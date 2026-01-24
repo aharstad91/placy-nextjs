@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
 import { POIAdminClient } from "./poi-admin-client";
@@ -129,11 +130,10 @@ export default async function AdminPOIsPage() {
     );
   }
 
-  // Fetch native POIs (no google_place_id)
+  // Fetch all POIs (native + Google)
   const { data: pois, error: poisError } = await supabase
     .from("pois")
     .select("*")
-    .is("google_place_id", null)
     .order("created_at", { ascending: false });
 
   // Fetch categories
@@ -156,12 +156,14 @@ export default async function AdminPOIsPage() {
   }
 
   return (
-    <POIAdminClient
-      pois={pois || []}
-      categories={categories || []}
-      createPOI={createPOI}
-      deletePOI={deletePOI}
-      updatePOI={updatePOI}
-    />
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Laster...</div>}>
+      <POIAdminClient
+        pois={pois || []}
+        categories={categories || []}
+        createPOI={createPOI}
+        deletePOI={deletePOI}
+        updatePOI={updatePOI}
+      />
+    </Suspense>
   );
 }
