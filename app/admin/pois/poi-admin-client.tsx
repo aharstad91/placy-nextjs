@@ -7,8 +7,8 @@ import type { DbCategory, DbPoi } from "@/lib/supabase/types";
 
 const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
 
-// Default center: Oslo
-const DEFAULT_CENTER = { lat: 59.9139, lng: 10.7522 };
+// Default center: Trondheim sentrum
+const DEFAULT_CENTER = { lat: 63.4305, lng: 10.3951 };
 
 interface GeocodingResult {
   place_name: string;
@@ -56,9 +56,13 @@ export function POIAdminClient({
     const { lng, lat } = event.lngLat;
     setCoordinates({ lat, lng });
 
-    // Reverse geocode to get address
+    // Reverse geocode to get address (client-side)
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) return;
+
     try {
-      const res = await fetch(`/api/geocode?lat=${lat}&lng=${lng}`);
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&limit=1&language=no`;
+      const res = await fetch(url);
       const data = await res.json();
       if (data.features?.[0]) {
         setAddress(data.features[0].place_name);
@@ -68,17 +72,41 @@ export function POIAdminClient({
     }
   }, []);
 
-  // Address search
+  // Address search - use client-side Mapbox API directly
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) {
+      setError("Mapbox token ikke konfigurert");
+      return;
+    }
+
     setIsSearching(true);
+    setError(null);
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(searchQuery)}`);
+      // Use Mapbox Geocoding API directly from client (avoids server-side token restrictions)
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${token}&country=NO&limit=5&language=no&proximity=${DEFAULT_CENTER.lng},${DEFAULT_CENTER.lat}`;
+      const res = await fetch(url);
       const data = await res.json();
-      setSearchResults(data.features || []);
+
+      if (data.message) {
+        // Mapbox error
+        setError(`Mapbox-feil: ${data.message}`);
+        setSearchResults([]);
+        return;
+      }
+
+      if (!data.features || data.features.length === 0) {
+        setError("Ingen resultater funnet. Prøv en annen adresse.");
+        setSearchResults([]);
+        return;
+      }
+
+      setSearchResults(data.features);
     } catch (e) {
       console.error("Search failed:", e);
+      setError("Kunne ikke søke. Sjekk internettforbindelsen.");
     } finally {
       setIsSearching(false);
     }
