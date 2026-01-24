@@ -1,0 +1,35 @@
+{
+  "name": "Ferjemannsveien 10 (Test)",
+  "customer": "klp-eiendom",
+  "center": {
+    "lat": 63.4320,
+    "lng": 10.4075
+  },
+  "radius": 800,
+
+  "discover": {
+    "googleCategories": [
+      "restaurant",
+      "cafe",
+      "gym"
+    ],
+    "minRating": 4.0,
+    "maxResultsPerCategory": 5,
+    "includeTransport": true
+  },
+
+  "themes": [
+    {
+      "id": "mat-drikke",
+      "title": "Mat & Drikke"
+    },
+    {
+      "id": "transport",
+      "title": "Transport & Mobilitet"
+    },
+    {
+      "id": "trening-helse",
+      "title": "Trening & Helse"
+    }
+  ]
+}

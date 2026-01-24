@@ -1,0 +1,30 @@
+project:
+  name: "Placy"
+  language: "TypeScript"
+  framework: "Next.js 14"
+  description: "Lokasjonsbasert storytelling-plattform"
+
+commands:
+  dev: "npm run dev"
+  build: "npm run build"
+  lint: "npm run lint"
+
+rules:
+  - "Les context/placy-concept-spec.md for full produktspesifikasjon"
+  - "Bruk Zustand for global state (lib/store.ts)"
+  - "Alle POI-data ligger i data/projects/{customer}/{project}.json"
+  - "Mapbox token ligger i .env.local som NEXT_PUBLIC_MAPBOX_TOKEN"
+  - "Bruk Lucide React for ikoner"
+  - "Følg eksisterende TypeScript-typer i lib/types.ts"
+  - "POI-kort skal vise reisetid basert på valgt travelMode"
+  - "Theme Story modal skal ha 50/50 split (liste + kart)"
+  - "Reisetider lagres i localStorage via Zustand persist"
+
+boundaries:
+  never_touch:
+    - "*.lock"
+    - ".env*"
+    - "node_modules/**"
+
+capabilities:
+  browser: "auto"

@@ -1,0 +1,50 @@
+{
+  "_comment": "Placy Story Generator Input Template",
+  "_instructions": "Kopier denne filen, gi den nytt navn (f.eks. 'mitt-prosjekt.input.json'), og fyll ut feltene under.",
+
+  "name": "Prosjektnavn",
+  "customer": "kunde-slug",
+  "center": {
+    "lat": 63.4320,
+    "lng": 10.4075
+  },
+  "radius": 1000,
+
+  "discover": {
+    "_comment": "Konfigurer hvilke typer steder som skal søkes opp",
+    "googleCategories": [
+      "restaurant",
+      "cafe",
+      "bar",
+      "bakery",
+      "gym",
+      "supermarket",
+      "pharmacy"
+    ],
+    "minRating": 4.0,
+    "maxResultsPerCategory": 15,
+    "includeTransport": true
+  },
+
+  "themes": [
+    {
+      "id": "mat-drikke",
+      "title": "Mat & Drikke",
+      "_comment": "categories er valgfritt - bruker default mapping hvis utelatt"
+    },
+    {
+      "id": "transport",
+      "title": "Transport & Mobilitet"
+    },
+    {
+      "id": "trening-helse",
+      "title": "Trening & Helse"
+    },
+    {
+      "id": "daglig-liv",
+      "title": "Daglige Ærender",
+      "categories": ["supermarket", "pharmacy", "bank", "post"],
+      "bridgeText": "Alt du trenger for hverdagen i gangavstand."
+    }
+  ]
+}

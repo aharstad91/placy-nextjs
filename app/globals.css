@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* Skjul standard Mapbox POI-labels */
+.mapboxgl-map .poi-label {
+  display: none;
+}
+
+/* Smooth scroll for POI-liste */
+.poi-scroll-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Aktiv POI-kort highlight */
+.poi-card-active {
+  @apply ring-2 ring-primary-500 ring-offset-2;
+}
+
+/* Travel mode button styles */
+.travel-mode-btn {
+  @apply px-3 py-1.5 rounded-full text-sm font-medium transition-colors;
+}
+
+.travel-mode-btn-active {
+  @apply bg-primary-500 text-white;
+}
+
+.travel-mode-btn-inactive {
+  @apply bg-gray-100 text-gray-600 hover:bg-gray-200;
+}
+
+/* Time budget button styles */
+.time-budget-btn {
+  @apply px-3 py-1.5 rounded-lg text-sm font-medium transition-colors;
+}
+
+.time-budget-btn-active {
+  @apply bg-gray-900 text-white;
+}
+
+.time-budget-btn-inactive {
+  @apply bg-gray-100 text-gray-600 hover:bg-gray-200;
+}

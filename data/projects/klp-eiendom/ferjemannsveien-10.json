@@ -1,0 +1,340 @@
+{
+  "id": "ferjemannsveien-10",
+  "name": "Ferjemannsveien 10",
+  "customer": "klp-eiendom",
+  "urlSlug": "ferjemannsveien-10",
+  "centerCoordinates": {
+    "lat": 63.4320,
+    "lng": 10.4075
+  },
+  "categories": [
+    { "id": "restaurant", "name": "Restaurant", "icon": "UtensilsCrossed", "color": "#ef4444" },
+    { "id": "cafe", "name": "Kafé", "icon": "Coffee", "color": "#f97316" },
+    { "id": "bus", "name": "Buss", "icon": "Bus", "color": "#3b82f6" },
+    { "id": "bike", "name": "Bysykkel", "icon": "Bike", "color": "#22c55e" },
+    { "id": "parking", "name": "Parkering", "icon": "ParkingCircle", "color": "#6366f1" },
+    { "id": "carshare", "name": "Bildeling", "icon": "Car", "color": "#8b5cf6" },
+    { "id": "train", "name": "Tog", "icon": "TrainFront", "color": "#0ea5e9" },
+    { "id": "taxi", "name": "Taxi", "icon": "Car", "color": "#fbbf24" },
+    { "id": "airport", "name": "Flybuss", "icon": "Plane", "color": "#06b6d4" },
+    { "id": "gym", "name": "Treningssenter", "icon": "Dumbbell", "color": "#ec4899" },
+    { "id": "outdoor", "name": "Utendørs aktivitet", "icon": "TreePine", "color": "#10b981" }
+  ],
+  "pois": [
+    {
+      "id": "sellanraa",
+      "name": "SELLANRAA Bok & Bar",
+      "coordinates": { "lat": 63.4340, "lng": 10.4010 },
+      "category": { "id": "cafe", "name": "Kafé", "icon": "Coffee", "color": "#f97316" },
+      "googleRating": 4.6,
+      "googleReviewCount": 892,
+      "editorialHook": "Litteraturhus-kafé oppkalt etter Hamsuns hovedperson – baristaene har vunnet NM flere ganger.",
+      "localInsight": "Holder til i byens gamle brannstasjon med dør direkte inn til Trondheim bibliotek. Kaffen regnes som byens beste – spør om dagens spesialitet fra NM-vinnende baristaer."
+    },
+    {
+      "id": "godt-brod-thomas",
+      "name": "Godt Brød Thomas Angells gate",
+      "coordinates": { "lat": 63.4315, "lng": 10.3950 },
+      "category": { "id": "cafe", "name": "Kafé", "icon": "Coffee", "color": "#f97316" },
+      "googleRating": 4.5,
+      "googleReviewCount": 456,
+      "editorialHook": "Håndverksbakeri med surdeigsbrød som har satt standarden i Trondheim siden 2003.",
+      "localInsight": "Kanelsnurrene går tom før lunsj – kom tidlig på lørdager. Spør om dagens restbrød etter kl. 15 for halv pris."
+    },
+    {
+      "id": "nabolaget-bagelri",
+      "name": "Nabolaget Bagelri",
+      "coordinates": { "lat": 63.4330, "lng": 10.4085 },
+      "category": { "id": "cafe", "name": "Kafé", "icon": "Coffee", "color": "#f97316" },
+      "googleRating": 4.8,
+      "googleReviewCount": 234,
+      "editorialHook": "Håndlagde bagels i retro 70-talls atmosfære – kalt \"Best bagels in Europe\" av besøkende.",
+      "localInsight": "Gjemt perle på Bakklandet nær Gamle Bybro. Prøv \"Hiking Viking\"-bagelen – en lokal favoritt."
+    },
+    {
+      "id": "jacobsen-svart",
+      "name": "Jacobsen & Svart Coffee Roasters",
+      "coordinates": { "lat": 63.4335, "lng": 10.4020 },
+      "category": { "id": "cafe", "name": "Kafé", "icon": "Coffee", "color": "#f97316" },
+      "googleRating": 4.7,
+      "googleReviewCount": 678,
+      "editorialHook": "Pioneren bak third-wave kaffe i Norge – startet i 6 kvm bak en frisørsalong i 2012.",
+      "localInsight": "Tony Jacobsen var blant de første til å bringe lysbrent skandinavisk kaffe til Trondheim."
+    },
+    {
+      "id": "cafe-lokka",
+      "name": "Café Løkka",
+      "coordinates": { "lat": 63.4325, "lng": 10.4100 },
+      "category": { "id": "cafe", "name": "Kafé", "icon": "Coffee", "color": "#f97316" },
+      "googleRating": 4.4,
+      "googleReviewCount": 512,
+      "editorialHook": "Retro-diner med Trondheims største uteservering og godt utvalg av øl.",
+      "localInsight": "Kjent for burgere og stort ølutvalg i 60-talls atmosfære. Hundevennlig utendørs."
+    },
+    {
+      "id": "jordbarpikene",
+      "name": "Jordbærpikene Solsiden",
+      "coordinates": { "lat": 63.4345, "lng": 10.4120 },
+      "category": { "id": "cafe", "name": "Kafé", "icon": "Coffee", "color": "#f97316" },
+      "googleRating": 4.3,
+      "googleReviewCount": 345,
+      "editorialHook": "Norsk kafékjede med hjemmelaget mat og kaker på Solsidens 2. etasje.",
+      "localInsight": "Studenter får 15% rabatt. Gratis påfyll på kaffe."
+    },
+    {
+      "id": "bysykkel-bakke-bru",
+      "name": "Trondheim Bysykkel: Bakke bru",
+      "coordinates": { "lat": 63.4321, "lng": 10.4074 },
+      "category": { "id": "bike", "name": "Bysykkel", "icon": "Bike", "color": "#22c55e" },
+      "bysykkelStationId": "bakke-bru"
+    },
+    {
+      "id": "bysykkel-dokkparken",
+      "name": "Trondheim Bysykkel: Dokkparken",
+      "coordinates": { "lat": 63.4336, "lng": 10.4114 },
+      "category": { "id": "bike", "name": "Bysykkel", "icon": "Bike", "color": "#22c55e" },
+      "bysykkelStationId": "dokkparken"
+    },
+    {
+      "id": "bakkegata-buss-fra",
+      "name": "Bakkegata bussholdeplass (fra sentrum)",
+      "coordinates": { "lat": 63.4322, "lng": 10.4072 },
+      "category": { "id": "bus", "name": "Buss", "icon": "Bus", "color": "#3b82f6" },
+      "enturStopplaceId": "NSR:StopPlace:42198"
+    },
+    {
+      "id": "bakkegata-buss-til",
+      "name": "Bakkegata bussholdeplass (til sentrum)",
+      "coordinates": { "lat": 63.4324, "lng": 10.4072 },
+      "category": { "id": "bus", "name": "Buss", "icon": "Bus", "color": "#3b82f6" },
+      "enturStopplaceId": "NSR:StopPlace:42198"
+    },
+    {
+      "id": "gateparkering-dokkgata",
+      "name": "Gateparkering: Dokkgata",
+      "coordinates": { "lat": 63.4336, "lng": 10.4097 },
+      "category": { "id": "parking", "name": "Gateparkering", "icon": "ParkingCircle", "color": "#6366f1" }
+    },
+    {
+      "id": "gateparkering-verftsgata",
+      "name": "Gateparkering: Verftsgata",
+      "coordinates": { "lat": 63.4327, "lng": 10.4084 },
+      "category": { "id": "parking", "name": "Gateparkering", "icon": "ParkingCircle", "color": "#6366f1" }
+    },
+    {
+      "id": "gateparkering-innherredsveien",
+      "name": "Gateparkering: Innherredsveien 1",
+      "coordinates": { "lat": 63.4324, "lng": 10.4092 },
+      "category": { "id": "parking", "name": "Gateparkering", "icon": "ParkingCircle", "color": "#6366f1" }
+    },
+    {
+      "id": "gateparkering-kjopmannsgata",
+      "name": "Gateparkering: Kjøpmannsgata",
+      "coordinates": { "lat": 63.4332, "lng": 10.4044 },
+      "category": { "id": "parking", "name": "Gateparkering", "icon": "ParkingCircle", "color": "#6366f1" }
+    },
+    {
+      "id": "parkeringshus-bakklandet",
+      "name": "Parkeringshus: Bakklandet P-hus",
+      "coordinates": { "lat": 63.4320, "lng": 10.4071 },
+      "category": { "id": "parking", "name": "Parkeringshus", "icon": "ParkingCircle", "color": "#6366f1" },
+      "description": "Parkering like utenfor Adressabygget. 286 p-plasser. Mandag-søndag: 24/7 – helautomatisk."
+    },
+    {
+      "id": "hyre-bakklandet",
+      "name": "Hyre: Bakklandet P-hus, plan 9",
+      "coordinates": { "lat": 63.4319, "lng": 10.4070 },
+      "category": { "id": "carshare", "name": "Bildeling", "icon": "Car", "color": "#8b5cf6" },
+      "hyreStationId": "bakklandet-p9"
+    },
+    {
+      "id": "amber-restaurant",
+      "name": "Amber Restaurant",
+      "coordinates": { "lat": 63.4312, "lng": 10.4025 },
+      "category": { "id": "restaurant", "name": "Restaurant", "icon": "UtensilsCrossed", "color": "#ef4444" },
+      "googleRating": 4.5,
+      "googleReviewCount": 723,
+      "editorialHook": "Nordisk fine dining med asiatiske undertoner – kjøkkenet kombinerer lokale råvarer med teknikker fra Østen.",
+      "localInsight": "Bestill smaksmeny for å oppleve hele spekteret. Vinmenyen er kuratert av en av Norges beste sommelierer."
+    },
+    {
+      "id": "blomster-og-vin",
+      "name": "Blomster og Vin",
+      "coordinates": { "lat": 63.4298, "lng": 10.3965 },
+      "category": { "id": "restaurant", "name": "Restaurant", "icon": "UtensilsCrossed", "color": "#ef4444" },
+      "googleRating": 4.7,
+      "googleReviewCount": 412,
+      "editorialHook": "Naturvin og sesongbaserte småretter i en intim atmosfære – Trondheims svar på en Pariser vinbar.",
+      "localInsight": "Ingen reservasjon, førstemann til mølla. Kom tidlig på fredager. Spør bartender om ukens naturvin-favoritt."
+    },
+    {
+      "id": "hevd-bakery",
+      "name": "Hevd Bakery & Pizzeria, Adressahuset",
+      "coordinates": { "lat": 63.4318, "lng": 10.4068 },
+      "category": { "id": "restaurant", "name": "Restaurant", "icon": "UtensilsCrossed", "color": "#ef4444" },
+      "googleRating": 4.6,
+      "googleReviewCount": 534,
+      "editorialHook": "Napolitansk pizza med 72-timers hevet deig – bakt i vedovn importert fra Napoli.",
+      "localInsight": "Ligger rett ved Ferjemannsveien 10. Perfekt for en rask lunsj – ta med pizza til Nidelva på fine dager."
+    },
+    {
+      "id": "una-pizzeria",
+      "name": "Una pizzeria e bar",
+      "coordinates": { "lat": 63.4338, "lng": 10.4005 },
+      "category": { "id": "restaurant", "name": "Restaurant", "icon": "UtensilsCrossed", "color": "#ef4444" },
+      "googleRating": 4.4,
+      "googleReviewCount": 678,
+      "editorialHook": "Autentisk napolitansk pizzeria med italienske råvarer – eid av kokker fra Napoli.",
+      "localInsight": "Bestill Margherita DOC for den klassiske opplevelsen. Uteservering med utsikt over Nidelva om sommeren."
+    },
+    {
+      "id": "robata-asian-fusion",
+      "name": "Robata Asian Fusion",
+      "coordinates": { "lat": 63.4342, "lng": 10.4095 },
+      "category": { "id": "restaurant", "name": "Restaurant", "icon": "UtensilsCrossed", "color": "#ef4444" },
+      "googleRating": 4.3,
+      "googleReviewCount": 456,
+      "editorialHook": "Japansk-inspirert fusion med robata-grill – smaker fra hele Asia i moderne setting på Solsiden.",
+      "localInsight": "Dele-menyen er populær for grupper. Prøv yakitori-spydene fra robata-grillen – byens beste."
+    },
+    {
+      "id": "godt-brod-solsiden",
+      "name": "Godt Brød Solsiden",
+      "coordinates": { "lat": 63.4348, "lng": 10.4115 },
+      "category": { "id": "cafe", "name": "Kafé", "icon": "Coffee", "color": "#f97316" },
+      "googleRating": 4.5,
+      "googleReviewCount": 289,
+      "editorialHook": "Norges fremste økologiske bakeri – kun rene råvarer uten tilsetningsstoffer siden 1995.",
+      "localInsight": "Rangert som topp bakeri i Trondheim. Prøv focacciaen til lunsj."
+    },
+    {
+      "id": "sats-solsiden",
+      "name": "SATS Solsiden",
+      "coordinates": { "lat": 63.4351, "lng": 10.4108 },
+      "category": { "id": "gym", "name": "Treningssenter", "icon": "Dumbbell", "color": "#ec4899" },
+      "googleRating": 4.2,
+      "googleReviewCount": 312,
+      "editorialHook": "Stort treningssenter med alt fra gruppetimer til styrketrening – åpent fra tidlig morgen til sen kveld.",
+      "localInsight": "Populært blant kontorfolk i området. Mindre kø på styrke mellom 10-14. Gruppetimene fyller seg fort – book i appen."
+    },
+    {
+      "id": "evo-midtbyen",
+      "name": "Evo Fitness Midtbyen",
+      "coordinates": { "lat": 63.4305, "lng": 10.3945 },
+      "category": { "id": "gym", "name": "Treningssenter", "icon": "Dumbbell", "color": "#ec4899" },
+      "googleRating": 4.4,
+      "googleReviewCount": 245,
+      "editorialHook": "Rimelig 24/7 treningssenter med moderne utstyr – perfekt for fleksible treningstider.",
+      "localInsight": "Ingen bindingstid og åpent hele døgnet. Bra valg for de som trener tidlig eller sent."
+    },
+    {
+      "id": "nidelva-elvesti",
+      "name": "Nidelva elvesti",
+      "coordinates": { "lat": 63.4315, "lng": 10.4085 },
+      "category": { "id": "outdoor", "name": "Utendørs aktivitet", "icon": "TreePine", "color": "#10b981" },
+      "editorialHook": "Populær løpe- og sykkelsti langs Nidelva – fra sentrum til Leirfossen på flat grusvei.",
+      "localInsight": "Start ved Bakke bru og løp sørover for en flat 5 km tur-retur. Flombelyst om vinteren."
+    },
+    {
+      "id": "ladestien",
+      "name": "Ladestien",
+      "coordinates": { "lat": 63.4455, "lng": 10.4320 },
+      "category": { "id": "outdoor", "name": "Utendørs aktivitet", "icon": "TreePine", "color": "#10b981" },
+      "editorialHook": "Kyststi fra Lade til Korsvika – spektakulær utsikt over fjorden og Munkholmen.",
+      "localInsight": "Ta buss til Lade og gå tilbake til sentrum langs stien. Ca 7 km med flere badeplasser underveis."
+    }
+  ],
+  "story": {
+    "id": "ferjemannsveien-story",
+    "title": "Velkommen til Ferjemannsveien 10",
+    "introText": "Her kommer en ny tittel som kan ha mer informasjon. Ved Nidelvas bredder, midt i Trondheims mest levende bydel, finner du alt du trenger for hverdagen – og mer til.",
+    "heroImages": [
+      "/images/hero-1.jpg",
+      "/images/hero-2.jpg"
+    ],
+    "sections": [
+      {
+        "id": "transport-section",
+        "type": "poi_list",
+        "categoryLabel": "DAGLIG LOGISTIKK",
+        "title": "Enkel ankomst med tog, buss eller sykkel",
+        "bridgeText": "Her fungerer hverdagslogistikken uten mye planlegging. Med flere kollektivvalg i nærheten og lav terskel for å kombinere gange, buss og sykkel, blir morgener mer forutsigbare – både for ansatte som pendler og for besøkende som skal finne frem.",
+        "pois": ["bakkegata-buss-fra", "bakkegata-buss-til", "bysykkel-bakke-bru"]
+      },
+      {
+        "id": "transport-section-2",
+        "type": "poi_list",
+        "categoryLabel": "TRANSPORT",
+        "title": "Transport & Mobilitet test",
+        "bridgeText": "Komme seg rundt er enkelt – 10 transportalternativer innen 1 km.",
+        "pois": ["bakkegata-buss-til", "gateparkering-verftsgata", "bakkegata-buss-fra"]
+      }
+    ],
+    "themeStories": [
+      {
+        "id": "transport-mobilitet",
+        "slug": "transport-mobilitet",
+        "title": "Enkel ankomst med tog, buss eller sykkel",
+        "bridgeText": "10 steder funnet. Alle innen gangavstand.",
+        "sections": [
+          {
+            "id": "sykkel-section",
+            "title": "Sykkel",
+            "description": "Hesthagen bussholdeplass er et knutepunkt for både lokale busser og flybussen til Værnes. Med sanntidsoversikt har du full kontroll på neste avgang.",
+            "images": ["/images/bysykkel-1.jpg", "/images/bysykkel-2.jpg"],
+            "pois": ["bysykkel-bakke-bru", "bysykkel-dokkparken"]
+          },
+          {
+            "id": "buss-section",
+            "title": "Buss og kollektivt",
+            "description": "Hesthagen bussholdeplass er et knutepunkt for både lokale busser og flybussen til Værnes.",
+            "pois": ["bakkegata-buss-fra", "bakkegata-buss-til"]
+          },
+          {
+            "id": "parkering-section",
+            "title": "Parkering",
+            "pois": ["parkeringshus-bakklandet", "gateparkering-dokkgata", "gateparkering-verftsgata", "gateparkering-innherredsveien", "gateparkering-kjopmannsgata", "hyre-bakklandet"]
+          }
+        ]
+      },
+      {
+        "id": "mat-drikke",
+        "slug": "mat-drikke",
+        "title": "Mat & Drikke",
+        "bridgeText": "Fra verdensmesterkaffe til håndlagde bagels – her er kaffebarene og spisestedene i nabolaget.",
+        "sections": [
+          {
+            "id": "kaffe-section",
+            "title": "Kaffe & Bakeri",
+            "pois": ["sellanraa", "jacobsen-svart", "godt-brod-thomas", "nabolaget-bagelri", "godt-brod-solsiden"]
+          },
+          {
+            "id": "spisestedet-section",
+            "title": "Spisesteder",
+            "pois": ["cafe-lokka", "jordbarpikene", "hevd-bakery", "amber-restaurant", "blomster-og-vin", "una-pizzeria", "robata-asian-fusion"]
+          }
+        ]
+      },
+      {
+        "id": "trening-helse",
+        "slug": "trening-helse",
+        "title": "Trening & Helse",
+        "bridgeText": "Hold deg i form med treningssentre og utendørsaktiviteter rett utenfor døra.",
+        "sections": [
+          {
+            "id": "treningssentre-section",
+            "title": "Treningssentre",
+            "description": "Flere treningssentre i gangavstand – både rimelige 24/7-sentre og fullservice-kjeder med gruppetimer.",
+            "pois": ["sats-solsiden", "evo-midtbyen"]
+          },
+          {
+            "id": "utendors-section",
+            "title": "Utendørs aktiviteter",
+            "description": "Nidelva og kyststien gir perfekte muligheter for løping, sykling og turgåing året rundt.",
+            "pois": ["nidelva-elvesti", "ladestien", "bysykkel-bakke-bru", "bysykkel-dokkparken"]
+          }
+        ]
+      }
+    ]
+  }
+}

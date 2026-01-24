@@ -1,0 +1,999 @@
+{
+  "id": "test-generator",
+  "name": "Ferjemannsveien 10 (Test)",
+  "customer": "klp-eiendom",
+  "urlSlug": "test-generator",
+  "centerCoordinates": {
+    "lat": 63.432,
+    "lng": 10.4075
+  },
+  "categories": [
+    {
+      "id": "restaurant",
+      "name": "Restaurant",
+      "icon": "UtensilsCrossed",
+      "color": "#ef4444"
+    },
+    {
+      "id": "cafe",
+      "name": "Kafé",
+      "icon": "Coffee",
+      "color": "#f97316"
+    },
+    {
+      "id": "gym",
+      "name": "Treningssenter",
+      "icon": "Dumbbell",
+      "color": "#ec4899"
+    },
+    {
+      "id": "bike",
+      "name": "Bysykkel",
+      "icon": "Bike",
+      "color": "#22c55e"
+    },
+    {
+      "id": "bus",
+      "name": "Buss",
+      "icon": "Bus",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "train",
+      "name": "Tog",
+      "icon": "TrainFront",
+      "color": "#0ea5e9"
+    }
+  ],
+  "pois": [
+    {
+      "id": "britannia-hotel",
+      "name": "Britannia Hotel",
+      "coordinates": {
+        "lat": 63.43177979999999,
+        "lng": 10.3985685
+      },
+      "address": "Dronningens gate 5, Trondheim",
+      "category": {
+        "id": "restaurant",
+        "name": "Restaurant",
+        "icon": "UtensilsCrossed",
+        "color": "#ef4444"
+      },
+      "googlePlaceId": "ChIJ10ho6psxbUYRzRiCX7jZB9M",
+      "googleRating": 4.7,
+      "googleReviewCount": 2046
+    },
+    {
+      "id": "quality-hotel-augustin",
+      "name": "Quality Hotel Augustin",
+      "coordinates": {
+        "lat": 63.430792,
+        "lng": 10.3926562
+      },
+      "address": "Kongens gate 26, Trondheim",
+      "category": {
+        "id": "restaurant",
+        "name": "Restaurant",
+        "icon": "UtensilsCrossed",
+        "color": "#ef4444"
+      },
+      "googlePlaceId": "ChIJIXFaIJsxbUYRNkJzkn2gJW0",
+      "googleRating": 4,
+      "googleReviewCount": 1034
+    },
+    {
+      "id": "sushime-take-away-solsiden",
+      "name": "SushiMe Take Away Solsiden",
+      "coordinates": {
+        "lat": 63.4346341,
+        "lng": 10.4141277
+      },
+      "address": "Beddingen 1, Trondheim",
+      "category": {
+        "id": "restaurant",
+        "name": "Restaurant",
+        "icon": "UtensilsCrossed",
+        "color": "#ef4444"
+      },
+      "googlePlaceId": "ChIJXa-r1qExbUYR6TZls7T5q5w",
+      "googleRating": 4.6,
+      "googleReviewCount": 347
+    },
+    {
+      "id": "solsiden-senter",
+      "name": "Solsiden Senter",
+      "coordinates": {
+        "lat": 63.43482030000001,
+        "lng": 10.4117302
+      },
+      "address": "Beddingen 10, Trondheim",
+      "category": {
+        "id": "restaurant",
+        "name": "Restaurant",
+        "icon": "UtensilsCrossed",
+        "color": "#ef4444"
+      },
+      "googlePlaceId": "ChIJyVBZnZ8xbUYRhB-s_crA_YQ",
+      "googleRating": 4.2,
+      "googleReviewCount": 5494
+    },
+    {
+      "id": "robata-asian-fusion",
+      "name": "Robata Asian Fusion",
+      "coordinates": {
+        "lat": 63.43378259999999,
+        "lng": 10.3937985
+      },
+      "address": "Munkegata 41, Trondheim",
+      "category": {
+        "id": "restaurant",
+        "name": "Restaurant",
+        "icon": "UtensilsCrossed",
+        "color": "#ef4444"
+      },
+      "googlePlaceId": "ChIJXemDX5sxbUYRUJFHImZJvr4",
+      "googleRating": 4.5,
+      "googleReviewCount": 586
+    },
+    {
+      "id": "dromedar-kaffebar-moxness",
+      "name": "Dromedar Kaffebar Moxness",
+      "coordinates": {
+        "lat": 63.43350529999999,
+        "lng": 10.399656
+      },
+      "address": "Olav Tryggvasons gate 14, Trondheim",
+      "category": {
+        "id": "cafe",
+        "name": "Kafé",
+        "icon": "Coffee",
+        "color": "#f97316"
+      },
+      "googlePlaceId": "ChIJTyx3C5wxbUYRXiTpOnuSvrc",
+      "googleRating": 4.2,
+      "googleReviewCount": 602
+    },
+    {
+      "id": "cafe-l-kka",
+      "name": "Café Løkka",
+      "coordinates": {
+        "lat": 63.4335355,
+        "lng": 10.4086411
+      },
+      "address": "Dokkgata 8, Trondheim",
+      "category": {
+        "id": "cafe",
+        "name": "Kafé",
+        "icon": "Coffee",
+        "color": "#f97316"
+      },
+      "googlePlaceId": "ChIJs-DHJJ8xbUYRslPZTW18HJo",
+      "googleRating": 4.3,
+      "googleReviewCount": 1301
+    },
+    {
+      "id": "digs",
+      "name": "Digs",
+      "coordinates": {
+        "lat": 63.4313107,
+        "lng": 10.4007683
+      },
+      "address": "Krambugata 2, Trondheim",
+      "category": {
+        "id": "cafe",
+        "name": "Kafé",
+        "icon": "Coffee",
+        "color": "#f97316"
+      },
+      "googlePlaceId": "ChIJtUzWfJsxbUYRnZzku3vVkNs",
+      "googleRating": 4.5,
+      "googleReviewCount": 192
+    },
+    {
+      "id": "jacobsen-svart-coffee-roasters",
+      "name": "Jacobsen & Svart Coffee Roasters",
+      "coordinates": {
+        "lat": 63.43405250000001,
+        "lng": 10.4021883
+      },
+      "address": "Brattørgata 4, Trondheim",
+      "category": {
+        "id": "cafe",
+        "name": "Kafé",
+        "icon": "Coffee",
+        "color": "#f97316"
+      },
+      "googlePlaceId": "ChIJWat1aMYxbUYRHj3pl88FD_E",
+      "googleRating": 4.7,
+      "googleReviewCount": 624
+    },
+    {
+      "id": "sellanraa-bok-bar",
+      "name": "SELLANRAA Bok & Bar",
+      "coordinates": {
+        "lat": 63.43063540000001,
+        "lng": 10.400301
+      },
+      "address": "Kongens gate 2, Trondheim",
+      "category": {
+        "id": "cafe",
+        "name": "Kafé",
+        "icon": "Coffee",
+        "color": "#f97316"
+      },
+      "googlePlaceId": "ChIJw6111psxbUYRtljsA7ciqSM",
+      "googleRating": 4.6,
+      "googleReviewCount": 604
+    },
+    {
+      "id": "3t-midtby-n",
+      "name": "3T-Midtby'n",
+      "coordinates": {
+        "lat": 63.43179050000001,
+        "lng": 10.4018786
+      },
+      "address": "Dronningens gate 1, Trondheim",
+      "category": {
+        "id": "gym",
+        "name": "Treningssenter",
+        "icon": "Dumbbell",
+        "color": "#ec4899"
+      },
+      "googlePlaceId": "ChIJ_f9EX5kxbUYRRZO7Z_Uj3P8",
+      "googleRating": 4.2,
+      "googleReviewCount": 179
+    },
+    {
+      "id": "impulse-treningssenter",
+      "name": "Impulse Treningssenter",
+      "coordinates": {
+        "lat": 63.4337081,
+        "lng": 10.4133825
+      },
+      "address": "Innherredsveien 7, Trondheim",
+      "category": {
+        "id": "gym",
+        "name": "Treningssenter",
+        "icon": "Dumbbell",
+        "color": "#ec4899"
+      },
+      "googlePlaceId": "ChIJKcII3KExbUYR5OojIFzYo3o",
+      "googleRating": 4.2,
+      "googleReviewCount": 64
+    },
+    {
+      "id": "coroptima-tidl-trondheimsnaprapatene-naprapat-smerteklinikk-i-trondheim",
+      "name": "CorOptima (tidl. TrondheimsNaprapatene)– Naprapat & Smerteklinikk i Trondheim",
+      "coordinates": {
+        "lat": 63.43314479999999,
+        "lng": 10.3962337
+      },
+      "address": "Olav Tryggvasons gate 33, Trondheim",
+      "category": {
+        "id": "gym",
+        "name": "Treningssenter",
+        "icon": "Dumbbell",
+        "color": "#ec4899"
+      },
+      "googlePlaceId": "ChIJ_1FjP5sxbUYRvl31masZab0",
+      "googleRating": 4.9,
+      "googleReviewCount": 109
+    },
+    {
+      "id": "trondheim-meditasjon-yoga",
+      "name": "Trondheim Meditasjon & Yoga",
+      "coordinates": {
+        "lat": 63.4285408,
+        "lng": 10.3986571
+      },
+      "address": "Erling Skakkes gate 3, Trondheim",
+      "category": {
+        "id": "gym",
+        "name": "Treningssenter",
+        "icon": "Dumbbell",
+        "color": "#ec4899"
+      },
+      "googlePlaceId": "ChIJLdEFSJsxbUYRdPmmq7yFuIc",
+      "googleRating": 4.8,
+      "googleReviewCount": 15
+    },
+    {
+      "id": "3t-solsiden",
+      "name": "3T-Solsiden",
+      "coordinates": {
+        "lat": 63.43650049999999,
+        "lng": 10.4163885
+      },
+      "address": "Dyre Halses gate 1, Trondheim",
+      "category": {
+        "id": "gym",
+        "name": "Treningssenter",
+        "icon": "Dumbbell",
+        "color": "#ec4899"
+      },
+      "googlePlaceId": "ChIJSUfPIqAxbUYRiyIKq4-hSPs",
+      "googleRating": 4.3,
+      "googleReviewCount": 171
+    },
+    {
+      "id": "bakkegata-bussholdeplass",
+      "name": "Bakkegata bussholdeplass",
+      "coordinates": {
+        "lat": 63.43234,
+        "lng": 10.407248
+      },
+      "category": {
+        "id": "bus",
+        "name": "Buss",
+        "icon": "Bus",
+        "color": "#3b82f6"
+      },
+      "enturStopplaceId": "NSR:StopPlace:43577"
+    },
+    {
+      "id": "olav-tryggvasons-gate-bussholdeplass",
+      "name": "Olav Tryggvasons gate bussholdeplass",
+      "coordinates": {
+        "lat": 63.433305,
+        "lng": 10.399879
+      },
+      "category": {
+        "id": "bus",
+        "name": "Buss",
+        "icon": "Bus",
+        "color": "#3b82f6"
+      },
+      "enturStopplaceId": "NSR:StopPlace:43460"
+    },
+    {
+      "id": "solsiden-bussholdeplass",
+      "name": "Solsiden bussholdeplass",
+      "coordinates": {
+        "lat": 63.434019,
+        "lng": 10.413246
+      },
+      "category": {
+        "id": "bus",
+        "name": "Buss",
+        "icon": "Bus",
+        "color": "#3b82f6"
+      },
+      "enturStopplaceId": "NSR:StopPlace:43133"
+    },
+    {
+      "id": "s-ndre-gate-bussholdeplass",
+      "name": "Søndre gate bussholdeplass",
+      "coordinates": {
+        "lat": 63.433869,
+        "lng": 10.400206
+      },
+      "category": {
+        "id": "bus",
+        "name": "Buss",
+        "icon": "Bus",
+        "color": "#3b82f6"
+      },
+      "enturStopplaceId": "NSR:StopPlace:63745"
+    },
+    {
+      "id": "s-ndre-gate-regionbuss-bussholdeplass",
+      "name": "Søndre gate Regionbuss bussholdeplass",
+      "coordinates": {
+        "lat": 63.43416,
+        "lng": 10.400076
+      },
+      "category": {
+        "id": "bus",
+        "name": "Buss",
+        "icon": "Bus",
+        "color": "#3b82f6"
+      },
+      "enturStopplaceId": "NSR:StopPlace:42911"
+    },
+    {
+      "id": "trondheim-s-stasjon",
+      "name": "Trondheim S stasjon",
+      "coordinates": {
+        "lat": 63.436279,
+        "lng": 10.399123
+      },
+      "category": {
+        "id": "train",
+        "name": "Tog",
+        "icon": "TrainFront",
+        "color": "#0ea5e9"
+      },
+      "enturStopplaceId": "NSR:StopPlace:59977"
+    },
+    {
+      "id": "festningsgata-bussholdeplass",
+      "name": "Festningsgata bussholdeplass",
+      "coordinates": {
+        "lat": 63.427882,
+        "lng": 10.416342
+      },
+      "category": {
+        "id": "bus",
+        "name": "Buss",
+        "icon": "Bus",
+        "color": "#3b82f6"
+      },
+      "enturStopplaceId": "NSR:StopPlace:43777"
+    },
+    {
+      "id": "bratt-ra-bussholdeplass",
+      "name": "Brattøra bussholdeplass",
+      "coordinates": {
+        "lat": 63.437579,
+        "lng": 10.407089
+      },
+      "category": {
+        "id": "bus",
+        "name": "Buss",
+        "icon": "Bus",
+        "color": "#3b82f6"
+      },
+      "enturStopplaceId": "NSR:StopPlace:43865"
+    },
+    {
+      "id": "gyldenl-ves-gate-bussholdeplass",
+      "name": "Gyldenløves gate bussholdeplass",
+      "coordinates": {
+        "lat": 63.430499,
+        "lng": 10.419608
+      },
+      "category": {
+        "id": "bus",
+        "name": "Buss",
+        "icon": "Bus",
+        "color": "#3b82f6"
+      },
+      "enturStopplaceId": "NSR:StopPlace:42284"
+    },
+    {
+      "id": "dyre-halses-gate-bussholdeplass",
+      "name": "Dyre Halses gate bussholdeplass",
+      "coordinates": {
+        "lat": 63.436977,
+        "lng": 10.414191
+      },
+      "category": {
+        "id": "bus",
+        "name": "Buss",
+        "icon": "Bus",
+        "color": "#3b82f6"
+      },
+      "enturStopplaceId": "NSR:StopPlace:60253"
+    },
+    {
+      "id": "trondheim-bysykkel-nedre-bakklandet",
+      "name": "Trondheim Bysykkel: Nedre Bakklandet",
+      "coordinates": {
+        "lat": 63.43088794361407,
+        "lng": 10.40622838479851
+      },
+      "address": "Nygata 28",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "5506"
+    },
+    {
+      "id": "trondheim-bysykkel-jernbanebrua",
+      "name": "Trondheim Bysykkel: Jernbanebrua",
+      "coordinates": {
+        "lat": 63.43590595543674,
+        "lng": 10.399037321300199
+      },
+      "address": "Sjøgangen 2, 7010 Trondheim",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "5430"
+    },
+    {
+      "id": "trondheim-bysykkel-bersvendveita",
+      "name": "Trondheim Bysykkel: Bersvendveita",
+      "coordinates": {
+        "lat": 63.43070587450512,
+        "lng": 10.393204757854818
+      },
+      "address": "Kongens gate 22, 7011 Trondheim",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "5429"
+    },
+    {
+      "id": "trondheim-bysykkel-munkegata",
+      "name": "Trondheim Bysykkel: Munkegata",
+      "coordinates": {
+        "lat": 63.432417920056736,
+        "lng": 10.393797730145366
+      },
+      "address": "Munkegata 48",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "5425"
+    },
+    {
+      "id": "trondheim-bysykkel-nova-kino",
+      "name": "Trondheim Bysykkel: Nova Kino",
+      "coordinates": {
+        "lat": 63.43337733865644,
+        "lng": 10.401074857528158
+      },
+      "address": "Olav Tryggvasons gate 10",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "1885"
+    },
+    {
+      "id": "trondheim-bysykkel-torvet-i",
+      "name": "Trondheim Bysykkel: Torvet I",
+      "coordinates": {
+        "lat": 63.43051170410531,
+        "lng": 10.392764550201036
+      },
+      "address": "Kongensgate 15",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "175"
+    },
+    {
+      "id": "trondheim-bysykkel-fjordgata",
+      "name": "Trondheim Bysykkel: Fjordgata",
+      "coordinates": {
+        "lat": 63.43483884684911,
+        "lng": 10.403396522008734
+      },
+      "address": "Fjordgata 16",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "148"
+    },
+    {
+      "id": "trondheim-bysykkel-rosenborg-skole",
+      "name": "Trondheim Bysykkel: Rosenborg skole",
+      "coordinates": {
+        "lat": 63.428896386680805,
+        "lng": 10.416175670425105
+      },
+      "address": "Stadsings Dahls gate 4B",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "16"
+    },
+    {
+      "id": "trondheim-bysykkel-m-llenberg",
+      "name": "Trondheim Bysykkel: Møllenberg",
+      "coordinates": {
+        "lat": 63.43593538982745,
+        "lng": 10.419479162128454
+      },
+      "address": "Innherredsveien",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "18"
+    },
+    {
+      "id": "trondheim-bysykkel-dokkparken",
+      "name": "Trondheim Bysykkel: Dokkparken",
+      "coordinates": {
+        "lat": 63.433509009133566,
+        "lng": 10.411412715911865
+      },
+      "address": "Innherredsveien 16A",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "1"
+    },
+    {
+      "id": "trondheim-bysykkel-erling-skakkes-gate",
+      "name": "Trondheim Bysykkel: Erling Skakkes gate",
+      "coordinates": {
+        "lat": 63.42889745011402,
+        "lng": 10.39928913116455
+      },
+      "address": "Erling skakkes gate 1",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "74"
+    },
+    {
+      "id": "trondheim-bysykkel-nordre-gate",
+      "name": "Trondheim Bysykkel: Nordre gate ",
+      "coordinates": {
+        "lat": 63.433085554043984,
+        "lng": 10.397391468286514
+      },
+      "address": "Nordre gate 23",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "20"
+    },
+    {
+      "id": "trondheim-bysykkel-bratt-rkaia",
+      "name": "Trondheim Bysykkel: Brattørkaia",
+      "coordinates": {
+        "lat": 63.43740318294613,
+        "lng": 10.39729356765747
+      },
+      "address": "Brattørkaia 17B",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "9"
+    },
+    {
+      "id": "trondheim-bysykkel-lillegardsbakken",
+      "name": "Trondheim Bysykkel: Lillegårdsbakken",
+      "coordinates": {
+        "lat": 63.42629161886643,
+        "lng": 10.404109150403997
+      },
+      "address": "Lillegårdsbakken 8",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "128"
+    },
+    {
+      "id": "trondheim-bysykkel-bassengbakken",
+      "name": "Trondheim Bysykkel: Bassengbakken",
+      "coordinates": {
+        "lat": 63.43592006472795,
+        "lng": 10.414788275957108
+      },
+      "address": "Dyre Halses 1",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "108"
+    },
+    {
+      "id": "trondheim-bysykkel-radhuset",
+      "name": "Trondheim Bysykkel: Rådhuset",
+      "coordinates": {
+        "lat": 63.42825317810852,
+        "lng": 10.396625484107602
+      },
+      "address": "Munkegata 1",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "14"
+    },
+    {
+      "id": "trondheim-bysykkel-kongens-gate",
+      "name": "Trondheim Bysykkel: Kongens gate",
+      "coordinates": {
+        "lat": 63.43045711348886,
+        "lng": 10.398100912570953
+      },
+      "address": "Kongens gate 14B",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "28"
+    },
+    {
+      "id": "trondheim-bysykkel-jomfrugateallmenningen",
+      "name": "Trondheim Bysykkel: Jomfrugateallmenningen",
+      "coordinates": {
+        "lat": 63.434423074986874,
+        "lng": 10.395468324422836
+      },
+      "address": "Fjordgata 66",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "19"
+    },
+    {
+      "id": "trondheim-bysykkel-trondheim-s",
+      "name": "Trondheim Bysykkel: Trondheim S",
+      "coordinates": {
+        "lat": 63.436215184202325,
+        "lng": 10.39990465658218
+      },
+      "address": "Sjøgangen 4",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "105"
+    },
+    {
+      "id": "trondheim-bysykkel-tmv-odden",
+      "name": "Trondheim Bysykkel: TMV-odden",
+      "coordinates": {
+        "lat": 63.43547778770301,
+        "lng": 10.410569131581866
+      },
+      "address": "Beddingen 14",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "85"
+    },
+    {
+      "id": "trondheim-bysykkel-bakke-bru",
+      "name": "Trondheim Bysykkel: Bakke bru",
+      "coordinates": {
+        "lat": 63.432148588449024,
+        "lng": 10.407380764659592
+      },
+      "address": "Nedre Bakklandet 60",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "21"
+    },
+    {
+      "id": "trondheim-bysykkel-bakklandet",
+      "name": "Trondheim Bysykkel: Bakklandet",
+      "coordinates": {
+        "lat": 63.427896581278105,
+        "lng": 10.403341750766884
+      },
+      "address": "Øvre Bakklandet 66",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "52"
+    },
+    {
+      "id": "trondheim-bysykkel-verftsbrua",
+      "name": "Trondheim Bysykkel: Verftsbrua",
+      "coordinates": {
+        "lat": 63.43527713641004,
+        "lng": 10.405813604593277
+      },
+      "address": "Havnegata 1",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "66"
+    },
+    {
+      "id": "trondheim-bysykkel-thornesparken",
+      "name": "Trondheim Bysykkel: Thornesparken ",
+      "coordinates": {
+        "lat": 63.43289961569575,
+        "lng": 10.412772931158543
+      },
+      "address": "Nonnegata 3",
+      "category": {
+        "id": "bike",
+        "name": "Bysykkel",
+        "icon": "Bike",
+        "color": "#22c55e"
+      },
+      "bysykkelStationId": "25"
+    }
+  ],
+  "story": {
+    "id": "ferjemannsveien-10-test-story",
+    "title": "Velkommen til Ferjemannsveien 10 (Test)",
+    "introText": "Oppdag nabolaget rundt Ferjemannsveien 10 (Test). Med 39 steder innen gangavstand har du alt du trenger for hverdagen – og mer til.",
+    "sections": [
+      {
+        "id": "mat-drikke-section",
+        "type": "poi_list",
+        "categoryLabel": "MAT & DRIKKE",
+        "title": "Mat & Drikke",
+        "bridgeText": "Fra verdensmesterkaffe til lokale favoritter – her er spisestedene i nabolaget.",
+        "pois": [
+          "britannia-hotel",
+          "jacobsen-svart-coffee-roasters",
+          "sushime-take-away-solsiden"
+        ],
+        "themeStoryId": "mat-drikke"
+      },
+      {
+        "id": "transport-section",
+        "type": "poi_list",
+        "categoryLabel": "TRANSPORT",
+        "title": "Transport & Mobilitet",
+        "bridgeText": "Enkel tilgang med buss, sykkel eller bil – alle transportalternativer i nærheten.",
+        "pois": [
+          "bakkegata-bussholdeplass",
+          "olav-tryggvasons-gate-bussholdeplass",
+          "solsiden-bussholdeplass",
+          "trondheim-bysykkel-nedre-bakklandet",
+          "trondheim-bysykkel-jernbanebrua",
+          "trondheim-bysykkel-bersvendveita"
+        ],
+        "themeStoryId": "transport"
+      },
+      {
+        "id": "trening-helse-section",
+        "type": "poi_list",
+        "categoryLabel": "TRENING & HELSE",
+        "title": "Trening & Helse",
+        "bridgeText": "Hold deg i form med treningssentre og utendørsaktiviteter rett utenfor døra.",
+        "pois": [
+          "coroptima-tidl-trondheimsnaprapatene-naprapat-smerteklinikk-i-trondheim",
+          "trondheim-meditasjon-yoga",
+          "3t-solsiden"
+        ],
+        "themeStoryId": "trening-helse"
+      }
+    ],
+    "themeStories": [
+      {
+        "id": "mat-drikke",
+        "slug": "mat-drikke",
+        "title": "Mat & Drikke",
+        "bridgeText": "10 steder funnet. 0 innen 10 minutters gange.",
+        "sections": [
+          {
+            "id": "kaffe-bakeri",
+            "title": "Kaffe & Bakeri",
+            "description": "Start dagen med god kaffe og ferske bakervarer.",
+            "pois": [
+              "jacobsen-svart-coffee-roasters",
+              "sellanraa-bok-bar",
+              "digs",
+              "cafe-l-kka",
+              "dromedar-kaffebar-moxness"
+            ]
+          },
+          {
+            "id": "spisesteder",
+            "title": "Spisesteder",
+            "description": "Fra casual lunsj til fine dining – her er alternativene.",
+            "pois": [
+              "britannia-hotel",
+              "sushime-take-away-solsiden",
+              "robata-asian-fusion",
+              "solsiden-senter",
+              "quality-hotel-augustin"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "transport",
+        "slug": "transport",
+        "title": "Transport & Mobilitet",
+        "bridgeText": "24 steder funnet. 0 innen 10 minutters gange.",
+        "sections": [
+          {
+            "id": "kollektiv",
+            "title": "Kollektivtransport",
+            "description": "Buss, tog og trikk i gangavstand.",
+            "pois": [
+              "bakkegata-bussholdeplass",
+              "olav-tryggvasons-gate-bussholdeplass",
+              "solsiden-bussholdeplass",
+              "s-ndre-gate-bussholdeplass",
+              "s-ndre-gate-regionbuss-bussholdeplass",
+              "festningsgata-bussholdeplass",
+              "bratt-ra-bussholdeplass",
+              "gyldenl-ves-gate-bussholdeplass",
+              "dyre-halses-gate-bussholdeplass",
+              "trondheim-s-stasjon"
+            ]
+          },
+          {
+            "id": "sykkel",
+            "title": "Sykkel",
+            "description": "Bysykkelstasjoner for korte turer.",
+            "pois": [
+              "trondheim-bysykkel-nedre-bakklandet",
+              "trondheim-bysykkel-jernbanebrua",
+              "trondheim-bysykkel-bersvendveita",
+              "trondheim-bysykkel-munkegata",
+              "trondheim-bysykkel-nova-kino",
+              "trondheim-bysykkel-torvet-i",
+              "trondheim-bysykkel-fjordgata",
+              "trondheim-bysykkel-rosenborg-skole",
+              "trondheim-bysykkel-m-llenberg",
+              "trondheim-bysykkel-dokkparken"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trening-helse",
+        "slug": "trening-helse",
+        "title": "Trening & Helse",
+        "bridgeText": "5 steder funnet. 0 innen 10 minutters gange.",
+        "sections": [
+          {
+            "id": "treningssentre",
+            "title": "Treningssentre",
+            "description": "Treningssentre i gangavstand.",
+            "pois": [
+              "coroptima-tidl-trondheimsnaprapatene-naprapat-smerteklinikk-i-trondheim",
+              "trondheim-meditasjon-yoga",
+              "3t-solsiden",
+              "3t-midtby-n",
+              "impulse-treningssenter"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

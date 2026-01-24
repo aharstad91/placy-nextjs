@@ -1,0 +1,41 @@
+{
+  "name": "placy",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "generate:story": "npx tsx scripts/generate-story.ts"
+  },
+  "dependencies": {
+    "@types/node": "^25.0.10",
+    "@types/react": "^19.2.9",
+    "autoprefixer": "^10.4.23",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.563.0",
+    "mapbox-gl": "^3.18.1",
+    "next": "^14.2.35",
+    "postcss": "^8.5.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-map-gl": "^8.1.0",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "zustand": "^5.0.10"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "dotenv": "^17.2.3",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.4",
+    "jsdom": "^27.0.1",
+    "tsx": "^4.21.0",
+    "vitest": "^3.2.4"
+  }
+}
