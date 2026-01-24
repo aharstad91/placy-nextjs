@@ -62,7 +62,9 @@
       },
       "googlePlaceId": "ChIJ10ho6psxbUYRzRiCX7jZB9M",
       "googleRating": 4.7,
-      "googleReviewCount": 2046
+      "googleReviewCount": 2046,
+      "editorialHook": "Norges mest ikoniske hotell fra 1870, restaurert for 1,4 milliarder – Palmehaven fra 1918 er en opplevelse i seg selv.",
+      "localInsight": "Bestill bord i Palmehaven for lunsj med live musikk. Hotellet har egen 'Artist in Residence'-konsert hver onsdag."
     },
     {
       "id": "quality-hotel-augustin",
@@ -98,7 +100,9 @@
       },
       "googlePlaceId": "ChIJXa-r1qExbUYR6TZls7T5q5w",
       "googleRating": 4.6,
-      "googleReviewCount": 347
+      "googleReviewCount": 347,
+      "editorialHook": "Moderne take på tradisjonell sushi – kjent for kreative kombinasjoner og ferske råvarer.",
+      "localInsight": "Smart Choice lunsjtilbud mandag-lørdag kl. 14-18. Studenter får 10% rabatt med gyldig student-ID."
     },
     {
       "id": "solsiden-senter",
@@ -134,7 +138,9 @@
       },
       "googlePlaceId": "ChIJXemDX5sxbUYRUJFHImZJvr4",
       "googleRating": 4.5,
-      "googleReviewCount": 586
+      "googleReviewCount": 586,
+      "editorialHook": "Introduserte sushi til Trondheim – nå Asian fusion med autentisk japansk kullgrill ved Ravnkloa.",
+      "localInsight": "Be om plass ved sushi-baren for å se kokkene i aksjon. Robata-grillen bruker tradisjonell japansk binchotan-kull."
     },
     {
       "id": "dromedar-kaffebar-moxness",
@@ -152,7 +158,9 @@
       },
       "googlePlaceId": "ChIJTyx3C5wxbUYRXiTpOnuSvrc",
       "googleRating": 4.2,
-      "googleReviewCount": 602
+      "googleReviewCount": 602,
+      "editorialHook": "Trondheims første kaffebar, har servert spesialkaffe i 28 år – en institusjon i byen.",
+      "localInsight": "Prøv 'Søt chili' – deres signaturdrikk som serveres både varm og kald. Hjemmelagde kaker fra Dromedarbageriet."
     },
     {
       "id": "cafe-l-kka",
@@ -170,7 +178,9 @@
       },
       "googlePlaceId": "ChIJs-DHJJ8xbUYRslPZTW18HJo",
       "googleRating": 4.3,
-      "googleReviewCount": 1301
+      "googleReviewCount": 1301,
+      "editorialHook": "Retro gastro-pub i gammelt skipsverft med Trondheims største uteservering langs kanalen.",
+      "localInsight": "Kjent for stort ølutvalg og milkshakes. Uteserveringen på kaien er perfekt på varme dager – kom tidlig for å sikre plass."
     },
     {
       "id": "digs",
@@ -188,7 +198,9 @@
       },
       "googlePlaceId": "ChIJtUzWfJsxbUYRnZzku3vVkNs",
       "googleRating": 4.5,
-      "googleReviewCount": 192
+      "googleReviewCount": 192,
+      "editorialHook": "Trondheims første coworking-space fra 2013 – nå et nav for startups med egen kafé og bar.",
+      "localInsight": "Kantina serverer lunsj med Pala-kaffe og craft beer. Åpent for alle, ikke bare medlemmer – perfekt for arbeidsmøter."
     },
     {
       "id": "jacobsen-svart-coffee-roasters",
@@ -206,7 +218,9 @@
       },
       "googlePlaceId": "ChIJWat1aMYxbUYRHj3pl88FD_E",
       "googleRating": 4.7,
-      "googleReviewCount": 624
+      "googleReviewCount": 624,
+      "editorialHook": "Trondheims pionér innen spesialkaffe – startet i et 6 kvm lager bak en frisørsalong i 2012.",
+      "localInsight": "Ligger i Arkitektenes hus. Be om filterbrygg med deres nyeste enkeltopprinnelse – Tony Jacobsen var blant de første til å bringe skandinavisk lysbrente bønner til byen."
     },
     {
       "id": "sellanraa-bok-bar",
@@ -224,7 +238,9 @@
       },
       "googlePlaceId": "ChIJw6111psxbUYRtljsA7ciqSM",
       "googleRating": 4.6,
-      "googleReviewCount": 604
+      "googleReviewCount": 604,
+      "editorialHook": "Litteraturhus-kafé oppkalt etter Hamsuns hovedperson – baristaene har vunnet NM flere ganger.",
+      "localInsight": "Holder til i byens gamle brannstasjon med dør rett inn til Trondheim bibliotek. Prøv noe fra deres eget surdeigsbakeriet ISAK."
     },
     {
       "id": "3t-midtby-n",
@@ -242,7 +258,9 @@
       },
       "googlePlaceId": "ChIJ_f9EX5kxbUYRRZO7Z_Uj3P8",
       "googleRating": 4.2,
-      "googleReviewCount": 179
+      "googleReviewCount": 179,
+      "editorialHook": "Trøndelags største treningskjede – tre etasjer med alt fra yoga til styrke midt i sentrum.",
+      "localInsight": "Har svømmehall, badstue og squashbaner inkludert i medlemskapet. Egen fysioterapiklinikk i samme bygg."
     },
     {
       "id": "impulse-treningssenter",
@@ -296,7 +314,9 @@
       },
       "googlePlaceId": "ChIJLdEFSJsxbUYRdPmmq7yFuIc",
       "googleRating": 4.8,
-      "googleReviewCount": 15
+      "googleReviewCount": 15,
+      "editorialHook": "Dedikert yoga- og meditasjonsstudio med fokus på ro og mindfulness midt i byen.",
+      "localInsight": "Tilbyr alt fra nybegynnerkurs til fordypning i ulike yogaformer. Prøv en drop-in time for å kjenne på stemningen."
     },
     {
       "id": "3t-solsiden",
@@ -314,7 +334,9 @@
       },
       "googlePlaceId": "ChIJSUfPIqAxbUYRiyIKq4-hSPs",
       "googleRating": 4.3,
-      "googleReviewCount": 171
+      "googleReviewCount": 171,
+      "editorialHook": "Stort og lyst treningssenter strategisk plassert mellom Lilleby og sentrum.",
+      "localInsight": "Perfekt for løpetrening til Trondheim Maraton. Egen klinikk med fysioterapi og kiropraktor tilgjengelig."
     },
     {
       "id": "bakkegata-bussholdeplass",

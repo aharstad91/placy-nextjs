@@ -6,12 +6,14 @@ Dette er en Next.js 14-app for **Placy**, en lokasjonsbasert storytelling-plattf
 
 | Fil | Beskrivelse |
 |-----|-------------|
+| `COMMANDS.md` | **Alle kommandoer og scripts** |
 | `context/placy-concept-spec.md` | Full produktspesifikasjon med all funksjonalitet |
 | `PRD.md` | Gjeldende oppgaveliste og status |
-| `.ralphy/config.yaml` | Ralphy-konfigurasjon med regler |
 | `lib/types.ts` | Alle TypeScript-typer |
 | `lib/store.ts` | Zustand global state |
+| `lib/generators/` | Story-generering moduler |
 | `data/projects/klp-eiendom/ferjemannsveien-10.json` | Demo-data |
+| `data/templates/input.template.json` | Mal for nye prosjekter |
 
 ## Kjernekonsepter
 
@@ -37,9 +39,42 @@ Dette er en Next.js 14-app for **Placy**, en lokasjonsbasert storytelling-plattf
 ## API-er
 
 - **Mapbox Directions:** `/api/directions` - ruteberegning
-- **Entur:** Sanntids kollektivtransport (ikke implementert)
-- **Bysykkel GBFS:** Ledige sykler (ikke implementert)
-- **Google Places:** POI-detaljer og bilder (ikke implementert)
+- **Mapbox Matrix:** `/api/travel-times` - reisetidsberegning
+- **Entur:** `/api/entur` - sanntids kollektivtransport
+- **Bysykkel GBFS:** `/api/bysykkel` - ledige sykler
+- **Google Places:** `/api/places` - POI-detaljer og bilder
+
+## Story Generator
+
+Automatisk generering av stories fra koordinater:
+
+```bash
+# Generer ny story
+npm run generate:story data/projects/kunde/prosjekt.input.json -- --skip-travel-times
+```
+
+Se `COMMANDS.md` for full dokumentasjon.
+
+### Generator-moduler
+
+| Modul | Beskrivelse |
+|-------|-------------|
+| `lib/generators/poi-discovery.ts` | Henter POI-er fra Google, Entur, Bysykkel |
+| `lib/generators/travel-times.ts` | Beregner reisetider via Mapbox |
+| `lib/generators/story-structure.ts` | Auto-strukturerer themes og seksjoner |
+| `lib/generators/merge-data.ts` | Merger ny data med eksisterende |
+
+## Editorial Hooks (Claude Code)
+
+For å generere redaksjonelt innhold, si i Claude Code:
+
+```
+Generer editorial hooks for POI-ene i data/projects/kunde/prosjekt.json
+```
+
+Claude søker på nettet og genererer:
+- `editorialHook` - Én setning om det unike ved stedet
+- `localInsight` - Insider-tips
 
 ## Kjør dev server
 

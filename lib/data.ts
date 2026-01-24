@@ -1,13 +1,24 @@
 import type { Project, POI, ThemeStory } from "./types";
-import projectData from "@/data/projects/klp-eiendom/ferjemannsveien-10.json";
+import ferjemannsveien10 from "@/data/projects/klp-eiendom/ferjemannsveien-10.json";
+import testGenerator from "@/data/projects/klp-eiendom/test-generator.json";
+
+// Prosjekt-register
+const projects: Record<string, Record<string, unknown>> = {
+  "klp-eiendom": {
+    "ferjemannsveien-10": ferjemannsveien10,
+    "test-generator": testGenerator,
+  },
+};
 
 // Last prosjektdata
 export function getProject(customer: string, projectSlug: string): Project | null {
-  // For nå, returner hardkodet data
-  if (customer === "klp-eiendom" && projectSlug === "ferjemannsveien-10") {
-    return projectData as unknown as Project;
-  }
-  return null;
+  const customerProjects = projects[customer];
+  if (!customerProjects) return null;
+
+  const project = customerProjects[projectSlug];
+  if (!project) return null;
+
+  return project as unknown as Project;
 }
 
 // Hent POI fra prosjekt
