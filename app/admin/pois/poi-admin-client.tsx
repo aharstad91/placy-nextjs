@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Map, { Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox";
-import { MapPin, Trash2, Edit2, Plus, Search, ChevronDown, ChevronUp, X } from "lucide-react";
+import { MapPin, Trash2, Edit2, Plus, Search, ChevronDown, ChevronUp, X, Check } from "lucide-react";
 import type { DbCategory, DbPoi } from "@/lib/supabase/types";
 
 const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
@@ -31,6 +32,52 @@ export function POIAdminClient({
   updatePOI,
 }: POIAdminClientProps) {
   const mapRef = useRef<MapRef>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Category filter state with URL sync
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(() => {
+    const categoriesParam = searchParams.get("categories");
+    if (categoriesParam) {
+      const validIds = new Set(categories.map((c) => c.id));
+      const fromUrl = categoriesParam.split(",").filter((id) => validIds.has(id));
+      return new Set(fromUrl.length > 0 ? fromUrl : categories.map((c) => c.id));
+    }
+    return new Set(categories.map((c) => c.id));
+  });
+
+  // Sync categories to URL
+  const updateCategories = useCallback(
+    (newSet: Set<string>) => {
+      setSelectedCategories(newSet);
+      const params = new URLSearchParams(searchParams.toString());
+      if (newSet.size === categories.length) {
+        params.delete("categories");
+      } else if (newSet.size > 0) {
+        params.set("categories", Array.from(newSet).join(","));
+      } else {
+        params.set("categories", "none");
+      }
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [categories.length, router, searchParams]
+  );
+
+  // Filter POIs by selected categories
+  const filteredPois = useMemo(
+    () => pois.filter((poi) => selectedCategories.has(poi.category_id || "")),
+    [pois, selectedCategories]
+  );
+
+  // Count POIs per category
+  const poiCountByCategory = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const poi of pois) {
+      const catId = poi.category_id || "";
+      counts[catId] = (counts[catId] || 0) + 1;
+    }
+    return counts;
+  }, [pois]);
 
   // Form state
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
@@ -238,7 +285,7 @@ export function POIAdminClient({
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold text-gray-900">POI Admin</h1>
-          <p className="text-gray-600">Registrer og administrer native points of interest</p>
+          <p className="text-gray-600">Administrer alle points of interest (native og Google)</p>
         </div>
       </div>
 
@@ -307,9 +354,10 @@ export function POIAdminClient({
                   </Marker>
                 )}
 
-                {/* Existing POI markers */}
-                {pois.map((poi) => {
+                {/* Filtered POI markers */}
+                {filteredPois.map((poi) => {
                   const category = getCategoryById(poi.category_id);
+                  const isGooglePoi = poi.google_place_id != null;
                   return (
                     <Marker
                       key={poi.id}
@@ -322,11 +370,16 @@ export function POIAdminClient({
                       }}
                     >
                       <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center shadow cursor-pointer hover:scale-110 transition-transform"
+                        className="w-6 h-6 rounded-full flex items-center justify-center shadow cursor-pointer hover:scale-110 transition-transform relative"
                         style={{ backgroundColor: category?.color || "#6b7280" }}
                         title={poi.name}
                       >
                         <MapPin className="w-3 h-3 text-white" />
+                        {isGooglePoi && (
+                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                            G
+                          </span>
+                        )}
                       </div>
                     </Marker>
                   );
@@ -354,6 +407,39 @@ export function POIAdminClient({
               {error && (
                 <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">
                   {error}
+                </div>
+              )}
+
+              {/* Google POI Info (read-only) */}
+              {editingPoi?.google_place_id && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium">
+                      Google Places
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      Noen felt er read-only
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {editingPoi.google_rating && (
+                      <div>
+                        <span className="text-gray-500">Rating:</span>{" "}
+                        <span className="font-medium">⭐ {editingPoi.google_rating}</span>
+                      </div>
+                    )}
+                    {editingPoi.google_review_count && (
+                      <div>
+                        <span className="text-gray-500">Reviews:</span>{" "}
+                        <span className="font-medium">{editingPoi.google_review_count}</span>
+                      </div>
+                    )}
+                  </div>
+                  {editingPoi.google_place_id && (
+                    <div className="text-xs text-gray-400 truncate">
+                      Place ID: {editingPoi.google_place_id}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -513,53 +599,148 @@ export function POIAdminClient({
             </form>
           </div>
 
-          {/* Right: POI List */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 border-b">
-              <h2 className="text-lg font-semibold">Native POIs ({pois.length})</h2>
-            </div>
-            <div className="divide-y max-h-[800px] overflow-auto">
-              {pois.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
-                  Ingen native POIs registrert ennå.
-                  <br />
-                  Klikk på kartet for å starte!
+          {/* Right: Filter + POI List */}
+          <div className="space-y-4">
+            {/* Category Filter Panel */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700">Filtrer etter kategori</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => updateCategories(new Set(categories.map((c) => c.id)))}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    Alle
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={() => updateCategories(new Set())}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    Ingen
+                  </button>
                 </div>
-              ) : (
-                pois.map((poi) => {
-                  const category = getCategoryById(poi.category_id);
+              </div>
+              <div className="space-y-2">
+                {categories.map((category) => {
+                  const isSelected = selectedCategories.has(category.id);
                   return (
-                    <div key={poi.id} className="p-4 hover:bg-gray-50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: category?.color || "#6b7280" }}
-                          >
-                            <MapPin className="w-4 h-4 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium">{poi.name}</h3>
-                            <p className="text-sm text-gray-500">
-                              {category?.name || "Ukjent kategori"}
-                            </p>
-                            {poi.address && (
-                              <p className="text-sm text-gray-400 mt-1">{poi.address}</p>
-                            )}
-                            {poi.editorial_hook && (
-                              <p className="text-sm text-blue-600 mt-1 italic">
-                                &ldquo;{poi.editorial_hook}&rdquo;
+                    <label
+                      key={category.id}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded -mx-2"
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? "bg-blue-600 border-blue-600"
+                            : "border-gray-300 bg-white"
+                        }`}
+                        onClick={() => {
+                          const newSet = new Set(selectedCategories);
+                          if (isSelected) {
+                            newSet.delete(category.id);
+                          } else {
+                            newSet.add(category.id);
+                          }
+                          updateCategories(newSet);
+                        }}
+                      >
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      <span className="text-sm text-gray-700 flex-1">{category.name}</span>
+                      <span className="text-xs text-gray-400">{poiCountByCategory[category.id] || 0}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* POI List */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="p-4 border-b">
+                <h2 className="text-lg font-semibold">
+                  POIs ({filteredPois.length} av {pois.length})
+                </h2>
+              </div>
+              <div className="divide-y max-h-[600px] overflow-auto">
+                {pois.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    Ingen POIs funnet i databasen.
+                    <br />
+                    Klikk på kartet for å opprette en ny!
+                  </div>
+                ) : filteredPois.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    Ingen POIs matcher filteret.
+                    <br />
+                    <button
+                      onClick={() => updateCategories(new Set(categories.map((c) => c.id)))}
+                      className="text-blue-600 hover:text-blue-800 mt-2"
+                    >
+                      Vis alle kategorier
+                    </button>
+                  </div>
+                ) : (
+                  filteredPois.map((poi) => {
+                    const category = getCategoryById(poi.category_id);
+                    const isGooglePoi = poi.google_place_id != null;
+                    return (
+                      <div key={poi.id} className="p-4 hover:bg-gray-50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 relative"
+                              style={{ backgroundColor: category?.color || "#6b7280" }}
+                            >
+                              <MapPin className="w-4 h-4 text-white" />
+                              {isGooglePoi && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                  G
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium">{poi.name}</h3>
+                                <span
+                                  className={`text-xs px-1.5 py-0.5 rounded ${
+                                    isGooglePoi
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-green-100 text-green-700"
+                                  }`}
+                                >
+                                  {isGooglePoi ? "Google" : "Native"}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500">
+                                {category?.name || "Ukjent kategori"}
                               </p>
-                            )}
+                              {poi.address && (
+                                <p className="text-sm text-gray-400 mt-1">{poi.address}</p>
+                              )}
+                              {poi.editorial_hook && (
+                                <p className="text-sm text-blue-600 mt-1 italic">
+                                  &ldquo;{poi.editorial_hook}&rdquo;
+                                </p>
+                              )}
+                              {isGooglePoi && poi.google_rating && (
+                                <p className="text-sm text-gray-400 mt-1">
+                                  ⭐ {poi.google_rating} ({poi.google_review_count} reviews)
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => startEditing(poi)}
-                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-                            title="Rediger"
-                          >
-                            <Edit2 className="w-4 h-4" />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => startEditing(poi)}
+                              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                              title="Rediger"
+                            >
+                              <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(poi)}
@@ -572,8 +753,9 @@ export function POIAdminClient({
                       </div>
                     </div>
                   );
-                })
-              )}
+                  })
+                )}
+              </div>
             </div>
           </div>
         </div>
