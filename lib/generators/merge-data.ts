@@ -396,7 +396,7 @@ export function hasDataChanged(
   const existingIds = new Set(existing.pois.map((p) => p.id));
   const newIds = new Set(newProject.pois.map((p) => p.id));
 
-  for (const id of newIds) {
+  for (const id of Array.from(newIds)) {
     if (!existingIds.has(id)) return true;
   }
 

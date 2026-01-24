@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate:story": "npx tsx scripts/generate-story.ts"
+    "generate:story": "npx tsx scripts/generate-story.ts",
+    "migrate:supabase": "npx tsx scripts/migrate-to-supabase.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
     "@types/node": "^25.0.10",
     "@types/react": "^19.2.9",
     "autoprefixer": "^10.4.23",

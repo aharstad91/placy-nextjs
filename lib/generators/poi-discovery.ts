@@ -28,6 +28,9 @@ export interface DiscoveredPOI {
   source: "google" | "entur" | "bysykkel" | "manual";
   enturStopplaceId?: string;
   bysykkelStationId?: string;
+  // Editorial fields (added later via Claude or manual editing)
+  editorialHook?: string;
+  localInsight?: string;
 }
 
 // === Category Mappings ===

@@ -1,8 +1,12 @@
 import type { Project, POI, ThemeStory } from "./types";
+import { isSupabaseConfigured } from "./supabase/client";
+import { getProjectFromSupabase } from "./supabase/queries";
+
+// JSON fallback imports
 import ferjemannsveien10 from "@/data/projects/klp-eiendom/ferjemannsveien-10.json";
 import testGenerator from "@/data/projects/klp-eiendom/test-generator.json";
 
-// Prosjekt-register
+// Prosjekt-register (JSON fallback)
 const projects: Record<string, Record<string, unknown>> = {
   "klp-eiendom": {
     "ferjemannsveien-10": ferjemannsveien10,
@@ -10,8 +14,10 @@ const projects: Record<string, Record<string, unknown>> = {
   },
 };
 
-// Last prosjektdata
-export function getProject(customer: string, projectSlug: string): Project | null {
+/**
+ * Get project from JSON files (fallback when Supabase is not configured)
+ */
+function getProjectFromJSON(customer: string, projectSlug: string): Project | null {
   const customerProjects = projects[customer];
   if (!customerProjects) return null;
 
@@ -19,6 +25,46 @@ export function getProject(customer: string, projectSlug: string): Project | nul
   if (!project) return null;
 
   return project as unknown as Project;
+}
+
+/**
+ * Load project data - tries Supabase first, falls back to JSON
+ * Note: This is a synchronous function for backward compatibility.
+ * Use getProjectAsync for the async Supabase version.
+ */
+export function getProject(customer: string, projectSlug: string): Project | null {
+  // Always use JSON for synchronous calls (client components)
+  // Supabase requires async, so we fall back to JSON
+  return getProjectFromJSON(customer, projectSlug);
+}
+
+/**
+ * Load project data asynchronously - prefers Supabase when configured
+ */
+export async function getProjectAsync(
+  customer: string,
+  projectSlug: string
+): Promise<Project | null> {
+  // Try Supabase first if configured
+  if (isSupabaseConfigured()) {
+    const project = await getProjectFromSupabase(customer, projectSlug);
+    if (project) {
+      return project;
+    }
+    console.warn(
+      `Project ${customer}/${projectSlug} not found in Supabase, falling back to JSON`
+    );
+  }
+
+  // Fall back to JSON
+  return getProjectFromJSON(customer, projectSlug);
+}
+
+/**
+ * Check if data source is Supabase (for UI indicators)
+ */
+export function isUsingSupabase(): boolean {
+  return isSupabaseConfigured();
 }
 
 // Hent POI fra prosjekt

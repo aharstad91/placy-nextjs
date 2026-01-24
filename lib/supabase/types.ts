@@ -1,0 +1,436 @@
+// Supabase Database Types
+// Auto-generate with: npx supabase gen types typescript --project-id <your-project-id> > lib/supabase/types.ts
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export type Database = {
+  public: {
+    Tables: {
+      categories: {
+        Row: {
+          id: string;
+          name: string;
+          icon: string;
+          color: string;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          icon: string;
+          color: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          icon?: string;
+          color?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      pois: {
+        Row: {
+          id: string;
+          name: string;
+          lat: number;
+          lng: number;
+          address: string | null;
+          category_id: string | null;
+          google_place_id: string | null;
+          google_rating: number | null;
+          google_review_count: number | null;
+          google_maps_url: string | null;
+          photo_reference: string | null;
+          editorial_hook: string | null;
+          local_insight: string | null;
+          story_priority: "must_have" | "nice_to_have" | "filler" | null;
+          editorial_sources: string[] | null;
+          featured_image: string | null;
+          description: string | null;
+          entur_stopplace_id: string | null;
+          bysykkel_station_id: string | null;
+          hyre_station_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          lat: number;
+          lng: number;
+          address?: string | null;
+          category_id?: string | null;
+          google_place_id?: string | null;
+          google_rating?: number | null;
+          google_review_count?: number | null;
+          google_maps_url?: string | null;
+          photo_reference?: string | null;
+          editorial_hook?: string | null;
+          local_insight?: string | null;
+          story_priority?: "must_have" | "nice_to_have" | "filler" | null;
+          editorial_sources?: string[] | null;
+          featured_image?: string | null;
+          description?: string | null;
+          entur_stopplace_id?: string | null;
+          bysykkel_station_id?: string | null;
+          hyre_station_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          lat?: number;
+          lng?: number;
+          address?: string | null;
+          category_id?: string | null;
+          google_place_id?: string | null;
+          google_rating?: number | null;
+          google_review_count?: number | null;
+          google_maps_url?: string | null;
+          photo_reference?: string | null;
+          editorial_hook?: string | null;
+          local_insight?: string | null;
+          story_priority?: "must_have" | "nice_to_have" | "filler" | null;
+          editorial_sources?: string[] | null;
+          featured_image?: string | null;
+          description?: string | null;
+          entur_stopplace_id?: string | null;
+          bysykkel_station_id?: string | null;
+          hyre_station_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pois_category_id_fkey";
+            columns: ["category_id"];
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      customers: {
+        Row: {
+          id: string;
+          name: string;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      projects: {
+        Row: {
+          id: string;
+          customer_id: string | null;
+          name: string;
+          url_slug: string;
+          center_lat: number;
+          center_lng: number;
+          story_title: string | null;
+          story_intro_text: string | null;
+          story_hero_images: string[] | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          customer_id?: string | null;
+          name: string;
+          url_slug: string;
+          center_lat: number;
+          center_lng: number;
+          story_title?: string | null;
+          story_intro_text?: string | null;
+          story_hero_images?: string[] | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          customer_id?: string | null;
+          name?: string;
+          url_slug?: string;
+          center_lat?: number;
+          center_lng?: number;
+          story_title?: string | null;
+          story_intro_text?: string | null;
+          story_hero_images?: string[] | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "projects_customer_id_fkey";
+            columns: ["customer_id"];
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      project_pois: {
+        Row: {
+          project_id: string;
+          poi_id: string;
+        };
+        Insert: {
+          project_id: string;
+          poi_id: string;
+        };
+        Update: {
+          project_id?: string;
+          poi_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_pois_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_pois_poi_id_fkey";
+            columns: ["poi_id"];
+            referencedRelation: "pois";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      theme_stories: {
+        Row: {
+          id: string;
+          project_id: string | null;
+          slug: string;
+          title: string;
+          bridge_text: string | null;
+          illustration: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          project_id?: string | null;
+          slug: string;
+          title: string;
+          bridge_text?: string | null;
+          illustration?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string | null;
+          slug?: string;
+          title?: string;
+          bridge_text?: string | null;
+          illustration?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "theme_stories_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      story_sections: {
+        Row: {
+          id: string;
+          project_id: string | null;
+          type: string;
+          sort_order: number;
+          category_label: string | null;
+          title: string | null;
+          bridge_text: string | null;
+          content: string | null;
+          images: string[] | null;
+          theme_story_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          project_id?: string | null;
+          type: string;
+          sort_order?: number;
+          category_label?: string | null;
+          title?: string | null;
+          bridge_text?: string | null;
+          content?: string | null;
+          images?: string[] | null;
+          theme_story_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string | null;
+          type?: string;
+          sort_order?: number;
+          category_label?: string | null;
+          title?: string | null;
+          bridge_text?: string | null;
+          content?: string | null;
+          images?: string[] | null;
+          theme_story_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "story_sections_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "story_sections_theme_story_id_fkey";
+            columns: ["theme_story_id"];
+            referencedRelation: "theme_stories";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      section_pois: {
+        Row: {
+          section_id: string;
+          poi_id: string;
+          sort_order: number;
+        };
+        Insert: {
+          section_id: string;
+          poi_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          section_id?: string;
+          poi_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "section_pois_section_id_fkey";
+            columns: ["section_id"];
+            referencedRelation: "story_sections";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "section_pois_poi_id_fkey";
+            columns: ["poi_id"];
+            referencedRelation: "pois";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      theme_story_sections: {
+        Row: {
+          id: string;
+          theme_story_id: string | null;
+          title: string;
+          description: string | null;
+          images: string[] | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          theme_story_id?: string | null;
+          title: string;
+          description?: string | null;
+          images?: string[] | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          theme_story_id?: string | null;
+          title?: string;
+          description?: string | null;
+          images?: string[] | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "theme_story_sections_theme_story_id_fkey";
+            columns: ["theme_story_id"];
+            referencedRelation: "theme_stories";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      theme_section_pois: {
+        Row: {
+          section_id: string;
+          poi_id: string;
+          sort_order: number;
+        };
+        Insert: {
+          section_id: string;
+          poi_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          section_id?: string;
+          poi_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "theme_section_pois_section_id_fkey";
+            columns: ["section_id"];
+            referencedRelation: "theme_story_sections";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "theme_section_pois_poi_id_fkey";
+            columns: ["poi_id"];
+            referencedRelation: "pois";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+    };
+    Views: {};
+    Functions: {};
+    Enums: {};
+    CompositeTypes: {};
+  };
+};
+
+// Helper types for easier access
+export type Tables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Row"];
+export type InsertTables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Insert"];
+export type UpdateTables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Update"];
+
+// Convenience type aliases
+export type DbCategory = Tables<"categories">;
+export type DbPoi = Tables<"pois">;
+export type DbCustomer = Tables<"customers">;
+export type DbProject = Tables<"projects">;
+export type DbProjectPoi = Tables<"project_pois">;
+export type DbThemeStory = Tables<"theme_stories">;
+export type DbStorySection = Tables<"story_sections">;
+export type DbSectionPoi = Tables<"section_pois">;
+export type DbThemeStorySection = Tables<"theme_story_sections">;
+export type DbThemeSectionPoi = Tables<"theme_section_pois">;
