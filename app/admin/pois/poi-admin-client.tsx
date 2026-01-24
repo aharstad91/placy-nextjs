@@ -100,6 +100,7 @@ export function POIAdminClient({
   const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [editingPoi, setEditingPoi] = useState<DbPoi | null>(null);
+  const [hoveredPoiId, setHoveredPoiId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -206,7 +207,7 @@ export function POIAdminClient({
     setPanelState("idle");
   };
 
-  // Start editing
+  // Start editing - no zoom/pan change for better UX
   const startEditing = (poi: DbPoi) => {
     setEditingPoi(poi);
     setName(poi.name);
@@ -219,13 +220,16 @@ export function POIAdminClient({
     setStoryPriority(poi.story_priority || "");
     setShowMoreFields(!!(poi.description || poi.editorial_hook || poi.local_insight || poi.story_priority));
     setPanelState("editing");
-
-    mapRef.current?.flyTo({
-      center: [poi.lng, poi.lat],
-      zoom: 16,
-      duration: 1000,
-    });
   };
+
+  // Hide Mapbox POI labels on map load
+  const handleMapLoad = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (map) {
+      // Hide default Mapbox POI labels to reduce visual clutter
+      map.setLayoutProperty("poi-label", "visibility", "none");
+    }
+  }, []);
 
   // Start creating
   const startCreating = () => {
@@ -322,6 +326,7 @@ export function POIAdminClient({
           style={{ width: "100%", height: "100%" }}
           mapStyle={MAP_STYLE}
           onClick={handleMapClick}
+          onLoad={handleMapLoad}
           cursor={panelState === "creating" ? "crosshair" : "grab"}
         >
           <NavigationControl position="top-right" />
@@ -340,6 +345,7 @@ export function POIAdminClient({
             const category = getCategoryById(poi.category_id);
             const isGooglePoi = poi.google_place_id != null;
             const isActive = editingPoi?.id === poi.id;
+            const isHovered = hoveredPoiId === poi.id;
             return (
               <Marker
                 key={poi.id}
@@ -352,18 +358,33 @@ export function POIAdminClient({
                 }}
               >
                 <div
-                  className={`rounded-full flex items-center justify-center shadow cursor-pointer transition-transform relative ${
-                    isActive ? "w-8 h-8 ring-4 ring-blue-400" : "w-6 h-6 hover:scale-110"
-                  }`}
-                  style={{ backgroundColor: category?.color || "#6b7280" }}
-                  title={poi.name}
+                  className="relative flex flex-col items-center"
+                  onMouseEnter={() => setHoveredPoiId(poi.id)}
+                  onMouseLeave={() => setHoveredPoiId(null)}
                 >
-                  <MapPin className={isActive ? "w-4 h-4 text-white" : "w-3 h-3 text-white"} />
-                  {isGooglePoi && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-                      G
-                    </span>
+                  {/* Hover label */}
+                  {(isHovered || isActive) && (
+                    <div className="absolute bottom-full mb-1 whitespace-nowrap px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none z-10">
+                      {poi.name}
+                      {isGooglePoi && (
+                        <span className="ml-1 text-blue-300 text-[10px]">G</span>
+                      )}
+                    </div>
                   )}
+                  {/* Marker dot */}
+                  <div
+                    className={`rounded-full flex items-center justify-center shadow cursor-pointer transition-transform relative ${
+                      isActive ? "w-8 h-8 ring-4 ring-blue-400" : "w-6 h-6 hover:scale-110"
+                    }`}
+                    style={{ backgroundColor: category?.color || "#6b7280" }}
+                  >
+                    <MapPin className={isActive ? "w-4 h-4 text-white" : "w-3 h-3 text-white"} />
+                    {isGooglePoi && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                        G
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Marker>
             );
