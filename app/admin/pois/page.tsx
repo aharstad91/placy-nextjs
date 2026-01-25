@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { POIAdminClient } from "./poi-admin-client";
 import type { DbCategory, DbPoi } from "@/lib/supabase/types";
 
+// Force dynamic rendering - admin pages need fresh data
+export const dynamic = "force-dynamic";
+
 // Auth check - redirect if admin not enabled
 const adminEnabled = process.env.ADMIN_ENABLED === "true";
 
@@ -130,11 +133,33 @@ export default async function AdminPOIsPage() {
     );
   }
 
-  // Fetch all POIs (native + Google)
-  const { data: pois, error: poisError } = await supabase
-    .from("pois")
-    .select("*")
-    .order("created_at", { ascending: false });
+  // Fetch all POIs with pagination (Supabase limits to 1000 per request)
+  const allPois: DbPoi[] = [];
+  let poisError: Error | null = null;
+  const PAGE_SIZE = 1000;
+  let page = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("pois")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+    if (error) {
+      poisError = error;
+      break;
+    }
+
+    if (!data || data.length === 0) break;
+
+    allPois.push(...data);
+
+    if (data.length < PAGE_SIZE) break; // Last page
+    page++;
+  }
+
+  const pois = allPois;
 
   // Fetch categories
   const { data: categories, error: categoriesError } = await supabase
