@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "next lint",
     "generate:story": "npx tsx scripts/generate-story.ts",
-    "migrate:supabase": "npx tsx scripts/migrate-to-supabase.ts"
+    "migrate:supabase": "npx tsx scripts/migrate-to-supabase.ts",
+    "import:taxi": "npx tsx scripts/import-taxi-stands.ts",
+    "import:hyre": "npx tsx scripts/import-hyre-stations.ts",
+    "import:kommune": "npx tsx scripts/import-kommune-pois.ts",
+    "import:atb": "npx tsx scripts/import-atb-stops.ts",
+    "import:bysykkel": "npx tsx scripts/import-bysykkel.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",
