@@ -174,10 +174,10 @@ type GenerationStep = "idle" | "discovering" | "structuring" | "writing" | "done
 
 interface GenerationResult {
   success: boolean;
-  path?: string;
   poiCount?: number;
   error?: string;
   projectUrl?: string;
+  themeCount?: number;
 }
 
 interface GenerateClientProps {
@@ -223,7 +223,7 @@ export function GenerateClient({ customers }: GenerateClientProps) {
     setSelectedCategories(newSet);
   };
 
-  // Generate story
+  // Generate story using StoryWriter API
   const handleGenerate = async () => {
     if (!isValid || !center) return;
 
@@ -231,53 +231,42 @@ export function GenerateClient({ customers }: GenerateClientProps) {
     setDiscoveredCount(0);
     setResult(null);
 
-    // Separate place categories from transport categories
-    const placeCategories = Array.from(selectedCategories).filter(
-      id => ALL_CATEGORIES.find(c => c.id === id)?.group === "place"
-    );
-    const transportCategories = Array.from(selectedCategories).filter(
-      id => ALL_CATEGORIES.find(c => c.id === id)?.group === "transport"
-    );
+    // Get all selected category IDs
+    const categoryIds = Array.from(selectedCategories);
 
     try {
-      const response = await fetch("/api/generate", {
+      const response = await fetch("/api/story-writer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          customer: customerId,
+          customerId,
           center,
           radius,
-          categories: placeCategories,
-          includeTransport: transportCategories.length > 0,
-          transportCategories,
+          categoryIds,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Generering feilet");
+        throw new Error(data.message || "Generering feilet");
       }
 
-      // Simulate progress steps
-      setStep("discovering");
-      await new Promise(r => setTimeout(r, 800));
-
-      const data = await response.json();
       setDiscoveredCount(data.poiCount || 0);
 
+      // Progress through steps
       setStep("structuring");
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 400));
 
       setStep("writing");
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 300));
 
       setStep("done");
       setResult({
         success: true,
-        path: data.path,
         poiCount: data.poiCount,
-        projectUrl: `/${customerId}/${data.slug || name.toLowerCase().replace(/\s+/g, "-")}`,
+        projectUrl: data.projectUrl,
       });
     } catch (error) {
       setStep("error");
@@ -458,7 +447,7 @@ export function GenerateClient({ customers }: GenerateClientProps) {
                 </div>
 
                 <div className="text-xs text-gray-400 text-center pt-2">
-                  Fil: <code className="bg-gray-100 px-1.5 py-0.5 rounded">{result.path}</code>
+                  Data lagret i Supabase
                 </div>
               </div>
             ) : step === "error" ? (

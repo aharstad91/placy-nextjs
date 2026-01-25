@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from "./client";
+import { supabase, isSupabaseConfigured, createServerClient } from "./client";
 import type {
   DbCategory,
   DbPoi,
@@ -16,6 +16,7 @@ import type {
   StorySection,
   Story,
 } from "../types";
+import { calculateDistance, calculateBoundingBox } from "../utils/geo";
 
 // ============================================
 // Type Transformers
@@ -114,6 +115,95 @@ function transformStorySection(
 // ============================================
 
 /**
+ * Fetch all POIs within a given radius from a center point.
+ *
+ * Uses a two-step filtering approach:
+ * 1. Database bounding box filter (reduces data transfer by ~99%)
+ * 2. Precise Haversine calculation on remaining POIs
+ *
+ * This avoids loading all POIs into memory while maintaining accuracy.
+ */
+export async function getPOIsWithinRadius(
+  center: { lat: number; lng: number },
+  radiusMeters: number,
+  categoryIds?: string[]
+): Promise<{ poi: DbPoi; category: DbCategory | null }[]> {
+  const client = createServerClient();
+  if (!client) {
+    console.error("Supabase client not configured");
+    return [];
+  }
+
+  // Step 1: Calculate bounding box for database-level pre-filtering
+  const bbox = calculateBoundingBox(center, radiusMeters);
+
+  // Build query with bounding box filter
+  let query = client
+    .from("pois")
+    .select(`*, categories (*)`)
+    // Bounding box pre-filter - reduces data by ~99%
+    .gte("lat", bbox.minLat)
+    .lte("lat", bbox.maxLat)
+    .gte("lng", bbox.minLng)
+    .lte("lng", bbox.maxLng);
+
+  if (categoryIds && categoryIds.length > 0) {
+    query = query.in("category_id", categoryIds);
+  }
+
+  const { data: pois, error } = await query;
+
+  if (error) {
+    console.error("Error fetching POIs:", error);
+    return [];
+  }
+
+  if (!pois) {
+    return [];
+  }
+
+  // Step 2: Precise Haversine filter on reduced dataset
+  const filtered = pois.filter((poi) => {
+    const distance = calculateDistance(
+      center.lat,
+      center.lng,
+      poi.lat,
+      poi.lng
+    );
+    return distance <= radiusMeters;
+  });
+
+  // Return POIs with their categories
+  return filtered.map((poi) => ({
+    poi: {
+      id: poi.id,
+      name: poi.name,
+      lat: poi.lat,
+      lng: poi.lng,
+      address: poi.address,
+      category_id: poi.category_id,
+      google_place_id: poi.google_place_id,
+      google_rating: poi.google_rating,
+      google_review_count: poi.google_review_count,
+      google_maps_url: poi.google_maps_url,
+      photo_reference: poi.photo_reference,
+      editorial_hook: poi.editorial_hook,
+      local_insight: poi.local_insight,
+      story_priority: poi.story_priority,
+      editorial_sources: poi.editorial_sources,
+      featured_image: poi.featured_image,
+      description: poi.description,
+      entur_stopplace_id: poi.entur_stopplace_id,
+      bysykkel_station_id: poi.bysykkel_station_id,
+      hyre_station_id: poi.hyre_station_id,
+      created_at: poi.created_at,
+      updated_at: poi.updated_at,
+    } as DbPoi,
+    category: poi.categories as DbCategory | null,
+  }));
+}
+
+/**
  * Fetch all categories
  */
 export async function getCategories(): Promise<Category[]> {
@@ -201,7 +291,28 @@ export async function getProjectPOIs(projectId: string): Promise<POI[]> {
 }
 
 /**
- * Fetch theme stories for a project with all sections and POI references
+ * Helper function to group array by key
+ */
+function groupBy<T>(array: T[], keyFn: (item: T) => string): Record<string, T[]> {
+  return array.reduce((groups, item) => {
+    const key = keyFn(item);
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(item);
+    return groups;
+  }, {} as Record<string, T[]>);
+}
+
+/**
+ * Fetch theme stories for a project with all sections and POI references.
+ *
+ * Uses batch fetching to avoid N+1 queries:
+ * - Query 1: All theme stories for project
+ * - Query 2: All sections for those theme stories
+ * - Query 3: All POI mappings for those sections
+ *
+ * This reduces query count from O(T + T*S) to O(3) constant.
  */
 export async function getProjectThemeStories(
   projectId: string
@@ -210,60 +321,76 @@ export async function getProjectThemeStories(
     return [];
   }
 
-  // Fetch theme stories
+  // Query 1: Fetch all theme stories
   const { data: themeStories, error: tsError } = await supabase
     .from("theme_stories")
     .select("*")
     .eq("project_id", projectId)
     .order("sort_order");
 
-  if (tsError || !themeStories) {
-    console.error("Error fetching theme stories:", tsError);
+  if (tsError || !themeStories || themeStories.length === 0) {
+    if (tsError) console.error("Error fetching theme stories:", tsError);
     return [];
   }
 
-  // For each theme story, fetch its sections and POIs
-  const results: ThemeStory[] = [];
+  const themeStoryIds = themeStories.map(ts => ts.id);
 
-  for (const ts of themeStories) {
-    // Fetch sections
-    const { data: sections, error: secError } = await supabase
-      .from("theme_story_sections")
-      .select("*")
-      .eq("theme_story_id", ts.id)
-      .order("sort_order");
+  // Query 2: Fetch all sections for all theme stories at once
+  const { data: allSections, error: secError } = await supabase
+    .from("theme_story_sections")
+    .select("*")
+    .in("theme_story_id", themeStoryIds)
+    .order("sort_order");
 
-    if (secError || !sections) {
-      console.error("Error fetching theme story sections:", secError);
-      continue;
-    }
-
-    // For each section, get POI IDs
-    const transformedSections: ThemeStorySection[] = [];
-
-    for (const section of sections) {
-      const { data: sectionPois, error: spError } = await supabase
-        .from("theme_section_pois")
-        .select("poi_id")
-        .eq("section_id", section.id)
-        .order("sort_order");
-
-      if (spError) {
-        console.error("Error fetching theme section POIs:", spError);
-      }
-
-      const poiIds = sectionPois?.map((sp) => sp.poi_id) ?? [];
-      transformedSections.push(transformThemeStorySection(section, poiIds));
-    }
-
-    results.push(transformThemeStory(ts, transformedSections));
+  if (secError) {
+    console.error("Error fetching theme story sections:", secError);
+    return themeStories.map(ts => transformThemeStory(ts, []));
   }
 
-  return results;
+  const sectionIds = (allSections || []).map(s => s.id);
+
+  // Query 3: Fetch all POI mappings for all sections at once
+  let allSectionPois: Array<{ section_id: string; poi_id: string; sort_order: number }> = [];
+  if (sectionIds.length > 0) {
+    const { data: pois, error: spError } = await supabase
+      .from("theme_section_pois")
+      .select("section_id, poi_id, sort_order")
+      .in("section_id", sectionIds)
+      .order("sort_order");
+
+    if (spError) {
+      console.error("Error fetching theme section POIs:", spError);
+    } else {
+      allSectionPois = pois || [];
+    }
+  }
+
+  // Build lookup maps for in-memory assembly
+  const sectionsByTheme = groupBy(allSections || [], s => s.theme_story_id || "");
+  const poisBySection = groupBy(allSectionPois, sp => sp.section_id);
+
+  // Assemble the result in memory
+  return themeStories.map(ts => {
+    const sections = sectionsByTheme[ts.id] || [];
+    const transformedSections = sections.map(section => {
+      const sectionPois = poisBySection[section.id] || [];
+      const poiIds = sectionPois
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(sp => sp.poi_id);
+      return transformThemeStorySection(section, poiIds);
+    });
+    return transformThemeStory(ts, transformedSections);
+  });
 }
 
 /**
- * Fetch story sections for a project with POI references
+ * Fetch story sections for a project with POI references.
+ *
+ * Uses batch fetching to avoid N+1 queries:
+ * - Query 1: All story sections for project
+ * - Query 2: All POI mappings for those sections
+ *
+ * This reduces query count from O(S) to O(2) constant.
  */
 export async function getProjectStorySections(
   projectId: string
@@ -272,37 +399,42 @@ export async function getProjectStorySections(
     return [];
   }
 
-  // Fetch sections
+  // Query 1: Fetch all sections
   const { data: sections, error: secError } = await supabase
     .from("story_sections")
     .select("*")
     .eq("project_id", projectId)
     .order("sort_order");
 
-  if (secError || !sections) {
-    console.error("Error fetching story sections:", secError);
+  if (secError || !sections || sections.length === 0) {
+    if (secError) console.error("Error fetching story sections:", secError);
     return [];
   }
 
-  // For each section, get POI IDs
-  const results: StorySection[] = [];
+  const sectionIds = sections.map(s => s.id);
 
-  for (const section of sections) {
-    const { data: sectionPois, error: spError } = await supabase
-      .from("section_pois")
-      .select("poi_id")
-      .eq("section_id", section.id)
-      .order("sort_order");
+  // Query 2: Fetch all POI mappings for all sections at once
+  const { data: allSectionPois, error: spError } = await supabase
+    .from("section_pois")
+    .select("section_id, poi_id, sort_order")
+    .in("section_id", sectionIds)
+    .order("sort_order");
 
-    if (spError) {
-      console.error("Error fetching section POIs:", spError);
-    }
-
-    const poiIds = sectionPois?.map((sp) => sp.poi_id) ?? [];
-    results.push(transformStorySection(section, poiIds));
+  if (spError) {
+    console.error("Error fetching section POIs:", spError);
   }
 
-  return results;
+  // Build lookup map
+  const poisBySection = groupBy(allSectionPois || [], sp => sp.section_id);
+
+  // Assemble results in memory
+  return sections.map(section => {
+    const sectionPois = poisBySection[section.id] || [];
+    const poiIds = sectionPois
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(sp => sp.poi_id);
+    return transformStorySection(section, poiIds);
+  });
 }
 
 /**
@@ -376,7 +508,9 @@ export async function getProjectFromSupabase(
 }
 
 /**
- * Fetch a single theme story by project and slug
+ * Fetch a single theme story by project and slug.
+ *
+ * Uses batch fetching to avoid N+1 queries.
  */
 export async function getThemeStoryFromSupabase(
   projectId: string,
@@ -386,6 +520,7 @@ export async function getThemeStoryFromSupabase(
     return null;
   }
 
+  // Query 1: Fetch theme story
   const { data: ts, error } = await supabase
     .from("theme_stories")
     .select("*")
@@ -398,31 +533,42 @@ export async function getThemeStoryFromSupabase(
     return null;
   }
 
-  // Fetch sections
+  // Query 2: Fetch all sections
   const { data: sections, error: secError } = await supabase
     .from("theme_story_sections")
     .select("*")
     .eq("theme_story_id", ts.id)
     .order("sort_order");
 
-  if (secError || !sections) {
-    console.error("Error fetching theme story sections:", secError);
+  if (secError || !sections || sections.length === 0) {
+    if (secError) console.error("Error fetching theme story sections:", secError);
     return transformThemeStory(ts, []);
   }
 
-  // For each section, get POI IDs
-  const transformedSections: ThemeStorySection[] = [];
+  const sectionIds = sections.map(s => s.id);
 
-  for (const section of sections) {
-    const { data: sectionPois } = await supabase
-      .from("theme_section_pois")
-      .select("poi_id")
-      .eq("section_id", section.id)
-      .order("sort_order");
+  // Query 3: Fetch all POI mappings at once
+  const { data: allSectionPois, error: spError } = await supabase
+    .from("theme_section_pois")
+    .select("section_id, poi_id, sort_order")
+    .in("section_id", sectionIds)
+    .order("sort_order");
 
-    const poiIds = sectionPois?.map((sp) => sp.poi_id) ?? [];
-    transformedSections.push(transformThemeStorySection(section, poiIds));
+  if (spError) {
+    console.error("Error fetching theme section POIs:", spError);
   }
+
+  // Build lookup map
+  const poisBySection = groupBy(allSectionPois || [], sp => sp.section_id);
+
+  // Assemble sections
+  const transformedSections = sections.map(section => {
+    const sectionPois = poisBySection[section.id] || [];
+    const poiIds = sectionPois
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(sp => sp.poi_id);
+    return transformThemeStorySection(section, poiIds);
+  });
 
   return transformThemeStory(ts, transformedSections);
 }

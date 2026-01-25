@@ -4,6 +4,7 @@
  */
 
 import { POI, Category, Coordinates } from "../types";
+import { calculateDistance } from "../utils/geo";
 
 // === Types ===
 
@@ -134,10 +135,10 @@ export async function discoverGooglePlaces(
           break;
         }
 
-        // Create POI ID from name (slug)
-        const id = slugify(place.name);
+        // Create POI ID with source prefix (using Google place_id for stability)
+        const id = generatePoiId("google", place.name, place.place_id);
 
-        // Check for duplicates (same name already added)
+        // Check for duplicates
         if (allPOIs.some((p) => p.id === id)) {
           continue;
         }
@@ -272,7 +273,9 @@ export async function discoverEnturStops(
       }
 
       const name = place.name + (place.name.toLowerCase().includes("holdeplass") || place.name.toLowerCase().includes("stasjon") ? "" : suffix);
-      const id = slugify(name);
+
+      // Create POI ID with source prefix (using Entur stopplace_id for stability)
+      const id = generatePoiId("entur", name, place.id);
 
       // Skip duplicates
       if (pois.some((p) => p.id === id)) continue;
@@ -346,7 +349,9 @@ export async function discoverBysykkelStations(
       if (distance > config.radius) continue;
 
       const name = `Trondheim Bysykkel: ${station.name}`;
-      const id = slugify(name);
+
+      // Create POI ID with source prefix (using station_id for stability)
+      const id = generatePoiId("bysykkel", name, station.station_id);
 
       pois.push({
         id,
@@ -414,32 +419,34 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371000; // Earth's radius in meters
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function toRad(deg: number): number {
-  return deg * (Math.PI / 180);
+/**
+ * Generate a unique POI ID with source prefix.
+ *
+ * Uses external ID when available for stability (ID won't change if name changes).
+ * Falls back to slugified name with source prefix.
+ *
+ * Examples:
+ * - google-ChIJN1t_tDeuEmsR (using place_id)
+ * - entur-NSR-StopPlace-58366 (using stopplace_id)
+ * - bysykkel-123 (using station_id)
+ * - google-cafe-lansen (fallback using name)
+ */
+function generatePoiId(
+  source: "google" | "entur" | "bysykkel" | "manual",
+  name: string,
+  externalId?: string
+): string {
+  if (externalId) {
+    // Clean the external ID (replace colons with dashes for URL-safety)
+    const cleanId = externalId.replace(/:/g, "-");
+    return `${source}-${cleanId}`;
+  }
+  return `${source}-${slugify(name)}`;
 }
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Export categories for use elsewhere
-export { GOOGLE_CATEGORY_MAP, TRANSPORT_CATEGORIES };
+// Export categories and utilities for use elsewhere
+export { GOOGLE_CATEGORY_MAP, TRANSPORT_CATEGORIES, slugify, generatePoiId };
