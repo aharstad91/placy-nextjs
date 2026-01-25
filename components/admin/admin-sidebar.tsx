@@ -17,27 +17,19 @@ import {
   X,
 } from "lucide-react";
 
-type NavDivider = { type: "divider"; label: string };
 type NavLink = { href: string; label: string; icon: LucideIcon; exact?: boolean };
-type NavItem = NavDivider | NavLink;
 
-const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS: NavLink[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { type: "divider", label: "Admin" },
   { href: "/admin/customers", label: "Kunder", icon: Users },
   { href: "/admin/projects", label: "Prosjekter", icon: FolderOpen },
-  { type: "divider", label: "Data" },
   { href: "/admin/pois", label: "POI-er", icon: MapPin },
   { href: "/admin/categories", label: "Kategorier", icon: Tag },
   { href: "/admin/generate", label: "Generator", icon: Sparkles },
   { href: "/admin/import", label: "Import", icon: Upload },
-  { type: "divider", label: "Innhold" },
   { href: "/admin/stories", label: "Stories", icon: BookOpen },
   { href: "/admin/editorial", label: "Editorial", icon: FileText },
 ];
-
-// Pages that are fullscreen (maps) - sidebar should be hidden by default
-const FULLSCREEN_PAGES = ["/admin/generate", "/admin/pois"];
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -46,7 +38,6 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
   const pathname = usePathname();
-  const isFullscreen = FULLSCREEN_PAGES.some((p) => pathname.startsWith(p));
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href;
@@ -55,33 +46,31 @@ export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
 
   return (
     <>
-      {/* Hamburger button - visible on mobile and fullscreen pages */}
+      {/* Hamburger button - visible on mobile only */}
       <button
         onClick={onToggle}
-        className={`fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors ${
-          isFullscreen ? "block" : "lg:hidden"
-        }`}
+        className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors lg:hidden"
         aria-label="Toggle navigation"
       >
         <Menu className="w-5 h-5 text-gray-700" />
       </button>
 
-      {/* Overlay backdrop */}
+      {/* Overlay backdrop - mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onToggle}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Icon-only on desktop, full on mobile */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200
+          fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200
           transform transition-transform duration-200 ease-in-out
-          ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          ${!isFullscreen ? "lg:translate-x-0" : ""}
+          w-64 lg:w-14
+          ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
         {/* Close button - mobile only */}
@@ -93,51 +82,59 @@ export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
-        <div className="p-4 pt-6">
+        {/* Header - Logo area */}
+        <div className="h-14 flex items-center justify-center border-b border-gray-100">
           <Link
             href="/admin"
             onClick={onToggle}
-            className="text-lg font-bold text-gray-900 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors"
           >
-            Placy Admin
+            {/* Desktop: Icon only */}
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+              <MapPin className="w-4 h-4 text-white" />
+            </div>
+            {/* Mobile: Show text */}
+            <span className="text-lg font-bold lg:hidden">Placy</span>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="px-4 pb-4 space-y-1">
-          {NAV_ITEMS.map((item, i) => {
-            if ("type" in item && item.type === "divider") {
-              return (
-                <div
-                  key={`divider-${i}`}
-                  className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                >
-                  {item.label}
-                </div>
-              );
-            }
-            const linkItem = item as NavLink;
-            return (
-              <Link
-                key={linkItem.href}
-                href={linkItem.href}
-                onClick={onToggle}
-                className={`
-                  flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
-                  focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                  ${
-                    isActive(linkItem.href, linkItem.exact)
-                      ? "bg-gray-100 text-gray-900 font-medium"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }
-                `}
-              >
-                <linkItem.icon className="w-5 h-5" />
-                {linkItem.label}
-              </Link>
-            );
-          })}
+        <nav className="p-2 space-y-1">
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onToggle}
+              className={`
+                group relative flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm transition-colors
+                focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                lg:justify-center lg:px-0
+                ${
+                  isActive(item.href, item.exact)
+                    ? "bg-gray-100 text-gray-900 font-medium"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }
+              `}
+            >
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              {/* Mobile: Show label */}
+              <span className="lg:hidden">{item.label}</span>
+
+              {/* Desktop: Tooltip on hover */}
+              <div className="
+                absolute left-full ml-2 px-2.5 py-1.5
+                bg-gray-900 text-white text-xs font-medium rounded-lg
+                opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                transition-all duration-150 whitespace-nowrap z-50
+                pointer-events-none
+                hidden lg:block
+              ">
+                {item.label}
+                {/* Arrow */}
+                <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900" />
+              </div>
+            </Link>
+          ))}
         </nav>
       </aside>
     </>

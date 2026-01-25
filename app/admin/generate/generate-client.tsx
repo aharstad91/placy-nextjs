@@ -37,45 +37,19 @@ import {
   TramFront,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { AdminSecondaryNav, SecondaryNavTrigger } from "@/components/admin/admin-secondary-nav";
 
 const MAP_STYLE = "mapbox://styles/mapbox/light-v11";
 const DEFAULT_CENTER = { lat: 63.4305, lng: 10.3951 };
 
-// Animation keyframes
 const customStyles = `
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
   @keyframes pulseGlow {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-    }
-    50% {
-      box-shadow: 0 0 0 20px rgba(16, 185, 129, 0);
-    }
-  }
-  @keyframes radiusPulse {
-    0%, 100% {
-      opacity: 0.15;
-    }
-    50% {
-      opacity: 0.25;
-    }
-  }
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  @keyframes categoryReveal {
-    0% {
-      opacity: 0;
-      transform: scale(0.8) translateY(4px);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    50% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
   }
   @keyframes checkPop {
     0% { transform: scale(0); }
@@ -87,13 +61,6 @@ const customStyles = `
   }
   .animate-fadeInUp { animation: fadeInUp 0.2s ease-out forwards; }
   .animate-pulseGlow { animation: pulseGlow 2s ease-in-out infinite; }
-  .animate-radiusPulse { animation: radiusPulse 3s ease-in-out infinite; }
-  .animate-shimmer {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-  .animate-categoryReveal { animation: categoryReveal 0.3s ease-out forwards; }
   .animate-checkPop { animation: checkPop 0.3s ease-out forwards; }
   .animate-spin { animation: spin 1s linear infinite; }
 `;
@@ -106,40 +73,7 @@ interface Category {
   group: "place" | "transport";
 }
 
-// Icon mapping from string to Lucide component
-const ICON_MAP: Record<string, LucideIcon> = {
-  UtensilsCrossed: Utensils,
-  Utensils,
-  Coffee,
-  Wine,
-  Croissant,
-  Dumbbell,
-  ShoppingCart,
-  Pill,
-  Building,
-  Mail,
-  ShoppingBag,
-  Landmark,
-  BookOpen,
-  TreePine,
-  Film,
-  Hospital,
-  Stethoscope,
-  Smile,
-  Scissors,
-  Sparkles,
-  Building2,
-  Bus,
-  Bike,
-  ParkingCircle,
-  TrainFront,
-  TramFront,
-  MapPin,
-};
-
-// All categories - places + transport
 const ALL_CATEGORIES: Category[] = [
-  // Places (Google categories)
   { id: "restaurant", name: "Restaurant", icon: Utensils, color: "#ef4444", group: "place" },
   { id: "cafe", name: "Kafé", icon: Coffee, color: "#f97316", group: "place" },
   { id: "bar", name: "Bar", icon: Wine, color: "#a855f7", group: "place" },
@@ -160,14 +94,12 @@ const ALL_CATEGORIES: Category[] = [
   { id: "hair_care", name: "Frisør", icon: Scissors, color: "#d946ef", group: "place" },
   { id: "spa", name: "Spa", icon: Sparkles, color: "#c084fc", group: "place" },
   { id: "hotel", name: "Hotell", icon: Building2, color: "#0891b2", group: "place" },
-  // Transport
   { id: "bus", name: "Buss", icon: Bus, color: "#3b82f6", group: "transport" },
   { id: "train", name: "Tog", icon: TrainFront, color: "#0ea5e9", group: "transport" },
   { id: "tram", name: "Trikk", icon: TramFront, color: "#f97316", group: "transport" },
   { id: "bike", name: "Bysykkel", icon: Bike, color: "#22c55e", group: "transport" },
 ];
 
-// Default selected categories
 const DEFAULT_CATEGORIES = new Set(["restaurant", "cafe", "supermarket", "bus", "bike"]);
 
 type GenerationStep = "idle" | "discovering" | "structuring" | "writing" | "done" | "error";
@@ -177,7 +109,6 @@ interface GenerationResult {
   poiCount?: number;
   error?: string;
   projectUrl?: string;
-  themeCount?: number;
 }
 
 interface GenerateClientProps {
@@ -186,6 +117,9 @@ interface GenerateClientProps {
 
 export function GenerateClient({ customers }: GenerateClientProps) {
   const mapRef = useRef<MapRef>(null);
+
+  // Secondary nav state (mobile)
+  const [secondaryNavOpen, setSecondaryNavOpen] = useState(false);
 
   // Form state
   const [name, setName] = useState("");
@@ -199,20 +133,14 @@ export function GenerateClient({ customers }: GenerateClientProps) {
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [discoveredCount, setDiscoveredCount] = useState(0);
 
-  // Validation
   const isValid = name.trim() && customerId && center && selectedCategories.size > 0;
 
-  // Get selected customer name for display
-  const selectedCustomer = customers.find(c => c.id === customerId);
-
-  // Handle map click
   const handleMapClick = useCallback((event: mapboxgl.MapLayerMouseEvent) => {
     if (step !== "idle") return;
     const { lng, lat } = event.lngLat;
     setCenter({ lat, lng });
   }, [step]);
 
-  // Toggle category
   const toggleCategory = (id: string) => {
     const newSet = new Set(selectedCategories);
     if (newSet.has(id)) {
@@ -223,7 +151,6 @@ export function GenerateClient({ customers }: GenerateClientProps) {
     setSelectedCategories(newSet);
   };
 
-  // Generate story using StoryWriter API
   const handleGenerate = async () => {
     if (!isValid || !center) return;
 
@@ -231,7 +158,6 @@ export function GenerateClient({ customers }: GenerateClientProps) {
     setDiscoveredCount(0);
     setResult(null);
 
-    // Get all selected category IDs
     const categoryIds = Array.from(selectedCategories);
 
     try {
@@ -255,7 +181,6 @@ export function GenerateClient({ customers }: GenerateClientProps) {
 
       setDiscoveredCount(data.poiCount || 0);
 
-      // Progress through steps
       setStep("structuring");
       await new Promise(r => setTimeout(r, 400));
 
@@ -277,7 +202,6 @@ export function GenerateClient({ customers }: GenerateClientProps) {
     }
   };
 
-  // Reset
   const handleReset = () => {
     setStep("idle");
     setResult(null);
@@ -288,7 +212,6 @@ export function GenerateClient({ customers }: GenerateClientProps) {
     setSelectedCategories(DEFAULT_CATEGORIES);
   };
 
-  // Create radius circle GeoJSON
   const radiusCircle = center ? {
     type: "Feature" as const,
     geometry: {
@@ -304,9 +227,317 @@ export function GenerateClient({ customers }: GenerateClientProps) {
     <>
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
 
-      <div className="h-screen w-screen relative bg-gray-100 overflow-hidden">
+      <div className="flex h-screen bg-gray-100 overflow-hidden">
+        {/* Mobile trigger */}
+        <SecondaryNavTrigger
+          onClick={() => setSecondaryNavOpen(true)}
+          label="Åpne generator-panel"
+        />
+
+        {/* Secondary Navigation */}
+        <AdminSecondaryNav
+          isOpen={secondaryNavOpen}
+          onClose={() => setSecondaryNavOpen(false)}
+          title="Story Generator"
+        >
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-100 hidden lg:block">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+                  }}
+                >
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-base font-bold text-gray-900 tracking-tight">Story Generator</h1>
+                  <p className="text-xs text-gray-500">Klikk på kartet for senter</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+              {step === "done" && result?.success ? (
+                <div className="p-4 space-y-4 animate-fadeInUp">
+                  <div className="text-center py-6">
+                    <div
+                      className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center animate-checkPop"
+                      style={{
+                        background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                        boxShadow: "0 8px 24px rgba(16, 185, 129, 0.4)",
+                      }}
+                    >
+                      <Check className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-1">Story generert!</h2>
+                    <p className="text-sm text-gray-500">
+                      {result.poiCount} POIs funnet og strukturert
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <a
+                      href={result.projectUrl}
+                      className="flex items-center justify-between w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 shadow-lg shadow-emerald-500/25"
+                    >
+                      <span className="font-semibold">Åpne story</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+
+                    <button
+                      onClick={handleReset}
+                      className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                    >
+                      Generer ny story
+                    </button>
+                  </div>
+                </div>
+              ) : step === "error" ? (
+                <div className="p-4 space-y-4 animate-fadeInUp">
+                  <div className="text-center py-6">
+                    <div
+                      className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                      style={{
+                        background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                        boxShadow: "0 8px 24px rgba(239, 68, 68, 0.3)",
+                      }}
+                    >
+                      <AlertCircle className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-1">Noe gikk galt</h2>
+                    <p className="text-sm text-red-600">{result?.error}</p>
+                  </div>
+
+                  <button
+                    onClick={handleReset}
+                    className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    Prøv igjen
+                  </button>
+                </div>
+              ) : isGenerating ? (
+                <div className="p-4 space-y-5">
+                  <div className="text-center py-4">
+                    <div className="relative w-16 h-16 mx-auto mb-4">
+                      <div
+                        className="absolute inset-0 rounded-full animate-spin"
+                        style={{
+                          background: "conic-gradient(from 0deg, #10b981, #3b82f6, #8b5cf6, #10b981)",
+                          mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
+                          WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
+                        }}
+                      />
+                      <div className="absolute inset-2 rounded-full bg-white flex items-center justify-center">
+                        <Sparkles className="w-6 h-6 text-emerald-500" />
+                      </div>
+                    </div>
+                    <h2 className="text-lg font-bold text-gray-900">Genererer story...</h2>
+                  </div>
+
+                  <div className="space-y-3">
+                    <ProgressStep
+                      label="Søker POIs"
+                      detail={discoveredCount > 0 ? `${discoveredCount} funnet` : undefined}
+                      status={step === "discovering" ? "active" : step === "structuring" || step === "writing" ? "done" : "pending"}
+                    />
+                    <ProgressStep
+                      label="Bygger struktur"
+                      status={step === "structuring" ? "active" : step === "writing" ? "done" : "pending"}
+                    />
+                    <ProgressStep
+                      label="Skriver fil"
+                      status={step === "writing" ? "active" : "pending"}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 space-y-4">
+                  {/* Project Name */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Prosjektnavn
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="F.eks. Ferjemannsveien 10"
+                      className="w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-300 transition-all placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  {/* Customer Select */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Kunde
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={customerId}
+                        onChange={(e) => setCustomerId(e.target.value)}
+                        className="w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-300 transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="">Velg kunde...</option>
+                        {customers.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
+                    {customers.length === 0 && (
+                      <p className="text-xs text-amber-600">
+                        Ingen kunder funnet. <a href="/admin/customers" className="underline hover:text-amber-700">Opprett en kunde først.</a>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Senter + Radius */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Senter
+                      </label>
+                      {center ? (
+                        <div className="flex items-center gap-1.5 px-3 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
+                          <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                          <span className="text-xs text-emerald-700 font-mono truncate">
+                            {center.lat.toFixed(4)}, {center.lng.toFixed(4)}
+                          </span>
+                          <button
+                            onClick={() => setCenter(null)}
+                            className="ml-auto text-emerald-600 hover:text-emerald-800 text-xs font-medium flex-shrink-0"
+                          >
+                            Endre
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                          <MapPin className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                          <span className="text-xs text-amber-700">Klikk på kartet</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Søkeradius
+                      </label>
+                      <div className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
+                        <span className="text-[10px] text-gray-400 flex-shrink-0">300m</span>
+                        <input
+                          type="range"
+                          min={300}
+                          max={2000}
+                          step={100}
+                          value={radius}
+                          onChange={(e) => setRadius(Number(e.target.value))}
+                          className="flex-1 min-w-0 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-emerald-500"
+                        />
+                        <span className="text-[10px] text-gray-400 flex-shrink-0">2km</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Categories */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Kategorier ({selectedCategories.size} valgt)
+                    </label>
+                    <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-xl bg-white">
+                      <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Steder</span>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {ALL_CATEGORIES.filter(c => c.group === "place").map((cat) => {
+                          const Icon = cat.icon;
+                          const isSelected = selectedCategories.has(cat.id);
+                          return (
+                            <label
+                              key={cat.id}
+                              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleCategory(cat.id)}
+                                className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0"
+                              />
+                              <div
+                                className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: `${cat.color}20` }}
+                              >
+                                <Icon className="w-3 h-3" style={{ color: cat.color }} />
+                              </div>
+                              <span className="text-sm text-gray-700">{cat.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <div className="px-3 py-2 bg-gray-50 border-y border-gray-200">
+                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Transport</span>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {ALL_CATEGORIES.filter(c => c.group === "transport").map((cat) => {
+                          const Icon = cat.icon;
+                          const isSelected = selectedCategories.has(cat.id);
+                          return (
+                            <label
+                              key={cat.id}
+                              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleCategory(cat.id)}
+                                className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0"
+                              />
+                              <div
+                                className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: `${cat.color}20` }}
+                              >
+                                <Icon className="w-3 h-3" style={{ color: cat.color }} />
+                              </div>
+                              <span className="text-sm text-gray-700">{cat.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer - Generate Button */}
+            {step === "idle" && (
+              <div className="p-4 border-t border-gray-100">
+                <button
+                  onClick={handleGenerate}
+                  disabled={!isValid}
+                  className={`w-full px-4 py-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all duration-200 ${
+                    isValid
+                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-xl hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Generer Story
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </AdminSecondaryNav>
+
         {/* Map */}
-        <div className="absolute inset-0">
+        <div className="flex-1 relative">
           <Map
             ref={mapRef}
             mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
@@ -322,7 +553,6 @@ export function GenerateClient({ customers }: GenerateClientProps) {
           >
             <NavigationControl position="bottom-right" />
 
-            {/* Radius circle */}
             {radiusCircle && (
               <Source id="radius" type="geojson" data={radiusCircle}>
                 <Layer
@@ -346,7 +576,6 @@ export function GenerateClient({ customers }: GenerateClientProps) {
               </Source>
             )}
 
-            {/* Center marker */}
             {center && (
               <Marker longitude={center.lng} latitude={center.lat}>
                 <div className="relative">
@@ -378,344 +607,27 @@ export function GenerateClient({ customers }: GenerateClientProps) {
               </Marker>
             )}
           </Map>
-        </div>
 
-        {/* Floating Panel */}
-        <div
-          className="absolute top-4 left-4 z-20 w-96 rounded-2xl flex flex-col overflow-hidden transition-all duration-300"
-          style={{
-            background: "linear-gradient(to bottom, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.96) 100%)",
-            backdropFilter: "blur(16px)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)",
-          }}
-        >
-          {/* Header */}
-          <div className="p-5 border-b border-gray-100/80">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{
-                  background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                  boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
-                }}
-              >
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900 tracking-tight">Story Generator</h1>
-                <p className="text-xs text-gray-500">Klikk på kartet for å plassere senter</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto max-h-[calc(100vh-12rem)]">
-            {step === "done" && result?.success ? (
-              /* Success State */
-              <div className="p-5 space-y-4 animate-fadeInUp">
-                <div className="text-center py-6">
-                  <div
-                    className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center animate-checkPop"
-                    style={{
-                      background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                      boxShadow: "0 8px 24px rgba(16, 185, 129, 0.4)",
-                    }}
-                  >
-                    <Check className="w-8 h-8 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">Story generert!</h2>
-                  <p className="text-sm text-gray-500">
-                    {result.poiCount} POIs funnet og strukturert
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <a
-                    href={result.projectUrl}
-                    className="flex items-center justify-between w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5"
-                  >
-                    <span className="font-semibold">Åpne story</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-
-                  <button
-                    onClick={handleReset}
-                    className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-                  >
-                    Generer ny story
-                  </button>
-                </div>
-
-                <div className="text-xs text-gray-400 text-center pt-2">
-                  Data lagret i Supabase
-                </div>
-              </div>
-            ) : step === "error" ? (
-              /* Error State */
-              <div className="p-5 space-y-4 animate-fadeInUp">
-                <div className="text-center py-6">
-                  <div
-                    className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-                    style={{
-                      background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-                      boxShadow: "0 8px 24px rgba(239, 68, 68, 0.3)",
-                    }}
-                  >
-                    <AlertCircle className="w-8 h-8 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">Noe gikk galt</h2>
-                  <p className="text-sm text-red-600">{result?.error}</p>
-                </div>
-
-                <button
-                  onClick={handleReset}
-                  className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-                >
-                  Prøv igjen
-                </button>
-              </div>
-            ) : isGenerating ? (
-              /* Generating State */
-              <div className="p-5 space-y-5">
-                <div className="text-center py-4">
-                  <div className="relative w-16 h-16 mx-auto mb-4">
-                    <div
-                      className="absolute inset-0 rounded-full animate-spin"
-                      style={{
-                        background: "conic-gradient(from 0deg, #10b981, #3b82f6, #8b5cf6, #10b981)",
-                        mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
-                        WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))",
-                      }}
-                    />
-                    <div className="absolute inset-2 rounded-full bg-white flex items-center justify-center">
-                      <Sparkles className="w-6 h-6 text-emerald-500" />
-                    </div>
-                  </div>
-                  <h2 className="text-lg font-bold text-gray-900">Genererer story...</h2>
-                </div>
-
-                {/* Progress Steps */}
-                <div className="space-y-3">
-                  <ProgressStep
-                    label="Søker POIs"
-                    detail={discoveredCount > 0 ? `${discoveredCount} funnet` : undefined}
-                    status={step === "discovering" ? "active" : step === "structuring" || step === "writing" ? "done" : "pending"}
-                  />
-                  <ProgressStep
-                    label="Bygger struktur"
-                    status={step === "structuring" ? "active" : step === "writing" ? "done" : "pending"}
-                  />
-                  <ProgressStep
-                    label="Skriver fil"
-                    status={step === "writing" ? "active" : "pending"}
-                  />
-                </div>
-              </div>
-            ) : (
-              /* Form State */
-              <div className="p-5 space-y-5">
-                {/* Project Name */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Prosjektnavn
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="F.eks. Ferjemannsveien 10"
-                    className="w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-300 transition-all placeholder:text-gray-400"
-                  />
-                </div>
-
-                {/* Customer Select */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Kunde
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={customerId}
-                      onChange={(e) => setCustomerId(e.target.value)}
-                      className="w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-300 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="">Velg kunde...</option>
-                      {customers.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  </div>
-                  {customers.length === 0 && (
-                    <p className="text-xs text-amber-600">
-                      Ingen kunder funnet. <a href="/admin/customers" className="underline hover:text-amber-700">Opprett en kunde først.</a>
-                    </p>
-                  )}
-                </div>
-
-                {/* Senter + Søkeradius - 50/50 layout */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Coordinates indicator */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Senter
-                    </label>
-                    {center ? (
-                      <div className="flex items-center gap-1.5 px-3 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
-                        <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                        <span className="text-xs text-emerald-700 font-mono truncate">
-                          {center.lat.toFixed(4)}, {center.lng.toFixed(4)}
-                        </span>
-                        <button
-                          onClick={() => setCenter(null)}
-                          className="ml-auto text-emerald-600 hover:text-emerald-800 text-xs font-medium flex-shrink-0"
-                        >
-                          Endre
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
-                        <MapPin className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                        <span className="text-xs text-amber-700">Klikk på kartet</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Radius */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Søkeradius
-                    </label>
-                    <div className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
-                      <span className="text-[10px] text-gray-400 flex-shrink-0">300m</span>
-                      <input
-                        type="range"
-                        min={300}
-                        max={2000}
-                        step={100}
-                        value={radius}
-                        onChange={(e) => setRadius(Number(e.target.value))}
-                        className="flex-1 min-w-0 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-emerald-500"
-                      />
-                      <span className="text-[10px] text-gray-400 flex-shrink-0">2km</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Categories - Compact checkbox list */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Kategorier ({selectedCategories.size} valgt)
-                  </label>
-                  <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-xl bg-white">
-                    {/* Places group */}
-                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Steder</span>
-                    </div>
-                    <div className="divide-y divide-gray-100">
-                      {ALL_CATEGORIES.filter(c => c.group === "place").map((cat) => {
-                        const Icon = cat.icon;
-                        const isSelected = selectedCategories.has(cat.id);
-                        return (
-                          <label
-                            key={cat.id}
-                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleCategory(cat.id)}
-                              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0"
-                            />
-                            <div
-                              className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                              style={{ backgroundColor: `${cat.color}20` }}
-                            >
-                              <Icon className="w-3 h-3" style={{ color: cat.color }} />
-                            </div>
-                            <span className="text-sm text-gray-700">{cat.name}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    {/* Transport group */}
-                    <div className="px-3 py-2 bg-gray-50 border-y border-gray-200">
-                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Transport</span>
-                    </div>
-                    <div className="divide-y divide-gray-100">
-                      {ALL_CATEGORIES.filter(c => c.group === "transport").map((cat) => {
-                        const Icon = cat.icon;
-                        const isSelected = selectedCategories.has(cat.id);
-                        return (
-                          <label
-                            key={cat.id}
-                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleCategory(cat.id)}
-                              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0"
-                            />
-                            <div
-                              className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                              style={{ backgroundColor: `${cat.color}20` }}
-                            >
-                              <Icon className="w-3 h-3" style={{ color: cat.color }} />
-                            </div>
-                            <span className="text-sm text-gray-700">{cat.name}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Footer - Generate Button */}
-          {step === "idle" && (
-            <div className="p-4 border-t border-gray-100/80">
-              <button
-                onClick={handleGenerate}
-                disabled={!isValid}
-                className={`w-full px-4 py-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all duration-200 ${
-                  isValid
-                    ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-xl hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                <Sparkles className="w-5 h-5" />
-                Generer Story
-                <ChevronRight className="w-4 h-4" />
-              </button>
+          {/* Keyboard hint */}
+          {step === "idle" && !center && (
+            <div
+              className="absolute bottom-8 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full animate-fadeInUp"
+              style={{
+                background: "rgba(0,0,0,0.75)",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <span className="text-sm text-white/90">
+                Klikk på kartet for å plassere prosjektets senter
+              </span>
             </div>
           )}
         </div>
-
-        {/* Keyboard hint */}
-        {step === "idle" && !center && (
-          <div
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full animate-fadeInUp"
-            style={{
-              background: "rgba(0,0,0,0.75)",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <span className="text-sm text-white/90">
-              Klikk på kartet for å plassere prosjektets senter
-            </span>
-          </div>
-        )}
       </div>
     </>
   );
 }
 
-// Progress step component
 function ProgressStep({
   label,
   detail,
@@ -764,7 +676,6 @@ function ProgressStep({
   );
 }
 
-// Create circle coordinates for radius visualization
 function createCircleCoordinates(lng: number, lat: number, radiusMeters: number): [number, number][] {
   const points = 64;
   const km = radiusMeters / 1000;
@@ -775,7 +686,6 @@ function createCircleCoordinates(lng: number, lat: number, radiusMeters: number)
     const dx = km * Math.cos(angle);
     const dy = km * Math.sin(angle);
 
-    // Approximate degree offset
     const latOffset = dy / 111.32;
     const lngOffset = dx / (111.32 * Math.cos(lat * Math.PI / 180));
 
