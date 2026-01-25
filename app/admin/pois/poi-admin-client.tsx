@@ -3,10 +3,28 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Map, { Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox";
-import { MapPin, Trash2, Edit2, Plus, Search, ChevronDown, ChevronUp, X, Check } from "lucide-react";
+import { MapPin, Trash2, Edit2, Plus, Search, ChevronDown, ChevronUp, X, Check, Loader2 } from "lucide-react";
 import type { DbCategory, DbPoi } from "@/lib/supabase/types";
 
 const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
+
+// Custom CSS for animations (inject via style tag or globals.css)
+const customStyles = `
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseRing {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .animate-fadeInUp { animation: fadeInUp 0.15s ease-out forwards; }
+  .animate-pulseRing { animation: pulseRing 2s ease-in-out infinite; }
+`;
 
 // Default center: Trondheim sentrum
 const DEFAULT_CENTER = { lat: 63.4305, lng: 10.3951 };
@@ -222,12 +240,20 @@ export function POIAdminClient({
     setPanelState("editing");
   };
 
-  // Hide Mapbox POI labels on map load
+  // Hide Mapbox POI and transit labels on map load
   const handleMapLoad = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (map) {
-      // Hide default Mapbox POI labels to reduce visual clutter
-      map.setLayoutProperty("poi-label", "visibility", "none");
+      // Hide default Mapbox labels to reduce visual clutter
+      const layersToHide = [
+        "poi-label",           // POI labels (shops, restaurants, etc.)
+        "transit-label",       // Transit labels (bus stops, tram stops)
+      ];
+      for (const layer of layersToHide) {
+        if (map.getLayer(layer)) {
+          map.setLayoutProperty(layer, "visibility", "none");
+        }
+      }
     }
   }, []);
 
@@ -312,7 +338,10 @@ export function POIAdminClient({
   const isFormVisible = panelState === "editing" || panelState === "creating";
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-screen font-[system-ui]">
+      {/* Inject custom animations */}
+      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
+
       {/* Fullscreen Map */}
       <div className="absolute inset-0">
         <Map
@@ -334,8 +363,13 @@ export function POIAdminClient({
           {/* Selected position marker (when creating) */}
           {coordinates && panelState === "creating" && (
             <Marker longitude={coordinates.lng} latitude={coordinates.lat} anchor="center">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg ring-4 ring-blue-200 animate-pulse">
-                <MapPin className="w-5 h-5 text-white" />
+              <div className="relative">
+                {/* Pulsing ring */}
+                <div className="absolute inset-0 w-10 h-10 -m-1 bg-amber-400/30 rounded-full animate-pulseRing" />
+                {/* Marker */}
+                <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg shadow-amber-500/30">
+                  <MapPin className="w-5 h-5 text-white drop-shadow" />
+                </div>
               </div>
             </Marker>
           )}
@@ -362,28 +396,42 @@ export function POIAdminClient({
                   onMouseEnter={() => setHoveredPoiId(poi.id)}
                   onMouseLeave={() => setHoveredPoiId(null)}
                 >
-                  {/* Hover label */}
+                  {/* Hover label - animated tooltip */}
                   {(isHovered || isActive) && (
-                    <div className="absolute bottom-full mb-1 whitespace-nowrap px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none z-10">
-                      {poi.name}
-                      {isGooglePoi && (
-                        <span className="ml-1 text-blue-300 text-[10px]">G</span>
-                      )}
+                    <div className="absolute bottom-full mb-2 whitespace-nowrap animate-fadeInUp pointer-events-none z-10">
+                      <div className="px-2.5 py-1.5 bg-gray-900/95 backdrop-blur-sm text-white text-xs rounded-lg shadow-xl">
+                        <span className="font-medium">{poi.name}</span>
+                        {isGooglePoi && (
+                          <span className="ml-1.5 text-blue-300 text-[10px] font-semibold">G</span>
+                        )}
+                      </div>
+                      {/* Tooltip arrow */}
+                      <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-gray-900/95 rotate-45" />
                     </div>
                   )}
-                  {/* Marker dot */}
-                  <div
-                    className={`rounded-full flex items-center justify-center shadow cursor-pointer transition-transform relative ${
-                      isActive ? "w-8 h-8 ring-4 ring-blue-400" : "w-6 h-6 hover:scale-110"
-                    }`}
-                    style={{ backgroundColor: category?.color || "#6b7280" }}
-                  >
-                    <MapPin className={isActive ? "w-4 h-4 text-white" : "w-3 h-3 text-white"} />
-                    {isGooglePoi && (
-                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-                        G
-                      </span>
+                  {/* Marker container - fixed size to prevent label jumping */}
+                  <div className="w-6 h-6 flex items-center justify-center cursor-pointer">
+                    {/* Active ring - animated pulse */}
+                    {isActive && (
+                      <div className="absolute w-9 h-9 rounded-full bg-blue-400/20 animate-pulseRing" />
                     )}
+                    {/* Marker dot - teardrop shape with gradient */}
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 relative ${
+                        isActive ? "scale-110" : "hover:scale-110"
+                      }`}
+                      style={{
+                        background: `linear-gradient(135deg, ${category?.color || "#6b7280"} 0%, ${category?.color || "#6b7280"}dd 100%)`,
+                        boxShadow: `0 2px 8px ${category?.color || "#6b7280"}40, 0 1px 2px rgba(0,0,0,0.1)`
+                      }}
+                    >
+                      <MapPin className="w-3 h-3 text-white drop-shadow-sm" />
+                      {isGooglePoi && (
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-[8px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                          G
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Marker>
@@ -394,68 +442,74 @@ export function POIAdminClient({
 
       {/* Floating Panel - Top Left */}
       <div
-        className={`absolute top-4 left-4 z-20 w-80 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg flex flex-col overflow-hidden transition-all ${
+        className={`absolute top-4 left-4 z-20 w-80 rounded-2xl flex flex-col overflow-hidden transition-all duration-300 ease-out ${
           isFormVisible ? "max-h-[calc(100vh-2rem)]" : "max-h-fit"
         }`}
+        style={{
+          background: "linear-gradient(to bottom, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%)",
+          backdropFilter: "blur(12px)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9)"
+        }}
       >
-        {/* Search Field */}
-        <div className="p-3 border-b">
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Søk etter adresse..."
-                className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              {searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-30 max-h-48 overflow-auto">
-                  {searchResults.map((result, i) => (
-                    <button
-                      key={i}
-                      onClick={() => selectSearchResult(result)}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 border-b last:border-b-0"
-                    >
-                      {result.place_name}
-                    </button>
-                  ))}
-                </div>
+        {/* Search Field - Enhanced */}
+        <div className="p-4 border-b border-gray-100/80">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              {isSearching ? (
+                <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4 text-gray-400" />
               )}
             </div>
-            <button
-              onClick={handleSearch}
-              disabled={isSearching}
-              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              <Search className="w-4 h-4" />
-            </button>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              placeholder="Søk etter adresse..."
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all placeholder:text-gray-400"
+            />
+            {searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-30 max-h-48 overflow-auto animate-fadeInUp">
+                {searchResults.map((result, i) => (
+                  <button
+                    key={i}
+                    onClick={() => selectSearchResult(result)}
+                    className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
+                  >
+                    <span className="text-gray-700">{result.place_name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Category Filter - Compact */}
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-500">
-              Filter ({filteredPois.length}/{pois.length})
+        {/* Category Filter - Enhanced */}
+        <div className="p-4 border-b border-gray-100/80">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Filter
+              <span className="ml-2 text-gray-400 font-normal normal-case">
+                {filteredPois.length}/{pois.length}
+              </span>
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <button
                 onClick={() => updateCategories(new Set(categories.map((c) => c.id)))}
-                className="text-xs text-blue-600 hover:text-blue-800"
+                className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Alle
               </button>
               <button
                 onClick={() => updateCategories(new Set())}
-                className="text-xs text-blue-600 hover:text-blue-800"
+                className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Ingen
               </button>
             </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {categories.map((category) => {
               const isSelected = selectedCategories.has(category.id);
               const count = poiCountByCategory[category.id] || 0;
@@ -471,17 +525,20 @@ export function POIAdminClient({
                     }
                     updateCategories(newSet);
                   }}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                     isSelected
-                      ? "text-white"
-                      : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                      ? "text-white shadow-sm hover:shadow-md active:scale-95"
+                      : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-800 active:scale-95"
                   }`}
                   style={{
                     backgroundColor: isSelected ? category.color : undefined,
+                    boxShadow: isSelected ? `0 2px 8px ${category.color}40` : undefined
                   }}
                 >
                   <span>{category.name}</span>
-                  <span className={`px-1 rounded-full text-[10px] ${isSelected ? "bg-white/20" : "bg-gray-200"}`}>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${
+                    isSelected ? "bg-white/25" : "bg-gray-200/80 text-gray-500"
+                  }`}>
                     {count}
                   </span>
                 </button>
@@ -492,10 +549,10 @@ export function POIAdminClient({
 
         {/* Action Button or Form */}
         {panelState === "idle" ? (
-          <div className="p-3">
+          <div className="p-4">
             <button
               onClick={startCreating}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 text-sm font-medium"
+              className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 flex items-center justify-center gap-2 text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md"
             >
               <Plus className="w-4 h-4" />
               Ny POI
@@ -504,16 +561,16 @@ export function POIAdminClient({
         ) : (
           /* Form - Scrollable */
           <div className="flex-1 overflow-y-auto">
-            <form onSubmit={handleSubmit} className="p-3 space-y-3">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {/* Form Header */}
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-900">
+                <h2 className="text-sm font-bold text-gray-900">
                   {panelState === "editing" ? "Rediger POI" : "Ny POI"}
                 </h2>
                 <button
                   type="button"
                   onClick={closePanel}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -521,26 +578,27 @@ export function POIAdminClient({
 
               {/* Instructions for creating */}
               {panelState === "creating" && !coordinates && (
-                <div className="p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                  Klikk på kartet for å velge posisjon
+                <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-xl text-xs text-amber-700 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-amber-500" />
+                  <span>Klikk på kartet for å velge posisjon</span>
                 </div>
               )}
 
               {error && (
-                <div className="p-2 bg-red-100 text-red-700 rounded text-xs">
+                <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs font-medium">
                   {error}
                 </div>
               )}
 
               {/* Google POI Info */}
               {editingPoi?.google_place_id && (
-                <div className="p-2 bg-blue-50 border border-blue-200 rounded space-y-1">
+                <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-xl">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                    <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-md font-semibold">
                       Google
                     </span>
                     {editingPoi.google_rating && (
-                      <span className="text-xs text-gray-600">
+                      <span className="text-xs text-gray-600 font-medium">
                         ⭐ {editingPoi.google_rating} ({editingPoi.google_review_count})
                       </span>
                     )}
@@ -549,25 +607,25 @@ export function POIAdminClient({
               )}
 
               {/* Name */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Navn *</label>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-gray-600">Navn *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-2 py-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all placeholder:text-gray-400"
                   placeholder="F.eks. Kaffebrenneriet"
                 />
               </div>
 
               {/* Coordinates */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Koordinater * {panelState === "creating" && "(klikk på kartet)"}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-gray-600">
+                  Koordinater * {panelState === "creating" && <span className="font-normal text-gray-400">(klikk på kartet)</span>}
                 </label>
-                <div className="px-2 py-1.5 border rounded bg-gray-50 text-xs">
+                <div className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs">
                   {coordinates ? (
-                    <span className="font-mono">
+                    <span className="font-mono text-gray-700 font-medium">
                       {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
                     </span>
                   ) : (
@@ -577,12 +635,12 @@ export function POIAdminClient({
               </div>
 
               {/* Category */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Kategori *</label>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-gray-600">Kategori *</label>
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full px-2 py-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all cursor-pointer"
                 >
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -593,13 +651,13 @@ export function POIAdminClient({
               </div>
 
               {/* Address */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Adresse</label>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-gray-600">Adresse</label>
                 <input
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-2 py-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all placeholder:text-gray-400"
                   placeholder="Autofylles fra kart"
                 />
               </div>
@@ -608,47 +666,49 @@ export function POIAdminClient({
               <button
                 type="button"
                 onClick={() => setShowMoreFields(!showMoreFields)}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors py-1"
               >
-                {showMoreFields ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                {showMoreFields ? "Skjul ekstra felt" : "Vis ekstra felt"}
+                <div className={`transition-transform duration-200 ${showMoreFields ? "rotate-180" : ""}`}>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+                <span className="font-medium">{showMoreFields ? "Skjul ekstra felt" : "Vis ekstra felt"}</span>
               </button>
 
               {showMoreFields && (
-                <div className="space-y-3 pt-2 border-t">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Beskrivelse</label>
+                <div className="space-y-4 pt-4 border-t border-gray-100 animate-fadeInUp">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-gray-600">Beskrivelse</label>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
-                      className="w-full px-2 py-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all resize-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Editorial Hook</label>
-                    <input
-                      type="text"
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-gray-600">Editorial Hook</label>
+                    <textarea
                       value={editorialHook}
                       onChange={(e) => setEditorialHook(e.target.value)}
-                      className="w-full px-2 py-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+                      rows={2}
+                      className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all resize-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Local Insight</label>
-                    <input
-                      type="text"
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-gray-600">Local Insight</label>
+                    <textarea
                       value={localInsight}
                       onChange={(e) => setLocalInsight(e.target.value)}
-                      className="w-full px-2 py-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+                      rows={2}
+                      className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all resize-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Story Prioritet</label>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-gray-600">Story Prioritet</label>
                     <select
                       value={storyPriority}
                       onChange={(e) => setStoryPriority(e.target.value as typeof storyPriority)}
-                      className="w-full px-2 py-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all cursor-pointer"
                     >
                       <option value="">Ikke angitt</option>
                       <option value="must_have">Must Have</option>
@@ -660,12 +720,12 @@ export function POIAdminClient({
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 pt-4">
                 {panelState === "editing" && (
                   <button
                     type="button"
                     onClick={handleDelete}
-                    className="px-3 py-1.5 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+                    className="px-3 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -673,17 +733,24 @@ export function POIAdminClient({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-1"
+                  className={`flex-1 px-4 py-2.5 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${
+                    panelState === "editing"
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30"
+                      : "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30"
+                  }`}
                 >
                   {isSubmitting ? (
-                    "Lagrer..."
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Lagrer...
+                    </>
                   ) : panelState === "editing" ? (
                     <>
-                      <Edit2 className="w-3 h-3" /> Oppdater
+                      <Check className="w-4 h-4" /> Oppdater
                     </>
                   ) : (
                     <>
-                      <Plus className="w-3 h-3" /> Opprett
+                      <Plus className="w-4 h-4" /> Opprett
                     </>
                   )}
                 </button>
@@ -694,10 +761,17 @@ export function POIAdminClient({
       </div>
 
       {/* POI Count Indicator - Bottom Left */}
-      <div className="absolute bottom-4 left-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
-        <span className="text-sm text-gray-600">
-          Viser <span className="font-semibold text-gray-900">{filteredPois.length}</span> av{" "}
-          <span className="font-semibold text-gray-900">{pois.length}</span> POIs
+      <div
+        className="absolute bottom-4 left-4 z-10 rounded-xl px-4 py-2.5"
+        style={{
+          background: "linear-gradient(to bottom, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%)",
+          backdropFilter: "blur(12px)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)"
+        }}
+      >
+        <span className="text-sm text-gray-500 font-medium">
+          Viser <span className="text-gray-900 font-bold">{filteredPois.length}</span> av{" "}
+          <span className="text-gray-900 font-bold">{pois.length}</span> POIs
         </span>
       </div>
     </div>
