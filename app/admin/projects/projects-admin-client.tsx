@@ -12,6 +12,7 @@ import {
   FolderOpen,
   ExternalLink,
   Filter,
+  BookOpen,
 } from "lucide-react";
 import type { DbProject, DbCustomer } from "@/lib/supabase/types";
 import { ConfirmDialog } from "@/components/admin";
@@ -321,6 +322,13 @@ export function ProjectsAdminClient({
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/admin/projects/${project.id}/story`}
+                          className="p-2 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          title="Story Editor"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                        </Link>
                         <button
                           onClick={() => openEditModal(project)}
                           className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
