@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProjectAsync } from "@/lib/data";
+import { getProjectAsync } from "@/lib/data-server";
 import ProjectPageClient from "./ProjectPageClient";
 
 interface PageProps {
