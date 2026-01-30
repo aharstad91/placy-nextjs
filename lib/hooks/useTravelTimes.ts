@@ -106,45 +106,49 @@ export function useTravelTimes(
       return;
     }
 
-    // Fetch from API
+    // Fetch from API — batch into groups of 24 (Mapbox Matrix limit)
     setResult((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Map TravelMode to API profile
       const profileMap: Record<TravelMode, string> = {
         walk: "walking",
         bike: "cycling",
         car: "driving",
       };
 
-      const response = await fetch("/api/travel-times", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          origin: projectCenter,
-          destinations: pois.map((poi) => poi.coordinates),
-          profile: profileMap[travelMode],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch travel times");
-      }
-
-      const data = await response.json();
-
-      // Build travel times map
+      const BATCH_SIZE = 24;
       const travelTimes: Record<string, number | null> = {};
-      data.results.forEach(
-        (
-          result: { destinationIndex: number; durationMinutes: number | null },
-        ) => {
-          const poi = pois[result.destinationIndex];
-          if (poi) {
-            travelTimes[poi.id] = result.durationMinutes;
-          }
+
+      for (let i = 0; i < pois.length; i += BATCH_SIZE) {
+        const batch = pois.slice(i, i + BATCH_SIZE);
+
+        const response = await fetch("/api/travel-times", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            origin: projectCenter,
+            destinations: batch.map((poi) => poi.coordinates),
+            profile: profileMap[travelMode],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch travel times");
         }
-      );
+
+        const data = await response.json();
+
+        data.results.forEach(
+          (
+            result: { destinationIndex: number; durationMinutes: number | null },
+          ) => {
+            const poi = batch[result.destinationIndex];
+            if (poi) {
+              travelTimes[poi.id] = result.durationMinutes;
+            }
+          }
+        );
+      }
 
       // Save to cache
       saveToCache(projectId, travelMode, travelTimes);

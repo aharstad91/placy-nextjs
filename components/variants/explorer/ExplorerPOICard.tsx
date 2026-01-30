@@ -1,0 +1,246 @@
+"use client";
+
+import { useState } from "react";
+import type { POI } from "@/lib/types";
+import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
+import * as LucideIcons from "lucide-react";
+import {
+  Star,
+  MapPin,
+  ExternalLink,
+  ChevronDown,
+  Sparkles,
+  Footprints,
+  Navigation,
+  Clock,
+} from "lucide-react";
+
+interface ExplorerPOICardProps {
+  poi: POI;
+  isActive: boolean;
+  onClick: () => void;
+  openingHours?: OpeningHoursData;
+  travelTimesLoading?: boolean;
+}
+
+export default function ExplorerPOICard({
+  poi,
+  isActive,
+  onClick,
+  openingHours,
+  travelTimesLoading,
+}: ExplorerPOICardProps) {
+  const [imageError, setImageError] = useState(false);
+
+  // Get category icon
+  const getIcon = (iconName: string): LucideIcons.LucideIcon => {
+    const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[iconName];
+    return Icon || LucideIcons.MapPin;
+  };
+
+  const CategoryIcon = getIcon(poi.category.icon);
+
+  const imageUrl = poi.featuredImage
+    ? poi.featuredImage
+    : poi.photoReference
+    ? `/api/places/photo?reference=${poi.photoReference}&maxwidth=400`
+    : null;
+
+  const walkMinutes = poi.travelTime?.walk;
+  const isOpen = openingHours?.isOpen;
+
+  // Google Maps directions URL
+  const googleMapsDirectionsUrl = poi.googlePlaceId
+    ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
+    : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left transition-all duration-200 ${
+        isActive
+          ? "bg-gray-50"
+          : "hover:bg-gray-50/50"
+      }`}
+    >
+      <div className="px-4 py-3">
+        {/* Main row */}
+        <div className="flex items-start gap-3">
+          {/* Category icon */}
+          <div
+            className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center mt-0.5"
+            style={{ backgroundColor: poi.category.color }}
+          >
+            <CategoryIcon className="w-4 h-4 text-white" />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-900 truncate">
+                {poi.name}
+              </h3>
+              {poi.editorialHook && (
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              )}
+            </div>
+
+            {/* Meta line: category · rating · walk time · open status */}
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span
+                className="text-xs font-medium"
+                style={{ color: poi.category.color }}
+              >
+                {poi.category.name}
+              </span>
+
+              {poi.googleRating && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  <span className="flex items-center gap-0.5 text-xs text-gray-500">
+                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                    {poi.googleRating.toFixed(1)}
+                  </span>
+                </>
+              )}
+
+              {walkMinutes != null && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  <span className="flex items-center gap-0.5 text-xs text-gray-500">
+                    <Footprints className="w-3 h-3" />
+                    {Math.round(walkMinutes)} min
+                  </span>
+                </>
+              )}
+
+              {walkMinutes == null && travelTimesLoading && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  <span className="w-10 h-3 bg-gray-100 rounded animate-pulse" />
+                </>
+              )}
+
+              {isOpen === true && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  <span className="text-xs font-medium text-emerald-600">
+                    Åpen
+                  </span>
+                </>
+              )}
+
+              {isOpen === false && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  <span className="text-xs text-gray-400">
+                    Stengt
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Expand indicator */}
+          <ChevronDown
+            className={`w-4 h-4 text-gray-300 flex-shrink-0 transition-transform duration-200 mt-2 ${
+              isActive ? "rotate-180 text-gray-500" : ""
+            }`}
+          />
+        </div>
+
+        {/* Expanded content */}
+        {isActive && (
+          <div className="mt-3 ml-12 space-y-3">
+            {/* Image */}
+            {imageUrl && !imageError && (
+              <div className="rounded-lg overflow-hidden aspect-[16/9] bg-gray-100">
+                <img
+                  src={imageUrl}
+                  alt={poi.name}
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
+                />
+              </div>
+            )}
+
+            {/* Editorial hook */}
+            {poi.editorialHook && (
+              <div className="bg-amber-50 rounded-lg px-3 py-2.5 border border-amber-100">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-amber-900 leading-relaxed">
+                    {poi.editorialHook}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Local insight */}
+            {poi.localInsight && (
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {poi.localInsight}
+              </p>
+            )}
+
+            {/* Description (fallback if no editorial) */}
+            {poi.description && !poi.editorialHook && (
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {poi.description}
+              </p>
+            )}
+
+            {/* Opening hours */}
+            {openingHours?.openingHours && openingHours.openingHours.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+                  <Clock className="w-3 h-3" />
+                  Åpningstider
+                </div>
+                <div className="text-xs text-gray-500 space-y-0.5 pl-4.5">
+                  {openingHours.openingHours.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-1">
+              <a
+                href={googleMapsDirectionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
+              >
+                <Navigation className="w-3 h-3" />
+                Vis rute
+              </a>
+
+              {poi.googleMapsUrl && (
+                <a
+                  href={poi.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Google Maps
+                </a>
+              )}
+
+              {poi.address && (
+                <span className="flex items-center gap-1 text-xs text-gray-400">
+                  <MapPin className="w-3 h-3" />
+                  {poi.address}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </button>
+  );
+}
