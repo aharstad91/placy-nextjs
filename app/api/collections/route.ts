@@ -94,7 +94,7 @@ async function sendCollectionEmail(
       "api-key": apiKey,
     },
     body: JSON.stringify({
-      sender: { name: "Placy", email: "hei@placy.no" },
+      sender: { name: "Placy", email: "andreas@aharstad.no" },
       to: [{ email }],
       subject: `Din samling — ${poiCount} steder`,
       htmlContent: `

@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProjectAsync } from "@/lib/data-server";
 import { getCollectionBySlug } from "@/lib/supabase/queries";
-import MagazinePage from "@/components/variants/magazine/MagazinePage";
 import PortraitPage from "@/components/variants/portrait/PortraitPage";
 import ExplorerPage from "@/components/variants/explorer/ExplorerPage";
 import ReportPage from "@/components/variants/report/ReportPage";
@@ -16,7 +15,6 @@ interface PageProps {
 }
 
 const VARIANT_COMPONENTS: Record<string, React.ComponentType<{ project: any }>> = {
-  magazine: MagazinePage,
   portrait: PortraitPage,
   explorer: ExplorerPage,
   report: ReportPage,
