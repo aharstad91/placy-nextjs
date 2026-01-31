@@ -12,6 +12,40 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      collections: {
+        Row: {
+          id: string;
+          slug: string;
+          project_id: string;
+          email: string | null;
+          poi_ids: string[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          project_id: string;
+          email?: string | null;
+          poi_ids: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          project_id?: string;
+          email?: string | null;
+          poi_ids?: string[];
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "collections_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       categories: {
         Row: {
           id: string;
@@ -434,3 +468,4 @@ export type DbStorySection = Tables<"story_sections">;
 export type DbSectionPoi = Tables<"section_pois">;
 export type DbThemeStorySection = Tables<"theme_story_sections">;
 export type DbThemeSectionPoi = Tables<"theme_section_pois">;
+export type DbCollection = Tables<"collections">;

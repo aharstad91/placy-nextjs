@@ -728,3 +728,39 @@ export async function writeStoryStructureWithRollback(
     throw error;
   }
 }
+
+// ============================================
+// Collection Operations
+// ============================================
+
+/**
+ * Create a new collection in Supabase
+ */
+export async function createCollection(data: {
+  slug: string;
+  projectId: string;
+  poiIds: string[];
+  email?: string;
+}): Promise<{ id: string; slug: string }> {
+  const supabase = createServerClient();
+  if (!supabase) {
+    throw new Error("Supabase ikke konfigurert");
+  }
+
+  const { data: row, error } = await supabase
+    .from("collections")
+    .insert({
+      slug: data.slug,
+      project_id: data.projectId,
+      poi_ids: data.poiIds,
+      email: data.email || null,
+    })
+    .select("id, slug")
+    .single();
+
+  if (error || !row) {
+    throw new Error(`Kunne ikke opprette samling: ${error?.message}`);
+  }
+
+  return { id: row.id, slug: row.slug };
+}

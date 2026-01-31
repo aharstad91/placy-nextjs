@@ -572,3 +572,30 @@ export async function getThemeStoryFromSupabase(
 
   return transformThemeStory(ts, transformedSections);
 }
+
+// ============================================
+// Collection Queries
+// ============================================
+
+/**
+ * Fetch a collection by its slug
+ */
+export async function getCollectionBySlug(
+  slug: string
+): Promise<{ id: string; slug: string; project_id: string; poi_ids: string[]; email: string | null } | null> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("collections")
+    .select("id, slug, project_id, poi_ids, email")
+    .eq("slug", slug)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data;
+}
