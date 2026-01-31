@@ -15,8 +15,9 @@ import Map, {
 import type { Coordinates, POI, TravelMode, TimeBudget } from "@/lib/types";
 import { cn, isWithinTimeBudget } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
-import { MapPin, Sparkles } from "lucide-react";
+import { MapPin, Sparkles, Building2, X } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 
 const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
 
@@ -37,6 +38,11 @@ interface ExplorerMapProps {
   travelMode?: TravelMode;
   timeBudget?: TimeBudget;
   initialBounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+  // Geolocation
+  userPosition?: Coordinates | null;
+  userAccuracy?: number | null;
+  geoMode?: GeolocationMode;
+  distanceToProject?: number | null;
 }
 
 export default function ExplorerMap({
@@ -53,9 +59,18 @@ export default function ExplorerMap({
   travelMode = "walk",
   timeBudget = 15,
   initialBounds,
+  userPosition,
+  userAccuracy,
+  geoMode = "loading",
+  distanceToProject,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [infoDismissed, setInfoDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem("placy-geo-info-dismissed") === "true";
+  });
+  const hasFittedBoundsRef = useRef(false);
 
   // Get Lucide icon component by name
   const getIcon = useCallback((iconName: string): LucideIcons.LucideIcon => {
@@ -145,6 +160,35 @@ export default function ExplorerMap({
     setMapLoaded(true);
   }, []);
 
+  // Fit bounds to show both user and project when in hybrid mode (first time only)
+  useEffect(() => {
+    if (
+      !mapRef.current ||
+      !mapLoaded ||
+      !userPosition ||
+      geoMode !== "gps-far" ||
+      hasFittedBoundsRef.current
+    )
+      return;
+
+    hasFittedBoundsRef.current = true;
+
+    const sw: [number, number] = [
+      Math.min(center.lng, userPosition.lng),
+      Math.min(center.lat, userPosition.lat),
+    ];
+    const ne: [number, number] = [
+      Math.max(center.lng, userPosition.lng),
+      Math.max(center.lat, userPosition.lat),
+    ];
+
+    mapRef.current.fitBounds([sw, ne], {
+      padding: 80,
+      maxZoom: 14,
+      duration: 1200,
+    });
+  }, [mapLoaded, userPosition, geoMode, center]);
+
   // Update visible POIs after load
   useEffect(() => {
     if (mapLoaded) {
@@ -181,21 +225,57 @@ export default function ExplorerMap({
           />
         )}
 
-        {/* Project center marker */}
+        {/* Project center marker — changes based on geo mode */}
         <Marker
           longitude={center.lng}
           latitude={center.lat}
           anchor="center"
         >
-          <div className="flex flex-col items-center">
-            <div className="w-10 h-10 bg-sky-500 rounded-full shadow-lg border-2 border-white flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-white" />
+          {geoMode === "gps-near" ? (
+            /* Small neutral pin when user is nearby with GPS */
+            <div className="flex flex-col items-center">
+              <div className="w-6 h-6 bg-gray-400 rounded-full shadow border-2 border-white flex items-center justify-center">
+                <Building2 className="w-3 h-3 text-white" />
+              </div>
             </div>
-            <span className="text-[10px] font-medium text-gray-500 mt-1 bg-white/80 px-1.5 py-0.5 rounded">
-              Du er her
-            </span>
-          </div>
+          ) : (
+            /* Full marker with label when GPS not active or user is far */
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 bg-sky-500 rounded-full shadow-lg border-2 border-white flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-[10px] font-medium text-gray-500 mt-1 bg-white/80 px-1.5 py-0.5 rounded">
+                {geoMode === "gps-far" ? projectName : "Du er her"}
+              </span>
+            </div>
+          )}
         </Marker>
+
+        {/* GPS user position dot */}
+        {userPosition && (geoMode === "gps-near" || geoMode === "gps-far") && (
+          <Marker
+            longitude={userPosition.lng}
+            latitude={userPosition.lat}
+            anchor="center"
+          >
+            <div className="relative flex items-center justify-center">
+              {/* Accuracy circle */}
+              {userAccuracy && userAccuracy < 200 && (
+                <div
+                  className="absolute rounded-full bg-blue-500/10 border border-blue-500/20"
+                  style={{
+                    width: Math.max(24, Math.min(userAccuracy / 2, 80)),
+                    height: Math.max(24, Math.min(userAccuracy / 2, 80)),
+                  }}
+                />
+              )}
+              {/* Pulsing ring */}
+              <div className="absolute w-8 h-8 rounded-full bg-blue-500/30 animate-ping" />
+              {/* Solid dot */}
+              <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg z-10" />
+            </div>
+          </Marker>
+        )}
 
         {/* All POI markers — no clustering */}
         {pois.map((poi) => {
@@ -264,6 +344,26 @@ export default function ExplorerMap({
           );
         })}
       </Map>
+
+      {/* Info banner for hybrid mode (user is far from project) */}
+      {geoMode === "gps-far" && !infoDismissed && distanceToProject && (
+        <div className="absolute top-14 right-2 left-2 md:left-auto md:w-80 z-10">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg px-3 py-2 flex items-center gap-2 text-sm">
+            <span className="text-gray-600 flex-1">
+              Du er {(distanceToProject / 1000).toFixed(1)} km fra {projectName}. Avstander vises herfra.
+            </span>
+            <button
+              onClick={() => {
+                setInfoDismissed(true);
+                sessionStorage.setItem("placy-geo-info-dismissed", "true");
+              }}
+              className="text-gray-400 hover:text-gray-600 p-0.5 shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
