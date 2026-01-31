@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
+import type { Coordinates } from "@/lib/types";
 
 // Kombiner CSS-klasser med clsx
 export function cn(...inputs: ClassValue[]) {
@@ -56,3 +57,21 @@ export const travelModeIcons = {
   bike: "Bike",
   car: "Car",
 } as const;
+
+// Haversine-avstand mellom to koordinater i meter
+export function haversineDistance(a: Coordinates, b: Coordinates): number {
+  const R = 6371000; // jordradius i meter
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+
+  const sinHalfLat = Math.sin(dLat / 2);
+  const sinHalfLng = Math.sin(dLng / 2);
+
+  const h =
+    sinHalfLat * sinHalfLat +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * sinHalfLng * sinHalfLng;
+
+  return 2 * R * Math.asin(Math.sqrt(h));
+}

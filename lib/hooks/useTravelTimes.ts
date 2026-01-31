@@ -68,8 +68,10 @@ function saveToCache(
 export function useTravelTimes(
   projectId: string,
   projectCenter: Coordinates,
-  pois: POI[]
+  pois: POI[],
+  options?: { skipCache?: boolean }
 ): TravelTimesResult {
+  const skipCache = options?.skipCache ?? false;
   const { travelMode } = useTravelSettings();
   const [result, setResult] = useState<TravelTimesResult>({
     pois: pois,
@@ -87,8 +89,8 @@ export function useTravelTimes(
       return;
     }
 
-    // Check cache first
-    const cached = getFromCache(projectId, travelMode);
+    // Check cache first (skip when using GPS origin)
+    const cached = skipCache ? null : getFromCache(projectId, travelMode);
     if (cached) {
       const updatedPOIs = pois.map((poi) => ({
         ...poi,
@@ -150,8 +152,10 @@ export function useTravelTimes(
         );
       }
 
-      // Save to cache
-      saveToCache(projectId, travelMode, travelTimes);
+      // Save to cache (skip when using GPS origin to avoid pollution)
+      if (!skipCache) {
+        saveToCache(projectId, travelMode, travelTimes);
+      }
 
       // Update POIs with travel times
       const updatedPOIs = pois.map((poi) => ({
@@ -175,7 +179,7 @@ export function useTravelTimes(
         error: "Failed to calculate travel times",
       });
     }
-  }, [projectId, projectCenter, pois, travelMode]);
+  }, [projectId, projectCenter, pois, travelMode, skipCache]);
 
   useEffect(() => {
     fetchTravelTimes();

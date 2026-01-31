@@ -6,7 +6,9 @@ import { useTravelSettings } from "@/lib/store";
 import { useCollection } from "@/lib/collection-store";
 import { useTravelTimes } from "@/lib/hooks/useTravelTimes";
 import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
-import { isWithinTimeBudget } from "@/lib/utils";
+import { isWithinTimeBudget, haversineDistance } from "@/lib/utils";
+import { useGeolocation } from "@/lib/hooks/useGeolocation";
+import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerMap from "./ExplorerMap";
 import ExplorerPanel from "./ExplorerPanel";
@@ -39,6 +41,35 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
   const [mapZoom, setMapZoom] = useState(14);
   const [activePackage, setActivePackage] = useState<string | null>("all");
 
+  // Geolocation
+  const geo = useGeolocation(project.centerCoordinates);
+
+  // Throttle travel time recalculation for GPS: only when moved >100m and >30s since last calc
+  const lastCalcOriginRef = useRef(project.centerCoordinates);
+  const lastCalcTimeRef = useRef(0);
+  const throttledOrigin = useMemo(() => {
+    if (geo.mode !== "gps-near" || !geo.userPosition) {
+      // Reset refs when not in GPS-near mode
+      lastCalcOriginRef.current = project.centerCoordinates;
+      lastCalcTimeRef.current = 0;
+      return geo.effectiveOrigin;
+    }
+    const distMoved = haversineDistance(geo.userPosition, lastCalcOriginRef.current);
+    const elapsed = Date.now() - lastCalcTimeRef.current;
+    if (distMoved > 100 && elapsed > 30_000) {
+      lastCalcOriginRef.current = geo.userPosition;
+      lastCalcTimeRef.current = Date.now();
+      return geo.userPosition;
+    }
+    // First GPS fix — always trigger
+    if (lastCalcTimeRef.current === 0) {
+      lastCalcOriginRef.current = geo.userPosition;
+      lastCalcTimeRef.current = Date.now();
+      return geo.userPosition;
+    }
+    return lastCalcOriginRef.current;
+  }, [geo.mode, geo.userPosition, geo.effectiveOrigin, project.centerCoordinates]);
+
   // Route state
   const [routeData, setRouteData] = useState<{
     coordinates: [number, number][];
@@ -53,11 +84,12 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     return project.pois.filter((poi) => collectionSet.has(poi.id));
   }, [project.pois, collection]);
 
-  // Travel times — enriches POIs with walk times
+  // Travel times — enriches POIs with walk times (uses GPS origin when near)
   const { pois: poisWithTravelTimes, loading: travelTimesLoading } = useTravelTimes(
     project.id,
-    project.centerCoordinates,
-    basePOIs
+    throttledOrigin,
+    basePOIs,
+    { skipCache: geo.mode === "gps-near" }
   );
 
   // POI lookup map
@@ -92,7 +124,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
 
   // Sort visible POIs by walk time (nearest first), fallback to euclidean distance
   const sortedVisiblePOIs = useMemo(() => {
-    const center = project.centerCoordinates;
+    const center = geo.effectiveOrigin;
     return [...visiblePOIs].sort((a, b) => {
       const timeA = a.travelTime?.walk;
       const timeB = b.travelTime?.walk;
@@ -104,7 +136,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
       const distB = Math.hypot(b.coordinates.lat - center.lat, b.coordinates.lng - center.lng);
       return distA - distB;
     });
-  }, [visiblePOIs, project.centerCoordinates]);
+  }, [visiblePOIs, geo.effectiveOrigin]);
 
   // Package selection
   const handleSelectPackage = useCallback((packageId: string) => {
@@ -185,7 +217,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     setMapZoom(zoom);
   }, []);
 
-  // Fetch walking route when a POI is selected
+  // Fetch route when a POI is selected (from effective origin — GPS or hotel)
   useEffect(() => {
     if (!activePOI) {
       setRouteData(null);
@@ -198,7 +230,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const origin = `${project.centerCoordinates.lng},${project.centerCoordinates.lat}`;
+    const origin = `${geo.effectiveOrigin.lng},${geo.effectiveOrigin.lat}`;
     const destination = `${poi.coordinates.lng},${poi.coordinates.lat}`;
     const profileMap: Record<TravelMode, string> = {
       walk: "walking",
@@ -223,7 +255,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
       });
 
     return () => controller.abort();
-  }, [activePOI, poiMap, project.centerCoordinates, travelMode]);
+  }, [activePOI, poiMap, geo.effectiveOrigin, travelMode]);
 
   // Calculate initial bounds for collection view (fit all collection POIs)
   const collectionBounds = useMemo(() => {
@@ -341,6 +373,11 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     travelMode,
     timeBudget,
     initialBounds: collectionBounds,
+    // Geolocation
+    userPosition: geo.userPosition,
+    userAccuracy: geo.accuracy,
+    geoMode: geo.mode,
+    distanceToProject: geo.distanceToProject,
   };
 
   return (
