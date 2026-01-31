@@ -13,6 +13,8 @@ import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerMap from "./ExplorerMap";
 import ExplorerPanel from "./ExplorerPanel";
 import ExplorerBottomSheet from "./ExplorerBottomSheet";
+import ExplorerNavbar from "./ExplorerNavbar";
+import ExplorerPOIList from "./ExplorerPOIList";
 import CollectionDrawer from "./CollectionDrawer";
 
 interface CollectionData {
@@ -308,31 +310,36 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
   // Snap points for mobile bottom sheet (px)
   const snapPoints = [140, typeof window !== "undefined" ? window.innerHeight * 0.5 : 400, typeof window !== "undefined" ? window.innerHeight * 0.9 : 720];
 
-  const panelProps = {
+  // Props shared between mobile panel and desktop POI list
+  const poiListProps = {
     pois: sortedVisiblePOIs,
-    allPOIs: poisWithTravelTimes,
-    categories: project.categories,
-    activeCategories,
     activePOI,
     highlightedPOI,
     contextHint,
     onPOIClick: handlePOIClick,
-    onToggleCategory: toggleCategory,
-    onToggleAll: toggleAllCategories,
     visibleCount: visiblePOIs.length,
     totalCount: filteredPOIs.length,
     travelTimesLoading,
     projectName: project.name,
     openingHoursData,
     travelMode,
-    onSetTravelMode: setTravelMode,
-    // Collection props — hidden in collection view (read-only)
     ...(isCollectionView
       ? {}
       : {
           collectionPOIs,
           onToggleCollection: handleToggleCollection,
         }),
+  };
+
+  // Mobile panel needs extra props for category filters etc.
+  const panelProps = {
+    ...poiListProps,
+    allPOIs: poisWithTravelTimes,
+    categories: project.categories,
+    activeCategories,
+    onToggleCategory: toggleCategory,
+    onToggleAll: toggleAllCategories,
+    onSetTravelMode: setTravelMode,
     isCollectionView,
     collectionPoiCount: collection?.poiIds.length,
     collectionCreatedAt: collection?.createdAt,
@@ -360,27 +367,58 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     distanceToProject: geo.distanceToProject,
   };
 
+  // Desktop map padding to compensate for navbar + floating panel
+  const desktopMapPadding = {
+    left: 60 + 380 + 16, // navbar + panel + gap
+    top: 16,
+    right: 16,
+    bottom: 16,
+  };
+
   return (
     <div className="h-screen w-screen relative overflow-hidden bg-white">
-      {/* Map — fullscreen on mobile, left half on desktop */}
-      <div className="absolute inset-0 md:relative md:w-1/2 md:h-full md:float-left">
-        <ExplorerMap {...mapProps} />
+      {/* ===== DESKTOP LAYOUT (lg+) ===== */}
+
+      {/* Map — fullscreen behind everything, offset for navbar */}
+      <div className="absolute inset-0 lg:pl-[60px]">
+        <ExplorerMap
+          {...mapProps}
+          mapPadding={desktopMapPadding}
+        />
       </div>
 
-      {/* Desktop panel — right half */}
-      <div className="hidden md:flex md:flex-col md:w-1/2 md:h-full md:float-right overflow-hidden">
-        <ExplorerPanel {...panelProps} />
+      {/* Desktop: Navbar (left edge) */}
+      {!isCollectionView && (
+        <div className="hidden lg:block">
+          <ExplorerNavbar
+            travelMode={travelMode}
+            onSetTravelMode={setTravelMode}
+            packages={EXPLORER_PACKAGES}
+            activeCategories={activeCategories}
+            categories={project.categories}
+            onSelectPackage={handleSelectPackage}
+            onToggleCategory={toggleCategory}
+            collectionCount={collectionPOIs.length}
+            onOpenCollection={() => setCollectionDrawerOpen(true)}
+          />
+        </div>
+      )}
+
+      {/* Desktop: Floating POI list */}
+      <div className="hidden lg:flex flex-col absolute top-4 bottom-4 left-[76px] w-[380px] bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.12)] z-30 overflow-hidden">
+        <ExplorerPOIList {...poiListProps} />
       </div>
 
-      {/* Mobile bottom sheet */}
-      <div className="md:hidden">
+      {/* ===== MOBILE LAYOUT (below lg) ===== */}
+
+      {/* Mobile: Map fullscreen (already rendered above via absolute inset-0) */}
+
+      {/* Mobile: Bottom sheet */}
+      <div className="lg:hidden">
         <ExplorerBottomSheet
           snapPoints={snapPoints}
           initialSnap={1}
-          onSnapChange={(snapIndex) => {
-            // When opening a POI, move to half if in peek
-            // This is handled elsewhere via active POI
-          }}
+          onSnapChange={() => {}}
         >
           <ExplorerPanel {...panelProps} />
         </ExplorerBottomSheet>

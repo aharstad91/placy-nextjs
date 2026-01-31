@@ -37,6 +37,7 @@ interface ExplorerMapProps {
   } | null;
   travelMode?: TravelMode;
   initialBounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+  mapPadding?: { left: number; top: number; right: number; bottom: number };
   // Geolocation
   userPosition?: Coordinates | null;
   userAccuracy?: number | null;
@@ -57,6 +58,7 @@ export default function ExplorerMap({
   routeData,
   travelMode = "walk",
   initialBounds,
+  mapPadding,
   userPosition,
   userAccuracy,
   geoMode = "loading",
@@ -84,9 +86,9 @@ export default function ExplorerMap({
         [initialBounds.minLng, initialBounds.minLat],
         [initialBounds.maxLng, initialBounds.maxLat],
       ],
-      { padding: 60, duration: 0 }
+      { padding: mapPadding || 60, duration: 0 }
     );
-  }, [mapLoaded, initialBounds]);
+  }, [mapLoaded, initialBounds, mapPadding]);
 
   // Fly to active POI
   useEffect(() => {
@@ -97,9 +99,10 @@ export default function ExplorerMap({
         center: [poi.coordinates.lng, poi.coordinates.lat],
         zoom: Math.max(mapRef.current.getZoom(), 15),
         duration: 800,
+        padding: mapPadding,
       });
     }
-  }, [activePOI, pois, mapLoaded]);
+  }, [activePOI, pois, mapLoaded, mapPadding]);
 
   // Update visible POIs when map moves
   const updateVisiblePOIs = useCallback(() => {
@@ -181,11 +184,11 @@ export default function ExplorerMap({
     ];
 
     mapRef.current.fitBounds([sw, ne], {
-      padding: 80,
+      padding: mapPadding || 80,
       maxZoom: 14,
       duration: 1200,
     });
-  }, [mapLoaded, userPosition, geoMode, center]);
+  }, [mapLoaded, userPosition, geoMode, center, mapPadding]);
 
   // Update visible POIs after load
   useEffect(() => {
