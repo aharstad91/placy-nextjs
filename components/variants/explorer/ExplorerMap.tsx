@@ -36,6 +36,7 @@ interface ExplorerMapProps {
   } | null;
   travelMode?: TravelMode;
   timeBudget?: TimeBudget;
+  initialBounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
 }
 
 export default function ExplorerMap({
@@ -51,6 +52,7 @@ export default function ExplorerMap({
   routeData,
   travelMode = "walk",
   timeBudget = 15,
+  initialBounds,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -60,6 +62,18 @@ export default function ExplorerMap({
     const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[iconName];
     return Icon || LucideIcons.MapPin;
   }, []);
+
+  // Fit to initial bounds (for collection view)
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !initialBounds) return;
+    mapRef.current.fitBounds(
+      [
+        [initialBounds.minLng, initialBounds.minLat],
+        [initialBounds.maxLng, initialBounds.maxLat],
+      ],
+      { padding: 60, duration: 0 }
+    );
+  }, [mapLoaded, initialBounds]);
 
   // Fly to active POI
   useEffect(() => {

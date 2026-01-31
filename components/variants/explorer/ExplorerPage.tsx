@@ -13,11 +13,18 @@ import ExplorerPanel from "./ExplorerPanel";
 import ExplorerBottomSheet from "./ExplorerBottomSheet";
 import CollectionDrawer from "./CollectionDrawer";
 
-interface ExplorerPageProps {
-  project: Project;
+interface CollectionData {
+  slug: string;
+  poiIds: string[];
 }
 
-export default function ExplorerPage({ project }: ExplorerPageProps) {
+interface ExplorerPageProps {
+  project: Project;
+  collection?: CollectionData;
+}
+
+export default function ExplorerPage({ project, collection }: ExplorerPageProps) {
+  const isCollectionView = !!collection;
   const { travelMode, timeBudget, setTravelMode, setTimeBudget } = useTravelSettings();
   const { collectionPOIs, addToCollection, removeFromCollection, clearCollection } = useCollection();
   const [collectionDrawerOpen, setCollectionDrawerOpen] = useState(false);
@@ -39,11 +46,18 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
   } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Filter POIs if in collection view
+  const basePOIs = useMemo(() => {
+    if (!collection) return project.pois;
+    const collectionSet = new Set(collection.poiIds);
+    return project.pois.filter((poi) => collectionSet.has(poi.id));
+  }, [project.pois, collection]);
+
   // Travel times — enriches POIs with walk times
   const { pois: poisWithTravelTimes, loading: travelTimesLoading } = useTravelTimes(
     project.id,
     project.centerCoordinates,
-    project.pois
+    basePOIs
   );
 
   // POI lookup map
@@ -211,6 +225,19 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
     return () => controller.abort();
   }, [activePOI, poiMap, project.centerCoordinates, travelMode]);
 
+  // Calculate initial bounds for collection view (fit all collection POIs)
+  const collectionBounds = useMemo(() => {
+    if (!isCollectionView || basePOIs.length === 0) return undefined;
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    for (const poi of basePOIs) {
+      if (poi.coordinates.lat < minLat) minLat = poi.coordinates.lat;
+      if (poi.coordinates.lat > maxLat) maxLat = poi.coordinates.lat;
+      if (poi.coordinates.lng < minLng) minLng = poi.coordinates.lng;
+      if (poi.coordinates.lng > maxLng) maxLng = poi.coordinates.lng;
+    }
+    return { minLat, maxLat, minLng, maxLng };
+  }, [isCollectionView, basePOIs]);
+
   // Generate contextual hint based on viewport
   const contextHint = useMemo(() => {
     if (visiblePOIs.length === 0 && filteredPOIs.length > 0) {
@@ -288,9 +315,16 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
     poisWithinBudgetCount: poisWithinBudget.length,
     searchQuery,
     onSearchChange: setSearchQuery,
-    collectionPOIs,
-    onToggleCollection: handleToggleCollection,
-    onOpenCollection: () => setCollectionDrawerOpen(true),
+    // Collection props — hidden in collection view (read-only)
+    ...(isCollectionView
+      ? {}
+      : {
+          collectionPOIs,
+          onToggleCollection: handleToggleCollection,
+          onOpenCollection: () => setCollectionDrawerOpen(true),
+        }),
+    isCollectionView,
+    collectionPoiCount: collection?.poiIds.length,
   };
 
   const mapProps = {
@@ -306,6 +340,7 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
     routeData,
     travelMode,
     timeBudget,
+    initialBounds: collectionBounds,
   };
 
   return (

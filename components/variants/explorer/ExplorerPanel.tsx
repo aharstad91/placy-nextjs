@@ -46,6 +46,8 @@ interface ExplorerPanelProps {
   collectionPOIs?: string[];
   onToggleCollection?: (poiId: string) => void;
   onOpenCollection?: () => void;
+  isCollectionView?: boolean;
+  collectionPoiCount?: number;
 }
 
 export default function ExplorerPanel({
@@ -76,6 +78,8 @@ export default function ExplorerPanel({
   collectionPOIs = [],
   onToggleCollection,
   onOpenCollection,
+  isCollectionView,
+  collectionPoiCount,
 }: ExplorerPanelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -132,19 +136,32 @@ export default function ExplorerPanel({
         {/* Dark header — matches theme story modal */}
         <div className="p-4 pb-3 bg-gray-900 text-white">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-            Neighborhood Story
+            {isCollectionView ? "Din samling" : "Neighborhood Story"}
           </h2>
           <h1 className="text-xl font-bold mb-1">
-            {projectName ? `Utforsk ${projectName}` : "Utforsk nabolaget"}
+            {isCollectionView
+              ? `${collectionPoiCount ?? totalCount} steder`
+              : projectName ? `Utforsk ${projectName}` : "Utforsk nabolaget"}
           </h1>
           <p className="text-sm text-gray-400">
-            {totalCount} steder funnet
-            {poisWithinBudgetCount != null && (
+            {isCollectionView ? (
+              <a
+                href={typeof window !== "undefined" ? window.location.pathname : "#"}
+                className="text-sky-400 hover:text-sky-300 transition-colors"
+              >
+                Utforsk alle steder
+              </a>
+            ) : (
               <>
-                <br />
-                <span className="text-sky-400">
-                  {poisWithinBudgetCount} highlighted within ≤{timeBudget} min
-                </span>
+                {totalCount} steder funnet
+                {poisWithinBudgetCount != null && (
+                  <>
+                    <br />
+                    <span className="text-sky-400">
+                      {poisWithinBudgetCount} highlighted within ≤{timeBudget} min
+                    </span>
+                  </>
+                )}
               </>
             )}
           </p>
@@ -224,8 +241,8 @@ export default function ExplorerPanel({
           </div>
         )}
 
-        {/* Package buttons */}
-        {onSelectPackage && (
+        {/* Package buttons — hidden in collection view */}
+        {onSelectPackage && !isCollectionView && (
           <div className="px-4 pt-3 pb-1">
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {EXPLORER_PACKAGES.map((pkg, idx) => {
@@ -261,8 +278,8 @@ export default function ExplorerPanel({
           </div>
         )}
 
-        {/* Category filters — horizontal scroll */}
-        <div className="px-4 py-2">
+        {/* Category filters — horizontal scroll — hidden in collection view */}
+        {!isCollectionView && <div className="px-4 py-2">
           <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
             {availableCategories.map((category) => {
               const Icon = getIcon(category.icon);
@@ -295,7 +312,7 @@ export default function ExplorerPanel({
               );
             })}
           </div>
-        </div>
+        </div>}
 
         {/* Count indicator + context hint */}
         <div className="px-4 pb-2 flex items-center gap-2">

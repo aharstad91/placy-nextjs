@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProjectAsync } from "@/lib/data-server";
+import { getCollectionBySlug } from "@/lib/supabase/queries";
 import MagazinePage from "@/components/variants/magazine/MagazinePage";
 import PortraitPage from "@/components/variants/portrait/PortraitPage";
 import ExplorerPage from "@/components/variants/explorer/ExplorerPage";
@@ -11,6 +12,7 @@ interface PageProps {
     project: string;
     variant: string;
   }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 const VARIANT_COMPONENTS: Record<string, React.ComponentType<{ project: any }>> = {
@@ -20,8 +22,9 @@ const VARIANT_COMPONENTS: Record<string, React.ComponentType<{ project: any }>> 
   report: ReportPage,
 };
 
-export default async function VariantPage({ params }: PageProps) {
+export default async function VariantPage({ params, searchParams }: PageProps) {
   const { customer, project: projectSlug, variant } = await params;
+  const resolvedSearchParams = await searchParams;
 
   const VariantComponent = VARIANT_COMPONENTS[variant];
   if (!VariantComponent) {
@@ -31,6 +34,23 @@ export default async function VariantPage({ params }: PageProps) {
   const projectData = await getProjectAsync(customer, projectSlug);
   if (!projectData) {
     notFound();
+  }
+
+  // If ?c=<slug> is present and this is the explorer variant, fetch collection
+  if (variant === "explorer" && typeof resolvedSearchParams.c === "string") {
+    const collection = await getCollectionBySlug(resolvedSearchParams.c);
+    if (collection) {
+      return (
+        <ExplorerPage
+          project={projectData}
+          collection={{
+            slug: collection.slug,
+            poiIds: collection.poi_ids,
+          }}
+        />
+      );
+    }
+    // Invalid slug — render normal explorer (could add toast later)
   }
 
   return <VariantComponent project={projectData} />;
