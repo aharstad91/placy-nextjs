@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useEffect, useCallback } from "react";
-import type { POI, TravelMode } from "@/lib/types";
+import type { POI, Category, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
 import { Compass } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import ExplorerPOICard from "./ExplorerPOICard";
 
 interface ExplorerPOIListProps {
@@ -21,6 +22,10 @@ interface ExplorerPOIListProps {
   travelMode?: TravelMode;
   collectionPOIs?: string[];
   onToggleCollection?: (poiId: string) => void;
+  // Category tag filters (shown when a package is selected)
+  filterCategories?: Category[];
+  activeCategories?: Set<string>;
+  onToggleCategory?: (categoryId: string) => void;
 }
 
 export default function ExplorerPOIList({
@@ -37,6 +42,9 @@ export default function ExplorerPOIList({
   travelMode = "walk",
   collectionPOIs = [],
   onToggleCollection,
+  filterCategories,
+  activeCategories,
+  onToggleCategory,
 }: ExplorerPOIListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -61,6 +69,11 @@ export default function ExplorerPOIList({
     []
   );
 
+  const getIcon = (iconName: string): LucideIcons.LucideIcon => {
+    const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[iconName];
+    return Icon || LucideIcons.MapPin;
+  };
+
   return (
     <>
       {/* Header */}
@@ -80,6 +93,35 @@ export default function ExplorerPOIList({
           <p className="text-xs text-sky-600 mt-1">{contextHint}</p>
         )}
       </div>
+
+      {/* Category filter tags — shown when a specific package is selected */}
+      {filterCategories && filterCategories.length > 0 && activeCategories && onToggleCategory && (
+        <div className="flex-shrink-0 px-3 py-2 border-b border-gray-100">
+          <div className="flex flex-wrap gap-1.5">
+            {filterCategories.map((cat) => {
+              const Icon = getIcon(cat.icon);
+              const isActive = activeCategories.has(cat.id);
+
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => onToggleCategory(cat.id)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors",
+                    isActive
+                      ? "text-white"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  )}
+                  style={isActive ? { backgroundColor: cat.color } : undefined}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {cat.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* POI list */}
       <div ref={listRef} className="flex-1 overflow-y-auto">

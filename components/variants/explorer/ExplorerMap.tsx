@@ -140,23 +140,6 @@ export default function ExplorerMap({
         }
       });
 
-      // Add 3D building extrusions
-      const buildingLayer = map.getLayer("3d-buildings");
-      if (!buildingLayer) {
-        map.addLayer({
-          id: "3d-buildings",
-          source: "composite",
-          "source-layer": "building",
-          type: "fill-extrusion",
-          minzoom: 14,
-          paint: {
-            "fill-extrusion-color": "#d4d4d8",
-            "fill-extrusion-height": ["get", "height"],
-            "fill-extrusion-base": ["get", "min_height"],
-            "fill-extrusion-opacity": 0.5,
-          },
-        });
-      }
     }
     setMapLoaded(true);
   }, []);
@@ -207,7 +190,7 @@ export default function ExplorerMap({
           longitude: center.lng,
           latitude: center.lat,
           zoom: 15,
-          pitch: 45,
+          pitch: 0,
         }}
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE}
@@ -215,7 +198,7 @@ export default function ExplorerMap({
         onMoveEnd={updateVisiblePOIs}
         onZoomEnd={updateVisiblePOIs}
       >
-        <NavigationControl position="top-right" visualizePitch={true} />
+        <NavigationControl position="top-right" />
 
         {/* Route overlay */}
         {routeData && (

@@ -367,9 +367,21 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     distanceToProject: geo.distanceToProject,
   };
 
-  // Desktop map padding to compensate for panel overlay
+  // Categories for the active package (shown as tags in the POI list)
+  const filterCategories = useMemo(() => {
+    if (!activePackage || activePackage === "all") return undefined;
+    const pkg = EXPLORER_PACKAGES.find((p) => p.id === activePackage);
+    if (!pkg) return undefined;
+    const catMap = new Map(project.categories.map((c) => [c.id, c]));
+    return pkg.categoryIds
+      .map((id) => catMap.get(id))
+      .filter((c): c is Category => !!c);
+  }, [activePackage, project.categories]);
+
+  // Desktop: 40% list / 60% map. Panel = 40vw - 60px navbar
+  // Using a fixed calc approach for the absolute-positioned panel
   const desktopMapPadding = {
-    left: 380, // panel width (map already offset by navbar via pl-[60px])
+    left: 0, // map starts after the panel via CSS, no extra padding needed
     top: 0,
     right: 0,
     bottom: 0,
@@ -379,14 +391,6 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     <div className="h-screen w-screen relative overflow-hidden bg-white">
       {/* ===== DESKTOP LAYOUT (lg+) ===== */}
 
-      {/* Map — fullscreen behind everything, offset for navbar */}
-      <div className="absolute inset-0 lg:pl-[60px]">
-        <ExplorerMap
-          {...mapProps}
-          mapPadding={desktopMapPadding}
-        />
-      </div>
-
       {/* Desktop: Navbar (left edge) */}
       {!isCollectionView && (
         <div className="hidden lg:block">
@@ -394,24 +398,48 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
             travelMode={travelMode}
             onSetTravelMode={setTravelMode}
             packages={EXPLORER_PACKAGES}
+            activePackage={activePackage}
             activeCategories={activeCategories}
             categories={project.categories}
             onSelectPackage={handleSelectPackage}
-            onToggleCategory={toggleCategory}
             collectionCount={collectionPOIs.length}
             onOpenCollection={() => setCollectionDrawerOpen(true)}
           />
         </div>
       )}
 
-      {/* Desktop: POI list — flush with navbar, full height */}
-      <div className="hidden lg:flex flex-col absolute top-0 bottom-0 left-[60px] w-[380px] bg-white border-r border-gray-200 z-30 overflow-hidden">
-        <ExplorerPOIList {...poiListProps} />
+      {/* Desktop: 40/60 split — navbar + list panel | map */}
+      <div className="hidden lg:flex h-full">
+        {/* Left: navbar spacer + POI list (40%) */}
+        <div className="flex h-full" style={{ width: "40%" }}>
+          {/* Navbar spacer */}
+          <div className="w-[60px] flex-shrink-0" />
+          {/* POI list */}
+          <div className="flex-1 flex flex-col border-r border-gray-200 overflow-hidden bg-white">
+            <ExplorerPOIList
+              {...poiListProps}
+              filterCategories={filterCategories}
+              activeCategories={activeCategories}
+              onToggleCategory={toggleCategory}
+            />
+          </div>
+        </div>
+
+        {/* Right: Map (60%) */}
+        <div className="flex-1 h-full">
+          <ExplorerMap
+            {...mapProps}
+            mapPadding={desktopMapPadding}
+          />
+        </div>
       </div>
 
       {/* ===== MOBILE LAYOUT (below lg) ===== */}
 
-      {/* Mobile: Map fullscreen (already rendered above via absolute inset-0) */}
+      {/* Mobile: Map fullscreen */}
+      <div className="lg:hidden absolute inset-0">
+        <ExplorerMap {...mapProps} />
+      </div>
 
       {/* Mobile: Bottom sheet */}
       <div className="lg:hidden">
