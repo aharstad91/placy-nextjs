@@ -9,15 +9,14 @@ import {
 } from "react";
 import Map, {
   NavigationControl,
-  Source,
-  Layer,
   Marker,
   type MapRef,
-  type MapMouseEvent,
 } from "react-map-gl/mapbox";
-import type { Coordinates, POI } from "@/lib/types";
+import type { Coordinates, POI, TravelMode, TimeBudget } from "@/lib/types";
+import { cn, isWithinTimeBudget } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
-import { MapPin } from "lucide-react";
+import { MapPin, Sparkles } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 
 const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
 
@@ -35,6 +34,8 @@ interface ExplorerMapProps {
     coordinates: [number, number][];
     travelTime: number;
   } | null;
+  travelMode?: TravelMode;
+  timeBudget?: TimeBudget;
 }
 
 export default function ExplorerMap({
@@ -48,35 +49,17 @@ export default function ExplorerMap({
   onZoomChange,
   projectName,
   routeData,
+  travelMode = "walk",
+  timeBudget = 15,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Build GeoJSON for clustering
-  const geojsonData = useMemo(() => {
-    return {
-      type: "FeatureCollection" as const,
-      features: pois.map((poi) => ({
-        type: "Feature" as const,
-        id: poi.id,
-        geometry: {
-          type: "Point" as const,
-          coordinates: [poi.coordinates.lng, poi.coordinates.lat],
-        },
-        properties: {
-          id: poi.id,
-          name: poi.name,
-          categoryId: poi.category.id,
-          categoryColor: poi.category.color,
-          categoryIcon: poi.category.icon,
-          categoryName: poi.category.name,
-          rating: poi.googleRating || 0,
-          hasEditorial: poi.editorialHook ? 1 : 0,
-          priority: poi.storyPriority || "filler",
-        },
-      })),
-    };
-  }, [pois]);
+  // Get Lucide icon component by name
+  const getIcon = useCallback((iconName: string): LucideIcons.LucideIcon => {
+    const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[iconName];
+    return Icon || LucideIcons.MapPin;
+  }, []);
 
   // Fly to active POI
   useEffect(() => {
@@ -100,28 +83,14 @@ export default function ExplorerMap({
     if (!bounds) return;
 
     const visibleIds = new Set<string>();
-    let clusterCount = 0;
 
-    // Check which POIs are in viewport
     for (const poi of pois) {
       if (bounds.contains([poi.coordinates.lng, poi.coordinates.lat])) {
         visibleIds.add(poi.id);
       }
     }
 
-    // Count visible clusters
-    try {
-      const canvas = map.getCanvas();
-      const features = map.queryRenderedFeatures(
-        [[0, 0], [canvas.width, canvas.height]] as [mapboxgl.PointLike, mapboxgl.PointLike],
-        { layers: ["explorer-clusters"] }
-      );
-      clusterCount = features?.length || 0;
-    } catch {
-      // Layer may not exist yet
-    }
-
-    onViewportPOIs(visibleIds, clusterCount);
+    onViewportPOIs(visibleIds, 0);
     onZoomChange(map.getZoom());
   }, [pois, mapLoaded, onViewportPOIs, onZoomChange]);
 
@@ -140,6 +109,24 @@ export default function ExplorerMap({
           map.setLayoutProperty(layer.id, "visibility", "none");
         }
       });
+
+      // Add 3D building extrusions
+      const buildingLayer = map.getLayer("3d-buildings");
+      if (!buildingLayer) {
+        map.addLayer({
+          id: "3d-buildings",
+          source: "composite",
+          "source-layer": "building",
+          type: "fill-extrusion",
+          minzoom: 14,
+          paint: {
+            "fill-extrusion-color": "#d4d4d8",
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "min_height"],
+            "fill-extrusion-opacity": 0.5,
+          },
+        });
+      }
     }
     setMapLoaded(true);
   }, []);
@@ -152,60 +139,6 @@ export default function ExplorerMap({
     }
   }, [mapLoaded, updateVisiblePOIs]);
 
-  // Handle cluster click — zoom into the cluster
-  const onClusterClick = useCallback(
-    (e: MapMouseEvent) => {
-      const map = mapRef.current?.getMap();
-      if (!map) return;
-
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ["explorer-clusters"],
-      });
-
-      if (!features.length) return;
-
-      const feature = features[0];
-      const clusterId = feature.properties?.cluster_id;
-      const source = map.getSource("explorer-pois") as mapboxgl.GeoJSONSource;
-
-      if (source && clusterId !== undefined) {
-        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-          if (err || zoom === undefined || zoom === null) return;
-          const coords = (feature.geometry as GeoJSON.Point).coordinates;
-          map.flyTo({
-            center: [coords[0], coords[1]],
-            zoom: zoom + 0.5,
-            duration: 500,
-          });
-        });
-      }
-    },
-    []
-  );
-
-  // Handle unclustered point click
-  const onPointClick = useCallback(
-    (features: mapboxgl.GeoJSONFeature[]) => {
-      if (!features.length) return;
-      const poiId = features[0].properties?.id;
-      if (poiId) {
-        onPOIClick(poiId);
-      }
-    },
-    [onPOIClick]
-  );
-
-  // Cursor changes
-  const onMouseEnterCluster = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) map.getCanvas().style.cursor = "pointer";
-  }, []);
-
-  const onMouseLeaveCluster = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) map.getCanvas().style.cursor = "";
-  }, []);
-
   return (
     <div className="w-full h-full relative">
       <Map
@@ -214,43 +147,23 @@ export default function ExplorerMap({
         initialViewState={{
           longitude: center.lng,
           latitude: center.lat,
-          zoom: 14,
+          zoom: 15,
+          pitch: 45,
         }}
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE}
         onLoad={onLoad}
         onMoveEnd={updateVisiblePOIs}
         onZoomEnd={updateVisiblePOIs}
-        interactiveLayerIds={["explorer-clusters", "explorer-unclustered"]}
-        onClick={(e) => {
-          const map = mapRef.current?.getMap();
-          if (!map) return;
-          const clusterFeatures = map.queryRenderedFeatures(e.point, {
-            layers: ["explorer-clusters"],
-          });
-          if (clusterFeatures.length) {
-            onClusterClick(e);
-            return;
-          }
-          const pointFeatures = map.queryRenderedFeatures(e.point, {
-            layers: ["explorer-unclustered"],
-          });
-          if (pointFeatures.length) {
-            onPointClick(pointFeatures);
-            return;
-          }
-        }}
-        onMouseEnter={onMouseEnterCluster}
-        onMouseLeave={onMouseLeaveCluster}
       >
-        <NavigationControl position="top-right" />
+        <NavigationControl position="top-right" visualizePitch={true} />
 
-        {/* Walking route overlay */}
+        {/* Route overlay */}
         {routeData && (
           <RouteLayer
             coordinates={routeData.coordinates}
             travelTime={routeData.travelTime}
-            travelMode="walk"
+            travelMode={travelMode}
           />
         )}
 
@@ -270,132 +183,72 @@ export default function ExplorerMap({
           </div>
         </Marker>
 
-        {/* Clustered POI source */}
-        <Source
-          id="explorer-pois"
-          type="geojson"
-          data={geojsonData}
-          cluster={true}
-          clusterMaxZoom={15}
-          clusterRadius={50}
-        >
-          {/* Cluster circles */}
-          <Layer
-            id="explorer-clusters"
-            type="circle"
-            filter={["has", "point_count"]}
-            paint={{
-              "circle-color": [
-                "step",
-                ["get", "point_count"],
-                "#94a3b8",
-                10,
-                "#64748b",
-                30,
-                "#475569",
-              ],
-              "circle-radius": [
-                "step",
-                ["get", "point_count"],
-                18,
-                10,
-                24,
-                30,
-                30,
-              ],
-              "circle-stroke-width": 2,
-              "circle-stroke-color": "#ffffff",
-            }}
-          />
+        {/* All POI markers — no clustering */}
+        {pois.map((poi) => {
+          const withinBudget = isWithinTimeBudget(poi.travelTime?.[travelMode], timeBudget);
+          const Icon = getIcon(poi.category.icon);
+          const isThisActive = activePOI === poi.id;
 
-          {/* Cluster count labels */}
-          <Layer
-            id="explorer-cluster-count"
-            type="symbol"
-            filter={["has", "point_count"]}
-            layout={{
-              "text-field": ["get", "point_count_abbreviated"],
-              "text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
-              "text-size": 13,
-              "text-allow-overlap": true,
-            }}
-            paint={{
-              "text-color": "#ffffff",
-            }}
-          />
-
-          {/* Individual unclustered POI circles */}
-          <Layer
-            id="explorer-unclustered"
-            type="circle"
-            filter={["!", ["has", "point_count"]]}
-            paint={{
-              "circle-color": ["get", "categoryColor"],
-              "circle-radius": [
-                "case",
-                ["==", ["get", "hasEditorial"], 1],
-                8,
-                6,
-              ],
-              "circle-stroke-width": [
-                "case",
-                ["==", ["get", "hasEditorial"], 1],
-                2.5,
-                1.5,
-              ],
-              "circle-stroke-color": "#ffffff",
-            }}
-          />
-
-          {/* Editorial badge ring */}
-          <Layer
-            id="explorer-editorial-ring"
-            type="circle"
-            filter={[
-              "all",
-              ["!", ["has", "point_count"]],
-              ["==", ["get", "hasEditorial"], 1],
-            ]}
-            paint={{
-              "circle-color": "transparent",
-              "circle-radius": 12,
-              "circle-stroke-width": 1.5,
-              "circle-stroke-color": ["get", "categoryColor"],
-              "circle-opacity": 0.6,
-              "circle-stroke-opacity": 0.4,
-            }}
-          />
-        </Source>
-
-        {/* Active POI highlight */}
-        {activePOI && (() => {
-          const poi = pois.find((p) => p.id === activePOI);
-          if (!poi) return null;
           return (
             <Marker
+              key={poi.id}
               longitude={poi.coordinates.lng}
               latitude={poi.coordinates.lat}
               anchor="center"
+              onClick={(e) => {
+                e.originalEvent.stopPropagation();
+                onPOIClick(poi.id);
+              }}
             >
-              <div className="relative">
+              <div className="relative cursor-pointer">
+                {/* Pulsing ring for active marker */}
+                {isThisActive && (
+                  <div
+                    className="absolute rounded-full animate-ping opacity-50"
+                    style={{
+                      backgroundColor: poi.category.color,
+                      width: 32,
+                      height: 32,
+                      top: -4,
+                      left: -4,
+                    }}
+                  />
+                )}
+
+                {/* Icon circle */}
                 <div
-                  className="absolute inset-0 rounded-full animate-ping opacity-50"
-                  style={{
-                    backgroundColor: poi.category.color,
-                    width: 28,
-                    height: 28,
-                    marginLeft: -4,
-                    marginTop: -4,
-                  }}
-                />
-                <div
-                  className="w-5 h-5 rounded-full border-[3px] border-white shadow-lg"
+                  className={cn(
+                    "flex items-center justify-center rounded-full border-2 border-white shadow-md transition-all",
+                    isThisActive ? "w-10 h-10" : "w-8 h-8 hover:scale-110",
+                    !withinBudget && !isThisActive && "opacity-30"
+                  )}
                   style={{ backgroundColor: poi.category.color }}
-                />
+                >
+                  <Icon className={cn("text-white", isThisActive ? "w-5 h-5" : "w-4 h-4")} />
+                </div>
+
+                {/* Editorial sparkle badge */}
+                {poi.editorialHook && !isThisActive && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full border border-white flex items-center justify-center">
+                    <Sparkles className="w-2.5 h-2.5 text-white" />
+                  </div>
+                )}
+
+                {/* Active marker name label */}
+                {isThisActive && (
+                  <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <span
+                      className="px-2 py-0.5 text-[10px] font-medium text-white rounded shadow-lg"
+                      style={{ backgroundColor: poi.category.color }}
+                    >
+                      {poi.name}
+                    </span>
+                  </div>
+                )}
               </div>
             </Marker>
           );
-        })()}
+        })}
       </Map>
     </div>
   );

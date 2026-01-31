@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Project, POI, Category } from "@/lib/types";
+import type { Project, POI, Category, TravelMode } from "@/lib/types";
+import { useTravelSettings } from "@/lib/store";
 import { useTravelTimes } from "@/lib/hooks/useTravelTimes";
 import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
+import { isWithinTimeBudget } from "@/lib/utils";
 import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerMap from "./ExplorerMap";
 import ExplorerPanel from "./ExplorerPanel";
@@ -14,7 +16,10 @@ interface ExplorerPageProps {
 }
 
 export default function ExplorerPage({ project }: ExplorerPageProps) {
+  const { travelMode, timeBudget, setTravelMode, setTimeBudget } = useTravelSettings();
   const [activePOI, setActivePOI] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [highlightedPOI, setHighlightedPOI] = useState<string | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<string>>(
     new Set(project.categories.map((c) => c.id))
   );
@@ -51,10 +56,18 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
     return poisWithTravelTimes.filter((poi) => activeCategories.has(poi.category.id));
   }, [poisWithTravelTimes, activeCategories]);
 
-  // POIs visible in current viewport AND matching active categories
+  // Search filtering (applied after category filter, before viewport)
+  const searchFilteredPOIs = useMemo(() => {
+    if (!searchQuery) return filteredPOIs;
+    return filteredPOIs.filter((poi) =>
+      poi.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [filteredPOIs, searchQuery]);
+
+  // POIs visible in current viewport AND matching active categories AND search
   const visiblePOIs = useMemo(() => {
-    return filteredPOIs.filter((poi) => viewportPOIIds.has(poi.id));
-  }, [filteredPOIs, viewportPOIIds]);
+    return searchFilteredPOIs.filter((poi) => viewportPOIIds.has(poi.id));
+  }, [searchFilteredPOIs, viewportPOIIds]);
 
   // Opening hours for visible POIs
   const { hoursData: openingHoursData } = useOpeningHours(visiblePOIs);
@@ -113,9 +126,23 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
     });
   }, [project.categories]);
 
-  // POI selection
+  // Count POIs within time budget
+  const poisWithinBudget = useMemo(() => {
+    return searchFilteredPOIs.filter((poi) =>
+      isWithinTimeBudget(poi.travelTime?.[travelMode], timeBudget)
+    );
+  }, [searchFilteredPOIs, travelMode, timeBudget]);
+
+  // POI selection (from list click)
   const handlePOIClick = useCallback((poiId: string) => {
     setActivePOI((prev) => (prev === poiId ? null : poiId));
+  }, []);
+
+  // POI selection from map click (with temporary highlight)
+  const handleMapPOIClick = useCallback((poiId: string) => {
+    setActivePOI((prev) => (prev === poiId ? null : poiId));
+    setHighlightedPOI(poiId);
+    setTimeout(() => setHighlightedPOI(null), 2000);
   }, []);
 
   // Map reports which POIs are in viewport
@@ -146,8 +173,13 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
 
     const origin = `${project.centerCoordinates.lng},${project.centerCoordinates.lat}`;
     const destination = `${poi.coordinates.lng},${poi.coordinates.lat}`;
+    const profileMap: Record<TravelMode, string> = {
+      walk: "walking",
+      bike: "cycling",
+      car: "driving",
+    };
 
-    fetch(`/api/directions?origin=${origin}&destination=${destination}&profile=walking`, {
+    fetch(`/api/directions?origin=${origin}&destination=${destination}&profile=${profileMap[travelMode]}`, {
       signal: controller.signal,
     })
       .then((res) => res.json())
@@ -164,7 +196,7 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
       });
 
     return () => controller.abort();
-  }, [activePOI, poiMap, project.centerCoordinates]);
+  }, [activePOI, poiMap, project.centerCoordinates, travelMode]);
 
   // Generate contextual hint based on viewport
   const contextHint = useMemo(() => {
@@ -224,30 +256,40 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
     categories: project.categories,
     activeCategories,
     activePOI,
+    highlightedPOI,
     contextHint,
     onPOIClick: handlePOIClick,
     onToggleCategory: toggleCategory,
     onToggleAll: toggleAllCategories,
     visibleCount: visiblePOIs.length,
-    totalCount: filteredPOIs.length,
+    totalCount: searchFilteredPOIs.length,
     travelTimesLoading,
     projectName: project.name,
     openingHoursData,
     activePackage,
     onSelectPackage: handleSelectPackage,
+    travelMode,
+    timeBudget,
+    onSetTravelMode: setTravelMode,
+    onSetTimeBudget: setTimeBudget,
+    poisWithinBudgetCount: poisWithinBudget.length,
+    searchQuery,
+    onSearchChange: setSearchQuery,
   };
 
   const mapProps = {
     center: project.centerCoordinates,
-    pois: filteredPOIs,
+    pois: searchFilteredPOIs,
     allPOIs: poisWithTravelTimes,
     activePOI,
     activeCategories,
-    onPOIClick: handlePOIClick,
+    onPOIClick: handleMapPOIClick,
     onViewportPOIs: handleViewportPOIs,
     onZoomChange: handleZoomChange,
     projectName: project.name,
     routeData,
+    travelMode,
+    timeBudget,
   };
 
   return (

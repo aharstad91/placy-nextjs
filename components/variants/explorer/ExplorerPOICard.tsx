@@ -1,19 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import type { POI } from "@/lib/types";
+import type { POI, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
+import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
+import { cn, formatTravelTime } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import {
   Star,
   MapPin,
+  MapPinned,
   ExternalLink,
   ChevronDown,
   Sparkles,
   Footprints,
+  Bike,
+  Car,
+  Bus,
   Navigation,
   Clock,
+  Globe,
+  Phone,
 } from "lucide-react";
+
+const travelModeIcons = {
+  walk: Footprints,
+  bike: Bike,
+  car: Car,
+};
 
 interface ExplorerPOICardProps {
   poi: POI;
@@ -21,6 +35,8 @@ interface ExplorerPOICardProps {
   onClick: () => void;
   openingHours?: OpeningHoursData;
   travelTimesLoading?: boolean;
+  isOutsideBudget?: boolean;
+  travelMode?: TravelMode;
 }
 
 export default function ExplorerPOICard({
@@ -29,6 +45,8 @@ export default function ExplorerPOICard({
   onClick,
   openingHours,
   travelTimesLoading,
+  isOutsideBudget,
+  travelMode = "walk",
 }: ExplorerPOICardProps) {
   const [imageError, setImageError] = useState(false);
 
@@ -40,29 +58,44 @@ export default function ExplorerPOICard({
 
   const CategoryIcon = getIcon(poi.category.icon);
 
+  const realtimeData = useRealtimeData(isActive ? poi : null);
+
   const imageUrl = poi.featuredImage
     ? poi.featuredImage
     : poi.photoReference
     ? `/api/places/photo?reference=${poi.photoReference}&maxwidth=400`
     : null;
 
-  const walkMinutes = poi.travelTime?.walk;
+  const travelTime = poi.travelTime?.[travelMode];
+  const TravelIcon = travelModeIcons[travelMode];
   const isOpen = openingHours?.isOpen;
+  const hasRealtimeData = realtimeData.entur || realtimeData.bysykkel;
 
   // Google Maps directions URL
   const googleMapsDirectionsUrl = poi.googlePlaceId
     ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
     : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`;
 
+  // Format departure time to relative format
+  const formatDepartureTime = (isoTime: string) => {
+    const departure = new Date(isoTime);
+    const now = new Date();
+    const diffMs = departure.getTime() - now.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    if (diffMins <= 0) return "Nå";
+    if (diffMins === 1) return "1 min";
+    return `${diffMins} min`;
+  };
+
   return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left transition-all duration-200 ${
-        isActive
-          ? "bg-gray-50"
-          : "hover:bg-gray-50/50"
-      }`}
+    <div
+      className={cn(
+        "w-full text-left transition-all duration-200",
+        isActive ? "bg-gray-50" : "hover:bg-gray-50/50",
+        isOutsideBudget && !isActive && "opacity-50"
+      )}
     >
+      <button onClick={onClick} className="w-full text-left">
       <div className="px-4 py-3">
         {/* Main row */}
         <div className="flex items-start gap-3">
@@ -104,17 +137,17 @@ export default function ExplorerPOICard({
                 </>
               )}
 
-              {walkMinutes != null && (
+              {travelTime != null && (
                 <>
                   <span className="text-gray-300">·</span>
                   <span className="flex items-center gap-0.5 text-xs text-gray-500">
-                    <Footprints className="w-3 h-3" />
-                    {Math.round(walkMinutes)} min
+                    <TravelIcon className="w-3 h-3" />
+                    {Math.round(travelTime)} min
                   </span>
                 </>
               )}
 
-              {walkMinutes == null && travelTimesLoading && (
+              {travelTime == null && travelTimesLoading && (
                 <>
                   <span className="text-gray-300">·</span>
                   <span className="w-10 h-3 bg-gray-100 rounded animate-pulse" />
@@ -141,12 +174,18 @@ export default function ExplorerPOICard({
             </div>
           </div>
 
-          {/* Expand indicator */}
-          <ChevronDown
-            className={`w-4 h-4 text-gray-300 flex-shrink-0 transition-transform duration-200 mt-2 ${
-              isActive ? "rotate-180 text-gray-500" : ""
-            }`}
-          />
+          {/* "Se på kart" + Expand indicator */}
+          <div className="flex items-center gap-1 flex-shrink-0 mt-1">
+            <span className="flex items-center gap-1 text-xs font-medium text-sky-600">
+              <MapPinned className="w-3.5 h-3.5" />
+            </span>
+            <ChevronDown
+              className={cn(
+                "w-4 h-4 text-gray-300 transition-transform duration-200",
+                isActive && "rotate-180 text-gray-500"
+              )}
+            />
+          </div>
         </div>
 
         {/* Expanded content */}
@@ -205,6 +244,49 @@ export default function ExplorerPOICard({
               </div>
             )}
 
+            {/* Realtime data */}
+            {hasRealtimeData && (
+              <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+                {/* Bus/transit departures */}
+                {realtimeData.entur && realtimeData.entur.departures.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                      <Bus className="w-3 h-3" />
+                      <span>Neste avganger</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {realtimeData.entur.departures.slice(0, 3).map((dep, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border border-gray-200"
+                        >
+                          <span className="font-medium">{dep.lineCode}</span>
+                          <span className="text-gray-400">{dep.destination}</span>
+                          <span className={dep.isRealtime ? "text-green-600" : "text-gray-600"}>
+                            {formatDepartureTime(dep.departureTime)}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Bike share availability */}
+                {realtimeData.bysykkel && (
+                  <div className="flex items-center gap-1 text-xs text-gray-600">
+                    <Bike className="w-3 h-3" />
+                    <span>
+                      {realtimeData.bysykkel.availableBikes} ledige sykler,{" "}
+                      {realtimeData.bysykkel.availableDocks} ledige låser
+                    </span>
+                    {!realtimeData.bysykkel.isOpen && (
+                      <span className="text-red-500 ml-1">(Stengt)</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex items-center gap-3 pt-1">
               <a
@@ -241,6 +323,7 @@ export default function ExplorerPOICard({
           </div>
         )}
       </div>
-    </button>
+      </button>
+    </div>
   );
 }
