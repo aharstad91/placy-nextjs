@@ -61,3 +61,17 @@ body {
 .time-budget-btn-inactive {
   @apply bg-gray-100 text-gray-600 hover:bg-gray-200;
 }
+
+/* Collection drawer slide-up animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.2, 0, 0, 1);
+}

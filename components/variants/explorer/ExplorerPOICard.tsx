@@ -21,6 +21,8 @@ import {
   Clock,
   Globe,
   Phone,
+  Plus,
+  Check,
 } from "lucide-react";
 
 const travelModeIcons = {
@@ -37,6 +39,8 @@ interface ExplorerPOICardProps {
   travelTimesLoading?: boolean;
   isOutsideBudget?: boolean;
   travelMode?: TravelMode;
+  isInCollection?: boolean;
+  onToggleCollection?: (poiId: string) => void;
 }
 
 export default function ExplorerPOICard({
@@ -47,6 +51,8 @@ export default function ExplorerPOICard({
   travelTimesLoading,
   isOutsideBudget,
   travelMode = "walk",
+  isInCollection,
+  onToggleCollection,
 }: ExplorerPOICardProps) {
   const [imageError, setImageError] = useState(false);
 
@@ -174,11 +180,28 @@ export default function ExplorerPOICard({
             </div>
           </div>
 
-          {/* "Se på kart" + Expand indicator */}
-          <div className="flex items-center gap-1 flex-shrink-0 mt-1">
-            <span className="flex items-center gap-1 text-xs font-medium text-sky-600">
-              <MapPinned className="w-3.5 h-3.5" />
-            </span>
+          {/* Collection toggle + Expand indicator */}
+          <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
+            {onToggleCollection && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleCollection(poi.id);
+                }}
+                className={cn(
+                  "w-7 h-7 rounded-full flex items-center justify-center transition-all",
+                  isInCollection
+                    ? "bg-sky-500 text-white"
+                    : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                )}
+              >
+                {isInCollection ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
             <ChevronDown
               className={cn(
                 "w-4 h-4 text-gray-300 transition-transform duration-200",

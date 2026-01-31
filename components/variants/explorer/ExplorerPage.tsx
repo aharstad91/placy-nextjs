@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Project, POI, Category, TravelMode } from "@/lib/types";
 import { useTravelSettings } from "@/lib/store";
+import { useCollection } from "@/lib/collection-store";
 import { useTravelTimes } from "@/lib/hooks/useTravelTimes";
 import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
 import { isWithinTimeBudget } from "@/lib/utils";
@@ -10,6 +11,7 @@ import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerMap from "./ExplorerMap";
 import ExplorerPanel from "./ExplorerPanel";
 import ExplorerBottomSheet from "./ExplorerBottomSheet";
+import CollectionDrawer from "./CollectionDrawer";
 
 interface ExplorerPageProps {
   project: Project;
@@ -17,6 +19,8 @@ interface ExplorerPageProps {
 
 export default function ExplorerPage({ project }: ExplorerPageProps) {
   const { travelMode, timeBudget, setTravelMode, setTimeBudget } = useTravelSettings();
+  const { collectionPOIs, addToCollection, removeFromCollection, clearCollection } = useCollection();
+  const [collectionDrawerOpen, setCollectionDrawerOpen] = useState(false);
   const [activePOI, setActivePOI] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [highlightedPOI, setHighlightedPOI] = useState<string | null>(null);
@@ -132,6 +136,15 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
       isWithinTimeBudget(poi.travelTime?.[travelMode], timeBudget)
     );
   }, [searchFilteredPOIs, travelMode, timeBudget]);
+
+  // Collection toggle
+  const handleToggleCollection = useCallback((poiId: string) => {
+    if (collectionPOIs.includes(poiId)) {
+      removeFromCollection(poiId);
+    } else {
+      addToCollection(poiId);
+    }
+  }, [collectionPOIs, addToCollection, removeFromCollection]);
 
   // POI selection (from list click)
   const handlePOIClick = useCallback((poiId: string) => {
@@ -275,6 +288,9 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
     poisWithinBudgetCount: poisWithinBudget.length,
     searchQuery,
     onSearchChange: setSearchQuery,
+    collectionPOIs,
+    onToggleCollection: handleToggleCollection,
+    onOpenCollection: () => setCollectionDrawerOpen(true),
   };
 
   const mapProps = {
@@ -317,6 +333,17 @@ export default function ExplorerPage({ project }: ExplorerPageProps) {
           <ExplorerPanel {...panelProps} />
         </ExplorerBottomSheet>
       </div>
+
+      {/* Collection drawer */}
+      <CollectionDrawer
+        open={collectionDrawerOpen}
+        onClose={() => setCollectionDrawerOpen(false)}
+        collectionPOIs={collectionPOIs}
+        allPOIs={poisWithTravelTimes}
+        onRemove={removeFromCollection}
+        onClearAll={clearCollection}
+        projectId={project.id}
+      />
     </div>
   );
 }

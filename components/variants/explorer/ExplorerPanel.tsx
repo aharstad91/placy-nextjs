@@ -7,7 +7,7 @@ import { cn, isWithinTimeBudget } from "@/lib/utils";
 import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerPOICard from "./ExplorerPOICard";
 import * as LucideIcons from "lucide-react";
-import { Compass, Sparkles, Search, X, Footprints, Bike, Car } from "lucide-react";
+import { Compass, Sparkles, Search, X, Footprints, Bike, Car, Bookmark, ChevronUp } from "lucide-react";
 
 // Travel mode options matching theme story modal
 const travelModes: { mode: TravelMode; label: string; icon: React.ReactNode }[] = [
@@ -43,6 +43,9 @@ interface ExplorerPanelProps {
   poisWithinBudgetCount?: number;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  collectionPOIs?: string[];
+  onToggleCollection?: (poiId: string) => void;
+  onOpenCollection?: () => void;
 }
 
 export default function ExplorerPanel({
@@ -70,6 +73,9 @@ export default function ExplorerPanel({
   poisWithinBudgetCount,
   searchQuery = "",
   onSearchChange,
+  collectionPOIs = [],
+  onToggleCollection,
+  onOpenCollection,
 }: ExplorerPanelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -340,12 +346,30 @@ export default function ExplorerPanel({
                   travelTimesLoading={travelTimesLoading}
                   isOutsideBudget={!travelTimesLoading && poi.travelTime?.[travelMode] != null && !isWithinTimeBudget(poi.travelTime?.[travelMode], timeBudget)}
                   travelMode={travelMode}
+                  isInCollection={collectionPOIs.includes(poi.id)}
+                  onToggleCollection={onToggleCollection}
                 />
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Collection count bar */}
+      {onOpenCollection && collectionPOIs.length > 0 && (
+        <button
+          onClick={onOpenCollection}
+          className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-sky-500 text-white hover:bg-sky-600 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Bookmark className="w-4 h-4" />
+            <span className="text-sm font-semibold">
+              Min samling ({collectionPOIs.length})
+            </span>
+          </div>
+          <ChevronUp className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 }
