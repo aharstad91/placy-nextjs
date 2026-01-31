@@ -1,13 +1,12 @@
 "use client";
 
 import { useRef, useEffect, useCallback } from "react";
-import type { POI, Category, TravelMode, TimeBudget } from "@/lib/types";
+import type { POI, Category, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
-import { cn, isWithinTimeBudget } from "@/lib/utils";
-import { EXPLORER_PACKAGES } from "./explorer-packages";
+import { cn } from "@/lib/utils";
 import ExplorerPOICard from "./ExplorerPOICard";
 import * as LucideIcons from "lucide-react";
-import { Compass, Sparkles, Search, X, Footprints, Bike, Car, Bookmark, ChevronUp, ExternalLink } from "lucide-react";
+import { Compass, Footprints, Bike, Car, ExternalLink } from "lucide-react";
 
 // Travel mode options matching theme story modal
 const travelModes: { mode: TravelMode; label: string; icon: React.ReactNode }[] = [
@@ -15,8 +14,6 @@ const travelModes: { mode: TravelMode; label: string; icon: React.ReactNode }[] 
   { mode: "bike", label: "Sykkel", icon: <Bike className="w-4 h-4" /> },
   { mode: "car", label: "Bil", icon: <Car className="w-4 h-4" /> },
 ];
-
-const timeBudgets: TimeBudget[] = [5, 10, 15];
 
 interface ExplorerPanelProps {
   pois: POI[];
@@ -34,18 +31,10 @@ interface ExplorerPanelProps {
   travelTimesLoading?: boolean;
   projectName?: string;
   openingHoursData?: Map<string, OpeningHoursData>;
-  activePackage?: string | null;
-  onSelectPackage?: (packageId: string) => void;
   travelMode?: TravelMode;
-  timeBudget?: TimeBudget;
   onSetTravelMode?: (mode: TravelMode) => void;
-  onSetTimeBudget?: (budget: TimeBudget) => void;
-  poisWithinBudgetCount?: number;
-  searchQuery?: string;
-  onSearchChange?: (query: string) => void;
   collectionPOIs?: string[];
   onToggleCollection?: (poiId: string) => void;
-  onOpenCollection?: () => void;
   isCollectionView?: boolean;
   collectionPoiCount?: number;
   collectionCreatedAt?: string;
@@ -69,18 +58,10 @@ export default function ExplorerPanel({
   travelTimesLoading,
   projectName,
   openingHoursData,
-  activePackage,
-  onSelectPackage,
   travelMode = "walk",
-  timeBudget = 15,
   onSetTravelMode,
-  onSetTimeBudget,
-  poisWithinBudgetCount,
-  searchQuery = "",
-  onSearchChange,
   collectionPOIs = [],
   onToggleCollection,
-  onOpenCollection,
   isCollectionView,
   collectionPoiCount,
   collectionCreatedAt,
@@ -122,13 +103,6 @@ export default function ExplorerPanel({
     const count = categoryCounts.get(poi.category.id) || 0;
     categoryCounts.set(poi.category.id, count + 1);
   }
-
-  // Count POIs per package
-  const packageCounts = EXPLORER_PACKAGES.map((pkg) => {
-    if (pkg.id === "all") return allPOIs.length;
-    const ids = new Set(pkg.categoryIds);
-    return allPOIs.filter((poi) => ids.has(poi.category.id)).length;
-  });
 
   // Only show categories that exist in data
   const availableCategories = categories.filter(
@@ -174,128 +148,31 @@ export default function ExplorerPanel({
                 </a>
               </>
             ) : (
-              <>
-                {totalCount} steder funnet
-                {poisWithinBudgetCount != null && (
-                  <>
-                    <br />
-                    <span className="text-sky-400">
-                      {poisWithinBudgetCount} highlighted within ≤{timeBudget} min
-                    </span>
-                  </>
-                )}
-              </>
+              <>{totalCount} steder funnet</>
             )}
           </p>
         </div>
 
-        {/* Travel mode + Time budget controls */}
-        {onSetTravelMode && onSetTimeBudget && (
+        {/* Travel mode controls */}
+        {onSetTravelMode && (
           <div className="px-4 py-3 border-b border-gray-100 bg-white">
-            <div className="flex flex-wrap gap-4">
-              {/* Travel Mode */}
-              <div>
-                <label className="text-xs text-gray-500 mb-1.5 block">Travel Mode</label>
-                <div className="flex gap-1">
-                  {travelModes.map(({ mode, label, icon }) => (
-                    <button
-                      key={mode}
-                      onClick={() => onSetTravelMode(mode)}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-                        travelMode === mode
-                          ? "bg-gray-900 text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      )}
-                    >
-                      {icon}
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Time Budget */}
-              <div>
-                <label className="text-xs text-gray-500 mb-1.5 block">Time Budget</label>
-                <div className="flex gap-1">
-                  {timeBudgets.map((budget) => (
-                    <button
-                      key={budget}
-                      onClick={() => onSetTimeBudget(budget)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                        timeBudget === budget
-                          ? "bg-gray-900 text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      )}
-                    >
-                      {budget} min
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Search field */}
-        {onSearchChange && (
-          <div className="px-4 py-2 border-b border-gray-100 bg-white">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Søk etter steder..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-              />
-              {searchQuery && (
+            <label className="text-xs text-gray-500 mb-1.5 block">Travel Mode</label>
+            <div className="flex gap-1">
+              {travelModes.map(({ mode, label, icon }) => (
                 <button
-                  onClick={() => onSearchChange("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-gray-100"
+                  key={mode}
+                  onClick={() => onSetTravelMode(mode)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+                    travelMode === mode
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  )}
                 >
-                  <X className="w-3.5 h-3.5 text-gray-400" />
+                  {icon}
+                  {label}
                 </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Package buttons — hidden in collection view */}
-        {onSelectPackage && !isCollectionView && (
-          <div className="px-4 pt-3 pb-1">
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {EXPLORER_PACKAGES.map((pkg, idx) => {
-                const Icon = getIcon(pkg.icon);
-                const isActive = activePackage === pkg.id;
-                const count = packageCounts[idx];
-
-                if (count === 0 && pkg.id !== "all") return null;
-
-                return (
-                  <button
-                    key={pkg.id}
-                    onClick={() => onSelectPackage(pkg.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                      isActive
-                        ? "bg-gray-900 text-white shadow-sm"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{pkg.name}</span>
-                    <span
-                      className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        isActive ? "bg-white/20" : "bg-gray-200 text-gray-500"
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
+              ))}
             </div>
           </div>
         )}
@@ -383,7 +260,6 @@ export default function ExplorerPanel({
                   onClick={() => onPOIClick(poi.id)}
                   openingHours={openingHoursData?.get(poi.id)}
                   travelTimesLoading={travelTimesLoading}
-                  isOutsideBudget={!travelTimesLoading && poi.travelTime?.[travelMode] != null && !isWithinTimeBudget(poi.travelTime?.[travelMode], timeBudget)}
                   travelMode={travelMode}
                   isInCollection={collectionPOIs.includes(poi.id)}
                   onToggleCollection={onToggleCollection}
@@ -394,21 +270,6 @@ export default function ExplorerPanel({
         )}
       </div>
 
-      {/* Collection count bar */}
-      {onOpenCollection && collectionPOIs.length > 0 && (
-        <button
-          onClick={onOpenCollection}
-          className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-sky-500 text-white hover:bg-sky-600 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Bookmark className="w-4 h-4" />
-            <span className="text-sm font-semibold">
-              Min samling ({collectionPOIs.length})
-            </span>
-          </div>
-          <ChevronUp className="w-4 h-4" />
-        </button>
-      )}
     </div>
   );
 }

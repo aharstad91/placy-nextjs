@@ -37,7 +37,6 @@ interface ExplorerPOICardProps {
   onClick: () => void;
   openingHours?: OpeningHoursData;
   travelTimesLoading?: boolean;
-  isOutsideBudget?: boolean;
   travelMode?: TravelMode;
   isInCollection?: boolean;
   onToggleCollection?: (poiId: string) => void;
@@ -49,7 +48,6 @@ export default function ExplorerPOICard({
   onClick,
   openingHours,
   travelTimesLoading,
-  isOutsideBudget,
   travelMode = "walk",
   isInCollection,
   onToggleCollection,
@@ -97,8 +95,7 @@ export default function ExplorerPOICard({
     <div
       className={cn(
         "w-full text-left transition-all duration-200",
-        isActive ? "bg-gray-50" : "hover:bg-gray-50/50",
-        isOutsideBudget && !isActive && "opacity-50"
+        isActive ? "bg-gray-50" : "hover:bg-gray-50/50"
       )}
     >
       <button onClick={onClick} className="w-full text-left">

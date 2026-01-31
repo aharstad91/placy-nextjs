@@ -6,7 +6,7 @@ import { useTravelSettings } from "@/lib/store";
 import { useCollection } from "@/lib/collection-store";
 import { useTravelTimes } from "@/lib/hooks/useTravelTimes";
 import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
-import { isWithinTimeBudget, haversineDistance } from "@/lib/utils";
+import { haversineDistance } from "@/lib/utils";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import { EXPLORER_PACKAGES } from "./explorer-packages";
@@ -29,11 +29,10 @@ interface ExplorerPageProps {
 
 export default function ExplorerPage({ project, collection }: ExplorerPageProps) {
   const isCollectionView = !!collection;
-  const { travelMode, timeBudget, setTravelMode, setTimeBudget } = useTravelSettings();
+  const { travelMode, setTravelMode } = useTravelSettings();
   const { collectionPOIs, addToCollection, removeFromCollection, clearCollection } = useCollection();
   const [collectionDrawerOpen, setCollectionDrawerOpen] = useState(false);
   const [activePOI, setActivePOI] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [highlightedPOI, setHighlightedPOI] = useState<string | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<string>>(
     new Set(project.categories.map((c) => c.id))
@@ -108,18 +107,10 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     return poisWithTravelTimes.filter((poi) => activeCategories.has(poi.category.id));
   }, [poisWithTravelTimes, activeCategories]);
 
-  // Search filtering (applied after category filter, before viewport)
-  const searchFilteredPOIs = useMemo(() => {
-    if (!searchQuery) return filteredPOIs;
-    return filteredPOIs.filter((poi) =>
-      poi.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [filteredPOIs, searchQuery]);
-
-  // POIs visible in current viewport AND matching active categories AND search
+  // POIs visible in current viewport AND matching active categories
   const visiblePOIs = useMemo(() => {
-    return searchFilteredPOIs.filter((poi) => viewportPOIIds.has(poi.id));
-  }, [searchFilteredPOIs, viewportPOIIds]);
+    return filteredPOIs.filter((poi) => viewportPOIIds.has(poi.id));
+  }, [filteredPOIs, viewportPOIIds]);
 
   // Opening hours for visible POIs
   const { hoursData: openingHoursData } = useOpeningHours(visiblePOIs);
@@ -177,13 +168,6 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
       return new Set(project.categories.map((c) => c.id));
     });
   }, [project.categories]);
-
-  // Count POIs within time budget
-  const poisWithinBudget = useMemo(() => {
-    return searchFilteredPOIs.filter((poi) =>
-      isWithinTimeBudget(poi.travelTime?.[travelMode], timeBudget)
-    );
-  }, [searchFilteredPOIs, travelMode, timeBudget]);
 
   // Collection toggle
   const handleToggleCollection = useCallback((poiId: string) => {
@@ -336,26 +320,18 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     onToggleCategory: toggleCategory,
     onToggleAll: toggleAllCategories,
     visibleCount: visiblePOIs.length,
-    totalCount: searchFilteredPOIs.length,
+    totalCount: filteredPOIs.length,
     travelTimesLoading,
     projectName: project.name,
     openingHoursData,
-    activePackage,
-    onSelectPackage: handleSelectPackage,
     travelMode,
-    timeBudget,
     onSetTravelMode: setTravelMode,
-    onSetTimeBudget: setTimeBudget,
-    poisWithinBudgetCount: poisWithinBudget.length,
-    searchQuery,
-    onSearchChange: setSearchQuery,
     // Collection props — hidden in collection view (read-only)
     ...(isCollectionView
       ? {}
       : {
           collectionPOIs,
           onToggleCollection: handleToggleCollection,
-          onOpenCollection: () => setCollectionDrawerOpen(true),
         }),
     isCollectionView,
     collectionPoiCount: collection?.poiIds.length,
@@ -366,7 +342,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
 
   const mapProps = {
     center: project.centerCoordinates,
-    pois: searchFilteredPOIs,
+    pois: filteredPOIs,
     allPOIs: poisWithTravelTimes,
     activePOI,
     activeCategories,
@@ -376,7 +352,6 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     projectName: project.name,
     routeData,
     travelMode,
-    timeBudget,
     initialBounds: collectionBounds,
     // Geolocation
     userPosition: geo.userPosition,

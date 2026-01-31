@@ -12,8 +12,8 @@ import Map, {
   Marker,
   type MapRef,
 } from "react-map-gl/mapbox";
-import type { Coordinates, POI, TravelMode, TimeBudget } from "@/lib/types";
-import { cn, isWithinTimeBudget } from "@/lib/utils";
+import type { Coordinates, POI, TravelMode } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
 import { MapPin, Sparkles, Building2, X } from "lucide-react";
 import * as LucideIcons from "lucide-react";
@@ -36,7 +36,6 @@ interface ExplorerMapProps {
     travelTime: number;
   } | null;
   travelMode?: TravelMode;
-  timeBudget?: TimeBudget;
   initialBounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
   // Geolocation
   userPosition?: Coordinates | null;
@@ -57,7 +56,6 @@ export default function ExplorerMap({
   projectName,
   routeData,
   travelMode = "walk",
-  timeBudget = 15,
   initialBounds,
   userPosition,
   userAccuracy,
@@ -279,7 +277,6 @@ export default function ExplorerMap({
 
         {/* All POI markers — no clustering */}
         {pois.map((poi) => {
-          const withinBudget = isWithinTimeBudget(poi.travelTime?.[travelMode], timeBudget);
           const Icon = getIcon(poi.category.icon);
           const isThisActive = activePOI === poi.id;
 
@@ -313,8 +310,7 @@ export default function ExplorerMap({
                 <div
                   className={cn(
                     "flex items-center justify-center rounded-full border-2 border-white shadow-md transition-all",
-                    isThisActive ? "w-10 h-10" : "w-8 h-8 hover:scale-110",
-                    !withinBudget && !isThisActive && "opacity-30"
+                    isThisActive ? "w-10 h-10" : "w-8 h-8 hover:scale-110"
                   )}
                   style={{ backgroundColor: poi.category.color }}
                 >
