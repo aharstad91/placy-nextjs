@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
+import { Resend } from "resend";
 import { createCollection } from "@/lib/supabase/mutations";
 
 interface CreateCollectionBody {
@@ -80,43 +81,36 @@ async function sendCollectionEmail(
   collectionUrl: string,
   poiCount: number
 ): Promise<boolean> {
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn("[Collections] BREVO_API_KEY not set, skipping email");
+    console.warn("[Collections] RESEND_API_KEY not set, skipping email");
     return false;
   }
 
-  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
-    headers: {
-      "accept": "application/json",
-      "content-type": "application/json",
-      "api-key": apiKey,
-    },
-    body: JSON.stringify({
-      sender: { name: "Placy", email: "andreas@aharstad.no" },
-      to: [{ email }],
-      subject: `Din samling — ${poiCount} steder`,
-      htmlContent: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 16px;">
-          <h2 style="font-size: 20px; margin-bottom: 8px;">Din samling er klar!</h2>
-          <p style="color: #6b7280; font-size: 15px; line-height: 1.6;">
-            Du lagret ${poiCount} steder. Åpne samlingen din her:
-          </p>
-          <a href="${collectionUrl}" style="display: inline-block; margin: 16px 0; padding: 12px 24px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
-            Åpne samlingen
-          </a>
-          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">
-            God tur!<br>— Placy
-          </p>
-        </div>
-      `,
-    }),
+  const resend = new Resend(apiKey);
+
+  const { error } = await resend.emails.send({
+    from: "Placy <andreas@aharstad.no>",
+    to: [email],
+    subject: `Din samling — ${poiCount} steder`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 16px;">
+        <h2 style="font-size: 20px; margin-bottom: 8px;">Din samling er klar!</h2>
+        <p style="color: #6b7280; font-size: 15px; line-height: 1.6;">
+          Du lagret ${poiCount} steder. Åpne samlingen din her:
+        </p>
+        <a href="${collectionUrl}" style="display: inline-block; margin: 16px 0; padding: 12px 24px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Åpne samlingen
+        </a>
+        <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">
+          God tur!<br>— Placy
+        </p>
+      </div>
+    `,
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Brevo API error: ${response.status} ${errorText}`);
+  if (error) {
+    throw new Error(`Resend error: ${error.message}`);
   }
 
   return true;
