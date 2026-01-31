@@ -7,7 +7,7 @@ import { cn, isWithinTimeBudget } from "@/lib/utils";
 import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerPOICard from "./ExplorerPOICard";
 import * as LucideIcons from "lucide-react";
-import { Compass, Sparkles, Search, X, Footprints, Bike, Car, Bookmark, ChevronUp } from "lucide-react";
+import { Compass, Sparkles, Search, X, Footprints, Bike, Car, Bookmark, ChevronUp, ExternalLink } from "lucide-react";
 
 // Travel mode options matching theme story modal
 const travelModes: { mode: TravelMode; label: string; icon: React.ReactNode }[] = [
@@ -48,6 +48,9 @@ interface ExplorerPanelProps {
   onOpenCollection?: () => void;
   isCollectionView?: boolean;
   collectionPoiCount?: number;
+  collectionCreatedAt?: string;
+  collectionEmail?: string | null;
+  explorerUrl?: string;
 }
 
 export default function ExplorerPanel({
@@ -80,6 +83,9 @@ export default function ExplorerPanel({
   onOpenCollection,
   isCollectionView,
   collectionPoiCount,
+  collectionCreatedAt,
+  collectionEmail,
+  explorerUrl,
 }: ExplorerPanelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -145,12 +151,28 @@ export default function ExplorerPanel({
           </h1>
           <p className="text-sm text-gray-400">
             {isCollectionView ? (
-              <a
-                href={typeof window !== "undefined" ? window.location.pathname : "#"}
-                className="text-sky-400 hover:text-sky-300 transition-colors"
-              >
-                Utforsk alle steder
-              </a>
+              <>
+                {collectionCreatedAt && (
+                  <span>
+                    Opprettet {new Date(collectionCreatedAt).toLocaleDateString("nb-NO", { day: "numeric", month: "short" })}
+                  </span>
+                )}
+                {collectionEmail && (
+                  <span>
+                    {collectionCreatedAt ? " · " : ""}Delt med {collectionEmail.replace(/^(.{1})(.*)(@.*)$/, (_, first, middle, domain) => first + "•".repeat(Math.min(middle.length, 4)) + domain)}
+                  </span>
+                )}
+                {(collectionCreatedAt || collectionEmail) && <br />}
+                <a
+                  href={explorerUrl || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 transition-colors"
+                >
+                  Utforsk alle steder
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </>
             ) : (
               <>
                 {totalCount} steder funnet

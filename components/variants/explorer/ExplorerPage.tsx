@@ -18,6 +18,8 @@ import CollectionDrawer from "./CollectionDrawer";
 interface CollectionData {
   slug: string;
   poiIds: string[];
+  createdAt?: string;
+  email?: string | null;
 }
 
 interface ExplorerPageProps {
@@ -357,6 +359,9 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
         }),
     isCollectionView,
     collectionPoiCount: collection?.poiIds.length,
+    collectionCreatedAt: collection?.createdAt,
+    collectionEmail: collection?.email,
+    explorerUrl: isCollectionView ? `/${project.customer}/${project.id}/v/explorer` : undefined,
   };
 
   const mapProps = {

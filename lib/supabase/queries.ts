@@ -582,14 +582,14 @@ export async function getThemeStoryFromSupabase(
  */
 export async function getCollectionBySlug(
   slug: string
-): Promise<{ id: string; slug: string; project_id: string; poi_ids: string[]; email: string | null } | null> {
+): Promise<{ id: string; slug: string; project_id: string; poi_ids: string[]; email: string | null; created_at: string } | null> {
   if (!isSupabaseConfigured() || !supabase) {
     return null;
   }
 
   const { data, error } = await supabase
     .from("collections")
-    .select("id, slug, project_id, poi_ids, email")
+    .select("id, slug, project_id, poi_ids, email, created_at")
     .eq("slug", slug)
     .single();
 

@@ -44,6 +44,8 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           collection={{
             slug: collection.slug,
             poiIds: collection.poi_ids,
+            createdAt: collection.created_at,
+            email: collection.email,
           }}
         />
       );
