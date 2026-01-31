@@ -367,12 +367,12 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     distanceToProject: geo.distanceToProject,
   };
 
-  // Desktop map padding to compensate for navbar + floating panel
+  // Desktop map padding to compensate for panel overlay
   const desktopMapPadding = {
-    left: 60 + 380 + 16, // navbar + panel + gap
-    top: 16,
-    right: 16,
-    bottom: 16,
+    left: 380, // panel width (map already offset by navbar via pl-[60px])
+    top: 0,
+    right: 0,
+    bottom: 0,
   };
 
   return (
@@ -404,8 +404,8 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
         </div>
       )}
 
-      {/* Desktop: Floating POI list */}
-      <div className="hidden lg:flex flex-col absolute top-4 bottom-4 left-[76px] w-[380px] bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.12)] z-30 overflow-hidden">
+      {/* Desktop: POI list — flush with navbar, full height */}
+      <div className="hidden lg:flex flex-col absolute top-0 bottom-0 left-[60px] w-[380px] bg-white border-r border-gray-200 z-30 overflow-hidden">
         <ExplorerPOIList {...poiListProps} />
       </div>
 
