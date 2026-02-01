@@ -194,6 +194,7 @@ async function main() {
     name: input.name,
     customer: input.customer,
     urlSlug: slugify(baseName),
+    productType: "explorer",
     centerCoordinates: input.center as Coordinates,
     categories: allCategories,
     pois: poisWithTravelTimes.map((p) => convertToPOI(p as DiscoveredPOI & { travelTime?: { walk?: number; bike?: number; car?: number } })),

@@ -52,6 +52,7 @@ export function ProjectsAdminClient({
   const [customerId, setCustomerId] = useState("");
   const [name, setName] = useState("");
   const [urlSlug, setUrlSlug] = useState("");
+  const [productType, setProductType] = useState("explorer");
   const [centerLat, setCenterLat] = useState("63.4305");
   const [centerLng, setCenterLng] = useState("10.3951");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,6 +70,7 @@ export function ProjectsAdminClient({
     setCustomerId(customers[0]?.id || "");
     setName("");
     setUrlSlug("");
+    setProductType("explorer");
     setCenterLat("63.4305");
     setCenterLng("10.3951");
     setSlugManuallyEdited(false);
@@ -81,6 +83,7 @@ export function ProjectsAdminClient({
     setCustomerId(project.customer_id || "");
     setName(project.name);
     setUrlSlug(project.url_slug);
+    setProductType(project.product_type || "explorer");
     setCenterLat(project.center_lat.toString());
     setCenterLng(project.center_lng.toString());
     setSlugManuallyEdited(true);
@@ -143,6 +146,7 @@ export function ProjectsAdminClient({
       formData.set("customerId", customerId);
       formData.set("name", name);
       formData.set("urlSlug", urlSlug);
+      formData.set("productType", productType);
       formData.set("centerLat", lat.toString());
       formData.set("centerLng", lng.toString());
 
@@ -247,6 +251,9 @@ export function ProjectsAdminClient({
                   URL Slug
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Koordinater
                 </th>
                 <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -257,7 +264,7 @@ export function ProjectsAdminClient({
             <tbody>
               {filteredProjects.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center">
+                  <td colSpan={6} className="py-12 text-center">
                     <FolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">
                       {filterCustomerId
@@ -307,6 +314,11 @@ export function ProjectsAdminClient({
                           <ExternalLink className="w-3.5 h-3.5" />
                         </Link>
                       </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600 capitalize">
+                        {project.product_type || "explorer"}
+                      </span>
                     </td>
                     <td className="py-3 px-4 text-xs font-mono text-gray-500">
                       {project.center_lat.toFixed(4)}, {project.center_lng.toFixed(4)}
@@ -412,6 +424,21 @@ export function ProjectsAdminClient({
                 <p className="text-xs text-gray-400">
                   Brukes i URL: /{customerId || "kunde"}/{urlSlug || "prosjekt"}
                 </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-gray-600">
+                  Produkttype
+                </label>
+                <select
+                  value={productType}
+                  onChange={(e) => setProductType(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all"
+                >
+                  <option value="explorer">Explorer</option>
+                  <option value="report">Report</option>
+                  <option value="portrait">Portrait</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

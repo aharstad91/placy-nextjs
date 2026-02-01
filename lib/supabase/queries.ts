@@ -9,6 +9,7 @@ import type {
 } from "./types";
 import type {
   Project,
+  ProductType,
   POI,
   Category,
   ThemeStory,
@@ -497,6 +498,7 @@ export async function getProjectFromSupabase(
     name: project.name,
     customer: customerSlug,
     urlSlug: project.url_slug,
+    productType: (project.product_type as ProductType) || "explorer",
     centerCoordinates: {
       lat: project.center_lat,
       lng: project.center_lng,

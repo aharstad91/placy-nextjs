@@ -22,6 +22,7 @@ async function createProject(formData: FormData) {
   const urlSlug = formData.get("urlSlug") as string;
   const centerLat = parseFloat(formData.get("centerLat") as string);
   const centerLng = parseFloat(formData.get("centerLng") as string);
+  const productType = (formData.get("productType") as string) || "explorer";
 
   if (!customerId || !name || !urlSlug) {
     throw new Error("Kunde, navn og URL-slug er påkrevd");
@@ -50,6 +51,7 @@ async function createProject(formData: FormData) {
     url_slug: urlSlug,
     center_lat: centerLat,
     center_lng: centerLng,
+    product_type: productType,
   });
 
   if (error) {
@@ -73,6 +75,7 @@ async function updateProject(formData: FormData) {
   const urlSlug = formData.get("urlSlug") as string;
   const centerLat = parseFloat(formData.get("centerLat") as string);
   const centerLng = parseFloat(formData.get("centerLng") as string);
+  const productType = (formData.get("productType") as string) || "explorer";
 
   if (!id || !customerId || !name || !urlSlug) {
     throw new Error("Alle felt er påkrevd");
@@ -103,6 +106,7 @@ async function updateProject(formData: FormData) {
       url_slug: urlSlug,
       center_lat: centerLat,
       center_lng: centerLng,
+      product_type: productType,
     })
     .eq("id", id);
 

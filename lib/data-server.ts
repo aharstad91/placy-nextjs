@@ -25,7 +25,11 @@ function getProjectFromJSON(customer: string, projectSlug: string): Project | nu
     }
 
     const content = fs.readFileSync(projectPath, "utf-8");
-    return JSON.parse(content) as Project;
+    const project = JSON.parse(content) as Project;
+    if (!project.productType) {
+      project.productType = "explorer";
+    }
+    return project;
   } catch (error) {
     console.error(`Failed to load project ${customer}/${projectSlug}:`, error);
     return null;

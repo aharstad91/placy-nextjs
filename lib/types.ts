@@ -6,6 +6,7 @@
 export type TravelMode = "walk" | "bike" | "car";
 export type TimeBudget = 5 | 10 | 15 | 20 | 30;
 export type StoryPriority = "must_have" | "nice_to_have" | "filler";
+export type ProductType = "explorer" | "report" | "portrait";
 
 export interface Coordinates {
   lat: number;
@@ -111,6 +112,7 @@ export interface Project {
   name: string;
   customer: string;
   urlSlug: string;
+  productType: ProductType;
   centerCoordinates: Coordinates;
   story: Story;
   pois: POI[];

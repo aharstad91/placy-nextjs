@@ -358,7 +358,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     collectionPoiCount: collection?.poiIds.length,
     collectionCreatedAt: collection?.createdAt,
     collectionEmail: collection?.email,
-    explorerUrl: isCollectionView ? `/${project.customer}/${project.id}/v/explorer` : undefined,
+    explorerUrl: isCollectionView ? `/${project.customer}/${project.id}` : undefined,
     // Package filtering — same as desktop
     packages: EXPLORER_PACKAGES,
     activePackage,

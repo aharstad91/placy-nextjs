@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
       name: body.name,
       customer: body.customer,
       urlSlug: slug,
+      productType: "explorer",
       centerCoordinates: body.center as Coordinates,
       categories: allCategories,
       pois: discoveredPOIs.map((p) =>
