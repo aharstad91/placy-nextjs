@@ -111,7 +111,7 @@ export default function ExplorerBottomSheet({
   return (
     <div
       ref={sheetRef}
-      className="fixed bottom-0 left-0 right-0 z-30 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.12)]"
+      className="fixed bottom-0 left-0 right-0 z-30 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.12)] flex flex-col"
       style={{
         height: displayHeight,
         transition: dragging ? "none" : "height 0.3s cubic-bezier(0.2, 0, 0, 1)",
@@ -131,7 +131,7 @@ export default function ExplorerBottomSheet({
       {/* Content */}
       <div
         ref={contentRef}
-        className="flex-1 overflow-y-auto overscroll-contain"
+        className="flex-1 overflow-hidden"
         style={{
           height: `calc(100% - 28px)`, // subtract drag handle
         }}

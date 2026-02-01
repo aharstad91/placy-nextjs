@@ -6,14 +6,14 @@ import { useTravelSettings } from "@/lib/store";
 import { useCollection } from "@/lib/collection-store";
 import { useTravelTimes } from "@/lib/hooks/useTravelTimes";
 import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
-import { haversineDistance } from "@/lib/utils";
+import { haversineDistance, cn } from "@/lib/utils";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
+import { Bookmark } from "lucide-react";
 import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerMap from "./ExplorerMap";
 import ExplorerPanel from "./ExplorerPanel";
 import ExplorerBottomSheet from "./ExplorerBottomSheet";
-import ExplorerNavbar from "./ExplorerNavbar";
 import ExplorerPOIList from "./ExplorerPOIList";
 import CollectionDrawer from "./CollectionDrawer";
 
@@ -34,6 +34,8 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
   const { travelMode, setTravelMode } = useTravelSettings();
   const { collectionPOIs, addToCollection, removeFromCollection, clearCollection } = useCollection();
   const [collectionDrawerOpen, setCollectionDrawerOpen] = useState(false);
+  const [collectionFlash, setCollectionFlash] = useState(false);
+  const prevCollectionCountRef = useRef(0);
   const [activePOI, setActivePOI] = useState<string | null>(null);
   const [highlightedPOI, setHighlightedPOI] = useState<string | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<string>>(
@@ -146,9 +148,8 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     }
   }, [project.categories]);
 
-  // Category toggle — clears active package since user is fine-tuning
+  // Category toggle — keeps the active package context
   const toggleCategory = useCallback((categoryId: string) => {
-    setActivePackage(null);
     setActiveCategories((prev) => {
       const next = new Set(prev);
       if (next.has(categoryId)) {
@@ -244,6 +245,16 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
 
     return () => controller.abort();
   }, [activePOI, poiMap, geo.effectiveOrigin, travelMode]);
+
+  // Flash animation when item added to collection
+  useEffect(() => {
+    if (collectionPOIs.length > prevCollectionCountRef.current) {
+      setCollectionFlash(true);
+      const timer = setTimeout(() => setCollectionFlash(false), 400);
+      return () => clearTimeout(timer);
+    }
+    prevCollectionCountRef.current = collectionPOIs.length;
+  }, [collectionPOIs.length]);
 
   // Calculate initial bounds for collection view (fit all collection POIs)
   const collectionBounds = useMemo(() => {
@@ -367,23 +378,11 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     distanceToProject: geo.distanceToProject,
   };
 
-  // Categories for the active package (shown as tags in the POI list)
-  const filterCategories = useMemo(() => {
-    if (!activePackage || activePackage === "all") return undefined;
-    const pkg = EXPLORER_PACKAGES.find((p) => p.id === activePackage);
-    if (!pkg) return undefined;
-    const catMap = new Map(project.categories.map((c) => [c.id, c]));
-    return pkg.categoryIds
-      .map((id) => catMap.get(id))
-      .filter((c): c is Category => !!c);
-  }, [activePackage, project.categories]);
-
-  // Desktop: 40% list / 60% map. Panel = 40vw - 60px navbar
-  // Using a fixed calc approach for the absolute-positioned panel
+  // Desktop: map fullscreen with floating sidebar (40%) overlaid on right
   const desktopMapPadding = {
-    left: 0, // map starts after the panel via CSS, no extra padding needed
+    left: 0,
     top: 0,
-    right: 0,
+    right: typeof window !== "undefined" ? window.innerWidth * 0.4 : 500,
     bottom: 0,
   };
 
@@ -391,46 +390,68 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     <div className="h-screen w-screen relative overflow-hidden bg-white">
       {/* ===== DESKTOP LAYOUT (lg+) ===== */}
 
-      {/* Desktop: Navbar (left edge) */}
-      {!isCollectionView && (
-        <div className="hidden lg:block">
-          <ExplorerNavbar
-            travelMode={travelMode}
-            onSetTravelMode={setTravelMode}
-            packages={EXPLORER_PACKAGES}
-            activePackage={activePackage}
-            activeCategories={activeCategories}
-            categories={project.categories}
-            onSelectPackage={handleSelectPackage}
-            collectionCount={collectionPOIs.length}
-            onOpenCollection={() => setCollectionDrawerOpen(true)}
-          />
-        </div>
-      )}
-
-      {/* Desktop: 40/60 split — navbar + list panel | map */}
-      <div className="hidden lg:flex h-full">
-        {/* Left: navbar spacer + POI list (40%) */}
-        <div className="flex h-full" style={{ width: "40%" }}>
-          {/* Navbar spacer */}
-          <div className="w-[60px] flex-shrink-0" />
-          {/* POI list */}
-          <div className="flex-1 flex flex-col border-r border-gray-200 overflow-hidden bg-white">
-            <ExplorerPOIList
-              {...poiListProps}
-              filterCategories={filterCategories}
-              activeCategories={activeCategories}
-              onToggleCategory={toggleCategory}
-            />
-          </div>
-        </div>
-
-        {/* Right: Map (60%) */}
-        <div className="flex-1 h-full">
+      {/* Desktop: fullscreen map + floating glassmorphism sidebar */}
+      <div className="hidden lg:block h-full relative">
+        {/* Map: full viewport */}
+        <div className="absolute inset-0">
           <ExplorerMap
             {...mapProps}
             mapPadding={desktopMapPadding}
           />
+        </div>
+
+        {/* Sidebar: floating right panel with glassmorphism */}
+        <div className="absolute top-6 right-6 bottom-6 w-[40%] bg-white/90 backdrop-blur-md rounded-2xl border border-white/50 shadow-[-4px_0_24px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col z-10">
+          <ExplorerPOIList
+            {...poiListProps}
+            allPOIs={poisWithTravelTimes}
+            packages={EXPLORER_PACKAGES}
+            activePackage={activePackage}
+            onSelectPackage={handleSelectPackage}
+            categories={project.categories}
+            activeCategories={activeCategories}
+            onToggleCategory={toggleCategory}
+            onSetTravelMode={setTravelMode}
+          />
+
+          {/* Collection footer — "hangs" at bottom of sidebar */}
+          <button
+            onClick={collectionPOIs.length > 0 ? () => setCollectionDrawerOpen(true) : undefined}
+            className={cn(
+              "flex-shrink-0 border-t px-8 py-5 flex items-center gap-3 transition-all duration-200",
+              collectionFlash
+                ? "bg-sky-500 border-sky-400"
+                : "bg-gray-200/50 border-gray-200/40 hover:bg-gray-200/70",
+              collectionPOIs.length > 0 ? "cursor-pointer" : "cursor-default"
+            )}
+          >
+            <Bookmark className={cn(
+              "w-5 h-5 flex-shrink-0 transition-colors duration-200",
+              collectionFlash ? "text-white" : "text-gray-700"
+            )} />
+            <div className="flex-1 min-w-0 text-left">
+              <span className={cn(
+                "text-base font-semibold transition-colors duration-200",
+                collectionFlash ? "text-white" : "text-gray-800"
+              )}>Min samling</span>
+              <p className={cn(
+                "text-sm mt-0.5 truncate transition-colors duration-200",
+                collectionFlash ? "text-sky-100" : "text-gray-500"
+              )}>
+                {collectionPOIs.length === 0
+                  ? "Lagre steder du liker med +"
+                  : `${collectionPOIs.length} ${collectionPOIs.length === 1 ? "sted" : "steder"} lagret — trykk for å se`}
+              </p>
+            </div>
+            {collectionPOIs.length > 0 && (
+              <span className={cn(
+                "w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 transition-all duration-200",
+                collectionFlash ? "bg-white text-sky-600 scale-125" : "bg-gray-800 text-white scale-100"
+              )}>
+                {collectionPOIs.length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
