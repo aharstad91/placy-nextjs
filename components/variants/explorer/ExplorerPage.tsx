@@ -319,7 +319,10 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
   }, [visiblePOIs, filteredPOIs, visibleClusterCount, mapZoom]);
 
   // Snap points for mobile bottom sheet (px)
-  const snapPoints = [140, typeof window !== "undefined" ? window.innerHeight * 0.5 : 400, typeof window !== "undefined" ? window.innerHeight * 0.9 : 720];
+  // Peek: enough for header + toolbar (~180px)
+  // Half: 50% of viewport
+  // Full: 92% of viewport (leaving some map visible)
+  const snapPoints = [180, typeof window !== "undefined" ? window.innerHeight * 0.5 : 420, typeof window !== "undefined" ? window.innerHeight * 0.92 : 760];
 
   // Props shared between mobile panel and desktop POI list
   const poiListProps = {
@@ -356,6 +359,10 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     collectionCreatedAt: collection?.createdAt,
     collectionEmail: collection?.email,
     explorerUrl: isCollectionView ? `/${project.customer}/${project.id}/v/explorer` : undefined,
+    // Package filtering — same as desktop
+    packages: EXPLORER_PACKAGES,
+    activePackage,
+    onSelectPackage: handleSelectPackage,
   };
 
   const mapProps = {
@@ -457,9 +464,12 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
 
       {/* ===== MOBILE LAYOUT (below lg) ===== */}
 
-      {/* Mobile: Map fullscreen */}
+      {/* Mobile: Map fullscreen with bottom padding for sheet */}
       <div className="lg:hidden absolute inset-0">
-        <ExplorerMap {...mapProps} />
+        <ExplorerMap
+          {...mapProps}
+          mapPadding={{ left: 0, top: 0, right: 0, bottom: snapPoints[0] }}
+        />
       </div>
 
       {/* Mobile: Bottom sheet */}
@@ -470,6 +480,47 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
           onSnapChange={() => {}}
         >
           <ExplorerPanel {...panelProps} />
+
+          {/* Collection footer — matches desktop sidebar footer */}
+          {!isCollectionView && (
+            <button
+              onClick={collectionPOIs.length > 0 ? () => setCollectionDrawerOpen(true) : undefined}
+              className={cn(
+                "flex-shrink-0 border-t px-4 py-3.5 flex items-center gap-3 transition-all duration-200",
+                collectionFlash
+                  ? "bg-sky-500 border-sky-400"
+                  : "bg-gray-100/80 border-gray-200/40",
+                collectionPOIs.length > 0 ? "cursor-pointer" : "cursor-default"
+              )}
+            >
+              <Bookmark className={cn(
+                "w-4 h-4 flex-shrink-0 transition-colors duration-200",
+                collectionFlash ? "text-white" : "text-gray-600"
+              )} />
+              <div className="flex-1 min-w-0 text-left">
+                <span className={cn(
+                  "text-sm font-semibold transition-colors duration-200",
+                  collectionFlash ? "text-white" : "text-gray-800"
+                )}>Min samling</span>
+                <p className={cn(
+                  "text-xs mt-0.5 truncate transition-colors duration-200",
+                  collectionFlash ? "text-sky-100" : "text-gray-500"
+                )}>
+                  {collectionPOIs.length === 0
+                    ? "Lagre steder du liker"
+                    : `${collectionPOIs.length} ${collectionPOIs.length === 1 ? "sted" : "steder"} lagret`}
+                </p>
+              </div>
+              {collectionPOIs.length > 0 && (
+                <span className={cn(
+                  "w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0 transition-all duration-200",
+                  collectionFlash ? "bg-white text-sky-600 scale-125" : "bg-gray-800 text-white scale-100"
+                )}>
+                  {collectionPOIs.length}
+                </span>
+              )}
+            </button>
+          )}
         </ExplorerBottomSheet>
       </div>
 
