@@ -55,8 +55,13 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   const [mapZoom, setMapZoom] = useState(14);
   const [activePackage, setActivePackage] = useState<string | null>("all");
 
-  // Project-level packages (fallback to global)
-  const packages = project.packages ?? EXPLORER_PACKAGES;
+  // Project-level packages:
+  // - undefined → use EXPLORER_PACKAGES (default behavior)
+  // - null or [] → no packages (hide the selector)
+  // - [...] → use project's custom packages
+  const packages = project.packages === undefined
+    ? EXPLORER_PACKAGES
+    : (project.packages && project.packages.length > 0 ? project.packages : undefined);
 
   // Origin mode determines geolocation behavior
   const originMode: OriginMode = project.originMode ?? "geolocation-with-fallback";
@@ -241,14 +246,22 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   }, [geo.userPosition, project.centerCoordinates]);
 
   // Fetch route when a POI is selected (from GPS position or project center)
+  // Note: We look up POI from project.pois directly to avoid re-fetching when poiMap updates
   useEffect(() => {
     if (!activePOI) {
       setRouteData(null);
       return;
     }
-    // Look up POI from enriched map first, fallback to project.pois
-    const poi = poiMap.get(activePOI) ?? project.pois.find(p => p.id === activePOI);
-    if (!poi) return;
+
+    // Look up POI from project.pois (stable reference)
+    const poi = project.pois.find(p => p.id === activePOI);
+    if (!poi) {
+      console.warn('Route: POI not found:', activePOI);
+      return;
+    }
+
+    // Clear previous route while loading new one
+    setRouteData(null);
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -272,6 +285,8 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
             coordinates: data.geometry.coordinates,
             travelTime: data.duration,
           });
+        } else {
+          console.warn('Route: No geometry returned for', activePOI);
         }
       })
       .catch((err) => {
@@ -282,7 +297,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
       });
 
     return () => controller.abort();
-  }, [activePOI, poiMap, routeOrigin, travelMode, project.pois]);
+  }, [activePOI, routeOrigin, travelMode, project.pois]);
 
   // Flash animation when item added to collection
   useEffect(() => {
@@ -360,7 +375,11 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   // Peek: enough for header + toolbar (~180px)
   // Half: 50% of viewport
   // Full: 92% of viewport (leaving some map visible)
-  const snapPoints = [180, typeof window !== "undefined" ? window.innerHeight * 0.5 : 420, typeof window !== "undefined" ? window.innerHeight * 0.92 : 760];
+  // Use fixed values on server, update on client after mount to avoid hydration mismatch
+  const [snapPoints, setSnapPoints] = useState([180, 420, 760]);
+  useEffect(() => {
+    setSnapPoints([180, window.innerHeight * 0.5, window.innerHeight * 0.92]);
+  }, []);
 
   // Props shared between mobile panel and desktop POI list
   const poiListProps = {

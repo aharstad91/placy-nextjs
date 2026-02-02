@@ -4,12 +4,11 @@ import { useState } from "react";
 import type { POI, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
-import { cn, formatTravelTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import {
   Star,
   MapPin,
-  MapPinned,
   ExternalLink,
   ChevronDown,
   Sparkles,
@@ -19,8 +18,6 @@ import {
   Bus,
   Navigation,
   Clock,
-  Globe,
-  Phone,
   Plus,
   Check,
 } from "lucide-react";
@@ -72,6 +69,7 @@ export default function ExplorerPOICard({
     ? `/api/places/photo?reference=${poi.photoReference}&maxwidth=400`
     : null;
 
+  const hasImage = imageUrl && !imageError;
   const travelTime = poi.travelTime?.[travelMode];
   const TravelIcon = travelModeIcons[travelMode];
   const isOpen = openingHours?.isOpen;
@@ -118,144 +116,234 @@ export default function ExplorerPOICard({
   return (
     <div
       className={cn(
-        "w-full text-left transition-all duration-200",
+        "w-full text-left transition-all duration-300 ease-out",
         isActive ? "bg-gray-50" : "hover:bg-gray-50/50"
       )}
     >
-      <button onClick={onClick} className="w-full text-left">
-      <div className="px-4 py-3">
-        {/* Main row */}
-        <div className="flex items-start gap-3">
-          {/* Category icon */}
-          <div
-            className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center mt-0.5"
-            style={{ backgroundColor: poi.category.color }}
-          >
-            <CategoryIcon className="w-4 h-4 text-white" />
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-gray-900 truncate">
-                {poi.name}
-              </h3>
-              {poi.editorialHook && (
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-              )}
-            </div>
-
-            {/* Meta line: category · rating · walk time · open status */}
-            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              <span
-                className="text-xs font-medium"
-                style={{ color: poi.category.color }}
-              >
-                {poi.category.name}
-              </span>
-
-              {poi.googleRating && (
-                <>
-                  <span className="text-gray-300">·</span>
-                  <span className="flex items-center gap-0.5 text-xs text-gray-500">
-                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                    {poi.googleRating.toFixed(1)}
-                  </span>
-                </>
-              )}
-
-              {travelTime != null && (
-                <>
-                  <span className="text-gray-300">·</span>
-                  <span className="flex items-center gap-0.5 text-xs text-gray-500">
-                    <TravelIcon className="w-3 h-3" />
-                    {Math.round(travelTime)} min
-                  </span>
-                </>
-              )}
-
-              {travelTime == null && travelTimesLoading && (
-                <>
-                  <span className="text-gray-300">·</span>
-                  <span className="w-10 h-3 bg-gray-100 rounded animate-pulse" />
-                </>
-              )}
-
-              {isOpen === true && (
-                <>
-                  <span className="text-gray-300">·</span>
-                  <span className="text-xs font-medium text-emerald-600">
-                    Åpen
-                  </span>
-                </>
-              )}
-
-              {isOpen === false && (
-                <>
-                  <span className="text-gray-300">·</span>
-                  <span className="text-xs text-gray-400">
-                    Stengt
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Collection toggle pill button + Expand indicator */}
-          <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
-            {onToggleCollection && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleCollection(poi.id);
-                }}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-medium transition-colors",
-                  isInCollection
-                    ? "bg-sky-50 text-sky-600"
-                    : "bg-gray-100 text-gray-500 hover:bg-sky-50 hover:text-sky-600"
-                )}
-              >
-                {isInCollection ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Lagret</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Lagre</span>
-                  </>
-                )}
-              </button>
-            )}
-            <ChevronDown
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        className="w-full text-left cursor-pointer"
+      >
+        {/* === COLLAPSED STATE === */}
+        <div
+          className={cn(
+            "px-4 py-3 transition-all duration-300 ease-out",
+            isActive ? "opacity-0 h-0 py-0 overflow-hidden" : "opacity-100"
+          )}
+        >
+          <div className="flex items-start gap-3">
+            {/* Thumbnail / Category icon */}
+            <div
               className={cn(
-                "w-4 h-4 text-gray-300 transition-transform duration-200",
-                isActive && "rotate-180 text-gray-500"
+                "flex-shrink-0 overflow-hidden",
+                hasImage ? "w-12 h-12 rounded-xl" : "w-9 h-9 rounded-full mt-0.5"
               )}
-            />
-          </div>
-        </div>
-      </div>
-      </button>
-
-      {/* Expanded content — outside button so links are clickable */}
-      {isActive && (
-        <div className="px-4 pb-3">
-          <div className="ml-12 space-y-3">
-            {/* Image */}
-            {imageUrl && !imageError && (
-              <div className="rounded-lg overflow-hidden aspect-[16/9] bg-gray-100">
+              style={!hasImage ? { backgroundColor: poi.category.color } : undefined}
+            >
+              {hasImage ? (
                 <img
                   src={imageUrl}
                   alt={poi.name}
                   className="w-full h-full object-cover"
                   onError={() => setImageError(true)}
                 />
-              </div>
-            )}
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <CategoryIcon className="w-4 h-4 text-white" />
+                </div>
+              )}
+            </div>
 
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-gray-900 truncate">
+                  {poi.name}
+                </h3>
+                {poi.editorialHook && (
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span className="text-xs font-medium" style={{ color: poi.category.color }}>
+                  {poi.category.name}
+                </span>
+                {poi.googleRating && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    <span className="flex items-center gap-0.5 text-xs text-gray-500">
+                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      {poi.googleRating.toFixed(1)}
+                    </span>
+                  </>
+                )}
+                {travelTime != null && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    <span className="flex items-center gap-0.5 text-xs text-gray-500">
+                      <TravelIcon className="w-3 h-3" />
+                      {Math.round(travelTime)} min
+                    </span>
+                  </>
+                )}
+                {travelTime == null && travelTimesLoading && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    <span className="w-10 h-3 bg-gray-100 rounded animate-pulse" />
+                  </>
+                )}
+                {isOpen === true && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    <span className="text-xs font-medium text-emerald-600">Åpen</span>
+                  </>
+                )}
+                {isOpen === false && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    <span className="text-xs text-gray-400">Stengt</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Save button + chevron */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
+              {onToggleCollection && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleCollection(poi.id);
+                  }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-medium transition-colors",
+                    isInCollection
+                      ? "bg-sky-50 text-sky-600"
+                      : "bg-gray-100 text-gray-500 hover:bg-sky-50 hover:text-sky-600"
+                  )}
+                >
+                  {isInCollection ? (
+                    <><Check className="w-3.5 h-3.5" /><span>Lagret</span></>
+                  ) : (
+                    <><Plus className="w-3.5 h-3.5" /><span>Lagre</span></>
+                  )}
+                </button>
+              )}
+              <ChevronDown className="w-4 h-4 text-gray-300" />
+            </div>
+          </div>
+        </div>
+
+        {/* === EXPANDED STATE === */}
+        <div
+          className={cn(
+            "transition-all duration-300 ease-out",
+            isActive ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
+          )}
+        >
+          {/* Full-width image */}
+          {hasImage && (
+            <div className="w-full aspect-[16/9] overflow-hidden">
+              <img
+                src={imageUrl}
+                alt={poi.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            </div>
+          )}
+
+          {/* Title row below image */}
+          <div className="px-4 py-3">
+            <div className="flex items-start gap-3">
+              {/* Category icon (when no image) or small badge */}
+              <div
+                className={cn(
+                  "flex-shrink-0 rounded-full flex items-center justify-center",
+                  hasImage ? "w-6 h-6 mt-0.5" : "w-9 h-9"
+                )}
+                style={{ backgroundColor: poi.category.color }}
+              >
+                <CategoryIcon className={cn("text-white", hasImage ? "w-3 h-3" : "w-4 h-4")} />
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-gray-900 truncate">
+                    {poi.name}
+                  </h3>
+                  {poi.editorialHook && (
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <span className="text-xs font-medium" style={{ color: poi.category.color }}>
+                    {poi.category.name}
+                  </span>
+                  {poi.googleRating && (
+                    <>
+                      <span className="text-gray-300">·</span>
+                      <span className="flex items-center gap-0.5 text-xs text-gray-500">
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                        {poi.googleRating.toFixed(1)}
+                      </span>
+                    </>
+                  )}
+                  {travelTime != null && (
+                    <>
+                      <span className="text-gray-300">·</span>
+                      <span className="flex items-center gap-0.5 text-xs text-gray-500">
+                        <TravelIcon className="w-3 h-3" />
+                        {Math.round(travelTime)} min
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Save button + chevron */}
+              <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
+                {onToggleCollection && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleCollection(poi.id);
+                    }}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-medium transition-colors",
+                      isInCollection
+                        ? "bg-sky-50 text-sky-600"
+                        : "bg-gray-100 text-gray-500 hover:bg-sky-50 hover:text-sky-600"
+                    )}
+                  >
+                    {isInCollection ? (
+                      <><Check className="w-3.5 h-3.5" /><span>Lagret</span></>
+                    ) : (
+                      <><Plus className="w-3.5 h-3.5" /><span>Lagre</span></>
+                    )}
+                  </button>
+                )}
+                <ChevronDown className="w-4 h-4 text-gray-500 rotate-180" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded content — outside clickable area so links work */}
+      {isActive && (
+        <div className="px-4 pb-3">
+          {/* Align with content: 24px badge + 12px gap = 36px (with image), or 36px icon + 12px gap = 48px */}
+          <div className={cn(hasImage ? "ml-9" : "ml-12", "space-y-3")}>
             {/* Editorial hook */}
             {poi.editorialHook && (
               <div className="bg-amber-50 rounded-lg px-3 py-2.5 border border-amber-100">

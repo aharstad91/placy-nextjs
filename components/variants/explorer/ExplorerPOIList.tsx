@@ -112,6 +112,7 @@ export default function ExplorerPOIList({
 
   // Package data for dropdown — count POIs per package
   const packageData = useMemo(() => {
+    if (!packages) return [];
     const catMap = new Map(categories.map((c) => [c.id, c]));
     return packages.map((pkg) => {
       const catIds = pkg.id === "all"
@@ -124,10 +125,11 @@ export default function ExplorerPOIList({
 
   // Active package info for trigger
   const activePackageDef = useMemo(() => {
+    if (packageData.length === 0) return null;
     return packageData.find((d) => d.pkg.id === activePackage) || packageData.find((d) => d.pkg.id === "all")!;
   }, [packageData, activePackage]);
 
-  const ActivePkgIcon = getIcon(activePackageDef.pkg.icon);
+  const ActivePkgIcon = activePackageDef ? getIcon(activePackageDef.pkg.icon) : null;
 
   // Categories for the category dropdown (scoped to active package)
   const dropdownCategories = useMemo(() => {
@@ -191,44 +193,46 @@ export default function ExplorerPOIList({
 
       {/* Filter toolbar — packages + categories + travel mode */}
       <div className="flex-shrink-0 px-8 pb-3 flex items-center gap-2">
-        {/* Package dropdown */}
-        <div ref={pkgDropdownRef} className="relative flex-1">
-          <button
-            onClick={() => { setPkgDropdownOpen((p) => !p); setCatDropdownOpen(false); setTravelDropdownOpen(false); }}
-            className={cn(chipClass, "w-full justify-center")}
-          >
-            <ActivePkgIcon className="w-4 h-4 text-gray-500" />
-            <span className="truncate">{activePackageDef.pkg.name}</span>
-            <span className="text-xs text-gray-400 tabular-nums">({activePackageDef.poiCount})</span>
-            <ChevronDown className={cn("w-3.5 h-3.5 text-gray-400 transition-transform", pkgDropdownOpen && "rotate-180")} />
-          </button>
+        {/* Package dropdown — only shown if packages are defined */}
+        {packages && activePackageDef && ActivePkgIcon && (
+          <div ref={pkgDropdownRef} className="relative flex-1">
+            <button
+              onClick={() => { setPkgDropdownOpen((p) => !p); setCatDropdownOpen(false); setTravelDropdownOpen(false); }}
+              className={cn(chipClass, "w-full justify-center")}
+            >
+              <ActivePkgIcon className="w-4 h-4 text-gray-500" />
+              <span className="truncate">{activePackageDef.pkg.name}</span>
+              <span className="text-xs text-gray-400 tabular-nums">({activePackageDef.poiCount})</span>
+              <ChevronDown className={cn("w-3.5 h-3.5 text-gray-400 transition-transform", pkgDropdownOpen && "rotate-180")} />
+            </button>
 
-          {pkgDropdownOpen && (
-            <div className="absolute top-full mt-1.5 left-0 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-50">
-              {packageData.map(({ pkg, poiCount }) => {
-                const Icon = getIcon(pkg.icon);
-                const isActive = activePackage === pkg.id ||
-                  (pkg.id === "all" && (activePackage === "all" || activeCategories.size === categories.length));
+            {pkgDropdownOpen && (
+              <div className="absolute top-full mt-1.5 left-0 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-50">
+                {packageData.map(({ pkg, poiCount }) => {
+                  const Icon = getIcon(pkg.icon);
+                  const isActive = activePackage === pkg.id ||
+                    (pkg.id === "all" && (activePackage === "all" || activeCategories.size === categories.length));
 
-                return (
-                  <button
-                    key={pkg.id}
-                    onClick={() => handleSelectPackage(pkg.id)}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors",
-                      isActive ? "bg-gray-50 text-gray-900 font-medium" : "text-gray-600 hover:bg-gray-50"
-                    )}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="flex-1 text-left">{pkg.name}</span>
-                    <span className="text-xs text-gray-400 tabular-nums">{poiCount}</span>
-                    {isActive && <Check className="w-3.5 h-3.5 text-gray-500" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  return (
+                    <button
+                      key={pkg.id}
+                      onClick={() => handleSelectPackage(pkg.id)}
+                      className={cn(
+                        "w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors",
+                        isActive ? "bg-gray-50 text-gray-900 font-medium" : "text-gray-600 hover:bg-gray-50"
+                      )}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="flex-1 text-left">{pkg.name}</span>
+                      <span className="text-xs text-gray-400 tabular-nums">{poiCount}</span>
+                      {isActive && <Check className="w-3.5 h-3.5 text-gray-500" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Categories dropdown */}
         <div ref={catDropdownRef} className="relative flex-1">

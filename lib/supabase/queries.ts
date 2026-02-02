@@ -511,6 +511,9 @@ export async function getProjectFromSupabase(
       lat: project.center_lat,
       lng: project.center_lng,
     },
+    // Supabase projects: explicitly null = no packages UI
+    // (can be extended later with JSONB column if needed)
+    packages: null,
     story,
     pois,
     categories,
