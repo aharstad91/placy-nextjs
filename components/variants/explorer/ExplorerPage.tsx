@@ -394,30 +394,30 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     distanceToProject: geo.distanceToProject,
   };
 
-  // Desktop: map fullscreen with floating sidebar (40%) overlaid on right
+  // Desktop: split layout — map gets its own area, no sidebar overlap
   const desktopMapPadding = {
-    left: 0,
-    top: 0,
-    right: typeof window !== "undefined" ? window.innerWidth * 0.4 : 500,
-    bottom: 0,
+    left: 60,
+    top: 60,
+    right: 60,
+    bottom: 60,
   };
 
   return (
     <div className="h-[calc(100vh-3rem)] w-screen relative overflow-hidden bg-white">
       {/* ===== DESKTOP LAYOUT (lg+) ===== */}
 
-      {/* Desktop: fullscreen map + floating glassmorphism sidebar */}
-      <div className="hidden lg:block h-full relative">
-        {/* Map: full viewport */}
-        <div className="absolute inset-0">
+      {/* Desktop: flex split — map + flush sidebar */}
+      <div className="hidden lg:flex h-full">
+        {/* Map: takes remaining width */}
+        <div className="flex-1 relative">
           <ExplorerMap
             {...mapProps}
             mapPadding={desktopMapPadding}
           />
         </div>
 
-        {/* Sidebar: floating right panel with glassmorphism */}
-        <div className="absolute top-6 right-6 bottom-6 w-[40%] bg-white/90 backdrop-blur-md rounded-2xl border border-white/50 shadow-[-4px_0_24px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col z-10">
+        {/* Sidebar: flush right panel */}
+        <div className="w-[40%] flex-shrink-0 bg-white border-l border-gray-200 overflow-hidden flex flex-col">
           <ExplorerPOIList
             {...poiListProps}
             allPOIs={poisWithTravelTimes}
