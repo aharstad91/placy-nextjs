@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import type { Project, POI } from "@/lib/types";
 import { ferjemannsveien10Content } from "./portrait-content";
 import type { PortraitContent } from "./portrait-content";
@@ -13,17 +13,6 @@ interface PortraitPageProps {
 }
 
 export default function PortraitPage({ project }: PortraitPageProps) {
-  const [scrolledPastHero, setScrolledPastHero] = useState(false);
-
-  // Sticky header: show after scrolling past hero
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolledPastHero(window.scrollY > window.innerHeight * 0.8);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   // Build POI lookup map
   const poiMap = useMemo(() => {
     const map = new Map<string, POI>();
@@ -38,27 +27,6 @@ export default function PortraitPage({ project }: PortraitPageProps) {
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
-      {/* Sticky header */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolledPastHero
-            ? "bg-[#faf9f7]/95 backdrop-blur-sm border-b border-[#e8e4df]"
-            : "bg-transparent pointer-events-none"
-        }`}
-      >
-        <div className="max-w-prose mx-auto px-6 py-4">
-          <span
-            className={`text-sm tracking-[0.15em] uppercase transition-opacity duration-500 ${
-              scrolledPastHero
-                ? "opacity-100 text-[#1a1a1a]"
-                : "opacity-0"
-            }`}
-          >
-            {project.name}
-          </span>
-        </div>
-      </header>
-
       {/* Hero */}
       <PortraitHero
         title={content.heroTitle}

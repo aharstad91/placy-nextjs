@@ -1,16 +1,36 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { POI } from "@/lib/types";
 import { Star, MapPin, ChevronDown, ExternalLink } from "lucide-react";
 
 interface ReportCompactListProps {
   pois: POI[];
+  explorerBaseUrl?: string | null;
+  themeCategories?: string[];
 }
 
 const INITIAL_VISIBLE = 5;
 
-export default function ReportCompactList({ pois }: ReportCompactListProps) {
+function buildExplorerUrl(
+  baseUrl: string,
+  poiId: string,
+  categories?: string[]
+): string {
+  const params = new URLSearchParams();
+  params.set("poi", poiId);
+  if (categories && categories.length > 0) {
+    params.set("categories", categories.join(","));
+  }
+  return `${baseUrl}?${params.toString()}`;
+}
+
+export default function ReportCompactList({
+  pois,
+  explorerBaseUrl,
+  themeCategories,
+}: ReportCompactListProps) {
   const [showAll, setShowAll] = useState(false);
 
   if (pois.length === 0) return null;
@@ -26,14 +46,12 @@ export default function ReportCompactList({ pois }: ReportCompactListProps) {
             ? Math.round(poi.travelTime.walk / 60)
             : null;
 
-          return (
-            <a
-              key={poi.id}
-              href={poi.googleMapsUrl ?? "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center gap-3 px-4 py-3 hover:bg-[#faf9f7] transition-colors"
-            >
+          const explorerUrl = explorerBaseUrl
+            ? buildExplorerUrl(explorerBaseUrl, poi.id, themeCategories)
+            : null;
+
+          const rowContent = (
+            <>
               {/* Category color dot */}
               <span
                 className="w-2 h-2 rounded-full flex-shrink-0"
@@ -61,8 +79,45 @@ export default function ReportCompactList({ pois }: ReportCompactListProps) {
                 </span>
               )}
 
-              {/* External link */}
-              <ExternalLink className="w-3 h-3 text-[#c0b9ad] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+              {/* Google Maps icon (secondary when explorer exists) */}
+              {explorerUrl && poi.googleMapsUrl ? (
+                <a
+                  href={poi.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Åpne i Google Maps"
+                >
+                  <ExternalLink className="w-3 h-3 text-[#c0b9ad] hover:text-[#7a7062]" />
+                </a>
+              ) : (
+                <ExternalLink className="w-3 h-3 text-[#c0b9ad] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+              )}
+            </>
+          );
+
+          if (explorerUrl) {
+            return (
+              <Link
+                key={poi.id}
+                href={explorerUrl}
+                className="group flex items-center gap-3 px-4 py-3 hover:bg-[#faf9f7] transition-colors"
+              >
+                {rowContent}
+              </Link>
+            );
+          }
+
+          return (
+            <a
+              key={poi.id}
+              href={poi.googleMapsUrl ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-3 px-4 py-3 hover:bg-[#faf9f7] transition-colors"
+            >
+              {rowContent}
             </a>
           );
         })}

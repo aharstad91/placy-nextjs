@@ -3,14 +3,20 @@ import type { POI, Coordinates } from "@/lib/types";
 interface ReportDensityMapProps {
   pois: POI[];
   center: Coordinates;
+  mapStyle?: string;
 }
+
+const DEFAULT_MAP_STYLE = "mapbox/light-v11";
 
 export default function ReportDensityMap({
   pois,
   center,
+  mapStyle,
 }: ReportDensityMapProps) {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   if (!token || pois.length === 0) return null;
+
+  const style = mapStyle ?? DEFAULT_MAP_STYLE;
 
   // Project center marker (larger, dark)
   const centerMarker = `pin-l+1a1a1a(${center.lng},${center.lat})`;
@@ -25,7 +31,7 @@ export default function ReportDensityMap({
 
   const markers = `${centerMarker},${poiMarkers}`;
 
-  const url = `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${markers}/auto/800x400@2x?padding=50&access_token=${token}`;
+  const url = `https://api.mapbox.com/styles/v1/${style}/static/${markers}/auto/800x400@2x?padding=50&access_token=${token}`;
 
   const altText = `Kart over ${pois.length} steder i kategorien: ${pois
     .slice(0, 3)

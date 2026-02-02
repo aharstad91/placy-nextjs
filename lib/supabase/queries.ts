@@ -475,12 +475,20 @@ export async function getProjectFromSupabase(
   }
 
   // Fetch all related data in parallel
-  const [pois, themeStories, sections, categories] = await Promise.all([
+  const [pois, themeStories, sections] = await Promise.all([
     getProjectPOIs(project.id),
     getProjectThemeStories(project.id),
     getProjectStorySections(project.id),
-    getCategories(),
   ]);
+
+  // Derive categories from project's POIs (not all categories in DB)
+  const categoryMap = new Map<string, Category>();
+  for (const poi of pois) {
+    if (poi.category && !categoryMap.has(poi.category.id)) {
+      categoryMap.set(poi.category.id, poi.category);
+    }
+  }
+  const categories = Array.from(categoryMap.values());
 
   // Build the Story object
   const story: Story = {

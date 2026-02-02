@@ -37,6 +37,62 @@ function getProjectFromJSON(customer: string, projectSlug: string): Project | nu
 }
 
 /**
+ * Check if a project slug exists for a customer
+ * SERVER ONLY
+ */
+export async function projectExists(
+  customer: string,
+  projectSlug: string
+): Promise<boolean> {
+  const project = await getProjectAsync(customer, projectSlug);
+  return project !== null;
+}
+
+/**
+ * Derive sibling product slugs using naming convention:
+ * - Report: {base-slug} (e.g. "quality-hotel-augustin")
+ * - Explorer: {base-slug}-explore
+ * - Guide: {base-slug}-guide
+ *
+ * Returns the base slug stripped of any product suffix.
+ */
+export function getBaseSlug(slug: string): string {
+  if (slug.endsWith("-explore")) return slug.slice(0, -8);
+  if (slug.endsWith("-guide")) return slug.slice(0, -6);
+  return slug;
+}
+
+export interface SiblingProducts {
+  explore?: string; // URL path like /customer/slug-explore
+  guide?: string;
+  report?: string;
+}
+
+/**
+ * Find sibling product URLs for a given project
+ * SERVER ONLY
+ */
+export async function getSiblingProducts(
+  customer: string,
+  projectSlug: string,
+): Promise<SiblingProducts> {
+  const base = getBaseSlug(projectSlug);
+
+  const [hasReport, hasExplore, hasGuide] = await Promise.all([
+    projectExists(customer, base),
+    projectExists(customer, `${base}-explore`),
+    projectExists(customer, `${base}-guide`),
+  ]);
+
+  const siblings: SiblingProducts = {};
+  if (hasReport) siblings.report = `/${customer}/${base}`;
+  if (hasExplore) siblings.explore = `/${customer}/${base}-explore`;
+  if (hasGuide) siblings.guide = `/${customer}/${base}-guide`;
+
+  return siblings;
+}
+
+/**
  * Load project data asynchronously - prefers Supabase when configured
  * SERVER ONLY - do not import in client components
  */

@@ -3,21 +3,30 @@ import type { ReportHeroMetrics } from "./report-data";
 interface ReportHeroProps {
   projectName: string;
   metrics: ReportHeroMetrics;
+  label?: string;
+  heroIntro?: string;
 }
 
-export default function ReportHero({ projectName, metrics }: ReportHeroProps) {
+export default function ReportHero({ projectName, metrics, label, heroIntro }: ReportHeroProps) {
   return (
-    <section className="pt-16 pb-12 md:pt-24 md:pb-16">
+    <section className="pt-6 pb-12 md:pt-12 md:pb-16">
       <div className="max-w-3xl mx-auto px-6">
         {/* Label */}
         <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-4">
-          Nabolagsrapport
+          {label ?? "Nabolagsrapport"}
         </p>
 
         {/* Project name */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#1a1a1a] leading-tight mb-6">
           {projectName}
         </h1>
+
+        {/* Custom intro paragraph */}
+        {heroIntro && (
+          <p className="text-lg md:text-xl text-[#4a4a4a] leading-relaxed mb-4">
+            {heroIntro}
+          </p>
+        )}
 
         {/* Summary paragraph with inline metrics */}
         <p className="text-lg md:text-xl text-[#4a4a4a] leading-relaxed">

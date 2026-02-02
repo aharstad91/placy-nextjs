@@ -1,11 +1,31 @@
+import Link from "next/link";
 import type { POI } from "@/lib/types";
 import { Star, MapPin, ExternalLink } from "lucide-react";
 
 interface ReportHighlightCardProps {
   poi: POI;
+  explorerBaseUrl?: string | null;
+  themeCategories?: string[];
 }
 
-export default function ReportHighlightCard({ poi }: ReportHighlightCardProps) {
+function buildExplorerUrl(
+  baseUrl: string,
+  poiId: string,
+  categories?: string[]
+): string {
+  const params = new URLSearchParams();
+  params.set("poi", poiId);
+  if (categories && categories.length > 0) {
+    params.set("categories", categories.join(","));
+  }
+  return `${baseUrl}?${params.toString()}`;
+}
+
+export default function ReportHighlightCard({
+  poi,
+  explorerBaseUrl,
+  themeCategories,
+}: ReportHighlightCardProps) {
   const hasImage = poi.photoReference;
   const imageUrl = hasImage
     ? `/api/places/photo?reference=${poi.photoReference}&maxwidth=400`
@@ -15,13 +35,24 @@ export default function ReportHighlightCard({ poi }: ReportHighlightCardProps) {
     ? Math.round(poi.travelTime.walk / 60)
     : null;
 
+  const explorerUrl = explorerBaseUrl
+    ? buildExplorerUrl(explorerBaseUrl, poi.id, themeCategories)
+    : null;
+
+  const CardWrapper = explorerUrl
+    ? ({ children, className }: { children: React.ReactNode; className: string }) => (
+        <Link href={explorerUrl} className={className}>
+          {children}
+        </Link>
+      )
+    : ({ children, className }: { children: React.ReactNode; className: string }) => (
+        <a href={poi.googleMapsUrl ?? "#"} target="_blank" rel="noopener noreferrer" className={className}>
+          {children}
+        </a>
+      );
+
   return (
-    <a
-      href={poi.googleMapsUrl ?? "#"}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group block bg-white rounded-xl shadow-sm border border-[#eae6e1] overflow-hidden hover:shadow-md transition-shadow"
-    >
+    <CardWrapper className="group block bg-white rounded-xl shadow-sm border border-[#eae6e1] overflow-hidden hover:shadow-md transition-shadow">
       {/* Image or fallback */}
       <div className="relative h-40 overflow-hidden">
         {imageUrl ? (
@@ -36,7 +67,6 @@ export default function ReportHighlightCard({ poi }: ReportHighlightCardProps) {
             className="w-full h-full flex items-center justify-center relative overflow-hidden"
             style={{ backgroundColor: poi.category.color + "10" }}
           >
-            {/* Decorative circles */}
             <div
               className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-[0.07]"
               style={{ backgroundColor: poi.category.color }}
@@ -61,12 +91,30 @@ export default function ReportHighlightCard({ poi }: ReportHighlightCardProps) {
 
       {/* Content */}
       <div className="p-4">
-        {/* Name + external link icon */}
+        {/* Name + external links */}
         <div className="flex items-start justify-between gap-2 mb-2">
           <h4 className="font-semibold text-[#1a1a1a] leading-snug">
             {poi.name}
           </h4>
-          <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+            {/* Google Maps secondary link */}
+            {explorerUrl && poi.googleMapsUrl && (
+              <a
+                href={poi.googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Åpne i Google Maps"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] hover:text-[#7a7062]" />
+              </a>
+            )}
+            {/* Show external link icon when no explorer (original behavior) */}
+            {!explorerUrl && (
+              <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] opacity-0 group-hover:opacity-100 transition-opacity" />
+            )}
+          </div>
         </div>
 
         {/* Rating */}
@@ -99,6 +147,6 @@ export default function ReportHighlightCard({ poi }: ReportHighlightCardProps) {
           </div>
         )}
       </div>
-    </a>
+    </CardWrapper>
   );
 }

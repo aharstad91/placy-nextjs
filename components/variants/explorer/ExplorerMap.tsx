@@ -78,9 +78,11 @@ export default function ExplorerMap({
     return Icon || LucideIcons.MapPin;
   }, []);
 
-  // Fit to initial bounds (for collection view)
+  // Fit to initial bounds on first load
+  const hasInitialFitRef = useRef(false);
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !initialBounds) return;
+    if (!mapRef.current || !mapLoaded || !initialBounds || hasInitialFitRef.current) return;
+    hasInitialFitRef.current = true;
     mapRef.current.fitBounds(
       [
         [initialBounds.minLng, initialBounds.minLat],

@@ -3,7 +3,9 @@ import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 
 interface CollectionState {
+  projectId: string | null;
   collectionPOIs: string[];
+  setProject: (projectId: string) => void;
   addToCollection: (poiId: string) => void;
   removeFromCollection: (poiId: string) => void;
   clearCollection: () => void;
@@ -13,7 +15,14 @@ interface CollectionState {
 export const useCollectionStore = create<CollectionState>()(
   persist(
     (set, get) => ({
+      projectId: null,
       collectionPOIs: [],
+
+      setProject: (projectId: string) => {
+        if (get().projectId !== projectId) {
+          set({ projectId, collectionPOIs: [] });
+        }
+      },
 
       addToCollection: (poiId: string) =>
         set((state) => {
@@ -41,6 +50,7 @@ export const useCollection = () =>
   useCollectionStore(
     useShallow((state) => ({
       collectionPOIs: state.collectionPOIs,
+      setProject: state.setProject,
       addToCollection: state.addToCollection,
       removeFromCollection: state.removeFromCollection,
       clearCollection: state.clearCollection,

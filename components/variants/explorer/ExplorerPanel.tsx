@@ -259,7 +259,7 @@ export default function ExplorerPanel({
 
           {/* Category dropdown */}
           {activeDropdown === "cat" && (
-            <div className="py-1 max-h-52 overflow-y-auto">
+            <div className="py-1 max-h-[480px] overflow-y-auto">
               {dropdownCategories.map((cat) => {
                 const Icon = getIcon(cat.icon);
                 const isActive = activeCategories.has(cat.id);

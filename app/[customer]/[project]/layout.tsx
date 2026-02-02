@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { getProjectAsync, getSiblingProducts } from "@/lib/data-server";
+import ProductNav from "@/components/shared/ProductNav";
+import type { ProductLink } from "@/components/shared/ProductNav";
 
-// Dynamisk metadata basert på prosjekt
+interface LayoutProps {
+  params: Promise<{ customer: string; project: string }>;
+  children: React.ReactNode;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -8,7 +15,6 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { customer, project } = await params;
 
-  // Konverter slug til lesbar tittel
   const formatTitle = (slug: string) =>
     slug
       .split("-")
@@ -26,10 +32,48 @@ export async function generateMetadata({
   };
 }
 
-export default function ProjectLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <>{children}</>;
+export default async function ProjectLayout({ params, children }: LayoutProps) {
+  const { customer, project: projectSlug } = await params;
+
+  const [projectData, siblings] = await Promise.all([
+    getProjectAsync(customer, projectSlug),
+    getSiblingProducts(customer, projectSlug),
+  ]);
+
+  if (!projectData) {
+    return <>{children}</>;
+  }
+
+  // Build product links from sibling data
+  const currentPath = `/${customer}/${projectSlug}`;
+  const products: ProductLink[] = [];
+
+  if (siblings.explore) {
+    products.push({
+      label: "Explore",
+      href: siblings.explore,
+      active: siblings.explore === currentPath,
+    });
+  }
+  if (siblings.guide) {
+    products.push({
+      label: "Guides",
+      href: siblings.guide,
+      active: siblings.guide === currentPath,
+    });
+  }
+  if (siblings.report) {
+    products.push({
+      label: "Report",
+      href: siblings.report,
+      active: siblings.report === currentPath,
+    });
+  }
+
+  return (
+    <>
+      <ProductNav projectName={projectData.name} products={products} />
+      <div className="pt-12">{children}</div>
+    </>
+  );
 }

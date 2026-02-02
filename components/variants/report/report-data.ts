@@ -1,5 +1,5 @@
 import type { Project, POI } from "@/lib/types";
-import { REPORT_THEMES } from "./report-themes";
+import { getReportThemes } from "./report-themes";
 
 export interface ReportHeroMetrics {
   totalPOIs: number;
@@ -21,6 +21,7 @@ export interface ReportTheme {
   id: string;
   name: string;
   icon: string;
+  intro?: string;
   stats: ReportThemeStats;
   highlightPOIs: POI[];
   listPOIs: POI[];
@@ -34,6 +35,11 @@ export interface ReportData {
   centerCoordinates: { lat: number; lng: number };
   heroMetrics: ReportHeroMetrics;
   themes: ReportTheme[];
+  label?: string;
+  heroIntro?: string;
+  closingTitle?: string;
+  closingText?: string;
+  mapStyle?: string;
 }
 
 const TRANSPORT_CATEGORIES = new Set([
@@ -77,14 +83,15 @@ export function transformToReportData(project: Project): ReportData {
 
   // Group POIs by theme
   const themes: ReportTheme[] = [];
+  const themeDefinitions = getReportThemes(project);
   const categorySet = new Map<string, Set<string>>();
 
-  for (const theme of REPORT_THEMES) {
+  for (const theme of themeDefinitions) {
     const cats = new Set(theme.categories);
     categorySet.set(theme.id, cats);
   }
 
-  for (const themeDef of REPORT_THEMES) {
+  for (const themeDef of themeDefinitions) {
     const cats = categorySet.get(themeDef.id)!;
     const themePOIs = allPOIs.filter((p) => cats.has(p.category.id));
 
@@ -120,6 +127,7 @@ export function transformToReportData(project: Project): ReportData {
       id: themeDef.id,
       name: themeDef.name,
       icon: themeDef.icon,
+      intro: themeDef.intro,
       stats: {
         totalPOIs: themePOIs.length,
         ratedPOIs: themeRated.length,
@@ -137,11 +145,18 @@ export function transformToReportData(project: Project): ReportData {
   // Sort themes by richness descending
   themes.sort((a, b) => b.richnessScore - a.richnessScore);
 
+  const rc = project.reportConfig;
+
   return {
     projectName: project.name,
     address: project.pois[0]?.address ?? "",
     centerCoordinates: project.centerCoordinates,
     heroMetrics,
     themes,
+    label: rc?.label,
+    heroIntro: rc?.heroIntro,
+    closingTitle: rc?.closingTitle,
+    closingText: rc?.closingText,
+    mapStyle: rc?.mapStyle,
   };
 }

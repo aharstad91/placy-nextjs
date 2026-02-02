@@ -437,7 +437,7 @@ export function ProjectsAdminClient({
                 >
                   <option value="explorer">Explorer</option>
                   <option value="report">Report</option>
-                  <option value="portrait">Portrait</option>
+                  <option value="portrait">Guide</option>
                 </select>
               </div>
 

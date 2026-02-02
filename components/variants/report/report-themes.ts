@@ -1,8 +1,11 @@
+import type { Project } from "@/lib/types";
+
 export interface ReportThemeDefinition {
   id: string;
   name: string;
   icon: string;
   categories: string[];
+  intro?: string;
 }
 
 export const REPORT_THEMES: ReportThemeDefinition[] = [
@@ -31,3 +34,10 @@ export const REPORT_THEMES: ReportThemeDefinition[] = [
     categories: ["gym", "outdoor"],
   },
 ];
+
+export function getReportThemes(project: Project): ReportThemeDefinition[] {
+  if (project.reportConfig?.themes) {
+    return project.reportConfig.themes;
+  }
+  return REPORT_THEMES;
+}

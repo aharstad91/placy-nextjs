@@ -13,7 +13,8 @@
     "import:hyre": "npx tsx scripts/import-hyre-stations.ts",
     "import:kommune": "npx tsx scripts/import-kommune-pois.ts",
     "import:atb": "npx tsx scripts/import-atb-stops.ts",
-    "import:bysykkel": "npx tsx scripts/import-bysykkel.ts"
+    "import:bysykkel": "npx tsx scripts/import-bysykkel.ts",
+    "import:kml": "npx tsx scripts/import-kml.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -47,6 +48,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.4",
+    "fast-xml-parser": "^5.3.4",
     "jsdom": "^27.0.1",
     "tsx": "^4.21.0",
     "vitest": "^3.2.4"

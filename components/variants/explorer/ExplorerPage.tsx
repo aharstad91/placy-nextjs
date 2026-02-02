@@ -27,20 +27,29 @@ interface CollectionData {
 interface ExplorerPageProps {
   project: Project;
   collection?: CollectionData;
+  initialPOI?: string;
+  initialCategories?: string[];
 }
 
-export default function ExplorerPage({ project, collection }: ExplorerPageProps) {
+export default function ExplorerPage({ project, collection, initialPOI, initialCategories }: ExplorerPageProps) {
   const isCollectionView = !!collection;
   const { travelMode, setTravelMode } = useTravelSettings();
-  const { collectionPOIs, addToCollection, removeFromCollection, clearCollection } = useCollection();
+  const { collectionPOIs, setProject, addToCollection, removeFromCollection, clearCollection } = useCollection();
+  // Scope collection to current project — clears stale POIs from other projects
+  useEffect(() => { setProject(project.id); }, [project.id, setProject]);
   const [collectionDrawerOpen, setCollectionDrawerOpen] = useState(false);
   const [collectionFlash, setCollectionFlash] = useState(false);
   const prevCollectionCountRef = useRef(0);
-  const [activePOI, setActivePOI] = useState<string | null>(null);
+  const [activePOI, setActivePOI] = useState<string | null>(initialPOI ?? null);
   const [highlightedPOI, setHighlightedPOI] = useState<string | null>(null);
-  const [activeCategories, setActiveCategories] = useState<Set<string>>(
-    new Set(project.categories.map((c) => c.id))
-  );
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(() => {
+    if (initialCategories && initialCategories.length > 0) {
+      const validIds = new Set(project.categories.map((c) => c.id));
+      const filtered = initialCategories.filter((id) => validIds.has(id));
+      if (filtered.length > 0) return new Set(filtered);
+    }
+    return new Set(project.categories.map((c) => c.id));
+  });
   const [viewportPOIIds, setViewportPOIIds] = useState<Set<string>>(new Set());
   const [visibleClusterCount, setVisibleClusterCount] = useState(0);
   const [mapZoom, setMapZoom] = useState(14);
@@ -257,8 +266,8 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
   }, [collectionPOIs.length]);
 
   // Calculate initial bounds for collection view (fit all collection POIs)
-  const collectionBounds = useMemo(() => {
-    if (!isCollectionView || basePOIs.length === 0) return undefined;
+  const poiBounds = useMemo(() => {
+    if (basePOIs.length === 0) return undefined;
     let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
     for (const poi of basePOIs) {
       if (poi.coordinates.lat < minLat) minLat = poi.coordinates.lat;
@@ -267,7 +276,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
       if (poi.coordinates.lng > maxLng) maxLng = poi.coordinates.lng;
     }
     return { minLat, maxLat, minLng, maxLng };
-  }, [isCollectionView, basePOIs]);
+  }, [basePOIs]);
 
   // Generate contextual hint based on viewport
   const contextHint = useMemo(() => {
@@ -377,7 +386,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
     projectName: project.name,
     routeData,
     travelMode,
-    initialBounds: collectionBounds,
+    initialBounds: poiBounds,
     // Geolocation
     userPosition: geo.userPosition,
     userAccuracy: geo.accuracy,
@@ -394,7 +403,7 @@ export default function ExplorerPage({ project, collection }: ExplorerPageProps)
   };
 
   return (
-    <div className="h-screen w-screen relative overflow-hidden bg-white">
+    <div className="h-[calc(100vh-3rem)] w-screen relative overflow-hidden bg-white">
       {/* ===== DESKTOP LAYOUT (lg+) ===== */}
 
       {/* Desktop: fullscreen map + floating glassmorphism sidebar */}

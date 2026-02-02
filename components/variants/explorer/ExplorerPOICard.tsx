@@ -66,7 +66,9 @@ export default function ExplorerPOICard({
   const realtimeData = useRealtimeData(isActive ? poi : null);
 
   const imageUrl = poi.featuredImage
-    ? poi.featuredImage
+    ? poi.featuredImage.includes("mymaps.usercontent.google.com")
+      ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
+      : poi.featuredImage
     : poi.photoReference
     ? `/api/places/photo?reference=${poi.photoReference}&maxwidth=400`
     : null;
@@ -80,6 +82,28 @@ export default function ExplorerPOICard({
   const googleMapsDirectionsUrl = poi.googlePlaceId
     ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
     : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`;
+
+  // Auto-link URLs in text
+  const linkifyText = (text: string) => {
+    const parts = text.split(/(https?:\/\/[^\s]+)/g);
+    if (parts.length === 1) return text;
+    return parts.map((part, i) => {
+      if (/^https?:\/\//.test(part)) {
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sky-600 hover:text-sky-700 underline break-all"
+          >
+            {part.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+          </a>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
 
   // Format departure time to relative format
   const formatDepartureTime = (isoTime: string) => {
@@ -223,10 +247,13 @@ export default function ExplorerPOICard({
             />
           </div>
         </div>
+      </div>
+      </button>
 
-        {/* Expanded content */}
-        {isActive && (
-          <div className="mt-3 ml-12 space-y-3">
+      {/* Expanded content — outside button so links are clickable */}
+      {isActive && (
+        <div className="px-4 pb-3">
+          <div className="ml-12 space-y-3">
             {/* Image */}
             {imageUrl && !imageError && (
               <div className="rounded-lg overflow-hidden aspect-[16/9] bg-gray-100">
@@ -254,14 +281,14 @@ export default function ExplorerPOICard({
             {/* Local insight */}
             {poi.localInsight && (
               <p className="text-sm text-gray-500 leading-relaxed">
-                {poi.localInsight}
+                {linkifyText(poi.localInsight)}
               </p>
             )}
 
             {/* Description (fallback if no editorial) */}
             {poi.description && !poi.editorialHook && (
               <p className="text-sm text-gray-500 leading-relaxed">
-                {poi.description}
+                {linkifyText(poi.description)}
               </p>
             )}
 
@@ -357,9 +384,8 @@ export default function ExplorerPOICard({
               )}
             </div>
           </div>
-        )}
-      </div>
-      </button>
+        </div>
+      )}
     </div>
   );
 }

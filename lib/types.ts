@@ -105,6 +105,25 @@ export interface Story {
   themeStories: ThemeStory[];
 }
 
+// === Report Config ===
+
+export interface ReportThemeConfig {
+  id: string;
+  name: string;
+  icon: string;
+  categories: string[];
+  intro?: string;
+}
+
+export interface ReportConfig {
+  label?: string;
+  heroIntro?: string;
+  themes?: ReportThemeConfig[];
+  closingTitle?: string;
+  closingText?: string;
+  mapStyle?: string;
+}
+
 // === Project ===
 
 export interface Project {
@@ -117,6 +136,7 @@ export interface Project {
   story: Story;
   pois: POI[];
   categories: Category[];
+  reportConfig?: ReportConfig;
 }
 
 // === Global State ===

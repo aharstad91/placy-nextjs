@@ -243,7 +243,7 @@ export default function ExplorerPOIList({
           </button>
 
           {catDropdownOpen && (
-            <div className="absolute top-full mt-1.5 left-0 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-50 max-h-72 overflow-y-auto">
+            <div className="absolute top-full mt-1.5 left-0 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-50 max-h-[480px] overflow-y-auto">
               {dropdownCategories.map((cat) => {
                 const Icon = getIcon(cat.icon);
                 const isActive = activeCategories.has(cat.id);
