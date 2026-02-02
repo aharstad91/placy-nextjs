@@ -40,8 +40,8 @@ export default function ProductNav({ projectName, products }: ProductNavProps) {
   }, [projectName]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#faf9f7]/95 backdrop-blur-sm border-b border-[#e8e4df]">
-      <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+      <div className="px-8 h-12 flex items-center justify-between">
         {/* Left: Project name */}
         <span className="text-sm font-medium text-[#1a1a1a] truncate max-w-[180px] sm:max-w-none">
           {projectName}

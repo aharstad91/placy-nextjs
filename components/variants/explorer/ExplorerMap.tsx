@@ -92,19 +92,22 @@ export default function ExplorerMap({
     );
   }, [mapLoaded, initialBounds, mapPadding]);
 
-  // Fly to active POI
+  // Fit map to show full route when route data arrives
   useEffect(() => {
-    if (!mapRef.current || !activePOI || !mapLoaded) return;
-    const poi = pois.find((p) => p.id === activePOI);
-    if (poi) {
-      mapRef.current.flyTo({
-        center: [poi.coordinates.lng, poi.coordinates.lat],
-        zoom: Math.max(mapRef.current.getZoom(), 15),
-        duration: 800,
-        padding: mapPadding,
-      });
+    if (!mapRef.current || !mapLoaded || !routeData?.coordinates.length) return;
+    const coords = routeData.coordinates;
+    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    for (const [lng, lat] of coords) {
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
     }
-  }, [activePOI, pois, mapLoaded, mapPadding]);
+    mapRef.current.fitBounds(
+      [[minLng, minLat], [maxLng, maxLat]],
+      { padding: mapPadding || 60, duration: 400, maxZoom: mapRef.current.getZoom() }
+    );
+  }, [routeData, mapLoaded, mapPadding]);
 
   // Update visible POIs when map moves
   const updateVisiblePOIs = useCallback(() => {
