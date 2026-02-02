@@ -413,7 +413,7 @@ function parseKml(
   }
 
   // Build category list
-  const uniqueCategories = [...new Set(pois.map((p) => p.category))];
+  const uniqueCategories = Array.from(new Set(pois.map((p) => p.category)));
   const categories: ParsedCategory[] = uniqueCategories.map((catName) => ({
     id: `${customerSlug}-${slugify(catName)}`,
     name: catName,
