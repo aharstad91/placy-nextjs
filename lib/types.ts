@@ -287,6 +287,7 @@ export interface GuideConfig {
   stops: NonEmptyArray<GuideStopConfig>;
   precomputedDistanceMeters?: number;
   precomputedDurationMinutes?: number;
+  reward?: RewardConfig;
 }
 
 // Runtime state
@@ -300,4 +301,46 @@ export function isCompletedStop(
   status: GuideStopStatus
 ): status is { type: "completed"; completedAt: number } {
   return status.type === "completed";
+}
+
+// === Guide Gamification Types ===
+
+// Branded type for Guide ID (konsistent med eksisterende GuideStopId)
+export type GuideId = Brand<string, "GuideId">;
+
+export function createGuideId(value: string): GuideId {
+  if (!value || typeof value !== "string") {
+    throw new Error(`Invalid Guide ID: ${value}`);
+  }
+  return value as GuideId;
+}
+
+// Validity days - eksplisitte tillatte verdier
+export type RewardValidityDays = 1 | 3 | 7 | 14 | 30;
+
+// Stop completion record - ekstrahert for testbarhet
+export interface StopCompletionRecord {
+  markedAt: number;           // Unix timestamp
+  verifiedByGPS: boolean;
+  accuracy?: number;          // GPS nøyaktighet i meter (for audit)
+  coordinates?: Coordinates;
+}
+
+// Guide completion state - bruker branded types og unix timestamps
+export interface GuideCompletionState {
+  guideId: GuideId;
+  startedAt: number;           // Unix timestamp
+  completedAt?: number;        // Unix timestamp
+  redeemedAt?: number;         // Unix timestamp
+  celebrationShownAt?: number; // Forhindrer dobbel konfetti
+  stops: Record<string, StopCompletionRecord>; // string for JSON compat
+}
+
+// Reward configuration
+export interface RewardConfig {
+  title: string;               // "15% rabatt i baren"
+  description: string;         // "Vis denne skjermen i resepsjonen"
+  hotelName: string;           // "Scandic Nidelven"
+  hotelLogoUrl?: string;
+  validityDays: RewardValidityDays;
 }

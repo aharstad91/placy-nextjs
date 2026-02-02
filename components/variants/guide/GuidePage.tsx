@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import type { Project, POI, GuideStopConfig } from "@/lib/types";
+import type { Project, POI, GuideStopConfig, Coordinates } from "@/lib/types";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
+import { useGuideCompletion } from "@/lib/hooks/useGuideCompletion";
 import { haversineDistance } from "@/lib/utils";
 import ExplorerBottomSheet from "@/components/variants/explorer/ExplorerBottomSheet";
 import GuideMap from "./GuideMap";
 import GuideStopPanel from "./GuideStopPanel";
+import GuideIntroOverlay from "./GuideIntroOverlay";
+import GuideCompletionScreen from "./GuideCompletionScreen";
 
 interface GuidePageProps {
   project: Project;
@@ -21,11 +24,25 @@ type RouteState =
 export default function GuidePage({ project }: GuidePageProps) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
-  const [completedStops, setCompletedStops] = useState<Set<number>>(new Set());
   const [routeState, setRouteState] = useState<RouteState>({ status: "idle" });
+  const [showCompletionScreen, setShowCompletionScreen] = useState(false);
 
   // Get guide config - must be checked before hooks that depend on it
   const guideConfig = project.guideConfig;
+  const guideId = guideConfig?.id ?? "";
+
+  // Guide completion state (persisted in localStorage)
+  const {
+    isHydrated: completionHydrated,
+    completion,
+    hasSeenIntro,
+    isCompleted: isGuideCompleted,
+    startGuide,
+    markIntroSeen,
+    markStopComplete,
+    completeGuide,
+    markCelebrationShown,
+  } = useGuideCompletion(guideId);
 
   // Build stops array by resolving POI references
   const stops: POI[] = useMemo(() => {
@@ -44,6 +61,20 @@ export default function GuidePage({ project }: GuidePageProps) {
   // Geolocation
   const geo = useGeolocation(project.centerCoordinates);
 
+  // Build completedStops Set from persisted state
+  const completedStops = useMemo(() => {
+    const set = new Set<number>();
+    if (!completion) return set;
+
+    stopConfigs.forEach((config, index) => {
+      if (completion.stops[config.id as string]) {
+        set.add(index);
+      }
+    });
+
+    return set;
+  }, [completion, stopConfigs]);
+
   // Hydration guard
   useEffect(() => {
     setIsHydrated(true);
@@ -54,6 +85,29 @@ export default function GuidePage({ project }: GuidePageProps) {
     if (!geo.userPosition || !stops[currentStopIndex]) return null;
     return haversineDistance(geo.userPosition, stops[currentStopIndex].coordinates);
   }, [geo.userPosition, stops, currentStopIndex]);
+
+  // Check if all stops are completed
+  const allStopsCompleted = useMemo(() => {
+    return stops.length > 0 && completedStops.size === stops.length;
+  }, [stops.length, completedStops.size]);
+
+  // Auto-complete guide when all stops are done
+  useEffect(() => {
+    if (allStopsCompleted && !isGuideCompleted && completionHydrated) {
+      completeGuide();
+      setShowCompletionScreen(true);
+    }
+  }, [allStopsCompleted, isGuideCompleted, completionHydrated, completeGuide]);
+
+  // Show completion screen if already completed (on page load)
+  useEffect(() => {
+    if (isGuideCompleted && completionHydrated && !showCompletionScreen) {
+      // Only auto-show if celebration hasn't been shown yet
+      if (!completion?.celebrationShownAt) {
+        setShowCompletionScreen(true);
+      }
+    }
+  }, [isGuideCompleted, completionHydrated, showCompletionScreen, completion?.celebrationShownAt]);
 
   // Fetch route from Mapbox Directions (single multi-waypoint call)
   useEffect(() => {
@@ -109,13 +163,32 @@ export default function GuidePage({ project }: GuidePageProps) {
     setCurrentStopIndex(index);
   }, []);
 
-  const handleMarkComplete = useCallback(() => {
-    setCompletedStops((prev) => {
-      const next = new Set(prev);
-      next.add(currentStopIndex);
-      return next;
-    });
-  }, [currentStopIndex]);
+  // Handle marking a stop as complete
+  const handleMarkComplete = useCallback(
+    (gpsVerified: boolean, accuracy?: number, coords?: Coordinates) => {
+      const stopConfig = stopConfigs[currentStopIndex];
+      if (!stopConfig) return;
+
+      markStopComplete(stopConfig.id as string, gpsVerified, accuracy, coords);
+    },
+    [currentStopIndex, stopConfigs, markStopComplete]
+  );
+
+  // Handle intro overlay start
+  const handleIntroStart = useCallback(() => {
+    startGuide();
+    markIntroSeen();
+  }, [startGuide, markIntroSeen]);
+
+  // Handle completion screen close
+  const handleCompletionClose = useCallback(() => {
+    setShowCompletionScreen(false);
+  }, []);
+
+  // Handle celebration shown
+  const handleCelebrationShown = useCallback(() => {
+    markCelebrationShown();
+  }, [markCelebrationShown]);
 
   // Snap points for bottom sheet
   const snapPoints = useMemo(() => {
@@ -125,7 +198,7 @@ export default function GuidePage({ project }: GuidePageProps) {
   }, []);
 
   // Don't render until hydrated (prevents SSR/client mismatch)
-  if (!isHydrated) {
+  if (!isHydrated || !completionHydrated) {
     return (
       <div className="h-screen w-full bg-stone-100 flex items-center justify-center">
         <div className="text-stone-500">Laster guide...</div>
@@ -149,6 +222,12 @@ export default function GuidePage({ project }: GuidePageProps) {
     );
   }
 
+  // Determine if we should show intro overlay
+  const showIntroOverlay = !hasSeenIntro && guideConfig.reward;
+
+  // Determine if we should show celebration (first time completing)
+  const shouldCelebrate = isGuideCompleted && !completion?.celebrationShownAt;
+
   return (
     <div className="h-screen w-full relative overflow-hidden bg-stone-100">
       {/* Map (fullscreen) */}
@@ -171,16 +250,35 @@ export default function GuidePage({ project }: GuidePageProps) {
       {/* Guide title overlay */}
       <div className="absolute top-4 left-4 right-4 z-10">
         <div className="bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg">
-          <h1 className="text-lg font-semibold text-stone-900">
-            {guideConfig.title}
-          </h1>
-          {guideConfig.precomputedDistanceMeters && guideConfig.precomputedDurationMinutes && (
-            <p className="text-sm text-stone-500 mt-0.5">
-              {(guideConfig.precomputedDistanceMeters / 1000).toFixed(1)} km
-              {" · "}
-              {guideConfig.precomputedDurationMinutes} min
-            </p>
-          )}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-semibold text-stone-900">
+                {guideConfig.title}
+              </h1>
+              {guideConfig.precomputedDistanceMeters && guideConfig.precomputedDurationMinutes && (
+                <p className="text-sm text-stone-500 mt-0.5">
+                  {(guideConfig.precomputedDistanceMeters / 1000).toFixed(1)} km
+                  {" · "}
+                  {guideConfig.precomputedDurationMinutes} min
+                </p>
+              )}
+            </div>
+            {/* Progress indicator */}
+            <div className="text-right">
+              <span className="text-sm font-medium text-emerald-600">
+                {completedStops.size}/{stops.length}
+              </span>
+              <p className="text-xs text-stone-400">stopp</p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mt-2 h-1 bg-stone-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 transition-all duration-300"
+              style={{ width: `${(completedStops.size / stops.length) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
 
@@ -192,11 +290,29 @@ export default function GuidePage({ project }: GuidePageProps) {
           currentStopIndex={currentStopIndex}
           completedStops={completedStops}
           distanceToStop={distanceToCurrentStop}
+          userPosition={geo.userPosition}
+          gpsAvailable={geo.mode !== "disabled" && geo.mode !== "fallback"}
           onNext={handleNext}
           onPrev={handlePrev}
           onMarkComplete={handleMarkComplete}
         />
       </ExplorerBottomSheet>
+
+      {/* Intro overlay (shown once for guides with rewards) */}
+      {showIntroOverlay && (
+        <GuideIntroOverlay guideConfig={guideConfig} onStart={handleIntroStart} />
+      )}
+
+      {/* Completion screen */}
+      {showCompletionScreen && completion && (
+        <GuideCompletionScreen
+          guideConfig={guideConfig}
+          completion={completion}
+          onClose={handleCompletionClose}
+          onCelebrationShown={handleCelebrationShown}
+          shouldCelebrate={shouldCelebrate}
+        />
+      )}
     </div>
   );
 }

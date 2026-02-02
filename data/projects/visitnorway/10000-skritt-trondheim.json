@@ -15,6 +15,12 @@
     "difficulty": "easy",
     "precomputedDistanceMeters": 4800,
     "precomputedDurationMinutes": 75,
+    "reward": {
+      "title": "15% rabatt i Scandic Bar",
+      "description": "Vis denne skjermen i resepsjonen for å motta din belønning",
+      "hotelName": "Scandic Nidelven",
+      "validityDays": 7
+    },
     "stops": [
       {
         "id": "stop-1",
