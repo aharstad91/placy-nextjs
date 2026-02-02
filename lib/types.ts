@@ -124,6 +124,19 @@ export interface ReportConfig {
   mapStyle?: string;
 }
 
+// === Category Package (for Explorer filtering) ===
+
+export interface CategoryPackage {
+  id: string;
+  name: string;
+  icon: string; // Lucide icon name
+  categoryIds: string[];
+}
+
+// === Origin Mode (for Explorer geolocation behavior) ===
+
+export type OriginMode = "geolocation" | "fixed" | "geolocation-with-fallback";
+
 // === Project ===
 
 export interface Project {
@@ -137,6 +150,9 @@ export interface Project {
   pois: POI[];
   categories: Category[];
   reportConfig?: ReportConfig;
+  // Explorer-specific settings
+  originMode?: OriginMode; // Default: "geolocation-with-fallback"
+  packages?: CategoryPackage[]; // Custom package filters (falls back to EXPLORER_PACKAGES)
 }
 
 // === Global State ===

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { Coordinates } from "@/lib/types";
 import { haversineDistance } from "@/lib/utils";
 
-export type GeolocationMode = "loading" | "gps-near" | "gps-far" | "fallback";
+export type GeolocationMode = "loading" | "gps-near" | "gps-far" | "fallback" | "disabled";
 
 export interface GeolocationState {
   userPosition: Coordinates | null;
@@ -14,6 +14,15 @@ export interface GeolocationState {
   isNearProject: boolean;
   distanceToProject: number | null;
   error: GeolocationPositionError | null;
+  /** Call to enable geolocation on-demand (triggers permission prompt) */
+  enable: () => void;
+  /** Whether geolocation is currently enabled */
+  isEnabled: boolean;
+}
+
+export interface UseGeolocationOptions {
+  /** Whether to automatically start watching position. Default: true */
+  enabled?: boolean;
 }
 
 // Hysteresis thresholds to prevent flickering at the boundary
@@ -21,11 +30,16 @@ const NEAR_THRESHOLD = 1800; // Switch to gps-near at <1.8km
 const FAR_THRESHOLD = 2200; // Switch back to gps-far at >2.2km
 const SIGNAL_LOST_TIMEOUT = 120_000; // 120s before falling back
 
-export function useGeolocation(projectCenter: Coordinates): GeolocationState {
+export function useGeolocation(
+  projectCenter: Coordinates,
+  options: UseGeolocationOptions = {}
+): GeolocationState {
+  const { enabled: initialEnabled = true } = options;
   const [userPosition, setUserPosition] = useState<Coordinates | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
-  const [mode, setMode] = useState<GeolocationMode>("loading");
+  const [mode, setMode] = useState<GeolocationMode>(initialEnabled ? "loading" : "disabled");
   const [error, setError] = useState<GeolocationPositionError | null>(null);
+  const [isEnabled, setIsEnabled] = useState(initialEnabled);
 
   const lastUpdateRef = useRef<number>(0);
   const signalLostTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -34,6 +48,14 @@ export function useGeolocation(projectCenter: Coordinates): GeolocationState {
   const wasNearRef = useRef(false);
   const modeRef = useRef(mode);
   modeRef.current = mode;
+
+  // Enable geolocation on-demand
+  const enable = useCallback(() => {
+    if (!isEnabled) {
+      setIsEnabled(true);
+      setMode("loading");
+    }
+  }, [isEnabled]);
 
   const clearSignalLostTimer = useCallback(() => {
     if (signalLostTimerRef.current) {
@@ -50,6 +72,11 @@ export function useGeolocation(projectCenter: Coordinates): GeolocationState {
   }, [clearSignalLostTimer]);
 
   useEffect(() => {
+    // Don't start watching if not enabled
+    if (!isEnabled) {
+      return;
+    }
+
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setMode("fallback");
       return;
@@ -117,7 +144,7 @@ export function useGeolocation(projectCenter: Coordinates): GeolocationState {
       }
       clearSignalLostTimer();
     };
-  }, [projectCenter, clearSignalLostTimer, startSignalLostTimer]);
+  }, [projectCenter, clearSignalLostTimer, startSignalLostTimer, isEnabled]);
 
   const distanceToProject =
     userPosition ? haversineDistance(userPosition, projectCenter) : null;
@@ -135,5 +162,7 @@ export function useGeolocation(projectCenter: Coordinates): GeolocationState {
     isNearProject,
     distanceToProject,
     error,
+    enable,
+    isEnabled,
   };
 }

@@ -1,9 +1,6 @@
-export interface CategoryPackage {
-  id: string;
-  name: string;
-  icon: string; // Lucide icon name
-  categoryIds: string[];
-}
+import type { CategoryPackage } from "@/lib/types";
+
+export type { CategoryPackage };
 
 export const EXPLORER_PACKAGES: CategoryPackage[] = [
   {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Project, POI, Category, TravelMode } from "@/lib/types";
+import type { Project, POI, Category, TravelMode, OriginMode } from "@/lib/types";
 import { useTravelSettings } from "@/lib/store";
 import { useCollection } from "@/lib/collection-store";
 import { useTravelTimes } from "@/lib/hooks/useTravelTimes";
@@ -9,7 +9,7 @@ import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
 import { haversineDistance, cn } from "@/lib/utils";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Navigation } from "lucide-react";
 import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerMap from "./ExplorerMap";
 import ExplorerPanel from "./ExplorerPanel";
@@ -55,8 +55,40 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   const [mapZoom, setMapZoom] = useState(14);
   const [activePackage, setActivePackage] = useState<string | null>("all");
 
-  // Geolocation
-  const geo = useGeolocation(project.centerCoordinates);
+  // Project-level packages (fallback to global)
+  const packages = project.packages ?? EXPLORER_PACKAGES;
+
+  // Origin mode determines geolocation behavior
+  const originMode: OriginMode = project.originMode ?? "geolocation-with-fallback";
+
+  // Geo prompt banner state (for geolocation-with-fallback mode)
+  const [geoPromptDismissed, setGeoPromptDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem("placy-geo-prompt-dismissed") === "true";
+  });
+  const [hasInteractedWithPOI, setHasInteractedWithPOI] = useState(false);
+
+  // Geolocation — enabled immediately for "geolocation" mode, deferred for others
+  const geoEnabledByDefault = originMode === "geolocation";
+  const geo = useGeolocation(project.centerCoordinates, { enabled: geoEnabledByDefault });
+
+  // Show geo prompt: after first POI interaction, not fixed mode, GPS not already enabled/granted
+  const showGeoPrompt =
+    originMode === "geolocation-with-fallback" &&
+    hasInteractedWithPOI &&
+    !geoPromptDismissed &&
+    !geo.isEnabled &&
+    geo.mode === "disabled";
+
+  const handleDismissGeoPrompt = useCallback(() => {
+    setGeoPromptDismissed(true);
+    sessionStorage.setItem("placy-geo-prompt-dismissed", "true");
+  }, []);
+
+  const handleEnableGeolocation = useCallback(() => {
+    geo.enable();
+    setGeoPromptDismissed(true);
+  }, [geo]);
 
   // Throttle travel time recalculation for GPS: only when moved >100m and >30s since last calc
   const lastCalcOriginRef = useRef(project.centerCoordinates);
@@ -147,7 +179,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   // Package selection
   const handleSelectPackage = useCallback((packageId: string) => {
     setActivePackage(packageId);
-    const pkg = EXPLORER_PACKAGES.find((p) => p.id === packageId);
+    const pkg = packages.find((p) => p.id === packageId);
     if (!pkg) return;
 
     if (pkg.id === "all" || pkg.categoryIds.length === 0) {
@@ -155,7 +187,12 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     } else {
       setActiveCategories(new Set(pkg.categoryIds));
     }
-  }, [project.categories]);
+  }, [project.categories, packages]);
+
+  // Dismiss active POI (from map background click)
+  const handleDismissActive = useCallback(() => {
+    setActivePOI(null);
+  }, []);
 
   // Category toggle — keeps the active package context
   const toggleCategory = useCallback((categoryId: string) => {
@@ -193,12 +230,14 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   // POI selection (from list click)
   const handlePOIClick = useCallback((poiId: string) => {
     setActivePOI((prev) => (prev === poiId ? null : poiId));
+    setHasInteractedWithPOI(true);
   }, []);
 
   // POI selection from map click (with temporary highlight)
   const handleMapPOIClick = useCallback((poiId: string) => {
     setActivePOI((prev) => (prev === poiId ? null : poiId));
     setHighlightedPOI(poiId);
+    setHasInteractedWithPOI(true);
     setTimeout(() => setHighlightedPOI(null), 2000);
   }, []);
 
@@ -369,7 +408,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     collectionEmail: collection?.email,
     explorerUrl: isCollectionView ? `/${project.customer}/${project.id}` : undefined,
     // Package filtering — same as desktop
-    packages: EXPLORER_PACKAGES,
+    packages,
     activePackage,
     onSelectPackage: handleSelectPackage,
   };
@@ -381,6 +420,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     activePOI,
     activeCategories,
     onPOIClick: handleMapPOIClick,
+    onDismissActive: handleDismissActive,
     onViewportPOIs: handleViewportPOIs,
     onZoomChange: handleZoomChange,
     projectName: project.name,
@@ -392,6 +432,10 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     userAccuracy: geo.accuracy,
     geoMode: geo.mode,
     distanceToProject: geo.distanceToProject,
+    // Geolocation prompt (for deferred mode)
+    showGeoPrompt,
+    onEnableGeolocation: handleEnableGeolocation,
+    onDismissGeoPrompt: handleDismissGeoPrompt,
   };
 
   // Desktop: split layout — map gets its own area, no sidebar overlap
@@ -421,7 +465,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
           <ExplorerPOIList
             {...poiListProps}
             allPOIs={poisWithTravelTimes}
-            packages={EXPLORER_PACKAGES}
+            packages={packages}
             activePackage={activePackage}
             onSelectPackage={handleSelectPackage}
             categories={project.categories}

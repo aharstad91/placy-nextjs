@@ -53,7 +53,6 @@ export default function ExplorerPOICard({
   onToggleCollection,
 }: ExplorerPOICardProps) {
   const [imageError, setImageError] = useState(false);
-  const [isCardHovered, setIsCardHovered] = useState(false);
 
   // Get category icon
   const getIcon = (iconName: string): LucideIcons.LucideIcon => {
@@ -122,8 +121,6 @@ export default function ExplorerPOICard({
         "w-full text-left transition-all duration-200",
         isActive ? "bg-gray-50" : "hover:bg-gray-50/50"
       )}
-      onMouseEnter={() => setIsCardHovered(true)}
-      onMouseLeave={() => setIsCardHovered(false)}
     >
       <button onClick={onClick} className="w-full text-left">
       <div className="px-4 py-3">
@@ -204,40 +201,33 @@ export default function ExplorerPOICard({
             </div>
           </div>
 
-          {/* Collection toggle with animated label + Expand indicator */}
+          {/* Collection toggle pill button + Expand indicator */}
           <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
             {onToggleCollection && (
-              <div className="flex items-center gap-0 overflow-hidden">
-                <span className={cn(
-                  "text-xs font-medium whitespace-nowrap transition-all duration-200 ease-out",
-                  isCardHovered && !isInCollection
-                    ? "opacity-100 max-w-[60px] mr-1.5"
-                    : isInCollection
-                    ? "opacity-100 max-w-[60px] mr-1.5"
-                    : "opacity-0 max-w-0",
-                  isInCollection ? "text-sky-500" : "text-gray-400"
-                )}>
-                  {isInCollection ? "Lagret" : "Lagre"}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleCollection(poi.id);
-                  }}
-                  className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
-                    isInCollection
-                      ? "bg-sky-50 text-sky-500"
-                      : "bg-gray-50 text-gray-400 hover:bg-sky-50 hover:text-sky-500"
-                  )}
-                >
-                  {isInCollection ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    <Plus className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleCollection(poi.id);
+                }}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-medium transition-colors",
+                  isInCollection
+                    ? "bg-sky-50 text-sky-600"
+                    : "bg-gray-100 text-gray-500 hover:bg-sky-50 hover:text-sky-600"
+                )}
+              >
+                {isInCollection ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Lagret</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Lagre</span>
+                  </>
+                )}
+              </button>
             )}
             <ChevronDown
               className={cn(

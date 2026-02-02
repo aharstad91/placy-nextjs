@@ -5,9 +5,36 @@
   "urlSlug": "prisbellonnet-arkitektur",
   "productType": "explorer",
   "centerCoordinates": {
-    "lat": 63.41898,
-    "lng": 10.401927
+    "lat": 63.4305,
+    "lng": 10.3951
   },
+  "originMode": "geolocation-with-fallback",
+  "packages": [
+    {
+      "id": "all",
+      "name": "Alle priser",
+      "icon": "Trophy",
+      "categoryIds": []
+    },
+    {
+      "id": "houens",
+      "name": "Houens fonds diplom",
+      "icon": "Award",
+      "categoryIds": ["houens-fonds-diplom"]
+    },
+    {
+      "id": "byggeskikk",
+      "name": "Byggeskikkprisen",
+      "icon": "Building2",
+      "categoryIds": ["byggeskikkpris"]
+    },
+    {
+      "id": "oevrig",
+      "name": "Andre priser",
+      "icon": "Star",
+      "categoryIds": ["betongtavlen", "bolig-byplanpris", "landskapspris", "murverkspris", "statens-pris", "annen-pris"]
+    }
+  ],
   "story": {
     "id": "prisbellonnet-story",
     "title": "Prisbelønnet arkitektur i Trondheim",

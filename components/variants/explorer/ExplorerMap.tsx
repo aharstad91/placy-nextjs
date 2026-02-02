@@ -15,7 +15,7 @@ import Map, {
 import type { Coordinates, POI, TravelMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
-import { MapPin, Sparkles, Building2, X } from "lucide-react";
+import { MapPin, Sparkles, Building2, X, Navigation } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 
@@ -28,6 +28,7 @@ interface ExplorerMapProps {
   activePOI: string | null;
   activeCategories: Set<string>;
   onPOIClick: (poiId: string) => void;
+  onDismissActive?: () => void;
   onViewportPOIs: (poiIds: Set<string>, clusterCount: number) => void;
   onZoomChange: (zoom: number) => void;
   projectName: string;
@@ -43,6 +44,10 @@ interface ExplorerMapProps {
   userAccuracy?: number | null;
   geoMode?: GeolocationMode;
   distanceToProject?: number | null;
+  // Geolocation prompt (for deferred geolocation mode)
+  showGeoPrompt?: boolean;
+  onEnableGeolocation?: () => void;
+  onDismissGeoPrompt?: () => void;
 }
 
 export default function ExplorerMap({
@@ -52,6 +57,7 @@ export default function ExplorerMap({
   activePOI,
   activeCategories,
   onPOIClick,
+  onDismissActive,
   onViewportPOIs,
   onZoomChange,
   projectName,
@@ -63,6 +69,9 @@ export default function ExplorerMap({
   userAccuracy,
   geoMode = "loading",
   distanceToProject,
+  showGeoPrompt,
+  onEnableGeolocation,
+  onDismissGeoPrompt,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -202,6 +211,11 @@ export default function ExplorerMap({
         onLoad={onLoad}
         onMoveEnd={updateVisiblePOIs}
         onZoomEnd={updateVisiblePOIs}
+        onClick={() => {
+          // Dismiss active POI when clicking on map background
+          // (marker clicks call e.originalEvent.stopPropagation())
+          onDismissActive?.();
+        }}
       >
         <NavigationControl position="top-right" />
 
@@ -247,7 +261,7 @@ export default function ExplorerMap({
             latitude={userPosition.lat}
             anchor="center"
           >
-            <div className="relative flex items-center justify-center">
+            <div className="relative w-8 h-8 flex items-center justify-center">
               {/* Accuracy circle */}
               {userAccuracy && userAccuracy < 200 && (
                 <div
@@ -258,9 +272,9 @@ export default function ExplorerMap({
                   }}
                 />
               )}
-              {/* Pulsing ring */}
-              <div className="absolute w-8 h-8 rounded-full bg-blue-500/30 animate-ping" />
-              {/* Solid dot */}
+              {/* Pulsing ring — fills parent, stays centered */}
+              <div className="absolute inset-0 rounded-full bg-blue-500/30 animate-ping" />
+              {/* Solid dot — centered in parent */}
               <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg z-10" />
             </div>
           </Marker>
@@ -348,6 +362,35 @@ export default function ExplorerMap({
             >
               <X className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Geolocation prompt banner (for geolocation-with-fallback mode) */}
+      {showGeoPrompt && (
+        <div className="absolute bottom-4 left-4 right-4 z-20 lg:left-auto lg:right-4 lg:w-72">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 px-4 py-3 flex items-start gap-3">
+            <Navigation className="w-5 h-5 text-sky-500 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900">Aktiver posisjon</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Se avstander fra der du er nå
+              </p>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={onDismissGeoPrompt}
+                className="text-xs text-gray-400 hover:text-gray-600 py-1.5"
+              >
+                Ikke nå
+              </button>
+              <button
+                onClick={onEnableGeolocation}
+                className="text-xs font-medium text-sky-600 bg-sky-50 px-3 py-1.5 rounded-lg hover:bg-sky-100 transition-colors"
+              >
+                Aktiver
+              </button>
+            </div>
           </div>
         </div>
       )}
