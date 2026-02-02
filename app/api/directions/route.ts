@@ -2,16 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Mapbox Directions API proxy
 // Brukes for å beregne reisetider mellom prosjekt-sentrum og POI-er
+// Supports both origin/destination and multi-waypoint (waypoints) formats
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const origin = searchParams.get("origin");
   const destination = searchParams.get("destination");
-  const profile = searchParams.get("profile") || "walking";
+  const waypoints = searchParams.get("waypoints"); // Format: "lng,lat;lng,lat;..."
+  const modeParam = searchParams.get("profile") || searchParams.get("mode") || "walking";
+  // Map short names to Mapbox profile names
+  const profileMap: Record<string, string> = {
+    walk: "walking",
+    bike: "cycling",
+    car: "driving",
+    walking: "walking",
+    cycling: "cycling",
+    driving: "driving",
+  };
+  const profile = profileMap[modeParam] || "walking";
 
-  if (!origin || !destination) {
+  // Build coordinates string - either from waypoints or origin/destination
+  let coordinates: string;
+  if (waypoints) {
+    // Multi-waypoint format (for Guide)
+    coordinates = waypoints;
+  } else if (origin && destination) {
+    // Origin/destination format (legacy)
+    coordinates = `${origin};${destination}`;
+  } else {
     return NextResponse.json(
-      { error: "Origin and destination are required" },
+      { error: "Either waypoints or origin/destination are required" },
       { status: 400 }
     );
   }
@@ -27,7 +47,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Mapbox Directions API URL
-    const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${origin};${destination}?access_token=${mapboxToken}&geometries=geojson&overview=full`;
+    const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?access_token=${mapboxToken}&geometries=geojson&overview=full`;
 
     const response = await fetch(url);
 
@@ -37,13 +57,19 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    // Returner forenklet respons
+    // Return response with routes array for compatibility with GuidePage
     if (data.routes && data.routes.length > 0) {
       const route = data.routes[0];
       return NextResponse.json({
         duration: Math.ceil(route.duration / 60), // Konverter til minutter
         distance: Math.round(route.distance), // Meter
         geometry: route.geometry,
+        // Include full routes array for Guide component
+        routes: data.routes.map((r: { duration: number; distance: number; geometry: object }) => ({
+          duration: Math.ceil(r.duration / 60),
+          distance: Math.round(r.distance),
+          geometry: r.geometry,
+        })),
       });
     }
 

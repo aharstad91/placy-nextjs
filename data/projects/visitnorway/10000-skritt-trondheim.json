@@ -1,0 +1,203 @@
+{
+  "id": "10000-skritt-trondheim",
+  "name": "10,000 skritt Trondheim",
+  "customer": "visitnorway",
+  "urlSlug": "10000-skritt-trondheim",
+  "productType": "guide",
+  "centerCoordinates": {
+    "lat": 63.4305,
+    "lng": 10.3951
+  },
+  "guideConfig": {
+    "id": "10000-skritt-trondheim",
+    "title": "10,000 skritt Trondheim",
+    "description": "En klassisk gåtur gjennom Trondheims historiske hjerte. Fra torgene til katedralen, over broene og opp til festningen.",
+    "difficulty": "easy",
+    "precomputedDistanceMeters": 4800,
+    "precomputedDurationMinutes": 75,
+    "stops": [
+      {
+        "id": "stop-1",
+        "poiId": "torget",
+        "transitionText": "Start turen på Torvet, byens hjerte siden middelalderen."
+      },
+      {
+        "id": "stop-2",
+        "poiId": "stiftsgarden",
+        "transitionText": "Gå nordover langs Munkegata til Stiftsgården."
+      },
+      {
+        "id": "stop-3",
+        "poiId": "nidarosdomen",
+        "transitionText": "Fortsett sørover til Norges nasjonalhelligdom."
+      },
+      {
+        "id": "stop-4",
+        "poiId": "erkebispegarden",
+        "transitionText": "Like ved katedralen ligger Erkebispegården."
+      },
+      {
+        "id": "stop-5",
+        "poiId": "gamle-bybro",
+        "transitionText": "Gå ned til Nidelva og kryss Gamle Bybro."
+      },
+      {
+        "id": "stop-6",
+        "poiId": "bakklandet",
+        "transitionText": "Du er nå i Bakklandet med sine sjarmerende trehus."
+      },
+      {
+        "id": "stop-7",
+        "poiId": "kristiansten",
+        "transitionText": "Ta den bratte stien opp til festningen for byens beste utsikt."
+      }
+    ]
+  },
+  "story": {
+    "id": "10000-skritt-story",
+    "title": "10,000 skritt Trondheim",
+    "introText": "En klassisk gåtur gjennom Trondheims historiske hjerte. Fra torgene til katedralen, over broene og opp til festningen.",
+    "sections": [],
+    "themeStories": []
+  },
+  "categories": [
+    {
+      "id": "landmark",
+      "name": "Landemerke",
+      "icon": "Landmark",
+      "color": "#3B82F6"
+    },
+    {
+      "id": "historic",
+      "name": "Historisk",
+      "icon": "Castle",
+      "color": "#8B5CF6"
+    },
+    {
+      "id": "viewpoint",
+      "name": "Utsiktspunkt",
+      "icon": "Mountain",
+      "color": "#10B981"
+    },
+    {
+      "id": "neighborhood",
+      "name": "Bydel",
+      "icon": "Home",
+      "color": "#F59E0B"
+    }
+  ],
+  "pois": [
+    {
+      "id": "torget",
+      "name": "Torvet",
+      "coordinates": {
+        "lat": 63.4305,
+        "lng": 10.3951
+      },
+      "category": {
+        "id": "landmark",
+        "name": "Landemerke",
+        "icon": "Landmark",
+        "color": "#3B82F6"
+      },
+      "description": "Trondheims sentrale torg har vært byens samlingspunkt siden middelalderen. Her står Olav Tryggvason-statuen på sin søyle, et av byens mest kjente landemerker. Torvet er omgitt av fargerike trebygninger og er startpunktet for mange byopplevelser.",
+      "address": "Torvet, 7013 Trondheim"
+    },
+    {
+      "id": "stiftsgarden",
+      "name": "Stiftsgården",
+      "coordinates": {
+        "lat": 63.4312,
+        "lng": 10.3933
+      },
+      "category": {
+        "id": "historic",
+        "name": "Historisk",
+        "icon": "Castle",
+        "color": "#8B5CF6"
+      },
+      "description": "Stiftsgården er den kongelige residensen i Trondheim og et av Skandinavias største trebygninger. Bygget mellom 1774 og 1778, med 140 rom og en praktfull rokokko-interiør. Kongefamilien bor her under offisielle besøk.",
+      "address": "Munkegata 23, 7013 Trondheim"
+    },
+    {
+      "id": "nidarosdomen",
+      "name": "Nidarosdomen",
+      "coordinates": {
+        "lat": 63.4269,
+        "lng": 10.3967
+      },
+      "category": {
+        "id": "landmark",
+        "name": "Landemerke",
+        "icon": "Landmark",
+        "color": "#3B82F6"
+      },
+      "description": "Nidarosdomen er Norges nasjonalhelligdom og nordligste gotiske katedral i verden. Bygget over Olav den helliges grav, har katedralen vært kroningskirke og pilegrimsmål i nesten 1000 år. Vestfrontens skulpturer er et mesterverk i europeisk gotikk.",
+      "address": "Bispegata 11, 7012 Trondheim"
+    },
+    {
+      "id": "erkebispegarden",
+      "name": "Erkebispegården",
+      "coordinates": {
+        "lat": 63.4262,
+        "lng": 10.3985
+      },
+      "category": {
+        "id": "historic",
+        "name": "Historisk",
+        "icon": "Castle",
+        "color": "#8B5CF6"
+      },
+      "description": "Erkebispegården var erkebiskopens residens og Skandinavias eldste sekulære bygning. I dag huser komplekset Rustkammeret og Riksregaliene. Den middelalderske steinbygningen og krypten gir et unikt innblikk i Norges religiøse historie.",
+      "address": "Kongsgårdsgata 1B, 7013 Trondheim"
+    },
+    {
+      "id": "gamle-bybro",
+      "name": "Gamle Bybro",
+      "coordinates": {
+        "lat": 63.4270,
+        "lng": 10.4020
+      },
+      "category": {
+        "id": "landmark",
+        "name": "Landemerke",
+        "icon": "Landmark",
+        "color": "#3B82F6"
+      },
+      "description": "Gamle Bybro, også kjent som Lykkens portal, er en ikonisk rød trebro fra 1861. Broen forbinder sentrum med Bakklandet og gir et av byens mest fotograferte motiver: de fargerike sjøbodene langs Nidelva. Ifølge tradisjonen bringer det lykke å gå gjennom porten.",
+      "address": "Gamle Bybro, 7014 Trondheim"
+    },
+    {
+      "id": "bakklandet",
+      "name": "Bakklandet",
+      "coordinates": {
+        "lat": 63.4282,
+        "lng": 10.4055
+      },
+      "category": {
+        "id": "neighborhood",
+        "name": "Bydel",
+        "icon": "Home",
+        "color": "#F59E0B"
+      },
+      "description": "Bakklandet er Trondheims sjarmerende trebydel med brosteinsbelagte gater og fargerike hus fra 1600-1800-tallet. Her finner du koselige kafeer, antikvariater og håndverksboder. Om sommeren summer området av liv langs den historiske gaten.",
+      "address": "Øvre Bakklandet, 7014 Trondheim"
+    },
+    {
+      "id": "kristiansten",
+      "name": "Kristiansten Festning",
+      "coordinates": {
+        "lat": 63.4275,
+        "lng": 10.4115
+      },
+      "category": {
+        "id": "viewpoint",
+        "name": "Utsiktspunkt",
+        "icon": "Mountain",
+        "color": "#10B981"
+      },
+      "description": "Kristiansten Festning ble bygget 1681-1685 for å beskytte byen mot angrep fra øst. Fra festningen har du panoramautsikt over hele Trondheim, fjorden og Bymarka. En perfekt avslutning på byturen med 10,000 skritt i beina.",
+      "address": "Kristiansten Festning, 7014 Trondheim"
+    }
+  ]
+}

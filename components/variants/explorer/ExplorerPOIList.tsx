@@ -25,7 +25,7 @@ interface ExplorerPOIListProps {
   onToggleCollection?: (poiId: string) => void;
   // Package / category filtering
   allPOIs: POI[];
-  packages: CategoryPackage[];
+  packages?: CategoryPackage[] | null;
   activePackage: string | null;
   onSelectPackage: (id: string) => void;
   categories: Category[];
@@ -133,7 +133,7 @@ export default function ExplorerPOIList({
 
   // Categories for the category dropdown (scoped to active package)
   const dropdownCategories = useMemo(() => {
-    if (!activePackage || activePackage === "all") return categories;
+    if (!activePackage || activePackage === "all" || !packages) return categories;
     const pkg = packages.find((p) => p.id === activePackage);
     if (!pkg) return categories;
     const catIds = new Set(pkg.categoryIds);

@@ -6,7 +6,7 @@
 export type TravelMode = "walk" | "bike" | "car";
 export type TimeBudget = 5 | 10 | 15 | 20 | 30;
 export type StoryPriority = "must_have" | "nice_to_have" | "filler";
-export type ProductType = "explorer" | "report" | "portrait";
+export type ProductType = "explorer" | "report" | "portrait" | "guide";
 
 export interface Coordinates {
   lat: number;
@@ -152,7 +152,9 @@ export interface Project {
   reportConfig?: ReportConfig;
   // Explorer-specific settings
   originMode?: OriginMode; // Default: "geolocation-with-fallback"
-  packages?: CategoryPackage[]; // Custom package filters (falls back to EXPLORER_PACKAGES)
+  packages?: CategoryPackage[] | null; // Custom package filters (null = hide UI, undefined = EXPLORER_PACKAGES)
+  // Guide-specific settings
+  guideConfig?: GuideConfig;
 }
 
 // === Global State ===
@@ -230,3 +232,72 @@ export const createErrorAsyncState = <T>(error: string, currentData?: T | null):
   loading: false,
   error,
 });
+
+// === Branded Types ===
+
+declare const __brand: unique symbol;
+type Brand<T, B> = T & { [__brand]: B };
+
+export type POIId = Brand<string, "POIId">;
+export type GuideStopId = Brand<string, "GuideStopId">;
+
+// Constructor functions for branded types
+export function createPOIId(value: string): POIId {
+  if (!value || typeof value !== "string") {
+    throw new Error(`Invalid POI ID: ${value}`);
+  }
+  return value as POIId;
+}
+
+export function createGuideStopId(value: string): GuideStopId {
+  if (!value || typeof value !== "string") {
+    throw new Error(`Invalid GuideStop ID: ${value}`);
+  }
+  return value as GuideStopId;
+}
+
+// Exhaustiveness checking utility
+export function assertNever(x: never): never {
+  throw new Error(`Unexpected value: ${x}`);
+}
+
+// Non-empty array type
+export type NonEmptyArray<T> = [T, ...T[]];
+
+// === Guide Types ===
+
+export type GuideDifficulty = "easy" | "moderate" | "challenging";
+
+// Static configuration (JSON/database)
+export interface GuideStopConfig {
+  id: GuideStopId;
+  poiId: POIId;
+  nameOverride?: string;
+  descriptionOverride?: string;
+  imageUrlOverride?: string;
+  transitionText?: string; // "Herfra går du over brua..."
+}
+
+export interface GuideConfig {
+  id: string;
+  title: string;
+  description?: string;
+  coverImageUrl?: string;
+  difficulty?: GuideDifficulty;
+  stops: NonEmptyArray<GuideStopConfig>;
+  precomputedDistanceMeters?: number;
+  precomputedDurationMinutes?: number;
+}
+
+// Runtime state
+export type GuideStopStatus =
+  | { type: "available" }
+  | { type: "active" }
+  | { type: "completed"; completedAt: number }; // Unix timestamp
+
+// Type guard for status narrowing
+export function isCompletedStop(
+  status: GuideStopStatus
+): status is { type: "completed"; completedAt: number } {
+  return status.type === "completed";
+}

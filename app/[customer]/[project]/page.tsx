@@ -4,6 +4,7 @@ import { getCollectionBySlug } from "@/lib/supabase/queries";
 import ExplorerPage from "@/components/variants/explorer/ExplorerPage";
 import ReportPage from "@/components/variants/report/ReportPage";
 import PortraitPage from "@/components/variants/portrait/PortraitPage";
+import GuidePage from "@/components/variants/guide/GuidePage";
 
 interface PageProps {
   params: Promise<{
@@ -66,6 +67,11 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
         explorerBaseUrl={hasExplorer ? `/${customer}/${explorerSlug}` : null}
       />
     );
+  }
+
+  // === Guide ===
+  if (projectData.productType === "guide") {
+    return <GuidePage project={projectData} />;
   }
 
   // === Portrait ===

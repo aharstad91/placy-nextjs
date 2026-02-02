@@ -166,6 +166,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   // Package selection
   const handleSelectPackage = useCallback((packageId: string) => {
     setActivePackage(packageId);
+    if (!packages) return;
     const pkg = packages.find((p) => p.id === packageId);
     if (!pkg) return;
 
