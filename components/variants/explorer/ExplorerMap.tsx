@@ -15,7 +15,8 @@ import Map, {
 import type { Coordinates, POI, TravelMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
-import { MapPin, Sparkles, Building2, X, Navigation } from "lucide-react";
+import { MapPin, Sparkles } from "lucide-react";
+import GeoLocationWidget from "./GeoLocationWidget";
 import * as LucideIcons from "lucide-react";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 
@@ -44,10 +45,10 @@ interface ExplorerMapProps {
   userAccuracy?: number | null;
   geoMode?: GeolocationMode;
   distanceToProject?: number | null;
-  // Geolocation prompt (for deferred geolocation mode)
-  showGeoPrompt?: boolean;
+  // Geolocation widget (for deferred geolocation mode)
+  showGeoWidget?: boolean;
+  geoIsEnabled?: boolean;
   onEnableGeolocation?: () => void;
-  onDismissGeoPrompt?: () => void;
 }
 
 export default function ExplorerMap({
@@ -69,17 +70,15 @@ export default function ExplorerMap({
   userAccuracy,
   geoMode = "loading",
   distanceToProject,
-  showGeoPrompt,
+  showGeoWidget,
+  geoIsEnabled,
   onEnableGeolocation,
-  onDismissGeoPrompt,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [infoDismissed, setInfoDismissed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem("placy-geo-info-dismissed") === "true";
-  });
   const hasFittedBoundsRef = useRef(false);
+  const lastFittedPOIRef = useRef<string | null>(null);
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
 
   // Get Lucide icon component by name
   const getIcon = useCallback((iconName: string): LucideIcons.LucideIcon => {
@@ -101,9 +100,14 @@ export default function ExplorerMap({
     );
   }, [mapLoaded, initialBounds, mapPadding]);
 
-  // Fit map to show full route when route data arrives
+  // Fit map to show full route when a NEW POI is selected (not on route updates)
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !routeData?.coordinates.length) return;
+    if (!mapRef.current || !mapLoaded || !routeData?.coordinates.length || !activePOI) return;
+
+    // Only fit bounds when selecting a different POI, not when route updates (e.g. GPS change)
+    if (lastFittedPOIRef.current === activePOI) return;
+    lastFittedPOIRef.current = activePOI;
+
     const coords = routeData.coordinates;
     let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
     for (const [lng, lat] of coords) {
@@ -116,7 +120,14 @@ export default function ExplorerMap({
       [[minLng, minLat], [maxLng, maxLat]],
       { padding: mapPadding || 60, duration: 400, maxZoom: mapRef.current.getZoom() }
     );
-  }, [routeData, mapLoaded, mapPadding]);
+  }, [routeData, mapLoaded, mapPadding, activePOI]);
+
+  // Reset fitted POI ref when route is dismissed
+  useEffect(() => {
+    if (!activePOI) {
+      lastFittedPOIRef.current = null;
+    }
+  }, [activePOI]);
 
   // Update visible POIs when map moves
   const updateVisiblePOIs = useCallback(() => {
@@ -211,7 +222,23 @@ export default function ExplorerMap({
         onLoad={onLoad}
         onMoveEnd={updateVisiblePOIs}
         onZoomEnd={updateVisiblePOIs}
-        onClick={() => {
+        onMouseDown={(e) => {
+          // Track mouse position to distinguish click from drag
+          mouseDownPosRef.current = { x: e.point.x, y: e.point.y };
+        }}
+        onClick={(e) => {
+          // Only dismiss if this was a true click (not a drag)
+          // Check if mouse moved more than 5px from mousedown position
+          if (mouseDownPosRef.current) {
+            const dx = Math.abs(e.point.x - mouseDownPosRef.current.x);
+            const dy = Math.abs(e.point.y - mouseDownPosRef.current.y);
+            if (dx > 5 || dy > 5) {
+              // This was a drag, not a click
+              mouseDownPosRef.current = null;
+              return;
+            }
+          }
+          mouseDownPosRef.current = null;
           // Dismiss active POI when clicking on map background
           // (marker clicks call e.originalEvent.stopPropagation())
           onDismissActive?.();
@@ -228,31 +255,23 @@ export default function ExplorerMap({
           />
         )}
 
-        {/* Project center marker — changes based on geo mode */}
-        <Marker
-          longitude={center.lng}
-          latitude={center.lat}
-          anchor="center"
-        >
-          {geoMode === "gps-near" ? (
-            /* Small neutral pin when user is nearby with GPS */
-            <div className="flex flex-col items-center">
-              <div className="w-6 h-6 bg-gray-400 rounded-full shadow border-2 border-white flex items-center justify-center">
-                <Building2 className="w-3 h-3 text-white" />
-              </div>
-            </div>
-          ) : (
-            /* Full marker with label when GPS not active or user is far */
+        {/* Project center marker — only show when GPS is not active */}
+        {(geoMode === "disabled" || geoMode === "loading" || geoMode === "fallback") && (
+          <Marker
+            longitude={center.lng}
+            latitude={center.lat}
+            anchor="center"
+          >
             <div className="flex flex-col items-center">
               <div className="w-10 h-10 bg-sky-500 rounded-full shadow-lg border-2 border-white flex items-center justify-center">
                 <MapPin className="w-5 h-5 text-white" />
               </div>
               <span className="text-[10px] font-medium text-gray-500 mt-1 bg-white/80 px-1.5 py-0.5 rounded">
-                {geoMode === "gps-far" ? projectName : "Du er her"}
+                Sentrum
               </span>
             </div>
-          )}
-        </Marker>
+          </Marker>
+        )}
 
         {/* GPS user position dot */}
         {userPosition && (geoMode === "gps-near" || geoMode === "gps-far") && (
@@ -297,20 +316,6 @@ export default function ExplorerMap({
               }}
             >
               <div className="relative cursor-pointer">
-                {/* Pulsing ring for active marker */}
-                {isThisActive && (
-                  <div
-                    className="absolute rounded-full animate-ping opacity-50"
-                    style={{
-                      backgroundColor: poi.category.color,
-                      width: 32,
-                      height: 32,
-                      top: -4,
-                      left: -4,
-                    }}
-                  />
-                )}
-
                 {/* Icon circle */}
                 <div
                   className={cn(
@@ -346,53 +351,16 @@ export default function ExplorerMap({
         })}
       </Map>
 
-      {/* Info banner for hybrid mode (user is far from project) */}
-      {geoMode === "gps-far" && !infoDismissed && distanceToProject && (
-        <div className="absolute top-14 right-2 left-2 md:left-auto md:w-80 z-10">
-          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg px-3 py-2 flex items-center gap-2 text-sm">
-            <span className="text-gray-600 flex-1">
-              Du er {(distanceToProject / 1000).toFixed(1)} km fra {projectName}. Avstander vises herfra.
-            </span>
-            <button
-              onClick={() => {
-                setInfoDismissed(true);
-                sessionStorage.setItem("placy-geo-info-dismissed", "true");
-              }}
-              className="text-gray-400 hover:text-gray-600 p-0.5 shrink-0"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Geolocation prompt banner (for geolocation-with-fallback mode) */}
-      {showGeoPrompt && (
-        <div className="absolute bottom-4 left-4 right-4 z-20 lg:left-auto lg:right-4 lg:w-72">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 px-4 py-3 flex items-start gap-3">
-            <Navigation className="w-5 h-5 text-sky-500 mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900">Aktiver posisjon</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Se avstander fra der du er nå
-              </p>
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <button
-                onClick={onDismissGeoPrompt}
-                className="text-xs text-gray-400 hover:text-gray-600 py-1.5"
-              >
-                Ikke nå
-              </button>
-              <button
-                onClick={onEnableGeolocation}
-                className="text-xs font-medium text-sky-600 bg-sky-50 px-3 py-1.5 rounded-lg hover:bg-sky-100 transition-colors"
-              >
-                Aktiver
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Geolocation widget (for geolocation-with-fallback mode) */}
+      {showGeoWidget && onEnableGeolocation && (
+        <GeoLocationWidget
+          geoMode={geoMode}
+          isEnabled={geoIsEnabled ?? false}
+          distanceToProject={distanceToProject ?? null}
+          accuracy={userAccuracy ?? null}
+          projectName={projectName}
+          onEnable={onEnableGeolocation}
+        />
       )}
     </div>
   );

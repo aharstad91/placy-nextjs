@@ -9,7 +9,7 @@ import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
 import { haversineDistance, cn } from "@/lib/utils";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
-import { Bookmark, Navigation } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerMap from "./ExplorerMap";
 import ExplorerPanel from "./ExplorerPanel";
@@ -61,33 +61,15 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   // Origin mode determines geolocation behavior
   const originMode: OriginMode = project.originMode ?? "geolocation-with-fallback";
 
-  // Geo prompt banner state (for geolocation-with-fallback mode)
-  const [geoPromptDismissed, setGeoPromptDismissed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem("placy-geo-prompt-dismissed") === "true";
-  });
-  const [hasInteractedWithPOI, setHasInteractedWithPOI] = useState(false);
-
   // Geolocation — enabled immediately for "geolocation" mode, deferred for others
   const geoEnabledByDefault = originMode === "geolocation";
   const geo = useGeolocation(project.centerCoordinates, { enabled: geoEnabledByDefault });
 
-  // Show geo prompt: after first POI interaction, not fixed mode, GPS not already enabled/granted
-  const showGeoPrompt =
-    originMode === "geolocation-with-fallback" &&
-    hasInteractedWithPOI &&
-    !geoPromptDismissed &&
-    !geo.isEnabled &&
-    geo.mode === "disabled";
-
-  const handleDismissGeoPrompt = useCallback(() => {
-    setGeoPromptDismissed(true);
-    sessionStorage.setItem("placy-geo-prompt-dismissed", "true");
-  }, []);
+  // Show geo widget: only for geolocation-with-fallback mode (not fixed, not auto)
+  const showGeoWidget = originMode === "geolocation-with-fallback";
 
   const handleEnableGeolocation = useCallback(() => {
     geo.enable();
-    setGeoPromptDismissed(true);
   }, [geo]);
 
   // Throttle travel time recalculation for GPS: only when moved >100m and >30s since last calc
@@ -230,14 +212,12 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   // POI selection (from list click)
   const handlePOIClick = useCallback((poiId: string) => {
     setActivePOI((prev) => (prev === poiId ? null : poiId));
-    setHasInteractedWithPOI(true);
   }, []);
 
   // POI selection from map click (with temporary highlight)
   const handleMapPOIClick = useCallback((poiId: string) => {
     setActivePOI((prev) => (prev === poiId ? null : poiId));
     setHighlightedPOI(poiId);
-    setHasInteractedWithPOI(true);
     setTimeout(() => setHighlightedPOI(null), 2000);
   }, []);
 
@@ -254,20 +234,27 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     setMapZoom(zoom);
   }, []);
 
-  // Fetch route when a POI is selected (from effective origin — GPS or hotel)
+  // Route origin: use GPS position when available, otherwise project center
+  // (Different from travel times which use effectiveOrigin based on near/far logic)
+  const routeOrigin = useMemo(() => {
+    return geo.userPosition ?? project.centerCoordinates;
+  }, [geo.userPosition, project.centerCoordinates]);
+
+  // Fetch route when a POI is selected (from GPS position or project center)
   useEffect(() => {
     if (!activePOI) {
       setRouteData(null);
       return;
     }
-    const poi = poiMap.get(activePOI);
+    // Look up POI from enriched map first, fallback to project.pois
+    const poi = poiMap.get(activePOI) ?? project.pois.find(p => p.id === activePOI);
     if (!poi) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const origin = `${geo.effectiveOrigin.lng},${geo.effectiveOrigin.lat}`;
+    const origin = `${routeOrigin.lng},${routeOrigin.lat}`;
     const destination = `${poi.coordinates.lng},${poi.coordinates.lat}`;
     const profileMap: Record<TravelMode, string> = {
       walk: "walking",
@@ -287,12 +274,15 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
           });
         }
       })
-      .catch(() => {
-        // Aborted or failed — ignore
+      .catch((err) => {
+        // Aborted requests are expected, other errors should be logged
+        if (err.name !== 'AbortError') {
+          console.error('Route fetch failed:', err);
+        }
       });
 
     return () => controller.abort();
-  }, [activePOI, poiMap, geo.effectiveOrigin, travelMode]);
+  }, [activePOI, poiMap, routeOrigin, travelMode, project.pois]);
 
   // Flash animation when item added to collection
   useEffect(() => {
@@ -432,10 +422,10 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     userAccuracy: geo.accuracy,
     geoMode: geo.mode,
     distanceToProject: geo.distanceToProject,
-    // Geolocation prompt (for deferred mode)
-    showGeoPrompt,
+    // Geolocation widget (for deferred mode)
+    showGeoWidget,
+    geoIsEnabled: geo.isEnabled,
     onEnableGeolocation: handleEnableGeolocation,
-    onDismissGeoPrompt: handleDismissGeoPrompt,
   };
 
   // Desktop: split layout — map gets its own area, no sidebar overlap
