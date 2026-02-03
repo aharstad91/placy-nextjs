@@ -20,7 +20,7 @@ body {
   font-family: Inter, system-ui, sans-serif;
 }
 
-/* Skjul standard Mapbox POI-labels */
+/* Skjul standard Mapbox POI-labels (kun admin-verktøy bruker Mapbox nå) */
 .mapboxgl-map .poi-label {
   display: none;
 }

@@ -303,6 +303,31 @@ export function isCompletedStop(
   return status.type === "completed";
 }
 
+// === Camera Constraints (3D Map Performance) ===
+
+export interface CameraConstraints {
+  minTilt?: number;       // Default: 0 (degrees)
+  maxTilt?: number;       // Default: 70 (degrees)
+  minRange?: number;      // Default: 150 (meters)
+  maxRange?: number;      // Default: 3000 (meters)
+  bounds?: {
+    north: number;        // Max latitude
+    south: number;        // Min latitude
+    east: number;         // Max longitude
+    west: number;         // Min longitude
+  };
+  boundsBuffer?: number;  // Default: 0.2 (20% of diagonal)
+}
+
+// Default camera constraints for consistent performance
+export const DEFAULT_CAMERA_CONSTRAINTS: Required<Omit<CameraConstraints, 'bounds' | 'boundsBuffer'>> & Pick<CameraConstraints, 'boundsBuffer'> = {
+  minTilt: 0,
+  maxTilt: 70,
+  minRange: 150,
+  maxRange: 3000,
+  boundsBuffer: 0.2,
+};
+
 // === Guide Gamification Types ===
 
 // Branded type for Guide ID (konsistent med eksisterende GuideStopId)

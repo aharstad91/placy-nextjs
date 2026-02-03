@@ -23,6 +23,7 @@
     "@supabase/supabase-js": "^2.47.10",
     "@types/node": "^25.0.10",
     "@types/react": "^19.2.9",
+    "@vis.gl/react-google-maps": "^1.7.1",
     "autoprefixer": "^10.4.23",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
