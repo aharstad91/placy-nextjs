@@ -35,6 +35,15 @@ const config: Config = {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
+      keyframes: {
+        fadeInSlide: {
+          '0%': { opacity: '0', transform: 'translateX(-8px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+      },
+      animation: {
+        fadeInSlide: 'fadeInSlide 200ms ease-out forwards',
+      },
     },
   },
   plugins: [],

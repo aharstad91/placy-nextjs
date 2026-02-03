@@ -6,6 +6,7 @@ import { DEFAULT_CAMERA_CONSTRAINTS } from "@/lib/types";
 import { calculateBoundsWithBuffer } from "@/lib/map-utils";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import MapView3D, { useMap3DCamera } from "@/components/map/map-view-3d";
+import { MarkerActionButtons } from "@/components/map/MarkerActionButtons";
 import GeoLocationWidget from "./GeoLocationWidget";
 
 interface ExplorerMap3DProps {
@@ -65,6 +66,10 @@ export default function ExplorerMap3D({
   const lastFittedPOIRef = useRef<string | null>(null);
   const hasFittedBoundsRef = useRef(false);
 
+  // Track active marker element for action buttons
+  const [activeMarkerElement, setActiveMarkerElement] =
+    useState<google.maps.maps3d.Marker3DInteractiveElement | null>(null);
+
   // Determine if we should show the project center marker
   // (only when GPS is not active)
   const showProjectCenter = geoMode === "disabled" || geoMode === "loading" || geoMode === "fallback";
@@ -79,41 +84,40 @@ export default function ExplorerMap3D({
     onDismissActive?.();
   }, [onDismissActive]);
 
-  // Handle POI click with fly animation
+  // Handle POI click without camera movement
   const handlePOIClick = useCallback((poiId: string) => {
-    const poi = pois.find(p => p.id === poiId);
-    if (poi && cameraRef.current) {
-      cameraRef.current.flyTo(poi.coordinates, {
-        range: 500,
-        tilt: 60,
-        duration: 1200
-      });
-    }
+    // Just select the POI without moving camera
+    // The route/path will be created by the parent component
     onPOIClick(poiId);
-  }, [pois, onPOIClick]);
+  }, [onPOIClick]);
 
-  // Fit map to show full route when a NEW POI is selected
-  useEffect(() => {
-    if (!mapReady || !routeData?.coordinates.length || !activePOI || !cameraRef.current) return;
+  // Handle 3D toggle
+  const handle3DToggle = useCallback(() => {
+    if (!cameraRef.current) return;
 
-    // Only fit bounds when selecting a different POI
-    if (lastFittedPOIRef.current === activePOI) return;
-    lastFittedPOIRef.current = activePOI;
+    const currentCamera = cameraRef.current.getCamera();
+    if (!currentCamera || !currentCamera.center) return;
 
-    const coords = routeData.coordinates;
-    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
-    for (const [lng, lat] of coords) {
-      if (lng < minLng) minLng = lng;
-      if (lng > maxLng) maxLng = lng;
-      if (lat < minLat) minLat = lat;
-      if (lat > maxLat) maxLat = lat;
+    // Check if already in 3D (tilt > 30°)
+    const isIn3D = currentCamera.tilt && currentCamera.tilt > 30;
+
+    if (isIn3D) {
+      // Return to top-down
+      cameraRef.current.flyTo(
+        { lat: currentCamera.center.lat, lng: currentCamera.center.lng },
+        { tilt: 0, range: currentCamera.range, duration: 1200 }
+      );
+    } else {
+      // Go to 3D
+      cameraRef.current.flyTo(
+        { lat: currentCamera.center.lat, lng: currentCamera.center.lng },
+        { tilt: 55, range: 600, duration: 1200 }
+      );
     }
+  }, []);
 
-    cameraRef.current.fitBounds(
-      { minLat, maxLat, minLng, maxLng },
-      { duration: 800, padding: 0.3 }
-    );
-  }, [routeData, mapReady, activePOI]);
+  // Removed: Auto-fit bounds to show full route
+  // Keep zoom level unchanged when selecting POI
 
   // Reset fitted POI ref when route is dismissed
   useEffect(() => {
@@ -237,7 +241,20 @@ export default function ExplorerMap3D({
         projectCenterLabel="Sentrum"
         // Camera constraints for performance
         constraints={constraints}
+        // Marker ref callback for action buttons
+        onActiveMarkerRef={setActiveMarkerElement}
       />
+
+      {/* Action buttons overlay */}
+      {activePOI && routeData && (
+        <MarkerActionButtons
+          markerElement={activeMarkerElement}
+          travelTime={Math.round(routeData.travelTime)}
+          travelMode={travelMode}
+          onToggle3D={handle3DToggle}
+          show={true}
+        />
+      )}
 
       {/* Geolocation widget (for geolocation-with-fallback mode) */}
       {showGeoWidget && onEnableGeolocation && (

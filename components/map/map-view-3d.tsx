@@ -38,6 +38,8 @@ interface MapView3DInnerProps {
   projectCenterLabel?: string;
   // Camera constraints for performance optimization
   constraints?: CameraConstraints;
+  // Active marker ref callback (for action buttons)
+  onActiveMarkerRef?: (marker: google.maps.maps3d.Marker3DInteractiveElement) => void;
 }
 
 function MapView3DInner({
@@ -56,7 +58,8 @@ function MapView3DInner({
   cameraRef,
   showProjectCenter = false,
   projectCenterLabel = "Sentrum",
-  constraints
+  constraints,
+  onActiveMarkerRef
 }: MapView3DInnerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapElementRef = useRef<google.maps.maps3d.Map3DElement | null>(null);
@@ -115,7 +118,7 @@ function MapView3DInner({
         // CRITICAL: mode must be set for 3D to render
         const map3d = new Map3DElement({
           center: { lat: center.lat, lng: center.lng, altitude: 0 },
-          tilt: 50,
+          tilt: 0, // Start with top-down view
           heading: 0,
           range: 1200,
           mode: "SATELLITE" as google.maps.MapMode,
@@ -151,6 +154,10 @@ function MapView3DInner({
         mapContainerRef.current.appendChild(map3d);
 
         // Range constraint via listener (no native minRange/maxRange support)
+        // Only enforce constraints after user stops zooming (debounced)
+        let lastClampedRange = map3d.range;
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
         map3d.addEventListener("gmp-rangechange", () => {
           const currentRange = map3d.range;
           const clampedRange = clampRange(
@@ -159,8 +166,18 @@ function MapView3DInner({
             effectiveConstraints.maxRange
           );
 
-          if (currentRange !== clampedRange) {
-            map3d.range = clampedRange;
+          // Clear pending constraint enforcement
+          if (debounceTimer !== null) {
+            clearTimeout(debounceTimer);
+          }
+
+          // Only enforce constraint after user stops zooming (300ms delay)
+          if (clampedRange !== currentRange && Math.abs(clampedRange - lastClampedRange) > 1) {
+            debounceTimer = setTimeout(() => {
+              lastClampedRange = clampedRange;
+              map3d.range = clampedRange;
+              debounceTimer = null;
+            }, 300);
           }
         });
 
@@ -242,6 +259,7 @@ function MapView3DInner({
           activePOI={activePOI ?? null}
           onPOIClick={onPOIClick}
           map3d={mapElementRef.current}
+          onActiveMarkerRef={onActiveMarkerRef}
         />
       )}
 
