@@ -248,45 +248,51 @@ export async function getCategoryById(id: string): Promise<Category | null> {
 }
 
 /**
- * Fetch all POIs for a project
+ * Fetch all POIs for a project with resolved categories.
+ *
+ * Handles category resolution: project-specific categories override global ones.
+ * Uses a single query with nested selects to fetch all data efficiently.
  */
 export async function getProjectPOIs(projectId: string): Promise<POI[]> {
   if (!isSupabaseConfigured() || !supabase) {
     return [];
   }
 
-  // First get the POI IDs linked to this project
-  const { data: projectPois, error: linkError } = await supabase
+  // Fetch project_pois with nested POI data, global category, and project category
+  const { data: projectPois, error } = await supabase
     .from("project_pois")
-    .select("poi_id")
+    .select(`
+      poi_id,
+      project_category_id,
+      pois (
+        *,
+        categories (*)
+      ),
+      project_categories (*)
+    `)
     .eq("project_id", projectId);
 
-  if (linkError || !projectPois) {
-    console.error("Error fetching project POIs:", linkError);
+  if (error) {
+    console.error("Error fetching project POIs:", error);
     return [];
   }
 
-  const poiIds = projectPois.map((pp) => pp.poi_id);
-  if (poiIds.length === 0) return [];
-
-  // Fetch the POIs with their categories
-  const { data: pois, error: poiError } = await supabase
-    .from("pois")
-    .select(`
-      *,
-      categories (*)
-    `)
-    .in("id", poiIds);
-
-  if (poiError || !pois) {
-    console.error("Error fetching POIs:", poiError);
+  if (!projectPois || projectPois.length === 0) {
     return [];
   }
 
-  return pois.map((poi) => {
-    const category = poi.categories
-      ? transformCategory(poi.categories as DbCategory)
+  // Transform with category resolution (project category overrides global)
+  return projectPois.map((pp) => {
+    const poi = pp.pois as DbPoi & { categories: DbCategory | null };
+    const projectCategory = pp.project_categories as DbCategory | null;
+    const globalCategory = poi.categories;
+
+    // Resolution: project category takes precedence over global
+    const resolvedCategory = projectCategory || globalCategory;
+    const category: Category | undefined = resolvedCategory
+      ? transformCategory(resolvedCategory)
       : undefined;
+
     return transformPOI(poi, category);
   });
 }

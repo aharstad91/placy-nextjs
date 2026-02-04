@@ -226,14 +226,17 @@ export type Database = {
         Row: {
           project_id: string;
           poi_id: string;
+          project_category_id: string | null;
         };
         Insert: {
           project_id: string;
           poi_id: string;
+          project_category_id?: string | null;
         };
         Update: {
           project_id?: string;
           poi_id?: string;
+          project_category_id?: string | null;
         };
         Relationships: [
           {
@@ -246,6 +249,46 @@ export type Database = {
             foreignKeyName: "project_pois_poi_id_fkey";
             columns: ["poi_id"];
             referencedRelation: "pois";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_pois_project_category_id_fkey";
+            columns: ["project_category_id"];
+            referencedRelation: "project_categories";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      project_categories: {
+        Row: {
+          id: string;
+          project_id: string;
+          name: string;
+          icon: string;
+          color: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          name: string;
+          icon?: string;
+          color?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          name?: string;
+          icon?: string;
+          color?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_categories_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
             referencedColumns: ["id"];
           }
         ];
@@ -472,3 +515,25 @@ export type DbSectionPoi = Tables<"section_pois">;
 export type DbThemeStorySection = Tables<"theme_story_sections">;
 export type DbThemeSectionPoi = Tables<"theme_section_pois">;
 export type DbCollection = Tables<"collections">;
+export type DbProjectCategory = Tables<"project_categories">;
+
+// Resolved POI type for frontend use (category resolution done)
+export interface ResolvedPoi {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  address: string | null;
+  google_rating: number | null;
+  google_review_count: number | null;
+  photo_reference: string | null;
+  editorial_hook: string | null;
+  local_insight: string | null;
+  category: {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+  } | null;
+  isProjectCategoryOverride: boolean;
+}

@@ -34,7 +34,7 @@ interface ProjectsAdminClientProps {
   projects: ProjectWithCustomerName[];
   customers: Pick<DbCustomer, "id" | "name">[];
   createProject: (formData: FormData) => Promise<void>;
-  updateProject: (formData: FormData) => Promise<void>;
+  updateProject: (formData: FormData) => Promise<void>; // Kept for API compatibility, not used
   deleteProject: (formData: FormData) => Promise<void>;
 }
 
@@ -52,15 +52,13 @@ export function ProjectsAdminClient({
   projects,
   customers,
   createProject,
-  updateProject,
   deleteProject,
 }: ProjectsAdminClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<ProjectWithCustomerName | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProjectWithCustomerName | null>(null);
   const [filterCustomerId, setFilterCustomerId] = useState<string>("");
 
-  // Form state
+  // Form state for create modal
   const [customerId, setCustomerId] = useState("");
   const [name, setName] = useState("");
   const [urlSlug, setUrlSlug] = useState("");
@@ -78,7 +76,6 @@ export function ProjectsAdminClient({
   }, [projects, filterCustomerId]);
 
   const openCreateModal = () => {
-    setEditingProject(null);
     setCustomerId(customers[0]?.id || "");
     setName("");
     setUrlSlug("");
@@ -90,22 +87,8 @@ export function ProjectsAdminClient({
     setIsModalOpen(true);
   };
 
-  const openEditModal = (project: ProjectWithCustomerName) => {
-    setEditingProject(project);
-    setCustomerId(project.customer_id || "");
-    setName(project.name);
-    setUrlSlug(project.url_slug);
-    setProductType(project.product_type || "explorer");
-    setCenterLat(project.center_lat.toString());
-    setCenterLng(project.center_lng.toString());
-    setSlugManuallyEdited(true);
-    setError(null);
-    setIsModalOpen(true);
-  };
-
   const closeModal = () => {
     setIsModalOpen(false);
-    setEditingProject(null);
     setError(null);
   };
 
@@ -152,9 +135,6 @@ export function ProjectsAdminClient({
 
     try {
       const formData = new FormData();
-      if (editingProject) {
-        formData.set("id", editingProject.id);
-      }
       formData.set("customerId", customerId);
       formData.set("name", name);
       formData.set("urlSlug", urlSlug);
@@ -162,12 +142,7 @@ export function ProjectsAdminClient({
       formData.set("centerLat", lat.toString());
       formData.set("centerLng", lng.toString());
 
-      if (editingProject) {
-        await updateProject(formData);
-      } else {
-        await createProject(formData);
-      }
-
+      await createProject(formData);
       closeModal();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Noe gikk galt");
@@ -354,13 +329,13 @@ export function ProjectsAdminClient({
                           </Link>
                         )}
                         {project.source === "supabase" && (
-                          <button
-                            onClick={() => openEditModal(project)}
+                          <Link
+                            href={`/admin/projects/${project.id}`}
                             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Rediger"
                           >
                             <Edit2 className="w-4 h-4" />
-                          </button>
+                          </Link>
                         )}
                         {project.source === "json" && (
                           <span className="text-xs text-gray-400 px-2 truncate max-w-[200px]">
@@ -390,7 +365,7 @@ export function ProjectsAdminClient({
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">
-                {editingProject ? "Rediger prosjekt" : "Nytt prosjekt"}
+                Nytt prosjekt
               </h2>
               <button
                 onClick={closeModal}
@@ -512,10 +487,8 @@ export function ProjectsAdminClient({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Lagrer...
+                      Oppretter...
                     </>
-                  ) : editingProject ? (
-                    "Oppdater"
                   ) : (
                     "Opprett"
                   )}
