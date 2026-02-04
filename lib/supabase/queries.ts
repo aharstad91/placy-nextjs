@@ -250,25 +250,24 @@ export async function getCategoryById(id: string): Promise<Category | null> {
 /**
  * Fetch all POIs for a project with resolved categories.
  *
- * Handles category resolution: project-specific categories override global ones.
- * Uses a single query with nested selects to fetch all data efficiently.
+ * Note: project_category_id and project_categories support requires migration 005.
+ * Until then, only global categories are used.
  */
 export async function getProjectPOIs(projectId: string): Promise<POI[]> {
   if (!isSupabaseConfigured() || !supabase) {
     return [];
   }
 
-  // Fetch project_pois with nested POI data, global category, and project category
+  // Fetch project_pois with nested POI data and global category
+  // Note: project_category_id column only exists after migration 005 is applied
   const { data: projectPois, error } = await supabase
     .from("project_pois")
     .select(`
       poi_id,
-      project_category_id,
       pois (
         *,
         categories (*)
-      ),
-      project_categories (*)
+      )
     `)
     .eq("project_id", projectId);
 
@@ -281,16 +280,13 @@ export async function getProjectPOIs(projectId: string): Promise<POI[]> {
     return [];
   }
 
-  // Transform with category resolution (project category overrides global)
+  // Transform POIs using global categories (project category override not yet available)
   return projectPois.map((pp) => {
     const poi = pp.pois as DbPoi & { categories: DbCategory | null };
-    const projectCategory = pp.project_categories as DbCategory | null;
     const globalCategory = poi.categories;
 
-    // Resolution: project category takes precedence over global
-    const resolvedCategory = projectCategory || globalCategory;
-    const category: Category | undefined = resolvedCategory
-      ? transformCategory(resolvedCategory)
+    const category: Category | undefined = globalCategory
+      ? transformCategory(globalCategory)
       : undefined;
 
     return transformPOI(poi, category);
