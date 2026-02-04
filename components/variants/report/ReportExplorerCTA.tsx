@@ -72,7 +72,7 @@ export default function ReportExplorerCTA({
   const altText = `Kart over ${totalPOIs} steder fordelt på ${centroids.length} kategorier`;
 
   return (
-    <section className="col-span-12 py-16 md:py-20 bg-[#f3f0eb] -mx-6 px-6">
+    <section className="col-span-12 py-16 md:py-20 bg-[#f3f0eb] -mx-16 px-16">
       <div className="max-w-4xl">
         <div className="h-px bg-[#e8e4df] mb-12" />
 

@@ -34,7 +34,7 @@ export default function ReportClosing({
       </section>
 
       {/* Attribution footer */}
-      <footer className="col-span-12 py-8 bg-[#f3f0eb] border-t border-[#e8e4df] -mx-6 px-6">
+      <footer className="col-span-12 py-8 bg-[#f3f0eb] border-t border-[#e8e4df] -mx-16 px-16">
         <p className="text-xs text-[#8a8a8a]">
           Data: Google, Entur, Trondheim Bysykkel
         </p>

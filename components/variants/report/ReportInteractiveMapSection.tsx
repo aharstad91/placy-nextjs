@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import type { ReportTheme } from "./report-data";
-import type { Coordinates } from "@/lib/types";
+import type { Coordinates, Category } from "@/lib/types";
 import type { MapRef } from "react-map-gl/mapbox";
 import ReportHighlightCard from "./ReportHighlightCard";
 import ReportInteractiveMap from "./ReportInteractiveMap";
@@ -28,18 +28,19 @@ export default function ReportInteractiveMapSection({
   const [activePOI, setActivePOI] = useState<string | null>(null);
   const [isInView, setIsInView] = useState(false);
   const [activeTab, setActiveTab] = useState<"list" | "map">("list");
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
   const sectionRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // Lazy loading with triggerOnce pattern (disconnect after first intersection)
   useEffect(() => {
-    if (isInView) return; // Already loaded, don't re-observe
+    if (isInView) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
-          observer.disconnect(); // Stop observing after first load
+          observer.disconnect();
         }
       },
       { rootMargin: "100px" }
@@ -49,11 +50,44 @@ export default function ReportInteractiveMapSection({
     return () => observer.disconnect();
   }, [isInView]);
 
-  // Derive POIs with useMemo (from Guide Library learnings - never useEffect + setState)
-  const pois = useMemo(
+  // All POIs in this theme
+  const allPois = useMemo(
     () => theme.highlightPOIs.concat(theme.listPOIs),
     [theme.highlightPOIs, theme.listPOIs]
   );
+
+  // Extract unique categories with counts
+  const categories = useMemo(() => {
+    const categoryMap = new Map<string, { category: Category; count: number }>();
+    for (const poi of allPois) {
+      const existing = categoryMap.get(poi.category.id);
+      if (existing) {
+        existing.count++;
+      } else {
+        categoryMap.set(poi.category.id, { category: poi.category, count: 1 });
+      }
+    }
+    return Array.from(categoryMap.values());
+  }, [allPois]);
+
+  // Filtered POIs based on hidden categories
+  const pois = useMemo(
+    () => allPois.filter((poi) => !hiddenCategories.has(poi.category.id)),
+    [allPois, hiddenCategories]
+  );
+
+  // Toggle category visibility
+  const toggleCategory = useCallback((categoryId: string) => {
+    setHiddenCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  }, []);
 
   // Map lifecycle callbacks
   const handleMapMount = useCallback(
@@ -75,7 +109,6 @@ export default function ReportInteractiveMapSection({
   // Handle POI click from map marker
   const handleMarkerClick = useCallback((poiId: string) => {
     setActivePOI((prev) => (prev === poiId ? null : poiId));
-    // On mobile, switch to list tab when marker is clicked
     setActiveTab("list");
   }, []);
 
@@ -93,8 +126,34 @@ export default function ReportInteractiveMapSection({
 
   // Get theme categories for explorer URL
   const themeCategories = useMemo(
-    () => Array.from(new Set(pois.map((poi) => poi.category.id))),
-    [pois]
+    () => Array.from(new Set(allPois.map((poi) => poi.category.id))),
+    [allPois]
+  );
+
+  // Category filter pills component
+  const CategoryFilters = () => (
+    <div className="flex flex-wrap gap-2 mb-4">
+      {categories.map(({ category, count }) => {
+        const isHidden = hiddenCategories.has(category.id);
+        return (
+          <button
+            key={category.id}
+            onClick={() => toggleCategory(category.id)}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-all ${
+              isHidden
+                ? "bg-[#f5f3f0] text-[#a0a0a0] line-through"
+                : "text-white"
+            }`}
+            style={!isHidden ? { backgroundColor: category.color } : undefined}
+          >
+            {category.name}
+            <span className={isHidden ? "text-[#c0c0c0]" : "opacity-70"}>
+              ({count})
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 
   return (
@@ -103,18 +162,21 @@ export default function ReportInteractiveMapSection({
       <div className="lg:hidden">
         <ReportMapTabs activeTab={activeTab} onTabChange={setActiveTab} />
         {activeTab === "list" ? (
-          <div className="space-y-3 py-4">
-            {pois.map((poi) => (
-              <div key={poi.id} ref={registerCardRef(poi.id)}>
-                <ReportHighlightCard
-                  poi={poi}
-                  explorerBaseUrl={explorerBaseUrl}
-                  themeCategories={themeCategories}
-                  isActive={activePOI === poi.id}
-                  onClick={() => handleCardClick(poi.id)}
-                />
-              </div>
-            ))}
+          <div className="py-4">
+            <CategoryFilters />
+            <div className="space-y-3">
+              {pois.map((poi) => (
+                <div key={poi.id} ref={registerCardRef(poi.id)}>
+                  <ReportHighlightCard
+                    poi={poi}
+                    explorerBaseUrl={explorerBaseUrl}
+                    themeCategories={themeCategories}
+                    isActive={activePOI === poi.id}
+                    onClick={() => handleCardClick(poi.id)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="h-[400px]">
@@ -136,21 +198,24 @@ export default function ReportInteractiveMapSection({
         )}
       </div>
 
-      {/* Desktop: Cards flow naturally, map is sticky */}
-      <div className="hidden lg:flex gap-6">
-        {/* Left: POI cards - natural flow */}
-        <div className="w-1/2 space-y-3">
-          {pois.map((poi) => (
-            <div key={poi.id} ref={registerCardRef(poi.id)}>
-              <ReportHighlightCard
-                poi={poi}
-                explorerBaseUrl={explorerBaseUrl}
-                themeCategories={themeCategories}
-                isActive={activePOI === poi.id}
-                onClick={() => handleCardClick(poi.id)}
-              />
-            </div>
-          ))}
+      {/* Desktop: Cards in 2-col grid, map is sticky */}
+      <div className="hidden lg:flex gap-16">
+        {/* Left: Category filters + POI cards */}
+        <div className="w-1/2">
+          <CategoryFilters />
+          <div className="grid grid-cols-2 gap-4 content-start">
+            {pois.map((poi) => (
+              <div key={poi.id} ref={registerCardRef(poi.id)}>
+                <ReportHighlightCard
+                  poi={poi}
+                  explorerBaseUrl={explorerBaseUrl}
+                  themeCategories={themeCategories}
+                  isActive={activePOI === poi.id}
+                  onClick={() => handleCardClick(poi.id)}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Right: Sticky map */}

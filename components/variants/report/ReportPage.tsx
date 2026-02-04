@@ -59,7 +59,7 @@ export default function ReportPage({ project, explorerBaseUrl }: ReportPageProps
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] px-6">
+    <div className="min-h-screen bg-[#faf9f7] px-16">
       <div className="grid grid-cols-12 gap-x-6">
         {/* Hero with integrated theme navigation */}
         <ReportHero
