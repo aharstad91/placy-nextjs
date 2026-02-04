@@ -14,9 +14,7 @@ import {
   Building2,
   type LucideIcon,
 } from "lucide-react";
-import ReportDensityMap from "./ReportDensityMap";
-import ReportHighlightCard from "./ReportHighlightCard";
-import ReportCompactList from "./ReportCompactList";
+import ReportInteractiveMapSection from "./ReportInteractiveMapSection";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   UtensilsCrossed,
@@ -35,16 +33,12 @@ interface ReportThemeSectionProps {
   theme: ReportTheme;
   center: Coordinates;
   explorerBaseUrl?: string | null;
-  themeCategories?: string[];
-  mapStyle?: string;
 }
 
 export default function ReportThemeSection({
   theme,
   center,
   explorerBaseUrl,
-  themeCategories,
-  mapStyle,
 }: ReportThemeSectionProps) {
   const Icon = ICON_MAP[theme.icon];
 
@@ -90,29 +84,15 @@ export default function ReportThemeSection({
             {theme.intro}
           </p>
         )}
+      </div>
 
-        {/* Density map */}
-        <ReportDensityMap pois={theme.allPOIs} center={center} mapStyle={mapStyle} />
-
-        {/* Highlight cards */}
-        {theme.highlightPOIs.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            {theme.highlightPOIs.map((poi) => (
-              <ReportHighlightCard
-                key={poi.id}
-                poi={poi}
-                explorerBaseUrl={explorerBaseUrl}
-                themeCategories={themeCategories}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Compact list for remaining POIs */}
-        <ReportCompactList
-          pois={theme.listPOIs}
+      {/* Interactive map section - wider container for 50/50 layout */}
+      <div className="max-w-6xl mx-auto px-6">
+        <ReportInteractiveMapSection
+          theme={theme}
+          center={center}
+          sectionId={theme.id}
           explorerBaseUrl={explorerBaseUrl}
-          themeCategories={themeCategories}
         />
       </div>
     </section>

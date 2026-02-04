@@ -6,6 +6,10 @@ interface ReportHighlightCardProps {
   poi: POI;
   explorerBaseUrl?: string | null;
   themeCategories?: string[];
+  /** When provided, card becomes interactive (click to select) instead of a navigation link */
+  onClick?: () => void;
+  /** Shows highlight state when card is selected */
+  isActive?: boolean;
 }
 
 function buildExplorerUrl(
@@ -25,6 +29,8 @@ export default function ReportHighlightCard({
   poi,
   explorerBaseUrl,
   themeCategories,
+  onClick,
+  isActive,
 }: ReportHighlightCardProps) {
   const hasImage = poi.photoReference;
   const imageUrl = hasImage
@@ -39,20 +45,40 @@ export default function ReportHighlightCard({
     ? buildExplorerUrl(explorerBaseUrl, poi.id, themeCategories)
     : null;
 
-  const CardWrapper = explorerUrl
-    ? ({ children, className }: { children: React.ReactNode; className: string }) => (
-        <Link href={explorerUrl} className={className}>
+  // When onClick is provided, card is interactive (clickable div)
+  // Otherwise, card navigates to Explorer or Google Maps
+  const CardWrapper = onClick
+    ? ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={onClick}
+          onKeyDown={(e) => e.key === "Enter" && onClick()}
+          className={className}
+          style={style}
+        >
           {children}
-        </Link>
+        </div>
       )
-    : ({ children, className }: { children: React.ReactNode; className: string }) => (
-        <a href={poi.googleMapsUrl ?? "#"} target="_blank" rel="noopener noreferrer" className={className}>
-          {children}
-        </a>
-      );
+    : explorerUrl
+      ? ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
+          <Link href={explorerUrl} className={className} style={style}>
+            {children}
+          </Link>
+        )
+      : ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
+          <a href={poi.googleMapsUrl ?? "#"} target="_blank" rel="noopener noreferrer" className={className} style={style}>
+            {children}
+          </a>
+        );
 
   return (
-    <CardWrapper className="group block bg-white rounded-xl shadow-sm border border-[#eae6e1] overflow-hidden hover:shadow-md transition-shadow">
+    <CardWrapper
+      className={`group block bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all cursor-pointer ${
+        isActive ? "shadow-md" : "border border-[#eae6e1]"
+      }`}
+      style={isActive ? { outline: `2px solid ${poi.category.color}`, outlineOffset: "-2px" } : undefined}
+    >
       {/* Image or fallback */}
       <div className="relative h-40 overflow-hidden">
         {imageUrl ? (
@@ -97,8 +123,19 @@ export default function ReportHighlightCard({
             {poi.name}
           </h4>
           <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-            {/* Google Maps secondary link */}
-            {explorerUrl && poi.googleMapsUrl && (
+            {/* In interactive mode: show Explorer link if available */}
+            {onClick && explorerUrl && (
+              <Link
+                href={explorerUrl}
+                onClick={(e) => e.stopPropagation()}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Åpne i Explorer"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] hover:text-[#7a7062]" />
+              </Link>
+            )}
+            {/* In interactive mode without explorer: show Google Maps link */}
+            {onClick && !explorerUrl && poi.googleMapsUrl && (
               <a
                 href={poi.googleMapsUrl}
                 target="_blank"
@@ -110,8 +147,21 @@ export default function ReportHighlightCard({
                 <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] hover:text-[#7a7062]" />
               </a>
             )}
-            {/* Show external link icon when no explorer (original behavior) */}
-            {!explorerUrl && (
+            {/* Non-interactive mode: Google Maps secondary link when card links to Explorer */}
+            {!onClick && explorerUrl && poi.googleMapsUrl && (
+              <a
+                href={poi.googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Åpne i Google Maps"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] hover:text-[#7a7062]" />
+              </a>
+            )}
+            {/* Non-interactive mode without explorer: show icon (card itself links to Google Maps) */}
+            {!onClick && !explorerUrl && (
               <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] opacity-0 group-hover:opacity-100 transition-opacity" />
             )}
           </div>
