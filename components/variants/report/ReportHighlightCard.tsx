@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { POI } from "@/lib/types";
-import { Star, MapPin, ExternalLink } from "lucide-react";
+import { Star } from "lucide-react";
 
 interface ReportHighlightCardProps {
   poi: POI;
@@ -32,169 +32,104 @@ export default function ReportHighlightCard({
   onClick,
   isActive,
 }: ReportHighlightCardProps) {
-  const hasImage = poi.photoReference;
-  const imageUrl = hasImage
-    ? `/api/places/photo?reference=${poi.photoReference}&maxwidth=400`
-    : null;
-
-  const walkMinutes = poi.travelTime?.walk
-    ? Math.round(poi.travelTime.walk / 60)
-    : null;
-
   const explorerUrl = explorerBaseUrl
     ? buildExplorerUrl(explorerBaseUrl, poi.id, themeCategories)
     : null;
 
+  // Category initial (first letter)
+  const categoryInitial = poi.category.name.charAt(0).toUpperCase();
+
   // When onClick is provided, card is interactive (clickable div)
   // Otherwise, card navigates to Explorer or Google Maps
   const CardWrapper = onClick
-    ? ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
+    ? ({ children, className }: { children: React.ReactNode; className: string }) => (
         <div
           role="button"
           tabIndex={0}
           onClick={onClick}
           onKeyDown={(e) => e.key === "Enter" && onClick()}
           className={className}
-          style={style}
         >
           {children}
         </div>
       )
     : explorerUrl
-      ? ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
-          <Link href={explorerUrl} className={className} style={style}>
+      ? ({ children, className }: { children: React.ReactNode; className: string }) => (
+          <Link href={explorerUrl} className={className}>
             {children}
           </Link>
         )
-      : ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
-          <a href={poi.googleMapsUrl ?? "#"} target="_blank" rel="noopener noreferrer" className={className} style={style}>
+      : ({ children, className }: { children: React.ReactNode; className: string }) => (
+          <a href={poi.googleMapsUrl ?? "#"} target="_blank" rel="noopener noreferrer" className={className}>
             {children}
           </a>
         );
 
   return (
     <CardWrapper
-      className={`group block bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all cursor-pointer ${
-        isActive ? "shadow-md" : "border border-[#eae6e1]"
+      className={`group flex items-stretch bg-white rounded-lg overflow-hidden transition-all cursor-pointer ${
+        isActive
+          ? "shadow-md ring-2"
+          : "border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm"
       }`}
-      style={isActive ? { outline: `2px solid ${poi.category.color}`, outlineOffset: "-2px" } : undefined}
+      style={isActive ? { ringColor: poi.category.color } as React.CSSProperties : undefined}
     >
-      {/* Image or fallback */}
-      <div className="relative h-40 overflow-hidden">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={poi.name}
-            loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center relative overflow-hidden"
-            style={{ backgroundColor: poi.category.color + "10" }}
-          >
-            <div
-              className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-[0.07]"
-              style={{ backgroundColor: poi.category.color }}
-            />
-            <div
-              className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-[0.05]"
-              style={{ backgroundColor: poi.category.color }}
-            />
-            <span
-              className="text-5xl font-bold opacity-[0.12]"
-              style={{ color: poi.category.color }}
-            >
-              {poi.category.name.charAt(0)}
-            </span>
-          </div>
-        )}
-        {/* Category badge */}
-        <span className="absolute top-3 left-3 text-xs font-medium bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 text-[#4a4a4a]">
+      {/* Left color bar + category initial */}
+      <div
+        className="flex-shrink-0 w-12 flex flex-col items-center justify-center gap-1"
+        style={{ backgroundColor: poi.category.color + "12" }}
+      >
+        <span
+          className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold text-white"
+          style={{ backgroundColor: poi.category.color }}
+        >
+          {categoryInitial}
+        </span>
+        <span className="text-[10px] font-medium text-[#6a6a6a] text-center leading-tight px-1">
           {poi.category.name}
         </span>
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        {/* Name + external links */}
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h4 className="font-semibold text-[#1a1a1a] leading-snug">
+      <div className="flex-1 p-3 min-w-0">
+        {/* Top row: Name + Rating */}
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h4 className="font-semibold text-[#1a1a1a] leading-snug truncate">
             {poi.name}
           </h4>
-          <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-            {/* In interactive mode: show Explorer link if available */}
-            {onClick && explorerUrl && (
-              <Link
-                href={explorerUrl}
-                onClick={(e) => e.stopPropagation()}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Åpne i Explorer"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] hover:text-[#7a7062]" />
-              </Link>
-            )}
-            {/* In interactive mode without explorer: show Google Maps link */}
-            {onClick && !explorerUrl && poi.googleMapsUrl && (
-              <a
-                href={poi.googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Åpne i Google Maps"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] hover:text-[#7a7062]" />
-              </a>
-            )}
-            {/* Non-interactive mode: Google Maps secondary link when card links to Explorer */}
-            {!onClick && explorerUrl && poi.googleMapsUrl && (
-              <a
-                href={poi.googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Åpne i Google Maps"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] hover:text-[#7a7062]" />
-              </a>
-            )}
-            {/* Non-interactive mode without explorer: show icon (card itself links to Google Maps) */}
-            {!onClick && !explorerUrl && (
-              <ExternalLink className="w-3.5 h-3.5 text-[#a0937d] opacity-0 group-hover:opacity-100 transition-opacity" />
-            )}
-          </div>
+
+          {/* Rating - more prominent */}
+          {poi.googleRating != null && (
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Star className="w-4 h-4 text-[#b45309] fill-[#b45309]" />
+              <span className="text-sm font-semibold text-[#1a1a1a]">
+                {poi.googleRating.toFixed(1)}
+              </span>
+              {poi.googleReviewCount != null && (
+                <span className="text-xs text-[#8a8a8a]">
+                  ({poi.googleReviewCount.toLocaleString("nb-NO")})
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Rating */}
-        {poi.googleRating != null && (
-          <div className="flex items-center gap-1.5 mb-2">
-            <Star className="w-3.5 h-3.5 text-[#b45309] fill-[#b45309]" />
-            <span className="text-sm font-medium text-[#1a1a1a]">
-              {poi.googleRating.toFixed(1)}
-            </span>
-            {poi.googleReviewCount != null && (
-              <span className="text-sm text-[#8a8a8a]">
-                ({poi.googleReviewCount.toLocaleString("nb-NO")})
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Editorial hook */}
+        {/* Editorial hook - main content */}
         {poi.editorialHook && (
-          <p className="text-sm text-[#5a5a5a] leading-relaxed italic border-l-2 border-[#e8e4df] pl-3 mb-2">
+          <p className="text-sm text-[#5a5a5a] leading-relaxed line-clamp-2">
             {poi.editorialHook}
           </p>
         )}
 
-        {/* Walking distance */}
-        {walkMinutes != null && (
-          <div className="flex items-center gap-1 text-xs text-[#8a8a8a]">
-            <MapPin className="w-3 h-3" />
-            <span>{walkMinutes} min å gå</span>
-          </div>
+        {/* Explorer link - visible on hover */}
+        {explorerUrl && (
+          <Link
+            href={explorerUrl}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-[#7a7062] opacity-0 group-hover:opacity-100 transition-opacity hover:text-[#5a5042]"
+          >
+            Åpne i Explorer
+          </Link>
         )}
       </div>
     </CardWrapper>

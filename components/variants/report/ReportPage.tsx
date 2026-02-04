@@ -4,7 +4,6 @@ import { useMemo, useEffect, useRef } from "react";
 import type { Project } from "@/lib/types";
 import { transformToReportData } from "./report-data";
 import ReportHero from "./ReportHero";
-import ReportThemeIndex from "./ReportThemeIndex";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportExplorerCTA from "./ReportExplorerCTA";
 import ReportClosing from "./ReportClosing";
@@ -60,53 +59,51 @@ export default function ReportPage({ project, explorerBaseUrl }: ReportPageProps
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#faf9f7]">
-      {/* Hero */}
-      <ReportHero
-        projectName={reportData.projectName}
-        metrics={reportData.heroMetrics}
-        label={reportData.label}
-        heroIntro={reportData.heroIntro}
-      />
+    <div className="min-h-screen bg-[#faf9f7] px-6">
+      <div className="grid grid-cols-12 gap-x-6">
+        {/* Hero with integrated theme navigation */}
+        <ReportHero
+          projectName={reportData.projectName}
+          metrics={reportData.heroMetrics}
+          themes={reportData.themes}
+          label={reportData.label}
+          heroIntro={reportData.heroIntro}
+        />
 
-      {/* Theme index tags */}
-      <ReportThemeIndex themes={reportData.themes} />
-
-      {/* Theme sections */}
-      {reportData.themes.map((theme, i) => (
-        <div key={theme.id}>
-          {i > 0 && (
-            <div className="max-w-3xl mx-auto px-6">
+        {/* Theme sections */}
+        {reportData.themes.map((theme, i) => (
+          <div key={theme.id} className="col-span-12">
+            {i > 0 && (
               <div className="h-px bg-[#e8e4df]" />
-            </div>
-          )}
-          <ReportThemeSection
-            theme={theme}
+            )}
+            <ReportThemeSection
+              theme={theme}
+              center={reportData.centerCoordinates}
+              explorerBaseUrl={explorerBaseUrl}
+            />
+          </div>
+        ))}
+
+        {/* Explorer CTA */}
+        {explorerBaseUrl && project.pois.length > 0 && (
+          <ReportExplorerCTA
+            pois={project.pois}
             center={reportData.centerCoordinates}
             explorerBaseUrl={explorerBaseUrl}
+            totalPOIs={reportData.heroMetrics.totalPOIs}
           />
-        </div>
-      ))}
+        )}
 
-      {/* Explorer CTA */}
-      {explorerBaseUrl && project.pois.length > 0 && (
-        <ReportExplorerCTA
-          pois={project.pois}
-          center={reportData.centerCoordinates}
-          explorerBaseUrl={explorerBaseUrl}
+        {/* Closing */}
+        <ReportClosing
+          projectName={reportData.projectName}
           totalPOIs={reportData.heroMetrics.totalPOIs}
+          avgRating={reportData.heroMetrics.avgRating}
+          closingTitle={reportData.closingTitle}
+          closingText={reportData.closingText}
+          label={reportData.label}
         />
-      )}
-
-      {/* Closing */}
-      <ReportClosing
-        projectName={reportData.projectName}
-        totalPOIs={reportData.heroMetrics.totalPOIs}
-        avgRating={reportData.heroMetrics.avgRating}
-        closingTitle={reportData.closingTitle}
-        closingText={reportData.closingText}
-        label={reportData.label}
-      />
+      </div>
     </div>
   );
 }

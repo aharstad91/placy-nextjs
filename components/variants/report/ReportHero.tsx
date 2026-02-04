@@ -1,16 +1,54 @@
-import type { ReportHeroMetrics } from "./report-data";
+"use client";
+
+import type { ReportHeroMetrics, ReportTheme } from "./report-data";
+import {
+  UtensilsCrossed,
+  Bus,
+  ShoppingCart,
+  Dumbbell,
+  Landmark,
+  TreePine,
+  ShoppingBag,
+  Wine,
+  Mountain,
+  Building2,
+  Star,
+  type LucideIcon,
+} from "lucide-react";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  UtensilsCrossed,
+  Bus,
+  ShoppingCart,
+  Dumbbell,
+  Landmark,
+  TreePine,
+  ShoppingBag,
+  Wine,
+  Mountain,
+  Building2,
+};
 
 interface ReportHeroProps {
   projectName: string;
   metrics: ReportHeroMetrics;
+  themes: ReportTheme[];
   label?: string;
   heroIntro?: string;
 }
 
-export default function ReportHero({ projectName, metrics, label, heroIntro }: ReportHeroProps) {
+export default function ReportHero({ projectName, metrics, themes, label, heroIntro }: ReportHeroProps) {
+  const handleThemeClick = (themeId: string) => {
+    const el = document.getElementById(themeId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
-    <section className="pt-6 pb-12 md:pt-12 md:pb-16">
-      <div className="max-w-3xl mx-auto px-6">
+    <section className="col-span-12 pt-6 pb-12 md:pt-12 md:pb-16">
+      {/* Text content - constrained width */}
+      <div className="max-w-4xl">
         {/* Label */}
         <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-4">
           {label ?? "Nabolagsrapport"}
@@ -66,10 +104,50 @@ export default function ReportHero({ projectName, metrics, label, heroIntro }: R
             </>
           )}
         </p>
-
-        {/* Divider */}
-        <div className="mt-10 h-px bg-[#e8e4df]" />
       </div>
+
+      {/* Theme navigation - larger cards with stats */}
+      {themes.length > 0 && (
+        <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {themes.map((theme) => {
+            const Icon = ICON_MAP[theme.icon];
+            return (
+              <button
+                key={theme.id}
+                onClick={() => handleThemeClick(theme.id)}
+                className="group flex flex-col items-start p-4 bg-white border border-[#eae6e1] rounded-xl hover:border-[#c0b9ad] hover:shadow-sm transition-all text-left"
+              >
+                {/* Icon */}
+                {Icon && (
+                  <Icon className="w-6 h-6 text-[#7a7062] group-hover:text-[#5a5042] mb-2 transition-colors" />
+                )}
+
+                {/* Theme name */}
+                <span className="font-semibold text-[#1a1a1a] text-sm leading-tight mb-1">
+                  {theme.name}
+                </span>
+
+                {/* Stats row */}
+                <div className="flex items-center gap-2 text-xs text-[#6a6a6a]">
+                  <span>{theme.stats.totalPOIs} steder</span>
+                  {theme.stats.avgRating != null && (
+                    <>
+                      <span className="text-[#d4cfc8]">·</span>
+                      <span className="flex items-center gap-0.5">
+                        <Star className="w-3 h-3 text-[#b45309] fill-[#b45309]" />
+                        {theme.stats.avgRating.toFixed(1)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Divider */}
+      <div className="mt-10 h-px bg-[#e8e4df]" />
     </section>
   );
 }

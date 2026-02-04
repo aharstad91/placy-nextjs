@@ -72,8 +72,8 @@ export default function ReportExplorerCTA({
   const altText = `Kart over ${totalPOIs} steder fordelt på ${centroids.length} kategorier`;
 
   return (
-    <section className="py-16 md:py-20 bg-[#f3f0eb]">
-      <div className="max-w-3xl mx-auto px-6">
+    <section className="col-span-12 py-16 md:py-20 bg-[#f3f0eb] -mx-6 px-6">
+      <div className="max-w-4xl">
         <div className="h-px bg-[#e8e4df] mb-12" />
 
         <h2 className="text-xl md:text-2xl font-semibold text-[#1a1a1a] mb-4">
@@ -83,30 +83,30 @@ export default function ReportExplorerCTA({
           Se alle {totalPOIs} steder på ett kart. Filtrer etter det som passer
           deg, og lag din egen liste å ta med ut.
         </p>
+      </div>
 
-        {/* Clickable map image */}
-        <Link href={explorerBaseUrl} className="block mb-8">
-          <img
-            src={url}
-            alt={altText}
-            loading="lazy"
-            className="w-full rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-            style={{ aspectRatio: "2/1" }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
+      {/* Clickable map image */}
+      <Link href={explorerBaseUrl} className="block mb-8">
+        <img
+          src={url}
+          alt={altText}
+          loading="lazy"
+          className="w-full rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+          style={{ aspectRatio: "2/1" }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
+      </Link>
+
+      {/* CTA button */}
+      <div>
+        <Link
+          href={explorerBaseUrl}
+          className="inline-flex items-center justify-center px-8 py-3 bg-[#1a1a1a] text-white font-medium rounded-lg hover:bg-[#333] transition-colors"
+        >
+          Åpne i Explorer
         </Link>
-
-        {/* CTA button */}
-        <div className="text-center">
-          <Link
-            href={explorerBaseUrl}
-            className="inline-flex items-center justify-center px-8 py-3 bg-[#1a1a1a] text-white font-medium rounded-lg hover:bg-[#333] transition-colors"
-          >
-            Åpne i Explorer
-          </Link>
-        </div>
       </div>
     </section>
   );

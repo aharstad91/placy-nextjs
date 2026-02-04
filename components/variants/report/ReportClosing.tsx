@@ -20,8 +20,8 @@ export default function ReportClosing({
   return (
     <>
       {/* Closing section */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-3xl mx-auto px-6">
+      <section className="col-span-12 py-16 md:py-20">
+        <div className="max-w-4xl">
           <div className="h-px bg-[#e8e4df] mb-12" />
 
           <h2 className="text-xl md:text-2xl font-semibold text-[#1a1a1a] mb-4">
@@ -34,15 +34,13 @@ export default function ReportClosing({
       </section>
 
       {/* Attribution footer */}
-      <footer className="py-8 bg-[#f3f0eb] border-t border-[#e8e4df]">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <p className="text-xs text-[#8a8a8a]">
-            Data: Google, Entur, Trondheim Bysykkel
-          </p>
-          <p className="text-xs text-[#a0a0a0] mt-1">
-            {label ? `${label} av Placy` : "Nabolagsrapport av Placy"}
-          </p>
-        </div>
+      <footer className="col-span-12 py-8 bg-[#f3f0eb] border-t border-[#e8e4df] -mx-6 px-6">
+        <p className="text-xs text-[#8a8a8a]">
+          Data: Google, Entur, Trondheim Bysykkel
+        </p>
+        <p className="text-xs text-[#a0a0a0] mt-1">
+          {label ? `${label} av Placy` : "Nabolagsrapport av Placy"}
+        </p>
       </footer>
     </>
   );

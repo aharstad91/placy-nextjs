@@ -44,7 +44,8 @@ export default function ReportThemeSection({
 
   return (
     <section id={theme.id} className="py-10 md:py-14 scroll-mt-20">
-      <div className="max-w-3xl mx-auto px-6">
+      {/* Section header - constrained width for vertical reading flow */}
+      <div className="max-w-4xl">
         {/* Section heading */}
         <div className="flex items-center gap-3 mb-3">
           {Icon && <Icon className="w-5 h-5 text-[#7a7062]" />}
@@ -86,15 +87,13 @@ export default function ReportThemeSection({
         )}
       </div>
 
-      {/* Interactive map section - wider container for 50/50 layout */}
-      <div className="max-w-6xl mx-auto px-6">
-        <ReportInteractiveMapSection
-          theme={theme}
-          center={center}
-          sectionId={theme.id}
-          explorerBaseUrl={explorerBaseUrl}
-        />
-      </div>
+      {/* Interactive map section - full width */}
+      <ReportInteractiveMapSection
+        theme={theme}
+        center={center}
+        sectionId={theme.id}
+        explorerBaseUrl={explorerBaseUrl}
+      />
     </section>
   );
 }

@@ -30,7 +30,6 @@ export default function ReportInteractiveMapSection({
   const [activeTab, setActiveTab] = useState<"list" | "map">("list");
   const sectionRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Lazy loading with triggerOnce pattern (disconnect after first intersection)
   useEffect(() => {
@@ -49,22 +48,6 @@ export default function ReportInteractiveMapSection({
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, [isInView]);
-
-  // Scroll to card when marker clicked (with debounce to prevent rapid scroll conflicts)
-  useEffect(() => {
-    if (activePOI) {
-      // Clear any pending scroll
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-
-      scrollTimeoutRef.current = setTimeout(() => {
-        const cardEl = cardRefs.current.get(activePOI);
-        cardEl?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 50); // Small delay to let rapid clicks settle
-    }
-    return () => {
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-    };
-  }, [activePOI]);
 
   // Derive POIs with useMemo (from Guide Library learnings - never useEffect + setState)
   const pois = useMemo(
@@ -115,12 +98,12 @@ export default function ReportInteractiveMapSection({
   );
 
   return (
-    <div ref={sectionRef} className="min-h-[400px]">
+    <div ref={sectionRef}>
       {/* Mobile: Tabs */}
       <div className="lg:hidden">
         <ReportMapTabs activeTab={activeTab} onTabChange={setActiveTab} />
         {activeTab === "list" ? (
-          <div className="space-y-4 p-4">
+          <div className="space-y-3 py-4">
             {pois.map((poi) => (
               <div key={poi.id} ref={registerCardRef(poi.id)}>
                 <ReportHighlightCard
@@ -153,10 +136,10 @@ export default function ReportInteractiveMapSection({
         )}
       </div>
 
-      {/* Desktop: 50/50 split (from Explorer layout pattern) */}
-      <div className="hidden lg:flex h-[500px] rounded-xl overflow-hidden border border-[#eae6e1]">
-        {/* Left: POI cards with internal scroll */}
-        <div className="w-1/2 overflow-y-auto p-4 space-y-4 bg-white">
+      {/* Desktop: Cards flow naturally, map is sticky */}
+      <div className="hidden lg:flex gap-6">
+        {/* Left: POI cards - natural flow */}
+        <div className="w-1/2 space-y-3">
           {pois.map((poi) => (
             <div key={poi.id} ref={registerCardRef(poi.id)}>
               <ReportHighlightCard
@@ -170,22 +153,24 @@ export default function ReportInteractiveMapSection({
           ))}
         </div>
 
-        {/* Right: Interactive map */}
-        <div className="w-1/2 relative">
-          {isInView ? (
-            <ReportInteractiveMap
-              pois={pois}
-              center={center}
-              activePOI={activePOI}
-              onPOIClick={handleMarkerClick}
-              onMapMount={handleMapMount}
-              onMapUnmount={handleMapUnmount}
-            />
-          ) : (
-            <div className="w-full h-full bg-[#f5f3f0] animate-pulse flex items-center justify-center">
-              <span className="text-[#8a8a8a] text-sm">Laster kart...</span>
-            </div>
-          )}
+        {/* Right: Sticky map */}
+        <div className="w-1/2">
+          <div className="sticky top-20 h-[500px] rounded-xl overflow-hidden border border-[#eae6e1]">
+            {isInView ? (
+              <ReportInteractiveMap
+                pois={pois}
+                center={center}
+                activePOI={activePOI}
+                onPOIClick={handleMarkerClick}
+                onMapMount={handleMapMount}
+                onMapUnmount={handleMapUnmount}
+              />
+            ) : (
+              <div className="w-full h-full bg-[#f5f3f0] animate-pulse flex items-center justify-center">
+                <span className="text-[#8a8a8a] text-sm">Laster kart...</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

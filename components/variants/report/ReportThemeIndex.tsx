@@ -43,7 +43,7 @@ export default function ReportThemeIndex({ themes }: ReportThemeIndexProps) {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-6 pb-2">
+    <div className="col-span-6 max-w-4xl pb-2">
       <div className="flex flex-wrap gap-2">
         {themes.map((theme) => {
           const Icon = ICON_MAP[theme.icon];
