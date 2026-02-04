@@ -16,8 +16,8 @@ export default function AdminLayout({
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
-      {/* Main content - offset by primary sidebar width (56px = 3.5rem = pl-14) */}
-      <main className="lg:pl-14">{children}</main>
+      {/* Main content - offset by primary sidebar width (256px = 16rem = pl-64) */}
+      <main className="lg:pl-64">{children}</main>
     </div>
   );
 }
