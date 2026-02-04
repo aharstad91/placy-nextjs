@@ -91,12 +91,12 @@ export default async function ProjectDetailPage({
   }
 
   // Fetch project_pois with nested data
-  const { data: projectPoisData } = await supabase
+  // Note: project_category_id only exists after migration 005 is applied
+  const { data: projectPoisData, error: poisError } = await supabase
     .from("project_pois")
     .select(
       `
       poi_id,
-      project_category_id,
       pois (
         id,
         name,
@@ -110,11 +110,17 @@ export default async function ProjectDetailPage({
     )
     .eq("project_id", projectId);
 
+  // Add project_category_id as null for each POI (until migration is applied)
+  const projectPoisWithCategory = (projectPoisData || []).map((pp) => ({
+    ...pp,
+    project_category_id: null,
+  }));
+
   // Combine into the expected structure
   const projectWithRelations = {
     ...project,
     project_categories: projectCategories,
-    project_pois: projectPoisData || [],
+    project_pois: projectPoisWithCategory,
   };
 
   // Fetch all customers for dropdown
