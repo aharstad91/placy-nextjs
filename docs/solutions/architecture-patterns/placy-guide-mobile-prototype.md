@@ -8,7 +8,8 @@ symptoms:
   - Need curated walking tour product
   - Mobile-first navigation UX
   - Multi-waypoint route display
-related_issues: []
+related_issues:
+  - guide-library-spotify-pattern-20260204.md
 ---
 
 # Placy Guide Mobile Prototype
