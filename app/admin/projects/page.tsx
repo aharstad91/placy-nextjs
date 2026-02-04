@@ -4,8 +4,60 @@ import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
 import { ProjectsAdminClient } from "./projects-admin-client";
 import type { DbCustomer } from "@/lib/supabase/types";
+import * as fs from "fs";
+import * as path from "path";
 
 const adminEnabled = process.env.ADMIN_ENABLED === "true";
+
+// Scan JSON project files from data/projects/
+function getJSONProjects() {
+  const projectsDir = path.join(process.cwd(), "data", "projects");
+  const projects: Array<{
+    id: string;
+    name: string;
+    customer: string;
+    urlSlug: string;
+    productType: string;
+    centerLat: number;
+    centerLng: number;
+    filePath: string;
+  }> = [];
+
+  if (!fs.existsSync(projectsDir)) return projects;
+
+  const customers = fs.readdirSync(projectsDir, { withFileTypes: true });
+  for (const customerDir of customers) {
+    if (!customerDir.isDirectory()) continue;
+
+    const customerPath = path.join(projectsDir, customerDir.name);
+    const files = fs.readdirSync(customerPath);
+
+    for (const file of files) {
+      if (!file.endsWith(".json")) continue;
+
+      try {
+        const filePath = path.join(customerPath, file);
+        const content = fs.readFileSync(filePath, "utf-8");
+        const data = JSON.parse(content);
+
+        projects.push({
+          id: `json:${customerDir.name}/${file}`,
+          name: data.name || file.replace(".json", ""),
+          customer: customerDir.name,
+          urlSlug: data.urlSlug || file.replace(".json", ""),
+          productType: data.productType || "explorer",
+          centerLat: data.centerCoordinates?.lat || 0,
+          centerLng: data.centerCoordinates?.lng || 0,
+          filePath: `data/projects/${customerDir.name}/${file}`,
+        });
+      } catch {
+        // Skip invalid JSON files
+      }
+    }
+  }
+
+  return projects;
+}
 
 // Server Actions
 async function createProject(formData: FormData) {
@@ -120,12 +172,27 @@ async function updateProject(formData: FormData) {
 async function deleteProject(formData: FormData) {
   "use server";
 
+  const id = formData.get("id") as string;
+
+  // Check if this is a JSON project (id starts with "json:")
+  if (id.startsWith("json:")) {
+    const relativePath = id.replace("json:", "");
+    const filePath = path.join(process.cwd(), "data", "projects", relativePath);
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      revalidatePath("/admin/projects");
+      return;
+    } else {
+      throw new Error("JSON-fil ikke funnet");
+    }
+  }
+
+  // Otherwise, delete from Supabase
   const supabase = createServerClient();
   if (!supabase) {
     throw new Error("Supabase not configured");
   }
-
-  const id = formData.get("id") as string;
 
   // Delete related data in order (due to foreign key constraints)
 
@@ -243,12 +310,44 @@ export default async function AdminProjectsPage() {
     customerMap[customer.id] = customer.name;
   }
 
-  const projectsWithCustomerName = (projects || []).map((project) => ({
-    ...project,
+  // Get Supabase projects (map to common interface)
+  const supabaseProjects = (projects || []).map((project) => ({
+    id: project.id,
+    name: project.name,
+    customer_id: project.customer_id,
+    url_slug: project.url_slug,
+    product_type: project.product_type,
+    center_lat: project.center_lat,
+    center_lng: project.center_lng,
     customerName: project.customer_id
       ? customerMap[project.customer_id] || "Ukjent"
       : "Ingen kunde",
+    source: "supabase" as const,
   }));
+
+  // Get JSON projects
+  const jsonProjects = getJSONProjects().map((project) => ({
+    id: project.id,
+    name: project.name,
+    customer_id: project.customer,
+    url_slug: project.urlSlug,
+    product_type: project.productType,
+    center_lat: project.centerLat,
+    center_lng: project.centerLng,
+    customerName: project.customer,
+    source: "json" as const,
+    filePath: project.filePath,
+  }));
+
+  // Merge and dedupe (Supabase takes priority if same customer/slug)
+  const supabaseKeys = new Set(
+    supabaseProjects.map((p) => `${p.customer_id}/${p.url_slug}`)
+  );
+  const uniqueJsonProjects = jsonProjects.filter(
+    (p) => !supabaseKeys.has(`${p.customer_id}/${p.url_slug}`)
+  );
+
+  const allProjects = [...supabaseProjects, ...uniqueJsonProjects];
 
   return (
     <Suspense
@@ -259,7 +358,7 @@ export default async function AdminProjectsPage() {
       }
     >
       <ProjectsAdminClient
-        projects={projectsWithCustomerName}
+        projects={allProjects}
         customers={customers || []}
         createProject={createProject}
         updateProject={updateProject}

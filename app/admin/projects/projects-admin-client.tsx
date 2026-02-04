@@ -13,10 +13,22 @@ import {
   Filter,
   BookOpen,
 } from "lucide-react";
-import type { DbProject, DbCustomer } from "@/lib/supabase/types";
+import type { DbCustomer } from "@/lib/supabase/types";
 import { ConfirmDialog } from "@/components/admin";
 
-type ProjectWithCustomerName = DbProject & { customerName: string };
+// Combined type for both Supabase and JSON projects
+interface ProjectWithCustomerName {
+  id: string;
+  name: string;
+  customer_id: string | null;
+  url_slug: string;
+  product_type: string;
+  center_lat: number;
+  center_lng: number;
+  customerName: string;
+  source: "supabase" | "json";
+  filePath?: string;
+}
 
 interface ProjectsAdminClientProps {
   projects: ProjectWithCustomerName[];
@@ -316,29 +328,45 @@ export function ProjectsAdminClient({
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600 capitalize">
-                        {project.product_type || "explorer"}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600 capitalize">
+                          {project.product_type || "explorer"}
+                        </span>
+                        {project.source === "json" && (
+                          <span className="text-xs bg-amber-100 px-2 py-1 rounded text-amber-700">
+                            JSON
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-xs font-mono text-gray-500">
                       {project.center_lat.toFixed(4)}, {project.center_lng.toFixed(4)}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-end gap-1">
-                        <Link
-                          href={`/admin/projects/${project.id}/story`}
-                          className="p-2 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                          title="Story Editor"
-                        >
-                          <BookOpen className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={() => openEditModal(project)}
-                          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Rediger"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
+                        {project.source === "supabase" && (
+                          <Link
+                            href={`/admin/projects/${project.id}/story`}
+                            className="p-2 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Story Editor"
+                          >
+                            <BookOpen className="w-4 h-4" />
+                          </Link>
+                        )}
+                        {project.source === "supabase" && (
+                          <button
+                            onClick={() => openEditModal(project)}
+                            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Rediger"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {project.source === "json" && (
+                          <span className="text-xs text-gray-400 px-2 truncate max-w-[200px]">
+                            {project.filePath}
+                          </span>
+                        )}
                         <button
                           onClick={() => setDeleteTarget(project)}
                           className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -502,8 +530,12 @@ export function ProjectsAdminClient({
       <ConfirmDialog
         isOpen={!!deleteTarget}
         title="Slett prosjekt"
-        message={`Er du sikker på at du vil slette prosjektet "${deleteTarget?.name}"? Dette vil også slette alle tilknyttede stories, seksjoner og POI-koblinger.`}
-        confirmLabel="Slett alt"
+        message={
+          deleteTarget?.source === "json"
+            ? `Er du sikker på at du vil slette JSON-filen "${deleteTarget?.filePath}"? Denne handlingen kan ikke angres.`
+            : `Er du sikker på at du vil slette prosjektet "${deleteTarget?.name}"? Dette vil også slette alle tilknyttede stories, seksjoner og POI-koblinger.`
+        }
+        confirmLabel={deleteTarget?.source === "json" ? "Slett fil" : "Slett alt"}
         variant="danger"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
