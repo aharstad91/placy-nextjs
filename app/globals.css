@@ -225,3 +225,16 @@ gmp-popover::part(dialog) {
   white-space: nowrap;
   border-width: 0;
 }
+
+/* ===================================
+   Horizontal Scroll - Hidden Scrollbar
+   =================================== */
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

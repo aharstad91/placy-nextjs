@@ -8,6 +8,7 @@ import ReportHighlightCard from "./ReportHighlightCard";
 import ReportInteractiveMap from "./ReportInteractiveMap";
 import ReportMapTabs from "./ReportMapTabs";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
+import { ReportFactCards, computeFactCards } from "./ReportFactCards";
 
 interface ReportInteractiveMapSectionProps {
   theme: ReportTheme;
@@ -141,6 +142,9 @@ export default function ReportInteractiveMapSection({
     [allPois]
   );
 
+  // Compute fact cards for this theme
+  const factCards = useMemo(() => computeFactCards(theme), [theme]);
+
   // Category filter pills component
   const CategoryFilters = () => (
     <div className="flex flex-wrap gap-2 mb-4">
@@ -169,8 +173,25 @@ export default function ReportInteractiveMapSection({
 
   return (
     <div ref={sectionRef}>
-      {/* Mobile: Tabs */}
+      {/* Mobile: Fact cards (horizontal scroll) + Tabs */}
       <div className="lg:hidden">
+        {/* Fact cards horizontal scroll */}
+        {factCards.length > 0 && (
+          <div className="relative mb-4">
+            {/* Fade edges for scroll affordance */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#faf9f7] to-transparent z-10" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[#faf9f7] to-transparent z-10" />
+
+            {/* Snap-scroll container */}
+            <div
+              className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              <ReportFactCards cards={factCards} variant="horizontal" />
+            </div>
+          </div>
+        )}
+
         <ReportMapTabs activeTab={activeTab} onTabChange={setActiveTab} />
         {activeTab === "list" ? (
           <div className="py-4">
@@ -207,10 +228,19 @@ export default function ReportInteractiveMapSection({
         )}
       </div>
 
-      {/* Desktop: Cards in 2-col grid, map is sticky */}
-      <div className="hidden lg:flex gap-16">
-        {/* Left: Category filters + POI cards */}
-        <div className="w-1/2">
+      {/* Desktop: Fact cards sidebar + POI cards + sticky map */}
+      <div className="hidden lg:flex gap-8">
+        {/* Left: Fact cards sidebar */}
+        {factCards.length > 0 && (
+          <div className="w-[240px] flex-shrink-0">
+            <div className="sticky top-20">
+              <ReportFactCards cards={factCards} variant="vertical" />
+            </div>
+          </div>
+        )}
+
+        {/* Middle: Category filters + POI cards */}
+        <div className="flex-1">
           <CategoryFilters />
           <div className="grid grid-cols-2 gap-4 content-start">
             {pois.map((poi) => (
@@ -228,7 +258,7 @@ export default function ReportInteractiveMapSection({
         </div>
 
         {/* Right: Sticky map */}
-        <div className="w-1/2">
+        <div className="w-[400px] flex-shrink-0">
           <div className="sticky top-20 h-[500px] rounded-xl overflow-hidden border border-[#eae6e1]">
             {isInView ? (
               <ReportInteractiveMap
