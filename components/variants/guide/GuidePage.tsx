@@ -6,7 +6,7 @@ import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import { useGuideCompletion } from "@/lib/hooks/useGuideCompletion";
 import { haversineDistance } from "@/lib/utils";
 import ExplorerBottomSheet from "@/components/variants/explorer/ExplorerBottomSheet";
-import GuideMap3D from "./GuideMap3D";
+import GuideMap from "./GuideMap";
 import GuideStopPanel from "./GuideStopPanel";
 import GuideIntroOverlay from "./GuideIntroOverlay";
 import GuideCompletionScreen from "./GuideCompletionScreen";
@@ -232,7 +232,7 @@ export default function GuidePage({ project }: GuidePageProps) {
     <div className="h-screen w-full relative overflow-hidden bg-stone-100">
       {/* Map (fullscreen) */}
       <div className="absolute inset-0">
-        <GuideMap3D
+        <GuideMap
           center={project.centerCoordinates}
           stops={stops}
           currentStopIndex={currentStopIndex}

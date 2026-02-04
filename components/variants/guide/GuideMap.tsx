@@ -5,6 +5,7 @@ import Map, { NavigationControl, Marker, type MapRef } from "react-map-gl/mapbox
 import type { Coordinates, POI } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
+import { Check } from "lucide-react";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 
 const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
@@ -36,6 +37,10 @@ export default function GuideMap({
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const hasFittedInitialRef = useRef(false);
+
+  // Animation debouncing: track if we're currently animating
+  const animatingRef = useRef(false);
+  const pendingTargetRef = useRef<Coordinates | null>(null);
 
   // Compute bounds from all stops
   const bounds = useMemo(() => {
@@ -88,18 +93,56 @@ export default function GuideMap({
     setMapLoaded(true);
   }, []);
 
+  // Debounced flyTo function with reduced motion support
+  const flyToStop = useCallback((coordinates: Coordinates) => {
+    if (!mapRef.current) return;
+
+    // If already animating, queue this target for later
+    if (animatingRef.current) {
+      pendingTargetRef.current = coordinates;
+      return;
+    }
+
+    animatingRef.current = true;
+
+    // Check reduced motion preference
+    const reducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reducedMotion) {
+      mapRef.current.jumpTo({
+        center: [coordinates.lng, coordinates.lat],
+        zoom: 16,
+      });
+      animatingRef.current = false;
+    } else {
+      mapRef.current.flyTo({
+        center: [coordinates.lng, coordinates.lat],
+        zoom: 16,
+        duration: 1000,
+      });
+
+      // Wait for animation to complete
+      setTimeout(() => {
+        animatingRef.current = false;
+        if (pendingTargetRef.current) {
+          const target = pendingTargetRef.current;
+          pendingTargetRef.current = null;
+          flyToStop(target);
+        }
+      }, 1000);
+    }
+  }, []);
+
   // Fly to current stop when it changes
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return;
+    if (!mapLoaded) return;
     const currentStop = stops[currentStopIndex];
     if (!currentStop) return;
 
-    mapRef.current.flyTo({
-      center: [currentStop.coordinates.lng, currentStop.coordinates.lat],
-      zoom: 16,
-      duration: 800,
-    });
-  }, [currentStopIndex, mapLoaded, stops]);
+    flyToStop(currentStop.coordinates);
+  }, [currentStopIndex, mapLoaded, stops, flyToStop]);
 
   return (
     <div className="w-full h-full relative">
@@ -165,17 +208,38 @@ export default function GuideMap({
                 onStopClick(index);
               }}
             >
-              <div
-                className={cn(
-                  "flex items-center justify-center rounded-full border-2 cursor-pointer transition-all font-semibold",
-                  isActive
-                    ? "w-10 h-10 bg-blue-600 text-white border-white shadow-lg text-lg"
-                    : isCompleted
-                    ? "w-8 h-8 bg-stone-400 text-white border-white shadow-md text-sm"
-                    : "w-8 h-8 bg-white text-stone-700 border-stone-300 shadow-md text-sm hover:scale-110"
+              <div className="relative cursor-pointer">
+                {/* Pulsing ring for active marker */}
+                {isActive && (
+                  <div className="absolute inset-0 rounded-full bg-blue-600 marker-pulse-ring" />
                 )}
-              >
-                {isCompleted ? "✓" : index + 1}
+
+                {/* Numbered circle */}
+                <div
+                  className={cn(
+                    "relative flex items-center justify-center rounded-full border-2 border-white shadow-md transition-all font-semibold",
+                    isActive && "w-10 h-10 bg-blue-600 text-white text-lg",
+                    isCompleted && "w-8 h-8 bg-stone-500 text-white hover:scale-110",
+                    !isActive && !isCompleted && "w-8 h-8 bg-white text-stone-700 hover:scale-110"
+                  )}
+                >
+                  {isCompleted ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <span className={isActive ? "text-base" : "text-sm"}>
+                      {index + 1}
+                    </span>
+                  )}
+                </div>
+
+                {/* Active marker name label */}
+                {isActive && (
+                  <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <span className="px-2 py-0.5 text-[10px] font-medium text-white bg-blue-600 rounded shadow-lg">
+                      {stop.name}
+                    </span>
+                  </div>
+                )}
               </div>
             </Marker>
           );

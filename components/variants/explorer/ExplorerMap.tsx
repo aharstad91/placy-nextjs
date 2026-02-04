@@ -316,10 +316,18 @@ export default function ExplorerMap({
               }}
             >
               <div className="relative cursor-pointer">
+                {/* Pulsing ring for active marker */}
+                {isThisActive && (
+                  <div
+                    className="absolute inset-0 rounded-full marker-pulse-ring"
+                    style={{ backgroundColor: poi.category.color }}
+                  />
+                )}
+
                 {/* Icon circle */}
                 <div
                   className={cn(
-                    "flex items-center justify-center rounded-full border-2 border-white shadow-md transition-all",
+                    "relative flex items-center justify-center rounded-full border-2 border-white shadow-md transition-all",
                     isThisActive ? "w-10 h-10" : "w-8 h-8 hover:scale-110"
                   )}
                   style={{ backgroundColor: poi.category.color }}

@@ -11,7 +11,7 @@ import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import { Bookmark } from "lucide-react";
 import { EXPLORER_PACKAGES } from "./explorer-packages";
-import ExplorerMap3D from "./ExplorerMap3D";
+import ExplorerMap from "./ExplorerMap";
 import ExplorerPanel from "./ExplorerPanel";
 import ExplorerBottomSheet from "./ExplorerBottomSheet";
 import ExplorerPOIList from "./ExplorerPOIList";
@@ -464,7 +464,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
       <div className="hidden lg:flex h-full">
         {/* Map: takes remaining width */}
         <div className="flex-1 relative">
-          <ExplorerMap3D
+          <ExplorerMap
             {...mapProps}
             mapPadding={desktopMapPadding}
           />
@@ -529,7 +529,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
 
       {/* Mobile: Map fullscreen with bottom padding for sheet */}
       <div className="lg:hidden absolute inset-0">
-        <ExplorerMap3D
+        <ExplorerMap
           {...mapProps}
           mapPadding={{ left: 0, top: 0, right: 0, bottom: snapPoints[0] }}
         />

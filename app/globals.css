@@ -49,6 +49,35 @@ body {
   @apply bg-gray-100 text-gray-600 hover:bg-gray-200;
 }
 
+/* Google Maps 3D PopoverElement custom styling */
+gmp-popover {
+  /* Attempt to override dialog background via CSS variables */
+  --gmp-popover-background: transparent;
+  --gmp-popover-border-radius: 0;
+  --gmp-popover-box-shadow: none;
+  --gmp-popover-padding: 0;
+}
+
+/* Try to target dialog inside shadow DOM (may not work) */
+gmp-popover::part(dialog) {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* 3D Map action button animations */
+@keyframes fadeInSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* Time budget button styles */
 .time-budget-btn {
   @apply px-3 py-1.5 rounded-lg text-sm font-medium transition-colors;
@@ -74,4 +103,39 @@ body {
 
 .animate-slide-up {
   animation: slide-up 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Pulsing ring animation for active POI markers */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.marker-pulse-ring {
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* Mapbox popup styling */
+.mapboxgl-popup-content {
+  padding: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.mapboxgl-popup-close-button {
+  font-size: 20px;
+  padding: 4px 10px;
+  color: #6b7280;
+}
+
+.mapboxgl-popup-close-button:hover {
+  color: #1f2937;
+  background: transparent;
 }
