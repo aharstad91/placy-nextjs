@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
 import { MapPin, Sparkles } from "lucide-react";
 import GeoLocationWidget from "./GeoLocationWidget";
+import { SkeletonMapOverlay } from "@/components/ui/SkeletonMapOverlay";
 import * as LucideIcons from "lucide-react";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 
@@ -49,6 +50,8 @@ interface ExplorerMapProps {
   showGeoWidget?: boolean;
   geoIsEnabled?: boolean;
   onEnableGeolocation?: () => void;
+  // Skeleton loading state
+  showSkeleton?: boolean;
 }
 
 export default function ExplorerMap({
@@ -73,6 +76,7 @@ export default function ExplorerMap({
   showGeoWidget,
   geoIsEnabled,
   onEnableGeolocation,
+  showSkeleton = false,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -358,6 +362,9 @@ export default function ExplorerMap({
           );
         })}
       </Map>
+
+      {/* Skeleton loading overlay */}
+      {showSkeleton && <SkeletonMapOverlay />}
 
       {/* Geolocation widget (for geolocation-with-fallback mode) */}
       {showGeoWidget && onEnableGeolocation && (

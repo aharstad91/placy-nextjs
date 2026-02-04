@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Compass, ChevronDown, Check, SlidersHorizontal, Footprints, Bike, Car } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import ExplorerPOICard from "./ExplorerPOICard";
+import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
 
 interface ExplorerPOIListProps {
   pois: POI[];
@@ -33,6 +34,10 @@ interface ExplorerPOIListProps {
   onToggleCategory: (categoryId: string) => void;
   // Travel mode
   onSetTravelMode?: (mode: TravelMode) => void;
+  // Skeleton loading state
+  showSkeleton?: boolean;
+  showContent?: boolean;
+  isRefreshing?: boolean;
 }
 
 export default function ExplorerPOIList({
@@ -57,6 +62,9 @@ export default function ExplorerPOIList({
   activeCategories,
   onToggleCategory,
   onSetTravelMode,
+  showSkeleton = false,
+  showContent = true,
+  isRefreshing = false,
 }: ExplorerPOIListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -179,14 +187,20 @@ export default function ExplorerPOIList({
           {projectName ? `Utforsk ${projectName}` : "Utforsk nabolaget"}
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          {visibleCount} av {totalCount} steder synlige
-          {travelTimesLoading && (
-            <span className="text-sky-500 animate-pulse ml-2">
-              Beregner gangtider…
-            </span>
+          {showSkeleton ? (
+            <span className="text-sky-500 animate-pulse">Laster steder…</span>
+          ) : (
+            <>
+              {visibleCount} av {totalCount} steder synlige
+              {isRefreshing && (
+                <span className="text-sky-500 animate-pulse ml-2">
+                  Oppdaterer…
+                </span>
+              )}
+            </>
           )}
         </p>
-        {contextHint && !travelTimesLoading && (
+        {contextHint && !showSkeleton && !isRefreshing && (
           <p className="text-xs text-sky-600 mt-1">{contextHint}</p>
         )}
       </div>
@@ -318,44 +332,61 @@ export default function ExplorerPOIList({
 
       {/* POI list + collection bar */}
       <div className="relative flex-1 overflow-hidden">
-        {/* Scrollable list */}
-        <div ref={listRef} className="h-full overflow-y-auto pb-4">
-          {pois.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center px-12 py-12">
-              <Compass className="w-10 h-10 text-gray-300 mb-3" />
-              <p className="text-sm text-gray-400">
-                Panorer eller zoom kartet for å se steder her
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2.5 px-8 py-4">
-              {pois.map((poi) => (
-                <div
-                  key={poi.id}
-                  ref={setCardRef(poi.id)}
-                  className={cn(
-                    "rounded-xl border overflow-hidden transition-all duration-300",
-                    highlightedPOI === poi.id && "ring-2 ring-blue-500",
-                    activePOI === poi.id
-                      ? "border-sky-200 ring-2 ring-sky-500 ring-offset-1 shadow-md"
-                      : "border-gray-200"
-                  )}
-                >
-                  <ExplorerPOICard
-                    poi={poi}
-                    isActive={activePOI === poi.id}
-                    onClick={() => onPOIClick(poi.id)}
-                    openingHours={openingHoursData?.get(poi.id)}
-                    travelTimesLoading={travelTimesLoading}
-                    travelMode={travelMode}
-                    isInCollection={collectionPOIs.includes(poi.id)}
-                    onToggleCollection={onToggleCollection}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Skeleton loading state */}
+        {showSkeleton && (
+          <SkeletonPOIList count={6} variant="desktop" />
+        )}
+
+        {/* Actual content */}
+        {showContent && (
+          <div ref={listRef} className={cn(
+            "h-full overflow-y-auto pb-4",
+            showSkeleton ? "hidden" : "animate-content-appear"
+          )}>
+            {pois.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center px-12 py-12">
+                <Compass className="w-10 h-10 text-gray-300 mb-3" />
+                <p className="text-sm text-gray-400">
+                  Panorer eller zoom kartet for å se steder her
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2.5 px-8 py-4">
+                {pois.map((poi) => (
+                  <div
+                    key={poi.id}
+                    ref={setCardRef(poi.id)}
+                    className={cn(
+                      "rounded-xl border overflow-hidden transition-all duration-300",
+                      highlightedPOI === poi.id && "ring-2 ring-blue-500",
+                      activePOI === poi.id
+                        ? "border-sky-200 ring-2 ring-sky-500 ring-offset-1 shadow-md"
+                        : "border-gray-200"
+                    )}
+                  >
+                    <ExplorerPOICard
+                      poi={poi}
+                      isActive={activePOI === poi.id}
+                      onClick={() => onPOIClick(poi.id)}
+                      openingHours={openingHoursData?.get(poi.id)}
+                      travelTimesLoading={travelTimesLoading}
+                      travelMode={travelMode}
+                      isInCollection={collectionPOIs.includes(poi.id)}
+                      onToggleCollection={onToggleCollection}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Refreshing indicator overlay */}
+        {isRefreshing && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-gray-200 z-10">
+            <span className="text-xs text-gray-600 animate-pulse">Oppdaterer…</span>
+          </div>
+        )}
 
         {/* Gradient fade */}
         <div className="absolute bottom-0 left-0 right-0 pointer-events-none">

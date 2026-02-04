@@ -2,6 +2,9 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Project, POI, Category, TravelMode, OriginMode } from "@/lib/types";
+
+// Loading state machine for skeleton loading
+type LoadState = "initial" | "loading" | "loaded" | "error" | "refreshing";
 import { useTravelSettings } from "@/lib/store";
 import { useCollection } from "@/lib/collection-store";
 import { useTravelTimes } from "@/lib/hooks/useTravelTimes";
@@ -118,12 +121,62 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   }, [project.pois, collection]);
 
   // Travel times — enriches POIs with walk times (uses GPS origin when near)
-  const { pois: poisWithTravelTimes, loading: travelTimesLoading } = useTravelTimes(
+  const { pois: poisWithTravelTimes, loading: travelTimesLoading, error: travelTimesError } = useTravelTimes(
     project.id,
     throttledOrigin,
     basePOIs,
     { skipCache: geo.mode === "gps-near" }
   );
+
+  // Loading state machine for skeleton loading
+  const [loadState, setLoadState] = useState<LoadState>("initial");
+  const hasShownContentRef = useRef(false);
+  const loadStartTimeRef = useRef<number>(0);
+  const MIN_SKELETON_DISPLAY_MS = 400;
+
+  // State machine transitions
+  useEffect(() => {
+    if (travelTimesError) {
+      setLoadState("error");
+      return;
+    }
+
+    if (travelTimesLoading) {
+      if (hasShownContentRef.current) {
+        // We've shown content before, this is a refresh (e.g., travel mode change)
+        setLoadState("refreshing");
+      } else {
+        // First load — track start time for minimum display
+        if (loadState === "initial") {
+          loadStartTimeRef.current = Date.now();
+        }
+        setLoadState("loading");
+      }
+      return;
+    }
+
+    // Loading finished — ensure minimum skeleton display time
+    if (loadState === "loading" && !hasShownContentRef.current) {
+      const elapsed = Date.now() - loadStartTimeRef.current;
+      const remaining = MIN_SKELETON_DISPLAY_MS - elapsed;
+
+      if (remaining > 0) {
+        const timer = setTimeout(() => {
+          hasShownContentRef.current = true;
+          setLoadState("loaded");
+        }, remaining);
+        return () => clearTimeout(timer);
+      }
+    }
+
+    hasShownContentRef.current = true;
+    setLoadState("loaded");
+  }, [travelTimesLoading, travelTimesError, loadState]);
+
+  // Computed loading states for rendering
+  const showSkeleton = loadState === "initial" || loadState === "loading";
+  const showContent = loadState === "loaded" || loadState === "refreshing" || loadState === "error";
+  const isRefreshing = loadState === "refreshing";
 
   // POI lookup map
   const poiMap = useMemo(() => {
@@ -395,6 +448,10 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     projectName: project.name,
     openingHoursData,
     travelMode,
+    // Skeleton loading state
+    showSkeleton,
+    showContent,
+    isRefreshing,
     ...(isCollectionView
       ? {}
       : {
@@ -446,6 +503,8 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     showGeoWidget,
     geoIsEnabled: geo.isEnabled,
     onEnableGeolocation: handleEnableGeolocation,
+    // Skeleton loading state
+    showSkeleton,
   };
 
   // Desktop: split layout — map gets its own area, no sidebar overlap
@@ -456,8 +515,29 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     bottom: 60,
   };
 
+  // Announcement text for screen readers
+  const loadingAnnouncement = useMemo(() => {
+    if (loadState === "loading") return "Laster steder...";
+    if (loadState === "loaded" && sortedVisiblePOIs.length > 0) {
+      return `${sortedVisiblePOIs.length} steder lastet`;
+    }
+    if (loadState === "refreshing") return "Oppdaterer reisetider...";
+    if (loadState === "error") return "Kunne ikke laste reisetider";
+    return "";
+  }, [loadState, sortedVisiblePOIs.length]);
+
   return (
     <div className="h-[calc(100vh-3rem)] w-screen relative overflow-hidden bg-white">
+      {/* Screen reader announcement for loading state changes */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {loadingAnnouncement}
+      </div>
+
       {/* ===== DESKTOP LAYOUT (lg+) ===== */}
 
       {/* Desktop: flex split — map + flush sidebar */}
