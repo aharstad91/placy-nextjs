@@ -72,27 +72,20 @@ export default function ReportPage({ project, explorerBaseUrl }: ReportPageProps
       <ReportThemeIndex themes={reportData.themes} />
 
       {/* Theme sections */}
-      {reportData.themes.map((theme, i) => {
-        const themeCategories = theme.allPOIs.length > 0
-          ? Array.from(new Set(theme.allPOIs.map((p) => p.category.id)))
-          : [];
-        return (
-          <div key={theme.id}>
-            {i > 0 && (
-              <div className="max-w-3xl mx-auto px-6">
-                <div className="h-px bg-[#e8e4df]" />
-              </div>
-            )}
-            <ReportThemeSection
-              theme={theme}
-              center={reportData.centerCoordinates}
-              explorerBaseUrl={explorerBaseUrl}
-              themeCategories={themeCategories}
-              mapStyle={reportData.mapStyle}
-            />
-          </div>
-        );
-      })}
+      {reportData.themes.map((theme, i) => (
+        <div key={theme.id}>
+          {i > 0 && (
+            <div className="max-w-3xl mx-auto px-6">
+              <div className="h-px bg-[#e8e4df]" />
+            </div>
+          )}
+          <ReportThemeSection
+            theme={theme}
+            center={reportData.centerCoordinates}
+            explorerBaseUrl={explorerBaseUrl}
+          />
+        </div>
+      ))}
 
       {/* Closing */}
       <ReportClosing
