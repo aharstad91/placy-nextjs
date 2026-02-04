@@ -266,6 +266,28 @@ export type NonEmptyArray<T> = [T, ...T[]];
 
 // === Guide Types ===
 
+// Guide categories for library grouping
+export const GUIDE_CATEGORIES = [
+  "food", // Mat & drikke
+  "culture", // Kultur og historie
+  "nature", // Natur
+  "family", // Familieutflukt
+  "active", // Aktiv tur
+  "hidden-gems", // Skjulte perler
+] as const;
+
+export type GuideCategory = (typeof GUIDE_CATEGORIES)[number];
+
+// Norwegian labels for categories
+export const GUIDE_CATEGORY_LABELS: Record<GuideCategory, string> = {
+  food: "Mat & drikke",
+  culture: "Kultur og historie",
+  nature: "Natur",
+  family: "Familieutflukt",
+  active: "Aktiv tur",
+  "hidden-gems": "Skjulte perler",
+};
+
 export type GuideDifficulty = "easy" | "moderate" | "challenging";
 
 // Static configuration (JSON/database)
@@ -288,6 +310,11 @@ export interface GuideConfig {
   precomputedDistanceMeters?: number;
   precomputedDurationMinutes?: number;
   reward?: RewardConfig;
+  // Guide Library fields
+  category?: GuideCategory; // For grouping in library
+  tags?: string[]; // Extra tags for filtering
+  featured?: boolean; // Show in "Featured" section
+  sortOrder?: number; // Manual sorting within category
 }
 
 // Runtime state

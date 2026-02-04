@@ -114,3 +114,47 @@ export async function getProjectAsync(
   // Fall back to JSON (dynamic loading)
   return getProjectFromJSON(customer, projectSlug);
 }
+
+/**
+ * Get all guides for a customer
+ * SERVER ONLY - do not import in client components
+ */
+export async function getGuidesByCustomer(customer: string): Promise<Project[]> {
+  const guides: Project[] = [];
+
+  try {
+    const customerPath = path.join(process.cwd(), "data", "projects", customer);
+
+    if (!fs.existsSync(customerPath)) {
+      return guides;
+    }
+
+    const files = fs.readdirSync(customerPath);
+
+    for (const file of files) {
+      if (!file.endsWith(".json")) continue;
+
+      const slug = file.replace(".json", "");
+      const project = await getProjectAsync(customer, slug);
+
+      if (project && project.productType === "guide") {
+        guides.push(project);
+      }
+    }
+
+    // Sort by sortOrder, then by title
+    guides.sort((a, b) => {
+      const orderA = a.guideConfig?.sortOrder ?? 999;
+      const orderB = b.guideConfig?.sortOrder ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.guideConfig?.title ?? a.name).localeCompare(
+        b.guideConfig?.title ?? b.name
+      );
+    });
+
+    return guides;
+  } catch (error) {
+    console.error(`Failed to get guides for customer ${customer}:`, error);
+    return guides;
+  }
+}

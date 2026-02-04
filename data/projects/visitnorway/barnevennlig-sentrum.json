@@ -1,0 +1,91 @@
+{
+  "id": "barnevennlig-sentrum",
+  "name": "Barnevennlig Sentrum",
+  "customer": "visitnorway",
+  "urlSlug": "barnevennlig-sentrum",
+  "productType": "guide",
+  "centerCoordinates": {
+    "lat": 63.4305,
+    "lng": 10.3951
+  },
+  "guideConfig": {
+    "id": "barnevennlig-sentrum",
+    "title": "Barnevennlig sentrum",
+    "description": "Perfekt familiedag i Trondheim sentrum med lekeplasser, museer og is.",
+    "coverImageUrl": "https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=400&h=500&fit=crop",
+    "category": "family",
+    "tags": ["barn", "familie", "aktiviteter"],
+    "featured": false,
+    "sortOrder": 1,
+    "difficulty": "easy",
+    "precomputedDistanceMeters": 3000,
+    "precomputedDurationMinutes": 180,
+    "stops": [
+      {
+        "id": "stop-1",
+        "poiId": "vitensenteret",
+        "transitionText": "Start med interaktiv læring på Vitensenteret."
+      },
+      {
+        "id": "stop-2",
+        "poiId": "ravnkloa",
+        "transitionText": "Ta trikken ned til Ravnkloa for sjømat og fuglemat."
+      },
+      {
+        "id": "stop-3",
+        "poiId": "solsiden-lekeplass",
+        "transitionText": "La barna leke på Solsiden mens du tar en kaffe."
+      },
+      {
+        "id": "stop-4",
+        "poiId": "iskrembar",
+        "transitionText": "Avslutt med is fra Trondheims beste isbar."
+      }
+    ]
+  },
+  "story": {
+    "id": "barnevennlig-story",
+    "title": "Barnevennlig sentrum",
+    "introText": "Perfekt familiedag i Trondheim sentrum.",
+    "sections": [],
+    "themeStories": []
+  },
+  "categories": [
+    {
+      "id": "family",
+      "name": "Familie",
+      "icon": "Users",
+      "color": "#EC4899"
+    }
+  ],
+  "pois": [
+    {
+      "id": "vitensenteret",
+      "name": "Vitensenteret",
+      "coordinates": { "lat": 63.4350, "lng": 10.4010 },
+      "category": { "id": "family", "name": "Familie", "icon": "Users", "color": "#EC4899" },
+      "description": "Interaktivt vitensenter med over 400 eksperimenter."
+    },
+    {
+      "id": "ravnkloa",
+      "name": "Ravnkloa",
+      "coordinates": { "lat": 63.4380, "lng": 10.4050 },
+      "category": { "id": "family", "name": "Familie", "icon": "Users", "color": "#EC4899" },
+      "description": "Fisketorg der du kan mate måkene."
+    },
+    {
+      "id": "solsiden-lekeplass",
+      "name": "Solsiden Lekeplass",
+      "coordinates": { "lat": 63.4365, "lng": 10.4120 },
+      "category": { "id": "family", "name": "Familie", "icon": "Users", "color": "#EC4899" },
+      "description": "Moderne lekeplass ved vannet."
+    },
+    {
+      "id": "iskrembar",
+      "name": "Trondheim Iskrembar",
+      "coordinates": { "lat": 63.4330, "lng": 10.4000 },
+      "category": { "id": "family", "name": "Familie", "icon": "Users", "color": "#EC4899" },
+      "description": "Hjemmelaget is med lokale smaker."
+    }
+  ]
+}

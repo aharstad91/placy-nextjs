@@ -1,0 +1,91 @@
+{
+  "id": "bymarkaloypa",
+  "name": "Bymarka-løypa",
+  "customer": "visitnorway",
+  "urlSlug": "bymarkaloypa",
+  "productType": "guide",
+  "centerCoordinates": {
+    "lat": 63.4200,
+    "lng": 10.3500
+  },
+  "guideConfig": {
+    "id": "bymarkaloypa",
+    "title": "Bymarka-løypa",
+    "description": "En aktiv tur i Trondheims grønne lunge. Perfekt for en ettermiddag i naturen.",
+    "coverImageUrl": "https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&h=500&fit=crop",
+    "category": "nature",
+    "tags": ["natur", "skog", "aktiv"],
+    "featured": true,
+    "sortOrder": 1,
+    "difficulty": "moderate",
+    "precomputedDistanceMeters": 8000,
+    "precomputedDurationMinutes": 150,
+    "stops": [
+      {
+        "id": "stop-1",
+        "poiId": "lian",
+        "transitionText": "Start ved Lian stasjon - ta Gråkallbanen hit."
+      },
+      {
+        "id": "stop-2",
+        "poiId": "skistua",
+        "transitionText": "Følg stien til Skistua for vafler og utsikt."
+      },
+      {
+        "id": "stop-3",
+        "poiId": "grakalltoppem",
+        "transitionText": "Bestig Gråkalltoppen for 360-graders panorama."
+      },
+      {
+        "id": "stop-4",
+        "poiId": "ugla",
+        "transitionText": "Avslutt med kakao på Ugla."
+      }
+    ]
+  },
+  "story": {
+    "id": "bymarkaloypa-story",
+    "title": "Bymarka-løypa",
+    "introText": "En aktiv tur i Trondheims grønne lunge.",
+    "sections": [],
+    "themeStories": []
+  },
+  "categories": [
+    {
+      "id": "nature",
+      "name": "Natur",
+      "icon": "Trees",
+      "color": "#16A34A"
+    }
+  ],
+  "pois": [
+    {
+      "id": "lian",
+      "name": "Lian",
+      "coordinates": { "lat": 63.4180, "lng": 10.3420 },
+      "category": { "id": "nature", "name": "Natur", "icon": "Trees", "color": "#16A34A" },
+      "description": "Endestasjon for Gråkallbanen og innfallsporten til Bymarka."
+    },
+    {
+      "id": "skistua",
+      "name": "Skistua",
+      "coordinates": { "lat": 63.4150, "lng": 10.3350 },
+      "category": { "id": "nature", "name": "Natur", "icon": "Trees", "color": "#16A34A" },
+      "description": "Populær serveringssted med vafler og utsikt."
+    },
+    {
+      "id": "grakalltoppem",
+      "name": "Gråkalltoppen",
+      "coordinates": { "lat": 63.4120, "lng": 10.3280 },
+      "category": { "id": "nature", "name": "Natur", "icon": "Trees", "color": "#16A34A" },
+      "description": "552 moh - byens høyeste punkt med fantastisk utsikt."
+    },
+    {
+      "id": "ugla",
+      "name": "Ugla",
+      "coordinates": { "lat": 63.4195, "lng": 10.3480 },
+      "category": { "id": "nature", "name": "Natur", "icon": "Trees", "color": "#16A34A" },
+      "description": "Servering ved Theisendammen - perfekt for en avsluttende pause."
+    }
+  ]
+}
