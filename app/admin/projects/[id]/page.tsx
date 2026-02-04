@@ -57,8 +57,9 @@ export default async function ProjectDetailPage({
     redirect("/");
   }
 
-  // Fetch project with nested relations in a single query
-  const { data: project, error } = await supabase
+  // Fetch project with nested relations
+  // Split query to handle case where project_categories table doesn't exist yet
+  const { data: project, error: projectError } = await supabase
     .from("projects")
     .select(
       `
@@ -69,29 +70,52 @@ export default async function ProjectDetailPage({
       center_lat,
       center_lng,
       customer_id,
-      customers (id, name),
-      project_categories (*),
-      project_pois (
-        poi_id,
-        project_category_id,
-        pois (
-          id,
-          name,
-          lat,
-          lng,
-          category_id,
-          google_rating,
-          categories (*)
-        )
-      )
+      customers (id, name)
     `
     )
     .eq("id", projectId)
     .single();
 
-  if (error || !project) {
+  if (projectError || !project) {
     notFound();
   }
+
+  // Try to fetch project_categories (may not exist if migration not run)
+  let projectCategories: DbProjectCategory[] = [];
+  const { data: categories } = await supabase
+    .from("project_categories")
+    .select("*")
+    .eq("project_id", projectId);
+  if (categories) {
+    projectCategories = categories;
+  }
+
+  // Fetch project_pois with nested data
+  const { data: projectPoisData } = await supabase
+    .from("project_pois")
+    .select(
+      `
+      poi_id,
+      project_category_id,
+      pois (
+        id,
+        name,
+        lat,
+        lng,
+        category_id,
+        google_rating,
+        categories (*)
+      )
+    `
+    )
+    .eq("project_id", projectId);
+
+  // Combine into the expected structure
+  const projectWithRelations = {
+    ...project,
+    project_categories: projectCategories,
+    project_pois: projectPoisData || [],
+  };
 
   // Fetch all customers for dropdown
   const { data: customers } = await supabase
@@ -296,7 +320,7 @@ export default async function ProjectDetailPage({
 
   return (
     <ProjectDetailClient
-      project={project as ProjectWithRelations}
+      project={projectWithRelations as ProjectWithRelations}
       customers={customers || []}
       globalCategories={globalCategories || []}
       allPois={allPois || []}
