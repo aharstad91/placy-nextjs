@@ -297,7 +297,7 @@ function FactCard({ card }: { card: FactCardData }) {
 
 interface ReportFactCardsProps {
   cards: FactCardData[];
-  variant?: "vertical" | "horizontal";
+  variant?: "vertical" | "horizontal" | "horizontal-desktop";
 }
 
 export const ReportFactCards = memo(function ReportFactCards({
@@ -306,6 +306,7 @@ export const ReportFactCards = memo(function ReportFactCards({
 }: ReportFactCardsProps) {
   if (cards.length === 0) return null;
 
+  // Mobile horizontal scroll
   if (variant === "horizontal") {
     return (
       <>
@@ -318,6 +319,20 @@ export const ReportFactCards = memo(function ReportFactCards({
     );
   }
 
+  // Desktop horizontal row (below POI cards)
+  if (variant === "horizontal-desktop") {
+    return (
+      <div className="flex gap-4">
+        {cards.map((card) => (
+          <div key={card.type} className="flex-1 min-w-0">
+            <FactCard card={card} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Vertical stack (sidebar)
   return (
     <div className="space-y-3">
       {cards.map((card) => (

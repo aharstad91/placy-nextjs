@@ -228,52 +228,52 @@ export default function ReportInteractiveMapSection({
         )}
       </div>
 
-      {/* Desktop: Fact cards sidebar + POI cards + sticky map */}
-      <div className="hidden lg:flex gap-8">
-        {/* Left: Fact cards sidebar */}
-        {factCards.length > 0 && (
-          <div className="w-[240px] flex-shrink-0">
-            <div className="sticky top-20">
-              <ReportFactCards cards={factCards} variant="vertical" />
+      {/* Desktop: POI cards + sticky map, fact cards below */}
+      <div className="hidden lg:block">
+        <div className="flex gap-8">
+          {/* Left: Category filters + POI cards */}
+          <div className="flex-1">
+            <CategoryFilters />
+            <div className="grid grid-cols-2 gap-4 content-start">
+              {pois.map((poi) => (
+                <div key={poi.id} ref={registerCardRef(poi.id)}>
+                  <ReportHighlightCard
+                    poi={poi}
+                    explorerBaseUrl={explorerBaseUrl}
+                    themeCategories={themeCategories}
+                    isActive={activePOI === poi.id}
+                    onClick={() => handleCardClick(poi.id)}
+                  />
+                </div>
+              ))}
             </div>
           </div>
-        )}
 
-        {/* Middle: Category filters + POI cards */}
-        <div className="flex-1">
-          <CategoryFilters />
-          <div className="grid grid-cols-2 gap-4 content-start">
-            {pois.map((poi) => (
-              <div key={poi.id} ref={registerCardRef(poi.id)}>
-                <ReportHighlightCard
-                  poi={poi}
-                  explorerBaseUrl={explorerBaseUrl}
-                  themeCategories={themeCategories}
-                  isActive={activePOI === poi.id}
-                  onClick={() => handleCardClick(poi.id)}
+          {/* Right: Sticky map */}
+          <div className="w-[400px] flex-shrink-0">
+            <div className="sticky top-20 h-[500px] rounded-xl overflow-hidden border border-[#eae6e1]">
+              {isInView ? (
+                <ReportInteractiveMap
+                  pois={pois}
+                  center={center}
+                  activePOI={activePOI}
+                  onPOIClick={handleMarkerClick}
+                  onMapMount={handleMapMount}
+                  onMapUnmount={handleMapUnmount}
                 />
-              </div>
-            ))}
+              ) : (
+                <SkeletonReportMap />
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Right: Sticky map */}
-        <div className="w-[400px] flex-shrink-0">
-          <div className="sticky top-20 h-[500px] rounded-xl overflow-hidden border border-[#eae6e1]">
-            {isInView ? (
-              <ReportInteractiveMap
-                pois={pois}
-                center={center}
-                activePOI={activePOI}
-                onPOIClick={handleMarkerClick}
-                onMapMount={handleMapMount}
-                onMapUnmount={handleMapUnmount}
-              />
-            ) : (
-              <SkeletonReportMap />
-            )}
+        {/* Fact cards below POI cards */}
+        {factCards.length > 0 && (
+          <div className="mt-6">
+            <ReportFactCards cards={factCards} variant="horizontal-desktop" />
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
