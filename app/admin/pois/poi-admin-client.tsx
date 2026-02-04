@@ -56,15 +56,18 @@ export function POIAdminClient({
   // Panel state
   const [panelState, setPanelState] = useState<PanelState>("idle");
 
-  // Category filter state with URL sync
+  // Category filter state with URL sync - default to none selected
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(() => {
     const categoriesParam = searchParams.get("categories");
-    if (categoriesParam) {
+    if (categoriesParam === "all") {
+      return new Set(categories.map((c) => c.id));
+    }
+    if (categoriesParam && categoriesParam !== "none") {
       const validIds = new Set(categories.map((c) => c.id));
       const fromUrl = categoriesParam.split(",").filter((id) => validIds.has(id));
-      return new Set(fromUrl.length > 0 ? fromUrl : categories.map((c) => c.id));
+      return new Set(fromUrl);
     }
-    return new Set(categories.map((c) => c.id));
+    return new Set(); // Default: no categories selected
   });
 
   // Sync categories to URL
@@ -72,12 +75,12 @@ export function POIAdminClient({
     (newSet: Set<string>) => {
       setSelectedCategories(newSet);
       const params = new URLSearchParams(searchParams.toString());
-      if (newSet.size === categories.length) {
-        params.delete("categories");
-      } else if (newSet.size > 0) {
-        params.set("categories", Array.from(newSet).join(","));
+      if (newSet.size === 0) {
+        params.delete("categories"); // Default: no categories
+      } else if (newSet.size === categories.length) {
+        params.set("categories", "all");
       } else {
-        params.set("categories", "none");
+        params.set("categories", Array.from(newSet).join(","));
       }
       router.replace(`?${params.toString()}`, { scroll: false });
     },

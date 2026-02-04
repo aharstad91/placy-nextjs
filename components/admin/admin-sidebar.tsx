@@ -10,9 +10,6 @@ import {
   MapPin,
   Tag,
   Sparkles,
-  Upload,
-  BookOpen,
-  FileText,
   Menu,
   X,
 } from "lucide-react";
@@ -26,9 +23,6 @@ const NAV_ITEMS: NavLink[] = [
   { href: "/admin/pois", label: "POI-er", icon: MapPin },
   { href: "/admin/categories", label: "Kategorier", icon: Tag },
   { href: "/admin/generate", label: "Generator", icon: Sparkles },
-  { href: "/admin/import", label: "Import", icon: Upload },
-  { href: "/admin/stories", label: "Stories", icon: BookOpen },
-  { href: "/admin/editorial", label: "Editorial", icon: FileText },
 ];
 
 interface AdminSidebarProps {
@@ -64,12 +58,12 @@ export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
         />
       )}
 
-      {/* Sidebar - Icon-only on desktop, full on mobile */}
+      {/* Sidebar - Full width with labels on all screen sizes */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200
           transform transition-transform duration-200 ease-in-out
-          w-64 lg:w-14
+          w-64
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
@@ -89,12 +83,10 @@ export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
             onClick={onToggle}
             className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors"
           >
-            {/* Desktop: Icon only */}
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
               <MapPin className="w-4 h-4 text-white" />
             </div>
-            {/* Mobile: Show text */}
-            <span className="text-lg font-bold lg:hidden">Placy</span>
+            <span className="text-lg font-bold">Placy</span>
           </Link>
         </div>
 
@@ -108,7 +100,6 @@ export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
               className={`
                 group relative flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm transition-colors
                 focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                lg:justify-center lg:px-0
                 ${
                   isActive(item.href, item.exact)
                     ? "bg-gray-100 text-gray-900 font-medium"
@@ -117,22 +108,7 @@ export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
               `}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
-              {/* Mobile: Show label */}
-              <span className="lg:hidden">{item.label}</span>
-
-              {/* Desktop: Tooltip on hover */}
-              <div className="
-                absolute left-full ml-2 px-2.5 py-1.5
-                bg-gray-900 text-white text-xs font-medium rounded-lg
-                opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                transition-all duration-150 whitespace-nowrap z-50
-                pointer-events-none
-                hidden lg:block
-              ">
-                {item.label}
-                {/* Arrow */}
-                <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900" />
-              </div>
+              <span>{item.label}</span>
             </Link>
           ))}
         </nav>
