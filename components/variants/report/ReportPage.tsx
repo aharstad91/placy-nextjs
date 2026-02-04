@@ -6,6 +6,7 @@ import { transformToReportData } from "./report-data";
 import ReportHero from "./ReportHero";
 import ReportThemeIndex from "./ReportThemeIndex";
 import ReportThemeSection from "./ReportThemeSection";
+import ReportExplorerCTA from "./ReportExplorerCTA";
 import ReportClosing from "./ReportClosing";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
@@ -86,6 +87,16 @@ export default function ReportPage({ project, explorerBaseUrl }: ReportPageProps
           />
         </div>
       ))}
+
+      {/* Explorer CTA */}
+      {explorerBaseUrl && project.pois.length > 0 && (
+        <ReportExplorerCTA
+          pois={project.pois}
+          center={reportData.centerCoordinates}
+          explorerBaseUrl={explorerBaseUrl}
+          totalPOIs={reportData.heroMetrics.totalPOIs}
+        />
+      )}
 
       {/* Closing */}
       <ReportClosing
