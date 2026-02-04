@@ -7,6 +7,7 @@ import type { MapRef } from "react-map-gl/mapbox";
 import ReportHighlightCard from "./ReportHighlightCard";
 import ReportInteractiveMap from "./ReportInteractiveMap";
 import ReportMapTabs from "./ReportMapTabs";
+import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 
 interface ReportInteractiveMapSectionProps {
   theme: ReportTheme;
@@ -31,23 +32,33 @@ export default function ReportInteractiveMapSection({
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
   const sectionRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // Lazy loading with triggerOnce pattern (disconnect after first intersection)
+  // Lazy loading with ref-based observer (race condition safe)
   useEffect(() => {
-    if (isInView) return;
+    // Skip if already in view or no element
+    if (isInView || !sectionRef.current) return;
 
-    const observer = new IntersectionObserver(
+    // Don't create duplicate observers
+    if (observerRef.current) return;
+
+    observerRef.current = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
-          observer.disconnect();
+          observerRef.current?.disconnect();
+          observerRef.current = null;
         }
       },
       { rootMargin: "100px" }
     );
 
-    if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => observer.disconnect();
+    observerRef.current.observe(sectionRef.current);
+
+    return () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+    };
   }, [isInView]);
 
   // All POIs in this theme
@@ -190,9 +201,7 @@ export default function ReportInteractiveMapSection({
                 onMapUnmount={handleMapUnmount}
               />
             ) : (
-              <div className="w-full h-full bg-[#f5f3f0] animate-pulse flex items-center justify-center">
-                <span className="text-[#8a8a8a] text-sm">Laster kart...</span>
-              </div>
+              <SkeletonReportMap />
             )}
           </div>
         )}
@@ -231,9 +240,7 @@ export default function ReportInteractiveMapSection({
                 onMapUnmount={handleMapUnmount}
               />
             ) : (
-              <div className="w-full h-full bg-[#f5f3f0] animate-pulse flex items-center justify-center">
-                <span className="text-[#8a8a8a] text-sm">Laster kart...</span>
-              </div>
+              <SkeletonReportMap />
             )}
           </div>
         </div>
