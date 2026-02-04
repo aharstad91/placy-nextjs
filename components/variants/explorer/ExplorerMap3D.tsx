@@ -105,7 +105,7 @@ export default function ExplorerMap3D({
       // Return to top-down
       cameraRef.current.flyTo(
         { lat: currentCamera.center.lat, lng: currentCamera.center.lng },
-        { tilt: 0, range: currentCamera.range, duration: 1200 }
+        { tilt: 0, range: currentCamera.range ?? 1200, duration: 1200 }
       );
     } else {
       // Go to 3D

@@ -155,11 +155,11 @@ function MapView3DInner({
 
         // Range constraint via listener (no native minRange/maxRange support)
         // Only enforce constraints after user stops zooming (debounced)
-        let lastClampedRange = map3d.range;
+        let lastClampedRange = map3d.range ?? 1200;
         let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
         map3d.addEventListener("gmp-rangechange", () => {
-          const currentRange = map3d.range;
+          const currentRange = map3d.range ?? 1200;
           const clampedRange = clampRange(
             currentRange,
             effectiveConstraints.minRange,
