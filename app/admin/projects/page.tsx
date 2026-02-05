@@ -6,6 +6,7 @@ import { ProjectsAdminClient } from "./projects-admin-client";
 import type { DbCustomer } from "@/lib/supabase/types";
 import * as fs from "fs";
 import * as path from "path";
+import { nanoid } from "nanoid";
 
 const adminEnabled = process.env.ADMIN_ENABLED === "true";
 
@@ -95,10 +96,12 @@ async function createProject(formData: FormData) {
     throw new Error("URL-slug er allerede i bruk for denne kunden");
   }
 
-  // Create project container
+  // Create project container with generated short_id
   const containerId = `${customerId}_${urlSlug}`;
+  const shortId = nanoid(7);
   const { error: containerError } = await supabase.from("projects").insert({
     id: containerId,
+    short_id: shortId,
     customer_id: customerId,
     name,
     url_slug: urlSlug,
@@ -290,10 +293,14 @@ export default async function AdminProjectsPage() {
   }
 
   // Transform to hierarchy structure
+  // NOTE: short_id added in migration 008_add_project_short_id.sql
+  // Before migration runs, short_id will be undefined
   const supabaseContainers = (projectContainers || [])
     .filter((container) => container.customer_id !== null)
     .map((container) => ({
       id: container.id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      short_id: (container as any).short_id as string | undefined,
       name: container.name,
       customer_id: container.customer_id!,
       url_slug: container.url_slug,

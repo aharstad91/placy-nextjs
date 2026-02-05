@@ -186,6 +186,7 @@ function DetailsTab({ project, customers, updateProject }: DetailsTabProps) {
     try {
       const formData = new FormData();
       formData.set("id", project.id);
+      formData.set("shortId", project.short_id);
       formData.set("customerId", customerId);
       formData.set("name", name);
       formData.set("urlSlug", urlSlug);
@@ -386,6 +387,7 @@ function CategoriesTab({
     try {
       const formData = new FormData();
       formData.set("projectId", project.id);
+      formData.set("shortId", project.short_id);
       formData.set("name", categoryName);
       formData.set("icon", categoryIcon);
       formData.set("color", categoryColor);
@@ -412,7 +414,7 @@ function CategoriesTab({
     try {
       const formData = new FormData();
       formData.set("id", deleteTarget.id);
-      formData.set("projectId", project.id);
+      formData.set("shortId", project.short_id);
       await deleteProjectCategory(formData);
       setDeleteTarget(null);
     } catch (e) {
@@ -651,6 +653,7 @@ function PoisTab({
     try {
       const formData = new FormData();
       formData.set("projectId", project.id);
+      formData.set("shortId", project.short_id);
       formData.set("poiId", poiId);
       if (projectCategoryId) {
         formData.set("projectCategoryId", projectCategoryId);
@@ -671,6 +674,7 @@ function PoisTab({
     try {
       const formData = new FormData();
       formData.set("projectId", project.id);
+      formData.set("shortId", project.short_id);
       formData.set("poiId", selectedPoiId);
       await addPoiToProject(formData);
       setIsAddModalOpen(false);
@@ -689,6 +693,7 @@ function PoisTab({
     try {
       const formData = new FormData();
       formData.set("projectId", project.id);
+      formData.set("shortId", project.short_id);
       formData.set("poiId", removeTarget);
       await removePoiFromProject(formData);
       setRemoveTarget(null);
@@ -997,7 +1002,7 @@ function ProductsTab({
       const formData = new FormData();
       formData.set("productId", product.id);
       formData.set("poiId", poiId);
-      formData.set("projectId", project.id);
+      formData.set("shortId", project.short_id);
 
       if (isCurrentlySelected) {
         await removePoiFromProduct(formData);
@@ -1062,6 +1067,7 @@ function ProductsTab({
     try {
       const formData = new FormData();
       formData.set("projectId", project.id);
+      formData.set("shortId", project.short_id);
       formData.set("productType", newProductType);
 
       await createProduct(formData);

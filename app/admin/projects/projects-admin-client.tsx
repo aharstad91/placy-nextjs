@@ -31,6 +31,7 @@ interface ProductInfo {
 // Container (project) with products
 interface ProjectContainer {
   id: string;
+  short_id?: string;
   name: string;
   customer_id: string;
   url_slug: string;
@@ -341,9 +342,9 @@ export function ProjectsAdminClient({
                         <Package className="w-4 h-4 text-blue-600" />
                       </div>
                       <div>
-                        {container.source === "supabase" ? (
+                        {container.source === "supabase" && container.short_id ? (
                           <Link
-                            href={`/admin/projects/${container.id}`}
+                            href={`/admin/projects/${container.short_id}`}
                             className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
                             onClick={(e) => e.stopPropagation()}
                           >
