@@ -19,6 +19,7 @@ import {
   Map,
   AlertCircle,
   Check,
+  Minus,
 } from "lucide-react";
 import {
   IconPicker,
@@ -979,6 +980,20 @@ function ProductsTab({
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newProductType, setNewProductType] = useState<"explorer" | "report" | "guide">("explorer");
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategory = (productId: string, categoryName: string) => {
+    const key = `${productId}::${categoryName}`;
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   // Track optimistic updates for checkboxes
   const [optimisticUpdates, setOptimisticUpdates] = useState<
@@ -1039,31 +1054,38 @@ function ProductsTab({
     }
   };
 
-  // Handle select all / deselect all for a product using batch operations
-  const handleToggleAll = async (product: ProductWithPois, selectAll: boolean) => {
+  // Shared batch toggle for both "select all" and per-category toggles
+  const handleBatchToggle = async (
+    product: ProductWithPois,
+    poisSubset: typeof projectPois,
+    selectAll: boolean
+  ) => {
+    const poisToToggle = selectAll
+      ? poisSubset.filter((pp) => !isPoiSelected(product, pp.pois.id))
+      : poisSubset.filter((pp) => isPoiSelected(product, pp.pois.id));
+
+    if (poisToToggle.length === 0) return;
+
     setIsSubmitting(true);
     setError(null);
 
-    // Get POIs that need to be toggled
-    const poisToToggle = selectAll
-      ? projectPois.filter((pp) => !isPoiSelected(product, pp.pois.id))
-      : projectPois.filter((pp) => isPoiSelected(product, pp.pois.id));
-
-    if (poisToToggle.length === 0) {
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Optimistic update for all
     const newOptimistic: Record<string, boolean> = {};
     for (const pp of poisToToggle) {
-      const key = `${product.id}-${pp.pois.id}`;
-      newOptimistic[key] = selectAll;
+      newOptimistic[`${product.id}-${pp.pois.id}`] = selectAll;
     }
     setOptimisticUpdates((prev) => ({ ...prev, ...newOptimistic }));
 
+    const clearOptimistic = () => {
+      setOptimisticUpdates((prev) => {
+        const next = { ...prev };
+        for (const pp of poisToToggle) {
+          delete next[`${product.id}-${pp.pois.id}`];
+        }
+        return next;
+      });
+    };
+
     try {
-      // Single batch operation instead of 84 parallel calls
       const formData = new FormData();
       formData.set("productId", product.id);
       formData.set("poiIds", JSON.stringify(poisToToggle.map((pp) => pp.pois.id)));
@@ -1074,30 +1096,13 @@ function ProductsTab({
       } else {
         await batchRemovePoisFromProduct(formData);
       }
-
-      // Clear all optimistic updates on success
-      setOptimisticUpdates((prev) => {
-        const next = { ...prev };
-        for (const pp of poisToToggle) {
-          const key = `${product.id}-${pp.pois.id}`;
-          delete next[key];
-        }
-        return next;
-      });
+      clearOptimistic();
     } catch (e) {
-      // Revert all optimistic updates on error
-      setOptimisticUpdates((prev) => {
-        const next = { ...prev };
-        for (const pp of poisToToggle) {
-          const key = `${product.id}-${pp.pois.id}`;
-          delete next[key];
-        }
-        return next;
-      });
+      clearOptimistic();
       setError(e instanceof Error ? e.message : "Kunne ikke oppdatere POI-er");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   const isPoiSelected = (product: ProductWithPois, poiId: string): boolean => {
@@ -1123,6 +1128,33 @@ function ProductsTab({
       }
     }
     return count;
+  };
+
+  // Group POIs by category for display
+  const poisByCategory = useMemo(() => {
+    const groups: Record<string, typeof projectPois> = {};
+    for (const pp of projectPois) {
+      const catName = pp.pois.categories?.name || "Ukategorisert";
+      if (!groups[catName]) groups[catName] = [];
+      groups[catName].push(pp);
+    }
+    return Object.entries(groups)
+      .sort(([a], [b]) => {
+        if (a === "Ukategorisert") return 1;
+        if (b === "Ukategorisert") return -1;
+        return a.localeCompare(b);
+      })
+      .map(([name, pois]) => ({
+        name,
+        pois: pois.sort((a, b) => a.pois.name.localeCompare(b.pois.name)),
+      }));
+  }, [projectPois]);
+
+  const getSelectedCountForCategory = (
+    product: ProductWithPois,
+    categoryPois: typeof projectPois
+  ): number => {
+    return categoryPois.filter((pp) => isPoiSelected(product, pp.pois.id)).length;
   };
 
   // Get existing product types to show which are available
@@ -1430,7 +1462,7 @@ function ProductsTab({
                     <div className="flex items-center gap-2">
                       {selectedCount < totalCount && (
                         <button
-                          onClick={() => handleToggleAll(product, true)}
+                          onClick={() => handleBatchToggle(product, projectPois, true)}
                           disabled={isSubmitting}
                           className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
                         >
@@ -1439,7 +1471,7 @@ function ProductsTab({
                       )}
                       {selectedCount > 0 && (
                         <button
-                          onClick={() => handleToggleAll(product, false)}
+                          onClick={() => handleBatchToggle(product, projectPois, false)}
                           disabled={isSubmitting}
                           className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
                         >
@@ -1448,68 +1480,126 @@ function ProductsTab({
                       )}
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    {projectPois
-                      .sort((a, b) => a.pois.name.localeCompare(b.pois.name))
-                      .map((pp) => {
-                        const poi = pp.pois;
-                        const selected = isPoiSelected(product, poi.id);
-                        const key = `${product.id}-${poi.id}`;
-                        const isPending = key in optimisticUpdates;
+                  <div className="space-y-4">
+                    {poisByCategory.map((category) => {
+                      const catSelectedCount = getSelectedCountForCategory(product, category.pois);
+                      const catTotalCount = category.pois.length;
+                      const allSelected = catSelectedCount === catTotalCount;
+                      const someSelected = catSelectedCount > 0 && !allSelected;
 
-                        return (
-                          <label
-                            key={poi.id}
-                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
-                              selected
-                                ? "bg-blue-50 hover:bg-blue-100"
-                                : "hover:bg-gray-100"
-                            } ${isPending ? "opacity-70" : ""}`}
-                          >
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() =>
-                                  handleTogglePoi(product, poi.id, selected)
-                                }
-                                disabled={isSubmitting && isPending}
-                                className="sr-only"
-                              />
+                      const isCatExpanded = expandedCategories.has(`${product.id}::${category.name}`);
+
+                      return (
+                        <div key={category.name}>
+                          {/* Category Header */}
+                          <div className="flex items-center gap-3 p-2.5 bg-gray-100 rounded-lg mb-1">
+                            {/* Checkbox area — toggles selection */}
+                            <button
+                              type="button"
+                              onClick={() => handleBatchToggle(product, category.pois, !allSelected)}
+                              disabled={isSubmitting}
+                              className="flex-shrink-0 disabled:opacity-50"
+                            >
                               <div
                                 className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                  selected
+                                  allSelected
                                     ? "bg-blue-500 border-blue-500"
-                                    : "bg-white border-gray-300"
+                                    : someSelected
+                                      ? "bg-blue-500 border-blue-500"
+                                      : "bg-white border-gray-300"
                                 }`}
                               >
-                                {selected && (
-                                  <Check className="w-3 h-3 text-white" />
+                                {allSelected && <Check className="w-3 h-3 text-white" />}
+                                {someSelected && <Minus className="w-3 h-3 text-white" />}
+                              </div>
+                            </button>
+                            {/* Accordion trigger — expands/collapses */}
+                            <button
+                              type="button"
+                              onClick={() => toggleCategory(product.id, category.name)}
+                              className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
+                            >
+                              <div className="text-gray-400">
+                                {isCatExpanded ? (
+                                  <ChevronDown className="w-4 h-4" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4" />
                                 )}
                               </div>
-                              {isPending && (
-                                <Loader2 className="w-3 h-3 text-blue-500 animate-spin absolute -right-1 -top-1" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-gray-900 truncate">
-                                {poi.name}
-                              </div>
-                              {poi.categories && (
-                                <div className="text-xs text-gray-500">
-                                  {poi.categories.name}
-                                </div>
-                              )}
-                            </div>
-                            {poi.google_rating && (
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
-                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                {poi.google_rating.toFixed(1)}
-                              </div>
-                            )}
-                          </label>
-                        );
-                      })}
+                              <span className="text-sm font-semibold text-gray-700">
+                                {category.name}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                ({catTotalCount})
+                              </span>
+                              <span className="ml-auto text-xs text-gray-500">
+                                {catSelectedCount}/{catTotalCount} valgt
+                              </span>
+                            </button>
+                          </div>
+
+                          {/* POIs in category (accordion) */}
+                          {isCatExpanded && (
+                          <div className="space-y-0.5 pl-2 mb-2">
+                            {category.pois.map((pp) => {
+                              const poi = pp.pois;
+                              const selected = isPoiSelected(product, poi.id);
+                              const key = `${product.id}-${poi.id}`;
+                              const isPending = key in optimisticUpdates;
+
+                              return (
+                                <label
+                                  key={poi.id}
+                                  className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                                    selected
+                                      ? "bg-blue-50 hover:bg-blue-100"
+                                      : "hover:bg-gray-100"
+                                  } ${isPending ? "opacity-70" : ""}`}
+                                >
+                                  <div className="relative">
+                                    <input
+                                      type="checkbox"
+                                      checked={selected}
+                                      onChange={() =>
+                                        handleTogglePoi(product, poi.id, selected)
+                                      }
+                                      disabled={isSubmitting && isPending}
+                                      className="sr-only"
+                                    />
+                                    <div
+                                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                        selected
+                                          ? "bg-blue-500 border-blue-500"
+                                          : "bg-white border-gray-300"
+                                      }`}
+                                    >
+                                      {selected && (
+                                        <Check className="w-3 h-3 text-white" />
+                                      )}
+                                    </div>
+                                    {isPending && (
+                                      <Loader2 className="w-3 h-3 text-blue-500 animate-spin absolute -right-1 -top-1" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-gray-900 truncate">
+                                      {poi.name}
+                                    </div>
+                                  </div>
+                                  {poi.google_rating && (
+                                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                      {poi.google_rating.toFixed(1)}
+                                    </div>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
