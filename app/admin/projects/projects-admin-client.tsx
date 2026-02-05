@@ -341,9 +341,19 @@ export function ProjectsAdminClient({
                         <Package className="w-4 h-4 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900">
-                          {container.name}
-                        </h3>
+                        {container.source === "supabase" ? (
+                          <Link
+                            href={`/admin/projects/${container.id}`}
+                            className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {container.name}
+                          </Link>
+                        ) : (
+                          <h3 className="text-sm font-semibold text-gray-900">
+                            {container.name}
+                          </h3>
+                        )}
                         <p className="text-xs text-gray-500">
                           {container.customerName} ·{" "}
                           <code className="bg-gray-100 px-1 rounded">
