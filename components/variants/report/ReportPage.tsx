@@ -80,6 +80,7 @@ export default function ReportPage({ project, explorerBaseUrl }: ReportPageProps
               theme={theme}
               center={reportData.centerCoordinates}
               explorerBaseUrl={explorerBaseUrl}
+              projectName={reportData.projectName}
             />
           </div>
         ))}
