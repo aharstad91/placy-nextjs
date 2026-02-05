@@ -411,6 +411,57 @@ export default async function ProjectDetailPage({
     revalidatePath(`/admin/projects/${shortId}`);
   }
 
+  async function batchAddPoisToProduct(formData: FormData) {
+    "use server";
+
+    const productId = getRequiredString(formData, "productId");
+    const poiIdsJson = getRequiredString(formData, "poiIds");
+    const shortId = getRequiredString(formData, "shortId");
+
+    const poiIds: string[] = JSON.parse(poiIdsJson);
+    if (poiIds.length === 0) return;
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    // Batch insert - Supabase handles duplicates with upsert
+    const rows = poiIds.map((poiId) => ({
+      product_id: productId,
+      poi_id: poiId,
+    }));
+
+    const { error } = await supabase
+      .from("product_pois")
+      .upsert(rows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
+  async function batchRemovePoisFromProduct(formData: FormData) {
+    "use server";
+
+    const productId = getRequiredString(formData, "productId");
+    const poiIdsJson = getRequiredString(formData, "poiIds");
+    const shortId = getRequiredString(formData, "shortId");
+
+    const poiIds: string[] = JSON.parse(poiIdsJson);
+    if (poiIds.length === 0) return;
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    // Batch delete
+    const { error } = await supabase
+      .from("product_pois")
+      .delete()
+      .eq("product_id", productId)
+      .in("poi_id", poiIds);
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
   async function removePoiFromProduct(formData: FormData) {
     "use server";
 
@@ -483,6 +534,8 @@ export default async function ProjectDetailPage({
       removePoiFromProject={removePoiFromProject}
       addPoiToProduct={addPoiToProduct}
       removePoiFromProduct={removePoiFromProduct}
+      batchAddPoisToProduct={batchAddPoisToProduct}
+      batchRemovePoisFromProduct={batchRemovePoisFromProduct}
       createProduct={createProduct}
     />
   );

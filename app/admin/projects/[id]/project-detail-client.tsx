@@ -62,6 +62,8 @@ interface ProjectDetailClientProps {
   removePoiFromProject: (formData: FormData) => Promise<void>;
   addPoiToProduct: (formData: FormData) => Promise<void>;
   removePoiFromProduct: (formData: FormData) => Promise<void>;
+  batchAddPoisToProduct: (formData: FormData) => Promise<void>;
+  batchRemovePoisFromProduct: (formData: FormData) => Promise<void>;
   createProduct: (formData: FormData) => Promise<void>;
 }
 
@@ -79,6 +81,8 @@ export function ProjectDetailClient({
   removePoiFromProject,
   addPoiToProduct,
   removePoiFromProduct,
+  batchAddPoisToProduct,
+  batchRemovePoisFromProduct,
   createProduct,
 }: ProjectDetailClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("details");
@@ -150,6 +154,8 @@ export function ProjectDetailClient({
               project={project}
               addPoiToProduct={addPoiToProduct}
               removePoiFromProduct={removePoiFromProduct}
+              batchAddPoisToProduct={batchAddPoisToProduct}
+              batchRemovePoisFromProduct={batchRemovePoisFromProduct}
               createProduct={createProduct}
             />
           )}
@@ -953,6 +959,8 @@ interface ProductsTabProps {
   project: ProjectWithRelations;
   addPoiToProduct: (formData: FormData) => Promise<void>;
   removePoiFromProduct: (formData: FormData) => Promise<void>;
+  batchAddPoisToProduct: (formData: FormData) => Promise<void>;
+  batchRemovePoisFromProduct: (formData: FormData) => Promise<void>;
   createProduct: (formData: FormData) => Promise<void>;
 }
 
@@ -960,6 +968,8 @@ function ProductsTab({
   project,
   addPoiToProduct,
   removePoiFromProduct,
+  batchAddPoisToProduct,
+  batchRemovePoisFromProduct,
   createProduct,
 }: ProductsTabProps) {
   const [expandedProductId, setExpandedProductId] = useState<string | null>(
@@ -1027,6 +1037,67 @@ function ProductsTab({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Handle select all / deselect all for a product using batch operations
+  const handleToggleAll = async (product: ProductWithPois, selectAll: boolean) => {
+    setIsSubmitting(true);
+    setError(null);
+
+    // Get POIs that need to be toggled
+    const poisToToggle = selectAll
+      ? projectPois.filter((pp) => !isPoiSelected(product, pp.pois.id))
+      : projectPois.filter((pp) => isPoiSelected(product, pp.pois.id));
+
+    if (poisToToggle.length === 0) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Optimistic update for all
+    const newOptimistic: Record<string, boolean> = {};
+    for (const pp of poisToToggle) {
+      const key = `${product.id}-${pp.pois.id}`;
+      newOptimistic[key] = selectAll;
+    }
+    setOptimisticUpdates((prev) => ({ ...prev, ...newOptimistic }));
+
+    try {
+      // Single batch operation instead of 84 parallel calls
+      const formData = new FormData();
+      formData.set("productId", product.id);
+      formData.set("poiIds", JSON.stringify(poisToToggle.map((pp) => pp.pois.id)));
+      formData.set("shortId", project.short_id);
+
+      if (selectAll) {
+        await batchAddPoisToProduct(formData);
+      } else {
+        await batchRemovePoisFromProduct(formData);
+      }
+
+      // Clear all optimistic updates on success
+      setOptimisticUpdates((prev) => {
+        const next = { ...prev };
+        for (const pp of poisToToggle) {
+          const key = `${product.id}-${pp.pois.id}`;
+          delete next[key];
+        }
+        return next;
+      });
+    } catch (e) {
+      // Revert all optimistic updates on error
+      setOptimisticUpdates((prev) => {
+        const next = { ...prev };
+        for (const pp of poisToToggle) {
+          const key = `${product.id}-${pp.pois.id}`;
+          delete next[key];
+        }
+        return next;
+      });
+      setError(e instanceof Error ? e.message : "Kunne ikke oppdatere POI-er");
+    }
+
+    setIsSubmitting(false);
   };
 
   const isPoiSelected = (product: ProductWithPois, poiId: string): boolean => {
@@ -1351,6 +1422,32 @@ function ProductsTab({
               {/* Expanded POI List */}
               {isExpanded && (
                 <div className="border-t border-gray-100 p-4 bg-gray-50">
+                  {/* Select All / Deselect All Header */}
+                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                    <span className="text-sm text-gray-600">
+                      {selectedCount} av {totalCount} valgt
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {selectedCount < totalCount && (
+                        <button
+                          onClick={() => handleToggleAll(product, true)}
+                          disabled={isSubmitting}
+                          className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          Velg alle
+                        </button>
+                      )}
+                      {selectedCount > 0 && (
+                        <button
+                          onClick={() => handleToggleAll(product, false)}
+                          disabled={isSubmitting}
+                          className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          Fjern alle
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   <div className="space-y-1">
                     {projectPois
                       .sort((a, b) => a.pois.name.localeCompare(b.pois.name))
