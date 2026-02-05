@@ -485,35 +485,35 @@ CREATE INDEX IF NOT EXISTS idx_project_pois_project_id ON project_pois (project_
 
 ### Functional Requirements
 
-- [ ] Admin kan navigere til `/admin/import`
-- [ ] Admin kan klikke på kartet for å sette senterpunkt
-- [ ] Admin kan velge prosjekt fra dropdown (auto-fyller center)
-- [ ] Kartet viser en sirkel som visualiserer valgt radius
-- [ ] Admin kan justere radius med slider (300m - 2km)
-- [ ] Admin kan velge kategorier via checkboxes
-- [ ] Admin kan velge om transport skal inkluderes
-- [ ] "Søk"-knapp kaller API med `preview=true` og viser resultater
-- [ ] Preview viser antall POI-er per kategori
-- [ ] Preview viser "X nye, Y oppdateres"
+- [x] Admin kan navigere til `/admin/import`
+- [x] Admin kan klikke på kartet for å sette senterpunkt
+- [x] Admin kan velge prosjekt fra dropdown (auto-fyller center)
+- [x] Kartet viser en sirkel som visualiserer valgt radius
+- [x] Admin kan justere radius med slider (300m - 2km)
+- [x] Admin kan velge kategorier via checkboxes
+- [x] Admin kan velge om transport skal inkluderes
+- [x] "Søk"-knapp kaller API med `preview=true` og viser resultater
+- [x] Preview viser antall POI-er per kategori
+- [x] Preview viser "X nye, Y oppdateres"
 - [ ] Map viser markers for discoverede POI-er
-- [ ] "Importer"-knapp lagrer POI-er til Supabase
-- [ ] Success-melding viser "Importerte X nye, oppdaterte Y"
-- [ ] Hvis prosjekt valgt: POI-er kobles til project_pois
+- [x] "Importer"-knapp lagrer POI-er til Supabase
+- [x] Success-melding viser "Importerte X nye, oppdaterte Y"
+- [x] Hvis prosjekt valgt: POI-er kobles til project_pois
 
 ### Non-Functional Requirements
 
-- [ ] Import av 100 POI-er tar < 5 sekunder (target: < 3 sec)
-- [ ] Google Places API-kall har 200ms delay for rate limiting
-- [ ] All input valideres med Zod
-- [ ] Editorial fields bevares ved re-import
-- [ ] Deduplisering basert på external IDs (O(1) lookup)
+- [x] Import av 100 POI-er tar < 5 sekunder (target: < 3 sec)
+- [x] Google Places API-kall har 200ms delay for rate limiting
+- [x] All input valideres med Zod
+- [x] Editorial fields bevares ved re-import
+- [x] Deduplisering basert på external IDs (O(1) lookup)
 
 ### Security Requirements (NEW)
 
-- [ ] Zod validation på alle request inputs
-- [ ] Koordinater validert innenfor Norge bounds
-- [ ] Kategorier validert mot allowlist
-- [ ] API nøkler aldri eksponert til klient
+- [x] Zod validation på alle request inputs
+- [x] Koordinater validert innenfor Norge bounds
+- [x] Kategorier validert mot allowlist
+- [x] API nøkler aldri eksponert til klient
 
 ---
 
