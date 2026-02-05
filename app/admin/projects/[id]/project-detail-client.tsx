@@ -12,6 +12,13 @@ import {
   Tag,
   MapPin,
   Star,
+  ChevronDown,
+  ChevronRight,
+  Compass,
+  FileText,
+  Map,
+  AlertCircle,
+  Check,
 } from "lucide-react";
 import {
   IconPicker,
@@ -24,15 +31,22 @@ import type {
   DbProjectCategory,
   DbCustomer,
 } from "@/lib/supabase/types";
-import type { ProjectWithRelations } from "./page";
+import type { ProjectWithRelations, ProductWithPois } from "./page";
 
 const TABS = [
   { id: "details", label: "Detaljer" },
   { id: "categories", label: "Kategorier" },
   { id: "pois", label: "POI-er" },
+  { id: "products", label: "Produkter" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
+
+const PRODUCT_TYPE_CONFIG = {
+  explorer: { label: "Explorer", icon: Compass, color: "emerald" },
+  report: { label: "Report", icon: FileText, color: "rose" },
+  guide: { label: "Guide", icon: Map, color: "amber" },
+} as const;
 
 interface ProjectDetailClientProps {
   project: ProjectWithRelations;
@@ -46,6 +60,8 @@ interface ProjectDetailClientProps {
   updateProjectPoiCategory: (formData: FormData) => Promise<void>;
   addPoiToProject: (formData: FormData) => Promise<void>;
   removePoiFromProject: (formData: FormData) => Promise<void>;
+  addPoiToProduct: (formData: FormData) => Promise<void>;
+  removePoiFromProduct: (formData: FormData) => Promise<void>;
 }
 
 export function ProjectDetailClient({
@@ -60,6 +76,8 @@ export function ProjectDetailClient({
   updateProjectPoiCategory,
   addPoiToProject,
   removePoiFromProject,
+  addPoiToProduct,
+  removePoiFromProduct,
 }: ProjectDetailClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("details");
 
@@ -125,6 +143,13 @@ export function ProjectDetailClient({
               removePoiFromProject={removePoiFromProject}
             />
           )}
+          {activeTab === "products" && (
+            <ProductsTab
+              project={project}
+              addPoiToProduct={addPoiToProduct}
+              removePoiFromProduct={removePoiFromProduct}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -143,7 +168,6 @@ function DetailsTab({ project, customers, updateProject }: DetailsTabProps) {
   const [customerId, setCustomerId] = useState(project.customer_id || "");
   const [name, setName] = useState(project.name);
   const [urlSlug, setUrlSlug] = useState(project.url_slug);
-  const [productType, setProductType] = useState(project.product_type);
   const [centerLat, setCenterLat] = useState(project.center_lat.toString());
   const [centerLng, setCenterLng] = useState(project.center_lng.toString());
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -162,7 +186,6 @@ function DetailsTab({ project, customers, updateProject }: DetailsTabProps) {
       formData.set("customerId", customerId);
       formData.set("name", name);
       formData.set("urlSlug", urlSlug);
-      formData.set("productType", productType);
       formData.set("centerLat", centerLat);
       formData.set("centerLng", centerLng);
 
@@ -237,21 +260,6 @@ function DetailsTab({ project, customers, updateProject }: DetailsTabProps) {
             className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all font-mono"
             required
           />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-gray-600">
-            Produkttype
-          </label>
-          <select
-            value={productType}
-            onChange={(e) => setProductType(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all"
-          >
-            <option value="explorer">Explorer</option>
-            <option value="report">Report</option>
-            <option value="portrait">Guide</option>
-          </select>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -927,6 +935,302 @@ function PoisTab({
         onConfirm={handleRemovePoi}
         onCancel={() => setRemoveTarget(null)}
       />
+    </div>
+  );
+}
+
+// ============ PRODUCTS TAB ============
+
+interface ProductsTabProps {
+  project: ProjectWithRelations;
+  addPoiToProduct: (formData: FormData) => Promise<void>;
+  removePoiFromProduct: (formData: FormData) => Promise<void>;
+}
+
+function ProductsTab({
+  project,
+  addPoiToProduct,
+  removePoiFromProduct,
+}: ProductsTabProps) {
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(
+    null
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Track optimistic updates for checkboxes
+  const [optimisticUpdates, setOptimisticUpdates] = useState<
+    Record<string, boolean>
+  >({});
+
+  const products = project.products || [];
+  const projectPois = project.project_pois || [];
+
+  const toggleProduct = (productId: string) => {
+    setExpandedProductId((prev) => (prev === productId ? null : productId));
+  };
+
+  const handleTogglePoi = async (
+    product: ProductWithPois,
+    poiId: string,
+    isCurrentlySelected: boolean
+  ) => {
+    const key = `${product.id}-${poiId}`;
+
+    // Optimistic update
+    setOptimisticUpdates((prev) => ({
+      ...prev,
+      [key]: !isCurrentlySelected,
+    }));
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.set("productId", product.id);
+      formData.set("poiId", poiId);
+      formData.set("projectId", project.id);
+
+      if (isCurrentlySelected) {
+        await removePoiFromProduct(formData);
+      } else {
+        await addPoiToProduct(formData);
+      }
+
+      // Clear optimistic update after successful save (server data will take over)
+      setOptimisticUpdates((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } catch (e) {
+      // Revert optimistic update on error
+      setOptimisticUpdates((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      setError(e instanceof Error ? e.message : "Kunne ikke oppdatere");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isPoiSelected = (product: ProductWithPois, poiId: string): boolean => {
+    const key = `${product.id}-${poiId}`;
+    // Check optimistic update first
+    if (key in optimisticUpdates) {
+      return optimisticUpdates[key];
+    }
+    // Otherwise use server data
+    return product.product_pois.some((pp) => pp.poi_id === poiId);
+  };
+
+  const getSelectedCount = (product: ProductWithPois): number => {
+    let count = product.product_pois.length;
+    // Adjust for optimistic updates
+    for (const [key, isSelected] of Object.entries(optimisticUpdates)) {
+      if (key.startsWith(`${product.id}-`)) {
+        const wasSelected = product.product_pois.some(
+          (pp) => key === `${product.id}-${pp.poi_id}`
+        );
+        if (isSelected && !wasSelected) count++;
+        if (!isSelected && wasSelected) count--;
+      }
+    }
+    return count;
+  };
+
+  // Empty state: no products
+  if (products.length === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <Compass className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          Ingen produkter
+        </h3>
+        <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+          Dette prosjektet har ingen produkter ennå. Produkter opprettes
+          automatisk når prosjektet konfigureres.
+        </p>
+      </div>
+    );
+  }
+
+  // Empty state: no POIs in project pool
+  if (projectPois.length === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          Ingen POI-er i prosjektet
+        </h3>
+        <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+          Legg til POI-er i prosjektet først for å kunne velge hvilke som skal
+          vises i hvert produkt.
+        </p>
+        <p className="text-sm text-blue-600">
+          Gå til &quot;POI-er&quot;-fanen for å legge til POI-er.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+
+      <p className="text-sm text-gray-500 mb-4">
+        {products.length} produkt{products.length !== 1 && "er"} &middot;{" "}
+        {projectPois.length} POI-er i prosjektbassenget
+      </p>
+
+      <div className="space-y-3">
+        {products.map((product) => {
+          const config =
+            PRODUCT_TYPE_CONFIG[
+              product.product_type as keyof typeof PRODUCT_TYPE_CONFIG
+            ] || PRODUCT_TYPE_CONFIG.explorer;
+          const IconComponent = config.icon;
+          const isExpanded = expandedProductId === product.id;
+          const selectedCount = getSelectedCount(product);
+          const totalCount = projectPois.length;
+
+          return (
+            <div
+              key={product.id}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+            >
+              {/* Product Header */}
+              <button
+                onClick={() => toggleProduct(product.id)}
+                className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left"
+              >
+                <div className="text-gray-400">
+                  {isExpanded ? (
+                    <ChevronDown className="w-5 h-5" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5" />
+                  )}
+                </div>
+                <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    config.color === "emerald"
+                      ? "bg-emerald-100"
+                      : config.color === "rose"
+                        ? "bg-rose-100"
+                        : "bg-amber-100"
+                  }`}
+                >
+                  <IconComponent
+                    className={`w-5 h-5 ${
+                      config.color === "emerald"
+                        ? "text-emerald-600"
+                        : config.color === "rose"
+                          ? "text-rose-600"
+                          : "text-amber-600"
+                    }`}
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">{config.label}</div>
+                  {product.story_title && (
+                    <div className="text-sm text-gray-500 truncate">
+                      {product.story_title}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {selectedCount === 0 && (
+                    <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Ingen POI-er
+                    </span>
+                  )}
+                  <span className="text-sm text-gray-500">
+                    {selectedCount}/{totalCount} POI-er
+                  </span>
+                </div>
+              </button>
+
+              {/* Expanded POI List */}
+              {isExpanded && (
+                <div className="border-t border-gray-100 p-4 bg-gray-50">
+                  <div className="space-y-1">
+                    {projectPois
+                      .sort((a, b) => a.pois.name.localeCompare(b.pois.name))
+                      .map((pp) => {
+                        const poi = pp.pois;
+                        const selected = isPoiSelected(product, poi.id);
+                        const key = `${product.id}-${poi.id}`;
+                        const isPending = key in optimisticUpdates;
+
+                        return (
+                          <label
+                            key={poi.id}
+                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                              selected
+                                ? "bg-blue-50 hover:bg-blue-100"
+                                : "hover:bg-gray-100"
+                            } ${isPending ? "opacity-70" : ""}`}
+                          >
+                            <div className="relative">
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() =>
+                                  handleTogglePoi(product, poi.id, selected)
+                                }
+                                disabled={isSubmitting && isPending}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                  selected
+                                    ? "bg-blue-500 border-blue-500"
+                                    : "bg-white border-gray-300"
+                                }`}
+                              >
+                                {selected && (
+                                  <Check className="w-3 h-3 text-white" />
+                                )}
+                              </div>
+                              {isPending && (
+                                <Loader2 className="w-3 h-3 text-blue-500 animate-spin absolute -right-1 -top-1" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">
+                                {poi.name}
+                              </div>
+                              {poi.categories && (
+                                <div className="text-xs text-gray-500">
+                                  {poi.categories.name}
+                                </div>
+                              )}
+                            </div>
+                            {poi.google_rating && (
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                {poi.google_rating.toFixed(1)}
+                              </div>
+                            )}
+                          </label>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

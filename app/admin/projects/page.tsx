@@ -68,7 +68,6 @@ async function createProject(formData: FormData) {
     throw new Error("Supabase not configured");
   }
 
-  const id = crypto.randomUUID();
   const customerId = formData.get("customerId") as string;
   const name = formData.get("name") as string;
   const urlSlug = formData.get("urlSlug") as string;
@@ -96,74 +95,33 @@ async function createProject(formData: FormData) {
     throw new Error("URL-slug er allerede i bruk for denne kunden");
   }
 
-  const { error } = await supabase.from("projects").insert({
-    id,
+  // Create project container
+  const containerId = `${customerId}_${urlSlug}`;
+  const { error: containerError } = await supabase.from("projects").insert({
+    id: containerId,
     customer_id: customerId,
     name,
     url_slug: urlSlug,
     center_lat: centerLat,
     center_lng: centerLng,
-    product_type: productType,
   });
 
-  if (error) {
-    throw new Error(`Kunne ikke opprette prosjekt: ${error.message}`);
+  if (containerError) {
+    throw new Error(`Kunne ikke opprette prosjekt: ${containerError.message}`);
   }
 
-  revalidatePath("/admin/projects");
-}
+  // Create first product
+  const productId = crypto.randomUUID();
+  const { error: productError } = await supabase.from("products").insert({
+    id: productId,
+    project_id: containerId,
+    product_type: productType as "explorer" | "report" | "guide",
+  });
 
-async function updateProject(formData: FormData) {
-  "use server";
-
-  const supabase = createServerClient();
-  if (!supabase) {
-    throw new Error("Supabase not configured");
-  }
-
-  const id = formData.get("id") as string;
-  const customerId = formData.get("customerId") as string;
-  const name = formData.get("name") as string;
-  const urlSlug = formData.get("urlSlug") as string;
-  const centerLat = parseFloat(formData.get("centerLat") as string);
-  const centerLng = parseFloat(formData.get("centerLng") as string);
-  const productType = (formData.get("productType") as string) || "explorer";
-
-  if (!id || !customerId || !name || !urlSlug) {
-    throw new Error("Alle felt er påkrevd");
-  }
-
-  if (isNaN(centerLat) || isNaN(centerLng)) {
-    throw new Error("Ugyldige koordinater");
-  }
-
-  // Check if url_slug is unique for this customer (excluding current project)
-  const { data: existing } = await supabase
-    .from("projects")
-    .select("id")
-    .eq("customer_id", customerId)
-    .eq("url_slug", urlSlug)
-    .neq("id", id)
-    .single();
-
-  if (existing) {
-    throw new Error("URL-slug er allerede i bruk for denne kunden");
-  }
-
-  const { error } = await supabase
-    .from("projects")
-    .update({
-      customer_id: customerId,
-      name,
-      url_slug: urlSlug,
-      center_lat: centerLat,
-      center_lng: centerLng,
-      product_type: productType,
-    })
-    .eq("id", id);
-
-  if (error) {
-    throw new Error(`Kunne ikke oppdatere prosjekt: ${error.message}`);
+  if (productError) {
+    // Rollback container
+    await supabase.from("projects").delete().eq("id", containerId);
+    throw new Error(`Kunne ikke opprette produkt: ${productError.message}`);
   }
 
   revalidatePath("/admin/projects");
@@ -173,6 +131,7 @@ async function deleteProject(formData: FormData) {
   "use server";
 
   const id = formData.get("id") as string;
+  const deleteType = formData.get("type") as string || "container";
 
   // Check if this is a JSON project (id starts with "json:")
   if (id.startsWith("json:")) {
@@ -194,64 +153,81 @@ async function deleteProject(formData: FormData) {
     throw new Error("Supabase not configured");
   }
 
-  // Delete related data in order (due to foreign key constraints)
+  if (deleteType === "product") {
+    // Delete single product (CASCADE will handle product_pois, product_categories)
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) {
+      throw new Error(`Kunne ikke slette produkt: ${error.message}`);
+    }
+  } else {
+    // Delete entire container
+    // Due to CASCADE, deleting the project will delete:
+    // - products (CASCADE)
+    // - product_pois (CASCADE from products)
+    // - product_categories (CASCADE from products)
+    // - project_pois (CASCADE)
 
-  // 1. Get theme stories for this project
-  const { data: themeStories } = await supabase
-    .from("theme_stories")
-    .select("id")
-    .eq("project_id", id);
-
-  if (themeStories && themeStories.length > 0) {
-    const themeStoryIds = themeStories.map((ts) => ts.id);
-
-    // 2. Get theme story sections
-    const { data: themeSections } = await supabase
-      .from("theme_story_sections")
+    // But we need to handle legacy tables manually (theme_stories, story_sections)
+    // Get all products for this container
+    const { data: products } = await supabase
+      .from("products")
       .select("id")
-      .in("theme_story_id", themeStoryIds);
+      .eq("project_id", id);
 
-    if (themeSections && themeSections.length > 0) {
-      const themeSectionIds = themeSections.map((s) => s.id);
-      // 3. Delete theme_section_pois
-      await supabase
-        .from("theme_section_pois")
-        .delete()
-        .in("section_id", themeSectionIds);
+    const productIds = (products || []).map((p) => p.id);
+
+    // Delete legacy story data for each product
+    for (const productId of productIds) {
+      // Get theme stories
+      const { data: themeStories } = await supabase
+        .from("theme_stories")
+        .select("id")
+        .eq("project_id", productId);
+
+      if (themeStories && themeStories.length > 0) {
+        const themeStoryIds = themeStories.map((ts) => ts.id);
+
+        const { data: themeSections } = await supabase
+          .from("theme_story_sections")
+          .select("id")
+          .in("theme_story_id", themeStoryIds);
+
+        if (themeSections && themeSections.length > 0) {
+          const themeSectionIds = themeSections.map((s) => s.id);
+          await supabase
+            .from("theme_section_pois")
+            .delete()
+            .in("section_id", themeSectionIds);
+        }
+
+        await supabase
+          .from("theme_story_sections")
+          .delete()
+          .in("theme_story_id", themeStoryIds);
+
+        await supabase.from("theme_stories").delete().eq("project_id", productId);
+      }
+
+      // Delete story sections
+      const { data: sections } = await supabase
+        .from("story_sections")
+        .select("id")
+        .eq("project_id", productId);
+
+      if (sections && sections.length > 0) {
+        const sectionIds = sections.map((s) => s.id);
+        await supabase.from("section_pois").delete().in("section_id", sectionIds);
+      }
+
+      await supabase.from("story_sections").delete().eq("project_id", productId);
     }
 
-    // 4. Delete theme_story_sections
-    await supabase
-      .from("theme_story_sections")
-      .delete()
-      .in("theme_story_id", themeStoryIds);
+    // Finally delete the project container (CASCADE handles the rest)
+    const { error } = await supabase.from("projects").delete().eq("id", id);
 
-    // 5. Delete theme_stories
-    await supabase.from("theme_stories").delete().eq("project_id", id);
-  }
-
-  // 6. Delete section_pois
-  const { data: sections } = await supabase
-    .from("story_sections")
-    .select("id")
-    .eq("project_id", id);
-
-  if (sections && sections.length > 0) {
-    const sectionIds = sections.map((s) => s.id);
-    await supabase.from("section_pois").delete().in("section_id", sectionIds);
-  }
-
-  // 7. Delete story_sections
-  await supabase.from("story_sections").delete().eq("project_id", id);
-
-  // 8. Delete project_pois
-  await supabase.from("project_pois").delete().eq("project_id", id);
-
-  // 9. Finally delete the project
-  const { error } = await supabase.from("projects").delete().eq("id", id);
-
-  if (error) {
-    throw new Error(`Kunne ikke slette prosjekt: ${error.message}`);
+    if (error) {
+      throw new Error(`Kunne ikke slette prosjekt: ${error.message}`);
+    }
   }
 
   revalidatePath("/admin/projects");
@@ -279,10 +255,13 @@ export default async function AdminProjectsPage() {
     );
   }
 
-  // Fetch projects with customer info
-  const { data: projects, error: projectsError } = await supabase
+  // Fetch project containers with products
+  const { data: projectContainers, error: projectsError } = await supabase
     .from("projects")
-    .select("*")
+    .select(`
+      *,
+      products (*)
+    `)
     .order("created_at", { ascending: false });
 
   // Fetch customers for dropdown
@@ -310,44 +289,80 @@ export default async function AdminProjectsPage() {
     customerMap[customer.id] = customer.name;
   }
 
-  // Get Supabase projects (map to common interface)
-  const supabaseProjects = (projects || []).map((project) => ({
-    id: project.id,
-    name: project.name,
-    customer_id: project.customer_id,
-    url_slug: project.url_slug,
-    product_type: project.product_type,
-    center_lat: project.center_lat,
-    center_lng: project.center_lng,
-    customerName: project.customer_id
-      ? customerMap[project.customer_id] || "Ukjent"
-      : "Ingen kunde",
-    source: "supabase" as const,
-  }));
+  // Transform to hierarchy structure
+  const supabaseContainers = (projectContainers || [])
+    .filter((container) => container.customer_id !== null)
+    .map((container) => ({
+      id: container.id,
+      name: container.name,
+      customer_id: container.customer_id!,
+      url_slug: container.url_slug,
+      center_lat: Number(container.center_lat),
+      center_lng: Number(container.center_lng),
+      customerName: customerMap[container.customer_id!] || "Ukjent",
+      source: "supabase" as const,
+      products: ((container.products as Array<{
+        id: string;
+        product_type: string;
+        story_title: string | null;
+      }>) || []).map((p) => ({
+        id: p.id,
+        type: p.product_type as "explorer" | "report" | "guide",
+        title: p.story_title,
+      })),
+    }));
 
-  // Get JSON projects
-  const jsonProjects = getJSONProjects().map((project) => ({
-    id: project.id,
-    name: project.name,
-    customer_id: project.customer,
-    url_slug: project.urlSlug,
-    product_type: project.productType,
-    center_lat: project.centerLat,
-    center_lng: project.centerLng,
-    customerName: project.customer,
-    source: "json" as const,
-    filePath: project.filePath,
-  }));
+  // Get JSON projects and group by base slug
+  const jsonProjects = getJSONProjects();
+  const jsonGrouped = new Map<string, typeof jsonProjects>();
 
-  // Merge and dedupe (Supabase takes priority if same customer/slug)
+  for (const project of jsonProjects) {
+    // Extract base slug (remove -explore, -guide suffix)
+    const baseSlug = project.urlSlug
+      .replace(/-explore$/, "")
+      .replace(/-guide$/, "");
+    const key = `${project.customer}/${baseSlug}`;
+
+    if (!jsonGrouped.has(key)) {
+      jsonGrouped.set(key, []);
+    }
+    jsonGrouped.get(key)!.push(project);
+  }
+
+  // Convert grouped JSON to container format
+  const jsonContainers = Array.from(jsonGrouped.entries()).map(([key, projects]) => {
+    const first = projects[0];
+    const baseSlug = first.urlSlug
+      .replace(/-explore$/, "")
+      .replace(/-guide$/, "");
+
+    return {
+      id: `json:${key}`,
+      name: first.name.replace(/ Explorer$/, "").replace(/ Guide$/, ""),
+      customer_id: first.customer,
+      url_slug: baseSlug,
+      center_lat: first.centerLat,
+      center_lng: first.centerLng,
+      customerName: first.customer,
+      source: "json" as const,
+      products: projects.map((p) => ({
+        id: p.id,
+        type: p.productType as "explorer" | "report" | "guide",
+        title: p.name,
+        filePath: p.filePath,
+      })),
+    };
+  });
+
+  // Merge and dedupe (Supabase takes priority)
   const supabaseKeys = new Set(
-    supabaseProjects.map((p) => `${p.customer_id}/${p.url_slug}`)
+    supabaseContainers.map((p) => `${p.customer_id}/${p.url_slug}`)
   );
-  const uniqueJsonProjects = jsonProjects.filter(
+  const uniqueJsonContainers = jsonContainers.filter(
     (p) => !supabaseKeys.has(`${p.customer_id}/${p.url_slug}`)
   );
 
-  const allProjects = [...supabaseProjects, ...uniqueJsonProjects];
+  const allContainers = [...supabaseContainers, ...uniqueJsonContainers];
 
   return (
     <Suspense
@@ -358,10 +373,9 @@ export default async function AdminProjectsPage() {
       }
     >
       <ProjectsAdminClient
-        projects={allProjects}
+        containers={allContainers}
         customers={customers || []}
         createProject={createProject}
-        updateProject={updateProject}
         deleteProject={deleteProject}
       />
     </Suspense>

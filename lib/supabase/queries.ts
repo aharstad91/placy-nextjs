@@ -3,6 +3,7 @@ import type {
   DbCategory,
   DbPoi,
   DbProject,
+  DbProduct,
   DbThemeStory,
   DbStorySection,
   DbThemeStorySection,
@@ -16,6 +17,9 @@ import type {
   ThemeStorySection,
   StorySection,
   Story,
+  ProjectContainer,
+  ProductInstance,
+  ProductSummary,
 } from "../types";
 import { calculateDistance, calculateBoundingBox } from "../utils/geo";
 
@@ -613,4 +617,298 @@ export async function getCollectionBySlug(
   }
 
   return data;
+}
+
+// ============================================
+// Project Hierarchy Queries (NEW)
+// NOTE: These functions require migration 006_project_hierarchy_ddl.sql to be run.
+// Until then, they return null/empty and data-server.ts handles fallback.
+// ============================================
+
+/**
+ * Check if the new hierarchy tables exist (products table as indicator).
+ * This is a simple check - in production you might want a more robust approach.
+ */
+async function isHierarchyMigrated(): Promise<boolean> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return false;
+  }
+
+  try {
+    // Try to query the products table - if it doesn't exist, this will fail
+    const { error } = await supabase
+      .from("products")
+      .select("id")
+      .limit(1);
+
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Fetch a project container by customer and project slug.
+ * Returns the container with all its products and the full POI pool.
+ *
+ * NOTE: Requires migration 006 to be run. Returns null if migration not applied.
+ */
+export async function getProjectContainerFromSupabase(
+  customerSlug: string,
+  projectSlug: string
+): Promise<ProjectContainer | null> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return null;
+  }
+
+  // Check if migration has been applied
+  const migrated = await isHierarchyMigrated();
+  if (!migrated) {
+    console.warn("Project hierarchy migration not yet applied. Using legacy fallback.");
+    return null;
+  }
+
+  // Verify customer exists
+  const { data: customer, error: custError } = await supabase
+    .from("customers")
+    .select("id")
+    .eq("id", customerSlug)
+    .single();
+
+  if (custError || !customer) {
+    console.error("Customer not found:", customerSlug, custError);
+    return null;
+  }
+
+  // Fetch the project container (new structure has description and version)
+  const { data: project, error: projError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("customer_id", customer.id)
+    .eq("url_slug", projectSlug)
+    .single();
+
+  if (projError || !project) {
+    console.error("Project not found:", projectSlug, projError);
+    return null;
+  }
+
+  // Fetch products for this project
+  const { data: products, error: prodError } = await supabase
+    .from("products")
+    .select("*")
+    .eq("project_id", project.id);
+
+  if (prodError) {
+    console.error("Error fetching products:", prodError);
+  }
+
+  // Fetch project POI pool (new structure has sort_order)
+  const { data: projectPois, error: ppError } = await supabase
+    .from("project_pois")
+    .select(`
+      poi_id,
+      pois (
+        *,
+        categories (*)
+      )
+    `)
+    .eq("project_id", project.id);
+
+  if (ppError) {
+    console.error("Error fetching project POIs:", ppError);
+  }
+
+  // Transform POIs - using type assertion for the joined data
+  const pois: POI[] = (projectPois || []).map((pp: { poi_id: string; pois: unknown }) => {
+    const poi = pp.pois as DbPoi & { categories: DbCategory | null };
+    const globalCategory = poi.categories;
+    const category = globalCategory ? transformCategory(globalCategory) : undefined;
+    return transformPOI(poi, category);
+  });
+
+  // Derive categories from POIs
+  const categoryMap = new Map<string, Category>();
+  for (const poi of pois) {
+    if (poi.category && !categoryMap.has(poi.category.id)) {
+      categoryMap.set(poi.category.id, poi.category);
+    }
+  }
+  const categories = Array.from(categoryMap.values());
+
+  // For each product, fetch its POI and category selections
+  const productInstances: ProductInstance[] = [];
+  for (const product of products || []) {
+    // Type assertion for new product structure
+    const prod = product as DbProduct;
+
+    // Fetch product POIs
+    const { data: productPoisData } = await supabase
+      .from("product_pois")
+      .select("poi_id, sort_order")
+      .eq("product_id", prod.id)
+      .order("sort_order");
+
+    // Fetch product categories
+    const { data: productCatsData } = await supabase
+      .from("product_categories")
+      .select("category_id, display_order")
+      .eq("product_id", prod.id)
+      .order("display_order");
+
+    productInstances.push({
+      id: prod.id,
+      projectId: prod.project_id,
+      productType: prod.product_type,
+      config: (prod.config as Record<string, unknown>) || {},
+      storyTitle: prod.story_title ?? undefined,
+      storyIntroText: prod.story_intro_text ?? undefined,
+      storyHeroImages: prod.story_hero_images ?? undefined,
+      poiIds: (productPoisData || []).map((pp) => pp.poi_id),
+      categoryIds: (productCatsData || []).map((pc) => pc.category_id),
+      version: prod.version,
+      createdAt: prod.created_at,
+      updatedAt: prod.updated_at,
+    });
+  }
+
+  // The new project structure - need to handle that description/version might not exist in old DB
+  const projectAny = project as Record<string, unknown>;
+
+  return {
+    id: project.id,
+    customerId: project.customer_id || customerSlug,
+    name: project.name,
+    urlSlug: project.url_slug,
+    centerCoordinates: {
+      lat: project.center_lat,
+      lng: project.center_lng,
+    },
+    description: (projectAny.description as string | null) ?? undefined,
+    pois,
+    categories,
+    products: productInstances,
+    version: (projectAny.version as number) ?? 1,
+    createdAt: project.created_at,
+    updatedAt: project.updated_at,
+  };
+}
+
+/**
+ * Fetch a specific product by customer, project slug, and product type.
+ * Returns a Project object for backward compatibility with existing pages.
+ *
+ * NOTE: Requires migration 006 to be run. Returns null if migration not applied.
+ */
+export async function getProductFromSupabase(
+  customerSlug: string,
+  projectSlug: string,
+  productType: ProductType
+): Promise<Project | null> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return null;
+  }
+
+  // Get the project container first
+  const container = await getProjectContainerFromSupabase(customerSlug, projectSlug);
+  if (!container) {
+    // Migration not applied or project not found - let caller handle fallback
+    return null;
+  }
+
+  // Find the specific product
+  const product = container.products.find((p) => p.productType === productType);
+  if (!product) {
+    console.error(`Product ${productType} not found for project ${projectSlug}`);
+    return null;
+  }
+
+  // Get POIs for this product (filter from project pool)
+  const productPoiSet = new Set(product.poiIds);
+  const pois = container.pois.filter((poi) => productPoiSet.has(poi.id));
+
+  // Get categories for this product
+  const productCatSet = new Set(product.categoryIds);
+  const categories = container.categories.filter((cat) => productCatSet.has(cat.id));
+
+  // Fetch story data (theme stories and sections are per-product via legacy tables)
+  // For now, we continue using legacy queries until those are also migrated
+  const [themeStories, sections] = await Promise.all([
+    getProjectThemeStories(product.id),
+    getProjectStorySections(product.id),
+  ]);
+
+  const story: Story = {
+    id: `${product.id}-story`,
+    title: product.storyTitle ?? container.name,
+    introText: product.storyIntroText ?? undefined,
+    heroImages: product.storyHeroImages ?? undefined,
+    sections,
+    themeStories,
+  };
+
+  return {
+    id: product.id,
+    name: container.name,
+    customer: customerSlug,
+    urlSlug: container.urlSlug,
+    productType: product.productType,
+    centerCoordinates: container.centerCoordinates,
+    packages: null, // Can be added via product.config later
+    story,
+    pois,
+    categories,
+  };
+}
+
+/**
+ * Get available products for a project (for landing page).
+ *
+ * NOTE: Requires migration 006 to be run. Returns empty array if migration not applied.
+ */
+export async function getProjectProducts(
+  customerSlug: string,
+  projectSlug: string
+): Promise<ProductSummary[]> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return [];
+  }
+
+  // Check if migration has been applied
+  const migrated = await isHierarchyMigrated();
+  if (!migrated) {
+    return [];
+  }
+
+  // First find the project
+  const { data: project, error: projError } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("customer_id", customerSlug)
+    .eq("url_slug", projectSlug)
+    .single();
+
+  if (projError || !project) {
+    return [];
+  }
+
+  // Fetch products with POI counts
+  const { data: products, error: prodError } = await supabase
+    .from("products")
+    .select(`
+      product_type,
+      story_title,
+      product_pois (count)
+    `)
+    .eq("project_id", project.id);
+
+  if (prodError || !products) {
+    return [];
+  }
+
+  return products.map((p) => ({
+    type: p.product_type as ProductType,
+    poiCount: (p.product_pois as unknown as { count: number }[])?.[0]?.count ?? 0,
+    hasStory: !!p.story_title,
+  }));
 }

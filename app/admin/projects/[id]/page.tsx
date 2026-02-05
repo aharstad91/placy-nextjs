@@ -20,7 +20,6 @@ export interface ProjectWithRelations {
   id: string;
   name: string;
   url_slug: string;
-  product_type: string;
   center_lat: number;
   center_lng: number;
   customer_id: string | null;
@@ -39,6 +38,14 @@ export interface ProjectWithRelations {
       categories: DbCategory | null;
     };
   }>;
+  products: Array<ProductWithPois>;
+}
+
+export interface ProductWithPois {
+  id: string;
+  product_type: string;
+  story_title: string | null;
+  product_pois: Array<{ poi_id: string }>;
 }
 
 export default async function ProjectDetailPage({
@@ -66,7 +73,6 @@ export default async function ProjectDetailPage({
       id,
       name,
       url_slug,
-      product_type,
       center_lat,
       center_lng,
       customer_id,
@@ -116,11 +122,24 @@ export default async function ProjectDetailPage({
     project_category_id: null,
   }));
 
+  // Fetch products with their selected POIs
+  const { data: productsData } = await supabase
+    .from("products")
+    .select(`
+      id,
+      product_type,
+      story_title,
+      product_pois (poi_id)
+    `)
+    .eq("project_id", projectId)
+    .order("product_type");
+
   // Combine into the expected structure
   const projectWithRelations = {
     ...project,
     project_categories: projectCategories,
     project_pois: projectPoisWithCategory,
+    products: (productsData || []) as ProductWithPois[],
   };
 
   // Fetch all customers for dropdown
@@ -150,7 +169,6 @@ export default async function ProjectDetailPage({
     const customerId = getOptionalString(formData, "customerId");
     const name = getRequiredString(formData, "name");
     const urlSlug = getRequiredString(formData, "urlSlug");
-    const productType = getRequiredString(formData, "productType");
     const centerLat = getRequiredNumber(formData, "centerLat");
     const centerLng = getRequiredNumber(formData, "centerLng");
 
@@ -163,7 +181,6 @@ export default async function ProjectDetailPage({
         customer_id: customerId,
         name,
         url_slug: urlSlug,
-        product_type: productType,
         center_lat: centerLat,
         center_lng: centerLng,
       })
@@ -324,6 +341,51 @@ export default async function ProjectDetailPage({
     revalidatePath(`/admin/projects/${projectId}`);
   }
 
+  async function addPoiToProduct(formData: FormData) {
+    "use server";
+
+    const productId = getRequiredString(formData, "productId");
+    const poiId = getRequiredString(formData, "poiId");
+    const projectId = getRequiredString(formData, "projectId");
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    const { error } = await supabase.from("product_pois").insert({
+      product_id: productId,
+      poi_id: poiId,
+    });
+
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Denne POI-en er allerede i produktet.");
+      }
+      throw new Error(error.message);
+    }
+
+    revalidatePath(`/admin/projects/${projectId}`);
+  }
+
+  async function removePoiFromProduct(formData: FormData) {
+    "use server";
+
+    const productId = getRequiredString(formData, "productId");
+    const poiId = getRequiredString(formData, "poiId");
+    const projectId = getRequiredString(formData, "projectId");
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    const { error } = await supabase
+      .from("product_pois")
+      .delete()
+      .eq("product_id", productId)
+      .eq("poi_id", poiId);
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${projectId}`);
+  }
+
   return (
     <ProjectDetailClient
       project={projectWithRelations as ProjectWithRelations}
@@ -337,6 +399,8 @@ export default async function ProjectDetailPage({
       updateProjectPoiCategory={updateProjectPoiCategory}
       addPoiToProject={addPoiToProject}
       removePoiFromProject={removePoiFromProject}
+      addPoiToProduct={addPoiToProduct}
+      removePoiFromProduct={removePoiFromProduct}
     />
   );
 }
