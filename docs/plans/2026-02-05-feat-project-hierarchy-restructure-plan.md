@@ -533,12 +533,12 @@ export default async function ProjectLandingPage({ params }) {
 - [ ] Uses Server Actions, not API routes
 
 ### Public Routes
-- [ ] `/{customer}/{project}/` shows landing page with product cards
-- [ ] `/{customer}/{project}/explore` renders Explorer
-- [ ] `/{customer}/{project}/report` renders Report
-- [ ] `/{customer}/{project}/guide` renders Guide
-- [ ] Old URLs redirect with 308 to new structure
-- [ ] Query params preserved through redirects
+- [x] `/{customer}/{project}/` shows landing page with product cards
+- [x] `/{customer}/{project}/explore` renders Explorer
+- [x] `/{customer}/{project}/report` renders Report
+- [x] `/{customer}/{project}/guide` renders Guide
+- [x] Old URLs redirect with 308 to new structure
+- [x] Query params preserved through redirects
 
 ### Data Migration
 - [ ] All existing projects migrated to new structure
