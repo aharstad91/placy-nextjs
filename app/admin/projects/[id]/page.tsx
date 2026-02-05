@@ -386,6 +386,42 @@ export default async function ProjectDetailPage({
     revalidatePath(`/admin/projects/${projectId}`);
   }
 
+  async function createProduct(formData: FormData) {
+    "use server";
+
+    const projectId = getRequiredString(formData, "projectId");
+    const productType = getRequiredString(formData, "productType") as
+      | "explorer"
+      | "report"
+      | "guide";
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    // Check if this product type already exists for the project
+    const { data: existing } = await supabase
+      .from("products")
+      .select("id")
+      .eq("project_id", projectId)
+      .eq("product_type", productType)
+      .single();
+
+    if (existing) {
+      throw new Error(`Et ${productType}-produkt finnes allerede for dette prosjektet.`);
+    }
+
+    const productId = crypto.randomUUID();
+    const { error } = await supabase.from("products").insert({
+      id: productId,
+      project_id: projectId,
+      product_type: productType,
+    });
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath("/admin/projects");
+  }
+
   return (
     <ProjectDetailClient
       project={projectWithRelations as ProjectWithRelations}
@@ -401,6 +437,7 @@ export default async function ProjectDetailPage({
       removePoiFromProject={removePoiFromProject}
       addPoiToProduct={addPoiToProduct}
       removePoiFromProduct={removePoiFromProduct}
+      createProduct={createProduct}
     />
   );
 }

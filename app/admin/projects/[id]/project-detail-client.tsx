@@ -62,6 +62,7 @@ interface ProjectDetailClientProps {
   removePoiFromProject: (formData: FormData) => Promise<void>;
   addPoiToProduct: (formData: FormData) => Promise<void>;
   removePoiFromProduct: (formData: FormData) => Promise<void>;
+  createProduct: (formData: FormData) => Promise<void>;
 }
 
 export function ProjectDetailClient({
@@ -78,6 +79,7 @@ export function ProjectDetailClient({
   removePoiFromProject,
   addPoiToProduct,
   removePoiFromProduct,
+  createProduct,
 }: ProjectDetailClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("details");
 
@@ -148,6 +150,7 @@ export function ProjectDetailClient({
               project={project}
               addPoiToProduct={addPoiToProduct}
               removePoiFromProduct={removePoiFromProduct}
+              createProduct={createProduct}
             />
           )}
         </div>
@@ -945,18 +948,22 @@ interface ProductsTabProps {
   project: ProjectWithRelations;
   addPoiToProduct: (formData: FormData) => Promise<void>;
   removePoiFromProduct: (formData: FormData) => Promise<void>;
+  createProduct: (formData: FormData) => Promise<void>;
 }
 
 function ProductsTab({
   project,
   addPoiToProduct,
   removePoiFromProduct,
+  createProduct,
 }: ProductsTabProps) {
   const [expandedProductId, setExpandedProductId] = useState<string | null>(
     null
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newProductType, setNewProductType] = useState<"explorer" | "report" | "guide">("explorer");
 
   // Track optimistic updates for checkboxes
   const [optimisticUpdates, setOptimisticUpdates] = useState<
@@ -1042,6 +1049,161 @@ function ProductsTab({
     return count;
   };
 
+  // Get existing product types to show which are available
+  const existingProductTypes = new Set(products.map((p) => p.product_type));
+  const availableProductTypes = (["explorer", "report", "guide"] as const).filter(
+    (type) => !existingProductTypes.has(type)
+  );
+
+  const handleCreateProduct = async () => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.set("projectId", project.id);
+      formData.set("productType", newProductType);
+
+      await createProduct(formData);
+      setIsCreateModalOpen(false);
+      setNewProductType("explorer");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Kunne ikke opprette produkt");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Create product modal component (defined early for use in empty states)
+  const CreateProductModal = () => {
+    if (!isCreateModalOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Nytt produkt
+            </h2>
+            <button
+              onClick={() => {
+                setIsCreateModalOpen(false);
+                setError(null);
+              }}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm">
+              {error}
+            </div>
+          )}
+
+          {availableProductTypes.length === 0 ? (
+            <div className="text-center py-6">
+              <Check className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+              <p className="text-gray-600">
+                Alle produkttyper er allerede opprettet for dette prosjektet.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-gray-600">
+                  Produkttype
+                </label>
+                <div className="space-y-2">
+                  {availableProductTypes.map((type) => {
+                    const config = PRODUCT_TYPE_CONFIG[type];
+                    const IconComponent = config.icon;
+                    const isSelected = newProductType === type;
+
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setNewProductType(type)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            config.color === "emerald"
+                              ? "bg-emerald-100"
+                              : config.color === "rose"
+                                ? "bg-rose-100"
+                                : "bg-amber-100"
+                          }`}
+                        >
+                          <IconComponent
+                            className={`w-5 h-5 ${
+                              config.color === "emerald"
+                                ? "text-emerald-600"
+                                : config.color === "rose"
+                                  ? "text-rose-600"
+                                  : "text-amber-600"
+                            }`}
+                          />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-medium text-gray-900">
+                            {config.label}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {type === "explorer" && "Utforsk steder fritt på kartet"}
+                            {type === "report" && "Redaksjonell artikkel med kart"}
+                            {type === "guide" && "Kuratert tur med rekkefølge"}
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <Check className="w-5 h-5 text-blue-500 ml-auto" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCreateModalOpen(false);
+                    setError(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                >
+                  Avbryt
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateProduct}
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Oppretter...
+                    </>
+                  ) : (
+                    "Opprett"
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Empty state: no products
   if (products.length === 0) {
     return (
@@ -1051,9 +1213,16 @@ function ProductsTab({
           Ingen produkter
         </h3>
         <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-          Dette prosjektet har ingen produkter ennå. Produkter opprettes
-          automatisk når prosjektet konfigureres.
+          Dette prosjektet har ingen produkter ennå.
         </p>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all"
+        >
+          <Plus className="w-4 h-4" />
+          Nytt produkt
+        </button>
+        <CreateProductModal />
       </div>
     );
   }
@@ -1079,17 +1248,31 @@ function ProductsTab({
 
   return (
     <div>
-      {error && (
+      {error && !isCreateModalOpen && (
         <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-center gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
         </div>
       )}
 
-      <p className="text-sm text-gray-500 mb-4">
-        {products.length} produkt{products.length !== 1 && "er"} &middot;{" "}
-        {projectPois.length} POI-er i prosjektbassenget
-      </p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-gray-500">
+          {products.length} produkt{products.length !== 1 && "er"} &middot;{" "}
+          {projectPois.length} POI-er i prosjektbassenget
+        </p>
+        {availableProductTypes.length > 0 && (
+          <button
+            onClick={() => {
+              setNewProductType(availableProductTypes[0]);
+              setIsCreateModalOpen(true);
+            }}
+            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 flex items-center gap-2 text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Nytt produkt
+          </button>
+        )}
+      </div>
 
       <div className="space-y-3">
         {products.map((product) => {
@@ -1231,6 +1414,8 @@ function ProductsTab({
           );
         })}
       </div>
+
+      <CreateProductModal />
     </div>
   );
 }
