@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import ReportInteractiveMapSection from "./ReportInteractiveMapSection";
+import ReportAddressInput from "./ReportAddressInput";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   UtensilsCrossed,
@@ -33,14 +34,22 @@ interface ReportThemeSectionProps {
   theme: ReportTheme;
   center: Coordinates;
   explorerBaseUrl?: string | null;
+  projectName?: string;
 }
+
+// Categories that indicate a transport-related theme
+const TRANSPORT_CATEGORIES = new Set(["bus", "train", "bike", "parking", "carshare", "taxi", "airport"]);
 
 export default function ReportThemeSection({
   theme,
   center,
   explorerBaseUrl,
+  projectName,
 }: ReportThemeSectionProps) {
   const Icon = ICON_MAP[theme.icon];
+
+  // Check if this is a transport theme by looking at POI categories
+  const isTransport = theme.allPOIs.some(poi => TRANSPORT_CATEGORIES.has(poi.category.id));
 
   return (
     <section id={theme.id} className="py-10 md:py-14 scroll-mt-20">
@@ -53,6 +62,11 @@ export default function ReportThemeSection({
             {theme.name}
           </h2>
         </div>
+
+        {/* Category quote - generated based on score */}
+        <p className="text-lg md:text-xl text-[#4a4a4a] leading-relaxed mb-4">
+          {theme.quote}
+        </p>
 
         {/* Stats row */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#6a6a6a] mb-6">
@@ -79,11 +93,21 @@ export default function ReportThemeSection({
           )}
         </div>
 
-        {/* Theme intro */}
+        {/* Theme intro - additional context if provided */}
         {theme.intro && (
           <p className="text-base text-[#4a4a4a] leading-relaxed mb-6">
             {theme.intro}
           </p>
+        )}
+
+        {/* Address input for transport theme */}
+        {isTransport && projectName && (
+          <div className="mb-6">
+            <ReportAddressInput
+              propertyCoordinates={[center.lng, center.lat]}
+              propertyName={projectName}
+            />
+          </div>
         )}
       </div>
 

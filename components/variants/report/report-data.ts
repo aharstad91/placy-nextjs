@@ -1,5 +1,10 @@
 import type { Project, POI } from "@/lib/types";
 import { getReportThemes } from "./report-themes";
+import {
+  calculateCategoryScore,
+  generateCategoryQuote,
+  type CategoryScore,
+} from "@/lib/utils/category-score";
 
 export interface ReportHeroMetrics {
   totalPOIs: number;
@@ -15,6 +20,7 @@ export interface ReportThemeStats {
   avgRating: number | null;
   totalReviews: number;
   editorialCount: number;
+  uniqueCategories: number;
 }
 
 export interface ReportTheme {
@@ -27,6 +33,8 @@ export interface ReportTheme {
   listPOIs: POI[];
   allPOIs: POI[];
   richnessScore: number;
+  score: CategoryScore;
+  quote: string;
 }
 
 export interface ReportData {
@@ -120,8 +128,27 @@ export function transformToReportData(project: Project): ReportData {
     );
     const editorialCount = themePOIs.filter((p) => p.editorialHook).length;
 
+    // Count unique categories within theme
+    const uniqueCategories = new Set(themePOIs.map((p) => p.category.id)).size;
+
     const richnessScore =
       themeRated.length * 2 + editorialCount * 3 + themePOIs.length;
+
+    // Calculate category score (proximity uses null for now, will be enhanced client-side)
+    const score = calculateCategoryScore({
+      totalPOIs: themePOIs.length,
+      avgRating: themeAvg,
+      avgWalkTimeMinutes: null, // Enhanced client-side with travel times
+      uniqueCategories,
+    });
+
+    // Generate quote based on score and variety
+    const quote = generateCategoryQuote(
+      themeDef.id,
+      score.total,
+      uniqueCategories,
+      project.id // Use project ID as seed for consistency
+    );
 
     themes.push({
       id: themeDef.id,
@@ -134,11 +161,14 @@ export function transformToReportData(project: Project): ReportData {
         avgRating: themeAvg != null ? Math.round(themeAvg * 10) / 10 : null,
         totalReviews: themeReviews,
         editorialCount,
+        uniqueCategories,
       },
       highlightPOIs,
       listPOIs,
       allPOIs: themePOIs,
       richnessScore,
+      score,
+      quote,
     });
   }
 

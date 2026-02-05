@@ -35,7 +35,7 @@ function getCategoryCentroids(pois: POI[]): CategoryCentroid[] {
   }
 
   const centroids: CategoryCentroid[] = [];
-  for (const { color, lats, lngs } of categoryGroups.values()) {
+  for (const { color, lats, lngs } of Array.from(categoryGroups.values())) {
     centroids.push({
       color,
       lat: lats.reduce((a, b) => a + b, 0) / lats.length,
