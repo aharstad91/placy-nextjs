@@ -71,7 +71,7 @@ const ImportRequestSchema = z.object({
     .max(20),
   includeEntur: z.boolean().default(true),
   includeBysykkel: z.boolean().default(true),
-  projectId: z.string().uuid().optional(),
+  projectId: z.string().min(1).optional(),
   preview: z.boolean().default(false),
 });
 
