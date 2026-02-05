@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Plus,
-  Edit2,
   Trash2,
   X,
   Loader2,
@@ -12,31 +11,60 @@ import {
   ExternalLink,
   Filter,
   BookOpen,
+  Compass,
+  FileText,
+  Map,
+  ChevronRight,
+  Package,
 } from "lucide-react";
 import type { DbCustomer } from "@/lib/supabase/types";
 import { ConfirmDialog } from "@/components/admin";
 
-// Combined type for both Supabase and JSON projects
-interface ProjectWithCustomerName {
+// Product in a container
+interface ProductInfo {
+  id: string;
+  type: "explorer" | "report" | "guide";
+  title: string | null;
+  filePath?: string;
+}
+
+// Container (project) with products
+interface ProjectContainer {
   id: string;
   name: string;
-  customer_id: string | null;
+  customer_id: string;
   url_slug: string;
-  product_type: string;
   center_lat: number;
   center_lng: number;
   customerName: string;
   source: "supabase" | "json";
-  filePath?: string;
+  products: ProductInfo[];
 }
 
 interface ProjectsAdminClientProps {
-  projects: ProjectWithCustomerName[];
+  containers: ProjectContainer[];
   customers: Pick<DbCustomer, "id" | "name">[];
   createProject: (formData: FormData) => Promise<void>;
-  updateProject: (formData: FormData) => Promise<void>; // Kept for API compatibility, not used
   deleteProject: (formData: FormData) => Promise<void>;
 }
+
+const productIcons = {
+  explorer: Compass,
+  report: FileText,
+  guide: Map,
+};
+
+const productLabels = {
+  explorer: "Explorer",
+  report: "Report",
+  guide: "Guide",
+};
+
+const productColors = {
+  explorer: "text-blue-600 bg-blue-50",
+  report: "text-purple-600 bg-purple-50",
+  guide: "text-amber-600 bg-amber-50",
+};
 
 function slugify(text: string): string {
   return text
@@ -49,14 +77,20 @@ function slugify(text: string): string {
 }
 
 export function ProjectsAdminClient({
-  projects,
+  containers,
   customers,
   createProject,
   deleteProject,
 }: ProjectsAdminClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<ProjectWithCustomerName | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    container: ProjectContainer;
+    product?: ProductInfo;
+  } | null>(null);
   const [filterCustomerId, setFilterCustomerId] = useState<string>("");
+  const [expandedContainers, setExpandedContainers] = useState<Set<string>>(
+    new Set()
+  );
 
   // Form state for create modal
   const [customerId, setCustomerId] = useState("");
@@ -69,11 +103,29 @@ export function ProjectsAdminClient({
   const [error, setError] = useState<string | null>(null);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
-  // Filter projects by customer
-  const filteredProjects = useMemo(() => {
-    if (!filterCustomerId) return projects;
-    return projects.filter((p) => p.customer_id === filterCustomerId);
-  }, [projects, filterCustomerId]);
+  // Filter containers by customer
+  const filteredContainers = useMemo(() => {
+    if (!filterCustomerId) return containers;
+    return containers.filter((c) => c.customer_id === filterCustomerId);
+  }, [containers, filterCustomerId]);
+
+  // Count total products
+  const totalProducts = useMemo(
+    () => filteredContainers.reduce((sum, c) => sum + c.products.length, 0),
+    [filteredContainers]
+  );
+
+  const toggleExpanded = (containerId: string) => {
+    setExpandedContainers((prev) => {
+      const next = new Set(prev);
+      if (next.has(containerId)) {
+        next.delete(containerId);
+      } else {
+        next.add(containerId);
+      }
+      return next;
+    });
+  };
 
   const openCreateModal = () => {
     setCustomerId(customers[0]?.id || "");
@@ -159,7 +211,15 @@ export function ProjectsAdminClient({
 
     try {
       const formData = new FormData();
-      formData.set("id", deleteTarget.id);
+      if (deleteTarget.product) {
+        // Delete single product
+        formData.set("id", deleteTarget.product.id);
+        formData.set("type", "product");
+      } else {
+        // Delete entire container
+        formData.set("id", deleteTarget.container.id);
+        formData.set("type", "container");
+      }
       await deleteProject(formData);
       setDeleteTarget(null);
     } catch (e) {
@@ -178,7 +238,9 @@ export function ProjectsAdminClient({
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Prosjekter</h1>
             <p className="text-sm text-gray-500">
-              {filteredProjects.length} prosjekt{filteredProjects.length !== 1 && "er"}
+              {filteredContainers.length} prosjekt
+              {filteredContainers.length !== 1 && "er"}, {totalProducts} produkt
+              {totalProducts !== 1 && "er"}
               {filterCustomerId && " (filtrert)"}
             </p>
           </div>
@@ -223,143 +285,205 @@ export function ProjectsAdminClient({
           </div>
         )}
 
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Navn
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Kunde
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  URL Slug
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Koordinater
-                </th>
-                <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Handlinger
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProjects.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center">
-                    <FolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">
-                      {filterCustomerId
-                        ? "Ingen prosjekter for denne kunden"
-                        : "Ingen prosjekter ennå"}
-                    </p>
-                    {!filterCustomerId && (
-                      <button
-                        onClick={openCreateModal}
-                        className="mt-3 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-                      >
-                        Opprett ditt første prosjekt
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ) : (
-                filteredProjects.map((project) => (
-                  <tr
-                    key={project.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+        {/* Container List */}
+        <div className="space-y-3">
+          {filteredContainers.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 py-12 text-center">
+              <FolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">
+                {filterCustomerId
+                  ? "Ingen prosjekter for denne kunden"
+                  : "Ingen prosjekter ennå"}
+              </p>
+              {!filterCustomerId && (
+                <button
+                  onClick={openCreateModal}
+                  className="mt-3 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                >
+                  Opprett ditt første prosjekt
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredContainers.map((container) => {
+              const isExpanded =
+                expandedContainers.has(container.id) ||
+                container.products.length === 1;
+              const hasMultipleProducts = container.products.length > 1;
+
+              return (
+                <div
+                  key={container.id}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+                >
+                  {/* Container header */}
+                  <div
+                    className={`flex items-center justify-between px-4 py-3 ${
+                      hasMultipleProducts
+                        ? "cursor-pointer hover:bg-gray-50"
+                        : ""
+                    }`}
+                    onClick={
+                      hasMultipleProducts
+                        ? () => toggleExpanded(container.id)
+                        : undefined
+                    }
                   >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                          <FolderOpen className="w-4 h-4 text-blue-500" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {project.name}
-                        </span>
+                    <div className="flex items-center gap-3">
+                      {hasMultipleProducts && (
+                        <ChevronRight
+                          className={`w-4 h-4 text-gray-400 transition-transform ${
+                            isExpanded ? "rotate-90" : ""
+                          }`}
+                        />
+                      )}
+                      <div className="w-9 h-9 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
+                        <Package className="w-4 h-4 text-blue-600" />
                       </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {project.customerName}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
-                          {project.url_slug}
-                        </code>
-                        <Link
-                          href={`/${project.customer_id}/${project.url_slug}`}
-                          target="_blank"
-                          className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
-                          title="Åpne prosjekt"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Link>
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {container.name}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {container.customerName} ·{" "}
+                          <code className="bg-gray-100 px-1 rounded">
+                            {container.url_slug}
+                          </code>
+                        </p>
                       </div>
-                    </td>
-                    <td className="py-3 px-4">
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {/* Product badges */}
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600 capitalize">
-                          {project.product_type || "explorer"}
-                        </span>
-                        {project.source === "json" && (
-                          <span className="text-xs bg-amber-100 px-2 py-1 rounded text-amber-700">
+                        {container.products.map((product) => {
+                          const Icon = productIcons[product.type];
+                          return (
+                            <span
+                              key={product.id}
+                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                                productColors[product.type]
+                              }`}
+                              title={productLabels[product.type]}
+                            >
+                              <Icon className="w-3 h-3" />
+                              {productLabels[product.type]}
+                            </span>
+                          );
+                        })}
+                        {container.source === "json" && (
+                          <span className="text-xs bg-amber-100 px-2 py-1 rounded-md text-amber-700 font-medium">
                             JSON
                           </span>
                         )}
                       </div>
-                    </td>
-                    <td className="py-3 px-4 text-xs font-mono text-gray-500">
-                      {project.center_lat.toFixed(4)}, {project.center_lng.toFixed(4)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-end gap-1">
-                        {project.source === "supabase" && (
-                          <Link
-                            href={`/admin/projects/${project.id}/story`}
-                            className="p-2 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            title="Story Editor"
-                          >
-                            <BookOpen className="w-4 h-4" />
-                          </Link>
-                        )}
-                        {project.source === "supabase" && (
-                          <Link
-                            href={`/admin/projects/${project.id}`}
-                            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Rediger"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Link>
-                        )}
-                        {project.source === "json" && (
-                          <span className="text-xs text-gray-400 px-2 truncate max-w-[200px]">
-                            {project.filePath}
-                          </span>
-                        )}
+
+                      {/* External link */}
+                      <Link
+                        href={`/${container.customer_id}/${container.url_slug}`}
+                        target="_blank"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Åpne prosjekt"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Link>
+
+                      {/* Delete container */}
+                      {container.source === "supabase" && (
                         <button
-                          onClick={() => setDeleteTarget(project)}
-                          className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Slett"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget({ container });
+                          }}
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Slett prosjekt"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Expanded products */}
+                  {isExpanded && container.products.length > 0 && (
+                    <div className="border-t border-gray-100 bg-gray-50/50">
+                      {container.products.map((product, idx) => {
+                        const Icon = productIcons[product.type];
+                        const productPath =
+                          product.type === "explorer"
+                            ? "explore"
+                            : product.type;
+
+                        return (
+                          <div
+                            key={product.id}
+                            className={`flex items-center justify-between px-4 py-2.5 ${
+                              idx > 0 ? "border-t border-gray-100" : ""
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 pl-7">
+                              <div
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                                  productColors[product.type]
+                                }`}
+                              >
+                                <Icon className="w-3.5 h-3.5" />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-gray-700">
+                                  {productLabels[product.type]}
+                                </span>
+                                {product.title && (
+                                  <p className="text-xs text-gray-400 truncate max-w-[300px]">
+                                    {product.title}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              {/* Story Editor link */}
+                              {container.source === "supabase" && (
+                                <Link
+                                  href={`/admin/projects/${product.id}/story`}
+                                  className="p-2 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                  title="Story Editor"
+                                >
+                                  <BookOpen className="w-4 h-4" />
+                                </Link>
+                              )}
+
+                              {/* Open product */}
+                              <Link
+                                href={`/${container.customer_id}/${container.url_slug}/${productPath}`}
+                                target="_blank"
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                title={`Åpne ${productLabels[product.type]}`}
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </Link>
+
+                              {/* JSON file path */}
+                              {product.filePath && (
+                                <span className="text-xs text-gray-400 px-2 truncate max-w-[180px]">
+                                  {product.filePath}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
-      {/* Create/Edit Modal */}
+      {/* Create Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
@@ -409,7 +533,7 @@ export function ProjectsAdminClient({
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all"
-                  placeholder="F.eks. Ferjemannsveien 10"
+                  placeholder="F.eks. Quality Hotel Augustin"
                 />
               </div>
 
@@ -422,16 +546,16 @@ export function ProjectsAdminClient({
                   value={urlSlug}
                   onChange={(e) => handleSlugChange(e.target.value)}
                   className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all font-mono"
-                  placeholder="ferjemannsveien-10"
+                  placeholder="quality-hotel-augustin"
                 />
                 <p className="text-xs text-gray-400">
-                  Brukes i URL: /{customerId || "kunde"}/{urlSlug || "prosjekt"}
+                  URL: /{customerId || "kunde"}/{urlSlug || "prosjekt"}
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium text-gray-600">
-                  Produkttype
+                  Første produkt
                 </label>
                 <select
                   value={productType}
@@ -440,8 +564,11 @@ export function ProjectsAdminClient({
                 >
                   <option value="explorer">Explorer</option>
                   <option value="report">Report</option>
-                  <option value="portrait">Guide</option>
+                  <option value="guide">Guide</option>
                 </select>
+                <p className="text-xs text-gray-400">
+                  Du kan legge til flere produkter senere
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -502,13 +629,17 @@ export function ProjectsAdminClient({
       {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Slett prosjekt"
-        message={
-          deleteTarget?.source === "json"
-            ? `Er du sikker på at du vil slette JSON-filen "${deleteTarget?.filePath}"? Denne handlingen kan ikke angres.`
-            : `Er du sikker på at du vil slette prosjektet "${deleteTarget?.name}"? Dette vil også slette alle tilknyttede stories, seksjoner og POI-koblinger.`
+        title={
+          deleteTarget?.product ? "Slett produkt" : "Slett prosjekt"
         }
-        confirmLabel={deleteTarget?.source === "json" ? "Slett fil" : "Slett alt"}
+        message={
+          deleteTarget?.product
+            ? `Er du sikker på at du vil slette ${
+                productLabels[deleteTarget.product.type]
+              } fra "${deleteTarget.container.name}"?`
+            : `Er du sikker på at du vil slette prosjektet "${deleteTarget?.container.name}" og alle tilhørende produkter?`
+        }
+        confirmLabel="Slett"
         variant="danger"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
