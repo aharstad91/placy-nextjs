@@ -35,25 +35,26 @@ export default function ReportHighlightCard({
     : null;
 
   const CardWrapper = onClick
-    ? ({ children, className }: { children: React.ReactNode; className: string }) => (
+    ? ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
         <div
           role="button"
           tabIndex={0}
           onClick={onClick}
           onKeyDown={(e) => e.key === "Enter" && onClick()}
           className={className}
+          style={style}
         >
           {children}
         </div>
       )
     : explorerUrl
-      ? ({ children, className }: { children: React.ReactNode; className: string }) => (
-          <Link href={explorerUrl} className={className}>
+      ? ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
+          <Link href={explorerUrl} className={className} style={style}>
             {children}
           </Link>
         )
-      : ({ children, className }: { children: React.ReactNode; className: string }) => (
-          <a href={poi.googleMapsUrl ?? "#"} target="_blank" rel="noopener noreferrer" className={className}>
+      : ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
+          <a href={poi.googleMapsUrl ?? "#"} target="_blank" rel="noopener noreferrer" className={className} style={style}>
             {children}
           </a>
         );
@@ -65,7 +66,7 @@ export default function ReportHighlightCard({
           ? "shadow-md ring-2"
           : "border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm"
       }`}
-      style={isActive ? { ringColor: poi.category.color } as React.CSSProperties : undefined}
+      style={isActive ? { "--tw-ring-color": poi.category.color } as React.CSSProperties : undefined}
     >
       {/* Category tag */}
       <span
