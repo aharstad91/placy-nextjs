@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -11,6 +12,31 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -166,34 +192,122 @@ export type Database = {
           },
         ]
       }
-      project_categories: {
+      product_categories: {
         Row: {
-          id: string
-          project_id: string
-          name: string
-          icon: string
-          color: string
-          created_at: string | null
+          category_id: string
+          display_order: number | null
+          product_id: string
         }
         Insert: {
-          id?: string
-          project_id: string
-          name: string
-          icon?: string
-          color?: string
-          created_at?: string | null
+          category_id: string
+          display_order?: number | null
+          product_id: string
         }
         Update: {
-          id?: string
-          project_id?: string
-          name?: string
-          icon?: string
-          color?: string
-          created_at?: string | null
+          category_id?: string
+          display_order?: number | null
+          product_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "project_categories_project_id_fkey"
+            foreignKeyName: "product_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_categories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_pois: {
+        Row: {
+          category_override_id: string | null
+          poi_id: string
+          product_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          category_override_id?: string | null
+          poi_id: string
+          product_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          category_override_id?: string | null
+          poi_id?: string
+          product_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_pois_category_override_id_fkey"
+            columns: ["category_override_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_pois_poi_id_fkey"
+            columns: ["poi_id"]
+            isOneToOne: false
+            referencedRelation: "pois"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_pois_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          product_type: string
+          project_id: string
+          story_hero_images: string[] | null
+          story_intro_text: string | null
+          story_title: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          product_type: string
+          project_id: string
+          story_hero_images?: string[] | null
+          story_intro_text?: string | null
+          story_title?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          product_type?: string
+          project_id?: string
+          story_hero_images?: string[] | null
+          story_intro_text?: string | null
+          story_title?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -205,17 +319,47 @@ export type Database = {
         Row: {
           poi_id: string
           project_id: string
-          project_category_id: string | null
+          sort_order: number | null
         }
         Insert: {
           poi_id: string
           project_id: string
-          project_category_id?: string | null
+          sort_order?: number | null
         }
         Update: {
           poi_id?: string
           project_id?: string
-          project_category_id?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_pois_poi_id_fkey1"
+            columns: ["poi_id"]
+            isOneToOne: false
+            referencedRelation: "pois"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_pois_project_id_fkey1"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_pois_legacy: {
+        Row: {
+          poi_id: string
+          project_id: string
+        }
+        Insert: {
+          poi_id: string
+          project_id: string
+        }
+        Update: {
+          poi_id?: string
+          project_id?: string
         }
         Relationships: [
           {
@@ -226,22 +370,62 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "project_pois_project_category_id_fkey"
-            columns: ["project_category_id"]
-            isOneToOne: false
-            referencedRelation: "project_categories"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "project_pois_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "projects"
+            referencedRelation: "projects_legacy"
             referencedColumns: ["id"]
           },
         ]
       }
       projects: {
+        Row: {
+          center_lat: number
+          center_lng: number
+          created_at: string
+          customer_id: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          url_slug: string
+          version: number
+        }
+        Insert: {
+          center_lat: number
+          center_lng: number
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          id: string
+          name: string
+          updated_at?: string
+          url_slug: string
+          version?: number
+        }
+        Update: {
+          center_lat?: number
+          center_lng?: number
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          url_slug?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_customer_id_fkey1"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects_legacy: {
         Row: {
           center_lat: number
           center_lng: number
@@ -301,7 +485,7 @@ export type Database = {
             foreignKeyName: "fk_projects_parent"
             columns: ["parent_project_id"]
             isOneToOne: false
-            referencedRelation: "projects"
+            referencedRelation: "projects_legacy"
             referencedColumns: ["id"]
           },
           {
@@ -391,7 +575,7 @@ export type Database = {
             foreignKeyName: "story_sections_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "projects"
+            referencedRelation: "projects_legacy"
             referencedColumns: ["id"]
           },
           {
@@ -472,7 +656,7 @@ export type Database = {
             foreignKeyName: "theme_stories_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "projects"
+            referencedRelation: "projects_legacy"
             referencedColumns: ["id"]
           },
         ]
@@ -649,6 +833,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
