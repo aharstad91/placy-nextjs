@@ -5,9 +5,14 @@
  * WARNING: Do not import this file in client components - it uses Node.js fs module
  */
 
-import type { Project } from "./types";
+import type { Project, ProjectContainer, ProductType, ProductSummary } from "./types";
 import { isSupabaseConfigured } from "./supabase/client";
-import { getProjectFromSupabase } from "./supabase/queries";
+import {
+  getProjectFromSupabase,
+  getProjectContainerFromSupabase,
+  getProductFromSupabase,
+  getProjectProducts as getProjectProductsFromSupabase,
+} from "./supabase/queries";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -157,4 +162,178 @@ export async function getGuidesByCustomer(customer: string): Promise<Project[]> 
     console.error(`Failed to get guides for customer ${customer}:`, error);
     return guides;
   }
+}
+
+// ============================================
+// New Hierarchy Functions
+// ============================================
+
+/**
+ * Load a project container with all its products.
+ * SERVER ONLY - do not import in client components
+ */
+export async function getProjectContainerAsync(
+  customer: string,
+  projectSlug: string
+): Promise<ProjectContainer | null> {
+  if (isSupabaseConfigured()) {
+    return getProjectContainerFromSupabase(customer, projectSlug);
+  }
+
+  // JSON fallback: simulate container from old project files
+  const baseSlug = getBaseSlug(projectSlug);
+  const [report, explore, guide] = await Promise.all([
+    getProjectFromJSON(customer, baseSlug),
+    getProjectFromJSON(customer, `${baseSlug}-explore`),
+    getProjectFromJSON(customer, `${baseSlug}-guide`),
+  ]);
+
+  const firstProject = report || explore || guide;
+  if (!firstProject) {
+    return null;
+  }
+
+  // Collect all POIs from all products (merge duplicates)
+  const poiMap = new Map();
+  const categoryMap = new Map();
+
+  [report, explore, guide].forEach((proj) => {
+    if (!proj) return;
+    proj.pois.forEach((poi) => poiMap.set(poi.id, poi));
+    proj.categories.forEach((cat) => categoryMap.set(cat.id, cat));
+  });
+
+  return {
+    id: `${customer}_${baseSlug}`,
+    customerId: customer,
+    name: firstProject.name.replace(/ (Explorer|Guide)$/, ""),
+    urlSlug: baseSlug,
+    centerCoordinates: firstProject.centerCoordinates,
+    description: undefined,
+    pois: Array.from(poiMap.values()),
+    categories: Array.from(categoryMap.values()),
+    products: [report, explore, guide]
+      .filter((p): p is Project => p !== null)
+      .map((p) => ({
+        id: p.id,
+        projectId: `${customer}_${baseSlug}`,
+        productType: p.productType,
+        config: {},
+        storyTitle: p.story.title,
+        storyIntroText: p.story.introText,
+        storyHeroImages: p.story.heroImages,
+        poiIds: p.pois.map((poi) => poi.id),
+        categoryIds: p.categories.map((cat) => cat.id),
+        version: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })),
+    version: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Load a specific product from a project container.
+ * SERVER ONLY - do not import in client components
+ */
+export async function getProductAsync(
+  customer: string,
+  projectSlug: string,
+  productType: ProductType
+): Promise<Project | null> {
+  if (isSupabaseConfigured()) {
+    return getProductFromSupabase(customer, projectSlug, productType);
+  }
+
+  // JSON fallback: derive slug from product type
+  const baseSlug = getBaseSlug(projectSlug);
+  let slug: string;
+  switch (productType) {
+    case "explorer":
+      slug = `${baseSlug}-explore`;
+      break;
+    case "guide":
+      slug = `${baseSlug}-guide`;
+      break;
+    case "report":
+    default:
+      slug = baseSlug;
+      break;
+  }
+
+  return getProjectFromJSON(customer, slug);
+}
+
+/**
+ * Get available products for a project (for landing page).
+ * SERVER ONLY - do not import in client components
+ */
+export async function getProjectProducts(
+  customer: string,
+  projectSlug: string
+): Promise<ProductSummary[]> {
+  if (isSupabaseConfigured()) {
+    return getProjectProductsFromSupabase(customer, projectSlug);
+  }
+
+  // JSON fallback
+  const baseSlug = getBaseSlug(projectSlug);
+  const [report, explore, guide] = await Promise.all([
+    getProjectFromJSON(customer, baseSlug),
+    getProjectFromJSON(customer, `${baseSlug}-explore`),
+    getProjectFromJSON(customer, `${baseSlug}-guide`),
+  ]);
+
+  const products: ProductSummary[] = [];
+
+  if (report) {
+    products.push({
+      type: "report",
+      poiCount: report.pois.length,
+      hasStory: !!report.story.title,
+    });
+  }
+  if (explore) {
+    products.push({
+      type: "explorer",
+      poiCount: explore.pois.length,
+      hasStory: !!explore.story.title,
+    });
+  }
+  if (guide) {
+    products.push({
+      type: "guide",
+      poiCount: guide.pois.length,
+      hasStory: !!guide.story.title,
+    });
+  }
+
+  return products;
+}
+
+/**
+ * Check if a project container exists (new hierarchy).
+ * SERVER ONLY
+ */
+export async function projectContainerExists(
+  customer: string,
+  projectSlug: string
+): Promise<boolean> {
+  const container = await getProjectContainerAsync(customer, projectSlug);
+  return container !== null;
+}
+
+/**
+ * Check if a specific product exists within a project container.
+ * SERVER ONLY
+ */
+export async function productExists(
+  customer: string,
+  projectSlug: string,
+  productType: ProductType
+): Promise<boolean> {
+  const products = await getProjectProducts(customer, projectSlug);
+  return products.some((p) => p.type === productType);
 }

@@ -222,6 +222,124 @@ export type Database = {
           }
         ];
       };
+      // NEW HIERARCHY TABLES (available after migration 006)
+      products: {
+        Row: {
+          id: string;
+          project_id: string;
+          product_type: "explorer" | "report" | "guide";
+          config: Record<string, unknown>;
+          story_title: string | null;
+          story_intro_text: string | null;
+          story_hero_images: string[] | null;
+          version: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          product_type: "explorer" | "report" | "guide";
+          config?: Record<string, unknown>;
+          story_title?: string | null;
+          story_intro_text?: string | null;
+          story_hero_images?: string[] | null;
+          version?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          product_type?: "explorer" | "report" | "guide";
+          config?: Record<string, unknown>;
+          story_title?: string | null;
+          story_intro_text?: string | null;
+          story_hero_images?: string[] | null;
+          version?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "products_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      product_pois: {
+        Row: {
+          product_id: string;
+          poi_id: string;
+          category_override_id: string | null;
+          sort_order: number;
+        };
+        Insert: {
+          product_id: string;
+          poi_id: string;
+          category_override_id?: string | null;
+          sort_order?: number;
+        };
+        Update: {
+          product_id?: string;
+          poi_id?: string;
+          category_override_id?: string | null;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_pois_product_id_fkey";
+            columns: ["product_id"];
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_pois_poi_id_fkey";
+            columns: ["poi_id"];
+            referencedRelation: "pois";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_pois_category_override_id_fkey";
+            columns: ["category_override_id"];
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      product_categories: {
+        Row: {
+          product_id: string;
+          category_id: string;
+          display_order: number;
+        };
+        Insert: {
+          product_id: string;
+          category_id: string;
+          display_order?: number;
+        };
+        Update: {
+          product_id?: string;
+          category_id?: string;
+          display_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_product_id_fkey";
+            columns: ["product_id"];
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_categories_category_id_fkey";
+            columns: ["category_id"];
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       project_pois: {
         Row: {
           project_id: string;
@@ -516,6 +634,12 @@ export type DbThemeStorySection = Tables<"theme_story_sections">;
 export type DbThemeSectionPoi = Tables<"theme_section_pois">;
 export type DbCollection = Tables<"collections">;
 export type DbProjectCategory = Tables<"project_categories">;
+export type DbProduct = Tables<"products">;
+export type DbProductPoi = Tables<"product_pois">;
+export type DbProductCategory = Tables<"product_categories">;
+
+// Product type enum
+export type ProductType = "explorer" | "report" | "guide";
 
 // Resolved POI type for frontend use (category resolution done)
 export interface ResolvedPoi {

@@ -1,6 +1,3 @@
-(node:87451) ExperimentalWarning: CommonJS module /opt/homebrew/lib/node_modules/npm/node_modules/debug/src/node.js is loading ES Module /opt/homebrew/lib/node_modules/npm/node_modules/supports-color/index.js using require().
-Support for loading ES Module in require() is an experimental feature and might change at any time
-(Use `node --trace-warnings ...` to show where the warning was created)
 export type Json =
   | string
   | number
@@ -656,5 +653,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-A new version of Supabase CLI is available: v2.75.0 (currently installed v2.33.9)
-We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

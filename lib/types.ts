@@ -6,7 +6,7 @@
 export type TravelMode = "walk" | "bike" | "car";
 export type TimeBudget = 5 | 10 | 15 | 20 | 30;
 export type StoryPriority = "must_have" | "nice_to_have" | "filler";
-export type ProductType = "explorer" | "report" | "portrait" | "guide";
+export type ProductType = "explorer" | "report" | "guide";
 
 export interface Coordinates {
   lat: number;
@@ -137,8 +137,65 @@ export interface CategoryPackage {
 
 export type OriginMode = "geolocation" | "fixed" | "geolocation-with-fallback";
 
-// === Project ===
+// === Project Container (NEW: Hierarchy) ===
 
+/**
+ * Project container - groups related products for a single location/concept.
+ * POIs are shared at this level, then selected per product.
+ */
+export interface ProjectContainer {
+  id: string;
+  customerId: string;
+  name: string;
+  urlSlug: string;
+  centerCoordinates: Coordinates;
+  description?: string;
+  /** All POIs available to products under this project */
+  pois: POI[];
+  /** All categories used by POIs in this project */
+  categories: Category[];
+  /** Products under this project container */
+  products: ProductInstance[];
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Product instance - a specific product type (Explorer/Report/Guide) under a project.
+ */
+export interface ProductInstance {
+  id: string;
+  projectId: string;
+  productType: ProductType;
+  config: Record<string, unknown>;
+  storyTitle?: string;
+  storyIntroText?: string;
+  storyHeroImages?: string[];
+  /** POI IDs this product uses (subset of project's POI pool) */
+  poiIds: string[];
+  /** Category IDs this product shows */
+  categoryIds: string[];
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Summary of a product for display (e.g., in landing page cards)
+ */
+export interface ProductSummary {
+  type: ProductType;
+  poiCount: number;
+  hasStory: boolean;
+}
+
+// === Project (LEGACY - for backward compatibility) ===
+
+/**
+ * @deprecated Use ProjectContainer and ProductInstance instead.
+ * This type is kept for backward compatibility during migration.
+ */
 export interface Project {
   id: string;
   name: string;
