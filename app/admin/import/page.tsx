@@ -1,22 +1,21 @@
 import { redirect } from "next/navigation";
-import { Upload } from "lucide-react";
+import { createServerClient } from "@/lib/supabase/client";
+import ImportClient from "./import-client";
 
-const adminEnabled = process.env.ADMIN_ENABLED === "true";
-
-export default function ImportPage() {
-  if (!adminEnabled) {
+export default async function ImportPage() {
+  if (process.env.ADMIN_ENABLED !== "true") {
     redirect("/");
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-          <Upload className="w-8 h-8 text-gray-400" />
-        </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Import</h1>
-        <p className="text-gray-500">Kommer snart</p>
-      </div>
-    </div>
-  );
+  const supabase = createServerClient();
+
+  // Fetch projects with customer names for the dropdown
+  const { data: projects } = supabase
+    ? await supabase
+        .from("projects")
+        .select("id, name, center_lat, center_lng, customers(name)")
+        .order("updated_at", { ascending: false })
+    : { data: [] };
+
+  return <ImportClient projects={projects || []} />;
 }
