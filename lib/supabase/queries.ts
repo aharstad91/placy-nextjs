@@ -828,8 +828,18 @@ export async function getProductFromSupabase(
   const pois = container.pois.filter((poi) => productPoiSet.has(poi.id));
 
   // Get categories for this product
-  const productCatSet = new Set(product.categoryIds);
-  const categories = container.categories.filter((cat) => productCatSet.has(cat.id));
+  // If product_categories is populated, use it; otherwise derive from selected POIs
+  let categories: typeof container.categories;
+  if (product.categoryIds.length > 0) {
+    const productCatSet = new Set(product.categoryIds);
+    categories = container.categories.filter((cat) => productCatSet.has(cat.id));
+  } else {
+    // Derive categories from the POIs selected for this product
+    const poiCategoryIds = new Set(
+      pois.map((poi) => poi.category?.id).filter((id): id is string => !!id)
+    );
+    categories = container.categories.filter((cat) => poiCategoryIds.has(cat.id));
+  }
 
   // Fetch story data (theme stories and sections are per-product via legacy tables)
   // For now, we continue using legacy queries until those are also migrated
