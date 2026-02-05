@@ -523,11 +523,11 @@ export default async function ProjectLandingPage({ params }) {
 - [ ] Row count verification passes (after migration)
 
 ### Admin UI
-- [ ] Projects list shows unique containers with product badges (post-migration)
-- [ ] Can create new project container (post-migration)
-- [ ] Can add/remove products from project (post-migration)
-- [ ] Can select POIs per product from project pool (post-migration)
-- [ ] Can select categories per product (post-migration)
+- [x] Projects list shows unique containers with product badges
+- [x] Can create new project container
+- [ ] Can add/remove products from project (future enhancement)
+- [ ] Can select POIs per product from project pool (future enhancement)
+- [ ] Can select categories per product (future enhancement)
 - [x] Delete project cascades to all products (via ON DELETE CASCADE)
 - [x] Delete product preserves project and other products (via FK design)
 - [x] Uses Server Actions, not API routes (existing pattern)
