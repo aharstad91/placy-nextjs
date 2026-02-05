@@ -10,6 +10,7 @@ import {
   MapPin,
   Tag,
   Sparkles,
+  Upload,
   Menu,
   X,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const NAV_ITEMS: NavLink[] = [
   { href: "/admin/pois", label: "POI-er", icon: MapPin },
   { href: "/admin/categories", label: "Kategorier", icon: Tag },
   { href: "/admin/generate", label: "Generator", icon: Sparkles },
+  { href: "/admin/import", label: "Import", icon: Upload },
 ];
 
 interface AdminSidebarProps {

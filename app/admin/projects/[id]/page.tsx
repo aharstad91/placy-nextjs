@@ -18,6 +18,7 @@ const adminEnabled = process.env.ADMIN_ENABLED === "true";
 // Types for nested query results
 export interface ProjectWithRelations {
   id: string;
+  short_id: string;
   name: string;
   url_slug: string;
   center_lat: number;
@@ -57,20 +58,28 @@ export default async function ProjectDetailPage({
     redirect("/");
   }
 
-  const { id: projectId } = await params;
+  // URL param is the short_id (7-character nanoid)
+  const { id: shortId } = await params;
 
   const supabase = createServerClient();
   if (!supabase) {
     redirect("/");
   }
 
-  // Fetch project with nested relations
-  // Split query to handle case where project_categories table doesn't exist yet
-  const { data: project, error: projectError } = await supabase
+  // Fetch project by short_id with nested relations
+  // NOTE: short_id column added in migration 008_add_project_short_id.sql
+  // Before migration, fall back to looking up by id
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let project: any = null;
+  let projectError: Error | null = null;
+
+  // First try by short_id (new format)
+  const { data: projectByShortId, error: shortIdError } = await supabase
     .from("projects")
     .select(
       `
       id,
+      short_id,
       name,
       url_slug,
       center_lat,
@@ -79,12 +88,43 @@ export default async function ProjectDetailPage({
       customers (id, name)
     `
     )
-    .eq("id", projectId)
+    .eq("short_id", shortId)
     .single();
+
+  if (projectByShortId) {
+    project = projectByShortId;
+  } else {
+    // Fall back to lookup by full id (backward compatibility)
+    const { data: projectById, error: idError } = await supabase
+      .from("projects")
+      .select(
+        `
+        id,
+        name,
+        url_slug,
+        center_lat,
+        center_lng,
+        customer_id,
+        customers (id, name)
+      `
+      )
+      .eq("id", shortId)
+      .single();
+
+    if (projectById) {
+      // Add a temporary short_id for backward compatibility
+      project = { ...projectById, short_id: shortId };
+    } else {
+      projectError = shortIdError || idError;
+    }
+  }
 
   if (projectError || !project) {
     notFound();
   }
+
+  // Use the full project.id for subsequent queries
+  const projectId = project.id;
 
   // Try to fetch project_categories (may not exist if migration not run)
   let projectCategories: DbProjectCategory[] = [];
@@ -98,7 +138,7 @@ export default async function ProjectDetailPage({
 
   // Fetch project_pois with nested data
   // Note: project_category_id only exists after migration 005 is applied
-  const { data: projectPoisData, error: poisError } = await supabase
+  const { data: projectPoisData } = await supabase
     .from("project_pois")
     .select(
       `
@@ -166,6 +206,7 @@ export default async function ProjectDetailPage({
     "use server";
 
     const id = getRequiredString(formData, "id");
+    const shortId = getRequiredString(formData, "shortId");
     const customerId = getOptionalString(formData, "customerId");
     const name = getRequiredString(formData, "name");
     const urlSlug = getRequiredString(formData, "urlSlug");
@@ -187,7 +228,7 @@ export default async function ProjectDetailPage({
       .eq("id", id);
 
     if (error) throw new Error(error.message);
-    revalidatePath(`/admin/projects/${id}`);
+    revalidatePath(`/admin/projects/${shortId}`);
     revalidatePath("/admin/projects");
   }
 
@@ -195,6 +236,7 @@ export default async function ProjectDetailPage({
     "use server";
 
     const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
     const name = getRequiredString(formData, "name");
     const icon = getRequiredString(formData, "icon");
     const color = getRequiredString(formData, "color");
@@ -218,14 +260,14 @@ export default async function ProjectDetailPage({
       throw new Error(error.message);
     }
 
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${shortId}`);
   }
 
   async function updateProjectCategory(formData: FormData) {
     "use server";
 
     const id = getRequiredString(formData, "id");
-    const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
     const name = getRequiredString(formData, "name");
     const icon = getRequiredString(formData, "icon");
     const color = getRequiredString(formData, "color");
@@ -247,14 +289,14 @@ export default async function ProjectDetailPage({
       throw new Error(error.message);
     }
 
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${shortId}`);
   }
 
   async function deleteProjectCategory(formData: FormData) {
     "use server";
 
     const id = getRequiredString(formData, "id");
-    const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
 
     const supabase = createServerClient();
     if (!supabase) throw new Error("Database not configured");
@@ -275,13 +317,14 @@ export default async function ProjectDetailPage({
       .eq("id", id);
 
     if (error) throw new Error(error.message);
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${shortId}`);
   }
 
   async function updateProjectPoiCategory(formData: FormData) {
     "use server";
 
     const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
     const poiId = getRequiredString(formData, "poiId");
     const projectCategoryId = getOptionalString(formData, "projectCategoryId");
 
@@ -295,13 +338,14 @@ export default async function ProjectDetailPage({
       .eq("poi_id", poiId);
 
     if (error) throw new Error(error.message);
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${shortId}`);
   }
 
   async function addPoiToProject(formData: FormData) {
     "use server";
 
     const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
     const poiId = getRequiredString(formData, "poiId");
 
     const supabase = createServerClient();
@@ -319,13 +363,14 @@ export default async function ProjectDetailPage({
       throw new Error(error.message);
     }
 
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${shortId}`);
   }
 
   async function removePoiFromProject(formData: FormData) {
     "use server";
 
     const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
     const poiId = getRequiredString(formData, "poiId");
 
     const supabase = createServerClient();
@@ -338,7 +383,7 @@ export default async function ProjectDetailPage({
       .eq("poi_id", poiId);
 
     if (error) throw new Error(error.message);
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${shortId}`);
   }
 
   async function addPoiToProduct(formData: FormData) {
@@ -346,7 +391,7 @@ export default async function ProjectDetailPage({
 
     const productId = getRequiredString(formData, "productId");
     const poiId = getRequiredString(formData, "poiId");
-    const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
 
     const supabase = createServerClient();
     if (!supabase) throw new Error("Database not configured");
@@ -363,7 +408,58 @@ export default async function ProjectDetailPage({
       throw new Error(error.message);
     }
 
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
+  async function batchAddPoisToProduct(formData: FormData) {
+    "use server";
+
+    const productId = getRequiredString(formData, "productId");
+    const poiIdsJson = getRequiredString(formData, "poiIds");
+    const shortId = getRequiredString(formData, "shortId");
+
+    const poiIds: string[] = JSON.parse(poiIdsJson);
+    if (poiIds.length === 0) return;
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    // Batch insert - Supabase handles duplicates with upsert
+    const rows = poiIds.map((poiId) => ({
+      product_id: productId,
+      poi_id: poiId,
+    }));
+
+    const { error } = await supabase
+      .from("product_pois")
+      .upsert(rows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
+  async function batchRemovePoisFromProduct(formData: FormData) {
+    "use server";
+
+    const productId = getRequiredString(formData, "productId");
+    const poiIdsJson = getRequiredString(formData, "poiIds");
+    const shortId = getRequiredString(formData, "shortId");
+
+    const poiIds: string[] = JSON.parse(poiIdsJson);
+    if (poiIds.length === 0) return;
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    // Batch delete
+    const { error } = await supabase
+      .from("product_pois")
+      .delete()
+      .eq("product_id", productId)
+      .in("poi_id", poiIds);
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${shortId}`);
   }
 
   async function removePoiFromProduct(formData: FormData) {
@@ -371,7 +467,7 @@ export default async function ProjectDetailPage({
 
     const productId = getRequiredString(formData, "productId");
     const poiId = getRequiredString(formData, "poiId");
-    const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
 
     const supabase = createServerClient();
     if (!supabase) throw new Error("Database not configured");
@@ -383,7 +479,44 @@ export default async function ProjectDetailPage({
       .eq("poi_id", poiId);
 
     if (error) throw new Error(error.message);
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
+  async function createProduct(formData: FormData) {
+    "use server";
+
+    const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
+    const productType = getRequiredString(formData, "productType") as
+      | "explorer"
+      | "report"
+      | "guide";
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    // Check if this product type already exists for the project
+    const { data: existing } = await supabase
+      .from("products")
+      .select("id")
+      .eq("project_id", projectId)
+      .eq("product_type", productType)
+      .single();
+
+    if (existing) {
+      throw new Error(`Et ${productType}-produkt finnes allerede for dette prosjektet.`);
+    }
+
+    const newProductId = crypto.randomUUID();
+    const { error } = await supabase.from("products").insert({
+      id: newProductId,
+      project_id: projectId,
+      product_type: productType,
+    });
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${shortId}`);
+    revalidatePath("/admin/projects");
   }
 
   return (
@@ -401,6 +534,9 @@ export default async function ProjectDetailPage({
       removePoiFromProject={removePoiFromProject}
       addPoiToProduct={addPoiToProduct}
       removePoiFromProduct={removePoiFromProduct}
+      batchAddPoisToProduct={batchAddPoisToProduct}
+      batchRemovePoisFromProduct={batchRemovePoisFromProduct}
+      createProduct={createProduct}
     />
   );
 }

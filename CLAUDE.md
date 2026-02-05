@@ -23,6 +23,24 @@ Placy er en lokasjonsbasert plattform med tre produkter: **Explorer** (utforsk f
 
 - Next.js 14 (App Router), TypeScript, Tailwind CSS
 - Zustand (state), Mapbox GL JS (kart), Lucide React (ikoner)
+- Supabase (database, auth)
+
+## Supabase CLI
+
+Supabase CLI er konfigurert og linket til prosjektet. Bruk CLI for migrasjoner:
+
+```bash
+# Kjør nye migrasjoner
+source .env.local && supabase db push --password "$DATABASE_PASSWORD"
+
+# Sjekk migrasjonsstatus
+source .env.local && supabase migration list --password "$DATABASE_PASSWORD"
+
+# Marker migrasjoner som allerede kjørt (hvis nødvendig)
+source .env.local && supabase migration repair 001 003 004 --status applied --password "$DATABASE_PASSWORD"
+```
+
+Migrasjoner ligger i `supabase/migrations/` med format `NNN_beskrivelse.sql`.
 
 ## Viktige kodefiler
 
