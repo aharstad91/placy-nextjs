@@ -83,7 +83,7 @@ export function ProjectDetailClient({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="px-8 py-8 max-w-6xl mx-auto">
+      <div className="px-8 py-8">
         {/* Header */}
         <Link
           href="/admin/projects"
@@ -200,7 +200,7 @@ function DetailsTab({ project, customers, updateProject }: DetailsTabProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-6">
         Prosjektdetaljer
       </h2>
