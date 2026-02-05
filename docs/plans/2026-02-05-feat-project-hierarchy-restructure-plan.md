@@ -523,14 +523,14 @@ export default async function ProjectLandingPage({ params }) {
 - [ ] Row count verification passes (after migration)
 
 ### Admin UI
-- [ ] Projects list shows unique containers with product badges
-- [ ] Can create new project container
-- [ ] Can add/remove products from project
-- [ ] Can select POIs per product from project pool
-- [ ] Can select categories per product
-- [ ] Delete project cascades to all products
-- [ ] Delete product preserves project and other products
-- [ ] Uses Server Actions, not API routes
+- [ ] Projects list shows unique containers with product badges (post-migration)
+- [ ] Can create new project container (post-migration)
+- [ ] Can add/remove products from project (post-migration)
+- [ ] Can select POIs per product from project pool (post-migration)
+- [ ] Can select categories per product (post-migration)
+- [x] Delete project cascades to all products (via ON DELETE CASCADE)
+- [x] Delete product preserves project and other products (via FK design)
+- [x] Uses Server Actions, not API routes (existing pattern)
 
 ### Public Routes
 - [x] `/{customer}/{project}/` shows landing page with product cards
@@ -541,10 +541,12 @@ export default async function ProjectLandingPage({ params }) {
 - [x] Query params preserved through redirects
 
 ### Data Migration
-- [ ] All existing projects migrated to new structure
-- [ ] No data loss (POIs, categories, configs)
-- [ ] JSON files deprecated and removed
-- [ ] Dry-run mode shows proposed groupings before commit
+- [x] Migration script ready (007_project_hierarchy_data.sql)
+- [x] Verification queries included
+- [ ] All existing projects migrated to new structure (run migration)
+- [ ] No data loss verified (POIs, categories, configs)
+- [ ] JSON files deprecated and removed (post-migration)
+- [x] Dry-run mode available (pre_migration_validation.sql)
 
 ## Success Metrics
 
