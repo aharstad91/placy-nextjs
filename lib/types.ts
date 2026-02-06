@@ -128,15 +128,6 @@ export interface ReportConfig {
   mapStyle?: string;
 }
 
-// === Category Package (for Explorer filtering) ===
-
-export interface CategoryPackage {
-  id: string;
-  name: string;
-  icon: string; // Lucide icon name
-  categoryIds: string[];
-}
-
 // === Origin Mode (for Explorer geolocation behavior) ===
 
 export type OriginMode = "geolocation" | "fixed" | "geolocation-with-fallback";
@@ -216,7 +207,6 @@ export interface Project {
   reportConfig?: ReportConfig;
   // Explorer-specific settings
   originMode?: OriginMode; // Default: "geolocation-with-fallback"
-  packages?: CategoryPackage[] | null; // Custom package filters (null = hide UI, undefined = EXPLORER_PACKAGES)
   venueType?: "hotel" | "residential" | "commercial" | null;
   // Guide-specific settings
   guideConfig?: GuideConfig;

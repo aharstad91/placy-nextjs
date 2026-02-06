@@ -517,9 +517,6 @@ export async function getProjectFromSupabase(
       lat: project.center_lat,
       lng: project.center_lng,
     },
-    // Supabase projects: explicitly null = no packages UI
-    // (can be extended later with JSONB column if needed)
-    packages: null,
     story,
     pois,
     categories,
@@ -889,7 +886,6 @@ export async function getProductFromSupabase(
     urlSlug: container.urlSlug,
     productType: product.productType,
     centerCoordinates: container.centerCoordinates,
-    packages: null, // Can be added via product.config later
     venueType: container.venueType,
     reportConfig,
     story,
