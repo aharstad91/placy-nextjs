@@ -8,8 +8,9 @@
  */
 
 import { supabase, isSupabaseConfigured } from "./client";
+import type { Locale } from "@/lib/i18n/strings";
 
-export type Locale = "no" | "en";
+export type { Locale };
 
 /** Flat map: "entity_type:entity_id:field" → translated value */
 export type TranslationMap = Record<string, string>;

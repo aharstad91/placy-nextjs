@@ -17,6 +17,8 @@ export default function ReportLocaleToggle() {
         <button
           key={opt.value}
           onClick={() => setLocale(opt.value)}
+          aria-label={opt.value === "no" ? "Norsk" : "English"}
+          aria-pressed={locale === opt.value}
           className={`px-3 py-1 text-xs font-medium transition-colors ${
             locale === opt.value
               ? "bg-[#1a1a1a] text-white"
