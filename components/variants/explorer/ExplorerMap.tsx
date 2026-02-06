@@ -266,12 +266,14 @@ export default function ExplorerMap({
             latitude={center.lat}
             anchor="center"
           >
-            <div className="flex flex-col items-center">
-              <div className="w-10 h-10 bg-sky-500 rounded-full shadow-lg border-2 border-white flex items-center justify-center">
+            <div className="flex flex-col items-center relative">
+              {/* Pulse ring behind marker */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-sky-500/30 animate-pulse-ring motion-reduce:animate-none motion-reduce:opacity-30" />
+              <div className="w-10 h-10 bg-sky-500 rounded-full shadow-lg border-2 border-white flex items-center justify-center relative z-10">
                 <MapPin className="w-5 h-5 text-white" />
               </div>
-              <span className="text-[10px] font-medium text-gray-500 mt-1 bg-white/80 px-1.5 py-0.5 rounded">
-                Sentrum
+              <span className="text-[10px] font-medium text-gray-600 mt-1 bg-white/90 px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap max-w-[120px] truncate relative z-10">
+                {projectName.length > 20 ? `${projectName.slice(0, 20)}…` : projectName}
               </span>
             </div>
           </Marker>

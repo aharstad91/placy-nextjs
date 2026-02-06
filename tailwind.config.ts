@@ -42,9 +42,14 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'translateX(-8px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        'pulse-ring': {
+          '0%': { transform: 'translateX(-50%) scale(1)', opacity: '0.6' },
+          '100%': { transform: 'translateX(-50%) scale(2.5)', opacity: '0' },
+        },
       },
       animation: {
         fadeInSlide: 'fadeInSlide 200ms ease-out forwards',
+        'pulse-ring': 'pulse-ring 2s ease-out infinite',
       },
     },
   },
