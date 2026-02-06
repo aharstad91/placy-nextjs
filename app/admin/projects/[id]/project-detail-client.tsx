@@ -1394,11 +1394,19 @@ function ProductsTab({
     return product.product_pois.some((pp) => pp.poi_id === poiId);
   };
 
+  // Only count product_pois that are still in the project pool
+  const projectPoiIds = useMemo(
+    () => new Set(projectPois.map((pp) => pp.poi_id)),
+    [projectPois]
+  );
+
   const getSelectedCount = (product: ProductWithPois): number => {
-    let count = product.product_pois.length;
+    let count = product.product_pois.filter((pp) => projectPoiIds.has(pp.poi_id)).length;
     // Adjust for optimistic updates
     for (const [key, isSelected] of Object.entries(optimisticUpdates)) {
       if (key.startsWith(`${product.id}-`)) {
+        const poiId = key.slice(`${product.id}-`.length);
+        if (!projectPoiIds.has(poiId)) continue; // skip orphaned entries
         const wasSelected = product.product_pois.some(
           (pp) => key === `${product.id}-${pp.poi_id}`
         );

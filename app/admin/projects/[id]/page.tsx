@@ -421,6 +421,20 @@ export default async function ProjectDetailPage({
     const supabase = createServerClient();
     if (!supabase) throw new Error("Database not configured");
 
+    // Also remove from all products in this project (cascade cleanup)
+    const { data: products } = await supabase
+      .from("products")
+      .select("id")
+      .eq("project_id", projectId);
+
+    if (products && products.length > 0) {
+      await supabase
+        .from("product_pois")
+        .delete()
+        .in("product_id", products.map((p) => p.id))
+        .eq("poi_id", poiId);
+    }
+
     const { error } = await supabase
       .from("project_pois")
       .delete()
