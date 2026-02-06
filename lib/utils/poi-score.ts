@@ -6,10 +6,13 @@
  * - proximityBonus: lineær bonus for steder innen 15 min gange, maks 0.5
  */
 
-interface POIScoreInput {
+import type { VenueProfile } from "@/lib/themes/venue-profiles";
+
+export interface POIScoreInput {
   googleRating?: number | null;
   googleReviewCount?: number | null;
   walkMinutes?: number | null;
+  category?: string;
 }
 
 export function calculatePOIScore(poi: POIScoreInput): number {
@@ -18,4 +21,18 @@ export function calculatePOIScore(poi: POIScoreInput): number {
   const walkMin = poi.walkMinutes ?? 15;
   const proximityBonus = Math.max(0, (15 - walkMin) / 15) * 0.5;
   return rating * reviewWeight + proximityBonus;
+}
+
+/**
+ * Weighted score that applies venue-profile relevance multiplier.
+ * Preserves original calculatePOIScore signature for backward compatibility.
+ */
+export function calculateWeightedPOIScore(
+  poi: POIScoreInput,
+  profile?: VenueProfile
+): number {
+  const baseScore = calculatePOIScore(poi);
+  if (!profile || !poi.category) return baseScore;
+  const weight = profile.categoryWeights[poi.category] ?? 1.0;
+  return baseScore * weight;
 }

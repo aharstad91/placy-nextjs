@@ -179,6 +179,7 @@ export type Database = {
           center_lat: number;
           center_lng: number;
           product_type: string;
+          venue_type: "hotel" | "residential" | "commercial";
           story_title: string | null;
           story_intro_text: string | null;
           story_hero_images: string[] | null;
@@ -193,6 +194,7 @@ export type Database = {
           center_lat: number;
           center_lng: number;
           product_type?: string;
+          venue_type?: "hotel" | "residential" | "commercial";
           story_title?: string | null;
           story_intro_text?: string | null;
           story_hero_images?: string[] | null;
@@ -207,6 +209,7 @@ export type Database = {
           center_lat?: number;
           center_lng?: number;
           product_type?: string;
+          venue_type?: "hotel" | "residential" | "commercial";
           story_title?: string | null;
           story_intro_text?: string | null;
           story_hero_images?: string[] | null;
