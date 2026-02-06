@@ -53,6 +53,10 @@ export default function ReportInteractiveMap({
       const layers = map.getStyle()?.layers || [];
       layers.forEach((layer) => {
         if (
+          layer.id === "poi-circles" // Keep our custom layer visible
+        )
+          return;
+        if (
           layer.id.includes("poi") ||
           layer.id.includes("place-label") ||
           layer.id.includes("transit")
