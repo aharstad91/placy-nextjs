@@ -10,5 +10,5 @@ export interface ThemeDefinition {
   name: string;
   icon: string; // Lucide icon name
   categories: string[]; // "categories" for Report backward compatibility
-  color?: string; // Tailwind-friendly hex for chip styling
+  color: string; // Tailwind-friendly hex for chip styling
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useState, useMemo } from "react";
-import type { POI, Category, TravelMode } from "@/lib/types";
+import type { POI, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
 import {
@@ -20,7 +20,6 @@ import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
 interface ExplorerPanelProps {
   pois: POI[];
   allPOIs: POI[];
-  categories: Category[];
   activeThemes: Set<string>;
   disabledCategories: Set<string>;
   activePOI: string | null;
@@ -58,7 +57,6 @@ const travelModeConfig: { mode: TravelMode; label: string; Icon: typeof Footprin
 export default function ExplorerPanel({
   pois,
   allPOIs,
-  categories,
   activeThemes,
   disabledCategories,
   activePOI,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useState, useMemo } from "react";
-import type { POI, Category, TravelMode } from "@/lib/types";
+import type { POI, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
 import { Compass, ChevronDown, Check, Footprints, Bike, Car } from "lucide-react";
@@ -37,6 +37,12 @@ interface ExplorerPOIListProps {
   showContent?: boolean;
   isRefreshing?: boolean;
 }
+
+const travelModeConfig: { mode: TravelMode; label: string; Icon: typeof Footprints }[] = [
+  { mode: "walk", label: "Til fots", Icon: Footprints },
+  { mode: "bike", label: "Sykkel", Icon: Bike },
+  { mode: "car", label: "Bil", Icon: Car },
+];
 
 export default function ExplorerPOIList({
   pois,
@@ -98,12 +104,6 @@ export default function ExplorerPOIList({
     },
     []
   );
-
-  const travelModeConfig: { mode: TravelMode; label: string; Icon: typeof Footprints }[] = [
-    { mode: "walk", label: "Til fots", Icon: Footprints },
-    { mode: "bike", label: "Sykkel", Icon: Bike },
-    { mode: "car", label: "Bil", Icon: Car },
-  ];
 
   const activeTravelConfig = travelModeConfig.find((t) => t.mode === travelMode) || travelModeConfig[0];
 

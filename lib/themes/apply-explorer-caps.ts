@@ -55,10 +55,8 @@ export function applyExplorerCaps(
       .slice(0, themeCap);
 
     for (const { poi } of themePOIs) {
-      if (!selectedIds.has(poi.id)) {
-        selectedIds.add(poi.id);
-        result.push(poi);
-      }
+      selectedIds.add(poi.id);
+      result.push(poi);
     }
   }
 
@@ -69,10 +67,8 @@ export function applyExplorerCaps(
     .slice(0, 5);
 
   for (const { poi } of unmapped) {
-    if (!selectedIds.has(poi.id)) {
-      selectedIds.add(poi.id);
-      result.push(poi);
-    }
+    selectedIds.add(poi.id);
+    result.push(poi);
   }
 
   // 6. Enforce total cap

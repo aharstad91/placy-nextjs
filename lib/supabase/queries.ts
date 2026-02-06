@@ -520,6 +520,7 @@ export async function getProjectFromSupabase(
     story,
     pois,
     categories,
+    venueType: (project as Record<string, unknown>).venue_type as "hotel" | "residential" | "commercial" | null ?? null,
   };
 }
 

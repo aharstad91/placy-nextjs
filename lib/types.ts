@@ -115,6 +115,7 @@ export interface ReportThemeConfig {
   name: string;
   icon: string;
   categories: string[];
+  color: string;
   intro?: string;
   bridgeText?: string;
 }
