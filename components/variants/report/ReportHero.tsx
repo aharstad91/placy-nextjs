@@ -1,6 +1,9 @@
 "use client";
 
 import type { ReportHeroMetrics, ReportTheme } from "./report-data";
+import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/strings";
+import ReportLocaleToggle from "./ReportLocaleToggle";
 import {
   UtensilsCrossed,
   Bus,
@@ -38,6 +41,8 @@ interface ReportHeroProps {
 }
 
 export default function ReportHero({ projectName, metrics, themes, label, heroIntro }: ReportHeroProps) {
+  const { locale } = useLocale();
+
   const handleThemeClick = (themeId: string) => {
     const el = document.getElementById(themeId);
     if (el) {
@@ -45,13 +50,20 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
     }
   };
 
+  const numLocale = locale === "en" ? "en-US" : "nb-NO";
+
   return (
     <section className="col-span-12 pt-6 pb-12 md:pt-12 md:pb-16">
       {/* Text content - constrained width */}
-      <div className="max-w-4xl">
+      <div className="max-w-4xl relative">
+        {/* Locale toggle - top right */}
+        <div className="absolute top-0 right-0">
+          <ReportLocaleToggle />
+        </div>
+
         {/* Label */}
         <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-4">
-          {label ?? "Nabolagsrapport"}
+          {label ?? t(locale, "label")}
         </p>
 
         {/* Project name */}
@@ -68,27 +80,27 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
 
         {/* Summary paragraph with inline metrics */}
         <p className="text-lg md:text-xl text-[#4a4a4a] leading-relaxed">
-          I nærområdet finner du{" "}
+          {t(locale, "inTheArea")}{" "}
           <span className="font-semibold text-[#1a1a1a]">
-            {metrics.totalPOIs} steder
+            {metrics.totalPOIs} {t(locale, "places")}
           </span>{" "}
-          innen gåavstand.{" "}
+          {t(locale, "withinWalking")}.{" "}
           {metrics.ratedPOIs > 0 && (
             <>
-              De{" "}
+              {t(locale, "the")}{" "}
               <span className="font-semibold text-[#1a1a1a]">
-                {metrics.ratedPOIs} vurderte
+                {metrics.ratedPOIs} {t(locale, "rated")}
               </span>{" "}
-              har et snitt på{" "}
+              {t(locale, "hasAvgOf")}{" "}
               <span className="font-semibold text-[#b45309]">
                 {metrics.avgRating.toFixed(1)} ★
               </span>
               {metrics.totalReviews > 0 && (
                 <>
                   {" "}
-                  basert på{" "}
+                  {t(locale, "basedOn")}{" "}
                   <span className="font-semibold text-[#1a1a1a]">
-                    {metrics.totalReviews.toLocaleString("nb-NO")} anmeldelser
+                    {metrics.totalReviews.toLocaleString(numLocale)} {t(locale, "reviews")}
                   </span>
                 </>
               )}
@@ -98,9 +110,9 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
           {metrics.transportCount > 0 && (
             <>
               <span className="font-semibold text-[#1a1a1a]">
-                {metrics.transportCount} transportpunkter
+                {metrics.transportCount} {t(locale, "transportPoints")}
               </span>{" "}
-              gjør det enkelt å komme seg rundt.
+              {t(locale, "easyToGetAround")}.
             </>
           )}
         </p>
@@ -129,7 +141,7 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
 
                 {/* Stats row */}
                 <div className="flex items-center gap-2 text-xs text-[#6a6a6a]">
-                  <span>{theme.stats.totalPOIs} steder</span>
+                  <span>{theme.stats.totalPOIs} {t(locale, "places")}</span>
                   {theme.stats.avgRating != null && (
                     <>
                       <span className="text-[#d4cfc8]">·</span>

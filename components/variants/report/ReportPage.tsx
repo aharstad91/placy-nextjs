@@ -2,7 +2,10 @@
 
 import { useMemo, useEffect, useRef } from "react";
 import type { Project } from "@/lib/types";
+import type { TranslationMap } from "@/lib/supabase/translations";
 import { transformToReportData } from "./report-data";
+import { applyTranslations } from "@/lib/i18n/apply-translations";
+import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportExplorerCTA from "./ReportExplorerCTA";
@@ -13,12 +16,28 @@ const SCROLL_KEY_PREFIX = "placy-scroll:";
 interface ReportPageProps {
   project: Project;
   explorerBaseUrl?: string | null;
+  enTranslations?: TranslationMap;
 }
 
-export default function ReportPage({ project, explorerBaseUrl }: ReportPageProps) {
+export default function ReportPage(props: ReportPageProps) {
+  return (
+    <LocaleProvider>
+      <ReportPageInner {...props} />
+    </LocaleProvider>
+  );
+}
+
+function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: ReportPageProps) {
+  const { locale } = useLocale();
+
+  const effectiveProject = useMemo(
+    () => applyTranslations(project, locale, enTranslations),
+    [project, locale, enTranslations]
+  );
+
   const reportData = useMemo(
-    () => transformToReportData(project),
-    [project]
+    () => transformToReportData(effectiveProject),
+    [effectiveProject]
   );
 
   // Scroll preservation: restore on mount, save continuously

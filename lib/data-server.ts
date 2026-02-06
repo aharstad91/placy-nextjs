@@ -223,6 +223,7 @@ export async function getProjectContainerAsync(
         storyIntroText: p.story.introText,
         storyHeroImages: p.story.heroImages,
         poiIds: p.pois.map((poi) => poi.id),
+        featuredPoiIds: [],
         categoryIds: p.categories.map((cat) => cat.id),
         version: 1,
         createdAt: new Date().toISOString(),

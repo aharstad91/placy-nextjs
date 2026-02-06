@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import type { POI } from "@/lib/types";
 import { Star } from "lucide-react";
@@ -30,9 +33,20 @@ export default function ReportHighlightCard({
   onClick,
   isActive,
 }: ReportHighlightCardProps) {
+  const [imgError, setImgError] = useState(false);
+
   const explorerUrl = explorerBaseUrl
     ? buildExplorerUrl(explorerBaseUrl, poi.id, themeCategories)
     : null;
+
+  // Build image URL: featuredImage > photoReference proxy > null
+  function resolveImageUrl(): string | null {
+    if (imgError) return null;
+    if (poi.featuredImage) return poi.featuredImage;
+    if (poi.photoReference) return `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=400`;
+    return null;
+  }
+  const imageUrl = resolveImageUrl();
 
   const CardWrapper = onClick
     ? ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (
@@ -61,13 +75,28 @@ export default function ReportHighlightCard({
 
   return (
     <CardWrapper
-      className={`group block bg-white rounded-lg p-3 transition-all cursor-pointer ${
+      className={`group block bg-white rounded-lg overflow-hidden transition-all cursor-pointer ${
         isActive
           ? "shadow-md ring-2"
           : "border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm"
       }`}
       style={isActive ? { "--tw-ring-color": poi.category.color } as React.CSSProperties : undefined}
     >
+      {/* Featured image */}
+      {imageUrl && (
+        <div className="w-full aspect-[16/9] bg-[#f5f3f0] overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageUrl}
+            alt={poi.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
+        </div>
+      )}
+
+      <div className="p-3">
       {/* Category tag */}
       <span
         className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full mb-2"
@@ -100,6 +129,7 @@ export default function ReportHighlightCard({
           {poi.editorialHook}
         </p>
       )}
+      </div>
     </CardWrapper>
   );
 }

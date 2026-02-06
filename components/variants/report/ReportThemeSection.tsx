@@ -1,5 +1,7 @@
 import type { Coordinates } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
+import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/strings";
 import {
   UtensilsCrossed,
   Bus,
@@ -38,7 +40,7 @@ interface ReportThemeSectionProps {
 }
 
 // Categories that indicate a transport-related theme
-const TRANSPORT_CATEGORIES = new Set(["bus", "train", "bike", "parking", "carshare", "taxi", "airport"]);
+const TRANSPORT_CATEGORIES = new Set(["bus", "train", "tram", "bike", "parking", "carshare", "taxi", "airport"]);
 
 export default function ReportThemeSection({
   theme,
@@ -46,7 +48,9 @@ export default function ReportThemeSection({
   explorerBaseUrl,
   projectName,
 }: ReportThemeSectionProps) {
+  const { locale } = useLocale();
   const Icon = ICON_MAP[theme.icon];
+  const numLocale = locale === "en" ? "en-US" : "nb-NO";
 
   // Check if this is a transport theme by looking at POI categories
   const isTransport = theme.allPOIs.some(poi => TRANSPORT_CATEGORIES.has(poi.category.id));
@@ -70,12 +74,12 @@ export default function ReportThemeSection({
 
         {/* Stats row */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#6a6a6a] mb-6">
-          <span>{theme.stats.totalPOIs} steder</span>
+          <span>{theme.stats.totalPOIs} {t(locale, "places")}</span>
           {theme.stats.avgRating != null && (
             <>
               <span className="text-[#d4cfc8]">|</span>
               <span className="flex items-center gap-1">
-                Snitt{" "}
+                {t(locale, "avg")}{" "}
                 <Star className="w-3.5 h-3.5 text-[#b45309] fill-[#b45309]" />
                 <span className="font-medium text-[#1a1a1a]">
                   {theme.stats.avgRating.toFixed(1)}
@@ -87,7 +91,7 @@ export default function ReportThemeSection({
             <>
               <span className="text-[#d4cfc8]">|</span>
               <span>
-                {theme.stats.totalReviews.toLocaleString("nb-NO")} anmeldelser
+                {theme.stats.totalReviews.toLocaleString(numLocale)} {t(locale, "reviews")}
               </span>
             </>
           )}
@@ -97,6 +101,13 @@ export default function ReportThemeSection({
         {theme.intro && (
           <p className="text-base text-[#4a4a4a] leading-relaxed mb-6">
             {theme.intro}
+          </p>
+        )}
+
+        {/* Bridge text - editorial, locally-anchored context */}
+        {theme.bridgeText && (
+          <p className="text-base italic text-[#5a5a5a] leading-relaxed mb-6">
+            {theme.bridgeText}
           </p>
         )}
 

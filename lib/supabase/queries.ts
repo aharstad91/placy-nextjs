@@ -742,12 +742,24 @@ export async function getProjectContainerFromSupabase(
     // Type assertion for new product structure
     const prod = product as DbProduct;
 
-    // Fetch product POIs
+    // Fetch product POIs (featured column added by migration 009)
     const { data: productPoisData } = await supabase
       .from("product_pois")
       .select("poi_id, sort_order")
       .eq("product_id", prod.id)
       .order("sort_order");
+
+    // Separate query for featured (graceful if column doesn't exist yet)
+    let featuredPoiIds: string[] = [];
+    const { data: featuredData, error: featuredError } = await supabase
+      .from("product_pois")
+      .select("poi_id")
+      .eq("product_id", prod.id)
+      .eq("featured" as string, true); // TODO: Remove `as string` cast after regenerating Supabase types
+    if (!featuredError) {
+      featuredPoiIds = (featuredData || []).map((fp: { poi_id: string }) => fp.poi_id);
+    }
+    // featuredError means migration 009 not yet applied — gracefully skip
 
     // Fetch product categories
     const { data: productCatsData } = await supabase
@@ -765,6 +777,7 @@ export async function getProjectContainerFromSupabase(
       storyIntroText: prod.story_intro_text ?? undefined,
       storyHeroImages: prod.story_hero_images ?? undefined,
       poiIds: (productPoisData || []).map((pp) => pp.poi_id),
+      featuredPoiIds,
       categoryIds: (productCatsData || []).map((pc) => pc.category_id),
       version: prod.version,
       createdAt: prod.created_at,
@@ -825,7 +838,13 @@ export async function getProductFromSupabase(
 
   // Get POIs for this product (filter from project pool)
   const productPoiSet = new Set(product.poiIds);
-  const pois = container.pois.filter((poi) => productPoiSet.has(poi.id));
+  const featuredPoiSet = new Set(product.featuredPoiIds);
+  const pois = container.pois
+    .filter((poi) => productPoiSet.has(poi.id))
+    .map((poi) => ({
+      ...poi,
+      featured: featuredPoiSet.has(poi.id) ? true : undefined,
+    }));
 
   // Get categories for this product
   // If product_categories is populated, use it; otherwise derive from selected POIs
@@ -857,6 +876,11 @@ export async function getProductFromSupabase(
     themeStories,
   };
 
+  // Extract reportConfig from product.config if available
+  const reportConfig = (product.config as Record<string, unknown>)?.reportConfig as
+    | import("@/lib/types").ReportConfig
+    | undefined;
+
   return {
     id: product.id,
     name: container.name,
@@ -865,6 +889,7 @@ export async function getProductFromSupabase(
     productType: product.productType,
     centerCoordinates: container.centerCoordinates,
     packages: null, // Can be added via product.config later
+    reportConfig,
     story,
     pois,
     categories,
