@@ -129,12 +129,12 @@ export function calculatePOIScore(poi: POIScoreInput): number {
 
 ### Oppgaver
 
-- [ ] Etter featured-utvelgelse (WP2), hent foto for hver featured POI:
-  - Bruk eksisterende `/api/places?placeId={id}&fields=photos` (allerede implementert)
+- [x] Etter featured-utvelgelse (WP2), hent foto for hver featured POI:
+  - Bruk eksisterende `/api/places/{placeId}` (allerede implementert)
   - Lagre `photo_reference` og konstruer URL
   - Skriv `featured_image`-URL til POI via Supabase REST
-- [ ] Legg til bilde-visning i Report for featured POI-kort
-- [ ] Fallback: Vis ikon/farge-kort uten bilde (som i dag) hvis foto mangler
+- [x] Legg til bilde-visning i Report for featured POI-kort
+- [x] Fallback: Vis ikon/farge-kort uten bilde (som i dag) hvis foto mangler
 
 ### Filer som endres
 
@@ -165,14 +165,14 @@ export function calculatePOIScore(poi: POIScoreInput): number {
 
 ### Oppgaver
 
-- [ ] Oppdater editorial hooks i generate-hotel til å alltid kjøre (ikke lenger valgfritt)
-- [ ] Legg til prompt-kontekst: hotellnavn, bydel (fra geocode), bynavn, POI-liste med rating/avstand
-- [ ] Generer Report-intro per prosjekt (kort, stedsspesifikk, confident)
-- [ ] Generer bridgeText per theme (kontekstuell, lokal vinkel, nevner faktiske POI-er)
-- [ ] Generer editorialHook per POI (lokal kontekst, historisk/kulturell, basert på WebSearch)
-- [ ] Generer localInsight per POI (praktisk tips, insider-perspektiv)
-- [ ] Skriv intro til `products.config.reportConfig.heroIntro`
-- [ ] Skriv bridgeText til themes i `products.config.reportConfig.themes[].bridgeText`
+- [x] Oppdater editorial hooks i generate-hotel til å alltid kjøre (ikke lenger valgfritt)
+- [x] Legg til prompt-kontekst: hotellnavn, bydel (fra geocode), bynavn, POI-liste med rating/avstand
+- [x] Generer Report-intro per prosjekt (kort, stedsspesifikk, confident)
+- [x] Generer bridgeText per theme (kontekstuell, lokal vinkel, nevner faktiske POI-er)
+- [x] Generer editorialHook per POI (lokal kontekst, historisk/kulturell, basert på WebSearch)
+- [x] Generer localInsight per POI (praktisk tips, insider-perspektiv)
+- [x] Skriv intro til `products.config.reportConfig.heroIntro`
+- [x] Skriv bridgeText til themes i `products.config.reportConfig.themes[].bridgeText`
 
 ### Prompt-mal (konsept)
 
@@ -280,12 +280,12 @@ CREATE INDEX idx_translations_lookup
 
 ### Oppgaver
 
-- [ ] Legg til QA-steg i generate-hotel etter alle andre steg
-- [ ] Sjekk 1: POI-dekning — alle themes har minst 2 POI-er
-- [ ] Sjekk 2: Bilde-dekning — alle featured POI-er har `featured_image`
-- [ ] Sjekk 3: Tekst-dekning — alle ikke-transport POI-er har `editorial_hook`
-- [ ] Vis rapport med status-ikoner (✅/⚠️)
-- [ ] Tilby auto-fix for advarsler ("Vil du at jeg genererer hooks for de 3 manglende?")
+- [x] Legg til QA-steg i generate-hotel etter alle andre steg
+- [x] Sjekk 1: POI-dekning — alle themes har minst 2 POI-er
+- [x] Sjekk 2: Bilde-dekning — alle featured POI-er har `featured_image`
+- [x] Sjekk 3: Tekst-dekning — alle ikke-transport POI-er har `editorial_hook`
+- [x] Vis rapport med status-ikoner (✅/⚠️)
+- [x] Tilby auto-fix for advarsler ("Vil du at jeg genererer hooks for de 3 manglende?")
 
 ### Output-format
 

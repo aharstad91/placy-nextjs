@@ -38,7 +38,7 @@ interface ReportThemeSectionProps {
 }
 
 // Categories that indicate a transport-related theme
-const TRANSPORT_CATEGORIES = new Set(["bus", "train", "bike", "parking", "carshare", "taxi", "airport"]);
+const TRANSPORT_CATEGORIES = new Set(["bus", "train", "tram", "bike", "parking", "carshare", "taxi", "airport"]);
 
 export default function ReportThemeSection({
   theme,
@@ -97,6 +97,13 @@ export default function ReportThemeSection({
         {theme.intro && (
           <p className="text-base text-[#4a4a4a] leading-relaxed mb-6">
             {theme.intro}
+          </p>
+        )}
+
+        {/* Bridge text - editorial, locally-anchored context */}
+        {theme.bridgeText && (
+          <p className="text-base italic text-[#5a5a5a] leading-relaxed mb-6">
+            {theme.bridgeText}
           </p>
         )}
 
