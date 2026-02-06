@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Map, { Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox";
 import { MapPin, Trash2, Plus, Search, ChevronDown, X, Check, Loader2 } from "lucide-react";
@@ -37,6 +37,169 @@ interface POIAdminClientProps {
   createPOI: (formData: FormData) => Promise<void>;
   deletePOI: (formData: FormData) => Promise<void>;
   updatePOI: (formData: FormData) => Promise<void>;
+}
+
+function CategoryFilterDropdown({
+  categories,
+  selectedCategories,
+  updateCategories,
+  poiCountByCategory,
+  filteredCount,
+  totalCount,
+}: {
+  categories: DbCategory[];
+  selectedCategories: Set<string>;
+  updateCategories: (s: Set<string>) => void;
+  poiCountByCategory: Record<string, number>;
+  filteredCount: number;
+  totalCount: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Summary text for trigger
+  const selectedNames = categories
+    .filter((c) => selectedCategories.has(c.id))
+    .map((c) => c.name);
+  const summaryText =
+    selectedNames.length === 0
+      ? "Ingen valgt"
+      : selectedNames.length <= 2
+        ? selectedNames.join(", ")
+        : `${selectedNames.length} kategorier valgt`;
+
+  // Filter + sort: selected first, then alphabetical, filtered by search
+  const sortedCategories = useMemo(() => {
+    const q = search.toLowerCase();
+    return [...categories]
+      .filter((c) => !q || c.name.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aSelected = selectedCategories.has(a.id) ? 0 : 1;
+        const bSelected = selectedCategories.has(b.id) ? 0 : 1;
+        if (aSelected !== bSelected) return aSelected - bSelected;
+        return a.name.localeCompare(b.name, "no");
+      });
+  }, [categories, selectedCategories, search]);
+
+  return (
+    <div className="p-4 border-b border-gray-100" ref={dropdownRef}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Filter
+          <span className="ml-2 text-gray-400 font-normal normal-case">
+            {filteredCount}/{totalCount}
+          </span>
+        </span>
+        <div className="flex gap-1">
+          <button
+            onClick={() => updateCategories(new Set(categories.map((c) => c.id)))}
+            className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Alle
+          </button>
+          <button
+            onClick={() => updateCategories(new Set())}
+            className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Ingen
+          </button>
+        </div>
+      </div>
+
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl hover:border-gray-300 transition-all"
+      >
+        <span className={`truncate ${selectedNames.length === 0 ? "text-gray-400" : "text-gray-700"}`}>
+          {summaryText}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 ml-2 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div className="mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden animate-fadeInUp">
+          {/* Search inside dropdown */}
+          <div className="p-2 border-b border-gray-100">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filtrer kategorier..."
+                className="w-full pl-8 pr-3 py-2 text-xs bg-gray-50 border border-gray-100 rounded-lg focus:ring-1 focus:ring-blue-500/50 focus:border-blue-300 transition-all placeholder:text-gray-400"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* Category list */}
+          <div className="max-h-[300px] overflow-y-auto">
+            {sortedCategories.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-gray-400 text-center">Ingen treff</div>
+            ) : (
+              sortedCategories.map((category) => {
+                const isSelected = selectedCategories.has(category.id);
+                const count = poiCountByCategory[category.id] || 0;
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => {
+                      const newSet = new Set(selectedCategories);
+                      if (isSelected) {
+                        newSet.delete(category.id);
+                      } else {
+                        newSet.add(category.id);
+                      }
+                      updateCategories(newSet);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+                  >
+                    {/* Color dot */}
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    {/* Checkbox */}
+                    <span className={`w-4 h-4 rounded shrink-0 flex items-center justify-center border transition-colors ${
+                      isSelected
+                        ? "bg-blue-500 border-blue-500"
+                        : "border-gray-300 bg-white"
+                    }`}>
+                      {isSelected && <Check className="w-3 h-3 text-white" />}
+                    </span>
+                    {/* Name */}
+                    <span className={`flex-1 text-left truncate ${isSelected ? "text-gray-900 font-medium" : "text-gray-600"}`}>
+                      {category.name}
+                    </span>
+                    {/* Count */}
+                    <span className="text-[10px] text-gray-400 tabular-nums shrink-0">
+                      {count}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function POIAdminClient({
@@ -386,67 +549,15 @@ export function POIAdminClient({
             </div>
           </div>
 
-          {/* Category Filter */}
-          <div className="p-4 border-b border-gray-100">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Filter
-                <span className="ml-2 text-gray-400 font-normal normal-case">
-                  {filteredPois.length}/{pois.length}
-                </span>
-              </span>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => updateCategories(new Set(categories.map((c) => c.id)))}
-                  className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Alle
-                </button>
-                <button
-                  onClick={() => updateCategories(new Set())}
-                  className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Ingen
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => {
-                const isSelected = selectedCategories.has(category.id);
-                const count = poiCountByCategory[category.id] || 0;
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => {
-                      const newSet = new Set(selectedCategories);
-                      if (isSelected) {
-                        newSet.delete(category.id);
-                      } else {
-                        newSet.add(category.id);
-                      }
-                      updateCategories(newSet);
-                    }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                      isSelected
-                        ? "text-white shadow-sm hover:shadow-md active:scale-95"
-                        : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-800 active:scale-95"
-                    }`}
-                    style={{
-                      backgroundColor: isSelected ? category.color : undefined,
-                      boxShadow: isSelected ? `0 2px 8px ${category.color}40` : undefined
-                    }}
-                  >
-                    <span>{category.name}</span>
-                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${
-                      isSelected ? "bg-white/25" : "bg-gray-200/80 text-gray-500"
-                    }`}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* Category Filter — Dropdown */}
+          <CategoryFilterDropdown
+            categories={categories}
+            selectedCategories={selectedCategories}
+            updateCategories={updateCategories}
+            poiCountByCategory={poiCountByCategory}
+            filteredCount={filteredPois.length}
+            totalCount={pois.length}
+          />
 
           {/* Action Button or Form */}
           <div className="flex-1 overflow-y-auto">
