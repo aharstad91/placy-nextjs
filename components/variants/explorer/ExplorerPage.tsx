@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Project, POI, Category, TravelMode, OriginMode } from "@/lib/types";
+import { DEFAULT_THEMES } from "@/lib/themes";
 
 // Loading state machine for skeleton loading
 type LoadState = "initial" | "loading" | "loaded" | "error" | "refreshing";
@@ -13,7 +14,6 @@ import { haversineDistance, cn } from "@/lib/utils";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import { Bookmark } from "lucide-react";
-import { EXPLORER_PACKAGES } from "./explorer-packages";
 import ExplorerMap from "./ExplorerMap";
 import ExplorerPanel from "./ExplorerPanel";
 import ExplorerBottomSheet from "./ExplorerBottomSheet";
@@ -45,26 +45,42 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   const prevCollectionCountRef = useRef(0);
   const [activePOI, setActivePOI] = useState<string | null>(initialPOI ?? null);
   const [highlightedPOI, setHighlightedPOI] = useState<string | null>(null);
-  const [activeCategories, setActiveCategories] = useState<Set<string>>(() => {
+  // Theme-based filtering (derived state pattern)
+  const [activeThemes, setActiveThemes] = useState<Set<string>>(
+    () => new Set(DEFAULT_THEMES.map((t) => t.id))
+  );
+  const [disabledCategories, setDisabledCategories] = useState<Set<string>>(() => {
+    // If initialCategories provided, disable everything else
     if (initialCategories && initialCategories.length > 0) {
       const validIds = new Set(project.categories.map((c) => c.id));
-      const filtered = initialCategories.filter((id) => validIds.has(id));
-      if (filtered.length > 0) return new Set(filtered);
+      const enabled = new Set(initialCategories.filter((id) => validIds.has(id)));
+      if (enabled.size > 0) {
+        const allCats = new Set(DEFAULT_THEMES.flatMap((t) => t.categories));
+        const disabled = new Set<string>();
+        allCats.forEach((c) => { if (!enabled.has(c)) disabled.add(c); });
+        return disabled;
+      }
     }
-    return new Set(project.categories.map((c) => c.id));
+    return new Set();
   });
+
+  // Derived: active categories from themes + disabled individual categories
+  const activeCategories = useMemo(() => {
+    const cats = new Set<string>();
+    for (const theme of DEFAULT_THEMES) {
+      if (!activeThemes.has(theme.id)) continue;
+      for (const catId of theme.categories) {
+        if (!disabledCategories.has(catId)) {
+          cats.add(catId);
+        }
+      }
+    }
+    return cats;
+  }, [activeThemes, disabledCategories]);
+
   const [viewportPOIIds, setViewportPOIIds] = useState<Set<string>>(new Set());
   const [visibleClusterCount, setVisibleClusterCount] = useState(0);
   const [mapZoom, setMapZoom] = useState(14);
-  const [activePackage, setActivePackage] = useState<string | null>("all");
-
-  // Project-level packages:
-  // - undefined → use EXPLORER_PACKAGES (default behavior)
-  // - null or [] → no packages (hide the selector)
-  // - [...] → use project's custom packages
-  const packages = project.packages === undefined
-    ? EXPLORER_PACKAGES
-    : (project.packages && project.packages.length > 0 ? project.packages : undefined);
 
   // Origin mode determines geolocation behavior
   const originMode: OriginMode = project.originMode ?? "geolocation-with-fallback";
@@ -216,28 +232,22 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     });
   }, [visiblePOIs, geo.effectiveOrigin]);
 
-  // Package selection
-  const handleSelectPackage = useCallback((packageId: string) => {
-    setActivePackage(packageId);
-    if (!packages) return;
-    const pkg = packages.find((p) => p.id === packageId);
-    if (!pkg) return;
-
-    if (pkg.id === "all" || pkg.categoryIds.length === 0) {
-      setActiveCategories(new Set(project.categories.map((c) => c.id)));
-    } else {
-      setActiveCategories(new Set(pkg.categoryIds));
-    }
-  }, [project.categories, packages]);
-
-  // Dismiss active POI (from map background click)
-  const handleDismissActive = useCallback(() => {
-    setActivePOI(null);
+  // Theme toggle: activate/deactivate entire theme
+  const handleToggleTheme = useCallback((themeId: string) => {
+    setActiveThemes((prev) => {
+      const next = new Set(prev);
+      if (next.has(themeId)) {
+        next.delete(themeId);
+      } else {
+        next.add(themeId);
+      }
+      return next;
+    });
   }, []);
 
-  // Category toggle — keeps the active package context
-  const toggleCategory = useCallback((categoryId: string) => {
-    setActiveCategories((prev) => {
+  // Category toggle: enable/disable individual category within active theme
+  const handleToggleCategory = useCallback((categoryId: string) => {
+    setDisabledCategories((prev) => {
       const next = new Set(prev);
       if (next.has(categoryId)) {
         next.delete(categoryId);
@@ -248,16 +258,10 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     });
   }, []);
 
-  const toggleAllCategories = useCallback(() => {
-    setActivePackage("all");
-    setActiveCategories((prev) => {
-      if (prev.size === project.categories.length) {
-        setActivePackage(null);
-        return new Set();
-      }
-      return new Set(project.categories.map((c) => c.id));
-    });
-  }, [project.categories]);
+  // Dismiss active POI (from map background click)
+  const handleDismissActive = useCallback(() => {
+    setActivePOI(null);
+  }, []);
 
   // Collection toggle
   const handleToggleCollection = useCallback((poiId: string) => {
@@ -465,19 +469,16 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     ...poiListProps,
     allPOIs: poisWithTravelTimes,
     categories: project.categories,
-    activeCategories,
-    onToggleCategory: toggleCategory,
-    onToggleAll: toggleAllCategories,
+    activeThemes,
+    disabledCategories,
+    onToggleTheme: handleToggleTheme,
+    onToggleCategory: handleToggleCategory,
     onSetTravelMode: setTravelMode,
     isCollectionView,
     collectionPoiCount: collection?.poiIds.length,
     collectionCreatedAt: collection?.createdAt,
     collectionEmail: collection?.email,
     explorerUrl: isCollectionView ? `/${project.customer}/${project.id}` : undefined,
-    // Package filtering — same as desktop
-    packages,
-    activePackage,
-    onSelectPackage: handleSelectPackage,
   };
 
   const mapProps = {
@@ -555,12 +556,10 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
           <ExplorerPOIList
             {...poiListProps}
             allPOIs={poisWithTravelTimes}
-            packages={packages}
-            activePackage={activePackage}
-            onSelectPackage={handleSelectPackage}
-            categories={project.categories}
-            activeCategories={activeCategories}
-            onToggleCategory={toggleCategory}
+            activeThemes={activeThemes}
+            disabledCategories={disabledCategories}
+            onToggleTheme={handleToggleTheme}
+            onToggleCategory={handleToggleCategory}
             onSetTravelMode={setTravelMode}
           />
 
