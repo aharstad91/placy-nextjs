@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { getProductAsync, getProjectAsync } from "@/lib/data-server";
 import { getCollectionBySlug } from "@/lib/supabase/queries";
 import ExplorerPage from "@/components/variants/explorer/ExplorerPage";
+import { applyExplorerCaps } from "@/lib/themes/apply-explorer-caps";
+import { DEFAULT_THEMES, getVenueProfile } from "@/lib/themes";
 
 interface PageProps {
   params: Promise<{
@@ -33,6 +35,16 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
 
   if (!projectData) {
     notFound();
+  }
+
+  // Apply Explorer caps (skip for collection views — they show a curated subset)
+  const isCollectionView = typeof resolvedSearchParams.c === "string";
+  if (!isCollectionView) {
+    const profile = getVenueProfile(projectData.venueType);
+    projectData = {
+      ...projectData,
+      pois: applyExplorerCaps(projectData.pois, DEFAULT_THEMES, profile),
+    };
   }
 
   // Collection mode

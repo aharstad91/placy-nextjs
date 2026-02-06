@@ -801,6 +801,7 @@ export async function getProjectContainerFromSupabase(
     pois,
     categories,
     products: productInstances,
+    venueType: (projectAny.venue_type as "hotel" | "residential" | "commercial" | null) ?? null,
     version: (projectAny.version as number) ?? 1,
     createdAt: project.created_at,
     updatedAt: project.updated_at,
@@ -889,6 +890,7 @@ export async function getProductFromSupabase(
     productType: product.productType,
     centerCoordinates: container.centerCoordinates,
     packages: null, // Can be added via product.config later
+    venueType: container.venueType,
     reportConfig,
     story,
     pois,

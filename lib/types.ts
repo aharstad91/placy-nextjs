@@ -160,6 +160,7 @@ export interface ProjectContainer {
   categories: Category[];
   /** Products under this project container */
   products: ProductInstance[];
+  venueType?: "hotel" | "residential" | "commercial" | null;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -216,6 +217,7 @@ export interface Project {
   // Explorer-specific settings
   originMode?: OriginMode; // Default: "geolocation-with-fallback"
   packages?: CategoryPackage[] | null; // Custom package filters (null = hide UI, undefined = EXPLORER_PACKAGES)
+  venueType?: "hotel" | "residential" | "commercial" | null;
   // Guide-specific settings
   guideConfig?: GuideConfig;
 }
