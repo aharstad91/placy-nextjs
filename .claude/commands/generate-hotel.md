@@ -268,12 +268,12 @@ Body: { "photo_reference": "{reference}", "featured_image": "{featured_image_url
 
 **Fallback:** Hvis Google Places ikke returnerer bilder, logg advarsel men fortsett. POI-kortet viser kategorifarge som fallback.
 
-### Steg 10: Editorial Hooks med lokalt perspektiv
+### Steg 10: Editorial Hooks med lokalt perspektiv (tospråklig)
 
 For hver POI (unntatt transport: bus, train, bike, tram, parking):
 
 1. Søk etter `"{poi.name} {poi.address}"` med WebSearch
-2. Generer `editorialHook` og `localInsight` med lokalt perspektiv:
+2. Generer **norsk og engelsk** `editorialHook` og `localInsight` med lokalt perspektiv:
 
 **Redaksjonell vinkel:** "Slik bruker lokalbefolkningen nabolaget."
 - Tone: Monocle/Kinfolk — kort, opinionated, curated
@@ -281,18 +281,29 @@ For hver POI (unntatt transport: bus, train, bike, tram, parking):
 - Regel: Aldri påstå noe som ikke kan verifiseres fra søkeresultat
 
 **editorialHook:** 1 setning. Lokal kontekst — historisk, kulturell, eller praktisk. Basert på WebSearch.
-Eksempel: "Har servert kaffe på Bakklandet siden 2004. Fast stopp for lokale på vei til jobb."
+NO-eksempel: "Har servert kaffe på Bakklandet siden 2004. Fast stopp for lokale på vei til jobb."
+EN-eksempel: "Serving coffee on Bakklandet since 2004. A regular stop for locals on their way to work."
 
 **localInsight:** 1 setning. Praktisk tips fra insider-perspektiv.
-Eksempel: "Bestill bord etter kl 18 i helgene — populært blant lokale."
+NO-eksempel: "Bestill bord etter kl 18 i helgene — populært blant lokale."
+EN-eksempel: "Book a table after 6 PM on weekends — popular with locals."
 
-3. PATCH POI-en via Supabase REST: `editorial_hook` og `local_insight`
-4. Hopp over POI-er som allerede har `editorial_hook`
-5. Vis progress: `[15/42] Generating hook for Havfruen...`
+3. PATCH POI-en med norsk tekst via Supabase REST: `editorial_hook` og `local_insight`
+4. Lagre engelsk tekst i `translations`-tabellen:
+```
+POST {SUPABASE_URL}/rest/v1/translations
+Headers: Prefer: resolution=merge-duplicates
+Body: [
+  { "locale": "en", "entity_type": "poi", "entity_id": "{poiId}", "field": "editorial_hook", "value": "{EN editorialHook}" },
+  { "locale": "en", "entity_type": "poi", "entity_id": "{poiId}", "field": "local_insight", "value": "{EN localInsight}" }
+]
+```
+5. Hopp over POI-er som allerede har `editorial_hook`
+6. Vis progress: `[15/42] Generating hook for Havfruen...`
 
-### Steg 11: Report-intro og bridgeText per theme
+### Steg 11: Report-intro og bridgeText per theme (tospråklig)
 
-Generer tekster som gjør rapporten stedsspesifikk.
+Generer tekster som gjør rapporten stedsspesifikk — **på norsk og engelsk**.
 
 **Kontekst for generering:**
 - Hotellnavn: {hotellnavn}
@@ -302,11 +313,13 @@ Generer tekster som gjør rapporten stedsspesifikk.
 
 **1. heroIntro** — 2-3 setninger. Kort, confident, stedsspesifikk. Nevn bydel.
 
-Eksempel: "Scandic Nidelven ligger midt i Trondheims historiske sjøfartsmiljø. Nabolaget byr på byens beste restaurantscene, levende kulturliv og korte avstander til alt du trenger."
+NO-eksempel: "Scandic Nidelven ligger midt i Trondheims historiske sjøfartsmiljø. Nabolaget byr på byens beste restaurantscene, levende kulturliv og korte avstander til alt du trenger."
+EN-eksempel: "Scandic Nidelven sits in the heart of Trondheim's historic maritime quarter. The neighborhood offers the city's best restaurant scene, vibrant cultural life, and short distances to everything you need."
 
 **2. bridgeText per theme** — 1-2 setninger. Kontekstuell overgang. Nevn faktiske POI-er.
 
-Eksempel (Mat & Drikke): "Fra prisbelønte Credo til den lokale favoritten Bakklandet Skydsstation — matscenen rundt hotellet spenner fra fine dining til upretensiøs hverdagskos."
+NO-eksempel (Mat & Drikke): "Fra prisbelønte Credo til den lokale favoritten Bakklandet Skydsstation — matscenen rundt hotellet spenner fra fine dining til upretensiøs hverdagskos."
+EN-eksempel (Food & Drinks): "From award-winning Credo to local favorite Bakklandet Skydsstation — the food scene around the hotel ranges from fine dining to unpretentious everyday comfort."
 
 **Prompt-mal:**
 ```
@@ -321,12 +334,16 @@ By: {by}
 POI-er i denne kategorien:
 {poi-liste med navn, rating, gangtid}
 
-Generer:
+Generer på NORSK:
 1. heroIntro (kun for første kall): 2-3 setninger om nabolaget som helhet
 2. bridgeText for theme "{theme.name}": 1-2 setninger, nevn 1-2 konkrete steder
+
+Generer deretter samme tekster på ENGELSK:
+1. heroIntro_en
+2. bridgeText_en
 ```
 
-**Lagre:**
+**Lagre norsk:**
 - heroIntro → PATCH Report-produktet: `config.reportConfig.heroIntro`
 - bridgeText → PATCH Report-produktet: `config.reportConfig.themes[i].bridgeText`
 
@@ -334,6 +351,18 @@ Generer:
 PATCH {SUPABASE_URL}/rest/v1/products?id=eq.{reportId}
 Body: { "config": {oppdatert config med heroIntro og bridgeTexts} }
 ```
+
+**Lagre engelsk i translations-tabellen:**
+```
+POST {SUPABASE_URL}/rest/v1/translations
+Headers: Prefer: resolution=merge-duplicates
+Body: [
+  { "locale": "en", "entity_type": "report", "entity_id": "{reportId}", "field": "hero_intro", "value": "{EN heroIntro}" },
+  { "locale": "en", "entity_type": "theme", "entity_id": "{themeId}", "field": "bridge_text", "value": "{EN bridgeText}" }
+]
+```
+
+Gjenta for alle themes.
 
 ### Steg 12: Revalidate cache + valider
 
@@ -373,6 +402,11 @@ Verifiser resultatet og vis rapport.
 - Alle themes skal ha bridgeText
 - Vis: `✅ Report-tekster: heroIntro + 5/5 bridgeTexts`
 
+**Sjekk 5: Oversettelser (EN)**
+- Hent antall translations med locale="en" for dette prosjektet
+- Sammenlign med forventet antall (POI editorial_hooks + theme bridgeTexts + heroIntro)
+- Vis: `✅ Oversettelser: 43/43 EN translations lagret` eller `⚠️ Oversettelser: 38/43 EN — 5 mangler`
+
 **Output-format:**
 ```
 QA-sjekk:
@@ -383,6 +417,7 @@ QA-sjekk:
    - supermarket-rema-1000-2
    - gym-sats-midtbyen
 ✅ Report-tekster: heroIntro + 5/5 bridgeTexts
+✅ Oversettelser: 43/43 EN translations lagret
 
 Vil du at jeg fikser advarslene?
 ```
@@ -391,6 +426,7 @@ Hvis brukeren sier ja, fiks:
 - Manglende editorialHook → Kjør Steg 10 for de spesifikke POI-ene
 - Manglende bilder → Kjør Steg 9 for de spesifikke POI-ene
 - Manglende bridgeText → Kjør Steg 11 for manglende themes
+- Manglende EN translations → Kjør Steg 10/11 for de spesifikke entitetene
 
 ## Output
 
@@ -411,5 +447,7 @@ Vis en oppsummering med:
 - Report themes: `components/variants/report/report-themes.ts`
 - Report data: `components/variants/report/report-data.ts`
 - GeoJSON gotcha: Koordinater er `[lng, lat]`, reverser til `{ lat, lng }`
+- Translations: `lib/supabase/translations.ts` — translation CRUD
+- i18n strings: `lib/i18n/strings.ts` — UI string dictionary
 - Category fallback: `docs/solutions/logic-errors/empty-product-categories-explorer-zero-pois-20260205.md`
 - Nanoid short URLs: `docs/solutions/ux-improvements/nanoid-short-urls-admin-projects-20260205.md`

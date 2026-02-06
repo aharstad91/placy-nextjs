@@ -211,7 +211,7 @@ Generer:
 
 ### Database
 
-- [ ] Ny migration: `translations`-tabell
+- [x] Ny migration: `translations`-tabell
 
 ```sql
 -- supabase/migrations/NNN_create_translations.sql
@@ -233,22 +233,22 @@ CREATE INDEX idx_translations_lookup
 
 ### Backend
 
-- [ ] Lag `lib/supabase/translations.ts` — CRUD for translations
-- [ ] Oppdater `getProductFromSupabase()` til å hente translations med locale-parameter
-- [ ] Fallback-kjede: `translations[locale]` → `translations["no"]` → `poi.editorial_hook` → null
+- [x] Lag `lib/supabase/translations.ts` — CRUD for translations
+- [x] Oppdater `getProductFromSupabase()` til å hente translations med locale-parameter
+- [x] Fallback-kjede: `translations[locale]` → `translations["no"]` → `poi.editorial_hook` → null
 
 ### Frontend
 
-- [ ] Lag `lib/hooks/useLocale.ts` — detect fra `Accept-Language` + state for toggle
-- [ ] Legg til NO/EN toggle-komponent i Report header
-- [ ] Oppdater Report-komponenter til å bruke translations med locale
+- [x] Lag `lib/hooks/useLocale.ts` — detect fra `Accept-Language` + state for toggle
+- [x] Legg til NO/EN toggle-komponent i Report header
+- [x] Oppdater Report-komponenter til å bruke translations med locale
 
 ### Generering
 
-- [ ] Oppdater generate-hotel til å generere NO + EN i samme kjøring
-- [ ] Prompten ber om begge språk per tekst
-- [ ] Lagre som separate rader i translations-tabellen
-- [ ] Behold eksisterende felter (editorial_hook, local_insight) som fallback
+- [x] Oppdater generate-hotel til å generere NO + EN i samme kjøring
+- [x] Prompten ber om begge språk per tekst
+- [x] Lagre som separate rader i translations-tabellen
+- [x] Behold eksisterende felter (editorial_hook, local_insight) som fallback
 
 ### Filer som opprettes
 
@@ -265,12 +265,12 @@ CREATE INDEX idx_translations_lookup
 
 ### Akseptkriterier
 
-- [ ] Translations-tabell eksisterer med correct schema
-- [ ] Generate-hotel skriver NO + EN for alle tekster
-- [ ] Report autodetekter språk fra nettleser
-- [ ] NO/EN toggle fungerer i Report
-- [ ] Fallback til norsk hvis oversettelse mangler
-- [ ] Eksisterende rapporter fungerer uten translations (backward-compatible)
+- [x] Translations-tabell eksisterer med correct schema
+- [x] Generate-hotel skriver NO + EN for alle tekster
+- [x] Report autodetekter språk fra nettleser
+- [x] NO/EN toggle fungerer i Report
+- [x] Fallback til norsk hvis oversettelse mangler
+- [x] Eksisterende rapporter fungerer uten translations (backward-compatible)
 
 ---
 

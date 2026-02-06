@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProductAsync, getProjectAsync, productExists } from "@/lib/data-server";
+import { getProjectTranslations } from "@/lib/supabase/translations";
 import ReportPage from "@/components/variants/report/ReportPage";
 
 interface PageProps {
@@ -27,11 +28,22 @@ export default async function ReportProductPage({ params }: PageProps) {
     notFound();
   }
 
+  // Load English translations for locale toggle (Norwegian is canonical in project data)
+  const poiIds = projectData.pois.map((p) => p.id);
+  const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
+  const enTranslations = await getProjectTranslations("en", poiIds, themeIds, projectData.id);
+
   // Check if explorer exists (for CTA link)
   const hasExplorer = await productExists(customer, projectSlug, "explorer");
   const explorerUrl = hasExplorer ? `/${customer}/${projectSlug}/explore` : null;
 
-  return <ReportPage project={projectData} explorerBaseUrl={explorerUrl} />;
+  return (
+    <ReportPage
+      project={projectData}
+      explorerBaseUrl={explorerUrl}
+      enTranslations={enTranslations}
+    />
+  );
 }
 
 export async function generateMetadata({ params }: PageProps) {
