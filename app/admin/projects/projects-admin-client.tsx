@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Trash2,
@@ -10,15 +11,14 @@ import {
   FolderOpen,
   ExternalLink,
   Filter,
-  BookOpen,
   Compass,
   FileText,
   Map,
-  ChevronRight,
   Package,
 } from "lucide-react";
 import type { DbCustomer } from "@/lib/supabase/types";
 import { ConfirmDialog } from "@/components/admin";
+import { slugify } from "@/lib/utils/slugify";
 
 // Product in a container
 interface ProductInfo {
@@ -67,31 +67,19 @@ const productColors = {
   guide: "text-amber-600 bg-amber-50",
 };
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[æ]/g, "ae")
-    .replace(/[ø]/g, "o")
-    .replace(/[å]/g, "a")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
 export function ProjectsAdminClient({
   containers,
   customers,
   createProject,
   deleteProject,
 }: ProjectsAdminClientProps) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     container: ProjectContainer;
     product?: ProductInfo;
   } | null>(null);
   const [filterCustomerId, setFilterCustomerId] = useState<string>("");
-  const [expandedContainers, setExpandedContainers] = useState<Set<string>>(
-    new Set()
-  );
 
   // Form state for create modal
   const [customerId, setCustomerId] = useState("");
@@ -109,24 +97,6 @@ export function ProjectsAdminClient({
     if (!filterCustomerId) return containers;
     return containers.filter((c) => c.customer_id === filterCustomerId);
   }, [containers, filterCustomerId]);
-
-  // Count total products
-  const totalProducts = useMemo(
-    () => filteredContainers.reduce((sum, c) => sum + c.products.length, 0),
-    [filteredContainers]
-  );
-
-  const toggleExpanded = (containerId: string) => {
-    setExpandedContainers((prev) => {
-      const next = new Set(prev);
-      if (next.has(containerId)) {
-        next.delete(containerId);
-      } else {
-        next.add(containerId);
-      }
-      return next;
-    });
-  };
 
   const openCreateModal = () => {
     setCustomerId(customers[0]?.id || "");
@@ -240,8 +210,7 @@ export function ProjectsAdminClient({
             <h1 className="text-2xl font-bold text-gray-900">Prosjekter</h1>
             <p className="text-sm text-gray-500">
               {filteredContainers.length} prosjekt
-              {filteredContainers.length !== 1 && "er"}, {totalProducts} produkt
-              {totalProducts !== 1 && "er"}
+              {filteredContainers.length !== 1 && "er"}
               {filterCustomerId && " (filtrert)"}
             </p>
           </div>
@@ -307,54 +276,33 @@ export function ProjectsAdminClient({
             </div>
           ) : (
             filteredContainers.map((container) => {
-              const isExpanded =
-                expandedContainers.has(container.id) ||
-                container.products.length === 1;
-              const hasMultipleProducts = container.products.length > 1;
+              const canNavigate =
+                container.source === "supabase" && container.short_id;
 
               return (
                 <div
                   key={container.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+                  className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${
+                    canNavigate
+                      ? "cursor-pointer hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                      : ""
+                  }`}
+                  onClick={
+                    canNavigate
+                      ? () =>
+                          router.push(`/admin/projects/${container.short_id}`)
+                      : undefined
+                  }
                 >
-                  {/* Container header */}
-                  <div
-                    className={`flex items-center justify-between px-4 py-3 ${
-                      hasMultipleProducts
-                        ? "cursor-pointer hover:bg-gray-50"
-                        : ""
-                    }`}
-                    onClick={
-                      hasMultipleProducts
-                        ? () => toggleExpanded(container.id)
-                        : undefined
-                    }
-                  >
+                  <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                      {hasMultipleProducts && (
-                        <ChevronRight
-                          className={`w-4 h-4 text-gray-400 transition-transform ${
-                            isExpanded ? "rotate-90" : ""
-                          }`}
-                        />
-                      )}
                       <div className="w-9 h-9 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
                         <Package className="w-4 h-4 text-blue-600" />
                       </div>
                       <div>
-                        {container.source === "supabase" && container.short_id ? (
-                          <Link
-                            href={`/admin/projects/${container.short_id}`}
-                            className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {container.name}
-                          </Link>
-                        ) : (
-                          <h3 className="text-sm font-semibold text-gray-900">
-                            {container.name}
-                          </h3>
-                        )}
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {container.name}
+                        </h3>
                         <p className="text-xs text-gray-500">
                           {container.customerName} ·{" "}
                           <code className="bg-gray-100 px-1 rounded">
@@ -415,78 +363,6 @@ export function ProjectsAdminClient({
                       )}
                     </div>
                   </div>
-
-                  {/* Expanded products */}
-                  {isExpanded && container.products.length > 0 && (
-                    <div className="border-t border-gray-100 bg-gray-50/50">
-                      {container.products.map((product, idx) => {
-                        const Icon = productIcons[product.type];
-                        const productPath =
-                          product.type === "explorer"
-                            ? "explore"
-                            : product.type;
-
-                        return (
-                          <div
-                            key={product.id}
-                            className={`flex items-center justify-between px-4 py-2.5 ${
-                              idx > 0 ? "border-t border-gray-100" : ""
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 pl-7">
-                              <div
-                                className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                                  productColors[product.type]
-                                }`}
-                              >
-                                <Icon className="w-3.5 h-3.5" />
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-gray-700">
-                                  {productLabels[product.type]}
-                                </span>
-                                {product.title && (
-                                  <p className="text-xs text-gray-400 truncate max-w-[300px]">
-                                    {product.title}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                              {/* Story Editor link */}
-                              {container.source === "supabase" && (
-                                <Link
-                                  href={`/admin/projects/${product.id}/story`}
-                                  className="p-2 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                  title="Story Editor"
-                                >
-                                  <BookOpen className="w-4 h-4" />
-                                </Link>
-                              )}
-
-                              {/* Open product */}
-                              <Link
-                                href={`/${container.customer_id}/${container.url_slug}/${productPath}`}
-                                target="_blank"
-                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                                title={`Åpne ${productLabels[product.type]}`}
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </Link>
-
-                              {/* JSON file path */}
-                              {product.filePath && (
-                                <span className="text-xs text-gray-400 px-2 truncate max-w-[180px]">
-                                  {product.filePath}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               );
             })

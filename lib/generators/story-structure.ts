@@ -12,6 +12,7 @@ import {
   Category,
 } from "../types";
 import { DiscoveredPOI } from "./poi-discovery";
+import { slugify } from "../utils/slugify";
 
 // === Types ===
 
@@ -345,14 +346,7 @@ export function convertToPOI(
 
 // === Helper Functions ===
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+// slugify imported from lib/utils/slugify
 
 function countWithinWalk(
   pois: DiscoveredPOI[],

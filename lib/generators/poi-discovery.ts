@@ -5,6 +5,7 @@
 
 import { POI, Category, Coordinates } from "../types";
 import { calculateDistance } from "../utils/geo";
+import { slugify } from "../utils/slugify";
 
 // === Types ===
 
@@ -410,14 +411,7 @@ export async function discoverPOIs(
 
 // === Helper Functions ===
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+// slugify imported from lib/utils/slugify
 
 /**
  * Generate a unique POI ID with source prefix.

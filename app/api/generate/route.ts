@@ -13,6 +13,7 @@ import { Project, Coordinates } from "@/lib/types";
 import { discoverPOIs, DiscoveredPOI } from "@/lib/generators/poi-discovery";
 import { generateStoryStructure, convertToPOI, ThemeConfig } from "@/lib/generators/story-structure";
 import { mergeProjectData } from "@/lib/generators/merge-data";
+import { slugify } from "@/lib/utils/slugify";
 
 // Default configuration
 const DEFAULT_THEMES: ThemeConfig[] = [
@@ -29,15 +30,6 @@ interface GenerateRequest {
   radius: number;
   categories: string[];
   includeTransport: boolean;
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 export async function POST(request: NextRequest) {

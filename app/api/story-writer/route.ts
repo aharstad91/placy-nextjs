@@ -19,6 +19,7 @@ import {
   STORY_WRITER_DEFAULT_THEMES,
 } from "@/lib/generators/story-writer";
 import type { ThemeConfig } from "@/lib/generators/story-structure";
+import { slugify } from "@/lib/utils/slugify";
 
 interface StoryWriterRequest {
   // For new project
@@ -31,15 +32,6 @@ interface StoryWriterRequest {
 
   // For existing project (regenerate)
   projectId?: string;
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 export async function POST(request: NextRequest) {
