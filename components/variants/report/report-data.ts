@@ -104,9 +104,6 @@ export function transformToReportData(project: Project): ReportData {
     transportCount,
   };
 
-  // Check if any POIs have featured flag set (from generate-hotel scoring)
-  const hasFeaturedFlags = allPOIs.some((p) => p.featured);
-
   // Group POIs by theme
   const themes: ReportTheme[] = [];
   const themeDefinitions = getReportThemes(project);
@@ -137,12 +134,14 @@ export function transformToReportData(project: Project): ReportData {
     const capped = sorted.slice(0, cap);
 
     // Split into highlight and list POIs
+    // Check per-theme so themes with featured flags use them while others use rating fallback
+    const themeFeatured = capped.filter((p) => p.featured);
     let highlightPOIs: POI[];
     let listPOIs: POI[];
 
-    if (hasFeaturedFlags) {
-      // Use DB-driven featured flags
-      highlightPOIs = capped.filter((p) => p.featured);
+    if (themeFeatured.length > 0) {
+      // Use DB-driven featured flags for this theme
+      highlightPOIs = themeFeatured;
       listPOIs = capped.filter((p) => !p.featured);
     } else {
       // Fallback: top N by rating (backward compatible)

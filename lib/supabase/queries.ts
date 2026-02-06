@@ -751,16 +751,15 @@ export async function getProjectContainerFromSupabase(
 
     // Separate query for featured (graceful if column doesn't exist yet)
     let featuredPoiIds: string[] = [];
-    try {
-      const { data: featuredData } = await supabase
-        .from("product_pois")
-        .select("poi_id")
-        .eq("product_id", prod.id)
-        .eq("featured" as string, true);
+    const { data: featuredData, error: featuredError } = await supabase
+      .from("product_pois")
+      .select("poi_id")
+      .eq("product_id", prod.id)
+      .eq("featured" as string, true); // TODO: Remove `as string` cast after regenerating Supabase types
+    if (!featuredError) {
       featuredPoiIds = (featuredData || []).map((fp: { poi_id: string }) => fp.poi_id);
-    } catch {
-      // Column doesn't exist yet — migration 009 not applied
     }
+    // featuredError means migration 009 not yet applied — gracefully skip
 
     // Fetch product categories
     const { data: productCatsData } = await supabase
@@ -844,7 +843,7 @@ export async function getProductFromSupabase(
     .filter((poi) => productPoiSet.has(poi.id))
     .map((poi) => ({
       ...poi,
-      featured: featuredPoiSet.has(poi.id) || undefined,
+      featured: featuredPoiSet.has(poi.id) ? true : undefined,
     }));
 
   // Get categories for this product
