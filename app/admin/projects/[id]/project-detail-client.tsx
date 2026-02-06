@@ -731,6 +731,8 @@ function PoisTab({
       formData.set("projectId", project.id);
       formData.set("shortId", project.short_id);
       formData.set("poiId", removeTarget);
+      formData.set("customerSlug", project.customer_id || "");
+      formData.set("projectSlug", project.url_slug);
       await removePoiFromProject(formData);
       setRemoveTarget(null);
       setActivePoiId(null);
@@ -1307,6 +1309,8 @@ function ProductsTab({
       formData.set("productId", product.id);
       formData.set("poiId", poiId);
       formData.set("shortId", project.short_id);
+      formData.set("customerSlug", project.customer_id || "");
+      formData.set("projectSlug", project.url_slug);
 
       if (isCurrentlySelected) {
         await removePoiFromProduct(formData);
@@ -1369,6 +1373,8 @@ function ProductsTab({
       formData.set("productId", product.id);
       formData.set("poiIds", JSON.stringify(poisToToggle.map((pp) => pp.pois.id)));
       formData.set("shortId", project.short_id);
+      formData.set("customerSlug", project.customer_id || "");
+      formData.set("projectSlug", project.url_slug);
 
       if (selectAll) {
         await batchAddPoisToProduct(formData);

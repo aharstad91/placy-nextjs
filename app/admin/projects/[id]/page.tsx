@@ -417,6 +417,8 @@ export default async function ProjectDetailPage({
     const projectId = getRequiredString(formData, "projectId");
     const shortId = getRequiredString(formData, "shortId");
     const poiId = getRequiredString(formData, "poiId");
+    const customerSlug = getOptionalString(formData, "customerSlug");
+    const projectSlug = getOptionalString(formData, "projectSlug");
 
     const supabase = createServerClient();
     if (!supabase) throw new Error("Database not configured");
@@ -443,6 +445,9 @@ export default async function ProjectDetailPage({
 
     if (error) throw new Error(error.message);
     revalidatePath(`/admin/projects/${shortId}`);
+    if (customerSlug && projectSlug) {
+      revalidatePath(`/${customerSlug}/${projectSlug}`, "layout");
+    }
   }
 
   async function addPoiToProduct(formData: FormData) {
@@ -451,6 +456,8 @@ export default async function ProjectDetailPage({
     const productId = getRequiredString(formData, "productId");
     const poiId = getRequiredString(formData, "poiId");
     const shortId = getRequiredString(formData, "shortId");
+    const customerSlug = getOptionalString(formData, "customerSlug");
+    const projectSlug = getOptionalString(formData, "projectSlug");
 
     const supabase = createServerClient();
     if (!supabase) throw new Error("Database not configured");
@@ -468,6 +475,9 @@ export default async function ProjectDetailPage({
     }
 
     revalidatePath(`/admin/projects/${shortId}`);
+    if (customerSlug && projectSlug) {
+      revalidatePath(`/${customerSlug}/${projectSlug}`, "layout");
+    }
   }
 
   async function batchAddPoisToProduct(formData: FormData) {
@@ -476,6 +486,8 @@ export default async function ProjectDetailPage({
     const productId = getRequiredString(formData, "productId");
     const poiIdsJson = getRequiredString(formData, "poiIds");
     const shortId = getRequiredString(formData, "shortId");
+    const customerSlug = getOptionalString(formData, "customerSlug");
+    const projectSlug = getOptionalString(formData, "projectSlug");
 
     const poiIds = parseStringArray(poiIdsJson);
     if (poiIds.length === 0) return;
@@ -495,6 +507,9 @@ export default async function ProjectDetailPage({
 
     if (error) throw new Error(error.message);
     revalidatePath(`/admin/projects/${shortId}`);
+    if (customerSlug && projectSlug) {
+      revalidatePath(`/${customerSlug}/${projectSlug}`, "layout");
+    }
   }
 
   async function batchRemovePoisFromProduct(formData: FormData) {
@@ -503,6 +518,8 @@ export default async function ProjectDetailPage({
     const productId = getRequiredString(formData, "productId");
     const poiIdsJson = getRequiredString(formData, "poiIds");
     const shortId = getRequiredString(formData, "shortId");
+    const customerSlug = getOptionalString(formData, "customerSlug");
+    const projectSlug = getOptionalString(formData, "projectSlug");
 
     const poiIds = parseStringArray(poiIdsJson);
     if (poiIds.length === 0) return;
@@ -519,6 +536,9 @@ export default async function ProjectDetailPage({
 
     if (error) throw new Error(error.message);
     revalidatePath(`/admin/projects/${shortId}`);
+    if (customerSlug && projectSlug) {
+      revalidatePath(`/${customerSlug}/${projectSlug}`, "layout");
+    }
   }
 
   async function removePoiFromProduct(formData: FormData) {
@@ -527,6 +547,8 @@ export default async function ProjectDetailPage({
     const productId = getRequiredString(formData, "productId");
     const poiId = getRequiredString(formData, "poiId");
     const shortId = getRequiredString(formData, "shortId");
+    const customerSlug = getOptionalString(formData, "customerSlug");
+    const projectSlug = getOptionalString(formData, "projectSlug");
 
     const supabase = createServerClient();
     if (!supabase) throw new Error("Database not configured");
@@ -539,6 +561,9 @@ export default async function ProjectDetailPage({
 
     if (error) throw new Error(error.message);
     revalidatePath(`/admin/projects/${shortId}`);
+    if (customerSlug && projectSlug) {
+      revalidatePath(`/${customerSlug}/${projectSlug}`, "layout");
+    }
   }
 
   async function createProduct(formData: FormData) {
