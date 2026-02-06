@@ -28,6 +28,7 @@ export interface ReportTheme {
   name: string;
   icon: string;
   intro?: string;
+  bridgeText?: string;
   stats: ReportThemeStats;
   highlightPOIs: POI[];
   listPOIs: POI[];
@@ -53,6 +54,7 @@ export interface ReportData {
 const TRANSPORT_CATEGORIES = new Set([
   "bus",
   "train",
+  "tram",
   "bike",
   "parking",
   "carshare",
@@ -60,8 +62,21 @@ const TRANSPORT_CATEGORIES = new Set([
   "airport",
 ]);
 
-const HIGHLIGHT_COUNT = 3;
-const THEME_MIN_POIS = 3;
+/**
+ * Variable cap per theme for Report view.
+ * Transport gets all; other themes are capped to keep the report focused.
+ */
+const THEME_CAP: Record<string, number> = {
+  "mat-drikke": 8,
+  "kultur-opplevelser": 3,
+  "hverdagsbehov": 3,
+  "transport": Infinity,
+  "trening-velvare": 3,
+};
+const DEFAULT_THEME_CAP = 5;
+
+const HIGHLIGHT_FALLBACK_COUNT = 3;
+const THEME_MIN_POIS = 2;
 
 export function transformToReportData(project: Project): ReportData {
   const allPOIs = project.pois;
@@ -89,6 +104,9 @@ export function transformToReportData(project: Project): ReportData {
     transportCount,
   };
 
+  // Check if any POIs have featured flag set (from generate-hotel scoring)
+  const hasFeaturedFlags = allPOIs.some((p) => p.featured);
+
   // Group POIs by theme
   const themes: ReportTheme[] = [];
   const themeDefinitions = getReportThemes(project);
@@ -105,6 +123,9 @@ export function transformToReportData(project: Project): ReportData {
 
     if (themePOIs.length < THEME_MIN_POIS) continue;
 
+    // Apply variable capping (transport gets all, others are capped)
+    const cap = THEME_CAP[themeDef.id] ?? DEFAULT_THEME_CAP;
+
     // Sort by rating descending (unrated at end)
     const sorted = [...themePOIs].sort((a, b) => {
       if (a.googleRating == null && b.googleRating == null) return 0;
@@ -113,32 +134,45 @@ export function transformToReportData(project: Project): ReportData {
       return b.googleRating - a.googleRating;
     });
 
-    const highlightPOIs = sorted.slice(0, HIGHLIGHT_COUNT);
-    const listPOIs = sorted.slice(HIGHLIGHT_COUNT);
+    const capped = sorted.slice(0, cap);
 
-    const themeRated = themePOIs.filter((p) => p.googleRating != null);
+    // Split into highlight and list POIs
+    let highlightPOIs: POI[];
+    let listPOIs: POI[];
+
+    if (hasFeaturedFlags) {
+      // Use DB-driven featured flags
+      highlightPOIs = capped.filter((p) => p.featured);
+      listPOIs = capped.filter((p) => !p.featured);
+    } else {
+      // Fallback: top N by rating (backward compatible)
+      highlightPOIs = capped.slice(0, HIGHLIGHT_FALLBACK_COUNT);
+      listPOIs = capped.slice(HIGHLIGHT_FALLBACK_COUNT);
+    }
+
+    const themeRated = capped.filter((p) => p.googleRating != null);
     const themeAvg =
       themeRated.length > 0
         ? themeRated.reduce((s, p) => s + (p.googleRating ?? 0), 0) /
           themeRated.length
         : null;
-    const themeReviews = themePOIs.reduce(
+    const themeReviews = capped.reduce(
       (s, p) => s + (p.googleReviewCount ?? 0),
       0
     );
-    const editorialCount = themePOIs.filter((p) => p.editorialHook).length;
+    const editorialCount = capped.filter((p) => p.editorialHook).length;
 
     // Count unique categories within theme
-    const uniqueCategories = new Set(themePOIs.map((p) => p.category.id)).size;
+    const uniqueCategories = new Set(capped.map((p) => p.category.id)).size;
 
     const richnessScore =
-      themeRated.length * 2 + editorialCount * 3 + themePOIs.length;
+      themeRated.length * 2 + editorialCount * 3 + capped.length;
 
-    // Calculate category score (proximity uses null for now, will be enhanced client-side)
+    // Calculate category score
     const score = calculateCategoryScore({
-      totalPOIs: themePOIs.length,
+      totalPOIs: capped.length,
       avgRating: themeAvg,
-      avgWalkTimeMinutes: null, // Enhanced client-side with travel times
+      avgWalkTimeMinutes: null,
       uniqueCategories,
     });
 
@@ -147,7 +181,7 @@ export function transformToReportData(project: Project): ReportData {
       themeDef.id,
       score.total,
       uniqueCategories,
-      project.id // Use project ID as seed for consistency
+      project.id
     );
 
     themes.push({
@@ -155,8 +189,9 @@ export function transformToReportData(project: Project): ReportData {
       name: themeDef.name,
       icon: themeDef.icon,
       intro: themeDef.intro,
+      bridgeText: themeDef.bridgeText,
       stats: {
-        totalPOIs: themePOIs.length,
+        totalPOIs: capped.length,
         ratedPOIs: themeRated.length,
         avgRating: themeAvg != null ? Math.round(themeAvg * 10) / 10 : null,
         totalReviews: themeReviews,
@@ -165,15 +200,17 @@ export function transformToReportData(project: Project): ReportData {
       },
       highlightPOIs,
       listPOIs,
-      allPOIs: themePOIs,
+      allPOIs: capped,
       richnessScore,
       score,
       quote,
     });
   }
 
-  // Sort themes by richness descending
-  themes.sort((a, b) => b.richnessScore - a.richnessScore);
+  // If themes come from reportConfig, preserve that order; otherwise sort by richness
+  if (!project.reportConfig?.themes) {
+    themes.sort((a, b) => b.richnessScore - a.richnessScore);
+  }
 
   const rc = project.reportConfig;
 

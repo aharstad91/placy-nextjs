@@ -46,6 +46,9 @@ export interface POI {
   storyPriority?: StoryPriority;
   editorialSources?: string[];
 
+  // Product-specific flags (set per product_pois)
+  featured?: boolean;
+
   // Transport-integrasjoner
   enturStopplaceId?: string;
   bysykkelStationId?: string;
@@ -113,6 +116,7 @@ export interface ReportThemeConfig {
   icon: string;
   categories: string[];
   intro?: string;
+  bridgeText?: string;
 }
 
 export interface ReportConfig {
@@ -174,6 +178,8 @@ export interface ProductInstance {
   storyHeroImages?: string[];
   /** POI IDs this product uses (subset of project's POI pool) */
   poiIds: string[];
+  /** POI IDs marked as featured for this product */
+  featuredPoiIds: string[];
   /** Category IDs this product shows */
   categoryIds: string[];
   version: number;

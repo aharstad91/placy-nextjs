@@ -6,32 +6,43 @@ export interface ReportThemeDefinition {
   icon: string;
   categories: string[];
   intro?: string;
+  bridgeText?: string;
 }
 
+/**
+ * Default report themes optimized for city hotel guests.
+ * Order: what a guest cares about most first.
+ */
 export const REPORT_THEMES: ReportThemeDefinition[] = [
   {
     id: "mat-drikke",
     name: "Mat & Drikke",
     icon: "UtensilsCrossed",
-    categories: ["restaurant", "cafe"],
+    categories: ["restaurant", "cafe", "bar", "bakery"],
+  },
+  {
+    id: "kultur-opplevelser",
+    name: "Kultur & Opplevelser",
+    icon: "Landmark",
+    categories: ["museum", "library", "cinema", "park"],
+  },
+  {
+    id: "hverdagsbehov",
+    name: "Hverdagsbehov",
+    icon: "ShoppingCart",
+    categories: ["supermarket", "pharmacy", "shopping", "haircare"],
   },
   {
     id: "transport",
     name: "Transport & Mobilitet",
     icon: "Bus",
-    categories: ["bus", "train", "bike", "parking", "carshare", "taxi", "airport"],
+    categories: ["bus", "train", "tram", "bike", "parking", "carshare", "taxi", "airport"],
   },
   {
-    id: "daglig",
-    name: "Daglig & Praktisk",
-    icon: "ShoppingCart",
-    categories: ["supermarket"],
-  },
-  {
-    id: "aktivitet",
-    name: "Aktivitet & Fritid",
+    id: "trening-velvare",
+    name: "Trening & Velvære",
     icon: "Dumbbell",
-    categories: ["gym", "outdoor"],
+    categories: ["gym", "spa"],
   },
 ];
 
