@@ -15,6 +15,26 @@ import type {
 
 const adminEnabled = process.env.ADMIN_ENABLED === "true";
 
+function parseStringArray(json: string): string[] {
+  const parsed: unknown = JSON.parse(json);
+  if (!Array.isArray(parsed) || !parsed.every((v) => typeof v === "string")) {
+    throw new Error("Expected an array of strings");
+  }
+  return parsed;
+}
+
+// Intermediate type for the project query (before joining project_pois, products, etc.)
+interface ProjectBase {
+  id: string;
+  short_id: string;
+  name: string;
+  url_slug: string;
+  center_lat: number;
+  center_lng: number;
+  customer_id: string | null;
+  customers: Pick<DbCustomer, "id" | "name"> | null;
+}
+
 // Types for nested query results
 export interface ProjectWithRelations {
   id: string;
@@ -69,8 +89,7 @@ export default async function ProjectDetailPage({
   // Fetch project by short_id with nested relations
   // NOTE: short_id column added in migration 008_add_project_short_id.sql
   // Before migration, fall back to looking up by id
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let project: any = null;
+  let project: ProjectBase | null = null;
   let projectError: Error | null = null;
 
   // First try by short_id (new format)
@@ -92,7 +111,8 @@ export default async function ProjectDetailPage({
     .single();
 
   if (projectByShortId) {
-    project = projectByShortId;
+    // Cast needed: short_id column exists (migration 008) but Supabase types not regenerated
+    project = projectByShortId as unknown as ProjectBase;
   } else {
     // Fall back to lookup by full id (backward compatibility)
     const { data: projectById, error: idError } = await supabase
@@ -113,7 +133,7 @@ export default async function ProjectDetailPage({
 
     if (projectById) {
       // Add a temporary short_id for backward compatibility
-      project = { ...projectById, short_id: shortId };
+      project = { ...(projectById as unknown as Omit<ProjectBase, "short_id">), short_id: shortId };
     } else {
       projectError = shortIdError || idError;
     }
@@ -194,10 +214,10 @@ export default async function ProjectDetailPage({
     .select("*")
     .order("name");
 
-  // Fetch all POIs for "Add POI" dropdown
+  // Fetch all POIs for "Add POI" modal (with category for grouping)
   const { data: allPois } = await supabase
     .from("pois")
-    .select("id, name, category_id")
+    .select("id, name, category_id, categories(id, name, color)")
     .order("name");
 
   // Server Actions
@@ -366,6 +386,31 @@ export default async function ProjectDetailPage({
     revalidatePath(`/admin/projects/${shortId}`);
   }
 
+  async function batchAddPoisToProject(formData: FormData) {
+    "use server";
+
+    const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
+    const poiIdsJson = getRequiredString(formData, "poiIds");
+    const poiIds = parseStringArray(poiIdsJson);
+    if (poiIds.length === 0) return;
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    const rows = poiIds.map((poiId) => ({
+      project_id: projectId,
+      poi_id: poiId,
+    }));
+
+    const { error } = await supabase
+      .from("project_pois")
+      .upsert(rows, { onConflict: "project_id,poi_id", ignoreDuplicates: true });
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
   async function removePoiFromProject(formData: FormData) {
     "use server";
 
@@ -418,7 +463,7 @@ export default async function ProjectDetailPage({
     const poiIdsJson = getRequiredString(formData, "poiIds");
     const shortId = getRequiredString(formData, "shortId");
 
-    const poiIds: string[] = JSON.parse(poiIdsJson);
+    const poiIds = parseStringArray(poiIdsJson);
     if (poiIds.length === 0) return;
 
     const supabase = createServerClient();
@@ -445,7 +490,7 @@ export default async function ProjectDetailPage({
     const poiIdsJson = getRequiredString(formData, "poiIds");
     const shortId = getRequiredString(formData, "shortId");
 
-    const poiIds: string[] = JSON.parse(poiIdsJson);
+    const poiIds = parseStringArray(poiIdsJson);
     if (poiIds.length === 0) return;
 
     const supabase = createServerClient();
@@ -529,8 +574,8 @@ export default async function ProjectDetailPage({
       createProjectCategory={createProjectCategory}
       updateProjectCategory={updateProjectCategory}
       deleteProjectCategory={deleteProjectCategory}
-      updateProjectPoiCategory={updateProjectPoiCategory}
       addPoiToProject={addPoiToProject}
+      batchAddPoisToProject={batchAddPoisToProject}
       removePoiFromProject={removePoiFromProject}
       addPoiToProduct={addPoiToProduct}
       removePoiFromProduct={removePoiFromProduct}
