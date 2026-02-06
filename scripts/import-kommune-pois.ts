@@ -15,7 +15,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
-import { slugify } from "../lib/generators/poi-discovery";
+import { slugify } from "../lib/utils/slugify";
 
 dotenv.config({ path: ".env.local" });
 

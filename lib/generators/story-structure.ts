@@ -346,8 +346,6 @@ export function convertToPOI(
 
 // === Helper Functions ===
 
-// slugify imported from lib/utils/slugify
-
 function countWithinWalk(
   pois: DiscoveredPOI[],
   minutes: number

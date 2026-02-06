@@ -411,8 +411,6 @@ export async function discoverPOIs(
 
 // === Helper Functions ===
 
-// slugify imported from lib/utils/slugify
-
 /**
  * Generate a unique POI ID with source prefix.
  *
@@ -443,4 +441,4 @@ function sleep(ms: number): Promise<void> {
 }
 
 // Export categories and utilities for use elsewhere
-export { GOOGLE_CATEGORY_MAP, TRANSPORT_CATEGORIES, slugify, generatePoiId };
+export { GOOGLE_CATEGORY_MAP, TRANSPORT_CATEGORIES, generatePoiId };
