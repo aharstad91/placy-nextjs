@@ -66,7 +66,7 @@ export default function ExplorerPOICard({
       ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
       : poi.featuredImage
     : poi.photoReference
-    ? `/api/places/photo?reference=${poi.photoReference}&maxwidth=400`
+    ? `/api/places/photo?photoReference=${poi.photoReference}&maxWidth=400`
     : null;
 
   const hasImage = imageUrl && !imageError;

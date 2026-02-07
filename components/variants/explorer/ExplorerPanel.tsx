@@ -1,34 +1,33 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useState, useMemo } from "react";
-import type { POI, Category, TravelMode } from "@/lib/types";
-import type { CategoryPackage } from "./explorer-packages";
+import type { POI, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
 import {
   Compass,
   ChevronDown,
   Check,
-  SlidersHorizontal,
   Footprints,
   Bike,
   Car,
 } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { DEFAULT_THEMES } from "@/lib/themes";
 import ExplorerPOICard from "./ExplorerPOICard";
+import ExplorerThemeChips from "./ExplorerThemeChips";
 import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
 
 interface ExplorerPanelProps {
   pois: POI[];
   allPOIs: POI[];
-  categories: Category[];
-  activeCategories: Set<string>;
+  activeThemes: Set<string>;
+  disabledCategories: Set<string>;
   activePOI: string | null;
   highlightedPOI?: string | null;
   contextHint: string | null;
   onPOIClick: (poiId: string) => void;
+  onToggleTheme: (themeId: string) => void;
   onToggleCategory: (categoryId: string) => void;
-  onToggleAll: () => void;
   visibleCount: number;
   totalCount: number;
   travelTimesLoading?: boolean;
@@ -43,10 +42,6 @@ interface ExplorerPanelProps {
   collectionCreatedAt?: string;
   collectionEmail?: string | null;
   explorerUrl?: string;
-  // Package filtering (matching desktop)
-  packages?: CategoryPackage[];
-  activePackage?: string | null;
-  onSelectPackage?: (id: string) => void;
   // Skeleton loading state
   showSkeleton?: boolean;
   showContent?: boolean;
@@ -62,14 +57,14 @@ const travelModeConfig: { mode: TravelMode; label: string; Icon: typeof Footprin
 export default function ExplorerPanel({
   pois,
   allPOIs,
-  categories,
-  activeCategories,
+  activeThemes,
+  disabledCategories,
   activePOI,
   highlightedPOI,
   contextHint,
   onPOIClick,
+  onToggleTheme,
   onToggleCategory,
-  onToggleAll,
   visibleCount,
   totalCount,
   travelTimesLoading,
@@ -84,16 +79,13 @@ export default function ExplorerPanel({
   collectionCreatedAt,
   collectionEmail,
   explorerUrl,
-  packages,
-  activePackage,
-  onSelectPackage,
   showSkeleton = false,
   showContent = true,
   isRefreshing = false,
 }: ExplorerPanelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const [activeDropdown, setActiveDropdown] = useState<"pkg" | "cat" | "travel" | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<"travel" | null>(null);
 
   // Scroll to active POI in list
   useEffect(() => {
@@ -115,52 +107,7 @@ export default function ExplorerPanel({
     []
   );
 
-  const getIcon = useCallback((iconName: string): LucideIcons.LucideIcon => {
-    const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[iconName];
-    return Icon || LucideIcons.MapPin;
-  }, []);
-
-  // Package data
-  const packageData = useMemo(() => {
-    if (!packages) return [];
-    const catMap = new Map(categories.map((c) => [c.id, c]));
-    return packages.map((pkg) => {
-      const catIds = pkg.id === "all"
-        ? new Set(categories.map((c) => c.id))
-        : new Set(pkg.categoryIds.filter((id) => catMap.has(id)));
-      const poiCount = allPOIs.filter((p) => catIds.has(p.category.id)).length;
-      return { pkg, catIds, poiCount };
-    }).filter((d) => d.pkg.id === "all" || d.poiCount > 0);
-  }, [packages, categories, allPOIs]);
-
-  const activePackageDef = useMemo(() => {
-    return packageData.find((d) => d.pkg.id === activePackage) || packageData[0];
-  }, [packageData, activePackage]);
-
-  // Categories scoped to active package
-  const dropdownCategories = useMemo(() => {
-    if (!packages || !activePackage || activePackage === "all") return categories;
-    const pkg = packages.find((p) => p.id === activePackage);
-    if (!pkg) return categories;
-    const catIds = new Set(pkg.categoryIds);
-    return categories.filter((c) => catIds.has(c.id));
-  }, [activePackage, packages, categories]);
-
-  // POI count per category
-  const poiCountByCategory = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const poi of allPOIs) {
-      counts.set(poi.category.id, (counts.get(poi.category.id) || 0) + 1);
-    }
-    return counts;
-  }, [allPOIs]);
-
   const activeTravelConfig = travelModeConfig.find((t) => t.mode === travelMode) || travelModeConfig[0];
-
-  const handleSelectPackage = useCallback((pkgId: string) => {
-    onSelectPackage?.(pkgId);
-    setActiveDropdown(null);
-  }, [onSelectPackage]);
 
   const closeDropdown = useCallback(() => setActiveDropdown(null), []);
 
@@ -199,132 +146,57 @@ export default function ExplorerPanel({
         </p>
       </div>
 
-      {/* Toolbar — matches desktop dropdowns in compact pill form */}
+      {/* Theme chips + travel mode */}
       {!isCollectionView && (
-        <div className="flex-shrink-0 px-4 pb-2 flex items-center gap-1.5">
-          {/* Package selector */}
-          {packages && activePackageDef && (
-            <button
-              onClick={() => setActiveDropdown(activeDropdown === "pkg" ? null : "pkg")}
-              className={cn(chipClass, activeDropdown === "pkg" && "border-gray-400 bg-gray-50")}
-            >
-              {(() => {
-                const PkgIcon = getIcon(activePackageDef.pkg.icon);
-                return <PkgIcon className="w-3.5 h-3.5 text-gray-500" />;
-              })()}
-              <span className="truncate max-w-[60px]">{activePackageDef.pkg.name}</span>
-              <span className="text-[10px] text-gray-400 tabular-nums">({activePackageDef.poiCount})</span>
-              <ChevronDown className={cn("w-3 h-3 text-gray-400 transition-transform", activeDropdown === "pkg" && "rotate-180")} />
-            </button>
-          )}
+        <>
+          <ExplorerThemeChips
+            themes={DEFAULT_THEMES}
+            pois={allPOIs}
+            activeThemes={activeThemes}
+            disabledCategories={disabledCategories}
+            onToggleTheme={onToggleTheme}
+            onToggleCategory={onToggleCategory}
+            variant="mobile"
+          />
 
-          {/* Categories */}
-          <button
-            onClick={() => setActiveDropdown(activeDropdown === "cat" ? null : "cat")}
-            className={cn(chipClass, activeDropdown === "cat" && "border-gray-400 bg-gray-50")}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-gray-500" />
-            <span>Filter</span>
-            <span className="text-[10px] text-gray-400 tabular-nums">({activeCategories.size})</span>
-            <ChevronDown className={cn("w-3 h-3 text-gray-400 transition-transform", activeDropdown === "cat" && "rotate-180")} />
-          </button>
-
-          {/* Travel mode */}
-          {onSetTravelMode && (
-            <button
-              onClick={() => setActiveDropdown(activeDropdown === "travel" ? null : "travel")}
-              className={cn(chipClass, activeDropdown === "travel" && "border-gray-400 bg-gray-50")}
-            >
-              <activeTravelConfig.Icon className="w-3.5 h-3.5 text-gray-500" />
-              <span>{activeTravelConfig.label}</span>
-              <ChevronDown className={cn("w-3 h-3 text-gray-400 transition-transform", activeDropdown === "travel" && "rotate-180")} />
-            </button>
-          )}
-        </div>
+          {/* Travel mode selector */}
+          <div className="flex-shrink-0 px-4 pb-2 flex items-center gap-1.5">
+            {onSetTravelMode && (
+              <button
+                onClick={() => setActiveDropdown(activeDropdown === "travel" ? null : "travel")}
+                className={cn(chipClass, activeDropdown === "travel" && "border-gray-400 bg-gray-50")}
+              >
+                <activeTravelConfig.Icon className="w-3.5 h-3.5 text-gray-500" />
+                <span>{activeTravelConfig.label}</span>
+                <ChevronDown className={cn("w-3 h-3 text-gray-400 transition-transform", activeDropdown === "travel" && "rotate-180")} />
+              </button>
+            )}
+          </div>
+        </>
       )}
 
-      {/* Dropdown panels — slide down inline */}
-      {activeDropdown && (
+      {/* Travel mode dropdown panel */}
+      {activeDropdown === "travel" && (
         <div className="flex-shrink-0 border-t border-b border-gray-100 bg-gray-50/80">
-          {/* Package dropdown */}
-          {activeDropdown === "pkg" && packages && (
-            <div className="py-1 max-h-52 overflow-y-auto">
-              {packageData.map(({ pkg, poiCount }) => {
-                const Icon = getIcon(pkg.icon);
-                const isActive = activePackage === pkg.id;
-                return (
-                  <button
-                    key={pkg.id}
-                    onClick={() => handleSelectPackage(pkg.id)}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
-                      isActive ? "bg-white text-gray-900 font-medium" : "text-gray-600 active:bg-white"
-                    )}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="flex-1 text-left">{pkg.name}</span>
-                    <span className="text-xs text-gray-400 tabular-nums">{poiCount}</span>
-                    {isActive && <Check className="w-3.5 h-3.5 text-gray-500" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Category dropdown */}
-          {activeDropdown === "cat" && (
-            <div className="py-1 max-h-[480px] overflow-y-auto">
-              {dropdownCategories.map((cat) => {
-                const Icon = getIcon(cat.icon);
-                const isActive = activeCategories.has(cat.id);
-                const count = poiCountByCategory.get(cat.id) || 0;
-                if (count === 0) return null;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => onToggleCategory(cat.id)}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 active:bg-white transition-colors"
-                  >
-                    <div
-                      className={cn(
-                        "w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-colors",
-                        isActive ? "border-transparent text-white" : "border-gray-300 bg-white"
-                      )}
-                      style={isActive ? { backgroundColor: cat.color } : undefined}
-                    >
-                      {isActive && <Check className="w-3 h-3" />}
-                    </div>
-                    <Icon className="w-4 h-4 flex-shrink-0" style={{ color: cat.color }} />
-                    <span className="flex-1 text-left">{cat.name}</span>
-                    <span className="text-xs text-gray-400 tabular-nums">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Travel mode dropdown */}
-          {activeDropdown === "travel" && (
-            <div className="py-1">
-              {travelModeConfig.map(({ mode, label, Icon }) => {
-                const isActive = travelMode === mode;
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => { onSetTravelMode?.(mode); closeDropdown(); }}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
-                      isActive ? "bg-white text-gray-900 font-medium" : "text-gray-600 active:bg-white"
-                    )}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="flex-1 text-left">{label}</span>
-                    {isActive && <Check className="w-3.5 h-3.5 text-gray-500" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <div className="py-1">
+            {travelModeConfig.map(({ mode, label, Icon }) => {
+              const isActive = travelMode === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => { onSetTravelMode?.(mode); closeDropdown(); }}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
+                    isActive ? "bg-white text-gray-900 font-medium" : "text-gray-600 active:bg-white"
+                  )}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="flex-1 text-left">{label}</span>
+                  {isActive && <Check className="w-3.5 h-3.5 text-gray-500" />}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 

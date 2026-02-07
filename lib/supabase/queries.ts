@@ -517,12 +517,10 @@ export async function getProjectFromSupabase(
       lat: project.center_lat,
       lng: project.center_lng,
     },
-    // Supabase projects: explicitly null = no packages UI
-    // (can be extended later with JSONB column if needed)
-    packages: null,
     story,
     pois,
     categories,
+    venueType: (project as Record<string, unknown>).venue_type as "hotel" | "residential" | "commercial" | null ?? null,
   };
 }
 
@@ -801,6 +799,7 @@ export async function getProjectContainerFromSupabase(
     pois,
     categories,
     products: productInstances,
+    venueType: (projectAny.venue_type as "hotel" | "residential" | "commercial" | null) ?? null,
     version: (projectAny.version as number) ?? 1,
     createdAt: project.created_at,
     updatedAt: project.updated_at,
@@ -888,7 +887,7 @@ export async function getProductFromSupabase(
     urlSlug: container.urlSlug,
     productType: product.productType,
     centerCoordinates: container.centerCoordinates,
-    packages: null, // Can be added via product.config later
+    venueType: container.venueType,
     reportConfig,
     story,
     pois,
