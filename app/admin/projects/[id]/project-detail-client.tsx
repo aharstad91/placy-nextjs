@@ -35,6 +35,7 @@ import type {
   DbCustomer,
 } from "@/lib/supabase/types";
 import type { ProjectWithRelations, ProductWithPois } from "./page";
+import { DiscoveryCirclesEditor } from "./discovery-circles-editor";
 
 // NOTE: "Kategorier"-fanen er skjult — prosjekt-kategorier brukes ikke i praksis.
 // Vurder å fjerne CategoriesTab og relatert kode helt hvis det forblir ubrukt.
@@ -135,11 +136,19 @@ export function ProjectDetailClient({
         {/* Tab Content */}
         <div className="mt-6">
           {activeTab === "details" && (
-            <DetailsTab
-              project={project}
-              customers={customers}
-              updateProject={updateProject}
-            />
+            <div className="space-y-6">
+              <DetailsTab
+                project={project}
+                customers={customers}
+                updateProject={updateProject}
+              />
+              <DiscoveryCirclesEditor
+                projectId={project.id}
+                centerLat={project.center_lat}
+                centerLng={project.center_lng}
+                initialCircles={project.discovery_circles ?? null}
+              />
+            </div>
           )}
           {/* NOTE: CategoriesTab skjult — prosjekt-kategorier brukes ikke. Fjern helt hvis det forblir ubrukt. */}
           {activeTab === "pois" && (

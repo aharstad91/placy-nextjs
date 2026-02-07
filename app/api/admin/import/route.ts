@@ -52,8 +52,22 @@ const NORWAY_BOUNDS = {
   maxLng: 32.0,
 };
 
+// Single circle schema (reusable)
+const CircleSchema = z.object({
+  lat: z
+    .number()
+    .min(NORWAY_BOUNDS.minLat, "Latitude out of Norway bounds")
+    .max(NORWAY_BOUNDS.maxLat, "Latitude out of Norway bounds"),
+  lng: z
+    .number()
+    .min(NORWAY_BOUNDS.minLng, "Longitude out of Norway bounds")
+    .max(NORWAY_BOUNDS.maxLng, "Longitude out of Norway bounds"),
+  radiusMeters: z.number().min(300).max(2000),
+});
+
 // Zod schema for request validation
 const ImportRequestSchema = z.object({
+  // Legacy single-circle (backward compatible)
   center: z.object({
     lat: z
       .number()
@@ -63,8 +77,10 @@ const ImportRequestSchema = z.object({
       .number()
       .min(NORWAY_BOUNDS.minLng, "Longitude out of Norway bounds")
       .max(NORWAY_BOUNDS.maxLng, "Longitude out of Norway bounds"),
-  }),
-  radiusMeters: z.number().min(300).max(2000),
+  }).optional(),
+  radiusMeters: z.number().min(300).max(2000).optional(),
+  // Multi-circle (new)
+  circles: z.array(CircleSchema).min(1).max(10).optional(),
   categories: z
     .array(z.enum(ALLOWED_CATEGORIES))
     .min(1, "Velg minst én kategori")
@@ -288,7 +304,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ugyldig JSON" }, { status: 400 });
   }
 
-  // 3. Check Google API key
+  // 3. Resolve circles: use explicit circles array, or fallback to center+radius
+  const circles: Array<{ lat: number; lng: number; radiusMeters: number }> =
+    body.circles ?? (body.center && body.radiusMeters
+      ? [{ lat: body.center.lat, lng: body.center.lng, radiusMeters: body.radiusMeters }]
+      : []);
+
+  if (circles.length === 0) {
+    return NextResponse.json(
+      { error: "Enten circles eller center+radiusMeters må oppgis" },
+      { status: 400 }
+    );
+  }
+
+  // API call budget: circles × categories ≤ 60
+  const apiCallBudget = circles.length * body.categories.length;
+  if (apiCallBudget > 60) {
+    return NextResponse.json(
+      { error: `For mange API-kall (${apiCallBudget}). Maks 60 (sirkler × kategorier). Reduser antall sirkler eller kategorier.` },
+      { status: 400 }
+    );
+  }
+
+  // 4. Check Google API key
   const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!googleApiKey && body.categories.length > 0) {
     return NextResponse.json(
@@ -297,46 +335,82 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  console.log(`[Import] Starting discovery at (${body.center.lat}, ${body.center.lng}), radius=${body.radiusMeters}m`);
+  console.log(`[Import] Starting discovery with ${circles.length} circle(s)`);
 
-  // 4. Calculate bounding box for pre-fetching existing POIs
-  const bbox = calculateBoundingBox(body.center, body.radiusMeters);
+  // 5. Calculate combined bounding box for pre-fetching existing POIs
+  const allBboxes = circles.map((c) => calculateBoundingBox({ lat: c.lat, lng: c.lng }, c.radiusMeters));
+  const combinedBbox: BoundingBox = {
+    minLat: Math.min(...allBboxes.map((b) => b.minLat)),
+    maxLat: Math.max(...allBboxes.map((b) => b.maxLat)),
+    minLng: Math.min(...allBboxes.map((b) => b.minLng)),
+    maxLng: Math.max(...allBboxes.map((b) => b.maxLng)),
+  };
 
-  // 5. PARALLEL FETCH - Critical for performance
-  const [googlePois, enturPois, bysykkelPois, existingPois] = await Promise.all([
-    // Google Places (only if we have categories selected)
-    body.categories.length > 0 && googleApiKey
-      ? discoverGooglePlaces(
-          {
-            center: body.center,
-            radius: body.radiusMeters,
-            googleCategories: [...body.categories],
-            minRating: body.minRating,
-            maxResultsPerCategory: body.maxResultsPerCategory,
-          },
-          googleApiKey
-        )
-      : Promise.resolve([]),
+  // 6. PARALLEL FETCH per circle + existing POIs
+  // Deduplicate across circles by external ID
+  const seenGoogleIds = new Set<string>();
+  const seenEnturIds = new Set<string>();
+  const seenBysykkelIds = new Set<string>();
 
-    // Entur stops
-    body.includeEntur
-      ? discoverEnturStops({
-          center: body.center,
-          radius: body.radiusMeters,
-        })
-      : Promise.resolve([]),
+  const allGooglePois: DiscoveredPOI[] = [];
+  const allEnturPois: DiscoveredPOI[] = [];
+  const allBysykkelPois: DiscoveredPOI[] = [];
 
-    // Bysykkel stations
-    body.includeBysykkel
-      ? discoverBysykkelStations({
-          center: body.center,
-          radius: body.radiusMeters,
-        })
-      : Promise.resolve([]),
+  // Fetch existing POIs first (for final dedup)
+  const existingPois = await fetchExistingPOIsInBoundingBox(combinedBbox);
 
-    // Pre-fetch existing POIs for O(1) dedup
-    fetchExistingPOIsInBoundingBox(bbox),
-  ]);
+  // Fetch per circle in parallel
+  await Promise.all(
+    circles.map(async (circle) => {
+      const center = { lat: circle.lat, lng: circle.lng };
+      const radius = circle.radiusMeters;
+
+      const [googlePois, enturPois, bysykkelPois] = await Promise.all([
+        body.categories.length > 0 && googleApiKey
+          ? discoverGooglePlaces(
+              {
+                center,
+                radius,
+                googleCategories: [...body.categories],
+                minRating: body.minRating,
+                maxResultsPerCategory: body.maxResultsPerCategory,
+              },
+              googleApiKey
+            )
+          : Promise.resolve([]),
+        body.includeEntur
+          ? discoverEnturStops({ center, radius })
+          : Promise.resolve([]),
+        body.includeBysykkel
+          ? discoverBysykkelStations({ center, radius })
+          : Promise.resolve([]),
+      ]);
+
+      // Deduplicate across circles by external ID
+      for (const poi of googlePois) {
+        if (poi.googlePlaceId && !seenGoogleIds.has(poi.googlePlaceId)) {
+          seenGoogleIds.add(poi.googlePlaceId);
+          allGooglePois.push(poi);
+        }
+      }
+      for (const poi of enturPois) {
+        if (poi.enturStopplaceId && !seenEnturIds.has(poi.enturStopplaceId)) {
+          seenEnturIds.add(poi.enturStopplaceId);
+          allEnturPois.push(poi);
+        }
+      }
+      for (const poi of bysykkelPois) {
+        if (poi.bysykkelStationId && !seenBysykkelIds.has(poi.bysykkelStationId)) {
+          seenBysykkelIds.add(poi.bysykkelStationId);
+          allBysykkelPois.push(poi);
+        }
+      }
+    })
+  );
+
+  const googlePois = allGooglePois;
+  const enturPois = allEnturPois;
+  const bysykkelPois = allBysykkelPois;
 
   // 6. Combine and deduplicate
   const allDiscovered = [...googlePois, ...enturPois, ...bysykkelPois];

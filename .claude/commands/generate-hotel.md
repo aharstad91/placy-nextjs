@@ -134,6 +134,7 @@ INSERT til `projects`-tabellen via Supabase REST med alle felter:
 - `name` (hotellnavnet)
 - `center_lat`, `center_lng`
 - `short_id`
+- `discovery_circles`: `[{"lat": {lat}, "lng": {lng}, "radiusMeters": {by-spesifikk radius}}]`
 
 Feil med tydelig melding hvis prosjektet allerede eksisterer (UNIQUE constraint).
 
@@ -157,13 +158,12 @@ Sett `config.reportConfig` med themes-arrayet fra byhotell-profilen. Explorer tr
 
 Slå opp by-spesifikk radius fra per-by defaults (Steg 1 gir bynavn).
 
-Kall import-API-et:
+Kall import-API-et med circles-format:
 ```
 POST http://localhost:3000/api/admin/import
 {
   "projectId": "{containerId}",
-  "center": { "lat": {lat}, "lng": {lng} },
-  "radiusMeters": {by-spesifikk radius},
+  "circles": [{ "lat": {lat}, "lng": {lng}, "radiusMeters": {by-spesifikk radius} }],
   "categories": ["restaurant","cafe","bar","bakery","supermarket","pharmacy",
                   "gym","park","museum","library","shopping_mall","movie_theater",
                   "hair_care","spa"],

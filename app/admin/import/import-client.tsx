@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { createCircleCoordinates } from "@/lib/utils/geo";
 import Map, {
   Marker,
   Source,
@@ -124,6 +125,7 @@ interface Project {
   name: string;
   center_lat: number;
   center_lng: number;
+  discovery_circles: Array<{ lat: number; lng: number; radiusMeters: number }> | null;
   customers: { name: string } | null;
 }
 
@@ -140,6 +142,7 @@ export default function ImportClient({ projects }: ImportClientProps) {
   // Form state
   const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState(1000);
+  const [discoveryCircles, setDiscoveryCircles] = useState<Array<{ lat: number; lng: number; radiusMeters: number }> | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(DEFAULT_CATEGORIES);
   const [includeEntur, setIncludeEntur] = useState(true);
   const [includeBysykkel, setIncludeBysykkel] = useState(true);
@@ -175,10 +178,11 @@ export default function ImportClient({ projects }: ImportClientProps) {
         const project = projects.find((p) => p.id === projectId);
         if (project) {
           setCenter({ lat: project.center_lat, lng: project.center_lng });
+          setDiscoveryCircles(project.discovery_circles);
           // Pan map to project center
           mapRef.current?.flyTo({
             center: [project.center_lng, project.center_lat],
-            zoom: 14,
+            zoom: 13,
             duration: 1000,
           });
         }
@@ -207,6 +211,25 @@ export default function ImportClient({ projects }: ImportClientProps) {
     }
   };
 
+  // Build import request body — uses circles if available, otherwise single center+radius
+  const buildImportBody = useCallback(
+    (preview: boolean) => {
+      const base = {
+        categories: Array.from(selectedCategories),
+        includeEntur,
+        includeBysykkel,
+        projectId: selectedProjectId || undefined,
+        preview,
+      };
+
+      if (discoveryCircles && discoveryCircles.length > 0) {
+        return { ...base, circles: discoveryCircles };
+      }
+      return { ...base, center, radiusMeters: radius };
+    },
+    [selectedCategories, includeEntur, includeBysykkel, selectedProjectId, discoveryCircles, center, radius]
+  );
+
   const handlePreview = async () => {
     if (!hasSelection || !center) return;
 
@@ -217,15 +240,7 @@ export default function ImportClient({ projects }: ImportClientProps) {
       const response = await fetch("/api/admin/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          center,
-          radiusMeters: radius,
-          categories: Array.from(selectedCategories),
-          includeEntur,
-          includeBysykkel,
-          projectId: selectedProjectId || undefined,
-          preview: true,
-        }),
+        body: JSON.stringify(buildImportBody(true)),
       });
 
       const data = await response.json();
@@ -252,15 +267,7 @@ export default function ImportClient({ projects }: ImportClientProps) {
       const response = await fetch("/api/admin/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          center,
-          radiusMeters: radius,
-          categories: Array.from(selectedCategories),
-          includeEntur,
-          includeBysykkel,
-          projectId: selectedProjectId || undefined,
-          preview: false,
-        }),
+        body: JSON.stringify(buildImportBody(false)),
       });
 
       const data = await response.json();
@@ -282,23 +289,43 @@ export default function ImportClient({ projects }: ImportClientProps) {
     setStats(null);
     setError(null);
     setCenter(null);
+    setDiscoveryCircles(null);
     setSelectedCategories(DEFAULT_CATEGORIES);
     setIncludeEntur(true);
     setIncludeBysykkel(true);
     setSelectedProjectId("");
   };
 
-  // Create circle polygon for radius visualization
-  const radiusCircle = center
-    ? {
-        type: "Feature" as const,
-        geometry: {
-          type: "Polygon" as const,
-          coordinates: [createCircleCoordinates(center.lng, center.lat, radius)],
-        },
-        properties: {},
-      }
-    : null;
+  // Create GeoJSON for radius visualization — multi-circle or single
+  const radiusGeoJSON = useMemo(() => {
+    if (discoveryCircles && discoveryCircles.length > 0) {
+      return {
+        type: "FeatureCollection" as const,
+        features: discoveryCircles.map((c) => ({
+          type: "Feature" as const,
+          geometry: {
+            type: "Polygon" as const,
+            coordinates: [createCircleCoordinates(c.lng, c.lat, c.radiusMeters)],
+          },
+          properties: {},
+        })),
+      };
+    }
+    if (center) {
+      return {
+        type: "FeatureCollection" as const,
+        features: [{
+          type: "Feature" as const,
+          geometry: {
+            type: "Polygon" as const,
+            coordinates: [createCircleCoordinates(center.lng, center.lat, radius)],
+          },
+          properties: {},
+        }],
+      };
+    }
+    return null;
+  }, [discoveryCircles, center, radius]);
 
   const isProcessing = step === "discovering" || step === "importing";
 
@@ -624,61 +651,75 @@ export default function ImportClient({ projects }: ImportClientProps) {
                     )}
                   </div>
 
-                  {/* Center + Radius */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Senter
-                      </label>
-                      {center ? (
-                        <div className="flex items-center gap-1.5 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-xl">
-                          <MapPin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                          <span className="text-xs text-blue-700 font-mono truncate">
-                            {center.lat.toFixed(4)}, {center.lng.toFixed(4)}
-                          </span>
-                          <button
-                            onClick={() => setCenter(null)}
-                            className="ml-auto text-blue-600 hover:text-blue-800 text-xs font-medium flex-shrink-0"
-                          >
-                            Endre
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
-                          <MapPin className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                          <span className="text-xs text-amber-700">
-                            Klikk på kartet
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Søkeradius
-                      </label>
-                      <div className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
-                        <span className="text-[10px] text-gray-400 flex-shrink-0">
-                          300m
-                        </span>
-                        <input
-                          type="range"
-                          min={300}
-                          max={2000}
-                          step={100}
-                          value={radius}
-                          onChange={(e) => setRadius(Number(e.target.value))}
-                          className="flex-1 min-w-0 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-500"
-                        />
-                        <span className="text-[10px] text-gray-400 flex-shrink-0">
-                          2km
+                  {/* Center + Radius / Discovery Circles */}
+                  {discoveryCircles && discoveryCircles.length > 0 ? (
+                    <div className="px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                        <span className="text-xs text-blue-700 font-medium">
+                          {discoveryCircles.length} discovery-sirkler definert
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 text-center">
-                        {radius}m
+                      <p className="text-xs text-blue-600 mt-1">
+                        Import bruker prosjektets sirkler. Endre i prosjektdetalj.
                       </p>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Senter
+                        </label>
+                        {center ? (
+                          <div className="flex items-center gap-1.5 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+                            <MapPin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                            <span className="text-xs text-blue-700 font-mono truncate">
+                              {center.lat.toFixed(4)}, {center.lng.toFixed(4)}
+                            </span>
+                            <button
+                              onClick={() => setCenter(null)}
+                              className="ml-auto text-blue-600 hover:text-blue-800 text-xs font-medium flex-shrink-0"
+                            >
+                              Endre
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                            <MapPin className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                            <span className="text-xs text-amber-700">
+                              Klikk på kartet
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Søkeradius
+                        </label>
+                        <div className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
+                          <span className="text-[10px] text-gray-400 flex-shrink-0">
+                            300m
+                          </span>
+                          <input
+                            type="range"
+                            min={300}
+                            max={2000}
+                            step={100}
+                            value={radius}
+                            onChange={(e) => setRadius(Number(e.target.value))}
+                            className="flex-1 min-w-0 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-500"
+                          />
+                          <span className="text-[10px] text-gray-400 flex-shrink-0">
+                            2km
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 text-center">
+                          {radius}m
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Categories */}
                   <div className="space-y-2">
@@ -807,8 +848,8 @@ export default function ImportClient({ projects }: ImportClientProps) {
           >
             <NavigationControl position="bottom-right" />
 
-            {radiusCircle && (
-              <Source id="radius" type="geojson" data={radiusCircle}>
+            {radiusGeoJSON && (
+              <Source id="radius" type="geojson" data={radiusGeoJSON}>
                 <Layer
                   id="radius-fill"
                   type="fill"
@@ -933,25 +974,3 @@ function ProgressStep({
   );
 }
 
-function createCircleCoordinates(
-  lng: number,
-  lat: number,
-  radiusMeters: number
-): [number, number][] {
-  const points = 64;
-  const km = radiusMeters / 1000;
-  const coords: [number, number][] = [];
-
-  for (let i = 0; i <= points; i++) {
-    const angle = (i / points) * 2 * Math.PI;
-    const dx = km * Math.cos(angle);
-    const dy = km * Math.sin(angle);
-
-    const latOffset = dy / 111.32;
-    const lngOffset = dx / (111.32 * Math.cos((lat * Math.PI) / 180));
-
-    coords.push([lng + lngOffset, lat + latOffset]);
-  }
-
-  return coords;
-}
