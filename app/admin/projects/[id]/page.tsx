@@ -32,6 +32,7 @@ interface ProjectBase {
   center_lat: number;
   center_lng: number;
   customer_id: string | null;
+  discovery_circles: Array<{ lat: number; lng: number; radiusMeters: number }> | null;
   customers: Pick<DbCustomer, "id" | "name"> | null;
 }
 
@@ -45,6 +46,7 @@ export interface ProjectWithRelations {
   center_lng: number;
   customer_id: string | null;
   customers: Pick<DbCustomer, "id" | "name"> | null;
+  discovery_circles: Array<{ lat: number; lng: number; radiusMeters: number }> | null;
   project_categories: DbProjectCategory[];
   project_pois: Array<{
     poi_id: string;
@@ -104,6 +106,7 @@ export default async function ProjectDetailPage({
       center_lat,
       center_lng,
       customer_id,
+      discovery_circles,
       customers (id, name)
     `
     )
@@ -125,6 +128,7 @@ export default async function ProjectDetailPage({
         center_lat,
         center_lng,
         customer_id,
+        discovery_circles,
         customers (id, name)
       `
       )
