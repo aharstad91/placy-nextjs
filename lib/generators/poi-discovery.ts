@@ -70,6 +70,32 @@ const TRANSPORT_CATEGORIES: Record<string, Category> = {
 
 // === Google Places Discovery ===
 
+// Map of related types that count as a valid match for a search category.
+// Google returns a `types` array per result — we require at least one match
+// to avoid junk results (e.g. stadiums returned for "hotel" searches).
+const VALID_TYPES_FOR_CATEGORY: Record<string, Set<string>> = {
+  restaurant: new Set(["restaurant", "food"]),
+  cafe: new Set(["cafe", "coffee_shop"]),
+  bar: new Set(["bar", "night_club"]),
+  bakery: new Set(["bakery"]),
+  gym: new Set(["gym", "health"]),
+  supermarket: new Set(["supermarket", "grocery_or_supermarket"]),
+  pharmacy: new Set(["pharmacy", "drugstore"]),
+  bank: new Set(["bank"]),
+  post_office: new Set(["post_office"]),
+  shopping_mall: new Set(["shopping_mall"]),
+  museum: new Set(["museum"]),
+  library: new Set(["library"]),
+  park: new Set(["park"]),
+  movie_theater: new Set(["movie_theater"]),
+  hospital: new Set(["hospital"]),
+  doctor: new Set(["doctor"]),
+  dentist: new Set(["dentist"]),
+  hair_care: new Set(["hair_care", "beauty_salon"]),
+  spa: new Set(["spa"]),
+  hotel: new Set(["lodging", "hotel"]),
+};
+
 interface GooglePlaceResult {
   place_id: string;
   name: string;
@@ -135,6 +161,15 @@ export async function discoverGooglePlaces(
         );
         if (distance > config.radius) {
           continue;
+        }
+
+        // Filter by type match — Google returns junk (stadiums, offices) for some categories
+        const validTypes = VALID_TYPES_FOR_CATEGORY[category];
+        if (validTypes && place.types) {
+          const hasMatch = place.types.some((t) => validTypes.has(t));
+          if (!hasMatch) {
+            continue;
+          }
         }
 
         // Filter by rating
