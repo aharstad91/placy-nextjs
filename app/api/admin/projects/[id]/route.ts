@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/client";
 import { z } from "zod";
 
@@ -60,6 +61,17 @@ export async function PATCH(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Fetch short_id for revalidation path
+  const { data: proj } = await supabase
+    .from("projects")
+    .select("short_id")
+    .eq("id", projectId)
+    .single();
+
+  if (proj?.short_id) {
+    revalidatePath(`/admin/projects/${proj.short_id}`);
   }
 
   return NextResponse.json({ success: true });

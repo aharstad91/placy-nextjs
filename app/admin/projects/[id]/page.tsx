@@ -13,6 +13,8 @@ import type {
   DbCustomer,
 } from "@/lib/supabase/types";
 
+export const dynamic = "force-dynamic";
+
 const adminEnabled = process.env.ADMIN_ENABLED === "true";
 
 function parseStringArray(json: string): string[] {
