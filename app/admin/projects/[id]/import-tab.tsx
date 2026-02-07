@@ -109,7 +109,21 @@ const ALL_IMPORT_CATEGORIES: Category[] = [
   { id: "_bysykkel", name: "Bysykkel", icon: Bike, color: "#22c55e" },
 ];
 
-const DEFAULT_SELECTED = new Set(ALL_IMPORT_CATEGORIES.map((c) => c.id));
+// Categories to EXCLUDE per venue type (everything else is included by default)
+// hotel: guests don't need bank/post/health services
+// commercial: office tenants don't need hotel
+// residential: residents need everything — no exclusions
+const VENUE_EXCLUDED_CATEGORIES: Record<string, Set<string>> = {
+  hotel: new Set(["bank", "post_office", "hospital", "doctor", "dentist"]),
+  commercial: new Set(["hotel"]),
+};
+
+function getDefaultCategories(venueType: string | null): Set<string> {
+  const allIds = ALL_IMPORT_CATEGORIES.map((c) => c.id);
+  const excluded = (venueType && VENUE_EXCLUDED_CATEGORIES[venueType]) || null;
+  if (!excluded) return new Set(allIds);
+  return new Set(allIds.filter((id) => !excluded.has(id)));
+}
 
 type ImportStep =
   | "idle"
@@ -145,7 +159,9 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
   const [circleSaveStatus, setCircleSaveStatus] = useState<"idle" | "success" | "error">("idle");
 
   // Import form state — single unified set for all categories + transport sources
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(DEFAULT_SELECTED);
+  // Default selection depends on project venue_type (e.g. hotels exclude bank, post, hospital...)
+  const defaultCategories = useMemo(() => getDefaultCategories(project.venue_type), [project.venue_type]);
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(defaultCategories);
 
   // Import step state
   const [step, setStep] = useState<ImportStep>("idle");
@@ -332,7 +348,7 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
     setStep("idle");
     setStats(null);
     setError(null);
-    setSelectedCategories(DEFAULT_SELECTED);
+    setSelectedCategories(defaultCategories);
   };
 
   // --- GeoJSON ---
