@@ -262,7 +262,7 @@ function getUniqueCategoriesFromPOIs(pois: DiscoveredPOI[]) {
   return categories;
 }
 
-// Link POIs to project
+// Link POIs to project and all its products
 async function addPOIsToProject(projectId: string, poiIds: string[]) {
   const supabase = createServerClient();
   if (!supabase || poiIds.length === 0) return;
@@ -280,6 +280,21 @@ async function addPOIsToProject(projectId: string, poiIds: string[]) {
 
   if (newLinks.length > 0) {
     await supabase.from("project_pois").insert(newLinks);
+  }
+
+  // Auto-add to all products in this project (Explorer, Report, Guide)
+  const { data: products } = await supabase
+    .from("products")
+    .select("id")
+    .eq("project_id", projectId);
+
+  if (products && products.length > 0) {
+    const productPoiRows = products.flatMap((product) =>
+      poiIds.map((poiId) => ({ product_id: product.id, poi_id: poiId }))
+    );
+    await supabase
+      .from("product_pois")
+      .upsert(productPoiRows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
   }
 }
 

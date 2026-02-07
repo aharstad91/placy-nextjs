@@ -387,6 +387,19 @@ export default async function ProjectDetailPage({
       throw new Error(error.message);
     }
 
+    // Auto-add to all products in this project
+    const { data: products } = await supabase
+      .from("products")
+      .select("id")
+      .eq("project_id", projectId);
+
+    if (products && products.length > 0) {
+      const rows = products.map((p) => ({ product_id: p.id, poi_id: poiId }));
+      await supabase
+        .from("product_pois")
+        .upsert(rows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
+    }
+
     revalidatePath(`/admin/projects/${shortId}`);
   }
 
@@ -412,6 +425,22 @@ export default async function ProjectDetailPage({
       .upsert(rows, { onConflict: "project_id,poi_id", ignoreDuplicates: true });
 
     if (error) throw new Error(error.message);
+
+    // Auto-add to all products in this project
+    const { data: products } = await supabase
+      .from("products")
+      .select("id")
+      .eq("project_id", projectId);
+
+    if (products && products.length > 0) {
+      const productPoiRows = products.flatMap((product) =>
+        poiIds.map((poiId) => ({ product_id: product.id, poi_id: poiId }))
+      );
+      await supabase
+        .from("product_pois")
+        .upsert(productPoiRows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
+    }
+
     revalidatePath(`/admin/projects/${shortId}`);
   }
 
