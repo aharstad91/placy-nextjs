@@ -79,7 +79,11 @@ interface Category {
   color: string;
 }
 
-const PLACE_CATEGORIES: Category[] = [
+// Transport source IDs (not sent as Google categories — handled separately)
+const TRANSPORT_SOURCE_IDS = new Set(["_entur", "_bysykkel"]);
+
+const ALL_IMPORT_CATEGORIES: Category[] = [
+  // Google Places categories
   { id: "restaurant", name: "Restaurant", icon: Utensils, color: "#ef4444" },
   { id: "cafe", name: "Kafé", icon: Coffee, color: "#f97316" },
   { id: "bar", name: "Bar", icon: Wine, color: "#a855f7" },
@@ -100,13 +104,12 @@ const PLACE_CATEGORIES: Category[] = [
   { id: "hair_care", name: "Frisør", icon: Scissors, color: "#d946ef" },
   { id: "spa", name: "Spa", icon: Sparkles, color: "#c084fc" },
   { id: "hotel", name: "Hotell", icon: Building2, color: "#0891b2" },
+  // Transport sources (mapped to includeEntur/includeBysykkel in buildImportBody)
+  { id: "_entur", name: "Buss, trikk & tog", icon: Bus, color: "#3b82f6" },
+  { id: "_bysykkel", name: "Bysykkel", icon: Bike, color: "#22c55e" },
 ];
 
-const DEFAULT_CATEGORIES = new Set([
-  "restaurant",
-  "cafe",
-  "supermarket",
-]);
+const DEFAULT_SELECTED = new Set(ALL_IMPORT_CATEGORIES.map((c) => c.id));
 
 type ImportStep =
   | "idle"
@@ -141,10 +144,8 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
   const [isSavingCircles, setIsSavingCircles] = useState(false);
   const [circleSaveStatus, setCircleSaveStatus] = useState<"idle" | "success" | "error">("idle");
 
-  // Import form state
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(DEFAULT_CATEGORIES);
-  const [includeEntur, setIncludeEntur] = useState(true);
-  const [includeBysykkel, setIncludeBysykkel] = useState(true);
+  // Import form state — single unified set for all categories + transport sources
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(DEFAULT_SELECTED);
 
   // Import step state
   const [step, setStep] = useState<ImportStep>("idle");
@@ -152,7 +153,7 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
   const [error, setError] = useState<string | null>(null);
 
   const hasCircles = circles.length > 0;
-  const hasSelection = hasCircles && (selectedCategories.size > 0 || includeEntur || includeBysykkel);
+  const hasSelection = hasCircles && selectedCategories.size > 0;
   const selectedCircle = selectedCircleIndex !== null ? circles[selectedCircleIndex] : null;
 
   // --- Circle editor handlers ---
@@ -258,14 +259,14 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
 
   const buildImportBody = useCallback(
     (preview: boolean) => ({
-      categories: Array.from(selectedCategories),
-      includeEntur,
-      includeBysykkel,
+      categories: Array.from(selectedCategories).filter((id) => !TRANSPORT_SOURCE_IDS.has(id)),
+      includeEntur: selectedCategories.has("_entur"),
+      includeBysykkel: selectedCategories.has("_bysykkel"),
       projectId: project.id,
       preview,
       circles,
     }),
-    [selectedCategories, includeEntur, includeBysykkel, project.id, circles]
+    [selectedCategories, project.id, circles]
   );
 
   const handlePreview = async () => {
@@ -331,9 +332,7 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
     setStep("idle");
     setStats(null);
     setError(null);
-    setSelectedCategories(DEFAULT_CATEGORIES);
-    setIncludeEntur(true);
-    setIncludeBysykkel(true);
+    setSelectedCategories(DEFAULT_SELECTED);
   };
 
   // --- GeoJSON ---
@@ -541,7 +540,7 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
                   <ProgressStep
                     label="Entur holdeplasser"
                     status={
-                      includeEntur
+                      selectedCategories.has("_entur")
                         ? step === "discovering"
                           ? "active"
                           : "done"
@@ -551,7 +550,7 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
                   <ProgressStep
                     label="Bysykkel stasjoner"
                     status={
-                      includeBysykkel
+                      selectedCategories.has("_bysykkel")
                         ? step === "discovering"
                           ? "active"
                           : "done"
@@ -565,7 +564,7 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
               </div>
             ) : (
               // Idle state — circle editor + import form
-              <div className="p-4 space-y-4">
+              <div className="p-4 space-y-4 flex flex-col h-full">
                 {/* Discovery circles section */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -675,14 +674,14 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
                 {/* Divider */}
                 <div className="border-t border-gray-200" />
 
-                {/* Categories */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                {/* Unified categories list — fills remaining space */}
+                <div className="flex-1 flex flex-col min-h-0 space-y-2">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-shrink-0">
                     Kategorier ({selectedCategories.size} valgt)
                   </label>
-                  <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl bg-white">
+                  <div className="flex-1 overflow-y-auto border border-gray-200 rounded-xl bg-white min-h-0">
                     <div className="divide-y divide-gray-100">
-                      {PLACE_CATEGORIES.map((cat) => {
+                      {ALL_IMPORT_CATEGORIES.map((cat) => {
                         const Icon = cat.icon;
                         const isSelected = selectedCategories.has(cat.id);
                         return (
@@ -712,50 +711,6 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
                         );
                       })}
                     </div>
-                  </div>
-                </div>
-
-                {/* Transport options */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Transport
-                  </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2.5 px-3 py-2.5 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={includeEntur}
-                        onChange={(e) => setIncludeEntur(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
-                      />
-                      <div
-                        className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: "#3b82f620" }}
-                      >
-                        <Bus className="w-3 h-3" style={{ color: "#3b82f6" }} />
-                      </div>
-                      <span className="text-sm text-gray-700">
-                        Entur (buss, trikk, tog)
-                      </span>
-                    </label>
-
-                    <label className="flex items-center gap-2.5 px-3 py-2.5 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={includeBysykkel}
-                        onChange={(e) => setIncludeBysykkel(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
-                      />
-                      <div
-                        className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: "#22c55e20" }}
-                      >
-                        <Bike className="w-3 h-3" style={{ color: "#22c55e" }} />
-                      </div>
-                      <span className="text-sm text-gray-700">
-                        Trondheim Bysykkel
-                      </span>
-                    </label>
                   </div>
                 </div>
               </div>
@@ -886,7 +841,7 @@ function CategoryBreakdown({ stats, maxHeight }: { stats: ImportStats; maxHeight
       </h3>
       <div className={`space-y-2 ${maxHeight ? "max-h-48 overflow-y-auto" : ""}`}>
         {Object.entries(stats.byCategory).map(([catId, count]) => {
-          const cat = PLACE_CATEGORIES.find((c) => c.id === catId);
+          const cat = ALL_IMPORT_CATEGORIES.find((c) => c.id === catId);
           const Icon = cat?.icon || MapPin;
           return (
             <div key={catId} className="flex items-center justify-between">

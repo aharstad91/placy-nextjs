@@ -126,6 +126,17 @@ export async function discoverGooglePlaces(
 
       let addedCount = 0;
       for (const place of places) {
+        // Filter by actual distance (Google API treats radius as preference, not strict)
+        const distance = calculateDistance(
+          config.center.lat,
+          config.center.lng,
+          place.geometry.location.lat,
+          place.geometry.location.lng
+        );
+        if (distance > config.radius) {
+          continue;
+        }
+
         // Filter by rating
         if (place.rating && place.rating < minRating) {
           continue;
