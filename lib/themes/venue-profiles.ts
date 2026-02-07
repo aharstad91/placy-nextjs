@@ -30,8 +30,8 @@ export const VENUE_PROFILES: Record<VenueType, VenueProfile> = {
       // Everything else defaults to 1.0
     },
     transportCaps: {
-      bus: 4,
-      bike: 6,
+      bus: 6,
+      bike: 10,
       train: 3,
       tram: 3,
       parking: 4,

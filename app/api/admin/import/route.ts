@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
   discoverGooglePlaces,
@@ -262,7 +263,7 @@ function getUniqueCategoriesFromPOIs(pois: DiscoveredPOI[]) {
   return categories;
 }
 
-// Link POIs to project and all its products
+// Link POIs to project and all its products, then revalidate public pages
 async function addPOIsToProject(projectId: string, poiIds: string[]) {
   const supabase = createServerClient();
   if (!supabase || poiIds.length === 0) return;
@@ -295,6 +296,17 @@ async function addPOIsToProject(projectId: string, poiIds: string[]) {
     await supabase
       .from("product_pois")
       .upsert(productPoiRows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
+  }
+
+  // Revalidate public pages so Explorer/Report show new POIs immediately
+  const { data: project } = await supabase
+    .from("projects")
+    .select("customer_id, url_slug")
+    .eq("id", projectId)
+    .single();
+
+  if (project) {
+    revalidatePath(`/${project.customer_id}/${project.url_slug}`, "layout");
   }
 }
 

@@ -13,6 +13,8 @@ import ExplorerPage from "@/components/variants/explorer/ExplorerPage";
 import ReportPage from "@/components/variants/report/ReportPage";
 import PortraitPage from "@/components/variants/portrait/PortraitPage";
 import GuidePage from "@/components/variants/guide/GuidePage";
+
+export const dynamic = "force-dynamic";
 import type { ProductType, ProductSummary } from "@/lib/types";
 
 interface PageProps {

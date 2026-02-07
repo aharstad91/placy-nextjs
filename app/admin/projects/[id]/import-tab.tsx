@@ -320,6 +320,7 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
 
       setStats(data.stats);
       setStep("done");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ukjent feil");
       setStep("error");

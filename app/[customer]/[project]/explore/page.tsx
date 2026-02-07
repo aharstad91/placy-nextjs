@@ -5,6 +5,10 @@ import ExplorerPage from "@/components/variants/explorer/ExplorerPage";
 import { applyExplorerCaps } from "@/lib/themes/apply-explorer-caps";
 import { DEFAULT_THEMES, getVenueProfile } from "@/lib/themes";
 
+// Revalidate on every request — import API calls revalidatePath() after import,
+// but we also want a baseline of no stale data for Supabase-backed pages.
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{
     customer: string;

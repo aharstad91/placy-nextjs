@@ -4,7 +4,7 @@
  */
 
 export const EXPLORER_THEME_CAPS: Record<string, number> = {
-  "mat-drikke": 30,
+  "mat-drikke": 60,
   "kultur-opplevelser": 15,
   "transport": 20,
   "trening-velvare": 15,

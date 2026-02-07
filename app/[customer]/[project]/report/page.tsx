@@ -3,6 +3,8 @@ import { getProductAsync, getProjectAsync, productExists } from "@/lib/data-serv
 import { getProjectTranslations } from "@/lib/supabase/translations";
 import ReportPage from "@/components/variants/report/ReportPage";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{
     customer: string;
