@@ -133,6 +133,14 @@ export interface ReportConfig {
 
 export type OriginMode = "geolocation" | "fixed" | "geolocation-with-fallback";
 
+// === Discovery Circle ===
+
+export interface DiscoveryCircle {
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+}
+
 // === Project Container (NEW: Hierarchy) ===
 
 /**
@@ -153,6 +161,7 @@ export interface ProjectContainer {
   /** Products under this project container */
   products: ProductInstance[];
   venueType?: "hotel" | "residential" | "commercial" | null;
+  discoveryCircles?: DiscoveryCircle[] | null;
   version: number;
   createdAt: string;
   updatedAt: string;

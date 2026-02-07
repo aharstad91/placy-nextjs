@@ -20,6 +20,7 @@ import type {
   ProjectContainer,
   ProductInstance,
   ProductSummary,
+  DiscoveryCircle,
 } from "../types";
 import { calculateDistance, calculateBoundingBox } from "../utils/geo";
 
@@ -800,6 +801,7 @@ export async function getProjectContainerFromSupabase(
     categories,
     products: productInstances,
     venueType: (projectAny.venue_type as "hotel" | "residential" | "commercial" | null) ?? null,
+    discoveryCircles: (projectAny.discovery_circles as DiscoveryCircle[] | null) ?? null,
     version: (projectAny.version as number) ?? 1,
     createdAt: project.created_at,
     updatedAt: project.updated_at,

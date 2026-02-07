@@ -73,3 +73,32 @@ export function isValidCoordinates(lat: number, lng: number): boolean {
     lng <= 180
   );
 }
+
+/**
+ * Generate polygon coordinates approximating a circle on a map.
+ * Used for Mapbox Source/Layer visualization of discovery radius.
+ *
+ * @returns Array of [lng, lat] coordinate pairs forming a closed polygon
+ */
+export function createCircleCoordinates(
+  lng: number,
+  lat: number,
+  radiusMeters: number,
+  points: number = 64
+): [number, number][] {
+  const km = radiusMeters / 1000;
+  const coords: [number, number][] = [];
+
+  for (let i = 0; i <= points; i++) {
+    const angle = (i / points) * 2 * Math.PI;
+    const dx = km * Math.cos(angle);
+    const dy = km * Math.sin(angle);
+
+    const latOffset = dy / 111.32;
+    const lngOffset = dx / (111.32 * Math.cos((lat * Math.PI) / 180));
+
+    coords.push([lng + lngOffset, lat + latOffset]);
+  }
+
+  return coords;
+}

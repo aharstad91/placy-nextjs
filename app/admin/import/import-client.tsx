@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { createCircleCoordinates } from "@/lib/utils/geo";
 import Map, {
   Marker,
   Source,
@@ -933,25 +934,3 @@ function ProgressStep({
   );
 }
 
-function createCircleCoordinates(
-  lng: number,
-  lat: number,
-  radiusMeters: number
-): [number, number][] {
-  const points = 64;
-  const km = radiusMeters / 1000;
-  const coords: [number, number][] = [];
-
-  for (let i = 0; i <= points; i++) {
-    const angle = (i / points) * 2 * Math.PI;
-    const dx = km * Math.cos(angle);
-    const dy = km * Math.sin(angle);
-
-    const latOffset = dy / 111.32;
-    const lngOffset = dx / (111.32 * Math.cos((lat * Math.PI) / 180));
-
-    coords.push([lng + lngOffset, lat + latOffset]);
-  }
-
-  return coords;
-}
