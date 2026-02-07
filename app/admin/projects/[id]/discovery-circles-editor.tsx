@@ -34,6 +34,7 @@ interface DiscoveryCirclesEditorProps {
   centerLat: number;
   centerLng: number;
   initialCircles: DiscoveryCircle[] | null;
+  onSaved?: () => void;
 }
 
 export function DiscoveryCirclesEditor({
@@ -41,6 +42,7 @@ export function DiscoveryCirclesEditor({
   centerLat,
   centerLng,
   initialCircles,
+  onSaved,
 }: DiscoveryCirclesEditorProps) {
   const mapRef = useRef<MapRef>(null);
   const [circles, setCircles] = useState<DiscoveryCircle[]>(
@@ -159,6 +161,7 @@ export function DiscoveryCirclesEditor({
       }
 
       setSaveStatus("success");
+      onSaved?.();
       setTimeout(() => setSaveStatus("idle"), 3000);
     } catch (e) {
       setSaveStatus("error");

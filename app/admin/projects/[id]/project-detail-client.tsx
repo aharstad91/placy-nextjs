@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MapGL, { Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox";
 import {
@@ -36,14 +37,16 @@ import type {
 } from "@/lib/supabase/types";
 import type { ProjectWithRelations, ProductWithPois } from "./page";
 import { DiscoveryCirclesEditor } from "./discovery-circles-editor";
+import { ImportTab } from "./import-tab";
 
 // NOTE: "Kategorier"-fanen er skjult — prosjekt-kategorier brukes ikke i praksis.
 // Vurder å fjerne CategoriesTab og relatert kode helt hvis det forblir ubrukt.
 const TABS = [
   { id: "details", label: "Detaljer" },
   // { id: "categories", label: "Kategorier" },
-  { id: "pois", label: "POI-er" },
   { id: "products", label: "Produkter" },
+  { id: "pois", label: "POI-er" },
+  { id: "import", label: "Import" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -96,6 +99,7 @@ export function ProjectDetailClient({
   batchRemovePoisFromProduct,
   createProduct,
 }: ProjectDetailClientProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("details");
 
   return (
@@ -147,6 +151,7 @@ export function ProjectDetailClient({
                 centerLat={project.center_lat}
                 centerLng={project.center_lng}
                 initialCircles={project.discovery_circles ?? null}
+                onSaved={() => router.refresh()}
               />
             </div>
           )}
@@ -170,6 +175,9 @@ export function ProjectDetailClient({
               batchRemovePoisFromProduct={batchRemovePoisFromProduct}
               createProduct={createProduct}
             />
+          )}
+          {activeTab === "import" && (
+            <ImportTab project={project} onSwitchTab={(tab) => setActiveTab(tab as TabId)} />
           )}
         </div>
       </div>
