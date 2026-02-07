@@ -61,10 +61,12 @@ export function applyExplorerCaps(
   }
 
   // 5. Handle any POIs with unmapped categories (catch-all)
+  // Use remaining capacity so projects with custom categories (e.g. architecture prizes) aren't truncated
+  const unmappedCap = Math.max(EXPLORER_TOTAL_CAP - result.length, 0);
   const unmapped = transportCapped
     .filter((s) => !CATEGORY_TO_THEME[s.poi.category.id] && !selectedIds.has(s.poi.id))
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
+    .slice(0, unmappedCap);
 
   for (const { poi } of unmapped) {
     selectedIds.add(poi.id);

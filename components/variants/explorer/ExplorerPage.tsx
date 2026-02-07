@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Project, POI, Category, TravelMode, OriginMode } from "@/lib/types";
-import { DEFAULT_THEMES } from "@/lib/themes";
+import { DEFAULT_THEMES, CATEGORY_TO_THEME } from "@/lib/themes";
 
 // Loading state machine for skeleton loading
 type LoadState = "initial" | "loading" | "loaded" | "error" | "refreshing";
@@ -75,8 +75,14 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
         }
       }
     }
+    // Include project-specific categories not mapped to any theme (e.g. architecture prizes)
+    for (const cat of project.categories) {
+      if (!CATEGORY_TO_THEME[cat.id] && !disabledCategories.has(cat.id)) {
+        cats.add(cat.id);
+      }
+    }
     return cats;
-  }, [activeThemes, disabledCategories]);
+  }, [activeThemes, disabledCategories, project.categories]);
 
   const [viewportPOIIds, setViewportPOIIds] = useState<Set<string>>(new Set());
   const [visibleClusterCount, setVisibleClusterCount] = useState(0);
