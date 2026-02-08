@@ -69,6 +69,12 @@ function transformPOI(
     enturStopplaceId: dbPoi.entur_stopplace_id ?? undefined,
     bysykkelStationId: dbPoi.bysykkel_station_id ?? undefined,
     hyreStationId: dbPoi.hyre_station_id ?? undefined,
+    trustScore: dbPoi.trust_score ?? undefined,
+    trustFlags: dbPoi.trust_flags ?? undefined,
+    trustScoreUpdatedAt: dbPoi.trust_score_updated_at ?? undefined,
+    googleWebsite: dbPoi.google_website ?? undefined,
+    googleBusinessStatus: dbPoi.google_business_status ?? undefined,
+    googlePriceLevel: dbPoi.google_price_level ?? undefined,
   };
 }
 
@@ -202,6 +208,12 @@ export async function getPOIsWithinRadius(
       entur_stopplace_id: poi.entur_stopplace_id,
       bysykkel_station_id: poi.bysykkel_station_id,
       hyre_station_id: poi.hyre_station_id,
+      trust_score: poi.trust_score,
+      trust_flags: poi.trust_flags,
+      trust_score_updated_at: poi.trust_score_updated_at,
+      google_website: poi.google_website,
+      google_business_status: poi.google_business_status,
+      google_price_level: poi.google_price_level,
       created_at: poi.created_at,
       updated_at: poi.updated_at,
     } as DbPoi,

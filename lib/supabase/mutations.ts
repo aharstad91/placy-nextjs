@@ -31,6 +31,12 @@ export interface POIImportData {
   entur_stopplace_id: string | null;
   bysykkel_station_id: string | null;
   hyre_station_id: string | null;
+  trust_score: number | null;
+  trust_flags: string[] | null;
+  trust_score_updated_at: string | null;
+  google_website: string | null;
+  google_business_status: string | null;
+  google_price_level: number | null;
 }
 
 /**
@@ -52,6 +58,27 @@ const EDITORIAL_FIELD_NAMES: (keyof EditorialFields)[] = [
   'editorial_sources',
   'featured_image',
   'description',
+];
+
+/**
+ * Trust fields that should be preserved during re-imports
+ */
+interface TrustFields {
+  trust_score: number | null;
+  trust_flags: string[] | null;
+  trust_score_updated_at: string | null;
+  google_website: string | null;
+  google_business_status: string | null;
+  google_price_level: number | null;
+}
+
+const TRUST_FIELD_NAMES: (keyof TrustFields)[] = [
+  'trust_score',
+  'trust_flags',
+  'trust_score_updated_at',
+  'google_website',
+  'google_business_status',
+  'google_price_level',
 ];
 
 export interface POIUpsertResult {
@@ -467,7 +494,7 @@ export async function upsertPOIsWithEditorialPreservation(
   const poiIds = pois.map(p => p.id);
   const { data: existingPois, error: fetchError } = await supabase
     .from("pois")
-    .select("id, editorial_hook, local_insight, story_priority, editorial_sources, featured_image, description")
+    .select("id, editorial_hook, local_insight, story_priority, editorial_sources, featured_image, description, trust_score, trust_flags, trust_score_updated_at, google_website, google_business_status, google_price_level")
     .in("id", poiIds);
 
   if (fetchError) {
@@ -475,8 +502,8 @@ export async function upsertPOIsWithEditorialPreservation(
     return result;
   }
 
-  // Create lookup map for existing editorial content
-  const existingMap = new Map<string, EditorialFields>(
+  // Create lookup map for existing editorial + trust content
+  const existingMap = new Map<string, EditorialFields & TrustFields>(
     (existingPois || []).map(poi => [poi.id, {
       editorial_hook: poi.editorial_hook,
       local_insight: poi.local_insight,
@@ -484,6 +511,12 @@ export async function upsertPOIsWithEditorialPreservation(
       editorial_sources: poi.editorial_sources,
       featured_image: poi.featured_image,
       description: poi.description,
+      trust_score: poi.trust_score,
+      trust_flags: poi.trust_flags,
+      trust_score_updated_at: poi.trust_score_updated_at,
+      google_website: poi.google_website,
+      google_business_status: poi.google_business_status,
+      google_price_level: poi.google_price_level,
     }])
   );
 
@@ -499,6 +532,13 @@ export async function upsertPOIsWithEditorialPreservation(
       editorial_sources: existing?.editorial_sources ?? null,
       featured_image: existing?.featured_image ?? null,
       description: existing?.description ?? null,
+      // Preserve existing trust fields
+      trust_score: poi.trust_score ?? existing?.trust_score ?? null,
+      trust_flags: poi.trust_flags ?? existing?.trust_flags ?? null,
+      trust_score_updated_at: poi.trust_score_updated_at ?? existing?.trust_score_updated_at ?? null,
+      google_website: poi.google_website ?? existing?.google_website ?? null,
+      google_business_status: poi.google_business_status ?? existing?.google_business_status ?? null,
+      google_price_level: poi.google_price_level ?? existing?.google_price_level ?? null,
     };
   });
 
@@ -522,6 +562,38 @@ export async function upsertPOIsWithEditorialPreservation(
   }
 
   return result;
+}
+
+// ============================================
+// Trust Score Operations
+// ============================================
+
+/**
+ * Update a single POI's trust score and flags.
+ * Used by the validation pipeline after Layer 1-3 checks.
+ */
+export async function updatePOITrustScore(
+  poiId: string,
+  trustScore: number,
+  trustFlags: string[]
+): Promise<void> {
+  const supabase = createServerClient();
+  if (!supabase) {
+    throw new Error("Supabase ikke konfigurert");
+  }
+
+  const { error } = await supabase
+    .from("pois")
+    .update({
+      trust_score: trustScore,
+      trust_flags: trustFlags,
+      trust_score_updated_at: new Date().toISOString(),
+    })
+    .eq("id", poiId);
+
+  if (error) {
+    throw new Error(`Kunne ikke oppdatere trust score for POI ${poiId}: ${error.message}`);
+  }
 }
 
 // ============================================

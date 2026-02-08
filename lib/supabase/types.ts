@@ -92,6 +92,12 @@ export type Database = {
           entur_stopplace_id: string | null;
           bysykkel_station_id: string | null;
           hyre_station_id: string | null;
+          trust_score: number | null;
+          trust_flags: string[] | null;
+          trust_score_updated_at: string | null;
+          google_website: string | null;
+          google_business_status: string | null;
+          google_price_level: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -116,6 +122,12 @@ export type Database = {
           entur_stopplace_id?: string | null;
           bysykkel_station_id?: string | null;
           hyre_station_id?: string | null;
+          trust_score?: number | null;
+          trust_flags?: string[] | null;
+          trust_score_updated_at?: string | null;
+          google_website?: string | null;
+          google_business_status?: string | null;
+          google_price_level?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -140,6 +152,12 @@ export type Database = {
           entur_stopplace_id?: string | null;
           bysykkel_station_id?: string | null;
           hyre_station_id?: string | null;
+          trust_score?: number | null;
+          trust_flags?: string[] | null;
+          trust_score_updated_at?: string | null;
+          google_website?: string | null;
+          google_business_status?: string | null;
+          google_price_level?: number | null;
           created_at?: string;
           updated_at?: string;
         };

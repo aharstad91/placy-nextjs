@@ -235,6 +235,13 @@ function convertToPOIImportData(
     entur_stopplace_id: poi.enturStopplaceId || null,
     bysykkel_station_id: poi.bysykkelStationId || null,
     hyre_station_id: null,
+    // Trust: transport POIs are trusted (1.0), Google POIs need validation (null)
+    trust_score: (poi.enturStopplaceId || poi.bysykkelStationId) ? 1.0 : null,
+    trust_flags: null,
+    trust_score_updated_at: null,
+    google_website: null,
+    google_business_status: null,
+    google_price_level: null,
   };
 }
 

@@ -19,9 +19,15 @@ export function applyExplorerCaps(
   themes: ThemeDefinition[],
   profile: VenueProfile
 ): POI[] {
+  // 0. Trust filter: remove untrusted POIs (score < 0.5), null = show
+  const trusted = pois.filter((poi) => {
+    if (poi.trustScore == null) return true;
+    return poi.trustScore >= 0.5;
+  });
+
   // 1. Remove blacklisted categories
   const blacklist = new Set(profile.categoryBlacklist);
-  const eligible = pois.filter((poi) => !blacklist.has(poi.category.id));
+  const eligible = trusted.filter((poi) => !blacklist.has(poi.category.id));
 
   // 2. Score all POIs
   const scored = eligible.map((poi) => ({

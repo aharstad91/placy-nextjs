@@ -46,6 +46,16 @@ export interface POI {
   storyPriority?: StoryPriority;
   editorialSources?: string[];
 
+  // Trust validation
+  trustScore?: number;
+  trustFlags?: string[];
+  trustScoreUpdatedAt?: string;
+
+  // Google enrichment (Layer 1)
+  googleWebsite?: string;
+  googleBusinessStatus?: string;
+  googlePriceLevel?: number;
+
   // Product-specific flags (set per product_pois)
   featured?: boolean;
 
