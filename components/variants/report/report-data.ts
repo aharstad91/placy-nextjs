@@ -23,6 +23,8 @@ export interface ReportThemeStats {
   uniqueCategories: number;
 }
 
+export type ThemeDisplayMode = "editorial" | "functional";
+
 export interface ReportTheme {
   id: string;
   name: string;
@@ -33,6 +35,8 @@ export interface ReportTheme {
   highlightPOIs: POI[];
   listPOIs: POI[];
   allPOIs: POI[];
+  hiddenPOIs: POI[];
+  displayMode: ThemeDisplayMode;
   richnessScore: number;
   score: CategoryScore;
   quote: string;
@@ -77,6 +81,15 @@ const DEFAULT_THEME_CAP = 5;
 
 const HIGHLIGHT_FALLBACK_COUNT = 3;
 const THEME_MIN_POIS = 2;
+
+/** Display mode per theme — editorial gets photo cards, functional gets compact list */
+const CATEGORY_DISPLAY_MODE: Record<string, ThemeDisplayMode> = {
+  "mat-drikke": "editorial",
+  "kultur-opplevelser": "editorial",
+  "trening-velvare": "editorial",
+  "hverdagsbehov": "functional",
+  "transport": "functional",
+};
 
 export function transformToReportData(project: Project): ReportData {
   const allPOIs = project.pois;
@@ -132,6 +145,7 @@ export function transformToReportData(project: Project): ReportData {
     });
 
     const capped = sorted.slice(0, cap);
+    const hiddenPOIs = sorted.slice(cap);
 
     // Split into highlight and list POIs
     // Check per-theme so themes with featured flags use them while others use rating fallback
@@ -200,6 +214,8 @@ export function transformToReportData(project: Project): ReportData {
       highlightPOIs,
       listPOIs,
       allPOIs: capped,
+      hiddenPOIs,
+      displayMode: (CATEGORY_DISPLAY_MODE[themeDef.id] ?? "editorial") as ThemeDisplayMode,
       richnessScore,
       score,
       quote,

@@ -1,17 +1,25 @@
 "use client";
 
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import type { Project } from "@/lib/types";
 import type { TranslationMap } from "@/lib/supabase/translations";
-import { transformToReportData } from "./report-data";
+import { transformToReportData, type ReportTheme } from "./report-data";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
+import { useActiveSection } from "@/lib/hooks/useActiveSection";
 import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
+import ReportStickyMap from "./ReportStickyMap";
 import ReportExplorerCTA from "./ReportExplorerCTA";
 import ReportClosing from "./ReportClosing";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
+
+/** Active POI with source discriminator to prevent feedback loops */
+export interface ActivePOIState {
+  poiId: string;
+  source: "card" | "marker";
+}
 
 interface ReportPageProps {
   project: Project;
@@ -40,6 +48,33 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
     [effectiveProject]
   );
 
+  // Active POI state with source discriminator (shared between map and sections)
+  const [activePOI, setActivePOI] = useState<ActivePOIState | null>(null);
+
+  // Initialize active section to first theme
+  const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
+  const { activeSectionId, registerSectionRef } = useActiveSection(initialThemeId);
+
+  // Find the active theme data for the map
+  const activeTheme = useMemo(
+    () => reportData.themes.find((th) => th.id === activeSectionId) ?? reportData.themes[0] ?? null,
+    [reportData.themes, activeSectionId]
+  );
+
+  // Handle card click → highlight marker (source: "card")
+  const handleCardClick = useCallback((poiId: string) => {
+    setActivePOI((prev) =>
+      prev?.poiId === poiId ? null : { poiId, source: "card" }
+    );
+  }, []);
+
+  // Handle marker click → scroll to card (source: "marker")
+  const handleMarkerClick = useCallback((poiId: string) => {
+    setActivePOI((prev) =>
+      prev?.poiId === poiId ? null : { poiId, source: "marker" }
+    );
+  }, []);
+
   // Scroll preservation: restore on mount, save continuously
   const restoredRef = useRef(false);
 
@@ -53,7 +88,6 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
       if (saved) {
         const y = parseInt(saved, 10);
         if (!isNaN(y) && y > 0) {
-          // Small delay to let the layout render
           requestAnimationFrame(() => {
             window.scrollTo(0, y);
           });
@@ -78,51 +112,96 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] px-16">
-      <div className="grid grid-cols-12 gap-x-6">
-        {/* Hero with integrated theme navigation */}
-        <ReportHero
-          projectName={reportData.projectName}
-          metrics={reportData.heroMetrics}
-          themes={reportData.themes}
-          label={reportData.label}
-          heroIntro={reportData.heroIntro}
-        />
+    <div className="min-h-screen bg-[#faf9f7]">
+      {/* Hero — full width with padding */}
+      <div className="px-16">
+        <div className="grid grid-cols-12 gap-x-6">
+          <ReportHero
+            projectName={reportData.projectName}
+            metrics={reportData.heroMetrics}
+            themes={reportData.themes}
+            label={reportData.label}
+            heroIntro={reportData.heroIntro}
+          />
+        </div>
+      </div>
 
-        {/* Theme sections */}
-        {reportData.themes.map((theme, i) => (
-          <div key={theme.id} className="col-span-12">
-            {i > 0 && (
-              <div className="h-px bg-[#e8e4df]" />
-            )}
-            <ReportThemeSection
-              theme={theme}
-              center={reportData.centerCoordinates}
-              explorerBaseUrl={explorerBaseUrl}
-              projectName={reportData.projectName}
+      {/* Desktop: 50/50 split with sticky map */}
+      <div className="hidden lg:flex">
+        {/* Left: Scrollable theme sections */}
+        <div className="w-1/2 px-16">
+          {reportData.themes.map((theme, i) => (
+            <div key={theme.id}>
+              {i > 0 && <div className="h-px bg-[#e8e4df]" />}
+              <ReportThemeSection
+                theme={theme}
+                center={reportData.centerCoordinates}
+                explorerBaseUrl={explorerBaseUrl}
+                projectName={reportData.projectName}
+                registerRef={registerSectionRef(theme.id)}
+                useStickyMap={true}
+                activePOIId={activePOI?.poiId ?? null}
+                onPOIClick={handleCardClick}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Right: Sticky map */}
+        <div className="w-1/2">
+          <div className="sticky top-20 h-[calc(100vh-5rem)]">
+            <ReportStickyMap
+              themes={reportData.themes}
+              activeThemeId={activeSectionId}
+              activePOI={activePOI}
+              hotelCoordinates={reportData.centerCoordinates}
+              onMarkerClick={handleMarkerClick}
+              mapStyle={reportData.mapStyle}
             />
           </div>
-        ))}
+        </div>
+      </div>
 
-        {/* Explorer CTA */}
-        {explorerBaseUrl && project.pois.length > 0 && (
-          <ReportExplorerCTA
-            pois={project.pois}
-            center={reportData.centerCoordinates}
-            explorerBaseUrl={explorerBaseUrl}
+      {/* Mobile: Original per-section inline maps */}
+      <div className="lg:hidden px-16">
+        <div className="grid grid-cols-12 gap-x-6">
+          {reportData.themes.map((theme, i) => (
+            <div key={theme.id} className="col-span-12">
+              {i > 0 && <div className="h-px bg-[#e8e4df]" />}
+              <ReportThemeSection
+                theme={theme}
+                center={reportData.centerCoordinates}
+                explorerBaseUrl={explorerBaseUrl}
+                projectName={reportData.projectName}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer sections — full width with padding */}
+      <div className="px-16">
+        <div className="grid grid-cols-12 gap-x-6">
+          {/* Explorer CTA */}
+          {explorerBaseUrl && project.pois.length > 0 && (
+            <ReportExplorerCTA
+              pois={project.pois}
+              center={reportData.centerCoordinates}
+              explorerBaseUrl={explorerBaseUrl}
+              totalPOIs={reportData.heroMetrics.totalPOIs}
+            />
+          )}
+
+          {/* Closing */}
+          <ReportClosing
+            projectName={reportData.projectName}
             totalPOIs={reportData.heroMetrics.totalPOIs}
+            avgRating={reportData.heroMetrics.avgRating}
+            closingTitle={reportData.closingTitle}
+            closingText={reportData.closingText}
+            label={reportData.label}
           />
-        )}
-
-        {/* Closing */}
-        <ReportClosing
-          projectName={reportData.projectName}
-          totalPOIs={reportData.heroMetrics.totalPOIs}
-          avgRating={reportData.heroMetrics.avgRating}
-          closingTitle={reportData.closingTitle}
-          closingText={reportData.closingText}
-          label={reportData.label}
-        />
+        </div>
       </div>
     </div>
   );
