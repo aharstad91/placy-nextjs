@@ -64,11 +64,12 @@ export async function PATCH(
   }
 
   // Fetch short_id for revalidation path
+  // Cast needed: short_id column added in migration but Supabase types not regenerated
   const { data: proj } = await supabase
     .from("projects")
     .select("short_id")
     .eq("id", projectId)
-    .single();
+    .single() as { data: { short_id?: string } | null };
 
   if (proj?.short_id) {
     revalidatePath(`/admin/projects/${proj.short_id}`);

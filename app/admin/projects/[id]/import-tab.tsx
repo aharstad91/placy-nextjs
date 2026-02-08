@@ -45,6 +45,7 @@ import {
   Trash2,
   Plus,
   MousePointerClick,
+  Camera,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { DiscoveryCircle } from "@/lib/types";
@@ -167,6 +168,10 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
   const [step, setStep] = useState<ImportStep>("idle");
   const [stats, setStats] = useState<ImportStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Photo fetch state
+  const [isFetchingPhotos, setIsFetchingPhotos] = useState(false);
+  const [photoStats, setPhotoStats] = useState<{ updated: number; skipped: number; failed: number } | null>(null);
 
   const hasCircles = circles.length > 0;
   const hasSelection = hasCircles && selectedCategories.size > 0;
@@ -338,16 +343,41 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
       setStats(data.stats);
       setStep("done");
       router.refresh();
+
+      // Auto-fetch photos for newly imported POIs
+      handleFetchPhotos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ukjent feil");
       setStep("error");
     }
   };
 
+  const handleFetchPhotos = useCallback(async () => {
+    setIsFetchingPhotos(true);
+    setPhotoStats(null);
+    try {
+      const res = await fetch("/api/admin/fetch-photos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: project.id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPhotoStats(data);
+        router.refresh();
+      }
+    } catch {
+      // Photo fetch is non-critical — fail silently
+    } finally {
+      setIsFetchingPhotos(false);
+    }
+  }, [project.id, router]);
+
   const handleReset = () => {
     setStep("idle");
     setStats(null);
     setError(null);
+    setPhotoStats(null);
     setSelectedCategories(defaultCategories);
   };
 
@@ -427,6 +457,45 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
                 </div>
 
                 <CategoryBreakdown stats={stats} />
+
+                {/* Photo fetch status */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-gray-500" />
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Bilder
+                      </span>
+                    </div>
+                    {!isFetchingPhotos && (
+                      <button
+                        onClick={handleFetchPhotos}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        {photoStats ? "Kjør på nytt" : "Hent bilder"}
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    {isFetchingPhotos ? (
+                      <div className="flex items-center gap-2 text-sm text-blue-600">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Henter bilder fra Google...</span>
+                      </div>
+                    ) : photoStats ? (
+                      <p className="text-sm text-gray-600">
+                        {photoStats.updated > 0
+                          ? `${photoStats.updated} bilder hentet`
+                          : "Alle POI-er har allerede bilder"}
+                        {photoStats.failed > 0 && `, ${photoStats.failed} feilet`}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-400">
+                        Henter automatisk...
+                      </p>
+                    )}
+                  </div>
+                </div>
 
                 <div className="space-y-2">
                   <button
@@ -574,7 +643,10 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
                     }
                   />
                   {step === "importing" && (
-                    <ProgressStep label="Lagrer til database" status="active" />
+                    <>
+                      <ProgressStep label="Lagrer til database" status="active" />
+                      <ProgressStep label="Henter bilder" status="pending" />
+                    </>
                   )}
                 </div>
               </div>
