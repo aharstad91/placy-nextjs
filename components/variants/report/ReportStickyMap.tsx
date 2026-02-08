@@ -8,8 +8,7 @@ import type { ActivePOIState } from "./ReportPage";
 import { getIcon } from "@/lib/utils/map-icons";
 import { Building2 } from "lucide-react";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
-
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
+import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 
 interface ReportStickyMapProps {
   themes: ReportTheme[];
@@ -137,22 +136,13 @@ export default function ReportStickyMap({
     [poisByTheme, hotelCoordinates]
   );
 
-  // Hide default POI labels on map load
+  // Apply illustrated theme + initial fitBounds on map load
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
     if (!mapRef.current) return;
 
     const map = mapRef.current.getMap();
-    const layers = map.getStyle()?.layers || [];
-    for (const layer of layers) {
-      if (
-        layer.id.includes("poi") ||
-        layer.id.includes("place-label") ||
-        layer.id.includes("transit")
-      ) {
-        map.setLayoutProperty(layer.id, "visibility", "none");
-      }
-    }
+    applyIllustratedTheme(map);
 
     // Initial fitBounds
     fitBoundsForTheme(activeThemeId);
@@ -273,7 +263,7 @@ export default function ReportStickyMap({
           zoom: 14,
         }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle={mapStyle || MAP_STYLE}
+        mapStyle={mapStyle || MAP_STYLE_STANDARD}
         onLoad={handleMapLoad}
         scrollZoom={true}
       >
