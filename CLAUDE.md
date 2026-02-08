@@ -94,6 +94,10 @@ Agent Teams er aktivert (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). Velg riktig 
 - Foretrekk 2-4 teammates. Flere øker token-kostnad uten tilsvarende gevinst
 - Bruk delegate mode (Shift+Tab) for rene orkestreringsoppgaver
 
+## Git og parallelle sesjoner
+
+**Flere Claude Code-sesjoner kjører ofte parallelt.** Filer kan bli committed fra en annen sesjon. Før du committer: kjør `git status` og verifiser at endringene ikke allerede er committed.
+
 ## Git Worktrees (parallelle sesjoner)
 
 Flere Claude Code-sesjoner i samme mappe ødelegger hverandres arbeid. **Bruk alltid worktrees for parallelt arbeid.**

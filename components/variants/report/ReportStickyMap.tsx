@@ -200,6 +200,23 @@ export default function ReportStickyMap({
     return () => clearTimeout(timer);
   }, [activeThemeId, mapLoaded, fitBoundsForTheme]);
 
+  // Fly to POI when selected from a card click (not from marker click)
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current || !activePOI) return;
+    if (activePOI.source !== "card") return;
+
+    const poi = allPOIs.find((p) => p.id === activePOI.poiId);
+    if (!poi) return;
+
+    const map = mapRef.current;
+    map.getMap().stop();
+    map.flyTo({
+      center: [poi.coordinates.lng, poi.coordinates.lat],
+      duration: 400,
+      // Don't change zoom — keep current zoom level
+    });
+  }, [activePOI, mapLoaded, allPOIs]);
+
   // Re-fit bounds when a theme is expanded (new markers appear)
   const prevExpandedSizeRef = useRef(0);
   useEffect(() => {

@@ -17,6 +17,8 @@ const SCROLL_KEY_PREFIX = "placy-scroll:";
 
 export interface ActivePOIState {
   poiId: string;
+  /** Where the selection originated — controls whether the map flies to the POI */
+  source: "card" | "marker";
 }
 
 interface ReportPageProps {
@@ -60,17 +62,17 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
   const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
   const { activeSectionId, registerSectionRef } = useActiveSection(initialThemeId);
 
-  // Handle card click → highlight marker
+  // Handle card click → highlight marker + fly map to POI
   const handleCardClick = useCallback((poiId: string) => {
     setActivePOI((prev) =>
-      prev?.poiId === poiId ? null : { poiId }
+      prev?.poiId === poiId ? null : { poiId, source: "card" }
     );
   }, []);
 
-  // Handle marker click → highlight card + scroll to it
+  // Handle marker click → highlight card + scroll to it (no map movement)
   const handleMarkerClick = useCallback((poiId: string) => {
     setActivePOI((prev) => {
-      const next = prev?.poiId === poiId ? null : { poiId };
+      const next: ActivePOIState | null = prev?.poiId === poiId ? null : { poiId, source: "marker" };
       // Scroll to the card after state update
       if (next) {
         requestAnimationFrame(() => {
