@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kundeprospekter Trondheim - Placy</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 { color: #1a1a1a; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
+    h2 { color: #1e40af; margin-top: 40px; border-bottom: 2px solid #ddd; padding-bottom: 8px; }
+    h3 { color: #475569; margin-top: 25px; }
+    .meta { color: #666; font-size: 14px; margin-bottom: 30px; }
+    .segment { background: white; border-radius: 12px; padding: 25px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 16px; margin-top: 15px; }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      transition: box-shadow 0.2s;
+    }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card h4 { margin: 0 0 8px 0; color: #1e40af; font-size: 16px; }
+    .card .address { color: #666; font-size: 13px; margin-bottom: 8px; }
+    .card .contact { font-size: 13px; }
+    .card .contact a { color: #2563eb; text-decoration: none; }
+    .card .contact a:hover { text-decoration: underline; }
+    .card .projects { font-size: 12px; color: #888; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; }
+    .tier-label {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .tier-1 { background: #dbeafe; color: #1e40af; }
+    .tier-2 { background: #e0e7ff; color: #4338ca; }
+    .tier-3 { background: #f3e8ff; color: #7c3aed; }
+    .tier-4 { background: #fef3c7; color: #b45309; }
+    .hotel-stars { color: #f59e0b; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    th { background: #f8fafc; font-weight: 600; color: #475569; }
+    tr:hover { background: #f8fafc; }
+    .summary-box {
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+    }
+    .summary-box h3 { color: white; margin-top: 0; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center; }
+    .summary-item { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; }
+    .summary-item .number { font-size: 28px; font-weight: bold; }
+    .summary-item .label { font-size: 12px; opacity: 0.9; }
+    .pitch-box { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0; }
+    .pitch-box h4 { margin: 0 0 10px 0; color: #166534; }
+    .pitch-box ul { margin: 0; padding-left: 20px; }
+    .pitch-box li { margin: 5px 0; color: #166534; }
+    @media print {
+      body { background: white; }
+      .segment { box-shadow: none; border: 1px solid #ddd; }
+      .card:hover { box-shadow: none; }
+    }
+    @media (max-width: 768px) {
+      .card-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Kundeprospekter Trondheim</h1>
+<p class="meta">Placy - Explorer, Guide, Report | Oppdatert: 5. februar 2026</p>
+
+<div class="summary-box">
+  <h3>Totalt identifisert</h3>
+  <div class="summary-grid">
+    <div class="summary-item">
+      <div class="number">7</div>
+      <div class="label">Næringseiendoim</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">18</div>
+      <div class="label">Boligutbyggere</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">17</div>
+      <div class="label">Hoteller</div>
+    </div>
+  </div>
+</div>
+
+<!-- NÆRINGSEIENDOM -->
+<div class="segment">
+  <h2>1. Næringseiendom</h2>
+
+  <h3>Store aktører</h3>
+  <div class="card-grid">
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>EC Dahls Eiendom</h4>
+      <div class="address">Kongens gate 8 (3. etg), 7011 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 73 99 09 90<br>
+        <strong>Web:</strong> <a href="https://ecde.no/" target="_blank">ecde.no</a>
+      </div>
+      <div class="projects">Største privateide i Midtbyen. 90+ eiendommer. Eid av Reitan.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>KLP Eiendom Trondheim</h4>
+      <div class="address">Professor Brochs gate 14, 7030 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 55 54 85 00<br>
+        <strong>Web:</strong> <a href="https://www.klpeiendom.no/trondheim" target="_blank">klpeiendom.no/trondheim</a>
+      </div>
+      <div class="projects">Allerede demo-kunde i Placy. God inngang.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>Koteng Eiendom</h4>
+      <div class="address">Travbanevegen 2, 7061 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 73 80 22 20<br>
+        <strong>E-post:</strong> <a href="mailto:koteng@koteng.no">koteng@koteng.no</a>
+      </div>
+      <div class="projects">270.000 m² portefølje, 310 MNOK i leie. Planlegger 70.000 m² nybygg.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>Reitan Eiendom</h4>
+      <div class="address">Lade Gård, Lade allé 40, 7041 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 73 89 10 00<br>
+        <strong>Web:</strong> <a href="https://reitaneiendom.no/" target="_blank">reitaneiendom.no</a>
+      </div>
+      <div class="projects">Morselskap til EC Dahls. Del av Reitan-konsernet.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>AHA Eiendom</h4>
+      <div class="address">Fjordgata 34, 7010 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 73 89 00 00<br>
+        <strong>E-post:</strong> <a href="mailto:post@aha.no">post@aha.no</a>
+      </div>
+      <div class="projects">Lokalt fokus. Kontor i sentrum.</div>
+    </div>
+  </div>
+
+  <h3>Meglere/Rådgivere</h3>
+  <div class="card-grid">
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>EiendomsMegler 1 Næring</h4>
+      <div class="address">Søndre gate 4, 7011 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 915 05 250<br>
+        <strong>Web:</strong> <a href="https://www.eiendomsmegler1.no/kontor/naeringseiendom" target="_blank">eiendomsmegler1.no</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>DNB Næringsmegling</h4>
+      <div class="address">Trondheim sentrum</div>
+      <div class="contact">
+        <strong>Web:</strong> <a href="https://dnbnaringsmegling.no/trondheim/" target="_blank">dnbnaringsmegling.no/trondheim</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="pitch-box">
+    <h4>Pitch: Næringseiendom → Report</h4>
+    <ul>
+      <li>"Gi leietakere og ansatte interaktive nabolagsoversikter"</li>
+      <li>"Øk attraktiviteten til lokasjonen med redaksjonelt innhold"</li>
+      <li>"Differensier dere fra konkurrentene med lokalkunnskap"</li>
+    </ul>
+  </div>
+</div>
+
+<!-- BOLIGUTVIKLING -->
+<div class="segment">
+  <h2>2. Boligutvikling</h2>
+
+  <h3>Store nasjonale utbyggere</h3>
+  <div class="card-grid">
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>TOBB</h4>
+      <div class="address">Krambugata 7, 7011 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 73 83 15 00<br>
+        <strong>Web:</strong> <a href="https://tobb.no/" target="_blank">tobb.no</a>
+      </div>
+      <div class="projects">Overvik, flere prosjekter. Største boligbyggelag i regionen.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>OBOS Midt-Norge</h4>
+      <div class="address">Ranheimsvegen 9 (5. etg), 7044 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 22 86 55 00<br>
+        <strong>E-post:</strong> <a href="mailto:oef@obos.no">oef@obos.no</a>
+      </div>
+      <div class="projects">Flere prosjekter i Trondheim.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>Fredensborg Bolig</h4>
+      <div class="address">Munkegata 25, 7011 Trondheim</div>
+      <div class="contact">
+        <strong>Web:</strong> <a href="https://fredensborgbolig.no/" target="_blank">fredensborgbolig.no</a>
+      </div>
+      <div class="projects">Brøset Nord, Overvik, Vikhammerstrand, Basseløkka. Tilbyr "Leie til eie".</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>Nordr</h4>
+      <div class="address">Beddingen 16, 7042 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 45 40 90 00<br>
+        <strong>E-post:</strong> <a href="mailto:post@nordr.com">post@nordr.com</a>
+      </div>
+      <div class="projects">Nye Lilleby (1100 boliger totalt). Bilfritt, 38 dekar park.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>Skanska Bolig</h4>
+      <div class="address">Oslo (nasjonalt)</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 40 00 64 00<br>
+        <strong>Web:</strong> <a href="https://bolig.skanska.no/" target="_blank">bolig.skanska.no</a>
+      </div>
+      <div class="projects">Gartnersletta, Lilleby, Ranheim Senter (600+ leil). Kjøpte Nordrs portefølje.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>Selvaag Bolig</h4>
+      <div class="address">Oslo (nasjonalt)</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 915 02 224<br>
+        <strong>E-post:</strong> <a href="mailto:post@selvaagbolig.no">post@selvaagbolig.no</a>
+      </div>
+      <div class="projects">Ringve Pluss (164 leil). Ferdigstilt 2024.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>JM Norge</h4>
+      <div class="address">Havnegata 9, 7010 Trondheim</div>
+      <div class="contact">
+        <strong>Web:</strong> <a href="https://www.jm.no/trondheim-omegn/" target="_blank">jm.no/trondheim-omegn</a>
+      </div>
+      <div class="projects">Strindalia, Granås øst (170 leil).</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Tier 1</span>
+      <h4>Bane NOR Eiendom</h4>
+      <div class="address">Sjøgangen 6, 7010 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 22 45 50 00<br>
+        <strong>E-post:</strong> <a href="mailto:eiendom@banenor.no">eiendom@banenor.no</a>
+      </div>
+      <div class="projects">StasjonsKvartalet (235 leil), Cecilienborg. Knutepunktutvikling.</div>
+    </div>
+  </div>
+
+  <h3>Lokale/regionale utbyggere</h3>
+  <div class="card-grid">
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>Trym</h4>
+      <div class="address">Bratsbergvegen 2, 7031 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 73 60 60 67<br>
+        <strong>Web:</strong> <a href="https://trym.no/" target="_blank">trym.no</a>
+      </div>
+      <div class="projects">Brøset, 300-400 boliger i pipeline.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>Heimdal Eiendom</h4>
+      <div class="address">Falkenborgvegen 9, 7044 Trondheim</div>
+      <div class="contact">
+        <strong>E-post:</strong> <a href="mailto:kontakt@heimdaleiendom.no">kontakt@heimdaleiendom.no</a>
+      </div>
+      <div class="projects">Ladehammeren (300 leil m/Fredensborg, Dora).</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>Koteng Jenssen</h4>
+      <div class="address">Travbanevegen 2, 7061 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 73 80 22 20<br>
+        <strong>E-post:</strong> <a href="mailto:marius@koteng.no">marius@koteng.no</a>
+      </div>
+      <div class="projects">Grilstad Marina, 300+ planlagte leiligheter.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>Rett Hjem Bolig</h4>
+      <div class="address">Sluppenvegen 14, 7037 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 984 21 950<br>
+        <strong>E-post:</strong> <a href="mailto:kontor@rett-hjem.no">kontor@rett-hjem.no</a>
+      </div>
+      <div class="projects">Saupstad Torg (257 leil), StasjonsKvartalet.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>Sebo Boliger</h4>
+      <div class="address">Moafjæra 6I, 7606 Levanger</div>
+      <div class="contact">
+        <strong>Web:</strong> <a href="https://www.seboboliger.no/" target="_blank">seboboliger.no</a>
+      </div>
+      <div class="projects">Fjæregata, Vikhammerstrand (m/Fredensborg).</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>Dora Eiendom</h4>
+      <div class="address">Maskinistgata 1, 7042 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 73 52 77 17<br>
+        <strong>E-post:</strong> <a href="mailto:post@dora.no">post@dora.no</a>
+      </div>
+      <div class="projects">Nyhavna (800 boliger under regulering).</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>Kjeldsberg Eiendom</h4>
+      <div class="address">Sluppenvegen 19, 7037 Trondheim</div>
+      <div class="contact">
+        <strong>Web:</strong> <a href="https://www.kjeldsberg.no/" target="_blank">kjeldsberg.no</a>
+      </div>
+      <div class="projects">EC Dahls bryggeri (1200 leil).</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>Leangen Bolig</h4>
+      <div class="address">Travbanevegen 2, 7061 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 73 80 22 20<br>
+        <strong>E-post:</strong> <a href="mailto:marius@koteng.no">marius@koteng.no</a>
+      </div>
+      <div class="projects">Leangen bydel, Løkka, Tunet.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Tier 2</span>
+      <h4>Salvesen & Thams</h4>
+      <div class="address">Thamshavnveien 22, 7300 Orkanger</div>
+      <div class="contact">
+        <strong>Tlf:</strong> 72 49 90 00<br>
+        <strong>E-post:</strong> <a href="mailto:firmapost@salvesen-thams.no">firmapost@salvesen-thams.no</a>
+      </div>
+      <div class="projects">Overvik (m/TOBB, Fredensborg). 1/3 eier av Østbyen Utvikling.</div>
+    </div>
+  </div>
+
+  <h3>Aktive prosjekter (24 totalt)</h3>
+  <table>
+    <tr>
+      <th>Prosjekt</th>
+      <th>Område</th>
+      <th>Utbygger</th>
+      <th>Antall</th>
+      <th>Status</th>
+    </tr>
+    <tr><td><strong>StasjonsKvartalet</strong></td><td>Sentrum</td><td>Bane NOR / Rett Hjem</td><td>235</td><td>50% solgt, ferdig 2028</td></tr>
+    <tr><td><strong>Transittkaia</strong></td><td>Nyhavna</td><td>Nyhavna Utvikling</td><td>700</td><td>Byggestart 2026</td></tr>
+    <tr><td><strong>Nye Lilleby</strong></td><td>Lilleby</td><td>Nordr/Skanska</td><td>1100</td><td>Pågående</td></tr>
+    <tr><td><strong>Ringve Pluss</strong></td><td>Lade</td><td>Selvaag</td><td>164</td><td>Ferdigstilt 2024</td></tr>
+    <tr><td><strong>Gartnersletta</strong></td><td>Lade</td><td>Skanska</td><td>104</td><td>Under salg</td></tr>
+    <tr><td><strong>Ranheim Senter</strong></td><td>Ranheim</td><td>Skanska/Coop</td><td>600+</td><td>Planlagt</td></tr>
+    <tr><td><strong>Strindalia</strong></td><td>Granås</td><td>JM Norge</td><td>170</td><td>Under utvikling</td></tr>
+    <tr><td><strong>Brøset Nord</strong></td><td>Brøset</td><td>Fredensborg/NREP</td><td>460</td><td>Under regulering</td></tr>
+    <tr><td><strong>Overvik</strong></td><td>Charlottenlund</td><td>Østbyen Utvikling</td><td>1500+</td><td>Pågående</td></tr>
+    <tr><td><strong>Saupstad Torg</strong></td><td>Heimdal</td><td>Rett Hjem</td><td>257</td><td>Fase 1: 119 leil</td></tr>
+    <tr><td><strong>Grilstad Marina</strong></td><td>Grilstad</td><td>Koteng Jenssen</td><td>300+</td><td>Pågående</td></tr>
+    <tr><td><strong>Vikhammerstrand</strong></td><td>Vikhammar</td><td>Fredensborg/Sebo</td><td>400</td><td>Under utvikling</td></tr>
+    <tr><td><strong>EC Dahls bryggeri</strong></td><td>Lade</td><td>Heimdal/Kjeldsberg</td><td>1200</td><td>Langsiktig</td></tr>
+    <tr><td><strong>Nyhavna total</strong></td><td>Nyhavna</td><td>Nyhavna Utvikling</td><td>3000</td><td>Over flere tiår</td></tr>
+  </table>
+
+  <div class="pitch-box">
+    <h4>Pitch: Boligutvikling → Report + Explorer</h4>
+    <ul>
+      <li>"Hjelp kjøpere å forstå nabolaget før de kjøper"</li>
+      <li>"Reduser usikkerhet og øk konvertering"</li>
+      <li>"Vis frem livskvalitet, ikke bare kvadratmeter"</li>
+    </ul>
+  </div>
+</div>
+
+<!-- HOTELLER -->
+<div class="segment">
+  <h2>3. Hoteller</h2>
+
+  <h3>Luksus & Premium</h3>
+  <div class="card-grid">
+    <div class="card">
+      <span class="tier-label tier-1">Premium</span>
+      <h4>Britannia Hotel <span class="hotel-stars">★★★★★</span></h4>
+      <div class="address">Dronningens gate 5, 7011 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 73 800 809<br>
+        <strong>E-post:</strong> <a href="mailto:event@britannia.no">event@britannia.no</a>
+      </div>
+      <div class="projects">13 møterom, Britannia Hall (320 seter). Norges beste frokost 12 år.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-1">Premium</span>
+      <h4>Radisson Blu Royal Garden <span class="hotel-stars">★★★★</span></h4>
+      <div class="address">Kjøpmannsgt. 73, 7011 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 73 80 30 00<br>
+        <strong>E-post:</strong> <a href="mailto:info.trondheim@radissonblu.com">info.trondheim@radissonblu.com</a>
+      </div>
+      <div class="projects">15 møterom, opptil 1000 gjester. Stort konferansehotell.</div>
+    </div>
+  </div>
+
+  <h3>Store konferansehoteller</h3>
+  <div class="card-grid">
+    <div class="card">
+      <span class="tier-label tier-2">Konferanse</span>
+      <h4>Clarion Hotel Trondheim <span class="hotel-stars">★★★★</span></h4>
+      <div class="address">Brattørkaia 1, 7010 Trondheim</div>
+      <div class="contact">
+        <strong>Web:</strong> <a href="https://www.strawberry.no/hotell/norge/trondheim/clarion-hotel-trondheim/" target="_blank">strawberry.no</a>
+      </div>
+      <div class="projects">Skandinavias største kongresshotell. 400 rom, 19 møterom.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Konferanse</span>
+      <h4>Scandic Nidelven <span class="hotel-stars">★★★★</span></h4>
+      <div class="address">Havnegata 1-3, 7400 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 21 61 46 00<br>
+        <strong>E-post:</strong> <a href="mailto:nidelven@scandichotels.com">nidelven@scandichotels.com</a>
+      </div>
+      <div class="projects">349 rom, bygget over Nidelva. 5 min fra sentralstasjonen.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-2">Konferanse</span>
+      <h4>Quality Hotel Prinsen <span class="hotel-stars">★★★★</span></h4>
+      <div class="address">Kongensgate 30, 7012 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 73 80 70 00<br>
+        <strong>E-post:</strong> <a href="mailto:q.prinsen@strawberry.no">q.prinsen@strawberry.no</a>
+      </div>
+      <div class="projects">Historisk hotell i hjertet av sentrum.</div>
+    </div>
+  </div>
+
+  <h3>Sentrumshoteller</h3>
+  <div class="card-grid">
+    <div class="card">
+      <span class="tier-label tier-3">Sentrum</span>
+      <h4>Thon Hotel Trondheim <span class="hotel-stars">★★★</span></h4>
+      <div class="address">Ved Torvet, sentrum</div>
+      <div class="contact">
+        <strong>Web:</strong> <a href="https://www.thonhotels.com/hotels/norway/trondheim/thon-hotel-trondheim/" target="_blank">thonhotels.com</a>
+      </div>
+      <div class="projects">107 rom. 50m fra Torvet.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-3">Sentrum</span>
+      <h4>Thon Hotel Nidaros <span class="hotel-stars">★★★</span></h4>
+      <div class="address">Sentrum</div>
+      <div class="contact">
+        <strong>Web:</strong> <a href="https://www.thonhotels.com/hotels/norway/trondheim/thon-hotel-nidaros/" target="_blank">thonhotels.com</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-3">Sentrum</span>
+      <h4>Scandic Bakklandet <span class="hotel-stars">★★★★</span></h4>
+      <div class="address">Nedre Bakklandet 60, 7014 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 72 90 20 00<br>
+        <strong>E-post:</strong> <a href="mailto:bakklandet@scandichotels.com">bakklandet@scandichotels.com</a>
+      </div>
+      <div class="projects">Historisk beliggenhet ved Gamle Bybro.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-3">Sentrum</span>
+      <h4>Scandic Solsiden <span class="hotel-stars">★★★★</span></h4>
+      <div class="address">Beddingen 1, 7014 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 21 61 46 00<br>
+        <strong>E-post:</strong> <a href="mailto:solsiden@scandichotels.com">solsiden@scandichotels.com</a>
+      </div>
+      <div class="projects">Trendy område med restauranter og shopping.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-3">Sentrum</span>
+      <h4>Scandic Lerkendal <span class="hotel-stars">★★★★</span></h4>
+      <div class="address">Klæbuveien 127, 7031 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 21 61 51 00<br>
+        <strong>E-post:</strong> <a href="mailto:lerkendal@scandichotels.com">lerkendal@scandichotels.com</a>
+      </div>
+      <div class="projects">Ved Lerkendal stadion.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-3">Sentrum</span>
+      <h4>Comfort Hotel Park <span class="hotel-stars">★★★</span></h4>
+      <div class="address">Prinsens gate 4A, 7012 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 73 83 39 00<br>
+        <strong>E-post:</strong> <a href="mailto:co.park@strawberry.no">co.park@strawberry.no</a>
+      </div>
+    </div>
+  </div>
+
+  <h3>Budsjett & Boutique</h3>
+  <div class="card-grid">
+    <div class="card">
+      <span class="tier-label tier-4">Boutique</span>
+      <h4>Best Western Plus Hotel Bakeriet <span class="hotel-stars">★★★★</span></h4>
+      <div class="address">Brattørgata 2, 7010 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 73 99 10 00<br>
+        <strong>Web:</strong> <a href="https://www.bestwestern.com/" target="_blank">bestwestern.com</a>
+      </div>
+      <div class="projects">Historisk bygning, tidligere bakeri.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-4">Budsjett</span>
+      <h4>P-Hotels Brattøra <span class="hotel-stars">★★★</span></h4>
+      <div class="address">Fosenkaia 7, 7010 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 73 60 40 05<br>
+        <strong>Web:</strong> <a href="https://p-hotels.no/" target="_blank">p-hotels.no</a>
+      </div>
+      <div class="projects">Nær sentralstasjonen.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-4">Leilighet</span>
+      <h4>City Living Sentrum <span class="hotel-stars">★★★</span></h4>
+      <div class="address">Nordre gate 24, 7011 Trondheim</div>
+      <div class="contact">
+        <strong>Tlf:</strong> +47 73 87 08 08<br>
+        <strong>E-post:</strong> <a href="mailto:sentrum@cityliving.no">sentrum@cityliving.no</a>
+      </div>
+      <div class="projects">Leilighetshotell i Midtbyen.</div>
+    </div>
+
+    <div class="card">
+      <span class="tier-label tier-4">Unikt</span>
+      <h4>Nidaros Pilegrimsgård <span class="hotel-stars">★★★</span></h4>
+      <div class="address">Kjøpmannsgata 1, 7013 Trondheim</div>
+      <div class="contact">
+        <strong>Web:</strong> <a href="https://www.nidarospilegrimsgard.no/" target="_blank">nidarospilegrimsgard.no</a>
+      </div>
+      <div class="projects">Ved Nidarosdomen. Unikt konsept for pilegrimer.</div>
+    </div>
+  </div>
+
+  <div class="pitch-box">
+    <h4>Pitch: Hoteller → Guide + Explorer</h4>
+    <ul>
+      <li>"Kuraterte opplevelser for gjestene dine"</li>
+      <li>"Øk gjesteopplevelsen med lokale tips"</li>
+      <li>"Differensier fra booking-sider med lokal ekspertise"</li>
+      <li>"Pilegrimsruter og kulturopplevelser" (for Pilegrimsgård)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ANBEFALTE FØRSTEBESØK -->
+<div class="segment">
+  <h2>Anbefalte førstebesøk</h2>
+
+  <div class="card-grid">
+    <div class="card" style="border-left: 4px solid #1e40af;">
+      <h4>Næringseiendom</h4>
+      <ol style="margin: 0; padding-left: 20px;">
+        <li><strong>EC Dahls Eiendom</strong> - Største i Midtbyen</li>
+        <li><strong>KLP Eiendom</strong> - Allerede demo-kunde</li>
+        <li><strong>Koteng Eiendom</strong> - Stor lokal aktør</li>
+      </ol>
+    </div>
+
+    <div class="card" style="border-left: 4px solid #059669;">
+      <h4>Bolig</h4>
+      <ol style="margin: 0; padding-left: 20px;">
+        <li><strong>TOBB</strong> - Største boligbyggelag</li>
+        <li><strong>Fredensborg Bolig</strong> - 4+ prosjekter</li>
+        <li><strong>Nordr/Skanska</strong> - Nye Lilleby</li>
+        <li><strong>Rett Hjem Bolig</strong> - Lokal utbygger</li>
+        <li><strong>Bane NOR Eiendom</strong> - Knutepunkt</li>
+      </ol>
+    </div>
+
+    <div class="card" style="border-left: 4px solid #dc2626;">
+      <h4>Hoteller</h4>
+      <ol style="margin: 0; padding-left: 20px;">
+        <li><strong>Britannia Hotel</strong> - Premium, event</li>
+        <li><strong>Radisson Blu</strong> - Konferanse</li>
+        <li><strong>Scandic Nidelven</strong> - Volum (349 rom)</li>
+        <li><strong>Nidaros Pilegrimsgård</strong> - Unikt</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<footer style="text-align: center; padding: 30px; color: #888; font-size: 13px;">
+  Placy Kundeprospekter | Trondheim | Februar 2026
+</footer>
+
+</body>
+</html>
