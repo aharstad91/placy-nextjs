@@ -45,7 +45,6 @@ export default function ReportStickyMap({
   const prevThemeIdRef = useRef<string | null>(null);
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-  if (!token) return null;
 
   // Build a flat lookup: themeId → POI[]
   const poisByTheme = useMemo(() => {
@@ -83,37 +82,7 @@ export default function ReportStickyMap({
     return lookup;
   }, [themes]);
 
-  // Hide default POI labels on map load
-  const handleMapLoad = useCallback(() => {
-    setMapLoaded(true);
-    if (!mapRef.current) return;
-
-    const map = mapRef.current.getMap();
-    const layers = map.getStyle()?.layers || [];
-    for (const layer of layers) {
-      if (
-        layer.id.includes("poi") ||
-        layer.id.includes("place-label") ||
-        layer.id.includes("transit")
-      ) {
-        map.setLayoutProperty(layer.id, "visibility", "none");
-      }
-    }
-
-    // WebGL context loss handlers
-    const canvas = map.getCanvas();
-    canvas.addEventListener("webglcontextlost", () => setWebglLost(true));
-    canvas.addEventListener("webglcontextrestored", () => setWebglLost(false));
-
-    // Track user interaction to suppress auto-fitBounds
-    map.on("dragend", () => { userInteractedRef.current = true; });
-    map.on("zoomend", () => { userInteractedRef.current = true; });
-
-    // Initial fitBounds
-    fitBoundsForTheme(activeThemeId);
-  }, [activeThemeId]);
-
-  // fitBounds when active theme changes
+  // fitBounds for a given theme — calculates bounds from theme POIs + hotel
   const fitBoundsForTheme = useCallback(
     (themeId: string | null) => {
       if (!mapRef.current || !themeId) return;
@@ -158,6 +127,51 @@ export default function ReportStickyMap({
     [poisByTheme, hotelCoordinates]
   );
 
+  // Hide default POI labels on map load
+  const handleMapLoad = useCallback(() => {
+    setMapLoaded(true);
+    if (!mapRef.current) return;
+
+    const map = mapRef.current.getMap();
+    const layers = map.getStyle()?.layers || [];
+    for (const layer of layers) {
+      if (
+        layer.id.includes("poi") ||
+        layer.id.includes("place-label") ||
+        layer.id.includes("transit")
+      ) {
+        map.setLayoutProperty(layer.id, "visibility", "none");
+      }
+    }
+
+    // Initial fitBounds
+    fitBoundsForTheme(activeThemeId);
+  }, [activeThemeId, fitBoundsForTheme]);
+
+  // Event listeners that need cleanup on unmount
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+
+    const map = mapRef.current.getMap();
+    const canvas = map.getCanvas();
+
+    const onContextLost = () => setWebglLost(true);
+    const onContextRestored = () => setWebglLost(false);
+    const onUserInteract = () => { userInteractedRef.current = true; };
+
+    canvas.addEventListener("webglcontextlost", onContextLost);
+    canvas.addEventListener("webglcontextrestored", onContextRestored);
+    map.on("dragend", onUserInteract);
+    map.on("zoomend", onUserInteract);
+
+    return () => {
+      canvas.removeEventListener("webglcontextlost", onContextLost);
+      canvas.removeEventListener("webglcontextrestored", onContextRestored);
+      map.off("dragend", onUserInteract);
+      map.off("zoomend", onUserInteract);
+    };
+  }, [mapLoaded]);
+
   // React to theme changes — reset user interaction flag and fitBounds
   useEffect(() => {
     if (!mapLoaded || !activeThemeId) return;
@@ -194,7 +208,10 @@ export default function ReportStickyMap({
     [activeThemeId, poiThemeMap]
   );
 
+  if (!token) return null;
+
   return (
+    // aria-hidden: map is decorative — all POI data is accessible in the left panel text content
     <div className="relative w-full h-full" aria-hidden="true">
       {/* WebGL context loss overlay */}
       {webglLost && (

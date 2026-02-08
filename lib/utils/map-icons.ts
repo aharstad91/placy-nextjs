@@ -12,6 +12,10 @@ import {
   MapPin,
   type LucideIcon,
 } from "lucide-react";
+// NOTE: Wildcard import pulls entire lucide-react into this chunk.
+// This is intentional — POI categories use 20+ different icons dynamically
+// (Coffee, Croissant, Pill, Film, Bike, etc.) so tree-shaking isn't viable.
+// If bundle size becomes an issue, switch to @lucide/lab dynamic imports.
 import * as LucideIcons from "lucide-react";
 
 /**

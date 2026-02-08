@@ -15,7 +15,7 @@ import { useDebouncedCallback } from "use-debounce";
 export function useActiveSection(initialThemeId: string | null) {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(initialThemeId);
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const hasInitialized = useRef(false);
+  const [refCount, setRefCount] = useState(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const debouncedSet = useDebouncedCallback(setActiveSectionId, 200, {
@@ -23,27 +23,37 @@ export function useActiveSection(initialThemeId: string | null) {
     trailing: true,
   });
 
-  // Callback ref factory — call registerSectionRef(themeId) to get a ref callback
-  // This pattern triggers re-render on mount (matches registerCardRef pattern
-  // in ReportInteractiveMapSection.tsx:128)
+  // Callback ref factory — call registerSectionRef(themeId) to get a ref callback.
+  // Increments refCount to signal the observer effect to (re)initialize.
+  const refCallbackCache = useRef<Map<string, (el: HTMLElement | null) => void>>(new Map());
+
   const registerSectionRef = useCallback(
-    (themeId: string) => (el: HTMLElement | null) => {
-      if (el) {
-        sectionRefs.current.set(themeId, el);
-      } else {
-        sectionRefs.current.delete(themeId);
+    (themeId: string) => {
+      if (!refCallbackCache.current.has(themeId)) {
+        refCallbackCache.current.set(themeId, (el: HTMLElement | null) => {
+          if (el) {
+            const hadKey = sectionRefs.current.has(themeId);
+            sectionRefs.current.set(themeId, el);
+            if (!hadKey) setRefCount((c) => c + 1);
+          } else {
+            if (sectionRefs.current.has(themeId)) {
+              sectionRefs.current.delete(themeId);
+              setRefCount((c) => c - 1);
+            }
+          }
+        });
       }
+      return refCallbackCache.current.get(themeId)!;
     },
     []
   );
 
-  // Set up IntersectionObserver once all sections are mounted
+  // Set up IntersectionObserver when sections are mounted (refCount > 0)
   useEffect(() => {
-    // Guard: only initialize once
-    if (hasInitialized.current) return;
     if (sectionRefs.current.size === 0) return;
 
-    hasInitialized.current = true;
+    // Disconnect previous observer before creating new one
+    observerRef.current?.disconnect();
 
     const entries = new Map<string, IntersectionObserverEntry>();
 
@@ -80,7 +90,7 @@ export function useActiveSection(initialThemeId: string | null) {
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
-  }, [debouncedSet]);
+  }, [refCount, debouncedSet]);
 
   return { activeSectionId, registerSectionRef };
 }

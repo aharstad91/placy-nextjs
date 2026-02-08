@@ -3,7 +3,7 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import type { Project } from "@/lib/types";
 import type { TranslationMap } from "@/lib/supabase/translations";
-import { transformToReportData, type ReportTheme } from "./report-data";
+import { transformToReportData } from "./report-data";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
@@ -15,10 +15,8 @@ import ReportClosing from "./ReportClosing";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
 
-/** Active POI with source discriminator to prevent feedback loops */
 export interface ActivePOIState {
   poiId: string;
-  source: "card" | "marker";
 }
 
 interface ReportPageProps {
@@ -55,23 +53,17 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
   const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
   const { activeSectionId, registerSectionRef } = useActiveSection(initialThemeId);
 
-  // Find the active theme data for the map
-  const activeTheme = useMemo(
-    () => reportData.themes.find((th) => th.id === activeSectionId) ?? reportData.themes[0] ?? null,
-    [reportData.themes, activeSectionId]
-  );
-
-  // Handle card click → highlight marker (source: "card")
+  // Handle card click → highlight marker
   const handleCardClick = useCallback((poiId: string) => {
     setActivePOI((prev) =>
-      prev?.poiId === poiId ? null : { poiId, source: "card" }
+      prev?.poiId === poiId ? null : { poiId }
     );
   }, []);
 
-  // Handle marker click → scroll to card (source: "marker")
+  // Handle marker click → highlight card
   const handleMarkerClick = useCallback((poiId: string) => {
     setActivePOI((prev) =>
-      prev?.poiId === poiId ? null : { poiId, source: "marker" }
+      prev?.poiId === poiId ? null : { poiId }
     );
   }, []);
 
