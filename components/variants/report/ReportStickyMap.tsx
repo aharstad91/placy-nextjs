@@ -18,6 +18,8 @@ interface ReportStickyMapProps {
   hotelCoordinates: Coordinates;
   onMarkerClick: (poiId: string) => void;
   mapStyle?: string;
+  /** Themes that have been expanded via "Vis meg mer" — shows all POIs on map */
+  expandedThemes?: Set<string>;
 }
 
 /**
@@ -37,6 +39,7 @@ export default function ReportStickyMap({
   hotelCoordinates,
   onMarkerClick,
   mapStyle,
+  expandedThemes = new Set(),
 }: ReportStickyMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -46,21 +49,27 @@ export default function ReportStickyMap({
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-  // Build a flat lookup: themeId → POI[]
+  // Build a flat lookup: themeId → visible POI[]
+  // Only includes highlights + listPOIs by default; adds hiddenPOIs when expanded
   const poisByTheme = useMemo(() => {
     const lookup: Record<string, POI[]> = {};
     for (const theme of themes) {
-      lookup[theme.id] = [...theme.highlightPOIs, ...theme.listPOIs];
+      const visible = [...theme.highlightPOIs, ...theme.listPOIs];
+      if (expandedThemes.has(theme.id)) {
+        visible.push(...theme.hiddenPOIs);
+      }
+      lookup[theme.id] = visible;
     }
     return lookup;
-  }, [themes]);
+  }, [themes, expandedThemes]);
 
-  // All POIs across all themes (for pre-rendering marker pool)
+  // All visible POIs across all themes (for pre-rendering marker pool)
   const allPOIs = useMemo(() => {
     const seen = new Set<string>();
     const result: (POI & { themeId: string })[] = [];
     for (const theme of themes) {
-      for (const poi of [...theme.highlightPOIs, ...theme.listPOIs]) {
+      const pois = poisByTheme[theme.id] ?? [];
+      for (const poi of pois) {
         if (!seen.has(poi.id)) {
           seen.add(poi.id);
           result.push({ ...poi, themeId: theme.id });
@@ -68,19 +77,20 @@ export default function ReportStickyMap({
       }
     }
     return result;
-  }, [themes]);
+  }, [themes, poisByTheme]);
 
   // Build themeId lookup per POI (a POI can appear in multiple themes via categories)
   const poiThemeMap = useMemo(() => {
     const lookup: Record<string, Set<string>> = {};
     for (const theme of themes) {
-      for (const poi of [...theme.highlightPOIs, ...theme.listPOIs]) {
+      const pois = poisByTheme[theme.id] ?? [];
+      for (const poi of pois) {
         if (!lookup[poi.id]) lookup[poi.id] = new Set();
         lookup[poi.id].add(theme.id);
       }
     }
     return lookup;
-  }, [themes]);
+  }, [themes, poisByTheme]);
 
   // fitBounds for a given theme — calculates bounds from theme POIs + hotel
   const fitBoundsForTheme = useCallback(
@@ -189,6 +199,23 @@ export default function ReportStickyMap({
 
     return () => clearTimeout(timer);
   }, [activeThemeId, mapLoaded, fitBoundsForTheme]);
+
+  // Re-fit bounds when a theme is expanded (new markers appear)
+  const prevExpandedSizeRef = useRef(0);
+  useEffect(() => {
+    if (!mapLoaded || !activeThemeId) return;
+    if (expandedThemes.size <= prevExpandedSizeRef.current) return;
+    prevExpandedSizeRef.current = expandedThemes.size;
+
+    // Only refit if the active theme was just expanded
+    if (!expandedThemes.has(activeThemeId)) return;
+
+    const timer = setTimeout(() => {
+      fitBoundsForTheme(activeThemeId);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [expandedThemes, activeThemeId, mapLoaded, fitBoundsForTheme]);
 
   // Handle marker click
   const handleMarkerClick = useCallback(
