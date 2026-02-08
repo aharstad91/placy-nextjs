@@ -25,22 +25,26 @@ function computeZoomState(zoom: number): ZoomState {
 export function useMapZoomState(
   mapRef: React.RefObject<MapRef | null>,
   containerRef: React.RefObject<HTMLDivElement | null>,
-  options?: { labelBudget?: number; mapLoaded?: boolean }
+  options?: {
+    /** Max markers before suppressing labels (default: Infinity = disabled) */
+    labelBudget?: number;
+    /** Pass true after map onLoad to trigger hook activation */
+    mapLoaded?: boolean;
+    /** Total marker count — used for label budget check without DOM queries */
+    markerCount?: number;
+  }
 ): void {
   const lastStateRef = useRef<string>("full-label");
-  const labelBudget = options?.labelBudget ?? 15;
+  const lastBudgetRef = useRef<boolean>(false);
+  const labelBudget = options?.labelBudget ?? Infinity;
   const mapLoaded = options?.mapLoaded ?? true;
+  const markerCount = options?.markerCount ?? 0;
 
   useEffect(() => {
     const map = mapRef.current?.getMap();
     if (!map || !containerRef.current) return;
 
-    // Set initial state
-    const initialState = computeZoomState(map.getZoom());
-    lastStateRef.current = initialState;
-    containerRef.current.dataset.zoomState = initialState;
-
-    const onZoom = () => {
+    const updateState = () => {
       const state = computeZoomState(map.getZoom());
       if (state !== lastStateRef.current) {
         lastStateRef.current = state;
@@ -48,11 +52,27 @@ export function useMapZoomState(
           containerRef.current.dataset.zoomState = state;
         }
       }
+
+      // Label budget: when at full-label zoom with many markers, suppress labels
+      // CSS rules for [data-label-budget-exceeded="true"] hide labels
+      // except for active/hovered markers (see globals.css)
+      if (labelBudget < Infinity) {
+        const exceeded = state === "full-label" && markerCount > labelBudget;
+        if (exceeded !== lastBudgetRef.current) {
+          lastBudgetRef.current = exceeded;
+          if (containerRef.current) {
+            containerRef.current.dataset.labelBudgetExceeded = String(exceeded);
+          }
+        }
+      }
     };
 
-    map.on("zoom", onZoom);
+    // Set initial state
+    updateState();
+
+    map.on("zoom", updateState);
     return () => {
-      map.off("zoom", onZoom);
+      map.off("zoom", updateState);
     };
-  }, [mapRef, containerRef, labelBudget, mapLoaded]);
+  }, [mapRef, containerRef, labelBudget, mapLoaded, markerCount]);
 }
