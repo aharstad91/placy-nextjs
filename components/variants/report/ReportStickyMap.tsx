@@ -6,8 +6,10 @@ import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import type { ActivePOIState } from "./ReportPage";
 import { getIcon } from "@/lib/utils/map-icons";
-import { Building2 } from "lucide-react";
+import { Building2, MapPin } from "lucide-react";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
+import { GoogleRating } from "@/components/ui/GoogleRating";
+import { shouldShowRating } from "@/lib/themes/rating-categories";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 
 interface ReportStickyMapProps {
@@ -43,6 +45,7 @@ export default function ReportStickyMap({
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [webglLost, setWebglLost] = useState(false);
+  const [hoveredPOI, setHoveredPOI] = useState<string | null>(null);
   const userInteractedRef = useRef(false);
   const prevThemeIdRef = useRef<string | null>(null);
 
@@ -285,7 +288,11 @@ export default function ReportStickyMap({
         {allPOIs.map((poi) => {
           const isActive = isPoiInActiveTheme(poi.id);
           const isHighlighted = activePOI?.poiId === poi.id;
+          const isHovered = hoveredPOI === poi.id && !isHighlighted;
           const Icon = getIcon(poi.category.icon);
+          const walkMinutes = poi.travelTime?.walk
+            ? Math.round(poi.travelTime.walk / 60)
+            : null;
 
           return (
             <Marker
@@ -295,7 +302,7 @@ export default function ReportStickyMap({
               anchor="center"
               onClick={(e) => isActive ? handleMarkerClick(e, poi.id) : undefined}
               style={{
-                zIndex: isHighlighted ? 5 : isActive ? 2 : 0,
+                zIndex: isHighlighted ? 5 : isHovered ? 4 : isActive ? 2 : 0,
               }}
             >
               <div
@@ -318,9 +325,13 @@ export default function ReportStickyMap({
                   className={`relative flex items-center justify-center rounded-full border-2 border-white shadow-md cursor-pointer transition-transform ${
                     isHighlighted
                       ? "w-10 h-10 scale-110"
+                      : isHovered
+                      ? "w-8 h-8 scale-110"
                       : "w-8 h-8 hover:scale-110"
                   }`}
                   style={{ backgroundColor: poi.category.color }}
+                  onMouseEnter={() => setHoveredPOI(poi.id)}
+                  onMouseLeave={() => setHoveredPOI(null)}
                 >
                   <Icon
                     className={`text-white ${
@@ -329,7 +340,34 @@ export default function ReportStickyMap({
                   />
                 </div>
 
-                {/* Name label for highlighted marker */}
+                {/* Hover tooltip — name + category + walk time (matches Explorer) */}
+                {isHovered && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap pointer-events-none z-20">
+                    <div className="bg-gray-900/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg shadow-xl text-xs">
+                      <div className="font-semibold">{poi.name}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-gray-300">
+                        <span>{poi.category.name}</span>
+                        {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
+                          <>
+                            <span className="text-gray-500">·</span>
+                            <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="xs" variant="dark" />
+                          </>
+                        )}
+                        {walkMinutes != null && (
+                          <>
+                            <span className="text-gray-500">·</span>
+                            <MapPin className="w-3 h-3" />
+                            <span>{walkMinutes} min</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {/* Tooltip arrow */}
+                    <div className="w-2 h-2 bg-gray-900/90 rotate-45 mx-auto -mt-1" />
+                  </div>
+                )}
+
+                {/* Name label for highlighted (clicked) marker */}
                 {isHighlighted && (
                   <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
                     <span
