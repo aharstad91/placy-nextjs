@@ -50,8 +50,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { DiscoveryCircle } from "@/lib/types";
 import type { ProjectWithRelations } from "./page";
-
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
+import { MAP_STYLE_DEFAULT } from "@/lib/themes/map-styles";
 const MAX_CIRCLES = 10;
 
 const CIRCLE_COLORS = [
@@ -836,7 +835,7 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
               zoom: 13,
             }}
             style={{ width: "100%", height: "100%" }}
-            mapStyle={MAP_STYLE}
+            mapStyle={MAP_STYLE_DEFAULT}
             onClick={step === "idle" ? handleMapClick : undefined}
             cursor={step === "idle" && circles.length < MAX_CIRCLES ? "crosshair" : "default"}
             interactiveLayerIds={step === "idle" ? ["import-circles-fill"] : []}

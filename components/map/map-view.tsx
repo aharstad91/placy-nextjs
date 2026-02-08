@@ -5,9 +5,7 @@ import Map, { NavigationControl, type MapRef } from "react-map-gl/mapbox";
 import type { Coordinates, POI } from "@/lib/types";
 import { POIMarker } from "./poi-marker";
 import { RouteLayer } from "./route-layer";
-
-// Mapbox stil som skjuler standard POI-labels
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
+import { MAP_STYLE_DEFAULT } from "@/lib/themes/map-styles";
 
 interface MapViewProps {
   center: Coordinates;
@@ -79,7 +77,7 @@ export function MapView({
           zoom: 14,
         }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle={MAP_STYLE}
+        mapStyle={MAP_STYLE_DEFAULT}
         onLoad={onLoad}
       >
       <NavigationControl position="top-right" />

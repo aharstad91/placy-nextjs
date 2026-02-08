@@ -7,8 +7,7 @@ import { cn } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
 import { Check } from "lucide-react";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
-
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
+import { MAP_STYLE_DEFAULT } from "@/lib/themes/map-styles";
 
 interface GuideMapProps {
   center: Coordinates;
@@ -156,7 +155,7 @@ export default function GuideMap({
           pitch: 0,
         }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle={MAP_STYLE}
+        mapStyle={MAP_STYLE_DEFAULT}
         onLoad={onLoad}
       >
         <NavigationControl position="top-right" />

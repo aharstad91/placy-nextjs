@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MapGL, { Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox";
+import { MAP_STYLE_DEFAULT } from "@/lib/themes/map-styles";
 import {
   ArrowLeft,
   Plus,
@@ -640,8 +641,6 @@ function CategoriesTab({
 
 // ============ POIs TAB ============
 
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
-
 interface PoisTabProps {
   project: ProjectWithRelations;
   globalCategories: DbCategory[];
@@ -1122,7 +1121,7 @@ function PoisTab({
               zoom: 13,
             }}
             style={{ width: "100%", height: "100%" }}
-            mapStyle={MAP_STYLE}
+            mapStyle={MAP_STYLE_DEFAULT}
             onLoad={handleMapLoad}
             onClick={() => setActivePoiId(null)}
           >

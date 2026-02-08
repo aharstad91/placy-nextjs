@@ -1,11 +1,12 @@
 "use client";
 
 import { useRef, useCallback, useEffect, useMemo } from "react";
-import Map, { Marker, Source, Layer, type MapRef } from "react-map-gl/mapbox";
+import Map, { Source, Layer, type MapRef } from "react-map-gl/mapbox";
 import type { POI, Coordinates } from "@/lib/types";
-import * as LucideIcons from "lucide-react";
+import { MAP_STYLE_DEFAULT, hideDefaultPOILabels } from "@/lib/themes/map-styles";
+import { AdaptiveMarker } from "@/components/map/adaptive-marker";
+import { useMapZoomState } from "@/lib/hooks/useMapZoomState";
 
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
 const USE_SYMBOL_LAYER_THRESHOLD = 15;
 
 interface ReportInteractiveMapProps {
@@ -26,15 +27,11 @@ export default function ReportInteractiveMap({
   onMapUnmount,
 }: ReportInteractiveMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const useSymbolLayers = pois.length > USE_SYMBOL_LAYER_THRESHOLD;
 
-  // Get Lucide icon component by name
-  const getIcon = useCallback((iconName: string): LucideIcons.LucideIcon => {
-    const Icon = (
-      LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>
-    )[iconName];
-    return Icon || LucideIcons.MapPin;
-  }, []);
+  // CSS-driven zoom state (only used for DOM markers path)
+  useMapZoomState(mapRef, mapContainerRef);
 
   // Cleanup on unmount - critical for WebGL context management
   useEffect(() => {
@@ -50,20 +47,7 @@ export default function ReportInteractiveMap({
 
       // Hide default POI labels for cleaner look
       const map = mapRef.current.getMap();
-      const layers = map.getStyle()?.layers || [];
-      layers.forEach((layer) => {
-        if (
-          layer.id === "poi-circles" // Keep our custom layer visible
-        )
-          return;
-        if (
-          layer.id.includes("poi") ||
-          layer.id.includes("place-label") ||
-          layer.id.includes("transit")
-        ) {
-          map.setLayoutProperty(layer.id, "visibility", "none");
-        }
-      });
+      hideDefaultPOILabels(map);
 
       // Initial fitBounds to show all POIs
       if (pois.length > 0) {
@@ -112,8 +96,8 @@ export default function ReportInteractiveMap({
 
   // Handle marker click
   const handleMarkerClick = useCallback(
-    (e: { originalEvent: MouseEvent }, poiId: string) => {
-      e.originalEvent.stopPropagation();
+    (e: { originalEvent: MouseEvent | undefined }, poiId: string) => {
+      e.originalEvent?.stopPropagation();
       onPOIClick(poiId);
     },
     [onPOIClick]
@@ -153,87 +137,54 @@ export default function ReportInteractiveMap({
   );
 
   return (
-    <Map
-      ref={mapRef}
-      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
-      initialViewState={{
-        longitude: center.lng,
-        latitude: center.lat,
-        zoom: 14,
-      }}
-      style={{ width: "100%", height: "100%" }}
-      mapStyle={MAP_STYLE}
-      onLoad={handleMapLoad}
-      cooperativeGestures={true}
-      interactiveLayerIds={useSymbolLayers ? ["poi-circles"] : undefined}
-      onClick={useSymbolLayers ? handleSymbolClick : undefined}
-    >
-      {/* Use DOM markers for small POI counts */}
-      {!useSymbolLayers &&
-        pois.map((poi) => {
-          const Icon = getIcon(poi.category.icon);
-          const isActive = activePOI === poi.id;
+    <div ref={mapContainerRef} className="w-full h-full">
+      <Map
+        ref={mapRef}
+        mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+        initialViewState={{
+          longitude: center.lng,
+          latitude: center.lat,
+          zoom: 14,
+        }}
+        style={{ width: "100%", height: "100%" }}
+        mapStyle={MAP_STYLE_DEFAULT}
+        onLoad={handleMapLoad}
+        cooperativeGestures={true}
+        interactiveLayerIds={useSymbolLayers ? ["poi-circles"] : undefined}
+        onClick={useSymbolLayers ? handleSymbolClick : undefined}
+      >
+        {/* Use adaptive DOM markers for small POI counts */}
+        {!useSymbolLayers &&
+          pois.map((poi) => {
+            const isActive = activePOI === poi.id;
 
-          return (
-            <Marker
-              key={poi.id}
-              longitude={poi.coordinates.lng}
-              latitude={poi.coordinates.lat}
-              anchor="center"
-              onClick={(e) => handleMarkerClick(e, poi.id)}
-            >
-              <div className="relative cursor-pointer">
-                {/* Pulsing ring for active marker */}
-                {isActive && (
-                  <div
-                    className="absolute inset-0 rounded-full animate-ping opacity-75"
-                    style={{ backgroundColor: poi.category.color }}
-                  />
-                )}
+            return (
+              <AdaptiveMarker
+                key={poi.id}
+                poi={poi}
+                isActive={isActive}
+                zIndex={isActive ? 10 : 1}
+                onClick={(e) => handleMarkerClick(e, poi.id)}
+              />
+            );
+          })}
 
-                {/* Icon circle */}
-                <div
-                  className={`relative flex items-center justify-center rounded-full border-2 border-white shadow-md transition-all ${
-                    isActive ? "w-10 h-10 scale-110" : "w-8 h-8 hover:scale-110"
-                  }`}
-                  style={{ backgroundColor: poi.category.color }}
-                >
-                  <Icon
-                    className={`text-white ${isActive ? "w-5 h-5" : "w-4 h-4"}`}
-                  />
-                </div>
-
-                {/* Active marker name label */}
-                {isActive && (
-                  <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span
-                      className="px-2 py-0.5 text-[10px] font-medium text-white rounded shadow-lg"
-                      style={{ backgroundColor: poi.category.color }}
-                    >
-                      {poi.name}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Marker>
-          );
-        })}
-
-      {/* Use symbol layer for large POI counts (WebGL-based, better performance) */}
-      {useSymbolLayers && geojsonData && (
-        <Source id="pois" type="geojson" data={geojsonData}>
-          <Layer
-            id="poi-circles"
-            type="circle"
-            paint={{
-              "circle-radius": ["case", ["get", "isActive"], 16, 12],
-              "circle-color": ["get", "color"],
-              "circle-stroke-width": ["case", ["get", "isActive"], 3, 2],
-              "circle-stroke-color": "#ffffff",
-            }}
-          />
-        </Source>
-      )}
-    </Map>
+        {/* Use symbol layer for large POI counts (WebGL-based, better performance) */}
+        {useSymbolLayers && geojsonData && (
+          <Source id="pois" type="geojson" data={geojsonData}>
+            <Layer
+              id="poi-circles"
+              type="circle"
+              paint={{
+                "circle-radius": ["case", ["get", "isActive"], 16, 12],
+                "circle-color": ["get", "color"],
+                "circle-stroke-width": ["case", ["get", "isActive"], 3, 2],
+                "circle-stroke-color": "#ffffff",
+              }}
+            />
+          </Source>
+        )}
+      </Map>
+    </div>
   );
 }

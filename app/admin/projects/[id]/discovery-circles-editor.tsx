@@ -12,6 +12,7 @@ import MapGL, {
 import { Plus, Trash2, Save, Loader2, MapPin } from "lucide-react";
 import { createCircleCoordinates } from "@/lib/utils/geo";
 import type { DiscoveryCircle } from "@/lib/types";
+import { MAP_STYLE_LIGHT } from "@/lib/themes/map-styles";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 const MAX_CIRCLES = 10;
@@ -233,7 +234,7 @@ export function DiscoveryCirclesEditor({
                 zoom: 13,
               }}
               mapboxAccessToken={MAPBOX_TOKEN}
-              mapStyle="mapbox://styles/mapbox/light-v11"
+              mapStyle={MAP_STYLE_LIGHT}
               onClick={handleMapClick}
               cursor={circles.length < MAX_CIRCLES ? "crosshair" : "default"}
               interactiveLayerIds={["discovery-circles-fill"]}
