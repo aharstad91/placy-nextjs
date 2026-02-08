@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { t } from "@/lib/i18n/strings";
-import { Star, ChevronDown, MapPin, Sparkles } from "lucide-react";
+import { Star, ChevronDown, MapPin, Sparkles, Loader2 } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
@@ -26,6 +26,10 @@ interface ReportThemeSectionProps {
   activePOIId?: string | null;
   /** Callback when a POI card is clicked (for sticky map sync) */
   onPOIClick?: (poiId: string) => void;
+  /** Whether this theme is expanded (showing all POIs) */
+  isExpanded?: boolean;
+  /** Callback when theme is expanded via "Vis meg mer" */
+  onExpand?: (themeId: string) => void;
 }
 
 // Categories that indicate a transport-related theme
@@ -49,6 +53,8 @@ export default function ReportThemeSection({
   useStickyMap,
   activePOIId,
   onPOIClick,
+  isExpanded,
+  onExpand,
 }: ReportThemeSectionProps) {
   const { locale } = useLocale();
   const Icon = getIcon(theme.icon);
@@ -139,6 +145,8 @@ export default function ReportThemeSection({
           theme={theme}
           activePOIId={activePOIId ?? null}
           onPOIClick={onPOIClick}
+          isExpanded={isExpanded ?? false}
+          onExpand={() => onExpand?.(theme.id)}
         />
       ) : (
         <ReportInteractiveMapSection
@@ -157,72 +165,45 @@ function StickyMapContent({
   theme,
   activePOIId,
   onPOIClick,
+  isExpanded,
+  onExpand,
 }: {
   theme: ReportTheme;
   activePOIId: string | null;
   onPOIClick?: (poiId: string) => void;
+  isExpanded: boolean;
+  onExpand: () => void;
 }) {
-  const [showHidden, setShowHidden] = useState(false);
   const { locale } = useLocale();
-
-  const visiblePOIs = [...theme.highlightPOIs, ...theme.listPOIs];
   const hasHidden = theme.hiddenPOIs.length > 0;
 
-  if (theme.displayMode === "editorial") {
-    return (
-      <EditorialContent
-        highlightPOIs={theme.highlightPOIs}
-        listPOIs={theme.listPOIs}
-        hiddenPOIs={showHidden ? theme.hiddenPOIs : []}
-        activePOIId={activePOIId}
-        onPOIClick={onPOIClick}
-        hasHidden={hasHidden && !showHidden}
-        onShowMore={() => setShowHidden(true)}
-        locale={locale}
-      />
-    );
-  }
-
-  // Functional mode — compact list only
-  return (
-    <FunctionalContent
-      pois={visiblePOIs}
-      hiddenPOIs={showHidden ? theme.hiddenPOIs : []}
-      activePOIId={activePOIId}
-      onPOIClick={onPOIClick}
-      hasHidden={hasHidden && !showHidden}
-      onShowMore={() => setShowHidden(true)}
-      locale={locale}
-    />
+  // Staged reveal: loading → cards appear → map markers appear
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "done">(
+    isExpanded ? "done" : "idle"
   );
-}
 
-/** Editorial mode: highlight photo cards in horizontal scroll + compact list below */
-function EditorialContent({
-  highlightPOIs,
-  listPOIs,
-  hiddenPOIs,
-  activePOIId,
-  onPOIClick,
-  hasHidden,
-  onShowMore,
-  locale,
-}: {
-  highlightPOIs: POI[];
-  listPOIs: POI[];
-  hiddenPOIs: POI[];
-  activePOIId: string | null;
-  onPOIClick?: (poiId: string) => void;
-  hasHidden: boolean;
-  onShowMore: () => void;
-  locale: string;
-}) {
+  const handleLoadMore = useCallback(() => {
+    setLoadState("loading");
+
+    // Step 1: After 2s — reveal cards, hide button
+    setTimeout(() => {
+      setLoadState("done");
+
+      // Step 2: After 1s more — add markers to map
+      setTimeout(() => {
+        onExpand();
+      }, 1000);
+    }, 2000);
+  }, [onExpand]);
+
+  const showCards = loadState === "done" || isExpanded;
+
   return (
     <div className="mt-4 space-y-4">
-      {/* Highlight cards — horizontal scroll */}
-      {highlightPOIs.length > 0 && (
+      {/* Highlight photo cards — horizontal scroll (editorial themes only) */}
+      {theme.displayMode === "editorial" && theme.highlightPOIs.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#d4cfc8]">
-          {highlightPOIs.map((poi) => (
+          {theme.highlightPOIs.map((poi) => (
             <div
               key={poi.id}
               data-poi-id={poi.id}
@@ -238,68 +219,43 @@ function EditorialContent({
         </div>
       )}
 
-      {/* List POIs — compact rows */}
-      {listPOIs.length > 0 && (
+      {/* Compact card grid — initial visible POIs */}
+      {theme.listPOIs.length > 0 && (
         <CompactPOIList
-          pois={listPOIs}
+          pois={theme.listPOIs}
           activePOIId={activePOIId}
           onPOIClick={onPOIClick}
         />
       )}
 
-      {/* Hidden POIs revealed */}
-      {hiddenPOIs.length > 0 && (
-        <CompactPOIList
-          pois={hiddenPOIs}
-          activePOIId={activePOIId}
-          onPOIClick={onPOIClick}
+      {/* Hidden POIs revealed after staged loading */}
+      {showCards && theme.hiddenPOIs.length > 0 && (
+        <div
+          className="transition-all duration-300 ease-out"
+          style={{ animation: "fadeSlideIn 0.6s ease-out" }}
+        >
+          <CompactPOIList
+            pois={theme.hiddenPOIs}
+            activePOIId={activePOIId}
+            onPOIClick={onPOIClick}
+          />
+          <style jsx>{`
+            @keyframes fadeSlideIn {
+              from { opacity: 0; transform: translateY(8px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* Load more button — morphs between states */}
+      {hasHidden && loadState !== "done" && !isExpanded && (
+        <LoadMoreButton
+          onClick={handleLoadMore}
+          isLoading={loadState === "loading"}
+          locale={locale}
+          hiddenCount={theme.hiddenPOIs.length}
         />
-      )}
-
-      {/* Show more button */}
-      {hasHidden && (
-        <ShowMoreButton onClick={onShowMore} locale={locale} />
-      )}
-    </div>
-  );
-}
-
-/** Functional mode: all POIs in compact list */
-function FunctionalContent({
-  pois,
-  hiddenPOIs,
-  activePOIId,
-  onPOIClick,
-  hasHidden,
-  onShowMore,
-  locale,
-}: {
-  pois: POI[];
-  hiddenPOIs: POI[];
-  activePOIId: string | null;
-  onPOIClick?: (poiId: string) => void;
-  hasHidden: boolean;
-  onShowMore: () => void;
-  locale: string;
-}) {
-  return (
-    <div className="mt-4 space-y-4">
-      <CompactPOIList
-        pois={pois}
-        activePOIId={activePOIId}
-        onPOIClick={onPOIClick}
-      />
-
-      {hiddenPOIs.length > 0 && (
-        <CompactPOIList
-          pois={hiddenPOIs}
-          activePOIId={activePOIId}
-          onPOIClick={onPOIClick}
-        />
-      )}
-
-      {hasHidden && (
-        <ShowMoreButton onClick={onShowMore} locale={locale} />
       )}
     </div>
   );
@@ -425,20 +381,43 @@ function ReportPOIRow({
   );
 }
 
-function ShowMoreButton({
+/** Button that morphs: "Hent flere punkter" → spinner + "Henter flere punkter..." */
+function LoadMoreButton({
   onClick,
+  isLoading,
   locale,
+  hiddenCount,
 }: {
   onClick: () => void;
+  isLoading: boolean;
   locale: string;
+  hiddenCount: number;
 }) {
+  const idleText =
+    locale === "en"
+      ? `Load more places (${hiddenCount})`
+      : `Hent flere punkter (${hiddenCount})`;
+  const loadingText =
+    locale === "en" ? "Loading more places..." : "Henter flere punkter...";
+
   return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-1.5 text-sm text-[#6a6a6a] hover:text-[#1a1a1a] transition-colors"
-    >
-      <ChevronDown className="w-4 h-4" />
-      {locale === "en" ? "Show more" : "Vis flere"}
-    </button>
+    <div className="flex justify-center pt-2">
+      <button
+        onClick={isLoading ? undefined : onClick}
+        disabled={isLoading}
+        className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm transition-all duration-300 ${
+          isLoading
+            ? "border-[#e8e4df] bg-[#faf9f7] text-[#8a8a8a] cursor-default"
+            : "border-[#d4cfc8] bg-white text-[#4a4a4a] hover:bg-[#faf9f7] hover:border-[#b5b0a8]"
+        }`}
+      >
+        {isLoading ? (
+          <Loader2 className="w-4 h-4" style={{ animation: "spin 0.35s linear infinite" }} />
+        ) : (
+          <ChevronDown className="w-4 h-4" />
+        )}
+        <span>{isLoading ? loadingText : idleText}</span>
+      </button>
+    </div>
   );
 }

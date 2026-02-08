@@ -49,6 +49,13 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
   // Active POI state with source discriminator (shared between map and sections)
   const [activePOI, setActivePOI] = useState<ActivePOIState | null>(null);
 
+  // Track which themes have been expanded via "Vis meg mer"
+  const [expandedThemes, setExpandedThemes] = useState<Set<string>>(new Set());
+
+  const handleExpandTheme = useCallback((themeId: string) => {
+    setExpandedThemes((prev) => new Set(prev).add(themeId));
+  }, []);
+
   // Initialize active section to first theme
   const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
   const { activeSectionId, registerSectionRef } = useActiveSection(initialThemeId);
@@ -142,6 +149,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
                 useStickyMap={true}
                 activePOIId={activePOI?.poiId ?? null}
                 onPOIClick={handleCardClick}
+                isExpanded={expandedThemes.has(theme.id)}
+                onExpand={handleExpandTheme}
               />
             </div>
           ))}
@@ -157,6 +166,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
               hotelCoordinates={reportData.centerCoordinates}
               onMarkerClick={handleMarkerClick}
               mapStyle={reportData.mapStyle}
+              expandedThemes={expandedThemes}
             />
           </div>
         </div>

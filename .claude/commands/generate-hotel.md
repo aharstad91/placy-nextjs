@@ -240,33 +240,22 @@ Headers: Prefer: resolution=merge-duplicates
 Body: [{product_id: "{explorerId}", category_id: "{catId}", display_order: {n}}, ...]
 ```
 
-### Steg 9: Google Photos for featured POI-er
+### Steg 9: Google Photos for alle POI-er
 
-Hent bilder for alle featured POI-er (markert i Steg 7). Kun featured — dette holder API-kostnadene lave (5-10 kall per prosjekt).
+Hent bilder for alle Google-POI-er i prosjektet via bulk fetch-photos API-et.
 
-For hver featured POI med `google_place_id`:
-
-1. Hent bilde-referanse:
 ```
-GET http://localhost:3000/api/places/{google_place_id}
-```
-Svaret inneholder `photos[]` med `reference` og `url`.
-
-2. Bruk første bilde sin `reference` — lagre som `photo_reference` og bygg `featured_image`-URL:
-```
-featured_image = "/api/places/photo?photoReference={reference}&maxWidth=800"
+POST http://localhost:3000/api/admin/fetch-photos
+{ "projectId": "{containerId}" }
 ```
 
-3. PATCH POI via Supabase REST:
-```
-PATCH {SUPABASE_URL}/rest/v1/pois?id=eq.{poiId}
-Body: { "photo_reference": "{reference}", "featured_image": "{featured_image_url}" }
-```
+API-et håndterer:
+- Henter `photo_reference` fra Google Places for hver POI med `google_place_id`
+- Bygger `featured_image`-URL automatisk
+- Hopper over POI-er som allerede har `featured_image` (bevarer manuelt satt bilde)
+- Returnerer `{ updated, skipped, failed, errors }`
 
-4. Hopp over POI-er som allerede har `featured_image` (bevarer manuelt satt bilde)
-5. Vis progress: `[3/7] Fetching photo for Havfruen...`
-
-**Fallback:** Hvis Google Places ikke returnerer bilder, logg advarsel men fortsett. POI-kortet viser kategorifarge som fallback.
+**Validering:** Vis resultatet — forvent at de fleste Google-POI-er får bilde. POI-er uten tilgjengelige bilder fra Google er normalt (små/nye steder) og viser kategorifarge som fallback.
 
 ### Steg 10: Editorial Hooks med lokalt perspektiv (tospråklig)
 

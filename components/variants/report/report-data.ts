@@ -1,10 +1,23 @@
-import type { Project, POI } from "@/lib/types";
+import type { Project, POI, Coordinates } from "@/lib/types";
 import { getReportThemes } from "./report-themes";
 import {
   calculateCategoryScore,
   generateCategoryQuote,
   type CategoryScore,
 } from "@/lib/utils/category-score";
+
+/** Haversine distance in meters between two coordinates */
+function haversineMeters(a: Coordinates, b: Coordinates): number {
+  const R = 6_371_000;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) *
+      Math.cos((b.lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
 
 export interface ReportHeroMetrics {
   totalPOIs: number;
@@ -66,21 +79,11 @@ const TRANSPORT_CATEGORIES = new Set([
   "airport",
 ]);
 
-/**
- * Variable cap per theme for Report view.
- * Transport gets all; other themes are capped to keep the report focused.
- */
-const THEME_CAP: Record<string, number> = {
-  "mat-drikke": 8,
-  "kultur-opplevelser": 3,
-  "hverdagsbehov": 3,
-  "transport": Infinity,
-  "trening-velvare": 3,
-};
-const DEFAULT_THEME_CAP = 5;
-
 const HIGHLIGHT_FALLBACK_COUNT = 3;
-const THEME_MIN_POIS = 2;
+const THEME_MIN_POIS = 5;
+
+/** How many compact cards to show before "Vis meg mer" */
+export const INITIAL_VISIBLE_COUNT = 6;
 
 /** Display mode per theme — editorial gets photo cards, functional gets compact list */
 const CATEGORY_DISPLAY_MODE: Record<string, ThemeDisplayMode> = {
@@ -133,57 +136,69 @@ export function transformToReportData(project: Project): ReportData {
 
     if (themePOIs.length < THEME_MIN_POIS) continue;
 
-    // Apply variable capping (transport gets all, others are capped)
-    const cap = THEME_CAP[themeDef.id] ?? DEFAULT_THEME_CAP;
+    const center = project.centerCoordinates;
 
-    // Sort by rating descending (unrated at end)
+    // Sort by distance to project center (closest first)
     const sorted = [...themePOIs].sort((a, b) => {
-      if (a.googleRating == null && b.googleRating == null) return 0;
-      if (a.googleRating == null) return 1;
-      if (b.googleRating == null) return -1;
-      return b.googleRating - a.googleRating;
+      // Prefer walk time when both have it
+      const aWalk = a.travelTime?.walk;
+      const bWalk = b.travelTime?.walk;
+      if (aWalk != null && bWalk != null) return aWalk - bWalk;
+      // Fall back to haversine
+      return (
+        haversineMeters(center, a.coordinates) -
+        haversineMeters(center, b.coordinates)
+      );
     });
 
-    const capped = sorted.slice(0, cap);
-    const hiddenPOIs = sorted.slice(cap);
-
-    // Split into highlight and list POIs
-    // Check per-theme so themes with featured flags use them while others use rating fallback
-    const themeFeatured = capped.filter((p) => p.featured);
+    // Split into highlight POIs (featured/top-rated) and the rest
+    const themeFeatured = sorted.filter((p) => p.featured);
     let highlightPOIs: POI[];
-    let listPOIs: POI[];
+    const displayMode = (CATEGORY_DISPLAY_MODE[themeDef.id] ?? "editorial") as ThemeDisplayMode;
 
-    if (themeFeatured.length > 0) {
-      // Use DB-driven featured flags for this theme
+    if (displayMode === "editorial" && themeFeatured.length > 0) {
       highlightPOIs = themeFeatured;
-      listPOIs = capped.filter((p) => !p.featured);
+    } else if (displayMode === "editorial") {
+      // Fallback: top N by rating for editorial themes
+      const byRating = [...sorted].sort((a, b) => {
+        if (a.googleRating == null && b.googleRating == null) return 0;
+        if (a.googleRating == null) return 1;
+        if (b.googleRating == null) return -1;
+        return b.googleRating - a.googleRating;
+      });
+      highlightPOIs = byRating.slice(0, HIGHLIGHT_FALLBACK_COUNT);
     } else {
-      // Fallback: top N by rating (backward compatible)
-      highlightPOIs = capped.slice(0, HIGHLIGHT_FALLBACK_COUNT);
-      listPOIs = capped.slice(HIGHLIGHT_FALLBACK_COUNT);
+      highlightPOIs = [];
     }
 
-    const themeRated = capped.filter((p) => p.googleRating != null);
+    const highlightIds = new Set(highlightPOIs.map((p) => p.id));
+    const remaining = sorted.filter((p) => !highlightIds.has(p.id));
+
+    // First INITIAL_VISIBLE_COUNT compact cards, rest behind "Vis meg mer"
+    const listPOIs = remaining.slice(0, INITIAL_VISIBLE_COUNT);
+    const hiddenPOIs = remaining.slice(INITIAL_VISIBLE_COUNT);
+
+    const themeRated = sorted.filter((p) => p.googleRating != null);
     const themeAvg =
       themeRated.length > 0
         ? themeRated.reduce((s, p) => s + (p.googleRating ?? 0), 0) /
           themeRated.length
         : null;
-    const themeReviews = capped.reduce(
+    const themeReviews = sorted.reduce(
       (s, p) => s + (p.googleReviewCount ?? 0),
       0
     );
-    const editorialCount = capped.filter((p) => p.editorialHook).length;
+    const editorialCount = sorted.filter((p) => p.editorialHook).length;
 
     // Count unique categories within theme
-    const uniqueCategories = new Set(capped.map((p) => p.category.id)).size;
+    const uniqueCategories = new Set(sorted.map((p) => p.category.id)).size;
 
     const richnessScore =
-      themeRated.length * 2 + editorialCount * 3 + capped.length;
+      themeRated.length * 2 + editorialCount * 3 + sorted.length;
 
     // Calculate category score
     const score = calculateCategoryScore({
-      totalPOIs: capped.length,
+      totalPOIs: sorted.length,
       avgRating: themeAvg,
       avgWalkTimeMinutes: null,
       uniqueCategories,
@@ -204,7 +219,7 @@ export function transformToReportData(project: Project): ReportData {
       intro: themeDef.intro,
       bridgeText: themeDef.bridgeText,
       stats: {
-        totalPOIs: capped.length,
+        totalPOIs: sorted.length,
         ratedPOIs: themeRated.length,
         avgRating: themeAvg != null ? Math.round(themeAvg * 10) / 10 : null,
         totalReviews: themeReviews,
@@ -213,9 +228,9 @@ export function transformToReportData(project: Project): ReportData {
       },
       highlightPOIs,
       listPOIs,
-      allPOIs: capped,
+      allPOIs: sorted,
       hiddenPOIs,
-      displayMode: (CATEGORY_DISPLAY_MODE[themeDef.id] ?? "editorial") as ThemeDisplayMode,
+      displayMode,
       richnessScore,
       score,
       quote,
