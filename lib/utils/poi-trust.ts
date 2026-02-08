@@ -15,15 +15,29 @@ import type { POI } from "@/lib/types";
 
 export type GoogleBusinessStatus = "OPERATIONAL" | "CLOSED_TEMPORARILY" | "CLOSED_PERMANENTLY";
 
-export type TrustFlag =
-  | "permanently_closed"
-  | "suspect_no_website_perfect_rating"
-  | "no_website"
-  | "website_ok"
-  | "suspicious_domain"
-  | "has_price_level"
-  | "high_review_count"
-  | "moderate_review_count";
+/** Single source of truth for all valid trust flags. Type and Set are derived from this. */
+export const ALL_TRUST_FLAGS = [
+  // Layer 1+2 (heuristic scoring)
+  "permanently_closed",
+  "suspect_no_website_perfect_rating",
+  "no_website",
+  "website_ok",
+  "suspicious_domain",
+  "has_price_level",
+  "high_review_count",
+  "moderate_review_count",
+  // Layer 3 (Claude web search)
+  "found_on_tripadvisor",
+  "found_on_yelp",
+  "found_on_multiple_sources",
+  "not_found_online",
+  "claude_review_passed",
+  "claude_review_failed",
+  // Admin
+  "manual_override",
+] as const;
+
+export type TrustFlag = typeof ALL_TRUST_FLAGS[number];
 
 export interface TrustSignals {
   // Layer 1: Google data

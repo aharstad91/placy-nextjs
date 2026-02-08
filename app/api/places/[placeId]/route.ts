@@ -1,24 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchPlaceDetails, type PlaceDetails } from "@/lib/google-places/fetch-place-details";
 
 // Google Places API proxy with caching
-// Fetches place details including rating, reviews, photos, website, phone, and opening hours
 
 interface CacheEntry {
   data: PlaceDetails;
   timestamp: number;
-}
-
-interface PlaceDetails {
-  rating?: number;
-  reviewCount?: number;
-  photos?: Array<{
-    reference: string;
-    url: string;
-  }>;
-  website?: string;
-  phone?: string;
-  openingHours?: string[];
-  isOpen?: boolean;
 }
 
 // In-memory cache (24 hour TTL)
@@ -73,47 +60,14 @@ export async function GET(
   }
 
   try {
-    // Fields to fetch from Google Places API
-    const fields = [
-      "rating",
-      "user_ratings_total",
-      "photos",
-      "website",
-      "formatted_phone_number",
-      "opening_hours",
-    ].join(",");
+    const placeDetails = await fetchPlaceDetails(placeId, apiKey);
 
-    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${apiKey}`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Google Places API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.status !== "OK" || !data.result) {
+    if (!placeDetails) {
       return NextResponse.json(
         { error: "Place not found" },
         { status: 404 }
       );
     }
-
-    const place = data.result;
-
-    const placeDetails: PlaceDetails = {
-      rating: place.rating,
-      reviewCount: place.user_ratings_total,
-      photos: place.photos?.slice(0, 5).map((photo: { photo_reference: string }) => ({
-        reference: photo.photo_reference,
-        url: `/api/places/photo?photoReference=${photo.photo_reference}&maxWidth=400`,
-      })),
-      website: place.website,
-      phone: place.formatted_phone_number,
-      openingHours: place.opening_hours?.weekday_text,
-      isOpen: place.opening_hours?.open_now,
-    };
 
     // Store in cache
     cache.set(placeId, {

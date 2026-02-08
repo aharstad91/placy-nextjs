@@ -4,6 +4,7 @@
  */
 
 import { createServerClient } from "./client";
+import { ALL_TRUST_FLAGS } from "@/lib/utils/poi-trust";
 import type {
   InsertTables,
   Database,
@@ -550,17 +551,8 @@ export async function upsertPOIsWithEditorialPreservation(
 // Trust Score Operations
 // ============================================
 
-/** Allowed trust flag values for input validation */
-const VALID_TRUST_FLAGS = new Set([
-  "permanently_closed",
-  "suspect_no_website_perfect_rating",
-  "no_website",
-  "website_ok",
-  "suspicious_domain",
-  "has_price_level",
-  "high_review_count",
-  "moderate_review_count",
-]);
+/** Allowed trust flag values — derived from single source of truth in poi-trust.ts */
+const VALID_TRUST_FLAGS = new Set<string>(ALL_TRUST_FLAGS);
 
 /**
  * Update a single POI's trust score and flags.
