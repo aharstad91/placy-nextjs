@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect, useMemo } from "react";
+import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import Map, { Source, Layer, type MapRef } from "react-map-gl/mapbox";
 import type { POI, Coordinates } from "@/lib/types";
 import { MAP_STYLE_DEFAULT, hideDefaultPOILabels } from "@/lib/themes/map-styles";
@@ -28,10 +28,11 @@ export default function ReportInteractiveMap({
 }: ReportInteractiveMapProps) {
   const mapRef = useRef<MapRef>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const useSymbolLayers = pois.length > USE_SYMBOL_LAYER_THRESHOLD;
 
   // CSS-driven zoom state (only used for DOM markers path)
-  useMapZoomState(mapRef, mapContainerRef);
+  useMapZoomState(mapRef, mapContainerRef, { mapLoaded });
 
   // Cleanup on unmount - critical for WebGL context management
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function ReportInteractiveMap({
   }, [onMapUnmount]);
 
   const handleMapLoad = useCallback(() => {
+    setMapLoaded(true);
     if (mapRef.current) {
       onMapMount?.(mapRef.current);
 

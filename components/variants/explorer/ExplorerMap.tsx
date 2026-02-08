@@ -91,7 +91,7 @@ export default function ExplorerMap({
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
 
   // CSS-driven zoom state (writes data-zoom-state to container, no React re-renders)
-  useMapZoomState(mapRef, mapContainerRef);
+  useMapZoomState(mapRef, mapContainerRef, { mapLoaded });
 
   const TravelIcon = travelMode === "walk" ? Footprints : travelMode === "bike" ? Bike : Car;
 

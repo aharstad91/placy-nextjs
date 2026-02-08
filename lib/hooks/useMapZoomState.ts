@@ -25,10 +25,11 @@ function computeZoomState(zoom: number): ZoomState {
 export function useMapZoomState(
   mapRef: React.RefObject<MapRef | null>,
   containerRef: React.RefObject<HTMLDivElement | null>,
-  options?: { labelBudget?: number }
+  options?: { labelBudget?: number; mapLoaded?: boolean }
 ): void {
   const lastStateRef = useRef<string>("full-label");
   const labelBudget = options?.labelBudget ?? 15;
+  const mapLoaded = options?.mapLoaded ?? true;
 
   useEffect(() => {
     const map = mapRef.current?.getMap();
@@ -53,5 +54,5 @@ export function useMapZoomState(
     return () => {
       map.off("zoom", onZoom);
     };
-  }, [mapRef, containerRef, labelBudget]);
+  }, [mapRef, containerRef, labelBudget, mapLoaded]);
 }
