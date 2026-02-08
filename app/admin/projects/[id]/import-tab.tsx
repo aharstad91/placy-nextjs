@@ -494,6 +494,12 @@ export function ImportTab({ project, onSwitchTab }: ImportTabProps) {
                       </p>
                     )}
                   </div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">
+                    Import fullført!
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {stats.new} nye, {stats.updated} oppdatert
+                  </p>
                 </div>
 
                 <div className="space-y-2">
