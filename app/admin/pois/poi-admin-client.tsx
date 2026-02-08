@@ -6,8 +6,7 @@ import Map, { Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox
 import { MapPin, Trash2, Plus, Search, ChevronDown, X, Check, Loader2 } from "lucide-react";
 import type { DbCategory, DbPoi } from "@/lib/supabase/types";
 import { AdminSecondaryNav, SecondaryNavTrigger } from "@/components/admin/admin-secondary-nav";
-
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
+import { MAP_STYLE_DEFAULT } from "@/lib/themes/map-styles";
 
 const customStyles = `
   @keyframes fadeInUp {
@@ -791,7 +790,7 @@ export function POIAdminClient({
             zoom: 12,
           }}
           style={{ width: "100%", height: "100%" }}
-          mapStyle={MAP_STYLE}
+          mapStyle={MAP_STYLE_DEFAULT}
           onClick={handleMapClick}
           onLoad={handleMapLoad}
           cursor={panelState === "creating" ? "crosshair" : "grab"}

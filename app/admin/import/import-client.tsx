@@ -46,8 +46,7 @@ import {
   AdminSecondaryNav,
   SecondaryNavTrigger,
 } from "@/components/admin/admin-secondary-nav";
-
-const MAP_STYLE = "mapbox://styles/mapbox/light-v11";
+import { MAP_STYLE_LIGHT } from "@/lib/themes/map-styles";
 const DEFAULT_CENTER = { lat: 63.4305, lng: 10.3951 }; // Trondheim
 
 const customStyles = `
@@ -840,7 +839,7 @@ export default function ImportClient({ projects }: ImportClientProps) {
               zoom: 14,
             }}
             style={{ width: "100%", height: "100%" }}
-            mapStyle={MAP_STYLE}
+            mapStyle={MAP_STYLE_LIGHT}
             onClick={handleMapClick}
             cursor={
               step === "idle" || step === "preview" ? "crosshair" : "default"

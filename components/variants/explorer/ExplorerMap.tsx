@@ -5,7 +5,6 @@ import {
   useCallback,
   useEffect,
   useState,
-  useMemo,
 } from "react";
 import Map, {
   NavigationControl,
@@ -15,15 +14,15 @@ import Map, {
 import type { Coordinates, POI, TravelMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
-import { MapPin, Sparkles, Footprints, Bike, Car, Navigation } from "lucide-react";
+import { MapPin, Footprints, Bike, Car, Navigation } from "lucide-react";
 import GeoLocationWidget from "./GeoLocationWidget";
 import { SkeletonMapOverlay } from "@/components/ui/SkeletonMapOverlay";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
-import * as LucideIcons from "lucide-react";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
-
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
+import { AdaptiveMarker } from "@/components/map/adaptive-marker";
+import { useMapZoomState } from "@/lib/hooks/useMapZoomState";
+import { MAP_STYLE_DEFAULT, hideDefaultPOILabels } from "@/lib/themes/map-styles";
 
 interface ExplorerMapProps {
   center: Coordinates;
@@ -84,17 +83,15 @@ export default function ExplorerMap({
   fitRoute = false,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const hasFittedBoundsRef = useRef(false);
   const lastFittedPOIRef = useRef<string | null>(null);
   const [hoveredPOI, setHoveredPOI] = useState<string | null>(null);
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Get Lucide icon component by name
-  const getIcon = useCallback((iconName: string): LucideIcons.LucideIcon => {
-    const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[iconName];
-    return Icon || LucideIcons.MapPin;
-  }, []);
+  // CSS-driven zoom state (writes data-zoom-state to container, no React re-renders)
+  useMapZoomState(mapRef, mapContainerRef);
 
   const TravelIcon = travelMode === "walk" ? Footprints : travelMode === "bike" ? Bike : Car;
 
@@ -164,18 +161,7 @@ export default function ExplorerMap({
   const onLoad = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (map) {
-      // Hide default POI labels for cleaner look
-      const layers = map.getStyle()?.layers || [];
-      layers.forEach((layer) => {
-        if (
-          layer.id.includes("poi") ||
-          layer.id.includes("place-label") ||
-          layer.id.includes("transit")
-        ) {
-          map.setLayoutProperty(layer.id, "visibility", "none");
-        }
-      });
-
+      hideDefaultPOILabels(map);
     }
     setMapLoaded(true);
   }, []);
@@ -218,7 +204,7 @@ export default function ExplorerMap({
   }, [mapLoaded, updateVisiblePOIs]);
 
   return (
-    <div className="w-full h-full relative">
+    <div ref={mapContainerRef} className="w-full h-full relative">
       <Map
         ref={mapRef}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
@@ -229,7 +215,7 @@ export default function ExplorerMap({
           pitch: 0,
         }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle={MAP_STYLE}
+        mapStyle={MAP_STYLE_DEFAULT}
         onLoad={onLoad}
         onMoveEnd={updateVisiblePOIs}
         onZoomEnd={updateVisiblePOIs}
@@ -314,118 +300,86 @@ export default function ExplorerMap({
           </Marker>
         )}
 
-        {/* All POI markers — no clustering */}
+        {/* All POI markers — adaptive zoom states driven by CSS */}
         {pois.map((poi) => {
-          const Icon = getIcon(poi.category.icon);
           const isThisActive = activePOI === poi.id;
           const isHovered = hoveredPOI === poi.id && !isThisActive;
           const poiTravelTime = poi.travelTime?.[travelMode];
 
           return (
-            <Marker
+            <AdaptiveMarker
               key={poi.id}
-              longitude={poi.coordinates.lng}
-              latitude={poi.coordinates.lat}
-              anchor="center"
-              style={{ zIndex: isThisActive ? 10 : isHovered ? 5 : 1 }}
+              poi={poi}
+              isActive={isThisActive}
+              isHovered={isHovered}
+              zIndex={isThisActive ? 10 : isHovered ? 5 : 1}
               onClick={(e) => {
                 e.originalEvent.stopPropagation();
                 onPOIClick(poi.id);
               }}
+              onMouseEnter={() => setHoveredPOI(poi.id)}
+              onMouseLeave={() => setHoveredPOI(null)}
             >
-              <div
-                className="relative cursor-pointer"
-                onMouseEnter={() => setHoveredPOI(poi.id)}
-                onMouseLeave={() => setHoveredPOI(null)}
-              >
-                {/* Pulsing ring for active marker */}
-                {isThisActive && (
-                  <div
-                    className="absolute inset-0 rounded-full marker-pulse-ring"
-                    style={{ backgroundColor: poi.category.color }}
-                  />
-                )}
-
-                {/* Icon circle */}
-                <div
-                  className={cn(
-                    "relative flex items-center justify-center rounded-full border-2 border-white shadow-md transition-all duration-150",
-                    isThisActive ? "w-10 h-10" : "w-8 h-8",
-                    isHovered && "scale-110 shadow-lg"
-                  )}
-                  style={{ backgroundColor: poi.category.color }}
-                >
-                  <Icon className={cn("text-white", isThisActive ? "w-5 h-5" : "w-4 h-4")} />
-                </div>
-
-                {/* Editorial sparkle badge */}
-                {poi.editorialHook && !isThisActive && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full border border-white flex items-center justify-center">
-                    <Sparkles className="w-2.5 h-2.5 text-white" />
-                  </div>
-                )}
-
-                {/* Hover tooltip — name + category + travel time */}
-                {isHovered && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap pointer-events-none z-20 animate-fade-in">
-                    <div className="bg-gray-900/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg shadow-xl text-xs">
-                      <div className="font-semibold">{poi.name}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-gray-300">
-                        <span>{poi.category.name}</span>
-                        {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
-                          <>
-                            <span className="text-gray-500">·</span>
-                            <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="xs" variant="dark" />
-                          </>
-                        )}
-                        {poiTravelTime != null && (
-                          <>
-                            <span className="text-gray-500">·</span>
-                            <TravelIcon className="w-3 h-3" />
-                            <span>{Math.round(poiTravelTime)} min</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {/* Tooltip arrow */}
-                    <div className="w-2 h-2 bg-gray-900/90 rotate-45 mx-auto -mt-1" />
-                  </div>
-                )}
-
-                {/* Active state: info pill with name + travel time + directions */}
-                {isThisActive && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap z-20">
-                    <div className="bg-white rounded-xl shadow-xl border border-gray-200 px-3 py-2 flex items-center gap-2">
-                      <span
-                        className="text-xs font-semibold truncate max-w-[140px]"
-                        style={{ color: poi.category.color }}
-                      >
-                        {poi.name}
-                      </span>
-                      {poiTravelTime != null && (
-                        <span className="flex items-center gap-1 text-xs text-gray-500">
-                          <TravelIcon className="w-3 h-3" />
-                          {Math.round(poiTravelTime)} min
-                        </span>
+              {/* Hover tooltip — name + category + travel time */}
+              {isHovered && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap pointer-events-none z-20 animate-fade-in">
+                  <div className="bg-gray-900/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg shadow-xl text-xs">
+                    <div className="font-semibold">{poi.name}</div>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-gray-300">
+                      <span>{poi.category.name}</span>
+                      {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
+                        <>
+                          <span className="text-gray-500">·</span>
+                          <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="xs" variant="dark" />
+                        </>
                       )}
-                      <a
-                        href={poi.googlePlaceId
-                          ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
-                          : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors text-xs font-medium"
-                      >
-                        <Navigation className="w-3 h-3" />
-                        Rute
-                      </a>
+                      {poiTravelTime != null && (
+                        <>
+                          <span className="text-gray-500">·</span>
+                          <TravelIcon className="w-3 h-3" />
+                          <span>{Math.round(poiTravelTime)} min</span>
+                        </>
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
-            </Marker>
+                  {/* Tooltip arrow */}
+                  <div className="w-2 h-2 bg-gray-900/90 rotate-45 mx-auto -mt-1" />
+                </div>
+              )}
+
+              {/* Active state: info pill with name + travel time + directions */}
+              {isThisActive && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap z-20">
+                  <div className="bg-white rounded-xl shadow-xl border border-gray-200 px-3 py-2 flex items-center gap-2">
+                    <span
+                      className="text-xs font-semibold truncate max-w-[140px]"
+                      style={{ color: poi.category.color }}
+                    >
+                      {poi.name}
+                    </span>
+                    {poiTravelTime != null && (
+                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                        <TravelIcon className="w-3 h-3" />
+                        {Math.round(poiTravelTime)} min
+                      </span>
+                    )}
+                    <a
+                      href={poi.googlePlaceId
+                        ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
+                        : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1 px-2 py-1 rounded-full bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors text-xs font-medium"
+                    >
+                      <Navigation className="w-3 h-3" />
+                      Rute
+                    </a>
+                  </div>
+                </div>
+              )}
+            </AdaptiveMarker>
           );
         })}
       </Map>

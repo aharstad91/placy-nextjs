@@ -39,8 +39,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { AdminSecondaryNav, SecondaryNavTrigger } from "@/components/admin/admin-secondary-nav";
-
-const MAP_STYLE = "mapbox://styles/mapbox/light-v11";
+import { MAP_STYLE_LIGHT } from "@/lib/themes/map-styles";
 const DEFAULT_CENTER = { lat: 63.4305, lng: 10.3951 };
 
 const customStyles = `
@@ -548,7 +547,7 @@ export function GenerateClient({ customers }: GenerateClientProps) {
               zoom: 14,
             }}
             style={{ width: "100%", height: "100%" }}
-            mapStyle={MAP_STYLE}
+            mapStyle={MAP_STYLE_LIGHT}
             onClick={handleMapClick}
             cursor={step === "idle" ? "crosshair" : "default"}
           >

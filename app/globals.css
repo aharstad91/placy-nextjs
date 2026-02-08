@@ -223,6 +223,95 @@ gmp-popover::part(dialog) {
   }
 }
 
+/* ===================================
+   Adaptive Map Markers — Zoom States
+   ===================================
+   Driven by data-zoom-state attribute on parent container.
+   States: dot | icon | icon-rating | full-label
+   ===================================  */
+
+/* Base sizing */
+.adaptive-marker__dot {
+  width: 8px;
+  height: 8px;
+}
+
+.adaptive-marker__icon {
+  width: 32px;
+  height: 32px;
+}
+
+/* Default: hide everything except icon (safe fallback) */
+.adaptive-marker__dot { opacity: 0; position: absolute; }
+.adaptive-marker__icon { opacity: 1; }
+.adaptive-marker__rating { opacity: 0; pointer-events: none; }
+.adaptive-marker__label { opacity: 0; pointer-events: none; max-width: 0; overflow: hidden; }
+.adaptive-marker__sparkle { opacity: 1; }
+
+/* ── Dot state ── */
+[data-zoom-state="dot"] .adaptive-marker__dot { opacity: 1; position: static; }
+[data-zoom-state="dot"] .adaptive-marker__icon { opacity: 0; position: absolute; pointer-events: none; }
+[data-zoom-state="dot"] .adaptive-marker__rating { opacity: 0; }
+[data-zoom-state="dot"] .adaptive-marker__label { opacity: 0; max-width: 0; }
+[data-zoom-state="dot"] .adaptive-marker__sparkle { opacity: 0; pointer-events: none; }
+
+/* Active markers at dot state promote to icon size */
+[data-zoom-state="dot"] .adaptive-marker--active .adaptive-marker__dot { opacity: 0; position: absolute; }
+[data-zoom-state="dot"] .adaptive-marker--active .adaptive-marker__icon { opacity: 1; position: static; pointer-events: auto; width: 28px; height: 28px; }
+
+/* ── Icon state ── */
+[data-zoom-state="icon"] .adaptive-marker__dot { opacity: 0; position: absolute; }
+[data-zoom-state="icon"] .adaptive-marker__icon { opacity: 1; position: static; }
+[data-zoom-state="icon"] .adaptive-marker__rating { opacity: 0; }
+[data-zoom-state="icon"] .adaptive-marker__label { opacity: 0; max-width: 0; }
+
+/* ── Icon + Rating state ── */
+[data-zoom-state="icon-rating"] .adaptive-marker__dot { opacity: 0; position: absolute; }
+[data-zoom-state="icon-rating"] .adaptive-marker__icon { opacity: 1; position: static; }
+[data-zoom-state="icon-rating"] .adaptive-marker__rating { opacity: 1; pointer-events: auto; }
+[data-zoom-state="icon-rating"] .adaptive-marker__label { opacity: 0; max-width: 0; }
+
+/* ── Full Label state ── */
+[data-zoom-state="full-label"] .adaptive-marker__dot { opacity: 0; position: absolute; }
+[data-zoom-state="full-label"] .adaptive-marker__icon { opacity: 1; position: static; width: 36px; height: 36px; }
+[data-zoom-state="full-label"] .adaptive-marker__rating { opacity: 1; pointer-events: auto; }
+[data-zoom-state="full-label"] .adaptive-marker__label { opacity: 1; pointer-events: auto; max-width: 140px; }
+
+/* ── Hover / Active interactions ── */
+.adaptive-marker--hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.adaptive-marker--active {
+  transform: scale(1.15);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+}
+
+/* ── Label density cap ── */
+[data-label-budget-exceeded="true"] .adaptive-marker__label {
+  opacity: 0;
+  max-width: 0;
+}
+/* Active/hovered markers always show labels even when budget exceeded */
+[data-label-budget-exceeded="true"] .adaptive-marker--active .adaptive-marker__label,
+[data-label-budget-exceeded="true"] .adaptive-marker--hover .adaptive-marker__label {
+  opacity: 1;
+  max-width: 140px;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .adaptive-marker,
+  .adaptive-marker__dot,
+  .adaptive-marker__icon,
+  .adaptive-marker__rating,
+  .adaptive-marker__label,
+  .adaptive-marker__sparkle {
+    transition: none !important;
+  }
+}
+
 /* Screen reader only utility */
 .sr-only {
   position: absolute;
