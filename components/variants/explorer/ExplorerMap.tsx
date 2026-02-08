@@ -22,7 +22,7 @@ import { shouldShowRating } from "@/lib/themes/rating-categories";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import { AdaptiveMarker } from "@/components/map/adaptive-marker";
 import { useMapZoomState } from "@/lib/hooks/useMapZoomState";
-import { MAP_STYLE_DEFAULT, hideDefaultPOILabels } from "@/lib/themes/map-styles";
+import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 
 interface ExplorerMapProps {
   center: Coordinates;
@@ -157,11 +157,11 @@ export default function ExplorerMap({
     onZoomChange(map.getZoom());
   }, [pois, mapLoaded, onViewportPOIs, onZoomChange]);
 
-  // Handle map load
+  // Handle map load — apply illustrated theme for warm, soft look
   const onLoad = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (map) {
-      hideDefaultPOILabels(map);
+      applyIllustratedTheme(map);
     }
     setMapLoaded(true);
   }, []);
@@ -215,7 +215,7 @@ export default function ExplorerMap({
           pitch: 0,
         }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle={MAP_STYLE_DEFAULT}
+        mapStyle={MAP_STYLE_STANDARD}
         onLoad={onLoad}
         onMoveEnd={updateVisiblePOIs}
         onZoomEnd={updateVisiblePOIs}
