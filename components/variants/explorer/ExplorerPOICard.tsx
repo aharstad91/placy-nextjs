@@ -7,7 +7,6 @@ import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import {
-  Star,
   MapPin,
   ExternalLink,
   ChevronDown,
@@ -21,6 +20,8 @@ import {
   Plus,
   Check,
 } from "lucide-react";
+import { GoogleRating } from "@/components/ui/GoogleRating";
+import { shouldShowRating } from "@/lib/themes/rating-categories";
 
 const travelModeIcons = {
   walk: Footprints,
@@ -176,13 +177,10 @@ export default function ExplorerPOICard({
                 <span className="text-xs font-medium" style={{ color: poi.category.color }}>
                   {poi.category.name}
                 </span>
-                {poi.googleRating && (
+                {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
                   <>
                     <span className="text-gray-300">·</span>
-                    <span className="flex items-center gap-0.5 text-xs text-gray-500">
-                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                      {poi.googleRating.toFixed(1)}
-                    </span>
+                    <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="sm" />
                   </>
                 )}
                 {travelTime != null && (
@@ -249,9 +247,9 @@ export default function ExplorerPOICard({
             isActive ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
           )}
         >
-          {/* Full-width image */}
+          {/* Compact image strip */}
           {hasImage && (
-            <div className="w-full aspect-[16/9] overflow-hidden">
+            <div className="w-full aspect-[21/9] overflow-hidden">
               <img
                 src={imageUrl}
                 alt={poi.name}
@@ -289,13 +287,10 @@ export default function ExplorerPOICard({
                   <span className="text-xs font-medium" style={{ color: poi.category.color }}>
                     {poi.category.name}
                   </span>
-                  {poi.googleRating && (
+                  {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
                     <>
                       <span className="text-gray-300">·</span>
-                      <span className="flex items-center gap-0.5 text-xs text-gray-500">
-                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                        {poi.googleRating.toFixed(1)}
-                      </span>
+                      <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="sm" />
                     </>
                   )}
                   {travelTime != null && (
@@ -342,8 +337,7 @@ export default function ExplorerPOICard({
       {/* Expanded content — outside clickable area so links work */}
       {isActive && (
         <div className="px-4 pb-3">
-          {/* Align with content: 24px badge + 12px gap = 36px (with image), or 36px icon + 12px gap = 48px */}
-          <div className={cn(hasImage ? "ml-9" : "ml-12", "space-y-3")}>
+          <div className="space-y-2.5">
             {/* Editorial hook */}
             {poi.editorialHook && (
               <div className="bg-amber-50 rounded-lg px-3 py-2.5 border border-amber-100">
@@ -370,20 +364,32 @@ export default function ExplorerPOICard({
               </p>
             )}
 
-            {/* Opening hours */}
-            {openingHours?.openingHours && openingHours.openingHours.length > 0 && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
-                  <Clock className="w-3 h-3" />
-                  Åpningstider
+            {/* Today's opening hours */}
+            {openingHours?.openingHours && openingHours.openingHours.length > 0 && (() => {
+              const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+              const today = days[new Date().getDay()];
+              const todayLine = openingHours.openingHours.find((line) =>
+                line.toLowerCase().startsWith(today.toLowerCase())
+              );
+              const hours = todayLine
+                ? todayLine.replace(/^[^:]+:\s*/, "")
+                : null;
+
+              return (
+                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <Clock className="w-3 h-3 flex-shrink-0" />
+                  <span>
+                    I dag: {hours || "Ukjent"}
+                    {openingHours.isOpen === true && (
+                      <span className="text-emerald-600 font-medium ml-1">· Åpen nå</span>
+                    )}
+                    {openingHours.isOpen === false && (
+                      <span className="text-gray-400 ml-1">· Stengt</span>
+                    )}
+                  </span>
                 </div>
-                <div className="text-xs text-gray-500 space-y-0.5 pl-4.5">
-                  {openingHours.openingHours.map((line, i) => (
-                    <div key={i}>{line}</div>
-                  ))}
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Realtime data */}
             {hasRealtimeData && (

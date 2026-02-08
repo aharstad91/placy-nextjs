@@ -5,6 +5,8 @@ import { X, ChevronUp, MapPin, Clock, ExternalLink, Phone, Globe } from "lucide-
 import * as LucideIcons from "lucide-react";
 import type { POI, TravelMode } from "@/lib/types";
 import { cn, formatTravelTime } from "@/lib/utils";
+import { GoogleRating } from "@/components/ui/GoogleRating";
+import { shouldShowRating } from "@/lib/themes/rating-categories";
 
 interface POIBottomSheetProps {
   poi: POI | null;
@@ -207,17 +209,9 @@ export function POIBottomSheet({ poi, travelMode, onClose, onShowRoute }: POIBot
             )}
 
             {/* Google rating */}
-            {poi.googleRating && (
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center gap-1">
-                  <span className="text-yellow-500">★</span>
-                  <span className="font-medium">{poi.googleRating}</span>
-                </div>
-                {poi.googleReviewCount && (
-                  <span className="text-sm text-gray-500">
-                    ({poi.googleReviewCount} anmeldelser)
-                  </span>
-                )}
+            {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
+              <div className="mb-4">
+                <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="md" showLabel />
               </div>
             )}
 
