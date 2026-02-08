@@ -13,10 +13,22 @@ import type { POI } from "@/lib/types";
 // Types
 // ============================================
 
+export type GoogleBusinessStatus = "OPERATIONAL" | "CLOSED_TEMPORARILY" | "CLOSED_PERMANENTLY";
+
+export type TrustFlag =
+  | "permanently_closed"
+  | "suspect_no_website_perfect_rating"
+  | "no_website"
+  | "website_ok"
+  | "suspicious_domain"
+  | "has_price_level"
+  | "high_review_count"
+  | "moderate_review_count";
+
 export interface TrustSignals {
   // Layer 1: Google data
   hasWebsite: boolean;
-  businessStatus: string | null; // "OPERATIONAL" | "CLOSED_TEMPORARILY" | "CLOSED_PERMANENTLY"
+  businessStatus: GoogleBusinessStatus | null;
   hasPriceLevel: boolean;
   googleRating: number | null;
   googleReviewCount: number | null;
@@ -28,14 +40,13 @@ export interface TrustSignals {
 
 export interface TrustResult {
   score: number; // 0.0-1.0
-  flags: string[];
+  flags: TrustFlag[];
   needsClaudeReview: boolean; // true if score is in 0.3-0.7 range
 }
 
 export interface WebsiteCheckResult {
   responds: boolean;
   isSuspicious: boolean;
-  statusCode: number | null;
 }
 
 // ============================================
@@ -44,10 +55,13 @@ export interface WebsiteCheckResult {
 
 const BASE_SCORE = 0.6;
 
+/** Minimum trust score for POIs to appear in Explorer. Exported for use in apply-explorer-caps. */
+export const MIN_TRUST_SCORE = 0.5;
+
 const SUSPICIOUS_DOMAINS = [
   ".ntnu.no", ".uio.no", ".uit.no", ".nmbu.no", ".uib.no", // Norske universiteter
   ".edu", ".ac.uk",                                          // Internasjonale universiteter
-  "blogspot.com", "wordpress.com",                           // Blogg-plattformer
+  ".blogspot.com", ".wordpress.com",                         // Blogg-plattformer (dot-prefixed to avoid myblogspot.com false positive)
 ];
 
 /** Private/reserved IP ranges that must be blocked for SSRF protection */
@@ -76,7 +90,7 @@ const DEFAULT_BATCH_CONCURRENCY = 10;
  * Pure function — no I/O.
  */
 export function calculateHeuristicTrust(signals: TrustSignals): TrustResult {
-  const flags: string[] = [];
+  const flags: TrustFlag[] = [];
 
   // Hard fail: permanently closed
   if (signals.businessStatus === "CLOSED_PERMANENTLY") {
@@ -145,11 +159,15 @@ export function calculateHeuristicTrust(signals: TrustSignals): TrustResult {
 // SSRF Protection
 // ============================================
 
+type UrlValidation =
+  | { safe: true }
+  | { safe: false; reason: string };
+
 /**
  * Validate that a URL is safe for server-side requests.
- * Blocks private IPs, non-http protocols, and bare IP addresses.
+ * Blocks private IPs, non-http protocols, bare IP addresses, localhost, and metadata endpoints.
  */
-export function validateExternalUrl(rawUrl: string): { safe: boolean; reason?: string } {
+export function validateExternalUrl(rawUrl: string): UrlValidation {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
@@ -162,7 +180,17 @@ export function validateExternalUrl(rawUrl: string): { safe: boolean; reason?: s
     return { safe: false, reason: "invalid_protocol" };
   }
 
-  const hostname = parsed.hostname;
+  const hostname = parsed.hostname.toLowerCase();
+
+  // Block localhost
+  if (hostname === "localhost" || hostname === "0.0.0.0") {
+    return { safe: false, reason: "localhost" };
+  }
+
+  // Block cloud metadata endpoints
+  if (hostname === "169.254.169.254" || hostname === "metadata.google.internal") {
+    return { safe: false, reason: "metadata_endpoint" };
+  }
 
   // Block bare IP addresses (require FQDN)
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
@@ -199,9 +227,10 @@ export function validateExternalUrl(rawUrl: string): { safe: boolean; reason?: s
 export function isSuspiciousDomain(url: string): boolean {
   try {
     const hostname = new URL(url).hostname.toLowerCase();
-    return SUSPICIOUS_DOMAINS.some(
-      (domain) => hostname.endsWith(domain) || hostname === domain.replace(/^\./, "")
-    );
+    return SUSPICIOUS_DOMAINS.some((domain) => {
+      // All domains are dot-prefixed, so endsWith is exact segment match
+      return hostname.endsWith(domain) || hostname === domain.slice(1);
+    });
   } catch {
     return false;
   }
@@ -214,45 +243,48 @@ export function isSuspiciousDomain(url: string): boolean {
 /**
  * Check if a website URL responds. Uses HTTP HEAD with 3s timeout.
  * Includes SSRF protection — blocks private IPs and non-http protocols.
+ * Uses redirect: "manual" to prevent TOCTOU redirect attacks.
  */
 export async function checkWebsite(url: string): Promise<WebsiteCheckResult> {
   // SSRF check
   const validation = validateExternalUrl(url);
   if (!validation.safe) {
-    return { responds: false, isSuspicious: false, statusCode: null };
+    return { responds: false, isSuspicious: false };
   }
 
   const suspicious = isSuspiciousDomain(url);
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), WEBSITE_CHECK_TIMEOUT_MS);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WEBSITE_CHECK_TIMEOUT_MS);
 
+  try {
     const response = await fetch(url, {
       method: "HEAD",
       signal: controller.signal,
-      redirect: "follow",
+      redirect: "manual", // Prevent redirect TOCTOU — validate each hop
     });
 
-    clearTimeout(timeout);
-
-    // Check final URL after redirects for SSRF
-    if (response.url && response.url !== url) {
-      const redirectValidation = validateExternalUrl(response.url);
+    // If redirect, validate the target URL for SSRF
+    const location = response.headers.get("location");
+    if (response.status >= 300 && response.status < 400 && location) {
+      const redirectValidation = validateExternalUrl(location);
       if (!redirectValidation.safe) {
-        return { responds: false, isSuspicious: suspicious, statusCode: null };
+        return { responds: false, isSuspicious: suspicious };
       }
+      // Redirect target is safe — treat as responds (don't follow)
+      return {
+        responds: true,
+        isSuspicious: suspicious || isSuspiciousDomain(location),
+      };
     }
 
     const responds = response.status >= 200 && response.status < 400;
-    return {
-      responds,
-      isSuspicious: suspicious || (response.url ? isSuspiciousDomain(response.url) : false),
-      statusCode: response.status,
-    };
+    return { responds, isSuspicious: suspicious };
   } catch {
     // Timeout or network error — neutral (not negative)
-    return { responds: false, isSuspicious: suspicious, statusCode: null };
+    return { responds: false, isSuspicious: suspicious };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -269,7 +301,7 @@ export function buildTrustSignals(
 ): TrustSignals {
   return {
     hasWebsite: !!poi.googleWebsite,
-    businessStatus: poi.googleBusinessStatus ?? null,
+    businessStatus: (poi.googleBusinessStatus as GoogleBusinessStatus) ?? null,
     hasPriceLevel: poi.googlePriceLevel != null,
     googleRating: poi.googleRating ?? null,
     googleReviewCount: poi.googleReviewCount ?? null,
@@ -280,7 +312,7 @@ export function buildTrustSignals(
 
 /**
  * Validate multiple POIs concurrently.
- * Runs website checks in parallel with limited concurrency.
+ * Deduplicates website checks by domain, then runs with a concurrency pool.
  */
 export async function batchValidateTrust(
   pois: POI[],
@@ -288,28 +320,58 @@ export async function batchValidateTrust(
 ): Promise<Map<string, TrustResult>> {
   const results = new Map<string, TrustResult>();
 
-  // Process in batches for concurrency control
-  for (let i = 0; i < pois.length; i += concurrency) {
-    const batch = pois.slice(i, i + concurrency);
+  // Deduplicate website checks by domain (same domain = same result)
+  const domainResults = new Map<string, WebsiteCheckResult>();
+  const getDomainKey = (url: string): string | null => {
+    try { return new URL(url).hostname.toLowerCase(); } catch { return null; }
+  };
 
-    const batchResults = await Promise.all(
-      batch.map(async (poi) => {
-        // Layer 2: Website check (only if has website URL)
-        const websiteResult = poi.googleWebsite
-          ? await checkWebsite(poi.googleWebsite)
-          : null;
-
-        // Layer 1+2: Calculate heuristic trust
-        const signals = buildTrustSignals(poi, websiteResult);
-        const result = calculateHeuristicTrust(signals);
-
-        return { poiId: poi.id, result };
-      })
-    );
-
-    for (const { poiId, result } of batchResults) {
-      results.set(poiId, result);
+  // Collect unique domains to check
+  const domainsToCheck = new Map<string, string>(); // domain → first URL
+  for (const poi of pois) {
+    if (poi.googleWebsite) {
+      const domain = getDomainKey(poi.googleWebsite);
+      if (domain && !domainsToCheck.has(domain)) {
+        domainsToCheck.set(domain, poi.googleWebsite);
+      }
     }
+  }
+
+  // Check unique domains with concurrency pool
+  const domainEntries = Array.from(domainsToCheck.entries());
+  let running = 0;
+  let idx = 0;
+
+  await new Promise<void>((resolve) => {
+    if (domainEntries.length === 0) { resolve(); return; }
+
+    const next = () => {
+      while (running < concurrency && idx < domainEntries.length) {
+        const [domain, url] = domainEntries[idx++];
+        running++;
+        checkWebsite(url).then((result) => {
+          domainResults.set(domain, result);
+          running--;
+          if (idx >= domainEntries.length && running === 0) {
+            resolve();
+          } else {
+            next();
+          }
+        });
+      }
+    };
+    next();
+  });
+
+  // Score each POI using cached domain results
+  for (const poi of pois) {
+    let websiteResult: WebsiteCheckResult | null = null;
+    if (poi.googleWebsite) {
+      const domain = getDomainKey(poi.googleWebsite);
+      if (domain) websiteResult = domainResults.get(domain) ?? null;
+    }
+    const signals = buildTrustSignals(poi, websiteResult);
+    results.set(poi.id, calculateHeuristicTrust(signals));
   }
 
   return results;

@@ -2,34 +2,36 @@ import type { POI } from "@/lib/types";
 import type { ThemeDefinition } from "./theme-definitions";
 import type { VenueProfile } from "./venue-profiles";
 import { calculateWeightedPOIScore } from "@/lib/utils/poi-score";
+import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
 import { EXPLORER_THEME_CAPS, EXPLORER_TOTAL_CAP } from "./explorer-caps";
 import { CATEGORY_TO_THEME } from "./default-themes";
 
 /**
- * Apply Explorer caps: blacklist → score → per-theme cap → total cap.
+ * Apply Explorer caps: trust filter → blacklist → score → per-theme cap → total cap.
  *
- * 1. Remove blacklisted categories
- * 2. Score all POIs with venue-profile weights
- * 3. Apply per-transport-category caps (e.g., max 4 bus stops)
- * 4. Per theme: take top N by score
- * 5. Dedup and enforce total cap
+ * 1. Trust filter: remove untrusted POIs (score < MIN_TRUST_SCORE), null = show
+ * 2. Remove blacklisted categories
+ * 3. Score all POIs with venue-profile weights
+ * 4. Apply per-transport-category caps (e.g., max 4 bus stops)
+ * 5. Per theme: take top N by score
+ * 6. Handle unmapped categories, then enforce total cap
  */
 export function applyExplorerCaps(
   pois: POI[],
   themes: ThemeDefinition[],
   profile: VenueProfile
 ): POI[] {
-  // 0. Trust filter: remove untrusted POIs (score < 0.5), null = show
+  // 1. Trust filter: remove untrusted POIs, null = show (backward compatible)
   const trusted = pois.filter((poi) => {
     if (poi.trustScore == null) return true;
-    return poi.trustScore >= 0.5;
+    return poi.trustScore >= MIN_TRUST_SCORE;
   });
 
-  // 1. Remove blacklisted categories
+  // 2. Remove blacklisted categories
   const blacklist = new Set(profile.categoryBlacklist);
   const eligible = trusted.filter((poi) => !blacklist.has(poi.category.id));
 
-  // 2. Score all POIs
+  // 3. Score all POIs
   const scored = eligible.map((poi) => ({
     poi,
     score: calculateWeightedPOIScore(
@@ -43,10 +45,10 @@ export function applyExplorerCaps(
     ),
   }));
 
-  // 3. Apply per-transport-category caps
+  // 4. Apply per-transport-category caps
   const transportCapped = applyTransportCaps(scored, profile);
 
-  // 4. Per theme: take top N by score
+  // 5. Per theme: take top N by score
   const selectedIds = new Set<string>();
   const result: POI[] = [];
 
@@ -66,7 +68,7 @@ export function applyExplorerCaps(
     }
   }
 
-  // 5. Handle any POIs with unmapped categories (catch-all)
+  // 6. Handle any POIs with unmapped categories (catch-all)
   // Use remaining capacity so projects with custom categories (e.g. architecture prizes) aren't truncated
   const unmappedCap = Math.max(EXPLORER_TOTAL_CAP - result.length, 0);
   const unmapped = transportCapped
@@ -79,7 +81,7 @@ export function applyExplorerCaps(
     result.push(poi);
   }
 
-  // 6. Enforce total cap
+  // 7. Enforce total cap
   return result.slice(0, EXPLORER_TOTAL_CAP);
 }
 

@@ -32,7 +32,7 @@ export interface POIImportData {
   bysykkel_station_id: string | null;
   hyre_station_id: string | null;
   trust_score: number | null;
-  trust_flags: string[] | null;
+  trust_flags: string[];
   trust_score_updated_at: string | null;
   google_website: string | null;
   google_business_status: string | null;
@@ -51,35 +51,17 @@ interface EditorialFields {
   description: string | null;
 }
 
-const EDITORIAL_FIELD_NAMES: (keyof EditorialFields)[] = [
-  'editorial_hook',
-  'local_insight',
-  'story_priority',
-  'editorial_sources',
-  'featured_image',
-  'description',
-];
-
 /**
  * Trust fields that should be preserved during re-imports
  */
 interface TrustFields {
   trust_score: number | null;
-  trust_flags: string[] | null;
+  trust_flags: string[];
   trust_score_updated_at: string | null;
   google_website: string | null;
   google_business_status: string | null;
   google_price_level: number | null;
 }
-
-const TRUST_FIELD_NAMES: (keyof TrustFields)[] = [
-  'trust_score',
-  'trust_flags',
-  'trust_score_updated_at',
-  'google_website',
-  'google_business_status',
-  'google_price_level',
-];
 
 export interface POIUpsertResult {
   inserted: number;
@@ -534,7 +516,7 @@ export async function upsertPOIsWithEditorialPreservation(
       description: existing?.description ?? null,
       // Preserve existing trust fields
       trust_score: poi.trust_score ?? existing?.trust_score ?? null,
-      trust_flags: poi.trust_flags ?? existing?.trust_flags ?? null,
+      trust_flags: poi.trust_flags ?? existing?.trust_flags ?? [],
       trust_score_updated_at: poi.trust_score_updated_at ?? existing?.trust_score_updated_at ?? null,
       google_website: poi.google_website ?? existing?.google_website ?? null,
       google_business_status: poi.google_business_status ?? existing?.google_business_status ?? null,
@@ -568,6 +550,18 @@ export async function upsertPOIsWithEditorialPreservation(
 // Trust Score Operations
 // ============================================
 
+/** Allowed trust flag values for input validation */
+const VALID_TRUST_FLAGS = new Set([
+  "permanently_closed",
+  "suspect_no_website_perfect_rating",
+  "no_website",
+  "website_ok",
+  "suspicious_domain",
+  "has_price_level",
+  "high_review_count",
+  "moderate_review_count",
+]);
+
 /**
  * Update a single POI's trust score and flags.
  * Used by the validation pipeline after Layer 1-3 checks.
@@ -577,6 +571,18 @@ export async function updatePOITrustScore(
   trustScore: number,
   trustFlags: string[]
 ): Promise<void> {
+  // Validate score range
+  if (trustScore < 0 || trustScore > 1) {
+    throw new Error(`Trust score must be 0.0-1.0, got ${trustScore}`);
+  }
+
+  // Validate flag values
+  for (const flag of trustFlags) {
+    if (!VALID_TRUST_FLAGS.has(flag)) {
+      throw new Error(`Invalid trust flag: ${flag}`);
+    }
+  }
+
   const supabase = createServerClient();
   if (!supabase) {
     throw new Error("Supabase ikke konfigurert");

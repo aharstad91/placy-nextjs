@@ -93,7 +93,7 @@ export type Database = {
           bysykkel_station_id: string | null;
           hyre_station_id: string | null;
           trust_score: number | null;
-          trust_flags: string[] | null;
+          trust_flags: string[];
           trust_score_updated_at: string | null;
           google_website: string | null;
           google_business_status: string | null;
@@ -123,7 +123,7 @@ export type Database = {
           bysykkel_station_id?: string | null;
           hyre_station_id?: string | null;
           trust_score?: number | null;
-          trust_flags?: string[] | null;
+          trust_flags?: string[];
           trust_score_updated_at?: string | null;
           google_website?: string | null;
           google_business_status?: string | null;
@@ -153,7 +153,7 @@ export type Database = {
           bysykkel_station_id?: string | null;
           hyre_station_id?: string | null;
           trust_score?: number | null;
-          trust_flags?: string[] | null;
+          trust_flags?: string[];
           trust_score_updated_at?: string | null;
           google_website?: string | null;
           google_business_status?: string | null;
