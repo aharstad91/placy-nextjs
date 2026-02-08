@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import type { POI } from "@/lib/types";
-import { Star, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
+import { GoogleRating } from "@/components/ui/GoogleRating";
+import { shouldShowRating } from "@/lib/themes/rating-categories";
 
 interface ReportPOICardProps {
   poi: POI;
@@ -67,18 +69,18 @@ export default function ReportPOICard({ poi, isActive, onClick }: ReportPOICardP
         </h4>
 
         {/* Rating + distance row */}
-        <div className="flex items-center gap-2 mt-1">
-          {poi.googleRating != null && (
-            <span className="flex items-center gap-0.5 text-xs text-[#6a6a6a]">
-              <Star className="w-3 h-3 text-[#b45309] fill-[#b45309]" />
-              {poi.googleRating.toFixed(1)}
-            </span>
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+          {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
+            <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="sm" />
           )}
           {walkMinutes != null && (
-            <span className="flex items-center gap-0.5 text-xs text-[#8a8a8a]">
-              <MapPin className="w-3 h-3" />
-              {walkMinutes} min
-            </span>
+            <>
+              {poi.googleRating != null && <span className="text-gray-300">·</span>}
+              <span className="flex items-center gap-0.5 text-xs text-[#8a8a8a]">
+                <MapPin className="w-3 h-3" />
+                {walkMinutes} min
+              </span>
+            </>
           )}
         </div>
 

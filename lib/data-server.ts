@@ -12,7 +12,10 @@ import {
   getProjectContainerFromSupabase,
   getProductFromSupabase,
   getProjectProducts as getProjectProductsFromSupabase,
+  getProjectShortId,
 } from "./supabase/queries";
+
+export { getProjectShortId };
 import * as fs from "fs";
 import * as path from "path";
 

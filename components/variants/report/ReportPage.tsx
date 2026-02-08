@@ -60,11 +60,19 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
     );
   }, []);
 
-  // Handle marker click → highlight card
+  // Handle marker click → highlight card + scroll to it
   const handleMarkerClick = useCallback((poiId: string) => {
-    setActivePOI((prev) =>
-      prev?.poiId === poiId ? null : { poiId }
-    );
+    setActivePOI((prev) => {
+      const next = prev?.poiId === poiId ? null : { poiId };
+      // Scroll to the card after state update
+      if (next) {
+        requestAnimationFrame(() => {
+          const card = document.querySelector(`[data-poi-id="${poiId}"]`);
+          card?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      }
+      return next;
+    });
   }, []);
 
   // Scroll preservation: restore on mount, save continuously
@@ -104,7 +112,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#faf9f7]">
+    <div className="min-h-screen bg-white">
       {/* Hero — full width with padding */}
       <div className="px-16">
         <div className="grid grid-cols-12 gap-x-6">
@@ -140,8 +148,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
         </div>
 
         {/* Right: Sticky map */}
-        <div className="w-1/2">
-          <div className="sticky top-20 h-[calc(100vh-5rem)]">
+        <div className="w-1/2 pt-16 pr-16 pb-16">
+          <div className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden">
             <ReportStickyMap
               themes={reportData.themes}
               activeThemeId={activeSectionId}

@@ -2,20 +2,22 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { Share2, Check } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Share2, Check, Pencil } from "lucide-react";
 
 export interface ProductLink {
   label: string;
   href: string;
-  active: boolean;
 }
 
 interface ProductNavProps {
   projectName: string;
   products: ProductLink[];
+  adminEditUrl?: string | null;
 }
 
-export default function ProductNav({ projectName, products }: ProductNavProps) {
+export default function ProductNav({ projectName, products, adminEditUrl }: ProductNavProps) {
+  const pathname = usePathname();
   const [copied, setCopied] = useState(false);
 
   const handleShare = useCallback(async () => {
@@ -42,10 +44,22 @@ export default function ProductNav({ projectName, products }: ProductNavProps) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
       <div className="px-8 h-12 flex items-center justify-between">
-        {/* Left: Project name */}
-        <span className="text-sm font-medium text-[#1a1a1a] truncate max-w-[180px] sm:max-w-none">
-          {projectName}
-        </span>
+        {/* Left: Project name (clickable to admin if available) */}
+        {adminEditUrl ? (
+          <Link
+            href={adminEditUrl}
+            target="_blank"
+            className="flex items-center gap-1.5 text-sm font-medium text-[#1a1a1a] hover:text-[#7a7062] transition-colors truncate max-w-[250px] sm:max-w-none"
+            title="Rediger i admin"
+          >
+            {projectName}
+            <Pencil className="w-3 h-3 shrink-0 opacity-40" />
+          </Link>
+        ) : (
+          <span className="text-sm font-medium text-[#1a1a1a] truncate max-w-[180px] sm:max-w-none">
+            {projectName}
+          </span>
+        )}
 
         {/* Center: Product pill toggle */}
         {products.length > 1 && (
@@ -55,7 +69,7 @@ export default function ProductNav({ projectName, products }: ProductNavProps) {
                 key={product.href}
                 href={product.href}
                 className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
-                  product.active
+                  pathname === product.href
                     ? "bg-white text-[#1a1a1a] shadow-sm"
                     : "text-[#7a7062] hover:text-[#1a1a1a]"
                 }`}

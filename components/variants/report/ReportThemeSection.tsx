@@ -5,8 +5,10 @@ import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { t } from "@/lib/i18n/strings";
-import { Star, ChevronDown } from "lucide-react";
+import { Star, ChevronDown, MapPin, Sparkles } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
+import { GoogleRating } from "@/components/ui/GoogleRating";
+import { shouldShowRating } from "@/lib/themes/rating-categories";
 import ReportInteractiveMapSection from "./ReportInteractiveMapSection";
 import ReportAddressInput from "./ReportAddressInput";
 import ReportPOICard from "./ReportPOICard";
@@ -223,6 +225,7 @@ function EditorialContent({
           {highlightPOIs.map((poi) => (
             <div
               key={poi.id}
+              data-poi-id={poi.id}
               className="flex-shrink-0 w-[180px] snap-start"
             >
               <ReportPOICard
@@ -302,7 +305,7 @@ function FunctionalContent({
   );
 }
 
-/** Compact row list for non-highlight POIs */
+/** Explorer-style POI card grid for report sections */
 function CompactPOIList({
   pois,
   activePOIId,
@@ -313,53 +316,112 @@ function CompactPOIList({
   onPOIClick?: (poiId: string) => void;
 }) {
   return (
-    <div className="space-y-1">
-      {pois.map((poi) => {
-        const Icon = getIcon(poi.category.icon);
-        const isActive = activePOIId === poi.id;
-        const walkMinutes = poi.travelTime?.walk
-          ? Math.round(poi.travelTime.walk / 60)
-          : null;
+    <div className="grid grid-cols-2 gap-2.5">
+      {pois.map((poi) => (
+        <ReportPOIRow
+          key={poi.id}
+          poi={poi}
+          isActive={activePOIId === poi.id}
+          onClick={() => onPOIClick?.(poi.id)}
+        />
+      ))}
+    </div>
+  );
+}
 
-        return (
-          <button
-            key={poi.id}
-            onClick={() => onPOIClick?.(poi.id)}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              isActive
-                ? "bg-[#f0ede8] ring-1 ring-[#d4cfc8]"
-                : "hover:bg-[#faf9f7]"
-            }`}
-          >
-            <div
-              className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: poi.category.color + "20" }}
-            >
-              <Icon
-                className="w-3.5 h-3.5"
-                style={{ color: poi.category.color }}
-              />
+/** Single POI card — matches Explorer collapsed card style with border + radius */
+function ReportPOIRow({
+  poi,
+  isActive,
+  onClick,
+}: {
+  poi: POI;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const [imageError, setImageError] = useState(false);
+  const CategoryIcon = getIcon(poi.category.icon);
+
+  const imageUrl = poi.featuredImage
+    ? poi.featuredImage.includes("mymaps.usercontent.google.com")
+      ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
+      : poi.featuredImage
+    : poi.photoReference
+    ? `/api/places/photo?photoReference=${poi.photoReference}&maxWidth=400`
+    : null;
+
+  const hasImage = imageUrl && !imageError;
+  const walkMinutes = poi.travelTime?.walk
+    ? Math.round(poi.travelTime.walk / 60)
+    : null;
+
+  return (
+    <button
+      data-poi-id={poi.id}
+      onClick={onClick}
+      className={`w-full text-left rounded-xl border overflow-hidden transition-all ${
+        isActive
+          ? "bg-[#f0ede8] border-[#d4cfc8] ring-1 ring-[#d4cfc8]"
+          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
+      }`}
+    >
+      <div className="flex items-start gap-3 px-3 py-3">
+        {/* Thumbnail / Category icon */}
+        <div
+          className={`flex-shrink-0 overflow-hidden ${
+            hasImage ? "w-12 h-12 rounded-xl" : "w-9 h-9 rounded-full mt-0.5"
+          }`}
+          style={!hasImage ? { backgroundColor: poi.category.color } : undefined}
+        >
+          {hasImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt={poi.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <CategoryIcon className="w-4 h-4 text-white" />
             </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-sm font-medium text-[#1a1a1a] truncate block">
-                {poi.name}
-              </span>
-            </div>
-            {poi.googleRating != null && (
-              <span className="flex items-center gap-0.5 text-xs text-[#6a6a6a] flex-shrink-0">
-                <Star className="w-3 h-3 text-[#b45309] fill-[#b45309]" />
-                {poi.googleRating.toFixed(1)}
-              </span>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900 truncate">
+              {poi.name}
+            </h3>
+            {poi.editorialHook && (
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            <span className="text-xs font-medium" style={{ color: poi.category.color }}>
+              {poi.category.name}
+            </span>
+            {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
+              <>
+                <span className="text-gray-300">·</span>
+                <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="sm" />
+              </>
             )}
             {walkMinutes != null && (
-              <span className="text-xs text-[#8a8a8a] flex-shrink-0">
-                {walkMinutes} min
-              </span>
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="flex items-center gap-0.5 text-xs text-gray-500">
+                  <MapPin className="w-3 h-3" />
+                  {walkMinutes} min
+                </span>
+              </>
             )}
-          </button>
-        );
-      })}
-    </div>
+          </div>
+        </div>
+      </div>
+    </button>
   );
 }
 

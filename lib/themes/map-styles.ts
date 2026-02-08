@@ -43,8 +43,8 @@ export function applyIllustratedTheme(map: MapboxMap): void {
   try {
     // Faded theme gives a softer, muted base
     map.setConfigProperty("basemap", "theme", "faded");
-    // Dawn lighting adds warmth
-    map.setConfigProperty("basemap", "lightPreset", "dawn");
+    // Day lighting — minimal shadows, keeps 3D trees visible
+    map.setConfigProperty("basemap", "lightPreset", "day");
     // Warm earth-tone land color
     map.setConfigProperty("basemap", "colorLand", "hsl(40, 40%, 92%)");
     // Lush green spaces

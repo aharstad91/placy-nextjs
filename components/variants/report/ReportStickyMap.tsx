@@ -231,7 +231,7 @@ export default function ReportStickyMap({
         style={{ width: "100%", height: "100%" }}
         mapStyle={mapStyle || MAP_STYLE}
         onLoad={handleMapLoad}
-        cooperativeGestures={true}
+        scrollZoom={true}
       >
         {/* Hotel marker — always visible, higher z-index */}
         <Marker

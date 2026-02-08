@@ -23,6 +23,19 @@ import type {
   DiscoveryCircle,
 } from "../types";
 import { calculateDistance, calculateBoundingBox } from "../utils/geo";
+import { MIN_TRUST_SCORE } from "../utils/poi-trust";
+
+// ============================================
+// Trust Filtering
+// ============================================
+
+/** Filter out untrusted POIs. null = show (backward compatible), score < threshold = hide. */
+function filterTrustedPOIs(pois: POI[]): POI[] {
+  return pois.filter((poi) => {
+    if (poi.trustScore == null) return true;
+    return poi.trustScore >= MIN_TRUST_SCORE;
+  });
+}
 
 // ============================================
 // Type Transformers
@@ -298,7 +311,7 @@ export async function getProjectPOIs(projectId: string): Promise<POI[]> {
   }
 
   // Transform POIs using global categories (project category override not yet available)
-  return projectPois.map((pp) => {
+  const allPois = projectPois.map((pp) => {
     const poi = pp.pois as DbPoi & { categories: DbCategory | null };
     const globalCategory = poi.categories;
 
@@ -308,6 +321,8 @@ export async function getProjectPOIs(projectId: string): Promise<POI[]> {
 
     return transformPOI(poi, category);
   });
+
+  return filterTrustedPOIs(allPois);
 }
 
 /**
@@ -731,12 +746,13 @@ export async function getProjectContainerFromSupabase(
   }
 
   // Transform POIs - using type assertion for the joined data
-  const pois: POI[] = (projectPois || []).map((pp: { poi_id: string; pois: unknown }) => {
+  const allPois: POI[] = (projectPois || []).map((pp: { poi_id: string; pois: unknown }) => {
     const poi = pp.pois as DbPoi & { categories: DbCategory | null };
     const globalCategory = poi.categories;
     const category = globalCategory ? transformCategory(globalCategory) : undefined;
     return transformPOI(poi, category);
   });
+  const pois = filterTrustedPOIs(allPois);
 
   // Derive categories from POIs
   const categoryMap = new Map<string, Category>();
@@ -959,4 +975,25 @@ export async function getProjectProducts(
     poiCount: (p.product_pois as unknown as { count: number }[])?.[0]?.count ?? 0,
     hasStory: !!p.story_title,
   }));
+}
+
+/**
+ * Get a project's short_id for building admin URLs.
+ */
+export async function getProjectShortId(
+  customerSlug: string,
+  projectSlug: string
+): Promise<string | null> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return null;
+  }
+
+  const { data } = await supabase
+    .from("projects")
+    .select("short_id")
+    .eq("customer_id", customerSlug)
+    .eq("url_slug", projectSlug)
+    .single();
+
+  return (data as { short_id: string } | null)?.short_id ?? null;
 }
