@@ -215,9 +215,16 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   }, [poisWithTravelTimes, activeCategories]);
 
   // POIs visible in current viewport AND matching active categories
+  // Active POI is pinned separately in ExplorerPOIList, but must be in the
+  // data set so opening hours / travel times are available for it
   const visiblePOIs = useMemo(() => {
-    return filteredPOIs.filter((poi) => viewportPOIIds.has(poi.id));
-  }, [filteredPOIs, viewportPOIIds]);
+    const inViewport = filteredPOIs.filter((poi) => viewportPOIIds.has(poi.id));
+    if (activePOI && !viewportPOIIds.has(activePOI)) {
+      const active = filteredPOIs.find((poi) => poi.id === activePOI);
+      if (active) inViewport.push(active);
+    }
+    return inViewport;
+  }, [filteredPOIs, viewportPOIIds, activePOI]);
 
   // Opening hours for visible POIs
   const { hoursData: openingHoursData } = useOpeningHours(visiblePOIs);
@@ -278,14 +285,19 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     }
   }, [collectionPOIs, addToCollection, removeFromCollection]);
 
-  // POI selection (from list click)
+  // Track whether to fit map to route (list click = yes, map click = no)
+  const [fitRoute, setFitRoute] = useState(false);
+
+  // POI selection (from list click — fit map to show route)
   const handlePOIClick = useCallback((poiId: string) => {
     setActivePOI((prev) => (prev === poiId ? null : poiId));
+    setFitRoute(true);
   }, []);
 
-  // POI selection from map click (with temporary highlight)
+  // POI selection from map click (no camera movement, with temporary highlight)
   const handleMapPOIClick = useCallback((poiId: string) => {
     setActivePOI((prev) => (prev === poiId ? null : poiId));
+    setFitRoute(false);
     setHighlightedPOI(poiId);
     setTimeout(() => setHighlightedPOI(null), 2000);
   }, []);
@@ -500,6 +512,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     projectName: project.name,
     routeData,
     travelMode,
+    fitRoute,
     initialBounds: poiBounds,
     // Geolocation
     userPosition: geo.userPosition,

@@ -85,12 +85,10 @@ export default function ExplorerPOIList({
     return () => document.removeEventListener("mousedown", handler);
   }, [travelDropdownOpen]);
 
-  // Scroll to active POI in list
+  // Scroll list to top when active POI changes (pinned card handles visibility)
   useEffect(() => {
-    if (!activePOI || !listRef.current) return;
-    const cardEl = cardRefs.current.get(activePOI);
-    if (cardEl) {
-      cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (activePOI && listRef.current) {
+      listRef.current.scrollTop = 0;
     }
   }, [activePOI]);
 
@@ -111,43 +109,30 @@ export default function ExplorerPOIList({
 
   return (
     <>
-      {/* Header */}
+      {/* Header + travel mode */}
       <div className="flex-shrink-0 px-8 pt-8 pb-3">
-        <h1 className="text-lg font-bold text-gray-900">
-          {projectName ? `Utforsk ${projectName}` : "Utforsk nabolaget"}
-        </h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {showSkeleton ? (
-            <span className="text-sky-500 animate-pulse">Laster steder…</span>
-          ) : (
-            <>
-              {visibleCount} av {totalCount} steder synlige
-              {isRefreshing && (
-                <span className="text-sky-500 animate-pulse ml-2">
-                  Oppdaterer…
-                </span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-gray-900">
+              {projectName ? `Utforsk ${projectName}` : "Utforsk nabolaget"}
+            </h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {showSkeleton ? (
+                <span className="text-sky-500 animate-pulse">Laster steder…</span>
+              ) : (
+                <>
+                  {visibleCount} av {totalCount} steder synlige
+                  {isRefreshing && (
+                    <span className="text-sky-500 animate-pulse ml-2">
+                      Oppdaterer…
+                    </span>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </p>
-        {contextHint && !showSkeleton && !isRefreshing && (
-          <p className="text-xs text-sky-600 mt-1">{contextHint}</p>
-        )}
-      </div>
-
-      {/* Theme chips + travel mode */}
-      <div className="flex-shrink-0">
-        <div className="flex items-center gap-2 px-8 pb-2">
-          <div className="flex-1 min-w-0">
-            <ExplorerThemeChips
-              themes={DEFAULT_THEMES}
-              pois={allPOIs}
-              activeThemes={activeThemes}
-              disabledCategories={disabledCategories}
-              onToggleTheme={onToggleTheme}
-              onToggleCategory={onToggleCategory}
-              variant="desktop"
-            />
+            </p>
+            {contextHint && !showSkeleton && !isRefreshing && (
+              <p className="text-xs text-sky-600 mt-1">{contextHint}</p>
+            )}
           </div>
 
           {/* Travel mode dropdown */}
@@ -187,59 +172,99 @@ export default function ExplorerPOIList({
         </div>
       </div>
 
+      {/* Theme chips — full width */}
+      <div className="flex-shrink-0">
+        <ExplorerThemeChips
+          themes={DEFAULT_THEMES}
+          pois={allPOIs}
+          activeThemes={activeThemes}
+          disabledCategories={disabledCategories}
+          onToggleTheme={onToggleTheme}
+          onToggleCategory={onToggleCategory}
+          variant="desktop"
+        />
+      </div>
+
       {/* Separator */}
       <div className="h-px bg-gray-200/50 mx-8" />
 
       {/* POI list + collection bar */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-hidden flex flex-col">
         {/* Skeleton loading state */}
         {showSkeleton && (
           <SkeletonPOIList count={6} variant="desktop" />
         )}
 
         {/* Actual content */}
-        {showContent && (
-          <div ref={listRef} className={cn(
-            "h-full overflow-y-auto pb-4",
-            showSkeleton ? "hidden" : "animate-content-appear"
-          )}>
-            {pois.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center px-12 py-12">
-                <Compass className="w-10 h-10 text-gray-300 mb-3" />
-                <p className="text-sm text-gray-400">
-                  Panorer eller zoom kartet for å se steder her
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2.5 px-8 py-4">
-                {pois.map((poi) => (
+        {showContent && (() => {
+          const activePOIData = activePOI ? pois.find((p) => p.id === activePOI) : null;
+          const remainingPOIs = activePOIData ? pois.filter((p) => p.id !== activePOI) : pois;
+
+          return (
+            <>
+              {/* Pinned active card — always visible at top */}
+              {activePOIData && (
+                <div className="flex-shrink-0 px-8 pt-4 pb-2">
                   <div
-                    key={poi.id}
-                    ref={setCardRef(poi.id)}
-                    className={cn(
-                      "rounded-xl border overflow-hidden transition-all duration-300",
-                      highlightedPOI === poi.id && "ring-2 ring-blue-500",
-                      activePOI === poi.id
-                        ? "border-sky-200 ring-2 ring-sky-500 ring-offset-1 shadow-md"
-                        : "border-gray-200"
-                    )}
+                    ref={setCardRef(activePOIData.id)}
+                    className="rounded-xl border border-sky-200 ring-2 ring-sky-500 ring-offset-1 shadow-md overflow-hidden"
                   >
                     <ExplorerPOICard
-                      poi={poi}
-                      isActive={activePOI === poi.id}
-                      onClick={() => onPOIClick(poi.id)}
-                      openingHours={openingHoursData?.get(poi.id)}
+                      poi={activePOIData}
+                      isActive
+                      onClick={() => onPOIClick(activePOIData.id)}
+                      openingHours={openingHoursData?.get(activePOIData.id)}
                       travelTimesLoading={travelTimesLoading}
                       travelMode={travelMode}
-                      isInCollection={collectionPOIs.includes(poi.id)}
+                      isInCollection={collectionPOIs.includes(activePOIData.id)}
                       onToggleCollection={onToggleCollection}
                     />
                   </div>
-                ))}
+                </div>
+              )}
+
+              {/* Scrollable list of remaining POIs */}
+              <div ref={listRef} className={cn(
+                "flex-1 overflow-y-auto pb-4",
+                showSkeleton ? "hidden" : "animate-content-appear"
+              )}>
+                {remainingPOIs.length === 0 && !activePOIData ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center px-12 py-12">
+                    <Compass className="w-10 h-10 text-gray-300 mb-3" />
+                    <p className="text-sm text-gray-400">
+                      Panorer eller zoom kartet for å se steder her
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 px-8 py-2">
+                    {remainingPOIs.map((poi) => (
+                      <div
+                        key={poi.id}
+                        ref={setCardRef(poi.id)}
+                        className={cn(
+                          "rounded-xl border overflow-hidden transition-all duration-300",
+                          highlightedPOI === poi.id && "ring-2 ring-blue-500",
+                          "border-gray-200"
+                        )}
+                      >
+                        <ExplorerPOICard
+                          poi={poi}
+                          isActive={false}
+                          onClick={() => onPOIClick(poi.id)}
+                          openingHours={openingHoursData?.get(poi.id)}
+                          travelTimesLoading={travelTimesLoading}
+                          travelMode={travelMode}
+                          isInCollection={collectionPOIs.includes(poi.id)}
+                          onToggleCollection={onToggleCollection}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
+            </>
+          );
+        })()}
 
         {/* Refreshing indicator overlay */}
         {isRefreshing && (
