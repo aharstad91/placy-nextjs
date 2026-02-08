@@ -23,14 +23,11 @@ export function RouteLayer({ coordinates, travelTime, travelMode = "walk" }: Rou
     }],
   }), [coordinates]);
 
-  // Beregn midtpunkt for reisetid-badge
-  const midpoint = useMemo(() => {
+  // Plasser reisetid-badge ved destinasjonen (siste koordinat i ruten)
+  const endpoint = useMemo(() => {
     if (coordinates.length < 2) return null;
-    const [start, end] = [coordinates[0], coordinates[coordinates.length - 1]];
-    return {
-      lng: (start[0] + end[0]) / 2,
-      lat: (start[1] + end[1]) / 2,
-    };
+    const last = coordinates[coordinates.length - 1];
+    return { lng: last[0], lat: last[1] };
   }, [coordinates]);
 
   const modeIcon = travelMode === "walk" ? "🚶" : travelMode === "bike" ? "🚴" : "🚗";
@@ -88,12 +85,12 @@ export function RouteLayer({ coordinates, travelTime, travelMode = "walk" }: Rou
         />
       </Source>
 
-      {/* Reisetid-badge på midten av ruten */}
-      {midpoint && travelTime && (
+      {/* Reisetid-badge ved destinasjonen (den klikkede markøren) */}
+      {endpoint && travelTime && (
         <Marker
-          longitude={midpoint.lng}
-          latitude={midpoint.lat}
-          anchor="center"
+          longitude={endpoint.lng}
+          latitude={endpoint.lat}
+          anchor="bottom-left"
         >
           <div className="bg-white text-gray-900 px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg flex items-center gap-1.5 whitespace-nowrap border border-gray-100">
             <span>{modeIcon}</span>

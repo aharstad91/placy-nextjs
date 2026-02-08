@@ -76,6 +76,24 @@ Generer editorial hooks for POI-ene i data/projects/kunde/prosjekt.json
 
 Genererer `editorialHook` og `localInsight` per POI basert på nettsøk.
 
+## Arbeidsmodus og Agent Teams
+
+Agent Teams er aktivert (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). Velg riktig modus basert på oppgavens størrelse:
+
+| Oppgave | Modus | Eksempel |
+|---------|-------|---------|
+| Bugfix, liten tweak | Direkte — gi oppgaven rett til Claude | "Fiks at POI-markøren ikke vises" |
+| Enkeltfeature | `/full` eller direkte med plan | "Legg til filter i Explorer" |
+| Stor feature med uavhengige deler | **Agent Teams** — spawn teammates per modul | "Bygg Guide-produkt med backend + frontend + tester" |
+| Research / code review | **Agent Teams** — parallelle perspektiver | "Review PR med sikkerhet, ytelse, UX" |
+
+**Retningslinjer for Agent Teams:**
+- Bruk kun når arbeidet kan deles i **uavhengige deler som berører ulike filer**
+- Unngå teams for oppgaver der stegene er strengt sekvensielle
+- Hver teammate bør eie sine egne filer — unngå at to teammates redigerer samme fil
+- Foretrekk 2-4 teammates. Flere øker token-kostnad uten tilsvarende gevinst
+- Bruk delegate mode (Shift+Tab) for rene orkestreringsoppgaver
+
 ## Kjør dev server
 
 ```bash

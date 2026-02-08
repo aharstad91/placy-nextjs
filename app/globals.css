@@ -121,6 +121,16 @@ gmp-popover::part(dialog) {
   animation: pulse-ring 1.5s ease-out infinite;
 }
 
+/* Quick fade-in for hover tooltips */
+@keyframes fade-in {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out both;
+}
+
 /* Mapbox popup styling */
 .mapboxgl-popup-content {
   padding: 0;
