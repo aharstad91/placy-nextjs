@@ -94,6 +94,29 @@ Agent Teams er aktivert (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). Velg riktig 
 - Foretrekk 2-4 teammates. Flere øker token-kostnad uten tilsvarende gevinst
 - Bruk delegate mode (Shift+Tab) for rene orkestreringsoppgaver
 
+## Git Worktrees (parallelle sesjoner)
+
+Flere Claude Code-sesjoner i samme mappe ødelegger hverandres arbeid. **Bruk alltid worktrees for parallelt arbeid.**
+
+### Opprette ny worktree
+
+```bash
+git worktree add ../placy-ralph-<feature> -b feat/<feature-name>
+cd ../placy-ralph-<feature>
+../placy-ralph/scripts/setup-worktree.sh
+```
+
+Setup-scriptet gjør tre ting:
+1. Symlinker `.env.local` fra hovedrepoet (delt config, én kilde)
+2. Installerer `node_modules` hvis mangler
+3. Sletter `.next`-cache (unngår korrupte webpack-moduler)
+
+### Regler
+- **Én sesjon per working directory** — aldri to i samme mappe
+- **Sjekk** `git worktree list` før ny sesjon
+- **Port-konflikter**: Hovedrepo bruker `:3000`. Worktrees bruker `PORT=3001 npm run dev` etc.
+- **Rydde opp**: `git worktree remove ../placy-ralph-<feature>` når ferdig
+
 ## Kjør dev server
 
 ```bash
