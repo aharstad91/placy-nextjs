@@ -39,7 +39,7 @@
     {
       "id": "gamle-bybro",
       "name": "Gamle Bybro",
-      "coordinates": { "lat": 63.4270, "lng": 10.4020 },
+      "coordinates": { "lat": 63.4283, "lng": 10.4010 },
       "category": {
         "id": "sightseeing",
         "name": "Severdighet",
@@ -51,7 +51,7 @@
     {
       "id": "bakklandet",
       "name": "Bakklandet",
-      "coordinates": { "lat": 63.4280, "lng": 10.4040 },
+      "coordinates": { "lat": 63.4290, "lng": 10.4055 },
       "category": {
         "id": "food-drink",
         "name": "Mat & drikke",
@@ -75,7 +75,7 @@
     {
       "id": "erkebispegarden",
       "name": "Erkebispegården",
-      "coordinates": { "lat": 63.4272, "lng": 10.3987 },
+      "coordinates": { "lat": 63.4260, "lng": 10.3968 },
       "category": {
         "id": "sightseeing",
         "name": "Severdighet",
@@ -87,7 +87,7 @@
     {
       "id": "solsiden",
       "name": "Solsiden",
-      "coordinates": { "lat": 63.4345, "lng": 10.4090 },
+      "coordinates": { "lat": 63.4340, "lng": 10.4130 },
       "category": {
         "id": "food-drink",
         "name": "Mat & drikke",
