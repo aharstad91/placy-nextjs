@@ -9,7 +9,7 @@ import { Check } from "lucide-react";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import { MAP_STYLE_DEFAULT } from "@/lib/themes/map-styles";
 
-interface GuideMapProps {
+interface TripMapProps {
   center: Coordinates;
   stops: POI[];
   currentStopIndex: number;
@@ -22,7 +22,7 @@ interface GuideMapProps {
   geoMode?: GeolocationMode;
 }
 
-export default function GuideMap({
+export default function TripMap({
   center,
   stops,
   currentStopIndex,
@@ -32,7 +32,7 @@ export default function GuideMap({
   userPosition,
   userAccuracy,
   geoMode = "loading",
-}: GuideMapProps) {
+}: TripMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const hasFittedInitialRef = useRef(false);

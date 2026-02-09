@@ -12,7 +12,7 @@ import type { NextRequest } from "next/server";
  * Uses 308 permanent redirects to preserve HTTP method and transfer SEO equity.
  */
 
-const PRODUCT_SUFFIXES = ["explore", "guide"] as const;
+const PRODUCT_SUFFIXES = ["explore", "guide", "trip"] as const;
 
 // Known customer slugs - add new customers here
 // In production, this could be fetched from database or config
@@ -51,6 +51,14 @@ export function middleware(request: NextRequest) {
         308 // Permanent redirect, preserves HTTP method
       );
     }
+  }
+
+  // Redirect /customer/guides → /customer/trips
+  if (slugWithSuffix === "guides") {
+    return NextResponse.redirect(
+      new URL(`/${customer}/trips${search}`, request.url),
+      301
+    );
   }
 
   // No suffix found - this is either a report URL or new format

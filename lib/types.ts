@@ -178,7 +178,7 @@ export interface ProjectContainer {
 }
 
 /**
- * Product instance - a specific product type (Explorer/Report/Guide) under a project.
+ * Product instance - a specific product type (Explorer/Report/Trip) under a project.
  */
 export interface ProductInstance {
   id: string;
@@ -228,8 +228,8 @@ export interface Project {
   // Explorer-specific settings
   originMode?: OriginMode; // Default: "geolocation-with-fallback"
   venueType?: "hotel" | "residential" | "commercial" | null;
-  // Guide-specific settings
-  guideConfig?: GuideConfig;
+  // Trip-specific settings
+  tripConfig?: TripConfig;
 }
 
 // === Global State ===
@@ -314,7 +314,7 @@ declare const __brand: unique symbol;
 type Brand<T, B> = T & { [__brand]: B };
 
 export type POIId = Brand<string, "POIId">;
-export type GuideStopId = Brand<string, "GuideStopId">;
+export type TripStopId = Brand<string, "TripStopId">;
 
 // Constructor functions for branded types
 export function createPOIId(value: string): POIId {
@@ -324,11 +324,11 @@ export function createPOIId(value: string): POIId {
   return value as POIId;
 }
 
-export function createGuideStopId(value: string): GuideStopId {
+export function createTripStopId(value: string): TripStopId {
   if (!value || typeof value !== "string") {
-    throw new Error(`Invalid GuideStop ID: ${value}`);
+    throw new Error(`Invalid TripStop ID: ${value}`);
   }
-  return value as GuideStopId;
+  return value as TripStopId;
 }
 
 // Exhaustiveness checking utility
@@ -339,10 +339,10 @@ export function assertNever(x: never): never {
 // Non-empty array type
 export type NonEmptyArray<T> = [T, ...T[]];
 
-// === Guide Types ===
+// === Trip Types ===
 
-// Guide categories for library grouping
-export const GUIDE_CATEGORIES = [
+// Trip categories for library grouping
+export const TRIP_CATEGORIES = [
   "food", // Mat & drikke
   "culture", // Kultur og historie
   "nature", // Natur
@@ -351,10 +351,10 @@ export const GUIDE_CATEGORIES = [
   "hidden-gems", // Skjulte perler
 ] as const;
 
-export type GuideCategory = (typeof GUIDE_CATEGORIES)[number];
+export type TripCategory = (typeof TRIP_CATEGORIES)[number];
 
 // Norwegian labels for categories
-export const GUIDE_CATEGORY_LABELS: Record<GuideCategory, string> = {
+export const TRIP_CATEGORY_LABELS: Record<TripCategory, string> = {
   food: "Mat & drikke",
   culture: "Kultur og historie",
   nature: "Natur",
@@ -363,11 +363,11 @@ export const GUIDE_CATEGORY_LABELS: Record<GuideCategory, string> = {
   "hidden-gems": "Skjulte perler",
 };
 
-export type GuideDifficulty = "easy" | "moderate" | "challenging";
+export type TripDifficulty = "easy" | "moderate" | "challenging";
 
 // Static configuration (JSON/database)
-export interface GuideStopConfig {
-  id: GuideStopId;
+export interface TripStopConfig {
+  id: TripStopId;
   poiId: POIId;
   nameOverride?: string;
   descriptionOverride?: string;
@@ -375,32 +375,32 @@ export interface GuideStopConfig {
   transitionText?: string; // "Herfra går du over brua..."
 }
 
-export interface GuideConfig {
+export interface TripConfig {
   id: string;
   title: string;
   description?: string;
   coverImageUrl?: string;
-  difficulty?: GuideDifficulty;
-  stops: NonEmptyArray<GuideStopConfig>;
+  difficulty?: TripDifficulty;
+  stops: NonEmptyArray<TripStopConfig>;
   precomputedDistanceMeters?: number;
   precomputedDurationMinutes?: number;
   reward?: RewardConfig;
-  // Guide Library fields
-  category?: GuideCategory; // For grouping in library
+  // Trip Library fields
+  category?: TripCategory; // For grouping in library
   tags?: string[]; // Extra tags for filtering
   featured?: boolean; // Show in "Featured" section
   sortOrder?: number; // Manual sorting within category
 }
 
 // Runtime state
-export type GuideStopStatus =
+export type TripStopStatus =
   | { type: "available" }
   | { type: "active" }
   | { type: "completed"; completedAt: number }; // Unix timestamp
 
 // Type guard for status narrowing
 export function isCompletedStop(
-  status: GuideStopStatus
+  status: TripStopStatus
 ): status is { type: "completed"; completedAt: number } {
   return status.type === "completed";
 }
@@ -430,16 +430,16 @@ export const DEFAULT_CAMERA_CONSTRAINTS: Required<Omit<CameraConstraints, 'bound
   boundsBuffer: 0.2,
 };
 
-// === Guide Gamification Types ===
+// === Trip Gamification Types ===
 
-// Branded type for Guide ID (konsistent med eksisterende GuideStopId)
-export type GuideId = Brand<string, "GuideId">;
+// Branded type for Trip ID (konsistent med eksisterende TripStopId)
+export type TripId = Brand<string, "TripId">;
 
-export function createGuideId(value: string): GuideId {
+export function createTripId(value: string): TripId {
   if (!value || typeof value !== "string") {
-    throw new Error(`Invalid Guide ID: ${value}`);
+    throw new Error(`Invalid Trip ID: ${value}`);
   }
-  return value as GuideId;
+  return value as TripId;
 }
 
 // Validity days - eksplisitte tillatte verdier
@@ -453,9 +453,9 @@ export interface StopCompletionRecord {
   coordinates?: Coordinates;
 }
 
-// Guide completion state - bruker branded types og unix timestamps
-export interface GuideCompletionState {
-  guideId: GuideId;
+// Trip completion state - bruker branded types og unix timestamps
+export interface TripCompletionState {
+  tripId: TripId;
   startedAt: number;           // Unix timestamp
   completedAt?: number;        // Unix timestamp
   redeemedAt?: number;         // Unix timestamp

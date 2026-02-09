@@ -1,27 +1,49 @@
 /**
- * useGuideCompletion - State management for guide gamification
+ * useTripCompletion - State management for trip gamification
  *
  * Handles:
  * - Persisted completion state in localStorage
  * - Stop marking with GPS verification
- * - Guide completion tracking
+ * - Trip completion tracking
  * - Reward redemption
  */
 
 import { useState, useEffect, useCallback } from "react";
 import type {
-  GuideId,
-  GuideCompletionState,
+  TripId,
+  TripCompletionState,
   StopCompletionRecord,
   Coordinates,
 } from "@/lib/types";
-import { createGuideId } from "@/lib/types";
+import { createTripId } from "@/lib/types";
 
-const STORAGE_KEY = "placy-guide-completions";
-const INTROS_KEY = "placy-guide-intros-seen";
+const STORAGE_KEY = "placy-trip-completions";
+const INTROS_KEY = "placy-trip-intros-seen";
+
+// Legacy keys for migration
+const LEGACY_STORAGE_KEY = "placy-guide-completions";
+const LEGACY_INTROS_KEY = "placy-guide-intros-seen";
+
+// Migrate old localStorage keys to new ones (idempotent, safe for multi-tab)
+function migrateOldKeys() {
+  if (typeof window === "undefined") return;
+  try {
+    const oldCompletions = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (oldCompletions && !localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, oldCompletions);
+    }
+    const oldIntros = localStorage.getItem(LEGACY_INTROS_KEY);
+    if (oldIntros && !localStorage.getItem(INTROS_KEY)) {
+      localStorage.setItem(INTROS_KEY, oldIntros);
+    }
+    // Don't delete old keys — harmless, avoids race conditions
+  } catch {
+    // Ignore migration errors
+  }
+}
 
 // Get completions from localStorage
-function getStoredCompletions(): Record<string, GuideCompletionState> {
+function getStoredCompletions(): Record<string, TripCompletionState> {
   if (typeof window === "undefined") return {};
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -32,12 +54,12 @@ function getStoredCompletions(): Record<string, GuideCompletionState> {
 }
 
 // Save completions to localStorage
-function saveCompletions(completions: Record<string, GuideCompletionState>) {
+function saveCompletions(completions: Record<string, TripCompletionState>) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(completions));
   } catch (e) {
-    console.error("Failed to save guide completions:", e);
+    console.error("Failed to save trip completions:", e);
   }
 }
 
@@ -58,53 +80,54 @@ function saveIntros(intros: Record<string, boolean>) {
   try {
     localStorage.setItem(INTROS_KEY, JSON.stringify(intros));
   } catch (e) {
-    console.error("Failed to save guide intros:", e);
+    console.error("Failed to save trip intros:", e);
   }
 }
 
 /**
- * Hook for managing guide completion state for a specific guide
+ * Hook for managing trip completion state for a specific trip
  */
-export function useGuideCompletion(guideId: string) {
+export function useTripCompletion(tripId: string) {
   const [isHydrated, setIsHydrated] = useState(false);
-  const [completion, setCompletion] = useState<GuideCompletionState | undefined>(
+  const [completion, setCompletion] = useState<TripCompletionState | undefined>(
     undefined
   );
   const [hasSeenIntro, setHasSeenIntro] = useState(false);
 
-  // Hydrate from localStorage on mount
+  // Hydrate from localStorage on mount (with migration)
   useEffect(() => {
+    migrateOldKeys();
     const completions = getStoredCompletions();
     const intros = getStoredIntros();
 
-    setCompletion(completions[guideId]);
-    setHasSeenIntro(intros[guideId] === true);
+    setCompletion(completions[tripId]);
+    setHasSeenIntro(intros[tripId] === true);
     setIsHydrated(true);
-  }, [guideId]);
+  }, [tripId]);
 
-  // Start guide
-  const startGuide = useCallback(() => {
+  // Start trip
+  const startTrip = useCallback(() => {
     const completions = getStoredCompletions();
-    if (completions[guideId]) return; // Already started
+    if (completions[tripId]) return; // Already started
 
-    const newCompletion: GuideCompletionState = {
-      guideId: createGuideId(guideId),
+    const newCompletion: TripCompletionState = {
+      tripId: createTripId(tripId),
       startedAt: Date.now(),
       stops: {},
     };
 
-    completions[guideId] = newCompletion;
+    completions[tripId] = newCompletion;
     saveCompletions(completions);
     setCompletion(newCompletion);
-  }, [guideId]);
+  }, [tripId]);
 
   // Mark intro as seen
   const markIntroSeen = useCallback(() => {
     const intros = getStoredIntros();
-    intros[guideId] = true;
+    intros[tripId] = true;
     saveIntros(intros);
     setHasSeenIntro(true);
-  }, [guideId]);
+  }, [tripId]);
 
   // Mark stop as complete
   const markStopComplete = useCallback(
@@ -115,12 +138,12 @@ export function useGuideCompletion(guideId: string) {
       coords?: Coordinates
     ) => {
       const completions = getStoredCompletions();
-      let current = completions[guideId];
+      let current = completions[tripId];
 
       // Auto-start if not started
       if (!current) {
         current = {
-          guideId: createGuideId(guideId),
+          tripId: createTripId(tripId),
           startedAt: Date.now(),
           stops: {},
         };
@@ -137,48 +160,48 @@ export function useGuideCompletion(guideId: string) {
       };
 
       current.stops[stopId] = record;
-      completions[guideId] = current;
+      completions[tripId] = current;
       saveCompletions(completions);
       setCompletion({ ...current });
     },
-    [guideId]
+    [tripId]
   );
 
-  // Complete the guide
-  const completeGuide = useCallback(() => {
+  // Complete the trip
+  const completeTrip = useCallback(() => {
     const completions = getStoredCompletions();
-    const current = completions[guideId];
+    const current = completions[tripId];
     if (!current || current.completedAt) return;
 
     current.completedAt = Date.now();
-    completions[guideId] = current;
+    completions[tripId] = current;
     saveCompletions(completions);
     setCompletion({ ...current });
-  }, [guideId]);
+  }, [tripId]);
 
   // Mark celebration as shown
   const markCelebrationShown = useCallback(() => {
     const completions = getStoredCompletions();
-    const current = completions[guideId];
+    const current = completions[tripId];
     if (!current) return;
 
     current.celebrationShownAt = Date.now();
-    completions[guideId] = current;
+    completions[tripId] = current;
     saveCompletions(completions);
     setCompletion({ ...current });
-  }, [guideId]);
+  }, [tripId]);
 
   // Mark as redeemed
   const markRedeemed = useCallback(() => {
     const completions = getStoredCompletions();
-    const current = completions[guideId];
+    const current = completions[tripId];
     if (!current || !current.completedAt) return;
 
     current.redeemedAt = Date.now();
-    completions[guideId] = current;
+    completions[tripId] = current;
     saveCompletions(completions);
     setCompletion({ ...current });
-  }, [guideId]);
+  }, [tripId]);
 
   // Check if stop is completed
   const isStopCompleted = useCallback(
@@ -216,10 +239,10 @@ export function useGuideCompletion(guideId: string) {
     stats,
 
     // Actions
-    startGuide,
+    startTrip,
     markIntroSeen,
     markStopComplete,
-    completeGuide,
+    completeTrip,
     markCelebrationShown,
     markRedeemed,
     isStopCompleted,

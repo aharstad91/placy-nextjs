@@ -4,34 +4,34 @@ import { useState, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, ChevronRight, X } from "lucide-react";
-import type { Project, GuideCategory } from "@/lib/types";
+import type { Project, TripCategory } from "@/lib/types";
 
-interface GuideLibraryClientProps {
+interface TripLibraryClientProps {
   customer: string;
-  guides: Project[];
-  groupedGuides: Record<GuideCategory, Project[]>;
-  categoriesWithGuides: readonly GuideCategory[];
-  categoryLabels: Record<GuideCategory, string>;
+  trips: Project[];
+  groupedTrips: Record<TripCategory, Project[]>;
+  categoriesWithTrips: readonly TripCategory[];
+  categoryLabels: Record<TripCategory, string>;
 }
 
-// GuideCard component
-function GuideCard({
-  guide,
+// TripCard component
+function TripCard({
+  trip,
   customer,
   priority = false,
 }: {
-  guide: Project;
+  trip: Project;
   customer: string;
   priority?: boolean;
 }) {
-  const config = guide.guideConfig;
+  const config = trip.tripConfig;
   const stopCount = config?.stops.length ?? 0;
-  const title = config?.title ?? guide.name;
+  const title = config?.title ?? trip.name;
   const coverImage = config?.coverImageUrl;
 
   return (
     <Link
-      href={`/${customer}/${guide.urlSlug}`}
+      href={`/${customer}/${trip.urlSlug}`}
       className="flex-shrink-0 w-40 group cursor-pointer snap-start focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C45C3A] focus-visible:ring-offset-2 rounded-xl"
     >
       {/* Cover image with 4:5 aspect ratio */}
@@ -83,17 +83,17 @@ function GuideCard({
 function CategoryRow({
   category,
   label,
-  guides,
+  trips,
   customer,
   isFirstRow = false,
 }: {
-  category: GuideCategory;
+  category: TripCategory;
   label: string;
-  guides: Project[];
+  trips: Project[];
   customer: string;
   isFirstRow?: boolean;
 }) {
-  if (guides.length === 0) return null;
+  if (trips.length === 0) return null;
 
   return (
     <section className="mt-8 first:mt-4">
@@ -109,10 +109,10 @@ function CategoryRow({
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         <div className="flex gap-3 overflow-x-auto px-4 pb-4 scrollbar-hide snap-x snap-mandatory">
-          {guides.map((guide, index) => (
-            <GuideCard
-              key={guide.id}
-              guide={guide}
+          {trips.map((trip, index) => (
+            <TripCard
+              key={trip.id}
+              trip={trip}
               customer={customer}
               priority={isFirstRow && index < 4}
             />
@@ -125,15 +125,15 @@ function CategoryRow({
   );
 }
 
-export default function GuideLibraryClient({
+export default function TripLibraryClient({
   customer,
-  guides,
-  groupedGuides,
-  categoriesWithGuides,
+  trips,
+  groupedTrips,
+  categoriesWithTrips,
   categoryLabels,
-}: GuideLibraryClientProps) {
+}: TripLibraryClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<GuideCategory | null>(null);
+  const [activeCategory, setActiveCategory] = useState<TripCategory | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
 
@@ -151,17 +151,17 @@ export default function GuideLibraryClient({
     signal.addEventListener("abort", () => clearTimeout(timeoutId));
   }, []);
 
-  // Filter guides using useMemo (not useEffect + setState)
-  const filteredGuides = useMemo(() => {
-    let result = guides;
+  // Filter trips using useMemo (not useEffect + setState)
+  const filteredTrips = useMemo(() => {
+    let result = trips;
 
     // Filter by search term
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      result = result.filter((guide) => {
-        const title = (guide.guideConfig?.title ?? guide.name).toLowerCase();
-        const description = (guide.guideConfig?.description ?? "").toLowerCase();
-        const tags = guide.guideConfig?.tags?.join(" ").toLowerCase() ?? "";
+      result = result.filter((trip) => {
+        const title = (trip.tripConfig?.title ?? trip.name).toLowerCase();
+        const description = (trip.tripConfig?.description ?? "").toLowerCase();
+        const tags = trip.tripConfig?.tags?.join(" ").toLowerCase() ?? "";
         return title.includes(search) || description.includes(search) || tags.includes(search);
       });
     }
@@ -169,16 +169,16 @@ export default function GuideLibraryClient({
     // Filter by category
     if (activeCategory) {
       result = result.filter(
-        (guide) => guide.guideConfig?.category === activeCategory
+        (trip) => trip.tripConfig?.category === activeCategory
       );
     }
 
     return result;
-  }, [guides, searchTerm, activeCategory]);
+  }, [trips, searchTerm, activeCategory]);
 
-  // Group filtered guides
-  const filteredGroupedGuides = useMemo(() => {
-    const grouped: Record<GuideCategory, Project[]> = {
+  // Group filtered trips
+  const filteredGroupedTrips = useMemo(() => {
+    const grouped: Record<TripCategory, Project[]> = {
       'food': [],
       'culture': [],
       'nature': [],
@@ -187,29 +187,29 @@ export default function GuideLibraryClient({
       'hidden-gems': [],
     };
 
-    for (const guide of filteredGuides) {
-      const category = guide.guideConfig?.category ?? 'hidden-gems';
+    for (const trip of filteredTrips) {
+      const category = trip.tripConfig?.category ?? 'hidden-gems';
       if (category in grouped) {
-        grouped[category].push(guide);
+        grouped[category].push(trip);
       }
     }
 
     return grouped;
-  }, [filteredGuides]);
+  }, [filteredTrips]);
 
   // Categories to show
   const categoriesToShow = activeCategory
     ? [activeCategory]
-    : categoriesWithGuides;
+    : categoriesWithTrips;
 
-  const hasNoResults = filteredGuides.length === 0 && (searchTerm || activeCategory);
+  const hasNoResults = filteredTrips.length === 0 && (searchTerm || activeCategory);
 
   return (
     <main className="min-h-screen bg-[#FAF8F5] py-6">
       {/* Header with search */}
       <header className="px-4 mb-6">
         <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mb-4">
-          Utforsk guides
+          Utforsk turer
         </h1>
 
         {/* Search input */}
@@ -218,7 +218,7 @@ export default function GuideLibraryClient({
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Sok etter guides..."
+            placeholder="Sok etter turer..."
             onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-stone-200 text-[#1A1A1A] placeholder-[#6B6560] focus:outline-none focus:ring-2 focus:ring-[#C45C3A] focus:border-transparent"
           />
@@ -251,7 +251,7 @@ export default function GuideLibraryClient({
           >
             Alle
           </button>
-          {categoriesWithGuides.map((category) => (
+          {categoriesWithTrips.map((category) => (
             <button
               key={category}
               onClick={() =>
@@ -272,7 +272,7 @@ export default function GuideLibraryClient({
       {/* No results state */}
       {hasNoResults && (
         <div className="px-4 py-12 text-center">
-          <p className="text-[#6B6560] mb-4">Ingen guides funnet</p>
+          <p className="text-[#6B6560] mb-4">Ingen turer funnet</p>
           <button
             onClick={() => {
               setSearchTerm("");
@@ -295,10 +295,10 @@ export default function GuideLibraryClient({
             key={category}
             category={category}
             label={categoryLabels[category]}
-            guides={
+            trips={
               activeCategory
-                ? filteredGroupedGuides[category]
-                : groupedGuides[category]
+                ? filteredGroupedTrips[category]
+                : groupedTrips[category]
             }
             customer={customer}
             isFirstRow={index === 0}

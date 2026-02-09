@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { MapPin, Gift, Clock, ArrowRight } from "lucide-react";
-import type { GuideConfig } from "@/lib/types";
+import type { TripConfig } from "@/lib/types";
 
-interface GuideIntroOverlayProps {
-  guideConfig: GuideConfig;
+interface TripIntroOverlayProps {
+  tripConfig: TripConfig;
   onStart: () => void;
 }
 
-export default function GuideIntroOverlay({
-  guideConfig,
+export default function TripIntroOverlay({
+  tripConfig,
   onStart,
-}: GuideIntroOverlayProps) {
+}: TripIntroOverlayProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   // Animate in on mount
@@ -27,7 +27,7 @@ export default function GuideIntroOverlay({
     setTimeout(onStart, 300);
   };
 
-  const { reward } = guideConfig;
+  const { reward } = tripConfig;
   const hasReward = !!reward;
 
   return (
@@ -47,31 +47,31 @@ export default function GuideIntroOverlay({
       >
         {/* Header with gradient */}
         <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 px-6 py-8 text-white">
-          <h1 className="text-2xl font-bold">{guideConfig.title}</h1>
-          {guideConfig.description && (
+          <h1 className="text-2xl font-bold">{tripConfig.title}</h1>
+          {tripConfig.description && (
             <p className="mt-2 text-emerald-50 text-sm leading-relaxed">
-              {guideConfig.description}
+              {tripConfig.description}
             </p>
           )}
 
           {/* Stats row */}
           <div className="flex gap-4 mt-4 text-emerald-100">
-            {guideConfig.precomputedDurationMinutes && (
+            {tripConfig.precomputedDurationMinutes && (
               <div className="flex items-center gap-1.5 text-sm">
                 <Clock className="w-4 h-4" />
-                <span>{guideConfig.precomputedDurationMinutes} min</span>
+                <span>{tripConfig.precomputedDurationMinutes} min</span>
               </div>
             )}
-            {guideConfig.precomputedDistanceMeters && (
+            {tripConfig.precomputedDistanceMeters && (
               <div className="flex items-center gap-1.5 text-sm">
                 <MapPin className="w-4 h-4" />
                 <span>
-                  {(guideConfig.precomputedDistanceMeters / 1000).toFixed(1)} km
+                  {(tripConfig.precomputedDistanceMeters / 1000).toFixed(1)} km
                 </span>
               </div>
             )}
             <div className="flex items-center gap-1.5 text-sm">
-              <span>{guideConfig.stops.length} stopp</span>
+              <span>{tripConfig.stops.length} stopp</span>
             </div>
           </div>
         </div>

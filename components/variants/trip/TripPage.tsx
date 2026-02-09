@@ -1,17 +1,19 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import type { Project, POI, GuideStopConfig, Coordinates } from "@/lib/types";
+import type { Project, POI, TripStopConfig, Coordinates } from "@/lib/types";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
-import { useGuideCompletion } from "@/lib/hooks/useGuideCompletion";
+import { useTripCompletion } from "@/lib/hooks/useTripCompletion";
 import { haversineDistance } from "@/lib/utils";
 import ExplorerBottomSheet from "@/components/variants/explorer/ExplorerBottomSheet";
-import GuideMap from "./GuideMap";
-import GuideStopPanel from "./GuideStopPanel";
-import GuideIntroOverlay from "./GuideIntroOverlay";
-import GuideCompletionScreen from "./GuideCompletionScreen";
+import TripMap from "./TripMap";
+import TripStopPanel from "./TripStopPanel";
+import TripIntroOverlay from "./TripIntroOverlay";
+import TripCompletionScreen from "./TripCompletionScreen";
+import TripHeader from "./TripHeader";
+import TripStopList from "./TripStopList";
 
-interface GuidePageProps {
+interface TripPageProps {
   project: Project;
 }
 
@@ -21,42 +23,42 @@ type RouteState =
   | { status: "ready"; coordinates: [number, number][] }
   | { status: "error"; message: string };
 
-export default function GuidePage({ project }: GuidePageProps) {
+export default function TripPage({ project }: TripPageProps) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [routeState, setRouteState] = useState<RouteState>({ status: "idle" });
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
 
-  // Get guide config - must be checked before hooks that depend on it
-  const guideConfig = project.guideConfig;
-  const guideId = guideConfig?.id ?? "";
+  // Get trip config - must be checked before hooks that depend on it
+  const tripConfig = project.tripConfig;
+  const tripId = tripConfig?.id ?? "";
 
-  // Guide completion state (persisted in localStorage)
+  // Trip completion state (persisted in localStorage)
   const {
     isHydrated: completionHydrated,
     completion,
     hasSeenIntro,
-    isCompleted: isGuideCompleted,
-    startGuide,
+    isCompleted: isTripCompleted,
+    startTrip,
     markIntroSeen,
     markStopComplete,
-    completeGuide,
+    completeTrip,
     markCelebrationShown,
-  } = useGuideCompletion(guideId);
+  } = useTripCompletion(tripId);
 
   // Build stops array by resolving POI references
   const stops: POI[] = useMemo(() => {
-    if (!guideConfig) return [];
-    return guideConfig.stops
+    if (!tripConfig) return [];
+    return tripConfig.stops
       .map((stopConfig) => {
         const poi = project.pois.find((p) => p.id === stopConfig.poiId);
         return poi || null;
       })
       .filter((poi): poi is POI => poi !== null);
-  }, [guideConfig, project.pois]);
+  }, [tripConfig, project.pois]);
 
   // Get stop configs (for overrides)
-  const stopConfigs: GuideStopConfig[] = guideConfig?.stops ?? [];
+  const stopConfigs: TripStopConfig[] = tripConfig?.stops ?? [];
 
   // Geolocation
   const geo = useGeolocation(project.centerCoordinates);
@@ -91,23 +93,23 @@ export default function GuidePage({ project }: GuidePageProps) {
     return stops.length > 0 && completedStops.size === stops.length;
   }, [stops.length, completedStops.size]);
 
-  // Auto-complete guide when all stops are done
+  // Auto-complete trip when all stops are done
   useEffect(() => {
-    if (allStopsCompleted && !isGuideCompleted && completionHydrated) {
-      completeGuide();
+    if (allStopsCompleted && !isTripCompleted && completionHydrated) {
+      completeTrip();
       setShowCompletionScreen(true);
     }
-  }, [allStopsCompleted, isGuideCompleted, completionHydrated, completeGuide]);
+  }, [allStopsCompleted, isTripCompleted, completionHydrated, completeTrip]);
 
   // Show completion screen if already completed (on page load)
   useEffect(() => {
-    if (isGuideCompleted && completionHydrated && !showCompletionScreen) {
+    if (isTripCompleted && completionHydrated && !showCompletionScreen) {
       // Only auto-show if celebration hasn't been shown yet
       if (!completion?.celebrationShownAt) {
         setShowCompletionScreen(true);
       }
     }
-  }, [isGuideCompleted, completionHydrated, showCompletionScreen, completion?.celebrationShownAt]);
+  }, [isTripCompleted, completionHydrated, showCompletionScreen, completion?.celebrationShownAt]);
 
   // Fetch route from Mapbox Directions (single multi-waypoint call)
   useEffect(() => {
@@ -176,9 +178,9 @@ export default function GuidePage({ project }: GuidePageProps) {
 
   // Handle intro overlay start
   const handleIntroStart = useCallback(() => {
-    startGuide();
+    startTrip();
     markIntroSeen();
-  }, [startGuide, markIntroSeen]);
+  }, [startTrip, markIntroSeen]);
 
   // Handle completion screen close
   const handleCompletionClose = useCallback(() => {
@@ -201,21 +203,21 @@ export default function GuidePage({ project }: GuidePageProps) {
   if (!isHydrated || !completionHydrated) {
     return (
       <div className="h-screen w-full bg-stone-100 flex items-center justify-center">
-        <div className="text-stone-500">Laster guide...</div>
+        <div className="text-stone-500">Laster tur...</div>
       </div>
     );
   }
 
-  // No guide config - show error
-  if (!guideConfig) {
+  // No trip config - show error
+  if (!tripConfig) {
     return (
       <div className="flex h-screen items-center justify-center bg-stone-100">
         <div className="text-center">
           <h1 className="text-xl font-semibold text-stone-900">
-            Ingen guidedata funnet
+            Ingen turdata funnet
           </h1>
           <p className="mt-2 text-stone-600">
-            Dette prosjektet mangler guideConfig.
+            Dette prosjektet mangler tripConfig.
           </p>
         </div>
       </div>
@@ -223,96 +225,141 @@ export default function GuidePage({ project }: GuidePageProps) {
   }
 
   // Determine if we should show intro overlay
-  const showIntroOverlay = !hasSeenIntro && guideConfig.reward;
+  const showIntroOverlay = !hasSeenIntro && tripConfig.reward;
 
   // Determine if we should show celebration (first time completing)
-  const shouldCelebrate = isGuideCompleted && !completion?.celebrationShownAt;
+  const shouldCelebrate = isTripCompleted && !completion?.celebrationShownAt;
+
+  // Shared map props
+  const mapProps = {
+    center: project.centerCoordinates,
+    stops,
+    currentStopIndex,
+    completedStops,
+    onStopClick: handleStopClick,
+    routeCoordinates:
+      routeState.status === "ready" ? routeState.coordinates : undefined,
+    userPosition: geo.userPosition,
+    userAccuracy: geo.accuracy,
+    geoMode: geo.mode,
+  };
 
   return (
-    <div className="h-screen w-full relative overflow-hidden bg-stone-100">
-      {/* Map (fullscreen) */}
-      <div className="absolute inset-0">
-        <GuideMap
-          center={project.centerCoordinates}
-          stops={stops}
-          currentStopIndex={currentStopIndex}
-          completedStops={completedStops}
-          onStopClick={handleStopClick}
-          routeCoordinates={
-            routeState.status === "ready" ? routeState.coordinates : undefined
-          }
-          userPosition={geo.userPosition}
-          userAccuracy={geo.accuracy}
-          geoMode={geo.mode}
-        />
-      </div>
+    <>
+      {/* Mobile layout */}
+      <div className="lg:hidden h-screen w-full relative overflow-hidden bg-stone-100">
+        {/* Map (fullscreen) */}
+        <div className="absolute inset-0">
+          <TripMap {...mapProps} />
+        </div>
 
-      {/* Guide title overlay */}
-      <div className="absolute top-4 left-4 right-4 z-10">
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-semibold text-stone-900">
-                {guideConfig.title}
-              </h1>
-              {guideConfig.precomputedDistanceMeters && guideConfig.precomputedDurationMinutes && (
-                <p className="text-sm text-stone-500 mt-0.5">
-                  {(guideConfig.precomputedDistanceMeters / 1000).toFixed(1)} km
-                  {" · "}
-                  {guideConfig.precomputedDurationMinutes} min
-                </p>
-              )}
+        {/* Trip title overlay */}
+        <div className="absolute top-4 left-4 right-4 z-10">
+          <div className="bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-semibold text-stone-900">
+                  {tripConfig.title}
+                </h1>
+                {tripConfig.precomputedDistanceMeters && tripConfig.precomputedDurationMinutes && (
+                  <p className="text-sm text-stone-500 mt-0.5">
+                    {(tripConfig.precomputedDistanceMeters / 1000).toFixed(1)} km
+                    {" · "}
+                    {tripConfig.precomputedDurationMinutes} min
+                  </p>
+                )}
+              </div>
+              {/* Progress indicator */}
+              <div className="text-right">
+                <span className="text-sm font-medium text-emerald-600">
+                  {completedStops.size}/{stops.length}
+                </span>
+                <p className="text-xs text-stone-400">stopp</p>
+              </div>
             </div>
-            {/* Progress indicator */}
-            <div className="text-right">
-              <span className="text-sm font-medium text-emerald-600">
-                {completedStops.size}/{stops.length}
-              </span>
-              <p className="text-xs text-stone-400">stopp</p>
+
+            {/* Progress bar */}
+            <div className="mt-2 h-1 bg-stone-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 transition-all duration-300"
+                style={{ width: `${(completedStops.size / stops.length) * 100}%` }}
+              />
             </div>
           </div>
+        </div>
 
-          {/* Progress bar */}
-          <div className="mt-2 h-1 bg-stone-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 transition-all duration-300"
-              style={{ width: `${(completedStops.size / stops.length) * 100}%` }}
+        {/* Bottom sheet */}
+        <ExplorerBottomSheet snapPoints={snapPoints} initialSnap={0}>
+          <TripStopPanel
+            stops={stops}
+            stopConfigs={stopConfigs}
+            currentStopIndex={currentStopIndex}
+            completedStops={completedStops}
+            distanceToStop={distanceToCurrentStop}
+            userPosition={geo.userPosition}
+            gpsAvailable={geo.mode !== "disabled" && geo.mode !== "fallback"}
+            onNext={handleNext}
+            onPrev={handlePrev}
+            onMarkComplete={handleMarkComplete}
+            showProgressDots
+          />
+        </ExplorerBottomSheet>
+      </div>
+
+      {/* Desktop layout */}
+      <div className="hidden lg:flex h-screen">
+        {/* Map: takes remaining width */}
+        <div className="flex-1 relative">
+          <TripMap {...mapProps} />
+        </div>
+
+        {/* Sidebar: flush right panel */}
+        <div className="w-[40%] flex-shrink-0 bg-white border-l border-stone-200 flex flex-col overflow-hidden">
+          <TripHeader
+            tripConfig={tripConfig}
+            completedStops={completedStops}
+            totalStops={stops.length}
+          />
+          <TripStopList
+            stops={stops}
+            stopConfigs={stopConfigs}
+            currentStopIndex={currentStopIndex}
+            completedStops={completedStops}
+            onStopClick={handleStopClick}
+          />
+          <div className="flex-1 overflow-hidden border-t border-stone-200">
+            <TripStopPanel
+              stops={stops}
+              stopConfigs={stopConfigs}
+              currentStopIndex={currentStopIndex}
+              completedStops={completedStops}
+              distanceToStop={distanceToCurrentStop}
+              userPosition={geo.userPosition}
+              gpsAvailable={geo.mode !== "disabled" && geo.mode !== "fallback"}
+              onNext={handleNext}
+              onPrev={handlePrev}
+              onMarkComplete={handleMarkComplete}
+              showProgressDots={false}
             />
           </div>
         </div>
       </div>
 
-      {/* Bottom sheet */}
-      <ExplorerBottomSheet snapPoints={snapPoints} initialSnap={0}>
-        <GuideStopPanel
-          stops={stops}
-          stopConfigs={stopConfigs}
-          currentStopIndex={currentStopIndex}
-          completedStops={completedStops}
-          distanceToStop={distanceToCurrentStop}
-          userPosition={geo.userPosition}
-          gpsAvailable={geo.mode !== "disabled" && geo.mode !== "fallback"}
-          onNext={handleNext}
-          onPrev={handlePrev}
-          onMarkComplete={handleMarkComplete}
-        />
-      </ExplorerBottomSheet>
-
-      {/* Intro overlay (shown once for guides with rewards) */}
+      {/* Intro overlay (shown once for trips with rewards) */}
       {showIntroOverlay && (
-        <GuideIntroOverlay guideConfig={guideConfig} onStart={handleIntroStart} />
+        <TripIntroOverlay tripConfig={tripConfig} onStart={handleIntroStart} />
       )}
 
       {/* Completion screen */}
       {showCompletionScreen && completion && (
-        <GuideCompletionScreen
-          guideConfig={guideConfig}
+        <TripCompletionScreen
+          tripConfig={tripConfig}
           completion={completion}
           onClose={handleCompletionClose}
           onCelebrationShown={handleCelebrationShown}
           shouldCelebrate={shouldCelebrate}
         />
       )}
-    </div>
+    </>
   );
 }

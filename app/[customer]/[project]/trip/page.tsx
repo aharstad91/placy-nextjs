@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProductAsync, getProjectAsync } from "@/lib/data-server";
-import GuidePage from "@/components/variants/guide/GuidePage";
+import TripPage from "@/components/variants/trip/TripPage";
 
 interface PageProps {
   params: Promise<{
@@ -9,7 +9,7 @@ interface PageProps {
   }>;
 }
 
-export default async function GuideProductPage({ params }: PageProps) {
+export default async function TripProductPage({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
 
   // Try new hierarchy first
@@ -32,7 +32,7 @@ export default async function GuideProductPage({ params }: PageProps) {
     notFound();
   }
 
-  return <GuidePage project={projectData} />;
+  return <TripPage project={projectData} />;
 }
 
 export async function generateMetadata({ params }: PageProps) {
@@ -44,11 +44,11 @@ export async function generateMetadata({ params }: PageProps) {
   }
 
   if (!projectData) {
-    return { title: "Guide ikke funnet" };
+    return { title: "Tur ikke funnet" };
   }
 
   return {
-    title: `${projectData.guideConfig?.title ?? projectData.story.title} – Guide | Placy`,
-    description: projectData.guideConfig?.description ?? projectData.story.introText,
+    title: `${projectData.tripConfig?.title ?? projectData.story.title} – Tur | Placy`,
+    description: projectData.tripConfig?.description ?? projectData.story.introText,
   };
 }

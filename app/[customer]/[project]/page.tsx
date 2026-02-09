@@ -12,7 +12,7 @@ import { getCollectionBySlug } from "@/lib/supabase/queries";
 import ExplorerPage from "@/components/variants/explorer/ExplorerPage";
 import ReportPage from "@/components/variants/report/ReportPage";
 import PortraitPage from "@/components/variants/portrait/PortraitPage";
-import GuidePage from "@/components/variants/guide/GuidePage";
+import TripPage from "@/components/variants/trip/TripPage";
 
 export const dynamic = "force-dynamic";
 import type { ProductType, ProductSummary } from "@/lib/types";
@@ -50,11 +50,11 @@ const PRODUCT_CONFIG: Record<
     path: "report",
   },
   guide: {
-    title: "Guide",
+    title: "Trip",
     description: "Følg en kuratert tur gjennom de beste stedene i området.",
     icon: Map,
     cta: "Start tur",
-    path: "guide",
+    path: "trip",
   },
 };
 
@@ -207,7 +207,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
 
   // === Guide ===
   if (projectData.productType === "guide") {
-    return <GuidePage project={projectData} />;
+    return <TripPage project={projectData} />;
   }
 
   // === Portrait ===
@@ -222,7 +222,7 @@ export async function generateMetadata({ params }: PageProps) {
   if (container) {
     return {
       title: `${container.name} | Placy`,
-      description: `Velg mellom Explorer, Report og Guide for ${container.name}`,
+      description: `Velg mellom Explorer, Report og Trip for ${container.name}`,
     };
   }
 

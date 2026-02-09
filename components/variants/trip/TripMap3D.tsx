@@ -6,7 +6,7 @@ import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import MapView3D, { useMap3DCamera } from "@/components/map/map-view-3d";
 import { RouteLayer3D, UserLocationMarker3D } from "@/components/map/route-layer-3d";
 
-interface GuideMap3DProps {
+interface TripMap3DProps {
   center: Coordinates;
   stops: POI[];
   currentStopIndex: number;
@@ -19,7 +19,7 @@ interface GuideMap3DProps {
   geoMode?: GeolocationMode;
 }
 
-export default function GuideMap3D({
+export default function TripMap3D({
   center,
   stops,
   currentStopIndex,
@@ -29,7 +29,7 @@ export default function GuideMap3D({
   userPosition,
   userAccuracy,
   geoMode = "loading",
-}: GuideMap3DProps) {
+}: TripMap3DProps) {
   const cameraRef = useRef<ReturnType<typeof useMap3DCamera> | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const hasFittedInitialRef = useRef(false);

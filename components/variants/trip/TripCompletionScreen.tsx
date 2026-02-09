@@ -2,24 +2,24 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Award, Clock, MapPin, CheckCircle, Gift, X } from "lucide-react";
-import type { GuideConfig, GuideCompletionState } from "@/lib/types";
+import type { TripConfig, TripCompletionState } from "@/lib/types";
 import { celebrateCompletion, stopConfetti } from "./confetti";
 
-interface GuideCompletionScreenProps {
-  guideConfig: GuideConfig;
-  completion: GuideCompletionState;
+interface TripCompletionScreenProps {
+  tripConfig: TripConfig;
+  completion: TripCompletionState;
   onClose: () => void;
   onCelebrationShown: () => void;
   shouldCelebrate: boolean;
 }
 
-export default function GuideCompletionScreen({
-  guideConfig,
+export default function TripCompletionScreen({
+  tripConfig,
   completion,
   onClose,
   onCelebrationShown,
   shouldCelebrate,
-}: GuideCompletionScreenProps) {
+}: TripCompletionScreenProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const celebrationTriggeredRef = useRef(false);
@@ -51,7 +51,7 @@ export default function GuideCompletionScreen({
     };
   }, [shouldCelebrate, onCelebrationShown]);
 
-  const { reward } = guideConfig;
+  const { reward } = tripConfig;
   const hasReward = !!reward;
 
   // Calculate stats
@@ -59,7 +59,7 @@ export default function GuideCompletionScreen({
     ? Math.round((completion.completedAt - completion.startedAt) / 60000)
     : 0;
   const stopsCompleted = Object.keys(completion.stops).length;
-  const totalStops = guideConfig.stops.length;
+  const totalStops = tripConfig.stops.length;
   const completedDate = completion.completedAt
     ? new Date(completion.completedAt)
     : new Date();
@@ -116,7 +116,7 @@ export default function GuideCompletionScreen({
 
           <h1 className="mt-6 text-2xl font-bold">Gratulerer!</h1>
           <p className="mt-1 text-emerald-100">
-            Du har fullfort {guideConfig.title}
+            Du har fullfort {tripConfig.title}
           </p>
         </div>
 
@@ -135,8 +135,8 @@ export default function GuideCompletionScreen({
           <StatCard
             icon={<MapPin className="w-4 h-4" />}
             value={
-              guideConfig.precomputedDistanceMeters
-                ? `${(guideConfig.precomputedDistanceMeters / 1000).toFixed(1)}`
+              tripConfig.precomputedDistanceMeters
+                ? `${(tripConfig.precomputedDistanceMeters / 1000).toFixed(1)}`
                 : "-"
             }
             label="km"
@@ -200,7 +200,7 @@ function VoucherCard({
   isExpired,
   isRedeemed,
 }: {
-  reward: NonNullable<GuideConfig["reward"]>;
+  reward: NonNullable<TripConfig["reward"]>;
   completedDate: Date;
   expiryDate: Date | null;
   currentTime: Date;

@@ -1,14 +1,14 @@
 import { z } from "zod";
 import {
-  createGuideStopId,
+  createTripStopId,
   createPOIId,
-  type GuideConfig,
-  type GuideStopConfig,
+  type TripConfig,
+  type TripStopConfig,
   type NonEmptyArray,
 } from "@/lib/types";
-import { GuideError } from "@/lib/errors/guide-errors";
+import { TripError } from "@/lib/errors/trip-errors";
 
-const GuideStopConfigSchema = z.object({
+const TripStopConfigSchema = z.object({
   id: z.string().min(1),
   poiId: z.string().min(1),
   nameOverride: z.string().optional(),
@@ -17,24 +17,24 @@ const GuideStopConfigSchema = z.object({
   transitionText: z.string().optional(),
 });
 
-const GuideConfigSchema = z.object({
+const TripConfigSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   description: z.string().optional(),
   coverImageUrl: z.string().url().optional(),
   difficulty: z.enum(["easy", "moderate", "challenging"]).optional(),
-  stops: z.array(GuideStopConfigSchema).min(1),
+  stops: z.array(TripStopConfigSchema).min(1),
   precomputedDistanceMeters: z.number().positive().optional(),
   precomputedDurationMinutes: z.number().positive().optional(),
 });
 
-export function parseGuideConfig(data: unknown): GuideConfig {
-  const result = GuideConfigSchema.safeParse(data);
+export function parseTripConfig(data: unknown): TripConfig {
+  const result = TripConfigSchema.safeParse(data);
 
   if (!result.success) {
-    throw new GuideError(
-      `Invalid guide config: ${result.error.message}`,
-      "INVALID_GUIDE_CONFIG"
+    throw new TripError(
+      `Invalid trip config: ${result.error.message}`,
+      "INVALID_TRIP_CONFIG"
     );
   }
 
@@ -44,8 +44,8 @@ export function parseGuideConfig(data: unknown): GuideConfig {
     ...parsed,
     stops: parsed.stops.map((stop) => ({
       ...stop,
-      id: createGuideStopId(stop.id),
+      id: createTripStopId(stop.id),
       poiId: createPOIId(stop.poiId),
-    })) as NonEmptyArray<GuideStopConfig>,
+    })) as NonEmptyArray<TripStopConfig>,
   };
 }

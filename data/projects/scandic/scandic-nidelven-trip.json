@@ -1,0 +1,161 @@
+{
+  "id": "scandic-nidelven-trip",
+  "name": "Scandic Nidelven Trip",
+  "customer": "scandic",
+  "urlSlug": "scandic-nidelven-trip",
+  "productType": "guide",
+  "centerCoordinates": {
+    "lat": 63.4310,
+    "lng": 10.4040
+  },
+  "story": {
+    "id": "scandic-nidelven-trip-story",
+    "title": "Trondheim Byvandring",
+    "introText": "Opplev Trondheims historiske perler på en tur fra Scandic Nidelven.",
+    "sections": [],
+    "themeStories": []
+  },
+  "categories": [
+    {
+      "id": "sightseeing",
+      "name": "Severdighet",
+      "icon": "Landmark",
+      "color": "#6366f1"
+    },
+    {
+      "id": "food-drink",
+      "name": "Mat & drikke",
+      "icon": "UtensilsCrossed",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "hotel",
+      "name": "Hotell",
+      "icon": "Hotel",
+      "color": "#10b981"
+    }
+  ],
+  "pois": [
+    {
+      "id": "gamle-bybro",
+      "name": "Gamle Bybro",
+      "coordinates": { "lat": 63.4270, "lng": 10.4020 },
+      "category": {
+        "id": "sightseeing",
+        "name": "Severdighet",
+        "icon": "Landmark",
+        "color": "#6366f1"
+      },
+      "description": "Den ikoniske bybroen fra 1861 gir fantastisk utsikt over Nidelva og Bakklandet. Et perfekt startpunkt for byvandringen."
+    },
+    {
+      "id": "bakklandet",
+      "name": "Bakklandet",
+      "coordinates": { "lat": 63.4280, "lng": 10.4040 },
+      "category": {
+        "id": "food-drink",
+        "name": "Mat & drikke",
+        "icon": "UtensilsCrossed",
+        "color": "#f59e0b"
+      },
+      "description": "Trondheims sjarmerende bydel med fargerike trehus, koselige kafeer og unik atmosfære langs Nidelva."
+    },
+    {
+      "id": "nidarosdomen",
+      "name": "Nidarosdomen",
+      "coordinates": { "lat": 63.4269, "lng": 10.3967 },
+      "category": {
+        "id": "sightseeing",
+        "name": "Severdighet",
+        "icon": "Landmark",
+        "color": "#6366f1"
+      },
+      "description": "Nordens viktigste kirkebygg og Norges nasjonalhelligdom. Bygget over graven til Olav den hellige."
+    },
+    {
+      "id": "erkebispegarden",
+      "name": "Erkebispegården",
+      "coordinates": { "lat": 63.4272, "lng": 10.3987 },
+      "category": {
+        "id": "sightseeing",
+        "name": "Severdighet",
+        "icon": "Landmark",
+        "color": "#6366f1"
+      },
+      "description": "Skandinavias eldste profane bygning, med røtter tilbake til 1100-tallet. I dag museum med kronjuvelene."
+    },
+    {
+      "id": "solsiden",
+      "name": "Solsiden",
+      "coordinates": { "lat": 63.4345, "lng": 10.4090 },
+      "category": {
+        "id": "food-drink",
+        "name": "Mat & drikke",
+        "icon": "UtensilsCrossed",
+        "color": "#f59e0b"
+      },
+      "description": "Trondheims mest populære matområde med restauranter, barer og kafeer langs sjøfronten."
+    },
+    {
+      "id": "scandic-nidelven",
+      "name": "Scandic Nidelven",
+      "coordinates": { "lat": 63.4350, "lng": 10.4060 },
+      "category": {
+        "id": "hotel",
+        "name": "Hotell",
+        "icon": "Hotel",
+        "color": "#10b981"
+      },
+      "description": "Kåret til Norges beste frokost flere år på rad. Ligger vakkert til ved Nidelvas bredd."
+    }
+  ],
+  "tripConfig": {
+    "id": "scandic-nidelven-trip",
+    "title": "Trondheim Byvandring",
+    "description": "En klassisk byvandring fra Gamle Bybro, gjennom Bakklandet og Nidarosdomen, og tilbake til Scandic Nidelven via Solsiden.",
+    "difficulty": "easy",
+    "category": "culture",
+    "featured": true,
+    "sortOrder": 1,
+    "precomputedDistanceMeters": 2800,
+    "precomputedDurationMinutes": 45,
+    "stops": [
+      {
+        "id": "stop-1",
+        "poiId": "gamle-bybro",
+        "transitionText": "Start ved den ikoniske Gamle Bybro og nyt utsikten over Nidelva."
+      },
+      {
+        "id": "stop-2",
+        "poiId": "bakklandet",
+        "transitionText": "Kryss broa og gå inn i Bakklandets sjarmerende smau."
+      },
+      {
+        "id": "stop-3",
+        "poiId": "nidarosdomen",
+        "transitionText": "Følg gatene sørover mot Nordens gotiske katedral."
+      },
+      {
+        "id": "stop-4",
+        "poiId": "erkebispegarden",
+        "transitionText": "Gå et par skritt nordover til Erkebispegårdens historiske murer."
+      },
+      {
+        "id": "stop-5",
+        "poiId": "solsiden",
+        "transitionText": "Følg Nidelva tilbake nordover til Solsidens restaurantstrøk."
+      },
+      {
+        "id": "stop-6",
+        "poiId": "scandic-nidelven",
+        "transitionText": "Avslutt turen med en velfortjent pause på Scandic Nidelven."
+      }
+    ],
+    "reward": {
+      "title": "15% rabatt i baren",
+      "description": "Vis denne skjermen i resepsjonen",
+      "hotelName": "Scandic Nidelven",
+      "validityDays": 7
+    }
+  }
+}

@@ -124,17 +124,17 @@ export async function getProjectAsync(
 }
 
 /**
- * Get all guides for a customer
+ * Get all trips for a customer
  * SERVER ONLY - do not import in client components
  */
-export async function getGuidesByCustomer(customer: string): Promise<Project[]> {
-  const guides: Project[] = [];
+export async function getTripsByCustomer(customer: string): Promise<Project[]> {
+  const trips: Project[] = [];
 
   try {
     const customerPath = path.join(process.cwd(), "data", "projects", customer);
 
     if (!fs.existsSync(customerPath)) {
-      return guides;
+      return trips;
     }
 
     const files = fs.readdirSync(customerPath);
@@ -146,24 +146,24 @@ export async function getGuidesByCustomer(customer: string): Promise<Project[]> 
       const project = await getProjectAsync(customer, slug);
 
       if (project && project.productType === "guide") {
-        guides.push(project);
+        trips.push(project);
       }
     }
 
     // Sort by sortOrder, then by title
-    guides.sort((a, b) => {
-      const orderA = a.guideConfig?.sortOrder ?? 999;
-      const orderB = b.guideConfig?.sortOrder ?? 999;
+    trips.sort((a, b) => {
+      const orderA = a.tripConfig?.sortOrder ?? 999;
+      const orderB = b.tripConfig?.sortOrder ?? 999;
       if (orderA !== orderB) return orderA - orderB;
-      return (a.guideConfig?.title ?? a.name).localeCompare(
-        b.guideConfig?.title ?? b.name
+      return (a.tripConfig?.title ?? a.name).localeCompare(
+        b.tripConfig?.title ?? b.name
       );
     });
 
-    return guides;
+    return trips;
   } catch (error) {
-    console.error(`Failed to get guides for customer ${customer}:`, error);
-    return guides;
+    console.error(`Failed to get trips for customer ${customer}:`, error);
+    return trips;
   }
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
-import type { POI, GuideStopConfig, Coordinates } from "@/lib/types";
+import type { POI, TripStopConfig, Coordinates } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Check, MapPin, Navigation, Clock, Loader2 } from "lucide-react";
 
@@ -17,9 +17,9 @@ type VerificationState =
   | { status: "waiting-fallback"; remainingSeconds: number }
   | { status: "verified"; method: "gps" | "fallback" };
 
-interface GuideStopPanelProps {
+interface TripStopPanelProps {
   stops: POI[];
-  stopConfigs: GuideStopConfig[];
+  stopConfigs: TripStopConfig[];
   currentStopIndex: number;
   completedStops: Set<number>;
   distanceToStop?: number | null;
@@ -28,9 +28,10 @@ interface GuideStopPanelProps {
   onNext: () => void;
   onPrev: () => void;
   onMarkComplete: (gpsVerified: boolean, accuracy?: number, coords?: Coordinates) => void;
+  showProgressDots?: boolean;
 }
 
-export default function GuideStopPanel({
+export default function TripStopPanel({
   stops,
   stopConfigs,
   currentStopIndex,
@@ -41,7 +42,8 @@ export default function GuideStopPanel({
   onNext,
   onPrev,
   onMarkComplete,
-}: GuideStopPanelProps) {
+  showProgressDots = true,
+}: TripStopPanelProps) {
   const currentStop = stops[currentStopIndex];
   const currentConfig = stopConfigs[currentStopIndex];
   const isCompleted = completedStops.has(currentStopIndex);
@@ -152,25 +154,27 @@ export default function GuideStopPanel({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Progress dots */}
-      <div className="flex items-center justify-center gap-1.5 py-3 border-b border-stone-100">
-        {stops.map((_, index) => (
-          <div
-            key={index}
-            className={cn(
-              "w-2.5 h-2.5 rounded-full transition-colors",
-              index === currentStopIndex
-                ? "bg-blue-600"
-                : completedStops.has(index)
-                ? "bg-stone-400"
-                : "bg-stone-200"
-            )}
-          />
-        ))}
-        <span className="ml-2 text-xs text-stone-500">
-          {currentStopIndex + 1}/{stops.length}
-        </span>
-      </div>
+      {/* Progress dots (only on mobile) */}
+      {showProgressDots && (
+        <div className="flex items-center justify-center gap-1.5 py-3 border-b border-stone-100">
+          {stops.map((_, index) => (
+            <div
+              key={index}
+              className={cn(
+                "w-2.5 h-2.5 rounded-full transition-colors",
+                index === currentStopIndex
+                  ? "bg-blue-600"
+                  : completedStops.has(index)
+                  ? "bg-stone-400"
+                  : "bg-stone-200"
+              )}
+            />
+          ))}
+          <span className="ml-2 text-xs text-stone-500">
+            {currentStopIndex + 1}/{stops.length}
+          </span>
+        </div>
+      )}
 
       {/* Stop info */}
       <div className="flex-1 overflow-auto px-5 py-4">
