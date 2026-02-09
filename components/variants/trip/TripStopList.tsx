@@ -1,29 +1,11 @@
 "use client";
 
-import { useMemo, useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import type { POI, TripStopConfig, Coordinates } from "@/lib/types";
+import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
-import {
-  Check,
-  Flag,
-  MapPin,
-  Navigation,
-  Loader2,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-
-// GPS verification radius in meters
-const GPS_VERIFICATION_RADIUS = 50;
-// Fallback timer duration in seconds
-const FALLBACK_TIMER_SECONDS = 30;
-
-type VerificationState =
-  | { status: "idle" }
-  | { status: "verifying" }
-  | { status: "near-stop"; distance: number }
-  | { status: "waiting-fallback"; remainingSeconds: number }
-  | { status: "verified"; method: "gps" | "fallback" };
+import { Check, Flag } from "lucide-react";
+import TripStopDetail from "./TripStopDetail";
 
 interface TripStopListProps {
   stops: POI[];
@@ -36,6 +18,7 @@ interface TripStopListProps {
   distanceToStop?: number | null;
   userPosition?: Coordinates | null;
   gpsAvailable?: boolean;
+  openingHours?: OpeningHoursData;
   onNext?: () => void;
   onPrev?: () => void;
   onMarkComplete?: (gpsVerified: boolean, accuracy?: number, coords?: Coordinates) => void;
@@ -51,95 +34,13 @@ export default function TripStopList({
   distanceToStop,
   userPosition,
   gpsAvailable = true,
+  openingHours,
   onNext,
   onPrev,
   onMarkComplete,
 }: TripStopListProps) {
   const activeRef = useRef<HTMLLIElement>(null);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
-
-  // --- GPS Verification state (only used in accordion mode) ---
-  const [verificationState, setVerificationState] = useState<VerificationState>({ status: "idle" });
-  const fallbackTimerRef = useRef<{ timeoutId: NodeJS.Timeout; canceled: boolean } | null>(null);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const isNearStop = useMemo(() => {
-    if (distanceToStop === null || distanceToStop === undefined) return false;
-    return distanceToStop <= GPS_VERIFICATION_RADIUS;
-  }, [distanceToStop]);
-
-  const cleanupTimers = useCallback(() => {
-    if (fallbackTimerRef.current) {
-      fallbackTimerRef.current.canceled = true;
-      clearTimeout(fallbackTimerRef.current.timeoutId);
-      fallbackTimerRef.current = null;
-    }
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
-  }, []);
-
-  // Reset verification when stop changes
-  useEffect(() => {
-    cleanupTimers();
-    setVerificationState({ status: "idle" });
-  }, [currentStopIndex, cleanupTimers]);
-
-  useEffect(() => {
-    return () => cleanupTimers();
-  }, [cleanupTimers]);
-
-  // GPS arrives while waiting for fallback
-  useEffect(() => {
-    if (
-      verificationState.status === "waiting-fallback" &&
-      isNearStop &&
-      gpsAvailable
-    ) {
-      cleanupTimers();
-      setVerificationState({ status: "verified", method: "gps" });
-      onMarkComplete?.(true, undefined, userPosition ?? undefined);
-    }
-  }, [isNearStop, gpsAvailable, verificationState.status, cleanupTimers, onMarkComplete, userPosition]);
-
-  const handleMarkCompleteClick = useCallback(() => {
-    const isCompleted = completedStops.has(currentStopIndex);
-    if (isCompleted || !onMarkComplete) return;
-
-    if (isNearStop && gpsAvailable) {
-      setVerificationState({ status: "verified", method: "gps" });
-      onMarkComplete(true, undefined, userPosition ?? undefined);
-      return;
-    }
-
-    setVerificationState({ status: "waiting-fallback", remainingSeconds: FALLBACK_TIMER_SECONDS });
-
-    countdownIntervalRef.current = setInterval(() => {
-      setVerificationState((prev) => {
-        if (prev.status !== "waiting-fallback") return prev;
-        const newRemaining = prev.remainingSeconds - 1;
-        if (newRemaining <= 0) return prev;
-        return { ...prev, remainingSeconds: newRemaining };
-      });
-    }, 1000);
-
-    const cancelToken = { canceled: false };
-    const timeoutId = setTimeout(() => {
-      if (cancelToken.canceled) return;
-      cleanupTimers();
-      setVerificationState({ status: "verified", method: "fallback" });
-      onMarkComplete(false);
-    }, FALLBACK_TIMER_SECONDS * 1000);
-
-    fallbackTimerRef.current = { timeoutId, canceled: cancelToken.canceled };
-  }, [completedStops, currentStopIndex, isNearStop, gpsAvailable, userPosition, onMarkComplete, cleanupTimers]);
-
-  const formattedDistance = useMemo(() => {
-    if (distanceToStop === null || distanceToStop === undefined) return null;
-    if (distanceToStop < 1000) return `${Math.round(distanceToStop)} m`;
-    return `${(distanceToStop / 1000).toFixed(1)} km`;
-  }, [distanceToStop]);
 
   // Auto-scroll to active stop
   useEffect(() => {
@@ -199,8 +100,8 @@ export default function TripStopList({
                       isActive
                         ? "font-medium text-blue-900"
                         : isCompleted
-                        ? "text-stone-500 line-through"
-                        : "text-stone-700"
+                          ? "text-stone-500 line-through"
+                          : "text-stone-700"
                     )}
                   >
                     {displayName}
@@ -217,7 +118,6 @@ export default function TripStopList({
   // --- Accordion mode (desktop) ---
   const isFirstStop = currentStopIndex === 0;
   const isLastStop = currentStopIndex === stops.length - 1;
-  const currentIsCompleted = completedStops.has(currentStopIndex);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -228,7 +128,6 @@ export default function TripStopList({
           const isStartPoint = index === 0;
           const config = stopConfigs[index];
           const displayName = config?.nameOverride ?? stop.name;
-          const displayDescription = config?.descriptionOverride ?? stop.description;
           const imageUrl = config?.imageUrlOverride ?? stop.featuredImage;
           const hasImage = imageUrl && !imageErrors.has(stop.id);
 
@@ -315,154 +214,33 @@ export default function TripStopList({
                     </div>
                   </div>
                 </div>
-
-                {/* === EXPANDED HEADER (image strip) === */}
-                <div
-                  className={cn(
-                    "transition-all duration-300 ease-out",
-                    isActive ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
-                  )}
-                >
-                  {hasImage && (
-                    <div className="w-full aspect-[21/9] overflow-hidden">
-                      <img
-                        src={imageUrl}
-                        alt={displayName}
-                        className="w-full h-full object-cover"
-                        onError={() => handleImageError(stop.id)}
-                      />
-                    </div>
-                  )}
-
-                  {/* Title row */}
-                  <div className="px-5 pt-4 pb-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                          {isStartPoint ? <Flag className="w-4 h-4" /> : index}
-                        </span>
-                        <div>
-                          <h3 className="text-base font-semibold text-stone-900">
-                            {displayName}
-                          </h3>
-                          <p className="text-xs text-stone-500 mt-0.5">
-                            {stop.category.name}
-                          </p>
-                        </div>
-                      </div>
-                      {formattedDistance && isActive && (
-                        <div className="flex items-center gap-1 text-sm text-stone-500 flex-shrink-0">
-                          <MapPin className="w-3.5 h-3.5" />
-                          <span>{formattedDistance}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
               </button>
 
-              {/* === EXPANDED CONTENT (outside button for interactivity) === */}
+              {/* === EXPANDED CONTENT (rich POI card + trip controls) === */}
               <div
                 className={cn(
                   "transition-all duration-300 ease-out",
-                  isActive
-                    ? "opacity-100 bg-blue-50/50"
-                    : "opacity-0 h-0 overflow-hidden"
+                  isActive ? "opacity-100 bg-blue-50/50" : "opacity-0 h-0 overflow-hidden"
                 )}
               >
-                <div className="px-5 pb-4">
-                  {/* Transition text */}
-                  {config?.transitionText && (
-                    <p className="text-sm text-blue-700 italic mb-3 pl-11">
-                      {config.transitionText}
-                    </p>
-                  )}
-
-                  {/* Description */}
-                  {displayDescription && (
-                    <p className="text-stone-600 text-sm leading-relaxed pl-11 mb-4">
-                      {displayDescription}
-                    </p>
-                  )}
-
-                  {/* Navigation + Mark Complete */}
-                  <div className="flex items-center gap-3 pl-11">
-                    {/* Previous button */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onPrev?.(); }}
-                      disabled={isFirstStop}
-                      className={cn(
-                        "w-9 h-9 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-                        isFirstStop
-                          ? "bg-stone-100 text-stone-300 cursor-not-allowed"
-                          : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                      )}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-
-                    {/* Mark complete button */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleMarkCompleteClick(); }}
-                      disabled={currentIsCompleted || verificationState.status === "waiting-fallback"}
-                      className={cn(
-                        "flex-1 h-10 rounded-full flex items-center justify-center font-medium text-sm transition-all duration-300",
-                        currentIsCompleted
-                          ? "bg-green-100 text-green-700"
-                          : verificationState.status === "waiting-fallback"
-                          ? verificationState.remainingSeconds <= 10
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700"
-                          : isNearStop && gpsAvailable
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                      )}
-                    >
-                      {currentIsCompleted ? (
-                        <span className="flex items-center gap-2">
-                          <Check className="w-4 h-4" />
-                          Besøkt
-                        </span>
-                      ) : verificationState.status === "waiting-fallback" ? (
-                        verificationState.remainingSeconds <= 10 ? (
-                          <span className="flex items-center gap-2">
-                            <Check className="w-4 h-4" />
-                            Godkjennes om {verificationState.remainingSeconds}s
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Sjekker GPS... {verificationState.remainingSeconds}s
-                          </span>
-                        )
-                      ) : isNearStop && gpsAvailable ? (
-                        <span className="flex items-center gap-2">
-                          <Navigation className="w-4 h-4" />
-                          Du er her!
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          Merk som besøkt
-                        </span>
-                      )}
-                    </button>
-
-                    {/* Next button */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onNext?.(); }}
-                      disabled={isLastStop}
-                      className={cn(
-                        "w-9 h-9 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-                        isLastStop
-                          ? "bg-stone-100 text-stone-300 cursor-not-allowed"
-                          : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                      )}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                {isActive && onMarkComplete && (
+                  <TripStopDetail
+                    stop={stop}
+                    stopConfig={config}
+                    stopIndex={index}
+                    totalStops={stops.length}
+                    isCompleted={isCompleted}
+                    isFirstStop={isFirstStop}
+                    isLastStop={isLastStop}
+                    distanceToStop={distanceToStop}
+                    userPosition={userPosition}
+                    gpsAvailable={gpsAvailable}
+                    openingHours={openingHours}
+                    onNext={onNext ?? (() => {})}
+                    onPrev={onPrev ?? (() => {})}
+                    onMarkComplete={onMarkComplete}
+                  />
+                )}
               </div>
             </li>
           );

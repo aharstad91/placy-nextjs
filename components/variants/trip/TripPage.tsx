@@ -5,6 +5,7 @@ import type { Project, POI, TripStopConfig, Coordinates } from "@/lib/types";
 import type { RouteSegment } from "@/components/map/route-layer";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import { useTripCompletion } from "@/lib/hooks/useTripCompletion";
+import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
 import { haversineDistance } from "@/lib/utils";
 import ExplorerBottomSheet from "@/components/variants/explorer/ExplorerBottomSheet";
 import TripMap from "./TripMap";
@@ -63,6 +64,16 @@ export default function TripPage({ project }: TripPageProps) {
 
   // Geolocation
   const geo = useGeolocation(project.centerCoordinates);
+
+  // Opening hours for current stop (single-element array to reuse existing hook)
+  const currentStopArray = useMemo(
+    () => (stops[currentStopIndex] ? [stops[currentStopIndex]] : []),
+    [stops, currentStopIndex]
+  );
+  const { hoursData: openingHoursData } = useOpeningHours(currentStopArray);
+  const currentStopOpeningHours = stops[currentStopIndex]
+    ? openingHoursData.get(stops[currentStopIndex].id)
+    : undefined;
 
   // Build completedStops Set from persisted state
   const completedStops = useMemo(() => {
@@ -342,6 +353,7 @@ export default function TripPage({ project }: TripPageProps) {
             distanceToStop={distanceToCurrentStop}
             userPosition={geo.userPosition}
             gpsAvailable={geo.mode !== "disabled" && geo.mode !== "fallback"}
+            openingHours={currentStopOpeningHours}
             onNext={handleNext}
             onPrev={handlePrev}
             onMarkComplete={handleMarkComplete}
@@ -374,6 +386,7 @@ export default function TripPage({ project }: TripPageProps) {
             distanceToStop={distanceToCurrentStop}
             userPosition={geo.userPosition}
             gpsAvailable={geo.mode !== "disabled" && geo.mode !== "fallback"}
+            openingHours={currentStopOpeningHours}
             onNext={handleNext}
             onPrev={handlePrev}
             onMarkComplete={handleMarkComplete}
