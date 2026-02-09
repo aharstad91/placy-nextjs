@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getTripsByCustomer, getBaseSlug } from "@/lib/data-server";
+import { getProjectIdBySlugAsync, getProjectTripsAsync } from "@/lib/data-server";
+import { tripToProject } from "@/lib/trip-adapter";
 import { TRIP_CATEGORIES, TRIP_CATEGORY_LABELS } from "@/lib/types";
 import type { Project, TripCategory } from "@/lib/types";
 import TripLibraryClient from "./TripLibraryClient";
@@ -37,7 +38,23 @@ function groupTripsByCategory(trips: Project[]): Record<TripCategory, Project[]>
 
 export default async function TripsPage({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
-  const trips = await getTripsByCustomer(customer);
+
+  // Look up the project ID from customer + project slug
+  const projectId = await getProjectIdBySlugAsync(customer, projectSlug);
+  if (!projectId) {
+    notFound();
+  }
+
+  // Fetch trips linked to this project (with overrides)
+  const projectTrips = await getProjectTripsAsync(projectId);
+
+  // Convert each ProjectTrip to the legacy Project shape via adapter
+  const trips: Project[] = projectTrips.map((pt) =>
+    tripToProject(pt.trip, pt.override)
+  );
+
+  // Extract welcome text from first override (if any)
+  const welcomeText = projectTrips[0]?.override?.welcomeText;
 
   // If no trips exist, show empty state
   if (trips.length === 0) {
@@ -70,6 +87,7 @@ export default async function TripsPage({ params }: PageProps) {
       groupedTrips={groupedTrips}
       categoriesWithTrips={categoriesWithTrips}
       categoryLabels={TRIP_CATEGORY_LABELS}
+      welcomeText={welcomeText}
     />
   );
 }

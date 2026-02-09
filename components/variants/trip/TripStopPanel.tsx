@@ -3,7 +3,7 @@
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import type { POI, TripStopConfig, Coordinates } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Check, MapPin, Navigation, Clock, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, MapPin, Navigation, Clock, Loader2, Flag } from "lucide-react";
 
 // GPS verification radius in meters
 const GPS_VERIFICATION_RADIUS = 50;
@@ -171,7 +171,7 @@ export default function TripStopPanel({
             />
           ))}
           <span className="ml-2 text-xs text-stone-500">
-            {currentStopIndex + 1}/{stops.length}
+            {currentStopIndex === 0 ? "Start" : currentStopIndex}/{stops.length - 1}
           </span>
         </div>
       )}
@@ -182,7 +182,7 @@ export default function TripStopPanel({
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-3">
             <span className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
-              {currentStopIndex + 1}
+              {currentStopIndex === 0 ? <Flag className="w-4 h-4" /> : currentStopIndex}
             </span>
             <h2 className="text-xl font-semibold text-stone-900">{displayName}</h2>
           </div>

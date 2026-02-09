@@ -5,7 +5,7 @@
  * WARNING: Do not import this file in client components - it uses Node.js fs module
  */
 
-import type { Project, ProjectContainer, ProductType, ProductSummary, Trip, ProjectTrip } from "./types";
+import type { Project, ProjectContainer, ProductType, ProductSummary, Trip, ProjectTrip, ProjectTripOverride } from "./types";
 import { isSupabaseConfigured } from "./supabase/client";
 import {
   getProjectFromSupabase,
@@ -16,6 +16,9 @@ import {
   getTripBySlug as getTripBySlugFromSupabase,
   getTripsByProject as getTripsByProjectFromSupabase,
   getTripsByCity as getTripsByCityFromSupabase,
+  getProjectIdBySlug as getProjectIdBySlugFromSupabase,
+  getProjectTripOverride as getProjectTripOverrideFromSupabase,
+  getTripsByPoiId as getTripsByPoiIdFromSupabase,
 } from "./supabase/queries";
 
 export { getProjectShortId };
@@ -387,6 +390,51 @@ export async function getTripsByCityAsync(
 ): Promise<Trip[]> {
   if (isSupabaseConfigured()) {
     return getTripsByCityFromSupabase(city);
+  }
+  return [];
+}
+
+/**
+ * Look up a project ID from customer + project slug.
+ * Supabase only.
+ * SERVER ONLY
+ */
+export async function getProjectIdBySlugAsync(
+  customerSlug: string,
+  projectSlug: string
+): Promise<string | null> {
+  if (isSupabaseConfigured()) {
+    return getProjectIdBySlugFromSupabase(customerSlug, projectSlug);
+  }
+  return null;
+}
+
+/**
+ * Get the project_trips override for a trip within a project.
+ * Supabase only.
+ * SERVER ONLY
+ */
+export async function getProjectTripOverrideAsync(
+  tripSlug: string,
+  customerSlug: string,
+  projectSlug: string
+): Promise<ProjectTripOverride | null> {
+  if (isSupabaseConfigured()) {
+    return getProjectTripOverrideFromSupabase(tripSlug, customerSlug, projectSlug);
+  }
+  return null;
+}
+
+/**
+ * Get all published trips that include a specific POI.
+ * Supabase only.
+ * SERVER ONLY
+ */
+export async function getTripsByPoiIdAsync(
+  poiId: string
+): Promise<{ title: string; urlSlug: string }[]> {
+  if (isSupabaseConfigured()) {
+    return getTripsByPoiIdFromSupabase(poiId);
   }
   return [];
 }

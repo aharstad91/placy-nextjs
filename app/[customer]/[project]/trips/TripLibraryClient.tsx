@@ -13,6 +13,7 @@ interface TripLibraryClientProps {
   groupedTrips: Record<TripCategory, Project[]>;
   categoriesWithTrips: readonly TripCategory[];
   categoryLabels: Record<TripCategory, string>;
+  welcomeText?: string;
 }
 
 // TripCard component
@@ -138,6 +139,7 @@ export default function TripLibraryClient({
   groupedTrips,
   categoriesWithTrips,
   categoryLabels,
+  welcomeText,
 }: TripLibraryClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState<TripCategory | null>(null);
@@ -213,6 +215,15 @@ export default function TripLibraryClient({
 
   return (
     <main className="min-h-screen bg-[#FAF8F5] py-6">
+      {/* Welcome text from project override */}
+      {welcomeText && (
+        <div className="px-4 mb-4">
+          <p className="text-sm text-[#6B6560] leading-relaxed">
+            {welcomeText}
+          </p>
+        </div>
+      )}
+
       {/* Header with search */}
       <header className="px-4 mb-6">
         <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mb-4">

@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
 import { Check } from "lucide-react";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
-import { MAP_STYLE_DEFAULT } from "@/lib/themes/map-styles";
+import { AdaptiveMarker } from "@/components/map/adaptive-marker";
+import { useMapZoomState } from "@/lib/hooks/useMapZoomState";
+import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 
 interface TripMapProps {
   center: Coordinates;
@@ -34,12 +36,22 @@ export default function TripMap({
   geoMode = "loading",
 }: TripMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const hasFittedInitialRef = useRef(false);
+  const [hoveredStop, setHoveredStop] = useState<number | null>(null);
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Skip flyTo when stop change originated from a map marker click
+  // (the marker is already visible — flying to it is disorienting)
+  const skipNextFlyRef = useRef(false);
 
   // Animation debouncing: track if we're currently animating
   const animatingRef = useRef(false);
   const pendingTargetRef = useRef<Coordinates | null>(null);
+
+  // CSS-driven zoom state (writes data-zoom-state to container, no React re-renders)
+  useMapZoomState(mapRef, mapContainerRef, { mapLoaded });
 
   // Compute bounds from all stops
   const bounds = useMemo(() => {
@@ -73,23 +85,22 @@ export default function TripMap({
     );
   }, [mapLoaded, bounds]);
 
-  // Handle map load
+  // Handle map load — apply illustrated theme and wait for style imports
   const onLoad = useCallback(() => {
     const map = mapRef.current?.getMap();
-    if (map) {
-      // Hide default POI labels for cleaner look
-      const layers = map.getStyle()?.layers || [];
-      layers.forEach((layer) => {
-        if (
-          layer.id.includes("poi") ||
-          layer.id.includes("place-label") ||
-          layer.id.includes("transit")
-        ) {
-          map.setLayoutProperty(layer.id, "visibility", "none");
-        }
-      });
+    if (!map) return;
+
+    const finalize = () => {
+      applyIllustratedTheme(map);
+      setMapLoaded(true);
+    };
+
+    // Standard style uses imports that may still be loading after onLoad
+    if (map.isStyleLoaded()) {
+      finalize();
+    } else {
+      map.once("style.load", finalize);
     }
-    setMapLoaded(true);
   }, []);
 
   // Debounced flyTo function with reduced motion support
@@ -134,9 +145,19 @@ export default function TripMap({
     }
   }, []);
 
-  // Fly to current stop when it changes
+  // Fly to current stop when it changes (unless change came from map click
+  // or this is the initial load — fitBounds already handles the initial view)
+  const hasInitiallyLoadedRef = useRef(false);
   useEffect(() => {
     if (!mapLoaded) return;
+    if (!hasInitiallyLoadedRef.current) {
+      hasInitiallyLoadedRef.current = true;
+      return;
+    }
+    if (skipNextFlyRef.current) {
+      skipNextFlyRef.current = false;
+      return;
+    }
     const currentStop = stops[currentStopIndex];
     if (!currentStop) return;
 
@@ -144,7 +165,7 @@ export default function TripMap({
   }, [currentStopIndex, mapLoaded, stops, flyToStop]);
 
   return (
-    <div className="w-full h-full relative">
+    <div ref={mapContainerRef} className="w-full h-full relative">
       <Map
         ref={mapRef}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
@@ -155,13 +176,28 @@ export default function TripMap({
           pitch: 0,
         }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle={MAP_STYLE_DEFAULT}
+        mapStyle={MAP_STYLE_STANDARD}
         onLoad={onLoad}
+        onMouseDown={(e) => {
+          mouseDownPosRef.current = { x: e.point.x, y: e.point.y };
+        }}
+        onClick={(e) => {
+          // Only dismiss if this was a true click (not a drag)
+          if (mouseDownPosRef.current) {
+            const dx = Math.abs(e.point.x - mouseDownPosRef.current.x);
+            const dy = Math.abs(e.point.y - mouseDownPosRef.current.y);
+            if (dx > 5 || dy > 5) {
+              mouseDownPosRef.current = null;
+              return;
+            }
+          }
+          mouseDownPosRef.current = null;
+        }}
       >
         <NavigationControl position="top-right" />
 
         {/* Route overlay */}
-        {routeCoordinates && routeCoordinates.length >= 2 && (
+        {mapLoaded && routeCoordinates && routeCoordinates.length >= 2 && (
           <RouteLayer coordinates={routeCoordinates} />
         )}
 
@@ -191,56 +227,82 @@ export default function TripMap({
           </Marker>
         )}
 
-        {/* Stop markers with numbers */}
+        {/* Stop markers — AdaptiveMarker with stop number badge */}
         {stops.map((stop, index) => {
           const isActive = index === currentStopIndex;
           const isCompleted = completedStops.has(index);
+          const isHovered = hoveredStop === index && !isActive;
+          const isStartPoint = index === 0;
 
           return (
-            <Marker
+            <AdaptiveMarker
               key={stop.id}
-              longitude={stop.coordinates.lng}
-              latitude={stop.coordinates.lat}
-              anchor="center"
+              poi={stop}
+              isActive={isActive}
+              isHovered={isHovered}
+              zIndex={isActive ? 10 : isHovered ? 5 : 1}
               onClick={(e) => {
                 e.originalEvent.stopPropagation();
+                skipNextFlyRef.current = true;
                 onStopClick(index);
               }}
+              onMouseEnter={() => setHoveredStop(index)}
+              onMouseLeave={() => setHoveredStop(null)}
             >
-              <div className="relative cursor-pointer">
-                {/* Pulsing ring for active marker */}
-                {isActive && (
-                  <div className="absolute inset-0 rounded-full bg-blue-600 marker-pulse-ring" />
-                )}
-
-                {/* Numbered circle */}
+              {/* Stop number badge — top-left corner of marker (not on start point) */}
+              {!isStartPoint && (
                 <div
                   className={cn(
-                    "relative flex items-center justify-center rounded-full border-2 border-white shadow-md transition-all font-semibold",
-                    isActive && "w-10 h-10 bg-blue-600 text-white text-lg",
-                    isCompleted && "w-8 h-8 bg-stone-500 text-white hover:scale-110",
-                    !isActive && !isCompleted && "w-8 h-8 bg-white text-stone-700 hover:scale-110"
+                    "absolute -top-1.5 -left-1.5 min-w-[20px] h-[20px] rounded-full border-2 border-white flex items-center justify-center z-10 shadow-sm",
+                    isCompleted
+                      ? "bg-green-600"
+                      : "bg-white"
                   )}
                 >
                   {isCompleted ? (
-                    <Check className="w-4 h-4" />
+                    <Check className="w-2.5 h-2.5 text-white" />
                   ) : (
-                    <span className={isActive ? "text-base" : "text-sm"}>
-                      {index + 1}
+                    <span
+                      className="text-[10px] font-bold leading-none px-0.5"
+                      style={{ color: stop.category.color }}
+                    >
+                      {index}
                     </span>
                   )}
                 </div>
+              )}
 
-                {/* Active marker name label */}
-                {isActive && (
-                  <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span className="px-2 py-0.5 text-[10px] font-medium text-white bg-blue-600 rounded shadow-lg">
+              {/* Hover tooltip — name + category */}
+              {isHovered && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap pointer-events-none z-20 animate-fade-in">
+                  <div className="bg-gray-900/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg shadow-xl text-xs">
+                    <div className="font-semibold">{stop.name}</div>
+                    <div className="text-gray-300 mt-0.5">
+                      {isStartPoint ? "Start" : stop.category.name}
+                    </div>
+                  </div>
+                  {/* Tooltip arrow */}
+                  <div className="w-2 h-2 bg-gray-900/90 rotate-45 mx-auto -mt-1" />
+                </div>
+              )}
+
+              {/* Active state: info pill below marker */}
+              {isActive && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap z-20">
+                  <div className="bg-white rounded-xl shadow-xl border border-gray-200 px-3 py-2 flex items-center gap-2">
+                    <span
+                      className="text-xs font-semibold truncate max-w-[140px]"
+                      style={{ color: stop.category.color }}
+                    >
                       {stop.name}
                     </span>
+                    <span className="text-xs text-gray-500">
+                      {isStartPoint ? "Start" : stop.category.name}
+                    </span>
                   </div>
-                )}
-              </div>
-            </Marker>
+                </div>
+              )}
+            </AdaptiveMarker>
           );
         })}
       </Map>

@@ -326,22 +326,14 @@ export default function TripPage({ project }: TripPageProps) {
             currentStopIndex={currentStopIndex}
             completedStops={completedStops}
             onStopClick={handleStopClick}
+            accordion
+            distanceToStop={distanceToCurrentStop}
+            userPosition={geo.userPosition}
+            gpsAvailable={geo.mode !== "disabled" && geo.mode !== "fallback"}
+            onNext={handleNext}
+            onPrev={handlePrev}
+            onMarkComplete={handleMarkComplete}
           />
-          <div className="flex-1 overflow-hidden border-t border-stone-200">
-            <TripStopPanel
-              stops={stops}
-              stopConfigs={stopConfigs}
-              currentStopIndex={currentStopIndex}
-              completedStops={completedStops}
-              distanceToStop={distanceToCurrentStop}
-              userPosition={geo.userPosition}
-              gpsAvailable={geo.mode !== "disabled" && geo.mode !== "fallback"}
-              onNext={handleNext}
-              onPrev={handlePrev}
-              onMarkComplete={handleMarkComplete}
-              showProgressDots={false}
-            />
-          </div>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import type { POI, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
@@ -19,6 +20,7 @@ import {
   Clock,
   Plus,
   Check,
+  Route,
 } from "lucide-react";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
@@ -61,6 +63,18 @@ export default function ExplorerPOICard({
   const CategoryIcon = getIcon(poi.category.icon);
 
   const realtimeData = useRealtimeData(isActive ? poi : null);
+
+  // Fetch trip cross-references when card is expanded
+  const [tripRefs, setTripRefs] = useState<{ title: string; urlSlug: string }[]>([]);
+  useEffect(() => {
+    if (!isActive) return;
+    let cancelled = false;
+    fetch(`/api/poi-trips?poiId=${encodeURIComponent(poi.id)}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => { if (!cancelled) setTripRefs(data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isActive, poi.id]);
 
   const imageUrl = poi.featuredImage
     ? poi.featuredImage.includes("mymaps.usercontent.google.com")
@@ -467,6 +481,23 @@ export default function ExplorerPOICard({
                 </span>
               )}
             </div>
+
+            {/* Trip cross-reference badges */}
+            {tripRefs.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {tripRefs.map((trip) => (
+                  <Link
+                    key={trip.urlSlug}
+                    href={`/trips/${trip.urlSlug}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                  >
+                    <Route className="w-3 h-3" />
+                    Del av: {trip.title}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

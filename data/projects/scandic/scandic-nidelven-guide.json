@@ -121,9 +121,14 @@
     "precomputedDurationMinutes": 45,
     "stops": [
       {
+        "id": "stop-start",
+        "poiId": "scandic-nidelven",
+        "transitionText": "Turen starter her — rett utenfor hotellet."
+      },
+      {
         "id": "stop-1",
         "poiId": "gamle-bybro",
-        "transitionText": "Start ved den ikoniske Gamle Bybro og nyt utsikten over Nidelva."
+        "transitionText": "Gå ned til den ikoniske Gamle Bybro og nyt utsikten over Nidelva."
       },
       {
         "id": "stop-2",
@@ -144,11 +149,6 @@
         "id": "stop-5",
         "poiId": "solsiden",
         "transitionText": "Følg Nidelva tilbake nordover til Solsidens restaurantstrøk."
-      },
-      {
-        "id": "stop-6",
-        "poiId": "scandic-nidelven",
-        "transitionText": "Avslutt turen med en velfortjent pause på Scandic Nidelven."
       }
     ],
     "reward": {

@@ -13,7 +13,7 @@ import {
   Filter,
   Compass,
   FileText,
-  Map,
+  Route,
   Package,
 } from "lucide-react";
 import type { DbCustomer } from "@/lib/supabase/types";
@@ -52,13 +52,13 @@ interface ProjectsAdminClientProps {
 const productIcons = {
   explorer: Compass,
   report: FileText,
-  guide: Map,
+  guide: Route,
 };
 
 const productLabels = {
   explorer: "Explorer",
   report: "Report",
-  guide: "Guide",
+  guide: "Trip",
 };
 
 const productColors = {
