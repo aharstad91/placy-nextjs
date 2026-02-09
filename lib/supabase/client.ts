@@ -11,7 +11,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient<Database>(supabaseUrl, supabaseAnonKey)
+  ? createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      global: {
+        fetch: (url, options = {}) =>
+          fetch(url, { ...options, cache: "no-store" }),
+      },
+    })
   : null;
 
 // Helper to check if Supabase is configured
@@ -28,5 +33,10 @@ export function createServerClient() {
     return null;
   }
 
-  return createClient<Database>(url, key);
+  return createClient<Database>(url, key, {
+    global: {
+      fetch: (url, options = {}) =>
+        fetch(url, { ...options, cache: "no-store" }),
+    },
+  });
 }

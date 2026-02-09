@@ -626,6 +626,207 @@ export type Database = {
           }
         ];
       };
+      // TRIP LIBRARY TABLES (available after migration 016)
+      trips: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          url_slug: string;
+          cover_image_url: string | null;
+          category: "food" | "culture" | "nature" | "family" | "active" | "hidden-gems" | null;
+          difficulty: "easy" | "moderate" | "challenging" | null;
+          season: "spring" | "summer" | "autumn" | "winter" | "all-year";
+          tags: string[];
+          featured: boolean;
+          city: string;
+          region: string | null;
+          country: string;
+          center_lat: number;
+          center_lng: number;
+          distance_meters: number | null;
+          duration_minutes: number | null;
+          stop_count: number;
+          default_reward_title: string | null;
+          default_reward_description: string | null;
+          created_by: string | null;
+          published: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          url_slug: string;
+          cover_image_url?: string | null;
+          category?: "food" | "culture" | "nature" | "family" | "active" | "hidden-gems" | null;
+          difficulty?: "easy" | "moderate" | "challenging" | null;
+          season?: "spring" | "summer" | "autumn" | "winter" | "all-year";
+          tags?: string[];
+          featured?: boolean;
+          city: string;
+          region?: string | null;
+          country?: string;
+          center_lat: number;
+          center_lng: number;
+          distance_meters?: number | null;
+          duration_minutes?: number | null;
+          stop_count?: number;
+          default_reward_title?: string | null;
+          default_reward_description?: string | null;
+          created_by?: string | null;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          url_slug?: string;
+          cover_image_url?: string | null;
+          category?: "food" | "culture" | "nature" | "family" | "active" | "hidden-gems" | null;
+          difficulty?: "easy" | "moderate" | "challenging" | null;
+          season?: "spring" | "summer" | "autumn" | "winter" | "all-year";
+          tags?: string[];
+          featured?: boolean;
+          city?: string;
+          region?: string | null;
+          country?: string;
+          center_lat?: number;
+          center_lng?: number;
+          distance_meters?: number | null;
+          duration_minutes?: number | null;
+          stop_count?: number;
+          default_reward_title?: string | null;
+          default_reward_description?: string | null;
+          created_by?: string | null;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      trip_stops: {
+        Row: {
+          id: string;
+          trip_id: string;
+          poi_id: string;
+          sort_order: number;
+          name_override: string | null;
+          description_override: string | null;
+          image_url_override: string | null;
+          transition_text: string | null;
+          local_insight: string | null;
+        };
+        Insert: {
+          id?: string;
+          trip_id: string;
+          poi_id: string;
+          sort_order?: number;
+          name_override?: string | null;
+          description_override?: string | null;
+          image_url_override?: string | null;
+          transition_text?: string | null;
+          local_insight?: string | null;
+        };
+        Update: {
+          id?: string;
+          trip_id?: string;
+          poi_id?: string;
+          sort_order?: number;
+          name_override?: string | null;
+          description_override?: string | null;
+          image_url_override?: string | null;
+          transition_text?: string | null;
+          local_insight?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_stops_trip_id_fkey";
+            columns: ["trip_id"];
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "trip_stops_poi_id_fkey";
+            columns: ["poi_id"];
+            referencedRelation: "pois";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      project_trips: {
+        Row: {
+          id: string;
+          project_id: string;
+          trip_id: string;
+          sort_order: number;
+          enabled: boolean;
+          start_poi_id: string | null;
+          start_name: string | null;
+          start_description: string | null;
+          start_transition_text: string | null;
+          reward_title: string | null;
+          reward_description: string | null;
+          reward_code: string | null;
+          reward_validity_days: number | null;
+          welcome_text: string | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          trip_id: string;
+          sort_order?: number;
+          enabled?: boolean;
+          start_poi_id?: string | null;
+          start_name?: string | null;
+          start_description?: string | null;
+          start_transition_text?: string | null;
+          reward_title?: string | null;
+          reward_description?: string | null;
+          reward_code?: string | null;
+          reward_validity_days?: number | null;
+          welcome_text?: string | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          trip_id?: string;
+          sort_order?: number;
+          enabled?: boolean;
+          start_poi_id?: string | null;
+          start_name?: string | null;
+          start_description?: string | null;
+          start_transition_text?: string | null;
+          reward_title?: string | null;
+          reward_description?: string | null;
+          reward_code?: string | null;
+          reward_validity_days?: number | null;
+          welcome_text?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_trips_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_trips_trip_id_fkey";
+            columns: ["trip_id"];
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_trips_start_poi_id_fkey";
+            columns: ["start_poi_id"];
+            referencedRelation: "pois";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {};
     Functions: {};
@@ -658,6 +859,9 @@ export type DbProjectCategory = Tables<"project_categories">;
 export type DbProduct = Tables<"products">;
 export type DbProductPoi = Tables<"product_pois">;
 export type DbProductCategory = Tables<"product_categories">;
+export type DbTrip = Tables<"trips">;
+export type DbTripStop = Tables<"trip_stops">;
+export type DbProjectTrip = Tables<"project_trips">;
 
 // Product type enum
 export type ProductType = "explorer" | "report" | "guide";

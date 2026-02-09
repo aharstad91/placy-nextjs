@@ -5,7 +5,7 @@
  * WARNING: Do not import this file in client components - it uses Node.js fs module
  */
 
-import type { Project, ProjectContainer, ProductType, ProductSummary } from "./types";
+import type { Project, ProjectContainer, ProductType, ProductSummary, Trip, ProjectTrip } from "./types";
 import { isSupabaseConfigured } from "./supabase/client";
 import {
   getProjectFromSupabase,
@@ -13,6 +13,9 @@ import {
   getProductFromSupabase,
   getProjectProducts as getProjectProductsFromSupabase,
   getProjectShortId,
+  getTripBySlug as getTripBySlugFromSupabase,
+  getTripsByProject as getTripsByProjectFromSupabase,
+  getTripsByCity as getTripsByCityFromSupabase,
 } from "./supabase/queries";
 
 export { getProjectShortId };
@@ -340,4 +343,50 @@ export async function productExists(
 ): Promise<boolean> {
   const products = await getProjectProducts(customer, projectSlug);
   return products.some((p) => p.type === productType);
+}
+
+// ============================================
+// Trip Library Functions
+// ============================================
+
+/**
+ * Load a trip by its URL slug.
+ * Supabase only — no JSON fallback (trips live in Supabase).
+ * SERVER ONLY
+ */
+export async function getTripBySlugAsync(
+  slug: string
+): Promise<Trip | null> {
+  if (isSupabaseConfigured()) {
+    return getTripBySlugFromSupabase(slug);
+  }
+  return null;
+}
+
+/**
+ * Load all trips linked to a project (with overrides).
+ * Supabase only — no JSON fallback.
+ * SERVER ONLY
+ */
+export async function getProjectTripsAsync(
+  projectId: string
+): Promise<ProjectTrip[]> {
+  if (isSupabaseConfigured()) {
+    return getTripsByProjectFromSupabase(projectId);
+  }
+  return [];
+}
+
+/**
+ * Load all published trips in a city (for discovery/SEO).
+ * Supabase only — no JSON fallback.
+ * SERVER ONLY
+ */
+export async function getTripsByCityAsync(
+  city: string
+): Promise<Trip[]> {
+  if (isSupabaseConfigured()) {
+    return getTripsByCityFromSupabase(city);
+  }
+  return [];
 }

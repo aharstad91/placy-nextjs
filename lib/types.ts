@@ -365,6 +365,8 @@ export const TRIP_CATEGORY_LABELS: Record<TripCategory, string> = {
 
 export type TripDifficulty = "easy" | "moderate" | "challenging";
 
+export type TripSeason = "spring" | "summer" | "autumn" | "winter" | "all-year";
+
 // Static configuration (JSON/database)
 export interface TripStopConfig {
   id: TripStopId;
@@ -390,6 +392,70 @@ export interface TripConfig {
   tags?: string[]; // Extra tags for filtering
   featured?: boolean; // Show in "Featured" section
   sortOrder?: number; // Manual sorting within category
+}
+
+// === Resolved Trip Types (from Supabase) ===
+// These types are returned by query functions with POIs already resolved.
+// TripConfig/TripStopConfig above are the JSON-based config types.
+
+export interface TripStop {
+  id: TripStopId;
+  poi: POI;
+  sortOrder: number;
+  nameOverride?: string;
+  descriptionOverride?: string;
+  imageUrlOverride?: string;
+  transitionText?: string;
+  localInsight?: string;
+}
+
+export interface Trip {
+  id: string;
+  title: string;
+  urlSlug: string;
+  description?: string;
+  coverImageUrl?: string;
+  category?: TripCategory;
+  difficulty?: TripDifficulty;
+  season: TripSeason;
+  tags: string[];
+  featured: boolean;
+  city: string;
+  region?: string;
+  country: string;
+  center: Coordinates;
+  distanceMeters?: number;
+  durationMinutes?: number;
+  stopCount: number;
+  stops: TripStop[];
+  defaultRewardTitle?: string;
+  defaultRewardDescription?: string;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectTripOverride {
+  id: string;
+  projectId: string;
+  tripId: string;
+  sortOrder: number;
+  enabled: boolean;
+  startPoi?: POI;
+  startName?: string;
+  startDescription?: string;
+  startTransitionText?: string;
+  rewardTitle?: string;
+  rewardDescription?: string;
+  rewardCode?: string;
+  rewardValidityDays?: number;
+  welcomeText?: string;
+}
+
+// A Trip as seen through a project's lens (with overrides applied)
+export interface ProjectTrip {
+  trip: Trip;
+  override: ProjectTripOverride;
 }
 
 // Runtime state

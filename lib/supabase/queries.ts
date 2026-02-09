@@ -7,6 +7,9 @@ import type {
   DbThemeStory,
   DbStorySection,
   DbThemeStorySection,
+  DbTrip,
+  DbTripStop,
+  DbProjectTrip,
 } from "./types";
 import type {
   Project,
@@ -21,7 +24,15 @@ import type {
   ProductInstance,
   ProductSummary,
   DiscoveryCircle,
+  Trip,
+  TripStop,
+  TripCategory,
+  TripDifficulty,
+  TripSeason,
+  ProjectTripOverride,
+  ProjectTrip,
 } from "../types";
+import { createTripStopId } from "../types";
 import { calculateDistance, calculateBoundingBox } from "../utils/geo";
 import { MIN_TRUST_SCORE } from "../utils/poi-trust";
 
@@ -910,6 +921,11 @@ export async function getProductFromSupabase(
     | import("@/lib/types").ReportConfig
     | undefined;
 
+  // Extract tripConfig from product.config if available
+  const tripConfig = (product.config as Record<string, unknown>)?.tripConfig as
+    | import("@/lib/types").TripConfig
+    | undefined;
+
   return {
     id: product.id,
     name: container.name,
@@ -919,6 +935,7 @@ export async function getProductFromSupabase(
     centerCoordinates: container.centerCoordinates,
     venueType: container.venueType,
     reportConfig,
+    tripConfig,
     story,
     pois,
     categories,
@@ -996,4 +1013,242 @@ export async function getProjectShortId(
     .single();
 
   return (data as { short_id: string } | null)?.short_id ?? null;
+}
+
+// ============================================
+// Trip Library Queries
+// ============================================
+
+/**
+ * Transform a DB trip stop (with nested POI) into a frontend TripStop.
+ */
+function transformTripStop(
+  dbStop: DbTripStop & { pois: DbPoi & { categories: DbCategory | null } }
+): TripStop {
+  const poi = dbStop.pois;
+  const category = poi.categories ? transformCategory(poi.categories) : undefined;
+
+  return {
+    id: createTripStopId(dbStop.id),
+    poi: transformPOI(poi, category),
+    sortOrder: dbStop.sort_order,
+    nameOverride: dbStop.name_override ?? undefined,
+    descriptionOverride: dbStop.description_override ?? undefined,
+    imageUrlOverride: dbStop.image_url_override ?? undefined,
+    transitionText: dbStop.transition_text ?? undefined,
+    localInsight: dbStop.local_insight ?? undefined,
+  };
+}
+
+/**
+ * Transform a DB trip (with nested stops) into a frontend Trip.
+ */
+function transformTrip(
+  dbTrip: DbTrip,
+  stops: TripStop[]
+): Trip {
+  return {
+    id: dbTrip.id,
+    title: dbTrip.title,
+    urlSlug: dbTrip.url_slug,
+    description: dbTrip.description ?? undefined,
+    coverImageUrl: dbTrip.cover_image_url ?? undefined,
+    category: (dbTrip.category as TripCategory) ?? undefined,
+    difficulty: (dbTrip.difficulty as TripDifficulty) ?? undefined,
+    season: (dbTrip.season as TripSeason) ?? "all-year",
+    tags: dbTrip.tags ?? [],
+    featured: dbTrip.featured ?? false,
+    city: dbTrip.city,
+    region: dbTrip.region ?? undefined,
+    country: dbTrip.country ?? "NO",
+    center: {
+      lat: Number(dbTrip.center_lat),
+      lng: Number(dbTrip.center_lng),
+    },
+    distanceMeters: dbTrip.distance_meters ? Number(dbTrip.distance_meters) : undefined,
+    durationMinutes: dbTrip.duration_minutes ?? undefined,
+    stopCount: dbTrip.stop_count ?? stops.length,
+    stops,
+    defaultRewardTitle: dbTrip.default_reward_title ?? undefined,
+    defaultRewardDescription: dbTrip.default_reward_description ?? undefined,
+    published: dbTrip.published ?? false,
+    createdAt: dbTrip.created_at,
+    updatedAt: dbTrip.updated_at,
+  };
+}
+
+/**
+ * Transform a DB project_trip into a frontend ProjectTripOverride.
+ */
+function transformProjectTripOverride(
+  dbPt: DbProjectTrip,
+  startPoi?: POI
+): ProjectTripOverride {
+  return {
+    id: dbPt.id,
+    projectId: dbPt.project_id,
+    tripId: dbPt.trip_id,
+    sortOrder: dbPt.sort_order ?? 0,
+    enabled: dbPt.enabled ?? true,
+    startPoi,
+    startName: dbPt.start_name ?? undefined,
+    startDescription: dbPt.start_description ?? undefined,
+    startTransitionText: dbPt.start_transition_text ?? undefined,
+    rewardTitle: dbPt.reward_title ?? undefined,
+    rewardDescription: dbPt.reward_description ?? undefined,
+    rewardCode: dbPt.reward_code ?? undefined,
+    rewardValidityDays: dbPt.reward_validity_days ?? undefined,
+    welcomeText: dbPt.welcome_text ?? undefined,
+  };
+}
+
+/**
+ * Fetch a trip by URL slug with all its stops and POI data.
+ *
+ * Uses batch fetching:
+ * - Query 1: Trip by slug
+ * - Query 2: All stops with nested POI + category data
+ */
+export async function getTripBySlug(
+  slug: string
+): Promise<Trip | null> {
+  const client = createServerClient();
+  if (!client) return null;
+
+  // Query 1: Fetch trip
+  const { data: dbTrip, error: tripError } = await client
+    .from("trips")
+    .select("*")
+    .eq("url_slug", slug)
+    .single();
+
+  if (tripError || !dbTrip) {
+    if (tripError) console.error("Error fetching trip:", tripError);
+    return null;
+  }
+
+  // Query 2: Fetch stops with nested POIs and categories
+  const { data: dbStops, error: stopsError } = await client
+    .from("trip_stops")
+    .select(`*, pois (*, categories (*))`)
+    .eq("trip_id", dbTrip.id)
+    .order("sort_order");
+
+  if (stopsError) {
+    console.error("Error fetching trip stops:", stopsError);
+  }
+
+  const stops = (dbStops || []).map((stop) =>
+    transformTripStop(stop as DbTripStop & { pois: DbPoi & { categories: DbCategory | null } })
+  );
+
+  return transformTrip(dbTrip as DbTrip, stops);
+}
+
+/**
+ * Fetch all trips linked to a project, with overrides and stops.
+ *
+ * Uses batch fetching:
+ * - Query 1: project_trips with nested trip data
+ * - Query 2: All stops for all linked trips
+ * - Query 3: Start POIs for project_trips that have start_poi_id
+ */
+export async function getTripsByProject(
+  projectId: string
+): Promise<ProjectTrip[]> {
+  const client = createServerClient();
+  if (!client) return [];
+
+  // Query 1: Fetch project_trips with nested trip data
+  const { data: dbProjectTrips, error: ptError } = await client
+    .from("project_trips")
+    .select(`*, trips (*)`)
+    .eq("project_id", projectId)
+    .eq("enabled", true)
+    .order("sort_order");
+
+  if (ptError || !dbProjectTrips || dbProjectTrips.length === 0) {
+    if (ptError) console.error("Error fetching project trips:", ptError);
+    return [];
+  }
+
+  // Collect all trip IDs for batch stop fetch
+  const tripIds = dbProjectTrips.map((pt) => (pt.trips as DbTrip).id);
+
+  // Query 2: Fetch all stops for all trips at once
+  const { data: allStops, error: stopsError } = await client
+    .from("trip_stops")
+    .select(`*, pois (*, categories (*))`)
+    .in("trip_id", tripIds)
+    .order("sort_order");
+
+  if (stopsError) {
+    console.error("Error fetching trip stops:", stopsError);
+  }
+
+  // Group stops by trip_id
+  const stopsByTrip = groupBy(allStops || [], (s) => s.trip_id);
+
+  // Query 3: Fetch start POIs where needed
+  const startPoiIds = dbProjectTrips
+    .map((pt) => pt.start_poi_id)
+    .filter((id): id is string => id !== null);
+
+  let startPoiMap = new Map<string, POI>();
+  if (startPoiIds.length > 0) {
+    const { data: startPois } = await client
+      .from("pois")
+      .select(`*, categories (*)`)
+      .in("id", startPoiIds);
+
+    if (startPois) {
+      for (const sp of startPois) {
+        const cat = (sp as { categories: DbCategory | null }).categories;
+        const category = cat ? transformCategory(cat) : undefined;
+        startPoiMap.set(sp.id, transformPOI(sp as DbPoi, category));
+      }
+    }
+  }
+
+  // Assemble results
+  return dbProjectTrips.map((pt) => {
+    const dbTrip = pt.trips as DbTrip;
+    const rawStops = stopsByTrip[dbTrip.id] || [];
+    const stops = rawStops.map((stop) =>
+      transformTripStop(stop as DbTripStop & { pois: DbPoi & { categories: DbCategory | null } })
+    );
+
+    const trip = transformTrip(dbTrip, stops);
+    const startPoi = pt.start_poi_id ? startPoiMap.get(pt.start_poi_id) : undefined;
+    const override = transformProjectTripOverride(pt as unknown as DbProjectTrip, startPoi);
+
+    return { trip, override };
+  });
+}
+
+/**
+ * Fetch all published trips in a city (for SEO/discovery pages).
+ * Returns trips without stops for listing purposes.
+ */
+export async function getTripsByCity(
+  city: string
+): Promise<Trip[]> {
+  const client = createServerClient();
+  if (!client) return [];
+
+  const { data: dbTrips, error } = await client
+    .from("trips")
+    .select("*")
+    .eq("city", city)
+    .eq("published", true)
+    .order("featured", { ascending: false })
+    .order("title");
+
+  if (error || !dbTrips) {
+    if (error) console.error("Error fetching trips by city:", error);
+    return [];
+  }
+
+  // Return trips without stops (listing view)
+  return dbTrips.map((t) => transformTrip(t as DbTrip, []));
 }
