@@ -6,6 +6,7 @@ import type { MapRef } from "react-map-gl/mapbox";
 export type ZoomState = "dot" | "icon" | "icon-rating" | "full-label";
 
 function computeZoomState(zoom: number): ZoomState {
+  console.log(`[zoom] ${zoom.toFixed(2)}`);
   if (zoom < 13) return "dot";
   return "icon";
 }
