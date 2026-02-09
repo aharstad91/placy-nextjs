@@ -1252,3 +1252,220 @@ export async function getTripsByCity(
   // Return trips without stops (listing view)
   return dbTrips.map((t) => transformTrip(t as DbTrip, []));
 }
+
+/**
+ * Look up a project ID from customer + project URL slug.
+ * Returns the project UUID or null if not found.
+ */
+export async function getProjectIdBySlug(
+  customerSlug: string,
+  projectSlug: string
+): Promise<string | null> {
+  const client = createServerClient();
+  if (!client) return null;
+
+  const { data, error } = await client
+    .from("projects")
+    .select("id")
+    .eq("customer_id", customerSlug)
+    .eq("url_slug", projectSlug)
+    .single();
+
+  if (error || !data) {
+    if (error) console.error("Error fetching project ID:", error);
+    return null;
+  }
+
+  return data.id;
+}
+
+/**
+ * Fetch the project_trips override for a specific trip within a project.
+ * Resolves the project from customer + project slug, then finds the override.
+ */
+export async function getProjectTripOverride(
+  tripSlug: string,
+  customerSlug: string,
+  projectSlug: string
+): Promise<ProjectTripOverride | null> {
+  const client = createServerClient();
+  if (!client) return null;
+
+  // Resolve project ID
+  const projectId = await getProjectIdBySlug(customerSlug, projectSlug);
+  if (!projectId) return null;
+
+  // Find the trip by slug
+  const { data: trip } = await client
+    .from("trips")
+    .select("id")
+    .eq("url_slug", tripSlug)
+    .single();
+
+  if (!trip) return null;
+
+  // Fetch the project_trip override
+  const { data: dbPt, error } = await client
+    .from("project_trips")
+    .select("*")
+    .eq("project_id", projectId)
+    .eq("trip_id", trip.id)
+    .single();
+
+  if (error || !dbPt) return null;
+
+  // Fetch start POI if present
+  let startPoi: POI | undefined;
+  if (dbPt.start_poi_id) {
+    const { data: sp } = await client
+      .from("pois")
+      .select("*, categories (*)")
+      .eq("id", dbPt.start_poi_id)
+      .single();
+
+    if (sp) {
+      const cat = (sp as { categories: DbCategory | null }).categories;
+      const category = cat ? transformCategory(cat) : undefined;
+      startPoi = transformPOI(sp as DbPoi, category);
+    }
+  }
+
+  return transformProjectTripOverride(dbPt as unknown as DbProjectTrip, startPoi);
+}
+
+/**
+ * Fetch all published trips that include a specific POI.
+ * Returns trip title + slug for cross-reference display.
+ */
+export async function getTripsByPoiId(
+  poiId: string
+): Promise<{ title: string; urlSlug: string }[]> {
+  const client = createServerClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("trip_stops")
+    .select("trips!inner(title, url_slug, published)")
+    .eq("poi_id", poiId);
+
+  if (error || !data) {
+    if (error) console.error("Error fetching trips by POI:", error);
+    return [];
+  }
+
+  // Filter to published trips and extract fields
+  return data
+    .map((row) => {
+      const trip = row.trips as unknown as { title: string; url_slug: string; published: boolean };
+      return trip;
+    })
+    .filter((trip) => trip.published)
+    .map((trip) => ({
+      title: trip.title,
+      urlSlug: trip.url_slug,
+    }));
+}
+
+// ============================================
+// Admin Trip Queries (service_role — no RLS)
+// ============================================
+
+/**
+ * Fetch all trips for admin dashboard (including unpublished).
+ * Returns trips without stops for listing purposes.
+ */
+export async function getAllTripsAdmin(): Promise<Trip[]> {
+  const client = createServerClient();
+  if (!client) return [];
+
+  const { data: dbTrips, error } = await client
+    .from("trips")
+    .select("*")
+    .order("city")
+    .order("title");
+
+  if (error || !dbTrips) {
+    if (error) console.error("Error fetching all trips:", error);
+    return [];
+  }
+
+  return dbTrips.map((t) => transformTrip(t as DbTrip, []));
+}
+
+/**
+ * Fetch a single trip by ID with all stops and POI data (for editor).
+ * Includes unpublished trips (admin view).
+ */
+export async function getTripByIdAdmin(
+  id: string
+): Promise<Trip | null> {
+  const client = createServerClient();
+  if (!client) return null;
+
+  const { data: dbTrip, error: tripError } = await client
+    .from("trips")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (tripError || !dbTrip) {
+    if (tripError) console.error("Error fetching trip by ID:", tripError);
+    return null;
+  }
+
+  const { data: dbStops, error: stopsError } = await client
+    .from("trip_stops")
+    .select(`*, pois (*, categories (*))`)
+    .eq("trip_id", dbTrip.id)
+    .order("sort_order");
+
+  if (stopsError) {
+    console.error("Error fetching trip stops:", stopsError);
+  }
+
+  const stops = (dbStops || []).map((stop) =>
+    transformTripStop(stop as DbTripStop & { pois: DbPoi & { categories: DbCategory | null } })
+  );
+
+  return transformTrip(dbTrip as DbTrip, stops);
+}
+
+/**
+ * Search POIs by name for stop selection in trip editor.
+ * Returns max 20 results with category data.
+ */
+export async function searchPoisAdmin(
+  query: string,
+  city?: string
+): Promise<POI[]> {
+  const client = createServerClient();
+  if (!client) return [];
+
+  // Sanitize query: Supabase .ilike() uses parameterized queries internally,
+  // but we escape special LIKE chars for correctness
+  const sanitized = query.replace(/[%_\\]/g, "\\$&");
+
+  let q = client
+    .from("pois")
+    .select(`*, categories (*)`)
+    .ilike("name", `%${sanitized}%`)
+    .limit(20);
+
+  if (city) {
+    // Filter POIs near the trip's city by checking if any project in that city has the POI
+    // For now, just return all matching POIs (city filter on POIs is not directly available)
+    // POIs don't have a city field — we'll return all matches
+  }
+
+  const { data, error } = await q.order("name");
+
+  if (error || !data) {
+    if (error) console.error("Error searching POIs:", error);
+    return [];
+  }
+
+  return data.map((poi) => {
+    const category = (poi as { categories: DbCategory | null }).categories;
+    return transformPOI(poi as DbPoi, category ? transformCategory(category) : undefined);
+  });
+}
