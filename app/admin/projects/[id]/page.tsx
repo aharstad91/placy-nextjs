@@ -5,8 +5,10 @@ import { ProjectDetailClient } from "./project-detail-client";
 import {
   getRequiredString,
   getOptionalString,
+  getOptionalNumber,
   getRequiredNumber,
 } from "@/lib/utils/form-data";
+import { getProjectTripsAdmin, getAllTripsAdmin } from "@/lib/supabase/queries";
 import type {
   DbCategory,
   DbProjectCategory,
@@ -229,6 +231,16 @@ export default async function ProjectDetailPage({
     .from("pois")
     .select("id, name, category_id, categories(id, name, color)")
     .order("name");
+
+  // Fetch trips linked to this project (for Trips tab)
+  const projectTrips = await getProjectTripsAdmin(projectId);
+
+  // Fetch all trips for "Add trip" search (for Trips tab)
+  const allTrips = await getAllTripsAdmin();
+
+  // Get project city for geo-suggestions
+  // Find customer city from existing data or project coords
+  const projectCity = project.name; // Will be used for geo suggestions
 
   // Server Actions
 
@@ -642,12 +654,102 @@ export default async function ProjectDetailPage({
     revalidatePath("/admin/projects");
   }
 
+  // --- Trip-related server actions (WP3B) ---
+
+  async function linkTripToProject(formData: FormData) {
+    "use server";
+
+    const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
+    const tripId = getRequiredString(formData, "tripId");
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    const { error } = await supabase.from("project_trips").insert({
+      project_id: projectId,
+      trip_id: tripId,
+    });
+
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Denne trippen er allerede koblet til prosjektet.");
+      }
+      throw new Error(error.message);
+    }
+
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
+  async function unlinkTripFromProject(formData: FormData) {
+    "use server";
+
+    const projectId = getRequiredString(formData, "projectId");
+    const shortId = getRequiredString(formData, "shortId");
+    const tripId = getRequiredString(formData, "tripId");
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    const { error } = await supabase
+      .from("project_trips")
+      .delete()
+      .eq("project_id", projectId)
+      .eq("trip_id", tripId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
+  async function updateProjectTripOverride(formData: FormData) {
+    "use server";
+
+    const overrideId = getRequiredString(formData, "overrideId");
+    const shortId = getRequiredString(formData, "shortId");
+    const startPoiId = getOptionalString(formData, "startPoiId");
+    const startName = getOptionalString(formData, "startName");
+    const startDescription = getOptionalString(formData, "startDescription");
+    const startTransitionText = getOptionalString(formData, "startTransitionText");
+    const rewardTitle = getOptionalString(formData, "rewardTitle");
+    const rewardDescription = getOptionalString(formData, "rewardDescription");
+    const rewardCode = getOptionalString(formData, "rewardCode");
+    const rewardValidityDays = getOptionalNumber(formData, "rewardValidityDays");
+    const welcomeText = getOptionalString(formData, "welcomeText");
+    const enabled = formData.get("enabled") === "true";
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    const { error } = await supabase
+      .from("project_trips")
+      .update({
+        start_poi_id: startPoiId,
+        start_name: startName,
+        start_description: startDescription,
+        start_transition_text: startTransitionText,
+        reward_title: rewardTitle,
+        reward_description: rewardDescription,
+        reward_code: rewardCode,
+        reward_validity_days: rewardValidityDays,
+        welcome_text: welcomeText,
+        enabled,
+      })
+      .eq("id", overrideId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
   return (
     <ProjectDetailClient
       project={projectWithRelations as ProjectWithRelations}
       customers={customers || []}
       globalCategories={globalCategories || []}
       allPois={allPois || []}
+      projectTrips={projectTrips}
+      allTrips={allTrips}
       updateProject={updateProject}
       createProjectCategory={createProjectCategory}
       updateProjectCategory={updateProjectCategory}
@@ -660,6 +762,9 @@ export default async function ProjectDetailPage({
       batchAddPoisToProduct={batchAddPoisToProduct}
       batchRemovePoisFromProduct={batchRemovePoisFromProduct}
       createProduct={createProduct}
+      linkTripToProject={linkTripToProject}
+      unlinkTripFromProject={unlinkTripFromProject}
+      updateProjectTripOverride={updateProjectTripOverride}
     />
   );
 }

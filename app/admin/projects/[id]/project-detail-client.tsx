@@ -19,7 +19,7 @@ import {
   ChevronRight,
   Compass,
   FileText,
-  Map,
+  Route,
   AlertCircle,
   Check,
   Minus,
@@ -39,6 +39,8 @@ import type {
 import type { ProjectWithRelations, ProductWithPois } from "./page";
 import { DiscoveryCirclesEditor } from "./discovery-circles-editor";
 import { ImportTab } from "./import-tab";
+import { TripsTab } from "./trips-tab";
+import type { Trip, ProjectTrip } from "@/lib/types";
 
 // NOTE: "Kategorier"-fanen er skjult — prosjekt-kategorier brukes ikke i praksis.
 // Vurder å fjerne CategoriesTab og relatert kode helt hvis det forblir ubrukt.
@@ -47,6 +49,7 @@ const TABS = [
   // { id: "categories", label: "Kategorier" },
   { id: "products", label: "Produkter" },
   { id: "pois", label: "POI-er" },
+  { id: "trips", label: "Trips" },
   { id: "import", label: "Import" },
 ] as const;
 
@@ -55,7 +58,7 @@ type TabId = (typeof TABS)[number]["id"];
 const PRODUCT_TYPE_CONFIG = {
   explorer: { label: "Explorer", icon: Compass, color: "emerald", route: "explore" },
   report: { label: "Report", icon: FileText, color: "rose", route: "report" },
-  guide: { label: "Guide", icon: Map, color: "amber", route: "guide" },
+  guide: { label: "Trip", icon: Route, color: "amber", route: "trip" },
 } as const;
 
 interface ProjectDetailClientProps {
@@ -68,6 +71,8 @@ interface ProjectDetailClientProps {
     category_id: string | null;
     categories: { id: string; name: string; color: string } | null;
   }>;
+  projectTrips: ProjectTrip[];
+  allTrips: Trip[];
   updateProject: (formData: FormData) => Promise<void>;
   createProjectCategory: (formData: FormData) => Promise<void>;
   updateProjectCategory: (formData: FormData) => Promise<void>;
@@ -80,6 +85,9 @@ interface ProjectDetailClientProps {
   batchAddPoisToProduct: (formData: FormData) => Promise<void>;
   batchRemovePoisFromProduct: (formData: FormData) => Promise<void>;
   createProduct: (formData: FormData) => Promise<void>;
+  linkTripToProject: (formData: FormData) => Promise<void>;
+  unlinkTripFromProject: (formData: FormData) => Promise<void>;
+  updateProjectTripOverride: (formData: FormData) => Promise<void>;
 }
 
 export function ProjectDetailClient({
@@ -87,6 +95,8 @@ export function ProjectDetailClient({
   customers,
   globalCategories,
   allPois,
+  projectTrips,
+  allTrips,
   updateProject,
   createProjectCategory,
   updateProjectCategory,
@@ -99,6 +109,9 @@ export function ProjectDetailClient({
   batchAddPoisToProduct,
   batchRemovePoisFromProduct,
   createProduct,
+  linkTripToProject,
+  unlinkTripFromProject,
+  updateProjectTripOverride,
 }: ProjectDetailClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("details");
@@ -175,6 +188,16 @@ export function ProjectDetailClient({
               batchAddPoisToProduct={batchAddPoisToProduct}
               batchRemovePoisFromProduct={batchRemovePoisFromProduct}
               createProduct={createProduct}
+            />
+          )}
+          {activeTab === "trips" && (
+            <TripsTab
+              project={project}
+              projectTrips={projectTrips}
+              allTrips={allTrips}
+              linkTripToProject={linkTripToProject}
+              unlinkTripFromProject={unlinkTripFromProject}
+              updateProjectTripOverride={updateProjectTripOverride}
             />
           )}
           {activeTab === "import" && (

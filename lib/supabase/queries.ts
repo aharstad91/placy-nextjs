@@ -1469,3 +1469,54 @@ export async function searchPoisAdmin(
     return transformPOI(poi as DbPoi, category ? transformCategory(category) : undefined);
   });
 }
+
+/**
+ * Fetch all trips linked to a project (admin view — includes disabled).
+ * Returns trip data with override info for the project admin trips tab.
+ */
+export async function getProjectTripsAdmin(
+  projectId: string
+): Promise<ProjectTrip[]> {
+  const client = createServerClient();
+  if (!client) return [];
+
+  const { data: dbProjectTrips, error: ptError } = await client
+    .from("project_trips")
+    .select(`*, trips (*)`)
+    .eq("project_id", projectId)
+    .order("sort_order");
+
+  if (ptError || !dbProjectTrips || dbProjectTrips.length === 0) {
+    if (ptError) console.error("Error fetching project trips admin:", ptError);
+    return [];
+  }
+
+  // Fetch start POIs where needed
+  const startPoiIds = dbProjectTrips
+    .map((pt) => pt.start_poi_id)
+    .filter((id): id is string => id !== null);
+
+  let startPoiMap = new Map<string, POI>();
+  if (startPoiIds.length > 0) {
+    const { data: startPois } = await client
+      .from("pois")
+      .select(`*, categories (*)`)
+      .in("id", startPoiIds);
+
+    if (startPois) {
+      for (const sp of startPois) {
+        const cat = (sp as { categories: DbCategory | null }).categories;
+        const category = cat ? transformCategory(cat) : undefined;
+        startPoiMap.set(sp.id, transformPOI(sp as DbPoi, category));
+      }
+    }
+  }
+
+  return dbProjectTrips.map((pt) => {
+    const dbTrip = pt.trips as DbTrip;
+    const trip = transformTrip(dbTrip, []);
+    const startPoi = pt.start_poi_id ? startPoiMap.get(pt.start_poi_id) : undefined;
+    const override = transformProjectTripOverride(pt as unknown as DbProjectTrip, startPoi);
+    return { trip, override };
+  });
+}
