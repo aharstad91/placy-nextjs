@@ -81,25 +81,25 @@ export default function ReportThemeSection({
     <section
       id={theme.id}
       ref={registerRef}
-      className="py-10 md:py-14 scroll-mt-20"
+      className="py-12 md:py-16 scroll-mt-20"
     >
       {/* Section header */}
       <div className="max-w-4xl">
         {/* Section heading */}
-        <div className="flex items-center gap-3 mb-3">
-          <Icon className="w-5 h-5 text-[#7a7062]" />
-          <h2 className="text-xl md:text-2xl font-semibold text-[#1a1a1a]">
+        <div className="flex items-center gap-3 mb-4">
+          <Icon className="w-6 h-6 text-[#7a7062]" />
+          <h2 className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
             {theme.name}
           </h2>
         </div>
 
         {/* Category quote */}
-        <p className="text-lg md:text-xl text-[#4a4a4a] leading-relaxed mb-4">
+        <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed mb-5">
           {theme.quote}
         </p>
 
         {/* Stats row */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#6a6a6a] mb-6">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base text-[#6a6a6a] mb-8">
           <span>
             {theme.stats.totalPOIs} {t(locale, "places")}
           </span>
@@ -128,14 +128,14 @@ export default function ReportThemeSection({
 
         {/* Theme intro */}
         {theme.intro && (
-          <p className="text-base text-[#4a4a4a] leading-relaxed mb-6">
+          <p className="text-lg text-[#4a4a4a] leading-relaxed mb-8">
             {theme.intro}
           </p>
         )}
 
         {/* Bridge text */}
         {theme.bridgeText && (
-          <p className="text-base italic text-[#5a5a5a] leading-relaxed mb-6">
+          <p className="text-lg italic text-[#5a5a5a] leading-relaxed mb-8">
             {theme.bridgeText}
           </p>
         )}
