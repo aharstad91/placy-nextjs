@@ -138,7 +138,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
       {/* Desktop: 50/50 split with sticky map */}
       <div className="hidden lg:flex">
         {/* Left: Scrollable theme sections */}
-        <div className="w-1/2 px-16">
+        <div className="w-1/2 px-16 min-w-0 overflow-hidden">
           {reportData.themes.map((theme, i) => (
             <div key={theme.id}>
               {i > 0 && <div className="h-px bg-[#e8e4df]" />}
