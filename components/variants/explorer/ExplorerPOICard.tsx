@@ -401,7 +401,7 @@ export default function ExplorerPOICard({
   // === ALWAYS EXPANDED MODE (used by Trip) ===
   if (alwaysExpanded) {
     return (
-      <div className={cn("w-full text-left bg-gray-50", className)}>
+      <div className={cn("w-full text-left", className)}>
         {expandedHeader}
         {expandedContent}
       </div>

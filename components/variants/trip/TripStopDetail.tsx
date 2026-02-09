@@ -142,7 +142,7 @@ export default function TripStopDetail({
   }, [distanceToStop]);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col p-4 gap-3">
       {/* Rich POI card (always expanded, no save button) */}
       <ExplorerPOICard
         poi={stop}
@@ -150,10 +150,11 @@ export default function TripStopDetail({
         alwaysExpanded
         openingHours={openingHours}
         travelMode="walk"
+        className="rounded-xl border border-stone-200 overflow-hidden shadow-sm bg-white"
       />
 
       {/* Trip-specific content below the card */}
-      <div className="px-4 pb-4">
+      <div>
         {/* Distance badge */}
         {formattedDistance && (
           <div className="flex items-center gap-1 text-sm text-stone-500 mb-3">
