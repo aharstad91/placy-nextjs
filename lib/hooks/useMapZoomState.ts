@@ -7,9 +7,8 @@ export type ZoomState = "dot" | "icon" | "icon-rating" | "full-label";
 
 function computeZoomState(zoom: number): ZoomState {
   if (zoom < 11) return "dot";
-  if (zoom < 13) return "icon";
-  if (zoom < 15) return "icon-rating";
-  return "full-label";
+  // icon-rating and full-label disabled — hover tooltips provide name/rating
+  return "icon";
 }
 
 /**
