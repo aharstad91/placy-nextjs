@@ -1,0 +1,161 @@
+{
+  "id": "scandic-nidelven-panorama-guide",
+  "name": "Scandic Nidelven Panorama Guide",
+  "customer": "scandic",
+  "urlSlug": "scandic-nidelven-panorama-guide",
+  "productType": "guide",
+  "centerCoordinates": {
+    "lat": 63.4300,
+    "lng": 10.4030
+  },
+  "story": {
+    "id": "scandic-nidelven-panorama-story",
+    "title": "Over hustakene",
+    "introText": "Klatre opp til Trondheims beste utsiktspunkt og se byen fra oven — fra Bakklandet til Kristiansten Festning.",
+    "sections": [],
+    "themeStories": []
+  },
+  "categories": [
+    {
+      "id": "sightseeing",
+      "name": "Severdighet",
+      "icon": "Landmark",
+      "color": "#6366f1"
+    },
+    {
+      "id": "food-drink",
+      "name": "Mat & drikke",
+      "icon": "UtensilsCrossed",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "hotel",
+      "name": "Hotell",
+      "icon": "Hotel",
+      "color": "#10b981"
+    }
+  ],
+  "pois": [
+    {
+      "id": "gamle-bybro-panorama",
+      "name": "Gamle Bybro",
+      "coordinates": { "lat": 63.4283, "lng": 10.4010 },
+      "category": {
+        "id": "sightseeing",
+        "name": "Severdighet",
+        "icon": "Landmark",
+        "color": "#6366f1"
+      },
+      "description": "Start turen ved den ikoniske bybroen. Herfra ser du Bakklandet og bryggerekkene langs Nidelva — det klassiske Trondheim-motivet."
+    },
+    {
+      "id": "bakklandet-panorama",
+      "name": "Bakklandet",
+      "coordinates": { "lat": 63.4290, "lng": 10.4055 },
+      "category": {
+        "id": "food-drink",
+        "name": "Mat & drikke",
+        "icon": "UtensilsCrossed",
+        "color": "#f59e0b"
+      },
+      "description": "Trondheims mest fotogene bydel. Ta med en kaffe fra en av de koselige kafeene — du trenger energi til klatringen som venter."
+    },
+    {
+      "id": "kristiansten-festning",
+      "name": "Kristiansten Festning",
+      "coordinates": { "lat": 63.4228, "lng": 10.4063 },
+      "category": {
+        "id": "sightseeing",
+        "name": "Severdighet",
+        "icon": "Landmark",
+        "color": "#6366f1"
+      },
+      "description": "Bygget etter bybrannen i 1681 for å beskytte byen. Fra festningsmurene har du 360-graders panoramautsikt over Trondheim, fjorden og Nidelva."
+    },
+    {
+      "id": "torvet",
+      "name": "Torvet",
+      "coordinates": { "lat": 63.4305, "lng": 10.3952 },
+      "category": {
+        "id": "sightseeing",
+        "name": "Severdighet",
+        "icon": "Landmark",
+        "color": "#6366f1"
+      },
+      "description": "Trondheims hovedtorg med Olav Tryggvasons statue. Byens hjerte siden middelalderen, omgitt av butikker og kafeer."
+    },
+    {
+      "id": "rockheim",
+      "name": "Rockheim",
+      "coordinates": { "lat": 63.4387, "lng": 10.4018 },
+      "category": {
+        "id": "sightseeing",
+        "name": "Severdighet",
+        "icon": "Landmark",
+        "color": "#6366f1"
+      },
+      "description": "Norges nasjonalmuseum for populærmusikk i et spektakulært bygg på Brattøra. Interaktive utstillinger fra 1950-tallet til i dag."
+    },
+    {
+      "id": "scandic-nidelven-panorama",
+      "name": "Scandic Nidelven",
+      "coordinates": { "lat": 63.4352, "lng": 10.4065 },
+      "category": {
+        "id": "hotel",
+        "name": "Hotell",
+        "icon": "Hotel",
+        "color": "#10b981"
+      },
+      "description": "Tilbake ved hotellet etter en aktiv dag. Du har fortjent en belønning!"
+    }
+  ],
+  "tripConfig": {
+    "id": "scandic-nidelven-panorama-trip",
+    "title": "Over hustakene",
+    "description": "Fra Gamle Bybro og Bakklandet, opp til Kristiansten Festning med panoramautsikt, gjennom sentrum til Rockheim og tilbake til hotellet.",
+    "difficulty": "moderate",
+    "category": "active",
+    "featured": false,
+    "sortOrder": 3,
+    "precomputedDistanceMeters": 4500,
+    "precomputedDurationMinutes": 75,
+    "stops": [
+      {
+        "id": "stop-1",
+        "poiId": "gamle-bybro-panorama",
+        "transitionText": "Start ved Gamle Bybro og nyt utsikten over Nidelva."
+      },
+      {
+        "id": "stop-2",
+        "poiId": "bakklandet-panorama",
+        "transitionText": "Kryss broen til Bakklandets fargerike trehus og kafeer."
+      },
+      {
+        "id": "stop-3",
+        "poiId": "kristiansten-festning",
+        "transitionText": "Følg den bratte stien opp til festningen — utsikten er verdt svetten!"
+      },
+      {
+        "id": "stop-4",
+        "poiId": "torvet",
+        "transitionText": "Gå ned fra festningen og vestover til byens hovedtorg."
+      },
+      {
+        "id": "stop-5",
+        "poiId": "rockheim",
+        "transitionText": "Følg Kjøpmannsgata nordover til Brattøra og Norges musikkhistorie."
+      },
+      {
+        "id": "stop-6",
+        "poiId": "scandic-nidelven-panorama",
+        "transitionText": "En kort spasertur tilbake til hotellet for velfortjent hvile."
+      }
+    ],
+    "reward": {
+      "title": "Gratis kaffe i lobbyen",
+      "description": "Vis denne skjermen i resepsjonen",
+      "hotelName": "Scandic Nidelven",
+      "validityDays": 7
+    }
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "id": "scandic-nidelven-food-guide",
+  "name": "Scandic Nidelven Food Guide",
+  "customer": "scandic",
+  "urlSlug": "scandic-nidelven-food-guide",
+  "productType": "guide",
+  "centerCoordinates": {
+    "lat": 63.4330,
+    "lng": 10.4020
+  },
+  "story": {
+    "id": "scandic-nidelven-food-story",
+    "title": "Smak av Trondheim",
+    "introText": "En kulinarisk vandring gjennom Trondheims beste restauranter og kafeer — fra frokostkonge til gourmetmiddag.",
+    "sections": [],
+    "themeStories": []
+  },
+  "categories": [
+    {
+      "id": "food-drink",
+      "name": "Mat & drikke",
+      "icon": "UtensilsCrossed",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "hotel",
+      "name": "Hotell",
+      "icon": "Hotel",
+      "color": "#10b981"
+    }
+  ],
+  "pois": [
+    {
+      "id": "scandic-nidelven-food",
+      "name": "Scandic Nidelven",
+      "coordinates": { "lat": 63.4352, "lng": 10.4065 },
+      "category": {
+        "id": "hotel",
+        "name": "Hotell",
+        "icon": "Hotel",
+        "color": "#10b981"
+      },
+      "description": "Start dagen med Norges beste frokost — kåret flere år på rad. Scandic Nidelvens frokostbuffet er en attraksjon i seg selv."
+    },
+    {
+      "id": "jacobsen-svart",
+      "name": "Jacobsen & Svart",
+      "coordinates": { "lat": 63.4360, "lng": 10.4040 },
+      "category": {
+        "id": "food-drink",
+        "name": "Mat & drikke",
+        "icon": "UtensilsCrossed",
+        "color": "#f59e0b"
+      },
+      "description": "Spesialkaffe fra Trondheims eget mikrobryggeri. Lysristede bønner, single-origin håndbrygget kaffe og espresso i verdensklasse."
+    },
+    {
+      "id": "britannia-brasserie",
+      "name": "Brasserie Britannia",
+      "coordinates": { "lat": 63.4307, "lng": 10.3958 },
+      "category": {
+        "id": "food-drink",
+        "name": "Mat & drikke",
+        "icon": "UtensilsCrossed",
+        "color": "#f59e0b"
+      },
+      "description": "Franskinspisert brasserie i det ærverdige Britannia Hotel. Turbot med brunet smør, tarte tatin, og nordiske vrier på klassikerne."
+    },
+    {
+      "id": "bakklandet-kafeer",
+      "name": "Bakklandet",
+      "coordinates": { "lat": 63.4290, "lng": 10.4055 },
+      "category": {
+        "id": "food-drink",
+        "name": "Mat & drikke",
+        "icon": "UtensilsCrossed",
+        "color": "#f59e0b"
+      },
+      "description": "Bakklandets koselige kafeer og bakerier i fargerike trehus. Perfekt for en ettermiddagskaffe med kanelbolle langs Nidelva."
+    },
+    {
+      "id": "spontan-vinbar",
+      "name": "Spontan Vinbar",
+      "coordinates": { "lat": 63.4338, "lng": 10.4048 },
+      "category": {
+        "id": "food-drink",
+        "name": "Mat & drikke",
+        "icon": "UtensilsCrossed",
+        "color": "#f59e0b"
+      },
+      "description": "Trondheims beste naturvinbar med småretter. Kyllinglevermousse med tyttebær, delerett og biodynamisk vin i avslappet atmosfære."
+    },
+    {
+      "id": "tollbua",
+      "name": "Tollbua",
+      "coordinates": { "lat": 63.4384, "lng": 10.4025 },
+      "category": {
+        "id": "food-drink",
+        "name": "Mat & drikke",
+        "icon": "UtensilsCrossed",
+        "color": "#f59e0b"
+      },
+      "description": "Nordisk gourmetbistro ved sjøen, åpnet av Bocuse d'Or-sølvmedaljevinner Christopher Davidsen. Lokale råvarer, smørsauser og kreative retter."
+    }
+  ],
+  "tripConfig": {
+    "id": "scandic-nidelven-food-trip",
+    "title": "Smak av Trondheim",
+    "description": "En kulinarisk vandring fra Scandic Nidelvens legendariske frokost, gjennom byens beste kafeer og restauranter, til gourmetmiddag ved sjøen.",
+    "difficulty": "easy",
+    "category": "food",
+    "featured": true,
+    "sortOrder": 2,
+    "precomputedDistanceMeters": 3200,
+    "precomputedDurationMinutes": 50,
+    "stops": [
+      {
+        "id": "stop-1",
+        "poiId": "scandic-nidelven-food",
+        "transitionText": "Start med Norges beste frokost på Scandic Nidelven."
+      },
+      {
+        "id": "stop-2",
+        "poiId": "jacobsen-svart",
+        "transitionText": "En kort spasertur til Brattørgata for morgenens spesialkaffe."
+      },
+      {
+        "id": "stop-3",
+        "poiId": "britannia-brasserie",
+        "transitionText": "Gå sørover gjennom sentrum til det ærverdige Britannia Hotel."
+      },
+      {
+        "id": "stop-4",
+        "poiId": "bakklandet-kafeer",
+        "transitionText": "Kryss Nidelva østover til Bakklandets sjarmerende kafégater."
+      },
+      {
+        "id": "stop-5",
+        "poiId": "spontan-vinbar",
+        "transitionText": "Følg elva nordover til Fjordgata for et glass naturvin."
+      },
+      {
+        "id": "stop-6",
+        "poiId": "tollbua",
+        "transitionText": "Avslutt med gourmetmiddag på Brattørkaia, rett ved hotellet."
+      }
+    ],
+    "reward": {
+      "title": "Gratis dessert i restauranten",
+      "description": "Vis denne skjermen i resepsjonen",
+      "hotelName": "Scandic Nidelven",
+      "validityDays": 7
+    }
+  }
+}
