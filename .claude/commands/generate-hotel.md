@@ -269,13 +269,31 @@ For hver POI (unntatt transport: bus, train, bike, tram, parking):
 - Dobbelt publikum: Hotellet (kjøper) og gjesten (leser)
 - Regel: Aldri påstå noe som ikke kan verifiseres fra søkeresultat
 
-**editorialHook:** 1 setning. Lokal kontekst — historisk, kulturell, eller praktisk. Basert på WebSearch.
+**FERSKVARE-REGEL (KRITISK):** Aldri inkluder informasjon som kan bli utdatert. Feil info slår direkte tilbake på Placy og kunden.
+
+| ALDRI bruk | Eksempel (feil) | Bruk i stedet |
+|------------|------------------|---------------|
+| Spesifikke priser | "Pizza til 159 kr" | "Kjent for god pizza til rimelig pris" |
+| Åpningstider | "Åpent kl. 18–22" | "Populært for middag" |
+| Tidsbegrensede tilbud | "Lunsjtilbud kl. 11–15" | "Godt lunsjsted" |
+| Beliggenhet inne i bygg | "Inne i City Syd" | "I Kjøpmannsgata" (bruk faktisk adresse) |
+| Spesifikke menyer | "Prøv dagens 3-retter til 495 kr" | "Kjent for sesongmenyen" |
+| Spesifikke leveringstjenester | "Bestill via Wolt" | "Tilbyr levering" |
+
+**Holdbar informasjon (bruk dette):**
+- Etableringsår og historie ("Familiedrevet siden 1900")
+- Kategori/kjøkkentype ("Trøndersk sushikjede", "Håndverksbakeri")
+- Atmosfære og karakter ("Ujålete bar med lokal stamgjengfølelse")
+- Nabolagskontekst ("Rett ved Torgkvartalet", "I Søndregata")
+- Generelle tips uten tall ("Bestill bord i helgene", "Gå tidlig for best utvalg")
+
+**editorialHook:** 1 setning. Lokal kontekst — historisk, kulturell, eller praktisk. Basert på WebSearch. Tidløs.
 NO-eksempel: "Har servert kaffe på Bakklandet siden 2004. Fast stopp for lokale på vei til jobb."
 EN-eksempel: "Serving coffee on Bakklandet since 2004. A regular stop for locals on their way to work."
 
-**localInsight:** 1 setning. Praktisk tips fra insider-perspektiv.
-NO-eksempel: "Bestill bord etter kl 18 i helgene — populært blant lokale."
-EN-eksempel: "Book a table after 6 PM on weekends — popular with locals."
+**localInsight:** 1 setning. Praktisk tips fra insider-perspektiv. Uten tall/priser/tider.
+NO-eksempel: "Bestill bord i helgene — populært blant lokale."
+EN-eksempel: "Book a table on weekends — popular with locals."
 
 3. PATCH POI-en med norsk tekst via Supabase REST: `editorial_hook` og `local_insight`
 4. Lagre engelsk tekst i `translations`-tabellen:
