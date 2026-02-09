@@ -1,8 +1,8 @@
 {
-  "id": "scandic-nidelven-trip",
-  "name": "Scandic Nidelven Trip",
+  "id": "scandic-nidelven-guide",
+  "name": "Scandic Nidelven Guide",
   "customer": "scandic",
-  "urlSlug": "scandic-nidelven-trip",
+  "urlSlug": "scandic-nidelven-guide",
   "productType": "guide",
   "centerCoordinates": {
     "lat": 63.4310,

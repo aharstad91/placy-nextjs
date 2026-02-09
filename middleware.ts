@@ -6,13 +6,19 @@ import type { NextRequest } from "next/server";
  *
  * Handles redirects from old URL structure to new:
  * - /customer/slug-explore → /customer/slug/explore
- * - /customer/slug-guide → /customer/slug/guide
+ * - /customer/slug-guide → /customer/slug/trip  (guide route renamed to trip)
  * - /customer/slug (report) → stays as-is (handled by page.tsx)
  *
  * Uses 308 permanent redirects to preserve HTTP method and transfer SEO equity.
  */
 
-const PRODUCT_SUFFIXES = ["explore", "guide", "trip"] as const;
+const PRODUCT_SUFFIXES = ["explore", "guide"] as const;
+
+/** Map legacy suffix to actual route path */
+const SUFFIX_TO_ROUTE: Record<string, string> = {
+  explore: "explore",
+  guide: "trip",
+};
 
 // Known customer slugs - add new customers here
 // In production, this could be fetched from database or config
@@ -44,10 +50,11 @@ export function middleware(request: NextRequest) {
   for (const suffix of PRODUCT_SUFFIXES) {
     if (slugWithSuffix.endsWith(`-${suffix}`)) {
       const baseSlug = slugWithSuffix.slice(0, -(suffix.length + 1));
+      const route = SUFFIX_TO_ROUTE[suffix] ?? suffix;
 
       // Redirect to new URL structure
       return NextResponse.redirect(
-        new URL(`/${customer}/${baseSlug}/${suffix}${search}`, request.url),
+        new URL(`/${customer}/${baseSlug}/${route}${search}`, request.url),
         308 // Permanent redirect, preserves HTTP method
       );
     }
