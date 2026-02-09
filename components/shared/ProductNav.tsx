@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Share2, Check, Pencil } from "lucide-react";
+import { Share2, Check, Pencil, ChevronLeft } from "lucide-react";
 
 export interface ProductLink {
   label: string;
@@ -19,6 +19,15 @@ interface ProductNavProps {
 export default function ProductNav({ projectName, products, adminEditUrl }: ProductNavProps) {
   const pathname = usePathname();
   const [copied, setCopied] = useState(false);
+
+  // On trip detail pages, show a back link to the trips collection
+  // URL: /customer/project/trips/tripSlug → /customer/project/trips
+  const segments = pathname.split("/").filter(Boolean);
+  const tripsIdx = segments.indexOf("trips");
+  const isTripDetailPage = tripsIdx >= 0 && tripsIdx < segments.length - 1;
+  const tripsHref = isTripDetailPage
+    ? `/${segments.slice(0, tripsIdx + 1).join("/")}`
+    : null;
 
   const handleShare = useCallback(async () => {
     const url = window.location.href;
@@ -44,8 +53,17 @@ export default function ProductNav({ projectName, products, adminEditUrl }: Prod
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
       <div className="px-8 h-12 flex items-center justify-between">
-        {/* Left: Project name (clickable to admin if available) */}
-        {adminEditUrl ? (
+        {/* Left: Back link on trip pages, otherwise project name */}
+        {tripsHref ? (
+          <Link
+            href={tripsHref}
+            className="flex items-center gap-0.5 text-sm font-medium text-[#7a7062] hover:text-[#1a1a1a] transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Alle turer</span>
+            <span className="sm:hidden">Tilbake</span>
+          </Link>
+        ) : adminEditUrl ? (
           <Link
             href={adminEditUrl}
             target="_blank"

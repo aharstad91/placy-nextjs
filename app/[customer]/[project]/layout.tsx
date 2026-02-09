@@ -49,7 +49,7 @@ export default async function ProjectLayout({ params, children }: LayoutProps) {
   const basePath = `/${customer}/${projectSlug}`;
   const productTypeToLink: Record<string, { label: string; subPath: string }> = {
     explorer: { label: "Explore", subPath: "/explore" },
-    guide: { label: "Trips", subPath: "/trip" },
+    guide: { label: "Trips", subPath: "/trips" },
     report: { label: "Report", subPath: "/report" },
   };
 

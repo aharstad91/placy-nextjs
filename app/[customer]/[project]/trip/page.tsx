@@ -1,6 +1,5 @@
-import { notFound } from "next/navigation";
-import { getProductAsync, getProjectAsync } from "@/lib/data-server";
-import TripPage from "@/components/variants/trip/TripPage";
+import { redirect, notFound } from "next/navigation";
+import { getProductAsync, getProjectAsync, getBaseSlug } from "@/lib/data-server";
 
 interface PageProps {
   params: Promise<{
@@ -9,46 +8,39 @@ interface PageProps {
   }>;
 }
 
-export default async function TripProductPage({ params }: PageProps) {
+/**
+ * Legacy route: /customer/slug/trip
+ * Redirects to /customer/baseSlug/trips/tripSlug
+ */
+export default async function TripRedirectPage({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
 
-  // Try new hierarchy first
-  let projectData = await getProductAsync(customer, projectSlug, "guide");
+  // Find the trip slug — try hierarchy, then legacy patterns
+  let tripSlug: string | null = null;
 
-  // Fallback to legacy: try {slug}-guide
-  if (!projectData) {
-    projectData = await getProjectAsync(customer, `${projectSlug}-guide`);
+  const hierarchyData = await getProductAsync(customer, projectSlug, "guide");
+  if (hierarchyData) {
+    tripSlug = hierarchyData.urlSlug;
   }
 
-  // Final fallback: check if slug itself is a guide
-  if (!projectData) {
-    const legacyProject = await getProjectAsync(customer, projectSlug);
-    if (legacyProject?.productType === "guide") {
-      projectData = legacyProject;
+  if (!tripSlug) {
+    const legacyGuide = await getProjectAsync(customer, `${projectSlug}-guide`);
+    if (legacyGuide) {
+      tripSlug = legacyGuide.urlSlug;
     }
   }
 
-  if (!projectData) {
+  if (!tripSlug) {
+    const directProject = await getProjectAsync(customer, projectSlug);
+    if (directProject?.productType === "guide") {
+      tripSlug = directProject.urlSlug;
+    }
+  }
+
+  if (!tripSlug) {
     notFound();
   }
 
-  return <TripPage project={projectData} />;
-}
-
-export async function generateMetadata({ params }: PageProps) {
-  const { customer, project: projectSlug } = await params;
-
-  let projectData = await getProductAsync(customer, projectSlug, "guide");
-  if (!projectData) {
-    projectData = await getProjectAsync(customer, `${projectSlug}-guide`);
-  }
-
-  if (!projectData) {
-    return { title: "Tur ikke funnet" };
-  }
-
-  return {
-    title: `${projectData.tripConfig?.title ?? projectData.story.title} – Tur | Placy`,
-    description: projectData.tripConfig?.description ?? projectData.story.introText,
-  };
+  const baseSlug = getBaseSlug(tripSlug);
+  redirect(`/${customer}/${baseSlug}/trips/${tripSlug}`);
 }

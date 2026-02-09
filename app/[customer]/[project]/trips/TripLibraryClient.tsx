@@ -8,6 +8,7 @@ import type { Project, TripCategory } from "@/lib/types";
 
 interface TripLibraryClientProps {
   customer: string;
+  projectSlug: string;
   trips: Project[];
   groupedTrips: Record<TripCategory, Project[]>;
   categoriesWithTrips: readonly TripCategory[];
@@ -18,10 +19,12 @@ interface TripLibraryClientProps {
 function TripCard({
   trip,
   customer,
+  projectSlug,
   priority = false,
 }: {
   trip: Project;
   customer: string;
+  projectSlug: string;
   priority?: boolean;
 }) {
   const config = trip.tripConfig;
@@ -31,7 +34,7 @@ function TripCard({
 
   return (
     <Link
-      href={`/${customer}/${trip.urlSlug}`}
+      href={`/${customer}/${projectSlug}/trips/${trip.urlSlug}`}
       className="flex-shrink-0 w-40 group cursor-pointer snap-start focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C45C3A] focus-visible:ring-offset-2 rounded-xl"
     >
       {/* Cover image with 4:5 aspect ratio */}
@@ -85,12 +88,14 @@ function CategoryRow({
   label,
   trips,
   customer,
+  projectSlug,
   isFirstRow = false,
 }: {
   category: TripCategory;
   label: string;
   trips: Project[];
   customer: string;
+  projectSlug: string;
   isFirstRow?: boolean;
 }) {
   if (trips.length === 0) return null;
@@ -114,6 +119,7 @@ function CategoryRow({
               key={trip.id}
               trip={trip}
               customer={customer}
+              projectSlug={projectSlug}
               priority={isFirstRow && index < 4}
             />
           ))}
@@ -127,6 +133,7 @@ function CategoryRow({
 
 export default function TripLibraryClient({
   customer,
+  projectSlug,
   trips,
   groupedTrips,
   categoriesWithTrips,
@@ -301,6 +308,7 @@ export default function TripLibraryClient({
                 : groupedTrips[category]
             }
             customer={customer}
+            projectSlug={projectSlug}
             isFirstRow={index === 0}
           />
         ))}
