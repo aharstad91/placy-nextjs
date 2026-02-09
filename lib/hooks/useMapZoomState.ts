@@ -6,8 +6,7 @@ import type { MapRef } from "react-map-gl/mapbox";
 export type ZoomState = "dot" | "icon" | "icon-rating" | "full-label";
 
 function computeZoomState(zoom: number): ZoomState {
-  if (zoom < 11) return "dot";
-  // icon-rating and full-label disabled — hover tooltips provide name/rating
+  if (zoom < 13) return "dot";
   return "icon";
 }
 
