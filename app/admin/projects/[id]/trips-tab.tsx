@@ -218,6 +218,8 @@ export function TripsTab({
             <LinkedTripCard
               key={pt.trip.id}
               projectTrip={pt}
+              customerSlug={project.customer_id}
+              projectSlug={project.url_slug}
               isExpanded={isExpanded}
               onToggle={() =>
                 setExpandedTripId(isExpanded ? null : pt.trip.id)
@@ -452,6 +454,8 @@ function TripListItem({
 
 interface LinkedTripCardProps {
   projectTrip: ProjectTrip;
+  customerSlug: string | null;
+  projectSlug: string;
   isExpanded: boolean;
   onToggle: () => void;
   onUnlink: () => void;
@@ -464,6 +468,8 @@ interface LinkedTripCardProps {
 
 function LinkedTripCard({
   projectTrip,
+  customerSlug,
+  projectSlug,
   isExpanded,
   onToggle,
   onUnlink,
@@ -523,13 +529,17 @@ function LinkedTripCard({
           </div>
         </button>
         <div className="flex items-center gap-1 pr-3">
-          <Link
-            href={`/admin/trips/${trip.id}`}
-            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Rediger trip"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </Link>
+          {customerSlug && (
+            <a
+              href={`/${customerSlug}/${projectSlug}/trips/${trip.urlSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Åpne B2B-tur"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
           <button
             onClick={onUnlink}
             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

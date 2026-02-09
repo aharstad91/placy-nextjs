@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import type { Project, POI, TripStopConfig, Coordinates } from "@/lib/types";
+import type { RouteSegment } from "@/components/map/route-layer";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import { useTripCompletion } from "@/lib/hooks/useTripCompletion";
 import { haversineDistance } from "@/lib/utils";
@@ -148,6 +149,48 @@ export default function TripPage({ project }: TripPageProps) {
     return () => abortController.abort();
   }, [stops]);
 
+  // Compute route segments (active/inactive per leg) based on currentStopIndex
+  const routeSegments: RouteSegment[] | undefined = useMemo(() => {
+    if (routeState.status !== "ready" || stops.length < 2) return undefined;
+
+    const coords = routeState.coordinates;
+
+    // Find the closest route coordinate index for each stop (forward-only search)
+    const indices: number[] = [];
+    for (const stop of stops) {
+      let minDist = Infinity;
+      let minIdx = indices.length > 0 ? indices[indices.length - 1] : 0;
+      const searchStart = indices.length > 0 ? indices[indices.length - 1] : 0;
+
+      for (let i = searchStart; i < coords.length; i++) {
+        const dx = coords[i][0] - stop.coordinates.lng;
+        const dy = coords[i][1] - stop.coordinates.lat;
+        const dist = dx * dx + dy * dy;
+        if (dist < minDist) {
+          minDist = dist;
+          minIdx = i;
+        }
+      }
+      indices.push(minIdx);
+    }
+
+    // Build one segment per leg (stop i → stop i+1)
+    // Active = progress bar: current segment + all completed/passed segments
+    const segments: RouteSegment[] = [];
+    for (let i = 0; i < indices.length - 1; i++) {
+      const start = indices[i];
+      const end = indices[i + 1];
+      if (end > start) {
+        segments.push({
+          coordinates: coords.slice(start, end + 1),
+          active: i <= currentStopIndex || completedStops.has(i),
+        });
+      }
+    }
+
+    return segments.length > 0 ? segments : undefined;
+  }, [routeState, stops, currentStopIndex, completedStops]);
+
   // Navigation handlers
   const handleNext = useCallback(() => {
     if (currentStopIndex < stops.length - 1) {
@@ -239,6 +282,7 @@ export default function TripPage({ project }: TripPageProps) {
     onStopClick: handleStopClick,
     routeCoordinates:
       routeState.status === "ready" ? routeState.coordinates : undefined,
+    routeSegments,
     userPosition: geo.userPosition,
     userAccuracy: geo.accuracy,
     geoMode: geo.mode,

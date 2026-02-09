@@ -52,7 +52,8 @@ export function TripsAdminClient({ trips, cities }: TripsAdminClientProps) {
   }, [trips, searchQuery, filterCity, filterCategory, filterSeason, filterPublished]);
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+    <div className="px-8 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -211,6 +212,7 @@ export function TripsAdminClient({ trips, cities }: TripsAdminClientProps) {
           </table>
         </div>
       )}
+    </div>
     </div>
   );
 }

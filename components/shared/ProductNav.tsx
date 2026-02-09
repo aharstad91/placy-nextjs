@@ -87,7 +87,7 @@ export default function ProductNav({ projectName, products, adminEditUrl }: Prod
                 key={product.href}
                 href={product.href}
                 className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
-                  pathname === product.href
+                  pathname === product.href || pathname.startsWith(product.href + "/")
                     ? "bg-white text-[#1a1a1a] shadow-sm"
                     : "text-[#7a7062] hover:text-[#1a1a1a]"
                 }`}

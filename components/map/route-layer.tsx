@@ -2,90 +2,119 @@
 
 import { Source, Layer, Marker } from "react-map-gl/mapbox";
 import { useMemo } from "react";
+import type { Expression } from "mapbox-gl";
+
+export interface RouteSegment {
+  coordinates: [number, number][];
+  active: boolean;
+}
 
 interface RouteLayerProps {
-  coordinates: [number, number][];
+  coordinates?: [number, number][];
+  segments?: RouteSegment[];
   travelTime?: number;
   travelMode?: "walk" | "bike" | "car";
 }
 
-export function RouteLayer({ coordinates, travelTime, travelMode = "walk" }: RouteLayerProps) {
-  // GeoJSON for ruten
-  const routeGeoJSON: GeoJSON.FeatureCollection = useMemo(() => ({
-    type: "FeatureCollection",
-    features: [{
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "LineString",
-        coordinates: coordinates,
-      },
-    }],
-  }), [coordinates]);
+export function RouteLayer({ coordinates, segments, travelTime, travelMode = "walk" }: RouteLayerProps) {
+  // Build GeoJSON — segments mode (active/inactive) or single-line mode
+  const routeGeoJSON: GeoJSON.FeatureCollection = useMemo(() => {
+    if (segments && segments.length > 0) {
+      return {
+        type: "FeatureCollection",
+        features: segments
+          .filter((s) => s.coordinates.length >= 2)
+          .map((segment) => ({
+            type: "Feature" as const,
+            properties: { active: segment.active },
+            geometry: {
+              type: "LineString" as const,
+              coordinates: segment.coordinates,
+            },
+          })),
+      };
+    }
 
-  // Plasser reisetid-badge ved destinasjonen (siste koordinat i ruten)
+    return {
+      type: "FeatureCollection",
+      features: coordinates && coordinates.length >= 2
+        ? [{
+            type: "Feature" as const,
+            properties: { active: true },
+            geometry: {
+              type: "LineString" as const,
+              coordinates: coordinates,
+            },
+          }]
+        : [],
+    };
+  }, [coordinates, segments]);
+
+  const hasSegments = segments && segments.length > 0;
+
+  // Travel-time badge position
+  const allCoords = segments
+    ? segments.flatMap((s) => s.coordinates)
+    : coordinates ?? [];
   const endpoint = useMemo(() => {
-    if (coordinates.length < 2) return null;
-    const last = coordinates[coordinates.length - 1];
+    if (allCoords.length < 2) return null;
+    const last = allCoords[allCoords.length - 1];
     return { lng: last[0], lat: last[1] };
-  }, [coordinates]);
+  }, [allCoords]);
 
   const modeIcon = travelMode === "walk" ? "🚶" : travelMode === "bike" ? "🚴" : "🚗";
 
-  if (coordinates.length < 2) return null;
+  if (routeGeoJSON.features.length === 0) return null;
+
+  // Data-driven paint expressions for active/inactive segments
+  const activeExpr = (active: string | number, inactive: string | number): Expression =>
+    ["case", ["get", "active"], active, inactive] as Expression;
 
   return (
     <>
       <Source id="route-source" type="geojson" data={routeGeoJSON}>
-        {/* Rute-linje (bakgrunn/glow) */}
+        {/* Glow layer */}
         <Layer
           id="route-glow"
           type="line"
           source="route-source"
-          layout={{
-            "line-join": "round",
-            "line-cap": "round",
-          }}
+          layout={{ "line-join": "round", "line-cap": "round" }}
           paint={{
             "line-color": "#3b82f6",
-            "line-width": 14,
-            "line-opacity": 0.25,
+            "line-width": hasSegments ? (activeExpr(14, 8) as unknown as number) : 14,
+            "line-opacity": hasSegments ? (activeExpr(0.25, 0.08) as unknown as number) : 0.25,
             "line-blur": 3,
           }}
         />
-        {/* Rute-linje (bakgrunn hvit) */}
+        {/* Casing layer */}
         <Layer
           id="route-casing"
           type="line"
           source="route-source"
-          layout={{
-            "line-join": "round",
-            "line-cap": "round",
-          }}
+          layout={{ "line-join": "round", "line-cap": "round" }}
           paint={{
             "line-color": "#ffffff",
-            "line-width": 8,
-            "line-opacity": 1,
+            "line-width": hasSegments ? (activeExpr(8, 5) as unknown as number) : 8,
+            "line-opacity": hasSegments ? (activeExpr(1, 0.5) as unknown as number) : 1,
           }}
         />
-        {/* Rute-linje (forgrunn blå) */}
+        {/* Main line */}
         <Layer
           id="route-line"
           type="line"
           source="route-source"
-          layout={{
-            "line-join": "round",
-            "line-cap": "round",
-          }}
+          layout={{ "line-join": "round", "line-cap": "round" }}
           paint={{
-            "line-color": "#3b82f6",
-            "line-width": 5,
-            "line-opacity": 1,
+            "line-color": hasSegments
+              ? (activeExpr("#3b82f6", "#93c5fd") as unknown as string)
+              : "#3b82f6",
+            "line-width": hasSegments ? (activeExpr(5, 3) as unknown as number) : 5,
+            "line-opacity": hasSegments ? (activeExpr(1, 0.4) as unknown as number) : 1,
           }}
         />
       </Source>
 
-      {/* Reisetid-badge ved destinasjonen (den klikkede markøren) */}
+      {/* Travel-time badge */}
       {endpoint && travelTime && (
         <Marker
           longitude={endpoint.lng}

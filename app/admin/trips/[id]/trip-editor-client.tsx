@@ -14,6 +14,7 @@ import {
   X,
   Loader2,
   Circle,
+  ExternalLink,
 } from "lucide-react";
 import type { Trip, TripStop, TripCategory, TripSeason } from "@/lib/types";
 import { TRIP_CATEGORY_LABELS } from "@/lib/types";
@@ -259,7 +260,8 @@ export function TripEditorClient({
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+    <div className="px-8 py-8 max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -281,6 +283,15 @@ export function TripEditorClient({
 
         {!isNew && trip && (
           <div className="flex items-center gap-2">
+            <a
+              href={`/trips/${trip.urlSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Åpne
+            </a>
             <button
               onClick={handleTogglePublish}
               disabled={isPending}
@@ -423,6 +434,7 @@ export function TripEditorClient({
         onCancel={() => setShowDeleteConfirm(false)}
         variant="danger"
       />
+    </div>
     </div>
   );
 }
