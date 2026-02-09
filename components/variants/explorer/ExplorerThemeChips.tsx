@@ -4,15 +4,14 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import type { POI } from "@/lib/types";
 import type { ThemeDefinition } from "@/lib/themes";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, EyeOff, Eye } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 
 interface ExplorerThemeChipsProps {
   themes: ThemeDefinition[];
   pois: POI[];
-  activeThemes: Set<string>;
   disabledCategories: Set<string>;
-  onToggleTheme: (themeId: string) => void;
+  onToggleAllInTheme: (themeId: string) => void;
   onToggleCategory: (categoryId: string) => void;
   variant?: "desktop" | "mobile";
 }
@@ -20,9 +19,8 @@ interface ExplorerThemeChipsProps {
 export default function ExplorerThemeChips({
   themes,
   pois,
-  activeThemes,
   disabledCategories,
-  onToggleTheme,
+  onToggleAllInTheme,
   onToggleCategory,
   variant = "desktop",
 }: ExplorerThemeChipsProps) {
@@ -83,6 +81,10 @@ export default function ExplorerThemeChips({
 
   const isDesktop = variant === "desktop";
 
+  const togglePopover = useCallback((themeId: string) => {
+    setOpenPopover((prev) => (prev === themeId ? null : themeId));
+  }, []);
+
   return (
     <div
       className={cn(
@@ -92,20 +94,22 @@ export default function ExplorerThemeChips({
     >
       {themes.map((theme) => {
         const Icon = getIcon(theme.icon);
-        const isActive = activeThemes.has(theme.id);
         const count = themeCountMap.get(theme.id) || 0;
         const isPopoverOpen = openPopover === theme.id;
 
-        // Count active categories and active POIs within this theme
-        const activeCatsInTheme = theme.categories.filter(
+        // Determine active state from disabledCategories (not activeThemes)
+        const catsWithPOIs = theme.categories.filter((c) => (categoryCountMap.get(c) || 0) > 0);
+        const activeCatsInTheme = catsWithPOIs.filter(
           (c) => !disabledCategories.has(c)
         ).length;
-        const hasPartialFilter = isActive && activeCatsInTheme < theme.categories.length;
+        const allDisabled = activeCatsInTheme === 0;
+        const hasPartialFilter = activeCatsInTheme > 0 && activeCatsInTheme < catsWithPOIs.length;
         const activeCount = hasPartialFilter
           ? theme.categories
               .filter((c) => !disabledCategories.has(c))
               .reduce((sum, c) => sum + (categoryCountMap.get(c) || 0), 0)
           : count;
+        const allActive = activeCatsInTheme === catsWithPOIs.length;
 
         if (count === 0) return null;
 
@@ -115,14 +119,14 @@ export default function ExplorerThemeChips({
               className={cn(
                 "flex items-center rounded-lg border transition-all duration-150 bg-white",
                 isDesktop ? "h-9" : "h-8",
-                isActive
-                  ? "border-gray-200 shadow-sm"
-                  : "border-gray-200 text-gray-600"
+                allDisabled
+                  ? "border-gray-200 text-gray-600"
+                  : "border-gray-200 shadow-sm"
               )}
             >
-              {/* Main chip: toggle theme */}
+              {/* Main chip: opens dropdown */}
               <button
-                onClick={() => onToggleTheme(theme.id)}
+                onClick={() => togglePopover(theme.id)}
                 className={cn(
                   "flex items-center gap-2 h-full transition-colors hover:bg-gray-50",
                   isDesktop ? "px-3 text-sm" : "px-2.5 text-xs",
@@ -133,7 +137,7 @@ export default function ExplorerThemeChips({
                   className={cn(
                     "flex items-center justify-center rounded-full border-2 border-white shadow-sm transition-all flex-shrink-0",
                     isDesktop ? "w-6 h-6" : "w-5 h-5",
-                    !isActive && "opacity-30 grayscale"
+                    allDisabled && "opacity-30 grayscale"
                   )}
                   style={{ backgroundColor: theme.color || "#6b7280" }}
                 >
@@ -141,7 +145,7 @@ export default function ExplorerThemeChips({
                 </div>
                 <span className={cn(
                   "font-medium whitespace-nowrap",
-                  isActive ? "text-gray-900" : "text-gray-600"
+                  allDisabled ? "text-gray-600" : "text-gray-900"
                 )}>{theme.name}</span>
                 <span
                   className={cn(
@@ -153,26 +157,22 @@ export default function ExplorerThemeChips({
                 </span>
               </button>
 
-              {/* Chevron: open sub-category dropdown */}
-              {isActive && theme.categories.length > 1 && (
-                <>
-                  <div className="w-px h-4 bg-gray-200" />
-                  <button
-                    onClick={() => setOpenPopover(isPopoverOpen ? null : theme.id)}
-                    className={cn(
-                      "flex items-center justify-center h-full transition-colors text-gray-400 hover:bg-gray-50",
-                      isDesktop ? "px-2" : "px-1.5",
-                    )}
-                  >
-                    <ChevronDown
-                      className={cn(
-                        "w-3.5 h-3.5 transition-transform",
-                        isPopoverOpen && "rotate-180"
-                      )}
-                    />
-                  </button>
-                </>
-              )}
+              {/* Chevron: also opens dropdown */}
+              <div className="w-px h-4 bg-gray-200" />
+              <button
+                onClick={() => togglePopover(theme.id)}
+                className={cn(
+                  "flex items-center justify-center h-full transition-colors text-gray-400 hover:bg-gray-50",
+                  isDesktop ? "px-2" : "px-1.5",
+                )}
+              >
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 transition-transform",
+                    isPopoverOpen && "rotate-180"
+                  )}
+                />
+              </button>
             </div>
 
             {/* Sub-category popover */}
@@ -209,6 +209,22 @@ export default function ExplorerThemeChips({
                     </button>
                   );
                 })}
+
+                {/* Toggle all separator + button */}
+                <div className="h-px bg-gray-100 mx-2 my-1" />
+                <button
+                  onClick={() => onToggleAllInTheme(theme.id)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+                >
+                  {allActive ? (
+                    <EyeOff className="w-4 h-4 flex-shrink-0" />
+                  ) : (
+                    <Eye className="w-4 h-4 flex-shrink-0" />
+                  )}
+                  <span className="flex-1 text-left">
+                    {allActive ? "Skjul alle" : "Vis alle"}
+                  </span>
+                </button>
               </div>
             )}
           </div>

@@ -45,10 +45,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
   const prevCollectionCountRef = useRef(0);
   const [activePOI, setActivePOI] = useState<string | null>(initialPOI ?? null);
   const [highlightedPOI, setHighlightedPOI] = useState<string | null>(null);
-  // Theme-based filtering (derived state pattern)
-  const [activeThemes, setActiveThemes] = useState<Set<string>>(
-    () => new Set(DEFAULT_THEMES.map((t) => t.id))
-  );
+  // Category-based filtering via disabled set
   const [disabledCategories, setDisabledCategories] = useState<Set<string>>(() => {
     // If initialCategories provided, disable everything else
     if (initialCategories && initialCategories.length > 0) {
@@ -64,11 +61,10 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     return new Set();
   });
 
-  // Derived: active categories from themes + disabled individual categories
+  // Derived: active categories = all theme categories minus disabled ones
   const activeCategories = useMemo(() => {
     const cats = new Set<string>();
     for (const theme of DEFAULT_THEMES) {
-      if (!activeThemes.has(theme.id)) continue;
       for (const catId of theme.categories) {
         if (!disabledCategories.has(catId)) {
           cats.add(catId);
@@ -82,7 +78,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
       }
     }
     return cats;
-  }, [activeThemes, disabledCategories, project.categories]);
+  }, [disabledCategories, project.categories]);
 
   const [viewportPOIIds, setViewportPOIIds] = useState<Set<string>>(new Set());
   const [visibleClusterCount, setVisibleClusterCount] = useState(0);
@@ -245,14 +241,19 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     });
   }, [visiblePOIs, geo.effectiveOrigin]);
 
-  // Theme toggle: activate/deactivate entire theme
-  const handleToggleTheme = useCallback((themeId: string) => {
-    setActiveThemes((prev) => {
+  // Toggle all categories in a theme: if all active → disable all, otherwise → enable all
+  const handleToggleAllInTheme = useCallback((themeId: string) => {
+    const theme = DEFAULT_THEMES.find((t) => t.id === themeId);
+    if (!theme) return;
+    setDisabledCategories((prev) => {
       const next = new Set(prev);
-      if (next.has(themeId)) {
-        next.delete(themeId);
+      const allActive = theme.categories.every((c) => !prev.has(c));
+      if (allActive) {
+        // Disable all categories in this theme
+        for (const c of theme.categories) next.add(c);
       } else {
-        next.add(themeId);
+        // Enable all categories in this theme
+        for (const c of theme.categories) next.delete(c);
       }
       return next;
     });
@@ -487,9 +488,8 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     ...poiListProps,
     allPOIs: poisWithTravelTimes,
     categories: project.categories,
-    activeThemes,
     disabledCategories,
-    onToggleTheme: handleToggleTheme,
+    onToggleAllInTheme: handleToggleAllInTheme,
     onToggleCategory: handleToggleCategory,
     onSetTravelMode: setTravelMode,
     isCollectionView,
@@ -575,9 +575,8 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
           <ExplorerPOIList
             {...poiListProps}
             allPOIs={poisWithTravelTimes}
-            activeThemes={activeThemes}
             disabledCategories={disabledCategories}
-            onToggleTheme={handleToggleTheme}
+            onToggleAllInTheme={handleToggleAllInTheme}
             onToggleCategory={handleToggleCategory}
             onSetTravelMode={setTravelMode}
           />

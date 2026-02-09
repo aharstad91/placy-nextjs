@@ -20,13 +20,12 @@ import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
 interface ExplorerPanelProps {
   pois: POI[];
   allPOIs: POI[];
-  activeThemes: Set<string>;
   disabledCategories: Set<string>;
   activePOI: string | null;
   highlightedPOI?: string | null;
   contextHint: string | null;
   onPOIClick: (poiId: string) => void;
-  onToggleTheme: (themeId: string) => void;
+  onToggleAllInTheme: (themeId: string) => void;
   onToggleCategory: (categoryId: string) => void;
   visibleCount: number;
   totalCount: number;
@@ -57,13 +56,12 @@ const travelModeConfig: { mode: TravelMode; label: string; Icon: typeof Footprin
 export default function ExplorerPanel({
   pois,
   allPOIs,
-  activeThemes,
   disabledCategories,
   activePOI,
   highlightedPOI,
   contextHint,
   onPOIClick,
-  onToggleTheme,
+  onToggleAllInTheme,
   onToggleCategory,
   visibleCount,
   totalCount,
@@ -152,9 +150,8 @@ export default function ExplorerPanel({
           <ExplorerThemeChips
             themes={DEFAULT_THEMES}
             pois={allPOIs}
-            activeThemes={activeThemes}
             disabledCategories={disabledCategories}
-            onToggleTheme={onToggleTheme}
+            onToggleAllInTheme={onToggleAllInTheme}
             onToggleCategory={onToggleCategory}
             variant="mobile"
           />

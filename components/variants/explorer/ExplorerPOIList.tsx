@@ -26,9 +26,8 @@ interface ExplorerPOIListProps {
   onToggleCollection?: (poiId: string) => void;
   // Theme filtering
   allPOIs: POI[];
-  activeThemes: Set<string>;
   disabledCategories: Set<string>;
-  onToggleTheme: (themeId: string) => void;
+  onToggleAllInTheme: (themeId: string) => void;
   onToggleCategory: (categoryId: string) => void;
   // Travel mode
   onSetTravelMode?: (mode: TravelMode) => void;
@@ -59,9 +58,8 @@ export default function ExplorerPOIList({
   collectionPOIs = [],
   onToggleCollection,
   allPOIs,
-  activeThemes,
   disabledCategories,
-  onToggleTheme,
+  onToggleAllInTheme,
   onToggleCategory,
   onSetTravelMode,
   showSkeleton = false,
@@ -177,9 +175,8 @@ export default function ExplorerPOIList({
         <ExplorerThemeChips
           themes={DEFAULT_THEMES}
           pois={allPOIs}
-          activeThemes={activeThemes}
           disabledCategories={disabledCategories}
-          onToggleTheme={onToggleTheme}
+          onToggleAllInTheme={onToggleAllInTheme}
           onToggleCategory={onToggleCategory}
           variant="desktop"
         />
