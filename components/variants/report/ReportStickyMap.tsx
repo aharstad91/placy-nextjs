@@ -6,10 +6,9 @@ import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import type { ActivePOIState } from "./ReportPage";
 import { getIcon } from "@/lib/utils/map-icons";
-import { Building2, MapPin } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
-import { GoogleRating } from "@/components/ui/GoogleRating";
-import { shouldShowRating } from "@/lib/themes/rating-categories";
+import { MarkerTooltip } from "@/components/map/marker-tooltip";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 
 interface ReportStickyMapProps {
@@ -340,43 +339,17 @@ export default function ReportStickyMap({
                   />
                 </div>
 
-                {/* Hover tooltip — name + category + walk time (matches Explorer) */}
-                {isHovered && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap pointer-events-none z-20">
-                    <div className="bg-gray-900/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg shadow-xl text-xs">
-                      <div className="font-semibold">{poi.name}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-gray-300">
-                        <span>{poi.category.name}</span>
-                        {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
-                          <>
-                            <span className="text-gray-500">·</span>
-                            <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="xs" variant="dark" />
-                          </>
-                        )}
-                        {walkMinutes != null && (
-                          <>
-                            <span className="text-gray-500">·</span>
-                            <MapPin className="w-3 h-3" />
-                            <span>{walkMinutes} min</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {/* Tooltip arrow */}
-                    <div className="w-2 h-2 bg-gray-900/90 rotate-45 mx-auto -mt-1" />
-                  </div>
-                )}
-
-                {/* Name label for highlighted (clicked) marker */}
-                {isHighlighted && (
-                  <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span
-                      className="px-2 py-0.5 text-[10px] font-medium text-white rounded shadow-lg"
-                      style={{ backgroundColor: poi.category.color }}
-                    >
-                      {poi.name}
-                    </span>
-                  </div>
+                {/* Tooltip — shared for hover and highlighted state */}
+                {(isHovered || isHighlighted) && (
+                  <MarkerTooltip
+                    name={poi.name}
+                    categoryName={poi.category.name}
+                    categoryId={poi.category.id}
+                    googleRating={poi.googleRating}
+                    googleReviewCount={poi.googleReviewCount}
+                    travelTimeMinutes={walkMinutes}
+                    travelMode="walk"
+                  />
                 )}
               </div>
             </Marker>

@@ -131,6 +131,12 @@ gmp-popover::part(dialog) {
   animation: fade-in 0.15s ease-out both;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in {
+    animation: none;
+  }
+}
+
 /* Mapbox popup styling */
 .mapboxgl-popup-content {
   padding: 0;

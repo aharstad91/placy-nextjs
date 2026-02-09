@@ -14,11 +14,10 @@ import Map, {
 import type { Coordinates, POI, TravelMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RouteLayer } from "@/components/map/route-layer";
-import { MapPin, Footprints, Bike, Car, Navigation } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { MarkerTooltip } from "@/components/map/marker-tooltip";
 import GeoLocationWidget from "./GeoLocationWidget";
 import { SkeletonMapOverlay } from "@/components/ui/SkeletonMapOverlay";
-import { GoogleRating } from "@/components/ui/GoogleRating";
-import { shouldShowRating } from "@/lib/themes/rating-categories";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import { AdaptiveMarker } from "@/components/map/adaptive-marker";
 import { useMapZoomState } from "@/lib/hooks/useMapZoomState";
@@ -93,7 +92,6 @@ export default function ExplorerMap({
   // CSS-driven zoom state (writes data-zoom-state to container, no React re-renders)
   useMapZoomState(mapRef, mapContainerRef, { mapLoaded });
 
-  const TravelIcon = travelMode === "walk" ? Footprints : travelMode === "bike" ? Bike : Car;
 
   // Fit to initial bounds on first load
   const hasInitialFitRef = useRef(false);
@@ -320,64 +318,17 @@ export default function ExplorerMap({
               onMouseEnter={() => setHoveredPOI(poi.id)}
               onMouseLeave={() => setHoveredPOI(null)}
             >
-              {/* Hover tooltip — name + category + travel time */}
-              {isHovered && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap pointer-events-none z-20 animate-fade-in">
-                  <div className="bg-gray-900/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg shadow-xl text-xs">
-                    <div className="font-semibold">{poi.name}</div>
-                    <div className="flex items-center gap-1.5 mt-0.5 text-gray-300">
-                      <span>{poi.category.name}</span>
-                      {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
-                        <>
-                          <span className="text-gray-500">·</span>
-                          <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="xs" variant="dark" />
-                        </>
-                      )}
-                      {poiTravelTime != null && (
-                        <>
-                          <span className="text-gray-500">·</span>
-                          <TravelIcon className="w-3 h-3" />
-                          <span>{Math.round(poiTravelTime)} min</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {/* Tooltip arrow */}
-                  <div className="w-2 h-2 bg-gray-900/90 rotate-45 mx-auto -mt-1" />
-                </div>
-              )}
-
-              {/* Active state: info pill with name + travel time + directions */}
-              {isThisActive && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap z-20">
-                  <div className="bg-white rounded-xl shadow-xl border border-gray-200 px-3 py-2 flex items-center gap-2">
-                    <span
-                      className="text-xs font-semibold truncate max-w-[140px]"
-                      style={{ color: poi.category.color }}
-                    >
-                      {poi.name}
-                    </span>
-                    {poiTravelTime != null && (
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <TravelIcon className="w-3 h-3" />
-                        {Math.round(poiTravelTime)} min
-                      </span>
-                    )}
-                    <a
-                      href={poi.googlePlaceId
-                        ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
-                        : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1 px-2 py-1 rounded-full bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors text-xs font-medium"
-                    >
-                      <Navigation className="w-3 h-3" />
-                      Rute
-                    </a>
-                  </div>
-                </div>
+              {/* Tooltip — shared for hover and active state */}
+              {(isHovered || isThisActive) && (
+                <MarkerTooltip
+                  name={poi.name}
+                  categoryName={poi.category.name}
+                  categoryId={poi.category.id}
+                  googleRating={poi.googleRating}
+                  googleReviewCount={poi.googleReviewCount}
+                  travelTimeMinutes={poiTravelTime != null ? Math.round(poiTravelTime / 60) : null}
+                  travelMode={travelMode}
+                />
               )}
             </AdaptiveMarker>
           );

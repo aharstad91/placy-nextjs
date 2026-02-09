@@ -4,8 +4,9 @@ import { useRef, useCallback, useEffect, useState, useMemo } from "react";
 import Map, { NavigationControl, Marker, type MapRef } from "react-map-gl/mapbox";
 import type { Coordinates, POI } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { RouteLayer } from "@/components/map/route-layer";
+import { RouteLayer, type RouteSegment } from "@/components/map/route-layer";
 import { Check } from "lucide-react";
+import { MarkerTooltip } from "@/components/map/marker-tooltip";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import { AdaptiveMarker } from "@/components/map/adaptive-marker";
 import { useMapZoomState } from "@/lib/hooks/useMapZoomState";
@@ -18,6 +19,7 @@ interface TripMapProps {
   completedStops: Set<number>;
   onStopClick: (index: number) => void;
   routeCoordinates?: [number, number][];
+  routeSegments?: RouteSegment[];
   // Geolocation
   userPosition?: Coordinates | null;
   userAccuracy?: number | null;
@@ -31,6 +33,7 @@ export default function TripMap({
   completedStops,
   onStopClick,
   routeCoordinates,
+  routeSegments,
   userPosition,
   userAccuracy,
   geoMode = "loading",
@@ -198,7 +201,10 @@ export default function TripMap({
 
         {/* Route overlay */}
         {mapLoaded && routeCoordinates && routeCoordinates.length >= 2 && (
-          <RouteLayer coordinates={routeCoordinates} />
+          <RouteLayer
+            coordinates={routeSegments ? undefined : routeCoordinates}
+            segments={routeSegments}
+          />
         )}
 
         {/* GPS user position dot */}
@@ -272,35 +278,14 @@ export default function TripMap({
                 </div>
               )}
 
-              {/* Hover tooltip — name + category */}
-              {isHovered && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap pointer-events-none z-20 animate-fade-in">
-                  <div className="bg-gray-900/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg shadow-xl text-xs">
-                    <div className="font-semibold">{stop.name}</div>
-                    <div className="text-gray-300 mt-0.5">
-                      {isStartPoint ? "Start" : stop.category.name}
-                    </div>
-                  </div>
-                  {/* Tooltip arrow */}
-                  <div className="w-2 h-2 bg-gray-900/90 rotate-45 mx-auto -mt-1" />
-                </div>
-              )}
-
-              {/* Active state: info pill below marker */}
-              {isActive && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap z-20">
-                  <div className="bg-white rounded-xl shadow-xl border border-gray-200 px-3 py-2 flex items-center gap-2">
-                    <span
-                      className="text-xs font-semibold truncate max-w-[140px]"
-                      style={{ color: stop.category.color }}
-                    >
-                      {stop.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {isStartPoint ? "Start" : stop.category.name}
-                    </span>
-                  </div>
-                </div>
+              {/* Tooltip — shared for hover and active state */}
+              {(isHovered || isActive) && (
+                <MarkerTooltip
+                  name={stop.name}
+                  categoryName={stop.category.name}
+                  categoryId={stop.category.id}
+                  subtitle={isStartPoint ? "Start" : undefined}
+                />
               )}
             </AdaptiveMarker>
           );
