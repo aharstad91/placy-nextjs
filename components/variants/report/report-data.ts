@@ -38,6 +38,20 @@ export interface ReportThemeStats {
 
 export type ThemeDisplayMode = "editorial" | "functional";
 
+export interface ReportSubSection {
+  categoryId: string;
+  name: string;
+  icon: string;
+  color: string;
+  stats: ReportThemeStats;
+  highlightPOIs: POI[];
+  listPOIs: POI[];
+  hiddenPOIs: POI[];
+  allPOIs: POI[];
+  displayMode: ThemeDisplayMode;
+  quote: string;
+}
+
 export interface ReportTheme {
   id: string;
   name: string;
@@ -53,6 +67,8 @@ export interface ReportTheme {
   richnessScore: number;
   score: CategoryScore;
   quote: string;
+  /** Sub-sections for categories exceeding SUB_SECTION_THRESHOLD */
+  subSections?: ReportSubSection[];
 }
 
 export interface ReportData {
@@ -68,7 +84,7 @@ export interface ReportData {
   mapStyle?: string;
 }
 
-const TRANSPORT_CATEGORIES = new Set([
+export const TRANSPORT_CATEGORIES = new Set([
   "bus",
   "train",
   "tram",
@@ -82,6 +98,9 @@ const TRANSPORT_CATEGORIES = new Set([
 const HIGHLIGHT_FALLBACK_COUNT = 3;
 const THEME_MIN_POIS = 5;
 
+/** When a sub-category within a theme exceeds this count, it gets its own section */
+export const SUB_SECTION_THRESHOLD = 15;
+
 /** How many compact cards to show before "Vis meg mer" */
 export const INITIAL_VISIBLE_COUNT = 6;
 
@@ -93,6 +112,122 @@ const CATEGORY_DISPLAY_MODE: Record<string, ThemeDisplayMode> = {
   "hverdagsbehov": "functional",
   "transport": "functional",
 };
+
+// --- Shared helpers (used by both buildSubSections and transformToReportData) ---
+
+/** Sort comparator: highest googleRating first, nulls last */
+function byRatingDesc(a: POI, b: POI): number {
+  if (a.googleRating == null && b.googleRating == null) return 0;
+  if (a.googleRating == null) return 1;
+  if (b.googleRating == null) return -1;
+  return b.googleRating - a.googleRating;
+}
+
+/** Pick highlight POIs: featured first, fallback to top-rated. Returns [] for functional mode. */
+function pickHighlights(pois: POI[], displayMode: ThemeDisplayMode): POI[] {
+  if (displayMode !== "editorial") return [];
+  const featured = pois.filter((p) => p.featured);
+  if (featured.length > 0) return featured;
+  return [...pois].sort(byRatingDesc).slice(0, HIGHLIGHT_FALLBACK_COUNT);
+}
+
+/** Compute stats from a POI array */
+function computePOIStats(pois: POI[]) {
+  const rated = pois.filter((p) => p.googleRating != null);
+  const avg =
+    rated.length > 0
+      ? rated.reduce((s, p) => s + (p.googleRating ?? 0), 0) / rated.length
+      : null;
+  return {
+    ratedCount: rated.length,
+    avgRating: avg != null ? Math.round(avg * 10) / 10 : null,
+    totalReviews: pois.reduce((s, p) => s + (p.googleReviewCount ?? 0), 0),
+    editorialCount: pois.filter((p) => p.editorialHook).length,
+  };
+}
+
+/** Split POIs into listPOIs (visible) and hiddenPOIs (behind "Vis meg mer") */
+function splitVisibleHidden(pois: POI[], highlights: POI[]) {
+  const highlightIds = new Set(highlights.map((p) => p.id));
+  const rest = pois.filter((p) => !highlightIds.has(p.id));
+  return {
+    listPOIs: rest.slice(0, INITIAL_VISIBLE_COUNT),
+    hiddenPOIs: rest.slice(INITIAL_VISIBLE_COUNT),
+  };
+}
+
+/**
+ * Group sorted POIs by category and build sub-sections for categories
+ * exceeding SUB_SECTION_THRESHOLD. Returns empty array if no splitting needed.
+ */
+function buildSubSections(
+  sortedPOIs: POI[],
+  parentDisplayMode: ThemeDisplayMode,
+  projectId: string,
+): ReportSubSection[] {
+  // Group by category
+  const byCat = new Map<string, POI[]>();
+  for (const poi of sortedPOIs) {
+    const catId = poi.category.id;
+    const arr = byCat.get(catId);
+    if (arr) {
+      arr.push(poi);
+    } else {
+      byCat.set(catId, [poi]);
+    }
+  }
+
+  // Check if any category exceeds threshold
+  const largeCats = Array.from(byCat.entries()).filter(
+    ([, pois]) => pois.length > SUB_SECTION_THRESHOLD
+  );
+  if (largeCats.length === 0) return [];
+
+  // Build sub-sections for large categories, sorted by count (most first)
+  largeCats.sort((a, b) => b[1].length - a[1].length);
+
+  return largeCats.map(([catId, catPOIs]) => {
+    const sample = catPOIs[0].category;
+    const highlights = pickHighlights(catPOIs, parentDisplayMode);
+    const { listPOIs, hiddenPOIs } = splitVisibleHidden(catPOIs, highlights);
+    const stats = computePOIStats(catPOIs);
+
+    const subScore = calculateCategoryScore({
+      totalPOIs: catPOIs.length,
+      avgRating: stats.avgRating,
+      avgWalkTimeMinutes: null,
+      uniqueCategories: 1,
+    });
+
+    const quote = generateCategoryQuote(
+      catId,
+      subScore.total,
+      1,
+      projectId
+    );
+
+    return {
+      categoryId: catId,
+      name: sample.name,
+      icon: sample.icon,
+      color: sample.color,
+      stats: {
+        totalPOIs: catPOIs.length,
+        ratedPOIs: stats.ratedCount,
+        avgRating: stats.avgRating,
+        totalReviews: stats.totalReviews,
+        editorialCount: stats.editorialCount,
+        uniqueCategories: 1,
+      },
+      highlightPOIs: highlights,
+      listPOIs,
+      hiddenPOIs,
+      allPOIs: catPOIs,
+      displayMode: parentDisplayMode,
+      quote,
+    };
+  });
+}
 
 export function transformToReportData(project: Project): ReportData {
   const allPOIs = project.pois;
@@ -123,15 +258,9 @@ export function transformToReportData(project: Project): ReportData {
   // Group POIs by theme
   const themes: ReportTheme[] = [];
   const themeDefinitions = getReportThemes(project);
-  const categorySet = new Map<string, Set<string>>();
-
-  for (const theme of themeDefinitions) {
-    const cats = new Set(theme.categories);
-    categorySet.set(theme.id, cats);
-  }
 
   for (const themeDef of themeDefinitions) {
-    const cats = categorySet.get(themeDef.id)!;
+    const cats = new Set(themeDef.categories);
     const themePOIs = allPOIs.filter((p) => cats.has(p.category.id));
 
     if (themePOIs.length < THEME_MIN_POIS) continue;
@@ -152,54 +281,21 @@ export function transformToReportData(project: Project): ReportData {
     });
 
     // Split into highlight POIs (featured/top-rated) and the rest
-    const themeFeatured = sorted.filter((p) => p.featured);
-    let highlightPOIs: POI[];
     const displayMode = (CATEGORY_DISPLAY_MODE[themeDef.id] ?? "editorial") as ThemeDisplayMode;
-
-    if (displayMode === "editorial" && themeFeatured.length > 0) {
-      highlightPOIs = themeFeatured;
-    } else if (displayMode === "editorial") {
-      // Fallback: top N by rating for editorial themes
-      const byRating = [...sorted].sort((a, b) => {
-        if (a.googleRating == null && b.googleRating == null) return 0;
-        if (a.googleRating == null) return 1;
-        if (b.googleRating == null) return -1;
-        return b.googleRating - a.googleRating;
-      });
-      highlightPOIs = byRating.slice(0, HIGHLIGHT_FALLBACK_COUNT);
-    } else {
-      highlightPOIs = [];
-    }
-
-    const highlightIds = new Set(highlightPOIs.map((p) => p.id));
-    const remaining = sorted.filter((p) => !highlightIds.has(p.id));
-
-    // First INITIAL_VISIBLE_COUNT compact cards, rest behind "Vis meg mer"
-    const listPOIs = remaining.slice(0, INITIAL_VISIBLE_COUNT);
-    const hiddenPOIs = remaining.slice(INITIAL_VISIBLE_COUNT);
-
-    const themeRated = sorted.filter((p) => p.googleRating != null);
-    const themeAvg =
-      themeRated.length > 0
-        ? themeRated.reduce((s, p) => s + (p.googleRating ?? 0), 0) /
-          themeRated.length
-        : null;
-    const themeReviews = sorted.reduce(
-      (s, p) => s + (p.googleReviewCount ?? 0),
-      0
-    );
-    const editorialCount = sorted.filter((p) => p.editorialHook).length;
+    const highlightPOIs = pickHighlights(sorted, displayMode);
+    const { listPOIs, hiddenPOIs } = splitVisibleHidden(sorted, highlightPOIs);
+    const themeStats = computePOIStats(sorted);
 
     // Count unique categories within theme
     const uniqueCategories = new Set(sorted.map((p) => p.category.id)).size;
 
     const richnessScore =
-      themeRated.length * 2 + editorialCount * 3 + sorted.length;
+      themeStats.ratedCount * 2 + themeStats.editorialCount * 3 + sorted.length;
 
     // Calculate category score
     const score = calculateCategoryScore({
       totalPOIs: sorted.length,
-      avgRating: themeAvg,
+      avgRating: themeStats.avgRating,
       avgWalkTimeMinutes: null,
       uniqueCategories,
     });
@@ -212,6 +308,9 @@ export function transformToReportData(project: Project): ReportData {
       project.id
     );
 
+    // Build sub-sections for categories exceeding threshold
+    const subSections = buildSubSections(sorted, displayMode, project.id);
+
     themes.push({
       id: themeDef.id,
       name: themeDef.name,
@@ -220,10 +319,10 @@ export function transformToReportData(project: Project): ReportData {
       bridgeText: themeDef.bridgeText,
       stats: {
         totalPOIs: sorted.length,
-        ratedPOIs: themeRated.length,
-        avgRating: themeAvg != null ? Math.round(themeAvg * 10) / 10 : null,
-        totalReviews: themeReviews,
-        editorialCount,
+        ratedPOIs: themeStats.ratedCount,
+        avgRating: themeStats.avgRating,
+        totalReviews: themeStats.totalReviews,
+        editorialCount: themeStats.editorialCount,
         uniqueCategories,
       },
       highlightPOIs,
@@ -234,6 +333,7 @@ export function transformToReportData(project: Project): ReportData {
       richnessScore,
       score,
       quote,
+      subSections: subSections.length > 0 ? subSections : undefined,
     });
   }
 

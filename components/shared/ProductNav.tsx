@@ -52,7 +52,7 @@ export default function ProductNav({ projectName, products, adminEditUrl }: Prod
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-      <div className="px-8 h-12 flex items-center justify-between">
+      <div className="px-8 h-14 flex items-center justify-between">
         {/* Left: Back link on trip pages, otherwise project name */}
         {tripsHref ? (
           <Link
@@ -86,7 +86,7 @@ export default function ProductNav({ projectName, products, adminEditUrl }: Prod
               <Link
                 key={product.href}
                 href={product.href}
-                className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
+                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
                   pathname === product.href || pathname.startsWith(product.href + "/")
                     ? "bg-white text-[#1a1a1a] shadow-sm"
                     : "text-[#7a7062] hover:text-[#1a1a1a]"

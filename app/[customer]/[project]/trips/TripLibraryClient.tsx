@@ -3,8 +3,169 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, ChevronRight, X } from "lucide-react";
+import {
+  Search,
+  ChevronRight,
+  X,
+  UtensilsCrossed,
+  Landmark,
+  TreePine,
+  Users,
+  Mountain,
+  Sparkles,
+  Clock,
+  MapPin,
+  type LucideIcon,
+} from "lucide-react";
 import type { Project, TripCategory } from "@/lib/types";
+import { TRIP_CATEGORIES, TRIP_CATEGORY_LABELS } from "@/lib/types";
+
+// ─── Dummy trips for design prototyping ──────────────────────────────
+// TODO: Remove when real seed-trips exist in Supabase
+interface DummyTrip {
+  id: string;
+  title: string;
+  description: string;
+  category: TripCategory;
+  difficulty: "easy" | "moderate" | "challenging";
+  stopCount: number;
+  durationMinutes: number;
+  featured: boolean;
+  coverImageUrl?: string;
+}
+
+const DUMMY_TRIPS: DummyTrip[] = [
+  {
+    id: "dummy-bakklandet",
+    title: "Bakklandet & Bryggene",
+    category: "culture",
+    difficulty: "easy",
+    stopCount: 5,
+    durationMinutes: 35,
+    description:
+      "Historisk vandring langs Nidelva, gjennom Bakklandet og forbi de ikoniske bryggerekkene.",
+    featured: true,
+  },
+  {
+    id: "dummy-coffee",
+    title: "Best of Coffee",
+    category: "food",
+    difficulty: "easy",
+    stopCount: 4,
+    durationMinutes: 60,
+    description:
+      "Trondheims beste kaffebarer — fra spesialbrent til klassisk.",
+    featured: true,
+  },
+  {
+    id: "dummy-foodie",
+    title: "Foodie Walk",
+    category: "food",
+    difficulty: "easy",
+    stopCount: 6,
+    durationMinutes: 90,
+    description:
+      "Smak av Trondheim — fra håndverksbakeri til sjømat og fine dining.",
+    featured: false,
+  },
+  {
+    id: "dummy-fjord",
+    title: "Fjordstien",
+    category: "nature",
+    difficulty: "moderate",
+    stopCount: 4,
+    durationMinutes: 45,
+    description: "Naturtur langs fjorden med utsikt over byen og Munkholmen.",
+    featured: false,
+  },
+  {
+    id: "dummy-family",
+    title: "Barnas Trondheim",
+    category: "family",
+    difficulty: "easy",
+    stopCount: 5,
+    durationMinutes: 50,
+    description:
+      "Barnevennlige aktiviteter i sentrum — fra museum til lekeplass.",
+    featured: false,
+  },
+  {
+    id: "dummy-hidden",
+    title: "Hemmelige Trondheim",
+    category: "hidden-gems",
+    difficulty: "moderate",
+    stopCount: 4,
+    durationMinutes: 40,
+    description:
+      "Steder de fleste gar forbi — bakgarder, utsiktspunkter og lokale favoritter.",
+    featured: true,
+  },
+];
+
+// Gradient backgrounds for dummy trips without cover images
+const CATEGORY_GRADIENTS: Record<TripCategory, string> = {
+  food: "from-amber-800 to-orange-600",
+  culture: "from-stone-700 to-amber-800",
+  nature: "from-emerald-800 to-teal-600",
+  family: "from-sky-700 to-blue-500",
+  active: "from-rose-700 to-orange-500",
+  "hidden-gems": "from-purple-800 to-indigo-600",
+};
+
+const CATEGORY_ICONS: Record<TripCategory, LucideIcon> = {
+  food: UtensilsCrossed,
+  culture: Landmark,
+  nature: TreePine,
+  family: Users,
+  active: Mountain,
+  "hidden-gems": Sparkles,
+};
+
+const DIFFICULTY_LABELS: Record<string, string> = {
+  easy: "Enkel",
+  moderate: "Moderat",
+  challenging: "Krevende",
+};
+
+// ─── Unified trip item (real or dummy) ───────────────────────────────
+
+interface TripItem {
+  id: string;
+  title: string;
+  description: string;
+  category: TripCategory;
+  difficulty: string;
+  stopCount: number;
+  durationMinutes: number;
+  featured: boolean;
+  coverImageUrl?: string;
+  /** Link target — undefined for dummy trips */
+  href?: string;
+  isDummy: boolean;
+}
+
+function realTripToItem(trip: Project, customer: string, projectSlug: string): TripItem {
+  const config = trip.tripConfig;
+  return {
+    id: trip.id,
+    title: config?.title ?? trip.name,
+    description: config?.description ?? "",
+    category: config?.category ?? "hidden-gems",
+    difficulty: config?.difficulty ?? "easy",
+    stopCount: config?.stops.length ?? 0,
+    durationMinutes: config?.precomputedDurationMinutes ?? 0,
+    featured: config?.featured ?? false,
+    coverImageUrl: config?.coverImageUrl,
+    href: `/${customer}/${projectSlug}/trips/${trip.urlSlug}`,
+    isDummy: false,
+  };
+}
+
+function dummyToItem(d: DummyTrip): TripItem {
+  return { ...d, isDummy: true };
+}
+
+// ─── Components ──────────────────────────────────────────────────────
 
 interface TripLibraryClientProps {
   customer: string;
@@ -16,41 +177,139 @@ interface TripLibraryClientProps {
   welcomeText?: string;
 }
 
-// TripCard component
-function TripCard({
-  trip,
-  customer,
-  projectSlug,
-  priority = false,
+/** Category navigation card (Report-style) */
+function CategoryCard({
+  category,
+  tripCount,
+  onClick,
 }: {
-  trip: Project;
-  customer: string;
-  projectSlug: string;
-  priority?: boolean;
+  category: TripCategory;
+  tripCount: number;
+  onClick: () => void;
 }) {
-  const config = trip.tripConfig;
-  const stopCount = config?.stops.length ?? 0;
-  const title = config?.title ?? trip.name;
-  const coverImage = config?.coverImageUrl;
+  const Icon = CATEGORY_ICONS[category];
+  const label = TRIP_CATEGORY_LABELS[category];
 
   return (
-    <Link
-      href={`/${customer}/${projectSlug}/trips/${trip.urlSlug}`}
-      className="flex-shrink-0 w-40 group cursor-pointer snap-start focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C45C3A] focus-visible:ring-offset-2 rounded-xl"
+    <button
+      onClick={onClick}
+      className="group flex flex-col items-start p-4 bg-white border border-[#eae6e1] rounded-xl hover:border-[#c0b9ad] hover:shadow-sm transition-all text-left"
     >
-      {/* Cover image with 4:5 aspect ratio */}
-      <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-stone-200">
-        {coverImage ? (
+      <Icon className="w-6 h-6 text-[#7a7062] group-hover:text-[#5a5042] mb-2 transition-colors" />
+      <span className="font-semibold text-[#1a1a1a] text-sm leading-tight mb-1">
+        {label}
+      </span>
+      <span className="text-xs text-[#6a6a6a]">
+        {tripCount} {tripCount === 1 ? "tur" : "turer"}
+      </span>
+    </button>
+  );
+}
+
+/** Featured trip card (large, horizontal) */
+function FeaturedTripCard({ item }: { item: TripItem }) {
+  const gradient = CATEGORY_GRADIENTS[item.category];
+  const Icon = CATEGORY_ICONS[item.category];
+
+  const inner = (
+    <div className="flex-shrink-0 w-[300px] sm:w-[340px] group cursor-pointer snap-start">
+      <div className={`relative aspect-[16/10] rounded-2xl overflow-hidden bg-gradient-to-br ${gradient}`}>
+        {item.coverImageUrl ? (
           <Image
-            src={coverImage}
-            alt={title}
+            src={item.coverImageUrl}
+            alt={item.title}
             fill
-            sizes="160px"
-            priority={priority}
+            sizes="340px"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-stone-300 to-stone-400" />
+          /* Decorative pattern for placeholder */
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-6 right-6">
+              <Icon className="w-20 h-20 text-white" />
+            </div>
+          </div>
+        )}
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+        {/* Category badge */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full">
+          <Icon className="w-3.5 h-3.5 text-[#5a5042]" />
+          <span className="text-xs font-medium text-[#1a1a1a]">
+            {TRIP_CATEGORY_LABELS[item.category]}
+          </span>
+        </div>
+
+        {/* Content overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h3 className="font-serif text-xl font-semibold text-white leading-tight mb-1">
+            {item.title}
+          </h3>
+          <p className="text-sm text-white/80 line-clamp-1 mb-2">
+            {item.description}
+          </p>
+          <div className="flex items-center gap-3 text-xs text-white/70">
+            {item.durationMinutes > 0 && (
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {item.durationMinutes} min
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              {item.stopCount} stopp
+            </span>
+            <span>{DIFFICULTY_LABELS[item.difficulty] ?? ""}</span>
+          </div>
+        </div>
+
+        {/* "Coming soon" for dummy */}
+        {item.isDummy && (
+          <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full">
+            <span className="text-[10px] font-medium text-white/80 uppercase tracking-wider">
+              Kommer snart
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (item.href) {
+    return (
+      <Link href={item.href} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C45C3A] focus-visible:ring-offset-2 rounded-2xl">
+        {inner}
+      </Link>
+    );
+  }
+
+  return inner;
+}
+
+/** Standard trip card (used in category rows) */
+function TripCard({ item }: { item: TripItem }) {
+  const gradient = CATEGORY_GRADIENTS[item.category];
+  const Icon = CATEGORY_ICONS[item.category];
+
+  const inner = (
+    <div className="flex-shrink-0 w-48 group cursor-pointer snap-start">
+      <div className={`relative aspect-[4/5] rounded-xl overflow-hidden bg-gradient-to-br ${gradient}`}>
+        {item.coverImageUrl ? (
+          <Image
+            src={item.coverImageUrl}
+            alt={item.title}
+            fill
+            sizes="192px"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 opacity-15">
+            <div className="absolute bottom-4 right-4">
+              <Icon className="w-12 h-12 text-white" />
+            </div>
+          </div>
         )}
 
         {/* Gradient overlay */}
@@ -58,95 +317,116 @@ function TripCard({
 
         {/* Stop count badge */}
         <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-[#1A1A1A]">
-          {stopCount} stopp
+          {item.stopCount} stopp
         </div>
+
+        {/* "Coming soon" for dummy */}
+        {item.isDummy && (
+          <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
+            <span className="text-[9px] font-medium text-white/80 uppercase tracking-wider">
+              Snart
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Title and metadata */}
       <div className="mt-3">
         <h3 className="font-serif text-base font-semibold leading-tight line-clamp-2 text-[#1A1A1A] group-hover:text-[#C45C3A] transition-colors">
-          {title}
+          {item.title}
         </h3>
-        {config?.category && (
-          <p className="mt-1 text-xs text-[#6B6560]">
-            {config.difficulty === "easy"
-              ? "Enkel"
-              : config.difficulty === "moderate"
-              ? "Moderat"
-              : config.difficulty === "challenging"
-              ? "Krevende"
-              : ""}
-          </p>
-        )}
+        <div className="mt-1 flex items-center gap-2 text-xs text-[#6B6560]">
+          {item.durationMinutes > 0 && (
+            <span className="flex items-center gap-0.5">
+              <Clock className="w-3 h-3" />
+              {item.durationMinutes} min
+            </span>
+          )}
+          {item.difficulty && (
+            <span>{DIFFICULTY_LABELS[item.difficulty] ?? ""}</span>
+          )}
+        </div>
       </div>
-    </Link>
+    </div>
   );
+
+  if (item.href) {
+    return (
+      <Link
+        href={item.href}
+        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C45C3A] focus-visible:ring-offset-2 rounded-xl"
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return inner;
 }
 
-// CategoryRow component
+/** Category row with horizontal scroll */
 function CategoryRow({
   category,
   label,
-  trips,
-  customer,
-  projectSlug,
-  isFirstRow = false,
+  items,
 }: {
   category: TripCategory;
   label: string;
-  trips: Project[];
-  customer: string;
-  projectSlug: string;
-  isFirstRow?: boolean;
+  items: TripItem[];
 }) {
-  if (trips.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
-    <section className="mt-8 first:mt-4">
-      <div className="flex items-center justify-between mb-3 px-4">
+    <section id={`trip-category-${category}`} className="mt-10 first:mt-6">
+      <div className="flex items-center justify-between mb-4 px-4">
         <h2 className="font-serif text-lg font-semibold text-[#1A1A1A]">
           {label}
         </h2>
         <ChevronRight className="w-5 h-5 text-stone-400" />
       </div>
 
-      <div
-        className="relative"
-        style={{ WebkitOverflowScrolling: "touch" }}
-      >
+      <div className="relative" style={{ WebkitOverflowScrolling: "touch" }}>
         <div className="flex gap-3 overflow-x-auto px-4 pb-4 scrollbar-hide snap-x snap-mandatory">
-          {trips.map((trip, index) => (
-            <TripCard
-              key={trip.id}
-              trip={trip}
-              customer={customer}
-              projectSlug={projectSlug}
-              priority={isFirstRow && index < 4}
-            />
+          {items.map((item) => (
+            <TripCard key={item.id} item={item} />
           ))}
         </div>
         {/* Scroll fade indicator */}
-        <div className="absolute right-0 top-0 bottom-4 w-10 bg-gradient-to-l from-[#FAF8F5] to-transparent pointer-events-none" />
+        {items.length > 1 && (
+          <div className="absolute right-0 top-0 bottom-4 w-10 bg-gradient-to-l from-[#FAF8F5] to-transparent pointer-events-none" />
+        )}
       </div>
     </section>
   );
 }
 
+// ─── Main Component ──────────────────────────────────────────────────
+
 export default function TripLibraryClient({
   customer,
   projectSlug,
   trips,
-  groupedTrips,
-  categoriesWithTrips,
-  categoryLabels,
   welcomeText,
 }: TripLibraryClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<TripCategory | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
 
-  // Debounced search with cancellation
+  // Merge real trips with dummy trips
+  const allItems = useMemo(() => {
+    const realItems = trips.map((t) => realTripToItem(t, customer, projectSlug));
+    const realCategories = new Set(realItems.map((i) => i.category));
+    const realTitles = new Set(realItems.map((i) => i.title.toLowerCase()));
+
+    // Add dummy trips that don't duplicate real ones
+    const dummyItems = DUMMY_TRIPS
+      .filter((d) => !realTitles.has(d.title.toLowerCase()))
+      .map(dummyToItem);
+
+    return [...realItems, ...dummyItems];
+  }, [trips, customer, projectSlug]);
+
+  // Debounced search
   const handleSearchChange = useCallback((value: string) => {
     searchAbortRef.current?.abort();
     searchAbortRef.current = new AbortController();
@@ -160,77 +440,72 @@ export default function TripLibraryClient({
     signal.addEventListener("abort", () => clearTimeout(timeoutId));
   }, []);
 
-  // Filter trips using useMemo (not useEffect + setState)
-  const filteredTrips = useMemo(() => {
-    let result = trips;
+  // Filter by search
+  const filteredItems = useMemo(() => {
+    if (!searchTerm.trim()) return allItems;
+    const search = searchTerm.toLowerCase();
+    return allItems.filter(
+      (item) =>
+        item.title.toLowerCase().includes(search) ||
+        item.description.toLowerCase().includes(search)
+    );
+  }, [allItems, searchTerm]);
 
-    // Filter by search term
-    if (searchTerm.trim()) {
-      const search = searchTerm.toLowerCase();
-      result = result.filter((trip) => {
-        const title = (trip.tripConfig?.title ?? trip.name).toLowerCase();
-        const description = (trip.tripConfig?.description ?? "").toLowerCase();
-        const tags = trip.tripConfig?.tags?.join(" ").toLowerCase() ?? "";
-        return title.includes(search) || description.includes(search) || tags.includes(search);
-      });
-    }
-
-    // Filter by category
-    if (activeCategory) {
-      result = result.filter(
-        (trip) => trip.tripConfig?.category === activeCategory
-      );
-    }
-
-    return result;
-  }, [trips, searchTerm, activeCategory]);
-
-  // Group filtered trips
-  const filteredGroupedTrips = useMemo(() => {
-    const grouped: Record<TripCategory, Project[]> = {
-      'food': [],
-      'culture': [],
-      'nature': [],
-      'family': [],
-      'active': [],
-      'hidden-gems': [],
+  // Group items
+  const grouped = useMemo(() => {
+    const result: Record<TripCategory, TripItem[]> = {
+      food: [],
+      culture: [],
+      nature: [],
+      family: [],
+      active: [],
+      "hidden-gems": [],
     };
-
-    for (const trip of filteredTrips) {
-      const category = trip.tripConfig?.category ?? 'hidden-gems';
-      if (category in grouped) {
-        grouped[category].push(trip);
+    for (const item of filteredItems) {
+      if (item.category in result) {
+        result[item.category].push(item);
       }
     }
+    return result;
+  }, [filteredItems]);
 
-    return grouped;
-  }, [filteredTrips]);
+  // Featured items
+  const featuredItems = useMemo(
+    () => filteredItems.filter((item) => item.featured),
+    [filteredItems]
+  );
 
-  // Categories to show
-  const categoriesToShow = activeCategory
-    ? [activeCategory]
-    : categoriesWithTrips;
+  // Categories with items (in defined order)
+  const categoriesWithItems = useMemo(
+    () => TRIP_CATEGORIES.filter((cat) => grouped[cat].length > 0),
+    [grouped]
+  );
 
-  const hasNoResults = filteredTrips.length === 0 && (searchTerm || activeCategory);
+  // Scroll to category section
+  const scrollToCategory = useCallback((category: TripCategory) => {
+    const el = document.getElementById(`trip-category-${category}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
+
+  const hasNoResults = filteredItems.length === 0 && searchTerm;
 
   return (
-    <main className="min-h-screen bg-[#FAF8F5] py-6">
-      {/* Welcome text from project override */}
-      {welcomeText && (
-        <div className="px-4 mb-4">
-          <p className="text-sm text-[#6B6560] leading-relaxed">
+    <main className="min-h-screen bg-[#FAF8F5] pb-12">
+      {/* Header */}
+      <header className="px-4 pt-6 pb-2">
+        {welcomeText && (
+          <p className="text-sm text-[#6B6560] leading-relaxed mb-3">
             {welcomeText}
           </p>
-        </div>
-      )}
+        )}
 
-      {/* Header with search */}
-      <header className="px-4 mb-6">
         <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mb-4">
           Utforsk turer
         </h1>
 
-        {/* Search input */}
+        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B6560]" />
           <input
@@ -244,9 +519,7 @@ export default function TripLibraryClient({
             <button
               onClick={() => {
                 setSearchTerm("");
-                if (searchInputRef.current) {
-                  searchInputRef.current.value = "";
-                }
+                if (searchInputRef.current) searchInputRef.current.value = "";
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-stone-100 rounded-full"
             >
@@ -256,71 +529,67 @@ export default function TripLibraryClient({
         </div>
       </header>
 
-      {/* Category filter chips */}
-      <div className="px-4 mb-4">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              activeCategory === null
-                ? "bg-[#1A1A1A] text-white"
-                : "bg-[#F0EDE8] text-[#1A1A1A] hover:bg-stone-200"
-            }`}
-          >
-            Alle
-          </button>
-          {categoriesWithTrips.map((category) => (
-            <button
-              key={category}
-              onClick={() =>
-                setActiveCategory(activeCategory === category ? null : category)
-              }
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeCategory === category
-                  ? "bg-[#1A1A1A] text-white"
-                  : "bg-[#F0EDE8] text-[#1A1A1A] hover:bg-stone-200"
-              }`}
-            >
-              {categoryLabels[category]}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Category navigation cards (Report-style) */}
+      {!searchTerm && categoriesWithItems.length > 0 && (
+        <section className="px-4 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {categoriesWithItems.map((cat) => (
+              <CategoryCard
+                key={cat}
+                category={cat}
+                tripCount={grouped[cat].length}
+                onClick={() => scrollToCategory(cat)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* No results state */}
+      {/* Featured trips */}
+      {!searchTerm && featuredItems.length > 0 && (
+        <section className="mt-10">
+          <div className="flex items-center justify-between mb-4 px-4">
+            <h2 className="font-serif text-lg font-semibold text-[#1A1A1A]">
+              Anbefalt
+            </h2>
+          </div>
+          <div className="relative" style={{ WebkitOverflowScrolling: "touch" }}>
+            <div className="flex gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide snap-x snap-mandatory">
+              {featuredItems.map((item) => (
+                <FeaturedTripCard key={item.id} item={item} />
+              ))}
+            </div>
+            {featuredItems.length > 1 && (
+              <div className="absolute right-0 top-0 bottom-4 w-10 bg-gradient-to-l from-[#FAF8F5] to-transparent pointer-events-none" />
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* No results */}
       {hasNoResults && (
         <div className="px-4 py-12 text-center">
           <p className="text-[#6B6560] mb-4">Ingen turer funnet</p>
           <button
             onClick={() => {
               setSearchTerm("");
-              setActiveCategory(null);
-              if (searchInputRef.current) {
-                searchInputRef.current.value = "";
-              }
+              if (searchInputRef.current) searchInputRef.current.value = "";
             }}
             className="text-[#C45C3A] font-medium hover:underline"
           >
-            Nullstill filter
+            Nullstill sok
           </button>
         </div>
       )}
 
       {/* Category rows */}
       {!hasNoResults &&
-        categoriesToShow.map((category, index) => (
+        categoriesWithItems.map((category) => (
           <CategoryRow
             key={category}
             category={category}
-            label={categoryLabels[category]}
-            trips={
-              activeCategory
-                ? filteredGroupedTrips[category]
-                : groupedTrips[category]
-            }
-            customer={customer}
-            projectSlug={projectSlug}
-            isFirstRow={index === 0}
+            label={TRIP_CATEGORY_LABELS[category]}
+            items={grouped[category]}
           />
         ))}
     </main>

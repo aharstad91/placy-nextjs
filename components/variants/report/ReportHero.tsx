@@ -53,7 +53,7 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
   const numLocale = locale === "en" ? "en-US" : "nb-NO";
 
   return (
-    <section className="col-span-12 pt-6 pb-12 md:pt-12 md:pb-16">
+    <section className="col-span-12 pt-8 pb-14 md:pt-14 md:pb-20">
       {/* Text content - constrained width */}
       <div className="max-w-4xl relative">
         {/* Locale toggle - top right */}
@@ -62,24 +62,24 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
         </div>
 
         {/* Label */}
-        <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-4">
+        <p className="text-sm uppercase tracking-[0.2em] text-[#a0937d] mb-5">
           {label ?? t(locale, "label")}
         </p>
 
         {/* Project name */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#1a1a1a] leading-tight mb-6">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#1a1a1a] leading-tight mb-8">
           {projectName}
         </h1>
 
         {/* Custom intro paragraph */}
         {heroIntro && (
-          <p className="text-lg md:text-xl text-[#4a4a4a] leading-relaxed mb-4">
+          <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed mb-5">
             {heroIntro}
           </p>
         )}
 
         {/* Summary paragraph with inline metrics */}
-        <p className="text-lg md:text-xl text-[#4a4a4a] leading-relaxed">
+        <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed">
           {t(locale, "inTheArea")}{" "}
           <span className="font-semibold text-[#1a1a1a]">
             {metrics.totalPOIs} {t(locale, "places")}
@@ -120,7 +120,7 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
 
       {/* Theme navigation - larger cards with stats */}
       {themes.length > 0 && (
-        <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {themes.map((theme) => {
             const Icon = ICON_MAP[theme.icon];
             return (
@@ -131,16 +131,16 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
               >
                 {/* Icon */}
                 {Icon && (
-                  <Icon className="w-6 h-6 text-[#7a7062] group-hover:text-[#5a5042] mb-2 transition-colors" />
+                  <Icon className="w-7 h-7 text-[#7a7062] group-hover:text-[#5a5042] mb-2 transition-colors" />
                 )}
 
                 {/* Theme name */}
-                <span className="font-semibold text-[#1a1a1a] text-sm leading-tight mb-1">
+                <span className="font-semibold text-[#1a1a1a] text-base leading-tight mb-1">
                   {theme.name}
                 </span>
 
                 {/* Stats row */}
-                <div className="flex items-center gap-2 text-xs text-[#6a6a6a]">
+                <div className="flex items-center gap-2 text-sm text-[#6a6a6a]">
                   <span>{theme.stats.totalPOIs} {t(locale, "places")}</span>
                   {theme.stats.avgRating != null && (
                     <>
@@ -159,7 +159,7 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
       )}
 
       {/* Divider */}
-      <div className="mt-10 h-px bg-[#e8e4df]" />
+      <div className="mt-14 h-px bg-[#e8e4df]" />
     </section>
   );
 }

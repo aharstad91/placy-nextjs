@@ -51,16 +51,23 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
   // Active POI state with source discriminator (shared between map and sections)
   const [activePOI, setActivePOI] = useState<ActivePOIState | null>(null);
 
-  // Track which themes have been expanded via "Vis meg mer"
+  // Track which themes/sub-sections have been expanded via "Vis meg mer"
+  // Keys: "themeId" for themes, "themeId:categoryId" for sub-sections
   const [expandedThemes, setExpandedThemes] = useState<Set<string>>(new Set());
 
-  const handleExpandTheme = useCallback((themeId: string) => {
-    setExpandedThemes((prev) => new Set(prev).add(themeId));
+  const handleExpand = useCallback((key: string) => {
+    setExpandedThemes((prev) => new Set(prev).add(key));
   }, []);
 
   // Initialize active section to first theme
   const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
   const { activeSectionId, registerSectionRef } = useActiveSection(initialThemeId);
+
+  // Parse activeSectionId: "mat-drikke" or "mat-drikke:restaurant"
+  const activeThemeId = activeSectionId?.split(":")[0] ?? null;
+  const activeSubSectionCategoryId = activeSectionId?.includes(":")
+    ? activeSectionId.split(":")[1]
+    : null;
 
   // Handle card click → highlight marker + fly map to POI
   const handleCardClick = useCallback((poiId: string) => {
@@ -138,7 +145,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
       {/* Desktop: 50/50 split with sticky map */}
       <div className="hidden lg:flex">
         {/* Left: Scrollable theme sections */}
-        <div className="w-1/2 px-16">
+        <div className="w-1/2 px-16 min-w-0 overflow-hidden">
           {reportData.themes.map((theme, i) => (
             <div key={theme.id}>
               {i > 0 && <div className="h-px bg-[#e8e4df]" />}
@@ -152,7 +159,10 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
                 activePOIId={activePOI?.poiId ?? null}
                 onPOIClick={handleCardClick}
                 isExpanded={expandedThemes.has(theme.id)}
-                onExpand={handleExpandTheme}
+                onExpand={handleExpand}
+                registerSubSectionRef={registerSectionRef}
+                expandedKeys={expandedThemes}
+                onExpandKey={handleExpand}
               />
             </div>
           ))}
@@ -163,7 +173,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
           <div className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden">
             <ReportStickyMap
               themes={reportData.themes}
-              activeThemeId={activeSectionId}
+              activeThemeId={activeThemeId}
+              activeSubSectionCategoryId={activeSubSectionCategoryId}
               activePOI={activePOI}
               hotelCoordinates={reportData.centerCoordinates}
               onMarkerClick={handleMarkerClick}
