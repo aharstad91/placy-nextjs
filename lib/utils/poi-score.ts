@@ -8,6 +8,9 @@
 
 import type { VenueProfile } from "@/lib/themes/venue-profiles";
 
+/** Null tier = 2.5 (between tier 2 and 3). Avoids penalizing unevaluated popular POIs during partial evaluation. */
+export const NULL_TIER_VALUE = 2.5;
+
 export interface POIScoreInput {
   googleRating?: number | null;
   googleReviewCount?: number | null;

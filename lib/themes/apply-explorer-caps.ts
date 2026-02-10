@@ -1,7 +1,7 @@
 import type { POI } from "@/lib/types";
 import type { ThemeDefinition } from "./theme-definitions";
 import type { VenueProfile } from "./venue-profiles";
-import { calculateWeightedPOIScore } from "@/lib/utils/poi-score";
+import { calculateWeightedPOIScore, NULL_TIER_VALUE } from "@/lib/utils/poi-score";
 import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
 import { EXPLORER_THEME_CAPS, EXPLORER_TOTAL_CAP } from "./explorer-caps";
 import { CATEGORY_TO_THEME } from "./default-themes";
@@ -56,10 +56,15 @@ export function applyExplorerCaps(
     const themeCap = EXPLORER_THEME_CAPS[theme.id] ?? 10;
     const themeCats = new Set(theme.categories);
 
-    // POIs in this theme, sorted by score desc
+    // POIs in this theme, sorted by tier first (lower = better), then score desc
     const themePOIs = transportCapped
       .filter((s) => themeCats.has(s.poi.category.id) && !selectedIds.has(s.poi.id))
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => {
+        const aTier = a.poi.poiTier ?? NULL_TIER_VALUE;
+        const bTier = b.poi.poiTier ?? NULL_TIER_VALUE;
+        if (aTier !== bTier) return aTier - bTier;
+        return b.score - a.score;
+      })
       .slice(0, themeCap);
 
     for (const { poi } of themePOIs) {

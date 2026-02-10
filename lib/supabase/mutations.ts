@@ -620,6 +620,71 @@ export async function updatePOITrustScore(
 }
 
 // ============================================
+// POI Tier Operations
+// ============================================
+
+/**
+ * Update a single POI's tier data.
+ * Editorial overwrite policy: only writes editorial_hook/local_insight if existing value is null.
+ */
+export async function updatePOITier(
+  poiId: string,
+  data: {
+    poi_tier: 1 | 2 | 3;
+    tier_reason: string;
+    is_chain: boolean;
+    is_local_gem: boolean;
+    poi_metadata: Record<string, unknown>;
+    editorial_hook?: string;
+    local_insight?: string;
+    editorial_sources?: string[];
+  }
+): Promise<void> {
+  if (data.poi_tier < 1 || data.poi_tier > 3) {
+    throw new Error(`POI tier must be 1, 2, or 3, got ${data.poi_tier}`);
+  }
+
+  const supabase = createServerClient();
+  if (!supabase) {
+    throw new Error("Supabase ikke konfigurert");
+  }
+
+  // Only write editorial fields if currently null (preserve hand-crafted content)
+  const editorialUpdate: Record<string, unknown> = {};
+  if (data.editorial_hook || data.local_insight) {
+    const { data: existing } = await supabase
+      .from("pois")
+      .select("editorial_hook, local_insight")
+      .eq("id", poiId)
+      .single();
+    if (!existing?.editorial_hook && data.editorial_hook) {
+      editorialUpdate.editorial_hook = data.editorial_hook;
+    }
+    if (!existing?.local_insight && data.local_insight) {
+      editorialUpdate.local_insight = data.local_insight;
+    }
+  }
+
+  const { error } = await supabase
+    .from("pois")
+    .update({
+      poi_tier: data.poi_tier,
+      tier_reason: data.tier_reason,
+      is_chain: data.is_chain,
+      is_local_gem: data.is_local_gem,
+      poi_metadata: data.poi_metadata,
+      editorial_sources: data.editorial_sources ?? [],
+      tier_evaluated_at: new Date().toISOString(),
+      ...editorialUpdate,
+    } as Record<string, unknown>)
+    .eq("id", poiId);
+
+  if (error) {
+    throw new Error(`Kunne ikke oppdatere tier for POI ${poiId}: ${error.message}`);
+  }
+}
+
+// ============================================
 // Story Structure Writing with Transaction Support
 // ============================================
 
