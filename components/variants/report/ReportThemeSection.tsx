@@ -2,9 +2,10 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { Coordinates, POI } from "@/lib/types";
-import type { ReportTheme } from "./report-data";
+import type { ReportTheme, ReportSubSection } from "./report-data";
+import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { t } from "@/lib/i18n/strings";
+import { t, type Locale } from "@/lib/i18n/strings";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import {
   Star,
@@ -42,19 +43,36 @@ interface ReportThemeSectionProps {
   isExpanded?: boolean;
   /** Callback when theme is expanded via "Vis meg mer" */
   onExpand?: (themeId: string) => void;
+  /** Register sub-section elements for scroll tracking (composite key: themeId:categoryId) */
+  registerSubSectionRef?: (compositeId: string) => (el: HTMLElement | null) => void;
+  /** Set of expanded composite keys (themeId:categoryId) */
+  expandedKeys?: Set<string>;
+  /** Expand callback for composite key */
+  onExpandKey?: (compositeKey: string) => void;
 }
 
-// Categories that indicate a transport-related theme
-const TRANSPORT_CATEGORIES = new Set([
-  "bus",
-  "train",
-  "tram",
-  "bike",
-  "parking",
-  "carshare",
-  "taxi",
-  "airport",
-]);
+/** Derive numeric locale string from app locale */
+function getNumericLocale(locale: string): string {
+  return locale === "en" ? "en-US" : "nb-NO";
+}
+
+/** Shared load-more state machine for theme sections and sub-sections */
+function useLoadMore(isExpanded: boolean, onExpand: () => void) {
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "done">(
+    isExpanded ? "done" : "idle"
+  );
+
+  const handleLoadMore = useCallback(() => {
+    setLoadState("loading");
+    setTimeout(() => {
+      setLoadState("done");
+      setTimeout(() => onExpand(), 1000);
+    }, 2000);
+  }, [onExpand]);
+
+  const showAll = loadState === "done" || isExpanded;
+  return { loadState, handleLoadMore, showAll } as const;
+}
 
 export default function ReportThemeSection({
   theme,
@@ -67,12 +85,13 @@ export default function ReportThemeSection({
   onPOIClick,
   isExpanded,
   onExpand,
+  registerSubSectionRef,
+  expandedKeys,
+  onExpandKey,
 }: ReportThemeSectionProps) {
   const { locale } = useLocale();
   const Icon = getIcon(theme.icon);
-  const numLocale = locale === "en" ? "en-US" : "nb-NO";
-
-  // Check if this is a transport theme by looking at POI categories
+  const numLocale = getNumericLocale(locale);
   const isTransport = theme.allPOIs.some((poi) =>
     TRANSPORT_CATEGORIES.has(poi.category.id)
   );
@@ -159,6 +178,9 @@ export default function ReportThemeSection({
           onPOIClick={onPOIClick}
           isExpanded={isExpanded ?? false}
           onExpand={() => onExpand?.(theme.id)}
+          registerSubSectionRef={registerSubSectionRef}
+          expandedKeys={expandedKeys}
+          onExpandKey={onExpandKey}
         />
       ) : (
         <ReportInteractiveMapSection
@@ -179,6 +201,93 @@ function StickyMapContent({
   onPOIClick,
   isExpanded,
   onExpand,
+  registerSubSectionRef,
+  expandedKeys,
+  onExpandKey,
+}: {
+  theme: ReportTheme;
+  activePOIId: string | null;
+  onPOIClick?: (poiId: string) => void;
+  isExpanded: boolean;
+  onExpand: () => void;
+  /** Register a sub-section element for scroll tracking */
+  registerSubSectionRef?: (compositeId: string) => (el: HTMLElement | null) => void;
+  /** Set of expanded composite keys (themeId:categoryId) */
+  expandedKeys?: Set<string>;
+  /** Expand callback for composite key */
+  onExpandKey?: (compositeKey: string) => void;
+}) {
+  const { locale } = useLocale();
+  const numLocale = getNumericLocale(locale);
+
+  // If theme has sub-sections, render them instead of flat list
+  if (theme.subSections && theme.subSections.length > 0) {
+    // Collect POI IDs that belong to sub-sections
+    const subSectionPoiIds = new Set<string>();
+    for (const sub of theme.subSections) {
+      for (const poi of sub.allPOIs) subSectionPoiIds.add(poi.id);
+    }
+
+    // Remaining POIs: those not in any sub-section
+    const remainingPOIs = theme.allPOIs.filter(
+      (p) => !subSectionPoiIds.has(p.id)
+    );
+
+    return (
+      <div className="mt-4 space-y-8">
+        {theme.subSections.map((sub) => {
+          const compositeKey = `${theme.id}:${sub.categoryId}`;
+          const subIsExpanded = expandedKeys?.has(compositeKey) ?? false;
+
+          return (
+            <SubSectionContent
+              key={sub.categoryId}
+              sub={sub}
+              compositeKey={compositeKey}
+              activePOIId={activePOIId}
+              onPOIClick={onPOIClick}
+              isExpanded={subIsExpanded}
+              onExpand={() => onExpandKey?.(compositeKey)}
+              registerRef={registerSubSectionRef}
+              locale={locale}
+              numLocale={numLocale}
+            />
+          );
+        })}
+
+        {/* Remaining POIs (categories under threshold) — flat list */}
+        {remainingPOIs.length > 0 && (
+          <div>
+            <CompactPOIList
+              pois={remainingPOIs}
+              activePOIId={activePOIId}
+              onPOIClick={onPOIClick}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // No sub-sections — render as before
+  return (
+    <FlatThemeContent
+      theme={theme}
+      activePOIId={activePOIId}
+      onPOIClick={onPOIClick}
+      isExpanded={isExpanded}
+      onExpand={onExpand}
+    />
+  );
+}
+
+/** Original flat rendering (no sub-sections) */
+function FlatThemeContent({
+  theme,
+  activePOIId,
+  onPOIClick,
+  isExpanded,
+  onExpand,
 }: {
   theme: ReportTheme;
   activePOIId: string | null;
@@ -188,36 +297,14 @@ function StickyMapContent({
 }) {
   const { locale } = useLocale();
   const hasHidden = theme.hiddenPOIs.length > 0;
+  const { loadState, handleLoadMore, showAll } = useLoadMore(isExpanded, onExpand);
 
-  // Staged reveal: loading → cards appear → map markers appear
-  const [loadState, setLoadState] = useState<"idle" | "loading" | "done">(
-    isExpanded ? "done" : "idle"
-  );
-
-  const handleLoadMore = useCallback(() => {
-    setLoadState("loading");
-
-    // Step 1: After 2s — reveal cards, hide button
-    setTimeout(() => {
-      setLoadState("done");
-
-      // Step 2: After 1s more — add markers to map
-      setTimeout(() => {
-        onExpand();
-      }, 1000);
-    }, 2000);
-  }, [onExpand]);
-
-  const showCards = loadState === "done" || isExpanded;
-
-  // Combine visible POIs into one array so they share a single two-column layout
-  const visiblePois = showCards
+  const visiblePois = showAll
     ? [...theme.listPOIs, ...theme.hiddenPOIs]
     : theme.listPOIs;
 
   return (
     <div className="mt-4 space-y-4">
-      {/* Highlight photo cards — horizontal scroll (editorial themes only) */}
       {theme.displayMode === "editorial" && theme.highlightPOIs.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#d4cfc8]">
           {theme.highlightPOIs.map((poi) => (
@@ -236,7 +323,6 @@ function StickyMapContent({
         </div>
       )}
 
-      {/* Compact card grid — all visible POIs in one unified two-column layout */}
       {visiblePois.length > 0 && (
         <CompactPOIList
           pois={visiblePois}
@@ -245,13 +331,133 @@ function StickyMapContent({
         />
       )}
 
-      {/* Load more button — morphs between states */}
       {hasHidden && loadState !== "done" && !isExpanded && (
         <LoadMoreButton
           onClick={handleLoadMore}
           isLoading={loadState === "loading"}
           locale={locale}
           hiddenCount={theme.hiddenPOIs.length}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Single sub-section with its own header, highlight cards, list, and load-more */
+function SubSectionContent({
+  sub,
+  compositeKey,
+  activePOIId,
+  onPOIClick,
+  isExpanded,
+  onExpand,
+  registerRef,
+  locale,
+  numLocale,
+}: {
+  sub: ReportSubSection;
+  compositeKey: string;
+  activePOIId: string | null;
+  onPOIClick?: (poiId: string) => void;
+  isExpanded: boolean;
+  onExpand: () => void;
+  registerRef?: (compositeId: string) => (el: HTMLElement | null) => void;
+  locale: Locale;
+  numLocale: string;
+}) {
+  const Icon = getIcon(sub.icon);
+  const hasHidden = sub.hiddenPOIs.length > 0;
+  const { loadState, handleLoadMore, showAll } = useLoadMore(isExpanded, onExpand);
+
+  const visiblePois = showAll
+    ? [...sub.listPOIs, ...sub.hiddenPOIs]
+    : sub.listPOIs;
+
+  return (
+    <div
+      id={compositeKey}
+      ref={registerRef?.(compositeKey)}
+      className="scroll-mt-20"
+    >
+      {/* Sub-section header */}
+      <div className="flex items-center gap-2.5 mb-2">
+        <div
+          className="flex items-center justify-center w-7 h-7 rounded-full"
+          style={{ backgroundColor: sub.color }}
+        >
+          <Icon className="w-3.5 h-3.5 text-white" />
+        </div>
+        <h3 className="text-lg font-semibold text-[#1a1a1a]">{sub.name}</h3>
+      </div>
+
+      {/* Stats row */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#6a6a6a] mb-2">
+        <span>
+          {sub.stats.totalPOIs} {t(locale, "places")}
+        </span>
+        {sub.stats.avgRating != null && (
+          <>
+            <span className="text-[#d4cfc8]">|</span>
+            <span className="flex items-center gap-1">
+              {t(locale, "avg")}{" "}
+              <Star className="w-3 h-3 text-[#b45309] fill-[#b45309]" />
+              <span className="font-medium text-[#1a1a1a]">
+                {sub.stats.avgRating.toFixed(1)}
+              </span>
+            </span>
+          </>
+        )}
+        {sub.stats.totalReviews > 0 && (
+          <>
+            <span className="text-[#d4cfc8]">|</span>
+            <span>
+              {sub.stats.totalReviews.toLocaleString(numLocale)}{" "}
+              {t(locale, "reviews")}
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Quote */}
+      <p className="text-base text-[#4a4a4a] leading-relaxed mb-4">
+        {sub.quote}
+      </p>
+
+      {/* Highlight photo cards */}
+      {sub.displayMode === "editorial" && sub.highlightPOIs.length > 0 && (
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#d4cfc8] mb-3">
+          {sub.highlightPOIs.map((poi) => (
+            <div
+              key={poi.id}
+              data-poi-id={poi.id}
+              className="flex-shrink-0 w-[180px] snap-start"
+            >
+              <ReportPOICard
+                poi={poi}
+                isActive={activePOIId === poi.id}
+                onClick={() => onPOIClick?.(poi.id)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Compact card grid */}
+      {visiblePois.length > 0 && (
+        <CompactPOIList
+          pois={visiblePois}
+          activePOIId={activePOIId}
+          onPOIClick={onPOIClick}
+        />
+      )}
+
+      {/* Load more */}
+      {hasHidden && loadState !== "done" && !isExpanded && (
+        <LoadMoreButton
+          onClick={handleLoadMore}
+          isLoading={loadState === "loading"}
+          locale={locale}
+          hiddenCount={sub.hiddenPOIs.length}
         />
       )}
     </div>

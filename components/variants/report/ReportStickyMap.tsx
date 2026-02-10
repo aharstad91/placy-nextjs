@@ -14,11 +14,13 @@ import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styl
 interface ReportStickyMapProps {
   themes: ReportTheme[];
   activeThemeId: string | null;
+  /** Active sub-section category ID within the active theme (null = show all theme markers) */
+  activeSubSectionCategoryId?: string | null;
   activePOI: ActivePOIState | null;
   hotelCoordinates: Coordinates;
   onMarkerClick: (poiId: string) => void;
   mapStyle?: string;
-  /** Themes that have been expanded via "Vis meg mer" — shows all POIs on map */
+  /** Themes/sub-sections expanded via "Vis meg mer" — keys: "themeId" or "themeId:categoryId" */
   expandedThemes?: Set<string>;
 }
 
@@ -35,6 +37,7 @@ interface ReportStickyMapProps {
 export default function ReportStickyMap({
   themes,
   activeThemeId,
+  activeSubSectionCategoryId,
   activePOI,
   hotelCoordinates,
   onMarkerClick,
@@ -50,15 +53,35 @@ export default function ReportStickyMap({
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-  // Build a flat lookup: themeId → visible POI[]
-  // Only includes highlights + listPOIs by default; adds hiddenPOIs when expanded
+  // Build a flat lookup: key → visible POI[]
+  // Keys: "themeId" for theme-level, "themeId:categoryId" for sub-sections
   const poisByTheme = useMemo(() => {
     const lookup: Record<string, POI[]> = {};
     for (const theme of themes) {
+      // Theme-level: all visible POIs
       const visible = [...theme.highlightPOIs, ...theme.listPOIs];
       if (expandedThemes.has(theme.id)) {
         visible.push(...theme.hiddenPOIs);
       }
+
+      // Also add sub-section POIs to theme-level when their sub-section is expanded
+      for (const sub of theme.subSections ?? []) {
+        const subKey = `${theme.id}:${sub.categoryId}`;
+        const subVisible = [...sub.highlightPOIs, ...sub.listPOIs];
+        if (expandedThemes.has(subKey)) {
+          subVisible.push(...sub.hiddenPOIs);
+        }
+        lookup[subKey] = subVisible;
+
+        // Ensure expanded sub-section POIs are in the theme-level pool too
+        if (expandedThemes.has(subKey)) {
+          const themeVisibleIds = new Set(visible.map((p) => p.id));
+          for (const poi of sub.hiddenPOIs) {
+            if (!themeVisibleIds.has(poi.id)) visible.push(poi);
+          }
+        }
+      }
+
       lookup[theme.id] = visible;
     }
     return lookup;
@@ -80,18 +103,17 @@ export default function ReportStickyMap({
     return result;
   }, [themes, poisByTheme]);
 
-  // Build themeId lookup per POI (a POI can appear in multiple themes via categories)
-  const poiThemeMap = useMemo(() => {
-    const lookup: Record<string, Set<string>> = {};
-    for (const theme of themes) {
-      const pois = poisByTheme[theme.id] ?? [];
-      for (const poi of pois) {
-        if (!lookup[poi.id]) lookup[poi.id] = new Set();
-        lookup[poi.id].add(theme.id);
-      }
-    }
-    return lookup;
-  }, [themes, poisByTheme]);
+  // Pre-compute active POI IDs for O(1) visibility checks in the marker pool
+  // (computed after activeSectionKey is derived below — hoisted as ref-stable memo)
+  // Note: activeSectionKey defined further down, so we use the raw props here
+  const activeSectionKeyForIds = activeSubSectionCategoryId
+    ? `${activeThemeId}:${activeSubSectionCategoryId}`
+    : activeThemeId;
+
+  const activePoiIds = useMemo(() => {
+    if (!activeSectionKeyForIds) return new Set<string>();
+    return new Set((poisByTheme[activeSectionKeyForIds] ?? []).map((p) => p.id));
+  }, [activeSectionKeyForIds, poisByTheme]);
 
   // fitBounds for a given theme — calculates bounds from theme POIs + hotel
   const fitBoundsForTheme = useCallback(
@@ -174,23 +196,28 @@ export default function ReportStickyMap({
     };
   }, [mapLoaded]);
 
-  // React to theme changes — reset user interaction flag and fitBounds
-  useEffect(() => {
-    if (!mapLoaded || !activeThemeId) return;
-    if (prevThemeIdRef.current === activeThemeId) return;
+  // The active section key combines theme + optional sub-section
+  const activeSectionKey = activeSubSectionCategoryId
+    ? `${activeThemeId}:${activeSubSectionCategoryId}`
+    : activeThemeId;
 
-    prevThemeIdRef.current = activeThemeId;
+  // React to theme/sub-section changes — reset user interaction flag and fitBounds
+  useEffect(() => {
+    if (!mapLoaded || !activeSectionKey) return;
+    if (prevThemeIdRef.current === activeSectionKey) return;
+
+    prevThemeIdRef.current = activeSectionKey;
     userInteractedRef.current = false;
 
     // Small delay to let markers transition, then fitBounds
     const timer = setTimeout(() => {
       if (!userInteractedRef.current) {
-        fitBoundsForTheme(activeThemeId);
+        fitBoundsForTheme(activeSectionKey);
       }
     }, 220);
 
     return () => clearTimeout(timer);
-  }, [activeThemeId, mapLoaded, fitBoundsForTheme]);
+  }, [activeSectionKey, mapLoaded, fitBoundsForTheme]);
 
   // Fly to POI when selected from a card click (not from marker click)
   useEffect(() => {
@@ -209,22 +236,22 @@ export default function ReportStickyMap({
     });
   }, [activePOI, mapLoaded, allPOIs]);
 
-  // Re-fit bounds when a theme is expanded (new markers appear)
+  // Re-fit bounds when a theme/sub-section is expanded (new markers appear)
   const prevExpandedSizeRef = useRef(0);
   useEffect(() => {
-    if (!mapLoaded || !activeThemeId) return;
+    if (!mapLoaded || !activeSectionKey) return;
     if (expandedThemes.size <= prevExpandedSizeRef.current) return;
     prevExpandedSizeRef.current = expandedThemes.size;
 
-    // Only refit if the active theme was just expanded
-    if (!expandedThemes.has(activeThemeId)) return;
+    // Only refit if the active section was just expanded
+    if (!expandedThemes.has(activeSectionKey) && !expandedThemes.has(activeThemeId ?? "")) return;
 
     const timer = setTimeout(() => {
-      fitBoundsForTheme(activeThemeId);
+      fitBoundsForTheme(activeSectionKey);
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [expandedThemes, activeThemeId, mapLoaded, fitBoundsForTheme]);
+  }, [expandedThemes, activeSectionKey, activeThemeId, mapLoaded, fitBoundsForTheme]);
 
   // Handle marker click
   const handleMarkerClick = useCallback(
@@ -235,13 +262,10 @@ export default function ReportStickyMap({
     [onMarkerClick]
   );
 
-  // Check if a POI is in the active theme
-  const isPoiInActiveTheme = useCallback(
-    (poiId: string) => {
-      if (!activeThemeId) return false;
-      return poiThemeMap[poiId]?.has(activeThemeId) ?? false;
-    },
-    [activeThemeId, poiThemeMap]
+  // Check if a POI should be visible — O(1) lookup via pre-computed Set
+  const isPoiInActiveSection = useCallback(
+    (poiId: string) => activePoiIds.has(poiId),
+    [activePoiIds]
   );
 
   if (!token) return null;
@@ -285,7 +309,7 @@ export default function ReportStickyMap({
 
         {/* Marker pool — ALL POIs pre-rendered, opacity toggled by active theme */}
         {allPOIs.map((poi) => {
-          const isActive = isPoiInActiveTheme(poi.id);
+          const isActive = isPoiInActiveSection(poi.id);
           const isHighlighted = activePOI?.poiId === poi.id;
           const isHovered = hoveredPOI === poi.id && !isHighlighted;
           const Icon = getIcon(poi.category.icon);

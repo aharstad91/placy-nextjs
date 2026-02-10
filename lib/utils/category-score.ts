@@ -87,8 +87,13 @@ const DEFAULT_TEMPLATES: Record<QuoteLevel, string> = {
   limited: "Begrenset tilbud i umiddelbar nærhet",
 };
 
+// Theme IDs (e.g. "mat-drikke") and sub-category IDs (e.g. "restaurant") share
+// the same key-space. generateCategoryQuote() resolves the correct template by
+// looking up the provided key — callers pass theme ID at theme level and
+// category ID at sub-section level.
 const QUOTE_TEMPLATES: Record<string, Record<QuoteLevel, string[]>> = {
-  food: {
+  // === Theme-level quotes (keyed by theme ID) ===
+  "mat-drikke": {
     exceptional: [
       "Matmekka med alt fra gatemat til fine dining",
       "Et område som bugner av matopplevelser",
@@ -114,46 +119,20 @@ const QUOTE_TEMPLATES: Record<string, Record<QuoteLevel, string[]>> = {
     sufficient: ["Tilgang til kollektivtransport"],
     limited: ["Begrenset kollektivtilbud i umiddelbar nærhet"],
   },
-  shopping: {
+  hverdagsbehov: {
     exceptional: [
-      "Handlemekka med alt du trenger",
-      "Rikt utvalg av butikker og kjøpesentre",
+      "Alt av tjenester og handel i gangavstand",
+      "Komplett tilbud for hverdagens behov",
     ],
     very_good: [
-      "Bredt utvalg av butikker i gangavstand",
+      "Bredt utvalg av butikker og tjenester",
       "Gode handlemuligheter rett utenfor døren",
     ],
-    good: ["Godt utvalg av dagligvare og shopping"],
-    sufficient: ["Noen butikker i nærområdet"],
-    limited: ["Begrenset handletilbud i umiddelbar nærhet"],
+    good: ["Godt utvalg av dagligvare og tjenester"],
+    sufficient: ["Noen butikker og tjenester i nærområdet"],
+    limited: ["Begrenset tilbud i umiddelbar nærhet"],
   },
-  services: {
-    exceptional: [
-      "Alt av tjenester i gangavstand",
-      "Komplett servicetilbud rett utenfor døren",
-    ],
-    very_good: [
-      "Svært godt utvalg av tjenester",
-      "Enkelt å få utført daglige ærender",
-    ],
-    good: ["Godt utvalg av hverdagstjenester"],
-    sufficient: ["Noen tjenester i nærområdet"],
-    limited: ["Begrenset servicetilbud i umiddelbar nærhet"],
-  },
-  fitness: {
-    exceptional: [
-      "Treningsparadis med varierte muligheter",
-      "Alt for den aktive livsstilen",
-    ],
-    very_good: [
-      "Svært godt utvalg for trening og helse",
-      "Gode muligheter for en aktiv hverdag",
-    ],
-    good: ["Godt utvalg av treningsmuligheter"],
-    sufficient: ["Noen treningsfasiliteter i nærheten"],
-    limited: ["Begrenset treningstilbud i umiddelbar nærhet"],
-  },
-  culture: {
+  "kultur-opplevelser": {
     exceptional: [
       "Kulturelt sentrum med rikt tilbud",
       "Kunst, kultur og opplevelser i overflod",
@@ -166,31 +145,93 @@ const QUOTE_TEMPLATES: Record<string, Record<QuoteLevel, string[]>> = {
     sufficient: ["Noen kulturelle tilbud i nærheten"],
     limited: ["Begrenset kulturtilbud i umiddelbar nærhet"],
   },
-  outdoors: {
+  "trening-velvare": {
     exceptional: [
-      "Naturperle med grøntområder og friluftsliv",
-      "Unike muligheter for naturopplevelser",
+      "Treningsparadis med varierte muligheter",
+      "Alt for den aktive livsstilen",
     ],
     very_good: [
-      "Rik tilgang på grøntområder og parker",
-      "Gode muligheter for friluftsliv",
+      "Svært godt utvalg for trening og helse",
+      "Gode muligheter for en aktiv hverdag",
     ],
-    good: ["God tilgang til parker og grøntområder"],
-    sufficient: ["Noen grøntområder i nærheten"],
-    limited: ["Begrenset tilgang til grøntområder"],
+    good: ["Godt utvalg av treningsmuligheter"],
+    sufficient: ["Noen treningsfasiliteter i nærheten"],
+    limited: ["Begrenset treningstilbud i umiddelbar nærhet"],
   },
-  nightlife: {
+
+  // === Sub-category-level quotes (keyed by category ID) ===
+  restaurant: {
     exceptional: [
-      "Livlig natteliv med varierte tilbud",
-      "Sentrum for byens uteliv",
+      "Matmekka — mangfoldig restaurantscene",
+      "Restaurantutvalg i toppklasse",
+    ],
+    very_good: [
+      "Rikt restaurantutvalg i gangavstand",
+      "Solid restaurantscene med varierte kjøkken",
+    ],
+    good: ["Godt utvalg av restauranter"],
+    sufficient: ["Noen restauranter i nærheten"],
+    limited: ["Begrenset restauranttilbud"],
+  },
+  cafe: {
+    exceptional: [
+      "Kafé-paradis med noe for enhver smak",
+      "Rikholdig kafékultur i nabolaget",
+    ],
+    very_good: [
+      "Bredt utvalg av kaféer i gangavstand",
+      "Levende kaféscene rett utenfor døren",
+    ],
+    good: ["Godt utvalg av kaféer"],
+    sufficient: ["Noen kaféer i nærheten"],
+    limited: ["Begrenset kafétilbud"],
+  },
+  bar: {
+    exceptional: [
+      "Livlig uteliv med varierte barer",
+      "Sentrum for byens barliv",
     ],
     very_good: [
       "Godt utvalg av barer og utesteder",
-      "Aktiv utelivsscene i gangavstand",
+      "Aktiv barscene i gangavstand",
     ],
-    good: ["Hyggelige utesteder i nærområdet"],
-    sufficient: ["Noen utesteder i nærheten"],
-    limited: ["Begrenset uteliv i umiddelbar nærhet"],
+    good: ["Hyggelige barer i nærområdet"],
+    sufficient: ["Noen barer i nærheten"],
+    limited: ["Begrenset bartilbud"],
+  },
+  bakery: {
+    exceptional: ["Bakerimekka med ferske brød og kaker"],
+    very_good: ["Godt utvalg av bakerier"],
+    good: ["Noen fine bakerier i nærheten"],
+    sufficient: ["Et bakeri i nærheten"],
+    limited: ["Begrenset bakeritilbud"],
+  },
+  supermarket: {
+    exceptional: ["Komplett dagligvaretilbud i gangavstand"],
+    very_good: ["Flere dagligvarebutikker rett i nærheten"],
+    good: ["Godt utvalg av dagligvare"],
+    sufficient: ["Dagligvare tilgjengelig i nærheten"],
+    limited: ["Begrenset dagligvaretilbud"],
+  },
+  shopping: {
+    exceptional: [
+      "Handlemekka med alt du trenger",
+      "Rikt utvalg av butikker og kjøpesentre",
+    ],
+    very_good: [
+      "Bredt utvalg av butikker i gangavstand",
+      "Gode shoppingmuligheter",
+    ],
+    good: ["Godt utvalg av butikker"],
+    sufficient: ["Noen butikker i nærområdet"],
+    limited: ["Begrenset shoppingtilbud"],
+  },
+  bus: {
+    exceptional: ["Knutepunkt med hyppige avganger"],
+    very_good: ["Svært god bussdekning i gangavstand"],
+    good: ["God busstilgang"],
+    sufficient: ["Busstopp i nærheten"],
+    limited: ["Begrenset busstilbud"],
   },
 };
 
