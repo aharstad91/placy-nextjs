@@ -56,6 +56,14 @@ export interface POI {
   googleBusinessStatus?: string;
   googlePriceLevel?: number;
 
+  // POI Tier System
+  poiTier?: 1 | 2 | 3;
+  tierReason?: string;
+  isChain?: boolean;
+  isLocalGem?: boolean;
+  poiMetadata?: Record<string, unknown>;
+  tierEvaluatedAt?: string;
+
   // Product-specific flags (set per product_pois)
   featured?: boolean;
 

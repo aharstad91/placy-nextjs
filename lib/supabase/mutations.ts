@@ -64,6 +64,18 @@ interface TrustFields {
   google_price_level: number | null;
 }
 
+/**
+ * Tier fields that should be preserved during re-imports
+ */
+interface TierFields {
+  poi_tier: number | null;
+  tier_reason: string | null;
+  is_chain: boolean;
+  is_local_gem: boolean;
+  poi_metadata: Record<string, unknown>;
+  tier_evaluated_at: string | null;
+}
+
 export interface POIUpsertResult {
   inserted: number;
   updated: number;
@@ -477,7 +489,7 @@ export async function upsertPOIsWithEditorialPreservation(
   const poiIds = pois.map(p => p.id);
   const { data: existingPois, error: fetchError } = await supabase
     .from("pois")
-    .select("id, editorial_hook, local_insight, story_priority, editorial_sources, featured_image, description, trust_score, trust_flags, trust_score_updated_at, google_website, google_business_status, google_price_level")
+    .select("id, editorial_hook, local_insight, story_priority, editorial_sources, featured_image, description, trust_score, trust_flags, trust_score_updated_at, google_website, google_business_status, google_price_level, poi_tier, tier_reason, is_chain, is_local_gem, poi_metadata, tier_evaluated_at")
     .in("id", poiIds);
 
   if (fetchError) {
@@ -486,7 +498,7 @@ export async function upsertPOIsWithEditorialPreservation(
   }
 
   // Create lookup map for existing editorial + trust content
-  const existingMap = new Map<string, EditorialFields & TrustFields>(
+  const existingMap = new Map<string, EditorialFields & TrustFields & TierFields>(
     (existingPois || []).map(poi => [poi.id, {
       editorial_hook: poi.editorial_hook,
       local_insight: poi.local_insight,
@@ -500,6 +512,12 @@ export async function upsertPOIsWithEditorialPreservation(
       google_website: poi.google_website,
       google_business_status: poi.google_business_status,
       google_price_level: poi.google_price_level,
+      poi_tier: poi.poi_tier as number | null,
+      tier_reason: poi.tier_reason as string | null,
+      is_chain: poi.is_chain as boolean,
+      is_local_gem: poi.is_local_gem as boolean,
+      poi_metadata: (poi.poi_metadata ?? {}) as Record<string, unknown>,
+      tier_evaluated_at: poi.tier_evaluated_at as string | null,
     }])
   );
 
@@ -522,6 +540,13 @@ export async function upsertPOIsWithEditorialPreservation(
       google_website: poi.google_website ?? existing?.google_website ?? null,
       google_business_status: poi.google_business_status ?? existing?.google_business_status ?? null,
       google_price_level: poi.google_price_level ?? existing?.google_price_level ?? null,
+      // Preserve existing tier fields
+      poi_tier: existing?.poi_tier ?? null,
+      tier_reason: existing?.tier_reason ?? null,
+      is_chain: existing?.is_chain ?? false,
+      is_local_gem: existing?.is_local_gem ?? false,
+      poi_metadata: existing?.poi_metadata ?? {},
+      tier_evaluated_at: existing?.tier_evaluated_at ?? null,
     };
   });
 

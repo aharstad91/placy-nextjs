@@ -98,6 +98,12 @@ export type Database = {
           google_website: string | null;
           google_business_status: string | null;
           google_price_level: number | null;
+          poi_tier: number | null;
+          tier_reason: string | null;
+          is_chain: boolean;
+          is_local_gem: boolean;
+          poi_metadata: Record<string, unknown>;
+          tier_evaluated_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -128,6 +134,12 @@ export type Database = {
           google_website?: string | null;
           google_business_status?: string | null;
           google_price_level?: number | null;
+          poi_tier?: number | null;
+          tier_reason?: string | null;
+          is_chain?: boolean;
+          is_local_gem?: boolean;
+          poi_metadata?: Record<string, unknown>;
+          tier_evaluated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -158,6 +170,12 @@ export type Database = {
           google_website?: string | null;
           google_business_status?: string | null;
           google_price_level?: number | null;
+          poi_tier?: number | null;
+          tier_reason?: string | null;
+          is_chain?: boolean;
+          is_local_gem?: boolean;
+          poi_metadata?: Record<string, unknown>;
+          tier_evaluated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

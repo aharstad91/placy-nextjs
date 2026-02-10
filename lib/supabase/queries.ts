@@ -99,6 +99,12 @@ function transformPOI(
     googleWebsite: dbPoi.google_website ?? undefined,
     googleBusinessStatus: dbPoi.google_business_status ?? undefined,
     googlePriceLevel: dbPoi.google_price_level ?? undefined,
+    poiTier: (dbPoi.poi_tier as 1 | 2 | 3 | null) ?? undefined,
+    tierReason: dbPoi.tier_reason ?? undefined,
+    isChain: dbPoi.is_chain ?? undefined,
+    isLocalGem: dbPoi.is_local_gem ?? undefined,
+    poiMetadata: dbPoi.poi_metadata ?? undefined,
+    tierEvaluatedAt: dbPoi.tier_evaluated_at ?? undefined,
   };
 }
 
@@ -238,6 +244,12 @@ export async function getPOIsWithinRadius(
       google_website: poi.google_website,
       google_business_status: poi.google_business_status,
       google_price_level: poi.google_price_level,
+      poi_tier: poi.poi_tier ?? null,
+      tier_reason: poi.tier_reason ?? null,
+      is_chain: poi.is_chain ?? false,
+      is_local_gem: poi.is_local_gem ?? false,
+      poi_metadata: poi.poi_metadata ?? {},
+      tier_evaluated_at: poi.tier_evaluated_at ?? null,
       created_at: poi.created_at,
       updated_at: poi.updated_at,
     } as DbPoi,
