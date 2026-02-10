@@ -137,15 +137,9 @@ function pickHighlights(pois: POI[], displayMode: ThemeDisplayMode): POI[] {
   const featured = pois.filter((p) => p.featured);
   if (featured.length > 0) return featured;
 
-  // 2. Tier 1 POIs (only reached when no featured POIs exist)
+  // 2. Tier 1 first, fill remaining with top formula-scored
   const tier1 = pois.filter((p) => p.poiTier === 1);
-  if (tier1.length >= HIGHLIGHT_FALLBACK_COUNT) {
-    return tier1.sort(byFormulaScore).slice(0, HIGHLIGHT_FALLBACK_COUNT);
-  }
-
-  // 3. Fallback: fill Tier 1 + top formula-scored POIs
-  const tier1Ids = new Set(tier1.map((p) => p.id));
-  const rest = pois.filter((p) => !tier1Ids.has(p.id)).sort(byFormulaScore);
+  const rest = pois.filter((p) => p.poiTier !== 1).sort(byFormulaScore);
   return [...tier1, ...rest].slice(0, HIGHLIGHT_FALLBACK_COUNT);
 }
 

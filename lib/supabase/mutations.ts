@@ -68,7 +68,7 @@ interface TrustFields {
  * Tier fields that should be preserved during re-imports
  */
 interface TierFields {
-  poi_tier: number | null;
+  poi_tier: 1 | 2 | 3 | null;
   tier_reason: string | null;
   is_chain: boolean;
   is_local_gem: boolean;
@@ -512,7 +512,7 @@ export async function upsertPOIsWithEditorialPreservation(
       google_website: poi.google_website,
       google_business_status: poi.google_business_status,
       google_price_level: poi.google_price_level,
-      poi_tier: poi.poi_tier as number | null,
+      poi_tier: poi.poi_tier as 1 | 2 | 3 | null,
       tier_reason: poi.tier_reason as string | null,
       is_chain: poi.is_chain as boolean,
       is_local_gem: poi.is_local_gem as boolean,
@@ -650,33 +650,35 @@ export async function updatePOITier(
   }
 
   // Only write editorial fields if currently null (preserve hand-crafted content)
-  const editorialUpdate: Record<string, unknown> = {};
-  if (data.editorial_hook || data.local_insight) {
-    const { data: existing } = await supabase
-      .from("pois")
-      .select("editorial_hook, local_insight")
-      .eq("id", poiId)
-      .single();
-    if (!existing?.editorial_hook && data.editorial_hook) {
-      editorialUpdate.editorial_hook = data.editorial_hook;
-    }
-    if (!existing?.local_insight && data.local_insight) {
-      editorialUpdate.local_insight = data.local_insight;
-    }
+  const { data: existing } = await supabase
+    .from("pois")
+    .select("editorial_hook, local_insight, editorial_sources")
+    .eq("id", poiId)
+    .single();
+
+  const updatePayload: Record<string, unknown> = {
+    poi_tier: data.poi_tier,
+    tier_reason: data.tier_reason,
+    is_chain: data.is_chain,
+    is_local_gem: data.is_local_gem,
+    poi_metadata: data.poi_metadata,
+    tier_evaluated_at: new Date().toISOString(),
+  };
+
+  // Editorial overwrite: strict null check (preserve even empty strings)
+  if (existing?.editorial_hook === null && data.editorial_hook !== undefined) {
+    updatePayload.editorial_hook = data.editorial_hook;
+  }
+  if (existing?.local_insight === null && data.local_insight !== undefined) {
+    updatePayload.local_insight = data.local_insight;
+  }
+  if (existing?.editorial_sources === null && data.editorial_sources !== undefined) {
+    updatePayload.editorial_sources = data.editorial_sources;
   }
 
   const { error } = await supabase
     .from("pois")
-    .update({
-      poi_tier: data.poi_tier,
-      tier_reason: data.tier_reason,
-      is_chain: data.is_chain,
-      is_local_gem: data.is_local_gem,
-      poi_metadata: data.poi_metadata,
-      editorial_sources: data.editorial_sources ?? [],
-      tier_evaluated_at: new Date().toISOString(),
-      ...editorialUpdate,
-    } as Record<string, unknown>)
+    .update(updatePayload as Record<string, unknown>)
     .eq("id", poiId);
 
   if (error) {

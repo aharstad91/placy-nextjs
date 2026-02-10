@@ -78,7 +78,12 @@ export function applyExplorerCaps(
   const unmappedCap = Math.max(EXPLORER_TOTAL_CAP - result.length, 0);
   const unmapped = transportCapped
     .filter((s) => !CATEGORY_TO_THEME[s.poi.category.id] && !selectedIds.has(s.poi.id))
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => {
+      const aTier = a.poi.poiTier ?? NULL_TIER_VALUE;
+      const bTier = b.poi.poiTier ?? NULL_TIER_VALUE;
+      if (aTier !== bTier) return aTier - bTier;
+      return b.score - a.score;
+    })
     .slice(0, unmappedCap);
 
   for (const { poi } of unmapped) {

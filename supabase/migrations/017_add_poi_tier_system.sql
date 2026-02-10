@@ -1,5 +1,6 @@
 -- POI Tier System columns
-ALTER TABLE pois ADD COLUMN poi_tier SMALLINT CHECK (poi_tier IN (1, 2, 3));
+ALTER TABLE pois ADD COLUMN poi_tier SMALLINT
+  CONSTRAINT pois_poi_tier_valid CHECK (poi_tier IN (1, 2, 3));
 ALTER TABLE pois ADD COLUMN tier_reason TEXT;
 ALTER TABLE pois ADD COLUMN is_chain BOOLEAN DEFAULT false;
 ALTER TABLE pois ADD COLUMN is_local_gem BOOLEAN DEFAULT false;
