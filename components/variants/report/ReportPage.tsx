@@ -142,10 +142,10 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
         </div>
       </div>
 
-      {/* Desktop: 50/50 split with sticky map */}
+      {/* Desktop: 60/40 split with sticky map */}
       <div className="hidden lg:flex">
         {/* Left: Scrollable theme sections */}
-        <div className="w-1/2 px-16 min-w-0 overflow-hidden">
+        <div className="w-[60%] px-16 min-w-0 overflow-hidden">
           {reportData.themes.map((theme, i) => (
             <div key={theme.id}>
               {i > 0 && <div className="h-px bg-[#e8e4df]" />}
@@ -169,7 +169,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
         </div>
 
         {/* Right: Sticky map */}
-        <div className="w-1/2 pt-16 pr-16 pb-16">
+        <div className="w-[40%] pt-16 pr-16 pb-16">
           <div className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden">
             <ReportStickyMap
               themes={reportData.themes}

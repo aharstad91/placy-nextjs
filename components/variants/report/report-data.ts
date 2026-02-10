@@ -103,7 +103,7 @@ const THEME_MIN_POIS = 5;
 export const SUB_SECTION_THRESHOLD = 15;
 
 /** How many compact cards to show before "Vis meg mer" */
-export const INITIAL_VISIBLE_COUNT = 6;
+export const INITIAL_VISIBLE_COUNT = 12;
 
 /** Display mode per theme — editorial gets photo cards, functional gets compact list */
 const CATEGORY_DISPLAY_MODE: Record<string, ThemeDisplayMode> = {
