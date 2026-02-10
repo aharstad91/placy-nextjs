@@ -5,6 +5,7 @@ import type { POI } from "@/lib/types";
 import { MapPin } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { GoogleRating } from "@/components/ui/GoogleRating";
+import { TierBadge } from "@/components/ui/TierBadge";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
 
 interface ReportPOICardProps {
@@ -42,7 +43,7 @@ export default function ReportPOICard({ poi, isActive, onClick }: ReportPOICardP
     >
       {/* 16:9 image or category icon fallback */}
       <div
-        className="w-full aspect-[16/9] overflow-hidden flex items-center justify-center"
+        className="relative w-full aspect-[16/9] overflow-hidden flex items-center justify-center"
         style={!imageUrl ? { backgroundColor: poi.category.color + "20" } : undefined}
       >
         {imageUrl ? (
@@ -59,6 +60,13 @@ export default function ReportPOICard({ poi, isActive, onClick }: ReportPOICardP
             className="w-8 h-8"
             style={{ color: poi.category.color }}
           />
+        )}
+
+        {/* Tier badge overlay */}
+        {(poi.poiTier === 1 || poi.isLocalGem) && (
+          <div className="absolute top-1.5 left-1.5">
+            <TierBadge poiTier={poi.poiTier} isLocalGem={poi.isLocalGem} variant="card" />
+          </div>
         )}
       </div>
 

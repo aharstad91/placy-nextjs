@@ -25,6 +25,7 @@ import { shouldShowRating } from "@/lib/themes/rating-categories";
 import ReportInteractiveMapSection from "./ReportInteractiveMapSection";
 import ReportAddressInput from "./ReportAddressInput";
 import ReportPOICard from "./ReportPOICard";
+import { TierBadge } from "@/components/ui/TierBadge";
 
 interface ReportThemeSectionProps {
   theme: ReportTheme;
@@ -630,10 +631,11 @@ function ReportPOIRow({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <h3 className="text-sm font-semibold text-gray-900 truncate">
                 {poi.name}
               </h3>
+              <TierBadge poiTier={poi.poiTier} isLocalGem={poi.isLocalGem} variant="inline" />
               {poi.editorialHook && (
                 <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
               )}

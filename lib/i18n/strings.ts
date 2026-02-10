@@ -21,6 +21,8 @@ const strings = {
     avg: "Snitt",
     summary: "Oppsummert",
     byPlacy: "av Placy",
+    recommended: "Anbefalt",
+    localGem: "Lokal perle",
   },
   en: {
     label: "Neighborhood Report",
@@ -37,6 +39,8 @@ const strings = {
     avg: "Avg",
     summary: "Summary",
     byPlacy: "by Placy",
+    recommended: "Recommended",
+    localGem: "Local gem",
   },
 } as const;
 

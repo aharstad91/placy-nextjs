@@ -327,6 +327,13 @@ export default function ReportStickyMap({
             ? Math.round(poi.travelTime.walk / 60)
             : null;
 
+          // Tier-aware sizing (only when not highlighted/hovered — those override)
+          const tier = poi.poiTier ?? 2;
+          const tierSize = tier === 1 ? "w-9 h-9" : tier === 3 ? "w-7 h-7" : "w-8 h-8";
+          const tierBorder = tier === 1 ? "border-2 border-white shadow-lg" : tier === 3 ? "border-[1.5px] border-white/70 shadow-md" : "border-2 border-white shadow-md";
+          const tierIconSize = tier === 1 ? "w-[18px] h-[18px]" : tier === 3 ? "w-3.5 h-3.5" : "w-4 h-4";
+          const tierZIndex = isHighlighted ? 5 : isHovered ? 4 : isActive ? (tier === 1 ? 3 : 2) : 0;
+
           return (
             <Marker
               key={poi.id}
@@ -334,9 +341,7 @@ export default function ReportStickyMap({
               latitude={poi.coordinates.lat}
               anchor="center"
               onClick={(e) => isActive ? handleMarkerClick(e, poi.id) : undefined}
-              style={{
-                zIndex: isHighlighted ? 5 : isHovered ? 4 : isActive ? 2 : 0,
-              }}
+              style={{ zIndex: tierZIndex }}
             >
               <div
                 className="relative transition-opacity duration-200 ease-in-out"
@@ -353,14 +358,22 @@ export default function ReportStickyMap({
                   />
                 )}
 
-                {/* Icon circle */}
+                {/* Glow ring for Tier 1 (not highlighted/hovered) */}
+                {tier === 1 && !isHighlighted && !isHovered && (
+                  <div
+                    className="absolute -inset-1 rounded-full"
+                    style={{ backgroundColor: poi.category.color, opacity: 0.2 }}
+                  />
+                )}
+
+                {/* Icon circle — tier-aware default sizes, overridden by highlight/hover */}
                 <div
-                  className={`relative flex items-center justify-center rounded-full border-2 border-white shadow-md cursor-pointer transition-transform ${
+                  className={`relative flex items-center justify-center rounded-full cursor-pointer transition-transform ${
                     isHighlighted
-                      ? "w-10 h-10 scale-110"
+                      ? "w-10 h-10 border-2 border-white shadow-lg scale-110"
                       : isHovered
-                      ? "w-8 h-8 scale-110"
-                      : "w-8 h-8 hover:scale-110"
+                      ? "w-8 h-8 border-2 border-white shadow-md scale-110"
+                      : `${tierSize} ${tierBorder} hover:scale-110`
                   }`}
                   style={{ backgroundColor: poi.category.color }}
                   onMouseEnter={() => setHoveredPOI(poi.id)}
@@ -368,7 +381,7 @@ export default function ReportStickyMap({
                 >
                   <Icon
                     className={`text-white ${
-                      isHighlighted ? "w-5 h-5" : "w-4 h-4"
+                      isHighlighted ? "w-5 h-5" : isHovered ? "w-4 h-4" : tierIconSize
                     }`}
                   />
                 </div>
@@ -383,6 +396,8 @@ export default function ReportStickyMap({
                     googleReviewCount={poi.googleReviewCount}
                     travelTimeMinutes={walkMinutes}
                     travelMode="walk"
+                    poiTier={poi.poiTier}
+                    isLocalGem={poi.isLocalGem}
                   />
                 )}
               </div>

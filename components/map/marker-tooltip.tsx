@@ -1,6 +1,6 @@
 "use client";
 
-import { Footprints, Bike, Car } from "lucide-react";
+import { Footprints, Bike, Car, Award, Gem } from "lucide-react";
 import type { TravelMode } from "@/lib/types";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
@@ -22,6 +22,8 @@ interface MarkerTooltipProps {
   travelMode?: TravelMode;
   /** Override category name with custom text (e.g. "Start" in TripMap) */
   subtitle?: string;
+  poiTier?: 1 | 2 | 3 | null;
+  isLocalGem?: boolean;
 }
 
 export function MarkerTooltip({
@@ -33,6 +35,8 @@ export function MarkerTooltip({
   travelTimeMinutes,
   travelMode,
   subtitle,
+  poiTier,
+  isLocalGem,
 }: MarkerTooltipProps) {
   const displaySubtitle = subtitle ?? categoryName;
   const showRating =
@@ -41,9 +45,26 @@ export function MarkerTooltip({
     googleRating > 0;
   const TravelIcon = travelMode ? TRAVEL_MODE_ICONS[travelMode] : null;
 
+  const isTier1 = poiTier === 1;
+  const showRecommended = isTier1;
+  const showLocalGem = isLocalGem && !isTier1;
+
   return (
     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap pointer-events-none z-20 animate-fade-in">
       <div className="bg-white px-3 py-1.5 rounded-lg shadow-lg border border-gray-100 text-xs">
+        {/* Tier / Local Gem label */}
+        {showRecommended && (
+          <div className="flex items-center gap-1 text-emerald-700 mb-0.5">
+            <Award className="w-3 h-3" />
+            <span className="font-medium">Anbefalt</span>
+          </div>
+        )}
+        {showLocalGem && (
+          <div className="flex items-center gap-1 text-amber-700 mb-0.5">
+            <Gem className="w-3 h-3" />
+            <span className="font-medium">Lokal perle</span>
+          </div>
+        )}
         <div className="font-semibold text-gray-900 truncate max-w-[200px]">
           {name}
         </div>
