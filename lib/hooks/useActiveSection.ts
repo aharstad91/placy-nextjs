@@ -67,13 +67,35 @@ export function useActiveSection(initialThemeId: string | null) {
         let bestId: string | null = null;
         let bestHeight = 0;
 
-        Array.from(entries.entries()).forEach(([id, entry]) => {
+        const entryList = Array.from(entries.entries());
+        for (let i = 0; i < entryList.length; i++) {
+          const [id, entry] = entryList[i];
           const visibleHeight = entry.intersectionRect.height;
           if (visibleHeight > bestHeight) {
             bestHeight = visibleHeight;
             bestId = id;
           }
-        });
+        }
+
+        // Sub-section preference: a theme <section> wraps its sub-section <div>s,
+        // so the parent always has more visible pixels. When the winner is a theme
+        // ID (no ":"), prefer its most-visible sub-section if one is intersecting.
+        if (bestId !== null && !bestId.includes(":")) {
+          const themePrefix = bestId + ":";
+          let bestSubHeight = 0;
+
+          for (let i = 0; i < entryList.length; i++) {
+            const [id, entry] = entryList[i];
+            if (
+              id.startsWith(themePrefix) &&
+              entry.isIntersecting &&
+              entry.intersectionRect.height > bestSubHeight
+            ) {
+              bestSubHeight = entry.intersectionRect.height;
+              bestId = id;
+            }
+          }
+        }
 
         if (bestId) {
           debouncedSet(bestId);

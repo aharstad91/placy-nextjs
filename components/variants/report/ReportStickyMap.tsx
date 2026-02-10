@@ -87,16 +87,26 @@ export default function ReportStickyMap({
     return lookup;
   }, [themes, expandedThemes]);
 
-  // All visible POIs across all themes (for pre-rendering marker pool)
+  // All visible POIs across all themes AND sub-sections (for pre-rendering marker pool)
   const allPOIs = useMemo(() => {
     const seen = new Set<string>();
     const result: (POI & { themeId: string })[] = [];
     for (const theme of themes) {
-      const pois = poisByTheme[theme.id] ?? [];
-      for (const poi of pois) {
+      // Theme-level POIs
+      for (const poi of poisByTheme[theme.id] ?? []) {
         if (!seen.has(poi.id)) {
           seen.add(poi.id);
           result.push({ ...poi, themeId: theme.id });
+        }
+      }
+      // Sub-section POIs (may not overlap with theme-level)
+      for (const sub of theme.subSections ?? []) {
+        const subKey = `${theme.id}:${sub.categoryId}`;
+        for (const poi of poisByTheme[subKey] ?? []) {
+          if (!seen.has(poi.id)) {
+            seen.add(poi.id);
+            result.push({ ...poi, themeId: theme.id });
+          }
         }
       }
     }
