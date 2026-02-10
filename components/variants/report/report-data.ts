@@ -5,6 +5,7 @@ import {
   generateCategoryQuote,
   type CategoryScore,
 } from "@/lib/utils/category-score";
+import { calculateReportScore } from "@/lib/utils/poi-score";
 
 /** Haversine distance in meters between two coordinates */
 function haversineMeters(a: Coordinates, b: Coordinates): number {
@@ -98,7 +99,7 @@ export const TRANSPORT_CATEGORIES = new Set([
 const HIGHLIGHT_FALLBACK_COUNT = 3;
 const THEME_MIN_POIS = 5;
 
-/** When a sub-category within a theme exceeds this count, it gets its own section */
+/** When any category within a theme has >= this many POIs, all categories become sub-sections */
 export const SUB_SECTION_THRESHOLD = 15;
 
 /** How many compact cards to show before "Vis meg mer" */
@@ -115,12 +116,9 @@ const CATEGORY_DISPLAY_MODE: Record<string, ThemeDisplayMode> = {
 
 // --- Shared helpers (used by both buildSubSections and transformToReportData) ---
 
-/** Sort comparator: highest googleRating first, nulls last */
-function byRatingDesc(a: POI, b: POI): number {
-  if (a.googleRating == null && b.googleRating == null) return 0;
-  if (a.googleRating == null) return 1;
-  if (b.googleRating == null) return -1;
-  return b.googleRating - a.googleRating;
+/** Sort comparator: highest formula score first (rating × log2(1 + reviews)) */
+function byFormulaScore(a: POI, b: POI): number {
+  return calculateReportScore(b) - calculateReportScore(a);
 }
 
 /** Pick highlight POIs: featured first, fallback to top-rated. Returns [] for functional mode. */
@@ -128,7 +126,7 @@ function pickHighlights(pois: POI[], displayMode: ThemeDisplayMode): POI[] {
   if (displayMode !== "editorial") return [];
   const featured = pois.filter((p) => p.featured);
   if (featured.length > 0) return featured;
-  return [...pois].sort(byRatingDesc).slice(0, HIGHLIGHT_FALLBACK_COUNT);
+  return [...pois].sort(byFormulaScore).slice(0, HIGHLIGHT_FALLBACK_COUNT);
 }
 
 /** Compute stats from a POI array */
@@ -177,23 +175,26 @@ function buildSubSections(
     }
   }
 
-  // Check if any category exceeds threshold
-  const largeCats = Array.from(byCat.entries()).filter(
-    ([, pois]) => pois.length > SUB_SECTION_THRESHOLD
+  // When ANY category meets threshold, ALL categories become sub-sections
+  const hasLargeCat = Array.from(byCat.values()).some(
+    (pois) => pois.length >= SUB_SECTION_THRESHOLD
   );
-  if (largeCats.length === 0) return [];
+  if (!hasLargeCat) return [];
 
-  // Build sub-sections for large categories, sorted by count (most first)
-  largeCats.sort((a, b) => b[1].length - a[1].length);
+  // Build sub-sections for ALL categories, sorted by count (most first)
+  const allCats = Array.from(byCat.entries());
+  allCats.sort((a, b) => b[1].length - a[1].length);
 
-  return largeCats.map(([catId, catPOIs]) => {
+  return allCats.map(([catId, catPOIs]) => {
     const sample = catPOIs[0].category;
-    const highlights = pickHighlights(catPOIs, parentDisplayMode);
-    const { listPOIs, hiddenPOIs } = splitVisibleHidden(catPOIs, highlights);
-    const stats = computePOIStats(catPOIs);
+    // Sort by formula score so highlights and visible list show best POIs
+    const sortedCatPOIs = [...catPOIs].sort(byFormulaScore);
+    const highlights = pickHighlights(sortedCatPOIs, parentDisplayMode);
+    const { listPOIs, hiddenPOIs } = splitVisibleHidden(sortedCatPOIs, highlights);
+    const stats = computePOIStats(sortedCatPOIs);
 
     const subScore = calculateCategoryScore({
-      totalPOIs: catPOIs.length,
+      totalPOIs: sortedCatPOIs.length,
       avgRating: stats.avgRating,
       avgWalkTimeMinutes: null,
       uniqueCategories: 1,
@@ -222,7 +223,7 @@ function buildSubSections(
       highlightPOIs: highlights,
       listPOIs,
       hiddenPOIs,
-      allPOIs: catPOIs,
+      allPOIs: sortedCatPOIs,
       displayMode: parentDisplayMode,
       quote,
     };
