@@ -159,13 +159,13 @@ function splitVisibleHidden(pois: POI[], highlights: POI[]) {
  * exceeding SUB_SECTION_THRESHOLD. Returns empty array if no splitting needed.
  */
 function buildSubSections(
-  sortedPOIs: POI[],
+  themePOIs: POI[],
   parentDisplayMode: ThemeDisplayMode,
   projectId: string,
 ): ReportSubSection[] {
   // Group by category
   const byCat = new Map<string, POI[]>();
-  for (const poi of sortedPOIs) {
+  for (const poi of themePOIs) {
     const catId = poi.category.id;
     const arr = byCat.get(catId);
     if (arr) {
