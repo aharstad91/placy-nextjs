@@ -24,6 +24,18 @@ export function calculatePOIScore(poi: POIScoreInput): number {
 }
 
 /**
+ * Report scoring: rating × log2(1 + reviewCount).
+ * Balances quality (rating) with confidence (review volume).
+ * POIs with no rating score 0.
+ */
+export function calculateReportScore(poi: Pick<POIScoreInput, "googleRating" | "googleReviewCount">): number {
+  const rating = poi.googleRating ?? 0;
+  const reviews = poi.googleReviewCount ?? 0;
+  if (rating === 0) return 0;
+  return rating * Math.log2(1 + reviews);
+}
+
+/**
  * Weighted score that applies venue-profile relevance multiplier.
  * Preserves original calculatePOIScore signature for backward compatibility.
  */
