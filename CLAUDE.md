@@ -1,5 +1,7 @@
 # Placy — Prosjektkontekst
 
+klientmappe: /Users/andreasharstad/klienter/placy
+
 Placy er en lokasjonsbasert plattform med tre produkter: **Explorer** (utforsk fritt), **Guide** (kuraterte turer), og **Report** (redaksjonelle artikler med kart). Se `context/products.md` for full produktbeskrivelse.
 
 ## Kontekst-dokumenter
