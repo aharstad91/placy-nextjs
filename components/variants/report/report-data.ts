@@ -5,7 +5,7 @@ import {
   generateCategoryQuote,
   type CategoryScore,
 } from "@/lib/utils/category-score";
-import { calculateReportScore } from "@/lib/utils/poi-score";
+import { calculateReportScore, NULL_TIER_VALUE } from "@/lib/utils/poi-score";
 
 /** Haversine distance in meters between two coordinates */
 function haversineMeters(a: Coordinates, b: Coordinates): number {
@@ -121,12 +121,26 @@ function byFormulaScore(a: POI, b: POI): number {
   return calculateReportScore(b) - calculateReportScore(a);
 }
 
-/** Pick highlight POIs: featured first, fallback to top-rated. Returns [] for functional mode. */
+/** Sort comparator: tier first (lower = better), then formula score within same tier */
+export function byTierThenScore(a: POI, b: POI): number {
+  const aTier = a.poiTier ?? NULL_TIER_VALUE;
+  const bTier = b.poiTier ?? NULL_TIER_VALUE;
+  if (aTier !== bTier) return aTier - bTier;
+  return calculateReportScore(b) - calculateReportScore(a);
+}
+
+/** Pick highlight POIs: featured first, then Tier 1, fallback to formula score. Returns [] for functional mode. */
 function pickHighlights(pois: POI[], displayMode: ThemeDisplayMode): POI[] {
   if (displayMode !== "editorial") return [];
+
+  // 1. Featured POIs (manually curated) — return ALL featured, nothing else
   const featured = pois.filter((p) => p.featured);
   if (featured.length > 0) return featured;
-  return [...pois].sort(byFormulaScore).slice(0, HIGHLIGHT_FALLBACK_COUNT);
+
+  // 2. Tier 1 first, fill remaining with top formula-scored
+  const tier1 = pois.filter((p) => p.poiTier === 1);
+  const rest = pois.filter((p) => p.poiTier !== 1).sort(byFormulaScore);
+  return [...tier1, ...rest].slice(0, HIGHLIGHT_FALLBACK_COUNT);
 }
 
 /** Compute stats from a POI array */
@@ -187,8 +201,8 @@ function buildSubSections(
 
   return allCats.map(([catId, catPOIs]) => {
     const sample = catPOIs[0].category;
-    // Sort by formula score so highlights and visible list show best POIs
-    const sortedCatPOIs = [...catPOIs].sort(byFormulaScore);
+    // Sort by tier then formula score so highlights and visible list show best POIs
+    const sortedCatPOIs = [...catPOIs].sort(byTierThenScore);
     const highlights = pickHighlights(sortedCatPOIs, parentDisplayMode);
     const { listPOIs, hiddenPOIs } = splitVisibleHidden(sortedCatPOIs, highlights);
     const stats = computePOIStats(sortedCatPOIs);
