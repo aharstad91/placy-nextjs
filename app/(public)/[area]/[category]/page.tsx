@@ -79,7 +79,7 @@ export default async function CategoryPage({ params }: PageProps) {
   ];
 
   return (
-    <div className="px-4 sm:px-6 lg:px-0 py-8 lg:py-0">
+    <div className="px-4 sm:px-6 lg:px-0 py-8 lg:py-0 max-w-[1920px] mx-auto">
       <BreadcrumbJsonLd
         items={[
           { name: "Placy", url: "https://placy.no" },

@@ -147,7 +147,7 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
       </div>
 
       {/* Desktop layout — 50/50 split matching Report */}
-      <div className="hidden lg:flex">
+      <div className="hidden lg:flex max-w-[1920px] mx-auto">
         {/* Left: Scrollable card list */}
         <div className="w-[50%] px-16 min-w-0 overflow-hidden">
           {cardList}
