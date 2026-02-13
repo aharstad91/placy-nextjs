@@ -29,6 +29,10 @@ interface GuideMapLayoutProps {
   interactive?: boolean;
 }
 
+function poiHref(areaSlug: string, slug: string) {
+  return `/${areaSlug}/steder/${slug}`;
+}
+
 export default function GuideMapLayout({ pois, areaSlug, interactive = false }: GuideMapLayoutProps) {
   const [activePOIId, setActivePOIId] = useState<string | null>(null);
   const [activePOISource, setActivePOISource] = useState<"card" | "marker">(
@@ -85,21 +89,22 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
         <div className="mb-6">
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#d4cfc8]">
             {featured.map((poi) => (
-              <div
+              <a
                 key={poi.id}
                 ref={(el) => {
                   if (el) cardRefs.current.set(poi.id, el);
                   else cardRefs.current.delete(poi.id);
                 }}
+                href={poiHref(areaSlug, poi.slug)}
                 data-poi-id={poi.id}
                 className="flex-shrink-0 w-[180px] snap-start"
+                onClick={interactive ? (e) => { e.preventDefault(); handleCardLocate(poi.id); } : undefined}
               >
                 <ReportPOICard
                   poi={poi}
                   isActive={activePOIId === poi.id}
-                  onClick={() => handleCardLocate(poi.id)}
                 />
-              </div>
+              </a>
             ))}
           </div>
         </div>
@@ -112,6 +117,8 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
           activePOIId={activePOIId}
           onPOIClick={handleCardLocate}
           cardRefs={cardRefs}
+          areaSlug={areaSlug}
+          interactive={interactive}
         />
       )}
 
@@ -201,11 +208,15 @@ function CompactPOIList({
   activePOIId,
   onPOIClick,
   cardRefs,
+  areaSlug,
+  interactive,
 }: {
   pois: PublicPOI[];
   activePOIId: string | null;
   onPOIClick: (poiId: string) => void;
   cardRefs: React.RefObject<Map<string, HTMLElement>>;
+  areaSlug: string;
+  interactive: boolean;
 }) {
   const leftPois = pois.filter((_, i) => i % 2 === 0);
   const rightPois = pois.filter((_, i) => i % 2 === 1);
@@ -220,6 +231,8 @@ function CompactPOIList({
           poiId={poi.id}
           onPOIClick={onPOIClick}
           cardRefs={cardRefs}
+          areaSlug={areaSlug}
+          interactive={interactive}
         />
       ))}
     </div>
@@ -240,12 +253,16 @@ const CompactPOIRow = memo(function CompactPOIRow({
   poiId,
   onPOIClick,
   cardRefs,
+  areaSlug,
+  interactive,
 }: {
   poi: PublicPOI;
   isActive: boolean;
   poiId: string;
   onPOIClick: (poiId: string) => void;
   cardRefs: React.RefObject<Map<string, HTMLElement>>;
+  areaSlug: string;
+  interactive: boolean;
 }) {
   const [imageError, setImageError] = useState(false);
   const CategoryIcon = getIcon(poi.category.icon);
@@ -258,7 +275,12 @@ const CompactPOIRow = memo(function CompactPOIRow({
 
   const hasImage = imageUrl && !imageError;
 
-  const handleClick = useCallback(() => onPOIClick(poiId), [onPOIClick, poiId]);
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (interactive) {
+      e.preventDefault();
+      onPOIClick(poiId);
+    }
+  }, [onPOIClick, poiId, interactive]);
   const cardRef = useCallback(
     (el: HTMLElement | null) => {
       if (el) cardRefs.current?.set(poiId, el);
@@ -268,11 +290,12 @@ const CompactPOIRow = memo(function CompactPOIRow({
   );
 
   return (
-    <button
+    <a
       ref={cardRef}
+      href={poiHref(areaSlug, poi.slug)}
       data-poi-id={poiId}
       onClick={handleClick}
-      className={`w-full text-left rounded-xl border overflow-hidden transition-all ${
+      className={`block w-full text-left rounded-xl border overflow-hidden transition-all ${
         isActive
           ? "bg-[#f0ede8] border-[#d4cfc8] ring-1 ring-[#d4cfc8]"
           : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
@@ -293,6 +316,8 @@ const CompactPOIRow = memo(function CompactPOIRow({
               alt={poi.name}
               className="w-full h-full object-cover"
               loading="lazy"
+              width={48}
+              height={48}
               onError={() => setImageError(true)}
             />
           ) : (
@@ -326,6 +351,6 @@ const CompactPOIRow = memo(function CompactPOIRow({
           </div>
         </div>
       </div>
-    </button>
+    </a>
   );
 });
