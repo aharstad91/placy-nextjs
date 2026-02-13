@@ -79,7 +79,7 @@ export default async function CategoryPage({ params }: PageProps) {
   ];
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8">
+    <div className="px-4 sm:px-6 lg:px-0 py-8 lg:py-0">
       <BreadcrumbJsonLd
         items={[
           { name: "Placy", url: "https://placy.no" },
@@ -104,7 +104,7 @@ export default async function CategoryPage({ params }: PageProps) {
       />
 
       {/* Header */}
-      <section className="mb-6">
+      <section className="mb-6 lg:px-16 lg:pt-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-[#1a1a1a] mb-2 tracking-tight">
           {title}
         </h1>

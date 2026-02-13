@@ -65,20 +65,97 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
     setActivePOIId(null);
   }, []);
 
-  return (
-    <div className="lg:flex lg:gap-0">
-      {/* Mobile map toggle */}
-      <div className="lg:hidden mb-4">
-        <button
-          onClick={() => setShowMobileMap((v) => !v)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#eae6e1] rounded-lg text-sm font-medium text-[#1a1a1a] hover:border-[#d4cfc8] hover:shadow-sm transition-all w-full justify-center"
-        >
-          <MapPin className="w-4 h-4 text-[#a0937d]" />
-          {showMobileMap ? "Skjul kart" : "Vis kart"}
-        </button>
+  const cardList = (
+    <>
+      {/* Highlighted POIs (Tier 1) — horizontal scroll */}
+      {featured.length > 0 && (
+        <div className="mb-6">
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#d4cfc8]">
+            {featured.map((poi) => (
+              <div
+                key={poi.id}
+                ref={(el) => {
+                  if (el) cardRefs.current.set(poi.id, el);
+                  else cardRefs.current.delete(poi.id);
+                }}
+                data-poi-id={poi.id}
+                className="flex-shrink-0 w-[180px] snap-start"
+              >
+                <ReportPOICard
+                  poi={poi}
+                  isActive={activePOIId === poi.id}
+                  onClick={() => handleCardLocate(poi.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-        {showMobileMap && (
-          <div className="mt-3 h-[250px] rounded-lg overflow-hidden border border-[#eae6e1]">
+      {/* Compact POI rows — 2-column layout */}
+      {visibleRest.length > 0 && (
+        <CompactPOIList
+          pois={visibleRest}
+          activePOIId={activePOIId}
+          onPOIClick={handleCardLocate}
+          cardRefs={cardRefs}
+        />
+      )}
+
+      {/* Load more */}
+      {hiddenCount > 0 && !showAll && (
+        <div className="flex justify-center pt-4 pb-8">
+          <button
+            onClick={() => setShowAll(true)}
+            className="flex items-center gap-2 rounded-full border border-[#d4cfc8] bg-white px-5 py-2 text-sm text-[#4a4a4a] hover:bg-[#faf9f7] hover:border-[#b5b0a8] transition-all"
+          >
+            <ChevronDown className="w-4 h-4" />
+            <span>Hent flere punkter ({hiddenCount})</span>
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile layout */}
+      <div className="lg:hidden">
+        <div className="mb-4">
+          <button
+            onClick={() => setShowMobileMap((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#eae6e1] rounded-lg text-sm font-medium text-[#1a1a1a] hover:border-[#d4cfc8] hover:shadow-sm transition-all w-full justify-center"
+          >
+            <MapPin className="w-4 h-4 text-[#a0937d]" />
+            {showMobileMap ? "Skjul kart" : "Vis kart"}
+          </button>
+
+          {showMobileMap && (
+            <div className="mt-3 h-[250px] rounded-lg overflow-hidden border border-[#eae6e1]">
+              <GuideStickyMap
+                pois={pois}
+                activePOIId={activePOIId}
+                activePOISource={activePOISource}
+                onMarkerClick={handleMarkerClick}
+                onMapClick={handleMapClick}
+              />
+            </div>
+          )}
+        </div>
+
+        {cardList}
+      </div>
+
+      {/* Desktop layout — 50/50 split matching Report */}
+      <div className="hidden lg:flex">
+        {/* Left: Scrollable card list */}
+        <div className="w-[50%] px-16 min-w-0 overflow-hidden">
+          {cardList}
+        </div>
+
+        {/* Right: Sticky map */}
+        <div className="w-[50%] pt-16 pr-16 pb-16">
+          <div className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden">
             <GuideStickyMap
               pois={pois}
               activePOIId={activePOIId}
@@ -87,73 +164,9 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
               onMapClick={handleMapClick}
             />
           </div>
-        )}
-      </div>
-
-      {/* Card list — 60% on desktop */}
-      <div className="lg:w-[60%] lg:pr-4">
-        {/* Highlighted POIs (Tier 1) — horizontal scroll */}
-        {featured.length > 0 && (
-          <div className="mb-6">
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#d4cfc8]">
-              {featured.map((poi) => (
-                <div
-                  key={poi.id}
-                  ref={(el) => {
-                    if (el) cardRefs.current.set(poi.id, el);
-                    else cardRefs.current.delete(poi.id);
-                  }}
-                  data-poi-id={poi.id}
-                  className="flex-shrink-0 w-[180px] snap-start"
-                >
-                  <ReportPOICard
-                    poi={poi}
-                    isActive={activePOIId === poi.id}
-                    onClick={() => handleCardLocate(poi.id)}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Compact POI rows — 2-column layout */}
-        {visibleRest.length > 0 && (
-          <CompactPOIList
-            pois={visibleRest}
-            activePOIId={activePOIId}
-            onPOIClick={handleCardLocate}
-            cardRefs={cardRefs}
-          />
-        )}
-
-        {/* Load more */}
-        {hiddenCount > 0 && !showAll && (
-          <div className="flex justify-center pt-4">
-            <button
-              onClick={() => setShowAll(true)}
-              className="flex items-center gap-2 rounded-full border border-[#d4cfc8] bg-white px-5 py-2 text-sm text-[#4a4a4a] hover:bg-[#faf9f7] hover:border-[#b5b0a8] transition-all"
-            >
-              <ChevronDown className="w-4 h-4" />
-              <span>Hent flere punkter ({hiddenCount})</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Sticky map — 40% on desktop */}
-      <div className="hidden lg:block lg:w-[40%]">
-        <div className="sticky top-14 h-[calc(100vh-3.5rem)] rounded-lg overflow-hidden border border-[#eae6e1]">
-          <GuideStickyMap
-            pois={pois}
-            activePOIId={activePOIId}
-            activePOISource={activePOISource}
-            onMarkerClick={handleMarkerClick}
-            onMapClick={handleMapClick}
-          />
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
