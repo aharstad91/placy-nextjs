@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/for/", "/admin/", "/api/"],
+        disallow: ["/for/", "/admin/", "/api/", "/trips/", "/test-3d/"],
       },
     ],
     sitemap: "https://placy.no/sitemap.xml",

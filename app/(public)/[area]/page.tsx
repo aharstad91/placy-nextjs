@@ -8,6 +8,7 @@ import {
   getCategoriesForArea,
   getHighlightPOIs,
 } from "@/lib/public-queries";
+import { getCuratedListsForArea } from "@/lib/curated-lists";
 import { getIcon } from "@/lib/utils/map-icons";
 import Breadcrumb from "@/components/public/Breadcrumb";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
@@ -53,6 +54,8 @@ export default async function AreaPage({ params }: PageProps) {
     getCategoriesForArea(area.id, "no"),
     getHighlightPOIs(area.id, 8),
   ]);
+
+  const guides = getCuratedListsForArea(area.id);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -119,6 +122,31 @@ export default async function AreaPage({ params }: PageProps) {
           })}
         </div>
       </section>
+
+      {/* Curated guides */}
+      {guides.length > 0 && (
+        <section className="mb-16">
+          <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-6">
+            Guider
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {guides.map((guide) => (
+              <Link
+                key={guide.slug}
+                href={`/${area.slugNo}/guide/${guide.slug}`}
+                className="group block p-4 bg-white rounded-xl border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm transition-all"
+              >
+                <h3 className="text-sm font-semibold text-[#1a1a1a] group-hover:underline mb-1">
+                  {guide.titleNo}
+                </h3>
+                <p className="text-xs text-[#6a6a6a] line-clamp-2 leading-relaxed">
+                  {guide.descriptionNo}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Highlights */}
       {highlights.length > 0 && (

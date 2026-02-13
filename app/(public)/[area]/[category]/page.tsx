@@ -13,6 +13,7 @@ import Breadcrumb from "@/components/public/Breadcrumb";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import ItemListJsonLd from "@/components/seo/ItemListJsonLd";
 import SaveButton from "@/components/public/SaveButton";
+import FAQJsonLd from "@/components/seo/FAQJsonLd";
 
 export const revalidate = 86400;
 
@@ -70,6 +71,21 @@ export default async function CategoryPage({ params }: PageProps) {
   const categoryName = pois[0]?.category.name ?? categorySlug;
   const title = catInfo.seoTitle ?? `${categoryName} i ${area.nameNo}`;
 
+  // Generate FAQ items for structured data
+  const topRated = pois.filter((p) => p.googleRating != null).sort((a, b) => (b.googleRating ?? 0) - (a.googleRating ?? 0));
+  const faqItems = [
+    {
+      question: `Hvor mange ${categoryName.toLowerCase()} er det i ${area.nameNo}?`,
+      answer: `Det er ${pois.length} ${categoryName.toLowerCase()} registrert i ${area.nameNo} på Placy${featured.length > 0 ? `, hvorav ${featured.length} er spesielt anbefalt` : ""}.`,
+    },
+    ...(topRated.length > 0
+      ? [{
+          question: `Hva er de best vurderte ${categoryName.toLowerCase()} i ${area.nameNo}?`,
+          answer: `De best vurderte inkluderer ${topRated.slice(0, 3).map((p) => `${p.name} (${p.googleRating?.toFixed(1)})`).join(", ")}.`,
+        }]
+      : []),
+  ];
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <BreadcrumbJsonLd
@@ -86,6 +102,7 @@ export default async function CategoryPage({ params }: PageProps) {
           position: i + 1,
         }))}
       />
+      <FAQJsonLd items={faqItems} />
       <Breadcrumb
         items={[
           { label: "Placy", href: "/" },
@@ -223,18 +240,20 @@ function CompactPOIRow({
         className="w-2 h-2 rounded-full flex-shrink-0"
         style={{ backgroundColor: poi.category.color }}
       />
-      <span className="flex-1 text-sm font-medium text-[#1a1a1a] group-hover:underline truncate">
-        {poi.name}
-      </span>
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium text-[#1a1a1a] group-hover:underline truncate block">
+          {poi.name}
+        </span>
+        {poi.editorialHook && (
+          <span className="text-xs text-[#a0937d] line-clamp-1 block mt-0.5">
+            {poi.editorialHook}
+          </span>
+        )}
+      </div>
       {poi.googleRating != null && (
         <span className="flex items-center gap-1 text-sm text-[#6a6a6a] flex-shrink-0">
           <Star className="w-3 h-3 text-[#b45309] fill-[#b45309]" />
           {poi.googleRating.toFixed(1)}
-        </span>
-      )}
-      {poi.editorialHook && (
-        <span className="hidden sm:block text-xs text-[#a0937d] truncate max-w-[200px] flex-shrink-0">
-          {poi.editorialHook}
         </span>
       )}
       <SaveButton poiId={poi.id} poiName={poi.name} />

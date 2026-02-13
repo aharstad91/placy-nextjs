@@ -338,6 +338,62 @@ export async function getHighlightPOIs(
   });
 }
 
+export async function getCuratedPOIs(
+  areaId: string,
+  options: {
+    categoryId?: string | null;
+    tier?: 1;
+    bbox?: [number, number, number, number];
+    limit?: number;
+  }
+): Promise<PublicPOI[]> {
+  const client = createPublicClient();
+  if (!client) return [];
+
+  let query = client
+    .from("pois")
+    .select("*, categories!inner(id, name, icon, color)")
+    .eq("area_id", areaId)
+    .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`);
+
+  if (options.categoryId) {
+    query = query.eq("category_id", options.categoryId);
+  }
+  if (options.tier) {
+    query = query.eq("poi_tier", options.tier);
+  }
+  if (options.bbox) {
+    const [south, west, north, east] = options.bbox;
+    query = query
+      .gte("lat", south)
+      .lte("lat", north)
+      .gte("lng", west)
+      .lte("lng", east);
+  }
+
+  query = query
+    .order("poi_tier", { ascending: true, nullsFirst: false })
+    .order("google_rating", { ascending: false, nullsFirst: true });
+
+  if (options.limit) {
+    query = query.limit(options.limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) return [];
+
+  return data.map((poi) => {
+    const cat = poi.categories as unknown as { id: string; name: string; icon: string; color: string };
+    return transformPublicPOI(poi, {
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      color: cat.color,
+    });
+  });
+}
+
 export async function getSimilarPOIs(
   areaId: string,
   categoryId: string,
