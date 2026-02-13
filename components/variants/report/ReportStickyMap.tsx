@@ -117,17 +117,23 @@ export default function ReportStickyMap({
     return result;
   }, [themes, poisByTheme]);
 
-  // Pre-compute active POI IDs for O(1) visibility checks in the marker pool
-  // (computed after activeSectionKey is derived below — hoisted as ref-stable memo)
-  // Note: activeSectionKey defined further down, so we use the raw props here
-  const activeSectionKeyForIds = activeSubSectionCategoryId
+  // The active section key combines theme + optional sub-section
+  const activeSectionKey = activeSubSectionCategoryId
     ? `${activeThemeId}:${activeSubSectionCategoryId}`
     : activeThemeId;
 
+  // Pre-compute active POI IDs for O(1) visibility checks in the marker pool
   const activePoiIds = useMemo(() => {
-    if (!activeSectionKeyForIds) return new Set<string>();
-    return new Set((poisByTheme[activeSectionKeyForIds] ?? []).map((p) => p.id));
-  }, [activeSectionKeyForIds, poisByTheme]);
+    if (!activeSectionKey) return new Set<string>();
+    return new Set((poisByTheme[activeSectionKey] ?? []).map((p) => p.id));
+  }, [activeSectionKey, poisByTheme]);
+
+  // O(1) lookup for POI by ID (used for flyTo + popup card)
+  const poiById = useMemo(() => {
+    const lookup: Record<string, POI & { themeId: string }> = {};
+    for (const poi of allPOIs) lookup[poi.id] = poi;
+    return lookup;
+  }, [allPOIs]);
 
   // fitBounds for a given theme — calculates bounds from theme POIs + hotel
   const fitBoundsForTheme = useCallback(
@@ -210,11 +216,6 @@ export default function ReportStickyMap({
     };
   }, [mapLoaded]);
 
-  // The active section key combines theme + optional sub-section
-  const activeSectionKey = activeSubSectionCategoryId
-    ? `${activeThemeId}:${activeSubSectionCategoryId}`
-    : activeThemeId;
-
   // React to theme/sub-section changes — reset user interaction flag and fitBounds
   useEffect(() => {
     if (!mapLoaded || !activeSectionKey) return;
@@ -238,7 +239,7 @@ export default function ReportStickyMap({
     if (!mapLoaded || !mapRef.current || !activePOI) return;
     if (activePOI.source !== "card") return;
 
-    const poi = allPOIs.find((p) => p.id === activePOI.poiId);
+    const poi = poiById[activePOI.poiId];
     if (!poi) return;
 
     const map = mapRef.current;
@@ -248,7 +249,7 @@ export default function ReportStickyMap({
       duration: 400,
       // Don't change zoom — keep current zoom level
     });
-  }, [activePOI, mapLoaded, allPOIs]);
+  }, [activePOI, mapLoaded, poiById]);
 
   // Re-fit bounds when a theme/sub-section is expanded (new markers appear)
   const prevExpandedSizeRef = useRef(0);
@@ -281,6 +282,13 @@ export default function ReportStickyMap({
     (poiId: string) => activePoiIds.has(poiId),
     [activePoiIds]
   );
+
+  // Derived: active popup POI (O(1) lookup instead of O(n) find in JSX)
+  const popupPOI = activePOI ? poiById[activePOI.poiId] ?? null : null;
+
+  const handlePopupClose = useCallback(() => {
+    if (activePOI) onMarkerClick(activePOI.poiId);
+  }, [activePOI, onMarkerClick]);
 
   if (!token) return null;
 
@@ -411,25 +419,21 @@ export default function ReportStickyMap({
         })}
 
         {/* Popup card for active POI */}
-        {activePOI && (() => {
-          const poi = allPOIs.find((p) => p.id === activePOI.poiId);
-          if (!poi) return null;
-          return (
-            <Marker
-              key={`popup-${poi.id}`}
-              longitude={poi.coordinates.lng}
-              latitude={poi.coordinates.lat}
-              anchor="bottom"
-              style={{ zIndex: 20 }}
-              offset={[0, -20]}
-            >
-              <MapPopupCard
-                poi={poi}
-                onClose={() => onMarkerClick(poi.id)}
-              />
-            </Marker>
-          );
-        })()}
+        {popupPOI && (
+          <Marker
+            key={`popup-${popupPOI.id}`}
+            longitude={popupPOI.coordinates.lng}
+            latitude={popupPOI.coordinates.lat}
+            anchor="bottom"
+            style={{ zIndex: 20 }}
+            offset={[0, -20]}
+          >
+            <MapPopupCard
+              poi={popupPOI}
+              onClose={handlePopupClose}
+            />
+          </Marker>
+        )}
       </Map>
 
       {/* Skeleton while map loads */}

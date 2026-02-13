@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import type { POI } from "@/lib/types";
 import { getIcon } from "@/lib/utils/map-icons";
 import { GoogleRating } from "@/components/ui/GoogleRating";
@@ -26,26 +26,24 @@ export default function MapPopupCard({ poi, onClose }: MapPopupCardProps) {
     isOpen?: boolean;
     openingHours?: string[];
   } | null>(null);
-  const fetchedRef = useRef(false);
 
-  // Fetch opening hours on mount
+  // Reset state + fetch opening hours when POI changes
   useEffect(() => {
-    if (!poi.googlePlaceId || fetchedRef.current) return;
-    fetchedRef.current = true;
-    fetch(`/api/places/${poi.googlePlaceId}`)
+    setOpeningHours(null);
+    setImageError(false);
+
+    if (!poi.googlePlaceId) return;
+
+    const controller = new AbortController();
+    fetch(`/api/places/${poi.googlePlaceId}`, { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) setOpeningHours({ isOpen: data.isOpen, openingHours: data.openingHours });
       })
       .catch(() => {});
-  }, [poi.googlePlaceId]);
 
-  // Reset fetch ref when POI changes
-  useEffect(() => {
-    fetchedRef.current = false;
-    setOpeningHours(null);
-    setImageError(false);
-  }, [poi.id]);
+    return () => controller.abort();
+  }, [poi.id, poi.googlePlaceId]);
 
   const CategoryIcon = getIcon(poi.category.icon);
 

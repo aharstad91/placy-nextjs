@@ -88,7 +88,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
       // Scroll to the card after state update
       if (next) {
         requestAnimationFrame(() => {
-          const card = document.querySelector(`[data-poi-id="${poiId}"]`);
+          const card = document.querySelector(`[data-poi-id="${CSS.escape(poiId)}"]`);
           card?.scrollIntoView({ behavior: "smooth", block: "center" });
         });
       }
