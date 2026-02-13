@@ -23,11 +23,9 @@ export async function generateStaticParams() {
   const params: { area: string; slug: string }[] = [];
   // Import dynamically to avoid circular deps
   const { CURATED_LISTS } = await import("@/lib/curated-lists");
-  for (const [, lists] of Object.entries(CURATED_LISTS)) {
+  for (const [areaId, lists] of Object.entries(CURATED_LISTS)) {
     for (const list of lists) {
-      // We use the area slug from DB, but for static params we need the URL slug
-      // Area slugs match area IDs in our case (trondheim = trondheim)
-      params.push({ area: list.slug, slug: list.slug });
+      params.push({ area: areaId, slug: list.slug });
     }
   }
   return params;

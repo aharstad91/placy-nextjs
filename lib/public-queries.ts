@@ -356,7 +356,7 @@ export async function getCuratedPOIs(
     .eq("area_id", areaId)
     .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`);
 
-  if (options.categoryId) {
+  if (options.categoryId != null) {
     query = query.eq("category_id", options.categoryId);
   }
   if (options.tier) {
@@ -364,11 +364,13 @@ export async function getCuratedPOIs(
   }
   if (options.bbox) {
     const [south, west, north, east] = options.bbox;
-    query = query
-      .gte("lat", south)
-      .lte("lat", north)
-      .gte("lng", west)
-      .lte("lng", east);
+    if ([south, west, north, east].every(Number.isFinite)) {
+      query = query
+        .gte("lat", south)
+        .lte("lat", north)
+        .gte("lng", west)
+        .lte("lng", east);
+    }
   }
 
   query = query
