@@ -147,7 +147,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
         </div>
       </div>
 
-      {/* Desktop: 50/50 split with sticky map */}
+      {/* Desktop: 60/40 split with sticky map */}
       <div className="hidden lg:flex">
         {/* Left: Scrollable theme sections */}
         <div className="w-[50%] px-16 min-w-0 overflow-hidden">
