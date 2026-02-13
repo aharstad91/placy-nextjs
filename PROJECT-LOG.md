@@ -134,3 +134,44 @@
 - **Chrome DevTools MCP var nyttig for debugging:** Kunne scrolle til Kafé-seksjonen, ta screenshot, og verifisere 60/40-fiksen direkte — uten å bytte vindu
 - **TypeScript narrowing-quirk:** `let` i `.forEach()`-closure narrowes til `never`. Bruk indexed `for`-loops eller `Array.from()` + `.entries()` i stedet
 - **Prosjektet er i "polering"-fase:** De store arkitekturbeslutningene er tatt. Nå handler det om å gjøre ting riktig, ikke nytt
+
+---
+
+## 2026-02-13 — SEO Content Strategy, Fase 1
+
+### Beslutninger
+- **Keyword research gjort manuelt:** SEO-verktøy bak betalingsmurer. Estimerte søkevolum basert på byens størrelse (210K innbyggere), bransjetall og kategoriekonkurranse. "Restaurant Trondheim" ~4400/mnd, "kafé Trondheim" ~1600/mnd
+- **Top 5 prioriterte kategorier:** Restaurant, Kafé, Bar, Badeplass, Park — basert på søkevolum × innholdskvalitet
+- **Config-drevet kuraterte lister** (lib/curated-lists.ts) fremfor DB-drevet: enklere, ingen admin-UI nødvendig ennå, lett å legge til nye lister
+- **Bounding box-filter for geografiske guider:** Bakklandet-guiden bruker bbox [63.4270, 10.3970, 63.4330, 10.4100] for å scope til nabolaget
+- **Editorial hooks synlige på mobil:** Endret fra `hidden sm:block` til alltid synlig med `line-clamp-1`. Mer innhold = bedre SEO-signaler
+- **FAQ structured data på kategori- og guide-sider:** Dynamiske spørsmål basert på data (antall steder, best vurderte)
+
+### Levert
+- DB-migrasjon 019: intro-tekster for 5 kategorier (NO+EN) + manglende category_slugs (park, badeplass, lekeplass, hundepark, outdoor)
+- `components/seo/FAQJsonLd.tsx` — gjenbrukbar FAQ-komponent
+- `lib/curated-lists.ts` — 3 guider for Trondheim (beste restauranter, badeplasser, bakklandet)
+- `lib/public-queries.ts` — `getCuratedPOIs()` med filter for kategori, tier, bbox, limit
+- `app/(public)/[area]/guide/[slug]/page.tsx` — guide-side med JSON-LD, FAQ, POI-grid
+- Editorial hooks synlig på mobil (NO+EN kategori-sider)
+- robots.txt oppdatert med /trips/ og /test-3d/
+- Code review: fikset generateStaticParams-bug, bbox-validering, categoryId null-check
+
+### Parkert / Åpne spørsmål
+- **Fase 2:** Core Web Vitals-optimalisering, bildekomprimering, lazy loading audit
+- **Fase 3:** Linkbait-artikkel (f.eks. "De 10 beste kafeene på Bakklandet")
+- **Engelske guide-sider:** Kuraterte lister har EN-innhold, men ingen EN guide-rute ennå
+- **Google Search Console:** Bør settes opp ASAP for å tracke indeksering
+- **Sitemap:** Bør inkludere guide-sider (ikke gjort ennå)
+- **Internal linking:** Kategori-sider → guide-sider → POI-sider → tilbake. Linkstrukturen er på plass men kan styrkes
+
+### Retning
+- Offentlig SEO-side er nå **innholdsmessig operativ**: kategori-sider med intro-tekst, FAQ-schema, kuraterte guider, editorial hooks overalt
+- Neste steg bør være **teknisk SEO** (Fase 2): CWV, sitemap, GSC-oppsett
+- Eller: **mer innhold** — flere kuraterte lister, flere intro-tekster, flere editorial hooks på POIs som mangler det
+
+### Observasjoner
+- **Keyword research uten verktøy er overraskende mulig:** Estimater basert på byens størrelse og kategori-popularitet ga fornuftige tall. Viktigere enn eksakte volum er prioriteringsrekkefølgen
+- **Config-drevet innhold er en god mellomstasjon:** Kuraterte lister i TypeScript er versjonskontrollerte, type-safe, og krever null infrastruktur. Kan migrere til DB senere om nødvendig
+- **generateStaticParams-bug var reell P2:** Ville produsert 404 for alle guide-sider ved deploy fordi area-param ble satt til guide-slug istedenfor area-slug
+- **Prosjektet beveger seg fra produkt-bygging til distribusjon:** SEO-arbeid handler om å gjøre eksisterende innhold synlig for Google. Data er der, redaksjonelt innhold er der — nå må søkemotorene finne det
