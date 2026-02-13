@@ -46,7 +46,7 @@ export default async function ProjectLayout({ params, children }: LayoutProps) {
   }
 
   // Build product links from available products in the hierarchy
-  const basePath = `/${customer}/${projectSlug}`;
+  const basePath = `/for/${customer}/${projectSlug}`;
   const productTypeToLink: Record<string, { label: string; subPath: string }> = {
     explorer: { label: "Explore", subPath: "/explore" },
     guide: { label: "Trips", subPath: "/trips" },

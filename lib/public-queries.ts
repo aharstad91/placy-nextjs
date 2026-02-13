@@ -1,0 +1,360 @@
+/**
+ * Data queries for public SEO pages.
+ * Uses ISR-compatible Supabase client (no cache: "no-store").
+ */
+
+import { createPublicClient } from "./supabase/public-client";
+import { slugify } from "./utils/slugify";
+import type { POI, Category } from "./types";
+import { MIN_TRUST_SCORE } from "./utils/poi-trust";
+
+// ============================================
+// Types
+// ============================================
+
+export interface Area {
+  id: string;
+  nameNo: string;
+  nameEn: string;
+  slugNo: string;
+  slugEn: string;
+  descriptionNo: string | null;
+  descriptionEn: string | null;
+  centerLat: number;
+  centerLng: number;
+  zoomLevel: number;
+  active: boolean;
+}
+
+export interface CategorySlug {
+  categoryId: string;
+  locale: string;
+  slug: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  introText: string | null;
+}
+
+export interface PublicPOI extends POI {
+  slug: string;
+}
+
+export interface CategoryWithCount {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  slug: string;
+  seoTitle: string | null;
+  count: number;
+  avgRating: number | null;
+}
+
+// ============================================
+// Area queries
+// ============================================
+
+export async function getAreas(): Promise<Area[]> {
+  const client = createPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("areas")
+    .select("*")
+    .eq("active", true)
+    .order("name_no");
+
+  if (error) {
+    console.error("Error fetching areas:", error);
+    return [];
+  }
+
+  return (data ?? []).map((a) => ({
+    id: a.id,
+    nameNo: a.name_no,
+    nameEn: a.name_en,
+    slugNo: a.slug_no,
+    slugEn: a.slug_en,
+    descriptionNo: a.description_no,
+    descriptionEn: a.description_en,
+    centerLat: Number(a.center_lat),
+    centerLng: Number(a.center_lng),
+    zoomLevel: a.zoom_level ?? 13,
+    active: a.active ?? true,
+  }));
+}
+
+export async function getAreaBySlug(slug: string): Promise<Area | null> {
+  const client = createPublicClient();
+  if (!client) return null;
+
+  const { data, error } = await client
+    .from("areas")
+    .select("*")
+    .or(`slug_no.eq.${slug},slug_en.eq.${slug}`)
+    .eq("active", true)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    nameNo: data.name_no,
+    nameEn: data.name_en,
+    slugNo: data.slug_no,
+    slugEn: data.slug_en,
+    descriptionNo: data.description_no,
+    descriptionEn: data.description_en,
+    centerLat: Number(data.center_lat),
+    centerLng: Number(data.center_lng),
+    zoomLevel: data.zoom_level ?? 13,
+    active: data.active ?? true,
+  };
+}
+
+// ============================================
+// Category queries
+// ============================================
+
+export async function getCategoriesForArea(
+  areaId: string,
+  locale: "no" | "en"
+): Promise<CategoryWithCount[]> {
+  const client = createPublicClient();
+  if (!client) return [];
+
+  // Get category slugs for this locale
+  const { data: slugs, error: slugError } = await client
+    .from("category_slugs")
+    .select("category_id, slug, seo_title")
+    .eq("locale", locale);
+
+  if (slugError || !slugs) return [];
+
+  // Get categories with POI counts
+  const { data: categories, error: catError } = await client
+    .from("categories")
+    .select("id, name, icon, color");
+
+  if (catError || !categories) return [];
+
+  // Get POI counts per category in this area
+  const { data: pois, error: poiError } = await client
+    .from("pois")
+    .select("category_id, google_rating")
+    .eq("area_id", areaId)
+    .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`);
+
+  if (poiError) return [];
+
+  const slugMap = new Map(slugs.map((s) => [s.category_id, s]));
+  const countMap = new Map<string, { count: number; totalRating: number; ratedCount: number }>();
+
+  for (const poi of pois ?? []) {
+    if (!poi.category_id) continue;
+    const entry = countMap.get(poi.category_id) ?? { count: 0, totalRating: 0, ratedCount: 0 };
+    entry.count++;
+    if (poi.google_rating != null && poi.google_rating > 0) {
+      entry.totalRating += poi.google_rating;
+      entry.ratedCount++;
+    }
+    countMap.set(poi.category_id, entry);
+  }
+
+  return categories
+    .filter((cat) => slugMap.has(cat.id) && (countMap.get(cat.id)?.count ?? 0) > 0)
+    .map((cat) => {
+      const slug = slugMap.get(cat.id)!;
+      const counts = countMap.get(cat.id)!;
+      return {
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        color: cat.color,
+        slug: slug.slug,
+        seoTitle: slug.seo_title,
+        count: counts.count,
+        avgRating: counts.ratedCount > 0 ? Math.round((counts.totalRating / counts.ratedCount) * 10) / 10 : null,
+      };
+    })
+    .sort((a, b) => b.count - a.count);
+}
+
+export async function getCategoryBySlug(
+  slug: string,
+  locale: "no" | "en"
+): Promise<{ categoryId: string; seoTitle: string | null; seoDescription: string | null; introText: string | null } | null> {
+  const client = createPublicClient();
+  if (!client) return null;
+
+  const { data, error } = await client
+    .from("category_slugs")
+    .select("category_id, seo_title, seo_description, intro_text")
+    .eq("slug", slug)
+    .eq("locale", locale)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    categoryId: data.category_id,
+    seoTitle: data.seo_title,
+    seoDescription: data.seo_description,
+    introText: data.intro_text,
+  };
+}
+
+// ============================================
+// POI queries
+// ============================================
+
+function transformPublicPOI(dbPoi: Record<string, unknown>, category: Category): PublicPOI {
+  return {
+    id: dbPoi.id as string,
+    name: dbPoi.name as string,
+    coordinates: {
+      lat: dbPoi.lat as number,
+      lng: dbPoi.lng as number,
+    },
+    address: (dbPoi.address as string) ?? undefined,
+    category,
+    description: (dbPoi.description as string) ?? undefined,
+    featuredImage: (dbPoi.featured_image as string) ?? undefined,
+    googlePlaceId: (dbPoi.google_place_id as string) ?? undefined,
+    googleRating: (dbPoi.google_rating as number) ?? undefined,
+    googleReviewCount: (dbPoi.google_review_count as number) ?? undefined,
+    googleMapsUrl: (dbPoi.google_maps_url as string) ?? undefined,
+    photoReference: (dbPoi.photo_reference as string) ?? undefined,
+    editorialHook: (dbPoi.editorial_hook as string) ?? undefined,
+    localInsight: (dbPoi.local_insight as string) ?? undefined,
+    poiTier: (dbPoi.poi_tier as 1 | 2 | 3 | null) ?? undefined,
+    tierReason: (dbPoi.tier_reason as string) ?? undefined,
+    isChain: (dbPoi.is_chain as boolean) ?? undefined,
+    isLocalGem: (dbPoi.is_local_gem as boolean) ?? undefined,
+    googleWebsite: (dbPoi.google_website as string) ?? undefined,
+    slug: slugify(dbPoi.name as string),
+  };
+}
+
+export async function getPOIsForCategory(
+  areaId: string,
+  categoryId: string
+): Promise<PublicPOI[]> {
+  const client = createPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("pois")
+    .select("*, categories!inner(id, name, icon, color)")
+    .eq("area_id", areaId)
+    .eq("category_id", categoryId)
+    .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`)
+    .order("poi_tier", { ascending: true, nullsFirst: false })
+    .order("google_rating", { ascending: false, nullsFirst: true });
+
+  if (error || !data) return [];
+
+  return data.map((poi) => {
+    const cat = poi.categories as unknown as { id: string; name: string; icon: string; color: string };
+    return transformPublicPOI(poi, {
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      color: cat.color,
+    });
+  });
+}
+
+export async function getPOIBySlug(
+  areaId: string,
+  poiSlug: string
+): Promise<PublicPOI | null> {
+  const client = createPublicClient();
+  if (!client) return null;
+
+  // We need to find by generated slug — query all POIs and match
+  // In production, consider adding a slug column to avoid this
+  const { data, error } = await client
+    .from("pois")
+    .select("*, categories!inner(id, name, icon, color)")
+    .eq("area_id", areaId)
+    .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`);
+
+  if (error || !data) return null;
+
+  for (const poi of data) {
+    if (slugify(poi.name) === poiSlug) {
+      const cat = poi.categories as unknown as { id: string; name: string; icon: string; color: string };
+      return transformPublicPOI(poi, {
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        color: cat.color,
+      });
+    }
+  }
+
+  return null;
+}
+
+export async function getHighlightPOIs(
+  areaId: string,
+  limit = 12
+): Promise<PublicPOI[]> {
+  const client = createPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("pois")
+    .select("*, categories!inner(id, name, icon, color)")
+    .eq("area_id", areaId)
+    .eq("poi_tier", 1)
+    .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`)
+    .order("google_rating", { ascending: false, nullsFirst: true })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return data.map((poi) => {
+    const cat = poi.categories as unknown as { id: string; name: string; icon: string; color: string };
+    return transformPublicPOI(poi, {
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      color: cat.color,
+    });
+  });
+}
+
+export async function getSimilarPOIs(
+  areaId: string,
+  categoryId: string,
+  excludePoiId: string,
+  limit = 6
+): Promise<PublicPOI[]> {
+  const client = createPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("pois")
+    .select("*, categories!inner(id, name, icon, color)")
+    .eq("area_id", areaId)
+    .eq("category_id", categoryId)
+    .neq("id", excludePoiId)
+    .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`)
+    .order("poi_tier", { ascending: true, nullsFirst: false })
+    .order("google_rating", { ascending: false, nullsFirst: true })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return data.map((poi) => {
+    const cat = poi.categories as unknown as { id: string; name: string; icon: string; color: string };
+    return transformPublicPOI(poi, {
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      color: cat.color,
+    });
+  });
+}

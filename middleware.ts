@@ -2,26 +2,24 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Legacy URL Redirect Middleware
+ * Middleware for routing and legacy redirects.
  *
- * Handles redirects from old URL structure to new:
- * - /customer/slug-explore → /customer/slug/explore
- * - /customer/slug-guide → /customer/slug/trip  (guide route renamed to trip)
- * - /customer/slug (report) → stays as-is (handled by page.tsx)
- *
- * Uses 308 permanent redirects to preserve HTTP method and transfer SEO equity.
+ * Routes:
+ * - /for/customer/project/... → B2B (passthrough)
+ * - /en/... → English public (passthrough)
+ * - /trondheim/... → Norwegian public (passthrough)
+ * - /admin/... → Admin (passthrough)
+ * - /scandic/... → Legacy redirect to /for/scandic/...
  */
 
 const PRODUCT_SUFFIXES = ["explore", "guide"] as const;
 
-/** Map legacy suffix to actual route path */
 const SUFFIX_TO_ROUTE: Record<string, string> = {
   explore: "explore",
   guide: "trip",
 };
 
-// Known customer slugs - add new customers here
-// In production, this could be fetched from database or config
+// Known customer slugs for legacy redirect
 const KNOWN_CUSTOMERS = [
   "klp-eiendom",
   "visitnorway",
@@ -30,58 +28,69 @@ const KNOWN_CUSTOMERS = [
   "thon",
 ] as const;
 
+// Known area slugs for public pages
+const KNOWN_AREAS = ["trondheim"] as const;
+
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const segments = pathname.split("/").filter(Boolean);
 
-  // Only process 2-segment paths: /customer/slug
-  if (segments.length !== 2) {
+  if (segments.length === 0) return NextResponse.next();
+
+  const firstSegment = segments[0];
+
+  // /for/... → B2B passthrough
+  if (firstSegment === "for") return NextResponse.next();
+
+  // /en/... → English public passthrough
+  if (firstSegment === "en") return NextResponse.next();
+
+  // /admin/... → Admin passthrough
+  if (firstSegment === "admin") return NextResponse.next();
+
+  // /trondheim/... → Norwegian public passthrough
+  if (KNOWN_AREAS.includes(firstSegment as typeof KNOWN_AREAS[number])) {
     return NextResponse.next();
   }
 
-  const [customer, slugWithSuffix] = segments;
+  // Legacy customer redirects: /customer/... → /for/customer/...
+  if (KNOWN_CUSTOMERS.includes(firstSegment as typeof KNOWN_CUSTOMERS[number])) {
+    // Handle legacy suffix redirects: /customer/slug-explore → /for/customer/slug/explore
+    if (segments.length === 2) {
+      const slugWithSuffix = segments[1];
 
-  // Only process known customers
-  if (!KNOWN_CUSTOMERS.includes(customer as typeof KNOWN_CUSTOMERS[number])) {
-    return NextResponse.next();
-  }
+      for (const suffix of PRODUCT_SUFFIXES) {
+        if (slugWithSuffix.endsWith(`-${suffix}`)) {
+          const baseSlug = slugWithSuffix.slice(0, -(suffix.length + 1));
+          const route = SUFFIX_TO_ROUTE[suffix] ?? suffix;
+          return NextResponse.redirect(
+            new URL(`/for/${firstSegment}/${baseSlug}/${route}${search}`, request.url),
+            308
+          );
+        }
+      }
 
-  // Check for product suffix: slug-explore, slug-guide
-  for (const suffix of PRODUCT_SUFFIXES) {
-    if (slugWithSuffix.endsWith(`-${suffix}`)) {
-      const baseSlug = slugWithSuffix.slice(0, -(suffix.length + 1));
-      const route = SUFFIX_TO_ROUTE[suffix] ?? suffix;
-
-      // Redirect to new URL structure
-      return NextResponse.redirect(
-        new URL(`/${customer}/${baseSlug}/${route}${search}`, request.url),
-        308 // Permanent redirect, preserves HTTP method
-      );
+      // Redirect /customer/guides → /for/customer/trips
+      if (slugWithSuffix === "guides") {
+        return NextResponse.redirect(
+          new URL(`/for/${firstSegment}/trips${search}`, request.url),
+          301
+        );
+      }
     }
-  }
 
-  // Redirect /customer/guides → /customer/trips
-  if (slugWithSuffix === "guides") {
+    // General redirect: /customer/... → /for/customer/...
     return NextResponse.redirect(
-      new URL(`/${customer}/trips${search}`, request.url),
-      301
+      new URL(`/for${pathname}${search}`, request.url),
+      308
     );
   }
 
-  // No suffix found - this is either a report URL or new format
-  // Let the page handle it
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - api (API routes)
-     * - _next (Next.js internals)
-     * - favicon.ico, sitemap.xml, robots.txt
-     * - files with extensions (static files)
-     */
     "/((?!api|_next|favicon.ico|sitemap.xml|robots.txt|.*\\..*).*)",
   ],
 };

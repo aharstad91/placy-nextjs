@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Placy - Lokasjonsbasert storytelling",
-  description: "Oppdag nabolag gjennom kuraterte historier og lokalkunnskap",
+  title: "Placy — Oppdag de beste stedene",
+  description: "Oppdag de beste stedene i norske byer gjennom kuraterte guider og lokalkunnskap.",
 };
 
 export default function RootLayout({
@@ -13,12 +13,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="no">
-      <head>
-        <link
-          href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css"
-          rel="stylesheet"
-        />
-      </head>
       <body className="antialiased">{children}</body>
     </html>
   );

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { createServerClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured, createServerClient } from "@/lib/supabase/client";
+
+export const dynamic = "force-dynamic";
 
 interface ProjectRow {
   id: string;
@@ -37,10 +38,9 @@ async function getProjects(): Promise<ProjectRow[]> {
   }));
 }
 
-export default async function Home() {
+export default async function ProjectListingPage() {
   const projects = await getProjects();
 
-  // Group projects by customer
   const byCustomer = projects.reduce<Record<string, { name: string; projects: ProjectRow[] }>>((acc, p) => {
     const key = p.customer_id ?? "unknown";
     if (!acc[key]) acc[key] = { name: p.customerName ?? key, projects: [] };
@@ -52,7 +52,7 @@ export default async function Home() {
     <main className="min-h-screen bg-[#faf9f7]">
       <div className="max-w-3xl mx-auto px-4 py-12">
         <header className="mb-10">
-          <h1 className="text-3xl font-semibold text-[#1a1a1a] mb-2">Placy</h1>
+          <h1 className="text-3xl font-semibold text-[#1a1a1a] mb-2">Placy B2B</h1>
           <p className="text-sm text-[#6a6a6a]">
             Velg et prosjekt for å utforske nabolaget.
           </p>
@@ -71,7 +71,7 @@ export default async function Home() {
                   {customerProjects.map((project) => (
                     <li key={project.id}>
                       <Link
-                        href={`/${project.customer_id}/${project.url_slug}`}
+                        href={`/for/${project.customer_id}/${project.url_slug}`}
                         className="group flex items-center gap-3 p-4 bg-white border border-[#eae6e1] rounded-xl hover:shadow-md transition-all"
                       >
                         <MapPin className="w-5 h-5 text-[#7a7062] shrink-0" />
@@ -80,7 +80,7 @@ export default async function Home() {
                             {project.name}
                           </span>
                           <span className="block text-xs text-[#a0937d]">
-                            /{project.customer_id}/{project.url_slug}
+                            /for/{project.customer_id}/{project.url_slug}
                           </span>
                         </div>
                         <span className="ml-auto text-sm text-[#a0937d] group-hover:text-[#1a1a1a] transition-colors">
