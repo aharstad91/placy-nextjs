@@ -10,6 +10,7 @@ import { Building2 } from "lucide-react";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 import { MarkerTooltip } from "@/components/map/marker-tooltip";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
+import MapPopupCard from "./MapPopupCard";
 
 interface ReportStickyMapProps {
   themes: ReportTheme[];
@@ -19,6 +20,8 @@ interface ReportStickyMapProps {
   activePOI: ActivePOIState | null;
   hotelCoordinates: Coordinates;
   onMarkerClick: (poiId: string) => void;
+  /** Called when user clicks empty map area (deselects active POI) */
+  onMapClick?: () => void;
   mapStyle?: string;
   /** Themes/sub-sections expanded via "Vis meg mer" — keys: "themeId" or "themeId:categoryId" */
   expandedThemes?: Set<string>;
@@ -41,6 +44,7 @@ export default function ReportStickyMap({
   activePOI,
   hotelCoordinates,
   onMarkerClick,
+  onMapClick,
   mapStyle,
   expandedThemes = new Set(),
 }: ReportStickyMapProps) {
@@ -301,6 +305,7 @@ export default function ReportStickyMap({
         style={{ width: "100%", height: "100%" }}
         mapStyle={mapStyle || MAP_STYLE_STANDARD}
         onLoad={handleMapLoad}
+        onClick={onMapClick}
         scrollZoom={true}
       >
         {/* Hotel marker — always visible, higher z-index */}
@@ -404,6 +409,27 @@ export default function ReportStickyMap({
             </Marker>
           );
         })}
+
+        {/* Popup card for active POI */}
+        {activePOI && (() => {
+          const poi = allPOIs.find((p) => p.id === activePOI.poiId);
+          if (!poi) return null;
+          return (
+            <Marker
+              key={`popup-${poi.id}`}
+              longitude={poi.coordinates.lng}
+              latitude={poi.coordinates.lat}
+              anchor="bottom"
+              style={{ zIndex: 20 }}
+              offset={[0, -20]}
+            >
+              <MapPopupCard
+                poi={poi}
+                onClose={() => onMarkerClick(poi.id)}
+              />
+            </Marker>
+          );
+        })()}
       </Map>
 
       {/* Skeleton while map loads */}
