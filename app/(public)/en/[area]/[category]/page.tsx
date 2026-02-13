@@ -42,6 +42,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     alternates: {
       canonical: `https://placy.no/en/${areaSlug}/${categorySlug}`,
+      languages: {
+        no: `https://placy.no/${area.slugNo}/${categorySlug}`,
+        en: `https://placy.no/en/${areaSlug}/${categorySlug}`,
+      },
     },
   };
 }

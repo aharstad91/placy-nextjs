@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 
 interface SaveButtonProps {
@@ -14,15 +14,17 @@ interface SaveButtonProps {
  * Uses localStorage for now — can be upgraded to Supabase auth later.
  */
 export default function SaveButton({ poiId, poiName, className = "" }: SaveButtonProps) {
-  const [saved, setSaved] = useState(() => {
-    if (typeof window === "undefined") return false;
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
     try {
-      const collection = JSON.parse(localStorage.getItem("placy-collection") ?? "[]");
-      return collection.includes(poiId);
+      const raw = JSON.parse(localStorage.getItem("placy-collection") ?? "[]");
+      const collection = Array.isArray(raw) ? raw : [];
+      setSaved(collection.includes(poiId));
     } catch {
-      return false;
+      // localStorage unavailable
     }
-  });
+  }, [poiId]);
 
   const toggle = useCallback(
     (e: React.MouseEvent) => {

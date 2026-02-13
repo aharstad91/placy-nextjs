@@ -29,7 +29,13 @@ export default function POIJsonLd({ poi, area }: POIJsonLdProps) {
     "@context": "https://schema.org",
     "@type": schemaType,
     name: poi.name,
-    ...(poi.address && { address: poi.address }),
+    ...(poi.address && {
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: poi.address,
+        addressCountry: "NO",
+      },
+    }),
     ...(poi.coordinates && {
       geo: {
         "@type": "GeoCoordinates",
@@ -53,7 +59,7 @@ export default function POIJsonLd({ poi, area }: POIJsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
     />
   );
 }

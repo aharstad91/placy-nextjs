@@ -43,6 +43,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     alternates: {
       canonical: `https://placy.no/${areaSlug}/${categorySlug}`,
+      languages: {
+        no: `https://placy.no/${areaSlug}/${categorySlug}`,
+        en: `https://placy.no/en/${area.slugEn}/${categorySlug}`,
+      },
     },
   };
 }
@@ -64,9 +68,6 @@ export default async function CategoryPage({ params }: PageProps) {
 
   // Get category info from first POI
   const categoryName = pois[0]?.category.name ?? categorySlug;
-  const categoryColor = pois[0]?.category.color ?? "#6b7280";
-  const categoryIcon = pois[0]?.category.icon ?? "MapPin";
-
   const title = catInfo.seoTitle ?? `${categoryName} i ${area.nameNo}`;
 
   return (

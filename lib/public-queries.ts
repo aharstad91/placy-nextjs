@@ -8,6 +8,12 @@ import { slugify } from "./utils/slugify";
 import type { POI, Category } from "./types";
 import { MIN_TRUST_SCORE } from "./utils/poi-trust";
 
+/** Validate slug format to prevent PostgREST filter injection */
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+function isValidSlug(s: string): boolean {
+  return SLUG_PATTERN.test(s) && s.length <= 100;
+}
+
 // ============================================
 // Types
 // ============================================
@@ -85,6 +91,8 @@ export async function getAreas(): Promise<Area[]> {
 }
 
 export async function getAreaBySlug(slug: string): Promise<Area | null> {
+  if (!isValidSlug(slug)) return null;
+
   const client = createPublicClient();
   if (!client) return null;
 
@@ -184,6 +192,8 @@ export async function getCategoryBySlug(
   slug: string,
   locale: "no" | "en"
 ): Promise<{ categoryId: string; seoTitle: string | null; seoDescription: string | null; introText: string | null } | null> {
+  if (!isValidSlug(slug)) return null;
+
   const client = createPublicClient();
   if (!client) return null;
 
@@ -269,6 +279,8 @@ export async function getPOIBySlug(
   areaId: string,
   poiSlug: string
 ): Promise<PublicPOI | null> {
+  if (!isValidSlug(poiSlug)) return null;
+
   const client = createPublicClient();
   if (!client) return null;
 

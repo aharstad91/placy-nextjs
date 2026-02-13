@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createPublicClient } from "@/lib/supabase/public-client";
 import { slugify } from "@/lib/utils/slugify";
+import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const client = createPublicClient();
@@ -73,7 +74,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from("pois")
       .select("name")
       .eq("area_id", area.id)
-      .or("trust_score.is.null,trust_score.gte.50");
+      .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`);
 
     if (pois) {
       for (const poi of pois) {

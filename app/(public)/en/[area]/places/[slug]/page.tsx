@@ -17,6 +17,15 @@ import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 
 export const revalidate = 86400;
 
+function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 interface PageProps {
   params: Promise<{ area: string; slug: string }>;
 }
@@ -186,7 +195,7 @@ export default async function POIPageEN({ params }: PageProps) {
         {/* Sidebar */}
         <div className="space-y-4">
           <div className="space-y-2">
-            {poi.googleMapsUrl && (
+            {poi.googleMapsUrl && isSafeUrl(poi.googleMapsUrl) && (
               <a
                 href={poi.googleMapsUrl}
                 target="_blank"
@@ -197,7 +206,7 @@ export default async function POIPageEN({ params }: PageProps) {
                 View on Google Maps
               </a>
             )}
-            {poi.googleWebsite && (
+            {poi.googleWebsite && isSafeUrl(poi.googleWebsite) && (
               <a
                 href={poi.googleWebsite}
                 target="_blank"

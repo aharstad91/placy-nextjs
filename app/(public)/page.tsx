@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { MapPin, ArrowRight } from "lucide-react";
-import { getAreas, getCategoriesForArea, getHighlightPOIs } from "@/lib/public-queries";
+import { getAreas, getCategoriesForArea } from "@/lib/public-queries";
 import { getIcon } from "@/lib/utils/map-icons";
 
 export const revalidate = 86400; // 24 hours

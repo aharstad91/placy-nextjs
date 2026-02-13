@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Star, ArrowRight } from "lucide-react";
+import { Star } from "lucide-react";
 import {
   getAreaBySlug,
   getCategoriesForArea,
