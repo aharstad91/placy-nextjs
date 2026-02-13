@@ -24,16 +24,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!area) return {};
 
   return {
-    title: `${area.nameNo} — Restauranter, kafeer og severdigheter | Placy`,
-    description: `Oppdag ${area.nameNo} med kuraterte guider til de beste restaurantene, kafeene, barene og severdighetene. Lokalkunnskap og redaksjonelle anbefalinger.`,
+    title: `${area.nameEn} — Restaurants, cafes and sightseeing | Placy`,
+    description: `Discover ${area.nameEn} with curated guides to the best restaurants, cafes, bars and sights. Local knowledge and editorial recommendations.`,
     openGraph: {
-      title: `${area.nameNo} | Placy`,
-      description: `Oppdag de beste stedene i ${area.nameNo}`,
+      title: `${area.nameEn} | Placy`,
+      description: `Discover the best places in ${area.nameEn}`,
       type: "website",
-      url: `https://placy.no/${area.slugNo}`,
+      url: `https://placy.no/en/${area.slugEn}`,
     },
     alternates: {
-      canonical: `https://placy.no/${area.slugNo}`,
+      canonical: `https://placy.no/en/${area.slugEn}`,
       languages: {
         no: `https://placy.no/${area.slugNo}`,
         en: `https://placy.no/en/${area.slugEn}`,
@@ -42,14 +42,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function AreaPage({ params }: PageProps) {
+export default async function AreaPageEN({ params }: PageProps) {
   const { area: areaSlug } = await params;
   const area = await getAreaBySlug(areaSlug);
 
   if (!area) notFound();
 
   const [categories, highlights] = await Promise.all([
-    getCategoriesForArea(area.id, "no"),
+    getCategoriesForArea(area.id, "en"),
     getHighlightPOIs(area.id, 8),
   ]);
 
@@ -57,25 +57,25 @@ export default async function AreaPage({ params }: PageProps) {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <BreadcrumbJsonLd
         items={[
-          { name: "Placy", url: "https://placy.no" },
-          { name: area.nameNo },
+          { name: "Placy", url: "https://placy.no/en" },
+          { name: area.nameEn },
         ]}
       />
       <Breadcrumb
         items={[
-          { label: "Placy", href: "/" },
-          { label: area.nameNo },
+          { label: "Placy", href: "/en" },
+          { label: area.nameEn },
         ]}
       />
 
       {/* Hero */}
       <section className="mb-12">
         <h1 className="text-3xl sm:text-4xl font-bold text-[#1a1a1a] mb-3 tracking-tight">
-          {area.nameNo}
+          {area.nameEn}
         </h1>
-        {area.descriptionNo && (
+        {area.descriptionEn && (
           <p className="text-base text-[#6a6a6a] max-w-3xl leading-relaxed">
-            {area.descriptionNo}
+            {area.descriptionEn}
           </p>
         )}
       </section>
@@ -83,7 +83,7 @@ export default async function AreaPage({ params }: PageProps) {
       {/* Category grid */}
       <section className="mb-16">
         <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-6">
-          Kategorier
+          Categories
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {categories.map((cat) => {
@@ -91,7 +91,7 @@ export default async function AreaPage({ params }: PageProps) {
             return (
               <Link
                 key={cat.id}
-                href={`/${area.slugNo}/${cat.slug}`}
+                href={`/en/${area.slugEn}/${cat.slug}`}
                 className="group flex items-center gap-3 p-4 bg-white rounded-xl border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm transition-all"
               >
                 <div
@@ -105,7 +105,7 @@ export default async function AreaPage({ params }: PageProps) {
                     {cat.name}
                   </span>
                   <span className="block text-xs text-[#a0937d]">
-                    {cat.count} steder
+                    {cat.count} places
                     {cat.avgRating != null && (
                       <>
                         {" "}· <Star className="w-3 h-3 inline text-[#b45309] fill-[#b45309]" /> {cat.avgRating}
@@ -123,7 +123,7 @@ export default async function AreaPage({ params }: PageProps) {
       {highlights.length > 0 && (
         <section>
           <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-6">
-            Anbefalte steder
+            Recommended places
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {highlights.map((poi) => {
@@ -135,7 +135,7 @@ export default async function AreaPage({ params }: PageProps) {
               return (
                 <Link
                   key={poi.id}
-                  href={`/${area.slugNo}/steder/${poi.slug}`}
+                  href={`/en/${area.slugEn}/places/${poi.slug}`}
                   className="group block bg-white rounded-lg overflow-hidden border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm transition-all"
                 >
                   {imageUrl ? (

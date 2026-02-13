@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Star, MapPin } from "lucide-react";
+import { Star } from "lucide-react";
 import {
   getAreaBySlug,
   getCategoryBySlug,
@@ -24,70 +24,65 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const area = await getAreaBySlug(areaSlug);
   if (!area) return {};
 
-  const catInfo = await getCategoryBySlug(categorySlug, "no");
+  const catInfo = await getCategoryBySlug(categorySlug, "en");
   if (!catInfo) return {};
 
-  const title = catInfo.seoTitle ?? `${categorySlug} i ${area.nameNo}`;
+  const title = catInfo.seoTitle ?? `${categorySlug} in ${area.nameEn}`;
 
   return {
     title: `${title} | Placy`,
     description:
       catInfo.seoDescription ??
-      `Oppdag de beste ${categorySlug} i ${area.nameNo}. Kuraterte anbefalinger med lokalkunnskap.`,
+      `Discover the best ${categorySlug} in ${area.nameEn}. Curated recommendations with local knowledge.`,
     openGraph: {
       title: `${title} | Placy`,
-      description: `De beste ${categorySlug} i ${area.nameNo}`,
+      description: `The best ${categorySlug} in ${area.nameEn}`,
       type: "website",
-      url: `https://placy.no/${areaSlug}/${categorySlug}`,
+      url: `https://placy.no/en/${areaSlug}/${categorySlug}`,
     },
     alternates: {
-      canonical: `https://placy.no/${areaSlug}/${categorySlug}`,
+      canonical: `https://placy.no/en/${areaSlug}/${categorySlug}`,
     },
   };
 }
 
-export default async function CategoryPage({ params }: PageProps) {
+export default async function CategoryPageEN({ params }: PageProps) {
   const { area: areaSlug, category: categorySlug } = await params;
 
   const area = await getAreaBySlug(areaSlug);
   if (!area) notFound();
 
-  const catInfo = await getCategoryBySlug(categorySlug, "no");
+  const catInfo = await getCategoryBySlug(categorySlug, "en");
   if (!catInfo) notFound();
 
   const pois = await getPOIsForCategory(area.id, catInfo.categoryId);
 
-  // Split into featured (tier 1) and rest
   const featured = pois.filter((p) => p.poiTier === 1);
   const rest = pois.filter((p) => p.poiTier !== 1);
 
-  // Get category info from first POI
   const categoryName = pois[0]?.category.name ?? categorySlug;
-  const categoryColor = pois[0]?.category.color ?? "#6b7280";
-  const categoryIcon = pois[0]?.category.icon ?? "MapPin";
-
-  const title = catInfo.seoTitle ?? `${categoryName} i ${area.nameNo}`;
+  const title = catInfo.seoTitle ?? `${categoryName} in ${area.nameEn}`;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <BreadcrumbJsonLd
         items={[
-          { name: "Placy", url: "https://placy.no" },
-          { name: area.nameNo, url: `https://placy.no/${area.slugNo}` },
+          { name: "Placy", url: "https://placy.no/en" },
+          { name: area.nameEn, url: `https://placy.no/en/${area.slugEn}` },
           { name: categoryName },
         ]}
       />
       <ItemListJsonLd
         items={pois.slice(0, 20).map((poi, i) => ({
           name: poi.name,
-          url: `https://placy.no/${area.slugNo}/steder/${poi.slug}`,
+          url: `https://placy.no/en/${area.slugEn}/places/${poi.slug}`,
           position: i + 1,
         }))}
       />
       <Breadcrumb
         items={[
-          { label: "Placy", href: "/" },
-          { label: area.nameNo, href: `/${area.slugNo}` },
+          { label: "Placy", href: "/en" },
+          { label: area.nameEn, href: `/en/${area.slugEn}` },
           { label: categoryName },
         ]}
       />
@@ -98,8 +93,8 @@ export default async function CategoryPage({ params }: PageProps) {
           {title}
         </h1>
         <p className="text-sm text-[#6a6a6a]">
-          {pois.length} steder
-          {featured.length > 0 && ` · ${featured.length} anbefalte`}
+          {pois.length} places
+          {featured.length > 0 && ` · ${featured.length} recommended`}
         </p>
         {catInfo.introText && (
           <p className="mt-4 text-base text-[#4a4a4a] leading-relaxed max-w-3xl">
@@ -112,11 +107,11 @@ export default async function CategoryPage({ params }: PageProps) {
       {featured.length > 0 && (
         <section className="mb-12">
           <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-4">
-            Anbefalte
+            Recommended
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {featured.map((poi) => (
-              <POICard key={poi.id} poi={poi} areaSlug={area.slugNo} />
+              <POICardEN key={poi.id} poi={poi} areaSlug={area.slugEn} />
             ))}
           </div>
         </section>
@@ -125,11 +120,11 @@ export default async function CategoryPage({ params }: PageProps) {
       {/* All places */}
       <section>
         <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-4">
-          {featured.length > 0 ? "Alle steder" : `${categoryName}`}
+          {featured.length > 0 ? "All places" : categoryName}
         </h2>
         <div className="bg-white rounded-xl border border-[#eae6e1] divide-y divide-[#f0ece7] overflow-hidden">
           {(featured.length > 0 ? rest : pois).map((poi) => (
-            <CompactPOIRow key={poi.id} poi={poi} areaSlug={area.slugNo} />
+            <CompactPOIRowEN key={poi.id} poi={poi} areaSlug={area.slugEn} />
           ))}
         </div>
       </section>
@@ -137,7 +132,7 @@ export default async function CategoryPage({ params }: PageProps) {
   );
 }
 
-function POICard({
+function POICardEN({
   poi,
   areaSlug,
 }: {
@@ -152,7 +147,7 @@ function POICard({
 
   return (
     <Link
-      href={`/${areaSlug}/steder/${poi.slug}`}
+      href={`/en/${areaSlug}/places/${poi.slug}`}
       className="group block bg-white rounded-lg overflow-hidden border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm transition-all"
     >
       {imageUrl ? (
@@ -198,7 +193,7 @@ function POICard({
   );
 }
 
-function CompactPOIRow({
+function CompactPOIRowEN({
   poi,
   areaSlug,
 }: {
@@ -207,7 +202,7 @@ function CompactPOIRow({
 }) {
   return (
     <Link
-      href={`/${areaSlug}/steder/${poi.slug}`}
+      href={`/en/${areaSlug}/places/${poi.slug}`}
       className="group flex items-center gap-3 px-4 py-3 hover:bg-[#faf9f7] transition-colors"
     >
       <span

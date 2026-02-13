@@ -31,29 +31,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const description =
     poi.editorialHook ??
-    `${poi.name} i ${area.nameNo} — ${poi.category.name}. Les anbefalinger og finn veien.`;
+    `${poi.name} in ${area.nameEn} — ${poi.category.name}. Read recommendations and find your way.`;
 
   return {
-    title: `${poi.name} — ${poi.category.name} i ${area.nameNo} | Placy`,
+    title: `${poi.name} — ${poi.category.name} in ${area.nameEn} | Placy`,
     description,
     openGraph: {
       title: `${poi.name} | Placy`,
       description,
       type: "website",
-      url: `https://placy.no/${areaSlug}/steder/${slug}`,
+      url: `https://placy.no/en/${areaSlug}/places/${slug}`,
       ...(poi.featuredImage ? { images: [{ url: poi.featuredImage }] } : {}),
     },
     alternates: {
-      canonical: `https://placy.no/${areaSlug}/steder/${slug}`,
+      canonical: `https://placy.no/en/${areaSlug}/places/${slug}`,
       languages: {
-        no: `https://placy.no/${areaSlug}/steder/${slug}`,
+        no: `https://placy.no/${area.slugNo}/steder/${slug}`,
         en: `https://placy.no/en/${area.slugEn}/places/${slug}`,
       },
     },
   };
 }
 
-export default async function POIPage({ params }: PageProps) {
+export default async function POIPageEN({ params }: PageProps) {
   const { area: areaSlug, slug } = await params;
 
   const area = await getAreaBySlug(areaSlug);
@@ -71,7 +71,6 @@ export default async function POIPage({ params }: PageProps) {
 
   const CategoryIcon = getIcon(poi.category.icon);
 
-  // Static map for sidebar
   const staticMapUrl = getStaticMapUrl({
     lat: poi.coordinates.lat,
     lng: poi.coordinates.lng,
@@ -81,16 +80,14 @@ export default async function POIPage({ params }: PageProps) {
     markerColor: poi.category.color.replace("#", ""),
   });
 
-  // Find the category slug for breadcrumb
-  const allCategorySlugs = await getCategoriesForArea(area.id, "no");
+  const allCategorySlugs = await getCategoriesForArea(area.id, "en");
   const categorySlug = allCategorySlugs.find((c) => c.id === poi.category.id)?.slug;
 
-  // Breadcrumb data for JSON-LD
   const breadcrumbItems = [
-    { name: "Placy", url: "https://placy.no" },
-    { name: area.nameNo, url: `https://placy.no/${area.slugNo}` },
+    { name: "Placy", url: "https://placy.no/en" },
+    { name: area.nameEn, url: `https://placy.no/en/${area.slugEn}` },
     ...(categorySlug
-      ? [{ name: poi.category.name, url: `https://placy.no/${area.slugNo}/${categorySlug}` }]
+      ? [{ name: poi.category.name, url: `https://placy.no/en/${area.slugEn}/${categorySlug}` }]
       : []),
     { name: poi.name },
   ];
@@ -102,10 +99,10 @@ export default async function POIPage({ params }: PageProps) {
 
       <Breadcrumb
         items={[
-          { label: "Placy", href: "/" },
-          { label: area.nameNo, href: `/${area.slugNo}` },
+          { label: "Placy", href: "/en" },
+          { label: area.nameEn, href: `/en/${area.slugEn}` },
           ...(categorySlug
-            ? [{ label: poi.category.name, href: `/${area.slugNo}/${categorySlug}` }]
+            ? [{ label: poi.category.name, href: `/en/${area.slugEn}/${categorySlug}` }]
             : []),
           { label: poi.name },
         ]}
@@ -142,7 +139,6 @@ export default async function POIPage({ params }: PageProps) {
           {poi.name}
         </h1>
 
-        {/* Rating + Address */}
         <div className="flex flex-wrap items-center gap-4 text-sm text-[#6a6a6a]">
           {poi.googleRating != null && (
             <div className="flex items-center gap-1">
@@ -151,7 +147,7 @@ export default async function POIPage({ params }: PageProps) {
                 {poi.googleRating.toFixed(1)}
               </span>
               {poi.googleReviewCount != null && (
-                <span>({poi.googleReviewCount} anmeldelser)</span>
+                <span>({poi.googleReviewCount} reviews)</span>
               )}
             </div>
           )}
@@ -178,7 +174,7 @@ export default async function POIPage({ params }: PageProps) {
           {poi.localInsight && (
             <div>
               <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-2">
-                Lokaltips
+                Local Tip
               </h2>
               <p className="text-sm text-[#4a4a4a] leading-relaxed">
                 {poi.localInsight}
@@ -189,7 +185,6 @@ export default async function POIPage({ params }: PageProps) {
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Action buttons */}
           <div className="space-y-2">
             {poi.googleMapsUrl && (
               <a
@@ -199,7 +194,7 @@ export default async function POIPage({ params }: PageProps) {
                 className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-[#1a1a1a] text-white text-sm font-medium rounded-lg hover:bg-[#333] transition-colors"
               >
                 <MapPin className="w-4 h-4" />
-                Vis i Google Maps
+                View on Google Maps
               </a>
             )}
             {poi.googleWebsite && (
@@ -210,12 +205,11 @@ export default async function POIPage({ params }: PageProps) {
                 className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-[#1a1a1a] text-sm font-medium rounded-lg border border-[#eae6e1] hover:border-[#d4cfc8] transition-colors"
               >
                 <ExternalLink className="w-4 h-4" />
-                Nettside
+                Website
               </a>
             )}
           </div>
 
-          {/* Static map */}
           {staticMapUrl ? (
             <a
               href={poi.googleMapsUrl ?? `https://www.google.com/maps/search/?api=1&query=${poi.coordinates.lat},${poi.coordinates.lng}`}
@@ -225,7 +219,7 @@ export default async function POIPage({ params }: PageProps) {
             >
               <Image
                 src={staticMapUrl}
-                alt={`Kart over ${poi.name}`}
+                alt={`Map of ${poi.name}`}
                 width={400}
                 height={300}
                 className="w-full h-auto"
@@ -244,7 +238,7 @@ export default async function POIPage({ params }: PageProps) {
       {similar.length > 0 && (
         <section>
           <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-4">
-            Lignende steder
+            Similar places
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {similar.map((s) => {
@@ -257,7 +251,7 @@ export default async function POIPage({ params }: PageProps) {
               return (
                 <Link
                   key={s.id}
-                  href={`/${areaSlug}/steder/${s.slug}`}
+                  href={`/en/${areaSlug}/places/${s.slug}`}
                   className="group block bg-white rounded-lg overflow-hidden border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm transition-all"
                 >
                   {sImageUrl ? (
