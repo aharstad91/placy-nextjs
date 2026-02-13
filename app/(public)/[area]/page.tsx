@@ -11,6 +11,7 @@ import {
 import { getIcon } from "@/lib/utils/map-icons";
 import Breadcrumb from "@/components/public/Breadcrumb";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
+import SaveButton from "@/components/public/SaveButton";
 
 export const revalidate = 86400;
 
@@ -138,28 +139,35 @@ export default async function AreaPage({ params }: PageProps) {
                   href={`/${area.slugNo}/steder/${poi.slug}`}
                   className="group block bg-white rounded-lg overflow-hidden border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm transition-all"
                 >
-                  {imageUrl ? (
-                    <div className="aspect-[16/9] bg-[#f5f3f0] overflow-hidden relative">
-                      <Image
-                        src={imageUrl}
-                        alt={poi.name}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className="aspect-[16/9] flex items-center justify-center"
-                      style={{ backgroundColor: poi.category.color + "18" }}
-                    >
-                      {(() => {
-                        const CatIcon = getIcon(poi.category.icon);
-                        return <CatIcon className="w-8 h-8" style={{ color: poi.category.color }} />;
-                      })()}
-                    </div>
-                  )}
+                  <div className="relative">
+                    {imageUrl ? (
+                      <div className="aspect-[16/9] bg-[#f5f3f0] overflow-hidden relative">
+                        <Image
+                          src={imageUrl}
+                          alt={poi.name}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="aspect-[16/9] flex items-center justify-center"
+                        style={{ backgroundColor: poi.category.color + "18" }}
+                      >
+                        {(() => {
+                          const CatIcon = getIcon(poi.category.icon);
+                          return <CatIcon className="w-8 h-8" style={{ color: poi.category.color }} />;
+                        })()}
+                      </div>
+                    )}
+                    <SaveButton
+                      poiId={poi.id}
+                      poiName={poi.name}
+                      className="absolute top-2 right-2 bg-white/70 backdrop-blur-sm"
+                    />
+                  </div>
                   <div className="p-3">
                     <span
                       className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full mb-1"

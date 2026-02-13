@@ -1,6 +1,7 @@
 import Script from "next/script";
 import PlacyHeader from "@/components/public/PlacyHeader";
 import PlacyFooter from "@/components/public/PlacyFooter";
+import CollectionBar from "@/components/public/CollectionBar";
 
 export default function PublicLayout({
   children,
@@ -12,6 +13,7 @@ export default function PublicLayout({
       <PlacyHeader locale="no" />
       <main className="min-h-screen bg-[#faf9f7]">{children}</main>
       <PlacyFooter locale="no" />
+      <CollectionBar />
       {/* Plausible analytics — privacy-friendly, no cookies */}
       {process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN && (
         <Script

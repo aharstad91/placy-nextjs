@@ -14,6 +14,7 @@ import { getStaticMapUrl } from "@/lib/mapbox-static";
 import Breadcrumb from "@/components/public/Breadcrumb";
 import POIJsonLd from "@/components/seo/POIJsonLd";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
+import SaveButton from "@/components/public/SaveButton";
 
 export const revalidate = 86400;
 
@@ -142,8 +143,9 @@ export default async function POIPage({ params }: PageProps) {
           {poi.name}
         </h1>
 
-        {/* Rating + Address */}
+        {/* Save + Rating + Address */}
         <div className="flex flex-wrap items-center gap-4 text-sm text-[#6a6a6a]">
+          <SaveButton poiId={poi.id} poiName={poi.name} />
           {poi.googleRating != null && (
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 text-[#b45309] fill-[#b45309]" />
