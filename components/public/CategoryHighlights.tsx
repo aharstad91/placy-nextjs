@@ -29,8 +29,8 @@ export default function CategoryHighlights({
         {title}
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {pois.map((poi) => (
-          <HighlightCard key={poi.id} poi={poi} areaSlug={areaSlug} />
+        {pois.map((poi, index) => (
+          <HighlightCard key={poi.id} poi={poi} areaSlug={areaSlug} priorityImage={index < 2} />
         ))}
       </div>
     </section>
@@ -40,9 +40,11 @@ export default function CategoryHighlights({
 function HighlightCard({
   poi,
   areaSlug,
+  priorityImage = false,
 }: {
   poi: PublicPOI;
   areaSlug: string;
+  priorityImage?: boolean;
 }) {
   const imageUrl = poi.featuredImage
     ?? (poi.photoReference
@@ -64,7 +66,7 @@ function HighlightCard({
             fill
             className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
             sizes="(max-width: 640px) 100vw, 50vw"
-            loading="lazy"
+            {...(priorityImage ? { priority: true } : { loading: "lazy" as const })}
           />
         </div>
       ) : (

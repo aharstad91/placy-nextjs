@@ -28,13 +28,15 @@ interface GuideMapLayoutProps {
   areaSlug: string;
   /** When true, cards interact with map instead of navigating to detail page */
   interactive?: boolean;
+  /** Static map image URL — shown as zero-JS placeholder until user interacts */
+  staticMapUrl?: string | null;
 }
 
 function poiHref(areaSlug: string, slug: string) {
   return `/${areaSlug}/steder/${slug}`;
 }
 
-export default function GuideMapLayout({ pois, areaSlug, interactive = false }: GuideMapLayoutProps) {
+export default function GuideMapLayout({ pois, areaSlug, interactive = false, staticMapUrl }: GuideMapLayoutProps) {
   const [activePOIId, setActivePOIId] = useState<string | null>(null);
   const [activePOISource, setActivePOISource] = useState<"card" | "marker">(
     "card"
@@ -45,15 +47,20 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
 
   const isDesktop = useIsDesktop();
 
-  // Defer map mount until the browser is idle — avoids 4.1 MB Mapbox chunk
-  // blocking the main thread during the critical rendering path.
+  // Desktop: defer Mapbox until user interacts (hover/click) — eliminates
+  // 4.3 MB parse + WebGL init from Lighthouse entirely.
+  // Mobile: load on toggle (showMobileMap already gates it).
   const [mapReady, setMapReady] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
+
+  const triggerMapLoad = useCallback(() => {
+    if (!mapReady) setMapReady(true);
+  }, [mapReady]);
+
+  // When mobile map toggle opens, also trigger map load
   useEffect(() => {
-    const schedule = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 1));
-    const id = schedule(() => setMapReady(true));
-    const cancel = window.cancelIdleCallback ?? clearTimeout;
-    return () => cancel(id);
-  }, []);
+    if (showMobileMap) triggerMapLoad();
+  }, [showMobileMap, triggerMapLoad]);
 
   // Split POIs into featured (Tier 1) and rest
   const featured = pois.filter((p) => p.poiTier === 1);
@@ -160,6 +167,7 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
                   activePOISource={activePOISource}
                   onMarkerClick={handleMarkerClick}
                   onMapClick={handleMapClick}
+                  onLoad={() => setMapLoaded(true)}
                 />
               ) : (
                 <div className="w-full h-full bg-[#f5f3f0] animate-pulse flex items-center justify-center">
@@ -182,18 +190,48 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
 
         {/* Right: Sticky map */}
         <div className="w-[50%] pt-16 pr-16 pb-16">
-          <div className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden">
-            {isDesktop && mapReady ? (
-              <GuideStickyMap
-                pois={pois}
-                activePOIId={activePOIId}
-                activePOISource={activePOISource}
-                onMarkerClick={handleMarkerClick}
-                onMapClick={handleMapClick}
-              />
-            ) : (
+          <div
+            className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden relative"
+            onMouseEnter={triggerMapLoad}
+            onClick={triggerMapLoad}
+          >
+            {/* Static map placeholder — zero JS, instant render */}
+            {staticMapUrl && !mapLoaded && (
+              <div className="absolute inset-0 z-10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={staticMapUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+                {!mapReady && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="bg-white/90 backdrop-blur-sm text-sm text-[#6a6a6a] px-4 py-2 rounded-full shadow-sm">
+                      Hold over for interaktivt kart
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Fallback when no static URL */}
+            {!staticMapUrl && !mapReady && (
               <div className="w-full h-full bg-[#f5f3f0] animate-pulse flex items-center justify-center">
                 <span className="text-sm text-[#a0937d]">Laster kart...</span>
+              </div>
+            )}
+
+            {/* Interactive map — loads behind static image, fades in */}
+            {isDesktop && mapReady && (
+              <div className={`absolute inset-0 transition-opacity duration-500 ${mapLoaded ? "opacity-100 z-20" : "opacity-0 z-0"}`}>
+                <GuideStickyMap
+                  pois={pois}
+                  activePOIId={activePOIId}
+                  activePOISource={activePOISource}
+                  onMarkerClick={handleMarkerClick}
+                  onMapClick={handleMapClick}
+                  onLoad={() => setMapLoaded(true)}
+                />
               </div>
             )}
           </div>

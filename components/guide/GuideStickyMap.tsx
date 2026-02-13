@@ -15,6 +15,8 @@ interface GuideStickyMapProps {
   activePOISource?: "card" | "marker";
   onMarkerClick: (poiId: string) => void;
   onMapClick?: () => void;
+  /** Fired when Mapbox map is fully loaded (tiles + style) */
+  onLoad?: () => void;
 }
 
 export default function GuideStickyMap({
@@ -23,6 +25,7 @@ export default function GuideStickyMap({
   activePOISource,
   onMarkerClick,
   onMapClick,
+  onLoad,
 }: GuideStickyMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -73,6 +76,7 @@ export default function GuideStickyMap({
 
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
+    onLoad?.();
     if (!mapRef.current) return;
 
     const map = mapRef.current.getMap();
@@ -86,7 +90,7 @@ export default function GuideStickyMap({
       ],
       { padding: 50, duration: 0, maxZoom: 16 }
     );
-  }, [bounds.minLng, bounds.minLat, bounds.maxLng, bounds.maxLat]);
+  }, [bounds.minLng, bounds.minLat, bounds.maxLng, bounds.maxLat, onLoad]);
 
   // O(1) POI lookup for flyTo + popup
   const poiById = useMemo(() => {

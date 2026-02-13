@@ -7,17 +7,10 @@
   --foreground: #171717;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Inter, system-ui, sans-serif;
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
 }
 
 /* Skjul standard Mapbox POI-labels (kun admin-verktøy bruker Mapbox nå) */
@@ -191,20 +184,6 @@ gmp-popover::part(dialog) {
   100% {
     transform: translateX(100%);
   }
-}
-
-/* Dark mode skeleton */
-.dark .skeleton-shimmer {
-  background-color: #374151; /* gray-700 */
-}
-
-.dark .skeleton-shimmer::after {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    transparent 100%
-  );
 }
 
 /* Content fade-in when skeleton resolves */

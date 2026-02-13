@@ -95,6 +95,22 @@ export default async function CategoryPage({ params }: PageProps) {
     .filter((c) => c.slug !== categorySlug && c.count > 0)
     .slice(0, 8);
 
+  // Static map image for desktop placeholder (zero JS until interaction)
+  const staticMarkers = pois
+    .filter((p) => p.coordinates?.lat && p.coordinates?.lng)
+    .slice(0, 80)
+    .map((p) => ({
+      lat: p.coordinates.lat,
+      lng: p.coordinates.lng,
+      color: p.category.color?.replace("#", ""),
+    }));
+  const staticMapUrl = getStaticMapUrlMulti({
+    markers: staticMarkers,
+    width: 800,
+    height: 600,
+    retina: true,
+  });
+
   // Featured POIs with editorial content for highlights section
   const editorialFeatured = featured.filter((p) => p.editorialHook);
 
@@ -174,7 +190,7 @@ export default async function CategoryPage({ params }: PageProps) {
       )}
 
       {/* Map + card layout */}
-      <GuideMapLayout pois={pois} areaSlug={area.slugNo} interactive />
+      <GuideMapLayout pois={pois} areaSlug={area.slugNo} interactive staticMapUrl={staticMapUrl} />
 
       {/* Cross-category links */}
       {otherCategories.length > 0 && (

@@ -7,6 +7,7 @@ import Breadcrumb from "@/components/public/Breadcrumb";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import ItemListJsonLd from "@/components/seo/ItemListJsonLd";
 import FAQJsonLd from "@/components/seo/FAQJsonLd";
+import { getStaticMapUrlMulti } from "@/lib/mapbox-static";
 import GuideMapLayout from "@/components/guide/GuideMapLayout";
 
 export const revalidate = 86400;
@@ -65,6 +66,22 @@ export default async function GuidePage({ params }: PageProps) {
     tier: list.tierFilter,
     bbox: list.bbox,
     limit: list.limit,
+  });
+
+  // Static map image for desktop placeholder (zero JS until interaction)
+  const staticMarkers = pois
+    .filter((p) => p.coordinates?.lat && p.coordinates?.lng)
+    .slice(0, 80)
+    .map((p) => ({
+      lat: p.coordinates.lat,
+      lng: p.coordinates.lng,
+      color: p.category.color?.replace("#", ""),
+    }));
+  const staticMapUrl = getStaticMapUrlMulti({
+    markers: staticMarkers,
+    width: 800,
+    height: 600,
+    retina: true,
   });
 
   // FAQ structured data
@@ -135,7 +152,7 @@ export default async function GuidePage({ params }: PageProps) {
 
       {/* POI cards + sticky map */}
       <section className="mb-12">
-        <GuideMapLayout pois={pois} areaSlug={area.slugNo} />
+        <GuideMapLayout pois={pois} areaSlug={area.slugNo} staticMapUrl={staticMapUrl} />
       </section>
 
       {/* Other guides */}
