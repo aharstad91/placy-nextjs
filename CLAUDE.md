@@ -10,8 +10,11 @@ Placy er en lokasjonsbasert plattform med tre produkter: **Explorer** (utforsk f
 |-----|---------|
 | `context/products.md` | **De tre produktene** — Explorer, Guide, Report. Målgrupper, differensiering, oppsummering. |
 | `context/placy-concept-spec.md` | Full teknisk/funksjonell spesifikasjon. Datamodell, UX, API-er, admin-verktøy. |
+| `PROJECT-LOG.md` | **Prosjektdagbok** — beslutninger, retning, åpne spørsmål. Les ved sesjonstart. |
 | `PRD.md` | Gjeldende oppgaveliste og status |
 | `COMMANDS.md` | Alle kommandoer og scripts |
+
+**Når bruker sier "sjekk loggen":** Les `PROJECT-LOG.md` — spesielt siste sesjon. Bruk den som kontekst for sparring og beslutninger.
 
 ## Kjernekonsepter
 
