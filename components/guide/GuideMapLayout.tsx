@@ -55,6 +55,11 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
     setActivePOIId(null);
   }, []);
 
+  // Click on empty map area → deselect
+  const handleMapClick = useCallback(() => {
+    setActivePOIId(null);
+  }, []);
+
   return (
     <div className="lg:flex lg:gap-0">
       {/* Mobile map toggle */}
@@ -71,8 +76,10 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
           <div className="mt-3 h-[250px] rounded-lg overflow-hidden border border-[#eae6e1]">
             <GuideStickyMap
               pois={pois}
-              activePOIId={activePOISource === "card" ? activePOIId : null}
+              activePOIId={activePOIId}
+              activePOISource={activePOISource}
               onMarkerClick={handleMarkerClick}
+              onMapClick={handleMapClick}
             />
           </div>
         )}
@@ -154,8 +161,10 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
         <div className="sticky top-14 h-[calc(100vh-3.5rem)] rounded-lg overflow-hidden border border-[#eae6e1]">
           <GuideStickyMap
             pois={pois}
-            activePOIId={activePOISource === "card" ? activePOIId : null}
+            activePOIId={activePOIId}
+            activePOISource={activePOISource}
             onMarkerClick={handleMarkerClick}
+            onMapClick={handleMapClick}
           />
         </div>
       </div>

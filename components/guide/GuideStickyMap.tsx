@@ -1,23 +1,28 @@
 "use client";
 
-import { useRef, useCallback, useEffect, useState } from "react";
+import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { PublicPOI } from "@/lib/public-queries";
 import { getIcon } from "@/lib/utils/map-icons";
 import { MarkerTooltip } from "@/components/map/marker-tooltip";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
+import MapPopupCard from "@/components/variants/report/MapPopupCard";
 
 interface GuideStickyMapProps {
   pois: PublicPOI[];
   activePOIId: string | null;
+  activePOISource?: "card" | "marker";
   onMarkerClick: (poiId: string) => void;
+  onMapClick?: () => void;
 }
 
 export default function GuideStickyMap({
   pois,
   activePOIId,
+  activePOISource,
   onMarkerClick,
+  onMapClick,
 }: GuideStickyMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -83,11 +88,19 @@ export default function GuideStickyMap({
     );
   }, [bounds.minLng, bounds.minLat, bounds.maxLng, bounds.maxLat]);
 
-  // Fly to active POI when set from card interaction
+  // O(1) POI lookup for flyTo + popup
+  const poiById = useMemo(() => {
+    const lookup: Record<string, PublicPOI> = {};
+    for (const poi of pois) lookup[poi.id] = poi;
+    return lookup;
+  }, [pois]);
+
+  // Fly to active POI when selected from card
   useEffect(() => {
     if (!mapLoaded || !mapRef.current || !activePOIId) return;
+    if (activePOISource !== "card") return;
 
-    const poi = pois.find((p) => p.id === activePOIId);
+    const poi = poiById[activePOIId];
     if (!poi) return;
 
     const map = mapRef.current;
@@ -96,7 +109,7 @@ export default function GuideStickyMap({
       center: [poi.coordinates.lng, poi.coordinates.lat],
       duration: 400,
     });
-  }, [activePOIId, mapLoaded, pois]);
+  }, [activePOIId, activePOISource, mapLoaded, poiById]);
 
   const handleMarkerClick = useCallback(
     (e: { originalEvent: MouseEvent }, poiId: string) => {
@@ -105,6 +118,13 @@ export default function GuideStickyMap({
     },
     [onMarkerClick]
   );
+
+  // Popup card data
+  const popupPOI = activePOIId ? poiById[activePOIId] ?? null : null;
+
+  const handlePopupClose = useCallback(() => {
+    if (onMapClick) onMapClick();
+  }, [onMapClick]);
 
   if (!token) return null;
 
@@ -121,6 +141,7 @@ export default function GuideStickyMap({
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE_STANDARD}
         onLoad={handleMapLoad}
+        onClick={onMapClick}
         scrollZoom={true}
       >
         {pois.map((poi) => {
@@ -214,6 +235,23 @@ export default function GuideStickyMap({
             </Marker>
           );
         })}
+
+        {/* Popup card for active POI */}
+        {popupPOI && (
+          <Marker
+            key={`popup-${popupPOI.id}`}
+            longitude={popupPOI.coordinates.lng}
+            latitude={popupPOI.coordinates.lat}
+            anchor="bottom"
+            style={{ zIndex: 20 }}
+            offset={[0, -20]}
+          >
+            <MapPopupCard
+              poi={popupPOI}
+              onClose={handlePopupClose}
+            />
+          </Marker>
+        )}
       </Map>
 
       {/* Loading skeleton */}
