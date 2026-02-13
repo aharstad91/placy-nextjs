@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 interface GoogleRatingProps {
   rating: number;
   reviewCount?: number;
@@ -37,12 +39,13 @@ function StarIcon({
   fill,
   size,
   emptyColor,
+  gradientId,
 }: {
   fill: "full" | "half" | "empty";
   size: number;
   emptyColor: string;
+  gradientId: string;
 }) {
-  const id = `half-${Math.random().toString(36).slice(2, 8)}`;
 
   if (fill === "full") {
     return (
@@ -59,14 +62,14 @@ function StarIcon({
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
         <defs>
-          <linearGradient id={id}>
+          <linearGradient id={gradientId}>
             <stop offset="50%" stopColor={STAR_FILLED} />
             <stop offset="50%" stopColor={emptyColor} />
           </linearGradient>
         </defs>
         <path
           d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-          fill={`url(#${id})`}
+          fill={`url(#${gradientId})`}
         />
       </svg>
     );
@@ -90,6 +93,8 @@ export function GoogleRating({
   showLabel = false,
   className,
 }: GoogleRatingProps) {
+  const gradientId = useId();
+
   if (!rating || rating <= 0) return null;
 
   const s = SIZES[size];
@@ -109,7 +114,7 @@ export function GoogleRating({
         role="img"
         aria-label={ariaLabel}
       >
-        <StarIcon fill="full" size={s.star} emptyColor={emptyColor} />
+        <StarIcon fill="full" size={s.star} emptyColor={emptyColor} gradientId={`${gradientId}-xs`} />
         <span className={`${s.textClass} font-medium ${textColor}`}>
           {rating.toFixed(1)}
         </span>
@@ -133,7 +138,7 @@ export function GoogleRating({
     >
       <span className="inline-flex items-center" style={{ gap: s.gap }}>
         {fills.map((fill, i) => (
-          <StarIcon key={i} fill={fill} size={s.star} emptyColor={emptyColor} />
+          <StarIcon key={i} fill={fill} size={s.star} emptyColor={emptyColor} gradientId={`${gradientId}-${i}`} />
         ))}
       </span>
       <span className={`${s.textClass} font-medium ${textColor}`}>
