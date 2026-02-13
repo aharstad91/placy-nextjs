@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect, memo } from "react";
 import dynamic from "next/dynamic";
 import { MapPin, Sparkles, ChevronDown } from "lucide-react";
 import type { PublicPOI } from "@/lib/public-queries";
 import { getIcon } from "@/lib/utils/map-icons";
+import { useIsDesktop } from "@/lib/hooks/useIsDesktop";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
@@ -36,6 +37,18 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
   const [showMobileMap, setShowMobileMap] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  const isDesktop = useIsDesktop();
+
+  // Defer map mount until the browser is idle — avoids 4.1 MB Mapbox chunk
+  // blocking the main thread during the critical rendering path.
+  const [mapReady, setMapReady] = useState(false);
+  useEffect(() => {
+    const schedule = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 1));
+    const id = schedule(() => setMapReady(true));
+    const cancel = window.cancelIdleCallback ?? clearTimeout;
+    return () => cancel(id);
+  }, []);
 
   // Split POIs into featured (Tier 1) and rest
   const featured = pois.filter((p) => p.poiTier === 1);
@@ -132,13 +145,19 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
 
           {showMobileMap && (
             <div className="mt-3 h-[250px] rounded-lg overflow-hidden border border-[#eae6e1]">
-              <GuideStickyMap
-                pois={pois}
-                activePOIId={activePOIId}
-                activePOISource={activePOISource}
-                onMarkerClick={handleMarkerClick}
-                onMapClick={handleMapClick}
-              />
+              {mapReady ? (
+                <GuideStickyMap
+                  pois={pois}
+                  activePOIId={activePOIId}
+                  activePOISource={activePOISource}
+                  onMarkerClick={handleMarkerClick}
+                  onMapClick={handleMapClick}
+                />
+              ) : (
+                <div className="w-full h-full bg-[#f5f3f0] animate-pulse flex items-center justify-center">
+                  <span className="text-sm text-[#a0937d]">Laster kart...</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -156,13 +175,19 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
         {/* Right: Sticky map */}
         <div className="w-[50%] pt-16 pr-16 pb-16">
           <div className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden">
-            <GuideStickyMap
-              pois={pois}
-              activePOIId={activePOIId}
-              activePOISource={activePOISource}
-              onMarkerClick={handleMarkerClick}
-              onMapClick={handleMapClick}
-            />
+            {isDesktop && mapReady ? (
+              <GuideStickyMap
+                pois={pois}
+                activePOIId={activePOIId}
+                activePOISource={activePOISource}
+                onMarkerClick={handleMarkerClick}
+                onMapClick={handleMapClick}
+              />
+            ) : (
+              <div className="w-full h-full bg-[#f5f3f0] animate-pulse flex items-center justify-center">
+                <span className="text-sm text-[#a0937d]">Laster kart...</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -192,11 +217,9 @@ function CompactPOIList({
           key={poi.id}
           poi={poi}
           isActive={activePOIId === poi.id}
-          onClick={() => onPOIClick(poi.id)}
-          cardRef={(el) => {
-            if (el) cardRefs.current?.set(poi.id, el);
-            else cardRefs.current?.delete(poi.id);
-          }}
+          poiId={poi.id}
+          onPOIClick={onPOIClick}
+          cardRefs={cardRefs}
         />
       ))}
     </div>
@@ -211,16 +234,18 @@ function CompactPOIList({
 }
 
 /** Compact POI row — thumbnail, name, badges, category, rating */
-function CompactPOIRow({
+const CompactPOIRow = memo(function CompactPOIRow({
   poi,
   isActive,
-  onClick,
-  cardRef,
+  poiId,
+  onPOIClick,
+  cardRefs,
 }: {
   poi: PublicPOI;
   isActive: boolean;
-  onClick: () => void;
-  cardRef: (el: HTMLElement | null) => void;
+  poiId: string;
+  onPOIClick: (poiId: string) => void;
+  cardRefs: React.RefObject<Map<string, HTMLElement>>;
 }) {
   const [imageError, setImageError] = useState(false);
   const CategoryIcon = getIcon(poi.category.icon);
@@ -233,11 +258,20 @@ function CompactPOIRow({
 
   const hasImage = imageUrl && !imageError;
 
+  const handleClick = useCallback(() => onPOIClick(poiId), [onPOIClick, poiId]);
+  const cardRef = useCallback(
+    (el: HTMLElement | null) => {
+      if (el) cardRefs.current?.set(poiId, el);
+      else cardRefs.current?.delete(poiId);
+    },
+    [cardRefs, poiId]
+  );
+
   return (
     <button
       ref={cardRef}
-      data-poi-id={poi.id}
-      onClick={onClick}
+      data-poi-id={poiId}
+      onClick={handleClick}
       className={`w-full text-left rounded-xl border overflow-hidden transition-all ${
         isActive
           ? "bg-[#f0ede8] border-[#d4cfc8] ring-1 ring-[#d4cfc8]"
@@ -294,4 +328,4 @@ function CompactPOIRow({
       </div>
     </button>
   );
-}
+});
