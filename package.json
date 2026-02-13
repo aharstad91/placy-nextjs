@@ -14,7 +14,8 @@
     "import:kommune": "npx tsx scripts/import-kommune-pois.ts",
     "import:atb": "npx tsx scripts/import-atb-stops.ts",
     "import:bysykkel": "npx tsx scripts/import-bysykkel.ts",
-    "import:kml": "npx tsx scripts/import-kml.ts"
+    "import:kml": "npx tsx scripts/import-kml.ts",
+    "import:riksantikvaren": "npx tsx scripts/import-riksantikvaren.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
