@@ -76,6 +76,11 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
     );
   }, []);
 
+  // Handle map background click → deselect active POI
+  const handleMapClick = useCallback(() => {
+    setActivePOI(null);
+  }, []);
+
   // Handle marker click → highlight card + scroll to it (no map movement)
   const handleMarkerClick = useCallback((poiId: string) => {
     setActivePOI((prev) => {
@@ -83,7 +88,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
       // Scroll to the card after state update
       if (next) {
         requestAnimationFrame(() => {
-          const card = document.querySelector(`[data-poi-id="${poiId}"]`);
+          const card = document.querySelector(`[data-poi-id="${CSS.escape(poiId)}"]`);
           card?.scrollIntoView({ behavior: "smooth", block: "center" });
         });
       }
@@ -142,10 +147,10 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
         </div>
       </div>
 
-      {/* Desktop: 60/40 split with sticky map */}
+      {/* Desktop: 50/50 split with sticky map */}
       <div className="hidden lg:flex">
         {/* Left: Scrollable theme sections */}
-        <div className="w-[60%] px-16 min-w-0 overflow-hidden">
+        <div className="w-[50%] px-16 min-w-0 overflow-hidden">
           {reportData.themes.map((theme, i) => (
             <div key={theme.id}>
               {i > 0 && <div className="h-px bg-[#e8e4df]" />}
@@ -169,7 +174,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
         </div>
 
         {/* Right: Sticky map */}
-        <div className="w-[40%] pt-16 pr-16 pb-16">
+        <div className="w-[50%] pt-16 pr-16 pb-16">
           <div className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden">
             <ReportStickyMap
               themes={reportData.themes}
@@ -178,6 +183,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
               activePOI={activePOI}
               hotelCoordinates={reportData.centerCoordinates}
               onMarkerClick={handleMarkerClick}
+              onMapClick={handleMapClick}
               mapStyle={reportData.mapStyle}
               expandedThemes={expandedThemes}
             />

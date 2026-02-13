@@ -137,41 +137,69 @@
 
 ---
 
-## 2026-02-13 — SEO Content Strategy, Fase 1
+## 2026-02-11 — Strategisk: Placy som POI-database / IP
+
+### Kontekst
+Observasjon fra Redfin sin "Neighborhood"-fane: de bruker **Foursquare** som POI-dataleverandør. Redfin eier null POI-data selv — alt er innkjøpt. Dette er standarden i bransjen: konsument-lag kjøper data fra dataleverandør-lag.
+
+### Strategisk innsikt
+Placy bygger potensielt **verdifull IP** gjennom sin POI-database. To typer punkter:
+
+1. **Google-sourcede POIs:** Hentet via Places API. Rådataene (koordinater, navn, adresse, kategori) er fakta og ikke opphavsrettslig beskyttet. Men Google sine proprietære felter (anmeldelser, bilder, place_id) kan ikke beholdes/videreselges. Over tid bør avhengigheten til Google reduseres.
+
+2. **Native Points:** 100% egne POI-er, skapt redaksjonelt. Dette er ren IP — editorial hooks, local insights, kuratering, tier-klassifisering, relasjoner til Guides/Reports.
+
+### Hva som er IP vs. commodity
+
+| Data | Eierskap | IP-verdi |
+|------|----------|----------|
+| Koordinater, navn, adresse, kategori | Fakta — ingen eier | Lav (commodity) |
+| Google-anmeldelser, bilder, place_id | Google eier | Null (kan ikke beholdes) |
+| Editorial hooks, local insights | **Placy eier** | **Høy** |
+| Kuratering (hvilke POIs, rekkefølge, tier) | **Placy eier** | **Høy** |
+| Relasjoner (POI→Guide, POI→Report) | **Placy eier** | **Høy** |
+| Metadata (vibe, best_for, cuisine_type) | **Placy eier** | **Høy** |
+
+### Retning — ha i bakhodet hele veien
+- **Bygg native points bevisst.** Hver Guide og Report som lages beriker POI-databasen med kuratert, kontekstuell data som Google/Foursquare ikke har.
+- **Gradvis løsrivelse fra Google:** Google som hull-fyller, ikke primærkilde. Egne data først, Google for det vi mangler.
+- **Foursquare-modellen er inspirasjonen:** De pivoterte fra consumer-app til B2B dataleverandør. Placy kan potensielt selge nabolagsanalyse / POI-data til eiendom, kommune, reiseliv.
+- **Differensieringen er kontekst, ikke volum.** Google vinner alltid på antall. Placy sin styrke er kuratert, redaksjonell, norsk/nordisk kontekstuell POI-data.
+- **Alle tre produktene produserer data:** Explorer, Guide, og Report er ikke bare konsumenter av POI-data — de er produsenter. Nettverkseffekten er reell.
+
+### Beslutning
+- Dette er en **bakgrunnsstrategisk retning**, ikke en umiddelbar feature. Men den skal påvirke alle designvalg fremover: prioriter native points, berik eksisterende data, reduser Google-avhengighet gradvis.
+
+---
+
+## 2026-02-13 — Map Popup Card + Layout 50/50
 
 ### Beslutninger
-- **Keyword research gjort manuelt:** SEO-verktøy bak betalingsmurer. Estimerte søkevolum basert på byens størrelse (210K innbyggere), bransjetall og kategoriekonkurranse. "Restaurant Trondheim" ~4400/mnd, "kafé Trondheim" ~1600/mnd
-- **Top 5 prioriterte kategorier:** Restaurant, Kafé, Bar, Badeplass, Park — basert på søkevolum × innholdskvalitet
-- **Config-drevet kuraterte lister** (lib/curated-lists.ts) fremfor DB-drevet: enklere, ingen admin-UI nødvendig ennå, lett å legge til nye lister
-- **Bounding box-filter for geografiske guider:** Bakklandet-guiden bruker bbox [63.4270, 10.3970, 63.4330, 10.4100] for å scope til nabolaget
-- **Editorial hooks synlige på mobil:** Endret fra `hidden sm:block` til alltid synlig med `line-clamp-1`. Mer innhold = bedre SEO-signaler
-- **FAQ structured data på kategori- og guide-sider:** Dynamiske spørsmål basert på data (antall steder, best vurderte)
+- **Accordion expand fjernet fra Report-kortlista.** All detaljert POI-info (bilde, editorial, åpningstider, action-knapper) flyttes til en popup-card som rendres over markøren i kartet. Inspirert av pilegrimsleden.no/kart sitt mønster.
+- **Layout 50/50** (tilbake fra 60/40 i sesjon 4). Med accordion borte trenger kompakte kort-rader mindre plass. 50/50 gir kartet nok rom til popup-kortet.
+- **Popup som Marker child** i react-map-gl — ingen manuell koordinat→piksel-konvertering. Mapbox håndterer posisjonering automatisk.
+- **On-demand data-fetching** for åpningstider — hentes kun når popup åpnes, ikke for alle kort i lista.
+- **Transit/sanntidsdata droppet fra Report.** Realtime bysykkel/buss var i accordion-viewet. Ikke inkludert i popup — akseptabelt fordi transit er mest relevant i Explorer, ikke i en redaksjonell artikkel.
 
 ### Levert
-- DB-migrasjon 019: intro-tekster for 5 kategorier (NO+EN) + manglende category_slugs (park, badeplass, lekeplass, hundepark, outdoor)
-- `components/seo/FAQJsonLd.tsx` — gjenbrukbar FAQ-komponent
-- `lib/curated-lists.ts` — 3 guider for Trondheim (beste restauranter, badeplasser, bakklandet)
-- `lib/public-queries.ts` — `getCuratedPOIs()` med filter for kategori, tier, bbox, limit
-- `app/(public)/[area]/guide/[slug]/page.tsx` — guide-side med JSON-LD, FAQ, POI-grid
-- Editorial hooks synlig på mobil (NO+EN kategori-sider)
-- robots.txt oppdatert med /trips/ og /test-3d/
-- Code review: fikset generateStaticParams-bug, bbox-validering, categoryId null-check
+- `MapPopupCard.tsx` — ny komponent med bilde, editorial hook, local insight, åpningstider, action buttons
+- Bidireksjonell interaksjon: kort→markør (flyTo + popup) og markør→kort (scroll + popup)
+- Code review: fikset race condition i dual useEffects, CSS.escape for sikker querySelector, O(1) poiById lookup
+- Compound-dokumentasjon: `docs/solutions/feature-implementations/report-map-popup-card-20260213.md`
 
 ### Parkert / Åpne spørsmål
-- **Fase 2:** Core Web Vitals-optimalisering, bildekomprimering, lazy loading audit
-- **Fase 3:** Linkbait-artikkel (f.eks. "De 10 beste kafeene på Bakklandet")
-- **Engelske guide-sider:** Kuraterte lister har EN-innhold, men ingen EN guide-rute ennå
-- **Google Search Console:** Bør settes opp ASAP for å tracke indeksering
-- **Sitemap:** Bør inkludere guide-sider (ikke gjort ennå)
-- **Internal linking:** Kategori-sider → guide-sider → POI-sider → tilbake. Linkstrukturen er på plass men kan styrkes
+- ~~Kart-markører visuell differensiering~~ → Levert i forrige sesjon (tier badges, sizing, tooltips)
+- **Popup nær kartkant:** Kan bli klippet av. Ikke løst — Mapbox flyTo sentrerer markøren, men edge cases finnes. Akseptabelt risiko.
+- **Hotel-kategori misklassifisering:** kontorer, stadioner, butikker (fortsatt åpent)
+- **Null-kategori POIs:** 15 POIs med `category_id = null` (fortsatt åpent)
 
 ### Retning
-- Offentlig SEO-side er nå **innholdsmessig operativ**: kategori-sider med intro-tekst, FAQ-schema, kuraterte guider, editorial hooks overalt
-- Neste steg bør være **teknisk SEO** (Fase 2): CWV, sitemap, GSC-oppsett
-- Eller: **mer innhold** — flere kuraterte lister, flere intro-tekster, flere editorial hooks på POIs som mangler det
+- Report-produktet har nå en **klar interaksjonsmodell**: kompakt liste + detaljert popup på kart. Mye renere enn accordion + kart side ved side.
+- Neste naturlige steg for Report: polering av popup (edge-cases, animasjon) eller gå videre til andre produkter.
+- **Tre uløste datakvalitetsproblemer** (hotel-misklassifisering, null-kategorier, Google-avhengighet) akkumulerer. Ingen er blokkerende, men de eroderer kvaliteten gradvis.
 
 ### Observasjoner
-- **Keyword research uten verktøy er overraskende mulig:** Estimater basert på byens størrelse og kategori-popularitet ga fornuftige tall. Viktigere enn eksakte volum er prioriteringsrekkefølgen
-- **Config-drevet innhold er en god mellomstasjon:** Kuraterte lister i TypeScript er versjonskontrollerte, type-safe, og krever null infrastruktur. Kan migrere til DB senere om nødvendig
-- **generateStaticParams-bug var reell P2:** Ville produsert 404 for alle guide-sider ved deploy fordi area-param ble satt til guide-slug istedenfor area-slug
-- **Prosjektet beveger seg fra produkt-bygging til distribusjon:** SEO-arbeid handler om å gjøre eksisterende innhold synlig for Google. Data er der, redaksjonelt innhold er der — nå må søkemotorene finne det
+- **Fjerne ting er ofte bedre enn å legge til.** Å fjerne 278 linjer accordion-kode og erstatte med et fokusert popup-kort ga en renere opplevelse. Report-visningen er nå enklere å forstå.
+- **Code review fant reelle bugs igjen:** Race condition i useEffect var subtil — to effects med ulike deps som delte en ref. Ville trolig manifestert seg som "åpningstider forsvinner" i produksjon.
+- **MapBox `Map` import-konflikt med JS `Map`** — gotcha som bør huskes. Bruk `Record<K,V>` i filer som importerer react-map-gl.
+- **Prosjektet er i "raffinering"-modus.** Arkitekturen er stabil. Endringene handler om å forbedre interaksjonsdesign innenfor eksisterende rammeverk.
