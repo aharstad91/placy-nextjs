@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
-import Image from "next/image";
-import { Star, MapPin } from "lucide-react";
+import { MapPin, Sparkles, ChevronDown } from "lucide-react";
 import type { PublicPOI } from "@/lib/public-queries";
 import { getIcon } from "@/lib/utils/map-icons";
-import SaveButton from "@/components/public/SaveButton";
+import { GoogleRating } from "@/components/ui/GoogleRating";
+import { TierBadge } from "@/components/ui/TierBadge";
+import { shouldShowRating } from "@/lib/themes/rating-categories";
+import ReportPOICard from "@/components/variants/report/ReportPOICard";
 
 const GuideStickyMap = dynamic(() => import("./GuideStickyMap"), {
   ssr: false,
@@ -17,6 +18,8 @@ const GuideStickyMap = dynamic(() => import("./GuideStickyMap"), {
     </div>
   ),
 });
+
+const INITIAL_VISIBLE = 12;
 
 interface GuideMapLayoutProps {
   pois: PublicPOI[];
@@ -31,7 +34,14 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
     "card"
   );
   const [showMobileMap, setShowMobileMap] = useState(false);
-  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [showAll, setShowAll] = useState(false);
+  const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  // Split POIs into featured (Tier 1) and rest
+  const featured = pois.filter((p) => p.poiTier === 1);
+  const rest = pois.filter((p) => p.poiTier !== 1);
+  const visibleRest = showAll ? rest : rest.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = rest.length - INITIAL_VISIBLE;
 
   // Card click → toggle highlight + fly map to POI
   const handleCardLocate = useCallback((poiId: string) => {
@@ -48,11 +58,6 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
     if (card) {
       card.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, []);
-
-  // Link-mode: click on a card → deselect (let Link handle navigation)
-  const handleCardClick = useCallback(() => {
-    setActivePOIId(null);
   }, []);
 
   // Click on empty map area → deselect
@@ -87,73 +92,53 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
 
       {/* Card list — 60% on desktop */}
       <div className="lg:w-[60%] lg:pr-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {pois.map((poi) => {
-            const imageUrl =
-              poi.featuredImage ??
-              (poi.photoReference
-                ? `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=400`
-                : null);
-            const CategoryIcon = getIcon(poi.category.icon);
-            const isActive = activePOIId === poi.id;
-
-            return (
-              <div
-                key={poi.id}
-                ref={(el) => {
-                  if (el) cardRefs.current.set(poi.id, el);
-                  else cardRefs.current.delete(poi.id);
-                }}
-                data-poi-id={poi.id}
-                className={`group relative bg-white rounded-lg overflow-hidden border transition-all ${
-                  isActive
-                    ? "border-[#b45309] ring-2 ring-[#b45309]/20 shadow-md"
-                    : "border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm"
-                }`}
-              >
-                {interactive ? (
-                  /* Interactive mode: card click → map interaction */
-                  <div
-                    className="block cursor-pointer"
+        {/* Highlighted POIs (Tier 1) — horizontal scroll */}
+        {featured.length > 0 && (
+          <div className="mb-6">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#d4cfc8]">
+              {featured.map((poi) => (
+                <div
+                  key={poi.id}
+                  ref={(el) => {
+                    if (el) cardRefs.current.set(poi.id, el);
+                    else cardRefs.current.delete(poi.id);
+                  }}
+                  data-poi-id={poi.id}
+                  className="flex-shrink-0 w-[180px] snap-start"
+                >
+                  <ReportPOICard
+                    poi={poi}
+                    isActive={activePOIId === poi.id}
                     onClick={() => handleCardLocate(poi.id)}
-                  >
-                    <CardContent
-                      poi={poi}
-                      imageUrl={imageUrl}
-                      CategoryIcon={CategoryIcon}
-                    />
-                  </div>
-                ) : (
-                  /* Link mode: card click → navigate to detail page */
-                  <>
-                    <Link
-                      href={`/${areaSlug}/steder/${poi.slug}`}
-                      className="block"
-                      onClick={handleCardClick}
-                    >
-                      <CardContent
-                        poi={poi}
-                        imageUrl={imageUrl}
-                        CategoryIcon={CategoryIcon}
-                      />
-                    </Link>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCardLocate(poi.id);
-                      }}
-                      className="absolute bottom-3 right-3 p-1.5 rounded-md bg-[#f5f3f0] hover:bg-[#eae6e1] text-[#6a6a6a] hover:text-[#1a1a1a] transition-colors"
-                      title="Vis på kart"
-                      aria-label={`Vis ${poi.name} på kartet`}
-                    >
-                      <MapPin className="w-3.5 h-3.5" />
-                    </button>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Compact POI rows — 2-column layout */}
+        {visibleRest.length > 0 && (
+          <CompactPOIList
+            pois={visibleRest}
+            activePOIId={activePOIId}
+            onPOIClick={handleCardLocate}
+            cardRefs={cardRefs}
+          />
+        )}
+
+        {/* Load more */}
+        {hiddenCount > 0 && !showAll && (
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={() => setShowAll(true)}
+              className="flex items-center gap-2 rounded-full border border-[#d4cfc8] bg-white px-5 py-2 text-sm text-[#4a4a4a] hover:bg-[#faf9f7] hover:border-[#b5b0a8] transition-all"
+            >
+              <ChevronDown className="w-4 h-4" />
+              <span>Hent flere punkter ({hiddenCount})</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Sticky map — 40% on desktop */}
@@ -172,75 +157,128 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false }: 
   );
 }
 
-function CardContent({
+/** Two-column compact row grid (matching Report design) */
+function CompactPOIList({
+  pois,
+  activePOIId,
+  onPOIClick,
+  cardRefs,
+}: {
+  pois: PublicPOI[];
+  activePOIId: string | null;
+  onPOIClick: (poiId: string) => void;
+  cardRefs: React.RefObject<Map<string, HTMLElement>>;
+}) {
+  const leftPois = pois.filter((_, i) => i % 2 === 0);
+  const rightPois = pois.filter((_, i) => i % 2 === 1);
+
+  const renderColumn = (columnPois: PublicPOI[]) => (
+    <div className="flex-1 flex flex-col gap-2.5">
+      {columnPois.map((poi) => (
+        <CompactPOIRow
+          key={poi.id}
+          poi={poi}
+          isActive={activePOIId === poi.id}
+          onClick={() => onPOIClick(poi.id)}
+          cardRef={(el) => {
+            if (el) cardRefs.current?.set(poi.id, el);
+            else cardRefs.current?.delete(poi.id);
+          }}
+        />
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="flex items-start gap-2.5">
+      {renderColumn(leftPois)}
+      {renderColumn(rightPois)}
+    </div>
+  );
+}
+
+/** Compact POI row — thumbnail, name, badges, category, rating */
+function CompactPOIRow({
   poi,
-  imageUrl,
-  CategoryIcon,
+  isActive,
+  onClick,
+  cardRef,
 }: {
   poi: PublicPOI;
-  imageUrl: string | null;
-  CategoryIcon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  isActive: boolean;
+  onClick: () => void;
+  cardRef: (el: HTMLElement | null) => void;
 }) {
+  const [imageError, setImageError] = useState(false);
+  const CategoryIcon = getIcon(poi.category.icon);
+
+  const imageUrl = poi.featuredImage
+    ? poi.featuredImage
+    : poi.photoReference
+    ? `/api/places/photo?photoReference=${poi.photoReference}&maxWidth=400`
+    : null;
+
+  const hasImage = imageUrl && !imageError;
+
   return (
-    <>
-      <div className="relative">
-        {imageUrl ? (
-          <div className="aspect-[16/9] bg-[#f5f3f0] overflow-hidden relative">
-            <Image
+    <button
+      ref={cardRef}
+      data-poi-id={poi.id}
+      onClick={onClick}
+      className={`w-full text-left rounded-xl border overflow-hidden transition-all ${
+        isActive
+          ? "bg-[#f0ede8] border-[#d4cfc8] ring-1 ring-[#d4cfc8]"
+          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
+      }`}
+    >
+      <div className="flex items-start gap-3 px-3 py-3">
+        {/* Thumbnail / Category icon */}
+        <div
+          className={`flex-shrink-0 overflow-hidden ${
+            hasImage ? "w-12 h-12 rounded-xl" : "w-9 h-9 rounded-full mt-0.5"
+          }`}
+          style={!hasImage ? { backgroundColor: poi.category.color } : undefined}
+        >
+          {hasImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={imageUrl}
               alt={poi.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="w-full h-full object-cover"
               loading="lazy"
+              onError={() => setImageError(true)}
             />
-          </div>
-        ) : (
-          <div
-            className="aspect-[16/9] flex items-center justify-center"
-            style={{ backgroundColor: poi.category.color + "18" }}
-          >
-            <CategoryIcon
-              className="w-8 h-8"
-              style={{ color: poi.category.color }}
-            />
-          </div>
-        )}
-        <SaveButton
-          poiId={poi.id}
-          poiName={poi.name}
-          className="absolute top-2 right-2 bg-white/70 backdrop-blur-sm"
-        />
-      </div>
-      <div className="p-3">
-        <span
-          className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full mb-1"
-          style={{
-            backgroundColor: poi.category.color + "18",
-            color: poi.category.color,
-          }}
-        >
-          {poi.category.name}
-        </span>
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="text-sm font-semibold text-[#1a1a1a] group-hover:underline leading-snug">
-            {poi.name}
-          </h3>
-          {poi.googleRating != null && (
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <Star className="w-3.5 h-3.5 text-[#b45309] fill-[#b45309]" />
-              <span className="text-xs font-semibold text-[#1a1a1a]">
-                {poi.googleRating.toFixed(1)}
-              </span>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <CategoryIcon className="w-4 h-4 text-white" />
             </div>
           )}
         </div>
-        {poi.editorialHook && (
-          <p className="text-xs text-[#6a6a6a] leading-relaxed line-clamp-2">
-            {poi.editorialHook}
-          </p>
-        )}
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-sm font-semibold text-gray-900 truncate">
+              {poi.name}
+            </h3>
+            <TierBadge poiTier={poi.poiTier} isLocalGem={poi.isLocalGem} variant="inline" />
+            {poi.editorialHook && (
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
+            <span className="text-xs font-medium flex-shrink-0" style={{ color: poi.category.color }}>
+              {poi.category.name}
+            </span>
+            {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
+              <>
+                <span className="text-gray-300 flex-shrink-0">&middot;</span>
+                <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="sm" />
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </>
+    </button>
   );
 }
