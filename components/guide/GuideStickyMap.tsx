@@ -25,22 +25,44 @@ export default function GuideStickyMap({
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-  // Compute bounds from all POIs
-  const bounds = pois.reduce(
-    (acc, poi) => ({
-      minLng: Math.min(acc.minLng, poi.coordinates.lng),
-      maxLng: Math.max(acc.maxLng, poi.coordinates.lng),
-      minLat: Math.min(acc.minLat, poi.coordinates.lat),
-      maxLat: Math.max(acc.maxLat, poi.coordinates.lat),
-    }),
-    {
-      minLng: Infinity,
-      maxLng: -Infinity,
-      minLat: Infinity,
-      maxLat: -Infinity,
-    }
-  );
+  // Compute bounds using IQR to exclude outlier POIs (e.g. Tiller, Stjørdal)
+  const computeRobustBounds = (items: PublicPOI[]) => {
+    if (items.length === 0) return { minLng: 10.4, maxLng: 10.4, minLat: 63.43, maxLat: 63.43 };
 
+    const lats = items.map((p) => p.coordinates.lat).sort((a, b) => a - b);
+    const lngs = items.map((p) => p.coordinates.lng).sort((a, b) => a - b);
+
+    const q1 = (arr: number[]) => arr[Math.floor(arr.length * 0.25)];
+    const q3 = (arr: number[]) => arr[Math.floor(arr.length * 0.75)];
+
+    const latIQR = q3(lats) - q1(lats);
+    const lngIQR = q3(lngs) - q1(lngs);
+    const latLo = q1(lats) - 1.5 * latIQR;
+    const latHi = q3(lats) + 1.5 * latIQR;
+    const lngLo = q1(lngs) - 1.5 * lngIQR;
+    const lngHi = q3(lngs) + 1.5 * lngIQR;
+
+    const inliers = items.filter(
+      (p) =>
+        p.coordinates.lat >= latLo &&
+        p.coordinates.lat <= latHi &&
+        p.coordinates.lng >= lngLo &&
+        p.coordinates.lng <= lngHi
+    );
+
+    const src = inliers.length > 0 ? inliers : items;
+    return src.reduce(
+      (acc, poi) => ({
+        minLng: Math.min(acc.minLng, poi.coordinates.lng),
+        maxLng: Math.max(acc.maxLng, poi.coordinates.lng),
+        minLat: Math.min(acc.minLat, poi.coordinates.lat),
+        maxLat: Math.max(acc.maxLat, poi.coordinates.lat),
+      }),
+      { minLng: Infinity, maxLng: -Infinity, minLat: Infinity, maxLat: -Infinity }
+    );
+  };
+
+  const bounds = computeRobustBounds(pois);
   const centerLng = (bounds.minLng + bounds.maxLng) / 2;
   const centerLat = (bounds.minLat + bounds.maxLat) / 2;
 

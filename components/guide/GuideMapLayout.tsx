@@ -21,9 +21,11 @@ const GuideStickyMap = dynamic(() => import("./GuideStickyMap"), {
 interface GuideMapLayoutProps {
   pois: PublicPOI[];
   areaSlug: string;
+  /** When true, cards interact with map instead of navigating to detail page */
+  interactive?: boolean;
 }
 
-export default function GuideMapLayout({ pois, areaSlug }: GuideMapLayoutProps) {
+export default function GuideMapLayout({ pois, areaSlug, interactive = false }: GuideMapLayoutProps) {
   const [activePOIId, setActivePOIId] = useState<string | null>(null);
   const [activePOISource, setActivePOISource] = useState<"card" | "marker">(
     "card"
@@ -31,15 +33,15 @@ export default function GuideMapLayout({ pois, areaSlug }: GuideMapLayoutProps) 
   const [showMobileMap, setShowMobileMap] = useState(false);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Card locate button → fly to marker on map
+  // Card click → toggle highlight + fly map to POI
   const handleCardLocate = useCallback((poiId: string) => {
-    setActivePOIId(poiId);
+    setActivePOIId((prev) => (prev === poiId ? null : poiId));
     setActivePOISource("card");
   }, []);
 
-  // Marker click → scroll card into view
+  // Marker click → highlight card + scroll to it
   const handleMarkerClick = useCallback((poiId: string) => {
-    setActivePOIId(poiId);
+    setActivePOIId((prev) => (prev === poiId ? null : poiId));
     setActivePOISource("marker");
 
     const card = cardRefs.current.get(poiId);
@@ -48,7 +50,7 @@ export default function GuideMapLayout({ pois, areaSlug }: GuideMapLayoutProps) 
     }
   }, []);
 
-  // Click on a card → deselect (let Link handle navigation)
+  // Link-mode: click on a card → deselect (let Link handle navigation)
   const handleCardClick = useCallback(() => {
     setActivePOIId(null);
   }, []);
@@ -102,92 +104,52 @@ export default function GuideMapLayout({ pois, areaSlug }: GuideMapLayoutProps) 
                     : "border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm"
                 }`}
               >
-                <Link
-                  href={`/${areaSlug}/steder/${poi.slug}`}
-                  className="block"
-                  onClick={handleCardClick}
-                >
-                  <div className="relative">
-                    {imageUrl ? (
-                      <div className="aspect-[16/9] bg-[#f5f3f0] overflow-hidden relative">
-                        <Image
-                          src={imageUrl}
-                          alt={poi.name}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          loading="lazy"
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        className="aspect-[16/9] flex items-center justify-center"
-                        style={{
-                          backgroundColor: poi.category.color + "18",
-                        }}
-                      >
-                        <CategoryIcon
-                          className="w-8 h-8"
-                          style={{ color: poi.category.color }}
-                        />
-                      </div>
-                    )}
-                    <SaveButton
-                      poiId={poi.id}
-                      poiName={poi.name}
-                      className="absolute top-2 right-2 bg-white/70 backdrop-blur-sm"
+                {interactive ? (
+                  /* Interactive mode: card click → map interaction */
+                  <div
+                    className="block cursor-pointer"
+                    onClick={() => handleCardLocate(poi.id)}
+                  >
+                    <CardContent
+                      poi={poi}
+                      imageUrl={imageUrl}
+                      CategoryIcon={CategoryIcon}
                     />
                   </div>
-                  <div className="p-3">
-                    <span
-                      className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full mb-1"
-                      style={{
-                        backgroundColor: poi.category.color + "18",
-                        color: poi.category.color,
-                      }}
+                ) : (
+                  /* Link mode: card click → navigate to detail page */
+                  <>
+                    <Link
+                      href={`/${areaSlug}/steder/${poi.slug}`}
+                      className="block"
+                      onClick={handleCardClick}
                     >
-                      {poi.category.name}
-                    </span>
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="text-sm font-semibold text-[#1a1a1a] group-hover:underline leading-snug">
-                        {poi.name}
-                      </h3>
-                      {poi.googleRating != null && (
-                        <div className="flex items-center gap-0.5 flex-shrink-0">
-                          <Star className="w-3.5 h-3.5 text-[#b45309] fill-[#b45309]" />
-                          <span className="text-xs font-semibold text-[#1a1a1a]">
-                            {poi.googleRating.toFixed(1)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    {poi.editorialHook && (
-                      <p className="text-xs text-[#6a6a6a] leading-relaxed line-clamp-2">
-                        {poi.editorialHook}
-                      </p>
-                    )}
-                  </div>
-                </Link>
-
-                {/* Map locate button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCardLocate(poi.id);
-                  }}
-                  className="absolute bottom-3 right-3 p-1.5 rounded-md bg-[#f5f3f0] hover:bg-[#eae6e1] text-[#6a6a6a] hover:text-[#1a1a1a] transition-colors"
-                  title="Vis på kart"
-                  aria-label={`Vis ${poi.name} på kartet`}
-                >
-                  <MapPin className="w-3.5 h-3.5" />
-                </button>
+                      <CardContent
+                        poi={poi}
+                        imageUrl={imageUrl}
+                        CategoryIcon={CategoryIcon}
+                      />
+                    </Link>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCardLocate(poi.id);
+                      }}
+                      className="absolute bottom-3 right-3 p-1.5 rounded-md bg-[#f5f3f0] hover:bg-[#eae6e1] text-[#6a6a6a] hover:text-[#1a1a1a] transition-colors"
+                      title="Vis på kart"
+                      aria-label={`Vis ${poi.name} på kartet`}
+                    >
+                      <MapPin className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Sticky map — 40% on desktop, hidden on mobile */}
+      {/* Sticky map — 40% on desktop */}
       <div className="hidden lg:block lg:w-[40%]">
         <div className="sticky top-14 h-[calc(100vh-3.5rem)] rounded-lg overflow-hidden border border-[#eae6e1]">
           <GuideStickyMap
@@ -198,5 +160,78 @@ export default function GuideMapLayout({ pois, areaSlug }: GuideMapLayoutProps) 
         </div>
       </div>
     </div>
+  );
+}
+
+function CardContent({
+  poi,
+  imageUrl,
+  CategoryIcon,
+}: {
+  poi: PublicPOI;
+  imageUrl: string | null;
+  CategoryIcon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+}) {
+  return (
+    <>
+      <div className="relative">
+        {imageUrl ? (
+          <div className="aspect-[16/9] bg-[#f5f3f0] overflow-hidden relative">
+            <Image
+              src={imageUrl}
+              alt={poi.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              loading="lazy"
+            />
+          </div>
+        ) : (
+          <div
+            className="aspect-[16/9] flex items-center justify-center"
+            style={{ backgroundColor: poi.category.color + "18" }}
+          >
+            <CategoryIcon
+              className="w-8 h-8"
+              style={{ color: poi.category.color }}
+            />
+          </div>
+        )}
+        <SaveButton
+          poiId={poi.id}
+          poiName={poi.name}
+          className="absolute top-2 right-2 bg-white/70 backdrop-blur-sm"
+        />
+      </div>
+      <div className="p-3">
+        <span
+          className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full mb-1"
+          style={{
+            backgroundColor: poi.category.color + "18",
+            color: poi.category.color,
+          }}
+        >
+          {poi.category.name}
+        </span>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <h3 className="text-sm font-semibold text-[#1a1a1a] group-hover:underline leading-snug">
+            {poi.name}
+          </h3>
+          {poi.googleRating != null && (
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <Star className="w-3.5 h-3.5 text-[#b45309] fill-[#b45309]" />
+              <span className="text-xs font-semibold text-[#1a1a1a]">
+                {poi.googleRating.toFixed(1)}
+              </span>
+            </div>
+          )}
+        </div>
+        {poi.editorialHook && (
+          <p className="text-xs text-[#6a6a6a] leading-relaxed line-clamp-2">
+            {poi.editorialHook}
+          </p>
+        )}
+      </div>
+    </>
   );
 }
