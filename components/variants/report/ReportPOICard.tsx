@@ -53,6 +53,8 @@ export default function ReportPOICard({ poi, isActive, onClick }: ReportPOICardP
             alt={poi.name}
             className="w-full h-full object-cover"
             loading="lazy"
+            width={180}
+            height={101}
             onError={() => setImgError(true)}
           />
         ) : (
