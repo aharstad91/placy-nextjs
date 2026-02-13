@@ -118,9 +118,13 @@ export default async function CategoryPageEN({ params }: PageProps) {
           {featured.length > 0 && ` · ${featured.length} recommended`}
         </p>
         {catInfo.introText && (
-          <p className="mt-4 text-base text-[#4a4a4a] leading-relaxed max-w-3xl">
-            {catInfo.introText}
-          </p>
+          <div className="mt-4 space-y-3 max-w-3xl">
+            {catInfo.introText.split("\n\n").map((paragraph, i) => (
+              <p key={i} className="text-base text-[#4a4a4a] leading-relaxed">
+                {paragraph}
+              </p>
+            ))}
+          </div>
         )}
       </section>
 
@@ -207,6 +211,11 @@ function POICardEN({
         {poi.editorialHook && (
           <p className="text-xs text-[#6a6a6a] leading-relaxed line-clamp-2">
             {poi.editorialHook}
+          </p>
+        )}
+        {poi.localInsight && (
+          <p className="text-xs text-[#8a7d6b] leading-relaxed italic line-clamp-2 mt-1">
+            {poi.localInsight}
           </p>
         )}
       </div>

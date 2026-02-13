@@ -14,6 +14,7 @@ import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import ItemListJsonLd from "@/components/seo/ItemListJsonLd";
 import FAQJsonLd from "@/components/seo/FAQJsonLd";
 import GuideMapLayout from "@/components/guide/GuideMapLayout";
+import CategoryHighlights from "@/components/public/CategoryHighlights";
 
 export const revalidate = 86400;
 
@@ -94,8 +95,12 @@ export default async function CategoryPage({ params }: PageProps) {
     .filter((c) => c.slug !== categorySlug && c.count > 0)
     .slice(0, 8);
 
+  // Featured POIs with editorial content for highlights section
+  const editorialFeatured = featured.filter((p) => p.editorialHook);
+
   // FAQ structured data for SEO — use categorySlug (plural) for grammatically correct Norwegian
   const topRated = pois.filter((p) => p.googleRating != null).sort((a, b) => (b.googleRating ?? 0) - (a.googleRating ?? 0));
+  const withEditorial = pois.filter((p) => p.editorialHook);
   const faqItems = [
     {
       question: `Hvor mange ${categorySlug} er det i ${area.nameNo}?`,
@@ -104,7 +109,13 @@ export default async function CategoryPage({ params }: PageProps) {
     ...(topRated.length > 0
       ? [{
           question: `Hva er de best vurderte ${categorySlug} i ${area.nameNo}?`,
-          answer: `De best vurderte inkluderer ${topRated.slice(0, 3).map((p) => `${p.name} (${p.googleRating?.toFixed(1)})`).join(", ")}.`,
+          answer: `De best vurderte inkluderer ${topRated.slice(0, 3).map((p) => `${p.name} (${p.googleRating?.toFixed(1)}★)`).join(", ")}.`,
+        }]
+      : []),
+    ...(withEditorial.length > 3
+      ? [{
+          question: `Hvilke ${categorySlug} i ${area.nameNo} anbefaler Placy?`,
+          answer: `Placy anbefaler spesielt ${editorialFeatured.slice(0, 4).map((p) => p.name).join(", ")}${editorialFeatured.length > 4 ? ` og ${editorialFeatured.length - 4} til` : ""}. Disse er håndplukket basert på lokalkunnskap og kvalitet.`,
         }]
       : []),
   ];
@@ -144,11 +155,23 @@ export default async function CategoryPage({ params }: PageProps) {
           {featured.length > 0 && ` · ${featured.length} anbefalte`}
         </p>
         {catInfo.introText && (
-          <p className="mt-4 text-base text-[#4a4a4a] leading-relaxed max-w-3xl">
-            {catInfo.introText}
-          </p>
+          <div className="mt-4 space-y-3 max-w-3xl">
+            {catInfo.introText.split("\n\n").map((paragraph, i) => (
+              <p key={i} className="text-base text-[#4a4a4a] leading-relaxed">
+                {paragraph}
+              </p>
+            ))}
+          </div>
         )}
       </section>
+
+      {/* Editorial highlights — Tier 1 with editorial content */}
+      {editorialFeatured.length > 0 && (
+        <CategoryHighlights
+          pois={editorialFeatured}
+          areaSlug={area.slugNo}
+        />
+      )}
 
       {/* Map + card layout */}
       <GuideMapLayout pois={pois} areaSlug={area.slugNo} interactive />
