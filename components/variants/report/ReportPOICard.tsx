@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { POI } from "@/lib/types";
 import { MapPin } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
@@ -47,14 +48,12 @@ export default function ReportPOICard({ poi, isActive, onClick }: ReportPOICardP
         style={!imageUrl ? { backgroundColor: poi.category.color + "20" } : undefined}
       >
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={imageUrl}
             alt={poi.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            width={180}
-            height={101}
+            fill
+            sizes="180px"
+            className="object-cover"
             onError={() => setImgError(true)}
           />
         ) : (
@@ -109,6 +108,6 @@ function resolveImageUrl(poi: POI, imgError: boolean): string | null {
   if (imgError) return null;
   if (poi.featuredImage) return poi.featuredImage;
   if (poi.photoReference)
-    return `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=400`;
+    return `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=360`;
   return null;
 }

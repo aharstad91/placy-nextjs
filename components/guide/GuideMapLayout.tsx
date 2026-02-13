@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, memo } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { MapPin, Sparkles, ChevronDown } from "lucide-react";
 import type { PublicPOI } from "@/lib/public-queries";
 import { getIcon } from "@/lib/utils/map-icons";
@@ -270,7 +271,7 @@ const CompactPOIRow = memo(function CompactPOIRow({
   const imageUrl = poi.featuredImage
     ? poi.featuredImage
     : poi.photoReference
-    ? `/api/places/photo?photoReference=${poi.photoReference}&maxWidth=400`
+    ? `/api/places/photo?photoReference=${poi.photoReference}&maxWidth=96`
     : null;
 
   const hasImage = imageUrl && !imageError;
@@ -310,14 +311,13 @@ const CompactPOIRow = memo(function CompactPOIRow({
           style={!hasImage ? { backgroundColor: poi.category.color } : undefined}
         >
           {hasImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={imageUrl}
               alt={poi.name}
-              className="w-full h-full object-cover"
-              loading="lazy"
               width={48}
               height={48}
+              sizes="48px"
+              className="w-full h-full object-cover"
               onError={() => setImageError(true)}
             />
           ) : (
