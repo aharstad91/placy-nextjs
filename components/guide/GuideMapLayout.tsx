@@ -30,13 +30,16 @@ interface GuideMapLayoutProps {
   interactive?: boolean;
   /** Static map image URL — shown as zero-JS placeholder until user interacts */
   staticMapUrl?: string | null;
+  /** Locale for link generation */
+  locale?: "no" | "en";
 }
 
-function poiHref(areaSlug: string, slug: string) {
+function poiHref(areaSlug: string, slug: string, locale: "no" | "en" = "no") {
+  if (locale === "en") return `/en/${areaSlug}/places/${slug}`;
   return `/${areaSlug}/steder/${slug}`;
 }
 
-export default function GuideMapLayout({ pois, areaSlug, interactive = false, staticMapUrl }: GuideMapLayoutProps) {
+export default function GuideMapLayout({ pois, areaSlug, interactive = false, staticMapUrl, locale = "no" }: GuideMapLayoutProps) {
   const [activePOIId, setActivePOIId] = useState<string | null>(null);
   const [activePOISource, setActivePOISource] = useState<"card" | "marker">(
     "card"
@@ -103,7 +106,7 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false, st
                   if (el) cardRefs.current.set(poi.id, el);
                   else cardRefs.current.delete(poi.id);
                 }}
-                href={poiHref(areaSlug, poi.slug)}
+                href={poiHref(areaSlug, poi.slug, locale)}
                 data-poi-id={poi.id}
                 className="flex-shrink-0 w-[180px] snap-start"
                 onClick={interactive ? (e) => { e.preventDefault(); handleCardLocate(poi.id); } : undefined}
@@ -127,6 +130,7 @@ export default function GuideMapLayout({ pois, areaSlug, interactive = false, st
           cardRefs={cardRefs}
           areaSlug={areaSlug}
           interactive={interactive}
+          locale={locale}
         />
       )}
 
@@ -249,6 +253,7 @@ function CompactPOIList({
   cardRefs,
   areaSlug,
   interactive,
+  locale = "no",
 }: {
   pois: PublicPOI[];
   activePOIId: string | null;
@@ -256,6 +261,7 @@ function CompactPOIList({
   cardRefs: React.RefObject<Map<string, HTMLElement>>;
   areaSlug: string;
   interactive: boolean;
+  locale?: "no" | "en";
 }) {
   const leftPois = pois.filter((_, i) => i % 2 === 0);
   const rightPois = pois.filter((_, i) => i % 2 === 1);
@@ -272,6 +278,7 @@ function CompactPOIList({
           cardRefs={cardRefs}
           areaSlug={areaSlug}
           interactive={interactive}
+          locale={locale}
         />
       ))}
     </div>
@@ -294,6 +301,7 @@ const CompactPOIRow = memo(function CompactPOIRow({
   cardRefs,
   areaSlug,
   interactive,
+  locale = "no",
 }: {
   poi: PublicPOI;
   isActive: boolean;
@@ -302,6 +310,7 @@ const CompactPOIRow = memo(function CompactPOIRow({
   cardRefs: React.RefObject<Map<string, HTMLElement>>;
   areaSlug: string;
   interactive: boolean;
+  locale?: "no" | "en";
 }) {
   const [imageError, setImageError] = useState(false);
   const CategoryIcon = getIcon(poi.category.icon);
@@ -331,7 +340,7 @@ const CompactPOIRow = memo(function CompactPOIRow({
   return (
     <a
       ref={cardRef}
-      href={poiHref(areaSlug, poi.slug)}
+      href={poiHref(areaSlug, poi.slug, locale)}
       data-poi-id={poiId}
       onClick={handleClick}
       className={`block w-full text-left rounded-xl border overflow-hidden transition-all ${

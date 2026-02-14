@@ -34,6 +34,12 @@ export default function PlacyHeader({ locale = "no", currentPath }: PlacyHeaderP
             >
               Trondheim
             </Link>
+            <Link
+              href={isEnglish ? "/en/visit-trondheim" : "/visit-trondheim"}
+              className="text-sm text-[#6a6a6a] hover:text-[#1a1a1a] transition-colors"
+            >
+              {isEnglish ? "Visit Trondheim" : "Besøk Trondheim"}
+            </Link>
           </nav>
 
           {/* Language toggle */}

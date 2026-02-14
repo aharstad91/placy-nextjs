@@ -342,6 +342,7 @@ export async function getCuratedPOIs(
   areaId: string,
   options: {
     categoryId?: string | null;
+    categoryIds?: string[];
     tier?: 1;
     bbox?: [number, number, number, number];
     limit?: number;
@@ -356,7 +357,9 @@ export async function getCuratedPOIs(
     .eq("area_id", areaId)
     .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`);
 
-  if (options.categoryId != null) {
+  if (options.categoryIds?.length) {
+    query = query.in("category_id", options.categoryIds);
+  } else if (options.categoryId != null) {
     query = query.eq("category_id", options.categoryId);
   }
   if (options.tier) {

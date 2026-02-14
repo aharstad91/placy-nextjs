@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { createPublicClient } from "@/lib/supabase/public-client";
 import { slugify } from "@/lib/utils/slugify";
 import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
+import { CURATED_LISTS } from "@/lib/curated-lists";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const client = createPublicClient();
@@ -16,6 +17,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(),
     changeFrequency: "weekly",
     priority: 1,
+  });
+
+  // Visit Trondheim landing pages
+  entries.push({
+    url: `${baseUrl}/visit-trondheim`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.9,
+  });
+  entries.push({
+    url: `${baseUrl}/en/visit-trondheim`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.9,
   });
 
   // Get all active areas
@@ -67,6 +82,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.8,
         });
       }
+    }
+
+    // Guide pages (curated lists)
+    const areaLists = CURATED_LISTS[area.id] ?? [];
+    for (const list of areaLists) {
+      entries.push({
+        url: `${baseUrl}/${area.slug_no}/guide/${list.slug}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.8,
+      });
+      entries.push({
+        url: `${baseUrl}/en/${area.slug_en}/guide/${list.slugEn ?? list.slug}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.8,
+      });
     }
 
     // Get all POIs for this area
