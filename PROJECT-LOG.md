@@ -528,3 +528,40 @@ cityguide.no leverer brosjyrer via Visit Trondheim, men er en tynn katalogside u
 ### Observasjoner
 - **To tabeller for POI-linking er en vedvarende feilkilde.** `project_pois` (container ID) og `product_pois` (UUID) har overlappende formål men ulike nøkkeltyper. Bør dokumenteres tydelig eller konsolideres
 - **Prop threading gjennom 5 nivåer er en code smell.** `areaSlug` passeres fra server page → page component → list/panel → card. Context eller en shared hook ville vært renere, men overkill for én prop
+
+---
+
+## 2026-02-14 (sesjon 7) — Curator writing levels: kontekst bestemmer skrivestil
+
+### Kontekst
+Curator-skillen (sesjon 2) definerte stemme og prinsipper for POI-tekster. Da vi brukte den til å skrive kategori-bridgeText (som oppsummerer 90 steder), feilet tilnærmingen: å cherry-picke 3 av 90 steder uten kontekst føltes tilfeldig og snevert. Brukeren: "det ble for snevert på noen få steder, som 3 av 90 plasser blir nevnt, uten at en egentlig helt ser sammenhengen hvorfor disse blir nevnt."
+
+### Beslutninger
+- **Skrivestil differensieres etter kontekst.** POI-hooks navngir mennesker, datoer, spesifikke detaljer. Kategori-bridgeText beskriver nabolagskarakter og bruker steder som endepunkter i en bevegelse, ikke som anbefalinger
+- **"Nabolag + 1-2 ankere"-tilnærming for bridgeText.** Ankerpunktene (f.eks. "fra Britannia-kvartalet til Bakklandets trehuskaféer") definerer ytterpunktene i et spekter — de er navigasjonspunkter, ikke favoritter
+- **Ingen statistikk i tekst.** UI-et viser antall/rating/anmeldelser separat — teksten gjentar ikke tallene
+- **categoryDescriptions som ny datastruktur.** `reportConfig.themes[].categoryDescriptions` — Record<string, string> som gir hver sub-kategori (restaurant, kafé, bakeri, etc.) sin egen nabolagsbeskrivelse
+- **Doblet tekstlengde** på tema-bridgeText etter feedback — originalt for kompakt til å gi reell nabolagsfølelse
+
+### Levert
+- Brainstorm: `docs/brainstorms/2026-02-14-curator-writing-levels-brainstorm.md`
+- Migrasjon 030: 5 tema-bridgeText omskrevet med nabolagskarakter-tilnærming
+- Migrasjon 031: 22 sub-kategori-beskrivelser + dobbel bridgeText-lengde
+- Kode: `categoryDescriptions` i types.ts, report-data.ts, report-themes.ts, ReportThemeSection.tsx
+- TypeScript kompilerer rent, migrasjoner pushet til produksjon
+
+### Parkert / Åpne spørsmål
+- **Curator-nivåer for ALLE teksttyper mangler.** Brainstormen definerte bare bridgeText-nivået. heroIntro, intro_text, editorial_hook, local_insight, seo_description — alle trenger sin egen kontekstbeskrivelse i Curator-skillen. Dokumentert som TODO i brainstormen
+- **Guide mangler fortsatt areaSlug/"Les mer" CTA** (fra sesjon 6)
+- **Kafé 021-hooks under standard** — 16 hooks som bør skrives om med Curator-skillen (fra sesjon 2)
+
+### Retning
+- **Curator-skillen er nå operasjonell på to nivåer:** POI-hooks (spesifikt, mennesker, datoer) og kategori-bridgeText (nabolagskarakter, ankerpunkter). Resten av nivåene bør defineres før neste store editorial-pass
+- **Scandic Nidelven-rapporten er den mest komplette demoen.** 93 kuraterte restauranter, 22 sub-kategori-beskrivelser, 5 tema-bridgeText-er, alle med nabolagskarakter-tilnærming. Kan brukes som referanse for fremtidige rapporter
+- **Neste editorial-arbeid bør starte med å fullføre Curator-nivåene** i skillen — slik at alle teksttyper har tydelig skriveoppskrift før vi kuraterer neste kategori
+
+### Observasjoner
+- **Kontekst trumfer prinsipper.** De 6 Curator-prinsippene (navngi, bevegelse, kontraster, etc.) er riktige, men vektleggingen endres dramatisk basert på hva teksten beskriver. "Navngi" er essensielt for POI-hooks men kontraproduktivt for kategori-oppsummeringer. En skill uten kontekst-differensiering gir feil output
+- **Brukerens magefølelse var riktig.** Første bridgeText-versjon fulgte alle prinsippene teknisk, men føltes feil. "Det ble for snevert" er et presist problem — skrivestilen matchet ikke tekstens funksjon. Lærdom: test alltid ny skrivestil mot brukerens leseopplevelse, ikke bare mot en sjekkliste
+- **22 sub-kategori-beskrivelser er mye tekst.** Kvaliteten varierer — transport-kategoriene (buss, tog, bysykkel) er mer faktabaserte og mindre "nabolags"-pregede enn mat-kategoriene. Det er kanskje riktig — ikke alle kategorier har like sterk nabolagskarakter
+- **Migrasjonsnummer-konflikter fortsetter.** 028 og 029 kolliderte med andre sesjoner, måtte bruke 030 og 031. Med 6-7 parallelle sesjoner på én dag er dette uunngåelig. Sjekk alltid `supabase migration list` først
