@@ -207,3 +207,7 @@ npm run import:taxi
 
 35 taxi stands successfully imported and visible at:
 `http://localhost:3000/admin/pois?categories=taxi`
+
+## Related Issues
+
+- See also: [arcgis-dual-table-linking-DataImport-20260214.md](./arcgis-dual-table-linking-DataImport-20260214.md) — ArcGIS REST API import with dual table-linking pattern (project_pois + product_pois)
