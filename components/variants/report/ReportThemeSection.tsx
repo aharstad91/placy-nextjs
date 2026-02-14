@@ -414,9 +414,16 @@ function SubSectionContent({
       </div>
 
       {/* Quote */}
-      <p className="text-base text-[#4a4a4a] leading-relaxed mb-4">
+      <p className="text-base text-[#4a4a4a] leading-relaxed mb-2">
         {sub.quote}
       </p>
+
+      {/* Bridge text */}
+      {sub.bridgeText && (
+        <p className="text-sm italic text-[#5a5a5a] leading-relaxed mb-4">
+          {sub.bridgeText}
+        </p>
+      )}
 
       {/* Highlight photo cards */}
       {sub.displayMode === "editorial" && sub.highlightPOIs.length > 0 && (

@@ -136,6 +136,7 @@ export interface ReportThemeConfig {
   color: string;
   intro?: string;
   bridgeText?: string;
+  categoryDescriptions?: Record<string, string>;
 }
 
 export interface ReportConfig {

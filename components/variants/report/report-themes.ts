@@ -9,6 +9,7 @@ import { DEFAULT_THEMES } from "@/lib/themes";
 export interface ReportThemeDefinition extends ThemeDefinition {
   intro?: string;
   bridgeText?: string;
+  categoryDescriptions?: Record<string, string>;
 }
 
 /**

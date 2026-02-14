@@ -51,6 +51,7 @@ export interface ReportSubSection {
   allPOIs: POI[];
   displayMode: ThemeDisplayMode;
   quote: string;
+  bridgeText?: string;
 }
 
 export interface ReportTheme {
@@ -176,6 +177,7 @@ function buildSubSections(
   themePOIs: POI[],
   parentDisplayMode: ThemeDisplayMode,
   projectId: string,
+  categoryDescriptions?: Record<string, string>,
 ): ReportSubSection[] {
   // Group by category
   const byCat = new Map<string, POI[]>();
@@ -240,6 +242,7 @@ function buildSubSections(
       allPOIs: sortedCatPOIs,
       displayMode: parentDisplayMode,
       quote,
+      bridgeText: categoryDescriptions?.[catId],
     };
   });
 }
@@ -324,7 +327,7 @@ export function transformToReportData(project: Project): ReportData {
     );
 
     // Build sub-sections for categories exceeding threshold
-    const subSections = buildSubSections(sorted, displayMode, project.id);
+    const subSections = buildSubSections(sorted, displayMode, project.id, themeDef.categoryDescriptions);
 
     themes.push({
       id: themeDef.id,
