@@ -503,3 +503,28 @@ cityguide.no leverer brosjyrer via Visit Trondheim, men er en tynn katalogside u
 - **Reconciliation er nødvendig.** Batch 1 fant Top Chef 2015, Batch 3 brukte 2016 for samme person. Uten manuell sjekk hadde vi hatt inkonsistent data. **Alltid søk etter overlappende entiteter på tvers av batches**
 - **Migrasjonsnummer-konflikter er en real risiko med parallelle sesjoner.** Session A hadde pushet 028 mens vi jobbet — måtte renames til 029. Bør alltid sjekke `supabase migration list` før man velger nummer
 - **Redaksjonelt innhold gjør produktet levende.** Brukerens kommentar "det oppleves spennende å lese for en som er lokalkjent" er den beste valideringen. Hookene treffer riktig register — informative uten å være Wikipedia-tørre
+
+---
+
+## 2026-02-14 (sesjon 6) — "Les mer" CTA i Explorer + bugfix product_pois
+
+### Beslutninger
+- **"Les mer" CTA utvidet til Explorer.** Samme mønster som Report — BookOpen-ikon, emerald-styling (vs amber i Report). Linker til `/{area}/steder/{slug}` for intern SEO-linking
+- **`product_pois` vs `project_pois` bug fikset.** `getAreaSlugForProject()` brukte feil tabell. `projectData.id` er alltid en product UUID, men `project_pois` bruker container-IDer. Endret til `product_pois` som bruker product UUIDs
+
+### Levert
+- Bugfix: `getAreaSlugForProject()` bruker nå `product_pois.product_id` (UUID) i stedet for `project_pois.project_id` (container ID)
+- "Les mer" CTA i Explorer: prop chain `explore/page.tsx → ExplorerPage → ExplorerPOIList/ExplorerPanel → ExplorerPOICard`
+- Visuelt verifisert via Chrome DevTools MCP — knappen vises korrekt med riktig URL
+
+### Parkert / Åpne spørsmål
+- **Guide mangler fortsatt areaSlug.** GuideStickyMap passerer ikke areaSlug til MapPopupCard — "Les mer" CTA vises ikke i Guide ennå
+- **Fargekonsistens:** Report bruker amber-styling for "Les mer", Explorer bruker emerald. Bevisst valg for å differensiere produktene, men kan revurderes
+
+### Retning
+- Intern linking er nå live i to av tre produkter (Report + Explorer). Guide er neste
+- SEO-strategien tar form: klientprodukter → offentlige sider → søkemotorer
+
+### Observasjoner
+- **To tabeller for POI-linking er en vedvarende feilkilde.** `project_pois` (container ID) og `product_pois` (UUID) har overlappende formål men ulike nøkkeltyper. Bør dokumenteres tydelig eller konsolideres
+- **Prop threading gjennom 5 nivåer er en code smell.** `areaSlug` passeres fra server page → page component → list/panel → card. Context eller en shared hook ville vært renere, men overkill for én prop
