@@ -441,3 +441,33 @@ cityguide.no leverer brosjyrer via Visit Trondheim, men er en tynn katalogside u
 - **Landingssiden gjenbruker 100% eksisterende komponenter.** Ingen nye UI-komponenter ble laget — alt er kategori-grid, guide-kort, highlight-kort, SaveButton fra `[area]/page.tsx`. God arkitektur betaler seg
 - **Museum-research med background agent var effektivt.** 12 museer researched og verifisert via web-søk mens hovedarbeidet fortsatte. Parallelisering fungerte godt
 - **10 filer, 1044 linjer — men strukturen er enkel.** Mye av koden er ren markup (landingssider) og data (guide-definisjoner + SQL). Logikk-endringene er minimale (3 linjer i public-queries, 15 linjer i GuideMapLayout)
+
+---
+
+## 2026-02-14 (sesjon 4) — Admin: Offentlige sider — inventaroversikt
+
+### Beslutninger
+- **Read-only inventar, ikke CMS.** Formålet er å se hva som er produsert, med tellere og lenker. Redigering er ikke i scope
+- **Både Dashboard-sammendrag + dedikert `/admin/public`-side.** Dashboard gir nøkkeltall på ett blikk, detaljsiden gir full oversikt per område
+- **`createPublicClient()` (untyped), ikke `createServerClient()`.** `areas` og `category_slugs` er ikke i Database-typene (migrering 018). Følger mønsteret fra `lib/public-queries.ts`
+- **Paginering for POI-queries.** Supabase sin 1000-rads default-grense ville kuttet data stille. Bruker `.range()`-loop fra `app/admin/pois/page.tsx`-mønsteret
+
+### Levert
+- `app/admin/public/page.tsx` — full oversiktsside: summary cards, per-område kategoritabeller med SEO/intro-statusbadges, kuraterte guider med filter-info, landingssider, editorial coverage stats
+- `app/admin/page.tsx` — ny "Offentlige sider"-seksjon mellom Data og Verktøy med nøkkeltall
+- `components/admin/admin-sidebar.tsx` — ny nav-item "Offentlige sider" med Globe-ikon
+- `docs/solutions/feature-implementations/admin-public-pages-inventory-20260214.md`
+- Branch: `feat/public-pages-admin`
+
+### Parkert / Åpne spørsmål
+- **EN-versjoner vises ikke separat.** Kategorisider og guider har NO+EN, men admin viser kun NO-slugs. Akseptabelt for nå — oversikt er viktigere enn completeness
+- **Guide POI-count mangler.** Kuraterte guider viser filter-info (Tier 1, Bbox, kategori) men ikke faktisk POI-antall. Ville kreve separate queries per guide
+
+### Retning
+- **Admin-inventaret gir kontroll tilbake.** Brukeren kan nå se alt offentlig innhold fra én side — samme mønster som `/admin/projects` for kunder
+- **Neste naturlige admin-utvidelse:** Redigering av SEO-titler og intro-tekster direkte fra admin. Men det er CMS-funksjonalitet som bør vurderes separat
+
+### Observasjoner
+- **Lucide `Map`-ikon shadower global `Map` constructor.** Importert `Map` fra lucide-react → `new Map<string, string>()` feiler med "Expected 0 type arguments". Må aliase til `MapIcon`. Dokumentert i compound-learnings
+- **`force-dynamic` er lett å glemme på admin-sider.** Uten den cacher Next.js ISR resultater fra build-tid, som gir utdaterte tall. Bør vurdere å gjøre dette til mønster for alle admin-sider
+- **Compound-kunnskapen betaler seg.** Supabase-pagineringsmønsteret, trust-score-filteret, og public client-bruken var alle dokumentert fra tidligere sesjoner. Implementasjonen gikk raskere fordi mønstrene var kjente
