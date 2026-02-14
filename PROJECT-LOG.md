@@ -328,3 +328,33 @@ PageSpeed Insights for `/trondheim/bakerier` viste **6.9s hovedtråd-arbeid** p�
 - **Statisk kartbilde var en elegant løsning.** Null JS, instant render, smidig overgang. Brukeren merker ikke byttet — kartet "blir interaktivt" plutselig
 - **`next/font` er en gratis seier.** Self-hosting + subsetting + swap = bedre font-loading enn manuell `@font-face`. Bør alltid brukes
 - **Performance trace på localhost er misvisende for absolutte tall** (LCP 166ms er urealistisk rask). Men relative forskjeller og third-party-analyse er nyttige. Produksjonstall fra PageSpeed Insights er den endelige sannheten
+
+---
+
+## 2026-02-14 — Mobil LCP-optimalisering: Google CDN-URLer
+
+### Beslutninger
+- **Resolve Google photo redirect-URLer ved ISR-tid.** Kategorisiden resolver nå de 2 første editorial highlight-bildenes Google Places photo-referanser til direkte `lh3.googleusercontent.com`-URLer. Eliminerer 2 nettverkshopp (serverless proxy + Google API 302 redirect)
+- **Beholdt proxy for øvrige bilder.** Kun LCP-bildene (de 2 første highlight-kortene) resolves — resten bruker fortsatt `/api/places/photo`-proxyen. Balanserer Google API-kall vs brukeropplevelse
+- **Forbedret CDN-caching.** `s-maxage` + `stale-while-revalidate` på foto-proxy + `minimumCacheTTL: 2592000` i next.config for `/_next/image`
+
+### Resultater — Produksjon (placy.no/trondheim/bakerier)
+| Metrikk | Desktop | Mobil (før) | Mobil (etter) |
+|---------|---------|-------------|---------------|
+| Performance | 99 | 85 | **97** |
+| LCP | 0.8s | 4.4s | **2.6s** |
+| TBT | 0ms | 0ms | 0ms |
+| CLS | 0 | 0 | 0 |
+
+### Parkert / Åpne spørsmål
+- **`photo_reference` er NULL i databasen** for mange POI-er — referansen er bakt inn i `featured_image`-URL-en som proxy-sti. Ideelt bør `featured_image` inneholde direkte CDN-URLer (ikke proxy-stier), og `photo_reference` bør synces periodisk fra Google for å unngå utløpte referanser
+- **Mobil LCP 2.6s er gul, ikke grønn.** De gjenstående ~1.7s skyldes render-blocking CSS (uunngåelig med Next.js) og bildestørrelse på Slow 4G. Å komme under 2.5s krever enten inlining av kritisk CSS eller vesentlig mindre bilder
+- **Google photo-referanser utløper.** Resolve-funksjonen feiler gracefully (faller tilbake til proxy-URL), men bilder vil til slutt bli 404 uten periodisk refresh fra Google Places API
+
+### Retning
+- **PageSpeed er nå god nok.** 97 mobil, 99 desktop. Videre forbedring krever dyptgående arkitekturendringer (kritisk CSS, bildepipeline) med avtagende utbytte
+- **Neste naturlige steg:** Refresh `photo_reference`/`featured_image` til direkte CDN-URLer for alle POI-er via batch-jobb — fjerner proxy-avhengigheten helt
+
+### Observasjoner
+- **`featured_image` i DB inneholder proxy-URLer**, ikke direkte bilde-URLer. Dette var en overraskelse. Det betyr at all bildelasting alltid gikk gjennom serverless-funksjonen, selv når `featuredImage` var satt
+- **Google Places Photo API redirecter konsistent** til `lh3.googleusercontent.com/places/...` eller `/place-photos/...`. URL-ene er stabile og offentlige (ingen API-nøkkel). Trygt å cache og eksponere
