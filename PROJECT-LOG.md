@@ -393,3 +393,51 @@ PageSpeed Insights for `/trondheim/bakerier` viste **6.9s hovedtråd-arbeid** p�
 - **Register-differensiering var det brukeren trengte.** Brainstormen landet på "én stemme, tilpasset register" — men første implementering hadde bare én mal per teksttype. Uten maler per register er prinsippet verdiløst i praksis.
 - **Destillering > kopiering.** Spontan-eksemplet i before-after viser teknikken: ta Anders Husas 200-ords anmeldelse og komprimer til 2 setninger med høyere presisjon enn originalen. Placy er mer presist enn kildene fordi vi komprimerer mer.
 - **72 tekster er nok til å definere en stemme.** Man trenger ikke hundrevis — man trenger diversitet (4 ulike sjangre) og grundig analyse. Sem & Johnsen ga bevegelse, Anders Husa ga mennesker, Monocle ga materialitet, LP ga struktur. Sammen dekker de hele spekteret.
+
+---
+
+## 2026-02-14 (sesjon 3) — Visit Trondheim Demo-pakke
+
+### Kontekst
+cityguide.no leverer brosjyrer via Visit Trondheim, men er en tynn katalogside uten redaksjonelt innhold, kart, eller kuratering. Placy har 1853 POIs med tier-rangering, editorial hooks, og kartopplevelse. Mål: bygge en dedikert demo som viser Visit Trondheim hva Placy kan tilby som partner.
+
+### Beslutninger
+- **Standalone `/visit-trondheim`-rute** (ikke under `[area]`) — unngår kollisjon med dynamisk area-routing, gir dedikert URL å dele med Visit Trondheim
+- **Multi-kategori-filter (`categoryIds`)** i `getCuratedPOIs` — Supabase `.in()` for å hente flere kategorier i én query. Bakoverkompatibelt med eksisterende `categoryId`
+- **7 tematiske guider** (3 eksisterende + 4 nye): beste-restauranter, badeplasser, bakklandet, historisk-byvandring, smak-trondheim, familievennlig, uteservering-og-uteliv
+- **Engelsk guide-rute** (`/en/[area]/guide/[slug]`) — manglet helt, nå speiler norsk versjon med `titleEn`, `slugEn`, engelske labels
+- **`slugEn` på CuratedList** — gjør at engelske URLer kan ha egne slugs (`taste-trondheim` i stedet for `smak-trondheim`)
+- **`locale` prop i GuideMapLayout** — for korrekt lenke-generering (`/en/{area}/places/` vs `/{area}/steder/`)
+
+### Levert
+- `/visit-trondheim` + `/en/visit-trondheim` — landingssider med hero-kart, 7 guider, turistkategorier, redaksjonens favoritter, partnerskaps-CTA
+- `/trondheim/guide/historisk-byvandring` — sightseeing + museum, 19 steder
+- `/trondheim/guide/smak-trondheim` — restaurant + cafe + bakery + bar, Tier 1, 28 steder
+- `/trondheim/guide/familievennlig` — lekeplass + museum + park + badeplass
+- `/trondheim/guide/uteservering-og-uteliv` — bar + restaurant, Tier 1
+- Alle 7 guider på engelsk (`/en/trondheim/guide/...`)
+- Sitemap med 16 nye guide-URLer + 2 visit-trondheim-URLer
+- Header-nav: "Besøk Trondheim" / "Visit Trondheim"
+- Migrasjon 026: editorial hooks + local insights for 12 museer (Nidarosdomen, Rockheim, Ringve, Erkebispegården, Vitenskapsmuseet, Rustkammeret, Kunstmuseum, Nordenfjeldske, Stiftsgården, Sverresborg, Sjøfartsmuseum, Jødisk Museum)
+
+### Verifisert
+- Alle sider 200 OK, TypeScript null feil
+- Screenshots av landingsside, guider (NO+EN), museum POI-side med editorial hooks
+- Sitemap inkluderer alle nye URLer
+- Migrasjon 026 kjørt mot produksjon
+
+### Parkert / Åpne spørsmål
+- **Engelsk layout bruker norsk header/footer:** `(public)/layout.tsx` passer `locale="no"` til alle sider. EN-sider under `/en/` arver dette. Bør fikses med layout-gruppe eller middleware, men er et pre-eksisterende problem
+- **Guide-kort på landingssiden mangler POI-count:** Planen sa "antall steder" per guide-kort, men å hente counts for 7 guider server-side er 7 ekstra queries. Droppet for å holde ISR-ytelsen god
+- **Kafé 021-hooks under standard:** Nå som editorial voice skill er definert, bør de 16 kafé-hookene fra migrasjon 021 skrives om
+
+### Retning
+- **Demo-pakken er klar til å vises frem.** URL-er kan deles direkte med Visit Trondheim-kontakter
+- **Neste steg for partnerskap:** Eventuelt tilpasse CTA-seksjonen med mer konkret value proposition, legge til kontaktskjema
+- **Museum-editorial kan utvides:** 12 museer har hooks nå — sightseeing-kategorien (severdigheter) mangler fortsatt editorial. Kristiansten festning, Gamle Bybro, etc.
+
+### Observasjoner
+- **Multi-kategori-filteret var en minimal endring med stor effekt.** Én linje Supabase (`.in()`) åpnet for 4 nye tematiske guider som krysser kategorier. Smak Trondheim med 28 steder fra 4 kategorier er mye rikere enn én enkelt kategori
+- **Landingssiden gjenbruker 100% eksisterende komponenter.** Ingen nye UI-komponenter ble laget — alt er kategori-grid, guide-kort, highlight-kort, SaveButton fra `[area]/page.tsx`. God arkitektur betaler seg
+- **Museum-research med background agent var effektivt.** 12 museer researched og verifisert via web-søk mens hovedarbeidet fortsatte. Parallelisering fungerte godt
+- **10 filer, 1044 linjer — men strukturen er enkel.** Mye av koden er ren markup (landingssider) og data (guide-definisjoner + SQL). Logikk-endringene er minimale (3 linjer i public-queries, 15 linjer i GuideMapLayout)
