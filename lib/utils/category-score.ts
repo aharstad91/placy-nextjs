@@ -175,7 +175,7 @@ const QUOTE_TEMPLATES: Record<string, Record<QuoteLevel, string[]>> = {
   },
   cafe: {
     exceptional: [
-      "Kafé-paradis med noe for enhver smak",
+      "Levende kafémiljø med spesialkaffe og håndverksbakerier",
       "Rikholdig kafékultur i nabolaget",
     ],
     very_good: [

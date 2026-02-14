@@ -80,11 +80,24 @@ Se `references/text-type-specs.md` for maler og eksempler per register.
 
 Også unngå: "hidden gem", "must-visit", "Instagram-worthy", "duftende oase", "skjult perle".
 
+## Tidsregel: historisk tilknytning er trygg, nåværende er skjør
+
+Mennesker bytter jobb, menyer endres, priser justeres. Bruk **historisk form** for å knytte personer til steder:
+
+| Skjørt (unngå) | Trygt (bruk) |
+|-----------------|--------------|
+| "Sellanraa **har** barista Erlend Wessel-Berg" | "Erlend Wessel-Berg vant NM Barista 2025 **på** Sellanraa" |
+| "Kokk Fredrik Engen **leder** kjøkkenet" | "**Grunnlagt av** Jonas Nåvik med erfaring fra Alinea" |
+| "Menyen **inkluderer** sushi og lutefisk" | "**Første restaurant i Trondheim som serverte sushi** (1998)" |
+
+**Tommelregel:** Kan dette bli feil om personen slutter i morgen? Da omformuler til historisk faktum. Grunnleggelse, åpningsår, utmerkelser og prestasjoner er permanente. Nåværende ansettelse, meny og tilbud er forgjengelige.
+
 ## Kvalitetssjekkliste
 
-Sjekk **hver tekst** mot disse 8 punktene:
+Sjekk **hver tekst** mot disse 9 punktene:
 
 - [ ] Ingen forgjengelig info (priser, åpningstider, midlertidige tilbud)
+- [ ] Ingen nåtidspåstander om ansatte, meny eller tilbud som kan endre seg
 - [ ] Minst ett spesifikt navn (person, sted, rett, produkt)
 - [ ] Grunnlagt/årstall hvis relevant og verifiserbart
 - [ ] Første setning fungerer alene (for avkortede visninger)
