@@ -39,11 +39,12 @@ export async function GET(request: NextRequest) {
     const contentType = response.headers.get("content-type") || "image/jpeg";
 
     // Return the image with long cache headers (30 days)
+    // s-maxage for Vercel CDN, stale-while-revalidate for instant revalidation
     return new NextResponse(imageBuffer, {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=2592000", // 30 days
-        "CDN-Cache-Control": "public, max-age=2592000",
+        "Cache-Control":
+          "public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400",
       },
     });
   } catch (error) {

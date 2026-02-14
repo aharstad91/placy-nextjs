@@ -8,6 +8,7 @@ import {
   getPOIsForCategory,
 } from "@/lib/public-queries";
 import { getStaticMapUrlMulti } from "@/lib/mapbox-static";
+import { resolveGooglePhotoUrl } from "@/lib/resolve-photo-url";
 import { getIcon } from "@/lib/utils/map-icons";
 import Breadcrumb from "@/components/public/Breadcrumb";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
@@ -113,6 +114,23 @@ export default async function CategoryPage({ params }: PageProps) {
 
   // Featured POIs with editorial content for highlights section
   const editorialFeatured = featured.filter((p) => p.editorialHook);
+
+  // Pre-resolve Google photo URLs for LCP images (eliminates proxy chain).
+  // featured_image may be a proxy URL (/api/places/photo?photoReference=...).
+  // Resolving to a direct lh3.googleusercontent.com URL eliminates 2 network hops.
+  await Promise.all(
+    editorialFeatured.slice(0, 2).map(async (poi) => {
+      // Extract photoReference from either the column or the proxy URL
+      const ref =
+        poi.photoReference ??
+        poi.featuredImage?.match(/photoReference=([^&]+)/)?.[1];
+      if (ref) {
+        const decoded = decodeURIComponent(ref);
+        const resolved = await resolveGooglePhotoUrl(decoded, 400);
+        if (resolved) poi.featuredImage = resolved;
+      }
+    }),
+  );
 
   // FAQ structured data for SEO — use categorySlug (plural) for grammatically correct Norwegian
   const topRated = pois.filter((p) => p.googleRating != null).sort((a, b) => (b.googleRating ?? 0) - (a.googleRating ?? 0));

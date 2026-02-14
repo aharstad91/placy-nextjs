@@ -327,7 +327,7 @@ async function main() {
 
   // Print category summary
   console.log("📊 Categories:");
-  for (const [name, count] of categoryCounts.entries()) {
+  for (const [name, count] of Array.from(categoryCounts.entries())) {
     console.log(`   ${name}: ${count}`);
   }
   console.log();

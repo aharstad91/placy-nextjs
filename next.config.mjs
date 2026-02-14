@@ -7,6 +7,7 @@ const nextConfig = {
   },
   // Tillat bilder fra eksterne kilder
   images: {
+    minimumCacheTTL: 2592000, // 30 days — match photo proxy cache
     remotePatterns: [
       {
         protocol: "https",
