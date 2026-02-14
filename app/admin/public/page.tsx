@@ -13,12 +13,14 @@ import { createPublicClient } from "@/lib/supabase/public-client";
 import { CURATED_LISTS } from "@/lib/curated-lists";
 import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
 
+export const dynamic = "force-dynamic";
+
 const adminEnabled = process.env.ADMIN_ENABLED === "true";
 
 // Known landing pages (hardcoded routes in app/(public)/)
 const LANDING_PAGES = [
-  { name: "Hovedside", path: "/", pathEn: "/en" },
-  { name: "Visit Trondheim", path: "/visit-trondheim", pathEn: "/en/visit-trondheim" },
+  { name: "Hovedside", path: "/" },
+  { name: "Visit Trondheim", path: "/visit-trondheim" },
 ];
 
 interface AreaStats {
@@ -69,22 +71,41 @@ export default async function AdminPublicPage() {
     );
   }
 
-  // Fetch all data in parallel
-  const [areasResult, poisResult, slugsResult, categoriesResult] = await Promise.all([
+  // Fetch areas, slugs, categories in parallel
+  const [areasResult, slugsResult, categoriesResult] = await Promise.all([
     supabase.from("areas").select("*").eq("active", true).order("name_no"),
-    supabase
-      .from("pois")
-      .select("area_id, category_id, editorial_hook, poi_tier")
-      .not("area_id", "is", null)
-      .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`),
     supabase.from("category_slugs").select("category_id, slug, seo_title, intro_text, locale").eq("locale", "no"),
     supabase.from("categories").select("id, name"),
   ]);
 
+  if (areasResult.error) console.error("Failed to fetch areas:", areasResult.error);
+  if (slugsResult.error) console.error("Failed to fetch slugs:", slugsResult.error);
+  if (categoriesResult.error) console.error("Failed to fetch categories:", categoriesResult.error);
+
   const areas = areasResult.data ?? [];
-  const pois = poisResult.data ?? [];
   const slugs = slugsResult.data ?? [];
   const categories = categoriesResult.data ?? [];
+
+  // Fetch POIs with pagination (Supabase limits to 1000 per request)
+  const PAGE_SIZE = 1000;
+  const pois: { area_id: string | null; category_id: string | null; editorial_hook: string | null; poi_tier: number | null }[] = [];
+  let page = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from("pois")
+      .select("area_id, category_id, editorial_hook, poi_tier")
+      .not("area_id", "is", null)
+      .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`)
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    if (error) {
+      console.error("Failed to fetch POIs:", error);
+      break;
+    }
+    if (!data || data.length === 0) break;
+    pois.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    page++;
+  }
 
   // Build lookup maps
   const categoryNameMap = new Map<string, string>();

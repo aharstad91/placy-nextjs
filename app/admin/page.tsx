@@ -102,17 +102,28 @@ export default async function AdminPage() {
   let publicStats = { areas: 0, categoryPages: 0, guides: 0, publicPOIs: 0, editorialPct: 0 };
 
   if (publicClient) {
-    const [areasRes, publicPoisRes, slugsRes] = await Promise.all([
-      publicClient.from("areas").select("id", { count: "exact" }).eq("active", true),
-      publicClient
+    const [areasRes, slugsRes] = await Promise.all([
+      publicClient.from("areas").select("id", { count: "exact", head: true }).eq("active", true),
+      publicClient.from("category_slugs").select("category_id", { count: "exact", head: true }).eq("locale", "no"),
+    ]);
+
+    // Fetch public POIs with pagination for editorial stats
+    const PAGE_SIZE = 1000;
+    const publicPois: { editorial_hook: string | null }[] = [];
+    let page = 0;
+    while (true) {
+      const { data, error } = await publicClient
         .from("pois")
         .select("editorial_hook")
         .not("area_id", "is", null)
-        .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`),
-      publicClient.from("category_slugs").select("category_id", { count: "exact" }).eq("locale", "no"),
-    ]);
+        .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`)
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      if (error || !data || data.length === 0) break;
+      publicPois.push(...data);
+      if (data.length < PAGE_SIZE) break;
+      page++;
+    }
 
-    const publicPois = publicPoisRes.data ?? [];
     const editorialCount = publicPois.filter((p: { editorial_hook: string | null }) => p.editorial_hook).length;
     const totalGuides = Object.values(CURATED_LISTS).reduce((sum, lists) => sum + lists.length, 0);
 
