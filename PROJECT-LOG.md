@@ -471,3 +471,35 @@ cityguide.no leverer brosjyrer via Visit Trondheim, men er en tynn katalogside u
 - **Lucide `Map`-ikon shadower global `Map` constructor.** Importert `Map` fra lucide-react → `new Map<string, string>()` feiler med "Expected 0 type arguments". Må aliase til `MapIcon`. Dokumentert i compound-learnings
 - **`force-dynamic` er lett å glemme på admin-sider.** Uten den cacher Next.js ISR resultater fra build-tid, som gir utdaterte tall. Bør vurdere å gjøre dette til mønster for alle admin-sider
 - **Compound-kunnskapen betaler seg.** Supabase-pagineringsmønsteret, trust-score-filteret, og public client-bruken var alle dokumentert fra tidligere sesjoner. Implementasjonen gikk raskere fordi mønstrene var kjente
+
+---
+
+## 2026-02-14 (sesjon 5) — Restaurant-kurator + intern linking
+
+### Beslutninger
+- **Kuratert alle 93 aktive restaurant-POIs i én sesjon.** 4 parallelle agents, ~24 POIs per batch, alle med WebSearch-verifisert research. Første gang vi kuraterer en hel kategori systematisk
+- **Tidsregel håndhevet strengt.** Fjernet alle "X leder kjøkkenet"-formuleringer til fordel for "Grunnlagt av X" eller historisk form. 6 faktafeil korrigert (Top Chef-år, feil kjøkkentype, feil beliggenhet)
+- **Intern linking: "Les mer" CTA på MapPopupCard.** Report-kortene linker nå til offentlige POI-sider (`/trondheim/steder/[slug]`). Gir SEO-juice til de offentlige sidene fra Placy sine klientrapporter
+- **`getAreaSlugForProject()` i public-queries.ts.** Ny query som henter area slug fra project_pois → pois.area_id → areas.slug_no. Bruker untyped public client (areas-tabellen er ikke i Database-typene)
+
+### Levert
+- `supabase/migrations/029_restaurant_editorial_v2.sql` — 686 linjer, 93 POIs kuratert
+- `docs/solutions/best-practices/restaurant-curator-batch-pattern-20260214.md` — compound-doc for batch-mønsteret
+- MapPopupCard "Les mer" CTA med amber-styling, BookOpen-ikon
+- Prop chain: report page → ReportPage → ReportStickyMap → MapPopupCard (areaSlug)
+
+### Parkert / Åpne spørsmål
+- **Guide-produktet bruker også MapPopupCard, men sender ikke areaSlug.** GuideStickyMap importerer MapPopupCard men passerer ikke areaSlug ennå. CTA-en vises bare i Report foreløpig — Guide bør få samme linking etter hvert
+- **Neste kategori-kurator?** Attraction, shopping, nightlife står for tur. Batch-mønsteret er dokumentert og repeterbart
+- **Trenger vi en visuell sjekk av CTA-plassering?** Chrome DevTools MCP var utilgjengelig — ikke visuelt verifisert ennå. Bør testes manuelt
+
+### Retning
+- **Kuratorarbeidet bygger real IP.** 112 restauranter med research-verifiserte hooks er et genuint innholdskvalitets-fortrinn. Ingen konkurrent har dette manuelt verifisert nivået av lokalkunnskap
+- **Intern linking er en strategisk SEO-beslutning.** Klientrapportene (som har høy lesertid) sender nå trafikk til de offentlige sidene. Dette er riktig retning for organisk vekst
+- **Neste naturlige steg:** Systematisk kurator-pass for resterende kategorier (attraction, shopping, nightlife), og utvidelse av "Les mer"-linken til Guide-produktet
+
+### Observasjoner
+- **4 parallelle agents er sweet spot.** Respekterer CLAUDE.md-grensen, gir nok parallellitet, og krever bare én reconciliation-runde. Batch-størrelse 20-25 POIs fungerte godt — agentene fullførte alle uten timeout
+- **Reconciliation er nødvendig.** Batch 1 fant Top Chef 2015, Batch 3 brukte 2016 for samme person. Uten manuell sjekk hadde vi hatt inkonsistent data. **Alltid søk etter overlappende entiteter på tvers av batches**
+- **Migrasjonsnummer-konflikter er en real risiko med parallelle sesjoner.** Session A hadde pushet 028 mens vi jobbet — måtte renames til 029. Bør alltid sjekke `supabase migration list` før man velger nummer
+- **Redaksjonelt innhold gjør produktet levende.** Brukerens kommentar "det oppleves spennende å lese for en som er lokalkjent" er den beste valideringen. Hookene treffer riktig register — informative uten å være Wikipedia-tørre
