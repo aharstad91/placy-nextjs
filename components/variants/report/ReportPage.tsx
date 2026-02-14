@@ -25,6 +25,7 @@ interface ReportPageProps {
   project: Project;
   explorerBaseUrl?: string | null;
   enTranslations?: TranslationMap;
+  areaSlug?: string | null;
 }
 
 export default function ReportPage(props: ReportPageProps) {
@@ -35,7 +36,7 @@ export default function ReportPage(props: ReportPageProps) {
   );
 }
 
-function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: ReportPageProps) {
+function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSlug }: ReportPageProps) {
   const { locale } = useLocale();
 
   const effectiveProject = useMemo(
@@ -186,6 +187,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {} }: Repo
               onMapClick={handleMapClick}
               mapStyle={reportData.mapStyle}
               expandedThemes={expandedThemes}
+              areaSlug={areaSlug}
             />
           </div>
         </div>

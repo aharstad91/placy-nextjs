@@ -25,6 +25,8 @@ interface ReportStickyMapProps {
   mapStyle?: string;
   /** Themes/sub-sections expanded via "Vis meg mer" — keys: "themeId" or "themeId:categoryId" */
   expandedThemes?: Set<string>;
+  /** Area slug for linking to public POI pages (e.g. "trondheim") */
+  areaSlug?: string | null;
 }
 
 /**
@@ -47,6 +49,7 @@ export default function ReportStickyMap({
   onMapClick,
   mapStyle,
   expandedThemes = new Set(),
+  areaSlug,
 }: ReportStickyMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -431,6 +434,7 @@ export default function ReportStickyMap({
             <MapPopupCard
               poi={popupPOI}
               onClose={handlePopupClose}
+              areaSlug={areaSlug}
             />
           </Marker>
         )}

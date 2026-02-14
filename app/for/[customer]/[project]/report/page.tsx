@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getProductAsync, getProjectAsync, productExists } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
+import { getAreaSlugForProject } from "@/lib/public-queries";
 import ReportPage from "@/components/variants/report/ReportPage";
 
 export const dynamic = "force-dynamic";
@@ -39,11 +40,15 @@ export default async function ReportProductPage({ params }: PageProps) {
   const hasExplorer = await productExists(customer, projectSlug, "explorer");
   const explorerUrl = hasExplorer ? `/${customer}/${projectSlug}/explore` : null;
 
+  // Look up area slug for POI detail page links
+  const areaSlug = await getAreaSlugForProject(projectData.id);
+
   return (
     <ReportPage
       project={projectData}
       explorerBaseUrl={explorerUrl}
       enTranslations={enTranslations}
+      areaSlug={areaSlug}
     />
   );
 }

@@ -6,6 +6,7 @@ import { getIcon } from "@/lib/utils/map-icons";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
 import { TierBadge } from "@/components/ui/TierBadge";
+import { slugify } from "@/lib/utils/slugify";
 import {
   X,
   Sparkles,
@@ -13,14 +14,16 @@ import {
   Navigation,
   ExternalLink,
   MapPin,
+  BookOpen,
 } from "lucide-react";
 
 interface MapPopupCardProps {
   poi: POI;
   onClose: () => void;
+  areaSlug?: string | null;
 }
 
-export default function MapPopupCard({ poi, onClose }: MapPopupCardProps) {
+export default function MapPopupCard({ poi, onClose, areaSlug }: MapPopupCardProps) {
   const [imageError, setImageError] = useState(false);
   const [openingHours, setOpeningHours] = useState<{
     isOpen?: boolean;
@@ -63,6 +66,8 @@ export default function MapPopupCard({ poi, onClose }: MapPopupCardProps) {
   const googleMapsDirectionsUrl = poi.googlePlaceId
     ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
     : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`;
+
+  const poiPageUrl = areaSlug ? `/${areaSlug}/steder/${slugify(poi.name)}` : null;
 
   // Today's opening hours
   const todayHours = (() => {
@@ -189,6 +194,16 @@ export default function MapPopupCard({ poi, onClose }: MapPopupCardProps) {
               <Navigation className="w-3 h-3" />
               Vis rute
             </a>
+
+            {poiPageUrl && (
+              <a
+                href={poiPageUrl}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+              >
+                <BookOpen className="w-3 h-3" />
+                Les mer
+              </a>
+            )}
 
             {poi.googleMapsUrl && (
               <a
