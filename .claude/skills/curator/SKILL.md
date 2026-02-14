@@ -1,6 +1,6 @@
 ---
-name: placy-editorial
-description: Placy editorial voice & style guide — ensures consistent, high-quality text
+name: curator
+description: Placy Curator — editorial voice & style guide for all curated content
 triggers:
   - editorial_hook
   - local_insight
@@ -12,9 +12,11 @@ triggers:
   - redaksjonell tekst
   - skriv hook
   - write hook
+  - curator
+  - kurater
 ---
 
-# Placy Editorial Voice & Style Guide
+# Placy Curator — Editorial Voice & Style Guide
 
 Destillert fra 72 tekster: Sem & Johnsen (eiendom), Anders Husa (matanmeldelser), Monocle/Kinfolk (reiseguider), Lonely Planet/Visit Norway (stedsbeskrivelser).
 

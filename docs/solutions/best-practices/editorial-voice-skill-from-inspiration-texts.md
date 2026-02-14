@@ -1,7 +1,7 @@
 ---
 title: Building a Claude Code editorial skill from inspiration texts
 category: best-practices
-tags: [editorial, skill, voice, style-guide, claude-code]
+tags: [editorial, skill, voice, style-guide, claude-code, curator]
 date: 2026-02-14
 ---
 
@@ -17,7 +17,7 @@ No formalized editorial voice — Claude generated text based on general pattern
 
 ## Solution
 
-Created a Claude Code skill (`.claude/skills/placy-editorial/`) with voice principles destilled from 72 analyzed texts across 4 source types.
+Created a Claude Code skill called **Curator** (`.claude/skills/curator/`) with voice principles destilled from 72 analyzed texts across 4 source types.
 
 ### Key insight: Skills need source material, not just summaries
 
@@ -32,12 +32,12 @@ The fix: ground every principle in actual quotes from the inspiration sources.
 ### Skill structure
 
 ```
-.claude/skills/placy-editorial/
-├── SKILL.md                        # Main: voice, checklist, quick ref (113 lines)
+.claude/skills/curator/
+├── SKILL.md                        # Main: voice, checklist, quick ref
 └── references/
-    ├── voice-principles.md         # 6 principles with source quotes (194 lines)
-    ├── text-type-specs.md          # Structure patterns + register templates (207 lines)
-    └── before-after-examples.md    # Real migration comparisons (154 lines)
+    ├── voice-principles.md         # 6 principles with source quotes
+    ├── text-type-specs.md          # Structure patterns + register templates
+    └── before-after-examples.md    # Real migration comparisons
 ```
 
 ### Design decisions
