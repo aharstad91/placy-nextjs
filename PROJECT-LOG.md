@@ -358,3 +358,38 @@ PageSpeed Insights for `/trondheim/bakerier` viste **6.9s hovedtråd-arbeid** p�
 ### Observasjoner
 - **`featured_image` i DB inneholder proxy-URLer**, ikke direkte bilde-URLer. Dette var en overraskelse. Det betyr at all bildelasting alltid gikk gjennom serverless-funksjonen, selv når `featuredImage` var satt
 - **Google Places Photo API redirecter konsistent** til `lh3.googleusercontent.com/places/...` eller `/place-photos/...`. URL-ene er stabile og offentlige (ingen API-nøkkel). Trygt å cache og eksponere
+
+---
+
+## 2026-02-14 (sesjon 2) — Placy Editorial Voice & Style Guide Skill
+
+### Beslutninger
+- **Claude Code skill** (`.claude/skills/placy-editorial/`) — prosjektnivå, versjonskontrollert, delt med alle som jobber i repoet
+- **Destillert fra 72 inspirasjoonstekster:** 35 Sem & Johnsen beliggenhetsbeskrivelser, 11 Anders Husa restaurantanmeldelser, 13 Monocle/Kinfolk stedsbeskrivelser, 13 Lonely Planet/Visit Norway/Culture Trip korte beskrivelser
+- **Én stemme, fem registre:** Michelin/finedining, håndverksbakeri/kafé, hverdagssted, nabolag/område, opplevelse/museum — hver med ulik vektlegging og tone
+- **6 prinsipper med kildehenvisning:** Navngi (Sem & Johnsen), Bevegelse (Sem & Johnsen + Kinfolk), Kontraster (Sem & Johnsen + LP), Saklig entusiasme (Anders Husa + Monocle), Mennesker (Anders Husa + Monocle), Sensorisk presisjon (Monocle + Kinfolk + LP)
+- **4 strukturmønstre fra reiseguidene:** Location+Feature+Get, Historical Hook+Current, Sensory Opening+Practical, Declarative Claim+Evidence
+- **Viktig lærdom: Skills trenger kildemateriale, ikke bare oppsummeringer.** Første versjon var basert på brainstorm-sammendraget — for tynn til at Claude kunne kalibrere tonen. Omskrevet med faktiske sitater fra kildene per prinsipp.
+
+### Levert
+- `.claude/skills/placy-editorial/SKILL.md` — hovedfil med stemme, sjekkliste, hurtigreferanse (113 linjer)
+- `references/voice-principles.md` — 6 prinsipper med faktiske sitater fra de 72 kildene (194 linjer)
+- `references/text-type-specs.md` — strukturmønstre, stil-DNA per kilde, register-maler (207 linjer)
+- `references/before-after-examples.md` — 5 reelle sammenligninger fra 021→025 + destilleringsteknikk (154 linjer)
+- `docs/solutions/best-practices/editorial-voice-skill-from-inspiration-texts.md`
+
+### Parkert / Åpne spørsmål
+- **Kafé 021-migrasjonen bør skrives om.** Nå har vi skillen som definerer kvalitetsnivået — de 16 kafé-hookene fra 021 er under standard. Kan gjøres som neste editorial-migrasjon
+- **Persontillatelser:** Når vi navngir grunnleggere/kokker — trenger vi samtykke? Sannsynligvis ikke for offentlig info (allerede publisert i Anders Husa, Google, etc.), men verdt å sjekke
+- **Nye kategorier:** Opplevelse/museum-registeret er definert men ikke testet med reelle data ennå. Bør valideres mot faktisk innhold (f.eks. Riksantikvaren-dataen)
+
+### Retning
+- **Skillen er klar for bruk.** Neste gang vi skriver editorial innhold (ny kategori, ny by, omskriving av svake hooks) trigges den automatisk
+- **Kafé-omskrivning er lavthengende frukt.** 16 hooks som vi vet er under standard + ferdig skill som definerer standard = rask kvalitetsheving
+- **Visit Trondheim-pakkene kan bruke skillen.** Guide-hooks og landing page-tekster bør følge same voice
+
+### Observasjoner
+- **Skills trenger kildemateriale, ikke oppsummeringer.** Den viktigste lærdommen fra denne sesjonen. En skill som sier "bruk sensorisk presisjon" er mye svakere enn en som viser "bright blue chairs, brass details, raw wood" (Monocle) og "pastel-hued wooden buildings on the car-free, cobbled streets" (Lonely Planet). Claude trenger eksempler for å kalibrere, ikke regler for å følge.
+- **Register-differensiering var det brukeren trengte.** Brainstormen landet på "én stemme, tilpasset register" — men første implementering hadde bare én mal per teksttype. Uten maler per register er prinsippet verdiløst i praksis.
+- **Destillering > kopiering.** Spontan-eksemplet i before-after viser teknikken: ta Anders Husas 200-ords anmeldelse og komprimer til 2 setninger med høyere presisjon enn originalen. Placy er mer presist enn kildene fordi vi komprimerer mer.
+- **72 tekster er nok til å definere en stemme.** Man trenger ikke hundrevis — man trenger diversitet (4 ulike sjangre) og grundig analyse. Sem & Johnsen ga bevegelse, Anders Husa ga mennesker, Monocle ga materialitet, LP ga struktur. Sammen dekker de hele spekteret.

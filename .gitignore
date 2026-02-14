@@ -33,4 +33,5 @@ Thumbs.db
 ralphy/
 screenshots/
 tmp/
-.claude/
+.claude/*
+!.claude/skills/
