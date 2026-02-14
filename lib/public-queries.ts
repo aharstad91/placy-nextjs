@@ -121,18 +121,19 @@ export async function getAreaBySlug(slug: string): Promise<Area | null> {
 }
 
 /**
- * Get the area slug for a project's POIs (all POIs in a project share the same area).
+ * Get the area slug for a product's POIs (all POIs in a product share the same area).
+ * Accepts a product ID (UUID from the products table).
  * Returns the area's slug_no (e.g. "trondheim") or null if not found.
  */
-export async function getAreaSlugForProject(projectId: string): Promise<string | null> {
+export async function getAreaSlugForProject(productId: string): Promise<string | null> {
   const client = createPublicClient();
   if (!client) return null;
 
-  // Get area_id from any POI linked to this project
+  // Get area_id from any POI linked to this product
   const { data: poiRow } = await client
-    .from("project_pois")
+    .from("product_pois")
     .select("pois(area_id)")
-    .eq("project_id", projectId)
+    .eq("product_id", productId)
     .limit(1)
     .single();
 
