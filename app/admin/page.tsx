@@ -1,10 +1,14 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/client";
+import { createPublicClient } from "@/lib/supabase/public-client";
+import { CURATED_LISTS } from "@/lib/curated-lists";
+import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
 import {
   MapPin,
   Users,
   FolderOpen,
+  Globe,
   Tag,
   Sparkles,
   ChevronRight,
@@ -93,6 +97,34 @@ export default async function AdminPage() {
     categories: categoriesResult.count ?? 0,
   };
 
+  // Public pages stats (uses untyped client for areas/category_slugs)
+  const publicClient = createPublicClient();
+  let publicStats = { areas: 0, categoryPages: 0, guides: 0, publicPOIs: 0, editorialPct: 0 };
+
+  if (publicClient) {
+    const [areasRes, publicPoisRes, slugsRes] = await Promise.all([
+      publicClient.from("areas").select("id", { count: "exact" }).eq("active", true),
+      publicClient
+        .from("pois")
+        .select("editorial_hook")
+        .not("area_id", "is", null)
+        .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`),
+      publicClient.from("category_slugs").select("category_id", { count: "exact" }).eq("locale", "no"),
+    ]);
+
+    const publicPois = publicPoisRes.data ?? [];
+    const editorialCount = publicPois.filter((p: { editorial_hook: string | null }) => p.editorial_hook).length;
+    const totalGuides = Object.values(CURATED_LISTS).reduce((sum, lists) => sum + lists.length, 0);
+
+    publicStats = {
+      areas: areasRes.count ?? 0,
+      categoryPages: slugsRes.count ?? 0,
+      guides: totalGuides,
+      publicPOIs: publicPois.length,
+      editorialPct: publicPois.length > 0 ? Math.round((editorialCount / publicPois.length) * 100) : 0,
+    };
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-12">
@@ -133,6 +165,21 @@ export default async function AdminPage() {
               count={stats.categories}
               description="POI-kategorier"
               href="/admin/categories"
+            />
+          </div>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+            Offentlige sider
+          </h2>
+          <div className="space-y-2">
+            <StatCard
+              icon={<Globe className="w-5 h-5" />}
+              title="Offentlige sider"
+              count={null}
+              description={`${publicStats.areas} områder · ${publicStats.categoryPages} kategorisider · ${publicStats.guides} guider · ${publicStats.publicPOIs} POIs (${publicStats.editorialPct}% editorial)`}
+              href="/admin/public"
             />
           </div>
         </section>
