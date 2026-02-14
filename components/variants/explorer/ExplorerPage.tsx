@@ -29,12 +29,13 @@ interface CollectionData {
 
 interface ExplorerPageProps {
   project: Project;
+  areaSlug?: string | null;
   collection?: CollectionData;
   initialPOI?: string;
   initialCategories?: string[];
 }
 
-export default function ExplorerPage({ project, collection, initialPOI, initialCategories }: ExplorerPageProps) {
+export default function ExplorerPage({ project, areaSlug, collection, initialPOI, initialCategories }: ExplorerPageProps) {
   const isCollectionView = !!collection;
   const { travelMode, setTravelMode } = useTravelSettings();
   const { collectionPOIs, setProject, addToCollection, removeFromCollection, clearCollection } = useCollection();
@@ -471,6 +472,7 @@ export default function ExplorerPage({ project, collection, initialPOI, initialC
     projectName: project.name,
     openingHoursData,
     travelMode,
+    areaSlug,
     // Skeleton loading state
     showSkeleton,
     showContent,

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getProductAsync, getProjectAsync } from "@/lib/data-server";
 import { getCollectionBySlug } from "@/lib/supabase/queries";
+import { getAreaSlugForProject } from "@/lib/public-queries";
 import ExplorerPage from "@/components/variants/explorer/ExplorerPage";
 import { applyExplorerCaps } from "@/lib/themes/apply-explorer-caps";
 import { DEFAULT_THEMES, getVenueProfile } from "@/lib/themes";
@@ -41,6 +42,9 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
     notFound();
   }
 
+  // Look up area slug for public POI page links
+  const areaSlug = await getAreaSlugForProject(projectData.id);
+
   // Apply Explorer caps (skip for collection views — they show a curated subset)
   const isCollectionView = typeof resolvedSearchParams.c === "string";
   if (!isCollectionView) {
@@ -58,6 +62,7 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
       return (
         <ExplorerPage
           project={projectData}
+          areaSlug={areaSlug}
           collection={{
             slug: collection.slug,
             poiIds: collection.poi_ids,
@@ -82,6 +87,7 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
   return (
     <ExplorerPage
       project={projectData}
+      areaSlug={areaSlug}
       initialPOI={
         typeof resolvedSearchParams.poi === "string"
           ? resolvedSearchParams.poi

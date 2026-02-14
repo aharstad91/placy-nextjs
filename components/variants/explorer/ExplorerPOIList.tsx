@@ -24,6 +24,7 @@ interface ExplorerPOIListProps {
   travelMode?: TravelMode;
   collectionPOIs?: string[];
   onToggleCollection?: (poiId: string) => void;
+  areaSlug?: string | null;
   // Theme filtering
   allPOIs: POI[];
   disabledCategories: Set<string>;
@@ -57,6 +58,7 @@ export default function ExplorerPOIList({
   travelMode = "walk",
   collectionPOIs = [],
   onToggleCollection,
+  areaSlug,
   allPOIs,
   disabledCategories,
   onToggleAllInTheme,
@@ -215,6 +217,7 @@ export default function ExplorerPOIList({
                       travelMode={travelMode}
                       isInCollection={collectionPOIs.includes(activePOIData.id)}
                       onToggleCollection={onToggleCollection}
+                      areaSlug={areaSlug}
                     />
                   </div>
                 </div>
@@ -253,6 +256,7 @@ export default function ExplorerPOIList({
                           travelMode={travelMode}
                           isInCollection={collectionPOIs.includes(poi.id)}
                           onToggleCollection={onToggleCollection}
+                          areaSlug={areaSlug}
                         />
                       </div>
                     ))}

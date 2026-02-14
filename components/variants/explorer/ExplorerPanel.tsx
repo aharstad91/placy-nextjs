@@ -36,6 +36,7 @@ interface ExplorerPanelProps {
   onSetTravelMode?: (mode: TravelMode) => void;
   collectionPOIs?: string[];
   onToggleCollection?: (poiId: string) => void;
+  areaSlug?: string | null;
   isCollectionView?: boolean;
   collectionPoiCount?: number;
   collectionCreatedAt?: string;
@@ -72,6 +73,7 @@ export default function ExplorerPanel({
   onSetTravelMode,
   collectionPOIs = [],
   onToggleCollection,
+  areaSlug,
   isCollectionView,
   collectionPoiCount,
   collectionCreatedAt,
@@ -243,6 +245,7 @@ export default function ExplorerPanel({
                       travelMode={travelMode}
                       isInCollection={collectionPOIs.includes(poi.id)}
                       onToggleCollection={onToggleCollection}
+                      areaSlug={areaSlug}
                     />
                   </div>
                 ))}

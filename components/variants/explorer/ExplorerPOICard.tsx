@@ -21,9 +21,11 @@ import {
   Plus,
   Check,
   Route,
+  BookOpen,
 } from "lucide-react";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
+import { slugify } from "@/lib/utils/slugify";
 
 const travelModeIcons = {
   walk: Footprints,
@@ -40,6 +42,7 @@ interface ExplorerPOICardProps {
   travelMode?: TravelMode;
   isInCollection?: boolean;
   onToggleCollection?: (poiId: string) => void;
+  areaSlug?: string | null;
   alwaysExpanded?: boolean;
   hideChevron?: boolean;
   className?: string;
@@ -54,6 +57,7 @@ export default function ExplorerPOICard({
   travelMode = "walk",
   isInCollection,
   onToggleCollection,
+  areaSlug,
   alwaysExpanded,
   hideChevron,
   className,
@@ -101,6 +105,9 @@ export default function ExplorerPOICard({
   const TravelIcon = travelModeIcons[travelMode];
   const isOpen = openingHours?.isOpen;
   const hasRealtimeData = realtimeData.entur || realtimeData.bysykkel;
+
+  // Public POI page URL (for SEO internal linking)
+  const poiPageUrl = areaSlug ? `/${areaSlug}/steder/${slugify(poi.name)}` : null;
 
   // Google Maps directions URL
   const googleMapsDirectionsUrl = poi.googlePlaceId
@@ -356,6 +363,17 @@ export default function ExplorerPOICard({
             <Navigation className="w-3 h-3" />
             Vis rute
           </a>
+
+          {poiPageUrl && (
+            <Link
+              href={poiPageUrl}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+            >
+              <BookOpen className="w-3 h-3" />
+              Les mer
+            </Link>
+          )}
 
           {poi.googleMapsUrl && (
             <a
