@@ -881,3 +881,87 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 - **Rask implementasjon (567 linjer, 6 filer).** Klar PRD + eksisterende patterns (TripMap, RouteLayer, types) = 1 commit for hele featuren. Ingen overraskelser
 - **Trip Library href manglet `/for/`-prefix.** Fungerte via middleware redirect, men direkte URL er riktigere og raskere (unngår 308-redirect). Liten fix, men viktig for SEO og ytelse
 - **TripPreview bruker Trip-typen direkte.** Første komponent som ikke går gjennom `tripToProject()`-adapteren. Viser at ny kode bør bygges direkte på Supabase-typer — adapteren er legacy-bro, ikke permanent mønster
+
+---
+
+## 2026-02-15 (sesjon 6) — Trips Sprint 4: Rewards/progress demo data
+
+### Beslutninger
+- **Data, ikke kode.** Sprint 4 var en ren data-og-adapter-oppgave. All kode (completion screen, GPS verification, confetti, voucher, intro overlay, progress indicators) var allerede bygget i Sprint 1-3. Eneste kodeendring: én linje i `buildRewardConfig()`.
+- **`override.startName` som `hotelName`.** Naturlig kobling — `project_trips.start_name` er hotellet/venue-navnet, og det er det som skal vises på voucher og intro overlay. Ingen ny kolonne nødvendig.
+- **Supabase JS client for seeding, ikke CLI.** CLI-passordet var utgått. Seed-script via JS client med `SUPABASE_SERVICE_ROLE_KEY` fungerte uten problemer — raskere enn å debugge CLI.
+
+### Levert (PR #36)
+- Migration 037: `project_trips` rows for Scandic Nidelven → 3 featured trips
+- `trip-adapter.ts:133` — `hotelName: override?.startName ?? ""`
+- Seed-script satte `start_poi_id`, `reward_title/description/code`, `welcome_text` for alle linker
+
+### Verifisert
+- TypeScript: 0 feil
+- Produksjonsbuild: OK
+- Visuelt (Chrome DevTools MCP):
+  - Trip Library: 3 featured trips med kategori-badges
+  - Preview: amber reward teaser "15% på Scandic Bar"
+  - Intro overlay: "Fullfør og få belønning!" + "fra Scandic Nidelven"
+  - Aktiv modus: progress 0/6, mode toggle, Scandic Nidelven som start POI
+
+### Parkert / Åpne spørsmål
+- **Completion flow ikke E2E-testet i browser.** Intro overlay og preview verifisert, men å markere alle 6 stopp manuelt tar tid — confetti/voucher er verifisert via kode-review
+- **Supabase CLI password trenger reset.** `supabase db push` feiler med SASL auth — trolig endret passord. Workaround: JS client-scripts
+- **Mobil-responsivitet ikke testet** (gjentatt fra Sprint 3)
+
+### Retning
+- **4 av 5 sprints levert.** Sprint 1 (POI), Sprint 2 (Preview), Sprint 3 (Guided/Free), Sprint 4 (Rewards). Kun Sprint 5 (Polish) gjenstår.
+- **Scandic-demoen er funksjonell.** Full flow fra Library → Preview → Start → Mark stops → Complete → Voucher eksisterer. Sprint 5 er kosmetisk polish.
+- **Trips v2 MVP er nesten komplett.** Det som mangler er visuell polish og edge cases — ikke grunnleggende funksjonalitet.
+
+### Observasjoner
+- **Inkrementell Sprint-tilnærming har fungert usedvanlig godt.** Hver sprint bygget naturlig på forrige, og Sprint 4 var nesten "gratis" fordi all kode var klar. Dette er en god modell for fremtidige features: bygg kode i tidlige sprints, aktiver med data i senere.
+- **`project_trips` som override-lag er en sterk arkitektur.** B2B-kunder (Scandic) får skreddersydd innhold (rewards, start point, welcome text) uten å endre base-trip-data. Andre kunder kan bruke samme trips med andre overrides.
+- **3 filer, 165 linjer endret.** Laveste Sprint-endring så langt — bevis på at forberedelsene i Sprint 1-3 var solide.
+
+---
+
+## 2026-02-15 (sesjon 5) — Trips Sprint 3: Guided/Free mode toggle
+
+### Beslutninger
+- **`TripMode` = "guided" | "free" som fullstack-type.** Flyter fra DB (`trips.default_mode`) gjennom `transformTrip()` → `tripToProject()` → komponent-props. Alle lag kjenner modusen
+- **localStorage per trip, ikke global.** `trip-mode-${tripId}` — brukeren kan velge ulik modus per tur. Initialiseres fra `trip.defaultMode`, overskrives av brukervalg
+- **Haversine-avstand, ikke walking distance.** Free mode sorterer stopp etter luftlinje fra brukerens GPS (eller trip center uten GPS). Unngår API-kall for ruting, godt nok for sortering
+- **Rute skjules helt i Free mode.** `routeCoordinates` og `routeSegments` settes til `undefined` — TripMap rendrer kun markører. Rent visuelt skille mellom modusene
+- **Pill-toggle med Route/Compass-ikoner.** "Anbefalt rute" (Route) / "Utforsk fritt" (Compass). Plassert i både mobil-header og desktop-sidebar
+
+### Levert (PR #35)
+- Migration 036: `trips.default_mode TEXT CHECK ('guided'|'free')` default 'guided'
+- `TripModeToggle.tsx` — pill-style segmented control
+- `TripPage.tsx` — mode state, distance beregning, sorted indices, localStorage persist
+- `TripStopPanel.tsx` — free mode: alle stopp i scrollbar liste med avstand-badges
+- `TripStopList.tsx` — accordion-modus med distance-sorting for free mode
+- `TripStopDetail.tsx` — skjuler prev/next og transition_text i free mode
+- `TripPreview.tsx` — "Du kan også utforske stoppene i din egen rekkefølge" hint
+- 13 filer, +457/-56 linjer
+
+### Verifisert
+- TypeScript: 0 feil
+- Produksjonsbuild: OK
+- Visuelt (Chrome DevTools MCP):
+  - Guided mode: rute-polyline på kart, sekvensiell stoppvisning, prev/next fungerer
+  - Free mode: ingen polyline, stopp sortert etter avstand (5.5→6.2 km), avstand-badges, "Merk som besøkt" uten navigasjonsknapper
+  - Toggle bytter riktig mellom modusene
+
+### Parkert / Åpne spørsmål
+- **Mobil-responsivitet ikke testet.** Desktop fungerer perfekt, men mobil bottom sheet med free mode trenger testing
+- **Guide mangler "Les mer" CTA** (gjentatt)
+- **Kafé 021-hooks under standard** (gjentatt)
+- **Sprint 4 (Rewards + progress) er neste.** Uavhengig av Guided/Free — belønningssystem fungerer for begge moduser
+
+### Retning
+- **3 av 5 sprints levert på én dag.** Sprint 1 (POI-innhold), Sprint 2 (Preview), Sprint 3 (Guided/Free). Tempo er høyt, men kvaliteten holder (alle verifisert visuelt + TypeScript + build)
+- **Sprint 4 og 5 gjenstår.** Rewards (Sprint 4) og Polish (Sprint 5) er de siste stegene for Trips v2 MVP
+- **Scandic-demoen nærmer seg.** Med Preview + Guided/Free + innhold er det nesten komplett for å vise Scandic Nidelven
+
+### Observasjoner
+- **Haversine vs walking distance var riktig avveining.** Walking distance ville krevd Mapbox Matrix API (N stopp × N API-kall) for å sortere. Haversine gir ~90% riktig sortering for bynære stopp — og er gratis og instant
+- **localStorage-strategi eliminerer auth-avhengighet.** Ingen brukerregistrering nødvendig for å huske modus-preferanse. Perfekt for hotellgjester som ikke logger inn
+- **Pill-toggle vs dropdown var bevisst.** To moduser = toggle er riktig UX. Ville ikke trengt pill-toggle hvis det var 3+ moduser
+- **Free mode avslører at trip center er viktig.** Uten GPS sorteres stopp fra trip center — og den verdien brukes nå aktivt, ikke bare for kartvisning. God at vi la det inn i Sprint 1
