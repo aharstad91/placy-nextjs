@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getProjectAsync, getProjectProducts, getProjectShortId } from "@/lib/data-server";
 import ProductNav from "@/components/shared/ProductNav";
 import type { ProductLink } from "@/components/shared/ProductNav";
+import { PageTransition } from "@/components/transitions";
 
 interface LayoutProps {
   params: Promise<{ customer: string; project: string }>;
@@ -67,7 +68,9 @@ export default async function ProjectLayout({ params, children }: LayoutProps) {
         products={products}
         adminEditUrl={shortId ? `/admin/projects/${shortId}` : null}
       />
-      <div className="pt-12">{children}</div>
+      <PageTransition className="pt-12">
+        {children}
+      </PageTransition>
     </>
   );
 }

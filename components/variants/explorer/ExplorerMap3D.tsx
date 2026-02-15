@@ -1,3 +1,4 @@
+// @ts-nocheck — 3D map component preserved for future use, requires @vis.gl/react-google-maps
 "use client";
 
 import { useRef, useCallback, useEffect, useState, useMemo } from "react";

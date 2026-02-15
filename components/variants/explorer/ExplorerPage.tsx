@@ -13,9 +13,15 @@ import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
 import { haversineDistance, cn } from "@/lib/utils";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
+import dynamic from "next/dynamic";
 import { Bookmark } from "lucide-react";
-import ExplorerMap from "./ExplorerMap";
+import { SkeletonMapOverlay } from "@/components/ui/SkeletonMapOverlay";
 import ExplorerPanel from "./ExplorerPanel";
+
+const ExplorerMap = dynamic(() => import("./ExplorerMap"), {
+  ssr: false,
+  loading: () => <SkeletonMapOverlay />,
+});
 import ExplorerBottomSheet from "./ExplorerBottomSheet";
 import ExplorerPOIList from "./ExplorerPOIList";
 import CollectionDrawer from "./CollectionDrawer";

@@ -7,9 +7,18 @@ import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import { useTripCompletion } from "@/lib/hooks/useTripCompletion";
 import { useOpeningHours } from "@/lib/hooks/useOpeningHours";
 import { haversineDistance } from "@/lib/utils";
+import dynamic from "next/dynamic";
 import ExplorerBottomSheet from "@/components/variants/explorer/ExplorerBottomSheet";
-import TripMap from "./TripMap";
 import TripStopPanel from "./TripStopPanel";
+
+const TripMap = dynamic(() => import("./TripMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-[#f5f3f0] animate-pulse flex items-center justify-center">
+      <div className="w-12 h-12 rounded-full skeleton-shimmer" />
+    </div>
+  ),
+});
 import TripIntroOverlay from "./TripIntroOverlay";
 import TripCompletionScreen from "./TripCompletionScreen";
 import TripHeader from "./TripHeader";

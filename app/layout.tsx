@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import TransitionProvider from "@/components/transitions/TransitionProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,7 +25,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.mapbox.com" />
         <link rel="dns-prefetch" href="https://api.mapbox.com" />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <TransitionProvider>{children}</TransitionProvider>
+      </body>
     </html>
   );
 }
