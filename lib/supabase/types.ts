@@ -670,6 +670,7 @@ export type Database = {
           stop_count: number;
           default_reward_title: string | null;
           default_reward_description: string | null;
+          default_mode: "guided" | "free";
           created_by: string | null;
           published: boolean;
           created_at: string;
@@ -696,6 +697,7 @@ export type Database = {
           stop_count?: number;
           default_reward_title?: string | null;
           default_reward_description?: string | null;
+          default_mode?: "guided" | "free";
           created_by?: string | null;
           published?: boolean;
           created_at?: string;
@@ -722,6 +724,7 @@ export type Database = {
           stop_count?: number;
           default_reward_title?: string | null;
           default_reward_description?: string | null;
+          default_mode?: "guided" | "free";
           created_by?: string | null;
           published?: boolean;
           created_at?: string;

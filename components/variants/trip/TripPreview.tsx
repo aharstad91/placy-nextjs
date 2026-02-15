@@ -200,6 +200,13 @@ export default function TripPreview({
         </div>
       </div>
 
+      {/* Free mode hint */}
+      <div className="px-5 sm:px-8 pt-6 pb-0">
+        <p className="text-sm text-[#7a7062] italic">
+          Du kan også utforske stoppene i din egen rekkefølge.
+        </p>
+      </div>
+
       {/* Stop list */}
       <div className="px-5 sm:px-8 py-8">
         <h2 className="font-serif text-xl font-semibold text-[#1A1A1A] mb-5">
