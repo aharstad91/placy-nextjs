@@ -848,3 +848,36 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 - **Teaser chain er en redaksjonell teknikk som fungerer.** Bakklandet-turen føles som en historie du leser — hvert stopp bygger på forrige. Kontrast med Historisk Trondheim som har mer guide-book-stil. Begge fungerer, men teaser chain er mer engasjerende
 - **`/full-auto` kjørte gjennom alle 7 faser autonomt.** Brainstorm+plan var ferdig fra forrige sesjon → direkte til tech audit → work → code review → compound → project log. Én kontekst-reset underveis (stor sesjon), men recovery var smidig
 - **Supabase `.temp`-katalogen er en worktree-gotcha.** Gitignored, så den eksisterer ikke i nye worktrees. Må kopieres manuelt fra hovedrepoet. Bør dokumenteres i setup-worktree.sh
+
+---
+
+## 2026-02-15 (sesjon 4) — Trips Sprint 2: Preview-modus
+
+### Beslutninger
+- **Query param for mode-switching, ikke separate ruter.** `?mode=active` aktiverer TripPage, default viser TripPreview. Holder URL-strukturen ren og unngår nye route-segmenter
+- **TripPreview mottar Trip-typen direkte.** Ingen `tripToProject()`-adapter — bare aktiv modus trenger legacy Project-shapen. Ny kode bør bruke Supabase-typer direkte
+- **Statisk kart uten scroll zoom.** TripPreviewMap disabler scroll zoom for å unngå at brukeren zoomer ved accident under scrolling. Pan/touch fungerer fortsatt
+- **Sticky CTA med gradient fade.** "Start turen"-knappen er sticky bottom med gradient fra bakgrunn — synlig uansett scroll-posisjon uten å blokkere innhold
+
+### Levert (PR #34)
+- `TripPreview.tsx` — hero, metadata-stripe, beskrivelse, stopp-liste med timeline connector, rewards-teaser, sticky CTA
+- `TripPreviewMap.tsx` — statisk Mapbox med nummererte markører + rute-polyline
+- Routing oppdatert for begge ruter (project + SEO) med query param branching
+- TripLibraryClient href fikset fra `/{customer}/...` til `/for/{customer}/...`
+- `docs/solutions/feature-implementations/trips-sprint2-preview-mode-20260215.md`
+
+### Parkert / Åpne spørsmål
+- **Cover images mangler.** Alle 3 demo-turer har gradient-fallback. Sprint 5 (polish) skal legge til kuraterte bilder
+- **Guide mangler "Les mer" CTA** (gjentatt)
+- **Kafé 021-hooks under standard** (gjentatt)
+- **Sprint 3 (Guided/Free toggle) kan starte nå.** Preview viser allerede anbefalt rute — Free mode trenger kart uten polyline + stopp sortert etter avstand
+
+### Retning
+- **Preview → Active flyten fungerer end-to-end.** Guest kan nå browse Trip Library → vurdere tur → starte. Dette var den viktigste manglende biten for Scandic-demoen
+- **Sprint 3 og 4 kan kjøres parallelt.** Guided/Free toggle og Rewards/progress er uavhengige
+- **Sprint 5 (polish + demo-klargjøring) er siste steg.** Cover images, responsiv polering, end-to-end test på mobil
+
+### Observasjoner
+- **Rask implementasjon (567 linjer, 6 filer).** Klar PRD + eksisterende patterns (TripMap, RouteLayer, types) = 1 commit for hele featuren. Ingen overraskelser
+- **Trip Library href manglet `/for/`-prefix.** Fungerte via middleware redirect, men direkte URL er riktigere og raskere (unngår 308-redirect). Liten fix, men viktig for SEO og ytelse
+- **TripPreview bruker Trip-typen direkte.** Første komponent som ikke går gjennom `tripToProject()`-adapteren. Viser at ny kode bør bygges direkte på Supabase-typer — adapteren er legacy-bro, ikke permanent mønster
