@@ -791,54 +791,58 @@ export async function getProjectContainerFromSupabase(
   }
   const categories = Array.from(categoryMap.values());
 
-  // For each product, fetch its POI and category selections
-  const productInstances: ProductInstance[] = [];
-  for (const product of products || []) {
-    // Type assertion for new product structure
-    const prod = product as DbProduct;
+  // Fetch POI selections, featured flags, and categories for all products in parallel
+  // Capture non-null ref — supabase is guaranteed non-null after the guard at function entry
+  const db = supabase!;
+  const productInstances: ProductInstance[] = await Promise.all(
+    (products || []).map(async (product) => {
+      const prod = product as DbProduct;
 
-    // Fetch product POIs (featured column added by migration 009)
-    const { data: productPoisData } = await supabase
-      .from("product_pois")
-      .select("poi_id, sort_order")
-      .eq("product_id", prod.id)
-      .order("sort_order");
+      // Run all three queries for this product in parallel
+      const [
+        { data: productPoisData },
+        { data: featuredData, error: featuredError },
+        { data: productCatsData },
+      ] = await Promise.all([
+        db
+          .from("product_pois")
+          .select("poi_id, sort_order")
+          .eq("product_id", prod.id)
+          .order("sort_order"),
+        db
+          .from("product_pois")
+          .select("poi_id")
+          .eq("product_id", prod.id)
+          .eq("featured" as string, true), // TODO: Remove `as string` cast after regenerating Supabase types
+        db
+          .from("product_categories")
+          .select("category_id, display_order")
+          .eq("product_id", prod.id)
+          .order("display_order"),
+      ]);
 
-    // Separate query for featured (graceful if column doesn't exist yet)
-    let featuredPoiIds: string[] = [];
-    const { data: featuredData, error: featuredError } = await supabase
-      .from("product_pois")
-      .select("poi_id")
-      .eq("product_id", prod.id)
-      .eq("featured" as string, true); // TODO: Remove `as string` cast after regenerating Supabase types
-    if (!featuredError) {
-      featuredPoiIds = (featuredData || []).map((fp: { poi_id: string }) => fp.poi_id);
-    }
-    // featuredError means migration 009 not yet applied — gracefully skip
+      // featuredError means migration 009 not yet applied — gracefully skip
+      const featuredPoiIds = !featuredError
+        ? (featuredData || []).map((fp: { poi_id: string }) => fp.poi_id)
+        : [];
 
-    // Fetch product categories
-    const { data: productCatsData } = await supabase
-      .from("product_categories")
-      .select("category_id, display_order")
-      .eq("product_id", prod.id)
-      .order("display_order");
-
-    productInstances.push({
-      id: prod.id,
-      projectId: prod.project_id,
-      productType: prod.product_type,
-      config: (prod.config as Record<string, unknown>) || {},
-      storyTitle: prod.story_title ?? undefined,
-      storyIntroText: prod.story_intro_text ?? undefined,
-      storyHeroImages: prod.story_hero_images ?? undefined,
-      poiIds: (productPoisData || []).map((pp) => pp.poi_id),
-      featuredPoiIds,
-      categoryIds: (productCatsData || []).map((pc) => pc.category_id),
-      version: prod.version,
-      createdAt: prod.created_at,
-      updatedAt: prod.updated_at,
-    });
-  }
+      return {
+        id: prod.id,
+        projectId: prod.project_id,
+        productType: prod.product_type,
+        config: (prod.config as Record<string, unknown>) || {},
+        storyTitle: prod.story_title ?? undefined,
+        storyIntroText: prod.story_intro_text ?? undefined,
+        storyHeroImages: prod.story_hero_images ?? undefined,
+        poiIds: (productPoisData || []).map((pp) => pp.poi_id),
+        featuredPoiIds,
+        categoryIds: (productCatsData || []).map((pc) => pc.category_id),
+        version: prod.version,
+        createdAt: prod.created_at,
+        updatedAt: prod.updated_at,
+      };
+    })
+  );
 
   // The new project structure - need to handle that description/version might not exist in old DB
   const projectAny = project as Record<string, unknown>;
