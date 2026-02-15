@@ -1,13 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 
+/** Match ISR revalidation period (24 hours) */
+const REVALIDATE_SECONDS = 86400;
+
 /**
  * Supabase client for public (SEO) pages.
- * Unlike the main client, this does NOT set cache: "no-store",
- * allowing Next.js ISR (revalidate) to work properly.
  *
- * Uses untyped client because areas/category_slugs tables
- * are not yet in the generated Database types.
- * TODO: Regenerate types after running migration 018.
+ * Uses `next.revalidate` to align the Data Cache with the ISR period.
+ * Without this, Next.js caches fetch responses indefinitely and
+ * revalidatePath may not consistently clear the Data Cache on Vercel.
  */
 export function createPublicClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,5 +16,10 @@ export function createPublicClient() {
 
   if (!url || !key) return null;
 
-  return createClient(url, key);
+  return createClient(url, key, {
+    global: {
+      fetch: (input, init) =>
+        fetch(input, { ...init, next: { revalidate: REVALIDATE_SECONDS } }),
+    },
+  });
 }
