@@ -1063,3 +1063,87 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 - **Editorial hooks er rikere enn forventet.** Plan estimerte 1.2-1.5 fakta per hook, men vi fikk 2.8 per POI. Hookene inneholder mer verifiserbar info enn antatt
 - **Faktafeil i våre egne hooks er viktig funn.** 5 av 20 hooks hadde unøyaktigheter. Dette er en påminnelse om at redaksjonelt innhold også trenger fakta-sjekk
 - **SHA-256 dedup er robust men blindt.** Fungerer perfekt for eksakte duplikater, men fanger ikke semantiske duplikater (to fakta som sier det samme med ulike ord). Kurator-review er siste linje
+
+---
+
+## 2026-02-15 — Dagoppsummering: Innholdsmodellen som AI kan jobbe med
+
+### Hva skjedde
+
+Dagen startet med trips og kostnadsreduksjon, men den røde tråden ble **å bygge et komplett system der AI kan produsere, strukturere, lagre og vise kuratert innhold**. Åtte sesjoner, 18 planer/brainstorms, 6 PR-er — alt konvergerte mot én ting: en innholdsmodell som gjør Placy-data til IP.
+
+### De fire byggesteinene
+
+**1. City Knowledge Base — strukturert kunnskapslagring**
+`place_knowledge`-tabell med 9 topics, confidence-nivåer, dual-format (fact_text for mennesker + structured_data JSONB for maskiner), XOR-constraint (POI eller område), RLS, tospråklig. Ikke bare en database-tabell — en fullstendig arkitektur for kuratert bykunnskap.
+
+**2. Research Pipeline — AI som innhøster**
+Tre-stegs pipeline: manifest-script → Claude Code Task-agenter med WebSearch (4 parallelt) → backfill-script med SHA-256 dedup. Resultat: 186 nye fakta, 97% fra multiple kilder. Alt `display_ready=false` — kurator er siste ledd.
+
+**3. Editorial Parsing — eksisterende innhold → strukturerte fakta**
+200+ editorial hooks parset til knowledge-fakta med kvalitetsfiltre (kun verifiserbare, tidløse fakta), topic-klassifisering via decision tree, og batch-prosess med checkpoints. Konverterer ustrukturert tekst til querybar kunnskap.
+
+**4. Curator Writing Levels — differensiert stemme per kontekst**
+Modell for ulike registre: `editorial_hook` (museumsskilt), `bridgeText` (plakett ved inngangen), `fact_text` (encyklopedi), `transition_text` (teaser chain). AI vet nå hvilket register den skal bruke basert på konteksten.
+
+### Strategisk betydning
+
+**Før i dag:** AI produserte tekst-blobs bakt inn i hardkodede felter. Ingen gjenbruk, ingen maskinlesbarhet, ingen kvalitetssikring.
+
+**Etter i dag:** Komplett innholdsmodell der:
+- Research → strukturerte fakta med kilde og confidence
+- Lagring → querybar, indeksert, tospråklig, RLS-beskyttet
+- Visning → POI-detaljsider, MapPopupCard, admin-dashboard
+- Kvalitet → `display_ready` separerer AI-output fra publisert innhold
+- Skalering → pipeline gjenbrukes for nye byer (Bergen, Oslo)
+
+### Også levert i dag (ikke innholdsmodell)
+
+- **Trips v2 MVP komplett:** 5 sprints på én dag — POI-innhold, Preview, Guided/Free toggle, Rewards/progress, Visual polish. Scandic-demoen er klar
+- **Google API-kostnad redusert fra 339 kr/halvmåned til ~0:** Cache alle Google-data i Supabase, CDN-URLer direkte i DB
+- **Facebook URL på POI-kort:** Dedikert kolonne, shared `isSafeUrl` utility
+- **Desktop layout for TripPreview:** 50/50 split med sticky map
+- **POI gallery grid:** 3-bilde layout på POI-detaljsider
+- **SEO-forbedringer:** JSON-LD, cache tags, Supabase Data Cache alignment
+
+### Nøkkelinnsikt
+
+> "Alle har tilgang til Claude. Men ingen har en strukturert, verifisert, kuratert kunnskapsbase om norske byer optimalisert for opplevelsesprodukter. Dataen er IP-en, ikke AI-modellen."
+
+Innholdsmodellen er det som gjør Placy til mer enn en kartapp. Den gjør AI-compute om til kumulativ, proprietær data-IP som ikke kan kopieres over natten.
+
+### Neste steg
+
+- **Kurator-review av 186 fakta** — sette `display_ready=true` for verifiserte fakta
+- **Definere alle tekstnivåer i Curator-skillen** — heroIntro, intro_text mangler register-beskrivelse
+- **Pipeline for neste by** — Bergen eller Oslo med samme manifest → research → backfill-mønster
+- **Koble trips til project_trips** — Scandic Nidelven-demoen trenger linkene
+
+---
+
+## 2026-02-15 — Sesjon 9: Kurator-review av 190 knowledge-fakta
+
+### Beslutninger
+- **185 fakta godkjent** (display_ready=true) etter systematisk gjennomgang av alle 190 display_ready=false fakta
+- **6 Britannia-fakta fikset** for encoding-feil — alle å/ø/æ var borte fra WebSearch-agentenes output. Rettet manuelt med korrekt norsk
+- **3 uverifiserte fakta oppgradert til verified** — Blomster og Vin (trd.by-kilde), Erkebispegården (Aftenposten-kilde), Antikvariatet (verifiserbar geografi)
+- **5 fakta holdt tilbake** (display_ready=false):
+  - 4 uten kilde: Den Gode Nabo livemusikk, Awake kaffesubjektiv, Britannia Spa åpent for ikke-gjester, Baklandet mikroklima
+  - 1 for kort: "Ligger i Fjordgata ved havna." (29 tegn, for tynn som standalone)
+
+### Parkert / Åpne spørsmål
+- ~~Kurator-review av 186 fakta~~ **Løst** — 185 godkjent, 5 holdt tilbake
+- **Korreksjon av editorial hooks?** Research avdekket 5 faktafeil i hooks — fortsatt uløst, nå mer relevant enn noen gang siden fakta er publisert
+- **Nature-topic underrepresentert** (7 av 231) — bør vi droppe nature for barer/restauranter?
+- **Encoding-problemet i WebSearch-agenter** — Britannia-faktaene mistet alle norske tegn. Trenger vi en post-processing-steg i research-pipeline for fremtidige byer?
+
+### Retning
+- **226 fakta er nå live på offentlige sider.** POI-detaljsidene har rik, kuratert kunnskap for 20 Trondheim-steder. Placy har gått fra "kartapp" til "bykunnskap-plattform"
+- **Innholdsmodellen er fullstendig.** Pipeline → research → backfill → kurator-review → publish fungerer E2E
+- **Neste prioritet: Bergen/Oslo-pipeline** eller Scandic-demo polish. Kunnskapsbasen er bevist — nå er det skalering
+
+### Observasjoner
+- **Encoding-feil var begrenset til Britannia.** Kun 6 av 190 fakta hadde problemet. Trolig fordi Britannia-agenten fikk mye innhold og WebSearch hadde encoding-tap i en spesifikk kilde. Andre POI-er var upåvirket
+- **97% godkjenningsrate** (185/190) tyder på god research-kvalitet. De 5 som ble holdt tilbake var enten uten kilde eller for tynne — ikke feil, bare ikke verifiserbare
+- **Kurator-review tok ca. 15 min med script-støtte.** review-issues.mjs identifiserte encoding, unverified, og korte fakta automatisk. For neste by kan dette bakes inn i pipeline
+- **display_ready-mønsteret fungerer.** Separasjon mellom AI-output og publisert innhold er essensiell kvalitetssikring. Aldri skip dette steget
