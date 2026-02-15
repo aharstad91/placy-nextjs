@@ -742,3 +742,38 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 - **POI-databasen har en transport-forurensning.** Bysykkel-stasjoner, taxiholdeplasser og bussholdeplasser dukker opp overalt i ILIKE-søk. De deler navn med landemerker (Gamle Bybro, Nidarosdomen, Torvet). Enhver POI-søk-funksjon bør ekskludere disse kategoriene som default
 - **`--dry-run` forhindret feil data i prod.** Første kjøring avslørte 6 feil-matcher og 3 manglende POI-er. Uten dry-run hadde vi fått turer med bysykkel-stasjoner som stopp. Alltid ha preview-modus på seed-scripts
 - **nameOverride er et kraftig mønster.** Lar oss bruke "Stiftsgårdsparken" (som eksisterer i DB) men vise "Stiftsgården" til brukeren. Separerer datamodell fra presentasjon uten å kreve nye POI-er
+
+---
+
+## 2026-02-15 — Google API-kostnad: fra 339 kr/halvmåned til ~0
+
+### Beslutninger
+- **Cache alle Google-data i Supabase.** Åpningstider, telefon og bilder hentes nå ved import/refresh, ikke ved sidevisning. Tre runtime-lekkasjer eliminert: useOpeningHours-hooket, foto-proxyen, og MapPopupCard fetch
+- **Beregn isOpen klient-side.** Lagrer `weekday_text`-arrayen, ikke `open_now`-snapshot som ville blitt stale. Klienten beregner om stedet er åpent/stengt fra tidsparsing
+- **CDN-URLer direkte i DB.** Google Photo API gir 302 → `lh3.googleusercontent.com`. Den URLen er offentlig, trenger ingen API-nøkkel, og lever lenge. Batch-migrert alle 443 bilder
+- **Kurator-flyter uendret.** Import-time CDN-resolve betyr at nye POI-er automatisk får riktig URL. Koster 2 API-kall per POI ved import — neglisjerbart vs tusenvis per måned
+
+### Levert
+- Migration 032: `opening_hours_json`, `google_phone`, `opening_hours_updated_at`
+- `scripts/resolve-photo-urls.ts` — 443/443 bilder migrert, 0 feil
+- `scripts/refresh-opening-hours.ts` — 553 POI-er oppdatert med timer+telefon
+- `useOpeningHours` fullstendig omskrevet — fra fetch-per-viewport til pure useMemo
+- `MapPopupCard` og `poi-card-expanded` bruker cached data
+- Code review fikset: duplisert `computeIsOpen` (multi-range bug), manglende felt i `getPOIsWithinRadius`, type-cast precedence
+- `docs/solutions/performance-issues/google-api-runtime-cost-leakage-20260215.md`
+
+### Parkert / Åpne spørsmål
+- **~15 filer har fortsatt photoReference-fallback.** Proxy-URLer som dead code etter batch-migrering. Lav prioritet — de fungerer, men bør fjernes i en oppryddingsrunde for å lukke kostnadslekasje helt (nye POI-er mellom script-kjøring og deploy kan utløse fallback)
+- **Supabase-genererte typer ikke oppdatert.** `google_phone`, `opening_hours_json` bruker `Record<string, unknown>` cast. Bør regenerere med `supabase gen types` for ærlige typer
+- **Guide mangler "Les mer" CTA** (gjentatt fra sesjon 6/7/8)
+- **Kafé 021-hooks under standard** (gjentatt fra sesjon 2/7/8)
+
+### Retning
+- **Kostnad under kontroll.** Neste Google-faktura bør vise dramatisk reduksjon. Verifiser etter 1 mars
+- **Refresh-script bør kjøres månedlig.** Åpningstider endres, nye steder legger seg til. Vurder cron-job (GitHub Action?) eller manuelt
+- **foto-proxyen (`/api/places/photo`) kan pensjoneres.** Etter at alle proxy-URLer er migrert og nye imports resolver direkte, er endepunktet dead code. Slett den når du er trygg
+
+### Observasjoner
+- **In-memory cache på Vercel er verdiløs.** `Map()` i API-route resettes ved cold start. Med serverless-arkitektur er persistent lagring (Supabase) eneste reelle cache. Lærdom verdt å huske for alle fremtidige caching-behov
+- **Google Photo 302-redirect er den egentlige CDN-URLen.** Hele proxy-laget var unødvendig — API-kall med `redirect: "manual"` gir direkte CDN-link som fungerer uten nøkkel. Elegant og kostnadsfritt
+- **`featured_image` lagret proxy-URLer som var kilden til mesteparten av forbruket.** En enkel seed-beslutning tidlig (lagre `/api/places/photo?photoReference=...` i stedet for CDN-URL) skapte 7000+ unødvendige API-kall per måned. Data-design ved import-tid er kritisk

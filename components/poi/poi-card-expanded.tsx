@@ -19,7 +19,7 @@ import {
   Globe,
   Phone,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { POI, TravelMode } from "@/lib/types";
 import { cn, formatTravelTime } from "@/lib/utils";
 import { useTravelSettings } from "@/lib/store";
@@ -63,32 +63,11 @@ export function POICardExpanded({
   const [isExpanded, setIsExpanded] = useState(false);
   const { timeBudget } = useTravelSettings();
   const realtimeData = useRealtimeData(poi);
-  const [placeDetails, setPlaceDetails] = useState<{
-    website?: string;
-    phone?: string;
-  } | null>(null);
-
-  // Fetch Google Places details when POI has googlePlaceId
-  useEffect(() => {
-    if (!poi.googlePlaceId) return;
-
-    const fetchPlaceDetails = async () => {
-      try {
-        const response = await fetch(`/api/places/${poi.googlePlaceId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPlaceDetails({
-            website: data.website,
-            phone: data.phone,
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch place details:", error);
-      }
-    };
-
-    fetchPlaceDetails();
-  }, [poi.googlePlaceId]);
+  // Use cached data from Supabase instead of runtime Google API calls
+  const placeDetails = {
+    website: poi.googleWebsite,
+    phone: poi.googlePhone,
+  };
 
   const IconComponent = iconMap[poi.category.icon] || MapPin;
   const TravelIcon = travelModeIcons[travelMode];

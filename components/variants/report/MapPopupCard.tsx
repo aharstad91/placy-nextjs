@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { POI } from "@/lib/types";
 import { getIcon } from "@/lib/utils/map-icons";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { slugify } from "@/lib/utils/slugify";
+import { computeIsOpen } from "@/lib/hooks/useOpeningHours";
 import {
   X,
   Sparkles,
@@ -25,28 +26,11 @@ interface MapPopupCardProps {
 
 export default function MapPopupCard({ poi, onClose, areaSlug }: MapPopupCardProps) {
   const [imageError, setImageError] = useState(false);
-  const [openingHours, setOpeningHours] = useState<{
-    isOpen?: boolean;
-    openingHours?: string[];
-  } | null>(null);
 
-  // Reset state + fetch opening hours when POI changes
+  // Reset image error when POI changes
   useEffect(() => {
-    setOpeningHours(null);
     setImageError(false);
-
-    if (!poi.googlePlaceId) return;
-
-    const controller = new AbortController();
-    fetch(`/api/places/${poi.googlePlaceId}`, { signal: controller.signal })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data) setOpeningHours({ isOpen: data.isOpen, openingHours: data.openingHours });
-      })
-      .catch(() => {});
-
-    return () => controller.abort();
-  }, [poi.id, poi.googlePlaceId]);
+  }, [poi.id]);
 
   const CategoryIcon = getIcon(poi.category.icon);
 
@@ -69,16 +53,20 @@ export default function MapPopupCard({ poi, onClose, areaSlug }: MapPopupCardPro
 
   const poiPageUrl = areaSlug ? `/${areaSlug}/steder/${slugify(poi.name)}` : null;
 
-  // Today's opening hours
-  const todayHours = (() => {
-    if (!openingHours?.openingHours?.length) return null;
+  // Opening hours from cached data (no API call)
+  const { todayHours, isOpen } = useMemo(() => {
+    const weekdayText = poi.openingHoursJson?.weekday_text;
+    if (!weekdayText?.length) return { todayHours: null, isOpen: undefined };
+
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const today = days[new Date().getDay()];
-    const todayLine = openingHours.openingHours.find((line) =>
+    const todayLine = weekdayText.find((line) =>
       line.toLowerCase().startsWith(today.toLowerCase())
     );
-    return todayLine ? todayLine.replace(/^[^:]+:\s*/, "") : null;
-  })();
+    const hours = todayLine ? todayLine.replace(/^[^:]+:\s*/, "") : null;
+
+    return { todayHours: hours, isOpen: computeIsOpen(weekdayText) };
+  }, [poi.openingHoursJson]);
 
   return (
     <div
@@ -173,10 +161,10 @@ export default function MapPopupCard({ poi, onClose, areaSlug }: MapPopupCardPro
               <Clock className="w-3 h-3 flex-shrink-0" />
               <span>
                 I dag: {todayHours}
-                {openingHours?.isOpen === true && (
+                {isOpen === true && (
                   <span className="text-emerald-600 font-medium ml-1">&middot; Åpen nå</span>
                 )}
-                {openingHours?.isOpen === false && (
+                {isOpen === false && (
                   <span className="text-gray-400 ml-1">&middot; Stengt</span>
                 )}
               </span>
