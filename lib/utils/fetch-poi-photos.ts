@@ -102,9 +102,10 @@ export async function fetchAndCachePOIPhotos(
             return;
           }
 
-          const photoRef = placeData.result.photos[0].photo_reference;
+          const photos = placeData.result.photos;
+          const photoRef = photos[0].photo_reference;
 
-          // Resolve to direct CDN URL, fallback to proxy
+          // Resolve main image to direct CDN URL, fallback to proxy
           let featuredImage = `/api/places/photo?photoReference=${photoRef}&maxWidth=800`;
           try {
             const photoApiUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${googleApiKey}`;
@@ -119,6 +120,25 @@ export async function fetchAndCachePOIPhotos(
             // Keep proxy URL as fallback
           }
 
+          // Resolve up to 3 gallery images
+          const galleryImages: string[] = [];
+          const galleryRefs = photos.slice(0, 3).map((p: { photo_reference: string }) => p.photo_reference);
+          for (let g = 0; g < galleryRefs.length; g++) {
+            try {
+              const maxW = g === 0 ? 800 : 400;
+              const gUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxW}&photo_reference=${galleryRefs[g]}&key=${googleApiKey}`;
+              const gRes = await fetch(gUrl, { redirect: "manual" });
+              if (gRes.status === 302) {
+                const loc = gRes.headers.get("location");
+                if (loc?.includes("googleusercontent.com")) {
+                  galleryImages.push(loc);
+                }
+              }
+            } catch {
+              // Skip failed gallery images
+            }
+          }
+
           // Update POI in Supabase
           const patchRes = await fetch(
             `${supabaseUrl}/rest/v1/pois?id=eq.${poi.id}`,
@@ -128,6 +148,7 @@ export async function fetchAndCachePOIPhotos(
               body: JSON.stringify({
                 photo_reference: photoRef,
                 featured_image: featuredImage,
+                ...(galleryImages.length > 0 ? { gallery_images: galleryImages } : {}),
               }),
             }
           );
