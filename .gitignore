@@ -35,3 +35,6 @@ screenshots/
 tmp/
 .claude/*
 !.claude/skills/
+
+# Research output (generated, not committed)
+data/research/
