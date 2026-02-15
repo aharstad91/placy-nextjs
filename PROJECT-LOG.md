@@ -884,6 +884,44 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 
 ---
 
+## 2026-02-15 (sesjon 6) — Trips Sprint 4: Rewards/progress demo data
+
+### Beslutninger
+- **Data, ikke kode.** Sprint 4 var en ren data-og-adapter-oppgave. All kode (completion screen, GPS verification, confetti, voucher, intro overlay, progress indicators) var allerede bygget i Sprint 1-3. Eneste kodeendring: én linje i `buildRewardConfig()`.
+- **`override.startName` som `hotelName`.** Naturlig kobling — `project_trips.start_name` er hotellet/venue-navnet, og det er det som skal vises på voucher og intro overlay. Ingen ny kolonne nødvendig.
+- **Supabase JS client for seeding, ikke CLI.** CLI-passordet var utgått. Seed-script via JS client med `SUPABASE_SERVICE_ROLE_KEY` fungerte uten problemer — raskere enn å debugge CLI.
+
+### Levert (PR #36)
+- Migration 037: `project_trips` rows for Scandic Nidelven → 3 featured trips
+- `trip-adapter.ts:133` — `hotelName: override?.startName ?? ""`
+- Seed-script satte `start_poi_id`, `reward_title/description/code`, `welcome_text` for alle linker
+
+### Verifisert
+- TypeScript: 0 feil
+- Produksjonsbuild: OK
+- Visuelt (Chrome DevTools MCP):
+  - Trip Library: 3 featured trips med kategori-badges
+  - Preview: amber reward teaser "15% på Scandic Bar"
+  - Intro overlay: "Fullfør og få belønning!" + "fra Scandic Nidelven"
+  - Aktiv modus: progress 0/6, mode toggle, Scandic Nidelven som start POI
+
+### Parkert / Åpne spørsmål
+- **Completion flow ikke E2E-testet i browser.** Intro overlay og preview verifisert, men å markere alle 6 stopp manuelt tar tid — confetti/voucher er verifisert via kode-review
+- **Supabase CLI password trenger reset.** `supabase db push` feiler med SASL auth — trolig endret passord. Workaround: JS client-scripts
+- **Mobil-responsivitet ikke testet** (gjentatt fra Sprint 3)
+
+### Retning
+- **4 av 5 sprints levert.** Sprint 1 (POI), Sprint 2 (Preview), Sprint 3 (Guided/Free), Sprint 4 (Rewards). Kun Sprint 5 (Polish) gjenstår.
+- **Scandic-demoen er funksjonell.** Full flow fra Library → Preview → Start → Mark stops → Complete → Voucher eksisterer. Sprint 5 er kosmetisk polish.
+- **Trips v2 MVP er nesten komplett.** Det som mangler er visuell polish og edge cases — ikke grunnleggende funksjonalitet.
+
+### Observasjoner
+- **Inkrementell Sprint-tilnærming har fungert usedvanlig godt.** Hver sprint bygget naturlig på forrige, og Sprint 4 var nesten "gratis" fordi all kode var klar. Dette er en god modell for fremtidige features: bygg kode i tidlige sprints, aktiver med data i senere.
+- **`project_trips` som override-lag er en sterk arkitektur.** B2B-kunder (Scandic) får skreddersydd innhold (rewards, start point, welcome text) uten å endre base-trip-data. Andre kunder kan bruke samme trips med andre overrides.
+- **3 filer, 165 linjer endret.** Laveste Sprint-endring så langt — bevis på at forberedelsene i Sprint 1-3 var solide.
+
+---
+
 ## 2026-02-15 (sesjon 5) — Trips Sprint 3: Guided/Free mode toggle
 
 ### Beslutninger
