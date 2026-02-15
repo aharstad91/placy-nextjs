@@ -293,11 +293,42 @@ export default function ReportStickyMap({
     if (activePOI) onMarkerClick(activePOI.poiId);
   }, [activePOI, onMarkerClick]);
 
+  // Derive active theme object for context label
+  const activeTheme = useMemo(
+    () => themes.find((t) => t.id === activeThemeId) ?? null,
+    [themes, activeThemeId]
+  );
+  const activeSubSection = useMemo(() => {
+    if (!activeTheme || !activeSubSectionCategoryId) return null;
+    return activeTheme.subSections?.find(
+      (s) => s.categoryId === activeSubSectionCategoryId
+    ) ?? null;
+  }, [activeTheme, activeSubSectionCategoryId]);
+
   if (!token) return null;
+
+  // Build context label text
+  const ActiveThemeIcon = activeTheme ? getIcon(activeTheme.icon) : null;
+  const contextLabel = activeTheme
+    ? activeSubSection
+      ? `${activeTheme.name} / ${activeSubSection.name}`
+      : activeTheme.name
+    : null;
 
   return (
     // aria-hidden: map is decorative — all POI data is accessible in the left panel text content
     <div className="relative w-full h-full" aria-hidden="true">
+      {/* Theme context label */}
+      {contextLabel && ActiveThemeIcon && (
+        <div
+          key={activeSectionKey}
+          className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm border border-[#eae6e1] px-3 py-1.5 animate-fade-in"
+        >
+          <ActiveThemeIcon className="w-3.5 h-3.5 text-[#7a7062]" />
+          <span className="text-sm font-medium text-[#1a1a1a]">{contextLabel}</span>
+        </div>
+      )}
+
       {/* WebGL context loss overlay */}
       {webglLost && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#faf9f7]/90">

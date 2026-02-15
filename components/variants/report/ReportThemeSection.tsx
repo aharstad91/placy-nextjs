@@ -95,7 +95,7 @@ export default function ReportThemeSection({
     <section
       id={theme.id}
       ref={registerRef}
-      className="py-12 md:py-16 scroll-mt-20"
+      className="py-12 md:py-16 scroll-mt-[7rem]"
     >
       {/* Section header */}
       <div className="max-w-4xl">
@@ -230,23 +230,31 @@ function StickyMapContent({
 
     return (
       <div className="mt-4 space-y-8">
-        {theme.subSections.map((sub) => {
+        {theme.subSections.map((sub, i) => {
           const compositeKey = `${theme.id}:${sub.categoryId}`;
           const subIsExpanded = expandedKeys?.has(compositeKey) ?? false;
 
           return (
-            <SubSectionContent
-              key={sub.categoryId}
-              sub={sub}
-              compositeKey={compositeKey}
-              activePOIId={activePOIId}
-              onPOIClick={onPOIClick}
-              isExpanded={subIsExpanded}
-              onExpand={() => onExpandKey?.(compositeKey)}
-              registerRef={registerSubSectionRef}
-              locale={locale}
-              numLocale={numLocale}
-            />
+            <div key={sub.categoryId}>
+              {/* Center-dot divider between sub-sections */}
+              {i > 0 && (
+                <div className="relative my-6">
+                  <div className="h-px bg-[#eae6e1]" />
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#d4cfc8]" />
+                </div>
+              )}
+              <SubSectionContent
+                sub={sub}
+                compositeKey={compositeKey}
+                activePOIId={activePOIId}
+                onPOIClick={onPOIClick}
+                isExpanded={subIsExpanded}
+                onExpand={() => onExpandKey?.(compositeKey)}
+                registerRef={registerSubSectionRef}
+                locale={locale}
+                numLocale={numLocale}
+              />
+            </div>
           );
         })}
 
@@ -372,7 +380,7 @@ function SubSectionContent({
     <div
       id={compositeKey}
       ref={registerRef?.(compositeKey)}
-      className="scroll-mt-20"
+      className="scroll-mt-[7rem]"
     >
       {/* Sub-section header */}
       <div className="flex items-center gap-2.5 mb-2">

@@ -53,7 +53,7 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
   const numLocale = locale === "en" ? "en-US" : "nb-NO";
 
   return (
-    <section className="col-span-12 pt-8 pb-14 md:pt-14 md:pb-20">
+    <section className="col-span-12 -mx-16 px-16 pt-8 pb-14 md:pt-14 md:pb-20 bg-gradient-to-b from-[#faf9f7] via-[#faf9f7] to-white">
       {/* Text content - constrained width */}
       <div className="max-w-4xl relative">
         {/* Locale toggle - top right */}
@@ -61,8 +61,9 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
           <ReportLocaleToggle />
         </div>
 
-        {/* Label */}
-        <p className="text-sm uppercase tracking-[0.2em] text-[#a0937d] mb-5">
+        {/* Label with horizontal line accent */}
+        <p className="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.25em] text-[#a0937d] mb-5">
+          <span className="w-8 h-px bg-[#a0937d]" />
           {label ?? t(locale, "label")}
         </p>
 
@@ -118,6 +119,49 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
         </p>
       </div>
 
+      {/* Scorecard stripe */}
+      <div className="mt-10 mb-10 bg-white border border-[#eae6e1] rounded-xl p-5 flex items-center divide-x divide-[#eae6e1]">
+        <div className="flex-1 text-center px-4">
+          <p className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
+            {metrics.totalPOIs}
+          </p>
+          <p className="text-xs text-[#6a6a6a] mt-1 uppercase tracking-wider">
+            {t(locale, "places")}
+          </p>
+        </div>
+        {metrics.avgRating > 0 && (
+          <div className="flex-1 text-center px-4">
+            <p className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
+              {metrics.avgRating.toFixed(1)}{" "}
+              <Star className="inline w-5 h-5 text-[#b45309] fill-[#b45309] -mt-1" />
+            </p>
+            <p className="text-xs text-[#6a6a6a] mt-1 uppercase tracking-wider">
+              Rating
+            </p>
+          </div>
+        )}
+        {metrics.totalReviews > 0 && (
+          <div className="flex-1 text-center px-4">
+            <p className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
+              {metrics.totalReviews.toLocaleString(numLocale)}
+            </p>
+            <p className="text-xs text-[#6a6a6a] mt-1 uppercase tracking-wider">
+              {t(locale, "reviews")}
+            </p>
+          </div>
+        )}
+        {metrics.transportCount > 0 && (
+          <div className="flex-1 text-center px-4">
+            <p className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
+              {metrics.transportCount}
+            </p>
+            <p className="text-xs text-[#6a6a6a] mt-1 uppercase tracking-wider">
+              Transport
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Theme navigation - larger cards with stats */}
       {themes.length > 0 && (
         <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -127,7 +171,7 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
               <button
                 key={theme.id}
                 onClick={() => handleThemeClick(theme.id)}
-                className="group flex flex-col items-start p-4 bg-white border border-[#eae6e1] rounded-xl hover:border-[#c0b9ad] hover:shadow-sm transition-all text-left"
+                className="group flex flex-col items-start p-4 bg-white border border-[#eae6e1] rounded-xl hover:border-[#c0b9ad] hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 text-left"
               >
                 {/* Icon */}
                 {Icon && (

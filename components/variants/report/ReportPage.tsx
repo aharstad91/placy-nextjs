@@ -11,6 +11,7 @@ import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportStickyMap from "./ReportStickyMap";
 import ReportExplorerCTA from "./ReportExplorerCTA";
+import ReportFloatingNav from "./ReportFloatingNav";
 import ReportClosing from "./ReportClosing";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
@@ -97,6 +98,21 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
     });
   }, []);
 
+  // Section reveal animation via IntersectionObserver
+  const revealRef = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("revealed");
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.05, rootMargin: "0px 0px -60px 0px" }
+    );
+    observer.observe(el);
+  }, []);
+
   // Scroll preservation: restore on mount, save continuously
   const restoredRef = useRef(false);
 
@@ -148,12 +164,19 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
         </div>
       </div>
 
+      {/* Floating theme navigation */}
+      <ReportFloatingNav
+        themes={reportData.themes}
+        activeThemeId={activeThemeId}
+        activeSectionId={activeSectionId}
+      />
+
       {/* Desktop: 60/40 split with sticky map */}
       <div className="hidden lg:flex">
         {/* Left: Scrollable theme sections */}
         <div className="w-[50%] px-16 min-w-0 overflow-hidden">
           {reportData.themes.map((theme, i) => (
-            <div key={theme.id}>
+            <div key={theme.id} ref={revealRef} className="report-section-reveal">
               {i > 0 && <div className="h-px bg-[#e8e4df]" />}
               <ReportThemeSection
                 theme={theme}
@@ -197,7 +220,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
       <div className="lg:hidden px-16">
         <div className="grid grid-cols-12 gap-x-6">
           {reportData.themes.map((theme, i) => (
-            <div key={theme.id} className="col-span-12">
+            <div key={theme.id} ref={revealRef} className="col-span-12 report-section-reveal">
               {i > 0 && <div className="h-px bg-[#e8e4df]" />}
               <ReportThemeSection
                 theme={theme}
