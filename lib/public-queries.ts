@@ -129,25 +129,17 @@ export async function getAreaSlugForProject(productId: string): Promise<string |
   const client = createPublicClient();
   if (!client) return null;
 
-  // Get area_id from any POI linked to this product
-  const { data: poiRow } = await client
+  // Single query: product_pois → pois → areas via nested joins
+  const { data: row } = await client
     .from("product_pois")
-    .select("pois(area_id)")
+    .select("pois(areas(slug_no))")
     .eq("product_id", productId)
     .limit(1)
     .single();
 
-  const areaId = (poiRow as { pois: { area_id: string } | null } | null)?.pois?.area_id;
-  if (!areaId) return null;
-
-  // Look up the area's slug
-  const { data: area } = await client
-    .from("areas")
-    .select("slug_no")
-    .eq("id", areaId)
-    .single();
-
-  return (area as { slug_no: string } | null)?.slug_no ?? null;
+  const slug = (row as { pois: { areas: { slug_no: string } | null } | null } | null)
+    ?.pois?.areas?.slug_no;
+  return slug ?? null;
 }
 
 // ============================================
