@@ -35,6 +35,15 @@ export default function MapPopupCard({ poi, onClose, areaSlug, knowledge }: MapP
 
   const CategoryIcon = getIcon(poi.category.icon);
 
+  const knowledgeSnippet = useMemo(() => {
+    if (!knowledge?.length) return null;
+    return (
+      knowledge.find((k) => k.topic === "local_knowledge") ??
+      knowledge.find((k) => k.topic === "history") ??
+      null
+    );
+  }, [knowledge]);
+
   const imageUrl = poi.featuredImage
     ? poi.featuredImage.includes("mymaps.usercontent.google.com")
       ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
@@ -157,17 +166,11 @@ export default function MapPopupCard({ poi, onClose, areaSlug, knowledge }: MapP
           )}
 
           {/* Knowledge snippet — 1 fact from local_knowledge or history */}
-          {knowledge && knowledge.length > 0 && (() => {
-            const snippet =
-              knowledge.find((k) => k.topic === "local_knowledge") ??
-              knowledge.find((k) => k.topic === "history");
-            if (!snippet) return null;
-            return (
-              <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-2 italic">
-                {snippet.factText}
-              </p>
-            );
-          })()}
+          {knowledgeSnippet && (
+            <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-2 italic">
+              {knowledgeSnippet.factText}
+            </p>
+          )}
 
           {/* Opening hours */}
           {todayHours && (

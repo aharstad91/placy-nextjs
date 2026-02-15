@@ -475,7 +475,7 @@ function transformPlaceKnowledge(row: DbPlaceKnowledge): PlaceKnowledge {
     sourceUrl: row.source_url && isSafeUrl(row.source_url) ? row.source_url : undefined,
     sourceName: row.source_name ?? undefined,
     sortOrder: row.sort_order ?? 0,
-    displayReady: row.display_ready ? true : false,
+    displayReady: row.display_ready === true,
     verifiedAt: row.verified_at ?? undefined,
   };
 }
@@ -490,7 +490,6 @@ export async function getPlaceKnowledge(poiId: string): Promise<PlaceKnowledge[]
     .select("*")
     .eq("poi_id", poiId)
     .eq("display_ready", true)
-    .order("topic")
     .order("sort_order")
     .order("created_at");
 
@@ -536,8 +535,8 @@ export async function getAreaKnowledge(areaId: string): Promise<PlaceKnowledge[]
     .select("*")
     .eq("area_id", areaId)
     .eq("display_ready", true)
-    .order("topic")
-    .order("sort_order");
+    .order("sort_order")
+    .order("created_at");
 
   if (error || !data) return [];
   return data.map(transformPlaceKnowledge);

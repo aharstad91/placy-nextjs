@@ -1565,7 +1565,7 @@ function transformPlaceKnowledgeAdmin(row: DbPlaceKnowledge): PlaceKnowledge {
     sourceUrl: row.source_url ?? undefined,
     sourceName: row.source_name ?? undefined,
     sortOrder: row.sort_order ?? 0,
-    displayReady: row.display_ready ? true : false,
+    displayReady: row.display_ready === true,
     verifiedAt: row.verified_at ?? undefined,
   };
 }

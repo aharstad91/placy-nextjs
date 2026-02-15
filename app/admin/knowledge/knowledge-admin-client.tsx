@@ -33,10 +33,16 @@ export function KnowledgeAdminClient({ knowledge }: Props) {
     });
   }, [knowledge, topicFilter, confidenceFilter, displayReadyFilter, searchQuery]);
 
-  // Stats
-  const totalCount = knowledge.length;
-  const verifiedCount = knowledge.filter((k) => k.confidence === "verified").length;
-  const displayReadyCount = knowledge.filter((k) => k.displayReady).length;
+  // Stats (single-pass, memoized)
+  const { totalCount, verifiedCount, displayReadyCount } = useMemo(() => {
+    let verified = 0;
+    let ready = 0;
+    for (const k of knowledge) {
+      if (k.confidence === "verified") verified++;
+      if (k.displayReady) ready++;
+    }
+    return { totalCount: knowledge.length, verifiedCount: verified, displayReadyCount: ready };
+  }, [knowledge]);
   const topicCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const k of knowledge) {
