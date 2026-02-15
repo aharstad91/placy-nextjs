@@ -126,7 +126,7 @@ export default function TripPreview({
         )}
 
         {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
         {/* Back button */}
         {backHref && (
@@ -202,8 +202,8 @@ export default function TripPreview({
 
       {/* Free mode hint */}
       <div className="px-5 sm:px-8 pt-6 pb-0">
-        <p className="text-sm text-[#7a7062] italic">
-          Du kan også utforske stoppene i din egen rekkefølge.
+        <p className="text-xs text-[#9a9288] uppercase tracking-wide">
+          Du kan også utforske stoppene i din egen rekkefølge
         </p>
       </div>
 
@@ -245,10 +245,10 @@ export default function TripPreview({
       )}
 
       {/* CTA */}
-      <div className="sticky bottom-0 px-5 sm:px-8 py-4 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5] to-transparent">
+      <div className="sticky bottom-0 px-5 sm:px-8 py-4 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/95 to-[#FAF8F5]/0">
         <button
           onClick={() => router.push(activeHref)}
-          className="w-full flex items-center justify-center gap-2 bg-[#1A1A1A] text-white py-4 rounded-2xl font-semibold text-base hover:bg-[#2a2a2a] transition-colors shadow-lg"
+          className="w-full flex items-center justify-center gap-2.5 bg-[#1A1A1A] text-white py-4 rounded-2xl font-semibold text-base hover:bg-[#2a2a2a] active:scale-[0.98] transition-all shadow-lg shadow-black/20"
         >
           <Play className="w-5 h-5 fill-current" />
           Start turen
@@ -311,11 +311,12 @@ function PreviewStopCard({
         <div className="flex gap-3">
           {/* Thumbnail */}
           {imageUrl && (
-            <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-stone-100">
+            <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-stone-100">
               <img
                 src={imageUrl}
                 alt={displayName}
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
             </div>
           )}

@@ -168,9 +168,12 @@ export default function TripStopDetail({
 
         {/* Transition text (guided mode only) */}
         {!isFreeMode && stopConfig?.transitionText && (
-          <p className="text-sm text-blue-700 italic mb-3">
-            {stopConfig.transitionText}
-          </p>
+          <div className="flex gap-2.5 mb-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+            <Navigation className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-blue-800 leading-relaxed">
+              {stopConfig.transitionText}
+            </p>
+          </div>
         )}
 
         {/* Navigation + Mark Complete */}

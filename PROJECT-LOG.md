@@ -965,3 +965,48 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 - **localStorage-strategi eliminerer auth-avhengighet.** Ingen brukerregistrering nødvendig for å huske modus-preferanse. Perfekt for hotellgjester som ikke logger inn
 - **Pill-toggle vs dropdown var bevisst.** To moduser = toggle er riktig UX. Ville ikke trengt pill-toggle hvis det var 3+ moduser
 - **Free mode avslører at trip center er viktig.** Uten GPS sorteres stopp fra trip center — og den verdien brukes nå aktivt, ikke bare for kartvisning. God at vi la det inn i Sprint 1
+
+---
+
+## 2026-02-15 (sesjon 6) — Trips Sprint 5: Visual polish + demo readiness
+
+### Beslutninger
+- **Wikimedia Commons for cover images.** Forsøkte Unsplash (SPA, kan ikke scrape), Pexels (403), Pixabay (redirect). Wikimedia Commons API gir stabile, CC-lisensierte bilder med thumbnail-generering
+- **Lokale bilder i `public/trips/`.** Lettere å kontrollere enn eksterne URL-er, ingen CORS-problemer, ingen avhengighet av tredjeparter. 200-350KB per bilde — akseptabel størrelse
+- **Fjernet `welcomeText` fra Trip Library.** Var trip-spesifikk tekst ("Velkommen til Art and Vintage...") som dukket opp i bibliotek-oversikten. Feil scope — welcome text hører til enkelt-tur, ikke bibliotek-nivå
+- **Kategori-accent-farger i stedet for plain hvit.** Gir visuell differensiering mellom mat/kultur/natur etc. uten å overdesigne. Subtle bg-amber-50 / bg-emerald-50 etc.
+- **Transition text som navigasjonskort.** Endret fra kursiv tekst til kort med blå bakgrunn, border og ikon — mye lettere å lese mens man går
+
+### Levert (PR #38)
+- Cover images: 3 Wikimedia Commons-bilder for demo-turene
+- Trip Library: fargede kategorikort, "Trondheim" lokasjonslabel, betinget søkefelt
+- Preview: lettere hero-gradient, CTA med press-animasjon, lazy-loadede thumbnails
+- Active mode: forbedret tittel-overlay med backdrop blur, progresbar-animasjon
+- Stop detail: transition text som navigasjonskort med ikon
+- Dead code cleanup: fjernet ubrukt welcomeText-prop
+- 5 kodefiler, 149 innsettinger, 62 slettinger
+
+### Verifisert
+- TypeScript: 0 feil
+- Produksjonsbuild: OK
+- Visuelt (Chrome DevTools MCP, mobil 390×844):
+  - Trip Library: cover images vises, kategorikort har farger
+  - Preview: hero-bilde synlig gjennom lettere gradient, CTA tydelig
+  - Active mode: tittel-overlay med blur, progresbar animerer
+  - Guided mode: transition text vises som blått kort med navigasjonsikon
+
+### Parkert / Åpne spørsmål
+- **Completion flow fortsatt ikke E2E-testet i browser** (gjentatt). Confetti og voucher verifisert via kode, men full 6-stopp gjennomgang er manuelt arbeid
+- **Supabase CLI password trenger fortsatt reset** (gjentatt)
+- **Bilder er CC-lisensiert men attribusjon mangler.** Wikimedia Commons-bilder krever attribusjon — for demo er dette OK, men for produksjon bør det legges til
+
+### Retning
+- **Alle 5 sprints er nå levert.** Trips v2 MVP er komplett: POI-innhold → Preview → Guided/Free → Rewards → Polish
+- **Demoen er klar for Scandic-kontakten.** Full flow: Library → Preview → Start → Walk → Mark stops → Complete → Voucher. Visuelt polert med cover images
+- **Neste steg for Trips:** Ekte brukerdata, analytics, flere turer, bedre bilder (profesjonelle), og mer innhold per by
+
+### Observasjoner
+- **5 sprints på 2 sesjoner er rekordtempo.** Fra ingenting til en komplett turopplevelse med gamification. `/full-auto`-workflowen fjerner all friksjon mellom fasene
+- **Image sourcing er fortsatt et pain point.** Gratis, pålitelige, kvalitetsbilder for norske byer er vanskelig å finne programmatisk. Wikimedia Commons er best-in-class, men bildekvaliteten varierer. For produksjon bør vi vurdere egne bilder eller en betalt tjeneste
+- **Dead code fra refactoring er lett å glemme.** `welcomeText`-proppen overlevde etter at page.tsx sluttet å sende den. Self-review fanget det — viktig å alltid sjekke at props som fjernes fra parent også fjernes fra child
+- **Trips v2 er en sterk demo-case.** Scandic Nidelven-demoen viser Placy som mer enn en Explorer/Report-plattform — kuraterte turopplevelser med gamification er et differensiert produkt

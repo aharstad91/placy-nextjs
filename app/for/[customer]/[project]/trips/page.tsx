@@ -28,8 +28,8 @@ export default async function TripsPage({ params }: PageProps) {
     tripToProject(pt.trip, pt.override)
   );
 
-  // Extract welcome text from first override (if any)
-  const welcomeText = projectTrips[0]?.override?.welcomeText;
+  // Don't pass individual trip welcome texts to the library page
+  // (they are trip-specific, not project-level)
 
   // If no trips exist, show empty state
   if (trips.length === 0) {
@@ -52,7 +52,6 @@ export default async function TripsPage({ params }: PageProps) {
       customer={customer}
       projectSlug={projectSlug}
       trips={trips}
-      welcomeText={welcomeText}
     />
   );
 }
