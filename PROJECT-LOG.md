@@ -565,3 +565,180 @@ Curator-skillen (sesjon 2) definerte stemme og prinsipper for POI-tekster. Da vi
 - **Brukerens magefølelse var riktig.** Første bridgeText-versjon fulgte alle prinsippene teknisk, men føltes feil. "Det ble for snevert" er et presist problem — skrivestilen matchet ikke tekstens funksjon. Lærdom: test alltid ny skrivestil mot brukerens leseopplevelse, ikke bare mot en sjekkliste
 - **22 sub-kategori-beskrivelser er mye tekst.** Kvaliteten varierer — transport-kategoriene (buss, tog, bysykkel) er mer faktabaserte og mindre "nabolags"-pregede enn mat-kategoriene. Det er kanskje riktig — ikke alle kategorier har like sterk nabolagskarakter
 - **Migrasjonsnummer-konflikter fortsetter.** 028 og 029 kolliderte med andre sesjoner, måtte bruke 030 og 031. Med 6-7 parallelle sesjoner på én dag er dette uunngåelig. Sjekk alltid `supabase migration list` først
+
+---
+
+## 2026-02-14 (sesjon 8) — Strategisk: Hurtigruten & Havila som kundesegment
+
+### Kontekst
+Brainstorm rundt Hurtigruten og Havila Kystruten som potensielle Placy-kunder. Begge opererer Bergen–Kirkenes-ruten med 34 havner, 11 skip totalt (7 Hurtigruten + 4 Havila), ~400 000 passasjerer årlig. Hurtigruten hadde EUR 571M i forhåndssolgt billett-revenue (2024), bookinger for 2025 opp 22,7%.
+
+### Strategisk innsikt — to posisjoner
+
+**1. Standalone (QR-kode-modell, lik hoteller)**
+QR i lugarer og fellesarealer → passasjeren lander på placy.no/hurtigruten/tromsø. Rask å lansere, ingen integrasjon nødvendig.
+
+**2. API/dataleverandør inne i cruiselinjens app**
+Hurtigruten har allerede en app (booking, dagsprogram, excursions). Placy leverer POI-data, kuraterte turer og kartlag som API — rendret i cruiselinjens eget design. Større lock-in, mer enterprise.
+
+**Kombinasjonen er sterkest:** Data engine inne i appen + QR-fallback for de uten appen.
+
+### Hvorfor det passer
+
+| Placy-produkt | Use case | Eksempel |
+|---------------|----------|----------|
+| **Explorer** | Korte landganger (15-45 min) — "hva rekker jeg?" | Ålesund: kafeer, museer, utsiktspunkt innenfor 15 min fra kaien |
+| **Guide** | Selvguidede 1-2t byvandringer i større havner | "Historisk byvandring i Tromsø", "Art Nouveau i Ålesund" |
+| **Report** | Destinasjonsmarkedsføring per by/region | "Hammerfest — verdens nordligste by" |
+
+**Kjernepoenget:** Cruiselinjene er eksperter på sjøen, ikke på land. De vet ikke hva som finnes 10 min fra kaien i Sandnessjøen. Placy vet.
+
+**Guide er spesielt godt egnet:**
+- 1-2 timer = typisk landgangstid
+- Selvguidet = ingen operasjonell overhead, skalerer til 34 byer
+- Komplementerer betalte excursions (som krever booking, leverandører, minimum antall)
+- Alltid tilgjengelig, ingen booking nødvendig
+
+### Skalerbarhet
+- 34 byer × 3 produkter = opptil **102 Placy-oppsett** per operatør
+- Time budget (5/10/15 min) er skreddersydd for korte landganger
+- Sesongvariasjon: nordlys-turer om vinteren, midnattssol-vandringer om sommeren
+- To operatører som deler infrastruktur men er separate kunder
+
+### Utfordringer
+- **Mange små havner:** Florø, Nesna, Risøyhamn — kanskje 3-5 POI-er. Nok verdi?
+- **Konkurranse med excursions:** 130+ betalte excursions er revenue stream. Placy må posisjoneres som komplementært
+- **To konkurrerende kunder:** Hurtigruten og Havila deler rute men er rivaler. Eksklusivitet?
+- **Offline-behov:** Nord-Norge har dårlig dekning — trenger Placy offline-modus?
+- **API-integrasjon:** Krever dokumentasjon, SLA, enterprise-salg. Større terskel enn QR-kode
+
+### Inntektsmuligheter — basert på eksisterende prismodell
+
+#### Modell A: Hotell-analog (QR-kode per skip)
+Behandler hvert skip som et "hotell" med QR-koder i lugarer/fellesarealer.
+
+| Produkt | Pris per skip/mnd | 11 skip totalt |
+|---------|-------------------|----------------|
+| Explorer (alle 34 havner) | 4 990 kr | 54 890 kr/mnd |
+| Guide Unlimited (alle guider, alle havner) | 9 990 kr | 109 890 kr/mnd |
+| Report (per by, engang) | 15 000 kr × 10 store byer | 150 000 kr engang |
+
+**ARR:** ~2,0M kr (Explorer + Guide) + 150k engang = **~2,15M kr første år**
+
+Logikk: Skipene har 300-500 lugarer — større enn et typisk hotell. Premium-pris per skip er rettferdig. Explorer-prisen er ~3,3× hotellprisen fordi den dekker 34 byer, ikke 1.
+
+#### Modell B: Per-havn-lisens
+Cruiselinjen betaler per by de vil ha dekket, uavhengig av antall skip.
+
+| Produkt | Pris per havn/mnd | 34 havner |
+|---------|-------------------|-----------|
+| Explorer | 990 kr | 33 660 kr/mnd |
+| Guide (3 guider per havn) | 1 490 kr | 50 660 kr/mnd |
+| Totalt | 2 480 kr/havn | **84 320 kr/mnd** |
+
+**ARR per operatør:** ~1,0M kr
+**ARR begge operatører:** ~2,0M kr
+
+Logikk: Kunden betaler for innholdsdekning, ikke distribusjon. Mer transparent. Kan starte med 10 store havner og utvide.
+
+#### Modell C: Enterprise API-lisens (dataleverandør)
+Placy leverer POI-data + guider + kartlag via API. Cruiselinjen rendrer i sin egen app.
+
+| Komponent | Pris |
+|-----------|------|
+| API-tilgang (flat) | 15 000 kr/mnd |
+| Per havn aktivert | 500 kr/havn/mnd |
+| Per guide produsert | 5 000 kr engang |
+| Support & SLA | 5 000 kr/mnd |
+| **Totalt (34 havner, 50 guider)** | **37 000 kr/mnd + 250k engang** |
+
+**ARR:** ~444k kr/år + 250k setup = **~694k kr første år, ~444k vedvarende**
+
+Logikk: Lavere topplinje enn B2C-modellene, men: lavere churn, høyere lock-in, og cruiselinjen gjør distribusjon selv. Placy eier ingen brukerflate — ren dataleverandør (Foursquare-modellen fra 2026-02-11).
+
+#### Modell D: Hybrid (anbefalt)
+Kombinerer QR-standalone + API-feed. Cruiselinjen får både:
+- Placy-hostede sider (QR i lugarer) for passasjerer uten appen
+- API-feed inn i egen app for den integrerte opplevelsen
+
+| Komponent | Pris |
+|-----------|------|
+| Standalone (10 store havner, Explorer + Guide) | 24 800 kr/mnd |
+| API-tilgang for resterende 24 havner | 12 000 kr/mnd |
+| 20 produserte guider (engang) | 100 000 kr |
+| **Totalt** | **36 800 kr/mnd + 100k engang** |
+
+**ARR per operatør:** ~442k + 100k = **~542k kr første år, ~442k vedvarende**
+**ARR begge operatører:** ~1,1M kr
+
+### Sammenligning med hotellmarkedet
+
+| Segment | Enhetspris | Volum | ARR-potensial |
+|---------|-----------|-------|---------------|
+| Hoteller (50 stk tidlig fase) | 2 480 kr/mnd | 50 | ~1,5M kr |
+| Scandic-avtale (82 hoteller) | ~2 260 kr/mnd | 82 | ~2,2M kr |
+| Hurtigruten + Havila (hybrid) | ~37 000 kr/mnd | 2 | ~1,1M kr |
+| Destinasjonsselskaper (10 stk) | 3 999 kr/mnd | 10 | ~480k kr |
+
+**Cruiselinjene er high-value/low-volume kunder** — 2 kunder som gir nesten like mye som 50 hoteller. Drømmescenario for en startup: færre salgssamtaler, større kontrakter.
+
+### IP-strategi (kobling til 2026-02-11)
+Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte POI-er, guider og redaksjonelt innhold. Denne databasen er verdifull langt utover cruisemarkedet:
+- Samme data kan selges til hoteller i havnebyene
+- Destinasjonsselskapene langs kysten får ferdig innhold
+- Visit Norway / Innovasjon Norge kan være interessert i kystdata
+- **Nettverkseffekten:** Bygge for cruiseline → selge til hoteller i samme byer → selge til destinasjonsselskap
+
+### Beslutning
+- **Strategisk prioritering, ikke umiddelbar implementering.** Krever enterprise-salg, API-utvikling, og innholdsproduksjon for 34 byer. Men potensialet er reelt og kompatibelt med eksisterende strategi.
+- **Neste konkrete steg:** Utforske kontaktpunkter hos Hurtigruten (commercial/partnerships) og Havila. Eventuelt demo med 3-5 av de største havnene (Bergen, Ålesund, Trondheim, Tromsø, Bodø) som proof of concept.
+- **Modell D (hybrid) er anbefalt startpunkt** — gir verdi raskt via QR, bygger mot API-integrasjon over tid.
+
+### Observasjoner
+- **Cruiseline-segmentet validerer Placy som dataleverandør.** Foursquare-analogien (2026-02-11) blir enda tydeligere: Placy eier kuratert norsk kystby-data som ingen andre har. Google har volum, Placy har kontekst.
+- **"Spre turistene"-narrativet (2026-02-01 brainstorm) treffer cruiseline enda hardere.** 400 000 passasjerer som alle går i land på samme kai, i korte intervaller. Explorer med time budget er bokstavelig talt designet for dette.
+- **Guide > Explorer for dette segmentet.** Hoteller: Explorer er primærproduktet (gjesten er der lenge). Cruiseline: Guide er primærproduktet (passasjeren har 1-2 timer, trenger struktur, ikke fri utforskning).
+- **Offline-modus er en reell blocker for Nord-Norge-havnene.** Mehamn, Berlevåg, Båtsfjord — dårlig dekning. Kan ikke ignoreres for en cruiseline-kunde. Bør planlegges tidlig.
+
+### TODO — Kystruten-demo
+- [ ] Bygg `/kystruten/trondheim` med kai-origin (Brattøra). Bruk eksisterende data, ny inngang med cruiseline-perspektiv
+- [ ] Lag 2-3 landgangs-guider: "Bakklandet på 45 min", "2 timer i Trondheim", evt. "Smak Trondheim fra kaien"
+- [ ] Skriv kort pitch (5 linjer) med demo-link — la demoen fortelle historien
+- [ ] Research kontaktpersoner Havila (Commercial Director, Head of Guest Experience)
+- [ ] Pilot: gratis / symbolsk pris. Gevinsten er 5 nye byer med data + referansekunde + bruksdata fra 400k passasjerer
+
+---
+
+## 2026-02-15 — Trip Library: fra dummy til ekte data
+
+### Beslutninger
+- **Seed script fremfor manuelt admin-UI.** Reproducerbart, versjonskontrollert, og mye raskere enn å klikke gjennom admin for 5 turer × 4-5 stopp. `scripts/seed-trips.ts` med `--dry-run` og `--publish` flagg
+- **Ekskluderer transport-kategorier fra POI-søk.** bike, taxi, bus-kategorier filtreres ut i `findPoi()`. Uten dette matcher "Gamle Bybro" en bysykkel-stasjon, "Nidarosdomen" en taxiholdeplass, "Torvet" enda en bysykkel. Supabase ILIKE uten kategorifilter er ubrukelig for landmark-søk
+- **Substitusjon fremfor tomme stopp.** POI-er som ikke eksisterer i databasen (Ravnkloa, Vitensenteret, Kristiansten festning, Sverresborg museum) ble erstattet med nærliggende alternativer + `nameOverride` for å beholde intensjonen. Bedre å ha 4 gode stopp enn 6 med hull
+- **Fjernet DUMMY_TRIPS helt.** Ingen "Kommer snart"-badges, ingen dummy-data-blanding. Klienten viser kun reelle turer fra Supabase
+- **Ryddet bort ubrukte server-props.** `groupedTrips`, `categoriesWithTrips`, `categoryLabels` ble passert fra server til klient men aldri brukt — klienten grupperer selv
+
+### Levert
+- 5 turer seedet og publisert: Bakklandet & Bryggene, Historisk Trondheim, Smak av Trondheim, Kaffebar-ruten, Barnas Trondheim
+- 22 stopp totalt, alle koblet til verifiserte POI-er
+- Hvert stopp med redaksjonell transition_text og local_insight
+- TripLibraryClient.tsx forenklet fra 597 til 462 linjer
+- `docs/solutions/feature-implementations/trip-seed-data-poi-matching-20260215.md`
+
+### Parkert / Åpne spørsmål
+- **Manglende landmark-POI-er i databasen.** Ravnkloa (fiskemarked), Vitensenteret (NTNU), Kristiansten festning, Sverresborg Trøndelag Folkemuseum, Stiftsgården (som bygning, ikke park) — alle viktige Trondheim-landemerker som mangler som POI-er. Bør opprettes manuelt eller via import
+- **Guide mangler fortsatt "Les mer" CTA** (fra sesjon 6 og 7)
+- **Kafé 021-hooks under standard** (gjentatt fra sesjon 2/7)
+- **Trips er ikke koblet til noen project_trips ennå.** Turene er publisert og tilgjengelig via SEO-rute (`/trips/[slug]`), men ingen B2B-prosjekt linker til dem via `project_trips`. Scandic Nidelven bør kobles
+
+### Retning
+- **Trip-produktet er nå funksjonelt.** Database, queries, adapter, UI, admin — alt var bygget. Nå har det også innhold. Neste steg er å koble trips til kunder via `project_trips`
+- **SEO-rutene (`/trips/[slug]`) er live** med 5+1 turer (inkludert "Art and Vintage" fra før). Disse kan indekseres
+- **Kystruten-demoen (sesjon 8) bør bygge på dette.** En "Trondheim fra kaien"-tur med kai-origin er den naturlige neste tripen å seede
+- **POI-gap bør tettes.** Flere av Trondheims mest kjente landemerker mangler i databasen. Uten dem er guidene ufullstendige
+
+### Observasjoner
+- **Alt var bygget bortsett fra dataen.** PRD-en viste WP1/WP2/WP3 som "ikke startet", men alt var kodet. Den egentlige blokkeringen var én ting: ingen turer i databasen. Lærdom: sjekk alltid koden før du planlegger arbeid — PRD-status kan være utdatert
+- **POI-databasen har en transport-forurensning.** Bysykkel-stasjoner, taxiholdeplasser og bussholdeplasser dukker opp overalt i ILIKE-søk. De deler navn med landemerker (Gamle Bybro, Nidarosdomen, Torvet). Enhver POI-søk-funksjon bør ekskludere disse kategoriene som default
+- **`--dry-run` forhindret feil data i prod.** Første kjøring avslørte 6 feil-matcher og 3 manglende POI-er. Uten dry-run hadde vi fått turer med bysykkel-stasjoner som stopp. Alltid ha preview-modus på seed-scripts
+- **nameOverride er et kraftig mønster.** Lar oss bruke "Stiftsgårdsparken" (som eksisterer i DB) men vise "Stiftsgården" til brukeren. Separerer datamodell fra presentasjon uten å kreve nye POI-er
