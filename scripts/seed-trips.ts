@@ -9,6 +9,7 @@
  *   npx tsx scripts/seed-trips.ts --dry-run    # Preview without inserting
  *   npx tsx scripts/seed-trips.ts --publish     # Auto-publish trips
  *   npx tsx scripts/seed-trips.ts --force       # Update existing trips (delete old stops, re-insert)
+ *   npx tsx scripts/seed-trips.ts --link-project scandic_scandic-nidelven  # Link all trips to a project
  */
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -21,6 +22,10 @@ dotenv.config({ path: ".env.local" });
 const DRY_RUN = process.argv.includes("--dry-run");
 const AUTO_PUBLISH = process.argv.includes("--publish");
 const FORCE_UPDATE = process.argv.includes("--force");
+const LINK_PROJECT = (() => {
+  const idx = process.argv.indexOf("--link-project");
+  return idx !== -1 ? process.argv[idx + 1] : null;
+})();
 
 const TRONDHEIM_CENTER = { lat: 63.4305, lng: 10.3951 };
 
@@ -604,6 +609,61 @@ async function main() {
 
   console.log("=== DONE ===");
   console.log(`Created: ${created}, Updated: ${updated}, Skipped: ${skipped}`);
+
+  // Link trips to a project if --link-project is specified
+  if (LINK_PROJECT && !DRY_RUN) {
+    console.log(`\n=== LINKING TO PROJECT: ${LINK_PROJECT} ===`);
+
+    // Get all trip IDs by url_slug
+    const slugs = TRIPS.map((t) => t.urlSlug);
+    const { data: allTrips } = await client
+      .from("trips")
+      .select("id, url_slug")
+      .in("url_slug", slugs);
+
+    if (!allTrips) {
+      console.error("  ERROR: Could not fetch trips for linking");
+    } else {
+      // Get existing project_trips for this project
+      const { data: existingLinks } = await client
+        .from("project_trips")
+        .select("trip_id")
+        .eq("project_id", LINK_PROJECT);
+
+      const linkedIds = new Set((existingLinks || []).map((l) => l.trip_id));
+
+      // Find max sort_order
+      const { data: maxOrder } = await client
+        .from("project_trips")
+        .select("sort_order")
+        .eq("project_id", LINK_PROJECT)
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .single();
+
+      let nextOrder = (maxOrder?.sort_order ?? -1) + 1;
+
+      for (const trip of allTrips) {
+        if (linkedIds.has(trip.id)) {
+          console.log(`  SKIP: ${trip.url_slug} (already linked)`);
+          continue;
+        }
+
+        const { error } = await client.from("project_trips").insert({
+          project_id: LINK_PROJECT,
+          trip_id: trip.id,
+          enabled: true,
+          sort_order: nextOrder++,
+        });
+
+        if (error) {
+          console.error(`  ERROR linking ${trip.url_slug}:`, error);
+        } else {
+          console.log(`  LINKED: ${trip.url_slug} (sort_order: ${nextOrder - 1})`);
+        }
+      }
+    }
+  }
 
   if (!AUTO_PUBLISH && !DRY_RUN) {
     console.log("\nTrips are UNPUBLISHED. Use --publish flag or publish via admin UI.");
