@@ -808,3 +808,43 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 ### Observasjoner
 - **Minimal endring, 9 filer.** +54/-19 linjer. Tight scope holdt — ingen gold-plating
 - **`/full-auto` kjørt for første gang.** Brainstorm+plan allerede ferdig → direkte til Work. Alt levert i én commit, TS+build verifisert, migration pushet, PR opprettet
+
+---
+
+## 2026-02-15 (sesjon 3) — Trips Sprint 1: POI-grunnlag + innhold
+
+### Beslutninger
+- **Sightseeing som ny trip-kategori.** Fullstack-endring: DB CHECK constraint (migration 034) + `categories`-tabell (migration 035) + TypeScript types + UI mappings (gradient, ikon, grouped state). Fire lag som alle må stemme
+- **Tre landmark-POI-er opprettet via migration.** Gamle Bybro (bro, ikke park), Ravnkloa (fiskemarked), Stiftsgården (bygning, ikke park). Koordinater web-verifisert. Bruker `gen_random_uuid()::TEXT`-mønsteret fra 016
+- **Seed script upsert med `--force`.** Delete old stops → update trip metadata → re-insert stops. Bevarer trip ID for `project_trips` FK-referanser. Viktig for iterasjon uten å bryte relasjoner
+- **Ny tur: Midtbyen på 30 minutter.** Sightseeing-kategori, 4 stopp, 1.2 km. Fyller "rask oversikt"-nisjen — kortest tur i biblioteket
+- **Teaser chain-teknikk for transition_text.** Hvert stopp slutter med en hook til neste ("På den andre siden venter Bakklandet"). Bygger framdrift og nysgjerrighet
+- **Smak av Trondheim omstrukturert.** Starter nå ved Ravnkloa (fjord/sjømat) og ender ved Credo (gård-til-bord). Narrativ bue fra sjø til jord — sterkere enn å starte midt i sentrum
+- **3 demo-turer featured, 3 non-demo.** Bakklandet & Bryggene, Smak av Trondheim, Midtbyen på 30 min = featured:true. Historisk Trondheim, Kaffebar-ruten, Barnas Trondheim = featured:false
+
+### Levert (PR #33)
+- Migration 034: sightseeing i trips.category CHECK constraint
+- Migration 035: sightseeing i categories-tabell + 3 landmark-POI-er (Gamle Bybro, Ravnkloa, Stiftsgården)
+- `lib/types.ts`: TRIP_CATEGORIES + TRIP_CATEGORY_LABELS utvidet
+- `TripLibraryClient.tsx`: gradient, ikon, grouped state for sightseeing
+- `scripts/seed-trips.ts`: --force upsert, 6 turer med teaser chain-innhold
+- `docs/solutions/feature-implementations/trips-sprint1-poi-content-seeding-20260215.md`
+- Branch: `feat/trips-sprint1-poi-content`, 4 commits
+
+### Parkert / Åpne spørsmål
+- **Guide mangler "Les mer" CTA** (gjentatt fra sesjon 6/7/8 + forrige sesjon)
+- **Kafé 021-hooks under standard** (gjentatt — Curator-skillen definerer standard nå)
+- **Visuell verifisering gjenstår.** Turene er seedet og databasen er oppdatert, men vi har ikke kjørt dev server og tatt screenshot. Bør sjekkes manuelt
+- **Historisk Trondheim har 5 stopp vs. de andre 4-5.** Lengste turen (90 min) med mest ambisiøst scope — passer det, eller er det for mye?
+
+### Retning
+- **Sprint 1 er ferdig.** Alle checkboxes i planen er markert. POI-grunnlaget er på plass, innholdet er oppgradert, seed-scriptet støtter iterasjon
+- **Sprint 2 naturlig neste steg:** Guided Mode (trinn-for-trinn navigasjon), kart-integrasjon (rute mellom stopp), mer avansert UI for turfølging
+- **Koble trips til project_trips** bør prioriteres — Scandic Nidelven-demoen viser turene best i kontekst
+- **POI-databasen for Trondheim blir rikere.** 3 nye landmark-POI-er + detaljert editorial for 6 turer. Bygger IP
+
+### Observasjoner
+- **`categories`-tabellen er FK-target for `pois.category_id`.** Ikke åpenbart fra planen. Migration 035 feilet første gang fordi vi la til POI-er med `category_id='sightseeing'` uten å opprette kategorien først. Gotcha dokumentert i compound-docs
+- **Teaser chain er en redaksjonell teknikk som fungerer.** Bakklandet-turen føles som en historie du leser — hvert stopp bygger på forrige. Kontrast med Historisk Trondheim som har mer guide-book-stil. Begge fungerer, men teaser chain er mer engasjerende
+- **`/full-auto` kjørte gjennom alle 7 faser autonomt.** Brainstorm+plan var ferdig fra forrige sesjon → direkte til tech audit → work → code review → compound → project log. Én kontekst-reset underveis (stor sesjon), men recovery var smidig
+- **Supabase `.temp`-katalogen er en worktree-gotcha.** Gitignored, så den eksisterer ikke i nye worktrees. Må kopieres manuelt fra hovedrepoet. Bør dokumenteres i setup-worktree.sh

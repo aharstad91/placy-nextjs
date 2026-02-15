@@ -1,13 +1,15 @@
 /**
  * Seed trips for Trondheim using existing POIs from the database.
  *
- * Creates 5 curated trips with ordered stops, transition text, and local insights.
+ * Creates curated trips with ordered stops, transition text, and local insights.
  * Each trip references real POIs already in the database.
  *
  * Usage:
  *   npx tsx scripts/seed-trips.ts
  *   npx tsx scripts/seed-trips.ts --dry-run    # Preview without inserting
  *   npx tsx scripts/seed-trips.ts --publish     # Auto-publish trips
+ *   npx tsx scripts/seed-trips.ts --force       # Update existing trips (delete old stops, re-insert)
+ *   npx tsx scripts/seed-trips.ts --link-project scandic_scandic-nidelven  # Link all trips to a project
  */
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -19,6 +21,11 @@ dotenv.config({ path: ".env.local" });
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const AUTO_PUBLISH = process.argv.includes("--publish");
+const FORCE_UPDATE = process.argv.includes("--force");
+const LINK_PROJECT = (() => {
+  const idx = process.argv.indexOf("--link-project");
+  return idx !== -1 ? process.argv[idx + 1] : null;
+})();
 
 const TRONDHEIM_CENTER = { lat: 63.4305, lng: 10.3951 };
 
@@ -28,7 +35,7 @@ interface TripDef {
   title: string;
   urlSlug: string;
   description: string;
-  category: "food" | "culture" | "nature" | "family" | "active" | "hidden-gems";
+  category: "food" | "culture" | "nature" | "family" | "active" | "hidden-gems" | "sightseeing";
   difficulty: "easy" | "moderate" | "challenging";
   season: "all-year" | "spring" | "summer" | "autumn" | "winter";
   durationMinutes: number;
@@ -52,56 +59,183 @@ interface StopDef {
 // === Trip definitions ===
 
 const TRIPS: TripDef[] = [
+  // ═══ DEMO TRIP 1: Bakklandet & Bryggene (featured) ═══
   {
     title: "Bakklandet & Bryggene",
     urlSlug: "bakklandet-og-bryggene",
     description:
-      "Vandre gjennom Trondheims mest sjarmerende nabolag — langs Nidelva, over Gamle Bybro og forbi de ikoniske trehusene.",
+      "Vandre gjennom Trondheims mest sjarmerende nabolag — over Gamle Bybro, langs fargerike trehus og ned til bryggene ved Nidelva.",
     category: "culture",
     difficulty: "easy",
     season: "all-year",
     durationMinutes: 45,
-    distanceMeters: 2200,
+    distanceMeters: 2000,
     featured: true,
-    tags: ["byvandring", "historie", "arkitektur"],
+    tags: ["byvandring", "historie", "arkitektur", "bakklandet"],
     stops: [
       {
-        poiSearch: "Gamle Bybro plass",
-        poiFallbacks: ["Gamle Bybro"],
+        poiSearch: "Gamle Bybro",
+        poiFallbacks: ["Gamle Bybro plass"],
         nameOverride: "Gamle Bybro",
         transitionText:
-          "Start ved den ikoniske Gamle Bybro — den beste utsikten over bryggerekkene og Nidelva. Herfra krysser du over til Bakklandet.",
+          "Start midt på broen og ta inn utsikten. De fargerike sjøhusene speiler seg i Nidelva — dette er byens mest ikoniske motiv. Porten du nettopp gikk gjennom heter Lykkens Portal, oppkalt etter en vals fra 1940. På den andre siden venter Bakklandet.",
         localInsight:
-          "Broen ble opprinnelig bygget i 1681 og har vært gjenoppbygd flere ganger. Den nåværende versjonen er fra 1861. Porten på bysiden — Lykkens Portal — er byens mest fotograferte motiv.",
+          "Johan Caspar von Cicignon tegnet den første broen i 1681, etter bybrannen som la Trondheim i aske. Dagens versjon er fra 1861 — den fjerde i rekken. Kristian Oskar Hoddø skrev valsen «Nidelven stille og vakker du er» en aprilnatt her i 1940.",
       },
       {
         poiSearch: "Baklandet Skydsstation",
         poiFallbacks: ["Skydsstation"],
         transitionText:
-          "Gå ned Øvre Bakklandet. Etter noen hundre meter finner du byens kanskje mest kjente kafé i et trehus fra 1700-tallet.",
+          "Gå ned Øvre Bakklandet. Brosteinen sliper seg under skoene, og trehusene presser seg tett inntil gaten. Etter et par hundre meter dukker et gult hus fra 1700-tallet opp — Bakklandets mest fotograferte fasade.",
         localInsight:
-          "Skydsstasjonen ble kåret til årets kafé av National Geographic. Bygget er et autentisk skysstasjon fra 1700-tallet — her byttet reisende hest på vei mellom Trondheim og Sverige.",
+          "Bygget var en ekte skysstasjon der reisende byttet hest på vei mellom Trondheim og Sverige. National Geographic kåret den til én av verdens beste kaféer. Menyen holder seg enkel — vafler, smørbrød, hjemmelaget pai.",
       },
       {
         poiSearch: "Café le Frère",
         poiFallbacks: ["Le Frere"],
         nameOverride: "Øvre Bakklandet",
         transitionText:
-          "Fortsett nedover Øvre Bakklandet. Den brosteinsbelagte gaten er kantet av fargerike trehus, småbutikker og kaféer.",
+          "Fortsett nedover gaten. Legg merke til hvordan trehusene skifter farge fra bygning til bygning — okergult, rødt, grønt, hvitt. På 1960-tallet ville politikerne rive alt dette for en motorvei. Heldigvis tapte de.",
         localInsight:
-          "Bakklandet ble nesten revet på 1960-tallet for å gi plass til en motorvei. Heldigvis ble planene stoppet, og i dag er området Trondheims best bevarte trehusstrøk.",
+          "Bakklandet er Trondheims best bevarte trehusstrøk. Det som reddet området var en protestbevegelse ledet av beboerne selv. I dag er bydelen full av småbutikker, atelierer og kaféer — en levende bydel, ikke et museum.",
+      },
+      {
+        poiSearch: "Brygga kaffebar",
+        poiFallbacks: ["Nidelva elvesti", "Habitat Bakklandet"],
+        nameOverride: "Bryggene langs Nidelva",
+        transitionText:
+          "Følg Nidelva nedover. Her står de gamle sjøhusene — bryggene som ga gaten sitt navn. Tømmeret er mørkt av alder, og noen bygninger lener seg lett mot elva som om de fortsatt venter på last.",
+        localInsight:
+          "Bryggerekkene langs Nidelva er Trondheims svar på Bryggen i Bergen. De ble brukt som lagerhus for fisk, korn og trelast fra middelalderen. I dag huser de leiligheter, restauranter og kontorer.",
       },
       {
         poiSearch: "Jordbærpikene Solsiden",
         poiFallbacks: ["Solsiden Senter", "Godt Brød Solsiden"],
         nameOverride: "Solsiden",
         transitionText:
-          "Følg Nidelva videre nedover mot fjorden. Du kommer til Solsiden — byens moderne matdestinasjon ved vannkanten.",
+          "Ruten ender ved Solsiden — fra Bakklandets 1700-tallsidyll til 2000-tallets restaurantstrøk. Kaikanten byr på uteservering med utsikt tilbake mot bryggene du nettopp passerte.",
         localInsight:
-          "Solsiden var et industriområde og skipsverft frem til 1990-tallet. I dag er det Trondheims mest populære restaurantstrøk, med uteservering langs hele kaikanten.",
+          "Solsiden var skipsverft og industriområde frem til 1990-tallet. Transformasjonen til restaurantdestinasjon kom på 2000-tallet. I dag er dette Trondheims mest populære kveldsdestinasjon, med over 20 serveringssteder langs kaien.",
       },
     ],
   },
+  // ═══ DEMO TRIP 2: Smak av Trondheim (featured) ═══
+  {
+    title: "Smak av Trondheim",
+    urlSlug: "smak-av-trondheim",
+    description:
+      "Fra fiskemarked via håndverksbakeri og historisk kafé til Michelin-nivå — smak byens kulinariske bredde på én vandring.",
+    category: "food",
+    difficulty: "easy",
+    season: "all-year",
+    durationMinutes: 60,
+    distanceMeters: 2500,
+    featured: true,
+    tags: ["mat", "restaurant", "kafé", "sjømat", "michelin"],
+    stops: [
+      {
+        poiSearch: "Ravnkloa",
+        poiFallbacks: ["Ravnkloa Fisk"],
+        transitionText:
+          "Start ved fjorden. Ravnkloa har solgt fisk her i over hundre år — lukten av sjø og ferske reker møter deg allerede på brygga. Ta deg tid til å se utvalget før du spiser videre.",
+        localInsight:
+          "Lonely Planet kåret Ravnkloa til ett av Norges tre beste sjømatmarkeder. Herfra går også båten til Munkholmen. Markedet er mest levende på formiddagen — da kommer fiskerne inn med dagens fangst.",
+        descriptionOverride:
+          "Trondheims eldste sjømatmarked, ved enden av Munkegata. Ferske reker, røkelaks og lokale spesialiteter rett fra fjorden.",
+      },
+      {
+        poiSearch: "Sellanraa",
+        poiFallbacks: ["Sellanraa Bok & Bar", "SELLANRAA"],
+        transitionText:
+          "Gå oppover Munkegata mot sentrum. Noen kvartaler inn finner du en kafé der bøkene er like viktige som baksten. Sellanraa kombinerer bokhandel, kafé og bar i lokaler som lukter av nybakt og papir.",
+        localInsight:
+          "Oppkalt etter gården i Knut Hamsuns «Markens Grøde» fra 1917. Lokalet er innredet med naturmaterialer og dempet belysning — designet for å bli sittende. Kjøkkenets surdeigsbakst har blitt en institusjon.",
+        descriptionOverride:
+          "Bokhandel, kafé og bar i ett. Surdeigsbakst, god kaffe og et lokale du ikke vil forlate.",
+      },
+      {
+        poiSearch: "Baklandet Skydsstation",
+        poiFallbacks: ["Skydsstation"],
+        transitionText:
+          "Kryss Gamle Bybro til Bakklandet. Den gule fasaden fra 1700-tallet er lett å kjenne igjen — køen utenfor er et godt tegn. Inne venter knarrende gulv og en meny som ikke trenger å bevise noe.",
+        localInsight:
+          "Et autentisk skysstasjonshus der reisende byttet hest mellom Trondheim og Sverige. National Geographic kåret den til én av verdens beste kaféer. Vafler, smørbrød og hjemmelaget pai — ingenting fancy, alt ekte.",
+        descriptionOverride:
+          "1700-talls skysstasjon blitt kafé. Hjemmelaget mat i et av Norges mest sjarmerende lokaler.",
+      },
+      {
+        poiSearch: "Britannia",
+        poiFallbacks: ["Britannia Hotel", "Speilsalen"],
+        nameOverride: "Britannia Hotel",
+        transitionText:
+          "Tilbake over broen og inn i sentrum. Fra Bakklandets rustikke sjarm til Trondheims mest elegante adresse — Britannia Hotel. Her møtes tradisjon og ambisjon under krystallysekronene.",
+        localInsight:
+          "Britannia åpnet i 1870 og gjenåpnet i 2019 etter en storstilt renovering. Speilsalen har Michelin-stjerne. Palmehaven serverer ettermiddagste med finger sandwiches i jugendinteriør fra 1918.",
+        descriptionOverride:
+          "Grand hotel fra 1870 med Michelin-restaurant, champagnebar og Trondheims fineste palmehave.",
+      },
+      {
+        poiSearch: "Credo",
+        poiFallbacks: ["Restaurant Credo", "Credo Restaurant"],
+        transitionText:
+          "Avslutningen er like ambisiøs som starten var jordnær. Credo ligger i en gammel jernvarefabrikk — men kjøkkenet henter alt fra gården. Heidi Bjerkan har gjort bærekraft til signatur, ikke slagord.",
+        localInsight:
+          "Heidi Bjerkan dyrker mye av råvarene selv på gården Hojem i Orkdal. Alt er lokalt og sesongbasert. Restauranten har fått internasjonal anerkjennelse for bærekraft — men det er smakene som gjør inntrykk.",
+        descriptionOverride:
+          "Heidi Bjerkans bærekraftige flaggskip. Alt fra gården, alt fra sesongen, alt fra regionen.",
+      },
+    ],
+  },
+  // ═══ DEMO TRIP 3: Midtbyen på 30 minutter (featured, NEW) ═══
+  {
+    title: "Midtbyen på 30 minutter",
+    urlSlug: "midtbyen-paa-30-minutter",
+    description:
+      "Trondheims høydepunkter på en halvtime — fra Torvet via Skandinavias største trebygning til Gamle Bybro. Perfekt når tiden er knapp.",
+    category: "sightseeing",
+    difficulty: "easy",
+    season: "all-year",
+    durationMinutes: 30,
+    distanceMeters: 1200,
+    featured: true,
+    tags: ["sightseeing", "rask tur", "highlights", "midtbyen"],
+    stops: [
+      {
+        poiSearch: "Torvet i Trondheim",
+        poiFallbacks: ["Torvet", "Sot & Sabrura på Torvet"],
+        nameOverride: "Torvet",
+        transitionText:
+          "Start i byens hjerte. Olav Tryggvasons statue rager 17 meter over Torvet — men kjenner du den skjulte funksjonen? Søylen er en solur. Se ned på steinene rundt foten. Herfra går vi nordover til noe enda mer overraskende.",
+        localInsight:
+          "Bygrunnleggeren Olav Tryggvason fikk sin statue i 1921. Søylen fungerer som solur — skyggen peker på riktig klokkeslett på steinene rundt foten. Torvet har vært byens samlingspunkt i over tusen år.",
+      },
+      {
+        poiSearch: "Stiftsgården",
+        poiFallbacks: ["Stiftsgårdsparken", "Stiftsgård"],
+        transitionText:
+          "Gå nordover langs Munkegata. Etter to kvartaler reiser Skandinavias største trebygning seg foran deg — 140 rom bygd i tre, for en enke som ville ha det beste. Fasaden strekker seg over en hel kvartalside.",
+        localInsight:
+          "Cecilie Christine Schøller lot bygningen reise seg mellom 1774 og 1778. 4000 kvadratmeter senbarokk, opprinnelig som privat bolig. Kongefamilien har brukt Stiftsgården som offisiell residens i Trondheim siden 1800.",
+      },
+      {
+        poiSearch: "Ravnkloa",
+        poiFallbacks: ["Ravnkloa Fisk"],
+        transitionText:
+          "Fortsett nedover Munkegata mot fjorden. Gaten ender der byen møter vannet — ved Ravnkloa, fiskemarkedet som har ligget her i over hundre år. Stopp opp og trekk inn lukten av sjø.",
+        localInsight:
+          "Ravnkloa er ett av Norges tre beste sjømatmarkeder ifølge Lonely Planet. Herfra tar du båten til Munkholmen — øya som har vært kloster, festning og henrettelsessted.",
+      },
+      {
+        poiSearch: "Gamle Bybro",
+        poiFallbacks: ["Gamle Bybro plass"],
+        transitionText:
+          "Sving østover langs havna. Etter noen minutter åpner utsikten seg — Gamle Bybro med de fargerike bryggene bak. Gå ut på broen for avslutningen. Dette er det mest fotograferte motivet i Trondheim.",
+        localInsight:
+          "Den første broen ble tegnet av Cicignon i 1681 etter den store bybrannen. Porten på bysiden — Lykkens Portal — fikk sitt navn etter Hoddøs vals fra 1940. Utsikten mot bryggerekkene er spesielt vakker i kveldslys.",
+      },
+    ],
+  },
+  // ═══ Non-demo trips (featured: false) ═══
   {
     title: "Historisk Trondheim",
     urlSlug: "historisk-trondheim",
@@ -112,7 +246,7 @@ const TRIPS: TripDef[] = [
     season: "all-year",
     durationMinutes: 90,
     distanceMeters: 3500,
-    featured: true,
+    featured: false,
     tags: ["historie", "kultur", "arkitektur", "kirke"],
     stops: [
       {
@@ -134,17 +268,17 @@ const TRIPS: TripDef[] = [
           "Erkebispegården var erkebiskopens residens fra 1100-tallet. I dag huser den Rustkammeret (hærmuseum) og kroningsregaliene. Borggården brukes til konserter om sommeren.",
       },
       {
-        poiSearch: "Stiftsgårdsparken",
-        poiFallbacks: ["Stiftsgård"],
+        poiSearch: "Stiftsgården",
+        poiFallbacks: ["Stiftsgårdsparken", "Stiftsgård"],
         nameOverride: "Stiftsgården",
         transitionText:
           "Gå nordover til Munkegata. Stiftsgården — kongens offisielle residens i Trondheim — troner over byens hovedgate.",
         localInsight:
-          "Stiftsgården er Skandinavias største trebygning, bygget 1774-78. Bygningen har 140 rom og brukes under kongelige besøk og kroninger. Omvisninger tilbys om sommeren.",
+          "Stiftsgården er Skandinavias største trebygning, bygget 1774-78. Bygningen har 140 rom og brukes under kongelige besøk og kroninger.",
       },
       {
         poiSearch: "Torvet i Trondheim",
-        poiFallbacks: ["Torvet", "Olav Tryggvason"],
+        poiFallbacks: ["Torvet", "Sot & Sabrura på Torvet"],
         nameOverride: "Torvet & Olavsstatuen",
         transitionText:
           "Gå rett ned Munkegata til byens hjerte — Torvet med Olav Tryggvasons statue.",
@@ -152,69 +286,13 @@ const TRIPS: TripDef[] = [
           "Statuen av bygrunnleggeren Olav Tryggvason ble reist i 1921. Søylen fungerer også som solur — skyggen viser klokken på steinene rundt foten. Torvet har vært byens samlingspunkt i over tusen år.",
       },
       {
-        poiSearch: "Gamle Bybro plass",
-        poiFallbacks: ["Gamle Bybro"],
+        poiSearch: "Gamle Bybro",
+        poiFallbacks: ["Gamle Bybro plass"],
         nameOverride: "Gamle Bybro",
         transitionText:
           "Gå østover mot Nidelva. Gamle Bybro gir den klassiske utsikten over sjøhusene — Trondheims mest kjente motiv.",
         localInsight:
           "Lykkens Portal på bysiden av broen har inskripsjonen «Brug mig til Fornøyelse». Utsikten mot bryggerekkene speiler seg i Nidelva — spesielt vakker i kveldslys.",
-      },
-    ],
-  },
-  {
-    title: "Smak av Trondheim",
-    urlSlug: "smak-av-trondheim",
-    description:
-      "En kulinarisk vandring fra håndverksbakeri via lokale favoritter til Michelin-nivå — smak byens beste.",
-    category: "food",
-    difficulty: "easy",
-    season: "all-year",
-    durationMinutes: 120,
-    distanceMeters: 2800,
-    featured: true,
-    tags: ["mat", "restaurant", "kafé", "bakeri"],
-    stops: [
-      {
-        poiSearch: "Sellanraa",
-        poiFallbacks: ["Sellanraa Bok & Bar", "Sellanraa Bok"],
-        transitionText:
-          "Start dagen med kaffe og bakst hos Sellanraa — en bokhandel, kafé og bar i ett.",
-        localInsight:
-          "Oppkalt etter Knut Hamsuns roman 'Markens Grøde' (Sellanraa er gården i boken). Kombinasjonen av bøker og mat i et vakkert lokale gjør dette til et av Trondheims mest stemningsfulle steder.",
-      },
-      {
-        poiSearch: "Dromedar",
-        poiFallbacks: ["Dromedar Kaffebar", "Dromedar kaffe"],
-        transitionText:
-          "Et par minutters gange bringer deg til Trondheims kaffepioner.",
-        localInsight:
-          "Dromedar startet kafferevolusjonen i Trondheim. De brenner sine egne bønner og har vært en lokal institusjon siden 2002. Prøv espressoen — den regnes blant Norges beste.",
-      },
-      {
-        poiSearch: "Bakklandet Skydsstation",
-        poiFallbacks: ["Skydsstation"],
-        transitionText:
-          "Videre til Bakklandet for lunsj i historiske omgivelser.",
-        localInsight:
-          "Menyen er enkel og hjemmelaget — vafler, smørbrød, pai. Det er stemningen i det 300 år gamle trehuset som gjør opplevelsen. Kom tidlig — det er alltid kø.",
-      },
-      {
-        poiSearch: "Britannia",
-        poiFallbacks: ["Britannia Hotel", "Speilsalen"],
-        nameOverride: "Britannia Hotel & Speilsalen",
-        transitionText:
-          "Fra Bakklandets rustikke sjarm til Trondheims mest elegante adresse.",
-        localInsight:
-          "Britannia Hotel gjenåpnet i 2019 etter en massiv renovering. Speilsalen, hotellets flaggskiprestaurant, har Michelin-stjerne. Vinmonopolet i kjelleren er Norges mest eksklusive.",
-      },
-      {
-        poiSearch: "Credo",
-        poiFallbacks: ["Restaurant Credo"],
-        transitionText:
-          "Avslutningen er verdig: Credo, kåret til verdens mest bærekraftige restaurant.",
-        localInsight:
-          "Heidi Bjerkan driver Credo fra en gammel jernvarefabrikk. Alt er lokalt, sesongbasert og bærekraftig — de dyrker mye selv på gården Hojem i Orkdal. Reservér i god tid.",
       },
     ],
   },
@@ -376,10 +454,12 @@ async function main() {
   const client = getClient();
 
   console.log(DRY_RUN ? "=== DRY RUN ===" : "=== SEEDING TRIPS ===");
-  console.log(`Trips to create: ${TRIPS.length}`);
+  if (FORCE_UPDATE) console.log("FORCE mode: existing trips will be updated");
+  console.log(`Trips to process: ${TRIPS.length}`);
   console.log();
 
   let created = 0;
+  let updated = 0;
   let skipped = 0;
 
   for (const tripDef of TRIPS) {
@@ -392,8 +472,8 @@ async function main() {
       .eq("url_slug", tripDef.urlSlug)
       .single();
 
-    if (existing) {
-      console.log(`  SKIP: Already exists (${tripDef.urlSlug})`);
+    if (existing && !FORCE_UPDATE) {
+      console.log(`  SKIP: Already exists (use --force to update)`);
       skipped++;
       continue;
     }
@@ -429,47 +509,83 @@ async function main() {
       continue;
     }
 
+    const tripFields = {
+      title: tripDef.title,
+      description: tripDef.description,
+      url_slug: tripDef.urlSlug,
+      category: tripDef.category,
+      difficulty: tripDef.difficulty,
+      season: tripDef.season,
+      duration_minutes: tripDef.durationMinutes,
+      distance_meters: tripDef.distanceMeters,
+      featured: tripDef.featured,
+      tags: tripDef.tags,
+      city: "Trondheim",
+      region: "Trøndelag",
+      country: "NO",
+      center_lat: TRONDHEIM_CENTER.lat,
+      center_lng: TRONDHEIM_CENTER.lng,
+      published: AUTO_PUBLISH,
+    };
+
     if (DRY_RUN) {
-      console.log(`  DRY RUN: Would create trip with ${resolvedStops.length} stops`);
+      const action = existing ? "UPDATE" : "CREATE";
+      console.log(`  DRY RUN: Would ${action} trip with ${resolvedStops.length} stops`);
+      if (existing) updated++;
+      else created++;
+      continue;
+    }
+
+    let tripId: string;
+
+    if (existing) {
+      // --force update: delete old stops, update trip metadata, re-insert stops
+      console.log(`  UPDATE: Deleting old stops and re-inserting...`);
+
+      const { error: deleteError } = await client
+        .from("trip_stops")
+        .delete()
+        .eq("trip_id", existing.id);
+
+      if (deleteError) {
+        console.error(`  ERROR deleting old stops:`, deleteError);
+        continue;
+      }
+
+      const { error: updateError } = await client
+        .from("trips")
+        .update(tripFields)
+        .eq("id", existing.id);
+
+      if (updateError) {
+        console.error(`  ERROR updating trip:`, updateError);
+        continue;
+      }
+
+      tripId = existing.id;
+      console.log(`  Updated trip: ${tripId}`);
+      updated++;
+    } else {
+      // Insert new trip
+      const { data: tripRow, error: tripError } = await client
+        .from("trips")
+        .insert({ ...tripFields, created_by: "seed-script" })
+        .select("id")
+        .single();
+
+      if (tripError || !tripRow) {
+        console.error(`  ERROR creating trip:`, tripError);
+        continue;
+      }
+
+      tripId = tripRow.id;
+      console.log(`  Created trip: ${tripId}`);
       created++;
-      continue;
     }
-
-    // Insert trip
-    const { data: tripRow, error: tripError } = await client
-      .from("trips")
-      .insert({
-        title: tripDef.title,
-        description: tripDef.description,
-        url_slug: tripDef.urlSlug,
-        category: tripDef.category,
-        difficulty: tripDef.difficulty,
-        season: tripDef.season,
-        duration_minutes: tripDef.durationMinutes,
-        distance_meters: tripDef.distanceMeters,
-        featured: tripDef.featured,
-        tags: tripDef.tags,
-        city: "Trondheim",
-        region: "Trøndelag",
-        country: "NO",
-        center_lat: TRONDHEIM_CENTER.lat,
-        center_lng: TRONDHEIM_CENTER.lng,
-        published: AUTO_PUBLISH,
-        created_by: "seed-script",
-      })
-      .select("id")
-      .single();
-
-    if (tripError || !tripRow) {
-      console.error(`  ERROR creating trip:`, tripError);
-      continue;
-    }
-
-    console.log(`  Created trip: ${tripRow.id}`);
 
     // Insert stops
     const stopsToInsert = resolvedStops.map((rs) => ({
-      trip_id: tripRow.id,
+      trip_id: tripId,
       poi_id: rs.poiId,
       sort_order: rs.sortOrder,
       transition_text: rs.stop.transitionText ?? null,
@@ -485,15 +601,69 @@ async function main() {
     if (stopsError) {
       console.error(`  ERROR creating stops:`, stopsError);
     } else {
-      console.log(`  Created ${stopsToInsert.length} stops`);
+      console.log(`  Inserted ${stopsToInsert.length} stops`);
     }
 
-    created++;
     console.log();
   }
 
   console.log("=== DONE ===");
-  console.log(`Created: ${created}, Skipped: ${skipped}`);
+  console.log(`Created: ${created}, Updated: ${updated}, Skipped: ${skipped}`);
+
+  // Link trips to a project if --link-project is specified
+  if (LINK_PROJECT && !DRY_RUN) {
+    console.log(`\n=== LINKING TO PROJECT: ${LINK_PROJECT} ===`);
+
+    // Get all trip IDs by url_slug
+    const slugs = TRIPS.map((t) => t.urlSlug);
+    const { data: allTrips } = await client
+      .from("trips")
+      .select("id, url_slug")
+      .in("url_slug", slugs);
+
+    if (!allTrips) {
+      console.error("  ERROR: Could not fetch trips for linking");
+    } else {
+      // Get existing project_trips for this project
+      const { data: existingLinks } = await client
+        .from("project_trips")
+        .select("trip_id")
+        .eq("project_id", LINK_PROJECT);
+
+      const linkedIds = new Set((existingLinks || []).map((l) => l.trip_id));
+
+      // Find max sort_order
+      const { data: maxOrder } = await client
+        .from("project_trips")
+        .select("sort_order")
+        .eq("project_id", LINK_PROJECT)
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .single();
+
+      let nextOrder = (maxOrder?.sort_order ?? -1) + 1;
+
+      for (const trip of allTrips) {
+        if (linkedIds.has(trip.id)) {
+          console.log(`  SKIP: ${trip.url_slug} (already linked)`);
+          continue;
+        }
+
+        const { error } = await client.from("project_trips").insert({
+          project_id: LINK_PROJECT,
+          trip_id: trip.id,
+          enabled: true,
+          sort_order: nextOrder++,
+        });
+
+        if (error) {
+          console.error(`  ERROR linking ${trip.url_slug}:`, error);
+        } else {
+          console.log(`  LINKED: ${trip.url_slug} (sort_order: ${nextOrder - 1})`);
+        }
+      }
+    }
+  }
 
   if (!AUTO_PUBLISH && !DRY_RUN) {
     console.log("\nTrips are UNPUBLISHED. Use --publish flag or publish via admin UI.");
