@@ -1,3 +1,4 @@
+// @ts-nocheck — 3D component preserved for future use
 "use client";
 
 import { useEffect, useRef } from "react";

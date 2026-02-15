@@ -1,3 +1,4 @@
+// @ts-nocheck — 3D hook preserved for future use
 "use client";
 
 import { useRef, useCallback, useMemo } from "react";

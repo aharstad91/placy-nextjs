@@ -4,10 +4,15 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import type { ReportTheme } from "./report-data";
 import type { Coordinates, Category } from "@/lib/types";
 import type { MapRef } from "react-map-gl/mapbox";
+import dynamic from "next/dynamic";
 import ReportHighlightCard from "./ReportHighlightCard";
-import ReportInteractiveMap from "./ReportInteractiveMap";
 import ReportMapTabs from "./ReportMapTabs";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
+
+const ReportInteractiveMap = dynamic(() => import("./ReportInteractiveMap"), {
+  ssr: false,
+  loading: () => <SkeletonReportMap />,
+});
 
 interface ReportInteractiveMapSectionProps {
   theme: ReportTheme;

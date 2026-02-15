@@ -7,10 +7,16 @@ import { transformToReportData } from "./report-data";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
+import dynamic from "next/dynamic";
 import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
-import ReportStickyMap from "./ReportStickyMap";
 import ReportExplorerCTA from "./ReportExplorerCTA";
+import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
+
+const ReportStickyMap = dynamic(() => import("./ReportStickyMap"), {
+  ssr: false,
+  loading: () => <SkeletonReportMap className="fixed top-0 right-0 w-1/2 h-screen" />,
+});
 import ReportFloatingNav from "./ReportFloatingNav";
 import ReportClosing from "./ReportClosing";
 

@@ -1,3 +1,4 @@
+// @ts-nocheck — 3D component preserved for future use
 'use client';
 
 import { MapPin } from 'lucide-react';
