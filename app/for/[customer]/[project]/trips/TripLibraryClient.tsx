@@ -13,6 +13,7 @@ import {
   Users,
   Mountain,
   Sparkles,
+  Eye,
   Clock,
   MapPin,
   type LucideIcon,
@@ -28,6 +29,7 @@ const CATEGORY_GRADIENTS: Record<TripCategory, string> = {
   family: "from-sky-700 to-blue-500",
   active: "from-rose-700 to-orange-500",
   "hidden-gems": "from-purple-800 to-indigo-600",
+  sightseeing: "from-indigo-700 to-blue-600",
 };
 
 const CATEGORY_ICONS: Record<TripCategory, LucideIcon> = {
@@ -37,6 +39,7 @@ const CATEGORY_ICONS: Record<TripCategory, LucideIcon> = {
   family: Users,
   active: Mountain,
   "hidden-gems": Sparkles,
+  sightseeing: Eye,
 };
 
 const DIFFICULTY_LABELS: Record<string, string> = {
@@ -321,6 +324,7 @@ export default function TripLibraryClient({
       family: [],
       active: [],
       "hidden-gems": [],
+      sightseeing: [],
     };
     for (const item of filteredItems) {
       if (item.category in result) {

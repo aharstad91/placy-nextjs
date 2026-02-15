@@ -365,6 +365,7 @@ export const TRIP_CATEGORIES = [
   "family", // Familieutflukt
   "active", // Aktiv tur
   "hidden-gems", // Skjulte perler
+  "sightseeing", // Sightseeing
 ] as const;
 
 export type TripCategory = (typeof TRIP_CATEGORIES)[number];
@@ -377,6 +378,7 @@ export const TRIP_CATEGORY_LABELS: Record<TripCategory, string> = {
   family: "Familieutflukt",
   active: "Aktiv tur",
   "hidden-gems": "Skjulte perler",
+  sightseeing: "Sightseeing",
 };
 
 export type TripDifficulty = "easy" | "moderate" | "challenging";

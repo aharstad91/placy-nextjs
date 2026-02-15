@@ -28,7 +28,7 @@ interface TripDef {
   title: string;
   urlSlug: string;
   description: string;
-  category: "food" | "culture" | "nature" | "family" | "active" | "hidden-gems";
+  category: "food" | "culture" | "nature" | "family" | "active" | "hidden-gems" | "sightseeing";
   difficulty: "easy" | "moderate" | "challenging";
   season: "all-year" | "spring" | "summer" | "autumn" | "winter";
   durationMinutes: number;
