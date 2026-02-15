@@ -12,6 +12,7 @@ import {
   MapPin,
   Tag,
   Sparkles,
+  BookOpen,
   Menu,
   X,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const NAV_ITEMS: NavLink[] = [
   { href: "/admin/projects", label: "Prosjekter", icon: FolderOpen },
   { href: "/admin/public", label: "Offentlige sider", icon: Globe },
   { href: "/admin/trips", label: "Trips", icon: Route },
+  { href: "/admin/knowledge", label: "Kunnskap", icon: BookOpen },
   { href: "/admin/pois", label: "POI-er", icon: MapPin },
   { href: "/admin/categories", label: "Kategorier", icon: Tag },
   { href: "/admin/generate", label: "Generator", icon: Sparkles },

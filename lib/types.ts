@@ -559,3 +559,54 @@ export interface RewardConfig {
   hotelLogoUrl?: string;
   validityDays: RewardValidityDays;
 }
+
+// === Place Knowledge Types ===
+
+export const KNOWLEDGE_TOPICS = [
+  'history', 'architecture', 'food', 'culture', 'people',
+  'nature', 'practical', 'local_knowledge', 'spatial'
+] as const;
+
+export type KnowledgeTopic = (typeof KNOWLEDGE_TOPICS)[number];
+
+export const KNOWLEDGE_TOPIC_LABELS: Record<KnowledgeTopic, string> = {
+  history: 'Historikk',
+  architecture: 'Arkitektur',
+  food: 'Mat & drikke',
+  culture: 'Kultur',
+  people: 'Mennesker',
+  nature: 'Natur',
+  practical: 'Praktisk',
+  local_knowledge: 'Visste du?',
+  spatial: 'I nærheten',
+};
+
+export const KNOWLEDGE_TOPIC_LABELS_EN: Record<KnowledgeTopic, string> = {
+  history: 'History',
+  architecture: 'Architecture',
+  food: 'Food & drink',
+  culture: 'Culture',
+  people: 'People',
+  nature: 'Nature',
+  practical: 'Practical',
+  local_knowledge: 'Did you know?',
+  spatial: 'Nearby',
+};
+
+export type KnowledgeConfidence = 'verified' | 'unverified' | 'disputed';
+
+export interface PlaceKnowledge {
+  id: string;
+  poiId?: string;
+  areaId?: string;
+  topic: KnowledgeTopic;
+  factText: string;
+  factTextEn?: string;
+  structuredData?: Record<string, unknown>;
+  confidence: KnowledgeConfidence;
+  sourceUrl?: string;
+  sourceName?: string;
+  sortOrder: number;
+  displayReady: boolean;
+  verifiedAt?: string;
+}

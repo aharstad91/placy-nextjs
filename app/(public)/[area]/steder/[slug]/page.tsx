@@ -8,10 +8,12 @@ import {
   getPOIBySlug,
   getSimilarPOIs,
   getCategoriesForArea,
+  getPlaceKnowledge,
 } from "@/lib/public-queries";
 import { getIcon } from "@/lib/utils/map-icons";
 import { getStaticMapUrl } from "@/lib/mapbox-static";
 import Breadcrumb from "@/components/public/Breadcrumb";
+import PlaceKnowledgeSection from "@/components/public/PlaceKnowledgeSection";
 import POIJsonLd from "@/components/seo/POIJsonLd";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import SaveButton from "@/components/public/SaveButton";
@@ -64,7 +66,11 @@ export default async function POIPage({ params }: PageProps) {
   const poi = await getPOIBySlug(area.id, slug);
   if (!poi) notFound();
 
-  const similar = await getSimilarPOIs(area.id, poi.category.id, poi.id, 4);
+  const [similar, knowledge, allCategorySlugs] = await Promise.all([
+    getSimilarPOIs(area.id, poi.category.id, poi.id, 4),
+    getPlaceKnowledge(poi.id),
+    getCategoriesForArea(area.id, "no"),
+  ]);
 
   const imageUrl = poi.featuredImage
     ?? (poi.photoReference
@@ -83,8 +89,7 @@ export default async function POIPage({ params }: PageProps) {
     markerColor: poi.category.color.replace("#", ""),
   });
 
-  // Find the category slug for breadcrumb
-  const allCategorySlugs = await getCategoriesForArea(area.id, "no");
+  // Find the category slug for breadcrumb (from parallelized query above)
   const categorySlug = allCategorySlugs.find((c) => c.id === poi.category.id)?.slug;
 
   // Breadcrumb data for JSON-LD
@@ -187,6 +192,14 @@ export default async function POIPage({ params }: PageProps) {
                 {poi.localInsight}
               </p>
             </div>
+          )}
+
+          {knowledge.length > 0 && (
+            <PlaceKnowledgeSection
+              knowledge={knowledge}
+              locale="no"
+              hasEditorialHook={!!poi.editorialHook}
+            />
           )}
         </div>
 
