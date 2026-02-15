@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
-import type { POI, TripStopConfig, Coordinates } from "@/lib/types";
+import type { POI, TripStopConfig, TripMode, Coordinates } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
 import {
@@ -41,6 +41,7 @@ interface TripStopDetailProps {
   onNext: () => void;
   onPrev: () => void;
   onMarkComplete: (gpsVerified: boolean, accuracy?: number, coords?: Coordinates) => void;
+  tripMode?: TripMode;
 }
 
 export default function TripStopDetail({
@@ -58,7 +59,9 @@ export default function TripStopDetail({
   onNext,
   onPrev,
   onMarkComplete,
+  tripMode = "guided",
 }: TripStopDetailProps) {
+  const isFreeMode = tripMode === "free";
   // --- GPS Verification state ---
   const [verificationState, setVerificationState] = useState<VerificationState>({ status: "idle" });
   const fallbackTimerRef = useRef<{ timeoutId: NodeJS.Timeout; canceled: boolean } | null>(null);
@@ -163,8 +166,8 @@ export default function TripStopDetail({
           </div>
         )}
 
-        {/* Transition text */}
-        {stopConfig?.transitionText && (
+        {/* Transition text (guided mode only) */}
+        {!isFreeMode && stopConfig?.transitionText && (
           <p className="text-sm text-blue-700 italic mb-3">
             {stopConfig.transitionText}
           </p>
@@ -172,19 +175,21 @@ export default function TripStopDetail({
 
         {/* Navigation + Mark Complete */}
         <div className="flex items-center gap-3">
-          {/* Previous button */}
-          <button
-            onClick={onPrev}
-            disabled={isFirstStop}
-            className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-              isFirstStop
-                ? "bg-stone-100 text-stone-300 cursor-not-allowed"
-                : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-            )}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+          {/* Previous button (guided only) */}
+          {!isFreeMode && (
+            <button
+              onClick={onPrev}
+              disabled={isFirstStop}
+              className={cn(
+                "w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
+                isFirstStop
+                  ? "bg-stone-100 text-stone-300 cursor-not-allowed"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              )}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
 
           {/* Mark complete button */}
           <button
@@ -233,19 +238,21 @@ export default function TripStopDetail({
             )}
           </button>
 
-          {/* Next button */}
-          <button
-            onClick={onNext}
-            disabled={isLastStop}
-            className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-              isLastStop
-                ? "bg-stone-100 text-stone-300 cursor-not-allowed"
-                : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-            )}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+          {/* Next button (guided only) */}
+          {!isFreeMode && (
+            <button
+              onClick={onNext}
+              disabled={isLastStop}
+              className={cn(
+                "w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
+                isLastStop
+                  ? "bg-stone-100 text-stone-300 cursor-not-allowed"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              )}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

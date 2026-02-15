@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import type { Project, POI, TripStopConfig, Coordinates } from "@/lib/types";
+import type { Project, POI, TripStopConfig, TripMode, Coordinates } from "@/lib/types";
 import type { RouteSegment } from "@/components/map/route-layer";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import { useTripCompletion } from "@/lib/hooks/useTripCompletion";
@@ -23,6 +23,7 @@ import TripIntroOverlay from "./TripIntroOverlay";
 import TripCompletionScreen from "./TripCompletionScreen";
 import TripHeader from "./TripHeader";
 import TripStopList from "./TripStopList";
+import TripModeToggle from "./TripModeToggle";
 
 interface TripPageProps {
   project: Project;
@@ -43,6 +44,32 @@ export default function TripPage({ project }: TripPageProps) {
   // Get trip config - must be checked before hooks that depend on it
   const tripConfig = project.tripConfig;
   const tripId = tripConfig?.id ?? "";
+
+  // Trip mode (guided/free) — persisted per trip in localStorage
+  const [tripMode, setTripMode] = useState<TripMode>(
+    tripConfig?.defaultMode ?? "guided"
+  );
+
+  // Initialize mode from localStorage on hydration
+  useEffect(() => {
+    if (!tripId) return;
+    const stored = localStorage.getItem(`trip-mode-${tripId}`);
+    if (stored === "guided" || stored === "free") {
+      setTripMode(stored);
+    }
+  }, [tripId]);
+
+  const handleModeChange = useCallback(
+    (mode: TripMode) => {
+      setTripMode(mode);
+      if (tripId) {
+        localStorage.setItem(`trip-mode-${tripId}`, mode);
+      }
+    },
+    [tripId]
+  );
+
+  const isGuidedMode = tripMode === "guided";
 
   // Trip completion state (persisted in localStorage)
   const {
@@ -103,11 +130,32 @@ export default function TripPage({ project }: TripPageProps) {
     setIsHydrated(true);
   }, []);
 
-  // Calculate distance to current stop
-  const distanceToCurrentStop = useMemo(() => {
-    if (!geo.userPosition || !stops[currentStopIndex]) return null;
-    return haversineDistance(geo.userPosition, stops[currentStopIndex].coordinates);
-  }, [geo.userPosition, stops, currentStopIndex]);
+  // Calculate distance from user to each stop (used in both modes)
+  const stopDistances = useMemo(() => {
+    if (!geo.userPosition) return new Map<number, number>();
+    const map = new Map<number, number>();
+    stops.forEach((stop, index) => {
+      map.set(index, haversineDistance(geo.userPosition!, stop.coordinates));
+    });
+    return map;
+  }, [geo.userPosition, stops]);
+
+  // Distance to current stop (for guided mode detail view)
+  const distanceToCurrentStop = stopDistances.get(currentStopIndex) ?? null;
+
+  // Sorted stop indices for Free mode (nearest first)
+  const freeModeSortedIndices = useMemo(() => {
+    if (isGuidedMode) return undefined;
+    const indices = stops.map((_, i) => i);
+    if (stopDistances.size > 0) {
+      indices.sort((a, b) => {
+        const dA = stopDistances.get(a) ?? Infinity;
+        const dB = stopDistances.get(b) ?? Infinity;
+        return dA - dB;
+      });
+    }
+    return indices;
+  }, [isGuidedMode, stops, stopDistances]);
 
   // Check if all stops are completed
   const allStopsCompleted = useMemo(() => {
@@ -133,6 +181,7 @@ export default function TripPage({ project }: TripPageProps) {
   }, [isTripCompleted, completionHydrated, showCompletionScreen, completion?.celebrationShownAt]);
 
   // Fetch route from Mapbox Directions (single multi-waypoint call)
+  // Always fetch (needed if user switches to guided mode)
   useEffect(() => {
     if (stops.length < 2) return;
 
@@ -170,7 +219,9 @@ export default function TripPage({ project }: TripPageProps) {
   }, [stops]);
 
   // Compute route segments (active/inactive per leg) based on currentStopIndex
+  // Only used in guided mode
   const routeSegments: RouteSegment[] | undefined = useMemo(() => {
+    if (!isGuidedMode) return undefined;
     if (routeState.status !== "ready" || stops.length < 2) return undefined;
 
     const coords = routeState.coordinates;
@@ -209,9 +260,9 @@ export default function TripPage({ project }: TripPageProps) {
     }
 
     return segments.length > 0 ? segments : undefined;
-  }, [routeState, stops, currentStopIndex, completedStops]);
+  }, [isGuidedMode, routeState, stops, currentStopIndex, completedStops]);
 
-  // Navigation handlers
+  // Navigation handlers (guided mode only)
   const handleNext = useCallback(() => {
     if (currentStopIndex < stops.length - 1) {
       setCurrentStopIndex((prev) => prev + 1);
@@ -293,16 +344,19 @@ export default function TripPage({ project }: TripPageProps) {
   // Determine if we should show celebration (first time completing)
   const shouldCelebrate = isTripCompleted && !completion?.celebrationShownAt;
 
-  // Shared map props
+  // Shared map props — in free mode, hide route
   const mapProps = {
     center: project.centerCoordinates,
     stops,
     currentStopIndex,
     completedStops,
     onStopClick: handleStopClick,
-    routeCoordinates:
-      routeState.status === "ready" ? routeState.coordinates : undefined,
-    routeSegments,
+    routeCoordinates: isGuidedMode
+      ? routeState.status === "ready"
+        ? routeState.coordinates
+        : undefined
+      : undefined,
+    routeSegments: isGuidedMode ? routeSegments : undefined,
     userPosition: geo.userPosition,
     userAccuracy: geo.accuracy,
     geoMode: geo.mode,
@@ -342,12 +396,19 @@ export default function TripPage({ project }: TripPageProps) {
               </div>
             </div>
 
-            {/* Progress bar */}
-            <div className="mt-2 h-1 bg-stone-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 transition-all duration-300"
-                style={{ width: `${(completedStops.size / stops.length) * 100}%` }}
+            {/* Mode toggle + progress bar */}
+            <div className="mt-2 flex items-center gap-3">
+              <TripModeToggle
+                mode={tripMode}
+                onModeChange={handleModeChange}
+                className="flex-shrink-0"
               />
+              <div className="flex-1 h-1 bg-stone-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-300"
+                  style={{ width: `${(completedStops.size / stops.length) * 100}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -366,7 +427,11 @@ export default function TripPage({ project }: TripPageProps) {
             onNext={handleNext}
             onPrev={handlePrev}
             onMarkComplete={handleMarkComplete}
-            showProgressDots
+            showProgressDots={isGuidedMode}
+            tripMode={tripMode}
+            stopDistances={stopDistances}
+            freeModeSortedIndices={freeModeSortedIndices}
+            onStopClick={handleStopClick}
           />
         </ExplorerBottomSheet>
       </div>
@@ -384,6 +449,8 @@ export default function TripPage({ project }: TripPageProps) {
             tripConfig={tripConfig}
             completedStops={completedStops}
             totalStops={stops.length}
+            tripMode={tripMode}
+            onModeChange={handleModeChange}
           />
           <TripStopList
             stops={stops}
@@ -399,6 +466,9 @@ export default function TripPage({ project }: TripPageProps) {
             onNext={handleNext}
             onPrev={handlePrev}
             onMarkComplete={handleMarkComplete}
+            tripMode={tripMode}
+            stopDistances={stopDistances}
+            freeModeSortedIndices={freeModeSortedIndices}
           />
         </div>
       </div>

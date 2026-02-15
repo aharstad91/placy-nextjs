@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import type { POI, TripStopConfig, Coordinates } from "@/lib/types";
+import type { POI, TripStopConfig, TripMode, Coordinates } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
-import { Check, Flag } from "lucide-react";
+import { Check, Flag, MapPin } from "lucide-react";
 import TripStopDetail from "./TripStopDetail";
 
 interface TripStopListProps {
@@ -22,6 +22,10 @@ interface TripStopListProps {
   onNext?: () => void;
   onPrev?: () => void;
   onMarkComplete?: (gpsVerified: boolean, accuracy?: number, coords?: Coordinates) => void;
+  // Mode props
+  tripMode?: TripMode;
+  stopDistances?: Map<number, number>;
+  freeModeSortedIndices?: number[];
 }
 
 export default function TripStopList({
@@ -38,7 +42,11 @@ export default function TripStopList({
   onNext,
   onPrev,
   onMarkComplete,
+  tripMode = "guided",
+  stopDistances,
+  freeModeSortedIndices,
 }: TripStopListProps) {
+  const isFreeMode = tripMode === "free";
   const activeRef = useRef<HTMLLIElement>(null);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
@@ -119,10 +127,26 @@ export default function TripStopList({
   const isFirstStop = currentStopIndex === 0;
   const isLastStop = currentStopIndex === stops.length - 1;
 
+  // In free mode, use sorted indices; in guided mode, natural order
+  const displayOrder = isFreeMode && freeModeSortedIndices
+    ? freeModeSortedIndices
+    : stops.map((_, i) => i);
+
   return (
     <div className="flex-1 overflow-y-auto">
+      {/* Free mode subtitle */}
+      {isFreeMode && (
+        <div className="px-5 py-3 border-b border-stone-100">
+          <p className="text-xs text-stone-500">
+            Utforsk stoppene i din egen rekkefølge
+          </p>
+        </div>
+      )}
+
       <ul className="divide-y divide-stone-100">
-        {stops.map((stop, index) => {
+        {displayOrder.map((index) => {
+          const stop = stops[index];
+          if (!stop) return null;
           const isActive = index === currentStopIndex;
           const isCompleted = completedStops.has(index);
           const isStartPoint = index === 0;
@@ -130,6 +154,7 @@ export default function TripStopList({
           const displayName = config?.nameOverride ?? stop.name;
           const imageUrl = config?.imageUrlOverride ?? stop.featuredImage;
           const hasImage = imageUrl && !imageErrors.has(stop.id);
+          const distance = isFreeMode ? stopDistances?.get(index) : undefined;
 
           return (
             <li key={stop.id} ref={isActive ? activeRef : undefined}>
@@ -212,6 +237,14 @@ export default function TripStopList({
                         {stop.category.name}
                       </p>
                     </div>
+
+                    {/* Distance badge (free mode) */}
+                    {distance != null && (
+                      <span className="flex-shrink-0 flex items-center gap-1 text-xs text-stone-400">
+                        <MapPin className="w-3 h-3" />
+                        {formatDistanceCompact(distance)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </button>
@@ -230,15 +263,16 @@ export default function TripStopList({
                     stopIndex={index}
                     totalStops={stops.length}
                     isCompleted={isCompleted}
-                    isFirstStop={isFirstStop}
-                    isLastStop={isLastStop}
-                    distanceToStop={distanceToStop}
+                    isFirstStop={isFreeMode ? false : isFirstStop}
+                    isLastStop={isFreeMode ? false : isLastStop}
+                    distanceToStop={distance ?? distanceToStop}
                     userPosition={userPosition}
                     gpsAvailable={gpsAvailable}
                     openingHours={openingHours}
                     onNext={onNext ?? (() => {})}
                     onPrev={onPrev ?? (() => {})}
                     onMarkComplete={onMarkComplete}
+                    tripMode={tripMode}
                   />
                 )}
               </div>
@@ -248,4 +282,9 @@ export default function TripStopList({
       </ul>
     </div>
   );
+}
+
+function formatDistanceCompact(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
 }

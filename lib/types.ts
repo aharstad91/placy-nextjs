@@ -385,6 +385,8 @@ export type TripDifficulty = "easy" | "moderate" | "challenging";
 
 export type TripSeason = "spring" | "summer" | "autumn" | "winter" | "all-year";
 
+export type TripMode = "guided" | "free";
+
 // Static configuration (JSON/database)
 export interface TripStopConfig {
   id: TripStopId;
@@ -405,6 +407,7 @@ export interface TripConfig {
   precomputedDistanceMeters?: number;
   precomputedDurationMinutes?: number;
   reward?: RewardConfig;
+  defaultMode?: TripMode; // "guided" (follow route) or "free" (explore freely)
   // Trip Library fields
   category?: TripCategory; // For grouping in library
   tags?: string[]; // Extra tags for filtering
@@ -446,6 +449,7 @@ export interface Trip {
   durationMinutes?: number;
   stopCount: number;
   stops: TripStop[];
+  defaultMode: TripMode;
   defaultRewardTitle?: string;
   defaultRewardDescription?: string;
   published: boolean;
