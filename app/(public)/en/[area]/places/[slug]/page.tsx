@@ -8,10 +8,12 @@ import {
   getPOIBySlug,
   getSimilarPOIs,
   getCategoriesForArea,
+  getPlaceKnowledge,
 } from "@/lib/public-queries";
 import { getIcon } from "@/lib/utils/map-icons";
 import { getStaticMapUrl } from "@/lib/mapbox-static";
 import Breadcrumb from "@/components/public/Breadcrumb";
+import PlaceKnowledgeSection from "@/components/public/PlaceKnowledgeSection";
 import POIJsonLd from "@/components/seo/POIJsonLd";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import { isSafeUrl } from "@/lib/utils/url";
@@ -63,7 +65,11 @@ export default async function POIPageEN({ params }: PageProps) {
   const poi = await getPOIBySlug(area.id, slug);
   if (!poi) notFound();
 
-  const similar = await getSimilarPOIs(area.id, poi.category.id, poi.id, 4);
+  const [similar, knowledge, allCategorySlugs] = await Promise.all([
+    getSimilarPOIs(area.id, poi.category.id, poi.id, 4),
+    getPlaceKnowledge(poi.id),
+    getCategoriesForArea(area.id, "en"),
+  ]);
 
   const imageUrl = poi.featuredImage
     ?? (poi.photoReference
@@ -81,7 +87,6 @@ export default async function POIPageEN({ params }: PageProps) {
     markerColor: poi.category.color.replace("#", ""),
   });
 
-  const allCategorySlugs = await getCategoriesForArea(area.id, "en");
   const categorySlug = allCategorySlugs.find((c) => c.id === poi.category.id)?.slug;
 
   const breadcrumbItems = [
@@ -181,6 +186,14 @@ export default async function POIPageEN({ params }: PageProps) {
                 {poi.localInsight}
               </p>
             </div>
+          )}
+
+          {knowledge.length > 0 && (
+            <PlaceKnowledgeSection
+              knowledge={knowledge}
+              locale="en"
+              hasEditorialHook={!!poi.editorialHook}
+            />
           )}
         </div>
 

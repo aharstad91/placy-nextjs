@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import type { POI } from "@/lib/types";
+import type { POI, PlaceKnowledge } from "@/lib/types";
 import { getIcon } from "@/lib/utils/map-icons";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
@@ -22,9 +22,10 @@ interface MapPopupCardProps {
   poi: POI;
   onClose: () => void;
   areaSlug?: string | null;
+  knowledge?: PlaceKnowledge[];
 }
 
-export default function MapPopupCard({ poi, onClose, areaSlug }: MapPopupCardProps) {
+export default function MapPopupCard({ poi, onClose, areaSlug, knowledge }: MapPopupCardProps) {
   const [imageError, setImageError] = useState(false);
 
   // Reset image error when POI changes
@@ -154,6 +155,19 @@ export default function MapPopupCard({ poi, onClose, areaSlug }: MapPopupCardPro
               {poi.description}
             </p>
           )}
+
+          {/* Knowledge snippet — 1 fact from local_knowledge or history */}
+          {knowledge && knowledge.length > 0 && (() => {
+            const snippet =
+              knowledge.find((k) => k.topic === "local_knowledge") ??
+              knowledge.find((k) => k.topic === "history");
+            if (!snippet) return null;
+            return (
+              <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-2 italic">
+                {snippet.factText}
+              </p>
+            );
+          })()}
 
           {/* Opening hours */}
           {todayHours && (
