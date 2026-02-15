@@ -2,8 +2,8 @@
  * Fetch Google Photos for POIs and persist as featured_image.
  *
  * Strategy: Call Google Places Details to get photo references,
- * then store a proxy URL as featured_image on the POI.
- * The proxy (/api/places/photo) handles API key and caching.
+ * then resolve the redirect to a direct CDN URL (lh3.googleusercontent.com).
+ * Falls back to proxy URL if CDN resolve fails.
  */
 
 const BATCH_SIZE = 10;
@@ -103,7 +103,21 @@ export async function fetchAndCachePOIPhotos(
           }
 
           const photoRef = placeData.result.photos[0].photo_reference;
-          const featuredImage = `/api/places/photo?photoReference=${photoRef}&maxWidth=800`;
+
+          // Resolve to direct CDN URL, fallback to proxy
+          let featuredImage = `/api/places/photo?photoReference=${photoRef}&maxWidth=800`;
+          try {
+            const photoApiUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${googleApiKey}`;
+            const photoRes = await fetch(photoApiUrl, { redirect: "manual" });
+            if (photoRes.status === 302) {
+              const location = photoRes.headers.get("location");
+              if (location?.includes("googleusercontent.com")) {
+                featuredImage = location;
+              }
+            }
+          } catch {
+            // Keep proxy URL as fallback
+          }
 
           // Update POI in Supabase
           const patchRes = await fetch(

@@ -99,6 +99,8 @@ function transformPOI(
     googleWebsite: dbPoi.google_website ?? undefined,
     googleBusinessStatus: dbPoi.google_business_status ?? undefined,
     googlePriceLevel: dbPoi.google_price_level ?? undefined,
+    googlePhone: (dbPoi as Record<string, unknown>).google_phone as string ?? undefined,
+    openingHoursJson: (dbPoi as Record<string, unknown>).opening_hours_json as { weekday_text?: string[] } ?? undefined,
     poiTier: (dbPoi.poi_tier as 1 | 2 | 3 | null) ?? undefined,
     tierReason: dbPoi.tier_reason ?? undefined,
     isChain: dbPoi.is_chain ?? undefined,

@@ -55,6 +55,10 @@ export interface POI {
   googleWebsite?: string;
   googleBusinessStatus?: string;
   googlePriceLevel?: number;
+  googlePhone?: string;
+
+  // Cached opening hours (from periodic refresh)
+  openingHoursJson?: { weekday_text?: string[] };
 
   // POI Tier System
   poiTier?: 1 | 2 | 3;

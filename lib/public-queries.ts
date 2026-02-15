@@ -272,6 +272,8 @@ function transformPublicPOI(dbPoi: Record<string, unknown>, category: Category):
     isChain: (dbPoi.is_chain as boolean) ?? undefined,
     isLocalGem: (dbPoi.is_local_gem as boolean) ?? undefined,
     googleWebsite: (dbPoi.google_website as string) ?? undefined,
+    googlePhone: (dbPoi.google_phone as string) ?? undefined,
+    openingHoursJson: (dbPoi.opening_hours_json as { weekday_text?: string[] }) ?? undefined,
     slug: slugify(dbPoi.name as string),
   };
 }
