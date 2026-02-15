@@ -100,6 +100,7 @@ Next.js 14 has **multiple caching layers** that can each cause stale data:
 | Layer | What It Caches | Fix | Documented In |
 |-------|---------------|-----|---------------|
 | **fetch() Data Cache** | Individual fetch responses | `cache: "no-store"` on fetch | **This document** |
+| **Vercel Data Cache** | fetch responses across deploys | `next.revalidate` + `next.tags` + `revalidateTag()` | `vercel-data-cache-stale-across-deployments-20260215.md` |
 | **Full Route Cache** | Rendered server component output | `export const dynamic = "force-dynamic"` | `nextjs-server-component-caching-force-dynamic-20260208.md` |
 | **Router Cache** | Client-side prefetched routes | `router.refresh()` or `revalidatePath()` | `nextjs-revalidate-endpoint-supabase-rest-20260206.md` |
 
@@ -150,5 +151,6 @@ const supabase = createClient(url, key, {
 
 - Related: `docs/solutions/architecture-patterns/nextjs-server-component-caching-force-dynamic-20260208.md`
 - Related: `docs/solutions/architecture-patterns/nextjs-revalidate-endpoint-supabase-rest-20260206.md`
+- Related: `docs/solutions/integration-issues/vercel-data-cache-stale-across-deployments-20260215.md` — Vercel-specific: Data Cache persists across deployments. For ISR/public pages, use `next.revalidate` + `next.tags` instead of `cache: "no-store"`.
 - Next.js Docs: [Data Fetching and Caching](https://nextjs.org/docs/app/building-your-application/data-fetching)
 - Supabase Docs: [Custom Fetch](https://supabase.com/docs/reference/javascript/initializing)

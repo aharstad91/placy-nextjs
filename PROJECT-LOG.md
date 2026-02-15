@@ -1010,3 +1010,56 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 - **Image sourcing er fortsatt et pain point.** Gratis, pålitelige, kvalitetsbilder for norske byer er vanskelig å finne programmatisk. Wikimedia Commons er best-in-class, men bildekvaliteten varierer. For produksjon bør vi vurdere egne bilder eller en betalt tjeneste
 - **Dead code fra refactoring er lett å glemme.** `welcomeText`-proppen overlevde etter at page.tsx sluttet å sende den. Self-review fanget det — viktig å alltid sjekke at props som fjernes fra parent også fjernes fra child
 - **Trips v2 er en sterk demo-case.** Scandic Nidelven-demoen viser Placy som mer enn en Explorer/Report-plattform — kuraterte turopplevelser med gamification er et differensiert produkt
+
+---
+
+## 2026-02-15 (sesjon 7) — Trip Preview: Desktop Layout
+
+### Beslutninger
+- **Desktop-layout for TripPreview** lagt til med 50/50 split (innhold + sticky map). Følger ReportPage-mønsteret — bevisst valg for konsistens
+- **Gjenbruk fremfor nytt design:** Brukte eksisterende sticky map-mønster (`top-20 h-[calc(100vh-5rem-4rem)]`) og dual-render pattern (`lg:hidden` + `hidden lg:block`) fra Report/Explorer/TripPage
+- **Delte sub-komponenter:** Ekstraherte HeroImage og HeroOverlay for gjenbruk mellom mobil og desktop — reduserer duplisering uten å legge til kompleksitet
+- **CTA ikke sticky på desktop** — bevisst UX-valg: brukere bør se alle stopp før de starter turen
+
+### Parkert / Åpne spørsmål
+- **Completion flow fortsatt ikke E2E-testet i browser** (gjentatt fra forrige sesjon)
+- **Bilder er CC-lisensiert men attribusjon mangler** (gjentatt)
+- **Desktop preview for trips/samleside (TripLibraryClient):** Bør den også få en desktop-variant? Akkurat nå er den mer responsiv enn preview-siden var, men kartet mangler
+
+### Retning
+- **Trips-produktet nærmer seg "desktop-klar" tilstand.** TripPage hadde allerede desktop. TripPreview har det nå. TripLibrary er neste kandidat
+- **Placy.no er live og desktop-trafikk er sannsynlig.** Etter at vi fikser desktop for alle sider, bør vi vurdere en soft launch mot kontakter
+- **Mønsterbiblioteket konsolideres:** Tre produkter (Explorer, Report, Trip) bruker nå alle samme dual-render + sticky map-mønster. Dette er blitt en de facto standard
+
+### Observasjoner
+- **Gjenbruk av mønstre sparert mye tid.** Hele desktop-layouten tok én komponent og én commit. Fordi ReportPage allerede hadde løst sticky map + scrollbar innhold, var det bare å kopiere mønsteret
+- **Tech audit fant reelle avvik:** Planen hadde feil sticky-verdier og et 55/45 split som avvek fra standarden. Auditen fanget dette før implementering — verdifullt
+- **Sub-komponent-ekstraksjon er god teknikk for dual-render.** HeroImage og HeroOverlay som delte komponenter gjør at endringer i hero-designet bare trenger å gjøres ett sted
+
+---
+
+## 2026-02-15 (sesjon 8) — City Knowledge Base Phase 2: Research Pipeline Execution
+
+### Beslutninger
+- **WebSearch i Claude Code som eneste research-kilde.** Ingen Anthropic API-nøkkel — all research kjøres som Task-agenter med WebSearch. Fungerte overraskende bra: 132 research-fakta med 97% verified (kun 4 av 132 hadde enkeltkilde)
+- **Editorial backfill som separat fase, ikke mikset med research.** Holdt editorial parsing manuelt i Claude Code fremfor script. Grunn: krever vurdering av hva som er "verifiserbart" vs "subjektivt" — ikke godt egnet for automatisering
+- **display_ready=false for alt.** Alle 186 nye fakta krever manuell kurator-gjennomgang. Selv om mange er korrekte, vil vi ha menneskelig kvalitetskontroll før publisering
+- **UI-dedup via source_name filter, ikke DB-constraint.** `PlaceKnowledgeSection` skjuler backfill-038 fakta når editorial_hook finnes. Enklere enn DB-level dedup, og kurator kan override ved å sette display_ready=true
+
+### Parkert / Åpne spørsmål
+- **186 fakta venter på kurator-review.** display_ready=false. Trenger en effektiv gjennomgang-workflow — admin-siden fungerer, men er ikke optimalisert for bulk-gjennomgang
+- **Korreksjon av editorial hooks?** Research avdekket 5 faktafeil i eksisterende hooks (Britannia-renovering 1.4B→1.2B, Top Chef-årstall, Credo grønne stjerne). Hookene er i `pois`-tabellen — bør de oppdateres?
+- **Completion flow fortsatt ikke E2E-testet** (gjentatt)
+- **Nature-topic er underrepresentert** (7 av 231 fakta). Urbane POI-er har lite naturrelevans. Bør vi droppe nature for barer/restauranter og heller la det være for parker/utsiktspunkter?
+
+### Retning
+- **Data-fylling gjør produktet mye mer verdifullt.** Med 231 fakta ser POI-detaljsidene ut som ekte redaksjonelt innhold. Forskjellen fra "Google Maps med norske navn" til "kuratert bykunnskap" er merkbar
+- **Neste steg: kurator-review + display_ready.** Når 186 fakta er gjennomgått og publisert, vil offentlige sider vise rik kunnskap. Prioriter dette over nye features
+- **Skalerbarhet er bevist.** Pipeline-mønsteret (manifest → research → JSON → backfill) fungerer og kan gjenbrukes for nye byer. Neste by: Bergen eller Oslo
+- **Placy nærmer seg soft launch.** Med Trips MVP (5 sprints), desktop layout, SEO-forbedringer, og nå kunnskapsbase — produktet begynner å henge sammen
+
+### Observasjoner
+- **Research-kvaliteten overrasket positivt.** WebSearch i Claude Code Task-agenter fant relevante, verifiserbare fakta for nesten alle 20 POI-er. Tier 1-kilder (SNL, Wikipedia) var pålitelige. Tier 3 (blogger) krevde kryssverifisering
+- **Editorial hooks er rikere enn forventet.** Plan estimerte 1.2-1.5 fakta per hook, men vi fikk 2.8 per POI. Hookene inneholder mer verifiserbar info enn antatt
+- **Faktafeil i våre egne hooks er viktig funn.** 5 av 20 hooks hadde unøyaktigheter. Dette er en påminnelse om at redaksjonelt innhold også trenger fakta-sjekk
+- **SHA-256 dedup er robust men blindt.** Fungerer perfekt for eksakte duplikater, men fanger ikke semantiske duplikater (to fakta som sier det samme med ulike ord). Kurator-review er siste linje
