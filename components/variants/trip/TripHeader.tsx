@@ -1,17 +1,22 @@
 "use client";
 
-import type { TripConfig } from "@/lib/types";
+import type { TripConfig, TripMode } from "@/lib/types";
+import TripModeToggle from "./TripModeToggle";
 
 interface TripHeaderProps {
   tripConfig: TripConfig;
   completedStops: Set<number>;
   totalStops: number;
+  tripMode: TripMode;
+  onModeChange: (mode: TripMode) => void;
 }
 
 export default function TripHeader({
   tripConfig,
   completedStops,
   totalStops,
+  tripMode,
+  onModeChange,
 }: TripHeaderProps) {
   return (
     <div className="flex-shrink-0 px-6 py-5 border-b border-stone-200">
@@ -31,6 +36,11 @@ export default function TripHeader({
           )}
         </p>
       )}
+
+      {/* Mode toggle */}
+      <div className="mt-3">
+        <TripModeToggle mode={tripMode} onModeChange={onModeChange} />
+      </div>
 
       {/* Progress bar */}
       <div className="mt-3 flex items-center gap-3">

@@ -77,6 +77,7 @@ export function tripToProject(
     precomputedDistanceMeters: trip.distanceMeters,
     precomputedDurationMinutes: trip.durationMinutes,
     reward,
+    defaultMode: trip.defaultMode,
     category: trip.category,
     tags: trip.tags,
     featured: trip.featured,

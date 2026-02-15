@@ -29,6 +29,7 @@ import type {
   TripCategory,
   TripDifficulty,
   TripSeason,
+  TripMode,
   ProjectTripOverride,
   ProjectTrip,
 } from "../types";
@@ -1092,6 +1093,7 @@ function transformTrip(
     durationMinutes: dbTrip.duration_minutes ?? undefined,
     stopCount: dbTrip.stop_count ?? stops.length,
     stops,
+    defaultMode: (dbTrip.default_mode as TripMode) ?? "guided",
     defaultRewardTitle: dbTrip.default_reward_title ?? undefined,
     defaultRewardDescription: dbTrip.default_reward_description ?? undefined,
     published: dbTrip.published ?? false,
