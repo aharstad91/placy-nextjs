@@ -51,6 +51,9 @@ export interface POI {
   trustFlags?: string[];
   trustScoreUpdatedAt?: string;
 
+  // Social media links
+  facebookUrl?: string;
+
   // Google enrichment (Layer 1)
   googleWebsite?: string;
   googleBusinessStatus?: string;

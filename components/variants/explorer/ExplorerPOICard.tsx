@@ -26,6 +26,7 @@ import {
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
 import { slugify } from "@/lib/utils/slugify";
+import { isSafeUrl } from "@/lib/utils/url";
 
 const travelModeIcons = {
   walk: Footprints,
@@ -352,7 +353,7 @@ export default function ExplorerPOICard({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-3 pt-1">
+        <div className="flex items-center gap-3 pt-1 flex-wrap">
           <a
             href={googleMapsDirectionsUrl}
             target="_blank"
@@ -385,6 +386,19 @@ export default function ExplorerPOICard({
             >
               <ExternalLink className="w-3 h-3" />
               Google Maps
+            </a>
+          )}
+
+          {poi.facebookUrl && isSafeUrl(poi.facebookUrl) && (
+            <a
+              href={poi.facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Facebook
             </a>
           )}
 

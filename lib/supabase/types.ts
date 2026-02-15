@@ -98,6 +98,7 @@ export type Database = {
           google_website: string | null;
           google_business_status: string | null;
           google_price_level: number | null;
+          facebook_url: string | null;
           poi_tier: number | null;
           tier_reason: string | null;
           is_chain: boolean;
@@ -134,6 +135,7 @@ export type Database = {
           google_website?: string | null;
           google_business_status?: string | null;
           google_price_level?: number | null;
+          facebook_url?: string | null;
           poi_tier?: number | null;
           tier_reason?: string | null;
           is_chain?: boolean;
@@ -170,6 +172,7 @@ export type Database = {
           google_website?: string | null;
           google_business_status?: string | null;
           google_price_level?: number | null;
+          facebook_url?: string | null;
           poi_tier?: number | null;
           tier_reason?: string | null;
           is_chain?: boolean;
