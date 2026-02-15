@@ -881,3 +881,49 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 - **Rask implementasjon (567 linjer, 6 filer).** Klar PRD + eksisterende patterns (TripMap, RouteLayer, types) = 1 commit for hele featuren. Ingen overraskelser
 - **Trip Library href manglet `/for/`-prefix.** Fungerte via middleware redirect, men direkte URL er riktigere og raskere (unngår 308-redirect). Liten fix, men viktig for SEO og ytelse
 - **TripPreview bruker Trip-typen direkte.** Første komponent som ikke går gjennom `tripToProject()`-adapteren. Viser at ny kode bør bygges direkte på Supabase-typer — adapteren er legacy-bro, ikke permanent mønster
+
+---
+
+## 2026-02-15 (sesjon 5) — Trips Sprint 3: Guided/Free mode toggle
+
+### Beslutninger
+- **`TripMode` = "guided" | "free" som fullstack-type.** Flyter fra DB (`trips.default_mode`) gjennom `transformTrip()` → `tripToProject()` → komponent-props. Alle lag kjenner modusen
+- **localStorage per trip, ikke global.** `trip-mode-${tripId}` — brukeren kan velge ulik modus per tur. Initialiseres fra `trip.defaultMode`, overskrives av brukervalg
+- **Haversine-avstand, ikke walking distance.** Free mode sorterer stopp etter luftlinje fra brukerens GPS (eller trip center uten GPS). Unngår API-kall for ruting, godt nok for sortering
+- **Rute skjules helt i Free mode.** `routeCoordinates` og `routeSegments` settes til `undefined` — TripMap rendrer kun markører. Rent visuelt skille mellom modusene
+- **Pill-toggle med Route/Compass-ikoner.** "Anbefalt rute" (Route) / "Utforsk fritt" (Compass). Plassert i både mobil-header og desktop-sidebar
+
+### Levert (PR #35)
+- Migration 036: `trips.default_mode TEXT CHECK ('guided'|'free')` default 'guided'
+- `TripModeToggle.tsx` — pill-style segmented control
+- `TripPage.tsx` — mode state, distance beregning, sorted indices, localStorage persist
+- `TripStopPanel.tsx` — free mode: alle stopp i scrollbar liste med avstand-badges
+- `TripStopList.tsx` — accordion-modus med distance-sorting for free mode
+- `TripStopDetail.tsx` — skjuler prev/next og transition_text i free mode
+- `TripPreview.tsx` — "Du kan også utforske stoppene i din egen rekkefølge" hint
+- 13 filer, +457/-56 linjer
+
+### Verifisert
+- TypeScript: 0 feil
+- Produksjonsbuild: OK
+- Visuelt (Chrome DevTools MCP):
+  - Guided mode: rute-polyline på kart, sekvensiell stoppvisning, prev/next fungerer
+  - Free mode: ingen polyline, stopp sortert etter avstand (5.5→6.2 km), avstand-badges, "Merk som besøkt" uten navigasjonsknapper
+  - Toggle bytter riktig mellom modusene
+
+### Parkert / Åpne spørsmål
+- **Mobil-responsivitet ikke testet.** Desktop fungerer perfekt, men mobil bottom sheet med free mode trenger testing
+- **Guide mangler "Les mer" CTA** (gjentatt)
+- **Kafé 021-hooks under standard** (gjentatt)
+- **Sprint 4 (Rewards + progress) er neste.** Uavhengig av Guided/Free — belønningssystem fungerer for begge moduser
+
+### Retning
+- **3 av 5 sprints levert på én dag.** Sprint 1 (POI-innhold), Sprint 2 (Preview), Sprint 3 (Guided/Free). Tempo er høyt, men kvaliteten holder (alle verifisert visuelt + TypeScript + build)
+- **Sprint 4 og 5 gjenstår.** Rewards (Sprint 4) og Polish (Sprint 5) er de siste stegene for Trips v2 MVP
+- **Scandic-demoen nærmer seg.** Med Preview + Guided/Free + innhold er det nesten komplett for å vise Scandic Nidelven
+
+### Observasjoner
+- **Haversine vs walking distance var riktig avveining.** Walking distance ville krevd Mapbox Matrix API (N stopp × N API-kall) for å sortere. Haversine gir ~90% riktig sortering for bynære stopp — og er gratis og instant
+- **localStorage-strategi eliminerer auth-avhengighet.** Ingen brukerregistrering nødvendig for å huske modus-preferanse. Perfekt for hotellgjester som ikke logger inn
+- **Pill-toggle vs dropdown var bevisst.** To moduser = toggle er riktig UX. Ville ikke trengt pill-toggle hvis det var 3+ moduser
+- **Free mode avslører at trip center er viktig.** Uten GPS sorteres stopp fra trip center — og den verdien brukes nå aktivt, ikke bare for kartvisning. God at vi la det inn i Sprint 1
