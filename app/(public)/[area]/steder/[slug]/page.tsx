@@ -104,7 +104,7 @@ export default async function POIPage({ params }: PageProps) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <POIJsonLd poi={poi} area={area} />
+      <POIJsonLd poi={poi} area={area} locale="no" />
       <BreadcrumbJsonLd items={breadcrumbItems} />
 
       <Breadcrumb
