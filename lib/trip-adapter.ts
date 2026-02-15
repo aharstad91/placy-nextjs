@@ -130,7 +130,7 @@ function buildRewardConfig(
   return {
     title,
     description,
-    hotelName: "", // Will be populated from project context if needed
+    hotelName: override?.startName ?? "",
     validityDays,
   };
 }
