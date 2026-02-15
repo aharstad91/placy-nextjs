@@ -82,9 +82,6 @@ interface TripLibraryClientProps {
   customer: string;
   projectSlug: string;
   trips: Project[];
-  groupedTrips: Record<TripCategory, Project[]>;
-  categoriesWithTrips: readonly TripCategory[];
-  categoryLabels: Record<TripCategory, string>;
   welcomeText?: string;
 }
 
