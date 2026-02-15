@@ -15,8 +15,6 @@ import {
   Database,
 } from "lucide-react";
 
-const adminEnabled = process.env.ADMIN_ENABLED === "true";
-
 interface StatCardProps {
   icon: React.ReactNode;
   title: string;
@@ -59,7 +57,7 @@ function StatCard({ icon, title, count, description, href, disabled }: StatCardP
 }
 
 export default async function AdminPage() {
-  if (!adminEnabled) {
+  if (process.env.ADMIN_ENABLED !== "true") {
     redirect("/");
   }
 
