@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { PlaceKnowledge, KnowledgeTopic, KnowledgeConfidence } from "@/lib/types";
 import { KNOWLEDGE_TOPICS, KNOWLEDGE_TOPIC_LABELS } from "@/lib/types";
 import {
@@ -10,17 +10,22 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
+
+const CONFIDENCE_CYCLE: KnowledgeConfidence[] = ["unverified", "verified", "disputed"];
 
 interface Props {
   knowledge: PlaceKnowledge[];
 }
 
-export function KnowledgeAdminClient({ knowledge }: Props) {
+export function KnowledgeAdminClient({ knowledge: initialKnowledge }: Props) {
+  const [knowledge, setKnowledge] = useState(initialKnowledge);
   const [topicFilter, setTopicFilter] = useState<KnowledgeTopic | "all">("all");
   const [confidenceFilter, setConfidenceFilter] = useState<KnowledgeConfidence | "all">("all");
   const [displayReadyFilter, setDisplayReadyFilter] = useState<"all" | "ready" | "draft">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [updating, setUpdating] = useState<Set<string>>(new Set());
 
   const filtered = useMemo(() => {
     return knowledge.filter((k) => {
@@ -50,6 +55,62 @@ export function KnowledgeAdminClient({ knowledge }: Props) {
     }
     return counts;
   }, [knowledge]);
+
+  const updateFact = useCallback(async (
+    id: string,
+    updates: { displayReady?: boolean; confidence?: KnowledgeConfidence }
+  ) => {
+    setUpdating((prev) => new Set(prev).add(id));
+
+    // Optimistic update
+    setKnowledge((prev) =>
+      prev.map((k) => (k.id === id ? { ...k, ...updates } : k))
+    );
+
+    try {
+      const res = await fetch("/api/admin/knowledge", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...updates }),
+      });
+
+      if (!res.ok) {
+        // Revert on failure
+        setKnowledge((prev) =>
+          prev.map((k) => {
+            if (k.id !== id) return k;
+            const original = initialKnowledge.find((ik) => ik.id === id);
+            return original ?? k;
+          })
+        );
+      }
+    } catch {
+      // Revert on network error
+      setKnowledge((prev) =>
+        prev.map((k) => {
+          if (k.id !== id) return k;
+          const original = initialKnowledge.find((ik) => ik.id === id);
+          return original ?? k;
+        })
+      );
+    } finally {
+      setUpdating((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }, [initialKnowledge]);
+
+  const toggleDisplayReady = useCallback((k: PlaceKnowledge) => {
+    updateFact(k.id, { displayReady: !k.displayReady });
+  }, [updateFact]);
+
+  const cycleConfidence = useCallback((k: PlaceKnowledge) => {
+    const idx = CONFIDENCE_CYCLE.indexOf(k.confidence);
+    const next = CONFIDENCE_CYCLE[(idx + 1) % CONFIDENCE_CYCLE.length];
+    updateFact(k.id, { confidence: next });
+  }, [updateFact]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -153,40 +214,61 @@ export function KnowledgeAdminClient({ knowledge }: Props) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((k) => (
-                <tr key={k.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-3 py-2">
-                    <span className="inline-block px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px]">
-                      {KNOWLEDGE_TOPIC_LABELS[k.topic]}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 max-w-md">
-                    <p className="text-gray-900 line-clamp-2">{k.factText}</p>
-                    {k.factTextEn && (
-                      <p className="text-gray-400 line-clamp-1 mt-0.5">{k.factTextEn}</p>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-gray-500 whitespace-nowrap">
-                    {k.sourceName ?? "-"}
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    {k.confidence === "verified" ? (
-                      <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" />
-                    ) : k.confidence === "disputed" ? (
-                      <AlertCircle className="w-4 h-4 text-red-500 mx-auto" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-gray-300 mx-auto" />
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    {k.displayReady ? (
-                      <Eye className="w-4 h-4 text-blue-500 mx-auto" />
-                    ) : (
-                      <EyeOff className="w-4 h-4 text-gray-300 mx-auto" />
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {filtered.map((k) => {
+                const isUpdating = updating.has(k.id);
+                return (
+                  <tr key={k.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-3 py-2">
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px]">
+                        {KNOWLEDGE_TOPIC_LABELS[k.topic]}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 max-w-md">
+                      <p className="text-gray-900 line-clamp-2">{k.factText}</p>
+                      {k.factTextEn && (
+                        <p className="text-gray-400 line-clamp-1 mt-0.5">{k.factTextEn}</p>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-gray-500 whitespace-nowrap">
+                      {k.sourceName ?? "-"}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        onClick={() => cycleConfidence(k)}
+                        disabled={isUpdating}
+                        className="inline-flex items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
+                        title={`${k.confidence} — klikk for å endre`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 text-gray-300 mx-auto animate-spin" />
+                        ) : k.confidence === "verified" ? (
+                          <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" />
+                        ) : k.confidence === "disputed" ? (
+                          <AlertCircle className="w-4 h-4 text-red-500 mx-auto" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-gray-300 mx-auto" />
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        onClick={() => toggleDisplayReady(k)}
+                        disabled={isUpdating}
+                        className="inline-flex items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
+                        title={k.displayReady ? "Publisert — klikk for å skjule" : "Utkast — klikk for å publisere"}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 text-gray-300 mx-auto animate-spin" />
+                        ) : k.displayReady ? (
+                          <Eye className="w-4 h-4 text-blue-500 mx-auto" />
+                        ) : (
+                          <EyeOff className="w-4 h-4 text-gray-300 mx-auto" />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-3 py-8 text-center text-gray-400">
