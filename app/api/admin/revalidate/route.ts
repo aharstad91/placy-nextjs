@@ -1,5 +1,6 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_CACHE_TAG } from "@/lib/supabase/public-client";
 
 const MAX_PATHS = 20;
 
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  // Purge Supabase Data Cache so fresh data is fetched
+  revalidateTag(SUPABASE_CACHE_TAG);
 
   for (const path of paths as string[]) {
     revalidatePath(path, "layout");
