@@ -70,6 +70,75 @@ export type Database = {
         };
         Relationships: [];
       };
+      place_knowledge: {
+        Row: {
+          area_id: string | null;
+          confidence: string;
+          created_at: string;
+          display_ready: boolean | null;
+          fact_text: string;
+          fact_text_en: string | null;
+          id: string;
+          poi_id: string | null;
+          sort_order: number | null;
+          source_name: string | null;
+          source_url: string | null;
+          structured_data: Json | null;
+          topic: string;
+          updated_at: string;
+          verified_at: string | null;
+        };
+        Insert: {
+          area_id?: string | null;
+          confidence?: string;
+          created_at?: string;
+          display_ready?: boolean | null;
+          fact_text: string;
+          fact_text_en?: string | null;
+          id?: string;
+          poi_id?: string | null;
+          sort_order?: number | null;
+          source_name?: string | null;
+          source_url?: string | null;
+          structured_data?: Json | null;
+          topic: string;
+          updated_at?: string;
+          verified_at?: string | null;
+        };
+        Update: {
+          area_id?: string | null;
+          confidence?: string;
+          created_at?: string;
+          display_ready?: boolean | null;
+          fact_text?: string;
+          fact_text_en?: string | null;
+          id?: string;
+          poi_id?: string | null;
+          sort_order?: number | null;
+          source_name?: string | null;
+          source_url?: string | null;
+          structured_data?: Json | null;
+          topic?: string;
+          updated_at?: string;
+          verified_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "place_knowledge_area_id_fkey";
+            columns: ["area_id"];
+            isOneToOne: false;
+            referencedRelation: "areas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "place_knowledge_poi_id_fkey";
+            columns: ["poi_id"];
+            isOneToOne: false;
+            referencedRelation: "pois";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       pois: {
         Row: {
           id: string;
@@ -883,6 +952,7 @@ export type DbProductCategory = Tables<"product_categories">;
 export type DbTrip = Tables<"trips">;
 export type DbTripStop = Tables<"trip_stops">;
 export type DbProjectTrip = Tables<"project_trips">;
+export type DbPlaceKnowledge = Tables<"place_knowledge">;
 
 // Product type enum
 export type ProductType = "explorer" | "report" | "guide";

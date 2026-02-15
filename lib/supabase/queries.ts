@@ -10,6 +10,7 @@ import type {
   DbTrip,
   DbTripStop,
   DbProjectTrip,
+  DbPlaceKnowledge,
 } from "./types";
 import type {
   Project,
@@ -31,6 +32,9 @@ import type {
   TripSeason,
   ProjectTripOverride,
   ProjectTrip,
+  PlaceKnowledge,
+  KnowledgeTopic,
+  KnowledgeConfidence,
 } from "../types";
 import { createTripStopId } from "../types";
 import { calculateDistance, calculateBoundingBox } from "../utils/geo";
@@ -1542,5 +1546,41 @@ export async function getProjectTripsAdmin(
     const override = transformProjectTripOverride(pt as unknown as DbProjectTrip, startPoi);
     return { trip, override };
   });
+}
+
+// ============================================
+// Place Knowledge (admin — service_role, sees all rows)
+// ============================================
+
+function transformPlaceKnowledgeAdmin(row: DbPlaceKnowledge): PlaceKnowledge {
+  return {
+    id: row.id,
+    poiId: row.poi_id ?? undefined,
+    areaId: row.area_id ?? undefined,
+    topic: row.topic as KnowledgeTopic,
+    factText: row.fact_text,
+    factTextEn: row.fact_text_en ?? undefined,
+    structuredData: (row.structured_data as Record<string, unknown>) ?? undefined,
+    confidence: row.confidence as KnowledgeConfidence,
+    sourceUrl: row.source_url ?? undefined,
+    sourceName: row.source_name ?? undefined,
+    sortOrder: row.sort_order ?? 0,
+    displayReady: row.display_ready ? true : false,
+    verifiedAt: row.verified_at ?? undefined,
+  };
+}
+
+/** Admin: fetch all knowledge rows (including non-display-ready). */
+export async function getAllKnowledgeAdmin(): Promise<PlaceKnowledge[]> {
+  const client = createServerClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("place_knowledge")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data.map(transformPlaceKnowledgeAdmin);
 }
 

@@ -5,7 +5,9 @@
 
 import { createPublicClient } from "./supabase/public-client";
 import { slugify } from "./utils/slugify";
-import type { POI, Category } from "./types";
+import { isSafeUrl } from "./utils/url";
+import type { POI, Category, PlaceKnowledge, KnowledgeTopic, KnowledgeConfidence } from "./types";
+import type { DbPlaceKnowledge } from "./supabase/types";
 import { MIN_TRUST_SCORE } from "./utils/poi-trust";
 
 /** Validate slug format to prevent PostgREST filter injection */
@@ -454,4 +456,89 @@ export async function getSimilarPOIs(
       color: cat.color,
     });
   });
+}
+
+// ============================================
+// Place Knowledge queries (public — RLS enforced)
+// ============================================
+
+function transformPlaceKnowledge(row: DbPlaceKnowledge): PlaceKnowledge {
+  return {
+    id: row.id,
+    poiId: row.poi_id ?? undefined,
+    areaId: row.area_id ?? undefined,
+    topic: row.topic as KnowledgeTopic,
+    factText: row.fact_text,
+    factTextEn: row.fact_text_en ?? undefined,
+    structuredData: (row.structured_data as Record<string, unknown>) ?? undefined,
+    confidence: row.confidence as KnowledgeConfidence,
+    sourceUrl: row.source_url && isSafeUrl(row.source_url) ? row.source_url : undefined,
+    sourceName: row.source_name ?? undefined,
+    sortOrder: row.sort_order ?? 0,
+    displayReady: row.display_ready ? true : false,
+    verifiedAt: row.verified_at ?? undefined,
+  };
+}
+
+/** Fetch all display-ready knowledge for a POI. */
+export async function getPlaceKnowledge(poiId: string): Promise<PlaceKnowledge[]> {
+  const client = createPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("place_knowledge")
+    .select("*")
+    .eq("poi_id", poiId)
+    .eq("display_ready", true)
+    .order("topic")
+    .order("sort_order")
+    .order("created_at");
+
+  if (error || !data) return [];
+  return data.map(transformPlaceKnowledge);
+}
+
+/** Batch-fetch knowledge for multiple POIs (max 100 IDs). */
+export async function getPlaceKnowledgeBatch(
+  poiIds: string[]
+): Promise<Record<string, PlaceKnowledge[]>> {
+  if (poiIds.length === 0) return {};
+  const limitedIds = poiIds.slice(0, 100);
+
+  const client = createPublicClient();
+  if (!client) return {};
+
+  const { data, error } = await client
+    .from("place_knowledge")
+    .select("*")
+    .in("poi_id", limitedIds)
+    .eq("display_ready", true)
+    .order("sort_order");
+
+  if (error || !data) return {};
+
+  const result: Record<string, PlaceKnowledge[]> = {};
+  for (const row of data) {
+    const id = row.poi_id as string;
+    if (!result[id]) result[id] = [];
+    result[id].push(transformPlaceKnowledge(row));
+  }
+  return result;
+}
+
+/** Fetch knowledge for an area (city/neighborhood). */
+export async function getAreaKnowledge(areaId: string): Promise<PlaceKnowledge[]> {
+  const client = createPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("place_knowledge")
+    .select("*")
+    .eq("area_id", areaId)
+    .eq("display_ready", true)
+    .order("topic")
+    .order("sort_order");
+
+  if (error || !data) return [];
+  return data.map(transformPlaceKnowledge);
 }
