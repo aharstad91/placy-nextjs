@@ -777,3 +777,34 @@ Cruiseline-arbeidet produserer **enorm IP:** 34 norske kystbyer med kuraterte PO
 - **In-memory cache på Vercel er verdiløs.** `Map()` i API-route resettes ved cold start. Med serverless-arkitektur er persistent lagring (Supabase) eneste reelle cache. Lærdom verdt å huske for alle fremtidige caching-behov
 - **Google Photo 302-redirect er den egentlige CDN-URLen.** Hele proxy-laget var unødvendig — API-kall med `redirect: "manual"` gir direkte CDN-link som fungerer uten nøkkel. Elegant og kostnadsfritt
 - **`featured_image` lagret proxy-URLer som var kilden til mesteparten av forbruket.** En enkel seed-beslutning tidlig (lagre `/api/places/photo?photoReference=...` i stedet for CDN-URL) skapte 7000+ unødvendige API-kall per måned. Data-design ved import-tid er kritisk
+
+---
+
+## 2026-02-15 (sesjon 2) — Facebook URL på POI-kort (Fase 1)
+
+### Beslutninger
+- **Facebook URL som dedikert kolonne, ikke JSONB.** `facebook_url TEXT` med HTTPS-only CHECK constraint. Enkelt, querybart, konsistent med eksisterende `google_maps_url`-mønster
+- **Shared `isSafeUrl` utility.** Duplisert i to SEO-sider — ekstrahert til `lib/utils/url.ts`. Brukes nå av 4 filer (2 SEO-sider + 2 POI-kort-komponenter)
+- **Ren lenke-stil, ikke dedikert ikon.** Plan diskuterte Facebook-ikon vs ExternalLink — valgte ExternalLink + "Facebook" tekst i ExplorerPOICard og icon-only ExternalLink i POIBottomSheet. Matcher eksisterende Google Maps-mønster
+- **flex-wrap på action-raden.** Forebygger overflow på smale skjermer nå som det er 4+ action-elementer
+
+### Levert (PR #32)
+- Migration 033: `facebook_url TEXT CHECK (https only)` på pois-tabellen
+- `lib/utils/url.ts` — shared isSafeUrl
+- Facebook-lenke i ExplorerPOICard (text link) og POIBottomSheet (icon-only button)
+- TypeScript-typer og queries oppdatert
+- Testdata: Café Løkka satt med facebook_url
+
+### Parkert / Åpne spørsmål
+- **Fase 2: OG-metadata scraping.** `og:image` som bilde-fallback, rikere preview-widget. Ikke i scope for denne PRen
+- **Høyt & Lavt POI mangler i databasen.** Planlagt som testdata-POI, men eksisterer ikke. Brukte Café Løkka i stedet
+- **Guide mangler fortsatt "Les mer" CTA** (gjentatt)
+- **Kafé 021-hooks under standard** (gjentatt)
+
+### Retning
+- **Facebook-lenken er et første steg mot sosial kontekst.** Fase 2 (OG-scraping) gir bildene og metadata som gjør det til en rikere widget
+- **Kurator-rollen bekreftet.** Placy peker brukeren til riktig sted (Facebook-appen, Google Maps) i stedet for å reprodusere alt selv. Det er kuratorrollen
+
+### Observasjoner
+- **Minimal endring, 9 filer.** +54/-19 linjer. Tight scope holdt — ingen gold-plating
+- **`/full-auto` kjørt for første gang.** Brainstorm+plan allerede ferdig → direkte til Work. Alt levert i én commit, TS+build verifisert, migration pushet, PR opprettet

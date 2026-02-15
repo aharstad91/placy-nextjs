@@ -14,17 +14,9 @@ import { getStaticMapUrl } from "@/lib/mapbox-static";
 import Breadcrumb from "@/components/public/Breadcrumb";
 import POIJsonLd from "@/components/seo/POIJsonLd";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
+import { isSafeUrl } from "@/lib/utils/url";
 
 export const revalidate = 86400;
-
-function isSafeUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
 
 interface PageProps {
   params: Promise<{ area: string; slug: string }>;

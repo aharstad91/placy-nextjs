@@ -5,6 +5,7 @@ import { X, ChevronUp, MapPin, Clock, ExternalLink, Phone, Globe } from "lucide-
 import * as LucideIcons from "lucide-react";
 import type { POI, TravelMode } from "@/lib/types";
 import { cn, formatTravelTime } from "@/lib/utils";
+import { isSafeUrl } from "@/lib/utils/url";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
 
@@ -229,6 +230,16 @@ export function POIBottomSheet({ poi, travelMode, onClose, onShowRoute }: POIBot
               {poi.googleMapsUrl && (
                 <a
                   href={poi.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+              {poi.facebookUrl && isSafeUrl(poi.facebookUrl) && (
+                <a
+                  href={poi.facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
