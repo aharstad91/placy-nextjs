@@ -32,6 +32,16 @@ const CATEGORY_GRADIENTS: Record<TripCategory, string> = {
   sightseeing: "from-indigo-700 to-blue-600",
 };
 
+const CATEGORY_ACCENT_COLORS: Record<TripCategory, string> = {
+  food: "bg-amber-50 text-amber-700 border-amber-100",
+  culture: "bg-stone-50 text-stone-700 border-stone-200",
+  nature: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  family: "bg-sky-50 text-sky-700 border-sky-100",
+  active: "bg-rose-50 text-rose-700 border-rose-100",
+  "hidden-gems": "bg-purple-50 text-purple-700 border-purple-100",
+  sightseeing: "bg-indigo-50 text-indigo-700 border-indigo-100",
+};
+
 const CATEGORY_ICONS: Record<TripCategory, LucideIcon> = {
   food: UtensilsCrossed,
   culture: Landmark,
@@ -85,7 +95,6 @@ interface TripLibraryClientProps {
   customer: string;
   projectSlug: string;
   trips: Project[];
-  welcomeText?: string;
 }
 
 /** Category navigation card (Report-style) */
@@ -100,17 +109,18 @@ function CategoryCard({
 }) {
   const Icon = CATEGORY_ICONS[category];
   const label = TRIP_CATEGORY_LABELS[category];
+  const accent = CATEGORY_ACCENT_COLORS[category];
 
   return (
     <button
       onClick={onClick}
-      className="group flex flex-col items-start p-4 bg-white border border-[#eae6e1] rounded-xl hover:border-[#c0b9ad] hover:shadow-sm transition-all text-left"
+      className={`group flex flex-col items-start p-3.5 rounded-xl border hover:shadow-sm transition-all text-left ${accent}`}
     >
-      <Icon className="w-6 h-6 text-[#7a7062] group-hover:text-[#5a5042] mb-2 transition-colors" />
-      <span className="font-semibold text-[#1a1a1a] text-sm leading-tight mb-1">
+      <Icon className="w-5 h-5 mb-2 opacity-70 group-hover:opacity-100 transition-opacity" />
+      <span className="font-semibold text-[#1a1a1a] text-sm leading-tight mb-0.5">
         {label}
       </span>
-      <span className="text-xs text-[#6a6a6a]">
+      <span className="text-xs opacity-60">
         {tripCount} {tripCount === 1 ? "tur" : "turer"}
       </span>
     </button>
@@ -279,7 +289,6 @@ export default function TripLibraryClient({
   customer,
   projectSlug,
   trips,
-  welcomeText,
 }: TripLibraryClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -360,38 +369,38 @@ export default function TripLibraryClient({
     <main className="min-h-screen bg-[#FAF8F5] pb-12">
       {/* Header */}
       <header className="px-4 pt-6 pb-2">
-        {welcomeText && (
-          <p className="text-sm text-[#6B6560] leading-relaxed mb-3">
-            {welcomeText}
-          </p>
-        )}
-
-        <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mb-4">
+        <p className="text-xs font-medium uppercase tracking-wider text-[#9a9288] mb-1">
+          Trondheim
+        </p>
+        <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mb-1">
           Utforsk turer
         </h1>
+        <div className="mb-4" />
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B6560]" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Sok etter turer..."
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-stone-200 text-[#1A1A1A] placeholder-[#6B6560] focus:outline-none focus:ring-2 focus:ring-[#C45C3A] focus:border-transparent"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                if (searchInputRef.current) searchInputRef.current.value = "";
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-stone-100 rounded-full"
-            >
-              <X className="w-4 h-4 text-[#6B6560]" />
-            </button>
-          )}
-        </div>
+        {allItems.length > 3 && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B6560]" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Sok etter turer..."
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-stone-200 text-[#1A1A1A] placeholder-[#6B6560] focus:outline-none focus:ring-2 focus:ring-[#C45C3A] focus:border-transparent"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  if (searchInputRef.current) searchInputRef.current.value = "";
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-stone-100 rounded-full"
+              >
+                <X className="w-4 h-4 text-[#6B6560]" />
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Category navigation cards (Report-style) */}

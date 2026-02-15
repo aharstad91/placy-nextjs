@@ -373,14 +373,14 @@ export default function TripPage({ project }: TripPageProps) {
 
         {/* Trip title overlay */}
         <div className="absolute top-4 left-4 right-4 z-10">
-          <div className="bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl px-4 py-3 shadow-lg shadow-black/5">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-lg font-semibold text-stone-900">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base font-semibold text-stone-900 truncate">
                   {tripConfig.title}
                 </h1>
                 {tripConfig.precomputedDistanceMeters && tripConfig.precomputedDurationMinutes && (
-                  <p className="text-sm text-stone-500 mt-0.5">
+                  <p className="text-xs text-stone-500 mt-0.5">
                     {(tripConfig.precomputedDistanceMeters / 1000).toFixed(1)} km
                     {" · "}
                     {tripConfig.precomputedDurationMinutes} min
@@ -388,27 +388,26 @@ export default function TripPage({ project }: TripPageProps) {
                 )}
               </div>
               {/* Progress indicator */}
-              <div className="text-right">
-                <span className="text-sm font-medium text-emerald-600">
+              <div className="flex-shrink-0 ml-3 text-right">
+                <span className="text-sm font-bold tabular-nums text-emerald-600">
                   {completedStops.size}/{stops.length}
                 </span>
-                <p className="text-xs text-stone-400">stopp</p>
+                <p className="text-[10px] text-stone-400">stopp</p>
               </div>
             </div>
 
-            {/* Mode toggle + progress bar */}
-            <div className="mt-2 flex items-center gap-3">
+            {/* Progress bar + mode toggle */}
+            <div className="mt-2.5 space-y-2">
+              <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${stops.length > 0 ? (completedStops.size / stops.length) * 100 : 0}%` }}
+                />
+              </div>
               <TripModeToggle
                 mode={tripMode}
                 onModeChange={handleModeChange}
-                className="flex-shrink-0"
               />
-              <div className="flex-1 h-1 bg-stone-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 transition-all duration-300"
-                  style={{ width: `${(completedStops.size / stops.length) * 100}%` }}
-                />
-              </div>
             </div>
           </div>
         </div>
