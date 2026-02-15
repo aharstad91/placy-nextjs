@@ -41,7 +41,7 @@ export function useOpeningHours(visiblePOIs: POI[]) {
  * Google's weekday_text format: "Monday: 8:00 AM – 5:00 PM"
  * Returns undefined if hours cannot be parsed.
  */
-function computeIsOpen(weekdayText: string[]): boolean | undefined {
+export function computeIsOpen(weekdayText: string[]): boolean | undefined {
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const now = new Date();
   const todayName = days[now.getDay()];

@@ -7,6 +7,7 @@ import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { slugify } from "@/lib/utils/slugify";
+import { computeIsOpen } from "@/lib/hooks/useOpeningHours";
 import {
   X,
   Sparkles,
@@ -64,37 +65,7 @@ export default function MapPopupCard({ poi, onClose, areaSlug }: MapPopupCardPro
     );
     const hours = todayLine ? todayLine.replace(/^[^:]+:\s*/, "") : null;
 
-    // Compute isOpen from time range
-    let open: boolean | undefined;
-    if (hours) {
-      const lower = hours.toLowerCase();
-      if (lower.includes("closed")) open = false;
-      else if (lower.includes("open 24 hours")) open = true;
-      else {
-        const now = new Date();
-        const currentMinutes = now.getHours() * 60 + now.getMinutes();
-        const match = hours.match(
-          /(\d{1,2}):(\d{2})\s*(AM|PM)\s*[–-]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i
-        );
-        if (match) {
-          const toMin = (h: number, m: number, ap: string) => {
-            let hr = h;
-            if (ap === "PM" && hr !== 12) hr += 12;
-            if (ap === "AM" && hr === 12) hr = 0;
-            return hr * 60 + m;
-          };
-          const openMin = toMin(parseInt(match[1]), parseInt(match[2]), match[3].toUpperCase());
-          const closeMin = toMin(parseInt(match[4]), parseInt(match[5]), match[6].toUpperCase());
-          if (closeMin <= openMin) {
-            open = currentMinutes >= openMin || currentMinutes < closeMin;
-          } else {
-            open = currentMinutes >= openMin && currentMinutes < closeMin;
-          }
-        }
-      }
-    }
-
-    return { todayHours: hours, isOpen: open };
+    return { todayHours: hours, isOpen: computeIsOpen(weekdayText) };
   }, [poi.openingHoursJson]);
 
   return (

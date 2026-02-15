@@ -12,9 +12,9 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY!;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 
 const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 300;
