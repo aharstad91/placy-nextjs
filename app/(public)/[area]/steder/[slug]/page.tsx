@@ -72,10 +72,14 @@ export default async function POIPage({ params }: PageProps) {
     getCategoriesForArea(area.id, "no"),
   ]);
 
-  const imageUrl = poi.featuredImage
+  // Build gallery images array (prefer gallery_images, fall back to single image)
+  const mainImage = poi.featuredImage
     ?? (poi.photoReference
       ? `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=800`
       : null);
+  const galleryImages = poi.galleryImages?.length
+    ? poi.galleryImages
+    : (mainImage ? [mainImage] : []);
 
   const CategoryIcon = getIcon(poi.category.icon);
 
@@ -118,11 +122,44 @@ export default async function POIPage({ params }: PageProps) {
         ]}
       />
 
-      {/* Hero image */}
-      {imageUrl && (
+      {/* Image gallery */}
+      {galleryImages.length >= 3 ? (
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] md:grid-rows-2 gap-1 rounded-xl overflow-hidden mb-6 md:h-[340px]">
+          {/* Main image — full height on left */}
+          <div className="relative aspect-[16/9] md:aspect-auto md:row-span-2 bg-[#f5f3f0]">
+            <Image
+              src={galleryImages[0]}
+              alt={poi.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 600px"
+              priority
+            />
+          </div>
+          {/* Secondary images — stacked on right, hidden on mobile */}
+          <div className="hidden md:block relative bg-[#f5f3f0]">
+            <Image
+              src={galleryImages[1]}
+              alt={`${poi.name} — bilde 2`}
+              fill
+              className="object-cover"
+              sizes="300px"
+            />
+          </div>
+          <div className="hidden md:block relative bg-[#f5f3f0]">
+            <Image
+              src={galleryImages[2]}
+              alt={`${poi.name} — bilde 3`}
+              fill
+              className="object-cover"
+              sizes="300px"
+            />
+          </div>
+        </div>
+      ) : galleryImages.length > 0 ? (
         <div className="aspect-[21/9] rounded-xl overflow-hidden bg-[#f5f3f0] mb-6 relative">
           <Image
-            src={imageUrl}
+            src={galleryImages[0]}
             alt={poi.name}
             fill
             className="object-cover"
@@ -130,7 +167,7 @@ export default async function POIPage({ params }: PageProps) {
             priority
           />
         </div>
-      )}
+      ) : null}
 
       {/* Header */}
       <div className="mb-8">

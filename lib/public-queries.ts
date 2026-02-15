@@ -254,6 +254,7 @@ function transformPublicPOI(dbPoi: Record<string, unknown>, category: Category):
     category,
     description: (dbPoi.description as string) ?? undefined,
     featuredImage: (dbPoi.featured_image as string) ?? undefined,
+    galleryImages: Array.isArray(dbPoi.gallery_images) ? (dbPoi.gallery_images as string[]) : undefined,
     googlePlaceId: (dbPoi.google_place_id as string) ?? undefined,
     googleRating: (dbPoi.google_rating as number) ?? undefined,
     googleReviewCount: (dbPoi.google_review_count as number) ?? undefined,

@@ -32,6 +32,7 @@ export interface POI {
   category: Category;
   description?: string;
   featuredImage?: string;
+  galleryImages?: string[];
 
   // Google Places data (for Google Points)
   googlePlaceId?: string;
