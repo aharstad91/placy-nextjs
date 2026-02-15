@@ -20,89 +20,7 @@ import {
 import type { Project, TripCategory } from "@/lib/types";
 import { TRIP_CATEGORIES, TRIP_CATEGORY_LABELS } from "@/lib/types";
 
-// ─── Dummy trips for design prototyping ──────────────────────────────
-// TODO: Remove when real seed-trips exist in Supabase
-interface DummyTrip {
-  id: string;
-  title: string;
-  description: string;
-  category: TripCategory;
-  difficulty: "easy" | "moderate" | "challenging";
-  stopCount: number;
-  durationMinutes: number;
-  featured: boolean;
-  coverImageUrl?: string;
-}
-
-const DUMMY_TRIPS: DummyTrip[] = [
-  {
-    id: "dummy-bakklandet",
-    title: "Bakklandet & Bryggene",
-    category: "culture",
-    difficulty: "easy",
-    stopCount: 5,
-    durationMinutes: 35,
-    description:
-      "Historisk vandring langs Nidelva, gjennom Bakklandet og forbi de ikoniske bryggerekkene.",
-    featured: true,
-  },
-  {
-    id: "dummy-coffee",
-    title: "Best of Coffee",
-    category: "food",
-    difficulty: "easy",
-    stopCount: 4,
-    durationMinutes: 60,
-    description:
-      "Trondheims beste kaffebarer — fra spesialbrent til klassisk.",
-    featured: true,
-  },
-  {
-    id: "dummy-foodie",
-    title: "Foodie Walk",
-    category: "food",
-    difficulty: "easy",
-    stopCount: 6,
-    durationMinutes: 90,
-    description:
-      "Smak av Trondheim — fra håndverksbakeri til sjømat og fine dining.",
-    featured: false,
-  },
-  {
-    id: "dummy-fjord",
-    title: "Fjordstien",
-    category: "nature",
-    difficulty: "moderate",
-    stopCount: 4,
-    durationMinutes: 45,
-    description: "Naturtur langs fjorden med utsikt over byen og Munkholmen.",
-    featured: false,
-  },
-  {
-    id: "dummy-family",
-    title: "Barnas Trondheim",
-    category: "family",
-    difficulty: "easy",
-    stopCount: 5,
-    durationMinutes: 50,
-    description:
-      "Barnevennlige aktiviteter i sentrum — fra museum til lekeplass.",
-    featured: false,
-  },
-  {
-    id: "dummy-hidden",
-    title: "Hemmelige Trondheim",
-    category: "hidden-gems",
-    difficulty: "moderate",
-    stopCount: 4,
-    durationMinutes: 40,
-    description:
-      "Steder de fleste gar forbi — bakgarder, utsiktspunkter og lokale favoritter.",
-    featured: true,
-  },
-];
-
-// Gradient backgrounds for dummy trips without cover images
+// Gradient backgrounds for trips without cover images
 const CATEGORY_GRADIENTS: Record<TripCategory, string> = {
   food: "from-amber-800 to-orange-600",
   culture: "from-stone-700 to-amber-800",
@@ -127,7 +45,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   challenging: "Krevende",
 };
 
-// ─── Unified trip item (real or dummy) ───────────────────────────────
+// ─── Trip item for display ───────────────────────────────────────────
 
 interface TripItem {
   id: string;
@@ -139,12 +57,10 @@ interface TripItem {
   durationMinutes: number;
   featured: boolean;
   coverImageUrl?: string;
-  /** Link target — undefined for dummy trips */
-  href?: string;
-  isDummy: boolean;
+  href: string;
 }
 
-function realTripToItem(trip: Project, customer: string, projectSlug: string): TripItem {
+function tripToItem(trip: Project, customer: string, projectSlug: string): TripItem {
   const config = trip.tripConfig;
   return {
     id: trip.id,
@@ -157,12 +73,7 @@ function realTripToItem(trip: Project, customer: string, projectSlug: string): T
     featured: config?.featured ?? false,
     coverImageUrl: config?.coverImageUrl,
     href: `/${customer}/${projectSlug}/trips/${trip.urlSlug}`,
-    isDummy: false,
   };
-}
-
-function dummyToItem(d: DummyTrip): TripItem {
-  return { ...d, isDummy: true };
 }
 
 // ─── Components ──────────────────────────────────────────────────────
@@ -211,8 +122,8 @@ function FeaturedTripCard({ item }: { item: TripItem }) {
   const gradient = CATEGORY_GRADIENTS[item.category];
   const Icon = CATEGORY_ICONS[item.category];
 
-  const inner = (
-    <div className="flex-shrink-0 w-[300px] sm:w-[340px] group cursor-pointer snap-start">
+  return (
+    <Link href={item.href} className="flex-shrink-0 w-[300px] sm:w-[340px] group cursor-pointer snap-start focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C45C3A] focus-visible:ring-offset-2 rounded-2xl">
       <div className={`relative aspect-[16/10] rounded-2xl overflow-hidden bg-gradient-to-br ${gradient}`}>
         {item.coverImageUrl ? (
           <Image
@@ -264,28 +175,9 @@ function FeaturedTripCard({ item }: { item: TripItem }) {
             <span>{DIFFICULTY_LABELS[item.difficulty] ?? ""}</span>
           </div>
         </div>
-
-        {/* "Coming soon" for dummy */}
-        {item.isDummy && (
-          <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full">
-            <span className="text-[10px] font-medium text-white/80 uppercase tracking-wider">
-              Kommer snart
-            </span>
-          </div>
-        )}
       </div>
-    </div>
+    </Link>
   );
-
-  if (item.href) {
-    return (
-      <Link href={item.href} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C45C3A] focus-visible:ring-offset-2 rounded-2xl">
-        {inner}
-      </Link>
-    );
-  }
-
-  return inner;
 }
 
 /** Standard trip card (used in category rows) */
@@ -293,8 +185,11 @@ function TripCard({ item }: { item: TripItem }) {
   const gradient = CATEGORY_GRADIENTS[item.category];
   const Icon = CATEGORY_ICONS[item.category];
 
-  const inner = (
-    <div className="flex-shrink-0 w-48 group cursor-pointer snap-start">
+  return (
+    <Link
+      href={item.href}
+      className="flex-shrink-0 w-48 group cursor-pointer snap-start focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C45C3A] focus-visible:ring-offset-2 rounded-xl"
+    >
       <div className={`relative aspect-[4/5] rounded-xl overflow-hidden bg-gradient-to-br ${gradient}`}>
         {item.coverImageUrl ? (
           <Image
@@ -319,15 +214,6 @@ function TripCard({ item }: { item: TripItem }) {
         <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-[#1A1A1A]">
           {item.stopCount} stopp
         </div>
-
-        {/* "Coming soon" for dummy */}
-        {item.isDummy && (
-          <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
-            <span className="text-[9px] font-medium text-white/80 uppercase tracking-wider">
-              Snart
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Title and metadata */}
@@ -347,21 +233,8 @@ function TripCard({ item }: { item: TripItem }) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
-
-  if (item.href) {
-    return (
-      <Link
-        href={item.href}
-        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C45C3A] focus-visible:ring-offset-2 rounded-xl"
-      >
-        {inner}
-      </Link>
-    );
-  }
-
-  return inner;
 }
 
 /** Category row with horizontal scroll */
@@ -412,19 +285,10 @@ export default function TripLibraryClient({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
 
-  // Merge real trips with dummy trips
-  const allItems = useMemo(() => {
-    const realItems = trips.map((t) => realTripToItem(t, customer, projectSlug));
-    const realCategories = new Set(realItems.map((i) => i.category));
-    const realTitles = new Set(realItems.map((i) => i.title.toLowerCase()));
-
-    // Add dummy trips that don't duplicate real ones
-    const dummyItems = DUMMY_TRIPS
-      .filter((d) => !realTitles.has(d.title.toLowerCase()))
-      .map(dummyToItem);
-
-    return [...realItems, ...dummyItems];
-  }, [trips, customer, projectSlug]);
+  const allItems = useMemo(
+    () => trips.map((t) => tripToItem(t, customer, projectSlug)),
+    [trips, customer, projectSlug]
+  );
 
   // Debounced search
   const handleSearchChange = useCallback((value: string) => {
