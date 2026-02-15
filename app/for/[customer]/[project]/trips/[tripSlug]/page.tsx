@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getTripBySlugAsync, getProjectTripOverrideAsync } from "@/lib/data-server";
 import { tripToProject } from "@/lib/trip-adapter";
 import TripPage from "@/components/variants/trip/TripPage";
+import TripPreview from "@/components/variants/trip/TripPreview";
 
 interface PageProps {
   params: Promise<{
@@ -9,10 +10,12 @@ interface PageProps {
     project: string;
     tripSlug: string;
   }>;
+  searchParams: Promise<{ mode?: string }>;
 }
 
-export default async function TripDetailPage({ params }: PageProps) {
+export default async function TripDetailPage({ params, searchParams }: PageProps) {
   const { customer, project: projectSlug, tripSlug } = await params;
+  const { mode } = await searchParams;
 
   // Fetch trip from Supabase by slug
   const trip = await getTripBySlugAsync(tripSlug);
@@ -23,10 +26,22 @@ export default async function TripDetailPage({ params }: PageProps) {
   // Fetch project-specific override (start POI, reward, etc.)
   const override = await getProjectTripOverrideAsync(tripSlug, customer, projectSlug);
 
-  // Convert to legacy Project shape via adapter
-  const projectData = tripToProject(trip, override ?? undefined);
+  // Active mode: use existing TripPage with adapter
+  if (mode === "active") {
+    const projectData = tripToProject(trip, override ?? undefined);
+    return <TripPage project={projectData} />;
+  }
 
-  return <TripPage project={projectData} />;
+  // Default: Preview mode
+  const basePath = `/for/${customer}/${projectSlug}/trips/${tripSlug}`;
+  return (
+    <TripPreview
+      trip={trip}
+      override={override ?? undefined}
+      activeHref={`${basePath}?mode=active`}
+      backHref={`/for/${customer}/${projectSlug}/trips`}
+    />
+  );
 }
 
 export async function generateMetadata({ params }: PageProps) {

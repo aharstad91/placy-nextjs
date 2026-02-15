@@ -75,7 +75,7 @@ function tripToItem(trip: Project, customer: string, projectSlug: string): TripI
     durationMinutes: config?.precomputedDurationMinutes ?? 0,
     featured: config?.featured ?? false,
     coverImageUrl: config?.coverImageUrl,
-    href: `/${customer}/${projectSlug}/trips/${trip.urlSlug}`,
+    href: `/for/${customer}/${projectSlug}/trips/${trip.urlSlug}`,
   };
 }
 
