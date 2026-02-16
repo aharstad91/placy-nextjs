@@ -1182,3 +1182,103 @@ Innholdsmodellen er det som gjør Placy til mer enn en kartapp. Den gjør AI-com
 - **Grunnlaget er solid.** JSON-LD, sitemap, hreflang, ISR, canonical — alt er på plass. Det som mangler er polish og fullstendighet, ikke fundament
 - **Schema-type-mapping er for enkel.** Én category.id → én schema-type funker ikke når Britannia Hotel er "restaurant" men egentlig hotell. Trenger override-mekanisme eller smartere mapping
 - **Sitemap-lastmod er meningsløs.** Alle 1100+ URLer har identisk timestamp. Google ignorerer dette. Må bruke ekte updated_at fra DB
+
+---
+
+## 2026-02-16 (sesjon 11) — Knowledge Base Taxonomy v0.2: 5 kategorier, 19 sub-topics
+
+### Beslutninger
+- **Utvidet fra 9 flat topics til 5 kategorier med 19 sub-topics + 1 legacy.** Kuratorgjennomgang av 226 fakta viste "blødning" mellom topics — atmosphere-fakta i architecture, drinks i food, insider-tips i local_knowledge. Trengte mer granularitet OG logisk gruppering.
+- **Kategorier kun i TypeScript, ikke i DB.** Kategorier er et presentasjonsanliggende. DB lagrer atomære fakta med topic-klassifisering. Hvordan topics grupperes for visning er en UI-beslutning som kan utvikle seg uavhengig av databaseskjemaet.
+- **CHECK constraint over ENUM.** `ALTER TYPE ... ADD VALUE` kan ikke kjøres inne i en transaksjon. CHECK constraints kan erstattes atomisk med `BEGIN/COMMIT`. Bedre for evolverende taksonomier.
+- **`as const satisfies`-mønsteret** for compile-time validering av kategori-topic-mapping. TypeScript fanger typoer i topic-arrays ved byggetidspunkt.
+- **Beholdt `local_knowledge` som legacy-verdi** i DB og typer, mappet til 'inside'-kategorien. Ingen datamigrasjon nødvendig — alle 226 fakta forblir gyldige.
+
+### Parkert / Åpne spørsmål
+- **Re-kategorisering av 226 eksisterende fakta** — gradvis, manuelt i admin. Nye topics (atmosphere, signature, drinks, etc.) er tilgjengelige men ikke tatt i bruk ennå.
+- **Instagram/sosiale medier-topics** (`photo`, `visual`, `social`) — parkert for v0.3
+- **AI-basert tekst-syntese** — slå sammen flere fakta til sammenhengende prosa per kategori. Parkert.
+- ~~Encoding-feil i knowledge-data~~ — fikset i forrige sesjon (226 fakta renset)
+
+### Retning
+- **Neste steg er innholdsproduksjon med utvidede topics.** Nå som taxonomy støtter drinks, atmosphere, signature etc., kan neste research-runde produsere mer presist kategoriserte fakta.
+- **Admin-UI er klart for kurasjon.** Grupperte filtre gjør det mye enklere å jobbe med 19 topics enn 9 i flat liste.
+- **PlaceKnowledgeSection viser nå kategorier automatisk.** Bare topics med fakta rendres — tomme kategorier skjules. Sub-topic-overskrifter vises kun når en kategori har 2+ aktive topics.
+
+### Observasjoner
+- **MapPopupCard-oppdagelsen viser verdien av systematisk filsøk.** Deepen-plan-fasen fant at `MapPopupCard.tsx:41` hadde hardkodet `local_knowledge`/`history`-prioritet som ville blitt oversett uten codebase-utforsking. Alltid søk etter alle imports av modifiserte typer.
+- **7 filer importerer KNOWLEDGE_TOPICS** — 4 trengte manuell oppdatering, 6 auto-adapterer. `Record<KnowledgeTopic, string>` for label-maps tvinger compile-time fullstendighet.
+- **Supabase worktree-gotcha:** `supabase db push` feiler i worktrees fordi `.supabase/`-mappen med prosjektreferanse ikke kopieres. Løsning: kopier migrasjonsfilen til hovedrepoet, kjør push der.
+- **PR #44 shipped.** 5 filer endret, 211 innsettinger, 70 slettinger. Rent, fokusert diff.
+
+---
+
+## 2026-02-16 (sesjon 12) — Google API-kostnad Fase 2: Freshness-tracking
+
+### Beslutninger
+- **photo_resolved_at-kolonne for URL-friskhet.** Sesjon 2026-02-15 migrerte alle CDN-URLer, men hadde ingen mekanisme for å oppdage når de blir stale. Ny kolonne tracker siste resolve-tidspunkt.
+- **Bi-ukentlig refresh-script.** `refresh-photo-urls.ts --days 14` re-resolver CDN-URLer eldre enn 14 dager. Estimert kost: ~$1.50 per kjøring (~500 Photo API-kall).
+- **Null ut utgåtte referanser.** Tidligere ble expired photo_reference stående i DB — som betyr at neste script-kjøring prøvde igjen og igjen. Nå nulles både `photo_reference`, `photo_resolved_at` og `featured_image` ut.
+- **minimumCacheTTL 30d → 7d.** Strammere feedback-loop for lh3-friskhet. Merk: global setting som påvirker alle remote-bilder, ikke bare Google.
+- **Skippet code duplication-refactoring.** resolve + refresh scripts deler ~80% kode. Bevisst valgt å la dem stå som separate scripts — 2 filer er håndterbart, og en shared module-abstraksjon gir lite nok verdi.
+
+### Levert (PR #45)
+- Migration 041: `photo_resolved_at TIMESTAMPTZ` + backfill for eksisterende CDN-URLer
+- `scripts/refresh-photo-urls.ts` — nytt script for periodisk URL-refresh
+- `scripts/resolve-photo-urls.ts` — oppdatert med `photo_resolved_at` + expired-nulling
+- `lib/utils/fetch-poi-photos.ts` — setter `photo_resolved_at` ved nye imports
+- `next.config.mjs` — minimumCacheTTL 30d → 7d
+- `COMMANDS.md` — vedlikeholdsplan dokumentert
+- Code review: 2 P1 fikset (unchecked PATCH + NaN-guard), 1 P2 fikset (stale featured_image)
+
+### Parkert / Åpne spørsmål
+- **Places API (New) migrering** — neste prioritet. Photo-only kall er GRATIS på Essentials IDs Only-tier. `skipHttpRedirect=true` returnerer `photoUri` direkte. Vil eliminere 302-redirect-hacket helt.
+- **Gallery images refreshes ikke.** Refresh-scriptet oppdaterer kun `featured_image`, ikke `gallery_images`. Lav prioritet — galleri brukes kun på POI-detaljsider.
+- **~15 filer med proxy-fallback** — gjentatt fra forrige sesjon. Dead code som bør fjernes.
+- **Supabase TypeScript-typer** — `photo_resolved_at` og `gallery_images` mangler i genererte typer.
+
+### Retning
+- **Google API-kostnad er nå under kontroll.** Fase 1 (2026-02-15) eliminerte runtime-kall. Fase 2 (denne) sikrer at CDN-URLer holdes ferske. Neste steg er Places API (New) for å gjøre photo-kall gratis.
+- **Vedlikeholdsrutine etablert.** Refresh-script annenhver uke, opening hours månedlig. Bør vurdere GitHub Action for automatisering.
+
+### Observasjoner
+- **$200/month Google Maps credit er borte siden mars 2025.** Erstattet med per-SKU free thresholds (10K Essentials, 5K Pro, 1K Enterprise). Placy's volum (~6K calls/halvmåned) treffer allerede betalbar sone. Places API (New) migrering er ikke nice-to-have — det er nødvendig for bærekraftig drift.
+- **lh3 CDN-URLer er IKKE permanente.** Google-dokumentasjon sier "short-lived" (~60 min). I praksis lever de uker/måneder. Men refresh-mekanismen er essensielt forsikring mot plutselig utløp.
+- **Fire code review-agenter fanget reelle bugs.** Unchecked PATCH på expired refs ville medført at stale data aldri ble ryddet opp — direkte motstrid med kostnadsmålet. Systematisk review betaler seg.
+
+---
+
+## 2026-02-16 (sesjon 13) — Google API-kostnad Fase 3: Places API (New)
+
+### Beslutninger
+- **Migrerte alle photo-operasjoner til Places API (New).** Essentials (IDs Only) tier med `photos` field mask = $0/ubegrenset. `skipHttpRedirect=true` returnerer `photoUri` direkte som JSON — ingen 302-redirect-hack.
+- **Delt helper-modul: `lib/google-places/photo-api.ts`.** To funksjoner (`fetchPhotoNames`, `resolvePhotoUri`) erstatter all legacy photo-kode. Konsistent `X-Goog-Api-Key` header (ikke URL query param).
+- **Beholdt photo proxy-route.** Plan sa "slett den" — men grep avslørte ~15 komponenter som fortsatt fallbacker til `/api/places/photo?photoReference=...`. Dead code-vurderingen var feil. Beholdt med legacy-kommentar.
+- **Slettet `lib/resolve-photo-url.ts`.** ISR-utility med null importere — ren dead code. Ingen komponenter bruker den etter forrige sesjon.
+- **fetchPhotoNames kaster på API-feil (403/429/500).** Kritisk review-finding: legacy-versjonen returnerte tom array for alle feil-statuser, som fikk scripts til å tolke API-nedetid som "ingen bilder" og slette data. Nå: 404 = tom array, alt annet = throw.
+
+### Levert (PR #46)
+- `lib/google-places/photo-api.ts` — ny shared helper
+- `lib/utils/fetch-poi-photos.ts` — import pipeline bruker New API
+- `scripts/resolve-photo-urls.ts` — batch resolve med legacy-migrering
+- `scripts/refresh-photo-urls.ts` — refresh med dual-format + auto-migrering
+- `scripts/backfill-gallery-images.ts` — gallery backfill bruker New API
+- `lib/resolve-photo-url.ts` — slettet (dead code)
+- Code review: 4 P1 fikset (API key i URL, silent data deletion, input validation, placeId sanitering)
+
+### Parkert / Åpne spørsmål
+- ~~Places API (New) migrering~~ — ferdig!
+- **~15 komponenter med proxy-fallback.** Disse bruker fortsatt `photoReference` direkte via `/api/places/photo`. Bør migreres til å bruke `featuredImage` som primær kilde. Når alle bruker CDN-URL direkte, kan proxy-routen slettes.
+- **Gallery images refreshes ikke.** Videreført fra sesjon 12. refresh-scriptet oppdaterer kun `featured_image`.
+- **Supabase TypeScript-typer.** Videreført — `photo_resolved_at` og `gallery_images` mangler i genererte typer.
+- **Security-funn utenfor scope:** /api/places/route.ts eksponerer API-nøkkel i JSON-respons, /api/places POST mangler input-validering, admin-ruter mangler autentisering. Separate oppgaver.
+
+### Retning
+- **Google API photo-kostnad er nå $0.** Tre faser fullført på én dag: runtime-eliminering → freshness-tracking → Places API (New). Import av nye POI-er er nå kostnadsfritt for bilder.
+- **Neste kostnadsfokus bør være Places Details (mixed fields).** `fetch-place-details.ts` bruker fortsatt Legacy for rating/website/opening_hours — dette er ikke Essentials tier og koster fortsatt.
+- **Komponent-opprydning er teknisk gjeld.** 15 filer med proxy-fallback er en luktet men ikke kritisk — proxy-routen fungerer, den koster bare et ekstra hop.
+
+### Observasjoner
+- **Tre code review-agenter fant kritisk data-destruksjon.** `fetchPhotoNames` returnerte `[]` på 403/429/500. Scripts tolket dette som "ingen bilder" og slettet `photo_reference` + `featured_image`. Én Google API-nedetid ville slettet alle foto-data. Systematic review reddet oss.
+- **Planer kan ta feil.** Plan sa "slett photo proxy" — grep viste 15+ referanser. Alltid verifiser antagelser med faktisk kodebase-søk.
+- **Format-kompatibilitet via regex er robust nok.** `places/{id}/photos/{ref}` detekteres pålitelig. Legacy opake strenger matcher aldri. Refresh-scriptet migrerer automatisk — over tid forsvinner legacy-format fra DB.

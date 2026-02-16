@@ -30,22 +30,26 @@ Placy er en lokasjonsbasert plattform med tre produkter: **Explorer** (utforsk f
 - Zustand (state), Mapbox GL JS (kart), Lucide React (ikoner)
 - Supabase (database, auth)
 
-## Supabase CLI
-
-Supabase CLI er konfigurert og linket til prosjektet. Bruk CLI for migrasjoner:
-
-```bash
-# Kjør nye migrasjoner
-source .env.local && supabase db push --password "$DATABASE_PASSWORD"
-
-# Sjekk migrasjonsstatus
-source .env.local && supabase migration list --password "$DATABASE_PASSWORD"
-
-# Marker migrasjoner som allerede kjørt (hvis nødvendig)
-source .env.local && supabase migration repair 001 003 004 --status applied --password "$DATABASE_PASSWORD"
-```
+## Supabase Migrasjoner
 
 Migrasjoner ligger i `supabase/migrations/` med format `NNN_beskrivelse.sql`.
+
+**OBS: `supabase db push` fungerer IKKE med vår nummerering** (krever `<timestamp>_name.sql`). Bruk psql direkte:
+
+```bash
+# Kjør migrasjon direkte via psql
+source .env.local && /opt/homebrew/Cellar/libpq/17.2/bin/psql \
+  "postgresql://postgres.eolzjxkonfwbzjqqvbnj:${DATABASE_PASSWORD}@aws-1-eu-west-1.pooler.supabase.com:6543/postgres" \
+  -f supabase/migrations/NNN_name.sql
+
+# Verifiser at kolonne/tabell eksisterer etter migrasjon
+source .env.local && curl -s "${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/pois?select=new_column&limit=1" \
+  -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}"
+```
+
+**Migrasjoner er en del av /work-fasen.** Jobben er ikke ferdig før migrasjonen er kjørt og verifisert mot produksjonsdatabasen.
+
+**Worktree-gotcha:** `.supabase/`-mappen kopieres ikke. Kopier migrasjonsfilen til hovedrepo eller kjør psql direkte med full sti.
 
 ## Viktige kodefiler
 
@@ -80,6 +84,27 @@ Generer editorial hooks for POI-ene i data/projects/kunde/prosjekt.json
 ```
 
 Genererer `editorialHook` og `localInsight` per POI basert på nettsøk.
+
+## Kvalitetsstandard — "Ferdig betyr ferdig"
+
+Brukeren er vibe coder og har ikke kapasitet til å kvalitetssikre arbeidet i etterkant. Når en oppgave gjøres, skal den gjøres **100% komplett**. Ingen snarveier, ingen "good enough".
+
+### Regler
+
+1. **Definer "ferdig" før du starter.** Si eksplisitt hva som er scope og fullføringskriterier. "Reklassifiser fakta" betyr "vurder HVERT fakta og bekreft eller flytt" — ikke "plukk de åpenbare".
+
+2. **Full dekning, aldri sampling.** Når oppgaven er å gjennomgå data, kode, eller innhold: gå gjennom ALT. Ikke stopp etter de lette tilfellene. De vanskelige er der verdien ligger.
+
+3. **Multi-pass for dataarbeid:**
+   - Pass 1: Gå gjennom alt, fatt beslutninger
+   - Pass 2: Gå gjennom det som ble igjen — er det riktig plassert?
+   - Pass 3: Stikkprøve av egne beslutninger
+
+4. **Rapporter fullstendighet.** Si alltid: "X av Y gjennomgått, Z endret, W bekreftet riktig." Aldri bare "Z endret" — det skjuler at Y-Z ikke ble sjekket.
+
+5. **Bruk kapasiteten.** Vi har 20x Claude Pro. Grundighet > hastighet. Ikke optimer for å bli fort ferdig — optimer for at resultatet er riktig.
+
+6. **Når du er usikker, gjør mer, ikke mindre.** Hellre en time ekstra arbeid enn at brukeren oppdager hull i etterkant.
 
 ## Arbeidsmodus og Agent Teams
 
