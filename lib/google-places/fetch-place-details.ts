@@ -7,7 +7,7 @@
 export interface PlaceDetails {
   rating?: number;
   reviewCount?: number;
-  photos?: Array<{ reference: string; url: string }>;
+  photos?: Array<{ reference: string }>;
   website?: string;
   phone?: string;
   openingHours?: string[];
@@ -72,7 +72,6 @@ export async function fetchPlaceDetails(
     reviewCount: place.user_ratings_total,
     photos: place.photos?.slice(0, 5).map((photo: { photo_reference: string }) => ({
       reference: photo.photo_reference,
-      url: `/api/places/photo?photoReference=${photo.photo_reference}&maxWidth=400`,
     })),
     website: place.website,
     phone: place.formatted_phone_number,

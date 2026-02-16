@@ -78,13 +78,6 @@ export default function PortraitPOIInline({
             alt={poi.name}
             className="w-full h-full object-cover"
           />
-        ) : poi.photoReference ? (
-          <img
-            src={`/api/places/photo?photoReference=${poi.photoReference}&maxWidth=800`}
-            alt={poi.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
         ) : (
           <div className="w-full h-full flex items-end p-6">
             <div

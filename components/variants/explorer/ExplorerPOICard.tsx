@@ -97,9 +97,7 @@ export default function ExplorerPOICard({
     ? poi.featuredImage.includes("mymaps.usercontent.google.com")
       ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
       : poi.featuredImage
-    : poi.photoReference
-      ? `/api/places/photo?photoReference=${poi.photoReference}&maxWidth=400`
-      : null;
+    : null;
 
   const hasImage = imageUrl && !imageError;
   const travelTime = poi.travelTime?.[travelMode];
