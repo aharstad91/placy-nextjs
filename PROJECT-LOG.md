@@ -1282,3 +1282,36 @@ Innholdsmodellen er det som gjør Placy til mer enn en kartapp. Den gjør AI-com
 - **Tre code review-agenter fant kritisk data-destruksjon.** `fetchPhotoNames` returnerte `[]` på 403/429/500. Scripts tolket dette som "ingen bilder" og slettet `photo_reference` + `featured_image`. Én Google API-nedetid ville slettet alle foto-data. Systematic review reddet oss.
 - **Planer kan ta feil.** Plan sa "slett photo proxy" — grep viste 15+ referanser. Alltid verifiser antagelser med faktisk kodebase-søk.
 - **Format-kompatibilitet via regex er robust nok.** `places/{id}/photos/{ref}` detekteres pålitelig. Legacy opake strenger matcher aldri. Refresh-scriptet migrerer automatisk — over tid forsvinner legacy-format fra DB.
+
+---
+
+## 2026-02-16 (sesjon 14) — Knowledge Reclassification: 3-pass gjennomgang
+
+### Beslutninger
+- **Kvalitetsstandard innført i CLAUDE.md: "Ferdig betyr ferdig."** Etter at pass 1 (50 av 231 fakta) ble levert som "ferdig", avdekket bruker at dette var utilstrekkelig. Standardiserte nå: full dekning, multi-pass for dataarbeid, rapporter fullstendighet (X av Y).
+- **3-pass metodikk for reklassifisering:**
+  - Pass 1: Beslutningsmodus — identifiser åpenbare flyttinger (50 endret)
+  - Pass 2: Verifiseringsmodus — les ALLE 231 fakta med full tekst, bekreft eller flytt (9 endret, 222 bekreftet)
+  - Pass 3: Stikkprøve — verifiser 6 tilfeldig valgte pass 1-beslutninger (alle korrekte)
+- **3 fakta beholdt i `local_knowledge`:** Bevisst valg etter grundig vurdering — genuint lokal kunnskap som ikke passer bedre i andre topics.
+
+### Levert
+- `scripts/reclassify-knowledge-v02.ts` — pass 1: 50 reklassifiseringer (committed)
+- `scripts/reclassify-knowledge-v02-pass2.ts` — pass 2: 9 reklassifiseringer (committed)
+- `CLAUDE.md` — kvalitetsstandard lagt til
+- `PROJECT-LOG.md` — sesjon 11 + denne oppføringen
+- **231/231 fakta gjennomgått, 59 endret, 172 bekreftet riktig**
+
+### Parkert / Åpne spørsmål
+- **`seasonal` og `media` topics har null fakta.** Korrekt — disse er nye topics for fremtidig innhold fra neste research-runde.
+- **`nature` har kun 1 faktum** (Bakklandet mikroklima). Trondheim by-POIs er ikke natur-fokuserte — dette endres om vi utvider til turområder.
+- **Research-pipeline for v0.2 topics** — neste steg er å researche fakta for de nye topic-kategoriene (atmosphere, signature, insider, etc.) systematisk.
+- **UI-visning av 5 kategorier** — PlaceKnowledgeSection viser fortsatt flat topic-liste. Plan for sammenhengende tekst per kategori er skrevet men ikke implementert.
+
+### Retning
+- **Data-kvaliteten i knowledge base er nå solid.** 231 fakta fordelt over 17 aktive topics med gjennomtenkt plassering. Grunnlaget er klart for UI-forbedring og nye research-runder.
+- **Kvalitetsstandarden er viktigere enn reklassifiseringen.** Den prinsipielle endringen — at ALL jobb skal gjøres 100% komplett — påvirker alt fremtidig arbeid. Bruker er vibe coder som ikke kan QA i etterkant.
+
+### Observasjoner
+- **Pass 1 vs pass 2 avdekket forskjellen mellom "lett" og "grundig".** 50 åpenbare moves er raskt å finne. De 9 ekstra krevde å lese full tekst på alle 231 fakta og tenke nøye gjennom grensetilfeller. Forskjellen er 90% vs 100% — men de siste 10% er der kvaliteten sitter.
+- **Brukerens meta-spørsmål var viktigst.** "Hva gjør at du ikke jobber i 10 min?" avdekket en systemisk svakhet. Svaret — "jeg stopper når det føles ferdig" — er uakseptabelt for en vibe coder som stoler på at jobben er gjort. Kvalitetsstandarden fikser dette.
