@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Star, MapPin, ExternalLink } from "lucide-react";
+import { Star, MapPin } from "lucide-react";
 import {
   getAreaBySlug,
   getPOIBySlug,
@@ -13,12 +13,22 @@ import {
 import { getIcon } from "@/lib/utils/map-icons";
 import { getStaticMapUrl } from "@/lib/mapbox-static";
 import Breadcrumb from "@/components/public/Breadcrumb";
-import PlaceKnowledgeSection from "@/components/public/PlaceKnowledgeSection";
+import POIDetailBody from "@/components/public/POIDetailBody";
+import POIDetailSidebar from "@/components/public/POIDetailSidebar";
 import POIJsonLd from "@/components/seo/POIJsonLd";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
-import { isSafeUrl } from "@/lib/utils/url";
+import type { KnowledgeTopic, KnowledgeCategory } from "@/lib/types";
+import { KNOWLEDGE_CATEGORIES } from "@/lib/types";
 
 export const revalidate = 86400;
+
+const CATEGORY_ORDER: KnowledgeCategory[] = [
+  "story",
+  "experience",
+  "taste",
+  "place",
+  "inside",
+];
 
 interface PageProps {
   params: Promise<{ area: string; slug: string }>;
@@ -71,7 +81,11 @@ export default async function POIPageEN({ params }: PageProps) {
     getCategoriesForArea(area.id, "en"),
   ]);
 
-  const imageUrl = poi.featuredImage ?? null;
+  // Build gallery images array (prefer gallery_images, fall back to single image)
+  const mainImage = poi.featuredImage ?? null;
+  const galleryImages = poi.galleryImages?.length
+    ? poi.galleryImages
+    : (mainImage ? [mainImage] : []);
 
   const CategoryIcon = getIcon(poi.category.icon);
 
@@ -95,6 +109,35 @@ export default async function POIPageEN({ params }: PageProps) {
     { name: poi.name },
   ];
 
+  // --- Knowledge grouping for tabs ---
+  const filteredKnowledge = poi.editorialHook
+    ? knowledge.filter((k) => !k.sourceName?.toLowerCase().includes("backfill"))
+    : knowledge;
+
+  const byTopic = new Map<KnowledgeTopic, typeof filteredKnowledge>();
+  for (const fact of filteredKnowledge) {
+    const existing = byTopic.get(fact.topic) ?? [];
+    existing.push(fact);
+    byTopic.set(fact.topic, existing);
+  }
+
+  const knowledgeCategories = CATEGORY_ORDER
+    .map((catKey) => {
+      const cat = KNOWLEDGE_CATEGORIES[catKey];
+      const activeTopics = cat.topics.filter((t) => byTopic.has(t as KnowledgeTopic));
+      if (activeTopics.length === 0) return null;
+      return {
+        key: catKey,
+        label: cat.labelEn,
+        topicGroups: activeTopics.map((t) => ({
+          topic: t as KnowledgeTopic,
+          facts: byTopic.get(t as KnowledgeTopic)!,
+          showLabel: activeTopics.length > 1,
+        })),
+      };
+    })
+    .filter((c): c is NonNullable<typeof c> => c !== null);
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <POIJsonLd poi={poi} area={area} locale="en" />
@@ -111,11 +154,42 @@ export default async function POIPageEN({ params }: PageProps) {
         ]}
       />
 
-      {/* Hero image */}
-      {imageUrl && (
+      {/* Image gallery */}
+      {galleryImages.length >= 3 ? (
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] md:grid-rows-2 gap-1 rounded-xl overflow-hidden mb-6 md:h-[340px]">
+          <div className="relative aspect-[16/9] md:aspect-auto md:row-span-2 bg-[#f5f3f0]">
+            <Image
+              src={galleryImages[0]}
+              alt={poi.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 600px"
+              priority
+            />
+          </div>
+          <div className="hidden md:block relative bg-[#f5f3f0]">
+            <Image
+              src={galleryImages[1]}
+              alt={`${poi.name} — image 2`}
+              fill
+              className="object-cover"
+              sizes="300px"
+            />
+          </div>
+          <div className="hidden md:block relative bg-[#f5f3f0]">
+            <Image
+              src={galleryImages[2]}
+              alt={`${poi.name} — image 3`}
+              fill
+              className="object-cover"
+              sizes="300px"
+            />
+          </div>
+        </div>
+      ) : galleryImages.length > 0 ? (
         <div className="aspect-[21/9] rounded-xl overflow-hidden bg-[#f5f3f0] mb-6 relative">
           <Image
-            src={imageUrl}
+            src={galleryImages[0]}
             alt={poi.name}
             fill
             className="object-cover"
@@ -123,7 +197,7 @@ export default async function POIPageEN({ params }: PageProps) {
             priority
           />
         </div>
-      )}
+      ) : null}
 
       {/* Header */}
       <div className="mb-8">
@@ -161,89 +235,19 @@ export default async function POIPageEN({ params }: PageProps) {
             </div>
           )}
         </div>
+
+        {/* Editorial hook — plain paragraph */}
+        {poi.editorialHook && (
+          <p className="mt-4 text-base text-[#4a4a4a] leading-relaxed">
+            {poi.editorialHook}
+          </p>
+        )}
       </div>
 
-      {/* Editorial content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-        <div className="lg:col-span-2 space-y-6">
-          {poi.editorialHook && (
-            <div className="bg-[#faf8f5] border-l-4 rounded-r-lg p-4" style={{ borderColor: poi.category.color }}>
-              <p className="text-base text-[#1a1a1a] leading-relaxed italic">
-                {poi.editorialHook}
-              </p>
-            </div>
-          )}
-
-          {poi.localInsight && (
-            <div>
-              <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-2">
-                Local Tip
-              </h2>
-              <p className="text-sm text-[#4a4a4a] leading-relaxed">
-                {poi.localInsight}
-              </p>
-            </div>
-          )}
-
-          {knowledge.length > 0 && (
-            <PlaceKnowledgeSection
-              knowledge={knowledge}
-              locale="en"
-              hasEditorialHook={!!poi.editorialHook}
-            />
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            {poi.googleMapsUrl && isSafeUrl(poi.googleMapsUrl) && (
-              <a
-                href={poi.googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-[#1a1a1a] text-white text-sm font-medium rounded-lg hover:bg-[#333] transition-colors"
-              >
-                <MapPin className="w-4 h-4" />
-                View on Google Maps
-              </a>
-            )}
-            {poi.googleWebsite && isSafeUrl(poi.googleWebsite) && (
-              <a
-                href={poi.googleWebsite}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-[#1a1a1a] text-sm font-medium rounded-lg border border-[#eae6e1] hover:border-[#d4cfc8] transition-colors"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Website
-              </a>
-            )}
-          </div>
-
-          {staticMapUrl ? (
-            <a
-              href={poi.googleMapsUrl ?? `https://www.google.com/maps/search/?api=1&query=${poi.coordinates.lat},${poi.coordinates.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-lg overflow-hidden border border-[#eae6e1] hover:border-[#d4cfc8] transition-all"
-            >
-              <Image
-                src={staticMapUrl}
-                alt={`Map of ${poi.name}`}
-                width={400}
-                height={300}
-                className="w-full h-auto"
-                loading="lazy"
-              />
-            </a>
-          ) : (
-            <div className="aspect-[4/3] rounded-lg bg-[#f0ece7] flex items-center justify-center">
-              <MapPin className="w-8 h-8 text-[#c0b9ad]" />
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Tab body + sidebar */}
+      <POIDetailBody categories={knowledgeCategories} locale="en">
+        <POIDetailSidebar poi={poi} staticMapUrl={staticMapUrl} locale="en" />
+      </POIDetailBody>
 
       {/* Similar places */}
       {similar.length > 0 && (

@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Star, MapPin, ExternalLink } from "lucide-react";
+import { Star, MapPin } from "lucide-react";
 import {
   getAreaBySlug,
   getPOIBySlug,
@@ -13,13 +13,23 @@ import {
 import { getIcon } from "@/lib/utils/map-icons";
 import { getStaticMapUrl } from "@/lib/mapbox-static";
 import Breadcrumb from "@/components/public/Breadcrumb";
-import PlaceKnowledgeSection from "@/components/public/PlaceKnowledgeSection";
+import POIDetailBody from "@/components/public/POIDetailBody";
+import POIDetailSidebar from "@/components/public/POIDetailSidebar";
 import POIJsonLd from "@/components/seo/POIJsonLd";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import SaveButton from "@/components/public/SaveButton";
-import { isSafeUrl } from "@/lib/utils/url";
+import type { KnowledgeTopic, KnowledgeCategory } from "@/lib/types";
+import { KNOWLEDGE_CATEGORIES } from "@/lib/types";
 
 export const revalidate = 86400;
+
+const CATEGORY_ORDER: KnowledgeCategory[] = [
+  "story",
+  "experience",
+  "taste",
+  "place",
+  "inside",
+];
 
 interface PageProps {
   params: Promise<{ area: string; slug: string }>;
@@ -102,6 +112,35 @@ export default async function POIPage({ params }: PageProps) {
       : []),
     { name: poi.name },
   ];
+
+  // --- Knowledge grouping for tabs ---
+  const filteredKnowledge = poi.editorialHook
+    ? knowledge.filter((k) => !k.sourceName?.toLowerCase().includes("backfill"))
+    : knowledge;
+
+  const byTopic = new Map<KnowledgeTopic, typeof filteredKnowledge>();
+  for (const fact of filteredKnowledge) {
+    const existing = byTopic.get(fact.topic) ?? [];
+    existing.push(fact);
+    byTopic.set(fact.topic, existing);
+  }
+
+  const knowledgeCategories = CATEGORY_ORDER
+    .map((catKey) => {
+      const cat = KNOWLEDGE_CATEGORIES[catKey];
+      const activeTopics = cat.topics.filter((t) => byTopic.has(t as KnowledgeTopic));
+      if (activeTopics.length === 0) return null;
+      return {
+        key: catKey,
+        label: cat.labelNo,
+        topicGroups: activeTopics.map((t) => ({
+          topic: t as KnowledgeTopic,
+          facts: byTopic.get(t as KnowledgeTopic)!,
+          showLabel: activeTopics.length > 1,
+        })),
+      };
+    })
+    .filter((c): c is NonNullable<typeof c> => c !== null);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -204,91 +243,19 @@ export default async function POIPage({ params }: PageProps) {
             </div>
           )}
         </div>
+
+        {/* Editorial hook — plain paragraph */}
+        {poi.editorialHook && (
+          <p className="mt-4 text-base text-[#4a4a4a] leading-relaxed">
+            {poi.editorialHook}
+          </p>
+        )}
       </div>
 
-      {/* Editorial content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-        <div className="lg:col-span-2 space-y-6">
-          {poi.editorialHook && (
-            <div className="bg-[#faf8f5] border-l-4 rounded-r-lg p-4" style={{ borderColor: poi.category.color }}>
-              <p className="text-base text-[#1a1a1a] leading-relaxed italic">
-                {poi.editorialHook}
-              </p>
-            </div>
-          )}
-
-          {poi.localInsight && (
-            <div>
-              <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-2">
-                Lokaltips
-              </h2>
-              <p className="text-sm text-[#4a4a4a] leading-relaxed">
-                {poi.localInsight}
-              </p>
-            </div>
-          )}
-
-          {knowledge.length > 0 && (
-            <PlaceKnowledgeSection
-              knowledge={knowledge}
-              locale="no"
-              hasEditorialHook={!!poi.editorialHook}
-            />
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Action buttons */}
-          <div className="space-y-2">
-            {poi.googleMapsUrl && isSafeUrl(poi.googleMapsUrl) && (
-              <a
-                href={poi.googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-[#1a1a1a] text-white text-sm font-medium rounded-lg hover:bg-[#333] transition-colors"
-              >
-                <MapPin className="w-4 h-4" />
-                Vis i Google Maps
-              </a>
-            )}
-            {poi.googleWebsite && isSafeUrl(poi.googleWebsite) && (
-              <a
-                href={poi.googleWebsite}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-[#1a1a1a] text-sm font-medium rounded-lg border border-[#eae6e1] hover:border-[#d4cfc8] transition-colors"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Nettside
-              </a>
-            )}
-          </div>
-
-          {/* Static map */}
-          {staticMapUrl ? (
-            <a
-              href={poi.googleMapsUrl ?? `https://www.google.com/maps/search/?api=1&query=${poi.coordinates.lat},${poi.coordinates.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-lg overflow-hidden border border-[#eae6e1] hover:border-[#d4cfc8] transition-all"
-            >
-              <Image
-                src={staticMapUrl}
-                alt={`Kart over ${poi.name}`}
-                width={400}
-                height={300}
-                className="w-full h-auto"
-                loading="lazy"
-              />
-            </a>
-          ) : (
-            <div className="aspect-[4/3] rounded-lg bg-[#f0ece7] flex items-center justify-center">
-              <MapPin className="w-8 h-8 text-[#c0b9ad]" />
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Tab body + sidebar */}
+      <POIDetailBody categories={knowledgeCategories} locale="no">
+        <POIDetailSidebar poi={poi} staticMapUrl={staticMapUrl} locale="no" />
+      </POIDetailBody>
 
       {/* Similar places */}
       {similar.length > 0 && (
