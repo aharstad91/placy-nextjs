@@ -137,8 +137,8 @@ async function main() {
             console.log(`  ERR  ${poi.name} — DB update failed: ${patchRes.status}`);
           }
         } else if (result.status === "expired") {
-          // Null out expired photo_reference so it doesn't block future resolves
-          await fetch(
+          // Null out expired photo_reference and stale featured_image
+          const expPatchRes = await fetch(
             `${SUPABASE_URL}/rest/v1/pois?id=eq.${poi.id}`,
             {
               method: "PATCH",
@@ -146,11 +146,20 @@ async function main() {
               body: JSON.stringify({
                 photo_reference: null,
                 photo_resolved_at: null,
+                ...(poi.featured_image?.startsWith("/api/places/photo")
+                  ? { featured_image: null }
+                  : {}),
               }),
             }
           );
-          expired++;
-          console.log(`  EXP  ${poi.name} — photo reference expired, nulled out`);
+
+          if (expPatchRes.ok) {
+            expired++;
+            console.log(`  EXP  ${poi.name} — photo reference expired, nulled out`);
+          } else {
+            errors++;
+            console.log(`  ERR  ${poi.name} — failed to null expired reference: ${expPatchRes.status}`);
+          }
         } else {
           errors++;
           console.log(`  ERR  ${poi.name} — resolve failed`);

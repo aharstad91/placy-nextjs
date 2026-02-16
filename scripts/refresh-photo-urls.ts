@@ -61,9 +61,8 @@ async function main() {
 
   // Parse --days argument (default 14)
   const daysArg = process.argv.indexOf("--days");
-  const staleDays = daysArg !== -1 && process.argv[daysArg + 1]
-    ? parseInt(process.argv[daysArg + 1], 10)
-    : 14;
+  const rawDays = daysArg !== -1 ? parseInt(process.argv[daysArg + 1], 10) : 14;
+  const staleDays = Number.isFinite(rawDays) && rawDays > 0 ? rawDays : 14;
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - staleDays);
@@ -126,8 +125,8 @@ async function main() {
             console.log(`  ERR  ${poi.name} — DB update failed: ${patchRes.status}`);
           }
         } else if (result.status === "expired") {
-          // Null out expired reference
-          await fetch(
+          // Null out expired reference and stale CDN URL
+          const expPatchRes = await fetch(
             `${SUPABASE_URL}/rest/v1/pois?id=eq.${poi.id}`,
             {
               method: "PATCH",
@@ -135,11 +134,18 @@ async function main() {
               body: JSON.stringify({
                 photo_reference: null,
                 photo_resolved_at: null,
+                featured_image: null,
               }),
             }
           );
-          expired++;
-          console.log(`  EXP  ${poi.name} — photo reference expired, nulled out`);
+
+          if (expPatchRes.ok) {
+            expired++;
+            console.log(`  EXP  ${poi.name} — photo reference expired, nulled out`);
+          } else {
+            errors++;
+            console.log(`  ERR  ${poi.name} — failed to null expired reference: ${expPatchRes.status}`);
+          }
         } else {
           errors++;
           console.log(`  ERR  ${poi.name} — resolve failed`);
