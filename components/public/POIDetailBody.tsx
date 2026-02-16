@@ -39,7 +39,7 @@ export default function POIDetailBody({
 
   if (categories.length === 0) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 mb-12">
         <div className="lg:col-span-2" />
         <div>{children}</div>
       </div>
@@ -66,7 +66,7 @@ export default function POIDetailBody({
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
         {/* Tab content — all rendered in DOM for SEO, visibility toggled */}
         <div className="lg:col-span-2">
           {categories.map((cat) => (
