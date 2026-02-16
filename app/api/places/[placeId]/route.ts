@@ -3,6 +3,9 @@ import { fetchPlaceDetails, type PlaceDetails } from "@/lib/google-places/fetch-
 
 // Google Places API proxy with caching
 
+const PLACE_ID_PATTERN = /^[A-Za-z0-9_-]{1,300}$/;
+const MAX_CACHE_SIZE = 2000;
+
 interface CacheEntry {
   data: PlaceDetails;
   timestamp: number;
@@ -19,6 +22,14 @@ function cleanCache() {
       cache.delete(key);
     }
   });
+  // Evict oldest entries if cache exceeds max size
+  if (cache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(cache.entries()).sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const toRemove = entries.slice(0, cache.size - MAX_CACHE_SIZE);
+    for (const [key] of toRemove) {
+      cache.delete(key);
+    }
+  }
 }
 
 export async function GET(
@@ -27,9 +38,9 @@ export async function GET(
 ) {
   const { placeId } = await params;
 
-  if (!placeId) {
+  if (!placeId || !PLACE_ID_PATTERN.test(placeId)) {
     return NextResponse.json(
-      { error: "placeId is required" },
+      { error: "Valid placeId is required" },
       { status: 400 }
     );
   }

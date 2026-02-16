@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Google Places API proxy
 // Brukes for å hente POI-detaljer som åpningstider, bilder, og anmeldelser
 
-const PLACE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
+const PLACE_ID_PATTERN = /^[A-Za-z0-9_-]{1,300}$/;
 const ALLOWED_FIELDS = new Set([
   "name", "rating", "user_ratings_total", "opening_hours", "photos",
   "formatted_address", "formatted_phone_number", "website", "price_level",
@@ -88,7 +88,15 @@ const ALLOWED_PLACE_TYPES = new Set([
 ]);
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON body" },
+      { status: 400 }
+    );
+  }
   const { lat, lng, radius = 1000, type = "restaurant" } = body;
 
   // Validate lat/lng as numbers within valid bounds
@@ -117,7 +125,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Validate type against allowlist
-  if (!ALLOWED_PLACE_TYPES.has(type)) {
+  if (typeof type !== "string" || !ALLOWED_PLACE_TYPES.has(type)) {
     return NextResponse.json(
       { error: "Invalid place type" },
       { status: 400 }

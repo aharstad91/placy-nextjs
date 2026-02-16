@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 // and store CDN URLs directly. This proxy is still needed for
 // components that fallback to photoReference when featuredImage is null.
 
-const PHOTO_REF_PATTERN = /^[A-Za-z0-9_-]+$/;
+const PHOTO_REF_PATTERN = /^[A-Za-z0-9_-]{1,500}$/;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
