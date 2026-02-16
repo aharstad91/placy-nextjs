@@ -6,17 +6,21 @@ import { NextRequest, NextResponse } from "next/server";
 // and store CDN URLs directly. This proxy is still needed for
 // components that fallback to photoReference when featuredImage is null.
 
+const PHOTO_REF_PATTERN = /^[A-Za-z0-9_-]{1,500}$/;
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const photoReference = searchParams.get("photoReference");
-  const maxWidth = searchParams.get("maxWidth") || "400";
+  const maxWidthParam = searchParams.get("maxWidth") || "400";
 
-  if (!photoReference) {
+  if (!photoReference || !PHOTO_REF_PATTERN.test(photoReference)) {
     return NextResponse.json(
-      { error: "photoReference is required" },
+      { error: "Valid photoReference is required" },
       { status: 400 }
     );
   }
+
+  const maxWidth = Math.min(Math.max(Number(maxWidthParam) || 400, 1), 1600);
 
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
@@ -28,7 +32,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Google Places Photo API URL
     const url = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${apiKey}`;
 
     const response = await fetch(url);
