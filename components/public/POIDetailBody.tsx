@@ -78,7 +78,7 @@ export default function POIDetailBody({
                 {cat.topicGroups.map((group) => (
                   <div key={group.topic} className="space-y-2">
                     {group.showLabel && (
-                      <h4 className="text-[15px] font-semibold text-[#6a6a6a]">
+                      <h4 className="text-[15px] font-semibold text-[#1a1a1a]">
                         {topicLabels[group.topic]}
                       </h4>
                     )}

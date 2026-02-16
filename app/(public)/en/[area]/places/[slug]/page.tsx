@@ -252,7 +252,7 @@ export default async function POIPageEN({ params }: PageProps) {
       {/* Similar places */}
       {similar.length > 0 && (
         <section>
-          <h2 className="text-[15px] font-semibold text-[#6a6a6a] mb-4">
+          <h2 className="text-[15px] font-semibold text-[#1a1a1a] mb-4">
             Similar places
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

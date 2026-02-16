@@ -96,7 +96,7 @@ export default function POIDetailSidebar({
       {poi.openingHoursJson?.weekday_text &&
         poi.openingHoursJson.weekday_text.length > 0 && (
           <div className="bg-[#faf8f5] rounded-lg p-4">
-            <h3 className="text-[15px] font-semibold text-[#6a6a6a] mb-2 flex items-center gap-1.5">
+            <h3 className="text-[15px] font-semibold text-[#1a1a1a] mb-2 flex items-center gap-1.5">
               <Clock className="w-4 h-4" />
               {labels.hours}
             </h3>
@@ -113,7 +113,7 @@ export default function POIDetailSidebar({
       {/* Local tip */}
       {poi.localInsight && (
         <div className="bg-[#faf8f5] rounded-lg p-4">
-          <h3 className="text-[15px] font-semibold text-[#6a6a6a] mb-2">
+          <h3 className="text-[15px] font-semibold text-[#1a1a1a] mb-2">
             {labels.localTip}
           </h3>
           <p className="text-base text-[#4a4a4a] leading-relaxed">
