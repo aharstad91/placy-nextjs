@@ -57,6 +57,34 @@ Genererer `<prosjektnavn>.json` i samme mappe som input-filen.
 
 ---
 
+## Google Places Photo Scripts
+
+### Resolve proxy URLs til CDN
+```bash
+npx tsx scripts/resolve-photo-urls.ts
+```
+Konverterer `/api/places/photo?photoReference=...` i `featured_image` til direkte `lh3.googleusercontent.com` CDN-URLer. Setter `photo_resolved_at` timestamp. Idempotent — trygt å kjøre flere ganger.
+
+### Refresh gamle CDN-URLer
+```bash
+npx tsx scripts/refresh-photo-urls.ts [--days 14]
+```
+Re-resolver CDN-URLer eldre enn N dager (default 14). Nuller ut utgåtte `photo_reference`. Kjør annenhver uke for å holde bilde-URLer ferske.
+
+### Refresh åpningstider
+```bash
+npx tsx scripts/refresh-opening-hours.ts [--days 30]
+```
+Oppdaterer `opening_hours_json` fra Google Places API for POI-er med utdaterte data.
+
+### Anbefalt vedlikeholdsplan
+| Script | Frekvens | Estimert API-kost |
+|--------|----------|-------------------|
+| `refresh-photo-urls.ts` | Annenhver uke | ~500 Photo calls (~$1.50) |
+| `refresh-opening-hours.ts` | Månedlig | ~500 Details calls (~$8.50) |
+
+---
+
 ## Claude Code Kommandoer
 
 Disse kommandoene kjøres i Claude Code (denne samtalen):

@@ -148,6 +148,7 @@ export async function fetchAndCachePOIPhotos(
               body: JSON.stringify({
                 photo_reference: photoRef,
                 featured_image: featuredImage,
+                photo_resolved_at: new Date().toISOString(),
                 ...(galleryImages.length > 0 ? { gallery_images: galleryImages } : {}),
               }),
             }
