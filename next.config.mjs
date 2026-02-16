@@ -7,7 +7,7 @@ const nextConfig = {
   },
   // Tillat bilder fra eksterne kilder
   images: {
-    minimumCacheTTL: 2592000, // 30 days — match photo proxy cache
+    minimumCacheTTL: 604800, // 7 days — tighter feedback loop for lh3 URL freshness
     remotePatterns: [
       {
         protocol: "https",
