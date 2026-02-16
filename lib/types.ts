@@ -564,34 +564,97 @@ export interface RewardConfig {
 // === Place Knowledge Types ===
 
 export const KNOWLEDGE_TOPICS = [
-  'history', 'architecture', 'food', 'culture', 'people',
-  'nature', 'practical', 'local_knowledge', 'spatial'
+  'history', 'people', 'awards', 'media', 'controversy',
+  'atmosphere', 'signature', 'culture', 'seasonal',
+  'food', 'drinks', 'sustainability',
+  'architecture', 'spatial', 'nature', 'accessibility',
+  'practical', 'insider', 'relationships',
+  'local_knowledge', // legacy — mapped to 'inside' category
 ] as const;
 
 export type KnowledgeTopic = (typeof KNOWLEDGE_TOPICS)[number];
 
+// Category definition for type-safe grouping
+interface CategoryDef {
+  readonly labelNo: string;
+  readonly labelEn: string;
+  readonly topics: readonly KnowledgeTopic[];
+}
+
+export const KNOWLEDGE_CATEGORIES = {
+  story: {
+    labelNo: 'Historien',
+    labelEn: 'The Story',
+    topics: ['history', 'people', 'awards', 'media', 'controversy'],
+  },
+  experience: {
+    labelNo: 'Opplevelsen',
+    labelEn: 'The Experience',
+    topics: ['atmosphere', 'signature', 'culture', 'seasonal'],
+  },
+  taste: {
+    labelNo: 'Smaken',
+    labelEn: 'The Taste',
+    topics: ['food', 'drinks', 'sustainability'],
+  },
+  place: {
+    labelNo: 'Stedet',
+    labelEn: 'The Place',
+    topics: ['architecture', 'spatial', 'nature', 'accessibility'],
+  },
+  inside: {
+    labelNo: 'Innsiden',
+    labelEn: 'The Inside Track',
+    topics: ['practical', 'insider', 'relationships', 'local_knowledge'],
+  },
+} as const satisfies Record<string, CategoryDef>;
+
+export type KnowledgeCategory = keyof typeof KNOWLEDGE_CATEGORIES;
+
 export const KNOWLEDGE_TOPIC_LABELS: Record<KnowledgeTopic, string> = {
   history: 'Historikk',
-  architecture: 'Arkitektur',
-  food: 'Mat & drikke',
-  culture: 'Kultur',
   people: 'Mennesker',
+  awards: 'Anerkjennelse',
+  media: 'I media',
+  controversy: 'Debatt',
+  atmosphere: 'Atmosfære',
+  signature: 'Signaturen',
+  culture: 'Kultur',
+  seasonal: 'Sesong',
+  food: 'Mat',
+  drinks: 'Drikke',
+  sustainability: 'Bærekraft',
+  architecture: 'Arkitektur',
+  spatial: 'Beliggenhet',
   nature: 'Natur',
+  accessibility: 'Tilgjengelighet',
   practical: 'Praktisk',
+  insider: 'Insider',
+  relationships: 'Koblinger',
   local_knowledge: 'Visste du?',
-  spatial: 'I nærheten',
 };
 
 export const KNOWLEDGE_TOPIC_LABELS_EN: Record<KnowledgeTopic, string> = {
   history: 'History',
-  architecture: 'Architecture',
-  food: 'Food & drink',
-  culture: 'Culture',
   people: 'People',
+  awards: 'Awards',
+  media: 'In the Media',
+  controversy: 'Debate',
+  atmosphere: 'Atmosphere',
+  signature: 'Signature',
+  culture: 'Culture',
+  seasonal: 'Seasonal',
+  food: 'Food',
+  drinks: 'Drinks',
+  sustainability: 'Sustainability',
+  architecture: 'Architecture',
+  spatial: 'Location',
   nature: 'Nature',
+  accessibility: 'Accessibility',
   practical: 'Practical',
+  insider: 'Insider',
+  relationships: 'Connections',
   local_knowledge: 'Did you know?',
-  spatial: 'Nearby',
 };
 
 export type KnowledgeConfidence = 'verified' | 'unverified' | 'disputed';

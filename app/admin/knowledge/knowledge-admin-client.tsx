@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import type { PlaceKnowledge, KnowledgeTopic, KnowledgeConfidence } from "@/lib/types";
-import { KNOWLEDGE_TOPICS, KNOWLEDGE_TOPIC_LABELS } from "@/lib/types";
+import { KNOWLEDGE_CATEGORIES, KNOWLEDGE_TOPIC_LABELS } from "@/lib/types";
 import {
   BookOpen,
   Filter,
@@ -144,23 +144,35 @@ export function KnowledgeAdminClient({ knowledge: initialKnowledge }: Props) {
         </div>
       </div>
 
-      {/* Topic distribution */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {KNOWLEDGE_TOPICS.map((topic) => {
-          const count = topicCounts[topic] ?? 0;
-          if (count === 0) return null;
+      {/* Topic distribution — grouped by category */}
+      <div className="space-y-2 mb-6">
+        {Object.entries(KNOWLEDGE_CATEGORIES).map(([catKey, cat]) => {
+          const catTopics = cat.topics.filter(
+            (t) => (topicCounts[t] ?? 0) > 0
+          );
+          if (catTopics.length === 0) return null;
+
           return (
-            <button
-              key={topic}
-              onClick={() => setTopicFilter(topicFilter === topic ? "all" : topic)}
-              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                topicFilter === topic
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              {KNOWLEDGE_TOPIC_LABELS[topic]} ({count})
-            </button>
+            <div key={catKey} className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider w-20 shrink-0">
+                {cat.labelNo}
+              </span>
+              {catTopics.map((topic) => (
+                <button
+                  key={topic}
+                  onClick={() =>
+                    setTopicFilter(topicFilter === topic ? "all" : topic)
+                  }
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                    topicFilter === topic
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  {KNOWLEDGE_TOPIC_LABELS[topic as keyof typeof KNOWLEDGE_TOPIC_LABELS]} ({topicCounts[topic]})
+                </button>
+              ))}
+            </div>
           );
         })}
       </div>

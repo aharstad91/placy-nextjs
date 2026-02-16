@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import type { POI, PlaceKnowledge } from "@/lib/types";
+import type { POI, PlaceKnowledge, KnowledgeTopic } from "@/lib/types";
 import { getIcon } from "@/lib/utils/map-icons";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
@@ -37,9 +37,12 @@ export default function MapPopupCard({ poi, onClose, areaSlug, knowledge }: MapP
 
   const knowledgeSnippet = useMemo(() => {
     if (!knowledge?.length) return null;
+    const priority: KnowledgeTopic[] = [
+      "insider", "local_knowledge", "signature", "atmosphere", "history",
+    ];
     return (
-      knowledge.find((k) => k.topic === "local_knowledge") ??
-      knowledge.find((k) => k.topic === "history") ??
+      priority.map((t) => knowledge.find((k) => k.topic === t)).find(Boolean) ??
+      knowledge[0] ??
       null
     );
   }, [knowledge]);
