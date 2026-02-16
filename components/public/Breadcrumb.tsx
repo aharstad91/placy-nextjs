@@ -13,7 +13,7 @@ interface BreadcrumbProps {
 export default function Breadcrumb({ items }: BreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb" className="mb-6">
-      <ol className="flex items-center gap-1 text-sm text-[#a0937d]">
+      <ol className="flex items-center gap-1 text-[15px] text-[#4a4a4a]">
         {items.map((item, i) => (
           <li key={i} className="flex items-center gap-1">
             {i > 0 && <ChevronRight className="w-3.5 h-3.5" />}
@@ -22,7 +22,7 @@ export default function Breadcrumb({ items }: BreadcrumbProps) {
                 {item.label}
               </Link>
             ) : (
-              <span className="text-[#6a6a6a] font-medium">{item.label}</span>
+              <span className="text-[#1a1a1a] font-medium">{item.label}</span>
             )}
           </li>
         ))}
