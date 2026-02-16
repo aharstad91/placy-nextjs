@@ -186,7 +186,7 @@ export default async function StoryEditorPage({
   }
 
   // Fetch all POI data at once
-  let poisMap: Record<string, PoiBasic> = {};
+  const poisMap: Record<string, PoiBasic> = {};
   if (allPoiIds.size > 0) {
     const { data: pois } = await supabase
       .from("pois")

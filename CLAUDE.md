@@ -85,6 +85,47 @@ Generer editorial hooks for POI-ene i data/projects/kunde/prosjekt.json
 
 Genererer `editorialHook` og `localInsight` per POI basert på nettsøk.
 
+## Arkitekturregler (ufravikelige)
+
+Disse reglene håndheves av ESLint og pre-commit hooks der mulig, men gjelder ALLTID — også når verktøy ikke fanger det.
+
+### Data-henting
+- ALDRI bruk `useEffect` for data-fetching — bruk server components eller server actions
+- ALDRI query Supabase direkte fra klientkomponenter — all data går via server (API routes eller server components)
+- ALLTID håndter error-tilstand ved Supabase-kall
+
+### Komponenter
+- ALDRI bruk `<img>` — bruk `next/image` (håndheves av ESLint)
+- ALLTID eksporter `metadata` fra `page.tsx` for SEO
+- ALDRI legg forretningslogikk i komponenter — flytt til `lib/`
+
+### State
+- ALDRI lagre sensitiv data i Zustand store (tokens, passord, API-nøkler)
+- ALLTID bruk Zustand selectors, aldri hele store (`useStore(s => s.field)`, ikke `useStore()`)
+
+### Imports
+- ALDRI importer fra `@supabase/supabase-js` direkte — bruk `@/lib/supabase` wrappers (håndheves av ESLint)
+- ALLTID bruk `@/`-prefix for imports (aldri relative `../../`)
+
+### Kodebase-hygiene
+- Når du bygger noe nytt som erstatter noe gammelt: SLETT det gamle umiddelbart
+- ALDRI la dead code ligge — det er støy som degraderer agentens kontekst
+- ALDRI kommenter ut kode "for sikkerhets skyld" — git har historikk
+
+### Output-fokus
+- Verifiser at features FUNGERER (screenshots, tester, manuell sjekk) — ikke bare at koden "ser riktig ut"
+- Definer akseptansekriterier FØR implementering — test mot dem etterpå
+
+### Mekaniske sjekker (kjøres automatisk av pre-commit hook, men kjør også manuelt)
+```bash
+npm run lint         # ESLint — 0 errors
+npm test             # Vitest — alle tester passerer
+npx tsc --noEmit     # TypeScript — ingen typefeil
+npm run build        # Next.js — bygger uten feil (før PR)
+```
+
+---
+
 ## Kvalitetsstandard — "Ferdig betyr ferdig"
 
 Brukeren er vibe coder og har ikke kapasitet til å kvalitetssikre arbeidet i etterkant. Når en oppgave gjøres, skal den gjøres **100% komplett**. Ingen snarveier, ingen "good enough".

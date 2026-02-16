@@ -12,7 +12,6 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
         href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css"
         rel="stylesheet"

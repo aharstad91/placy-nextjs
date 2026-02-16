@@ -1223,7 +1223,7 @@ export async function getTripsByProject(
     .map((pt) => pt.start_poi_id)
     .filter((id): id is string => id !== null);
 
-  let startPoiMap = new Map<string, POI>();
+  const startPoiMap = new Map<string, POI>();
   if (startPoiIds.length > 0) {
     const { data: startPois } = await client
       .from("pois")
@@ -1474,7 +1474,7 @@ export async function searchPoisAdmin(
   // but we escape special LIKE chars for correctness
   const sanitized = query.replace(/[%_\\]/g, "\\$&");
 
-  let q = client
+  const q = client
     .from("pois")
     .select(`*, categories (*)`)
     .ilike("name", `%${sanitized}%`)
@@ -1525,7 +1525,7 @@ export async function getProjectTripsAdmin(
     .map((pt) => pt.start_poi_id)
     .filter((id): id is string => id !== null);
 
-  let startPoiMap = new Map<string, POI>();
+  const startPoiMap = new Map<string, POI>();
   if (startPoiIds.length > 0) {
     const { data: startPois } = await client
       .from("pois")

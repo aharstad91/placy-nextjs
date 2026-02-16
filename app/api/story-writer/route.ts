@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
 
     const introText = generateIntroText(projectName, poisWithCategories.length);
 
+    // eslint-disable-next-line prefer-const -- declared with let for control flow
     projectId = await createProject({
       name: projectName,
       customerId,
