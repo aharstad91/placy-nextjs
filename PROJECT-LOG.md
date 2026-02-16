@@ -1368,3 +1368,32 @@ Fortsettelse av sesjon 13 (Places API New migration). PR #46 var merget, men mig
 
 ### Observasjoner
 - **Ren opprydding er undervurdert.** -122 linjer dead code i 19 filer. Koden er enklere å forstå, færre API-ruter å vedlikeholde, null runtime-kostnad. Denne typen jobb lønner seg selv om den ikke legger til features.
+
+---
+
+## 2026-02-16 (sesjon 16) — Dead code audit + build-fix
+
+### Beslutninger
+- **`/api/places/route.ts` slettet** (187 linjer). Grep-audit viste null kallere fra frontend — GET (place details) og POST (nearby search) var dead code fra utviklingstiden.
+- **3D-kart-komponenter slettet** (1019 linjer). `MapView3D`, `TripMap3D`, `ExplorerMap3D`, `useMap3DCamera` — ingen importerte dem. Fjerner Google Maps JS API-avhengigheten helt.
+- **Google API-kostnad er nå effektivt kr 0/mnd.** Null runtime-kall fra offentlige sider. Import/admin-kall (50-200/mnd) dekkes av Google sin gratis-kvote (1000 Place Details + 1000 Nearby Search gratis/mnd).
+
+### Levert
+- Dead code slettet: 1206 linjer (4 komponenter + 1 API-route + 1 hook)
+- Build-fix: `_tmp-top-pois.ts` slettet + `Array.from()` i reclassify-scripts
+- Compound doc: `docs/solutions/best-practices/dead-code-api-route-audit-20260216.md`
+- Vercel deploy grønn igjen etter ~10+ påfølgende failures
+
+### Parkert / Åpne spørsmål
+- **`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`** kan fjernes fra env — ingen kode bruker den lenger. Lav prioritet.
+- **`refresh-opening-hours.ts` bruker fortsatt Legacy API.** Kunne migreres til Places API (New) for konsistens, men koster allerede ~kr 0 pga lavt volum.
+- **Trust-validate + import bruker Legacy API.** Samme vurdering — fungerer, koster ingenting, men er teknisk gjeld.
+
+### Retning
+- **Google-kostnadskuttet er fullført.** Fra estimert kr 250-350/mnd → kr 0/mnd. Ingen flere faser trengs med mindre volumet vokser dramatisk.
+- **Neste naturlige fokus** bør være produkt/UX, ikke mer infrastruktur-opprydding. Kostnadsjobben har gitt trygghet til å skalere uten overraskende regninger.
+
+### Observasjoner
+- **Temp-scripts er build-bomber.** Next.js inkluderer ALLE `.ts`-filer i typecheck under build — også scripts som aldri kjøres i prod. `_tmp-top-pois.ts` brøt Vercel-deploy i ~10 commits uten at noen la merke til det. Lærdom: slett temp-filer umiddelbart, eller legg scripts i en mappe ekskludert fra tsconfig.
+- **Grep-audit er undervurdert som verktøy.** To grep-kommandoer (finn alle Google API-kallere → sjekk hvem som importerer dem) avslørte at 1200+ linjer var dead code. Burde kjøres jevnlig etter store migrasjoner.
+- **Sesjon 15 sin retning var feil.** Loggen sa "neste kostnadsfase: eliminer runtime Place Details-kall helt". Men audit viste at det allerede var null runtime-kall fra offentlige sider — "neste fase" var allerede løst uten at vi visste det. Viktig å verifisere antakelser med data før man planlegger arbeid.
