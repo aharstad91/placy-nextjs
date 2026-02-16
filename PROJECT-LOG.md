@@ -1147,3 +1147,38 @@ Innholdsmodellen er det som gjør Placy til mer enn en kartapp. Den gjør AI-com
 - **97% godkjenningsrate** (185/190) tyder på god research-kvalitet. De 5 som ble holdt tilbake var enten uten kilde eller for tynne — ikke feil, bare ikke verifiserbare
 - **Kurator-review tok ca. 15 min med script-støtte.** review-issues.mjs identifiserte encoding, unverified, og korte fakta automatisk. For neste by kan dette bakes inn i pipeline
 - **display_ready-mønsteret fungerer.** Separasjon mellom AI-output og publisert innhold er essensiell kvalitetssikring. Aldri skip dette steget
+
+### Idéer parkert for senere
+- **Instagram/sosiale medier på POI-sider:** Researche Instagram-handles og hashtags (#antikvariatet, #bakklandettrondheim) per POI. Vise som "Se på Instagram"-seksjon. oEmbed for visuelle embeds. Kan utvides til TikTok/YouTube. Krever ikke API — bare kuraterte lenker og hashtags lagret som knowledge-fakta. Potensielt sub-topic `visual` eller `social` i knowledge-taksonomien
+
+---
+
+## 2026-02-16 — Sesjon 10: SEO-audit av POI-detaljsider
+
+### Beslutninger
+- **Full SEO-audit av Britannia Hotel-siden** — 13 konkrete forbedringspunkter identifisert og prioritert
+- **Dokumentert som compound-doc** i ny kategori `docs/solutions/seo-optimization/`
+- **TODO-er lagt i PRD.md** — parkert for systematisk arbeid når de offentlige sidene er mer modne
+- **Ikke implementert noe ennå** — bevisst valg. De offentlige sidene er fortsatt i utvikling, det gir ikke mening å optimalisere før strukturen er stabil
+
+### Funn (topp 4 — høy impact)
+1. **openingHours feil format** — bruker Google Places weekday_text, ikke schema.org OpeningHoursSpecification. Google ignorerer det
+2. **PostalAddress ufullstendig** — mangler addressLocality (bynavn) og postalCode. Svekker local SEO
+3. **JSON-LD image er én string, ikke array** — vi har allerede galleryImages, bare ikke sendt til schema
+4. **Ingen generateStaticParams** — POI-sider bygges on-demand, gir tregere TTFB for crawlere
+
+### Parkert / Åpne spørsmål
+- **Alle 13 SEO-funn parkert som TODO** — se `docs/solutions/seo-optimization/poi-detail-structured-data-audit-20260216.md`
+- **Favicon mangler** — bør lages når vi har endelig visuell identitet
+- **Organization schema** — krever avklaring av sosiale profiler (@placy_no etc.)
+- **robots.txt blokkerer /api/places/photo** — mest irrelevant nå at vi bruker featuredImage, men bør ryddes opp
+
+### Retning
+- **SEO er ikke blocker nå, men blir det snart.** Når sidene er indeksert og vi vil ranke, er structured data og generateStaticParams de viktigste grepene
+- **De offentlige sidene trenger mer innhold først** — flere byer, kuratert tekst på kategorisider, long-tail-sider. Teknisk SEO uten innhold gir ikke ranking
+- **Prioriter innhold → deretter teknisk SEO-sweep** som en samlet sprint
+
+### Observasjoner
+- **Grunnlaget er solid.** JSON-LD, sitemap, hreflang, ISR, canonical — alt er på plass. Det som mangler er polish og fullstendighet, ikke fundament
+- **Schema-type-mapping er for enkel.** Én category.id → én schema-type funker ikke når Britannia Hotel er "restaurant" men egentlig hotell. Trenger override-mekanisme eller smartere mapping
+- **Sitemap-lastmod er meningsløs.** Alle 1100+ URLer har identisk timestamp. Google ignorerer dette. Må bruke ekte updated_at fra DB
