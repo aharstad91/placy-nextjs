@@ -61,7 +61,6 @@ export async function GET(request: NextRequest) {
         isOpen: place.opening_hours?.open_now,
         photos: place.photos?.map((photo: { photo_reference: string }) => ({
           reference: photo.photo_reference,
-          url: `/api/places/photo?photoReference=${encodeURIComponent(photo.photo_reference)}&maxWidth=400`,
         })),
       });
     }

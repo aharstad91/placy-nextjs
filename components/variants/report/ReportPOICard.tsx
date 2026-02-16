@@ -106,8 +106,5 @@ export default function ReportPOICard({ poi, isActive, onClick }: ReportPOICardP
 
 function resolveImageUrl(poi: POI, imgError: boolean): string | null {
   if (imgError) return null;
-  if (poi.featuredImage) return poi.featuredImage;
-  if (poi.photoReference)
-    return `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=360`;
-  return null;
+  return poi.featuredImage ?? null;
 }

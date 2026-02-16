@@ -526,8 +526,6 @@ function ReportPOIRow({
     ? poi.featuredImage.includes("mymaps.usercontent.google.com")
       ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
       : poi.featuredImage
-    : poi.photoReference
-    ? `/api/places/photo?photoReference=${poi.photoReference}&maxWidth=400`
     : null;
 
   const hasImage = imageUrl && !imageError;

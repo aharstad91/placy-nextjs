@@ -194,10 +194,7 @@ export default async function VisitTrondheimPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {highlights.map((poi) => {
-              const imageUrl = poi.featuredImage
-                ?? (poi.photoReference
-                  ? `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=400`
-                  : null);
+              const imageUrl = poi.featuredImage ?? null;
 
               return (
                 <Link

@@ -315,11 +315,7 @@ const CompactPOIRow = memo(function CompactPOIRow({
   const [imageError, setImageError] = useState(false);
   const CategoryIcon = getIcon(poi.category.icon);
 
-  const imageUrl = poi.featuredImage
-    ? poi.featuredImage
-    : poi.photoReference
-    ? `/api/places/photo?photoReference=${poi.photoReference}&maxWidth=96`
-    : null;
+  const imageUrl = poi.featuredImage ?? null;
 
   const hasImage = imageUrl && !imageError;
 

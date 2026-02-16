@@ -164,10 +164,7 @@ function POICardEN({
   poi: Awaited<ReturnType<typeof getPOIsForCategory>>[0];
   areaSlug: string;
 }) {
-  const imageUrl = poi.featuredImage
-    ?? (poi.photoReference
-      ? `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=400`
-      : null);
+  const imageUrl = poi.featuredImage ?? null;
   const CategoryIcon = getIcon(poi.category.icon);
 
   return (

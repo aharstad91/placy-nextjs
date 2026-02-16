@@ -73,10 +73,7 @@ export default async function POIPage({ params }: PageProps) {
   ]);
 
   // Build gallery images array (prefer gallery_images, fall back to single image)
-  const mainImage = poi.featuredImage
-    ?? (poi.photoReference
-      ? `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=800`
-      : null);
+  const mainImage = poi.featuredImage ?? null;
   const galleryImages = poi.galleryImages?.length
     ? poi.galleryImages
     : (mainImage ? [mainImage] : []);
@@ -301,10 +298,7 @@ export default async function POIPage({ params }: PageProps) {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {similar.map((s) => {
-              const sImageUrl = s.featuredImage
-                ?? (s.photoReference
-                  ? `/api/places/photo?photoReference=${encodeURIComponent(s.photoReference)}&maxWidth=300`
-                  : null);
+              const sImageUrl = s.featuredImage ?? null;
               const SIcon = getIcon(s.category.icon);
 
               return (

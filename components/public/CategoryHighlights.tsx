@@ -46,10 +46,7 @@ function HighlightCard({
   areaSlug: string;
   priorityImage?: boolean;
 }) {
-  const imageUrl = poi.featuredImage
-    ?? (poi.photoReference
-      ? `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=400`
-      : null);
+  const imageUrl = poi.featuredImage ?? null;
   const CategoryIcon = getIcon(poi.category.icon);
 
   return (

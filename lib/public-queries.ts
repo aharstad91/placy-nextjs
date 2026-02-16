@@ -259,7 +259,7 @@ function transformPublicPOI(dbPoi: Record<string, unknown>, category: Category):
     googleRating: (dbPoi.google_rating as number) ?? undefined,
     googleReviewCount: (dbPoi.google_review_count as number) ?? undefined,
     googleMapsUrl: (dbPoi.google_maps_url as string) ?? undefined,
-    photoReference: (dbPoi.photo_reference as string) ?? undefined,
+    // photoReference omitted — public pages use featuredImage directly
     editorialHook: (dbPoi.editorial_hook as string) ?? undefined,
     localInsight: (dbPoi.local_insight as string) ?? undefined,
     poiTier: (dbPoi.poi_tier as 1 | 2 | 3 | null) ?? undefined,

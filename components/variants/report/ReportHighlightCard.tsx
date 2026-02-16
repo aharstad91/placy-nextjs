@@ -39,14 +39,7 @@ export default function ReportHighlightCard({
     ? buildExplorerUrl(explorerBaseUrl, poi.id, themeCategories)
     : null;
 
-  // Build image URL: featuredImage > photoReference proxy > null
-  function resolveImageUrl(): string | null {
-    if (imgError) return null;
-    if (poi.featuredImage) return poi.featuredImage;
-    if (poi.photoReference) return `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=400`;
-    return null;
-  }
-  const imageUrl = resolveImageUrl();
+  const imageUrl = imgError ? null : (poi.featuredImage ?? null);
 
   const CardWrapper = onClick
     ? ({ children, className, style }: { children: React.ReactNode; className: string; style?: React.CSSProperties }) => (

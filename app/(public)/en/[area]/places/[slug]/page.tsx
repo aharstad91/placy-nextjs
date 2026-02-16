@@ -71,10 +71,7 @@ export default async function POIPageEN({ params }: PageProps) {
     getCategoriesForArea(area.id, "en"),
   ]);
 
-  const imageUrl = poi.featuredImage
-    ?? (poi.photoReference
-      ? `/api/places/photo?photoReference=${encodeURIComponent(poi.photoReference)}&maxWidth=800`
-      : null);
+  const imageUrl = poi.featuredImage ?? null;
 
   const CategoryIcon = getIcon(poi.category.icon);
 
@@ -256,10 +253,7 @@ export default async function POIPageEN({ params }: PageProps) {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {similar.map((s) => {
-              const sImageUrl = s.featuredImage
-                ?? (s.photoReference
-                  ? `/api/places/photo?photoReference=${encodeURIComponent(s.photoReference)}&maxWidth=300`
-                  : null);
+              const sImageUrl = s.featuredImage ?? null;
               const SIcon = getIcon(s.category.icon);
 
               return (
