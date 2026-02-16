@@ -141,7 +141,7 @@ async function main() {
   }
 
   let totalMoves = 0;
-  for (const [moveKey, group] of [...moveGroups.entries()].sort()) {
+  for (const [moveKey, group] of Array.from(moveGroups.entries()).sort()) {
     console.log(`\n${moveKey} (${group.length}):`);
     for (const item of group) {
       console.log(`  ${item.poiName}: ${item.factSnippet}`);
@@ -164,7 +164,7 @@ async function main() {
   let success = 0;
   let failed = 0;
 
-  for (const [, group] of moveGroups) {
+  for (const [, group] of Array.from(moveGroups)) {
     for (const item of group) {
       const newTopic = RECLASSIFICATIONS[item.id].newTopic;
       const result = await supabasePatch(item.fullId, { topic: newTopic });
