@@ -1349,3 +1349,22 @@ Fortsettelse av sesjon 13 (Places API New migration). PR #46 var merget, men mig
 - **`--days 0` var en klassisk off-by-one.** `rawDays > 0` forkaster 0, men 0 er den mest nyttige verdien for "migrer alt". Lærdom: grenseverdier i CLI-args bør alltid testes
 - **Security-review var verdt pengene.** Code review fant API-nøkkel i JSON-respons — dette hadde ligget i produksjon siden dag 1. Nøkkelen er nå rotert og fjernet fra responses
 - **Tre faser av kostnadskutt er nå komplett:** (1) freshness tracking med photo_resolved_at, (2) Places API New migration for $0 photo-ops, (3) security hardening. Total estimert besparelse: kr 250-350/mnd → kr 0-50/mnd for photo-operasjoner
+
+---
+
+## 2026-02-16 (sesjon 15) — Photo proxy fjernet
+
+### Beslutninger
+- **Legacy photo proxy slettet.** `app/api/places/photo/route.ts` er borte. Alle 327 POIs har `featured_image` CDN-URLs, proxy-fallbacken var dead code.
+- **photoReference fjernet fra public queries.** `lib/public-queries.ts` eksponerer ikke lenger `photo_reference` til komponenter. Scripts/admin beholder tilgang.
+- **15 komponenter forenklet.** `featuredImage ?? (photoReference ? proxy : null)` → `featuredImage ?? null`. -122 linjer netto.
+
+### Levert
+- PR #48 — 19 filer endret, 1 API-route slettet
+
+### Retning
+- **Google API-proxy-laget er nå minimalt.** Kun `/api/places` (details) og `/api/places/[placeId]` (cached details) gjenstår. Begge brukes av admin/internal, ikke av offentlige sider.
+- **Neste kostnadsfase:** Eliminer runtime Place Details-kall helt — hent opening_hours/reviews ved import-tid og lagre i DB. Da kan `/api/places` route.ts også slettes.
+
+### Observasjoner
+- **Ren opprydding er undervurdert.** -122 linjer dead code i 19 filer. Koden er enklere å forstå, færre API-ruter å vedlikeholde, null runtime-kostnad. Denne typen jobb lønner seg selv om den ikke legger til features.
