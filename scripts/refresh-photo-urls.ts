@@ -67,7 +67,7 @@ async function main() {
   // Parse --days argument (default 14)
   const daysArg = process.argv.indexOf("--days");
   const rawDays = daysArg !== -1 ? parseInt(process.argv[daysArg + 1], 10) : 14;
-  const staleDays = Number.isFinite(rawDays) && rawDays > 0 ? rawDays : 14;
+  const staleDays = Number.isFinite(rawDays) && rawDays >= 0 ? rawDays : 14;
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - staleDays);

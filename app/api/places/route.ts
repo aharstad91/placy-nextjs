@@ -3,14 +3,30 @@ import { NextRequest, NextResponse } from "next/server";
 // Google Places API proxy
 // Brukes for å hente POI-detaljer som åpningstider, bilder, og anmeldelser
 
+const PLACE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
+const ALLOWED_FIELDS = new Set([
+  "name", "rating", "user_ratings_total", "opening_hours", "photos",
+  "formatted_address", "formatted_phone_number", "website", "price_level",
+  "reviews", "geometry", "types", "business_status",
+]);
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const placeId = searchParams.get("placeId");
-  const fields = searchParams.get("fields") || "name,rating,user_ratings_total,opening_hours,photos";
+  const fieldsParam = searchParams.get("fields") || "name,rating,user_ratings_total,opening_hours,photos";
 
-  if (!placeId) {
+  if (!placeId || !PLACE_ID_PATTERN.test(placeId)) {
     return NextResponse.json(
-      { error: "placeId is required" },
+      { error: "Valid placeId is required" },
+      { status: 400 }
+    );
+  }
+
+  // Validate and filter requested fields
+  const fields = fieldsParam.split(",").filter((f) => ALLOWED_FIELDS.has(f.trim())).join(",");
+  if (!fields) {
+    return NextResponse.json(
+      { error: "No valid fields requested" },
       { status: 400 }
     );
   }
@@ -25,7 +41,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Google Places Details API URL
     const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${apiKey}`;
 
     const response = await fetch(url);
@@ -46,7 +61,7 @@ export async function GET(request: NextRequest) {
         isOpen: place.opening_hours?.open_now,
         photos: place.photos?.map((photo: { photo_reference: string }) => ({
           reference: photo.photo_reference,
-          url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photo.photo_reference}&key=${apiKey}`,
+          url: `/api/places/photo?photoReference=${encodeURIComponent(photo.photo_reference)}&maxWidth=400`,
         })),
       });
     }
@@ -65,13 +80,46 @@ export async function GET(request: NextRequest) {
 }
 
 // Søk etter steder i nærheten
+const ALLOWED_PLACE_TYPES = new Set([
+  "restaurant", "cafe", "bar", "bakery", "gym", "spa", "museum",
+  "art_gallery", "library", "park", "hotel", "lodging", "pharmacy",
+  "hair_care", "beauty_salon", "shopping_mall", "store", "supermarket",
+  "tourist_attraction", "church", "movie_theater", "night_club",
+]);
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { lat, lng, radius = 1000, type = "restaurant" } = body;
 
-  if (!lat || !lng) {
+  // Validate lat/lng as numbers within valid bounds
+  const parsedLat = Number(lat);
+  const parsedLng = Number(lng);
+  if (!Number.isFinite(parsedLat) || parsedLat < -90 || parsedLat > 90) {
     return NextResponse.json(
-      { error: "lat and lng are required" },
+      { error: "lat must be a number between -90 and 90" },
+      { status: 400 }
+    );
+  }
+  if (!Number.isFinite(parsedLng) || parsedLng < -180 || parsedLng > 180) {
+    return NextResponse.json(
+      { error: "lng must be a number between -180 and 180" },
+      { status: 400 }
+    );
+  }
+
+  // Validate radius
+  const parsedRadius = Number(radius);
+  if (!Number.isFinite(parsedRadius) || parsedRadius < 1 || parsedRadius > 50000) {
+    return NextResponse.json(
+      { error: "radius must be between 1 and 50000" },
+      { status: 400 }
+    );
+  }
+
+  // Validate type against allowlist
+  if (!ALLOWED_PLACE_TYPES.has(type)) {
+    return NextResponse.json(
+      { error: "Invalid place type" },
       { status: 400 }
     );
   }
@@ -86,8 +134,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Google Places Nearby Search API URL
-    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=${type}&key=${apiKey}`;
+    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${parsedLat},${parsedLng}&radius=${parsedRadius}&type=${type}&key=${apiKey}`;
 
     const response = await fetch(url);
 
