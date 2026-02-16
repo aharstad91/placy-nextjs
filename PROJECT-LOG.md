@@ -1315,3 +1315,37 @@ Innholdsmodellen er det som gjør Placy til mer enn en kartapp. Den gjør AI-com
 ### Observasjoner
 - **Pass 1 vs pass 2 avdekket forskjellen mellom "lett" og "grundig".** 50 åpenbare moves er raskt å finne. De 9 ekstra krevde å lese full tekst på alle 231 fakta og tenke nøye gjennom grensetilfeller. Forskjellen er 90% vs 100% — men de siste 10% er der kvaliteten sitter.
 - **Brukerens meta-spørsmål var viktigst.** "Hva gjør at du ikke jobber i 10 min?" avdekket en systemisk svakhet. Svaret — "jeg stopper når det føles ferdig" — er uakseptabelt for en vibe coder som stoler på at jobben er gjort. Kvalitetsstandarden fikser dette.
+
+---
+
+## 2026-02-16 (sesjon 14) — Google API-kostnad Fase 3b: Migrasjon + Security
+
+### Kontekst
+Fortsettelse av sesjon 13 (Places API New migration). PR #46 var merget, men migrasjonsscriptet hadde kjørt uten effekt pga `--days 0`-bug, og code review hadde avdekket security-hull i API-rutene.
+
+### Beslutninger
+- **`--days 0` betyr "alle":** Fikset guard fra `> 0` til `>= 0`. Null dager = null cooldown = migrer alt.
+- **API-nøkkel fjernet fra JSON-respons:** Photo-URLs i `/api/places` GET bruker nå intern proxy-path (`/api/places/photo?photoReference=...`) i stedet for Google-URL med `&key=`. Kritisk fix — nøkkelen lå synlig i DevTools for enhver besøkende.
+- **Input-validering på alle API-ruter:** Regex for placeId/photoRef, bounds for lat/lng/radius, allowlist for type og fields. Aldri stol på klientdata i URL-interpolasjon.
+- **Cache-størrelse capped:** `[placeId]`-ruten hadde ubegrenset in-memory Map — nå maks 2000 entries med eviction av eldste.
+- **Sibling-rute hardnet:** `/api/places/[placeId]/route.ts` hadde samme manglende validering — fikset i review-runde.
+
+### Levert
+- 327/327 POIs migrert fra legacy til new photo_reference format (0 feil)
+- PR #47 — security hardening (3 API-ruter + script fix)
+- `docs/solutions/best-practices/api-route-security-hardening-20260216.md`
+
+### Parkert / Åpne spørsmål
+- **Rate limiting mangler på alle API-ruter.** POST nearby-search er mest utsatt — kan bruke opp Google-kvote via flooding. Upstash/ratelimit er enklest, men lav prioritet gitt lite trafikk
+- **CORS ikke konfigurert.** API-ene er offentlig tilgjengelige fra enhver origin. Bør begrenses til placy.no i produksjon
+- **15+ komponenter bruker fortsatt photo proxy.** Legacy fallback til `/api/places/photo` lever — bør fjernes når alle POIs har `featured_image` (som de nå har etter migrasjonen)
+
+### Retning
+- **Google API-kostnad er nå kontrollert.** Photo-ops: $0 (Places API New). Gjenværende legacy-kostnad: ~kr 100-150/mnd fra Place Details (opening hours, reviews) — dette kan elimineres ved å importere alt ved import-tid i stedet for runtime
+- **Security-baseline er satt.** De mest kritiske API-rutene er nå hardnet. Rate limiting og CORS er neste steg, men lav prioritet med nåværende trafikkvolum
+- **Neste kostnadsfase:** Eliminer runtime Place Details-kall helt — hent opening_hours/reviews ved import og lagre i DB
+
+### Observasjoner
+- **`--days 0` var en klassisk off-by-one.** `rawDays > 0` forkaster 0, men 0 er den mest nyttige verdien for "migrer alt". Lærdom: grenseverdier i CLI-args bør alltid testes
+- **Security-review var verdt pengene.** Code review fant API-nøkkel i JSON-respons — dette hadde ligget i produksjon siden dag 1. Nøkkelen er nå rotert og fjernet fra responses
+- **Tre faser av kostnadskutt er nå komplett:** (1) freshness tracking med photo_resolved_at, (2) Places API New migration for $0 photo-ops, (3) security hardening. Total estimert besparelse: kr 250-350/mnd → kr 0-50/mnd for photo-operasjoner
