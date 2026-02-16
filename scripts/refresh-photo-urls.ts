@@ -1,9 +1,14 @@
 /**
  * Refresh stale Google Places photo CDN URLs.
  *
+ * Uses Places API (New) — $0/unlimited for photo operations.
  * Targets POIs where photo_resolved_at is older than the threshold
  * (default 14 days) and re-resolves their photo_reference to a fresh
  * lh3.googleusercontent.com URL.
+ *
+ * Handles both formats:
+ * - New: "places/{placeId}/photos/{ref}" → resolve directly via New API
+ * - Legacy: opaque string → re-fetch via google_place_id, migrate to new format
  *
  * Usage: npx tsx scripts/refresh-photo-urls.ts [--days 14]
  *
@@ -12,6 +17,12 @@
 
 import { config } from "dotenv";
 config({ path: ".env.local" });
+
+import {
+  fetchPhotoNames,
+  resolvePhotoUri,
+  isNewPhotoFormat,
+} from "../lib/google-places/photo-api";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -23,33 +34,27 @@ const BATCH_DELAY_MS = 300;
 interface POIRow {
   id: string;
   name: string;
+  google_place_id: string | null;
   photo_reference: string;
   featured_image: string | null;
   photo_resolved_at: string | null;
 }
 
-async function resolvePhotoUrl(
-  photoReference: string,
-  maxWidth = 800
-): Promise<{ url: string | null; status: "ok" | "expired" | "error" }> {
-  try {
-    const url = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${GOOGLE_API_KEY}`;
-    const res = await fetch(url, { redirect: "manual" });
-
-    if (res.status === 302) {
-      const location = res.headers.get("location");
-      if (location?.includes("googleusercontent.com")) {
-        return { url: location, status: "ok" };
-      }
+async function updatePoi(
+  poiId: string,
+  headers: Record<string, string>,
+  data: Record<string, unknown>,
+) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/pois?id=eq.${poiId}`,
+    {
+      method: "PATCH",
+      headers: { ...headers, Prefer: "return=minimal" },
+      body: JSON.stringify(data),
     }
-
-    if (res.status === 400 || res.status === 404) {
-      return { url: null, status: "expired" };
-    }
-
-    return { url: null, status: "error" };
-  } catch {
-    return { url: null, status: "error" };
+  );
+  if (!res.ok) {
+    throw new Error(`DB update failed: ${res.status}`);
   }
 }
 
@@ -77,7 +82,7 @@ async function main() {
   };
 
   // Fetch POIs with stale or missing photo_resolved_at that have a photo_reference
-  const query = `${SUPABASE_URL}/rest/v1/pois?select=id,name,photo_reference,featured_image,photo_resolved_at&photo_reference=not.is.null&or=(photo_resolved_at.is.null,photo_resolved_at.lt.${cutoffISO})&order=name`;
+  const query = `${SUPABASE_URL}/rest/v1/pois?select=id,name,google_place_id,photo_reference,featured_image,photo_resolved_at&photo_reference=not.is.null&or=(photo_resolved_at.is.null,photo_resolved_at.lt.${cutoffISO})&order=name`;
 
   const res = await fetch(query, { headers });
   if (!res.ok) {
@@ -94,6 +99,7 @@ async function main() {
   }
 
   let refreshed = 0;
+  let migrated = 0;
   let expired = 0;
   let errors = 0;
 
@@ -102,53 +108,65 @@ async function main() {
 
     await Promise.all(
       batch.map(async (poi) => {
-        const result = await resolvePhotoUrl(poi.photo_reference);
-
-        if (result.status === "ok" && result.url) {
-          const patchRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/pois?id=eq.${poi.id}`,
-            {
-              method: "PATCH",
-              headers: { ...headers, Prefer: "return=minimal" },
-              body: JSON.stringify({
-                featured_image: result.url,
+        try {
+          // New format: resolve directly
+          if (isNewPhotoFormat(poi.photo_reference)) {
+            const cdnUrl = await resolvePhotoUri(poi.photo_reference, GOOGLE_API_KEY, 800);
+            if (cdnUrl) {
+              await updatePoi(poi.id, headers, {
+                featured_image: cdnUrl,
                 photo_resolved_at: new Date().toISOString(),
-              }),
-            }
-          );
-
-          if (patchRes.ok) {
-            refreshed++;
-            console.log(`  OK   ${poi.name}`);
-          } else {
-            errors++;
-            console.log(`  ERR  ${poi.name} — DB update failed: ${patchRes.status}`);
-          }
-        } else if (result.status === "expired") {
-          // Null out expired reference and stale CDN URL
-          const expPatchRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/pois?id=eq.${poi.id}`,
-            {
-              method: "PATCH",
-              headers: { ...headers, Prefer: "return=minimal" },
-              body: JSON.stringify({
+              });
+              refreshed++;
+              console.log(`  OK   ${poi.name}`);
+            } else {
+              // Photo name no longer valid — null out
+              await updatePoi(poi.id, headers, {
                 photo_reference: null,
                 photo_resolved_at: null,
                 featured_image: null,
-              }),
+              });
+              expired++;
+              console.log(`  EXP  ${poi.name} — photo no longer available`);
             }
-          );
+            return;
+          }
 
-          if (expPatchRes.ok) {
+          // Legacy format — re-fetch via google_place_id to migrate
+          if (!poi.google_place_id) {
+            errors++;
+            console.log(`  ERR  ${poi.name} — legacy format, no google_place_id to migrate`);
+            return;
+          }
+
+          const photoNames = await fetchPhotoNames(poi.google_place_id, GOOGLE_API_KEY);
+          if (photoNames.length === 0) {
+            await updatePoi(poi.id, headers, {
+              photo_reference: null,
+              photo_resolved_at: null,
+              featured_image: null,
+            });
             expired++;
-            console.log(`  EXP  ${poi.name} — photo reference expired, nulled out`);
+            console.log(`  EXP  ${poi.name} — no photos from New API, nulled out`);
+            return;
+          }
+
+          const cdnUrl = await resolvePhotoUri(photoNames[0], GOOGLE_API_KEY, 800);
+          if (cdnUrl) {
+            await updatePoi(poi.id, headers, {
+              photo_reference: photoNames[0],
+              featured_image: cdnUrl,
+              photo_resolved_at: new Date().toISOString(),
+            });
+            migrated++;
+            console.log(`  OK   ${poi.name} (migrated to new format)`);
           } else {
             errors++;
-            console.log(`  ERR  ${poi.name} — failed to null expired reference: ${expPatchRes.status}`);
+            console.log(`  ERR  ${poi.name} — resolve failed`);
           }
-        } else {
+        } catch (err) {
           errors++;
-          console.log(`  ERR  ${poi.name} — resolve failed`);
+          console.log(`  ERR  ${poi.name} — ${err instanceof Error ? err.message : String(err)}`);
         }
       })
     );
@@ -163,6 +181,7 @@ async function main() {
 
   console.log("\n=== Summary ===");
   console.log(`Refreshed: ${refreshed}`);
+  console.log(`Migrated:  ${migrated}`);
   console.log(`Expired:   ${expired}`);
   console.log(`Errors:    ${errors}`);
   console.log(`Total:     ${pois.length}`);

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Google Place Photo proxy
 // Proxies photo requests to avoid exposing API key to client
+// NOTE: This is a legacy fallback. New imports use Places API (New)
+// and store CDN URLs directly. This proxy is still needed for
+// components that fallback to photoReference when featuredImage is null.
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
