@@ -1,10 +1,11 @@
 /**
  * Fetch Google Photos for POIs and persist as featured_image.
  *
- * Strategy: Call Google Places Details to get photo references,
- * then resolve the redirect to a direct CDN URL (lh3.googleusercontent.com).
- * Falls back to proxy URL if CDN resolve fails.
+ * Uses Places API (New) — $0/unlimited for photo operations.
+ * fetchPhotoNames → resolvePhotoUri → store CDN URLs directly.
  */
+
+import { fetchPhotoNames, resolvePhotoUri } from "@/lib/google-places/photo-api";
 
 const BATCH_SIZE = 10;
 const BATCH_DELAY_MS = 500;
@@ -84,69 +85,40 @@ export async function fetchAndCachePOIPhotos(
         onProgress?.(idx + 1, needsPhoto.length, poi.name);
 
         try {
-          // Fetch place details from Google Places API directly
-          const placeUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${poi.google_place_id}&fields=photos&key=${googleApiKey}`;
-          const placeRes = await fetch(placeUrl);
+          // Fetch photo names via Places API (New) — $0
+          const photoNames = await fetchPhotoNames(poi.google_place_id!, googleApiKey);
 
-          if (!placeRes.ok) {
-            result.failed++;
-            result.errors.push(`${poi.name}: Places API ${placeRes.status}`);
-            return;
-          }
-
-          const placeData = await placeRes.json();
-
-          if (placeData.status !== "OK" || !placeData.result?.photos?.length) {
+          if (photoNames.length === 0) {
             result.failed++;
             result.errors.push(`${poi.name}: No photos available`);
             return;
           }
 
-          const photos = placeData.result.photos;
-          const photoRef = photos[0].photo_reference;
-
-          // Resolve main image to direct CDN URL, fallback to proxy
-          let featuredImage = `/api/places/photo?photoReference=${photoRef}&maxWidth=800`;
-          try {
-            const photoApiUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${googleApiKey}`;
-            const photoRes = await fetch(photoApiUrl, { redirect: "manual" });
-            if (photoRes.status === 302) {
-              const location = photoRes.headers.get("location");
-              if (location?.includes("googleusercontent.com")) {
-                featuredImage = location;
-              }
-            }
-          } catch {
-            // Keep proxy URL as fallback
+          // Resolve featured image (first photo, 800px)
+          const featuredImage = await resolvePhotoUri(photoNames[0], googleApiKey, 800);
+          if (!featuredImage) {
+            result.failed++;
+            result.errors.push(`${poi.name}: Failed to resolve featured image`);
+            return;
           }
 
-          // Resolve up to 3 gallery images
-          const galleryImages: string[] = [];
-          const galleryRefs = photos.slice(0, 3).map((p: { photo_reference: string }) => p.photo_reference);
-          for (let g = 0; g < galleryRefs.length; g++) {
-            try {
-              const maxW = g === 0 ? 800 : 400;
-              const gUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxW}&photo_reference=${galleryRefs[g]}&key=${googleApiKey}`;
-              const gRes = await fetch(gUrl, { redirect: "manual" });
-              if (gRes.status === 302) {
-                const loc = gRes.headers.get("location");
-                if (loc?.includes("googleusercontent.com")) {
-                  galleryImages.push(loc);
-                }
-              }
-            } catch {
-              // Skip failed gallery images
+          // Resolve up to 3 gallery images (reuse featured as first)
+          const galleryImages: string[] = [featuredImage];
+          for (let g = 1; g < Math.min(3, photoNames.length); g++) {
+            const cdnUrl = await resolvePhotoUri(photoNames[g], googleApiKey, 400);
+            if (cdnUrl) {
+              galleryImages.push(cdnUrl);
             }
           }
 
-          // Update POI in Supabase
+          // Update POI in Supabase — store new-format photo name
           const patchRes = await fetch(
             `${supabaseUrl}/rest/v1/pois?id=eq.${poi.id}`,
             {
               method: "PATCH",
               headers: { ...headers, Prefer: "return=minimal" },
               body: JSON.stringify({
-                photo_reference: photoRef,
+                photo_reference: photoNames[0],
                 featured_image: featuredImage,
                 photo_resolved_at: new Date().toISOString(),
                 ...(galleryImages.length > 0 ? { gallery_images: galleryImages } : {}),

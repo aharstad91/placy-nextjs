@@ -1,8 +1,8 @@
 /**
  * Backfill gallery_images for POIs that have a google_place_id.
  *
- * Fetches up to 3 photos from Google Places Details API,
- * resolves them to direct CDN URLs, and stores in gallery_images[].
+ * Uses Places API (New) — $0/unlimited for photo operations.
+ * Fetches up to 3 photos, resolves to CDN URLs, stores in gallery_images[].
  *
  * Usage: npx tsx scripts/backfill-gallery-images.ts [--area trondheim]
  *
@@ -11,6 +11,8 @@
 
 import { config } from "dotenv";
 config({ path: ".env.local" });
+
+import { fetchPhotoNames, resolvePhotoUri } from "../lib/google-places/photo-api";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -25,26 +27,6 @@ interface POIRow {
   name: string;
   google_place_id: string;
   gallery_images: string[] | null;
-}
-
-async function resolvePhotoUrl(
-  photoReference: string,
-  maxWidth: number
-): Promise<string | null> {
-  try {
-    const url = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${GOOGLE_API_KEY}`;
-    const res = await fetch(url, { redirect: "manual" });
-
-    if (res.status === 302) {
-      const location = res.headers.get("location");
-      if (location?.includes("googleusercontent.com")) {
-        return location;
-      }
-    }
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 async function main() {
@@ -104,36 +86,20 @@ async function main() {
     await Promise.all(
       batch.map(async (poi) => {
         try {
-          // Fetch place details to get photo references
-          const placeUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${poi.google_place_id}&fields=photos&key=${GOOGLE_API_KEY}`;
-          const placeRes = await fetch(placeUrl);
+          // Fetch photo names via Places API (New) — $0
+          const photoNames = await fetchPhotoNames(poi.google_place_id, GOOGLE_API_KEY);
 
-          if (!placeRes.ok) {
-            errors++;
-            console.log(`  ERR  ${poi.name} — Places API ${placeRes.status}`);
-            return;
-          }
-
-          const placeData = await placeRes.json();
-          const photos = placeData.result?.photos;
-
-          if (!photos?.length) {
+          if (photoNames.length === 0) {
             noPhotos++;
             console.log(`  SKIP ${poi.name} — no photos available`);
             return;
           }
 
-          // Take up to GALLERY_SIZE photos
-          const photoRefs = photos
-            .slice(0, GALLERY_SIZE)
-            .map((p: { photo_reference: string }) => p.photo_reference);
-
-          // Resolve all photo references to CDN URLs
-          // Main image: 800px, secondary: 400px
+          // Resolve up to GALLERY_SIZE photos to CDN URLs
           const resolvedUrls: string[] = [];
-          for (let j = 0; j < photoRefs.length; j++) {
+          for (let j = 0; j < Math.min(GALLERY_SIZE, photoNames.length); j++) {
             const maxWidth = j === 0 ? 800 : 400;
-            const cdnUrl = await resolvePhotoUrl(photoRefs[j], maxWidth);
+            const cdnUrl = await resolvePhotoUri(photoNames[j], GOOGLE_API_KEY, maxWidth);
             if (cdnUrl) {
               resolvedUrls.push(cdnUrl);
             }
