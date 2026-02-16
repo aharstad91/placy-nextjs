@@ -92,6 +92,31 @@
 
 ---
 
+## SEO Optimalisering — POI Detail Pages
+
+> **Audit:** 2026-02-16 | **Docs:** `docs/solutions/seo-optimization/poi-detail-structured-data-audit-20260216.md`
+> **Status:** Parkert — tas når de offentlige sidene er mer modne og dynamiske.
+
+### Høy prioritet
+- [ ] Parse `openingHours` fra Google Places weekday_text til schema.org `OpeningHoursSpecification` format (`POIJsonLd.tsx`)
+- [ ] Legg til `addressLocality` (bynavn) i JSON-LD PostalAddress (`POIJsonLd.tsx`)
+- [ ] Send galleryImages-array (ikke bare én URL) til JSON-LD image-felt (`POIJsonLd.tsx`, `page.tsx`)
+- [ ] Legg til `generateStaticParams` for POI-sider — pre-render ved build (`page.tsx`, `public-queries.ts`)
+
+### Medium prioritet
+- [ ] Bruk ekte `updated_at` fra database som `lastmod` i sitemap (`sitemap.ts`)
+- [ ] Endre `og:type` fra "website" til "place" for steder-sider (`page.tsx`)
+- [ ] Legg til `priceRange` i structured data, map fra Google `price_level` (`POIJsonLd.tsx`)
+- [ ] Legg til favicon og apple-touch-icon (`layout.tsx`, `/public`)
+- [ ] Fiks schema-type for hoteller — Hotel istedenfor Restaurant (`POIJsonLd.tsx`)
+
+### Lav prioritet
+- [ ] Legg til `twitter:site` meta tag (`page.tsx`)
+- [ ] Legg til site-wide `Organization` JSON-LD schema (`layout.tsx`)
+- [ ] Unnta `/api/places/photo` fra robots.txt blokkering (`robots.txt`)
+
+---
+
 ## Tekniske Forbedringer
 
 - [x] I `app/[customer]/[project]/page.tsx`: Wrap hovedinnholdet i en React Error Boundary. Opprett `components/error-boundary.tsx` som fanger feil og viser en bruker-vennlig feilmelding med "Prøv igjen" knapp.
