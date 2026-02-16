@@ -102,11 +102,10 @@ export async function fetchAndCachePOIPhotos(
             return;
           }
 
-          // Resolve up to 3 gallery images
-          const galleryImages: string[] = [];
-          for (let g = 0; g < Math.min(3, photoNames.length); g++) {
-            const maxW = g === 0 ? 800 : 400;
-            const cdnUrl = await resolvePhotoUri(photoNames[g], googleApiKey, maxW);
+          // Resolve up to 3 gallery images (reuse featured as first)
+          const galleryImages: string[] = [featuredImage];
+          for (let g = 1; g < Math.min(3, photoNames.length); g++) {
+            const cdnUrl = await resolvePhotoUri(photoNames[g], googleApiKey, 400);
             if (cdnUrl) {
               galleryImages.push(cdnUrl);
             }
