@@ -50,7 +50,7 @@ export default function POIDetailSidebar({
             href={poi.googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-[#1a1a1a] text-white text-sm font-medium rounded-lg hover:bg-[#333] transition-colors"
+            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-[#1a1a1a] text-white text-[15px] font-medium rounded-lg hover:bg-[#333] transition-colors"
           >
             <MapPin className="w-4 h-4" />
             {labels.maps}
@@ -61,7 +61,7 @@ export default function POIDetailSidebar({
             href={poi.googleWebsite}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-[#1a1a1a] text-sm font-medium rounded-lg border border-[#eae6e1] hover:border-[#d4cfc8] transition-colors"
+            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-[#1a1a1a] text-[15px] font-medium rounded-lg border border-[#eae6e1] hover:border-[#d4cfc8] transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             {labels.website}
@@ -96,13 +96,13 @@ export default function POIDetailSidebar({
       {poi.openingHoursJson?.weekday_text &&
         poi.openingHoursJson.weekday_text.length > 0 && (
           <div className="bg-[#faf8f5] rounded-lg p-4">
-            <h3 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-2 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" />
+            <h3 className="text-[15px] font-semibold text-[#6a6a6a] mb-2 flex items-center gap-1.5">
+              <Clock className="w-4 h-4" />
               {labels.hours}
             </h3>
             <ul className="space-y-1">
               {poi.openingHoursJson.weekday_text.map((line, i) => (
-                <li key={i} className="text-xs text-[#4a4a4a]">
+                <li key={i} className="text-[15px] text-[#4a4a4a]">
                   {line}
                 </li>
               ))}
@@ -113,10 +113,10 @@ export default function POIDetailSidebar({
       {/* Local tip */}
       {poi.localInsight && (
         <div className="bg-[#faf8f5] rounded-lg p-4">
-          <h3 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-2">
+          <h3 className="text-[15px] font-semibold text-[#6a6a6a] mb-2">
             {labels.localTip}
           </h3>
-          <p className="text-sm text-[#4a4a4a] leading-relaxed">
+          <p className="text-base text-[#4a4a4a] leading-relaxed">
             {poi.localInsight}
           </p>
         </div>

@@ -202,13 +202,13 @@ export default async function POIPageEN({ params }: PageProps) {
       {/* Header */}
       <div className="mb-8">
         <span
-          className="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-3"
+          className="inline-block text-[15px] font-medium px-3 py-1 rounded-full mb-3"
           style={{
             backgroundColor: poi.category.color + "18",
             color: poi.category.color,
           }}
         >
-          <CategoryIcon className="w-3.5 h-3.5 inline mr-1" />
+          <CategoryIcon className="w-4 h-4 inline mr-1" />
           {poi.category.name}
         </span>
 
@@ -216,7 +216,7 @@ export default async function POIPageEN({ params }: PageProps) {
           {poi.name}
         </h1>
 
-        <div className="flex flex-wrap items-center gap-4 text-sm text-[#6a6a6a]">
+        <div className="flex flex-wrap items-center gap-4 text-[15px] text-[#6a6a6a]">
           {poi.googleRating != null && (
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 text-[#b45309] fill-[#b45309]" />
@@ -252,7 +252,7 @@ export default async function POIPageEN({ params }: PageProps) {
       {/* Similar places */}
       {similar.length > 0 && (
         <section>
-          <h2 className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mb-4">
+          <h2 className="text-[15px] font-semibold text-[#6a6a6a] mb-4">
             Similar places
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -286,13 +286,13 @@ export default async function POIPageEN({ params }: PageProps) {
                     </div>
                   )}
                   <div className="p-2">
-                    <h3 className="text-xs font-medium text-[#1a1a1a] group-hover:underline truncate">
+                    <h3 className="text-[15px] font-medium text-[#1a1a1a] group-hover:underline truncate">
                       {s.name}
                     </h3>
                     {s.googleRating != null && (
                       <div className="flex items-center gap-0.5 mt-0.5">
-                        <Star className="w-3 h-3 text-[#b45309] fill-[#b45309]" />
-                        <span className="text-[11px] text-[#6a6a6a]">{s.googleRating.toFixed(1)}</span>
+                        <Star className="w-3.5 h-3.5 text-[#b45309] fill-[#b45309]" />
+                        <span className="text-[15px] text-[#6a6a6a]">{s.googleRating.toFixed(1)}</span>
                       </div>
                     )}
                   </div>

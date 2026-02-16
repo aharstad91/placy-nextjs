@@ -53,10 +53,10 @@ export default function POIDetailBody({
         {categories.map((cat) => (
           <button
             key={cat.key}
-            className={`whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors ${
+            className={`whitespace-nowrap px-4 py-3 text-[15px] font-medium transition-colors ${
               activeTab === cat.key
                 ? "text-[#1a1a1a] border-b-2 border-[#1a1a1a]"
-                : "text-[#8a8a8a] hover:text-[#5a5a5a]"
+                : "text-[#767676] hover:text-[#4a4a4a]"
             }`}
             onClick={() => setActiveTab(cat.key)}
           >
@@ -78,7 +78,7 @@ export default function POIDetailBody({
                 {cat.topicGroups.map((group) => (
                   <div key={group.topic} className="space-y-2">
                     {group.showLabel && (
-                      <h4 className="text-[11px] font-medium text-[#6a6a6a] uppercase tracking-wider">
+                      <h4 className="text-[15px] font-semibold text-[#6a6a6a]">
                         {topicLabels[group.topic]}
                       </h4>
                     )}
@@ -90,20 +90,20 @@ export default function POIDetailBody({
                       return (
                         <div
                           key={fact.id}
-                          className="text-sm text-[#4a4a4a] leading-relaxed"
+                          className="text-base text-[#4a4a4a] leading-relaxed"
                         >
                           <p>{text}</p>
                           {fact.sourceName && (
-                            <p className="text-[11px] text-[#a0937d] mt-1">
+                            <p className="text-[15px] text-[#6a6a6a] mt-1">
                               {fact.sourceUrl && isSafeUrl(fact.sourceUrl) ? (
                                 <a
                                   href={fact.sourceUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-0.5 hover:text-[#6a6a6a] transition-colors"
+                                  className="inline-flex items-center gap-0.5 hover:text-[#4a4a4a] transition-colors"
                                 >
                                   {fact.sourceName}
-                                  <ExternalLink className="w-2.5 h-2.5" />
+                                  <ExternalLink className="w-3.5 h-3.5" />
                                 </a>
                               ) : (
                                 <span>{fact.sourceName}</span>
