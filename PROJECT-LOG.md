@@ -1654,7 +1654,6 @@ Gjennomførte dyp research på Voice of Norway / Guide To Go AS med 4 parallelle
 **Anbefalt rekkefølge:** KLP (varm, demo klar) → Koteng (dobbel inngang) → EC Dahls (volum)
 
 Tre selskaper, ~190 eiendommer i Trondheim, null nabolagsinnhold. Samlet potensial: **1,5–3M/år.**
-
 ### Oppdatert retning
 - **Næringseiendom er primærsegment** — recurring, ingen Plyo-overlapp, høyere relevans
 - **Boligutvikling er sekundær** — per-prosjekt, Plyo-risiko, men Leangen Bolig viser behovet
