@@ -1603,8 +1603,90 @@ Gjennomførte dyp research på Voice of Norway / Guide To Go AS med 4 parallelle
 - Leiekontrakter fornyes hvert 3-5 år — nabolaget selger hver gang
 - Færre, større kunder: én forvalter kan ha 10-50 bygg
 
+### Kundeprospekter — research på de tre største i Trondheim
+
+**1. EC Dahls Eiendom (Reitan Eiendom)**
+- ~100 eiendommer i Trondheim sentrum, alle med dedikerte sider på ecde.no
+- Kjøpte Entras portefølje (13 eiendommer, 187 000 m², 6,45 mrd NOK) i Q2 2024
+- Drift-omsetning 74,7 MNOK (2023), 50+ ansatte
+- Kontor, handel, restaurant, hotell, bolig
+- Fokus: bærekraft, byutvikling (BREEAM Outstanding, FutureBuilt, Kulturkvartalet)
+- Sjekket Nordre gate 12 og Søndre gate 12: **null nabolagsinformasjon** på eiendomssidene
+- Kald start — ingen eksisterende kontakt
+- Potensial: 500k–1M/år
+
+**2. KLP Eiendom**
+- Norges største eiendomsselskap: 2,4M m², verdi 105 mrd NOK, 190 ansatte
+- Trondheim: **29 eiendommer**, ~290 000 m², leieinntekter 135 MNOK/år
+- Inkl. Teknostallen (47,2k m² — flaggskip), Solsiden, **Ferjemannsveien 10 (eksisterende Placy-demo!)**
+- 6 byer: Oslo, Trondheim, Stavanger, Bergen, Stockholm, København
+- Sjekket Ranheimsveien 10: **null nabolagsinformasjon**, bare "like utenfor Trondheim sentrum"
+- Varm start — eksisterende kontakt (Kine) + ferdig demo
+- Potensial Trondheim: 300–500k/år. Hele konsernet: 1–2M/år
+
+**3. Koteng Eiendom (Koteng-familien)**
+- ~60 næringseiendommer, 270 000 m², leieinntekter **340 MNOK/år**
+- Holding-omsetning 455 MNOK (2024), 58 ansatte, 34 selskaper i konsern
+- Under utvikling: 70 000 m² nye næringslokaler (~1,75 mrd NOK)
+- 35 ledige lokaler akkurat nå
+- **Boligdelen (Koteng Jenssen, 50/50 med Jenssen Holding):**
+  - Leangen Bolig (~2 000 boliger) — bruker Plyo for boligvelger, "IKEA 2 min" som nabolagsinfo
+  - Leangenbukta (~500 boliger), Grilstad Marina (~1 000 boliger)
+  - ~3 500 boliger under aktiv utvikling
+- Sjekket Skonnertvegen 7: minimal nabolagsinfo, bare "10 min med bil til sentrum"
+- Unik: **eneste med både næring OG bolig** — dobbel inngang
+- Potensial: 500k–900k/år
+
+**Sammenligning:**
+
+| | EC Dahls | KLP Eiendom | Koteng |
+|---|---|---|---|
+| Eiendommer Trondheim | ~100 | 29 | ~60 |
+| Boligprosjekter | Nei | Nei | 3 500+ boliger |
+| Leieinntekter | Ukjent | 135 MNOK | 340 MNOK |
+| Eier | Reitan (privat) | KLP (offentlig) | Koteng-familien |
+| Eksisterende kontakt | Nei | Ja (Kine) | Nei |
+| Placy-data klar | Nei | Ja (Ferjemannsveien) | Delvis (Leangen) |
+| Beslutningshastighet | Rask | Treg | Rask |
+| Skaleringsverdi | Kun Trondheim | 6 byer | Kun Trondheim |
+| Totalpotensial/år | 500k–1M | 300k–2M | 500k–900k |
+
+**Anbefalt rekkefølge:** KLP (varm, demo klar) → Koteng (dobbel inngang) → EC Dahls (volum)
+
+Tre selskaper, ~190 eiendommer i Trondheim, null nabolagsinnhold. Samlet potensial: **1,5–3M/år.**
+
 ### Oppdatert retning
 - **Næringseiendom er primærsegment** — recurring, ingen Plyo-overlapp, høyere relevans
 - **Boligutvikling er sekundær** — per-prosjekt, Plyo-risiko, men Leangen Bolig viser behovet
 - **Plyo er fremtidig distribusjonspartner, ikke nå** — land kunder først, pitch til Plyo fra styrke
 - **Vinduet er ikke evig** — rask implementering i større kjeder er kritisk
+- **Tre konkrete prospekter identifisert** — KLP, Koteng, EC Dahls. Alle researched med portefølje, økonomi, og eiendomssider sjekket for nabolagsinnhold (null hos alle tre)
+
+---
+
+## 2026-02-18 (sesjon 2) — /generate-bolig: Fra hotell til eiendom i koden
+
+### Beslutninger
+- Bygde `/generate-bolig` som **fork av `/generate-hotel`** — eget kommandofil, ikke profil-basert. Nok forskjeller til å rettferdiggjøre separasjonen.
+- 3 nye kategorier (skole, barnehage, idrett) med offisielle norske API-er: NSR/Udir, Barnehagefakta, Overpass. Ingen web-scraping.
+- 6 bolig-temaer erstatter 5 hotell-temaer. Viktigste endring: "Barn & Oppvekst" som nytt tema + "Natur & Friluftsliv" skilt ut fra "Kultur & Opplevelser".
+- `park`/`outdoor` flyttet fra kultur-opplevelser til natur-friluftsliv i DEFAULT_THEMES. Påvirker hotell-Explorer (forbedring, ikke regresjon — temaer uten POIs auto-skjules).
+- External-ID-basert dedup (nsr-{OrgNr}, bhf-{id}, osm-{nodeId}) — ikke navne-basert. Viktig lærdom fra tech audit.
+- Institusjonell baseline-score (rating=4.0, reviews=10) for skoler/barnehager/idrett, ellers scorer de ~0 og kan ikke features.
+
+### Parkert / Åpne spørsmål
+- ~~Næringseiendom er primærsegment~~ — dette gjelder fortsatt strategisk, men Overvik ble bygget som første salgsmateriell
+- Kommunenummer-mapping er hardkodet i kommandoen (Trondheim=5001, Oslo=0301, Bergen=4601). Trenger automatisk lookup for nye byer.
+- NSR API returnerer *alle* skoler i kommunen (kan være 100+). Filtreringen på avstand er kritisk — trenger god GeoKvalitet-sjekk.
+- Skal vi sette opp `/generate-naering` også? Eller holder bolig + hotell?
+- Overvik-pilot er klar til kjøring. Trenger `npm run dev` + internett for API-kall.
+
+### Retning
+- **Koden er klar, piloten gjenstår.** Selve `/generate-bolig` er implementert og committed. Neste steg er å kjøre den for Overvik.
+- **Eiendom-pivoten er nå materialisert i kode.** Strategien fra pitch-decken (100% eiendom) har nå en konkret pipeline. `/generate-hotel` er intakt for tilbakefall.
+- **Tema-system er nå 7 temaer globalt** (var 5). Barnefamilier og Natur & Friluftsliv er synlige for alle prosjekter der POIs finnes. Hoteller påvirkes minimalt (ingen skoler/barnehager → tema skjules).
+
+### Observasjoner
+- Tech audit fanget 7 reelle feil i planen som ville bitt under implementering (manglende filer, feil API-antakelser, scoring-formel som nullet ut institusjonelle POIs). Investering i audit betalte seg.
+- 16-stegs pipeline er ambisiøst. Risikoen er at den første kjøringen avslører problemer med de 3 nye API-ene (NSR, Barnehagefakta, Overpass) som krever real-time debugging.
+- Boligrapport er et *mye* bredere produkt enn hotellrapport — 6 temaer vs 5, 2500m vs 800m, 3 ekstra API-er. Skaleringsutfordringen er at hvert nye boligprosjekt krever god data i suburban strøk der Google Places er tynt.
