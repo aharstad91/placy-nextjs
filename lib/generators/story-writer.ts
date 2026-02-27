@@ -22,10 +22,13 @@ import type {
 /**
  * Determine POI source based on available IDs
  */
-function determineSource(poi: DbPoi): "google" | "entur" | "bysykkel" | "manual" {
+function determineSource(poi: DbPoi): DiscoveredPOI["source"] {
   if (poi.google_place_id) return "google";
   if (poi.entur_stopplace_id) return "entur";
   if (poi.bysykkel_station_id) return "bysykkel";
+  if (poi.nsr_id) return "nsr";
+  if (poi.barnehagefakta_id) return "barnehagefakta";
+  if (poi.osm_id) return "osm";
   return "manual";
 }
 

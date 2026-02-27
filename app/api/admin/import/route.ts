@@ -63,7 +63,7 @@ const CircleSchema = z.object({
     .number()
     .min(NORWAY_BOUNDS.minLng, "Longitude out of Norway bounds")
     .max(NORWAY_BOUNDS.maxLng, "Longitude out of Norway bounds"),
-  radiusMeters: z.number().min(300).max(2000),
+  radiusMeters: z.number().min(300).max(3000),
 });
 
 // Zod schema for request validation
@@ -79,7 +79,7 @@ const ImportRequestSchema = z.object({
       .min(NORWAY_BOUNDS.minLng, "Longitude out of Norway bounds")
       .max(NORWAY_BOUNDS.maxLng, "Longitude out of Norway bounds"),
   }).optional(),
-  radiusMeters: z.number().min(300).max(2000).optional(),
+  radiusMeters: z.number().min(300).max(3000).optional(),
   // Multi-circle (new)
   circles: z.array(CircleSchema).min(1).max(10).optional(),
   categories: z

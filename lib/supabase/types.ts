@@ -168,6 +168,10 @@ export type Database = {
           google_business_status: string | null;
           google_price_level: number | null;
           facebook_url: string | null;
+          source: string | null;
+          nsr_id: string | null;
+          barnehagefakta_id: string | null;
+          osm_id: string | null;
           poi_tier: number | null;
           tier_reason: string | null;
           is_chain: boolean;
@@ -205,6 +209,10 @@ export type Database = {
           google_business_status?: string | null;
           google_price_level?: number | null;
           facebook_url?: string | null;
+          source?: string | null;
+          nsr_id?: string | null;
+          barnehagefakta_id?: string | null;
+          osm_id?: string | null;
           poi_tier?: number | null;
           tier_reason?: string | null;
           is_chain?: boolean;
@@ -242,6 +250,10 @@ export type Database = {
           google_business_status?: string | null;
           google_price_level?: number | null;
           facebook_url?: string | null;
+          source?: string | null;
+          nsr_id?: string | null;
+          barnehagefakta_id?: string | null;
+          osm_id?: string | null;
           poi_tier?: number | null;
           tier_reason?: string | null;
           is_chain?: boolean;

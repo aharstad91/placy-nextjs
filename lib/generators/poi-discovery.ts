@@ -34,9 +34,12 @@ export interface DiscoveredPOI {
   googlePlaceId?: string;
   googleRating?: number;
   googleReviewCount?: number;
-  source: "google" | "entur" | "bysykkel" | "manual";
+  source: "google" | "entur" | "bysykkel" | "nsr" | "barnehagefakta" | "osm" | "manual";
   enturStopplaceId?: string;
   bysykkelStationId?: string;
+  nsrId?: string;
+  barnehagefaktaId?: string;
+  osmId?: string;
   // Editorial fields (added later via Claude or manual editing)
   editorialHook?: string;
   localInsight?: string;
