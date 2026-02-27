@@ -46,7 +46,9 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
     return (
       <WelcomeScreen
         projectName={container.name}
+        heroTitle={container.welcomeTitle}
         tagline={container.welcomeTagline}
+        heroImage={container.welcomeImage}
         defaultProductPath={productPath}
         basePath={`/for/${customer}/${projectSlug}`}
         themes={DEFAULT_THEMES}
