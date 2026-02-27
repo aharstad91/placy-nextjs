@@ -65,12 +65,24 @@ export default function ProductNav({ projectName, products, adminEditUrl, homeHr
             <span className="sm:hidden">Tilbake</span>
           </Link>
         ) : homeHref ? (
-          <Link
-            href={homeHref}
-            className="text-sm font-medium text-[#1a1a1a] hover:text-[#7a7062] transition-colors truncate max-w-[250px] sm:max-w-none"
-          >
-            {projectName}
-          </Link>
+          <span className="flex items-center gap-1.5 truncate max-w-[250px] sm:max-w-none">
+            <Link
+              href={homeHref}
+              className="text-sm font-medium text-[#1a1a1a] hover:text-[#7a7062] transition-colors truncate"
+            >
+              {projectName}
+            </Link>
+            {adminEditUrl && (
+              <Link
+                href={adminEditUrl}
+                target="_blank"
+                title="Rediger i admin"
+                className="shrink-0 text-[#1a1a1a] hover:text-[#7a7062] transition-colors"
+              >
+                <Pencil className="w-3 h-3 opacity-40" />
+              </Link>
+            )}
+          </span>
         ) : adminEditUrl ? (
           <Link
             href={adminEditUrl}
