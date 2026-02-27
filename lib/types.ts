@@ -189,6 +189,10 @@ export interface ProjectContainer {
   products: ProductInstance[];
   venueType?: "hotel" | "residential" | "commercial" | null;
   discoveryCircles?: DiscoveryCircle[] | null;
+  /** Short tagline shown on the welcome screen */
+  welcomeTagline?: string;
+  /** Default product to navigate to from the welcome screen */
+  defaultProduct: ProductType;
   version: number;
   createdAt: string;
   updatedAt: string;

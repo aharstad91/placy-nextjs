@@ -219,6 +219,8 @@ export async function getProjectContainerAsync(
     urlSlug: baseSlug,
     centerCoordinates: firstProject.centerCoordinates,
     description: undefined,
+    welcomeTagline: undefined,
+    defaultProduct: "report" as const,
     pois: Array.from(poiMap.values()),
     categories: Array.from(categoryMap.values()),
     products: [report, explore, guide]

@@ -55,6 +55,16 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
     };
   }
 
+  // Parse ?themes= param from welcome screen → translate to category IDs
+  const selectedThemes = typeof resolvedSearchParams.themes === "string"
+    ? resolvedSearchParams.themes.split(",")
+    : undefined;
+  const themeDerivedCategories = selectedThemes
+    ? DEFAULT_THEMES
+        .filter((t) => selectedThemes.includes(t.id))
+        .flatMap((t) => t.categories)
+    : undefined;
+
   // Collection mode
   if (typeof resolvedSearchParams.c === "string") {
     const collection = await getCollectionBySlug(resolvedSearchParams.c);
@@ -84,6 +94,12 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
     }
   }
 
+  // ?themes= has precedence over ?categories=
+  const initialCategories = themeDerivedCategories
+    ?? (typeof resolvedSearchParams.categories === "string"
+      ? resolvedSearchParams.categories.split(",")
+      : undefined);
+
   return (
     <ExplorerPage
       project={projectData}
@@ -93,11 +109,7 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
           ? resolvedSearchParams.poi
           : undefined
       }
-      initialCategories={
-        typeof resolvedSearchParams.categories === "string"
-          ? resolvedSearchParams.categories.split(",")
-          : undefined
-      }
+      initialCategories={initialCategories}
     />
   );
 }
@@ -117,5 +129,8 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: `${projectData.story.title} – Explorer | Placy`,
     description: `Utforsk nærområdet rundt ${projectData.name}`,
+    alternates: {
+      canonical: `https://placy.no/for/${customer}/${projectSlug}/explore`,
+    },
   };
 }

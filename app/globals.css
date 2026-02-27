@@ -355,6 +355,35 @@ gmp-popover::part(dialog) {
   }
 }
 
+/* ===================================
+   Welcome Screen Staggered Animation
+   =================================== */
+@keyframes welcome-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-animate {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: welcome-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-animate {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
 /* Screen reader only utility */
 .sr-only {
   position: absolute;

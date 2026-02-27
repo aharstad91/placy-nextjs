@@ -869,6 +869,8 @@ export async function getProjectContainerFromSupabase(
     products: productInstances,
     venueType: (projectAny.venue_type as "hotel" | "residential" | "commercial" | null) ?? null,
     discoveryCircles: (projectAny.discovery_circles as DiscoveryCircle[] | null) ?? null,
+    welcomeTagline: (projectAny.welcome_tagline as string | null) ?? undefined,
+    defaultProduct: (projectAny.default_product as "explorer" | "report" | "guide" | null) ?? "report",
     version: (projectAny.version as number) ?? 1,
     createdAt: project.created_at,
     updatedAt: project.updated_at,

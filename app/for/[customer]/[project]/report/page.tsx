@@ -11,10 +11,12 @@ interface PageProps {
     customer: string;
     project: string;
   }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function ReportProductPage({ params }: PageProps) {
+export default async function ReportProductPage({ params, searchParams }: PageProps) {
   const { customer, project: projectSlug } = await params;
+  const resolvedSearchParams = await searchParams;
 
   // Try new hierarchy first
   let projectData = await getProductAsync(customer, projectSlug, "report");
@@ -43,12 +45,18 @@ export default async function ReportProductPage({ params }: PageProps) {
   // Look up area slug for POI detail page links
   const areaSlug = await getAreaSlugForProject(projectData.id);
 
+  // Parse ?themes= param for welcome screen prioritization
+  const rawThemes = typeof resolvedSearchParams.themes === "string"
+    ? resolvedSearchParams.themes.split(",")
+    : undefined;
+
   return (
     <ReportPage
       project={projectData}
       explorerBaseUrl={explorerUrl}
       enTranslations={enTranslations}
       areaSlug={areaSlug}
+      primaryThemeIds={rawThemes}
     />
   );
 }
@@ -68,5 +76,8 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: `${projectData.story.title} – Nabolagsrapport | Placy`,
     description: projectData.story.introText,
+    alternates: {
+      canonical: `https://placy.no/for/${customer}/${projectSlug}/report`,
+    },
   };
 }
