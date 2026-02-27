@@ -131,7 +131,7 @@ export default function WelcomeScreen({
                             focus-within:ring-2 focus-within:ring-[#1a1a1a] focus-within:ring-offset-2
                             ${isSelected
                               ? "bg-white shadow-sm border border-[#eae6e1] hover:border-[#c0b9ad]"
-                              : "bg-transparent border border-[#eae6e1] opacity-50 hover:opacity-100 hover:border-[#c0b9ad] hover:shadow-sm"
+                              : "bg-transparent border border-[#eae6e1] opacity-65 hover:opacity-100 hover:border-[#c0b9ad] hover:shadow-sm"
                             }
                           `}
                           style={{ animationDelay: `${320 + i * 55}ms` }}
@@ -144,29 +144,25 @@ export default function WelcomeScreen({
                             aria-label={theme.name}
                           />
 
-                          {/* Checkbox indicator — top right */}
-                          <span className="absolute top-3 right-3">
-                            {isSelected ? (
-                              <span className="w-5 h-5 rounded-md bg-[#1a1a1a] flex items-center justify-center">
-                                <svg
-                                  className="w-3 h-3 text-white"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={3}
-                                  aria-hidden="true"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              </span>
-                            ) : (
-                              <span className="w-5 h-5 rounded-md border-2 border-[#d6d0c8]" />
-                            )}
-                          </span>
+                          {/* Checkmark — only when selected */}
+                          {isSelected && (
+                            <span className="absolute top-3 right-3 w-5 h-5 rounded-md bg-[#1a1a1a] flex items-center justify-center">
+                              <svg
+                                className="w-3 h-3 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={3}
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </span>
+                          )}
 
                           {/* Icon */}
                           <Icon
@@ -328,7 +324,7 @@ export default function WelcomeScreen({
                           focus-within:ring-2 focus-within:ring-[#1a1a1a] focus-within:ring-offset-2
                           ${isSelected
                             ? "bg-white shadow-sm border border-[#eae6e1] hover:border-[#c0b9ad]"
-                            : "bg-transparent border border-[#eae6e1] opacity-50 hover:opacity-100 hover:border-[#c0b9ad] hover:shadow-sm"
+                            : "bg-transparent border border-[#eae6e1] opacity-65 hover:opacity-100 hover:border-[#c0b9ad] hover:shadow-sm"
                           }
                         `}
                         style={{ animationDelay: `${(heroImage ? 160 : 120) + i * 55}ms` }}
