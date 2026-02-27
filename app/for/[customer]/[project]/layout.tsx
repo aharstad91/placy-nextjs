@@ -67,6 +67,7 @@ export default async function ProjectLayout({ params, children }: LayoutProps) {
         projectName={projectData.name}
         products={products}
         adminEditUrl={shortId ? `/admin/projects/${shortId}` : null}
+        homeHref={basePath}
       />
       <PageTransition className="pt-12">
         {children}

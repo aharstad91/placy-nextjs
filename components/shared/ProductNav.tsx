@@ -14,9 +14,10 @@ interface ProductNavProps {
   projectName: string;
   products: ProductLink[];
   adminEditUrl?: string | null;
+  homeHref?: string;
 }
 
-export default function ProductNav({ projectName, products, adminEditUrl }: ProductNavProps) {
+export default function ProductNav({ projectName, products, adminEditUrl, homeHref }: ProductNavProps) {
   const pathname = usePathname();
   const [copied, setCopied] = useState(false);
 
@@ -62,6 +63,13 @@ export default function ProductNav({ projectName, products, adminEditUrl }: Prod
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Alle turer</span>
             <span className="sm:hidden">Tilbake</span>
+          </Link>
+        ) : homeHref ? (
+          <Link
+            href={homeHref}
+            className="text-sm font-medium text-[#1a1a1a] hover:text-[#7a7062] transition-colors truncate max-w-[250px] sm:max-w-none"
+          >
+            {projectName}
           </Link>
         ) : adminEditUrl ? (
           <Link
