@@ -13,7 +13,7 @@ const NORWAY_BOUNDS = {
 const DiscoveryCircleSchema = z.object({
   lat: z.number().min(NORWAY_BOUNDS.minLat).max(NORWAY_BOUNDS.maxLat),
   lng: z.number().min(NORWAY_BOUNDS.minLng).max(NORWAY_BOUNDS.maxLng),
-  radiusMeters: z.number().min(300).max(2000),
+  radiusMeters: z.number().min(300).max(3000),
 });
 
 const PatchProjectSchema = z.object({

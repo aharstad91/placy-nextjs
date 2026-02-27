@@ -341,7 +341,7 @@ export function DiscoveryCirclesEditor({
             <input
               type="range"
               min={300}
-              max={2000}
+              max={3000}
               step={50}
               value={selectedCircle.radiusMeters}
               onChange={(e) => handleRadiusChange(Number(e.target.value))}

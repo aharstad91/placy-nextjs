@@ -2,7 +2,6 @@ import type { ThemeDefinition } from "./theme-definitions";
 
 /**
  * Default themes shared between Report and Explorer.
- * Order: what a hotel guest cares about most.
  *
  * Every POI category used in the system must map to exactly one theme.
  * See ALL_CATEGORIES_BY_THEME for the full mapping.
@@ -19,8 +18,15 @@ export const DEFAULT_THEMES: ThemeDefinition[] = [
     id: "kultur-opplevelser",
     name: "Kultur & Opplevelser",
     icon: "Landmark",
-    categories: ["museum", "library", "cinema", "park", "outdoor"],
+    categories: ["museum", "library", "cinema", "park", "outdoor", "badeplass"],
     color: "#0ea5e9",
+  },
+  {
+    id: "barnefamilier",
+    name: "Barn & Oppvekst",
+    icon: "GraduationCap",
+    categories: ["skole", "barnehage", "lekeplass", "idrett"],
+    color: "#f59e0b",
   },
   {
     id: "hverdagsbehov",

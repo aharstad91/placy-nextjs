@@ -703,7 +703,7 @@ export default function ImportClient({ projects }: ImportClientProps) {
                           <input
                             type="range"
                             min={300}
-                            max={2000}
+                            max={3000}
                             step={100}
                             value={radius}
                             onChange={(e) => setRadius(Number(e.target.value))}
