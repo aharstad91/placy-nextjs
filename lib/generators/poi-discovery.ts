@@ -3,7 +3,7 @@
  * Henter POI-er fra Google Places, Entur, og Trondheim Bysykkel
  */
 
-import { POI, Category, Coordinates } from "../types";
+import { Category, Coordinates } from "../types";
 import { calculateDistance } from "../utils/geo";
 import { slugify } from "../utils/slugify";
 import {
