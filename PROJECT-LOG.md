@@ -1397,3 +1397,296 @@ Fortsettelse av sesjon 13 (Places API New migration). PR #46 var merget, men mig
 - **Temp-scripts er build-bomber.** Next.js inkluderer ALLE `.ts`-filer i typecheck under build — også scripts som aldri kjøres i prod. `_tmp-top-pois.ts` brøt Vercel-deploy i ~10 commits uten at noen la merke til det. Lærdom: slett temp-filer umiddelbart, eller legg scripts i en mappe ekskludert fra tsconfig.
 - **Grep-audit er undervurdert som verktøy.** To grep-kommandoer (finn alle Google API-kallere → sjekk hvem som importerer dem) avslørte at 1200+ linjer var dead code. Burde kjøres jevnlig etter store migrasjoner.
 - **Sesjon 15 sin retning var feil.** Loggen sa "neste kostnadsfase: eliminer runtime Place Details-kall helt". Men audit viste at det allerede var null runtime-kall fra offentlige sider — "neste fase" var allerede løst uten at vi visste det. Viktig å verifisere antakelser med data før man planlegger arbeid.
+
+---
+
+## 2026-02-18 — Strategisk pivot: Fra turisme til eiendom
+
+### Kontekst
+Pitch deck vist til forretningsutvikler Markus. Ærlig, kritisk tilbakemelding som endrer retningen for Placy.
+
+### Markus sin feedback
+- **"Fantastisk prototype, men dette er ikke et produkt ennå."** Ingen bevist betalingsvilje.
+- **"Luksusproblem"** — løsningen er god, men hvem betaler?
+- **Hoteller er skeptisk:** Gjesten har allerede betalt for rommet. Placy sender gjester *ut* av hotellet — potensielt kannibaliserer bar/restaurant. Hvorfor betale?
+- **Cruise samme logikk:** Passasjeren har betalt for lugaren. Hva de gjør i land er sekundært.
+
+### Nøkkelinnsikt: Incentiv-alignment
+Placy leverer verdi **etter** transaksjonen for hotell/cruise. Spørsmålet som avgjør segment: *Hvor leverer stedsinnsikt verdi **før** en kjøpsbeslutning?*
+
+Svar: **Eiendom.** Nabolagskvalitet påvirker direkte om noen kjøper leilighet for 6M eller signerer kontorleie.
+
+### Beslutninger
+- **100% fokus på eiendom** — både privat eiendomsutvikling og næringseiendom
+- **Hotell/cruise er Phase 2** — ikke dødt, men krever bevist kundecase først
+- **Report er primærproduktet** for eiendom — erstatter generisk prospekttekst
+- **Explorer kan komme som tillegg**, men Report er det som selges
+
+### To sub-segmenter
+
+**Næringseiendom (prioritet 1):**
+- Kontakt: Kine @ KLP Eiendom (eiendomsforvalter)
+- Modell: Porteføljebasert, recurring. Én avtale = mange eiendommer.
+- Ferjemannsveien 10 var opprinnelig demo — kan gjenopplives
+
+**Privat eiendomsutvikling (prioritet 2):**
+- Kontakt: Kristian @ Eiendomsmegler 1
+- Modell: Engangs per prosjekt (15-50k)
+
+### Teknisk vurdering
+Report og Explorer er allerede bygd for eiendom — minimal tech-endring:
+1. Rekkefølge/vinkling på themes (Transport, Hverdagsbehov viktigere enn Kultur for kontor)
+2. Noen manglende kategorier (barnehage, skole, coworking)
+3. Språk/tone-tilpasning per prosjekt (allerede mulig via reportConfig)
+4. Nytt prosjekt i databasen for KLP-demo
+
+### Neste steg
+1. **Ring Kine** — still spørsmål, ikke pitch. "Hvordan markedsfører dere nærområdet til leietakere?"
+2. **Vis Ferjemannsveien-demo** bare hvis hun beskriver en smerte
+3. **Kristian etterpå** — for boligmarkedet
+4. **Ikke bygg mer** før betalingsvilje er validert
+
+### Observasjoner
+- **Scandic har en elendig "Nearby"-løsning** på sine hotellsider (Copenhagen Airport 97km, golfklubber 22km). Placy gjør dette 100x bedre. Men at noe er dårlig betyr ikke at de vil betale for å fikse det — de har *valgt* dette.
+- **Scandic sin "Nearby" sitter på hotellsiden** (før booking), ikke bare for gjester. Så det *er* et before-transaction use case for hotell også. Men: Phase 2.
+- **Bygde for egen frustrasjon som turist** — klassisk grunnfeil. "Jeg savnet dette i Barcelona" ≠ noen betaler for det.
+- **Pitch deck hoppet fra demo til prisliste** uten å vise at noen har problemet. Neste pitch: spørsmål først, demo hvis smerte, pris aldri i første møte.
+
+### Retning
+Placy har gått fra "vi har tre produkter for seks bransjer" til **"Report for eiendom — validér med Kine."** Mye smalere. Mye sterkere. Alt annet er Phase 2+.
+
+---
+
+## 2026-02-18
+
+### Pitch deck — 100% eiendom
+- Skrevet om hele pitch-decken fra "hotell/cruise/turisme/eiendom" til **100% eiendom**
+- Fjernet Trips helt, fjernet cruise-prising, fjernet 6-segment-oversikten
+- Report er nå primærprodukt, Explorer er tillegg
+- Ny headline: "Nabolaget som selger eiendommen"
+- To delsegmenter: Næringseiendom (recurring, portefølje) vs Boligutvikling (per-prosjekt, engangs)
+- Hero-bilde byttet fra Explorer til Report-screenshot
+
+### Voice of Norway — full konkurranseanalyse
+
+Gjennomførte dyp research på Voice of Norway / Guide To Go AS med 4 parallelle agenter. Full rapport: `klienter/placy/pitch/research-voice-of-norway-cruise.md`
+
+**Selskapet:**
+- **Guide To Go AS** (org. 932 608 952, Ålesund). Tidl. Experio AS (2017), tidl. Hopperguide AS (2010). Konsept fra 2009.
+- ~7 ansatte. Utvikling outsourcet til Kroatia.
+- **241 000 NOK i omsetning, -30% profitabilitet** (siste rapporterte, Experio AS). 15 år uten lønnsomhet.
+- Aksjekapital: 36 144 kr. Lån fra Innovasjon Norge. Inkubert ved AKP/ProtoMore.
+- Restrukturert 2023-24: Experio slettet, Guide To Go opprettet. Mulig finansiell opprydding.
+- App: 20 ratings på iOS, ~50k downloads Android. Svak traction etter 7+ år.
+
+**80+ betalende kunder — markedsvalidering:**
+- Transport: VY (Bergensbanen), SJ, Arctic Train, FRAM
+- ~18 kommuner: Molde, Kristiansund, Larvik, Ålesund, Kongsberg m.fl.
+- Museer: Nobelsenteret, Teknisk Museum, Romsdalsmuseet, Hanseatisk Museum m.fl.
+- Hotell: Classic Norway Hotels, Hotel Ullensvang, Reine Rorbuer
+- Nasjonale: Nasjonale turistveger, Sametinget, Nordkapp
+- ~15 campingplasser
+- Partnere: Innovasjon Norge, Sparebanken Møre
+- **Merk: Hurtigruten og Havila er IKKE på listen**
+
+**Prismodell — hva markedet betaler:**
+- Intro: 5 990 kr/år (10 POIs, 1 rute, 1 språk) + 9 900 setup
+- Basic: 24 990 kr/år (50 POIs, 5 ruter, 5 språk) — eller 249 990 kr engangskjøp
+- Pro: 35 990 kr/år (100 POIs, 10 ruter, 10 språk) — eller 359 990 kr engangskjøp
+- Innholdsproduksjon (manus, oversettelse, voice-over) kommer PÅ TOPPEN — ikke inkludert
+- AR-hologram: 90k-505k NOK i produksjon per oppsett
+- Reell totalkostnad for et Pro-oppsett med innhold: sannsynligvis 200-500k+
+
+**Hvorfor det ikke skalerte:**
+- Studio-innspilt voice-over i mange språk = høy produksjonskostnad per by
+- Kunder må skrive eget manus eller betale tillegg — høy friksjon
+- Max 100 POIs i Pro-tier — Placy har 1000+ bare i Trondheim
+- Ingen interaktivt kart, ingen nabolagsrapport — kun audioguide
+
+### Hurtigruten-gapet — vid åpen mulighet
+
+**Passasjertall:**
+- Hurtigruten: ~200 000/år, 7→10 skip, +24% booking 2025 vs 2024
+- Havila: ~70-90 000/år, 4 skip, 73% belegg
+- **Totalt: ~270 000+ passasjerer/år, voksende**
+
+**Hva passasjerene har i dag: Nesten ingenting.**
+- Hurtigruten-appen: booking + dagsprogram. **Null destinasjonsinnhold.** 3.7/5, 17 ratings.
+- Havila: MyVoyage web-portal, ingen app.
+- Tredjeparts: "Kystruten" av en tysk utvikler (skipposisjon, vær, nordlys). Basic.
+- Audioguide: AOYO-Guide — se detaljer under.
+
+**AOYO-Guide — den eneste audioguiden for kystruten:**
+- **Selskap:** AOYO-Guide GbR, Diespeck, Tyskland. Grunnlagt av Dietmar Schäffer og Thilo Kirsch — tyske turguider.
+- **Hovedfokus er roadtrips** (Island, Namibia, California). Norge-guiden er et sideprosjekt.
+- **Dekker kun 7 av 34 havner:** Ålesund (8 stopp), Trondheim (19), Bodø (5), Svolvær (3), Tromsø (14), Hammerfest (5), Kirkenes (8). Totalt 72 GPS-stopp, 80 min audio.
+- **Kun engelsk og tysk.** Ingen norsk.
+- **Pris:** $36 USD / €29,99 per nedlasting. Distribuert via GetYourGuide, Musement, guidemate.
+- **Traction:** 39 likes på guidemate. Nesten null.
+- **Portefølje:** 21 guider totalt, mest selvkjøringsguider. Island mest populær (62 likes).
+- **Perspektiv:** To tyske roadtrip-guider har laget den *eneste* digitale destinasjonsguiden for 270 000 kystrutepassasjerer — som sideprosjekt. Placy har 1000+ POIs bare i Trondheim. De har 19.
+- Ekskursjoner: 130+ turer, 65 lokale leverandører. 100% analogt.
+
+**27 av 34 havner har null digital dekning.** Inkl. Honningsvåg (Nordkapp, 3,5t stopp).
+
+**Hurtigrutens situasjon:**
+- Gjeld redusert fra ~26 mrd til ~4,6 mrd NOK (feb 2025). Nye eiere (kreditorer tok over).
+- Splittet fra HX Expeditions — nå rent kystselskap.
+- **Ny CDO ansatt 2025** (Lisa Warner) — digital er på agendaen.
+- Stabiliseringsfase, ikke innovasjonsfase. Partnerskap > bygge selv.
+
+**Konkurranselandskapet:**
+- Voice of Norway: dominerer kommune/museum-segmentet, men ikke cruise
+- StoryHunt (København): nærmeste konkurrent, $746k funding, Tivoli som case. Har Oslo/Bergen/Tromsø.
+- izi.TRAVEL: gratis plattform, 25 000 turer globalt. Variabel kvalitet.
+- **Ingen eier cruise/kystrute-segmentet.** Null profesjonelle aktører.
+
+### Placy vs Voice of Norway — head to head
+
+| | Voice of Norway | Placy |
+|---|---|---|
+| Innhold | Manuelt: manus → studio → oversettelse | AI-pipeline: crawl → kuratere → generere |
+| Kostnad/språk | Studioinnspilling (dyrt) | AI TTS (nesten gratis) |
+| Oppdatering | Ny innspilling = ny kostnad | Regenerer lydfil = sekunder |
+| POIs | Max 100 (Pro) | 1000+ i Trondheim |
+| Produkter | Kun audioguide | Report + Explorer + Trips |
+| Interaktivt kart | Nei | Ja |
+| Ny by | Måneder (studio) | Dager (AI) |
+
+### Åpne spørsmål for Markus
+1. Er cruise-gapet stort nok til å prioritere nå, eller Phase 2 etter eiendom?
+2. Hvem er beslutningstaker hos Hurtigruten? Lisa Warner (CDO)? Ekskursjonsteam?
+3. B2B (selge til Hurtigruten) eller B2B2C (direkte til passasjerer)?
+4. Voice of Norway som oppkjøpsmål? 80 kunder, lav omsetning, sannsynligvis billig. Eller utkonkurrere?
+5. Innovasjon Norge støttet Voice of Norway — relevant for Placy?
+
+### Retning
+- **Eiendom er primær** — all pitch-energi dit
+- **Cruise/Hurtigruten er Phase 2** — men researchen viser at muligheten er mye større enn antatt
+- Voice of Norway beviser betalingsvilje (80+ kunder, 360k engangskjøp). Hurtigruten-gapet beviser udekket behov (270k passasjerer, null innhold). Placy løser kostnadsproblemet med AI.
+- Referanse til Voice of Norway lagt inn i pitch-decken (differensierings-sliden) som markedsvalidering
+
+### Plyo-research og konkurransestrategi (sent 18. feb)
+
+**Plyo (plyo.com)** — Norges dominerende proptech for boligsalg:
+- 250+ kunder, 56 MNOK omsetning, 40 ansatte, 70%+ markedsandel i enterprise
+- Produkter: Site Project (prosjektnettside), Explore (3D boligvelger), Visuals (renderings), Plyo Work (CRM)
+- Fusjonert med 3D Estate (Skandinavias ledende 3D for eiendom)
+- Leangen Bolig bruker Plyo Cloud for boligvelger (`leangen.plyo.cloud`), resten er WordPress
+
+**Leangen Bolig som case:**
+- Nabolagssiden (`leangenbolig.no/sentral-beliggenhet/`) er bokstavelig talt: "IKEA 2 min. Treningssenter 7 min. Togstasjon 13 min."
+- Perfekt eksempel på problemet Placy løser — lagt til i pitch-decket som navngitt eksempel (slide 2)
+
+**Plyo-risiko — kan de bygge det Placy gjør?**
+- "Vis nærmeste steder på kart" = trivielt, 2-4 uker dev. Kan godt stå på tavla allerede.
+- MEN: kuratert innhold, editorial depth, native points, tier-system, verifiserte fakta = 6-12 mnd + ongoing manuelt arbeid
+- Plyo er tech platform, ikke content company. De bygger verktøy, ikke redaksjonelt innhold.
+- Risikoen er at vi *viser dem idéen* og de bygger en light-versjon med 250 kunder dag 1
+
+**Strategisk beslutning: IKKE pitch til Plyo nå.**
+- Land kunder direkte først (3-5 betalende)
+- Bygg case studies og bevist etterspørsel
+- Først snakk med Plyo fra en posisjon med traction: "Kundene deres spør allerede etter dette"
+
+**Placy sine moats vs Plyo:**
+1. **Koststruktur** — én person + AI-agenter vs 40 ansatte. Kan prise lavt med god margin.
+2. **Fokus** — nabolagsinnhold er alt vi gjør. For Plyo er det feature #47.
+3. **Speed** — ny by på dager. Plyo bruker 6 mnd å prioritere det internt.
+4. **Data compound** — hver rapport gjør datasettet rikere. Plyo starter med null kuratert innhold.
+
+**Næringseiendom > bolig som førstesegment:**
+- Plyo er nesten utelukkende rettet mot boligutvikling/nybygg — ikke næring
+- Ingen Plyo-overlapp i næringssegmentet
+- Recurring revenue (forvaltere med porteføljer) vs engangsprosjekter
+- Nabolaget er *mer* relevant for næring: lunsj, transport, ansattrekruttering
+- Leiekontrakter fornyes hvert 3-5 år — nabolaget selger hver gang
+- Færre, større kunder: én forvalter kan ha 10-50 bygg
+
+### Kundeprospekter — research på de tre største i Trondheim
+
+**1. EC Dahls Eiendom (Reitan Eiendom)**
+- ~100 eiendommer i Trondheim sentrum, alle med dedikerte sider på ecde.no
+- Kjøpte Entras portefølje (13 eiendommer, 187 000 m², 6,45 mrd NOK) i Q2 2024
+- Drift-omsetning 74,7 MNOK (2023), 50+ ansatte
+- Kontor, handel, restaurant, hotell, bolig
+- Fokus: bærekraft, byutvikling (BREEAM Outstanding, FutureBuilt, Kulturkvartalet)
+- Sjekket Nordre gate 12 og Søndre gate 12: **null nabolagsinformasjon** på eiendomssidene
+- Kald start — ingen eksisterende kontakt
+- Potensial: 500k–1M/år
+
+**2. KLP Eiendom**
+- Norges største eiendomsselskap: 2,4M m², verdi 105 mrd NOK, 190 ansatte
+- Trondheim: **29 eiendommer**, ~290 000 m², leieinntekter 135 MNOK/år
+- Inkl. Teknostallen (47,2k m² — flaggskip), Solsiden, **Ferjemannsveien 10 (eksisterende Placy-demo!)**
+- 6 byer: Oslo, Trondheim, Stavanger, Bergen, Stockholm, København
+- Sjekket Ranheimsveien 10: **null nabolagsinformasjon**, bare "like utenfor Trondheim sentrum"
+- Varm start — eksisterende kontakt (Kine) + ferdig demo
+- Potensial Trondheim: 300–500k/år. Hele konsernet: 1–2M/år
+
+**3. Koteng Eiendom (Koteng-familien)**
+- ~60 næringseiendommer, 270 000 m², leieinntekter **340 MNOK/år**
+- Holding-omsetning 455 MNOK (2024), 58 ansatte, 34 selskaper i konsern
+- Under utvikling: 70 000 m² nye næringslokaler (~1,75 mrd NOK)
+- 35 ledige lokaler akkurat nå
+- **Boligdelen (Koteng Jenssen, 50/50 med Jenssen Holding):**
+  - Leangen Bolig (~2 000 boliger) — bruker Plyo for boligvelger, "IKEA 2 min" som nabolagsinfo
+  - Leangenbukta (~500 boliger), Grilstad Marina (~1 000 boliger)
+  - ~3 500 boliger under aktiv utvikling
+- Sjekket Skonnertvegen 7: minimal nabolagsinfo, bare "10 min med bil til sentrum"
+- Unik: **eneste med både næring OG bolig** — dobbel inngang
+- Potensial: 500k–900k/år
+
+**Sammenligning:**
+
+| | EC Dahls | KLP Eiendom | Koteng |
+|---|---|---|---|
+| Eiendommer Trondheim | ~100 | 29 | ~60 |
+| Boligprosjekter | Nei | Nei | 3 500+ boliger |
+| Leieinntekter | Ukjent | 135 MNOK | 340 MNOK |
+| Eier | Reitan (privat) | KLP (offentlig) | Koteng-familien |
+| Eksisterende kontakt | Nei | Ja (Kine) | Nei |
+| Placy-data klar | Nei | Ja (Ferjemannsveien) | Delvis (Leangen) |
+| Beslutningshastighet | Rask | Treg | Rask |
+| Skaleringsverdi | Kun Trondheim | 6 byer | Kun Trondheim |
+| Totalpotensial/år | 500k–1M | 300k–2M | 500k–900k |
+
+**Anbefalt rekkefølge:** KLP (varm, demo klar) → Koteng (dobbel inngang) → EC Dahls (volum)
+
+Tre selskaper, ~190 eiendommer i Trondheim, null nabolagsinnhold. Samlet potensial: **1,5–3M/år.**
+
+### Oppdatert retning
+- **Næringseiendom er primærsegment** — recurring, ingen Plyo-overlapp, høyere relevans
+- **Boligutvikling er sekundær** — per-prosjekt, Plyo-risiko, men Leangen Bolig viser behovet
+- **Plyo er fremtidig distribusjonspartner, ikke nå** — land kunder først, pitch til Plyo fra styrke
+- **Vinduet er ikke evig** — rask implementering i større kjeder er kritisk
+- **Tre konkrete prospekter identifisert** — KLP, Koteng, EC Dahls. Alle researched med portefølje, økonomi, og eiendomssider sjekket for nabolagsinnhold (null hos alle tre)
+
+---
+
+## 2026-02-18 (sesjon 2) — /generate-bolig: Fra hotell til eiendom i koden
+
+### Beslutninger
+- Bygde `/generate-bolig` som **fork av `/generate-hotel`** — eget kommandofil, ikke profil-basert. Nok forskjeller til å rettferdiggjøre separasjonen.
+- 3 nye kategorier (skole, barnehage, idrett) med offisielle norske API-er: NSR/Udir, Barnehagefakta, Overpass. Ingen web-scraping.
+- 6 bolig-temaer erstatter 5 hotell-temaer. Viktigste endring: "Barn & Oppvekst" som nytt tema + "Natur & Friluftsliv" skilt ut fra "Kultur & Opplevelser".
+- `park`/`outdoor` flyttet fra kultur-opplevelser til natur-friluftsliv i DEFAULT_THEMES. Påvirker hotell-Explorer (forbedring, ikke regresjon — temaer uten POIs auto-skjules).
+- External-ID-basert dedup (nsr-{OrgNr}, bhf-{id}, osm-{nodeId}) — ikke navne-basert. Viktig lærdom fra tech audit.
+- Institusjonell baseline-score (rating=4.0, reviews=10) for skoler/barnehager/idrett, ellers scorer de ~0 og kan ikke features.
+
+### Parkert / Åpne spørsmål
+- ~~Næringseiendom er primærsegment~~ — dette gjelder fortsatt strategisk, men Overvik ble bygget som første salgsmateriell
+- Kommunenummer-mapping er hardkodet i kommandoen (Trondheim=5001, Oslo=0301, Bergen=4601). Trenger automatisk lookup for nye byer.
+- NSR API returnerer *alle* skoler i kommunen (kan være 100+). Filtreringen på avstand er kritisk — trenger god GeoKvalitet-sjekk.
+- Skal vi sette opp `/generate-naering` også? Eller holder bolig + hotell?
+- Overvik-pilot er klar til kjøring. Trenger `npm run dev` + internett for API-kall.
+
+### Retning
+- **Koden er klar, piloten gjenstår.** Selve `/generate-bolig` er implementert og committed. Neste steg er å kjøre den for Overvik.
+- **Eiendom-pivoten er nå materialisert i kode.** Strategien fra pitch-decken (100% eiendom) har nå en konkret pipeline. `/generate-hotel` er intakt for tilbakefall.
+- **Tema-system er nå 7 temaer globalt** (var 5). Barnefamilier og Natur & Friluftsliv er synlige for alle prosjekter der POIs finnes. Hoteller påvirkes minimalt (ingen skoler/barnehager → tema skjules).
+
+### Observasjoner
+- Tech audit fanget 7 reelle feil i planen som ville bitt under implementering (manglende filer, feil API-antakelser, scoring-formel som nullet ut institusjonelle POIs). Investering i audit betalte seg.
+- 16-stegs pipeline er ambisiøst. Risikoen er at den første kjøringen avslører problemer med de 3 nye API-ene (NSR, Barnehagefakta, Overpass) som krever real-time debugging.
+- Boligrapport er et *mye* bredere produkt enn hotellrapport — 6 temaer vs 5, 2500m vs 800m, 3 ekstra API-er. Skaleringsutfordringen er at hvert nye boligprosjekt krever god data i suburban strøk der Google Places er tynt.

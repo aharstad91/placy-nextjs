@@ -3,9 +3,16 @@
  * Henter POI-er fra Google Places, Entur, og Trondheim Bysykkel
  */
 
-import { POI, Category, Coordinates } from "../types";
+import { Category, Coordinates } from "../types";
 import { calculateDistance } from "../utils/geo";
 import { slugify } from "../utils/slugify";
+import {
+  evaluateGooglePlaceQuality,
+  isWithinCategoryDistance,
+  calculateQualityStats,
+  logQualityFilterStats,
+  type QualityRejection,
+} from "./poi-quality";
 
 // === Types ===
 
@@ -102,6 +109,7 @@ interface GooglePlaceResult {
   geometry: { location: { lat: number; lng: number } };
   rating?: number;
   user_ratings_total?: number;
+  business_status?: string;
   vicinity?: string;
   types?: string[];
 }
@@ -122,6 +130,8 @@ export async function discoverGooglePlaces(
   const minRating = config.minRating || 0;
   const maxPerCategory = config.maxResultsPerCategory || 20;
   const allPOIs: DiscoveredPOI[] = [];
+  const rejections: QualityRejection[] = [];
+  let totalEvaluated = 0;
 
   for (const category of categories) {
     console.log(`  → Søker etter ${category}...`);
@@ -177,6 +187,23 @@ export async function discoverGooglePlaces(
           continue;
         }
 
+        // Quality filter chain (business_status → distance → quality → name_mismatch)
+        totalEvaluated++;
+        const qualityResult = evaluateGooglePlaceQuality(
+          {
+            name: place.name,
+            business_status: place.business_status,
+            rating: place.rating,
+            user_ratings_total: place.user_ratings_total,
+          },
+          categoryDef.id,
+          distance,
+          rejections
+        );
+        if (!qualityResult.pass) {
+          continue;
+        }
+
         // Limit per category
         if (addedCount >= maxPerCategory) {
           break;
@@ -215,6 +242,12 @@ export async function discoverGooglePlaces(
 
     // Small delay to avoid rate limiting
     await sleep(200);
+  }
+
+  // Log quality filter stats
+  if (totalEvaluated > 0) {
+    const stats = calculateQualityStats(totalEvaluated, rejections);
+    logQualityFilterStats(stats);
   }
 
   return allPOIs;
@@ -305,21 +338,36 @@ export async function discoverEnturStops(
       const modes = place.transportMode || [];
       let category = TRANSPORT_CATEGORIES.bus;
       let suffix = "";
+      let categoryId = "bus";
 
       if (modes.includes("rail")) {
         category = TRANSPORT_CATEGORIES.train;
+        categoryId = "train";
         suffix = " stasjon";
       } else if (modes.includes("tram")) {
         category = TRANSPORT_CATEGORIES.tram;
+        categoryId = "tram";
         suffix = " holdeplass";
       } else if (modes.includes("metro")) {
         category = TRANSPORT_CATEGORIES.train;
+        categoryId = "train";
         suffix = " T-bane";
       } else {
         suffix = " bussholdeplass";
       }
 
       const name = place.name + (place.name.toLowerCase().includes("holdeplass") || place.name.toLowerCase().includes("stasjon") ? "" : suffix);
+
+      // Distance-based quality filter for transport
+      const stopDistance = calculateDistance(
+        config.center.lat,
+        config.center.lng,
+        place.latitude,
+        place.longitude
+      );
+      if (!isWithinCategoryDistance(stopDistance, categoryId)) {
+        continue;
+      }
 
       // Create POI ID with source prefix (using Entur stopplace_id for stability)
       const id = generatePoiId("entur", name, place.id);
@@ -394,6 +442,11 @@ export async function discoverBysykkelStations(
       );
 
       if (distance > config.radius) continue;
+
+      // Distance-based quality filter for bike stations
+      if (!isWithinCategoryDistance(distance, "bike")) {
+        continue;
+      }
 
       const name = `Trondheim Bysykkel: ${station.name}`;
 
