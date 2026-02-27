@@ -11,4 +11,6 @@ export interface ThemeDefinition {
   icon: string; // Lucide icon name
   categories: string[]; // "categories" for Report backward compatibility
   color: string; // Tailwind-friendly hex for chip styling
+  /** Number of POIs in this theme (computed at render time, not part of definition) */
+  poiCount?: number;
 }

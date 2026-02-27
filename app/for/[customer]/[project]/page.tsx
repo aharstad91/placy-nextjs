@@ -43,6 +43,13 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
     const productPath = PRODUCT_PATH[defaultProduct];
     const showThemeSelector = defaultProduct !== "guide";
 
+    // Enrich themes with POI counts from container data
+    const themesWithStats = DEFAULT_THEMES.map((theme) => {
+      const catSet = new Set(theme.categories);
+      const poiCount = container.pois.filter((p) => catSet.has(p.category.id)).length;
+      return { ...theme, poiCount };
+    });
+
     return (
       <WelcomeScreen
         projectName={container.name}
@@ -51,7 +58,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
         heroImage={container.welcomeImage}
         defaultProductPath={productPath}
         basePath={`/for/${customer}/${projectSlug}`}
-        themes={DEFAULT_THEMES}
+        themes={themesWithStats}
         showThemeSelector={showThemeSelector}
       />
     );

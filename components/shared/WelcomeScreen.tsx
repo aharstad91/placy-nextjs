@@ -93,7 +93,7 @@ export default function WelcomeScreen({
         {/* Right: Theme selector panel */}
         <div className="w-[45%] flex flex-col">
           <div className="flex-1 flex flex-col justify-center px-12 xl:px-16 py-12">
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-lg">
               {/* Section header */}
               <header
                 className="mb-8 welcome-animate"
@@ -109,7 +109,7 @@ export default function WelcomeScreen({
                 )}
               </header>
 
-              {/* Theme selector */}
+              {/* Theme selector — card grid */}
               {showThemeSelector && (
                 <fieldset
                   className="welcome-animate"
@@ -117,7 +117,7 @@ export default function WelcomeScreen({
                 >
                   <legend className="sr-only">Velg temaer</legend>
 
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {themes.map((theme, i) => {
                       const isSelected = selectedThemeIds.has(theme.id);
                       const Icon = getIcon(theme.icon);
@@ -126,12 +126,12 @@ export default function WelcomeScreen({
                         <label
                           key={theme.id}
                           className={`
-                            welcome-animate group relative flex items-center gap-3 px-4 py-3 rounded-xl
+                            welcome-animate group relative flex flex-col items-start p-4 rounded-xl
                             cursor-pointer select-none transition-all duration-150
                             focus-within:ring-2 focus-within:ring-[#1a1a1a] focus-within:ring-offset-2
                             ${isSelected
-                              ? "bg-white shadow-sm border border-[#eae6e1]"
-                              : "bg-transparent border border-transparent opacity-50 hover:opacity-100 hover:border-[#eae6e1] hover:shadow-sm"
+                              ? "bg-white shadow-sm border border-[#eae6e1] hover:border-[#c0b9ad]"
+                              : "bg-transparent border border-[#eae6e1] opacity-50 hover:opacity-100 hover:border-[#c0b9ad] hover:shadow-sm"
                             }
                           `}
                           style={{ animationDelay: `${320 + i * 55}ms` }}
@@ -144,30 +144,8 @@ export default function WelcomeScreen({
                             aria-label={theme.name}
                           />
 
-                          {/* Color dot */}
-                          <span
-                            className="w-3 h-3 rounded-full shrink-0"
-                            style={{
-                              backgroundColor: isSelected ? theme.color : "#d6d0c8",
-                            }}
-                            aria-hidden="true"
-                          />
-
-                          {/* Icon */}
-                          <Icon
-                            className={`w-4 h-4 shrink-0 ${isSelected ? "text-[#1a1a1a]" : "text-[#a0998f]"}`}
-                            aria-hidden="true"
-                          />
-
-                          {/* Label */}
-                          <span
-                            className={`text-sm font-medium ${isSelected ? "text-[#1a1a1a]" : "text-[#a0998f]"}`}
-                          >
-                            {theme.name}
-                          </span>
-
-                          {/* Checkbox indicator */}
-                          <span className="ml-auto shrink-0">
+                          {/* Checkbox indicator — top right */}
+                          <span className="absolute top-3 right-3">
                             {isSelected ? (
                               <span className="w-5 h-5 rounded-md bg-[#1a1a1a] flex items-center justify-center">
                                 <svg
@@ -189,6 +167,26 @@ export default function WelcomeScreen({
                               <span className="w-5 h-5 rounded-md border-2 border-[#d6d0c8]" />
                             )}
                           </span>
+
+                          {/* Icon */}
+                          <Icon
+                            className={`w-7 h-7 mb-2 ${isSelected ? "text-[#7a7062]" : "text-[#a0998f]"}`}
+                            aria-hidden="true"
+                          />
+
+                          {/* Theme name */}
+                          <span
+                            className={`font-semibold text-sm leading-tight mb-1 ${isSelected ? "text-[#1a1a1a]" : "text-[#a0998f]"}`}
+                          >
+                            {theme.name}
+                          </span>
+
+                          {/* POI count */}
+                          {theme.poiCount != null && theme.poiCount > 0 && (
+                            <span className={`text-xs ${isSelected ? "text-[#6a6a6a]" : "text-[#b0a99f]"}`}>
+                              {theme.poiCount} steder
+                            </span>
+                          )}
                         </label>
                       );
                     })}
@@ -203,7 +201,7 @@ export default function WelcomeScreen({
             className="px-12 xl:px-16 pb-12 welcome-animate"
             style={{ animationDelay: `${showThemeSelector ? 320 + themes.length * 55 + 80 : 360}ms` }}
           >
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-lg">
               {/* Live region for screen readers */}
               <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
                 {showThemeSelector && (
@@ -306,7 +304,7 @@ export default function WelcomeScreen({
               </p>
             )}
 
-            {/* Theme selector */}
+            {/* Theme selector — card grid */}
             {showThemeSelector && (
               <fieldset
                 className="welcome-animate"
@@ -316,7 +314,7 @@ export default function WelcomeScreen({
                   Hva interesserer deg?
                 </legend>
 
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
                   {themes.map((theme, i) => {
                     const isSelected = selectedThemeIds.has(theme.id);
                     const Icon = getIcon(theme.icon);
@@ -325,12 +323,12 @@ export default function WelcomeScreen({
                       <label
                         key={theme.id}
                         className={`
-                          welcome-animate group relative flex items-center gap-3 px-4 py-3 rounded-xl
+                          welcome-animate group relative flex flex-col items-start p-4 rounded-xl
                           cursor-pointer select-none transition-all duration-150
                           focus-within:ring-2 focus-within:ring-[#1a1a1a] focus-within:ring-offset-2
                           ${isSelected
-                            ? "bg-white shadow-sm border border-[#eae6e1]"
-                            : "bg-transparent border border-transparent opacity-50 hover:opacity-100 hover:border-[#eae6e1] hover:shadow-sm"
+                            ? "bg-white shadow-sm border border-[#eae6e1] hover:border-[#c0b9ad]"
+                            : "bg-transparent border border-[#eae6e1] opacity-50 hover:opacity-100 hover:border-[#c0b9ad] hover:shadow-sm"
                           }
                         `}
                         style={{ animationDelay: `${(heroImage ? 160 : 120) + i * 55}ms` }}
@@ -343,30 +341,8 @@ export default function WelcomeScreen({
                           aria-label={theme.name}
                         />
 
-                        {/* Color dot */}
-                        <span
-                          className="w-3 h-3 rounded-full shrink-0"
-                          style={{
-                            backgroundColor: isSelected ? theme.color : "#d6d0c8",
-                          }}
-                          aria-hidden="true"
-                        />
-
-                        {/* Icon */}
-                        <Icon
-                          className={`w-4 h-4 shrink-0 ${isSelected ? "text-[#1a1a1a]" : "text-[#a0998f]"}`}
-                          aria-hidden="true"
-                        />
-
-                        {/* Label */}
-                        <span
-                          className={`text-sm font-medium ${isSelected ? "text-[#1a1a1a]" : "text-[#a0998f]"}`}
-                        >
-                          {theme.name}
-                        </span>
-
-                        {/* Checkbox indicator */}
-                        <span className="ml-auto shrink-0">
+                        {/* Checkbox indicator — top right */}
+                        <span className="absolute top-3 right-3">
                           {isSelected ? (
                             <span className="w-5 h-5 rounded-md bg-[#1a1a1a] flex items-center justify-center">
                               <svg
@@ -388,6 +364,26 @@ export default function WelcomeScreen({
                             <span className="w-5 h-5 rounded-md border-2 border-[#d6d0c8]" />
                           )}
                         </span>
+
+                        {/* Icon */}
+                        <Icon
+                          className={`w-7 h-7 mb-2 ${isSelected ? "text-[#7a7062]" : "text-[#a0998f]"}`}
+                          aria-hidden="true"
+                        />
+
+                        {/* Theme name */}
+                        <span
+                          className={`font-semibold text-sm leading-tight mb-1 ${isSelected ? "text-[#1a1a1a]" : "text-[#a0998f]"}`}
+                        >
+                          {theme.name}
+                        </span>
+
+                        {/* POI count */}
+                        {theme.poiCount != null && theme.poiCount > 0 && (
+                          <span className={`text-xs ${isSelected ? "text-[#6a6a6a]" : "text-[#b0a99f]"}`}>
+                            {theme.poiCount} steder
+                          </span>
+                        )}
                       </label>
                     );
                   })}
