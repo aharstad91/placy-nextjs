@@ -1892,3 +1892,34 @@ Dette er en sterk åpner fordi:
 - **Offentlige geodata er tilgjengelige, men gjemt.** Trondheim kommunes GeoServer har full WFS med alle skolekretsene — men det tok 30 minutter å finne riktig endpoint fordi GeoInnsyn er en SPA som skjuler backend-URL-ene. Nøkkelen var å inspisere WMS legend-URL-en i DOM-en.
 - **"Hent flere"-knappen løser mye.** Brukerens innsikt om at den eksisterende expand-knappen allerede håndterer overflow var viktig. Vi trengte ikke et helt nytt UI — bare smartere initialverdier per kategori.
 - **Filtering er mer verdifullt enn mer data.** Å gå fra 19 skoler til 4 relevante skoler er en sterkere forbedring enn å legge til 10 nye skoler. Kurering > kvantitet.
+
+---
+
+## Sesjon 2026-02-28c — Skolekrets-filtrering i generate-bolig pipeline
+
+### Beslutninger
+- **WebSearch for skolekrets, ikke lokal GeoJSON.** Sesjon 2028-02-28b planla statisk GeoJSON + point-in-polygon. Under faktisk utførelse viste det seg at GeoInnsyn-API-et ikke er åpent tilgjengelig via standard WFS — skolekretslaget finnes ikke blant de 400+ lagene på `kart5.nois.no`. WebSearch + LLM-vurdering gir korrekt skolekrets uten API-avhengighet og fungerer for alle norske byer.
+- **Brøset-demo fikset: 19 → 5 skoler.** Fjernet 14 skoler som ikke tilhører Brøsets skolekrets. Beholdt: Eberg (nærskole), Blussuvoll (ungdomsskole), Strinda vgs, Montessori, International School.
+- **Skolekretsbevisste editorial hooks.** "Nærskolen for Brøset" er langt mer verdifullt for en boligkjøper enn "Grunnskole i nabolaget." Hooks kommuniserer at dette er DERES skole — en kjøpsfaktor.
+- **generate-bolig kommandoen oppdatert (833 → 908 linjer).** Steg 5.5 omstrukturert til 4 understeg: 5.5a (hent NSR), 5.5b (WebSearch skolekrets), 5.5c (filtrer), 5.5d (hooks med maler).
+
+### Parkert / Åpne spørsmål
+- **Velkomstskjerm + rapportfiltrering** (fra sesjon 28b) — planlagt men ikke implementert enda
+- **Deploy til Vercel** — fortsatt åpen
+- **Overvik bør regenereres** med den oppdaterte kommandoen
+- **Skolekrets-søk kan feile for nye utbyggingsområder.** Brøset er et stort nok prosjekt til at skolekretsen er dokumentert. Mindre, nyere felt kan mangle tydelig kretsinformasjon på nett — da faller vi tilbake på "nærmeste barneskole."
+
+### Retning
+- **Kommandoen modnes med hver kjøring.** 477 → 833 → 908 linjer. Hver reell demo avdekker hull som lukkes. Neste demo (ny by? nytt prosjekt?) vil teste WebSearch-tilnærmingen for skolekrets i en annen kontekst.
+- **"Salgbar uten manuell opprydding" er stadig nærmere.** Skoler var det siste store kvalitetshullet. Med skolekrets-filtrering, LLM-kvalitetspass, og skolekretsbevisste hooks er Brøset-demoen nå på nivå med hotel-demoene.
+- **Kurering er produktet.** Placy skiller seg fra statiske kartløsninger (broset.no) ved å vise det relevante, ikke alt. 5 riktige skoler > 19 tilfeldige skoler. Denne filosofien gjelder hele pipelinen.
+
+### Levert
+- Brøset-demo: 14 skoler fjernet, Eberg som featured, skolekretsbevisste hooks (NO + EN)
+- `.claude/commands/generate-bolig.md` — Steg 5.5a-d, gotcha #11, QA-sjekk med skolekrets
+- `docs/solutions/feature-implementations/skolekrets-filtering-bolig-pipeline-20260228.md`
+
+### Observasjoner
+- **GeoInnsyn ser åpent ut, men er lukket.** "GeoJson"-knappen og kartlaget antyder åpen data, men selve API-et er en Angular SPA uten REST-endepunkt for skolekretser. 30+ minutter brukt på å prøve WFS, API-stier, og JS-parsing — uten resultat.
+- **WebSearch er overraskende pålitelig for skolekretser.** Kommune-nettsider, skolenes egne sider, og WikiStrinda gir konsistent informasjon om hvilken barneskole som sogner til hvilken ungdomsskole. To søk er nok.
+- **Featured-markering er skjør.** Åsvang var featured. Fjerne Åsvang fjernet featured. Gotcha #1 ("featured forsvinner etter kvalitetsfiltrering") gjelder også manuell fjerning — alltid sjekk og erstatt.
