@@ -1857,3 +1857,40 @@ Dette er en sterk åpner fordi:
 - **Editorial hooks med WebSearch gir genuint god kvalitet.** Tier 3-hooks med faktisk research (etableringsår, spesialiteter, nabolagskontekst) løfter demoen fra "generert" til "kuratert". Dette er Placys differensiator vs. statiske kartløsninger.
 - **Kvalitetsfiltrering er viktigere for forstadsdata enn for bykjerner.** Byhoteller med 800m radius og minRating 3.5 filtrerer naturlig. Bolig med 2500m radius og minRating 0 slipper gjennom alt — dermed trenger du LLM-pass for å luke ut støy.
 - **Kommando-som-institusjonell-hukommelse fungerer.** 833 linjer med eksplisitte regler, gotchas, og eksempler = neste generering kan kjøre uten å gjenta de samme feilene. Compound-effekten er reell.
+
+---
+
+## Sesjon 2026-02-28b — Onboarding velkomstskjerm + smart rapportfiltrering
+
+### Beslutninger
+- **Velkomstskjerm med tema-valg.** Besøkende lander på en dedikert velkomstside i stedet for å dumpes rett inn i Explorer/Report. Hero-bilde, prosjektnavn, og avkryssingskort for temaer. Valgte temaer sendes som query-param til Report.
+- **Navigasjonspills skjult på velkomst, animert inn på produktsider.** Explore/Report-togglen gir ikke mening før brukeren har valgt et produkt. Pill-animasjonen (scale+fade) gir en naturlig overgang.
+- **Per-kategori filterregler i rapporten.** Gikk fra én global `INITIAL_VISIBLE_COUNT = 12` til differensierte regler per kategori. Buss: maks 5. Idrett: maks 3. Barnehage: 6 synlige + "Hent flere". Frisør: ingen begrensning.
+- **Skolekrets-filtrering via Trondheim kommunes GeoServer.** I stedet for å vise 19 tilfeldige skoler, viser vi kun de som prosjektet faktisk sogner til. Videregående/NTNU vises alltid uavhengig av krets.
+- **Statisk GeoJSON > runtime API-kall.** Skolekretsdata (700KB) lagres lokalt. Endres maks årlig, null runtime-avhengighet. Point-in-polygon med WGS84→UTM32N konvertering.
+
+### Parkert / Åpne spørsmål
+- **Skolekrets kun Trondheim.** Systemet fungerer perfekt for Trondheim (43 barneskretser, 18 ungdomsskretser). Andre kommuner trenger tilsvarende GeoServer-data — de fleste har det via geoinnsyn.no, men hvert datasett må hentes separat.
+- **VGS/høyskole-matching er keyword-basert.** Sjekker om navnet inneholder "vgs", "videregående", "ntnu" osv. Funker for Trondheim, men kan trenge utvidelse for andre byer.
+- **Theme translation scoping er global** (fra forrige sesjon, fortsatt åpen).
+- **Deploy til Vercel** (fra forrige sesjon, fortsatt åpen).
+- **Overvik bør regenereres** med den nye kommandoen (fra forrige sesjon).
+
+### Retning
+- **Rapporten er nå kontekstuell, ikke bare geografisk.** "Her er det som er relevant for deg" i stedet for "her er alt innen 2km". Skolekrets-logikken er det klareste eksempelet — en barnefamilie bryr seg om hvilken skole de sogner til, ikke de 19 nærmeste skolene.
+- **Velkomstskjermen er første steg mot personalisering.** Tema-valgene lar brukeren forme sin egen rapport. Neste naturlige steg er at valgte temaer også påvirker rekkefølge og dybde i rapporten.
+- **Infrastrukturen for geodata er på plass.** `data/geo/trondheim/` + `getSchoolZone()` er gjenbrukbart. Samme mønster kan utvides med barnehagekretser, grunnkretser, eller andre kommunale data.
+
+### Levert
+- PR #50 oppdatert med 3 nye commits
+- `components/shared/WelcomeScreen.tsx` — velkomstskjerm med tema-kort
+- `components/shared/ProductNav.tsx` — skjulte pills på velkomst, animasjon på produktsider
+- `data/geo/trondheim/barneskolekrets.json` + `ungskolekrets.json` — offisielle skolekretspolygoner
+- `lib/utils/school-zones.ts` — skolekrets-lookup med WGS84→UTM32N + point-in-polygon
+- `components/variants/report/report-data.ts` — per-kategori `CATEGORY_FILTER_RULES` + `applyCategoryFilter()`
+- 34 tester, alle grønne
+
+### Observasjoner
+- **Offentlige geodata er tilgjengelige, men gjemt.** Trondheim kommunes GeoServer har full WFS med alle skolekretsene — men det tok 30 minutter å finne riktig endpoint fordi GeoInnsyn er en SPA som skjuler backend-URL-ene. Nøkkelen var å inspisere WMS legend-URL-en i DOM-en.
+- **"Hent flere"-knappen løser mye.** Brukerens innsikt om at den eksisterende expand-knappen allerede håndterer overflow var viktig. Vi trengte ikke et helt nytt UI — bare smartere initialverdier per kategori.
+- **Filtering er mer verdifullt enn mer data.** Å gå fra 19 skoler til 4 relevante skoler er en sterkere forbedring enn å legge til 10 nye skoler. Kurering > kvantitet.
