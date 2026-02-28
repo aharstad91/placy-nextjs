@@ -189,6 +189,14 @@ export interface ProjectContainer {
   products: ProductInstance[];
   venueType?: "hotel" | "residential" | "commercial" | null;
   discoveryCircles?: DiscoveryCircle[] | null;
+  /** Hero title for the welcome screen (e.g. "Velkommen over til Overvik") */
+  welcomeTitle?: string;
+  /** Short tagline shown on the welcome screen */
+  welcomeTagline?: string;
+  /** Hero image URL for the welcome screen */
+  welcomeImage?: string;
+  /** Default product to navigate to from the welcome screen */
+  defaultProduct: ProductType;
   version: number;
   createdAt: string;
   updatedAt: string;

@@ -3,7 +3,7 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import type { Project } from "@/lib/types";
 import type { TranslationMap } from "@/lib/supabase/translations";
-import { transformToReportData } from "./report-data";
+import { transformToReportData, type ReportTheme } from "./report-data";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
@@ -33,6 +33,8 @@ interface ReportPageProps {
   explorerBaseUrl?: string | null;
   enTranslations?: TranslationMap;
   areaSlug?: string | null;
+  /** Theme IDs from ?themes= param — themes not in this list are demoted to "Andre kategorier" */
+  primaryThemeIds?: string[];
 }
 
 export default function ReportPage(props: ReportPageProps) {
@@ -43,7 +45,7 @@ export default function ReportPage(props: ReportPageProps) {
   );
 }
 
-function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSlug }: ReportPageProps) {
+function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSlug, primaryThemeIds }: ReportPageProps) {
   const { locale } = useLocale();
 
   const effectiveProject = useMemo(
@@ -55,6 +57,24 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
     () => transformToReportData(effectiveProject),
     [effectiveProject]
   );
+
+  // Split themes into primary (selected on welcome) and secondary (deselected)
+  const { primaryThemes, secondaryThemes } = useMemo(() => {
+    if (!primaryThemeIds || primaryThemeIds.length === 0) {
+      return { primaryThemes: reportData.themes, secondaryThemes: [] as ReportTheme[] };
+    }
+    // Validate theme IDs against actual themes
+    const validIds = new Set(reportData.themes.map((t) => t.id));
+    const selectedIds = new Set(primaryThemeIds.filter((id) => validIds.has(id)));
+    // If all validated IDs are empty, show all themes normally
+    if (selectedIds.size === 0) {
+      return { primaryThemes: reportData.themes, secondaryThemes: [] as ReportTheme[] };
+    }
+    return {
+      primaryThemes: reportData.themes.filter((t) => selectedIds.has(t.id)),
+      secondaryThemes: reportData.themes.filter((t) => !selectedIds.has(t.id)),
+    };
+  }, [reportData.themes, primaryThemeIds]);
 
   // Active POI state with source discriminator (shared between map and sections)
   const [activePOI, setActivePOI] = useState<ActivePOIState | null>(null);
@@ -170,9 +190,9 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
         </div>
       </div>
 
-      {/* Floating theme navigation */}
+      {/* Floating theme navigation — only primary themes */}
       <ReportFloatingNav
-        themes={reportData.themes}
+        themes={primaryThemes}
         activeThemeId={activeThemeId}
         activeSectionId={activeSectionId}
       />
@@ -181,7 +201,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
       <div className="hidden lg:flex">
         {/* Left: Scrollable theme sections */}
         <div className="w-[50%] px-16 min-w-0 overflow-hidden">
-          {reportData.themes.map((theme, i) => (
+          {/* Primary themes */}
+          {primaryThemes.map((theme, i) => (
             <div key={theme.id} ref={revealRef} className="report-section-reveal">
               {i > 0 && <div className="h-px bg-[#e8e4df]" />}
               <ReportThemeSection
@@ -201,6 +222,39 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
               />
             </div>
           ))}
+
+          {/* Secondary themes — demoted from welcome screen */}
+          {secondaryThemes.length > 0 && (
+            <>
+              <div className="py-8">
+                <div className="h-px bg-[#e8e4df]" />
+                <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mt-6 mb-2">
+                  Andre kategorier
+                </p>
+              </div>
+              {secondaryThemes.map((theme, i) => (
+                <div key={theme.id} ref={revealRef} className="report-section-reveal">
+                  {i > 0 && <div className="h-px bg-[#e8e4df]" />}
+                  <ReportThemeSection
+                    theme={theme}
+                    center={reportData.centerCoordinates}
+                    explorerBaseUrl={explorerBaseUrl}
+                    projectName={reportData.projectName}
+                    registerRef={registerSectionRef(theme.id)}
+                    useStickyMap={true}
+                    activePOIId={activePOI?.poiId ?? null}
+                    onPOIClick={handleCardClick}
+                    isExpanded={expandedThemes.has(theme.id)}
+                    onExpand={handleExpand}
+                    registerSubSectionRef={registerSectionRef}
+                    expandedKeys={expandedThemes}
+                    onExpandKey={handleExpand}
+                    variant="secondary"
+                  />
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         {/* Right: Sticky map */}
@@ -225,7 +279,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
       {/* Mobile: Original per-section inline maps */}
       <div className="lg:hidden px-16">
         <div className="grid grid-cols-12 gap-x-6">
-          {reportData.themes.map((theme, i) => (
+          {/* Primary themes */}
+          {primaryThemes.map((theme, i) => (
             <div key={theme.id} ref={revealRef} className="col-span-12 report-section-reveal">
               {i > 0 && <div className="h-px bg-[#e8e4df]" />}
               <ReportThemeSection
@@ -236,6 +291,30 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
               />
             </div>
           ))}
+
+          {/* Secondary themes — demoted from welcome screen */}
+          {secondaryThemes.length > 0 && (
+            <>
+              <div className="col-span-12 py-8">
+                <div className="h-px bg-[#e8e4df]" />
+                <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mt-6 mb-2">
+                  Andre kategorier
+                </p>
+              </div>
+              {secondaryThemes.map((theme, i) => (
+                <div key={theme.id} ref={revealRef} className="col-span-12 report-section-reveal">
+                  {i > 0 && <div className="h-px bg-[#e8e4df]" />}
+                  <ReportThemeSection
+                    theme={theme}
+                    center={reportData.centerCoordinates}
+                    explorerBaseUrl={explorerBaseUrl}
+                    projectName={reportData.projectName}
+                    variant="secondary"
+                  />
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
 

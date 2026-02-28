@@ -14,9 +14,10 @@ interface ProductNavProps {
   projectName: string;
   products: ProductLink[];
   adminEditUrl?: string | null;
+  homeHref?: string;
 }
 
-export default function ProductNav({ projectName, products, adminEditUrl }: ProductNavProps) {
+export default function ProductNav({ projectName, products, adminEditUrl, homeHref }: ProductNavProps) {
   const pathname = usePathname();
   const [copied, setCopied] = useState(false);
 
@@ -63,6 +64,25 @@ export default function ProductNav({ projectName, products, adminEditUrl }: Prod
             <span className="hidden sm:inline">Alle turer</span>
             <span className="sm:hidden">Tilbake</span>
           </Link>
+        ) : homeHref ? (
+          <span className="flex items-center gap-1.5 truncate max-w-[250px] sm:max-w-none">
+            <Link
+              href={homeHref}
+              className="text-sm font-medium text-[#1a1a1a] hover:text-[#7a7062] transition-colors truncate"
+            >
+              {projectName}
+            </Link>
+            {adminEditUrl && (
+              <Link
+                href={adminEditUrl}
+                target="_blank"
+                title="Rediger i admin"
+                className="shrink-0 text-[#1a1a1a] hover:text-[#7a7062] transition-colors"
+              >
+                <Pencil className="w-3 h-3 opacity-40" />
+              </Link>
+            )}
+          </span>
         ) : adminEditUrl ? (
           <Link
             href={adminEditUrl}
@@ -79,24 +99,30 @@ export default function ProductNav({ projectName, products, adminEditUrl }: Prod
           </span>
         )}
 
-        {/* Center: Product pill toggle */}
-        {products.length > 1 && (
-          <nav className="flex items-center bg-[#f0ece7] rounded-full p-0.5">
-            {products.map((product) => (
-              <Link
-                key={product.href}
-                href={product.href}
-                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
-                  pathname === product.href || pathname.startsWith(product.href + "/")
-                    ? "bg-white text-[#1a1a1a] shadow-sm"
-                    : "text-[#7a7062] hover:text-[#1a1a1a]"
-                }`}
-              >
-                {product.label}
-              </Link>
-            ))}
-          </nav>
-        )}
+        {/* Center: Product pill toggle — hidden on welcome screen (root path) */}
+        {products.length > 1 && (() => {
+          const isOnProduct = products.some(
+            (p) => pathname === p.href || pathname.startsWith(p.href + "/")
+          );
+          if (!isOnProduct) return null;
+          return (
+            <nav className="flex items-center bg-[#f0ece7] rounded-full p-0.5 animate-nav-pill-in">
+              {products.map((product) => (
+                <Link
+                  key={product.href}
+                  href={product.href}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
+                    pathname === product.href || pathname.startsWith(product.href + "/")
+                      ? "bg-white text-[#1a1a1a] shadow-sm"
+                      : "text-[#7a7062] hover:text-[#1a1a1a]"
+                  }`}
+                >
+                  {product.label}
+                </Link>
+              ))}
+            </nav>
+          );
+        })()}
 
         {/* Right: Share button */}
         <button

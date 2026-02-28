@@ -44,6 +44,8 @@ interface ReportThemeSectionProps {
   expandedKeys?: Set<string>;
   /** Expand callback for composite key */
   onExpandKey?: (compositeKey: string) => void;
+  /** Visual variant — "secondary" suppresses featured cards and uses smaller header */
+  variant?: "primary" | "secondary";
 }
 
 /** Derive numeric locale string from app locale */
@@ -83,6 +85,7 @@ export default function ReportThemeSection({
   registerSubSectionRef,
   expandedKeys,
   onExpandKey,
+  variant = "primary",
 }: ReportThemeSectionProps) {
   const { locale } = useLocale();
   const Icon = getIcon(theme.icon);
@@ -101,16 +104,21 @@ export default function ReportThemeSection({
       <div className="max-w-4xl">
         {/* Section heading */}
         <div className="flex items-center gap-3 mb-4">
-          <Icon className="w-6 h-6 text-[#7a7062]" />
-          <h2 className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
+          <Icon className={variant === "secondary" ? "w-5 h-5 text-[#a0937d]" : "w-6 h-6 text-[#7a7062]"} />
+          <h2 className={variant === "secondary"
+            ? "text-xl md:text-2xl font-semibold text-[#6a6a6a]"
+            : "text-2xl md:text-3xl font-semibold text-[#1a1a1a]"
+          }>
             {theme.name}
           </h2>
         </div>
 
-        {/* Category quote */}
-        <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed mb-5">
-          {theme.quote}
-        </p>
+        {/* Category quote — hidden for secondary variant */}
+        {variant !== "secondary" && (
+          <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed mb-5">
+            {theme.quote}
+          </p>
+        )}
 
         {/* Stats row */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base text-[#6a6a6a] mb-8">

@@ -1655,7 +1655,6 @@ Gjennomførte dyp research på Voice of Norway / Guide To Go AS med 4 parallelle
 
 Tre selskaper, ~190 eiendommer i Trondheim, null nabolagsinnhold. Samlet potensial: **1,5–3M/år.**
 
-
 ### Oppdatert retning
 - **Næringseiendom er primærsegment** — recurring, ingen Plyo-overlapp, høyere relevans
 - **Boligutvikling er sekundær** — per-prosjekt, Plyo-risiko, men Leangen Bolig viser behovet
@@ -1691,7 +1690,6 @@ Tre selskaper, ~190 eiendommer i Trondheim, null nabolagsinnhold. Samlet potensi
 - Tech audit fanget 7 reelle feil i planen som ville bitt under implementering (manglende filer, feil API-antakelser, scoring-formel som nullet ut institusjonelle POIs). Investering i audit betalte seg.
 - 16-stegs pipeline er ambisiøst. Risikoen er at den første kjøringen avslører problemer med de 3 nye API-ene (NSR, Barnehagefakta, Overpass) som krever real-time debugging.
 - Boligrapport er et *mye* bredere produkt enn hotellrapport — 6 temaer vs 5, 2500m vs 800m, 3 ekstra API-er. Skaleringsutfordringen er at hvert nye boligprosjekt krever god data i suburban strøk der Google Places er tynt.
-
 ---
 
 ## 2026-02-27 — Konkurransevalidering: Brøset har kjøpt Explorer-konseptet
