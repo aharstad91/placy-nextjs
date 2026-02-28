@@ -99,24 +99,30 @@ export default function ProductNav({ projectName, products, adminEditUrl, homeHr
           </span>
         )}
 
-        {/* Center: Product pill toggle */}
-        {products.length > 1 && (
-          <nav className="flex items-center bg-[#f0ece7] rounded-full p-0.5">
-            {products.map((product) => (
-              <Link
-                key={product.href}
-                href={product.href}
-                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
-                  pathname === product.href || pathname.startsWith(product.href + "/")
-                    ? "bg-white text-[#1a1a1a] shadow-sm"
-                    : "text-[#7a7062] hover:text-[#1a1a1a]"
-                }`}
-              >
-                {product.label}
-              </Link>
-            ))}
-          </nav>
-        )}
+        {/* Center: Product pill toggle — hidden on welcome screen (root path) */}
+        {products.length > 1 && (() => {
+          const isOnProduct = products.some(
+            (p) => pathname === p.href || pathname.startsWith(p.href + "/")
+          );
+          if (!isOnProduct) return null;
+          return (
+            <nav className="flex items-center bg-[#f0ece7] rounded-full p-0.5 animate-nav-pill-in">
+              {products.map((product) => (
+                <Link
+                  key={product.href}
+                  href={product.href}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
+                    pathname === product.href || pathname.startsWith(product.href + "/")
+                      ? "bg-white text-[#1a1a1a] shadow-sm"
+                      : "text-[#7a7062] hover:text-[#1a1a1a]"
+                  }`}
+                >
+                  {product.label}
+                </Link>
+              ))}
+            </nav>
+          );
+        })()}
 
         {/* Right: Share button */}
         <button
