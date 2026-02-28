@@ -80,7 +80,7 @@ Bruk bynavn fra geocode-resultatet til å slå opp radius.
 ]
 ```
 
-## Pipeline (13 steg)
+## Pipeline (15 steg)
 
 Utfør stegene i rekkefølge. Hvert steg bruker resultatet fra forrige.
 
@@ -177,6 +177,65 @@ POST http://localhost:3000/api/admin/import
 Import-API-et håndterer Google Places + Entur + Bysykkel parallelt, dedupliserer, og linker POI-er til `project_pois` automatisk.
 
 **Validering:** Hvis færre enn 10 POI-er returneres, vis advarsel og foreslå å prøve med større radius.
+
+### Steg 5a: Kategori-validering (LLM)
+
+Hent alle POI-er som nettopp ble importert:
+```
+GET {SUPABASE_URL}/rest/v1/project_pois?project_id=eq.{containerId}&select=poi_id,pois(id,name,category_id)
+```
+
+For hver batch på 25 POI-er, vurder om navnet er forenlig med kategorien:
+
+**Regler:**
+- Et renholdsfirma er IKKE en restaurant
+- Et byggefirma er IKKE en park
+- Tvetydige navn: vær forsiktig. "Park" KAN være et restaurantnavn
+- Norske merkenavn: "Peppes" = pizzakjede, "Dromedar" = kafé, "Coop" = dagligvare
+- Confidence threshold: 0.85 — kun fjern når du er sikker
+- Hvis du er usikker: BEHOLD POI-en
+
+**Eksempler:**
+- "Brilliance Cleaning" + restaurant → FJERN (renholdsfirma)
+- "Park Café" + restaurant → BEHOLD (café er spisested)
+- "MT Byggteknikk" + park → FJERN (byggebransje)
+- "Transport" + restaurant → BEHOLD (kjent restaurantnavn)
+
+Fjern feilkategoriserte fra project_pois:
+```
+DELETE {SUPABASE_URL}/rest/v1/project_pois?poi_id=eq.{id}&project_id=eq.{containerId}
+```
+
+Logg: "Steg 5a: Fjernet X feilkategoriserte POI-er: [liste]"
+
+**Feilhåndtering:** Hvis dette steget feiler (timeout, API-feil), logg advarselen og fortsett med Steg 5b. Rapporter i QA-sjekken.
+
+### Steg 5b: Duplikat-clustering (LLM)
+
+Hent alle POI-er med koordinater:
+```
+GET {SUPABASE_URL}/rest/v1/project_pois?project_id=eq.{containerId}&select=poi_id,pois(id,name,category_id,lat,lng,google_rating,google_review_count)
+```
+
+Bruk `findNearbyGroups()` fra `lib/generators/poi-quality.ts` til å finne grupper av nærliggende POI-er (< 300m) med samme kategori.
+
+For hver gruppe med 2+ nærliggende POI-er, vurder:
+- Er noen av disse SAMME virksomhet med ulike Google-oppføringer?
+- Behold den med best data (høyest rating × flest reviews)
+- Kjeder med flere lokasjoner er IKKE duplikater
+- Butikker i kjøpesenter er separate
+- Hvis usikker: IKKE marker som duplikat
+
+Fjern duplikater fra DETTE prosjektets POI-koblinger:
+```
+DELETE {SUPABASE_URL}/rest/v1/project_pois?poi_id=eq.{id}&project_id=eq.{containerId}
+```
+
+**VIKTIG:** Slett ALDRI fra `pois`-tabellen — kun fjern koblingen i `project_pois`. Scope: KUN dette prosjektets project_id, ikke andre prosjekter.
+
+Logg: "Steg 5b: Fjernet X duplikater: [liste med 'beholdt A, fjernet B' per gruppe]"
+
+**Feilhåndtering:** Uavhengig av Steg 5a — hvis 5a feilet, kjør 5b likevel. Rapporter i QA-sjekken.
 
 ### Steg 6: Link POI-er til produkter
 
@@ -409,7 +468,12 @@ Verifiser resultatet og vis rapport.
 - Alle themes skal ha bridgeText
 - Vis: `✅ Report-tekster: heroIntro + 5/5 bridgeTexts`
 
-**Sjekk 5: Oversettelser (EN)**
+**Sjekk 5: Kvalitetsfiltrering**
+- Rapporter resultat fra Steg 5 (grovfiltre) og Steg 5a/5b (LLM):
+- Vis: `✅ Kvalitet: X avvist av grovfilter (Y distance, Z name_mismatch), A fjernet av LLM kategori, B duplikater fjernet`
+- Eller: `⚠️ Kvalitet: Steg 5a feilet — LLM kategori-validering ble hoppet over`
+
+**Sjekk 6: Oversettelser (EN)**
 - Hent antall translations med locale="en" for dette prosjektet
 - Sammenlign med forventet antall (POI editorial_hooks + theme bridgeTexts + heroIntro)
 - Vis: `✅ Oversettelser: 43/43 EN translations lagret` eller `⚠️ Oversettelser: 38/43 EN — 5 mangler`
@@ -424,6 +488,7 @@ QA-sjekk:
    - supermarket-rema-1000-2
    - gym-sats-midtbyen
 ✅ Report-tekster: heroIntro + 5/5 bridgeTexts
+✅ Kvalitet: 8 avvist av grovfilter (5 distance, 2 quality, 1 name_mismatch), 2 LLM kategori, 1 duplikat
 ✅ Oversettelser: 43/43 EN translations lagret
 
 Vil du at jeg fikser advarslene?
@@ -447,6 +512,7 @@ Vis en oppsummering med:
 
 ## Referanser
 
+- POI Quality Filters: `lib/generators/poi-quality.ts` — grovfiltre + findNearbyGroups
 - Import API: `app/api/admin/import/route.ts`
 - POI scoring: `lib/utils/poi-score.ts`
 - Slugify: `lib/utils/slugify.ts`

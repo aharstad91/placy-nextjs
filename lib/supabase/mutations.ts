@@ -38,6 +38,10 @@ export interface POIImportData {
   google_website: string | null;
   google_business_status: string | null;
   google_price_level: number | null;
+  source?: string | null;
+  nsr_id?: string | null;
+  barnehagefakta_id?: string | null;
+  osm_id?: string | null;
 }
 
 /**
