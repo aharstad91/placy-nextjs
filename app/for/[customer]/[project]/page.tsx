@@ -77,7 +77,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
     if (products.length === 1) {
       const product = products[0];
       const config = PRODUCT_CONFIG[product.type];
-      redirect(`/${customer}/${projectSlug}/${config.path}`);
+      redirect(`/for/${customer}/${projectSlug}/${config.path}`);
     }
 
     // Show landing page
@@ -107,7 +107,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
                     <Icon className="w-8 h-8 text-[#7a7062] mb-3" />
                     <h2 className="font-semibold text-lg mb-2">
                       <Link
-                        href={`/${customer}/${projectSlug}/${config.path}`}
+                        href={`/for/${customer}/${projectSlug}/${config.path}`}
                         className="after:absolute after:inset-0"
                       >
                         {config.title}

@@ -1691,3 +1691,169 @@ Tre selskaper, ~190 eiendommer i Trondheim, null nabolagsinnhold. Samlet potensi
 - Tech audit fanget 7 reelle feil i planen som ville bitt under implementering (manglende filer, feil API-antakelser, scoring-formel som nullet ut institusjonelle POIs). Investering i audit betalte seg.
 - 16-stegs pipeline er ambisiøst. Risikoen er at den første kjøringen avslører problemer med de 3 nye API-ene (NSR, Barnehagefakta, Overpass) som krever real-time debugging.
 - Boligrapport er et *mye* bredere produkt enn hotellrapport — 6 temaer vs 5, 2500m vs 800m, 3 ekstra API-er. Skaleringsutfordringen er at hvert nye boligprosjekt krever god data i suburban strøk der Google Places er tynt.
+
+---
+
+## 2026-02-27 — Konkurransevalidering: Brøset har kjøpt Explorer-konseptet
+
+### Funn
+
+Oppdaget at [broset.no](https://broset.no/#destinasjonen) har en kartløsning som er funksjonelt identisk med Placy Explorer — bestilt og betalt av fire av Trondheims største utbyggere.
+
+**Utbygger:** Brøset Utvikling AS — eid 25% av Trym Bolig, Heimdal Bolig, Fredensborg Bolig, og Byggteknikk Prosjekt. ~1 735 boliger, 300 000 m², Trondheims største boligutvikling.
+
+**Nettside laget av:** [Headspin](https://www.headspin.no/) — kommunikasjonsbyrå i Trondheim, 30 ansatte, WordPress-byrå. Kontaktperson web: Andreas Wivestad.
+
+**Kartløsningen:** Google Maps satellitt med 17 POI-markører. Popup-kort per POI med navn, beskrivelse, bilde, og fire reisetids-badges (buss/bil/sykkel/gange). Statisk data, ingen filtrering, ingen kategorier. Bygd som custom WordPress-modul.
+
+**Estimert kostnad kartløsning:** 50–90 000 kr (40–60 timer × 1 200–1 500 kr/t). Hele nettsiden: 350–550 000 kr.
+
+### Placy vs. Brøset — head-to-head
+
+| | Brøset (Headspin) | Placy Explorer |
+|---|---|---|
+| Reisetider | Hardkodet, statisk | Live via Mapbox Directions/Matrix |
+| Time budget-filter | Nei | 5/10/15 min med visuell dimming |
+| Kategorisering | Ingen | Tematisk med ikoner |
+| Kuratert innhold | Én setning per POI | Editorial hooks, local insights |
+| Skalerbarhet | Custom one-off | Generisk for alle prosjekter |
+| Vedlikehold | Manuelt per POI | Database-drevet |
+| Ekstra produkter | Nei | Guide + Report |
+
+### Strategisk betydning
+
+- **Markedsvalidering:** Fire store utbyggere har gått til et byrå og *betalt* for nøyaktig denne funksjonaliteten. Behovet er reelt og betalingsviljen dokumentert.
+- **Prisanker:** 50–90k for en statisk engangsløsning. Placy kan levere mer for samme eller lavere pris — og skalere på tvers av prosjekter.
+- **Salgsingangen:** Brøset er et fellesprosjekt mellom Trym, Heimdal, Fredensborg og Byggteknikk. Alle fire er potensielle Placy-kunder — og de har allerede bevist at de verdsetter konseptet.
+- **"10-minuttersbyen":** Brøset bruker dette som bærende konsept. Vår time budget-funksjon (5/10/15 min) er den interaktive versjonen av nøyaktig dette.
+
+### Salgsvinkel — "Hva betalte dere for kartet?"
+
+Konkret pitch-tilnærming: Gå inn i møte med en av de fire utbyggerne og si:
+
+> "Vi ser at dere har en kartløsning på broset.no som viser nærområdet med reisetider. Det er nøyaktig det vi gjør — men dynamisk, interaktivt, og skalerbart. Kan jeg spørre hva dere betalte for den? For vi kan levere dette på samtlige prosjekter til en hyggelig pris."
+
+Dette er en sterk åpner fordi:
+1. Det viser at du kjenner dem og har gjort research
+2. Det anerkjenner at de allerede har validert behovet
+3. Prisspørsmålet avslører hva de har betalt — og setter ankeret for vår prising
+4. "Samtlige prosjekter" viser skaleringsverdien vs. one-off byrå-jobb
+
+### Retning
+- Brøset-casen bør inn i pitch-deck som konkret markedsvalidering
+- Trym, Heimdal, Fredensborg, Byggteknikk — fire nye prospekter i tillegg til KLP/Koteng/EC Dahls
+- Vurdere å bygge en quick Brøset-demo i Explorer som "slik kunne det sett ut"
+
+---
+
+## 2026-02-27 (sesjon 2) — POI Quality Pipeline for Bolig
+
+### Beslutninger
+- **Hybrid kvalitetspipeline:** Grovfiltre (TypeScript, import-tid) + Finfiltre (LLM, Claude Code command-steg). Grovfiltrene fanger de billige casene, LLM tar de som krever resonnering.
+- **Fire grovfiltre i billigste-først rekkefølge:** business_status → distance → quality → name_mismatch. Pipeline stopper ved første treff — sparrer unødvendig prosessering.
+- **Per-kategori gangavstandstak:** Restaurant 15 min, bus 10 min, hospital 45 min. Konstant: 80m/min. Differensiert fordi folk kjører til kjøpesenter men går til bakeri.
+- **Word-boundary name matching med single-word exemption:** "Transport Service AS" avvises som restaurant, men "Transport" (kjent Oslo-restaurant) slipper gjennom. Single-word navn er for tvetydige for regelbasert filter — overlates til LLM.
+- **LLM-filtre som Claude Code command-steg, ikke SDK:** Prosjektet har ingen `@anthropic-ai/sdk`-avhengighet. All LLM-reasoning følger editorial hooks-mønsteret: Claude Code leser, vurderer, oppdaterer via Supabase REST.
+- **Steg 5a og 5b er uavhengige:** Feil i kategori-validering blokkerer ikke duplikat-clustering. Robusthet gjennom isolasjon.
+- **Slett aldri fra `pois`-tabellen:** Kvalitetsfiltre fjerner kun koblinger (`project_pois`/`product_pois`). POI-er deles på tvers av prosjekter.
+
+### Levert (feat/poi-quality-pipeline)
+- `lib/generators/poi-quality.ts` — 6 funksjoner, 5 konfigurasjonstabeller, komplett typesystem
+- `lib/generators/poi-quality.test.ts` — 50 tester med Overvik regression-data
+- Integrert i `poi-discovery.ts` for Google, Entur, og Bysykkel
+- Steg 5a + 5b lagt til i `generate-hotel.md` pipeline (13 → 15 steg)
+- Compound-dokumentasjon: `docs/solutions/feature-implementations/poi-quality-pipeline-bolig-20260227.md`
+
+### Parkert / Åpne spørsmål
+- ~~Hotel-kategori misklassifisering~~ → Grovfiltrene + Steg 5a løser dette systematisk
+- **Overvik-demoen:** Bør regenerere med kvalitetsfiltrene og verifisere visuelt at resultatet er salgbart
+- **generate-bolig.md:** Eksisterer ikke ennå — generate-hotel.md med bolig-profil er neste steg. Kvalitetsfiltrene er klare, men bolig-spesifikke kategorier (skole, barnehage, lekeplass, idrett, badeplass) må inn i discovery + kategorimapping
+- **Safety valve:** Plan nevner "minimum 2 POI-er per kategori" safety valve som siste resort. Ikke implementert — venter på erfaring med faktiske bolig-generering
+
+### Retning
+- **Kvalitetsinfrastrukturen er på plass.** Neste steg er å faktisk generere en bolig-demo (Overvik eller annet) og verifisere at output er salgbart.
+- **Brøset-casen er den ultimate testen:** Kan vi generere en Explorer for Brøset som slår broset.no sin statiske kartløsning? Med kvalitetsfiltrene bør svaret være ja.
+- **Salgspipelinen venter på demoer:** Trym, Heimdal, Fredensborg, Byggteknikk, KLP, Koteng, EC Dahls — alle trenger en overbevisende demo. Kvalitetsfiltrene var blokkeren.
+
+### Observasjoner
+- **Tech audit fant reelle designfeil:** LLM-filtre var opprinnelig planlagt som Anthropic SDK-kall. Audit avdekket at prosjektet har null SDK-avhengighet — alt LLM-arbeid følger editorial hooks-mønsteret. Ville blitt en arkitekturfeil.
+- **Brainstorm → Plan → Deepen → Audit → Work-pipelinen ga solid resultat.** Deepening grunnla planen med best practices, audit korrigerte 12 designfeil, og work-fasen hadde kun 1 failing test (word-boundary edge case) som var raskt fikset.
+- **50 tester med ekte Overvik-data er verdifullt.** Brilliance Cleaning, Crispy Fried Chicken, Oasen Yoga, H2 Frisør — alle er regression-tester. Neste gang noen endrer filtrene, brekker testene hvis de utelater reelle cases.
+- **Prosjektet skifter gir:** Fra "bygg produkt" til "selg produkt". Kvalitetsfiltrene var den siste tekniske blokkeren for salgbare bolig-demoer. Nå er det pipeline, demo, pitch.
+
+---
+
+## 2026-02-27 (sesjon 3) — Generate Bolig Infrastructure (PR #52)
+
+### Beslutninger
+- **Gjenbruk av eksisterende plan (2026-02-18):** Planen fra 18. februar var allerede brainstormet, planlagt, deepened, og tech-audited. Delta-audit bekreftet at alle filer fortsatt eksisterer og at infrastrukturen er klar for implementering. Spart ~45 min planlegging.
+- **7 radius-steder, ikke 6:** Delta-audit avdekket at `app/api/admin/projects/[id]/route.ts` linje 16 også hadde `.max(2000)` — dette manglet i den originale planen. Oppdaterte planen.
+- **barnefamilier theme:** Ny theme med skole, barnehage, lekeplass, idrett. Farve #f59e0b (amber). badeplass lagt til kultur-opplevelser.
+- **External ID dedup-mønster:** `nsr_id`, `barnehagefakta_id`, `osm_id` med partial unique indexes. Upsert via external ID, ikke navn-basert dedup.
+- **generate-bolig.md som lokal command:** Gitignored (`.claude/*`), men dokumentert i compound. 16-stegs pipeline med NSR/Barnehagefakta/Overpass API-steg.
+
+### Levert (PR #52, merget)
+- `supabase/migrations/042_bolig_categories.sql` — 3 nye kategorier + source tracking + external ID-kolonner
+- Max radius 2000→3000 i 7 steder, 6 filer (Zod + UI-sliders)
+- barnefamilier theme + explorer-cap + badeplass i kultur-opplevelser
+- DiscoveredPOI.source utvidet med nsr/barnehagefakta/osm
+- determineSource(), DbPoi, POIImportData oppdatert
+- queries.ts mapping oppdatert (Record<string, unknown>-pattern)
+- `.claude/commands/generate-bolig.md` — 16-stegs bolig-pipeline (lokal)
+- Compound: `docs/solutions/feature-implementations/generate-bolig-infrastructure-20260227.md`
+
+### Parkert / Åpne spørsmål
+- **Selve Brøset-demoen er ikke generert ennå.** Infrastrukturen er på plass, men `/generate-bolig "Brøset" "Brøsetvegen 176, Trondheim"` er ikke kjørt. Dette er det faktiske salgsverktøyet.
+- **NSR/Barnehagefakta/Overpass API-er er ikke testet live.** Steg 5.5-5.7 i generate-bolig.md bruker disse API-ene — første kjøring vil avdekke eventuelle endringer i API-format eller autentisering.
+- **Safety valve (minimum 2 POI-er per kategori):** Fortsatt ikke implementert — venter på erfaring med faktisk bolig-generering.
+- **Overvik bør regenereres:** Med både kvalitetsfiltre (PR #51) og bolig-infrastruktur (PR #52) bør Overvik-demoen regenereres for å verifisere at output er salgbart.
+
+### Retning
+- **Neste steg er å kjøre `/generate-bolig` for Brøset.** Alt infrastruktur er klart. Kommandoen eksisterer. Det som mangler er å faktisk generere demoen og verifisere visuelt.
+- **Etter Brøset: salgsmøter.** Trym, Heimdal, Fredensborg, Byggteknikk — alle har betalt 50-90k for broset.no sin statiske kartløsning. En dynamisk Explorer-demo bør vinne dem over.
+- **Retningen er riktig.** To sesjoner i dag: kvalitetsfiltre (PR #51) + bolig-infrastruktur (PR #52). Begge var blokkere for salgbare demoer. Nå gjenstår kun generering og pitch.
+
+### Observasjoner
+- **Delta-audit av gammel plan fungerte godt.** I stedet for å re-planlegge fra scratch, kjørte vi en Explore-agent for å verifisere at planen fortsatt var gyldig. Fant den 7. radius-lokasjonen som ville blitt en bug.
+- **3 sesjoner i dag, alle produktive.** Sesjon 1: POI quality pipeline (50 tester, 6 filtre). Sesjon 2: Project log. Sesjon 3: Bolig-infrastruktur (14 filer, 1 migrasjon). God flyt.
+- **generate-bolig.md er gitignored — dette er en bevisst trade-off.** Kommandoen er lokal fordi den inneholder spesifikke API-kall og prosedyrer som ikke bør deles. Men det betyr at den forsvinner med worktree-rydding. Compound-doc kompenserer.
+
+---
+
+## 2026-02-28 — Brøset Demo Generert + generate-bolig Rewrite
+
+### Beslutninger
+- **Brøset-demoen er generert og visuelt verifisert.** Hele 18-stegs pipelinen kjørt: geocoding → kunde → prosjekt → Google Places → NSR skoler → Barnehagefakta → Overpass idrett → linkede lekeplasser → kvalitetsfiltrering → editorial hooks → translations → visual QA. Resultatet er salgbart.
+- **generate-bolig.md fullstendig omskrevet (477→833 linjer, 16→18 steg).** Basert på alt som ble lært under Brøset-genereringen. Kommandoen er nå selvstående — ingen "identisk med generate-hotel"-referanser igjen.
+- **Multi-pass kvalitetspipeline som eksplisitt arkitektur:** Import-grovfiltre → LLM-review (suburban-spesifikke kriterier) → duplikat-clustering → featured re-marking → categories refresh. Rekkefølgen er ufravikelig — featured ETTER filtrering.
+- **10 gotchas dokumentert fra faktiske feil:** heroIntro DB constraint, theme translation scoping, NSR manglende felt, Barnehagefakta null IDs, featured som forsvinner — alt fanget i kommandoen.
+- **Studentrelaterte POI-er fjernet som egen kategori:** I universitetsbyer (Trondheim) er studentbarer/-kantiner irrelevante for boligkjøpere. Lagt inn som eksplisitt filterkriterium.
+- **Internasjonal fast food fjernet for premium-følelse:** Burger King, Subway etc. senker inntrykket. Lokale kjeder (Peppes, Egon) beholdes — de ER nabolaget.
+
+### Levert
+- Brøset-demo: `http://localhost:3000/broset-utvikling-as/broset/explore` + `/report`
+- ~111 POI-er etter kvalitetsfiltrering (fra ~200 rå)
+- 33 featured POI-er, alle med editorial hooks (NO+EN)
+- 6/6 temaer med bridgeText (NO+EN)
+- `.claude/commands/generate-bolig.md` — 833 linjer, 18 steg, 10 gotchas
+- `docs/solutions/feature-implementations/generate-bolig-quality-pipeline-rewrite-20260228.md`
+
+### Parkert / Åpne spørsmål
+- ~~Selve Brøset-demoen er ikke generert ennå~~ → Generert og verifisert
+- ~~NSR/Barnehagefakta/Overpass API-er er ikke testet live~~ → Testet, gotchas fanget
+- **Theme translation scoping er global:** entity_id "hverdagsliv" deles på tvers av prosjekter. Neste boligprosjekt overskriver Brøsets engelske bridgeTexts. Akseptabelt nå, men trenger løsning ved 2+ samtidige boligprosjekter.
+- **heroIntro kun norsk:** DB check constraint tillater ikke entity_type "product" i translations. Akseptabelt fordi kjøperen er norsk, men bør vurderes om engelskspråklige markeder blir aktuelle.
+- **Overvik bør regenereres** med den nye kommandoen for å sammenligne kvalitet.
+- **Deploy til Vercel:** Brøset-demoen lever kun lokalt. Må deployes for salgsmøter.
+
+### Retning
+- **Demoen er klar. Neste steg er salg.** Trym, Heimdal, Fredensborg, Byggteknikk — alle har betalt 50-90k for broset.no. En dynamisk Explorer + Report-demo bør overbevise.
+- **generate-bolig er nå på nivå med generate-hotel.** Begge kommandoene produserer salgbare resultater uten manuell opprydding. Bolig-versjonen er mer detaljert fordi forstadsdata krever hardere kvalitetsfiltrering.
+- **Produktet skifter fra "bygg" til "selg".** Infrastruktur (PR #51, #52) + demo (Brøset) + kvalitetskommando (rewrite) = salgsklar. Neste fase er pitch-deck, møtebooking, og prising.
+
+### Observasjoner
+- **Første kjøring avdekker alltid gotchas.** 10 av 10 gotchas i den nye kommandoen ble oppdaget under Brøset-genereringen, ikke under planlegging. Planer er hypoteser — kjøring er validering.
+- **"Identisk med X" er en antipattern i kommandoer.** Den originale kommandoen sa "identisk med generate-hotel" for 4 steg. Under kjøring viste det seg at bolig-konteksten krever helt andre regler. Eksplisitt > referanse.
+- **Editorial hooks med WebSearch gir genuint god kvalitet.** Tier 3-hooks med faktisk research (etableringsår, spesialiteter, nabolagskontekst) løfter demoen fra "generert" til "kuratert". Dette er Placys differensiator vs. statiske kartløsninger.
+- **Kvalitetsfiltrering er viktigere for forstadsdata enn for bykjerner.** Byhoteller med 800m radius og minRating 3.5 filtrerer naturlig. Bolig med 2500m radius og minRating 0 slipper gjennom alt — dermed trenger du LLM-pass for å luke ut støy.
+- **Kommando-som-institusjonell-hukommelse fungerer.** 833 linjer med eksplisitte regler, gotchas, og eksempler = neste generering kan kjøre uten å gjenta de samme feilene. Compound-effekten er reell.
