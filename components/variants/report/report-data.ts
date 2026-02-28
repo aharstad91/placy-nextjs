@@ -6,6 +6,7 @@ import {
   type CategoryScore,
 } from "@/lib/utils/category-score";
 import { calculateReportScore, NULL_TIER_VALUE } from "@/lib/utils/poi-score";
+import { getSchoolZone } from "@/lib/utils/school-zones";
 
 /** Haversine distance in meters between two coordinates */
 function haversineMeters(a: Coordinates, b: Coordinates): number {
@@ -115,6 +116,37 @@ const CATEGORY_DISPLAY_MODE: Record<string, ThemeDisplayMode> = {
   "transport": "functional",
 };
 
+// ---------- Per-category filtering rules ----------
+
+interface CategoryFilterRule {
+  /** Max total POIs to include (before split). Rest are discarded, not hidden. */
+  maxCount?: number;
+  /** How many to show initially (rest go behind "Hent flere"). Overrides INITIAL_VISIBLE_COUNT. */
+  initialVisibleCount?: number;
+  /** Special filter: "school-zone" uses skolekrets lookup to keep only zone-matching schools. */
+  filter?: "school-zone";
+}
+
+/**
+ * Per-category rules for how many POIs to show in the report.
+ * Categories not listed here use the global INITIAL_VISIBLE_COUNT with no max cap.
+ */
+const CATEGORY_FILTER_RULES: Record<string, CategoryFilterRule> = {
+  bus:      { maxCount: 5, initialVisibleCount: 5 },
+  tram:     { maxCount: 5, initialVisibleCount: 5 },
+  bike:     { maxCount: 5, initialVisibleCount: 5 },
+  skole:    { filter: "school-zone" },
+  barnehage: { initialVisibleCount: 6 },
+  idrett:   { maxCount: 3, initialVisibleCount: 3 },
+  lekeplass: { initialVisibleCount: 5 },
+};
+
+/**
+ * Higher education categories are NOT filtered by school zone — we show nearest N.
+ * These are shown alongside zone-matched schools in the "skole" sub-section.
+ */
+const HIGHER_ED_KEYWORDS = ["vgs", "videregående", "ntnu", "høgskole", "høyskole", "universitet"];
+
 // --- Shared helpers (used by both buildSubSections and transformToReportData) ---
 
 /** Sort comparator: highest formula score first (rating × log2(1 + reviews)) */
@@ -159,14 +191,84 @@ function computePOIStats(pois: POI[]) {
   };
 }
 
-/** Split POIs into listPOIs (visible) and hiddenPOIs (behind "Vis meg mer") */
-function splitVisibleHidden(pois: POI[], highlights: POI[]) {
+/** Split POIs into listPOIs (visible) and hiddenPOIs (behind "Hent flere") */
+function splitVisibleHidden(pois: POI[], highlights: POI[], visibleCount = INITIAL_VISIBLE_COUNT) {
   const highlightIds = new Set(highlights.map((p) => p.id));
   const rest = pois.filter((p) => !highlightIds.has(p.id));
   return {
-    listPOIs: rest.slice(0, INITIAL_VISIBLE_COUNT),
-    hiddenPOIs: rest.slice(INITIAL_VISIBLE_COUNT),
+    listPOIs: rest.slice(0, visibleCount),
+    hiddenPOIs: rest.slice(visibleCount),
   };
+}
+
+// ---------- Category-level filtering ----------
+
+/**
+ * Apply per-category filter rules to a set of POIs (already sorted by distance).
+ * For "school-zone" filter: keep only schools in the project's skolekrets + higher ed.
+ * For maxCount: keep only the N nearest.
+ */
+export function applyCategoryFilter(
+  categoryId: string,
+  pois: POI[],
+  center: Coordinates,
+): POI[] {
+  const rule = CATEGORY_FILTER_RULES[categoryId];
+  if (!rule) return pois;
+
+  let filtered = pois;
+
+  // School zone filter: keep matching zone schools + higher ed
+  if (rule.filter === "school-zone") {
+    const zone = getSchoolZone(center.lat, center.lng);
+    filtered = pois.filter((poi) => {
+      const name = poi.name.toLowerCase();
+      // Always keep higher education (VGS, NTNU, etc.)
+      if (HIGHER_ED_KEYWORDS.some((kw) => name.includes(kw))) return true;
+      // Keep if school name matches the zone's barneskole or ungdomsskole
+      if (zone.barneskole && name.includes(zone.barneskole.toLowerCase())) return true;
+      if (zone.ungdomsskole && name.includes(zone.ungdomsskole.toLowerCase())) return true;
+      return false;
+    });
+  }
+
+  // Max count cap: keep only the N nearest (already sorted by distance)
+  if (rule.maxCount != null) {
+    filtered = filtered.slice(0, rule.maxCount);
+  }
+
+  return filtered;
+}
+
+/** Get the initialVisibleCount for a category, falling back to the global default */
+function getInitialVisibleCount(categoryId: string): number {
+  return CATEGORY_FILTER_RULES[categoryId]?.initialVisibleCount ?? INITIAL_VISIBLE_COUNT;
+}
+
+/**
+ * Apply per-category filters across all POIs in a theme.
+ * Groups by category, applies each category's filter rules, then reassembles
+ * in the original distance-sorted order.
+ */
+function applyThemeCategoryFilters(sortedPOIs: POI[], center: Coordinates): POI[] {
+  // Group by category while preserving order
+  const byCat = new Map<string, POI[]>();
+  for (const poi of sortedPOIs) {
+    const catId = poi.category.id;
+    const arr = byCat.get(catId);
+    if (arr) arr.push(poi);
+    else byCat.set(catId, [poi]);
+  }
+
+  // Apply filter to each category group
+  const allowedIds = new Set<string>();
+  byCat.forEach((pois, catId) => {
+    const filtered = applyCategoryFilter(catId, pois, center);
+    for (const poi of filtered) allowedIds.add(poi.id);
+  });
+
+  // Return in original order, keeping only allowed POIs
+  return sortedPOIs.filter((p) => allowedIds.has(p.id));
 }
 
 /**
@@ -177,6 +279,7 @@ function buildSubSections(
   themePOIs: POI[],
   parentDisplayMode: ThemeDisplayMode,
   projectId: string,
+  center: Coordinates,
   categoryDescriptions?: Record<string, string>,
 ): ReportSubSection[] {
   // Group by category
@@ -203,10 +306,13 @@ function buildSubSections(
 
   return allCats.map(([catId, catPOIs]) => {
     const sample = catPOIs[0].category;
+    // Apply per-category filtering (school-zone, maxCount) before sorting/splitting
+    const filteredPOIs = applyCategoryFilter(catId, catPOIs, center);
     // Sort by tier then formula score so highlights and visible list show best POIs
-    const sortedCatPOIs = [...catPOIs].sort(byTierThenScore);
+    const sortedCatPOIs = [...filteredPOIs].sort(byTierThenScore);
     const highlights = pickHighlights(sortedCatPOIs, parentDisplayMode);
-    const { listPOIs, hiddenPOIs } = splitVisibleHidden(sortedCatPOIs, highlights);
+    const visibleCount = getInitialVisibleCount(catId);
+    const { listPOIs, hiddenPOIs } = splitVisibleHidden(sortedCatPOIs, highlights, visibleCount);
     const stats = computePOIStats(sortedCatPOIs);
 
     const subScore = calculateCategoryScore({
@@ -229,7 +335,7 @@ function buildSubSections(
       icon: sample.icon,
       color: sample.color,
       stats: {
-        totalPOIs: catPOIs.length,
+        totalPOIs: sortedCatPOIs.length,
         ratedPOIs: stats.ratedCount,
         avgRating: stats.avgRating,
         totalReviews: stats.totalReviews,
@@ -277,48 +383,50 @@ export function transformToReportData(project: Project): ReportData {
   const themes: ReportTheme[] = [];
   const themeDefinitions = getReportThemes(project);
 
+  const center = project.centerCoordinates;
+
   for (const themeDef of themeDefinitions) {
     const cats = new Set(themeDef.categories);
     const themePOIs = allPOIs.filter((p) => cats.has(p.category.id));
 
     if (themePOIs.length < THEME_MIN_POIS) continue;
 
-    const center = project.centerCoordinates;
-
     // Sort by distance to project center (closest first)
-    const sorted = [...themePOIs].sort((a, b) => {
-      // Prefer walk time when both have it
+    const distanceSorted = [...themePOIs].sort((a, b) => {
       const aWalk = a.travelTime?.walk;
       const bWalk = b.travelTime?.walk;
       if (aWalk != null && bWalk != null) return aWalk - bWalk;
-      // Fall back to haversine
       return (
         haversineMeters(center, a.coordinates) -
         haversineMeters(center, b.coordinates)
       );
     });
 
+    // Apply per-category filtering (school-zone, maxCount) to each category group,
+    // then reassemble the theme's POI list preserving distance order.
+    const filtered = applyThemeCategoryFilters(distanceSorted, center);
+
     // Split into highlight POIs (featured/top-rated) and the rest
     const displayMode = (CATEGORY_DISPLAY_MODE[themeDef.id] ?? "editorial") as ThemeDisplayMode;
-    const highlightPOIs = pickHighlights(sorted, displayMode);
-    const { listPOIs, hiddenPOIs } = splitVisibleHidden(sorted, highlightPOIs);
-    const themeStats = computePOIStats(sorted);
+    const highlightPOIs = pickHighlights(filtered, displayMode);
 
-    // Count unique categories within theme
-    const uniqueCategories = new Set(sorted.map((p) => p.category.id)).size;
+    // For theme-level split, use the smallest per-category initialVisibleCount
+    // or the global default if no categories have custom rules
+    const { listPOIs, hiddenPOIs } = splitVisibleHidden(filtered, highlightPOIs);
+    const themeStats = computePOIStats(filtered);
+
+    const uniqueCategories = new Set(filtered.map((p) => p.category.id)).size;
 
     const richnessScore =
-      themeStats.ratedCount * 2 + themeStats.editorialCount * 3 + sorted.length;
+      themeStats.ratedCount * 2 + themeStats.editorialCount * 3 + filtered.length;
 
-    // Calculate category score
     const score = calculateCategoryScore({
-      totalPOIs: sorted.length,
+      totalPOIs: filtered.length,
       avgRating: themeStats.avgRating,
       avgWalkTimeMinutes: null,
       uniqueCategories,
     });
 
-    // Generate quote based on score and variety
     const quote = generateCategoryQuote(
       themeDef.id,
       score.total,
@@ -326,8 +434,8 @@ export function transformToReportData(project: Project): ReportData {
       project.id
     );
 
-    // Build sub-sections for categories exceeding threshold
-    const subSections = buildSubSections(sorted, displayMode, project.id, themeDef.categoryDescriptions);
+    // Build sub-sections with per-category filtering
+    const subSections = buildSubSections(filtered, displayMode, project.id, center, themeDef.categoryDescriptions);
 
     themes.push({
       id: themeDef.id,
@@ -336,7 +444,7 @@ export function transformToReportData(project: Project): ReportData {
       intro: themeDef.intro,
       bridgeText: themeDef.bridgeText,
       stats: {
-        totalPOIs: sorted.length,
+        totalPOIs: filtered.length,
         ratedPOIs: themeStats.ratedCount,
         avgRating: themeStats.avgRating,
         totalReviews: themeStats.totalReviews,
@@ -345,7 +453,7 @@ export function transformToReportData(project: Project): ReportData {
       },
       highlightPOIs,
       listPOIs,
-      allPOIs: sorted,
+      allPOIs: filtered,
       hiddenPOIs,
       displayMode,
       richnessScore,
