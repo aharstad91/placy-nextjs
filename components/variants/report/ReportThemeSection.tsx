@@ -50,29 +50,30 @@ function getNumericLocale(locale: string): string {
 
 const LOAD_MORE_BATCH = 6;
 
-/** Progressive load-more: 6 → 12 → all */
+/** Two-step load-more: first click → +6, second click → all remaining */
 function useProgressiveLoad(hiddenCount: number, isExpanded: boolean, onExpand: () => void) {
   const [revealedCount, setRevealedCount] = useState(isExpanded ? hiddenCount : 0);
   const [isLoading, setIsLoading] = useState(false);
 
   const allRevealed = revealedCount >= hiddenCount || isExpanded;
+  const hasLoadedOnce = revealedCount > 0;
 
   const handleLoadMore = useCallback(() => {
     setIsLoading(true);
     setTimeout(() => {
       setRevealedCount((prev) => {
-        const next = prev + LOAD_MORE_BATCH;
-        // If this batch reveals all or nearly all, just show everything
+        // First click: load one batch. Second click: load everything.
+        const next = prev === 0 ? Math.min(LOAD_MORE_BATCH, hiddenCount) : hiddenCount;
         if (next >= hiddenCount) {
           setTimeout(() => onExpand(), 1000);
         }
-        return Math.min(next, hiddenCount);
+        return next;
       });
       setIsLoading(false);
     }, 800);
   }, [hiddenCount, onExpand]);
 
-  return { revealedCount, isLoading, allRevealed, handleLoadMore } as const;
+  return { revealedCount, isLoading, allRevealed, hasLoadedOnce, handleLoadMore } as const;
 }
 
 export default function ReportThemeSection({
@@ -310,7 +311,7 @@ function FlatThemeContent({
 }) {
   const { locale } = useLocale();
   const hasHidden = theme.hiddenPOIs.length > 0;
-  const { revealedCount, isLoading, allRevealed, handleLoadMore } = useProgressiveLoad(
+  const { revealedCount, isLoading, allRevealed, hasLoadedOnce, handleLoadMore } = useProgressiveLoad(
     theme.hiddenPOIs.length, isExpanded, onExpand
   );
 
@@ -334,6 +335,8 @@ function FlatThemeContent({
           isLoading={isLoading}
           locale={locale}
           hiddenCount={remainingCount}
+          sectionName={theme.name}
+          showAll={hasLoadedOnce}
         />
       )}
     </div>
@@ -364,7 +367,7 @@ function SubSectionContent({
 }) {
   const Icon = getIcon(sub.icon);
   const hasHidden = sub.hiddenPOIs.length > 0;
-  const { revealedCount, isLoading, allRevealed, handleLoadMore } = useProgressiveLoad(
+  const { revealedCount, isLoading, allRevealed, hasLoadedOnce, handleLoadMore } = useProgressiveLoad(
     sub.hiddenPOIs.length, isExpanded, onExpand
   );
 
@@ -445,6 +448,8 @@ function SubSectionContent({
           isLoading={isLoading}
           locale={locale}
           hiddenCount={remainingCount}
+          sectionName={sub.name}
+          showAll={hasLoadedOnce}
         />
       )}
     </div>
@@ -476,24 +481,31 @@ function POICardGrid({
   );
 }
 
-/** Button that morphs: "Hent flere punkter" → spinner + "Henter flere punkter..." */
+/** Button: "Hent flere barnehage (+6)" → "Hent alle barnehage (13)" */
 function LoadMoreButton({
   onClick,
   isLoading,
   locale,
   hiddenCount,
+  sectionName,
+  showAll,
 }: {
   onClick: () => void;
   isLoading: boolean;
   locale: string;
   hiddenCount: number;
+  sectionName: string;
+  /** When true, button says "load all" instead of "load more (+batch)" */
+  showAll: boolean;
 }) {
-  const idleText =
-    locale === "en"
-      ? `Load more places (${hiddenCount})`
-      : `Hent flere punkter (${hiddenCount})`;
+  const name = sectionName.toLowerCase();
+  const batchCount = Math.min(LOAD_MORE_BATCH, hiddenCount);
+
+  const idleText = showAll
+    ? (locale === "en" ? `Load all ${name} (${hiddenCount})` : `Hent alle ${name} (${hiddenCount})`)
+    : (locale === "en" ? `Load more ${name} (+${batchCount})` : `Hent flere ${name} (+${batchCount})`);
   const loadingText =
-    locale === "en" ? "Loading more places..." : "Henter flere punkter...";
+    locale === "en" ? "Loading..." : "Henter...";
 
   return (
     <div className="flex justify-center pt-2">
