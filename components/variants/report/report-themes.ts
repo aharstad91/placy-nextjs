@@ -1,6 +1,6 @@
 import type { Project } from "@/lib/types";
 import type { ThemeDefinition } from "@/lib/themes";
-import { DEFAULT_THEMES, getBransjeprofil } from "@/lib/themes";
+import { getBransjeprofil } from "@/lib/themes";
 
 /**
  * Report-specific theme config extends the shared ThemeDefinition
@@ -11,14 +11,6 @@ export interface ReportThemeDefinition extends ThemeDefinition {
   bridgeText?: string;
   categoryDescriptions?: Record<string, string>;
 }
-
-/**
- * Default report themes — derived from the shared DEFAULT_THEMES.
- * Report may add intro/bridgeText per theme via reportConfig.
- */
-export const REPORT_THEMES: ReportThemeDefinition[] = DEFAULT_THEMES.map(
-  (theme) => ({ ...theme })
-);
 
 /**
  * Get report themes with override priority:
