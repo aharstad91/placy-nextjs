@@ -5,6 +5,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* White-label defaults — overridden per-project via inline <style> */
+  --placy-primary: #3b82f6;
+  --placy-bg: #ffffff;
+  --placy-font: system-ui;
 }
 
 body {

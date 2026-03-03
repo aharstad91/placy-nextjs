@@ -54,8 +54,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
   );
 
   const reportData = useMemo(
-    () => transformToReportData(effectiveProject),
-    [effectiveProject]
+    () => transformToReportData(effectiveProject, locale),
+    [effectiveProject, locale]
   );
 
   // Split themes into primary (selected on welcome) and secondary (deselected)
@@ -182,9 +182,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
         <div className="grid grid-cols-12 gap-x-6">
           <ReportHero
             projectName={reportData.projectName}
-            metrics={reportData.heroMetrics}
             themes={reportData.themes}
-            label={reportData.label}
             heroIntro={reportData.heroIntro}
           />
         </div>

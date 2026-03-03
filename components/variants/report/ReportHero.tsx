@@ -1,207 +1,55 @@
 "use client";
 
-import type { ReportHeroMetrics, ReportTheme } from "./report-data";
-import { useLocale } from "@/lib/i18n/locale-context";
-import { t } from "@/lib/i18n/strings";
+import type { ReportTheme } from "./report-data";
 import ReportLocaleToggle from "./ReportLocaleToggle";
-import {
-  UtensilsCrossed,
-  Bus,
-  ShoppingCart,
-  Dumbbell,
-  Landmark,
-  TreePine,
-  ShoppingBag,
-  Wine,
-  Mountain,
-  Building2,
-  Star,
-  type LucideIcon,
-} from "lucide-react";
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  UtensilsCrossed,
-  Bus,
-  ShoppingCart,
-  Dumbbell,
-  Landmark,
-  TreePine,
-  ShoppingBag,
-  Wine,
-  Mountain,
-  Building2,
-};
+import ThemeChip from "@/components/shared/ThemeChip";
 
 interface ReportHeroProps {
   projectName: string;
-  metrics: ReportHeroMetrics;
   themes: ReportTheme[];
-  label?: string;
   heroIntro?: string;
 }
 
-export default function ReportHero({ projectName, metrics, themes, label, heroIntro }: ReportHeroProps) {
-  const { locale } = useLocale();
-
+export default function ReportHero({ projectName, themes, heroIntro }: ReportHeroProps) {
   const handleThemeClick = (themeId: string) => {
-    const el = document.getElementById(themeId);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(themeId)?.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
   };
-
-  const numLocale = locale === "en" ? "en-US" : "nb-NO";
 
   return (
     <section className="col-span-12 -mx-16 px-16 pt-8 pb-14 md:pt-14 md:pb-20 bg-gradient-to-b from-[#faf9f7] via-[#faf9f7] to-white">
-      {/* Text content - constrained width */}
       <div className="max-w-4xl relative">
-        {/* Locale toggle - top right */}
+        {/* Locale toggle — top right */}
         <div className="absolute top-0 right-0">
           <ReportLocaleToggle />
         </div>
 
-        {/* Label with horizontal line accent */}
-        <p className="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.25em] text-[#a0937d] mb-5">
-          <span className="w-8 h-px bg-[#a0937d]" />
-          {label ?? t(locale, "label")}
-        </p>
-
         {/* Project name */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#1a1a1a] leading-tight mb-8">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#1a1a1a] leading-tight mb-6">
           {projectName}
         </h1>
 
-        {/* Custom intro paragraph */}
+        {/* Emosjonell intro */}
         {heroIntro && (
-          <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed mb-5">
+          <p className="text-lg md:text-xl text-[#6a6a6a] max-w-2xl leading-relaxed">
             {heroIntro}
           </p>
         )}
-
-        {/* Summary paragraph with inline metrics */}
-        <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed">
-          {t(locale, "inTheArea")}{" "}
-          <span className="font-semibold text-[#1a1a1a]">
-            {metrics.totalPOIs} {t(locale, "places")}
-          </span>{" "}
-          {t(locale, "withinWalking")}.{" "}
-          {metrics.ratedPOIs > 0 && (
-            <>
-              {t(locale, "the")}{" "}
-              <span className="font-semibold text-[#1a1a1a]">
-                {metrics.ratedPOIs} {t(locale, "rated")}
-              </span>{" "}
-              {t(locale, "hasAvgOf")}{" "}
-              <span className="font-semibold text-[#b45309]">
-                {metrics.avgRating.toFixed(1)} ★
-              </span>
-              {metrics.totalReviews > 0 && (
-                <>
-                  {" "}
-                  {t(locale, "basedOn")}{" "}
-                  <span className="font-semibold text-[#1a1a1a]">
-                    {metrics.totalReviews.toLocaleString(numLocale)} {t(locale, "reviews")}
-                  </span>
-                </>
-              )}
-              .{" "}
-            </>
-          )}
-          {metrics.transportCount > 0 && (
-            <>
-              <span className="font-semibold text-[#1a1a1a]">
-                {metrics.transportCount} {t(locale, "transportPoints")}
-              </span>{" "}
-              {t(locale, "easyToGetAround")}.
-            </>
-          )}
-        </p>
       </div>
 
-      {/* Scorecard stripe */}
-      <div className="mt-10 mb-10 bg-white border border-[#eae6e1] rounded-xl p-5 flex items-center divide-x divide-[#eae6e1]">
-        <div className="flex-1 text-center px-4">
-          <p className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
-            {metrics.totalPOIs}
-          </p>
-          <p className="text-xs text-[#6a6a6a] mt-1 uppercase tracking-wider">
-            {t(locale, "places")}
-          </p>
-        </div>
-        {metrics.avgRating > 0 && (
-          <div className="flex-1 text-center px-4">
-            <p className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
-              {metrics.avgRating.toFixed(1)}{" "}
-              <Star className="inline w-5 h-5 text-[#b45309] fill-[#b45309] -mt-1" />
-            </p>
-            <p className="text-xs text-[#6a6a6a] mt-1 uppercase tracking-wider">
-              Rating
-            </p>
-          </div>
-        )}
-        {metrics.totalReviews > 0 && (
-          <div className="flex-1 text-center px-4">
-            <p className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
-              {metrics.totalReviews.toLocaleString(numLocale)}
-            </p>
-            <p className="text-xs text-[#6a6a6a] mt-1 uppercase tracking-wider">
-              {t(locale, "reviews")}
-            </p>
-          </div>
-        )}
-        {metrics.transportCount > 0 && (
-          <div className="flex-1 text-center px-4">
-            <p className="text-2xl md:text-3xl font-semibold text-[#1a1a1a]">
-              {metrics.transportCount}
-            </p>
-            <p className="text-xs text-[#6a6a6a] mt-1 uppercase tracking-wider">
-              Transport
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Theme navigation - larger cards with stats */}
+      {/* Spørsmåls-chips */}
       {themes.length > 0 && (
-        <div className={`mt-12 grid grid-cols-2 sm:grid-cols-3 ${
-          themes.length <= 5 ? "lg:grid-cols-5" :
-          themes.length <= 6 ? "lg:grid-cols-3" : "lg:grid-cols-4"
-        } gap-3`}>
-          {themes.map((theme) => {
-            const Icon = ICON_MAP[theme.icon];
-            return (
-              <button
-                key={theme.id}
-                onClick={() => handleThemeClick(theme.id)}
-                className="group flex flex-col items-start p-4 bg-white border border-[#eae6e1] rounded-xl hover:border-[#c0b9ad] hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 text-left"
-              >
-                {/* Icon */}
-                {Icon && (
-                  <Icon className="w-7 h-7 text-[#7a7062] group-hover:text-[#5a5042] mb-2 transition-colors" />
-                )}
-
-                {/* Theme name */}
-                <span className="font-semibold text-[#1a1a1a] text-base leading-tight mb-1">
-                  {theme.name}
-                </span>
-
-                {/* Stats row */}
-                <div className="flex items-center gap-2 text-sm text-[#6a6a6a]">
-                  <span>{theme.stats.totalPOIs} {t(locale, "places")}</span>
-                  {theme.stats.avgRating != null && (
-                    <>
-                      <span className="text-[#d4cfc8]">·</span>
-                      <span className="flex items-center gap-0.5">
-                        <Star className="w-3 h-3 text-[#b45309] fill-[#b45309]" />
-                        {theme.stats.avgRating.toFixed(1)}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+        <div className="flex flex-wrap gap-2 mt-8">
+          {themes.map((theme) => (
+            <ThemeChip
+              key={theme.id}
+              theme={theme}
+              variant="scroll"
+              onScrollTo={() => handleThemeClick(theme.id)}
+            />
+          ))}
         </div>
       )}
 

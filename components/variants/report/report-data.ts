@@ -7,6 +7,7 @@ import {
 } from "@/lib/utils/category-score";
 import { calculateReportScore, NULL_TIER_VALUE } from "@/lib/utils/poi-score";
 import { getSchoolZone } from "@/lib/utils/school-zones";
+import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/strings";
 
 /** Haversine distance in meters between two coordinates */
 function haversineMeters(a: Coordinates, b: Coordinates): number {
@@ -59,6 +60,8 @@ export interface ReportTheme {
   id: string;
   name: string;
   icon: string;
+  color: string;
+  question?: string;
   intro?: string;
   bridgeText?: string;
   stats: ReportThemeStats;
@@ -363,7 +366,17 @@ function buildSubSections(
   });
 }
 
-export function transformToReportData(project: Project): ReportData {
+/**
+ * Get the hero intro key based on project tags (bransjeprofil).
+ */
+function getIntroKey(tags?: string[]): "heroIntroBolig" | "heroIntroNaering" | "heroIntroFallback" {
+  const tag = tags?.[0];
+  if (tag === "Eiendom - Bolig") return "heroIntroBolig";
+  if (tag === "Eiendom - Næring") return "heroIntroNaering";
+  return "heroIntroFallback";
+}
+
+export function transformToReportData(project: Project, locale: Locale = "no"): ReportData {
   const allPOIs = project.pois;
 
   // Build hero metrics
@@ -451,6 +464,8 @@ export function transformToReportData(project: Project): ReportData {
       id: themeDef.id,
       name: themeDef.name,
       icon: themeDef.icon,
+      color: themeDef.color,
+      question: getThemeQuestion(locale, themeDef.id),
       intro: themeDef.intro,
       bridgeText: themeDef.bridgeText,
       stats: {
@@ -480,6 +495,10 @@ export function transformToReportData(project: Project): ReportData {
 
   const rc = project.reportConfig;
 
+  // Hero intro: reportConfig override > bransjeprofil template > undefined
+  const heroIntro = rc?.heroIntro
+    ?? interpolate(t(locale, getIntroKey(project.tags)), { name: project.name });
+
   return {
     projectName: project.name,
     address: project.pois[0]?.address ?? "",
@@ -487,7 +506,7 @@ export function transformToReportData(project: Project): ReportData {
     heroMetrics,
     themes,
     label: rc?.label,
-    heroIntro: rc?.heroIntro,
+    heroIntro,
     closingTitle: rc?.closingTitle,
     closingText: rc?.closingText,
     mapStyle: rc?.mapStyle,
