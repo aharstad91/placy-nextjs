@@ -5,7 +5,7 @@ import type { POI, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
 import { Compass, ChevronDown, Check, Footprints, Bike, Car } from "lucide-react";
-import { DEFAULT_THEMES } from "@/lib/themes";
+import type { ThemeDefinition } from "@/lib/themes";
 import ExplorerPOICard from "./ExplorerPOICard";
 import ExplorerThemeChips from "./ExplorerThemeChips";
 import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
@@ -30,6 +30,8 @@ interface ExplorerPOIListProps {
   disabledCategories: Set<string>;
   onToggleAllInTheme: (themeId: string) => void;
   onToggleCategory: (categoryId: string) => void;
+  // Themes
+  themes: ThemeDefinition[];
   // Travel mode
   onSetTravelMode?: (mode: TravelMode) => void;
   // Skeleton loading state
@@ -63,6 +65,7 @@ export default function ExplorerPOIList({
   disabledCategories,
   onToggleAllInTheme,
   onToggleCategory,
+  themes,
   onSetTravelMode,
   showSkeleton = false,
   showContent = true,
@@ -175,7 +178,7 @@ export default function ExplorerPOIList({
       {/* Theme chips — full width */}
       <div className="flex-shrink-0">
         <ExplorerThemeChips
-          themes={DEFAULT_THEMES}
+          themes={themes}
           pois={allPOIs}
           disabledCategories={disabledCategories}
           onToggleAllInTheme={onToggleAllInTheme}

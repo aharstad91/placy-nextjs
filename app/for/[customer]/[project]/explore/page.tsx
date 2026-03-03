@@ -4,7 +4,7 @@ import { getCollectionBySlug } from "@/lib/supabase/queries";
 import { getAreaSlugForProject } from "@/lib/public-queries";
 import ExplorerPage from "@/components/variants/explorer/ExplorerPage";
 import { applyExplorerCaps } from "@/lib/themes/apply-explorer-caps";
-import { DEFAULT_THEMES, getVenueProfile } from "@/lib/themes";
+import { getVenueProfile, getBransjeprofil, resolveThemeId } from "@/lib/themes";
 
 // Revalidate on every request — import API calls revalidatePath() after import,
 // but we also want a baseline of no stale data for Supabase-backed pages.
@@ -45,22 +45,32 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
   // Look up area slug for public POI page links
   const areaSlug = await getAreaSlugForProject(projectData.id);
 
+  // Get bransjeprofil themes based on project tags
+  const profil = getBransjeprofil(projectData.tags);
+
   // Apply Explorer caps (skip for collection views — they show a curated subset)
   const isCollectionView = typeof resolvedSearchParams.c === "string";
   if (!isCollectionView) {
-    const profile = getVenueProfile(projectData.venueType);
+    const venueProfile = getVenueProfile(projectData.venueType);
     projectData = {
       ...projectData,
-      pois: applyExplorerCaps(projectData.pois, DEFAULT_THEMES, profile),
+      pois: applyExplorerCaps(
+        projectData.pois,
+        profil.themes,
+        venueProfile,
+        profil.explorerCaps,
+        profil.explorerTotalCap
+      ),
     };
   }
 
   // Parse ?themes= param from welcome screen → translate to category IDs
+  // Apply theme ID aliases for backward compatibility with old URLs
   const selectedThemes = typeof resolvedSearchParams.themes === "string"
-    ? resolvedSearchParams.themes.split(",")
+    ? resolvedSearchParams.themes.split(",").map(resolveThemeId)
     : undefined;
   const themeDerivedCategories = selectedThemes
-    ? DEFAULT_THEMES
+    ? profil.themes
         .filter((t) => selectedThemes.includes(t.id))
         .flatMap((t) => t.categories)
     : undefined;
@@ -72,6 +82,7 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
       return (
         <ExplorerPage
           project={projectData}
+          themes={profil.themes}
           areaSlug={areaSlug}
           collection={{
             slug: collection.slug,
@@ -103,6 +114,7 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
   return (
     <ExplorerPage
       project={projectData}
+      themes={profil.themes}
       areaSlug={areaSlug}
       initialPOI={
         typeof resolvedSearchParams.poi === "string"

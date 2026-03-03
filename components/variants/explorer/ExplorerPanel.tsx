@@ -12,7 +12,7 @@ import {
   Bike,
   Car,
 } from "lucide-react";
-import { DEFAULT_THEMES } from "@/lib/themes";
+import type { ThemeDefinition } from "@/lib/themes";
 import ExplorerPOICard from "./ExplorerPOICard";
 import ExplorerThemeChips from "./ExplorerThemeChips";
 import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
@@ -37,6 +37,7 @@ interface ExplorerPanelProps {
   collectionPOIs?: string[];
   onToggleCollection?: (poiId: string) => void;
   areaSlug?: string | null;
+  themes: ThemeDefinition[];
   isCollectionView?: boolean;
   collectionPoiCount?: number;
   collectionCreatedAt?: string;
@@ -74,6 +75,7 @@ export default function ExplorerPanel({
   collectionPOIs = [],
   onToggleCollection,
   areaSlug,
+  themes,
   isCollectionView,
   collectionPoiCount,
   collectionCreatedAt,
@@ -150,7 +152,7 @@ export default function ExplorerPanel({
       {!isCollectionView && (
         <>
           <ExplorerThemeChips
-            themes={DEFAULT_THEMES}
+            themes={themes}
             pois={allPOIs}
             disabledCategories={disabledCategories}
             onToggleAllInTheme={onToggleAllInTheme}

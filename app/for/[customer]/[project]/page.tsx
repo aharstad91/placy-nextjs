@@ -11,7 +11,7 @@ import ReportPage from "@/components/variants/report/ReportPage";
 import PortraitPage from "@/components/variants/portrait/PortraitPage";
 import TripPage from "@/components/variants/trip/TripPage";
 import WelcomeScreen from "@/components/shared/WelcomeScreen";
-import { DEFAULT_THEMES } from "@/lib/themes";
+import { getBransjeprofil } from "@/lib/themes";
 import type { ProductType } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -43,8 +43,9 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
     const productPath = PRODUCT_PATH[defaultProduct];
     const showThemeSelector = defaultProduct !== "guide";
 
-    // Enrich themes with POI counts from container data
-    const themesWithStats = DEFAULT_THEMES.map((theme) => {
+    // Get themes from bransjeprofil based on project tags
+    const profil = getBransjeprofil(container.tags);
+    const themesWithStats = profil.themes.map((theme) => {
       const catSet = new Set(theme.categories);
       const poiCount = container.pois.filter((p) => catSet.has(p.category.id)).length;
       return { ...theme, poiCount };
@@ -73,6 +74,8 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
 
   // === Explorer ===
   if (projectData.productType === "explorer") {
+    const legacyProfil = getBransjeprofil(projectData.tags);
+
     // Collection mode
     if (typeof resolvedSearchParams.c === "string") {
       const collection = await getCollectionBySlug(resolvedSearchParams.c);
@@ -80,6 +83,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
         return (
           <ExplorerPage
             project={projectData}
+            themes={legacyProfil.themes}
             collection={{
               slug: collection.slug,
               poiIds: collection.poi_ids,
@@ -104,6 +108,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
     return (
       <ExplorerPage
         project={projectData}
+        themes={legacyProfil.themes}
         initialPOI={
           typeof resolvedSearchParams.poi === "string"
             ? resolvedSearchParams.poi
