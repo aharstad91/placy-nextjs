@@ -48,22 +48,31 @@ function getNumericLocale(locale: string): string {
   return locale === "en" ? "en-US" : "nb-NO";
 }
 
-/** Shared load-more state machine for theme sections and sub-sections */
-function useLoadMore(isExpanded: boolean, onExpand: () => void) {
-  const [loadState, setLoadState] = useState<"idle" | "loading" | "done">(
-    isExpanded ? "done" : "idle"
-  );
+const LOAD_MORE_BATCH = 6;
+
+/** Progressive load-more: 6 → 12 → all */
+function useProgressiveLoad(hiddenCount: number, isExpanded: boolean, onExpand: () => void) {
+  const [revealedCount, setRevealedCount] = useState(isExpanded ? hiddenCount : 0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const allRevealed = revealedCount >= hiddenCount || isExpanded;
 
   const handleLoadMore = useCallback(() => {
-    setLoadState("loading");
+    setIsLoading(true);
     setTimeout(() => {
-      setLoadState("done");
-      setTimeout(() => onExpand(), 1000);
-    }, 2000);
-  }, [onExpand]);
+      setRevealedCount((prev) => {
+        const next = prev + LOAD_MORE_BATCH;
+        // If this batch reveals all or nearly all, just show everything
+        if (next >= hiddenCount) {
+          setTimeout(() => onExpand(), 1000);
+        }
+        return Math.min(next, hiddenCount);
+      });
+      setIsLoading(false);
+    }, 800);
+  }, [hiddenCount, onExpand]);
 
-  const showAll = loadState === "done" || isExpanded;
-  return { loadState, handleLoadMore, showAll } as const;
+  return { revealedCount, isLoading, allRevealed, handleLoadMore } as const;
 }
 
 export default function ReportThemeSection({
@@ -301,11 +310,15 @@ function FlatThemeContent({
 }) {
   const { locale } = useLocale();
   const hasHidden = theme.hiddenPOIs.length > 0;
-  const { loadState, handleLoadMore, showAll } = useLoadMore(isExpanded, onExpand);
+  const { revealedCount, isLoading, allRevealed, handleLoadMore } = useProgressiveLoad(
+    theme.hiddenPOIs.length, isExpanded, onExpand
+  );
 
-  const visiblePois = showAll
+  const visiblePois = allRevealed
     ? [...theme.pois, ...theme.hiddenPOIs]
-    : theme.pois;
+    : [...theme.pois, ...theme.hiddenPOIs.slice(0, revealedCount)];
+
+  const remainingCount = theme.hiddenPOIs.length - revealedCount;
 
   return (
     <div className="mt-4 space-y-4">
@@ -315,12 +328,12 @@ function FlatThemeContent({
         onPOIClick={onPOIClick}
       />
 
-      {hasHidden && loadState !== "done" && !isExpanded && (
+      {hasHidden && !allRevealed && (
         <LoadMoreButton
           onClick={handleLoadMore}
-          isLoading={loadState === "loading"}
+          isLoading={isLoading}
           locale={locale}
-          hiddenCount={theme.hiddenPOIs.length}
+          hiddenCount={remainingCount}
         />
       )}
     </div>
@@ -351,11 +364,15 @@ function SubSectionContent({
 }) {
   const Icon = getIcon(sub.icon);
   const hasHidden = sub.hiddenPOIs.length > 0;
-  const { loadState, handleLoadMore, showAll } = useLoadMore(isExpanded, onExpand);
+  const { revealedCount, isLoading, allRevealed, handleLoadMore } = useProgressiveLoad(
+    sub.hiddenPOIs.length, isExpanded, onExpand
+  );
 
-  const visiblePois = showAll
+  const visiblePois = allRevealed
     ? [...sub.pois, ...sub.hiddenPOIs]
-    : sub.pois;
+    : [...sub.pois, ...sub.hiddenPOIs.slice(0, revealedCount)];
+
+  const remainingCount = sub.hiddenPOIs.length - revealedCount;
 
   return (
     <div
@@ -422,12 +439,12 @@ function SubSectionContent({
       />
 
       {/* Load more */}
-      {hasHidden && loadState !== "done" && !isExpanded && (
+      {hasHidden && !allRevealed && (
         <LoadMoreButton
           onClick={handleLoadMore}
-          isLoading={loadState === "loading"}
+          isLoading={isLoading}
           locale={locale}
-          hiddenCount={sub.hiddenPOIs.length}
+          hiddenCount={remainingCount}
         />
       )}
     </div>
