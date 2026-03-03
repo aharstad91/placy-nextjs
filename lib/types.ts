@@ -187,6 +187,8 @@ export interface ProjectContainer {
   categories: Category[];
   /** Products under this project container */
   products: ProductInstance[];
+  /** Bransje-tags (envalg) — determines bransjeprofil for themes/categories */
+  tags?: string[];
   venueType?: "hotel" | "residential" | "commercial" | null;
   discoveryCircles?: DiscoveryCircle[] | null;
   /** Hero title for the welcome screen (e.g. "Velkommen over til Overvik") */
@@ -250,6 +252,8 @@ export interface Project {
   pois: POI[];
   categories: Category[];
   reportConfig?: ReportConfig;
+  /** Bransje-tags (envalg) — determines bransjeprofil for themes/categories */
+  tags?: string[];
   // Explorer-specific settings
   originMode?: OriginMode; // Default: "geolocation-with-fallback"
   venueType?: "hotel" | "residential" | "commercial" | null;

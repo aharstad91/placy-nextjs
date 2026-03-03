@@ -588,6 +588,7 @@ export async function getProjectFromSupabase(
     pois,
     categories,
     venueType: (project as Record<string, unknown>).venue_type as "hotel" | "residential" | "commercial" | null ?? null,
+    tags: (project as Record<string, unknown>).tags as string[] ?? [],
   };
 }
 
@@ -876,6 +877,7 @@ export async function getProjectContainerFromSupabase(
     welcomeTitle: (projectAny.welcome_title as string | null) ?? undefined,
     welcomeTagline: (projectAny.welcome_tagline as string | null) ?? undefined,
     welcomeImage: (projectAny.welcome_image as string | null) ?? undefined,
+    tags: (projectAny.tags as string[] | null) ?? [],
     defaultProduct: (projectAny.default_product as "explorer" | "report" | "guide" | null) ?? "report",
     version: (projectAny.version as number) ?? 1,
     createdAt: project.created_at,
@@ -970,6 +972,7 @@ export async function getProductFromSupabase(
     productType: product.productType,
     centerCoordinates: container.centerCoordinates,
     venueType: container.venueType,
+    tags: container.tags,
     reportConfig,
     tripConfig,
     story,

@@ -6,3 +6,11 @@ export {
 } from "./default-themes";
 export type { VenueType, VenueProfile } from "./venue-profiles";
 export { VENUE_PROFILES, getVenueProfile } from "./venue-profiles";
+export type { Bransjeprofil } from "./bransjeprofiler";
+export {
+  BRANSJEPROFILER,
+  THEME_ID_ALIASES,
+  resolveThemeId,
+  getBransjeprofil,
+  buildCategoryToTheme,
+} from "./bransjeprofiler";
