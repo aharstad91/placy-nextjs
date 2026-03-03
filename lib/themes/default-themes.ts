@@ -71,22 +71,3 @@ export const DEFAULT_THEMES: ThemeDefinition[] = [
     color: "#ec4899",
   },
 ];
-
-/**
- * Lookup: category → theme ID.
- * Built from DEFAULT_THEMES so every category resolves to a theme.
- */
-export const CATEGORY_TO_THEME: Record<string, string> = {};
-for (const theme of DEFAULT_THEMES) {
-  for (const cat of theme.categories) {
-    CATEGORY_TO_THEME[cat] = theme.id;
-  }
-}
-
-/**
- * Get the theme a category belongs to.
- * Returns "hverdagsbehov" as fallback for unknown categories.
- */
-export function getThemeForCategory(categoryId: string): string {
-  return CATEGORY_TO_THEME[categoryId] ?? "hverdagsbehov";
-}

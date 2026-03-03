@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Project, POI, Category, TravelMode, OriginMode } from "@/lib/types";
-import { DEFAULT_THEMES, CATEGORY_TO_THEME } from "@/lib/themes";
+import type { ThemeDefinition } from "@/lib/themes";
+import { buildCategoryToTheme } from "@/lib/themes";
 
 // Loading state machine for skeleton loading
 type LoadState = "initial" | "loading" | "loaded" | "error" | "refreshing";
@@ -35,14 +36,16 @@ interface CollectionData {
 
 interface ExplorerPageProps {
   project: Project;
+  themes: ThemeDefinition[];
   areaSlug?: string | null;
   collection?: CollectionData;
   initialPOI?: string;
   initialCategories?: string[];
 }
 
-export default function ExplorerPage({ project, areaSlug, collection, initialPOI, initialCategories }: ExplorerPageProps) {
+export default function ExplorerPage({ project, themes, areaSlug, collection, initialPOI, initialCategories }: ExplorerPageProps) {
   const isCollectionView = !!collection;
+  const categoryToTheme = useMemo(() => buildCategoryToTheme(themes), [themes]);
   const { travelMode, setTravelMode } = useTravelSettings();
   const { collectionPOIs, setProject, addToCollection, removeFromCollection, clearCollection } = useCollection();
   // Scope collection to current project — clears stale POIs from other projects
@@ -59,7 +62,7 @@ export default function ExplorerPage({ project, areaSlug, collection, initialPOI
       const validIds = new Set(project.categories.map((c) => c.id));
       const enabled = new Set(initialCategories.filter((id) => validIds.has(id)));
       if (enabled.size > 0) {
-        const allCats = new Set(DEFAULT_THEMES.flatMap((t) => t.categories));
+        const allCats = new Set(themes.flatMap((t) => t.categories));
         const disabled = new Set<string>();
         allCats.forEach((c) => { if (!enabled.has(c)) disabled.add(c); });
         return disabled;
@@ -71,7 +74,7 @@ export default function ExplorerPage({ project, areaSlug, collection, initialPOI
   // Derived: active categories = all theme categories minus disabled ones
   const activeCategories = useMemo(() => {
     const cats = new Set<string>();
-    for (const theme of DEFAULT_THEMES) {
+    for (const theme of themes) {
       for (const catId of theme.categories) {
         if (!disabledCategories.has(catId)) {
           cats.add(catId);
@@ -80,12 +83,12 @@ export default function ExplorerPage({ project, areaSlug, collection, initialPOI
     }
     // Include project-specific categories not mapped to any theme (e.g. architecture prizes)
     for (const cat of project.categories) {
-      if (!CATEGORY_TO_THEME[cat.id] && !disabledCategories.has(cat.id)) {
+      if (!categoryToTheme[cat.id] && !disabledCategories.has(cat.id)) {
         cats.add(cat.id);
       }
     }
     return cats;
-  }, [disabledCategories, project.categories]);
+  }, [disabledCategories, project.categories, themes, categoryToTheme]);
 
   const [viewportPOIIds, setViewportPOIIds] = useState<Set<string>>(new Set());
   const [visibleClusterCount, setVisibleClusterCount] = useState(0);
@@ -250,7 +253,7 @@ export default function ExplorerPage({ project, areaSlug, collection, initialPOI
 
   // Toggle all categories in a theme: if all active → disable all, otherwise → enable all
   const handleToggleAllInTheme = useCallback((themeId: string) => {
-    const theme = DEFAULT_THEMES.find((t) => t.id === themeId);
+    const theme = themes.find((t) => t.id === themeId);
     if (!theme) return;
     setDisabledCategories((prev) => {
       const next = new Set(prev);
@@ -264,7 +267,7 @@ export default function ExplorerPage({ project, areaSlug, collection, initialPOI
       }
       return next;
     });
-  }, []);
+  }, [themes]);
 
   // Category toggle: enable/disable individual category within active theme
   const handleToggleCategory = useCallback((categoryId: string) => {
@@ -478,6 +481,7 @@ export default function ExplorerPage({ project, areaSlug, collection, initialPOI
     projectName: project.name,
     openingHoursData,
     travelMode,
+    themes,
     areaSlug,
     // Skeleton loading state
     showSkeleton,

@@ -164,7 +164,10 @@ export default function ReportHero({ projectName, metrics, themes, label, heroIn
 
       {/* Theme navigation - larger cards with stats */}
       {themes.length > 0 && (
-        <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className={`mt-12 grid grid-cols-2 sm:grid-cols-3 ${
+          themes.length <= 5 ? "lg:grid-cols-5" :
+          themes.length <= 6 ? "lg:grid-cols-3" : "lg:grid-cols-4"
+        } gap-3`}>
           {themes.map((theme) => {
             const Icon = ICON_MAP[theme.icon];
             return (

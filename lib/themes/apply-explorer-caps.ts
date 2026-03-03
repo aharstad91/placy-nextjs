@@ -3,8 +3,7 @@ import type { ThemeDefinition } from "./theme-definitions";
 import type { VenueProfile } from "./venue-profiles";
 import { calculateWeightedPOIScore, NULL_TIER_VALUE } from "@/lib/utils/poi-score";
 import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
-import { EXPLORER_THEME_CAPS, EXPLORER_TOTAL_CAP } from "./explorer-caps";
-import { CATEGORY_TO_THEME } from "./default-themes";
+import { buildCategoryToTheme } from "./bransjeprofiler";
 
 /**
  * Apply Explorer caps: trust filter → blacklist → score → per-theme cap → total cap.
@@ -19,7 +18,9 @@ import { CATEGORY_TO_THEME } from "./default-themes";
 export function applyExplorerCaps(
   pois: POI[],
   themes: ThemeDefinition[],
-  profile: VenueProfile
+  profile: VenueProfile,
+  themeCaps: Record<string, number>,
+  totalCap: number
 ): POI[] {
   // 1. Trust filter: remove untrusted POIs, null = show (backward compatible)
   const trusted = pois.filter((poi) => {
@@ -48,12 +49,15 @@ export function applyExplorerCaps(
   // 4. Apply per-transport-category caps
   const transportCapped = applyTransportCaps(scored, profile);
 
+  // Build category → theme lookup from provided themes
+  const categoryToTheme = buildCategoryToTheme(themes);
+
   // 5. Per theme: take top N by score
   const selectedIds = new Set<string>();
   const result: POI[] = [];
 
   for (const theme of themes) {
-    const themeCap = EXPLORER_THEME_CAPS[theme.id] ?? 10;
+    const cap = themeCaps[theme.id] ?? 10;
     const themeCats = new Set(theme.categories);
 
     // POIs in this theme, sorted by tier first (lower = better), then score desc
@@ -65,7 +69,7 @@ export function applyExplorerCaps(
         if (aTier !== bTier) return aTier - bTier;
         return b.score - a.score;
       })
-      .slice(0, themeCap);
+      .slice(0, cap);
 
     for (const { poi } of themePOIs) {
       selectedIds.add(poi.id);
@@ -75,9 +79,9 @@ export function applyExplorerCaps(
 
   // 6. Handle any POIs with unmapped categories (catch-all)
   // Use remaining capacity so projects with custom categories (e.g. architecture prizes) aren't truncated
-  const unmappedCap = Math.max(EXPLORER_TOTAL_CAP - result.length, 0);
+  const unmappedCap = Math.max(totalCap - result.length, 0);
   const unmapped = transportCapped
-    .filter((s) => !CATEGORY_TO_THEME[s.poi.category.id] && !selectedIds.has(s.poi.id))
+    .filter((s) => !categoryToTheme[s.poi.category.id] && !selectedIds.has(s.poi.id))
     .sort((a, b) => {
       const aTier = a.poi.poiTier ?? NULL_TIER_VALUE;
       const bTier = b.poi.poiTier ?? NULL_TIER_VALUE;
@@ -92,7 +96,7 @@ export function applyExplorerCaps(
   }
 
   // 7. Enforce total cap
-  return result.slice(0, EXPLORER_TOTAL_CAP);
+  return result.slice(0, totalCap);
 }
 
 /**

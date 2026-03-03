@@ -109,11 +109,21 @@ export const INITIAL_VISIBLE_COUNT = 12;
 
 /** Display mode per theme — editorial gets photo cards, functional gets compact list */
 const CATEGORY_DISPLAY_MODE: Record<string, ThemeDisplayMode> = {
+  // Shared / legacy
   "mat-drikke": "editorial",
   "kultur-opplevelser": "editorial",
   "trening-velvare": "editorial",
   "hverdagsbehov": "functional",
   "transport": "functional",
+  // Eiendom - Bolig (new theme IDs)
+  "opplevelser": "editorial",
+  "natur-friluftsliv": "editorial",
+  "trening-aktivitet": "editorial",
+  "barn-oppvekst": "functional",
+  "hverdagsliv": "functional",
+  // Eiendom - Næring
+  "nabolaget": "editorial",
+  "hverdagstjenester": "functional",
 };
 
 // ---------- Per-category filtering rules ----------
