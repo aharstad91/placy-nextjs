@@ -1961,3 +1961,69 @@ Dette er en sterk åpner fordi:
 - Markedsavklaring handler om å dokumentere at smerten er reell og betalingsviljen finnes — ikke om å bygge mer produkt
 - Demoene vi allerede lager (Brøset, Overvik) er perfekte verktøy for kundemøter — vis, ikke fortell
 - Neste steg: lage intervjuguide, booke møter, dokumentere systematisk
+
+---
+
+## 2026-03-03 — Spørsmålskort + Bransjeprofil
+
+### Beslutninger
+- **Bransjeprofil-systemet** implementert og merget (PR #53): Tag-drevet tema-resolving, BOLIG_THEMES (7 temaer), NAERING_THEMES (5), `getBransjeprofil()`, alias-mapping
+- **Report hero redesignet** (PR #54): Fjernet metrics-bar, scorecard, store tema-kort. Erstattet med emosjonell intro + kompakte spørsmålschips (ThemeChip scroll-variant)
+- **ThemeChip** som delt komponent: scroll-variant (Report) og select-variant (WelcomeScreen). Duck-typed interface fungerer med både ThemeDefinition og ReportTheme
+- **i18n for tema-spørsmål**: Statiske strenger i `lib/i18n/strings.ts`, ikke database. 7 bolig-spørsmål + 5 næring-spørsmål, tospråklig (NO/EN)
+- **White-label grunnlag**: ProjectTheme type, migration 045 (theme JSONB med CHECK constraint), CSS-var injection i server component
+- **FloatingNav**: Pills viser nå spørsmål ("Er det bra for barna") i stedet for temanavn ("Barn & Oppvekst")
+
+### Teknisk
+- Dynamiske farger bruker inline `style` (ikke Tailwind arbitrary values — de krever statisk analyse)
+- Hero intro beregnes i datalaget (`transformToReportData()`), ikke i komponenten
+- WelcomeScreen har ingen LocaleProvider — bruker alltid "no"
+- `prefers-reduced-motion` respektert i scroll og animasjoner
+
+### Parkert / Åpne spørsmål
+- **Spørsmålskort-CTA**: Brukeren spør om CTAer koblet til hvert kort — dagens implementering har scroll-to-section, men kanskje mer eksplisitt CTA-tekst trengs?
+- **Story.introText vs heroIntro**: Gammel redaksjonell intro ("Nærhet til marka, gode skoler...") er mer innholdsrik enn bransjeprofil-template ("Lurer du på..."). Bør story.introText prioriteres som hoved-intro med template som fallback?
+- **Lokal dev-server 404**: Alle `/for/`-ruter gir 404 lokalt men fungerer i produksjon — pre-eksisterende problem, trenger debugging
+
+### Retning
+- Spørsmålskort-konseptet er kjernen i bolig-produktet: emosjonelle spørsmål > statistikk
+- Neste naturlige steg: Visuell polish av kortene, bedre intro-tekster, og koble til Analytics-segmentering
+- White-label er klart for admin-UI — trenger bare et skjema for å sette theme per prosjekt
+
+### Compound
+- `docs/solutions/ui-patterns/spoersmaalskort-report-hero-redesign-20260303.md`
+
+---
+
+## 2026-03-03 (sesjon 2) — Unified POI Card Grid + FloatingNav Fix
+
+### Beslutninger
+- **Fjernet kompakte POI-rader** i Report. Alle POI-er bruker nå store kort (ReportPOICard) i responsive grid: 3 kolonner desktop, 2 kolonner mobil
+- **6 kort initialt** per seksjon/sub-section, "Hent flere (N)" for resten. Balanserer informasjon vs scrolllengde
+- **Slettet editorial/functional-distinksjonen** (CATEGORY_DISPLAY_MODE, ThemeDisplayMode). Alle temaer bruker samme kort — sorteringen (tier → score) gjør jobben
+- **Subtil markering** beholdt: Tier-badge på Tier 1/Local Gem, men ingen annen visuell forskjell mellom kort
+- **FloatingNav-bug fikset**: PageTransition sin `transform: translateY(0)` brøt `position: fixed` via CSS containing block. Løst med `transitionend` cleanup
+
+### Teknisk
+- Datamodellen forenklet: `highlightPOIs` + `listPOIs` → `pois` (sortert, første 6 synlige)
+- `pickHighlights()`, `CompactPOIList`, `ReportPOIRow` slettet — 264 linjer fjernet, 93 lagt til
+- Mobil bruker separat rendering (ReportInteractiveMapSection → ReportHighlightCard), oppdatert til 2-kol grid
+- `INITIAL_VISIBLE_COUNT` endret fra 12 → 6 (store kort tar ~3x mer plass)
+
+### Parkert / Åpne spørsmål
+- **Spørsmålskort-CTA**: Fortsatt åpent — trenger kanskje mer eksplisitt CTA-tekst
+- **Story.introText vs heroIntro**: Fortsatt åpent — redaksjonell intro er rikere enn template
+- **Lokal dev-server 404**: Fortsatt åpent — `/for/`-ruter gir 404 lokalt
+- **Mobil kortformat**: `ReportHighlightCard` (mobil) og `ReportPOICard` (desktop) er to ulike kort-komponenter. Bør de slås sammen?
+
+### Retning
+- Report-produktet er nå visuelt konsistent: store kort hele veien ned
+- Neste steg for Report: kort-polish (hover-effekter, bedre fallback-ikoner for POIs uten foto), intro-tekster
+- Produktet er salgbart for demo: hero med emosjonelle spørsmål + store kort + kart
+
+### Observasjoner
+- **CSS containing block-gotchaen** med `transform` og `position: fixed` er et klassisk problem. Verdt å huske for fremtidige animasjoner: alltid rydd opp `transform` etter transisjon hvis fixed-posisjonerte barn finnes
+- **Kodeforenkling betaler seg**: Ved å fjerne editorial/functional-distinksjonen ble koden mye enklere. Distinksjonen var basert på en antakelse om at noen temaer "fortjener" foto-kort mens andre ikke gjør det — men i praksis ser alle kategorier bra ut med samme kort
+
+### Compound
+- `docs/solutions/ui-patterns/report-unified-poi-card-grid-20260303.md`
