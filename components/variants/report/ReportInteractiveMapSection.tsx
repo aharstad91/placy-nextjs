@@ -180,7 +180,7 @@ export default function ReportInteractiveMapSection({
         {activeTab === "list" ? (
           <div className="py-4">
             <CategoryFilters />
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               {pois.map((poi) => (
                 <div key={poi.id} ref={registerCardRef(poi.id)}>
                   <ReportHighlightCard
