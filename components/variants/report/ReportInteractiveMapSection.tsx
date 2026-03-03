@@ -68,8 +68,8 @@ export default function ReportInteractiveMapSection({
 
   // All POIs in this theme
   const allPois = useMemo(
-    () => theme.highlightPOIs.concat(theme.listPOIs),
-    [theme.highlightPOIs, theme.listPOIs]
+    () => [...theme.pois, ...theme.hiddenPOIs],
+    [theme.pois, theme.hiddenPOIs]
   );
 
   // Extract unique categories with counts

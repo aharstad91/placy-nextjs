@@ -39,19 +39,16 @@ export interface ReportThemeStats {
   uniqueCategories: number;
 }
 
-export type ThemeDisplayMode = "editorial" | "functional";
-
 export interface ReportSubSection {
   categoryId: string;
   name: string;
   icon: string;
   color: string;
   stats: ReportThemeStats;
-  highlightPOIs: POI[];
-  listPOIs: POI[];
+  /** All POIs sorted by tier then score. First `initialVisibleCount` are shown, rest behind "Hent flere". */
+  pois: POI[];
   hiddenPOIs: POI[];
   allPOIs: POI[];
-  displayMode: ThemeDisplayMode;
   quote: string;
   bridgeText?: string;
 }
@@ -65,11 +62,10 @@ export interface ReportTheme {
   intro?: string;
   bridgeText?: string;
   stats: ReportThemeStats;
-  highlightPOIs: POI[];
-  listPOIs: POI[];
+  /** All POIs sorted by tier then score. First INITIAL_VISIBLE_COUNT shown, rest behind "Hent flere". */
+  pois: POI[];
   allPOIs: POI[];
   hiddenPOIs: POI[];
-  displayMode: ThemeDisplayMode;
   richnessScore: number;
   score: CategoryScore;
   quote: string;
@@ -101,33 +97,13 @@ export const TRANSPORT_CATEGORIES = new Set([
   "airport",
 ]);
 
-const HIGHLIGHT_FALLBACK_COUNT = 3;
 const THEME_MIN_POIS = 5;
 
 /** When any category within a theme has >= this many POIs, all categories become sub-sections */
 export const SUB_SECTION_THRESHOLD = 15;
 
-/** How many compact cards to show before "Vis meg mer" */
-export const INITIAL_VISIBLE_COUNT = 12;
-
-/** Display mode per theme — editorial gets photo cards, functional gets compact list */
-const CATEGORY_DISPLAY_MODE: Record<string, ThemeDisplayMode> = {
-  // Shared / legacy
-  "mat-drikke": "editorial",
-  "kultur-opplevelser": "editorial",
-  "trening-velvare": "editorial",
-  "hverdagsbehov": "functional",
-  "transport": "functional",
-  // Eiendom - Bolig (new theme IDs)
-  "opplevelser": "editorial",
-  "natur-friluftsliv": "editorial",
-  "trening-aktivitet": "editorial",
-  "barn-oppvekst": "functional",
-  "hverdagsliv": "functional",
-  // Eiendom - Næring
-  "nabolaget": "editorial",
-  "hverdagstjenester": "functional",
-};
+/** How many cards to show before "Hent flere" */
+export const INITIAL_VISIBLE_COUNT = 6;
 
 // ---------- Per-category filtering rules ----------
 
@@ -162,31 +138,12 @@ const HIGHER_ED_KEYWORDS = ["vgs", "videregående", "ntnu", "høgskole", "høysk
 
 // --- Shared helpers (used by both buildSubSections and transformToReportData) ---
 
-/** Sort comparator: highest formula score first (rating × log2(1 + reviews)) */
-function byFormulaScore(a: POI, b: POI): number {
-  return calculateReportScore(b) - calculateReportScore(a);
-}
-
 /** Sort comparator: tier first (lower = better), then formula score within same tier */
 export function byTierThenScore(a: POI, b: POI): number {
   const aTier = a.poiTier ?? NULL_TIER_VALUE;
   const bTier = b.poiTier ?? NULL_TIER_VALUE;
   if (aTier !== bTier) return aTier - bTier;
   return calculateReportScore(b) - calculateReportScore(a);
-}
-
-/** Pick highlight POIs: featured first, then Tier 1, fallback to formula score. Returns [] for functional mode. */
-function pickHighlights(pois: POI[], displayMode: ThemeDisplayMode): POI[] {
-  if (displayMode !== "editorial") return [];
-
-  // 1. Featured POIs (manually curated) — return ALL featured, nothing else
-  const featured = pois.filter((p) => p.featured);
-  if (featured.length > 0) return featured;
-
-  // 2. Tier 1 first, fill remaining with top formula-scored
-  const tier1 = pois.filter((p) => p.poiTier === 1);
-  const rest = pois.filter((p) => p.poiTier !== 1).sort(byFormulaScore);
-  return [...tier1, ...rest].slice(0, HIGHLIGHT_FALLBACK_COUNT);
 }
 
 /** Compute stats from a POI array */
@@ -204,13 +161,11 @@ function computePOIStats(pois: POI[]) {
   };
 }
 
-/** Split POIs into listPOIs (visible) and hiddenPOIs (behind "Hent flere") */
-function splitVisibleHidden(pois: POI[], highlights: POI[], visibleCount = INITIAL_VISIBLE_COUNT) {
-  const highlightIds = new Set(highlights.map((p) => p.id));
-  const rest = pois.filter((p) => !highlightIds.has(p.id));
+/** Split sorted POIs into visible and hidden (behind "Hent flere") */
+function splitVisibleHidden(pois: POI[], visibleCount = INITIAL_VISIBLE_COUNT) {
   return {
-    listPOIs: rest.slice(0, visibleCount),
-    hiddenPOIs: rest.slice(visibleCount),
+    visiblePOIs: pois.slice(0, visibleCount),
+    hiddenPOIs: pois.slice(visibleCount),
   };
 }
 
@@ -290,7 +245,6 @@ function applyThemeCategoryFilters(sortedPOIs: POI[], center: Coordinates): POI[
  */
 function buildSubSections(
   themePOIs: POI[],
-  parentDisplayMode: ThemeDisplayMode,
   projectId: string,
   center: Coordinates,
   categoryDescriptions?: Record<string, string>,
@@ -323,9 +277,8 @@ function buildSubSections(
     const filteredPOIs = applyCategoryFilter(catId, catPOIs, center);
     // Sort by tier then formula score so highlights and visible list show best POIs
     const sortedCatPOIs = [...filteredPOIs].sort(byTierThenScore);
-    const highlights = pickHighlights(sortedCatPOIs, parentDisplayMode);
     const visibleCount = getInitialVisibleCount(catId);
-    const { listPOIs, hiddenPOIs } = splitVisibleHidden(sortedCatPOIs, highlights, visibleCount);
+    const { visiblePOIs, hiddenPOIs } = splitVisibleHidden(sortedCatPOIs, visibleCount);
     const stats = computePOIStats(sortedCatPOIs);
 
     const subScore = calculateCategoryScore({
@@ -355,11 +308,9 @@ function buildSubSections(
         editorialCount: stats.editorialCount,
         uniqueCategories: 1,
       },
-      highlightPOIs: highlights,
-      listPOIs,
+      pois: visiblePOIs,
       hiddenPOIs,
       allPOIs: sortedCatPOIs,
-      displayMode: parentDisplayMode,
       quote,
       bridgeText: categoryDescriptions?.[catId],
     };
@@ -429,13 +380,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     // then reassemble the theme's POI list preserving distance order.
     const filtered = applyThemeCategoryFilters(distanceSorted, center);
 
-    // Split into highlight POIs (featured/top-rated) and the rest
-    const displayMode = (CATEGORY_DISPLAY_MODE[themeDef.id] ?? "editorial") as ThemeDisplayMode;
-    const highlightPOIs = pickHighlights(filtered, displayMode);
-
-    // For theme-level split, use the smallest per-category initialVisibleCount
-    // or the global default if no categories have custom rules
-    const { listPOIs, hiddenPOIs } = splitVisibleHidden(filtered, highlightPOIs);
+    // Sort by tier then score and split into visible/hidden
+    const sorted = [...filtered].sort(byTierThenScore);
+    const { visiblePOIs, hiddenPOIs } = splitVisibleHidden(sorted);
     const themeStats = computePOIStats(filtered);
 
     const uniqueCategories = new Set(filtered.map((p) => p.category.id)).size;
@@ -458,7 +405,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     );
 
     // Build sub-sections with per-category filtering
-    const subSections = buildSubSections(filtered, displayMode, project.id, center, themeDef.categoryDescriptions);
+    const subSections = buildSubSections(filtered, project.id, center, themeDef.categoryDescriptions);
 
     themes.push({
       id: themeDef.id,
@@ -476,11 +423,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
         editorialCount: themeStats.editorialCount,
         uniqueCategories,
       },
-      highlightPOIs,
-      listPOIs,
+      pois: visiblePOIs,
       allPOIs: filtered,
       hiddenPOIs,
-      displayMode,
       richnessScore,
       score,
       quote,

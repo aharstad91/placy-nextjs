@@ -37,6 +37,7 @@ interface ProjectBase {
   center_lng: number;
   customer_id: string | null;
   venue_type: string | null;
+  tags: string[];
   discovery_circles: Array<{ lat: number; lng: number; radiusMeters: number }> | null;
   customers: Pick<DbCustomer, "id" | "name"> | null;
 }
@@ -51,6 +52,7 @@ export interface ProjectWithRelations {
   center_lng: number;
   customer_id: string | null;
   venue_type: string | null;
+  tags: string[];
   customers: Pick<DbCustomer, "id" | "name"> | null;
   discovery_circles: Array<{ lat: number; lng: number; radiusMeters: number }> | null;
   project_categories: DbProjectCategory[];
@@ -113,6 +115,7 @@ export default async function ProjectDetailPage({
       center_lng,
       customer_id,
       venue_type,
+      tags,
       discovery_circles,
       customers (id, name)
     `
@@ -136,6 +139,7 @@ export default async function ProjectDetailPage({
         center_lng,
         customer_id,
         venue_type,
+        tags,
         discovery_circles,
         customers (id, name)
       `
@@ -742,6 +746,27 @@ export default async function ProjectDetailPage({
     revalidatePath(`/admin/projects/${shortId}`);
   }
 
+  async function updateProjectTags(formData: FormData) {
+    "use server";
+
+    const id = getRequiredString(formData, "id");
+    const shortId = getRequiredString(formData, "shortId");
+    const tagsJson = getRequiredString(formData, "tags");
+    const tags = JSON.parse(tagsJson) as string[];
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    const { error } = await supabase
+      .from("projects")
+      .update({ tags })
+      .eq("id", id);
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${shortId}`);
+    revalidatePath("/admin/projects");
+  }
+
   return (
     <ProjectDetailClient
       project={projectWithRelations as ProjectWithRelations}
@@ -765,6 +790,7 @@ export default async function ProjectDetailPage({
       linkTripToProject={linkTripToProject}
       unlinkTripFromProject={unlinkTripFromProject}
       updateProjectTripOverride={updateProjectTripOverride}
+      updateProjectTags={updateProjectTags}
     />
   );
 }

@@ -37,6 +37,7 @@ interface ProjectContainer {
   url_slug: string;
   center_lat: number;
   center_lng: number;
+  tags?: string[];
   customerName: string;
   source: "supabase" | "json";
   products: ProductInfo[];
@@ -65,6 +66,22 @@ const productColors = {
   explorer: "text-blue-600 bg-blue-50",
   report: "text-purple-600 bg-purple-50",
   guide: "text-amber-600 bg-amber-50",
+};
+
+const AVAILABLE_TAGS = [
+  "Eiendom - Bolig",
+  "Eiendom - Næring",
+  "Hotell",
+  "Kultur",
+  "Kommune",
+] as const;
+
+const tagColors: Record<string, string> = {
+  "Eiendom - Bolig": "text-emerald-700 bg-emerald-50 border-emerald-200",
+  "Eiendom - Næring": "text-teal-700 bg-teal-50 border-teal-200",
+  "Hotell": "text-orange-700 bg-orange-50 border-orange-200",
+  "Kultur": "text-pink-700 bg-pink-50 border-pink-200",
+  "Kommune": "text-sky-700 bg-sky-50 border-sky-200",
 };
 
 export function ProjectsAdminClient({
@@ -310,6 +327,22 @@ export function ProjectsAdminClient({
                           </code>
                         </p>
                       </div>
+
+                      {/* Tags */}
+                      {container.tags && container.tags.length > 0 && (
+                        <div className="flex items-center gap-1 ml-2">
+                          {container.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${
+                                tagColors[tag] || "text-gray-600 bg-gray-50 border-gray-200"
+                              }`}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -339,7 +372,7 @@ export function ProjectsAdminClient({
 
                       {/* External link */}
                       <Link
-                        href={`/${container.customer_id}/${container.url_slug}`}
+                        href={`/for/${container.customer_id}/${container.url_slug}`}
                         target="_blank"
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Åpne prosjekt"

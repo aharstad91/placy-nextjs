@@ -306,6 +306,7 @@ export default async function AdminProjectsPage() {
       url_slug: container.url_slug,
       center_lat: Number(container.center_lat),
       center_lng: Number(container.center_lng),
+      tags: container.tags || [],
       customerName: customerMap[container.customer_id!] || "Ukjent",
       source: "supabase" as const,
       products: ((container.products as Array<{

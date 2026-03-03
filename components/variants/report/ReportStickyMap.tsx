@@ -66,7 +66,7 @@ export default function ReportStickyMap({
     const lookup: Record<string, POI[]> = {};
     for (const theme of themes) {
       // Theme-level: all visible POIs
-      const visible = [...theme.highlightPOIs, ...theme.listPOIs];
+      const visible = [...theme.pois];
       if (expandedThemes.has(theme.id)) {
         visible.push(...theme.hiddenPOIs);
       }
@@ -74,7 +74,7 @@ export default function ReportStickyMap({
       // Also add sub-section POIs to theme-level when their sub-section is expanded
       for (const sub of theme.subSections ?? []) {
         const subKey = `${theme.id}:${sub.categoryId}`;
-        const subVisible = [...sub.highlightPOIs, ...sub.listPOIs];
+        const subVisible = [...sub.pois];
         if (expandedThemes.has(subKey)) {
           subVisible.push(...sub.hiddenPOIs);
         }

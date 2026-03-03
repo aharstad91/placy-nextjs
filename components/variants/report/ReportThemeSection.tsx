@@ -9,17 +9,12 @@ import { t, type Locale } from "@/lib/i18n/strings";
 import {
   Star,
   ChevronDown,
-  MapPin,
-  Sparkles,
   Loader2,
 } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
-import { GoogleRating } from "@/components/ui/GoogleRating";
-import { shouldShowRating } from "@/lib/themes/rating-categories";
 import ReportInteractiveMapSection from "./ReportInteractiveMapSection";
 import ReportAddressInput from "./ReportAddressInput";
 import ReportPOICard from "./ReportPOICard";
-import { TierBadge } from "@/components/ui/TierBadge";
 
 interface ReportThemeSectionProps {
   theme: ReportTheme;
@@ -266,15 +261,13 @@ function StickyMapContent({
           );
         })}
 
-        {/* Remaining POIs (categories under threshold) — flat list */}
+        {/* Remaining POIs (categories under threshold) — card grid */}
         {remainingPOIs.length > 0 && (
-          <div>
-            <CompactPOIList
-              pois={remainingPOIs}
-              activePOIId={activePOIId}
-              onPOIClick={onPOIClick}
-            />
-          </div>
+          <POICardGrid
+            pois={remainingPOIs}
+            activePOIId={activePOIId}
+            onPOIClick={onPOIClick}
+          />
         )}
       </div>
     );
@@ -292,7 +285,7 @@ function StickyMapContent({
   );
 }
 
-/** Original flat rendering (no sub-sections) */
+/** Flat rendering (no sub-sections) — card grid with load-more */
 function FlatThemeContent({
   theme,
   activePOIId,
@@ -311,36 +304,16 @@ function FlatThemeContent({
   const { loadState, handleLoadMore, showAll } = useLoadMore(isExpanded, onExpand);
 
   const visiblePois = showAll
-    ? [...theme.listPOIs, ...theme.hiddenPOIs]
-    : theme.listPOIs;
+    ? [...theme.pois, ...theme.hiddenPOIs]
+    : theme.pois;
 
   return (
     <div className="mt-4 space-y-4">
-      {theme.displayMode === "editorial" && theme.highlightPOIs.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#d4cfc8]">
-          {theme.highlightPOIs.map((poi) => (
-            <div
-              key={poi.id}
-              data-poi-id={poi.id}
-              className="flex-shrink-0 w-[180px] snap-start"
-            >
-              <ReportPOICard
-                poi={poi}
-                isActive={activePOIId === poi.id}
-                onClick={() => onPOIClick?.(poi.id)}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {visiblePois.length > 0 && (
-        <CompactPOIList
-          pois={visiblePois}
-          activePOIId={activePOIId}
-          onPOIClick={onPOIClick}
-        />
-      )}
+      <POICardGrid
+        pois={visiblePois}
+        activePOIId={activePOIId}
+        onPOIClick={onPOIClick}
+      />
 
       {hasHidden && loadState !== "done" && !isExpanded && (
         <LoadMoreButton
@@ -381,8 +354,8 @@ function SubSectionContent({
   const { loadState, handleLoadMore, showAll } = useLoadMore(isExpanded, onExpand);
 
   const visiblePois = showAll
-    ? [...sub.listPOIs, ...sub.hiddenPOIs]
-    : sub.listPOIs;
+    ? [...sub.pois, ...sub.hiddenPOIs]
+    : sub.pois;
 
   return (
     <div
@@ -441,33 +414,12 @@ function SubSectionContent({
         </p>
       )}
 
-      {/* Highlight photo cards */}
-      {sub.displayMode === "editorial" && sub.highlightPOIs.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#d4cfc8] mb-3">
-          {sub.highlightPOIs.map((poi) => (
-            <div
-              key={poi.id}
-              data-poi-id={poi.id}
-              className="flex-shrink-0 w-[180px] snap-start"
-            >
-              <ReportPOICard
-                poi={poi}
-                isActive={activePOIId === poi.id}
-                onClick={() => onPOIClick?.(poi.id)}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Compact card grid */}
-      {visiblePois.length > 0 && (
-        <CompactPOIList
-          pois={visiblePois}
-          activePOIId={activePOIId}
-          onPOIClick={onPOIClick}
-        />
-      )}
+      {/* POI card grid */}
+      <POICardGrid
+        pois={visiblePois}
+        activePOIId={activePOIId}
+        onPOIClick={onPOIClick}
+      />
 
       {/* Load more */}
       {hasHidden && loadState !== "done" && !isExpanded && (
@@ -482,8 +434,8 @@ function SubSectionContent({
   );
 }
 
-/** Explorer-style POI card list — two independent columns so accordion only affects its own column */
-function CompactPOIList({
+/** Responsive POI card grid — 2 cols mobile, 3 cols desktop */
+function POICardGrid({
   pois,
   activePOIId,
   onPOIClick,
@@ -492,123 +444,18 @@ function CompactPOIList({
   activePOIId: string | null;
   onPOIClick?: (poiId: string) => void;
 }) {
-  // Split into two independent columns (interleaved: 0,2,4… left — 1,3,5… right)
-  const leftPois = pois.filter((_, i) => i % 2 === 0);
-  const rightPois = pois.filter((_, i) => i % 2 === 1);
-
-  const renderColumn = (columnPois: POI[]) => (
-    <div className="flex-1 flex flex-col gap-2.5">
-      {columnPois.map((poi) => (
-        <ReportPOIRow
-          key={poi.id}
-          poi={poi}
-          isActive={activePOIId === poi.id}
-          onClick={() => onPOIClick?.(poi.id)}
-        />
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+      {pois.map((poi) => (
+        <div key={poi.id} data-poi-id={poi.id}>
+          <ReportPOICard
+            poi={poi}
+            isActive={activePOIId === poi.id}
+            onClick={() => onPOIClick?.(poi.id)}
+          />
+        </div>
       ))}
     </div>
-  );
-
-  return (
-    <div className="flex items-start gap-2.5">
-      {renderColumn(leftPois)}
-      {renderColumn(rightPois)}
-    </div>
-  );
-}
-
-/** Compact POI row — click to select and show popup card on map */
-function ReportPOIRow({
-  poi,
-  isActive,
-  onClick,
-}: {
-  poi: POI;
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  const [imageError, setImageError] = useState(false);
-  const CategoryIcon = getIcon(poi.category.icon);
-
-  const imageUrl = poi.featuredImage
-    ? poi.featuredImage.includes("mymaps.usercontent.google.com")
-      ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
-      : poi.featuredImage
-    : null;
-
-  const hasImage = imageUrl && !imageError;
-  const walkMinutes = poi.travelTime?.walk
-    ? Math.round(poi.travelTime.walk / 60)
-    : null;
-
-  return (
-    <button
-      data-poi-id={poi.id}
-      onClick={onClick}
-      className={`w-full text-left rounded-xl border overflow-hidden transition-all ${
-        isActive
-          ? "bg-[#f0ede8] border-[#d4cfc8] ring-1 ring-[#d4cfc8]"
-          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
-      }`}
-    >
-      <div className="flex items-start gap-3 px-3 py-3">
-        {/* Thumbnail / Category icon */}
-        <div
-          className={`flex-shrink-0 overflow-hidden ${
-            hasImage ? "w-12 h-12 rounded-xl" : "w-9 h-9 rounded-full mt-0.5"
-          }`}
-          style={!hasImage ? { backgroundColor: poi.category.color } : undefined}
-        >
-          {hasImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={imageUrl}
-              alt={poi.name}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <CategoryIcon className="w-4 h-4 text-white" />
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <h3 className="text-sm font-semibold text-gray-900 truncate">
-              {poi.name}
-            </h3>
-            <TierBadge poiTier={poi.poiTier} isLocalGem={poi.isLocalGem} variant="inline" />
-            {poi.editorialHook && (
-              <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
-            <span className="text-xs font-medium flex-shrink-0" style={{ color: poi.category.color }}>
-              {poi.category.name}
-            </span>
-            {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
-              <>
-                <span className="text-gray-300 flex-shrink-0">&middot;</span>
-                <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="sm" />
-              </>
-            )}
-            {walkMinutes != null && (
-              <>
-                <span className="text-gray-300 flex-shrink-0">&middot;</span>
-                <span className="flex items-center gap-0.5 text-xs text-gray-500 flex-shrink-0">
-                  <MapPin className="w-3 h-3" />
-                  {walkMinutes} min
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </button>
   );
 }
 

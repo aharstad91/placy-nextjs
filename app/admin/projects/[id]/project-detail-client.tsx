@@ -88,6 +88,7 @@ interface ProjectDetailClientProps {
   linkTripToProject: (formData: FormData) => Promise<void>;
   unlinkTripFromProject: (formData: FormData) => Promise<void>;
   updateProjectTripOverride: (formData: FormData) => Promise<void>;
+  updateProjectTags: (formData: FormData) => Promise<void>;
 }
 
 export function ProjectDetailClient({
@@ -112,6 +113,7 @@ export function ProjectDetailClient({
   linkTripToProject,
   unlinkTripFromProject,
   updateProjectTripOverride,
+  updateProjectTags,
 }: ProjectDetailClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("details");
@@ -159,6 +161,7 @@ export function ProjectDetailClient({
                 project={project}
                 customers={customers}
                 updateProject={updateProject}
+                updateProjectTags={updateProjectTags}
               />
               <DiscoveryCirclesEditor
                 projectId={project.id}
@@ -211,13 +214,30 @@ export function ProjectDetailClient({
 
 // ============ DETAILS TAB ============
 
+const AVAILABLE_TAGS = [
+  "Eiendom - Bolig",
+  "Eiendom - Næring",
+  "Hotell",
+  "Kultur",
+  "Kommune",
+] as const;
+
+const tagColors: Record<string, string> = {
+  "Eiendom - Bolig": "text-emerald-700 bg-emerald-50 border-emerald-200",
+  "Eiendom - Næring": "text-teal-700 bg-teal-50 border-teal-200",
+  "Hotell": "text-orange-700 bg-orange-50 border-orange-200",
+  "Kultur": "text-pink-700 bg-pink-50 border-pink-200",
+  "Kommune": "text-sky-700 bg-sky-50 border-sky-200",
+};
+
 interface DetailsTabProps {
   project: ProjectWithRelations;
   customers: Pick<DbCustomer, "id" | "name">[];
   updateProject: (formData: FormData) => Promise<void>;
+  updateProjectTags: (formData: FormData) => Promise<void>;
 }
 
-function DetailsTab({ project, customers, updateProject }: DetailsTabProps) {
+function DetailsTab({ project, customers, updateProject, updateProjectTags }: DetailsTabProps) {
   const [customerId, setCustomerId] = useState(project.customer_id || "");
   const [name, setName] = useState(project.name);
   const [urlSlug, setUrlSlug] = useState(project.url_slug);
@@ -360,6 +380,37 @@ function DetailsTab({ project, customers, updateProject }: DetailsTabProps) {
           </button>
         </div>
       </form>
+
+      {/* Tags section */}
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Bransje-tags</h3>
+        <div className="flex flex-wrap gap-2">
+          {AVAILABLE_TAGS.map((tag) => {
+            const isActive = (project.tags || []).includes(tag);
+            return (
+              <button
+                key={tag}
+                onClick={async () => {
+                  const newTags = isActive ? [] : [tag];
+                  const formData = new FormData();
+                  formData.set("id", project.id);
+                  formData.set("shortId", project.short_id);
+                  formData.set("tags", JSON.stringify(newTags));
+                  await updateProjectTags(formData);
+                }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                  isActive
+                    ? tagColors[tag] || "text-gray-700 bg-gray-100 border-gray-300"
+                    : "text-gray-400 bg-white border-gray-200 hover:border-gray-300 hover:text-gray-600"
+                }`}
+              >
+                {isActive && <Check className="w-3.5 h-3.5" />}
+                {tag}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

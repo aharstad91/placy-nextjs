@@ -52,7 +52,7 @@ export default function ReportPOICard({ poi, isActive, onClick }: ReportPOICardP
             src={imageUrl}
             alt={poi.name}
             fill
-            sizes="180px"
+            sizes="(min-width: 1024px) 33vw, 50vw"
             className="object-cover"
             onError={() => setImgError(true)}
           />

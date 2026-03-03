@@ -1923,3 +1923,41 @@ Dette er en sterk åpner fordi:
 - **GeoInnsyn ser åpent ut, men er lukket.** "GeoJson"-knappen og kartlaget antyder åpen data, men selve API-et er en Angular SPA uten REST-endepunkt for skolekretser. 30+ minutter brukt på å prøve WFS, API-stier, og JS-parsing — uten resultat.
 - **WebSearch er overraskende pålitelig for skolekretser.** Kommune-nettsider, skolenes egne sider, og WikiStrinda gir konsistent informasjon om hvilken barneskole som sogner til hvilken ungdomsskole. To søk er nok.
 - **Featured-markering er skjør.** Åsvang var featured. Fjerne Åsvang fjernet featured. Gotcha #1 ("featured forsvinner etter kvalitetsfiltrering") gjelder også manuell fjerning — alltid sjekk og erstatt.
+
+---
+
+## 2026-03-02 — Innovasjon Norge & Markedsavklaring
+
+### Research
+
+**Markedsavklaring (nå Oppstartstilskudd 1):**
+- Inntil 100-200k NOK for å avklare om betalingsvillig marked finnes
+- Skal IKKE bygge ferdig — teste, validere, dokumentere
+- Forventet leveranse: bevis på markedsaksept (pilotavtaler, LOIs, betalende kunder, partnerinvolvering)
+- Selskap < 3 år, AS, vesentlig nytt, vekstambisjoner
+
+**Kundeintervju-rammeverk (The Mom Test):**
+- Snakk om DERES hverdag, ikke vår idé
+- Spør om fortid og spesifikke hendelser, aldri hypotetisk fremtid
+- Lytt etter workarounds (manuelt arbeid, Excel, Google Maps-screenshots) — det er ekte smerte
+- Komplimenter og "kult konsept!" er verdiløse — forpliktelser (tid, penger, intro til kollega) er ekte signal
+- Filtrer bort "fluff": generelle påstander, hypotetiske kanskje, fremtidsløfter
+
+**Nøkkelspørsmål for boligaktører:**
+1. Hvordan jobber dere med nærområdeinformasjon i salgsprosessen i dag?
+2. Kan du ta meg gjennom sist dere presenterte et prosjekt — hva viste dere?
+3. Hva er mest tidkrevende i den prosessen?
+4. Har dere prøvd noe for å løse dette? Hva fungerte/ikke?
+5. Hvem bestemmer innkjøp av denne typen verktøy?
+6. Har dere noen gang tapt et salg der nærområdet var en faktor?
+
+### Parkert / Åpne spørsmål
+- **Skal vi søke Oppstartstilskudd 1?** Krever AS, < 3 år, vesentlig nytt. Sjekk om Placy kvalifiserer.
+- **Kundeintervju-mal:** Lag en konkret intervjuguide basert på rammeverket over, tilpasset ulike segmenter (utbygger, megler, eiendomsforvaltning)
+- **Dokumenteringsmal for møter:** Hvem, rolle, nøkkelfunn, forpliktelse — for IN-rapportering
+- **Pilotavtale-mal:** Hva innebærer en pilot? Gratis demo → feedback → LOI?
+
+### Retning
+- Markedsavklaring handler om å dokumentere at smerten er reell og betalingsviljen finnes — ikke om å bygge mer produkt
+- Demoene vi allerede lager (Brøset, Overvik) er perfekte verktøy for kundemøter — vis, ikke fortell
+- Neste steg: lage intervjuguide, booke møter, dokumentere systematisk

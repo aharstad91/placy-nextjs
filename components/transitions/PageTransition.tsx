@@ -32,6 +32,10 @@ export default function PageTransition({
       el.style.transition = `opacity ${ENTER_DURATION}ms ease-out, transform ${ENTER_DURATION}ms ease-out`;
       el.style.opacity = "1";
       el.style.transform = "translateY(0)";
+
+      // Remove transform after animation so position:fixed children work correctly
+      // (any transform on an ancestor creates a new containing block, breaking fixed positioning)
+      el.addEventListener("transitionend", () => { el.style.transform = ""; }, { once: true });
     });
   }, []);
 
@@ -49,6 +53,8 @@ export default function PageTransition({
       el.style.transition = `opacity ${ENTER_DURATION}ms ease-out, transform ${ENTER_DURATION}ms ease-out`;
       el.style.opacity = "1";
       el.style.transform = "translateY(0)";
+
+      el.addEventListener("transitionend", () => { el.style.transform = ""; }, { once: true });
     });
   }, [pathname]);
 
