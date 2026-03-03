@@ -50,14 +50,28 @@ export default async function ReportProductPage({ params, searchParams }: PagePr
     ? resolvedSearchParams.themes.split(",")
     : undefined;
 
+  // Build white-label CSS overrides from project theme (if set)
+  const themeStyle = projectData.theme
+    ? `:root {${
+        projectData.theme.primaryColor ? ` --placy-primary: ${projectData.theme.primaryColor};` : ""
+      }${
+        projectData.theme.backgroundColor ? ` --placy-bg: ${projectData.theme.backgroundColor};` : ""
+      }${
+        projectData.theme.fontFamily ? ` --placy-font: ${projectData.theme.fontFamily};` : ""
+      }}`
+    : null;
+
   return (
-    <ReportPage
-      project={projectData}
-      explorerBaseUrl={explorerUrl}
-      enTranslations={enTranslations}
-      areaSlug={areaSlug}
-      primaryThemeIds={rawThemes}
-    />
+    <>
+      {themeStyle && <style dangerouslySetInnerHTML={{ __html: themeStyle }} />}
+      <ReportPage
+        project={projectData}
+        explorerBaseUrl={explorerUrl}
+        enTranslations={enTranslations}
+        areaSlug={areaSlug}
+        primaryThemeIds={rawThemes}
+      />
+    </>
   );
 }
 

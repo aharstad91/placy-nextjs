@@ -4,7 +4,8 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ThemeDefinition } from "@/lib/themes/theme-definitions";
-import { getIcon } from "@/lib/utils/map-icons";
+import { getThemeQuestion } from "@/lib/i18n/strings";
+import ThemeChip from "./ThemeChip";
 
 interface WelcomeScreenProps {
   projectName: string;
@@ -56,6 +57,9 @@ export default function WelcomeScreen({
   }, [selectedThemeIds, selectedCount, themes, basePath, defaultProductPath, showThemeSelector]);
 
   const isDisabled = showThemeSelector && selectedCount === 0;
+
+  // Filter to themes with POIs, enrich with question
+  const visibleThemes = themes.filter((t) => (t.poiCount ?? 0) > 0);
 
   return (
     <main className="-mt-12 bg-[#faf9f7]">
@@ -109,7 +113,7 @@ export default function WelcomeScreen({
                 )}
               </header>
 
-              {/* Theme selector — card grid */}
+              {/* Theme selector — ThemeChip grid */}
               {showThemeSelector && (
                 <fieldset
                   className="welcome-animate"
@@ -117,75 +121,24 @@ export default function WelcomeScreen({
                 >
                   <legend className="sr-only">Velg temaer</legend>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {themes.map((theme, i) => {
-                      const isSelected = selectedThemeIds.has(theme.id);
-                      const Icon = getIcon(theme.icon);
-
-                      return (
-                        <label
-                          key={theme.id}
-                          className={`
-                            welcome-animate group relative flex flex-col items-start p-4 rounded-xl
-                            cursor-pointer select-none transition-all duration-150
-                            focus-within:ring-2 focus-within:ring-[#1a1a1a] focus-within:ring-offset-2
-                            ${isSelected
-                              ? "bg-white shadow-sm border border-[#eae6e1] hover:border-[#c0b9ad]"
-                              : "bg-transparent border border-[#eae6e1] opacity-65 hover:opacity-100 hover:border-[#c0b9ad] hover:shadow-sm"
-                            }
-                          `}
-                          style={{ animationDelay: `${320 + i * 55}ms` }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleTheme(theme.id)}
-                            className="sr-only"
-                            aria-label={theme.name}
-                          />
-
-                          {/* Checkmark — only when selected */}
-                          {isSelected && (
-                            <span className="absolute top-3 right-3 w-5 h-5 rounded-md bg-[#1a1a1a] flex items-center justify-center">
-                              <svg
-                                className="w-3 h-3 text-white"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={3}
-                                aria-hidden="true"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            </span>
-                          )}
-
-                          {/* Icon */}
-                          <Icon
-                            className={`w-7 h-7 mb-2 ${isSelected ? "text-[#7a7062]" : "text-[#a0998f]"}`}
-                            aria-hidden="true"
-                          />
-
-                          {/* Theme name */}
-                          <span
-                            className={`font-semibold text-sm leading-tight mb-1 ${isSelected ? "text-[#1a1a1a]" : "text-[#a0998f]"}`}
-                          >
-                            {theme.name}
-                          </span>
-
-                          {/* POI count */}
-                          {theme.poiCount != null && theme.poiCount > 0 && (
-                            <span className={`text-xs ${isSelected ? "text-[#6a6a6a]" : "text-[#b0a99f]"}`}>
-                              {theme.poiCount} steder
-                            </span>
-                          )}
-                        </label>
-                      );
-                    })}
+                  <div className="flex flex-wrap gap-3">
+                    {visibleThemes.map((theme, i) => (
+                      <div
+                        key={theme.id}
+                        className="welcome-animate"
+                        style={{ animationDelay: `${320 + i * 55}ms` }}
+                      >
+                        <ThemeChip
+                          theme={{
+                            ...theme,
+                            question: getThemeQuestion("no", theme.id) ?? theme.name,
+                          }}
+                          variant="select"
+                          isSelected={selectedThemeIds.has(theme.id)}
+                          onToggle={() => toggleTheme(theme.id)}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </fieldset>
               )}
@@ -195,7 +148,7 @@ export default function WelcomeScreen({
           {/* CTA at bottom of right panel */}
           <div
             className="px-12 xl:px-16 pb-12 welcome-animate"
-            style={{ animationDelay: `${showThemeSelector ? 320 + themes.length * 55 + 80 : 360}ms` }}
+            style={{ animationDelay: `${showThemeSelector ? 320 + visibleThemes.length * 55 + 80 : 360}ms` }}
           >
             <div className="w-full max-w-lg">
               {/* Live region for screen readers */}
@@ -300,7 +253,7 @@ export default function WelcomeScreen({
               </p>
             )}
 
-            {/* Theme selector — card grid */}
+            {/* Theme selector — ThemeChip grid */}
             {showThemeSelector && (
               <fieldset
                 className="welcome-animate"
@@ -310,75 +263,24 @@ export default function WelcomeScreen({
                   Hva interesserer deg?
                 </legend>
 
-                <div className="grid grid-cols-2 gap-3">
-                  {themes.map((theme, i) => {
-                    const isSelected = selectedThemeIds.has(theme.id);
-                    const Icon = getIcon(theme.icon);
-
-                    return (
-                      <label
-                        key={theme.id}
-                        className={`
-                          welcome-animate group relative flex flex-col items-start p-4 rounded-xl
-                          cursor-pointer select-none transition-all duration-150
-                          focus-within:ring-2 focus-within:ring-[#1a1a1a] focus-within:ring-offset-2
-                          ${isSelected
-                            ? "bg-white shadow-sm border border-[#eae6e1] hover:border-[#c0b9ad]"
-                            : "bg-transparent border border-[#eae6e1] opacity-65 hover:opacity-100 hover:border-[#c0b9ad] hover:shadow-sm"
-                          }
-                        `}
-                        style={{ animationDelay: `${(heroImage ? 160 : 120) + i * 55}ms` }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleTheme(theme.id)}
-                          className="sr-only"
-                          aria-label={theme.name}
-                        />
-
-                        {/* Checkmark — only when selected */}
-                        {isSelected && (
-                          <span className="absolute top-3 right-3 w-5 h-5 rounded-md bg-[#1a1a1a] flex items-center justify-center">
-                            <svg
-                              className="w-3 h-3 text-white"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={3}
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </span>
-                        )}
-
-                        {/* Icon */}
-                        <Icon
-                          className={`w-7 h-7 mb-2 ${isSelected ? "text-[#7a7062]" : "text-[#a0998f]"}`}
-                          aria-hidden="true"
-                        />
-
-                        {/* Theme name */}
-                        <span
-                          className={`font-semibold text-sm leading-tight mb-1 ${isSelected ? "text-[#1a1a1a]" : "text-[#a0998f]"}`}
-                        >
-                          {theme.name}
-                        </span>
-
-                        {/* POI count */}
-                        {theme.poiCount != null && theme.poiCount > 0 && (
-                          <span className={`text-xs ${isSelected ? "text-[#6a6a6a]" : "text-[#b0a99f]"}`}>
-                            {theme.poiCount} steder
-                          </span>
-                        )}
-                      </label>
-                    );
-                  })}
+                <div className="flex flex-wrap gap-3">
+                  {visibleThemes.map((theme, i) => (
+                    <div
+                      key={theme.id}
+                      className="welcome-animate"
+                      style={{ animationDelay: `${(heroImage ? 160 : 120) + i * 55}ms` }}
+                    >
+                      <ThemeChip
+                        theme={{
+                          ...theme,
+                          question: getThemeQuestion("no", theme.id) ?? theme.name,
+                        }}
+                        variant="select"
+                        isSelected={selectedThemeIds.has(theme.id)}
+                        onToggle={() => toggleTheme(theme.id)}
+                      />
+                    </div>
+                  ))}
                 </div>
               </fieldset>
             )}
@@ -388,7 +290,7 @@ export default function WelcomeScreen({
         {/* Sticky CTA area (mobile) */}
         <div
           className="sticky bottom-0 bg-[#faf9f7] border-t border-[#eae6e1] px-4 py-4 welcome-animate"
-          style={{ animationDelay: `${showThemeSelector ? (heroImage ? 160 : 120) + themes.length * 55 + 80 : 160}ms` }}
+          style={{ animationDelay: `${showThemeSelector ? (heroImage ? 160 : 120) + visibleThemes.length * 55 + 80 : 160}ms` }}
         >
           <div className="max-w-lg mx-auto">
             {/* Live region for screen readers */}

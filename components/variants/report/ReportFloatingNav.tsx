@@ -121,7 +121,9 @@ export default function ReportFloatingNav({
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {theme.name}
+                  {theme.question
+                    ? theme.question.replace(/\?$/, "")
+                    : theme.name}
                 </button>
               );
             })}

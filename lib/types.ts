@@ -168,6 +168,15 @@ export interface DiscoveryCircle {
   radiusMeters: number;
 }
 
+// === White-label theming ===
+
+export interface ProjectTheme {
+  primaryColor?: string;      // Accent color (buttons, active states)
+  backgroundColor?: string;   // Section backgrounds
+  fontFamily?: "inter" | "dm-sans" | "system";
+  logoUrl?: string;           // Logo in header
+}
+
 // === Project Container (NEW: Hierarchy) ===
 
 /**
@@ -199,6 +208,8 @@ export interface ProjectContainer {
   welcomeImage?: string;
   /** Default product to navigate to from the welcome screen */
   defaultProduct: ProductType;
+  /** White-label theme configuration */
+  theme?: ProjectTheme;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -259,6 +270,8 @@ export interface Project {
   venueType?: "hotel" | "residential" | "commercial" | null;
   // Trip-specific settings
   tripConfig?: TripConfig;
+  /** Per-project white-label theme (CSS overrides) */
+  theme?: ProjectTheme;
 }
 
 // === Global State ===

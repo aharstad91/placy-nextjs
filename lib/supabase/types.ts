@@ -303,6 +303,8 @@ export type Database = {
           story_title: string | null;
           story_intro_text: string | null;
           story_hero_images: string[] | null;
+          tags: string[] | null;
+          theme: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };
@@ -318,6 +320,8 @@ export type Database = {
           story_title?: string | null;
           story_intro_text?: string | null;
           story_hero_images?: string[] | null;
+          tags?: string[] | null;
+          theme?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -333,6 +337,8 @@ export type Database = {
           story_title?: string | null;
           story_intro_text?: string | null;
           story_hero_images?: string[] | null;
+          tags?: string[] | null;
+          theme?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
