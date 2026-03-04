@@ -146,6 +146,79 @@ export function byTierThenScore(a: POI, b: POI): number {
   return calculateReportScore(b) - calculateReportScore(a);
 }
 
+/**
+ * Sort comparator: tier first (lower = better), then distance to center (closer = better).
+ * NULL_TIER_VALUE = 2.5 places unevaluated POIs between tier 2 and 3.
+ */
+export function byTierThenDistance(center: Coordinates) {
+  return (a: POI, b: POI): number => {
+    const aTier = a.poiTier ?? NULL_TIER_VALUE;
+    const bTier = b.poiTier ?? NULL_TIER_VALUE;
+    if (aTier !== bTier) return aTier - bTier;
+    // Distance: prefer walk time, fall back to haversine
+    const aDist = a.travelTime?.walk ?? haversineMeters(center, a.coordinates);
+    const bDist = b.travelTime?.walk ?? haversineMeters(center, b.coordinates);
+    return aDist - bDist;
+  };
+}
+
+/**
+ * Select POIs using category-diversified round-robin.
+ * Ensures first N POIs show breadth across categories.
+ * Within each category: sorted by tier → distance (not score).
+ * Handles any number of categories correctly (1, 2, or many).
+ */
+export function diversifiedSelection(
+  pois: POI[],
+  center: Coordinates,
+  count: number = INITIAL_VISIBLE_COUNT,
+): { visiblePOIs: POI[]; hiddenPOIs: POI[] } {
+  if (pois.length === 0) return { visiblePOIs: [], hiddenPOIs: [] };
+
+  // Group by category
+  const byCat = new Map<string, POI[]>();
+  for (const poi of pois) {
+    const catId = poi.category.id;
+    const arr = byCat.get(catId);
+    if (arr) {
+      arr.push(poi);
+    } else {
+      byCat.set(catId, [poi]);
+    }
+  }
+
+  // Re-sort within each category: tier → distance
+  const comparator = byTierThenDistance(center);
+  byCat.forEach((catPOIs) => {
+    catPOIs.sort(comparator);
+  });
+
+  const categories = Array.from(byCat.keys());
+
+  // Round-robin: pick best from each category in turn
+  const selected: POI[] = [];
+  const indices = new Map<string, number>(categories.map((c) => [c, 0]));
+  const totalAvailable = Math.min(count, pois.length);
+  let catIdx = 0;
+
+  while (selected.length < totalAvailable) {
+    const catId = categories[catIdx % categories.length];
+    const catPOIs = byCat.get(catId);
+    const idx = indices.get(catId);
+    if (catPOIs !== undefined && idx !== undefined && idx < catPOIs.length) {
+      selected.push(catPOIs[idx]);
+      indices.set(catId, idx + 1);
+    }
+    catIdx++;
+  }
+
+  // Hidden: everything not selected, sorted by tier → distance
+  const selectedIds = new Set(selected.map((p) => p.id));
+  const hidden = pois.filter((p) => !selectedIds.has(p.id)).sort(comparator);
+
+  return { visiblePOIs: selected, hiddenPOIs: hidden };
+}
+
 /** Compute stats from a POI array */
 function computePOIStats(pois: POI[]) {
   const rated = pois.filter((p) => p.googleRating != null);
@@ -275,8 +348,8 @@ function buildSubSections(
     const sample = catPOIs[0].category;
     // Apply per-category filtering (school-zone, maxCount) before sorting/splitting
     const filteredPOIs = applyCategoryFilter(catId, catPOIs, center);
-    // Sort by tier then formula score so highlights and visible list show best POIs
-    const sortedCatPOIs = [...filteredPOIs].sort(byTierThenScore);
+    // Sort by tier then distance (closer = better within same tier)
+    const sortedCatPOIs = [...filteredPOIs].sort(byTierThenDistance(center));
     const visibleCount = getInitialVisibleCount(catId);
     const { visiblePOIs, hiddenPOIs } = splitVisibleHidden(sortedCatPOIs, visibleCount);
     const stats = computePOIStats(sortedCatPOIs);
@@ -380,9 +453,8 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     // then reassemble the theme's POI list preserving distance order.
     const filtered = applyThemeCategoryFilters(distanceSorted, center);
 
-    // Sort by tier then score and split into visible/hidden
-    const sorted = [...filtered].sort(byTierThenScore);
-    const { visiblePOIs, hiddenPOIs } = splitVisibleHidden(sorted);
+    // Diversified selection: round-robin across categories, tier → distance within each
+    const { visiblePOIs, hiddenPOIs } = diversifiedSelection(filtered, center);
     const themeStats = computePOIStats(filtered);
 
     const uniqueCategories = new Set(filtered.map((p) => p.category.id)).size;
