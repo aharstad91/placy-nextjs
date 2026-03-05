@@ -39,7 +39,11 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
   const container = await getProjectContainerAsync(customer, projectSlug);
 
   if (container && container.products.length > 0) {
-    const defaultProduct = container.defaultProduct ?? "report";
+    const availableTypes = new Set(container.products.map((p) => p.productType));
+    const preferred = container.defaultProduct ?? "report";
+    const defaultProduct = availableTypes.has(preferred)
+      ? preferred
+      : container.products[0].productType;
     const productPath = PRODUCT_PATH[defaultProduct];
     const showThemeSelector = defaultProduct !== "guide";
 
