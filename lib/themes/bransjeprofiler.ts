@@ -238,7 +238,7 @@ export function getBransjeprofil(tags?: string[]): Bransjeprofil {
       "trening-velvare": 15,
       "hverdagsbehov": 20,
     },
-    explorerTotalCap: 100,
+    explorerTotalCap: 300,
   };
 }
 

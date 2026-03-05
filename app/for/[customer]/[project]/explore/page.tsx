@@ -48,7 +48,29 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
   // Get bransjeprofil themes based on project tags
   const profil = getBransjeprofil(projectData.tags);
 
+  // Auto-generate themes from project categories when bransjeprofil themes don't match any POIs
+  const profilCatIds = new Set(profil.themes.flatMap((t: { categories: string[] }) => t.categories));
+  const hasThemeOverlap = projectData.pois.some((p) => profilCatIds.has(p.category.id));
+
+  const effectiveThemes = hasThemeOverlap
+    ? profil.themes
+    : projectData.categories.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        categories: [cat.id],
+        color: cat.color,
+      }));
+
   // Apply Explorer caps (skip for collection views — they show a curated subset)
+  // When using auto-generated themes, build uncapped per-theme caps so all POIs pass through
+  const effectiveCaps = hasThemeOverlap
+    ? profil.explorerCaps
+    : Object.fromEntries(effectiveThemes.map((t) => [t.id, 999]));
+  const effectiveTotalCap = hasThemeOverlap
+    ? profil.explorerTotalCap
+    : 999;
+
   const isCollectionView = typeof resolvedSearchParams.c === "string";
   if (!isCollectionView) {
     const venueProfile = getVenueProfile(projectData.venueType);
@@ -56,10 +78,10 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
       ...projectData,
       pois: applyExplorerCaps(
         projectData.pois,
-        profil.themes,
+        effectiveThemes,
         venueProfile,
-        profil.explorerCaps,
-        profil.explorerTotalCap
+        effectiveCaps,
+        effectiveTotalCap
       ),
     };
   }
@@ -70,7 +92,7 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
     ? resolvedSearchParams.themes.split(",").map(resolveThemeId)
     : undefined;
   const themeDerivedCategories = selectedThemes
-    ? profil.themes
+    ? effectiveThemes
         .filter((t) => selectedThemes.includes(t.id))
         .flatMap((t) => t.categories)
     : undefined;
@@ -82,7 +104,7 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
       return (
         <ExplorerPage
           project={projectData}
-          themes={profil.themes}
+          themes={effectiveThemes}
           areaSlug={areaSlug}
           collection={{
             slug: collection.slug,
@@ -114,7 +136,7 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
   return (
     <ExplorerPage
       project={projectData}
-      themes={profil.themes}
+      themes={effectiveThemes}
       areaSlug={areaSlug}
       initialPOI={
         typeof resolvedSearchParams.poi === "string"

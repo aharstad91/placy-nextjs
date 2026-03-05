@@ -2027,3 +2027,90 @@ Dette er en sterk åpner fordi:
 
 ### Compound
 - `docs/solutions/ui-patterns/report-unified-poi-card-grid-20260303.md`
+
+---
+
+## 2026-03-05
+
+### Beslutninger
+- **Første outreach til Trondheim kommune** — e-post sendt til byarkitekt Nadja Sahbegovic (CC: byarkitekten@trondheim.kommune.no, Trond Åm)
+- Vinkling: "bi-produkt av Open House-artikkelen" — ikke salgspitch, men genuint resultat av å teste plattformen med kommunens data
+- Tre demoer vedlagt: Prisbelønnet arkitektur i Trondheim, Fredede bygninger i Trondheim, Open House Oslo 2025
+- Emne: "Open House Trondheim — en idé etter Adressa-artikkelen"
+- Bevisst valg å IKKE lansere placy.no først — demoene er beviset, og eiendomsnettsiden kan forvirre budskapet mot kommune
+
+### Kontekst
+- Artikkelen "Vil åpne private hjem i Trondheim" (Adressa, 2. feb 2026) — Sahbegovic og Åm planlegger Open House Trondheim
+- Artikkelen "Planlegger enorme endringer" (Adressa, 5. mars 2026) — Tempe-Sorgenfri områdeplan, Åm er sentral
+- Kommunens kart over prisbelønnet arkitektur (Trondheimskartet) ble brukt som datakilde — Placy viser samme data på en mer brukervennlig måte
+- Sahbegovic: nadja.sahbegovic@trondheim.kommune.no / tlf 94 43 84 13
+
+### Retning
+- Kommune/offentlig sektor er nytt potensielt kundesegment — kulturarv, arkitektur, byutvikling
+- Plattformen viser seg å håndtere mer enn eiendom/turisme — stedsdata generelt
+- Mobilopplevelsen er ikke klar enda — ærlig om dette i e-posten ("optimalisert for desktop")
+
+### Åpne spørsmål
+- Får vi svar fra Sahbegovic/Åm? Oppfølging om 1-2 uker om ikke
+- Bør vi lage en dedikert "kommune/offentlig sektor"-vinkling på placy.no?
+- Kan Open House Trondheim bli en pilotcase?
+
+### Observasjoner
+- "Warm outreach via verdi" — gi noe nyttig først, spør om samtale etterpå — mye sterkere enn kald pitch
+- Å la demoene snakke for seg selv er viktigere enn å forklare features
+- Ærlig om begrensninger (mobil) bygger troverdighet
+
+---
+
+## 2026-03-05 (del 2) — Trondheim Management / Kulturnatt
+
+### Beslutninger
+- **Kulturnatt Trondheim 2025 importert som demo** — 132 events via trdevents.no GraphQL API
+- Import-script: `scripts/import-kulturnatt.ts` — henter direkte fra trdevents.no, kategoriserer, pusher til Supabase
+- 10 kategorier: Utstilling & Galleri (28), Musikk & Konsert (26), Teater & Show (22), Museum (19), Verksted & Kurs (11), Familie (9), Annet (7), Foredrag & Samtale (5), Mat & Drikke (3), Film & Teknologi (2)
+- Explorer live: `/for/kulturnatt-trondheim/kulturnatt-2025/explore`
+- Økt fallback `explorerTotalCap` fra 100 → 300 i `lib/themes/bransjeprofiler.ts` — prosjekter uten bransjeprofil ble kuttet til 100 POIs
+
+### Prospekt: Trondheim Management AS
+
+**Organisasjonen eier fire brands/events som alle trenger kartbaserte nettsider:**
+
+| Brand | Type | Placy-match | Status |
+|-------|------|-------------|--------|
+| **Kulturnatt Trondheim** | Endagsfestival, 132+ events | Explorer med favoritter | Demo klar |
+| **Martnan** (julemarked) | Årlig event, steder på kart | Explorer | Neste demo? |
+| **Visit Trondheim** | Destinasjonsselskap, turisme | Explorer/Guide/Report | **Storkunde-potensial** |
+| **Midtbyen** | Bysentrum, butikker, restauranter | Explorer | Naturlig utvidelse |
+
+**Kontaktinfo:**
+- Prosjektleder Kulturnatt: nanna@midtbyen.no / 934 30 011
+- Produsent: isabel@midtbyen.no / 411 96 020
+- Produsent: stig@midtbyen.no
+
+**Nøkkelargumenter:**
+- Deres nåværende løsning: WordPress + trdevents-widget + Google Maps embed. Dårlig UX, spesielt mobil
+- Deres "Mine favoritter"-system er en tom side med hjerte-ikon. Vår "Min samling" er live kart med lagrede steder, delbar via lenke
+- Placy erstatter hele stacken: program, kart, favoritter — i én sammenhengende opplevelse
+- Samme import-pipeline kan kjøres for Kulturnatt 2026, Martnan, og andre events — skalerbart
+
+**Strategi:**
+- Kulturnatt er inngangsdøren — konkret demo med deres egne data
+- Visit Trondheim er den store premien — turisme er allerede Placys kjertevertical
+- Trondheim Management som organisasjon kan kjøpe **flere prosjekter**, ikke bare ett
+
+### Retning
+- To parallelle salgsspor nå: (1) Trondheim kommune/byarkitekten, (2) Trondheim Management
+- Begge bruker "warm outreach via verdi" — demo først, samtale etterpå
+- Kulturnatt-demo må deployes til placy.no før outreach
+- Samme playbook som byarkitekten: e-post med lenker, ingen pitch
+
+### Åpne spørsmål
+- Hvem er riktig kontaktperson hos Trondheim Management for pitch? Nanna (prosjektleder Kulturnatt) eller noen på Visit Trondheim-nivå?
+- Bør vi scrape Martnan-data også for å vise bredden?
+- Kulturnatt 2026 er 11. september — kan vi tilby å levere Explorer som pilot til årets festival?
+- Visit Trondheim bruker visittrondheim.no — hva slags tech-stack har de, og kan Placy erstatte deler av den?
+
+### Observasjoner
+- trdevents.no GraphQL API er åpent og veldokumentert — import tok under en time fra scraping til ferdig Explorer
+- Plattformens fleksibilitet bekreftet igjen: eiendom → kulturarv → events, uten kodeendringer
+- "Min samling" vs "Mine favoritter" er det sterkeste UX-argumentet — visuelt bevis på generasjonsgap
