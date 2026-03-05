@@ -89,6 +89,7 @@ interface ProjectDetailClientProps {
   unlinkTripFromProject: (formData: FormData) => Promise<void>;
   updateProjectTripOverride: (formData: FormData) => Promise<void>;
   updateProjectTags: (formData: FormData) => Promise<void>;
+  updateDefaultProduct: (formData: FormData) => Promise<void>;
 }
 
 export function ProjectDetailClient({
@@ -114,6 +115,7 @@ export function ProjectDetailClient({
   unlinkTripFromProject,
   updateProjectTripOverride,
   updateProjectTags,
+  updateDefaultProduct,
 }: ProjectDetailClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("details");
@@ -191,6 +193,7 @@ export function ProjectDetailClient({
               batchAddPoisToProduct={batchAddPoisToProduct}
               batchRemovePoisFromProduct={batchRemovePoisFromProduct}
               createProduct={createProduct}
+              updateDefaultProduct={updateDefaultProduct}
             />
           )}
           {activeTab === "trips" && (
@@ -1334,6 +1337,7 @@ interface ProductsTabProps {
   batchAddPoisToProduct: (formData: FormData) => Promise<void>;
   batchRemovePoisFromProduct: (formData: FormData) => Promise<void>;
   createProduct: (formData: FormData) => Promise<void>;
+  updateDefaultProduct: (formData: FormData) => Promise<void>;
 }
 
 function ProductsTab({
@@ -1343,6 +1347,7 @@ function ProductsTab({
   batchAddPoisToProduct,
   batchRemovePoisFromProduct,
   createProduct,
+  updateDefaultProduct,
 }: ProductsTabProps) {
   const [expandedProductId, setExpandedProductId] = useState<string | null>(
     null
@@ -1744,6 +1749,52 @@ function ProductsTab({
         <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-center gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
+        </div>
+      )}
+
+      {/* Default product selector */}
+      {products.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+          <label className="block text-xs font-medium text-gray-600 mb-2">
+            Standard produkt (landingsside)
+          </label>
+          <div className="flex gap-2">
+            {products.map((product) => {
+              const config =
+                PRODUCT_TYPE_CONFIG[
+                  product.product_type as keyof typeof PRODUCT_TYPE_CONFIG
+                ] || PRODUCT_TYPE_CONFIG.explorer;
+              const IconComponent = config.icon;
+              const isDefault = project.default_product === product.product_type;
+
+              return (
+                <button
+                  key={product.id}
+                  onClick={async () => {
+                    if (isDefault) return;
+                    const formData = new FormData();
+                    formData.set("id", project.id);
+                    formData.set("shortId", project.short_id);
+                    formData.set("defaultProduct", product.product_type);
+                    await updateDefaultProduct(formData);
+                  }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                    isDefault
+                      ? config.color === "emerald"
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                        : config.color === "rose"
+                          ? "border-rose-500 bg-rose-50 text-rose-700"
+                          : "border-amber-500 bg-amber-50 text-amber-700"
+                      : "border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4" />
+                  {config.label}
+                  {isDefault && <Check className="w-3.5 h-3.5" />}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
