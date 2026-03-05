@@ -662,6 +662,26 @@ export default async function ProjectDetailPage({
     revalidatePath("/admin/projects");
   }
 
+  async function deleteProduct(formData: FormData) {
+    "use server";
+
+    const productId = getRequiredString(formData, "productId");
+    const shortId = getRequiredString(formData, "shortId");
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    // Delete POI links first, then the product
+    await supabase.from("product_pois").delete().eq("product_id", productId);
+    await supabase.from("product_categories").delete().eq("product_id", productId);
+
+    const { error } = await supabase.from("products").delete().eq("id", productId);
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/admin/projects/${shortId}`);
+    revalidatePath("/admin/projects");
+  }
+
   // --- Trip-related server actions (WP3B) ---
 
   async function linkTripToProject(formData: FormData) {
@@ -815,6 +835,7 @@ export default async function ProjectDetailPage({
       updateProjectTripOverride={updateProjectTripOverride}
       updateProjectTags={updateProjectTags}
       updateDefaultProduct={updateDefaultProduct}
+      deleteProduct={deleteProduct}
     />
   );
 }

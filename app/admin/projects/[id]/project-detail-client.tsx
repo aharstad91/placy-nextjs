@@ -90,6 +90,7 @@ interface ProjectDetailClientProps {
   updateProjectTripOverride: (formData: FormData) => Promise<void>;
   updateProjectTags: (formData: FormData) => Promise<void>;
   updateDefaultProduct: (formData: FormData) => Promise<void>;
+  deleteProduct: (formData: FormData) => Promise<void>;
 }
 
 export function ProjectDetailClient({
@@ -116,6 +117,7 @@ export function ProjectDetailClient({
   updateProjectTripOverride,
   updateProjectTags,
   updateDefaultProduct,
+  deleteProduct,
 }: ProjectDetailClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("details");
@@ -194,6 +196,7 @@ export function ProjectDetailClient({
               batchRemovePoisFromProduct={batchRemovePoisFromProduct}
               createProduct={createProduct}
               updateDefaultProduct={updateDefaultProduct}
+              deleteProduct={deleteProduct}
             />
           )}
           {activeTab === "trips" && (
@@ -1338,6 +1341,7 @@ interface ProductsTabProps {
   batchRemovePoisFromProduct: (formData: FormData) => Promise<void>;
   createProduct: (formData: FormData) => Promise<void>;
   updateDefaultProduct: (formData: FormData) => Promise<void>;
+  deleteProduct: (formData: FormData) => Promise<void>;
 }
 
 function ProductsTab({
@@ -1348,10 +1352,12 @@ function ProductsTab({
   batchRemovePoisFromProduct,
   createProduct,
   updateDefaultProduct,
+  deleteProduct,
 }: ProductsTabProps) {
   const [expandedProductId, setExpandedProductId] = useState<string | null>(
     null
   );
+  const [deleteTarget, setDeleteTarget] = useState<ProductWithPois | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -1896,6 +1902,13 @@ function ProductsTab({
                     Åpne
                   </Link>
                 )}
+                <button
+                  onClick={() => setDeleteTarget(product)}
+                  className="p-2 mr-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Slett produkt"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Expanded POI List */}
@@ -2056,6 +2069,34 @@ function ProductsTab({
       </div>
 
       <CreateProductModal />
+
+      {/* Delete product confirmation */}
+      {deleteTarget && (
+        <ConfirmDialog
+          isOpen={true}
+          title="Slett produkt"
+          message={`Er du sikker på at du vil slette ${
+            PRODUCT_TYPE_CONFIG[deleteTarget.product_type as keyof typeof PRODUCT_TYPE_CONFIG]?.label ?? deleteTarget.product_type
+          }? Alle POI-koblinger for dette produktet fjernes. Dette kan ikke angres.`}
+          confirmLabel="Slett"
+          onConfirm={async () => {
+            setIsSubmitting(true);
+            setError(null);
+            try {
+              const formData = new FormData();
+              formData.set("productId", deleteTarget.id);
+              formData.set("shortId", project.short_id);
+              await deleteProduct(formData);
+              setDeleteTarget(null);
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Kunne ikke slette produkt");
+            } finally {
+              setIsSubmitting(false);
+            }
+          }}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }

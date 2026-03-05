@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   getProjectAsync,
   getBaseSlug,
@@ -45,7 +45,12 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
       ? preferred
       : container.products[0].productType;
     const productPath = PRODUCT_PATH[defaultProduct];
-    const showThemeSelector = defaultProduct !== "guide";
+    const basePath = `/for/${customer}/${projectSlug}`;
+
+    // WelcomeScreen is only for report — other products redirect directly
+    if (defaultProduct !== "report") {
+      redirect(`${basePath}/${productPath}`);
+    }
 
     // Get themes from bransjeprofil based on project tags
     const profil = getBransjeprofil(container.tags);
@@ -62,9 +67,9 @@ export default async function ProjectPage({ params, searchParams }: PageProps) {
         tagline={container.welcomeTagline}
         heroImage={container.welcomeImage}
         defaultProductPath={productPath}
-        basePath={`/for/${customer}/${projectSlug}`}
+        basePath={basePath}
         themes={themesWithStats}
-        showThemeSelector={showThemeSelector}
+        showThemeSelector={true}
       />
     );
   }
