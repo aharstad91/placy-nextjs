@@ -2114,3 +2114,36 @@ Dette er en sterk åpner fordi:
 - trdevents.no GraphQL API er åpent og veldokumentert — import tok under en time fra scraping til ferdig Explorer
 - Plattformens fleksibilitet bekreftet igjen: eiendom → kulturarv → events, uten kodeendringer
 - "Min samling" vs "Mine favoritter" er det sterkeste UX-argumentet — visuelt bevis på generasjonsgap
+
+---
+
+## 2026-03-06 — Selvbetjent megler-pipeline
+
+### Beslutninger
+- **Bygget full selvbetjeningsflyt for eiendomsmeglere:** `/generer` (bestillingsskjema) → `/kart/{slug}` (statusside → Explorer)
+- **KartExplorer som fork av ExplorerPage** (~444 vs ~712 linjer) — fjernet collection/admin/GeoWidget, erstattet med localStorage-bokmerker. Fork > abstraksjon når state-håndtering er fundamentalt ulik.
+- **NFC (ikke NFD) for norsk adresse-normalisering** — NFD + strip diacritics fjerner æ/ø/å, gjør norske adresser ugjenkjennelige
+- **ON DELETE SET NULL** som standard for audit-trail-tabeller — bevarer forespørsler selv om prosjektet slettes
+- **Eksplisitt service role key-sjekk** i API-rute — bedre enn å stole på at `createServerClient` velger riktig nøkkel stille
+- **Tre boligprofiler:** family (7 temaer, standard), young (5 temaer, uteliv-fokus), senior (4 temaer, helse-fokus)
+- **Pipeline som Claude Code slash-command** (`.claude/commands/generate-adresse.md`) — 12-stegs pipeline med atomic polling, fail-soft error handling
+- PR #57 opprettet: 17 filer, ~1600 linjer
+
+### Parkert / Apne sporsmaal
+- **RLS "Public read by slug" eksponerer e-post (PII)** — bør strammes inn til kun ikke-sensitive kolonner, men alle reads går via server components med service role, så lav risiko nå
+- **Ingen rate limiting** på generation endpoint — akseptabelt for prototype, men bør legges til før bred lansering
+- **Mapbox token i HTML** — bør låses med referrer-restrictions i Mapbox-dashboard
+- Pipeline slash-command er skrevet men ikke testet end-to-end — trenger reell kjøring for å verifisere alle 12 steg
+- Hvem er riktig kontaktperson hos Trondheim Management? (fra forrige sesjon, fortsatt åpent)
+
+### Retning
+- **Selvbetjening er nå mulig** — meglere kan bestille nabolagskart uten at vi gjør noe manuelt
+- Pipeline-steget (generere selve kartet) er neste implementering — slash-command er klar, trenger kjøring
+- To parallelle spor: (1) megler-selvbetjening med EM1/Kristian som pilot, (2) Trondheim Management/Kulturnatt
+- Plattformen utvider seg fra "vi lager demoer" til "brukerne lager selv" — viktig skift
+
+### Observasjoner
+- **Fork-strategi fungerte rent.** KartExplorer ble ~60% av ExplorerPage med tydelig separasjon. Risikoen er drift over tid — endringer i Explorer må vurderes for Kart også.
+- **Zod + server component + service role er et sterkt mønster** for offentlige API-ruter med database-skriving. Gjenbrukbart for fremtidige selvbetjenings-endepunkter.
+- **AddressAutocomplete ble genuint gjenbrukbar** — 300ms debounce, abort controller, keyboard nav. Kan erstatte ReportAddressInput der den brukes.
+- Sikkerhetsherdingen (migration 047, retry-guard, crypto.randomUUID) tok 15 min men fanget reelle svakheter. Risikobasert agent-review betaler seg.
