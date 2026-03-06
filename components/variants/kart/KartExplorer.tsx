@@ -115,6 +115,25 @@ export default function KartExplorer({ project, themes }: KartExplorerProps) {
     return map;
   }, [poisWithTravelTimes]);
 
+  // Initial bounds from all POIs (fit map to show POIs on load)
+  const initialBounds = useMemo(() => {
+    if (project.pois.length === 0) return undefined;
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    for (const poi of project.pois) {
+      if (poi.coordinates.lat < minLat) minLat = poi.coordinates.lat;
+      if (poi.coordinates.lat > maxLat) maxLat = poi.coordinates.lat;
+      if (poi.coordinates.lng < minLng) minLng = poi.coordinates.lng;
+      if (poi.coordinates.lng > maxLng) maxLng = poi.coordinates.lng;
+    }
+    // Also include center point
+    const c = project.centerCoordinates;
+    if (c.lat < minLat) minLat = c.lat;
+    if (c.lat > maxLat) maxLat = c.lat;
+    if (c.lng < minLng) minLng = c.lng;
+    if (c.lng > maxLng) maxLng = c.lng;
+    return { minLat, maxLat, minLng, maxLng };
+  }, [project.pois, project.centerCoordinates]);
+
   // Filtered POIs
   const filteredPOIs = useMemo(() => {
     return poisWithTravelTimes.filter((poi) => activeCategories.has(poi.category.id));
@@ -373,6 +392,7 @@ export default function KartExplorer({ project, themes }: KartExplorerProps) {
     travelMode,
     fitRoute,
     showSkeleton,
+    initialBounds,
   };
 
   const desktopMapPadding = { left: 60, top: 60, right: 60, bottom: 60 };
