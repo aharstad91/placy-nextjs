@@ -868,6 +868,73 @@ export type Database = {
           }
         ];
       };
+      generation_requests: {
+        Row: {
+          id: string;
+          address: string;
+          address_normalized: string;
+          email: string;
+          housing_type: "family" | "young" | "senior";
+          status: "pending" | "processing" | "completed" | "failed";
+          geocoded_lat: number | null;
+          geocoded_lng: number | null;
+          geocoded_city: string | null;
+          address_slug: string;
+          project_id: string | null;
+          result_url: string | null;
+          error_message: string | null;
+          consent_given: boolean;
+          created_at: string;
+          updated_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          address: string;
+          address_normalized: string;
+          email: string;
+          housing_type?: "family" | "young" | "senior";
+          status?: "pending" | "processing" | "completed" | "failed";
+          geocoded_lat?: number | null;
+          geocoded_lng?: number | null;
+          geocoded_city?: string | null;
+          address_slug: string;
+          project_id?: string | null;
+          result_url?: string | null;
+          error_message?: string | null;
+          consent_given?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          address?: string;
+          address_normalized?: string;
+          email?: string;
+          housing_type?: "family" | "young" | "senior";
+          status?: "pending" | "processing" | "completed" | "failed";
+          geocoded_lat?: number | null;
+          geocoded_lng?: number | null;
+          geocoded_city?: string | null;
+          address_slug?: string;
+          project_id?: string | null;
+          result_url?: string | null;
+          error_message?: string | null;
+          consent_given?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          completed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "generation_requests_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       project_trips: {
         Row: {
           id: string;
@@ -974,6 +1041,7 @@ export type DbTrip = Tables<"trips">;
 export type DbTripStop = Tables<"trip_stops">;
 export type DbProjectTrip = Tables<"project_trips">;
 export type DbPlaceKnowledge = Tables<"place_knowledge">;
+export type DbGenerationRequest = Tables<"generation_requests">;
 
 // Product type enum
 export type ProductType = "explorer" | "report" | "guide";

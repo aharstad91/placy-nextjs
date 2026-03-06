@@ -36,6 +36,7 @@ interface ExplorerPanelProps {
   onSetTravelMode?: (mode: TravelMode) => void;
   collectionPOIs?: string[];
   onToggleCollection?: (poiId: string) => void;
+  showBookmarkHeartOnly?: boolean;
   areaSlug?: string | null;
   themes: ThemeDefinition[];
   isCollectionView?: boolean;
@@ -74,6 +75,7 @@ export default function ExplorerPanel({
   onSetTravelMode,
   collectionPOIs = [],
   onToggleCollection,
+  showBookmarkHeartOnly,
   areaSlug,
   themes,
   isCollectionView,
@@ -247,6 +249,7 @@ export default function ExplorerPanel({
                       travelMode={travelMode}
                       isInCollection={collectionPOIs.includes(poi.id)}
                       onToggleCollection={onToggleCollection}
+                      showBookmarkHeartOnly={showBookmarkHeartOnly}
                       areaSlug={areaSlug}
                     />
                   </div>
