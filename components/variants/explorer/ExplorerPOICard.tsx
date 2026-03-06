@@ -22,6 +22,7 @@ import {
   Check,
   Route,
   BookOpen,
+  Heart,
 } from "lucide-react";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { shouldShowRating } from "@/lib/themes/rating-categories";
@@ -43,6 +44,7 @@ interface ExplorerPOICardProps {
   travelMode?: TravelMode;
   isInCollection?: boolean;
   onToggleCollection?: (poiId: string) => void;
+  showBookmarkHeartOnly?: boolean;
   areaSlug?: string | null;
   alwaysExpanded?: boolean;
   hideChevron?: boolean;
@@ -58,6 +60,7 @@ export default function ExplorerPOICard({
   travelMode = "walk",
   isInCollection,
   onToggleCollection,
+  showBookmarkHeartOnly,
   areaSlug,
   alwaysExpanded,
   hideChevron,
@@ -214,7 +217,20 @@ export default function ExplorerPOICard({
           {/* Save button + chevron (hidden in alwaysExpanded trip mode) */}
           {!alwaysExpanded && (
             <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
-              {onToggleCollection && (
+              {onToggleCollection && showBookmarkHeartOnly ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleCollection(poi.id);
+                  }}
+                  className={cn(
+                    "p-2 transition-colors rounded-full",
+                    isInCollection ? "text-red-500" : "text-gray-400 hover:text-red-400"
+                  )}
+                >
+                  <Heart className="w-5 h-5" fill={isInCollection ? "currentColor" : "none"} />
+                </button>
+              ) : onToggleCollection ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -239,7 +255,7 @@ export default function ExplorerPOICard({
                     </>
                   )}
                 </button>
-              )}
+              ) : null}
               {!hideChevron && <ChevronDown className="w-4 h-4 text-gray-500 rotate-180" />}
             </div>
           )}
@@ -545,7 +561,20 @@ export default function ExplorerPOICard({
 
             {/* Save button + chevron */}
             <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
-              {onToggleCollection && (
+              {onToggleCollection && showBookmarkHeartOnly ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleCollection(poi.id);
+                  }}
+                  className={cn(
+                    "p-2 transition-colors rounded-full",
+                    isInCollection ? "text-red-500" : "text-gray-400 hover:text-red-400"
+                  )}
+                >
+                  <Heart className="w-5 h-5" fill={isInCollection ? "currentColor" : "none"} />
+                </button>
+              ) : onToggleCollection ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -570,7 +599,7 @@ export default function ExplorerPOICard({
                     </>
                   )}
                 </button>
-              )}
+              ) : null}
               {!hideChevron && <ChevronDown className="w-4 h-4 text-gray-300" />}
             </div>
           </div>

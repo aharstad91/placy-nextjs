@@ -15,6 +15,7 @@ import {
   BookOpen,
   Menu,
   X,
+  FileText,
 } from "lucide-react";
 
 type NavLink = { href: string; label: string; icon: LucideIcon; exact?: boolean };
@@ -29,6 +30,7 @@ const NAV_ITEMS: NavLink[] = [
   { href: "/admin/pois", label: "POI-er", icon: MapPin },
   { href: "/admin/categories", label: "Kategorier", icon: Tag },
   { href: "/admin/generate", label: "Generator", icon: Sparkles },
+  { href: "/admin/requests", label: "Requests", icon: FileText },
 ];
 
 interface AdminSidebarProps {
