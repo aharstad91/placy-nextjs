@@ -18,11 +18,15 @@ function normalizeAddress(address: string): string {
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .normalize("NFC");
 }
 
 export async function POST(request: NextRequest) {
+  // createServerClient prefers SUPABASE_SERVICE_ROLE_KEY, falling back to anon key.
+  // Service role key is required here for RLS INSERT access.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
   const supabase = createServerClient();
   if (!supabase) {
     return NextResponse.json({ error: "Database not configured" }, { status: 500 });
@@ -73,7 +77,7 @@ export async function POST(request: NextRequest) {
     .limit(1);
 
   if (slugExists && slugExists.length > 0) {
-    const suffix = Math.random().toString(36).slice(2, 6);
+    const suffix = crypto.randomUUID().slice(0, 6);
     finalSlug = `${slug}-${suffix}`;
   }
 
@@ -91,7 +95,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (error) {
-    console.error("Failed to insert generation request:", error);
+    console.error("Failed to insert generation request:", error.message, error.code);
     return NextResponse.json({ error: "Kunne ikke lagre forespørsel" }, { status: 500 });
   }
 

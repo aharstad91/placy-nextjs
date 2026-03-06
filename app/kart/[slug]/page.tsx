@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { createServerClient } from "@/lib/supabase/client";
 import { getProductAsync } from "@/lib/data-server";
@@ -47,10 +48,13 @@ export default async function KartPage({ params }: PageProps) {
         <div className="max-w-md w-full text-center">
           {staticMapUrl && (
             <div className="rounded-xl overflow-hidden mb-6 border border-gray-100">
-              <img
+              <Image
                 src={staticMapUrl}
                 alt={`Kart over ${request.address}`}
+                width={600}
+                height={300}
                 className="w-full h-auto"
+                unoptimized
               />
             </div>
           )}
@@ -77,7 +81,7 @@ export default async function KartPage({ params }: PageProps) {
   // Failed — show error page
   if (request.status === "failed") {
     if (request.error_message) {
-      console.log("Generation failed:", request.error_message);
+      console.error("Generation failed:", request.error_message);
     }
 
     return (
