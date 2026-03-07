@@ -38,7 +38,13 @@ export async function generateMetadata({
 const PRODUCT_TYPE_MAP: Record<string, { label: string; mode?: "rapport" | "visning" }> = {
   explorer: { label: "Explorer" },
   report: { label: "Rapport", mode: "rapport" },
+  // Visning is always available for eiendom projects (uses explorer data)
 };
+
+/** Modes that are always shown in eiendom projects, regardless of DB products */
+const ALWAYS_AVAILABLE_MODES: { label: string; mode: "visning" }[] = [
+  { label: "Visning", mode: "visning" },
+];
 
 export default async function EiendomProjectLayout({ params, children }: LayoutProps) {
   const { customer, project: projectSlug } = await params;
@@ -67,6 +73,14 @@ export default async function EiendomProjectLayout({ params, children }: LayoutP
         exact: !config.mode,
       };
     });
+
+  // Add always-available modes (Visning)
+  for (const mode of ALWAYS_AVAILABLE_MODES) {
+    products.push({
+      label: mode.label,
+      href: `${basePath}/${mode.mode}`,
+    });
+  }
 
   return (
     <>
