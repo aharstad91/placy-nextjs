@@ -39,6 +39,9 @@ export function middleware(request: NextRequest) {
 
   const firstSegment = segments[0];
 
+  // /eiendom/... → Eiendom passthrough
+  if (firstSegment === "eiendom") return NextResponse.next();
+
   // /for/... → B2B passthrough
   if (firstSegment === "for") return NextResponse.next();
 

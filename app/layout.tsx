@@ -10,6 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://placy.no"),
   title: "Placy — Oppdag de beste stedene",
   description: "Oppdag de beste stedene i norske byer gjennom kuraterte guider og lokalkunnskap.",
 };
