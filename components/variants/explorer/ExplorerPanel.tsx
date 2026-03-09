@@ -15,6 +15,7 @@ import {
 import type { ThemeDefinition } from "@/lib/themes";
 import ExplorerPOICard from "./ExplorerPOICard";
 import ExplorerThemeChips from "./ExplorerThemeChips";
+import ExplorerDayFilter from "./ExplorerDayFilter";
 import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
 
 interface ExplorerPanelProps {
@@ -44,6 +45,12 @@ interface ExplorerPanelProps {
   collectionCreatedAt?: string;
   collectionEmail?: string | null;
   explorerUrl?: string;
+  // Event day filter
+  showDayFilter?: boolean;
+  eventDays?: string[];
+  selectedDay?: string | null;
+  onSelectDay?: (day: string | null) => void;
+  dayLabels?: Record<string, string>;
   // Skeleton loading state
   showSkeleton?: boolean;
   showContent?: boolean;
@@ -83,6 +90,11 @@ export default function ExplorerPanel({
   collectionCreatedAt,
   collectionEmail,
   explorerUrl,
+  showDayFilter,
+  eventDays = [],
+  selectedDay = null,
+  onSelectDay,
+  dayLabels,
   showSkeleton = false,
   showContent = true,
   isRefreshing = false,
@@ -161,6 +173,19 @@ export default function ExplorerPanel({
             onToggleCategory={onToggleCategory}
             variant="mobile"
           />
+
+          {/* Day filter (event projects) */}
+          {showDayFilter && eventDays.length > 1 && onSelectDay && (
+            <div className="flex-shrink-0">
+              <ExplorerDayFilter
+                days={eventDays}
+                selectedDay={selectedDay}
+                onSelectDay={onSelectDay}
+                dayLabels={dayLabels}
+                variant="mobile"
+              />
+            </div>
+          )}
 
           {/* Travel mode selector */}
           <div className="flex-shrink-0 px-4 pb-2 flex items-center gap-1.5">

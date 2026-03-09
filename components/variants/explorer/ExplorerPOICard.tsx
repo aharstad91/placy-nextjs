@@ -78,6 +78,13 @@ export default function ExplorerPOICard({
 
   const isExpanded = alwaysExpanded || isActive;
 
+  // Event time label (e.g. "10:00–16:00")
+  const eventTimeLabel = poi.eventTimeStart
+    ? poi.eventTimeEnd
+      ? `${poi.eventTimeStart}–${poi.eventTimeEnd}`
+      : poi.eventTimeStart
+    : null;
+
   const realtimeData = useRealtimeData(isExpanded ? poi : null);
 
   // Fetch trip cross-references when card is expanded
@@ -208,6 +215,15 @@ export default function ExplorerPOICard({
                   <span className="flex items-center gap-0.5 text-xs text-gray-500">
                     <TravelIcon className="w-3 h-3" />
                     {Math.round(travelTime)} min
+                  </span>
+                </>
+              )}
+              {eventTimeLabel && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  <span className="flex items-center gap-0.5 text-xs text-gray-500">
+                    <Clock className="w-3 h-3" />
+                    {eventTimeLabel}
                   </span>
                 </>
               )}
@@ -379,6 +395,19 @@ export default function ExplorerPOICard({
             Vis rute
           </a>
 
+          {poi.eventUrl && isSafeUrl(poi.eventUrl) && (
+            <a
+              href={poi.eventUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Mer info
+            </a>
+          )}
+
           {poiPageUrl && (
             <Link
               href={poiPageUrl}
@@ -542,6 +571,15 @@ export default function ExplorerPOICard({
                   <>
                     <span className="text-gray-300">·</span>
                     <span className="w-10 h-3 bg-gray-100 rounded animate-pulse" />
+                  </>
+                )}
+                {eventTimeLabel && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    <span className="flex items-center gap-0.5 text-xs text-gray-500">
+                      <Clock className="w-3 h-3" />
+                      {eventTimeLabel}
+                    </span>
                   </>
                 )}
                 {isOpen === true && (

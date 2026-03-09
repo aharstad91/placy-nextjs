@@ -144,6 +144,7 @@ export default async function ExplorePage({ params, searchParams }: PageProps) {
           : undefined
       }
       initialCategories={initialCategories}
+      features={profil.features}
     />
   );
 }

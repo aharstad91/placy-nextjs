@@ -2,8 +2,10 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Project, POI, Category, TravelMode, OriginMode } from "@/lib/types";
-import type { ThemeDefinition } from "@/lib/themes";
+import type { ThemeDefinition, BransjeprofilFeatures } from "@/lib/themes";
 import { buildCategoryToTheme } from "@/lib/themes";
+import { useEventDayFilter, useEventDays } from "@/lib/hooks/useEventDayFilter";
+import ExplorerDayFilter from "./ExplorerDayFilter";
 
 // Loading state machine for skeleton loading
 type LoadState = "initial" | "loading" | "loaded" | "error" | "refreshing";
@@ -34,6 +36,12 @@ interface CollectionData {
   email?: string | null;
 }
 
+interface EventConfig {
+  eventDates?: string[];
+  dayLabels?: Record<string, string>;
+  eventUrlLabel?: string;
+}
+
 interface ExplorerPageProps {
   project: Project;
   themes: ThemeDefinition[];
@@ -41,9 +49,11 @@ interface ExplorerPageProps {
   collection?: CollectionData;
   initialPOI?: string;
   initialCategories?: string[];
+  features?: BransjeprofilFeatures;
+  eventConfig?: EventConfig;
 }
 
-export default function ExplorerPage({ project, themes, areaSlug, collection, initialPOI, initialCategories }: ExplorerPageProps) {
+export default function ExplorerPage({ project, themes, areaSlug, collection, initialPOI, initialCategories, features, eventConfig }: ExplorerPageProps) {
   const isCollectionView = !!collection;
   const categoryToTheme = useMemo(() => buildCategoryToTheme(themes), [themes]);
   const { travelMode, setTravelMode } = useTravelSettings();
@@ -148,11 +158,17 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
     return project.pois.filter((poi) => collectionSet.has(poi.id));
   }, [project.pois, collection]);
 
+  // Event day filter — filters POIs by selected day (before travel time API calls)
+  const showDayFilter = !!features?.dayFilter;
+  const eventDays = useEventDays(basePOIs);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const eventFilteredPOIs = useEventDayFilter(basePOIs, selectedDay);
+
   // Travel times — enriches POIs with walk times (uses GPS origin when near)
   const { pois: poisWithTravelTimes, loading: travelTimesLoading, error: travelTimesError } = useTravelTimes(
     project.id,
     throttledOrigin,
-    basePOIs,
+    eventFilteredPOIs,
     { skipCache: geo.mode === "gps-near" }
   );
 
@@ -487,6 +503,12 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
     showSkeleton,
     showContent,
     isRefreshing,
+    // Event day filter
+    showDayFilter,
+    eventDays,
+    selectedDay,
+    onSelectDay: setSelectedDay,
+    dayLabels: eventConfig?.dayLabels,
     ...(isCollectionView
       ? {}
       : {

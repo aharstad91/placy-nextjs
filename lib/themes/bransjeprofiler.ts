@@ -12,6 +12,16 @@ import { DEFAULT_THEMES } from "./default-themes";
  * 2. bransjeprofil.themes — tag-driven
  * 3. DEFAULT_THEMES — global fallback
  */
+/**
+ * Feature flags for bransjeprofil-driven UI behavior.
+ * Only runtime/UI features — not admin or pipeline concerns.
+ */
+export interface BransjeprofilFeatures {
+  dayFilter?: boolean;
+  agendaView?: boolean;
+  eventUrl?: boolean;
+}
+
 export interface Bransjeprofil {
   tag: string;
   themes: ThemeDefinition[];
@@ -22,6 +32,7 @@ export interface Bransjeprofil {
   };
   explorerCaps: Record<string, number>;
   explorerTotalCap: number;
+  features?: BransjeprofilFeatures;
 }
 
 /**
@@ -190,6 +201,27 @@ export const BRANSJEPROFILER: Record<string, Bransjeprofil> = {
       "nabolaget": 20,
     },
     explorerTotalCap: 100,
+  },
+  /**
+   * Event: Festivaler, åpne hus, kulturnetter, kunsthelger.
+   * Themes auto-genereres fra import-kategorier (Kulturnatt-mønsteret).
+   * Høy total cap — event-data er kuratert, ikke scraped.
+   */
+  "Event": {
+    tag: "Event",
+    themes: [],
+    defaults: {
+      radius: 5000,
+      minRating: 0,
+      venueType: "commercial",
+    },
+    explorerCaps: {},
+    explorerTotalCap: 999,
+    features: {
+      dayFilter: true,
+      agendaView: true,
+      eventUrl: true,
+    },
   },
 };
 
