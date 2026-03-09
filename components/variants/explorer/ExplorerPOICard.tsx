@@ -78,7 +78,22 @@ export default function ExplorerPOICard({
 
   const isExpanded = alwaysExpanded || isActive;
 
-  // Event time label (e.g. "10:00–16:00")
+  // Event date + time label (e.g. "fre. 29. mai · 10:00–16:00")
+  const formatEventDate = (dateStr: string): string => {
+    const d = new Date(dateStr + "T12:00:00"); // noon to avoid timezone shift
+    const days = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
+    const months = ["jan", "feb", "mar", "apr", "mai", "jun", "jul", "aug", "sep", "okt", "nov", "des"];
+    return `${days[d.getDay()]}. ${d.getDate()}. ${months[d.getMonth()]}`;
+  };
+
+  const eventDateLabel = poi.eventDates?.length
+    ? poi.eventDates.length === 1
+      ? formatEventDate(poi.eventDates[0])
+      : poi.eventDates.length <= 3
+        ? poi.eventDates.map(formatEventDate).join(", ")
+        : `${formatEventDate(poi.eventDates[0])} – ${formatEventDate(poi.eventDates[poi.eventDates.length - 1])}`
+    : null;
+
   const eventTimeLabel = poi.eventTimeStart
     ? poi.eventTimeEnd
       ? `${poi.eventTimeStart}–${poi.eventTimeEnd}`
@@ -218,12 +233,12 @@ export default function ExplorerPOICard({
                   </span>
                 </>
               )}
-              {eventTimeLabel && (
+              {(eventDateLabel || eventTimeLabel) && (
                 <>
                   <span className="text-gray-300">·</span>
                   <span className="flex items-center gap-0.5 text-xs text-gray-500">
                     <Clock className="w-3 h-3" />
-                    {eventTimeLabel}
+                    {eventDateLabel}{eventDateLabel && eventTimeLabel ? " · " : ""}{eventTimeLabel}
                   </span>
                 </>
               )}
@@ -573,12 +588,12 @@ export default function ExplorerPOICard({
                     <span className="w-10 h-3 bg-gray-100 rounded animate-pulse" />
                   </>
                 )}
-                {eventTimeLabel && (
+                {(eventDateLabel || eventTimeLabel) && (
                   <>
                     <span className="text-gray-300">·</span>
                     <span className="flex items-center gap-0.5 text-xs text-gray-500">
                       <Clock className="w-3 h-3" />
-                      {eventTimeLabel}
+                      {eventDateLabel}{eventDateLabel && eventTimeLabel ? " · " : ""}{eventTimeLabel}
                     </span>
                   </>
                 )}
