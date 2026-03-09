@@ -12,26 +12,30 @@ tags:
   - kulturnatt
   - festspillene
   - oslo-kulturnatt
+  - oslo-open
   - geocoding
+  - coordinate-normalization
   - pipeline
   - typescript
 symptoms:
   - Need to import events from external festival/kulturnatt APIs
   - Events share venues (same coordinates) and need map clustering
   - Multiple data source formats (GraphQL, REST, CMS) need same output
+  - Artists at same address have micro-varying coordinates that break clustering
 ---
 
 # Event Import Pipeline — Reusable Pattern
 
 ## Context
 
-Placy imports events from festival/kulturnatt organizers into Explorer products. Two imports exist as reference implementations:
+Placy imports events from festival/kulturnatt organizers into Explorer products. Four imports exist as reference implementations:
 
 | Import | Data Source | API Type | Events | Geocoding | Script |
 |--------|-----------|----------|--------|-----------|--------|
 | Kulturnatt Trondheim | trdevents.no | GraphQL | ~130 | Source has coords | `scripts/import-kulturnatt.ts` |
 | Festspillene Bergen | fib.no Storyblok | REST CDN | ~56 POIs | Source has coords | `scripts/import-festspillene.ts` |
 | Oslo Kulturnatt | oslokulturnatt.no | REST JSON | ~257 | Mapbox geocoding | `scripts/import-oslo-kulturnatt.ts` |
+| Oslo Open | osloopen.no | REST JSON | ~441 | Source has coords | `scripts/import-oslo-open.ts` |
 
 The pipeline structure is identical regardless of data source. Only the fetch + transform step changes.
 
@@ -240,7 +244,30 @@ async function geocodeAddress(address: string, mapboxToken: string) {
 - **Name-based event fallbacks** — when `externalVenueName` is empty, use event name to look up known venues (e.g. "Gaustad sykehus 170 år" → Gaustad sykehus coords)
 - **Expect ~97-99% hit rate** — some events will have empty venue fields from the source
 
-### 9. Delete-then-Insert for Link Tables
+### 9. Coordinate Normalization for Shared Venues (Oslo Open Pattern)
+
+When the source provides per-artist coordinates that vary slightly even for the same address (e.g. geocoded individually), venue clustering breaks because `VenueClusterMarker` groups by exact `lat_lng` key.
+
+**Solution:** Normalize coordinates by address — all artists at the same address get the first artist's coords:
+
+```typescript
+const addressKey = (a: SourceArtist) => {
+  const addr = a.address.trim().toLowerCase().replace(/\s+/g, " ");
+  return `${addr}|${a.postal_code.trim()}`;
+};
+const addressCoords = new Map<string, { lat: number; lng: number }>();
+for (const artist of validArtists) {
+  const key = addressKey(artist);
+  if (!addressCoords.has(key)) {
+    addressCoords.set(key, { lat: parseFloat(artist.latitude), lng: parseFloat(artist.longitude) });
+  }
+}
+// Then use addressCoords.get(addressKey(artist)) instead of raw coords
+```
+
+Oslo Open: 441 artists → 173 unique addresses → 53 venue clusters (vs 8 without normalization).
+
+### 10. Delete-then-Insert for Link Tables
 
 `project_pois` and `product_pois` link tables don't have unique constraints suitable for upsert. Always delete existing links first:
 
@@ -260,10 +287,11 @@ await supabase.from("project_pois").delete().eq("project_id", projectId);
 - [ ] Determine if events have productions/groupings or are flat
 
 ### Implementation Phase
-- [ ] Copy template: `import-kulturnatt.ts` (flat+coords), `import-festspillene.ts` (grouped+coords), or `import-oslo-kulturnatt.ts` (flat+geocoding)
+- [ ] Copy template: `import-kulturnatt.ts` (flat+coords), `import-festspillene.ts` (grouped+coords), `import-oslo-kulturnatt.ts` (flat+geocoding), or `import-oslo-open.ts` (many-per-venue+coords)
 - [ ] Update configuration block (customer, project, center coords)
 - [ ] Map source categories → Placy categories (with catch-all "Annet")
 - [ ] If no coords in source: set up Mapbox geocoding with bbox, city suffix, override map
+- [ ] If many artists per venue with micro-varying coords: normalize by address (gotcha #9)
 - [ ] Set `poi_metadata.venue` for every POI
 - [ ] Set `event_dates`, `event_time_start`, `event_time_end`
 - [ ] Set project tag `["Event"]`
@@ -315,11 +343,30 @@ Only 4 tags: `Musikk og dans`, `Kunst`, `Utforsk`, `Arkitektur og design`.
 
 **Not trdevents.no** — confirmed 2026-03-09. Custom Next.js app with own backend.
 
+### Oslo Open (REST JSON + coords in source)
+Used by: Oslo Open (osloopen.no). Annual open-studio art event in Oslo.
+
+```
+GET https://osloopen.no/nb/kunstnere.json
+→ { artists: [{ id, name, technique, day, latitude, longitude, address, postal_code, images, ... }] }
+```
+
+**Coordinates included** — each artist has lat/lng from their registration. But micro-variations between artists at the same address require coordinate normalization (see gotcha #9).
+
+**Category mapping by technique keywords** — no tags/genres, only free-text `technique` field. Map keywords (maleri, skulptur, fotografi, etc.) to categories.
+
+**Day field** — `"saturday"` or `"sunday"` maps to event_dates `["2026-04-18"]` or `["2026-04-19"]`.
+
+**Large shared venues** — atelierfellesskap like Romsås Senter (40+ artists), Fossveien 24 (28), Kjelsåsveien 145 (17). These create large venue cluster popups — the scrollable popup design handles this well.
+
+**Image URLs** — relative paths, must prepend `https://osloopen.no`.
+
 ## Related Files
 
 - `scripts/import-kulturnatt.ts` — Simple flat event import (GraphQL, coords in source)
 - `scripts/import-festspillene.ts` — Complex grouped event import (Storyblok, coords in source)
 - `scripts/import-oslo-kulturnatt.ts` — Flat event import with Mapbox geocoding (REST, no coords)
+- `scripts/import-oslo-open.ts` — Open-studio art event import with coord normalization (REST, coords in source)
 - `components/map/venue-cluster-marker.tsx` — Map venue clustering component
 - `components/variants/explorer/ExplorerMap.tsx` — Venue grouping logic
 - `app/globals.css` — `.adaptive-marker__count` CSS for cluster badges
