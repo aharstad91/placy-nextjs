@@ -8,6 +8,7 @@ import { Compass, ChevronDown, Check, Footprints, Bike, Car } from "lucide-react
 import type { ThemeDefinition } from "@/lib/themes";
 import ExplorerPOICard from "./ExplorerPOICard";
 import ExplorerThemeChips from "./ExplorerThemeChips";
+import ExplorerDayFilter from "./ExplorerDayFilter";
 import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
 
 interface ExplorerPOIListProps {
@@ -35,6 +36,12 @@ interface ExplorerPOIListProps {
   themes: ThemeDefinition[];
   // Travel mode
   onSetTravelMode?: (mode: TravelMode) => void;
+  // Event day filter
+  showDayFilter?: boolean;
+  eventDays?: string[];
+  selectedDay?: string | null;
+  onSelectDay?: (day: string | null) => void;
+  dayLabels?: Record<string, string>;
   // Skeleton loading state
   showSkeleton?: boolean;
   showContent?: boolean;
@@ -69,6 +76,11 @@ export default function ExplorerPOIList({
   onToggleCategory,
   themes,
   onSetTravelMode,
+  showDayFilter,
+  eventDays = [],
+  selectedDay = null,
+  onSelectDay,
+  dayLabels,
   showSkeleton = false,
   showContent = true,
   isRefreshing = false,
@@ -188,6 +200,19 @@ export default function ExplorerPOIList({
           variant="desktop"
         />
       </div>
+
+      {/* Day filter (event projects) */}
+      {showDayFilter && eventDays.length > 1 && onSelectDay && (
+        <div className="flex-shrink-0">
+          <ExplorerDayFilter
+            days={eventDays}
+            selectedDay={selectedDay}
+            onSelectDay={onSelectDay}
+            dayLabels={dayLabels}
+            variant="desktop"
+          />
+        </div>
+      )}
 
       {/* Separator */}
       <div className="h-px bg-gray-200/50 mx-8" />

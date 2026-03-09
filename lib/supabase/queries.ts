@@ -113,6 +113,13 @@ function transformPOI(
     isLocalGem: dbPoi.is_local_gem ?? undefined,
     poiMetadata: dbPoi.poi_metadata ?? undefined,
     tierEvaluatedAt: dbPoi.tier_evaluated_at ?? undefined,
+    // Event fields (cast because Supabase types may not include new columns yet)
+    eventDates: ((dbPoi as Record<string, unknown>).event_dates as string[] | null) ?? undefined,
+    eventTimeStart: ((dbPoi as Record<string, unknown>).event_time_start as string | null) ?? undefined,
+    eventTimeEnd: ((dbPoi as Record<string, unknown>).event_time_end as string | null) ?? undefined,
+    eventDescription: ((dbPoi as Record<string, unknown>).event_description as string | null) ?? undefined,
+    eventUrl: ((dbPoi as Record<string, unknown>).event_url as string | null) ?? undefined,
+    eventTags: ((dbPoi as Record<string, unknown>).event_tags as string[] | null) ?? undefined,
   };
 }
 

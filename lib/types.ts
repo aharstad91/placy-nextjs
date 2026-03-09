@@ -72,6 +72,14 @@ export interface POI {
   poiMetadata?: Record<string, unknown>;
   tierEvaluatedAt?: string;
 
+  // Event data (for event-type projects)
+  eventDates?: string[];       // ["2026-04-18", "2026-04-19"]
+  eventTimeStart?: string;     // "10:00"
+  eventTimeEnd?: string;       // "16:00"
+  eventDescription?: string;
+  eventUrl?: string;           // Link to organizer's event page
+  eventTags?: string[];        // ["Gratis", "Barnevennlig"]
+
   // Product-specific flags (set per product_pois)
   featured?: boolean;
 

@@ -294,6 +294,9 @@ async function main() {
       const organizers = event.organizers.map((o) => o.name).join(", ");
       const imageUrl = event.images?.[0]?.urlLarge || event.images?.[0]?.urlSmall || null;
 
+      // Extract event date (YYYY-MM-DD) from startDate
+      const eventDate = event.startDate?.match(/(\d{4}-\d{2}-\d{2})/)?.[1] ?? null;
+
       return {
         id,
         name: event.title_nb,
@@ -303,6 +306,10 @@ async function main() {
         editorial_hook: event.desc_nb ? stripHtml(event.desc_nb).substring(0, 300) : null,
         description: null as string | null,
         featured_image: imageUrl,
+        // Event fields (new flat columns)
+        event_dates: eventDate ? [eventDate] : null,
+        event_time_start: formatTime(event.startDate) || null,
+        event_time_end: formatTime(event.endDate) || null,
         poi_metadata: {
           venue: venue?.name || null,
           address: venue?.address || null,
