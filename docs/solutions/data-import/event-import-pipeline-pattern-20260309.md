@@ -11,6 +11,8 @@ tags:
   - venue-clustering
   - kulturnatt
   - festspillene
+  - oslo-kulturnatt
+  - geocoding
   - pipeline
   - typescript
 symptoms:
@@ -25,10 +27,11 @@ symptoms:
 
 Placy imports events from festival/kulturnatt organizers into Explorer products. Two imports exist as reference implementations:
 
-| Import | Data Source | API Type | Events | Script |
-|--------|-----------|----------|--------|--------|
-| Kulturnatt Trondheim | trdevents.no | GraphQL | ~130 | `scripts/import-kulturnatt.ts` |
-| Festspillene Bergen | fib.no Storyblok | REST CDN | ~56 POIs (100+ showings) | `scripts/import-festspillene.ts` |
+| Import | Data Source | API Type | Events | Geocoding | Script |
+|--------|-----------|----------|--------|-----------|--------|
+| Kulturnatt Trondheim | trdevents.no | GraphQL | ~130 | Source has coords | `scripts/import-kulturnatt.ts` |
+| Festspillene Bergen | fib.no Storyblok | REST CDN | ~56 POIs | Source has coords | `scripts/import-festspillene.ts` |
+| Oslo Kulturnatt | oslokulturnatt.no | REST JSON | ~257 | Mapbox geocoding | `scripts/import-oslo-kulturnatt.ts` |
 
 The pipeline structure is identical regardless of data source. Only the fetch + transform step changes.
 
@@ -201,7 +204,43 @@ for (let i = 0; i < pois.length; i += BATCH_SIZE) {
 }
 ```
 
-### 8. Delete-then-Insert for Link Tables
+### 8. Geocoding Addresses → Coordinates (Oslo Kulturnatt Pattern)
+
+When the source only has text addresses (no lat/lng), use Mapbox forward geocoding:
+
+```typescript
+const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
+
+async function geocodeAddress(address: string, mapboxToken: string) {
+  if (geocodeCache.has(address)) return geocodeCache.get(address)!;
+
+  // Check hardcoded overrides first (landmarks, multi-location events)
+  if (VENUE_COORD_OVERRIDES[address]) {
+    geocodeCache.set(address, VENUE_COORD_OVERRIDES[address]);
+    return VENUE_COORD_OVERRIDES[address];
+  }
+
+  const query = `${address}, Oslo, Norway`; // Append city + country
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
+    `?access_token=${mapboxToken}&limit=1&country=no&bbox=10.5,59.8,10.95,60.0`;
+
+  const data = await (await fetch(url)).json();
+  const [lng, lat] = data.features?.[0]?.center ?? [0, 0];
+  const result = lat && lng ? { lat, lng } : null;
+  geocodeCache.set(address, result);
+  return result;
+}
+```
+
+**Key patterns:**
+- **Always cache results** — overrides MUST be cached too (bug: first version returned overrides without caching, so the POI builder couldn't find them)
+- **Bounding box** (`bbox`) — restrict to city area to avoid false matches in other cities
+- **Append city + country** — `"Rådhusgata 19, Oslo, Norway"` is much more precise than just `"Rådhusgata 19"`
+- **Override map for landmarks** — Youngstorget, Egertorget, Frognerparken etc. don't geocode well as street addresses
+- **Name-based event fallbacks** — when `externalVenueName` is empty, use event name to look up known venues (e.g. "Gaustad sykehus 170 år" → Gaustad sykehus coords)
+- **Expect ~97-99% hit rate** — some events will have empty venue fields from the source
+
+### 9. Delete-then-Insert for Link Tables
 
 `project_pois` and `product_pois` link tables don't have unique constraints suitable for upsert. Always delete existing links first:
 
@@ -221,9 +260,10 @@ await supabase.from("project_pois").delete().eq("project_id", projectId);
 - [ ] Determine if events have productions/groupings or are flat
 
 ### Implementation Phase
-- [ ] Copy `import-kulturnatt.ts` as template (simpler) or `import-festspillene.ts` (if production grouping needed)
+- [ ] Copy template: `import-kulturnatt.ts` (flat+coords), `import-festspillene.ts` (grouped+coords), or `import-oslo-kulturnatt.ts` (flat+geocoding)
 - [ ] Update configuration block (customer, project, center coords)
 - [ ] Map source categories → Placy categories (with catch-all "Annet")
+- [ ] If no coords in source: set up Mapbox geocoding with bbox, city suffix, override map
 - [ ] Set `poi_metadata.venue` for every POI
 - [ ] Set `event_dates`, `event_time_start`, `event_time_end`
 - [ ] Set project tag `["Event"]`
@@ -261,17 +301,25 @@ GET https://api.storyblok.com/v2/cdn/stories?token=TOKEN&starts_with=no/program/
 
 Requires resolving: events → productions → venues (3 separate queries, joined by UUID).
 
-### Oslo Kulturnatt (Next.js / unknown backend)
-Uses custom Next.js app. Data loaded dynamically. Would require:
-- Browser DevTools network inspection to find API endpoints
-- Or scraping the rendered page
+### Oslo Kulturnatt (REST JSON + Mapbox geocoding)
+Used by: Oslo Kulturnatt (oslokulturnatt.no). Simple public REST API.
 
-**Not trdevents.no** — confirmed 2026-03-09.
+```
+GET https://www.oslokulturnatt.no/api/events
+→ JSON array of event objects with: name, description, externalVenueName, tags, start_time_iso, custom_fields
+```
+
+**No coordinates in source** — only text addresses in `externalVenueName`. Requires Mapbox forward geocoding (see gotcha #8).
+
+Only 4 tags: `Musikk og dans`, `Kunst`, `Utforsk`, `Arkitektur og design`.
+
+**Not trdevents.no** — confirmed 2026-03-09. Custom Next.js app with own backend.
 
 ## Related Files
 
-- `scripts/import-kulturnatt.ts` — Simple flat event import (GraphQL)
-- `scripts/import-festspillene.ts` — Complex grouped event import (Storyblok)
+- `scripts/import-kulturnatt.ts` — Simple flat event import (GraphQL, coords in source)
+- `scripts/import-festspillene.ts` — Complex grouped event import (Storyblok, coords in source)
+- `scripts/import-oslo-kulturnatt.ts` — Flat event import with Mapbox geocoding (REST, no coords)
 - `components/map/venue-cluster-marker.tsx` — Map venue clustering component
 - `components/variants/explorer/ExplorerMap.tsx` — Venue grouping logic
 - `app/globals.css` — `.adaptive-marker__count` CSS for cluster badges
