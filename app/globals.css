@@ -307,6 +307,11 @@ gmp-popover::part(dialog) {
 [data-zoom-state="full-label"] .adaptive-marker__rating { opacity: 1; pointer-events: auto; }
 [data-zoom-state="full-label"] .adaptive-marker__label { opacity: 1; pointer-events: auto; max-width: 140px; }
 
+/* ── Venue cluster count badge: visible whenever icon is visible ── */
+.adaptive-marker__count { opacity: 1; }
+[data-zoom-state="dot"] .adaptive-marker__count { opacity: 0; pointer-events: none; }
+[data-zoom-state="dot"] .adaptive-marker--active .adaptive-marker__count { opacity: 1; pointer-events: auto; }
+
 /* ── Hover / Active interactions ── */
 .adaptive-marker--hover {
   transform: scale(1.1);

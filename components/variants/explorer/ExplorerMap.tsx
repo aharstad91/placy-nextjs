@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useState,
+  useMemo,
 } from "react";
 import Map, {
   NavigationControl,
@@ -20,6 +21,7 @@ import GeoLocationWidget from "./GeoLocationWidget";
 import { SkeletonMapOverlay } from "@/components/ui/SkeletonMapOverlay";
 import type { GeolocationMode } from "@/lib/hooks/useGeolocation";
 import { AdaptiveMarker } from "@/components/map/adaptive-marker";
+import { VenueClusterMarker } from "@/components/map/venue-cluster-marker";
 import { useMapZoomState } from "@/lib/hooks/useMapZoomState";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 
@@ -87,10 +89,29 @@ export default function ExplorerMap({
   const hasFittedBoundsRef = useRef(false);
   const lastFittedPOIRef = useRef<string | null>(null);
   const [hoveredPOI, setHoveredPOI] = useState<string | null>(null);
+  const [expandedVenueKey, setExpandedVenueKey] = useState<string | null>(null);
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
 
   // CSS-driven zoom state (writes data-zoom-state to container, no React re-renders)
   useMapZoomState(mapRef, mapContainerRef, { mapLoaded });
+
+  // Venue grouping — group POIs sharing exact coordinates (same venue)
+  // Returns { singlePOIs, venueGroups } where venueGroups is an array of [coordKey, POI[]]
+  const { singlePOIs, venueGroups } = useMemo(() => {
+    const groups: Record<string, POI[]> = {};
+    for (const poi of pois) {
+      const key = `${poi.coordinates.lat}_${poi.coordinates.lng}`;
+      if (groups[key]) groups[key].push(poi);
+      else groups[key] = [poi];
+    }
+    const singles: POI[] = [];
+    const venues: Array<[string, POI[]]> = [];
+    for (const key of Object.keys(groups)) {
+      if (groups[key].length === 1) singles.push(groups[key][0]);
+      else venues.push([key, groups[key]]);
+    }
+    return { singlePOIs: singles, venueGroups: venues };
+  }, [pois]);
 
 
   // Fit to initial bounds on first load
@@ -234,8 +255,9 @@ export default function ExplorerMap({
             }
           }
           mouseDownPosRef.current = null;
-          // Dismiss active POI when clicking on map background
+          // Dismiss active POI and close venue popups when clicking on map background
           // (marker clicks call e.originalEvent.stopPropagation())
+          setExpandedVenueKey(null);
           onDismissActive?.();
         }}
       >
@@ -298,8 +320,8 @@ export default function ExplorerMap({
           </Marker>
         )}
 
-        {/* All POI markers — adaptive zoom states driven by CSS */}
-        {pois.map((poi) => {
+        {/* Single-venue POI markers — adaptive zoom states driven by CSS */}
+        {singlePOIs.map((poi) => {
           const isThisActive = activePOI === poi.id;
           const isHovered = hoveredPOI === poi.id && !isThisActive;
           const poiTravelTime = poi.travelTime?.[travelMode];
@@ -331,6 +353,31 @@ export default function ExplorerMap({
                 />
               )}
             </AdaptiveMarker>
+          );
+        })}
+
+        {/* Multi-event venue cluster markers */}
+        {venueGroups.map(([coordKey, groupPois]) => {
+          const hasActive = groupPois.some((p) => p.id === activePOI);
+          return (
+            <VenueClusterMarker
+              key={`venue-${coordKey}`}
+              pois={groupPois}
+              isExpanded={expandedVenueKey === coordKey}
+              hasActivePOI={hasActive}
+              zIndex={expandedVenueKey === coordKey ? 100 : hasActive ? 10 : 2}
+              onClick={(e) => {
+                e.originalEvent.stopPropagation();
+                setExpandedVenueKey((prev) =>
+                  prev === coordKey ? null : coordKey
+                );
+              }}
+              onSelectEvent={(poiId) => {
+                setExpandedVenueKey(null);
+                onPOIClick(poiId);
+              }}
+              onClose={() => setExpandedVenueKey(null)}
+            />
           );
         })}
       </Map>
