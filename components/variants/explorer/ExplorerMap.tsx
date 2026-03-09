@@ -373,7 +373,6 @@ export default function ExplorerMap({
                 );
               }}
               onSelectEvent={(poiId) => {
-                setExpandedVenueKey(null);
                 onPOIClick(poiId);
               }}
               onClose={() => setExpandedVenueKey(null)}
