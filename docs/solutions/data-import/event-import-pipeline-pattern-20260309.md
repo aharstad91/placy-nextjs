@@ -13,6 +13,8 @@ tags:
   - festspillene
   - oslo-kulturnatt
   - oslo-open
+  - arendalsuka
+  - typesense
   - geocoding
   - coordinate-normalization
   - pipeline
@@ -28,7 +30,7 @@ symptoms:
 
 ## Context
 
-Placy imports events from festival/kulturnatt organizers into Explorer products. Four imports exist as reference implementations:
+Placy imports events from festival/kulturnatt organizers into Explorer products. Five imports exist as reference implementations:
 
 | Import | Data Source | API Type | Events | Geocoding | Script |
 |--------|-----------|----------|--------|-----------|--------|
@@ -36,6 +38,7 @@ Placy imports events from festival/kulturnatt organizers into Explorer products.
 | Festspillene Bergen | fib.no Storyblok | REST CDN | ~56 POIs | Source has coords | `scripts/import-festspillene.ts` |
 | Oslo Kulturnatt | oslokulturnatt.no | REST JSON | ~257 | Mapbox geocoding | `scripts/import-oslo-kulturnatt.ts` |
 | Oslo Open | osloopen.no | REST JSON | ~441 | Source has coords | `scripts/import-oslo-open.ts` |
+| Arendalsuka | arendalsuka.no | Typesense | ~135+ | Mapbox geocoding | `scripts/import-arendalsuka.ts` |
 
 The pipeline structure is identical regardless of data source. Only the fetch + transform step changes.
 
@@ -361,12 +364,34 @@ GET https://osloopen.no/nb/kunstnere.json
 
 **Image URLs** — relative paths, must prepend `https://osloopen.no`.
 
+### Arendalsuka (Typesense Search API + Mapbox geocoding)
+Used by: Arendalsuka (arendalsuka.no). Norway's largest political festival.
+
+```
+GET https://h6vy028rm4uj1tfbp-1.a2.typesense.net/collections/events/documents/search?q=*&per_page=250&page=1
+Header: X-TYPESENSE-API-KEY: FmesrBmkVBUSYXULakewoJDL84uoNI8D
+→ { hits: [{ document: { id, title, venue_name, venue_address, start_timestamp, subjects, ... } }] }
+```
+
+**Typesense hosted search** — public read-only API key found in page source. Paginated (per_page max 250). Supports `q=*` for all events.
+
+**No coordinates in source** — only `venue_name` + `venue_address`. Requires Mapbox geocoding with tight Arendal bbox (`8.74,58.44,8.82,58.48`). Only ~30 unique venues in a small city center — hardcoded overrides for tent-based venues (Samfunnsteltet, Frivillighetsteltet) that don't have proper addresses.
+
+**Growing program** — events are published gradually from March to August. 135 events in March, expected 2300+ by festival start. Script is re-runnable (upsert pattern).
+
+**13 subject categories** — direct 1:1 mapping to Placy categories. Events can have multiple subjects; first match wins.
+
+**Timestamps** — Unix timestamps in UTC. Must adjust for CEST (UTC+2) for Norwegian times.
+
+**No images** — source has no image URLs. POIs have `featured_image: null`.
+
 ## Related Files
 
 - `scripts/import-kulturnatt.ts` — Simple flat event import (GraphQL, coords in source)
 - `scripts/import-festspillene.ts` — Complex grouped event import (Storyblok, coords in source)
 - `scripts/import-oslo-kulturnatt.ts` — Flat event import with Mapbox geocoding (REST, no coords)
 - `scripts/import-oslo-open.ts` — Open-studio art event import with coord normalization (REST, coords in source)
+- `scripts/import-arendalsuka.ts` — Political festival import with Typesense API + Mapbox geocoding
 - `components/map/venue-cluster-marker.tsx` — Map venue clustering component
 - `components/variants/explorer/ExplorerMap.tsx` — Venue grouping logic
 - `app/globals.css` — `.adaptive-marker__count` CSS for cluster badges
