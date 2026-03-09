@@ -5,7 +5,22 @@ import { Marker, type MarkerEvent } from "react-map-gl/mapbox";
 import type { POI } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { getIcon } from "@/lib/utils/map-icons";
-import { MapPin, Clock, X } from "lucide-react";
+import { MapPin, Clock, Calendar, X } from "lucide-react";
+
+/** Format "2026-05-25" → "søn. 25. mai" */
+function formatShortDate(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  const days = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
+  const months = ["jan", "feb", "mar", "apr", "mai", "jun", "jul", "aug", "sep", "okt", "nov", "des"];
+  return `${days[d.getDay()]}. ${d.getDate()}. ${months[d.getMonth()]}`;
+}
+
+/** Sort key: first event date + start time → "2026-05-25 10:00" */
+function eventSortKey(poi: POI): string {
+  const date = poi.eventDates?.[0] ?? "9999-99-99";
+  const time = poi.eventTimeStart ?? "99:99";
+  return `${date} ${time}`;
+}
 
 interface VenueClusterMarkerProps {
   /** All POIs at this venue (same coordinates) */
@@ -202,39 +217,48 @@ export const VenueClusterMarker = React.memo(
                 </button>
               </div>
 
-              {/* Event list */}
+              {/* Event list — sorted by date then time */}
               <div className="overflow-y-auto overscroll-contain">
-                {pois.map((poi) => (
-                  <button
-                    key={poi.id}
-                    type="button"
-                    data-poi-id={poi.id}
-                    className="w-full px-3 py-2.5 flex items-start gap-2.5 hover:bg-gray-50 active:bg-gray-100 text-left border-b border-gray-50 last:border-b-0 transition-colors cursor-pointer"
-                  >
-                    {/* Category dot */}
-                    <div
-                      className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0"
-                      style={{ backgroundColor: poi.category.color }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 leading-snug line-clamp-2">
-                        {poi.name}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {(poi.eventTimeStart || poi.eventTimeEnd) && (
-                          <span className="text-xs text-gray-500 flex items-center gap-0.5">
-                            <Clock className="w-3 h-3" />
-                            {poi.eventTimeStart}
-                            {poi.eventTimeEnd && `–${poi.eventTimeEnd}`}
+                {[...pois].sort((a, b) => eventSortKey(a).localeCompare(eventSortKey(b))).map((poi) => {
+                  const dateLabel = poi.eventDates?.[0] ? formatShortDate(poi.eventDates[0]) : null;
+                  return (
+                    <button
+                      key={poi.id}
+                      type="button"
+                      data-poi-id={poi.id}
+                      className="w-full px-3 py-2.5 flex items-start gap-2.5 hover:bg-gray-50 active:bg-gray-100 text-left border-b border-gray-50 last:border-b-0 transition-colors cursor-pointer"
+                    >
+                      {/* Category dot */}
+                      <div
+                        className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0"
+                        style={{ backgroundColor: poi.category.color }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 leading-snug line-clamp-2">
+                          {poi.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          {dateLabel && (
+                            <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                              <Calendar className="w-3 h-3" />
+                              {dateLabel}
+                            </span>
+                          )}
+                          {(poi.eventTimeStart || poi.eventTimeEnd) && (
+                            <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                              <Clock className="w-3 h-3" />
+                              {poi.eventTimeStart}
+                              {poi.eventTimeEnd && `–${poi.eventTimeEnd}`}
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-400">
+                            {poi.category.name}
                           </span>
-                        )}
-                        <span className="text-xs text-gray-400">
-                          {poi.category.name}
-                        </span>
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
