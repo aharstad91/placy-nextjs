@@ -40,6 +40,7 @@ export const VenueClusterMarker = React.memo(
     onClose,
   }: VenueClusterMarkerProps) {
     const popupRef = useRef<HTMLDivElement>(null);
+    const popupContentRef = useRef<HTMLDivElement>(null);
     const firstPoi = pois[0];
     const venueName =
       (firstPoi.poiMetadata?.venue as string) || firstPoi.name;
@@ -65,6 +66,41 @@ export const VenueClusterMarker = React.memo(
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }, [isExpanded, onClose]);
+
+    // Native event delegation for popup clicks.
+    // react-map-gl Marker uses native addEventListener on the marker wrapper,
+    // so React's stopPropagation doesn't prevent the Marker onClick from firing.
+    // We attach a native bubble-phase handler that:
+    // 1. Stops propagation to the Marker wrapper
+    // 2. Identifies which element was clicked via data attributes
+    useEffect(() => {
+      const el = popupContentRef.current;
+      if (!isExpanded || !el) return;
+
+      const handleClick = (e: Event) => {
+        e.stopPropagation();
+        const target = e.target as HTMLElement;
+        const poiButton = target.closest("[data-poi-id]");
+        if (poiButton) {
+          const poiId = poiButton.getAttribute("data-poi-id");
+          if (poiId) onSelectEvent(poiId);
+          return;
+        }
+        const closeButton = target.closest("[data-close]");
+        if (closeButton) onClose();
+      };
+
+      const stopWheel = (e: Event) => e.stopPropagation();
+
+      el.addEventListener("click", handleClick);
+      el.addEventListener("wheel", stopWheel);
+      el.addEventListener("touchmove", stopWheel, { passive: false });
+      return () => {
+        el.removeEventListener("click", handleClick);
+        el.removeEventListener("wheel", stopWheel);
+        el.removeEventListener("touchmove", stopWheel);
+      };
+    }, [isExpanded, onSelectEvent, onClose]);
 
     const truncatedVenue =
       venueName.length > 20 ? venueName.slice(0, 18) + "…" : venueName;
@@ -135,6 +171,7 @@ export const VenueClusterMarker = React.memo(
           {/* ── Expanded popup: event list ── */}
           {isExpanded && (
             <div
+              ref={popupContentRef}
               className={cn(
                 "absolute left-1/2 -translate-x-1/2 bottom-full mb-3",
                 "bg-white rounded-xl shadow-2xl border border-gray-200",
@@ -142,7 +179,6 @@ export const VenueClusterMarker = React.memo(
                 "animate-in fade-in slide-in-from-bottom-2 duration-200",
                 "z-[200]"
               )}
-              onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100">
@@ -159,10 +195,7 @@ export const VenueClusterMarker = React.memo(
                 </div>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClose();
-                  }}
+                  data-close
                   className="p-1 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-4 h-4" />
@@ -175,11 +208,8 @@ export const VenueClusterMarker = React.memo(
                   <button
                     key={poi.id}
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectEvent(poi.id);
-                    }}
-                    className="w-full px-3 py-2.5 flex items-start gap-2.5 hover:bg-gray-50 text-left border-b border-gray-50 last:border-b-0 transition-colors"
+                    data-poi-id={poi.id}
+                    className="w-full px-3 py-2.5 flex items-start gap-2.5 hover:bg-gray-50 active:bg-gray-100 text-left border-b border-gray-50 last:border-b-0 transition-colors cursor-pointer"
                   >
                     {/* Category dot */}
                     <div
