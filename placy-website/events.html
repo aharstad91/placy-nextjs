@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Placy for Events — Kommer snart</title>
-  <meta name="description" content="Placy hjelper eventarrangører med å vise deltakerne hva som finnes rundt venue — med interaktive kart og kuratert innhold.">
+  <title>Placy for Events — Interaktivt kart for arrangementer</title>
+  <meta name="description" content="Gi deltakerne et interaktivt kart over arrangementet. Placy viser alle events på kartet med tider, kategorier og navigasjon — perfekt for festivaler, Open House og kulturnetter.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
@@ -21,46 +21,423 @@
       <a href="events.html" class="nav-link nav-link-active">Events</a>
       <a href="analytics.html" class="nav-link">Analytics</a>
       <a href="index.html#om" class="nav-link">Om</a>
-      <a href="index.html#demo" class="btn btn-dark">Kontakt oss</a>
+      <a href="mailto:hei@placy.no" class="btn btn-dark">Ta kontakt</a>
     </div>
   </nav>
 
-  <!-- ===== COMING SOON ===== -->
-  <section class="coming-soon">
-    <div class="coming-soon-content">
-      <p class="h-label mb-24">Kommer snart</p>
-      <h1 class="h-large">Placy for events</h1>
-      <p class="text-large coming-soon-sub">Gi deltakerne en komplett guide til området rundt venue — restauranter for middag etterpå, hoteller i nærheten, og ting å gjøre mellom sesjonene.</p>
+  <!-- ===== HERO ===== -->
+  <section class="ev-hero">
+    <div class="ev-hero-content">
+      <p class="h-label mb-24">Placy for Events</p>
+      <h1 class="h-display">Gi deltakerne et interaktivt kart over arrangementet</h1>
+      <p class="text-large ev-hero-sub">Arrangementer har programmer og tidsskjemaer — men deltakerne trenger å navigere mellom stedene. Placy gir dem et interaktivt kart med alle events, filtrering og veibeskrivelse.</p>
+      <div class="ev-hero-actions">
+        <a href="https://placy.no/for/kulturnatt-trondheim/kulturnatt-2025/explore" class="btn btn-dark btn-arrow" target="_blank">Se Kulturnatt-demo</a>
+        <a href="mailto:hei@placy.no" class="btn btn-outline-dark btn-arrow">Ta kontakt</a>
+      </div>
+    </div>
 
-      <div class="coming-soon-features">
-        <div class="coming-soon-feature">
-          <div class="feature-detail-icon">&#9678;</div>
-          <div>
-            <h3>Områdeguide for deltakere</h3>
-            <p>Alt rundt venue — spise, drikke, overnatte, oppleve. Delt som lenke eller QR-kode.</p>
+    <div class="ev-hero-visual">
+      <!-- Floating event cards to create atmosphere -->
+      <div class="ev-float-card ev-float-1">
+        <span class="ev-float-time">18:00</span>
+        <span class="ev-float-name">Åpen konsert</span>
+        <span class="ev-float-place">Nidarosdomen</span>
+      </div>
+      <div class="ev-float-card ev-float-2">
+        <span class="ev-float-time">19:30</span>
+        <span class="ev-float-name">Lysinstallasjon</span>
+        <span class="ev-float-place">Solsiden</span>
+      </div>
+      <div class="ev-float-card ev-float-3">
+        <span class="ev-float-time">20:00</span>
+        <span class="ev-float-name">Guidet vandring</span>
+        <span class="ev-float-place">Bakklandet</span>
+      </div>
+      <div class="ev-float-card ev-float-4">
+        <span class="ev-float-time">21:00</span>
+        <span class="ev-float-name">DJ-set</span>
+        <span class="ev-float-place">DIGS</span>
+      </div>
+
+      <!-- Center map pin -->
+      <div class="ev-hero-pin">
+        <div class="ev-hero-pin-ring"></div>
+        <div class="ev-hero-pin-ring ev-hero-pin-ring-2"></div>
+        <div class="ev-hero-pin-dot"></div>
+      </div>
+
+      <!-- Connecting lines (decorative) -->
+      <svg class="ev-hero-lines" viewBox="0 0 500 400" fill="none">
+        <path d="M250 200 L100 80" stroke="rgba(25,40,48,0.08)" stroke-width="1" stroke-dasharray="4 4"/>
+        <path d="M250 200 L380 100" stroke="rgba(25,40,48,0.08)" stroke-width="1" stroke-dasharray="4 4"/>
+        <path d="M250 200 L120 300" stroke="rgba(25,40,48,0.08)" stroke-width="1" stroke-dasharray="4 4"/>
+        <path d="M250 200 L400 280" stroke="rgba(25,40,48,0.08)" stroke-width="1" stroke-dasharray="4 4"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ===== REFERENCE — KULTURNATT ===== -->
+  <section class="ev-reference" id="kulturnatt">
+    <div class="ev-reference-intro">
+      <p class="h-label mb-16">Se det i praksis</p>
+      <h2 class="h-large">Kulturnatt Trondheim</h2>
+      <p class="text-large ev-reference-sub">132 arrangementer på én kveld, spredt over hele byen. Placy ga deltakerne et interaktivt kart der de kunne filtrere, utforske og navigere mellom events.</p>
+    </div>
+
+    <div class="ev-reference-stats">
+      <div class="reference-stat">
+        <span class="reference-stat-value">132</span>
+        <span class="reference-stat-label">Arrangementer</span>
+        <span class="reference-stat-detail">kartlagt</span>
+      </div>
+      <div class="reference-stat">
+        <span class="reference-stat-value">1 kveld</span>
+        <span class="reference-stat-label">Kulturnatt</span>
+        <span class="reference-stat-detail">Trondheim 2025</span>
+      </div>
+      <div class="reference-stat">
+        <span class="reference-stat-value">Hele byen</span>
+        <span class="reference-stat-label">Dekningsområde</span>
+        <span class="reference-stat-detail">sentrum + bydeler</span>
+      </div>
+    </div>
+
+    <!-- UI Showcase: Kulturnatt program -->
+    <div class="ev-showcase-wrapper">
+      <div class="ui-showcase ev-showcase">
+        <!-- Event program header -->
+        <div class="ui-card ev-program-card">
+          <div class="ev-program-header">
+            <div class="ev-program-icon">&#127912;</div>
+            <div>
+              <h4 class="ui-card-title">Kulturnatt Trondheim</h4>
+              <span class="ui-card-subtitle">Fredag 12. september 2025</span>
+            </div>
+          </div>
+          <div class="ui-chips-row">
+            <span class="ui-chip ui-chip-active">Alle <span class="ui-chip-count">132</span></span>
+            <span class="ui-chip">Musikk <span class="ui-chip-count">34</span></span>
+            <span class="ui-chip">Kunst <span class="ui-chip-count">28</span></span>
+            <span class="ui-chip">Teater <span class="ui-chip-count">19</span></span>
+            <span class="ui-chip">Barn <span class="ui-chip-count">22</span></span>
+            <span class="ui-chip">Mat <span class="ui-chip-count">15</span></span>
+          </div>
+          <div class="ui-stats-bar">
+            <span>132 arrangementer</span>
+            <span class="ui-stats-dot"></span>
+            <span>6 kategorier</span>
+            <span class="ui-stats-dot"></span>
+            <span>18:00–23:00</span>
           </div>
         </div>
-        <div class="coming-soon-feature">
-          <div class="feature-detail-icon">&#9733;</div>
-          <div>
-            <h3>Konferanse &amp; festival</h3>
-            <p>Perfekt for flerdag-arrangementer der deltakerne trenger å orientere seg i en ny by.</p>
+
+        <!-- Event cards -->
+        <div class="ev-event-stack">
+          <div class="ui-card ev-event-card ev-card-1">
+            <div class="ev-event-top">
+              <div class="ev-event-time-badge">18:00</div>
+              <div class="ev-event-info">
+                <h5>Åpen konsert: Trondheim Symfoniorkester</h5>
+                <div class="ui-poi-meta">
+                  <span class="ui-tag">Musikk</span>
+                  <span class="ui-distance">Olavshallen</span>
+                </div>
+              </div>
+            </div>
+            <a href="#" class="ev-event-link">Se program &#8594;</a>
+          </div>
+
+          <div class="ui-card ev-event-card ev-card-2">
+            <div class="ev-event-top">
+              <div class="ev-event-time-badge">19:00</div>
+              <div class="ev-event-info">
+                <h5>Lysinstallasjon: Northern Lights</h5>
+                <div class="ui-poi-meta">
+                  <span class="ui-tag">Kunst</span>
+                  <span class="ui-distance">Solsiden</span>
+                </div>
+              </div>
+            </div>
+            <a href="#" class="ev-event-link">Se program &#8594;</a>
+          </div>
+
+          <div class="ui-card ev-event-card ev-card-3">
+            <div class="ev-event-top">
+              <div class="ev-event-time-badge">20:30</div>
+              <div class="ev-event-info">
+                <h5>Gateteater: Det Norske Teatret</h5>
+                <div class="ui-poi-meta">
+                  <span class="ui-tag">Teater</span>
+                  <span class="ui-distance">Bakklandet</span>
+                </div>
+              </div>
+            </div>
+            <a href="#" class="ev-event-link">Se program &#8594;</a>
           </div>
         </div>
-        <div class="coming-soon-feature">
-          <div class="feature-detail-icon">&#9998;</div>
-          <div>
-            <h3>Sponsorsynlighet</h3>
-            <p>Vis sponsorer og partnere som del av kartet — restauranter, hoteller og opplevelser de støtter.</p>
+      </div>
+    </div>
+
+    <div class="ev-reference-cta">
+      <a href="https://placy.no/for/kulturnatt-trondheim/kulturnatt-2025/explore" class="btn btn-dark btn-arrow" target="_blank">Se live demo</a>
+    </div>
+  </section>
+
+  <!-- ===== FEATURE: PROGRAMKART ===== -->
+  <section class="feature" id="funksjoner">
+    <div class="feature-grid">
+      <div class="feature-text">
+        <p class="h-label mb-16">Funksjoner</p>
+        <h1 class="h-section">Alt programmet ditt, på ett kart</h1>
+        <p class="text-large">Deltakerne ser alle events på et interaktivt kart — filtrerer på kategori, sjekker tidspunkter og navigerer mellom steder. Du eier innholdet, Placy eier navigasjonen.</p>
+
+        <div class="feature-details">
+          <div class="feature-detail">
+            <div class="feature-detail-icon">&#128197;</div>
+            <div>
+              <h3>Dagsfilter</h3>
+              <p>Flerdag-arrangement? Deltakerne filtrerer på dag og ser bare det som er relevant akkurat nå.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">&#9200;</div>
+            <div>
+              <h3>Tidspunkt på kartet</h3>
+              <p>Hvert event viser start- og sluttid direkte på kartet. Ingen leting i program-PDF.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">&#128279;</div>
+            <div>
+              <h3>Lenker til ditt innhold</h3>
+              <p>Hvert punkt på kartet lenker til din eventside. Placy er navigasjonslaget — du eier innholdet.</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="coming-soon-cta">
-        <h2 class="h-section">Interessert?</h2>
-        <p class="text-body">Vi utforsker hvordan Placy kan brukes for events og festivaler. Ta kontakt for en uforpliktende prat.</p>
-        <a href="mailto:hei@placy.no" class="btn btn-dark btn-arrow">Ta kontakt</a>
+      <div class="ui-showcase ev-features-showcase">
+        <!-- Day filter demo -->
+        <div class="ui-card ev-dayfilter-card">
+          <span class="ev-dayfilter-label">Velg dag</span>
+          <div class="ev-dayfilter-chips">
+            <span class="ev-day-chip">Fredag</span>
+            <span class="ev-day-chip ev-day-chip-active">Lørdag</span>
+            <span class="ev-day-chip">Søndag</span>
+          </div>
+          <div class="ev-dayfilter-count">
+            <span class="ev-dayfilter-count-num">47</span> arrangementer lørdag
+          </div>
+        </div>
+
+        <!-- Mini event with time badge -->
+        <div class="ui-card ev-mini-event">
+          <div class="ev-mini-row">
+            <div class="ev-event-time-badge">11:00</div>
+            <div>
+              <h5>Arkitekturvandring: Brattøra</h5>
+              <span class="ev-mini-cat">Omvisning</span>
+            </div>
+            <span class="ev-mini-arrow">&#8594;</span>
+          </div>
+        </div>
+
+        <div class="ui-card ev-mini-event ev-mini-2">
+          <div class="ev-mini-row">
+            <div class="ev-event-time-badge">13:00</div>
+            <div>
+              <h5>Workshop: Byplanlegging</h5>
+              <span class="ev-mini-cat">Aktivitet</span>
+            </div>
+            <span class="ev-mini-arrow">&#8594;</span>
+          </div>
+        </div>
+
+        <div class="ui-card ev-mini-event ev-mini-3">
+          <div class="ev-mini-row">
+            <div class="ev-event-time-badge">15:30</div>
+            <div>
+              <h5>Konsert i bakgården</h5>
+              <span class="ev-mini-cat">Musikk</span>
+            </div>
+            <span class="ev-mini-arrow">&#8594;</span>
+          </div>
+        </div>
+
+        <!-- QR code hint -->
+        <div class="ui-card ev-qr-card">
+          <div class="ev-qr-icon">&#9641;&#9641;<br>&#9641;&#9641;</div>
+          <div>
+            <h5>Del med QR-kode</h5>
+            <p>Print QR-koden på plakater, programmer og billetter. Deltakerne scanner og er i gang.</p>
+          </div>
+        </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ===== USE CASES ===== -->
+  <section class="ev-usecases" id="hvem">
+    <div class="ev-usecases-intro">
+      <p class="h-label mb-16">Hvem bruker Placy Events?</p>
+      <h2 class="h-display">Fra kulturnatt til arkitekturfestival</h2>
+      <p class="text-large ev-usecases-sub">Alle arrangementer der deltakerne beveger seg mellom steder har nytte av et interaktivt kart. Her er noen av de vi bygger for.</p>
+    </div>
+
+    <div class="ev-usecase-grid">
+      <div class="ev-usecase-card">
+        <div class="ev-usecase-icon">&#127960;</div>
+        <h3>Open House</h3>
+        <p>Arkitektur- og byplanåpninger. Vis alle bygg på kartet med åpningstider, omvisninger og arkitektinfo.</p>
+        <span class="ev-usecase-example">Open House Oslo, Bergen, Trondheim</span>
+      </div>
+
+      <div class="ev-usecase-card">
+        <div class="ev-usecase-icon">&#127912;</div>
+        <h3>Kulturnatt</h3>
+        <p>En kveld, hundre events. Hjelp deltakerne finne det som skjer i nærheten — filtrert på kategori og tid.</p>
+        <span class="ev-usecase-example">Kulturnatt Trondheim, Bergen, Oslo</span>
+      </div>
+
+      <div class="ev-usecase-card">
+        <div class="ev-usecase-icon">&#127925;</div>
+        <h3>Musikkfestival</h3>
+        <p>Flere scener, mange artister. Vis programmet på kart med tider, scenenavn og navigasjon mellom dem.</p>
+        <span class="ev-usecase-example">Pstereo, Øya, Moldejazz</span>
+      </div>
+
+      <div class="ev-usecase-card">
+        <div class="ev-usecase-icon">&#127860;</div>
+        <h3>Matfestival</h3>
+        <p>Food trucks, restauranter, smakinger. Alt på kartet med åpningstider, kategorier og anbefalinger.</p>
+        <span class="ev-usecase-example">Trøndersk Matfestival, Gladmat</span>
+      </div>
+
+      <div class="ev-usecase-card">
+        <div class="ev-usecase-icon">&#127891;</div>
+        <h3>Konferanse</h3>
+        <p>Deltakerne er nye i byen. Vis dem restauranter, hoteller og transport rundt venue — en komplett områdeguide.</p>
+        <span class="ev-usecase-example">NTNU, Trondheim Spektrum</span>
+      </div>
+
+      <div class="ev-usecase-card">
+        <div class="ev-usecase-icon">&#127939;</div>
+        <h3>Idrettsarrangement</h3>
+        <p>Løyper, startpunkter, tilskuerplasser og fasiliteter. Alt samlet på et interaktivt kart.</p>
+        <span class="ev-usecase-example">Birken, Trondheim Maraton</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="feature" id="hvordan" style="background: var(--bg-primary);">
+    <div class="feature-grid reversed">
+      <div class="feature-text">
+        <p class="h-label mb-16">Slik fungerer det</p>
+        <h1 class="h-section">Fra program til interaktivt kart</h1>
+        <p class="text-large">Du sender oss programmet. Vi kartlegger alle lokasjoner, legger inn tider og kategorier, og leverer et interaktivt kart deltakerne kan dele og bruke.</p>
+
+        <div class="feature-details">
+          <div class="feature-detail">
+            <div class="feature-detail-icon">1</div>
+            <div>
+              <h3>Send oss programmet</h3>
+              <p>Excel, PDF, nettside — vi tar det vi får. Alt vi trenger er steder, tider og kategorier.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">2</div>
+            <div>
+              <h3>Vi kartlegger alt</h3>
+              <p>Hver lokasjon plasseres på kartet med riktige koordinater, tider og lenker til ditt innhold.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">3</div>
+            <div>
+              <h3>Deltakerne utforsker</h3>
+              <p>Del kartet som lenke eller QR-kode. Deltakerne filtrerer, navigerer og oppdager — rett fra mobilen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-showcase ev-how-showcase">
+        <!-- Input card -->
+        <div class="ui-card ui-card-prompt">
+          <div class="ui-prompt-input">
+            <div class="ui-prompt-icon">&#128197;</div>
+            <span class="ui-prompt-text">Open House Trondheim 2026</span>
+            <button class="ui-prompt-btn">Kartlegg</button>
+          </div>
+        </div>
+
+        <!-- Result card -->
+        <div class="ui-card ui-card-result">
+          <div class="ui-result-header">
+            <div class="ui-result-status">&#10003; Kartlagt</div>
+            <h4 class="ui-card-title">Open House Trondheim</h4>
+            <span class="ui-card-subtitle">Lørdag–søndag, september 2026</span>
+          </div>
+
+          <div class="ui-result-stats">
+            <div class="ui-result-stat">
+              <span class="ui-result-stat-value">38</span>
+              <span class="ui-result-stat-label">Bygg</span>
+            </div>
+            <div class="ui-result-stat">
+              <span class="ui-result-stat-value">2</span>
+              <span class="ui-result-stat-label">Dager</span>
+            </div>
+            <div class="ui-result-stat">
+              <span class="ui-result-stat-value">12</span>
+              <span class="ui-result-stat-label">Omvisninger</span>
+            </div>
+          </div>
+
+          <div class="ui-result-breakdown">
+            <div class="ui-breakdown-item">
+              <span class="ui-breakdown-name">Bolig</span>
+              <div class="ui-breakdown-bar"><div class="ui-breakdown-fill" style="width: 75%;"></div></div>
+              <span class="ui-breakdown-count">14</span>
+            </div>
+            <div class="ui-breakdown-item">
+              <span class="ui-breakdown-name">Næring</span>
+              <div class="ui-breakdown-bar"><div class="ui-breakdown-fill" style="width: 50%;"></div></div>
+              <span class="ui-breakdown-count">9</span>
+            </div>
+            <div class="ui-breakdown-item">
+              <span class="ui-breakdown-name">Offentlig</span>
+              <div class="ui-breakdown-bar"><div class="ui-breakdown-fill" style="width: 40%;"></div></div>
+              <span class="ui-breakdown-count">8</span>
+            </div>
+            <div class="ui-breakdown-item">
+              <span class="ui-breakdown-name">Historisk</span>
+              <div class="ui-breakdown-bar"><div class="ui-breakdown-fill" style="width: 35%;"></div></div>
+              <span class="ui-breakdown-count">7</span>
+            </div>
+          </div>
+
+          <a href="#" class="ui-result-link">Se kart &#8594;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CLOSING CTA ===== -->
+  <section class="ev-cta" id="kontakt">
+    <div class="ev-cta-content">
+      <h1 class="h-display">Klar for neste arrangement?</h1>
+      <p class="text-large ev-cta-sub">Ta kontakt for en demo og se hvordan Placy kan løfte opplevelsen for deltakerne dine.</p>
+    </div>
+
+    <div class="cta-box">
+      <div class="cta-box-left">
+        <div class="cta-box-dot"></div>
+        <span>Ta kontakt</span>
+      </div>
+      <div class="cta-box-arrow" onclick="window.location.href='mailto:hei@placy.no'">&#8594;</div>
     </div>
   </section>
 
@@ -81,6 +458,20 @@
       </div>
     </div>
   </footer>
+
+  <!-- ===== SCROLL SCRIPT ===== -->
+  <script>
+    // Intersection Observer for entrance animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.ev-reference, .ev-usecases, .ev-hero-visual').forEach(el => observer.observe(el));
+  </script>
 
 </body>
 </html>
