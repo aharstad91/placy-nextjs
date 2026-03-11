@@ -1,7 +1,8 @@
 # Placy Kompass — Event Prototype (Olavsfest)
 
 **Dato:** 2026-03-11
-**Status:** Brainstorm ferdig, klar for plan
+**Status:** Brainstorm ferdig. Steg 1 (data-import) er ferdig — 210 Olavsfest-events ligger i Supabase.
+**Branch:** `feat/kompass-event-prototype` (pushet til origin)
 **Trigger:** Claude.ai gjenskapte "trips"-konseptet med spørsmål → kuratert dagsplan. Placy kan gjøre det bedre med ekte data.
 
 ---
@@ -186,7 +187,7 @@ Men: **alle events er alltid tilgjengelige** i "Alle events"-tab.
 | Arendalsuka-importer | ✅ Ferdig | Mønster for Olavsfest-importer |
 
 **Nytt som må bygges:**
-1. **Olavsfest-importer** — scrape WordPress-programsiden, lag POI-er
+1. ~~**Olavsfest-importer**~~ ✅ FERDIG — 210 events importert til Supabase (customer `olavsfest`, project `olavsfest-2025`). Script: `scripts/import-olavsfest.ts`. 8 events droppet (manglende venue/utenfor Trondheim).
 2. **Kompass bottom sheet** — 3 steg, steg-for-steg, skip-CTA
 3. **Tab-komponent** — "🧭 Kompass" / "Alle events" over POI-liste
 4. **Tidslinje-visning** — kronologisk event-liste med vertikal linje
