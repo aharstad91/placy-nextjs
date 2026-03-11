@@ -38,3 +38,7 @@ tmp/
 
 # Research output (generated, not committed)
 data/research/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
