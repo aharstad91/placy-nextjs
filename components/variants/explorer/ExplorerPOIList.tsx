@@ -9,6 +9,8 @@ import type { ThemeDefinition } from "@/lib/themes";
 import ExplorerPOICard from "./ExplorerPOICard";
 import ExplorerThemeChips from "./ExplorerThemeChips";
 import ExplorerDayFilter from "./ExplorerDayFilter";
+import KompassTabs from "./KompassTabs";
+import KompassTimeline from "./KompassTimeline";
 import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
 
 interface ExplorerPOIListProps {
@@ -46,6 +48,13 @@ interface ExplorerPOIListProps {
   showSkeleton?: boolean;
   showContent?: boolean;
   isRefreshing?: boolean;
+  // Kompass
+  showKompass?: boolean;
+  kompassActiveTab?: "kompass" | "all";
+  onKompassTabChange?: (tab: "kompass" | "all") => void;
+  kompassRecommended?: POI[];
+  kompassRecommendedCount?: number;
+  onEditKompassFilter?: () => void;
 }
 
 const travelModeConfig: { mode: TravelMode; label: string; Icon: typeof Footprints }[] = [
@@ -84,6 +93,12 @@ export default function ExplorerPOIList({
   showSkeleton = false,
   showContent = true,
   isRefreshing = false,
+  showKompass = false,
+  kompassActiveTab = "all",
+  onKompassTabChange,
+  kompassRecommended = [],
+  kompassRecommendedCount = 0,
+  onEditKompassFilter,
 }: ExplorerPOIListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -217,6 +232,33 @@ export default function ExplorerPOIList({
       {/* Separator */}
       <div className="h-px bg-gray-200/50 mx-8" />
 
+      {/* Kompass tabs */}
+      {showKompass && onKompassTabChange && (
+        <div className="flex-shrink-0 px-8">
+          <KompassTabs
+            activeTab={kompassActiveTab}
+            onTabChange={onKompassTabChange}
+            kompassCount={kompassRecommendedCount}
+            allCount={totalCount}
+          />
+        </div>
+      )}
+
+      {/* Kompass timeline (when Kompass tab is active) */}
+      {showKompass && kompassActiveTab === "kompass" && (
+        <div className="relative flex-1 overflow-y-auto px-4">
+          <KompassTimeline
+            events={kompassRecommended}
+            activePOI={activePOI}
+            onPOIClick={onPOIClick}
+            onEditFilter={onEditKompassFilter ?? (() => {})}
+          />
+        </div>
+      )}
+
+      {/* POI list + collection bar (when "Alle events" tab is active) */}
+      {(!showKompass || kompassActiveTab === "all") && (
+      <>
       {/* POI list + collection bar */}
       <div className="relative flex-1 overflow-hidden flex flex-col">
         {/* Skeleton loading state */}
@@ -311,6 +353,8 @@ export default function ExplorerPOIList({
           <div className="h-12 bg-gradient-to-t from-white/90 to-transparent" />
         </div>
       </div>
+      </>
+      )}
     </>
   );
 }

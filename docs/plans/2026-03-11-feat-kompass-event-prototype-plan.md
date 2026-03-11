@@ -13,7 +13,7 @@ Bygg **Kompass** — Placys fjerde produktkonsept. En bottom sheet stiller 3 sp�
 
 ## Akseptansekriterier
 
-- [ ] Olavsfest 2025-programmet er importert til Supabase (222 events med dato, tid, venue, kategori, pris)
+- [x] Olavsfest 2025-programmet er importert til Supabase (210 events med dato, tid, venue, kategori, pris) — FERDIG
 - [ ] Kompass bottom sheet dukker opp ved første besøk på Olavsfest Explorer
 - [ ] 3 steg: tema → dag → tid, med skip-CTA
 - [ ] Etter svar: "Kompass"-tab viser filtrerte events i tidslinje-visning
@@ -80,7 +80,7 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
 
 ---
 
-### Steg 2: Kompass Zustand store (lib/stores/kompass-store.ts)
+### Steg 2: Kompass Zustand store (lib/kompass-store.ts)
 
 **Separat store** (ikke i hovedstore — holder Kompass ortogonal):
 
@@ -277,7 +277,7 @@ scripts/
   import-olavsfest.ts                    # Steg 1: Importer
 
 lib/
-  stores/kompass-store.ts                # Steg 2: Zustand store
+  kompass-store.ts                       # Steg 2: Zustand store
   hooks/useKompassFilter.ts             # Steg 3: Filtreringshook
 
 components/variants/explorer/
@@ -319,3 +319,201 @@ Steg 8 (integrasjon) → avhenger av alt over
 | Bottom sheet blokkerer kartet | Lav | Kart synlig bak, skip-CTA alltid tilgjengelig |
 | For få events matcher filter | Medium | "Hele dagen" og "Hele festivalen" som defaults |
 | Performance med 222 POIs | Lav | Allerede håndtert av Explorer (Arendalsuka har 134) |
+
+---
+
+## Test Cases
+
+### Kompass Store (Steg 2) → TC-01, TC-02, TC-03
+
+```
+TC-01 | Functional | P1
+Requirement: Kompass state management
+Given: Fresh page load
+When: No interaction yet
+Then: kompassCompleted=false, activeTab="kompass", selectedThemes=[], selectedDay=null, selectedTimeSlots=[]
+```
+
+```
+TC-02 | Functional | P1
+Requirement: Complete Kompass flow
+Given: User has selected themes, day, and time slots
+When: completeKompass() is called
+Then: kompassCompleted=true, activeTab="kompass"
+```
+
+```
+TC-03 | Functional | P1
+Requirement: Reset Kompass
+Given: kompassCompleted=true with selections
+When: resetKompass() is called
+Then: All selections cleared, kompassCompleted=false
+```
+
+### Kompass Filter (Steg 3) → TC-04, TC-05, TC-06, TC-07, TC-08
+
+```
+TC-04 | Functional | P1
+Requirement: Filter by theme
+Given: 210 events with 6 categories
+When: selectedThemes=["of-konserter"]
+Then: Only events with category.id "of-konserter" returned
+```
+
+```
+TC-05 | Functional | P1
+Requirement: Filter by day
+Given: Events on multiple days
+When: selectedDay="2025-07-29"
+Then: Only events with "2025-07-29" in eventDates returned
+```
+
+```
+TC-06 | Functional | P1
+Requirement: Filter by time of day
+Given: Events at various times
+When: selectedTimeSlots=["evening"]
+Then: Only events with eventTimeStart >= "17:00" returned
+```
+
+```
+TC-07 | Functional | P1
+Requirement: Combined filter (tema + dag + tid)
+Given: Events on multiple days/times/categories
+When: All three filters active
+Then: Only events matching ALL criteria returned, sorted by eventTimeStart
+```
+
+```
+TC-08 | Edge-case | P1
+Requirement: No matches
+Given: Very restrictive filter combination
+When: No events match all criteria
+Then: Empty array returned (UI shows empty state)
+```
+
+### Kompass Onboarding (Steg 4) → TC-09, TC-10, TC-11, TC-12
+
+```
+TC-09 | Functional | P1
+Requirement: Onboarding shows on first visit
+Given: features.kompass=true and kompassCompleted=false
+When: Explorer page loads
+Then: KompassOnboarding overlay is visible
+```
+
+```
+TC-10 | Functional | P1
+Requirement: Step navigation
+Given: Onboarding at step 1
+When: User selects themes and clicks "Neste"
+Then: Step 2 (dag) is shown, step indicator shows 2/3
+```
+
+```
+TC-11 | Functional | P1
+Requirement: Skip flow
+Given: Onboarding is visible
+When: User clicks "Utforsk fritt"
+Then: Onboarding closes, activeTab="all", all events visible
+```
+
+```
+TC-12 | Functional | P1
+Requirement: Complete flow
+Given: User at step 3
+When: User clicks "Se mitt program"
+Then: Onboarding closes, activeTab="kompass", timeline shows filtered events
+```
+
+### Tabs (Steg 5) → TC-13, TC-14
+
+```
+TC-13 | Functional | P1
+Requirement: Tab switching
+Given: Kompass tab active with filtered events
+When: User clicks "Alle events" tab
+Then: Full Explorer POI list shown, all map markers normal
+```
+
+```
+TC-14 | Functional | P1
+Requirement: Tab counts
+Given: 12 recommended events, 210 total
+When: Tabs render
+Then: Kompass tab shows "(12)", Alle events tab shows "(210)"
+```
+
+### Timeline (Steg 6) → TC-15, TC-16, TC-17
+
+```
+TC-15 | Functional | P1
+Requirement: Chronological timeline
+Given: 8 recommended events at various times
+When: Kompass tab active
+Then: Events displayed in chronological order with time nodes
+```
+
+```
+TC-16 | Functional | P1
+Requirement: Timeline event click
+Given: Timeline showing events
+When: User clicks an event card
+Then: activePOI set, map flies to venue, event highlighted on map
+```
+
+```
+TC-17 | Edge-case | P2
+Requirement: Empty timeline
+Given: Kompass completed but 0 events match
+When: Kompass tab shown
+Then: "Ingen events matcher dine valg" with "Endre filter" CTA
+```
+
+### Map Highlighting (Steg 7) → TC-18, TC-19
+
+```
+TC-18 | Functional | P1
+Requirement: Recommended events highlighted on map
+Given: Kompass tab active, 12 recommended events
+When: Map renders
+Then: 12 markers highlighted (glow), rest dimmed (opacity 0.4)
+```
+
+```
+TC-19 | Functional | P2
+Requirement: Normal markers on "Alle events" tab
+Given: "Alle events" tab active
+When: Map renders
+Then: All markers render normally, no dimming
+```
+
+### Integration (Steg 8) → TC-20, TC-21
+
+```
+TC-20 | Functional | P1
+Requirement: Feature flag gating
+Given: Project without features.kompass (e.g., Eiendom - Bolig)
+When: Explorer loads
+Then: No Kompass onboarding, no tabs, standard Explorer behavior
+```
+
+```
+TC-21 | Functional | P1
+Requirement: Full flow end-to-end
+Given: Olavsfest Explorer page
+When: User completes onboarding → views timeline → clicks event → switches tabs → back
+Then: All transitions smooth, state preserved, map updates correctly
+```
+
+### Step → TC Mapping
+
+| Steg | TC-IDs |
+|------|--------|
+| Steg 2: Kompass Store | TC-01, TC-02, TC-03 |
+| Steg 3: Filter Hook | TC-04, TC-05, TC-06, TC-07, TC-08 |
+| Steg 4: Onboarding | TC-09, TC-10, TC-11, TC-12 |
+| Steg 5: Tabs | TC-13, TC-14 |
+| Steg 6: Timeline | TC-15, TC-16, TC-17 |
+| Steg 7: Map Highlight | TC-18, TC-19 |
+| Steg 8: Integration | TC-20, TC-21 |

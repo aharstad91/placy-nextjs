@@ -28,6 +28,11 @@ const ExplorerMap = dynamic(() => import("./ExplorerMap"), {
 import ExplorerBottomSheet from "./ExplorerBottomSheet";
 import ExplorerPOIList from "./ExplorerPOIList";
 import CollectionDrawer from "./CollectionDrawer";
+import KompassOnboarding from "./KompassOnboarding";
+import KompassTabs from "./KompassTabs";
+import KompassTimeline from "./KompassTimeline";
+import { useKompassStore } from "@/lib/kompass-store";
+import { useKompassFilter } from "@/lib/hooks/useKompassFilter";
 
 interface CollectionData {
   slug: string;
@@ -163,6 +168,31 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
   const eventDays = useEventDays(basePOIs);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const eventFilteredPOIs = useEventDayFilter(basePOIs, selectedDay);
+
+  // Kompass — personal event recommendations
+  const showKompass = !!features?.kompass && !isCollectionView;
+  const kompassCompleted = useKompassStore((s) => s.kompassCompleted);
+  const showOnboarding = useKompassStore((s) => s.showOnboarding);
+  const kompassActiveTab = useKompassStore((s) => s.activeTab);
+  const kompassSelectedThemes = useKompassStore((s) => s.selectedThemes);
+  const kompassSelectedDay = useKompassStore((s) => s.selectedDay);
+  const kompassSelectedTimeSlots = useKompassStore((s) => s.selectedTimeSlots);
+  const setKompassActiveTab = useKompassStore((s) => s.setActiveTab);
+  const reopenOnboarding = useKompassStore((s) => s.reopenOnboarding);
+
+  const { recommended: kompassRecommended, recommendedIds: kompassHighlightIds } = useKompassFilter(
+    eventFilteredPOIs,
+    kompassSelectedThemes,
+    kompassSelectedDay,
+    kompassSelectedTimeSlots
+  );
+
+  // When Kompass day filter changes, sync it with the existing day filter
+  useEffect(() => {
+    if (showKompass && kompassCompleted && kompassSelectedDay) {
+      setSelectedDay(kompassSelectedDay);
+    }
+  }, [showKompass, kompassCompleted, kompassSelectedDay, setSelectedDay]);
 
   // Travel times — enriches POIs with walk times (uses GPS origin when near)
   const { pois: poisWithTravelTimes, loading: travelTimesLoading, error: travelTimesError } = useTravelTimes(
@@ -509,6 +539,13 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
     selectedDay,
     onSelectDay: setSelectedDay,
     dayLabels: eventConfig?.dayLabels,
+    // Kompass
+    showKompass,
+    kompassActiveTab,
+    onKompassTabChange: setKompassActiveTab,
+    kompassRecommended,
+    kompassRecommendedCount: kompassRecommended.length,
+    onEditKompassFilter: reopenOnboarding,
     ...(isCollectionView
       ? {}
       : {
@@ -559,6 +596,8 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
     onEnableGeolocation: handleEnableGeolocation,
     // Skeleton loading state
     showSkeleton,
+    // Kompass highlighting
+    kompassHighlightIds: showKompass && kompassCompleted && kompassActiveTab === "kompass" ? kompassHighlightIds : null,
   };
 
   // Desktop: split layout — map gets its own area, no sidebar overlap
@@ -728,6 +767,15 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
         onClearAll={clearCollection}
         projectId={project.id}
       />
+
+      {/* Kompass onboarding overlay */}
+      {showKompass && showOnboarding && (
+        <KompassOnboarding
+          themes={themes}
+          eventDays={eventDays}
+          dayLabels={eventConfig?.dayLabels}
+        />
+      )}
     </div>
   );
 }
