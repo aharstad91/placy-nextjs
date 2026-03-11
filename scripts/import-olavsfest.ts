@@ -345,14 +345,30 @@ async function main() {
   const festivalEvents = rawEvents.filter((e) => e.date >= "2025-07-27" && e.date <= "2025-08-03");
   console.log(`Festival events (Jul 27 – Aug 3): ${festivalEvents.length} of ${rawEvents.length}`);
 
-  // 2. Build POIs
-  const seenIds = new Set<string>();
-  const categoryCounts = new Map<string, number>();
+  // 2. Build POIs — merge recurring events (same name + venue) into single POIs
   const skipped: string[] = [];
   const venuesMissing = new Set<string>();
 
-  const pois = festivalEvents
-    .map((event) => {
+  // First pass: group by name + venue to detect recurring events
+  const mergeKey = (e: { title: string; venue: string }) => `${e.title}|||${e.venue}`;
+  const grouped = new Map<string, typeof festivalEvents>();
+  for (const event of festivalEvents) {
+    const key = mergeKey(event);
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.push(event);
+    } else {
+      grouped.set(key, [event]);
+    }
+  }
+
+  // Second pass: build one POI per unique event, merging dates
+  const seenIds = new Set<string>();
+  const categoryCounts = new Map<string, number>();
+
+  const pois = Array.from(grouped.values())
+    .map((events) => {
+      const event = events[0]; // Use first occurrence for metadata
       const coords = findVenueCoords(event.venue);
       if (!coords) {
         skipped.push(`${event.title} (venue: "${event.venue}")`);
@@ -369,6 +385,9 @@ async function main() {
       if (event.price === "Gratis") eventTags.push("Gratis");
       if (event.price === "Utsolgt") eventTags.push("Utsolgt");
 
+      // Collect all dates from recurring instances, sorted chronologically
+      const allDates = [...new Set(events.map((e) => e.date))].sort();
+
       return {
         id,
         name: event.title,
@@ -378,7 +397,7 @@ async function main() {
         editorial_hook: null as string | null,
         description: null as string | null,
         featured_image: event.imageUrl,
-        event_dates: [event.date],
+        event_dates: allDates,
         event_time_start: event.timeStart,
         event_time_end: event.timeEnd,
         event_url: event.url,
@@ -393,6 +412,12 @@ async function main() {
       };
     })
     .filter((p): p is NonNullable<typeof p> => p !== null);
+
+  // Report merge stats
+  const mergedCount = Array.from(grouped.values()).filter((g) => g.length > 1).length;
+  if (mergedCount > 0) {
+    console.log(`\nMerged ${mergedCount} recurring events (${festivalEvents.length} instances → ${pois.length} unique POIs)`);
+  }
 
   // 3. Summary
   console.log("\nCategories:");
@@ -472,6 +497,29 @@ async function main() {
     }
   }
   console.log(`${pois.length} POIs upserted`);
+
+  // 4c2. Clean up stale POIs (old duplicates from pre-merge imports)
+  const newPoiIds = new Set(pois.map((p) => p.id));
+  const { data: existingPois } = await supabase
+    .from("pois")
+    .select("id")
+    .like("id", "of-%");
+  if (existingPois) {
+    const staleIds = existingPois.map((p) => p.id).filter((id) => !newPoiIds.has(id));
+    if (staleIds.length > 0) {
+      // Remove links first (FK constraints)
+      for (const staleId of staleIds) {
+        await supabase.from("project_pois").delete().eq("poi_id", staleId);
+        await supabase.from("product_pois").delete().eq("poi_id", staleId);
+      }
+      // Delete stale POIs in batches
+      for (let i = 0; i < staleIds.length; i += BATCH_SIZE) {
+        const batch = staleIds.slice(i, i + BATCH_SIZE);
+        await supabase.from("pois").delete().in("id", batch);
+      }
+      console.log(`Cleaned up ${staleIds.length} stale duplicate POIs`);
+    }
+  }
 
   // 4d. Upsert project
   const projectId = `${CUSTOMER_ID}_${PROJECT_SLUG}`;
