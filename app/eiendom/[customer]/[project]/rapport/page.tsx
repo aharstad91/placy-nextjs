@@ -3,6 +3,7 @@ import { getProductAsync, getProjectAsync, productExists } from "@/lib/data-serv
 import { getProjectTranslations } from "@/lib/supabase/translations";
 import { getAreaSlugForProject } from "@/lib/public-queries";
 import ReportPage from "@/components/variants/report/ReportPage";
+import { eiendomUrl } from "@/lib/urls";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function ReportProductPage({ params, searchParams }: PageProps) {
+export default async function EiendomReportPage({ params, searchParams }: PageProps) {
   const { customer, project: projectSlug } = await params;
   const resolvedSearchParams = await searchParams;
 
@@ -40,7 +41,7 @@ export default async function ReportProductPage({ params, searchParams }: PagePr
 
   // Check if explorer exists (for CTA link)
   const hasExplorer = await productExists(customer, projectSlug, "explorer");
-  const explorerUrl = hasExplorer ? `/${customer}/${projectSlug}/explore` : null;
+  const explorerUrl = hasExplorer ? eiendomUrl(customer, projectSlug) : null;
 
   // Look up area slug for POI detail page links
   const areaSlug = await getAreaSlugForProject(projectData.id);
@@ -91,7 +92,7 @@ export async function generateMetadata({ params }: PageProps) {
     title: `${projectData.story.title} – Nabolagsrapport | Placy`,
     description: projectData.story.introText,
     alternates: {
-      canonical: `https://placy.no/for/${customer}/${projectSlug}/report`,
+      canonical: eiendomUrl(customer, projectSlug, "rapport"),
     },
   };
 }

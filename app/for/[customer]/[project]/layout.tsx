@@ -1,77 +1,11 @@
-import type { Metadata } from "next";
-import { getProjectAsync, getProjectProducts, getProjectShortId } from "@/lib/data-server";
-import ProductNav from "@/components/shared/ProductNav";
-import type { ProductLink } from "@/components/shared/ProductNav";
-import { PageTransition } from "@/components/transitions";
-
-interface LayoutProps {
-  params: Promise<{ customer: string; project: string }>;
-  children: React.ReactNode;
-}
-
-export async function generateMetadata({
-  params,
+/**
+ * Minimal layout for frozen trips pages.
+ * Only Mapbox CSS (from parent /for/layout.tsx) and children rendering.
+ */
+export default function FrozenProjectLayout({
+  children,
 }: {
-  params: Promise<{ customer: string; project: string }>;
-}): Promise<Metadata> {
-  const { customer, project } = await params;
-
-  const formatTitle = (slug: string) =>
-    slug
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-
-  return {
-    title: `${formatTitle(project)} | Placy`,
-    description: `Oppdag nabolaget rundt ${formatTitle(project)} - lokasjonsbasert storytelling`,
-    openGraph: {
-      title: `${formatTitle(project)} | Placy`,
-      description: `Oppdag nabolaget rundt ${formatTitle(project)}`,
-      type: "website",
-    },
-  };
-}
-
-export default async function ProjectLayout({ params, children }: LayoutProps) {
-  const { customer, project: projectSlug } = await params;
-
-  const [projectData, availableProducts, shortId] = await Promise.all([
-    getProjectAsync(customer, projectSlug),
-    getProjectProducts(customer, projectSlug),
-    getProjectShortId(customer, projectSlug),
-  ]);
-
-  if (!projectData) {
-    return <>{children}</>;
-  }
-
-  // Build product links from available products in the hierarchy
-  const basePath = `/for/${customer}/${projectSlug}`;
-  const productTypeToLink: Record<string, { label: string; subPath: string }> = {
-    explorer: { label: "Explore", subPath: "/explore" },
-    guide: { label: "Trips", subPath: "/trips" },
-    report: { label: "Report", subPath: "/report" },
-  };
-
-  const products: ProductLink[] = availableProducts
-    .filter((p) => productTypeToLink[p.type])
-    .map((p) => ({
-      label: productTypeToLink[p.type].label,
-      href: `${basePath}${productTypeToLink[p.type].subPath}`,
-    }));
-
-  return (
-    <>
-      <ProductNav
-        projectName={projectData.name}
-        products={products}
-        adminEditUrl={shortId ? `/admin/projects/${shortId}` : null}
-        homeHref={basePath}
-      />
-      <PageTransition className="pt-12">
-        {children}
-      </PageTransition>
-    </>
-  );
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
 }

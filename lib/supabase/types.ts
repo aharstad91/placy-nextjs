@@ -881,6 +881,7 @@ export type Database = {
           geocoded_city: string | null;
           address_slug: string;
           project_id: string | null;
+          customer_id: string | null;
           result_url: string | null;
           error_message: string | null;
           consent_given: boolean;
@@ -900,6 +901,7 @@ export type Database = {
           geocoded_city?: string | null;
           address_slug: string;
           project_id?: string | null;
+          customer_id?: string | null;
           result_url?: string | null;
           error_message?: string | null;
           consent_given?: boolean;
@@ -919,6 +921,7 @@ export type Database = {
           geocoded_city?: string | null;
           address_slug?: string;
           project_id?: string | null;
+          customer_id?: string | null;
           result_url?: string | null;
           error_message?: string | null;
           consent_given?: boolean;
@@ -931,6 +934,12 @@ export type Database = {
             foreignKeyName: "generation_requests_project_id_fkey";
             columns: ["project_id"];
             referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "generation_requests_customer_id_fkey";
+            columns: ["customer_id"];
+            referencedRelation: "customers";
             referencedColumns: ["id"];
           }
         ];

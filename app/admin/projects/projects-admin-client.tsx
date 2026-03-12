@@ -372,7 +372,7 @@ export function ProjectsAdminClient({
 
                       {/* External link */}
                       <Link
-                        href={`/for/${container.customer_id}/${container.url_slug}`}
+                        href={`/eiendom/${container.customer_id}/${container.url_slug}`}
                         target="_blank"
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Åpne prosjekt"
