@@ -172,6 +172,7 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
   // Kompass — personal event recommendations
   const showKompass = !!features?.kompass && !isCollectionView;
   const kompassCompleted = useKompassStore((s) => s.kompassCompleted);
+  const onboardingDismissed = useKompassStore((s) => s.onboardingDismissed);
   const showOnboarding = useKompassStore((s) => s.showOnboarding);
   const kompassActiveTab = useKompassStore((s) => s.activeTab);
   const kompassSelectedThemes = useKompassStore((s) => s.selectedThemes);
@@ -539,12 +540,13 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
     selectedDay,
     onSelectDay: setSelectedDay,
     dayLabels: eventConfig?.dayLabels,
-    // Kompass
-    showKompass,
+    // Kompass — tabs shown once onboarding has been dismissed (skip or complete)
+    showKompass: showKompass && onboardingDismissed,
     kompassActiveTab,
     onKompassTabChange: setKompassActiveTab,
     kompassRecommended,
     kompassRecommendedCount: kompassRecommended.length,
+    kompassCompleted,
     onEditKompassFilter: reopenOnboarding,
     ...(isCollectionView
       ? {}
@@ -572,7 +574,7 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
 
   const mapProps = {
     center: project.centerCoordinates,
-    pois: filteredPOIs,
+    pois: showKompass && kompassCompleted && kompassActiveTab === "kompass" ? kompassRecommended : filteredPOIs,
     allPOIs: poisWithTravelTimes,
     activePOI,
     activeCategories,

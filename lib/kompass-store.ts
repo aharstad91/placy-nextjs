@@ -11,6 +11,7 @@ export interface KompassState {
 
   // UI state
   kompassCompleted: boolean;
+  onboardingDismissed: boolean;    // True once user has interacted with onboarding (skip or complete)
   activeTab: "kompass" | "all";
   onboardingStep: 1 | 2 | 3;
   showOnboarding: boolean;
@@ -36,7 +37,8 @@ export const useKompassStore = create<KompassState>()((set) => ({
   selectedDay: null,
   selectedTimeSlots: [],
   kompassCompleted: false,
-  activeTab: "kompass",
+  onboardingDismissed: false,
+  activeTab: "all",
   onboardingStep: 1,
   showOnboarding: true,
 
@@ -76,6 +78,7 @@ export const useKompassStore = create<KompassState>()((set) => ({
   completeKompass: () =>
     set({
       kompassCompleted: true,
+      onboardingDismissed: true,
       showOnboarding: false,
       activeTab: "kompass",
     }),
@@ -83,6 +86,7 @@ export const useKompassStore = create<KompassState>()((set) => ({
   skipKompass: () =>
     set({
       kompassCompleted: false,
+      onboardingDismissed: true,
       showOnboarding: false,
       activeTab: "all",
     }),
@@ -93,7 +97,8 @@ export const useKompassStore = create<KompassState>()((set) => ({
       selectedDay: null,
       selectedTimeSlots: [],
       kompassCompleted: false,
-      activeTab: "kompass",
+      onboardingDismissed: false,
+      activeTab: "all",
       onboardingStep: 1,
       showOnboarding: true,
     }),
@@ -119,6 +124,7 @@ export const useKompassUI = () =>
   useKompassStore(
     useShallow((s) => ({
       kompassCompleted: s.kompassCompleted,
+      onboardingDismissed: s.onboardingDismissed,
       activeTab: s.activeTab,
       showOnboarding: s.showOnboarding,
       onboardingStep: s.onboardingStep,

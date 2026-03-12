@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Compass, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
+import { Compass, ChevronRight, ChevronLeft, Sparkles, X } from "lucide-react";
 import { useKompassStore } from "@/lib/kompass-store";
 import type { TimeSlot } from "@/lib/kompass-store";
 import { formatEventDay } from "@/lib/hooks/useEventDayFilter";
@@ -102,6 +102,14 @@ export default function KompassOnboarding({
         <div className="flex-shrink-0 px-6 pt-5 pb-3">
           {/* Drag handle (mobile) */}
           <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4 lg:hidden" />
+
+          {/* Close button */}
+          <button
+            onClick={skipKompass}
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
 
           <div className="flex items-center gap-2 mb-1">
             <Compass className="w-5 h-5 text-gray-700" />
@@ -309,7 +317,7 @@ export default function KompassOnboarding({
 
             <button
               onClick={skipKompass}
-              className="px-4 py-2.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              className="px-4 py-2.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors"
             >
               Utforsk fritt
             </button>

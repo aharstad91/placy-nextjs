@@ -1,16 +1,25 @@
 "use client";
 
-import { useMemo } from "react";
-import type { POI } from "@/lib/types";
+import { useMemo, useRef, useEffect, useCallback } from "react";
+import type { POI, TravelMode } from "@/lib/types";
+import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
-import { Clock, MapPin, Compass, SlidersHorizontal } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { Clock, Compass, SlidersHorizontal } from "lucide-react";
+import ExplorerPOICard from "./ExplorerPOICard";
 
 interface KompassTimelineProps {
   events: POI[];
   activePOI: string | null;
   onPOIClick: (poiId: string) => void;
   onEditFilter: () => void;
+  // Card props (same as ExplorerPOICard needs)
+  openingHoursData?: Map<string, OpeningHoursData>;
+  travelTimesLoading?: boolean;
+  travelMode?: TravelMode;
+  collectionPOIs?: string[];
+  onToggleCollection?: (poiId: string) => void;
+  showBookmarkHeartOnly?: boolean;
+  areaSlug?: string | null;
 }
 
 /**
@@ -27,30 +36,41 @@ function groupByTime(events: POI[]): Map<string, POI[]> {
   return groups;
 }
 
-/**
- * Extract a price label from eventTags.
- * Looks for "Gratis" or price patterns like "520,-"
- */
-function getPriceLabel(eventTags?: string[]): string | null {
-  if (!eventTags || eventTags.length === 0) return null;
-  const priceTag = eventTags.find(
-    (t) => t === "Gratis" || /^\d/.test(t) || t.includes("kr")
-  );
-  return priceTag ?? null;
-}
-
-function getIcon(iconName: string): LucideIcons.LucideIcon {
-  const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[iconName];
-  return Icon || LucideIcons.MapPin;
-}
-
 export default function KompassTimeline({
   events,
   activePOI,
   onPOIClick,
   onEditFilter,
+  openingHoursData,
+  travelTimesLoading,
+  travelMode = "walk",
+  collectionPOIs = [],
+  onToggleCollection,
+  showBookmarkHeartOnly,
+  areaSlug,
 }: KompassTimelineProps) {
   const timeGroups = useMemo(() => groupByTime(events), [events]);
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Scroll to active POI when it changes
+  useEffect(() => {
+    if (!activePOI) return;
+    const cardEl = cardRefs.current.get(activePOI);
+    if (cardEl) {
+      cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [activePOI]);
+
+  const setCardRef = useCallback(
+    (poiId: string) => (el: HTMLDivElement | null) => {
+      if (el) {
+        cardRefs.current.set(poiId, el);
+      } else {
+        cardRefs.current.delete(poiId);
+      }
+    },
+    []
+  );
 
   if (events.length === 0) {
     return (
@@ -106,54 +126,31 @@ export default function KompassTimeline({
               <div className="ml-3 pl-6 border-l border-transparent space-y-2 pb-4">
                 {groupEvents.map((event) => {
                   const isActive = activePOI === event.id;
-                  const priceLabel = getPriceLabel(event.eventTags);
-                  const CategoryIcon = getIcon(event.category.icon);
 
                   return (
-                    <button
+                    <div
                       key={event.id}
-                      onClick={() => onPOIClick(event.id)}
+                      ref={setCardRef(event.id)}
                       className={cn(
-                        "w-full text-left rounded-xl border p-3.5 transition-all",
+                        "rounded-xl border overflow-hidden transition-all duration-300",
                         isActive
-                          ? "border-sky-300 bg-sky-50/50 ring-1 ring-sky-400 shadow-sm"
-                          : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                          ? "border-sky-200 ring-2 ring-sky-500 ring-offset-1 shadow-md"
+                          : "border-gray-200"
                       )}
                     >
-                      <h4 className="text-sm font-semibold text-gray-900 leading-tight mb-1.5">
-                        {event.name}
-                      </h4>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="flex items-center gap-1 text-xs text-gray-500">
-                          <MapPin className="w-3 h-3" />
-                          {event.address ?? "Ukjent sted"}
-                        </span>
-                        <span className="text-gray-300">·</span>
-                        <span
-                          className="flex items-center gap-1 text-xs font-medium"
-                          style={{ color: event.category.color }}
-                        >
-                          <CategoryIcon className="w-3 h-3" />
-                          {event.category.name}
-                        </span>
-                        {priceLabel && (
-                          <>
-                            <span className="text-gray-300">·</span>
-                            <span className={cn(
-                              "text-xs font-medium",
-                              priceLabel === "Gratis" ? "text-green-600" : "text-gray-600"
-                            )}>
-                              {priceLabel}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      {event.eventTimeEnd && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          {event.eventTimeStart}–{event.eventTimeEnd}
-                        </p>
-                      )}
-                    </button>
+                      <ExplorerPOICard
+                        poi={event}
+                        isActive={isActive}
+                        onClick={() => onPOIClick(event.id)}
+                        openingHours={openingHoursData?.get(event.id)}
+                        travelTimesLoading={travelTimesLoading}
+                        travelMode={travelMode}
+                        isInCollection={collectionPOIs.includes(event.id)}
+                        onToggleCollection={onToggleCollection}
+                        showBookmarkHeartOnly={showBookmarkHeartOnly}
+                        areaSlug={areaSlug}
+                      />
+                    </div>
                   );
                 })}
               </div>

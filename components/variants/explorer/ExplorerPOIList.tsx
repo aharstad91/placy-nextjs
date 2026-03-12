@@ -11,6 +11,7 @@ import ExplorerThemeChips from "./ExplorerThemeChips";
 import ExplorerDayFilter from "./ExplorerDayFilter";
 import KompassTabs from "./KompassTabs";
 import KompassTimeline from "./KompassTimeline";
+import KompassInlineOnboarding from "./KompassInlineOnboarding";
 import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
 
 interface ExplorerPOIListProps {
@@ -54,6 +55,7 @@ interface ExplorerPOIListProps {
   onKompassTabChange?: (tab: "kompass" | "all") => void;
   kompassRecommended?: POI[];
   kompassRecommendedCount?: number;
+  kompassCompleted?: boolean;
   onEditKompassFilter?: () => void;
 }
 
@@ -98,6 +100,7 @@ export default function ExplorerPOIList({
   onKompassTabChange,
   kompassRecommended = [],
   kompassRecommendedCount = 0,
+  kompassCompleted = false,
   onEditKompassFilter,
 }: ExplorerPOIListProps) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -240,19 +243,37 @@ export default function ExplorerPOIList({
             onTabChange={onKompassTabChange}
             kompassCount={kompassRecommendedCount}
             allCount={totalCount}
+            kompassCompleted={kompassCompleted}
           />
         </div>
       )}
 
-      {/* Kompass timeline (when Kompass tab is active) */}
+      {/* Kompass timeline or inline onboarding (when Kompass tab is active) */}
       {showKompass && kompassActiveTab === "kompass" && (
-        <div className="relative flex-1 overflow-y-auto px-4">
-          <KompassTimeline
-            events={kompassRecommended}
-            activePOI={activePOI}
-            onPOIClick={onPOIClick}
-            onEditFilter={onEditKompassFilter ?? (() => {})}
-          />
+        <div className="relative flex-1 overflow-y-auto">
+          {kompassCompleted ? (
+            <div className="px-4">
+              <KompassTimeline
+                events={kompassRecommended}
+                activePOI={activePOI}
+                onPOIClick={onPOIClick}
+                onEditFilter={onEditKompassFilter ?? (() => {})}
+                openingHoursData={openingHoursData}
+                travelTimesLoading={travelTimesLoading}
+                travelMode={travelMode}
+                collectionPOIs={collectionPOIs}
+                onToggleCollection={onToggleCollection}
+                showBookmarkHeartOnly={showBookmarkHeartOnly}
+                areaSlug={areaSlug}
+              />
+            </div>
+          ) : (
+            <KompassInlineOnboarding
+              themes={themes}
+              eventDays={eventDays}
+              dayLabels={dayLabels}
+            />
+          )}
         </div>
       )}
 
