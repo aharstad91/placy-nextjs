@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Placy — Nabolaget som salgsargument</title>
+  <meta name="description" content="Placy gjør beliggenhet til et konkurransefortrinn for eiendomsutviklere. Interaktive kart, kuratert innhold og redaksjonell kvalitet.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav class="nav" id="navbar">
+    <a href="index.html" class="nav-logo">Placy</a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link nav-link-active">Eiendom</a>
+      <a href="turisme.html" class="nav-link">Turisme</a>
+      <a href="events.html" class="nav-link">Events</a>
+      <a href="analytics.html" class="nav-link">Analytics</a>
+      <a href="#om" class="nav-link">Om</a>
+      <a href="#demo" class="btn btn-dark">Book en demo</a>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1>Beliggenhet selger. Vi gjør den synlig.</h1>
+      <p>Placy gir eiendomsutviklere et interaktivt verktøy for å vise frem nabolaget — med kuraterte steder, redaksjonelt innhold og kart som engasjerer.</p>
+      <a href="#demo" class="btn btn-outline btn-arrow">Book en demo</a>
+    </div>
+  </section>
+
+  <!-- ===== PROBLEM ===== -->
+  <section class="problem section">
+    <div class="problem-mosaic">
+
+      <div class="mosaic-col mosaic-col-left">
+        <div class="mosaic-item">
+          <div class="circle-bg circle-bg-sage"></div>
+          <img class="circle-img" src="https://images.unsplash.com/photo-1462524653740-777d166c975e?w=300&h=300&fit=crop&crop=center" alt="Fargerike brygger langs Nidelva i Trondheim">
+        </div>
+        <div class="mosaic-bubble">
+          <span>Prospektet viser fasade, men ikke nabolaget</span>
+        </div>
+        <div class="mosaic-item mosaic-item-sm">
+          <div class="circle-bg circle-bg-warm"></div>
+          <img class="circle-img" src="https://images.unsplash.com/photo-1643939167687-bea647ba103e?w=240&h=240&fit=crop&crop=center" alt="Nidarosdomen i Trondheim">
+        </div>
+      </div>
+
+      <div class="mosaic-col mosaic-col-center">
+        <div class="mosaic-bubble">
+          <span>Hvordan viser vi kjøperne hva som finnes rundt hjørnet?</span>
+        </div>
+        <div class="mosaic-item mosaic-item-lg">
+          <div class="circle-bg circle-bg-blue"></div>
+          <img class="circle-img circle-img-large" src="https://images.unsplash.com/photo-1517904518766-16c4f3ab0293?w=360&h=360&fit=crop&crop=center" alt="Fargerikt nabolag i Trondheim">
+        </div>
+        <div class="mosaic-bubble mosaic-bubble-italic">
+          <span>Beliggenhet, beliggenhet, beliggenhet...</span>
+        </div>
+      </div>
+
+      <div class="mosaic-col mosaic-col-right">
+        <div class="mosaic-item mosaic-item-sm">
+          <div class="circle-bg circle-bg-pink"></div>
+          <img class="circle-img" src="https://images.unsplash.com/photo-1698430555830-e2af822434cb?w=240&h=240&fit=crop&crop=center" alt="Gamle Bybro i Trondheim">
+        </div>
+        <div class="mosaic-bubble">
+          <span>Naboprosjektet har lik plantegning — hva skiller oss?</span>
+        </div>
+        <div class="mosaic-item">
+          <div class="circle-bg circle-bg-sage"></div>
+          <img class="circle-img" src="https://images.unsplash.com/photo-1614417538522-19e59112c261?w=300&h=300&fit=crop&crop=center" alt="Trebebyggelse langs Nidelva i Trondheim">
+        </div>
+      </div>
+
+    </div>
+
+    <div class="problem-text">
+      <h1 class="h-display">For de som vet at beliggenhet er alt</h1>
+      <p class="text-large">Du bygger eiendommer på fantastiske steder. Men prospekter og nettsider viser plantegninger og fasader — ikke det som faktisk selger: nabolaget. Placy endrer det.</p>
+    </div>
+  </section>
+
+  <!-- ===== SOLUTION + REFERENCE CASE ===== -->
+  <section class="reference" id="referanse">
+    <div class="reference-intro">
+      <p class="h-label mb-16">Se det i praksis</p>
+      <h2 class="h-large">Nabolaget er ditt beste salgsargument.</h2>
+      <p class="text-large reference-sub">Placy samler kuraterte stedsdata, redaksjonelt innhold og interaktive kart — skreddersydd for hvert eiendomsprosjekt. Her er Ferjemannsveien 10 i Trondheim.</p>
+    </div>
+
+    <div class="reference-stats">
+      <div class="reference-stat">
+        <span class="reference-stat-value">47</span>
+        <span class="reference-stat-label">Kuraterte steder</span>
+        <span class="reference-stat-detail">i gangavstand</span>
+      </div>
+      <div class="reference-stat">
+        <span class="reference-stat-value">15 min</span>
+        <span class="reference-stat-label">Dekningsradius</span>
+        <span class="reference-stat-detail">til fots</span>
+      </div>
+    </div>
+
+    <!-- Radial map visualization -->
+    <div class="radial-map">
+      <!-- Concentric rings -->
+      <div class="radial-ring ring-outer">
+        <span class="ring-label">15 min</span>
+      </div>
+      <div class="radial-ring ring-mid">
+        <span class="ring-label">10 min</span>
+      </div>
+      <div class="radial-ring ring-inner">
+        <span class="ring-label">5 min</span>
+      </div>
+
+      <!-- Center pin -->
+      <div class="radial-center">
+        <div class="radial-center-pin"></div>
+        <span class="radial-center-label">Ferjemannsveien 10</span>
+      </div>
+
+      <!-- Floating POI markers with bubbles -->
+      <div class="radial-poi poi-pos-1">
+        <div class="radial-bubble">Dromedar Kaffebar</div>
+        <div class="radial-marker marker-cafe"></div>
+      </div>
+
+      <div class="radial-poi poi-pos-2">
+        <div class="radial-bubble">Bakklandet Skydsstation</div>
+        <div class="radial-marker marker-restaurant"></div>
+      </div>
+
+      <div class="radial-poi poi-pos-3">
+        <div class="radial-bubble bubble-below">Ila Barneskole</div>
+        <div class="radial-marker marker-school"></div>
+      </div>
+
+      <div class="radial-poi poi-pos-4">
+        <div class="radial-bubble">Iladalen Park</div>
+        <div class="radial-marker marker-park"></div>
+      </div>
+
+      <div class="radial-poi poi-pos-5">
+        <div class="radial-bubble">SATS Solsiden</div>
+        <div class="radial-marker marker-gym"></div>
+      </div>
+
+      <div class="radial-poi poi-pos-6">
+        <div class="radial-bubble">Rema 1000</div>
+        <div class="radial-marker marker-shop"></div>
+      </div>
+
+      <div class="radial-poi poi-pos-7">
+        <div class="radial-bubble">Sellanraa</div>
+        <div class="radial-marker marker-restaurant"></div>
+      </div>
+
+      <div class="radial-poi poi-pos-8">
+        <div class="radial-marker marker-cafe marker-sm"></div>
+      </div>
+
+      <div class="radial-poi poi-pos-9">
+        <div class="radial-marker marker-park marker-sm"></div>
+      </div>
+
+      <!-- Extra small markers for density -->
+      <div class="radial-poi poi-pos-10">
+        <div class="radial-marker marker-restaurant marker-sm"></div>
+      </div>
+      <div class="radial-poi poi-pos-11">
+        <div class="radial-marker marker-shop marker-sm"></div>
+      </div>
+      <div class="radial-poi poi-pos-12">
+        <div class="radial-marker marker-cafe marker-sm"></div>
+      </div>
+      <div class="radial-poi poi-pos-13">
+        <div class="radial-marker marker-gym marker-sm"></div>
+      </div>
+      <div class="radial-poi poi-pos-14">
+        <div class="radial-marker marker-school marker-sm"></div>
+      </div>
+    </div>
+
+    <div class="reference-cta">
+      <a href="https://placy.no/for/klp-eiendom/ferjemannsveien-10" class="btn btn-dark btn-arrow" target="_blank">Se live demo</a>
+    </div>
+  </section>
+
+  <!-- ===== FEATURE: BOLIGPROSJEKT ===== -->
+  <section class="feature" id="bolig">
+    <div class="feature-grid">
+      <div class="feature-text">
+        <p class="h-label mb-16">Boligprosjekter</p>
+        <h1 class="h-section">Vis kjøperne hva de egentlig kjøper</h1>
+        <p class="text-large">En bolig er mer enn kvadratmeter. Vis boligkjøperne kaféen rundt hjørnet, parken i nabolaget og skolen fem minutter unna — alt på ett sted, med kart og redaksjonelt innhold.</p>
+
+        <div class="feature-details">
+          <div class="feature-detail">
+            <div class="feature-detail-icon">&#9733;</div>
+            <div>
+              <h3>Kuraterte steder</h3>
+              <p>Håndplukkede og vurderte steder — ikke en rå Google-dump. Hvert sted er kvalitetssikret.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">&#9678;</div>
+            <div>
+              <h3>Interaktive kart</h3>
+              <p>Vis reelle gangavstander og reisetider. «Nærmeste barnehage er 4 minutter unna.»</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">&#9998;</div>
+            <div>
+              <h3>Redaksjonelt innhold</h3>
+              <p>«Byens beste bakeri er rett rundt hjørnet» — innhold som gjør beliggenheten levende.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-showcase bolig-showcase">
+        <!-- Neighborhood profile header card -->
+        <div class="ui-card ui-card-profile">
+          <div class="ui-card-header">
+            <div class="ui-card-pin"></div>
+            <div>
+              <h4 class="ui-card-title">Ferjemannsveien 10</h4>
+              <span class="ui-card-subtitle">Nabolagsprofil — Ila, Trondheim</span>
+            </div>
+          </div>
+          <div class="ui-chips-row">
+            <span class="ui-chip ui-chip-active">Kafé <span class="ui-chip-count">8</span></span>
+            <span class="ui-chip">Restaurant <span class="ui-chip-count">12</span></span>
+            <span class="ui-chip">Skole <span class="ui-chip-count">4</span></span>
+            <span class="ui-chip">Park <span class="ui-chip-count">6</span></span>
+            <span class="ui-chip">Trening <span class="ui-chip-count">3</span></span>
+          </div>
+          <div class="ui-stats-bar">
+            <span>47 steder</span>
+            <span class="ui-stats-dot"></span>
+            <span>8 kategorier</span>
+            <span class="ui-stats-dot"></span>
+            <span>15 min radius</span>
+          </div>
+        </div>
+
+        <!-- POI cards stacked with overlap -->
+        <div class="ui-poi-stack">
+          <div class="ui-card ui-card-poi poi-1">
+            <div class="ui-poi-top">
+              <div class="ui-poi-info">
+                <h5>Dromedar Kaffebar</h5>
+                <div class="ui-poi-meta">
+                  <span class="ui-rating">&#9733; 4.7</span>
+                  <span class="ui-tag">Kafé</span>
+                  <span class="ui-distance">4 min gange</span>
+                </div>
+              </div>
+            </div>
+            <p class="ui-poi-hook"><em>«Trondheims mest elskede kaffebar — perfekt for en rolig søndag med avisen.»</em></p>
+          </div>
+
+          <div class="ui-card ui-card-poi poi-2">
+            <div class="ui-poi-top">
+              <div class="ui-poi-info">
+                <h5>Baklandet Skydsstation</h5>
+                <div class="ui-poi-meta">
+                  <span class="ui-rating">&#9733; 4.5</span>
+                  <span class="ui-tag">Restaurant</span>
+                  <span class="ui-distance">6 min gange</span>
+                </div>
+              </div>
+            </div>
+            <p class="ui-poi-hook"><em>«Historisk sjarm og hjemmelaget mat ved Gamle Bybro.»</em></p>
+          </div>
+
+          <div class="ui-card ui-card-poi poi-3">
+            <div class="ui-poi-top">
+              <div class="ui-poi-info">
+                <h5>Ila Barneskole</h5>
+                <div class="ui-poi-meta">
+                  <span class="ui-rating">&#9733; 4.3</span>
+                  <span class="ui-tag">Skole</span>
+                  <span class="ui-distance">5 min gange</span>
+                </div>
+              </div>
+            </div>
+            <p class="ui-poi-hook"><em>«Populær nabolagsskole med gode utearealer og aktivt FAU.»</em></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURE: NÆRINGSEIENDOM ===== -->
+  <section class="feature" id="naering" style="background: var(--bg-primary);">
+    <div class="feature-grid reversed">
+      <div class="feature-text">
+        <p class="h-label mb-16">Næringseiendom</p>
+        <h1 class="h-section">Gjør beliggenheten til et konkurransefortrinn</h1>
+        <p class="text-large">Leietakere velger kontor basert på mer enn kvadratmeterpris. Vis dem lunsjtilbudet, kollektivtransporten, treningssentrene og servicetilbudet — alt som gjør adressen attraktiv.</p>
+
+        <div class="feature-details">
+          <div class="feature-detail">
+            <div class="feature-detail-icon">&#9962;</div>
+            <div>
+              <h3>Attraktiv arbeidsplass</h3>
+              <p>Vis leietakere at ansatte får et godt hverdagsliv — lunsj, trening, transport innen gangavstand.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">&#9670;</div>
+            <div>
+              <h3>Differensiering</h3>
+              <p>Når to kontorbygg har samme pris, vinner den med best dokumentert beliggenhet.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">&#10132;</div>
+            <div>
+              <h3>Digitalt prospekt</h3>
+              <p>Erstatt statiske PDF-er med interaktive nettsider leietakere faktisk bruker.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-showcase naering-showcase">
+        <!-- Main building card -->
+        <div class="ui-card ui-card-building">
+          <div class="ui-card-header">
+            <div class="ui-card-pin"></div>
+            <div>
+              <h4 class="ui-card-title">Powerhouse Brattørkaia</h4>
+              <span class="ui-card-subtitle">Næringseiendom — Brattøra, Trondheim</span>
+            </div>
+          </div>
+          <div class="ui-amenity-grid">
+            <div class="ui-amenity">
+              <span class="ui-amenity-label">Lunsj i nærheten</span>
+              <span class="ui-amenity-count">12 steder</span>
+            </div>
+            <div class="ui-amenity">
+              <span class="ui-amenity-label">Kollektivtransport</span>
+              <span class="ui-amenity-count">4 linjer</span>
+            </div>
+            <div class="ui-amenity">
+              <span class="ui-amenity-label">Trening</span>
+              <span class="ui-amenity-count">3 sentre</span>
+            </div>
+            <div class="ui-amenity">
+              <span class="ui-amenity-label">Service</span>
+              <span class="ui-amenity-count">8 tilbud</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating amenity cards -->
+        <div class="ui-card ui-card-float float-lunsj">
+          <h5 class="ui-float-title">&#127860; Lunsj</h5>
+          <div class="ui-float-items">
+            <div class="ui-float-item">
+              <span class="ui-float-name">Habitat Brattøra</span>
+              <span class="ui-distance">3 min</span>
+            </div>
+            <div class="ui-float-item">
+              <span class="ui-float-name">Bula Burger</span>
+              <span class="ui-distance">4 min</span>
+            </div>
+            <div class="ui-float-item">
+              <span class="ui-float-name">Kalas & Canasta</span>
+              <span class="ui-distance">5 min</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ui-card ui-card-float float-transport">
+          <h5 class="ui-float-title">&#128652; Transport</h5>
+          <div class="ui-float-items">
+            <div class="ui-float-item">
+              <span class="ui-transport-pill bus">Buss</span>
+              <span class="ui-distance">5 min</span>
+            </div>
+            <div class="ui-float-item">
+              <span class="ui-transport-pill train">Tog</span>
+              <span class="ui-distance">8 min</span>
+            </div>
+            <div class="ui-float-item">
+              <span class="ui-transport-pill bike">Bysykkel</span>
+              <span class="ui-distance">2 min</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ui-card ui-card-float float-trening">
+          <h5 class="ui-float-title">&#128170; Trening</h5>
+          <div class="ui-float-items">
+            <div class="ui-float-item">
+              <span class="ui-float-name">SATS Brattøra</span>
+              <span class="ui-distance">4 min</span>
+            </div>
+            <div class="ui-float-item">
+              <span class="ui-float-name">3T Pirbadet</span>
+              <span class="ui-distance">6 min</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURE: SLIK FUNGERER DET ===== -->
+  <section class="feature" id="hvordan">
+    <div class="feature-grid">
+      <div class="feature-text">
+        <p class="h-label mb-16">Slik fungerer det</p>
+        <h1 class="h-section">Fra adresse til ferdig nabolagsprofil</h1>
+        <p class="text-large">Du gir oss adressen. Vi kartlegger nabolaget, kuraterer de beste stedene, skriver redaksjonelt innhold og leverer en interaktiv nettside du kan dele med kjøpere og leietakere.</p>
+
+        <div class="feature-details">
+          <div class="feature-detail">
+            <div class="feature-detail-icon">1</div>
+            <div>
+              <h3>Send oss adressen</h3>
+              <p>Vi trenger bare adressen til prosjektet. Resten tar vi oss av.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">2</div>
+            <div>
+              <h3>Vi kartlegger og kuraterer</h3>
+              <p>Alle relevante steder i nabolaget blir funnet, vurdert og kvalitetssikret.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-detail-icon">3</div>
+            <div>
+              <h3>Du får en ferdig nettside</h3>
+              <p>Interaktivt kart, redaksjonelt innhold, mobilvennlig — klar til å dele.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-showcase hvordan-showcase">
+        <!-- Input/prompt area -->
+        <div class="ui-card ui-card-prompt">
+          <div class="ui-prompt-input">
+            <div class="ui-prompt-icon">&#128205;</div>
+            <span class="ui-prompt-text">Overvik Bolig, Trondheim</span>
+            <button class="ui-prompt-btn">Generer profil</button>
+          </div>
+        </div>
+
+        <!-- Result card -->
+        <div class="ui-card ui-card-result">
+          <div class="ui-result-header">
+            <div class="ui-result-status">&#10003; Generert</div>
+            <h4 class="ui-card-title">Overvik Bolig</h4>
+            <span class="ui-card-subtitle">Nabolagsprofil — Overvik, Trondheim</span>
+          </div>
+
+          <div class="ui-result-stats">
+            <div class="ui-result-stat">
+              <span class="ui-result-stat-value">34</span>
+              <span class="ui-result-stat-label">POI-er</span>
+            </div>
+            <div class="ui-result-stat">
+              <span class="ui-result-stat-value">8</span>
+              <span class="ui-result-stat-label">Kategorier</span>
+            </div>
+            <div class="ui-result-stat">
+              <span class="ui-result-stat-value">10 min</span>
+              <span class="ui-result-stat-label">Radius</span>
+            </div>
+          </div>
+
+          <div class="ui-result-breakdown">
+            <div class="ui-breakdown-item">
+              <span class="ui-breakdown-name">Kafé</span>
+              <div class="ui-breakdown-bar"><div class="ui-breakdown-fill" style="width: 60%;"></div></div>
+              <span class="ui-breakdown-count">8</span>
+            </div>
+            <div class="ui-breakdown-item">
+              <span class="ui-breakdown-name">Restaurant</span>
+              <div class="ui-breakdown-bar"><div class="ui-breakdown-fill" style="width: 85%;"></div></div>
+              <span class="ui-breakdown-count">12</span>
+            </div>
+            <div class="ui-breakdown-item">
+              <span class="ui-breakdown-name">Skole</span>
+              <div class="ui-breakdown-bar"><div class="ui-breakdown-fill" style="width: 30%;"></div></div>
+              <span class="ui-breakdown-count">4</span>
+            </div>
+            <div class="ui-breakdown-item">
+              <span class="ui-breakdown-name">Park</span>
+              <div class="ui-breakdown-bar"><div class="ui-breakdown-fill" style="width: 45%;"></div></div>
+              <span class="ui-breakdown-count">6</span>
+            </div>
+            <div class="ui-breakdown-item">
+              <span class="ui-breakdown-name">Dagligvare</span>
+              <div class="ui-breakdown-bar"><div class="ui-breakdown-fill" style="width: 30%;"></div></div>
+              <span class="ui-breakdown-count">4</span>
+            </div>
+          </div>
+
+          <a href="#" class="ui-result-link">Se profil &#8594;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ANALYTICS ===== -->
+  <section class="analytics" id="analytics">
+    <div class="analytics-intro">
+      <div class="analytics-badge">Snart tilgjengelig</div>
+      <h2 class="h-display">Vet du hva boligkjøperne faktisk bryr seg om?</h2>
+      <p class="text-large analytics-sub">Placy Analytics viser deg hva potensielle kjøpere utforsker — hvilke skoler de sjekker, hvor lenge de bruker tid, og hva slags kjøper de er. Uten cookies, uten login.</p>
+    </div>
+
+    <!-- Three layers preview -->
+    <div class="analytics-layers">
+      <div class="analytics-layer">
+        <div class="analytics-layer-num">1</div>
+        <h3>Presentasjon</h3>
+        <p>Interaktivt kart og kuraterte steder — penere enn en PDF.</p>
+        <span class="analytics-layer-status analytics-layer-done">Tilgjengelig i dag</span>
+      </div>
+      <div class="analytics-layer analytics-layer-highlight">
+        <div class="analytics-layer-num">2</div>
+        <h3>Engagement-data</h3>
+        <p>Hvem besøker, hva klikker de på, hvor lenge. Bevis at det funker.</p>
+        <span class="analytics-layer-status analytics-layer-soon">Kommer snart</span>
+      </div>
+      <div class="analytics-layer">
+        <div class="analytics-layer-num">3</div>
+        <h3>Kjøperinnsikt</h3>
+        <p>Aggregert atferdsdata på tvers. Markedsinnsikt ingen andre har.</p>
+        <span class="analytics-layer-status analytics-layer-vision">Visjon</span>
+      </div>
+    </div>
+
+    <!-- Key stats -->
+    <div class="analytics-stats">
+      <div class="analytics-stat-card">
+        <span class="analytics-stat-number">68%</span>
+        <p>av Brøset-besøkerne sjekket skoletilhørighet</p>
+      </div>
+      <div class="analytics-stat-card">
+        <span class="analytics-stat-number">3:42</span>
+        <p>i snitt bruker besøkende på å utforske nabolaget</p>
+      </div>
+      <div class="analytics-stat-card">
+        <span class="analytics-stat-number">0</span>
+        <p>cookies eller login kreves — 100% GDPR-vennlig</p>
+      </div>
+    </div>
+
+    <!-- Dashboard preview -->
+    <div class="dashboard">
+      <!-- KPI row -->
+      <div class="dash-kpis">
+        <div class="dash-kpi">
+          <span class="dash-kpi-value">847</span>
+          <span class="dash-kpi-label">Besøkende</span>
+        </div>
+        <div class="dash-kpi">
+          <span class="dash-kpi-value">50%</span>
+          <span class="dash-kpi-label">Utforsket nabolaget</span>
+        </div>
+        <div class="dash-kpi">
+          <span class="dash-kpi-value">3m 42s</span>
+          <span class="dash-kpi-label">Gj.snitt tid</span>
+        </div>
+        <div class="dash-kpi">
+          <span class="dash-kpi-value">Hverdagsliv</span>
+          <span class="dash-kpi-label">Populært tema</span>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="dash-charts">
+        <!-- Donut chart: Theme interest -->
+        <div class="dash-chart-card">
+          <h5 class="dash-chart-title">Tema-interesse</h5>
+          <div class="dash-donut">
+            <svg viewBox="0 0 120 120" class="dash-donut-svg">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#e4e7da" stroke-width="14"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#c47a5a" stroke-width="14" stroke-dasharray="110 204" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#c8960a" stroke-width="14" stroke-dasharray="78 236" stroke-dashoffset="-110" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#6aaa5a" stroke-width="14" stroke-dasharray="63 251" stroke-dashoffset="-188" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#5a8ac4" stroke-width="14" stroke-dasharray="47 267" stroke-dashoffset="-251" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="dash-donut-legend">
+              <span><i style="background:#c47a5a"></i>Hverdagsliv 35%</span>
+              <span><i style="background:#c8960a"></i>Mat & Drikke 25%</span>
+              <span><i style="background:#6aaa5a"></i>Aktiv Fritid 20%</span>
+              <span><i style="background:#5a8ac4"></i>Kultur 15%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bar chart: Top places -->
+        <div class="dash-chart-card">
+          <h5 class="dash-chart-title">Mest besøkte steder</h5>
+          <div class="dash-bars">
+            <div class="dash-bar-row">
+              <span class="dash-bar-name">Singsaker skole</span>
+              <div class="dash-bar-track"><div class="dash-bar-fill" style="width:92%; background:#c47a5a"></div></div>
+              <span class="dash-bar-val">184</span>
+            </div>
+            <div class="dash-bar-row">
+              <span class="dash-bar-name">Rema 1000 Ila</span>
+              <div class="dash-bar-track"><div class="dash-bar-fill" style="width:74%; background:#c8960a"></div></div>
+              <span class="dash-bar-val">148</span>
+            </div>
+            <div class="dash-bar-row">
+              <span class="dash-bar-name">Bakklandet</span>
+              <div class="dash-bar-track"><div class="dash-bar-fill" style="width:65%; background:#6aaa5a"></div></div>
+              <span class="dash-bar-val">131</span>
+            </div>
+            <div class="dash-bar-row">
+              <span class="dash-bar-name">Byåsen trimpark</span>
+              <div class="dash-bar-track"><div class="dash-bar-fill" style="width:48%; background:#5a8ac4"></div></div>
+              <span class="dash-bar-val">96</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="analytics-footer-text">Placy Analytics gir deg full oversikt over hvordan boligkjøpere bruker prosjektpresentasjonen din — med smart segmentering som avslører kjøpertype uten å identifisere noen.</p>
+    <a href="analytics.html" class="btn btn-dark btn-arrow">Les mer om Placy Analytics</a>
+  </section>
+
+  <!-- ===== WHY PLACY ===== -->
+  <section class="why-placy" id="om">
+    <h2>Hvorfor Placy? <em>("Play-see")</em></h2>
+
+    <div class="why-circles">
+      <img class="why-circle" src="https://images.unsplash.com/photo-1607169823512-dde989f498e6?w=200&h=200&fit=crop&crop=center" alt="Gate">
+      <img class="why-circle" src="https://images.unsplash.com/photo-1519999482648-25049ddd37b1?w=200&h=200&fit=crop&crop=center" alt="Kafé">
+      <img class="why-circle" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=200&fit=crop&crop=center" alt="Natur">
+      <img class="why-circle" src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&h=200&fit=crop&crop=center" alt="Restaurant">
+      <img class="why-circle" src="https://images.unsplash.com/photo-1475483768296-6163e08872a1?w=200&h=200&fit=crop&crop=center" alt="Bro">
+      <img class="why-circle" src="https://images.unsplash.com/photo-1654122678037-91373da1dbb2?w=200&h=200&fit=crop&crop=center" alt="Torg">
+      <img class="why-circle" src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=200&h=200&fit=crop&crop=center" alt="Park">
+    </div>
+
+    <p class="text-large">Placy er der «playful» møter «place». Vi tror nabolag fortjener mer enn et avsnitt i et prospekt. Bak hvert sted er det en historie, en stemning, en opplevelse — og det er den opplevelsen som overbeviser kjøpere og leietakere.</p>
+  </section>
+
+  <!-- ===== MISSION ===== -->
+  <section class="mission" id="mission">
+    <div class="placy-icon">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 4C24 4 12 14 12 24C12 30.6274 17.3726 36 24 36C30.6274 36 36 30.6274 36 24C36 14 24 4 24 4Z" stroke="#192830" stroke-width="2" fill="none"/>
+        <circle cx="24" cy="24" r="4" fill="#192830"/>
+        <path d="M24 36V44" stroke="#192830" stroke-width="2"/>
+        <path d="M20 44H28" stroke="#192830" stroke-width="2"/>
+      </svg>
+    </div>
+
+    <h2>Beliggenhet er det viktigste argumentet i eiendom. Endelig kan du bevise det.</h2>
+
+    <div class="mission-columns">
+      <p>Hver eiendomsutvikling bruker millioner på arkitekter, interiørdesign og markedsmateriell. Men nabolaget — det som faktisk avgjør om folk vil bo eller jobbe der — får et halvt avsnitt og et statisk kart i prospektet.</p>
+      <p>Vi bygger Placy fordi vi mener beliggenhet fortjener bedre. Med kuraterte stedsdata, redaksjonelt innhold og interaktive kart gjør vi det enkelt å vise hva som gjør en adresse unik. Fordi stedet rundt eiendommen betyr like mye som eiendommen selv.</p>
+    </div>
+
+    <div class="mission-signature">
+      <p>Med vennlig hilsen,</p>
+      <p class="name">Placy-teamet</p>
+    </div>
+  </section>
+
+  <!-- ===== CLOSING CTA ===== -->
+  <section class="cta-closing" id="demo">
+    <div class="section-content">
+      <h1>Klar til å gjøre beliggenheten synlig?</h1>
+      <p class="text-body">Book en demo og se hvordan Placy kan løfte ditt neste eiendomsprosjekt.</p>
+
+      <div class="cta-avatars">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100&h=100&fit=crop&crop=center" alt="">
+        <img src="https://images.unsplash.com/photo-1614417538522-19e59112c261?w=100&h=100&fit=crop&crop=center" alt="">
+        <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=100&h=100&fit=crop&crop=center" alt="">
+        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=100&h=100&fit=crop&crop=center" alt="">
+        <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=100&h=100&fit=crop&crop=center" alt="">
+        <img src="https://images.unsplash.com/photo-1573455494060-c5595004fb6c?w=100&h=100&fit=crop&crop=center" alt="">
+      </div>
+    </div>
+
+    <div class="cta-box">
+      <div class="cta-box-left">
+        <div class="cta-box-dot"></div>
+        <span>Book en demo</span>
+      </div>
+      <div class="cta-box-arrow" onclick="window.location.href='mailto:hei@placy.no'">→</div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <div class="footer-logo">Placy</div>
+        <p class="footer-copy">&copy; 2026 Placy. Alle rettigheter reservert.</p>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-right">
+        <div class="footer-links">
+          <a href="#">Instagram</a>
+          <a href="#">LinkedIn</a>
+        </div>
+        <p class="footer-copy"><a href="#">Personvern</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== SCROLL SCRIPT ===== -->
+  <script>
+    const nav = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 80) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+
+    // Intersection Observer for entrance animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.reference').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>
