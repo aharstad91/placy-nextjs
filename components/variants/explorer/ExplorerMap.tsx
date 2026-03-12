@@ -56,6 +56,8 @@ interface ExplorerMapProps {
   showSkeleton?: boolean;
   // Whether to fit map bounds to show the full route
   fitRoute?: boolean;
+  // Kompass: POI IDs to highlight (others dimmed)
+  kompassHighlightIds?: Set<string> | null;
 }
 
 export default function ExplorerMap({
@@ -82,6 +84,7 @@ export default function ExplorerMap({
   onEnableGeolocation,
   showSkeleton = false,
   fitRoute = false,
+  kompassHighlightIds = null,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -325,6 +328,7 @@ export default function ExplorerMap({
           const isThisActive = activePOI === poi.id;
           const isHovered = hoveredPOI === poi.id && !isThisActive;
           const poiTravelTime = poi.travelTime?.[travelMode];
+          const isDimmed = kompassHighlightIds != null && kompassHighlightIds.size > 0 && !kompassHighlightIds.has(poi.id);
 
           return (
             <AdaptiveMarker
@@ -332,7 +336,8 @@ export default function ExplorerMap({
               poi={poi}
               isActive={isThisActive}
               isHovered={isHovered}
-              zIndex={isThisActive ? 10 : isHovered ? 5 : 1}
+              zIndex={isThisActive ? 10 : isHovered ? 5 : isDimmed ? 0 : 1}
+              dimmed={isDimmed}
               onClick={(e) => {
                 e.originalEvent.stopPropagation();
                 onPOIClick(poi.id);

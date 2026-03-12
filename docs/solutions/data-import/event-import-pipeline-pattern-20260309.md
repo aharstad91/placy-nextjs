@@ -270,7 +270,39 @@ for (const artist of validArtists) {
 
 Oslo Open: 441 artists → 173 unique addresses → 53 venue clusters (vs 8 without normalization).
 
-### 10. Delete-then-Insert for Link Tables
+### 10. Recurring Events from Flat Sources (Olavsfest Pattern)
+
+When the source has one HTML/JSON row per event-per-date (no production grouping), the importer creates duplicate POIs — one per date for the same event. This causes duplicate cards in list/timeline and inflated POI counts.
+
+**Solution:** Group events by `name + venue` before POI creation, merge dates into `event_dates[]`:
+
+```typescript
+const mergeKey = (e: { title: string; venue: string }) => `${e.title}|||${e.venue}`;
+const grouped = new Map<string, typeof events>();
+for (const event of events) {
+  const key = mergeKey(event);
+  const existing = grouped.get(key);
+  if (existing) existing.push(event);
+  else grouped.set(key, [event]);
+}
+
+// Build one POI per group, collect all dates
+const allDates = [...new Set(events.map((e) => e.date))].sort();
+// Use first occurrence for metadata (image, price, time, category)
+```
+
+**Also clean up stale duplicates on re-import** — old POIs with `{prefix}-{name}-2`, `-3` etc. linger in DB since upsert only updates matching IDs:
+
+```typescript
+const newPoiIds = new Set(pois.map((p) => p.id));
+const { data: existingPois } = await supabase.from("pois").select("id").like("id", "of-%");
+const staleIds = existingPois?.map((p) => p.id).filter((id) => !newPoiIds.has(id)) ?? [];
+// Delete links first (FK constraints), then delete stale POIs
+```
+
+Olavsfest: 218 events → 119 unique POIs (33 recurring events, 91 stale duplicates removed).
+
+### 11. Delete-then-Insert for Link Tables
 
 `project_pois` and `product_pois` link tables don't have unique constraints suitable for upsert. Always delete existing links first:
 
@@ -295,6 +327,7 @@ await supabase.from("project_pois").delete().eq("project_id", projectId);
 - [ ] Map source categories → Placy categories (with catch-all "Annet")
 - [ ] If no coords in source: set up Mapbox geocoding with bbox, city suffix, override map
 - [ ] If many artists per venue with micro-varying coords: normalize by address (gotcha #9)
+- [ ] If flat source with recurring events: merge by name+venue before POI creation (gotcha #10)
 - [ ] Set `poi_metadata.venue` for every POI
 - [ ] Set `event_dates`, `event_time_start`, `event_time_end`
 - [ ] Set project tag `["Event"]`

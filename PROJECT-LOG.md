@@ -2147,3 +2147,40 @@ Dette er en sterk åpner fordi:
 - **Zod + server component + service role er et sterkt mønster** for offentlige API-ruter med database-skriving. Gjenbrukbart for fremtidige selvbetjenings-endepunkter.
 - **AddressAutocomplete ble genuint gjenbrukbar** — 300ms debounce, abort controller, keyboard nav. Kan erstatte ReportAddressInput der den brukes.
 - Sikkerhetsherdingen (migration 047, retry-guard, crypto.randomUUID) tok 15 min men fanget reelle svakheter. Risikobasert agent-review betaler seg.
+
+---
+
+## 2026-03-11 — Placy Kompass: Personal Event Recommendations
+
+### Beslutninger
+- **Bygget Kompass-prototypen** — personaliserte anbefalinger for festival-events via 3-stegs onboarding (tema/dag/tid)
+- **Separat Zustand store** (`lib/kompass-store.ts`) — ikke i hovedstore. Ephemeral per besøk, ingen localStorage. Ren isolasjon.
+- **Feature flag via bransjeprofil** — `kompass: true` på Event-profilen. Andre bransjeprofiler påvirkes ikke.
+- **Map dimming, ikke hiding** — ikke-anbefalte markører får `opacity: 0.35` i stedet for å forsvinne. Brukere beholder romlig oversikt.
+- **Tab-basert visning** — "Kompass" (timeline) vs "Alle events" (standard liste). Synkronisert med dagfilter.
+- **Olavsfest som pilotdata** — 210 events importert fra olavsfest.no med 6 kategorier
+
+### Levert
+- 5 nye komponenter: KompassOnboarding, KompassTabs, KompassTimeline, kompass-store, useKompassFilter
+- 5 modifiserte filer: ExplorerPage, ExplorerPanel, ExplorerPOIList, ExplorerMap, adaptive-marker
+- Bransjeprofil-feature flag + plan med 21 test cases
+- Branch: `feat/kompass-event-prototype`
+
+### Parkert / Apne sporsmaal
+- **Onboarding-design:** Nåværende bottom sheet er funksjonell men ikke visuelt polert. Bør testes med brukere.
+- **Anbefaling uten AI:** Nåværende filtrering er regelbasert (match theme + day + time). Mer sofistikert scoring (popularitet, avstand, variasjon) er naturlig neste steg.
+- **Persistering av preferanser:** Bevisst valg å IKKE persistere nå. Men for repeat-brukere kan det gi bedre UX.
+- **Venue-cluster interaksjon:** Kompass-timeline viser enkelthendelser, men mange deler venue. Bør timeline gruppere per venue?
+- Hvem er riktig kontaktperson hos Trondheim Management? (fortsatt åpent)
+
+### Retning
+- Kompass er et nytt produktkonsept — "personal concierge" for events. Olavsfest er piloten.
+- Demonstrerer at Placy kan levere verdi utover kartvisning — fra "se alt" til "se det som passer deg"
+- Neste steg: deploy, demo for Olavsfestdagene som potensiell samarbeidspartner
+- Event-plattformen har nå 4 importpipelines (Kulturnatt, Arendalsuka, Oslo Open, Olavsfest) + Kompass
+
+### Observasjoner
+- **Beads + /full-workflow fungerer end-to-end.** Første reelle test med beads som task tracker. 9 beads i 4 bølger, alle lukket. Plan → test cases → beads → sub-agent execution → verify. Raskere enn TodoWrite for komplekse features.
+- **Zustand er riktig for ephemeral UI state.** Kompass-store har ingen server-interaksjon, ingen caching-behov, ingen persistence. Zustand + useShallow er minimalt og performant.
+- **Feature flags i bransjeprofil er elegant.** Ingen compile-time flags, ingen environment vars — bare data. Nye features kan aktiveres per bransje uten kodeendringer.
+- **Event-plattformen er i ferd med å bli et selvstendig produkt.** Fra eiendoms-explorer til events-plattform med import, filtrering, anbefalinger — uten store kodeendringer. Plattformens fleksibilitet er reell.

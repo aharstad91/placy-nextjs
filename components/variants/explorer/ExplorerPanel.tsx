@@ -16,6 +16,9 @@ import type { ThemeDefinition } from "@/lib/themes";
 import ExplorerPOICard from "./ExplorerPOICard";
 import ExplorerThemeChips from "./ExplorerThemeChips";
 import ExplorerDayFilter from "./ExplorerDayFilter";
+import KompassTabs from "./KompassTabs";
+import KompassTimeline from "./KompassTimeline";
+import KompassInlineOnboarding from "./KompassInlineOnboarding";
 import { SkeletonPOIList } from "@/components/ui/SkeletonPOIList";
 
 interface ExplorerPanelProps {
@@ -55,6 +58,14 @@ interface ExplorerPanelProps {
   showSkeleton?: boolean;
   showContent?: boolean;
   isRefreshing?: boolean;
+  // Kompass
+  showKompass?: boolean;
+  kompassActiveTab?: "kompass" | "all";
+  onKompassTabChange?: (tab: "kompass" | "all") => void;
+  kompassRecommended?: POI[];
+  kompassRecommendedCount?: number;
+  kompassCompleted?: boolean;
+  onEditKompassFilter?: () => void;
 }
 
 const travelModeConfig: { mode: TravelMode; label: string; Icon: typeof Footprints }[] = [
@@ -98,6 +109,13 @@ export default function ExplorerPanel({
   showSkeleton = false,
   showContent = true,
   isRefreshing = false,
+  showKompass = false,
+  kompassActiveTab = "all",
+  onKompassTabChange,
+  kompassRecommended = [],
+  kompassRecommendedCount = 0,
+  kompassCompleted = false,
+  onEditKompassFilter,
 }: ExplorerPanelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -231,6 +249,47 @@ export default function ExplorerPanel({
       {/* Separator */}
       {!activeDropdown && <div className="h-px bg-gray-100 mx-4" />}
 
+      {/* Kompass tabs */}
+      {showKompass && onKompassTabChange && (
+        <KompassTabs
+          activeTab={kompassActiveTab}
+          onTabChange={onKompassTabChange}
+          kompassCount={kompassRecommendedCount}
+          allCount={totalCount}
+          kompassCompleted={kompassCompleted}
+        />
+      )}
+
+      {/* Kompass timeline or inline onboarding (when Kompass tab is active) */}
+      {showKompass && kompassActiveTab === "kompass" && (
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {kompassCompleted ? (
+            <KompassTimeline
+              events={kompassRecommended}
+              activePOI={activePOI}
+              onPOIClick={onPOIClick}
+              onEditFilter={onEditKompassFilter ?? (() => {})}
+              openingHoursData={openingHoursData}
+              travelTimesLoading={travelTimesLoading}
+              travelMode={travelMode}
+              collectionPOIs={collectionPOIs}
+              onToggleCollection={onToggleCollection}
+              showBookmarkHeartOnly={showBookmarkHeartOnly}
+              areaSlug={areaSlug}
+            />
+          ) : (
+            <KompassInlineOnboarding
+              themes={themes}
+              eventDays={eventDays}
+              dayLabels={dayLabels}
+            />
+          )}
+        </div>
+      )}
+
+      {/* POI list (when "Alle events" tab is active, or Kompass not enabled) */}
+      {(!showKompass || kompassActiveTab === "all") && (
+      <>
       {/* POI list */}
       <div className="flex-1 overflow-y-auto min-h-0 relative">
         {/* Skeleton loading state */}
@@ -291,6 +350,8 @@ export default function ExplorerPanel({
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

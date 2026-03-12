@@ -20,6 +20,7 @@ export interface BransjeprofilFeatures {
   dayFilter?: boolean;
   agendaView?: boolean;
   eventUrl?: boolean;
+  kompass?: boolean;
 }
 
 export interface Bransjeprofil {
@@ -221,6 +222,7 @@ export const BRANSJEPROFILER: Record<string, Bransjeprofil> = {
       dayFilter: true,
       agendaView: true,
       eventUrl: true,
+      kompass: true,
     },
   },
 };

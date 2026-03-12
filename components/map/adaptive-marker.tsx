@@ -11,6 +11,7 @@ export interface AdaptiveMarkerProps {
   poi: POI;
   isActive?: boolean;
   isHovered?: boolean;
+  dimmed?: boolean;
   onClick?: (e: MarkerEvent<MouseEvent>) => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
@@ -34,6 +35,7 @@ export const AdaptiveMarker = React.memo(
     poi,
     isActive = false,
     isHovered = false,
+    dimmed = false,
     onClick,
     onMouseEnter,
     onMouseLeave,
@@ -54,7 +56,7 @@ export const AdaptiveMarker = React.memo(
         longitude={poi.coordinates.lng}
         latitude={poi.coordinates.lat}
         anchor="center"
-        style={{ zIndex }}
+        style={{ zIndex, opacity: dimmed ? 0.35 : 1, transition: "opacity 0.3s ease" }}
         onClick={onClick}
       >
         <button
