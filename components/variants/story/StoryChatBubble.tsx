@@ -19,7 +19,7 @@ export default memo(function StoryChatBubble({
   return (
     <div
       ref={revealRef}
-      className="story-block flex items-start gap-3 max-w-[85%]"
+      className="flex items-start gap-3 max-w-[85%]"
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
       {showAvatar && (

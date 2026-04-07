@@ -448,31 +448,24 @@ gmp-popover::part(dialog) {
   }
 }
 
-.story-block {
+.story-block--hidden {
   opacity: 0;
   transform: translateY(16px);
 }
 
-.story-block.revealed {
+.story-block--revealed {
   animation: story-block-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   animation-delay: var(--story-delay, 0ms);
 }
 
-.story-choice {
-  opacity: 0;
-  transform: translateY(8px) scale(0.95);
-}
-
-.story-choice.revealed {
-  animation: story-choice-appear 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation-delay: var(--story-delay, 0ms);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .story-block,
-  .story-choice {
+  .story-block--hidden {
     opacity: 1 !important;
     transform: none !important;
+  }
+  .story-block--revealed {
     animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

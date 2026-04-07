@@ -24,7 +24,7 @@ export default memo(function StorySummary({
   return (
     <div
       ref={revealRef}
-      className="story-block w-full"
+      className="w-full"
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
       <div className="mb-6">

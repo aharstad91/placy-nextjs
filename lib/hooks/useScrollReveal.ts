@@ -1,82 +1,59 @@
 "use client";
 
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback } from "react";
 
 /**
- * Shared one-shot scroll reveal using a single IntersectionObserver.
- * - One observer for all targets (not per-element)
- * - One-shot: observe → add "revealed" class → unobserve
- * - Fast-scroll fallback: reveal if element was scrolled past
- * - prefers-reduced-motion: instant reveal
- * - Cleanup: disconnect on unmount
+ * Scroll reveal hook — attaches reveal animation to elements.
+ * Uses IntersectionObserver for below-fold elements.
+ * Elements in viewport at mount are revealed immediately.
  */
-
-const OBSERVER_OPTIONS: IntersectionObserverInit = {
-  threshold: 0.05,
-  rootMargin: "0px 0px -60px 0px",
-};
-
 export function useScrollReveal() {
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const targetsRef = useRef<Set<Element>>(new Set());
+  const revealRef = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
 
-  // Create shared observer lazily
-  const getObserver = useCallback(() => {
-    if (observerRef.current) return observerRef.current;
-
-    // Check reduced motion preference
-    const prefersReduced =
+    // Reduced motion: no animation
+    if (
       typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
 
-    observerRef.current = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        const el = entry.target;
+    // Set initial hidden state
+    el.style.opacity = "0";
+    el.style.transform = "translateY(16px)";
 
-        // Reveal if intersecting OR if scrolled past (fast-scroll fallback)
-        if (
-          entry.isIntersecting ||
-          (entry.rootBounds && entry.boundingClientRect.bottom < entry.rootBounds.bottom)
-        ) {
-          el.classList.add("revealed");
-          observerRef.current?.unobserve(el);
-          targetsRef.current.delete(el);
-        }
-      }
-    }, OBSERVER_OPTIONS);
-
-    return observerRef.current;
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      observerRef.current?.disconnect();
-      observerRef.current = null;
-      targetsRef.current.clear();
+    const reveal = () => {
+      el.style.transition = "opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)";
+      el.style.transitionDelay = el.style.getPropertyValue("--story-delay") || "0ms";
+      el.style.opacity = "1";
+      el.style.transform = "translateY(0)";
     };
+
+    // Check if element is in or near viewport
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 100) {
+      // In viewport — reveal after double-rAF for smooth animation
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          reveal();
+        });
+      });
+      return;
+    }
+
+    // Below viewport — observe
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          reveal();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0, rootMargin: "0px 0px 100px 0px" },
+    );
+    observer.observe(el);
   }, []);
-
-  // Callback ref for each block element
-  const revealRef = useCallback(
-    (el: HTMLElement | null) => {
-      if (!el) return;
-
-      // Reduced motion: reveal immediately
-      if (
-        typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ) {
-        el.classList.add("revealed");
-        return;
-      }
-
-      const obs = getObserver();
-      targetsRef.current.add(el);
-      obs.observe(el);
-    },
-    [getObserver],
-  );
 
   return revealRef;
 }

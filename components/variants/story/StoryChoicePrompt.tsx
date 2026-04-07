@@ -38,7 +38,7 @@ export default memo(function StoryChoicePrompt({
   return (
     <div
       ref={revealRef}
-      className="story-block flex justify-end"
+      className="flex justify-end"
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
       <div className="flex flex-col items-end gap-2 max-w-[80%]">
@@ -49,7 +49,7 @@ export default memo(function StoryChoicePrompt({
             onClick={() => handleClick(option)}
             disabled={hasChosen}
             className={cn(
-              "story-choice px-4 py-2.5 rounded-2xl rounded-br-md text-sm font-medium transition-all duration-200",
+              "px-4 py-2.5 rounded-2xl rounded-br-md text-sm font-medium transition-all duration-200",
               "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1a1a1a]",
               hasChosen && chosenId === option.id
                 ? "bg-[#1a1a1a] text-white shadow-sm"

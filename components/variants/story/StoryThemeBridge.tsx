@@ -25,7 +25,7 @@ export default memo(function StoryThemeBridge({
   return (
     <div
       ref={revealRef}
-      className="story-block py-8 flex flex-col items-center gap-4"
+      className="py-8 flex flex-col items-center gap-4"
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
       <div className="flex items-center gap-4 w-full">

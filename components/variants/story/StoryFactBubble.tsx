@@ -25,7 +25,7 @@ export default memo(function StoryFactBubble({
   return (
     <div
       ref={revealRef}
-      className="story-block flex items-start gap-3 max-w-[75%]"
+      className="flex items-start gap-3 max-w-[75%]"
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
       <div

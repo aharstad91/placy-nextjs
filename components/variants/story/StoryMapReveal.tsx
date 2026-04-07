@@ -27,7 +27,7 @@ export default memo(function StoryMapReveal({
   return (
     <div
       ref={revealRef}
-      className="story-block w-full rounded-xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#eae6e1]"
+      className="w-full rounded-xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#eae6e1]"
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
       <div className="relative aspect-[16/10] bg-[#eae6e1]">

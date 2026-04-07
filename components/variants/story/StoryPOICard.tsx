@@ -31,7 +31,7 @@ export default memo(function StoryPOICard({
   return (
     <div
       ref={revealRef}
-      className="story-block w-full"
+      className="w-full"
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
       <button

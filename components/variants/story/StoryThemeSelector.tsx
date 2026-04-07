@@ -23,7 +23,7 @@ export default memo(function StoryThemeSelector({
   return (
     <div
       ref={revealRef}
-      className="story-block w-full"
+      className="w-full"
     >
       <div className="mb-5">
         <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#a0937d] block mb-2">
