@@ -5,7 +5,7 @@ import {
   generateCategoryQuote,
   type CategoryScore,
 } from "@/lib/utils/category-score";
-import { calculateReportScore, NULL_TIER_VALUE } from "@/lib/utils/poi-score";
+import { calculateReportScore, NULL_TIER_VALUE, byTierThenScore } from "@/lib/utils/poi-score";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/strings";
 
@@ -138,13 +138,9 @@ const HIGHER_ED_KEYWORDS = ["vgs", "videregående", "ntnu", "høgskole", "høysk
 
 // --- Shared helpers (used by both buildSubSections and transformToReportData) ---
 
-/** Sort comparator: tier first (lower = better), then formula score within same tier */
-export function byTierThenScore(a: POI, b: POI): number {
-  const aTier = a.poiTier ?? NULL_TIER_VALUE;
-  const bTier = b.poiTier ?? NULL_TIER_VALUE;
-  if (aTier !== bTier) return aTier - bTier;
-  return calculateReportScore(b) - calculateReportScore(a);
-}
+// byTierThenScore is now imported from @/lib/utils/poi-score (shared with Story Mode)
+// Re-export for backward compatibility with any imports from this file
+export { byTierThenScore } from "@/lib/utils/poi-score";
 
 /** Compute stats from a POI array */
 function computePOIStats(pois: POI[]) {

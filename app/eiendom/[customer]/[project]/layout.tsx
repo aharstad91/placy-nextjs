@@ -35,15 +35,16 @@ export async function generateMetadata({
 }
 
 /** Map product type from DB to eiendom route labels and paths */
-const PRODUCT_TYPE_MAP: Record<string, { label: string; mode?: "rapport" | "visning" }> = {
+const PRODUCT_TYPE_MAP: Record<string, { label: string; mode?: "rapport" | "visning" | "story" }> = {
   explorer: { label: "Explorer" },
   report: { label: "Rapport", mode: "rapport" },
-  // Visning is always available for eiendom projects (uses explorer data)
+  // Visning and Story are always available (uses explorer data)
 };
 
 /** Modes that are always shown in eiendom projects, regardless of DB products */
-const ALWAYS_AVAILABLE_MODES: { label: string; mode: "visning" }[] = [
+const ALWAYS_AVAILABLE_MODES: { label: string; mode: "visning" | "story" }[] = [
   { label: "Visning", mode: "visning" },
+  { label: "Story", mode: "story" },
 ];
 
 export default async function EiendomProjectLayout({ params, children }: LayoutProps) {
