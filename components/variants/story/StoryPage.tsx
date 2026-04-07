@@ -7,11 +7,9 @@ import { assertNever } from "@/lib/types";
 import { composeStoryBlocks } from "@/lib/story/compose-story-blocks";
 import type { StoryBlock, ChoiceOption } from "@/lib/story/types";
 import StoryChatBubble from "./StoryChatBubble";
-import StoryPOICard from "./StoryPOICard";
-import StoryMapReveal from "./StoryMapReveal";
+import StoryMapStripe from "./StoryMapStripe";
+import StoryPOIListBubble from "./StoryPOIListBubble";
 import StoryChoicePrompt from "./StoryChoicePrompt";
-import StoryFactBubble from "./StoryFactBubble";
-import StoryThemeBridge from "./StoryThemeBridge";
 import StorySummary from "./StorySummary";
 import StoryThemeSelector from "./StoryThemeSelector";
 
@@ -45,7 +43,6 @@ export default function StoryPage({
   );
 
   const [state, setState] = useState<StoryState>(() => {
-    // Deep link: skip intro and jump to theme
     if (initialTheme && composition.themes.some((t) => t.id === initialTheme)) {
       const blocks = [
         ...composition.intro,
@@ -71,10 +68,8 @@ export default function StoryPage({
     };
   });
 
-  // Ref guard against double-clicks on choice prompts
   const choiceGuardRef = useRef<Set<string>>(new Set());
 
-  // Handle theme selection from theme selector
   const handleThemeSelect = useCallback(
     (themeId: string) => {
       setState((prev) => {
@@ -92,10 +87,8 @@ export default function StoryPage({
     [composition],
   );
 
-  // Handle choice prompt actions
   const handleChoice = useCallback(
     (blockId: string, option: ChoiceOption) => {
-      // Synchronous double-click guard
       if (choiceGuardRef.current.has(blockId)) return;
       choiceGuardRef.current.add(blockId);
 
@@ -122,7 +115,6 @@ export default function StoryPage({
           }
           case "summary": {
             const summaryBlocks = composition.getSummary(prev.visitedThemes);
-            // Inject URLs into summary block
             const enrichedBlocks = summaryBlocks.map((b) =>
               b.type === "summary" ? { ...b, explorerUrl, reportUrl } : b,
             );
@@ -141,16 +133,8 @@ export default function StoryPage({
     [composition, explorerUrl, reportUrl],
   );
 
-  // Expanded POI state (only one at a time)
-  const [expandedPOIId, setExpandedPOIId] = useState<string | null>(null);
-
-  const handlePOIToggle = useCallback((poiId: string) => {
-    setExpandedPOIId((prev) => (prev === poiId ? null : poiId));
-  }, []);
-
-  // Block renderer
   function renderBlock(block: StoryBlock, index: number) {
-    const staggerDelay = (index % 6) * 80;
+    const staggerDelay = (index % 4) * 60;
 
     switch (block.type) {
       case "chat":
@@ -162,23 +146,23 @@ export default function StoryPage({
             staggerDelay={staggerDelay}
           />
         );
-      case "poi":
+      case "map-stripe":
         return (
-          <StoryPOICard
-            key={block.id}
-            poi={block.poi}
-            isExpanded={expandedPOIId === block.poi.id}
-            onToggle={() => handlePOIToggle(block.poi.id)}
-            staggerDelay={staggerDelay}
-          />
-        );
-      case "map":
-        return (
-          <StoryMapReveal
+          <StoryMapStripe
             key={block.id}
             staticMapUrl={block.staticMapUrl}
             themeColor={block.themeColor}
-            poiCount={block.pois.length}
+            poiCount={block.poiCount}
+            themeName={block.themeName}
+            staggerDelay={staggerDelay}
+          />
+        );
+      case "poi-list":
+        return (
+          <StoryPOIListBubble
+            key={block.id}
+            pois={block.pois}
+            themeColor={block.themeColor}
             staggerDelay={staggerDelay}
           />
         );
@@ -189,28 +173,6 @@ export default function StoryPage({
             blockId={block.id}
             options={block.options}
             onChoose={(option) => handleChoice(block.id, option)}
-            staggerDelay={staggerDelay}
-          />
-        );
-      case "fact":
-        return (
-          <StoryFactBubble
-            key={block.id}
-            icon={block.icon}
-            number={block.number}
-            label={block.label}
-            themeColor={block.themeColor}
-            staggerDelay={staggerDelay}
-          />
-        );
-      case "bridge":
-        return (
-          <StoryThemeBridge
-            key={block.id}
-            themeName={block.themeName}
-            themeIcon={block.themeIcon}
-            themeColor={block.themeColor}
-            bridgeText={block.bridgeText}
             staggerDelay={staggerDelay}
           />
         );
@@ -229,19 +191,12 @@ export default function StoryPage({
     }
   }
 
-  // Filter available themes for selector (exclude visited)
-  const availableThemes = composition.themes.filter(
-    (t) => !state.visitedThemes.includes(t.id),
-  );
-
   return (
     <main className="min-h-screen bg-[#faf9f7]">
       <div className="max-w-xl mx-auto px-4 py-8 md:py-16">
-        <div className="flex flex-col gap-5">
-          {/* Render feed blocks */}
+        <div className="flex flex-col gap-4">
           {state.feedBlocks.map((block, i) => renderBlock(block, i))}
 
-          {/* Theme selector (shown between themes) */}
           {state.showThemeSelector && !state.showSummary && (
             <StoryThemeSelector
               themes={composition.themes}

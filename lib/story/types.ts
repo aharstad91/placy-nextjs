@@ -1,6 +1,6 @@
 /**
- * Story Mode — Type definitions.
- * Proper discriminated union for type-safe block rendering.
+ * Story Mode v2 — Type definitions.
+ * Compact, map-driven conversational scrollytelling.
  */
 
 import type { POI, Coordinates } from "@/lib/types";
@@ -18,40 +18,25 @@ export interface ChatBlock extends StoryBlockBase {
   readonly showAvatar?: boolean;
 }
 
-export interface POIBlock extends StoryBlockBase {
-  readonly type: "poi";
-  readonly poi: POI;
-  readonly preRevealed?: boolean;
+/** Compact map stripe showing all theme POIs as dots */
+export interface MapStripeBlock extends StoryBlockBase {
+  readonly type: "map-stripe";
+  readonly staticMapUrl: string | null;
+  readonly themeColor: string;
+  readonly poiCount: number;
+  readonly themeName: string;
 }
 
-export interface MapBlock extends StoryBlockBase {
-  readonly type: "map";
+/** Compact list of POIs inside a chat bubble — tap to expand */
+export interface POIListBlock extends StoryBlockBase {
+  readonly type: "poi-list";
   readonly pois: readonly POI[];
-  readonly center: Coordinates;
   readonly themeColor: string;
-  readonly staticMapUrl: string | null;
 }
 
 export interface ChoiceBlock extends StoryBlockBase {
   readonly type: "choice";
   readonly options: readonly ChoiceOption[];
-}
-
-export interface FactBlock extends StoryBlockBase {
-  readonly type: "fact";
-  readonly icon: string;
-  readonly number: number;
-  readonly label: string;
-  readonly themeColor: string;
-}
-
-export interface BridgeBlock extends StoryBlockBase {
-  readonly type: "bridge";
-  readonly themeId: string;
-  readonly themeName: string;
-  readonly themeIcon: string;
-  readonly themeColor: string;
-  readonly bridgeText: string;
 }
 
 export interface SummaryBlock extends StoryBlockBase {
@@ -63,11 +48,9 @@ export interface SummaryBlock extends StoryBlockBase {
 
 export type StoryBlock =
   | ChatBlock
-  | POIBlock
-  | MapBlock
+  | MapStripeBlock
+  | POIListBlock
   | ChoiceBlock
-  | FactBlock
-  | BridgeBlock
   | SummaryBlock;
 
 // --- Supporting types ---
@@ -100,5 +83,5 @@ export interface StoryComposition {
 
 // --- Constants ---
 
-export const STORY_BATCH_SIZE = 3;
+export const STORY_BATCH_SIZE = 5;
 export const THEME_MIN_POIS = 2;
