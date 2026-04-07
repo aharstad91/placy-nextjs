@@ -236,18 +236,20 @@ export default function StoryPage({
 
   return (
     <main className="min-h-screen bg-[#faf9f7]">
-      <div className="max-w-xl mx-auto px-4 py-8 md:py-16 flex flex-col gap-4">
-        {/* Render feed blocks */}
-        {state.feedBlocks.map((block, i) => renderBlock(block, i))}
+      <div className="max-w-xl mx-auto px-4 py-8 md:py-16">
+        <div className="flex flex-col gap-5">
+          {/* Render feed blocks */}
+          {state.feedBlocks.map((block, i) => renderBlock(block, i))}
 
-        {/* Theme selector (shown between themes) */}
-        {state.showThemeSelector && !state.showSummary && (
-          <StoryThemeSelector
-            themes={composition.themes}
-            visitedThemeIds={new Set(state.visitedThemes)}
-            onSelect={handleThemeSelect}
-          />
-        )}
+          {/* Theme selector (shown between themes) */}
+          {state.showThemeSelector && !state.showSummary && (
+            <StoryThemeSelector
+              themes={composition.themes}
+              visitedThemeIds={new Set(state.visitedThemes)}
+              onSelect={handleThemeSelect}
+            />
+          )}
+        </div>
       </div>
     </main>
   );

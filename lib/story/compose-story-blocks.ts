@@ -92,10 +92,10 @@ export function composeStoryBlocks(
 
   const poisByTheme = groupPoisByTheme(project.pois, themes);
 
-  // Filter themes with enough POIs
-  const availableThemes = themes.filter(
-    (t) => (poisByTheme[t.id]?.length ?? 0) >= THEME_MIN_POIS,
-  );
+  // Filter themes with enough POIs and enrich with poiCount
+  const availableThemes = themes
+    .filter((t) => (poisByTheme[t.id]?.length ?? 0) >= THEME_MIN_POIS)
+    .map((t) => ({ ...t, poiCount: poisByTheme[t.id]?.length ?? 0 }));
 
   // Build intro blocks
   const projectName = project.name;

@@ -91,6 +91,16 @@ export default memo(function StoryThemeSelector({
                 >
                   {theme.name}
                 </span>
+                {theme.poiCount != null && theme.poiCount > 0 && (
+                  <span
+                    className={cn(
+                      "block text-[11px] mt-0.5",
+                      isVisited ? "text-[#b0a99f]" : "text-[#a0998f]",
+                    )}
+                  >
+                    {theme.poiCount} steder
+                  </span>
+                )}
               </div>
 
               {isVisited ? (

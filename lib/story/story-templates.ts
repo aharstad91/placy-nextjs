@@ -7,8 +7,14 @@ import { interpolate } from "@/lib/i18n/strings";
 
 // --- Chat bubble templates ---
 
+/** Shorten address-style names: "Gata 7, 7014 Trondheim, Norge" → "Gata 7" */
+function shortName(name: string): string {
+  const firstComma = name.indexOf(",");
+  return firstComma > 0 ? name.substring(0, firstComma).trim() : name;
+}
+
 export function introText(projectName: string): string {
-  return interpolate("La oss utforske området rundt {name}", { name: projectName });
+  return interpolate("La oss utforske området rundt {name}", { name: shortName(projectName) });
 }
 
 export function themeIntroText(themeName: string): string {
