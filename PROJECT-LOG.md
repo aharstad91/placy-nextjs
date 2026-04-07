@@ -2811,3 +2811,31 @@ Hele pipelinen kjører synkront i API-ruten — ingen background jobs, cron, ell
 - **26 dager pause, 1 time tilbake til produktivt arbeid.** PROJECT-LOG + MEMORY.md ga full kontekst. Brainstorm + plan fra 6. mars var direkte gjenbrukbar — bare scopet ble forenklet (prototype vs prod)
 - **Eksisterende infrastruktur bar hele vekten.** Bransjeprofiler, explorer caps, admin import-logikk, Supabase-queries — alt fungerte uten endringer. De 4 nye filene (3 pipeline + 1 endret route) var alt som trengtes
 - **Supabase schema-drift er en gjenganger.** `story_title` migrert fra projects til products, `short_id` lagt til uten type-oppdatering. TS-types og DB-schema er ute av sync. Bør regenerere typer
+
+---
+
+## 2026-04-07
+
+### Hva skjedde
+Bygget **profil-filter** for Eiendom-Bolig Explorer — en livsfase-velger som bottom sheet over kartet. Samme UX-mønster som Kompass (Event), men tilpasset eiendom: barnefamilie/par/singel/pensjonist → pre-filtrerer 4 av 7 temaer.
+
+### Beslutninger
+- **Bottom sheet over kartet, ikke fullskjerm onboarding** — brukeren forsto umiddelbart at Explorer er "bak" modalen og at de kan klikke bort. Samme mønster som Kompass — konsistent UX
+- **Kun pre-velge temaer, ikke justere caps** — YAGNI. Enkel livsfase→tema mapping er nok. Caps kan legges til senere hvis data viser behov
+- **Ett steg, rett inn** — ingen mellomsteg med tema-justering. Tema-chips i Explorer er der for finjustering
+- **Ingen egen Zustand store** — Kompass trengte egen store (multi-steg, tabs). Profil-filter er ett steg med én callback — `useState` holder
+- **Parchment-palett (#faf9f7)** — konsistent med WelcomeScreen, ikke bg-white som Kompass. Lettere backdrop (25% vs 30%) for at kart-markørene synes bedre
+
+### Parkert / Åpne spørsmål
+- **Persistering:** Modalen vises hver gang brukeren besøker. Bør vi lagre valget i sessionStorage/localStorage så den bare vises én gang? Avventer bruker-feedback
+- **Skoler/barnehager mangler fortsatt i pipeline:** Profil-filter for "Barnefamilie" fremhever Barn & Oppvekst, men tema har fortsatt mangelfulle data (se forrige logg). NSR-importer trengs
+- **Boligtype-effekt:** `young`/`senior` i generer-pipeline → bør disse kobles til profil-filter automatisk? Altså: "denne boligen er tagget for unge, start med Aktiv singel pre-valgt"
+
+### Retning
+- **Explorer for eiendom begynner å bli et reelt produkt.** Profil-filter + bransjeprofiler + generer-pipeline = salgbart. Neste steg er å vise dette til meglere med ekte data
+- **Fokus: demo-kvalitet, ikke feature-bredde.** Vi har nok features. Det som mangler er data-kvalitet (skoler, barnehager) og polert UX for de funksjonene som finnes
+
+### Observasjoner
+- **Kompass-mønsteret var direkte gjenbrukbart.** Bottom sheet, feature flag, dismissal — alt kopiert med minimal tilpasning. Investering i Kompass betalte seg
+- **4 filer, ~150 linjer ny kode, 10 linjer endret.** Liten feature, stor effekt. Boligkjøpere slipper å se 200+ POI-er og kan fokusere umiddelbart
+- **Bransjeprofil-systemet skalerer godt.** Feature flags per bransje-tag gjør det trivielt å legge til nye UX-features uten å påvirke andre produkter

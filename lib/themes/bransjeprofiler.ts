@@ -21,6 +21,7 @@ export interface BransjeprofilFeatures {
   agendaView?: boolean;
   eventUrl?: boolean;
   kompass?: boolean;
+  profilFilter?: boolean;
 }
 
 export interface Bransjeprofil {
@@ -185,6 +186,9 @@ export const BRANSJEPROFILER: Record<string, Bransjeprofil> = {
       "transport": 20,
     },
     explorerTotalCap: 120,
+    features: {
+      profilFilter: true,
+    },
   },
   "Eiendom - Næring": {
     tag: "Eiendom - Næring",

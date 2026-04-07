@@ -29,9 +29,12 @@ import ExplorerBottomSheet from "./ExplorerBottomSheet";
 import ExplorerPOIList from "./ExplorerPOIList";
 import CollectionDrawer from "./CollectionDrawer";
 import KompassOnboarding from "./KompassOnboarding";
+import BoligProfilFilter from "./BoligProfilFilter";
 import KompassTabs from "./KompassTabs";
 import KompassTimeline from "./KompassTimeline";
 import { useKompassStore } from "@/lib/kompass-store";
+import { getDisabledCategories } from "@/lib/themes/profil-filter-mapping";
+import type { Livsfase } from "@/lib/themes/profil-filter-mapping";
 import { useKompassFilter } from "@/lib/hooks/useKompassFilter";
 
 interface CollectionData {
@@ -168,6 +171,20 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
   const eventDays = useEventDays(basePOIs);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const eventFilteredPOIs = useEventDayFilter(basePOIs, selectedDay);
+
+  // Profil-filter — livsfase-basert tema-filtrering for eiendom
+  const showProfilFilter = !!features?.profilFilter && !isCollectionView && !initialCategories;
+  const [profilFilterDismissed, setProfilFilterDismissed] = useState(false);
+
+  const handleProfilSelect = useCallback((livsfase: Livsfase) => {
+    const disabled = getDisabledCategories(livsfase, themes);
+    setDisabledCategories(disabled);
+    setProfilFilterDismissed(true);
+  }, [themes]);
+
+  const handleProfilSkip = useCallback(() => {
+    setProfilFilterDismissed(true);
+  }, []);
 
   // Kompass — personal event recommendations
   const showKompass = !!features?.kompass && !isCollectionView;
@@ -770,7 +787,16 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
         projectId={project.id}
       />
 
-      {/* Kompass onboarding overlay */}
+      {/* Profil-filter onboarding overlay (Eiendom - Bolig) */}
+      {showProfilFilter && !profilFilterDismissed && (
+        <BoligProfilFilter
+          projectName={project.name}
+          onSelect={handleProfilSelect}
+          onSkip={handleProfilSkip}
+        />
+      )}
+
+      {/* Kompass onboarding overlay (Event) */}
       {showKompass && showOnboarding && (
         <KompassOnboarding
           themes={themes}
