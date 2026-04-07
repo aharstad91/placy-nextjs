@@ -3,6 +3,10 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/client";
 import { slugify } from "@/lib/utils/slugify";
 import { eiendomUrl } from "@/lib/urls";
+import { createGeneratedProject } from "@/lib/pipeline/create-project";
+import { importPOIsToProject } from "@/lib/pipeline/import-pois";
+import { getHousingCategories } from "@/lib/pipeline/housing-categories";
+import type { HousingType } from "@/lib/pipeline/housing-categories";
 
 const RESERVED_SLUGS = ["generer", "tekst", "admin", "api"];
 
@@ -133,9 +137,110 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Kunne ikke lagre forespørsel" }, { status: 500 });
   }
 
+  // === Pipeline: Generate project + import POIs ===
+  const resultUrl = eiendomUrl(customerSlug, finalSlug);
+  let pipelineSuccess = false;
+
+  try {
+    // 1. Create project + explorer product in Supabase
+    const { projectId } = await createGeneratedProject({
+      customerSlug,
+      slug: finalSlug,
+      address,
+      lat,
+      lng,
+      housingType: housingType as HousingType,
+    });
+
+    // 2. Import POIs from Google Places + Entur + Bysykkel
+    const categories = getHousingCategories(housingType as HousingType);
+    const importResult = await importPOIsToProject({
+      circles: [{ lat, lng, radiusMeters: 2000 }],
+      categories,
+      projectId,
+      includeEntur: true,
+      includeBysykkel: true,
+    });
+
+    console.log(`[Pipeline] Imported ${importResult.total} POIs for ${address}`);
+
+    // 3. Update request to completed
+    await supabase.from("generation_requests").update({
+      status: "completed",
+      project_id: projectId,
+      result_url: resultUrl,
+      completed_at: new Date().toISOString(),
+    }).eq("address_slug", finalSlug);
+
+    pipelineSuccess = true;
+  } catch (err) {
+    console.error("[Pipeline] Failed:", err);
+    await supabase.from("generation_requests").update({
+      status: "failed",
+      error_message: err instanceof Error ? err.message : "Ukjent feil",
+    }).eq("address_slug", finalSlug);
+  }
+
+  // Send confirmation email
+  const projectUrl = `https://placy.no${resultUrl}`;
+  await sendConfirmationEmail(email, address, projectUrl, pipelineSuccess).catch((err) =>
+    console.error("Failed to send confirmation email:", err)
+  );
+
   return NextResponse.json({
     slug: finalSlug,
-    url: eiendomUrl(customerSlug, finalSlug),
-    message: "Forespørsel mottatt",
+    url: resultUrl,
+    message: pipelineSuccess ? "Nabolagskart generert" : "Forespørsel mottatt — generering pågår",
+    status: pipelineSuccess ? "completed" : "failed",
+  });
+}
+
+async function sendConfirmationEmail(to: string, address: string, projectUrl: string, ready: boolean) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return;
+
+  const shortAddress = address.split(",")[0];
+
+  await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "api-key": apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      sender: { name: "Placy", email: "hei@placy.no" },
+      to: [{ email: to }],
+      subject: ready
+        ? `Nabolagskart for ${shortAddress} er klart`
+        : `Nabolagskart for ${shortAddress}`,
+      htmlContent: ready
+        ? `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
+          <h1 style="font-size: 20px; color: #111; margin-bottom: 16px;">Nabolagskartet er klart!</h1>
+          <p style="font-size: 15px; color: #555; line-height: 1.6;">
+            Nabolagskartet for <strong>${address}</strong> er generert og klart til bruk.
+            Del lenken med potensielle kjøpere.
+          </p>
+          <a href="${projectUrl}" style="display: inline-block; margin-top: 24px; padding: 12px 24px; background: #111; color: #fff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500;">
+            Se nabolagskartet
+          </a>
+          <p style="font-size: 13px; color: #999; margin-top: 32px;">
+            Denne e-posten ble sendt fra Placy fordi du bestilte et nabolagskart.
+          </p>
+        </div>
+        `
+        : `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
+          <h1 style="font-size: 20px; color: #111; margin-bottom: 16px;">Forespørsel mottatt</h1>
+          <p style="font-size: 15px; color: #555; line-height: 1.6;">
+            Vi har mottatt din forespørsel om nabolagskart for <strong>${address}</strong>.
+            Genereringen tok lenger enn forventet — vi jobber med saken.
+          </p>
+          <p style="font-size: 13px; color: #999; margin-top: 32px;">
+            Denne e-posten ble sendt fra Placy fordi du bestilte et nabolagskart.
+          </p>
+        </div>
+        `,
+    }),
   });
 }

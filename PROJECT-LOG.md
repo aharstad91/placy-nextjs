@@ -2184,3 +2184,630 @@ Dette er en sterk åpner fordi:
 - **Zustand er riktig for ephemeral UI state.** Kompass-store har ingen server-interaksjon, ingen caching-behov, ingen persistence. Zustand + useShallow er minimalt og performant.
 - **Feature flags i bransjeprofil er elegant.** Ingen compile-time flags, ingen environment vars — bare data. Nye features kan aktiveres per bransje uten kodeendringer.
 - **Event-plattformen er i ferd med å bli et selvstendig produkt.** Fra eiendoms-explorer til events-plattform med import, filtrering, anbefalinger — uten store kodeendringer. Plattformens fleksibilitet er reell.
+
+---
+
+## 2026-03-06 (sesjon 2) — Strategisk sparring: Placy som megler-leverandør
+
+### Kontekst
+Sparring-sesjon om forretningsmodell, prising og produktstrategi for selvbetjent megler-pipeline. Ikke kode — ren strategi.
+
+### Analyse: Prisresearch
+
+Deep research på proptech-prising, norske megler-markedsføringskostnader og per-transaksjon SaaS-modeller. Nøkkelfunn:
+
+**Megler-markedsføring per bolig:**
+- Total markedspakke: 16 000–48 000 kr (uten/med styling)
+- Foto: 4 000–7 000 kr, FINN-annonse: 1 489–9 960 kr
+- Selger betaler totalt 70 000–150 000 kr for hele boligsalget
+
+**Sammenlignbare verktøy:**
+- NeighborhoodScout: ~300 NOK/rapport, HouseCanary: 250–900 NOK/rapport
+- FINN Nabolagsprofil: bundlet i Medium/Stor pakke (ikke separat)
+- Matterport 3D: 3 000–8 000 NOK/scan
+
+**Markedsgap:** Det finnes ingen standalone interaktivt nabolagskart-produkt for norske meglere. FINNs Nabolagsprofil er statisk data i annonsepakken. Placy er en ny kategori.
+
+### Beslutninger
+
+1. **Én generering, to moduser.** Explorer og Report er ikke to produkter — de er to views på samme datagrunnlag. Én pipeline kjører, megleren får begge. Ingen grunn til å splitte.
+
+2. **Prispunkt: 999 kr per bolig.** Inkluderer Explorer + Report. Under 5% av markedspakken, billigere enn ett sett boligfoto. "Easy yes" for megleren. Marginen er ~100%.
+
+3. **Beliggenhetstekst-generator som nytt produkt/funksjon.** Megler gir adresse + målgruppe, får ferdig tekst å lime inn i FINN/prospekt. Null friksjon, løser et konkret daglig problem.
+
+### Volumestimat: Megler1 Trøndelag
+
+| Scenario | Meglere | Maps/mnd | MRR | ARR |
+|----------|---------|----------|-----|-----|
+| Pilot | 5–10 | 15 | 15 000 kr | 180 000 kr |
+| Traction | 20–30 | 50 | 50 000 kr | 600 000 kr |
+| Full utrulling | 40–60 | 100 | 100 000 kr | 1 200 000 kr |
+
+### Skaleringsestimat @ 999 kr
+
+| Scope | Penetrasjon | Volum/år | ARR |
+|-------|-------------|----------|-----|
+| Trondheim | 50% | 2 250 | 2.25 MNOK |
+| Trøndelag | 50% | 4 000 | 4.0 MNOK |
+| Norges 5 største byer | 30% | 20 000 | 20 MNOK |
+| Hele Norge | 20% | 15 000 | 15 MNOK |
+
+### Ny idé: Beliggenhetstekst-generator
+
+**Observasjon fra Kristians FINN-annonser:** 4 annonser gjennomgått (Angelltrøa, Strindheim, Ranheim, Charlottenlund). Alle har 1–2 generiske setninger om beliggenhet. Copy-paste-aktig, ingen spesifikke POI-er, ingen avstander, ingen tilpasning til målgruppe.
+
+**Produktidé:** Megler skriver inn adresse + velger målgruppe (Familie/Ung/Senior) → får ferdig beliggenhetstekst med konkrete stedsnavn og avstander → limer inn i FINN/salgsoppgave.
+
+**Strategisk rolle:** Gratis funnel til 999 kr-pakken. Null friksjon, beviser datakvaliteten, sprer seg viralt mellom meglere. Tre produkter, én pipeline:
+
+| Produkt | Output | Friksjon | Pris |
+|---------|--------|----------|------|
+| Beliggenhetstekst | Tekst å lime inn | Null | Gratis (lead-gen) |
+| Explorer | Interaktivt kart | Link | Del av 999-pakke |
+| Report | Redaksjonell artikkel | Link i prospekt | Del av 999-pakke |
+
+### Retning
+- **Placy beveger seg fra "vi lager demoer" til "leverandør til meglerbransjen"** — dette er det viktigste strategiske skiftet hittil
+- Tre produktnivåer (tekst → Explorer → Report) fra samme datagrunnlag gir en naturlig trakt
+- Beliggenhetstekst-generatoren bør bygges som neste feature — lav innsats, høy spredningseffekt
+- Megler1 Trøndelag via Kristian er piloten, men produktet er bransje-agnostisk
+
+### Parkert / Åpne spørsmål
+- Beliggenhetstekst: bygges som del av /generer-siden eller som eget verktøy?
+- Prismodell for volum: klippekort (10-pakk, 25-pakk) eller kontorabo?
+- Go-to-market: demo for Kristian med hans egne adresser som proof of concept?
+- Skal tekst-generatoren kreve epost eller være helt anonym?
+- Enterprise/API-prising for kjeder som vil embedde det?
+
+### Observasjoner
+- **FINNs prisøkning (706% i 2025) har gjort bransjen prissensitiv** — men også vant til å betale for digitale verktøy. Placy @ 999 kr er en brøkdel av FINN-kostnaden.
+- **67% av meglere sier de får all tech fra kontoret** (NAR) — salget bør rettes mot meglerkontoret/kjedeledelsen, ikke individuell megler
+- **Kristians annonser beviser problemet konkret** — 1-2 generiske setninger vs. hva Placy kan levere. Forskjellen er dramatisk og lett å demonstrere.
+- **Sem & Johnsen som kvalitetsbenchmark.** Deres beliggenhetstekster har fast struktur: 3-4 avsnitt (intro → bomiljø → nærområde → hook). Selv de navngir ikke spesifikke steder/avstander — det er gapet Placy fyller.
+- **Tone-of-voice-tilpasning per meglerkontor.** Onboarding: kontoret gir 10-20 beste tekster → LLM lærer stilen → genererte tekster matcher kontorets stemme. Gjør Placy til leverandør, ikke bare verktøy. Trainees kan aldri skrive dårligere enn kontorets snitt.
+
+### Utvidet produktvisjon: Før, på og etter visning
+
+Nøkkelinnsikt: **Visningen er eneste ansikt-til-ansikt med kjøperen.** Megleren som svarer konkret bygger troverdighet. QR-kode til Explorer på visning = kjøper utforsker nabolaget i sofaen etterpå = boligen holder seg top-of-mind til budgivning.
+
+**Fire verktøy fra én pipeline, dekker hele salgsprosessen:**
+
+| Fase | Verktøy | Hva det løser |
+|------|---------|---------------|
+| FØR | Beliggenhetstekst-generator | FINN-annonse, prospekt (gratis lead-gen) |
+| FØR | Report | Redaksjonell nabolagsartikkel i salgsoppgaven |
+| PÅ | Visningsassistent (mobil) | Kompakt liste-view — megler svarer på 3 sek |
+| ETTER | Explorer + QR-kode | Kjøper utforsker nabolaget hjemme, deler med partner |
+
+**Visningsassistenten:** Mobiloptimert side (ikke PDF, ikke app). Skole (navn, avstand, gåtid), barnehage, dagligvare, kollektiv (inkl. reisetid til sentrum), trening, mat & drikke. Tredje view på samme data — Explorer (kart), Report (artikkel), Visningsassistent (liste).
+
+**Revidert pakke:** 999 kr per bolig — beliggenhetstekst + visningsassistent + Explorer + Report.
+
+**Produkttrakt:**
+```
+GRATIS — Beliggenhetstekst-generator, Placy Score (fase 2)
+999 KR — Beliggenhetstekst (med ToV) + Visningsassistent + Explorer + Report
+ENTERPRISE — Tone-of-voice per kontor, Vitec/FINN-integrasjon, Placy Score i FINN
+```
+
+**Parkerte idéer:** Nabolagssammenligning (2-3 adresser side-by-side), sesongvariant-tekst, tilflytterguide, automatisk FINN-levering via Vitec API.
+
+---
+
+## 2026-03-06 (sesjon 3) — Konkurrentanalyse: Beligenhetsbeskrivelser i praksis
+
+### Kontekst
+Deep research på 15 aktive boligannonser fra de største meglerkjedene i Trondheim. Formål: dokumentere eksakt hva meglere skriver om beliggenhet i dag, og hvor stort gapet til Placy er.
+
+### Markedsandeler Trondheim (estimert)
+
+| Kjede | Andel | Merknad |
+|-------|-------|---------|
+| EiendomsMegler 1 Midt-Norge | ~35-40% | Markedsleder, SpareBank 1-eid |
+| Heimdal Eiendomsmegling | ~13-15% | Sterk på nybygg (~49% nybolig) |
+| DNB Eiendom | ~10-12% | Nr. 3, 3 kontorer |
+| Proaktiv | ~8-10% | Vokser, 17+ meglere sentrum |
+| Nylander & Partners | ~10% | Midt-norsk, sterk i Stjørdal |
+| Privatmegleren | ~5-8% | 25 meglere |
+| Nordvik / Krogsveen / EIE / Aktiv | 3-5% hver | Mindre aktører |
+
+### Funn: 15 annonser analysert
+
+**14 av 15 annonser bruker identisk mønster:**
+- "Kort vei til" / "gangavstand til" / "i nærheten av" — uten faktisk avstand
+- Oppramsing: "barnehage, skole, butikk, buss" — samme sjekkliste, copy-paste mellom annonser
+- Generiske adjektiver: "populær", "attraktiv", "sentral", "barnevennlig"
+
+**Kun 1 av 15** (Berg/Moholt nybygg) oppgir faktiske gangminutter.
+
+**Ingen av 15 har:**
+- Interaktivt kart over nærområdet
+- Verifiserte avstander (beregnet, ikke gjettet)
+- Bilder av steder i nærområdet
+- Kategorisert oversikt over fasiliteter
+- Ratings/anmeldelser av stedene
+- Skolekretsinformasjon
+
+### Eksempler per kjede
+
+**EM1** — best case (Øvre Allé 4, 22.5 MNOK): *"Bakklandet med populære turstier langs Nidelven, hyggelige kafeer og restauranter. Midtbyen bare en kort spasertur unna. Kun 500 m til NTNU Gløshaugen."* — Noe spesifikt, men fortsatt prosa uten struktur.
+
+**EM1** — worst case (Bakkehellet 7): Ingen beligenhetsbeskrivelse i det hele tatt. Bare "Nærhet til NTNU og St. Olavs."
+
+**DNB** — typisk (Elgeseter gate 26A): *"Her bor du med umiddelbar nærhet til alt du trenger, enten du studerer på NTNU Gløshaugen eller jobber på St. Olavs."* — Én setning. Ferdig.
+
+**Heimdal** — typisk (Saupstadringen 39A): *"Gangavstand til bl.a. skoler, butikk, lege, tannlege, plass til ballspill og Husebybadet"* — Oppramsing uten avstand.
+
+**Proaktiv** — typisk (Gammel-lina 72): *"Kort avstand til barnehage, skoler, fotballbane, nærbutikk og bussholdeplass."* — Identisk struktur som alle andre.
+
+**Aktiv** — typisk (Tampereveien 2A): *"Attraktivt, med nærhet til Bymarka, dagligvarebutikk, offentlig kommunikasjon samt skole og barnehage."* — Generisk.
+
+### Implikasjon for Placy
+
+Gapet er **dramatisk og konsistent på tvers av alle kjeder**. Selv den dyreste boligen i datasettet (Øvre Allé 4, 22.5 MNOK via EM1) har en beligenhetsbeskrivelse som Placy automatisk overgår med verifiserte data, interaktivt kart og kategorisert oversikt.
+
+Dette er ikke et problem med dårlige meglere — det er et **strukturelt problem med verktøyene**. Meglere har ikke et verktøy som gjør det enkelt å produsere gode beligenhetsbeskrivelser. De skriver fritekst under tidspress, og resultatet blir generisk.
+
+### Beslutninger
+- **Nearby guarantee implementert** i `applyExplorerCaps`: de 5 nærmeste POI-ene per tema (innenfor 8 min gange) garanteres plass. Løser problemet med at nærområdet ble "nakent" når score-basert utvelgelse favoriserte fjernere, høyere ratede steder.
+- Endringen er isolert til `/kart/`-ruten (selvbetjent Explorer). Vanlig Explorer er upåvirket.
+
+### Retning
+- **Denne analysen er salgsmateriell.** "14 av 15 annonser har generisk beliggenhet" er en konkret pitch til meglerkontoret.
+- **Øvre Allé 4 er perfekt demo-case:** EM1 selger den akkurat nå for 22.5 MNOK med en generisk beligenhetsbeskrivelse. Vi har allerede generert Placy-kartet for samme adresse. Side-by-side sammenligning er overbevisende.
+- Beliggenhetstekst-generatoren (fra sesjon 2) styrkes av denne innsikten — den løser et problem som er dokumentert kvantitativt.
+
+---
+
+## 2026-03-06 (sesjon 4) — Konkurranseanalyse: FINN, Hjem.no og Nabolag.no
+
+### Kontekst
+Gjennomgang av konkurrerende nabolags-produkter i norsk eiendom. Sett på FINNs Nabolagsprofil (gammel + ny), Sem & Johnsens integrasjon, Hjem.no "Explore the area", og nabolag.no (dataleverandør). Formål: forstå konkurransebildet og Placys posisjonering.
+
+### Funn: Tre lag i Schibsteds nabolags-stack
+
+**1. profil.nabolag.no (backend)**
+- Levert av Finn.no AS (support@eiendomsprofil.no)
+- Kilder: SSB demografi (via Geodata AS), Matrikkelen/Statens Kartverk, Entur + Google (reisetider), nabolag.no crowdsourcing (ratings/sitater, min 10 besvarelser), Geodata AS (solforhold), Jacilla/skisporet.no
+- Ren data-aggregering fra offentlige registre + crowdsourcing
+
+**2. FINN Nabolagsprofil (i annonsen)**
+- Gammel versjon (Sem & Johnsen-integrert): Crowdsourced scores, demografi-grafer, anonyme fargede prikker på kart. Statistikk ingen bruker til beslutninger.
+- Ny versjon (direkte i FINN-annonsen): Interaktivt kart med kategori-chips (Transport, Handel, Skoler, Barnehager, Sport). Navngitte POI-er med gangavstand. "Coop Extra Charlottenlund — Gå i 4 min, 321m". Vesentlig forbedring.
+
+**3. Hjem.no "Explore the area" (sterkeste konkurrent)**
+- 7 kategorier: Transport, Education, Shopping, Food, Sport, Charging, People
+- Isochron-kart (fargede 5/10/20/30 min soner) — visuelt sterkt
+- Walk / Bike / Drive toggle (= Placys travel mode)
+- Navngitte POI-er med avstand og gåtid
+- Transport-detaljer med alle busslinjer per holdeplass
+- **Dette er den reelle Explorer-konkurrenten**
+
+### Hva konkurrentene IKKE har (Placys moat)
+
+| Feature | FINN | Hjem.no | Placy |
+|---------|------|---------|-------|
+| Interaktivt kart med POI-er | Ja (ny) | Ja | Ja |
+| Isochron (tidssoner) | Nei | Ja | Nei (bør vurderes) |
+| Travel mode (walk/bike/drive) | Nei | Ja | Ja |
+| Google Places-data (ratings, bilder, åpningstider) | Nei | Nei | Ja |
+| Redaksjonell kuratering (tiers, featured) | Nei | Nei | Ja |
+| Report (nabolagsartikkel) | Nei | Nei | Ja |
+| Beliggenhetstekst-generator | Nei | Nei | Ja |
+| Visningsassistent (mobil) | Nei | Nei | Ja |
+| Tone-of-voice per meglerkontor | Nei | Nei | Ja |
+| Uavhengig av plattform | Nei (FINN-låst) | Nei (Schibsted) | Ja |
+| Bygget for megleren (ikke kjøperen) | Nei | Nei | Ja |
+
+### Strategisk konklusjon
+
+**Explorer alene er sårbar.** Hjem.no har allerede en sterk Explorer-konkurrent med isochron-kart. FINN forbedrer sin versjon raskt. Begge er gratis for kjøperen (bundlet i FINN-pakken).
+
+**Pakken er moaten.** Beliggenhetstekst + Visningsassistent + Report + Explorer = noe verken FINN eller Hjem.no bygger. De bygger for kjøperen. Placy bygger for megleren.
+
+**Placy og FINN/Hjem er komplementære, ikke konkurrerende:**
+- FINN/Hjem svarer: "Hvem bor her?" (demografi, crowdsourcing, statistikk)
+- Placy svarer: "Hva finnes her?" (konkrete steder, redaksjonell kontekst, megler-verktøy)
+- Placy-link i FINN-annonsen = megleren bruker begge
+
+**FINN kommer aldri til å:**
+- Generere prosa/beliggenhetstekster for meglere
+- Bygge megler-verktøy for visninger
+- Tilpasse tone-of-voice per meglerkontor
+- La meglere bruke det utenfor FINN-plattformen
+
+Det er Placys rom.
+
+### Parkert / Åpne spørsmål
+- Bør Placy bygge isochron-kart (tidssoner)? Hjem.no har det og det er visuelt sterkt
+- Kan Placy integreres med Vitec (meglerverktøy) slik at nabolagsdata flyter rett inn?
+- Hjem.no har "Charging" som kategori — bør Placy legge til ladestasjon i boligprofilen?
+
+### Observasjoner
+- **Schibsted investerer tungt i nabolagsdata.** Tre separate produkter (FINN nabolagsprofil, FINN nærområdet-kart, Hjem.no explore) viser at dette er en prioritert satsning. Markedet er validert.
+- **Baren FINN setter er middels.** Ny versjon er bedre, men fortsatt bare datapunkter på et kart. Ingen redaksjon, ingen fortelling, ingen megler-verktøy. Placy trenger ikke være 10x bedre på kart — den trenger å være 10x bedre som megler-leverandør.
+- **Sem & Johnsen har embeddet den GAMLE nabolagsprofilen.** De har ikke oppgradert til den nye kart-widgeten ennå. Det betyr at meglerintegrasjoner henger etter FINNs egen utvikling — et vindu for Placy.
+
+---
+
+## 2026-03-07 — Strategisk beslutning: Eiendom som vertikal + URL-arkitektur
+
+### Kontekst
+Placy har vokst organisk i mange retninger — turisme (Guide/Trips), eiendom (bolig + næring + selvbetjent megler), hotell-demoer, kultur (Kulturnatt), SEO-sider, admin. For en vibe-coded codebase med én utvikler er det for spredt. Etter to sesjoner med prisresearch, konkurranseanalyse og produktstrategi er det tydelig at eiendom er vertikalen med klarest vei til inntekt.
+
+### Beslutninger
+
+**1. Placy er nå et eiendomsprodukt.**
+Guide/turisme, hotell-demoer og kultur legges i fryseren. All energi går til megler-vertikalen. Begrunnelse:
+- Betalingsvilje dokumentert (meglere betaler 16-48k per bolig i markedsføring)
+- Problemet er konkret (14/15 annonser har generisk beliggenhet)
+- Pipeline eksisterer (generate-bolig, generate-adresse)
+- Konkurrenter validerer markedet (FINN/Hjem.no investerer tungt)
+- Pilot finnes (Kristian/EM1)
+- Produktpakke klar (tekst + visning + Explorer + Report @ 999 kr)
+
+**2. URL-struktur: `/eiendom/{kunde}/{slug}`**
+
+Alltid med kunde — ingen unntak. Selvbetjente meglere tilhører meglerkontoret sitt, prosjekter tilhører utbyggeren.
+
+```
+placy.no/eiendom/
+├── /generer                                    — Selvbetjent inngang for meglere
+├── /tekst                                      — Gratis beliggenhetstekst-generator (lead-gen)
+│
+│   Selvbetjent megler (enkeltboliger):
+├── /eiendom/em1-trondelag/sildrapevegen-35c
+├── /eiendom/em1-trondelag/fernanda-nissens-veg-16
+├── /eiendom/privatmegleren/eksempel-adresse
+│
+│   Boligprosjekter:
+├── /eiendom/klp/ferjemannsveien-10
+├── /eiendom/overvik/b2-tiller
+│
+│   Næringseiendom:
+├── /eiendom/klp/dyre-halses-gate-1
+│
+│   Moduser (undermapper):
+│   /eiendom/{kunde}/{slug}             — Explorer (default)
+│   /eiendom/{kunde}/{slug}/rapport     — Report
+│   /eiendom/{kunde}/{slug}/visning     — Visningsassistent
+```
+
+**3. Alltid kunde-slug, aldri "Selvbetjent"-bøtte.**
+Når megler bestiller via /generer knyttes prosjektet til meglerkontoret (EM1 Trøndelag, Privatmegleren, etc.), ikke en generisk "Selvbetjent"-kunde. Gir:
+- Megler-dashboard per kunde (`/eiendom/em1-trondelag/` = oversikt)
+- Tone-of-voice-tilpasning per meglerkontor
+- Branding-mulighet (logo, farger) per kunde
+- Enkel fakturering (tell genereringer per kunde)
+
+### Migrasjon fra nåværende struktur
+
+| Nåværende | Ny | Status |
+|-----------|-----|--------|
+| `/for/{kunde}/{prosjekt}` | `/eiendom/{kunde}/{slug}` | Migreres |
+| `/kart/{slug}` | `/eiendom/{kunde}/{slug}` | Migreres (krever kunde-tilknytning) |
+| `/generer` | `/eiendom/generer` | Flyttes |
+| `/trips/...` | Fryses | Ikke prioritert |
+| `/admin/...` | Beholdes | Uendret |
+
+Gamle URL-er bør redirecte (301) til nye for å bevare eventuelle lenker.
+
+### Implikasjon for Supabase
+
+Ingen ny datamodell — `projects.customer_id` peker allerede på riktig kunde. Endringen er:
+- "Selvbetjent"-kunden i `generation_requests` erstattes med faktisk meglerkjede
+- `/generer`-skjemaet trenger et felt for "Hvilket meglerkontor?" (autocomplete eller dropdown)
+- Nye kunder opprettes i `customers`-tabellen ved onboarding av nytt meglerkontor
+
+### Retning
+- **Neste implementeringsoppgave:** Flytte eiendomsprosjekter til `/eiendom/`-ruter med riktig kunde-slug
+- **Beliggenhetstekst-generator** (`/eiendom/tekst`) som første nye feature — lav innsats, høy spredning, gratis lead-gen
+- **Demo for Kristian:** Generer Report + Explorer for én av hans fire annonser, vis side-by-side mot FINN-annonsen
+- Guide/turisme/hotell er ikke slettet — bare deprioritert. Kan reaktiveres som `/turisme/`-vertikal senere
+
+### Observasjoner
+- **Vertikal-fokus er riktig for et vibe-coded prosjekt.** Én utvikler kan ikke betjene fire bransjer. Eiendom har sterkest signal — dokumentert problem, dokumentert betalingsvilje, dokumentert konkurransegap.
+- **Kunde-slug fra dag 1 er viktig.** Å migrere fra flat `/kart/{slug}` til `/eiendom/{kunde}/{slug}` senere er smertefullt. Bedre å gjøre det riktig nå.
+- **Hele dagens sparring (sesjon 2+3+4+denne) henger sammen:** Prisresearch → produktpakke → konkurranseanalyse → vertikal-beslutning → URL-arkitektur. Strategien er nå sammenhengende fra marked til kode.
+
+### Krogsveen som kvalitetsbenchmark
+
+**Krogsveen Steinanvegen 76H** — best-in-class beliggenhetstekst i norsk eiendom:
+- Spesifikke skolekretser: Åsvang skole, Hoeggen ungdomsskole, Strinda VGS
+- Datakilde oppgitt: **Prognosesenteret** som leverandør (= betaler for data-tjeneste)
+- Konkrete avstander: "ca. sju km til sentrum", "ca. to km til E6", "ca. to km til NTNU Dragvoll"
+- Navngitte steder: Estenstadmarka, Steinan Skitrekk, Othilienborg Diskgolfpark, butikkene på Moholt
+- Kategorisert: friluftsliv, skolekrets, transport/handel — ikke generisk oppramsing
+
+**Likevel manuelt og upresist:**
+- "Ca. sju kilometer" — omtrentlig, ikke beregnet
+- "Butikkene på Moholt" — ingen spesifikke butikknavn
+- Ingen gangminutter — bare "ca. to kilometer"
+- Ingen kart, ingen interaktivitet
+
+**Implikasjon:** Krogsveen er unntaket (1 av 15 med god beliggenhetstekst) og setter baren. Placy beliggenhetstekst-generator ville produsert Krogsveen-kvalitet automatisk, med eksakte avstander og gangminutter, på 30 sekunder i stedet for 30 minutter. Krogsveen betaler allerede Prognosesenteret for skolekrets-data — de er en kjede som investerer i nabolags-informasjon og dermed en naturlig Placy-kunde.
+
+---
+
+## 2026-03-07 (sesjon 2) — Eiendom URL-arkitektur: Implementert
+
+### Kontekst
+Forrige sesjon (sesjon 1 i dag) planla URL-arkitekturen. Denne sesjonen implementerte alt — fra plan til produksjonsklar kode i 6 faser.
+
+### Beslutninger
+- **Route group `(tools)/`** for `/eiendom/generer` og `/eiendom/tekst` — forhindrer slug-kollisjon med `[customer]` uten middleware-hack. Samme mønster som `(public)/`
+- **ProductNav `exact` property** for root-path Explorer-tab — fikser double-highlight bug der Explorer-path (`/eiendom/X/Y`) matcher alt via `.startsWith()`
+- **Middleware: fjernet `/for/` passthrough** — erstattet med eksplisitt redirect-logikk som excluder frozen trips sub-paths
+- **Thin server component for `/kart/` redirect** — `permanentRedirect()` med DB-lookup, bedre enn middleware DB-hit på alle requests
+- **Customer upsert med reserved slug denied-list** — `["generer", "tekst", "admin", "api"]` valideres ved opprettelse
+- **IP-basert rate limiting** på `/api/eiendom/tekst` — 5 req/time per IP, in-memory Map med TTL
+- **`@anthropic-ai/sdk`** lagt til som ny dependency for runtime LLM-kall i tekst-generator
+- **`maxDuration = 30`** på tekst API route — Anthropic API tar 5-15s
+
+### Levert
+1. **`lib/urls.ts`** — sentralisert `eiendomUrl()`, aldri hardkod paths
+2. **`/eiendom/{kunde}/{slug}`** — Explorer (default), med generation status (pending/failed)
+3. **`/eiendom/{kunde}/{slug}/rapport`** — Report med oppdaterte canonical URLs
+4. **`/eiendom/{kunde}/{slug}/visning`** — NY: mobiloptimert POI-liste med QR-kode
+5. **`/eiendom/generer`** — bestillingsskjema med meglerkontor-felt (upsert-creates customer)
+6. **`/eiendom/tekst`** — NY: beliggenhetstekst-generator med Google Places + Claude
+7. **301 redirects** fra alle gamle URL-er (`/for/`, `/kart/`, `/generer`)
+8. **Migrasjon** `048_generation_requests_customer.sql` kjørt mot prod
+9. **Dead code slettet:** KartExplorer, kart-bookmarks-store, explore/report/landing pages
+10. **Compound doc:** `docs/solutions/architecture-patterns/eiendom-url-arkitektur-migration-20260307.md`
+
+Branch: `feat/eiendom-url-arkitektur` (worktree: `placy-ralph-eiendom`)
+
+### Parkert / Åpne spørsmål
+- **Tekst-generator kvalitet:** Prompten bruker Curator-prinsipper, men output er ikke validert mot Krogsveen-benchmark. Trenger manuell review av 5-10 genereringer
+- **Rate limiting er in-memory:** Fungerer per serverless instance, men resetter ved cold start. Vercel KV er bedre langsiktig, men overkill for nå
+- **Visningsassistent design:** Funksjonell MVP, men ikke visuelt polert. Trenger design-iterasjon etter brukertest
+- **Eksisterende selvbetjent-prosjekter:** Har `customer_id = NULL` i generation_requests. Trenger manuell migrasjon til riktig meglerkjede
+- **Google Places API-kall i tekst-generator:** Koster penger per request. Bør monitoreres
+- **Plausible analytics:** Lagt til i eiendom layout, men ikke verifisert i prod ennå
+
+### Retning
+- **Klar for deploy.** Branch er grønn: tsc, lint, test, build. Alle 6 eiendom-ruter rendrer riktig.
+- **Neste steg etter merge:** Generer 3-4 demoer for reelle adresser via `/eiendom/generer`, test at hele flyten fungerer E2E
+- **Tekst-generator er lead-gen:** Gratis verktøy → megler prøver → ser CTA for 999 kr-pakken → bestiller. Kvaliteten på generert tekst er make-or-break
+- **Visningsassistent er differensiator:** Ingen konkurrent har mobiloptimert POI-liste for visninger. QR-kode på visning = kjøper utforsker nabolaget selv
+
+### Observasjoner
+- **Tung feature, men kodebasen håndterte det.** 6 faser, 5 commits, ~1700 linjer ny kode, ~1450 linjer slettet. Arkitekturen (route groups, generisk ProductNav, server components, bransjeprofiler) skalerte uten strukturelle endringer
+- **Tech audit sparte tid.** 10 funn som ellers hadde blitt bugs i prod: ProductNav double-highlight, middleware passthrough blocking, rate limiting, reserved slugs. Alle fikset i planen før implementering
+- **Kill dead code aggressivt.** KartExplorer og kart-bookmarks-store hadde 0 referanser etter migrering. Slettet umiddelbart. Kodebasen er renere enn før migreringen startet
+- **`permanentRedirect()` vs `redirect()`** er en vanlig feil i Next.js. Førstnevnte gir 308 (permanent), sistnevnte gir 307 (temporary). For SEO-riktige 301-redirects i middleware: `NextResponse.redirect(url, 301)`
+
+---
+
+## 2026-03-09 — Event Explorer Fase 1 + Events-vertikal
+
+### Hva skjedde
+Samtale med Nadja Sahbegovic (Trondheim Kommune) om Open House Trondheim utløste oppdagelsen av en ny vertikal: **events og festivaler**. Undersøkelse avdekket 60+ potensielle kunder i Norge — fra Open House Oslo/Bergen til Kulturnatt, kunsthelger, matfestivaler og idrettsarrangementer.
+
+**Forretningslogikk:** Arrangører mangler interaktivt kart med navigasjon mellom events. De har innholdssider, men ikke "hva er nærmest meg"-funksjonalitet. Anyone AS har fakturert ~100k for Oslo Opens kart. Placy kan levere bedre til lavere pris, og det er gjentakende (årlige arrangementer).
+
+**Teknisk implementering (PR #58, merged):**
+1. `BransjeprofilFeatures` interface med `dayFilter`, `agendaView`, `eventUrl` flags
+2. Event-bransjeprofil med auto-theme fallback (Kulturnatt-mønsteret)
+3. `useEventDayFilter` hook + `ExplorerDayFilter` chip-komponent
+4. Event-tid badge og eventUrl-lenke på POI-kort
+5. 6 nye flate kolonner på `pois` + GIN-indeks + Kulturnatt data-migrasjon (132 POIs)
+6. Import-script oppdatert til å skrive nye event-felter direkte
+
+**Arkitekturbeslutning:** Navigasjonslag, ikke innholdsplattform. Placy eier navigasjon mellom events; arrangør eier innhold per event. `eventUrl` på hvert POI lenker til arrangørens eksisterende side.
+
+**Viktig:** Ingen ny rute-tre. Bransjeprofil feature flags på eksisterende `/for/[customer]/[project]/explore`. Vanity-URLer via middleware rewrite (fase 2).
+
+### Beslutninger
+- **Events er en vertikal vi satser på.** Gjentakende, løser reelt problem, bygger traction
+- **Navigasjonslag-posisjon:** Ikke truende for arrangør, lavere pris å forsvare, raskere onboarding
+- **Bransjeprofil > ny rute:** Feature flags skalerer uten dobbelt vedlikehold
+- **Flat POI-kolonner > JSONB nesting:** Følger eksisterende mønster (facebook_url, gallery_images)
+- **Kulturnatt er single-day:** Dagsfilteret skjules (by design) når bare én dag. Trenger multi-day testdata
+
+### Parkert / Åpne spørsmål
+- **Frida Rusnak (Open House Oslo):** Skal kontaktes med demo. Avventer at vi har multi-day testdata som viser dagsfilteret
+- **Agenda-visning:** Fase 2 — kronologisk listevisning basert på lagrede POIs
+- **CSV-import script:** Fase 2 — generisk import for nye events (ikke bare trdevents API)
+- **Vanity-URL middleware:** Fase 2 — `/events/kulturnatt` → `/for/kulturnatt-trondheim/kulturnatt-2025/explore`
+- **placy.no/events landingsside:** Fase 3 — salgsside for events-vertikalen
+- **Multi-day testdata:** Kulturnatt er 1-dags. Trenger Open House-lignende data (2-3 dager) for å demonstrere dagsfilteret
+- **Tekst-generator kvalitet** (fra forrige sesjon): Fortsatt ikke validert
+- **Eksisterende selvbetjent-prosjekter** (fra forrige sesjon): Fortsatt `customer_id = NULL`
+
+### Retning
+- **Events-vertikalen er den mest lovende nye aksen.** Den løser et reelt problem (navigasjon), er gjentakende (årlig), har mange potensielle kunder (60+), og bygger på eksisterende Explorer-infrastruktur
+- **Neste steg:** Lag multi-day testdata → ta screenshot med dagsfilter synlig → send mail til Frida Rusnak (Open House Oslo) og Nadja (Open House Trondheim)
+- **Eiendom og events parallelt.** Eiendom er B2B-inntekt nå, events er traction-building. Begge bruker same Explorer med ulik bransjeprofil
+- **Ikke bygg mer feature uten kunde.** Fase 1 er nok til å pitche. Agenda-visning og CSV-import bygges først når noen sier ja
+
+### Observasjoner
+- **Bransjeprofil-arkitekturen skalerer.** Tredje profil (etter Bolig og Næring) lagt til uten strukturelle endringer. Feature flags gjør at event-spesifikk UI bare aktiveres for Event-prosjekter
+- **+330 linjer, 0 regresjoner.** Eksisterende eiendom-Explorer er helt uberørt. Bygger, linter, type-checker alt grønt
+- **Kulturnatt-data var allerede der.** Import fra forrige sesjon ga oss testdata umiddelbart. `poi_metadata.time` migrert til nye kolonner med SQL
+- **Single-day events skjuler dagsfilteret.** Riktig UX-beslutning, men gjør det vanskelig å demonstrere features uten multi-day data
+
+---
+
+## 2026-03-10
+
+### Hva skjedde
+- **Oslo Open 2026 importert** — 441 kunstnere fra osloopen.no JSON API. Koordinater i kilden, men micro-variasjon per kunstner krevde normalisering per adresse (173 adresser → 53 venue clusters). 8 kategorier mappet fra fritekst-teknikk.
+- **Arendalsuka 2026 importert** — 134 events (foreløpig, vokser til 2300+ mot august) fra Typesense search API. 30 venues geocodet via Mapbox. 13 temaer mappet 1:1. Script er re-kjørbar.
+- **Compound doc oppdatert** med coordinate normalization pattern (gotcha #9), Typesense som ny API-type, og begge nye data sources
+
+### Markedsobservasjon — Events-vertikalen
+
+**Kunder investerer tungt i kart, men feiler på UX.**
+
+Arendalsuka har brukt betydelig tid og penger på sitt kart: egne SVG-ikoner for toaletter, taxi, medic-telt, veisperringer, til og med custom SVG-canvas for skip i havna. Imponerende produksjonsverdi på fasilitetslaget.
+
+Men selve programmet — det besøkende faktisk trenger — er bare røde prikker uten navn, filtrering eller navigasjon. Ingen kategori-filtre, ingen tidslinje, ingen venue-gruppering. Og på mobil (der 90% av festivalbrukerne er) er det helt ubrukelig.
+
+**Mønsteret:** Arrangører tenker "vi trenger et kart" og bygger et fasilitets-kart (hvor er do, parkering, scene). Men det reelle brukerproblemet er program-navigasjon (hva skjer nå, hvor, om hva, og hvordan kommer jeg dit).
+
+**To helt forskjellige produkter:**
+1. Fasilitets-kart — "hvor er nærmeste do?" — statisk, manuelt, tegnes én gang
+2. Program-kart — "hva skal jeg gå på kl 14 om klima?" — dynamisk, filtrert, personalisert
+
+Placy løser #2. Og #2 er det som er vanskelig å bygge selv — fordi det krever venue clustering, adaptive zoom, kategorifiltre, tidslinje, mobil-first UX, og ruting mellom venues.
+
+**Salgsargument:** "Dere har allerede investert i kart. Vi gir dere program-laget oppå — det som faktisk hjelper besøkende navigere mellom 2300 arrangementer."
+
+### Status — Event-demoer
+
+| Arrangement | Events | Dager | URL |
+|------------|--------|-------|-----|
+| Kulturnatt Trondheim 2025 | ~130 | 1 dag | `/for/kulturnatt-trondheim/kulturnatt-2025/explore` |
+| Festspillene Bergen 2026 | ~56 | 14 dager | `/for/festspillene/festspillene-2026/explore` |
+| Oslo Kulturnatt 2025 | 257 | 1 dag | `/for/oslo-kulturnatt/kulturnatt-2025/explore` |
+| Oslo Open 2026 | 441 | 2 dager | `/for/oslo-open/oslo-open-2026/explore` |
+| Arendalsuka 2026 | 134+ | 5 dager | `/for/arendalsuka/arendalsuka-2026/explore` |
+
+5 live demoer med reell data. Dekker ulike vertikaler: kunst, musikk, politikk, arkitektur. Viser multi-dag, venue clustering, kategorifiltrering.
+
+### Parkert / Åpne spørsmål
+- **Open House Bergen** — Squarespace, bare ~21 bygninger, ingen API. Lav prioritet — manuell innsats for lite data
+- **Arendalsuka re-import** — Re-kjør scriptet nærmere august når programmet er fullt (2300+ events)
+- **Kontakt Arendalsuka** — De investerer tydelig i kart-UX. Placy løser eksakt gapet de har (program-navigasjon)
+- **Research-listen har 60 arrangementer** — prioriter de med API/strukturert data og størst navigasjonsbehov
+
+### Produkt-idé — Fasilitets-POIs som USP
+
+Arrangører som Arendalsuka har allerede bygget et fasilitets-lag (toaletter, taxi, parkering, medic, sperringer). De har brukt enormt med tid på det. Men det lever i et separat statisk kart, disconnected fra programmet.
+
+**Placy kan tilby begge i ett:** Program-navigasjon (debatter, konserter, events) + fasilitets-POIs (toalett, parkering, førstehjelp, info-punkt, vannstasjon) — alt i samme kart med smart filtrering og zoom-avhengig synlighet.
+
+**Konkret feature:** Arrangør kan tagge "viktige POIs" — fasiliteter som vises som egne ikoner på kartet. Disse er ikke events, men permanente punkter som besøkende trenger. Synlige i alle zoom-nivåer, med egne ikoner (WC, P, medic-kors, info-i).
+
+**Salgsargument for landingsside:** "Ett kart for alt — program OG fasiliteter. Ikke to separate systemer som besøkende må bytte mellom."
+
+Dette gjør Placy til en komplett erstatning for det arrangøren allerede prøver å bygge selv — ikke bare et tillegg.
+
+**B2B-vinkel — Internt planleggingsverktøy:**
+
+Samme kart kan brukes internt av arrangøren FØR og UNDER festivalen:
+- **Sjekkliste per POI** — status på rigging, strøm, bemanning, godkjenning. "Er Samfunnsteltet klart? Har Bakgården fått strøm?"
+- **Facility management** — hvem eier hvert venue, kontaktperson, kapasitet, tilgjengelighet
+- **Live status under festival** — "Toalett ved Ferjekaia er ute av drift", "Bystyresalen er fullt"
+- **Planlegging av logistikk** — sperringer, taxiholdeplasser, medic-telt, vannstasjoner — alt plottet i kartet med ansvarlig person og status
+
+For Arendalsuka med 2300 arrangementer på 30+ venues over 5 dager er dette et reelt koordineringsproblem. De trenger et kart internt like mye som besøkende trenger det eksternt.
+
+**To produkter, ett kart:**
+1. Eksternt (besøkende): Program-navigasjon + fasiliteter
+2. Internt (arrangør): Planlegging, sjekkliste, live status per venue/POI
+
+### TODO
+- [ ] **Brainstorm videre: Internt planleggingsverktøy for festivalarrangører** — kart-basert sjekkliste, status per venue/POI, fasilitets-POIs med custom ikoner, live ops under festival. Bruk `/brainstorming` for å utforske scope, bruker, MVP. Sterk B2B-pitch mot Arendalsuka.
+
+### Retning
+- **Event-demoporteføljen er sterk nok til å pitche.** 5 live demoer med reelle data, ulike vertikaler og størrelser
+- **Arendalsuka er den sterkeste salgscasen** — 2300 events, de har allerede investert tungt i kart, og UX-en deres feiler på mobil
+- **Neste steg bør være outreach, ikke flere importer.** Vi har nok demoer. Nå trenger vi samtaler med arrangører
+- **Fasilitets-POIs som feature** — noter til landingsside og pitch. Viser at vi forstår hele behovet, ikke bare program-delen
+
+---
+
+## 2026-03-11 — AI Concierge: On-Site Personalisering for Events og Hotell
+
+### Observasjon
+
+Claude.ai har gjenskapt "trips"-konseptet — en bruker ber om en dagstur i Trondheim, Claude stiller 4-5 spørsmål (hvor, hva, hvem, når), og genererer en kuratert dagsplan med kart, tidspunkter og beskrivelser. Imponerende utførelse, men: hallusinert data, statisk kart, ingen delebar URL, ingen analytics, ingen embedding.
+
+**Konklusjon:** Dette er ikke en trussel mot Placy — det er en validering av konseptet. Og det viser en UX-pattern vi kan bygge bedre.
+
+### Produkt-idé — AI Concierge (on-site personalisering)
+
+**Konsept:** En besøkende (turist, festivalgjenger, konferansedeltager) åpner Placy på stedet og får 3-4 spørsmål. Basert på svarene genereres en personlig Guide med ekte, verifiserte data.
+
+**For events (Arendalsuka, Oslo Open, Kulturnatt):**
+- Hvilke temaer interesserer deg? (klima, tech, kultur, demokrati...)
+- Når er du ledig? (nå, i ettermiddag, i morgen)
+- Hvor er du nå? (GPS)
+- Tempo? (få utvalgte ting vs. pakket program)
+- → Personlig dagsplan med **ekte events som faktisk skjer akkurat nå**
+
+**For hotell:**
+- Hva er du i humør for? (mat, kultur, natur, shopping...)
+- Hvor lenge har du? (2 timer, halvdag, heldag)
+- Hvem er du med? (alene, partner, familie m/barn)
+- → Personlig dagstur med verifiserte POI-er og ekte reisetider
+
+### Hvorfor Placy kan gjøre dette bedre enn Claude.ai
+
+| | Claude.ai | Placy AI Concierge |
+|---|---|---|
+| Data | Hallusinert/utdatert | Verifiserte POI-er og events i databasen |
+| Tidsdimensjon | Vet ikke hva som skjer kl. 14 | Ekte eventtider, åpningstider, sanntid |
+| Reisetider | AI-gjetning | Mapbox Matrix, faktiske gangavstander |
+| Output | Tekst i en chat | Interaktiv Guide med kart, delebar URL |
+| Analytics | Ingen | Arrangør ser hva besøkende er interessert i |
+| Kost for bruker | Claude-abonnement | Gratis — arrangør/hotell betaler |
+
+### Strategisk vinkel
+
+**Tidsdimensjonen er nøkkelen.** Vanlige POI-er er statiske — en kafé er der i morgen også. Men events har en tidsdimensjon som gjør AI-conciergen langt mer verdifull: "Hva bør jeg gjøre DE NESTE 3 TIMENE?" er et spørsmål bare Placy kan svare på med ekte data.
+
+**Event-caset er sterkere enn hotell-caset** fordi:
+1. Dataen allerede er importert (Arendalsuka, Oslo Open, Kulturnatt)
+2. Behovet er akutt (hundrevis av events, besøkende er overveldet)
+3. Arrangøren er allerede kunden (B2B)
+4. Analytics-verdien er høy ("hvilke temaer trender?")
+
+**For eiendomsmegler (on-site visning):**
+- Har du barn? (alder?)
+- Hva er viktig i hverdagen? (trening, mat, natur, kollektiv...)
+- Hvordan reiser du? (bil, sykkel, gange, buss)
+- → Personalisert Explorer med kun de POI-ene som er relevante for DENNE kjøperen
+
+**Megler-caset er det sterkeste fordi:**
+1. Dataen er allerede generert (bolig-prosjektene)
+2. Kjøperen er fysisk på stedet — høyest mulig intent
+3. Megleren får analytics-gull: "Hvem er kjøperne mine og hva prioriterer de?"
+4. Differensierer Placy fra statiske nabolagsbrosjyrer til en interaktiv, personlig opplevelse
+5. Direkte koblet til eksisterende betalende kundesegment (eiendomsmeglere)
+
+### TODO
+- [ ] **Brainstorm videre: AI Concierge** — tre vertikaler (event, hotell, eiendom). Spørsmålsflyt, teknisk arkitektur, MVP-scope. Eiendom er nærmest eksisterende produkt. Bruk `/brainstorming`.
+
+### Retning
+- Ikke en prioritet nå — fokus er fortsatt outreach og salg av eksisterende demoer
+- Men AI Concierge bør inn i pitch-materialet som visjon / roadmap
+- Kan bli en killer-feature som differensierer Placy fra statiske event-apper
+
+---
+
+## 2026-04-07 — Automatisk generer-pipeline + Brevo e-post
+
+### Hva skjedde
+Etter 26 dagers pause. Satt opp Brevo e-postutsending fra `hei@placy.no` (domene-autentisering + DNS-opprydding — fjernet duplikat DMARC-record). Deretter bygget den automatiske generer-pipelinen som har vært planlagt siden 6. mars.
+
+**Flyten nå:** Megler fyller ut `/eiendom/generer` → venter 15-30 sek → får e-post "Nabolagskartet er klart" → klikker link → ser Explorer med 116 ekte POI-er.
+
+Hele pipelinen kjører synkront i API-ruten — ingen background jobs, cron, eller manuell intervensjon. Testet med Innherredsveien 7 i Trondheim: 116 POI-er, alle 6 bransjeprofil-temaer, ratings, gangavstander, åpningstider.
+
+### Beslutninger
+- **Synkron pipeline i API-ruten** — enkleste tilnærming. 15-30 sek er greit for demo. Timeout-grense på Vercel kan bli et problem i prod, men vi er i prototype-modus
+- **Prototype-fokus bekreftet:** Brukeren sa eksplisitt at dette bare skal fungere lokalt for å vise meglere. Ingen grunn til å bygge for prod-skala ennå
+- **Brevo over Resend:** Brukeren hadde allerede Brevo-konto med `aharstad.no` autentisert. La til `placy.no` i stedet for å sette opp ny tjeneste
+- **Gjenbruk admin-import-logikk:** Ekstraherte `importPOIsToProject()` fra `/api/admin/import` i stedet for å skrive ny. Samme dedup, editorial preservation, og project-linking
+
+### Parkert / Åpne spørsmål
+- **Vercel timeout i prod:** Synkron pipeline tar 15-30 sek lokalt. Vercel Hobby har 60s grense. Kan bli tight med mange kategorier eller treg Google API. Trenger async-variant for prod
+- **Kvalitetsfiltrering:** Pipelinen bruker kun Google Places grovfiltre. Ingen LLM-kvalitetsfilter (steg 5a/5b fra generate-bolig). For demo er det OK, men suburbs-data vil ha støy
+- **Skoler/barnehager mangler:** Pipelinen importerer kun Google Places + Entur + Bysykkel. NSR-skoler, Barnehagefakta, og Overpass-idrettsanlegg er ikke inkludert. Tema "Barn & Oppvekst" vil mangle skole-POI-er
+- **Eksisterende selvbetjente prosjekter:** `customer_id = NULL` i generation_requests fra før URL-migreringen. Fortsatt uløst
+- **Boligtype-effekt på UX:** `young` og `senior` profilerne endrer hvilke kategorier som importeres, men temaene i Explorer er alltid de 7 Eiendom-Bolig-temaene. Bør temaene tilpasses boligtype?
+
+### Retning
+- **Demo-pipeline er klar.** Vi kan nå generere nabolagskart for enhver norsk adresse via skjemaet. Neste steg er å vise dette til meglere
+- **Kristian (EM1) bør se det.** Generer hans aktive annonser og send link. "Se hva Placy kan gjøre for dine boliger — 30 sekunder fra adresse til interaktivt kart"
+- **Ikke bygg mer pipeline-feature ennå.** Kvalitetsfiltre, skoler, og async kan vente til etter første megler-feedback
+
+### Observasjoner
+- **26 dager pause, 1 time tilbake til produktivt arbeid.** PROJECT-LOG + MEMORY.md ga full kontekst. Brainstorm + plan fra 6. mars var direkte gjenbrukbar — bare scopet ble forenklet (prototype vs prod)
+- **Eksisterende infrastruktur bar hele vekten.** Bransjeprofiler, explorer caps, admin import-logikk, Supabase-queries — alt fungerte uten endringer. De 4 nye filene (3 pipeline + 1 endret route) var alt som trengtes
+- **Supabase schema-drift er en gjenganger.** `story_title` migrert fra projects til products, `short_id` lagt til uten type-oppdatering. TS-types og DB-schema er ute av sync. Bør regenerere typer
