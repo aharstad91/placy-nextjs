@@ -386,7 +386,7 @@ async function main() {
       if (event.price === "Utsolgt") eventTags.push("Utsolgt");
 
       // Collect all dates from recurring instances, sorted chronologically
-      const allDates = [...new Set(events.map((e) => e.date))].sort();
+      const allDates = Array.from(new Set(events.map((e) => e.date))).sort();
 
       return {
         id,
