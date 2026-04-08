@@ -24,6 +24,7 @@ import type { POI, TravelMode } from "@/lib/types";
 import { cn, formatTravelTime } from "@/lib/utils";
 import { useTravelSettings } from "@/lib/store";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
+import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
 // Map ikon-navn til Lucide-komponenter
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -62,7 +63,8 @@ export function POICardExpanded({
 }: POICardExpandedProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { timeBudget } = useTravelSettings();
-  const realtimeData = useRealtimeData(poi);
+  const hasTransportIds = !!(poi.enturStopplaceId || poi.bysykkelStationId || poi.hyreStationId);
+  const realtimeData = useRealtimeData(hasTransportIds ? poi : null);
   // Use cached data from Supabase instead of runtime Google API calls
   const placeDetails = {
     website: poi.googleWebsite,
@@ -77,16 +79,6 @@ export function POICardExpanded({
   const hasExpandedContent = poi.editorialHook || poi.localInsight || poi.description;
   const hasRealtimeData = realtimeData.entur || realtimeData.bysykkel;
 
-  // Format departure time to relative format
-  const formatDepartureTime = (isoTime: string) => {
-    const departure = new Date(isoTime);
-    const now = new Date();
-    const diffMs = departure.getTime() - now.getTime();
-    const diffMins = Math.round(diffMs / 60000);
-    if (diffMins <= 0) return "Nå";
-    if (diffMins === 1) return "1 min";
-    return `${diffMins} min`;
-  };
 
   return (
     <div
@@ -154,7 +146,7 @@ export function POICardExpanded({
                     <span className="font-medium">{dep.lineCode}</span>
                     <span className="text-gray-400">{dep.destination}</span>
                     <span className={dep.isRealtime ? "text-green-600" : "text-gray-600"}>
-                      {formatDepartureTime(dep.departureTime)}
+                      {formatRelativeDepartureTime(dep.departureTime)}
                     </span>
                   </span>
                 ))}
