@@ -6,6 +6,37 @@
 
 ---
 
+## 2026-04-08 (sesjon 2) — Inline POI-kortsystem med 5 varianter
+
+### Beslutninger
+- **Modal dialog beholdes** — ikke inline fold-ut. Passer editorial leseflyt bedre.
+- **Felles ramme + variabelt innhold** — alle kort deler header (ikon, navn, kategori, lukk). Innhold varierer: standard, transit, bysykkel, Hyre, skole.
+- **Lazy datahenting** — transport-data hentes ved dialog-åpning, ikke sidelast.
+- **Skoledata fra poiMetadata** — ikke nye felter på POI-interface, bruk type guard.
+- **useRealtimeData fikset** — AbortController, Promise.allSettled, stabile deps. Latent bug som berørte hele plattformen, ikke bare Story.
+- **Hyre API** — eget /api/hyre endepunkt (Entur Mobility v2 GraphQL). Fungerer, men hardkodet Trondheim-sentrum som scope.
+- **Alt i én omgang** — bruker eksplisitt. Simplicity-reviewer anbefalte å vente med Hyre/skole (ingen demodata), men scope er hellig.
+
+### Parkert / Åpne spørsmål
+- **Hyre demodata:** Finnes det POI-er med `hyreStationId` i Brøset-prosjektet? Trenger manuell test.
+- **Skole demodata:** Ingen skoler har `poiMetadata.schoolLevel` enda. Trenger Curator-arbeid.
+- **Hyre API hardkodet Trondheim:** `lat: 63.43, lon: 10.4, range: 15000` — må parameteriseres for andre byer.
+- **ExplorerPOICard Hyre-rendering:** Hooken returnerer nå Hyre-data, men Explorer har ingen renderer. Deferred bevisst.
+- **Rate limiting på API-proxyer:** Entur, bysykkel, Hyre — alle mangler. OK for prototype, trenger fix før prod.
+
+### Retning
+- **Story er produktfokus.** Kortene er nøkkelen til brukerinnsikt. Neste naturlige steg: teste på mobil, fylle inn demodata for Hyre + skoler, og vurdere om variant-systemet bør eksponeres i Explorer også.
+- **useRealtimeData-fiksen** (AbortController) er den viktigste tekniske leveransen. Den påvirker hele plattformen, ikke bare Story.
+- **Rike kort > mange kort.** 5 varianter med kontekstuelt innhold er mye mer verdifullt enn 50 standard-kort. Retningen er riktig.
+
+### Observasjoner
+- **/full-workflow med deepen + 5 review-agenter** ga konkrete, handlingsbare forbedringer. AbortController-buggen ble flagget av alle 5 reviewere — klar signal om alvor.
+- **Komposisjons-mønsteret** (én komponent med switch, ikke separate filer) holdt koden på ~250 linjer. Readable og maintainable.
+- **Promise.allSettled** er underkjent mønster for multiple uavhengige datakilder. Bør brukes konsistent i hele prosjektet.
+- **Brainstorming som gate fungerte godt.** 5 kortvarianter med prioritering var besluttet på under 5 minutter.
+
+---
+
 ## 2026-04-08 — Story-visning: S&J-inspirert editorial storytelling
 
 **Beslutning:** Story er nå produktfokus, ikke Report. Report er "kjedelig" (grid av POI-kort). Story = premium editorial article à la Sem & Johnsen nabolagsartikler.
