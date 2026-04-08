@@ -6,6 +6,29 @@
 
 ---
 
+## 2026-04-08 — Story-visning: S&J-inspirert editorial storytelling
+
+**Beslutning:** Story er nå produktfokus, ikke Report. Report er "kjedelig" (grid av POI-kort). Story = premium editorial article à la Sem & Johnsen nabolagsartikler.
+
+**Hva vi bygde:**
+- Research: 160 beliggenhetstekster fra 8 meglerkjeder analysert. S&J-dybdeanalyse med 7-stegs struktur, signaturkvaliteter, ordliste.
+- `bridge-text-generator.ts` — auto-genererer S&J-kalibrert bridgeText per tema fra POI-data (template-basert, ingen LLM)
+- Story-visning (`/story`-rute) med: heroIntro, 6 temakapitler, inline klikkbare POI-navn i prosa, POI-dialog, interaktivt Mapbox-kart per tema
+- `story-text-linker.ts` — matcher POI-navn i narrativ tekst → klikkbare elementer
+
+**Nøkkelinnsikt:** Interaktivitet i selve teksten (klikkbare stedsnavn → popup med detaljer) er mye sterkere enn separate POI-kort under teksten. Narrativ og data sydd sammen.
+
+**Demo:** Brøset med komplett Curator-data (heroIntro + bridgeText + extendedBridgeText for alle 6 temaer)
+
+**Neste steg:**
+- Kart-overlay: "Utforsk kartet"-knapp som aktiverer interaktivitet (har bug med hydration/ssr — overlay rendres ikke, trenger fix)
+- Megler-attribusjon i hero
+- Livsstil-avslutning per tema ("Ideelt for barnefamilier som...")
+- Tema-rekkefølge etter S&J-prioritet (karakter først, praktisk etterpå)
+- Test på mobil
+
+---
+
 ## 2026-02-10
 
 ### Beslutninger
