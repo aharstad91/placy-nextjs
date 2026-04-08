@@ -1,24 +1,15 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { POI } from "@/lib/types";
-import { Star, MapPin, Bus, Bike, Car } from "lucide-react";
+import { Star, MapPin, Bus, Bike, Car, X } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
   Drawer,
   DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
 } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -65,32 +56,65 @@ interface StoryPOIDialogProps {
 export default function StoryPOIDialog({ poi, onClose }: StoryPOIDialogProps) {
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const realtimeData = useRealtimeData(poi);
-  const open = poi !== null;
 
-  if (isDesktop) {
+  if (!isDesktop) {
     return (
-      <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-        <DialogContent showCloseButton className="max-w-sm p-0 gap-0 overflow-hidden">
-          {poi && <POICardContent poi={poi} realtimeData={realtimeData} />}
-        </DialogContent>
-      </Dialog>
+      <Drawer open={poi !== null} onOpenChange={(o) => { if (!o) onClose(); }}>
+        <DrawerContent>
+          <div className="max-h-[85vh] overflow-y-auto pb-6">
+            {poi && <POICardContent poi={poi} realtimeData={realtimeData} onClose={onClose} />}
+          </div>
+        </DrawerContent>
+      </Drawer>
     );
   }
 
+  return <DesktopDialog poi={poi} realtimeData={realtimeData} onClose={onClose} />;
+}
+
+// --- Desktop: native <dialog> (proven centering + modal behavior) ---
+
+function DesktopDialog({ poi, realtimeData, onClose }: {
+  poi: POI | null;
+  realtimeData: ReturnType<typeof useRealtimeData>;
+  onClose: () => void;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (poi && !dialog.open) dialog.showModal();
+    if (!poi && dialog.open) dialog.close();
+  }, [poi]);
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    if (e.target === dialogRef.current) onClose();
+  };
+
+  if (!poi) return null;
+
   return (
-    <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DrawerContent>
-        <div className="max-h-[85vh] overflow-y-auto">
-          {poi && <POICardContent poi={poi} realtimeData={realtimeData} />}
-        </div>
-      </DrawerContent>
-    </Drawer>
+    <dialog
+      ref={dialogRef}
+      onClick={handleBackdropClick}
+      onClose={onClose}
+      className="backdrop:bg-black/40 backdrop:backdrop-blur-sm bg-transparent p-0 m-auto max-w-sm w-[calc(100%-2rem)] rounded-2xl open:animate-in open:fade-in open:zoom-in-95"
+    >
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <POICardContent poi={poi} realtimeData={realtimeData} onClose={onClose} />
+      </div>
+    </dialog>
   );
 }
 
 // --- Shared card content (used by both Dialog and Drawer) ---
 
-function POICardContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnType<typeof useRealtimeData> }) {
+function POICardContent({ poi, realtimeData, onClose }: {
+  poi: POI;
+  realtimeData: ReturnType<typeof useRealtimeData>;
+  onClose: () => void;
+}) {
   const variant = getCardVariant(poi);
   const Icon = getIcon(poi.category.icon);
   const walkMin = poi.travelTime?.walk ? Math.round(poi.travelTime.walk / 60) : null;
@@ -98,36 +122,44 @@ function POICardContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnT
   return (
     <>
       {/* Header */}
-      <div className="flex items-center gap-3 p-5 pb-3">
-        <div
-          className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
-          style={{ backgroundColor: poi.category.color + "18" }}
-        >
-          <Icon className="w-5 h-5" style={{ color: poi.category.color }} />
+      <div className="flex items-start justify-between p-5 pb-3">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+            style={{ backgroundColor: poi.category.color + "18" }}
+          >
+            <Icon className="w-5 h-5" style={{ color: poi.category.color }} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-[#1a1a1a] text-lg leading-tight">
+              {poi.name}
+            </h3>
+            <span className="text-sm text-[#8a8a8a]">
+              {variant === "school" ? formatSchoolSubtitle(poi, getSchoolMetadata(poi)) : poi.category.name}
+            </span>
+          </div>
         </div>
-        <DialogHeader className="text-left">
-          <DialogTitle className="text-lg leading-tight">
-            {poi.name}
-          </DialogTitle>
-          <DialogDescription>
-            {variant === "school" ? formatSchoolSubtitle(poi, getSchoolMetadata(poi)) : poi.category.name}
-          </DialogDescription>
-        </DialogHeader>
+        <button
+          onClick={onClose}
+          className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#f5f3f0] transition-colors -mt-1 -mr-1"
+        >
+          <X className="w-4 h-4 text-[#8a8a8a]" />
+        </button>
       </div>
 
       {/* Meta row */}
       <div className="flex items-center gap-3 px-5 pb-3 text-sm">
         {poi.googleRating != null && (
-          <span className="flex items-center gap-1 text-foreground/70">
-            <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
+          <span className="flex items-center gap-1 text-[#4a4a4a]">
+            <Star className="w-3.5 h-3.5 text-[#b45309] fill-[#b45309]" />
             <span className="font-medium">{poi.googleRating.toFixed(1)}</span>
             {poi.googleReviewCount != null && (
-              <span className="text-muted-foreground">({poi.googleReviewCount})</span>
+              <span className="text-[#8a8a8a]">({poi.googleReviewCount})</span>
             )}
           </span>
         )}
         {walkMin != null && (
-          <span className="flex items-center gap-1 text-muted-foreground">
+          <span className="flex items-center gap-1 text-[#6a6a6a]">
             <MapPin className="w-3 h-3" />
             {walkMin} min gange
           </span>
@@ -142,28 +174,18 @@ function POICardContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnT
 
 // --- Variant content renderer ---
 
-function VariantContent({
-  variant,
-  poi,
-  realtimeData,
-}: {
+function VariantContent({ variant, poi, realtimeData }: {
   variant: CardVariant;
   poi: POI;
   realtimeData: ReturnType<typeof useRealtimeData>;
 }) {
   switch (variant) {
-    case "standard":
-      return <StandardContent poi={poi} />;
-    case "transit":
-      return <TransitContent poi={poi} realtimeData={realtimeData} />;
-    case "bysykkel":
-      return <BysykkelContent realtimeData={realtimeData} />;
-    case "hyre":
-      return <HyreContent realtimeData={realtimeData} />;
-    case "school":
-      return <SchoolContent poi={poi} />;
-    default:
-      return assertNever(variant);
+    case "standard": return <StandardContent poi={poi} />;
+    case "transit": return <TransitContent poi={poi} realtimeData={realtimeData} />;
+    case "bysykkel": return <BysykkelContent realtimeData={realtimeData} />;
+    case "hyre": return <HyreContent realtimeData={realtimeData} />;
+    case "school": return <SchoolContent poi={poi} />;
+    default: return assertNever(variant);
   }
 }
 
@@ -174,12 +196,12 @@ function StandardContent({ poi }: { poi: POI }) {
     <>
       {poi.editorialHook && (
         <div className="px-5 pb-4">
-          <p className="text-[15px] text-foreground/80 leading-relaxed">{poi.editorialHook}</p>
+          <p className="text-[15px] text-[#3a3a3a] leading-relaxed">{poi.editorialHook}</p>
         </div>
       )}
       {poi.localInsight && (
         <div className="px-5 pb-5 pt-0">
-          <p className="text-sm text-muted-foreground italic leading-relaxed">{poi.localInsight}</p>
+          <p className="text-sm text-[#6a6a6a] italic leading-relaxed">{poi.localInsight}</p>
         </div>
       )}
     </>
@@ -189,9 +211,7 @@ function StandardContent({ poi }: { poi: POI }) {
 // --- Transit content (Entur) ---
 
 function TransitContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnType<typeof useRealtimeData> }) {
-  if (realtimeData.loading) {
-    return <TransitSkeleton />;
-  }
+  if (realtimeData.loading) return <TransitSkeleton />;
 
   if (!realtimeData.entur || realtimeData.entur.departures.length === 0) {
     return <FallbackContent poi={poi} message="Ingen avganger tilgjengelig" />;
@@ -199,7 +219,7 @@ function TransitContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnT
 
   return (
     <div className="px-5 pb-5">
-      <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+      <div className="text-xs text-[#8a8a8a] mb-2 flex items-center gap-1">
         <Bus className="w-3 h-3" />
         Neste avganger
       </div>
@@ -212,8 +232,8 @@ function TransitContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnT
             >
               {dep.lineCode}
             </span>
-            <span className="text-foreground/80 flex-1 truncate">{dep.destination}</span>
-            <span className={`font-medium ${dep.isRealtime ? "text-green-700" : "text-muted-foreground"}`}>
+            <span className="text-[#3a3a3a] flex-1 truncate">{dep.destination}</span>
+            <span className={`font-medium ${dep.isRealtime ? "text-green-700" : "text-[#6a6a6a]"}`}>
               {formatRelativeDepartureTime(dep.departureTime)}
             </span>
           </div>
@@ -227,37 +247,25 @@ function TransitContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnT
 // --- Bysykkel content ---
 
 function BysykkelContent({ realtimeData }: { realtimeData: ReturnType<typeof useRealtimeData> }) {
-  if (realtimeData.loading) {
-    return <SimpleSkeleton />;
-  }
+  if (realtimeData.loading) return <SimpleSkeleton />;
 
   if (!realtimeData.bysykkel) {
-    return (
-      <div className="px-5 pb-5">
-        <p className="text-sm text-muted-foreground">Sanntidsdata utilgjengelig</p>
-      </div>
-    );
+    return <div className="px-5 pb-5"><p className="text-sm text-[#8a8a8a]">Sanntidsdata utilgjengelig</p></div>;
   }
 
   const { availableBikes, availableDocks, isOpen } = realtimeData.bysykkel;
 
   return (
     <div className="px-5 pb-5">
-      {!isOpen && (
-        <div className="text-sm text-destructive font-medium mb-2">Stasjonen er stengt</div>
-      )}
+      {!isOpen && <div className="text-sm text-red-600 font-medium mb-2">Stasjonen er stengt</div>}
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm">
-          <Bike className="w-4 h-4 text-foreground/60" />
-          <span className="text-foreground/80">
-            <span className="font-semibold">{availableBikes}</span> ledige sykler
-          </span>
+          <Bike className="w-4 h-4 text-[#4a4a4a]" />
+          <span className="text-[#3a3a3a]"><span className="font-semibold">{availableBikes}</span> ledige sykler</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="w-4 h-4 flex items-center justify-center text-foreground/60 text-xs">🔒</span>
-          <span className="text-foreground/80">
-            <span className="font-semibold">{availableDocks}</span> ledige låser
-          </span>
+          <span className="w-4 h-4 flex items-center justify-center text-[#4a4a4a] text-xs">🔒</span>
+          <span className="text-[#3a3a3a]"><span className="font-semibold">{availableDocks}</span> ledige låser</span>
         </div>
       </div>
       <UpdatedAt date={realtimeData.lastUpdated} />
@@ -268,25 +276,17 @@ function BysykkelContent({ realtimeData }: { realtimeData: ReturnType<typeof use
 // --- Hyre content ---
 
 function HyreContent({ realtimeData }: { realtimeData: ReturnType<typeof useRealtimeData> }) {
-  if (realtimeData.loading) {
-    return <SimpleSkeleton />;
-  }
+  if (realtimeData.loading) return <SimpleSkeleton />;
 
   if (!realtimeData.hyre) {
-    return (
-      <div className="px-5 pb-5">
-        <p className="text-sm text-muted-foreground">Sanntidsdata utilgjengelig</p>
-      </div>
-    );
+    return <div className="px-5 pb-5"><p className="text-sm text-[#8a8a8a]">Sanntidsdata utilgjengelig</p></div>;
   }
 
   return (
     <div className="px-5 pb-5">
       <div className="flex items-center gap-2 text-sm">
-        <Car className="w-4 h-4 text-foreground/60" />
-        <span className="text-foreground/80">
-          <span className="font-semibold">{realtimeData.hyre.numVehiclesAvailable}</span> tilgjengelige biler
-        </span>
+        <Car className="w-4 h-4 text-[#4a4a4a]" />
+        <span className="text-[#3a3a3a]"><span className="font-semibold">{realtimeData.hyre.numVehiclesAvailable}</span> tilgjengelige biler</span>
       </div>
       <UpdatedAt date={realtimeData.lastUpdated} />
     </div>
@@ -297,12 +297,11 @@ function HyreContent({ realtimeData }: { realtimeData: ReturnType<typeof useReal
 
 function SchoolContent({ poi }: { poi: POI }) {
   const schoolMeta = getSchoolMetadata(poi);
-
   return (
     <>
       {schoolMeta?.schoolLevel && (
         <div className="px-5 pb-3">
-          <span className="text-sm text-foreground/70 font-medium">{schoolMeta.schoolLevel}</span>
+          <span className="text-sm text-[#4a4a4a] font-medium">{schoolMeta.schoolLevel}</span>
         </div>
       )}
       <StandardContent poi={poi} />
@@ -314,16 +313,14 @@ function SchoolContent({ poi }: { poi: POI }) {
 
 function formatSchoolSubtitle(poi: POI, meta: SchoolMetadata | null): string {
   const parts: string[] = [poi.category.name];
-  if (meta?.schoolType) {
-    parts.push(meta.schoolType === "public" ? "Offentlig" : "Privat");
-  }
+  if (meta?.schoolType) parts.push(meta.schoolType === "public" ? "Offentlig" : "Privat");
   return parts.join(" · ");
 }
 
 function UpdatedAt({ date }: { date: Date | null }) {
   if (!date) return null;
   return (
-    <div className="text-xs text-muted-foreground/60 mt-2">
+    <div className="text-xs text-[#aaa] mt-2">
       Oppdatert: {date.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
     </div>
   );
@@ -332,10 +329,10 @@ function UpdatedAt({ date }: { date: Date | null }) {
 function TransitSkeleton() {
   return (
     <div className="px-5 pb-5 space-y-2">
-      <Skeleton className="h-3 w-24" />
-      <Skeleton className="h-5 w-full" />
-      <Skeleton className="h-5 w-full" />
-      <Skeleton className="h-5 w-3/4" />
+      <Skeleton className="h-3 w-24 rounded-md" />
+      <Skeleton className="h-5 w-full rounded-md" />
+      <Skeleton className="h-5 w-full rounded-md" />
+      <Skeleton className="h-5 w-3/4 rounded-md" />
     </div>
   );
 }
@@ -343,8 +340,8 @@ function TransitSkeleton() {
 function SimpleSkeleton() {
   return (
     <div className="px-5 pb-5 space-y-2">
-      <Skeleton className="h-5 w-48" />
-      <Skeleton className="h-5 w-36" />
+      <Skeleton className="h-5 w-48 rounded-md" />
+      <Skeleton className="h-5 w-36 rounded-md" />
     </div>
   );
 }
@@ -352,9 +349,7 @@ function SimpleSkeleton() {
 function FallbackContent({ poi, message }: { poi: POI; message: string }) {
   return (
     <>
-      <div className="px-5 pb-2">
-        <p className="text-xs text-muted-foreground/60">{message}</p>
-      </div>
+      <div className="px-5 pb-2"><p className="text-xs text-[#aaa]">{message}</p></div>
       <StandardContent poi={poi} />
     </>
   );

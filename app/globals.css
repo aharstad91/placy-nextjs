@@ -1,14 +1,36 @@
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* White-label defaults — overridden per-project via inline <style> */
-  --placy-primary: #3b82f6;
-  --placy-bg: #ffffff;
-  --placy-font: system-ui;
+@layer base {
+  :root {
+    /* shadcn semantic tokens — warm neutral palette matching Placy editorial */
+    --background: 40 20% 98%;
+    --foreground: 30 10% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 30 10% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 10% 12%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 10% 95%;
+    --secondary-foreground: 30 10% 25%;
+    --muted: 30 10% 95%;
+    --muted-foreground: 30 5% 45%;
+    --accent: 30 10% 93%;
+    --accent-foreground: 30 10% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 10% 90%;
+    --input: 30 10% 85%;
+    --ring: 199 89% 48%;
+    --radius: 1rem;
+
+    /* White-label defaults — overridden per-project via inline <style> */
+    --placy-primary: #3b82f6;
+    --placy-bg: #ffffff;
+    --placy-font: system-ui;
+  }
 }
 
 body {

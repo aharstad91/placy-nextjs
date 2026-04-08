@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import plugin from "tailwindcss/plugin";
+import animate from "tailwindcss-animate";
 
 const config: Config = {
   content: [
@@ -22,6 +23,8 @@ const config: Config = {
           700: "#0369a1",
           800: "#075985",
           900: "#0c4a6e",
+          DEFAULT: "#0ea5e9",
+          foreground: "#ffffff",
         },
         // Kategorifarger for POI-markører
         category: {
@@ -32,6 +35,39 @@ const config: Config = {
           bike: "#22c55e",
           hotel: "#a855f7",
         },
+        // shadcn semantic colors (CSS custom properties)
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+      },
+      borderRadius: {
+        "4xl": "2rem",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
@@ -54,15 +90,13 @@ const config: Config = {
     },
   },
   plugins: [
+    animate,
     // Scrollbar hide utility
     plugin(function ({ addUtilities }) {
       addUtilities({
         ".scrollbar-hide": {
-          /* IE and Edge */
           "-ms-overflow-style": "none",
-          /* Firefox */
           "scrollbar-width": "none",
-          /* Safari and Chrome */
           "&::-webkit-scrollbar": {
             display: "none",
           },

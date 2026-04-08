@@ -114,15 +114,21 @@ export default function StoryThemeChapter({ theme, center }: StoryThemeChapterPr
 function POIInlineLink({ poi, content, onClick }: { poi: POI; content: string; onClick: () => void }) {
   const Icon = getIcon(poi.category.icon);
   const walkMin = poi.travelTime?.walk ? Math.round(poi.travelTime.walk / 60) : null;
+  const [hoverOpen, setHoverOpen] = useState(false);
+
+  const handleClick = () => {
+    setHoverOpen(false);
+    onClick();
+  };
 
   return (
-    <HoverCard openDelay={300} closeDelay={100}>
+    <HoverCard open={hoverOpen} onOpenChange={setHoverOpen} openDelay={400} closeDelay={100}>
       <HoverCardTrigger asChild>
         <span
           role="button"
           tabIndex={0}
-          onClick={onClick}
-          onKeyDown={(e) => { if (e.key === "Enter") onClick(); }}
+          onClick={handleClick}
+          onKeyDown={(e) => { if (e.key === "Enter") handleClick(); }}
           aria-haspopup="dialog"
           className="font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors cursor-pointer"
         >
