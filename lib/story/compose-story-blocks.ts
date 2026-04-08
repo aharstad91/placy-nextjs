@@ -7,6 +7,7 @@ import type { Project, POI } from "@/lib/types";
 import type { ThemeDefinition } from "@/lib/themes/theme-definitions";
 import { byTierThenScore } from "@/lib/utils/poi-score";
 import { buildCategoryToTheme } from "@/lib/themes/bransjeprofiler";
+import { getStaticMapUrlMulti } from "@/lib/mapbox-static";
 import type {
   StoryBlock,
   StoryComposition,
@@ -124,7 +125,7 @@ export function composeStoryBlocks(
         showAvatar: true,
       });
 
-      // Photo grid: 3 best POIs with images + "Vis kart" cell
+      // Photo grid: 4 best POIs with images
       // Prioritize stable /places/ URLs over /place-photos/ which may expire
       const poisWithImages = allPois
         .filter((p) => p.featuredImage)
@@ -133,22 +134,20 @@ export function composeStoryBlocks(
           const bStable = b.featuredImage!.includes("/places/") ? 0 : 1;
           return aStable - bStable;
         })
-        .slice(0, 3);
+        .slice(0, 4);
       const photos = poisWithImages.map((p) => ({
         name: p.name,
         imageUrl: p.featuredImage!,
       }));
 
-      blocks.push({
-        id: nextId(),
-        type: "photo-grid",
-        photos,
-        themeColor: theme.color,
-        themeName: theme.name,
-        poiCount: allPois.length,
-        pois: allPois,
-        center: project.centerCoordinates,
-      });
+      if (photos.length > 0) {
+        blocks.push({
+          id: nextId(),
+          type: "photo-grid",
+          photos,
+          themeColor: theme.color,
+        });
+      }
 
       // Top POI highlight (only if we have useful data)
       const topPoi = allPois[0];
@@ -171,12 +170,31 @@ export function composeStoryBlocks(
       });
     }
 
-    // POI list bubble
+    // POI list bubble (first batch includes map header)
+    const mapHeader = batchIndex === 0
+      ? {
+          staticMapUrl: getStaticMapUrlMulti({
+            markers: allPois.slice(0, 15).map((p) => ({
+              lat: p.coordinates.lat,
+              lng: p.coordinates.lng,
+              color: theme.color.replace("#", ""),
+            })),
+            width: 580,
+            height: 200,
+          }),
+          poiCount: allPois.length,
+          themeName: theme.name,
+          allPois,
+          center: project.centerCoordinates,
+        }
+      : undefined;
+
     blocks.push({
       id: nextId(),
       type: "poi-list",
       pois: batchPois,
       themeColor: theme.color,
+      mapHeader,
     });
 
     // Choice prompt

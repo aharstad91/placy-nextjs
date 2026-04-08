@@ -183,9 +183,6 @@ export default function StoryPage({
             key={block.id}
             photos={block.photos}
             themeColor={block.themeColor}
-            themeName={block.themeName}
-            poiCount={block.poiCount}
-            onExpandMap={() => setMapModal(block)}
             staggerDelay={staggerDelay}
           />
         );
@@ -195,6 +192,13 @@ export default function StoryPage({
             key={block.id}
             pois={block.pois}
             themeColor={block.themeColor}
+            mapHeader={block.mapHeader}
+            onExpandMap={block.mapHeader ? () => setMapModal({
+              pois: block.mapHeader!.allPois,
+              center: block.mapHeader!.center,
+              themeColor: block.themeColor,
+              themeName: block.mapHeader!.themeName,
+            }) : undefined}
             staggerDelay={staggerDelay}
           />
         );

@@ -29,23 +29,27 @@ export interface MapStripeBlock extends StoryBlockBase {
   readonly center: Coordinates;
 }
 
-/** 2×2 photo grid replacing map stripe — 3 POI images + "Vis kart" cell */
+/** 2×2 photo grid — 4 POI images for visual richness */
 export interface PhotoGridBlock extends StoryBlockBase {
   readonly type: "photo-grid";
   readonly photos: readonly { name: string; imageUrl: string }[];
   readonly themeColor: string;
-  readonly themeName: string;
-  readonly poiCount: number;
-  /** Data for map modal (opened from "Vis kart" cell) */
-  readonly pois: readonly POI[];
-  readonly center: Coordinates;
 }
 
-/** Compact list of POIs inside a chat bubble — tap to expand */
+/** Compact list of POIs — with optional map stripe header */
 export interface POIListBlock extends StoryBlockBase {
   readonly type: "poi-list";
   readonly pois: readonly POI[];
   readonly themeColor: string;
+  /** Map stripe header (first batch only) */
+  readonly mapHeader?: {
+    readonly staticMapUrl: string | null;
+    readonly poiCount: number;
+    readonly themeName: string;
+    /** Data for opening map modal */
+    readonly allPois: readonly POI[];
+    readonly center: Coordinates;
+  };
 }
 
 export interface ChoiceBlock extends StoryBlockBase {

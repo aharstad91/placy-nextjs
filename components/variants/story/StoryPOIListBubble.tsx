@@ -2,14 +2,24 @@
 
 import { memo, useState, useCallback } from "react";
 import Image from "next/image";
-import { Star, ExternalLink } from "lucide-react";
+import { Star, ExternalLink, MapPin, Maximize2 } from "lucide-react";
 import { useScrollReveal } from "@/lib/hooks/useScrollReveal";
 import { getIcon } from "@/lib/utils/map-icons";
-import type { POI } from "@/lib/types";
+import type { POI, Coordinates } from "@/lib/types";
+
+interface MapHeader {
+  staticMapUrl: string | null;
+  poiCount: number;
+  themeName: string;
+  allPois: readonly POI[];
+  center: Coordinates;
+}
 
 interface StoryPOIListBubbleProps {
   pois: readonly POI[];
   themeColor: string;
+  mapHeader?: MapHeader;
+  onExpandMap?: () => void;
   staggerDelay?: number;
 }
 
@@ -22,11 +32,14 @@ function formatWalkMinutes(poi: POI): string | null {
 export default memo(function StoryPOIListBubble({
   pois,
   themeColor,
+  mapHeader,
+  onExpandMap,
   staggerDelay = 0,
 }: StoryPOIListBubbleProps) {
   const revealRef = useScrollReveal();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   const toggleExpand = useCallback((poiId: string) => {
     setExpandedId((prev) => (prev === poiId ? null : poiId));
@@ -43,6 +56,40 @@ export default memo(function StoryPOIListBubble({
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
       <div className="bg-white border border-[#eae6e1] rounded-2xl rounded-tl-md shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
+        {/* Map stripe header */}
+        {mapHeader?.staticMapUrl && (
+          <button
+            type="button"
+            onClick={onExpandMap}
+            className="w-full cursor-pointer group"
+          >
+            <div className="relative w-full h-[120px] bg-[#eae6e1]">
+              <Image
+                src={mapHeader.staticMapUrl}
+                alt={`${mapHeader.poiCount} ${mapHeader.themeName.toLowerCase()}-steder`}
+                fill
+                sizes="(min-width: 640px) 576px, 90vw"
+                className={`object-cover transition-opacity duration-500 ${mapLoaded ? "opacity-100" : "opacity-0"}`}
+                unoptimized
+                onLoad={() => setMapLoaded(true)}
+              />
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/40 to-transparent pt-8 pb-2 px-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-white" />
+                    <span className="text-xs font-medium text-white">
+                      {mapHeader.poiCount} {mapHeader.themeName.toLowerCase()}-steder
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-white/80 group-hover:text-white transition-colors">
+                    <span className="text-[10px] font-medium">Vis kart</span>
+                    <Maximize2 className="w-3 h-3" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </button>
+        )}
         {pois.map((poi, index) => {
           const isFirst = index === 0;
           const isExpanded = expandedId === poi.id;
