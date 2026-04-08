@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { POI, TravelMode } from "@/lib/types";
 import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
+import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import {
@@ -160,16 +161,6 @@ export default function ExplorerPOICard({
     });
   };
 
-  // Format departure time to relative format
-  const formatDepartureTime = (isoTime: string) => {
-    const departure = new Date(isoTime);
-    const now = new Date();
-    const diffMs = departure.getTime() - now.getTime();
-    const diffMins = Math.round(diffMs / 60000);
-    if (diffMins <= 0) return "Nå";
-    if (diffMins === 1) return "1 min";
-    return `${diffMins} min`;
-  };
 
   // Expanded image + title section (shared between normal and alwaysExpanded modes)
   const expandedHeader = (
@@ -373,7 +364,7 @@ export default function ExplorerPOICard({
                       <span className="font-medium">{dep.lineCode}</span>
                       <span className="text-gray-400">{dep.destination}</span>
                       <span className={dep.isRealtime ? "text-green-600" : "text-gray-600"}>
-                        {formatDepartureTime(dep.departureTime)}
+                        {formatRelativeDepartureTime(dep.departureTime)}
                       </span>
                     </span>
                   ))}
