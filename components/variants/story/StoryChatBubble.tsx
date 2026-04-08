@@ -1,20 +1,26 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
+import Image from "next/image";
 import { useScrollReveal } from "@/lib/hooks/useScrollReveal";
 
 interface StoryChatBubbleProps {
   text: string;
   showAvatar?: boolean;
+  avatarUrl?: string | null;
   staggerDelay?: number;
 }
 
 export default memo(function StoryChatBubble({
   text,
   showAvatar = false,
+  avatarUrl,
   staggerDelay = 0,
 }: StoryChatBubbleProps) {
   const revealRef = useScrollReveal();
+  const [imgError, setImgError] = useState(false);
+
+  const showLogo = showAvatar && avatarUrl && !imgError;
 
   return (
     <div
@@ -23,10 +29,22 @@ export default memo(function StoryChatBubble({
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
       {showAvatar && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center">
-          <span className="text-[10px] font-bold text-white tracking-wider select-none">
-            P
-          </span>
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center overflow-hidden">
+          {showLogo ? (
+            <Image
+              src={avatarUrl}
+              alt="Megler"
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
+              unoptimized
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <span className="text-[10px] font-bold text-white tracking-wider select-none">
+              P
+            </span>
+          )}
         </div>
       )}
       <div className="flex flex-col gap-1">

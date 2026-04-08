@@ -50,13 +50,18 @@ export default async function StoryRoute({ params, searchParams }: PageProps) {
     redirect(eiendomUrl(customer, projectSlug));
   }
 
-  // Extract editorial bridge texts from reportConfig (if available)
+  // Extract editorial content from reportConfig and theme
   const bridgeTexts: Record<string, string> = {};
   if (projectData.reportConfig?.themes) {
     for (const t of projectData.reportConfig.themes) {
       if (t.bridgeText) bridgeTexts[t.id] = t.bridgeText;
     }
   }
+  const editorial = {
+    bridgeTexts,
+    heroIntro: projectData.reportConfig?.heroIntro,
+    logoUrl: projectData.theme?.logoUrl,
+  };
 
   // Parse ?theme= for deep linking
   const initialTheme =
@@ -81,7 +86,7 @@ export default async function StoryRoute({ params, searchParams }: PageProps) {
       <StoryPage
         project={projectData}
         themes={themes}
-        bridgeTexts={bridgeTexts}
+        editorial={editorial}
         initialTheme={initialTheme}
         explorerUrl={eiendomUrl(customer, projectSlug)}
         reportUrl={eiendomUrl(customer, projectSlug, "rapport")}

@@ -1,25 +1,25 @@
 "use client";
 
 import { useState, useMemo, useCallback, useRef } from "react";
-import type { Project } from "@/lib/types";
+import type { Project, Coordinates, POI } from "@/lib/types";
 import type { ThemeDefinition } from "@/lib/themes/theme-definitions";
 import { assertNever } from "@/lib/types";
 import { composeStoryBlocks } from "@/lib/story/compose-story-blocks";
-import type { BridgeTexts } from "@/lib/story/compose-story-blocks";
+import type { StoryEditorial } from "@/lib/story/compose-story-blocks";
 import type { StoryBlock, ChoiceOption } from "@/lib/story/types";
 import StoryChatBubble from "./StoryChatBubble";
 import StoryMapStripe from "./StoryMapStripe";
+import StoryPhotoGrid from "./StoryPhotoGrid";
 import StoryPOIListBubble from "./StoryPOIListBubble";
 import StoryChoicePrompt from "./StoryChoicePrompt";
 import StorySummary from "./StorySummary";
 import StoryThemeSelector from "./StoryThemeSelector";
 import StoryMapModal from "./StoryMapModal";
-import type { MapStripeBlock } from "@/lib/story/types";
 
 interface StoryPageProps {
   project: Project;
   themes: ThemeDefinition[];
-  bridgeTexts?: BridgeTexts;
+  editorial?: StoryEditorial;
   initialTheme?: string;
   explorerUrl: string;
   reportUrl: string;
@@ -34,17 +34,25 @@ interface StoryState {
   showThemeSelector: boolean;
 }
 
+/** Data needed to open the map modal */
+interface MapModalData {
+  pois: readonly POI[];
+  center: Coordinates;
+  themeColor: string;
+  themeName: string;
+}
+
 export default function StoryPage({
   project,
   themes,
-  bridgeTexts,
+  editorial,
   initialTheme,
   explorerUrl,
   reportUrl,
 }: StoryPageProps) {
   const composition = useMemo(
-    () => composeStoryBlocks(project, themes, bridgeTexts),
-    [project, themes, bridgeTexts],
+    () => composeStoryBlocks(project, themes, editorial),
+    [project, themes, editorial],
   );
 
   const [state, setState] = useState<StoryState>(() => {
@@ -139,7 +147,9 @@ export default function StoryPage({
   );
 
   // Map modal state
-  const [mapModal, setMapModal] = useState<MapStripeBlock | null>(null);
+  const [mapModal, setMapModal] = useState<MapModalData | null>(null);
+
+  const avatarUrl = editorial?.logoUrl ?? null;
 
   function renderBlock(block: StoryBlock, index: number) {
     const staggerDelay = (index % 4) * 60;
@@ -151,6 +161,7 @@ export default function StoryPage({
             key={block.id}
             text={block.text}
             showAvatar={block.showAvatar}
+            avatarUrl={avatarUrl}
             staggerDelay={staggerDelay}
           />
         );
@@ -163,6 +174,18 @@ export default function StoryPage({
             poiCount={block.poiCount}
             themeName={block.themeName}
             onExpand={() => setMapModal(block)}
+            staggerDelay={staggerDelay}
+          />
+        );
+      case "photo-grid":
+        return (
+          <StoryPhotoGrid
+            key={block.id}
+            photos={block.photos}
+            themeColor={block.themeColor}
+            themeName={block.themeName}
+            poiCount={block.poiCount}
+            onExpandMap={() => setMapModal(block)}
             staggerDelay={staggerDelay}
           />
         );

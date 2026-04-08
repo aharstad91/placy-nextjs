@@ -7,7 +7,6 @@ import type { Project, POI } from "@/lib/types";
 import type { ThemeDefinition } from "@/lib/themes/theme-definitions";
 import { byTierThenScore } from "@/lib/utils/poi-score";
 import { buildCategoryToTheme } from "@/lib/themes/bransjeprofiler";
-import { getStaticMapUrlMulti } from "@/lib/mapbox-static";
 import type {
   StoryBlock,
   StoryComposition,
@@ -66,15 +65,17 @@ function shortName(name: string): string {
   return firstComma > 0 ? name.substring(0, firstComma).trim() : name;
 }
 
-/** Optional editorial bridge texts per theme (from reportConfig) */
-export interface BridgeTexts {
-  readonly [themeId: string]: string;
+/** Optional editorial content from reportConfig */
+export interface StoryEditorial {
+  readonly bridgeTexts?: Record<string, string>;
+  readonly heroIntro?: string;
+  readonly logoUrl?: string;
 }
 
 export function composeStoryBlocks(
   project: Project,
   themes: ThemeDefinition[],
-  bridgeTexts: BridgeTexts = {},
+  editorial: StoryEditorial = {},
 ): StoryComposition {
   blockCounter = 0;
 
@@ -84,15 +85,22 @@ export function composeStoryBlocks(
     .filter((t) => (poisByTheme[t.id]?.length ?? 0) >= THEME_MIN_POIS)
     .map((t) => ({ ...t, poiCount: poisByTheme[t.id]?.length ?? 0 }));
 
-  // v2 intro: just one chat bubble + theme selector
-  const intro: StoryBlock[] = [
-    {
+  // Intro: heroIntro (if available) + question
+  const intro: StoryBlock[] = [];
+  if (editorial.heroIntro) {
+    intro.push({
       id: nextId(),
       type: "chat",
-      text: `Hva vil du vite om ${shortName(project.name)}?`,
+      text: editorial.heroIntro,
       showAvatar: true,
-    },
-  ];
+    });
+  }
+  intro.push({
+    id: nextId(),
+    type: "chat",
+    text: `Hva vil du vite om ${shortName(project.name)}?`,
+    showAvatar: !editorial.heroIntro,
+  });
 
   function getThemeBlocks(themeId: string, batchIndex: number): readonly StoryBlock[] {
     const theme = availableThemes.find((t) => t.id === themeId);
@@ -105,34 +113,39 @@ export function composeStoryBlocks(
 
     const blocks: StoryBlock[] = [];
 
-    // First batch: bridge text + map stripe + top POI highlight
+    // First batch: bridge text + photo grid + top POI highlight
     if (batchIndex === 0) {
       // Bridge text: editorial from reportConfig, or deterministic fallback
-      const editorial = bridgeTexts[themeId];
+      const bridgeText = editorial.bridgeTexts?.[themeId];
       blocks.push({
         id: nextId(),
         type: "chat",
-        text: editorial || themeIntroBridge(theme.name, allPois.length),
+        text: bridgeText || themeIntroBridge(theme.name, allPois.length),
         showAvatar: true,
       });
 
-      const mapUrl = getStaticMapUrlMulti({
-        markers: allPois.slice(0, 15).map((p) => ({
-          lat: p.coordinates.lat,
-          lng: p.coordinates.lng,
-          color: theme.color.replace("#", ""),
-        })),
-        width: 580,
-        height: 200,
-      });
+      // Photo grid: 3 best POIs with images + "Vis kart" cell
+      // Prioritize stable /places/ URLs over /place-photos/ which may expire
+      const poisWithImages = allPois
+        .filter((p) => p.featuredImage)
+        .sort((a, b) => {
+          const aStable = a.featuredImage!.includes("/places/") ? 0 : 1;
+          const bStable = b.featuredImage!.includes("/places/") ? 0 : 1;
+          return aStable - bStable;
+        })
+        .slice(0, 3);
+      const photos = poisWithImages.map((p) => ({
+        name: p.name,
+        imageUrl: p.featuredImage!,
+      }));
 
       blocks.push({
         id: nextId(),
-        type: "map-stripe",
-        staticMapUrl: mapUrl,
+        type: "photo-grid",
+        photos,
         themeColor: theme.color,
-        poiCount: allPois.length,
         themeName: theme.name,
+        poiCount: allPois.length,
         pois: allPois,
         center: project.centerCoordinates,
       });
