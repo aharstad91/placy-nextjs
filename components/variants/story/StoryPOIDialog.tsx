@@ -1,11 +1,26 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import type { POI } from "@/lib/types";
-import { Star, X, MapPin, Bus, Bike, Car, Loader2 } from "lucide-react";
+import { Star, MapPin, Bus, Bike, Car } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // --- Variant detection ---
 
@@ -48,83 +63,80 @@ interface StoryPOIDialogProps {
 }
 
 export default function StoryPOIDialog({ poi, onClose }: StoryPOIDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   const realtimeData = useRealtimeData(poi);
+  const open = poi !== null;
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (poi && !dialog.open) dialog.showModal();
-    if (!poi && dialog.open) dialog.close();
-  }, [poi]);
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+        <DialogContent showCloseButton className="max-w-sm p-0 gap-0 overflow-hidden">
+          {poi && <POICardContent poi={poi} realtimeData={realtimeData} />}
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
-    if (e.target === dialogRef.current) onClose();
-  };
+  return (
+    <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DrawerContent>
+        <div className="max-h-[85vh] overflow-y-auto">
+          {poi && <POICardContent poi={poi} realtimeData={realtimeData} />}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
 
-  if (!poi) return null;
+// --- Shared card content (used by both Dialog and Drawer) ---
 
+function POICardContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnType<typeof useRealtimeData> }) {
   const variant = getCardVariant(poi);
   const Icon = getIcon(poi.category.icon);
   const walkMin = poi.travelTime?.walk ? Math.round(poi.travelTime.walk / 60) : null;
 
   return (
-    <dialog
-      ref={dialogRef}
-      onClick={handleBackdropClick}
-      onClose={onClose}
-      className="backdrop:bg-black/40 backdrop:backdrop-blur-sm bg-transparent p-0 m-auto max-w-sm w-[calc(100%-2rem)] rounded-2xl open:animate-in open:fade-in open:zoom-in-95"
-    >
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between p-5 pb-3">
-          <div className="flex items-center gap-3">
-            <div
-              className="flex items-center justify-center w-10 h-10 rounded-full"
-              style={{ backgroundColor: poi.category.color + "18" }}
-            >
-              <Icon className="w-5 h-5" style={{ color: poi.category.color }} />
-            </div>
-            <div>
-              <h3 className="font-semibold text-[#1a1a1a] text-lg leading-tight">
-                {poi.name}
-              </h3>
-              <span className="text-sm text-[#8a8a8a]">
-                {variant === "school" ? formatSchoolSubtitle(poi, getSchoolMetadata(poi)) : poi.category.name}
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#f5f3f0] transition-colors -mt-1 -mr-1"
-          >
-            <X className="w-4 h-4 text-[#8a8a8a]" />
-          </button>
+    <>
+      {/* Header */}
+      <div className="flex items-center gap-3 p-5 pb-3">
+        <div
+          className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+          style={{ backgroundColor: poi.category.color + "18" }}
+        >
+          <Icon className="w-5 h-5" style={{ color: poi.category.color }} />
         </div>
-
-        {/* Meta row */}
-        <div className="flex items-center gap-3 px-5 pb-3 text-sm">
-          {poi.googleRating != null && (
-            <span className="flex items-center gap-1 text-[#4a4a4a]">
-              <Star className="w-3.5 h-3.5 text-[#b45309] fill-[#b45309]" />
-              <span className="font-medium">{poi.googleRating.toFixed(1)}</span>
-              {poi.googleReviewCount != null && (
-                <span className="text-[#8a8a8a]">({poi.googleReviewCount})</span>
-              )}
-            </span>
-          )}
-          {walkMin != null && (
-            <span className="flex items-center gap-1 text-[#6a6a6a]">
-              <MapPin className="w-3 h-3" />
-              {walkMin} min gange
-            </span>
-          )}
-        </div>
-
-        {/* Variant content */}
-        <VariantContent variant={variant} poi={poi} realtimeData={realtimeData} />
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-lg leading-tight">
+            {poi.name}
+          </DialogTitle>
+          <DialogDescription>
+            {variant === "school" ? formatSchoolSubtitle(poi, getSchoolMetadata(poi)) : poi.category.name}
+          </DialogDescription>
+        </DialogHeader>
       </div>
-    </dialog>
+
+      {/* Meta row */}
+      <div className="flex items-center gap-3 px-5 pb-3 text-sm">
+        {poi.googleRating != null && (
+          <span className="flex items-center gap-1 text-foreground/70">
+            <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
+            <span className="font-medium">{poi.googleRating.toFixed(1)}</span>
+            {poi.googleReviewCount != null && (
+              <span className="text-muted-foreground">({poi.googleReviewCount})</span>
+            )}
+          </span>
+        )}
+        {walkMin != null && (
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <MapPin className="w-3 h-3" />
+            {walkMin} min gange
+          </span>
+        )}
+      </div>
+
+      {/* Variant content */}
+      <VariantContent variant={variant} poi={poi} realtimeData={realtimeData} />
+    </>
   );
 }
 
@@ -162,12 +174,12 @@ function StandardContent({ poi }: { poi: POI }) {
     <>
       {poi.editorialHook && (
         <div className="px-5 pb-4">
-          <p className="text-[15px] text-[#3a3a3a] leading-relaxed">{poi.editorialHook}</p>
+          <p className="text-[15px] text-foreground/80 leading-relaxed">{poi.editorialHook}</p>
         </div>
       )}
       {poi.localInsight && (
         <div className="px-5 pb-5 pt-0">
-          <p className="text-sm text-[#6a6a6a] italic leading-relaxed">{poi.localInsight}</p>
+          <p className="text-sm text-muted-foreground italic leading-relaxed">{poi.localInsight}</p>
         </div>
       )}
     </>
@@ -178,7 +190,7 @@ function StandardContent({ poi }: { poi: POI }) {
 
 function TransitContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnType<typeof useRealtimeData> }) {
   if (realtimeData.loading) {
-    return <LoadingSkeleton />;
+    return <TransitSkeleton />;
   }
 
   if (!realtimeData.entur || realtimeData.entur.departures.length === 0) {
@@ -187,7 +199,7 @@ function TransitContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnT
 
   return (
     <div className="px-5 pb-5">
-      <div className="text-xs text-[#8a8a8a] mb-2 flex items-center gap-1">
+      <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
         <Bus className="w-3 h-3" />
         Neste avganger
       </div>
@@ -200,18 +212,14 @@ function TransitContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnT
             >
               {dep.lineCode}
             </span>
-            <span className="text-[#3a3a3a] flex-1 truncate">{dep.destination}</span>
-            <span className={`font-medium ${dep.isRealtime ? "text-green-700" : "text-[#6a6a6a]"}`}>
+            <span className="text-foreground/80 flex-1 truncate">{dep.destination}</span>
+            <span className={`font-medium ${dep.isRealtime ? "text-green-700" : "text-muted-foreground"}`}>
               {formatRelativeDepartureTime(dep.departureTime)}
             </span>
           </div>
         ))}
       </div>
-      {realtimeData.lastUpdated && (
-        <div className="text-xs text-[#aaa] mt-2">
-          Oppdatert: {realtimeData.lastUpdated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
-        </div>
-      )}
+      <UpdatedAt date={realtimeData.lastUpdated} />
     </div>
   );
 }
@@ -220,13 +228,13 @@ function TransitContent({ poi, realtimeData }: { poi: POI; realtimeData: ReturnT
 
 function BysykkelContent({ realtimeData }: { realtimeData: ReturnType<typeof useRealtimeData> }) {
   if (realtimeData.loading) {
-    return <LoadingSkeleton />;
+    return <SimpleSkeleton />;
   }
 
   if (!realtimeData.bysykkel) {
     return (
       <div className="px-5 pb-5">
-        <p className="text-sm text-[#8a8a8a]">Sanntidsdata utilgjengelig</p>
+        <p className="text-sm text-muted-foreground">Sanntidsdata utilgjengelig</p>
       </div>
     );
   }
@@ -236,27 +244,23 @@ function BysykkelContent({ realtimeData }: { realtimeData: ReturnType<typeof use
   return (
     <div className="px-5 pb-5">
       {!isOpen && (
-        <div className="text-sm text-red-600 font-medium mb-2">Stasjonen er stengt</div>
+        <div className="text-sm text-destructive font-medium mb-2">Stasjonen er stengt</div>
       )}
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm">
-          <Bike className="w-4 h-4 text-[#4a4a4a]" />
-          <span className="text-[#3a3a3a]">
+          <Bike className="w-4 h-4 text-foreground/60" />
+          <span className="text-foreground/80">
             <span className="font-semibold">{availableBikes}</span> ledige sykler
           </span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="w-4 h-4 flex items-center justify-center text-[#4a4a4a] text-xs">🔒</span>
-          <span className="text-[#3a3a3a]">
+          <span className="w-4 h-4 flex items-center justify-center text-foreground/60 text-xs">🔒</span>
+          <span className="text-foreground/80">
             <span className="font-semibold">{availableDocks}</span> ledige låser
           </span>
         </div>
       </div>
-      {realtimeData.lastUpdated && (
-        <div className="text-xs text-[#aaa] mt-2">
-          Oppdatert: {realtimeData.lastUpdated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
-        </div>
-      )}
+      <UpdatedAt date={realtimeData.lastUpdated} />
     </div>
   );
 }
@@ -265,13 +269,13 @@ function BysykkelContent({ realtimeData }: { realtimeData: ReturnType<typeof use
 
 function HyreContent({ realtimeData }: { realtimeData: ReturnType<typeof useRealtimeData> }) {
   if (realtimeData.loading) {
-    return <LoadingSkeleton />;
+    return <SimpleSkeleton />;
   }
 
   if (!realtimeData.hyre) {
     return (
       <div className="px-5 pb-5">
-        <p className="text-sm text-[#8a8a8a]">Sanntidsdata utilgjengelig</p>
+        <p className="text-sm text-muted-foreground">Sanntidsdata utilgjengelig</p>
       </div>
     );
   }
@@ -279,16 +283,12 @@ function HyreContent({ realtimeData }: { realtimeData: ReturnType<typeof useReal
   return (
     <div className="px-5 pb-5">
       <div className="flex items-center gap-2 text-sm">
-        <Car className="w-4 h-4 text-[#4a4a4a]" />
-        <span className="text-[#3a3a3a]">
+        <Car className="w-4 h-4 text-foreground/60" />
+        <span className="text-foreground/80">
           <span className="font-semibold">{realtimeData.hyre.numVehiclesAvailable}</span> tilgjengelige biler
         </span>
       </div>
-      {realtimeData.lastUpdated && (
-        <div className="text-xs text-[#aaa] mt-2">
-          Oppdatert: {realtimeData.lastUpdated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
-        </div>
-      )}
+      <UpdatedAt date={realtimeData.lastUpdated} />
     </div>
   );
 }
@@ -302,7 +302,7 @@ function SchoolContent({ poi }: { poi: POI }) {
     <>
       {schoolMeta?.schoolLevel && (
         <div className="px-5 pb-3">
-          <span className="text-sm text-[#4a4a4a] font-medium">{schoolMeta.schoolLevel}</span>
+          <span className="text-sm text-foreground/70 font-medium">{schoolMeta.schoolLevel}</span>
         </div>
       )}
       <StandardContent poi={poi} />
@@ -320,13 +320,31 @@ function formatSchoolSubtitle(poi: POI, meta: SchoolMetadata | null): string {
   return parts.join(" · ");
 }
 
-function LoadingSkeleton() {
+function UpdatedAt({ date }: { date: Date | null }) {
+  if (!date) return null;
   return (
-    <div className="px-5 pb-5">
-      <div className="flex items-center gap-2 text-sm text-[#8a8a8a]">
-        <Loader2 className="w-4 h-4 animate-spin" />
-        Henter sanntidsdata...
-      </div>
+    <div className="text-xs text-muted-foreground/60 mt-2">
+      Oppdatert: {date.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
+    </div>
+  );
+}
+
+function TransitSkeleton() {
+  return (
+    <div className="px-5 pb-5 space-y-2">
+      <Skeleton className="h-3 w-24" />
+      <Skeleton className="h-5 w-full" />
+      <Skeleton className="h-5 w-full" />
+      <Skeleton className="h-5 w-3/4" />
+    </div>
+  );
+}
+
+function SimpleSkeleton() {
+  return (
+    <div className="px-5 pb-5 space-y-2">
+      <Skeleton className="h-5 w-48" />
+      <Skeleton className="h-5 w-36" />
     </div>
   );
 }
@@ -335,7 +353,7 @@ function FallbackContent({ poi, message }: { poi: POI; message: string }) {
   return (
     <>
       <div className="px-5 pb-2">
-        <p className="text-xs text-[#aaa]">{message}</p>
+        <p className="text-xs text-muted-foreground/60">{message}</p>
       </div>
       <StandardContent poi={poi} />
     </>
