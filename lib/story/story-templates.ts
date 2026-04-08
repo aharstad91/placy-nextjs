@@ -27,21 +27,34 @@ export function summaryIntroText(): string {
 
 // --- Bridge text templates ---
 
-export function bridgeText(themeName: string): string {
-  return interpolate("La oss se på {name}", { name: themeName.toLowerCase() });
-}
-
-// --- Fact templates ---
-
-export function totalPoisFact(count: number): string {
-  return interpolate("{count} steder innen gangavstand", { count: String(count) });
-}
-
-export function themePoisFact(count: number, categoryName: string): string {
-  return interpolate("{count} {name} i nærheten", {
-    count: String(count),
-    name: categoryName.toLowerCase(),
+/** Fallback theme intro when no editorial bridgeText exists */
+export function themeIntroBridge(themeName: string, poiCount: number): string {
+  return interpolate("Du har {count} {name}-steder i nærheten — la oss se på de beste", {
+    count: String(poiCount),
+    name: themeName.toLowerCase(),
   });
+}
+
+/** Highlight the top POI in a theme batch */
+export function topPoiHighlight(
+  poiName: string,
+  rating: number | null,
+  walkMin: number | null,
+): string {
+  const parts: string[] = [poiName];
+  if (rating != null) {
+    parts.push(interpolate("{rating} på Google", { rating: rating.toFixed(1) }));
+  }
+  if (walkMin != null) {
+    parts.push(interpolate("{min} min å gå", { min: String(walkMin) }));
+  }
+  if (parts.length === 1) return interpolate("{name} topper listen", { name: poiName });
+  return parts[0] + " topper listen — " + parts.slice(1).join(", ");
+}
+
+/** Bridge text for "Se flere" batches */
+export function moreBatchBridge(remaining: number): string {
+  return interpolate("Her er {count} til", { count: String(remaining) });
 }
 
 // --- Choice prompt labels ---

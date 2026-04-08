@@ -19,6 +19,9 @@ import {
   CHOICE_SEE_MORE,
   CHOICE_NEXT_THEME,
   CHOICE_SUMMARY,
+  themeIntroBridge,
+  topPoiHighlight,
+  moreBatchBridge,
 } from "./story-templates";
 
 let blockCounter = 0;
@@ -63,9 +66,15 @@ function shortName(name: string): string {
   return firstComma > 0 ? name.substring(0, firstComma).trim() : name;
 }
 
+/** Optional editorial bridge texts per theme (from reportConfig) */
+export interface BridgeTexts {
+  readonly [themeId: string]: string;
+}
+
 export function composeStoryBlocks(
   project: Project,
   themes: ThemeDefinition[],
+  bridgeTexts: BridgeTexts = {},
 ): StoryComposition {
   blockCounter = 0;
 
@@ -96,8 +105,17 @@ export function composeStoryBlocks(
 
     const blocks: StoryBlock[] = [];
 
-    // First batch: map stripe + intro
+    // First batch: bridge text + map stripe + top POI highlight
     if (batchIndex === 0) {
+      // Bridge text: editorial from reportConfig, or deterministic fallback
+      const editorial = bridgeTexts[themeId];
+      blocks.push({
+        id: nextId(),
+        type: "chat",
+        text: editorial || themeIntroBridge(theme.name, allPois.length),
+        showAvatar: true,
+      });
+
       const mapUrl = getStaticMapUrlMulti({
         markers: allPois.slice(0, 15).map((p) => ({
           lat: p.coordinates.lat,
@@ -117,6 +135,26 @@ export function composeStoryBlocks(
         themeName: theme.name,
         pois: allPois,
         center: project.centerCoordinates,
+      });
+
+      // Top POI highlight (only if we have useful data)
+      const topPoi = allPois[0];
+      if (topPoi) {
+        const walkMin = topPoi.travelTime?.walk
+          ? Math.round(topPoi.travelTime.walk / 60)
+          : null;
+        blocks.push({
+          id: nextId(),
+          type: "chat",
+          text: topPoiHighlight(topPoi.name, topPoi.googleRating ?? null, walkMin),
+        });
+      }
+    } else {
+      // Subsequent batches: short bridge text
+      blocks.push({
+        id: nextId(),
+        type: "chat",
+        text: moreBatchBridge(batchPois.length),
       });
     }
 

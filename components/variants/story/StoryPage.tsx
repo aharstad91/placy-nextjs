@@ -5,6 +5,7 @@ import type { Project } from "@/lib/types";
 import type { ThemeDefinition } from "@/lib/themes/theme-definitions";
 import { assertNever } from "@/lib/types";
 import { composeStoryBlocks } from "@/lib/story/compose-story-blocks";
+import type { BridgeTexts } from "@/lib/story/compose-story-blocks";
 import type { StoryBlock, ChoiceOption } from "@/lib/story/types";
 import StoryChatBubble from "./StoryChatBubble";
 import StoryMapStripe from "./StoryMapStripe";
@@ -18,6 +19,7 @@ import type { MapStripeBlock } from "@/lib/story/types";
 interface StoryPageProps {
   project: Project;
   themes: ThemeDefinition[];
+  bridgeTexts?: BridgeTexts;
   initialTheme?: string;
   explorerUrl: string;
   reportUrl: string;
@@ -35,13 +37,14 @@ interface StoryState {
 export default function StoryPage({
   project,
   themes,
+  bridgeTexts,
   initialTheme,
   explorerUrl,
   reportUrl,
 }: StoryPageProps) {
   const composition = useMemo(
-    () => composeStoryBlocks(project, themes),
-    [project, themes],
+    () => composeStoryBlocks(project, themes, bridgeTexts),
+    [project, themes, bridgeTexts],
   );
 
   const [state, setState] = useState<StoryState>(() => {

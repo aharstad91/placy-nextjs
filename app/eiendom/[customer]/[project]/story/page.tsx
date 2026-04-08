@@ -50,6 +50,14 @@ export default async function StoryRoute({ params, searchParams }: PageProps) {
     redirect(eiendomUrl(customer, projectSlug));
   }
 
+  // Extract editorial bridge texts from reportConfig (if available)
+  const bridgeTexts: Record<string, string> = {};
+  if (projectData.reportConfig?.themes) {
+    for (const t of projectData.reportConfig.themes) {
+      if (t.bridgeText) bridgeTexts[t.id] = t.bridgeText;
+    }
+  }
+
   // Parse ?theme= for deep linking
   const initialTheme =
     typeof resolvedSearchParams.theme === "string"
@@ -73,6 +81,7 @@ export default async function StoryRoute({ params, searchParams }: PageProps) {
       <StoryPage
         project={projectData}
         themes={themes}
+        bridgeTexts={bridgeTexts}
         initialTheme={initialTheme}
         explorerUrl={eiendomUrl(customer, projectSlug)}
         reportUrl={eiendomUrl(customer, projectSlug, "rapport")}
