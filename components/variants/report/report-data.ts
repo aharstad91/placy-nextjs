@@ -8,6 +8,7 @@ import {
 import { calculateReportScore, NULL_TIER_VALUE } from "@/lib/utils/poi-score";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/strings";
+import { generateBridgeText } from "@/lib/generators/bridge-text-generator";
 
 /** Haversine distance in meters between two coordinates */
 function haversineMeters(a: Coordinates, b: Coordinates): number {
@@ -97,7 +98,7 @@ export const TRANSPORT_CATEGORIES = new Set([
   "airport",
 ]);
 
-const THEME_MIN_POIS = 5;
+const THEME_MIN_POIS = 2;
 
 /** When any category within a theme has >= this many POIs, all categories become sub-sections */
 export const SUB_SECTION_THRESHOLD = 15;
@@ -414,7 +415,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       color: themeDef.color,
       question: getThemeQuestion(locale, themeDef.id),
       intro: themeDef.intro,
-      bridgeText: themeDef.bridgeText,
+      bridgeText: themeDef.bridgeText || generateBridgeText(themeDef.id, filtered, center),
       stats: {
         totalPOIs: filtered.length,
         ratedPOIs: themeStats.ratedCount,

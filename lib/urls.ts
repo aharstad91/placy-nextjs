@@ -6,7 +6,7 @@
 export function eiendomUrl(
   customer: string,
   slug: string,
-  mode?: "rapport" | "visning"
+  mode?: "rapport" | "visning" | "story"
 ) {
   const base = `/eiendom/${customer}/${slug}`;
   return mode ? `${base}/${mode}` : base;
