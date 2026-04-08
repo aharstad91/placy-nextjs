@@ -1,9 +1,10 @@
-import { clsx, type ClassValue } from "clsx";
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 import type { Coordinates } from "@/lib/types";
 
-// Kombiner CSS-klasser med clsx
+// Kombiner CSS-klasser med clsx + tailwind-merge
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs);
+  return twMerge(clsx(inputs))
 }
 
 // Formater reisetid til lesbar tekst
