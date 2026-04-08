@@ -115,6 +115,8 @@ export function composeStoryBlocks(
         themeColor: theme.color,
         poiCount: allPois.length,
         themeName: theme.name,
+        pois: allPois,
+        center: project.centerCoordinates,
       });
     }
 

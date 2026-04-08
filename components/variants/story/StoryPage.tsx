@@ -12,6 +12,8 @@ import StoryPOIListBubble from "./StoryPOIListBubble";
 import StoryChoicePrompt from "./StoryChoicePrompt";
 import StorySummary from "./StorySummary";
 import StoryThemeSelector from "./StoryThemeSelector";
+import StoryMapModal from "./StoryMapModal";
+import type { MapStripeBlock } from "@/lib/story/types";
 
 interface StoryPageProps {
   project: Project;
@@ -133,6 +135,9 @@ export default function StoryPage({
     [composition, explorerUrl, reportUrl],
   );
 
+  // Map modal state
+  const [mapModal, setMapModal] = useState<MapStripeBlock | null>(null);
+
   function renderBlock(block: StoryBlock, index: number) {
     const staggerDelay = (index % 4) * 60;
 
@@ -154,6 +159,7 @@ export default function StoryPage({
             themeColor={block.themeColor}
             poiCount={block.poiCount}
             themeName={block.themeName}
+            onExpand={() => setMapModal(block)}
             staggerDelay={staggerDelay}
           />
         );
@@ -192,20 +198,34 @@ export default function StoryPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#faf9f7]">
-      <div className="max-w-xl mx-auto px-4 py-8 md:py-16">
-        <div className="flex flex-col gap-4">
-          {state.feedBlocks.map((block, i) => renderBlock(block, i))}
+    <>
+      <main className="min-h-screen bg-[#faf9f7]">
+        <div className="max-w-xl mx-auto px-4 py-8 md:py-16">
+          <div className="flex flex-col gap-4">
+            {state.feedBlocks.map((block, i) => renderBlock(block, i))}
 
-          {state.showThemeSelector && !state.showSummary && (
-            <StoryThemeSelector
-              themes={composition.themes}
-              visitedThemeIds={new Set(state.visitedThemes)}
-              onSelect={handleThemeSelect}
-            />
-          )}
+            {state.showThemeSelector && !state.showSummary && (
+              <StoryThemeSelector
+                themes={composition.themes}
+                visitedThemeIds={new Set(state.visitedThemes)}
+                onSelect={handleThemeSelect}
+              />
+            )}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+      {/* Full-screen map modal */}
+      {mapModal && (
+        <StoryMapModal
+          isOpen
+          onClose={() => setMapModal(null)}
+          pois={mapModal.pois}
+          center={mapModal.center}
+          themeColor={mapModal.themeColor}
+          themeName={mapModal.themeName}
+        />
+      )}
+    </>
   );
 }

@@ -18,13 +18,15 @@ export interface ChatBlock extends StoryBlockBase {
   readonly showAvatar?: boolean;
 }
 
-/** Compact map stripe showing all theme POIs as dots */
+/** Compact map stripe showing all theme POIs as dots — tap to open full map */
 export interface MapStripeBlock extends StoryBlockBase {
   readonly type: "map-stripe";
   readonly staticMapUrl: string | null;
   readonly themeColor: string;
   readonly poiCount: number;
   readonly themeName: string;
+  readonly pois: readonly POI[];
+  readonly center: Coordinates;
 }
 
 /** Compact list of POIs inside a chat bubble — tap to expand */

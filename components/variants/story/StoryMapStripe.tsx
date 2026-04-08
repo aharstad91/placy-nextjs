@@ -2,16 +2,16 @@
 
 import { memo, useState } from "react";
 import Image from "next/image";
-import { MapPin } from "lucide-react";
+import { MapPin, Maximize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useScrollReveal } from "@/lib/hooks/useScrollReveal";
-import { getIcon } from "@/lib/utils/map-icons";
 
 interface StoryMapStripeProps {
   staticMapUrl: string | null;
   themeColor: string;
   poiCount: number;
   themeName: string;
+  onExpand?: () => void;
   staggerDelay?: number;
 }
 
@@ -20,6 +20,7 @@ export default memo(function StoryMapStripe({
   themeColor,
   poiCount,
   themeName,
+  onExpand,
   staggerDelay = 0,
 }: StoryMapStripeProps) {
   const revealRef = useScrollReveal();
@@ -33,7 +34,11 @@ export default memo(function StoryMapStripe({
       className="w-full"
       style={{ "--story-delay": `${staggerDelay}ms` } as React.CSSProperties}
     >
-      <div className="w-full rounded-xl overflow-hidden border border-[#eae6e1]">
+      <button
+        type="button"
+        onClick={onExpand}
+        className="w-full rounded-xl overflow-hidden border border-[#eae6e1] hover:border-[#cdc8c0] transition-colors cursor-pointer group"
+      >
         <div className="relative w-full h-[150px] bg-[#eae6e1]">
           <Image
             src={staticMapUrl}
@@ -48,17 +53,23 @@ export default memo(function StoryMapStripe({
             onLoad={() => setImageLoaded(true)}
           />
 
-          {/* Theme label overlay */}
-          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/30 to-transparent pt-8 pb-2.5 px-3">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-white" />
-              <span className="text-xs font-medium text-white">
-                {poiCount} {themeName.toLowerCase()}-steder
-              </span>
+          {/* Theme label + expand hint */}
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/40 to-transparent pt-10 pb-2.5 px-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-white" />
+                <span className="text-xs font-medium text-white">
+                  {poiCount} {themeName.toLowerCase()}-steder
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-white/80 group-hover:text-white transition-colors">
+                <span className="text-[10px] font-medium">Vis kart</span>
+                <Maximize2 className="w-3 h-3" />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </button>
     </div>
   );
 });
