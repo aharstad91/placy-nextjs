@@ -74,13 +74,6 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
   const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
   const { registerSectionRef } = useActiveSection(initialThemeId);
 
-  // Handle inline-POI click → highlight marker + fly map to POI
-  const handlePOIClick = useCallback((poiId: string) => {
-    setActivePOI((prev) =>
-      prev?.poiId === poiId ? null : { poiId, source: "card" }
-    );
-  }, []);
-
   // Handle map background click → deselect active POI
   const handleMapClick = useCallback(() => {
     setActivePOI(null);
@@ -166,7 +159,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
               center={reportData.centerCoordinates}
               projectName={reportData.projectName}
               registerRef={registerSectionRef(theme.id)}
-              onPOIClick={handlePOIClick}
+
               activePOI={activePOI}
               onMarkerClick={handleMarkerClick}
               onMapClick={handleMapClick}
@@ -193,7 +186,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
                   center={reportData.centerCoordinates}
                   projectName={reportData.projectName}
                   registerRef={registerSectionRef(theme.id)}
-                  onPOIClick={handlePOIClick}
+    
                   activePOI={activePOI}
                   onMarkerClick={handleMarkerClick}
                   onMapClick={handleMapClick}

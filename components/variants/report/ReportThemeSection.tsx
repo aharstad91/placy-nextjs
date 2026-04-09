@@ -29,10 +29,6 @@ interface ReportThemeSectionProps {
   projectName?: string;
   /** Callback ref to register this section for IntersectionObserver tracking */
   registerRef?: (el: HTMLElement | null) => void;
-  /** When true, uses narrative layout optimized for sticky map (desktop) */
-  useStickyMap?: boolean;
-  /** Callback when a POI is clicked (for sticky map sync — fly-to) */
-  onPOIClick?: (poiId: string) => void;
   /** Visual variant — "secondary" uses smaller header */
   variant?: "primary" | "secondary";
   /** Active POI state — for highlighting map markers */
@@ -52,8 +48,6 @@ export default function ReportThemeSection({
   center,
   projectName,
   registerRef,
-  useStickyMap,
-  onPOIClick,
   variant = "primary",
   activePOI,
   onMarkerClick,
@@ -66,11 +60,6 @@ export default function ReportThemeSection({
   const isTransport = theme.allPOIs.some((poi) =>
     TRANSPORT_CATEGORIES.has(poi.category.id)
   );
-
-  const handleInlinePOIClick = (poi: POI) => {
-    // Sync with map — fly to marker
-    onPOIClick?.(poi.id);
-  };
 
   // Parse extended bridge text into segments with inline POI links
   const segments = theme.extendedBridgeText
@@ -128,7 +117,6 @@ export default function ReportThemeSection({
                   key={i}
                   poi={seg.poi}
                   content={seg.content}
-                  onClick={() => handleInlinePOIClick(seg.poi!)}
                 />
               ) : (
                 <span key={i}>{seg.content}</span>
@@ -231,7 +219,7 @@ function generateThemeInsights(theme: ReportTheme): InsightItem[] {
 
 // --- POI inline link with Popover ---
 
-function POIInlineLink({ poi, content, onClick }: { poi: POI; content: string; onClick: () => void }) {
+function POIInlineLink({ poi, content }: { poi: POI; content: string }) {
   const Icon = getIcon(poi.category.icon);
   const walkMin = poi.travelTime?.walk ? Math.round(poi.travelTime.walk / 60) : null;
 
@@ -241,8 +229,6 @@ function POIInlineLink({ poi, content, onClick }: { poi: POI; content: string; o
         <span
           role="button"
           tabIndex={0}
-          onClick={onClick}
-          onKeyDown={(e) => { if (e.key === "Enter") onClick(); }}
           className="font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors cursor-pointer"
         >
           {content}
