@@ -7,18 +7,10 @@ import { transformToReportData, type ReportTheme } from "./report-data";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
-import dynamic from "next/dynamic";
 import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportExplorerCTA from "./ReportExplorerCTA";
-import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 import { getIcon } from "@/lib/utils/map-icons";
-import { MapPin } from "lucide-react";
-
-const ReportStickyMap = dynamic(() => import("./ReportStickyMap"), {
-  ssr: false,
-  loading: () => <SkeletonReportMap className="fixed top-0 right-0 w-[40%] h-screen" />,
-});
 import ReportClosing from "./ReportClosing";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
@@ -78,15 +70,9 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
   // Active POI state — shared between inline-POI clicks and map markers
   const [activePOI, setActivePOI] = useState<ActivePOIState | null>(null);
 
-  // Initialize active section to first theme
+  // Section tracking via IntersectionObserver (for registerSectionRef)
   const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
-  const { activeSectionId, registerSectionRef } = useActiveSection(initialThemeId);
-
-  // Parse activeSectionId: "mat-drikke" or "mat-drikke:restaurant"
-  const activeThemeId = activeSectionId?.split(":")[0] ?? null;
-  const activeSubSectionCategoryId = activeSectionId?.includes(":")
-    ? activeSectionId.split(":")[1]
-    : null;
+  const { registerSectionRef } = useActiveSection(initialThemeId);
 
   // Handle inline-POI click → highlight marker + fly map to POI
   const handlePOIClick = useCallback((poiId: string) => {
@@ -169,116 +155,56 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
         </div>
       </div>
 
-      {/* Desktop: 60/40 split with sticky map */}
-      <div className="hidden lg:flex">
-        {/* Left: Scrollable narrative content */}
-        <div className="w-[60%] px-16 min-w-0 overflow-hidden">
-          {/* Primary themes */}
-          {primaryThemes.map((theme, i) => (
-            <div key={theme.id} ref={revealRef} className="report-section-reveal">
-              {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
-              <ReportThemeSection
-                theme={theme}
-                center={reportData.centerCoordinates}
-                projectName={reportData.projectName}
-                registerRef={registerSectionRef(theme.id)}
-                useStickyMap={true}
-                onPOIClick={handlePOIClick}
-              />
-            </div>
-          ))}
-
-          {/* Secondary themes — demoted from welcome screen */}
-          {secondaryThemes.length > 0 && (
-            <>
-              <div className="py-8">
-                <div className="h-px bg-[#e8e4df]" />
-                <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mt-6 mb-2">
-                  Andre kategorier
-                </p>
-              </div>
-              {secondaryThemes.map((theme, i) => (
-                <div key={theme.id} ref={revealRef} className="report-section-reveal">
-                  {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
-                  <ReportThemeSection
-                    theme={theme}
-                    center={reportData.centerCoordinates}
-                    projectName={reportData.projectName}
-                    registerRef={registerSectionRef(theme.id)}
-                    useStickyMap={true}
-                    onPOIClick={handlePOIClick}
-                    variant="secondary"
-                  />
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-
-        {/* Right: Sticky map (40%) + metadata */}
-        <div className="w-[40%] pr-16">
-          <div className="sticky top-[15vh]">
-            <div className="h-[70vh] rounded-2xl overflow-hidden">
-              <ReportStickyMap
-                themes={reportData.themes}
-                activeThemeId={activeThemeId}
-                activeSubSectionCategoryId={activeSubSectionCategoryId}
-                activePOI={activePOI}
-                hotelCoordinates={reportData.centerCoordinates}
-                onMarkerClick={handleMarkerClick}
-                onMapClick={handleMapClick}
-                mapStyle={reportData.mapStyle}
-                expandedThemes={new Set(reportData.themes.map((t) => t.id))}
-                areaSlug={areaSlug}
-              />
-            </div>
-            {/* Map metadata panel */}
-            <MapMetadata
-              themes={reportData.themes}
-              activeThemeId={activeThemeId}
+      {/* Theme sections — full width with per-category maps */}
+      <div className="px-16">
+        {/* Primary themes */}
+        {primaryThemes.map((theme, i) => (
+          <div key={theme.id} ref={revealRef} className="report-section-reveal">
+            {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
+            <ReportThemeSection
+              theme={theme}
+              center={reportData.centerCoordinates}
+              projectName={reportData.projectName}
+              registerRef={registerSectionRef(theme.id)}
+              onPOIClick={handlePOIClick}
+              activePOI={activePOI}
+              onMarkerClick={handleMarkerClick}
+              onMapClick={handleMapClick}
+              mapStyle={reportData.mapStyle}
+              areaSlug={areaSlug}
             />
           </div>
-        </div>
-      </div>
+        ))}
 
-      {/* Mobile: Narrative content without sticky map */}
-      <div className="lg:hidden px-16">
-        <div className="grid grid-cols-12 gap-x-6">
-          {/* Primary themes */}
-          {primaryThemes.map((theme, i) => (
-            <div key={theme.id} ref={revealRef} className="col-span-12 report-section-reveal">
-              {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
-              <ReportThemeSection
-                theme={theme}
-                center={reportData.centerCoordinates}
-                projectName={reportData.projectName}
-              />
+        {/* Secondary themes — demoted from welcome screen */}
+        {secondaryThemes.length > 0 && (
+          <>
+            <div className="py-8">
+              <div className="h-px bg-[#e8e4df]" />
+              <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mt-6 mb-2">
+                Andre kategorier
+              </p>
             </div>
-          ))}
-
-          {/* Secondary themes */}
-          {secondaryThemes.length > 0 && (
-            <>
-              <div className="col-span-12 py-8">
-                <div className="h-px bg-[#e8e4df]" />
-                <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mt-6 mb-2">
-                  Andre kategorier
-                </p>
+            {secondaryThemes.map((theme, i) => (
+              <div key={theme.id} ref={revealRef} className="report-section-reveal">
+                {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
+                <ReportThemeSection
+                  theme={theme}
+                  center={reportData.centerCoordinates}
+                  projectName={reportData.projectName}
+                  registerRef={registerSectionRef(theme.id)}
+                  onPOIClick={handlePOIClick}
+                  activePOI={activePOI}
+                  onMarkerClick={handleMarkerClick}
+                  onMapClick={handleMapClick}
+                  mapStyle={reportData.mapStyle}
+                  areaSlug={areaSlug}
+                  variant="secondary"
+                />
               </div>
-              {secondaryThemes.map((theme, i) => (
-                <div key={theme.id} ref={revealRef} className="col-span-12 report-section-reveal">
-                  {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
-                  <ReportThemeSection
-                    theme={theme}
-                    center={reportData.centerCoordinates}
-                    projectName={reportData.projectName}
-                    variant="secondary"
-                  />
-                </div>
-              ))}
-            </>
-          )}
-        </div>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Footer sections — full width with padding */}
@@ -323,40 +249,6 @@ function ThemeSeparator({ icon, color }: { icon: string; color: string }) {
         <Icon className="w-5 h-5" style={{ color }} />
       </div>
       <div className="h-px flex-1 bg-[#e0dcd6]" />
-    </div>
-  );
-}
-
-// --- Map metadata panel below the sticky map ---
-
-function MapMetadata({ themes, activeThemeId }: { themes: ReportTheme[]; activeThemeId: string | null }) {
-  const activeTheme = themes.find((t) => t.id === activeThemeId);
-  if (!activeTheme) return null;
-
-  const Icon = getIcon(activeTheme.icon);
-  const nearestPOI = activeTheme.allPOIs[0];
-  const nearestWalkMin = nearestPOI?.travelTime?.walk
-    ? Math.round(nearestPOI.travelTime.walk / 60)
-    : null;
-
-  return (
-    <div className="mt-3 px-4 py-3 rounded-xl bg-[#faf9f7] border border-[#eae6e1]">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-4 h-4 text-[#7a7062]" />
-        <span className="text-sm font-medium text-[#1a1a1a]">{activeTheme.name}</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#6a6a6a]">
-        <span>{activeTheme.stats.totalPOIs} steder på kartet</span>
-        {nearestWalkMin != null && (
-          <span className="flex items-center gap-1">
-            <MapPin className="w-3 h-3" />
-            Nærmest: {nearestWalkMin} min gange
-          </span>
-        )}
-        {activeTheme.stats.avgRating != null && (
-          <span>Snitt ★ {activeTheme.stats.avgRating.toFixed(1)}</span>
-        )}
-      </div>
     </div>
   );
 }

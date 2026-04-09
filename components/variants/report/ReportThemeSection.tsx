@@ -14,6 +14,14 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import ReportAddressInput from "./ReportAddressInput";
+import type { ActivePOIState } from "./ReportPage";
+import dynamic from "next/dynamic";
+import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
+
+const ReportThemeMap = dynamic(() => import("./ReportThemeMap"), {
+  ssr: false,
+  loading: () => <SkeletonReportMap />,
+});
 
 interface ReportThemeSectionProps {
   theme: ReportTheme;
@@ -27,6 +35,16 @@ interface ReportThemeSectionProps {
   onPOIClick?: (poiId: string) => void;
   /** Visual variant — "secondary" uses smaller header */
   variant?: "primary" | "secondary";
+  /** Active POI state — for highlighting map markers */
+  activePOI?: ActivePOIState | null;
+  /** Callback when a map marker is clicked */
+  onMarkerClick?: (poiId: string) => void;
+  /** Callback when map background is clicked (deselect) */
+  onMapClick?: () => void;
+  /** Map style override */
+  mapStyle?: string;
+  /** Area slug for POI page links in map popup */
+  areaSlug?: string | null;
 }
 
 export default function ReportThemeSection({
@@ -37,6 +55,11 @@ export default function ReportThemeSection({
   useStickyMap,
   onPOIClick,
   variant = "primary",
+  activePOI,
+  onMarkerClick,
+  onMapClick,
+  mapStyle,
+  areaSlug,
 }: ReportThemeSectionProps) {
   const { locale } = useLocale();
   const Icon = getIcon(theme.icon);
@@ -124,6 +147,21 @@ export default function ReportThemeSection({
         {/* Data-driven category insight */}
         <ThemeInsight theme={theme} />
       </div>
+
+      {/* Per-category map */}
+      {theme.allPOIs.length > 0 && (
+        <div className="mt-8 h-[400px] md:h-[500px] rounded-2xl overflow-hidden border border-[#eae6e1]">
+          <ReportThemeMap
+            pois={theme.allPOIs}
+            center={center}
+            activePOI={activePOI ?? null}
+            onMarkerClick={onMarkerClick ?? (() => {})}
+            onMapClick={onMapClick}
+            mapStyle={mapStyle}
+            areaSlug={areaSlug}
+          />
+        </div>
+      )}
     </section>
   );
 }
