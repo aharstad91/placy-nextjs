@@ -216,9 +216,9 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
         </div>
 
         {/* Right: Sticky map (40%) + metadata */}
-        <div className="w-[40%] pt-16 pr-16 pb-16">
-          <div className="sticky top-6">
-            <div className="h-[60vh] rounded-2xl overflow-hidden">
+        <div className="w-[40%] pr-16 flex items-center">
+          <div className="sticky top-[15vh] w-full">
+            <div className="h-[70vh] rounded-2xl overflow-hidden">
               <ReportStickyMap
                 themes={reportData.themes}
                 activeThemeId={activeThemeId}
