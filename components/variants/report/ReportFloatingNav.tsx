@@ -94,7 +94,7 @@ export default function ReportFloatingNav({
 
       {/* Floating nav bar */}
       <div
-        className={`fixed z-40 top-[56px] left-0 right-0 transition-all duration-300 ${
+        className={`sticky z-40 top-0 left-0 right-0 transition-all duration-300 ${
           visible
             ? "translate-y-0 opacity-100"
             : "-translate-y-full opacity-0 pointer-events-none"
