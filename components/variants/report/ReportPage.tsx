@@ -17,7 +17,6 @@ const ReportStickyMap = dynamic(() => import("./ReportStickyMap"), {
   ssr: false,
   loading: () => <SkeletonReportMap className="fixed top-0 right-0 w-[40%] h-screen" />,
 });
-import ReportFloatingNav from "./ReportFloatingNav";
 import ReportClosing from "./ReportClosing";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
@@ -167,13 +166,6 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
           />
         </div>
       </div>
-
-      {/* Floating theme navigation — only primary themes */}
-      <ReportFloatingNav
-        themes={primaryThemes}
-        activeThemeId={activeThemeId}
-        activeSectionId={activeSectionId}
-      />
 
       {/* Desktop: 60/40 split with sticky map */}
       <div className="hidden lg:flex">
