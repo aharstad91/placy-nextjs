@@ -62,6 +62,7 @@ export interface ReportTheme {
   question?: string;
   intro?: string;
   bridgeText?: string;
+  extendedBridgeText?: string;
   stats: ReportThemeStats;
   /** All POIs sorted by tier then score. First INITIAL_VISIBLE_COUNT shown, rest behind "Hent flere". */
   pois: POI[];
@@ -416,6 +417,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       question: getThemeQuestion(locale, themeDef.id),
       intro: themeDef.intro,
       bridgeText: themeDef.bridgeText || generateBridgeText(themeDef.id, filtered, center),
+      extendedBridgeText: (themeDef as { extendedBridgeText?: string }).extendedBridgeText,
       stats: {
         totalPOIs: filtered.length,
         ratedPOIs: themeStats.ratedCount,

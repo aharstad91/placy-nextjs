@@ -1,103 +1,63 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import type { Coordinates, POI } from "@/lib/types";
-import type { ReportTheme, ReportSubSection } from "./report-data";
+import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { t, type Locale } from "@/lib/i18n/strings";
-import {
-  Star,
-  ChevronDown,
-  Loader2,
-} from "lucide-react";
+import { Star, MapPin } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
-import ReportInteractiveMapSection from "./ReportInteractiveMapSection";
+import { linkPOIsInText } from "@/lib/utils/story-text-linker";
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from "@/components/ui/hover-card";
+import StoryPOIDialog from "@/components/variants/story/StoryPOIDialog";
 import ReportAddressInput from "./ReportAddressInput";
-import ReportPOICard from "./ReportPOICard";
 
 interface ReportThemeSectionProps {
   theme: ReportTheme;
   center: Coordinates;
-  explorerBaseUrl?: string | null;
   projectName?: string;
   /** Callback ref to register this section for IntersectionObserver tracking */
   registerRef?: (el: HTMLElement | null) => void;
-  /** When true, hides the per-section inline map (desktop sticky map is shown instead) */
+  /** When true, uses narrative layout optimized for sticky map (desktop) */
   useStickyMap?: boolean;
-  /** Active POI ID from the page-level sticky map */
-  activePOIId?: string | null;
-  /** Callback when a POI card is clicked (for sticky map sync) */
+  /** Callback when a POI is clicked (for sticky map sync — fly-to) */
   onPOIClick?: (poiId: string) => void;
-  /** Whether this theme is expanded (showing all POIs) */
-  isExpanded?: boolean;
-  /** Callback when theme is expanded via "Vis meg mer" */
-  onExpand?: (themeId: string) => void;
-  /** Register sub-section elements for scroll tracking (composite key: themeId:categoryId) */
-  registerSubSectionRef?: (compositeId: string) => (el: HTMLElement | null) => void;
-  /** Set of expanded composite keys (themeId:categoryId) */
-  expandedKeys?: Set<string>;
-  /** Expand callback for composite key */
-  onExpandKey?: (compositeKey: string) => void;
-  /** Visual variant — "secondary" suppresses featured cards and uses smaller header */
+  /** Visual variant — "secondary" uses smaller header */
   variant?: "primary" | "secondary";
-}
-
-/** Derive numeric locale string from app locale */
-function getNumericLocale(locale: string): string {
-  return locale === "en" ? "en-US" : "nb-NO";
-}
-
-const LOAD_MORE_BATCH = 6;
-
-/** Two-step load-more: first click → +6, second click → all remaining */
-function useProgressiveLoad(hiddenCount: number, isExpanded: boolean, onExpand: () => void) {
-  const [revealedCount, setRevealedCount] = useState(isExpanded ? hiddenCount : 0);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const allRevealed = revealedCount >= hiddenCount || isExpanded;
-  const hasLoadedOnce = revealedCount > 0;
-
-  const handleLoadMore = useCallback(() => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setRevealedCount((prev) => {
-        // First click: load one batch. Second click: load everything.
-        const next = prev === 0 ? Math.min(LOAD_MORE_BATCH, hiddenCount) : hiddenCount;
-        if (next >= hiddenCount) {
-          setTimeout(() => onExpand(), 1000);
-        }
-        return next;
-      });
-      setIsLoading(false);
-    }, 800);
-  }, [hiddenCount, onExpand]);
-
-  return { revealedCount, isLoading, allRevealed, hasLoadedOnce, handleLoadMore } as const;
 }
 
 export default function ReportThemeSection({
   theme,
   center,
-  explorerBaseUrl,
   projectName,
   registerRef,
   useStickyMap,
-  activePOIId,
   onPOIClick,
-  isExpanded,
-  onExpand,
-  registerSubSectionRef,
-  expandedKeys,
-  onExpandKey,
   variant = "primary",
 }: ReportThemeSectionProps) {
   const { locale } = useLocale();
   const Icon = getIcon(theme.icon);
-  const numLocale = getNumericLocale(locale);
   const isTransport = theme.allPOIs.some((poi) =>
     TRANSPORT_CATEGORIES.has(poi.category.id)
   );
+
+  // POI dialog state (local to this theme section)
+  const [dialogPOI, setDialogPOI] = useState<POI | null>(null);
+
+  const handleInlinePOIClick = (poi: POI) => {
+    setDialogPOI(poi);
+    // Sync with map — fly to marker
+    onPOIClick?.(poi.id);
+  };
+
+  // Parse extended bridge text into segments with inline POI links
+  const segments = theme.extendedBridgeText
+    ? linkPOIsInText(theme.extendedBridgeText, theme.allPOIs)
+    : [];
 
   return (
     <section
@@ -105,7 +65,6 @@ export default function ReportThemeSection({
       ref={registerRef}
       className="py-12 md:py-16 scroll-mt-[7rem]"
     >
-      {/* Section header */}
       <div className="max-w-4xl">
         {/* Section heading */}
         <div className="flex items-center gap-3 mb-4">
@@ -118,51 +77,16 @@ export default function ReportThemeSection({
           </h2>
         </div>
 
-        {/* Category quote — hidden for secondary variant */}
-        {variant !== "secondary" && (
+        {/* Category quote — editorial pitch */}
+        {variant !== "secondary" && theme.quote && (
           <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed mb-5">
             {theme.quote}
           </p>
         )}
 
-        {/* Stats row */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base text-[#6a6a6a] mb-8">
-          <span>
-            {theme.stats.totalPOIs} {t(locale, "places")}
-          </span>
-          {theme.stats.avgRating != null && (
-            <>
-              <span className="text-[#d4cfc8]">|</span>
-              <span className="flex items-center gap-1">
-                {t(locale, "avg")}{" "}
-                <Star className="w-3.5 h-3.5 text-[#b45309] fill-[#b45309]" />
-                <span className="font-medium text-[#1a1a1a]">
-                  {theme.stats.avgRating.toFixed(1)}
-                </span>
-              </span>
-            </>
-          )}
-          {theme.stats.totalReviews > 0 && (
-            <>
-              <span className="text-[#d4cfc8]">|</span>
-              <span>
-                {theme.stats.totalReviews.toLocaleString(numLocale)}{" "}
-                {t(locale, "reviews")}
-              </span>
-            </>
-          )}
-        </div>
-
-        {/* Theme intro */}
-        {theme.intro && (
-          <p className="text-lg text-[#4a4a4a] leading-relaxed mb-8">
-            {theme.intro}
-          </p>
-        )}
-
-        {/* Bridge text */}
+        {/* Bridge text — short narrative intro */}
         {theme.bridgeText && (
-          <p className="text-lg italic text-[#5a5a5a] leading-relaxed mb-8">
+          <p className="text-lg italic text-[#5a5a5a] leading-relaxed mb-6">
             {theme.bridgeText}
           </p>
         )}
@@ -176,355 +100,97 @@ export default function ReportThemeSection({
             />
           </div>
         )}
+
+        {/* Extended narrative text with inline POI links */}
+        {segments.length > 0 && (
+          <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
+            {segments.map((seg, i) =>
+              seg.type === "poi" && seg.poi ? (
+                <POIInlineLink
+                  key={i}
+                  poi={seg.poi}
+                  content={seg.content}
+                  onClick={() => handleInlinePOIClick(seg.poi!)}
+                />
+              ) : (
+                <span key={i}>{seg.content}</span>
+              ),
+            )}
+          </div>
+        )}
+
+        {/* Fallback: show intro if no extended text */}
+        {segments.length === 0 && theme.intro && (
+          <p className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
+            {theme.intro}
+          </p>
+        )}
       </div>
 
-      {/* POI content — different rendering for sticky map vs inline map */}
-      {useStickyMap ? (
-        <StickyMapContent
-          theme={theme}
-          activePOIId={activePOIId ?? null}
-          onPOIClick={onPOIClick}
-          isExpanded={isExpanded ?? false}
-          onExpand={() => onExpand?.(theme.id)}
-          registerSubSectionRef={registerSubSectionRef}
-          expandedKeys={expandedKeys}
-          onExpandKey={onExpandKey}
-        />
-      ) : (
-        <ReportInteractiveMapSection
-          theme={theme}
-          center={center}
-          sectionId={theme.id}
-          explorerBaseUrl={explorerBaseUrl}
-        />
-      )}
+      {/* POI dialog — 5-variant system from Story */}
+      <StoryPOIDialog poi={dialogPOI} onClose={() => setDialogPOI(null)} />
     </section>
   );
 }
 
-/** POI content rendered when the page-level sticky map is active (desktop) */
-function StickyMapContent({
-  theme,
-  activePOIId,
-  onPOIClick,
-  isExpanded,
-  onExpand,
-  registerSubSectionRef,
-  expandedKeys,
-  onExpandKey,
-}: {
-  theme: ReportTheme;
-  activePOIId: string | null;
-  onPOIClick?: (poiId: string) => void;
-  isExpanded: boolean;
-  onExpand: () => void;
-  /** Register a sub-section element for scroll tracking */
-  registerSubSectionRef?: (compositeId: string) => (el: HTMLElement | null) => void;
-  /** Set of expanded composite keys (themeId:categoryId) */
-  expandedKeys?: Set<string>;
-  /** Expand callback for composite key */
-  onExpandKey?: (compositeKey: string) => void;
-}) {
-  const { locale } = useLocale();
-  const numLocale = getNumericLocale(locale);
+// --- POI inline link with HoverCard preview ---
 
-  // If theme has sub-sections, render them instead of flat list
-  if (theme.subSections && theme.subSections.length > 0) {
-    // Collect POI IDs that belong to sub-sections
-    const subSectionPoiIds = new Set<string>();
-    for (const sub of theme.subSections) {
-      for (const poi of sub.allPOIs) subSectionPoiIds.add(poi.id);
-    }
+function POIInlineLink({ poi, content, onClick }: { poi: POI; content: string; onClick: () => void }) {
+  const Icon = getIcon(poi.category.icon);
+  const walkMin = poi.travelTime?.walk ? Math.round(poi.travelTime.walk / 60) : null;
+  const [hoverOpen, setHoverOpen] = useState(false);
 
-    // Remaining POIs: those not in any sub-section
-    const remainingPOIs = theme.allPOIs.filter(
-      (p) => !subSectionPoiIds.has(p.id)
-    );
-
-    return (
-      <div className="mt-4 space-y-8">
-        {theme.subSections.map((sub, i) => {
-          const compositeKey = `${theme.id}:${sub.categoryId}`;
-          const subIsExpanded = expandedKeys?.has(compositeKey) ?? false;
-
-          return (
-            <div key={sub.categoryId}>
-              {/* Center-dot divider between sub-sections */}
-              {i > 0 && (
-                <div className="relative my-6">
-                  <div className="h-px bg-[#eae6e1]" />
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#d4cfc8]" />
-                </div>
-              )}
-              <SubSectionContent
-                sub={sub}
-                compositeKey={compositeKey}
-                activePOIId={activePOIId}
-                onPOIClick={onPOIClick}
-                isExpanded={subIsExpanded}
-                onExpand={() => onExpandKey?.(compositeKey)}
-                registerRef={registerSubSectionRef}
-                locale={locale}
-                numLocale={numLocale}
-              />
-            </div>
-          );
-        })}
-
-        {/* Remaining POIs (categories under threshold) — card grid */}
-        {remainingPOIs.length > 0 && (
-          <POICardGrid
-            pois={remainingPOIs}
-            activePOIId={activePOIId}
-            onPOIClick={onPOIClick}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // No sub-sections — render as before
-  return (
-    <FlatThemeContent
-      theme={theme}
-      activePOIId={activePOIId}
-      onPOIClick={onPOIClick}
-      isExpanded={isExpanded}
-      onExpand={onExpand}
-    />
-  );
-}
-
-/** Flat rendering (no sub-sections) — card grid with load-more */
-function FlatThemeContent({
-  theme,
-  activePOIId,
-  onPOIClick,
-  isExpanded,
-  onExpand,
-}: {
-  theme: ReportTheme;
-  activePOIId: string | null;
-  onPOIClick?: (poiId: string) => void;
-  isExpanded: boolean;
-  onExpand: () => void;
-}) {
-  const { locale } = useLocale();
-  const hasHidden = theme.hiddenPOIs.length > 0;
-  const { revealedCount, isLoading, allRevealed, hasLoadedOnce, handleLoadMore } = useProgressiveLoad(
-    theme.hiddenPOIs.length, isExpanded, onExpand
-  );
-
-  const visiblePois = allRevealed
-    ? [...theme.pois, ...theme.hiddenPOIs]
-    : [...theme.pois, ...theme.hiddenPOIs.slice(0, revealedCount)];
-
-  const remainingCount = theme.hiddenPOIs.length - revealedCount;
+  const handleClick = () => {
+    setHoverOpen(false);
+    onClick();
+  };
 
   return (
-    <div className="mt-4 space-y-4">
-      <POICardGrid
-        pois={visiblePois}
-        activePOIId={activePOIId}
-        onPOIClick={onPOIClick}
-      />
-
-      {hasHidden && !allRevealed && (
-        <LoadMoreButton
-          onClick={handleLoadMore}
-          isLoading={isLoading}
-          locale={locale}
-          hiddenCount={remainingCount}
-          sectionName={theme.name}
-          showAll={hasLoadedOnce}
-        />
-      )}
-    </div>
-  );
-}
-
-/** Single sub-section with its own header, highlight cards, list, and load-more */
-function SubSectionContent({
-  sub,
-  compositeKey,
-  activePOIId,
-  onPOIClick,
-  isExpanded,
-  onExpand,
-  registerRef,
-  locale,
-  numLocale,
-}: {
-  sub: ReportSubSection;
-  compositeKey: string;
-  activePOIId: string | null;
-  onPOIClick?: (poiId: string) => void;
-  isExpanded: boolean;
-  onExpand: () => void;
-  registerRef?: (compositeId: string) => (el: HTMLElement | null) => void;
-  locale: Locale;
-  numLocale: string;
-}) {
-  const Icon = getIcon(sub.icon);
-  const hasHidden = sub.hiddenPOIs.length > 0;
-  const { revealedCount, isLoading, allRevealed, hasLoadedOnce, handleLoadMore } = useProgressiveLoad(
-    sub.hiddenPOIs.length, isExpanded, onExpand
-  );
-
-  const visiblePois = allRevealed
-    ? [...sub.pois, ...sub.hiddenPOIs]
-    : [...sub.pois, ...sub.hiddenPOIs.slice(0, revealedCount)];
-
-  const remainingCount = sub.hiddenPOIs.length - revealedCount;
-
-  return (
-    <div
-      id={compositeKey}
-      ref={registerRef?.(compositeKey)}
-      className="scroll-mt-[7rem]"
-    >
-      {/* Sub-section header */}
-      <div className="flex items-center gap-2.5 mb-2">
-        <div
-          className="flex items-center justify-center w-7 h-7 rounded-full"
-          style={{ backgroundColor: sub.color }}
+    <HoverCard open={hoverOpen} onOpenChange={setHoverOpen} openDelay={400} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={handleClick}
+          onKeyDown={(e) => { if (e.key === "Enter") handleClick(); }}
+          aria-haspopup="dialog"
+          className="font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors cursor-pointer"
         >
-          <Icon className="w-3.5 h-3.5 text-white" />
-        </div>
-        <h3 className="text-lg font-semibold text-[#1a1a1a]">{sub.name}</h3>
-      </div>
-
-      {/* Stats row */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#6a6a6a] mb-2">
-        <span>
-          {sub.stats.totalPOIs} {t(locale, "places")}
+          {content}
         </span>
-        {sub.stats.avgRating != null && (
-          <>
-            <span className="text-[#d4cfc8]">|</span>
-            <span className="flex items-center gap-1">
-              {t(locale, "avg")}{" "}
-              <Star className="w-3 h-3 text-[#b45309] fill-[#b45309]" />
-              <span className="font-medium text-[#1a1a1a]">
-                {sub.stats.avgRating.toFixed(1)}
-              </span>
-            </span>
-          </>
-        )}
-        {sub.stats.totalReviews > 0 && (
-          <>
-            <span className="text-[#d4cfc8]">|</span>
-            <span>
-              {sub.stats.totalReviews.toLocaleString(numLocale)}{" "}
-              {t(locale, "reviews")}
-            </span>
-          </>
-        )}
-      </div>
-
-      {/* Quote */}
-      <p className="text-base text-[#4a4a4a] leading-relaxed mb-2">
-        {sub.quote}
-      </p>
-
-      {/* Bridge text */}
-      {sub.bridgeText && (
-        <p className="text-sm italic text-[#5a5a5a] leading-relaxed mb-4">
-          {sub.bridgeText}
-        </p>
-      )}
-
-      {/* POI card grid */}
-      <POICardGrid
-        pois={visiblePois}
-        activePOIId={activePOIId}
-        onPOIClick={onPOIClick}
-      />
-
-      {/* Load more */}
-      {hasHidden && !allRevealed && (
-        <LoadMoreButton
-          onClick={handleLoadMore}
-          isLoading={isLoading}
-          locale={locale}
-          hiddenCount={remainingCount}
-          sectionName={sub.name}
-          showAll={hasLoadedOnce}
-        />
-      )}
-    </div>
-  );
-}
-
-/** Responsive POI card grid — 2 cols mobile, 3 cols desktop */
-function POICardGrid({
-  pois,
-  activePOIId,
-  onPOIClick,
-}: {
-  pois: POI[];
-  activePOIId: string | null;
-  onPOIClick?: (poiId: string) => void;
-}) {
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-      {pois.map((poi) => (
-        <div key={poi.id} data-poi-id={poi.id}>
-          <ReportPOICard
-            poi={poi}
-            isActive={activePOIId === poi.id}
-            onClick={() => onPOIClick?.(poi.id)}
-          />
+      </HoverCardTrigger>
+      <HoverCardContent side="top" className="w-64 p-3">
+        <div className="flex items-center gap-2 mb-1.5">
+          <div
+            className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
+            style={{ backgroundColor: poi.category.color + "18" }}
+          >
+            <Icon className="w-3.5 h-3.5" style={{ color: poi.category.color }} />
+          </div>
+          <div className="min-w-0">
+            <div className="font-medium text-sm leading-tight truncate">{poi.name}</div>
+            <div className="text-xs text-muted-foreground">{poi.category.name}</div>
+          </div>
         </div>
-      ))}
-    </div>
-  );
-}
-
-/** Button: "Hent flere barnehage (+6)" → "Hent alle barnehage (13)" */
-function LoadMoreButton({
-  onClick,
-  isLoading,
-  locale,
-  hiddenCount,
-  sectionName,
-  showAll,
-}: {
-  onClick: () => void;
-  isLoading: boolean;
-  locale: string;
-  hiddenCount: number;
-  sectionName: string;
-  /** When true, button says "load all" instead of "load more (+batch)" */
-  showAll: boolean;
-}) {
-  const name = sectionName.toLowerCase();
-  const batchCount = Math.min(LOAD_MORE_BATCH, hiddenCount);
-
-  const idleText = showAll
-    ? (locale === "en" ? `Load all ${name} (${hiddenCount})` : `Hent alle ${name} (${hiddenCount})`)
-    : (locale === "en" ? `Load more ${name} (+${batchCount})` : `Hent flere ${name} (+${batchCount})`);
-  const loadingText =
-    locale === "en" ? "Loading..." : "Henter...";
-
-  return (
-    <div className="flex justify-center pt-2">
-      <button
-        onClick={isLoading ? undefined : onClick}
-        disabled={isLoading}
-        className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm transition-all duration-300 ${
-          isLoading
-            ? "border-[#e8e4df] bg-[#faf9f7] text-[#8a8a8a] cursor-default"
-            : "border-[#d4cfc8] bg-white text-[#4a4a4a] hover:bg-[#faf9f7] hover:border-[#b5b0a8]"
-        }`}
-      >
-        {isLoading ? (
-          <Loader2 className="w-4 h-4" style={{ animation: "spin 0.35s linear infinite" }} />
-        ) : (
-          <ChevronDown className="w-4 h-4" />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {poi.googleRating != null && (
+            <span className="flex items-center gap-0.5">
+              <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
+              {poi.googleRating.toFixed(1)}
+              {poi.googleReviewCount != null && <span>({poi.googleReviewCount})</span>}
+            </span>
+          )}
+          {walkMin != null && (
+            <span className="flex items-center gap-0.5">
+              <MapPin className="w-3 h-3" />
+              {walkMin} min
+            </span>
+          )}
+        </div>
+        {poi.editorialHook && (
+          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{poi.editorialHook}</p>
         )}
-        <span>{isLoading ? loadingText : idleText}</span>
-      </button>
-    </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 }

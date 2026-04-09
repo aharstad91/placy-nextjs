@@ -15,7 +15,7 @@ import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 
 const ReportStickyMap = dynamic(() => import("./ReportStickyMap"), {
   ssr: false,
-  loading: () => <SkeletonReportMap className="fixed top-0 right-0 w-1/2 h-screen" />,
+  loading: () => <SkeletonReportMap className="fixed top-0 right-0 w-[40%] h-screen" />,
 });
 import ReportFloatingNav from "./ReportFloatingNav";
 import ReportClosing from "./ReportClosing";
@@ -63,10 +63,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
     if (!primaryThemeIds || primaryThemeIds.length === 0) {
       return { primaryThemes: reportData.themes, secondaryThemes: [] as ReportTheme[] };
     }
-    // Validate theme IDs against actual themes
     const validIds = new Set(reportData.themes.map((t) => t.id));
     const selectedIds = new Set(primaryThemeIds.filter((id) => validIds.has(id)));
-    // If all validated IDs are empty, show all themes normally
     if (selectedIds.size === 0) {
       return { primaryThemes: reportData.themes, secondaryThemes: [] as ReportTheme[] };
     }
@@ -76,16 +74,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
     };
   }, [reportData.themes, primaryThemeIds]);
 
-  // Active POI state with source discriminator (shared between map and sections)
+  // Active POI state — shared between inline-POI clicks and map markers
   const [activePOI, setActivePOI] = useState<ActivePOIState | null>(null);
-
-  // Track which themes/sub-sections have been expanded via "Vis meg mer"
-  // Keys: "themeId" for themes, "themeId:categoryId" for sub-sections
-  const [expandedThemes, setExpandedThemes] = useState<Set<string>>(new Set());
-
-  const handleExpand = useCallback((key: string) => {
-    setExpandedThemes((prev) => new Set(prev).add(key));
-  }, []);
 
   // Initialize active section to first theme
   const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
@@ -97,8 +87,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
     ? activeSectionId.split(":")[1]
     : null;
 
-  // Handle card click → highlight marker + fly map to POI
-  const handleCardClick = useCallback((poiId: string) => {
+  // Handle inline-POI click → highlight marker + fly map to POI
+  const handlePOIClick = useCallback((poiId: string) => {
     setActivePOI((prev) =>
       prev?.poiId === poiId ? null : { poiId, source: "card" }
     );
@@ -109,19 +99,11 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
     setActivePOI(null);
   }, []);
 
-  // Handle marker click → highlight card + scroll to it (no map movement)
+  // Handle marker click → just show popup, no text highlight needed
   const handleMarkerClick = useCallback((poiId: string) => {
-    setActivePOI((prev) => {
-      const next: ActivePOIState | null = prev?.poiId === poiId ? null : { poiId, source: "marker" };
-      // Scroll to the card after state update
-      if (next) {
-        requestAnimationFrame(() => {
-          const card = document.querySelector(`[data-poi-id="${CSS.escape(poiId)}"]`);
-          card?.scrollIntoView({ behavior: "smooth", block: "center" });
-        });
-      }
-      return next;
-    });
+    setActivePOI((prev) =>
+      prev?.poiId === poiId ? null : { poiId, source: "marker" }
+    );
   }, []);
 
   // Section reveal animation via IntersectionObserver
@@ -145,7 +127,6 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
   useEffect(() => {
     const key = SCROLL_KEY_PREFIX + window.location.pathname;
 
-    // Restore scroll position once on mount
     if (!restoredRef.current) {
       restoredRef.current = true;
       const saved = sessionStorage.getItem(key);
@@ -159,7 +140,6 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
       }
     }
 
-    // Save scroll position on scroll (throttled)
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
@@ -197,8 +177,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
 
       {/* Desktop: 60/40 split with sticky map */}
       <div className="hidden lg:flex">
-        {/* Left: Scrollable theme sections */}
-        <div className="w-[50%] px-16 min-w-0 overflow-hidden">
+        {/* Left: Scrollable narrative content */}
+        <div className="w-[60%] px-16 min-w-0 overflow-hidden">
           {/* Primary themes */}
           {primaryThemes.map((theme, i) => (
             <div key={theme.id} ref={revealRef} className="report-section-reveal">
@@ -206,17 +186,10 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
               <ReportThemeSection
                 theme={theme}
                 center={reportData.centerCoordinates}
-                explorerBaseUrl={explorerBaseUrl}
                 projectName={reportData.projectName}
                 registerRef={registerSectionRef(theme.id)}
                 useStickyMap={true}
-                activePOIId={activePOI?.poiId ?? null}
-                onPOIClick={handleCardClick}
-                isExpanded={expandedThemes.has(theme.id)}
-                onExpand={handleExpand}
-                registerSubSectionRef={registerSectionRef}
-                expandedKeys={expandedThemes}
-                onExpandKey={handleExpand}
+                onPOIClick={handlePOIClick}
               />
             </div>
           ))}
@@ -236,17 +209,10 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
                   <ReportThemeSection
                     theme={theme}
                     center={reportData.centerCoordinates}
-                    explorerBaseUrl={explorerBaseUrl}
                     projectName={reportData.projectName}
                     registerRef={registerSectionRef(theme.id)}
                     useStickyMap={true}
-                    activePOIId={activePOI?.poiId ?? null}
-                    onPOIClick={handleCardClick}
-                    isExpanded={expandedThemes.has(theme.id)}
-                    onExpand={handleExpand}
-                    registerSubSectionRef={registerSectionRef}
-                    expandedKeys={expandedThemes}
-                    onExpandKey={handleExpand}
+                    onPOIClick={handlePOIClick}
                     variant="secondary"
                   />
                 </div>
@@ -255,8 +221,8 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
           )}
         </div>
 
-        {/* Right: Sticky map */}
-        <div className="w-[50%] pt-16 pr-16 pb-16">
+        {/* Right: Sticky map (40%) */}
+        <div className="w-[40%] pt-16 pr-16 pb-16">
           <div className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden">
             <ReportStickyMap
               themes={reportData.themes}
@@ -267,14 +233,14 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
               onMarkerClick={handleMarkerClick}
               onMapClick={handleMapClick}
               mapStyle={reportData.mapStyle}
-              expandedThemes={expandedThemes}
+              expandedThemes={new Set(reportData.themes.map((t) => t.id))}
               areaSlug={areaSlug}
             />
           </div>
         </div>
       </div>
 
-      {/* Mobile: Original per-section inline maps */}
+      {/* Mobile: Narrative content without sticky map */}
       <div className="lg:hidden px-16">
         <div className="grid grid-cols-12 gap-x-6">
           {/* Primary themes */}
@@ -284,13 +250,12 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
               <ReportThemeSection
                 theme={theme}
                 center={reportData.centerCoordinates}
-                explorerBaseUrl={explorerBaseUrl}
                 projectName={reportData.projectName}
               />
             </div>
           ))}
 
-          {/* Secondary themes — demoted from welcome screen */}
+          {/* Secondary themes */}
           {secondaryThemes.length > 0 && (
             <>
               <div className="col-span-12 py-8">
@@ -305,7 +270,6 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
                   <ReportThemeSection
                     theme={theme}
                     center={reportData.centerCoordinates}
-                    explorerBaseUrl={explorerBaseUrl}
                     projectName={reportData.projectName}
                     variant="secondary"
                   />

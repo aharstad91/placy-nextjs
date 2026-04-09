@@ -42,9 +42,8 @@ const PRODUCT_TYPE_MAP: Record<string, { label: string; mode?: "rapport" | "visn
 };
 
 /** Modes that are always shown in eiendom projects, regardless of DB products */
-const ALWAYS_AVAILABLE_MODES: { label: string; mode: "visning" | "story" }[] = [
+const ALWAYS_AVAILABLE_MODES: { label: string; mode: "visning" }[] = [
   { label: "Visning", mode: "visning" },
-  { label: "Story", mode: "story" },
 ];
 
 export default async function EiendomProjectLayout({ params, children }: LayoutProps) {

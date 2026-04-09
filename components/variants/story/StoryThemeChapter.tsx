@@ -6,7 +6,7 @@ import type { StoryTheme } from "./story-data";
 import { getIcon } from "@/lib/utils/map-icons";
 import dynamic from "next/dynamic";
 import { Star, MapPin } from "lucide-react";
-import { linkPOIsInText } from "./story-text-linker";
+import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import StoryPOIDialog from "./StoryPOIDialog";
 import type { POI } from "@/lib/types";
 import {
