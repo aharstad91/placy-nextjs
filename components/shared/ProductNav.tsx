@@ -54,7 +54,7 @@ export default function ProductNav({ projectName, products, adminEditUrl, homeHr
   }, [projectName]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+    <header className="relative top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
       <div className="px-8 h-14 flex items-center justify-between">
         {/* Left: Back link on trip pages, otherwise project name */}
         {tripsHref ? (

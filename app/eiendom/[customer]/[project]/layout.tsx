@@ -90,7 +90,7 @@ export default async function EiendomProjectLayout({ params, children }: LayoutP
         adminEditUrl={shortId ? `/admin/projects/${shortId}` : null}
         homeHref={basePath}
       />
-      <PageTransition className="pt-12">
+      <PageTransition>
         {children}
       </PageTransition>
     </>
