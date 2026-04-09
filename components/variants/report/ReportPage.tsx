@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useRef, useState, useCallback } from "react";
+import { useMemo, useEffect, useRef, useCallback } from "react";
 import type { Project } from "@/lib/types";
 import type { TranslationMap } from "@/lib/supabase/translations";
 import { transformToReportData, type ReportTheme } from "./report-data";
@@ -14,12 +14,6 @@ import { getIcon } from "@/lib/utils/map-icons";
 import ReportClosing from "./ReportClosing";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
-
-export interface ActivePOIState {
-  poiId: string;
-  /** Where the selection originated — controls whether the map flies to the POI */
-  source: "card" | "marker";
-}
 
 interface ReportPageProps {
   project: Project;
@@ -67,24 +61,9 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
     };
   }, [reportData.themes, primaryThemeIds]);
 
-  // Active POI state — shared between inline-POI clicks and map markers
-  const [activePOI, setActivePOI] = useState<ActivePOIState | null>(null);
-
   // Section tracking via IntersectionObserver (for registerSectionRef)
   const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
   const { registerSectionRef } = useActiveSection(initialThemeId);
-
-  // Handle map background click → deselect active POI
-  const handleMapClick = useCallback(() => {
-    setActivePOI(null);
-  }, []);
-
-  // Handle marker click → just show popup, no text highlight needed
-  const handleMarkerClick = useCallback((poiId: string) => {
-    setActivePOI((prev) =>
-      prev?.poiId === poiId ? null : { poiId, source: "marker" }
-    );
-  }, []);
 
   // Section reveal animation via IntersectionObserver
   const revealRef = useCallback((el: HTMLElement | null) => {
@@ -159,10 +138,6 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
               center={reportData.centerCoordinates}
               projectName={reportData.projectName}
               registerRef={registerSectionRef(theme.id)}
-
-              activePOI={activePOI}
-              onMarkerClick={handleMarkerClick}
-              onMapClick={handleMapClick}
               mapStyle={reportData.mapStyle}
               areaSlug={areaSlug}
             />
@@ -186,10 +161,6 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
                   center={reportData.centerCoordinates}
                   projectName={reportData.projectName}
                   registerRef={registerSectionRef(theme.id)}
-    
-                  activePOI={activePOI}
-                  onMarkerClick={handleMarkerClick}
-                  onMapClick={handleMapClick}
                   mapStyle={reportData.mapStyle}
                   areaSlug={areaSlug}
                   variant="secondary"

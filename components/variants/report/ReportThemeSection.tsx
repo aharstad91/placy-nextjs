@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Star, MapPin } from "lucide-react";
+import { Star, MapPin, Map as MapIcon } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import {
@@ -14,9 +14,9 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import ReportAddressInput from "./ReportAddressInput";
-import type { ActivePOIState } from "./ReportPage";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
+import ReportMapDrawer from "./ReportMapDrawer";
 
 const ReportThemeMap = dynamic(() => import("./ReportThemeMap"), {
   ssr: false,
@@ -31,12 +31,6 @@ interface ReportThemeSectionProps {
   registerRef?: (el: HTMLElement | null) => void;
   /** Visual variant — "secondary" uses smaller header */
   variant?: "primary" | "secondary";
-  /** Active POI state — for highlighting map markers */
-  activePOI?: ActivePOIState | null;
-  /** Callback when a map marker is clicked */
-  onMarkerClick?: (poiId: string) => void;
-  /** Callback when map background is clicked (deselect) */
-  onMapClick?: () => void;
   /** Map style override */
   mapStyle?: string;
   /** Area slug for POI page links in map popup */
@@ -49,9 +43,6 @@ export default function ReportThemeSection({
   projectName,
   registerRef,
   variant = "primary",
-  activePOI,
-  onMarkerClick,
-  onMapClick,
   mapStyle,
   areaSlug,
 }: ReportThemeSectionProps) {
@@ -60,6 +51,32 @@ export default function ReportThemeSection({
   const isTransport = theme.allPOIs.some((poi) =>
     TRANSPORT_CATEGORIES.has(poi.category.id)
   );
+
+  // Map activation state: dormant → activated
+  const [mapActivated, setMapActivated] = useState(false);
+
+  // Selected POI state (self-contained per section)
+  const [selectedPOIId, setSelectedPOIId] = useState<string | null>(null);
+
+  const poiById = useMemo(() => {
+    const lookup: Record<string, POI> = {};
+    for (const poi of theme.allPOIs) lookup[poi.id] = poi;
+    return lookup;
+  }, [theme.allPOIs]);
+
+  const selectedPOI = selectedPOIId ? poiById[selectedPOIId] ?? null : null;
+
+  const handleMarkerClick = useCallback((poiId: string) => {
+    setSelectedPOIId((prev) => (prev === poiId ? null : poiId));
+  }, []);
+
+  const handleMapClick = useCallback(() => {
+    setSelectedPOIId(null);
+  }, []);
+
+  const handleDrawerClose = useCallback(() => {
+    setSelectedPOIId(null);
+  }, []);
 
   // Parse extended bridge text into segments with inline POI links
   const segments = theme.extendedBridgeText
@@ -136,18 +153,47 @@ export default function ReportThemeSection({
         <ThemeInsight theme={theme} />
       </div>
 
-      {/* Per-category map */}
+      {/* Per-category map with activation states */}
       {theme.allPOIs.length > 0 && (
-        <div className="mt-8 h-[400px] md:h-[500px] rounded-2xl overflow-hidden border border-[#eae6e1]">
+        <div
+          className={`mt-8 rounded-2xl overflow-hidden border border-[#eae6e1] relative transition-all duration-500 ease-out ${
+            mapActivated
+              ? "h-[480px] md:h-[600px]"
+              : "max-w-4xl h-[400px] md:h-[500px]"
+          }`}
+        >
           <ReportThemeMap
             pois={theme.allPOIs}
             center={center}
-            activePOI={activePOI ?? null}
-            onMarkerClick={onMarkerClick ?? (() => {})}
-            onMapClick={onMapClick}
+            highlightedPOIId={selectedPOIId}
+            onMarkerClick={handleMarkerClick}
+            onMapClick={handleMapClick}
             mapStyle={mapStyle}
-            areaSlug={areaSlug}
+            activated={mapActivated}
           />
+
+          {/* Overlay + CTA — State 1 (dormant) */}
+          {!mapActivated && (
+            <div className="absolute inset-0 z-10 flex items-end justify-center pb-8 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-transparent" />
+              <button
+                onClick={() => setMapActivated(true)}
+                className="relative pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] hover:shadow-xl hover:border-[#d4cfc8] transition-all"
+              >
+                <MapIcon className="w-4 h-4 text-[#7a7062]" />
+                Utforsk kartet
+              </button>
+            </div>
+          )}
+
+          {/* POI drawer — State 2 (activated) */}
+          {mapActivated && selectedPOI && (
+            <ReportMapDrawer
+              poi={selectedPOI}
+              onClose={handleDrawerClose}
+              areaSlug={areaSlug}
+            />
+          )}
         </div>
       )}
     </section>

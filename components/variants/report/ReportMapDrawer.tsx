@@ -1,0 +1,294 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import type { POI } from "@/lib/types";
+import { getIcon } from "@/lib/utils/map-icons";
+import { GoogleRating } from "@/components/ui/GoogleRating";
+import { shouldShowRating } from "@/lib/themes/rating-categories";
+import { TierBadge } from "@/components/ui/TierBadge";
+import { slugify } from "@/lib/utils/slugify";
+import { computeIsOpen } from "@/lib/hooks/useOpeningHours";
+import {
+  X,
+  Sparkles,
+  Clock,
+  Navigation,
+  ExternalLink,
+  MapPin,
+  BookOpen,
+} from "lucide-react";
+
+interface ReportMapDrawerProps {
+  poi: POI;
+  onClose: () => void;
+  areaSlug?: string | null;
+}
+
+export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDrawerProps) {
+  const [imageError, setImageError] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  // Animate in on mount
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  // Reset image error when POI changes
+  useEffect(() => {
+    setImageError(false);
+  }, [poi.id]);
+
+  const CategoryIcon = getIcon(poi.category.icon);
+
+  const imageUrl = poi.featuredImage
+    ? poi.featuredImage.includes("mymaps.usercontent.google.com")
+      ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
+      : poi.featuredImage
+    : null;
+
+  const hasImage = imageUrl && !imageError;
+  const walkMinutes = poi.travelTime?.walk
+    ? Math.round(poi.travelTime.walk / 60)
+    : null;
+
+  const googleMapsDirectionsUrl = poi.googlePlaceId
+    ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
+    : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`;
+
+  const poiPageUrl = areaSlug ? `/${areaSlug}/steder/${slugify(poi.name)}` : null;
+
+  const { todayHours, isOpen } = useMemo(() => {
+    const weekdayText = poi.openingHoursJson?.weekday_text;
+    if (!weekdayText?.length) return { todayHours: null, isOpen: undefined };
+
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const today = days[new Date().getDay()];
+    const todayLine = weekdayText.find((line) =>
+      line.toLowerCase().startsWith(today.toLowerCase())
+    );
+    const hours = todayLine ? todayLine.replace(/^[^:]+:\s*/, "") : null;
+
+    return { todayHours: hours, isOpen: computeIsOpen(weekdayText) };
+  }, [poi.openingHoursJson]);
+
+  return (
+    <>
+      {/* Desktop: Left sidebar drawer */}
+      <div
+        className={`hidden md:flex absolute left-0 top-0 h-full z-20 transition-transform duration-300 ease-out ${
+          visible ? "translate-x-0" : "-translate-x-full"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-[320px] h-full bg-white/95 backdrop-blur-sm border-r border-[#eae6e1] overflow-y-auto">
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-white hover:bg-gray-50 shadow-sm border border-gray-200 transition-colors"
+          >
+            <X className="w-3.5 h-3.5 text-gray-600" />
+          </button>
+
+          {/* Featured image */}
+          {hasImage && (
+            <div className="w-full aspect-[16/9] overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt={poi.name}
+                className="w-full h-full object-cover"
+                loading="eager"
+                onError={() => setImageError(true)}
+              />
+            </div>
+          )}
+
+          {/* Content */}
+          <div className="px-4 py-4 space-y-3">
+            {/* Name + category + rating */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <CategoryIcon className="w-4 h-4" style={{ color: poi.category.color }} />
+                <h3 className="text-base font-semibold text-gray-900 truncate">
+                  {poi.name}
+                </h3>
+                <TierBadge poiTier={poi.poiTier} isLocalGem={poi.isLocalGem} variant="inline" />
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-medium" style={{ color: poi.category.color }}>
+                  {poi.category.name}
+                </span>
+                {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
+                  <>
+                    <span className="text-gray-300">&middot;</span>
+                    <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="sm" />
+                  </>
+                )}
+                {walkMinutes != null && (
+                  <>
+                    <span className="text-gray-300">&middot;</span>
+                    <span className="flex items-center gap-0.5 text-gray-500">
+                      <MapPin className="w-3 h-3" />
+                      {walkMinutes} min
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Editorial hook */}
+            {poi.editorialHook && (
+              <div className="bg-amber-50 rounded-lg px-3 py-2 border border-amber-100">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    {poi.editorialHook}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Local insight */}
+            {poi.localInsight && (
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {poi.localInsight}
+              </p>
+            )}
+
+            {/* Description (fallback) */}
+            {poi.description && !poi.editorialHook && !poi.localInsight && (
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {poi.description}
+              </p>
+            )}
+
+            {/* Opening hours */}
+            {todayHours && (
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <Clock className="w-3 h-3 flex-shrink-0" />
+                <span>
+                  I dag: {todayHours}
+                  {isOpen === true && (
+                    <span className="text-emerald-600 font-medium ml-1">&middot; Åpen nå</span>
+                  )}
+                  {isOpen === false && (
+                    <span className="text-gray-400 ml-1">&middot; Stengt</span>
+                  )}
+                </span>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-3 pt-1">
+              <a
+                href={googleMapsDirectionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
+              >
+                <Navigation className="w-3 h-3" />
+                Vis rute
+              </a>
+
+              {poiPageUrl && (
+                <a
+                  href={poiPageUrl}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                >
+                  <BookOpen className="w-3 h-3" />
+                  Les mer
+                </a>
+              )}
+
+              {poi.googleMapsUrl && (
+                <a
+                  href={poi.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Google Maps
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile: Bottom drawer */}
+      <div
+        className={`md:hidden absolute bottom-0 left-0 right-0 z-20 transition-transform duration-300 ease-out ${
+          visible ? "translate-y-0" : "translate-y-full"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-white/95 backdrop-blur-sm border-t border-[#eae6e1] rounded-t-xl max-h-[50%] overflow-y-auto">
+          {/* Drag handle */}
+          <div className="flex justify-center pt-2 pb-1">
+            <div className="w-8 h-1 rounded-full bg-gray-300" />
+          </div>
+
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-3 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-white hover:bg-gray-50 shadow-sm border border-gray-200 transition-colors"
+          >
+            <X className="w-3.5 h-3.5 text-gray-600" />
+          </button>
+
+          {/* Content — compact for mobile */}
+          <div className="px-4 py-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <CategoryIcon className="w-4 h-4" style={{ color: poi.category.color }} />
+              <h3 className="text-sm font-semibold text-gray-900 truncate">{poi.name}</h3>
+              <TierBadge poiTier={poi.poiTier} isLocalGem={poi.isLocalGem} variant="inline" />
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-medium" style={{ color: poi.category.color }}>{poi.category.name}</span>
+              {shouldShowRating(poi.category.id) && poi.googleRating != null && poi.googleRating > 0 && (
+                <>
+                  <span className="text-gray-300">&middot;</span>
+                  <GoogleRating rating={poi.googleRating} reviewCount={poi.googleReviewCount} size="sm" />
+                </>
+              )}
+              {walkMinutes != null && (
+                <>
+                  <span className="text-gray-300">&middot;</span>
+                  <span className="flex items-center gap-0.5 text-gray-500">
+                    <MapPin className="w-3 h-3" />{walkMinutes} min
+                  </span>
+                </>
+              )}
+            </div>
+            {poi.editorialHook && (
+              <p className="text-xs text-gray-600 leading-relaxed">{poi.editorialHook}</p>
+            )}
+            <div className="flex items-center gap-3">
+              <a
+                href={googleMapsDirectionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700"
+              >
+                <Navigation className="w-3 h-3" />
+                Vis rute
+              </a>
+              {poi.googleMapsUrl && (
+                <a
+                  href={poi.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-gray-500"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Google Maps
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

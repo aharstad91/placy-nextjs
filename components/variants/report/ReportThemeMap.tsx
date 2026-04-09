@@ -3,44 +3,36 @@
 import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 import type { Coordinates, POI } from "@/lib/types";
-import type { ActivePOIState } from "./ReportPage";
 import { getIcon } from "@/lib/utils/map-icons";
 import { Building2 } from "lucide-react";
 import { MarkerTooltip } from "@/components/map/marker-tooltip";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
-import MapPopupCard from "./MapPopupCard";
 
 interface ReportThemeMapProps {
   pois: POI[];
   center: Coordinates;
-  activePOI: ActivePOIState | null;
+  highlightedPOIId: string | null;
   onMarkerClick: (poiId: string) => void;
   onMapClick?: () => void;
   mapStyle?: string;
-  areaSlug?: string | null;
+  /** When false, map uses cooperativeGestures and markers are non-interactive */
+  activated?: boolean;
 }
 
 export default function ReportThemeMap({
   pois,
   center,
-  activePOI,
+  highlightedPOIId,
   onMarkerClick,
   onMapClick,
   mapStyle,
-  areaSlug,
+  activated = false,
 }: ReportThemeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [hoveredPOI, setHoveredPOI] = useState<string | null>(null);
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
-  // O(1) POI lookup for flyTo + popup
-  const poiById = useMemo(() => {
-    const lookup: Record<string, POI> = {};
-    for (const poi of pois) lookup[poi.id] = poi;
-    return lookup;
-  }, [pois]);
 
   // fitBounds on map load — show all POIs + project center
   const handleMapLoad = useCallback(() => {
@@ -71,37 +63,25 @@ export default function ReportThemeMap({
     }
   }, [pois, center]);
 
-  // FlyTo when activePOI changes (from inline-POI click)
+  // Resize map when activated (container changes size)
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !activePOI) return;
-    if (activePOI.source !== "card") return;
-
-    const poi = poiById[activePOI.poiId];
-    if (!poi) return;
-
-    const map = mapRef.current;
-    map.getMap().stop();
-    map.flyTo({
-      center: [poi.coordinates.lng, poi.coordinates.lat],
-      duration: 400,
-    });
-  }, [activePOI, mapLoaded, poiById]);
+    if (!mapLoaded || !mapRef.current) return;
+    // Small delay to let the CSS transition complete
+    const timer = setTimeout(() => {
+      mapRef.current?.resize();
+    }, 550);
+    return () => clearTimeout(timer);
+  }, [activated, mapLoaded]);
 
   // Handle marker click
   const handleMarkerClick = useCallback(
     (e: { originalEvent: MouseEvent }, poiId: string) => {
+      if (!activated) return;
       e.originalEvent.stopPropagation();
       onMarkerClick(poiId);
     },
-    [onMarkerClick]
+    [onMarkerClick, activated]
   );
-
-  // Popup POI
-  const popupPOI = activePOI ? poiById[activePOI.poiId] ?? null : null;
-
-  const handlePopupClose = useCallback(() => {
-    if (activePOI) onMarkerClick(activePOI.poiId);
-  }, [activePOI, onMarkerClick]);
 
   if (!token) return null;
 
@@ -118,8 +98,8 @@ export default function ReportThemeMap({
         style={{ width: "100%", height: "100%" }}
         mapStyle={mapStyle || MAP_STYLE_STANDARD}
         onLoad={handleMapLoad}
-        onClick={onMapClick}
-        cooperativeGestures={true}
+        onClick={activated ? onMapClick : undefined}
+        cooperativeGestures={!activated}
       >
         {/* Project/hotel marker — always visible */}
         <Marker
@@ -135,7 +115,7 @@ export default function ReportThemeMap({
 
         {/* POI markers — tier-aware styling */}
         {pois.map((poi) => {
-          const isHighlighted = activePOI?.poiId === poi.id;
+          const isHighlighted = highlightedPOIId === poi.id;
           const isHovered = hoveredPOI === poi.id && !isHighlighted;
           const Icon = getIcon(poi.category.icon);
           const walkMinutes = poi.travelTime?.walk
@@ -157,7 +137,7 @@ export default function ReportThemeMap({
               onClick={(e) => handleMarkerClick(e, poi.id)}
               style={{ zIndex }}
             >
-              <div className="relative">
+              <div className={`relative ${!activated ? "pointer-events-none" : ""}`}>
                 {/* Pulsing ring for highlighted */}
                 {isHighlighted && (
                   <div
@@ -176,16 +156,18 @@ export default function ReportThemeMap({
 
                 {/* Icon circle */}
                 <div
-                  className={`relative flex items-center justify-center rounded-full cursor-pointer transition-transform ${
+                  className={`relative flex items-center justify-center rounded-full transition-transform ${
+                    activated ? "cursor-pointer" : ""
+                  } ${
                     isHighlighted
                       ? "w-10 h-10 border-2 border-white shadow-lg scale-110"
                       : isHovered
                       ? "w-8 h-8 border-2 border-white shadow-md scale-110"
-                      : `${tierSize} ${tierBorder} hover:scale-110`
+                      : `${tierSize} ${tierBorder} ${activated ? "hover:scale-110" : ""}`
                   }`}
                   style={{ backgroundColor: poi.category.color }}
-                  onMouseEnter={() => setHoveredPOI(poi.id)}
-                  onMouseLeave={() => setHoveredPOI(null)}
+                  onMouseEnter={activated ? () => setHoveredPOI(poi.id) : undefined}
+                  onMouseLeave={activated ? () => setHoveredPOI(null) : undefined}
                 >
                   <Icon
                     className={`text-white ${
@@ -194,8 +176,8 @@ export default function ReportThemeMap({
                   />
                 </div>
 
-                {/* Tooltip on hover/highlight */}
-                {(isHovered || isHighlighted) && (
+                {/* Tooltip on hover/highlight — only when activated */}
+                {activated && (isHovered || isHighlighted) && (
                   <MarkerTooltip
                     name={poi.name}
                     categoryName={poi.category.name}
@@ -212,24 +194,6 @@ export default function ReportThemeMap({
             </Marker>
           );
         })}
-
-        {/* Popup card for active POI */}
-        {popupPOI && (
-          <Marker
-            key={`popup-${popupPOI.id}`}
-            longitude={popupPOI.coordinates.lng}
-            latitude={popupPOI.coordinates.lat}
-            anchor="bottom"
-            style={{ zIndex: 20 }}
-            offset={[0, -20]}
-          >
-            <MapPopupCard
-              poi={popupPOI}
-              onClose={handlePopupClose}
-              areaSlug={areaSlug}
-            />
-          </Marker>
-        )}
       </Map>
     </div>
   );
