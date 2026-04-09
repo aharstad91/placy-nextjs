@@ -5,7 +5,7 @@ import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Star, MapPin, Map as MapIcon } from "lucide-react";
+import { Star, MapPin, Map as MapIcon, X } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import {
@@ -13,6 +13,11 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
@@ -52,8 +57,8 @@ export default function ReportThemeSection({
     TRANSPORT_CATEGORIES.has(poi.category.id)
   );
 
-  // Map activation state: dormant → activated
-  const [mapActivated, setMapActivated] = useState(false);
+  // Map dialog state
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
 
   // Selected POI state (self-contained per section)
   const [selectedPOIId, setSelectedPOIId] = useState<string | null>(null);
@@ -153,48 +158,79 @@ export default function ReportThemeSection({
         <ThemeInsight theme={theme} />
       </div>
 
-      {/* Per-category map with activation states */}
+      {/* Per-category map — dormant preview + modal on activate */}
       {theme.allPOIs.length > 0 && (
-        <div
-          className={`mt-8 rounded-2xl overflow-hidden border border-[#eae6e1] relative transition-all duration-500 ease-out ${
-            mapActivated
-              ? "h-[480px] md:h-[600px]"
-              : "max-w-4xl h-[400px] md:h-[500px]"
-          }`}
-        >
-          <ReportThemeMap
-            pois={theme.allPOIs}
-            center={center}
-            highlightedPOIId={selectedPOIId}
-            onMarkerClick={handleMarkerClick}
-            onMapClick={handleMapClick}
-            mapStyle={mapStyle}
-            activated={mapActivated}
-          />
+        <>
+          {/* Dormant map preview */}
+          <div className="mt-8 max-w-4xl h-[400px] md:h-[500px] rounded-2xl overflow-hidden border border-[#eae6e1] relative">
+            <ReportThemeMap
+              pois={theme.allPOIs}
+              center={center}
+              highlightedPOIId={null}
+              onMarkerClick={() => {}}
+              mapStyle={mapStyle}
+              activated={false}
+            />
 
-          {/* Overlay + CTA — State 1 (dormant) */}
-          {!mapActivated && (
+            {/* Overlay + CTA */}
             <div className="absolute inset-0 z-10 flex items-end justify-center pb-8 pointer-events-none">
               <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-transparent" />
               <button
-                onClick={() => setMapActivated(true)}
+                onClick={() => { setSelectedPOIId(null); setMapDialogOpen(true); }}
                 className="relative pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] hover:shadow-xl hover:border-[#d4cfc8] transition-all"
               >
                 <MapIcon className="w-4 h-4 text-[#7a7062]" />
                 Utforsk kartet
               </button>
             </div>
-          )}
+          </div>
 
-          {/* POI drawer — State 2 (activated) */}
-          {mapActivated && selectedPOI && (
-            <ReportMapDrawer
-              poi={selectedPOI}
-              onClose={handleDrawerClose}
-              areaSlug={areaSlug}
-            />
-          )}
-        </div>
+          {/* Map modal */}
+          <Dialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
+            <DialogContent
+              showCloseButton={false}
+              className="flex flex-col w-[90vw] md:w-[80vw] h-[80vh] !max-w-none p-0 rounded-2xl overflow-hidden gap-0 bg-white"
+            >
+              <DialogTitle className="sr-only">{theme.name} — kart</DialogTitle>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-3 border-b border-[#eae6e1] bg-white shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <Icon className="w-5 h-5 text-[#7a7062]" />
+                  <span className="text-base font-semibold text-[#1a1a1a]">{theme.name}</span>
+                </div>
+                <button
+                  onClick={() => setMapDialogOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f5f3f0] transition-colors"
+                >
+                  <X className="w-4 h-4 text-[#6a6a6a]" />
+                </button>
+              </div>
+
+              {/* Map + drawer */}
+              <div className="relative flex-1 min-h-0">
+                <ReportThemeMap
+                  pois={theme.allPOIs}
+                  center={center}
+                  highlightedPOIId={selectedPOIId}
+                  onMarkerClick={handleMarkerClick}
+                  onMapClick={handleMapClick}
+                  mapStyle={mapStyle}
+                  activated={true}
+                />
+
+                {/* POI drawer */}
+                {selectedPOI && (
+                  <ReportMapDrawer
+                    poi={selectedPOI}
+                    onClose={handleDrawerClose}
+                    areaSlug={areaSlug}
+                  />
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
       )}
     </section>
   );
