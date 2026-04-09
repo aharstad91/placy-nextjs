@@ -12,6 +12,8 @@ import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportExplorerCTA from "./ReportExplorerCTA";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
+import { getIcon } from "@/lib/utils/map-icons";
+import { MapPin } from "lucide-react";
 
 const ReportStickyMap = dynamic(() => import("./ReportStickyMap"), {
   ssr: false,
@@ -174,7 +176,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
           {/* Primary themes */}
           {primaryThemes.map((theme, i) => (
             <div key={theme.id} ref={revealRef} className="report-section-reveal">
-              {i > 0 && <div className="h-px bg-[#e8e4df]" />}
+              {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
               <ReportThemeSection
                 theme={theme}
                 center={reportData.centerCoordinates}
@@ -197,7 +199,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
               </div>
               {secondaryThemes.map((theme, i) => (
                 <div key={theme.id} ref={revealRef} className="report-section-reveal">
-                  {i > 0 && <div className="h-px bg-[#e8e4df]" />}
+                  {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
                   <ReportThemeSection
                     theme={theme}
                     center={reportData.centerCoordinates}
@@ -213,20 +215,27 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
           )}
         </div>
 
-        {/* Right: Sticky map (40%) */}
+        {/* Right: Sticky map (40%) + metadata */}
         <div className="w-[40%] pt-16 pr-16 pb-16">
-          <div className="sticky top-20 h-[calc(100vh-5rem-4rem)] rounded-2xl overflow-hidden">
-            <ReportStickyMap
+          <div className="sticky top-6">
+            <div className="h-[60vh] rounded-2xl overflow-hidden">
+              <ReportStickyMap
+                themes={reportData.themes}
+                activeThemeId={activeThemeId}
+                activeSubSectionCategoryId={activeSubSectionCategoryId}
+                activePOI={activePOI}
+                hotelCoordinates={reportData.centerCoordinates}
+                onMarkerClick={handleMarkerClick}
+                onMapClick={handleMapClick}
+                mapStyle={reportData.mapStyle}
+                expandedThemes={new Set(reportData.themes.map((t) => t.id))}
+                areaSlug={areaSlug}
+              />
+            </div>
+            {/* Map metadata panel */}
+            <MapMetadata
               themes={reportData.themes}
               activeThemeId={activeThemeId}
-              activeSubSectionCategoryId={activeSubSectionCategoryId}
-              activePOI={activePOI}
-              hotelCoordinates={reportData.centerCoordinates}
-              onMarkerClick={handleMarkerClick}
-              onMapClick={handleMapClick}
-              mapStyle={reportData.mapStyle}
-              expandedThemes={new Set(reportData.themes.map((t) => t.id))}
-              areaSlug={areaSlug}
             />
           </div>
         </div>
@@ -238,7 +247,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
           {/* Primary themes */}
           {primaryThemes.map((theme, i) => (
             <div key={theme.id} ref={revealRef} className="col-span-12 report-section-reveal">
-              {i > 0 && <div className="h-px bg-[#e8e4df]" />}
+              {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
               <ReportThemeSection
                 theme={theme}
                 center={reportData.centerCoordinates}
@@ -258,7 +267,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
               </div>
               {secondaryThemes.map((theme, i) => (
                 <div key={theme.id} ref={revealRef} className="col-span-12 report-section-reveal">
-                  {i > 0 && <div className="h-px bg-[#e8e4df]" />}
+                  {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
                   <ReportThemeSection
                     theme={theme}
                     center={reportData.centerCoordinates}
@@ -295,6 +304,58 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
             label={reportData.label}
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Theme separator with icon ---
+
+function ThemeSeparator({ icon, color }: { icon: string; color: string }) {
+  const Icon = getIcon(icon);
+  return (
+    <div className="flex items-center gap-4 py-2">
+      <div className="h-px flex-1 bg-[#e0dcd6]" />
+      <div
+        className="flex items-center justify-center w-10 h-10 rounded-full"
+        style={{ backgroundColor: color + "18" }}
+      >
+        <Icon className="w-5 h-5" style={{ color }} />
+      </div>
+      <div className="h-px flex-1 bg-[#e0dcd6]" />
+    </div>
+  );
+}
+
+// --- Map metadata panel below the sticky map ---
+
+function MapMetadata({ themes, activeThemeId }: { themes: ReportTheme[]; activeThemeId: string | null }) {
+  const activeTheme = themes.find((t) => t.id === activeThemeId);
+  if (!activeTheme) return null;
+
+  const Icon = getIcon(activeTheme.icon);
+  const nearestPOI = activeTheme.allPOIs[0];
+  const nearestWalkMin = nearestPOI?.travelTime?.walk
+    ? Math.round(nearestPOI.travelTime.walk / 60)
+    : null;
+
+  return (
+    <div className="mt-3 px-4 py-3 rounded-xl bg-[#faf9f7] border border-[#eae6e1]">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="w-4 h-4 text-[#7a7062]" />
+        <span className="text-sm font-medium text-[#1a1a1a]">{activeTheme.name}</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#6a6a6a]">
+        <span>{activeTheme.stats.totalPOIs} steder på kartet</span>
+        {nearestWalkMin != null && (
+          <span className="flex items-center gap-1">
+            <MapPin className="w-3 h-3" />
+            Nærmest: {nearestWalkMin} min gange
+          </span>
+        )}
+        {activeTheme.stats.avgRating != null && (
+          <span>Snitt ★ {activeTheme.stats.avgRating.toFixed(1)}</span>
+        )}
       </div>
     </div>
   );

@@ -58,7 +58,7 @@ export default function ReportThemeSection({
     <section
       id={theme.id}
       ref={registerRef}
-      className="py-12 md:py-16 scroll-mt-[7rem]"
+      className="py-16 md:py-24 scroll-mt-[7rem]"
     >
       <div className="max-w-4xl">
         {/* Section heading */}
@@ -120,12 +120,78 @@ export default function ReportThemeSection({
             {theme.intro}
           </p>
         )}
+
+        {/* Data-driven category insight */}
+        <ThemeInsight theme={theme} />
       </div>
     </section>
   );
 }
 
-// --- POI inline link with HoverCard preview ---
+// --- Data-driven category insight ---
+
+function ThemeInsight({ theme }: { theme: ReportTheme }) {
+  const insights = generateThemeInsights(theme);
+  if (insights.length === 0) return null;
+
+  return (
+    <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm text-[#4a4a4a]">
+      {insights.map((insight, i) => (
+        <div key={i} className="flex items-baseline gap-2">
+          <span className="text-2xl font-semibold text-[#1a1a1a]">{insight.value}</span>
+          <span className="text-[#6a6a6a]">{insight.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface InsightItem {
+  value: string;
+  label: string;
+}
+
+function generateThemeInsights(theme: ReportTheme): InsightItem[] {
+  const pois = theme.allPOIs;
+  if (pois.length === 0) return [];
+
+  const nearestWalkMin = pois[0]?.travelTime?.walk
+    ? Math.round(pois[0].travelTime.walk / 60)
+    : null;
+
+  const within5 = pois.filter((p) => p.travelTime?.walk && p.travelTime.walk <= 300).length;
+  const within10 = pois.filter((p) => p.travelTime?.walk && p.travelTime.walk <= 600).length;
+
+  const items: InsightItem[] = [];
+  const id = theme.id;
+
+  if (id === "barn-oppvekst") {
+    const schools = pois.filter((p) => p.category.id === "skole");
+    const kindergartens = pois.filter((p) => p.category.id === "barnehage");
+    if (schools.length > 0) items.push({ value: String(schools.length), label: schools.length === 1 ? "skole" : "skoler" });
+    if (kindergartens.length > 0) items.push({ value: String(kindergartens.length), label: "barnehager" });
+    if (nearestWalkMin != null) items.push({ value: `${nearestWalkMin} min`, label: "til nærmeste" });
+  } else if (id === "hverdagsliv" || id === "hverdagstjenester") {
+    const grocery = pois.filter((p) => ["supermarket", "convenience"].includes(p.category.id));
+    if (grocery.length > 0) items.push({ value: String(grocery.length), label: grocery.length === 1 ? "dagligvare" : "dagligvarer" });
+    if (within5 > 0) items.push({ value: String(within5), label: "innen 5 min" });
+    items.push({ value: String(pois.length), label: "steder totalt" });
+  } else if (id === "transport") {
+    const bus = pois.filter((p) => p.category.id === "bus");
+    if (bus.length > 0) items.push({ value: String(bus.length), label: "holdeplasser" });
+    if (within5 > 0) items.push({ value: String(within5), label: "innen 5 min gange" });
+    if (nearestWalkMin != null) items.push({ value: `${nearestWalkMin} min`, label: "til nærmeste stopp" });
+  } else {
+    // Generic fallback
+    items.push({ value: String(pois.length), label: "steder" });
+    if (within10 > 0) items.push({ value: String(within10), label: "innen 10 min" });
+    if (theme.stats.avgRating != null) items.push({ value: theme.stats.avgRating.toFixed(1), label: "snittrating" });
+  }
+
+  return items;
+}
+
+// --- POI inline link with Popover ---
 
 function POIInlineLink({ poi, content, onClick }: { poi: POI; content: string; onClick: () => void }) {
   const Icon = getIcon(poi.category.icon);
