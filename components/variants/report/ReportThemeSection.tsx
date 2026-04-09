@@ -58,7 +58,7 @@ export default function ReportThemeSection({
     <section
       id={theme.id}
       ref={registerRef}
-      className="py-16 md:py-24 scroll-mt-[7rem]"
+      className="min-h-[80vh] py-16 md:py-24 scroll-mt-[7rem]"
     >
       <div className="max-w-4xl">
         {/* Section heading */}
