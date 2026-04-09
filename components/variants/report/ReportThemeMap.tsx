@@ -12,6 +12,8 @@ interface ReportThemeMapProps {
   pois: POI[];
   center: Coordinates;
   highlightedPOIId: string | null;
+  /** POI IDs mentioned in the narrative text — show permanent labels when activated */
+  featuredPOIIds?: Set<string>;
   onMarkerClick: (poiId: string) => void;
   onMapClick?: () => void;
   mapStyle?: string;
@@ -23,6 +25,7 @@ export default function ReportThemeMap({
   pois,
   center,
   highlightedPOIId,
+  featuredPOIIds,
   onMarkerClick,
   onMapClick,
   mapStyle,
@@ -116,6 +119,7 @@ export default function ReportThemeMap({
         {/* POI markers — tier-aware styling */}
         {pois.map((poi) => {
           const isHighlighted = highlightedPOIId === poi.id;
+          const isFeatured = activated && featuredPOIIds?.has(poi.id);
           const isHovered = hoveredPOI === poi.id && !isHighlighted;
           const Icon = getIcon(poi.category.icon);
           const walkMinutes = poi.travelTime?.walk
@@ -126,7 +130,7 @@ export default function ReportThemeMap({
           const tierSize = tier === 1 ? "w-9 h-9" : tier === 3 ? "w-7 h-7" : "w-8 h-8";
           const tierBorder = tier === 1 ? "border-2 border-white shadow-lg" : tier === 3 ? "border-[1.5px] border-white/70 shadow-md" : "border-2 border-white shadow-md";
           const tierIconSize = tier === 1 ? "w-[18px] h-[18px]" : tier === 3 ? "w-3.5 h-3.5" : "w-4 h-4";
-          const zIndex = isHighlighted ? 5 : isHovered ? 4 : tier === 1 ? 3 : 2;
+          const zIndex = isHighlighted ? 5 : isHovered ? 4 : isFeatured ? 3 : tier === 1 ? 3 : 2;
 
           return (
             <Marker
@@ -176,8 +180,8 @@ export default function ReportThemeMap({
                   />
                 </div>
 
-                {/* Tooltip on hover/highlight — only when activated */}
-                {activated && (isHovered || isHighlighted) && (
+                {/* Tooltip — featured POIs always visible, others on hover/highlight */}
+                {activated && (isHovered || isHighlighted || isFeatured) && (
                   <MarkerTooltip
                     name={poi.name}
                     categoryName={poi.category.name}

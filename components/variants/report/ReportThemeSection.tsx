@@ -88,6 +88,12 @@ export default function ReportThemeSection({
     ? linkPOIsInText(theme.extendedBridgeText, theme.allPOIs)
     : [];
 
+  // POIs mentioned in the text — show permanent labels on the activated map
+  const featuredPOIIds = useMemo(
+    () => new Set(segments.filter((s) => s.type === "poi" && s.poi).map((s) => s.poi!.id)),
+    [segments]
+  );
+
   return (
     <section
       id={theme.id}
@@ -213,6 +219,7 @@ export default function ReportThemeSection({
                   pois={theme.allPOIs}
                   center={center}
                   highlightedPOIId={selectedPOIId}
+                  featuredPOIIds={featuredPOIIds}
                   onMarkerClick={handleMarkerClick}
                   onMapClick={handleMapClick}
                   mapStyle={mapStyle}
