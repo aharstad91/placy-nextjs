@@ -6,6 +6,38 @@
 
 ---
 
+## 2026-04-09 — Report + Story merge: storytelling erstatter POI-grid
+
+### Beslutninger
+- **Report og Story merges** — for like produkter til å eksistere side om side. Story sin storytelling er det som manglet i Report.
+- **Report er basen** — beholder sin infrastruktur (sticky kart med marker-pooling, floating nav, spørsmålsbokser, scroll-tracking). Story sin innholdsopplevelse merges inn.
+- **POI-grid fjernet** — erstattet av narrativ tekst med inline-POI-lenker (fra story-text-linker). Klikk på POI-navn i teksten åpner 5-variant dialog OG synker med kartet.
+- **Stats-rad fjernet** — "12 steder | Snitt ★ 4.2 | 2733 anmeldelser" per tema borte. Ratings hører til på de individuelle kortene.
+- **60/40 layout** — tekst 60%, kart 40% (ned fra 50/50). Teksten er nå hovedinnholdet.
+- **Story-fane deaktivert** — fjernet fra nav, koden beholdes inntil vi er sikre.
+- **story-text-linker.ts** — flyttet fra Story til `lib/utils/` (delt mellom Report og Story).
+- **ReportThemeSection** — fra ~530 linjer med grid/load-more/sub-sections til ~180 linjer med narrativ tekst + inline-POI.
+
+### Parkert / Åpne spørsmål
+- **Temaer uten inline-POI:** Mat & Drikke og Natur & Friluftsliv har narrativ tekst men ingen klikkbare POI-lenker. Tekst-linkeren matcher bare POI-navn som finnes verbatim i teksten. Curator-skapte extendedBridgeText for disse temaene bør nevne spesifikke POI-er.
+- **Mobil kart:** Mobil har bare storytelling uten kart. Vurder å legge inn per-tema kart som Story hadde (StoryMap) for mobil.
+- **ReportPOICard dead code:** Filen er fortsatt i repo men brukes ikke lenger av ReportThemeSection. Slettes sammen med annen opprydding.
+- **ReportInteractiveMapSection:** Brukes av mobil-fallback men er nå bypassed — kan slettes.
+- **Engelsk bridgeText:** Auto-generert bridgeText er på engelsk mens extendedBridgeText (fra Curator) er norsk. Bør harmoniseres.
+
+### Retning
+- **Unified Report er riktig.** Storytelling med inline-POI-lenker er en mye sterkere opplevelse enn POI-kort i grid. Meglere kjenner igjen formatet — det ligner hvordan de selv presenterer et område.
+- **Neste steg:** Fylle inn extendedBridgeText for alle temaer via Curator (spesielt Mat & Drikke, Natur & Friluftsliv). Deretter mobil-kart per tema.
+- **Story-koden kan slettes** når vi er sikre på at unified Report dekker alt. Bør vente minst én demo-runde.
+
+### Observasjoner
+- **Netto -112 linjer kode** (383 lagt til, 495 fjernet). Merge forenklet kodebasen.
+- **Kart-synken fungerte umiddelbart** — ReportPage sin handlePOIClick() trengte ingen endring, bare å wire onPOIClick fra inline-POI til eksisterende callback.
+- **HoverCard + Dialog-mønsteret** fra Story er direkte gjenbrukbart i Report uten tilpasning. God komponentdesign betaler seg.
+- **Produktforenkling > produktekspansjon.** Å fjerne én fane (Story) og styrke en annen (Report) gir bedre brukeropplevelse enn to halvgode produkter.
+
+---
+
 ## 2026-04-08 (sesjon 2) — Inline POI-kortsystem med 5 varianter
 
 ### Beslutninger
