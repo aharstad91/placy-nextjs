@@ -28,14 +28,12 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
   const [imageError, setImageError] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  // Animate in on mount
+  // Reset and re-animate when POI changes
   useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-  }, []);
-
-  // Reset image error when POI changes
-  useEffect(() => {
+    setVisible(false);
     setImageError(false);
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
   }, [poi.id]);
 
   const CategoryIcon = getIcon(poi.category.icon);
@@ -218,12 +216,12 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
 
       {/* Mobile: Bottom drawer */}
       <div
-        className={`md:hidden absolute bottom-0 left-0 right-0 z-20 transition-transform duration-300 ease-out ${
-          visible ? "translate-y-0" : "translate-y-full"
+        className={`md:hidden absolute bottom-0 left-0 right-0 z-20 transition-all duration-300 ease-out ${
+          visible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-white/95 backdrop-blur-sm border-t border-[#eae6e1] rounded-t-xl max-h-[50%] overflow-y-auto">
+        <div className="bg-white border-t border-[#eae6e1] rounded-t-xl max-h-[50vh] overflow-y-auto shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
           {/* Drag handle */}
           <div className="flex justify-center pt-2 pb-1">
             <div className="w-8 h-1 rounded-full bg-gray-300" />

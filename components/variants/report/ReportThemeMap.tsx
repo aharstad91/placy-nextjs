@@ -19,6 +19,8 @@ interface ReportThemeMapProps {
   mapStyle?: string;
   /** When false, map uses cooperativeGestures and markers are non-interactive */
   activated?: boolean;
+  /** Project name — shown as permanent label on center marker */
+  projectName?: string;
 }
 
 export default function ReportThemeMap({
@@ -30,6 +32,7 @@ export default function ReportThemeMap({
   onMapClick,
   mapStyle,
   activated = false,
+  projectName,
 }: ReportThemeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -46,20 +49,15 @@ export default function ReportThemeMap({
     applyIllustratedTheme(map);
 
     if (pois.length > 0) {
-      const allCoords = [...pois.map((p) => p.coordinates), center];
-      const bounds = allCoords.reduce(
-        (acc, coord) => ({
-          minLng: Math.min(acc.minLng, coord.lng),
-          maxLng: Math.max(acc.maxLng, coord.lng),
-          minLat: Math.min(acc.minLat, coord.lat),
-          maxLat: Math.max(acc.maxLat, coord.lat),
-        }),
-        { minLng: Infinity, maxLng: -Infinity, minLat: Infinity, maxLat: -Infinity }
-      );
+      // Calculate max distance from center to any POI, then mirror to keep center in middle
+      const allCoords = pois.map((p) => p.coordinates);
+      const maxDeltaLng = Math.max(...allCoords.map((c) => Math.abs(c.lng - center.lng)));
+      const maxDeltaLat = Math.max(...allCoords.map((c) => Math.abs(c.lat - center.lat)));
+
       mapRef.current.fitBounds(
         [
-          [bounds.minLng, bounds.minLat],
-          [bounds.maxLng, bounds.maxLat],
+          [center.lng - maxDeltaLng, center.lat - maxDeltaLat],
+          [center.lng + maxDeltaLng, center.lat + maxDeltaLat],
         ],
         { padding: 60, duration: 0, maxZoom: 16 }
       );
@@ -104,15 +102,27 @@ export default function ReportThemeMap({
         onClick={activated ? onMapClick : undefined}
         cooperativeGestures={!activated}
       >
-        {/* Project/hotel marker — always visible */}
+        {/* Project/hotel marker — always visible with label */}
         <Marker
           longitude={center.lng}
           latitude={center.lat}
-          anchor="center"
+          anchor="bottom"
           style={{ zIndex: 10 }}
         >
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#b45309] border-2 border-white shadow-lg">
-            <Building2 className="w-5 h-5 text-white" />
+          <div className="flex flex-col items-center">
+            {/* Permanent label */}
+            {projectName && (
+              <div className="mb-1.5 px-2.5 py-1 bg-white rounded-lg shadow-md border border-[#eae6e1] whitespace-nowrap">
+                <span className="text-xs font-semibold text-[#1a1a1a]">{projectName}</span>
+              </div>
+            )}
+            {/* Marker with glow */}
+            <div className="relative">
+              <div className="absolute -inset-2 rounded-full bg-[#b45309]/20 animate-pulse" />
+              <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-[#b45309] border-[2.5px] border-white shadow-lg">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+            </div>
           </div>
         </Marker>
 

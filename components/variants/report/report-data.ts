@@ -9,6 +9,7 @@ import { calculateReportScore, NULL_TIER_VALUE } from "@/lib/utils/poi-score";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/strings";
 import { generateBridgeText } from "@/lib/generators/bridge-text-generator";
+import { getHeroInsightPOIIds } from "./ReportHeroInsight";
 
 /** Haversine distance in meters between two coordinates */
 function haversineMeters(a: Coordinates, b: Coordinates): number {
@@ -196,8 +197,15 @@ export function applyCategoryFilter(
       // Always keep higher education (VGS, NTNU, etc.)
       if (HIGHER_ED_KEYWORDS.some((kw) => name.includes(kw))) return true;
       // Keep if school name matches the zone's barneskole or ungdomsskole
-      if (zone.barneskole && name.includes(zone.barneskole.toLowerCase())) return true;
-      if (zone.ungdomsskole && name.includes(zone.ungdomsskole.toLowerCase())) return true;
+      // Fuzzy: also match with last char stripped (handles Blussuvold vs Blussuvoll etc.)
+      if (zone.barneskole) {
+        const zn = zone.barneskole.toLowerCase();
+        if (name.includes(zn) || (zn.length >= 4 && name.includes(zn.slice(0, -1)))) return true;
+      }
+      if (zone.ungdomsskole) {
+        const zn = zone.ungdomsskole.toLowerCase();
+        if (name.includes(zn) || (zn.length >= 4 && name.includes(zn.slice(0, -1)))) return true;
+      }
       return false;
     });
   }
@@ -416,7 +424,10 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       color: themeDef.color,
       question: getThemeQuestion(locale, themeDef.id),
       intro: themeDef.intro,
-      bridgeText: themeDef.bridgeText || generateBridgeText(themeDef.id, filtered, center),
+      bridgeText: themeDef.bridgeText || generateBridgeText(
+        themeDef.id, filtered, center,
+        getHeroInsightPOIIds(themeDef.id, filtered, center),
+      ),
       extendedBridgeText: (themeDef as { extendedBridgeText?: string }).extendedBridgeText,
       stats: {
         totalPOIs: filtered.length,

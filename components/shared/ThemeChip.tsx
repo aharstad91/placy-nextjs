@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { getIcon } from "@/lib/utils/map-icons";
-import { ChevronDown, Check } from "lucide-react";
+import { Check } from "lucide-react";
 
 /**
  * Minimal data interface — works with both ThemeDefinition and ReportTheme
@@ -63,10 +63,6 @@ export default function ThemeChip({
             <span className="block text-xs text-[#a0998f]">{theme.name}</span>
           )}
         </div>
-        <ChevronDown
-          className="w-4 h-4 text-[#a0998f] flex-shrink-0 group-hover:translate-y-0.5 transition-transform motion-reduce:transform-none"
-          aria-hidden="true"
-        />
       </button>
     );
   }

@@ -115,9 +115,9 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white max-w-[800px] mx-auto">
       {/* Hero — full width with padding */}
-      <div className="px-16">
+      <div className="px-8 md:px-16">
         <div className="grid grid-cols-12 gap-x-6">
           <ReportHero
             projectName={reportData.projectName}
@@ -128,7 +128,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
       </div>
 
       {/* Theme sections — full width with per-category maps */}
-      <div className="px-16">
+      <div className="px-8 md:px-16">
         {/* Primary themes */}
         {primaryThemes.map((theme, i) => (
           <div key={theme.id} ref={revealRef} className="report-section-reveal">
@@ -172,7 +172,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
       </div>
 
       {/* Footer sections — full width with padding */}
-      <div className="px-16">
+      <div className="px-8 md:px-16">
         <div className="grid grid-cols-12 gap-x-6">
           {/* Explorer CTA */}
           {explorerBaseUrl && project.pois.length > 0 && (

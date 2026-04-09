@@ -8,6 +8,7 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { Star, MapPin, Map as MapIcon, X } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
+import ReportHeroInsight from "./ReportHeroInsight";
 import {
   Popover,
   PopoverTrigger,
@@ -100,7 +101,7 @@ export default function ReportThemeSection({
       ref={registerRef}
       className="py-16 md:py-24 scroll-mt-[7rem]"
     >
-      <div className="max-w-4xl">
+      <div className="md:max-w-4xl">
         {/* Section heading */}
         <div className="flex items-center gap-3 mb-4">
           <Icon className={variant === "secondary" ? "w-5 h-5 text-[#a0937d]" : "w-6 h-6 text-[#7a7062]"} />
@@ -117,6 +118,11 @@ export default function ReportThemeSection({
           <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed mb-5">
             {theme.quote}
           </p>
+        )}
+
+        {/* Hero insight — category-specific structured data */}
+        {variant !== "secondary" && (
+          <ReportHeroInsight theme={theme} center={center} />
         )}
 
         {/* Bridge text — short narrative intro */}
@@ -160,15 +166,13 @@ export default function ReportThemeSection({
           </p>
         )}
 
-        {/* Data-driven category insight */}
-        <ThemeInsight theme={theme} />
       </div>
 
       {/* Per-category map — dormant preview + modal on activate */}
       {theme.allPOIs.length > 0 && (
         <>
           {/* Dormant map preview */}
-          <div className="mt-8 max-w-4xl h-[400px] md:h-[500px] rounded-2xl overflow-hidden border border-[#eae6e1] relative">
+          <div className="mt-8 md:max-w-4xl h-[280px] md:h-[400px] rounded-2xl overflow-hidden border border-[#eae6e1] relative">
             <ReportThemeMap
               pois={theme.allPOIs}
               center={center}
@@ -176,11 +180,13 @@ export default function ReportThemeSection({
               onMarkerClick={() => {}}
               mapStyle={mapStyle}
               activated={false}
+              projectName={projectName}
             />
 
             {/* Overlay + CTA */}
-            <div className="absolute inset-0 z-10 flex items-end justify-center pb-8 pointer-events-none">
-              <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-transparent" />
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center -mt-[10%] pointer-events-none">
+              <div className="absolute inset-0 bg-white/60" />
+              <p className="relative text-sm text-[#6a6a6a] mb-3">Se alle {theme.allPOIs.length} steder på kartet</p>
               <button
                 onClick={() => { setSelectedPOIId(null); setMapDialogOpen(true); }}
                 className="relative pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] hover:shadow-xl hover:border-[#d4cfc8] transition-all"
@@ -191,19 +197,24 @@ export default function ReportThemeSection({
             </div>
           </div>
 
-          {/* Map modal */}
+          {/* Map modal — bottom drawer on mobile, centered modal on desktop */}
           <Dialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
             <DialogContent
               showCloseButton={false}
-              className="flex flex-col w-[90vw] md:w-[80vw] h-[80vh] !max-w-none p-0 rounded-2xl overflow-hidden gap-0 bg-white"
+              className="flex flex-col !max-w-none p-0 overflow-hidden gap-0 bg-white fixed bottom-0 left-0 right-0 h-[85vh] rounded-t-2xl rounded-b-none md:static md:w-[80vw] md:h-[80vh] md:rounded-2xl"
             >
               <DialogTitle className="sr-only">{theme.name} — kart</DialogTitle>
 
+              {/* Drag handle — mobile only */}
+              <div className="flex justify-center pt-2 pb-0 md:hidden">
+                <div className="w-8 h-1 rounded-full bg-gray-300" />
+              </div>
+
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-[#eae6e1] bg-white shrink-0">
+              <div className="flex items-center justify-between px-4 py-2 md:px-5 md:py-3 border-b border-[#eae6e1] bg-white shrink-0">
                 <div className="flex items-center gap-2.5">
                   <Icon className="w-5 h-5 text-[#7a7062]" />
-                  <span className="text-base font-semibold text-[#1a1a1a]">{theme.name}</span>
+                  <span className="text-sm md:text-base font-semibold text-[#1a1a1a]">{theme.name}</span>
                 </div>
                 <button
                   onClick={() => setMapDialogOpen(false)}
@@ -214,7 +225,7 @@ export default function ReportThemeSection({
               </div>
 
               {/* Map + drawer */}
-              <div className="relative flex-1 min-h-0">
+              <div className="relative flex-1 min-h-0 p-0 md:p-8">
                 <ReportThemeMap
                   pois={theme.allPOIs}
                   center={center}
@@ -224,6 +235,7 @@ export default function ReportThemeSection({
                   onMapClick={handleMapClick}
                   mapStyle={mapStyle}
                   activated={true}
+                  projectName={projectName}
                 />
 
                 {/* POI drawer */}
@@ -243,74 +255,17 @@ export default function ReportThemeSection({
   );
 }
 
-// --- Data-driven category insight ---
-
-function ThemeInsight({ theme }: { theme: ReportTheme }) {
-  const insights = generateThemeInsights(theme);
-  if (insights.length === 0) return null;
-
-  return (
-    <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm text-[#4a4a4a]">
-      {insights.map((insight, i) => (
-        <div key={i} className="flex items-baseline gap-2">
-          <span className="text-2xl font-semibold text-[#1a1a1a]">{insight.value}</span>
-          <span className="text-[#6a6a6a]">{insight.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-interface InsightItem {
-  value: string;
-  label: string;
-}
-
-function generateThemeInsights(theme: ReportTheme): InsightItem[] {
-  const pois = theme.allPOIs;
-  if (pois.length === 0) return [];
-
-  const nearestWalkMin = pois[0]?.travelTime?.walk
-    ? Math.round(pois[0].travelTime.walk / 60)
-    : null;
-
-  const within5 = pois.filter((p) => p.travelTime?.walk && p.travelTime.walk <= 300).length;
-  const within10 = pois.filter((p) => p.travelTime?.walk && p.travelTime.walk <= 600).length;
-
-  const items: InsightItem[] = [];
-  const id = theme.id;
-
-  if (id === "barn-oppvekst") {
-    const schools = pois.filter((p) => p.category.id === "skole");
-    const kindergartens = pois.filter((p) => p.category.id === "barnehage");
-    if (schools.length > 0) items.push({ value: String(schools.length), label: schools.length === 1 ? "skole" : "skoler" });
-    if (kindergartens.length > 0) items.push({ value: String(kindergartens.length), label: "barnehager" });
-    if (nearestWalkMin != null) items.push({ value: `${nearestWalkMin} min`, label: "til nærmeste" });
-  } else if (id === "hverdagsliv" || id === "hverdagstjenester") {
-    const grocery = pois.filter((p) => ["supermarket", "convenience"].includes(p.category.id));
-    if (grocery.length > 0) items.push({ value: String(grocery.length), label: grocery.length === 1 ? "dagligvare" : "dagligvarer" });
-    if (within5 > 0) items.push({ value: String(within5), label: "innen 5 min" });
-    items.push({ value: String(pois.length), label: "steder totalt" });
-  } else if (id === "transport") {
-    const bus = pois.filter((p) => p.category.id === "bus");
-    if (bus.length > 0) items.push({ value: String(bus.length), label: "holdeplasser" });
-    if (within5 > 0) items.push({ value: String(within5), label: "innen 5 min gange" });
-    if (nearestWalkMin != null) items.push({ value: `${nearestWalkMin} min`, label: "til nærmeste stopp" });
-  } else {
-    // Generic fallback
-    items.push({ value: String(pois.length), label: "steder" });
-    if (within10 > 0) items.push({ value: String(within10), label: "innen 10 min" });
-    if (theme.stats.avgRating != null) items.push({ value: theme.stats.avgRating.toFixed(1), label: "snittrating" });
-  }
-
-  return items;
-}
-
 // --- POI inline link with Popover ---
 
 function POIInlineLink({ poi, content }: { poi: POI; content: string }) {
   const Icon = getIcon(poi.category.icon);
   const walkMin = poi.travelTime?.walk ? Math.round(poi.travelTime.walk / 60) : null;
+
+  const imageUrl = poi.featuredImage
+    ? poi.featuredImage.includes("mymaps.usercontent.google.com")
+      ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
+      : poi.featuredImage
+    : null;
 
   return (
     <Popover>
@@ -318,8 +273,19 @@ function POIInlineLink({ poi, content }: { poi: POI; content: string }) {
         <span
           role="button"
           tabIndex={0}
-          className="font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors cursor-pointer"
+          className="inline-flex items-baseline gap-1 font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors cursor-pointer"
         >
+          <span
+            className="inline-flex items-center justify-center w-[1.2em] h-[1.2em] rounded-full shrink-0 overflow-hidden relative translate-y-[0.15em]"
+            style={!imageUrl ? { backgroundColor: poi.category.color + "20" } : undefined}
+          >
+            {imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <Icon className="w-[0.6em] h-[0.6em]" style={{ color: poi.category.color }} />
+            )}
+          </span>
           {content}
         </span>
       </PopoverTrigger>

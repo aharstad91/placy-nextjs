@@ -8,11 +8,12 @@
  * Research: docs/research/2026-04-08-beliggenhetstekst-moensteranalyse.md
  *
  * Design principles (from Brøset 046 gullstandard):
- * 1. 1–2 ankersteder per theme — show span, not list
- * 2. Contrast pairs: nær ↔ fjern, innendørs ↔ utendørs
- * 3. Last sentence = hverdagskonklusjon
- * 4. Never generic — always name actual POIs
- * 5. Two sentences per theme (calibrated to Brøset output)
+ * 1. Complement the hero insight card — never repeat Tier 1 POIs
+ * 2. Focus on mood, context, and Tier 2 POIs that give the area character
+ * 3. Contrast pairs: nær ↔ fjern, innendørs ↔ utendørs
+ * 4. Last sentence = hverdagskonklusjon
+ * 5. Never generic — always name actual POIs
+ * 6. Two sentences per theme (calibrated to Brøset output)
  */
 
 import type { POI, Coordinates } from "@/lib/types";
@@ -24,15 +25,20 @@ import type { POI, Coordinates } from "@/lib/types";
 /**
  * Generate S&J-style bridge text for a theme.
  * Returns undefined if insufficient POI data for a meaningful text.
+ *
+ * @param excludePOIIds - POI IDs already shown in the hero insight card (Tier 1).
+ *   The generated text will avoid naming these and focus on Tier 2 POIs instead.
  */
 export function generateBridgeText(
   themeId: string,
   pois: POI[],
   center: Coordinates,
+  excludePOIIds?: Set<string>,
 ): string | undefined {
   const gen = GENERATORS[themeId];
   if (!gen || pois.length === 0) return undefined;
-  const text = gen(pois, center);
+  const exclude = excludePOIIds ?? new Set();
+  const text = gen(pois, center, exclude);
   return text || undefined;
 }
 
@@ -121,45 +127,43 @@ function ogJoin(items: string[]): string {
 // Theme generators
 // ============================================================
 
-type Gen = (pois: POI[], center: Coordinates) => string;
+type Gen = (pois: POI[], center: Coordinates, exclude: Set<string>) => string;
 
 /**
  * Barn & Oppvekst
- * Anchors: school ↔ barnehage  |  idrett ↔ lekeplass
- * Pattern: "Eberg skole i gangavstand, Brøset barnehage for de minste.
- *           Blussuvoll og Leangen dekker resten — fra svømmehall til friidrettsbane."
+ * Hero insight card shows: skolekrets (barneskole, ungdomsskole, VGS) + barnehage/lekeplass count
+ * Text complements: barnevennlighet, trygghet, lekeplasser med navn, organisert idrett
  */
-function barnOppvekst(pois: POI[], c: Coordinates): string {
-  const skoler = byDistance(inCats(pois, "skole"), c);
-  const bhg = byDistance(inCats(pois, "barnehage"), c);
-  const lek = byDistance(inCats(pois, "lekeplass"), c);
-  const idrett = byDistance(inCats(pois, "idrett"), c);
+function barnOppvekst(pois: POI[], c: Coordinates, exclude: Set<string>): string {
+  const lek = byDistance(inCats(pois, "lekeplass"), c).filter((p) => !exclude.has(p.id));
+  const idrett = byDistance(inCats(pois, "idrett"), c).filter((p) => !exclude.has(p.id));
+  // Secondary schools/barnehager not in the card
+  const bhg = byDistance(inCats(pois, "barnehage"), c).filter((p) => !exclude.has(p.id));
 
   const parts: string[] = [];
 
-  // Sentence 1: school + barnehage pair
-  if (skoler[0] && bhg[0]) {
+  // Sentence 1: barnevennlighet + lekeplass/barnehage character
+  if (lek[0] && bhg.length > 2) {
     parts.push(
-      `${clean(skoler[0])} ${prox(skoler[0], c)}, ${clean(bhg[0])} for de minste.`,
+      `Et trygt og barnevennlig nabolag med ${bhg.length} barnehager i gangavstand og lekeplass ved ${clean(lek[0])}.`,
     );
-  } else if (skoler[0]) {
-    parts.push(`${clean(skoler[0])} ${prox(skoler[0], c)}.`);
-  } else if (bhg[0]) {
-    const n = bhg.length;
+  } else if (lek[0]) {
     parts.push(
-      `${clean(bhg[0])} er nærmeste barnehage${n > 2 ? ` — ${n} alternativer i nærområdet` : ""}.`,
+      `Rolige omgivelser der barna kan leke trygt — ${clean(lek[0])} ${prox(lek[0], c)}.`,
     );
+  } else if (bhg.length > 2) {
+    parts.push(
+      `Et barnevennlig område med ${bhg.length} barnehager i nabolaget.`,
+    );
+  } else {
+    parts.push("Et rolig og barnevennlig nabolag.");
   }
 
-  // Sentence 2: activity contrast (organized ↔ free play)
-  if (idrett[0] && lek[0]) {
+  // Sentence 2: organized activity (idrett) — gives character
+  if (idrett[0]) {
     parts.push(
-      `${clean(idrett[0])} og lekeplass i nabolaget gir rom for både organisert aktivitet og fri lek.`,
+      `${clean(idrett[0])} gir rom for organisert aktivitet ${prox(idrett[0], c)}.`,
     );
-  } else if (idrett[0]) {
-    parts.push(`${clean(idrett[0])} for organisert aktivitet ${prox(idrett[0], c)}.`);
-  } else if (lek[0]) {
-    parts.push(`Lekeplass ${prox(lek[0], c)}.`);
   }
 
   return parts.join(" ");
@@ -167,33 +171,41 @@ function barnOppvekst(pois: POI[], c: Coordinates): string {
 
 /**
  * Hverdagsliv
- * Anchors: nærbutikk ↔ storhandel/alternativ
- * Pattern: "Valentinlyst Senter med Coop Mega, apotek og frisør i gangavstand
- *           — MENY Moholt for de større handlekurvene. Det meste ordnes uten bil."
+ * Hero insight card shows: nearest dagligvare, apotek, lege, frisør
+ * Text complements: samlokaliseringer, kjøpesentre, spesialbutikker, "uten bil"
  */
-function hverdagsliv(pois: POI[], c: Coordinates): string {
-  const butikker = byDistance(inCats(pois, "supermarket", "convenience"), c);
-  const apotek = inCats(pois, "pharmacy");
+function hverdagsliv(pois: POI[], c: Coordinates, exclude: Set<string>): string {
+  // Tier 2: butikker and services NOT in the card
+  const tier2 = byDistance(pois.filter((p) => !exclude.has(p.id)), c);
+  const butikker = tier2.filter((p) => ["supermarket", "convenience"].includes(p.category.id));
 
   const parts: string[] = [];
 
-  // Sentence 1: nearest + second supermarket (show span)
-  if (butikker[0] && butikker[1]) {
-    const hasApotek = apotek.length > 0;
-    const extras = hasApotek ? " med apotek i nærheten" : "";
+  // Sentence 1: secondary shops or samlokalisering
+  if (butikker.length >= 2) {
     parts.push(
-      `${clean(butikker[0])} ${prox(butikker[0], c)}${extras} — ${clean(butikker[1])} for variasjon.`,
+      `${clean(butikker[0])} og ${clean(butikker[1])} gir variasjon for de som vil veksle mellom butikker.`,
     );
   } else if (butikker[0]) {
-    parts.push(`${clean(butikker[0])} ${prox(butikker[0], c)}.`);
+    parts.push(
+      `${clean(butikker[0])} ${prox(butikker[0], c)} for variasjon.`,
+    );
+  } else {
+    // All grocery is in the card — focus on walkability
+    const walkable = countWithin(pois, c, 15);
+    if (walkable >= 5) {
+      parts.push("Hverdagstjenestene er samlet i gangavstand — alt ordnes uten bil.");
+    } else {
+      parts.push("De viktigste hverdagstjenestene i nabolaget.");
+    }
   }
 
-  // Sentence 2: conclusion
-  const walkable = countWithin(pois, c, 15);
-  if (walkable >= 5) {
-    parts.push("Det meste ordnes uten bil.");
-  } else if (walkable >= 3) {
-    parts.push("De viktigste hverdagstjenestene i gangavstand.");
+  // Sentence 2: walkability conclusion (if not already stated)
+  if (butikker.length > 0) {
+    const walkable = countWithin(pois, c, 15);
+    if (walkable >= 5) {
+      parts.push("Det meste ordnes uten bil.");
+    }
   }
 
   return parts.join(" ");
@@ -201,28 +213,32 @@ function hverdagsliv(pois: POI[], c: Coordinates): string {
 
 /**
  * Mat & Drikke
- * Anchors: local spot ↔ area character  |  quality + honesty
- * Pattern: "Moholt Allmenning har fått nye spisesteder de siste årene, og
- *           studentbyen tilfører kafeer. Sentrum med full bredde er et kvarter med buss."
+ * Hero insight card shows: top 3 rated places
+ * Text complements: mangfold, karakter, sekundære steder, "morgenkaffe til fredagskveld"
  */
-function matDrikke(pois: POI[], c: Coordinates): string {
-  const kafeer = inCats(pois, "cafe", "bakery");
-  const restauranter = inCats(pois, "restaurant");
+function matDrikke(pois: POI[], c: Coordinates, exclude: Set<string>): string {
+  // Tier 2: places NOT in the top-rated card
+  const tier2 = pois.filter((p) => !exclude.has(p.id));
+  const kafeer = byDistance(inCats(tier2, "cafe", "bakery"), c);
+  const restauranter = byDistance(inCats(tier2, "restaurant"), c);
+  const barer = byDistance(inCats(tier2, "bar"), c);
 
   const parts: string[] = [];
 
-  // Sentence 1: anchor pair (quality + daily)
-  const bestRest = topRated(restauranter) ?? byDistance(restauranter, c)[0];
-  const bestKafe = topRated(kafeer) ?? byDistance(kafeer, c)[0];
-
-  if (bestRest && bestKafe) {
-    parts.push(`${clean(bestKafe)} og ${clean(bestRest)} gir nabolaget karakter.`);
-  } else {
-    const anchor = bestRest ?? bestKafe;
-    if (anchor) parts.push(`${clean(anchor)} ${prox(anchor, c)}.`);
+  // Sentence 1: secondary places that give character
+  const charPoi = kafeer[0] ?? restauranter[0] ?? barer[0];
+  if (charPoi && (kafeer.length + restauranter.length + barer.length) >= 2) {
+    const second = kafeer[0]?.id !== charPoi.id ? kafeer[0] : (restauranter[0] ?? barer[0]);
+    if (second) {
+      parts.push(`Fra ${clean(charPoi)} til ${clean(second)} — nabolaget har sitt eget mattilbud.`);
+    } else {
+      parts.push(`${clean(charPoi)} gir nabolaget karakter.`);
+    }
+  } else if (charPoi) {
+    parts.push(`${clean(charPoi)} ${prox(charPoi, c)}.`);
   }
 
-  // Sentence 2: honest quantity conclusion
+  // Sentence 2: honest breadth conclusion
   const total = pois.length;
   if (total >= 8) {
     parts.push("Godt utvalg for den som setter pris på å spise ute.");
@@ -237,28 +253,26 @@ function matDrikke(pois: POI[], c: Coordinates): string {
 
 /**
  * Opplevelser
- * Anchors: 2–3 named culture spots
- * Pattern: "Bibliotek, kino og museum i nabolaget. Aldri langt til neste opplevelse."
+ * Hero insight card shows: nearest per type (bibliotek, kino, museum, teater)
+ * Text complements: what makes the cultural life unique, secondary spots, breadth
  */
-function opplevelser(pois: POI[], c: Coordinates): string {
-  const bib = byDistance(inCats(pois, "library"), c)[0];
-  const kino = byDistance(inCats(pois, "cinema"), c)[0];
-  const mus = byDistance(inCats(pois, "museum"), c)[0];
-  const annet = byDistance(inCats(pois, "bowling", "amusement", "theatre"), c)[0];
-
-  const anchors: POI[] = [bib, mus, kino, annet].filter(Boolean) as POI[];
-  if (anchors.length === 0) return "";
+function opplevelser(pois: POI[], c: Coordinates, exclude: Set<string>): string {
+  const tier2 = byDistance(pois.filter((p) => !exclude.has(p.id)), c);
 
   const parts: string[] = [];
 
-  if (anchors.length >= 2) {
-    parts.push(`${ogJoin(anchors.slice(0, 3).map(clean))} i nabolaget.`);
-  } else {
-    parts.push(`${clean(anchors[0])} ${prox(anchors[0], c)}.`);
+  if (tier2.length >= 2) {
+    parts.push(
+      `${ogJoin(tier2.slice(0, 2).map(clean))} utvider kulturtilbudet i nabolaget.`,
+    );
+  } else if (tier2[0]) {
+    parts.push(`${clean(tier2[0])} ${prox(tier2[0], c)}.`);
   }
 
   if (pois.length >= 4) {
     parts.push("Aldri langt til neste opplevelse.");
+  } else if (pois.length >= 2) {
+    parts.push("Et kulturliv som gir hverdagen farge.");
   }
 
   return parts.join(" ");
@@ -266,38 +280,30 @@ function opplevelser(pois: POI[], c: Coordinates): string {
 
 /**
  * Natur & Friluftsliv
- * Anchors: marka/tur ↔ lokal park/badeplass
- * Pattern: "Estenstadmarka starter i enden av gaten — merkede stier, lysløype
- *           om vinteren. Brøset-parken og Leangenbekken gir grønne drag."
+ * Hero insight card shows: primary nature area + 2 secondary spots
+ * Text complements: mood, trails, seasonal character, "marka utenfor døren"
  */
-function naturFriluftsliv(pois: POI[], c: Coordinates): string {
-  const parker = byDistance(inCats(pois, "park"), c);
-  const outdoor = byDistance(inCats(pois, "outdoor"), c);
-  const bade = byDistance(inCats(pois, "badeplass"), c);
+function naturFriluftsliv(pois: POI[], c: Coordinates, exclude: Set<string>): string {
+  const tier2 = byDistance(pois.filter((p) => !exclude.has(p.id)), c);
+  const bade = byDistance(inCats(tier2, "badeplass"), c);
 
   const parts: string[] = [];
 
-  // Sentence 1: nearest nature area (dramatic proximity)
-  const allNature = byDistance([...outdoor, ...parker], c);
-  const naturPoi = allNature[0];
-  if (naturPoi) {
-    const w = walkMin(naturPoi, c);
-    if (w <= 5) {
-      parts.push(`${clean(naturPoi)} starter rett utenfor døren.`);
-    } else {
-      parts.push(`${clean(naturPoi)} ${prox(naturPoi, c)}.`);
-    }
+  // Sentence 1: mood + secondary spots
+  if (tier2.length >= 2) {
+    parts.push(
+      `${clean(tier2[0])} og ${clean(tier2[1])} gir grønne drag midt i nabolaget.`,
+    );
+  } else if (tier2[0]) {
+    parts.push(`${clean(tier2[0])} gir grønne rom i nabolaget.`);
+  } else {
+    // All nature is in the card — focus on mood
+    parts.push("Naturen er aldri langt unna — turstier og grøntområder rett utenfor døren.");
   }
 
-  // Sentence 2: contrast — badeplass (seasonal) or secondary green space
-  if (bade[0]) {
+  // Sentence 2: badeplass or seasonal element
+  if (bade[0] && !exclude.has(bade[0].id)) {
     parts.push(`${clean(bade[0])} gir bademuligheter om sommeren.`);
-  } else {
-    // Find a secondary green area different from anchor 1
-    const secondary = allNature.find((p) => p.id !== naturPoi?.id);
-    if (secondary) {
-      parts.push(`${clean(secondary)} gir grønne rom midt i nabolaget.`);
-    }
   }
 
   return parts.join(" ");
@@ -305,32 +311,27 @@ function naturFriluftsliv(pois: POI[], c: Coordinates): string {
 
 /**
  * Trening & Aktivitet
- * Anchors: named gyms/pools ↔ outdoor option
- * Pattern: "MaxPuls på Moholt, Fresh Fitness på Valentinlyst, svømmebasseng
- *           i Blussuvollhallen — alt i gangavstand. Estenstadmarka har lysløype."
+ * Hero insight card shows: nearest gym, pool, fitness park
+ * Text complements: variation, outdoor options, secondary gyms, "noe for alle"
  */
-function treningAktivitet(pois: POI[], c: Coordinates): string {
-  const gym = byDistance(inCats(pois, "gym"), c);
-  const swim = byDistance(inCats(pois, "swimming"), c);
-  const fitPark = byDistance(inCats(pois, "fitness_park"), c);
+function treningAktivitet(pois: POI[], c: Coordinates, exclude: Set<string>): string {
+  const tier2 = byDistance(pois.filter((p) => !exclude.has(p.id)), c);
+  const gyms = inCats(tier2, "gym");
+  const fitPark = byDistance(inCats(tier2, "fitness_park"), c);
 
   const parts: string[] = [];
 
-  // Prefer top-rated gym as primary anchor, then nearest as secondary
-  const primaryGym = topRated(gym) ?? gym[0];
-  const secondaryGym = gym.find((g) => g.id !== primaryGym?.id);
-
-  // Sentence 1: named anchors (max 3) as list
-  const anchors: string[] = [];
-  if (primaryGym) anchors.push(clean(primaryGym));
-  if (secondaryGym) anchors.push(clean(secondaryGym));
-  if (swim[0]) anchors.push(`svømmebasseng i ${clean(swim[0])}`);
-
-  if (anchors.length >= 2) {
-    parts.push(`${ogJoin(anchors)} — alt i gangavstand.`);
-  } else if (anchors.length === 1) {
-    const anchor = primaryGym ?? swim[0];
-    if (anchor) parts.push(`${anchors[0]} ${prox(anchor, c)}.`);
+  // Sentence 1: secondary gyms or variation
+  if (gyms.length >= 2) {
+    parts.push(
+      `${ogJoin(gyms.slice(0, 2).map(clean))} gir alternativer for den som vil variere.`,
+    );
+  } else if (gyms[0]) {
+    parts.push(`${clean(gyms[0])} ${prox(gyms[0], c)} som alternativ.`);
+  } else if (tier2.length > 0) {
+    parts.push("Varierte treningsmuligheter i gangavstand.");
+  } else {
+    parts.push("Noe for alle — fra styrketrening til lagsport.");
   }
 
   // Sentence 2: outdoor contrast
@@ -343,44 +344,36 @@ function treningAktivitet(pois: POI[], c: Coordinates): string {
 
 /**
  * Transport & Mobilitet
- * Anchors: primary transit (tog > trikk > buss) ↔ sykkel/buss
- * Pattern: "AtB-linje 5 og 22 stopper ved Brøset — sentrum på tolv minutter.
- *           Bysykkel på Moholt og Blussuvoll, sykkelekspressen til Gløshaugen."
+ * Hero insight card shows: nearest bus/tram/train stops
+ * Text complements: frequency, flexibility, bike options, secondary routes
  */
-function transport(pois: POI[], c: Coordinates): string {
-  const buss = byDistance(inCats(pois, "bus"), c);
-  const trikk = byDistance(inCats(pois, "tram"), c);
-  const tog = byDistance(inCats(pois, "train"), c);
-  const sykkel = byDistance(inCats(pois, "bike"), c);
+function transport(pois: POI[], c: Coordinates, exclude: Set<string>): string {
+  const tier2 = pois.filter((p) => !exclude.has(p.id));
+  const sykkel = byDistance(inCats(tier2, "bike"), c);
+  const extraBuss = byDistance(inCats(tier2, "bus"), c);
 
   const parts: string[] = [];
 
-  // Sentence 1: best transit (train > tram > bus)
-  if (tog[0]) {
-    parts.push(`${clean(tog[0])} ${prox(tog[0], c)}.`);
-  } else if (trikk[0]) {
-    parts.push(`${clean(trikk[0])} ${prox(trikk[0], c)}.`);
-  } else if (buss[0]) {
-    const busCount = countWithin(buss, c, 10);
-    if (busCount >= 3) {
-      parts.push(`${busCount} busstopp innen ti minutters gange.`);
+  // Sentence 1: bike or secondary bus coverage
+  if (sykkel[0]) {
+    parts.push(`Bysykkel på ${clean(sykkel[0])} for kortere turer.`);
+  } else if (extraBuss.length >= 2) {
+    parts.push(`Flere busstopp i nabolaget gir hyppige avganger og fleksibilitet.`);
+  } else {
+    // All transit is in the card — focus on conclusion
+    const busNear = countWithin(inCats(pois, "bus"), c, 10);
+    if (busNear >= 3) {
+      parts.push(`${busNear} busstopp i gangavstand gir god dekning i alle retninger.`);
     } else {
-      parts.push(`Buss ${prox(buss[0], c)}.`);
+      parts.push("God kollektivdekning i gangavstand.");
     }
   }
 
-  // Sentence 2: alternative transport (bike preferred, bus count as fallback)
-  if (sykkel[0]) {
-    parts.push(`Bysykkel på ${clean(sykkel[0])} for kortere turer.`);
-  } else if (parts.length === 1 && buss.length >= 2) {
-    // No bike: mention bus coverage as second sentence
-    const busNear = countWithin(buss, c, 10);
-    if (busNear >= 3) {
-      parts.push(`${busNear} busstopp i gangavstand gir hyppige avganger.`);
-    } else if (buss[0] && !tog[0] && !trikk[0]) {
-      // Bus was primary — no need to repeat
-    } else {
-      parts.push(`Buss i tillegg for ruter tog ikke dekker.`);
+  // Sentence 2: bike if not primary, or parking/carshare
+  if (!sykkel[0]) {
+    const bike2 = byDistance(inCats(pois, "bike"), c)[0];
+    if (bike2) {
+      parts.push(`Bysykkel på ${clean(bike2)} for kortere turer.`);
     }
   }
 

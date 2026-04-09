@@ -35,7 +35,7 @@ export default function ReportClosing({
     <>
       {/* Closing section */}
       <section className="col-span-12 py-16 md:py-20">
-        <div className="max-w-4xl">
+        <div className="md:max-w-4xl">
           <div className="h-px bg-[#e8e4df] mb-12" />
 
           <h2 className="text-xl md:text-2xl font-semibold text-[#1a1a1a] mb-4">
@@ -48,7 +48,7 @@ export default function ReportClosing({
       </section>
 
       {/* Attribution footer */}
-      <footer className="col-span-12 py-8 bg-[#f3f0eb] border-t border-[#e8e4df] -mx-16 px-16">
+      <footer className="col-span-12 py-8 bg-[#f3f0eb] border-t border-[#e8e4df] -mx-8 px-8 md:-mx-16 md:px-16">
         <p className="text-xs text-[#8a8a8a]">
           Data: Google, Entur, Trondheim Bysykkel
         </p>

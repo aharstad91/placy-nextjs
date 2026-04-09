@@ -19,8 +19,8 @@ export default function ReportHero({ projectName, themes, heroIntro }: ReportHer
   };
 
   return (
-    <section className="col-span-12 -mx-16 px-16 pt-8 pb-14 md:pt-14 md:pb-20 bg-gradient-to-b from-[#faf9f7] via-[#faf9f7] to-white">
-      <div className="max-w-4xl relative">
+    <section className="col-span-12 -mx-8 px-8 md:-mx-16 md:px-16 pt-8 pb-14 md:pt-14 md:pb-20 bg-gradient-to-b from-[#faf9f7] via-[#faf9f7] to-white">
+      <div className="md:max-w-4xl relative">
         {/* Locale toggle — top right */}
         <div className="absolute top-0 right-0">
           <ReportLocaleToggle />
@@ -41,7 +41,7 @@ export default function ReportHero({ projectName, themes, heroIntro }: ReportHer
 
       {/* Spørsmåls-chips */}
       {themes.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-8">
+        <div className="flex flex-col md:flex-row md:flex-wrap gap-2 mt-8">
           {themes.map((theme) => (
             <ThemeChip
               key={theme.id}
