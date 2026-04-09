@@ -9,11 +9,10 @@ import { Star, MapPin } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import {
-  HoverCard,
-  HoverCardTrigger,
-  HoverCardContent,
-} from "@/components/ui/hover-card";
-import StoryPOIDialog from "@/components/variants/story/StoryPOIDialog";
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import ReportAddressInput from "./ReportAddressInput";
 
 interface ReportThemeSectionProps {
@@ -45,11 +44,7 @@ export default function ReportThemeSection({
     TRANSPORT_CATEGORIES.has(poi.category.id)
   );
 
-  // POI dialog state (local to this theme section)
-  const [dialogPOI, setDialogPOI] = useState<POI | null>(null);
-
   const handleInlinePOIClick = (poi: POI) => {
-    setDialogPOI(poi);
     // Sync with map — fly to marker
     onPOIClick?.(poi.id);
   };
@@ -126,9 +121,6 @@ export default function ReportThemeSection({
           </p>
         )}
       </div>
-
-      {/* POI dialog — 5-variant system from Story */}
-      <StoryPOIDialog poi={dialogPOI} onClose={() => setDialogPOI(null)} />
     </section>
   );
 }
@@ -138,59 +130,60 @@ export default function ReportThemeSection({
 function POIInlineLink({ poi, content, onClick }: { poi: POI; content: string; onClick: () => void }) {
   const Icon = getIcon(poi.category.icon);
   const walkMin = poi.travelTime?.walk ? Math.round(poi.travelTime.walk / 60) : null;
-  const [hoverOpen, setHoverOpen] = useState(false);
-
-  const handleClick = () => {
-    setHoverOpen(false);
-    onClick();
-  };
 
   return (
-    <HoverCard open={hoverOpen} onOpenChange={setHoverOpen} openDelay={400} closeDelay={100}>
-      <HoverCardTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <span
           role="button"
           tabIndex={0}
-          onClick={handleClick}
-          onKeyDown={(e) => { if (e.key === "Enter") handleClick(); }}
-          aria-haspopup="dialog"
+          onClick={onClick}
+          onKeyDown={(e) => { if (e.key === "Enter") onClick(); }}
           className="font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors cursor-pointer"
         >
           {content}
         </span>
-      </HoverCardTrigger>
-      <HoverCardContent side="top" className="w-64 p-3">
-        <div className="flex items-center gap-2 mb-1.5">
+      </PopoverTrigger>
+      <PopoverContent side="top" className="w-72 p-4 gap-0">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 mb-2">
           <div
-            className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
+            className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
             style={{ backgroundColor: poi.category.color + "18" }}
           >
-            <Icon className="w-3.5 h-3.5" style={{ color: poi.category.color }} />
+            <Icon className="w-4 h-4" style={{ color: poi.category.color }} />
           </div>
           <div className="min-w-0">
-            <div className="font-medium text-sm leading-tight truncate">{poi.name}</div>
+            <div className="font-semibold text-sm leading-tight truncate">{poi.name}</div>
             <div className="text-xs text-muted-foreground">{poi.category.name}</div>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+
+        {/* Meta */}
+        <div className="flex items-center gap-2.5 text-xs text-muted-foreground mb-2">
           {poi.googleRating != null && (
             <span className="flex items-center gap-0.5">
               <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
-              {poi.googleRating.toFixed(1)}
+              <span className="font-medium text-foreground">{poi.googleRating.toFixed(1)}</span>
               {poi.googleReviewCount != null && <span>({poi.googleReviewCount})</span>}
             </span>
           )}
           {walkMin != null && (
             <span className="flex items-center gap-0.5">
               <MapPin className="w-3 h-3" />
-              {walkMin} min
+              {walkMin} min gange
             </span>
           )}
         </div>
+
+        {/* Editorial content */}
         {poi.editorialHook && (
-          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{poi.editorialHook}</p>
+          <p className="text-[13px] text-[#3a3a3a] leading-relaxed">{poi.editorialHook}</p>
         )}
-      </HoverCardContent>
-    </HoverCard>
+        {poi.localInsight && (
+          <p className="text-xs text-muted-foreground italic leading-relaxed mt-1.5">{poi.localInsight}</p>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
