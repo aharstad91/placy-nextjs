@@ -4,6 +4,7 @@ import { getProjectTranslations } from "@/lib/supabase/translations";
 import { getAreaSlugForProject } from "@/lib/public-queries";
 import ReportPage from "@/components/variants/report/ReportPage";
 import { eiendomUrl } from "@/lib/urls";
+import { hexToHslChannels } from "@/lib/theme-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -51,20 +52,34 @@ export default async function EiendomReportPage({ params, searchParams }: PagePr
     ? resolvedSearchParams.themes.split(",")
     : undefined;
 
-  // Build white-label CSS overrides from project theme (if set)
-  const themeStyle = projectData.theme
-    ? `:root {${
-        projectData.theme.primaryColor ? ` --placy-primary: ${projectData.theme.primaryColor};` : ""
-      }${
-        projectData.theme.backgroundColor ? ` --placy-bg: ${projectData.theme.backgroundColor};` : ""
-      }${
-        projectData.theme.fontFamily ? ` --placy-font: ${projectData.theme.fontFamily};` : ""
-      }}`
-    : null;
+  // Build inline CSS variable overrides from project theme.
+  // Each hex color becomes HSL channel values (matches shadcn token pattern),
+  // injected via React's style prop on the wrapper. Scoped to this subtree —
+  // no leakage to other routes.
+  const themeStyle: React.CSSProperties = {};
+  const t = projectData.theme;
+  if (t) {
+    const setIf = (cssVar: string, hex?: string) => {
+      if (hex) {
+        const channels = hexToHslChannels(hex);
+        if (channels) (themeStyle as Record<string, string>)[cssVar] = channels;
+      }
+    };
+    setIf("--background", t.backgroundColor);
+    setIf("--foreground", t.foregroundColor);
+    setIf("--primary", t.primaryColor);
+    setIf("--primary-foreground", t.primaryForegroundColor);
+    setIf("--card", t.cardColor);
+    setIf("--muted", t.mutedColor);
+    setIf("--muted-foreground", t.mutedForegroundColor);
+    setIf("--border", t.borderColor);
+    if (t.fontFamily) {
+      (themeStyle as Record<string, string>)["--font-family"] = t.fontFamily;
+    }
+  }
 
   return (
-    <>
-      {themeStyle && <style dangerouslySetInnerHTML={{ __html: themeStyle }} />}
+    <div style={themeStyle} className="min-h-screen bg-background text-foreground">
       <ReportPage
         project={projectData}
         explorerBaseUrl={explorerUrl}
@@ -72,7 +87,7 @@ export default async function EiendomReportPage({ params, searchParams }: PagePr
         areaSlug={areaSlug}
         primaryThemeIds={rawThemes}
       />
-    </>
+    </div>
   );
 }
 

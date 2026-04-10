@@ -43,3 +43,4 @@ data/research/
 .dolt/
 *.db
 .mcp.json
+backups/

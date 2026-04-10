@@ -182,12 +182,38 @@ export interface ReportThemeConfig {
   categoryDescriptions?: Record<string, string>;
 }
 
+export interface BrokerInfo {
+  name: string;
+  firstName?: string;
+  title: string;
+  phone: string;
+  email: string;
+  photoUrl: string;
+  officeName: string;
+  officeLogoUrl?: string;
+  bio?: string;
+}
+
+export interface ReportSummary {
+  headline: string;
+  insights: string[];
+  brokerInviteText?: string;
+}
+
+export interface ReportCTA {
+  leadUrl?: string;
+  primaryLabel?: string;
+  primarySubject?: string;
+  shareTitle?: string;
+}
+
 export interface ReportConfig {
   label?: string;
   heroIntro?: string;
   themes?: ReportThemeConfig[];
-  closingTitle?: string;
-  closingText?: string;
+  summary?: ReportSummary;
+  brokers?: BrokerInfo[];
+  cta?: ReportCTA;
   mapStyle?: string;
   trails?: TrailCollection;
 }
@@ -205,12 +231,27 @@ export interface DiscoveryCircle {
 }
 
 // === White-label theming ===
+//
+// ProjectTheme maps to shadcn semantic CSS tokens. Each field is a hex color
+// that gets converted to HSL channel values via hexToHslChannels() and
+// injected as inline style on the report route wrapper. Channel values are
+// required so Tailwind's `hsl(var(--x) / <alpha-value>)` pattern keeps
+// opacity modifiers working.
 
 export interface ProjectTheme {
-  primaryColor?: string;      // Accent color (buttons, active states)
-  backgroundColor?: string;   // Section backgrounds
-  fontFamily?: "inter" | "dm-sans" | "system";
-  logoUrl?: string;           // Logo in header
+  // Semantic colors → override shadcn tokens
+  backgroundColor?: string;        // → --background
+  foregroundColor?: string;        // → --foreground
+  primaryColor?: string;           // → --primary (accent, CTA buttons)
+  primaryForegroundColor?: string; // → --primary-foreground (text on CTAs)
+  cardColor?: string;              // → --card (broker card, surface)
+  mutedColor?: string;             // → --muted (secondary surface)
+  mutedForegroundColor?: string;   // → --muted-foreground (secondary text)
+  borderColor?: string;            // → --border
+  // Typography
+  fontFamily?: string;             // CSS font-family string (free-form)
+  // Branding
+  logoUrl?: string;                // Logo in header
 }
 
 // === Project Container (NEW: Hierarchy) ===

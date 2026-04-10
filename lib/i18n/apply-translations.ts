@@ -34,12 +34,6 @@ export function applyTranslations(
           heroIntro:
             translations[`report:${project.id}:hero_intro`] ??
             project.reportConfig.heroIntro,
-          closingTitle:
-            translations[`report:${project.id}:closing_title`] ??
-            project.reportConfig.closingTitle,
-          closingText:
-            translations[`report:${project.id}:closing_text`] ??
-            project.reportConfig.closingText,
           themes: project.reportConfig.themes?.map((theme) => ({
             ...theme,
             bridgeText:
