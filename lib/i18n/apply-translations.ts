@@ -43,6 +43,7 @@ export function applyTranslations(
           themes: project.reportConfig.themes?.map((theme) => ({
             ...theme,
             bridgeText:
+              translations[`theme:${project.id}_${theme.id}:bridge_text`] ??
               translations[`theme:${theme.id}:bridge_text`] ??
               theme.bridgeText,
           })),

@@ -29,7 +29,9 @@ export async function getProjectTranslations(
     return {};
   }
 
-  const allEntityIds = [...poiIds, ...themeIds, reportProductId];
+  // Also include product-specific theme keys (productId_themeId) for per-product overrides
+  const productThemeIds = themeIds.map((id) => `${reportProductId}_${id}`);
+  const allEntityIds = [...poiIds, ...themeIds, ...productThemeIds, reportProductId];
   if (allEntityIds.length === 0) return {};
 
   // TODO: Remove type casts after regenerating Supabase types to include translations table
