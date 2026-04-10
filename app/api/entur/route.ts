@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
           numberOfDepartures,
         },
       }),
+      next: { revalidate: 30 },
     });
 
     if (!response.ok) {

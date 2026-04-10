@@ -130,7 +130,7 @@ function ogJoin(items: string[]): string {
 type Gen = (pois: POI[], center: Coordinates, exclude: Set<string>) => string;
 
 /**
- * Barn & Oppvekst
+ * Barn & Aktivitet
  * Hero insight card shows: skolekrets (barneskole, ungdomsskole, VGS) + barnehage/lekeplass count
  * Text complements: barnevennlighet, trygghet, lekeplasser med navn, organisert idrett
  */

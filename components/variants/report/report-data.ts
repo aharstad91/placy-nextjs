@@ -100,6 +100,7 @@ export const TRANSPORT_CATEGORIES = new Set([
   "carshare",
   "taxi",
   "airport",
+  "charging_station",
 ]);
 
 const THEME_MIN_POIS = 2;

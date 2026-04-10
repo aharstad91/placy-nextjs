@@ -5,10 +5,10 @@ import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Star, MapPin, Map as MapIcon, X } from "lucide-react";
+import { Star, MapPin, Map as MapIcon, X, Zap, Car } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
-import ReportHeroInsight from "./ReportHeroInsight";
+import ReportHeroInsight, { getHeroInsightPOIIds } from "./ReportHeroInsight";
 import {
   Popover,
   PopoverTrigger,
@@ -23,6 +23,8 @@ import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 import ReportMapDrawer from "./ReportMapDrawer";
+import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
+import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
 const ReportThemeMap = dynamic(() => import("./ReportThemeMap"), {
   ssr: false,
@@ -89,11 +91,102 @@ export default function ReportThemeSection({
     ? linkPOIsInText(theme.extendedBridgeText, theme.allPOIs)
     : [];
 
-  // POIs mentioned in the text — show permanent labels on the activated map
-  const featuredPOIIds = useMemo(
-    () => new Set(segments.filter((s) => s.type === "poi" && s.poi).map((s) => s.poi!.id)),
-    [segments]
+  // POIs mentioned in text + hero insight card — show permanent labels on the map
+  const featuredPOIIds = useMemo(() => {
+    const textIds = segments.filter((s) => s.type === "poi" && s.poi).map((s) => s.poi!.id);
+    const heroIds = getHeroInsightPOIIds(theme.id, theme.allPOIs, center);
+    return new Set([...textIds, ...Array.from(heroIds)]);
+  }, [segments, theme.id, theme.allPOIs, center]);
+
+  // Live transport data for map labels (only fetches when transport theme)
+  const emptyPois = useMemo(() => [] as POI[], []);
+  const transportDashboard = useTransportDashboard(
+    isTransport ? theme.allPOIs : emptyPois,
+    center,
   );
+
+  // Build live info strings per POI for map tooltips
+  const poiLiveInfo = useMemo(() => {
+    if (!isTransport || !transportDashboard.lastUpdated) return undefined;
+    const info: Record<string, string> = {};
+
+    // Bus/tram/train stops: match stopId (enturStopplaceId) back to POI id
+    for (const stop of transportDashboard.departures) {
+      const dep = stop.departures[0];
+      if (!dep) continue;
+      const poi = theme.allPOIs.find((p) => p.enturStopplaceId === stop.stopId);
+      if (poi) {
+        info[poi.id] = `${dep.lineCode} → ${dep.destination} om ${formatRelativeDepartureTime(dep.departureTime)}`;
+      }
+    }
+
+    // Bysykkel: show available bikes on ALL bysykkel stations (nearest gets exact count)
+    if (transportDashboard.bysykkel) {
+      const bs = transportDashboard.bysykkel;
+      // Find the nearest bysykkel POI that matches the dashboard station
+      for (const poi of theme.allPOIs) {
+        if (poi.bysykkelStationId && poi.category.id === "bike") {
+          // Only the nearest station has live data; show label for it
+          if (poi.name.includes(bs.stationName) || bs.stationName.includes(poi.name.replace("Trondheim Bysykkel: ", ""))) {
+            info[poi.id] = `${bs.availableBikes} ledige sykler`;
+            break;
+          }
+        }
+      }
+      // Fallback: just pick the first bysykkel POI
+      if (!Object.values(info).some((v) => v.includes("ledige sykler"))) {
+        const bPoi = theme.allPOIs.find((p) => p.bysykkelStationId);
+        if (bPoi) info[bPoi.id] = `${bs.availableBikes} ledige sykler`;
+      }
+    }
+
+    // Hyre: show available cars
+    if (transportDashboard.carShare) {
+      const cs = transportDashboard.carShare;
+      const hyrePoi = theme.allPOIs.find((p) => p.hyreStationId && p.category.id === "carshare");
+      if (hyrePoi) {
+        info[hyrePoi.id] = `${cs.numVehiclesAvailable} biler ledige`;
+      }
+    }
+
+    return Object.keys(info).length > 0 ? info : undefined;
+  }, [isTransport, transportDashboard, theme.allPOIs]);
+
+  // Floating chips for the map (scooter count — no fixed POI)
+  const mapChips = useMemo(() => {
+    if (!isTransport) return undefined;
+    const chips: Array<{ icon: React.ReactNode; label: string }> = [];
+    if (transportDashboard.scooters && transportDashboard.scooters.total > 0) {
+      chips.push({
+        icon: <Zap className="w-3.5 h-3.5 text-[#8b5cf6]" />,
+        label: `${transportDashboard.scooters.total} sparkesykler i nærheten`,
+      });
+    }
+    if (transportDashboard.freeFloatingCars && transportDashboard.freeFloatingCars.total > 0) {
+      chips.push({
+        icon: <Car className="w-3.5 h-3.5 text-[#10b981]" />,
+        label: `${transportDashboard.freeFloatingCars.total} Getaround-biler i nærheten`,
+      });
+    }
+    return chips.length > 0 ? chips : undefined;
+  }, [isTransport, transportDashboard.scooters, transportDashboard.freeFloatingCars]);
+
+  // Combine scooter + car positions for map dots
+  const vehiclePositions = useMemo(() => {
+    if (!isTransport) return undefined;
+    const positions: Array<{ lat: number; lng: number; color: string }> = [];
+    if (transportDashboard.scooters?.positions) {
+      for (const p of transportDashboard.scooters.positions) {
+        positions.push({ ...p, color: "#8b5cf6" }); // purple for scooters
+      }
+    }
+    if (transportDashboard.freeFloatingCars?.positions) {
+      for (const p of transportDashboard.freeFloatingCars.positions) {
+        positions.push({ ...p, color: "#10b981" }); // green for cars
+      }
+    }
+    return positions.length > 0 ? positions : undefined;
+  }, [isTransport, transportDashboard.scooters?.positions, transportDashboard.freeFloatingCars?.positions]);
 
   return (
     <section
@@ -113,23 +206,16 @@ export default function ReportThemeSection({
           </h2>
         </div>
 
-        {/* Category quote — editorial pitch */}
-        {variant !== "secondary" && theme.quote && (
-          <p className="text-xl md:text-2xl text-[#4a4a4a] leading-relaxed mb-5">
-            {theme.quote}
+        {/* Bridge text as sub-heading */}
+        {variant !== "secondary" && theme.bridgeText && (
+          <p className="text-lg md:text-xl italic text-[#5a5a5a] leading-relaxed mb-5">
+            {theme.bridgeText}
           </p>
         )}
 
         {/* Hero insight — category-specific structured data */}
         {variant !== "secondary" && (
           <ReportHeroInsight theme={theme} center={center} />
-        )}
-
-        {/* Bridge text — short narrative intro */}
-        {theme.bridgeText && (
-          <p className="text-lg italic text-[#5a5a5a] leading-relaxed mb-6">
-            {theme.bridgeText}
-          </p>
         )}
 
         {/* Address input for transport theme */}
@@ -238,6 +324,9 @@ export default function ReportThemeSection({
                   activated={true}
                   projectName={projectName}
                   trails={theme.trails}
+                  poiLiveInfo={poiLiveInfo}
+                  mapChips={mapChips}
+                  vehiclePositions={vehiclePositions}
                 />
 
                 {/* POI drawer */}
@@ -291,7 +380,13 @@ function POIInlineLink({ poi, content }: { poi: POI; content: string }) {
           {content}
         </span>
       </PopoverTrigger>
-      <PopoverContent side="top" className="w-72 p-4 gap-0">
+      <PopoverContent side="top" className="w-72 p-0 gap-0 overflow-hidden">
+        {/* Image */}
+        {imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt={poi.name} className="w-full aspect-[16/9] object-cover" />
+        )}
+        <div className="p-4">
         {/* Header */}
         <div className="flex items-center gap-2.5 mb-2">
           <div
@@ -330,6 +425,7 @@ function POIInlineLink({ poi, content }: { poi: POI; content: string }) {
         {poi.localInsight && (
           <p className="text-xs text-muted-foreground italic leading-relaxed mt-1.5">{poi.localInsight}</p>
         )}
+        </div>
       </PopoverContent>
     </Popover>
   );

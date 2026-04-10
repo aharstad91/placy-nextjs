@@ -10,7 +10,6 @@ import { useActiveSection } from "@/lib/hooks/useActiveSection";
 import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportExplorerCTA from "./ReportExplorerCTA";
-import { getIcon } from "@/lib/utils/map-icons";
 import ReportClosing from "./ReportClosing";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
@@ -132,7 +131,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
         {/* Primary themes */}
         {primaryThemes.map((theme, i) => (
           <div key={theme.id} ref={revealRef} className="report-section-reveal">
-            {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
+            {i > 0 && <ThemeSeparator />}
             <ReportThemeSection
               theme={theme}
               center={reportData.centerCoordinates}
@@ -155,7 +154,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
             </div>
             {secondaryThemes.map((theme, i) => (
               <div key={theme.id} ref={revealRef} className="report-section-reveal">
-                {i > 0 && <ThemeSeparator icon={theme.icon} color={theme.color} />}
+                {i > 0 && <ThemeSeparator />}
                 <ReportThemeSection
                   theme={theme}
                   center={reportData.centerCoordinates}
@@ -201,18 +200,10 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
 
 // --- Theme separator with icon ---
 
-function ThemeSeparator({ icon, color }: { icon: string; color: string }) {
-  const Icon = getIcon(icon);
+function ThemeSeparator() {
   return (
-    <div className="flex items-center gap-4 py-2">
-      <div className="h-px flex-1 bg-[#e0dcd6]" />
-      <div
-        className="flex items-center justify-center w-10 h-10 rounded-full"
-        style={{ backgroundColor: color + "18" }}
-      >
-        <Icon className="w-5 h-5" style={{ color }} />
-      </div>
-      <div className="h-px flex-1 bg-[#e0dcd6]" />
+    <div className="py-2">
+      <div className="h-px bg-[#e0dcd6]" />
     </div>
   );
 }

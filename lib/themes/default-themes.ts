@@ -23,7 +23,7 @@ export const DEFAULT_THEMES: ThemeDefinition[] = [
   },
   {
     id: "barnefamilier",
-    name: "Barn & Oppvekst",
+    name: "Barn & Aktivitet",
     icon: "GraduationCap",
     categories: ["skole", "barnehage", "lekeplass", "idrett"],
     color: "#f59e0b",

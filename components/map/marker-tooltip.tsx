@@ -24,6 +24,8 @@ interface MarkerTooltipProps {
   subtitle?: string;
   poiTier?: 1 | 2 | 3 | null;
   isLocalGem?: boolean;
+  /** Live info line (e.g. "6 ledige sykler", "L12 → Sentrum om 3 min") */
+  liveInfo?: string;
 }
 
 export function MarkerTooltip({
@@ -37,6 +39,7 @@ export function MarkerTooltip({
   subtitle,
   poiTier,
   isLocalGem,
+  liveInfo,
 }: MarkerTooltipProps) {
   const displaySubtitle = subtitle ?? categoryName;
   const showRating =
@@ -89,6 +92,12 @@ export function MarkerTooltip({
                 <span>{travelTimeMinutes} min</span>
               </>
             )}
+          </div>
+        )}
+        {liveInfo && (
+          <div className="flex items-center gap-1 mt-0.5 text-emerald-600 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+            <span>{liveInfo}</span>
           </div>
         )}
       </div>

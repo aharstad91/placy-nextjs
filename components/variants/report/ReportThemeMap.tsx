@@ -25,6 +25,12 @@ interface ReportThemeMapProps {
   projectName?: string;
   /** Trail/route overlay GeoJSON for Natur & Friluftsliv */
   trails?: TrailCollection;
+  /** Live info per POI — shown in marker tooltip (e.g. "6 ledige sykler") */
+  poiLiveInfo?: Record<string, string>;
+  /** Floating info chips on the map (e.g. scooter count) */
+  mapChips?: Array<{ icon: React.ReactNode; label: string }>;
+  /** Live vehicle positions to render as dots */
+  vehiclePositions?: Array<{ lat: number; lng: number; color: string }>;
 }
 
 export default function ReportThemeMap({
@@ -38,6 +44,9 @@ export default function ReportThemeMap({
   activated = false,
   projectName,
   trails,
+  poiLiveInfo,
+  mapChips,
+  vehiclePositions,
 }: ReportThemeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -272,13 +281,46 @@ export default function ReportThemeMap({
                     travelMode="walk"
                     poiTier={poi.poiTier}
                     isLocalGem={poi.isLocalGem}
+                    liveInfo={poiLiveInfo?.[poi.id]}
                   />
                 )}
               </div>
             </Marker>
           );
         })}
+
+        {/* Live vehicle positions (scooters) — small dots */}
+        {activated && vehiclePositions?.map((pos, i) => (
+          <Marker
+            key={`vehicle-${i}`}
+            longitude={pos.lng}
+            latitude={pos.lat}
+            anchor="center"
+            style={{ zIndex: 1 }}
+          >
+            <div
+              className="w-3 h-3 rounded-full shadow-sm"
+              style={{ backgroundColor: `${pos.color}99`, border: `1.5px solid ${pos.color}` }}
+            />
+          </Marker>
+        ))}
       </Map>
+
+      {/* Floating info chips — e.g. scooter count */}
+      {activated && mapChips && mapChips.length > 0 && (
+        <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
+          {mapChips.map((chip, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full shadow-md border border-gray-100 text-xs"
+            >
+              {chip.icon}
+              <span className="font-medium text-[#1a1a1a]">{chip.label}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
           range: 15000,
         },
       }),
+      next: { revalidate: 30 },
     });
 
     if (!response.ok) {

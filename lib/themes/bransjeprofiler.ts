@@ -44,7 +44,7 @@ export interface Bransjeprofil {
 const BOLIG_THEMES: ThemeDefinition[] = [
   {
     id: "barn-oppvekst",
-    name: "Barn & Oppvekst",
+    name: "Barn & Aktivitet",
     icon: "GraduationCap",
     categories: ["skole", "barnehage", "lekeplass", "idrett"],
     color: "#f59e0b",

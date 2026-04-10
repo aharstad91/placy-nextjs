@@ -1,12 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { resolveThemeId } from "@/lib/themes";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getIcon } from "@/lib/utils/map-icons";
-import { Star } from "lucide-react";
+import { Star, MapPin, Bike, Car, Zap } from "lucide-react";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
+import type { StopDepartures } from "@/lib/hooks/useTransportDashboard";
+import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
 interface HeroInsightProps {
   theme: ReportTheme;
@@ -107,7 +115,7 @@ function InsightCard({
 }
 
 // ============================================================
-// 1. Barn & Oppvekst — Skolekretskortet
+// 1. Barn & Aktivitet — Skolekretskortet
 // ============================================================
 
 const HIGHER_ED = [
@@ -196,33 +204,103 @@ function BarnOppvekstInsight({ theme, center }: HeroInsightProps) {
         ) : undefined
       }
     >
-      <div className="space-y-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {data.barneskole && (
-          <SchoolRow level="Barneskole (1\u20137)" poi={data.barneskole} center={center} />
+          <SchoolCard level="Barneskole (1–7)" poi={data.barneskole} center={center} />
         )}
         {data.ungdomsskole && (
-          <SchoolRow level="Ungdomsskole (8\u201310)" poi={data.ungdomsskole} center={center} />
+          <SchoolCard level="Ungdomsskole (8–10)" poi={data.ungdomsskole} center={center} />
         )}
-        {data.vgs && <SchoolRow level="Videreg\u00e5ende" poi={data.vgs} center={center} />}
+        {data.vgs && <SchoolCard level="Videregående" poi={data.vgs} center={center} />}
       </div>
     </InsightCard>
   );
 }
 
-function SchoolRow({ level, poi, center }: { level: string; poi: POI; center: Coordinates }) {
+function SchoolCard({ level, poi, center }: { level: string; poi: POI; center: Coordinates }) {
+  const [imageError, setImageError] = useState(false);
   const walk = fmtWalk(poi, center);
+  const Icon = getIcon(poi.category.icon);
+
+  const imageUrl = poi.featuredImage
+    ? poi.featuredImage.includes("mymaps.usercontent.google.com")
+      ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
+      : poi.featuredImage
+    : null;
+
+  const hasImage = imageUrl && !imageError;
+
   return (
-    <div className="flex items-baseline gap-2">
-      <span className="text-sm text-[#8a8a8a] w-[150px] shrink-0">
-        {level}
-      </span>
-      <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 min-w-0 truncate">
-        {poi.name}
-      </span>
-      {walk && (
-        <span className="text-sm text-[#8a8a8a] shrink-0">{walk}</span>
-      )}
-    </div>
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="text-left rounded-lg border border-[#eae6e1] overflow-hidden hover:border-[#d4cfc8] hover:shadow-sm transition-all cursor-pointer bg-white">
+          {/* Image / fallback */}
+          <div className="aspect-[16/10] relative">
+            {hasImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl}
+                alt={poi.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{ backgroundColor: poi.category.color + "15" }}
+              >
+                <Icon className="w-8 h-8" style={{ color: poi.category.color }} />
+              </div>
+            )}
+          </div>
+          {/* Text */}
+          <div className="px-3 py-2.5">
+            <div className="text-[11px] uppercase tracking-[0.12em] text-[#a0937d] mb-0.5">
+              {level}
+            </div>
+            <div className="text-sm font-semibold text-[#1a1a1a] truncate">{poi.name}</div>
+            {walk && (
+              <div className="flex items-center gap-1 text-xs text-[#8a8a8a] mt-1">
+                <MapPin className="w-3 h-3" />
+                {walk}
+              </div>
+            )}
+          </div>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" className="w-72 p-4 gap-0">
+        <div>
+          <div className="flex items-center gap-2.5 mb-2">
+            <div
+              className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
+              style={{ backgroundColor: poi.category.color + "18" }}
+            >
+              <Icon className="w-4 h-4" style={{ color: poi.category.color }} />
+            </div>
+            <div className="min-w-0">
+              <div className="font-semibold text-sm leading-tight truncate">{poi.name}</div>
+              <div className="text-xs text-muted-foreground">{level}</div>
+            </div>
+          </div>
+          {walk && (
+            <div className="flex items-center gap-2.5 text-xs text-muted-foreground mb-2">
+              <span className="flex items-center gap-0.5">
+                <MapPin className="w-3 h-3" />
+                {walk}
+              </span>
+            </div>
+          )}
+          {poi.editorialHook && (
+            <p className="text-[13px] text-[#3a3a3a] leading-relaxed">{poi.editorialHook}</p>
+          )}
+          {poi.localInsight && (
+            <p className="text-xs text-muted-foreground italic leading-relaxed mt-1.5">
+              {poi.localInsight}
+            </p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -293,16 +371,360 @@ function HverdagslivInsight({ theme, center }: HeroInsightProps) {
 }
 
 // ============================================================
-// 3. Transport — Holdeplasser
+// 3. Transport — Live Dashboard
 // ============================================================
 
-function TransportInsight({ theme, center }: HeroInsightProps) {
+function TransportDashboard({ theme, center }: HeroInsightProps) {
   const pois = theme.allPOIs;
+  const dashboard = useTransportDashboard(pois, center);
 
+  const transitStops = pois.filter(
+    (p) =>
+      estimateWalkMin(p, center) <= 5 &&
+      ["bus", "tram", "train"].includes(p.category.id),
+  ).length;
+
+  // Fallback: if no departures loaded yet, show static stop list
+  const hasLiveData = dashboard.departures.length > 0 || dashboard.lastUpdated;
+
+  return (
+    <>
+      {/* Kollektivliste med sanntidsavganger */}
+      <InsightCard
+        title="Kollektivt herfra"
+        footer={
+          transitStops > 0
+            ? `${transitStops} holdeplasser innen 5 min gange`
+            : undefined
+        }
+      >
+        {/* Tidsstempel */}
+        {dashboard.lastUpdated && (
+          <div className="text-[11px] text-[#a0a0a0] text-right -mt-1 mb-2">
+            oppdatert kl {dashboard.lastUpdated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+        )}
+
+        {/* Loading skeleton */}
+        {dashboard.loading && (
+          <div className="space-y-3 animate-pulse">
+            {[1, 2].map((i) => (
+              <div key={i}>
+                <div className="h-5 bg-[#eae6e1] rounded w-3/4 mb-2" />
+                <div className="h-4 bg-[#eae6e1] rounded w-1/2 ml-10 mb-1" />
+                <div className="h-4 bg-[#eae6e1] rounded w-2/5 ml-10" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Live departure list */}
+        {hasLiveData && !dashboard.loading && (
+          <div className="space-y-4">
+            {dashboard.departures.map((stop) => (
+              <DepartureBlock key={stop.stopId} stop={stop} />
+            ))}
+          </div>
+        )}
+
+        {/* Static fallback if no live data and not loading */}
+        {!hasLiveData && !dashboard.loading && (
+          <StaticTransportList pois={pois} center={center} />
+        )}
+      </InsightCard>
+
+      {/* Mobilitetskort — bysykkel, sparkesykkel, bildeling, lading */}
+      <div className="mb-6">
+        <div className="text-xs uppercase tracking-[0.15em] text-[#a0937d] font-medium mb-3">
+          Tilgjengelig i nærheten
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+        {/* Bysykkel */}
+        <MobilityCard
+          icon={<Bike className="w-5 h-5 text-[#3b82f6]" />}
+          iconBg="#3b82f620"
+          label="Bysykkel"
+          value={dashboard.bysykkel ? `${dashboard.bysykkel.availableBikes} ledige sykler` : "–"}
+          subtitle={dashboard.bysykkel
+            ? `${dashboard.bysykkel.stationName} · ${dashboard.bysykkel.walkMin} min gange`
+            : "Laster..."}
+          loading={dashboard.loading && !dashboard.bysykkel}
+          popoverContent={dashboard.bysykkel ? (
+            <div className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Bike className="w-4 h-4 text-[#3b82f6]" />
+                <span className="font-semibold text-sm">{dashboard.bysykkel.stationName}</span>
+              </div>
+              <div className="text-sm text-[#4a4a4a] space-y-1">
+                <div>{dashboard.bysykkel.availableBikes} ledige sykler</div>
+                <div>{dashboard.bysykkel.availableDocks} ledige låser</div>
+                {!dashboard.bysykkel.isOpen && (
+                  <div className="text-red-500 font-medium">Stengt</div>
+                )}
+              </div>
+              <div className="text-xs text-[#a0a0a0] mt-2">
+                {dashboard.bysykkel.walkMin} min gange · Trondheim Bysykkel
+              </div>
+            </div>
+          ) : undefined}
+        />
+
+        {/* Sparkesykkel */}
+        <MobilityCard
+          icon={<Zap className="w-5 h-5 text-[#8b5cf6]" />}
+          iconBg="#8b5cf620"
+          label="Sparkesykkel"
+          value={dashboard.scooters
+            ? dashboard.scooters.total > 0
+              ? `${dashboard.scooters.total} tilgjengelig`
+              : "Ingen nå"
+            : "–"}
+          subtitle={dashboard.scooters?.byOperator
+            .map((op) => op.name.replace("_Trondheim", "").replace(" trondheim", ""))
+            .join(" · ") || "Laster..."}
+          loading={dashboard.loading && !dashboard.scooters}
+          popoverContent={dashboard.scooters ? (
+            <div className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="w-4 h-4 text-[#8b5cf6]" />
+                <span className="font-semibold text-sm">Sparkesykler i nærheten</span>
+              </div>
+              {dashboard.scooters.total === 0 ? (
+                <div className="text-sm text-[#8a8a8a]">
+                  Ingen sparkesykler innen 750m akkurat nå
+                </div>
+              ) : (
+                <div className="text-sm text-[#4a4a4a] space-y-1">
+                  {dashboard.scooters.byOperator.map((op) => (
+                    <div key={op.systemId} className="flex justify-between">
+                      <span>{op.name.replace("_Trondheim", "").replace(" trondheim", "")}</span>
+                      <span className="font-medium">{op.count}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between pt-1 border-t border-[#eae6e1] font-medium">
+                    <span>Totalt</span>
+                    <span>{dashboard.scooters.total}</span>
+                  </div>
+                </div>
+              )}
+              <div className="text-xs text-[#a0a0a0] mt-2">Innen 750m</div>
+            </div>
+          ) : undefined}
+        />
+
+        {/* Bildeling — Hyre + Getaround samlet */}
+        {(() => {
+          const hyreCount = dashboard.carShare?.numVehiclesAvailable ?? 0;
+          const getaroundCount = dashboard.freeFloatingCars?.total ?? 0;
+          const totalCars = hyreCount + getaroundCount;
+          const hasData = dashboard.carShare || dashboard.freeFloatingCars;
+          const providers: string[] = [];
+          if (hyreCount > 0) providers.push("Hyre");
+          if (getaroundCount > 0) providers.push("Getaround");
+
+          return (
+            <MobilityCard
+              icon={<Car className="w-5 h-5 text-[#10b981]" />}
+              iconBg="#10b98120"
+              label="Bildeling"
+              value={hasData ? `${totalCars} biler` : "–"}
+              subtitle={hasData
+                ? providers.join(" · ") || "Laster..."
+                : "Laster..."}
+              loading={dashboard.loading && !hasData}
+              popoverContent={hasData ? (
+                <div className="p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Car className="w-4 h-4 text-[#10b981]" />
+                    <span className="font-semibold text-sm">Bildeling i nærheten</span>
+                  </div>
+                  <div className="text-sm text-[#4a4a4a] space-y-1">
+                    {hyreCount > 0 && dashboard.carShare && (
+                      <div className="flex justify-between">
+                        <span>Hyre ({dashboard.carShare.stationName})</span>
+                        <span className="font-medium">{hyreCount}</span>
+                      </div>
+                    )}
+                    {getaroundCount > 0 && (
+                      <div className="flex justify-between">
+                        <span>Getaround (fri parkering)</span>
+                        <span className="font-medium">{getaroundCount}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-1 border-t border-[#eae6e1] font-medium">
+                      <span>Totalt</span>
+                      <span>{totalCars}</span>
+                    </div>
+                  </div>
+                  <div className="text-xs text-[#a0a0a0] mt-2">Innen 2 km</div>
+                </div>
+              ) : undefined}
+            />
+          );
+        })()}
+
+        {/* Lading */}
+        {(() => {
+          const chargingPOIs = pois.filter((p) => p.category.id === "charging_station");
+          if (chargingPOIs.length === 0) return null;
+          const nearest = chargingPOIs.reduce((a, b) => {
+            const aw = estimateWalkMin(a, center);
+            const bw = estimateWalkMin(b, center);
+            return aw < bw ? a : b;
+          });
+          const nearestWalk = fmtWalk(nearest, center);
+
+          return (
+            <MobilityCard
+              icon={<Zap className="w-5 h-5 text-[#f59e0b]" />}
+              iconBg="#f59e0b20"
+              label="Elbillading"
+              value={`${chargingPOIs.length} stasjoner`}
+              subtitle={nearestWalk ? `Nærmeste ${nearestWalk} gange` : "I nabolaget"}
+              popoverContent={(
+                <div className="p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-[#f59e0b]" />
+                    <span className="font-semibold text-sm">Ladestasjoner i nærheten</span>
+                  </div>
+                  <div className="text-sm text-[#4a4a4a] space-y-1.5">
+                    {chargingPOIs
+                      .sort((a, b) => estimateWalkMin(a, center) - estimateWalkMin(b, center))
+                      .map((poi) => (
+                        <div key={poi.id} className="flex justify-between gap-2">
+                          <span className="truncate">{poi.name}</span>
+                          <span className="text-[#8a8a8a] shrink-0">{fmtWalk(poi, center)}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            />
+          );
+        })()}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// --- Departure block for one stop ---
+
+function DepartureBlock({ stop }: { stop: StopDepartures }) {
+  const Icon = getIcon("Bus");
+  return (
+    <div>
+      {/* Stop header */}
+      <div className="flex items-center gap-3 py-1">
+        <div className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 bg-[#3b82f615]">
+          <Icon className="w-3.5 h-3.5 text-[#3b82f6]" />
+        </div>
+        <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 min-w-0 truncate">
+          {stop.stopName}
+        </span>
+        <span className="text-sm text-[#8a8a8a] shrink-0">{stop.walkMin} min</span>
+      </div>
+
+      {/* Departures under the stop */}
+      {stop.departures.length > 0 ? (
+        <div className="ml-10 space-y-0.5">
+          {stop.departures.slice(0, 3).map((dep, i) => (
+            <div key={i} className="flex items-center gap-2 py-0.5 text-sm">
+              <span
+                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  dep.isRealtime ? "bg-green-500" : "bg-gray-300"
+                }`}
+              />
+              <a
+                href={`https://entur.no/nearby-stop-place-detail?id=${stop.stopId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[#1a1a1a] hover:text-[#3b82f6] transition-colors min-w-[2.5rem]"
+                style={dep.lineColor ? { color: dep.lineColor } : undefined}
+              >
+                {dep.lineCode}
+              </a>
+              <span className="text-[#6a6a6a] flex-1 min-w-0 truncate">
+                {dep.destination}
+              </span>
+              <span className="text-[#8a8a8a] shrink-0">
+                om {formatRelativeDepartureTime(dep.departureTime)}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="ml-10 text-sm text-[#a0a0a0] py-0.5">Ingen avganger</div>
+      )}
+    </div>
+  );
+}
+
+// --- Mobility card with popover ---
+
+function MobilityCard({
+  icon,
+  iconBg,
+  label,
+  value,
+  subtitle,
+  loading,
+  popoverContent,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  label: string;
+  value: string;
+  subtitle: string;
+  loading?: boolean;
+  popoverContent?: React.ReactNode;
+}) {
+  const cardContent = (
+    <div className={`rounded-lg border border-[#eae6e1] bg-white p-4 text-center ${popoverContent ? "hover:border-[#d4cfc8] hover:shadow-sm transition-all cursor-pointer" : ""}`}>
+      {loading ? (
+        <div className="animate-pulse space-y-2">
+          <div className="h-10 w-10 bg-[#eae6e1] rounded-full mx-auto" />
+          <div className="h-4 bg-[#eae6e1] rounded w-2/3 mx-auto" />
+          <div className="h-3 bg-[#eae6e1] rounded w-1/2 mx-auto" />
+        </div>
+      ) : (
+        <>
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2"
+            style={{ backgroundColor: iconBg }}
+          >
+            {icon}
+          </div>
+          <div className="text-[11px] uppercase tracking-[0.12em] text-[#a0937d] mb-1">
+            {label}
+          </div>
+          <div className="text-lg font-semibold text-[#1a1a1a]">{value}</div>
+          <div className="text-xs text-[#8a8a8a] mt-1 truncate">{subtitle}</div>
+        </>
+      )}
+    </div>
+  );
+
+  if (!popoverContent) return cardContent;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="text-left w-full">{cardContent}</button>
+      </PopoverTrigger>
+      <PopoverContent side="top" className="w-64 p-0 gap-0">
+        {popoverContent}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// --- Static fallback (original stop list) ---
+
+function StaticTransportList({ pois, center }: { pois: POI[]; center: Coordinates }) {
   const stops = useMemo(() => {
     const result: POI[] = [];
     const seen = new Set<string>();
-
     for (const catId of ["train", "tram", "bus"]) {
       for (const poi of byWalk(ofCats(pois, catId), center)) {
         if (!seen.has(poi.id) && result.length < 4) {
@@ -311,58 +733,39 @@ function TransportInsight({ theme, center }: HeroInsightProps) {
         }
       }
     }
-
     if (result.length < 4) {
       const bike = nearestOf(pois, center, "bike");
       if (bike && !seen.has(bike.id)) result.push(bike);
     }
-
     return result;
   }, [pois, center]);
 
-  if (stops.length < 1) return null;
-
-  const transitStops = pois.filter(
-    (p) =>
-      estimateWalkMin(p, center) <= 5 &&
-      ["bus", "tram", "train"].includes(p.category.id),
-  ).length;
-
   return (
-    <InsightCard
-      title="Kollektivt herfra"
-      footer={
-        transitStops > 0
-          ? `${transitStops} holdeplasser innen 5 min gange`
-          : undefined
-      }
-    >
-      <div className="space-y-1">
-        {stops.map((poi) => {
-          const Icon = getIcon(poi.category.icon);
-          const walk = fmtWalk(poi, center);
-          return (
-            <div key={poi.id} className="flex items-center gap-3 py-1.5">
-              <div
-                className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
-                style={{ backgroundColor: poi.category.color + "15" }}
-              >
-                <Icon className="w-3.5 h-3.5" style={{ color: poi.category.color }} />
-              </div>
-              <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 min-w-0 truncate">
-                {poi.name}
-              </span>
-              <span className="text-sm text-[#8a8a8a] shrink-0 hidden sm:inline">
-                {poi.category.name}
-              </span>
-              {walk && (
-                <span className="text-sm text-[#8a8a8a] shrink-0 w-12 text-right">{walk}</span>
-              )}
+    <div className="space-y-1">
+      {stops.map((poi) => {
+        const CatIcon = getIcon(poi.category.icon);
+        const walk = fmtWalk(poi, center);
+        return (
+          <div key={poi.id} className="flex items-center gap-3 py-1.5">
+            <div
+              className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
+              style={{ backgroundColor: poi.category.color + "15" }}
+            >
+              <CatIcon className="w-3.5 h-3.5" style={{ color: poi.category.color }} />
             </div>
-          );
-        })}
-      </div>
-    </InsightCard>
+            <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 min-w-0 truncate">
+              {poi.name}
+            </span>
+            <span className="text-sm text-[#8a8a8a] shrink-0 hidden sm:inline">
+              {poi.category.name}
+            </span>
+            {walk && (
+              <span className="text-sm text-[#8a8a8a] shrink-0 w-12 text-right">{walk}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -453,31 +856,112 @@ function MatDrikkeInsight({ theme, center }: HeroInsightProps) {
       title="Lokale favoritter"
       footer={<>{pois.length} spisesteder{avg && <> · snittrating {avg}</>}</>}
     >
-      <div className="space-y-1">
-        {topRated.map((poi) => {
-          const walk = fmtWalk(poi, center);
-          return (
-            <div key={poi.id} className="flex items-center gap-3 py-1.5">
-              <div className="flex items-center gap-1 shrink-0 w-12">
-                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                <span className="text-sm font-medium text-[#1a1a1a]">
-                  {poi.googleRating?.toFixed(1)}
-                </span>
-              </div>
-              <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 min-w-0 truncate">
-                {poi.name}
-              </span>
-              <span className="text-sm text-[#8a8a8a] shrink-0 hidden sm:inline">
-                {poi.category.name}
-              </span>
-              {walk && (
-                <span className="text-sm text-[#8a8a8a] shrink-0 w-12 text-right">{walk}</span>
-              )}
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {topRated.map((poi) => (
+          <FoodCard key={poi.id} poi={poi} center={center} />
+        ))}
       </div>
     </InsightCard>
+  );
+}
+
+function FoodCard({ poi, center }: { poi: POI; center: Coordinates }) {
+  const [imageError, setImageError] = useState(false);
+  const walk = fmtWalk(poi, center);
+  const Icon = getIcon(poi.category.icon);
+
+  const imageUrl = poi.featuredImage
+    ? poi.featuredImage.includes("mymaps.usercontent.google.com")
+      ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
+      : poi.featuredImage
+    : null;
+
+  const hasImage = imageUrl && !imageError;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="text-left rounded-lg border border-[#eae6e1] overflow-hidden hover:border-[#d4cfc8] hover:shadow-sm transition-all cursor-pointer bg-white">
+          <div className="aspect-[16/10] relative">
+            {hasImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl}
+                alt={poi.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{ backgroundColor: poi.category.color + "15" }}
+              >
+                <Icon className="w-8 h-8" style={{ color: poi.category.color }} />
+              </div>
+            )}
+          </div>
+          <div className="px-3 py-2.5">
+            <div className="text-[11px] uppercase tracking-[0.12em] text-[#a0937d] mb-0.5">
+              {poi.category.name}
+            </div>
+            <div className="text-sm font-semibold text-[#1a1a1a] truncate">{poi.name}</div>
+            <div className="flex items-center gap-2 mt-1">
+              {poi.googleRating != null && (
+                <span className="flex items-center gap-0.5 text-xs">
+                  <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  <span className="font-medium text-[#1a1a1a]">{poi.googleRating.toFixed(1)}</span>
+                </span>
+              )}
+              {walk && (
+                <span className="flex items-center gap-0.5 text-xs text-[#8a8a8a]">
+                  <MapPin className="w-3 h-3" />
+                  {walk}
+                </span>
+              )}
+            </div>
+          </div>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" className="w-72 p-4 gap-0">
+        <div>
+          <div className="flex items-center gap-2.5 mb-2">
+            <div
+              className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
+              style={{ backgroundColor: poi.category.color + "18" }}
+            >
+              <Icon className="w-4 h-4" style={{ color: poi.category.color }} />
+            </div>
+            <div className="min-w-0">
+              <div className="font-semibold text-sm leading-tight truncate">{poi.name}</div>
+              <div className="text-xs text-muted-foreground">{poi.category.name}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs text-muted-foreground mb-2">
+            {poi.googleRating != null && (
+              <span className="flex items-center gap-0.5">
+                <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
+                <span className="font-medium text-foreground">{poi.googleRating.toFixed(1)}</span>
+                {poi.googleReviewCount != null && <span>({poi.googleReviewCount})</span>}
+              </span>
+            )}
+            {walk && (
+              <span className="flex items-center gap-0.5">
+                <MapPin className="w-3 h-3" />
+                {walk}
+              </span>
+            )}
+          </div>
+          {poi.editorialHook && (
+            <p className="text-[13px] text-[#3a3a3a] leading-relaxed">{poi.editorialHook}</p>
+          )}
+          {poi.localInsight && (
+            <p className="text-xs text-muted-foreground italic leading-relaxed mt-1.5">
+              {poi.localInsight}
+            </p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -606,7 +1090,7 @@ const RENDERERS: Record<string, React.FC<HeroInsightProps>> = {
   "barn-oppvekst": BarnOppvekstInsight,
   hverdagsliv: HverdagslivInsight,
   hverdagstjenester: HverdagslivInsight,
-  transport: TransportInsight,
+  transport: TransportDashboard,
   "natur-friluftsliv": NaturInsight,
   "mat-drikke": MatDrikkeInsight,
   "trening-aktivitet": TreningInsight,
@@ -636,6 +1120,7 @@ const TIER1_EXTRACTORS: Record<
   transport: (pois, center) => {
     const result: POI[] = [];
     const seen = new Set<string>();
+    // Transit stops
     for (const catId of ["train", "tram", "bus"]) {
       for (const poi of byWalk(ofCats(pois, catId), center)) {
         if (!seen.has(poi.id) && result.length < 4) {
@@ -644,8 +1129,11 @@ const TIER1_EXTRACTORS: Record<
         }
       }
     }
+    // Nearest bysykkel + carshare for dashboard labels
     const bike = nearestOf(pois, center, "bike");
-    if (bike && !seen.has(bike.id) && result.length < 4) result.push(bike);
+    if (bike && !seen.has(bike.id)) { result.push(bike); seen.add(bike.id); }
+    const car = nearestOf(pois, center, "carshare");
+    if (car && !seen.has(car.id)) { result.push(car); seen.add(car.id); }
     return result;
   },
   "natur-friluftsliv": (pois, center) => {
