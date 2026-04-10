@@ -2925,3 +2925,31 @@ Bygget **profil-filter** for Eiendom-Bolig Explorer — en livsfase-velger som b
 - **Kompass-mønsteret var direkte gjenbrukbart.** Bottom sheet, feature flag, dismissal — alt kopiert med minimal tilpasning. Investering i Kompass betalte seg
 - **4 filer, ~150 linjer ny kode, 10 linjer endret.** Liten feature, stor effekt. Boligkjøpere slipper å se 200+ POI-er og kan fokusere umiddelbart
 - **Bransjeprofil-systemet skalerer godt.** Feature flags per bransje-tag gjør det trivielt å legge til nye UX-features uten å påvirke andre produkter
+
+---
+
+## 2026-04-10 — Trail overlay: Natur & Friluftsliv får ekte OSM-ruter
+
+### Beslutninger
+- **Overpass API som datakilde** — OSM route relations for bicycle/hiking/foot. Alternativ (mapbox-roads, manuell) vurdert og forkastet. OSM har navngitte ruter (Nidelvstien, Jonsvannsruta) som er meningsfulle for bruker.
+- **Data seedes, ikke hentes live** — ingen runtime Overpass-kall. Data lagres i `products.config.reportConfig.trails` (JSONB). Koster ~100KB per prosjekt, seedes én gang per prosjekt.
+- **TrailLayer som eget komponent** — `Source` + 2 `Layer`-komponenter (lines + labels) i `components/map/trail-layer.tsx`. Holder ReportThemeMap ren.
+- **Fargekoding etter routeType** — bicycle=grønn (#22C55E), hiking/foot=amber (#D97706). network-felt lagres men brukes ikke til fargekoding ennå (rcn/lcn er for lite kjent).
+- **Dormant↔activated state** — opacity 0.3→0.8, labels vises kun i aktivert tilstand. Jevne overganger med `line-opacity-transition`.
+- **mapLoaded gate** — kritisk: TrailLayer renderes kun etter `onLoad` callback. Uten denne gate krasjer Mapbox med "Style is not done loading".
+
+### Parkert / Åpne spørsmål
+- **Overpass nede 2026-04-10** — begge endpoints (overpass-api.de + overpass.kumi.systems) utilgjengelige under testing. Testdata er et syntetisk fixture med fiktive koordinater — gir meningsløse trails som går gjennom hus. **Neste steg:** seed ekte Overpass-data for Wesselslokka når servere er oppe: `npx tsx scripts/seed-trails.ts 63.422074 10.450617 3 > /tmp/wesselslokka-trails.json && npx tsx scripts/seed-trails-to-project.ts wesselslokka /tmp/wesselslokka-trails.json`
+- **Pipeline-integrasjon uverifisert** — `scripts/generate-story.ts` har step 2.5 for trail-fetching, men er ikke testet end-to-end fordi Overpass var nede.
+- **Datastorl på produksjon** — 3km radius kan gi store JSONB-blobs for tette byområder. Test med ekte data før man bestemmer radius-default.
+- **network-fargekoding** — rcn (regional) vs lcn (lokal) kan brukes til linje-tykkelse eller dash-mønster i fremtiden.
+
+### Retning
+- **Riktig beslutning** å bruke OSM. Navngitte ruter (Nidelvstien, Jonsvannsruta, Moholtruta) er meglerfaglig relevante og gjenkjennbare for boligkjøpere i Trondheim.
+- **Blokkert av data, ikke kode.** Implementasjonen er komplett og korrekt — vi venter bare på at Overpass-serverne kommer tilbake. Ikke bruk tid på å forbedre noe som ikke kan verifiseres.
+- **Neste naturlige steg etter data-seeding:** Vurder om trail-navn bør vises på dormant-kartet (lavere opacity) som en teaser, eller kun i aktivert tilstand.
+
+### Observasjoner
+- **Overpass API er upålitelig som runtime-tjeneste.** Begge kjente mirrors gikk ned samme dag. Beslutningen om å cache i Supabase (ikke hente live) var riktig.
+- **Fake testdata er verre enn ingen data.** Fiktive koordinater som tegner stier gjennom hus skaper mer forvirring enn de fjerner. Leksjon: for geo-features, enten ekte data eller ingenting.
+- **mapLoaded-gaten var ikke dokumentert noe sted.** En rimelig fallgruve — Mapbox krasjer stille uten god feilmelding. Nå dokumentert i docs/solutions/.

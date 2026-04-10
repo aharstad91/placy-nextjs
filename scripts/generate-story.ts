@@ -32,6 +32,8 @@ import {
   ThemeConfig,
 } from "../lib/generators/story-structure";
 import { mergeProjectData } from "../lib/generators/merge-data";
+import { fetchTrails } from "../lib/generators/trail-fetcher";
+import type { TrailCollection } from "../lib/types";
 
 // === Input Types ===
 
@@ -175,6 +177,33 @@ async function main() {
     console.log("   Reisetider beregnes av frontend ved runtime.\n");
   }
 
+  // === Step 2.5: Fetch Trails from Overpass API (optional) ===
+  let trailData: TrailCollection | undefined;
+  const skipTrails = args.includes("--skip-trails");
+
+  if (!skipTrails) {
+    try {
+      console.log("\n🗺️  Henter sykkelruter og turstier fra Overpass/OSM...");
+      trailData = await fetchTrails({
+        lat: input.center.lat,
+        lng: input.center.lng,
+        radiusKm: (input.radius || 1000) / 1000 * 3, // Use 3x discovery radius for trails
+      });
+      console.log(`   Fant ${trailData.features.length} navngitte ruter`);
+      for (const f of trailData.features.slice(0, 5)) {
+        console.log(`   - ${f.properties.name} (${f.properties.routeType})`);
+      }
+      if (trailData.features.length > 5) {
+        console.log(`   ... og ${trailData.features.length - 5} til`);
+      }
+    } catch (error) {
+      console.log("\n⚠️  Kunne ikke hente trails fra Overpass API");
+      console.log(`   ${error instanceof Error ? error.message : "Ukjent feil"}\n`);
+    }
+  } else {
+    console.log("\n⏭️  Skipper trail-henting (--skip-trails)");
+  }
+
   // === Step 3: Generate Story Structure ===
   const themes = input.themes || DEFAULT_THEMES;
 
@@ -199,6 +228,9 @@ async function main() {
     categories: allCategories,
     pois: poisWithTravelTimes.map((p) => convertToPOI(p as DiscoveredPOI & { travelTime?: { walk?: number; bike?: number; car?: number } })),
     story,
+    ...(trailData && trailData.features.length > 0 && {
+      reportConfig: { trails: trailData },
+    }),
   };
 
   // === Step 5: Merge with Existing Data ===
@@ -257,6 +289,7 @@ Argumenter:
 Options:
   --update            Oppdater eksisterende data (merger ny data)
   --skip-travel-times Skip reisetidsberegning (bruker frontend runtime)
+  --skip-trails       Skip henting av sykkelruter/turstier fra Overpass
   --help, -h          Vis denne hjelpeteksten
 
 Eksempel:

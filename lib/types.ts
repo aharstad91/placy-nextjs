@@ -142,6 +142,26 @@ export interface Story {
   themeStories: ThemeStory[];
 }
 
+// === Trail Overlay (Overpass/OSM route relations) ===
+
+export interface TrailFeatureProperties {
+  id: string;
+  name: string;
+  routeType: "bicycle" | "hiking" | "foot";
+  network: "lcn" | "rcn" | "ncn" | null;
+}
+
+export interface TrailFeature {
+  type: "Feature";
+  properties: TrailFeatureProperties;
+  geometry: GeoJSON.LineString | GeoJSON.MultiLineString;
+}
+
+export interface TrailCollection {
+  type: "FeatureCollection";
+  features: TrailFeature[];
+}
+
 // === Report Config ===
 
 export interface ReportThemeConfig {
@@ -162,6 +182,7 @@ export interface ReportConfig {
   closingTitle?: string;
   closingText?: string;
   mapStyle?: string;
+  trails?: TrailCollection;
 }
 
 // === Origin Mode (for Explorer geolocation behavior) ===

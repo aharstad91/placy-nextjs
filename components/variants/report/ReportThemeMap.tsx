@@ -2,10 +2,11 @@
 
 import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
-import type { Coordinates, POI } from "@/lib/types";
+import type { Coordinates, POI, TrailCollection } from "@/lib/types";
 import { getIcon } from "@/lib/utils/map-icons";
 import { Building2 } from "lucide-react";
 import { MarkerTooltip } from "@/components/map/marker-tooltip";
+import { TrailLayer } from "@/components/map/trail-layer";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 
 interface ReportThemeMapProps {
@@ -21,6 +22,8 @@ interface ReportThemeMapProps {
   activated?: boolean;
   /** Project name — shown as permanent label on center marker */
   projectName?: string;
+  /** Trail/route overlay GeoJSON for Natur & Friluftsliv */
+  trails?: TrailCollection;
 }
 
 export default function ReportThemeMap({
@@ -33,6 +36,7 @@ export default function ReportThemeMap({
   mapStyle,
   activated = false,
   projectName,
+  trails,
 }: ReportThemeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -102,6 +106,11 @@ export default function ReportThemeMap({
         onClick={activated ? onMapClick : undefined}
         cooperativeGestures={!activated}
       >
+        {/* Trail overlay — rendered as GL layer below DOM markers, only after style loads */}
+        {mapLoaded && trails && trails.features.length > 0 && (
+          <TrailLayer trails={trails} activated={activated} />
+        )}
+
         {/* Project/hotel marker — always visible with label */}
         <Marker
           longitude={center.lng}
