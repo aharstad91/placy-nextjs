@@ -6,10 +6,18 @@ import type { EnturDeparture, HyreStatus } from "./useRealtimeData";
 
 // --- Types ---
 
+export interface QuayDepartures {
+  quayId: string;
+  departures: EnturDeparture[];
+}
+
 export interface StopDepartures {
   stopName: string;
   stopId: string;
   walkMin: number;
+  /** Per-quay (per-direction) departure groups */
+  quays: QuayDepartures[];
+  /** Flattened first departure per quay — backward compat for map tooltips */
   departures: EnturDeparture[];
 }
 
@@ -64,12 +72,13 @@ const POLLING_INTERVAL = 90_000; // 90 seconds
 async function fetchDepartures(
   stopPlaceId: string,
   signal: AbortSignal,
-): Promise<{ stopName: string; departures: EnturDeparture[] }> {
-  const res = await fetch(`/api/entur?stopPlaceId=${stopPlaceId}&limit=5`, { signal });
+): Promise<{ stopName: string; quays: QuayDepartures[]; departures: EnturDeparture[] }> {
+  const res = await fetch(`/api/entur?stopPlaceId=${stopPlaceId}&limit=3`, { signal });
   if (!res.ok) throw new Error("Entur fetch failed");
   const data = await res.json();
   return {
     stopName: data.stopPlace?.name || "Ukjent",
+    quays: data.quays || [],
     departures: data.departures || [],
   };
 }
@@ -277,6 +286,7 @@ export function useTransportDashboard(
             stopName: val.stopName as string,
             stopId: val.stopId as string,
             walkMin: val.walkMin as number,
+            quays: val.quays as QuayDepartures[],
             departures: val.departures as EnturDeparture[],
           });
         } else if (val.type === "bysykkel") {

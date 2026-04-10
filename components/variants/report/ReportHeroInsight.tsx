@@ -95,15 +95,22 @@ function InsightCard({
   title,
   children,
   footer,
+  headerRight,
 }: {
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  headerRight?: React.ReactNode;
 }) {
   return (
     <div className="rounded-xl bg-[#faf9f7] border border-[#eae6e1] px-5 py-4 md:px-6 md:py-5 mb-6">
-      <div className="text-xs uppercase tracking-[0.15em] text-[#a0937d] font-medium mb-3">
-        {title}
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs uppercase tracking-[0.15em] text-[#a0937d] font-medium">
+          {title}
+        </div>
+        {headerRight && (
+          <div className="text-[11px] text-[#a0a0a0]">{headerRight}</div>
+        )}
       </div>
       {children}
       {footer && (
@@ -468,19 +475,18 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
     <>
       {/* Kollektivliste med sanntidsavganger */}
       <InsightCard
-        title="Kollektivt herfra"
+        title="Nærmeste bussholdeplass"
+        headerRight={
+          dashboard.lastUpdated
+            ? `oppdatert kl ${dashboard.lastUpdated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}`
+            : undefined
+        }
         footer={
           transitStops > 0
             ? `${transitStops} holdeplasser innen 5 min gange`
             : undefined
         }
       >
-        {/* Tidsstempel */}
-        {dashboard.lastUpdated && (
-          <div className="text-[11px] text-[#a0a0a0] text-right -mt-1 mb-2">
-            oppdatert kl {dashboard.lastUpdated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
-          </div>
-        )}
 
         {/* Loading skeleton */}
         {dashboard.loading && (
@@ -515,10 +521,10 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
         <div className="text-xs uppercase tracking-[0.15em] text-[#a0937d] font-medium mb-3">
           Tilgjengelig i nærheten
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* Bysykkel */}
         <MobilityCard
-          icon={<Bike className="w-5 h-5 text-[#3b82f6]" />}
+          icon={<Bike className="w-4 h-4 text-[#3b82f6]" />}
           iconBg="#3b82f620"
           label="Bysykkel"
           value={dashboard.bysykkel
@@ -569,7 +575,7 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
 
         {/* Sparkesykkel */}
         <MobilityCard
-          icon={<Zap className="w-5 h-5 text-[#8b5cf6]" />}
+          icon={<Zap className="w-4 h-4 text-[#8b5cf6]" />}
           iconBg="#8b5cf620"
           label="Sparkesykkel"
           value={dashboard.scooters
@@ -622,7 +628,7 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
 
           return (
             <MobilityCard
-              icon={<Car className="w-5 h-5 text-[#10b981]" />}
+              icon={<Car className="w-4 h-4 text-[#10b981]" />}
               iconBg="#10b98120"
               label="Bildeling"
               value={hasData ? `${totalCars} biler` : "–"}
@@ -674,7 +680,7 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
 
           return (
             <MobilityCard
-              icon={<Zap className="w-5 h-5 text-[#f59e0b]" />}
+              icon={<Zap className="w-4 h-4 text-[#f59e0b]" />}
               iconBg="#f59e0b20"
               label="Elbillading"
               value={`${chargingPOIs.length} stasjoner`}
@@ -710,6 +716,10 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
 
 function DepartureBlock({ stop }: { stop: StopDepartures }) {
   const Icon = getIcon("Bus");
+
+  // Prefer quay-grouped data; fall back to flat departures for backward compat
+  const hasQuays = stop.quays && stop.quays.length > 0;
+
   return (
     <div>
       {/* Stop header */}
@@ -717,31 +727,68 @@ function DepartureBlock({ stop }: { stop: StopDepartures }) {
         <div className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 bg-[#3b82f615]">
           <Icon className="w-3.5 h-3.5 text-[#3b82f6]" />
         </div>
-        <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 min-w-0 truncate">
+        <a
+          href={`https://entur.no/nearby-stop-place-detail?id=${stop.stopId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-[#1a1a1a] hover:text-[#3b82f6] transition-colors text-[15px] flex-1 min-w-0 truncate"
+        >
           {stop.stopName}
-        </span>
+        </a>
         <span className="text-sm text-[#8a8a8a] shrink-0">{stop.walkMin} min</span>
       </div>
 
-      {/* Departures under the stop */}
-      {stop.departures.length > 0 ? (
-        <div className="ml-10 space-y-0.5">
-          {stop.departures.slice(0, 3).map((dep, i) => (
+      {/* Direction blocks per quay — 50/50 grid */}
+      {hasQuays ? (
+        <div className="ml-10 mt-1 grid grid-cols-2 gap-x-8 gap-y-3">
+          {stop.quays.map((quay) => {
+            if (quay.departures.length === 0) return null;
+            const directionLabel = quay.departures[0].destination;
+            return (
+              <div key={quay.quayId} className="min-w-0">
+                <div className="text-[10px] uppercase tracking-[0.1em] text-[#a0937d] font-medium mb-1 truncate">
+                  → {directionLabel}
+                </div>
+                <div className="space-y-0.5">
+                  {quay.departures.map((dep, i) => (
+                    <div key={i} className="flex items-center gap-2 py-0.5 text-sm">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          dep.isRealtime ? "bg-green-500" : "bg-gray-300"
+                        }`}
+                      />
+                      <span
+                        className="font-semibold w-6 shrink-0"
+                        style={dep.lineColor ? { color: `#${dep.lineColor}` } : undefined}
+                      >
+                        {dep.lineCode}
+                      </span>
+                      <span className="text-[#8a8a8a] shrink-0">
+                        om {formatRelativeDepartureTime(dep.departureTime)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : stop.departures.length > 0 ? (
+        /* Fallback: flat list */
+        <div className="ml-10 space-y-0.5 mt-1">
+          {stop.departures.slice(0, 4).map((dep, i) => (
             <div key={i} className="flex items-center gap-2 py-0.5 text-sm">
               <span
                 className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                   dep.isRealtime ? "bg-green-500" : "bg-gray-300"
                 }`}
               />
-              <a
-                href={`https://entur.no/nearby-stop-place-detail?id=${stop.stopId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-[#1a1a1a] hover:text-[#3b82f6] transition-colors min-w-[2.5rem]"
-                style={dep.lineColor ? { color: dep.lineColor } : undefined}
+              <span
+                className="font-semibold min-w-[2.5rem]"
+                style={dep.lineColor ? { color: `#${dep.lineColor}` } : undefined}
               >
                 {dep.lineCode}
-              </a>
+              </span>
               <span className="text-[#6a6a6a] flex-1 min-w-0 truncate">
                 {dep.destination}
               </span>
@@ -778,26 +825,26 @@ function MobilityCard({
   popoverContent?: React.ReactNode;
 }) {
   const cardContent = (
-    <div className={`rounded-lg border border-[#eae6e1] bg-white p-4 text-center ${popoverContent ? "hover:border-[#d4cfc8] hover:shadow-sm transition-all cursor-pointer" : ""}`}>
+    <div className={`rounded-lg border border-[#eae6e1] bg-white p-3 text-center ${popoverContent ? "hover:border-[#d4cfc8] hover:shadow-sm transition-all cursor-pointer" : ""}`}>
       {loading ? (
         <div className="animate-pulse space-y-2">
-          <div className="h-10 w-10 bg-[#eae6e1] rounded-full mx-auto" />
-          <div className="h-4 bg-[#eae6e1] rounded w-2/3 mx-auto" />
-          <div className="h-3 bg-[#eae6e1] rounded w-1/2 mx-auto" />
+          <div className="h-8 w-8 bg-[#eae6e1] rounded-full mx-auto" />
+          <div className="h-3 bg-[#eae6e1] rounded w-2/3 mx-auto" />
+          <div className="h-2.5 bg-[#eae6e1] rounded w-1/2 mx-auto" />
         </div>
       ) : (
         <>
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2"
+            className="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1.5"
             style={{ backgroundColor: iconBg }}
           >
             {icon}
           </div>
-          <div className="text-[11px] uppercase tracking-[0.12em] text-[#a0937d] mb-1">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-[#a0937d] mb-0.5">
             {label}
           </div>
-          <div className="text-lg font-semibold text-[#1a1a1a]">{value}</div>
-          <div className="text-xs text-[#8a8a8a] mt-1 truncate">{subtitle}</div>
+          <div className="text-sm font-semibold text-[#1a1a1a]">{value}</div>
+          <div className="text-[11px] text-[#8a8a8a] mt-0.5 truncate">{subtitle}</div>
         </>
       )}
     </div>

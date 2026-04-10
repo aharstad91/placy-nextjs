@@ -282,8 +282,11 @@ export default function ReportThemeSection({
       {/* Per-category map — dormant preview + modal on activate */}
       {theme.allPOIs.length > 0 && (
         <>
-          {/* Dormant map preview */}
-          <div className="mt-8 md:max-w-4xl h-[280px] md:h-[400px] rounded-2xl overflow-hidden border border-[#eae6e1] relative">
+          {/* Dormant map preview — entire area is clickable */}
+          <button
+            onClick={() => { setSelectedPOIId(null); setMapDialogOpen(true); }}
+            className="mt-8 md:max-w-4xl h-[280px] md:h-[400px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors"
+          >
             <ReportThemeMap
               pois={theme.allPOIs}
               center={center}
@@ -293,21 +296,19 @@ export default function ReportThemeSection({
               activated={false}
               projectName={projectName}
               trails={theme.trails}
+              vehiclePositions={vehiclePositions}
             />
 
             {/* Overlay + CTA */}
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center -mt-[10%] pointer-events-none">
               <div className="absolute inset-0 bg-white/60" />
               <p className="relative text-sm text-[#6a6a6a] mb-3">Se alle {theme.allPOIs.length} steder på kartet</p>
-              <button
-                onClick={() => { setSelectedPOIId(null); setMapDialogOpen(true); }}
-                className="relative pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] hover:shadow-xl hover:border-[#d4cfc8] transition-all"
-              >
+              <div className="relative flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a]">
                 <MapIcon className="w-4 h-4 text-[#7a7062]" />
                 Utforsk kartet
-              </button>
+              </div>
             </div>
-          </div>
+          </button>
 
           {/* Map modal — bottom drawer on mobile, centered modal on desktop */}
           <Dialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>

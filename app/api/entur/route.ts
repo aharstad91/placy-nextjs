@@ -5,27 +5,30 @@ import { NextRequest, NextResponse } from "next/server";
 
 const ENTUR_API_URL = "https://api.entur.io/journey-planner/v3/graphql";
 
-// GraphQL query for å hente avganger fra en holdeplass
+// GraphQL query for å hente avganger fra en holdeplass — per quay (retning)
 const DEPARTURES_QUERY = `
   query GetDepartures($stopPlaceId: String!, $numberOfDepartures: Int!) {
     stopPlace(id: $stopPlaceId) {
       id
       name
-      estimatedCalls(numberOfDepartures: $numberOfDepartures) {
-        expectedDepartureTime
-        actualDepartureTime
-        realtime
-        destinationDisplay {
-          frontText
-        }
-        serviceJourney {
-          line {
-            id
-            publicCode
-            transportMode
-            presentation {
-              colour
-              textColour
+      quays {
+        id
+        estimatedCalls(numberOfDepartures: $numberOfDepartures) {
+          expectedDepartureTime
+          actualDepartureTime
+          realtime
+          destinationDisplay {
+            frontText
+          }
+          serviceJourney {
+            line {
+              id
+              publicCode
+              transportMode
+              presentation {
+                colour
+                textColour
+              }
             }
           }
         }
@@ -61,6 +64,31 @@ const TRIP_QUERY = `
     }
   }
 `;
+
+type RawCall = {
+  expectedDepartureTime: string;
+  actualDepartureTime: string | null;
+  realtime: boolean;
+  destinationDisplay: { frontText: string };
+  serviceJourney: {
+    line: {
+      publicCode: string;
+      transportMode: string;
+      presentation: { colour: string; textColour: string };
+    };
+  };
+};
+
+function formatCall(call: RawCall) {
+  return {
+    departureTime: call.actualDepartureTime || call.expectedDepartureTime,
+    isRealtime: call.realtime,
+    destination: call.destinationDisplay?.frontText,
+    lineCode: call.serviceJourney?.line?.publicCode,
+    transportMode: call.serviceJourney?.line?.transportMode,
+    lineColor: call.serviceJourney?.line?.presentation?.colour,
+  };
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -109,33 +137,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Formater avgangene
-    const departures = stopPlace.estimatedCalls?.map((call: {
-      expectedDepartureTime: string;
-      actualDepartureTime: string | null;
-      realtime: boolean;
-      destinationDisplay: { frontText: string };
-      serviceJourney: {
-        line: {
-          publicCode: string;
-          transportMode: string;
-          presentation: { colour: string; textColour: string };
-        };
-      };
-    }) => ({
-      departureTime: call.actualDepartureTime || call.expectedDepartureTime,
-      isRealtime: call.realtime,
-      destination: call.destinationDisplay?.frontText,
-      lineCode: call.serviceJourney?.line?.publicCode,
-      transportMode: call.serviceJourney?.line?.transportMode,
-      lineColor: call.serviceJourney?.line?.presentation?.colour,
-    })) || [];
+    // Build per-quay groups — skip quays with no departures
+    const rawQuays: Array<{ id: string; estimatedCalls: RawCall[] }> =
+      stopPlace.quays || [];
+
+    const quays = rawQuays
+      .filter((q) => q.estimatedCalls?.length > 0)
+      .map((q) => ({
+        quayId: q.id,
+        departures: q.estimatedCalls.map(formatCall),
+      }));
+
+    // Flat departures: first departure from each quay — backward compat for map tooltips
+    const departures = quays.map((q) => q.departures[0]).filter(Boolean);
 
     return NextResponse.json({
       stopPlace: {
         id: stopPlace.id,
         name: stopPlace.name,
       },
+      quays,
       departures,
     });
   } catch (error) {

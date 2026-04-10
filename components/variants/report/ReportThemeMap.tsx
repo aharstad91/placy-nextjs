@@ -65,29 +65,26 @@ export default function ReportThemeMap({
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-  // fitBounds on map load — show all POIs + project center
+  // Pre-calculate bounds so initialViewState starts at the correct viewport —
+  // eliminates the fitBounds jump that would otherwise happen after onLoad.
+  const initialBounds = useMemo((): [[number, number], [number, number]] | undefined => {
+    if (pois.length === 0) return undefined;
+    const allCoords = pois.map((p) => p.coordinates);
+    const maxDeltaLng = Math.max(...allCoords.map((c) => Math.abs(c.lng - center.lng)));
+    const maxDeltaLat = Math.max(...allCoords.map((c) => Math.abs(c.lat - center.lat)));
+    return [
+      [center.lng - maxDeltaLng, center.lat - maxDeltaLat],
+      [center.lng + maxDeltaLng, center.lat + maxDeltaLat],
+    ];
+  }, [pois, center]);
+
+  // onLoad — only apply illustrated theme; no fitBounds needed (handled by initialViewState)
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
     if (!mapRef.current) return;
-
     const map = mapRef.current.getMap();
     applyIllustratedTheme(map);
-
-    if (pois.length > 0) {
-      // Calculate max distance from center to any POI, then mirror to keep center in middle
-      const allCoords = pois.map((p) => p.coordinates);
-      const maxDeltaLng = Math.max(...allCoords.map((c) => Math.abs(c.lng - center.lng)));
-      const maxDeltaLat = Math.max(...allCoords.map((c) => Math.abs(c.lat - center.lat)));
-
-      mapRef.current.fitBounds(
-        [
-          [center.lng - maxDeltaLng, center.lat - maxDeltaLat],
-          [center.lng + maxDeltaLng, center.lat + maxDeltaLat],
-        ],
-        { padding: 60, duration: 0, maxZoom: 16 }
-      );
-    }
-  }, [pois, center]);
+  }, []);
 
   // Resize map when activated (container changes size)
   useEffect(() => {
@@ -152,15 +149,20 @@ export default function ReportThemeMap({
   if (!token) return null;
 
   return (
-    <div className="relative w-full h-full" aria-hidden="true">
+    <div className={`relative w-full h-full ${!activated ? "pointer-events-none" : ""}`} aria-hidden="true">
+      {/* Skeleton shown until theme is applied — prevents style-swap flash.
+          z-20 ensures it sits above both the map canvas and the preview overlay (z-10). */}
+      {!mapLoaded && (
+        <div className="absolute inset-0 z-20 bg-[#f0ece6] animate-pulse" />
+      )}
       <Map
         ref={mapRef}
         mapboxAccessToken={token}
-        initialViewState={{
-          longitude: center.lng,
-          latitude: center.lat,
-          zoom: 14,
-        }}
+        initialViewState={
+          initialBounds
+            ? { bounds: initialBounds, fitBoundsOptions: { padding: 60, maxZoom: 16 } }
+            : { longitude: center.lng, latitude: center.lat, zoom: 14 }
+        }
         style={{ width: "100%", height: "100%" }}
         mapStyle={mapStyle || MAP_STYLE_STANDARD}
         onLoad={handleMapLoad}
@@ -289,8 +291,8 @@ export default function ReportThemeMap({
           );
         })}
 
-        {/* Live vehicle positions (scooters) — small dots */}
-        {activated && vehiclePositions?.map((pos, i) => (
+        {/* Live vehicle positions (scooters) — small dots, shown in both preview and activated */}
+        {vehiclePositions?.map((pos, i) => (
           <Marker
             key={`vehicle-${i}`}
             longitude={pos.lng}

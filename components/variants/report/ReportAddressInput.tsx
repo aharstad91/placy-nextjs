@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
-import { MapPin, Navigation, Bike, Car, Loader2, X } from "lucide-react";
+import { MapPin, PersonStanding, Bike, Car, Loader2, X } from "lucide-react";
 
 interface Suggestion {
   id: string;
@@ -38,7 +38,6 @@ export default function ReportAddressInput({
   const router = useRouter();
   const pathname = usePathname();
 
-  const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState(searchParams.get("from") ?? "");
   const [state, setState] = useState<SelectionState>({ status: "idle" });
 
@@ -61,12 +60,10 @@ export default function ReportAddressInput({
   // Check for existing address in URL on mount
   useEffect(() => {
     const fromAddress = searchParams.get("from");
-    if (fromAddress && !isOpen) {
-      setIsOpen(true);
+    if (fromAddress) {
       setQuery(fromAddress);
-      // Trigger a search to restore state
     }
-  }, [searchParams, isOpen]);
+  }, [searchParams]);
 
   // Debounced search with race condition handling
   const debouncedSearch = useDebouncedCallback(async (searchQuery: string) => {
@@ -178,11 +175,6 @@ export default function ReportAddressInput({
     inputRef.current?.focus();
   }, [searchParams, router, pathname]);
 
-  const handleOpen = useCallback(() => {
-    setIsOpen(true);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, []);
-
   // Keyboard navigation for suggestions
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
@@ -213,34 +205,23 @@ export default function ReportAddressInput({
     setSelectedIndex(-1);
   }, [state.status === "suggestions" ? state.items : null]);
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={handleOpen}
-        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#1a1a1a] bg-white border border-[#d4cfc8] rounded-lg hover:bg-[#f8f6f4] transition-colors"
-      >
-        <MapPin className="w-4 h-4" />
-        Sjekk din reisetid
-      </button>
-    );
-  }
-
   return (
-    <div className="bg-[#f8f6f4] rounded-xl p-4 md:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-[#6a6a6a]">
-          Hvor bor eller jobber du?
-        </h3>
-        <button
-          onClick={() => {
-            setIsOpen(false);
-            handleClear();
-          }}
-          className="p-1 text-[#6a6a6a] hover:text-[#1a1a1a] transition-colors"
-          aria-label="Lukk"
-        >
-          <X className="w-4 h-4" />
-        </button>
+    <div className="bg-[#f8f6f4] rounded-xl p-4 md:p-5">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <MapPin className="w-4 h-4 text-[#7a7062] shrink-0" />
+            <span className="text-sm font-semibold text-[#1a1a1a]">Reisetid fra {propertyName}</span>
+          </div>
+          <p className="text-sm text-[#6a6a6a]">
+            Skriv inn din arbeidsplass eller et annet reisemål og se hvor lang tid det tar.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 mt-0.5">
+          <PersonStanding className="w-3.5 h-3.5 text-[#a0937d] opacity-50" />
+          <Bike className="w-3.5 h-3.5 text-[#a0937d] opacity-50" />
+          <Car className="w-3.5 h-3.5 text-[#a0937d] opacity-50" />
+        </div>
       </div>
 
       <div className="relative">
@@ -252,7 +233,7 @@ export default function ReportAddressInput({
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Skriv inn adresse..."
+            placeholder="Arbeidsplass, skole eller adresse..."
             className="w-full pl-10 pr-10 py-3 text-base border border-[#d4cfc8] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#7a7062] focus:border-transparent"
             aria-autocomplete="list"
             aria-expanded={state.status === "suggestions"}
@@ -275,7 +256,7 @@ export default function ReportAddressInput({
           <div className="absolute z-10 w-full mt-1 bg-white border border-[#d4cfc8] rounded-lg shadow-lg p-3">
             <div className="flex items-center gap-2 text-sm text-[#6a6a6a]">
               <Loader2 className="w-4 h-4 animate-spin" />
-              S\u00f8ker...
+              Søker...
             </div>
           </div>
         )}
@@ -287,21 +268,24 @@ export default function ReportAddressInput({
             role="listbox"
             className="absolute z-10 w-full mt-1 bg-white border border-[#d4cfc8] rounded-lg shadow-lg max-h-60 overflow-auto"
           >
-            {state.items.map((item, index) => (
-              <li
-                key={item.id}
-                role="option"
-                aria-selected={index === selectedIndex}
-                onClick={() => handleSelectSuggestion(item)}
-                className={`px-4 py-3 cursor-pointer text-sm ${
-                  index === selectedIndex
-                    ? "bg-[#f8f6f4] text-[#1a1a1a]"
-                    : "hover:bg-[#f8f6f4] text-[#4a4a4a]"
-                }`}
-              >
-                {item.place_name}
-              </li>
-            ))}
+            {state.items.map((item, index) => {
+              const [main, ...rest] = item.place_name.split(",");
+              const secondary = rest.slice(0, 2).join(",").trim();
+              return (
+                <li
+                  key={item.id}
+                  role="option"
+                  aria-selected={index === selectedIndex}
+                  onClick={() => handleSelectSuggestion(item)}
+                  className={`px-4 py-2.5 cursor-pointer ${
+                    index === selectedIndex ? "bg-[#f8f6f4]" : "hover:bg-[#f8f6f4]"
+                  }`}
+                >
+                  <div className="text-sm text-[#1a1a1a]">{main}</div>
+                  {secondary && <div className="text-xs text-[#8a8a8a] mt-0.5">{secondary}</div>}
+                </li>
+              );
+            })}
           </ul>
         )}
 
@@ -322,43 +306,55 @@ export default function ReportAddressInput({
       )}
 
       {/* Results */}
-      {state.status === "complete" && (
-        <div className="mt-4">
-          <p className="text-sm text-[#6a6a6a] mb-3">
-            Fra <span className="font-medium text-[#1a1a1a]">{state.address}</span> til{" "}
-            <span className="font-medium text-[#1a1a1a]">{propertyName}</span>
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            {state.result.walk !== null && (
-              <div className="bg-white rounded-lg p-3 text-center border border-[#e8e4e0]">
-                <Navigation className="w-5 h-5 mx-auto mb-1 text-[#7a7062]" />
-                <div className="text-xl font-semibold text-[#1a1a1a]">
-                  {state.result.walk}
-                </div>
-                <div className="text-xs text-[#6a6a6a]">min gange</div>
-              </div>
-            )}
-            {state.result.bike !== null && (
-              <div className="bg-white rounded-lg p-3 text-center border border-[#e8e4e0]">
-                <Bike className="w-5 h-5 mx-auto mb-1 text-[#7a7062]" />
-                <div className="text-xl font-semibold text-[#1a1a1a]">
-                  {state.result.bike}
-                </div>
-                <div className="text-xs text-[#6a6a6a]">min sykkel</div>
-              </div>
-            )}
-            {state.result.car !== null && (
-              <div className="bg-white rounded-lg p-3 text-center border border-[#e8e4e0]">
-                <Car className="w-5 h-5 mx-auto mb-1 text-[#7a7062]" />
-                <div className="text-xl font-semibold text-[#1a1a1a]">
-                  {state.result.car}
-                </div>
-                <div className="text-xs text-[#6a6a6a]">min bil</div>
-              </div>
-            )}
+      {state.status === "complete" && (() => {
+        const [propLng, propLat] = propertyCoordinates;
+        const mapsBase = `https://www.google.com/maps/dir/?api=1&origin=${propLat},${propLng}&destination=${encodeURIComponent(state.address)}`;
+        return (
+          <div className="mt-4">
+            <p className="text-xs text-[#a0937d] uppercase tracking-[0.1em] font-medium mb-3">
+              Fra {propertyName} til {state.address.split(",")[0]}
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {state.result.walk !== null && (
+                <a href={`${mapsBase}&travelmode=walking`} target="_blank" rel="noopener noreferrer"
+                  className="bg-white rounded-xl px-3 py-2.5 flex items-center gap-2.5 border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm transition-all">
+                  <div className="w-7 h-7 rounded-full bg-[#8a8a8a15] flex items-center justify-center shrink-0">
+                    <PersonStanding className="w-3.5 h-3.5 text-[#8a8a8a]" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-[#1a1a1a] leading-none">{state.result.walk} min</div>
+                    <div className="text-[11px] text-[#8a8a8a]">Google Maps ↗</div>
+                  </div>
+                </a>
+              )}
+              {state.result.bike !== null && (
+                <a href={`${mapsBase}&travelmode=bicycling`} target="_blank" rel="noopener noreferrer"
+                  className="bg-white rounded-xl px-3 py-2.5 flex items-center gap-2.5 border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm transition-all">
+                  <div className="w-7 h-7 rounded-full bg-[#3b82f615] flex items-center justify-center shrink-0">
+                    <Bike className="w-3.5 h-3.5 text-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-[#1a1a1a] leading-none">{state.result.bike} min</div>
+                    <div className="text-[11px] text-[#8a8a8a]">Google Maps ↗</div>
+                  </div>
+                </a>
+              )}
+              {state.result.car !== null && (
+                <a href={`${mapsBase}&travelmode=driving`} target="_blank" rel="noopener noreferrer"
+                  className="bg-white rounded-xl px-3 py-2.5 flex items-center gap-2.5 border border-[#eae6e1] hover:border-[#d4cfc8] hover:shadow-sm transition-all">
+                  <div className="w-7 h-7 rounded-full bg-[#10b98115] flex items-center justify-center shrink-0">
+                    <Car className="w-3.5 h-3.5 text-[#10b981]" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-[#1a1a1a] leading-none">{state.result.car} min</div>
+                    <div className="text-[11px] text-[#8a8a8a]">Google Maps ↗</div>
+                  </div>
+                </a>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Error state */}
       {state.status === "error" && (
