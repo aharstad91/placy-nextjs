@@ -171,40 +171,51 @@ function barnOppvekst(pois: POI[], c: Coordinates, exclude: Set<string>): string
 
 /**
  * Hverdagsliv
- * Hero insight card shows: nearest dagligvare, apotek, lege, frisør
- * Text complements: samlokaliseringer, kjøpesentre, spesialbutikker, "uten bil"
+ * Hero insight card shows: kjøpesenter (anchor) + dagligvare, apotek, lege
+ * Text complements: hva som finnes i tillegg til kjøpesenteret, eller dagligvare-bredde uten kjøpesenter
  */
 function hverdagsliv(pois: POI[], c: Coordinates, exclude: Set<string>): string {
-  // Tier 2: butikker and services NOT in the card
   const tier2 = byDistance(pois.filter((p) => !exclude.has(p.id)), c);
-  const butikker = tier2.filter((p) => ["supermarket", "convenience"].includes(p.category.id));
+
+  // Kjøpesenter er i hero (excluded) — bruk det som narrativt knutepunkt
+  const kjøpesenter = pois.find((p) => p.category.id === "shopping" && exclude.has(p.id));
+
+  // Sekundære butikker som IKKE er i hero
+  const butikker = tier2.filter((p) =>
+    ["supermarket", "convenience"].includes(p.category.id),
+  );
 
   const parts: string[] = [];
 
-  // Sentence 1: secondary shops or samlokalisering
-  if (butikker.length >= 2) {
-    parts.push(
-      `${clean(butikker[0])} og ${clean(butikker[1])} gir variasjon for de som vil veksle mellom butikker.`,
-    );
-  } else if (butikker[0]) {
-    parts.push(
-      `${clean(butikker[0])} ${prox(butikker[0], c)} for variasjon.`,
-    );
-  } else {
-    // All grocery is in the card — focus on walkability
-    const walkable = countWithin(pois, c, 15);
-    if (walkable >= 5) {
-      parts.push("Hverdagstjenestene er samlet i gangavstand — alt ordnes uten bil.");
+  if (kjøpesenter) {
+    if (butikker.length >= 1) {
+      parts.push(
+        `I tillegg til ${clean(kjøpesenter)} finnes ${clean(butikker[0])} ${prox(butikker[0], c)} for daglig handel.`,
+      );
     } else {
-      parts.push("De viktigste hverdagstjenestene i nabolaget.");
+      const walkable = countWithin(pois, c, 15);
+      if (walkable >= 5) {
+        parts.push(
+          `${clean(kjøpesenter)} samler det meste under ett tak — hverdagen ordnes uten bil.`,
+        );
+      }
     }
-  }
-
-  // Sentence 2: walkability conclusion (if not already stated)
-  if (butikker.length > 0) {
+  } else if (butikker.length >= 2) {
+    parts.push(
+      `${clean(butikker[0])} og ${clean(butikker[1])} ${prox(butikker[0], c)} gir godt utvalg i gangavstand.`,
+    );
     const walkable = countWithin(pois, c, 15);
     if (walkable >= 5) {
       parts.push("Det meste ordnes uten bil.");
+    }
+  } else if (butikker[0]) {
+    parts.push(`${clean(butikker[0])} ${prox(butikker[0], c)}.`);
+  } else {
+    const walkable = countWithin(pois, c, 15);
+    if (walkable >= 5) {
+      parts.push("De viktigste hverdagstjenestene er samlet i gangavstand — alt ordnes uten bil.");
+    } else {
+      parts.push("De viktigste hverdagstjenestene i nabolaget.");
     }
   }
 
