@@ -245,16 +245,6 @@ export default function ReportThemeSection({
           <ReportHeroInsight theme={theme} center={center} />
         )}
 
-        {/* Address input for transport theme */}
-        {isTransport && projectName && (
-          <div className="mb-6">
-            <ReportAddressInput
-              propertyCoordinates={[center.lng, center.lat]}
-              propertyName={projectName}
-            />
-          </div>
-        )}
-
         {/* Lower narrative — under kortene (bil, bildeling, elbil, tog, flybuss) */}
         {segments.length > 0 && (
           <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
@@ -277,6 +267,16 @@ export default function ReportThemeSection({
           </p>
         )}
 
+        {/* Address input for transport theme */}
+        {isTransport && projectName && (
+          <div className="mt-6">
+            <ReportAddressInput
+              propertyCoordinates={[center.lng, center.lat]}
+              propertyName={projectName}
+            />
+          </div>
+        )}
+
       </div>
 
       {/* Per-category map — dormant preview + modal on activate */}
@@ -285,7 +285,7 @@ export default function ReportThemeSection({
           {/* Dormant map preview — entire area is clickable */}
           <button
             onClick={() => { setSelectedPOIId(null); setMapDialogOpen(true); }}
-            className="mt-8 md:max-w-4xl h-[280px] md:h-[400px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors"
+            className="mt-8 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
           >
             <ReportThemeMap
               pois={theme.allPOIs}
@@ -299,11 +299,15 @@ export default function ReportThemeSection({
               vehiclePositions={vehiclePositions}
             />
 
-            {/* Overlay + CTA */}
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center -mt-[10%] pointer-events-none">
-              <div className="absolute inset-0 bg-white/60" />
-              <p className="relative text-sm text-[#6a6a6a] mb-3">Se alle {theme.allPOIs.length} steder på kartet</p>
-              <div className="relative flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a]">
+            {/* Gradient overlay — 100% solid at bottom, fades to transparent at top */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
+
+            {/* CTA — vertically centered + 25% down */}
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
+              <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
+                {theme.allPOIs.length} steder på kartet
+              </p>
+              <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
                 <MapIcon className="w-4 h-4 text-[#7a7062]" />
                 Utforsk kartet
               </div>
