@@ -78,15 +78,66 @@ Brøset-prosjektet (mars 2026) satte kvalitetsstandarden for boligrapporter. All
 
 ### Theme 5: Transport & Mobilitet
 
-**bridgeText:**
-> "AtB-linje 5 og 22 stopper ved Brøset — sentrum på tolv minutter i rushtid. Trondheim bysykkel på Moholt og Blussuvoll, og sykkelekspressen langs Klæbuveien tar deg til NTNU Gløshaugen på under ti minutter."
+Transport-temaet har tre tekstfelt (i stedet for to som de andre temaene):
 
-**Mønster:** Buss først (mest brukt), deretter sykkel som alternativ. Presise tider og linjenummer.
+| Felt | Plassering | Fokus | Lengde |
+|------|-----------|-------|--------|
+| `bridgeText` | Italic under tittel | Kategori-helhet — ikke sub-kategorier | 1–2 setninger |
+| `upperNarrative` | Mellom bridge og live-kortene | Buss, bysykkel, sparkesykkel — "her og nå" | 2–4 setninger |
+| `lowerNarrative` | Under live-kortene og knappen | Bil, bildeling, elbillading, tog, flybuss | 3–5 setninger |
+
+**Viktig:** `bridgeText` skal IKKE nevne spesifikke linjenummer, stoppenavn eller sub-kategorier. Det er bridge textens jobb for andre temaer, men for transport gir `upperNarrative` og `lowerNarrative` detaljene.
+
+---
+
+#### bridgeText (generisk kategori-intro)
+
+**Gullstandard:**
+> "Brøset er godt koblet — hverdagsmobilitet på gangavstand og regional tilgjengelighet innen kort rekkevidde."
+
+**Mønster:** Ett helhetsbilde, to dimensjoner (nær + regional). Ingen sub-kategori-spesifisitet.
+
+**Anti-mønster (FEIL):**
+> "AtB-linje 5 og 22 stopper ved Brøset — sentrum på tolv minutter i rushtid." *(for spesifikk — hører hjemme i upperNarrative)*
+
+---
+
+#### upperNarrative (buss + bysykkel + sparkesykkel)
+
+Brukeren ser live-antall i kortene rett under. Teksten gir kontekst til tallene — IKKE gjenta dem. Skriv om tilgang, frekvens og karakteren av nærhet.
+
+**Gullstandard (Wesselsløkka):**
+> "Brøset Hageby holdeplass er rett utenfor — linje 12 og 113 gir direkteavganger mot Strindheimsentrum og Dragvoll. Trondheim Bysykkel har to stasjoner innen gangavstand: Valentinlyst og Kong Øysteins veg dekker begge retninger langs Valentinlystveien. Sparkesykler fra Ryde, VOI og Dott er spredt i nabolaget for korte, fleksible hopp."
+
+**Mønster:** Nærmeste holdeplass → linjer og destinasjoner → bysykkel med stasjoner (ikke antall sykler) → sparkesykkel som kontrast (fri, fleksibel).
+
+**Regler:**
+- Nevn holdeplassen ved navn + linjenummer + destinasjoner
+- Bysykkel: nevn stasjoner ved navn, ikke antall sykler (brukeren ser live-antall i kortet)
+- Sparkesykkel: navn på operatørene, legg vekt på tilgjengelighet ikke antall
+
+---
+
+#### lowerNarrative (bil + bildeling + elbillading + tog + flybuss)
+
+**Gullstandard (Wesselsløkka):**
+> "For bil er Nyhavnavveien en rask vei mot E6 og videre sørover. Hyre og Getaround tilbyr bildeling uten binding — begge er tilgjengelige i nabolaget. Fire elbilladere finnes innen ti minutters gange. Leangen stasjon nås med kort sykkeltur og har regiontog mot Stjørdal og Steinkjer."
+
+**Mønster:** Bil → bildeling → elbillading → tog/flybuss. Siste setning = regional rekkevidde.
+
+**Regler:**
+- Bil: navngi spesifikke veier mot E6/E18
+- Bildeling: nevn operatørene ved navn (Hyre, Getaround, Hertz Connect)
+- Elbillading: antall stasjoner + gangavstand (hentes fra live-data, men skriv statisk basert på faktum)
+- Tog: stasjonsnavn + destinasjoner (regiontog, flybuss)
+- Flybuss: kun nevnes om stasjonen er innen sykkelavstand, ellers er det misvisende
+
+---
 
 **extendedBridgeText:**
 > "Bussen går hvert tiende minutt i rushtid fra holdeplassene ved Brøset. NTNU Gløshaugen ligger to kilometer unna — de fleste sykler dit på under ti minutter via sykkelekspressen langs Klæbuveien. Trondheim bysykkel har stasjoner på Moholt og Blussuvoll, og e-sykler gjør bakken fra sentrum overkommelig. For bil er det kort vei til E6 via Omkjøringsveien. Nye gang- og sykkelveier planlegges i forbindelse med utbyggingen på Brøset."
 
-**Mønster:** Frekvens → mest brukte destinasjon → alternativer → fremtidsplan. Siste setning = positiv utvikling.
+> *Merk: `extendedBridgeText` er den gamle enkelt-narrativen. Brukes kun som fallback for prosjekter som ikke har fått `lowerNarrative` ennå.*
 
 ---
 
