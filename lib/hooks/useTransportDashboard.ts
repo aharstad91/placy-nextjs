@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import type { Coordinates, POI } from "@/lib/types";
-import type { EnturDeparture, BysykkelStatus, HyreStatus } from "./useRealtimeData";
+import type { EnturDeparture, HyreStatus } from "./useRealtimeData";
 
 // --- Types ---
 
@@ -24,15 +24,38 @@ export interface VehiclePositions {
   positions: Array<{ lat: number; lng: number }>;
 }
 
+export interface BysykkelAggregate {
+  total: number;
+  totalDocks: number;
+  stations: number;
+  nearest: {
+    stationName: string;
+    availableBikes: number;
+    availableDocks: number;
+    isOpen: boolean;
+    walkMin: number;
+  } | null;
+  breakdown: Array<{
+    stationId: string;
+    name: string;
+    availableBikes: number;
+    capacity: number;
+    distance: number;
+  }>;
+  positions: Array<{ lat: number; lng: number }>;
+}
+
 export interface TransportDashboardData {
   departures: StopDepartures[];
-  bysykkel: (BysykkelStatus & { stationName: string; walkMin: number }) | null;
+  bysykkel: BysykkelAggregate | null;
   scooters: ScooterData | null;
   freeFloatingCars: VehiclePositions | null;
   carShare: (HyreStatus & { walkMin: number }) | null;
   loading: boolean;
   lastUpdated: Date | null;
 }
+
+const BYSYKKEL_RADIUS = 800; // meters — matches "10 min gange" comfort zone
 
 const POLLING_INTERVAL = 90_000; // 90 seconds
 
@@ -51,13 +74,34 @@ async function fetchDepartures(
   };
 }
 
-async function fetchBysykkel(
-  stationId: string,
+async function fetchBysykkelAggregate(
+  lat: number,
+  lng: number,
+  radius: number,
   signal: AbortSignal,
-): Promise<BysykkelStatus & { name: string }> {
-  const res = await fetch(`/api/bysykkel?stationId=${stationId}`, { signal });
+): Promise<BysykkelAggregate> {
+  const res = await fetch(
+    `/api/bysykkel?lat=${lat}&lng=${lng}&radius=${radius}`,
+    { signal },
+  );
   if (!res.ok) throw new Error("Bysykkel fetch failed");
-  return await res.json();
+  const data = await res.json();
+  return {
+    total: data.total ?? 0,
+    totalDocks: data.totalDocks ?? 0,
+    stations: data.stations ?? 0,
+    nearest: data.nearest
+      ? {
+          stationName: data.nearest.name,
+          availableBikes: data.nearest.availableBikes,
+          availableDocks: data.nearest.availableDocks,
+          isOpen: data.nearest.isOpen,
+          walkMin: data.nearest.walkMin,
+        }
+      : null,
+    breakdown: data.breakdown ?? [],
+    positions: data.positions ?? [],
+  };
 }
 
 async function fetchHyre(
@@ -103,8 +147,6 @@ function estimateWalkMin(poi: POI, center: Coordinates): number {
 interface TransportSources {
   /** The 2 nearest bus/tram/train stops with enturStopplaceId */
   enturStops: Array<{ poi: POI; walkMin: number }>;
-  /** Nearest bysykkel station with bysykkelStationId */
-  bysykkelStation: { poi: POI; walkMin: number } | null;
   /** Nearest Hyre station with hyreStationId */
   hyreStation: { poi: POI; walkMin: number } | null;
 }
@@ -118,10 +160,9 @@ function selectTransportSources(pois: POI[], center: Coordinates): TransportSour
     .filter((s) => s.poi.enturStopplaceId && ["bus", "tram", "train"].includes(s.poi.category.id))
     .slice(0, 1);
 
-  const bysykkelStation = sorted.find((s) => s.poi.bysykkelStationId) ?? null;
   const hyreStation = sorted.find((s) => s.poi.hyreStationId) ?? null;
 
-  return { enturStops, bysykkelStation, hyreStation };
+  return { enturStops, hyreStation };
 }
 
 // --- Hook ---
@@ -146,11 +187,11 @@ export function useTransportDashboard(
 
   // Stable keys for effect deps
   const enturIds = sources.enturStops.map((s) => s.poi.enturStopplaceId).join(",");
-  const bysykkelId = sources.bysykkelStation?.poi.bysykkelStationId || "";
   const hyreId = sources.hyreStation?.poi.hyreStationId || "";
 
   useEffect(() => {
-    if (!enturIds && !bysykkelId && !hyreId) return;
+    // Always poll — bysykkel/scooters/cars are queried by coordinates,
+    // so they run even when no dedicated POIs exist.
 
     const controller = new AbortController();
 
@@ -180,18 +221,15 @@ export function useTransportDashboard(
         }
       }
 
-      // Bysykkel
-      if (s.bysykkelStation?.poi.bysykkelStationId) {
-        promises.push(
-          fetchBysykkel(s.bysykkelStation.poi.bysykkelStationId, controller.signal).then(
-            (r) => ({
-              type: "bysykkel" as const,
-              walkMin: s.bysykkelStation!.walkMin,
-              ...r,
-            }),
-          ),
-        );
-      }
+      // Bysykkel — aggregate across all stations in radius
+      promises.push(
+        fetchBysykkelAggregate(
+          center.lat,
+          center.lng,
+          BYSYKKEL_RADIUS,
+          controller.signal,
+        ).then((r) => ({ type: "bysykkel" as const, ...r })),
+      );
 
       // Hyre
       if (s.hyreStation?.poi.hyreStationId) {
@@ -243,11 +281,12 @@ export function useTransportDashboard(
           });
         } else if (val.type === "bysykkel") {
           bysykkel = {
-            stationName: (val.name as string) || "Bysykkel",
-            walkMin: val.walkMin as number,
-            availableBikes: val.availableBikes as number,
-            availableDocks: val.availableDocks as number,
-            isOpen: val.isOpen as boolean,
+            total: val.total as number,
+            totalDocks: val.totalDocks as number,
+            stations: val.stations as number,
+            nearest: val.nearest as BysykkelAggregate["nearest"],
+            breakdown: val.breakdown as BysykkelAggregate["breakdown"],
+            positions: val.positions as BysykkelAggregate["positions"],
           };
         } else if (val.type === "hyre") {
           carShare = {
@@ -291,7 +330,7 @@ export function useTransportDashboard(
       clearInterval(intervalId);
     };
    
-  }, [enturIds, bysykkelId, hyreId, center.lat, center.lng]);
+  }, [enturIds, hyreId, center.lat, center.lng]);
 
   return data;
 }

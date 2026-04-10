@@ -444,26 +444,47 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
           icon={<Bike className="w-5 h-5 text-[#3b82f6]" />}
           iconBg="#3b82f620"
           label="Bysykkel"
-          value={dashboard.bysykkel ? `${dashboard.bysykkel.availableBikes} ledige sykler` : "–"}
+          value={dashboard.bysykkel
+            ? dashboard.bysykkel.total > 0
+              ? `${dashboard.bysykkel.total} ledige sykler`
+              : "Ingen nå"
+            : "–"}
           subtitle={dashboard.bysykkel
-            ? `${dashboard.bysykkel.stationName} · ${dashboard.bysykkel.walkMin} min gange`
+            ? dashboard.bysykkel.stations > 0 && dashboard.bysykkel.nearest
+              ? `${dashboard.bysykkel.stations} ${dashboard.bysykkel.stations === 1 ? "stasjon" : "stasjoner"} · ${dashboard.bysykkel.nearest.walkMin} min til nærmeste`
+              : "Ingen stasjoner innen 800m"
             : "Laster..."}
           loading={dashboard.loading && !dashboard.bysykkel}
           popoverContent={dashboard.bysykkel ? (
             <div className="p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Bike className="w-4 h-4 text-[#3b82f6]" />
-                <span className="font-semibold text-sm">{dashboard.bysykkel.stationName}</span>
+                <span className="font-semibold text-sm">Bysykkel i nærheten</span>
               </div>
-              <div className="text-sm text-[#4a4a4a] space-y-1">
-                <div>{dashboard.bysykkel.availableBikes} ledige sykler</div>
-                <div>{dashboard.bysykkel.availableDocks} ledige låser</div>
-                {!dashboard.bysykkel.isOpen && (
-                  <div className="text-red-500 font-medium">Stengt</div>
-                )}
-              </div>
+              {dashboard.bysykkel.stations === 0 ? (
+                <div className="text-sm text-[#8a8a8a]">
+                  Ingen bysykkelstasjoner innen 800m
+                </div>
+              ) : (
+                <div className="text-sm text-[#4a4a4a] space-y-1">
+                  {dashboard.bysykkel.breakdown.slice(0, 5).map((st) => (
+                    <div key={st.stationId} className="flex justify-between gap-3">
+                      <span className="truncate">
+                        {st.name.replace("Trondheim Bysykkel: ", "")}
+                      </span>
+                      <span className="font-medium whitespace-nowrap">
+                        {st.availableBikes} / {st.capacity}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between pt-1 border-t border-[#eae6e1] font-medium">
+                    <span>Totalt ledige sykler</span>
+                    <span>{dashboard.bysykkel.total}</span>
+                  </div>
+                </div>
+              )}
               <div className="text-xs text-[#a0a0a0] mt-2">
-                {dashboard.bysykkel.walkMin} min gange · Trondheim Bysykkel
+                Innen 800m · Trondheim Bysykkel
               </div>
             </div>
           ) : undefined}
