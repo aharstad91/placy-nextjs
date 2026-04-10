@@ -5,7 +5,7 @@ import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Star, MapPin, Map as MapIcon, X, Zap, Car, ExternalLink } from "lucide-react";
+import { Star, MapPin, Map as MapIcon, X, Zap, Car, ExternalLink, Sparkles } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import ReportHeroInsight, { getHeroInsightPOIIds } from "./ReportHeroInsight";
@@ -457,6 +457,22 @@ function POIInlineLink({ poi, content }: { poi: POI; content: string }) {
 }
 
 function ExternalInlineLink({ content, url }: { content: string; url: string }) {
+  const isGoogleAI = url.includes("google.com/search");
+
+  if (isGoogleAI) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-baseline gap-0.5 font-semibold text-[#4f46e5] underline decoration-[#c7d2fe] decoration-2 underline-offset-2 hover:decoration-[#818cf8] transition-colors"
+      >
+        {content}
+        <Sparkles className="w-[0.7em] h-[0.7em] translate-y-[0.05em] shrink-0 opacity-70" />
+      </a>
+    );
+  }
+
   return (
     <a
       href={url}
