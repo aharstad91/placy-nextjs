@@ -66,6 +66,7 @@ const GOOGLE_CATEGORY_MAP: Record<string, Category> = {
   doctor: { id: "doctor", name: "Legesenter", icon: "Stethoscope", color: "#3b82f6" },
   dentist: { id: "dentist", name: "Tannlege", icon: "Smile", color: "#22d3ee" },
   hair_care: { id: "haircare", name: "Frisør", icon: "Scissors", color: "#d946ef" },
+  liquor_store: { id: "liquor_store", name: "Vinmonopol", icon: "Wine", color: "#7c3aed" },
   spa: { id: "spa", name: "Spa", icon: "Sparkles", color: "#c084fc" },
   hotel: { id: "hotel", name: "Hotell", icon: "Building2", color: "#0891b2" },
 };
@@ -102,6 +103,7 @@ const VALID_TYPES_FOR_CATEGORY: Record<string, Set<string>> = {
   doctor: new Set(["doctor"]),
   dentist: new Set(["dentist"]),
   hair_care: new Set(["hair_care", "beauty_salon"]),
+  liquor_store: new Set(["liquor_store"]),
   spa: new Set(["spa"]),
   hotel: new Set(["lodging", "hotel"]),
 };

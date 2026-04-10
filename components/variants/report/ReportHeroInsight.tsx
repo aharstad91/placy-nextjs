@@ -6,7 +6,8 @@ import type { ReportTheme } from "./report-data";
 import { resolveThemeId } from "@/lib/themes";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getIcon } from "@/lib/utils/map-icons";
-import { Star, MapPin, Bike, Car, Zap } from "lucide-react";
+import { Star, MapPin, Bike, Car, Zap, ShoppingBag, ExternalLink } from "lucide-react";
+import { isSafeUrl } from "@/lib/utils/url";
 import {
   Popover,
   PopoverTrigger,
@@ -308,64 +309,140 @@ function SchoolCard({ level, poi, center }: { level: string; poi: POI; center: C
 // 2. Hverdagsliv — Nærmeste per behov
 // ============================================================
 
-const HVERDAGS_TYPES: { catIds: string[]; label: string }[] = [
+type HverdagsConfig = { catIds: string[]; label: string };
+type HverdagsRow = { label: string; poi: POI };
+
+const HVERDAGS_ANCHOR = {
+  catIds: ["shopping"],
+  label: "Kjøpesenter",
+} satisfies HverdagsConfig;
+
+const HVERDAGS_PRIMARY = [
   { catIds: ["supermarket", "convenience"], label: "Dagligvare" },
   { catIds: ["pharmacy"], label: "Apotek" },
   { catIds: ["doctor", "dentist", "hospital"], label: "Lege" },
-  { catIds: ["haircare"], label: "Fris\u00f8r" },
-];
+] satisfies HverdagsConfig[];
+
+const HVERDAGS_SECONDARY = [
+  { catIds: ["liquor_store"], label: "Vinmonopol" },
+  { catIds: ["post"], label: "Post" },
+  { catIds: ["bank"], label: "Bank" },
+  { catIds: ["haircare"], label: "Frisør" },
+] satisfies HverdagsConfig[];
 
 function HverdagslivInsight({ theme, center }: HeroInsightProps) {
   const pois = theme.allPOIs;
 
-  const rows = useMemo(() => {
-    return HVERDAGS_TYPES.map((type) => {
-      const nearest = nearestOf(pois, center, ...type.catIds);
-      if (!nearest) return null;
-      return { ...type, poi: nearest };
-    }).filter(Boolean) as { catIds: string[]; label: string; poi: POI }[];
-  }, [pois, center]);
+  const anchor = useMemo(
+    () => nearestOf(pois, center, ...HVERDAGS_ANCHOR.catIds) ?? null,
+    [pois, center],
+  );
 
-  if (rows.length < 2) return null;
+  const primaryRows = useMemo(
+    () =>
+      HVERDAGS_PRIMARY.map((t) => {
+        const poi = nearestOf(pois, center, ...t.catIds);
+        return poi ? ({ label: t.label, poi } as HverdagsRow) : null;
+      }).filter((r): r is HverdagsRow => r !== null),
+    [pois, center],
+  );
 
-  const within10 = pois.filter(
-    (p) => estimateWalkMin(p, center) <= 10,
-  ).length;
+  const secondaryRows = useMemo(
+    () =>
+      HVERDAGS_SECONDARY.map((t) => {
+        const poi = nearestOf(pois, center, ...t.catIds);
+        return poi ? ({ label: t.label, poi } as HverdagsRow) : null;
+      }).filter((r): r is HverdagsRow => r !== null),
+    [pois, center],
+  );
+
+  if (!anchor && primaryRows.length < 1) return null;
+
+  const within10 = pois.filter((p) => estimateWalkMin(p, center) <= 10).length;
+
+  function renderRow(row: HverdagsRow, compact: boolean) {
+    const Icon = getIcon(row.poi.category.icon);
+    const walk = fmtWalk(row.poi, center);
+    return (
+      <div key={row.label} className={`flex items-center gap-3 ${compact ? "py-1" : "py-1.5"}`}>
+        <div
+          className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
+          style={{ backgroundColor: row.poi.category.color + "15" }}
+        >
+          <Icon
+            className={compact ? "w-3 h-3" : "w-3.5 h-3.5"}
+            style={{ color: row.poi.category.color }}
+          />
+        </div>
+        <span
+          className={`font-medium text-[#1a1a1a] flex-1 min-w-0 truncate ${compact ? "text-[13px]" : "text-[15px]"}`}
+        >
+          {row.poi.name}
+        </span>
+        <span
+          className={`text-[#8a8a8a] shrink-0 hidden sm:inline ${compact ? "text-xs" : "text-sm"}`}
+        >
+          {row.label}
+        </span>
+        {walk && (
+          <span
+            className={`text-[#8a8a8a] shrink-0 w-12 text-right ${compact ? "text-xs" : "text-sm"}`}
+          >
+            {walk}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <InsightCard
       title="Hverdagen i gangavstand"
-      footer={
-        within10 > 0
-          ? `${within10} hverdagstjenester innen 10 min`
-          : undefined
-      }
+      footer={within10 > 0 ? `${within10} hverdagstjenester innen 10 min` : undefined}
     >
-      <div className="space-y-1">
-        {rows.map((row) => {
-          const Icon = getIcon(row.poi.category.icon);
-          const walk = fmtWalk(row.poi, center);
+      {/* Tier 1 — Kjøpesenter-anker */}
+      {anchor &&
+        (() => {
+          const walk = fmtWalk(anchor, center);
+          const hasWebsite = anchor.googleWebsite && isSafeUrl(anchor.googleWebsite);
           return (
-            <div key={row.label} className="flex items-center gap-3 py-1.5">
-              <div
-                className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
-                style={{ backgroundColor: row.poi.category.color + "15" }}
-              >
-                <Icon className="w-3.5 h-3.5" style={{ color: row.poi.category.color }} />
+            <div
+              className="rounded-lg p-3 mb-3"
+              style={{ backgroundColor: "#22c55e12" }}
+              {...(anchor.googlePlaceId ? { "data-google-ai-target": anchor.googlePlaceId } : {})}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4" style={{ color: "#22c55e" }} />
+                  <span className="font-semibold text-[#1a1a1a] text-[15px]">{anchor.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {walk && <span className="text-sm text-[#8a8a8a]">{walk}</span>}
+                  {hasWebsite && (
+                    <a
+                      href={anchor.googleWebsite!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" style={{ color: "#22c55e" }} />
+                    </a>
+                  )}
+                </div>
               </div>
-              <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 min-w-0 truncate">
-                {row.poi.name}
-              </span>
-              <span className="text-sm text-[#8a8a8a] shrink-0 hidden sm:inline">
-                {row.label}
-              </span>
-              {walk && (
-                <span className="text-sm text-[#8a8a8a] shrink-0 w-12 text-right">{walk}</span>
-              )}
             </div>
           );
-        })}
-      </div>
+        })()}
+
+      {/* Tier 2 — Primærtjenester */}
+      <div className="space-y-1">{primaryRows.map((row) => renderRow(row, false))}</div>
+
+      {/* Tier 3 — Sekundærtjenester (kun hvis data finnes) */}
+      {secondaryRows.length > 0 && (
+        <div className="space-y-0.5 mt-2 pt-2 border-t border-[#f0f0f0]">
+          {secondaryRows.map((row) => renderRow(row, true))}
+        </div>
+      )}
     </InsightCard>
   );
 }
@@ -1129,14 +1206,14 @@ const TIER1_EXTRACTORS: Record<
     return [barneskole, ungdomsskole, vgs].filter(Boolean) as POI[];
   },
   hverdagsliv: (pois, center) => {
-    return HVERDAGS_TYPES.map((t) => nearestOf(pois, center, ...t.catIds)).filter(
-      Boolean,
-    ) as POI[];
+    const anchor = nearestOf(pois, center, ...HVERDAGS_ANCHOR.catIds);
+    const tier2 = HVERDAGS_PRIMARY.map((t) => nearestOf(pois, center, ...t.catIds));
+    return [anchor, ...tier2].filter(Boolean) as POI[];
   },
   hverdagstjenester: (pois, center) => {
-    return HVERDAGS_TYPES.map((t) => nearestOf(pois, center, ...t.catIds)).filter(
-      Boolean,
-    ) as POI[];
+    const anchor = nearestOf(pois, center, ...HVERDAGS_ANCHOR.catIds);
+    const tier2 = HVERDAGS_PRIMARY.map((t) => nearestOf(pois, center, ...t.catIds));
+    return [anchor, ...tier2].filter(Boolean) as POI[];
   },
   transport: (pois, center) => {
     const result: POI[] = [];

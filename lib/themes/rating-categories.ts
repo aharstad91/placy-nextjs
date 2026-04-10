@@ -17,6 +17,7 @@ export const CATEGORIES_WITH_RATING = new Set([
   "supermarket",
   "pharmacy",
   "shopping",
+  "liquor_store",
   "haircare",
   // Trening & Velvære
   "gym",
