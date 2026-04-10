@@ -2,10 +2,12 @@
 
 import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
-import type { Coordinates, POI } from "@/lib/types";
+import type { Coordinates, POI, TrailCollection } from "@/lib/types";
 import { getIcon } from "@/lib/utils/map-icons";
 import { Building2 } from "lucide-react";
 import { MarkerTooltip } from "@/components/map/marker-tooltip";
+import { TrailLayer } from "@/components/map/trail-layer";
+import { RouteLayer } from "@/components/map/route-layer";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 
 interface ReportThemeMapProps {
@@ -21,6 +23,8 @@ interface ReportThemeMapProps {
   activated?: boolean;
   /** Project name — shown as permanent label on center marker */
   projectName?: string;
+  /** Trail/route overlay GeoJSON for Natur & Friluftsliv */
+  trails?: TrailCollection;
 }
 
 export default function ReportThemeMap({
@@ -33,10 +37,22 @@ export default function ReportThemeMap({
   mapStyle,
   activated = false,
   projectName,
+  trails,
 }: ReportThemeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [hoveredPOI, setHoveredPOI] = useState<string | null>(null);
+  const [routeData, setRouteData] = useState<{
+    coordinates: [number, number][];
+    travelTime: number;
+  } | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  // Stable refs — avoids re-triggering route fetch when parent re-renders
+  // with new object references for pois/center (same pattern as ExplorerPage)
+  const poisRef = useRef(pois);
+  poisRef.current = pois;
+  const centerRef = useRef(center);
+  centerRef.current = center;
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -84,6 +100,46 @@ export default function ReportThemeMap({
     [onMarkerClick, activated]
   );
 
+  // Fetch walking route when a POI is highlighted in activated map
+  useEffect(() => {
+    if (!activated || !highlightedPOIId) {
+      setRouteData(null);
+      return;
+    }
+
+    const poi = poisRef.current.find((p) => p.id === highlightedPOIId);
+    if (!poi) return;
+
+    setRouteData(null);
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const origin = `${centerRef.current.lng},${centerRef.current.lat}`;
+    const destination = `${poi.coordinates.lng},${poi.coordinates.lat}`;
+
+    fetch(`/api/directions?origin=${origin}&destination=${destination}&profile=walking`, {
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.geometry?.coordinates) {
+          setRouteData({
+            coordinates: data.geometry.coordinates,
+            travelTime: data.duration,
+          });
+        }
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Route fetch failed:", err);
+        }
+      });
+
+    return () => controller.abort();
+   
+  }, [highlightedPOIId, activated]);
+
   if (!token) return null;
 
   return (
@@ -102,6 +158,20 @@ export default function ReportThemeMap({
         onClick={activated ? onMapClick : undefined}
         cooperativeGestures={!activated}
       >
+        {/* Trail overlay — rendered as GL layer below DOM markers, only after style loads */}
+        {mapLoaded && trails && trails.features.length > 0 && (
+          <TrailLayer trails={trails} activated={activated} />
+        )}
+
+        {/* Route overlay — shown when a POI is highlighted in activated state */}
+        {mapLoaded && routeData && (
+          <RouteLayer
+            coordinates={routeData.coordinates}
+            travelTime={routeData.travelTime}
+            travelMode="walk"
+          />
+        )}
+
         {/* Project/hotel marker — always visible with label */}
         <Marker
           longitude={center.lng}

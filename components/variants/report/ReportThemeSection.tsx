@@ -181,6 +181,7 @@ export default function ReportThemeSection({
               mapStyle={mapStyle}
               activated={false}
               projectName={projectName}
+              trails={theme.trails}
             />
 
             {/* Overlay + CTA */}
@@ -236,6 +237,7 @@ export default function ReportThemeSection({
                   mapStyle={mapStyle}
                   activated={true}
                   projectName={projectName}
+                  trails={theme.trails}
                 />
 
                 {/* POI drawer */}

@@ -1,4 +1,4 @@
-import type { Project, POI, Coordinates } from "@/lib/types";
+import type { Project, POI, Coordinates, TrailCollection } from "@/lib/types";
 import { getReportThemes } from "./report-themes";
 import {
   calculateCategoryScore,
@@ -74,6 +74,8 @@ export interface ReportTheme {
   quote: string;
   /** Sub-sections for categories exceeding SUB_SECTION_THRESHOLD */
   subSections?: ReportSubSection[];
+  /** Trail/route overlay GeoJSON — only set for natur-friluftsliv theme */
+  trails?: TrailCollection;
 }
 
 export interface ReportData {
@@ -444,6 +446,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       score,
       quote,
       subSections: subSections.length > 0 ? subSections : undefined,
+      trails: themeDef.id === "natur-friluftsliv"
+        ? project.reportConfig?.trails
+        : undefined,
     });
   }
 
