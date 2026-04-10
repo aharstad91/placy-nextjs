@@ -43,6 +43,7 @@ const ALLOWED_CATEGORIES = [
   "hair_care",
   "spa",
   "hotel",
+  "liquor_store",
 ] as const;
 
 // Norway coordinate bounds
