@@ -380,6 +380,15 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
     if (themePOIs.length < THEME_MIN_POIS) continue;
 
+    // Opplevelser krever minst én POI innen 15 min — ellers er det ikke et reelt nabolagstilbud
+    if (themeDef.id === "opplevelser") {
+      const nearest = themePOIs.reduce((best, p) => {
+        const walk = p.travelTime?.walk ?? Infinity;
+        return walk < (best.travelTime?.walk ?? Infinity) ? p : best;
+      }, themePOIs[0]);
+      if ((nearest.travelTime?.walk ?? Infinity) > 15) continue;
+    }
+
     // Sort by distance to project center (closest first)
     const distanceSorted = [...themePOIs].sort((a, b) => {
       const aWalk = a.travelTime?.walk;
