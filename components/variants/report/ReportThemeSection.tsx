@@ -475,52 +475,39 @@ function ExternalInlineLink({ content, url }: { content: string; url: string }) 
 }
 
 function GoogleAIInlineLink({ content, url }: { content: string; url: string }) {
-  const [open, setOpen] = useState(false);
-
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="inline-flex items-baseline gap-0.5 font-semibold text-[#4f46e5] underline decoration-[#c7d2fe] decoration-2 underline-offset-2 hover:decoration-[#818cf8] transition-colors cursor-pointer"
-      >
-        {content}
-        <Sparkles className="w-[0.7em] h-[0.7em] translate-y-[0.05em] shrink-0 opacity-70" />
-      </button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#4f46e5]" />
-            Utforsk med Google AI
-          </DialogTitle>
-          <div className="space-y-3 text-sm text-[#3a3a3a] leading-relaxed">
-            <p>
-              Google AI kan gi deg mer utdypende informasjon om <span className="font-semibold">{content}</span> — ruter, reisetider og annet du lurer på.
-            </p>
-            <p className="text-xs text-muted-foreground border-l-2 border-[#e5e7eb] pl-3">
-              Google AI kan av og til gi unøyaktig eller utdatert informasjon. Verifiser viktige opplysninger mot offisielle kilder som AtB eller Entur.
-            </p>
-          </div>
-          <div className="flex gap-2 mt-1">
-            <button
-              onClick={() => setOpen(false)}
-              className="flex-1 px-4 py-2 text-sm border border-[#e5e7eb] rounded-lg hover:bg-[#f9f9f9] transition-colors"
-            >
-              Avbryt
-            </button>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
-              className="flex-1 px-4 py-2 text-sm bg-[#4f46e5] text-white rounded-lg hover:bg-[#4338ca] transition-colors text-center flex items-center justify-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Åpne Google AI
-            </a>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Popover>
+      <PopoverTrigger asChild>
+        <span
+          role="button"
+          tabIndex={0}
+          className="inline-flex items-baseline gap-0.5 font-semibold text-[#4f46e5] underline decoration-[#c7d2fe] decoration-2 underline-offset-2 hover:decoration-[#818cf8] transition-colors cursor-pointer"
+        >
+          {content}
+          <Sparkles className="w-[0.7em] h-[0.7em] translate-y-[0.05em] shrink-0 opacity-70" />
+        </span>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-3" align="start">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-4 h-4 text-[#4f46e5]" />
+          <span className="font-semibold text-sm">Utforsk med Google AI</span>
+        </div>
+        <p className="text-sm text-[#4a4a4a] leading-relaxed mb-3">
+          Vil du vite mer om <span className="font-medium">{content}</span>? Google AI kan gi deg utdypende svar om ruter, reisetider og destinasjoner.
+        </p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-sm bg-[#4f46e5] text-white rounded-lg hover:bg-[#4338ca] transition-colors"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          Åpne Google AI
+        </a>
+        <p className="text-xs text-[#a0a0a0] mt-2 leading-relaxed">
+          Google AI kan gi unøyaktig informasjon. Verifiser mot AtB eller Entur.
+        </p>
+      </PopoverContent>
+    </Popover>
   );
 }
