@@ -86,9 +86,16 @@ export default function ReportThemeSection({
     setSelectedPOIId(null);
   }, []);
 
-  // Parse extended bridge text into segments with inline POI links
-  const segments = theme.extendedBridgeText
-    ? linkPOIsInText(theme.extendedBridgeText, theme.allPOIs)
+  // Parse upper narrative (above cards) — buss, bysykkel, sparkesykkel
+  const upperSegments = theme.upperNarrative
+    ? linkPOIsInText(theme.upperNarrative, theme.allPOIs)
+    : [];
+
+  // Parse lower narrative (below cards) — bil, bildeling, elbil, tog, flybuss
+  // Falls back to extendedBridgeText for backward compat
+  const lowerText = theme.lowerNarrative ?? theme.extendedBridgeText;
+  const segments = lowerText
+    ? linkPOIsInText(lowerText, theme.allPOIs)
     : [];
 
   // POIs mentioned in text + hero insight card — show permanent labels on the map
@@ -120,23 +127,28 @@ export default function ReportThemeSection({
       }
     }
 
-    // Bysykkel: show available bikes on ALL bysykkel stations (nearest gets exact count)
+    // Bysykkel: map each live station's count onto its matching POI by name
     if (transportDashboard.bysykkel) {
-      const bs = transportDashboard.bysykkel;
-      // Find the nearest bysykkel POI that matches the dashboard station
-      for (const poi of theme.allPOIs) {
-        if (poi.bysykkelStationId && poi.category.id === "bike") {
-          // Only the nearest station has live data; show label for it
-          if (poi.name.includes(bs.stationName) || bs.stationName.includes(poi.name.replace("Trondheim Bysykkel: ", ""))) {
-            info[poi.id] = `${bs.availableBikes} ledige sykler`;
-            break;
-          }
+      const breakdown = transportDashboard.bysykkel.breakdown;
+      for (const station of breakdown) {
+        const stripped = station.name.replace("Trondheim Bysykkel: ", "");
+        const poi = theme.allPOIs.find(
+          (p) =>
+            p.bysykkelStationId &&
+            p.category.id === "bike" &&
+            (p.name.includes(stripped) || stripped.includes(p.name.replace("Trondheim Bysykkel: ", ""))),
+        );
+        if (poi) {
+          info[poi.id] = `${station.availableBikes} ledige sykler`;
         }
       }
-      // Fallback: just pick the first bysykkel POI
-      if (!Object.values(info).some((v) => v.includes("ledige sykler"))) {
+      // Fallback: if no POI matched but we have nearest data, label the first bysykkel POI
+      if (
+        transportDashboard.bysykkel.nearest &&
+        !Object.values(info).some((v) => v.includes("ledige sykler"))
+      ) {
         const bPoi = theme.allPOIs.find((p) => p.bysykkelStationId);
-        if (bPoi) info[bPoi.id] = `${bs.availableBikes} ledige sykler`;
+        if (bPoi) info[bPoi.id] = `${transportDashboard.bysykkel.nearest.availableBikes} ledige sykler`;
       }
     }
 
@@ -206,11 +218,24 @@ export default function ReportThemeSection({
           </h2>
         </div>
 
-        {/* Bridge text as sub-heading */}
+        {/* Bridge text as sub-heading — generisk kategori-intro */}
         {variant !== "secondary" && theme.bridgeText && (
           <p className="text-lg md:text-xl italic text-[#5a5a5a] leading-relaxed mb-5">
             {theme.bridgeText}
           </p>
+        )}
+
+        {/* Upper narrative — over kortene (buss, bysykkel, sparkesykkel) */}
+        {variant !== "secondary" && upperSegments.length > 0 && (
+          <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8] mb-6">
+            {upperSegments.map((seg, i) =>
+              seg.type === "poi" && seg.poi ? (
+                <POIInlineLink key={i} poi={seg.poi} content={seg.content} />
+              ) : (
+                <span key={i}>{seg.content}</span>
+              ),
+            )}
+          </div>
         )}
 
         {/* Hero insight — category-specific structured data */}
@@ -228,7 +253,7 @@ export default function ReportThemeSection({
           </div>
         )}
 
-        {/* Extended narrative text with inline POI links */}
+        {/* Lower narrative — under kortene (bil, bildeling, elbil, tog, flybuss) */}
         {segments.length > 0 && (
           <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
             {segments.map((seg, i) =>
@@ -245,7 +270,7 @@ export default function ReportThemeSection({
           </div>
         )}
 
-        {/* Fallback: show intro if no extended text */}
+        {/* Fallback: show intro if no lower text */}
         {segments.length === 0 && theme.intro && (
           <p className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
             {theme.intro}
@@ -317,7 +342,7 @@ export default function ReportThemeSection({
                   pois={theme.allPOIs}
                   center={center}
                   highlightedPOIId={selectedPOIId}
-                  featuredPOIIds={featuredPOIIds}
+                  featuredPOIIds={isTransport ? undefined : featuredPOIIds}
                   onMarkerClick={handleMarkerClick}
                   onMapClick={handleMapClick}
                   mapStyle={mapStyle}

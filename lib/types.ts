@@ -172,6 +172,8 @@ export interface ReportThemeConfig {
   color: string;
   intro?: string;
   bridgeText?: string;
+  upperNarrative?: string;
+  lowerNarrative?: string;
   categoryDescriptions?: Record<string, string>;
 }
 

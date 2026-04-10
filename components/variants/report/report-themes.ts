@@ -9,6 +9,9 @@ import { getBransjeprofil, resolveThemeId } from "@/lib/themes";
 export interface ReportThemeDefinition extends ThemeDefinition {
   intro?: string;
   bridgeText?: string;
+  upperNarrative?: string;
+  extendedBridgeText?: string;
+  lowerNarrative?: string;
   categoryDescriptions?: Record<string, string>;
 }
 
