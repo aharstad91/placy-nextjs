@@ -6,6 +6,33 @@
 
 ---
 
+## 2026-04-09 (sesjon 2) — Area-hierarki, generate-bolig sync, nabolagets sjel
+
+### Beslutninger
+- **Area-hierarki implementert:** `areas`-tabellen utvidet med `parent_id`, `level`, `boundary`, `postal_codes`. Seedet 4 bydeler + 31 strøk for Trondheim. Migrasjon 050. Eiendomsmarkedet bruker strøk-nivå (~25 navngitte nabolag) — det er riktig granularitet for Placy.
+- **Kaskaderende kunnskap:** place_knowledge kan nå peke til strøk → bydel → by. Rapport for Brøset henter fakta fra alle tre nivåer.
+- **`/generate-bolig` oppdatert:** 9 endringer — 7 temaer (Opplevelser lagt til), kanoniske theme IDs (barn-oppvekst, trening-aktivitet), nytt steg 1.5 for strøk-matching, area_id på strøk-nivå, Tier 1/2/3-awareness i tekster, nye QA-sjekker, 7 nye gotchas.
+
+### Utforsket: "Nabolagets sjel"
+- Inspirert av Stasjonskvartalet som viser 13 signatursteder (badstu, sjøbad, promenade, galleri) — ingen typiske Google POIs
+- Testet Overpass + WebSearch mot Brøset og sentrum
+- **Resultat:** Automatisering gir ~70% av stedene. 30% (de mest interessante) krever lokal kunnskap
+- **Megler-intervju som kilde** er nøkkelen — "hva er de 5 stedene du alltid nevner?"
+- **Parkert** — konseptet validert men krever hybrid tilnærming, ikke ren automatikk
+
+### Åpne spørsmål
+- Hvordan designer vi megler-onboarding som fanger lokal kunnskap?
+- Bør "nabolagets sjel" være en fast seksjon i rapport, eller kun for prosjekter der vi har kuratert innhold?
+- Boundary-polygoner per strøk — trenger vi det for auto-matching, eller holder postnummer + nearest-center?
+
+### Referanser
+- `supabase/migrations/050_areas_hierarchy_strok.sql`
+- `docs/brainstorms/2026-04-09-nabolagets-sjel-brainstorm.md`
+- `docs/solutions/architecture-patterns/area-hierarki-strok-eiendom-20260409.md`
+- `.claude/commands/generate-bolig.md` (oppdatert)
+
+---
+
 ## 2026-04-09 — Report + Story merge: storytelling erstatter POI-grid
 
 ### Beslutninger
@@ -2925,6 +2952,41 @@ Bygget **profil-filter** for Eiendom-Bolig Explorer — en livsfase-velger som b
 - **Kompass-mønsteret var direkte gjenbrukbart.** Bottom sheet, feature flag, dismissal — alt kopiert med minimal tilpasning. Investering i Kompass betalte seg
 - **4 filer, ~150 linjer ny kode, 10 linjer endret.** Liten feature, stor effekt. Boligkjøpere slipper å se 200+ POI-er og kan fokusere umiddelbart
 - **Bransjeprofil-systemet skalerer godt.** Feature flags per bransje-tag gjør det trivielt å legge til nye UX-features uten å påvirke andre produkter
+
+---
+
+## Sesjon: 2026-04-09 — Hero Insight-kort + kunnskapsbase-kobling
+
+### Hva vi bygde
+- **Hero insight-kort per kategori** — 7 unike visuelle oppsummeringer (skolekrets-tabell, nærmeste-per-behov, rating-liste, holdeplasser, etc.) plassert over teksten i hver rapport-seksjon
+- **Kureringsmodell med tre tier**: Kort (Tier 1 fakta) → Tekst (Tier 2 kontekst) → Kart (Tier 3 alt)
+- **Bridge-text-generator oppdatert** — mottar Tier 1-ekskludering, tekst komplementerer kortet
+- **Brøset Curator-tekster regenerert** (migrasjon 049) — tilpasset ny struktur
+- **Gangavstand-estimering** — haversine × 1.3 road factor når travelTime mangler fra DB
+- **Ungdomsskole fuzzy matching** — fikset Blussuvold↔Blussuvoll mismatch i skolekrets
+
+### Nøkkelbeslutninger
+- **Unik form per kategori, ikke felles mal.** Skolekrets er en tabell, Mat & Drikke er en rating-liste, Natur har primær+sekundær-behandling. Hver kategori har sin "killer insight"
+- **Tekst komplementerer kort.** Kortet sier "hva og hvor langt", teksten sier "hvorfor det er bra". Aldri gjentagelse
+- **Gammel ThemeInsight slettet.** Erstattet fullstendig av hero insight + kart-CTA-oppsummering
+- **resolveThemeId** løser legacy-aliaser (barnefamilier→barn-oppvekst, trening-velvare→trening-aktivitet)
+
+### Viktig funn: Jonsvatnet-feilen
+Google AI verifiserte Natur-teksten og fanget at "Jonsvatnet er en populære badespot" er feil — det er drikkevann med badeforbud. **Curator-tekster uten validering mot kunnskapsbasen er en risiko.** Fikset umiddelbart, men systemisk løsning trengs.
+
+### Retning: Kunnskapsbase → Rapport
+`place_knowledge`-tabellen (migrasjon 038, 226 fakta) er live men brukes ikke i rapporten. Neste steg er å koble den:
+1. **Generering trekker fra basen** — verifiserte fakta som input, ikke fri WebSearch
+2. **Begrensninger-lag** — negative fakta (badeforbud, restriksjoner) som forhindrer feil
+3. **Kilde-lenker i rapport** — ut.no, atb.no, kommune.no synlige for leseren
+4. **Forretningsverdi**: "Placy vet mer om nabolaget enn megleren" — kumulativ moat
+
+Se brainstorm: `docs/brainstorms/2026-04-09-kunnskapsbase-rapport-kobling-brainstorm.md`
+
+### Åpne spørsmål
+- Hvordan designer vi begrensninger-laget i `place_knowledge`? Ny topic, nytt felt, eller egen tabell?
+- Hvor vises kilde-lenker i rapporten? Per seksjon, per inline-POI, eller som fotnoter?
+- Skal vi bygge ut Trondheim-basen bydel-for-bydel (Brøset, Moholt, Lade...) som pilot?
 
 ---
 
