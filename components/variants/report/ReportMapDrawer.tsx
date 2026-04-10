@@ -19,8 +19,10 @@ import {
   Bus,
   Bike,
   Car,
+  ShoppingBag,
 } from "lucide-react";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
+import { isSafeUrl } from "@/lib/utils/url";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
 interface ReportMapDrawerProps {
@@ -167,6 +169,59 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
               </p>
             )}
 
+            {/* Anchor summary for parent POIs (e.g., shopping centers) */}
+            {poi.anchorSummary && (
+              <p className="text-sm text-gray-500 leading-relaxed">{poi.anchorSummary}</p>
+            )}
+
+            {/* Child POIs (e.g., stores inside a shopping center) */}
+            {poi.childPOIs && poi.childPOIs.length > 0 && (
+              <div className="bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
+                  <ShoppingBag className="w-3 h-3" />
+                  <span>Butikker i senteret</span>
+                </div>
+                <div className="space-y-1.5">
+                  {poi.childPOIs.map((child) => {
+                    const ChildIcon = getIcon(child.category.icon);
+                    return (
+                      <div key={child.id} className="flex items-center gap-2 text-xs">
+                        <ChildIcon className="w-3 h-3" style={{ color: child.category.color }} />
+                        <span className="text-gray-700 flex-1 truncate">{child.name}</span>
+                        <span className="text-gray-400">{child.category.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Website + Google AI links for parent POIs */}
+            {poi.childPOIs && poi.childPOIs.length > 0 && (
+              <div className="flex items-center gap-3">
+                {poi.googleWebsite && isSafeUrl(poi.googleWebsite) && (
+                  <a
+                    href={poi.googleWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Nettside
+                  </a>
+                )}
+                <a
+                  href={`https://www.google.com/search?udm=50&q=${encodeURIComponent(poi.name + " butikker åpningstider")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  Utforsk
+                </a>
+              </div>
+            )}
+
             {/* Realtime transport data */}
             {isTransportPOI && realtimeData.lastUpdated && (
               <RealtimeSection realtimeData={realtimeData} poi={poi} />
@@ -273,6 +328,22 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
             </div>
             {poi.editorialHook && (
               <p className="text-xs text-gray-600 leading-relaxed">{poi.editorialHook}</p>
+            )}
+            {poi.anchorSummary && (
+              <p className="text-xs text-gray-500 leading-relaxed">{poi.anchorSummary}</p>
+            )}
+            {poi.childPOIs && poi.childPOIs.length > 0 && (
+              <div className="space-y-1">
+                {poi.childPOIs.map((child) => {
+                  const ChildIcon = getIcon(child.category.icon);
+                  return (
+                    <div key={child.id} className="flex items-center gap-1.5 text-xs text-gray-600">
+                      <ChildIcon className="w-3 h-3" style={{ color: child.category.color }} />
+                      <span className="truncate">{child.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
             )}
             {/* Realtime transport data — mobile */}
             {isTransportPOI && realtimeData.lastUpdated && (

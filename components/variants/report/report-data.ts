@@ -345,9 +345,21 @@ function getIntroKey(tags?: string[]): "heroIntroBolig" | "heroIntroNaering" | "
 export function transformToReportData(project: Project, locale: Locale = "no"): ReportData {
   const allPOIs = project.pois;
 
+  // Build parent→children lookup for parent-child POI hierarchy
+  const childByParent = new Map<string, POI[]>();
+  for (const poi of allPOIs) {
+    if (poi.parentPoiId) {
+      const arr = childByParent.get(poi.parentPoiId);
+      if (arr) arr.push(poi); else childByParent.set(poi.parentPoiId, [poi]);
+    }
+  }
+
+  // Exclude child POIs from hero metrics
+  const topLevelPOIs = allPOIs.filter((p) => !p.parentPoiId);
+
   // Build hero metrics
-  const ratedPOIs = allPOIs.filter((p) => p.googleRating != null);
-  const totalReviews = allPOIs.reduce(
+  const ratedPOIs = topLevelPOIs.filter((p) => p.googleRating != null);
+  const totalReviews = topLevelPOIs.reduce(
     (sum, p) => sum + (p.googleReviewCount ?? 0),
     0
   );
@@ -356,12 +368,12 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       ? ratedPOIs.reduce((sum, p) => sum + (p.googleRating ?? 0), 0) /
         ratedPOIs.length
       : 0;
-  const transportCount = allPOIs.filter((p) =>
+  const transportCount = topLevelPOIs.filter((p) =>
     TRANSPORT_CATEGORIES.has(p.category.id)
   ).length;
 
   const heroMetrics: ReportHeroMetrics = {
-    totalPOIs: allPOIs.length,
+    totalPOIs: topLevelPOIs.length,
     ratedPOIs: ratedPOIs.length,
     avgRating: Math.round(avgRating * 10) / 10,
     totalReviews,
@@ -402,7 +414,14 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
     // Apply per-category filtering (school-zone, maxCount) to each category group,
     // then reassemble the theme's POI list preserving distance order.
-    const filtered = applyThemeCategoryFilters(distanceSorted, center);
+    const categoryFiltered = applyThemeCategoryFilters(distanceSorted, center);
+
+    // Filter child POIs when their parent is in the same theme, and attach children to parents
+    const parentIdsInTheme = new Set(categoryFiltered.filter(p => !p.parentPoiId).map(p => p.id));
+    const filtered = categoryFiltered.filter(p => !p.parentPoiId || !parentIdsInTheme.has(p.parentPoiId)).map(p => {
+      const children = childByParent.get(p.id);
+      return children ? { ...p, childPOIs: children } : p;
+    });
 
     // Sort by tier then score and split into visible/hidden
     const sorted = [...filtered].sort(byTierThenScore);

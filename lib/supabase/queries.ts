@@ -120,6 +120,8 @@ function transformPOI(
     eventDescription: ((dbPoi as Record<string, unknown>).event_description as string | null) ?? undefined,
     eventUrl: ((dbPoi as Record<string, unknown>).event_url as string | null) ?? undefined,
     eventTags: ((dbPoi as Record<string, unknown>).event_tags as string[] | null) ?? undefined,
+    parentPoiId: ((dbPoi as Record<string, unknown>).parent_poi_id as string | null) ?? undefined,
+    anchorSummary: ((dbPoi as Record<string, unknown>).anchor_summary as string | null) ?? undefined,
   };
 }
 
@@ -273,6 +275,8 @@ export async function getPOIsWithinRadius(
       nsr_id: (poi as Record<string, unknown>).nsr_id ?? null,
       barnehagefakta_id: (poi as Record<string, unknown>).barnehagefakta_id ?? null,
       osm_id: (poi as Record<string, unknown>).osm_id ?? null,
+      parent_poi_id: (poi as Record<string, unknown>).parent_poi_id ?? null,
+      anchor_summary: (poi as Record<string, unknown>).anchor_summary ?? null,
       created_at: poi.created_at,
       updated_at: poi.updated_at,
     } as DbPoi,

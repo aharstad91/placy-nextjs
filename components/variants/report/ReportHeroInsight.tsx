@@ -6,7 +6,7 @@ import type { ReportTheme } from "./report-data";
 import { resolveThemeId } from "@/lib/themes";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getIcon } from "@/lib/utils/map-icons";
-import { Star, MapPin, Bike, Car, Zap, ShoppingBag, ExternalLink } from "lucide-react";
+import { Star, MapPin, Bike, Car, Zap, ShoppingBag, ExternalLink, Sparkles } from "lucide-react";
 import { isSafeUrl } from "@/lib/utils/url";
 import {
   Popover,
@@ -412,6 +412,7 @@ function HverdagslivInsight({ theme, center }: HeroInsightProps) {
         (() => {
           const walk = fmtWalk(anchor, center);
           const hasWebsite = anchor.googleWebsite && isSafeUrl(anchor.googleWebsite);
+          const googleAiUrl = `https://www.google.com/search?udm=50&q=${encodeURIComponent(anchor.name + " butikker åpningstider")}`;
           return (
             <div
               className="rounded-lg p-3 mb-3"
@@ -435,8 +436,33 @@ function HverdagslivInsight({ theme, center }: HeroInsightProps) {
                       <ExternalLink className="w-3.5 h-3.5" style={{ color: "#22c55e" }} />
                     </a>
                   )}
+                  <a
+                    href={googleAiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" style={{ color: "#22c55e" }} />
+                  </a>
                 </div>
               </div>
+              {anchor.anchorSummary && (
+                <p className="text-xs text-[#6a6a6a] mt-1 ml-6">{anchor.anchorSummary}</p>
+              )}
+              {anchor.childPOIs && anchor.childPOIs.length > 0 && (
+                <div className="mt-2 ml-6 space-y-0.5">
+                  {anchor.childPOIs.map((child) => {
+                    const ChildIcon = getIcon(child.category.icon);
+                    return (
+                      <div key={child.id} className="flex items-center gap-2 text-xs text-[#6a6a6a]">
+                        <ChildIcon className="w-3 h-3" style={{ color: child.category.color }} />
+                        <span>{child.name}</span>
+                        <span className="text-[#aaa]">{child.category.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })()}
