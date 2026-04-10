@@ -181,14 +181,16 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
                   <ShoppingBag className="w-3 h-3" />
                   <span>Butikker i senteret</span>
                 </div>
-                <div className="space-y-1.5">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
                   {poi.childPOIs.map((child) => {
                     const ChildIcon = getIcon(child.category.icon);
                     return (
-                      <div key={child.id} className="flex items-center gap-2 text-xs">
-                        <ChildIcon className="w-3 h-3" style={{ color: child.category.color }} />
-                        <span className="text-gray-700 flex-1 truncate">{child.name}</span>
-                        <span className="text-gray-400">{child.category.name}</span>
+                      <div key={child.id} className="flex items-center gap-1.5 text-xs min-w-0">
+                        <ChildIcon
+                          className="w-3 h-3 shrink-0"
+                          style={{ color: child.category.color }}
+                        />
+                        <span className="text-gray-700 truncate">{child.name}</span>
                       </div>
                     );
                   })}

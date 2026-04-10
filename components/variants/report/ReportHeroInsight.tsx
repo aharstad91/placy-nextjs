@@ -419,21 +419,23 @@ function HverdagslivInsight({ theme, center }: HeroInsightProps) {
               style={{ backgroundColor: "#22c55e12" }}
               {...(anchor.googlePlaceId ? { "data-google-ai-target": anchor.googlePlaceId } : {})}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4" style={{ color: "#22c55e" }} />
-                  <span className="font-semibold text-[#1a1a1a] text-[15px]">{anchor.name}</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <ShoppingBag className="w-4 h-4 shrink-0" style={{ color: "#22c55e" }} />
+                  <span className="font-semibold text-[#1a1a1a] text-[15px] truncate">{anchor.name}</span>
+                  {walk && <span className="text-sm text-[#8a8a8a] shrink-0">· {walk}</span>}
                 </div>
-                <div className="flex items-center gap-2">
-                  {walk && <span className="text-sm text-[#8a8a8a]">{walk}</span>}
+                <div className="flex items-center gap-1.5 shrink-0">
                   {hasWebsite && (
                     <a
                       href={anchor.googleWebsite!}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#22c55e] text-white hover:bg-[#16a34a] transition-colors shadow-sm"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" style={{ color: "#22c55e" }} />
+                      <ExternalLink className="w-3 h-3" />
+                      Nettside
                     </a>
                   )}
                   <a
@@ -441,8 +443,10 @@ function HverdagslivInsight({ theme, center }: HeroInsightProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white text-[#15803d] border border-[#22c55e]/30 hover:bg-[#22c55e]/5 transition-colors"
                   >
-                    <Sparkles className="w-3.5 h-3.5" style={{ color: "#22c55e" }} />
+                    <Sparkles className="w-3 h-3" />
+                    Utforsk
                   </a>
                 </div>
               </div>
@@ -450,14 +454,18 @@ function HverdagslivInsight({ theme, center }: HeroInsightProps) {
                 <p className="text-xs text-[#6a6a6a] mt-1 ml-6">{anchor.anchorSummary}</p>
               )}
               {anchor.childPOIs && anchor.childPOIs.length > 0 && (
-                <div className="mt-2 ml-6 space-y-0.5">
+                <div className="mt-3 ml-6 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
                   {anchor.childPOIs.map((child) => {
                     const ChildIcon = getIcon(child.category.icon);
                     return (
-                      <div key={child.id} className="flex items-center gap-2 text-xs text-[#6a6a6a]">
-                        <ChildIcon className="w-3 h-3" style={{ color: child.category.color }} />
-                        <span>{child.name}</span>
-                        <span className="text-[#aaa]">{child.category.name}</span>
+                      <div key={child.id} className="flex items-center gap-2 text-xs min-w-0">
+                        <ChildIcon
+                          className="w-3 h-3 shrink-0"
+                          style={{ color: child.category.color }}
+                        />
+                        <span className="text-[#1a1a1a] font-medium truncate">
+                          {child.name}
+                        </span>
                       </div>
                     );
                   })}
