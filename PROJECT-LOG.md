@@ -3047,3 +3047,29 @@ Se brainstorm: `docs/brainstorms/2026-04-09-kunnskapsbase-rapport-kobling-brains
 - **`shopping_mall` vs `"shopping"`**: Google-type og Placy category id er ikke alltid like. For shopping_mall er Google-typen `shopping_mall` men Placy ID er `"shopping"`. Bransjeprofiler bruker alltid Placy IDs. Dette er et viktig mønster å huske.
 - **Flat liste med feil vekting**: Den forrige implementasjonen hadde frisør på lik linje med dagligvare. Tre-tier hierarki løser dette elegant — ingen spesialcasing, bare strukturell prioritering.
 - **hverdagstjenester (Næring) deler komponent**: Endringer i HverdagslivInsight berører Næring-prosjekter. Guard-logikken er bevisst satt til `< 1` (ikke `< 2`) for å ikke bryte eksisterende Næring-visning.
+
+---
+
+## 2026-04-10 — Kjøpesenter-anker med parent-child POI-hierarki
+
+### Beslutninger
+
+- **Senteret blir en POI med egen markør** — ikke en konfigobjekt eller et spesialfelt. Gir markør, drawer, walkTime, og redaksjonelt innhold gratis via eksisterende infrastruktur.
+- **`parent_poi_id` på pois-tabellen** — self-referencing FK med `ON DELETE SET NULL`. Barn-POI-er (butikker) peker til parent (senter). Filtreres fra kart-markører og hero-rader, vises innfoldet i anker-raden + drawer.
+- **Single filter point i `report-data.ts`** — all filtrering skjer i `transformToReportData`. Ingen downstream-filtrering. Én kilde, alle konsumenter arver.
+- **Cross-theme guard** — barn filtreres KUN når parent er i samme tema. Uten dette ville et barn i feil tema forsvinne helt (tech audit-mitigasjon).
+- **`anchor_summary` som kort beskrivelse** — "Dagligvare, apotek, frisør, vinmonopol, bakeri og mer". Vises under senter-navnet i både hero og drawer.
+- **Valentinlyst Senter som første implementasjon** — 4 barn (Coop Mega, Boots, Valentinlyst Vinmonopol, Studio Sax). Mønsteret er generisk og fungerer for alle sentre.
+
+### Retning
+
+Rapporten er nå "senter-aware". Brukeren ser at Valentinlyst Senter samler hele hverdagen, og kan klikke seg videre til senterets nettside eller Google AI-søk for dypere utforskning. S&J-stil oppnådd — teaser + videresending, ikke komplett oversikt.
+
+Neste steg: vurder om andre prosjekter (City Lade, Sirkus Shopping, Moholt) skal få samme parent-child-struktur. Dette er generisk datamodell — ingen kodeendringer nødvendig, bare migrasjoner som setter parent_poi_id.
+
+### Observasjoner
+
+- **Filtrering flytter sekundær-rader**: Når Boots Apotek filtreres som barn, blir Apotek 1 Strindheim (16 min) den nærmeste pharmacy-POI-en i primary-raden. Dette ser rart ut — nærmeste apotek er jo 8 min inne i senteret. Men det er bevisst design: anker-raden ER senteret, primary/secondary viser ALTERNATIVER utenfor. Vurder om dette trenger en fotnote eller bedre UX på sikt.
+- **Supabase types regenereres ikke automatisk**: Etter migrasjon 056 er parent_poi_id og anchor_summary ukjent for generert `DbPoi`. Cast-mønsteret `(dbPoi as Record<string, unknown>).parent_poi_id` fungerer, men det er nå minst 10 kolonner med dette mønsteret. På sikt: kjør `supabase gen types` eller manuelt oppdater `lib/supabase/types.ts`.
+- **Upsert bevarer ikke-nevnte kolonner**: Testet og bekreftet — Supabase PostgREST upsert oppdaterer kun kolonner som er i payload-objektet. Dette betyr at parent_poi_id/anchor_summary ikke overskrives under import, selv uten eksplisitt preservation-logikk.
+- **Tech audit fant to kritiske edge cases**: (1) cross-theme guard og (2) single filter point. Begge var lette å overse, men ville ha forårsaket bugs i prod. Audit betaler seg.

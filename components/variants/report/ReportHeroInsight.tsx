@@ -6,7 +6,7 @@ import type { ReportTheme } from "./report-data";
 import { resolveThemeId } from "@/lib/themes";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getIcon } from "@/lib/utils/map-icons";
-import { Star, MapPin, Bike, Car, Zap, ShoppingBag, ExternalLink } from "lucide-react";
+import { Star, MapPin, Bike, Car, Zap, ShoppingBag, ExternalLink, Sparkles } from "lucide-react";
 import { isSafeUrl } from "@/lib/utils/url";
 import {
   Popover,
@@ -412,31 +412,65 @@ function HverdagslivInsight({ theme, center }: HeroInsightProps) {
         (() => {
           const walk = fmtWalk(anchor, center);
           const hasWebsite = anchor.googleWebsite && isSafeUrl(anchor.googleWebsite);
+          const googleAiUrl = `https://www.google.com/search?udm=50&q=${encodeURIComponent(anchor.name + " butikker åpningstider")}`;
           return (
             <div
               className="rounded-lg p-3 mb-3"
               style={{ backgroundColor: "#22c55e12" }}
               {...(anchor.googlePlaceId ? { "data-google-ai-target": anchor.googlePlaceId } : {})}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4" style={{ color: "#22c55e" }} />
-                  <span className="font-semibold text-[#1a1a1a] text-[15px]">{anchor.name}</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <ShoppingBag className="w-4 h-4 shrink-0" style={{ color: "#22c55e" }} />
+                  <span className="font-semibold text-[#1a1a1a] text-[15px] truncate">{anchor.name}</span>
+                  {walk && <span className="text-sm text-[#8a8a8a] shrink-0">· {walk}</span>}
                 </div>
-                <div className="flex items-center gap-2">
-                  {walk && <span className="text-sm text-[#8a8a8a]">{walk}</span>}
+                <div className="flex items-center gap-1.5 shrink-0">
                   {hasWebsite && (
                     <a
                       href={anchor.googleWebsite!}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#22c55e] text-white hover:bg-[#16a34a] transition-colors shadow-sm"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" style={{ color: "#22c55e" }} />
+                      <ExternalLink className="w-3 h-3" />
+                      Nettside
                     </a>
                   )}
+                  <a
+                    href={googleAiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white text-[#15803d] border border-[#22c55e]/30 hover:bg-[#22c55e]/5 transition-colors"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Utforsk
+                  </a>
                 </div>
               </div>
+              {anchor.anchorSummary && (
+                <p className="text-xs text-[#6a6a6a] mt-1 ml-6">{anchor.anchorSummary}</p>
+              )}
+              {anchor.childPOIs && anchor.childPOIs.length > 0 && (
+                <div className="mt-3 ml-6 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                  {anchor.childPOIs.map((child) => {
+                    const ChildIcon = getIcon(child.category.icon);
+                    return (
+                      <div key={child.id} className="flex items-center gap-2 text-xs min-w-0">
+                        <ChildIcon
+                          className="w-3 h-3 shrink-0"
+                          style={{ color: child.category.color }}
+                        />
+                        <span className="text-[#1a1a1a] font-medium truncate">
+                          {child.name}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })()}

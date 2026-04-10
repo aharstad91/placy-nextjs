@@ -88,6 +88,11 @@ export interface POI {
   bysykkelStationId?: string;
   hyreStationId?: string;
 
+  // Parent-child POI hierarchy (e.g., shopping center → stores)
+  parentPoiId?: string;
+  anchorSummary?: string;
+  childPOIs?: POI[];
+
   // Beregnet data (runtime)
   travelTime?: {
     walk?: number;
