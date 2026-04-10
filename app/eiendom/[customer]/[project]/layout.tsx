@@ -83,16 +83,8 @@ export default async function EiendomProjectLayout({ params, children }: LayoutP
   }
 
   return (
-    <>
-      <ProductNav
-        projectName={projectData.name}
-        products={products}
-        adminEditUrl={shortId ? `/admin/projects/${shortId}` : null}
-        homeHref={basePath}
-      />
-      <PageTransition>
-        {children}
-      </PageTransition>
-    </>
+    <PageTransition>
+      {children}
+    </PageTransition>
   );
 }
