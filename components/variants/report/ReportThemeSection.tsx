@@ -5,7 +5,7 @@ import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Star, MapPin, Map as MapIcon, X, Zap, Car } from "lucide-react";
+import { Star, MapPin, Map as MapIcon, X, Zap, Car, ExternalLink } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import ReportHeroInsight, { getHeroInsightPOIIds } from "./ReportHeroInsight";
@@ -231,6 +231,8 @@ export default function ReportThemeSection({
             {upperSegments.map((seg, i) =>
               seg.type === "poi" && seg.poi ? (
                 <POIInlineLink key={i} poi={seg.poi} content={seg.content} />
+              ) : seg.type === "external" && seg.url ? (
+                <ExternalInlineLink key={i} content={seg.content} url={seg.url} />
               ) : (
                 <span key={i}>{seg.content}</span>
               ),
@@ -258,11 +260,9 @@ export default function ReportThemeSection({
           <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
             {segments.map((seg, i) =>
               seg.type === "poi" && seg.poi ? (
-                <POIInlineLink
-                  key={i}
-                  poi={seg.poi}
-                  content={seg.content}
-                />
+                <POIInlineLink key={i} poi={seg.poi} content={seg.content} />
+              ) : seg.type === "external" && seg.url ? (
+                <ExternalInlineLink key={i} content={seg.content} url={seg.url} />
               ) : (
                 <span key={i}>{seg.content}</span>
               ),
@@ -453,5 +453,19 @@ function POIInlineLink({ poi, content }: { poi: POI; content: string }) {
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function ExternalInlineLink({ content, url }: { content: string; url: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-baseline gap-0.5 font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors"
+    >
+      {content}
+      <ExternalLink className="w-[0.7em] h-[0.7em] translate-y-[0.05em] shrink-0 opacity-50" />
+    </a>
   );
 }

@@ -8,75 +8,99 @@
 import type { POI } from "@/lib/types";
 
 export interface TextSegment {
-  type: "text" | "poi";
+  type: "text" | "poi" | "external";
   content: string;
   poi?: POI;
+  url?: string;
+}
+
+const MARKDOWN_LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+
+/**
+ * Split text on markdown links `[text](url)` first, returning alternating
+ * text and external segments. Used before POI matching so markdown links
+ * are preserved verbatim.
+ */
+function splitMarkdownLinks(text: string): TextSegment[] {
+  const segments: TextSegment[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  MARKDOWN_LINK_RE.lastIndex = 0;
+  while ((match = MARKDOWN_LINK_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: "text", content: text.slice(lastIndex, match.index) });
+    }
+    segments.push({ type: "external", content: match[1], url: match[2] });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    segments.push({ type: "text", content: text.slice(lastIndex) });
+  }
+  return segments.length > 0 ? segments : [{ type: "text", content: text }];
 }
 
 /**
  * Parse text and match POI names to create linked segments.
  *
- * Strategy: sort POI names by length (longest first) to avoid
- * partial matches. Only match whole-word boundaries.
+ * Strategy:
+ * 1. Split on markdown links `[text](url)` — preserve as external segments
+ * 2. POI-match remaining plain-text segments
  */
 export function linkPOIsInText(text: string, pois: POI[]): TextSegment[] {
-  if (!text || pois.length === 0) return [{ type: "text", content: text }];
+  if (!text) return [{ type: "text", content: text }];
+
+  // Pass 1: extract markdown links
+  const withExternals = splitMarkdownLinks(text);
+
+  // No POIs — return as-is (externals + plain text)
+  if (pois.length === 0) return withExternals;
 
   // Build lookup: name → POI (longest names first to avoid partial matches)
   const poiByName = new Map<string, POI>();
-  const sortedNames = pois
-    .filter((p) => p.name.length >= 3) // Skip very short names
+  const sortedPOIs = pois
+    .filter((p) => p.name.length >= 3)
     .sort((a, b) => b.name.length - a.name.length);
 
-  for (const poi of sortedNames) {
+  for (const poi of sortedPOIs) {
     poiByName.set(poi.name, poi);
-    // Also match without common suffixes
-    const cleaned = poi.name
-      .replace(/ AS$/i, "")
-      .replace(/ SA$/i, "")
-      .trim();
-    if (cleaned !== poi.name && cleaned.length >= 3) {
-      poiByName.set(cleaned, poi);
-    }
+    const cleaned = poi.name.replace(/ AS$/i, "").replace(/ SA$/i, "").trim();
+    if (cleaned !== poi.name && cleaned.length >= 3) poiByName.set(cleaned, poi);
   }
 
-  // Build regex from all names (escaped, word-boundary)
   const names = Array.from(poiByName.keys()).sort((a, b) => b.length - a.length);
-  if (names.length === 0) return [{ type: "text", content: text }];
+  if (names.length === 0) return withExternals;
 
   const escaped = names.map((n) => escapeRegex(n));
   const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+  const matched = new Set<string>();
 
-  const segments: TextSegment[] = [];
-  let lastIndex = 0;
-  const matched = new Set<string>(); // Avoid duplicate POI matches
-
-  let match: RegExpExecArray | null;
-  while ((match = pattern.exec(text)) !== null) {
-    const matchedText = match[0];
-    const poi = findPOI(matchedText, poiByName);
-    if (!poi) continue;
-
-    // Only link first occurrence of each POI
-    if (matched.has(poi.id)) continue;
-    matched.add(poi.id);
-
-    // Add preceding text
-    if (match.index > lastIndex) {
-      segments.push({ type: "text", content: text.slice(lastIndex, match.index) });
+  // Pass 2: POI-match each plain-text segment, leave externals untouched
+  const result: TextSegment[] = [];
+  for (const seg of withExternals) {
+    if (seg.type !== "text") {
+      result.push(seg);
+      continue;
     }
-
-    // Add POI mention
-    segments.push({ type: "poi", content: matchedText, poi });
-    lastIndex = match.index + matchedText.length;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    pattern.lastIndex = 0;
+    while ((match = pattern.exec(seg.content)) !== null) {
+      const matchedText = match[0];
+      const poi = findPOI(matchedText, poiByName);
+      if (!poi || matched.has(poi.id)) continue;
+      matched.add(poi.id);
+      if (match.index > lastIndex) {
+        result.push({ type: "text", content: seg.content.slice(lastIndex, match.index) });
+      }
+      result.push({ type: "poi", content: matchedText, poi });
+      lastIndex = match.index + matchedText.length;
+    }
+    if (lastIndex < seg.content.length) {
+      result.push({ type: "text", content: seg.content.slice(lastIndex) });
+    }
   }
 
-  // Add remaining text
-  if (lastIndex < text.length) {
-    segments.push({ type: "text", content: text.slice(lastIndex) });
-  }
-
-  return segments.length > 0 ? segments : [{ type: "text", content: text }];
+  return result.length > 0 ? result : withExternals;
 }
 
 /** Case-insensitive POI lookup */
