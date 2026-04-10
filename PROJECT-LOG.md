@@ -3015,3 +3015,35 @@ Se brainstorm: `docs/brainstorms/2026-04-09-kunnskapsbase-rapport-kobling-brains
 - **Overpass API er upålitelig som runtime-tjeneste.** Begge kjente mirrors gikk ned samme dag. Beslutningen om å cache i Supabase (ikke hente live) var riktig.
 - **Fake testdata er verre enn ingen data.** Fiktive koordinater som tegner stier gjennom hus skaper mer forvirring enn de fjerner. Leksjon: for geo-features, enten ekte data eller ingenting.
 - **mapLoaded-gaten var ikke dokumentert noe sted.** En rimelig fallgruve — Mapbox krasjer stille uten god feilmelding. Nå dokumentert i docs/solutions/.
+
+---
+
+## 2026-04-10 — Hverdagsliv redesign: kjøpesenter-anker, tre-tier hierarki
+
+### Beslutninger
+
+- **Hverdagsliv er tema nr. 2 i megler-dekning** (~95% av annonser) men var implementert som sekundært tema. Nå løftet til riktig vektnivå.
+- **Kjøpesenter som Tier 1-anker**: `shopping`-kategorien lagt til hverdagsliv-temaet. KjøpesenterCard vises øverst med grønn bakgrunn, gangetid, nettstedslenke og `data-google-ai-target`-hook for fremtidig Google AI-mode.
+- **Tre-tier hierarki innført**: Tier 1 (kjøpesenter) → Tier 2 (dagligvare, apotek, lege, standard størrelse) → Tier 3 (vinmonopol, post, bank, frisør, kompakt med separator). Frisør nedprioritert visuelt.
+- **`liquor_store` ny kategori**: Lagt til i hele pipelinen (poi-discovery, bransjeprofiler, rating-categories). 0 rader i prod per i dag — data kommer ved neste Google Places import-kjøring.
+- **Pre-eksisterende bug fikset**: `"post_office"` i bransjeprofiler var feil — Placy category id er `"post"`. Post-POI-er var usynlige i hverdagsliv-temaet.
+- **Bridge text ny logikk**: Løfter kjøpesenteret som narrativt knutepunkt. "I tillegg til Valentinlyst kjøpesenter finnes Rema 1000 3 min unna for daglig handel." — S&J-nivå.
+- **TIER1_EXTRACTORS oppdatert atomisk**: Bridge text ekskluderer nå kjøpesenter + primærtjenester. Kritisk regel: TIER1_EXTRACTORS og HVERDAGS-konstantene MÅ alltid landes i samme commit.
+
+### Åpne spørsmål
+
+- **Vinmonopol-data**: `liquor_store` = 0 rader i prod. Trenger re-import av Google Places for Wesselsløkka og Brøset for å se Vinmonopol i UI.
+- **Explorer-cap**: Hverdagsliv-cap er 25. Med 2 nye kategorier bør man sjekke om cap bør justeres til 30 for store byer.
+- **Kjøpesenter-POI-data**: Wesselsløkka mangler `shopping_mall` POI i DB. Valentinlyst kjøpesenter er sannsynligvis der — vil dukke opp ved neste import.
+
+### Retning
+
+- **Riktig prioritering.** Hverdagsliv var det svakeste temaet til tross for at det er det viktigste. Nå matcher implementasjonen viktigheten.
+- **Neste naturlig steg**: Trigg re-import for Wesselsløkka og Brøset for å fylle inn shopping_mall og liquor_store POI-er. Deretter: PR til main.
+- **Google AI-mode slot er klar**: `data-google-ai-target`-attributtet er på plass i kjøpesenter-kortet. Selve funksjonen bygges i separat worktree.
+
+### Observasjoner
+
+- **`shopping_mall` vs `"shopping"`**: Google-type og Placy category id er ikke alltid like. For shopping_mall er Google-typen `shopping_mall` men Placy ID er `"shopping"`. Bransjeprofiler bruker alltid Placy IDs. Dette er et viktig mønster å huske.
+- **Flat liste med feil vekting**: Den forrige implementasjonen hadde frisør på lik linje med dagligvare. Tre-tier hierarki løser dette elegant — ingen spesialcasing, bare strukturell prioritering.
+- **hverdagstjenester (Næring) deler komponent**: Endringer i HverdagslivInsight berører Næring-prosjekter. Guard-logikken er bevisst satt til `< 1` (ikke `< 2`) for å ikke bryte eksisterende Næring-visning.
