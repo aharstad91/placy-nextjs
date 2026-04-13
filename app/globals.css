@@ -524,3 +524,51 @@ gmp-popover::part(dialog) {
     @apply font-sans;
   }
 }
+
+/* ===================================
+   Story Mode Animations
+   =================================== */
+
+@keyframes story-block-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes story-choice-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.story-block--hidden {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.story-block--revealed {
+  animation: story-block-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--story-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-block--hidden {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .story-block--revealed {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

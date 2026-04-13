@@ -51,3 +51,14 @@ export function calculateWeightedPOIScore(
   const weight = profile.categoryWeights[poi.category] ?? 1.0;
   return baseScore * weight;
 }
+
+/**
+ * Sort comparator: tier first (lower = better), then formula score within same tier.
+ * Shared by Report and Story Mode.
+ */
+export function byTierThenScore(a: { poiTier?: number | null; googleRating?: number | null; googleReviewCount?: number | null }, b: { poiTier?: number | null; googleRating?: number | null; googleReviewCount?: number | null }): number {
+  const aTier = a.poiTier ?? NULL_TIER_VALUE;
+  const bTier = b.poiTier ?? NULL_TIER_VALUE;
+  if (aTier !== bTier) return aTier - bTier;
+  return calculateReportScore(b) - calculateReportScore(a);
+}
