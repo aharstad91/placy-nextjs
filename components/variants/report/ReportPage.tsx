@@ -12,6 +12,7 @@ import ReportSidebarNav from "./ReportSidebarNav";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportExplorerCTA from "./ReportExplorerCTA";
 import ReportClosing from "./ReportClosing";
+import ReportSummarySection from "./ReportSummarySection";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
 
@@ -191,15 +192,17 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
                 />
               )}
 
-              {/* Closing */}
-              <ReportClosing
-                projectName={reportData.projectName}
-                totalPOIs={reportData.heroMetrics.totalPOIs}
-                avgRating={reportData.heroMetrics.avgRating}
-                closingTitle={reportData.closingTitle}
-                closingText={reportData.closingText}
-                label={reportData.label}
+              {/* Summary section — syntese, innsikter, megler, CTA */}
+              <ReportSummarySection
+                summary={reportData.summary}
+                brokers={reportData.brokers}
+                cta={reportData.cta}
+                projectTitle={reportData.projectName}
+                themesCount={reportData.themes.length}
               />
+
+              {/* Attribution footer */}
+              <ReportClosing label={reportData.label} />
             </div>
           </div>
         </div>

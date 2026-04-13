@@ -1,4 +1,4 @@
-import type { Project, POI, Coordinates, TrailCollection } from "@/lib/types";
+import type { Project, POI, Coordinates, TrailCollection, ReportSummary, BrokerInfo, ReportCTA } from "@/lib/types";
 import { getReportThemes } from "./report-themes";
 import {
   calculateCategoryScore,
@@ -88,8 +88,9 @@ export interface ReportData {
   themes: ReportTheme[];
   label?: string;
   heroIntro?: string;
-  closingTitle?: string;
-  closingText?: string;
+  summary?: ReportSummary;
+  brokers?: BrokerInfo[];
+  cta?: ReportCTA;
   mapStyle?: string;
 }
 
@@ -500,8 +501,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     themes,
     label: rc?.label,
     heroIntro,
-    closingTitle: rc?.closingTitle,
-    closingText: rc?.closingText,
+    summary: rc?.summary,
+    brokers: rc?.brokers,
+    cta: rc?.cta,
     mapStyle: rc?.mapStyle,
   };
 }
