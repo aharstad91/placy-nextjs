@@ -31,6 +31,16 @@ const nextConfig = {
       },
     ],
   },
+  // Redirects for gamle demo-URL-er som nå lever under /eiendom/
+  async redirects() {
+    return [
+      {
+        source: "/demo/wesselslokka",
+        destination: "/eiendom/broset-utvikling-as/wesselslokka/rapport",
+        permanent: true, // 301
+      },
+    ];
+  },
 };
 
 export default nextConfig;

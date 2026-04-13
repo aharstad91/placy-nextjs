@@ -3,8 +3,10 @@ import { getProductAsync, getProjectAsync, productExists } from "@/lib/data-serv
 import { getProjectTranslations } from "@/lib/supabase/translations";
 import { getAreaSlugForProject } from "@/lib/public-queries";
 import ReportPage from "@/components/variants/report/ReportPage";
+import PlacyReportHeader from "@/components/public/PlacyReportHeader";
+import PlacyReportFooter from "@/components/public/PlacyReportFooter";
 import { eiendomUrl } from "@/lib/urls";
-import { hexToHslChannels } from "@/lib/theme-utils";
+import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -76,16 +78,36 @@ export default async function EiendomReportPage({ params, searchParams }: PagePr
     if (t.fontFamily) {
       (themeStyle as Record<string, string>)["--font-family"] = t.fontFamily;
     }
+
+    // Precedence: eksplisitt primaryForegroundColor (satt via setIf over)
+    // vinner. Kun hvis den IKKE er satt, auto-computer vi basert på
+    // luminance av primaryColor for å sikre lesbar tekst i header.
+    if (t.primaryColor && !t.primaryForegroundColor) {
+      const autoFg = pickContrastForeground(t.primaryColor);
+      if (autoFg) {
+        (themeStyle as Record<string, string>)["--primary-foreground"] = autoFg;
+      }
+    }
   }
 
   return (
-    <div style={themeStyle} className="min-h-screen bg-background text-foreground">
-      <ReportPage
-        project={projectData}
-        explorerBaseUrl={explorerUrl}
-        enTranslations={enTranslations}
-        areaSlug={areaSlug}
-        primaryThemeIds={rawThemes}
+    <div style={themeStyle} className="min-h-screen bg-background text-foreground flex flex-col">
+      <PlacyReportHeader
+        projectName={projectData.name}
+        homepageUrl={projectData.homepageUrl}
+      />
+      <main className="flex-1">
+        <ReportPage
+          project={projectData}
+          explorerBaseUrl={explorerUrl}
+          enTranslations={enTranslations}
+          areaSlug={areaSlug}
+          primaryThemeIds={rawThemes}
+        />
+      </main>
+      <PlacyReportFooter
+        projectName={projectData.name}
+        homepageUrl={projectData.homepageUrl}
       />
     </div>
   );

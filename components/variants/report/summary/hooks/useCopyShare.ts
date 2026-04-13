@@ -14,15 +14,39 @@ interface UseCopyShareResult {
 }
 
 /**
+ * Siste-utvei fallback via document.execCommand("copy").
+ * Dekker Safari Private Browsing, HTTP utenfor localhost, og eldre browsere.
+ * Returnerer true ved suksess. SSR-safe (kun kalt fra callback).
+ */
+function copyViaExecCommand(text: string): boolean {
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Hook for share/clipboard handling with icon-swap confirmation.
  *
  * Strategy:
  * 1. If navigator.share() exists AND canShare() approves the payload, use it
  *    (native share sheet on mobile — Instagram, SMS, WhatsApp, etc.).
  * 2. Otherwise fall back to navigator.clipboard.writeText().
- * 3. On success, `copied` flips to true for 2s, then resets.
- * 4. AbortError (user cancelled share sheet) is swallowed silently.
- * 5. Other errors populate `error` but never throw.
+ * 3. If clipboard API unavailable or throws NotAllowedError (Safari Private
+ *    Browsing), fall back to document.execCommand("copy").
+ * 4. On success, `copied` flips to true for 2s, then resets.
+ * 5. AbortError (user cancelled share sheet) is swallowed silently.
+ * 6. Other errors populate `error` but never throw.
  *
  * SSR-safe: all browser API access is inside the callback, not at module load.
  */
@@ -56,7 +80,17 @@ export function useCopyShare(): UseCopyShareResult {
         // so the UI confirms something happened.
         setCopied(true);
       } else if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
-        await navigator.clipboard.writeText(url);
+        try {
+          await navigator.clipboard.writeText(url);
+          setCopied(true);
+        } catch (clipErr) {
+          // Safari Private Browsing + enkelte HTTP-kontekster kan kaste
+          // NotAllowedError. Fall tilbake til execCommand.
+          if (!copyViaExecCommand(url)) throw clipErr;
+          setCopied(true);
+        }
+      } else if (copyViaExecCommand(url)) {
+        // Ingen clipboard-API (HTTP utenfor localhost, eldre browsere).
         setCopied(true);
       } else {
         throw new Error("No share or clipboard API available");
