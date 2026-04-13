@@ -4,6 +4,52 @@
 
 ---
 date: 2026-04-13
+action: shipped
+pr: aharstad91/placy-nextjs#64
+files: [components/public/PlacyReportHeader.tsx, components/public/PlacyReportFooter.tsx, components/public/ShareButton.tsx, components/public/CookiesModal.tsx, app/eiendom/[customer]/[project]/rapport/page.tsx, lib/theme-utils.ts, lib/types.ts, lib/supabase/queries.ts, components/variants/report/summary/hooks/useCopyShare.ts, supabase/migrations/061_projects_homepage_url.sql, scripts/seed-wesselslokka-shell.ts, next.config.mjs]
+summary: Placy-standardisert shell for rapport-ruten. Header (kundens primary-farge, tilbake-link, prosjektnavn, del-knapp) + footer (nøytral Placy-branding). Erstatter ad-hoc whitelabel med skalerbar modell — neste demo ≤30 min branding.
+detail: |
+  Strategisk pivot fra forrige Wesselsløkka-demo-tilnærming: i stedet for
+  per-kunde custom shell (442 CSS-linjer, mimicking av kundens nettside),
+  eier Placy shellet og kunden bidrar med noen få design-tokens.
+
+  Full pipeline kjørt: brainstorm → plan → deepen (4 research-agenter) →
+  tech-audit (5 agenter, YELLOW→GREEN etter mitigasjoner) → implementering.
+  Tech audit fant 2 high-severity risikoer som ble mitigert:
+  1) JSONB-overwrite i seed-script (bruker `||`-merge, ikke naive UPDATE)
+  2) XSS via homepage_url (DB CHECK + client displayDomain-guard)
+
+  Nye komponenter i components/public/:
+  - PlacyReportHeader (server): sticky, kundens --primary som bg,
+    tilbake-link, prosjektnavn sentrert (desktop), del-knapp
+  - ShareButton (client): Web Share API + clipboard + execCommand-fallback,
+    inline ikon-swap, a11y role=status
+  - PlacyReportFooter (server): nøytral cream-bg, ALDRI kundens farger
+  - CookiesModal (client): shadcn Dialog, localStorage-persistering
+
+  Infrastruktur:
+  - Migration 061 m/CHECK-constraint (blokkerer javascript:/data:)
+  - computeLuminance + pickContrastForeground med WCAG 2.1 sRGB-
+    linearisering (ikke naiv weighted sum — feil-klassifiserer mid-tones)
+  - Contrast-ratio-sammenligning mot SOFT_WHITE/SOFT_BLACK (ikke fast
+    luminance-terskel) — mer robust for brand-farger i danger zone
+  - displayDomain + safeHref for URL-validering (defense in depth)
+
+  Wesselsløkka-migrering:
+  - Seed-script med dry-run, backup, JSONB-merge, concurrency lock
+  - Kjørt mot prod: homepage_url=wesselslokka.no, primary=#204c4c (teal)
+  - Valg av teal over pink: sticky header med full pink blir for intenst
+
+  Opprydding:
+  - Slettet /app/demo/wesselslokka/ (custom shell) + /public/ws-demo/
+  - 308 redirect fra gammel URL til ny kanonisk
+
+  Verifisert mot Leangen (shadcn-blå fallback) + Wesselsløkka
+  (teal 13:1 kontrast WCAG AAA). Typecheck clean, 0 lint errors.
+status: done
+related: docs/plans/2026-04-13-feat-placy-report-shell-plan.md
+---
+date: 2026-04-13
 action: created
 files: [app/demo/wesselslokka/layout.tsx, app/demo/wesselslokka/page.tsx, app/demo/wesselslokka/WesselsloekaHeader.tsx, app/demo/wesselslokka/WesselsloekaFooter.tsx, app/demo/wesselslokka/wesselslokka.css, public/ws-demo/wesselslokka-logo.png, public/ws-demo/wesselslokka-wordmark.png, public/ws-demo/wesselslokka-wordmark-neg.png, public/ws-demo/wesselslokka-script.webp]
 summary: Whitelabel-demo for Wesselsløkka — full brand-wrap rundt delte rapport-komponenter. CSS-scoping-strategi (`.ws-theme` overstyrer Tailwind arbitrary-values) unngår kode-fork av ReportPage. Første mønster vi kan gjenbruke for flere kunde-demoer.
