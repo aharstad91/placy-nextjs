@@ -33,6 +33,10 @@ import StatRow from "./blocks/StatRow";
 import { getTransportStats } from "./blocks/transport-stats";
 import TimelineRow from "./blocks/TimelineRow";
 import { getBarnTimeline, getBarnStats } from "./blocks/barn-timeline";
+import EditorialPull from "./blocks/EditorialPull";
+import SplitFeature from "./blocks/SplitFeature";
+import AnnotatedMap from "./blocks/AnnotatedMap";
+import { getNaturMarkers } from "./blocks/natur-annotated";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
@@ -256,7 +260,7 @@ export default function ReportThemeSection({
             banner illustration is suppressed — the block IS the visual. */}
         {(() => { return null; })()}
         {/* Optional banner illustration — hidden for themes with a custom block */}
-        {variant !== "secondary" && theme.image && theme.id !== "hverdagsliv" && theme.id !== "mat-drikke" && theme.id !== "transport" && (
+        {variant !== "secondary" && theme.image && theme.id !== "hverdagsliv" && theme.id !== "mat-drikke" && theme.id !== "transport" && theme.id !== "natur-friluftsliv" && theme.id !== "trening-aktivitet" && (
           <div className="mt-4 mb-12 w-full">
             <Image
               src={theme.image.src}
@@ -333,6 +337,55 @@ export default function ReportThemeSection({
             </>
           );
         })()}
+
+        {/* PILOT: AnnotatedMap — Natur & Friluftsliv. Redaksjonell illustrasjon
+            med nummererte callouts for nære park/natur-POIer. */}
+        {variant !== "secondary" && theme.id === "natur-friluftsliv" && theme.image && theme.allPOIs.length > 0 && (() => {
+          const markers = getNaturMarkers(theme.allPOIs, center);
+          if (markers.length === 0) return null;
+          return (
+            <AnnotatedMap
+              sectionKicker="Steder i grønt"
+              sectionTitle="Dine nærmeste natur-punkter"
+              image={theme.image.src}
+              imageWidth={theme.image.width}
+              imageHeight={theme.image.height}
+              markers={markers}
+            />
+          );
+        })()}
+
+        {/* PILOT: SplitFeature — Trening & Aktivitet. Diptyk som bryter ut av
+            sentrert kolonne, venstre tekst + høyre illustrasjon. */}
+        {variant !== "secondary" && theme.id === "trening-aktivitet" && theme.image && (
+          <SplitFeature
+            kicker="Aktivitet i hverdagen"
+            title="**Trening rundt hjørnet** — ikke som ekstra avtale."
+            body={
+              theme.bridgeText ??
+              "Gym og utendørs treningsparker innen gangavstand. Når dagens rytme allerede passerer dem, blir aktivitet en vane — ikke et prosjekt."
+            }
+            bullets={[
+              { value: `${theme.stats.totalPOIs}`, label: "treningstilbud i nabolaget" },
+              theme.stats.avgRating != null
+                ? { value: theme.stats.avgRating.toFixed(1), label: "snittrating på Google" }
+                : null,
+            ].filter(Boolean) as Array<{ label: string; value?: string }>}
+            image={theme.image.src}
+            imageWidth={theme.image.width}
+            imageHeight={theme.image.height}
+            tone="cream"
+          />
+        )}
+
+        {/* PILOT: EditorialPull — demonstreres på Hverdagsliv som "breather"
+            mellom bento og horisont. Hardkodet sitat for pilot. */}
+        {variant !== "secondary" && theme.id === "hverdagsliv" && (
+          <EditorialPull
+            quote="Valentinlyst er ikke et shoppingmål — det er nabolagets praktiske nav. Det er der du møter naboen i kø ved apoteket."
+            attribution="Redaksjonell observasjon · Placy"
+          />
+        )}
 
         {/* PILOT: StatRow — Transport. Live data (Entur/GBFS) + statiske reise-
             tidsberegninger til Trondheim-ankerpunkter (sentrum, Leangen, Værnes). */}
