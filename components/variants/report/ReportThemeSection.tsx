@@ -29,6 +29,8 @@ import BentoShowcase from "./blocks/BentoShowcase";
 import { getValentinlystBento, getHverdagslivHorizonCell } from "./blocks/hverdagsliv-bento";
 import FeatureCarousel from "./blocks/FeatureCarousel";
 import { getMatDrikkeCarousel } from "./blocks/matdrikke-carousel";
+import StatRow from "./blocks/StatRow";
+import { getTransportStats } from "./blocks/transport-stats";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
@@ -252,7 +254,7 @@ export default function ReportThemeSection({
             banner illustration is suppressed — the block IS the visual. */}
         {(() => { return null; })()}
         {/* Optional banner illustration — hidden for themes with a custom block */}
-        {variant !== "secondary" && theme.image && theme.id !== "hverdagsliv" && theme.id !== "mat-drikke" && (
+        {variant !== "secondary" && theme.image && theme.id !== "hverdagsliv" && theme.id !== "mat-drikke" && theme.id !== "transport" && (
           <div className="mt-4 mb-12 w-full">
             <Image
               src={theme.image.src}
@@ -300,6 +302,21 @@ export default function ReportThemeSection({
                   ? `${items.length} av ${theme.stats.totalPOIs} spisesteder · snittrating ${avg.toFixed(1)}`
                   : `${items.length} av ${theme.stats.totalPOIs} spisesteder`
               }
+              items={items}
+            />
+          );
+        })()}
+
+        {/* PILOT: StatRow — Transport. Live data (Entur/GBFS) + statiske reise-
+            tidsberegninger til Trondheim-ankerpunkter (sentrum, Leangen, Værnes). */}
+        {variant !== "secondary" && theme.id === "transport" && (() => {
+          const items = getTransportStats(theme.allPOIs, center, isTransport ? transportDashboard : null);
+          if (items.length === 0) return null;
+          return (
+            <StatRow
+              sectionKicker="Nøkkeltall"
+              sectionTitle="Slik beveger du deg"
+              footer="Sanntidsdata: Entur og Trondheim Bysykkel · Statiske beregninger: haversine × gjennomsnittshastighet per transportmåte"
               items={items}
             />
           );
