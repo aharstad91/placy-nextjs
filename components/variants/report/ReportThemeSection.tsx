@@ -27,6 +27,8 @@ import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 import ReportMapDrawer from "./ReportMapDrawer";
 import BentoShowcase from "./blocks/BentoShowcase";
 import { getValentinlystBento, getHverdagslivHorizonCell } from "./blocks/hverdagsliv-bento";
+import FeatureCarousel from "./blocks/FeatureCarousel";
+import { getMatDrikkeCarousel } from "./blocks/matdrikke-carousel";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
@@ -246,10 +248,11 @@ export default function ReportThemeSection({
           </div>
         )}
 
-        {/* Bento-pilot flag — when active, banner illustration is suppressed (bento IS the visual) */}
+        {/* Block-pilot flag — when active (hverdagsliv bento, mat-drikke carousel),
+            banner illustration is suppressed — the block IS the visual. */}
         {(() => { return null; })()}
-        {/* Optional banner illustration — hidden for themes with a bento showcase */}
-        {variant !== "secondary" && theme.image && theme.id !== "hverdagsliv" && (
+        {/* Optional banner illustration — hidden for themes with a custom block */}
+        {variant !== "secondary" && theme.image && theme.id !== "hverdagsliv" && theme.id !== "mat-drikke" && (
           <div className="mt-4 mb-12 w-full">
             <Image
               src={theme.image.src}
@@ -280,6 +283,25 @@ export default function ReportThemeSection({
               />
               <BentoShowcase cells={[getHverdagslivHorizonCell()]} />
             </>
+          );
+        })()}
+
+        {/* PILOT: Feature carousel — Mat & Drikke. Mange likeverdige spisesteder,
+            ingen klar hub — perfekt for horisontal scroll av uniforme kort. */}
+        {variant !== "secondary" && theme.id === "mat-drikke" && theme.allPOIs.length > 0 && (() => {
+          const items = getMatDrikkeCarousel(theme.allPOIs, center);
+          const avg = theme.stats.avgRating;
+          return (
+            <FeatureCarousel
+              sectionKicker="Innen rekkevidde"
+              sectionTitle="Spisesteder i nabolaget"
+              footer={
+                avg != null
+                  ? `${items.length} av ${theme.stats.totalPOIs} spisesteder · snittrating ${avg.toFixed(1)}`
+                  : `${items.length} av ${theme.stats.totalPOIs} spisesteder`
+              }
+              items={items}
+            />
           );
         })()}
 
