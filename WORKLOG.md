@@ -5,6 +5,34 @@
 ---
 date: 2026-04-13
 action: created
+files: [app/demo/wesselslokka/layout.tsx, app/demo/wesselslokka/page.tsx, app/demo/wesselslokka/WesselsloekaHeader.tsx, app/demo/wesselslokka/WesselsloekaFooter.tsx, app/demo/wesselslokka/wesselslokka.css, public/ws-demo/wesselslokka-logo.png, public/ws-demo/wesselslokka-wordmark.png, public/ws-demo/wesselslokka-wordmark-neg.png, public/ws-demo/wesselslokka-script.webp]
+summary: Whitelabel-demo for Wesselsløkka — full brand-wrap rundt delte rapport-komponenter. CSS-scoping-strategi (`.ws-theme` overstyrer Tailwind arbitrary-values) unngår kode-fork av ReportPage. Første mønster vi kan gjenbruke for flere kunde-demoer.
+detail: |
+  Mål: rapport som ser ut som en integrert del av wesselslokka.no,
+  ikke som en Placy-side med "Wesselsløkka" skrevet på.
+
+  Arkitektur:
+  - /demo/wesselslokka-rute med eget layout som wrapper alt i `.ws-theme`
+  - Custom header (wordmark, full nav, Facebook/Instagram, "Meld interesse"-CTA,
+    mobil-burger) + custom footer — egne React-komponenter
+  - Brand-palett hentet fra wesselslokka.no Squarespace:
+    teal ink #204c4c, pink CTA #e32d7a, vårgrønn #a0e885, cream bg #f7f4ec
+  - Fraunces variable font (SOFT + opsz axes) for display-følelse
+  - Delt ReportPage uendret — wesselslokka.css scoper overrides via
+    `.ws-theme [class*="text-[#1a1a1a]"] { color: var(--ws-ink) }` osv.
+    Samme komponent, to forskjellige looks uten fork.
+
+  Status: filer ble utviklet i worktree (placy-ralph-wesselslokka-demo,
+  branch feat/wesselslokka-demo hadde 0 commits — kun untracked). Flyttet
+  inn på main 2026-04-13 som c6397de da worktrees ble konsolidert.
+
+  Implikasjon: dette er malen for ~mange kunde-demoer fremover. Trenger
+  å diskuteres som eget spor (token-system? per-kunde theme-tabell?
+  whitelabel-pipeline?).
+status: done
+---
+date: 2026-04-13
+action: created
 files: [supabase/migrations/060_coachella_2026_demo.sql, app/event/[customer]/[project]/page.tsx, app/event/[customer]/[project]/layout.tsx, app/event/layout.tsx, lib/i18n/explorer-strings.ts, lib/themes/bransjeprofiler.ts, lib/hooks/useTravelTimes.ts, components/variants/explorer/ExplorerPage.tsx, components/variants/explorer/ExplorerPOIList.tsx, docs/solutions/ui-bugs/mapbox-markers-invisible-missing-css-EventRoute-20260413.md]
 summary: Coachella 2026 demo — full interaktiv festivalkart som proof-of-concept for Placy som event-plattform. Ny /event/-rute, engelsk UI, event-bransjeprofil med 6 tema-grupper, korrekte gangtider via luftlinje-beregning.
 detail: |
