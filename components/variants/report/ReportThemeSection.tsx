@@ -25,6 +25,8 @@ import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 import ReportMapDrawer from "./ReportMapDrawer";
+import BentoShowcase from "./blocks/BentoShowcase";
+import { getHverdagslivBento } from "./blocks/hverdagsliv-bento";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
@@ -244,9 +246,10 @@ export default function ReportThemeSection({
           </div>
         )}
 
-        {/* Optional banner illustration — placed under heading + intro, with breathing room below.
-            Uses natural aspect ratio per image (files are auto-cropped to content bounds). */}
-        {variant !== "secondary" && theme.image && (
+        {/* Bento-pilot flag — when active, banner illustration is suppressed (bento IS the visual) */}
+        {(() => { return null; })()}
+        {/* Optional banner illustration — hidden for themes with a bento showcase */}
+        {variant !== "secondary" && theme.image && theme.id !== "hverdagsliv" && (
           <div className="mt-4 mb-12 w-full">
             <Image
               src={theme.image.src}
@@ -260,6 +263,15 @@ export default function ReportThemeSection({
               priority={false}
             />
           </div>
+        )}
+
+        {/* PILOT: Bento showcase — Hverdagsliv only. Validates block-library approach. */}
+        {variant !== "secondary" && theme.id === "hverdagsliv" && theme.allPOIs.length > 0 && (
+          <BentoShowcase
+            sectionKicker="I nabolaget"
+            sectionTitle="Det du trenger, der du trenger det"
+            cells={getHverdagslivBento(theme.allPOIs, theme.stats, center)}
+          />
         )}
 
         {/* Upper narrative — over kortene (buss, bysykkel, sparkesykkel) */}
