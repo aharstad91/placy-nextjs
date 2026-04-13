@@ -122,7 +122,7 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
         projectName={reportData.projectName}
         themes={reportData.themes}
         heroIntro={reportData.heroIntro}
-        heroImage="/bekkeloep-dagtid.webp"
+        heroImage="/wesselslokka-illustrasjon-v2.png"
       />
 
       {/* Three-column layout: sidebar | content | balance */}

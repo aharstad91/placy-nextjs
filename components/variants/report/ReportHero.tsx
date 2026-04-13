@@ -21,58 +21,50 @@ export default function ReportHero({ projectName, themes, heroIntro, heroImage }
   };
 
   return (
-    <section className="bg-gradient-to-b from-[#faf9f7] via-[#faf9f7] to-white">
-      {/* Two-column intro — full bleed */}
-      <div className="grid grid-cols-1 md:grid-cols-2 min-h-[480px]">
-        {/* Left: text */}
-        <div className="flex flex-col justify-center px-8 md:px-16 lg:px-24 py-14 md:py-20 relative">
-          {/* Locale toggle */}
-          <div className="absolute top-6 right-8 md:right-16">
-            <ReportLocaleToggle />
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#1a1a1a] leading-tight mb-6">
-            {projectName}
-          </h1>
-
-          {heroIntro && (
-            <p className="text-lg md:text-xl text-[#6a6a6a] leading-relaxed max-w-xl mb-8">
-              {heroIntro}
-            </p>
-          )}
-
-          {/* Theme chips — in left column alongside intro */}
-          {themes.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
-              {themes.map((theme) => (
-                <ThemeChip
-                  key={theme.id}
-                  theme={theme}
-                  variant="scroll"
-                  onScrollTo={() => handleThemeClick(theme.id)}
-                />
-              ))}
-            </div>
-          )}
+    <section className="min-h-screen flex flex-col bg-white">
+      {/* Text — top, centered */}
+      <div className="relative px-8 pt-12 pb-8 max-w-xl mx-auto w-full text-center">
+        <div className="absolute top-4 right-4">
+          <ReportLocaleToggle />
         </div>
 
-        {/* Right: image — stretches to match left column height */}
-        {heroImage && (
-          <div className="hidden md:block pt-10 pr-12 pb-10">
-            <div className="relative h-full min-h-[360px] rounded-2xl overflow-hidden shadow-sm">
-              <Image
-                src={heroImage}
-                alt={projectName}
-                fill
-                className="object-cover"
-                priority
-                sizes="50vw"
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#1a1a1a] leading-tight mb-6">
+          {projectName}
+        </h1>
+
+        {heroIntro && (
+          <p className="text-lg md:text-xl text-[#6a6a6a] leading-relaxed mb-8">
+            {heroIntro}
+          </p>
+        )}
+
+        {themes.length > 0 && (
+          <div className="grid grid-cols-2 gap-2">
+            {themes.map((theme) => (
+              <ThemeChip
+                key={theme.id}
+                theme={theme}
+                variant="scroll"
+                onScrollTo={() => handleThemeClick(theme.id)}
               />
-            </div>
+            ))}
           </div>
         )}
       </div>
 
+      {/* Image — fills remaining height of 100vh section */}
+      {heroImage && (
+        <div className="relative flex-1">
+          <Image
+            src={heroImage}
+            alt={projectName}
+            fill
+            className="object-contain object-bottom"
+            priority
+            sizes="100vw"
+          />
+        </div>
+      )}
     </section>
   );
 }
