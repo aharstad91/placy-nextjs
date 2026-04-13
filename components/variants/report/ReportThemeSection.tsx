@@ -31,6 +31,8 @@ import FeatureCarousel from "./blocks/FeatureCarousel";
 import { getMatDrikkeCarousel } from "./blocks/matdrikke-carousel";
 import StatRow from "./blocks/StatRow";
 import { getTransportStats } from "./blocks/transport-stats";
+import TimelineRow from "./blocks/TimelineRow";
+import { getBarnTimeline, getBarnStats } from "./blocks/barn-timeline";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
@@ -304,6 +306,31 @@ export default function ReportThemeSection({
               }
               items={items}
             />
+          );
+        })()}
+
+        {/* PILOT: TimelineRow + StatRow — Barn & Aktivitet. Skole-progresjon
+            (barneskole → ungdomsskole → VGS) som timeline, støtte-stats under. */}
+        {variant !== "secondary" && theme.id === "barn-oppvekst" && theme.allPOIs.length > 0 && (() => {
+          const timelineNodes = getBarnTimeline(theme.allPOIs, center);
+          const statItems = getBarnStats(theme.allPOIs, center);
+          return (
+            <>
+              {timelineNodes && (
+                <TimelineRow
+                  sectionKicker="Skoleløpet"
+                  sectionTitle="Fra første klasse til videregående"
+                  nodes={timelineNodes}
+                />
+              )}
+              {statItems.length > 0 && (
+                <StatRow
+                  sectionKicker="Ellers i nabolaget"
+                  sectionTitle="Barnefamilien har alt nær"
+                  items={statItems}
+                />
+              )}
+            </>
           );
         })()}
 
