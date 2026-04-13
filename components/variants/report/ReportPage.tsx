@@ -6,19 +6,14 @@ import type { TranslationMap } from "@/lib/supabase/translations";
 import { transformToReportData, type ReportTheme } from "./report-data";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
-import { useActiveSection } from "@/lib/hooks/useActiveSection";
 import ReportHero from "./ReportHero";
-import ReportSidebarNav from "./ReportSidebarNav";
 import ReportThemeSection from "./ReportThemeSection";
-import ReportExplorerCTA from "./ReportExplorerCTA";
-import ReportClosing from "./ReportClosing";
 import ReportSummarySection from "./ReportSummarySection";
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
 
 interface ReportPageProps {
   project: Project;
-  explorerBaseUrl?: string | null;
   enTranslations?: TranslationMap;
   areaSlug?: string | null;
   /** Theme IDs from ?themes= param — themes not in this list are demoted to "Andre kategorier" */
@@ -33,7 +28,7 @@ export default function ReportPage(props: ReportPageProps) {
   );
 }
 
-function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSlug, primaryThemeIds }: ReportPageProps) {
+function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeIds }: ReportPageProps) {
   const { locale } = useLocale();
 
   const effectiveProject = useMemo(
@@ -61,10 +56,6 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
       secondaryThemes: reportData.themes.filter((t) => !selectedIds.has(t.id)),
     };
   }, [reportData.themes, primaryThemeIds]);
-
-  // Section tracking via IntersectionObserver (for registerSectionRef)
-  const initialThemeId = reportData.themes.length > 0 ? reportData.themes[0].id : null;
-  const { registerSectionRef, activeSectionId } = useActiveSection(initialThemeId);
 
   // Section reveal animation via IntersectionObserver
   const revealRef = useCallback((el: HTMLElement | null) => {
@@ -122,94 +113,61 @@ function ReportPageInner({ project, explorerBaseUrl, enTranslations = {}, areaSl
         projectName={reportData.projectName}
         themes={reportData.themes}
         heroIntro={reportData.heroIntro}
-        heroImage="/wesselslokka-illustrasjon-v2.png"
+        heroImage={reportData.heroImage}
       />
 
-      {/* Three-column layout: sidebar | content | balance */}
-      <div className="lg:grid lg:grid-cols-[220px_minmax(0,800px)_220px] lg:gap-16 lg:justify-center lg:px-8">
-        {/* Left: sticky sidebar nav (grid item stretches → nav can stick within) */}
-        <ReportSidebarNav
-          themes={reportData.themes}
-          activeSectionId={activeSectionId}
-        />
+      {/* Centered single-column layout — sidebar navigation removed in favour of a different approach */}
+      <div className="max-w-[800px] mx-auto w-full px-16">
+        {/* Primary themes */}
+        {primaryThemes.map((theme, i) => (
+          <div key={theme.id} ref={revealRef} className="report-section-reveal">
+            {i > 0 && <ThemeSeparator />}
+            <ReportThemeSection
+              theme={theme}
+              center={reportData.centerCoordinates}
+              projectName={reportData.projectName}
+              mapStyle={reportData.mapStyle}
+              areaSlug={areaSlug}
+            />
+          </div>
+        ))}
 
-        {/* Center: content column */}
-        <div className="max-w-[800px] mx-auto lg:mx-0 w-full">
-          {/* Theme sections */}
-          <div className="px-8 lg:px-0">
-            {/* Primary themes */}
-            {primaryThemes.map((theme, i) => (
+        {/* Secondary themes — demoted from welcome screen */}
+        {secondaryThemes.length > 0 && (
+          <>
+            <div className="py-8">
+              <div className="h-px bg-[#e8e4df]" />
+              <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mt-6 mb-2">
+                Andre kategorier
+              </p>
+            </div>
+            {secondaryThemes.map((theme, i) => (
               <div key={theme.id} ref={revealRef} className="report-section-reveal">
                 {i > 0 && <ThemeSeparator />}
                 <ReportThemeSection
                   theme={theme}
                   center={reportData.centerCoordinates}
                   projectName={reportData.projectName}
-                  registerRef={registerSectionRef(theme.id)}
                   mapStyle={reportData.mapStyle}
                   areaSlug={areaSlug}
+                  variant="secondary"
                 />
               </div>
             ))}
-
-            {/* Secondary themes — demoted from welcome screen */}
-            {secondaryThemes.length > 0 && (
-              <>
-                <div className="py-8">
-                  <div className="h-px bg-[#e8e4df]" />
-                  <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mt-6 mb-2">
-                    Andre kategorier
-                  </p>
-                </div>
-                {secondaryThemes.map((theme, i) => (
-                  <div key={theme.id} ref={revealRef} className="report-section-reveal">
-                    {i > 0 && <ThemeSeparator />}
-                    <ReportThemeSection
-                      theme={theme}
-                      center={reportData.centerCoordinates}
-                      projectName={reportData.projectName}
-                      registerRef={registerSectionRef(theme.id)}
-                      mapStyle={reportData.mapStyle}
-                      areaSlug={areaSlug}
-                      variant="secondary"
-                    />
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-
-          {/* Footer sections */}
-          <div className="px-8 lg:px-0">
-            <div className="grid grid-cols-12 gap-x-6">
-              {/* Explorer CTA */}
-              {explorerBaseUrl && project.pois.length > 0 && (
-                <ReportExplorerCTA
-                  pois={project.pois}
-                  center={reportData.centerCoordinates}
-                  explorerBaseUrl={explorerBaseUrl}
-                  totalPOIs={reportData.heroMetrics.totalPOIs}
-                />
-              )}
-
-              {/* Summary section — syntese, innsikter, megler, CTA */}
-              <ReportSummarySection
-                summary={reportData.summary}
-                brokers={reportData.brokers}
-                cta={reportData.cta}
-                projectTitle={reportData.projectName}
-                themesCount={reportData.themes.length}
-              />
-
-              {/* Attribution footer */}
-              <ReportClosing label={reportData.label} />
-            </div>
-          </div>
-        </div>
-
-        {/* Right: balance column (keeps content visually centered) */}
-        <div className="hidden lg:block" aria-hidden="true" />
+          </>
+        )}
       </div>
+
+      {/* Summary section — full-bleed hero-style layout mirroring ReportHero.
+          Sidebar exits naturally above since we're outside the 3-col grid. */}
+      <ReportSummarySection
+        summary={reportData.summary}
+        brokers={reportData.brokers}
+        cta={reportData.cta}
+        projectTitle={reportData.projectName}
+        themesCount={reportData.themes.length}
+        heroImage={reportData.heroImage}
+      />
     </div>
   );
 }

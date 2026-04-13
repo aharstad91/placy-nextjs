@@ -24,7 +24,7 @@ export default function ReportSidebarNav({
   const activeThemeId = activeSectionId?.split(":")[0] ?? null;
 
   return (
-    <aside className="hidden lg:block lg:pl-4 lg:pt-[5.875rem]">
+    <aside className="hidden lg:block lg:pt-[5.875rem]">
       <nav
         className="sticky top-10 self-start"
         aria-label="Kategori-navigasjon"

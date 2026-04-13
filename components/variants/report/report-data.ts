@@ -78,7 +78,44 @@ export interface ReportTheme {
   subSections?: ReportSubSection[];
   /** Trail/route overlay GeoJSON — only set for natur-friluftsliv theme */
   trails?: TrailCollection;
+  /** Optional banner illustration (auto-cropped, natural aspect). Rendered under heading + intro. */
+  image?: ThemeIllustration;
+  /** Optional hand-drawn icon (PNG). Replaces Lucide icon in heading when present. */
+  iconSrc?: string;
 }
+
+export interface ThemeIllustration {
+  src: string;
+  /** Intrinsic width after auto-crop (used by next/image for aspect-ratio hint — prevents layout shift). */
+  width: number;
+  /** Intrinsic height after auto-crop. */
+  height: number;
+}
+
+/**
+ * Per-theme illustrations shown under the heading+intro in ReportThemeSection.
+ * Files are auto-cropped to bounding box of non-white content (see scripts/crop_illustrations.py),
+ * so each image has its own natural aspect ratio. Dimensions kept in sync with cropped files.
+ */
+/** Per-theme hand-drawn icons (PNG). Add as we generate them. */
+const THEME_ICONS: Record<string, string> = {
+  hverdagsliv: "/illustrations/icons/hverdagsliv-icon.png",
+  "barn-oppvekst": "/illustrations/icons/barn-aktivitet-icon.png",
+  "mat-drikke": "/illustrations/icons/mat-drikke-icon.png",
+  opplevelser: "/illustrations/icons/opplevelser-icon.png",
+  "natur-friluftsliv": "/illustrations/icons/natur-friluftsliv-icon.png",
+  "trening-aktivitet": "/illustrations/icons/trening-aktivitet-icon.png",
+  transport: "/illustrations/icons/transport-mobilitet-icon.png",
+};
+
+const THEME_ILLUSTRATIONS: Record<string, ThemeIllustration> = {
+  hverdagsliv: { src: "/illustrations/hverdagsliv.jpg", width: 1220, height: 654 },
+  "barn-oppvekst": { src: "/illustrations/barn-aktivitet.jpg", width: 1255, height: 728 },
+  "mat-drikke": { src: "/illustrations/mat-drikke.jpg", width: 1188, height: 748 },
+  "natur-friluftsliv": { src: "/illustrations/natur-friluftsliv.jpg", width: 1219, height: 784 },
+  "trening-aktivitet": { src: "/illustrations/trening-aktivitet.jpg", width: 1226, height: 771 },
+  transport: { src: "/illustrations/transport-mobilitet.jpg", width: 1189, height: 728 },
+};
 
 export interface ReportData {
   projectName: string;
@@ -88,6 +125,7 @@ export interface ReportData {
   themes: ReportTheme[];
   label?: string;
   heroIntro?: string;
+  heroImage?: string;
   summary?: ReportSummary;
   brokers?: BrokerInfo[];
   cta?: ReportCTA;
@@ -479,6 +517,8 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       trails: themeDef.id === "natur-friluftsliv"
         ? project.reportConfig?.trails
         : undefined,
+      image: THEME_ILLUSTRATIONS[themeDef.id],
+      iconSrc: THEME_ICONS[themeDef.id],
     });
   }
 
@@ -501,6 +541,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     themes,
     label: rc?.label,
     heroIntro,
+    heroImage: rc?.heroImage,
     summary: rc?.summary,
     brokers: rc?.brokers,
     cta: rc?.cta,

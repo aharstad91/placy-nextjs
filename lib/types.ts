@@ -210,6 +210,8 @@ export interface ReportCTA {
 export interface ReportConfig {
   label?: string;
   heroIntro?: string;
+  /** Path (absolute or /public) til illustrasjon som vises i hero + summary. Optional. */
+  heroImage?: string;
   themes?: ReportThemeConfig[];
   summary?: ReportSummary;
   brokers?: BrokerInfo[];

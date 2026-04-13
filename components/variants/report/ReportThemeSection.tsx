@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import Image from "next/image";
 import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
@@ -8,6 +9,7 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { Star, MapPin, Map as MapIcon, X, Zap, Car, ExternalLink, Sparkles } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
+import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
 import ReportHeroInsight, { getHeroInsightPOIIds } from "./ReportHeroInsight";
 import {
   Popover,
@@ -207,22 +209,57 @@ export default function ReportThemeSection({
       className="py-16 md:py-24 scroll-mt-[7rem]"
     >
       <div className="md:max-w-4xl">
-        {/* Section heading */}
-        <div className="flex items-center gap-3 mb-4">
-          <Icon className={variant === "secondary" ? "w-5 h-5 text-[#a0937d]" : "w-6 h-6 text-[#7a7062]"} />
-          <h2 className={variant === "secondary"
-            ? "text-xl md:text-2xl font-semibold text-[#6a6a6a]"
-            : "text-2xl md:text-3xl font-semibold text-[#1a1a1a]"
-          }>
-            {theme.name}
-          </h2>
-        </div>
+        {/* Centered intro block — spot illustration, title, intro text. Editorial-magazine feel. */}
+        {variant !== "secondary" ? (
+          <div className="flex flex-col items-center text-center mb-8">
+            {theme.iconSrc && (
+              <Image
+                src={theme.iconSrc}
+                alt=""
+                aria-hidden="true"
+                width={288}
+                height={288}
+                className="w-32 h-32 md:w-36 md:h-36 select-none pointer-events-none mb-3"
+                draggable={false}
+              />
+            )}
+            {!theme.iconSrc && (
+              <Icon className="w-10 h-10 md:w-12 md:h-12 text-[#7a7062] mb-3" />
+            )}
+            <h2 className="text-3xl md:text-5xl font-semibold text-[#1a1a1a] tracking-tight mb-5">
+              {theme.name}
+            </h2>
+            {theme.bridgeText && (
+              <p className="text-xl md:text-2xl text-[#6a6a6a] leading-snug tracking-tight max-w-2xl">
+                {renderEmphasizedText(theme.bridgeText)}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 mb-5">
+            <Icon className="w-5 h-5 text-[#a0937d]" />
+            <h2 className="text-xl md:text-2xl font-semibold text-[#6a6a6a]">
+              {theme.name}
+            </h2>
+          </div>
+        )}
 
-        {/* Bridge text as sub-heading — generisk kategori-intro */}
-        {variant !== "secondary" && theme.bridgeText && (
-          <p className="text-lg md:text-xl italic text-[#5a5a5a] leading-relaxed mb-5">
-            {theme.bridgeText}
-          </p>
+        {/* Optional banner illustration — placed under heading + intro, with breathing room below.
+            Uses natural aspect ratio per image (files are auto-cropped to content bounds). */}
+        {variant !== "secondary" && theme.image && (
+          <div className="mt-4 mb-12 w-full">
+            <Image
+              src={theme.image.src}
+              alt=""
+              aria-hidden="true"
+              width={theme.image.width}
+              height={theme.image.height}
+              sizes="(min-width: 1024px) 800px, 100vw"
+              className="w-full h-auto select-none pointer-events-none"
+              draggable={false}
+              priority={false}
+            />
+          </div>
         )}
 
         {/* Upper narrative — over kortene (buss, bysykkel, sparkesykkel) */}

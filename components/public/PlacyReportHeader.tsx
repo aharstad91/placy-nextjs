@@ -34,10 +34,10 @@ export default function PlacyReportHeader({
 
   return (
     <header
-      className="sticky top-0 z-50 h-14 bg-primary text-primary-foreground"
+      className="h-14 bg-primary text-primary-foreground"
       style={{ backgroundColor: "hsl(var(--primary))" }}
     >
-      <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 flex items-center justify-between gap-4">
+      <div className="h-full px-16 flex items-center justify-between gap-4">
         {/* Venstre: tilbake-link */}
         {href && domain ? (
           <Link

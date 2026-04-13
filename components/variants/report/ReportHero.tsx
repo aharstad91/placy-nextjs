@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import type { ReportTheme } from "./report-data";
-import ReportLocaleToggle from "./ReportLocaleToggle";
 import ThemeChip from "@/components/shared/ThemeChip";
+import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
 
 interface ReportHeroProps {
   projectName: string;
@@ -21,50 +21,48 @@ export default function ReportHero({ projectName, themes, heroIntro, heroImage }
   };
 
   return (
-    <section className="min-h-screen flex flex-col bg-white">
-      {/* Text — top, centered */}
-      <div className="relative px-8 pt-12 pb-8 max-w-xl mx-auto w-full text-center">
-        <div className="absolute top-4 right-4">
-          <ReportLocaleToggle />
+    <section className="min-h-[66vh] flex flex-col bg-white">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2">
+        {/* Left: text */}
+        <div className="flex flex-col justify-center px-16 py-14">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#1a1a1a] leading-tight tracking-tight mb-6">
+            {projectName}
+          </h1>
+
+          {heroIntro && (
+            <p className="text-xl md:text-2xl text-[#6a6a6a] leading-snug tracking-tight mb-8">
+              {renderEmphasizedText(heroIntro)}
+            </p>
+          )}
+
+          {themes.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {themes.map((theme) => (
+                <ThemeChip
+                  key={theme.id}
+                  theme={theme}
+                  variant="scroll"
+                  onScrollTo={() => handleThemeClick(theme.id)}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#1a1a1a] leading-tight mb-6">
-          {projectName}
-        </h1>
-
-        {heroIntro && (
-          <p className="text-lg md:text-xl text-[#6a6a6a] leading-relaxed mb-8">
-            {heroIntro}
-          </p>
-        )}
-
-        {themes.length > 0 && (
-          <div className="grid grid-cols-2 gap-2">
-            {themes.map((theme) => (
-              <ThemeChip
-                key={theme.id}
-                theme={theme}
-                variant="scroll"
-                onScrollTo={() => handleThemeClick(theme.id)}
-              />
-            ))}
+        {/* Right: illustration */}
+        {heroImage && (
+          <div className="relative hidden md:block">
+            <Image
+              src={heroImage}
+              alt={projectName}
+              fill
+              className="object-contain object-center"
+              priority
+              sizes="50vw"
+            />
           </div>
         )}
       </div>
-
-      {/* Image — fills remaining height of 100vh section */}
-      {heroImage && (
-        <div className="relative flex-1">
-          <Image
-            src={heroImage}
-            alt={projectName}
-            fill
-            className="object-contain object-bottom"
-            priority
-            sizes="100vw"
-          />
-        </div>
-      )}
     </section>
   );
 }

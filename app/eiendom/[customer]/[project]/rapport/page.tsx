@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProductAsync, getProjectAsync, productExists } from "@/lib/data-server";
+import { getProductAsync, getProjectAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
 import { getAreaSlugForProject } from "@/lib/public-queries";
 import ReportPage from "@/components/variants/report/ReportPage";
@@ -41,10 +41,6 @@ export default async function EiendomReportPage({ params, searchParams }: PagePr
   const poiIds = projectData.pois.map((p) => p.id);
   const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
   const enTranslations = await getProjectTranslations("en", poiIds, themeIds, projectData.id);
-
-  // Check if explorer exists (for CTA link)
-  const hasExplorer = await productExists(customer, projectSlug, "explorer");
-  const explorerUrl = hasExplorer ? eiendomUrl(customer, projectSlug) : null;
 
   // Look up area slug for POI detail page links
   const areaSlug = await getAreaSlugForProject(projectData.id);
@@ -99,7 +95,6 @@ export default async function EiendomReportPage({ params, searchParams }: PagePr
       <main className="flex-1">
         <ReportPage
           project={projectData}
-          explorerBaseUrl={explorerUrl}
           enTranslations={enTranslations}
           areaSlug={areaSlug}
           primaryThemeIds={rawThemes}
