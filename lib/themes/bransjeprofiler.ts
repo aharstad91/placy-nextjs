@@ -167,6 +167,72 @@ const NAERING_THEMES: ThemeDefinition[] = [
 ];
 
 /**
+ * Event & Festival: 6 temaer for festivaler, konserter, og store arrangementer.
+ * Scener er sentrale; mat, fasiliteter og opplevelser gir oversikt over festivalområdet.
+ */
+const EVENT_THEMES: ThemeDefinition[] = [
+  {
+    id: "scener",
+    name: "Scener",
+    icon: "Music",
+    categories: [
+      "main_stage",
+      "outdoor_stage",
+      "tent_stage",
+      "dj_stage",
+      "art_stage",
+    ],
+    color: "#8b5cf6",
+  },
+  {
+    id: "mat-drikke-event",
+    name: "Mat & Drikke",
+    icon: "UtensilsCrossed",
+    categories: ["food_vendor", "bar_festival", "water_station", "vip_dining"],
+    color: "#ef4444",
+  },
+  {
+    id: "fasiliteter",
+    name: "Fasiliteter",
+    icon: "LifeBuoy",
+    categories: [
+      "restroom",
+      "medical",
+      "charging_festival",
+      "info_booth",
+      "lockers",
+    ],
+    color: "#22c55e",
+  },
+  {
+    id: "transport-event",
+    name: "Transport & Inngang",
+    icon: "DoorOpen",
+    categories: [
+      "entrance",
+      "parking_festival",
+      "shuttle",
+      "rideshare",
+    ],
+    color: "#3b82f6",
+  },
+  {
+    id: "opplevelser-event",
+    name: "Kunst & Opplevelser",
+    icon: "Sparkles",
+    categories: ["art_installation", "merch", "sponsor_activation", "lounge"],
+    color: "#f59e0b",
+  },
+  {
+    id: "camping",
+    name: "Camping",
+    icon: "Tent",
+    categories: ["campground", "glamping", "camping_hub", "camping_showers"],
+    color: "#10b981",
+  },
+];
+
+/**
  * All bransjeprofiler indexed by tag name.
  */
 export const BRANSJEPROFILER: Record<string, Bransjeprofil> = {
@@ -211,18 +277,24 @@ export const BRANSJEPROFILER: Record<string, Bransjeprofil> = {
   },
   /**
    * Event: Festivaler, åpne hus, kulturnetter, kunsthelger.
-   * Themes auto-genereres fra import-kategorier (Kulturnatt-mønsteret).
    * Høy total cap — event-data er kuratert, ikke scraped.
    */
   "Event": {
     tag: "Event",
-    themes: [],
+    themes: EVENT_THEMES,
     defaults: {
       radius: 5000,
       minRating: 0,
       venueType: "commercial",
     },
-    explorerCaps: {},
+    explorerCaps: {
+      "scener": 50,
+      "mat-drikke-event": 50,
+      "fasiliteter": 30,
+      "transport-event": 20,
+      "opplevelser-event": 30,
+      "camping": 20,
+    },
     explorerTotalCap: 999,
     features: {
       dayFilter: true,

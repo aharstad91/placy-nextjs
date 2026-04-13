@@ -6,6 +6,8 @@ import type { ThemeDefinition, BransjeprofilFeatures } from "@/lib/themes";
 import { buildCategoryToTheme } from "@/lib/themes";
 import { useEventDayFilter, useEventDays } from "@/lib/hooks/useEventDayFilter";
 import ExplorerDayFilter from "./ExplorerDayFilter";
+import type { Locale } from "@/lib/i18n/explorer-strings";
+import { getStrings } from "@/lib/i18n/explorer-strings";
 
 // Loading state machine for skeleton loading
 type LoadState = "initial" | "loading" | "loaded" | "error" | "refreshing";
@@ -59,9 +61,12 @@ interface ExplorerPageProps {
   initialCategories?: string[];
   features?: BransjeprofilFeatures;
   eventConfig?: EventConfig;
+  locale?: Locale;
+  useDirectDistance?: boolean;
 }
 
-export default function ExplorerPage({ project, themes, areaSlug, collection, initialPOI, initialCategories, features, eventConfig }: ExplorerPageProps) {
+export default function ExplorerPage({ project, themes, areaSlug, collection, initialPOI, initialCategories, features, eventConfig, locale = "no", useDirectDistance }: ExplorerPageProps) {
+  const t = useMemo(() => getStrings(locale), [locale]);
   const isCollectionView = !!collection;
   const categoryToTheme = useMemo(() => buildCategoryToTheme(themes), [themes]);
   const { travelMode, setTravelMode } = useTravelSettings();
@@ -213,12 +218,33 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
   }, [showKompass, kompassCompleted, kompassSelectedDay, setSelectedDay]);
 
   // Travel times — enriches POIs with walk times (uses GPS origin when near)
-  const { pois: poisWithTravelTimes, loading: travelTimesLoading, error: travelTimesError } = useTravelTimes(
+  // For festival venues, use direct (haversine) distance instead of Mapbox routing
+  // because Mapbox routes on roads around the venue instead of through the fields.
+  const directDistancePOIs = useMemo(() => {
+    if (!useDirectDistance) return null;
+    const WALK_SPEED_M_PER_MIN = 80; // ~5 km/h
+    const VENUE_FACTOR = 1.2; // slight overhead for walking paths within a venue
+    return eventFilteredPOIs.map((poi) => ({
+      ...poi,
+      travelTime: {
+        ...poi.travelTime,
+        walk: Math.max(1, Math.round(
+          (haversineDistance(throttledOrigin, poi.coordinates) * VENUE_FACTOR) / WALK_SPEED_M_PER_MIN
+        )),
+      },
+    }));
+  }, [useDirectDistance, eventFilteredPOIs, throttledOrigin]);
+
+  const { pois: mapboxTravelPOIs, loading: mapboxLoading, error: mapboxError } = useTravelTimes(
     project.id,
     throttledOrigin,
     eventFilteredPOIs,
-    { skipCache: geo.mode === "gps-near" }
+    { skipCache: geo.mode === "gps-near", disabled: !!useDirectDistance }
   );
+
+  const poisWithTravelTimes = directDistancePOIs ?? mapboxTravelPOIs;
+  const travelTimesLoading = useDirectDistance ? false : mapboxLoading;
+  const travelTimesError = useDirectDistance ? null : mapboxError;
 
   // Loading state machine for skeleton loading
   const [loadState, setLoadState] = useState<LoadState>("initial");
@@ -508,15 +534,15 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
         const editorialCount = visiblePOIs.filter(
           (p) => p.editorialHook
         ).length;
-        if (editorialCount > 0) {
+        if (editorialCount > 0 && locale === "no") {
           return `${visiblePOIs.length} steder i dette området — ${editorialCount} med lokaltips`;
         }
-        return `${maxCount} ${maxCategory.toLowerCase()} i dette området`;
+        return t.placesInArea(maxCount, maxCategory);
       }
     }
 
     if (visiblePOIs.length > 0) {
-      return `${visiblePOIs.length} steder i synsfeltet`;
+      return t.placesInView(visiblePOIs.length);
     }
 
     return null;
@@ -547,6 +573,7 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
     travelMode,
     themes,
     areaSlug,
+    locale,
     // Skeleton loading state
     showSkeleton,
     showContent,
@@ -629,14 +656,16 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
 
   // Announcement text for screen readers
   const loadingAnnouncement = useMemo(() => {
-    if (loadState === "loading") return "Laster steder...";
+    if (loadState === "loading") return t.loadingPlaces;
     if (loadState === "loaded" && sortedVisiblePOIs.length > 0) {
-      return `${sortedVisiblePOIs.length} steder lastet`;
+      return locale === "en"
+        ? `${sortedVisiblePOIs.length} places loaded`
+        : `${sortedVisiblePOIs.length} steder lastet`;
     }
-    if (loadState === "refreshing") return "Oppdaterer reisetider...";
-    if (loadState === "error") return "Kunne ikke laste reisetider";
+    if (loadState === "refreshing") return t.updating;
+    if (loadState === "error") return locale === "en" ? "Could not load travel times" : "Kunne ikke laste reisetider";
     return "";
-  }, [loadState, sortedVisiblePOIs.length]);
+  }, [loadState, sortedVisiblePOIs.length, t, locale]);
 
   return (
     <div className="h-[calc(100vh-3rem)] w-screen relative overflow-hidden bg-white">
@@ -692,14 +721,14 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
               <span className={cn(
                 "text-base font-semibold transition-colors duration-200",
                 collectionFlash ? "text-white" : "text-gray-800"
-              )}>Min samling</span>
+              )}>{t.myCollection}</span>
               <p className={cn(
                 "text-sm mt-0.5 truncate transition-colors duration-200",
                 collectionFlash ? "text-sky-100" : "text-gray-500"
               )}>
                 {collectionPOIs.length === 0
-                  ? "Lagre steder du liker med +"
-                  : `${collectionPOIs.length} ${collectionPOIs.length === 1 ? "sted" : "steder"} lagret — trykk for å se`}
+                  ? t.savePlacesHint
+                  : t.placesSaved(collectionPOIs.length)}
               </p>
             </div>
             {collectionPOIs.length > 0 && (
@@ -753,14 +782,14 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
                 <span className={cn(
                   "text-sm font-semibold transition-colors duration-200",
                   collectionFlash ? "text-white" : "text-gray-800"
-                )}>Min samling</span>
+                )}>{t.myCollection}</span>
                 <p className={cn(
                   "text-xs mt-0.5 truncate transition-colors duration-200",
                   collectionFlash ? "text-sky-100" : "text-gray-500"
                 )}>
                   {collectionPOIs.length === 0
-                    ? "Lagre steder du liker"
-                    : `${collectionPOIs.length} ${collectionPOIs.length === 1 ? "sted" : "steder"} lagret`}
+                    ? t.savePlacesHint
+                    : t.placesSaved(collectionPOIs.length)}
                 </p>
               </div>
               {collectionPOIs.length > 0 && (

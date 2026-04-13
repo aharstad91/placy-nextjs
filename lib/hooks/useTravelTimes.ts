@@ -69,17 +69,22 @@ export function useTravelTimes(
   projectId: string,
   projectCenter: Coordinates,
   pois: POI[],
-  options?: { skipCache?: boolean }
+  options?: { skipCache?: boolean; disabled?: boolean }
 ): TravelTimesResult {
   const skipCache = options?.skipCache ?? false;
+  const disabled = options?.disabled ?? false;
   const { travelMode } = useTravelSettings();
   const [result, setResult] = useState<TravelTimesResult>({
     pois: pois,
-    loading: true,
+    loading: !disabled,
     error: null,
   });
 
   const fetchTravelTimes = useCallback(async () => {
+    if (disabled) {
+      setResult({ pois, loading: false, error: null });
+      return;
+    }
     if (!projectCenter || pois.length === 0) {
       setResult({
         pois: pois,

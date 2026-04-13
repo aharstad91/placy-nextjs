@@ -6,6 +6,8 @@ import type { OpeningHoursData } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
 import { Compass, ChevronDown, Check, Footprints, Bike, Car } from "lucide-react";
 import type { ThemeDefinition } from "@/lib/themes";
+import type { Locale } from "@/lib/i18n/explorer-strings";
+import { getStrings } from "@/lib/i18n/explorer-strings";
 import ExplorerPOICard from "./ExplorerPOICard";
 import ExplorerThemeChips from "./ExplorerThemeChips";
 import ExplorerDayFilter from "./ExplorerDayFilter";
@@ -57,13 +59,22 @@ interface ExplorerPOIListProps {
   kompassRecommendedCount?: number;
   kompassCompleted?: boolean;
   onEditKompassFilter?: () => void;
+  locale?: Locale;
 }
 
-const travelModeConfig: { mode: TravelMode; label: string; Icon: typeof Footprints }[] = [
-  { mode: "walk", label: "Til fots", Icon: Footprints },
-  { mode: "bike", label: "Sykkel", Icon: Bike },
-  { mode: "car", label: "Bil", Icon: Car },
-];
+const travelModeLabels = {
+  no: { walk: "Til fots", bike: "Sykkel", car: "Bil" },
+  en: { walk: "Walking", bike: "Bicycle", car: "Car" },
+} as const;
+
+function getTravelModeConfig(locale: Locale = "no") {
+  const labels = travelModeLabels[locale];
+  return [
+    { mode: "walk" as TravelMode, label: labels.walk, Icon: Footprints },
+    { mode: "bike" as TravelMode, label: labels.bike, Icon: Bike },
+    { mode: "car" as TravelMode, label: labels.car, Icon: Car },
+  ];
+}
 
 export default function ExplorerPOIList({
   pois,
@@ -102,7 +113,10 @@ export default function ExplorerPOIList({
   kompassRecommendedCount = 0,
   kompassCompleted = false,
   onEditKompassFilter,
+  locale = "no",
 }: ExplorerPOIListProps) {
+  const t = useMemo(() => getStrings(locale), [locale]);
+  const travelModeConfig = useMemo(() => getTravelModeConfig(locale), [locale]);
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const travelDropdownRef = useRef<HTMLDivElement>(null);
@@ -149,14 +163,14 @@ export default function ExplorerPOIList({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-gray-900">
-              {projectName ? `Utforsk ${projectName}` : "Utforsk nabolaget"}
+              {projectName ? t.exploreProject(projectName) : t.explore}
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
               {showSkeleton ? (
-                <span className="text-sky-500 animate-pulse">Laster steder…</span>
+                <span className="text-sky-500 animate-pulse">{t.loadingPlaces}</span>
               ) : (
                 <>
-                  {visibleCount} av {totalCount} steder synlige
+                  {t.placesVisible(visibleCount, totalCount)}
                   {isRefreshing && (
                     <span className="text-sky-500 animate-pulse ml-2">
                       Oppdaterer…
@@ -326,7 +340,7 @@ export default function ExplorerPOIList({
                   <div className="flex flex-col items-center justify-center h-full text-center px-12 py-12">
                     <Compass className="w-10 h-10 text-gray-300 mb-3" />
                     <p className="text-sm text-gray-400">
-                      Panorer eller zoom kartet for å se steder her
+                      {t.panToDiscover}
                     </p>
                   </div>
                 ) : (
