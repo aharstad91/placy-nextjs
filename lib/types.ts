@@ -287,6 +287,8 @@ export interface ProjectContainer {
   defaultProduct: ProductType;
   /** White-label theme configuration */
   theme?: ProjectTheme;
+  /** URL til kundens hjemmeside — brukes i rapport-shell som tilbake-link og i footer */
+  homepageUrl?: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -349,6 +351,8 @@ export interface Project {
   tripConfig?: TripConfig;
   /** Per-project white-label theme (CSS overrides) */
   theme?: ProjectTheme;
+  /** URL til kundens hjemmeside — brukes i rapport-shell som tilbake-link og i footer */
+  homepageUrl?: string | null;
 }
 
 // === Global State ===
