@@ -26,7 +26,7 @@ import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 import ReportMapDrawer from "./ReportMapDrawer";
 import BentoShowcase from "./blocks/BentoShowcase";
-import { getHverdagslivBento } from "./blocks/hverdagsliv-bento";
+import { getValentinlystBento, getHverdagslivHorizonCell } from "./blocks/hverdagsliv-bento";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
@@ -265,14 +265,23 @@ export default function ReportThemeSection({
           </div>
         )}
 
-        {/* PILOT: Bento showcase — Hverdagsliv only. Validates block-library approach. */}
-        {variant !== "secondary" && theme.id === "hverdagsliv" && theme.allPOIs.length > 0 && (
-          <BentoShowcase
-            sectionKicker="I nabolaget"
-            sectionTitle="Det du trenger, der du trenger det"
-            cells={getHverdagslivBento(theme.allPOIs, theme.stats, center)}
-          />
-        )}
+        {/* PILOT: Bento showcase — Hverdagsliv. Rendyrket rundt Valentinlyst Senter
+            (ETT subjekt, alle celler handler om det). Horisont-kortet rendres som egen
+            blokk under. */}
+        {variant !== "secondary" && theme.id === "hverdagsliv" && (() => {
+          const bentoCells = getValentinlystBento(theme.allPOIs, center);
+          if (!bentoCells) return null;
+          return (
+            <>
+              <BentoShowcase
+                sectionKicker="Nabolagets nav"
+                sectionTitle="Alt i Valentinlyst Senter"
+                cells={bentoCells}
+              />
+              <BentoShowcase cells={[getHverdagslivHorizonCell()]} />
+            </>
+          );
+        })()}
 
         {/* Upper narrative — over kortene (buss, bysykkel, sparkesykkel) */}
         {variant !== "secondary" && upperSegments.length > 0 && (

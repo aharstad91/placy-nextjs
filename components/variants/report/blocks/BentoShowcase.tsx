@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { getIcon } from "@/lib/utils/map-icons";
 import type { LucideIcon } from "lucide-react";
+import { ExternalLink, Sparkles } from "lucide-react";
 
 /**
  * BentoShowcase — Apple-inspired bento grid for highlighting the most interesting
@@ -40,6 +41,19 @@ export interface BentoCell {
   iconName?: string;
   /** Optional custom icon component — used when you want a specific Lucide */
   IconComponent?: LucideIcon;
+  /** Optional action buttons rendered at cell bottom (hero cells mostly) */
+  actions?: BentoAction[];
+  /** Optional compact footer — small pill list of additional items (e.g. "og mer" row) */
+  pills?: Array<{ label: string; iconName?: string; color?: string }>;
+}
+
+export interface BentoAction {
+  label: string;
+  url: string;
+  /** "primary" = solid contrast; "ghost" = translucent */
+  variant: "primary" | "ghost";
+  /** "external" adds ExternalLink icon; "sparkles" adds Sparkles icon */
+  icon?: "external" | "sparkles";
 }
 
 export interface BentoShowcaseProps {
@@ -100,6 +114,41 @@ export default function BentoShowcase({
         ))}
       </div>
     </div>
+  );
+}
+
+function BentoActionButton({
+  action,
+  onDark,
+}: {
+  action: BentoAction;
+  onDark: boolean;
+}) {
+  const Icon = action.icon === "sparkles" ? Sparkles : action.icon === "external" ? ExternalLink : null;
+
+  const classes =
+    action.variant === "primary"
+      ? onDark
+        ? "bg-white text-[#1a2a1a] hover:bg-white/90"
+        : "bg-[#22c55e] text-white hover:bg-[#16a34a]"
+      : onDark
+        ? "bg-white/12 text-white border border-white/35 hover:bg-white/20 backdrop-blur-sm"
+        : "bg-white text-[#15803d] border border-[#22c55e]/35 hover:bg-[#22c55e]/5";
+
+  return (
+    <a
+      href={action.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className={[
+        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+        classes,
+      ].join(" ")}
+    >
+      {Icon && <Icon className="w-3.5 h-3.5" />}
+      {action.label}
+    </a>
   );
 }
 
@@ -182,8 +231,9 @@ function BentoCell({ cell }: { cell: BentoCell }) {
           )}
         </div>
 
-        {/* Main: push to bottom with mt-auto */}
-        <div className="mt-auto">
+        {/* Main content. Pill-heavy rows hug the top (kicker + title + pills read as a block);
+            other cells push content to bottom so kicker sits alone at top and main body anchors. */}
+        <div className={cell.pills && cell.pills.length > 0 ? "mt-3" : "mt-auto"}>
           {cell.stat && (
             <div className="flex items-baseline gap-1.5 mb-2">
               <span className={`text-4xl md:text-5xl font-semibold tracking-tight ${textClass}`}>
@@ -221,6 +271,47 @@ function BentoCell({ cell }: { cell: BentoCell }) {
             >
               {cell.body}
             </p>
+          )}
+
+          {cell.pills && cell.pills.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {cell.pills.map((pill, i) => {
+                const PillIcon = pill.iconName ? (getIcon(pill.iconName) as LucideIcon) : null;
+                return (
+                  <span
+                    key={i}
+                    className={[
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+                      isDominant
+                        ? "bg-white/15 text-white backdrop-blur-sm"
+                        : tone === "night"
+                          ? "bg-white/10 text-[#e8d0bb]"
+                          : "bg-white/70 text-[#3a3530]",
+                    ].join(" ")}
+                  >
+                    {PillIcon && (
+                      <PillIcon
+                        className="w-3 h-3 shrink-0"
+                        style={pill.color ? { color: pill.color } : undefined}
+                      />
+                    )}
+                    {pill.label}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {cell.actions && cell.actions.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {cell.actions.map((action, i) => (
+                <BentoActionButton
+                  key={i}
+                  action={action}
+                  onDark={isDominant || tone === "night"}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
