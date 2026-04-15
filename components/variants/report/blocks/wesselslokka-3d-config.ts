@@ -6,16 +6,19 @@ import type { POI, Category } from "@/lib/types";
  * POIer er dummy-data for MVP — erstattes med ekte rapport-data i fase 2.
  */
 
-/** Fast kamera-senter og lås-bounds rundt Wesselsløkka. */
+/**
+ * Default kamera-senter (fallback).
+ * Faktisk senter hentes fra prosjekt-data og sendes inn som prop.
+ */
 export const WESSELSLOKKA_CENTER = {
-  lat: 63.42,
-  lng: 10.463,
+  lat: 63.422074,
+  lng: 10.450617,
   altitude: 0,
 };
 
 /**
- * Deklarative lås-grenser for Map3D-props.
- * Ingen native minRange/maxRange → range lås via snap-back event-listener.
+ * Kameraprofil. Bounds beregnes dynamisk rundt faktisk center i MapView3D.
+ * Ingen native minRange/maxRange → range-lås via snap-back event-listener.
  */
 export const WESSELSLOKKA_CAMERA_LOCK = {
   // range = avstand fra kamera til center (meter). Låst via snap-back.
@@ -25,13 +28,6 @@ export const WESSELSLOKKA_CAMERA_LOCK = {
   // Tilt-range: brukeren kan tilte mellom 20° (nesten ovenfra) og 75° (skrått nedover mot horisonten)
   minTilt: 20,
   maxTilt: 75,
-  // Bounds holder center-panoreringen stramt rundt center — snap-back catches det som slipper gjennom.
-  bounds: {
-    south: 63.4195,
-    north: 63.4205,
-    west: 10.4625,
-    east: 10.4635,
-  },
 } as const;
 
 /** Rapportens tab-kategorier (i visningsrekkefølge). */

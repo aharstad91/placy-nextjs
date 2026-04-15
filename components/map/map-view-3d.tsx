@@ -34,7 +34,8 @@ export interface CameraLock {
   minTilt?: number;
   /** Øvre tilt-grense (default = samme som tilt, dvs. låst) */
   maxTilt?: number;
-  bounds: {
+  /** Valgfri — hvis utelatt beregnes en stram lås-boks rundt center. */
+  bounds?: {
     south: number;
     north: number;
     west: number;
@@ -85,32 +86,48 @@ function CameraController({
       center: { lat: number; lng: number; altitude: number };
     };
 
+    // Flag som hindrer rekursive snap-back-events når vi selv skriver
+    // nye verdier (vår skriving trigger samme gmp-*-change-event).
+    let applyingSnap = false;
+
     // ── Snap-back: range + center ────────────────────────────────────
     const onRangeChange = () => {
-      if (anyMap.range !== range) anyMap.range = range;
+      if (applyingSnap) return;
+      if (anyMap.range !== range) {
+        applyingSnap = true;
+        anyMap.range = range;
+        applyingSnap = false;
+      }
     };
 
     const onCenterChange = () => {
+      if (applyingSnap) return;
       const c = anyMap.center;
-      if (
-        !c ||
-        Math.abs(c.lat - center.lat) > 1e-6 ||
-        Math.abs(c.lng - center.lng) > 1e-6
-      ) {
+      if (!c) return;
+      if (c.lat !== center.lat || c.lng !== center.lng) {
+        applyingSnap = true;
         anyMap.center = {
           lat: center.lat,
           lng: center.lng,
           altitude: center.altitude ?? 0,
         };
+        applyingSnap = false;
       }
     };
 
-    // Klemm tilt til [minTilt, maxTilt] — snap-back hvis utenfor.
     const onTiltChange = () => {
+      if (applyingSnap) return;
       const t = anyMap.tilt;
       if (typeof t !== "number") return;
-      if (t < minTilt) anyMap.tilt = minTilt;
-      else if (t > maxTilt) anyMap.tilt = maxTilt;
+      if (t < minTilt) {
+        applyingSnap = true;
+        anyMap.tilt = minTilt;
+        applyingSnap = false;
+      } else if (t > maxTilt) {
+        applyingSnap = true;
+        anyMap.tilt = maxTilt;
+        applyingSnap = false;
+      }
     };
 
     map3d.addEventListener("gmp-rangechange", onRangeChange);
@@ -118,18 +135,48 @@ function CameraController({
     map3d.addEventListener("gmp-tiltchange", onTiltChange);
 
     // ── Drag-to-rotate/tilt: kun i aktivert modus ────────────────────
-    // I preview-modus (activated=false) brukes overlay-knappen til å åpne modalen.
     let dragging = false;
     let startX = 0;
     let startY = 0;
     let startHeading = 0;
     let startTilt = 0;
     let pointerId: number | null = null;
+    let rafId: number | null = null;
+    let pendingHeading: number | null = null;
+    let pendingTilt: number | null = null;
     const DRAG_THRESHOLD = 3; // px — skill klikk fra drag
 
-    const onPointerDown = (e: PointerEvent) => {
+    // Batch oppdateringer til frame-grensen. Forhindrer at vi kjemper
+    // mot Googles egen render-loop ved hver pointermove.
+    const flush = () => {
+      rafId = null;
+      applyingSnap = true;
+      if (pendingHeading != null) anyMap.heading = pendingHeading;
+      if (pendingTilt != null) anyMap.tilt = pendingTilt;
+      // Tving senter tilbake samtidig — ingen visuell pan-jitter.
+      if (
+        anyMap.center?.lat !== center.lat ||
+        anyMap.center?.lng !== center.lng
+      ) {
+        anyMap.center = {
+          lat: center.lat,
+          lng: center.lng,
+          altitude: center.altitude ?? 0,
+        };
+      }
+      applyingSnap = false;
+      pendingHeading = null;
+      pendingTilt = null;
+    };
+
+    const scheduleFlush = () => {
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(flush);
+    };
+
+    // CAPTURE phase: vi kjører FØR Googles egne handlers og kan stoppe dem.
+    const onPointerDownCapture = (e: PointerEvent) => {
       if (!activated) return;
-      // Primary-button only, ingen shift (la Google håndtere shift+drag)
       if (e.button !== 0 || e.shiftKey || e.ctrlKey || e.metaKey) return;
       dragging = true;
       startX = e.clientX;
@@ -140,38 +187,47 @@ function CameraController({
       try {
         (map3d as unknown as Element).setPointerCapture?.(e.pointerId);
       } catch {
-        // ignore — browser may not support
+        // ignore
       }
+      // IKKE preventDefault her — gjør vi det, blir pin-klikk (gmp-click) drept.
+      // preventDefault aktiveres kun når bruker faktisk drar (i pointermove).
     };
 
-    const onPointerMove = (e: PointerEvent) => {
+    const onPointerMoveCapture = (e: PointerEvent) => {
       if (!dragging) return;
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
       const moved = Math.max(Math.abs(deltaX), Math.abs(deltaY));
       if (moved < DRAG_THRESHOLD) return;
 
+      // Drag erkjent — stopp Googles pan-gesture fullstendig.
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
       const rect = (map3d as unknown as Element).getBoundingClientRect();
 
-      // Horisontalt: full map-bredde = 180° rotasjon
+      // Horisontal: full bredde = 180° rotasjon
       const degreesPerPxX = 180 / (rect.width || 600);
       let newHeading = startHeading - deltaX * degreesPerPxX;
       newHeading = ((newHeading % 360) + 360) % 360;
-      anyMap.heading = newHeading;
+      pendingHeading = newHeading;
 
-      // Vertikalt: full map-høyde = tilt-spennet. Dra opp → mindre tilt (mer ovenfra)
+      // Vertikal: full høyde = tilt-spennet
       const tiltSpan = maxTilt - minTilt;
       const degreesPerPxY = tiltSpan / (rect.height || 400);
       let newTilt = startTilt + deltaY * degreesPerPxY;
       if (newTilt < minTilt) newTilt = minTilt;
       if (newTilt > maxTilt) newTilt = maxTilt;
-      anyMap.tilt = newTilt;
+      pendingTilt = newTilt;
 
-      e.preventDefault();
+      scheduleFlush();
     };
 
-    const onPointerEnd = () => {
+    const onPointerEndCapture = (e: PointerEvent) => {
       if (!dragging) return;
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      const wasDragging = Math.max(Math.abs(deltaX), Math.abs(deltaY)) >= DRAG_THRESHOLD;
       dragging = false;
       if (pointerId != null) {
         try {
@@ -181,21 +237,32 @@ function CameraController({
         }
       }
       pointerId = null;
+      if (rafId != null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      if (pendingHeading != null || pendingTilt != null) flush();
+      // Hvis det var et drag, spis up-eventet så Google ikke tolker det som slutten av en pan.
+      if (wasDragging) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
     };
 
-    map3d.addEventListener("pointerdown", onPointerDown);
-    map3d.addEventListener("pointermove", onPointerMove);
-    map3d.addEventListener("pointerup", onPointerEnd);
-    map3d.addEventListener("pointercancel", onPointerEnd);
+    map3d.addEventListener("pointerdown", onPointerDownCapture, { capture: true });
+    map3d.addEventListener("pointermove", onPointerMoveCapture, { capture: true });
+    map3d.addEventListener("pointerup", onPointerEndCapture, { capture: true });
+    map3d.addEventListener("pointercancel", onPointerEndCapture, { capture: true });
 
     return () => {
       map3d.removeEventListener("gmp-rangechange", onRangeChange);
       map3d.removeEventListener("gmp-centerchange", onCenterChange);
       map3d.removeEventListener("gmp-tiltchange", onTiltChange);
-      map3d.removeEventListener("pointerdown", onPointerDown);
-      map3d.removeEventListener("pointermove", onPointerMove);
-      map3d.removeEventListener("pointerup", onPointerEnd);
-      map3d.removeEventListener("pointercancel", onPointerEnd);
+      map3d.removeEventListener("pointerdown", onPointerDownCapture, { capture: true } as EventListenerOptions);
+      map3d.removeEventListener("pointermove", onPointerMoveCapture, { capture: true } as EventListenerOptions);
+      map3d.removeEventListener("pointerup", onPointerEndCapture, { capture: true } as EventListenerOptions);
+      map3d.removeEventListener("pointercancel", onPointerEndCapture, { capture: true } as EventListenerOptions);
+      if (rafId != null) cancelAnimationFrame(rafId);
     };
   }, [map3d, center, range, minTilt, maxTilt, activated]);
 
@@ -213,6 +280,15 @@ function Map3DInner({
   const minTilt = cameraLock.minTilt ?? cameraLock.tilt;
   const maxTilt = cameraLock.maxTilt ?? cameraLock.tilt;
 
+  // Beregn stram lås-boks rundt senter hvis ikke eksplisitt oppgitt.
+  // 1e-5 grader ≈ 1 meter — gir Google praktisk talt ingen rom for pan.
+  const bounds = cameraLock.bounds ?? {
+    south: center.lat - 1e-5,
+    north: center.lat + 1e-5,
+    west: center.lng - 1e-5,
+    east: center.lng + 1e-5,
+  };
+
   return (
     <Map3D
       mode={MapMode.SATELLITE}
@@ -226,7 +302,7 @@ function Map3DInner({
       defaultHeading={0}
       minTilt={minTilt}
       maxTilt={maxTilt}
-      bounds={cameraLock.bounds}
+      bounds={bounds}
       defaultUIHidden
       style={{ width: "100%", height: "100%" }}
     >
