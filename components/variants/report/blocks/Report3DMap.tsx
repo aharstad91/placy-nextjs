@@ -131,6 +131,12 @@ export default function Report3DMap({
             cameraLock={WESSELSLOKKA_CAMERA_LOCK}
             pois={WESSELSLOKKA_POIS}
             activated={false}
+            projectSite={{
+              lat: mapCenter.lat,
+              lng: mapCenter.lng,
+              name: projectName,
+              subtitle: "Nybygg 2028",
+            }}
           />
 
           {/* Gradient-overlay som skiller CTA fra kartet */}
@@ -236,6 +242,12 @@ export default function Report3DMap({
               onPOIClick={handlePOIClick}
               onMapReady={handleMapReady}
               activated
+              projectSite={{
+                lat: mapCenter.lat,
+                lng: mapCenter.lng,
+                name: projectName,
+                subtitle: "Nybygg 2028",
+              }}
             />
 
             {selectedPOI && (
