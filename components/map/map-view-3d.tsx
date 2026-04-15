@@ -117,35 +117,30 @@ function Map3DInner({
 
   // Bruker Googles native gesture-handling. Bounds + altitude-grenser
   // håndheves av Google i WebGL → butter smooth, ingen JS-kamp.
+  // Map3DControls må være SØSKEN til Map3D (ikke barn), ellers blir
+  // div-ene absorbert i custom element sin shadow DOM.
   return (
-    <Map3D
-      mode={MapMode.SATELLITE}
-      defaultCenter={{
-        lat: center.lat,
-        lng: center.lng,
-        altitude: center.altitude ?? 0,
-      }}
-      defaultRange={cameraLock.range}
-      defaultTilt={cameraLock.tilt}
-      defaultHeading={0}
-      bounds={bounds}
-      minTilt={minTilt}
-      maxTilt={maxTilt}
-      minAltitude={minAltitude}
-      maxAltitude={maxAltitude}
-      defaultUIHidden
-      style={{ width: "100%", height: "100%" }}
-    >
-      <MapReadyBridge onReady={onMapReady} />
-      {activated && (
-        <Map3DControls
-          minTilt={minTilt ?? 15}
-          maxTilt={maxTilt ?? 75}
-          minAltitude={minAltitude ?? 100}
-          maxAltitude={maxAltitude ?? 5000}
-        />
-      )}
-      {pois.map((poi) => {
+    <div className="relative w-full h-full">
+      <Map3D
+        mode={MapMode.SATELLITE}
+        defaultCenter={{
+          lat: center.lat,
+          lng: center.lng,
+          altitude: center.altitude ?? 0,
+        }}
+        defaultRange={cameraLock.range}
+        defaultTilt={cameraLock.tilt}
+        defaultHeading={0}
+        bounds={bounds}
+        minTilt={minTilt}
+        maxTilt={maxTilt}
+        minAltitude={minAltitude}
+        maxAltitude={maxAltitude}
+        defaultUIHidden
+        style={{ width: "100%", height: "100%" }}
+      >
+        <MapReadyBridge onReady={onMapReady} />
+        {pois.map((poi) => {
         const Icon = getIcon(poi.category.icon);
         const isActive = activePOIId === poi.id;
         return (
@@ -168,7 +163,16 @@ function Map3DInner({
           </Marker3D>
         );
       })}
-    </Map3D>
+      </Map3D>
+      {activated && (
+        <Map3DControls
+          minTilt={minTilt ?? 15}
+          maxTilt={maxTilt ?? 75}
+          minAltitude={minAltitude ?? 100}
+          maxAltitude={maxAltitude ?? 5000}
+        />
+      )}
+    </div>
   );
 }
 
