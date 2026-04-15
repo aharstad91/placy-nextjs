@@ -9,15 +9,18 @@ import {
 } from "@/components/ui/sheet";
 import { MapView3D, type Map3DInstance } from "@/components/map/map-view-3d";
 import ReportMapDrawer from "../ReportMapDrawer";
+import { calculateDistance } from "@/lib/utils/geo";
+import type { POI } from "@/lib/types";
 import {
-  WESSELSLOKKA_CENTER,
-  WESSELSLOKKA_CAMERA_LOCK,
-  WESSELSLOKKA_POIS,
-  WESSELSLOKKA_TAB_IDS,
-  WESSELSLOKKA_TAB_LABELS,
+  DEFAULT_CAMERA_LOCK,
+  MAP3D_TAB_IDS,
+  MAP3D_TAB_LABELS,
   filterPoisByTab,
-  type WesselslokkaTabId,
-} from "./wesselslokka-3d-config";
+  type Map3DTabId,
+} from "./report-3d-config";
+
+const NEAR_THRESHOLD_M = 1200;
+const FAR_OPACITY = 0.3;
 
 /**
  * Report3DMap — blokk for "Alt rundt [område]"-seksjonen.
@@ -28,20 +31,32 @@ import {
 interface Report3DMapProps {
   areaSlug?: string | null;
   projectName?: string;
-  /** Faktisk senter for prosjektet. Faller tilbake til config-default hvis utelatt. */
+  /** Senter for prosjektet — brukes til distanseberegning og kamerasenter. */
   center?: { lat: number; lng: number };
+  /** Ekte POIs fra prosjektet. */
+  pois: POI[];
 }
 
 export default function Report3DMap({
   areaSlug = null,
-  projectName = "Wesselsløkka",
+  projectName = "prosjektet",
   center,
+  pois,
 }: Report3DMapProps) {
-  const mapCenter = center
-    ? { lat: center.lat, lng: center.lng, altitude: 0 }
-    : WESSELSLOKKA_CENTER;
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<WesselslokkaTabId>("alle");
+  const mapCenter = useMemo(() => {
+    if (center) return { lat: center.lat, lng: center.lng, altitude: 0 };
+    if (pois.length > 0) {
+      const avgLat =
+        pois.reduce((s, p) => s + p.coordinates.lat, 0) / pois.length;
+      const avgLng =
+        pois.reduce((s, p) => s + p.coordinates.lng, 0) / pois.length;
+      return { lat: avgLat, lng: avgLng, altitude: 0 };
+    }
+    return { lat: 63.422, lng: 10.45, altitude: 0 };
+  }, [center, pois]);
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<Map3DTabId>("alle");
   const [selectedPOIId, setSelectedPOIId] = useState<string | null>(null);
   const mapRef = useRef<Map3DInstance | null>(null);
 
@@ -70,27 +85,48 @@ export default function Report3DMap({
         center: {
           lat: mapCenter.lat,
           lng: mapCenter.lng,
-          altitude: mapCenter.altitude ?? 0,
+          altitude: mapCenter.altitude,
         },
-        range: WESSELSLOKKA_CAMERA_LOCK.range,
-        tilt: WESSELSLOKKA_CAMERA_LOCK.tilt,
+        range: DEFAULT_CAMERA_LOCK.range,
+        tilt: DEFAULT_CAMERA_LOCK.tilt,
         heading: 0,
       },
       durationMillis: 1500,
     });
   }, [mapCenter]);
 
+  /** Alle POIs med distansebasert opacity (nær ≤1200m = 1, fjern = 0.3). */
+  const poisWithOpacity = useMemo(() => {
+    return pois.map((poi) => {
+      const dist = center
+        ? calculateDistance(
+            center.lat,
+            center.lng,
+            poi.coordinates.lat,
+            poi.coordinates.lng,
+          )
+        : 0;
+      return { ...poi, opacity: dist <= NEAR_THRESHOLD_M ? 1 : FAR_OPACITY };
+    });
+  }, [pois, center]);
+
+  /** Record for rask opacity-oppslag i MapView3D. */
+  const opacities = useMemo(
+    () => Object.fromEntries(poisWithOpacity.map((p) => [p.id, p.opacity])),
+    [poisWithOpacity],
+  );
+
   const visiblePois = useMemo(
-    () => filterPoisByTab(WESSELSLOKKA_POIS, activeTab),
-    [activeTab],
+    () => filterPoisByTab(pois, activeTab),
+    [pois, activeTab],
   );
 
   const selectedPOI = useMemo(
-    () => WESSELSLOKKA_POIS.find((p) => p.id === selectedPOIId) ?? null,
-    [selectedPOIId],
+    () => pois.find((p) => p.id === selectedPOIId) ?? null,
+    [pois, selectedPOIId],
   );
 
-  const handleTabChange = (tabId: WesselslokkaTabId) => {
+  const handleTabChange = (tabId: Map3DTabId) => {
     setActiveTab(tabId);
     setSelectedPOIId(null);
   };
@@ -99,13 +135,13 @@ export default function Report3DMap({
     setSelectedPOIId((prev) => (prev === poiId ? null : poiId));
   };
 
-  const handleOpenDialog = () => {
+  const handleOpenSheet = () => {
     setSelectedPOIId(null);
-    setDialogOpen(true);
+    setSheetOpen(true);
   };
 
-  const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open);
+  const handleSheetChange = (open: boolean) => {
+    setSheetOpen(open);
     if (!open) setSelectedPOIId(null);
   };
 
@@ -122,14 +158,15 @@ export default function Report3DMap({
 
         {/* Dormant preview — hele flaten er klikkbar */}
         <button
-          onClick={handleOpenDialog}
+          onClick={handleOpenSheet}
           className="mt-2 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
         >
           <MapView3D
-            mapId="wesselslokka-3d-preview"
+            mapId="report-3d-preview"
             center={mapCenter}
-            cameraLock={WESSELSLOKKA_CAMERA_LOCK}
-            pois={WESSELSLOKKA_POIS}
+            cameraLock={DEFAULT_CAMERA_LOCK}
+            pois={pois}
+            opacities={opacities}
             activated={false}
             projectSite={{
               lat: mapCenter.lat,
@@ -145,7 +182,7 @@ export default function Report3DMap({
           {/* CTA sentralt */}
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
             <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
-              {WESSELSLOKKA_POIS.length} steder i 3D
+              {pois.length} steder i 3D
             </p>
             <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
               <MapIcon className="w-4 h-4 text-[#7a7062]" />
@@ -156,7 +193,7 @@ export default function Report3DMap({
       </div>
 
       {/* Modal — Apple-style slide-up, identisk med ReportThemeSection */}
-      <Sheet open={dialogOpen} onOpenChange={handleDialogChange}>
+      <Sheet open={sheetOpen} onOpenChange={handleSheetChange}>
         <SheetContent
           side="bottom"
           showCloseButton={false}
@@ -198,7 +235,7 @@ export default function Report3DMap({
                 <span className="hidden sm:inline">Tilbake</span>
               </button>
               <button
-                onClick={() => handleDialogChange(false)}
+                onClick={() => handleSheetChange(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f5f3f0] transition-colors"
                 aria-label="Lukk"
               >
@@ -209,22 +246,26 @@ export default function Report3DMap({
 
           {/* Kart + drawer */}
           <div className="relative flex-1 min-h-0 touch-none">
-            <MapView3D
-              mapId="wesselslokka-3d-modal"
-              center={mapCenter}
-              cameraLock={WESSELSLOKKA_CAMERA_LOCK}
-              pois={visiblePois}
-              activePOIId={selectedPOIId}
-              onPOIClick={handlePOIClick}
-              onMapReady={handleMapReady}
-              activated
-              projectSite={{
-                lat: mapCenter.lat,
-                lng: mapCenter.lng,
-                name: projectName,
-                subtitle: "Nybygg 2028",
-              }}
-            />
+            {/* Deferred mount — én WebGL-kontekst, mountes kun når modalen er åpen */}
+            {sheetOpen && (
+              <MapView3D
+                mapId="report-3d-modal"
+                center={mapCenter}
+                cameraLock={DEFAULT_CAMERA_LOCK}
+                pois={visiblePois}
+                opacities={opacities}
+                activePOIId={selectedPOIId}
+                onPOIClick={handlePOIClick}
+                onMapReady={handleMapReady}
+                activated
+                projectSite={{
+                  lat: mapCenter.lat,
+                  lng: mapCenter.lng,
+                  name: projectName,
+                  subtitle: "Nybygg 2028",
+                }}
+              />
+            )}
 
             {selectedPOI && (
               <ReportMapDrawer
@@ -242,7 +283,7 @@ export default function Report3DMap({
               aria-label="Filtrer kategorier"
               className="flex gap-2 overflow-x-auto scrollbar-none"
             >
-              {WESSELSLOKKA_TAB_IDS.map((tabId) => {
+              {MAP3D_TAB_IDS.map((tabId) => {
                 const isActive = tabId === activeTab;
                 return (
                   <button
@@ -256,7 +297,7 @@ export default function Report3DMap({
                         : "bg-white text-[#5d5348] border border-[#eae6e1] hover:border-[#d4cfc8]"
                     }`}
                   >
-                    {WESSELSLOKKA_TAB_LABELS[tabId]}
+                    {MAP3D_TAB_LABELS[tabId]}
                   </button>
                 );
               })}

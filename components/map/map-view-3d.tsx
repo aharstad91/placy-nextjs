@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, memo } from "react";
 import {
   APIProvider,
   Map3D,
@@ -71,6 +71,8 @@ export interface MapView3DProps {
     name: string;
     subtitle?: string;
   };
+  /** Per-POI opacity — poi.id → opacity (0–1). Default 1 for alle. */
+  opacities?: Record<string, number>;
 }
 
 /**
@@ -111,6 +113,43 @@ function MapReadyBridge({
 }
 
 /**
+ * Memoized markør-komponent — hindrer full re-render av alle markørene
+ * ved hvert POI-klikk (kun den aktive markøren trenger å oppdatere seg).
+ */
+const Marker3DItem = memo(function Marker3DItem({
+  poi,
+  isActive,
+  opacity,
+  onPOIClick,
+}: {
+  poi: POI;
+  isActive: boolean;
+  opacity: number;
+  onPOIClick?: (id: string) => void;
+}) {
+  const Icon = getIcon(poi.category.icon);
+  return (
+    <Marker3D
+      position={{
+        lat: poi.coordinates.lat,
+        lng: poi.coordinates.lng,
+        altitude: isActive ? 20 : 0,
+      }}
+      altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
+      onClick={() => onPOIClick?.(poi.id)}
+      title={poi.name}
+    >
+      <Marker3DPin
+        color={poi.category.color}
+        Icon={Icon}
+        size={isActive ? 48 : 40}
+        opacity={opacity}
+      />
+    </Marker3D>
+  );
+});
+
+/**
  * Tidligere forsøk med å overstyre Googles gestures ga hakking —
  * deres WebGL-drevne gesture-håndtering er allerede optimalisert.
  * Vi bruker den native nå. Ingen capture-phase, ingen snap-back,
@@ -130,6 +169,7 @@ function Map3DInner({
   activated = true,
   mapId,
   projectSite,
+  opacities,
 }: MapView3DProps) {
   const minTilt = cameraLock.minTilt;
   const maxTilt = cameraLock.maxTilt;
@@ -198,29 +238,15 @@ function Map3DInner({
           </Marker3D>
         )}
 
-        {pois.map((poi) => {
-        const Icon = getIcon(poi.category.icon);
-        const isActive = activePOIId === poi.id;
-        return (
-          <Marker3D
+        {pois.map((poi) => (
+          <Marker3DItem
             key={poi.id}
-            position={{
-              lat: poi.coordinates.lat,
-              lng: poi.coordinates.lng,
-              altitude: isActive ? 20 : 0,
-            }}
-            altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
-            onClick={() => onPOIClick?.(poi.id)}
-            title={poi.name}
-          >
-            <Marker3DPin
-              color={poi.category.color}
-              Icon={Icon}
-              size={isActive ? 48 : 40}
-            />
-          </Marker3D>
-        );
-      })}
+            poi={poi}
+            isActive={activePOIId === poi.id}
+            opacity={opacities?.[poi.id] ?? 1}
+            onPOIClick={onPOIClick}
+          />
+        ))}
       </Map3D>
       {activated && (
         <Map3DControls

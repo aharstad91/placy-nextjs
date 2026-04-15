@@ -21,6 +21,8 @@ export interface Marker3DPinProps {
   number?: number;
   /** Total størrelse i px — default 40 */
   size?: number;
+  /** Opacity for hele pin-SVG-en — 0–1, default 1. Rasteriseres av Google Maps 3D. */
+  opacity?: number;
 }
 
 export function Marker3DPin({
@@ -28,6 +30,7 @@ export function Marker3DPin({
   Icon,
   number,
   size = 40,
+  opacity,
 }: Marker3DPinProps) {
   const shadowId = useId();
 
@@ -46,6 +49,7 @@ export function Marker3DPin({
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       xmlns="http://www.w3.org/2000/svg"
+      opacity={opacity ?? 1}
     >
       <defs>
         <filter

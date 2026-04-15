@@ -48,14 +48,6 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
     [effectiveProject, locale]
   );
 
-  // Pilot-gate: vis Report3DMap kun for Wesselsløkka-prosjekter.
-  // Hardkodet POI-config matcher ikke andre områder, så vi skjermer andre.
-  const isWesselslokkaPilot = useMemo(() => {
-    const name = reportData.projectName?.toLowerCase() ?? "";
-    const slug = areaSlug?.toLowerCase() ?? "";
-    return name.includes("wessel") || slug.includes("wessel");
-  }, [reportData.projectName, areaSlug]);
-
   // Split themes into primary (selected on welcome) and secondary (deselected)
   const { primaryThemes, secondaryThemes } = useMemo(() => {
     if (!primaryThemeIds || primaryThemeIds.length === 0) {
@@ -147,12 +139,13 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
           </div>
         ))}
 
-        {/* 3D-kart — "Alt rundt [område]". Vises kun for Wesselsløkka-piloten. */}
-        {isWesselslokkaPilot && (
+        {/* 3D-kart — "Alt rundt [område]". Vises for alle rapporter med POIs. */}
+        {effectiveProject.pois.length > 0 && (
           <Report3DMap
             areaSlug={areaSlug}
             projectName={reportData.projectName}
             center={reportData.centerCoordinates}
+            pois={effectiveProject.pois}
           />
         )}
 

@@ -6,6 +6,38 @@
 
 ---
 
+## 2026-04-15 — 3D-kart koblet til ekte POI-data (distanse-opacity)
+
+### Beslutninger
+- **Wesselsløkka-pilen fjernet.** `isWesselslokkaPilot`-gaten i ReportPage er borte. 3D-kartet vises nå for alle rapporter som har POIs i databasen. Var bare nødvendig fordi vi hadde hardkodet config — løst nå.
+- **103 ekte POIs, ikke 15 dummy.** Wesselsløkka-rapport viser alle ekte steder fra Supabase. En umiddelbar wow-effekt.
+- **Distanse-tier (1200m) er rett terskel.** Alt innen ca. 15 min gange vises full opacity. Fjerne steder (City Lade, Værnes etc.) er demped til 0.3 — ærlig UX, alt er synlig men kontekst er klar.
+- **`wesselslokka-3d-config.ts` slettet.** Erstattet av `report-3d-config.ts` med generell kamera/tab-konfig og filterlogikk mot `DEFAULT_THEMES`.
+
+### Teknisk
+- **SVG `opacity`-attributt fungerer i Google Maps 3D.** CSS-klasser ignoreres av Googles rasterizer. `opacity={value}` direkte på SVG root appliseres FØR tekstur-creation. Dokumentert som gotcha.
+- **Deferred WebGL-kontekst.** `{sheetOpen && <MapView3D>}` hindrer to simultane WebGL-kontekster. Viktig — WebGL har hardt begrenset antall kontekster per side.
+- **React.memo på Marker3DItem.** Uten memo: 103 markører re-rendrer ved hvert POI-klikk. Med memo: kun aktiv markør.
+- **`Record<string, number>` — ikke `Map<K,V>`.** Codebasen bruker aldri Map<K,V> i prop-interfaces. Konsistens viktig for lesbarhet.
+
+### Parkert / Åpne spørsmål
+- **Distanse-slider** (dynamisk terskel) — vurdert, parkert til etter validert salg. To-lags er tilstrekkelig som prototype.
+- **Travel-time API** — presise gangtider (Mapbox Directions) hadde vært penere enn fuglelinje. Parkert.
+- **Tab-suppression** — vis kun tabs som har faktiske POIs (f.eks. skjul "Oppvekst" hvis ingen barnehager). Parkert — lav prioritet.
+- **Bør 3D-kartet auto-rotere ved innlasting** for å kommunisere "dette er 3D"? Ubesvart fra forrige sesjon.
+
+### Retning
+3D-rapporten er nå produksjonsklar for alle prosjekter, ikke bare Wesselsløkka. Neste naturlige steg er å validere dette i demo-møte med Heimdal Eiendomsmegling — er 103 pins forvirrende, eller er den romlige oversikten akkurat "wow"-effekten vi trenger?
+
+Interessant observasjon: å vise alt på en gang (ikke bare valgt kategori) gir umiddelbart en steds-fornemmelse som per-kategori-kartene i rapportens hoveddel ikke gir. Det er noe verdifullt i "alt nabolaget på én gang" som bør utforskes videre.
+
+### Referanser
+- Brainstorm: `docs/brainstorms/2026-04-15-3d-map-real-pois-brainstorm.md`
+- Plan: `docs/plans/2026-04-15-feat-3d-map-real-pois-plan.md`
+- Læring: `docs/solutions/feature-implementations/3d-map-real-pois-distance-opacity-20260415.md`
+
+---
+
 ## 2026-04-15 — Google Maps 3D gjeninnført for rapport (Wesselsløkka-pilot)
 
 ### Beslutninger
