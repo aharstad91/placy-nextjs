@@ -28,12 +28,18 @@ import {
 interface Report3DMapProps {
   areaSlug?: string | null;
   projectName?: string;
+  /** Faktisk senter for prosjektet. Faller tilbake til config-default hvis utelatt. */
+  center?: { lat: number; lng: number };
 }
 
 export default function Report3DMap({
   areaSlug = null,
   projectName = "Wesselsløkka",
+  center,
 }: Report3DMapProps) {
+  const mapCenter = center
+    ? { lat: center.lat, lng: center.lng, altitude: 0 }
+    : WESSELSLOKKA_CENTER;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<WesselslokkaTabId>("alle");
   const [selectedPOIId, setSelectedPOIId] = useState<string | null>(null);
@@ -84,7 +90,7 @@ export default function Report3DMap({
           className="mt-2 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
         >
           <MapView3D
-            center={WESSELSLOKKA_CENTER}
+            center={mapCenter}
             cameraLock={WESSELSLOKKA_CAMERA_LOCK}
             pois={WESSELSLOKKA_POIS}
             activated={false}
@@ -174,7 +180,7 @@ export default function Report3DMap({
           {/* Kart + drawer */}
           <div className="relative flex-1 min-h-0">
             <MapView3D
-              center={WESSELSLOKKA_CENTER}
+              center={mapCenter}
               cameraLock={WESSELSLOKKA_CAMERA_LOCK}
               pois={visiblePois}
               activePOIId={selectedPOIId}

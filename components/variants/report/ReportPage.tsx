@@ -152,6 +152,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
           <Report3DMap
             areaSlug={areaSlug}
             projectName={reportData.projectName}
+            center={reportData.centerCoordinates}
           />
         )}
 
