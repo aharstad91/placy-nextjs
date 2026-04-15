@@ -44,8 +44,9 @@ const DEFAULT_PALETTE = [
 ];
 
 /** Scroll-budsjett pr kort — bestemmer hvor mye brukeren må scrolle
-    før neste kort fyres. 100vh gir komfortabel rytme. */
-const SCROLL_PER_CARD_VH = 100;
+    før neste kort fyres. 60vh gir rask, tett rytme (4 kort ≈ 240vh total).
+    Høyere = langsommere reveal, mer "stopp og se" pr kort. */
+const SCROLL_PER_CARD_VH = 60;
 
 export default function MobilityStackCards({
   sectionKicker,
