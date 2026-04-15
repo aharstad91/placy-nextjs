@@ -4,6 +4,39 @@
 
 ---
 date: 2026-04-15
+action: google-maps-3d-pan-firkant-og-prosjektmarkør
+files:
+  - components/map/ProjectSitePin.tsx (NY)
+  - components/map/map-view-3d.tsx (panRadiusKm→panHalfSideKm, projectSite-prop)
+  - components/variants/report/blocks/Report3DMap.tsx (sender projectSite)
+  - components/variants/report/blocks/wesselslokka-3d-config.ts (panHalfSideKm: 1.5)
+branch: feat/report-3d-map
+pr: aharstad91/placy-nextjs#65
+summary: To forbedringer — (1) tydeliggjør at pan-boksen alltid har vært en firkant (navnebytter til squareBoundsAround/panHalfSideKm), setter halvside til 1.5km; (2) ny prosjektmarkør-chip som flyter 30m over tomten og viser prosjektnavn + "Nybygg 2028".
+detail: |
+  PAN-FIRKANT:
+  - radiusToBounds/panRadiusKm ga sirkel-assosiasjoner men returnerte alltid
+    rektangulær south/north/west/east-boks (Googles Map3D bounds IS firkant).
+  - Rename til squareBoundsAround/panHalfSideKm + oppdaterte kommentarer.
+  - cos(lat)-korreksjonen er beholdt — gjør firkanten kvadratisk i meter
+    (viktig på breddegrad 63° der 1° lng ≈ 50km, ikke 111km).
+  - Halvside 1.5km → 3×3km totalboks rundt Wesselsløkka.
+  - Større boks = kanten treffes sjeldnere i vanlig navigasjon.
+
+  PROSJEKTMARKØR (ProjectSitePin):
+  - SVG label-chip: avrundet pill-form, mørk bakgrunn (#1a1a1a).
+  - Bygningsikon (manuell Lucide Building2-path), prosjektnavn i hvit bold,
+    undertittel "Nybygg 2028" i gull (#e8b86d).
+  - Liten pil peker ned mot tomten.
+  - Rendres som Marker3D ved projectSite.lat/lng, altitude=30m
+    (AltitudeMode.RELATIVE_TO_GROUND) → flyter tydelig over jordet.
+  - Alltid synlig — ikke del av tab-filter.
+  - projectSite-prop på MapView3DProps; Report3DMap sender mapCenter + projectName.
+  - SVG text/rect fungerer i Google 3D fordi browser rasteriserer SVG til
+    tekstur FØR Google prosesserer markøren.
+
+---
+date: 2026-04-15
 action: google-maps-3d-rapportblokk-med-ui-kontroller
 files:
   - components/map/Marker3DPin.tsx (NY)
