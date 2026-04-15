@@ -3,6 +3,116 @@
 <!-- Each entry is a YAML block. Most recent first. -->
 
 ---
+date: 2026-04-15
+action: google-maps-3d-pan-firkant-og-prosjektmarkør
+files:
+  - components/map/ProjectSitePin.tsx (NY)
+  - components/map/map-view-3d.tsx (panRadiusKm→panHalfSideKm, projectSite-prop)
+  - components/variants/report/blocks/Report3DMap.tsx (sender projectSite)
+  - components/variants/report/blocks/wesselslokka-3d-config.ts (panHalfSideKm: 1.5)
+branch: feat/report-3d-map
+pr: aharstad91/placy-nextjs#65
+summary: To forbedringer — (1) tydeliggjør at pan-boksen alltid har vært en firkant (navnebytter til squareBoundsAround/panHalfSideKm), setter halvside til 1.5km; (2) ny prosjektmarkør-chip som flyter 30m over tomten og viser prosjektnavn + "Nybygg 2028".
+detail: |
+  PAN-FIRKANT:
+  - radiusToBounds/panRadiusKm ga sirkel-assosiasjoner men returnerte alltid
+    rektangulær south/north/west/east-boks (Googles Map3D bounds IS firkant).
+  - Rename til squareBoundsAround/panHalfSideKm + oppdaterte kommentarer.
+  - cos(lat)-korreksjonen er beholdt — gjør firkanten kvadratisk i meter
+    (viktig på breddegrad 63° der 1° lng ≈ 50km, ikke 111km).
+  - Halvside 1.5km → 3×3km totalboks rundt Wesselsløkka.
+  - Større boks = kanten treffes sjeldnere i vanlig navigasjon.
+
+  PROSJEKTMARKØR (ProjectSitePin):
+  - SVG label-chip: avrundet pill-form, mørk bakgrunn (#1a1a1a).
+  - Bygningsikon (manuell Lucide Building2-path), prosjektnavn i hvit bold,
+    undertittel "Nybygg 2028" i gull (#e8b86d).
+  - Liten pil peker ned mot tomten.
+  - Rendres som Marker3D ved projectSite.lat/lng, altitude=30m
+    (AltitudeMode.RELATIVE_TO_GROUND) → flyter tydelig over jordet.
+  - Alltid synlig — ikke del av tab-filter.
+  - projectSite-prop på MapView3DProps; Report3DMap sender mapCenter + projectName.
+  - SVG text/rect fungerer i Google 3D fordi browser rasteriserer SVG til
+    tekstur FØR Google prosesserer markøren.
+
+---
+date: 2026-04-15
+action: google-maps-3d-rapportblokk-med-ui-kontroller
+files:
+  - components/map/Marker3DPin.tsx (NY)
+  - components/map/map-view-3d.tsx (NY)
+  - components/map/Map3DControls.tsx (NY)
+  - components/map/poi-marker-3d.tsx (SLETTET — brokket for 3D)
+  - components/variants/report/blocks/Report3DMap.tsx (NY)
+  - components/variants/report/blocks/wesselslokka-3d-config.ts (NY)
+  - components/variants/report/ReportPage.tsx
+  - package.json (+@vis.gl/react-google-maps@^1.8.3)
+  - docs/brainstorms/2026-04-15-report-3d-map-brainstorm.md
+  - docs/plans/2026-04-15-feat-report-3d-map-plan.md
+  - docs/solutions/feature-implementations/google-maps-3d-report-block-20260415.md
+branch: feat/report-3d-map
+pr: aharstad91/placy-nextjs#65
+summary: Erstatter planlagt akvarell-TabbedAerialMap (ToS-brudd) med ekte Google Photorealistic 3D Tiles i rapporten. Pilot for Wesselsløkka. Full UX-iterasjon i én sesjon — fra naiv kamera-lock (hakket) til Google-native UX med bounds + UI-kontroller (smørbløt).
+detail: |
+  ARKITEKTUR:
+  - Dormant preview + modal-mønster (matcher ReportThemeSection)
+  - Preview: liten aspect-[4/3] kort med "Utforsk i 3D"-CTA, activated=false
+  - Modal: 90vw × 88vh på desktop, bottom sheet mobil
+  - Tabs-filter (Alle/Oppvekst/Mat&Drikke/Natur/Transport/Trening) i header
+  - ReportMapDrawer fra venstre ved pin-klikk (gjenbruk)
+  - 15 dummy-POIer rundt Wesselsløkka (ekte DB-senter 63.422074, 10.450617)
+  - SSR-gated via dynamic import, ssr:false
+
+  KAMERA-STRATEGI (iterert i sanntid):
+  1. Forsøk 1: kontrollerte center/range/bounds-props + JS-snap-back
+     → hakket, kjempet mot Googles interne state. FORKASTET.
+  2. Forsøk 2: capture-phase event-interception (stopp Googles gestures)
+     → senter-drift 0 men ga jitter ved rask drag. FORKASTET.
+  3. Forsøk 3: rAF-throttlet snap-back
+     → fortsatt hakking pga konkurrerende render-loops. FORKASTET.
+  4. FINAL: bruk Googles native gesture-handling + bounds-props
+     → butter smooth, håndheves i WebGL, ingen JS-kamp.
+
+  GRENSER (Googles native, ingen custom logic):
+  - bounds: 2km radius rundt senter (håndheves av Google)
+  - minAltitude 200m, maxAltitude 3000m (zoom-grenser)
+  - minTilt 15°, maxTilt 75°
+
+  UI-KONTROLLER (flytende nederst høyre i modal):
+  - Kompass (peker live med heading, klikk = snap til nord)
+  - Rotér CCW/CW (45° per klikk)
+  - Tilt opp/ned (15° per klikk)
+  - Zoom inn/ut (1.5× per klikk)
+  - Reset-knapp i header ("↺ Tilbake") fly-animerer til start
+  - Alle bruker Googles flyCameraTo (400ms) — samme motor som drag
+
+  FELLESFELLER OPPDAGET (dokumentert i solutions/):
+  1. useMap3D() upålitelig utenfor Map3D-treet med flere instanser
+     → prop-drill map3d via MapReadyBridge + lokal state
+  2. LatLngAltitude har lat/lng som getters — {...map3d.center} sprer
+     bare minifiserte interne felt (JB/KB/IB) → må kopiere eksplisitt
+  3. Marker3D rasteriserer kun SVG/Pin/img, ikke HTML-portal
+     → Marker3DPin bygget som inline SVG (circle + Lucide-path + badge)
+  4. Ingen native minRange/maxRange → må bruke altitude-grenser i stedet
+  5. minAltitude=maxAltitude=0 gir svart skjerm (kamera under bakken)
+  6. Tilt-konvensjon: 0° = rett ned, 90° = horisontal (motsatt intuisjon)
+  7. Map3D krever WebGL → SSR-crash uten dynamic({ssr:false})
+  8. Kontroller som children i <gmp-map-3d> blir absorbert i shadow DOM
+     → må være søsken til Map3D (inne i relative container)
+
+  JURIDISK GEVINST:
+  - Erstatter akvarell-pipeline som var ToS-brudd (derivative works +
+    offline caching >30 dager i public/)
+  - Googles Map Tiles API brukt direkte = 100% compliant
+  - Attribusjon automatisk, ingen tiles caches lokalt
+
+  KOSTNADSKONTROLL (deferred til etter validert salg):
+  - Ingen quota-cap eller budget alert satt opp ennå
+  - Bounds + maxAltitude begrenser tiles-lasting til nær-området
+  - Worst-case: $10/mnd før alert
+status: done
+
+---
 date: 2026-04-13
 action: kategori-ikoner-og-sentrert-layout
 files:
