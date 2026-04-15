@@ -4,6 +4,57 @@
 
 ---
 date: 2026-04-15
+action: 3d-map-orbit-mode-zoom-off
+files:
+  - components/map/map-view-3d.tsx (ctrlKey-hijack + wheel-block)
+  - components/map/Map3DControls.tsx (showZoom-prop)
+  - components/variants/report/blocks/report-3d-config.ts (strammere altitude)
+branch: feat/map-unification (worktree placy-ralph-map-unification)
+summary: |
+  3D-kartet i rapport-modaler skal føles som en satellitt-orbit rundt
+  property, ikke et fritt eksplorativt kart. Drag rotérer rundt center
+  (ikke pan), zoom er deaktivert, altitude er låst innen orbit-radien.
+detail: |
+  PROBLEM: Google Maps 3D Photorealistic åpnet i normal-modus med pan/zoom/
+  rotate — brukere kunne dra seg langt unna property og miste ankeret.
+  Ctrl+drag ga ønsket orbit-effekt, men burde være default uten modifier.
+
+  LØSNING 1 — Orbit-som-default (ctrlKey-hijack):
+  - Capture-phase pointer/mouse-listener overstyrer e.ctrlKey=true på
+    mus-drags via Object.defineProperty.
+  - Google's interne gesture-handler tolker da drag som ROTATE (native
+    smørbløt — ingen custom rAF/flyCameraTo som tidligere hakket).
+  - Touch (pointerType === 'touch') skipper — har ikke ctrlKey.
+
+  LØSNING 2 — Deaktiver zoom helt:
+  - Wheel blokkeres non-passive i capture (preventDefault + stopPropagation)
+    før Google ser eventen.
+  - Map3DControls fikk ny showZoom-prop (default true). MapView3D sender
+    false så +/- knappene skjules. Kompass/rotér/tilt beholdes.
+
+  LØSNING 3 — Strammere altitude:
+  - minAltitude 200→150 (kan zoome tettere inn)
+  - maxAltitude 3000→1200 (hindrer zoom-out som bryter orbit-ankeret)
+
+  FALLGRUVER PRØVD OG AVVIST underveis:
+  - Tight bounds (panHalfSideKm: 0.001): clamp under drag ga hakking.
+  - Custom rAF orbit via flyCameraTo: hakkete (brukerens tidligere erfaring).
+  - gmp-centerchange snap-back under drag: fightet Google's gesture, brøt
+    rotasjon helt.
+  - pointerup snap-back: ikke nødvendig — drift var kumulativ fra gamle
+    eksperimenter; nå stabilt uten.
+
+  Testet: drag rotérer rundt property, scroll/wheel ignoreres, +/- borte,
+  prosjekt-markør synlig midt i framen ved load.
+
+  PARKERT: Pinch-zoom på touch — ctrlKey-hijack treffer kun mus, så pinch
+  på mobil vil zoome fortsatt. Må evt. legges til senere med touch-count
+  guard eller manuell pinch-blokker.
+status: done
+related: commit c23a04c
+
+---
+date: 2026-04-15
 action: unified-map-modal-2d-3d-toggle
 files:
   - components/map/UnifiedMapModal.tsx (ny)
