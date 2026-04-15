@@ -16,6 +16,7 @@ import {
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import type { StopDepartures } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
+import MobilityStackCards, { type StackCardItem } from "./blocks/MobilityStackCards";
 
 interface HeroInsightProps {
   theme: ReportTheme;
@@ -550,29 +551,31 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
         )}
       </InsightCard>
 
-      {/* Mobilitetskort — bysykkel, sparkesykkel, bildeling, lading */}
-      <div className="mb-6">
-        <div className="text-xs uppercase tracking-[0.15em] text-[#a0937d] font-medium mb-3">
-          Tilgjengelig i nærheten
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* Bysykkel */}
-        <MobilityCard
-          icon={<Bike className="w-4 h-4 text-[#3b82f6]" />}
-          iconBg="#3b82f620"
-          label="Bysykkel"
-          value={dashboard.bysykkel
+      {/* Mobilitetskort — scroll-basert sticky stack. Erstatter tidligere
+          4-kort-grid med en stablet slideshow-opplevelse hvor hvert kort
+          får full bredde og oppmerksomhet mens man scroller. */}
+      {(() => {
+        const bysykkelItem: StackCardItem = {
+          icon: <Bike className="w-4 h-4 text-[#3b82f6]" />,
+          iconBg: "#3b82f620",
+          label: "Bysykkel",
+          metric: dashboard.bysykkel
             ? dashboard.bysykkel.total > 0
-              ? `${dashboard.bysykkel.total} ledige sykler`
-              : "Ingen nå"
-            : "–"}
-          subtitle={dashboard.bysykkel
+              ? String(dashboard.bysykkel.total)
+              : "0"
+            : "–",
+          metricUnit: dashboard.bysykkel
+            ? dashboard.bysykkel.total > 0
+              ? "ledige sykler"
+              : "ledige nå"
+            : undefined,
+          detail: dashboard.bysykkel
             ? dashboard.bysykkel.stations > 0 && dashboard.bysykkel.nearest
               ? `${dashboard.bysykkel.stations} ${dashboard.bysykkel.stations === 1 ? "stasjon" : "stasjoner"} · ${dashboard.bysykkel.nearest.walkMin} min til nærmeste`
               : "Ingen stasjoner innen 800m"
-            : "Laster..."}
-          loading={dashboard.loading && !dashboard.bysykkel}
-          popoverContent={dashboard.bysykkel ? (
+            : "Laster...",
+          loading: dashboard.loading && !dashboard.bysykkel,
+          popoverContent: dashboard.bysykkel ? (
             <div className="p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Bike className="w-4 h-4 text-[#3b82f6]" />
@@ -604,24 +607,29 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
                 Innen 800m · Trondheim Bysykkel
               </div>
             </div>
-          ) : undefined}
-        />
+          ) : undefined,
+        };
 
-        {/* Sparkesykkel */}
-        <MobilityCard
-          icon={<Zap className="w-4 h-4 text-[#8b5cf6]" />}
-          iconBg="#8b5cf620"
-          label="Sparkesykkel"
-          value={dashboard.scooters
+        const sparkesykkelItem: StackCardItem = {
+          icon: <Zap className="w-4 h-4 text-[#8b5cf6]" />,
+          iconBg: "#8b5cf620",
+          label: "Sparkesykkel",
+          metric: dashboard.scooters
             ? dashboard.scooters.total > 0
-              ? `${dashboard.scooters.total} tilgjengelig`
-              : "Ingen nå"
-            : "–"}
-          subtitle={dashboard.scooters?.byOperator
-            .map((op) => op.name.replace("_Trondheim", "").replace(" trondheim", ""))
-            .join(" · ") || "Laster..."}
-          loading={dashboard.loading && !dashboard.scooters}
-          popoverContent={dashboard.scooters ? (
+              ? String(dashboard.scooters.total)
+              : "0"
+            : "–",
+          metricUnit: dashboard.scooters
+            ? dashboard.scooters.total > 0
+              ? "tilgjengelig"
+              : "akkurat nå"
+            : undefined,
+          detail:
+            dashboard.scooters?.byOperator
+              .map((op) => op.name.replace("_Trondheim", "").replace(" trondheim", ""))
+              .join(" · ") || "Laster...",
+          loading: dashboard.loading && !dashboard.scooters,
+          popoverContent: dashboard.scooters ? (
             <div className="p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="w-4 h-4 text-[#8b5cf6]" />
@@ -647,64 +655,57 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
               )}
               <div className="text-xs text-[#a0a0a0] mt-2">Innen 750m</div>
             </div>
-          ) : undefined}
-        />
+          ) : undefined,
+        };
 
-        {/* Bildeling — Hyre + Getaround samlet */}
-        {(() => {
-          const hyreCount = dashboard.carShare?.numVehiclesAvailable ?? 0;
-          const getaroundCount = dashboard.freeFloatingCars?.total ?? 0;
-          const totalCars = hyreCount + getaroundCount;
-          const hasData = dashboard.carShare || dashboard.freeFloatingCars;
-          const providers: string[] = [];
-          if (hyreCount > 0) providers.push("Hyre");
-          if (getaroundCount > 0) providers.push("Getaround");
+        const hyreCount = dashboard.carShare?.numVehiclesAvailable ?? 0;
+        const getaroundCount = dashboard.freeFloatingCars?.total ?? 0;
+        const totalCars = hyreCount + getaroundCount;
+        const hasCarData = !!(dashboard.carShare || dashboard.freeFloatingCars);
+        const providers: string[] = [];
+        if (hyreCount > 0) providers.push("Hyre");
+        if (getaroundCount > 0) providers.push("Getaround");
 
-          return (
-            <MobilityCard
-              icon={<Car className="w-4 h-4 text-[#10b981]" />}
-              iconBg="#10b98120"
-              label="Bildeling"
-              value={hasData ? `${totalCars} biler` : "–"}
-              subtitle={hasData
-                ? providers.join(" · ") || "Laster..."
-                : "Laster..."}
-              loading={dashboard.loading && !hasData}
-              popoverContent={hasData ? (
-                <div className="p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Car className="w-4 h-4 text-[#10b981]" />
-                    <span className="font-semibold text-sm">Bildeling i nærheten</span>
+        const bildelingItem: StackCardItem = {
+          icon: <Car className="w-4 h-4 text-[#10b981]" />,
+          iconBg: "#10b98120",
+          label: "Bildeling",
+          metric: hasCarData ? String(totalCars) : "–",
+          metricUnit: hasCarData ? "biler" : undefined,
+          detail: hasCarData ? providers.join(" · ") || "Laster..." : "Laster...",
+          loading: dashboard.loading && !hasCarData,
+          popoverContent: hasCarData ? (
+            <div className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Car className="w-4 h-4 text-[#10b981]" />
+                <span className="font-semibold text-sm">Bildeling i nærheten</span>
+              </div>
+              <div className="text-sm text-[#4a4a4a] space-y-1">
+                {hyreCount > 0 && dashboard.carShare && (
+                  <div className="flex justify-between">
+                    <span>Hyre ({dashboard.carShare.stationName})</span>
+                    <span className="font-medium">{hyreCount}</span>
                   </div>
-                  <div className="text-sm text-[#4a4a4a] space-y-1">
-                    {hyreCount > 0 && dashboard.carShare && (
-                      <div className="flex justify-between">
-                        <span>Hyre ({dashboard.carShare.stationName})</span>
-                        <span className="font-medium">{hyreCount}</span>
-                      </div>
-                    )}
-                    {getaroundCount > 0 && (
-                      <div className="flex justify-between">
-                        <span>Getaround (fri parkering)</span>
-                        <span className="font-medium">{getaroundCount}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between pt-1 border-t border-[#eae6e1] font-medium">
-                      <span>Totalt</span>
-                      <span>{totalCars}</span>
-                    </div>
+                )}
+                {getaroundCount > 0 && (
+                  <div className="flex justify-between">
+                    <span>Getaround (fri parkering)</span>
+                    <span className="font-medium">{getaroundCount}</span>
                   </div>
-                  <div className="text-xs text-[#a0a0a0] mt-2">Innen 2 km</div>
+                )}
+                <div className="flex justify-between pt-1 border-t border-[#eae6e1] font-medium">
+                  <span>Totalt</span>
+                  <span>{totalCars}</span>
                 </div>
-              ) : undefined}
-            />
-          );
-        })()}
+              </div>
+              <div className="text-xs text-[#a0a0a0] mt-2">Innen 2 km</div>
+            </div>
+          ) : undefined,
+        };
 
-        {/* Lading */}
-        {(() => {
-          const chargingPOIs = pois.filter((p) => p.category.id === "charging_station");
-          if (chargingPOIs.length === 0) return null;
+        const chargingPOIs = pois.filter((p) => p.category.id === "charging_station");
+        let ladingItem: StackCardItem | null = null;
+        if (chargingPOIs.length > 0) {
           const nearest = chargingPOIs.reduce((a, b) => {
             const aw = estimateWalkMin(a, center);
             const bw = estimateWalkMin(b, center);
@@ -712,36 +713,48 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
           });
           const nearestWalk = fmtWalk(nearest, center);
 
-          return (
-            <MobilityCard
-              icon={<Zap className="w-4 h-4 text-[#f59e0b]" />}
-              iconBg="#f59e0b20"
-              label="Elbillading"
-              value={`${chargingPOIs.length} stasjoner`}
-              subtitle={nearestWalk ? `Nærmeste ${nearestWalk} gange` : "I nabolaget"}
-              popoverContent={(
-                <div className="p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-[#f59e0b]" />
-                    <span className="font-semibold text-sm">Ladestasjoner i nærheten</span>
-                  </div>
-                  <div className="text-sm text-[#4a4a4a] space-y-1.5">
-                    {chargingPOIs
-                      .sort((a, b) => estimateWalkMin(a, center) - estimateWalkMin(b, center))
-                      .map((poi) => (
-                        <div key={poi.id} className="flex justify-between gap-2">
-                          <span className="truncate">{poi.name}</span>
-                          <span className="text-[#8a8a8a] shrink-0">{fmtWalk(poi, center)}</span>
-                        </div>
-                      ))}
-                  </div>
+          ladingItem = {
+            icon: <Zap className="w-4 h-4 text-[#f59e0b]" />,
+            iconBg: "#f59e0b20",
+            label: "Elbillading",
+            metric: String(chargingPOIs.length),
+            metricUnit: chargingPOIs.length === 1 ? "stasjon" : "stasjoner",
+            detail: nearestWalk ? `Nærmeste ${nearestWalk} gange` : "I nabolaget",
+            popoverContent: (
+              <div className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-4 h-4 text-[#f59e0b]" />
+                  <span className="font-semibold text-sm">Ladestasjoner i nærheten</span>
                 </div>
-              )}
-            />
-          );
-        })()}
-        </div>
-      </div>
+                <div className="text-sm text-[#4a4a4a] space-y-1.5">
+                  {chargingPOIs
+                    .sort((a, b) => estimateWalkMin(a, center) - estimateWalkMin(b, center))
+                    .map((poi) => (
+                      <div key={poi.id} className="flex justify-between gap-2">
+                        <span className="truncate">{poi.name}</span>
+                        <span className="text-[#8a8a8a] shrink-0">{fmtWalk(poi, center)}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ),
+          };
+        }
+
+        const mobilityItems: StackCardItem[] = [
+          bysykkelItem,
+          sparkesykkelItem,
+          bildelingItem,
+          ...(ladingItem ? [ladingItem] : []),
+        ];
+
+        return (
+          <MobilityStackCards
+            sectionKicker="Tilgjengelig i nærheten"
+            items={mobilityItems}
+          />
+        );
+      })()}
     </>
   );
 }
@@ -836,65 +849,6 @@ function DepartureBlock({ stop }: { stop: StopDepartures }) {
         <div className="ml-10 text-sm text-[#a0a0a0] py-0.5">Ingen avganger</div>
       )}
     </div>
-  );
-}
-
-// --- Mobility card with popover ---
-
-function MobilityCard({
-  icon,
-  iconBg,
-  label,
-  value,
-  subtitle,
-  loading,
-  popoverContent,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  label: string;
-  value: string;
-  subtitle: string;
-  loading?: boolean;
-  popoverContent?: React.ReactNode;
-}) {
-  const cardContent = (
-    <div className={`rounded-lg border border-[#eae6e1] bg-white p-3 text-center ${popoverContent ? "hover:border-[#d4cfc8] hover:shadow-sm transition-all cursor-pointer" : ""}`}>
-      {loading ? (
-        <div className="animate-pulse space-y-2">
-          <div className="h-8 w-8 bg-[#eae6e1] rounded-full mx-auto" />
-          <div className="h-3 bg-[#eae6e1] rounded w-2/3 mx-auto" />
-          <div className="h-2.5 bg-[#eae6e1] rounded w-1/2 mx-auto" />
-        </div>
-      ) : (
-        <>
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1.5"
-            style={{ backgroundColor: iconBg }}
-          >
-            {icon}
-          </div>
-          <div className="text-[10px] uppercase tracking-[0.12em] text-[#a0937d] mb-0.5">
-            {label}
-          </div>
-          <div className="text-sm font-semibold text-[#1a1a1a]">{value}</div>
-          <div className="text-[11px] text-[#8a8a8a] mt-0.5 truncate">{subtitle}</div>
-        </>
-      )}
-    </div>
-  );
-
-  if (!popoverContent) return cardContent;
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className="text-left w-full">{cardContent}</button>
-      </PopoverTrigger>
-      <PopoverContent side="top" className="w-64 p-0 gap-0">
-        {popoverContent}
-      </PopoverContent>
-    </Popover>
   );
 }
 
