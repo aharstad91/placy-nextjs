@@ -21,13 +21,18 @@ export const WESSELSLOKKA_CENTER = {
  * Ingen native minRange/maxRange → range-lås via snap-back event-listener.
  */
 export const WESSELSLOKKA_CAMERA_LOCK = {
-  // range = avstand fra kamera til center (meter). Låst via snap-back.
+  // range = start-avstand fra kamera til center (meter)
   range: 900,
   // Start-tilt: 0° = rett ned, 90° = horisontal. 45° = bird's eye.
   tilt: 45,
-  // Tilt-range: brukeren kan tilte mellom 20° (nesten ovenfra) og 75° (skrått nedover mot horisonten)
-  minTilt: 20,
+  // Googles native bevegelsesgrenser — håndheves i WebGL, uten JS-kamp.
+  minTilt: 15,
   maxTilt: 75,
+  // Zoom-grenser (kamera-altitude i meter over havet)
+  minAltitude: 200, // kan ikke komme nærmere enn 200m
+  maxAltitude: 3000, // kan ikke zoome lenger ut enn 3km
+  // Pan-grense: 5km radius rundt center
+  panRadiusKm: 5,
 } as const;
 
 /** Rapportens tab-kategorier (i visningsrekkefølge). */

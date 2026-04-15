@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   APIProvider,
   Map3D,
   Marker3D,
   MapMode,
   AltitudeMode,
+  useMap3D,
 } from "@vis.gl/react-google-maps";
 import Map, { Marker as MapboxMarker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -13,6 +15,9 @@ import type { POI } from "@/lib/types";
 import { Marker3DPin } from "./Marker3DPin";
 import { getIcon } from "@/lib/utils/map-icons";
 import { useWebGLCheck } from "./Map3DFallback";
+
+/** Type for map3d-instansen vi sender tilbake til foreldre. */
+export type Map3DInstance = google.maps.maps3d.Map3DElement;
 
 /**
  * MapView3D — tynn wrapper rundt Google Maps 3D.
@@ -26,10 +31,16 @@ import { useWebGLCheck } from "./Map3DFallback";
 export interface CameraLock {
   range: number;
   tilt: number;
-  /** Nedre tilt-grense (for Map3D min/max props — valgfri) */
+  /** Nedre tilt-grense (Googles native min-prop) */
   minTilt?: number;
-  /** Øvre tilt-grense (for Map3D min/max props — valgfri) */
+  /** Øvre tilt-grense (Googles native max-prop) */
   maxTilt?: number;
+  /** Nedre altitude-grense for kamera (meter over havet). Begrenser zoom-inn. */
+  minAltitude?: number;
+  /** Øvre altitude-grense for kamera (meter over havet). Begrenser zoom-ut. */
+  maxAltitude?: number;
+  /** Radius i km for pan-grense. Beregner bounds rundt center. Default 5km. */
+  panRadiusKm?: number;
 }
 
 export interface MapView3DProps {
@@ -40,6 +51,41 @@ export interface MapView3DProps {
   onPOIClick?: (poiId: string) => void;
   /** False = passiv preview (ingen interaksjon), True = full interaktivitet. Default true. */
   activated?: boolean;
+  /** Callback som gir foreldre tilgang til map3d-instansen for imperative ops (fly-back etc). */
+  onMapReady?: (map3d: Map3DInstance | null) => void;
+}
+
+/**
+ * Beregner en bounding-box rundt et geosenter gitt ønsket radius i km.
+ * lat: 1° ≈ 111km. lng avhenger av breddegrad (cos(lat)).
+ */
+function radiusToBounds(
+  center: { lat: number; lng: number },
+  radiusKm: number,
+) {
+  const latDelta = radiusKm / 111;
+  const lngDelta = radiusKm / (111 * Math.cos((center.lat * Math.PI) / 180));
+  return {
+    south: center.lat - latDelta,
+    north: center.lat + latDelta,
+    west: center.lng - lngDelta,
+    east: center.lng + lngDelta,
+  };
+}
+
+/** Intern bro: bringer map3d-instansen opp til foreldre via callback. */
+function MapReadyBridge({
+  onReady,
+}: {
+  onReady?: (map3d: Map3DInstance | null) => void;
+}) {
+  const map3d = useMap3D();
+  useEffect(() => {
+    if (!onReady) return;
+    onReady(map3d);
+    return () => onReady(null);
+  }, [map3d, onReady]);
+  return null;
 }
 
 /**
@@ -58,9 +104,17 @@ function Map3DInner({
   pois,
   activePOIId,
   onPOIClick,
+  onMapReady,
 }: MapView3DProps) {
-  // Bruker Googles native gesture-handling for smørbløt UX.
-  // defaultCenter/Range/Tilt/Heading = startposisjon, deretter fri kamera.
+  const minTilt = cameraLock.minTilt;
+  const maxTilt = cameraLock.maxTilt;
+  const minAltitude = cameraLock.minAltitude;
+  const maxAltitude = cameraLock.maxAltitude;
+  const panRadiusKm = cameraLock.panRadiusKm ?? 5;
+  const bounds = radiusToBounds(center, panRadiusKm);
+
+  // Bruker Googles native gesture-handling. Bounds + altitude-grenser
+  // håndheves av Google i WebGL → butter smooth, ingen JS-kamp.
   return (
     <Map3D
       mode={MapMode.SATELLITE}
@@ -72,9 +126,15 @@ function Map3DInner({
       defaultRange={cameraLock.range}
       defaultTilt={cameraLock.tilt}
       defaultHeading={0}
+      bounds={bounds}
+      minTilt={minTilt}
+      maxTilt={maxTilt}
+      minAltitude={minAltitude}
+      maxAltitude={maxAltitude}
       defaultUIHidden
       style={{ width: "100%", height: "100%" }}
     >
+      <MapReadyBridge onReady={onMapReady} />
       {pois.map((poi) => {
         const Icon = getIcon(poi.category.icon);
         const isActive = activePOIId === poi.id;
