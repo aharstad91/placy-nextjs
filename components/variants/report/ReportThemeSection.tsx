@@ -11,6 +11,7 @@ import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
 import ReportHeroInsight, { getHeroInsightPOIIds } from "./ReportHeroInsight";
+import EditorialPull from "./blocks/EditorialPull";
 import {
   Popover,
   PopoverTrigger,
@@ -260,6 +261,15 @@ export default function ReportThemeSection({
               priority={false}
             />
           </div>
+        )}
+
+        {/* PILOT: EditorialPull — magasin-stil pull-sitat som "pust" mellom
+            intro og kortene. Hardkodet sitat for hverdagsliv foreløpig. */}
+        {variant !== "secondary" && theme.id === "hverdagsliv" && (
+          <EditorialPull
+            quote="Valentinlyst er ikke et shoppingmål — det er nabolagets praktiske nav. Det er der du møter naboen i kø ved apoteket."
+            attribution="Redaksjonell observasjon · Placy"
+          />
         )}
 
         {/* Upper narrative — over kortene (buss, bysykkel, sparkesykkel) */}
