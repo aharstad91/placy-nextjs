@@ -103,6 +103,24 @@ gmp-popover::part(dialog) {
   @apply bg-gray-100 text-gray-600 hover:bg-gray-200;
 }
 
+/* Apple-style map modal — full-height slide from bottom */
+@keyframes map-modal-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes map-modal-slide-down {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="sheet-content"][data-state="open"],
+  [data-slot="sheet-content"][data-state="closed"] {
+    animation: none !important;
+  }
+}
+
 /* Collection drawer slide-up animation */
 @keyframes slide-up {
   from {
