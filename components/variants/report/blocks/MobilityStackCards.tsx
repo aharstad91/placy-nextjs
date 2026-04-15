@@ -63,18 +63,21 @@ export default function MobilityStackCards({
         </div>
       )}
 
-      {/* Stack container — hver slot gir scroll-budsjett for sitt kort.
-          Sticky-posisjon sørger for at kortene overlapper under overgang. */}
+      {/* Stack container — kortene starter som en samlet bunke (overlapping
+          via negative margin), og henger sticky i samme område mens bruker
+          scroller. Hvert etterfølgende kort har litt høyere sticky-top for
+          en synlig "peek" av forrige kort under. Stacken som helhet skifter
+          ut når brukeren har scrollet forbi hele seksjonen. */}
       <div className="relative">
         {items.map((item, i) => {
           const bg = item.bgColor ?? DEFAULT_PALETTE[i % DEFAULT_PALETTE.length];
           const card = (
             <div
-              className="rounded-2xl p-6 md:p-10 shadow-sm transition-shadow hover:shadow-md"
+              className="rounded-2xl p-6 md:p-10 shadow-md transition-shadow hover:shadow-lg h-56 md:h-64 overflow-hidden"
               style={{ backgroundColor: bg }}
             >
               {item.loading ? (
-                <div className="animate-pulse space-y-4 min-h-[12rem]">
+                <div className="animate-pulse space-y-4">
                   <div className="h-10 w-10 bg-white/40 rounded-full" />
                   <div className="h-3 w-32 bg-white/40 rounded" />
                   <div className="h-16 w-48 bg-white/40 rounded" />
@@ -133,18 +136,30 @@ export default function MobilityStackCards({
             card
           );
 
+          /* Sticky-wrapper pr kort:
+               - top stagger 0.75rem pr kort → synlig peek av forrige under
+               - negative mt fra kort 2+ → starter stablet, 0.75rem peek
+               - zIndex i+1 → senere kort rendres over forrige
+             Overlap-verdiene må matche kortets faste høyde (h-56 mobil, h-64 desktop)
+             minus ønsket peek. Tailwind responsive klasser håndterer breakpointet. */
           return (
-            /* Slot som gir scroll-budsjett for dette kortet.
-               h-[50vh] på mobil (kortere for raskere flyt), h-[60vh] på desktop. */
             <div
               key={i}
-              className="h-[50vh] md:h-[60vh]"
-              style={{ zIndex: i + 1 }}
+              className={`sticky ${i === 0 ? "" : "-mt-[13.25rem] md:-mt-[15.25rem]"}`}
+              style={{
+                top: `${5 + i * 0.75}rem`,
+                zIndex: i + 1,
+              }}
             >
-              <div className="sticky top-24">{withPopover}</div>
+              {withPopover}
             </div>
           );
         })}
+
+        {/* Scroll-budsjett — lar brukeren scrolle forbi stacken.
+            Uten dette ville stacken sluppet sticky umiddelbart når innhold
+            under entrer viewport. */}
+        <div aria-hidden className="h-[60vh] md:h-[70vh]" />
       </div>
     </div>
   );
