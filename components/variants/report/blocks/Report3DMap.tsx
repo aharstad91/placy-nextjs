@@ -126,6 +126,7 @@ export default function Report3DMap({
           className="mt-2 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
         >
           <MapView3D
+            mapId="wesselslokka-3d-preview"
             center={mapCenter}
             cameraLock={WESSELSLOKKA_CAMERA_LOCK}
             pois={WESSELSLOKKA_POIS}
@@ -227,6 +228,7 @@ export default function Report3DMap({
           {/* Kart + drawer */}
           <div className="relative flex-1 min-h-0">
             <MapView3D
+              mapId="wesselslokka-3d-modal"
               center={mapCenter}
               cameraLock={WESSELSLOKKA_CAMERA_LOCK}
               pois={visiblePois}

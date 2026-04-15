@@ -1,18 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMap3D } from "@vis.gl/react-google-maps";
 import { Navigation, RotateCw, RotateCcw, ChevronUp, ChevronDown, Plus, Minus } from "lucide-react";
 
 /**
  * Flytende UI-kontroller i kanten av 3D-kartet.
- *
- * Alle knapper bruker Googles native `flyCameraTo` for smooth animasjon —
- * samme motor som drag-gestures, ingen JS-kamp.
- *
- * Plasseres som children til <Map3D> slik at `useMap3D()` returnerer instansen.
+ * Alle knapper bruker Googles native `flyCameraTo` for smooth animasjon.
  */
 interface Map3DControlsProps {
+  /** Map3D-instansen — sendes inn direkte for å unngå context-lookup-feller. */
+  map3d: Map3DAny | null;
   minTilt: number;
   maxTilt: number;
   minAltitude: number;
@@ -21,11 +18,11 @@ interface Map3DControlsProps {
   headingStep?: number;
   /** Grader per klikk for tilt-knappene */
   tiltStep?: number;
-  /** Faktor per klikk for zoom (range × faktor for zoom-inn, / for zoom-ut) */
+  /** Faktor per klikk for zoom */
   zoomFactor?: number;
 }
 
-type Map3DAny = {
+export type Map3DAny = {
   heading: number;
   tilt: number;
   range: number;
@@ -44,6 +41,7 @@ type Map3DAny = {
 };
 
 export function Map3DControls({
+  map3d,
   minTilt,
   maxTilt,
   minAltitude,
@@ -52,7 +50,6 @@ export function Map3DControls({
   tiltStep = 15,
   zoomFactor = 1.5,
 }: Map3DControlsProps) {
-  const map3d = useMap3D() as unknown as Map3DAny | null;
   const [heading, setHeading] = useState(0);
 
   // Lytt til heading-endringer for å rotere kompasset live
@@ -67,9 +64,17 @@ export function Map3DControls({
   if (!map3d) return null;
 
   const flyBy = (delta: Partial<{ heading: number; tilt: number; range: number }>) => {
+    if (!map3d) return;
+    // Google sin LatLngAltitude har lat/lng som getters — spread mister dem.
+    // Må kopiere eksplisitt.
+    const c = map3d.center;
     map3d.flyCameraTo({
       endCamera: {
-        center: { ...map3d.center },
+        center: {
+          lat: c.lat,
+          lng: c.lng,
+          altitude: c.altitude ?? 0,
+        },
         range: delta.range ?? map3d.range,
         tilt: delta.tilt ?? map3d.tilt,
         heading: delta.heading ?? map3d.heading,
