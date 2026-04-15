@@ -31,9 +31,9 @@ export const WESSELSLOKKA_CAMERA_LOCK = {
   // Zoom-grenser (kamera-altitude i meter over havet)
   minAltitude: 200, // kan ikke komme nærmere enn 200m
   maxAltitude: 3000, // kan ikke zoome lenger ut enn 3km
-  // Pan-grense: firkantet boks, 2.5km halvside → 5×5km totalt rundt senter.
+  // Pan-grense: firkantet boks, 1.5km halvside → 3×3km totalt rundt senter.
   // Firkant (ikke sirkel) gir færre hjørne-artefakter når brukeren møter kanten.
-  panHalfSideKm: 2.5,
+  panHalfSideKm: 1.5,
 } as const;
 
 /** Rapportens tab-kategorier (i visningsrekkefølge). */
