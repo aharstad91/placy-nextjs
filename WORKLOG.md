@@ -4,6 +4,20 @@
 
 ---
 date: 2026-04-15
+action: report-3d-map-modal-sheet-migrering
+files:
+  - components/variants/report/blocks/Report3DMap.tsx (Dialog→Sheet)
+branch: main
+summary: Migrerte Report3DMap fra shadcn Dialog til Sheet (side=bottom) — 3D-kartet bruker nå identisk Apple-style slide-up modal som Mapbox-kartet i ReportThemeSection.
+detail: |
+  - Byttet Dialog/DialogContent/DialogTitle → Sheet/SheetContent/SheetTitle
+  - Same klasser som ReportThemeSection: !inset-x-0 !bottom-0 !top-[8vh],
+    md:!inset-x-[4vw] md:!top-[5vh], rounded-t-2xl
+  - Same slide-up animasjon: map-modal-slide-up (400ms) / map-modal-slide-down (300ms)
+  - Visuell paritet verifisert i browser — begge modaler identiske i opplevelse
+
+---
+date: 2026-04-15
 action: google-maps-3d-pan-firkant-og-prosjektmarkør
 files:
   - components/map/ProjectSitePin.tsx (NY)
@@ -110,6 +124,301 @@ detail: |
   - Ingen quota-cap eller budget alert satt opp ennå
   - Bounds + maxAltitude begrenser tiles-lasting til nær-området
   - Worst-case: $10/mnd før alert
+status: done
+
+---
+date: 2026-04-15
+action: humor-i-kategori-illustrasjoner-eksperiment
+files:
+  - public/illustrations/hverdagsliv-humor-a.jpg
+  - public/illustrations/hverdagsliv-humor-b.jpg
+  - public/illustrations/trening-aktivitet-humor-a.jpg
+  - public/illustrations/trening-aktivitet-humor-b.jpg
+  - public/illustrations/trening-aktivitet-humor-c.jpg
+  - /tmp/gen_hverdagsliv_variant_a.py
+  - /tmp/gen_hverdagsliv_variant_b.py
+  - /tmp/gen_trening_variant_a.py
+  - /tmp/gen_trening_variant_b.py
+  - /tmp/gen_trening_variant_c.py
+summary: >
+  Eksperimentert med å legge subtil voksenhumor (Mode C — tørr juxtaposition,
+  ikke slapstick) INNE I kategori-illustrasjonene selv, ikke i captions. 5
+  varianter generert via Gemini Nano Banana Pro med eksisterende Wesselsløkka-
+  stil-lås. Parkert for senere — konseptet fungerer, men trenger fokusert
+  sesjon for å konsolidere på tvers av alle 6 kategorier.
+detail: |
+  UTGANGSPUNKT:
+  Brukeren ønsket å makse verdi ut av de allerede genererte kategori-
+  illustrasjonene. Ikke "cheesy quotes" under bildene — humor i selve
+  motivet, subtilt, "lur voksenhumor". Gemini-generering er gratis, så
+  iterasjon er fritt.
+
+  VALGT RETNING: Mode C — tørr juxtaposition
+  To elementer i scenen som kommenterer hverandre uten å si det.
+  Ikke to separate spøker — én joke med to synlige elementer.
+  Maks 2 humor-detaljer per bilde.
+
+  EKSPERIMENTER:
+  - hverdagsliv-humor-a: "Barnet ser, forelderen scroller" — forelder med
+    telefon opp, barn i vogn peker på spurv på bakken.
+  - hverdagsliv-humor-b: "To fartene" — sprinter passer eldre person
+    med rolator.
+  - trening-aktivitet-humor-a: "De to tempoene" — jogger passer eldre
+    par som går hånd-i-hånd.
+  - trening-aktivitet-humor-b: "Hunden venter" — yoga-person på matte,
+    hund sitter tålmodig ved siden av.
+  - trening-aktivitet-humor-c: Konsoliderte iterasjonen — bygget endret
+    til realistisk norsk mixed-use bygård (3 etg, gym i 1. etg), burger-
+    sjappe ved siden, yoga-person i child's pose med hund i play-bow ved
+    siden (hunden IMITERER posituren — visuelt rim), pluss person som
+    henger i pull-up-stanga.
+
+  LÆRDOMMER (viktige for videre arbeid):
+
+  1. Foreground vs middle-ground — helt avgjørende.
+     Første forsøk (hverdagsliv-a/b) plasserte humor-figurene foran i bildet
+     — de dominerte komposisjonen og så ut som "sticker på et bakgrunnsbilde".
+     Regelen som fungerte: ALLE figurer i middle-ground, samme skala som de
+     andre beboerne i scenen, 8-15% av canvas-høyde. Ingen close-ups.
+     Humoren skal oppdages, ikke skrikes.
+
+  2. Bygg-realisme: norsk urban-forstad er mixed-use, ikke standalone trehus.
+     Det opprinnelige trening-aktivitet-bygget var et idyllisk standalone
+     trehus — ikke realistisk for norsk kontekst. Skifte til 3-etasjes
+     bygård med kommersielt i 1. etg og leiligheter over = umiddelbart
+     mer troverdig for brokers/kjøpere. Dette gjelder sannsynligvis også
+     mat-drikke og hverdagsliv. Kan brukes som compound-læring senere.
+
+  3. Burger-sjappa ved siden av gymmet ER humor i seg selv.
+     Visuelt kodet (rødt-gult takskjerm, rundt burger-logo uten tekst).
+     Lesbart som "fast food" uten å bryte no-text-regelen. Fungerer på
+     miljø-nivå (environmental humor), ikke karakter-nivå.
+
+  4. Hund-imiterer-menneske er den sterkeste enkelt-detaljen.
+     Play-bow-posituren er ekte hund-gest som ser yoga-aktig ut.
+     Visuelt rim mellom menneske og hund = det varmeste smilet.
+     Rewards attention uten å være kryptisk.
+
+  5. Kroppsspråk-nyanser er svakere i Gemini.
+     Prompt'et "sliten pull-up person, slumpet kropp, hengende hode" —
+     modellen gjorde det mer nøytralt. Subtile emosjonelle detaljer
+     krever ofte re-generering eller enklere body-language-cues.
+
+  STIL-LÅS HOLDER:
+  Alle 5 varianter bevarte Wesselsløkka-akvarell-stilen, palett, og
+  pure-white bakgrunn. Pipeline fra 2026-04-13 fungerer fortsatt.
+
+  STATUS: PARKERT
+  Konseptet er bevist. Trening-aktivitet-humor-c er den sterkeste
+  variaten. Men dette krever fokusert sesjon for å:
+  - Lande stil-konsistens på tvers av alle 6 kategorier
+  - Bestemme hvilke humor-elementer som er "Placy-signaturer" vs per-bilde
+  - Beslutte om vi faktisk erstatter eksisterende kategori-illustrasjoner,
+    eller beholder de nåværende og har disse som "humor-varianter"
+  - Eventuelt iterere trening-c for å fikse sliten-pull-up-svakheten
+
+  Tar opp igjen når prioritert. Originale illustrasjoner (uten humor)
+  forblir i bruk inntil beslutning.
+
+status: parkert
+
+---
+date: 2026-04-15
+action: natur-friluftsliv-trail-data-research
+files:
+  - (ingen kodeendringer — kun research/strategi)
+summary: >
+  Sparring om hvordan løse det tynne sti-UX-et i Natur & Friluftsliv-
+  seksjonen. Konklusjon: vi trenger navngitte, kuraterte ruter —
+  ikke et komplett sti-nettverk. Utsatt for nå; dokumentert for senere.
+detail: |
+  BAKGRUNN:
+  Trail-overlay-featuren (committed 2026-04-10, branch feat/report-blocks)
+  henter Overpass API-data (OSM route relations med navn), men dekning
+  for lokale områder som Estenstadmarka er tynn. Session ble stoppet
+  tidligere fordi UX-en føltes mangelfull.
+
+  PROBLEMRAMMING:
+  Brukeren korrigerte retningen: vi skal IKKE vise hele sti-grafen —
+  vi skal vise "kjente, navngitte ruter mot meningsfulle mål"
+  (f.eks. Estenstad P-plass → Estenstadhytta).
+
+  DATAKILDER VURDERT (prioritert):
+  1. Kartverket NDTF ("Tur- og friluftsruter") — WFS/WMS/GeoPackage
+     via geonorge.no. Statlig kuratert, navngitte ruter, CC-BY 4.0.
+     Sannsynligvis beste primærkilde for Norge.
+  2. UT.no (DNT) — per-hytte-sider med tilkomstruter, GPX-nedlasting,
+     tur-beskrivelser. Ingen offentlig API, men scrapable URL-er.
+  3. Naturbase (Miljødirektoratet) — WFS med friluftsområder/turmål,
+     koordinater men ikke rute-geometri.
+  4. OSM utvidet query — relation["route"~"hiking|foot|bicycle"]["name"]
+     = det vi har i dag.
+  5. Strava Heatmap — tilleggslag for popularitet, ikke primærkilde.
+
+  FORESLÅTT DATAMODELL (ikke implementert):
+  interface NamedRoute {
+    id, name, routeType, distanceKm, duration, difficulty,
+    startPoint{lat,lng,name}, endPoint{lat,lng,name},
+    geometry: GeoJSON.LineString,
+    externalUrl?, editorialHook?,
+    source: "kartverket" | "ut.no" | "manual"
+  }
+  Lagres som `reportConfig.namedRoutes[]` — ikke `trails`.
+
+  UX-RETNING (for senere):
+  - 3-8 navngitte ruter per prosjekt, ikke tett sti-graf
+  - Labels alltid synlige (ikke bare hover)
+  - Startpunkt-pin + klikk åpner drawer med tur-beskrivelse
+  - "Åpne i ut.no"-knapp hvis rute har ekstern URL
+
+  STATUS:
+  Utsatt. For komplisert for å ta nå — trenger dedikert planning-sesjon
+  (/brainstorm → /plan) før implementasjon. Denne læringen står i worklog
+  så vi har konteksten når vi plukker det opp igjen.
+
+status: parkert
+
+---
+date: 2026-04-15
+action: tabbed-aerial-map-med-akvarell-pipeline
+files:
+  - components/variants/report/blocks/TabbedAerialMap.tsx
+  - components/variants/report/ReportPage.tsx
+  - public/illustrations/wesselslokka-{nord,ost,vest,sor}.png
+  - .env.local (la til GEMINI_API_KEY og REPLICATE_API_TOKEN)
+summary: >
+  Bygd ny TabbedAerialMap-komponent: akvarell-illustrasjon med tabs per
+  kategori, 4-retnings kompass (N/Ø/S/V), modal med zoom + sidebar drawer,
+  cursor-endrings-hover på kantene for retningsbytte. Testet ulike
+  bildegenererings-modeller for style transfer.
+detail: |
+  KOMPONENT-ARKITEKTUR (TabbedAerialMap):
+  - Preview: akvarell + små markører + gradient + CTA "Utforsk illustrasjonen"
+  - Modal (90vw/85vh): zoomable canvas, tabs, kompass via kant-hover, drawer
+  - Markører: klikkbare, åpner ReportMapDrawer (hvis full POI) eller
+    lettvekts MarkerDrawer (for dummy/enkle markører)
+  - 7 kategorier som tabs: Alle/Oppvekst/Mat&Drikke/Natur/Transport/Trening
+  - Retnings-bytte via hover-soner (60px) på alle 4 kanter med pil + label
+    og cursor-change (w-resize, e-resize, etc.) — erstattet diskrete N/Ø/S/V-
+    knapper etter UX-feedback
+  - Crossfade mellom 4 retningsbilder ved direction-bytte
+  - Drawer lukkes automatisk ved tab-bytte
+  - Zoom begrenset til 1.5x pga. bildeoppløsningscap
+
+  AKSEPTANSEKRITERIER TESTET (via Chrome DevTools MCP):
+  AC1 Preview vises — OK
+  AC2 Klikk åpner modal — OK
+  AC3 Tabs switcher markører (Alle=15, Oppvekst=4, etc.) — OK
+  AC4 Klikk markør → sidebar drawer — OK
+  AC5 Klikk samme marker lukker drawer — OK
+  AC6 Tab-bytte lukker drawer — OK
+  AC7 Kompass/kant-hover bytter retning — OK
+
+  AI-BILDEGENERERING — UNDERSØKELSE:
+  Testet pipeline for å gjøre Google Maps 3D-screenshots → akvarell:
+
+  1. Gemini 2.5 Flash Image (gratis) — BEST på layout-bevaring + stil,
+     men hard cap på ~1344x768. Varierende konsistens mellom kjøringer.
+     Generert 4 retninger (nord/ost/vest/sor) som nå brukes i komponenten.
+
+  2. Gemini 3 Pro Image (standard API) — Same ~1376x768 cap. Ville fått
+     4K-output via Vertex AI, men krever gcloud-setup + GCP-prosjekt.
+
+  3. Flux Kontext Pro (Replicate) — Fullstendig mislykket. Laget et helt
+     annet landskap, mistet layout-gjenkjenning komplett. Ikke brukbar.
+
+  4. Replicate (fofr/style-transfer, ControlNet) — Krever betalingsmetode
+     etter Flux-test (brukte opp gratis-kvote).
+
+  RESEARCH-KONKLUSJON (for fremtiden):
+  - #1: Gemini 3 Pro Image via Vertex AI — native 4K, $0.24/bilde
+  - #2: Recraft V3 img2img — urban_sketching-stil + Creative Upscale, $0.29
+  - #3: FLUX.2 [flex] — multi-referanse, 4MP, $0.12
+  - Upscaling-alternativ: Real-ESRGAN ($0.002) eller Recraft Crisp ($0.004)
+
+  UTSATT TIL SENERE:
+  - Vertex AI-setup for 4K-output (gcloud install + GCP-prosjekt + billing)
+  - Replicate billing + test av Recraft V3 / fofr/style-transfer
+  - Ekte POI-kobling for markører (nå er det dummy-data)
+  - Markør-posisjoner per retning (perspektiv endres ved rotasjon)
+
+  Alt arbeid på feat/report-blocks-worktree. Gemini API og Replicate token
+  lagt til .env.local (billing mangler på Replicate for å kjøre flere tester).
+
+---
+date: 2026-04-14
+action: rapport-v2-blokk-bibliotek
+files:
+  - components/variants/report/blocks/BentoShowcase.tsx
+  - components/variants/report/blocks/FeatureCarousel.tsx
+  - components/variants/report/blocks/StatRow.tsx
+  - components/variants/report/blocks/TimelineRow.tsx
+  - components/variants/report/blocks/EditorialPull.tsx
+  - components/variants/report/blocks/SplitFeature.tsx
+  - components/variants/report/blocks/AnnotatedMap.tsx
+  - components/variants/report/blocks/hverdagsliv-bento.ts
+  - components/variants/report/blocks/matdrikke-carousel.ts
+  - components/variants/report/blocks/transport-stats.ts
+  - components/variants/report/blocks/barn-timeline.ts
+  - components/variants/report/blocks/natur-annotated.ts
+  - components/variants/report/ReportThemeSection.tsx
+summary: >
+  Syv blokk-typer for rikere kategori-presentasjon i rapport v2. Pilotert
+  på Wesselsløkka. Alle 7 kategorier har nå dedikert blokk-komposisjon.
+  Arbeidet er på feat/report-blocks-branch i worktree.
+detail: |
+  BLOKK-BIBLIOTEK (7 typer):
+  
+  Kort-baserte (4):
+  1. BentoShowcase — Apple-bento, zoom-in på ETT subjekt (Valentinlyst Senter)
+     Rendyrket etter scanability-feedback: alle celler handler om senteret.
+     Hero 2×2 med Nettside/Utforsk-knapper + tenant-celler + "og mer"-pills.
+  2. FeatureCarousel — Horisontal scroll, uniforme kort. Mat & Drikke (10 POIer).
+     Snap-x, piler, bleed ut av 800px-kolonne. Google Places-bilder.
+  3. StatRow — Punchy tall-kort. Transport med live Entur/GBFS-data
+     (neste buss, bysykkel, sparkesykler, bildeling) + reisetidsberegninger
+     til Trondheim-ankere (sentrum, Leangen, Værnes, Trondheim S).
+  4. TimelineRow — Sekvensiell progresjon. Barn & Aktivitet skoleløp
+     (barneskole → ungdomsskole → VGS) med node-ikoner + forbindelseslinje.
+  
+  Ikke-kort-baserte (3):
+  5. EditorialPull — Magasin-sitat. Serif-typografi, dekorativt åpningsglyph.
+     Brukes som "pust" mellom tunge seksjoner.
+  6. SplitFeature — 50/50 diptyk. Tekst venstre + illustrasjon høyre.
+     Break-out fra 800px-kolonne. Trening & Aktivitet.
+  7. AnnotatedMap — Illustrert atlas. Nummererte callouts over akvarell-
+     illustrasjon + ordered-list under. Natur & Friluftsliv.
+  
+  VIKTIG DESIGNPRINSIPP (oppdaget under arbeidet):
+  "Én blokk = én narrativ enhet." Bento fungerer fordi alle celler
+  handler om Valentinlyst. Da vi blandet 3 subjekter i én bento
+  (senter + standalone POIer + horisont) ble det vanskelig å skanne.
+  
+  NESTE UTFORSKNINGSRETNING — AnnotatedMap med 3D-flyfoto:
+  Google Maps 3D-screenshot som komposisjonsreferanse → Gemini
+  transformerer til akvarell-illustrasjon → Placy-estetikk bevares,
+  geografisk nøyaktighet sikres, opphavsrettproblemer unngås.
+  Pipeline: 3D-screenshot → Gemini (stilreferanse: Placy akvarell)
+  → illustrert flyfoto → AnnotatedMap med callouts.
+  Topografi (bakker, trær, bygninger) bevares i illustrasjonen.
+  Skalerbart: kan automatiseres for ethvert prosjekt.
+  
+  TEKNISKE LØSNINGER:
+  - Walk-time: haversine × 1.3 road-factor @ 83m/min (matcher ReportHeroInsight)
+  - Live transport-data: transportDashboard hook gjenbrukt
+  - Banner-illustrasjon suppresses for themes med custom block
+  - Child-POIs flattening for Valentinlyst-tenanter
+  - minutesUntil(iso) erstatter formatRelativeDepartureTime for value/unit-split
+  - Flybussen-hastighet (50 km/h) vs urban buss (18 km/h) for Værnes
+  
+  GÅR IKKE VIDERE MED (bevisste valg):
+  - Duplikat-rydding: ReportHeroInsight vises fortsatt under blokkene
+    → tas i generaliseringspasset
+  - Opplevelser: eneste kategori uten dedikert blokk → bruker carousel
+  - AnnotatedMap posisjoner: hardkodet per-prosjekt → auto-projeksjon
+    fra lat/lng krever mer arbeid
+  - Blokk-config-generalisering: conditions er hardkodet i
+    ReportThemeSection → flyttes til report-data.ts
 status: done
 
 ---

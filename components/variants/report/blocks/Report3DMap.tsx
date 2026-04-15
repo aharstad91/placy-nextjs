@@ -3,10 +3,10 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { Map as MapIcon, X, RotateCcw } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { MapView3D, type Map3DInstance } from "@/components/map/map-view-3d";
 import ReportMapDrawer from "../ReportMapDrawer";
 import {
@@ -155,84 +155,60 @@ export default function Report3DMap({
         </button>
       </div>
 
-      {/* Modal — bottom sheet på mobil, sentert dialog på desktop */}
-      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent
+      {/* Modal — Apple-style slide-up, identisk med ReportThemeSection */}
+      <Sheet open={dialogOpen} onOpenChange={handleDialogChange}>
+        <SheetContent
+          side="bottom"
           showCloseButton={false}
-          className="flex flex-col !max-w-none p-0 overflow-hidden gap-0 bg-white fixed bottom-0 left-0 right-0 h-[90vh] rounded-t-2xl rounded-b-none md:static md:w-[90vw] md:h-[88vh] md:rounded-2xl"
+          className="flex flex-col p-0 overflow-hidden gap-0 bg-white !border-0
+            !inset-x-0 !bottom-0 !top-[4vh]
+            md:!inset-x-[4vw] md:!top-[5vh]
+            rounded-t-2xl
+            data-[state=open]:[animation-name:map-modal-slide-up]
+            data-[state=open]:[animation-duration:400ms]
+            data-[state=open]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]
+            data-[state=closed]:[animation-name:map-modal-slide-down]
+            data-[state=closed]:[animation-duration:300ms]
+            data-[state=closed]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]"
         >
-          <DialogTitle className="sr-only">
+          <SheetTitle className="sr-only">
             Alt rundt {projectName} — 3D-kart
-          </DialogTitle>
+          </SheetTitle>
 
           {/* Drag-håndtak på mobil */}
           <div className="flex justify-center pt-2 pb-0 md:hidden">
             <div className="w-8 h-1 rounded-full bg-gray-300" />
           </div>
 
-          {/* Header med tabs */}
-          <div className="flex flex-col gap-3 px-4 py-3 md:px-5 md:py-4 border-b border-[#eae6e1] bg-white shrink-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <MapIcon className="w-5 h-5 text-[#7a7062] shrink-0" />
-                <span className="text-sm md:text-base font-semibold text-[#1a1a1a] truncate">
-                  Alt rundt {projectName}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={handleResetView}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-[#eae6e1] text-[#5d5348] hover:border-[#d4cfc8] hover:text-[#1a1a1a] transition-colors"
-                  aria-label="Tilbake til startpunkt"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Tilbake</span>
-                </button>
-                <button
-                  onClick={() => handleDialogChange(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f5f3f0] transition-colors"
-                  aria-label="Lukk"
-                >
-                  <X className="w-4 h-4 text-[#6a6a6a]" />
-                </button>
-              </div>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-2 md:px-5 md:py-3 border-b border-[#eae6e1] bg-white shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <MapIcon className="w-5 h-5 text-[#7a7062] shrink-0" />
+              <span className="text-sm md:text-base font-semibold text-[#1a1a1a] truncate">
+                Alt rundt {projectName}
+              </span>
             </div>
-
-            {/* Tab-filter */}
-            <div
-              role="tablist"
-              aria-label="Filtrer kategorier"
-              className="flex flex-wrap gap-2"
-            >
-              {WESSELSLOKKA_TAB_IDS.map((tabId) => {
-                const isActive = tabId === activeTab;
-                return (
-                  <button
-                    key={tabId}
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => handleTabChange(tabId)}
-                    className={`px-3 py-1 rounded-full text-xs md:text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-[#1a1a1a] text-white"
-                        : "bg-white text-[#5d5348] border border-[#eae6e1] hover:border-[#d4cfc8]"
-                    }`}
-                  >
-                    {WESSELSLOKKA_TAB_LABELS[tabId]}
-                  </button>
-                );
-              })}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleResetView}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-[#eae6e1] text-[#5d5348] hover:border-[#d4cfc8] hover:text-[#1a1a1a] transition-colors"
+                aria-label="Tilbake til startpunkt"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tilbake</span>
+              </button>
+              <button
+                onClick={() => handleDialogChange(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f5f3f0] transition-colors"
+                aria-label="Lukk"
+              >
+                <X className="w-4 h-4 text-[#6a6a6a]" />
+              </button>
             </div>
-
-            {/* Hint om interaksjon */}
-            <p className="text-xs text-[#8b8275]">
-              Dra horisontalt for å rotere · Dra vertikalt for å tilte · Klikk pins
-              for detaljer
-            </p>
           </div>
 
           {/* Kart + drawer */}
-          <div className="relative flex-1 min-h-0">
+          <div className="relative flex-1 min-h-0 touch-none">
             <MapView3D
               mapId="wesselslokka-3d-modal"
               center={mapCenter}
@@ -258,8 +234,36 @@ export default function Report3DMap({
               />
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* Tab-filter — bottom bar, lett å nå med tommelen */}
+          <div className="shrink-0 border-t border-[#eae6e1] bg-white px-4 py-3 safe-area-bottom">
+            <div
+              role="tablist"
+              aria-label="Filtrer kategorier"
+              className="flex gap-2 overflow-x-auto scrollbar-none"
+            >
+              {WESSELSLOKKA_TAB_IDS.map((tabId) => {
+                const isActive = tabId === activeTab;
+                return (
+                  <button
+                    key={tabId}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => handleTabChange(tabId)}
+                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs md:text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-[#1a1a1a] text-white"
+                        : "bg-white text-[#5d5348] border border-[#eae6e1] hover:border-[#d4cfc8]"
+                    }`}
+                  >
+                    {WESSELSLOKKA_TAB_LABELS[tabId]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }

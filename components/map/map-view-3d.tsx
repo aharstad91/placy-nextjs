@@ -8,6 +8,7 @@ import {
   MapMode,
   AltitudeMode,
   useMap3D,
+  GestureHandling,
 } from "@vis.gl/react-google-maps";
 import Map, { Marker as MapboxMarker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -153,7 +154,10 @@ function Map3DInner({
   // Map3DControls må være SØSKEN til Map3D (ikke barn), ellers blir
   // div-ene absorbert i custom element sin shadow DOM.
   return (
-    <div className="relative w-full h-full">
+    // touch-action: none er påkrevd for at Google Maps 3D (WebGL custom element)
+    // skal motta touch-events på mobil. Uten dette fanger nettleseren touch som
+    // scroll før kartet ser dem. Mapbox setter dette internt; gmp-map-3d gjør det ikke.
+    <div className="relative w-full h-full touch-none">
       <Map3D
         id={mapId}
         mode={MapMode.SATELLITE}
@@ -171,7 +175,8 @@ function Map3DInner({
         minAltitude={minAltitude}
         maxAltitude={maxAltitude}
         defaultUIHidden
-        style={{ width: "100%", height: "100%" }}
+        gestureHandling={activated ? GestureHandling.GREEDY : GestureHandling.AUTO}
+        style={{ width: "100%", height: "100%", touchAction: "none" }}
       >
         <MapReadyBridge onReady={handleReady} />
 
