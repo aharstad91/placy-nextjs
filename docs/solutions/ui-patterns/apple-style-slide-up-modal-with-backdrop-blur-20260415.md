@@ -105,6 +105,35 @@ Eksisterende `supports-backdrop-filter:backdrop-blur-sm` i `DialogOverlay` hadde
 - **Kun transform + opacity i animasjoner.** Andre properties (width, height, left, top, filter) trigger layout/paint og gir frame-drops.
 - **Respekter `prefers-reduced-motion`** — alltid. En `@media` query som setter `animation: none` er alt som trengs.
 
+## Kritisk: Bruk Sheet, ikke Dialog — close-animasjon fungerer ikke med Dialog
+
+`DialogContent` er nestet **inne** i `DialogOverlay` i vår `dialog.tsx`. Når state blir `closed`, starter Overlay sin `fade-out-0` (200ms). Radix Presence ser at Overlay-animasjonen slutter og unmounter Overlay — og river med seg Content som er nestet inni, **før** Content sin slide-down-animasjon rekker å starte.
+
+**Sheet-komponenten** har sibling-struktur: `<SheetOverlay />` og `<SheetContent>` er uavhengige søsken i portalen. Begge har egne Radix Presence-livssykluser. Content unmountes først når **sin** animasjon er ferdig.
+
+### Verifisert løsning
+
+Bruk `Sheet`/`SheetContent` med `side="bottom"` + override animation via `[animation-name:*]`:
+
+```tsx
+<Sheet open={open} onOpenChange={setOpen}>
+  <SheetContent
+    side="bottom"
+    showCloseButton={false}
+    className="...posisjon...
+      data-[state=open]:[animation-name:map-modal-slide-up]
+      data-[state=open]:[animation-duration:400ms]
+      data-[state=open]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]
+      data-[state=closed]:[animation-name:map-modal-slide-down]
+      data-[state=closed]:[animation-duration:300ms]
+      data-[state=closed]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]"
+  >
+```
+
+`[animation-name:map-modal-slide-up]` overrider `animation-name`-sub-egenskapen etter at `animate-in` setter hele `animation`-shorthand. Keyframes ligger i `globals.css` (`@keyframes map-modal-slide-up`, `map-modal-slide-down`).
+
+**Animasjonene verifisert med JS-events:** `animationstart` + `animationend` på `sheet-content` for begge tilstander.
+
 ## Related Issues
 
 - `docs/solutions/ui-bugs/modal-backdrop-half-viewport-css-animation-collision-20260215.md` — samme prior art om duplikate keyframe-navn som override hverandre

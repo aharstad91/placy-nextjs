@@ -3109,3 +3109,22 @@ Neste fokusområder (per tidligere logger):
 - **Flere Dialog-brukere, få regresjoner.** Bare to Dialog-instanser i kodebase: map-modal og CookiesModal. Lav risiko-profil — kunne trygt endre defaults.
 - **Visuell verifisering via Chrome DevTools MCP er rask og effektiv.** Screenshots på desktop (1400×900) og mobil (390×844) ga umiddelbar visuell bekreftelse. Apple's design translerte direkte til Placys rapport-kontekst.
 - **Prior art-søk i QMD er første-steg**. Søket på "modal backdrop blur animation" ga oss ui-bugs/modal-backdrop-half-viewport-css-animation-collision rett i fanget — kritisk lærdom om duplikate keyframe-navn. Uten det hadde vi sannsynligvis valgt `slide-up` som navn og fått samme bug på nytt.
+
+---
+
+## 2026-04-15 (sesjon 2) — Apple-modal: fix lukke-animasjon via Sheet
+
+### Beslutninger
+- **Dialog → Sheet for map-modal.** Rotårsak funnet for manglende close-animasjon: `DialogContent` er nestet **inne** i `DialogOverlay` i vår `dialog.tsx`. Overlay umountes etter 200ms fade-out og river med seg Content som nestet element — før slide-down rekker å starte. Sheet-komponenten har sibling-struktur og uavhengige Presence-livssykluser. Ingen endring i animasjonslogikk — kun komponent-bytte.
+- **`[animation-name:*]` for Apple-timing.** Sheet's `animate-in` setter `animation: enter ...` via shorthand. Arbitrære sub-egenskaper (`[animation-name:map-modal-slide-up]`, `[animation-duration:400ms]`, `[animation-timing-function:...]`) overrider enkeltfelter etter shorthand i CSS-kaskaden. Rent og kollisjons-fritt.
+- **Animasjoner verifisert med JS-events.** `animationstart` + `animationend` på `data-slot="sheet-content"` for begge tilstander — ikke bare visuell sjekk.
+
+### Levert
+- `map-modal-slide-up/-down` keyframes i globals.css (full height, Apple easing)
+- `SheetOverlay` backdrop-blur fikset (samme `supports-[backdrop-filter:blur(1px)]`-fix som dialog.tsx)
+- Map-modal i `ReportThemeSection` byttet fra Dialog → Sheet
+- Compound-dokument oppdatert med rotårsak-diagnosen
+
+### Parkert / Åpne spørsmål
+- **Swipe-to-dismiss på mobil** — naturlig neste steg, ikke i scope nå
+- **`DialogContent`-nesting er fortsatt feil** i `dialog.tsx` — Content inni Overlay. Fungerer for CookiesModal fordi den ikke bruker slide-animasjoner, men er en latent bug for enhver fremtidig Dialog med close-animasjon. Bør fikses på sikt.
