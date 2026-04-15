@@ -20,6 +20,8 @@ interface Map3DControlsProps {
   tiltStep?: number;
   /** Faktor per klikk for zoom */
   zoomFactor?: number;
+  /** Hvis false, skjuler +/- zoom-knappene. Default true. */
+  showZoom?: boolean;
 }
 
 export type Map3DAny = {
@@ -49,6 +51,7 @@ export function Map3DControls({
   headingStep = 45,
   tiltStep = 15,
   zoomFactor = 1.5,
+  showZoom = true,
 }: Map3DControlsProps) {
   const [heading, setHeading] = useState(0);
 
@@ -164,24 +167,26 @@ export function Map3DControls({
       </div>
 
       {/* Zoom inn / ut */}
-      <div className="flex flex-col rounded-full overflow-hidden border border-[#eae6e1]">
-        <button
-          onClick={() => zoomBy(1 / zoomFactor)}
-          className={`${btn} rounded-none border-0 border-b border-[#eae6e1]`}
-          aria-label="Zoom inn"
-          title="Zoom inn"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => zoomBy(zoomFactor)}
-          className={`${btn} rounded-none border-0`}
-          aria-label="Zoom ut"
-          title="Zoom ut"
-        >
-          <Minus className="w-4 h-4" />
-        </button>
-      </div>
+      {showZoom && (
+        <div className="flex flex-col rounded-full overflow-hidden border border-[#eae6e1]">
+          <button
+            onClick={() => zoomBy(1 / zoomFactor)}
+            className={`${btn} rounded-none border-0 border-b border-[#eae6e1]`}
+            aria-label="Zoom inn"
+            title="Zoom inn"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => zoomBy(zoomFactor)}
+            className={`${btn} rounded-none border-0`}
+            aria-label="Zoom ut"
+            title="Zoom ut"
+          >
+            <Minus className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

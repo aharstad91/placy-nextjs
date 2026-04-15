@@ -9,14 +9,24 @@ import { DEFAULT_THEMES } from "@/lib/themes/default-themes";
 
 /**
  * Kameraprofil. Bounds beregnes dynamisk rundt faktisk center i MapView3D.
+ *
+ * Pan-låsen implementeres IKKE via bounds (det fightet brukerens drag og ga
+ * hakking). Isteden hijackes pointer-events i MapView3D slik at drag alltid
+ * tolkes som ROTATE — se `forceOrbitGesture` der. Bounds holdes som
+ * kvalitets-safety-net hvis Google en gang i fremtiden slipper gjennom
+ * pan-momentum.
  */
 export const DEFAULT_CAMERA_LOCK = {
   range: 900,
   tilt: 45,
   minTilt: 15,
   maxTilt: 75,
-  minAltitude: 200,
-  maxAltitude: 3000,
+  // Konservative altitude-grenser for å bevare "orbit rundt punktet"-følelsen:
+  // - minAltitude 150: kan zoome tett inn, men ikke helt ned i bakken
+  // - maxAltitude 1200: hindrer at brukeren zoomer seg ut av orbit-radien.
+  //   3000 var for romslig — man så hele Trondheim og mistet ankeret.
+  minAltitude: 150,
+  maxAltitude: 1200,
   panHalfSideKm: 1.5,
 } as const;
 
