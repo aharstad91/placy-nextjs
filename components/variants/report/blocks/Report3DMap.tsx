@@ -161,20 +161,23 @@ export default function Report3DMap({
           onClick={handleOpenSheet}
           className="mt-2 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
         >
-          <MapView3D
-            mapId="report-3d-preview"
-            center={mapCenter}
-            cameraLock={DEFAULT_CAMERA_LOCK}
-            pois={pois}
-            opacities={opacities}
-            activated={false}
-            projectSite={{
-              lat: mapCenter.lat,
-              lng: mapCenter.lng,
-              name: projectName,
-              subtitle: "Nybygg 2028",
-            }}
-          />
+          {/* Unmount preview når modal er åpen — iOS WebKit tåler kun én WebGL-kontekst */}
+          {!sheetOpen && (
+            <MapView3D
+              mapId="report-3d-preview"
+              center={mapCenter}
+              cameraLock={DEFAULT_CAMERA_LOCK}
+              pois={pois}
+              opacities={opacities}
+              activated={false}
+              projectSite={{
+                lat: mapCenter.lat,
+                lng: mapCenter.lng,
+                name: projectName,
+                subtitle: "Nybygg 2028",
+              }}
+            />
+          )}
 
           {/* Gradient-overlay som skiller CTA fra kartet */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec]/90 via-[#f5f1ec]/10 to-transparent pointer-events-none z-10" />

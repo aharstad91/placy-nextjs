@@ -40,20 +40,10 @@ export function Map3DFallback({ pois, message }: Map3DFallbackProps) {
 }
 
 /**
- * Check if WebGL is available for 3D rendering.
- *
- * iOS (Chrome, Safari, alle nettlesere) bruker WebKit og krasjer med
- * Google Maps 3D sine avanserte WebGL2-kall — selv om canvas.getContext('webgl')
- * returnerer et objekt. Vi faller tilbake til Mapbox 2D på alle iOS-enheter.
+ * Check if WebGL is available for 3D rendering
  */
 export function isWebGLAvailable(): boolean {
   if (typeof window === 'undefined') return true; // SSR - assume available
-
-  // iOS bruker WebKit uansett nettleser — Google Maps 3D krasjer der
-  const isIOS =
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (isIOS) return false;
 
   try {
     const canvas = document.createElement('canvas');
