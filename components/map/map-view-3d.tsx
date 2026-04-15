@@ -13,6 +13,7 @@ import Map, { Marker as MapboxMarker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { POI } from "@/lib/types";
 import { Marker3DPin } from "./Marker3DPin";
+import { Map3DControls } from "./Map3DControls";
 import { getIcon } from "@/lib/utils/map-icons";
 import { useWebGLCheck } from "./Map3DFallback";
 
@@ -105,6 +106,7 @@ function Map3DInner({
   activePOIId,
   onPOIClick,
   onMapReady,
+  activated = true,
 }: MapView3DProps) {
   const minTilt = cameraLock.minTilt;
   const maxTilt = cameraLock.maxTilt;
@@ -135,6 +137,14 @@ function Map3DInner({
       style={{ width: "100%", height: "100%" }}
     >
       <MapReadyBridge onReady={onMapReady} />
+      {activated && (
+        <Map3DControls
+          minTilt={minTilt ?? 15}
+          maxTilt={maxTilt ?? 75}
+          minAltitude={minAltitude ?? 100}
+          maxAltitude={maxAltitude ?? 5000}
+        />
+      )}
       {pois.map((poi) => {
         const Icon = getIcon(poi.category.icon);
         const isActive = activePOIId === poi.id;
