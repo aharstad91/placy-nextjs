@@ -11,9 +11,9 @@ import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportSummarySection from "./ReportSummarySection";
 
-// Report3DMap krever WebGL og browser-API → må lastes kun på klient.
+// ReportOverviewMap krever WebGL og browser-API → må lastes kun på klient.
 // Følger samme mønster som ReportThemeMap (SSR-safe).
-const Report3DMap = dynamic(() => import("./blocks/Report3DMap"), {
+const ReportOverviewMap = dynamic(() => import("./blocks/ReportOverviewMap"), {
   ssr: false,
 });
 
@@ -135,17 +135,19 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
               projectName={reportData.projectName}
               mapStyle={reportData.mapStyle}
               areaSlug={areaSlug}
+              has3dAddon={effectiveProject.has3dAddon ?? false}
             />
           </div>
         ))}
 
         {/* 3D-kart — "Alt rundt [område]". Vises for alle rapporter med POIs. */}
         {effectiveProject.pois.length > 0 && (
-          <Report3DMap
+          <ReportOverviewMap
             areaSlug={areaSlug}
             projectName={reportData.projectName}
             center={reportData.centerCoordinates}
             pois={effectiveProject.pois}
+            has3dAddon={effectiveProject.has3dAddon ?? false}
           />
         )}
 
@@ -168,6 +170,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
                   mapStyle={reportData.mapStyle}
                   areaSlug={areaSlug}
                   variant="secondary"
+                  has3dAddon={effectiveProject.has3dAddon ?? false}
                 />
               </div>
             ))}

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import type { Coordinates, POI } from "@/lib/types";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Star, MapPin, Map as MapIcon, X, Zap, Car, ExternalLink, Sparkles } from "lucide-react";
+import { Star, MapPin, Map as MapIcon, Zap, Car, ExternalLink, Sparkles } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
@@ -16,15 +16,10 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import UnifiedMapModal from "@/components/map/UnifiedMapModal";
 import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
-import ReportMapDrawer from "./ReportMapDrawer";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
@@ -45,6 +40,8 @@ interface ReportThemeSectionProps {
   mapStyle?: string;
   /** Area slug for POI page links in map popup */
   areaSlug?: string | null;
+  /** Whether this project has purchased the 3D map add-on */
+  has3dAddon: boolean;
 }
 
 export default function ReportThemeSection({
@@ -55,6 +52,7 @@ export default function ReportThemeSection({
   variant = "primary",
   mapStyle,
   areaSlug,
+  has3dAddon,
 }: ReportThemeSectionProps) {
   const { locale } = useLocale();
   const Icon = getIcon(theme.icon);
@@ -64,29 +62,6 @@ export default function ReportThemeSection({
 
   // Map dialog state
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
-
-  // Selected POI state (self-contained per section)
-  const [selectedPOIId, setSelectedPOIId] = useState<string | null>(null);
-
-  const poiById = useMemo(() => {
-    const lookup: Record<string, POI> = {};
-    for (const poi of theme.allPOIs) lookup[poi.id] = poi;
-    return lookup;
-  }, [theme.allPOIs]);
-
-  const selectedPOI = selectedPOIId ? poiById[selectedPOIId] ?? null : null;
-
-  const handleMarkerClick = useCallback((poiId: string) => {
-    setSelectedPOIId((prev) => (prev === poiId ? null : poiId));
-  }, []);
-
-  const handleMapClick = useCallback(() => {
-    setSelectedPOIId(null);
-  }, []);
-
-  const handleDrawerClose = useCallback(() => {
-    setSelectedPOIId(null);
-  }, []);
 
   // Parse upper narrative (above cards) — buss, bysykkel, sparkesykkel
   const upperSegments = theme.upperNarrative
@@ -319,104 +294,76 @@ export default function ReportThemeSection({
       {/* Per-category map — dormant preview + modal on activate */}
       {theme.allPOIs.length > 0 && (
         <>
-          {/* Dormant map preview — entire area is clickable */}
-          <button
-            onClick={() => { setSelectedPOIId(null); setMapDialogOpen(true); }}
-            className="mt-8 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
-          >
-            <ReportThemeMap
-              pois={theme.allPOIs}
-              center={center}
-              highlightedPOIId={null}
-              onMarkerClick={() => {}}
-              mapStyle={mapStyle}
-              activated={false}
-              projectName={projectName}
-              trails={theme.trails}
-              vehiclePositions={vehiclePositions}
-            />
-
-            {/* Gradient overlay — 100% solid at bottom, fades to transparent at top */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
-
-            {/* CTA — vertically centered + 25% down */}
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
-              <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
-                {theme.allPOIs.length} steder på kartet
-              </p>
-              <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
-                <MapIcon className="w-4 h-4 text-[#7a7062]" />
-                Utforsk kartet
-              </div>
-            </div>
-          </button>
-
-          {/* Map modal — Apple-style slide-up with backdrop-blur. Identical on mobile + desktop, scaled for width. */}
-          <Sheet open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
-            <SheetContent
-              side="bottom"
-              showCloseButton={false}
-              className="flex flex-col p-0 overflow-hidden gap-0 bg-white !border-0
-                !inset-x-0 !bottom-0 !top-[8vh]
-                md:!inset-x-[4vw] md:!top-[5vh]
-                rounded-t-2xl
-                data-[state=open]:[animation-name:map-modal-slide-up]
-                data-[state=open]:[animation-duration:400ms]
-                data-[state=open]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]
-                data-[state=closed]:[animation-name:map-modal-slide-down]
-                data-[state=closed]:[animation-duration:300ms]
-                data-[state=closed]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]"
+          {/* Dormant map preview — entire area is clickable.
+              Unmounted when modal is open to avoid two WebGL contexts on iOS. */}
+          {!mapDialogOpen && (
+            <button
+              onClick={() => setMapDialogOpen(true)}
+              className="mt-8 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
             >
-              <SheetTitle className="sr-only">{theme.name} — kart</SheetTitle>
+              <ReportThemeMap
+                pois={theme.allPOIs}
+                center={center}
+                highlightedPOIId={null}
+                onMarkerClick={() => {}}
+                mapStyle={mapStyle}
+                activated={false}
+                projectName={projectName}
+                trails={theme.trails}
+                vehiclePositions={vehiclePositions}
+              />
 
-              {/* Drag handle — mobile only */}
-              <div className="flex justify-center pt-2 pb-0 md:hidden">
-                <div className="w-8 h-1 rounded-full bg-gray-300" />
-              </div>
+              {/* Gradient overlay — 100% solid at bottom, fades to transparent at top */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
 
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-2 md:px-5 md:py-3 border-b border-[#eae6e1] bg-white shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <Icon className="w-5 h-5 text-[#7a7062]" />
-                  <span className="text-sm md:text-base font-semibold text-[#1a1a1a]">{theme.name}</span>
+              {/* CTA — vertically centered + 25% down */}
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
+                <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
+                  {theme.allPOIs.length} steder på kartet
+                </p>
+                <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
+                  <MapIcon className="w-4 h-4 text-[#7a7062]" />
+                  Utforsk kartet
                 </div>
-                <button
-                  onClick={() => setMapDialogOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f5f3f0] transition-colors"
-                >
-                  <X className="w-4 h-4 text-[#6a6a6a]" />
-                </button>
               </div>
+            </button>
+          )}
 
-              {/* Map + drawer */}
-              <div className="relative flex-1 min-h-0 p-0 md:p-8">
-                <ReportThemeMap
-                  pois={theme.allPOIs}
-                  center={center}
-                  highlightedPOIId={selectedPOIId}
-                  featuredPOIIds={isTransport ? undefined : featuredPOIIds}
-                  onMarkerClick={handleMarkerClick}
-                  onMapClick={handleMapClick}
-                  mapStyle={mapStyle}
-                  activated={true}
-                  projectName={projectName}
-                  trails={theme.trails}
-                  poiLiveInfo={poiLiveInfo}
-                  mapChips={mapChips}
-                  vehiclePositions={vehiclePositions}
-                />
-
-                {/* POI drawer */}
-                {selectedPOI && (
-                  <ReportMapDrawer
-                    poi={selectedPOI}
-                    onClose={handleDrawerClose}
-                    areaSlug={areaSlug}
-                  />
-                )}
+          {/* Unified map modal — 2D default, 3D toggle when has3dAddon */}
+          <UnifiedMapModal
+            open={mapDialogOpen}
+            onOpenChange={setMapDialogOpen}
+            title={theme.name}
+            has3dAddon={has3dAddon}
+            pois={theme.allPOIs}
+            center={center}
+            areaSlug={areaSlug}
+            mapboxSlot={(ctx) => (
+              <ReportThemeMap
+                pois={theme.allPOIs}
+                center={center}
+                highlightedPOIId={ctx.activePOI}
+                featuredPOIIds={isTransport ? undefined : featuredPOIIds}
+                onMarkerClick={(poiId) =>
+                  ctx.setActivePOI(ctx.activePOI === poiId ? null : poiId)
+                }
+                onMapClick={() => ctx.setActivePOI(null)}
+                mapStyle={mapStyle}
+                activated={true}
+                projectName={projectName}
+                trails={theme.trails}
+                poiLiveInfo={poiLiveInfo}
+                mapChips={mapChips}
+                vehiclePositions={vehiclePositions}
+              />
+            )}
+            google3dSlot={() => (
+              /* Placeholder 3D slot — wired in Phase 5 beads */
+              <div className="w-full h-full flex items-center justify-center bg-[#f0ece6] text-sm text-[#7a7062]">
+                3D-visning kommer snart
               </div>
-            </SheetContent>
-          </Sheet>
+            )}
+          />
         </>
       )}
     </section>

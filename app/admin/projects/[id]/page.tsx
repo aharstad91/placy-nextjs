@@ -39,6 +39,7 @@ interface ProjectBase {
   venue_type: string | null;
   tags: string[];
   default_product: string | null;
+  has_3d_addon: boolean;
   discovery_circles: Array<{ lat: number; lng: number; radiusMeters: number }> | null;
   customers: Pick<DbCustomer, "id" | "name"> | null;
 }
@@ -55,6 +56,7 @@ export interface ProjectWithRelations {
   venue_type: string | null;
   tags: string[];
   default_product: string | null;
+  has_3d_addon: boolean;
   customers: Pick<DbCustomer, "id" | "name"> | null;
   discovery_circles: Array<{ lat: number; lng: number; radiusMeters: number }> | null;
   project_categories: DbProjectCategory[];
@@ -119,6 +121,7 @@ export default async function ProjectDetailPage({
       venue_type,
       tags,
       default_product,
+      has_3d_addon,
       discovery_circles,
       customers (id, name)
     `
@@ -144,6 +147,7 @@ export default async function ProjectDetailPage({
         venue_type,
         tags,
         default_product,
+        has_3d_addon,
         discovery_circles,
         customers (id, name)
       `
@@ -810,6 +814,25 @@ export default async function ProjectDetailPage({
     revalidatePath("/admin/projects");
   }
 
+  async function updateProjectHas3dAddon(formData: FormData) {
+    "use server";
+
+    const id = getRequiredString(formData, "id");
+    const shortId = getRequiredString(formData, "shortId");
+    const enabled = formData.get("enabled") === "true";
+
+    const supabase = createServerClient();
+    if (!supabase) throw new Error("Database not configured");
+
+    const { error } = await supabase
+      .from("projects")
+      .update({ has_3d_addon: enabled } as Record<string, unknown>)
+      .eq("id", id);
+
+    if (error) throw new Error(error.message);
+    revalidatePath(`/admin/projects/${shortId}`);
+  }
+
   return (
     <ProjectDetailClient
       project={projectWithRelations as ProjectWithRelations}
@@ -834,6 +857,7 @@ export default async function ProjectDetailPage({
       unlinkTripFromProject={unlinkTripFromProject}
       updateProjectTripOverride={updateProjectTripOverride}
       updateProjectTags={updateProjectTags}
+      updateProjectHas3dAddon={updateProjectHas3dAddon}
       updateDefaultProduct={updateDefaultProduct}
       deleteProduct={deleteProduct}
     />

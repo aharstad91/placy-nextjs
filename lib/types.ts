@@ -291,6 +291,8 @@ export interface ProjectContainer {
   theme?: ProjectTheme;
   /** URL til kundens hjemmeside — brukes i rapport-shell som tilbake-link og i footer */
   homepageUrl?: string | null;
+  /** Whether this project has purchased the 3D map add-on (Google Photorealistic 3D Tiles) */
+  has3dAddon?: boolean;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -355,6 +357,8 @@ export interface Project {
   theme?: ProjectTheme;
   /** URL til kundens hjemmeside — brukes i rapport-shell som tilbake-link og i footer */
   homepageUrl?: string | null;
+  /** Whether the project has a 3D map add-on enabled */
+  has3dAddon?: boolean;
 }
 
 // === Global State ===
