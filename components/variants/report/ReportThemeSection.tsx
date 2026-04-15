@@ -355,7 +355,7 @@ export default function ReportThemeSection({
           <Dialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
             <DialogContent
               showCloseButton={false}
-              className="flex flex-col !max-w-none p-0 overflow-hidden gap-0 bg-white fixed inset-x-0 bottom-0 top-[8vh] md:inset-x-[4vw] md:top-[5vh] md:bottom-0 rounded-2xl data-[state=open]:animate-map-modal-in data-[state=closed]:animate-map-modal-out"
+              className="flex flex-col !max-w-none !w-auto p-0 overflow-hidden gap-0 bg-white fixed inset-x-0 bottom-0 top-[8vh] md:inset-x-[4vw] md:top-[5vh] md:bottom-0 rounded-2xl data-[state=open]:animate-map-modal-in data-[state=closed]:animate-map-modal-out"
             >
               <DialogTitle className="sr-only">{theme.name} — kart</DialogTitle>
 
