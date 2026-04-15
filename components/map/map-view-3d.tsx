@@ -13,6 +13,7 @@ import Map, { Marker as MapboxMarker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { POI } from "@/lib/types";
 import { Marker3DPin } from "./Marker3DPin";
+import { ProjectSitePin } from "./ProjectSitePin";
 import { Map3DControls, type Map3DAny } from "./Map3DControls";
 import { getIcon } from "@/lib/utils/map-icons";
 import { useWebGLCheck } from "./Map3DFallback";
@@ -59,6 +60,16 @@ export interface MapView3DProps {
   onMapReady?: (map3d: Map3DInstance | null) => void;
   /** Unik id — nødvendig når flere Map3D er mountet samtidig (preview + modal). */
   mapId?: string;
+  /**
+   * Valgfri prosjektmarkør — en stor label-chip som vises over selve tomten.
+   * Alltid synlig uavhengig av tab-filter. Brukes til å markere fremtidige bygg.
+   */
+  projectSite?: {
+    lat: number;
+    lng: number;
+    name: string;
+    subtitle?: string;
+  };
 }
 
 /**
@@ -117,6 +128,7 @@ function Map3DInner({
   onMapReady,
   activated = true,
   mapId,
+  projectSite,
 }: MapView3DProps) {
   const minTilt = cameraLock.minTilt;
   const maxTilt = cameraLock.maxTilt;
@@ -162,6 +174,25 @@ function Map3DInner({
         style={{ width: "100%", height: "100%" }}
       >
         <MapReadyBridge onReady={handleReady} />
+
+        {/* Prosjektmarkør — alltid synlig, ikke del av tab-filter */}
+        {projectSite && (
+          <Marker3D
+            position={{
+              lat: projectSite.lat,
+              lng: projectSite.lng,
+              altitude: 30,
+            }}
+            altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
+            title={projectSite.name}
+          >
+            <ProjectSitePin
+              name={projectSite.name}
+              subtitle={projectSite.subtitle}
+            />
+          </Marker3D>
+        )}
+
         {pois.map((poi) => {
         const Icon = getIcon(poi.category.icon);
         const isActive = activePOIId === poi.id;
