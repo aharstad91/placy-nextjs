@@ -222,5 +222,6 @@ Passive listener, ingen render-loop-konflikt.
 ## Referanser
 
 - Seks første fellesfeller: `docs/solutions/feature-implementations/google-maps-3d-report-block-20260415.md`
+- Oppfølging — SVG label-chip og bounds-semantikk: `docs/solutions/feature-implementations/google-maps-3d-svg-label-marker-og-bounds-semantikk-20260415.md`
 - @vis.gl v1.8 docs: https://visgl.github.io/react-google-maps/
 - Google Map3DElement.flyCameraTo: https://developers.google.com/maps/documentation/javascript/reference/3d-map#Map3DElement.flyCameraTo
