@@ -1,49 +1,41 @@
 "use client";
 
 /**
- * MobilityStackCards — scroll-driven sticky card-stack.
+ * MobilityStackCards — scroll-driven "deck reveal".
  *
- * Erstatter det generiske 4-kort-grid'et med en "stablet slideshow"-
- * opplevelse: hvert kort er full bredde, holder seg sticky mens du
- * scroller, og neste kort sklir opp over det. Inspirert av
- * cards-stack-slider.uiinitiative.com, men kun CSS (ingen JS-deps).
+ * Kortene starter stablet (alle på samme posisjon med små visuelle peek-
+ * offsets). På scroll gjennom seksjonen "fyres" det aktive kortet av
+ * (fader opp og ut), og neste kort i bunken blir aktivt. Sekvensiell
+ * reveal — ikke en permanent stack.
  *
- * Typografi-retning fra image 18: clean warm-beige bakgrunn, liten
- * uppercase-label, tydelig metric-tall, liten detaljlinje. Ikke så
- * stort som demo-bildet — moderat skala passer bedre med resten
- * av rapporten.
+ * Teknikk: 100vh scroll-budsjett pr kort. Scroll-listener mapper
+ * scroll-progress [0..1] til aktivt kort-index. CSS transforms håndterer
+ * visuell overgang.
+ *
+ * Inspirert av cards-stack-slider.uiinitiative.com, men scroll-trigger
+ * i stedet for manuell swipe.
  */
 
+import { useEffect, useRef, useState } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 export interface StackCardItem {
-  /** Small icon element (Lucide, etc.) */
   icon?: React.ReactNode;
-  /** Background for the icon chip */
   iconBg?: string;
-  /** Small uppercase label (e.g. "BYSYKKEL") */
   label: string;
-  /** Large metric (e.g. "15", "22", "4") — tall or kort streng */
   metric: string;
-  /** Small unit next to metric (e.g. "ledige sykler", "biler") */
   metricUnit?: string;
-  /** Additional context line below metric */
   detail?: string;
-  /** Card background — rotates through palette if omitted */
   bgColor?: string;
-  /** Optional popover with drilldown details */
   popoverContent?: React.ReactNode;
-  /** Loading state */
   loading?: boolean;
 }
 
 interface MobilityStackCardsProps {
-  /** Small section header above the stack */
   sectionKicker?: string;
   items: StackCardItem[];
 }
 
-/** Default palette — warm/muted, matcher Placy-stilen */
 const DEFAULT_PALETTE = [
   "#e8dcc8", // warm cream
   "#dde5d6", // sage
@@ -51,10 +43,50 @@ const DEFAULT_PALETTE = [
   "#d9d6cc", // warm grey
 ];
 
+/** Scroll-budsjett pr kort — bestemmer hvor mye brukeren må scrolle
+    før neste kort fyres. 100vh gir komfortabel rytme. */
+const SCROLL_PER_CARD_VH = 100;
+
 export default function MobilityStackCards({
   sectionKicker,
   items,
 }: MobilityStackCardsProps) {
+  const stackRef = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const el = stackRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const stackHeight = rect.height;
+      const viewportH = window.innerHeight;
+      const scrollable = stackHeight - viewportH;
+      if (scrollable <= 0) {
+        setProgress(0);
+        return;
+      }
+      // rect.top is negative when user has scrolled past top of stack
+      const scrolled = -rect.top;
+      const p = Math.max(0, Math.min(1, scrolled / scrollable));
+      setProgress(p);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
+  // Hvilket kort er aktivt basert på progress. progress [0..1] mappes til
+  // [0..items.length). Floor gir aktivt kort, fraction gir overgangs-"smak".
+  const activeF = progress * items.length;
+  const activeIndex = Math.min(items.length - 1, Math.floor(activeF));
+  const activeFraction = activeF - activeIndex; // 0..1 innen aktivt kort
+
   return (
     <div className="mb-6">
       {sectionKicker && (
@@ -63,17 +95,51 @@ export default function MobilityStackCards({
         </div>
       )}
 
-      {/* Stack container — kortene starter som en samlet bunke (overlapping
-          via negative margin), og henger sticky i samme område mens bruker
-          scroller. Hvert etterfølgende kort har litt høyere sticky-top for
-          en synlig "peek" av forrige kort under. Stacken som helhet skifter
-          ut når brukeren har scrollet forbi hele seksjonen. */}
-      <div className="relative">
+      {/* Tall scroll-container. Høyde = items.length × SCROLL_PER_CARD_VH.
+          Sticky-wrapperen er det ene elementet som fester seg — kortene
+          inni ligger absolutt posisjonert på samme sted og overlapper. */}
+      <div
+        ref={stackRef}
+        className="relative"
+        style={{ height: `${items.length * SCROLL_PER_CARD_VH}vh` }}
+      >
+        <div className="sticky top-24 h-56 md:h-64">
         {items.map((item, i) => {
           const bg = item.bgColor ?? DEFAULT_PALETTE[i % DEFAULT_PALETTE.length];
+
+          // Per-card stage:
+          //   fired  = i < activeIndex                    → gått opp, fadet ut
+          //   active = i === activeIndex                  → full focus
+          //   waiting = i > activeIndex                    → i bunken under
+          const isFired = i < activeIndex;
+          const isActive = i === activeIndex;
+          const stackDepth = Math.max(0, i - activeIndex); // 0 for active, 1/2/3 for waiting
+
+          // Active card extra-tweak: når activeFraction → 1 (nesten fyrt av),
+          // gi en liten "liftoff"-forsmak (scale + translate opp)
+          const liftoff = isActive ? activeFraction : 0;
+
+          // Transform:
+          //   fired   → translateY(-140%) scale(0.9) opacity(0)
+          //   active  → translateY(-liftoff*10%) scale(1 - liftoff*0.05) opacity(1 - liftoff*0.7)
+          //   waiting → translateY(stackDepth * 10px) scale(1 - stackDepth*0.02) opacity(1)
+          let transform = "translateY(0) scale(1)";
+          let opacity = 1;
+          if (isFired) {
+            transform = "translateY(-140%) scale(0.9)";
+            opacity = 0;
+          } else if (isActive) {
+            transform = `translateY(-${liftoff * 10}%) scale(${1 - liftoff * 0.05})`;
+            opacity = 1 - liftoff * 0.7;
+          } else {
+            // waiting — peek under aktivt kort
+            transform = `translateY(${stackDepth * 12}px) scale(${1 - stackDepth * 0.025})`;
+            opacity = 1;
+          }
+
           const card = (
             <div
-              className="rounded-2xl p-6 md:p-10 shadow-md transition-shadow hover:shadow-lg h-56 md:h-64 overflow-hidden"
+              className="rounded-2xl p-6 md:p-10 shadow-xl h-56 md:h-64 overflow-hidden"
               style={{ backgroundColor: bg }}
             >
               {item.loading ? (
@@ -85,7 +151,6 @@ export default function MobilityStackCards({
                 </div>
               ) : (
                 <div className="flex flex-col gap-4 md:gap-6">
-                  {/* Header: icon + label */}
                   <div className="flex items-center gap-3">
                     {item.icon && (
                       <div
@@ -100,7 +165,6 @@ export default function MobilityStackCards({
                     </div>
                   </div>
 
-                  {/* Metric — stort men ikke overdrevet */}
                   <div className="flex items-baseline gap-2 md:gap-3">
                     <div className="text-4xl md:text-5xl font-bold text-[#1a1a1a] tracking-tight">
                       {item.metric}
@@ -112,7 +176,6 @@ export default function MobilityStackCards({
                     )}
                   </div>
 
-                  {/* Detail */}
                   {item.detail && (
                     <div className="text-sm md:text-base text-[#4a4a4a] leading-relaxed">
                       {item.detail}
@@ -123,7 +186,7 @@ export default function MobilityStackCards({
             </div>
           );
 
-          const withPopover = item.popoverContent ? (
+          const withPopover = item.popoverContent && isActive ? (
             <Popover>
               <PopoverTrigger asChild>
                 <button className="w-full text-left cursor-pointer">{card}</button>
@@ -136,30 +199,23 @@ export default function MobilityStackCards({
             card
           );
 
-          /* Sticky-wrapper pr kort:
-               - top stagger 0.75rem pr kort → synlig peek av forrige under
-               - negative mt fra kort 2+ → starter stablet, 0.75rem peek
-               - zIndex i+1 → senere kort rendres over forrige
-             Overlap-verdiene må matche kortets faste høyde (h-56 mobil, h-64 desktop)
-             minus ønsket peek. Tailwind responsive klasser håndterer breakpointet. */
           return (
             <div
               key={i}
-              className={`sticky ${i === 0 ? "" : "-mt-[13.25rem] md:-mt-[15.25rem]"}`}
+              className="absolute inset-0"
               style={{
-                top: `${5 + i * 0.75}rem`,
-                zIndex: i + 1,
+                transform,
+                opacity,
+                zIndex: items.length - i, // tidligere kort på topp (fyres først)
+                transition: "transform 0.3s ease-out, opacity 0.3s ease-out",
+                pointerEvents: isActive ? "auto" : "none",
               }}
             >
               {withPopover}
             </div>
           );
         })}
-
-        {/* Scroll-budsjett — lar brukeren scrolle forbi stacken.
-            Uten dette ville stacken sluppet sticky umiddelbart når innhold
-            under entrer viewport. */}
-        <div aria-hidden className="h-[60vh] md:h-[70vh]" />
+        </div>
       </div>
     </div>
   );
