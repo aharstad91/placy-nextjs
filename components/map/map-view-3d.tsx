@@ -40,8 +40,11 @@ export interface CameraLock {
   minAltitude?: number;
   /** Øvre altitude-grense for kamera (meter over havet). Begrenser zoom-ut. */
   maxAltitude?: number;
-  /** Radius i km for pan-grense. Beregner bounds rundt center. Default 5km. */
-  panRadiusKm?: number;
+  /**
+   * Halv sidelengde i km for den firkantede pan-boksen rundt center.
+   * Total side = 2× denne verdien. Default 5 → 10×10km firkant.
+   */
+  panHalfSideKm?: number;
 }
 
 export interface MapView3DProps {
@@ -59,15 +62,19 @@ export interface MapView3DProps {
 }
 
 /**
- * Beregner en bounding-box rundt et geosenter gitt ønsket radius i km.
- * lat: 1° ≈ 111km. lng avhenger av breddegrad (cos(lat)).
+ * Beregner en firkantet bounding-box rundt et geosenter.
+ * Firkanten er kvadratisk i fysisk avstand (meter), ikke i grader —
+ * derfor cos(lat)-skalering på lng-delta. På breddegrad 63° gir dette
+ * samme nord-sør- og øst-vest-utstrekning i meter.
+ *
+ * 1° lat ≈ 111 km. 1° lng ≈ 111 km × cos(lat).
  */
-function radiusToBounds(
+function squareBoundsAround(
   center: { lat: number; lng: number },
-  radiusKm: number,
+  halfSideKm: number,
 ) {
-  const latDelta = radiusKm / 111;
-  const lngDelta = radiusKm / (111 * Math.cos((center.lat * Math.PI) / 180));
+  const latDelta = halfSideKm / 111;
+  const lngDelta = halfSideKm / (111 * Math.cos((center.lat * Math.PI) / 180));
   return {
     south: center.lat - latDelta,
     north: center.lat + latDelta,
@@ -115,8 +122,8 @@ function Map3DInner({
   const maxTilt = cameraLock.maxTilt;
   const minAltitude = cameraLock.minAltitude;
   const maxAltitude = cameraLock.maxAltitude;
-  const panRadiusKm = cameraLock.panRadiusKm ?? 5;
-  const bounds = radiusToBounds(center, panRadiusKm);
+  const panHalfSideKm = cameraLock.panHalfSideKm ?? 5;
+  const bounds = squareBoundsAround(center, panHalfSideKm);
 
   // Fanger map3d-instansen lokalt så Map3DControls (utenfor Map3D-treet)
   // kan bruke den direkte — useMap3D(mapId) er upålitelig utenfor Map3D.
