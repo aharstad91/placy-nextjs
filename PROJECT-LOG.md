@@ -3197,3 +3197,38 @@ Neste fokusområder (per tidligere logger):
 ### Parkert / Åpne spørsmål
 - **Swipe-to-dismiss på mobil** — naturlig neste steg, ikke i scope nå
 - **`DialogContent`-nesting er fortsatt feil** i `dialog.tsx` — Content inni Overlay. Fungerer for CookiesModal fordi den ikke bruker slide-animasjoner, men er en latent bug for enhver fremtidig Dialog med close-animasjon. Bør fikses på sikt.
+
+---
+
+## 2026-04-15 (sesjon 3) — UnifiedMapModal: Mapbox 2D + Google 3D toggle
+
+### Beslutninger
+
+- **Forene to kart-komponenter til én shell.** ReportThemeMap (Mapbox 2D) og Report3DMap (Google 3D) konvergerte til samme `UnifiedMapModal` med render-slot-mønster. Default 2D, valgfri 3D-toggle. Eliminerer divergerende UX og dupliserte sheets/drawers.
+- **3D er paid add-on (`projects.has_3d_addon`).** Toggle vises kun når flagg er true. Migrasjon `057_add_has_3d_addon.sql`. Default false for alle eksisterende prosjekter (wesselslokka satt manuelt til true).
+- **Worktree-strategi.** All kode i `placy-ralph-map-unification` (feat/map-unification). Beads i hovedrepo. Migrasjon kjørt via psql direkte (våre NNN-filer er usynlige for Supabase CLI).
+- **WebGL-asymmetri håndtert eksplisitt.** 4-tilstands maskin med Mapbox-teardown 150ms, Google 3D-teardown 350ms (sistnevnte mangler explicit `loseContext`). iOS WebKit-kravet om én WebGL-kontekst om gangen er bevisst designprinsipp, ikke en hack.
+
+### Bonusfunn (kritisk bug fikset i Phase 5)
+
+- **Toggle vises ikke selv om `has_3d_addon=true`.** Rotårsak: To parallelle Supabase-loadere — `getProjectFromSupabase` (gammel) hadde mappingen, `getProductFromSupabase` (ny via `ProjectContainer`) gjorde ikke. Rapport-siden bruker ny path først → `has3dAddon: false` lekket inn til UnifiedMapModal.
+- **Fix:** La til `has3dAddon` på `ProjectContainer`, populerte i `getProjectContainerFromSupabase`, forwardet i `getProductFromSupabase`. Verifisert visuelt: Wesselsløkka viser toggle, Leangen viser ikke.
+
+### Parkert / Åpne spørsmål
+
+- **Bead 2na.20:** Eksplisitt `loseContext()` på Google 3D-canvas før unmount (P2). I dag avhenger vi av GC + 350ms-vinduet. Defensive forbedring, ikke kritisk.
+- **Bead 2na.21:** `webglcontextlost`-recovery med remount-key (P2). Hvis WebGL-kontekst tapes mid-flight (lavt minne, OS-lukker GPU-ressurser) bør komponenten kunne rekonstruere seg.
+- **POI-klikk i Google 3D-canvas:** Markører er inne i canvas/shadow DOM — ikke alltid reachable via accessibility-tree. Click-handling fungerer i vanlig bruk men er vanskelig å automat-teste via Chrome DevTools MCP.
+
+### Retning
+
+- **Generaliserbart mønster.** UnifiedMapModal er nå mal for fremtidige map-modaler. Hvis Explorer eller Guide trenger 2D/3D-toggle på samme måte, kan slot-API gjenbrukes uten å bygge ny shell.
+- **Compound: paid add-on-mønsteret** (DB-flagg + UI-gating) fungerer rent. Andre features (f.eks. avansert ruteoptimalisering, premium POI-kategorier) kan følge samme mønster: kolonne + propagering gjennom container + skjul/vis i UI.
+- **Neste fokus:** Bead 2na.20/21 hvis vi opplever WebGL-krasj i prod. Hverdagsliv/Trening-illustrasjoner. Vurder senter-aware-mønsteret for City Lade og Sirkus.
+
+### Observasjoner
+
+- **Parallelle loadere er en silent killer.** Når `getProductFromSupabase` ble innført parallelt med `getProjectFromSupabase`, ble noen felter glemt. Hver gang dette skjer, må vi enten (a) mappe ALLE felter i begge, eller (b) slette den gamle umiddelbart. (a) krever disiplin, (b) krever tid. I dette tilfellet fanget Phase 5 verifisering det — men kunne lett ha lekket til prod.
+- **Render-slot-mønsteret skaler bra.** Slot-context med ref-callbacks lar shell være helt agnostisk til hvilke kart-engines som brukes. Kunne legge til en tredje motor (f.eks. Cesium 3D) uten å endre shell.
+- **Visuell verifisering på flere prosjekter er essensielt.** Wesselsløkka (add-on=true) og Leangen (add-on=false) ga tydelig visuell forskjell. Uten Leangen-test ville bug-pathen `has3dAddon=false → vis toggle alltid` ikke blitt fanget.
+- **Beads som tracking + Claude Code agents som executor er produktivt.** `bd ready` ga klar oversikt over neste arbeid hele veien. Sub-agents eksekverte beads med fokusert kontekst. 1M context-vinduet gjør at vi trygt kan kjøre Phase 4-7 uten å compacte mellom hver fase.
