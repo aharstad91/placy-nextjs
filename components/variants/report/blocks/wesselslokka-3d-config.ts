@@ -18,10 +18,13 @@ export const WESSELSLOKKA_CENTER = {
  * Ingen native minRange/maxRange → range lås via snap-back event-listener.
  */
 export const WESSELSLOKKA_CAMERA_LOCK = {
-  // range = avstand fra kamera til center (meter)
+  // range = avstand fra kamera til center (meter). Låst via snap-back.
   range: 900,
-  // tilt konvensjon: 0° = rett ned, 90° = horisontal. 45° = bird's eye.
+  // Start-tilt: 0° = rett ned, 90° = horisontal. 45° = bird's eye.
   tilt: 45,
+  // Tilt-range: brukeren kan tilte mellom 20° (nesten ovenfra) og 75° (skrått nedover mot horisonten)
+  minTilt: 20,
+  maxTilt: 75,
   // Bounds holder center-panoreringen stramt rundt center — snap-back catches det som slipper gjennom.
   bounds: {
     south: 63.4195,
