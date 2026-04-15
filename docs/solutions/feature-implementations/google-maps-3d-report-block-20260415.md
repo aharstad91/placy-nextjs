@@ -143,6 +143,10 @@ La `heading` være uncontrolled (bare `defaultHeading={0}`) → bruker kan roter
 
 Direkte Map Tiles API-kall via offisielt SDK er 100% innenfor Google sine ToS. Ingen tiles caches lokalt, attribusjon vises automatisk. Erstatter derivative-work-risikoen fra akvarell-pipelinen (screenshot → Gemini stil-transfer → lagret som eget bilde).
 
+## Oppfølging — kamera-kontroll og UI-knapper
+
+Se `google-maps-3d-camera-control-iteration-20260415.md` for fire nye fellesfeller oppdaget under iterasjonen: (a) kan ikke matche native smoothness med JS, (b) `LatLngAltitude.lat/lng` er getters og mistes ved spread, (c) `useMap3D()` upålitelig utenfor Map3D-treet med flere instanser, (d) DOM-elementer som children av `gmp-map-3d` absorberes i shadow DOM.
+
 ## Referanser
 
 - Plan: `docs/plans/2026-04-15-feat-report-3d-map-plan.md`
