@@ -22,11 +22,23 @@ import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
+import { DEFAULT_CAMERA_LOCK } from "./blocks/report-3d-config";
 
 const ReportThemeMap = dynamic(() => import("./ReportThemeMap"), {
   ssr: false,
   loading: () => <SkeletonReportMap />,
 });
+
+// 3D-motoren lazy-loades på samme måte som 2D — unngår å trekke inn
+// @vis.gl/react-google-maps i serverbundlen, og lar 3D-koden kun lastes
+// når brukeren faktisk åpner et kart-modal.
+const MapView3D = dynamic(
+  () => import("@/components/map/map-view-3d").then((mod) => ({ default: mod.MapView3D })),
+  {
+    ssr: false,
+    loading: () => <SkeletonReportMap />,
+  },
+);
 
 interface ReportThemeSectionProps {
   theme: ReportTheme;
@@ -357,11 +369,28 @@ export default function ReportThemeSection({
                 vehiclePositions={vehiclePositions}
               />
             )}
-            google3dSlot={() => (
-              /* Placeholder 3D slot — wired in Phase 5 beads */
-              <div className="w-full h-full flex items-center justify-center bg-[#f0ece6] text-sm text-[#7a7062]">
-                3D-visning kommer snart
-              </div>
+            google3dSlot={(ctx) => (
+              <MapView3D
+                mapId={`theme-3d-${theme.id}`}
+                center={{ lat: center.lat, lng: center.lng, altitude: 0 }}
+                cameraLock={DEFAULT_CAMERA_LOCK}
+                pois={theme.allPOIs}
+                activePOIId={ctx.activePOI}
+                onPOIClick={(poiId) =>
+                  ctx.setActivePOI(ctx.activePOI === poiId ? null : poiId)
+                }
+                onMapReady={ctx.registerGoogle3dMap}
+                activated
+                projectSite={
+                  projectName
+                    ? {
+                        lat: center.lat,
+                        lng: center.lng,
+                        name: projectName,
+                      }
+                    : undefined
+                }
+              />
             )}
           />
         </>
