@@ -3232,3 +3232,9 @@ Neste fokusområder (per tidligere logger):
 - **Render-slot-mønsteret skaler bra.** Slot-context med ref-callbacks lar shell være helt agnostisk til hvilke kart-engines som brukes. Kunne legge til en tredje motor (f.eks. Cesium 3D) uten å endre shell.
 - **Visuell verifisering på flere prosjekter er essensielt.** Wesselsløkka (add-on=true) og Leangen (add-on=false) ga tydelig visuell forskjell. Uten Leangen-test ville bug-pathen `has3dAddon=false → vis toggle alltid` ikke blitt fanget.
 - **Beads som tracking + Claude Code agents som executor er produktivt.** `bd ready` ga klar oversikt over neste arbeid hele veien. Sub-agents eksekverte beads med fokusert kontekst. 1M context-vinduet gjør at vi trygt kan kjøre Phase 4-7 uten å compacte mellom hver fase.
+
+### Post-workflow patch (samme dag)
+
+- **Bug fanget av bruker etter "ferdig"-melding:** Tema-modaler (Hverdagsliv, Trening, etc.) viste placeholder-tekst "3D-visning kommer snart" når toggle ble brukt. UnifiedMapModal var wired, men `google3dSlot` returnerte en `<div>` i stedet for å rendre `MapView3D`. Det undergravde halvparten av unification-poenget — kun "Alt rundt"-overview hadde ekte 3D.
+- **Fix (commit `05a9ec8`):** Lazy-loadet `MapView3D` med dynamic import i `ReportThemeSection.tsx` og koblet det inn i `google3dSlot` med `theme.allPOIs` som POI-set, `DEFAULT_CAMERA_LOCK` og activePOI gjennom SlotContext. Verifisert visuelt på Hverdagsliv: 13 markører + prosjekt-pin + navigasjon.
+- **Lærdom:** "Verifiser at features FUNGERER" må gjelde HVER consumer av den nye komponenten, ikke bare den første. Phase 5 sjekket overview-modalen, men ikke tema-modalene. Fremtidige unification-jobber bør liste opp hver consumer som egen TC.
