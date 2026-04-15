@@ -47,9 +47,13 @@ export interface MapView3DProps {
 
 /**
  * Indre komponent som har tilgang til Map3DElement via context.
- * Attacher imperative snap-back-lyttere for range/center (ingen native lock).
+ *
+ * Gjør to ting:
+ * 1. Snap-back range og center (Google har ingen native minRange/maxRange)
+ * 2. Oversetter vanlig drag til heading-endring (Googles default er drag=pan;
+ *    vi vil at drag=roter, slik at brukeren ikke må vite om Shift+drag)
  */
-function CameraSnapBack({
+function CameraController({
   center,
   range,
 }: {
@@ -61,28 +65,25 @@ function CameraSnapBack({
   useEffect(() => {
     if (!map3d) return;
 
+    const anyMap = map3d as unknown as {
+      range: number;
+      heading: number;
+      center: { lat: number; lng: number; altitude: number };
+    };
+
+    // ── Snap-back: range + center ────────────────────────────────────
     const onRangeChange = () => {
-      const current = (map3d as unknown as { range: number }).range;
-      if (current !== range) {
-        (map3d as unknown as { range: number }).range = range;
-      }
+      if (anyMap.range !== range) anyMap.range = range;
     };
 
     const onCenterChange = () => {
-      // Sammenlign grunt — hvis den drifter bytt tilbake
-      const c = (
-        map3d as unknown as { center: { lat: number; lng: number } }
-      ).center;
+      const c = anyMap.center;
       if (
         !c ||
         Math.abs(c.lat - center.lat) > 1e-6 ||
         Math.abs(c.lng - center.lng) > 1e-6
       ) {
-        (
-          map3d as unknown as {
-            center: { lat: number; lng: number; altitude: number };
-          }
-        ).center = {
+        anyMap.center = {
           lat: center.lat,
           lng: center.lng,
           altitude: center.altitude ?? 0,
@@ -93,9 +94,67 @@ function CameraSnapBack({
     map3d.addEventListener("gmp-rangechange", onRangeChange);
     map3d.addEventListener("gmp-centerchange", onCenterChange);
 
+    // ── Drag-to-rotate: vanlig drag = heading-endring ────────────────
+    let dragging = false;
+    let startX = 0;
+    let startHeading = 0;
+    let pointerId: number | null = null;
+    const DRAG_THRESHOLD = 3; // px — skill klikk fra drag
+
+    const onPointerDown = (e: PointerEvent) => {
+      // Primary-button only, ingen shift (la Google håndtere shift+drag)
+      if (e.button !== 0 || e.shiftKey || e.ctrlKey || e.metaKey) return;
+      dragging = true;
+      startX = e.clientX;
+      startHeading = typeof anyMap.heading === "number" ? anyMap.heading : 0;
+      pointerId = e.pointerId;
+      try {
+        (map3d as unknown as Element).setPointerCapture?.(e.pointerId);
+      } catch {
+        // ignore — browser may not support
+      }
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragging) return;
+      const deltaX = e.clientX - startX;
+      if (Math.abs(deltaX) < DRAG_THRESHOLD) return;
+      const rect = (map3d as unknown as Element).getBoundingClientRect();
+      // En full mapbredde = 180° rotasjon. Kjennes naturlig.
+      const degreesPerPx = 180 / (rect.width || 600);
+      // Negativ: dra høyre → kamera roterer venstre (scene flytter høyre)
+      let newHeading = startHeading - deltaX * degreesPerPx;
+      // Normaliser til [0, 360)
+      newHeading = ((newHeading % 360) + 360) % 360;
+      anyMap.heading = newHeading;
+      e.preventDefault();
+    };
+
+    const onPointerEnd = (e: PointerEvent) => {
+      if (!dragging) return;
+      dragging = false;
+      if (pointerId != null) {
+        try {
+          (map3d as unknown as Element).releasePointerCapture?.(pointerId);
+        } catch {
+          // ignore
+        }
+      }
+      pointerId = null;
+    };
+
+    map3d.addEventListener("pointerdown", onPointerDown);
+    map3d.addEventListener("pointermove", onPointerMove);
+    map3d.addEventListener("pointerup", onPointerEnd);
+    map3d.addEventListener("pointercancel", onPointerEnd);
+
     return () => {
       map3d.removeEventListener("gmp-rangechange", onRangeChange);
       map3d.removeEventListener("gmp-centerchange", onCenterChange);
+      map3d.removeEventListener("pointerdown", onPointerDown);
+      map3d.removeEventListener("pointermove", onPointerMove);
+      map3d.removeEventListener("pointerup", onPointerEnd);
+      map3d.removeEventListener("pointercancel", onPointerEnd);
     };
   }, [map3d, center, range]);
 
@@ -126,7 +185,7 @@ function Map3DInner({
       defaultUIHidden
       style={{ width: "100%", height: "100%" }}
     >
-      <CameraSnapBack center={center} range={cameraLock.range} />
+      <CameraController center={center} range={cameraLock.range} />
       {pois.map((poi) => {
         const Icon = getIcon(poi.category.icon);
         const isActive = activePOIId === poi.id;
