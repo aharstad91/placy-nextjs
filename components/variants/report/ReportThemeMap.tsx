@@ -2,6 +2,7 @@
 
 import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
+export type { MapRef };
 import type { Coordinates, POI, TrailCollection } from "@/lib/types";
 import { getIcon } from "@/lib/utils/map-icons";
 import { Building2 } from "lucide-react";
@@ -31,6 +32,8 @@ interface ReportThemeMapProps {
   mapChips?: Array<{ icon: React.ReactNode; label: string }>;
   /** Live vehicle positions to render as dots */
   vehiclePositions?: Array<{ lat: number; lng: number; color: string }>;
+  /** Callback exposing the MapRef once the map is loaded — used by UnifiedMapModal for camera reads */
+  onMapReady?: (ref: MapRef) => void;
 }
 
 export default function ReportThemeMap({
@@ -47,6 +50,7 @@ export default function ReportThemeMap({
   poiLiveInfo,
   mapChips,
   vehiclePositions,
+  onMapReady,
 }: ReportThemeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -84,7 +88,8 @@ export default function ReportThemeMap({
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
     applyIllustratedTheme(map);
-  }, []);
+    onMapReady?.(mapRef.current);
+  }, [onMapReady]);
 
   // Resize map when activated (container changes size)
   useEffect(() => {

@@ -89,6 +89,7 @@ interface ProjectDetailClientProps {
   unlinkTripFromProject: (formData: FormData) => Promise<void>;
   updateProjectTripOverride: (formData: FormData) => Promise<void>;
   updateProjectTags: (formData: FormData) => Promise<void>;
+  updateProjectHas3dAddon: (formData: FormData) => Promise<void>;
   updateDefaultProduct: (formData: FormData) => Promise<void>;
   deleteProduct: (formData: FormData) => Promise<void>;
 }
@@ -116,6 +117,7 @@ export function ProjectDetailClient({
   unlinkTripFromProject,
   updateProjectTripOverride,
   updateProjectTags,
+  updateProjectHas3dAddon,
   updateDefaultProduct,
   deleteProduct,
 }: ProjectDetailClientProps) {
@@ -166,6 +168,7 @@ export function ProjectDetailClient({
                 customers={customers}
                 updateProject={updateProject}
                 updateProjectTags={updateProjectTags}
+                updateProjectHas3dAddon={updateProjectHas3dAddon}
               />
               <DiscoveryCirclesEditor
                 projectId={project.id}
@@ -241,9 +244,10 @@ interface DetailsTabProps {
   customers: Pick<DbCustomer, "id" | "name">[];
   updateProject: (formData: FormData) => Promise<void>;
   updateProjectTags: (formData: FormData) => Promise<void>;
+  updateProjectHas3dAddon: (formData: FormData) => Promise<void>;
 }
 
-function DetailsTab({ project, customers, updateProject, updateProjectTags }: DetailsTabProps) {
+function DetailsTab({ project, customers, updateProject, updateProjectTags, updateProjectHas3dAddon }: DetailsTabProps) {
   const [customerId, setCustomerId] = useState(project.customer_id || "");
   const [name, setName] = useState(project.name);
   const [urlSlug, setUrlSlug] = useState(project.url_slug);
@@ -416,6 +420,29 @@ function DetailsTab({ project, customers, updateProject, updateProjectTags }: De
             );
           })}
         </div>
+      </div>
+
+      {/* 3D add-on section */}
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">Add-ons</h3>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={project.has_3d_addon ?? false}
+            onChange={async (e) => {
+              const formData = new FormData();
+              formData.set("id", project.id);
+              formData.set("shortId", project.short_id);
+              formData.set("enabled", e.target.checked ? "true" : "false");
+              await updateProjectHas3dAddon(formData);
+            }}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <div>
+            <span className="text-sm font-medium text-gray-900">3D-kart add-on</span>
+            <p className="text-xs text-gray-500">Aktiverer Google Maps 3D-toggle i rapporten (betalt funksjon)</p>
+          </div>
+        </label>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, memo } from "react";
+import { useCallback, useEffect, useRef, useState, memo } from "react";
 import {
   APIProvider,
   Map3D,
@@ -150,13 +150,21 @@ const Marker3DItem = memo(function Marker3DItem({
 });
 
 /**
- * Tidligere forsøk med å overstyre Googles gestures ga hakking —
- * deres WebGL-drevne gesture-håndtering er allerede optimalisert.
- * Vi bruker den native nå. Ingen capture-phase, ingen snap-back,
- * ingen rAF-batching. Smørbløt UX som Google Maps 3D selv.
+ * Orbit-as-default: Hijacker pointer/mouse-events på wrapper-divens capture-phase
+ * og tvinger `ctrlKey=true` på mus-drags. Google's interne gesture-handler
+ * tolker da alle drags som ROTATE (det som normalt krever Ctrl+drag) —
+ * brukeren spinner rundt center-punktet uten å kunne panne bort.
  *
- * Brukeren kan pan/rotér/tilt/zoom fritt i modalen. Dette er akseptert
- * i bytte mot kvalitets-UX.
+ * Hvorfor event-hijacking og ikke JS-basert kamera-styring:
+ * - Tidligere forsøk med rAF + flyCameraTo + manuell mouse-tracking ga hakking
+ * - Google's native ROTATE-gesture er allerede smørbløt (WebGL-drevet)
+ * - Ved å la Google kjøre sin egen gesture med fakes Ctrl, får vi smoothness gratis
+ *
+ * Scroll (zoom) og shift+drag (tilt) er uendret — Googles default. Vi rører kun
+ * mus-drags uten modifier for å konvertere PAN → ROTATE.
+ *
+ * Touch: touch-events har ikke ctrlKey-felt, så denne hijack-en treffer kun
+ * mus. For touch bruker vi Google's default gesture-handling (GestureHandling.GREEDY).
  */
 
 function Map3DInner({
@@ -189,6 +197,62 @@ function Map3DInner({
     [onMapReady],
   );
 
+  // Container-ref for orbit-hijack (capture-phase event-listener).
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Orbit-as-default: override ctrlKey=true på mus-drags, så Google ser ROTATE.
+  // Kun venstre musetast; scroll/touch/shift forblir uberørt.
+  useEffect(() => {
+    if (!activated) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const forceOrbitGesture = (e: PointerEvent | MouseEvent) => {
+      // Kun venstre musetast, kun når Ctrl ikke allerede holdes.
+      // Touch (pointerType === 'touch') skipper vi — de har ikke ctrlKey.
+      if ((e as PointerEvent).pointerType === "touch") return;
+      if (e.button !== undefined && e.button !== 0) return;
+      if (e.ctrlKey) return;
+      try {
+        Object.defineProperty(e, "ctrlKey", {
+          get: () => true,
+          configurable: true,
+        });
+      } catch {
+        // Ignorer — noen eventer kan være non-configurable.
+      }
+    };
+
+    // Zoom er deaktivert: blokker scroll-wheel før Google ser eventen.
+    // Touch-pinch håndteres ikke her — bruk evt. `touch-action` eller en
+    // pointercount-guard hvis pinch-zoom begynner å sniffe seg inn.
+    const blockZoomWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    // Capture-phase så vi treffer før Google's shadow-DOM-listenere.
+    // Dekker både pointer- og mouse-events for bred browser-støtte.
+    const captureOpts = { capture: true, passive: true } as AddEventListenerOptions;
+    // Wheel må være non-passive for at preventDefault skal fungere.
+    const wheelOpts = { capture: true, passive: false } as AddEventListenerOptions;
+
+    container.addEventListener("pointerdown", forceOrbitGesture, captureOpts);
+    container.addEventListener("pointermove", forceOrbitGesture, captureOpts);
+    container.addEventListener("mousedown", forceOrbitGesture, captureOpts);
+    container.addEventListener("mousemove", forceOrbitGesture, captureOpts);
+    container.addEventListener("wheel", blockZoomWheel, wheelOpts);
+
+    return () => {
+      container.removeEventListener("pointerdown", forceOrbitGesture, captureOpts);
+      container.removeEventListener("pointermove", forceOrbitGesture, captureOpts);
+      container.removeEventListener("mousedown", forceOrbitGesture, captureOpts);
+      container.removeEventListener("mousemove", forceOrbitGesture, captureOpts);
+      container.removeEventListener("wheel", blockZoomWheel, wheelOpts);
+    };
+  }, [activated]);
+
+
   // Bruker Googles native gesture-handling. Bounds + altitude-grenser
   // håndheves av Google i WebGL → butter smooth, ingen JS-kamp.
   // Map3DControls må være SØSKEN til Map3D (ikke barn), ellers blir
@@ -197,7 +261,7 @@ function Map3DInner({
     // touch-action: none er påkrevd for at Google Maps 3D (WebGL custom element)
     // skal motta touch-events på mobil. Uten dette fanger nettleseren touch som
     // scroll før kartet ser dem. Mapbox setter dette internt; gmp-map-3d gjør det ikke.
-    <div className="relative w-full h-full touch-none">
+    <div ref={containerRef} className="relative w-full h-full touch-none">
       <Map3D
         id={mapId}
         mode={MapMode.SATELLITE}
@@ -255,6 +319,7 @@ function Map3DInner({
           maxTilt={maxTilt ?? 75}
           minAltitude={minAltitude ?? 100}
           maxAltitude={maxAltitude ?? 5000}
+          showZoom={false}
         />
       )}
     </div>

@@ -601,6 +601,7 @@ export async function getProjectFromSupabase(
     venueType: (project as Record<string, unknown>).venue_type as "hotel" | "residential" | "commercial" | null ?? null,
     tags: (project as Record<string, unknown>).tags as string[] ?? [],
     homepageUrl: (project as Record<string, unknown>).homepage_url as string | null ?? null,
+    has3dAddon: ((project as Record<string, unknown>).has_3d_addon as boolean) ?? false,
   };
 }
 
@@ -892,6 +893,7 @@ export async function getProjectContainerFromSupabase(
     tags: (projectAny.tags as string[] | null) ?? [],
     theme: projectAny.theme as import("@/lib/types").ProjectTheme | undefined ?? undefined,
     homepageUrl: (projectAny.homepage_url as string | null) ?? null,
+    has3dAddon: (projectAny.has_3d_addon as boolean) ?? false,
     defaultProduct: (projectAny.default_product as "explorer" | "report" | "guide" | null) ?? "report",
     version: (projectAny.version as number) ?? 1,
     createdAt: project.created_at,
@@ -991,6 +993,7 @@ export async function getProductFromSupabase(
     tripConfig,
     theme: container.theme,
     homepageUrl: container.homepageUrl,
+    has3dAddon: container.has3dAddon,
     story,
     pois,
     categories,
