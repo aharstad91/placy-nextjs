@@ -20,8 +20,9 @@ import { useWebGLCheck } from "./Map3DFallback";
  * MapView3D — tynn wrapper rundt Google Maps 3D for rapport-flatene.
  *
  * Kamera er låst i "museum-modus":
- *   - center, range, tilt: låst via kontrollerte props + imperativ snap-back
- *   - heading: fri 360° rotasjon (uncontrolled)
+ *   - center, range: låst via kontrollerte props + imperativ snap-back
+ *   - heading: fri 360° rotasjon (horisontal drag)
+ *   - tilt: bruker kan justere mellom minTilt og maxTilt (vertikal drag)
  *
  * WebGL-detection faller tilbake til Mapbox 2D-satellitt inline.
  */
@@ -29,6 +30,10 @@ import { useWebGLCheck } from "./Map3DFallback";
 export interface CameraLock {
   range: number;
   tilt: number;
+  /** Nedre tilt-grense (default = samme som tilt, dvs. låst) */
+  minTilt?: number;
+  /** Øvre tilt-grense (default = samme som tilt, dvs. låst) */
+  maxTilt?: number;
   bounds: {
     south: number;
     north: number;
@@ -43,22 +48,30 @@ export interface MapView3DProps {
   pois: POI[];
   activePOIId?: string | null;
   onPOIClick?: (poiId: string) => void;
+  /** False = passiv preview (ingen interaksjon), True = full interaktivitet. Default true. */
+  activated?: boolean;
 }
 
 /**
  * Indre komponent som har tilgang til Map3DElement via context.
  *
- * Gjør to ting:
+ * Gjør tre ting:
  * 1. Snap-back range og center (Google har ingen native minRange/maxRange)
- * 2. Oversetter vanlig drag til heading-endring (Googles default er drag=pan;
- *    vi vil at drag=roter, slik at brukeren ikke må vite om Shift+drag)
+ * 2. Vanlig drag (horisontal) = heading-endring (roter 360°)
+ * 3. Vanlig drag (vertikal) = tilt-endring (opp/ned mellom min/max)
  */
 function CameraController({
   center,
   range,
+  minTilt,
+  maxTilt,
+  activated = true,
 }: {
   center: { lat: number; lng: number; altitude?: number };
   range: number;
+  minTilt: number;
+  maxTilt: number;
+  activated?: boolean;
 }) {
   const map3d = useMap3D();
 
@@ -68,6 +81,7 @@ function CameraController({
     const anyMap = map3d as unknown as {
       range: number;
       heading: number;
+      tilt: number;
       center: { lat: number; lng: number; altitude: number };
     };
 
@@ -91,22 +105,37 @@ function CameraController({
       }
     };
 
+    // Klemm tilt til [minTilt, maxTilt] — snap-back hvis utenfor.
+    const onTiltChange = () => {
+      const t = anyMap.tilt;
+      if (typeof t !== "number") return;
+      if (t < minTilt) anyMap.tilt = minTilt;
+      else if (t > maxTilt) anyMap.tilt = maxTilt;
+    };
+
     map3d.addEventListener("gmp-rangechange", onRangeChange);
     map3d.addEventListener("gmp-centerchange", onCenterChange);
+    map3d.addEventListener("gmp-tiltchange", onTiltChange);
 
-    // ── Drag-to-rotate: vanlig drag = heading-endring ────────────────
+    // ── Drag-to-rotate/tilt: kun i aktivert modus ────────────────────
+    // I preview-modus (activated=false) brukes overlay-knappen til å åpne modalen.
     let dragging = false;
     let startX = 0;
+    let startY = 0;
     let startHeading = 0;
+    let startTilt = 0;
     let pointerId: number | null = null;
     const DRAG_THRESHOLD = 3; // px — skill klikk fra drag
 
     const onPointerDown = (e: PointerEvent) => {
+      if (!activated) return;
       // Primary-button only, ingen shift (la Google håndtere shift+drag)
       if (e.button !== 0 || e.shiftKey || e.ctrlKey || e.metaKey) return;
       dragging = true;
       startX = e.clientX;
+      startY = e.clientY;
       startHeading = typeof anyMap.heading === "number" ? anyMap.heading : 0;
+      startTilt = typeof anyMap.tilt === "number" ? anyMap.tilt : minTilt;
       pointerId = e.pointerId;
       try {
         (map3d as unknown as Element).setPointerCapture?.(e.pointerId);
@@ -118,19 +147,30 @@ function CameraController({
     const onPointerMove = (e: PointerEvent) => {
       if (!dragging) return;
       const deltaX = e.clientX - startX;
-      if (Math.abs(deltaX) < DRAG_THRESHOLD) return;
+      const deltaY = e.clientY - startY;
+      const moved = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+      if (moved < DRAG_THRESHOLD) return;
+
       const rect = (map3d as unknown as Element).getBoundingClientRect();
-      // En full mapbredde = 180° rotasjon. Kjennes naturlig.
-      const degreesPerPx = 180 / (rect.width || 600);
-      // Negativ: dra høyre → kamera roterer venstre (scene flytter høyre)
-      let newHeading = startHeading - deltaX * degreesPerPx;
-      // Normaliser til [0, 360)
+
+      // Horisontalt: full map-bredde = 180° rotasjon
+      const degreesPerPxX = 180 / (rect.width || 600);
+      let newHeading = startHeading - deltaX * degreesPerPxX;
       newHeading = ((newHeading % 360) + 360) % 360;
       anyMap.heading = newHeading;
+
+      // Vertikalt: full map-høyde = tilt-spennet. Dra opp → mindre tilt (mer ovenfra)
+      const tiltSpan = maxTilt - minTilt;
+      const degreesPerPxY = tiltSpan / (rect.height || 400);
+      let newTilt = startTilt + deltaY * degreesPerPxY;
+      if (newTilt < minTilt) newTilt = minTilt;
+      if (newTilt > maxTilt) newTilt = maxTilt;
+      anyMap.tilt = newTilt;
+
       e.preventDefault();
     };
 
-    const onPointerEnd = (e: PointerEvent) => {
+    const onPointerEnd = () => {
       if (!dragging) return;
       dragging = false;
       if (pointerId != null) {
@@ -151,12 +191,13 @@ function CameraController({
     return () => {
       map3d.removeEventListener("gmp-rangechange", onRangeChange);
       map3d.removeEventListener("gmp-centerchange", onCenterChange);
+      map3d.removeEventListener("gmp-tiltchange", onTiltChange);
       map3d.removeEventListener("pointerdown", onPointerDown);
       map3d.removeEventListener("pointermove", onPointerMove);
       map3d.removeEventListener("pointerup", onPointerEnd);
       map3d.removeEventListener("pointercancel", onPointerEnd);
     };
-  }, [map3d, center, range]);
+  }, [map3d, center, range, minTilt, maxTilt, activated]);
 
   return null;
 }
@@ -167,7 +208,11 @@ function Map3DInner({
   pois,
   activePOIId,
   onPOIClick,
+  activated = true,
 }: MapView3DProps) {
+  const minTilt = cameraLock.minTilt ?? cameraLock.tilt;
+  const maxTilt = cameraLock.maxTilt ?? cameraLock.tilt;
+
   return (
     <Map3D
       mode={MapMode.SATELLITE}
@@ -177,15 +222,21 @@ function Map3DInner({
         altitude: center.altitude ?? 0,
       }}
       range={cameraLock.range}
-      tilt={cameraLock.tilt}
+      defaultTilt={cameraLock.tilt}
       defaultHeading={0}
-      minTilt={cameraLock.tilt}
-      maxTilt={cameraLock.tilt}
+      minTilt={minTilt}
+      maxTilt={maxTilt}
       bounds={cameraLock.bounds}
       defaultUIHidden
       style={{ width: "100%", height: "100%" }}
     >
-      <CameraController center={center} range={cameraLock.range} />
+      <CameraController
+        center={center}
+        range={cameraLock.range}
+        minTilt={minTilt}
+        maxTilt={maxTilt}
+        activated={activated}
+      />
       {pois.map((poi) => {
         const Icon = getIcon(poi.category.icon);
         const isActive = activePOIId === poi.id;
