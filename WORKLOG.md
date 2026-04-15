@@ -4,6 +4,42 @@
 
 ---
 date: 2026-04-15
+action: unified-map-modal-2d-3d-toggle
+files:
+  - components/map/UnifiedMapModal.tsx (ny)
+  - components/map/ModeToggle.tsx (ny)
+  - components/variants/report/ReportThemeSection.tsx
+  - components/variants/report/blocks/ReportOverviewMap.tsx
+  - lib/utils/camera-map.ts (ny)
+  - lib/types.ts (has3dAddon på ProjectContainer)
+  - lib/supabase/queries.ts (begge loadere)
+  - supabase/migrations/057_add_has_3d_addon.sql
+  - docs/solutions/architecture-patterns/unified-map-modal-2d-3d-toggle-20260415.md
+branch: feat/map-unification (worktree placy-ralph-map-unification)
+summary: |
+  Forenet ReportThemeMap (Mapbox 2D) og Report3DMap (Google 3D) til én UnifiedMapModal med
+  render-slot-mønster og 2D/3D-toggle. 3D er paid add-on (`projects.has_3d_addon`); toggle
+  vises kun når flagg er true. 4-tilstands maskin håndterer WebGL-asymmetri (Mapbox
+  loseContext 150ms, Google 3D GC 350ms). Kamera bevares mellom motorer via Web Mercator
+  range↔zoom-konvertering.
+detail: |
+  KRITISK BUG fanget i Phase 5: has_3d_addon=true i DB, men toggle vises ikke. To parallelle
+  Supabase-loadere — ny path manglet feltet. Fikset ved å mappe i begge + på ProjectContainer.
+
+  POST-WORKFLOW PATCH (samme dag, commit 05a9ec8): Tema-modaler viste placeholder
+  "3D-visning kommer snart" — google3dSlot returnerte <div> i stedet for MapView3D.
+  Fikset med dynamic import + theme.allPOIs som POI-set. Lærdom: verifiser HVER
+  consumer av en ny komponent, ikke bare den første.
+
+  Verifisert visuelt: Wesselsløkka (add-on=true) viser toggle, Leangen (add-on=false) ikke.
+  Hverdagsliv-tema rendrer 13 markører + prosjekt-pin i 3D.
+
+  Parkert: Bead 2na.20 (eksplisitt loseContext på Google 3D), 2na.21 (webglcontextlost
+  recovery med remount-key). Defensive forbedringer, ikke kritiske.
+status: done
+related: docs/plans/2026-04-15-feat-unified-map-modal-2d-3d-toggle-plan.md
+---
+date: 2026-04-15
 action: google-maps-3d-touch-fixes
 files:
   - components/variants/report/blocks/Report3DMap.tsx (to fix-er)
@@ -32,17 +68,36 @@ detail: |
 
 ---
 date: 2026-04-15
-action: report-3d-map-modal-sheet-migrering
+action: report-3d-map-apple-modal-og-mobil-touch
 files:
-  - components/variants/report/blocks/Report3DMap.tsx (Dialog→Sheet)
+  - components/variants/report/blocks/Report3DMap.tsx (Dialog→Sheet + UX)
+  - components/map/map-view-3d.tsx (gestureHandling + touch-action)
+  - app/globals.css (scrollbar-none utility)
 branch: main
-summary: Migrerte Report3DMap fra shadcn Dialog til Sheet (side=bottom) — 3D-kartet bruker nå identisk Apple-style slide-up modal som Mapbox-kartet i ReportThemeSection.
+commit: 9209909
+summary: Migrerte Report3DMap fra shadcn Dialog til Sheet (identisk Apple-style slide-up som Mapbox-kartene), fikset touch-interaksjon på mobil, og tweaket modal-layout (96vh, tabs til bottom bar, hint-tekst fjernet).
 detail: |
+  DIALOG→SHEET (visuell paritet med Mapbox-modalene):
   - Byttet Dialog/DialogContent/DialogTitle → Sheet/SheetContent/SheetTitle
-  - Same klasser som ReportThemeSection: !inset-x-0 !bottom-0 !top-[8vh],
-    md:!inset-x-[4vw] md:!top-[5vh], rounded-t-2xl
+  - Same klasser som ReportThemeSection: rounded-t-2xl, inset-x + top
   - Same slide-up animasjon: map-modal-slide-up (400ms) / map-modal-slide-down (300ms)
-  - Visuell paritet verifisert i browser — begge modaler identiske i opplevelse
+
+  MOBIL TOUCH-FIX:
+  - gestureHandling={activated ? GREEDY : AUTO} på Map3D
+    → én finger kan pan/rotere i modal, ingen "use two fingers"-melding
+  - touch-action: none på wrapper-div + inline style på Map3D
+    → nettleseren sender touch-events til WebGL-elementet i stedet for å
+      fange dem som scroll
+  - Google Maps 3D setter ikke touch-action selv (Mapbox gjør det)
+
+  UX-TWEAKS:
+  - Modal-høyde økt til 96vh (!top-[4vh]) — utnytter skjermen bedre
+  - Tabs flyttet til bottom bar — lettere å nå med tommelen på mobil
+  - Tab-rad er nå én horisontal linje med overflow-x-auto (scrollbar-none)
+  - Hint-tekst "Dra horisontalt for å rotere…" fjernet (kompaktere header)
+
+  NY UTILITY:
+  - .scrollbar-none i globals.css — skjuler scrollbar på alle nettlesere
 
 ---
 date: 2026-04-15
