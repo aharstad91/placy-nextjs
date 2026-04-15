@@ -6,6 +6,43 @@
 
 ---
 
+## 2026-04-15 — Google Maps 3D gjeninnført for rapport (Wesselsløkka-pilot)
+
+### Beslutninger
+- **Akvarell-pipelinen forkastet pga. ToS-brudd.** Screenshot → Gemini stil-transfer → lagret som PNG er deriverte verk etter Google Map Tiles API Policies, og repo-caching bryter 30-dagers caching-grense. Ingen "fair use" i kommersielt produkt.
+- **Report3DMap-blokk via `@vis.gl/react-google-maps@^1.8.3`.** Mars 2026-utgivelsen la til deklarative `<Map3D>` + `<Marker3D>` — erstatter all imperativ DOM-kode fra feb 2026-forsøket. Enkere kode enn forrige iterasjon.
+- **Gate for pilot:** Kun render 3D-blokken når `projectName` eller `areaSlug` inneholder "wessel". Hardkodet POI-config matcher ikke andre områder.
+- **Kostnadsprotokoll utsatt til etter validert salg.** Ingen quota-cap eller budget alert foreløpig — bruker prioriterte demo-launch over beskyttelse. Dokumentert i plan under "Out of Scope".
+
+### Teknisk
+- **Seks fellesfeller** ved Map3D-integrasjon dokumentert i `docs/solutions/feature-implementations/google-maps-3d-report-block-20260415.md`. Kritiske: `useMap3D()` returnerer element direkte (ikke context), `Marker3D` kan ikke rendre HTML-children (kun SVG/Pin/img), `minAltitude=maxAltitude=0` gir svart skjerm, tilt=0 er rett ned (ikke 90).
+- **Kameralås:** declarative props + imperativ snap-back via `gmp-rangechange`/`gmp-centerchange` listeners. Heading uncontrolled for fri 360° rotasjon.
+- **SSR-gate:** `dynamic(() => import("./blocks/Report3DMap"), { ssr: false })` — samme pattern som eksisterende `ReportThemeMap`.
+
+### Scope
+- Én blokk på rapport-siden ("Alt rundt [område]") — erstatter planlagt akvarell-TabbedAerialMap
+- Kun Wesselsløkka-pilot — utvidelse krever nye config-filer per område
+- AnnotatedMap-seksjoner (Natur, Hverdagsliv, etc.) bruker fortsatt Mapbox 2D — 7x 3D-kart per side er for tungt
+
+### Åpne spørsmål
+- Snap-back-jitter ved aggressiv drag — ikke testet empirisk ennå, bruker tester i demo
+- Når flytter vi POI-data fra hardkodet config til DB-backed queries?
+- Bør 3D-blokken auto-rotere litt ved innlasting for å kommunisere "dette er 3D"?
+- Mobil touch-gestures — hvordan oppfører snap-back seg under pinch/zoom på iOS?
+
+### Leveranse
+- 4 nye filer: `components/map/Marker3DPin.tsx`, `components/map/map-view-3d.tsx`, `components/variants/report/blocks/Report3DMap.tsx`, `components/variants/report/blocks/wesselslokka-3d-config.ts`
+- 1 slettet: `components/map/poi-marker-3d.tsx` (brokket for 3D, brukte HTML-portal)
+- `@vis.gl/react-google-maps@^1.8.3` lagt til
+- Verifisert på `/eiendom/broset-utvikling-as/wesselslokka/rapport` — 15 markers rendrer, drawer åpner på klikk
+
+### Referanser
+- Brainstorm: `docs/brainstorms/2026-04-15-report-3d-map-brainstorm.md`
+- Plan: `docs/plans/2026-04-15-feat-report-3d-map-plan.md`
+- Læring: `docs/solutions/feature-implementations/google-maps-3d-report-block-20260415.md`
+
+---
+
 ## 2026-04-09 (sesjon 2) — Area-hierarki, generate-bolig sync, nabolagets sjel
 
 ### Beslutninger

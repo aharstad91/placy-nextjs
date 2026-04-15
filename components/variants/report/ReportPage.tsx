@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import type { Project } from "@/lib/types";
 import type { TranslationMap } from "@/lib/supabase/translations";
 import { transformToReportData, type ReportTheme } from "./report-data";
@@ -9,6 +10,12 @@ import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportSummarySection from "./ReportSummarySection";
+
+// Report3DMap krever WebGL og browser-API → må lastes kun på klient.
+// Følger samme mønster som ReportThemeMap (SSR-safe).
+const Report3DMap = dynamic(() => import("./blocks/Report3DMap"), {
+  ssr: false,
+});
 
 const SCROLL_KEY_PREFIX = "placy-scroll:";
 
@@ -40,6 +47,14 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
     () => transformToReportData(effectiveProject, locale),
     [effectiveProject, locale]
   );
+
+  // Pilot-gate: vis Report3DMap kun for Wesselsløkka-prosjekter.
+  // Hardkodet POI-config matcher ikke andre områder, så vi skjermer andre.
+  const isWesselslokkaPilot = useMemo(() => {
+    const name = reportData.projectName?.toLowerCase() ?? "";
+    const slug = areaSlug?.toLowerCase() ?? "";
+    return name.includes("wessel") || slug.includes("wessel");
+  }, [reportData.projectName, areaSlug]);
 
   // Split themes into primary (selected on welcome) and secondary (deselected)
   const { primaryThemes, secondaryThemes } = useMemo(() => {
@@ -131,6 +146,14 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
             />
           </div>
         ))}
+
+        {/* 3D-kart — "Alt rundt [område]". Vises kun for Wesselsløkka-piloten. */}
+        {isWesselslokkaPilot && (
+          <Report3DMap
+            areaSlug={areaSlug}
+            projectName={reportData.projectName}
+          />
+        )}
 
         {/* Secondary themes — demoted from welcome screen */}
         {secondaryThemes.length > 0 && (
