@@ -17,10 +17,10 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
@@ -352,12 +352,22 @@ export default function ReportThemeSection({
           </button>
 
           {/* Map modal — Apple-style slide-up with backdrop-blur. Identical on mobile + desktop, scaled for width. */}
-          <Dialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
-            <DialogContent
+          <Sheet open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
+            <SheetContent
+              side="bottom"
               showCloseButton={false}
-              className="flex flex-col !max-w-none !w-auto p-0 overflow-hidden gap-0 bg-white fixed inset-x-0 bottom-0 top-[8vh] md:inset-x-[4vw] md:top-[5vh] md:bottom-0 rounded-2xl data-[state=open]:animate-map-modal-in data-[state=closed]:animate-map-modal-out"
+              className="flex flex-col p-0 overflow-hidden gap-0 bg-white !border-0
+                !inset-x-0 !bottom-0 !top-[8vh]
+                md:!inset-x-[4vw] md:!top-[5vh]
+                rounded-t-2xl
+                data-[state=open]:[animation-name:map-modal-slide-up]
+                data-[state=open]:[animation-duration:400ms]
+                data-[state=open]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]
+                data-[state=closed]:[animation-name:map-modal-slide-down]
+                data-[state=closed]:[animation-duration:300ms]
+                data-[state=closed]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]"
             >
-              <DialogTitle className="sr-only">{theme.name} — kart</DialogTitle>
+              <SheetTitle className="sr-only">{theme.name} — kart</SheetTitle>
 
               {/* Drag handle — mobile only */}
               <div className="flex justify-center pt-2 pb-0 md:hidden">
@@ -405,8 +415,8 @@ export default function ReportThemeSection({
                   />
                 )}
               </div>
-            </DialogContent>
-          </Dialog>
+            </SheetContent>
+          </Sheet>
         </>
       )}
     </section>
