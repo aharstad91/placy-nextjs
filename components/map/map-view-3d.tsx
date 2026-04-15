@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   APIProvider,
   Map3D,
@@ -13,7 +13,7 @@ import Map, { Marker as MapboxMarker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { POI } from "@/lib/types";
 import { Marker3DPin } from "./Marker3DPin";
-import { Map3DControls } from "./Map3DControls";
+import { Map3DControls, type Map3DAny } from "./Map3DControls";
 import { getIcon } from "@/lib/utils/map-icons";
 import { useWebGLCheck } from "./Map3DFallback";
 
@@ -54,6 +54,8 @@ export interface MapView3DProps {
   activated?: boolean;
   /** Callback som gir foreldre tilgang til map3d-instansen for imperative ops (fly-back etc). */
   onMapReady?: (map3d: Map3DInstance | null) => void;
+  /** Unik id — nødvendig når flere Map3D er mountet samtidig (preview + modal). */
+  mapId?: string;
 }
 
 /**
@@ -107,6 +109,7 @@ function Map3DInner({
   onPOIClick,
   onMapReady,
   activated = true,
+  mapId,
 }: MapView3DProps) {
   const minTilt = cameraLock.minTilt;
   const maxTilt = cameraLock.maxTilt;
@@ -115,6 +118,17 @@ function Map3DInner({
   const panRadiusKm = cameraLock.panRadiusKm ?? 5;
   const bounds = radiusToBounds(center, panRadiusKm);
 
+  // Fanger map3d-instansen lokalt så Map3DControls (utenfor Map3D-treet)
+  // kan bruke den direkte — useMap3D(mapId) er upålitelig utenfor Map3D.
+  const [mapInstance, setMapInstance] = useState<Map3DInstance | null>(null);
+  const handleReady = useCallback(
+    (m: Map3DInstance | null) => {
+      setMapInstance(m);
+      onMapReady?.(m);
+    },
+    [onMapReady],
+  );
+
   // Bruker Googles native gesture-handling. Bounds + altitude-grenser
   // håndheves av Google i WebGL → butter smooth, ingen JS-kamp.
   // Map3DControls må være SØSKEN til Map3D (ikke barn), ellers blir
@@ -122,6 +136,7 @@ function Map3DInner({
   return (
     <div className="relative w-full h-full">
       <Map3D
+        id={mapId}
         mode={MapMode.SATELLITE}
         defaultCenter={{
           lat: center.lat,
@@ -139,7 +154,7 @@ function Map3DInner({
         defaultUIHidden
         style={{ width: "100%", height: "100%" }}
       >
-        <MapReadyBridge onReady={onMapReady} />
+        <MapReadyBridge onReady={handleReady} />
         {pois.map((poi) => {
         const Icon = getIcon(poi.category.icon);
         const isActive = activePOIId === poi.id;
@@ -166,6 +181,7 @@ function Map3DInner({
       </Map3D>
       {activated && (
         <Map3DControls
+          map3d={mapInstance as unknown as Map3DAny | null}
           minTilt={minTilt ?? 15}
           maxTilt={maxTilt ?? 75}
           minAltitude={minAltitude ?? 100}
