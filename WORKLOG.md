@@ -4,6 +4,34 @@
 
 ---
 date: 2026-04-15
+action: google-maps-3d-touch-fixes
+files:
+  - components/variants/report/blocks/Report3DMap.tsx (to fix-er)
+  - components/map/Map3DFallback.tsx (revert iOS-fallback)
+branch: main
+summary: To touch-fixes for Google Maps 3D — (1) unmount preview ved modal-åpning for å unngå WebGL-krasj på iOS, (2) pointer-events-none på preview-wrapper for pålitelig tap-to-open på alle touch devices.
+detail: |
+  PROBLEM: Chrome på iOS krasjet ved åpning av 3D-modal.
+  ROTÅRSAK: To samtidige WebGL-kontekster (preview + modal). iOS WebKit
+  tåler kun én aktiv WebGL-kontekst per side — krasjer stille ved to.
+
+  FIX 1 — Én WebGL-kontekst:
+  - {!sheetOpen && <MapView3D preview />} — preview fjernes fra DOM
+    i det modal åpner, slik at kun modal-konteksten lever.
+  - Gjelder alle touch devices, ikke bare iOS.
+
+  FIX 2 — pointer-events-none på preview-wrapper:
+  - Google Maps 3D (WebGL custom element) kan fange touch-events og
+    blokkere knappens click-handler på touch devices.
+  - pointer-events-none på wrapper-div → alle taps rutes til <button>,
+    ikke til WebGL-elementet.
+
+  REVERT: iOS-fallback til Mapbox (forrige commit) fjernet —
+  problemet var kontekst-krasj, ikke iOS-inkompatibilitet.
+  Google Maps 3D støtter iOS WebKit (iOS 15+) fint med én kontekst.
+
+---
+date: 2026-04-15
 action: report-3d-map-modal-sheet-migrering
 files:
   - components/variants/report/blocks/Report3DMap.tsx (Dialog→Sheet)
