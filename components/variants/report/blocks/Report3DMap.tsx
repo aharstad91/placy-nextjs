@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Map as MapIcon, X } from "lucide-react";
+import { useState, useMemo, useRef, useCallback } from "react";
+import { Map as MapIcon, X, RotateCcw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MapView3D } from "@/components/map/map-view-3d";
+import { MapView3D, type Map3DInstance } from "@/components/map/map-view-3d";
 import ReportMapDrawer from "../ReportMapDrawer";
 import {
   WESSELSLOKKA_CENTER,
@@ -43,6 +43,42 @@ export default function Report3DMap({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<WesselslokkaTabId>("alle");
   const [selectedPOIId, setSelectedPOIId] = useState<string | null>(null);
+  const mapRef = useRef<Map3DInstance | null>(null);
+
+  const handleMapReady = useCallback((map3d: Map3DInstance | null) => {
+    mapRef.current = map3d;
+  }, []);
+
+  const handleResetView = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    // Googles native flyCameraTo gir smooth tilbake-animasjon
+    (
+      map as unknown as {
+        flyCameraTo: (opts: {
+          endCamera: {
+            center: { lat: number; lng: number; altitude: number };
+            range: number;
+            tilt: number;
+            heading: number;
+          };
+          durationMillis: number;
+        }) => void;
+      }
+    ).flyCameraTo({
+      endCamera: {
+        center: {
+          lat: mapCenter.lat,
+          lng: mapCenter.lng,
+          altitude: mapCenter.altitude ?? 0,
+        },
+        range: WESSELSLOKKA_CAMERA_LOCK.range,
+        tilt: WESSELSLOKKA_CAMERA_LOCK.tilt,
+        heading: 0,
+      },
+      durationMillis: 1500,
+    });
+  }, [mapCenter]);
 
   const visiblePois = useMemo(
     () => filterPoisByTab(WESSELSLOKKA_POIS, activeTab),
@@ -129,19 +165,30 @@ export default function Report3DMap({
 
           {/* Header med tabs */}
           <div className="flex flex-col gap-3 px-4 py-3 md:px-5 md:py-4 border-b border-[#eae6e1] bg-white shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <MapIcon className="w-5 h-5 text-[#7a7062]" />
-                <span className="text-sm md:text-base font-semibold text-[#1a1a1a]">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <MapIcon className="w-5 h-5 text-[#7a7062] shrink-0" />
+                <span className="text-sm md:text-base font-semibold text-[#1a1a1a] truncate">
                   Alt rundt {projectName}
                 </span>
               </div>
-              <button
-                onClick={() => handleDialogChange(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f5f3f0] transition-colors"
-              >
-                <X className="w-4 h-4 text-[#6a6a6a]" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleResetView}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-[#eae6e1] text-[#5d5348] hover:border-[#d4cfc8] hover:text-[#1a1a1a] transition-colors"
+                  aria-label="Tilbake til startpunkt"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Tilbake</span>
+                </button>
+                <button
+                  onClick={() => handleDialogChange(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f5f3f0] transition-colors"
+                  aria-label="Lukk"
+                >
+                  <X className="w-4 h-4 text-[#6a6a6a]" />
+                </button>
+              </div>
             </div>
 
             {/* Tab-filter */}
@@ -185,6 +232,7 @@ export default function Report3DMap({
               pois={visiblePois}
               activePOIId={selectedPOIId}
               onPOIClick={handlePOIClick}
+              onMapReady={handleMapReady}
               activated
             />
 
