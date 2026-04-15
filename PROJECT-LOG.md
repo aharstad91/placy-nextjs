@@ -3073,3 +3073,39 @@ Neste steg: vurder om andre prosjekter (City Lade, Sirkus Shopping, Moholt) skal
 - **Supabase types regenereres ikke automatisk**: Etter migrasjon 056 er parent_poi_id og anchor_summary ukjent for generert `DbPoi`. Cast-mønsteret `(dbPoi as Record<string, unknown>).parent_poi_id` fungerer, men det er nå minst 10 kolonner med dette mønsteret. På sikt: kjør `supabase gen types` eller manuelt oppdater `lib/supabase/types.ts`.
 - **Upsert bevarer ikke-nevnte kolonner**: Testet og bekreftet — Supabase PostgREST upsert oppdaterer kun kolonner som er i payload-objektet. Dette betyr at parent_poi_id/anchor_summary ikke overskrives under import, selv uten eksplisitt preservation-logikk.
 - **Tech audit fant to kritiske edge cases**: (1) cross-theme guard og (2) single filter point. Begge var lette å overse, men ville ha forårsaket bugs i prod. Audit betaler seg.
+
+---
+
+## 2026-04-15 — Apple-style map-modal
+
+### Beslutninger
+
+- **Gjenskape Apple's modal-UX for map-modal** — slide opp fra bunn, kraftig backdrop-blur, rounded corners, identisk på desktop og mobil. Brukeren ville matche Apple's "Utforsk M5-chipene"-modal fra apple.com/no/macbook-pro presist.
+- **Endre defaults i `DialogOverlay` (ikke variant)** — den sterkere backdrop-blur affecterer også `CookiesModal`, men er en forbedring der. Unngår kompleksitet med variant prop eller duplisert komponent.
+- **Override `DialogContent` via className i `ReportThemeSection.tsx`** — ikke endre shadcn-grunnkomponent. `!max-w-none` + `fixed inset-x-0 bottom-0 top-[8vh]` overstyrer default sentrert layout rent.
+- **Apple's easing `cubic-bezier(0.32, 0.72, 0, 1)`** valgt framfor generisk `ease-out` for autentisk Apple-preg.
+- **Unike keyframe-navn** (`map-modal-slide-up`/`-down`) fordi kodebasen allerede har `@keyframes slide-up` — prior art (2026-02-15) viser at duplikater silently overrider.
+
+### Bonusfunn
+
+- **`supports-backdrop-filter:backdrop-blur-sm` var en no-op.** Tailwind genererte `@supports (backdrop-filter: var(--tw))` som ikke er en gyldig feature query. Backdrop-blur har aldri fungert i noen shadcn-dialog hos oss. Fikset implisitt ved å bytte til `supports-[backdrop-filter:blur(1px)]:backdrop-blur-xl`.
+
+### Parkert / Åpne spørsmål
+
+- **Swipe-to-dismiss på mobil** — ikke i scope, men en naturlig videre-utvikling. Vurder på sikt om brukere forventer swipe-ned-gesten.
+- **Variant-prop på DialogContent?** — hvis vi senere vil ha BÅDE sentrert klassisk og Apple-style, må vi refaktorere. I dag er det greit å la alle dialoger arve den sterkere backdrop-blur.
+
+### Retning
+
+Designet på rapport-kartet føles mer profesjonelt. Siden vi nå har verifisert at `supports-[backdrop-filter:blur(1px)]` er riktig Tailwind-syntaks, kan vi bruke det andre steder der backdrop-blur er ønsket (f.eks. overlay på Explorer-modus).
+
+Neste fokusområder (per tidligere logger): 
+- Hverdagsliv/Trening illustrasjoner ferdigstilles (jfr. nye `hverdagsliv-humor-*.jpg`, `trening-aktivitet-humor-*.jpg` i public/illustrations)
+- Vurdere senter-aware-mønsteret for flere prosjekter (City Lade, Sirkus, Moholt)
+
+### Observasjoner
+
+- **Tech audit fanget en subtil Tailwind-bug** som var invisibly brutt i månedsvis. Uten `/tech-audit` hadde vi bare byttet fra `backdrop-blur-sm` til `backdrop-blur-xl` og antatt at det fungerte — i virkeligheten ville ingen av dem rendret fordi `@supports`-queryen var invalid. Audit betaler seg.
+- **Flere Dialog-brukere, få regresjoner.** Bare to Dialog-instanser i kodebase: map-modal og CookiesModal. Lav risiko-profil — kunne trygt endre defaults.
+- **Visuell verifisering via Chrome DevTools MCP er rask og effektiv.** Screenshots på desktop (1400×900) og mobil (390×844) ga umiddelbar visuell bekreftelse. Apple's design translerte direkte til Placys rapport-kontekst.
+- **Prior art-søk i QMD er første-steg**. Søket på "modal backdrop blur animation" ga oss ui-bugs/modal-backdrop-half-viewport-css-animation-collision rett i fanget — kritisk lærdom om duplikate keyframe-navn. Uten det hadde vi sannsynligvis valgt `slide-up` som navn og fått samme bug på nytt.
