@@ -148,6 +148,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
             center={reportData.centerCoordinates}
             pois={effectiveProject.pois}
             has3dAddon={effectiveProject.has3dAddon ?? false}
+            initialHeading={reportData.initialHeading}
           />
         )}
 

@@ -33,6 +33,8 @@ interface ReportOverviewMapProps {
   pois: POI[];
   /** Whether this project has purchased the 3D map add-on */
   has3dAddon: boolean;
+  /** Default heading for alle 3D-kart-instanser (0–359°). 0 = nord. */
+  initialHeading?: number;
 }
 
 export default function ReportOverviewMap({
@@ -41,7 +43,13 @@ export default function ReportOverviewMap({
   center,
   pois,
   has3dAddon,
+  initialHeading,
 }: ReportOverviewMapProps) {
+  const effectiveCameraLock = useMemo(
+    () => ({ ...DEFAULT_CAMERA_LOCK, heading: initialHeading ?? 0 }),
+    [initialHeading],
+  );
+
   const mapCenter = useMemo(() => {
     if (center) return { lat: center.lat, lng: center.lng, altitude: 0 };
     if (pois.length > 0) {
@@ -98,9 +106,9 @@ export default function ReportOverviewMap({
             lng: mapCenter.lng,
             altitude: 0,
           },
-          range: DEFAULT_CAMERA_LOCK.range,
-          tilt: DEFAULT_CAMERA_LOCK.tilt,
-          heading: 0,
+          range: effectiveCameraLock.range,
+          tilt: effectiveCameraLock.tilt,
+          heading: effectiveCameraLock.heading,
         },
         durationMillis: 1500,
       });
@@ -231,7 +239,7 @@ export default function ReportOverviewMap({
           <MapView3D
             mapId="report-3d-modal"
             center={mapCenter}
-            cameraLock={DEFAULT_CAMERA_LOCK}
+            cameraLock={effectiveCameraLock}
             pois={visiblePois}
             opacities={opacities}
             activePOIId={ctx.activePOI}

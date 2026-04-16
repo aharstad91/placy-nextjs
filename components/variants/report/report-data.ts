@@ -117,6 +117,24 @@ const THEME_ILLUSTRATIONS: Record<string, ThemeIllustration> = {
   transport: { src: "/illustrations/transport-mobilitet.jpg", width: 1189, height: 728 },
 };
 
+/** Project-specific illustration overrides — use when a project needs a different visual character than the defaults. */
+const PROJECT_THEME_ILLUSTRATIONS: Record<string, Record<string, ThemeIllustration>> = {
+  "banenor-eiendom_stasjonskvartalet": {
+    hverdagsliv:        { src: "/illustrations/stasjonskvartalet-hverdagsliv.jpg",      width: 1264, height: 848 },
+    "barn-oppvekst":    { src: "/illustrations/stasjonskvartalet-barn-oppvekst.jpg",     width: 1264, height: 848 },
+    "mat-drikke":       { src: "/illustrations/stasjonskvartalet-mat-drikke.jpg",        width: 1264, height: 848 },
+    opplevelser:        { src: "/illustrations/stasjonskvartalet-opplevelser.jpg",       width: 1264, height: 848 },
+    "natur-friluftsliv":{ src: "/illustrations/stasjonskvartalet-natur-friluftsliv.jpg",width: 1264, height: 848 },
+    "trening-aktivitet":{ src: "/illustrations/stasjonskvartalet-trening-aktivitet.jpg",width: 1264, height: 848 },
+    transport:          { src: "/illustrations/stasjonskvartalet-transport.jpg",         width: 1264, height: 848 },
+  },
+};
+
+/** Per-prosjekt default heading for 3D-kart (0–359°). 0 = nord. */
+const PROJECT_3D_HEADINGS: Record<string, number> = {
+  "banenor-eiendom_stasjonskvartalet": 180,
+};
+
 export interface ReportData {
   projectName: string;
   address: string;
@@ -130,6 +148,8 @@ export interface ReportData {
   brokers?: BrokerInfo[];
   cta?: ReportCTA;
   mapStyle?: string;
+  /** Default heading for alle 3D-kart-instanser (0–359°). Undefined = nord (0). */
+  initialHeading?: number;
 }
 
 export const TRANSPORT_CATEGORIES = new Set([
@@ -517,7 +537,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       trails: themeDef.id === "natur-friluftsliv"
         ? project.reportConfig?.trails
         : undefined,
-      image: THEME_ILLUSTRATIONS[themeDef.id],
+      image: PROJECT_THEME_ILLUSTRATIONS[`${project.customer}_${project.urlSlug}`]?.[themeDef.id] ?? THEME_ILLUSTRATIONS[themeDef.id],
       iconSrc: THEME_ICONS[themeDef.id],
     });
   }
@@ -546,5 +566,6 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     brokers: rc?.brokers,
     cta: rc?.cta,
     mapStyle: rc?.mapStyle,
+    initialHeading: PROJECT_3D_HEADINGS[`${project.customer}_${project.urlSlug}`],
   };
 }

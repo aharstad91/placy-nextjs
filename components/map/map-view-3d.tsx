@@ -47,6 +47,8 @@ export interface CameraLock {
    * Total side = 2× denne verdien. Default 5 → 10×10km firkant.
    */
   panHalfSideKm?: number;
+  /** Default heading (bearing) i grader ved innlasting og reset. 0 = nord. */
+  heading?: number;
 }
 
 export interface MapView3DProps {
@@ -272,7 +274,7 @@ function Map3DInner({
         }}
         defaultRange={cameraLock.range}
         defaultTilt={cameraLock.tilt}
-        defaultHeading={0}
+        defaultHeading={cameraLock.heading ?? 0}
         bounds={bounds}
         minTilt={minTilt}
         maxTilt={maxTilt}
