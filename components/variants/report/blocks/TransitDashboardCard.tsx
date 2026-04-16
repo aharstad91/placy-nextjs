@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bus, Train, TramFront, TrainFrontTunnel, CarTaxiFront, ArrowUpRight } from "lucide-react";
+import { Bus, Train, TramFront, TrainFrontTunnel, CarTaxiFront, Sparkles } from "lucide-react";
 import Image from "next/image";
 import {
   Tabs,
@@ -35,21 +35,24 @@ interface TransitDashboardCardProps {
 // --- StopRow ---
 
 function StopRow({ stop }: { stop: StopDepartures }) {
-  const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(stop.stopName + " holdeplass")}&udm=50`;
+  const googleUrl = `https://www.google.com/search?udm=50&q=${encodeURIComponent(stop.stopName + " holdeplass avganger")}`;
 
   return (
-    <a
-      href={googleUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 py-3 border-b border-[#f0ede8] last:border-0 -mx-5 px-5 md:-mx-6 md:px-6 hover:bg-[#f5f3ef] transition-colors group"
-    >
+    <div className="flex items-center gap-3 py-3 border-b border-[#f0ede8] last:border-0 -mx-5 px-5 md:-mx-6 md:px-6">
       <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 truncate">
         {stop.stopName}
       </span>
       <span className="text-sm text-[#8a8a8a] shrink-0">{stop.walkMin} min</span>
-      <ArrowUpRight className="w-3.5 h-3.5 text-[#c0b8b0] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-    </a>
+      <a
+        href={googleUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white text-[#6b5f56] border border-[#e0d8cf] hover:bg-[#f5f3ef] transition-colors shrink-0"
+      >
+        <Sparkles className="w-3 h-3" />
+        Utforsk
+      </a>
+    </div>
   );
 }
 
