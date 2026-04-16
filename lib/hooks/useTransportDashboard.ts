@@ -15,6 +15,8 @@ export interface StopDepartures {
   stopName: string;
   stopId: string;
   walkMin: number;
+  /** "bus" | "tram" | "train" — satt av hook for tab-gruppering */
+  categoryId?: string;
   /** Per-quay (per-direction) departure groups */
   quays: QuayDepartures[];
   /** Flattened first departure per quay — backward compat for map tooltips */
@@ -154,24 +156,39 @@ function estimateWalkMin(poi: POI, center: Coordinates): number {
 }
 
 interface TransportSources {
-  /** The 2 nearest bus/tram/train stops with enturStopplaceId */
-  enturStops: Array<{ poi: POI; walkMin: number }>;
+  /** Stopp gruppert per kategori — maks 5 per kategori, walkMin ≤ 5 */
+  enturStopsByCategory: Record<string, Array<{ poi: POI; walkMin: number }>>;
   /** Nearest Hyre station with hyreStationId */
   hyreStation: { poi: POI; walkMin: number } | null;
 }
 
 function selectTransportSources(pois: POI[], center: Coordinates): TransportSources {
+  const WALK_RADIUS = 5; // min
+  const MAX_PER_CATEGORY = 5;
+  const TRANSIT_CATS = ["bus", "tram", "train"] as const;
+
   const sorted = [...pois]
     .map((poi) => ({ poi, walkMin: estimateWalkMin(poi, center) }))
+    .filter((s) => s.walkMin <= WALK_RADIUS)
     .sort((a, b) => a.walkMin - b.walkMin);
 
-  const enturStops = sorted
-    .filter((s) => s.poi.enturStopplaceId && ["bus", "tram", "train"].includes(s.poi.category.id))
-    .slice(0, 1);
+  // Grupper per kategori, dedupliser på enturStopplaceId
+  const enturStopsByCategory: TransportSources["enturStopsByCategory"] = {};
+  for (const cat of TRANSIT_CATS) {
+    const seen = new Set<string>();
+    enturStopsByCategory[cat] = sorted
+      .filter((s) => s.poi.category.id === cat && s.poi.enturStopplaceId)
+      .filter((s) => {
+        if (seen.has(s.poi.enturStopplaceId!)) return false;
+        seen.add(s.poi.enturStopplaceId!);
+        return true;
+      })
+      .slice(0, MAX_PER_CATEGORY);
+  }
 
   const hyreStation = sorted.find((s) => s.poi.hyreStationId) ?? null;
 
-  return { enturStops, hyreStation };
+  return { enturStopsByCategory, hyreStation };
 }
 
 // --- Hook ---
@@ -180,7 +197,15 @@ export function useTransportDashboard(
   pois: POI[],
   center: Coordinates,
 ): TransportDashboardData {
-  const sources = useMemo(() => selectTransportSources(pois, center), [pois, center]);
+  const { sources, enturIds, hyreId } = useMemo(() => {
+    const s = selectTransportSources(pois, center);
+    const allStops = Object.values(s.enturStopsByCategory).flat();
+    return {
+      sources: s,
+      enturIds: allStops.map((st) => st.poi.enturStopplaceId).join(","),
+      hyreId: s.hyreStation?.poi.hyreStationId ?? "",
+    };
+  }, [pois, center]);
   const sourcesRef = useRef(sources);
   sourcesRef.current = sources;
 
@@ -193,10 +218,6 @@ export function useTransportDashboard(
     loading: false,
     lastUpdated: null,
   });
-
-  // Stable keys for effect deps
-  const enturIds = sources.enturStops.map((s) => s.poi.enturStopplaceId).join(",");
-  const hyreId = sources.hyreStation?.poi.hyreStationId || "";
 
   useEffect(() => {
     // Always poll — bysykkel/scooters/cars are queried by coordinates,
@@ -216,13 +237,17 @@ export function useTransportDashboard(
       const promises: Array<Promise<unknown>> = [];
       const s = sourcesRef.current;
 
-      // Entur departures (1 promise per stop)
-      for (const stop of s.enturStops) {
+      // Entur departures — alle stopp på tvers av kategorier
+      const allStops = Object.entries(s.enturStopsByCategory).flatMap(
+        ([catId, stops]) => stops.map((stop) => ({ ...stop, catId })),
+      );
+      for (const stop of allStops) {
         if (stop.poi.enturStopplaceId) {
           promises.push(
             fetchDepartures(stop.poi.enturStopplaceId, controller.signal).then((r) => ({
               type: "entur" as const,
               stopId: stop.poi.enturStopplaceId!,
+              categoryId: stop.catId,
               walkMin: stop.walkMin,
               ...r,
             })),
@@ -286,6 +311,7 @@ export function useTransportDashboard(
             stopName: val.stopName as string,
             stopId: val.stopId as string,
             walkMin: val.walkMin as number,
+            categoryId: val.categoryId as string,
             quays: val.quays as QuayDepartures[],
             departures: val.departures as EnturDeparture[],
           });

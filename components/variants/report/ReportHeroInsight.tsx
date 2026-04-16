@@ -14,8 +14,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
-import type { StopDepartures } from "@/lib/hooks/useTransportDashboard";
-import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
+import TransitDashboardCard from "./blocks/TransitDashboardCard";
 import MobilityStackCards, { type StackCardItem } from "./blocks/MobilityStackCards";
 
 interface HeroInsightProps {
@@ -503,53 +502,14 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
       ["bus", "tram", "train"].includes(p.category.id),
   ).length;
 
-  // Fallback: if no departures loaded yet, show static stop list
-  const hasLiveData = dashboard.departures.length > 0 || dashboard.lastUpdated;
-
   return (
     <>
-      {/* Kollektivliste med sanntidsavganger */}
-      <InsightCard
-        title="Nærmeste bussholdeplass"
-        headerRight={
-          dashboard.lastUpdated
-            ? `oppdatert kl ${dashboard.lastUpdated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}`
-            : undefined
-        }
-        footer={
-          transitStops > 0
-            ? `${transitStops} holdeplasser innen 5 min gange`
-            : undefined
-        }
-      >
-
-        {/* Loading skeleton */}
-        {dashboard.loading && (
-          <div className="space-y-3 animate-pulse">
-            {[1, 2].map((i) => (
-              <div key={i}>
-                <div className="h-5 bg-[#eae6e1] rounded w-3/4 mb-2" />
-                <div className="h-4 bg-[#eae6e1] rounded w-1/2 ml-10 mb-1" />
-                <div className="h-4 bg-[#eae6e1] rounded w-2/5 ml-10" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Live departure list */}
-        {hasLiveData && !dashboard.loading && (
-          <div className="space-y-4">
-            {dashboard.departures.map((stop) => (
-              <DepartureBlock key={stop.stopId} stop={stop} />
-            ))}
-          </div>
-        )}
-
-        {/* Static fallback if no live data and not loading */}
-        {!hasLiveData && !dashboard.loading && (
-          <StaticTransportList pois={pois} center={center} />
-        )}
-      </InsightCard>
+      <TransitDashboardCard
+        stops={dashboard.departures}
+        loading={dashboard.loading}
+        lastUpdated={dashboard.lastUpdated}
+        transitCount={transitStops}
+      />
 
       {/* Mobilitetskort — scroll-basert sticky stack. Erstatter tidligere
           4-kort-grid med en stablet slideshow-opplevelse hvor hvert kort
@@ -756,149 +716,6 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
         );
       })()}
     </>
-  );
-}
-
-// --- Departure block for one stop ---
-
-function DepartureBlock({ stop }: { stop: StopDepartures }) {
-  const Icon = getIcon("Bus");
-
-  // Prefer quay-grouped data; fall back to flat departures for backward compat
-  const hasQuays = stop.quays && stop.quays.length > 0;
-
-  return (
-    <div>
-      {/* Stop header */}
-      <div className="flex items-center gap-3 py-1">
-        <div className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 bg-[#3b82f615]">
-          <Icon className="w-3.5 h-3.5 text-[#3b82f6]" />
-        </div>
-        <a
-          href={`https://entur.no/nearby-stop-place-detail?id=${stop.stopId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-medium text-[#1a1a1a] hover:text-[#3b82f6] transition-colors text-[15px] flex-1 min-w-0 truncate"
-        >
-          {stop.stopName}
-        </a>
-        <span className="text-sm text-[#8a8a8a] shrink-0">{stop.walkMin} min</span>
-      </div>
-
-      {/* Direction blocks per quay — 50/50 grid */}
-      {hasQuays ? (
-        <div className="ml-10 mt-1 grid grid-cols-2 gap-x-8 gap-y-3">
-          {stop.quays.map((quay) => {
-            if (quay.departures.length === 0) return null;
-            const directionLabel = quay.departures[0].destination;
-            return (
-              <div key={quay.quayId} className="min-w-0">
-                <div className="text-[10px] uppercase tracking-[0.1em] text-[#a0937d] font-medium mb-1 truncate">
-                  → {directionLabel}
-                </div>
-                <div className="space-y-0.5">
-                  {quay.departures.map((dep, i) => (
-                    <div key={i} className="flex items-center gap-2 py-0.5 text-sm">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                          dep.isRealtime ? "bg-green-500" : "bg-gray-300"
-                        }`}
-                      />
-                      <span
-                        className="font-semibold w-6 shrink-0"
-                        style={dep.lineColor ? { color: `#${dep.lineColor}` } : undefined}
-                      >
-                        {dep.lineCode}
-                      </span>
-                      <span className="text-[#8a8a8a] shrink-0">
-                        om {formatRelativeDepartureTime(dep.departureTime)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : stop.departures.length > 0 ? (
-        /* Fallback: flat list */
-        <div className="ml-10 space-y-0.5 mt-1">
-          {stop.departures.slice(0, 4).map((dep, i) => (
-            <div key={i} className="flex items-center gap-2 py-0.5 text-sm">
-              <span
-                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                  dep.isRealtime ? "bg-green-500" : "bg-gray-300"
-                }`}
-              />
-              <span
-                className="font-semibold min-w-[2.5rem]"
-                style={dep.lineColor ? { color: `#${dep.lineColor}` } : undefined}
-              >
-                {dep.lineCode}
-              </span>
-              <span className="text-[#6a6a6a] flex-1 min-w-0 truncate">
-                {dep.destination}
-              </span>
-              <span className="text-[#8a8a8a] shrink-0">
-                om {formatRelativeDepartureTime(dep.departureTime)}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="ml-10 text-sm text-[#a0a0a0] py-0.5">Ingen avganger</div>
-      )}
-    </div>
-  );
-}
-
-// --- Static fallback (original stop list) ---
-
-function StaticTransportList({ pois, center }: { pois: POI[]; center: Coordinates }) {
-  const stops = useMemo(() => {
-    const result: POI[] = [];
-    const seen = new Set<string>();
-    for (const catId of ["train", "tram", "bus"]) {
-      for (const poi of byWalk(ofCats(pois, catId), center)) {
-        if (!seen.has(poi.id) && result.length < 4) {
-          result.push(poi);
-          seen.add(poi.id);
-        }
-      }
-    }
-    if (result.length < 4) {
-      const bike = nearestOf(pois, center, "bike");
-      if (bike && !seen.has(bike.id)) result.push(bike);
-    }
-    return result;
-  }, [pois, center]);
-
-  return (
-    <div className="space-y-1">
-      {stops.map((poi) => {
-        const CatIcon = getIcon(poi.category.icon);
-        const walk = fmtWalk(poi, center);
-        return (
-          <div key={poi.id} className="flex items-center gap-3 py-1.5">
-            <div
-              className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
-              style={{ backgroundColor: poi.category.color + "15" }}
-            >
-              <CatIcon className="w-3.5 h-3.5" style={{ color: poi.category.color }} />
-            </div>
-            <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 min-w-0 truncate">
-              {poi.name}
-            </span>
-            <span className="text-sm text-[#8a8a8a] shrink-0 hidden sm:inline">
-              {poi.category.name}
-            </span>
-            {walk && (
-              <span className="text-sm text-[#8a8a8a] shrink-0 w-12 text-right">{walk}</span>
-            )}
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
