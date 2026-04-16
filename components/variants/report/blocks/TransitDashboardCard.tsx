@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bus, Train, TramFront, ArrowUpRight } from "lucide-react";
+import { Bus, Train, TramFront, TrainFrontTunnel, CarTaxiFront, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import {
   Tabs,
@@ -15,8 +15,10 @@ import type { StopDepartures } from "@/lib/hooks/useTransportDashboard";
 
 const CATEGORIES = [
   { id: "train", label: "Tog", Icon: Train },
+  { id: "metro", label: "T-bane", Icon: TrainFrontTunnel },
   { id: "tram", label: "Trikk", Icon: TramFront },
   { id: "bus", label: "Buss", Icon: Bus },
+  { id: "taxi", label: "Taxi", Icon: CarTaxiFront },
 ] as const;
 
 // --- Props ---
@@ -84,7 +86,7 @@ export default function TransitDashboardCard({
   const currentStops = grouped[resolvedTab] ?? stops;
 
   return (
-    <div className="rounded-xl bg-[#faf9f7] border border-[#eae6e1] px-5 py-4 md:px-6 md:py-5 mb-6 relative overflow-hidden">
+    <div className="rounded-xl bg-[#faf9f7] border border-[#eae6e1] px-5 py-4 md:px-6 md:py-5 mb-6 relative">
       {/* Background illustration */}
       {illustrationSrc && (
         <div className="absolute bottom-0 left-0 w-28 h-20 pointer-events-none" aria-hidden>
@@ -140,15 +142,15 @@ export default function TransitDashboardCard({
       {stops.length > 0 && (
         <>
           {showTabs ? (
-            <Tabs value={resolvedTab} onValueChange={setActiveTab} className="gap-0">
-              <TabsList className="mb-3 h-8 gap-1 bg-[#f0ede8] rounded-full px-1">
+            <Tabs value={resolvedTab} onValueChange={setActiveTab} className="flex-col gap-0">
+              <TabsList className="mb-3 h-8 w-full gap-0 bg-[#f0ede8] rounded-full px-1">
                 {activeCategories.map((cat) => {
                   const Icon = cat.Icon;
                   return (
                     <TabsTrigger
                       key={cat.id}
                       value={cat.id}
-                      className="gap-1.5 px-3 py-1 text-xs rounded-full data-active:bg-white data-active:shadow-sm data-active:text-[#1a1a1a] text-[#8a8a8a]"
+                      className="flex-1 gap-1.5 px-2 py-1 text-xs rounded-full data-active:bg-white data-active:shadow-sm data-active:text-[#1a1a1a] text-[#8a8a8a]"
                     >
                       <Icon className="w-3.5 h-3.5" />
                       {cat.label}
