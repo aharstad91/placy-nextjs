@@ -150,7 +150,7 @@ export default function TransitDashboardCard({
                     <TabsTrigger
                       key={cat.id}
                       value={cat.id}
-                      className="flex-1 gap-1.5 px-2 py-1 text-xs rounded-full data-active:bg-white data-active:shadow-sm data-active:text-[#1a1a1a] text-[#8a8a8a]"
+                      className="flex-1 gap-1.5 px-2 py-1 text-xs rounded-full data-[state=active]:bg-[#2c2521] data-[state=active]:text-white text-[#8a8a8a]"
                     >
                       <Icon className="w-3.5 h-3.5" />
                       {cat.label}
