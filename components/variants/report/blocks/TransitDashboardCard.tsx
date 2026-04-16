@@ -146,7 +146,7 @@ export default function TransitDashboardCard({
         <>
           {showTabs ? (
             <Tabs value={resolvedTab} onValueChange={setActiveTab} className="flex-col gap-0">
-              <TabsList className="mb-3 h-9 w-full gap-0 bg-[#f0ede8] rounded-full px-1">
+              <TabsList className="mb-3 h-9 w-full gap-0 bg-[#f0ede8] rounded-full px-1 py-0">
                 {activeCategories.map((cat) => {
                   const Icon = cat.Icon;
                   return (
