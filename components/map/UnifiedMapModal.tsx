@@ -285,7 +285,7 @@ export default function UnifiedMapModal({
         showCloseButton={false}
         className="flex flex-col p-0 overflow-hidden gap-0 bg-white !border-0
           !inset-x-0 !bottom-0 !top-[4vh]
-          md:!inset-x-[9vw] md:!top-[15vh] md:!bottom-0
+          md:!inset-x-[9vw] md:!top-[10vh] md:!bottom-0
           rounded-t-2xl
           data-[state=open]:[animation-name:map-modal-slide-up]
           data-[state=open]:[animation-duration:400ms]
