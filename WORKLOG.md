@@ -3,6 +3,80 @@
 <!-- Each entry is a YAML block. Most recent first. -->
 
 ---
+date: 2026-04-16
+action: placy-illustrations-skill-og-rapport-blokker
+files:
+  - .claude/skills/placy-illustrations/ (NY SKILL — 8 filer)
+  - components/variants/report/blocks/EditorialPull.tsx (NY)
+  - components/variants/report/blocks/MobilityStackCards.tsx (NY)
+  - components/variants/report/ReportThemeSection.tsx (import + wiring)
+  - components/variants/report/ReportHeroInsight.tsx (erstatter MobilityCard-grid)
+  - public/illustrations/hverdagsliv-humor-a.jpg (NY)
+  - public/illustrations/hverdagsliv-humor-b.jpg (NY)
+  - public/illustrations/trening-aktivitet-humor-a.jpg (NY)
+  - public/illustrations/trening-aktivitet-humor-b.jpg (NY)
+  - public/illustrations/trening-aktivitet-humor-c.jpg (NY)
+  - docs/solutions/best-practices/aerial-photo-to-watercolor-model-comparison-20260415.md (NY)
+branch: main
+summary: >
+  Tre store leveranser: (1) placy-illustrations skill — kanoniserer
+  Wesselsløkka-akvarell-stilen med Gemini-pipeline. (2) EditorialPull-blokk
+  for redaksjonelle sitater mellom dense seksjoner. (3) MobilityStackCards —
+  scroll-drevet "deck reveal" som erstatter det generiske 4-kort-grid'et.
+detail: |
+  1) PLACY-ILLUSTRATIONS SKILL (.claude/skills/placy-illustrations/):
+  Ny Claude Code skill som kanoniserer akvarell-stilen for alle Placy-
+  illustrasjoner. Bygd fra bunnen basert på dagens læringer.
+
+  Innhold:
+  - scripts/generate.py — Gemini 3 Pro Image CLI, auto-sources .env.local
+  - references/style-guide.md — palett, teknikk, komposisjon, 7-punkts QA
+  - references/prompt-patterns.md — 3 beviste mønstre:
+    A: ny scene fra scratch, B: foto→akvarell (stil-transfer), C: humor
+  - references/humor-learnings.md — Mode C (tørr juxtaposition), bevist-sterke
+    mønstre (hund-yoga visuelt rim, tempo-juxtaposition, environment humor)
+  - assets/ — 3 frosne stil-ankre (playground, café, wesselsløkka-bred)
+
+  Smoke-testet: genererte test-scene + stil-transferte marina-foto → akvarell.
+  Skill registreres automatisk (placy-illustrations i skill-lista).
+
+  5 humor-varianter commitet (parkert) + solutions-doc for modellvalg
+  (Gemini vs Flux Kontext vs Replicate for flyfoto→akvarell).
+
+  2) EDITORIALPULL (cherry-pick fra feat/report-blocks):
+  Magasin-stil pull-sitat — stor serif-tekst med decorative open-quote.
+  Brukes som "pust" mellom dense seksjoner. Koblet inn på hverdagsliv-
+  tema med hardkodet Valentinlyst-sitat. Standalone, ingen deps.
+
+  Props: quote (obligatorisk), attribution, tone ("plain" | "sage").
+
+  3) MOBILITYSTACKCARDS (erstatter MobilityCard-grid):
+  Scroll-drevet "deck reveal" for mobilitetskort (Bysykkel/Sparkesykkel/
+  Bildeling/Elbillading). Inspirert av cards-stack-slider.uiinitiative.com.
+
+  Iterasjoner (4 commits):
+  i)   Naiv sticky-slot (h-[60vh] pr kort) → for mye tom plass, ingen overlap
+  ii)  Negative margin + peek → stablet men aldri "fyrt av"
+  iii) Scroll-lytter + absolute-posisjonerte kort i sticky-wrapper → ekte
+       sekvensiell reveal: fired=translateY(-140%)+fade, active=full,
+       waiting=translateY(depth*12px)+scale-down for peek-effekt
+  iv)  Scroll-budsjett tunet fra 100vh→60vh pr kort (240vh totalt)
+
+  Fortsatt under eksperimentering — scroll-budsjettet skaper tom plass
+  under kortet. Kanskje trenger en annen tilnærming (intersection observer
+  i stedet for tall container? Eller komprimere mer).
+
+  GAMMEL MobilityCard-funksjon slettet (erstattet av ny StackCardItem-API).
+
+  DESIGN-RETNING (fra bruker):
+  - Kort i full bredde, clean bg/tekst (inspirert av dagligvare/apotek-
+    kort med store tall)
+  - Muted warm palett (cream/sage/peach/grey) som roterer
+  - Scroll-basert reveal i stedet for statisk grid
+  - "Noe en må forholde seg til mens en scroller"
+status: wip
+
+---
 date: 2026-04-15
 action: 3d-map-orbit-mode-zoom-off
 files:
