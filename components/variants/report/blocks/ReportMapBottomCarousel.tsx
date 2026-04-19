@@ -122,7 +122,11 @@ export default function ReportMapBottomCarousel({
           aria-orientation="horizontal"
           tabIndex={-1}
           onKeyDown={handleKeyDown}
-          className="flex gap-3 overflow-x-auto overflow-y-visible snap-x snap-mandatory pb-2 pt-2 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          /* pt-4 absorberer morph (scale 1.05 + translateY -8px ≈ 17px fra
+             bunn-origin). CSS-spec: overflow-x:auto + overflow-y:visible blir
+             effektivt auto på begge akser — vi må ha padding for å ikke klippe
+             morph-en. */
+          className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-3 pt-4 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {pois.map((poi, index) => (
             <ReportMapBottomCard

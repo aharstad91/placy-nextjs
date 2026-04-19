@@ -420,8 +420,8 @@ export default function UnifiedMapModal({
         }}
         className="flex flex-col p-0 overflow-hidden gap-0 bg-white !border-0
           !inset-x-0 !bottom-0 !top-[4vh]
-          md:!inset-x-0 md:!top-[10vh] md:!bottom-0
-          rounded-t-2xl
+          md:!inset-0
+          rounded-t-2xl md:!rounded-none
           data-[state=open]:[animation-name:map-modal-slide-up]
           data-[state=open]:[animation-duration:400ms]
           data-[state=open]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]
@@ -510,9 +510,10 @@ export default function UnifiedMapModal({
         </div>
 
         {/* Footer slot — bottom carousel on desktop, hidden on mobile (mobile uses drawer).
-            max-h:20vh keeps the carousel subordinate to the map body per design spec. */}
+            overflow-visible på Y-akse slik at active-card morph (translateY(-8px))
+            ikke klippes. Horisontal scroll håndteres inne i carousel-komponenten. */}
         {bottomSlot && (
-          <div className="hidden md:block shrink-0 border-t border-[#eae6e1] bg-white px-3 py-2 max-h-[20vh] overflow-hidden">
+          <div className="hidden md:block shrink-0 border-t border-[#eae6e1] bg-white relative z-10 px-3 pt-5 pb-3">
             {bottomSlot(slotCtx)}
           </div>
         )}

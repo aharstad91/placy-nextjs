@@ -138,11 +138,16 @@ gmp-popover::part(dialog) {
 
 .map-modal-card {
   transform-origin: bottom center;
+  position: relative;
+  z-index: 1;
 }
 
 .map-modal-card--active {
   animation: map-modal-card-activate 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  /* Lift above the map body when the scale+translateY makes the card
+     spill over its container's top edge. */
+  z-index: 20;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -67,7 +67,7 @@ const ReportMapBottomCard = forwardRef<HTMLButtonElement, ReportMapBottomCardPro
         className={`
           map-modal-card
           ${isActive ? "map-modal-card--active" : ""}
-          relative shrink-0 snap-start w-[200px] md:w-[220px] rounded-xl overflow-hidden
+          relative shrink-0 snap-start w-[220px] md:w-[240px] rounded-xl overflow-hidden
           bg-white border text-left cursor-pointer
           transition-[border-color,background-color] duration-150
           ${isActive ? "border-[#b45309] border-2" : "border-[#eae6e1] hover:border-[#d4cfc8]"}
