@@ -124,10 +124,40 @@ gmp-popover::part(dialog) {
   to { transform: translateY(100%); }
 }
 
+/* Card-activation morph inside the map-modal bottom-carousel.
+ * transform-origin: bottom + scale only — bottom edge stays anchored,
+ * card grows upward. GPU-transform; shadow separate (opacity only). */
+@keyframes map-modal-card-activate {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.04);
+  }
+}
+
+.map-modal-card {
+  transform-origin: bottom center;
+  position: relative;
+  z-index: 1;
+}
+
+.map-modal-card--active {
+  animation: map-modal-card-activate 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  /* Lift above the map body when scale makes the card grow past its
+     container's top edge. */
+  z-index: 20;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-slot="sheet-content"][data-state="open"],
   [data-slot="sheet-content"][data-state="closed"] {
     animation: none !important;
+  }
+  .map-modal-card--active {
+    animation: none !important;
+    transform: scale(1.03);
   }
 }
 

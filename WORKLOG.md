@@ -4,6 +4,84 @@
 
 ---
 date: 2026-04-19
+action: Finish-pass map-modal — path-persistens ved toggle + kategori-typografi
+files:
+  - components/map/route-layer-3d.tsx (fix race — merge opprett+path i én effekt)
+  - components/variants/report/ReportMapBottomCard.tsx (kategori sentence-case, 12px)
+branch: feat/map-modal-bunn-carousel
+commits:
+  - 77d5494 fix(map-3d): bevar walking-rute path ved 2D↔3D toggle
+  - 0e0df24 style(map-card): sentence-case kategori, 12px, uten letter-spacing
+summary: >
+  (1) Fikset at 3D walking-rute-path ikke ble bevart når brukeren toggled
+  2D → 3D igjen. Rot-årsak: async Polyline3DElement-opprettelse vs synkron
+  path-setting i separate effekter — path-effekten kjørte før polylinjen
+  var klar. Merged til én effekt som både oppretter og setter path i samme
+  async-callback (badge-effekten har alltid virket fordi den gjør alt i
+  samme callback). (2) Justert kategori-label i bottom-carousel-kort:
+  fjernet all-caps + tracking, senket til 12px. Matcher POI-popup-labels
+  og føles mer redaksjonelt enn kjip "brand"-stil.
+
+---
+date: 2026-04-19
+action: Gangtid-badge på 3D walking-rute (match 2D-pill)
+files:
+  - components/map/route-layer-3d.tsx (+103 linjer — SVG-badge via Marker3DInteractiveElement)
+branch: feat/map-modal-bunn-carousel
+commit: 5f1fb31
+summary: >
+  Lagt til "X min"-badge på slutten av 3D walking-ruten for visuell
+  paritet med 2D-badge (components/map/route-layer.tsx:124). Markøren
+  opprettes imperativt via `Marker3DInteractiveElement` og muteres ved
+  POI-bytte.
+notes: >
+  Google Maps 3D `Marker3DInteractiveElement` slotter KUN <img> eller
+  <svg> — rå HTML-div og emoji-tekst i SVG rendres ikke. Løst med inline
+  SVG-badge (vektor-figur av gående + pill-bakgrunn). Badge mounts/unmounts
+  med routeData, altitude 12m (over polyline på 3m) for lesbarhet.
+
+---
+date: 2026-04-19
+action: Delte kartlag (2D/3D) + walking-rute fra prosjekt til aktivt POI i 3D
+files:
+  - lib/map/map-adapter.ts (NY — MapAdapter-interface + mapboxAdapter + google3dAdapter)
+  - lib/map/map-adapter.test.ts (NY — 11 unit-tester)
+  - lib/map/use-interaction-controller.ts (refaktorert — tar adapter istedenfor map)
+  - lib/map/use-interaction-controller.test.ts (oppdatert mock + ny mode-switch race-test)
+  - lib/map/use-route-data.ts (NY — Zod-validering + AbortController + 200ms debounce)
+  - components/map/UnifiedMapModal.tsx (adapter-velger + SlotContext.routeData)
+  - components/map/route-layer-3d.tsx (omskrevet — Polyline3DElement med path-mutation)
+  - components/variants/report/ReportThemeSection.tsx (fjernet 3D-gate + Google3DSlotContent)
+  - docs/solutions/architecture-patterns/map-adapter-pattern-20260419.md (NY — mønster-doc)
+  - docs/brainstorms/2026-04-19-delte-kartlag-3d-rute-brainstorm.md (NY — brainstorm)
+  - docs/plans/2026-04-19-feat-delte-kartlag-3d-rute-plan.md (NY — 694 linjer plan)
+branch: feat/map-modal-bunn-carousel
+summary: >
+  Gjorde UnifiedMapModal kart-agnostisk: Mapbox 2D og Google Photorealistic 3D
+  er nå utbyttbare rendering-lag. Delt bunn-carousel fungerer identisk i begge
+  moduser. Kort-klikk flyr kameraet i både 2D (mapboxAdapter.flyTo) og 3D
+  (google3dAdapter.flyCameraTo — bevarer tilt/heading). Walking-rute rendres
+  i 3D via Polyline3DElement med blå + hvit outline og RELATIVE_TO_GROUND
+  altitude. Én langlevet polyline-instans per map3d — ved POI-bytte muteres
+  path (ikke remount) for å unngå GPU-leak på iOS. MapAdapter-interfacet er
+  minimalt (stop + flyTo) med best-effort cancel-semantikk. Token-pattern i
+  useInteractionController er uendret og kart-agnostisk.
+verified:
+  - 19 unit-tester grønne (8 controller + 11 adapter)
+  - npm run build grønt
+  - npx tsc --noEmit 0 errors
+  - E2E på Wesselsløkka: toggle 2D↔3D, card-click fly i 3D, walking-rute synlig
+    (Valentinlyst + Moholt), route muterer ved POI-bytte uten remount,
+    POI-state bevart på tvers av mode-switch
+notes: >
+  Oppdaget at `Polyline3DElement.coordinates` er deprecated (bruk `path`).
+  Opprinnelig plan foreslo RELATIVE_TO_MESH; research viste dette ville fått
+  ruta til å klatre på hustak — vi bruker RELATIVE_TO_GROUND med 3m altitude.
+  2D-path i ReportThemeMap har fortsatt sin interne route-fetch (ikke
+  konsolidert mot SlotContext.routeData i V1) — dokumentert som follow-up.
+
+---
+date: 2026-04-19
 action: Bunn-carousel i UnifiedMapModal — toveis kart↔kort-kobling (desktop)
 files:
   - lib/map/use-interaction-controller.ts (NY — flyToken/scrollToken/cancelAll)

@@ -1,254 +1,222 @@
-// @ts-nocheck — 3D component preserved for future use
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { TravelMode } from "@/lib/types";
+import type { RouteData } from "@/lib/map/use-route-data";
+import type { Map3DInstance } from "./map-view-3d";
 
-// Route colors by travel mode
-const ROUTE_COLORS: Record<TravelMode, string> = {
-  walk: "#3B82F6",  // blue-500
-  bike: "#22C55E",  // green-500
-  car: "#8B5CF6"    // violet-500
-};
+/**
+ * 3D walking-rute via Google Maps `Polyline3DElement`.
+ *
+ * Design-prinsipp: **én langlevet polyline-instans per map3d.** Ved POI-bytte
+ * muterer vi `coordinates` — ingen mount/unmount. Forhindrer GPU-buffer-leak
+ * på iOS/Android (Photorealistic Tiles har langsom WebGL-cleanup) og forenkler
+ * StrictMode-race.
+ *
+ * Styling: native `outerColor`/`outerWidth` for outline (blå linje + hvit
+ * kantlinje). 4px outline (40% av 10px strokeWidth). RELATIVE_TO_GROUND med
+ * 3m altitude gir konstant clearance over bakkemesh — unngår z-fighting og
+ * klatrer ikke på hustak (som RELATIVE_TO_MESH ville gjort).
+ *
+ * `drawsOccludedSegments: true` tegner ruta semi-transparent der bygninger
+ * blokkerer — demo-vennlig, viser POI-relasjon selv i tett bebyggelse.
+ *
+ * Referanser:
+ * - https://developers.google.com/maps/documentation/javascript/3d/shapes-lines
+ * - docs/solutions/ui-bugs/google-maps-3d-popover-not-rendering.md (StrictMode-pattern)
+ */
 
 interface RouteLayer3DProps {
-  /** Route coordinates as [lng, lat] pairs (Mapbox format) */
-  coordinates: [number, number][];
-  travelMode?: TravelMode;
-  /** Custom color override */
-  color?: string;
-  /** Stroke width in pixels */
-  strokeWidth?: number;
-  map3d: google.maps.maps3d.Map3DElement | null;
+  map3d: Map3DInstance | null;
+  routeData: RouteData | null;
 }
 
-/**
- * 3D route polyline using Google Maps Polyline3DElement
- * Renders route that follows terrain (bridges, tunnels, etc.)
- */
-export function RouteLayer3D({
-  coordinates,
-  travelMode = "walk",
-  color,
-  strokeWidth = 6,
-  map3d
-}: RouteLayer3DProps) {
+// Constants — se brainstorm for rationale.
+const ROUTE_ALTITUDE_M = 3;
+const STROKE_COLOR = "#3B82F6"; // blue-500
+const OUTER_COLOR = "#FFFFFF";
+const STROKE_WIDTH = 10; // pixels
+const OUTER_WIDTH = 0.4; // 40% → 4px outline
+
+// SVG-basert gangtid-badge. Google Maps 3D `Marker3DInteractiveElement`
+// slotter kun <img> eller <svg>. Emoji rendres ikke pålitelig i SVG, så
+// vi bruker en inline SVG-figur av en gående person (Material-ikon-stil).
+// Design speiler 2D-badge i components/map/route-layer.tsx:124.
+function buildBadgeSVG(minutes: number): string {
+  const label = `${minutes} min`;
+  // Estimat: 28px venstre (ikon + padding) + ~10px per tegn + 14px høyre
+  const textWidth = label.length * 10;
+  const width = Math.max(96, 48 + textWidth);
+  const height = 42;
+  const radius = (height - 4) / 2;
+  // Material Symbols "directions_walk" (forenklet) — enkelt strektegnet piktogram
+  const walker = `
+    <g transform="translate(14, 9) scale(0.85)" fill="#3B82F6">
+      <circle cx="10" cy="3.5" r="2.2"/>
+      <path d="M 7 22 L 8.5 14 L 6 11 L 8 7 L 12 7 L 15 11 L 13 14 L 14.5 22 L 12.5 22 L 11 15.5 L 9.5 22 Z"/>
+    </g>
+  `;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <defs>
+      <filter id="rl3d-shadow" x="-20%" y="-20%" width="140%" height="160%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.22"/>
+      </filter>
+    </defs>
+    <rect x="2" y="2" width="${width - 4}" height="${height - 4}" rx="${radius}"
+      fill="#ffffff" stroke="#eae6e1" stroke-width="1" filter="url(#rl3d-shadow)"/>
+    ${walker}
+    <text x="${38}" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+      font-size="15" font-weight="600" fill="#1a1a1a">${label}</text>
+  </svg>`;
+}
+
+export function RouteLayer3D({ map3d, routeData }: RouteLayer3DProps) {
   const polylineRef = useRef<google.maps.maps3d.Polyline3DElement | null>(null);
+  const badgeRef = useRef<google.maps.maps3d.Marker3DInteractiveElement | null>(
+    null,
+  );
 
-  useEffect(() => {
-    if (!map3d || coordinates.length === 0) return;
-
-    const initPolyline = async () => {
-      try {
-        const { Polyline3DElement, AltitudeMode } = await google.maps.importLibrary("maps3d") as google.maps.Maps3DLibrary;
-
-        // Clean up existing polyline
-        if (polylineRef.current) {
-          polylineRef.current.remove();
-        }
-
-        // Convert coordinates from [lng, lat] to {lat, lng, altitude}
-        const pathCoords = coordinates.map(([lng, lat]) => ({
-          lat,
-          lng,
-          altitude: 2 // Slight elevation to avoid z-fighting with ground
-        }));
-
-        // Create polyline
-        const polyline = new Polyline3DElement({
-          altitudeMode: AltitudeMode.RELATIVE_TO_MESH, // Follows terrain (bridges, etc.)
-          strokeColor: color || ROUTE_COLORS[travelMode],
-          strokeWidth,
-          drawsOccludedSegments: true // Show segments hidden by buildings
-        });
-
-        // Set path (coordinates deprecated)
-        (polyline as unknown as { path: typeof pathCoords }).path = pathCoords;
-
-        polylineRef.current = polyline;
-        map3d.append(polyline);
-
-      } catch (err) {
-        console.error("Failed to create 3D route:", err);
-      }
-    };
-
-    initPolyline();
-
-    return () => {
-      if (polylineRef.current) {
-        polylineRef.current.remove();
-        polylineRef.current = null;
-      }
-    };
-  }, [map3d, coordinates, travelMode, color, strokeWidth]);
-
-  // Update polyline when coordinates change
-  useEffect(() => {
-    if (!polylineRef.current || coordinates.length === 0) return;
-
-    const pathCoords = coordinates.map(([lng, lat]) => ({
-      lat,
-      lng,
-      altitude: 2
-    }));
-
-    (polylineRef.current as unknown as { path: typeof pathCoords }).path = pathCoords;
-  }, [coordinates]);
-
-  // Update style when travel mode changes
-  useEffect(() => {
-    if (!polylineRef.current) return;
-
-    polylineRef.current.strokeColor = color || ROUTE_COLORS[travelMode];
-  }, [travelMode, color]);
-
-  return null;
-}
-
-interface UserLocationMarker3DProps {
-  position: { lat: number; lng: number };
-  accuracy?: number;
-  map3d: google.maps.maps3d.Map3DElement | null;
-}
-
-/**
- * User GPS location marker with pulsing effect
- */
-export function UserLocationMarker3D({ position, accuracy, map3d }: UserLocationMarker3DProps) {
-  const markerRef = useRef<google.maps.maps3d.Marker3DElement | null>(null);
-
+  // Effect 1: opprett (hvis nødvendig) og oppdater polyline basert på
+  // routeData. Én langlevet instans per map3d — path muteres i stedet for
+  // remount for å unngå GPU-buffer-leak.
+  //
+  // NB: Slått sammen av tidligere "opprett"- og "sett-path"-effekter fordi
+  // den asynkrone `importLibrary` gjorde at path-effekten kunne kjøre før
+  // polylinen var klar — da ble path aldri satt ved 3D-remount (toggle 2D→3D).
   useEffect(() => {
     if (!map3d) return;
 
-    const initMarker = async () => {
+    let cancelled = false;
+
+    // Ingen data → fjern fra DOM (behold instansen i ref for neste append).
+    if (!routeData || routeData.coordinates.length === 0) {
+      if (polylineRef.current?.parentNode) polylineRef.current.remove();
+      return;
+    }
+
+    (async () => {
       try {
-        const { Marker3DElement, AltitudeMode } = await google.maps.importLibrary("maps3d") as google.maps.Maps3DLibrary;
-        const { PinElement } = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
-
-        // Clean up existing marker
-        if (markerRef.current) {
-          markerRef.current.remove();
+        // Lazy-opprett polyline (cachet i ref på tvers av routeData-endringer).
+        if (!polylineRef.current) {
+          const lib = (await google.maps.importLibrary(
+            "maps3d",
+          )) as google.maps.Maps3DLibrary;
+          if (cancelled) return;
+          // Double-check etter async pause (StrictMode-race).
+          if (!polylineRef.current) {
+            polylineRef.current = new lib.Polyline3DElement({
+              strokeColor: STROKE_COLOR,
+              outerColor: OUTER_COLOR,
+              strokeWidth: STROKE_WIDTH,
+              outerWidth: OUTER_WIDTH,
+              altitudeMode: lib.AltitudeMode.RELATIVE_TO_GROUND,
+              drawsOccludedSegments: true,
+            });
+          }
         }
 
-        // Create blue dot pin
-        const pin = new PinElement({
-          background: "#2563EB", // blue-600
-          borderColor: "#ffffff",
-          glyphColor: "#ffffff",
-          scale: 0.8
-        });
+        const polyline = polylineRef.current;
+        if (!polyline || cancelled) return;
 
-        // Hide default glyph for just a colored dot
-        const glyph = pin.querySelector('[slot="glyph"]');
-        if (glyph) {
-          (glyph as HTMLElement).style.display = "none";
+        // Sett path og append. path FØR append er viktig — append uten path
+        // kan trigge "empty iterable"-feil i noen API-versjoner.
+        (polyline as unknown as { path: { lat: number; lng: number; altitude: number }[] }).path =
+          routeData.coordinates.map(({ lat, lng }) => ({
+            lat,
+            lng,
+            altitude: ROUTE_ALTITUDE_M,
+          }));
+        if (!polyline.parentNode) {
+          map3d.append(polyline);
         }
-
-        const marker = new Marker3DElement({
-          position: {
-            lat: position.lat,
-            lng: position.lng,
-            altitude: 10
-          },
-          altitudeMode: AltitudeMode.RELATIVE_TO_GROUND
-        });
-
-        marker.append(pin);
-        markerRef.current = marker;
-        map3d.append(marker);
-
       } catch (err) {
-        console.error("Failed to create user location marker:", err);
+        if (!cancelled) {
+          console.warn("[RouteLayer3D] polyline failed:", err);
+        }
       }
-    };
-
-    initMarker();
+    })();
 
     return () => {
-      if (markerRef.current) {
-        markerRef.current.remove();
-        markerRef.current = null;
-      }
+      cancelled = true;
     };
-  }, [map3d]);
+  }, [map3d, routeData]);
 
-  // Update position when it changes
+  // Cleanup ved full unmount av komponenten (map3d blir null / komponent
+  // fjernes). Fjerner polyline fra DOM og nullstiller ref slik at neste
+  // mount lager ny instans.
   useEffect(() => {
-    if (!markerRef.current) return;
-
-    markerRef.current.position = {
-      lat: position.lat,
-      lng: position.lng,
-      altitude: 10
+    return () => {
+      if (polylineRef.current?.parentNode) polylineRef.current.remove();
+      polylineRef.current = null;
     };
-  }, [position.lat, position.lng]);
+  }, []);
 
-  return null;
-}
-
-interface ProjectCenterMarker3DProps {
-  position: { lat: number; lng: number };
-  label?: string;
-  map3d: google.maps.maps3d.Map3DElement | null;
-}
-
-/**
- * Project center marker with sky blue pin and label
- * Shown when GPS is disabled/loading/fallback
- */
-export function ProjectCenterMarker3D({ position, label = "Sentrum", map3d }: ProjectCenterMarker3DProps) {
-  const markerRef = useRef<google.maps.maps3d.Marker3DElement | null>(null);
-
+  // Effect 3: gangtid-badge på rute-endepunktet. Match 2D-badge-stilen for
+  // visuell kontinuitet mellom modusene (se components/map/route-layer.tsx:124).
+  // Bruker Marker3DInteractiveElement fordi den lar oss appende HTML-children
+  // (ren Marker3DElement tar kun `label`-string).
   useEffect(() => {
     if (!map3d) return;
 
-    const initMarker = async () => {
+    let cancelled = false;
+
+    if (!routeData || routeData.coordinates.length === 0) {
+      if (badgeRef.current?.parentNode) badgeRef.current.remove();
+      badgeRef.current = null;
+      return;
+    }
+
+    const endCoord = routeData.coordinates[routeData.coordinates.length - 1];
+    const minutes = Math.round(routeData.travelMinutes);
+
+    (async () => {
       try {
-        const { Marker3DElement, AltitudeMode } = await google.maps.importLibrary("maps3d") as google.maps.Maps3DLibrary;
-        const { PinElement } = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
+        const lib = (await google.maps.importLibrary(
+          "maps3d",
+        )) as google.maps.Maps3DLibrary;
+        if (cancelled) return;
 
-        // Clean up existing marker
-        if (markerRef.current) {
-          markerRef.current.remove();
-        }
+        // Fjern gammel badge før ny opprettes (posisjon-property er read-only
+        // på Marker3D* etter construction — vi må rebygge ved endring).
+        if (badgeRef.current?.parentNode) badgeRef.current.remove();
 
-        // Create sky blue pin (matching ExplorerMap's project center marker)
-        const pin = new PinElement({
-          background: "#0EA5E9", // sky-500
-          borderColor: "#ffffff",
-          glyphColor: "#ffffff",
-          scale: 1.2
-        });
-
-        const marker = new Marker3DElement({
+        const marker = new lib.Marker3DInteractiveElement({
           position: {
-            lat: position.lat,
-            lng: position.lng,
-            altitude: 15
+            lat: endCoord.lat,
+            lng: endCoord.lng,
+            altitude: 12, // litt høyere enn polyline (3m) for lesbarhet
           },
-          altitudeMode: AltitudeMode.RELATIVE_TO_GROUND,
-          label: label
+          altitudeMode: lib.AltitudeMode.RELATIVE_TO_GROUND,
         });
 
-        marker.append(pin);
-        markerRef.current = marker;
+        // Marker3DInteractiveElement slotter <template> og templaten må
+        // inneholde <img> eller <svg>. Vi bygger en inline SVG-badge.
+        const template = document.createElement("template");
+        template.innerHTML = buildBadgeSVG(minutes);
+        marker.append(template);
+
+        if (cancelled) return;
         map3d.append(marker);
-
+        badgeRef.current = marker;
       } catch (err) {
-        console.error("Failed to create project center marker:", err);
+        if (!cancelled) {
+          console.warn("[RouteLayer3D] badge marker failed:", err);
+        }
       }
-    };
-
-    initMarker();
+    })();
 
     return () => {
-      if (markerRef.current) {
-        markerRef.current.remove();
-        markerRef.current = null;
-      }
+      cancelled = true;
     };
-  }, [map3d, position.lat, position.lng, label]);
+  }, [routeData, map3d]);
+
+  // Felles cleanup ved full unmount — fanger badge som kan bli igjen hvis
+  // effect 3 resolver etter at polyline-effect allerede har cleanupet.
+  useEffect(() => {
+    return () => {
+      if (badgeRef.current?.parentNode) badgeRef.current.remove();
+      badgeRef.current = null;
+    };
+  }, []);
 
   return null;
 }
