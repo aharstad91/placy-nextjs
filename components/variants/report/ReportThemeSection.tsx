@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useCallback, useState, useMemo } from "react";
 import Image from "next/image";
 import type { Coordinates, POI } from "@/lib/types";
+import type { Map3DInstance } from "@/components/map/map-view-3d";
+import type { SlotContext } from "@/components/map/UnifiedMapModal";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
@@ -50,6 +52,13 @@ const MapView3D = dynamic(
     ssr: false,
     loading: () => <SkeletonReportMap />,
   },
+);
+
+// RouteLayer3D lazy-loades sammen med MapView3D — samme bundling-strategi,
+// kun Google Maps 3D-bruk.
+const RouteLayer3D = dynamic(
+  () => import("@/components/map/route-layer-3d").then((mod) => ({ default: mod.RouteLayer3D })),
+  { ssr: false },
 );
 
 interface ReportThemeSectionProps {
@@ -453,26 +462,12 @@ export default function ReportThemeSection({
               />
             )}
             google3dSlot={(ctx) => (
-              <MapView3D
-                mapId={`theme-3d-${theme.id}`}
-                center={{ lat: center.lat, lng: center.lng, altitude: 0 }}
-                cameraLock={DEFAULT_CAMERA_LOCK}
+              <Google3DSlotContent
+                ctx={ctx}
+                themeId={theme.id}
                 pois={theme.allPOIs}
-                activePOIId={ctx.activePOI}
-                onPOIClick={(poiId) =>
-                  ctx.setActivePOI(ctx.activePOI === poiId ? null : poiId)
-                }
-                onMapReady={ctx.registerGoogle3dMap}
-                activated
-                projectSite={
-                  projectName
-                    ? {
-                        lat: center.lat,
-                        lng: center.lng,
-                        name: projectName,
-                      }
-                    : undefined
-                }
+                center={center}
+                projectName={projectName}
               />
             )}
             bottomSlot={(ctx) => {
@@ -480,8 +475,9 @@ export default function ReportThemeSection({
               const topPOIs = items
                 .map((item) => theme.allPOIs.find((p) => p.id === item.id))
                 .filter((p): p is POI => p != null);
-              // Carousel interaction deaktivert i 3D — flyTo-analog finnes ikke.
-              if (ctx.mapMode === "3d") return null;
+              // Delt carousel på tvers av 2D/3D — mapController er adapter-
+              // agnostisk og flyr kamera i begge moduser. Se plan
+              // 2026-04-19-feat-delte-kartlag-3d-rute-plan.md.
               if (topPOIs.length === 0) return null;
               return (
                 <ReportMapBottomCarousel
@@ -646,5 +642,79 @@ function GoogleAIInlineLink({ content, url }: { content: string; url: string }) 
         </p>
       </PopoverContent>
     </Popover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Google3DSlotContent — dedikert komponent for 3D-render-slot.
+// Ekstrahert for å holde rules-of-hooks ren (render-props kan kjøres
+// betinget av UnifiedMapModal, så hooks kan ikke ligge i inline-arrow).
+// ---------------------------------------------------------------------------
+
+interface Google3DSlotContentProps {
+  ctx: SlotContext;
+  themeId: string;
+  pois: POI[];
+  center: Coordinates;
+  projectName?: string;
+}
+
+function Google3DSlotContent({
+  ctx,
+  themeId,
+  pois,
+  center,
+  projectName,
+}: Google3DSlotContentProps) {
+  // Lokal map3d-state for deklarativ RouteLayer3D-mount. UnifiedMapModal har
+  // sin egen ref via ctx.registerGoogle3dMap; vi speiler den her slik at
+  // RouteLayer3D kan re-rendre når map3d blir klar (en ref ville ikke
+  // trigget re-render).
+  const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
+
+  const handleMapReady = useCallback(
+    (m: Map3DInstance | null) => {
+      ctx.registerGoogle3dMap(m);
+      setMap3dInstance(m);
+    },
+    [ctx],
+  );
+
+  return (
+    <>
+      <MapView3D
+        mapId={`theme-3d-${themeId}`}
+        center={{ lat: center.lat, lng: center.lng, altitude: 0 }}
+        cameraLock={DEFAULT_CAMERA_LOCK}
+        pois={pois}
+        activePOIId={ctx.activePOI}
+        onPOIClick={(poiId) => {
+          // Parity med 2D-marker-click: scroll korresponderende kort i
+          // visning (AC-4). Kartet er allerede sentrert rundt markøren —
+          // ingen flyTo her (brukeren traff akkurat den).
+          if (ctx.activePOI === poiId) {
+            ctx.setActivePOI(null);
+            return;
+          }
+          ctx.setActivePOI(poiId, "marker");
+          ctx.mapController.scrollCardIntoView(poiId, {
+            behavior: "instant",
+          });
+        }}
+        onMapReady={handleMapReady}
+        activated
+        projectSite={
+          projectName
+            ? {
+                lat: center.lat,
+                lng: center.lng,
+                name: projectName,
+              }
+            : undefined
+        }
+      />
+      {/* Walking-rute fra prosjekt til aktiv POI (AC-6 til AC-10). */}
+      <RouteLayer3D map3d={map3dInstance} routeData={ctx.routeData} />
+    </>
   );
 }

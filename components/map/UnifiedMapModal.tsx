@@ -11,6 +11,12 @@ import ModeToggle from "@/components/map/ModeToggle";
 import ReportMapDrawer from "@/components/variants/report/ReportMapDrawer";
 import { zoomToRange, rangeToZoom } from "@/lib/utils/camera-map";
 import { useInteractionController } from "@/lib/map/use-interaction-controller";
+import {
+  type MapAdapter,
+  mapboxAdapter,
+  google3dAdapter,
+} from "@/lib/map/map-adapter";
+import { useRouteData, type RouteData } from "@/lib/map/use-route-data";
 import type { ReactNode } from "react";
 import type { POI } from "@/lib/types";
 import type { MapRef } from "react-map-gl/mapbox";
@@ -84,6 +90,14 @@ export interface SlotContext {
   registerCardElement: (poiId: string, el: HTMLElement | null) => void;
   /** Active map mode — slots use this to disable carousel interaction in 3D. */
   mapMode: "2d" | "3d";
+  /**
+   * Walking-rute fra prosjekt til aktiv POI. Cachet per activePOI.id +
+   * projectCenter i `useRouteData`-hook. Null når ingen aktiv POI eller
+   * fetch feiler (silent). Konsumeres av RouteLayer3D i 3D-modus; 2D-
+   * `ReportThemeMap` har fortsatt sin egen interne fetch (V1 — 2D-konsolidering
+   * er dokumentert som follow-up).
+   */
+  routeData: RouteData | null;
 }
 
 export interface UnifiedMapModalProps {
@@ -134,7 +148,7 @@ export default function UnifiedMapModal({
   title,
   has3dAddon,
   pois,
-  center: _center,
+  center,
   mapboxSlot,
   google3dSlot,
   bottomSlot,
@@ -203,16 +217,36 @@ export default function UnifiedMapModal({
     (id: string) => cardRefsRef.current.get(id) ?? null,
     [],
   );
-  const getMap = useCallback(() => {
-    // react-map-gl's MapRef.getMap() returns the underlying mapbox-gl Map
-    return mapboxRef.current?.getMap?.() ?? null;
-  }, []);
+  // Adapter-velger: returnerer riktig MapAdapter basert på aktiv mapMode.
+  // Returnerer null under switching-states — useInteractionController no-oper
+  // silent når adapter mangler (mode-switch guard).
+  const getAdapter = useCallback((): MapAdapter | null => {
+    if (mapMode === "mapbox") {
+      const m = mapboxRef.current?.getMap?.();
+      return m ? mapboxAdapter(m) : null;
+    }
+    if (mapMode === "google3d") {
+      const m3d = google3dRef.current;
+      return m3d ? google3dAdapter(m3d) : null;
+    }
+    // switching-to-3d / switching-to-2d → no-op
+    return null;
+  }, [mapMode]);
 
   const mapController = useInteractionController(
-    getMap,
+    getAdapter,
     getCardElement,
     getPOICoords,
   );
+
+  // Walking-rute-hook: fetches /api/directions med AbortController + debounce
+  // + Zod-validering. Resultatet eksponeres via SlotContext så både 2D- og
+  // 3D-slot kan konsumere. Se lib/map/use-route-data.ts.
+  const activePOIObject = useMemo(
+    () => (activePOI ? (pois.find((p) => p.id === activePOI) ?? null) : null),
+    [activePOI, pois],
+  );
+  const { data: routeData } = useRouteData(activePOIObject, center);
 
   // Ref to the map body container — used for viewport dimensions in camera conversions
   const mapBodyRef = useRef<HTMLDivElement | null>(null);
@@ -365,6 +399,7 @@ export default function UnifiedMapModal({
       mapController,
       registerCardElement,
       mapMode: toggleMapMode,
+      routeData,
     }),
     [
       activePOI,
@@ -376,6 +411,7 @@ export default function UnifiedMapModal({
       mapController,
       registerCardElement,
       toggleMapMode,
+      routeData,
     ],
   );
 

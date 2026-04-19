@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useInteractionController } from "./use-interaction-controller";
+import type { MapAdapter } from "./map-adapter";
 
-// Minimal map shape the controller calls: stop() + flyTo()
-function createMockMap() {
+// Minimal adapter shape the controller calls: stop() + flyTo()
+function createMockAdapter(): MapAdapter & {
+  stop: ReturnType<typeof vi.fn>;
+  flyTo: ReturnType<typeof vi.fn>;
+} {
   return {
     stop: vi.fn(),
     flyTo: vi.fn(),
@@ -39,12 +43,12 @@ describe("useInteractionController", () => {
     callbacks.forEach((cb) => cb(performance.now()));
   }
 
-  it("flyTo triggers map.flyTo when current token wins the race", () => {
-    const map = createMockMap();
+  it("flyTo triggers adapter.flyTo when current token wins the race", () => {
+    const adapter = createMockAdapter();
     const poi = { lat: 63.4, lng: 10.4 };
     const { result } = renderHook(() =>
       useInteractionController(
-        () => map as never,
+        () => adapter,
         () => null,
         () => poi,
       ),
@@ -55,19 +59,20 @@ describe("useInteractionController", () => {
     });
     flushRAF();
 
-    expect(map.stop).toHaveBeenCalledTimes(1);
-    expect(map.flyTo).toHaveBeenCalledTimes(1);
-    expect(map.flyTo).toHaveBeenCalledWith(
-      expect.objectContaining({ center: [poi.lng, poi.lat], duration: 400 }),
+    expect(adapter.stop).toHaveBeenCalledTimes(1);
+    expect(adapter.flyTo).toHaveBeenCalledTimes(1);
+    expect(adapter.flyTo).toHaveBeenCalledWith(
+      { lat: poi.lat, lng: poi.lng },
+      expect.objectContaining({ animate: undefined }),
     );
   });
 
   it("flyTo superseded call is cancelled — only latest runs", () => {
-    const map = createMockMap();
+    const adapter = createMockAdapter();
     const poi = { lat: 63.4, lng: 10.4 };
     const { result } = renderHook(() =>
       useInteractionController(
-        () => map as never,
+        () => adapter,
         () => null,
         () => poi,
       ),
@@ -81,8 +86,8 @@ describe("useInteractionController", () => {
     flushRAF();
 
     // stop() called per invocation, flyTo() only for the last token
-    expect(map.stop).toHaveBeenCalledTimes(3);
-    expect(map.flyTo).toHaveBeenCalledTimes(1);
+    expect(adapter.stop).toHaveBeenCalledTimes(3);
+    expect(adapter.flyTo).toHaveBeenCalledTimes(1);
   });
 
   it("scrollCardIntoView respects the latest scroll token only", () => {
@@ -111,11 +116,11 @@ describe("useInteractionController", () => {
   });
 
   it("cancelAll prevents queued flyTo from executing", () => {
-    const map = createMockMap();
+    const adapter = createMockAdapter();
     const poi = { lat: 63.4, lng: 10.4 };
     const { result } = renderHook(() =>
       useInteractionController(
-        () => map as never,
+        () => adapter,
         () => null,
         () => poi,
       ),
@@ -128,16 +133,16 @@ describe("useInteractionController", () => {
     flushRAF();
 
     // Called at least once (from cancelAll, possibly from flyTo too)
-    expect(map.stop).toHaveBeenCalled();
-    expect(map.flyTo).not.toHaveBeenCalled();
+    expect(adapter.stop).toHaveBeenCalled();
+    expect(adapter.flyTo).not.toHaveBeenCalled();
   });
 
-  it("flyTo with animate:false uses duration 0 (instant)", () => {
-    const map = createMockMap();
+  it("flyTo with animate:false forwards animate option to adapter", () => {
+    const adapter = createMockAdapter();
     const poi = { lat: 63.4, lng: 10.4 };
     const { result } = renderHook(() =>
       useInteractionController(
-        () => map as never,
+        () => adapter,
         () => null,
         () => poi,
       ),
@@ -148,12 +153,13 @@ describe("useInteractionController", () => {
     });
     flushRAF();
 
-    expect(map.flyTo).toHaveBeenCalledWith(
-      expect.objectContaining({ duration: 0 }),
+    expect(adapter.flyTo).toHaveBeenCalledWith(
+      expect.objectContaining({ lat: poi.lat, lng: poi.lng }),
+      expect.objectContaining({ animate: false }),
     );
   });
 
-  it("flyTo silently aborts when map is null (mode-switch guard)", () => {
+  it("flyTo silently aborts when adapter is null (mode-switch guard)", () => {
     const poi = { lat: 63.4, lng: 10.4 };
     const { result } = renderHook(() =>
       useInteractionController(
@@ -171,10 +177,10 @@ describe("useInteractionController", () => {
   });
 
   it("flyTo silently aborts when POI is missing", () => {
-    const map = createMockMap();
+    const adapter = createMockAdapter();
     const { result } = renderHook(() =>
       useInteractionController(
-        () => map as never,
+        () => adapter,
         () => null,
         () => null,
       ),
@@ -185,6 +191,42 @@ describe("useInteractionController", () => {
     });
     flushRAF();
 
-    expect(map.flyTo).not.toHaveBeenCalled();
+    expect(adapter.flyTo).not.toHaveBeenCalled();
+  });
+
+  // --- Mode-switch race (ny fra deepen) ---
+  // Simulerer: flyTo(poiA) starter på adapterA. Før rAF-guard resolver,
+  // bytter mapMode slik at getAdapter() returnerer adapterB. Etter
+  // flushRAF skal IKKE adapterA.flyTo kalles (token-invalidation via
+  // stop() + nytt flyTo). Dette fanger regresjoner der useInteractionController
+  // lekker flyTo til en unmounted/byttet motor.
+  it("mode-switch under pending flyTo: previous adapter sees no flyTo", () => {
+    const adapterA = createMockAdapter();
+    const adapterB = createMockAdapter();
+    const poi = { lat: 63.4, lng: 10.4 };
+    let active: MapAdapter = adapterA;
+
+    const { result } = renderHook(() =>
+      useInteractionController(
+        () => active,
+        () => null,
+        () => poi,
+      ),
+    );
+
+    // Start fly på adapterA
+    act(() => {
+      result.current.flyTo("poi-1");
+    });
+    // Simulér mode-switch: ny adapter + ny flyTo (token-bump canceller gammel)
+    act(() => {
+      active = adapterB;
+      result.current.flyTo("poi-2");
+    });
+    flushRAF();
+
+    // AdapterA skal aldri ha fått flyTo — kun den nye vinneren flyr
+    expect(adapterA.flyTo).not.toHaveBeenCalled();
+    expect(adapterB.flyTo).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import type { Map as MapboxMap } from "mapbox-gl";
+import type { MapAdapter } from "./map-adapter";
 
 /**
  * Controls map↔carousel interactions in UnifiedMapModal.
  *
  * Matches the `camera-map.ts` pure-function style: closures over refs, no class.
+ * Kart-agnostisk etter adapter-refactor — flyr kamera på hvilken som helst
+ * motor som leverer `MapAdapter`-interfacet.
  *
  * Token pattern: each call increments a ref-counter before the next animation
  * frame and checks it is still current before executing. Any subsequent call
@@ -19,7 +21,7 @@ import type { Map as MapboxMap } from "mapbox-gl";
  * click handler before the paint that renders the new active state.
  */
 export function useInteractionController(
-  getMap: () => MapboxMap | null,
+  getAdapter: () => MapAdapter | null,
   getCardElement: (id: string) => HTMLElement | null,
   getPOI: (id: string) => { lat: number; lng: number } | null,
 ) {
@@ -30,21 +32,20 @@ export function useInteractionController(
     (poiId: string, opts?: { animate?: boolean }) => {
       const myToken = ++flyToken.current;
       // Stop any pan/zoom in flight so a superseded animation cannot continue
-      // in the background while the new one starts.
-      getMap()?.stop();
+      // in the background while the new one starts. Best-effort på 3D.
+      getAdapter()?.stop();
       requestAnimationFrame(() => {
         if (myToken !== flyToken.current) return;
-        const map = getMap();
+        const adapter = getAdapter();
         const poi = getPOI(poiId);
-        if (!map || !poi) return;
-        map.flyTo({
-          center: [poi.lng, poi.lat],
-          duration: opts?.animate === false ? 0 : 400,
-          essential: true,
-        });
+        if (!adapter || !poi) return;
+        adapter.flyTo(
+          { lat: poi.lat, lng: poi.lng },
+          { animate: opts?.animate },
+        );
       });
     },
-    [getMap, getPOI],
+    [getAdapter, getPOI],
   );
 
   const scrollCardIntoView = useCallback(
@@ -69,8 +70,8 @@ export function useInteractionController(
   const cancelAll = useCallback(() => {
     flyToken.current++;
     scrollToken.current++;
-    getMap()?.stop();
-  }, [getMap]);
+    getAdapter()?.stop();
+  }, [getAdapter]);
 
   return { flyTo, scrollCardIntoView, cancelAll };
 }
