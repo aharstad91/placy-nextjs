@@ -75,74 +75,80 @@ export function RouteLayer3D({ map3d, routeData }: RouteLayer3DProps) {
     null,
   );
 
-  // Effect 1: opprett polyline NÅR map3d blir klar. Én langlevet instans.
-  // NB: `coordinates` er deprecated — bruk `path` (Google Maps 3D API). Vi
-  // appender ikke før vi har data (append uten path gir "empty iterable"-feil).
+  // Effect 1: opprett (hvis nødvendig) og oppdater polyline basert på
+  // routeData. Én langlevet instans per map3d — path muteres i stedet for
+  // remount for å unngå GPU-buffer-leak.
+  //
+  // NB: Slått sammen av tidligere "opprett"- og "sett-path"-effekter fordi
+  // den asynkrone `importLibrary` gjorde at path-effekten kunne kjøre før
+  // polylinen var klar — da ble path aldri satt ved 3D-remount (toggle 2D→3D).
   useEffect(() => {
     if (!map3d) return;
 
     let cancelled = false;
 
+    // Ingen data → fjern fra DOM (behold instansen i ref for neste append).
+    if (!routeData || routeData.coordinates.length === 0) {
+      if (polylineRef.current?.parentNode) polylineRef.current.remove();
+      return;
+    }
+
     (async () => {
       try {
-        const lib = (await google.maps.importLibrary(
-          "maps3d",
-        )) as google.maps.Maps3DLibrary;
+        // Lazy-opprett polyline (cachet i ref på tvers av routeData-endringer).
+        if (!polylineRef.current) {
+          const lib = (await google.maps.importLibrary(
+            "maps3d",
+          )) as google.maps.Maps3DLibrary;
+          if (cancelled) return;
+          // Double-check etter async pause (StrictMode-race).
+          if (!polylineRef.current) {
+            polylineRef.current = new lib.Polyline3DElement({
+              strokeColor: STROKE_COLOR,
+              outerColor: OUTER_COLOR,
+              strokeWidth: STROKE_WIDTH,
+              outerWidth: OUTER_WIDTH,
+              altitudeMode: lib.AltitudeMode.RELATIVE_TO_GROUND,
+              drawsOccludedSegments: true,
+            });
+          }
+        }
 
-        // StrictMode-guard: hvis komponenten er unmountet før importLibrary
-        // resolver, skal vi ikke appende til detached map3d.
-        if (cancelled) return;
-        if (polylineRef.current) return; // allerede opprettet
+        const polyline = polylineRef.current;
+        if (!polyline || cancelled) return;
 
-        const polyline = new lib.Polyline3DElement({
-          strokeColor: STROKE_COLOR,
-          outerColor: OUTER_COLOR,
-          strokeWidth: STROKE_WIDTH,
-          outerWidth: OUTER_WIDTH,
-          altitudeMode: lib.AltitudeMode.RELATIVE_TO_GROUND,
-          drawsOccludedSegments: true,
-        });
-        // Ikke sett path/coordinates her — API kaster på empty iterable.
-        // Polyline appendes først ved første ikke-tom routeData (Effect 2).
-        if (cancelled) return;
-        polylineRef.current = polyline;
+        // Sett path og append. path FØR append er viktig — append uten path
+        // kan trigge "empty iterable"-feil i noen API-versjoner.
+        (polyline as unknown as { path: { lat: number; lng: number; altitude: number }[] }).path =
+          routeData.coordinates.map(({ lat, lng }) => ({
+            lat,
+            lng,
+            altitude: ROUTE_ALTITUDE_M,
+          }));
+        if (!polyline.parentNode) {
+          map3d.append(polyline);
+        }
       } catch (err) {
         if (!cancelled) {
-          console.warn("[RouteLayer3D] importLibrary failed:", err);
+          console.warn("[RouteLayer3D] polyline failed:", err);
         }
       }
     })();
 
     return () => {
       cancelled = true;
-      const p = polylineRef.current;
-      if (p && p.parentNode) p.remove();
+    };
+  }, [map3d, routeData]);
+
+  // Cleanup ved full unmount av komponenten (map3d blir null / komponent
+  // fjernes). Fjerner polyline fra DOM og nullstiller ref slik at neste
+  // mount lager ny instans.
+  useEffect(() => {
+    return () => {
+      if (polylineRef.current?.parentNode) polylineRef.current.remove();
       polylineRef.current = null;
     };
-  }, [map3d]);
-
-  // Effect 2: muter path når routeData endres. Appender/fjerner fra DOM
-  // basert på om vi har data. Ingen remount — samme instans gjenbrukes.
-  useEffect(() => {
-    const polyline = polylineRef.current;
-    if (!polyline || !map3d) return;
-
-    if (!routeData || routeData.coordinates.length === 0) {
-      if (polyline.parentNode) polyline.remove();
-      return;
-    }
-
-    // Mutér path, deretter append hvis ikke allerede i DOM.
-    (polyline as unknown as { path: { lat: number; lng: number; altitude: number }[] }).path =
-      routeData.coordinates.map(({ lat, lng }) => ({
-        lat,
-        lng,
-        altitude: ROUTE_ALTITUDE_M,
-      }));
-    if (!polyline.parentNode) {
-      map3d.append(polyline);
-    }
-  }, [routeData, map3d]);
+  }, []);
 
   // Effect 3: gangtid-badge på rute-endepunktet. Match 2D-badge-stilen for
   // visuell kontinuitet mellom modusene (se components/map/route-layer.tsx:124).
