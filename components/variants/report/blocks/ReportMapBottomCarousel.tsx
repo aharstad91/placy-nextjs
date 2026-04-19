@@ -122,7 +122,7 @@ export default function ReportMapBottomCarousel({
           /* items-end: kortene ankret i bunn, aktivt kort vokser oppover kun.
              min-h gir plass til aktivt kort fra start (ingen layout-shift ved
              aktivering). pt gir ekstra morph-slack (scale ~8px). */
-          className="flex items-end gap-3 overflow-x-auto snap-x snap-mandatory min-h-[220px] pb-3 pt-4 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex items-end gap-3 overflow-x-auto snap-x snap-mandatory min-h-[260px] pb-3 pt-5 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {pois.map((poi, index) => (
             <ReportMapBottomCard

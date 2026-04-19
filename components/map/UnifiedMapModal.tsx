@@ -507,16 +507,17 @@ export default function UnifiedMapModal({
               />
             </div>
           )}
-        </div>
 
-        {/* Footer slot — bottom carousel on desktop, hidden on mobile (mobile uses drawer).
-            overflow-visible på Y-akse slik at active-card morph (translateY(-8px))
-            ikke klippes. Horisontal scroll håndteres inne i carousel-komponenten. */}
-        {bottomSlot && (
-          <div className="hidden md:block shrink-0 border-t border-[#eae6e1] bg-white relative z-10 px-3 pt-5 pb-3">
-            {bottomSlot(slotCtx)}
-          </div>
-        )}
+          {/* Bottom carousel — desktop only. Rendered as an overlay inside the
+              map body so kortene sitter direkte på kartet (ingen hvit footer-
+              stripe). pointer-events-none på wrapper lar kart-interaksjoner
+              skje i mellomrommene; kortene selv har pointer-events-auto. */}
+          {bottomSlot && (
+            <div className="hidden md:block absolute inset-x-0 bottom-0 z-30 px-3 pb-3 pointer-events-none">
+              <div className="pointer-events-auto">{bottomSlot(slotCtx)}</div>
+            </div>
+          )}
+        </div>
 
         {/* Screen-reader announcement for marker-driven activations. React
             escapes the text, so no dangerouslySetInnerHTML is needed. */}
