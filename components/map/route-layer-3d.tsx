@@ -37,8 +37,43 @@ const OUTER_COLOR = "#FFFFFF";
 const STROKE_WIDTH = 10; // pixels
 const OUTER_WIDTH = 0.4; // 40% → 4px outline
 
+// SVG-basert gangtid-badge. Google Maps 3D `Marker3DInteractiveElement`
+// slotter kun <img> eller <svg>. Emoji rendres ikke pålitelig i SVG, så
+// vi bruker en inline SVG-figur av en gående person (Material-ikon-stil).
+// Design speiler 2D-badge i components/map/route-layer.tsx:124.
+function buildBadgeSVG(minutes: number): string {
+  const label = `${minutes} min`;
+  // Estimat: 28px venstre (ikon + padding) + ~10px per tegn + 14px høyre
+  const textWidth = label.length * 10;
+  const width = Math.max(96, 48 + textWidth);
+  const height = 42;
+  const radius = (height - 4) / 2;
+  // Material Symbols "directions_walk" (forenklet) — enkelt strektegnet piktogram
+  const walker = `
+    <g transform="translate(14, 9) scale(0.85)" fill="#3B82F6">
+      <circle cx="10" cy="3.5" r="2.2"/>
+      <path d="M 7 22 L 8.5 14 L 6 11 L 8 7 L 12 7 L 15 11 L 13 14 L 14.5 22 L 12.5 22 L 11 15.5 L 9.5 22 Z"/>
+    </g>
+  `;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <defs>
+      <filter id="rl3d-shadow" x="-20%" y="-20%" width="140%" height="160%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.22"/>
+      </filter>
+    </defs>
+    <rect x="2" y="2" width="${width - 4}" height="${height - 4}" rx="${radius}"
+      fill="#ffffff" stroke="#eae6e1" stroke-width="1" filter="url(#rl3d-shadow)"/>
+    ${walker}
+    <text x="${38}" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+      font-size="15" font-weight="600" fill="#1a1a1a">${label}</text>
+  </svg>`;
+}
+
 export function RouteLayer3D({ map3d, routeData }: RouteLayer3DProps) {
   const polylineRef = useRef<google.maps.maps3d.Polyline3DElement | null>(null);
+  const badgeRef = useRef<google.maps.maps3d.Marker3DInteractiveElement | null>(
+    null,
+  );
 
   // Effect 1: opprett polyline NÅR map3d blir klar. Én langlevet instans.
   // NB: `coordinates` er deprecated — bruk `path` (Google Maps 3D API). Vi
@@ -108,6 +143,74 @@ export function RouteLayer3D({ map3d, routeData }: RouteLayer3DProps) {
       map3d.append(polyline);
     }
   }, [routeData, map3d]);
+
+  // Effect 3: gangtid-badge på rute-endepunktet. Match 2D-badge-stilen for
+  // visuell kontinuitet mellom modusene (se components/map/route-layer.tsx:124).
+  // Bruker Marker3DInteractiveElement fordi den lar oss appende HTML-children
+  // (ren Marker3DElement tar kun `label`-string).
+  useEffect(() => {
+    if (!map3d) return;
+
+    let cancelled = false;
+
+    if (!routeData || routeData.coordinates.length === 0) {
+      if (badgeRef.current?.parentNode) badgeRef.current.remove();
+      badgeRef.current = null;
+      return;
+    }
+
+    const endCoord = routeData.coordinates[routeData.coordinates.length - 1];
+    const minutes = Math.round(routeData.travelMinutes);
+
+    (async () => {
+      try {
+        const lib = (await google.maps.importLibrary(
+          "maps3d",
+        )) as google.maps.Maps3DLibrary;
+        if (cancelled) return;
+
+        // Fjern gammel badge før ny opprettes (posisjon-property er read-only
+        // på Marker3D* etter construction — vi må rebygge ved endring).
+        if (badgeRef.current?.parentNode) badgeRef.current.remove();
+
+        const marker = new lib.Marker3DInteractiveElement({
+          position: {
+            lat: endCoord.lat,
+            lng: endCoord.lng,
+            altitude: 12, // litt høyere enn polyline (3m) for lesbarhet
+          },
+          altitudeMode: lib.AltitudeMode.RELATIVE_TO_GROUND,
+        });
+
+        // Marker3DInteractiveElement slotter <template> og templaten må
+        // inneholde <img> eller <svg>. Vi bygger en inline SVG-badge.
+        const template = document.createElement("template");
+        template.innerHTML = buildBadgeSVG(minutes);
+        marker.append(template);
+
+        if (cancelled) return;
+        map3d.append(marker);
+        badgeRef.current = marker;
+      } catch (err) {
+        if (!cancelled) {
+          console.warn("[RouteLayer3D] badge marker failed:", err);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routeData, map3d]);
+
+  // Felles cleanup ved full unmount — fanger badge som kan bli igjen hvis
+  // effect 3 resolver etter at polyline-effect allerede har cleanupet.
+  useEffect(() => {
+    return () => {
+      if (badgeRef.current?.parentNode) badgeRef.current.remove();
+      badgeRef.current = null;
+    };
+  }, []);
 
   return null;
 }
