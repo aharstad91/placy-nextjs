@@ -4,6 +4,26 @@
 
 ---
 date: 2026-04-19
+action: Finish-pass map-modal — path-persistens ved toggle + kategori-typografi
+files:
+  - components/map/route-layer-3d.tsx (fix race — merge opprett+path i én effekt)
+  - components/variants/report/ReportMapBottomCard.tsx (kategori sentence-case, 12px)
+branch: feat/map-modal-bunn-carousel
+commits:
+  - 77d5494 fix(map-3d): bevar walking-rute path ved 2D↔3D toggle
+  - 0e0df24 style(map-card): sentence-case kategori, 12px, uten letter-spacing
+summary: >
+  (1) Fikset at 3D walking-rute-path ikke ble bevart når brukeren toggled
+  2D → 3D igjen. Rot-årsak: async Polyline3DElement-opprettelse vs synkron
+  path-setting i separate effekter — path-effekten kjørte før polylinjen
+  var klar. Merged til én effekt som både oppretter og setter path i samme
+  async-callback (badge-effekten har alltid virket fordi den gjør alt i
+  samme callback). (2) Justert kategori-label i bottom-carousel-kort:
+  fjernet all-caps + tracking, senket til 12px. Matcher POI-popup-labels
+  og føles mer redaksjonelt enn kjip "brand"-stil.
+
+---
+date: 2026-04-19
 action: Gangtid-badge på 3D walking-rute (match 2D-pill)
 files:
   - components/map/route-layer-3d.tsx (+103 linjer — SVG-badge via Marker3DInteractiveElement)
