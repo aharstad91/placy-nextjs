@@ -4,6 +4,73 @@
 
 ---
 date: 2026-04-19
+action: Bunn-carousel i UnifiedMapModal — toveis kart↔kort-kobling (desktop)
+files:
+  - lib/map/use-interaction-controller.ts (NY — flyToken/scrollToken/cancelAll)
+  - lib/map/use-interaction-controller.test.ts (NY — 7 tester)
+  - components/variants/report/ReportMapBottomCard.tsx (NY — text-only kort)
+  - components/variants/report/blocks/ReportMapBottomCarousel.tsx (NY — scroll-snap + roving tabindex)
+  - components/map/UnifiedMapModal.tsx (activePOI→{id,source}, hook, aria-live, ESC, 100vh)
+  - components/variants/report/ReportThemeSection.tsx (bottomSlot render-prop)
+  - components/variants/report/blocks/ReportOverviewMap.tsx (bottomSlot function)
+  - app/globals.css (@keyframes map-modal-card-activate + .map-modal-card--active)
+  - docs/brainstorms/2026-04-19-kart-modal-bunn-carousel-brainstorm.md
+  - docs/plans/2026-04-19-feat-map-modal-bunn-carousel-plan.md
+branch: feat/map-modal-bunn-carousel (worktree placy-ralph-map-carousel)
+summary: >
+  Kjørt /full autonomt på Trello-kort ryuIdgVU. Bunn-carousel i UnifiedMapModal
+  (desktop, 100vh) med toveis kobling: klikk marker → kort scroller instant,
+  klikk kort → flyTo 400ms. Mobil beholder eksisterende ReportMapDrawer. 5
+  commits på feat-branch — grunnimplementasjon, 100vh/overflow/z-index-fix,
+  text-only-redesign (fjernet upålitelige Google-bilder), overlay-carousel
+  (ingen hvit footer-stripe — kortene sitter på kartet), font-sizing ≥14px
+  med 16px tittel.
+detail: |
+  FASE 1-5 (autonomt):
+  - useInteractionController (hook, matcher camera-map.ts-stil, ingen klasse)
+  - flyToken/scrollToken + rAF-guard avbryter superseded operasjoner
+  - Handler-drevne side-effekter (IKKE useEffect) — unngår React-batching-race
+  - source-discriminator {"card" | "marker"}: card→flyTo (ingen scroll),
+    marker→scroll instant (ingen flyTo)
+  - Én ReportMapBottomCard med isActive-prop (matcher ReportPOICard-mønster)
+  - cancelAll() på modal-close, mode-switch 2D→3D, unmount
+  - 3D-modus: carousel-interaksjon deaktivert (bottomSlot returnerer null)
+  - ESC: første preventDefault + deaktiverer, andre lukker modal
+  - aria-live polite + debouncet 150ms announce "[n] av [N], [navn]"
+  - Roving tabindex, arrow keys, Home/End
+
+  ITERASJONER PÅ DESIGN:
+  1. Første pass (med bilder, 90vh modal, footer-stripe) — cards truncated
+  2. 100vh modal + z-index fix for aktivt kort + overflow-fix for morph
+  3. Droppet bilder (Google Places upålitelig, mer problemer enn verdi) →
+     kun tekst: kategori-ikon, rating, tittel, walk-tid, editorialHook
+  4. Morph: dropped translateY, kun scale(1.04) med transform-origin:bottom
+     så aktivt kort vokser kun oppover, bunn forankret
+  5. items-end + min-h-[260px] på scroll container → ingen layout-shift ved
+     aktivering, aktivt kort får alltid plass
+  6. Overlay: fjernet hvit footer-stripe, carousel rendres absolute bottom
+     inne i map body (pointer-events-none wrapper + auto på inner) — føles
+     som en del av kartet
+  7. Font sizing ≥ 14px (text-sm) overalt, tittel 16px (text-base)
+  8. Kategori-ikon 36x36 m/20x20 ikon (større skannbarhet)
+
+  MEKANISKE SJEKKER:
+  - Vitest: 7 nye controller-tester passerer (180/183 totalt grønt; 3 failing
+    er pre-existing i lib/curation/validator.test.ts, ikke relatert)
+  - npx tsc --noEmit: 0 feil
+  - npm run lint: 0 errors (0 nye warnings på endrede filer)
+  - npm run build: clean build etter rm -rf .next
+  - Chrome DevTools MCP-verifisert: desktop 1440x900 (carousel synlig, 10 POIs,
+    marker-klikk scroller kort, kort-klikk flyTo + morph), mobile 390x844
+    (carousel skjult, drawer beholdt).
+
+  TODO NESTE SESJON:
+  - Evt. polish på aktivt kort (tekst-lengde, knappe-layout)
+  - Verifiser på tvers av alle 7 temaer (Transport har sin egen layout)
+  - Vurder PR/merge til main
+
+---
+date: 2026-04-19
 action: Unified grounded narrative — Claude-kuratert Gemini-data med POI-inline + fade-mønster
 files:
   - lib/types.ts (schema v2 + discriminated union + v1 passthrough)
