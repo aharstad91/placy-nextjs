@@ -90,7 +90,7 @@ const ReportMapBottomCard = forwardRef<HTMLButtonElement, ReportMapBottomCardPro
           </div>
 
           {/* Title */}
-          <h4 className="font-semibold text-base md:text-lg leading-snug text-[#1a1a1a] tracking-tight line-clamp-2">
+          <h4 className="font-semibold text-base leading-snug text-[#1a1a1a] tracking-tight line-clamp-2">
             {poi.name}
           </h4>
 
