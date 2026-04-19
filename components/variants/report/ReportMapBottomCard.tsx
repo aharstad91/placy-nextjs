@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, forwardRef } from "react";
+import { forwardRef } from "react";
 import type { POI } from "@/lib/types";
 import { Star, MapPin, Navigation, ExternalLink, BookOpen } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
@@ -10,42 +10,33 @@ interface ReportMapBottomCardProps {
   poi: POI;
   /** Whether this card is the currently selected one. Drives morph + action-row visibility. */
   isActive: boolean;
-  /** Zero-based index — used for aria-label, roving tabindex, and image priority. */
+  /** Zero-based index — used for aria-label, roving tabindex. */
   index: number;
   /** Total count in the carousel — used for aria-label "n of N". */
   total: number;
   /** Click handler — triggers flyTo + activation. */
   onClick: () => void;
-  /** Pointer-enter pre-loads the featured image (Safari morph-FOUC mitigation). */
-  onPointerEnter?: () => void;
   /** Slug for the area, used to build the "Les mer"-link. Null disables. */
   areaSlug?: string | null;
-  /** Priority loading hint — applied to the first ~3 cards. */
-  priority?: boolean;
 }
 
 /**
- * One card in the map-modal bottom carousel. Single component, `isActive`-prop
- * drives morph and action-row visibility (matches the `ReportPOICard`/
- * `ReportHighlightCard` pattern).
+ * One card in the map-modal bottom carousel. Text-only — no image.
+ * Google Places images are unreliable (wrong subject, missing, terms-of-use),
+ * and editorial text gives stronger signal for "what is this place" in the
+ * map-navigation context where a thumbnail adds little.
  */
 const ReportMapBottomCard = forwardRef<HTMLButtonElement, ReportMapBottomCardProps>(
   function ReportMapBottomCard(
-    { poi, isActive, index, total, onClick, onPointerEnter, areaSlug, priority },
+    { poi, isActive, index, total, onClick, areaSlug },
     ref,
   ) {
-    const [imageError, setImageError] = useState(false);
     const CategoryIcon = getIcon(poi.category.icon);
     const walkMinutes = poi.travelTime?.walk
       ? Math.round(poi.travelTime.walk / 60)
       : null;
 
-    const imageUrl = poi.featuredImage
-      ? poi.featuredImage.includes("mymaps.usercontent.google.com")
-        ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
-        : poi.featuredImage
-      : null;
-    const showImage = Boolean(imageUrl) && !imageError;
+    const bodyText = poi.editorialHook ?? poi.localInsight ?? poi.description;
 
     const googleMapsDirectionsUrl = poi.googlePlaceId
       ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
@@ -63,55 +54,33 @@ const ReportMapBottomCard = forwardRef<HTMLButtonElement, ReportMapBottomCardPro
         tabIndex={isActive ? 0 : -1}
         data-poi-id={poi.id}
         onClick={onClick}
-        onPointerEnter={onPointerEnter}
         className={`
           map-modal-card
           ${isActive ? "map-modal-card--active" : ""}
-          relative shrink-0 snap-start w-[220px] md:w-[240px] rounded-xl overflow-hidden
+          relative shrink-0 snap-start w-[240px] md:w-[260px] rounded-xl
           bg-white border text-left cursor-pointer
           transition-[border-color,background-color] duration-150
           ${isActive ? "border-[#b45309] border-2" : "border-[#eae6e1] hover:border-[#d4cfc8]"}
           focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b45309] focus-visible:ring-offset-2
         `}
       >
-        {/* Image / fallback */}
-        <div className="relative aspect-[16/10] bg-[#f5f1ec] overflow-hidden">
-          {showImage ? (
-            // Using <img> by design: next/image mid-carousel creates CLS issues
-            // with horizontal scrolling + morph. Pre-loading via pointer-enter
-            // + aspect-ratio stability covers the FOUC concern.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={imageUrl!}
-              alt=""
-              loading={priority ? "eager" : "lazy"}
-              fetchPriority={priority ? "high" : "auto"}
-              className="w-full h-full object-cover"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{ backgroundColor: `${poi.category.color}18` }}
-            >
-              <CategoryIcon className="w-8 h-8" style={{ color: poi.category.color }} />
-            </div>
-          )}
-
-          {walkMinutes != null && (
-            <div className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-sm text-[11px] font-medium text-[#1a1a1a] shadow-sm">
-              <MapPin className="w-2.5 h-2.5 text-[#7a7062]" />
-              {walkMinutes} min
-            </div>
-          )}
-        </div>
-
-        {/* Body */}
-        <div className="p-2.5 flex flex-col gap-1">
+        <div className="p-3 flex flex-col gap-1.5">
+          {/* Kicker row: icon + category name + rating */}
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[9px] uppercase tracking-[0.18em] font-medium text-[#a0937d] truncate">
-              {poi.category.name}
-            </p>
+            <span className="flex items-center gap-1.5 min-w-0">
+              <span
+                className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
+                style={{ backgroundColor: `${poi.category.color}1a` }}
+              >
+                <CategoryIcon
+                  className="w-3 h-3"
+                  style={{ color: poi.category.color }}
+                />
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.16em] font-medium text-[#6a5f51] truncate">
+                {poi.category.name}
+              </span>
+            </span>
             {poi.googleRating != null && (
               <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[#3a3530] shrink-0">
                 <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
@@ -119,14 +88,35 @@ const ReportMapBottomCard = forwardRef<HTMLButtonElement, ReportMapBottomCardPro
               </span>
             )}
           </div>
-          <h4 className="font-semibold text-[13px] leading-snug text-[#1a1a1a] tracking-tight line-clamp-2">
+
+          {/* Title */}
+          <h4 className="font-semibold text-[14px] md:text-[15px] leading-snug text-[#1a1a1a] tracking-tight line-clamp-2">
             {poi.name}
           </h4>
+
+          {/* Walk time + body text */}
+          <div className="flex flex-col gap-1">
+            {walkMinutes != null && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#5d5348]">
+                <MapPin className="w-2.5 h-2.5" />
+                {walkMinutes} min gange
+              </span>
+            )}
+            {bodyText && (
+              <p
+                className={`text-[11px] text-[#5a5147] leading-snug ${
+                  isActive ? "" : "line-clamp-2"
+                }`}
+              >
+                {bodyText}
+              </p>
+            )}
+          </div>
 
           {/* Action row — only on active card */}
           {isActive && (
             <div
-              className="flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-[#eae6e1]"
+              className="flex items-center gap-1.5 pt-2 mt-1 border-t border-[#eae6e1]"
               onClick={(e) => e.stopPropagation()}
             >
               <a

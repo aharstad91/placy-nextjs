@@ -12,8 +12,6 @@ export interface ReportMapBottomCarouselProps {
   activePOIId: string | null;
   /** Called when a card is clicked — parent fires flyTo + state update. */
   onCardClick: (poiId: string) => void;
-  /** Called on pointer-enter — parent pre-loads featured image. */
-  onCardPointerEnter?: (poiId: string) => void;
   /** Registers each card element so UnifiedMapModal can scroll by id. */
   registerCardRef: (poiId: string, el: HTMLElement | null) => void;
   /** Slug for "Les mer"-links inside the active-card action row. */
@@ -30,7 +28,6 @@ export default function ReportMapBottomCarousel({
   pois,
   activePOIId,
   onCardClick,
-  onCardPointerEnter,
   registerCardRef,
   areaSlug,
 }: ReportMapBottomCarouselProps) {
@@ -122,11 +119,10 @@ export default function ReportMapBottomCarousel({
           aria-orientation="horizontal"
           tabIndex={-1}
           onKeyDown={handleKeyDown}
-          /* pt-4 absorberer morph (scale 1.05 + translateY -8px ≈ 17px fra
-             bunn-origin). CSS-spec: overflow-x:auto + overflow-y:visible blir
-             effektivt auto på begge akser — vi må ha padding for å ikke klippe
-             morph-en. */
-          className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-3 pt-4 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          /* items-end: kortene ankret i bunn, aktivt kort vokser oppover kun.
+             min-h gir plass til aktivt kort fra start (ingen layout-shift ved
+             aktivering). pt gir ekstra morph-slack (scale ~8px). */
+          className="flex items-end gap-3 overflow-x-auto snap-x snap-mandatory min-h-[220px] pb-3 pt-4 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {pois.map((poi, index) => (
             <ReportMapBottomCard
@@ -137,11 +133,7 @@ export default function ReportMapBottomCarousel({
               total={pois.length}
               isActive={activePOIId === poi.id}
               onClick={() => onCardClick(poi.id)}
-              onPointerEnter={
-                onCardPointerEnter ? () => onCardPointerEnter(poi.id) : undefined
-              }
               areaSlug={areaSlug}
-              priority={index < 3}
             />
           ))}
         </div>

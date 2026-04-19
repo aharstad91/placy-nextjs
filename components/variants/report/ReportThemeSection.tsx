@@ -496,17 +496,6 @@ export default function ReportThemeSection({
                     // Kortet er allerede synlig — ingen scroll, kun flyTo.
                     ctx.mapController.flyTo(poiId);
                   }}
-                  onCardPointerEnter={(poiId) => {
-                    // Pre-load image (Safari morph-FOUC mitigation) — safe: browser caches.
-                    const p = theme.allPOIs.find((x) => x.id === poiId);
-                    const url = p?.featuredImage;
-                    if (url && typeof window !== "undefined") {
-                      const img = new window.Image();
-                      img.src = url.includes("mymaps.usercontent.google.com")
-                        ? `/api/image-proxy?url=${encodeURIComponent(url)}`
-                        : url;
-                    }
-                  }}
                   registerCardRef={ctx.registerCardElement}
                   areaSlug={areaSlug}
                 />
