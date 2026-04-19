@@ -259,7 +259,7 @@ export default function ReportOverviewMap({
             }}
           />
         )}
-        bottomSlot={
+        bottomSlot={() => (
           <div
             role="tablist"
             aria-label="Filtrer kategorier"
@@ -284,7 +284,7 @@ export default function ReportOverviewMap({
               );
             })}
           </div>
-        }
+        )}
       />
     </section>
   );

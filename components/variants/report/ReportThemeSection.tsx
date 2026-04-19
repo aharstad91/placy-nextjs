@@ -20,6 +20,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import UnifiedMapModal from "@/components/map/UnifiedMapModal";
+import ReportMapBottomCarousel from "./blocks/ReportMapBottomCarousel";
 import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
@@ -426,9 +427,21 @@ export default function ReportThemeSection({
                 center={center}
                 highlightedPOIId={ctx.activePOI}
                 featuredPOIIds={isTransport ? undefined : featuredPOIIds}
-                onMarkerClick={(poiId) =>
-                  ctx.setActivePOI(ctx.activePOI === poiId ? null : poiId)
-                }
+                /* Handler-drevne side-effekter: flyTo/scroll kjøres direkte i klikk-
+                   handlers, IKKE via useEffect som leser state. Årsak: React batcher
+                   state-updates, og ved rask klikking kan en effect lese state med
+                   feil `source` etter neste klikk — se plan 2026-04-19. */
+                onMarkerClick={(poiId) => {
+                  if (ctx.activePOI === poiId) {
+                    ctx.setActivePOI(null);
+                    return;
+                  }
+                  ctx.setActivePOI(poiId, "marker");
+                  // Kartet er allerede sentrert rundt markøren — kun scroll.
+                  ctx.mapController.scrollCardIntoView(poiId, {
+                    behavior: "instant",
+                  });
+                }}
                 onMapClick={() => ctx.setActivePOI(null)}
                 mapStyle={mapStyle}
                 activated={true}
@@ -462,6 +475,43 @@ export default function ReportThemeSection({
                 }
               />
             )}
+            bottomSlot={(ctx) => {
+              const items = getMatDrikkeCarousel(theme.allPOIs, center);
+              const topPOIs = items
+                .map((item) => theme.allPOIs.find((p) => p.id === item.id))
+                .filter((p): p is POI => p != null);
+              // Carousel interaction deaktivert i 3D — flyTo-analog finnes ikke.
+              if (ctx.mapMode === "3d") return null;
+              if (topPOIs.length === 0) return null;
+              return (
+                <ReportMapBottomCarousel
+                  pois={topPOIs}
+                  activePOIId={ctx.activePOI}
+                  onCardClick={(poiId) => {
+                    if (ctx.activePOI === poiId) {
+                      ctx.setActivePOI(null);
+                      return;
+                    }
+                    ctx.setActivePOI(poiId, "card");
+                    // Kortet er allerede synlig — ingen scroll, kun flyTo.
+                    ctx.mapController.flyTo(poiId);
+                  }}
+                  onCardPointerEnter={(poiId) => {
+                    // Pre-load image (Safari morph-FOUC mitigation) — safe: browser caches.
+                    const p = theme.allPOIs.find((x) => x.id === poiId);
+                    const url = p?.featuredImage;
+                    if (url && typeof window !== "undefined") {
+                      const img = new window.Image();
+                      img.src = url.includes("mymaps.usercontent.google.com")
+                        ? `/api/image-proxy?url=${encodeURIComponent(url)}`
+                        : url;
+                    }
+                  }}
+                  registerCardRef={ctx.registerCardElement}
+                  areaSlug={areaSlug}
+                />
+              );
+            }}
           />
         </>
       )}

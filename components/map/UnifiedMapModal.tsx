@@ -10,10 +10,20 @@ import {
 import ModeToggle from "@/components/map/ModeToggle";
 import ReportMapDrawer from "@/components/variants/report/ReportMapDrawer";
 import { zoomToRange, rangeToZoom } from "@/lib/utils/camera-map";
+import { useInteractionController } from "@/lib/map/use-interaction-controller";
 import type { ReactNode } from "react";
 import type { POI } from "@/lib/types";
 import type { MapRef } from "react-map-gl/mapbox";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
+
+/**
+ * Discriminator for the activation source.
+ * Kept inline (per plan) — promote to `lib/types.ts` when a second consumer exists.
+ *
+ * - "card":   user clicked a carousel card → fly map, do NOT scroll carousel
+ * - "marker": user clicked a map marker   → scroll carousel, do NOT fly map
+ */
+type ActivePOISource = "card" | "marker";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,13 +60,30 @@ export type PendingCamera = {
 /** Context passed to render-slots so they can register engine refs and receive pendingCamera. */
 export interface SlotContext {
   activePOI: string | null;
-  setActivePOI: (id: string | null) => void;
+  /** Which interaction activated this POI — drives side-effects in handlers, not renders. */
+  activePOISource: ActivePOISource | null;
+  /**
+   * Activate (or clear) the selected POI.
+   *
+   * Side-effects (flyTo/scroll) run directly in the caller's handler —
+   * this setter only mutates render-state. Reason: state-driven useEffects
+   * race against React batching during rapid clicks.
+   *
+   * Pass `source` when activating; omit on clear.
+   */
+  setActivePOI: (id: string | null, source?: ActivePOISource) => void;
   /** Register the Mapbox MapRef so UnifiedMapModal can read camera state on toggle. */
   registerMapboxMap: (ref: MapRef | null) => void;
   /** Register the Google 3D instance so UnifiedMapModal can read camera state on toggle. */
   registerGoogle3dMap: (map: Map3DInstance | null) => void;
   /** Camera to apply on mount after a mode switch. null = use default. */
   pendingCamera: PendingCamera | null;
+  /** Shared interaction controller — handlers call flyTo/scroll directly, not via effects. */
+  mapController: ReturnType<typeof useInteractionController>;
+  /** Register a card DOM element so the controller can scroll to it by POI id. */
+  registerCardElement: (poiId: string, el: HTMLElement | null) => void;
+  /** Active map mode — slots use this to disable carousel interaction in 3D. */
+  mapMode: "2d" | "3d";
 }
 
 export interface UnifiedMapModalProps {
@@ -70,8 +97,8 @@ export interface UnifiedMapModalProps {
   mapboxSlot: (ctx: SlotContext) => ReactNode;
   /** Render-slot for Google 3D content. Only invoked when has3dAddon=true. */
   google3dSlot: (ctx: SlotContext) => ReactNode;
-  /** Optional bottom bar (e.g., category pills, tab filter) */
-  bottomSlot?: ReactNode;
+  /** Optional bottom bar (e.g., category pills, tab filter). Render-prop so slot can access ctx. */
+  bottomSlot?: (ctx: SlotContext) => ReactNode;
   /** Optional area-slug pass-through for ReportMapDrawer */
   areaSlug?: string | null;
   /** Extra elements rendered in the header between the title and close button */
@@ -117,7 +144,27 @@ export default function UnifiedMapModal({
 }: UnifiedMapModalProps) {
   // ---- State machine ----
   const [mapMode, setMapMode] = useState<MapMode>("mapbox");
-  const [activePOI, setActivePOI] = useState<string | null>(null);
+
+  // Modalen eier selection lokalt — synker IKKE til useStore.activePOI by design.
+  // Se plan 2026-04-19-feat-map-modal-bunn-carousel-plan.md. Begrunnelse: modalen
+  // er en selvstendig surface, Zustand-global state eies av siden utenfor.
+  const [activePOIState, setActivePOIState] = useState<
+    { id: string; source: ActivePOISource } | null
+  >(null);
+  const activePOI = activePOIState?.id ?? null;
+  const activePOISource = activePOIState?.source ?? null;
+
+  // Setter som samtidig tar source. Nullstilling ignorerer source.
+  const setActivePOI = useCallback(
+    (id: string | null, source?: ActivePOISource) => {
+      if (id === null) {
+        setActivePOIState(null);
+        return;
+      }
+      setActivePOIState({ id, source: source ?? "card" });
+    },
+    [],
+  );
 
   // Camera state carried over during mode switches
   const [pendingCamera, setPendingCamera] = useState<PendingCamera | null>(null);
@@ -134,6 +181,38 @@ export default function UnifiedMapModal({
   const registerGoogle3dMap = useCallback((map: Map3DInstance | null) => {
     google3dRef.current = map;
   }, []);
+
+  // Registry for carousel card DOM elements. Keyed by POI id.
+  const cardRefsRef = useRef<Map<string, HTMLElement>>(new Map());
+  const registerCardElement = useCallback(
+    (poiId: string, el: HTMLElement | null) => {
+      if (el) cardRefsRef.current.set(poiId, el);
+      else cardRefsRef.current.delete(poiId);
+    },
+    [],
+  );
+
+  // POI-lookup for controller. Uses a ref so closures always see fresh data.
+  const poisRef = useRef<POI[]>(pois);
+  poisRef.current = pois;
+  const getPOICoords = useCallback((id: string) => {
+    const p = poisRef.current.find((x) => x.id === id);
+    return p ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null;
+  }, []);
+  const getCardElement = useCallback(
+    (id: string) => cardRefsRef.current.get(id) ?? null,
+    [],
+  );
+  const getMap = useCallback(() => {
+    // react-map-gl's MapRef.getMap() returns the underlying mapbox-gl Map
+    return mapboxRef.current?.getMap?.() ?? null;
+  }, []);
+
+  const mapController = useInteractionController(
+    getMap,
+    getCardElement,
+    getPOICoords,
+  );
 
   // Ref to the map body container — used for viewport dimensions in camera conversions
   const mapBodyRef = useRef<HTMLDivElement | null>(null);
@@ -251,25 +330,53 @@ export default function UnifiedMapModal({
           clearTimeout(switchTimerRef.current);
           switchTimerRef.current = null;
         }
+        // Cancel any pending flyTo / scrollIntoView before ripping out the map
+        mapController.cancelAll();
         setMapMode("mapbox");
         setActivePOI(null);
         setPendingCamera(null);
       }
       onOpenChange(nextOpen);
     },
-    [onOpenChange],
+    [onOpenChange, mapController, setActivePOI],
   );
 
+  // Cancel any pending animations when the map mode flips — the underlying
+  // Mapbox map unmounts during switching-to-3d, so any leftover rAF callback
+  // would reach a dead ref and crash on flyTo.
+  useEffect(() => {
+    if (mapMode !== "mapbox") {
+      mapController.cancelAll();
+    }
+  }, [mapMode, mapController]);
+
   // ---- Slot context ----
+  const toggleMapMode: "2d" | "3d" =
+    mapMode === "google3d" || mapMode === "switching-to-3d" ? "3d" : "2d";
+
   const slotCtx: SlotContext = useMemo(
     () => ({
       activePOI,
+      activePOISource,
       setActivePOI,
       registerMapboxMap,
       registerGoogle3dMap,
       pendingCamera,
+      mapController,
+      registerCardElement,
+      mapMode: toggleMapMode,
     }),
-    [activePOI, registerMapboxMap, registerGoogle3dMap, pendingCamera],
+    [
+      activePOI,
+      activePOISource,
+      setActivePOI,
+      registerMapboxMap,
+      registerGoogle3dMap,
+      pendingCamera,
+      mapController,
+      registerCardElement,
+      toggleMapMode,
+    ],
   );
 
   // ---- Resolved active POI object for drawer ----
@@ -278,11 +385,39 @@ export default function UnifiedMapModal({
     [pois, activePOI],
   );
 
+  // Debounced aria-live announcement when a marker-source activation happens.
+  // "politely" waits 150ms to avoid double-announcing during rapid clicks.
+  const [liveAnnouncement, setLiveAnnouncement] = useState<string>("");
+  const announceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (activePOISource !== "marker" || !activePOI) return;
+    if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
+    announceTimerRef.current = setTimeout(() => {
+      const poi = pois.find((p) => p.id === activePOI);
+      const total = pois.length;
+      const idx = pois.findIndex((p) => p.id === activePOI);
+      if (poi && idx >= 0) {
+        setLiveAnnouncement(`${idx + 1} av ${total}, ${poi.name}`);
+      }
+    }, 150);
+    return () => {
+      if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
+    };
+  }, [activePOI, activePOISource, pois]);
+
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="bottom"
         showCloseButton={false}
+        onEscapeKeyDown={(e) => {
+          // Dobbel-ESC: første ESC deaktiverer POI hvis satt, andre lukker.
+          if (activePOI) {
+            e.preventDefault();
+            setActivePOI(null);
+            mapController.cancelAll();
+          }
+        }}
         className="flex flex-col p-0 overflow-hidden gap-0 bg-white !border-0
           !inset-x-0 !bottom-0 !top-[4vh]
           md:!inset-x-0 md:!top-[10vh] md:!bottom-0
@@ -361,22 +496,32 @@ export default function UnifiedMapModal({
             </div>
           )}
 
-          {/* POI drawer — motor-agnostic, rendered regardless of active engine */}
+          {/* POI drawer — mobile only. Desktop uses the bottom-carousel active
+              card (rendered via bottomSlot) so we don't double up the UI. */}
           {selectedPOI && (
-            <ReportMapDrawer
-              poi={selectedPOI}
-              onClose={() => setActivePOI(null)}
-              areaSlug={areaSlug}
-            />
+            <div className="md:hidden">
+              <ReportMapDrawer
+                poi={selectedPOI}
+                onClose={() => setActivePOI(null)}
+                areaSlug={areaSlug}
+              />
+            </div>
           )}
         </div>
 
-        {/* Footer slot (category pills, tabs, etc.) */}
+        {/* Footer slot — bottom carousel on desktop, hidden on mobile (mobile uses drawer).
+            max-h:20vh keeps the carousel subordinate to the map body per design spec. */}
         {bottomSlot && (
-          <div className="shrink-0 border-t border-[#eae6e1] bg-white px-4 py-3 safe-area-bottom">
-            {bottomSlot}
+          <div className="hidden md:block shrink-0 border-t border-[#eae6e1] bg-white px-3 py-2 max-h-[20vh] overflow-hidden">
+            {bottomSlot(slotCtx)}
           </div>
         )}
+
+        {/* Screen-reader announcement for marker-driven activations. React
+            escapes the text, so no dangerouslySetInnerHTML is needed. */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {liveAnnouncement}
+        </div>
       </SheetContent>
     </Sheet>
   );

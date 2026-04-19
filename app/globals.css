@@ -124,10 +124,35 @@ gmp-popover::part(dialog) {
   to { transform: translateY(100%); }
 }
 
+/* Subtle card-activation morph inside the map-modal bottom-carousel.
+ * scale + translateY only (GPU-transform); shadow is handled by a
+ * pre-rendered layer whose opacity fades in — NOT box-shadow animation. */
+@keyframes map-modal-card-activate {
+  from {
+    transform: scale(1) translateY(0);
+  }
+  to {
+    transform: scale(1.05) translateY(-8px);
+  }
+}
+
+.map-modal-card {
+  transform-origin: bottom center;
+}
+
+.map-modal-card--active {
+  animation: map-modal-card-activate 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-slot="sheet-content"][data-state="open"],
   [data-slot="sheet-content"][data-state="closed"] {
     animation: none !important;
+  }
+  .map-modal-card--active {
+    animation: none !important;
+    transform: scale(1.03);
   }
 }
 
