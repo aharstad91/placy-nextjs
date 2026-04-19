@@ -1,6 +1,8 @@
 // Placy TypeScript Typer
 // Basert på placy-concept-spec.md
 
+import { z } from "zod";
+
 // === Grunnleggende typer ===
 
 export type TravelMode = "walk" | "bike" | "car";
@@ -169,6 +171,104 @@ export interface TrailCollection {
 
 // === Report Config ===
 
+export interface ReportThemeGroundingSource {
+  title: string;
+  /** Resolved final URL (eller redirect hvis resolve feilet). */
+  url: string;
+  /** Original Gemini redirect-URL — beholdt for re-resolve. */
+  redirectUrl: string;
+  domain: string;
+}
+
+/**
+ * Build-time-generert grounding-data fra Gemini API med google_search-tool.
+ * Lagret i products.config.reportConfig.themes[].grounding. Omit (ikke null)
+ * ved feil — matcher optional ?:.
+ *
+ * Google ToS krever at searchEntryPointHtml rendres verbatim (DOMPurify-sanert
+ * før lagring). groundingVersion bumpes for å tvinge regen.
+ *
+ * Version 1: raw Gemini narrative + sources + searchEntryPointHtml.
+ * Version 2: legger til curatedNarrative (Claude-kuratert unified tekst med
+ * POI-inline-lenker), curatedAt, poiLinksUsed. Raw narrative beholdes som
+ * backup. Per-tema — v1 og v2 kan coexist i samme themes[]-array.
+ */
+export interface ReportThemeGrounding {
+  /** Markdown-prosa, min 200 tegn. Raw Gemini-output for v1, råbackup for v2. */
+  narrative: string;
+  sources: ReportThemeGroundingSource[];
+  /** Google Search-attribution-HTML — DOMPurify-sanert. Renders via dangerouslySetInnerHTML. */
+  searchEntryPointHtml: string;
+  /** ISO-8601 tidspunkt for Gemini-kallet. */
+  fetchedAt: string;
+  /** Per-tema version-flagg. Tillater partial rollout v1→v2. */
+  groundingVersion: 1 | 2;
+  meta: {
+    model: "gemini-2.5-flash";
+    /** Debug-only — Gemini sine auto-genererte søk. */
+    searchQueries: string[];
+  };
+  /** V2 only — Claude-kuratert unified tekst med [POI-navn](poi:uuid)-lenker. */
+  curatedNarrative?: string;
+  /** V2 only — ISO-8601 tidspunkt for curation. */
+  curatedAt?: string;
+  /** V2 only — UUIDs for POIs som ble inline-lenket. Sporer rendring + invalidation. */
+  poiLinksUsed?: string[];
+}
+
+/**
+ * Runtime-schema brukt ved render for å validere JSONB-innhold. Discriminated
+ * union på groundingVersion tillater v1 (raw narrative) og v2 (curated +
+ * POI-lenker) coexisting. Silent skip + server-log ved mismatch.
+ *
+ * V1-skjema er .passthrough() for rollout-tolerance: lar extra v2-felter (som
+ * curatedNarrative) eksistere på rad som fortsatt er flagget v1, uten å feile.
+ * Dette håndterer mellomtilstanden mens curation pågår.
+ */
+const GroundingSourceSchema = z.object({
+  title: z.string(),
+  url: z.string().url(),
+  domain: z.string(),
+});
+
+export const ReportThemeGroundingV1Schema = z
+  .object({
+    narrative: z.string().min(1),
+    sources: z.array(GroundingSourceSchema).default([]),
+    searchEntryPointHtml: z.string().min(1),
+    fetchedAt: z.string(),
+    groundingVersion: z.literal(1),
+  })
+  .passthrough();
+
+export const ReportThemeGroundingV2Schema = z.object({
+  /** Raw Gemini-output beholdt som backup. */
+  narrative: z.string().min(1),
+  /** Claude-kuratert unified tekst — primær rendering-kilde i v2. */
+  curatedNarrative: z.string().min(100),
+  sources: z.array(GroundingSourceSchema).default([]),
+  searchEntryPointHtml: z.string().min(1),
+  fetchedAt: z.string(),
+  curatedAt: z.string(),
+  poiLinksUsed: z.array(z.string().uuid()).default([]),
+  groundingVersion: z.literal(2),
+});
+
+export const ReportThemeGroundingViewSchema = z.discriminatedUnion(
+  "groundingVersion",
+  [ReportThemeGroundingV1Schema, ReportThemeGroundingV2Schema],
+);
+
+export type ReportThemeGroundingView = z.infer<
+  typeof ReportThemeGroundingViewSchema
+>;
+export type ReportThemeGroundingViewV1 = z.infer<
+  typeof ReportThemeGroundingV1Schema
+>;
+export type ReportThemeGroundingViewV2 = z.infer<
+  typeof ReportThemeGroundingV2Schema
+>;
+
 export interface ReportThemeConfig {
   id: string;
   name: string;
@@ -180,6 +280,10 @@ export interface ReportThemeConfig {
   upperNarrative?: string;
   lowerNarrative?: string;
   categoryDescriptions?: Record<string, string>;
+  /** Google AI Mode-søk (udm=50) for "Les mer"-knapp. Short, generic query — Google handler fersk detalj. */
+  readMoreQuery?: string;
+  /** Build-time-generert Gemini-grounding. Omit ved feil — ikke null. */
+  grounding?: ReportThemeGrounding;
 }
 
 export interface BrokerInfo {
@@ -293,6 +397,8 @@ export interface ProjectContainer {
   homepageUrl?: string | null;
   /** Whether this project has purchased the 3D map add-on (Google Photorealistic 3D Tiles) */
   has3dAddon?: boolean;
+  /** Project context — drives illustration anchor selection and future style decisions */
+  venueContext?: 'suburban' | 'urban';
   version: number;
   createdAt: string;
   updatedAt: string;

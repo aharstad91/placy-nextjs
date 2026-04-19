@@ -37,11 +37,27 @@ Load `references/humor-learnings.md` only if humor is part of the brief.
 
 ### Step 2 — Pick style anchors from `assets/`
 
-Always include 1–3 reference images to lock the style. Choose based on scene character:
+Always include 1–3 reference images to lock the style. Choose based on **project context** (suburban vs urban) and scene character.
 
-- `assets/anchor-playground.jpg` — close-up scenes, single small building, few figures
-- `assets/anchor-cafe.jpg` — street-level, café, walking/shopping
-- `assets/anchor-wesselslokka.png` — wider complex, park, many middle-ground figures
+#### Suburban anchors (default — forstad, rolig nabolag)
+
+| Asset | Karakter | Bruk når scenen er... |
+|-------|----------|-----------------------|
+| `anchor-playground.jpg` | Nærscene, liten bygning, få figurer | Oppvekst, barnehage, nabolagscorner |
+| `anchor-cafe.jpg` | Gatenivå, café, lav bebyggelse | Mat & drikke, smågate, handel |
+| `anchor-wesselslokka.png` | Bredere kompleks, park, mange figurer | Master-scener, parkanlegg, oversikt |
+
+#### Urban anchors (sentrum, kaikant, tett bybebyggelse)
+
+| Asset | Karakter | Bruk når scenen er... |
+|-------|----------|-----------------------|
+| `anchor-urban-waterfront.jpg` | Kaikant, 6-8 etasjer, havnepromenade, båter | Bryggeprosjekter, sjøfront, kaikant |
+| `anchor-urban-street.jpg` | Bygårdsgater, 5-6 etasjer, fortau, café ut | Sentrumsprosjekter, bykvartal, gate-level |
+| `anchor-urban-square.jpg` | Bytorg, brostein, variabel høyde 2-5 etg, café | Torg, åpent byrom, handelsgate |
+| `anchor-urban-boulevard.jpg` | Bred gate, trær, treverk+mur blandet, sykkel | Allé, promenade, park-karakter i by |
+| `anchor-urban-station.jpg` | Buss, blandede fasader, variabel høyde, folk | Kollektivknutepunkt, stasjonsnærhet, transport |
+
+**Tommelfingerregel:** For `venue_context = 'urban'` bruk alltid minst ett urban anker. For stil-transfer (Mønster B): kildebildet er IMAGE 1, anker er IMAGE 2. Kombinér gjerne 2 ankere — waterfront + square for kaikantprosjekter med torg, boulevard + street for typisk norsk by.
 
 For style-transfer from a user-provided photo, include the photo as first content item and anchor(s) as subsequent items.
 
@@ -93,7 +109,7 @@ When replacing existing illustrations, follow project naming conventions (`-v2`,
 - `references/style-guide.md` — canonical palette, technique, composition rules, and 7-point quality checklist. Load on every use.
 - `references/prompt-patterns.md` — three proven prompt structures (A: new scene, B: style-transfer, C: humor). Load when building a new prompt.
 - `references/humor-learnings.md` — Mode C humor principles, proven patterns (visual rhyme, tempo juxtaposition), known Gemini weaknesses. Load only when humor is part of the brief.
-- `assets/anchor-*.{jpg,png}` — three curated style anchors representing close, medium, and wide scene characters. Always attach at least one to the generation call.
+- `assets/anchor-*.{jpg,png}` — eight curated style anchors: three suburban (close/medium/wide) and five urban (waterfront/street/square/boulevard/station). Always attach at least one to the generation call. Match anchor to project's `venue_context`.
 
 ## Notes
 

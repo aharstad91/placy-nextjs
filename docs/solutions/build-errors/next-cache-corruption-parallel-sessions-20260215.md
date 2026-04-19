@@ -70,6 +70,6 @@ First page load after restart takes 5-6 seconds as webpack recompiles everything
 
 ## Related Issues
 
-No related issues documented yet.
+- See also: [build-race-with-dev-server-enoent-20260418.md](./build-race-with-dev-server-enoent-20260418.md) — Same root cause (shared `.next`), different trigger (`npm run dev` + `npm run build` in one session) and different error surface (build-time `PageNotFoundError` / `ENOENT` on App Router routes).
 
 **Memory reference:** This pattern is documented in `MEMORY.md` under "Parallelle sesjoner KREVER git worktrees" and in `CLAUDE.md` under "Git Worktrees".

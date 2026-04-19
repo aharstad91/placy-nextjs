@@ -136,6 +136,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
               mapStyle={reportData.mapStyle}
               areaSlug={areaSlug}
               has3dAddon={effectiveProject.has3dAddon ?? false}
+              allProjectPOIs={reportData.allProjectPOIs}
             />
           </div>
         ))}
@@ -172,6 +173,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
                   areaSlug={areaSlug}
                   variant="secondary"
                   has3dAddon={effectiveProject.has3dAddon ?? false}
+                  allProjectPOIs={reportData.allProjectPOIs}
                 />
               </div>
             ))}

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { getProductAsync, getProjectAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
 import { getAreaSlugForProject } from "@/lib/public-queries";
@@ -8,7 +9,22 @@ import PlacyReportFooter from "@/components/public/PlacyReportFooter";
 import { eiendomUrl } from "@/lib/urls";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
 
-export const dynamic = "force-dynamic";
+/**
+ * Cached product-fetch. Tag matcher `scripts/gemini-grounding.ts`-revalidate:
+ * `product:${customer}_${slug}` hvor projectId er CLI-arg i scriptet. Tagget
+ * cache bustes når grounding-scriptet PATCH'er og kaller `/api/revalidate`.
+ */
+const getCachedReportProduct = (customer: string, projectSlug: string) =>
+  unstable_cache(
+    () => getProductAsync(customer, projectSlug, "report"),
+    ["report-product", customer, projectSlug],
+    {
+      tags: [`product:${customer}_${projectSlug}`],
+      revalidate: 3600,
+    },
+  )();
+
+export const revalidate = 3600;
 
 interface PageProps {
   params: Promise<{
@@ -22,8 +38,8 @@ export default async function EiendomReportPage({ params, searchParams }: PagePr
   const { customer, project: projectSlug } = await params;
   const resolvedSearchParams = await searchParams;
 
-  // Try new hierarchy first
-  let projectData = await getProductAsync(customer, projectSlug, "report");
+  // Try new hierarchy first (tagged cache — bustes av gemini-grounding-script via revalidateTag)
+  let projectData = await getCachedReportProduct(customer, projectSlug);
 
   // Fallback to legacy: try base slug directly
   if (!projectData) {
@@ -111,7 +127,7 @@ export default async function EiendomReportPage({ params, searchParams }: PagePr
 export async function generateMetadata({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
 
-  let projectData = await getProductAsync(customer, projectSlug, "report");
+  let projectData = await getCachedReportProduct(customer, projectSlug);
   if (!projectData) {
     projectData = await getProjectAsync(customer, projectSlug);
   }

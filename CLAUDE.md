@@ -112,6 +112,15 @@ Disse reglene håndheves av ESLint og pre-commit hooks der mulig, men gjelder AL
 - ALDRI la dead code ligge — det er støy som degraderer agentens kontekst
 - ALDRI kommenter ut kode "for sikkerhets skyld" — git har historikk
 
+### LLM-integrasjon
+- ALDRI runtime LLM-kall — build-time only (skill/script eller lagret output)
+- ALLTID API-nøkkel i `x-goog-api-key`/`Authorization`-header, aldri URL-querystring (leker i logs)
+- Gemini-grounding: `scripts/gemini-grounding.ts` + `lib/gemini/`. Lagret per tema i `products.config.reportConfig.themes[].grounding`.
+- Cache bustes via `groundingVersion`-bump (Zod `z.literal(1)`) eller `revalidateTag("product:${customer}_${slug}")` — ikke auto-TTL
+- Google ToS: `searchEntryPointHtml` må rendres verbatim med DOMPurify-sanering før lagring
+- SSRF-guard ved URL-resolve av Gemini redirect-URLer: DNS pre-resolve + `ipaddr.js`-`range() === "unicast"`-sjekk
+- Mønster: `docs/solutions/api-integration/gemini-grounding-pattern-20260418.md`
+
 ### Output-fokus
 - Verifiser at features FUNGERER (screenshots, tester, manuell sjekk) — ikke bare at koden "ser riktig ut"
 - Definer akseptansekriterier FØR implementering — test mot dem etterpå
@@ -197,3 +206,17 @@ Setup-scriptet gjør tre ting:
 ```bash
 npm run dev
 ```
+
+## Trello
+
+**Default board for Placy:** "Utvikling" (`onb3nsLD`) i Placy-workspace.
+
+Alle nye Trello-kort (utviklingsoppgaver, bugs, features) skal legges til her med mindre brukeren eksplisitt ber om et annet board. Ikke spør — bare bruk Utvikling.
+
+| Board | ID | Bruk |
+|-------|----|------|
+| Utvikling | `69e1df1d66ff1ec38987a5d2` (short: `onb3nsLD`) | **Default** — all utvikling |
+| Demo Pipeline | `69dcb71daff7e8044a29680e` (short: `HA0cmZhp`) | Salgspipeline per boligprosjekt/kunde |
+
+URL: https://trello.com/b/onb3nsLD/utvikling
+

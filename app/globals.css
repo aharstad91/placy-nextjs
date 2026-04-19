@@ -524,3 +524,53 @@ gmp-popover::part(dialog) {
     transform: none !important;
   }
 }
+
+/* Google AI grounding — override Google's innebygde chip-carousel-styling
+ * slik at den smelter inn i Placy-typografi. Google ToS krever at
+ * searchEntryPointHtml rendres (attribusjon), men vi får matche farger,
+ * font og spacing til resten av rapporten.
+ */
+.grounding-search-entry,
+.grounding-search-entry * {
+  font-family: inherit !important;
+}
+.grounding-search-entry .container {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem !important;
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+}
+.grounding-search-entry .carousel {
+  overflow: visible !important;
+  white-space: normal !important;
+  margin-right: 0 !important;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.grounding-search-entry .chip {
+  border: none !important;
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--muted-foreground)) !important;
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 9999px !important;
+  margin: 0 !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.grounding-search-entry .chip:hover,
+.grounding-search-entry .chip:focus {
+  background: hsl(var(--muted) / 0.7) !important;
+  color: hsl(var(--foreground)) !important;
+}
+.grounding-search-entry .gradient {
+  display: none !important;
+}
+.grounding-search-entry .headline {
+  display: none !important;
+}

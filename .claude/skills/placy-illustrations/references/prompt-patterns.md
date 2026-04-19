@@ -115,6 +115,34 @@ SUBTLE HUMOR (Mode C — dry juxtaposition, not slapstick):
 
 ---
 
+## Mønster A (Urban variant) — Ny scene, tett bybebyggelse
+
+Bruk når `venue_context = 'urban'`. Erstatter Mønster A-standardverdiene for bygningshøyde og vegetasjon.
+
+**Ankre:** `anchor-urban-waterfront.jpg` + `anchor-urban-street.jpg`
+
+Erstatt disse seksjonene i Mønster A:
+
+```diff
+- BUILDINGS (realistic Norwegian mixed-use, 3-4 stories, commercial ground floor + apartments above):
++ BUILDINGS (dense Norwegian urban mixed-use, 5-7 stories, commercial ground floor + apartments above,
++            brick and rendered facades, some modern glass elements alongside traditional materials):
+
+- Large deciduous trees with loose watercolor foliage framing the scene
++ Minimal vegetation — one or two small street trees or planter boxes at pavement level
+
+- BACKGROUND:
+- Large deciduous trees with loose watercolor foliage framing the scene
+- Soft sky — mostly white paper showing through
++ BACKGROUND:
++ Urban skyline — buildings visible in background, tightly packed
++ Sky only visible as a narrow strip above rooftops — mostly white paper
+```
+
+**Figurer for urban:** Litt mer aktivt tempo enn suburban — kafégjester, syklist, folk med kaffekopp. Fortsatt 8-15% canvas-høyde.
+
+---
+
 ## Iterasjons-tips
 
 - **Første forsøk feilet på stil-lock?** Legg til flere referanser (opp til 14). Understrek "EXACT style" og "match precisely" sterkere.

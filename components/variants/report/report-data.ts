@@ -1,4 +1,14 @@
-import type { Project, POI, Coordinates, TrailCollection, ReportSummary, BrokerInfo, ReportCTA } from "@/lib/types";
+import type {
+  Project,
+  POI,
+  Coordinates,
+  TrailCollection,
+  ReportSummary,
+  BrokerInfo,
+  ReportCTA,
+  ReportThemeGroundingView,
+} from "@/lib/types";
+import { ReportThemeGroundingViewSchema } from "@/lib/types";
 import { getReportThemes } from "./report-themes";
 import {
   calculateCategoryScore,
@@ -10,6 +20,26 @@ import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/strings";
 import { generateBridgeText } from "@/lib/generators/bridge-text-generator";
 import { getHeroInsightPOIIds } from "./ReportHeroInsight";
+
+/**
+ * Zod-parse grounding fra products.config ved render-boundary. Silent skip +
+ * server-log ved invalid shape — report-seksjonen rendres ellers normalt.
+ */
+function parseGroundingOrLog(
+  raw: unknown,
+  project: Project,
+  themeId: string,
+): ReportThemeGroundingView | undefined {
+  if (!raw) return undefined;
+  const result = ReportThemeGroundingViewSchema.safeParse(raw);
+  if (result.success) return result.data;
+  console.error("[grounding] Zod-parse failed — skipping", {
+    projectId: `${project.customer}/${project.urlSlug}`,
+    themeId,
+    issue: result.error.issues[0]?.message ?? "unknown",
+  });
+  return undefined;
+}
 
 /** Haversine distance in meters between two coordinates */
 function haversineMeters(a: Coordinates, b: Coordinates): number {
@@ -66,6 +96,9 @@ export interface ReportTheme {
   upperNarrative?: string;
   extendedBridgeText?: string;
   lowerNarrative?: string;
+  readMoreQuery?: string;
+  /** Build-time Gemini-grounding, Zod-validated. Undefined = skjul "Utdyp med Google AI"-knappen. */
+  grounding?: ReportThemeGroundingView;
   stats: ReportThemeStats;
   /** All POIs sorted by tier then score. First INITIAL_VISIBLE_COUNT shown, rest behind "Hent flere". */
   pois: POI[];
@@ -141,6 +174,12 @@ export interface ReportData {
   centerCoordinates: { lat: number; lng: number };
   heroMetrics: ReportHeroMetrics;
   themes: ReportTheme[];
+  /**
+   * Hele prosjektets POI-set (ufiltrert). Brukes av curated-grounded-narrative
+   * for å slå opp POI-chips på tvers av kategorier — theme-filtrerte POI-lister
+   * kan droppe POIs som curated tekst refererer til.
+   */
+  allProjectPOIs: POI[];
   label?: string;
   heroIntro?: string;
   heroImage?: string;
@@ -519,6 +558,8 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       upperNarrative: (themeDef as { upperNarrative?: string }).upperNarrative,
       extendedBridgeText: (themeDef as { extendedBridgeText?: string }).extendedBridgeText,
       lowerNarrative: (themeDef as { lowerNarrative?: string }).lowerNarrative,
+      readMoreQuery: themeDef.readMoreQuery,
+      grounding: parseGroundingOrLog(themeDef.grounding, project, themeDef.id),
       stats: {
         totalPOIs: filtered.length,
         ratedPOIs: themeStats.ratedCount,
@@ -559,6 +600,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     centerCoordinates: project.centerCoordinates,
     heroMetrics,
     themes,
+    allProjectPOIs: project.pois,
     label: rc?.label,
     heroIntro,
     heroImage: rc?.heroImage,

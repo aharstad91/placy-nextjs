@@ -3238,3 +3238,80 @@ Neste fokusområder (per tidligere logger):
 - **Bug fanget av bruker etter "ferdig"-melding:** Tema-modaler (Hverdagsliv, Trening, etc.) viste placeholder-tekst "3D-visning kommer snart" når toggle ble brukt. UnifiedMapModal var wired, men `google3dSlot` returnerte en `<div>` i stedet for å rendre `MapView3D`. Det undergravde halvparten av unification-poenget — kun "Alt rundt"-overview hadde ekte 3D.
 - **Fix (commit `05a9ec8`):** Lazy-loadet `MapView3D` med dynamic import i `ReportThemeSection.tsx` og koblet det inn i `google3dSlot` med `theme.allPOIs` som POI-set, `DEFAULT_CAMERA_LOCK` og activePOI gjennom SlotContext. Verifisert visuelt på Hverdagsliv: 13 markører + prosjekt-pin + navigasjon.
 - **Lærdom:** "Verifiser at features FUNGERER" må gjelde HVER consumer av den nye komponenten, ikke bare den første. Phase 5 sjekket overview-modalen, men ikke tema-modalene. Fremtidige unification-jobber bør liste opp hver consumer som egen TC.
+
+---
+
+## 2026-04-16 (sesjon) — TransitDashboardCard: multi-stopp kollektiv med tabs og accordion
+
+### Beslutninger
+
+- **Rotårsak identifisert og fikset.** `selectTransportSources()` hadde hardkodet `.slice(0, 1)` — kun 1 holdeplass hentet uansett. Alle retninger ble vist i flat 2-kolonne-grid, som ga 9+ rader ved Trondheim S. Løsning: redesignet til `enturStopsByCategory: Record<string, Array<{poi, walkMin}>>` med maks 5 per kategori innen 5 min gange.
+- **Tre-lags UI-arkitektur.** Tabs (Buss/Trikk/Tog) → Accordion per holdeplass → DepartureGrid per retning. Hvert lag aktiveres betinget: tabs kun ved 2+ kategorier, accordion kun ved 2+ stopp i aktiv tab. Suburban-case (1 buss-stopp) viser akkurat det det trenger.
+- **Fire Tech Audit-funn integrert i implementeringen:**
+  1. `categoryId?: string` optional for bakoverkompatibilitet
+  2. `activeTab` init via `useEffect` (ikke fra mount-tid der `activeCategories[0]` er `undefined`)
+  3. `enturIds`/`hyreId` inn i `useMemo` — unngår phantom polling-restarter
+  4. `new Set(prev)` immutable toggle for React state
+- **DepartureBlock og StaticTransportList slettet.** Erstattet av `TransitDashboardCard`. Ingen dead code igjen.
+
+### Tekniske notater
+
+- `TramFront` brukes for trikk (ikke `Tram` som ikke eksporteres av lucide-react i denne versjonen).
+- `useTransportDashboard` poller fortsatt hvert 90s med `Promise.allSettled`. Maks ~15 Entur-kall per syklus (5 bus + 5 tram + 5 train) — trygt innenfor 30s server-side cache.
+
+### Parkert / Åpne spørsmål
+
+- **Bead 2na.20/21** (Google 3D loseContext og recovery) — fortsatt åpne, lavere prioritet.
+- **Metro/T-bane/ferje** ikke støttet ennå (ikke i vår POI-modell). Naturlig utvidelse til CATEGORIES-array når vi legger til kategoriene.
+- **Manuell visuell verifisering av tabs + accordion-interaksjon** bør gjøres av bruker i browser — Chrome DevTools MCP hadde konflikt med eksisterende browser-profil i denne sesjonen.
+
+### Retning
+
+- `TransitDashboardCard` er nå mønsteret for live-data-kort i rapport: client component med loading-skeleton, data-drevet tabs/accordion, footer med aggregert antall.
+- Neste naturlige steg: koble opp accordion-innhold med klikkbar stopplace-link til entur.no (se `DepartureBlock` som slettet hadde dette — kan legges tilbake i `StopAccordionRow`-headeren).
+
+### Observasjoner
+
+- **`/plan` + Tech Audit identifiserte 4 reelle feil før kodeskriving.** Alle 4 ble håndtert i implementeringen. Resulterte i at første `npx tsc --noEmit` kjøring ga 0 feil — usedvanlig rent.
+- **Worktree-disiplin betaler seg.** `feat/transit-dashboard-card` ble isolert fra main og de to andre aktive worktrees. Ingen konflikter.
+
+---
+## 2026-04-18 (sesjon) — Gemini grounding i rapport: PR #1-#3 end-to-end
+
+### Hva ble gjort
+
+Erstattet manuell WebFetch-basert Steg 2.5 i /generate-rapport med Gemini 2.5 Flash + google_search-tool. Build-time only, parallellt 7 kategorier (~12-14s), deep-merge PATCH til `products.config.reportConfig.themes[].grounding`. Ny sheet-drawer "Utdyp med Google AI" erstatter ekstern `google.com/search?udm=50`-lenke — brukeren forblir i Placy.
+
+**PR #1 (tws):** `lib/gemini/{types,sanitize,url-resolver,grounding}` + `scripts/gemini-grounding.ts` + `/api/revalidate`. 44 nye tester (SSRF-matrix, Zod-schemas, DOMPurify-whitelist).
+
+**PR #2 (vja):** SKILL.md Steg 2.5/3.5/7/9 oppdatert. Stasjonskvartalet + Wesselsløkka begge 7/7 ✓ migrert. Post-write deep-equal verifiserte at summary/brokers/cta/trails ikke klobret.
+
+**PR #3 (agr):** `GoogleAIGroundingSheet.tsx` dynamic-imported. Google ToS-compliant (searchEntryPointHtml verbatim, Google-G-logo, fetchedAt-disclaimer). UI null-kontrakt (skjul knapp uten grounding). `unstable_cache` + `revalidateTag` på rapport-ruten.
+
+**PR #4 (e05):** CLAUDE.md `### LLM-integrasjon`-seksjon, docs/solutions-pattern-doc, WORKLOG + PROJECT-LOG.
+
+### Beslutninger
+
+- **Cache-lagring: JSONB på product-rad**, ikke ny tabell. Unngår join ved render, følger eksisterende reportConfig-mønster.
+- **Tag: `product:${customer}_${slug}`** i stedet for UUID. Matcher CLI-arg i scriptet uten å måtte slå opp UUID først.
+- **Omit ved feil, ikke null.** Matcher TS optional `?:`. UI null-kontrakt (`{theme.grounding && ...}`) skjuler knapp.
+- **Opplevelser-tema-filtrering ikke adressert.** Pre-existing bug (travelTime ikke SSR-populert) — grounding er lagret, UI-knapp vil dukke opp når den fikses. Orthogonal til dette arbeidet.
+
+### Kvalitet
+
+- 136/136 tests, 0 TS-errors, 0 nye lint-warnings, prod-build OK
+- Dev-server ready 1.6s, rapport 200 OK begge prosjekter
+- Gemini-kvalitetssprang: 5-16 kilder per kategori vs typisk 1-3 via WebSearch
+
+### Parkert / Åpne spørsmål
+
+- **Hverdagsliv-queryen bommer scope.** "Stasjonskvartalet dagligvare" ga prosjekt-info, ikke omgivelses-tjenester. Krever editorial-pass på readMoreQuery-ene.
+- **EN-locale** ikke støttet. `ReportLocaleToggle` finnes men grounding er kun norsk. Ved expansion: `grounding: { no, en }`, 14 kall per prosjekt. TODO-note i komponent.
+- **Opplevelser-tema** filtreres av pre-existing travelTime-bug. Ikke blocker — grounding er lagret, UI vises når bug fikses.
+- **`REVALIDATE_SECRET`** ikke satt i dev — scriptet warn'er, revalidateTag hopper over. Må settes i prod-deploy.
+
+### Observasjoner
+
+- **Tech-audit identifiserte 20+ reelle risikoer før kodeskriving.** Alle P0 mitigations integrert i plan og deretter koden. Resultatet: 0 TS-errors, 0 nye warnings, første dry-run 100% grønn — usedvanlig rent for et arbeid av denne størrelsen.
+- **`seed-wesselslokka-summary.ts` som golden pattern** fungerte perfekt. Whitelist-guard fanget to ukjente nøkler (`motiver`, `personas`) første gang scriptet kjørte — hindret klobring.
+- **`Promise.allSettled` for parallell Gemini** reduserte wall-time fra ~60s sekvensielt til ~13s. Under plan-mål på 25s.

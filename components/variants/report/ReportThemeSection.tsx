@@ -12,6 +12,8 @@ import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
 import ReportHeroInsight, { getHeroInsightPOIIds } from "./ReportHeroInsight";
 import EditorialPull from "./blocks/EditorialPull";
+import FeatureCarousel from "./blocks/FeatureCarousel";
+import { getMatDrikkeCarousel } from "./blocks/matdrikke-carousel";
 import {
   Popover,
   PopoverTrigger,
@@ -29,6 +31,14 @@ const ReportThemeMap = dynamic(() => import("./ReportThemeMap"), {
   ssr: false,
   loading: () => <SkeletonReportMap />,
 });
+
+// Google AI-utdyping lazy-lastes: react-markdown bør ikke ligge i main bundle.
+// ssr: true så knappen rendres i initial HTML — kun expanded-state er client.
+const ReportGroundingInline = dynamic(() => import("./ReportGroundingInline"));
+
+// V2: unified kuratert narrative med POI-inline-chips. Per-tema version-branch —
+// v1 bruker ReportGroundingInline, v2 bruker ReportCuratedGrounded.
+const ReportCuratedGrounded = dynamic(() => import("./ReportCuratedGrounded"));
 
 // 3D-motoren lazy-loades på samme måte som 2D — unngår å trekke inn
 // @vis.gl/react-google-maps i serverbundlen, og lar 3D-koden kun lastes
@@ -55,6 +65,8 @@ interface ReportThemeSectionProps {
   areaSlug?: string | null;
   /** Whether this project has purchased the 3D map add-on */
   has3dAddon: boolean;
+  /** Hele prosjektets POI-set — brukes til POI-chip-lookup i curated grounded narrative. */
+  allProjectPOIs?: POI[];
 }
 
 export default function ReportThemeSection({
@@ -66,6 +78,7 @@ export default function ReportThemeSection({
   mapStyle,
   areaSlug,
   has3dAddon,
+  allProjectPOIs,
 }: ReportThemeSectionProps) {
   const { locale } = useLocale();
   const Icon = getIcon(theme.icon);
@@ -82,7 +95,7 @@ export default function ReportThemeSection({
     : [];
 
   // Parse lower narrative (below cards) — bil, bildeling, elbil, tog, flybuss
-  // Falls back to extendedBridgeText for backward compat
+  // Falls back to extendedBridgeText for backward compat.
   const lowerText = theme.lowerNarrative ?? theme.extendedBridgeText;
   const segments = lowerText
     ? linkPOIsInText(lowerText, theme.allPOIs)
@@ -94,6 +107,18 @@ export default function ReportThemeSection({
     const heroIds = getHeroInsightPOIIds(theme.id, theme.allPOIs, center);
     return new Set([...textIds, ...Array.from(heroIds)]);
   }, [segments, theme.id, theme.allPOIs, center]);
+
+  // Lookup-map for POI-chips i curated grounded narrative (v2).
+  // Bruker hele prosjektets POI-set — theme.allPOIs er filtrert (maxCount/school-
+  // zone) og kan droppe POIs som curated tekst refererer til. Fallback til
+  // theme.allPOIs hvis allProjectPOIs ikke er satt (bakoverkompatibelt).
+  const poisById = useMemo(() => {
+    const m = new Map<string, POI>();
+    for (const poi of allProjectPOIs ?? theme.allPOIs) {
+      m.set(poi.id.toLowerCase(), poi);
+    }
+    return m;
+  }, [allProjectPOIs, theme.allPOIs]);
 
   // Live transport data for map labels (only fetches when transport theme)
   const emptyPois = useMemo(() => [] as POI[], []);
@@ -232,9 +257,8 @@ export default function ReportThemeSection({
           </div>
         )}
 
-        {/* Optional banner illustration — placed under heading + intro, with breathing room below.
-            Uses natural aspect ratio per image (files are auto-cropped to content bounds). */}
-        {variant !== "secondary" && theme.image && (
+        {/* Optional banner illustration — hidden for mat-drikke (carousel is the visual). */}
+        {variant !== "secondary" && theme.image && theme.id !== "mat-drikke" && (
           <div className="mt-4 mb-12 w-full">
             <Image
               src={theme.image.src}
@@ -249,6 +273,25 @@ export default function ReportThemeSection({
             />
           </div>
         )}
+
+        {/* PILOT: FeatureCarousel — Mat & Drikke. Mange likeverdige spisesteder,
+            ingen klar hub — horisontal scroll av uniforme kort. */}
+        {variant !== "secondary" && theme.id === "mat-drikke" && theme.allPOIs.length > 0 && (() => {
+          const items = getMatDrikkeCarousel(theme.allPOIs, center);
+          const avg = theme.stats.avgRating;
+          return (
+            <FeatureCarousel
+              sectionKicker="Innen rekkevidde"
+              sectionTitle="Spisesteder i nabolaget"
+              footer={
+                avg != null
+                  ? `${items.length} av ${theme.stats.totalPOIs} spisesteder · snittrating ${avg.toFixed(1)}`
+                  : `${items.length} av ${theme.stats.totalPOIs} spisesteder`
+              }
+              items={items}
+            />
+          );
+        })()}
 
         {/* PILOT: EditorialPull — magasin-stil pull-sitat som "pust" mellom
             intro og kortene. Hardkodet sitat for hverdagsliv foreløpig. */}
@@ -310,6 +353,23 @@ export default function ReportThemeSection({
             />
           </div>
         )}
+
+        {/* Google AI-utdyping — per-tema version-branch.
+            V2: unified kuratert narrative med POI-chips (en tekst, ingen knapp).
+            V1: staged-reveal-knapp → ekspanderer raw Gemini-narrative.
+            Undefined: grounding mangler → skjul helt (UI null-kontrakt). */}
+        {theme.grounding?.groundingVersion === 2 ? (
+          <ReportCuratedGrounded
+            grounding={theme.grounding}
+            poisById={poisById}
+            query={theme.readMoreQuery}
+          />
+        ) : theme.grounding ? (
+          <ReportGroundingInline
+            grounding={theme.grounding}
+            query={theme.readMoreQuery}
+          />
+        ) : null}
 
       </div>
 
