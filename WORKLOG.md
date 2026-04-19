@@ -4,6 +4,24 @@
 
 ---
 date: 2026-04-19
+action: Gangtid-badge på 3D walking-rute (match 2D-pill)
+files:
+  - components/map/route-layer-3d.tsx (+103 linjer — SVG-badge via Marker3DInteractiveElement)
+branch: feat/map-modal-bunn-carousel
+commit: 5f1fb31
+summary: >
+  Lagt til "X min"-badge på slutten av 3D walking-ruten for visuell
+  paritet med 2D-badge (components/map/route-layer.tsx:124). Markøren
+  opprettes imperativt via `Marker3DInteractiveElement` og muteres ved
+  POI-bytte.
+notes: >
+  Google Maps 3D `Marker3DInteractiveElement` slotter KUN <img> eller
+  <svg> — rå HTML-div og emoji-tekst i SVG rendres ikke. Løst med inline
+  SVG-badge (vektor-figur av gående + pill-bakgrunn). Badge mounts/unmounts
+  med routeData, altitude 12m (over polyline på 3m) for lesbarhet.
+
+---
+date: 2026-04-19
 action: Delte kartlag (2D/3D) + walking-rute fra prosjekt til aktivt POI i 3D
 files:
   - lib/map/map-adapter.ts (NY — MapAdapter-interface + mapboxAdapter + google3dAdapter)
