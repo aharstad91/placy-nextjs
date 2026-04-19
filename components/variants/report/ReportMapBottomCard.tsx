@@ -77,7 +77,7 @@ const ReportMapBottomCard = forwardRef<HTMLButtonElement, ReportMapBottomCardPro
                   style={{ color: poi.category.color }}
                 />
               </span>
-              <span className="text-sm uppercase tracking-[0.12em] font-medium text-[#6a5f51] truncate">
+              <span className="text-xs font-medium text-[#6a5f51] truncate">
                 {poi.category.name}
               </span>
             </span>
