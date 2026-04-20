@@ -8,7 +8,7 @@ import type { SlotContext } from "@/components/map/UnifiedMapModal";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Star, MapPin, Map as MapIcon, Zap, Car, ExternalLink, Sparkles } from "lucide-react";
+import { Star, MapPin, Map as MapIcon, Zap, Car, ExternalLink, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
@@ -95,10 +95,16 @@ export default function ReportThemeSection({
     TRANSPORT_CATEGORIES.has(poi.category.id)
   );
 
-  // Map dialog state
+  // Progressive disclosure state:
+  // - expanded: brukeren har klikket "Les mer" → avdekker POI-slider + grounding + CTA
+  // - mapPreviewVisible: CTA-klikket → dormant kart-preview rendres inn
+  // - mapDialogOpen: kart-preview-klikket → UnifiedMapModal åpnes
+  const [expanded, setExpanded] = useState(false);
+  const [mapPreviewVisible, setMapPreviewVisible] = useState(false);
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
   // Stabil handler for slider-CTA — unngår re-render pga ny referanse hver render.
-  const openMap = useCallback(() => setMapDialogOpen(true), []);
+  // CTA setter mapPreviewVisible (ikke mapDialogOpen) — progressive disclosure-nivå 3.
+  const revealMapPreview = useCallback(() => setMapPreviewVisible(true), []);
 
   // Parse upper narrative (above cards) — buss, bysykkel, sparkesykkel
   const upperSegments = theme.upperNarrative
@@ -314,9 +320,12 @@ export default function ReportThemeSection({
           <ReportHeroInsight theme={theme} center={center} />
         )}
 
-        {/* Lower narrative — under kortene (bil, bildeling, elbil, tog, flybuss) */}
+        {/* Lower narrative — progressive disclosure: truncated + fade når !expanded.
+            line-clamp-[6] gir font-size-agnostisk klipp på linjegrense. Fade skjuler
+            siste-linje-avkortning; "Les mer"-knapp rett under. Gradient to-[#f5f1ec]
+            matcher seksjonsbakgrunn. */}
         {segments.length > 0 && (
-          <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
+          <div className={`relative text-base md:text-lg text-[#4a4a4a] leading-[1.8] ${expanded ? "" : "line-clamp-[6] overflow-hidden"}`}>
             {segments.map((seg, i) =>
               seg.type === "poi" && seg.poi ? (
                 <POIInlineLink key={i} poi={seg.poi} content={seg.content} />
@@ -326,69 +335,100 @@ export default function ReportThemeSection({
                 <span key={i}>{seg.content}</span>
               ),
             )}
+            {!expanded && (
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-b from-transparent to-[#f5f1ec]" />
+            )}
           </div>
         )}
 
-        {/* Fallback: show intro if no lower text */}
+        {/* Fallback: show intro if no lower text — også gated av expanded */}
         {segments.length === 0 && theme.intro && (
-          <p className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
+          <p className={`text-base md:text-lg text-[#4a4a4a] leading-[1.8] ${expanded ? "" : "line-clamp-[6] overflow-hidden"}`}>
             {theme.intro}
           </p>
         )}
 
-        {/* Address input for transport theme */}
-        {isTransport && projectName && (
-          <div className="mt-6">
-            <ReportAddressInput
-              propertyCoordinates={[center.lng, center.lat]}
-              propertyName={projectName}
-            />
-          </div>
+        {/* Les mer / Vis mindre — variant-guard: secondary skjuler slider+grounding.
+            Viser knappen kun når det finnes innhold å avdekke. */}
+        {variant !== "secondary" && (segments.length > 0 || theme.intro) && (
+          <button
+            type="button"
+            onClick={() => {
+              if (expanded) {
+                setExpanded(false);
+                setMapPreviewVisible(false);
+              } else {
+                setExpanded(true);
+              }
+            }}
+            className="mt-4 flex items-center gap-1.5 text-sm font-medium text-[#6a5f51] hover:text-[#3a3530] transition-colors"
+            aria-expanded={expanded}
+          >
+            {expanded ? (
+              <>
+                Vis mindre
+                <ChevronUp className="w-3.5 h-3.5" />
+              </>
+            ) : (
+              <>
+                Les mer om {theme.name}
+                <ChevronDown className="w-3.5 h-3.5" />
+              </>
+            )}
+          </button>
         )}
 
-        {/* Google AI-utdyping — per-tema version-branch.
-            V2: unified kuratert narrative med POI-chips (en tekst, ingen knapp).
-            V1: staged-reveal-knapp → ekspanderer raw Gemini-narrative.
-            Undefined: grounding mangler → skjul helt (UI null-kontrakt). */}
-        {theme.grounding?.groundingVersion === 2 ? (
-          <ReportCuratedGrounded
-            grounding={theme.grounding}
-            poisById={poisById}
-            query={theme.readMoreQuery}
-          />
-        ) : theme.grounding ? (
-          <ReportGroundingInline
-            grounding={theme.grounding}
-            query={theme.readMoreQuery}
-          />
-        ) : null}
+        {/* Alt under "Les mer" — progressive disclosure-nivå 2 */}
+        {expanded && variant !== "secondary" && (
+          <>
+            {/* Address input for transport theme */}
+            {isTransport && projectName && (
+              <div className="mt-6">
+                <ReportAddressInput
+                  propertyCoordinates={[center.lng, center.lat]}
+                  propertyName={projectName}
+                />
+              </div>
+            )}
 
-        {/* POI-slider — top-6 rangerte steder for kategorien. Plasseres etter
-            narrativ/grounding, rett før dormant kart-preview. Skjult når kategorien
-            har 0 POI-er. CTA "Se alle X steder" vises iff totalCount > 6. */}
-        {variant !== "secondary" && theme.allPOIs.length > 0 && (
-          <div className="mt-8">
-            <ReportThemePOICarousel
-              pois={theme.topRanked.slice(0, 6)}
-              totalCount={theme.allPOIs.length}
-              onOpenMap={openMap}
-              areaSlug={areaSlug}
-              ariaLabel={`Steder i ${theme.name}`}
-            />
-          </div>
+            {/* POI-slider — kuraterte 6 steder (anchor + ranking-fill). Første
+                reveal etter "Les mer". CTA reveal-er kart-preview. */}
+            {theme.allPOIs.length > 0 && theme.curatedSliderPOIs && theme.curatedSliderPOIs.length > 0 && (
+              <div className="mt-8">
+                <ReportThemePOICarousel
+                  pois={theme.curatedSliderPOIs}
+                  totalCount={theme.allPOIs.length}
+                  onOpenMap={revealMapPreview}
+                  areaSlug={areaSlug}
+                  ariaLabel={`Steder i ${theme.name}`}
+                />
+              </div>
+            )}
+
+            {/* Google AI-utdyping — per-tema version-branch. */}
+            {theme.grounding?.groundingVersion === 2 ? (
+              <ReportCuratedGrounded
+                grounding={theme.grounding}
+                poisById={poisById}
+                query={theme.readMoreQuery}
+              />
+            ) : theme.grounding ? (
+              <ReportGroundingInline
+                grounding={theme.grounding}
+                query={theme.readMoreQuery}
+              />
+            ) : null}
+          </>
         )}
 
-      </div>
-
-      {/* Per-category map — dormant preview + modal on activate */}
-      {theme.allPOIs.length > 0 && (
-        <>
-          {/* Dormant map preview — entire area is clickable.
-              Unmounted when modal is open to avoid two WebGL contexts on iOS. */}
-          {!mapDialogOpen && (
+        {/* Dormant kart-preview — progressive disclosure-nivå 3.
+            !mapDialogOpen er load-bearing: prevents dual-WebGL contexts på iOS
+            når modal er åpen. expanded+mapPreviewVisible gater nivå 3. */}
+        {expanded && mapPreviewVisible && !mapDialogOpen && theme.allPOIs.length > 0 && (
+          <div className="mt-8 animate-in fade-in duration-300">
             <button
               onClick={() => setMapDialogOpen(true)}
-              className="mt-8 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
+              className="h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
             >
               <ReportThemeMap
                 pois={theme.allPOIs}
@@ -416,9 +456,14 @@ export default function ReportThemeSection({
                 </div>
               </div>
             </button>
-          )}
+          </div>
+        )}
 
-          {/* Unified map modal — 2D default, 3D toggle when has3dAddon */}
+      </div>
+
+      {/* Unified map modal — alltid mounted (dialog-state styrer open) */}
+      {theme.allPOIs.length > 0 && (
+        <>
           <UnifiedMapModal
             open={mapDialogOpen}
             onOpenChange={setMapDialogOpen}
