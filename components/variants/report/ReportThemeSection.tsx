@@ -14,8 +14,6 @@ import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
 import ReportHeroInsight, { getHeroInsightPOIIds } from "./ReportHeroInsight";
 import EditorialPull from "./blocks/EditorialPull";
-import FeatureCarousel from "./blocks/FeatureCarousel";
-import { getMatDrikkeCarousel } from "./blocks/matdrikke-carousel";
 import {
   Popover,
   PopoverTrigger,
@@ -23,6 +21,7 @@ import {
 } from "@/components/ui/popover";
 import UnifiedMapModal from "@/components/map/UnifiedMapModal";
 import ReportMapBottomCarousel from "./blocks/ReportMapBottomCarousel";
+import ReportThemePOICarousel from "./blocks/ReportThemePOICarousel";
 import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
@@ -98,6 +97,8 @@ export default function ReportThemeSection({
 
   // Map dialog state
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
+  // Stabil handler for slider-CTA — unngår re-render pga ny referanse hver render.
+  const openMap = useCallback(() => setMapDialogOpen(true), []);
 
   // Parse upper narrative (above cards) — buss, bysykkel, sparkesykkel
   const upperSegments = theme.upperNarrative
@@ -284,25 +285,6 @@ export default function ReportThemeSection({
           </div>
         )}
 
-        {/* PILOT: FeatureCarousel — Mat & Drikke. Mange likeverdige spisesteder,
-            ingen klar hub — horisontal scroll av uniforme kort. */}
-        {variant !== "secondary" && theme.id === "mat-drikke" && theme.allPOIs.length > 0 && (() => {
-          const items = getMatDrikkeCarousel(theme.allPOIs, center);
-          const avg = theme.stats.avgRating;
-          return (
-            <FeatureCarousel
-              sectionKicker="Innen rekkevidde"
-              sectionTitle="Spisesteder i nabolaget"
-              footer={
-                avg != null
-                  ? `${items.length} av ${theme.stats.totalPOIs} spisesteder · snittrating ${avg.toFixed(1)}`
-                  : `${items.length} av ${theme.stats.totalPOIs} spisesteder`
-              }
-              items={items}
-            />
-          );
-        })()}
-
         {/* PILOT: EditorialPull — magasin-stil pull-sitat som "pust" mellom
             intro og kortene. Hardkodet sitat for hverdagsliv foreløpig. */}
         {variant !== "secondary" && theme.id === "hverdagsliv" && (
@@ -380,6 +362,21 @@ export default function ReportThemeSection({
             query={theme.readMoreQuery}
           />
         ) : null}
+
+        {/* POI-slider — top-6 rangerte steder for kategorien. Plasseres etter
+            narrativ/grounding, rett før dormant kart-preview. Skjult når kategorien
+            har 0 POI-er. CTA "Se alle X steder" vises iff totalCount > 6. */}
+        {variant !== "secondary" && theme.allPOIs.length > 0 && (
+          <div className="mt-8">
+            <ReportThemePOICarousel
+              pois={theme.topRanked.slice(0, 6)}
+              totalCount={theme.allPOIs.length}
+              onOpenMap={openMap}
+              areaSlug={areaSlug}
+              ariaLabel={`Steder i ${theme.name}`}
+            />
+          </div>
+        )}
 
       </div>
 
@@ -471,17 +468,16 @@ export default function ReportThemeSection({
               />
             )}
             bottomSlot={(ctx) => {
-              const items = getMatDrikkeCarousel(theme.allPOIs, center);
-              const topPOIs = items
-                .map((item) => theme.allPOIs.find((p) => p.id === item.id))
-                .filter((p): p is POI => p != null);
+              // Gjenbruker precomputed theme.topRanked (rating × tier-vekt, cap 10).
+              // Samme sort-funksjon som text-slider → første 6 i modal matcher slider.
               // Delt carousel på tvers av 2D/3D — mapController er adapter-
               // agnostisk og flyr kamera i begge moduser. Se plan
               // 2026-04-19-feat-delte-kartlag-3d-rute-plan.md.
-              if (topPOIs.length === 0) return null;
+              if (theme.topRanked.length === 0) return null;
               return (
                 <ReportMapBottomCarousel
-                  pois={topPOIs}
+                  pois={theme.topRanked}
+                  ariaLabel={`Steder i ${theme.name}`}
                   activePOIId={ctx.activePOI}
                   onCardClick={(poiId) => {
                     if (ctx.activePOI === poiId) {

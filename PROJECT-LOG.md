@@ -3315,3 +3315,38 @@ Erstattet manuell WebFetch-basert Steg 2.5 i /generate-rapport med Gemini 2.5 Fl
 - **Tech-audit identifiserte 20+ reelle risikoer før kodeskriving.** Alle P0 mitigations integrert i plan og deretter koden. Resultatet: 0 TS-errors, 0 nye warnings, første dry-run 100% grønn — usedvanlig rent for et arbeid av denne størrelsen.
 - **`seed-wesselslokka-summary.ts` som golden pattern** fungerte perfekt. Whitelist-guard fanget to ukjente nøkler (`motiver`, `personas`) første gang scriptet kjørte — hindret klobring.
 - **`Promise.allSettled` for parallell Gemini** reduserte wall-time fra ~60s sekvensielt til ~13s. Under plan-mål på 25s.
+
+---
+## 2026-04-20 (sesjon) — Unified POI-carousel i tekstseksjon + a11y-oppgradering
+
+### Hva ble gjort
+
+Konsoliderte POI-visning i Report: fjernet `FeatureCarousel` (Mat & Drikke-spesifikk, med bilder) og `matdrikke-carousel.ts`. Opprettet generisk `ReportThemePOICarousel` som gjenbruker `ReportMapBottomCard` (tekst-only) og vises i alle 7 kategorier. Precomputed ranking (`rankScore = googleRating × (4 - poiTier)`) i data-laget via `theme.topRanked`. CTA-bro "Se alle X steder på kartet" trigger kart-modal uten page-scroll. A11y-semantikk oppgradert i begge carousel-komponenter (W3C APG 2025+: `aria-roledescription=carousel`, `role=group`, `aria-roledescription=slide`). `role=option` → `aria-pressed` i `ReportMapBottomCard`.
+
+6/7 temaer viser slider på stasjonskvartalet-prosjektet (Opplevelser har for få POI-er — korrekt oppførsel, slider skjuler seg selv).
+
+### Beslutninger
+
+- **`rovingTabindex` kun i kart-modal, ikke tekstseksjon.** Kart-modal har arrow-key nav (flyTo-kontekst), tekstseksjon bruker native Tab-order. To ulike UX-kontekster, én card-komponent.
+- **Ranking precomputed i `report-data.ts`, ikke i komponent.** Følger CLAUDE.md: forretningslogikk i `lib/` / data-lag, ikke i komponenter.
+- **`overscroll-x-contain`, ikke `touch-none`.** `touch-none` dreper iOS horizontal swipe. `overscroll-x-contain` forhindrer pull-to-refresh uten å ødelegge swipe-navigasjonen.
+- **`ariaLabel` required (ingen hardkodet default) på begge carousel-komponenter.** 7 instanser per side med per-tema-kontekst — default ville gitt meningsløs a11y.
+- **Slettet `FeatureCarousel` og `matdrikke-carousel.ts` umiddelbart.** Ingen backwards-compat shim — git har historikk.
+
+### Parkert / Åpne spørsmål
+
+- **`ReportOverviewMap` og andre kart-komponenter** ble ikke berørt — utenfor scope.
+- **Opplevelser-tema** (Stasjonskvartalet) har for få POI-er til å vise slider. Kan adresseres med lavere terskel, men er bevisst parkert — tomme sliders er dårlig UX.
+- **Pre-existing test failures** (`validator.test.ts` × 3) — bekreftet pre-existing (finnes på main uten feature-endringer). Ikke denne sesjonens ansvar.
+
+### Retning
+
+- `ReportThemePOICarousel` er nå mønsteret for per-tema POI-preview i tekstseksjoner. Neste utvidelse: evt. lazy-loading av bilder hvis datakvaliteten på Google Places-bilder bedres for non-restaurant kategorier.
+- Kart-bunn og tekst-seksjon bruker nå **én** kortkomponent (`ReportMapBottomCard`) og **én** ranking-funksjon (`getTopRankedPOIs`). Visuell konsistens på tvers av kontekster.
+- CTA-bro er nå etablert som pattern: tekst-seksjon previewer, kart viser geografisk kontekst.
+
+### Observasjoner
+
+- **En card-komponent på tvers av kart og tekst fungerer uten hacks.** `rovingTabindex`-prop-en var nok til å differentiere de to UX-kontekstene. Ingen forking av JSX, ingen wrapper-komponenter.
+- **Ranking i data-laget vs. komponent-laget.** Fristende å compute i komponenten, men data-laget er riktig plass — sikrer konsistens mellom kart-bunn og tekst-slider uten at to steder kan gå ut av sync.
+- **Pre-commit hook stoppet aldri.** 16 endrede filer, 0 lint-errors, 0 TS-errors, alle nye tester grønne på første kjøring. Deepen-plan-fasens research-investering betalte seg.

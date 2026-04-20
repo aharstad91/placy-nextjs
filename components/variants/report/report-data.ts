@@ -20,6 +20,7 @@ import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/strings";
 import { generateBridgeText } from "@/lib/generators/bridge-text-generator";
 import { getHeroInsightPOIIds } from "./ReportHeroInsight";
+import { getTopRankedPOIs } from "./top-ranked-pois";
 
 /**
  * Zod-parse grounding fra products.config ved render-boundary. Silent skip +
@@ -103,6 +104,9 @@ export interface ReportTheme {
   /** All POIs sorted by tier then score. First INITIAL_VISIBLE_COUNT shown, rest behind "Hent flere". */
   pois: POI[];
   allPOIs: POI[];
+  /** Top-N ranked POIs (rating × tier-vekt). Precomputed én gang per theme-build.
+   *  Delt kilde for text-slider (slice 0,6) og map-bottom-carousel (full). */
+  topRanked: readonly POI[];
   hiddenPOIs: POI[];
   richnessScore: number;
   score: CategoryScore;
@@ -570,6 +574,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       },
       pois: visiblePOIs,
       allPOIs: filtered,
+      topRanked: getTopRankedPOIs(filtered, 10),
       hiddenPOIs,
       richnessScore,
       score,

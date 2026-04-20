@@ -10,7 +10,7 @@ interface ReportMapBottomCardProps {
   poi: POI;
   /** Whether this card is the currently selected one. Drives morph + action-row visibility. */
   isActive: boolean;
-  /** Zero-based index — used for aria-label, roving tabindex. */
+  /** Zero-based index — used for aria-label. */
   index: number;
   /** Total count in the carousel — used for aria-label "n of N". */
   total: number;
@@ -18,6 +18,9 @@ interface ReportMapBottomCardProps {
   onClick: () => void;
   /** Slug for the area, used to build the "Les mer"-link. Null disables. */
   areaSlug?: string | null;
+  /** When true, only the active card is in tab order (parent carousel manages arrow-key nav).
+   *  When false, every card is tab-stop and relies on native Tab order. Default false. */
+  rovingTabindex?: boolean;
 }
 
 /**
@@ -28,7 +31,7 @@ interface ReportMapBottomCardProps {
  */
 const ReportMapBottomCard = forwardRef<HTMLButtonElement, ReportMapBottomCardProps>(
   function ReportMapBottomCard(
-    { poi, isActive, index, total, onClick, areaSlug },
+    { poi, isActive, index, total, onClick, areaSlug, rovingTabindex = false },
     ref,
   ) {
     const CategoryIcon = getIcon(poi.category.icon);
@@ -48,10 +51,9 @@ const ReportMapBottomCard = forwardRef<HTMLButtonElement, ReportMapBottomCardPro
       <button
         ref={ref}
         type="button"
-        role="option"
-        aria-selected={isActive}
+        aria-pressed={isActive}
         aria-label={`${poi.name}, ${index + 1} av ${total}`}
-        tabIndex={isActive ? 0 : -1}
+        tabIndex={rovingTabindex ? (isActive ? 0 : -1) : 0}
         data-poi-id={poi.id}
         onClick={onClick}
         className={`

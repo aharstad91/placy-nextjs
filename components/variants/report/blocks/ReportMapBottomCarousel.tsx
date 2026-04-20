@@ -8,6 +8,9 @@ import ReportMapBottomCard from "../ReportMapBottomCard";
 export interface ReportMapBottomCarouselProps {
   /** Top-N POIs (already ranked/capped). `readonly` signals the carousel does not mutate. */
   pois: readonly POI[];
+  /** Aria-label for region, e.g. "Steder i Mat & Drikke". Required — 7 instances
+   *  per page med per-theme-kontekst, ingen sensibel hardkodet default. */
+  ariaLabel: string;
   /** Currently active POI id (or null). Drives morph + scroll target. */
   activePOIId: string | null;
   /** Called when a card is clicked — parent fires flyTo + state update. */
@@ -22,16 +25,25 @@ export interface ReportMapBottomCarouselProps {
  * Bottom carousel for the UnifiedMapModal on desktop. Horizontal scroll-snap
  * with roving tabindex (arrow keys move focus + scroll, Enter/Space activates).
  *
+ * A11y (W3C APG 2025+): section[aria-roledescription=carousel] > ul[role=group]
+ * > li[aria-roledescription=slide] > button. Ikke role=listbox — listbox er for
+ * selekterbare widgets. Roving tabindex + arrow-key-nav beholdes (map-kontekst
+ * krever presis kort-navigasjon for flyTo), kommunisert via aria-keyshortcuts.
+ *
+ * iOS: overscroll-x-contain hindrer pull-to-refresh uten å drepe horizontal
+ * swipe. IKKE touch-none (bricker swipe). Safari 16+ universell støtte.
+ *
  * Renders nothing when the POI list is empty — parent can mount unconditionally.
  */
 export default function ReportMapBottomCarousel({
   pois,
+  ariaLabel,
   activePOIId,
   onCardClick,
   registerCardRef,
   areaSlug,
 }: ReportMapBottomCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLUListElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [focusIndex, setFocusIndex] = useState<number>(() => {
@@ -72,7 +84,7 @@ export default function ReportMapBottomCarousel({
     el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
     if (pois.length === 0) return;
     if (e.key === "ArrowRight") {
       e.preventDefault();
@@ -110,33 +122,45 @@ export default function ReportMapBottomCarousel({
   if (pois.length === 0) return null;
 
   return (
-    <div className="hidden md:flex flex-col gap-1.5 w-full">
+    <section
+      aria-label={ariaLabel}
+      aria-roledescription="carousel"
+      className="hidden md:flex flex-col gap-1.5 w-full"
+    >
       <div className="relative">
-        <div
+        <ul
           ref={scrollRef}
-          role="listbox"
-          aria-label="Steder i nabolaget"
+          role="group"
           aria-orientation="horizontal"
+          aria-keyshortcuts="ArrowLeft ArrowRight Home End"
           tabIndex={-1}
           onKeyDown={handleKeyDown}
           /* items-end: kortene ankret i bunn, aktivt kort vokser oppover kun.
              min-h gir plass til aktivt kort fra start (ingen layout-shift ved
-             aktivering). pt gir ekstra morph-slack (scale ~8px). */
-          className="flex items-end gap-3 overflow-x-auto snap-x snap-mandatory min-h-[260px] pb-3 pt-5 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+             aktivering). pt gir ekstra morph-slack (scale ~8px).
+             overscroll-x-contain: hindrer iOS pull-to-refresh uten å drepe swipe. */
+          className="flex items-end gap-3 overflow-x-auto overscroll-x-contain snap-x snap-mandatory min-h-[260px] pb-3 pt-5 px-1 list-none m-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {pois.map((poi, index) => (
-            <ReportMapBottomCard
+            <li
               key={poi.id}
-              ref={(el) => registerCardRef(poi.id, el)}
-              poi={poi}
-              index={index}
-              total={pois.length}
-              isActive={activePOIId === poi.id}
-              onClick={() => onCardClick(poi.id)}
-              areaSlug={areaSlug}
-            />
+              aria-roledescription="slide"
+              aria-label={`${index + 1} av ${pois.length}: ${poi.name}`}
+              className="shrink-0 flex"
+            >
+              <ReportMapBottomCard
+                ref={(el) => registerCardRef(poi.id, el)}
+                poi={poi}
+                index={index}
+                total={pois.length}
+                isActive={activePOIId === poi.id}
+                onClick={() => onCardClick(poi.id)}
+                areaSlug={areaSlug}
+                rovingTabindex={true}
+              />
+            </li>
           ))}
-        </div>
+        </ul>
 
         {/* Nav arrows — desktop only */}
         <button
@@ -158,6 +182,6 @@ export default function ReportMapBottomCarousel({
           <ChevronRight className="w-4 h-4 text-[#3a3530]" />
         </button>
       </div>
-    </div>
+    </section>
   );
 }
