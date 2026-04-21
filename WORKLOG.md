@@ -3,6 +3,67 @@
 <!-- Each entry is a YAML block. Most recent first. -->
 
 ---
+date: 2026-04-21
+action: Stor opprydning av rapport — fjernet alle PILOT-blokker, 4 av 7 hero-insights, aerial map og sandbox-data
+files:
+  - components/variants/report/ReportPage.tsx (fjernet TabbedAerialMap + DEMO_DIRECTIONS + DEMO_AERIAL_CATEGORIES hardkodede demo-data + imports)
+  - components/variants/report/ReportThemeSection.tsx (fjernet 7 PILOT-blokker + imports; ryddet ubrukt ReportMapDrawer-import i audit-pass)
+  - components/variants/report/ReportHeroInsight.tsx (fjernet 4 av 7 insights: BarnOppvekst/Hverdagsliv/Natur/MatDrikke + SchoolCard/FoodCard/HVERDAGS-konstanter/classifySchools/fuzzySchoolMatch/HIGHER_ED + registry-entries; fjernet MobilityStackCards-stack fra TransportDashboard; ryddet ubrukte imports MapPin/Popover*/useState/Star/ShoppingBag/ExternalLink/Sparkles/Bike/Car/Zap/isSafeUrl/getSchoolZone)
+  - components/variants/report/blocks/TabbedAerialMap.tsx (SLETTET)
+  - components/variants/report/blocks/MobilityStackCards.tsx (SLETTET)
+  - components/variants/report/blocks/BentoShowcase.tsx (SLETTET)
+  - components/variants/report/blocks/hverdagsliv-bento.ts (SLETTET)
+  - components/variants/report/blocks/FeatureCarousel.tsx (SLETTET)
+  - components/variants/report/blocks/matdrikke-carousel.ts (SLETTET)
+  - components/variants/report/blocks/StatRow.tsx (SLETTET)
+  - components/variants/report/blocks/transport-stats.ts (SLETTET)
+  - components/variants/report/blocks/TimelineRow.tsx (SLETTET)
+  - components/variants/report/blocks/barn-timeline.ts (SLETTET)
+  - components/variants/report/blocks/SplitFeature.tsx (SLETTET)
+  - components/variants/report/blocks/AnnotatedMap.tsx (SLETTET)
+  - components/variants/report/blocks/natur-annotated.ts (SLETTET)
+  - components/variants/report/blocks/EditorialPull.tsx (SLETTET)
+branch: main
+summary: >
+  Stor cleanup-økt der rapport-produktet ble slanket betydelig. Fire
+  runder:
+
+  (1) PILOT-blokker: Fjernet alle 7 sandbox-blokker fra ReportThemeSection
+  som hadde blitt liggende etter ulike design-eksperimenter —
+  BentoShowcase (hverdagsliv Valentinlyst), FeatureCarousel (mat-drikke),
+  TimelineRow "Skoleløpet" + StatRow "Ellers i nabolaget" (barn-oppvekst),
+  AnnotatedMap (natur), SplitFeature (trening), EditorialPull hardkodet
+  sitat, StatRow "Nøkkeltall" (transport).
+
+  (2) Hero-insights: Fjernet 4 av 7 hero-insight-kort — BarnOppvekstInsight
+  (Skolekrets-kortet), HverdagslivInsight (Hverdagen i gangavstand med
+  Valentinlyst-anker), NaturInsight (Naturen er nær), MatDrikkeInsight
+  (Lokale favoritter). Beholdt Transport (live dashboard), Trening og
+  Opplevelser. Også fjernet MobilityStackCards-stacken fra
+  TransportDashboard (Bysykkel/Sparkesykkel/Bildeling/Elbillading-
+  slideshow) — kun TransitDashboardCard med live Entur-data beholdt.
+
+  (3) Aerial map: Fjernet TabbedAerialMap fra ReportPage — den hadde
+  hardkodede DEMO_DIRECTIONS + DEMO_AERIAL_CATEGORIES med Wesselsløkka-
+  spesifikke POI-koordinater som aldri ble koblet til ekte data.
+
+  (4) Audit-pass: Holistisk gjennomgang fant 5 døde imports som ble
+  ryddet. DEMO_EXTRA_STOPS i TransportDashboard og CATEGORY_ILLUSTRATIONS
+  i TransitDashboardCard beholdes per brukerbeslutning (placeholder for
+  senere).
+
+  Kjerneflyt etter cleanup: ReportHero → per-theme ReportThemeSection
+  (banner + narrativ + progressiv disclosure med kart + grounding-kilder)
+  → ReportOverviewMap 3D → ReportSummarySection. Banner-illustrasjon
+  vises nå for alle themes (tidligere skjult for 5 av 7 fordi PILOT-
+  blokken var "det visuelle").
+notes: >
+  Verifisert løpende med tsc --noEmit (0 feil), npm run lint (0 errors),
+  npm run build (grønt). De 3 pre-eksisterende feilene i
+  lib/curation/validator.test.ts (æøå-håndtering) er urelatert og
+  bekreftet via git stash. Ingen tester for slettet kode eksisterte.
+
+---
 date: 2026-04-19
 action: Finish-pass map-modal — path-persistens ved toggle + kategori-typografi
 files:
