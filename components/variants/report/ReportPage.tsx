@@ -10,6 +10,8 @@ import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportSummarySection from "./ReportSummarySection";
+import TabbedAerialMap from "./blocks/TabbedAerialMap";
+import type { AerialCategory, DirectionalImages } from "./blocks/TabbedAerialMap";
 
 // ReportOverviewMap krever WebGL og browser-API → må lastes kun på klient.
 // Følger samme mønster som ReportThemeMap (SSR-safe).
@@ -125,6 +127,20 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
 
       {/* Centered single-column layout — sidebar navigation removed in favour of a different approach */}
       <div className="max-w-[800px] mx-auto w-full px-16">
+
+        {/* Aerial map with tabbed category markers */}
+        <div className="py-16 md:py-24">
+          <TabbedAerialMap
+            sectionKicker="Nabolaget fra luften"
+            sectionTitle="Alt rundt Wesselsløkka"
+            directions={DEMO_DIRECTIONS}
+            imageWidth={1792}
+            imageHeight={1024}
+            defaultDirection="S"
+            categories={DEMO_AERIAL_CATEGORIES}
+          />
+        </div>
+
         {/* Primary themes */}
         {primaryThemes.map((theme, i) => (
           <div key={theme.id} ref={revealRef} className="report-section-reveal">
@@ -194,6 +210,70 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
     </div>
   );
 }
+
+// --- Demo directional images (same image for all 4 — replace with real per-direction images) ---
+
+const DEMO_DIRECTIONS: DirectionalImages = {
+  N: "/illustrations/wesselslokka-nord.png",
+  E: "/illustrations/wesselslokka-ost.png",
+  S: "/illustrations/wesselslokka-sor.png",
+  W: "/illustrations/wesselslokka-vest.png",
+};
+
+// --- Demo aerial categories (dummy positions — replace with real data) ---
+
+const DEMO_AERIAL_CATEGORIES: AerialCategory[] = [
+  {
+    id: "oppvekst",
+    label: "Oppvekst",
+    color: "#5b8a3c",
+    markers: [
+      { number: 1, top: "45%", left: "40%", title: "Brøset skole", subtitle: "4 min gange", description: "Barneskole med stort uteområde" },
+      { number: 2, top: "35%", left: "55%", title: "Nidarvoll skole", subtitle: "8 min gange", description: "Ungdomsskole" },
+      { number: 3, top: "55%", left: "30%", title: "Brøset barnehage", subtitle: "3 min gange" },
+      { number: 4, top: "60%", left: "60%", title: "Lekeplass Valentinlyst", subtitle: "6 min gange" },
+    ],
+  },
+  {
+    id: "mat-drikke",
+    label: "Mat & Drikke",
+    color: "#c2553a",
+    markers: [
+      { number: 1, top: "38%", left: "52%", title: "Rema 1000 Valentinlyst", subtitle: "5 min gange" },
+      { number: 2, top: "42%", left: "62%", title: "Coop Extra", subtitle: "7 min gange" },
+      { number: 3, top: "30%", left: "45%", title: "Baker Nordby", subtitle: "9 min gange" },
+    ],
+  },
+  {
+    id: "natur",
+    label: "Natur & Friluftsliv",
+    color: "#3a7d5c",
+    markers: [
+      { number: 1, top: "25%", left: "25%", title: "Brøsetløkka park", subtitle: "2 min gange", description: "Stort grøntområde med tursti" },
+      { number: 2, top: "50%", left: "15%", title: "Kobberdammen", subtitle: "8 min gange" },
+      { number: 3, top: "20%", left: "65%", title: "Estenstadmarka", subtitle: "15 min gange", description: "Inngang til marka med skiløyper" },
+    ],
+  },
+  {
+    id: "transport",
+    label: "Transport",
+    color: "#4a6fa5",
+    markers: [
+      { number: 1, top: "48%", left: "48%", title: "Valentinlyst busstopp", subtitle: "3 min gange", description: "Linje 5, 22 — mot sentrum" },
+      { number: 2, top: "32%", left: "70%", title: "Brøset busstopp", subtitle: "6 min gange" },
+      { number: 3, top: "55%", left: "72%", title: "Bysykkel Valentinlyst", subtitle: "5 min gange" },
+    ],
+  },
+  {
+    id: "trening",
+    label: "Trening",
+    color: "#7c5cbf",
+    markers: [
+      { number: 1, top: "40%", left: "35%", title: "3T Valentinlyst", subtitle: "5 min gange" },
+      { number: 2, top: "28%", left: "50%", title: "Brøset Treningspark", subtitle: "3 min gange", description: "Utendørs kalisthenics-utstyr" },
+    ],
+  },
+];
 
 // --- Theme separator with icon ---
 

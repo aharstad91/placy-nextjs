@@ -25,6 +25,18 @@ import ReportThemePOICarousel from "./blocks/ReportThemePOICarousel";
 import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
+import ReportMapDrawer from "./ReportMapDrawer";
+import BentoShowcase from "./blocks/BentoShowcase";
+import { getValentinlystBento, getHverdagslivHorizonCell } from "./blocks/hverdagsliv-bento";
+import FeatureCarousel from "./blocks/FeatureCarousel";
+import { getMatDrikkeCarousel } from "./blocks/matdrikke-carousel";
+import StatRow from "./blocks/StatRow";
+import { getTransportStats } from "./blocks/transport-stats";
+import TimelineRow from "./blocks/TimelineRow";
+import { getBarnTimeline, getBarnStats } from "./blocks/barn-timeline";
+import SplitFeature from "./blocks/SplitFeature";
+import AnnotatedMap from "./blocks/AnnotatedMap";
+import { getNaturMarkers } from "./blocks/natur-annotated";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 import { DEFAULT_CAMERA_LOCK } from "./blocks/report-3d-config";
@@ -268,8 +280,11 @@ export default function ReportThemeSection({
           </div>
         )}
 
-        {/* Optional banner illustration — hidden for mat-drikke (carousel is the visual). */}
-        {variant !== "secondary" && theme.image && theme.id !== "mat-drikke" && (
+        {/* Block-pilot flag — when active (hverdagsliv bento, mat-drikke carousel),
+            banner illustration is suppressed — the block IS the visual. */}
+        {(() => { return null; })()}
+        {/* Optional banner illustration — hidden for themes with a custom block */}
+        {variant !== "secondary" && theme.image && theme.id !== "hverdagsliv" && theme.id !== "mat-drikke" && theme.id !== "transport" && theme.id !== "natur-friluftsliv" && theme.id !== "trening-aktivitet" && (
           <div className="mt-4 mb-12 w-full">
             <Image
               src={theme.image.src}
@@ -285,14 +300,131 @@ export default function ReportThemeSection({
           </div>
         )}
 
-        {/* PILOT: EditorialPull — magasin-stil pull-sitat som "pust" mellom
-            intro og kortene. Hardkodet sitat for hverdagsliv foreløpig. */}
+        {/* PILOT: Bento showcase — Hverdagsliv. Rendyrket rundt Valentinlyst Senter
+            (ETT subjekt, alle celler handler om det). Horisont-kortet rendres som egen
+            blokk under. */}
+        {variant !== "secondary" && theme.id === "hverdagsliv" && (() => {
+          const bentoCells = getValentinlystBento(theme.allPOIs, center);
+          if (!bentoCells) return null;
+          return (
+            <>
+              <BentoShowcase
+                sectionKicker="Nabolagets nav"
+                sectionTitle="Alt i Valentinlyst Senter"
+                cells={bentoCells}
+              />
+              <BentoShowcase cells={[getHverdagslivHorizonCell()]} />
+            </>
+          );
+        })()}
+
+        {/* PILOT: Feature carousel — Mat & Drikke. Mange likeverdige spisesteder,
+            ingen klar hub — perfekt for horisontal scroll av uniforme kort. */}
+        {variant !== "secondary" && theme.id === "mat-drikke" && theme.allPOIs.length > 0 && (() => {
+          const items = getMatDrikkeCarousel(theme.allPOIs, center);
+          const avg = theme.stats.avgRating;
+          return (
+            <FeatureCarousel
+              sectionKicker="Innen rekkevidde"
+              sectionTitle="Spisesteder i nabolaget"
+              footer={
+                avg != null
+                  ? `${items.length} av ${theme.stats.totalPOIs} spisesteder · snittrating ${avg.toFixed(1)}`
+                  : `${items.length} av ${theme.stats.totalPOIs} spisesteder`
+              }
+              items={items}
+            />
+          );
+        })()}
+
+        {/* PILOT: TimelineRow + StatRow — Barn & Aktivitet. Skole-progresjon
+            (barneskole → ungdomsskole → VGS) som timeline, støtte-stats under. */}
+        {variant !== "secondary" && theme.id === "barn-oppvekst" && theme.allPOIs.length > 0 && (() => {
+          const timelineNodes = getBarnTimeline(theme.allPOIs, center);
+          const statItems = getBarnStats(theme.allPOIs, center);
+          return (
+            <>
+              {timelineNodes && (
+                <TimelineRow
+                  sectionKicker="Skoleløpet"
+                  sectionTitle="Fra første klasse til videregående"
+                  nodes={timelineNodes}
+                />
+              )}
+              {statItems.length > 0 && (
+                <StatRow
+                  sectionKicker="Ellers i nabolaget"
+                  sectionTitle="Barnefamilien har alt nær"
+                  items={statItems}
+                />
+              )}
+            </>
+          );
+        })()}
+
+        {/* PILOT: AnnotatedMap — Natur & Friluftsliv. Redaksjonell illustrasjon
+            med nummererte callouts for nære park/natur-POIer. */}
+        {variant !== "secondary" && theme.id === "natur-friluftsliv" && theme.image && theme.allPOIs.length > 0 && (() => {
+          const markers = getNaturMarkers(theme.allPOIs, center);
+          if (markers.length === 0) return null;
+          return (
+            <AnnotatedMap
+              sectionKicker="Steder i grønt"
+              sectionTitle="Dine nærmeste natur-punkter"
+              image={theme.image.src}
+              imageWidth={theme.image.width}
+              imageHeight={theme.image.height}
+              markers={markers}
+            />
+          );
+        })()}
+
+        {/* PILOT: SplitFeature — Trening & Aktivitet. Diptyk som bryter ut av
+            sentrert kolonne, venstre tekst + høyre illustrasjon. */}
+        {variant !== "secondary" && theme.id === "trening-aktivitet" && theme.image && (
+          <SplitFeature
+            kicker="Aktivitet i hverdagen"
+            title="**Trening rundt hjørnet** — ikke som ekstra avtale."
+            body={
+              theme.bridgeText ??
+              "Gym og utendørs treningsparker innen gangavstand. Når dagens rytme allerede passerer dem, blir aktivitet en vane — ikke et prosjekt."
+            }
+            bullets={[
+              { value: `${theme.stats.totalPOIs}`, label: "treningstilbud i nabolaget" },
+              theme.stats.avgRating != null
+                ? { value: theme.stats.avgRating.toFixed(1), label: "snittrating på Google" }
+                : null,
+            ].filter(Boolean) as Array<{ label: string; value?: string }>}
+            image={theme.image.src}
+            imageWidth={theme.image.width}
+            imageHeight={theme.image.height}
+            tone="cream"
+          />
+        )}
+
+        {/* PILOT: EditorialPull — demonstreres på Hverdagsliv som "breather"
+            mellom bento og horisont. Hardkodet sitat for pilot. */}
         {variant !== "secondary" && theme.id === "hverdagsliv" && (
           <EditorialPull
             quote="Valentinlyst er ikke et shoppingmål — det er nabolagets praktiske nav. Det er der du møter naboen i kø ved apoteket."
             attribution="Redaksjonell observasjon · Placy"
           />
         )}
+
+        {/* PILOT: StatRow — Transport. Live data (Entur/GBFS) + statiske reise-
+            tidsberegninger til Trondheim-ankerpunkter (sentrum, Leangen, Værnes). */}
+        {variant !== "secondary" && theme.id === "transport" && (() => {
+          const items = getTransportStats(theme.allPOIs, center, isTransport ? transportDashboard : null);
+          if (items.length === 0) return null;
+          return (
+            <StatRow
+              sectionKicker="Nøkkeltall"
+              sectionTitle="Slik beveger du deg"
+              footer="Sanntidsdata: Entur og Trondheim Bysykkel · Statiske beregninger: haversine × gjennomsnittshastighet per transportmåte"
+              items={items}
+            />
+          );
+        })()}
 
         {/* Upper narrative — over kortene (buss, bysykkel, sparkesykkel) */}
         {variant !== "secondary" && upperSegments.length > 0 && (
