@@ -21,6 +21,18 @@ const CATEGORIES = [
   { id: "taxi", label: "Taxi", Icon: CarTaxiFront },
 ] as const;
 
+/**
+ * Per-category illustrations. Swap in real images once generated.
+ * Key = category id, value = /public path.
+ */
+const CATEGORY_ILLUSTRATIONS: Partial<Record<string, string>> = {
+  // train: "/illustrations/transit-train.jpg",
+  // metro: "/illustrations/transit-metro.jpg",
+  // tram:  "/illustrations/transit-tram.jpg",
+  // bus:   "/illustrations/transit-bus.jpg",
+  // taxi:  "/illustrations/transit-taxi.jpg",
+};
+
 // --- Props ---
 
 interface TransitDashboardCardProps {
@@ -28,8 +40,6 @@ interface TransitDashboardCardProps {
   loading: boolean;
   lastUpdated: Date | null;
   transitCount: number;
-  /** Optional illustration shown bottom-left as a subtle decoration */
-  illustrationSrc?: string;
 }
 
 // --- StopRow ---
@@ -38,7 +48,7 @@ function StopRow({ stop }: { stop: StopDepartures }) {
   const googleUrl = `https://www.google.com/search?udm=50&q=${encodeURIComponent(stop.stopName + " holdeplass avganger")}`;
 
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-[#f0ede8] last:border-0 -mx-5 px-5 md:-mx-6 md:px-6">
+    <div className="flex items-center gap-3 py-2.5 border-b border-[#f0ede8] last:border-0">
       <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 truncate">
         {stop.stopName}
       </span>
@@ -56,6 +66,38 @@ function StopRow({ stop }: { stop: StopDepartures }) {
   );
 }
 
+// --- StopList with illustration panel ---
+
+function StopList({ stops, categoryId }: { stops: StopDepartures[]; categoryId: string }) {
+  const illustrationSrc = CATEGORY_ILLUSTRATIONS[categoryId];
+
+  return (
+    <div className="flex gap-3">
+      {/* Left: illustration panel (1/3 width) */}
+      <div className="w-1/3 shrink-0 relative rounded-lg overflow-hidden bg-[#ede9e3] min-h-[120px]">
+        {illustrationSrc ? (
+          <Image
+            src={illustrationSrc}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 30vw, 200px"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#e6e0d6] to-[#cfc8bd]" />
+        )}
+      </div>
+
+      {/* Right: stop list (2/3 width) */}
+      <div className="flex-1 min-w-0">
+        {stops.map((stop) => (
+          <StopRow key={stop.stopId} stop={stop} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // --- Main component ---
 
 export default function TransitDashboardCard({
@@ -63,7 +105,6 @@ export default function TransitDashboardCard({
   loading,
   lastUpdated,
   transitCount,
-  illustrationSrc,
 }: TransitDashboardCardProps) {
   const [activeTab, setActiveTab] = useState<string | null>(null);
 
@@ -89,20 +130,7 @@ export default function TransitDashboardCard({
   const currentStops = grouped[resolvedTab] ?? stops;
 
   return (
-    <div className="rounded-xl bg-[#faf9f7] border border-[#eae6e1] px-5 py-4 md:px-6 md:py-5 mb-6 relative">
-      {/* Background illustration */}
-      {illustrationSrc && (
-        <div className="absolute bottom-0 left-0 w-28 h-20 pointer-events-none" aria-hidden>
-          <Image
-            src={illustrationSrc}
-            alt=""
-            fill
-            className="object-cover object-bottom opacity-[0.12]"
-            sizes="112px"
-          />
-        </div>
-      )}
-
+    <div className="rounded-xl bg-[#faf9f7] border border-[#eae6e1] px-5 py-4 md:px-6 md:py-5 mb-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="text-xs uppercase tracking-[0.15em] text-[#a0937d] font-medium">
@@ -163,23 +191,14 @@ export default function TransitDashboardCard({
                 })}
               </TabsList>
 
-              {activeCategories.map((cat) => {
-                const catStops = grouped[cat.id] ?? [];
-                return (
-                  <TabsContent key={cat.id} value={cat.id} className="mt-0">
-                    {catStops.map((stop) => (
-                      <StopRow key={stop.stopId} stop={stop} />
-                    ))}
-                  </TabsContent>
-                );
-              })}
+              {activeCategories.map((cat) => (
+                <TabsContent key={cat.id} value={cat.id} className="mt-0">
+                  <StopList stops={grouped[cat.id] ?? []} categoryId={cat.id} />
+                </TabsContent>
+              ))}
             </Tabs>
           ) : (
-            <div>
-              {currentStops.map((stop) => (
-                <StopRow key={stop.stopId} stop={stop} />
-              ))}
-            </div>
+            <StopList stops={currentStops} categoryId={resolvedTab} />
           )}
         </>
       )}
