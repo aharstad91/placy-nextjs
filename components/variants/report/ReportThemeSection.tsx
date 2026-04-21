@@ -8,11 +8,12 @@ import type { SlotContext } from "@/components/map/UnifiedMapModal";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Star, MapPin, Map as MapIcon, Zap, Car, ExternalLink, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, Zap, Car, ExternalLink, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
 import ReportHeroInsight, { getHeroInsightPOIIds } from "./ReportHeroInsight";
+import POIPopover from "./POIPopover";
 import EditorialPull from "./blocks/EditorialPull";
 import {
   Popover,
@@ -21,7 +22,6 @@ import {
 } from "@/components/ui/popover";
 import UnifiedMapModal from "@/components/map/UnifiedMapModal";
 import ReportMapBottomCarousel from "./blocks/ReportMapBottomCarousel";
-import ReportThemePOICarousel from "./blocks/ReportThemePOICarousel";
 import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
@@ -53,6 +53,9 @@ const ReportGroundingInline = dynamic(() => import("./ReportGroundingInline"));
 // V2: unified kuratert narrative med POI-inline-chips. Per-tema version-branch —
 // v1 bruker ReportGroundingInline, v2 bruker ReportCuratedGrounded.
 const ReportCuratedGrounded = dynamic(() => import("./ReportCuratedGrounded"));
+
+// Kilder + Google-chips + attribution — rendres alltid etter kart-preview.
+const ReportGroundingSources = dynamic(() => import("./ReportGroundingSources"));
 
 // 3D-motoren lazy-loades på samme måte som 2D — unngår å trekke inn
 // @vis.gl/react-google-maps i serverbundlen, og lar 3D-koden kun lastes
@@ -107,16 +110,9 @@ export default function ReportThemeSection({
     TRANSPORT_CATEGORIES.has(poi.category.id)
   );
 
-  // Progressive disclosure state:
-  // - expanded: brukeren har klikket "Les mer" → avdekker POI-slider + grounding + CTA
-  // - mapPreviewVisible: CTA-klikket → dormant kart-preview rendres inn
-  // - mapDialogOpen: kart-preview-klikket → UnifiedMapModal åpnes
   const [expanded, setExpanded] = useState(false);
-  const [mapPreviewVisible, setMapPreviewVisible] = useState(false);
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
-  // Stabil handler for slider-CTA — unngår re-render pga ny referanse hver render.
-  // CTA setter mapPreviewVisible (ikke mapDialogOpen) — progressive disclosure-nivå 3.
-  const revealMapPreview = useCallback(() => setMapPreviewVisible(true), []);
+  const openMap = useCallback(() => setMapDialogOpen(true), []);
 
   // Parse upper narrative (above cards) — buss, bysykkel, sparkesykkel
   const upperSegments = theme.upperNarrative
@@ -437,7 +433,7 @@ export default function ReportThemeSection({
           <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8] mb-6">
             {upperSegments.map((seg, i) =>
               seg.type === "poi" && seg.poi ? (
-                <POIInlineLink key={i} poi={seg.poi} content={seg.content} />
+                <POIPopover key={i} poi={seg.poi} label={seg.content} />
               ) : seg.type === "external" && seg.url ? (
                 <ExternalInlineLink key={i} content={seg.content} url={seg.url} />
               ) : (
@@ -452,69 +448,36 @@ export default function ReportThemeSection({
           <ReportHeroInsight theme={theme} center={center} />
         )}
 
-        {/* Lower narrative — progressive disclosure: truncated + fade når !expanded.
-            line-clamp-[6] gir font-size-agnostisk klipp på linjegrense. Fade skjuler
-            siste-linje-avkortning; "Les mer"-knapp rett under. Gradient to-[#f5f1ec]
-            matcher seksjonsbakgrunn. */}
+        {/* Lower narrative — alltid full høyde. Progressive disclosure håndteres
+            nedenfor med en tease-peek av grounding-narrativen. */}
         {segments.length > 0 && (
-          <div className={`relative text-base md:text-lg text-[#4a4a4a] leading-[1.8] ${expanded ? "" : "line-clamp-[6] overflow-hidden"}`}>
+          <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
             {segments.map((seg, i) =>
               seg.type === "poi" && seg.poi ? (
-                <POIInlineLink key={i} poi={seg.poi} content={seg.content} />
+                <POIPopover key={i} poi={seg.poi} label={seg.content} />
               ) : seg.type === "external" && seg.url ? (
                 <ExternalInlineLink key={i} content={seg.content} url={seg.url} />
               ) : (
                 <span key={i}>{seg.content}</span>
               ),
             )}
-            {!expanded && (
-              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-b from-transparent to-[#f5f1ec]" />
-            )}
           </div>
         )}
 
-        {/* Fallback: show intro if no lower text — også gated av expanded */}
+        {/* Fallback: vis intro hvis ingen lower narrative */}
         {segments.length === 0 && theme.intro && (
-          <p className={`text-base md:text-lg text-[#4a4a4a] leading-[1.8] ${expanded ? "" : "line-clamp-[6] overflow-hidden"}`}>
+          <p className="text-base md:text-lg text-[#4a4a4a] leading-[1.8]">
             {theme.intro}
           </p>
         )}
 
-        {/* Les mer / Vis mindre — variant-guard: secondary skjuler slider+grounding.
-            Viser knappen kun når det finnes innhold å avdekke. */}
+        {/* Progressiv disclosure nivå 2 — grounding-narrativ + kart + sources.
+            Når !expanded rendres kun en peek av grounding-narrativen bak fade
+            (tease-signal: "det ligger mer her"). */}
         {variant !== "secondary" && (segments.length > 0 || theme.intro) && (
-          <button
-            type="button"
-            onClick={() => {
-              if (expanded) {
-                setExpanded(false);
-                setMapPreviewVisible(false);
-              } else {
-                setExpanded(true);
-              }
-            }}
-            className="mt-4 flex items-center gap-1.5 text-sm font-medium text-[#6a5f51] hover:text-[#3a3530] transition-colors"
-            aria-expanded={expanded}
-          >
-            {expanded ? (
-              <>
-                Vis mindre
-                <ChevronUp className="w-3.5 h-3.5" />
-              </>
-            ) : (
-              <>
-                Les mer om {theme.name}
-                <ChevronDown className="w-3.5 h-3.5" />
-              </>
-            )}
-          </button>
-        )}
-
-        {/* Alt under "Les mer" — progressive disclosure-nivå 2 */}
-        {expanded && variant !== "secondary" && (
           <>
-            {/* Address input for transport theme */}
-            {isTransport && projectName && (
+            {/* Transport: address input sitter over grounding. Kun synlig når expanded. */}
+            {expanded && isTransport && projectName && (
               <div className="mt-6">
                 <ReportAddressInput
                   propertyCoordinates={[center.lng, center.lat]}
@@ -523,72 +486,97 @@ export default function ReportThemeSection({
               </div>
             )}
 
-            {/* POI-slider — kuraterte 6 steder (anchor + ranking-fill). Første
-                reveal etter "Les mer". CTA reveal-er kart-preview. */}
-            {theme.allPOIs.length > 0 && theme.curatedSliderPOIs && theme.curatedSliderPOIs.length > 0 && (
-              <div className="mt-8">
-                <ReportThemePOICarousel
-                  pois={theme.curatedSliderPOIs}
-                  totalCount={theme.allPOIs.length}
-                  onOpenMap={revealMapPreview}
-                  areaSlug={areaSlug}
-                  ariaLabel={`Steder i ${theme.name}`}
-                />
+            {/* Grounding-narrativ — tease (peek) når !expanded, full når expanded.
+                Peek fader teksten bak gradient for å signalere "her ligger mer". */}
+            {theme.grounding && (
+              <div className="relative mt-4">
+                <div
+                  className={
+                    expanded
+                      ? ""
+                      : "max-h-[60px] overflow-hidden pointer-events-none select-none"
+                  }
+                  aria-hidden={expanded ? undefined : true}
+                >
+                  {theme.grounding.groundingVersion === 2 ? (
+                    <ReportCuratedGrounded
+                      grounding={theme.grounding}
+                      poisById={poisById}
+                    />
+                  ) : (
+                    <ReportGroundingInline grounding={theme.grounding} />
+                  )}
+                </div>
+                {!expanded && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-white"
+                  />
+                )}
               </div>
             )}
 
-            {/* Google AI-utdyping — per-tema version-branch. */}
-            {theme.grounding?.groundingVersion === 2 ? (
-              <ReportCuratedGrounded
-                grounding={theme.grounding}
-                poisById={poisById}
-                query={theme.readMoreQuery}
-              />
-            ) : theme.grounding ? (
-              <ReportGroundingInline
-                grounding={theme.grounding}
-                query={theme.readMoreQuery}
-              />
-            ) : null}
-          </>
-        )}
+            {/* Les mer / Vis mindre — sentrert under gradient. */}
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                className="flex items-center gap-1.5 text-sm font-medium text-[#6a5f51] hover:text-[#3a3530] transition-colors"
+                aria-expanded={expanded}
+              >
+                {expanded ? (
+                  <>
+                    Vis mindre
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </>
+                ) : (
+                  <>
+                    Les mer om {theme.name}
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
 
-        {/* Dormant kart-preview — progressive disclosure-nivå 3.
-            !mapDialogOpen er load-bearing: prevents dual-WebGL contexts på iOS
-            når modal er åpen. expanded+mapPreviewVisible gater nivå 3. */}
-        {expanded && mapPreviewVisible && !mapDialogOpen && theme.allPOIs.length > 0 && (
-          <div className="mt-8 animate-in fade-in duration-300">
-            <button
-              onClick={() => setMapDialogOpen(true)}
-              className="h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
-            >
-              <ReportThemeMap
-                pois={theme.allPOIs}
-                center={center}
-                highlightedPOIId={null}
-                onMarkerClick={() => {}}
-                mapStyle={mapStyle}
-                activated={false}
-                projectName={projectName}
-                trails={theme.trails}
-                vehiclePositions={vehiclePositions}
-              />
-
-              {/* Gradient overlay — 100% solid at bottom, fades to transparent at top */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
-
-              {/* CTA — vertically centered + 25% down */}
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
-                <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
-                  {theme.allPOIs.length} steder på kartet
-                </p>
-                <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
-                  <MapIcon className="w-4 h-4 text-[#7a7062]" />
-                  Utforsk kartet
-                </div>
+            {/* Kart-preview — under grounding-narrativen, over kilder/legal.
+                !mapDialogOpen hindrer dual-WebGL-kontekst på iOS. */}
+            {expanded && !mapDialogOpen && theme.allPOIs.length > 0 && (
+              <div className="mt-8 animate-in fade-in duration-300">
+                <button
+                  type="button"
+                  onClick={openMap}
+                  className="h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
+                >
+                  <ReportThemeMap
+                    pois={theme.allPOIs}
+                    center={center}
+                    highlightedPOIId={null}
+                    onMarkerClick={() => {}}
+                    mapStyle={mapStyle}
+                    activated={false}
+                    projectName={projectName}
+                    trails={theme.trails}
+                    vehiclePositions={vehiclePositions}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
+                    <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
+                      {theme.allPOIs.length} steder på kartet
+                    </p>
+                    <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
+                      <MapPin className="w-4 h-4 text-[#7a7062]" />
+                      Utforsk kartet
+                    </div>
+                  </div>
+                </button>
               </div>
-            </button>
-          </div>
+            )}
+
+            {/* Kilder + Google foreslår også + attribution — helt på bunn. */}
+            {expanded && theme.grounding && (
+              <ReportGroundingSources grounding={theme.grounding} />
+            )}
+          </>
         )}
 
       </div>
@@ -677,90 +665,6 @@ export default function ReportThemeSection({
   );
 }
 
-// --- POI inline link with Popover ---
-
-function POIInlineLink({ poi, content }: { poi: POI; content: string }) {
-  const Icon = getIcon(poi.category.icon);
-  const walkMin = poi.travelTime?.walk ? Math.round(poi.travelTime.walk / 60) : null;
-
-  const imageUrl = poi.featuredImage
-    ? poi.featuredImage.includes("mymaps.usercontent.google.com")
-      ? `/api/image-proxy?url=${encodeURIComponent(poi.featuredImage)}`
-      : poi.featuredImage
-    : null;
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <span
-          role="button"
-          tabIndex={0}
-          className="inline-flex items-baseline gap-1 font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors cursor-pointer"
-        >
-          <span
-            className="inline-flex items-center justify-center w-[1.2em] h-[1.2em] rounded-full shrink-0 overflow-hidden relative translate-y-[0.15em]"
-            style={!imageUrl ? { backgroundColor: poi.category.color + "20" } : undefined}
-          >
-            {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <Icon className="w-[0.6em] h-[0.6em]" style={{ color: poi.category.color }} />
-            )}
-          </span>
-          {content}
-        </span>
-      </PopoverTrigger>
-      <PopoverContent side="top" className="w-72 p-0 gap-0 overflow-hidden">
-        {/* Image */}
-        {imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={poi.name} className="w-full aspect-[16/9] object-cover" />
-        )}
-        <div className="p-4">
-        {/* Header */}
-        <div className="flex items-center gap-2.5 mb-2">
-          <div
-            className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
-            style={{ backgroundColor: poi.category.color + "18" }}
-          >
-            <Icon className="w-4 h-4" style={{ color: poi.category.color }} />
-          </div>
-          <div className="min-w-0">
-            <div className="font-semibold text-sm leading-tight truncate">{poi.name}</div>
-            <div className="text-xs text-muted-foreground">{poi.category.name}</div>
-          </div>
-        </div>
-
-        {/* Meta */}
-        <div className="flex items-center gap-2.5 text-xs text-muted-foreground mb-2">
-          {poi.googleRating != null && (
-            <span className="flex items-center gap-0.5">
-              <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
-              <span className="font-medium text-foreground">{poi.googleRating.toFixed(1)}</span>
-              {poi.googleReviewCount != null && <span>({poi.googleReviewCount})</span>}
-            </span>
-          )}
-          {walkMin != null && (
-            <span className="flex items-center gap-0.5">
-              <MapPin className="w-3 h-3" />
-              {walkMin} min gange
-            </span>
-          )}
-        </div>
-
-        {/* Editorial content */}
-        {poi.editorialHook && (
-          <p className="text-[13px] text-[#3a3a3a] leading-relaxed">{poi.editorialHook}</p>
-        )}
-        {poi.localInsight && (
-          <p className="text-xs text-muted-foreground italic leading-relaxed mt-1.5">{poi.localInsight}</p>
-        )}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 function ExternalInlineLink({ content, url }: { content: string; url: string }) {
   if (url.includes("google.com/search")) {

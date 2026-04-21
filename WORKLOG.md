@@ -2464,3 +2464,50 @@ To sammenkoblede forbedringer av Report-tekstseksjonen:
 
 ### Viktigste audit-fix under implementering
 Plan antok `poiTier: 1/2/3` ≈ barneskole/ungdomsskole/VGS for barn-oppvekst. Verifisering avdekket at `poiTier` er kvalitetstier (primær/sekundær/øvrig), ikke skolenivå. Skoletrinn skilles via navn-matching + `school-zones.ts`, og håndteres allerede av `SchoolCard` i `ReportHeroInsight`. Løsning: byttet anchors til `barnehage/skole/lekeplass`.
+
+## 2026-04-21 — Rapport-tema-seksjon layout + opprydding
+
+**Branch:** `main` (direkte, ingen worktree) — `/ce-plan` + /ce-work
+
+### Hva som ble gjort
+
+6 implementation units fra `docs/plans/2026-04-21-refactor-rapport-tema-seksjon-layout-og-opprydding-plan.md`:
+
+1. **Delt POI-popover** (`components/variants/report/POIPopover.tsx`) — erstatter duplikatene `POIInlineLink` (i ReportThemeSection) og `PoiChipRenderer` (i ReportCuratedGrounded). Én komponent, `{ poi, label? }`-props.
+
+2. **Splitte grounding-komponent** — `ReportCuratedGrounded` (v2) og `ReportGroundingInline` (v1) rendrer nå kun narrativen. Kilder, "Google foreslår også" + attribution ekstrahert til ny v1/v2-agnostisk `ReportGroundingSources.tsx`.
+
+3. **Fjern POI-slider i tekstseksjon** — slettet `ReportThemePOICarousel.tsx` + test, `curatedSliderPOIs`-felt fra `ReportTheme`, `getCuratedPOIs`/`AnchorSlot`/`THEME_ANCHOR_SLOTS` + 10 tester fra `top-ranked-pois.ts`. Inline-POI-chips i narrativen gir samme kontekst-funksjon uten layout-problemer.
+
+4. **Restrukturere ReportThemeSection** — ny rekkefølge (expanded): address input → grounding-narrativ → **kart-preview** → `ReportGroundingSources`. Fjernet `line-clamp-[6]` på narrativen (narrativen er alltid full). Tease-fade er nå en peek av grounding-narrativen bak gradient (signal: "her ligger mer"). Fjernet `mapPreviewVisible` og `forceExpanded`-props.
+
+5. **WugZYeNg grounding UX-opprydding** — fjernet "VI STILTE SPØRSMÅLET"-blokk, `HoverCard` på kilde-chips med title + full URL, `target="_blank"`/`rel`/`referrerpolicy` legges på `<a>`-tags i Google `searchEntryPointHtml` via `useEffect` + `querySelectorAll`. ToS-compliant: HTML-innhold forblir verbatim, kun attributter endres.
+
+6. **Dokumentasjon** — oppdatert `docs/solutions/ui-patterns/progressive-disclosure-kuratert-poi-slots-20260420.md` til å reflektere nåværende arkitektur.
+
+### Filer
+
+- NY: `components/variants/report/POIPopover.tsx`
+- NY: `components/variants/report/ReportGroundingSources.tsx`
+- ENDRET: `components/variants/report/ReportThemeSection.tsx` (fjernet POIInlineLink, ny layout, ny fade-tease)
+- ENDRET: `components/variants/report/ReportCuratedGrounded.tsx` (narrativ-only, bruker POIPopover)
+- ENDRET: `components/variants/report/ReportGroundingInline.tsx` (narrativ-only, fjernet idle/loading-state)
+- ENDRET: `components/variants/report/report-data.ts` (fjernet `curatedSliderPOIs`)
+- ENDRET: `components/variants/report/top-ranked-pois.ts` (fjernet `getCuratedPOIs`, anchors)
+- ENDRET: `components/variants/report/top-ranked-pois.test.ts` (fjernet 10 `getCuratedPOIs`-tester + `catPoi`-helper)
+- SLETTET: `components/variants/report/blocks/ReportThemePOICarousel.tsx` + test
+- ENDRET: `docs/solutions/ui-patterns/progressive-disclosure-kuratert-poi-slots-20260420.md`
+
+### Teknisk
+
+- **Type-sjekk:** `npx tsc --noEmit` rent
+- **Lint:** 0 errors (warnings uendret)
+- **Tester:** 202/205 passerer (3 pre-existing failures i `validator.test.ts`, ikke relatert)
+- **Build:** Next.js production build grønt
+
+### Rationale — viktigste designvalg
+
+- **Kart under grounding-narrativ, sources på bunn:** kart er hoved-CTA per kategori, ikke et tillegg. Før var rekkefølgen slider → grounding (inkl. sources) → kart, som presset kartet nederst.
+- **Tease-peek av grounding istedenfor clamp på narrativ:** tidligere fade lå på narrativen selv (lite signaleringskraft). Nå teaser faden faktisk del-2-innhold, så "Les mer om X" har klar motivasjon.
+- **POI-slider fjernet:** inline-POI-chips i narrativ + kart-modal (med sin egen bottom-carousel) gir samme verdi. Slider skapte mer problemer enn verdi utenfor kart-kontekst.
+- **Grounding-splitt isteden for render-prop/slots:** to små komponenter er enklere enn én med slots. Layout-rekkefølge trumfer komponent-dekomposisjon.

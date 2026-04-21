@@ -1,232 +1,85 @@
 ---
-title: "Progressiv disclosure + kuraterte POI-slots i Report-tekstseksjon"
+title: "Progressiv disclosure i Report-tekstseksjon — narrativ, grounding, kart, kilder"
 category: ui-patterns
-tags: [progressive-disclosure, poi-curation, anchor-slots, line-clamp, report, report-theme-section, ux]
+tags: [progressive-disclosure, report, report-theme-section, tease-fade, ux, gemini-grounding]
 module: Report
-symptoms: "Alle brukere får full informasjonsmengde (narrativ + POI-slider + grounding + kart) uavhengig av interesse; POI-slider viser ren score-ranking uten hensyn til at boligkjøpere alltid vil vite nærmeste skole, dagligvare, buss."
-root_cause: "Alle Report-blokker var alltid rendret og alltid pure-ranked. Ingen ankerplass-logikk, ingen signal-basert avsløring."
+symptoms: "Brukere får full informasjonsmengde per tema uten å be om det; kart er presset helt nederst etter 'juridisk' Google-stoff; POI-slider i tekstseksjon forstyrrer layout når kortene ekspanderer."
+root_cause: "Tidlig versjon hadde POI-slider og dormant kart-preview som separate disclosure-steg, men rekkefølgen (slider → grounding → kart nederst) ga kartet lavest prioritet og slideren duplikerte innholdet allerede gitt av inline-POI-chips i narrativen."
 ---
 
 ## Problem
 
-`ReportThemeSection` rendret alltid full informasjonsmengde per tema: Placy-narrativ, ReportHeroInsight, Gemini-grounding, POI-slider og dormant kart-preview. Brukere som bare ville ha rask oversikt måtte scrolle forbi alt. I tillegg viste POI-slideren ren `rankScore`-ranking (googleRating × tier-vekt), uten å prioritere de faste spørsmålene boligkjøpere stiller: "nærmeste buss?", "nærmeste barnehage?", "nærmeste treningssenter?".
+`ReportThemeSection` rendret tidligere alt-på-en-gang per tema (narrativ, POI-slider, grounding, kart, kilder). Første forbedring introduserte progressiv disclosure i tre nivåer, men feilet på tre punkter:
+
+1. **Gradient-fade** lå på narrativen selv (via `line-clamp-[6]`) og viste kun at "teksten er kuttet", ikke at "her ligger mer innhold bak fade".
+2. **POI-slider** i tekstseksjon hadde expand-adferd (aktivt kort vokser) som fungerte i kart-carousel-konteksten, men brøt layout utenfor kart. Samtidig hadde inline-POI-chips i narrativen allerede samme kontekst-funksjon.
+3. **Kart-rekkefølgen** — kart-preview kom nederst, etter grounding-tekst og alle kilder/legal. Kartet er en hoved-CTA per kategori, ikke et tillegg.
 
 ## Løsning
 
-### 1. Progressiv disclosure — 3 nivåer
+### Ny seksjon-rekkefølge (2026-04-21)
 
 ```
-Nivå 1 — Default:
-  Tema-header + ReportHeroInsight (structured cards)
-  Placy narrativ (line-clamp-[6] + gradient fade to-[#f5f1ec])
-  [Les mer om {theme.name}] ↓
+Tema-header + ReportHeroInsight (structured cards)
+Placy narrativ — alltid full (ingen clamp)
 
-Nivå 2 — Etter "Les mer":
-  Narrativ (full, ingen clamp)
-  [Vis mindre] ↑
+[Tease-peek av grounding-narrativen bak gradient-fade når !expanded]
+[Les mer om {theme.name} ↓] / [Vis mindre ↑]
+
+Når expanded:
   Address input (transport)
-  POI-slider (kuratert 6 kort)
-  Gemini grounding
-  CTA "Se alle N steder på kartet"
-
-Nivå 3 — Etter CTA-klikk:
-  Dormant kart-preview (animate-in fade-in duration-300)
-  Klikk → UnifiedMapModal
+  Full Gemini grounding-narrativ (ReportCuratedGrounded / ReportGroundingInline)
+  Kart-preview (klikk → UnifiedMapModal)
+  Kilder + "Google foreslår også" + attribution (ReportGroundingSources)
 ```
 
-**State** i `ReportThemeSection`:
-```tsx
-const [expanded, setExpanded] = useState(false);
-const [mapPreviewVisible, setMapPreviewVisible] = useState(false);
-const [mapDialogOpen, setMapDialogOpen] = useState(false);
-```
+### Tease-fade som disclosure-signal
 
-**Vis mindre** resetter `mapPreviewVisible` også — neste ekspansjon starter uten kart-preview.
-
-**Line-clamp > max-h**: `line-clamp-[6]` er font-size-agnostisk og klipper presist på linjegrense. `max-h` i px gir halve linjer ved zoom eller custom font-size.
-
-**Fade-gradient**: `bg-gradient-to-b from-transparent to-[#f5f1ec]` matcher seksjonsbakgrunn. `pointer-events-none` så klikk går gjennom til tekst-chips under.
-
-### 2. Kuraterte POI-slots — anchor + ranking-fill
-
-Ny `getCuratedPOIs`-funksjon i `components/variants/report/top-ranked-pois.ts`:
-
-```typescript
-export interface AnchorSlot {
-  categoryId: string;  // poi.category.id eksakt match
-}
-
-export const THEME_ANCHOR_SLOTS: Record<string, readonly AnchorSlot[]> = {
-  "barn-oppvekst": [
-    { categoryId: "barnehage" },
-    { categoryId: "skole" },
-    { categoryId: "lekeplass" },
-  ],
-  "hverdagsliv": [
-    { categoryId: "supermarket" },
-    { categoryId: "pharmacy" },
-    { categoryId: "shopping" },
-  ],
-  "trening-aktivitet": [
-    { categoryId: "gym" },
-    { categoryId: "gym" },
-    { categoryId: "gym" },
-  ],
-  "transport": [
-    { categoryId: "bus" },
-    { categoryId: "bike" },
-    { categoryId: "carshare" },
-  ],
-  "natur-friluftsliv": [
-    { categoryId: "park" },
-    { categoryId: "outdoor" },
-    { categoryId: "badeplass" },
-  ],
-  "opplevelser": [
-    { categoryId: "library" },
-    { categoryId: "cinema" },
-  ],
-  // mat-drikke: ingen anchor-slots → pure ranking
-};
-
-export function getCuratedPOIs(
-  pois: readonly POI[],
-  themeId: string,
-  limit: number,
-): readonly POI[] {
-  if (limit < 1) return [];
-  const anchors = THEME_ANCHOR_SLOTS[themeId] ?? [];
-  const byWalk = [...pois].sort(
-    (a, b) =>
-      (a.travelTime?.walk ?? Infinity) - (b.travelTime?.walk ?? Infinity),
-  );
-  const result: POI[] = [];
-  for (const anchor of anchors) {
-    if (result.length >= limit) break;
-    const idx = byWalk.findIndex((p) => p.category.id === anchor.categoryId);
-    if (idx >= 0) result.push(byWalk.splice(idx, 1)[0]);
-  }
-  const pinned = new Set(result.map((p) => p.id));
-  const ranked = [...byWalk]
-    .filter((p) => !pinned.has(p.id))
-    .sort((a, b) => rankScore(b) - rankScore(a));
-  for (const poi of ranked) {
-    if (result.length >= limit) break;
-    result.push(poi);
-  }
-  return result;
-}
-```
-
-**Tiebreaker**: innen samme anchor-type (3 gyms) velges nærmest-først via `travelTime.walk` asc. Missing travel-time synker til bunn (`Infinity`).
-
-**Deduplikasjon**: `splice` fjerner anchor-POI fra `byWalk`-pool. `pinned`-Set sikrer at ranking-fill ikke duplikerer. Immutabel (`[...byWalk].filter(...).sort(...)`).
-
-**Graceful fallback**: Ukjent theme-id → anchors = []. Manglende anchor → hopper videre. Færre POI-er enn limit → ingen padding.
-
-### 3. ReportTheme: `curatedSliderPOIs?`
-
-```typescript
-export interface ReportTheme {
-  /** Top-10 ranked for map-modal bottom carousel */
-  topRanked: readonly POI[];
-  /** Kuraterte 6 for text-slider (anchor + ranking-fill). Optional for test-fixtures. */
-  curatedSliderPOIs?: readonly POI[];
-  // ...
-}
-```
-
-Populert i `transformToReportData`:
-```typescript
-topRanked: getTopRankedPOIs(filtered, 10),
-curatedSliderPOIs: getCuratedPOIs(filtered, themeDef.id, 6),
-```
-
-`topRanked` beholdes uendret for kart-modal bottom-carousel (konsistent rekkefølge i hele kart-view).
-
-### 4. ReportThemeSection — ny struktur
+Narrativen rendres alltid i full høyde. Grounding-narrativen rendres alltid (same DOM), men wrappet i en `max-h-[120px] overflow-hidden pointer-events-none` når `!expanded`. En gradient-fade på bunnen av wrapperen signalerer "her ligger mer innhold":
 
 ```tsx
-{/* Narrativ med clamp + fade */}
-<div className={`relative ... ${expanded ? "" : "line-clamp-[6] overflow-hidden"}`}>
-  {segments.map(...)}
-  {!expanded && <div className="... bg-gradient-to-b from-transparent to-[#f5f1ec]" />}
-</div>
-
-{/* Les mer / Vis mindre */}
-{variant !== "secondary" && (segments.length > 0 || theme.intro) && (
-  <button onClick={() => {
-    if (expanded) { setExpanded(false); setMapPreviewVisible(false); }
-    else { setExpanded(true); }
-  }} aria-expanded={expanded}>
-    {expanded ? "Vis mindre" : `Les mer om ${theme.name}`}
-  </button>
-)}
-
-{/* Nivå 2 */}
-{expanded && variant !== "secondary" && (
-  <>
-    {isTransport && projectName && <ReportAddressInput ... />}
-    {theme.allPOIs.length > 0 && theme.curatedSliderPOIs?.length > 0 && (
-      <ReportThemePOICarousel
-        pois={theme.curatedSliderPOIs}
-        totalCount={theme.allPOIs.length}
-        onOpenMap={revealMapPreview}  // ← setMapPreviewVisible(true)
-        ariaLabel={`Steder i ${theme.name}`}
-      />
-    )}
-    {theme.grounding?.groundingVersion === 2 ? <ReportCuratedGrounded ... /> : ...}
-  </>
-)}
-
-{/* Nivå 3 — !mapDialogOpen er load-bearing (iOS dual-WebGL) */}
-{expanded && mapPreviewVisible && !mapDialogOpen && theme.allPOIs.length > 0 && (
-  <div className="mt-8 animate-in fade-in duration-300">
-    {/* dormant preview */}
+<div className="relative mt-8">
+  <div className={expanded ? "" : "max-h-[120px] overflow-hidden pointer-events-none select-none"}>
+    {/* grounding-narrative */}
   </div>
-)}
+  {!expanded && (
+    <div aria-hidden className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#f5f1ec]" />
+  )}
+</div>
 ```
 
-## Gotchas
+Viktige detaljer:
+- `pointer-events-none` på peek-wrapperen hindrer at POI-chips inne i teksten blir klikkbare når de kun er delvis synlige
+- `aria-hidden` når collapsed — skjermlesere skal ikke plukke opp delvis tekst
+- Samme komponent rendres i begge tilstander; kun wrapping-layer endrer seg → ingen state-flytting
 
-### Line-clamp > max-h
-`max-h` i px krever justering når font-size eller linjehøyde endres. `line-clamp-[6]` er relativ til `line-height` og klipper presist.
+### Grounding splittet i narrativ og kilder
 
-### `!mapDialogOpen`-guard er load-bearing
-Uten denne mountes kart-preview og modal samtidig → dobbel WebGL-context → iOS Safari krasjer. Gjenbrukt fra forrige plan (2026-04-15 unified-map-modal).
+`ReportCuratedGrounded` (v2) og `ReportGroundingInline` (v1) rendrer **kun narrativen** (inkl. inline POI-chips via `POIPopover`). Kildene, "Google foreslår også" (searchEntryPointHtml) og attribution er flyttet til `ReportGroundingSources` — en v1/v2-agnostisk komponent rendret separat **under** kart-preview.
 
-### `poiTier` er ikke skoletrinn
-Tidlig plan antok `poiTier: 1/2/3` ≈ barneskole/ungdomsskole/VGS. **Dette er feil** — `poiTier` er kvalitetstier (primær/sekundær/øvrig). Skoler skilles via navn-matching og `lib/utils/school-zones.ts` (gjenbrukt i `ReportHeroInsight`). Løsning: `barn-oppvekst` anchors er `barnehage/skole/lekeplass` — skoletrinn håndteres allerede av `SchoolCard` i `ReportHeroInsight`.
+Fordelen: kart kan ligge fysisk mellom grounding-narrativ og kilder uten at komponent-grensene må håndtere slots eller render-props.
 
-### Ukjent theme-id = graceful fallback
-`THEME_ANCHOR_SLOTS[themeId] ?? []` — næring-temaer (`hverdagstjenester`, `nabolaget`) er ikke konfigurert og faller tilbake til pure ranking. Ingen runtime-feil.
+### WugZYeNg — grounding UX-cleanup
 
-## Filer
+Utført samme runde (Trello-kort `WugZYeNg`):
+- Fjernet "VI STILTE SPØRSMÅLET"-blokk (ikke verdi-skapende, støy)
+- `HoverCard` på kilde-chips (favicon + domain) viser full tittel + URL på hover
+- `target="_blank"` + `rel="noopener noreferrer nofollow"` + `referrerpolicy="no-referrer"` legges til på `<a>`-tags inne i `dangerouslySetInnerHTML` via `useEffect` + ref-query. Google ToS tillater target-endring; kun HTML-innhold må være verbatim.
 
-| Fil | Status |
-|-----|--------|
-| `components/variants/report/top-ranked-pois.ts` | ENDRET — `AnchorSlot`, `THEME_ANCHOR_SLOTS`, `getCuratedPOIs` |
-| `components/variants/report/top-ranked-pois.test.ts` | ENDRET — 10 nye tester (anchor, fallback, dedup, missing-theme) |
-| `components/variants/report/report-data.ts` | ENDRET — `curatedSliderPOIs?` felt + populering |
-| `components/variants/report/ReportThemeSection.tsx` | ENDRET — `expanded` + `mapPreviewVisible` state, progressive disclosure |
+### POI-popover konsolidert
 
-Ingen nye filer. Ingen slettinger.
+`POIInlineLink` (ReportThemeSection) og `PoiChipRenderer` (ReportCuratedGrounded) var duplisert. Konsolidert til `components/variants/report/POIPopover.tsx` med `{ poi, label? }`-props.
 
-## Invariant-tester
+## Fjernet (fra tidligere iterasjon)
 
-```typescript
-// TC-A4: mat-drikke uten anchors === ren ranking
-it("mat-drikke (ingen anchors) === getTopRankedPOIs", () => {
-  const curated = getCuratedPOIs(pois, "mat-drikke", 6);
-  const ranked = getTopRankedPOIs(pois, 6);
-  expect(curated.map((p) => p.id)).toEqual(ranked.map((p) => p.id));
-});
+- `ReportThemePOICarousel` og tilhørende test
+- `ReportTheme.curatedSliderPOIs`
+- `getCuratedPOIs`, `AnchorSlot`, `THEME_ANCHOR_SLOTS` (i `top-ranked-pois.ts`) + tester
+- `mapPreviewVisible`-state i `ReportThemeSection`
+- Dormant kart-preview som tredje-klikk-nivå — kart-preview er nå synlig direkte ved `expanded=true`
+- `forceExpanded`-props på grounding-komponenter (foreldren styrer disclosure via DOM-wrapping)
 
-// TC-A7: anchor-POI vises aldri i ranking-fill
-it("dedup — anchor-POI ikke duplikat i ranking-fill", () => {
-  // barnehage med høyeste rankScore skal være i slot 1, ikke også i ranking-fill
-  const result = getCuratedPOIs(pois, "barn-oppvekst", 6);
-  const bhgCount = result.filter((p) => p.id === "bhg-1").length;
-  expect(bhgCount).toBe(1);
-});
-```
+## Relaterte doc
+
+- `docs/solutions/api-integration/gemini-grounding-pattern-20260418.md` — Google ToS verbatim-krav
+- `docs/plans/2026-04-21-refactor-rapport-tema-seksjon-layout-og-opprydding-plan.md` — originalt planet for denne refactoren

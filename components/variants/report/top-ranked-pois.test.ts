@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { POI } from "@/lib/types";
-import { rankScore, getTopRankedPOIs, getCuratedPOIs } from "./top-ranked-pois";
+import { rankScore, getTopRankedPOIs } from "./top-ranked-pois";
 
 function poi(id: string, googleRating?: number, poiTier?: 1 | 2 | 3): POI {
   return {
@@ -10,24 +10,6 @@ function poi(id: string, googleRating?: number, poiTier?: 1 | 2 | 3): POI {
     category: { id: "cat", name: "Cat", icon: "Coffee", color: "#000" },
     googleRating,
     poiTier,
-  } as POI;
-}
-
-function catPoi(
-  id: string,
-  categoryId: string,
-  walk?: number,
-  googleRating?: number,
-  poiTier?: 1 | 2 | 3,
-): POI {
-  return {
-    id,
-    name: id,
-    coordinates: { lat: 0, lng: 0 },
-    category: { id: categoryId, name: categoryId, icon: "Coffee", color: "#000" },
-    googleRating,
-    poiTier,
-    travelTime: walk != null ? { walk } : undefined,
   } as POI;
 }
 
@@ -105,119 +87,3 @@ describe("getTopRankedPOIs", () => {
   });
 });
 
-describe("getCuratedPOIs", () => {
-  it("TC-A1: barn-oppvekst — barnehage slot 1, skole slot 2, lekeplass slot 3", () => {
-    const pois = [
-      catPoi("skole-1", "skole", 300, 4.5, 1),
-      catPoi("bhg-1", "barnehage", 200, 4.0, 1),
-      catPoi("lek-1", "lekeplass", 400, 3.5, 2),
-      catPoi("rest-1", "restaurant", 150, 4.8, 1),
-    ];
-    const result = getCuratedPOIs(pois, "barn-oppvekst", 6);
-    expect(result.slice(0, 3).map((p) => p.id)).toEqual([
-      "bhg-1",
-      "skole-1",
-      "lek-1",
-    ]);
-  });
-
-  it("TC-A2: manglende anchor → ranking-fill, slider forblir full", () => {
-    const pois = [
-      catPoi("bhg-1", "barnehage", 200, 4.0, 1),
-      catPoi("skole-1", "skole", 300, 4.5, 1),
-      // ingen lekeplass
-      catPoi("rest-1", "restaurant", 150, 4.8, 1),
-      catPoi("rest-2", "restaurant", 250, 4.7, 1),
-      catPoi("cafe-1", "cafe", 180, 4.6, 1),
-    ];
-    const result = getCuratedPOIs(pois, "barn-oppvekst", 6);
-    expect(result).toHaveLength(5);
-    expect(result[0].id).toBe("bhg-1");
-    expect(result[1].id).toBe("skole-1");
-    // Slot 3..5 = ranking-fill (rest-1 > rest-2 > cafe-1 alle har tier 1)
-    // rankScore: rest-1=4.8*3=14.4, cafe-1=4.6*3=13.8, rest-2=4.7*3=14.1
-    expect(result[2].id).toBe("rest-1");
-    expect(result[3].id).toBe("rest-2");
-    expect(result[4].id).toBe("cafe-1");
-  });
-
-  it("TC-A3: trening — 3 gyms nærmest-first, alle distinkte", () => {
-    const pois = [
-      catPoi("gym-far", "gym", 900, 4.5, 1),
-      catPoi("gym-mid", "gym", 500, 4.0, 1),
-      catPoi("gym-near", "gym", 200, 3.0, 2),
-      catPoi("spa-1", "spa", 300, 4.8, 1),
-    ];
-    const result = getCuratedPOIs(pois, "trening-aktivitet", 6);
-    expect(result.slice(0, 3).map((p) => p.id)).toEqual([
-      "gym-near",
-      "gym-mid",
-      "gym-far",
-    ]);
-    // Distinkte IDs (ingen duplikat)
-    expect(new Set(result.map((p) => p.id)).size).toBe(result.length);
-  });
-
-  it("TC-A4: mat-drikke (ingen anchors) === getTopRankedPOIs", () => {
-    const pois = [
-      catPoi("rest-1", "restaurant", 100, 4.5, 1), // 13.5
-      catPoi("cafe-1", "cafe", 200, 4.0, 2), // 8.0
-      catPoi("bar-1", "bar", 300, 4.8, 1), // 14.4
-      catPoi("bak-1", "bakery", 150, 3.5, 1), // 10.5
-    ];
-    const curated = getCuratedPOIs(pois, "mat-drikke", 6);
-    const ranked = getTopRankedPOIs(pois, 6);
-    expect(curated.map((p) => p.id)).toEqual(ranked.map((p) => p.id));
-  });
-
-  it("TC-A5: tom POI-liste → []", () => {
-    expect(getCuratedPOIs([], "barn-oppvekst", 6)).toEqual([]);
-  });
-
-  it("TC-A6: færre POI-er enn limit → returnerer alle tilgjengelige (ingen padding)", () => {
-    const pois = [
-      catPoi("bhg-1", "barnehage", 200, 4.0, 1),
-      catPoi("rest-1", "restaurant", 150, 4.8, 1),
-    ];
-    const result = getCuratedPOIs(pois, "barn-oppvekst", 6);
-    expect(result).toHaveLength(2);
-    expect(result.map((p) => p.id)).toEqual(["bhg-1", "rest-1"]);
-  });
-
-  it("TC-A7: dedup — anchor-POI vises ikke i ranking-fill", () => {
-    const pois = [
-      catPoi("bhg-1", "barnehage", 200, 5.0, 1), // høyeste rankScore (15)
-      catPoi("skole-1", "skole", 300, 4.5, 1),
-      catPoi("lek-1", "lekeplass", 400, 3.5, 2),
-      catPoi("rest-1", "restaurant", 150, 4.0, 1), // 12
-    ];
-    const result = getCuratedPOIs(pois, "barn-oppvekst", 6);
-    const ids = result.map((p) => p.id);
-    const bhgCount = ids.filter((id) => id === "bhg-1").length;
-    expect(bhgCount).toBe(1);
-    expect(ids).toEqual(["bhg-1", "skole-1", "lek-1", "rest-1"]);
-  });
-
-  it("handles unknown theme-id → ingen anchors, ren ranking", () => {
-    const pois = [
-      catPoi("a", "foo", 100, 4.0, 1),
-      catPoi("b", "bar", 200, 5.0, 1),
-    ];
-    const result = getCuratedPOIs(pois, "unknown-theme", 6);
-    expect(result.map((p) => p.id)).toEqual(["b", "a"]);
-  });
-
-  it("limit < 1 → []", () => {
-    expect(getCuratedPOIs([catPoi("a", "skole", 100)], "barn-oppvekst", 0)).toEqual([]);
-  });
-
-  it("does not mutate input array", () => {
-    const pois = [
-      catPoi("bhg-1", "barnehage", 200, 4.0, 1),
-      catPoi("skole-1", "skole", 300, 4.5, 1),
-    ];
-    const before = pois.map((p) => p.id);
-    getCuratedPOIs(pois, "barn-oppvekst", 6);
-    expect(pois.map((p) => p.id)).toEqual(before);
-  });
-});
