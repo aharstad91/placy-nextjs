@@ -455,9 +455,8 @@ export default function UnifiedMapModal({
           }
         }}
         className="flex flex-col p-0 overflow-hidden gap-0 bg-white !border-0
-          !inset-x-0 !bottom-0 !top-[4vh]
-          md:!inset-0
-          rounded-t-2xl md:!rounded-none
+          !inset-0
+          !rounded-none
           data-[state=open]:[animation-name:map-modal-slide-up]
           data-[state=open]:[animation-duration:400ms]
           data-[state=open]:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]
@@ -544,12 +543,13 @@ export default function UnifiedMapModal({
             </div>
           )}
 
-          {/* Bottom carousel — desktop only. Rendered as an overlay inside the
-              map body so kortene sitter direkte på kartet (ingen hvit footer-
-              stripe). pointer-events-none på wrapper lar kart-interaksjoner
-              skje i mellomrommene; kortene selv har pointer-events-auto. */}
+          {/* Bottom carousel — vises på alle størrelser. Rendered som overlay
+              inne i kart-body slik at kortene sitter direkte på kartet (ingen
+              hvit footer-stripe). pointer-events-none på wrapper lar kart-
+              interaksjoner skje i mellomrommene; kortene selv har
+              pointer-events-auto. */}
           {bottomSlot && (
-            <div className="hidden md:block absolute inset-x-0 bottom-0 z-30 px-3 pb-3 pointer-events-none">
+            <div className="absolute inset-x-0 bottom-0 z-30 px-3 pb-3 pointer-events-none">
               <div className="pointer-events-auto">{bottomSlot(slotCtx)}</div>
             </div>
           )}

@@ -4,6 +4,87 @@
 
 ---
 date: 2026-04-21
+action: Mobil-UX finish-pass — padding, tabs-overflow, pill-knapp, 100vh-modal, POI-carousel på mobil, smooth disclosure-animasjon
+files:
+  - components/variants/report/ReportPage.tsx (body-container px-16 → px-6 md:px-16)
+  - components/variants/report/ReportHero.tsx (tekstkolonne px-16 py-14 → px-6 py-10 md:px-16 md:py-14; chip-grid grid-cols-2 → grid-cols-1 sm:grid-cols-2)
+  - components/variants/report/ReportSummarySection.tsx (samme padding-mønster for topp+bunn)
+  - components/shared/ThemeChip.tsx (fjernet whitespace-nowrap på spørsmåls-label i scroll+select-variant — lange spørsmål wrapper nå naturlig)
+  - components/variants/report/blocks/TransitDashboardCard.tsx (TabsList overflow-x-auto scrollbar-hide; TabsTrigger shrink-0 sm:flex-1; illustrasjonspanel hidden sm:block)
+  - components/variants/report/ReportThemeSection.tsx (pill-knapp for "Les mer om X" + smooth max-height-transition + scroll-anchor)
+  - components/map/UnifiedMapModal.tsx (100vh modal på mobil + POI-carousel ikke lenger hidden md:block)
+  - components/variants/report/blocks/ReportMapBottomCarousel.tsx (fjernet hidden md:flex → synlig på alle breakpoints)
+branch: main
+summary: >
+  Seks runder mobilfiks basert på visuell QA i Chrome DevTools MCP ved
+  390×844. Endret semantikk der vi har breakpoints: padding, typografi og
+  grid skal skalere fra mobil-først, ikke desktop-først.
+
+  Konkret rundegjennomgang:
+  1. Padding: px-16 (64px) fungerer på desktop men kveler mobil-tekst
+     (linjelengde <60 tegn). Endret til px-6 md:px-16. Samme mønster
+     brukt i alle hero-style seksjoner (ReportHero, ReportPage-body,
+     ReportSummarySection topp+bunn).
+  2. Velkomstskjerm-chips: grid-cols-2 + whitespace-nowrap truncerte
+     spørsmål ("Hva kan jeg d...", "Kan jeg trene i nærhete..."). Byttet
+     til grid-cols-1 sm:grid-cols-2 + la spørsmål bryte naturlig med
+     leading-snug.
+  3. Tabs-overflow: 5 kollektiv-tabs (Tog/T-bane/Trikk/Buss/Taxi) pushet
+     dokumentet 15px til høyre på 390px mobil fordi flex-1 + whitespace-
+     nowrap ga minimumsbredder over container-størrelse. Fikset med
+     overflow-x-auto scrollbar-hide på TabsList + shrink-0 sm:flex-1 på
+     hver trigger — naturlig bredde med swipe på mobil, jevnt fordelt
+     på desktop. Stop-navn trunkerte også ("Lea...", "Mari...") pga.
+     1/3-bredde illustrasjonspanel som er tom placeholder (CATEGORY_
+     ILLUSTRATIONS commented-out); skjult på mobil (hidden sm:block).
+  4. Les-mer-knapp: ren tekst-lenke smeltet sammen med fade-gradienten.
+     Byttet til pill-knapp med hvit bakgrunn, border, shadow-sm og
+     hover-løft.
+  5. Kart-modal: modalen åpnet med !top-[4vh] (96vh) på mobil og hadde
+     POI-carousel hidden md:block. Brukeren ba om 100vh + kort på
+     mobil. Endret til !inset-0 !rounded-none. Overflow-wrapperen +
+     selve ReportMapBottomCarousel hadde hidden md:* to steder —
+     fjernet begge.
+  6. Disclosure-animasjon: "Vis mindre" kollapset innhold abrupt slik
+     at mobil-scroll hoppet ~1000px og brukeren mistet oversikten.
+     Byttet betinget-rendering til alltid-i-DOM-wrappers med
+     max-height-transition (500ms ease-in-out) på transport-input,
+     grounding-narrativ (60px peek ↔ 6000px full) og kart+kilder-
+     blokken. La til fade-overlay som opacity-transitioner, og
+     toggleButtonRef.scrollIntoView({behavior:"smooth", block:"center"})
+     etter kollaps slik at knappen holder seg midt i viewport.
+notes: >
+  Verifisert: tsc --noEmit grønt. Visuelt testet i Chrome DevTools MCP
+  med viewport emulate 390x844x2 mobile+touch for mobil, 1280x800x1 for
+  desktop — ingen horisontal scroll på hovedsiden, tabs swipes, kort
+  vises i modal-bunn på mobil.
+
+---
+date: 2026-04-21
+action: Follow-up cleanup — fjernet TreningInsight + sonderte ModeToggle-historikk
+files:
+  - components/variants/report/ReportHeroInsight.tsx (fjernet TreningInsight "Hold deg i form" + TRENING_TYPES-konstant + registry-entries)
+branch: main
+summary: >
+  Etter commit 607b90c ble TreningInsight ("Hold deg i form"-kortet for
+  trening-aktivitet) også fjernet på samme mønster som tidligere
+  hero-insights. Kun Transport (TransitDashboardCard live-data) og
+  Opplevelser (OpplevelserInsight) er nå igjen med hero-insight-kort.
+
+  Separat: Bruker spurte om å gjenopprette "sentrert 2D/3D-toggle i midten
+  av modalen". Grundig git-historikk-søk på UnifiedMapModal + ModeToggle
+  fant INGEN versjon hvor toggle-en har vært sentrert. Den har alltid
+  vært i header top-right siden første commit ac64bbe (15. april). Det
+  som historisk var sentrert var "Utforsk i 3D"-CTA-overlay på dormant
+  kart-preview (før modal-åpning) — men det var en åpne-modal-knapp,
+  ikke en toggle. Saken står uavklart inntil bruker spesifiserer hva
+  de mener.
+notes: >
+  Verifisert: tsc --noEmit grønt. Ingen endring i ModeToggle-plassering
+  gjort — venter på avklaring fra bruker.
+
+---
+date: 2026-04-21
 action: Stor opprydning av rapport — fjernet alle PILOT-blokker, 4 av 7 hero-insights, aerial map og sandbox-data
 files:
   - components/variants/report/ReportPage.tsx (fjernet TabbedAerialMap + DEMO_DIRECTIONS + DEMO_AERIAL_CATEGORIES hardkodede demo-data + imports)

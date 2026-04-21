@@ -123,7 +123,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
       />
 
       {/* Centered single-column layout — sidebar navigation removed in favour of a different approach */}
-      <div className="max-w-[800px] mx-auto w-full px-16">
+      <div className="max-w-[800px] mx-auto w-full px-6 md:px-16">
 
         {/* Primary themes */}
         {primaryThemes.map((theme, i) => (

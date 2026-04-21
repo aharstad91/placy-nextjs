@@ -125,7 +125,7 @@ export default function ReportMapBottomCarousel({
     <section
       aria-label={ariaLabel}
       aria-roledescription="carousel"
-      className="hidden md:flex flex-col gap-1.5 w-full"
+      className="flex flex-col gap-1.5 w-full"
     >
       <div className="relative">
         <ul

@@ -159,64 +159,6 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
 }
 
 // ============================================================
-// 6. Trening & Aktivitet — Breddevisning
-// ============================================================
-
-const TRENING_TYPES: { catIds: string[]; label: string }[] = [
-  { catIds: ["gym"], label: "Treningssenter" },
-  { catIds: ["swimming"], label: "Sv\u00f8mmehall" },
-  { catIds: ["fitness_park"], label: "Treningspark" },
-  { catIds: ["spa"], label: "Spa" },
-];
-
-function TreningInsight({ theme, center }: HeroInsightProps) {
-  const pois = theme.allPOIs;
-
-  const byType = useMemo(() => {
-    return TRENING_TYPES.map((type) => {
-      const nearest = nearestOf(pois, center, ...type.catIds);
-      if (!nearest) return null;
-      return { ...type, poi: nearest };
-    }).filter(Boolean) as { catIds: string[]; label: string; poi: POI }[];
-  }, [pois, center]);
-
-  if (byType.length < 1) return null;
-
-  return (
-    <InsightCard
-      title="Hold deg i form"
-      footer={`${pois.length} treningsmuligheter i nabolaget`}
-    >
-      <div className="space-y-1">
-        {byType.map(({ poi, label }) => {
-          const Icon = getIcon(poi.category.icon);
-          const walk = fmtWalk(poi, center);
-          return (
-            <div key={poi.id} className="flex items-center gap-3 py-1.5">
-              <div
-                className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
-                style={{ backgroundColor: poi.category.color + "15" }}
-              >
-                <Icon className="w-3.5 h-3.5" style={{ color: poi.category.color }} />
-              </div>
-              <span className="font-medium text-[#1a1a1a] text-[15px] flex-1 min-w-0 truncate">
-                {poi.name}
-              </span>
-              <span className="text-sm text-[#8a8a8a] shrink-0 hidden sm:inline">
-                {label}
-              </span>
-              {walk && (
-                <span className="text-sm text-[#8a8a8a] shrink-0 w-12 text-right">{walk}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </InsightCard>
-  );
-}
-
-// ============================================================
 // 7. Opplevelser — Kulturtilbudet
 // ============================================================
 
@@ -281,7 +223,6 @@ function OpplevelserInsight({ theme, center }: HeroInsightProps) {
 
 const RENDERERS: Record<string, React.FC<HeroInsightProps>> = {
   transport: TransportDashboard,
-  "trening-aktivitet": TreningInsight,
   opplevelser: OpplevelserInsight,
 };
 
@@ -308,11 +249,6 @@ const TIER1_EXTRACTORS: Record<
     const car = nearestOf(pois, center, "carshare");
     if (car && !seen.has(car.id)) { result.push(car); seen.add(car.id); }
     return result;
-  },
-  "trening-aktivitet": (pois, center) => {
-    return TRENING_TYPES.map((t) => nearestOf(pois, center, ...t.catIds)).filter(
-      Boolean,
-    ) as POI[];
   },
   opplevelser: (pois, center) => {
     return KULTUR_TYPES.map((t) => nearestOf(pois, center, ...t.catIds)).filter(

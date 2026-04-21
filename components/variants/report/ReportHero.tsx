@@ -24,7 +24,7 @@ export default function ReportHero({ projectName, themes, heroIntro, heroImage }
     <section className="min-h-[66vh] flex flex-col bg-white">
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2">
         {/* Left: text */}
-        <div className="flex flex-col justify-center px-16 py-14">
+        <div className="flex flex-col justify-center px-6 py-10 md:px-16 md:py-14">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#1a1a1a] leading-tight tracking-tight mb-6">
             {projectName}
           </h1>
@@ -36,7 +36,7 @@ export default function ReportHero({ projectName, themes, heroIntro, heroImage }
           )}
 
           {themes.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {themes.map((theme) => (
                 <ThemeChip
                   key={theme.id}

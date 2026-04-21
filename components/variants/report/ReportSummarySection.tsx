@@ -44,7 +44,7 @@ export default function ReportSummarySection({
       <section className="min-h-[66vh] flex flex-col bg-white">
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2">
           {/* Left: summary text */}
-          <div className="flex flex-col justify-center px-16 py-14">
+          <div className="flex flex-col justify-center px-6 py-10 md:px-16 md:py-14">
             <div className="space-y-8">
               <div className="relative">
                 <ShareAction shareTitle={ctaConfig.shareTitle ?? projectTitle} />
@@ -75,7 +75,7 @@ export default function ReportSummarySection({
 
       {/* Bottom: broker block + primary CTA (own section, breathes) */}
       {(hasBrokerBlock || ctaConfig.primaryLabel) && (
-        <section className="bg-white px-16 py-20">
+        <section className="bg-white px-6 py-12 md:px-16 md:py-20">
           <div className="max-w-[800px] mx-auto space-y-8">
             {hasBrokerBlock && (
               <div className="space-y-5">

@@ -55,8 +55,8 @@ export default function ThemeChip({
         )}
       >
         <Icon className="w-5 h-5 text-[#7a7062] flex-shrink-0" aria-hidden="true" />
-        <div className="text-left min-w-0">
-          <span className="font-semibold text-sm text-[#1a1a1a] whitespace-nowrap">
+        <div className="text-left min-w-0 flex-1">
+          <span className="font-semibold text-sm text-[#1a1a1a] leading-snug">
             {label}
           </span>
           {theme.question && (
@@ -102,10 +102,10 @@ export default function ThemeChip({
         className={cn("w-5 h-5 flex-shrink-0", isSelected ? "text-[#7a7062]" : "text-[#a0998f]")}
         aria-hidden="true"
       />
-      <div className="text-left min-w-0">
+      <div className="text-left min-w-0 flex-1">
         <span
           className={cn(
-            "font-semibold text-sm whitespace-nowrap",
+            "font-semibold text-sm leading-snug",
             isSelected ? "text-[#1a1a1a]" : "text-[#a0998f]",
           )}
         >

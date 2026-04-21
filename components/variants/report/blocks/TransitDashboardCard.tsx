@@ -73,8 +73,8 @@ function StopList({ stops, categoryId }: { stops: StopDepartures[]; categoryId: 
 
   return (
     <div className="flex gap-3">
-      {/* Left: illustration panel (1/3 width) */}
-      <div className="w-1/3 shrink-0 relative rounded-lg overflow-hidden bg-[#ede9e3] min-h-[120px]">
+      {/* Left: illustration panel (1/3 width) — hidden on mobile to give stop names room */}
+      <div className="hidden sm:block w-1/3 shrink-0 relative rounded-lg overflow-hidden bg-[#ede9e3] min-h-[120px]">
         {illustrationSrc ? (
           <Image
             src={illustrationSrc}
@@ -174,18 +174,18 @@ export default function TransitDashboardCard({
         <>
           {showTabs ? (
             <Tabs value={resolvedTab} onValueChange={setActiveTab} className="flex-col gap-0">
-              <TabsList className="mb-3 h-9 w-full gap-0 bg-[#f0ede8] rounded-full px-1 py-0">
+              <TabsList className="mb-3 h-9 w-full gap-0 bg-[#f0ede8] rounded-full px-1 py-0 overflow-x-auto scrollbar-hide justify-start sm:justify-center">
                 {activeCategories.map((cat) => {
                   const Icon = cat.Icon;
                   return (
                     <TabsTrigger
                       key={cat.id}
                       value={cat.id}
-                      className="flex-1 gap-1.5 px-2 py-1 text-xs rounded-full data-[state=active]:bg-[#2c2521] data-[state=active]:text-white text-[#8a8a8a]"
+                      className="shrink-0 sm:flex-1 gap-1.5 px-3 sm:px-2 py-1 text-xs rounded-full data-[state=active]:bg-[#2c2521] data-[state=active]:text-white text-[#8a8a8a]"
                     >
-                      <Icon className="w-3.5 h-3.5" />
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
                       {cat.label}
-                      <span className="opacity-60 ml-0.5">{grouped[cat.id].length}</span>
+                      <span className="opacity-60 ml-0.5 shrink-0">{grouped[cat.id].length}</span>
                     </TabsTrigger>
                   );
                 })}

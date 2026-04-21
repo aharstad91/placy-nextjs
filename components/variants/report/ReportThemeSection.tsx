@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import type { Coordinates, POI } from "@/lib/types";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
@@ -98,6 +98,24 @@ export default function ReportThemeSection({
   );
 
   const [expanded, setExpanded] = useState(false);
+  const toggleButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Ved kollaps: sørg for at "Vis mindre"-knappen holder seg synlig.
+  // Uten dette hopper knappen ut av viewport på mobil når ~1000px innhold
+  // nedenfor den forsvinner. Smooth scroll matcher max-height-animasjonen.
+  const handleToggle = useCallback(() => {
+    const wasExpanded = expanded;
+    setExpanded((v) => !v);
+    if (wasExpanded) {
+      // Vent én frame slik at state-oppdateringen trer i kraft før vi måler.
+      requestAnimationFrame(() => {
+        toggleButtonRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+    }
+  }, [expanded]);
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const openMap = useCallback(() => setMapDialogOpen(true), []);
 
@@ -331,16 +349,24 @@ export default function ReportThemeSection({
 
         {/* Progressiv disclosure nivå 2 — grounding-narrativ + kart + sources.
             Når !expanded rendres kun en peek av grounding-narrativen bak fade
-            (tease-signal: "det ligger mer her"). */}
+            (tease-signal: "det ligger mer her"). Alle disclosure-wrappere
+            animerer max-height med ease-in-out slik at kollaps ikke gir et
+            abrupt scroll-hopp på mobil. */}
         {variant !== "secondary" && (segments.length > 0 || theme.intro) && (
           <>
-            {/* Transport: address input sitter over grounding. Kun synlig når expanded. */}
-            {expanded && isTransport && projectName && (
-              <div className="mt-6">
-                <ReportAddressInput
-                  propertyCoordinates={[center.lng, center.lat]}
-                  propertyName={projectName}
-                />
+            {/* Transport: address input sitter over grounding. */}
+            {isTransport && projectName && (
+              <div
+                className="overflow-hidden transition-[max-height] duration-500 ease-in-out"
+                style={{ maxHeight: expanded ? "600px" : "0px" }}
+                aria-hidden={!expanded}
+              >
+                <div className="mt-6">
+                  <ReportAddressInput
+                    propertyCoordinates={[center.lng, center.lat]}
+                    propertyName={projectName}
+                  />
+                </div>
               </div>
             )}
 
@@ -349,11 +375,8 @@ export default function ReportThemeSection({
             {theme.grounding && (
               <div className="relative mt-4">
                 <div
-                  className={
-                    expanded
-                      ? ""
-                      : "max-h-[60px] overflow-hidden pointer-events-none select-none"
-                  }
+                  className="overflow-hidden transition-[max-height] duration-500 ease-in-out"
+                  style={{ maxHeight: expanded ? "6000px" : "60px" }}
                   aria-hidden={expanded ? undefined : true}
                 >
                   {theme.grounding.groundingVersion === 2 ? (
@@ -365,75 +388,79 @@ export default function ReportThemeSection({
                     <ReportGroundingInline grounding={theme.grounding} />
                   )}
                 </div>
-                {!expanded && (
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-white"
-                  />
-                )}
+                <div
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-white transition-opacity duration-500 ease-in-out ${expanded ? "opacity-0" : "opacity-100"}`}
+                />
               </div>
             )}
 
             {/* Les mer / Vis mindre — sentrert under gradient. */}
             <div className="mt-4 flex justify-center">
               <button
+                ref={toggleButtonRef}
                 type="button"
-                onClick={() => setExpanded((v) => !v)}
-                className="flex items-center gap-1.5 text-sm font-medium text-[#6a5f51] hover:text-[#3a3530] transition-colors"
+                onClick={handleToggle}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#d4cfc8] text-sm font-medium text-[#3a3530] shadow-sm hover:bg-[#faf9f7] hover:border-[#a89f92] hover:shadow-md active:scale-[0.98] transition-all"
                 aria-expanded={expanded}
               >
                 {expanded ? (
                   <>
                     Vis mindre
-                    <ChevronUp className="w-3.5 h-3.5" />
+                    <ChevronUp className="w-4 h-4" />
                   </>
                 ) : (
                   <>
                     Les mer om {theme.name}
-                    <ChevronDown className="w-3.5 h-3.5" />
+                    <ChevronDown className="w-4 h-4" />
                   </>
                 )}
               </button>
             </div>
 
-            {/* Kart-preview — under grounding-narrativen, over kilder/legal.
+            {/* Kart-preview + kilder — kollapser sammen med smooth max-height.
                 !mapDialogOpen hindrer dual-WebGL-kontekst på iOS. */}
-            {expanded && !mapDialogOpen && theme.allPOIs.length > 0 && (
-              <div className="mt-8 animate-in fade-in duration-300">
-                <button
-                  type="button"
-                  onClick={openMap}
-                  className="h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
-                >
-                  <ReportThemeMap
-                    pois={theme.allPOIs}
-                    center={center}
-                    highlightedPOIId={null}
-                    onMarkerClick={() => {}}
-                    mapStyle={mapStyle}
-                    activated={false}
-                    projectName={projectName}
-                    trails={theme.trails}
-                    vehiclePositions={vehiclePositions}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
-                    <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
-                      {theme.allPOIs.length} steder på kartet
-                    </p>
-                    <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
-                      <MapPin className="w-4 h-4 text-[#7a7062]" />
-                      Utforsk kartet
+            <div
+              className="overflow-hidden transition-[max-height] duration-500 ease-in-out"
+              style={{ maxHeight: expanded ? "6000px" : "0px" }}
+              aria-hidden={!expanded}
+            >
+              {!mapDialogOpen && theme.allPOIs.length > 0 && (
+                <div className="mt-8">
+                  <button
+                    type="button"
+                    onClick={openMap}
+                    className="h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
+                  >
+                    <ReportThemeMap
+                      pois={theme.allPOIs}
+                      center={center}
+                      highlightedPOIId={null}
+                      onMarkerClick={() => {}}
+                      mapStyle={mapStyle}
+                      activated={false}
+                      projectName={projectName}
+                      trails={theme.trails}
+                      vehiclePositions={vehiclePositions}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
+                      <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
+                        {theme.allPOIs.length} steder på kartet
+                      </p>
+                      <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
+                        <MapPin className="w-4 h-4 text-[#7a7062]" />
+                        Utforsk kartet
+                      </div>
                     </div>
-                  </div>
-                </button>
-              </div>
-            )}
+                  </button>
+                </div>
+              )}
 
-            {/* Kilder + Google foreslår også + attribution — helt på bunn. */}
-            {expanded && theme.grounding && (
-              <ReportGroundingSources grounding={theme.grounding} />
-            )}
+              {theme.grounding && (
+                <ReportGroundingSources grounding={theme.grounding} />
+              )}
+            </div>
           </>
         )}
 
