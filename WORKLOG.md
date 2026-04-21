@@ -2386,3 +2386,39 @@ detail: |
   URL: http://localhost:3000/eiendom/fredensborg-bolig/overvik/rapport
 status: done
 ---
+
+## 2026-04-20 (sent kveld) — Markedsanalyse: dimensjonering av Placy-gründerprosjektet
+
+**Ikke-teknisk økt** — strategisk sparring for å estimere marked, pris og inntektspotensial.
+
+### 1. Markedsstørrelse (norsk privatmarked)
+
+- Bruktboliger: 90 000–110 000 salg per år (2025 = rekordår med > 108 000)
+- Nybygg: ca. 15 500 solgte nye boliger per år
+- Definerer maks potensial for volum
+
+### 2. Pris- og kostnadsanalyse
+
+- **Hypotese**: Meglere betaler 500–800 kr ekskl. mva per nabolagsprofil
+- **Live-verifikasjon**: Testet bestillingsløsning for Martin Barstads veg 23C → **617 kr ekskl. mva**
+- Hypotesen bekreftet — prisnivået er innenfor estimatet
+
+### 3. Forretningscase ved 10 % markedsandel (pris 500 kr/enhet)
+
+| Segment | Volum | Årlig omsetning |
+|---------|-------|-----------------|
+| Bruktbolig | ~10 000 enheter | **~5 000 000 kr** |
+| Nybygg | ~1 550 enheter | ~775 000 kr |
+| Næring | Mindre volum | ~125 000 kr (høyere pris per profil mulig) |
+| **Totalt** | | **~5 900 000 kr** |
+
+### 4. Strategiske tekniske pilarer
+
+To fundamentale forutsetninger for å oppnå volum:
+1. **API-integrasjoner** — Placy må snakke automatisk med meglernes fagsystemer og hjemmesider. Manuelle bestillinger skalerer ikke til 10 % markedsandel.
+2. **Datafangst** — Korrekt inndata (kommunenummer + gårds-/bruksnummer) er avgjørende for å hente data fra Kartverket.
+
+### 5. Parkert spørsmål
+
+- **Neste steg**: Spisse verdiforslag mot næringseiendom? Eller prioritere tekniske krav for API-integrasjon?
+- Avklares i neste sparringsøkt.
