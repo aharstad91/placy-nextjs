@@ -3350,3 +3350,38 @@ Konsoliderte POI-visning i Report: fjernet `FeatureCarousel` (Mat & Drikke-spesi
 - **En card-komponent på tvers av kart og tekst fungerer uten hacks.** `rovingTabindex`-prop-en var nok til å differentiere de to UX-kontekstene. Ingen forking av JSX, ingen wrapper-komponenter.
 - **Ranking i data-laget vs. komponent-laget.** Fristende å compute i komponenten, men data-laget er riktig plass — sikrer konsistens mellom kart-bunn og tekst-slider uten at to steder kan gå ut av sync.
 - **Pre-commit hook stoppet aldri.** 16 endrede filer, 0 lint-errors, 0 TS-errors, alle nye tester grønne på første kjøring. Deepen-plan-fasens research-investering betalte seg.
+
+---
+
+## 2026-04-20 (kveld) — Progressiv disclosure + kuraterte POI-slots
+
+### Kontekst
+Rett etter PR #68 (unified POI-carousel) merget. Brukeren pivoterte: i stedet for alltid synlig slider + alltid synlig kart, ville han ha progressive disclosure i tre nivåer + kuraterte anchor-slots per tema.
+
+### Beslutninger
+
+- **`poiTier` brukes IKKE til skoletrinn.** Plan antok opprinnelig `poiTier: 1/2/3` ≈ barneskole/ungdomsskole/VGS. Verifisering under /full avdekket at `poiTier` er kvalitetstier (primær/sekundær/øvrig), ikke skolenivå. Skoler skilles via navn-matching + `school-zones.ts`. Valgt løsning: `barn-oppvekst` anchors = `barnehage/skole/lekeplass` — skoletrinn håndteres allerede av `SchoolCard` i `ReportHeroInsight`.
+- **Kart-preview flyttes INNE i expanded-seksjon.** Tidligere: alltid synlig under tema. Nå: avdekkes først etter CTA-klikk "Se alle N steder på kartet". Ren 3-nivå progressive disclosure: narrativ → slider+grounding → kart.
+- **`curatedSliderPOIs` er OPTIONAL på ReportTheme.** Unngår breakage av eksisterende test-fixtures som konstruerer ReportTheme-literals.
+- **`mapPreviewVisible` resettes ved "Vis mindre".** Neste ekspansjon starter i nivå 2, ikke nivå 3.
+- **Næring-temaer får ikke anchors enda.** `hverdagstjenester` og `nabolaget` er ikke i `THEME_ANCHOR_SLOTS` → faller tilbake til pure ranking (graceful). Kan konfigureres senere.
+- **line-clamp-[6] > max-h.** Font-size-agnostisk, klipper på linjegrense. Gradient-fade `to-[#f5f1ec]` matcher seksjons-bakgrunn.
+
+### Parkert / Åpne spørsmål
+
+- **Næring-temaer uten anchors** — `hverdagstjenester`/`nabolaget` bruker ren ranking. Kan konfigureres når vi har næringsprosjekter der kuraterte slots gir mening.
+- **Pre-existing test failures** (`validator.test.ts` × 3) — bekreftet pre-existing, arvet fra main før denne sesjonen. Ikke denne sesjonens ansvar.
+- **Animasjon på "Les mer"-reveal** — nå ingen custom animasjon (slider og grounding snapper inn). Kart-preview har `animate-in fade-in duration-300`. Kan legges på expanded-reveal om det oppleves harsh.
+
+### Retning
+
+- Progressive disclosure-mønsteret er nå etablert for Report. Dette er et prinsipp som kan utvides: default-state viser kun preview, interesse triggerer detaljer. Applicable også for Explorer-kort og Guide-seksjoner.
+- Kuraterte anchor-slots gir et rammeverk for å matche UX-forventninger mot data-virkelighet. "Boligkjøperen spør alltid X" → X er slot 1. Lavere eksponering av "hva enn Google rater høyt".
+- `theme.topRanked` vs `theme.curatedSliderPOIs` er bevisst delt: topRanked → konsistent rekkefølge i kart-modal (10 items); curatedSliderPOIs → UX-kuratert slider (6 items). Ikke sammenfall mellom ranking og curation.
+
+### Observasjoner
+
+- **Plan-audit fanget 3 RED issues, men misset én.** Audit flagget `poi.category.id runtime verification` for spot-check — dette var signalet for å verifisere under /full, og verifikasjonen avdekket `poiTier`-feil. Dette er prosessen som fungerer: plan + audit + /full-verifikasjon fanger ulike feil-typer.
+- **Session-log-recovery virket.** Plan+brainstorm ble borte da worktree ble force-removed, men rekonstruert fra JSONL-session-loggen (initial Write + alle Edits applied i rekkefølge). Verdt å huske for neste gang worktree nuking skjer.
+- **Test-count: 10 nye tester for `getCuratedPOIs`** — hver TC fra plan pluss 3 edge cases. Alle grønne på første kjøring.
+- **Ingen runtime LLM-kall, ingen nye API-kall, ingen datamodell-endringer.** Ren UI-logikk pluss en util-funksjon. Build-time only.

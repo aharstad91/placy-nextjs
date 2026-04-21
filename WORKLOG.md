@@ -2422,3 +2422,45 @@ To fundamentale forutsetninger for å oppnå volum:
 
 - **Neste steg**: Spisse verdiforslag mot næringseiendom? Eller prioritere tekniske krav for API-integrasjon?
 - Avklares i neste sparringsøkt.
+
+## 2026-04-20 (kveld) — Progressiv disclosure + kuraterte POI-slots
+
+**Branch:** `feat/curated-poi-slots` (worktree: `placy-ralph-curated-poi`, port 3003)
+
+### Hva som ble bygget
+
+To sammenkoblede forbedringer av Report-tekstseksjonen:
+
+1. **Progressive disclosure i 3 nivåer** per tema-seksjon:
+   - Nivå 1 (default): Placy-narrativ + structured cards + "Les mer om {theme.name}"-knapp
+   - Nivå 2 (expanded): + Address input (transport) + kuratert POI-slider + Gemini-grounding
+   - Nivå 3 (CTA-klikk): + dormant kart-preview (animate-in)
+
+2. **Kuraterte POI-slots per tema**: Anchor-kategorier fyller slot 1..N, ranking fyller resten. BOLIG-temaer:
+   - barn-oppvekst: barnehage, skole, lekeplass
+   - hverdagsliv: supermarket, pharmacy, shopping
+   - trening-aktivitet: 3× gym (nærmest-first)
+   - transport: bus, bike, carshare
+   - natur-friluftsliv: park, outdoor, badeplass
+   - opplevelser: library, cinema (slot 3 = ranking)
+   - mat-drikke: ingen anchors (pure ranking)
+
+### Filer endret
+- `components/variants/report/top-ranked-pois.ts` — `AnchorSlot`, `THEME_ANCHOR_SLOTS`, `getCuratedPOIs`
+- `components/variants/report/top-ranked-pois.test.ts` — 10 nye tester
+- `components/variants/report/report-data.ts` — `curatedSliderPOIs?` felt + populering
+- `components/variants/report/ReportThemeSection.tsx` — `expanded` + `mapPreviewVisible` state, full re-struktur
+- `docs/solutions/ui-patterns/progressive-disclosure-kuratert-poi-slots-20260420.md` — NY compound doc
+- `PROJECT-LOG.md` — sesjon-entry
+- `docs/brainstorms/2026-04-20-kuratert-poi-slots-lazy-kart-brainstorm.md` — NY
+- `docs/plans/2026-04-20-feat-kuraterte-poi-slots-progressiv-disclosure-plan.md` — NY
+
+### Teknisk
+- **Tester:** 20 passing i `top-ranked-pois.test.ts`; totalt 218/221 passing (3 pre-existing failures i `validator.test.ts`, ikke relatert).
+- **Type-sjekk:** Ren (`npx tsc --noEmit`).
+- **Lint:** 0 errors.
+- **Build:** Next.js production build grønt.
+- **Manuell verifikasjon:** Chrome DevTools bekreftet TC-1, TC-2, TC-3, TC-11, TC-12 på Ferjemannsveien 10-rapporten.
+
+### Viktigste audit-fix under implementering
+Plan antok `poiTier: 1/2/3` ≈ barneskole/ungdomsskole/VGS for barn-oppvekst. Verifisering avdekket at `poiTier` er kvalitetstier (primær/sekundær/øvrig), ikke skolenivå. Skoletrinn skilles via navn-matching + `school-zones.ts`, og håndteres allerede av `SchoolCard` i `ReportHeroInsight`. Løsning: byttet anchors til `barnehage/skole/lekeplass`.
