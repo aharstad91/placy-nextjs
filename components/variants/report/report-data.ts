@@ -95,8 +95,7 @@ export interface ReportTheme {
   intro?: string;
   bridgeText?: string;
   upperNarrative?: string;
-  extendedBridgeText?: string;
-  lowerNarrative?: string;
+  leadText?: string;
   readMoreQuery?: string;
   /** Build-time Gemini-grounding, Zod-validated. Undefined = skjul "Utdyp med Google AI"-knappen. */
   grounding?: ReportThemeGroundingView;
@@ -547,8 +546,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
         getHeroInsightPOIIds(themeDef.id, filtered, center),
       ),
       upperNarrative: (themeDef as { upperNarrative?: string }).upperNarrative,
-      extendedBridgeText: (themeDef as { extendedBridgeText?: string }).extendedBridgeText,
-      lowerNarrative: (themeDef as { lowerNarrative?: string }).lowerNarrative,
+      leadText: (themeDef as { leadText?: string }).leadText,
       readMoreQuery: themeDef.readMoreQuery,
       grounding: parseGroundingOrLog(themeDef.grounding, project, themeDef.id),
       stats: {

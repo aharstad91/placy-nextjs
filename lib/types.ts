@@ -278,7 +278,7 @@ export interface ReportThemeConfig {
   intro?: string;
   bridgeText?: string;
   upperNarrative?: string;
-  lowerNarrative?: string;
+  leadText?: string;
   categoryDescriptions?: Record<string, string>;
   /** Google AI Mode-søk (udm=50) for "Les mer"-knapp. Short, generic query — Google handler fersk detalj. */
   readMoreQuery?: string;

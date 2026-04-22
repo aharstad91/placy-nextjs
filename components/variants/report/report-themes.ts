@@ -10,8 +10,7 @@ export interface ReportThemeDefinition extends ThemeDefinition {
   intro?: string;
   bridgeText?: string;
   upperNarrative?: string;
-  extendedBridgeText?: string;
-  lowerNarrative?: string;
+  leadText?: string;
   categoryDescriptions?: Record<string, string>;
   readMoreQuery?: string;
   /** Build-time Gemini-grounding (fra products.config). Zod-parses i report-data.ts. */
@@ -24,7 +23,7 @@ export interface ReportThemeDefinition extends ThemeDefinition {
  * 2. bransjeprofil.themes — tag-driven
  * 3. DEFAULT_THEMES — global fallback (lowest)
  *
- * reportConfig themes often only have id + editorial fields (bridgeText, extendedBridgeText,
+ * reportConfig themes often only have id + editorial fields (bridgeText, leadText,
  * categories). Missing name/icon/color are filled from the bransjeprofil definition.
  */
 export function getReportThemes(project: Project): ReportThemeDefinition[] {

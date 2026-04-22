@@ -129,11 +129,9 @@ export default function ReportThemeSection({
     ? linkPOIsInText(theme.upperNarrative, theme.allPOIs)
     : [];
 
-  // Parse lower narrative (below cards) — bil, bildeling, elbil, tog, flybuss
-  // Falls back to extendedBridgeText for backward compat.
-  const lowerText = theme.lowerNarrative ?? theme.extendedBridgeText;
-  const segments = lowerText
-    ? linkPOIsInText(lowerText, theme.allPOIs)
+  // Parse lead text — always visible below title, with inline POI-chips
+  const segments = theme.leadText
+    ? linkPOIsInText(theme.leadText, theme.allPOIs)
     : [];
 
   // POIs mentioned in text + hero insight card — show permanent labels on the map
