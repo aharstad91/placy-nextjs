@@ -119,23 +119,6 @@ function InsightCard({
 // 3. Transport — Live Dashboard
 // ============================================================
 
-// DEMO: hardkodede stopp for å vise alle tre tabs (Tog / Trikk / Buss)
-const DEMO_EXTRA_STOPS: StopDepartures[] = [
-  { stopName: "Leangen stasjon", stopId: "demo-train-2", walkMin: 3, categoryId: "train", quays: [], departures: [] },
-  { stopName: "Marienborg stasjon", stopId: "demo-train-3", walkMin: 4, categoryId: "train", quays: [], departures: [] },
-  { stopName: "Heimdal stasjon", stopId: "demo-train-4", walkMin: 5, categoryId: "train", quays: [], departures: [] },
-  { stopName: "Kongens gate", stopId: "demo-tram-1", walkMin: 2, categoryId: "tram", quays: [], departures: [] },
-  { stopName: "Skansen", stopId: "demo-tram-2", walkMin: 3, categoryId: "tram", quays: [], departures: [] },
-  { stopName: "Elgeseter gate", stopId: "demo-tram-3", walkMin: 4, categoryId: "tram", quays: [], departures: [] },
-  { stopName: "Nedre Elvehavn", stopId: "demo-tram-4", walkMin: 5, categoryId: "tram", quays: [], departures: [] },
-  { stopName: "Jernbanetorget T-bane", stopId: "demo-metro-1", walkMin: 1, categoryId: "metro", quays: [], departures: [] },
-  { stopName: "Nationaltheatret", stopId: "demo-metro-2", walkMin: 2, categoryId: "metro", quays: [], departures: [] },
-  { stopName: "Stortinget", stopId: "demo-metro-3", walkMin: 3, categoryId: "metro", quays: [], departures: [] },
-  { stopName: "Taxi — Sentralstasjonen", stopId: "demo-taxi-1", walkMin: 1, categoryId: "taxi", quays: [], departures: [] },
-  { stopName: "Taxi — Torget", stopId: "demo-taxi-2", walkMin: 3, categoryId: "taxi", quays: [], departures: [] },
-  { stopName: "Taxi — Pirsenteret", stopId: "demo-taxi-3", walkMin: 4, categoryId: "taxi", quays: [], departures: [] },
-];
-
 function TransportDashboard({ theme, center }: HeroInsightProps) {
   const pois = theme.allPOIs;
   const dashboard = useTransportDashboard(pois, center);
@@ -146,11 +129,9 @@ function TransportDashboard({ theme, center }: HeroInsightProps) {
       ["bus", "tram", "train"].includes(p.category.id),
   ).length;
 
-  const demoStops = [...dashboard.departures, ...DEMO_EXTRA_STOPS];
-
   return (
     <TransitDashboardCard
-      stops={demoStops}
+      stops={dashboard.departures}
       loading={dashboard.loading}
       lastUpdated={dashboard.lastUpdated}
       transitCount={transitStops}
