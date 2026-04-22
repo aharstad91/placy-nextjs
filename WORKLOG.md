@@ -4,6 +4,51 @@
 
 ---
 date: 2026-04-22
+action: Rapport-terminologi refactor — lowerNarrative/extendedBridgeText → leadText (full /full-syklus)
+scope: Rapport-produktet, 10 commits, prod JSONB-migrasjon
+files:
+  - supabase/migrations/067_rename_narrative_to_lead.sql (JSONB UPDATE med NULLIF/COALESCE/jsonb_typeof-guards)
+  - scripts/rollback/067_rename_narrative_to_lead.rollback.sql (best-effort reverse)
+  - scripts/rollback/runbook-067-{test-connection,pg-dump,pre-count,dry-run,commit,verify}.sh
+  - lib/types.ts (ReportThemeConfig.lowerNarrative → leadText)
+  - components/variants/report/report-data.ts + report-themes.ts (fjernet extendedBridgeText)
+  - components/variants/report/ReportThemeSection.tsx (fjernet `?? extendedBridgeText`-fallback)
+  - .claude/skills/generate-rapport/SKILL.md + references/sj-prinsipper.md (grep-sveip)
+  - .claude/skills/curator/references/bridge-text-calibration.md (transport-case skrevet posisjonelt)
+  - docs/brainstorms/2026-04-22-leadtext-refactor-brainstorm.md
+  - docs/plans/2026-04-22-001-refactor-leadtext-rename-plan.md
+  - docs/solutions/architecture-patterns/safe-jsonb-rename-migration-with-runbook-20260422.md
+  - CLAUDE.md (docs/solutions/ surfacet i kontekst-dokumenter + Scope is Sacred-policy)
+  - .claude/commands/full.md (Placy-tuned /full-wrapper over compound-engineering 2.68.1)
+problem: |
+  theme.lowerNarrative og theme.extendedBridgeText var historiske feltnavn uten semantisk kobling
+  til rollen ("lead-tekst" alltid synlig under tittel). Forvirret i kode-review og skill-prompts.
+  Prod-data hadde 0 rader med lowerNarrative, 65 temaer med kun extendedBridgeText — "nyere" felt
+  fra migrasjon 051 ble aldri rullet ut. I praksis renamet vi extendedBridgeText → leadText.
+fix:
+  - Kjørte full /full-syklus: brainstorm → plan → doc-review → work → compound
+  - Minimal scope ratifisert: upperNarrative og grounding.narrative/curatedNarrative uendret
+  - Big-bang rollout akseptert pga prototype-status (ingen live klient-trafikk)
+  - Hardened JSONB UPDATE mot products-tabellen (13 rader oppdatert, 65 temaer migrert)
+  - pg_dump via pooler port 5432 (session-mode) før commit
+  - Dry-run via BEGIN/ROLLBACK før ekte COMMIT
+  - Pre/post-count-diff verifiserte null data-tap
+  - Grep-gate mot hele code-base + skill-filer returnerte 0 hits etter refactor
+result: |
+  ✓ Prod-migrasjon kjørt uten issues (residual=0, pre/post-count matcher)
+  ✓ Kode pushet til main (10 commits), Vercel-deploy ute
+  ✓ Localhost rendrer leadText korrekt på Wesselsløkka-rapport
+  ✓ Knowledge compounded: docs/solutions/architecture-patterns/safe-jsonb-rename-migration-with-runbook-20260422.md
+  ✓ Project-memory: project_stage_prototype.md (prototype-status dokumentert)
+learnings:
+  - pg_dump krever pooler port 5432 (session-mode), ikke 6543 (transaction-mode)
+  - rg har ikke --type tsx; bruk -t ts eller -g '*.tsx'
+  - TypeScript `as { field?: T }`-casts bypasser kompilator — grep er den faktiske safety-net-en for refactorer
+  - jsonb_set(path, subquery) skriver NULL stille når subquery er NULL; alltid wrap i COALESCE
+  - ce-doc-review's adversarial-persona verifiserer prod-data-realitet mot schema-antakelser — fanget invertert premiss her
+
+---
+date: 2026-04-22
 action: POI-chips i bridgeText + theme-categories utvidet — fikser inkonsekvens i inline-POIs per kategori
 files:
   - components/variants/report/ReportThemeSection.tsx (bridgeText gjennom linkPOIsInText + POIPopover-rendering)
