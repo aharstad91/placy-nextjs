@@ -1,6 +1,6 @@
 # Bridge Text Calibration — Gullstandard
 
-Denne filen inneholder Brøset 046 som gullstandard for bridgeText, extendedBridgeText og heroIntro. Bruk som kalibrering når du genererer nye tekster.
+Denne filen inneholder Brøset 046 som gullstandard for bridgeText, leadText og heroIntro. Bruk som kalibrering når du genererer nye tekster.
 
 ---
 
@@ -27,7 +27,7 @@ Brøset-prosjektet (mars 2026) satte kvalitetsstandarden for boligrapporter. All
 
 **Mønster:** Ankersteder (Valentinlyst Senter, MENY Moholt) som ytterpunkter for dagliglivet. Siste setning = hverdagskonklusjon.
 
-**extendedBridgeText:**
+**leadText:**
 > "Fra Brøset er det fem minutter ned til Valentinlyst Senter — Coop Mega, Apotek 1, Boots og postutlevering samlet under ett tak. Videre langs Valentinlystveien ligger MENY Moholt med ferskvaredisk og parkeringsmuligheter. For variasjon er Rema 1000 på Strindheim og Bunnpris på Eberg begge innen kort rekkevidde. Fem frisører finnes innen ti minutters gangavstand — fra Cowboys and Angels til Persaunet Hårsenter, som har holdt det gående i over førti år. Fastlege og legevakt ligger på Øya, rundt ti minutter med buss."
 
 **Mønster:** Bevegelse fra nærmest til fjernest. Overraskelse i nest siste setning (Persaunet Hårsenter, førti år). Siste setning = helsetjenester som avrunding.
@@ -41,7 +41,7 @@ Brøset-prosjektet (mars 2026) satte kvalitetsstandarden for boligrapporter. All
 
 **Mønster:** Skolekrets først (nærskolen), deretter barnehage, til slutt idrettsanlegg som ytterpunkter.
 
-**extendedBridgeText:**
+**leadText:**
 > "Eberg skole tar under ti minutter å gå til — aktivt FAU og variert SFO-tilbud for barna i Brøset-kretsen. Brøset barnehage er nærmest, men over tjue alternativer finnes innen kort avstand, både kommunale og private. Blussuvoll ungdomsskole ligger like ved, og for videregående er Strinda et naturlig valg med studiespesialisering og idrettsfag. Idrettsanleggene på Leangen og Blussuvoll har fotball, handball, svømming og friidrett — og lekeplassen i Ole Hogstads veg er to minutter fra døren."
 
 **Mønster:** Følger barnets alder (barneskole → barnehage → ungdomsskole → VGS → fritid). Overraskelse = lekeplassen to minutter unna.
@@ -55,7 +55,7 @@ Brøset-prosjektet (mars 2026) satte kvalitetsstandarden for boligrapporter. All
 
 **Mønster:** Lokal utvikling + sentrum som utvidelse. Ærlig om at forstaden ikke har alt — sentrum er tilgjengelig.
 
-**extendedBridgeText:**
+**leadText:**
 > "Matscenen rundt Brøset er i utvikling. Moholt Allmenning fungerer som voksende knutepunkt med nyåpnede steder i takt med studentbyens utbygging. Leangen har restauranter knyttet til handelsområdet, og Strindheim byr på både pizzeria og asiatiske kjøkken. Bakeri og kafé finnes innen fem til ti minutters sykkeltur. Sentrum — fra Bakklandet til Solsiden — er ti til femten minutter med buss, med hele Trondheims restaurantscene innen rekkevidde."
 
 **Mønster:** Ærlig om at forstaden utvikler seg. Bevegelse utover i konsentriske sirkler. Sentrum som endepunkt, ikke unnskyldning.
@@ -69,7 +69,7 @@ Brøset-prosjektet (mars 2026) satte kvalitetsstandarden for boligrapporter. All
 
 **Mønster:** Marka som dramatisk ankerpunkt (enden av gaten!), deretter lokale grøntområder som kontrast.
 
-**extendedBridgeText:**
+**leadText:**
 > "Fra Brøset kan du gå rett inn i Estenstadmarka — et sammenhengende turområde med merkede stier, flere utsiktspunkter mot byen og fjorden, og lysløype for langrenn om vinteren. For kortere turer er Brøset-parken og grøntområdene rundt det gamle sykehusområdet fine for rundturer. Leangenbekken renner gjennom nabolaget og gir en naturlig grønn korridor. Jonsvatnet — Trondheims drikkevannskilde og populære badespot — er en kort sykkeltur unna. Bymarka er tilgjengelig via sykkelsti gjennom Moholt."
 
 **Mønster:** Fra marka inn til lokalt, deretter ut igjen (Jonsvatnet, Bymarka). Overraskelse = Jonsvatnet som badespot.
@@ -84,9 +84,11 @@ Transport-temaet har tre tekstfelt (i stedet for to som de andre temaene):
 |------|-----------|-------|--------|
 | `bridgeText` | Italic under tittel | Kategori-helhet — ikke sub-kategorier | 1–2 setninger |
 | `upperNarrative` | Mellom bridge og live-kortene | Buss, bysykkel, sparkesykkel — "her og nå" | 2–4 setninger |
-| `lowerNarrative` | Under live-kortene og knappen | Bil, bildeling, elbillading, tog, flybuss | 3–5 setninger |
+| `leadText` | Under live-kortene og knappen | Bil, bildeling, elbillading, tog, flybuss | 3–5 setninger |
 
-**Viktig:** `bridgeText` skal IKKE nevne spesifikke linjenummer, stoppenavn eller sub-kategorier. Det er bridge textens jobb for andre temaer, men for transport gir `upperNarrative` og `lowerNarrative` detaljene.
+**Viktig:** `bridgeText` skal IKKE nevne spesifikke linjenummer, stoppenavn eller sub-kategorier. Det er bridge textens jobb for andre temaer, men for transport gir `upperNarrative` og `leadText` detaljene.
+
+> For transport-temaet rendres `leadText` posisjonelt under live-kortene (bil/bildeling/tog/flybuss). Teksten som rendres over live-kortene — fortsatt kjent som `upperNarrative` i datamodellen — er uendret av denne bruks-modusen.
 
 ---
 
@@ -118,7 +120,7 @@ Brukeren ser live-antall i kortene rett under. Teksten gir kontekst til tallene 
 
 ---
 
-#### lowerNarrative (bil + bildeling + elbillading + tog + flybuss)
+#### leadText (bil + bildeling + elbillading + tog + flybuss — under live-kortene for transport-temaet)
 
 **Gullstandard (Wesselsløkka):**
 > "For bil er Nyhavnavveien en rask vei mot E6 og videre sørover. Hyre og Getaround tilbyr bildeling uten binding — begge er tilgjengelige i nabolaget. Fire elbilladere finnes innen ti minutters gange. Leangen stasjon nås med kort sykkeltur og har regiontog mot Stjørdal og Steinkjer."
@@ -134,10 +136,8 @@ Brukeren ser live-antall i kortene rett under. Teksten gir kontekst til tallene 
 
 ---
 
-**extendedBridgeText:**
+**leadText:**
 > "Bussen går hvert tiende minutt i rushtid fra holdeplassene ved Brøset. NTNU Gløshaugen ligger to kilometer unna — de fleste sykler dit på under ti minutter via sykkelekspressen langs Klæbuveien. Trondheim bysykkel har stasjoner på Moholt og Blussuvoll, og e-sykler gjør bakken fra sentrum overkommelig. For bil er det kort vei til E6 via Omkjøringsveien. Nye gang- og sykkelveier planlegges i forbindelse med utbyggingen på Brøset."
-
-> *Merk: `extendedBridgeText` er den gamle enkelt-narrativen. Brukes kun som fallback for prosjekter som ikke har fått `lowerNarrative` ennå.*
 
 ---
 
@@ -148,7 +148,7 @@ Brukeren ser live-antall i kortene rett under. Teksten gir kontekst til tallene 
 
 **Mønster:** Fire ankersteder som viser bredden, avsluttet med utendørsalternativ som kontrast.
 
-**extendedBridgeText:**
+**leadText:**
 > "Treningsmulighetene er et av nabolagets sterkeste kort. MaxPuls på Moholt har det bredeste gruppetilbudet og er nærmest — Trondheims eneste HYROX-godkjente senter, etablert i 2007. Fresh Fitness på Valentinlyst er et rimelig alternativ med lang åpningstid. Blussuvollhallen har svømmebasseng, og Grip klatresenter på Leangen er populært for alle aldre. For utendørs trening har Estenstadmarka apparater langs stiene, og lysløypa er populær for langrenn om vinteren. Leangen idrettsanlegg har friidrettsbane, fotballbaner og tennisbaner tilgjengelige for publikum."
 
 **Mønster:** Åpner med selvtillit ("sterkeste kort"). Hvert sted med ett differensierende faktum. Utendørs som kontrast. Overraskelse = HYROX-godkjent.
@@ -185,7 +185,7 @@ Brukeren ser live-antall i kortene rett under. Teksten gir kontekst til tallene 
 - For mange navn (10+) — bridgeText skal ha 1-2 ankersteder
 - Leser som en oppramsing, ikke nabolagskarakter
 - Mister skogen for bare trær
-- Detaljene hører hjemme i extendedBridgeText, ikke bridgeText
+- Detaljene hører hjemme i leadText, ikke bridgeText
 
 ---
 

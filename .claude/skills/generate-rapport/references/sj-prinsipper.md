@@ -281,7 +281,7 @@ Klassisk AI-tekst-feil: sammensetninger som høres plausible ut men ikke brukes 
 {
   "id": "transport",
   "bridgeText": "...",
-  "extendedBridgeText": "...",
+  "leadText": "...",
   "readMoreQuery": "kollektivtransport fra Trondheim S"
 }
 ```
@@ -560,7 +560,7 @@ Omformuler til: *"Dromedar holder til fire minutter unna — en av Norges mest a
 
 ## Eksempel — før og etter
 
-### Før (dagens Stasjonskvartalet, Barn & Oppvekst extendedBridgeText)
+### Før (dagens Stasjonskvartalet, Barn & Oppvekst leadText)
 > Langs kaifronten fra Brattørkaia til TMV-kaia ligger tre lekeområder under seks minutters gange. Pirbadet åpnet i 2001 og tar imot rundt 400 000 besøkende i året — bølgebasseng, sklier og stupeanlegg gjør det til en fast del av hverdagen for trondheimsfamilier. Bispehaugen skole er nærskolen for 1.–7. trinn, elleve minutter til fots, og Rosenborg skole tar imot elevene videre til ungdomstrinnet. Trondheim katedralskole — grunnlagt i 1152, Norges eldste skole i drift — ligger elleve minutter unna for videregående.
 
 ### Etter (S&J-disciplin, 4 setn for L-kategori)

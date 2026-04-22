@@ -82,7 +82,7 @@ Patches `products` tabellen (product_type=report):
         {
           "id": "hverdagsliv",
           "bridgeText": "Broingssetning + 1 innledende setning (vises alltid)",
-          "extendedBridgeText": "Hovedinnhold, 3-5 setninger (adaptiv lengde)"
+          "leadText": "Hovedinnhold, 3-5 setninger (adaptiv lengde)"
         }
         // ... 6 flere temaer
       ]
@@ -91,7 +91,7 @@ Patches `products` tabellen (product_type=report):
 }
 ```
 
-Pluss oppdatering av `translations` for engelsk bridgeText per tema (ikke extendedBridgeText — den er kun norsk).
+Pluss oppdatering av `translations` for engelsk bridgeText per tema (ikke leadText — den er kun norsk).
 
 ## Personas og vektmatrise
 
@@ -210,7 +210,7 @@ grounding: {
 
 ### Steg 2.7: Curate grounded narrative (v2)
 
-**Hensikt:** Erstatt to-tekst-mønsteret (Placy `extendedBridgeText` + raw Gemini `narrative`) med én unified kuratert tekst per tema. Claude tar Gemini-fakta + prosjektets POI-set + Placy-kontekst, skriver sammenhengende markdown med POI-inline-lenker `[Navn](poi:uuid)`. Rød tråd + POI-chips i hele teksten.
+**Hensikt:** Erstatt to-tekst-mønsteret (Placy `leadText` + raw Gemini `narrative`) med én unified kuratert tekst per tema. Claude tar Gemini-fakta + prosjektets POI-set + Placy-kontekst, skriver sammenhengende markdown med POI-inline-lenker `[Navn](poi:uuid)`. Rød tråd + POI-chips i hele teksten.
 
 **Script-kommandoer:**
 ```bash
@@ -319,20 +319,20 @@ Per kategori:
 
 **Bakoverkompatibel deling:**
 - `bridgeText` = åpning + første hoveinnhold-setning (1-2 setn)
-- `extendedBridgeText` = resten (3-5 setn)
+- `leadText` = resten (3-5 setn)
 
 **Lengde per vekting:**
-- H = 6-7 setn (1-2 i bridgeText + 5 i extendedBridgeText)
+- H = 6-7 setn (1-2 i bridgeText + 5 i leadText)
 - M = 5 setn (1-2 + 4)
 - L = 4 setn (1-2 + 3)
 
-**Engelsk:** Oversett bridgeText til engelsk og lagre i translations. **Ikke oversett extendedBridgeText** (kun NO).
+**Engelsk:** Oversett bridgeText til engelsk og lagre i translations. **Ikke oversett leadText** (kun NO).
 
 ### Steg 8: QA-sjekk
 Kjør `references/qa-checklist.md` på alle tekstene. Hvis noe feiler: korriger og kjør på nytt.
 
 ### Steg 9: Lagre
-- PATCH `products.config.reportConfig` med ny heroIntro + motiver + themes (med oppdaterte bridgeText/extendedBridgeText).
+- PATCH `products.config.reportConfig` med ny heroIntro + motiver + themes (med oppdaterte bridgeText/leadText).
 - POST/upsert `translations` for engelsk bridgeText per theme.
 - Kall `/api/revalidate?tag=product:{id}&secret=...` for cache-refresh.
 
@@ -387,7 +387,7 @@ Se `references/qa-checklist.md` for full sjekkliste.
 
 **6. Google AI Mode har triangulering innebygd — vår WebSearch gjør det ikke.** Framtids-fakta (åpningsdatoer, byggestatus, nye tilbud) krever TO separate queries: én bekreftelse, én negativ-sjekk. Hvis negativ gir treff → hedge eller stryk. Se Steg 3.5.
 
-**7. Meter er no-go. 80 m/min = konverteringsrate.** "85 m" = "rett utenfor døren". "120 m" = "2 min til fots". Gjelder også i extendedBridgeText og POI-avstander fra Supabase. Se regel F i `sj-prinsipper.md`.
+**7. Meter er no-go. 80 m/min = konverteringsrate.** "85 m" = "rett utenfor døren". "120 m" = "2 min til fots". Gjelder også i leadText og POI-avstander fra Supabase. Se regel F i `sj-prinsipper.md`.
 
 **8. Senter-type-disambiguering — ikke alle `shopping_mall` er nærsentre.** Google Places klassifiserer bredt. Før et senter navngis i Hverdagsliv-kategorien, sjekk type:
 
@@ -424,4 +424,4 @@ Se `references/qa-checklist.md` for full sjekkliste.
 Eksisterende rapporter generert via `/generate-bolig` (Stasjonskvartalet, Wesselsløkka, Brøset):
 - Kan regenereres med `/generate-rapport <prosjekt-id> --persona <..>` uten å røre POI-data
 - Legacy Steg 10+11 gir ikke lenger mening etter migrasjon
-- Slett bridgeText/extendedBridgeText gamle verdier før ny generering (ikke strengt nødvendig, men ryddig)
+- Slett bridgeText/leadText gamle verdier før ny generering (ikke strengt nødvendig, men ryddig)
