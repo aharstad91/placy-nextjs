@@ -122,7 +122,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
         heroImage={reportData.heroImage}
       />
 
-      {/* Centered single-column layout — sidebar navigation removed in favour of a different approach */}
+      {/* Centered 800px layout — shared by all themes, overview map, summary */}
       <div className="max-w-[800px] mx-auto w-full px-6 md:px-16">
 
         {/* Primary themes */}

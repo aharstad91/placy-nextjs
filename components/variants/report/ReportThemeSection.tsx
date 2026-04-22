@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useMemo, useRef } from "react";
+import React, { useCallback, useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import type { Coordinates, POI } from "@/lib/types";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
@@ -118,6 +118,11 @@ export default function ReportThemeSection({
   }, [expanded]);
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const openMap = useCallback(() => setMapDialogOpen(true), []);
+
+  // Parse bridge text (hero subtitle) — samme POI-matcher som lower narrative
+  const bridgeSegments = theme.bridgeText
+    ? linkPOIsInText(theme.bridgeText, theme.allPOIs)
+    : [];
 
   // Parse upper narrative (above cards) — buss, bysykkel, sparkesykkel
   const upperSegments = theme.upperNarrative
@@ -245,65 +250,10 @@ export default function ReportThemeSection({
     return positions.length > 0 ? positions : undefined;
   }, [isTransport, transportDashboard.scooters?.positions, transportDashboard.freeFloatingCars?.positions]);
 
-  return (
-    <section
-      id={theme.id}
-      ref={registerRef}
-      className="py-16 md:py-24 scroll-mt-[7rem]"
-    >
-      <div className="md:max-w-4xl">
-        {/* Centered intro block — spot illustration, title, intro text. Editorial-magazine feel. */}
-        {variant !== "secondary" ? (
-          <div className="flex flex-col items-center text-center mb-8">
-            {theme.iconSrc && (
-              <Image
-                src={theme.iconSrc}
-                alt=""
-                aria-hidden="true"
-                width={288}
-                height={288}
-                className="w-32 h-32 md:w-36 md:h-36 select-none pointer-events-none mb-3"
-                draggable={false}
-              />
-            )}
-            {!theme.iconSrc && (
-              <Icon className="w-10 h-10 md:w-12 md:h-12 text-[#7a7062] mb-3" />
-            )}
-            <h2 className="text-3xl md:text-5xl font-semibold text-[#1a1a1a] tracking-tight mb-5">
-              {theme.name}
-            </h2>
-            {theme.bridgeText && (
-              <p className="text-xl md:text-2xl text-[#6a6a6a] leading-snug tracking-tight max-w-2xl">
-                {renderEmphasizedText(theme.bridgeText)}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 mb-5">
-            <Icon className="w-5 h-5 text-[#a0937d]" />
-            <h2 className="text-xl md:text-2xl font-semibold text-[#6a6a6a]">
-              {theme.name}
-            </h2>
-          </div>
-        )}
-
-        {/* Banner illustration */}
-        {variant !== "secondary" && theme.image && (
-          <div className="mt-4 mb-12 w-full">
-            <Image
-              src={theme.image.src}
-              alt=""
-              aria-hidden="true"
-              width={theme.image.width}
-              height={theme.image.height}
-              sizes="(min-width: 1024px) 800px, 100vw"
-              className="w-full h-auto select-none pointer-events-none"
-              draggable={false}
-              priority={false}
-            />
-          </div>
-        )}
-
+  // Shared body content — narratives, hero insight, progressive disclosure.
+  // Rendered inside different wrappers depending on variant.
+  const bodyContent = (
+    <>
         {/* Upper narrative — over kortene (buss, bysykkel, sparkesykkel) */}
         {variant !== "secondary" && upperSegments.length > 0 && (
           <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8] mb-6">
@@ -463,89 +413,156 @@ export default function ReportThemeSection({
             </div>
           </>
         )}
+    </>
+  );
 
-      </div>
-
-      {/* Unified map modal — alltid mounted (dialog-state styrer open) */}
-      {theme.allPOIs.length > 0 && (
-        <>
-          <UnifiedMapModal
-            open={mapDialogOpen}
-            onOpenChange={setMapDialogOpen}
-            title={theme.name}
-            has3dAddon={has3dAddon}
-            pois={theme.allPOIs}
-            center={center}
-            areaSlug={areaSlug}
-            mapboxSlot={(ctx) => (
-              <ReportThemeMap
-                pois={theme.allPOIs}
-                center={center}
-                highlightedPOIId={ctx.activePOI}
-                featuredPOIIds={isTransport ? undefined : featuredPOIIds}
-                /* Handler-drevne side-effekter: flyTo/scroll kjøres direkte i klikk-
-                   handlers, IKKE via useEffect som leser state. Årsak: React batcher
-                   state-updates, og ved rask klikking kan en effect lese state med
-                   feil `source` etter neste klikk — se plan 2026-04-19. */
-                onMarkerClick={(poiId) => {
-                  if (ctx.activePOI === poiId) {
-                    ctx.setActivePOI(null);
-                    return;
-                  }
-                  ctx.setActivePOI(poiId, "marker");
-                  // Kartet er allerede sentrert rundt markøren — kun scroll.
-                  ctx.mapController.scrollCardIntoView(poiId, {
-                    behavior: "instant",
-                  });
-                }}
-                onMapClick={() => ctx.setActivePOI(null)}
-                mapStyle={mapStyle}
-                activated={true}
-                projectName={projectName}
-                trails={theme.trails}
-                poiLiveInfo={poiLiveInfo}
-                mapChips={mapChips}
-                vehiclePositions={vehiclePositions}
-              />
-            )}
-            google3dSlot={(ctx) => (
-              <Google3DSlotContent
-                ctx={ctx}
-                themeId={theme.id}
-                pois={theme.allPOIs}
-                center={center}
-                projectName={projectName}
-              />
-            )}
-            bottomSlot={(ctx) => {
-              // Gjenbruker precomputed theme.topRanked (rating × tier-vekt, cap 10).
-              // Samme sort-funksjon som text-slider → første 6 i modal matcher slider.
-              // Delt carousel på tvers av 2D/3D — mapController er adapter-
-              // agnostisk og flyr kamera i begge moduser. Se plan
-              // 2026-04-19-feat-delte-kartlag-3d-rute-plan.md.
-              if (theme.topRanked.length === 0) return null;
-              return (
-                <ReportMapBottomCarousel
-                  pois={theme.topRanked}
-                  ariaLabel={`Steder i ${theme.name}`}
-                  activePOIId={ctx.activePOI}
-                  onCardClick={(poiId) => {
-                    if (ctx.activePOI === poiId) {
-                      ctx.setActivePOI(null);
-                      return;
-                    }
-                    ctx.setActivePOI(poiId, "card");
-                    // Kortet er allerede synlig — ingen scroll, kun flyTo.
-                    ctx.mapController.flyTo(poiId);
-                  }}
-                  registerCardRef={ctx.registerCardElement}
-                  areaSlug={areaSlug}
-                />
-              );
-            }}
-          />
-        </>
+  const modal = theme.allPOIs.length > 0 ? (
+    <UnifiedMapModal
+      open={mapDialogOpen}
+      onOpenChange={setMapDialogOpen}
+      title={theme.name}
+      has3dAddon={has3dAddon}
+      pois={theme.allPOIs}
+      center={center}
+      areaSlug={areaSlug}
+      mapboxSlot={(ctx) => (
+        <ReportThemeMap
+          pois={theme.allPOIs}
+          center={center}
+          highlightedPOIId={ctx.activePOI}
+          featuredPOIIds={isTransport ? undefined : featuredPOIIds}
+          /* Handler-drevne side-effekter: flyTo/scroll kjøres direkte i klikk-
+             handlers, IKKE via useEffect som leser state. Årsak: React batcher
+             state-updates, og ved rask klikking kan en effect lese state med
+             feil `source` etter neste klikk — se plan 2026-04-19. */
+          onMarkerClick={(poiId) => {
+            if (ctx.activePOI === poiId) {
+              ctx.setActivePOI(null);
+              return;
+            }
+            ctx.setActivePOI(poiId, "marker");
+            // Kartet er allerede sentrert rundt markøren — kun scroll.
+            ctx.mapController.scrollCardIntoView(poiId, {
+              behavior: "instant",
+            });
+          }}
+          onMapClick={() => ctx.setActivePOI(null)}
+          mapStyle={mapStyle}
+          activated={true}
+          projectName={projectName}
+          trails={theme.trails}
+          poiLiveInfo={poiLiveInfo}
+          mapChips={mapChips}
+          vehiclePositions={vehiclePositions}
+        />
       )}
+      google3dSlot={(ctx) => (
+        <Google3DSlotContent
+          ctx={ctx}
+          themeId={theme.id}
+          pois={theme.allPOIs}
+          center={center}
+          projectName={projectName}
+        />
+      )}
+      bottomSlot={(ctx) => {
+        // Gjenbruker precomputed theme.topRanked (rating × tier-vekt, cap 10).
+        // Samme sort-funksjon som text-slider → første 6 i modal matcher slider.
+        // Delt carousel på tvers av 2D/3D — mapController er adapter-
+        // agnostisk og flyr kamera i begge moduser. Se plan
+        // 2026-04-19-feat-delte-kartlag-3d-rute-plan.md.
+        if (theme.topRanked.length === 0) return null;
+        return (
+          <ReportMapBottomCarousel
+            pois={theme.topRanked}
+            ariaLabel={`Steder i ${theme.name}`}
+            activePOIId={ctx.activePOI}
+            onCardClick={(poiId) => {
+              if (ctx.activePOI === poiId) {
+                ctx.setActivePOI(null);
+                return;
+              }
+              ctx.setActivePOI(poiId, "card");
+              // Kortet er allerede synlig — ingen scroll, kun flyTo.
+              ctx.mapController.flyTo(poiId);
+            }}
+            registerCardRef={ctx.registerCardElement}
+            areaSlug={areaSlug}
+          />
+        );
+      }}
+    />
+  ) : null;
+
+  // Secondary variant: simple layout inside the parent's 800px container.
+  if (variant === "secondary") {
+    return (
+      <section
+        id={theme.id}
+        ref={registerRef}
+        className="py-16 md:py-24 scroll-mt-[7rem]"
+      >
+        <div className="w-full">
+          <div className="flex items-center gap-3 mb-5">
+            <Icon className="w-5 h-5 text-[#a0937d]" />
+            <h2 className="text-xl md:text-2xl font-semibold text-[#6a6a6a]">
+              {theme.name}
+            </h2>
+          </div>
+          {bodyContent}
+        </div>
+        {modal}
+      </section>
+    );
+  }
+
+  // Primary variant: centered single-column — banner illustration sits
+  // above the title, followed by intro text and body content.
+  return (
+    <section
+      id={theme.id}
+      ref={registerRef}
+      className="py-16 md:py-24 scroll-mt-[7rem]"
+    >
+      <div className="w-full">
+        {theme.image && (
+          <div className="mb-8 w-full">
+            <Image
+              src={theme.image.src}
+              alt=""
+              aria-hidden="true"
+              width={theme.image.width}
+              height={theme.image.height}
+              sizes="(min-width: 1024px) 800px, 100vw"
+              className="w-full h-auto select-none pointer-events-none"
+              draggable={false}
+              priority={false}
+            />
+          </div>
+        )}
+
+        <div className="mb-8">
+          <h2 className="text-3xl md:text-5xl font-semibold text-[#1a1a1a] tracking-tight mb-5">
+            {theme.name}
+          </h2>
+          {bridgeSegments.length > 0 && (
+            <p className="text-xl md:text-2xl text-[#6a6a6a] leading-snug tracking-tight">
+              {bridgeSegments.map((seg, i) =>
+                seg.type === "poi" && seg.poi ? (
+                  <POIPopover key={i} poi={seg.poi} label={seg.content} />
+                ) : seg.type === "external" && seg.url ? (
+                  <ExternalInlineLink key={i} content={seg.content} url={seg.url} />
+                ) : (
+                  <React.Fragment key={i}>{renderEmphasizedText(seg.content)}</React.Fragment>
+                ),
+              )}
+            </p>
+          )}
+        </div>
+
+        {bodyContent}
+      </div>
+      {modal}
     </section>
   );
 }

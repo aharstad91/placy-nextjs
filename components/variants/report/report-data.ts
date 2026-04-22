@@ -117,8 +117,6 @@ export interface ReportTheme {
   trails?: TrailCollection;
   /** Optional banner illustration (auto-cropped, natural aspect). Rendered under heading + intro. */
   image?: ThemeIllustration;
-  /** Optional hand-drawn icon (PNG). Replaces Lucide icon in heading when present. */
-  iconSrc?: string;
 }
 
 export interface ThemeIllustration {
@@ -134,17 +132,6 @@ export interface ThemeIllustration {
  * Files are auto-cropped to bounding box of non-white content (see scripts/crop_illustrations.py),
  * so each image has its own natural aspect ratio. Dimensions kept in sync with cropped files.
  */
-/** Per-theme hand-drawn icons (PNG). Add as we generate them. */
-const THEME_ICONS: Record<string, string> = {
-  hverdagsliv: "/illustrations/icons/hverdagsliv-icon.png",
-  "barn-oppvekst": "/illustrations/icons/barn-aktivitet-icon.png",
-  "mat-drikke": "/illustrations/icons/mat-drikke-icon.png",
-  opplevelser: "/illustrations/icons/opplevelser-icon.png",
-  "natur-friluftsliv": "/illustrations/icons/natur-friluftsliv-icon.png",
-  "trening-aktivitet": "/illustrations/icons/trening-aktivitet-icon.png",
-  transport: "/illustrations/icons/transport-mobilitet-icon.png",
-};
-
 const THEME_ILLUSTRATIONS: Record<string, ThemeIllustration> = {
   hverdagsliv: { src: "/illustrations/hverdagsliv.jpg", width: 1220, height: 654 },
   "barn-oppvekst": { src: "/illustrations/barn-aktivitet.jpg", width: 1255, height: 728 },
@@ -584,7 +571,6 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
         ? project.reportConfig?.trails
         : undefined,
       image: PROJECT_THEME_ILLUSTRATIONS[`${project.customer}_${project.urlSlug}`]?.[themeDef.id] ?? THEME_ILLUSTRATIONS[themeDef.id],
-      iconSrc: THEME_ICONS[themeDef.id],
     });
   }
 
