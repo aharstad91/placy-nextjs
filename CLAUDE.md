@@ -135,6 +135,32 @@ npm run build        # Next.js — bygger uten feil (før PR)
 
 ---
 
+## Compound Engineering Plugin — Placy-policies
+
+Vi bruker `compound-engineering`-pluginen (skills med prefix `ce-*`). To regler må følges uansett hvilket skill eller kommando som trigger dem:
+
+### Scope is Sacred
+
+Scope blir ratifisert i brainstorming-fasen — ikke forhandlet i plan- eller review-fasene. Derfor:
+
+- **`ce-scope-guardian-reviewer` skal aldri føre til at features fjernes fra planen.** Den er bygget for Every/Cora (YAGNI-maximalist, stabilt produkt, scope er forhandlingsbart). Det er motsatt av Placy-virkeligheten hvor scope er bestilt av klient eller produkteier.
+- **Hvis `ce-doc-review` aktiverer `ce-scope-guardian-reviewer` automatisk** (trigges når planen har >8 units, P0/P1/P2-tiers, stretch goals, eller misaligned scope-språk), **skal alle scope-guardian-funn automatisk "Skip"-es** med begrunnelsen `"Scope is Sacred — scope ratified in brainstorm phase"`. Dette logges i decision primer slik at det ikke re-surfacer i senere runder.
+- **Andre persona-reviewers respekteres normalt** — `ce-feasibility-reviewer`, `ce-coherence-reviewer`, `ce-security-lens-reviewer`, `ce-design-lens-reviewer`, `ce-product-lens-reviewer`, `ce-adversarial-document-reviewer`. Disse vurderer *hvordan* vi bygger, ikke *hva*.
+- **Code-review-fasen kan aldri kutte feature-scope** — bare forbedre kvaliteten på eksisterende implementasjon. Funn som foreslår "fjern denne funksjonaliteten" skal oversettes til "implementer denne funksjonaliteten riktig".
+
+### Unngå scope-guardian-triggere når du skriver planer
+
+Når `ce-plan` kalles (direkte eller via `/full`), formuler planen slik at `ce-doc-review`s auto-aktivering ikke fyrer scope-guardian:
+
+- **Ingen P0/P1/P2-tiers** i plan-dokumentet — bruk i stedet fasinndeling (Phase 1/2/3) eller rekkefølge basert på avhengigheter
+- **≤8 implementation units per plan-fil** — del store planer i flere plan-filer (f.eks. `plan-A.md`, `plan-B.md`) koblet via felles brainstorm
+- **Ingen "Future Work"- eller "Stretch Goals"-seksjon** — deferred work hører hjemme i `### Deferred to Separate Tasks` under Scope Boundaries, med tydelig peker til hvor det tas opp igjen
+- **Goals må tydelig kobles til requirements** — hvert mål skal peke til minst én konkret requirement som leveres
+
+Hvis planen *må* ha >8 units eller prioritets-tiers (f.eks. for å representere klientens faktiske krav), la scope-guardian fyre, men Skip-funnene automatisk per regelen over.
+
+---
+
 ## Kvalitetsstandard — "Ferdig betyr ferdig"
 
 Brukeren er vibe coder og har ikke kapasitet til å kvalitetssikre arbeidet i etterkant. Når en oppgave gjøres, skal den gjøres **100% komplett**. Ingen snarveier, ingen "good enough".

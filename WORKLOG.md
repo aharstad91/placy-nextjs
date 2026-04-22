@@ -3,6 +3,44 @@
 <!-- Each entry is a YAML block. Most recent first. -->
 
 ---
+date: 2026-04-22
+action: POI-chips i bridgeText + theme-categories utvidet — fikser inkonsekvens i inline-POIs per kategori
+files:
+  - components/variants/report/ReportThemeSection.tsx (bridgeText gjennom linkPOIsInText + POIPopover-rendering)
+  - Supabase products.config.reportConfig (hverdagsliv += shopping/shopping_mall; trening-aktivitet += idrett)
+  - Supabase products.config.reportConfig.themes[*].extendedBridgeText (omskrevet for mat-drikke, opplevelser, trening, hverdagsliv)
+  - Supabase products.config.reportConfig.themes[hverdagsliv].extendedBridgeText ("Tone – frisør" → "Tone - frisør" for POI-match)
+  - admin/import kjørt for hverdagsliv-kategorier → Oasen Senter importert
+problem: |
+  bridgeText rendret via renderEmphasizedText (Apple-style two-tone), ikke linkPOIsInText.
+  Resultat: POIs nevnt i bridgeText fikk aldri chips. Hverdagsliv hadde 1 chip, Mat hadde 0.
+fix:
+  - bridgeText rendrer nå gjennom samme POI-lenker som extendedBridgeText (også med emphasis-support)
+  - Utvidet theme-categories: shopping til hverdagsliv (Oasen Senter), idrett til trening-aktivitet (Bøneshallen, racketsenter)
+  - Omskrev tekstene til å nevne alle prosjektets POIs eksplisitt
+result: |
+  Før: hverdagsliv=1, barn=7, mat=0, natur=2, transport=0, trening=0 chips
+  Etter: hverdagsliv=5, barn=10, mat=4, natur=3, transport=3, trening=5 chips
+
+---
+date: 2026-04-21
+action: markus_bones Bergen-rapport generert — full pipeline /generate-bolig + /generate-rapport
+scope: markus_bones (Bønes, Bergen) — personas etablerer+barnefamilie
+files:
+  - Supabase projects (markus_bones created)
+  - Supabase products (69e01c8e-a408-4c52-a447-666d389fa05c)
+  - Supabase pois (54 linket — Google/NSR/Barnehagefakta/Overpass/websearch)
+  - Supabase translations (7 EN bridgeText for alle temaer)
+  - components/variants/report/ReportHeroInsight.tsx (fjernet DEMO_EXTRA_STOPS — viste Trondheim-data for alle prosjekter)
+summary: |
+  Fullstendig rapport for Markus (forretningsutvikler i Bergen) sitt nabolag Bønes.
+  HeroIntro + motiver + 7 kategoritemaer (bridgeText + extendedBridgeText) skrevet med
+  Gemini-grounding som fact-feed. Bergen city-level area opprettet. Demo-data fjernet fra
+  transport-dashboard (DEMO_EXTRA_STOPS viste hardkodede Trondheim-stasjonsnavn).
+  URL: /eiendom/markus/bones/rapport
+result: ✓ (54 POIs, 7/7 temaer med tekst, live Skyss-data, 3D-kart aktivert)
+
+---
 date: 2026-04-21
 action: Mobil-UX finish-pass — padding, tabs-overflow, pill-knapp, 100vh-modal, POI-carousel på mobil, smooth disclosure-animasjon
 files:
