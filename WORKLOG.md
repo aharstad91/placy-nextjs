@@ -4,6 +4,55 @@
 
 ---
 date: 2026-04-27
+action: Rapport-layout refactor — full 1280px container, chips-row med watercolor-ikoner, sticky sidebar
+scope: Rapport-produktet, frontend kun (ingen DB/migrasjon)
+files:
+  - components/variants/report/ReportPage.tsx (restrukturert layout: hero → chips → kart → 2-col tema)
+  - components/variants/report/ReportHero.tsx (chips fjernet fra venstre kolonne, kun tittel + heroIntro + image)
+  - components/variants/report/ReportThemeChipsRow.tsx (NY — vertikale kort i 7-col grid, full bredde i 1280px)
+  - components/variants/report/ReportThemeSidebar.tsx (NY — sticky scroll-spy nav m/ IntersectionObserver)
+  - components/variants/report/ReportMapIntroCard.tsx (theme.pois.length → allPOIs.length, viste 6 = INITIAL_VISIBLE_COUNT)
+problem: |
+  Layout-skissen viste 1280px hovedcontainer med tre flate seksjoner: tema-chips i horisontal rad
+  100% bredde, samlekart med intro-kort venstre, og tekst-seksjoner med sticky kategori-nav.
+  Eksisterende rapport hadde chips låst inne i hero-venstre-kolonne (~50% bredde) med stramme
+  lucide-outlined ikoner, samlekart nederst (91% scroll-dybde), og tekst-seksjoner sentret i
+  800px uten navigasjon.
+fix:
+  - Hero stripped til kun tittel + intro + image — chips flyttet ut til egen ReportThemeChipsRow
+  - Chips-row: max-w-[1280px], grid-cols-7 (wrap til 3-col/2-col på smal viewport), aspect-square
+    watercolor-ikon på toppen + spørsmål + tema-navn under, full bredde innenfor kortet
+  - Watercolor-ikoner fra public/illustrations/icons/*.png (Gemini-generert) erstatter lucide-React
+    via theme-id → path-mapping (med legacy-overrides: barn-oppvekst → barn-aktivitet,
+    transport → transport-mobilitet)
+  - Samlekart flyttet fra bunnen til rett under chips-row, beholder intro-kort + kart i 1280px-flex
+  - ReportThemeSidebar: sticky scroll-spy m/ IntersectionObserver (rootMargin -30%/-50%, 5 thresholds);
+    klikk = smooth-scroll til seksjons-id; aktivt tema highlightet med #f5f1ec bg
+  - Sticky-bug: la sticky på <nav> inni <aside> → containing-block ble aside (400px) ikke flex-parent
+    (9629px). Fikset ved å flytte `sticky top-8 self-start` til <aside> selv
+  - Gap mellom sidebar og innhold: gap-12 → gap-24 etter visuell QA
+  - Tekst-seksjoner: max-w-[800px] mx-auto → max-w-[1280px] container m/ flex (220px sidebar + max-w-[872px] innhold)
+  - Sub-bug fanget: ReportMapIntroCard viste "6" for alle kategorier fordi theme.pois er
+    visiblePOIs (slice(0, INITIAL_VISIBLE_COUNT)). Bytt til theme.allPOIs.length for ekte total
+result: |
+  - Hero: 2-col, ren tittel + intro (image på prosjekter som har heroImage)
+  - Chips-row: 7 vertikale kort i 1280px, watercolor-illustrasjoner top-of-card
+  - Samlekart: synlig i første viewport-pageful, intro-kort viser ekte kategori-totaler (24, 40, 19, 15, 12, 9, 16)
+  - Sticky nav følger med nedover fra første kategori, highlight skifter når seksjonen krysser midten
+  - Tekst-bredde: 872px (var 800px) — ~9% bredere lesemål m/ luft til sidebar
+learnings:
+  - position:sticky styres av nærmeste containing-block, IKKE viewport. Hvis sticky-elementet er
+    inne i en wrapper med items-start (som sizer til content), så stikker det innenfor wrapper-høyden.
+    Sett sticky direkte på flex-itemet, eller bruk self-stretch på wrapperen.
+  - getBoundingClientRect.y stort negativt mens scrollY er positiv = sticky engasjerer ikke i det
+    hele tatt; godt debug-signal når man tror sticky funker men ikke gjør det.
+  - theme.pois vs theme.allPOIs: pois = sliced (visible-count), allPOIs = full filtered.
+    INITIAL_VISIBLE_COUNT = 6 forklarte hvorfor alle kategori-tellinger viste samme tall.
+  - Gemini-watercolor-ikoner i public/illustrations/icons/ matcher theme-id med to legacy-overrides
+    (barn-aktivitet, transport-mobilitet) — kan klippe-og-lim på fremtidige report-views.
+
+---
+date: 2026-04-27
 action: Aggregerte kilder til bunn av rapport — splitt på Google ToS-grensen, så kollapset bak Drawer
 scope: Rapport-produktet, 2 commits på `refactor/grounding-kilder-aggregert-bunn`
 files:

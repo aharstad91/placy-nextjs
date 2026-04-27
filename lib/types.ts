@@ -317,6 +317,8 @@ export interface ReportConfig {
   /** Path (absolute or /public) til illustrasjon som vises i hero + summary. Optional. */
   heroImage?: string;
   themes?: ReportThemeConfig[];
+  /** Tre nabolags-motiver fra /generate-rapport. Vises i intro-kort ved samlekart. */
+  motiver?: string[];
   summary?: ReportSummary;
   brokers?: BrokerInfo[];
   cta?: ReportCTA;
