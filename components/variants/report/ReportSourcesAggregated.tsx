@@ -7,6 +7,7 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
@@ -54,6 +55,9 @@ export default function ReportSourcesAggregated({
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>Kilder ({sources.length})</DrawerTitle>
+            <DrawerDescription className="sr-only">
+              Kilder gruppert per tema, brukt i rapport-narrativen.
+            </DrawerDescription>
           </DrawerHeader>
 
           <div className="max-h-[70vh] overflow-y-auto px-4 pb-6 space-y-6">
