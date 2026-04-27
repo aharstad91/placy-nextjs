@@ -1,8 +1,28 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeAll } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReportTheme } from "./report-data";
 import type { ReportThemeGroundingView } from "@/lib/types";
 import ReportSourcesAggregated from "./ReportSourcesAggregated";
+
+// vaul (Drawer) leser window.matchMedia ved mount — jsdom har det ikke som default.
+beforeAll(() => {
+  if (!window.matchMedia) {
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }),
+    });
+  }
+});
 
 afterEach(cleanup);
 
@@ -58,7 +78,7 @@ describe("ReportSourcesAggregated", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders 'Kilder (N)' header with the deduplicated count", () => {
+  it("renders 'Kilder (N)' trigger button with the deduplicated count", () => {
     render(
       <ReportSourcesAggregated
         themes={[
@@ -67,50 +87,65 @@ describe("ReportSourcesAggregated", () => {
         ]}
       />,
     );
-    expect(screen.getByText("Kilder (3)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Kilder \(3\)/ })).toBeInTheDocument();
   });
 
-  it("renders source links with correct security attributes", () => {
-    const { container } = render(
-      <ReportSourcesAggregated
-        themes={[theme("a", "Skoler", grounding(["a.no"]))]}
-      />,
-    );
-    const link = container.querySelector("a")!;
-    expect(link.getAttribute("href")).toBe("https://a.no/");
-    expect(link.getAttribute("target")).toBe("_blank");
-    expect(link.getAttribute("rel")).toBe("noopener noreferrer nofollow");
-    expect(link.getAttribute("referrerpolicy")).toBe("no-referrer");
-  });
-
-  it("shows theme-name badges for sources used in multiple themes", () => {
+  it("renders attribution paragraph (visible without opening drawer)", () => {
     render(
       <ReportSourcesAggregated
         themes={[
-          theme("a", "Skoler", grounding(["valentinlyst.no"])),
-          theme("b", "Handel", grounding(["valentinlyst.no"])),
+          theme("a", "A", grounding(["a.no"], "2026-04-27T10:00:00Z")),
         ]}
       />,
     );
-    expect(screen.getByText("(Skoler, Handel)")).toBeInTheDocument();
-  });
-
-  it("renders attribution with latest fetchedAt formatted in no-NO locale", () => {
-    render(
-      <ReportSourcesAggregated
-        themes={[
-          theme(
-            "a",
-            "A",
-            grounding(["a.no"], "2026-04-27T10:00:00Z"),
-          ),
-        ]}
-      />,
-    );
-    // no-NO long date — example: "27. april 2026"
     expect(
       screen.getByText(/Generert med Google AI basert på offentlige kilder\./),
     ).toBeInTheDocument();
     expect(screen.getByText(/27\. april 2026/)).toBeInTheDocument();
+  });
+
+  it("opens drawer with grouped content on trigger click", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReportSourcesAggregated
+        themes={[
+          theme(
+            "hverdag",
+            "Hverdagsliv",
+            grounding(["coop.no", "valentinlyst.no"]),
+          ),
+          theme(
+            "barn",
+            "Barn & Oppvekst",
+            grounding(["barnehagefakta.no"]),
+          ),
+        ]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /Kilder \(3\)/ }));
+
+    // Drawer headings (themes in input order)
+    const themeHeadings = await screen.findAllByText(/Hverdagsliv|Barn & Oppvekst/);
+    expect(themeHeadings.length).toBeGreaterThanOrEqual(2);
+
+    // Source links rendered
+    expect(screen.getByRole("link", { name: "coop.no" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "valentinlyst.no" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "barnehagefakta.no" })).toBeInTheDocument();
+  });
+
+  it("source links inside drawer carry correct security attributes", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReportSourcesAggregated
+        themes={[theme("a", "Skoler", grounding(["a.no"]))]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /Kilder \(1\)/ }));
+    const link = await screen.findByRole("link", { name: "a.no" });
+    expect(link.getAttribute("href")).toBe("https://a.no/");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer nofollow");
+    expect(link.getAttribute("referrerpolicy")).toBe("no-referrer");
   });
 });

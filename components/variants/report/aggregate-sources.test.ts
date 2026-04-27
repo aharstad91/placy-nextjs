@@ -4,7 +4,7 @@ import type {
   ReportThemeGroundingSource,
   ReportThemeGroundingView,
 } from "@/lib/types";
-import { aggregateSources } from "./aggregate-sources";
+import { aggregateSources, groupSourcesByTheme } from "./aggregate-sources";
 
 function source(domain: string, urlSuffix = ""): ReportThemeGroundingSource {
   return {
@@ -150,5 +150,80 @@ describe("aggregateSources", () => {
       theme("b", "B", v2),
     ]);
     expect(result.sources.map((s) => s.domain)).toEqual(["a.no", "b.no"]);
+  });
+});
+
+describe("groupSourcesByTheme", () => {
+  it("returns empty array for empty themes", () => {
+    expect(groupSourcesByTheme([])).toEqual([]);
+  });
+
+  it("excludes themes without grounding", () => {
+    expect(groupSourcesByTheme([theme("a", "A")])).toEqual([]);
+  });
+
+  it("excludes themes with empty sources", () => {
+    expect(groupSourcesByTheme([theme("a", "A", grounding([]))])).toEqual([]);
+  });
+
+  it("preserves theme order from input array", () => {
+    const result = groupSourcesByTheme([
+      theme("a", "Hverdagsliv", grounding([source("a.no")])),
+      theme("b", "Barn & Oppvekst", grounding([source("b.no")])),
+      theme("c", "Trening", grounding([source("c.no")])),
+    ]);
+    expect(result.map((g) => g.themeName)).toEqual([
+      "Hverdagsliv",
+      "Barn & Oppvekst",
+      "Trening",
+    ]);
+  });
+
+  it("sorts sources alphabetically within each theme", () => {
+    const result = groupSourcesByTheme([
+      theme(
+        "a",
+        "A",
+        grounding([source("zebra.no"), source("apple.no"), source("middle.no")]),
+      ),
+    ]);
+    expect(result[0].sources.map((s) => s.domain)).toEqual([
+      "apple.no",
+      "middle.no",
+      "zebra.no",
+    ]);
+  });
+
+  it("repeats source across groups when used in multiple themes (no cross-theme dedup)", () => {
+    const shared = source("valentinlyst.no");
+    const result = groupSourcesByTheme([
+      theme("a", "Hverdagsliv", grounding([shared])),
+      theme("b", "Mat & Drikke", grounding([shared])),
+    ]);
+    expect(result).toHaveLength(2);
+    expect(result[0].sources.map((s) => s.domain)).toEqual(["valentinlyst.no"]);
+    expect(result[1].sources.map((s) => s.domain)).toEqual(["valentinlyst.no"]);
+  });
+
+  it("dedupes within a single theme (case-insensitive on domain)", () => {
+    const result = groupSourcesByTheme([
+      theme(
+        "a",
+        "A",
+        grounding([
+          source("valentinlyst.no", "page1"),
+          source("Valentinlyst.no", "page2"),
+        ]),
+      ),
+    ]);
+    expect(result[0].sources).toHaveLength(1);
+    expect(result[0].sources[0].url).toBe("https://valentinlyst.no/page1");
+  });
+
+  it("includes themeId for stable React keys", () => {
+    const result = groupSourcesByTheme([
+      theme("hverdagsliv", "Hverdagsliv", grounding([source("a.no")])),
+    ]);
+    expect(result[0].themeId).toBe("hverdagsliv");
   });
 });
