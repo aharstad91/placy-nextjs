@@ -3,6 +3,60 @@
 <!-- Each entry is a YAML block. Most recent first. -->
 
 ---
+date: 2026-04-27
+action: Aggregerte kilder til bunn av rapport — splitt på Google ToS-grensen, så kollapset bak Drawer
+scope: Rapport-produktet, 2 commits på `refactor/grounding-kilder-aggregert-bunn`
+files:
+  - components/variants/report/ReportGroundingChips.tsx (NY — kun searchEntryPointHtml-blokken, inline per tema)
+  - components/variants/report/ReportSourcesAggregated.tsx (NY — bunn-aggregat, så Drawer-CTA i runde 2)
+  - components/variants/report/aggregate-sources.ts (NY — aggregateSources + groupSourcesByTheme rene helpere)
+  - components/variants/report/aggregate-sources.test.ts (NY — 17 tester for begge helpere)
+  - components/variants/report/ReportGroundingChips.test.tsx (NY — 5 tester, inkl. ToS-attr-injeksjon)
+  - components/variants/report/ReportSourcesAggregated.test.tsx (NY — 6 tester m/ matchMedia-shim for vaul)
+  - components/variants/report/ReportThemeSection.tsx (bytter ReportGroundingSources → ReportGroundingChips)
+  - components/variants/report/ReportPage.tsx (mounter ReportSourcesAggregated mellom secondary themes og summary)
+  - components/variants/report/ReportGroundingSources.tsx (SLETTET — erstattet av split)
+  - components/variants/report/ReportGroundingInline.tsx + ReportCuratedGrounded.tsx (oppdaterte doc-kommentarer)
+  - docs/plans/2026-04-27-001-refactor-grounding-sources-aggregert-bunn-plan.md
+  - docs/solutions/api-integration/gemini-grounding-pattern-20260418.md (nytt punkt 3a om plassering)
+problem: |
+  Per-tema-rendering av "Kilder (N)"-pill-listen + "Google foreslår også"-chips + "Generert med..."
+  ble gjentatt 7 ganger på rapport-siden. På Wesselsløkka 9 rå-kilder per tema, på Langenga-h7 så
+  mange som 53 rå-kilder over 7 temaer. Tung visuell støy som konkurrerer med rapport-narrativen.
+  Spørsmål: kan vi flytte kildene til bunn? Hva sier Google ToS?
+fix:
+  - Web-research mot Vertex AI grounding docs + Gemini API Additional Terms identifiserte to ToS-grenser
+  - searchEntryPointHtml ("Google foreslår også"-chips) MÅ stå adjacent til sin grounded response
+    (Vertex: "Whenever a grounded response is shown, its corresponding Search Suggestion should
+    remain visible"; Additional Terms: "will not modify, or intersperse any other content with,
+    the Grounded Results or Search Suggestions"). Aggregering av chips på tvers av kall = ToS-brudd.
+  - groundingChunks (kilde-URLer) har fleksibelt format så lenge "direct, single-click path" til
+    kilden bevares. Aggregering nederst er tillatt; disclosure-mønster (drawer/details) er tillatt
+    fordi det er én UI-affordance ved siden av lenken, ikke abstraksjon av selve klikket.
+  - Splittet ReportGroundingSources → ReportGroundingChips (inline per tema, kun chips) +
+    ReportSourcesAggregated (bunn, ett globalt kilder-aggregat med dedup per domene)
+  - Runde 2 (etter Langenga-skjermbilde med 42 unike kilder): la til "Kilder (42)"-CTA som åpner
+    shadcn vaul Drawer med kildene gruppert per tema i rapport-rekkefølge, alfabetisk inni.
+  - Innen hver gruppe: dedup på domene case-insensitive. Samme domene KAN dukke opp i flere
+    tema-grupper (ingen cross-theme dedup) — gjør per-kategori-skanning enklere.
+result: |
+  Før: 7 × KILDER-blokk + 7 × Google-chips + 7 × attribution per rapport
+  Etter: 7 × Google-chips inline (ToS-compliant) + 1 × kollapset "Kilder (N)"-CTA i bunn
+  - Wesselsløkka: 53 rå-kilder → 27 unike domener i Drawer
+  - Langenga-h7: 42 unike kilder gruppert under sine 7 temaer
+  - 49/49 tester passerer i components/variants/report (var 31 før — 18 nye)
+  - TypeScript clean, lint 0 errors, build 63/63 pages
+learnings:
+  - Google ToS skiller skarpt mellom searchEntryPoint (per-respons-kobling, "associated") og
+    groundingChunks (URL-attribusjon, fleksibelt format). Disclosure-mønster er tillatt for sistnevnte
+    fordi klikk på selve lenken fortsatt går direkte til kilden.
+  - vaul (shadcn Drawer) leser window.matchMedia ved mount → jsdom trenger matchMedia-shim i tester.
+    Bruker `beforeAll` med Object.defineProperty istedenfor å forurense vitest.setup.ts globalt.
+  - aggregateSources (cross-theme dedup) og groupSourcesByTheme (per-theme dedup, kan repetere)
+    løser to ulike problemer — beholder begge fordi CTA-tellingen vil ha unikt antall, men selve
+    listen vil ha tema-grupper.
+
+---
 date: 2026-04-22
 action: Rapport-terminologi refactor — lowerNarrative/extendedBridgeText → leadText (full /full-syklus)
 scope: Rapport-produktet, 10 commits, prod JSONB-migrasjon
