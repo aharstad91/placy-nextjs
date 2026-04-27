@@ -10,6 +10,11 @@ import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import ReportHero from "./ReportHero";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportSummarySection from "./ReportSummarySection";
+// Aggregert kilder-footer for hele rapporten — én konsolidert liste i stedet
+// for per-tema kildeblokker.
+const ReportSourcesAggregated = dynamic(
+  () => import("./ReportSourcesAggregated"),
+);
 // ReportOverviewMap krever WebGL og browser-API → må lastes kun på klient.
 // Følger samme mønster som ReportThemeMap (SSR-safe).
 const ReportOverviewMap = dynamic(() => import("./blocks/ReportOverviewMap"), {
@@ -179,6 +184,10 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
             ))}
           </>
         )}
+
+        {/* Aggregert kilder-footer for hele rapporten. Liten tekst, dempet —
+            metadata, ikke innhold. Returnerer null hvis ingen tema har kilder. */}
+        <ReportSourcesAggregated themes={reportData.themes} />
       </div>
 
       {/* Summary section — full-bleed hero-style layout mirroring ReportHero.

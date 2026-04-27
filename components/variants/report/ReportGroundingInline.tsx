@@ -6,11 +6,9 @@ import type { ReportThemeGroundingView } from "@/lib/types";
 /**
  * V1-rendering av Gemini-grounded innhold. Raw narrative (ikke Claude-kuratert)
  * med inline http-lenker. Rendres alltid full — foreldrekomponent styrer
- * disclosure via DOM-gating. Kilder/attribution rendres separat via
- * ReportGroundingSources.
- *
- * Google ToS: searchEntryPointHtml rendres verbatim (DOMPurify-sanert ved
- * lagring) i ReportGroundingSources.
+ * disclosure via DOM-gating. "Google foreslår også"-chips rendres inline per
+ * tema via ReportGroundingChips. Aggregert kilder-footer rendres én gang i
+ * bunn av rapporten via ReportSourcesAggregated.
  */
 export interface ReportGroundingInlineProps {
   grounding: ReportThemeGroundingView;

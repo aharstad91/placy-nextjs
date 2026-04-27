@@ -38,6 +38,9 @@ URL-querystring leker API-nøkkel i logs (Nginx, Vercel, Sentry). Header er stan
 **3. searchEntryPointHtml er Google ToS-påkrevd**
 `groundingMetadata.searchEntryPoint.renderedContent` må rendres verbatim med styling. DOMPurify server-side før lagring (Google garanterer ikke trygg HTML). Hvis feltet mangler → omit hele kategorien (vi kan ikke vise grounding uten attribution).
 
+**3a. Chips inline per tema, kilder kan aggregeres**
+Når en side har flere grounded responses (f.eks. 7 kategorier i en rapport), MÅ `searchEntryPointHtml`-chipsene stå adjacent til sin egen response — Vertex-docs: *"Whenever a grounded response is shown, its corresponding Search Suggestion should remain visible"*, og Additional Terms: *"will not modify, or intersperse any other content with, the Grounded Results or Search Suggestions"*. Aggregering på tvers av kall er ToS-brudd. `groundingChunks`-listen (kilde-URLer) har derimot fleksibel plassering — kan samles én gang i sidens footer så lenge "direct, single-click path" til kilden bevares. Mønster: `ReportGroundingChips` rendres inline per tema, `ReportSourcesAggregated` rendres én gang i bunn med dedup per domene + tema-badges.
+
 **4. Deep-merge PATCH, aldri flat replace**
 `scripts/seed-wesselslokka-summary.ts` er golden pattern: whitelist-guard på `reportConfig`-nøkler → backup full row → match themes på `id` → shallow-merge → PATCH med `updated_at=eq.{read_value}` (optimistic lock) → post-write deep-equal for preserved keys. Flat replace ville klobret `summary`/`brokers`/`cta`/`trails`/`heroIntro`.
 

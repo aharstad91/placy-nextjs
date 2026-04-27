@@ -8,8 +8,9 @@ import POIPopover from "./POIPopover";
 /**
  * V2-rendering av Gemini-grounded innhold. Unified kuratert narrative med
  * POI-inline-lenker. Rendres alltid i full høyde — foreldrekomponent styrer
- * disclosure via DOM-gating. Kilder/attribution rendres separat via
- * ReportGroundingSources.
+ * disclosure via DOM-gating. "Google foreslår også"-chips rendres inline per
+ * tema via ReportGroundingChips. Aggregert kilder-footer rendres én gang i
+ * bunn av rapporten via ReportSourcesAggregated.
  *
  * Sikkerhet:
  * - ReactMarkdown med rehypeSanitize (whitelist av tags + poi/https-protokoller)
