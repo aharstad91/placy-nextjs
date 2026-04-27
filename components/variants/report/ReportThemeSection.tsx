@@ -41,8 +41,10 @@ const ReportGroundingInline = dynamic(() => import("./ReportGroundingInline"));
 // v1 bruker ReportGroundingInline, v2 bruker ReportCuratedGrounded.
 const ReportCuratedGrounded = dynamic(() => import("./ReportCuratedGrounded"));
 
-// Kilder + Google-chips + attribution — rendres alltid etter kart-preview.
-const ReportGroundingSources = dynamic(() => import("./ReportGroundingSources"));
+// "Google foreslår også"-chips — rendres alltid inline per tema (Google ToS).
+// Aggregert kildeliste rendres separat i bunn av hele rapporten via
+// ReportSourcesAggregated.
+const ReportGroundingChips = dynamic(() => import("./ReportGroundingChips"));
 
 // 3D-motoren lazy-loades på samme måte som 2D — unngår å trekke inn
 // @vis.gl/react-google-maps i serverbundlen, og lar 3D-koden kun lastes
@@ -406,7 +408,7 @@ export default function ReportThemeSection({
               )}
 
               {theme.grounding && (
-                <ReportGroundingSources grounding={theme.grounding} />
+                <ReportGroundingChips grounding={theme.grounding} />
               )}
             </div>
           </>

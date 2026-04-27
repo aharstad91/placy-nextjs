@@ -3,6 +3,109 @@
 <!-- Each entry is a YAML block. Most recent first. -->
 
 ---
+date: 2026-04-27
+action: Rapport-layout refactor — full 1280px container, chips-row med watercolor-ikoner, sticky sidebar
+scope: Rapport-produktet, frontend kun (ingen DB/migrasjon)
+files:
+  - components/variants/report/ReportPage.tsx (restrukturert layout: hero → chips → kart → 2-col tema)
+  - components/variants/report/ReportHero.tsx (chips fjernet fra venstre kolonne, kun tittel + heroIntro + image)
+  - components/variants/report/ReportThemeChipsRow.tsx (NY — vertikale kort i 7-col grid, full bredde i 1280px)
+  - components/variants/report/ReportThemeSidebar.tsx (NY — sticky scroll-spy nav m/ IntersectionObserver)
+  - components/variants/report/ReportMapIntroCard.tsx (theme.pois.length → allPOIs.length, viste 6 = INITIAL_VISIBLE_COUNT)
+problem: |
+  Layout-skissen viste 1280px hovedcontainer med tre flate seksjoner: tema-chips i horisontal rad
+  100% bredde, samlekart med intro-kort venstre, og tekst-seksjoner med sticky kategori-nav.
+  Eksisterende rapport hadde chips låst inne i hero-venstre-kolonne (~50% bredde) med stramme
+  lucide-outlined ikoner, samlekart nederst (91% scroll-dybde), og tekst-seksjoner sentret i
+  800px uten navigasjon.
+fix:
+  - Hero stripped til kun tittel + intro + image — chips flyttet ut til egen ReportThemeChipsRow
+  - Chips-row: max-w-[1280px], grid-cols-7 (wrap til 3-col/2-col på smal viewport), aspect-square
+    watercolor-ikon på toppen + spørsmål + tema-navn under, full bredde innenfor kortet
+  - Watercolor-ikoner fra public/illustrations/icons/*.png (Gemini-generert) erstatter lucide-React
+    via theme-id → path-mapping (med legacy-overrides: barn-oppvekst → barn-aktivitet,
+    transport → transport-mobilitet)
+  - Samlekart flyttet fra bunnen til rett under chips-row, beholder intro-kort + kart i 1280px-flex
+  - ReportThemeSidebar: sticky scroll-spy m/ IntersectionObserver (rootMargin -30%/-50%, 5 thresholds);
+    klikk = smooth-scroll til seksjons-id; aktivt tema highlightet med #f5f1ec bg
+  - Sticky-bug: la sticky på <nav> inni <aside> → containing-block ble aside (400px) ikke flex-parent
+    (9629px). Fikset ved å flytte `sticky top-8 self-start` til <aside> selv
+  - Gap mellom sidebar og innhold: gap-12 → gap-24 etter visuell QA
+  - Tekst-seksjoner: max-w-[800px] mx-auto → max-w-[1280px] container m/ flex (220px sidebar + max-w-[872px] innhold)
+  - Sub-bug fanget: ReportMapIntroCard viste "6" for alle kategorier fordi theme.pois er
+    visiblePOIs (slice(0, INITIAL_VISIBLE_COUNT)). Bytt til theme.allPOIs.length for ekte total
+result: |
+  - Hero: 2-col, ren tittel + intro (image på prosjekter som har heroImage)
+  - Chips-row: 7 vertikale kort i 1280px, watercolor-illustrasjoner top-of-card
+  - Samlekart: synlig i første viewport-pageful, intro-kort viser ekte kategori-totaler (24, 40, 19, 15, 12, 9, 16)
+  - Sticky nav følger med nedover fra første kategori, highlight skifter når seksjonen krysser midten
+  - Tekst-bredde: 872px (var 800px) — ~9% bredere lesemål m/ luft til sidebar
+learnings:
+  - position:sticky styres av nærmeste containing-block, IKKE viewport. Hvis sticky-elementet er
+    inne i en wrapper med items-start (som sizer til content), så stikker det innenfor wrapper-høyden.
+    Sett sticky direkte på flex-itemet, eller bruk self-stretch på wrapperen.
+  - getBoundingClientRect.y stort negativt mens scrollY er positiv = sticky engasjerer ikke i det
+    hele tatt; godt debug-signal når man tror sticky funker men ikke gjør det.
+  - theme.pois vs theme.allPOIs: pois = sliced (visible-count), allPOIs = full filtered.
+    INITIAL_VISIBLE_COUNT = 6 forklarte hvorfor alle kategori-tellinger viste samme tall.
+  - Gemini-watercolor-ikoner i public/illustrations/icons/ matcher theme-id med to legacy-overrides
+    (barn-aktivitet, transport-mobilitet) — kan klippe-og-lim på fremtidige report-views.
+
+---
+date: 2026-04-27
+action: Aggregerte kilder til bunn av rapport — splitt på Google ToS-grensen, så kollapset bak Drawer
+scope: Rapport-produktet, 2 commits på `refactor/grounding-kilder-aggregert-bunn`
+files:
+  - components/variants/report/ReportGroundingChips.tsx (NY — kun searchEntryPointHtml-blokken, inline per tema)
+  - components/variants/report/ReportSourcesAggregated.tsx (NY — bunn-aggregat, så Drawer-CTA i runde 2)
+  - components/variants/report/aggregate-sources.ts (NY — aggregateSources + groupSourcesByTheme rene helpere)
+  - components/variants/report/aggregate-sources.test.ts (NY — 17 tester for begge helpere)
+  - components/variants/report/ReportGroundingChips.test.tsx (NY — 5 tester, inkl. ToS-attr-injeksjon)
+  - components/variants/report/ReportSourcesAggregated.test.tsx (NY — 6 tester m/ matchMedia-shim for vaul)
+  - components/variants/report/ReportThemeSection.tsx (bytter ReportGroundingSources → ReportGroundingChips)
+  - components/variants/report/ReportPage.tsx (mounter ReportSourcesAggregated mellom secondary themes og summary)
+  - components/variants/report/ReportGroundingSources.tsx (SLETTET — erstattet av split)
+  - components/variants/report/ReportGroundingInline.tsx + ReportCuratedGrounded.tsx (oppdaterte doc-kommentarer)
+  - docs/plans/2026-04-27-001-refactor-grounding-sources-aggregert-bunn-plan.md
+  - docs/solutions/api-integration/gemini-grounding-pattern-20260418.md (nytt punkt 3a om plassering)
+problem: |
+  Per-tema-rendering av "Kilder (N)"-pill-listen + "Google foreslår også"-chips + "Generert med..."
+  ble gjentatt 7 ganger på rapport-siden. På Wesselsløkka 9 rå-kilder per tema, på Langenga-h7 så
+  mange som 53 rå-kilder over 7 temaer. Tung visuell støy som konkurrerer med rapport-narrativen.
+  Spørsmål: kan vi flytte kildene til bunn? Hva sier Google ToS?
+fix:
+  - Web-research mot Vertex AI grounding docs + Gemini API Additional Terms identifiserte to ToS-grenser
+  - searchEntryPointHtml ("Google foreslår også"-chips) MÅ stå adjacent til sin grounded response
+    (Vertex: "Whenever a grounded response is shown, its corresponding Search Suggestion should
+    remain visible"; Additional Terms: "will not modify, or intersperse any other content with,
+    the Grounded Results or Search Suggestions"). Aggregering av chips på tvers av kall = ToS-brudd.
+  - groundingChunks (kilde-URLer) har fleksibelt format så lenge "direct, single-click path" til
+    kilden bevares. Aggregering nederst er tillatt; disclosure-mønster (drawer/details) er tillatt
+    fordi det er én UI-affordance ved siden av lenken, ikke abstraksjon av selve klikket.
+  - Splittet ReportGroundingSources → ReportGroundingChips (inline per tema, kun chips) +
+    ReportSourcesAggregated (bunn, ett globalt kilder-aggregat med dedup per domene)
+  - Runde 2 (etter Langenga-skjermbilde med 42 unike kilder): la til "Kilder (42)"-CTA som åpner
+    shadcn vaul Drawer med kildene gruppert per tema i rapport-rekkefølge, alfabetisk inni.
+  - Innen hver gruppe: dedup på domene case-insensitive. Samme domene KAN dukke opp i flere
+    tema-grupper (ingen cross-theme dedup) — gjør per-kategori-skanning enklere.
+result: |
+  Før: 7 × KILDER-blokk + 7 × Google-chips + 7 × attribution per rapport
+  Etter: 7 × Google-chips inline (ToS-compliant) + 1 × kollapset "Kilder (N)"-CTA i bunn
+  - Wesselsløkka: 53 rå-kilder → 27 unike domener i Drawer
+  - Langenga-h7: 42 unike kilder gruppert under sine 7 temaer
+  - 49/49 tester passerer i components/variants/report (var 31 før — 18 nye)
+  - TypeScript clean, lint 0 errors, build 63/63 pages
+learnings:
+  - Google ToS skiller skarpt mellom searchEntryPoint (per-respons-kobling, "associated") og
+    groundingChunks (URL-attribusjon, fleksibelt format). Disclosure-mønster er tillatt for sistnevnte
+    fordi klikk på selve lenken fortsatt går direkte til kilden.
+  - vaul (shadcn Drawer) leser window.matchMedia ved mount → jsdom trenger matchMedia-shim i tester.
+    Bruker `beforeAll` med Object.defineProperty istedenfor å forurense vitest.setup.ts globalt.
+  - aggregateSources (cross-theme dedup) og groupSourcesByTheme (per-theme dedup, kan repetere)
+    løser to ulike problemer — beholder begge fordi CTA-tellingen vil ha unikt antall, men selve
+    listen vil ha tema-grupper.
+
+---
 date: 2026-04-22
 action: Rapport-terminologi refactor — lowerNarrative/extendedBridgeText → leadText (full /full-syklus)
 scope: Rapport-produktet, 10 commits, prod JSONB-migrasjon

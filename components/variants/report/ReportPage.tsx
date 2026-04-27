@@ -8,8 +8,16 @@ import { transformToReportData, type ReportTheme } from "./report-data";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import ReportHero from "./ReportHero";
+import ReportThemeChipsRow from "./ReportThemeChipsRow";
+import ReportThemeSidebar from "./ReportThemeSidebar";
+import ReportMapIntroCard from "./ReportMapIntroCard";
 import ReportThemeSection from "./ReportThemeSection";
 import ReportSummarySection from "./ReportSummarySection";
+// Aggregert kilder-footer for hele rapporten — én konsolidert liste i stedet
+// for per-tema kildeblokker.
+const ReportSourcesAggregated = dynamic(
+  () => import("./ReportSourcesAggregated"),
+);
 // ReportOverviewMap krever WebGL og browser-API → må lastes kun på klient.
 // Følger samme mønster som ReportThemeMap (SSR-safe).
 const ReportOverviewMap = dynamic(() => import("./blocks/ReportOverviewMap"), {
@@ -117,52 +125,52 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
       {/* Hero — full bleed, breaks out of centered container */}
       <ReportHero
         projectName={reportData.projectName}
-        themes={reportData.themes}
         heroIntro={reportData.heroIntro}
         heroImage={reportData.heroImage}
       />
 
-      {/* Centered 800px layout — shared by all themes, overview map, summary */}
-      <div className="max-w-[800px] mx-auto w-full px-6 md:px-16">
+      {/* Tema-chips — horisontal rad i full 1280px bredde under hero */}
+      <ReportThemeChipsRow themes={reportData.themes} />
 
-        {/* Primary themes */}
-        {primaryThemes.map((theme, i) => (
-          <div key={theme.id} ref={revealRef} className="report-section-reveal">
-            {i > 0 && <ThemeSeparator />}
-            <ReportThemeSection
-              theme={theme}
-              center={reportData.centerCoordinates}
-              projectName={reportData.projectName}
-              mapStyle={reportData.mapStyle}
-              areaSlug={areaSlug}
-              has3dAddon={effectiveProject.has3dAddon ?? false}
-              allProjectPOIs={reportData.allProjectPOIs}
-            />
-          </div>
-        ))}
-
-        {/* 3D-kart — "Alt rundt [område]". Vises for alle rapporter med POIs. */}
-        {effectiveProject.pois.length > 0 && (
-          <ReportOverviewMap
-            areaSlug={areaSlug}
-            projectName={reportData.projectName}
-            center={reportData.centerCoordinates}
-            pois={effectiveProject.pois}
-            has3dAddon={effectiveProject.has3dAddon ?? false}
-            initialHeading={reportData.initialHeading}
-          />
-        )}
-
-        {/* Secondary themes — demoted from welcome screen */}
-        {secondaryThemes.length > 0 && (
-          <>
-            <div className="py-8">
-              <div className="h-px bg-[#e8e4df]" />
-              <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mt-6 mb-2">
-                Andre kategorier
-              </p>
+      {/* Samlekart — intro-kort + kart side om side, 1280px container */}
+      {effectiveProject.pois.length > 0 && (
+        <div className="max-w-[1280px] mx-auto w-full px-6 md:px-12 py-12 border-t border-[#f0ece8]">
+          <div className="flex gap-8 items-start">
+            {/* Intro-kort — venstre kolonne */}
+            <div className="w-[220px] shrink-0 pt-2">
+              <ReportMapIntroCard
+                poiCount={effectiveProject.pois.length}
+                motiver={effectiveProject.reportConfig?.motiver}
+                themes={reportData.themes}
+              />
             </div>
-            {secondaryThemes.map((theme, i) => (
+            {/* Kart — høyre kolonne */}
+            <div className="flex-1 min-w-0">
+              <ReportOverviewMap
+                areaSlug={areaSlug}
+                projectName={reportData.projectName}
+                center={reportData.centerCoordinates}
+                pois={effectiveProject.pois}
+                has3dAddon={effectiveProject.has3dAddon ?? false}
+                initialHeading={reportData.initialHeading}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tekst-seksjoner — 1280px container med sticky sidebar venstre */}
+      <div className="max-w-[1280px] mx-auto w-full px-6 md:px-12">
+        <div className="flex gap-24 items-start">
+          {/* Sticky sidebar — følger med nedover */}
+          <aside className="w-[220px] shrink-0 hidden lg:block pt-2 sticky top-8 self-start">
+            <ReportThemeSidebar themes={reportData.themes} />
+          </aside>
+
+          {/* Tema-innhold */}
+          <div className="flex-1 min-w-0 max-w-[872px]">
+            {/* Primary themes */}
+            {primaryThemes.map((theme, i) => (
               <div key={theme.id} ref={revealRef} className="report-section-reveal">
                 {i > 0 && <ThemeSeparator />}
                 <ReportThemeSection
@@ -171,14 +179,44 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
                   projectName={reportData.projectName}
                   mapStyle={reportData.mapStyle}
                   areaSlug={areaSlug}
-                  variant="secondary"
                   has3dAddon={effectiveProject.has3dAddon ?? false}
                   allProjectPOIs={reportData.allProjectPOIs}
                 />
               </div>
             ))}
-          </>
-        )}
+
+            {/* Secondary themes — demoted from welcome screen */}
+            {secondaryThemes.length > 0 && (
+              <>
+                <div className="py-8">
+                  <div className="h-px bg-[#e8e4df]" />
+                  <p className="text-xs uppercase tracking-[0.2em] text-[#a0937d] mt-6 mb-2">
+                    Andre kategorier
+                  </p>
+                </div>
+                {secondaryThemes.map((theme, i) => (
+                  <div key={theme.id} ref={revealRef} className="report-section-reveal">
+                    {i > 0 && <ThemeSeparator />}
+                    <ReportThemeSection
+                      theme={theme}
+                      center={reportData.centerCoordinates}
+                      projectName={reportData.projectName}
+                      mapStyle={reportData.mapStyle}
+                      areaSlug={areaSlug}
+                      variant="secondary"
+                      has3dAddon={effectiveProject.has3dAddon ?? false}
+                      allProjectPOIs={reportData.allProjectPOIs}
+                    />
+                  </div>
+                ))}
+              </>
+            )}
+
+            {/* Aggregert kilder-footer for hele rapporten. Liten tekst, dempet —
+                metadata, ikke innhold. Returnerer null hvis ingen tema har kilder. */}
+            <ReportSourcesAggregated themes={reportData.themes} />
+          </div>
+        </div>
       </div>
 
       {/* Summary section — full-bleed hero-style layout mirroring ReportHero.

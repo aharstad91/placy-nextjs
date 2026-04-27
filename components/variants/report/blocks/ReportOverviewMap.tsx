@@ -19,15 +19,15 @@ const NEAR_THRESHOLD_M = 1200;
 const FAR_OPACITY = 0.3;
 
 /**
- * ReportOverviewMap — blokk for "Alt rundt [omr\u00e5de]"-seksjonen.
+ * ReportOverviewMap — blokk for "Alt rundt [område]"-seksjonen.
  *
- * Dormant preview i rapporten \u2192 klikk \u00e5pner UnifiedMapModal med 2D default
+ * Dormant preview i rapporten → klikk åpner UnifiedMapModal med 2D default
  * og valgfri 3D-toggle (krever has3dAddon).
  */
 interface ReportOverviewMapProps {
   areaSlug?: string | null;
   projectName?: string;
-  /** Senter for prosjektet \u2014 brukes til distanseberegning og kamerasenter. */
+  /** Senter for prosjektet — brukes til distanseberegning og kamerasenter. */
   center?: { lat: number; lng: number };
   /** Ekte POIs fra prosjektet. */
   pois: POI[];
@@ -115,7 +115,7 @@ export default function ReportOverviewMap({
     }
   }, [mapCenter]);
 
-  /** Alle POIs med distansebasert opacity (n\u00e6r \u22641200m = 1, fjern = 0.3). */
+  /** Alle POIs med distansebasert opacity (nær ≤1200m = 1, fjern = 0.3). */
   const poisWithOpacity = useMemo(() => {
     return pois.map((poi) => {
       const dist = center
@@ -166,18 +166,18 @@ export default function ReportOverviewMap({
           Alt rundt {projectName}
         </h2>
         <p className="text-[#5d5348] mb-6 leading-relaxed">
-          Se nabolaget i ekte 3D — rot\u00e9r 360\u00b0 og tilt opp/ned for \u00e5 utforske
+          Se nabolaget i ekte 3D — rotér 360° og tilt opp/ned for å utforske
           fra alle vinkler.
         </p>
 
-        {/* Dormant preview \u2014 hele flaten er klikkbar */}
+        {/* Dormant preview — hele flaten er klikkbar */}
         <button
           onClick={handleOpenSheet}
           className="mt-2 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
         >
           {/* TODO(2na.16): Dormant preview switched from MapView3D to ReportThemeMap (Mapbox 2D).
               Update CTA text and description copy to reflect 2D default. */}
-          {/* Unmount preview when modal is open \u2014 iOS WebKit only supports one WebGL context.
+          {/* Unmount preview when modal is open — iOS WebKit only supports one WebGL context.
               pointer-events-none on wrapper: all touch events are caught by the button,
               not by the WebGL element (which would otherwise block click on touch devices). */}
           {!sheetOpen && (
@@ -209,7 +209,7 @@ export default function ReportOverviewMap({
         </button>
       </div>
 
-      {/* Modal \u2014 delegated to UnifiedMapModal (shared Shell, 2D default, optional 3D toggle) */}
+      {/* Modal — delegated to UnifiedMapModal (shared Shell, 2D default, optional 3D toggle) */}
       <UnifiedMapModal
         open={sheetOpen}
         onOpenChange={handleSheetChange}

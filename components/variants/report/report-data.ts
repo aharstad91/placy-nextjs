@@ -478,11 +478,12 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
     // Opplevelser krever minst én POI innen 15 min — ellers er det ikke et reelt nabolagstilbud
     if (themeDef.id === "opplevelser") {
-      const nearest = themePOIs.reduce((best, p) => {
-        const walk = p.travelTime?.walk ?? Infinity;
-        return walk < (best.travelTime?.walk ?? Infinity) ? p : best;
-      }, themePOIs[0]);
-      if ((nearest.travelTime?.walk ?? Infinity) > 15) continue;
+      const walkMinutes = (p: POI) =>
+        p.travelTime?.walk ?? (haversineMeters(center, p.coordinates) * 1.3) / 83;
+      const nearest = themePOIs.reduce((best, p) =>
+        walkMinutes(p) < walkMinutes(best) ? p : best
+      , themePOIs[0]);
+      if (walkMinutes(nearest) > 15) continue;
     }
 
     // Sort by distance to project center (closest first)
