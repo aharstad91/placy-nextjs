@@ -5,7 +5,7 @@ import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 export type { MapRef };
 import type { Coordinates, POI, TrailCollection } from "@/lib/types";
 import { getIcon } from "@/lib/utils/map-icons";
-import { Building2 } from "lucide-react";
+import { Building2, Home } from "lucide-react";
 import { MarkerTooltip } from "@/components/map/marker-tooltip";
 import { TrailLayer } from "@/components/map/trail-layer";
 import { RouteLayer } from "@/components/map/route-layer";
@@ -34,6 +34,9 @@ interface ReportThemeMapProps {
   vehiclePositions?: Array<{ lat: number; lng: number; color: string }>;
   /** Callback exposing the MapRef once the map is loaded — used by UnifiedMapModal for camera reads */
   onMapReady?: (ref: MapRef) => void;
+  /** Preview-modus: forenklet POI-rendering (single-tone prikker), fast view (zoom 13.5),
+   *  forstørret prosjekt-pin med Home-ikon. Ingen labels, tooltips eller route-overlays. */
+  previewMode?: boolean;
 }
 
 export default function ReportThemeMap({
@@ -51,6 +54,7 @@ export default function ReportThemeMap({
   mapChips,
   vehiclePositions,
   onMapReady,
+  previewMode = false,
 }: ReportThemeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -164,7 +168,9 @@ export default function ReportThemeMap({
         ref={mapRef}
         mapboxAccessToken={token}
         initialViewState={
-          initialBounds
+          previewMode
+            ? { longitude: center.lng, latitude: center.lat, zoom: 13.5 }
+            : initialBounds
             ? { bounds: initialBounds, fitBoundsOptions: { padding: 60, maxZoom: 16 } }
             : { longitude: center.lng, latitude: center.lat, zoom: 14 }
         }
@@ -202,18 +208,50 @@ export default function ReportThemeMap({
                 <span className="text-xs font-semibold text-[#1a1a1a]">{projectName}</span>
               </div>
             )}
-            {/* Marker with glow */}
+            {/* Marker with glow — i preview-modus er pin forstørret og responderer på group-hover.
+                Pulse-animasjon er KUN i modal (activated) — i preview er glowen statisk og dempet. */}
             <div className="relative">
-              <div className="absolute -inset-2 rounded-full bg-[#b45309]/20 animate-pulse" />
-              <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-[#b45309] border-[2.5px] border-white shadow-lg">
-                <Building2 className="w-6 h-6 text-white" />
+              <div
+                className={`absolute rounded-full bg-[#b45309] transition-opacity duration-300 ${
+                  previewMode
+                    ? "-inset-2 opacity-15 group-hover:opacity-25"
+                    : "-inset-2 opacity-20 animate-pulse"
+                }`}
+              />
+              <div
+                className={`relative flex items-center justify-center rounded-full bg-[#b45309] border-[2.5px] border-white shadow-lg transition-transform duration-200 ${
+                  previewMode
+                    ? "w-14 h-14 group-hover:scale-110"
+                    : "w-12 h-12"
+                }`}
+              >
+                {previewMode ? (
+                  <Home className="w-7 h-7 text-white" strokeWidth={2.25} />
+                ) : (
+                  <Building2 className="w-6 h-6 text-white" />
+                )}
               </div>
             </div>
           </div>
         </Marker>
 
-        {/* POI markers — tier-aware styling */}
+        {/* POI markers — i previewMode rendres alle som single-tone prikker (ingen ikoner,
+            labels eller tooltips). Ellers tier-aware styling for modal-bruk. */}
         {pois.map((poi) => {
+          if (previewMode) {
+            return (
+              <Marker
+                key={poi.id}
+                longitude={poi.coordinates.lng}
+                latitude={poi.coordinates.lat}
+                anchor="center"
+                style={{ zIndex: 1 }}
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-[#94a3b8] border border-[#64748b]/60 shadow-sm pointer-events-none" />
+              </Marker>
+            );
+          }
+
           const isHighlighted = highlightedPOIId === poi.id;
           const isFeatured = activated && featuredPOIIds?.has(poi.id);
           const isHovered = hoveredPOI === poi.id && !isHighlighted;

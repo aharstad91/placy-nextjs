@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useMemo, useRef, useCallback } from "react";
-import { Map as MapIcon } from "lucide-react";
 import { MapView3D } from "@/components/map/map-view-3d";
 import UnifiedMapModal, { type SlotContext } from "@/components/map/UnifiedMapModal";
 import ReportThemeMap from "@/components/variants/report/ReportThemeMap";
+import ReportMapPreviewCard from "@/components/variants/report/ReportMapPreviewCard";
 import type { POI } from "@/lib/types";
 import {
   DEFAULT_CAMERA_LOCK,
@@ -145,17 +145,18 @@ export default function ReportOverviewMap({
           fra alle vinkler.
         </p>
 
-        {/* Dormant preview — hele flaten er klikkbar */}
-        <button
-          onClick={handleOpenSheet}
-          className="mt-2 md:max-w-4xl h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
-        >
-          {/* TODO(2na.16): Dormant preview switched from MapView3D to ReportThemeMap (Mapbox 2D).
-              Update CTA text and description copy to reflect 2D default. */}
-          {/* Unmount preview when modal is open — iOS WebKit only supports one WebGL context.
-              pointer-events-none on wrapper: all touch events are caught by the button,
-              not by the WebGL element (which would otherwise block click on touch devices). */}
-          {!sheetOpen && (
+        {/* Dormant preview — hele kortet (kart + info-stripe) er klikkbar.
+            Unmountes når modal er åpen: iOS WebKit støtter kun én WebGL-kontekst. */}
+        {!sheetOpen && (
+          <ReportMapPreviewCard
+            title={`Alt rundt ${projectName}`}
+            count={pois.length}
+            countLabel="steder i nabolaget"
+            illustrationSrc="/illustrations/wesselslokka-aerial-watercolor.png"
+            illustrationAlt={`Akvarell-illustrasjon av nabolaget rundt ${projectName}`}
+            onClick={handleOpenSheet}
+            ariaLabel={`Utforsk alle ${pois.length} steder rundt ${projectName} på kartet`}
+          >
             <div className="absolute inset-0 pointer-events-none">
               <ReportThemeMap
                 pois={pois}
@@ -163,25 +164,12 @@ export default function ReportOverviewMap({
                 highlightedPOIId={null}
                 onMarkerClick={() => {}}
                 activated={false}
+                previewMode
                 projectName={projectName}
               />
             </div>
-          )}
-
-          {/* Gradient-overlay som skiller CTA fra kartet */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec]/90 via-[#f5f1ec]/10 to-transparent pointer-events-none z-10" />
-
-          {/* CTA sentralt */}
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
-            <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
-              {pois.length} steder i 3D
-            </p>
-            <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
-              <MapIcon className="w-4 h-4 text-[#7a7062]" />
-              Utforsk i 3D
-            </div>
-          </div>
-        </button>
+          </ReportMapPreviewCard>
+        )}
       </div>
 
       {/* Modal — delegated to UnifiedMapModal (shared Shell, 2D default, optional 3D toggle) */}
