@@ -3,6 +3,41 @@
 <!-- Each entry is a YAML block. Most recent first. -->
 
 ---
+date: 2026-04-28
+action: Deaktiver Opplevelser-kategori i rapport-pipelinen (midlertidig, til innholdskvalitet er løst)
+scope: Rapport-produktet — alle bolig-rapporter (tagged + untagged legacy), /generate-bolig-pipelinen
+status: shipped — alle 4 units fullført + verifisert end-to-end
+trello: https://trello.com/c/VzitI2lQ
+plan: docs/plans/2026-04-28-002-feat-deaktiver-opplevelser-kategori-plan.md
+files:
+  - lib/themes/bransjeprofiler.ts (ny eksportert konstant GLOBAL_DISABLED_REPORT_THEMES + utvidet BransjeprofilFeatures.disabledThemes)
+  - lib/themes/index.ts (eksport av GLOBAL_DISABLED_REPORT_THEMES)
+  - components/variants/report/report-themes.ts (filter på union av global + per-profil disabled themes)
+  - components/variants/report/report-themes.test.ts (NY — 11 tester for filter-logikken)
+  - .claude/commands/generate-bolig.md (fjernet opplevelser-blokken fra Step 2c, beholdt POI-discovery i Step 3a for null-friksjon re-aktivering — lokal-only, gitignored)
+result: |
+  Opplevelser-kategorien skjult fra alle rapport-overflater (tema-chips, sidebar-nav, seksjon-rendring,
+  paraform-variant). Verifisert på obos_nostebukten-brygge (gikk fra 7 til 6 seksjoner). Markus_bones
+  hadde uansett kun 1 opplevelser-POI (filtrert ut av THEME_MIN_POIS=2).
+
+  Re-aktiverings-test bekreftet: fjerning av "opplevelser" fra GLOBAL_DISABLED_REPORT_THEMES
+  restaurerer kategorien umiddelbart med eksisterende grounding-data fra Supabase. 10 produkter har
+  fortsatt opplevelser-data lagret (uendret).
+
+  Discovery i /generate-bolig Step 3a (museum, library, movie_theater) beholdt — POI-er hentes
+  fortsatt for null-friksjon re-aktivering når innholdskvalitet er løst.
+
+  Kvalitet: TypeScript ren, 11/11 nye tester passerer, 49/49 eksisterende rapport-tester passerer.
+  3 pre-existing feil i lib/curation/validator.test.ts er urelatert (verifisert via git stash).
+
+  Designjustering vs. plan: implementerte som top-level konstant `GLOBAL_DISABLED_REPORT_THEMES`
+  istedenfor per-profil-flagg som planen opprinnelig spesifiserte. Begrunnelse: untagged
+  legacy-prosjekter (markus_bones, nostebukten-brygge har `tags: []`) faller tilbake til
+  fallback-profilen i getBransjeprofil, som ikke har features-objekt. Per-profil-flagget ville
+  krevd å duplikere innstillingen i fallback-profilen og hver av de tre BRANSJEPROFILER.
+  Global konstant gir én sann kilde for re-aktivering.
+
+---
 date: 2026-04-27
 action: Rapport-layout refactor — full 1280px container, chips-row med watercolor-ikoner, sticky sidebar
 scope: Rapport-produktet, frontend kun (ingen DB/migrasjon)
