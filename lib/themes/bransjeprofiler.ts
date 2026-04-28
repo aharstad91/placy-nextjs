@@ -22,6 +22,14 @@ export interface BransjeprofilFeatures {
   eventUrl?: boolean;
   kompass?: boolean;
   profilFilter?: boolean;
+  /**
+   * Tema-id-er som skal skjules fra rapport-rendering for denne bransjeprofilen.
+   * Filteret kjøres i `getReportThemes()` etter alias-resolusjon, så å sette
+   * `["opplevelser"]` skjuler både canonical id og legacy alias-id-er som
+   * resolver til "opplevelser". Eksisterende data i Supabase forblir uendret —
+   * kun rendering deaktiveres. Re-aktiver ved å fjerne id-en fra arrayen.
+   */
+  disabledThemes?: string[];
 }
 
 export interface Bransjeprofil {
@@ -230,6 +238,25 @@ const EVENT_THEMES: ThemeDefinition[] = [
     categories: ["campground", "glamping", "camping_hub", "camping_showers"],
     color: "#10b981",
   },
+];
+
+/**
+ * Globalt deaktiverte tema-id-er — gjelder alle rapporter uavhengig av
+ * bransjeprofil eller om prosjektet har tags satt. Bruk for kategorier
+ * som er midlertidig skjult på tvers av produktet (f.eks. pga.
+ * innholdskvalitet). Re-aktivering = fjern id-en herfra.
+ *
+ * Per-bransjeprofil-deaktivering kan i tillegg settes via
+ * `BransjeprofilFeatures.disabledThemes` — filteret tar union av begge.
+ */
+export const GLOBAL_DISABLED_REPORT_THEMES: string[] = [
+  // Opplevelser midlertidig deaktivert (2026-04-28) pga. utilstrekkelig
+  // innholdskvalitet (kultur/museum/bibliotek/kino/teater). Re-aktiver
+  // ved å fjerne strengen fra denne arrayen — eksisterende grounding-data
+  // i Supabase er bevart, så kategorien dukker opp igjen umiddelbart
+  // uten rebuild eller migrasjon.
+  // Se docs/plans/2026-04-28-002-feat-deaktiver-opplevelser-kategori-plan.md
+  "opplevelser",
 ];
 
 /**

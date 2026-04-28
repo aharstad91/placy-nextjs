@@ -5,6 +5,7 @@ export { VENUE_PROFILES, getVenueProfile } from "./venue-profiles";
 export type { Bransjeprofil, BransjeprofilFeatures } from "./bransjeprofiler";
 export {
   BRANSJEPROFILER,
+  GLOBAL_DISABLED_REPORT_THEMES,
   THEME_ID_ALIASES,
   resolveThemeId,
   getBransjeprofil,
