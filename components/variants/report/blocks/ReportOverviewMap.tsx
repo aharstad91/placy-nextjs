@@ -5,7 +5,6 @@ import { Map as MapIcon } from "lucide-react";
 import { MapView3D } from "@/components/map/map-view-3d";
 import UnifiedMapModal, { type SlotContext } from "@/components/map/UnifiedMapModal";
 import ReportThemeMap from "@/components/variants/report/ReportThemeMap";
-import { calculateDistance } from "@/lib/utils/geo";
 import type { POI } from "@/lib/types";
 import {
   DEFAULT_CAMERA_LOCK,
@@ -14,9 +13,6 @@ import {
   filterPoisByTab,
   type Map3DTabId,
 } from "./report-3d-config";
-
-const NEAR_THRESHOLD_M = 1200;
-const FAR_OPACITY = 0.3;
 
 /**
  * ReportOverviewMap — blokk for "Alt rundt [område]"-seksjonen.
@@ -114,27 +110,6 @@ export default function ReportOverviewMap({
       });
     }
   }, [mapCenter]);
-
-  /** Alle POIs med distansebasert opacity (nær ≤1200m = 1, fjern = 0.3). */
-  const poisWithOpacity = useMemo(() => {
-    return pois.map((poi) => {
-      const dist = center
-        ? calculateDistance(
-            center.lat,
-            center.lng,
-            poi.coordinates.lat,
-            poi.coordinates.lng,
-          )
-        : 0;
-      return { ...poi, opacity: dist <= NEAR_THRESHOLD_M ? 1 : FAR_OPACITY };
-    });
-  }, [pois, center]);
-
-  /** Record for rask opacity-oppslag i MapView3D. */
-  const opacities = useMemo(
-    () => Object.fromEntries(poisWithOpacity.map((p) => [p.id, p.opacity])),
-    [poisWithOpacity],
-  );
 
   const visiblePois = useMemo(
     () => filterPoisByTab(pois, activeTab),
@@ -241,7 +216,6 @@ export default function ReportOverviewMap({
             center={mapCenter}
             cameraLock={effectiveCameraLock}
             pois={visiblePois}
-            opacities={opacities}
             activePOIId={ctx.activePOI}
             onPOIClick={(id) =>
               ctx.setActivePOI(ctx.activePOI === id ? null : id)
