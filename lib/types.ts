@@ -250,7 +250,11 @@ export const ReportThemeGroundingV2Schema = z.object({
   searchEntryPointHtml: z.string().min(1),
   fetchedAt: z.string(),
   curatedAt: z.string(),
-  poiLinksUsed: z.array(z.string().uuid()).default([]),
+  // POI-IDer i Placy er heterogene strenger: UUID, `google-ChIJ…`, slug-stil
+  // (`bus-dronningens-gate`, `park-adressaparken`, `entur-NSR-StopPlace-271`).
+  // Stram UUID-sjekk droppet 6/7 grounding-objekter ved render — sikkerheten
+  // ligger i whitelist-oppslag mot loaded POI-set, ikke ID-form.
+  poiLinksUsed: z.array(z.string().min(1)).default([]),
   groundingVersion: z.literal(2),
 });
 

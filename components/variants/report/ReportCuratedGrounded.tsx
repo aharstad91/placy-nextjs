@@ -18,9 +18,10 @@ import POIPopover from "./POIPopover";
  * - Render-time re-validering mot loaded POI-set (ghost-POIs → plain text)
  */
 
-// POI href-format: poi:<uuid>
-const POI_HREF_RE =
-  /^poi:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// POI href-format: poi:<id>. POI-IDer er heterogene (UUID, google-ChIJ…,
+// slug-stil). Regexen blokkerer href-injection; cross-tenant-sikkerhet ligger
+// i poisById-whitelist-oppslaget under.
+const POI_HREF_RE = /^poi:[a-z0-9_-]+$/i;
 
 // rehype-sanitize schema: tillat poi: og https: på href
 const SANITIZE_SCHEMA = {

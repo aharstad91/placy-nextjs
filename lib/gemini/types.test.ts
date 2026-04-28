@@ -108,14 +108,33 @@ describe("ReportThemeGroundingViewSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects v2 with invalid POI UUID", () => {
+  it("accepts non-UUID POI ids in poiLinksUsed", () => {
+    // POI-tabellen i Placy har heterogene IDer (UUID, google-ChIJ…, slug-stil).
+    // Schema må akseptere alle — sikkerheten ligger i whitelist-oppslaget
+    // mot prosjektets POI-set ved render, ikke ID-form.
     const result = ReportThemeGroundingViewSchema.safeParse({
       ...valid,
       groundingVersion: 2,
       curatedNarrative:
         "En kuratert unified tekst med minst hundre tegn. Den har POI-lenker og flyter sømløst. Her er enda en setning for å sikre lengden.",
       curatedAt: "2026-04-19T08:00:00Z",
-      poiLinksUsed: ["not-a-uuid"],
+      poiLinksUsed: [
+        "550e8400-e29b-41d4-a716-446655440000",
+        "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+        "bus-dronningens-gate",
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty strings in poiLinksUsed", () => {
+    const result = ReportThemeGroundingViewSchema.safeParse({
+      ...valid,
+      groundingVersion: 2,
+      curatedNarrative:
+        "En kuratert unified tekst med minst hundre tegn. Den har POI-lenker og flyter sømløst. Her er enda en setning for å sikre lengden.",
+      curatedAt: "2026-04-19T08:00:00Z",
+      poiLinksUsed: [""],
     });
     expect(result.success).toBe(false);
   });
