@@ -16,7 +16,7 @@ import type { POI } from "@/lib/types";
 import { Marker3DPin } from "./Marker3DPin";
 import { ProjectSitePin } from "./ProjectSitePin";
 import { Map3DControls, type Map3DAny } from "./Map3DControls";
-import { getIcon } from "@/lib/utils/map-icons";
+import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useWebGLCheck } from "./Map3DFallback";
 
 /** Type for map3d-instansen vi sender tilbake til foreldre. */
@@ -129,7 +129,7 @@ const Marker3DItem = memo(function Marker3DItem({
   opacity: number;
   onPOIClick?: (id: string) => void;
 }) {
-  const Icon = getIcon(poi.category.icon);
+  const Icon = getFilledIcon(poi.category.icon);
   return (
     <Marker3D
       position={{
@@ -365,7 +365,7 @@ function MapboxFallback({
       mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
     >
       {pois.map((poi) => {
-        const Icon = getIcon(poi.category.icon);
+        const Icon = getFilledIcon(poi.category.icon);
         return (
           <MapboxMarker
             key={poi.id}

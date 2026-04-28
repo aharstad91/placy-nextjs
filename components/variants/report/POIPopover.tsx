@@ -35,19 +35,8 @@ export default function POIPopover({ poi, label }: POIPopoverProps) {
         <span
           role="button"
           tabIndex={0}
-          className="inline-flex items-baseline gap-1 font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors cursor-pointer"
+          className="font-semibold text-[#1a1a1a] underline decoration-[#d4cfc8] decoration-2 underline-offset-2 hover:decoration-[#8a8a8a] transition-colors cursor-pointer"
         >
-          <span
-            className="inline-flex items-center justify-center w-[1.2em] h-[1.2em] rounded-full shrink-0 overflow-hidden relative translate-y-[0.15em]"
-            style={!imageUrl ? { backgroundColor: poi.category.color + "20" } : undefined}
-          >
-            {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <Icon className="w-[0.6em] h-[0.6em]" style={{ color: poi.category.color }} />
-            )}
-          </span>
           {displayLabel}
         </span>
       </PopoverTrigger>
