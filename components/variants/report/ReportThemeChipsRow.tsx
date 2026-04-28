@@ -2,25 +2,11 @@
 
 import Image from "next/image";
 import type { ReportTheme } from "./report-data";
+import { THEME_ICON_SRC } from "./theme-icons";
 
 interface ReportThemeChipsRowProps {
   themes: ReportTheme[];
 }
-
-/**
- * Watercolor-illustrasjoner generert via Gemini. Filnavn matcher tema-id, med
- * legacy-overrides for tema som har skiftet id (barn-oppvekst → barn-aktivitet,
- * transport → transport-mobilitet).
- */
-const THEME_ICON_SRC: Record<string, string> = {
-  hverdagsliv: "/illustrations/icons/hverdagsliv-icon.png",
-  "barn-oppvekst": "/illustrations/icons/barn-aktivitet-icon.png",
-  "mat-drikke": "/illustrations/icons/mat-drikke-icon.png",
-  opplevelser: "/illustrations/icons/opplevelser-icon.png",
-  "natur-friluftsliv": "/illustrations/icons/natur-friluftsliv-icon.png",
-  transport: "/illustrations/icons/transport-mobilitet-icon.png",
-  "trening-aktivitet": "/illustrations/icons/trening-aktivitet-icon.png",
-};
 
 export default function ReportThemeChipsRow({ themes }: ReportThemeChipsRowProps) {
   if (themes.length === 0) return null;

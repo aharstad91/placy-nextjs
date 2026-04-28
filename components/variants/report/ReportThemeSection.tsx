@@ -8,7 +8,7 @@ import type { SlotContext } from "@/components/map/UnifiedMapModal";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { MapPin, Zap, Car, ExternalLink, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Zap, Car, ExternalLink, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
@@ -20,6 +20,8 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import UnifiedMapModal from "@/components/map/UnifiedMapModal";
+import ReportMapPreviewCard from "./ReportMapPreviewCard";
+import { THEME_SCENE_SRC } from "./theme-icons";
 import ReportMapBottomCarousel from "./blocks/ReportMapBottomCarousel";
 import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
@@ -252,34 +254,36 @@ export default function ReportThemeSection({
 
   // Map preview — flyttet ut av disclosure slik at det vises som primary
   // navigasjon mellom ingress og brødtekst (ikke gjemt bak "Les mer").
+  // Bruker delt ReportMapPreviewCard: forenklet POI-rendering (single-tone
+  // prikker), forstørret prosjekt-pin, info-stripe under med tema-tittel,
+  // antall, watercolor-illustrasjon og pil-i-sirkel-CTA.
+  const themeIllustrationSrc =
+    THEME_SCENE_SRC[theme.id] ?? "/illustrations/hverdagsliv.jpg";
   const mapPreview = !mapDialogOpen && theme.allPOIs.length > 0 ? (
-    <button
-      type="button"
+    <ReportMapPreviewCard
+      title={theme.name}
+      count={theme.allPOIs.length}
+      countLabel="steder på kartet"
+      illustrationSrc={themeIllustrationSrc}
+      illustrationAlt={`Akvarell-illustrasjon for ${theme.name}`}
       onClick={openMap}
-      className="h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
+      ariaLabel={`Utforsk ${theme.allPOIs.length} steder i ${theme.name} på kartet`}
     >
-      <ReportThemeMap
-        pois={theme.allPOIs}
-        center={center}
-        highlightedPOIId={null}
-        onMarkerClick={() => {}}
-        mapStyle={mapStyle}
-        activated={false}
-        projectName={projectName}
-        trails={theme.trails}
-        vehiclePositions={vehiclePositions}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
-        <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
-          {theme.allPOIs.length} steder på kartet
-        </p>
-        <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
-          <MapPin className="w-4 h-4 text-[#7a7062]" />
-          Utforsk kartet
-        </div>
+      <div className="absolute inset-0 pointer-events-none">
+        <ReportThemeMap
+          pois={theme.allPOIs}
+          center={center}
+          highlightedPOIId={null}
+          onMarkerClick={() => {}}
+          mapStyle={mapStyle}
+          activated={false}
+          previewMode
+          projectName={projectName}
+          trails={theme.trails}
+          vehiclePositions={vehiclePositions}
+        />
       </div>
-    </button>
+    </ReportMapPreviewCard>
   ) : null;
 
   // Shared body content — narratives, hero insight, progressive disclosure.
