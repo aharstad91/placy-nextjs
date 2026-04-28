@@ -4,6 +4,76 @@
 
 ---
 date: 2026-04-28
+action: Rapport-markører (2D + 3D) — lys disc m/ fylt farget Phosphor-ikon + kategorifarget ring, og fjerne POI-inline-ikon
+scope: Rapport-produktet, frontend kun. Worktree `refactor/rapport-markor-poi-inline-stil`.
+files:
+  - package.json (la til @phosphor-icons/react ^2.1.10)
+  - lib/utils/map-icons-filled.ts (NY — Phosphor-mapping for alle 37 lucide-navn fra map-icons.ts)
+  - lib/utils/map-icons-filled.test.ts (NY — 40 tester, fallback + alle mapped navn)
+  - components/variants/report/ReportThemeMap.tsx (2D markør-stil: lys disc, fylt farget ikon)
+  - components/map/Marker3DPin.tsx (3D markør-stil: bytte til Phosphor weight="fill",
+    lys disc + kategorifarget ring + farget fylt ikon — etter iterasjon m/ bruker
+    fra dark-glass-prototype)
+  - components/map/map-view-3d.tsx (bytte fra getIcon → getFilledIcon i begge callsites)
+  - components/variants/report/POIPopover.tsx (fjernet inline-ikon-spannet i trigger)
+  - docs/plans/2026-04-28-003-refactor-rapport-marker-og-poi-inline-stil-plan.md
+problem: |
+  To koblede UI-justeringer utløst av høyt visuelt trykk i rapporten:
+    1) Kart-markører viste mettede fargesirkler (kategorifarge som bg-disc, hvitt outline-ikon over).
+       Ved 35+ POI-er blir det fargestøy som konkurrerer med rapport-narrativen.
+    2) Inline POI-mentions viste samme kategori-ikon foran hver POI-lenke i samme avsnitt.
+       Når alle POI-er i en tema-seksjon deler kategori, blir ikonet ren støy.
+fix:
+  - Phosphor-icons (weight="fill") i stedet for Lucide for markørene — Lucide har ikke fyll-varianter
+  - Parallell helper `lib/utils/map-icons-filled.ts` mapper alle lucide-navn (Award, Baby, Bike, ...
+    UtensilsCrossed, Waves, Wine, Zap) til Phosphor-ekvivalenter (Medal, Bicycle, Cube, ForkKnife,
+    Lightning, ...). Beholder lucide-mappingen urørt så Explorer/Trip/Story/admin ikke påvirkes
+  - ReportThemeMap markør-stil: bg-disc fra `category.color` → `bg-white`. Border fra `border-white`
+    → `border-stone-200/300` (varierer m/ tier). Ikon fra `text-white` → `style={{ color: category.color }}`
+    + `weight="fill"`. Pulse-ring (highlighted) fra full disc m/ category bg → ring-only via `border-2`
+    m/ category borderColor. Tier-1 glow-ring beholdt som perimeter-effekt på lys disc
+  - Ikon-størrelse bumpet (tier 2: w-4 → w-[18px], tier 1: w-[18px] → w-5, tier 3: w-3.5 → w-4) fordi
+    fylt ikon på hvit bg leser visuelt mindre enn outline-på-mettet-bg
+  - POIPopover trigger: slettet hele ikon-disc-spannet (linje 40–50). Lenken er nå ren
+    underline-tekst. PopoverContent (header-ikon, rating, walk-tid) er urørt
+  - Story-produktet bruker samme `POIPopover` → får samme oppførsel automatisk (dokumentert som
+    scope-beslutning i planen)
+result: |
+  - Roligere kart med kategorifargen båret av selve ikonet, ikke en mettet bg-disc
+  - Aktiv-state synlig via pulse-ring i kategorifarge + scale-110, ikke via mettet bg
+  - Featured/tier-1-state synlig via perimeter-glow på lys disc
+  - Inline POI-mentions er ren tekst med underline + popover-trigger, ingen ikon-prefix
+  - 40 tester på map-icons-filled passerer; tsc + eslint + build alle grønne
+  - 3 pre-existing test-failures i `lib/curation/validator.test.ts` (ikke fra dette arbeidet —
+    verifisert mot main)
+learnings:
+  - Lucide er stroke-only (shadcn standard-bibliotek). Phosphor er drop-in-erstatning for fyll-ikoner
+    via `weight="fill"`-prop, og kan eksistere parallelt med lucide uten konflikt
+  - Når ikon bærer kategorifarge alene (uten mettet bg), trenger ikonet ~10–15% mer størrelse for å
+    lese like tydelig på lys disc som outline-på-mettet-bg
+  - Phosphor mangler noen lucide-konsepter: Award (→ Medal), Bike (→ Bicycle), Croissant (→ Bread),
+    UtensilsCrossed (→ ForkKnife), Plane (→ Airplane), TreePine (→ Tree), Sparkles (→ Sparkle),
+    Zap (→ Lightning), Landmark (→ Bank), Building2 (→ Buildings), Home (→ House), Mail (→ Envelope),
+    Smile (→ Tooth — semantisk bedre for dentist enn lucide Smile uansett). ParkingCircle og
+    CarFront mangler ekvivalenter — fall tilbake til Car
+  - Pulse-ring må være `border-2` med category color borderColor for å lese som ring etter at
+    sirkelen ble lys. `bg-disc + animate-ping` gir ikke ring-effekt på lys bakgrunn — bare en
+    flytende disc
+  - Google Maps 3D rasteriserer SVG-marker-innhold til tekstur — CSS `backdrop-filter` og andre
+    DOM-only effekter virker ikke. Phosphor-ikoner emitterer ren `<svg viewBox="0 0 256 256">`
+    med `<path fill="currentColor">`, som er gyldig nested SVG og rasterer korrekt
+  - Iterert m/ bruker på 3D-pinnen: dark-glass + hvitt ikon + farget ring (god, men koblet
+    fra 2D-stilen) → uten farget ring (for usynlig) → hvit + sort ikon + farget ring
+    (for hard kontrast) → mørk glass + farget ikon (ok men inkonsistent m/ 2D) →
+    landet på lys disc + kategorifarget fylt ikon + kategorifarget ring (samme språk
+    som 2D, bare med ring permanent og fyll #fafaf9 i stedet for #ffffff for å dempe
+    kontrast mot satellittfoto)
+  - Når flere visuelle alternativer er på bordet og bruker svinger mellom dem, gå
+    raskt og inkrementelt med små CSS/SVG-endringer + HMR — ikke bygg ny komponent
+    per variant. Hver iterasjon er én Edit + en refresh
+
+---
+date: 2026-04-28
 action: Deaktiver Opplevelser-kategori i rapport-pipelinen (midlertidig, til innholdskvalitet er løst)
 scope: Rapport-produktet — alle bolig-rapporter (tagged + untagged legacy), /generate-bolig-pipelinen
 status: shipped — alle 4 units fullført + verifisert end-to-end

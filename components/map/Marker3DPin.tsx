@@ -1,22 +1,27 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { useId } from "react";
 
 /**
  * SVG-based 3D marker pin for use as children of <Marker3D>.
  *
- * Google Maps 3D rasteriserer kun Pin/SVG/img som marker-innhold — ikke HTML.
- * Derfor bygger vi en inline SVG med sirkel-bakgrunn + nested Lucide-ikon.
+ * Google Maps 3D rasteriserer kun Pin/SVG/img som marker-innhold — ikke HTML,
+ * og rasteriseringen støtter ikke CSS backdrop-filter. "Glass"-effekten må
+ * derfor bygges med SVG-primitives: semi-transparent fyll lar satellitt-
+ * fotot skinne gjennom, og en subtil radial gradient gir konveks dybde-
+ * feel. En tynn kategorifarget ring beholder kategori-glanceability uten
+ * mettet bg-disc.
  *
- * Nested SVG er gyldig SVG og håndteres av nettleserens SVG-renderer før
- * Google konverterer marker-elementet til en tekstur.
+ * Hvitt fylt ikon (Phosphor weight="fill") leser tydelig over den mørke,
+ * tonete bakgrunnen mot fargerikt satellittbilde — der lys disc + farget
+ * ikon ville drukne.
  */
 export interface Marker3DPinProps {
-  /** Kategorifarge — hex eller CSS-farge */
+  /** Kategorifarge — hex eller CSS-farge. Brukes som ring rundt disc og badge-aksent. */
   color: string;
-  /** Lucide ikon-komponent (fra lucide-react) */
-  Icon: LucideIcon;
+  /** Phosphor ikon-komponent (fra @phosphor-icons/react). Rendres hvit med weight="fill". */
+  Icon: PhosphorIcon;
   /** Valgfritt tall-badge øverst til høyre */
   number?: number;
   /** Total størrelse i px — default 40 */
@@ -36,7 +41,7 @@ export function Marker3DPin({
 
   const half = size / 2;
   const circleR = half - 3;
-  const iconSize = Math.round(size * 0.5);
+  const iconSize = Math.round(size * 0.55);
   const iconOffset = (size - iconSize) / 2;
 
   const badgeR = Math.round(size * 0.18);
@@ -63,29 +68,29 @@ export function Marker3DPin({
             dx="0"
             dy="1.5"
             stdDeviation="1.5"
-            floodOpacity="0.3"
+            floodOpacity="0.35"
           />
         </filter>
       </defs>
 
-      {/* Background circle with white border + drop shadow */}
+      {/* Light disc with category-colored ring */}
       <circle
         cx={half}
         cy={half}
         r={circleR}
-        fill={color}
-        stroke="white"
+        fill="#fafaf9"
+        stroke={color}
         strokeWidth="2"
         filter={`url(#${shadowId})`}
       />
 
-      {/* Lucide icon (rendered as nested SVG, scaled to iconSize) */}
+      {/* Phosphor icon, weight="fill", colored by category */}
       <g transform={`translate(${iconOffset} ${iconOffset})`}>
         <Icon
           width={iconSize}
           height={iconSize}
-          stroke="white"
-          strokeWidth={2.2}
+          weight="fill"
+          color={color}
         />
       </g>
 

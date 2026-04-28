@@ -4,7 +4,7 @@ import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 export type { MapRef };
 import type { Coordinates, POI, TrailCollection } from "@/lib/types";
-import { getIcon } from "@/lib/utils/map-icons";
+import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { Building2 } from "lucide-react";
 import { MarkerTooltip } from "@/components/map/marker-tooltip";
 import { TrailLayer } from "@/components/map/trail-layer";
@@ -217,15 +217,15 @@ export default function ReportThemeMap({
           const isHighlighted = highlightedPOIId === poi.id;
           const isFeatured = activated && featuredPOIIds?.has(poi.id);
           const isHovered = hoveredPOI === poi.id && !isHighlighted;
-          const Icon = getIcon(poi.category.icon);
+          const Icon = getFilledIcon(poi.category.icon);
           const walkMinutes = poi.travelTime?.walk
             ? Math.round(poi.travelTime.walk / 60)
             : null;
 
           const tier = poi.poiTier ?? 2;
           const tierSize = tier === 1 ? "w-9 h-9" : tier === 3 ? "w-7 h-7" : "w-8 h-8";
-          const tierBorder = tier === 1 ? "border-2 border-white shadow-lg" : tier === 3 ? "border-[1.5px] border-white/70 shadow-md" : "border-2 border-white shadow-md";
-          const tierIconSize = tier === 1 ? "w-[18px] h-[18px]" : tier === 3 ? "w-3.5 h-3.5" : "w-4 h-4";
+          const tierBorder = tier === 1 ? "border-2 border-stone-200 shadow-lg" : tier === 3 ? "border-[1.5px] border-stone-200/70 shadow-md" : "border-2 border-stone-200 shadow-md";
+          const tierIconSize = tier === 1 ? "w-5 h-5" : tier === 3 ? "w-4 h-4" : "w-[18px] h-[18px]";
           const zIndex = isHighlighted ? 5 : isHovered ? 4 : isFeatured ? 3 : tier === 1 ? 3 : 2;
 
           return (
@@ -238,15 +238,15 @@ export default function ReportThemeMap({
               style={{ zIndex }}
             >
               <div className={`relative ${!activated ? "pointer-events-none" : ""}`}>
-                {/* Pulsing ring for highlighted */}
+                {/* Pulsing ring for highlighted — ring outline, not disc */}
                 {isHighlighted && (
                   <div
-                    className="absolute inset-0 rounded-full animate-ping opacity-75"
-                    style={{ backgroundColor: poi.category.color }}
+                    className="absolute inset-0 rounded-full animate-ping border-2 opacity-75"
+                    style={{ borderColor: poi.category.color }}
                   />
                 )}
 
-                {/* Glow ring for Tier 1 */}
+                {/* Glow ring for Tier 1 — perimeter halo in category color */}
                 {tier === 1 && !isHighlighted && !isHovered && (
                   <div
                     className="absolute -inset-1 rounded-full"
@@ -254,25 +254,31 @@ export default function ReportThemeMap({
                   />
                 )}
 
-                {/* Icon circle */}
+                {/* Icon circle — light disc, category-colored filled icon */}
                 <div
-                  className={`relative flex items-center justify-center rounded-full transition-transform ${
+                  className={`relative flex items-center justify-center rounded-full bg-white transition-transform ${
                     activated ? "cursor-pointer" : ""
                   } ${
                     isHighlighted
-                      ? "w-10 h-10 border-2 border-white shadow-lg scale-110"
+                      ? "w-10 h-10 border-2 shadow-lg scale-110"
                       : isHovered
-                      ? "w-8 h-8 border-2 border-white shadow-md scale-110"
+                      ? "w-8 h-8 border-2 border-stone-300 shadow-md scale-110"
                       : `${tierSize} ${tierBorder} ${activated ? "hover:scale-110" : ""}`
                   }`}
-                  style={{ backgroundColor: poi.category.color }}
+                  style={
+                    isHighlighted
+                      ? { borderColor: poi.category.color }
+                      : undefined
+                  }
                   onMouseEnter={activated ? () => setHoveredPOI(poi.id) : undefined}
                   onMouseLeave={activated ? () => setHoveredPOI(null) : undefined}
                 >
                   <Icon
-                    className={`text-white ${
-                      isHighlighted ? "w-5 h-5" : isHovered ? "w-4 h-4" : tierIconSize
-                    }`}
+                    weight="fill"
+                    className={
+                      isHighlighted ? "w-6 h-6" : isHovered ? "w-5 h-5" : tierIconSize
+                    }
+                    style={{ color: poi.category.color }}
                   />
                 </div>
 
