@@ -4,6 +4,56 @@
 
 ---
 date: 2026-04-28
+action: Rapport-map-previews — løft boligobjektet, dempet POI-er, info-stripe under kartet
+scope: Rapport-produktet, frontend kun. Worktree `feat/rapport-map-preview-redesign`. Merget til main.
+files:
+  - components/variants/report/ReportThemeMap.tsx (ny `previewMode`-prop)
+  - components/variants/report/ReportMapPreviewCard.tsx (NY — delt preview-card-komponent)
+  - components/variants/report/theme-icons.ts (NY — splittet THEME_ICON_SRC + THEME_SCENE_SRC)
+  - components/variants/report/ReportThemeChipsRow.tsx (importerer fra theme-icons)
+  - components/variants/report/ReportThemeSection.tsx (mapPreview → ReportMapPreviewCard)
+  - components/variants/report/blocks/ReportOverviewMap.tsx (samlekart → ReportMapPreviewCard)
+  - docs/plans/2026-04-28-002-feat-rapport-map-preview-redesign-plan.md (plan)
+problem: |
+  Tre samtidige UX-svakheter i preview-kart i rapporten (samlekart + alle 7 tema-kart):
+    1) Visuell støy — Mapbox-tile m/ gatenavn + 50–250 fargede kategori-pins ga ikke fokuspunkt.
+       POI-tetthet og posisjon kommuniserte svakt.
+    2) Boligobjektet druknet — orange Building2-pin m/ pulse-ring konkurrerte med 200+ kategori-pins.
+       Rapportens hovedkarakter fremstod ikke slik.
+    3) Innbydelsen manglet — pilleformet "Utforsk kartet"-CTA midt på kartet var funksjonell,
+       ikke inviterende, og duplicerte info som allerede stod over kartet.
+beslutning: |
+  Slett gammel preview-presentasjon helt (ingen flag-gating). Bygg ny ReportMapPreviewCard
+  som delt komponent for begge preview-overflater. Behold Mapbox som motor — kun rendring
+  endres via ny `previewMode`-prop på ReportThemeMap. Modal-tilstand er uendret.
+fix:
+  - previewMode på ReportThemeMap: fast view (zoom 13.5, ingen fitBounds), POI-er som single-tone
+    grå sirkler (#94a3b8) uten ikoner/labels/tooltips, prosjekt-pin oppgradert til Lucide Home
+    (w-14 h-14) m/ statisk dempet glow (opacity 15→25% på hover) i stedet for animert pulse,
+    og group-hover:scale-110 for klikk-affordance
+  - ReportMapPreviewCard: kart-slot (h-210/285px — redusert ~35% fra 320/440) over hvit info-stripe
+    med 24px padding, tema-tittel, antall, watercolor-illustrasjon høyre og pil-i-sirkel-CTA venstre.
+    Hover-states begrenset til pil-CTA og prosjekt-pin (ingen border/shadow på selve kortet)
+  - Eksisterende gradient-overlay som kontrast-enhancer beholdes
+  - Per-tema-kart bruker scene-illustrasjoner per tema (mat-drikke.jpg, barn-aktivitet.jpg etc.)
+    fra `public/illustrations/*.jpg`. Samlekart bruker `wesselslokka-aerial-watercolor.png`
+    som plassholder
+  - THEME_SCENE_SRC mapping ekstrahert til delt theme-icons.ts ved siden av eksisterende
+    THEME_ICON_SRC (chips-row beholder små ikoner)
+  - Iterativ visuell QA m/ bruker: roligere pulse, lysere/mørkere POI-prikker, redusert kart-høyde
+result: |
+  - Tydelig visuelt fokus på boligobjektet i alle previews — POI-prikker er kontekst, ikke konkurranse
+  - Hver preview er én klikk-target med tydelig pil-CTA og scene-illustrasjon som varm signatur
+  - Kart-flate ~35% lavere — info-stripen får visuell vekt
+  - tsc + eslint passerer (0 errors). Lint warnings uendret fra baseline
+  - Modal-tilstand fungerer som før (klikk preview → full POI-rendering m/ kategorier, labels, tooltips)
+deferred:
+  - Generere dedikert panoramisk Wesselsløkka-scene for samlekart (Unit 5 i planen) — separat sak
+  - `opplevelser`-tema mangler dedikert scene-illustrasjon (faller tilbake til hverdagsliv.jpg)
+  - Endelig finjustering av Mapbox-stil for ekstra demping av kart-bakgrunnen — gjøres iterativt
+
+---
+date: 2026-04-28
 action: Rapport-markører (2D + 3D) — lys disc m/ fylt farget Phosphor-ikon + kategorifarget ring, og fjerne POI-inline-ikon
 scope: Rapport-produktet, frontend kun. Worktree `refactor/rapport-markor-poi-inline-stil`.
 files:
