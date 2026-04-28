@@ -4,6 +4,34 @@
 
 ---
 date: 2026-04-28
+action: Fjern distansebasert opacity-dimming for POI-ikoner i 3D-modal
+scope: Rapport-produktet — `ReportOverviewMap` (3D Google Maps-modal i "Alt rundt"-seksjonen)
+status: shipped — committed til main (9401104), Trello-kort arkivert
+trello: https://trello.com/c/ibmjpiMu
+plan: docs/plans/2026-04-28-001-refactor-deaktiver-3d-poi-distanse-opacity-plan.md
+files:
+  - components/variants/report/blocks/ReportOverviewMap.tsx (-26 linjer — slettet NEAR_THRESHOLD_M/FAR_OPACITY-konstanter, poisWithOpacity- og opacities-useMemos, opacities-prop til MapView3D, ubrukt calculateDistance-import)
+result: |
+  Alle POI-ikoner i 3D-modalen rendres nå med opacity 1.0 — identisk med 2D Mapbox-kartet.
+  Tidligere ble POI-er >1200m fra prosjektsenter dimmet til 0.3, noe som gjorde kartet
+  visuelt urolig og skapte inntrykk av at fjerne POI-er var "halvt aktivert" eller
+  utilgjengelige (selv om de var klikkbare og fullt funksjonelle).
+
+  MapView3D-komponentens `opacities`-prop er beholdt som valgfri (defaulter til 1 når
+  undefined via `opacities?.[poi.id] ?? 1` i map-view-3d.tsx:312) — generisk API som kan
+  brukes av andre konsumenter senere uten endring. Ren visuell tilbakerulling, ingen flag,
+  ingen backwards-compat (Placy er prototype/demo-stadium).
+
+  Kvalitet: TypeScript ren, ESLint ren (1 pre-existing warning urørt), `npm run build`
+  passerer. Visuell verifikasjon via Chrome DevTools MCP på
+  /eiendom/banenor-eiendom/stasjonskvartalet/rapport bekreftet alle 232 POI-er — inkludert
+  fjerne ones i kantene av viewportet — rendres med samme full opacity som de nære.
+
+  Fremtidig distanse-basert UX (fade-out, color-grading, eller annet visuelt hierarki for
+  fjerne POI-er) kan revurderes som separat brainstorm/plan senere.
+
+---
+date: 2026-04-28
 action: Deaktiver Opplevelser-kategori i rapport-pipelinen (midlertidig, til innholdskvalitet er løst)
 scope: Rapport-produktet — alle bolig-rapporter (tagged + untagged legacy), /generate-bolig-pipelinen
 status: shipped — alle 4 units fullført + verifisert end-to-end
@@ -36,6 +64,73 @@ result: |
   fallback-profilen i getBransjeprofil, som ikke har features-objekt. Per-profil-flagget ville
   krevd å duplikere innstillingen i fallback-profilen og hver av de tre BRANSJEPROFILER.
   Global konstant gir én sann kilde for re-aktivering.
+
+---
+date: 2026-04-28
+action: Plan — deaktiver distansebasert opacity-dimming for POI-ikoner i 3D Google Maps-modal
+scope: Rapport-produktet, frontend kun. Plan + Trello-kort skrevet, ingen kode endret.
+status: planned — Trello "Klar til arbeid", klar for /ce-work
+trello: https://trello.com/c/ibmjpiMu/16-deaktiver-distansebasert-opacity-dimming-for-poi-ikoner-i-3d-modal
+plan: docs/plans/2026-04-28-001-refactor-deaktiver-3d-poi-distanse-opacity-plan.md
+problem: |
+  3D-modalen i rapporten dimmer POI-er som ligger >1200m fra prosjektsenter
+  til opacity 0.3, mens nære POI-er (≤1200m) rendres med 1.0. Resultatet er et
+  visuelt urolig kart der "fjerne" POI-er fremstår halvt aktiverte selv om de er
+  fullt klikkbare. Andre kart-varianter (Mapbox 2D, ReportThemeMap) har ikke
+  denne logikken — alle POI-er rendres likt.
+beslutning: |
+  Slett konseptet helt, ikke flag-gat det. Konseptet revurderes ikke i nær
+  fremtid; å beholde død kode bak en flag øker støy. Git-historikken er kilde
+  for evt. gjenoppretting. `MapView3D`s `opacities`-prop beholdes som valgfri
+  API på delt komponent (defaulter til 1 når undefined).
+endringer_planlagt:
+  - Slett konstantene NEAR_THRESHOLD_M (=1200) og FAR_OPACITY (=0.3) (linjer 18-19)
+  - Slett poisWithOpacity-useMemo (linjer 118-131)
+  - Slett opacities-useMemo (linjer 133-137)
+  - Fjern opacities={opacities}-prop på <MapView3D>-instansen (linje 244)
+  - Fjern ubrukt `import { calculateDistance } from "@/lib/utils/geo"` (linje 8)
+relaterte_filer:
+  - components/variants/report/blocks/ReportOverviewMap.tsx (eneste fil som endres)
+  - components/map/map-view-3d.tsx:312 (uendret — fallback `opacity={opacities?.[poi.id] ?? 1}` gjør fjerning trygg)
+  - components/map/Marker3DPin.tsx:52 (uendret — fallback `opacity={opacity ?? 1}`)
+
+---
+date: 2026-04-28
+action: Parkert — utdanning forbi vgs (fagskole/høyskole/universitet) i rapporten
+scope: Rapport-produktet, kun beslutning + datakilde-research. Ingen kode endret.
+status: parked — venter på første kunde-signal (typisk studentboliger eller sentrumsprosjekt)
+problem: |
+  Rapporten viser i dag bare barneskole/ungdomsskole/vgs under "Barn & Aktivitet"-temaet.
+  Studenter er en relevant målgruppe for sentrumsprosjekter, men dekkes ikke.
+  `lib/themes/bransjeprofiler.ts:49` — barn-oppvekst har categories ["skole", "barnehage",
+  "lekeplass", "idrett"]. Ingen kategori for høyere utdanning, og temaet heter "Barn &
+  Aktivitet" — fagskole/høyskole/universitet hører ikke hjemme der uansett (ulik målgruppe).
+beslutning: |
+  Vi bygger IKKE dette nå. Parkeres til en kunde flagger det som mangel — typisk
+  studentbolig-prosjekt eller sentrumsprosjekt med ung målgruppe. Når det skjer, ta opp
+  igjen denne worklog-entryen for ferdig research.
+datakilder_vurdert:
+  - NSR (Nasjonalt Skoleregister, https://data-nsr.udir.no/v4/enheter) — beste kilden.
+    Åpen, gratis, ingen nøkkel. Dekker barnehager → universitet inkl. fagskoler.
+    Filtrer ErAktiv=true + ErHovedenhet=true + Skoleslag (UNI/HOG/FAG). NLOD, krever attribusjon.
+    Autoritativ på koordinater, off. navn, org.nr., antall studenter, eierform.
+  - DBH (dbh.hkdir.no) — bare studietilbud/-tall, ingen koordinater. Supplement, ikke primær.
+  - Google Places API New (searchNearby, includedTypes ["university"]) — har allerede nøkkel.
+    Dekker univ/høyskole, men IKKE fagskoler konsekvent. OK fallback for navn/adresse/bilde.
+  - OpenStreetMap Overpass (amenity=university|college) — gratis, men inkonsistent merket i Norge.
+anbefalt_implementasjon: |
+  Når dette tas opp igjen:
+  1. Lag ny POI-kategori `hoyere-utdanning` (ikke utvid `skole` — annen målgruppe)
+  2. Nytt script `scripts/import-nsr-higher-education.ts` (samme mønster som import-atb-stops.ts)
+     — kall NSR med radius=5km rundt prosjekt-koordinaten, lagre top-N treff
+  3. Plasser i nytt tema (`studieliv`?) eller utvid `opplevelser`. Eget tema bør kun aktiveres
+     for prosjekter med riktig bransjetag (f.eks. studentboliger) eller eksplisitt reportConfig-flag
+  4. NLOD-attribusjon i fotnoter/kilder
+relaterte_filer:
+  - lib/themes/bransjeprofiler.ts (legg til kategori + evt. nytt tema)
+  - lib/themes/default-themes.ts (samme)
+  - lib/generators/poi-discovery.ts (kategori-mapping hvis Google brukes som fallback)
+  - docs/guides/poi-data-sourcing.md (oppdater med NSR-eksempel)
 
 ---
 date: 2026-04-27

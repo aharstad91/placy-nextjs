@@ -250,6 +250,38 @@ export default function ReportThemeSection({
     return positions.length > 0 ? positions : undefined;
   }, [isTransport, transportDashboard.scooters?.positions, transportDashboard.freeFloatingCars?.positions]);
 
+  // Map preview — flyttet ut av disclosure slik at det vises som primary
+  // navigasjon mellom ingress og brødtekst (ikke gjemt bak "Les mer").
+  const mapPreview = !mapDialogOpen && theme.allPOIs.length > 0 ? (
+    <button
+      type="button"
+      onClick={openMap}
+      className="h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
+    >
+      <ReportThemeMap
+        pois={theme.allPOIs}
+        center={center}
+        highlightedPOIId={null}
+        onMarkerClick={() => {}}
+        mapStyle={mapStyle}
+        activated={false}
+        projectName={projectName}
+        trails={theme.trails}
+        vehiclePositions={vehiclePositions}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
+        <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
+          {theme.allPOIs.length} steder på kartet
+        </p>
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
+          <MapPin className="w-4 h-4 text-[#7a7062]" />
+          Utforsk kartet
+        </div>
+      </div>
+    </button>
+  ) : null;
+
   // Shared body content — narratives, hero insight, progressive disclosure.
   // Rendered inside different wrappers depending on variant.
   const bodyContent = (
@@ -320,24 +352,23 @@ export default function ReportThemeSection({
               </div>
             )}
 
-            {/* Grounding-narrativ — tease (peek) når !expanded, full når expanded.
-                Peek fader teksten bak gradient for å signalere "her ligger mer". */}
-            {theme.grounding && (
-              <div className="relative mt-4">
-                <div
-                  className="overflow-hidden transition-[max-height] duration-500 ease-in-out"
-                  style={{ maxHeight: expanded ? "6000px" : "60px" }}
-                  aria-hidden={expanded ? undefined : true}
-                >
-                  {theme.grounding.groundingVersion === 2 ? (
-                    <ReportCuratedGrounded
-                      grounding={theme.grounding}
-                      poisById={poisById}
-                    />
-                  ) : (
-                    <ReportGroundingInline grounding={theme.grounding} />
-                  )}
-                </div>
+            {/* Tema-bilde med fade-overlay — visuell teaser inn mot "Les mer".
+                Fade fjernes når expanded slik at bildet står rent over
+                grounding-narrativen. Grounding-teksten er flyttet inn i
+                disclosure-blokken under, så collapsed-state viser kun bildet. */}
+            {theme.image && (
+              <div className="relative mt-4 w-full">
+                <Image
+                  src={theme.image.src}
+                  alt=""
+                  aria-hidden="true"
+                  width={theme.image.width}
+                  height={theme.image.height}
+                  sizes="(min-width: 1024px) 800px, 100vw"
+                  className="w-full h-auto select-none pointer-events-none"
+                  draggable={false}
+                  priority={false}
+                />
                 <div
                   aria-hidden="true"
                   className={`pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-white transition-opacity duration-500 ease-in-out ${expanded ? "opacity-0" : "opacity-100"}`}
@@ -368,45 +399,25 @@ export default function ReportThemeSection({
               </button>
             </div>
 
-            {/* Kart-preview + kilder — kollapser sammen med smooth max-height.
-                !mapDialogOpen hindrer dual-WebGL-kontekst på iOS. */}
+            {/* Grounding-narrativ + kilder — vises kun når expanded.
+                Tidligere peek-tease er erstattet med tema-bildet over. */}
             <div
               className="overflow-hidden transition-[max-height] duration-500 ease-in-out"
               style={{ maxHeight: expanded ? "6000px" : "0px" }}
               aria-hidden={!expanded}
             >
-              {!mapDialogOpen && theme.allPOIs.length > 0 && (
-                <div className="mt-8">
-                  <button
-                    type="button"
-                    onClick={openMap}
-                    className="h-[320px] md:h-[440px] rounded-2xl overflow-hidden border border-[#eae6e1] relative w-full block cursor-pointer hover:border-[#d4cfc8] transition-colors group"
-                  >
-                    <ReportThemeMap
-                      pois={theme.allPOIs}
-                      center={center}
-                      highlightedPOIId={null}
-                      onMarkerClick={() => {}}
-                      mapStyle={mapStyle}
-                      activated={false}
-                      projectName={projectName}
-                      trails={theme.trails}
-                      vehiclePositions={vehiclePositions}
+              {theme.grounding && (
+                <div className="mt-6">
+                  {theme.grounding.groundingVersion === 2 ? (
+                    <ReportCuratedGrounded
+                      grounding={theme.grounding}
+                      poisById={poisById}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#f5f1ec] to-transparent pointer-events-none z-10" />
-                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center translate-y-[25%] pointer-events-none">
-                      <p className="text-sm text-[#2a2a2a] font-semibold mb-3">
-                        {theme.allPOIs.length} steder på kartet
-                      </p>
-                      <div className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg border border-[#eae6e1] text-sm font-medium text-[#1a1a1a] group-hover:shadow-xl group-hover:border-[#d4cfc8] transition-all">
-                        <MapPin className="w-4 h-4 text-[#7a7062]" />
-                        Utforsk kartet
-                      </div>
-                    </div>
-                  </button>
+                  ) : (
+                    <ReportGroundingInline grounding={theme.grounding} />
+                  )}
                 </div>
               )}
-
               {theme.grounding && (
                 <ReportGroundingChips grounding={theme.grounding} />
               )}
@@ -509,6 +520,7 @@ export default function ReportThemeSection({
               {theme.name}
             </h2>
           </div>
+          {mapPreview && <div className="mb-8">{mapPreview}</div>}
           {bodyContent}
         </div>
         {modal}
@@ -516,8 +528,9 @@ export default function ReportThemeSection({
     );
   }
 
-  // Primary variant: centered single-column — banner illustration sits
-  // above the title, followed by intro text and body content.
+  // Primary variant: centered single-column — title + ingress, deretter kart
+  // (alltid synlig), så brødtekst. Tema-illustrasjonen sitter lenger ned som
+  // visuell teaser inn mot "Les mer".
   return (
     <section
       id={theme.id}
@@ -525,22 +538,6 @@ export default function ReportThemeSection({
       className="py-16 md:py-24 scroll-mt-[7rem]"
     >
       <div className="w-full">
-        {theme.image && (
-          <div className="mb-8 w-full">
-            <Image
-              src={theme.image.src}
-              alt=""
-              aria-hidden="true"
-              width={theme.image.width}
-              height={theme.image.height}
-              sizes="(min-width: 1024px) 800px, 100vw"
-              className="w-full h-auto select-none pointer-events-none"
-              draggable={false}
-              priority={false}
-            />
-          </div>
-        )}
-
         <div className="mb-8">
           <h2 className="text-3xl md:text-5xl font-semibold text-[#1a1a1a] tracking-tight mb-5">
             {theme.name}
@@ -559,6 +556,8 @@ export default function ReportThemeSection({
             </p>
           )}
         </div>
+
+        {mapPreview && <div className="mb-8">{mapPreview}</div>}
 
         {bodyContent}
       </div>

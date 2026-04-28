@@ -134,7 +134,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
 
       {/* Samlekart — intro-kort + kart side om side, 1280px container */}
       {effectiveProject.pois.length > 0 && (
-        <div className="max-w-[1280px] mx-auto w-full px-6 md:px-12 py-12 border-t border-[#f0ece8]">
+        <div className="max-w-[1080px] mx-auto w-full px-6 md:px-12 py-12">
           <div className="flex gap-8 items-start">
             {/* Intro-kort — venstre kolonne */}
             <div className="w-[220px] shrink-0 pt-2">
@@ -160,7 +160,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
       )}
 
       {/* Tekst-seksjoner — 1280px container med sticky sidebar venstre */}
-      <div className="max-w-[1280px] mx-auto w-full px-6 md:px-12">
+      <div className="max-w-[1080px] mx-auto w-full px-6 md:px-12">
         <div className="flex gap-24 items-start">
           {/* Sticky sidebar — følger med nedover */}
           <aside className="w-[220px] shrink-0 hidden lg:block pt-2 sticky top-8 self-start">
