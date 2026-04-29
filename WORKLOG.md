@@ -3,6 +3,73 @@
 <!-- Each entry is a YAML block. Most recent first. -->
 
 ---
+date: 2026-04-29
+action: Board UX som ny rapport-variant — port av prototype til React (Phase 1, mobile + desktop)
+scope: Rapport-produktet, ny parallell route /rapport-board. /rapport uendret.
+status: lokal — branch feat/board-ux-rapport-variant i worktree ../placy-ralph-board, ikke pushet
+files:
+  - app/eiendom/[customer]/[project]/rapport-board/page.tsx (NY — server-loader-kopi av rapport)
+  - components/variants/report/board/ReportBoardPage.tsx (NY — klient-rot med BoardProvider)
+  - components/variants/report/board/board-data.ts (NY — adaptBoardData mapper)
+  - components/variants/report/board/board-state.tsx (NY — reducer + Provider + selectors)
+  - components/variants/report/board/board-data.test.ts + board-state.test.ts (20 tester)
+  - components/variants/report/board/BoardMap.tsx (NY — Mapbox 2D-shell)
+  - components/variants/report/board/BoardMarker.tsx + HomeMarker.tsx (NY)
+  - components/variants/report/board/BoardPathLayer.tsx + BoardTravelChip.tsx + BoardPOILabel.tsx (NY)
+  - components/variants/report/board/mobile/BoardCategoryGrid.tsx (NY)
+  - components/variants/report/board/mobile/BoardPeekCard.tsx + BoardSwitcherChip.tsx (NY)
+  - components/variants/report/board/mobile/BoardReadingModal.tsx + BoardTabs.tsx (NY)
+  - components/variants/report/board/mobile/BoardPOISheet.tsx + BoardRelatedPOICard.tsx (NY)
+  - components/variants/report/board/desktop/BoardRail.tsx + BoardDetailPanel.tsx + BoardDesktopShell.tsx (NY)
+  - docs/plans/2026-04-29-001-feat-board-ux-rapport-variant-plan.md (plan, deepened)
+problem: |
+  Vanilla HTML-prototype på public/prototypes/board-ux.html hadde modnet til en UX
+  brukeren ville gjøre til den nye rapport-flowen. Men prototypen kunne ikke bruke
+  ekte rapport-data, ekte Mapbox 2D, eller leve i app-routingen. Måtte porte til
+  React mens vi gjenbrukte eksisterende rapport-data-laget (transformToReportData),
+  Mapbox-infra (react-map-gl/mapbox, useRouteData), og shadcn/ui (vaul Drawer, Tabs).
+beslutning: |
+  Parallell wedge: ny route /rapport-board, /rapport lever videre. Følger paraform-
+  variant-mønsteret. Server-loader gjenbrukes 1:1. Ny board-data adapter mapper
+  ReportData.themes → BoardCategory med branded IDer (BoardCategoryId, BoardPOIId).
+  State machine i lokal useReducer + Context (ikke Zustand — board-state er ephemeral).
+  Adaptive layout: mobile bottom-sheets (vaul) + desktop rail+panel+map grid (parallelle
+  DOM-trær). Én BoardMap-mount, conditional positioning via lg:left-[504px].
+  3D deferred til oppfølgingsplan.
+fix:
+  - Phase 1 (Foundation): server-loader, data-adapter, state machine, BoardMap med markers
+  - Phase 2 (Mobile UX): kategori-grid + peek + switcher chip, reading modal med Info/Punkter
+    pill-tabs (egen BoardTabs siden shadcn arvet theme --muted), POI bottom-sheet med vaul
+    snap-points [0.5, 0.9] default 0.5, parallell mount mellom Drawer-instanser for samtidig
+    slide-down/slide-up
+  - Phase 3 (Desktop): rail (104px) + panel (400px) + map (1fr) grid. POI-detail som subview
+    i panel. Tab-state-bevaring per Cluster 5: BACK_TO_ACTIVE bevarer Punkter-tab.
+    useIsDesktop matchMedia hook gates mobile drawers JS-side (vaul portaler omgår lg:hidden CSS)
+  - Map overlays: BoardPathLayer med mapbox line-opacity-transition (300ms fade), BoardTravelChip
+    HTML-pill med Clock-icon, BoardPOILabel via react-map-gl Marker (auto-følger kart)
+  - Doc-review-funn anvendt: useRouteData korrekt signatur (POI, projectCenter), Validation
+    Strategy section, Customer perception i Problem Frame, useReducer↔Zustand-bro dokumentert
+result: |
+  - 8/8 units landet, 8 commits på feat/board-ux-rapport-variant
+  - TypeScript clean (0 errors), 20/20 tester passerer (12 reducer + 8 adapter)
+  - Verifisert visuelt mot Wesselsløkka (broset-utvikling-as) på 390x844 og 1280x800:
+    * Mobil: kategori-tap → peek slide-up → Les mer → reading modal med Info/Punkter →
+      Punkter-POI-tap → POI-sheet med snap, in-place swap til relatert POI
+    * Desktop: rail-klikk → panel oppdaterer + kart fitter → Punkter-tab POI-klikk →
+      subview med tilbake-knapp + path tegnet på kart
+    * Map overlays fungerer: orange path Home→POI, "11 min" travel-chip, POI-label
+  - 6 kategorier · 36 POI-er rendrer korrekt fra ekte rapport-data
+deferred:
+  - Mapbox 3D / Google Photorealistic 3D Tiles toggle — egen oppfølgingsplan etter validering
+  - URL-state for delelinker (?cat=...&poi=...) — table stakes hvis board blir THE rapport
+  - Locale-toggle (NO/EN) — senere iterasjon
+  - 13 P2-funn fra doc-review appendert til plan Open Questions (RouteLayer coords-shape,
+    ReportTheme body-felt-mapping, ReportThemeMap-rejection rationale, parallel DOM-trær
+    surface-area, Wesselsløkka-data-shape-verifisering, accessibility/keyboard, iOS safe-area,
+    device-rotation, scan-vs-explore-reader)
+  - Push til origin når bruker vil teste på ekte mobil via Vercel preview-URL
+
+---
 date: 2026-04-28
 action: Rapport-map-previews — løft boligobjektet, dempet POI-er, info-stripe under kartet
 scope: Rapport-produktet, frontend kun.
