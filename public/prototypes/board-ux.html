@@ -393,41 +393,46 @@
     }
     .btn-ghost:hover { background: rgba(15, 29, 68, 0.06); }
 
-    .peek-tray {
+    .peek-switcher {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+    .switcher-chip {
+      appearance: none;
+      border: none;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      height: 44px;
+      padding: 0 14px;
+      border-radius: 999px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 4px 0;
-    }
-    .menu-btn {
-      appearance: none;
-      border: none;
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(8px);
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
+      gap: 12px;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(15, 29, 68, 0.12);
-    }
-    .menu-btn svg { width: 20px; height: 20px; color: var(--sheet-fg); }
-    .minimize-btn {
-      flex: 1;
-      appearance: none;
-      border: none;
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(15, 29, 68, 0.14);
       color: var(--sheet-fg);
-      font-family: inherit;
-      font-size: 15px;
-      font-weight: 600;
-      padding: 12px 18px;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(15, 29, 68, 0.12);
-      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 120ms ease, background 160ms ease;
     }
+    .switcher-chip:active { transform: scale(0.96); }
+    .switcher-chip:hover { background: rgba(255, 255, 255, 0.95); }
+    .switcher-icon { width: 20px; height: 20px; flex: none; }
+    .switcher-thumbs {
+      display: flex;
+      align-items: center;
+    }
+    .switcher-thumb {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      background-color: #e5e7eb;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(15, 29, 68, 0.18);
+    }
+    .switcher-thumb + .switcher-thumb { margin-left: -10px; }
 
     /* State 3: modal */
     .modal {
@@ -462,14 +467,6 @@
       display: flex; align-items: center; justify-content: center;
     }
     .modal-close:hover { background: rgba(255, 255, 255, 0.75); }
-    .modal-eyebrow {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--sheet-fg-muted);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      margin: 0 0 8px;
-    }
     .modal-title {
       font-size: 28px;
       line-height: 1.15;
@@ -669,6 +666,45 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    /* Pill-tabs (Mac-app stil) — brukes både i mobil-modal og desktop-panel */
+    .tabs {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 999px;
+      padding: 4px;
+      margin: 0 0 18px;
+      gap: 2px;
+    }
+    .tab {
+      appearance: none;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--sheet-fg-muted);
+      padding: 7px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
+    }
+    .tab:hover { color: var(--sheet-fg); }
+    .tab.active {
+      background: white;
+      color: var(--sheet-fg);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .tab-panel { animation: fadeIn 200ms ease; }
+    .tab-panel[hidden] { display: none; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Related-poi-kort med hvit tint i lavendel-containere (modal og desktop-panel) */
+    .modal .related-poi-card { background: rgba(255, 255, 255, 0.55); }
+    .modal .related-poi-card:hover { background: rgba(255, 255, 255, 0.8); }
 
     /* State machine */
     .board[data-state="default"] .categories { transform: translateY(0); opacity: 1; }
@@ -876,41 +912,6 @@
       .desktop-body p { margin: 0 0 14px; }
       .desktop-body p:last-child { margin-bottom: 0; }
 
-      /* Pill-tabs (Mac-app stil) */
-      .tabs {
-        display: inline-flex;
-        background: rgba(255, 255, 255, 0.45);
-        border-radius: 999px;
-        padding: 4px;
-        margin: 0 0 18px;
-        gap: 2px;
-      }
-      .tab {
-        appearance: none;
-        border: none;
-        background: transparent;
-        font-family: inherit;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--sheet-fg-muted);
-        padding: 7px 18px;
-        border-radius: 999px;
-        cursor: pointer;
-        transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
-      }
-      .tab:hover { color: var(--sheet-fg); }
-      .tab.active {
-        background: white;
-        color: var(--sheet-fg);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      }
-      .tab-panel { animation: fadeIn 200ms ease; }
-      .tab-panel[hidden] { display: none; }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(4px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
       /* POI panel (samme col som detail) */
       .desktop-back {
         appearance: none;
@@ -1017,22 +1018,18 @@
           </div>
 
           <div class="peek" id="peek">
+            <div class="peek-switcher">
+              <button class="switcher-chip" id="switcherBtn" aria-label="Bytt kategori">
+                <svg class="switcher-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+                <div class="switcher-thumbs" id="switcherThumbs" aria-hidden="true"></div>
+              </button>
+            </div>
             <div class="peek-card">
               <div class="peek-eyebrow" id="peekEyebrow">Hverdagsliv</div>
               <p class="peek-lead" id="peekLead">…</p>
               <div class="peek-actions">
                 <button class="btn btn-primary" id="readMoreBtn">Les mer</button>
-                <button class="btn btn-ghost" id="switchBtn">Bytt kategori</button>
               </div>
-            </div>
-            <div class="peek-tray">
-              <button class="menu-btn" id="menuBtn" aria-label="Hovedmeny">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
-              </button>
-              <button class="minimize-btn" id="minimizeBtn">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                Minimer
-              </button>
             </div>
           </div>
         </div>
@@ -1130,11 +1127,22 @@
       <div class="modal" id="modal">
         <button class="modal-close" id="closeBtn" aria-label="Lukk">×</button>
         <div class="modal-content">
-          <p class="modal-eyebrow" id="modalEyebrow">Hverdagsliv</p>
           <h1 class="modal-title" id="modalTitle">…</h1>
           <p class="modal-lead" id="modalLead">…</p>
-          <div class="modal-image" id="modalImage"></div>
-          <div class="modal-body" id="modalBody"></div>
+
+          <div class="tabs" role="tablist" id="modalTabs">
+            <button class="tab active" data-tab="info" role="tab" aria-selected="true">Info</button>
+            <button class="tab" data-tab="punkter" role="tab" aria-selected="false">Punkter</button>
+          </div>
+
+          <div class="tab-panel" data-tab="info" role="tabpanel">
+            <div class="modal-image" id="modalImage"></div>
+            <div class="modal-body" id="modalBody"></div>
+          </div>
+
+          <div class="tab-panel" data-tab="punkter" role="tabpanel" hidden>
+            <div class="related-pois-list" id="modalPoiList"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1463,9 +1471,10 @@
     // === DOM refs ===
     const board = document.getElementById('board');
     const devState = document.getElementById('devState');
+    const switcherThumbs = document.getElementById('switcherThumbs');
     const peekEyebrow = document.getElementById('peekEyebrow');
     const peekLead = document.getElementById('peekLead');
-    const modalEyebrow = document.getElementById('modalEyebrow');
+    const modalEl = document.getElementById('modal');
     const modalTitle = document.getElementById('modalTitle');
     const modalLead = document.getElementById('modalLead');
     const modalImage = document.getElementById('modalImage');
@@ -1571,6 +1580,10 @@
       // Mobil: peek
       peekEyebrow.textContent = cat.subtitle;
       peekLead.textContent = cat.lead;
+      const others = CATEGORIES.filter(c => c.id !== catId).slice(0, 3);
+      switcherThumbs.innerHTML = others
+        .map(c => `<div class="switcher-thumb" style="background-image: url('${c.illustration}')"></div>`)
+        .join('');
 
       // Desktop: panel — header er kategorinavnet, ingen question
       desktopCatTitle.textContent = cat.subtitle;
@@ -1616,14 +1629,52 @@
 
     function openReading() {
       if (!activeCat) return;
-      modalEyebrow.textContent = activeCat.subtitle;
-      modalTitle.textContent = activeCat.question;
+      modalTitle.textContent = activeCat.subtitle;
       modalLead.textContent = activeCat.lead;
       modalImage.style.backgroundImage = `url('${activeCat.illustration}')`;
       modalBody.innerHTML = activeCat.body.map(p => `<p>${p}</p>`).join('');
-      modalBody.parentElement.scrollTop = 0;
+
+      // Punkter-fanen i modal: alle POI-er som klikkbare kort
+      const modalPoiList = document.getElementById('modalPoiList');
+      modalPoiList.innerHTML = '';
+      activeCat.pois.forEach((poi, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'related-poi-card';
+        btn.innerHTML = `
+          <div class="related-poi-icon" style="background:${activeCat.markerColor}">${activeCat.markerIcon}</div>
+          <div class="related-poi-text">
+            <div class="related-poi-name"></div>
+            <div class="related-poi-info"></div>
+          </div>
+        `;
+        btn.querySelector('.related-poi-name').textContent = poi.name;
+        btn.querySelector('.related-poi-info').textContent = poi.info;
+        // Klikk → åpne POI: modal sklir ned, POI-sheet sklir opp (cross-fade)
+        btn.addEventListener('click', () => openPoi(activeCat.id, idx));
+        modalPoiList.appendChild(btn);
+      });
+
+      // Reset til Info-fane ved hver åpning
+      setModalTab('info');
+
+      modalEl.scrollTop = 0;
       setState('reading');
     }
+
+    // === Modal tab-bytter ===
+    const modalTabs = document.querySelectorAll('#modalTabs .tab');
+    const modalTabPanels = modalEl.querySelectorAll('.tab-panel');
+    function setModalTab(name) {
+      modalTabs.forEach(t => {
+        const on = t.dataset.tab === name;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on);
+      });
+      modalTabPanels.forEach(p => { p.hidden = p.dataset.tab !== name; });
+    }
+    modalTabs.forEach(t => {
+      t.addEventListener('click', () => setModalTab(t.dataset.tab));
+    });
 
     function closeReading() { setState('active'); }
 
@@ -1846,9 +1897,7 @@
     // === Wire up ===
     document.getElementById('readMoreBtn').addEventListener('click', openReading);
     document.getElementById('closeBtn').addEventListener('click', closeReading);
-    document.getElementById('minimizeBtn').addEventListener('click', deactivateCategory);
-    document.getElementById('switchBtn').addEventListener('click', deactivateCategory);
-    document.getElementById('menuBtn').addEventListener('click', deactivateCategory);
+    document.getElementById('switcherBtn').addEventListener('click', deactivateCategory);
     document.getElementById('poiCloseBtn').addEventListener('click', closePoi);
     poiBackBtn.addEventListener('click', backFromPoiToCategory);
     document.getElementById('desktopPunkterBack').addEventListener('click', backFromPoiToCategory);
