@@ -11,6 +11,7 @@ import { BoardProvider, useBoard } from "./board-state";
 import { BoardMap } from "./BoardMap";
 import { BoardCategoryGrid } from "./mobile/BoardCategoryGrid";
 import { BoardPeekCard } from "./mobile/BoardPeekCard";
+import { BoardReadingModal } from "./mobile/BoardReadingModal";
 
 interface Props {
   project: Project;
@@ -63,6 +64,9 @@ function BoardScaffold() {
           <BoardCategoryGrid />
           <BoardPeekCard />
         </div>
+      </div>
+      <div className="lg:hidden">
+        <BoardReadingModal />
       </div>
 
       {/* Debug-overlay — fjernes når desktop-UI mountes i Unit 8 */}
