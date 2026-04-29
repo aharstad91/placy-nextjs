@@ -104,21 +104,22 @@ export default function ReportThemeSection({
   const [expanded, setExpanded] = useState(false);
   const toggleButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  // Ved kollaps: sørg for at "Vis mindre"-knappen holder seg synlig.
-  // Uten dette hopper knappen ut av viewport på mobil når ~1000px innhold
-  // nedenfor den forsvinner. Smooth scroll matcher max-height-animasjonen.
+  // Ved expand: scroll knappen til top av viewport slik at curated narrative-
+  // disclosure-blokken (som rendres rett under knappen) blir synlig. Uten dette
+  // popper innholdet ut under fold og brukeren tror "Les mer"-klikket gjorde
+  // ingenting.
+  // Ved kollaps: scroll til center slik at knappen holder seg synlig — uten
+  // dette hopper den ut av viewport på mobil når ~1000px innhold under
+  // forsvinner. Smooth scroll matcher max-height-animasjonen.
   const handleToggle = useCallback(() => {
     const wasExpanded = expanded;
     setExpanded((v) => !v);
-    if (wasExpanded) {
-      // Vent én frame slik at state-oppdateringen trer i kraft før vi måler.
-      requestAnimationFrame(() => {
-        toggleButtonRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
+    requestAnimationFrame(() => {
+      toggleButtonRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: wasExpanded ? "center" : "start",
       });
-    }
+    });
   }, [expanded]);
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const openMap = useCallback(() => setMapDialogOpen(true), []);
