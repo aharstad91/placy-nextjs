@@ -357,33 +357,26 @@ export default function ReportThemeSection({
               </div>
             )}
 
-            {/* Les mer / Vis mindre — tema-illustrasjonen vises i kart-kortet
-                over (ReportMapPreviewCard), så vi har ingen ekstra teaser-bilde
-                her. */}
-            <div className="mt-4 flex justify-center">
-              <button
-                ref={toggleButtonRef}
-                type="button"
-                onClick={handleToggle}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#d4cfc8] text-sm font-medium text-[#3a3530] shadow-sm hover:bg-[#faf9f7] hover:border-[#a89f92] hover:shadow-md active:scale-[0.98] transition-all"
-                aria-expanded={expanded}
-              >
-                {expanded ? (
-                  <>
-                    Vis mindre
-                    <ChevronUp className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    Les mer om {theme.name}
-                    <ChevronDown className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Toggle-knappen flytter seg: "Les mer" over disclosure (collapsed),
+                "Vis mindre" under disclosure (expanded). Unngår hakk i lese-
+                flyten der knappen ellers stod statisk mellom lead-tekst og
+                curated narrative. */}
+            {!expanded && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  ref={toggleButtonRef}
+                  type="button"
+                  onClick={handleToggle}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#d4cfc8] text-sm font-medium text-[#3a3530] shadow-sm hover:bg-[#faf9f7] hover:border-[#a89f92] hover:shadow-md active:scale-[0.98] transition-all"
+                  aria-expanded={false}
+                >
+                  Les mer om {theme.name}
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
-            {/* Grounding-narrativ + kilder — vises kun når expanded.
-                Tidligere peek-tease er erstattet med tema-bildet over. */}
+            {/* Grounding-narrativ + kilder — vises kun når expanded. */}
             <div
               className="overflow-hidden transition-[max-height] duration-500 ease-in-out"
               style={{ maxHeight: expanded ? "6000px" : "0px" }}
@@ -405,6 +398,21 @@ export default function ReportThemeSection({
                 <ReportGroundingChips grounding={theme.grounding} />
               )}
             </div>
+
+            {expanded && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  ref={toggleButtonRef}
+                  type="button"
+                  onClick={handleToggle}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#d4cfc8] text-sm font-medium text-[#3a3530] shadow-sm hover:bg-[#faf9f7] hover:border-[#a89f92] hover:shadow-md active:scale-[0.98] transition-all"
+                  aria-expanded={true}
+                >
+                  Vis mindre
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </>
         )}
     </>
