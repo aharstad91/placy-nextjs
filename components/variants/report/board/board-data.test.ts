@@ -89,13 +89,26 @@ describe("adaptBoardData", () => {
     expect(data.categories[0].lead).toBe("lead fallback");
   });
 
-  it("body faller tilbake til intro+bridgeText hvis upperNarrative mangler", () => {
+  it("body inkluderer bridgeText når upperNarrative mangler og intro er lead (dedup)", () => {
     const theme = makeTheme("x", [makePOI("p1")], {
       intro: "intro-tekst",
       bridgeText: "bridge-tekst",
       upperNarrative: undefined,
     });
     const data = adaptBoardData(makeReportData([theme]));
+    expect(data.categories[0].lead).toBe("intro-tekst");
+    expect(data.categories[0].body).toBe("bridge-tekst");
+  });
+
+  it("body inkluderer intro+bridgeText når leadText finnes (intro er ikke lead)", () => {
+    const theme = makeTheme("x", [makePOI("p1")], {
+      intro: "intro-tekst",
+      bridgeText: "bridge-tekst",
+      upperNarrative: undefined,
+      leadText: "kort tagline",
+    });
+    const data = adaptBoardData(makeReportData([theme]));
+    expect(data.categories[0].lead).toBe("kort tagline");
     expect(data.categories[0].body).toBe("intro-tekst\n\nbridge-tekst");
   });
 

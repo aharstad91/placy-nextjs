@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, { type MapRef } from "react-map-gl/mapbox";
-import { MAP_STYLE_STANDARD } from "@/lib/themes/map-styles";
+import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
 import { HomeMarker } from "./HomeMarker";
@@ -38,6 +38,8 @@ export function BoardMap() {
 
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
+    if (!mapRef.current) return;
+    applyIllustratedTheme(mapRef.current.getMap());
   }, []);
 
   // FitBounds når kategori endres eller phase går default→active.
@@ -106,7 +108,6 @@ export function BoardMap() {
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE_STANDARD}
         onLoad={handleMapLoad}
-        cooperativeGestures
       >
         <HomeMarker
           coordinates={data.home.coordinates}

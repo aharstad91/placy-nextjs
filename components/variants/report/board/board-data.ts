@@ -62,7 +62,7 @@ export interface BoardData {
  */
 export function adaptBoardData(report: ReportData): BoardData {
   const categories: BoardCategory[] = report.themes
-    .filter((t) => t.pois.length > 0)
+    .filter((t) => t.allPOIs.length > 0)
     .map((t) => adaptCategory(t));
 
   return {
@@ -77,10 +77,26 @@ export function adaptBoardData(report: ReportData): BoardData {
 
 function adaptCategory(theme: ReportTheme): BoardCategory {
   const id = theme.id as BoardCategoryId;
-  const lead = theme.intro?.trim() || theme.leadText?.trim() || "";
-  const body =
-    theme.upperNarrative?.trim() ||
-    [theme.intro?.trim(), theme.bridgeText?.trim()].filter(Boolean).join("\n\n");
+
+  // Lead: kort hook hvis eksplisitt leadText, ellers første del av intro
+  const lead = theme.leadText?.trim() || theme.intro?.trim() || "";
+
+  // Body: alle narrative bidrag konkatenert, dedupert mot lead.
+  // Rekkefølge: upperNarrative (rik) → intro (basis) → bridgeText (overgang).
+  const bodyParts = [
+    theme.upperNarrative?.trim(),
+    theme.intro?.trim(),
+    theme.bridgeText?.trim(),
+  ].filter((s): s is string => Boolean(s));
+  const seen = new Set<string>();
+  if (lead) seen.add(lead);
+  const body = bodyParts
+    .filter((part) => {
+      if (seen.has(part)) return false;
+      seen.add(part);
+      return true;
+    })
+    .join("\n\n");
 
   return {
     id,
@@ -91,7 +107,7 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     illustration: theme.image,
     icon: theme.icon,
     color: theme.color,
-    pois: theme.pois.map((p) => adaptPOI(p, id)),
+    pois: theme.allPOIs.map((p) => adaptPOI(p, id)),
   };
 }
 
