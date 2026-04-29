@@ -8,6 +8,7 @@ import type { TranslationMap } from "@/lib/supabase/translations";
 import { transformToReportData } from "../report-data";
 import { adaptBoardData } from "./board-data";
 import { BoardProvider, useBoard } from "./board-state";
+import { BoardMap } from "./BoardMap";
 
 interface Props {
   project: Project;
@@ -46,26 +47,24 @@ function Inner({ project, enTranslations = {} }: Props) {
   );
 }
 
-/** Midlertidig shell — fylles inn av Unit 3+ med BoardMap, mobil-UI, og desktop-UI. */
+/** Board-shell: full-screen kart i bakgrunn. Mobil-UI (categories, peek, drawers) og desktop-UI legges på toppen i Unit 4+. */
 function BoardScaffold() {
   const { state, data } = useBoard();
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-muted/20">
-      <div className="max-w-md text-center space-y-4">
-        <h1 className="text-3xl font-bold text-foreground">Board UX kommer</h1>
-        <p className="text-muted-foreground">
-          State-machine + data-adapter på plass. UI bygges i Unit 3+.
-        </p>
-        <div className="text-sm text-muted-foreground/80 pt-4 border-t border-border space-y-1">
-          <p>
-            Project: <strong>{data.home.name}</strong>
-          </p>
-          <p>Categories: {data.categories.length}</p>
-          <p>POIs total: {data.categories.reduce((sum, c) => sum + c.pois.length, 0)}</p>
-          <p>
-            Phase: <code>{state.phase}</code>
-          </p>
+    <div className="relative w-full h-screen overflow-hidden bg-stone-100">
+      <BoardMap />
+
+      {/* Midlertidig debug-overlay — fjernes når mobil-UI mountes i Unit 4 */}
+      <div className="absolute top-4 right-4 z-30 bg-white/90 backdrop-blur rounded-lg shadow-md px-3 py-2 text-xs space-y-0.5 pointer-events-none">
+        <div>
+          <strong>{data.home.name}</strong>
+        </div>
+        <div className="text-muted-foreground">
+          {data.categories.length} kategorier · {data.categories.reduce((s, c) => s + c.pois.length, 0)} POI-er
+        </div>
+        <div className="text-muted-foreground">
+          phase: <code>{state.phase}</code>
         </div>
       </div>
     </div>
