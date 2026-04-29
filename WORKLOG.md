@@ -5,7 +5,8 @@
 ---
 date: 2026-04-28
 action: Rapport-map-previews — løft boligobjektet, dempet POI-er, info-stripe under kartet
-scope: Rapport-produktet, frontend kun. Worktree `feat/rapport-map-preview-redesign`. Merget til main.
+scope: Rapport-produktet, frontend kun.
+status: shipped — merget til main (5ea68ed over 83891b5) og pushet til origin, branch + worktree ryddet
 files:
   - components/variants/report/ReportThemeMap.tsx (ny `previewMode`-prop)
   - components/variants/report/ReportMapPreviewCard.tsx (NY — delt preview-card-komponent)
