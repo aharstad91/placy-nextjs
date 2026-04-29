@@ -135,8 +135,8 @@ export default function ReportOverviewMap({
   );
 
   return (
-    <section className="py-12 md:py-16">
-      <div className="md:max-w-4xl">
+    <section className="pt-8 md:pt-12 pb-4">
+      <div>
         <h2 className="text-2xl md:text-3xl font-bold text-[#1a1a1a] mb-2">
           Alt rundt {projectName}
         </h2>
@@ -149,11 +149,9 @@ export default function ReportOverviewMap({
             Unmountes når modal er åpen: iOS WebKit støtter kun én WebGL-kontekst. */}
         {!sheetOpen && (
           <ReportMapPreviewCard
-            title={`Alt rundt ${projectName}`}
+            title="Vis på kart"
             count={pois.length}
             countLabel="steder i nabolaget"
-            illustrationSrc="/illustrations/wesselslokka-aerial-watercolor.png"
-            illustrationAlt={`Akvarell-illustrasjon av nabolaget rundt ${projectName}`}
             onClick={handleOpenSheet}
             ariaLabel={`Utforsk alle ${pois.length} steder rundt ${projectName} på kartet`}
           >

@@ -12,9 +12,9 @@ interface ReportHeroProps {
 export default function ReportHero({ projectName, heroIntro, heroImage }: ReportHeroProps) {
   return (
     <section className="flex flex-col bg-white">
-      <div className="grid grid-cols-1 md:grid-cols-2">
-        {/* Left: text */}
-        <div className="flex flex-col justify-center px-6 py-10 md:px-16 md:py-14">
+      <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8">
+        {/* Left: text — padding fra 1080px-containeren rundt, ikke internt */}
+        <div className="flex flex-col justify-center py-10 md:py-14">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#1a1a1a] leading-tight tracking-tight mb-6">
             {projectName}
           </h1>
@@ -33,7 +33,7 @@ export default function ReportHero({ projectName, heroIntro, heroImage }: Report
               src={heroImage}
               alt={projectName}
               fill
-              className="object-contain object-center"
+              className="object-contain object-right"
               priority
               sizes="50vw"
             />

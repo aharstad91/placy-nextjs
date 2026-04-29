@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/popover";
 import UnifiedMapModal from "@/components/map/UnifiedMapModal";
 import ReportMapPreviewCard from "./ReportMapPreviewCard";
-import { THEME_SCENE_SRC } from "./theme-icons";
 import ReportMapBottomCarousel from "./blocks/ReportMapBottomCarousel";
 import ReportAddressInput from "./ReportAddressInput";
 import dynamic from "next/dynamic";
@@ -242,18 +241,12 @@ export default function ReportThemeSection({
 
   // Map preview — flyttet ut av disclosure slik at det vises som primary
   // navigasjon mellom ingress og brødtekst (ikke gjemt bak "Les mer").
-  // Bruker delt ReportMapPreviewCard: forenklet POI-rendering (single-tone
-  // prikker), forstørret prosjekt-pin, info-stripe under med tema-tittel,
-  // antall, watercolor-illustrasjon og pil-i-sirkel-CTA.
-  const themeIllustrationSrc =
-    THEME_SCENE_SRC[theme.id] ?? "/illustrations/hverdagsliv.jpg";
+  // Bruker delt ReportMapPreviewCard: forenklet POI-rendering, forstørret
+  // prosjekt-pin, og hvitt info-kort over kartet med "Vis på kart"-CTA.
   const mapPreview = !mapDialogOpen && theme.allPOIs.length > 0 ? (
     <ReportMapPreviewCard
-      title={theme.name}
+      title="Vis på kart"
       count={theme.allPOIs.length}
-      countLabel="steder på kartet"
-      illustrationSrc={themeIllustrationSrc}
-      illustrationAlt={`Akvarell-illustrasjon for ${theme.name}`}
       onClick={openMap}
       ariaLabel={`Utforsk ${theme.allPOIs.length} steder i ${theme.name} på kartet`}
     >
