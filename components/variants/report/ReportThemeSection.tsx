@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState, useMemo, useRef } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import type { Coordinates, POI } from "@/lib/types";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
 import type { SlotContext } from "@/components/map/UnifiedMapModal";
@@ -101,26 +101,13 @@ export default function ReportThemeSection({
   );
 
   const [expanded, setExpanded] = useState(false);
-  const toggleButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  // Ved kollaps: sørg for at "Vis mindre"-knappen holder seg synlig.
-  // Uten dette hopper knappen ut av viewport på mobil når ~1000px innhold
-  // nedenfor den forsvinner. Smooth scroll matcher max-height-animasjonen.
-  // Ved expand: ingen scroll — max-height-animasjonen i seg selv er nok
-  // signal om at innhold kommer inn. Auto-scroll oppleves som unødvendig
-  // bevegelse.
+  // Ingen auto-scroll ved toggle — verken expand eller kollaps. Max-height-
+  // animasjonen alene er signal nok; auto-scroll oppleves som unødvendig
+  // viewport-bevegelse.
   const handleToggle = useCallback(() => {
-    const wasExpanded = expanded;
     setExpanded((v) => !v);
-    if (wasExpanded) {
-      requestAnimationFrame(() => {
-        toggleButtonRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      });
-    }
-  }, [expanded]);
+  }, []);
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const openMap = useCallback(() => setMapDialogOpen(true), []);
 
@@ -364,7 +351,6 @@ export default function ReportThemeSection({
             {!expanded && (
               <div className="mt-4 flex justify-center">
                 <button
-                  ref={toggleButtonRef}
                   type="button"
                   onClick={handleToggle}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#d4cfc8] text-sm font-medium text-[#3a3530] shadow-sm hover:bg-[#faf9f7] hover:border-[#a89f92] hover:shadow-md active:scale-[0.98] transition-all"
@@ -402,7 +388,6 @@ export default function ReportThemeSection({
             {expanded && (
               <div className="mt-6 flex justify-center">
                 <button
-                  ref={toggleButtonRef}
                   type="button"
                   onClick={handleToggle}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#d4cfc8] text-sm font-medium text-[#3a3530] shadow-sm hover:bg-[#faf9f7] hover:border-[#a89f92] hover:shadow-md active:scale-[0.98] transition-all"
