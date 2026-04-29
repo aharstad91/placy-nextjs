@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useState, useMemo, useRef } from "react";
-import Image from "next/image";
 import type { Coordinates, POI } from "@/lib/types";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
 import type { SlotContext } from "@/components/map/UnifiedMapModal";
@@ -358,31 +357,9 @@ export default function ReportThemeSection({
               </div>
             )}
 
-            {/* Tema-bilde med fade-overlay — visuell teaser inn mot "Les mer".
-                Fade fjernes når expanded slik at bildet står rent over
-                grounding-narrativen. Grounding-teksten er flyttet inn i
-                disclosure-blokken under, så collapsed-state viser kun bildet. */}
-            {theme.image && (
-              <div className="relative mt-4 w-full">
-                <Image
-                  src={theme.image.src}
-                  alt=""
-                  aria-hidden="true"
-                  width={theme.image.width}
-                  height={theme.image.height}
-                  sizes="(min-width: 1024px) 800px, 100vw"
-                  className="w-full h-auto select-none pointer-events-none"
-                  draggable={false}
-                  priority={false}
-                />
-                <div
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-white transition-opacity duration-500 ease-in-out ${expanded ? "opacity-0" : "opacity-100"}`}
-                />
-              </div>
-            )}
-
-            {/* Les mer / Vis mindre — sentrert under gradient. */}
+            {/* Les mer / Vis mindre — tema-illustrasjonen vises i kart-kortet
+                over (ReportMapPreviewCard), så vi har ingen ekstra teaser-bilde
+                her. */}
             <div className="mt-4 flex justify-center">
               <button
                 ref={toggleButtonRef}
