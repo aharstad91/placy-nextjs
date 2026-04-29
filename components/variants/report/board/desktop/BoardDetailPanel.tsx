@@ -70,14 +70,41 @@ export function BoardDetailPanel() {
 }
 
 function DefaultEmptyState() {
+  const { data } = useBoard();
+  const { home } = data;
+
   return (
-    <div className="flex h-full flex-col justify-center px-6 py-8">
-      <h2 className="text-2xl font-bold leading-tight text-stone-900">
-        Hva lurer du på?
-      </h2>
-      <p className="mt-3 text-base leading-relaxed text-stone-600">
-        Velg en kategori i raden til venstre for å utforske nabolaget.
-      </p>
+    <div className="flex h-full flex-col overflow-y-auto">
+      {home.heroImage && (
+        <div className="relative aspect-[4/3] w-full flex-none bg-stone-200">
+          <Image
+            src={home.heroImage}
+            alt={home.name}
+            fill
+            sizes="400px"
+            className="object-cover"
+            priority
+          />
+        </div>
+      )}
+      <div className="flex flex-col gap-3 px-6 py-6">
+        {home.address && (
+          <div className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+            {home.address}
+          </div>
+        )}
+        <h2 className="text-2xl font-bold leading-tight text-stone-900">
+          {home.name}
+        </h2>
+        {home.heroIntro && (
+          <p className="text-[15px] leading-relaxed text-stone-700">
+            {home.heroIntro}
+          </p>
+        )}
+        <p className="pt-2 text-sm text-stone-500">
+          Velg en kategori for å utforske nabolaget.
+        </p>
+      </div>
     </div>
   );
 }

@@ -42,6 +42,10 @@ export interface BoardHome {
   name: string;
   coordinates: { lat: number; lng: number };
   address: string;
+  /** Hero-bilde av eiendommen (fra reportConfig.heroImage). Vist i default-detail-panel. */
+  heroImage?: string;
+  /** Intro-tekst (fra reportConfig.heroIntro eller bransjeprofil-mal). Vist i default-detail-panel. */
+  heroIntro?: string;
 }
 
 export interface BoardData {
@@ -70,6 +74,8 @@ export function adaptBoardData(report: ReportData): BoardData {
       name: report.projectName,
       coordinates: report.centerCoordinates,
       address: report.address,
+      heroImage: report.heroImage,
+      heroIntro: report.heroIntro,
     },
     categories,
   };
