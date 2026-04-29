@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Placy Board — UX-prototype</title>
+  <style>
+    :root {
+      --bg-page: #ececee;
+      --map-bg: #d8dbe0;
+      --map-grid: rgba(255, 255, 255, 0.5);
+      --map-block: #c5c9d0;
+      --map-park: #c8d6c0;
+      --map-water: #b9c8d8;
+      --map-road: #ffffff;
+
+      --poi: #4762d8;
+      --poi-active: #1f3aa8;
+      --poi-dim: rgba(71, 98, 216, 0.18);
+      --home: #1b2d5c;
+
+      --sheet-bg: #b8c2e8;
+      --sheet-fg: #0f1d44;
+      --sheet-fg-muted: #3b4a7a;
+      --card-bg: #ffffff;
+      --card-border: rgba(15, 29, 68, 0.08);
+      --card-shadow: 0 6px 24px rgba(15, 29, 68, 0.10);
+
+      --text: #0f1d44;
+      --text-muted: #5b6485;
+
+      --route: #4762d8;
+
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg-page);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* Phone frame on desktop */
+    .stage {
+      width: 100%;
+      height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .board {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      height: 100dvh;
+      max-height: 100dvh;
+      background: var(--bg-page);
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.04);
+    }
+    @media (min-width: 480px) {
+      .stage { padding: 24px; background: #f5f5f7; }
+      .board {
+        height: min(900px, calc(100dvh - 48px));
+        border-radius: 32px;
+        box-shadow: 0 24px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+      }
+    }
+
+    .topbar {
+      position: absolute; top: 14px; left: 18px;
+      font-size: 13px; color: rgba(0,0,0,0.45);
+      letter-spacing: 0.02em; z-index: 5;
+      pointer-events: none;
+    }
+
+    /* Map */
+    .map { position: absolute; inset: 0; background: var(--map-bg); overflow: hidden; }
+    .map-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--map-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--map-grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.6;
+    }
+    .map-features { position: absolute; inset: 0; pointer-events: none; }
+    .map-block { position: absolute; background: var(--map-block); border-radius: 4px; }
+    .map-park { position: absolute; background: var(--map-park); border-radius: 50%; opacity: 0.75; }
+    .map-water { position: absolute; background: var(--map-water); border-radius: 60% 40% 50% 50%; opacity: 0.7; }
+    .map-road { position: absolute; background: var(--map-road); opacity: 0.85; }
+
+    /* Path layer (route SVG) */
+    .path-layer {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .path-layer svg {
+      width: 100%; height: 100%; display: block;
+      overflow: visible;
+    }
+    .path-route {
+      fill: none;
+      stroke: var(--route);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      filter: drop-shadow(0 1px 2px rgba(71, 98, 216, 0.35));
+      opacity: 0;
+      transition: opacity 280ms ease;
+    }
+    .path-route.visible { opacity: 1; }
+
+    /* Home pin */
+    .home {
+      position: absolute;
+      top: 38%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--home);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      box-shadow: 0 4px 16px rgba(27, 45, 92, 0.25);
+      z-index: 4;
+    }
+    .home::after {
+      content: '';
+      position: absolute;
+      bottom: -6px; left: 50%;
+      width: 12px; height: 12px;
+      background: var(--home);
+      transform: translateX(-50%) rotate(45deg);
+      z-index: -1;
+    }
+
+    /* POI markers */
+    .poi {
+      position: absolute;
+      width: 14px; height: 14px;
+      background: var(--poi);
+      border-radius: 3px;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 2px 6px rgba(71, 98, 216, 0.35);
+      transition: opacity 280ms ease, background 280ms ease, width 240ms cubic-bezier(0.32, 0.72, 0.28, 1), height 240ms cubic-bezier(0.32, 0.72, 0.28, 1), border-radius 240ms ease, box-shadow 280ms ease;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0;
+      color: white;
+      overflow: hidden;
+    }
+    .poi.dim { opacity: 0.16; }
+    .poi.active { background: var(--poi-active); }
+    .poi.selected {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--cat-color, var(--poi-active));
+      font-size: 18px;
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.7), 0 6px 18px rgba(0, 0, 0, 0.18);
+      z-index: 5;
+    }
+    .poi-hit {
+      position: absolute;
+      width: 36px; height: 36px;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      z-index: 4;
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+    .poi-hit:focus-visible { outline: 2px solid var(--home); outline-offset: 2px; border-radius: 50%; }
+
+    /* POI label (above selected POI) */
+    .poi-label {
+      position: absolute;
+      background: white;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+      z-index: 7;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, calc(-100% - 26px));
+      transition: opacity 220ms ease 80ms, transform 240ms cubic-bezier(0.32, 0.72, 0.28, 1) 80ms;
+    }
+    .poi-label::after {
+      content: '';
+      position: absolute;
+      bottom: -4px; left: 50%;
+      width: 8px; height: 8px;
+      background: white;
+      transform: translateX(-50%) rotate(45deg);
+    }
+    .poi-label.visible {
+      opacity: 1;
+      transform: translate(-50%, calc(-100% - 22px));
+    }
+
+    /* Travel chip */
+    .travel-chip {
+      position: absolute;
+      background: white;
+      padding: 6px 12px 6px 8px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 7;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
+      transition: opacity 220ms ease 140ms, transform 240ms cubic-bezier(0.32, 0.72, 0.28, 1) 140ms;
+    }
+    .travel-chip.visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .travel-chip svg { width: 14px; height: 14px; }
+
+    /* Sheet */
+    .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 10; pointer-events: none; }
+    .sheet-inner { position: relative; pointer-events: auto; }
+
+    /* State 1: categories */
+    .categories {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      padding: 18px 0 calc(18px + var(--safe-bottom));
+      transition: transform 380ms cubic-bezier(0.32, 0.72, 0.28, 1), opacity 240ms ease;
+    }
+    .categories-title {
+      padding: 0 20px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .cards {
+      display: flex;
+      gap: 12px;
+      padding: 0 20px 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .cards::-webkit-scrollbar { display: none; }
+    .card {
+      flex: 0 0 168px;
+      scroll-snap-align: start;
+      background: var(--card-bg);
+      border-radius: 18px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--card-border);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 200ms ease, box-shadow 200ms ease;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      font-family: inherit;
+      padding: 0;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(15, 29, 68, 0.14); }
+    .card:active { transform: translateY(0); }
+    .card-illustration {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      background: #f0eee8;
+      background-size: cover;
+      background-position: center;
+    }
+    .card-count {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: var(--home);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 26px;
+      height: 26px;
+      padding: 0 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(27, 45, 92, 0.35);
+    }
+    .card-text {
+      padding: 12px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .card-question {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--text);
+    }
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* State 2: peek / teaser */
+    .peek {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      padding: 14px 16px calc(14px + var(--safe-bottom));
+      background: linear-gradient(180deg, transparent 0%, rgba(184, 194, 232, 0.4) 30%, var(--sheet-bg) 60%);
+      transform: translateY(110%);
+      transition: transform 420ms cubic-bezier(0.32, 0.72, 0.28, 1);
+    }
+    .peek-card {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 18px;
+      padding: 16px 18px 18px;
+      box-shadow: 0 8px 30px rgba(15, 29, 68, 0.14);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .peek-eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sheet-fg-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .peek-lead {
+      font-size: 16px;
+      line-height: 1.4;
+      font-weight: 500;
+      color: var(--sheet-fg);
+      margin: 0;
+    }
+    .peek-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 120ms ease, background 160ms ease, opacity 160ms ease;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: var(--home);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+    }
+    .btn-primary:hover { background: #25366d; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--sheet-fg);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      border: 1px solid rgba(15, 29, 68, 0.2);
+    }
+    .btn-ghost:hover { background: rgba(15, 29, 68, 0.06); }
+
+    .peek-tray {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 4px 0;
+    }
+    .menu-btn {
+      appearance: none;
+      border: none;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(8px);
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(15, 29, 68, 0.12);
+    }
+    .menu-btn svg { width: 20px; height: 20px; color: var(--sheet-fg); }
+    .minimize-btn {
+      flex: 1;
+      appearance: none;
+      border: none;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(8px);
+      color: var(--sheet-fg);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(15, 29, 68, 0.12);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    /* State 3: modal */
+    .modal {
+      position: absolute;
+      inset: 0;
+      background: var(--sheet-bg);
+      color: var(--sheet-fg);
+      z-index: 30;
+      transform: translateY(100%);
+      transition: transform 460ms cubic-bezier(0.32, 0.72, 0.28, 1);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .modal-content {
+      padding: 64px 24px calc(40px + var(--safe-bottom));
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .modal-close {
+      position: absolute;
+      top: 14px; right: 16px;
+      width: 40px; height: 40px;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(8px);
+      border: none;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--sheet-fg);
+      cursor: pointer;
+      z-index: 2;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { background: rgba(255, 255, 255, 0.75); }
+    .modal-eyebrow {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sheet-fg-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+    .modal-title {
+      font-size: 28px;
+      line-height: 1.15;
+      font-weight: 700;
+      margin: 0 0 16px;
+    }
+    .modal-lead {
+      font-size: 18px;
+      line-height: 1.45;
+      font-weight: 500;
+      margin: 0 0 20px;
+    }
+    .modal-image {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 16px;
+      margin: 0 0 22px;
+      background-size: cover;
+      background-position: center;
+    }
+    .modal-body { font-size: 16px; line-height: 1.6; }
+    .modal-body p { margin: 0 0 16px; }
+
+    /* State 4: POI sheet */
+    .poi-sheet {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      background: white;
+      border-radius: 22px 22px 0 0;
+      box-shadow: 0 -8px 36px rgba(0, 0, 0, 0.14);
+      transform: translateY(120%);
+      transition: transform 380ms cubic-bezier(0.32, 0.72, 0.28, 1);
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      max-height: 75dvh;
+      overflow: hidden;
+    }
+    .poi-sheet-handle {
+      width: 40px; height: 4px;
+      background: rgba(0, 0, 0, 0.16);
+      border-radius: 999px;
+      margin: 6px auto 0;
+      flex-shrink: 0;
+    }
+    .poi-sheet-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px 10px;
+      flex-shrink: 0;
+      gap: 10px;
+    }
+    .poi-sheet-close {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.06);
+      border: none;
+      font-size: 18px;
+      line-height: 1;
+      color: var(--text);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+    .poi-sheet-close:hover { background: rgba(0, 0, 0, 0.1); }
+    .poi-sheet-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sheet-fg-muted);
+      background: rgba(15, 29, 68, 0.08);
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .poi-sheet-back:hover { background: rgba(15, 29, 68, 0.14); }
+    .poi-sheet-back svg { width: 12px; height: 12px; }
+    .poi-sheet-scroll {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 20px calc(24px + var(--safe-bottom));
+      overscroll-behavior: contain;
+    }
+    .poi-sheet-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 0 14px;
+    }
+    .poi-sheet-icon {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .poi-sheet-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .poi-sheet-cat {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .poi-sheet-info {
+      background: rgba(0, 0, 0, 0.04);
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+    }
+    .poi-sheet-info svg { width: 18px; height: 18px; opacity: 0.7; flex-shrink: 0; }
+    .poi-sheet-body {
+      padding-top: 18px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    .poi-sheet-body p { margin: 0 0 14px; }
+    .poi-sheet-body p:last-child { margin-bottom: 0; }
+
+    /* State machine */
+    .board[data-state="default"] .categories { transform: translateY(0); opacity: 1; }
+    .board[data-state="default"] .peek { transform: translateY(110%); }
+    .board[data-state="default"] .modal { transform: translateY(100%); }
+    .board[data-state="default"] .poi-sheet { transform: translateY(120%); }
+
+    .board[data-state="active"] .categories { transform: translateY(110%); opacity: 0; }
+    .board[data-state="active"] .peek { transform: translateY(0); }
+    .board[data-state="active"] .modal { transform: translateY(100%); }
+    .board[data-state="active"] .poi-sheet { transform: translateY(120%); }
+
+    .board[data-state="reading"] .categories { transform: translateY(110%); opacity: 0; }
+    .board[data-state="reading"] .peek { transform: translateY(0); }
+    .board[data-state="reading"] .modal { transform: translateY(0); }
+    .board[data-state="reading"] .poi-sheet { transform: translateY(120%); }
+
+    .board[data-state="poi"] .categories { transform: translateY(110%); opacity: 0; }
+    .board[data-state="poi"] .peek { transform: translateY(110%); }
+    .board[data-state="poi"] .modal { transform: translateY(100%); }
+    .board[data-state="poi"] .poi-sheet { transform: translateY(0); }
+
+    .dev-state {
+      position: absolute; top: 14px; right: 14px;
+      font-size: 11px;
+      background: rgba(0,0,0,0.6); color: #fff;
+      padding: 4px 10px; border-radius: 999px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      letter-spacing: 0.05em;
+      z-index: 50;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="board" id="board" data-state="default">
+      <div class="topbar">Board</div>
+      <div class="dev-state" id="devState">DEFAULT</div>
+
+      <!-- Map -->
+      <div class="map" aria-hidden="true">
+        <div class="map-grid"></div>
+        <div class="map-features" id="mapFeatures"></div>
+        <div class="path-layer">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path id="routePath" class="path-route" d="" />
+          </svg>
+        </div>
+        <div class="poi-layer" id="poiLayer"></div>
+        <div class="hit-layer" id="hitLayer"></div>
+        <div class="poi-label" id="poiLabel"></div>
+        <div class="travel-chip" id="travelChip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>
+          </svg>
+          <span id="travelChipText">5 min</span>
+        </div>
+        <div class="home">Home</div>
+      </div>
+
+      <!-- Sheet -->
+      <div class="sheet">
+        <div class="sheet-inner">
+          <div class="categories" id="categories">
+            <div class="categories-title">Hva lurer du på?</div>
+            <div class="cards" id="cards"></div>
+          </div>
+
+          <div class="peek" id="peek">
+            <div class="peek-card">
+              <div class="peek-eyebrow" id="peekEyebrow">Hverdagsliv</div>
+              <p class="peek-lead" id="peekLead">…</p>
+              <div class="peek-actions">
+                <button class="btn btn-primary" id="readMoreBtn">Les mer</button>
+                <button class="btn btn-ghost" id="switchBtn">Bytt kategori</button>
+              </div>
+            </div>
+            <div class="peek-tray">
+              <button class="menu-btn" id="menuBtn" aria-label="Hovedmeny">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+              </button>
+              <button class="minimize-btn" id="minimizeBtn">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                Minimer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- POI Sheet (state 4) -->
+      <div class="poi-sheet" id="poiSheet">
+        <div class="poi-sheet-handle"></div>
+        <div class="poi-sheet-top">
+          <button class="poi-sheet-back" id="poiBackBtn" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <span id="poiBackLabel">Tilbake</span>
+          </button>
+          <button class="poi-sheet-close" id="poiCloseBtn" aria-label="Lukk">×</button>
+        </div>
+        <div class="poi-sheet-scroll">
+          <div class="poi-sheet-header">
+            <div class="poi-sheet-icon" id="poiSheetIcon">📍</div>
+            <div>
+              <div class="poi-sheet-name" id="poiSheetName">…</div>
+              <div class="poi-sheet-cat" id="poiSheetCat">…</div>
+            </div>
+          </div>
+          <div class="poi-sheet-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span id="poiSheetInfo">…</span>
+          </div>
+          <div class="poi-sheet-body" id="poiSheetBody"></div>
+        </div>
+      </div>
+
+      <!-- State 3: full reading modal -->
+      <div class="modal" id="modal">
+        <button class="modal-close" id="closeBtn" aria-label="Lukk">×</button>
+        <div class="modal-content">
+          <p class="modal-eyebrow" id="modalEyebrow">Hverdagsliv</p>
+          <h1 class="modal-title" id="modalTitle">…</h1>
+          <p class="modal-lead" id="modalLead">…</p>
+          <div class="modal-image" id="modalImage"></div>
+          <div class="modal-body" id="modalBody"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const HOME = { x: 50, y: 38 };
+
+    const LOREM_SENTENCES = [
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+      'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
+      'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+      'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.',
+      'Totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.',
+      'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.',
+      'Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit.',
+      'Sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.',
+      'Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam.',
+      'Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.',
+      'Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur.',
+      'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti.',
+      'Quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.',
+      'Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga.',
+      'Et harum quidem rerum facilis est et expedita distinctio.',
+      'Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat.',
+      'Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet.',
+      'Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias.'
+    ];
+
+    function generateLoremBody() {
+      const target = 50 + Math.floor(Math.random() * 151); // 50–200 tegn
+      let text = '';
+      while (text.length < target) {
+        const sentence = LOREM_SENTENCES[Math.floor(Math.random() * LOREM_SENTENCES.length)];
+        const candidate = text ? text + ' ' + sentence : sentence;
+        if (candidate.length > 200) {
+          let cut = candidate.slice(0, 200);
+          const lastSpace = cut.lastIndexOf(' ');
+          if (lastSpace > 50) cut = cut.slice(0, lastSpace);
+          text = cut.replace(/[\s,;:.]+$/, '') + '.';
+          break;
+        }
+        text = candidate;
+      }
+      return [text];
+    }
+
+    // === Categories with real Wesselsløkka content + named POIs ===
+    const CATEGORIES = [
+      {
+        id: 'hverdagsliv',
+        question: 'Hva kan jeg ordne i nærheten?',
+        subtitle: 'Hverdagsliv',
+        illustration: '/illustrations/themes/hverdagsliv.jpg',
+        markerIcon: '🛍',
+        markerColor: '#C89B6B',
+        lead: 'Daglige tjenester er samlet på Valentinlyst nærsenter fem minutters gange unna.',
+        body: [
+          'Valentinlyst er områdets nærmeste servicepunkt, med Coop Mega og Kiwi Valentinlyst for dagligvare. Senteret har også Boots apotek og Vinmonopolet, og posttjenester leveres via Coop Mega — praktisk samlet for daglige ærender.',
+          'For helse og velvære finnes Valentinlyst legesenter, tannklinikk, og spesialister som naprapat og optiker. Treningssentrene Feelgood Valentinlyst og Fresh Fitness ligger i samme område, slik at trening og helse kan kombineres med handleturen.',
+          'Tilbudet er tett nok til at dagligruten kan legges uten bil, og stabilt nok til at det lønner seg over tid — både for travle hverdager og for dem som vil ha alt i nærheten.'
+        ],
+        pois: [
+          {x:32,y:26, name:'Coop Mega Valentinlyst',  info:'Åpent 07–23 · Dagligvare'},
+          {x:38,y:30, name:'Kiwi Valentinlyst',       info:'Åpent 07–23 · Dagligvare'},
+          {x:35,y:22, name:'Boots Apotek',            info:'Apotek · Resept'},
+          {x:41,y:24, name:'Vinmonopolet Valentinlyst', info:'Vinmonopol'},
+          {x:28,y:32, name:'Valentinlyst legesenter', info:'Fastlege · Allmennpraksis'},
+          {x:34,y:18, name:'Tannklinikk Valentinlyst', info:'Tannlege'},
+          {x:45,y:28, name:'Rosenborg Bakeri',        info:'Bakeri · Kafé'},
+          {x:30,y:35, name:'Frisør Valentinlyst',     info:'Frisør · Drop-in'},
+          {x:40,y:35, name:'SpareBank 1 Valentinlyst', info:'Bank · Minibank'},
+          {x:37,y:14, name:'Bokhandel',               info:'Bok & papir'},
+          {x:26,y:23, name:'Naprapat Valentinlyst',   info:'Helse · Behandling'},
+          {x:43,y:20, name:'Optiker Valentinlyst',    info:'Optikk · Briller'}
+        ]
+      },
+      {
+        id: 'barn-oppvekst',
+        question: 'Er det bra for barna?',
+        subtitle: 'Barn & Oppvekst',
+        illustration: '/illustrations/themes/barn-oppvekst.jpg',
+        markerIcon: '🛝',
+        markerColor: '#6BAA66',
+        lead: 'Barnehage og skole ligger i nabolaget, med ny permanent skole planlagt på Brøset.',
+        body: [
+          'Brøset har én kommunal barnehage i dag — Brøset barnehage i Brøsetekra 8 — med kapasitet for 105 barn fordelt på småbarns- og storbarnsavdelinger.',
+          'Brøset midlertidige skole i Granåsvegen 6 er en paviljongskole med ca. 550 elevplasser. En ny, permanent barneskole med idrettsfasiliteter er planlagt, dimensjonert for 525 elever.',
+          'I nabolaget ligger også Eberg skole og Blussuvoll skole, samt videregående Strinda videregående skole — tre etablerte skoler som dekker hele opplæringsløpet.'
+        ],
+        pois: [
+          {x:52,y:20, name:'Brøset barnehage',           info:'105 plasser · Kommunal'},
+          {x:58,y:28, name:'Brøset midlertidige skole', info:'550 elever · Paviljong'},
+          {x:65,y:16, name:'Eberg skole',                info:'Barneskole'},
+          {x:60,y:35, name:'Blussuvoll skole',           info:'Ungdomsskole'},
+          {x:55,y:12, name:'Strinda videregående',       info:'Videregående skole'}
+        ]
+      },
+      {
+        id: 'mat-drikke',
+        question: 'Er det et levende nabolag?',
+        subtitle: 'Mat & Drikke',
+        illustration: '/illustrations/themes/mat-drikke.jpg',
+        markerIcon: '🍴',
+        markerColor: '#D27F4D',
+        lead: 'Bakeri, burger og roterende panoramarestaurant innen kort sykkel- eller bussavstand.',
+        body: [
+          'Valentinlyst-området rommer flere spisesteder med et praktisk tilbud for hverdagsmiddager og uformelle måltider. Fyr på Valentinlyst er kjent for burgere og pizza, mens Rosenborg Bakeri Valentinlyst serverer ferske bakevarer, brød, kaker og kaffe.',
+          'På Tyholt finnes den unike roterende Egon Tårnet, lokalisert i toppen av Tyholttårnet med panoramautsikt over byen. Restauranten roterer 360 grader i løpet av en time.',
+          'For finere middager tar du bussen ned til Midtbyen, som ligger i kort direktebuss-avstand fra nabolaget.'
+        ],
+        pois: [
+          {x:70,y:50, name:'Fyr på Valentinlyst',          info:'Burger & pizza'},
+          {x:62,y:56, name:'Rosenborg Bakeri Valentinlyst', info:'Bakeri · Kafé'},
+          {x:75,y:44, name:'Egon Tårnet',                  info:'Roterende restaurant · Tyholt'},
+          {x:58,y:62, name:'Sit Kafe Tyholt',              info:'Lunsj · Kafé'},
+          {x:80,y:52, name:'Pizzabakeren Moholt',          info:'Pizza · Takeaway'},
+          {x:65,y:48, name:"Domino's Pizza Moholt",        info:'Pizza · Takeaway'},
+          {x:72,y:58, name:'Café Riska',                   info:'Kafé · Lunsj'},
+          {x:68,y:40, name:'Sushi Express Tyholt',         info:'Sushi · Takeaway'}
+        ]
+      },
+      {
+        id: 'natur-friluftsliv',
+        question: 'Er det grønt i nærheten?',
+        subtitle: 'Natur & Friluftsliv',
+        illustration: '/illustrations/themes/natur-friluftsliv.jpg',
+        markerIcon: '🌳',
+        markerColor: '#5C8E5A',
+        lead: 'Estenstadmarka starter rett sør for Brøset, med stinettverk for tur, løp og ski.',
+        body: [
+          'Estenstadmarka ligger i umiddelbar nærhet sør for Brøset, og tilbyr et omfattende stinettverk for fotturer, løping og sykling — samt skiløyper om vinteren.',
+          'Estenstadhytta gir flott utsikt over Trondheim, mens Liaåsen er markas høyeste punkt. Burmaklippen er et kjent utsiktspunkt som ofte sammenlignes med en "mini-Trolltunga".',
+          'Nært boligen går Brøsetrunden — en ca. 2 km rundtur gjennom grønne områder og forbi historiske bygninger.'
+        ],
+        pois: [
+          {x:18,y:72, name:'Estenstadmarka inngang',  info:'Marka · Stinettverk'},
+          {x:24,y:80, name:'Estenstadhytta',          info:'DNT-hytte · Utsikt'},
+          {x:30,y:76, name:'Liaåsen',                 info:'Markas høyeste punkt'},
+          {x:12,y:68, name:'Estenstaddammen',         info:'Rasteplass · Vann'},
+          {x:22,y:88, name:'Burmaklippen',            info:'Utsiktspunkt · "Mini-Trolltunga"'},
+          {x:35,y:82, name:'Brøsetrunden',            info:'2 km tursti'},
+          {x:16,y:84, name:'Bekkedalen',              info:'Ravinelandskap · Bekkeløp'},
+          {x:28,y:70, name:'Steinan-inngang',         info:'Marka-inngang'},
+          {x:38,y:74, name:'Jakobsli-inngang',        info:'Marka-inngang'},
+          {x:14,y:78, name:'Skiløype-start',          info:'Skispor · Vinter'}
+        ]
+      },
+      {
+        id: 'opplevelser',
+        question: 'Hva er det å oppleve?',
+        subtitle: 'Opplevelser & Kultur',
+        illustration: '/illustrations/themes/opplevelser.jpg',
+        markerIcon: '🎭',
+        markerColor: '#7A6BAE',
+        lead: 'Nidarosdomen, Rockheim og Bakklandet — kulturen i Trondheim er en kort bussreise unna.',
+        body: [
+          'Trondheim sentrum huser flere betydelige museer — Nidarosdomen og Erkebispegården, Trondheim Kunstmuseum, Nordenfjeldske Kunstindustrimuseum og Vitenskapsmuseet. Rockheim ligger ved sentralstasjonen.',
+          'Trondhjems Sjøfartsmuseum, Justismuseet og Jødisk museum Trondheim gir ytterligere fordypning i byens historie.',
+          'Kulturelle landemerker inkluderer Kristiansten Festning med utsikt over byen, og Gamle Bybro — også kalt "Lykkens Portal" — som forbinder Midtbyen med det sjarmerende Bakklandet.'
+        ],
+        pois: [
+          {x:78,y:22, name:'Nidarosdomen',           info:'Domkirke · Sentrum'},
+          {x:84,y:30, name:'Rockheim',               info:'Musikkmuseum'},
+          {x:72,y:18, name:'Erkebispegården',        info:'Museum · Sentrum'},
+          {x:80,y:38, name:'Kristiansten Festning',  info:'Festning · Utsikt'},
+          {x:88,y:26, name:'Trondheim Kunstmuseum',  info:'Kunstmuseum'},
+          {x:76,y:32, name:'Gamle Bybro',            info:'Bro · "Lykkens Portal"'},
+          {x:82,y:14, name:'Vitenskapsmuseet',       info:'Museum'},
+          {x:70,y:28, name:'ISAK Kultursenter',      info:'Ungdom · Scenekunst'}
+        ]
+      },
+      {
+        id: 'transport',
+        question: 'Hvordan kommer jeg meg rundt?',
+        subtitle: 'Transport & Mobilitet',
+        illustration: '/illustrations/themes/transport.jpg',
+        markerIcon: '🚌',
+        markerColor: '#3FA6A8',
+        lead: 'Buss 12 og 113 binder Brøset til sentrum, Moholt og Dragvoll. Planlagt miljøbydel.',
+        body: [
+          'Brøset har god tilgang til kollektivtransport via flere busslinjer som gir direkte forbindelse til viktige knutepunkt og byens sentrale områder.',
+          'Blant de sentrale busslinjene finner man rute 12 og 113. Disse forbinder Brøset med sentrum, Strindheim, Moholt og Dragvoll, og gir effektive reiseveier videre i regionen.',
+          'Området er planlagt som en miljøbydel med særlig fokus på gode kollektivtransportløsninger, gang- og sykkelveier, og lav bilbruk.'
+        ],
+        pois: [
+          {x:50,y:50, name:'Brøset bussholdeplass', info:'Buss 12, 113'},
+          {x:55,y:65, name:'Hyre Valentinlyst',     info:'0 biler ledige · Bildeling'},
+          {x:45,y:45, name:'Bysykkel-stasjon',      info:'Bysykkel · 8 sykler'},
+          {x:60,y:75, name:'Moholt knutepunkt',     info:'Buss · Bytte'},
+          {x:48,y:80, name:'Dragvoll bussterminal', info:'Buss · NTNU Dragvoll'},
+          {x:52,y:38, name:'Strindheim P&R',        info:'Park & ride'}
+        ]
+      },
+      {
+        id: 'trening-aktivitet',
+        question: 'Kan jeg trene i nærheten?',
+        subtitle: 'Trening & Aktivitet',
+        illustration: '/illustrations/themes/trening-aktivitet.jpg',
+        markerIcon: '🏋',
+        markerColor: '#A85A5A',
+        lead: 'Fresh Fitness og Feelgood ligger på Valentinlyst — minutter unna boligen.',
+        body: [
+          'Valentinlyst rommer flere treningssentre for ulike behov. Fresh Fitness Valentinlyst har stor frivektsone, et bredt utvalg moderne styrkeapparater og en egen kondisjonsavdeling.',
+          'Feelgood Valentinlyst presenterer et helhetlig folkehelsekonsept hvor alle er velkomne, og tilbyr gratis prøvetimer for nye medlemmer.',
+          'For dem som ønsker variasjon, gir nærheten til Moholt og Strindheim tilgang til flere sentre innen kort buss- eller sykkelavstand.'
+        ],
+        pois: [
+          {x:36,y:60, name:'Fresh Fitness Valentinlyst', info:'Frivekt · Kondis'},
+          {x:42,y:68, name:'Feelgood Valentinlyst',      info:'Folkehelse · Inkluderende'},
+          {x:48,y:58, name:'Moholt treningssenter',      info:'Treningssenter'},
+          {x:38,y:54, name:'Yoga & Pilates Studio',      info:'Yoga · Pilates'},
+          {x:44,y:72, name:'Strindheim klubbhus',        info:'Idrettshall'}
+        ]
+      }
+    ];
+
+    // === Pre-generer varierende lorem per POI (stabilt for sesjonen) ===
+    for (const cat of CATEGORIES) {
+      for (const poi of cat.pois) {
+        poi.body = generateLoremBody();
+      }
+    }
+
+    // === Render fake map features ===
+    const mapFeatures = document.getElementById('mapFeatures');
+    const features = [
+      {type:'road', x:0,  y:50, w:100, h:0.6},
+      {type:'road', x:50, y:0,  w:0.5, h:100, vertical:true},
+      {type:'road', x:0,  y:25, w:100, h:0.4},
+      {type:'road', x:25, y:0,  w:0.4, h:100, vertical:true},
+      {type:'road', x:75, y:0,  w:0.4, h:100, vertical:true},
+      {type:'park', x:5,  y:65, w:35, h:30},
+      {type:'park', x:75, y:65, w:18, h:20},
+      {type:'block', x:8,  y:8,  w:14, h:8},
+      {type:'block', x:55, y:5,  w:18, h:10},
+      {type:'block', x:78, y:38, w:14, h:12},
+      {type:'block', x:55, y:42, w:8,  h:6},
+      {type:'block', x:38, y:8,  w:12, h:6},
+    ];
+    for (const f of features) {
+      const el = document.createElement('div');
+      el.className = `map-${f.type}`;
+      if (f.type === 'road') {
+        el.style.left = `${f.x}%`;
+        el.style.top  = `${f.y}%`;
+        if (f.vertical) {
+          el.style.width = '3px';
+          el.style.height = `${f.h}%`;
+        } else {
+          el.style.width = `${f.w}%`;
+          el.style.height = '3px';
+        }
+      } else {
+        el.style.left = `${f.x}%`;
+        el.style.top  = `${f.y}%`;
+        el.style.width = `${f.w}%`;
+        el.style.height = `${f.h}%`;
+      }
+      mapFeatures.appendChild(el);
+    }
+
+    // === Render POI markers + invisible hitboxes ===
+    const poiLayer = document.getElementById('poiLayer');
+    const hitLayer = document.getElementById('hitLayer');
+    const poiByKey = new Map();
+
+    for (const cat of CATEGORIES) {
+      cat.pois.forEach((poi, idx) => {
+        const key = `${cat.id}:${idx}`;
+
+        const dot = document.createElement('div');
+        dot.className = 'poi';
+        dot.dataset.cat = cat.id;
+        dot.dataset.idx = idx;
+        dot.style.left = `${poi.x}%`;
+        dot.style.top  = `${poi.y}%`;
+        poiLayer.appendChild(dot);
+
+        const hit = document.createElement('button');
+        hit.className = 'poi-hit';
+        hit.setAttribute('aria-label', poi.name);
+        hit.style.left = `${poi.x}%`;
+        hit.style.top  = `${poi.y}%`;
+        hit.addEventListener('click', () => openPoi(cat.id, idx));
+        hitLayer.appendChild(hit);
+
+        poiByKey.set(key, { dot, poi, cat, idx });
+      });
+    }
+
+    // === Render category cards ===
+    const cards = document.getElementById('cards');
+    for (const cat of CATEGORIES) {
+      const card = document.createElement('button');
+      card.className = 'card';
+      card.dataset.cat = cat.id;
+      card.innerHTML = `
+        <div class="card-illustration" style="background-image:url('${cat.illustration}')">
+          <div class="card-count">${cat.pois.length}</div>
+        </div>
+        <div class="card-text">
+          <div class="card-question">${cat.question}</div>
+          <div class="card-subtitle">${cat.subtitle}</div>
+        </div>
+      `;
+      card.addEventListener('click', () => activateCategory(cat.id));
+      cards.appendChild(card);
+    }
+
+    // === DOM refs ===
+    const board = document.getElementById('board');
+    const devState = document.getElementById('devState');
+    const peekEyebrow = document.getElementById('peekEyebrow');
+    const peekLead = document.getElementById('peekLead');
+    const modalEyebrow = document.getElementById('modalEyebrow');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalLead = document.getElementById('modalLead');
+    const modalImage = document.getElementById('modalImage');
+    const modalBody = document.getElementById('modalBody');
+    const routePath = document.getElementById('routePath');
+    const travelChip = document.getElementById('travelChip');
+    const travelChipText = document.getElementById('travelChipText');
+    const poiLabel = document.getElementById('poiLabel');
+    const poiSheetIcon = document.getElementById('poiSheetIcon');
+    const poiSheetName = document.getElementById('poiSheetName');
+    const poiSheetCat = document.getElementById('poiSheetCat');
+    const poiSheetInfo = document.getElementById('poiSheetInfo');
+    const poiSheetBody = document.getElementById('poiSheetBody');
+    const poiSheetScroll = document.querySelector('.poi-sheet-scroll');
+    const poiBackBtn = document.getElementById('poiBackBtn');
+    const poiBackLabel = document.getElementById('poiBackLabel');
+
+    let activeCat = null;
+    let selectedPoi = null;
+
+    function setState(state) {
+      board.dataset.state = state;
+      devState.textContent = state.toUpperCase();
+    }
+
+    // === Category activation (peek state) ===
+    function setCategoryFilter(catId) {
+      activeCat = CATEGORIES.find(c => c.id === catId) || null;
+      for (const { dot } of poiByKey.values()) {
+        dot.classList.remove('active', 'dim');
+      }
+      if (!activeCat) return;
+      for (const { dot } of poiByKey.values()) {
+        if (dot.dataset.cat === catId) dot.classList.add('active');
+        else dot.classList.add('dim');
+      }
+    }
+
+    function clearCategoryFilter() {
+      activeCat = null;
+      for (const { dot } of poiByKey.values()) {
+        dot.classList.remove('active', 'dim');
+      }
+    }
+
+    function activateCategory(catId) {
+      const cat = CATEGORIES.find(c => c.id === catId);
+      if (!cat) return;
+      setCategoryFilter(catId);
+      peekEyebrow.textContent = cat.subtitle;
+      peekLead.textContent = cat.lead;
+      setState('active');
+    }
+
+    function deactivateCategory() {
+      clearCategoryFilter();
+      setState('default');
+    }
+
+    function openReading() {
+      if (!activeCat) return;
+      modalEyebrow.textContent = activeCat.subtitle;
+      modalTitle.textContent = activeCat.question;
+      modalLead.textContent = activeCat.lead;
+      modalImage.style.backgroundImage = `url('${activeCat.illustration}')`;
+      modalBody.innerHTML = activeCat.body.map(p => `<p>${p}</p>`).join('');
+      modalBody.parentElement.scrollTop = 0;
+      setState('reading');
+    }
+
+    function closeReading() { setState('active'); }
+
+    // === POI activation ===
+    function travelMinutes(homePt, poiPt) {
+      const dx = poiPt.x - homePt.x;
+      const dy = poiPt.y - homePt.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      // Calibrert så ~12% gir 5 min — cirka 80m/min gangtempo, antar map ≈ 1.5km bredt
+      return Math.max(1, Math.round(dist * 0.42));
+    }
+
+    function buildPathD(home, poi) {
+      const dx = poi.x - home.x;
+      const dy = poi.y - home.y;
+      const len = Math.hypot(dx, dy);
+      if (len < 0.01) return `M ${home.x} ${home.y}`;
+      const midX = (home.x + poi.x) / 2;
+      const midY = (home.y + poi.y) / 2;
+      const px = -dy / len;
+      const py = dx / len;
+      const off = len * 0.18;
+      const cx = midX + px * off;
+      const cy = midY + py * off;
+      return { d: `M ${home.x} ${home.y} Q ${cx} ${cy} ${poi.x} ${poi.y}`, control: { x: cx, y: cy } };
+    }
+
+    function bezierAt(p0, p1, p2, t) {
+      const u = 1 - t;
+      return {
+        x: u*u*p0.x + 2*u*t*p1.x + t*t*p2.x,
+        y: u*u*p0.y + 2*u*t*p1.y + t*t*p2.y
+      };
+    }
+
+    function showRoute(home, poi) {
+      const built = buildPathD(home, poi);
+      routePath.setAttribute('d', built.d);
+      requestAnimationFrame(() => routePath.classList.add('visible'));
+
+      const minutes = travelMinutes(home, poi);
+      travelChipText.textContent = `${minutes} min`;
+      const chipPos = bezierAt(home, built.control, poi, 0.22);
+      travelChip.style.left = `${chipPos.x}%`;
+      travelChip.style.top  = `${chipPos.y}%`;
+      requestAnimationFrame(() => travelChip.classList.add('visible'));
+
+      poiLabel.textContent = poi.name;
+      poiLabel.style.left = `${poi.x}%`;
+      poiLabel.style.top  = `${poi.y}%`;
+      requestAnimationFrame(() => poiLabel.classList.add('visible'));
+    }
+
+    function hideRoute() {
+      routePath.classList.remove('visible');
+      travelChip.classList.remove('visible');
+      poiLabel.classList.remove('visible');
+    }
+
+    function promoteMarker(catId, idx) {
+      // demote any previously selected
+      for (const { dot } of poiByKey.values()) {
+        if (dot.classList.contains('selected')) {
+          dot.classList.remove('selected');
+          dot.style.removeProperty('--cat-color');
+          dot.textContent = '';
+        }
+      }
+      const entry = poiByKey.get(`${catId}:${idx}`);
+      if (!entry) return;
+      const { dot, cat } = entry;
+      dot.classList.add('selected');
+      dot.style.setProperty('--cat-color', cat.markerColor);
+      dot.textContent = cat.markerIcon;
+      // selected POI should not be dimmed even if outside active filter
+      dot.classList.remove('dim');
+    }
+
+    function demoteMarker() {
+      for (const { dot } of poiByKey.values()) {
+        if (dot.classList.contains('selected')) {
+          dot.classList.remove('selected');
+          dot.style.removeProperty('--cat-color');
+          dot.textContent = '';
+        }
+      }
+    }
+
+    function openPoi(catId, idx) {
+      const cat = CATEGORIES.find(c => c.id === catId);
+      const poi = cat?.pois[idx];
+      if (!cat || !poi) return;
+
+      // Tap på POI aktiverer også POI-ens kategori (filtrerer kart)
+      setCategoryFilter(catId);
+
+      // Populer POI-sheet
+      poiSheetIcon.textContent = cat.markerIcon;
+      poiSheetIcon.style.background = cat.markerColor;
+      poiSheetName.textContent = poi.name;
+      poiSheetCat.textContent = cat.subtitle;
+      poiSheetCat.style.color = cat.markerColor;
+      poiSheetInfo.textContent = poi.info;
+      poiSheetBody.innerHTML = (poi.body || []).map(p => `<p>${p}</p>`).join('');
+      if (poiSheetScroll) poiSheetScroll.scrollTop = 0;
+
+      // Back-chip viser kategori-konteksten man returnerer til
+      poiBackLabel.textContent = cat.subtitle;
+      poiBackBtn.hidden = false;
+
+      // Marker + path + chip + label
+      promoteMarker(catId, idx);
+      showRoute(HOME, poi);
+
+      // Oppdater peek-data så man har konsistent kontekst når man går "tilbake"
+      peekEyebrow.textContent = cat.subtitle;
+      peekLead.textContent = cat.lead;
+
+      selectedPoi = { catId, idx };
+      setState('poi');
+    }
+
+    function closePoi() {
+      hideRoute();
+      demoteMarker();
+      selectedPoi = null;
+      // Return to ACTIVE state for the POI's category (back-chip-konteksten)
+      if (activeCat) {
+        setState('active');
+      } else {
+        setState('default');
+      }
+    }
+
+    function backFromPoiToCategory() {
+      // Eksplisitt "tilbake til kategori" — samme som å lukke POI-en
+      closePoi();
+    }
+
+    // === Wire up ===
+    document.getElementById('readMoreBtn').addEventListener('click', openReading);
+    document.getElementById('closeBtn').addEventListener('click', closeReading);
+    document.getElementById('minimizeBtn').addEventListener('click', deactivateCategory);
+    document.getElementById('switchBtn').addEventListener('click', deactivateCategory);
+    document.getElementById('menuBtn').addEventListener('click', deactivateCategory);
+    document.getElementById('poiCloseBtn').addEventListener('click', closePoi);
+    poiBackBtn.addEventListener('click', backFromPoiToCategory);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const s = board.dataset.state;
+      if (s === 'reading') closeReading();
+      else if (s === 'poi') closePoi();
+      else if (s === 'active') deactivateCategory();
+    });
+  </script>
+</body>
+</html>
