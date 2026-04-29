@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Accordion,
   AccordionItem,
@@ -33,17 +33,45 @@ export function BoardPOIAccordion({ category }: Props) {
   const { state, dispatch } = useBoard();
   const [openIds, setOpenIds] = useState<string[]>([]);
 
+  // Spor om en activePOIId-endring kom fra accordion selv (klikk på trigger),
+  // eller utenfra (POI-marker på kartet). Brukes til å unngå scroll-into-view
+  // når brukeren allerede så på kortet.
+  const selfTriggerRef = useRef<string | null>(null);
+
+  // Token-pattern for scroll-rAF — siste call vinner, superseded calls aborts
+  // silent. Mønster fra lib/map/use-interaction-controller.ts.
+  const scrollTokenRef = useRef(0);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
   // Reset på kategori-bytte
   useEffect(() => {
     setOpenIds([]);
   }, [category.id]);
 
-  // Hvis activePOIId settes utenfra (POI-marker på kartet), åpne tilsvarende kort
+  // Marker-klikk på kartet → state.activePOIId endres → åpne kortet + scroll
   useEffect(() => {
-    if (!state.activePOIId) return;
-    setOpenIds((prev) =>
-      prev.includes(state.activePOIId!) ? prev : [...prev, state.activePOIId!],
-    );
+    const id = state.activePOIId;
+    if (!id) return;
+
+    // Hvis vi selv dispatchet OPEN_POI fra handleValueChange (accordion-klikk):
+    // brukeren ser allerede kortet, ikke scroll.
+    if (selfTriggerRef.current === id) {
+      selfTriggerRef.current = null;
+      return;
+    }
+
+    // Utenfra-trigger: sørg for at kortet er åpent
+    setOpenIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+
+    // Scroll med token-guard så nye marker-klikk avbryter pågående scroll.
+    const myToken = ++scrollTokenRef.current;
+    requestAnimationFrame(() => {
+      if (myToken !== scrollTokenRef.current) return;
+      const el = rootRef.current?.querySelector(
+        `[data-poi-id="${CSS.escape(id)}"]`,
+      ) as HTMLElement | null;
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }, [state.activePOIId]);
 
   const handleValueChange = (newIds: string[]) => {
@@ -52,6 +80,7 @@ export function BoardPOIAccordion({ category }: Props) {
 
     const added = newIds.find((id) => !prev.includes(id));
     if (added) {
+      selfTriggerRef.current = added;
       dispatch({
         type: "OPEN_POI",
         id: added as BoardPOIId,
@@ -63,9 +92,11 @@ export function BoardPOIAccordion({ category }: Props) {
     const removed = prev.find((id) => !newIds.includes(id));
     if (removed && removed === state.activePOIId) {
       if (newIds.length > 0) {
+        const fallback = newIds[newIds.length - 1];
+        selfTriggerRef.current = fallback;
         dispatch({
           type: "OPEN_POI",
-          id: newIds[newIds.length - 1] as BoardPOIId,
+          id: fallback as BoardPOIId,
           categoryId: category.id,
         });
       } else {
@@ -75,12 +106,13 @@ export function BoardPOIAccordion({ category }: Props) {
   };
 
   return (
-    <Accordion
-      type="multiple"
-      value={openIds}
-      onValueChange={handleValueChange}
-      className="flex flex-col gap-2.5 border-0 rounded-none overflow-visible"
-    >
+    <div ref={rootRef}>
+      <Accordion
+        type="multiple"
+        value={openIds}
+        onValueChange={handleValueChange}
+        className="flex flex-col gap-2.5 border-0 rounded-none overflow-visible"
+      >
       {category.pois.map((poi) => {
         const Icon = getFilledIcon(poi.raw.category.icon);
         const isActive = state.activePOIId === poi.id;
@@ -88,7 +120,8 @@ export function BoardPOIAccordion({ category }: Props) {
           <AccordionItem
             key={poi.id}
             value={poi.id}
-            className="rounded-2xl border border-stone-200/80 bg-white shadow-[0_2px_8px_rgba(15,29,68,0.06)] data-[state=open]:bg-white"
+            data-poi-id={poi.id}
+            className="rounded-2xl border border-stone-200/80 bg-white shadow-[0_2px_8px_rgba(15,29,68,0.06)] data-[state=open]:bg-white scroll-mt-2"
           >
             <AccordionTrigger
               className="items-center gap-3 px-3.5 py-3 text-left hover:no-underline data-[state=open]:bg-stone-50/40 [&>svg]:text-stone-400"
@@ -132,6 +165,7 @@ export function BoardPOIAccordion({ category }: Props) {
           </AccordionItem>
         );
       })}
-    </Accordion>
+      </Accordion>
+    </div>
   );
 }
