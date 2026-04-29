@@ -1083,7 +1083,6 @@
         </section>
 
         <section class="desktop-category" id="desktopCategory">
-          <p class="desktop-eyebrow" id="desktopCatEyebrow"></p>
           <h1 class="desktop-title" id="desktopCatTitle"></h1>
           <p class="desktop-lead" id="desktopCatLead"></p>
 
@@ -1098,27 +1097,27 @@
           </div>
 
           <div class="tab-panel" data-tab="punkter" role="tabpanel" hidden>
-            <div class="related-pois-list" id="desktopCatPoiList"></div>
-          </div>
-        </section>
-
-        <section class="desktop-poi" id="desktopPoi">
-          <button class="desktop-back" id="desktopPoiBack">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            <span id="desktopPoiBackLabel">Tilbake</span>
-          </button>
-          <div class="desktop-poi-header">
-            <div class="desktop-poi-icon" id="desktopPoiIcon">📍</div>
-            <div>
-              <div class="desktop-poi-name" id="desktopPoiName"></div>
-              <div class="desktop-poi-cat" id="desktopPoiCat"></div>
+            <!-- Sub-view: list (default i Punkter-fanen) -->
+            <div class="punkter-view" id="punkterList">
+              <div class="related-pois-list" id="desktopCatPoiList"></div>
             </div>
-          </div>
-          <div class="desktop-poi-info" id="desktopPoiInfo"></div>
-          <div class="desktop-poi-body" id="desktopPoiBody"></div>
-          <div class="related-pois" id="desktopPoiRelated" hidden>
-            <div class="related-pois-title">Andre i kategorien</div>
-            <div class="related-pois-list" id="desktopPoiRelatedList"></div>
+
+            <!-- Sub-view: detail (åpnes når en POI velges) -->
+            <div class="punkter-view" id="punkterDetail" hidden>
+              <button class="desktop-back" id="desktopPunkterBack">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Alle punkter
+              </button>
+              <div class="desktop-poi-header">
+                <div class="desktop-poi-icon" id="desktopPoiIcon">📍</div>
+                <div>
+                  <div class="desktop-poi-name" id="desktopPoiName"></div>
+                  <div class="desktop-poi-cat" id="desktopPoiCat"></div>
+                </div>
+              </div>
+              <div class="desktop-poi-info" id="desktopPoiInfo"></div>
+              <div class="desktop-poi-body" id="desktopPoiBody"></div>
+            </div>
           </div>
         </section>
       </aside>
@@ -1483,8 +1482,6 @@
     // Desktop refs
     const desktopDefault = document.getElementById('desktopDefault');
     const desktopCategory = document.getElementById('desktopCategory');
-    const desktopPoi = document.getElementById('desktopPoi');
-    const desktopCatEyebrow = document.getElementById('desktopCatEyebrow');
     const desktopCatTitle = document.getElementById('desktopCatTitle');
     const desktopCatLead = document.getElementById('desktopCatLead');
     const desktopCatImage = document.getElementById('desktopCatImage');
@@ -1494,13 +1491,20 @@
     const desktopPoiCat = document.getElementById('desktopPoiCat');
     const desktopPoiInfo = document.getElementById('desktopPoiInfo');
     const desktopPoiBody = document.getElementById('desktopPoiBody');
-    const desktopPoiBackLabel = document.getElementById('desktopPoiBackLabel');
+    const punkterListEl = document.getElementById('punkterList');
+    const punkterDetailEl = document.getElementById('punkterDetail');
 
     function showDesktopSection(name) {
-      // name: 'default' | 'category' | 'poi'
+      // name: 'default' | 'category'
       desktopDefault.classList.toggle('active', name === 'default');
       desktopCategory.classList.toggle('active', name === 'category');
-      desktopPoi.classList.toggle('active', name === 'poi');
+    }
+
+    // === Punkter-fanen har to subviews: list og detail ===
+    function setPunkterView(view) {
+      // view: 'list' | 'detail'
+      punkterListEl.hidden = view !== 'list';
+      punkterDetailEl.hidden = view !== 'detail';
     }
 
     // === Tab-bytter for desktop-kategori ===
@@ -1564,9 +1568,8 @@
       peekEyebrow.textContent = cat.subtitle;
       peekLead.textContent = cat.lead;
 
-      // Desktop: panel
-      desktopCatEyebrow.textContent = cat.subtitle;
-      desktopCatTitle.textContent = cat.question;
+      // Desktop: panel — header er kategorinavnet, ingen question
+      desktopCatTitle.textContent = cat.subtitle;
       desktopCatLead.textContent = cat.lead;
       desktopCatImage.style.backgroundImage = `url('${cat.illustration}')`;
       desktopCatBody.innerHTML = cat.body.map(p => `<p>${p}</p>`).join('');
@@ -1590,8 +1593,9 @@
         poiList.appendChild(btn);
       });
 
-      // Reset til Info-fanen ved kategori-bytte
+      // Reset til Info-fanen + list-view ved kategori-bytte
       setDesktopCatTab('info');
+      setPunkterView('list');
 
       setActiveRail(catId);
       showDesktopSection('category');
@@ -1751,7 +1755,7 @@
       poiSheetBody.innerHTML = (poi.body || []).map(p => `<p>${p}</p>`).join('');
       if (poiSheetScroll) poiSheetScroll.scrollTop = 0;
 
-      // Populer desktop POI-panel
+      // Populer desktop POI-detail (inni Punkter-fanen)
       desktopPoiIcon.textContent = cat.markerIcon;
       desktopPoiIcon.style.background = cat.markerColor;
       desktopPoiName.textContent = poi.name;
@@ -1759,16 +1763,42 @@
       desktopPoiCat.style.color = cat.markerColor;
       desktopPoiInfo.textContent = poi.info;
       desktopPoiBody.innerHTML = (poi.body || []).map(p => `<p>${p}</p>`).join('');
-      desktopPoiBackLabel.textContent = cat.subtitle;
-      showDesktopSection('poi');
 
-      // Andre POI-er i samme kategori
+      // Hvis brukeren tappet en POI fra annen kategori (eller ingen) — populer
+      // også kategori-feltene + POI-listen for ny kategori
+      if (!activeCat || activeCat.id !== catId) {
+        desktopCatTitle.textContent = cat.subtitle;
+        desktopCatLead.textContent = cat.lead;
+        desktopCatImage.style.backgroundImage = `url('${cat.illustration}')`;
+        desktopCatBody.innerHTML = cat.body.map(p => `<p>${p}</p>`).join('');
+        const poiList = document.getElementById('desktopCatPoiList');
+        poiList.innerHTML = '';
+        cat.pois.forEach((p, i) => {
+          const btn = document.createElement('button');
+          btn.className = 'related-poi-card';
+          btn.innerHTML = `
+            <div class="related-poi-icon" style="background:${cat.markerColor}">${cat.markerIcon}</div>
+            <div class="related-poi-text">
+              <div class="related-poi-name"></div>
+              <div class="related-poi-info"></div>
+            </div>
+          `;
+          btn.querySelector('.related-poi-name').textContent = p.name;
+          btn.querySelector('.related-poi-info').textContent = p.info;
+          btn.addEventListener('click', () => openPoi(cat.id, i));
+          poiList.appendChild(btn);
+        });
+      }
+
+      // Bytt til Punkter-fanen + detail-subview
+      showDesktopSection('category');
+      setDesktopCatTab('punkter');
+      setPunkterView('detail');
+
+      // Andre POI-er i samme kategori (kun mobil — desktop bruker Punkter-list-view)
       renderRelatedPois(cat, idx,
         document.getElementById('poiSheetRelatedList'),
         document.getElementById('poiSheetRelated'));
-      renderRelatedPois(cat, idx,
-        document.getElementById('desktopPoiRelatedList'),
-        document.getElementById('desktopPoiRelated'));
 
       // Back-chip viser kategori-konteksten man returnerer til
       poiBackLabel.textContent = cat.subtitle;
@@ -1790,9 +1820,10 @@
       hideRoute();
       demoteMarker();
       selectedPoi = null;
-      // Return to ACTIVE state for the POI's category (back-chip-konteksten)
       if (activeCat) {
-        showDesktopSection('category');
+        // Bli i kategori-panelet, men gå tilbake til list-view i Punkter-fanen
+        setDesktopCatTab('punkter');
+        setPunkterView('list');
         setState('active');
       } else {
         showDesktopSection('default');
@@ -1813,7 +1844,7 @@
     document.getElementById('menuBtn').addEventListener('click', deactivateCategory);
     document.getElementById('poiCloseBtn').addEventListener('click', closePoi);
     poiBackBtn.addEventListener('click', backFromPoiToCategory);
-    document.getElementById('desktopPoiBack').addEventListener('click', backFromPoiToCategory);
+    document.getElementById('desktopPunkterBack').addEventListener('click', backFromPoiToCategory);
 
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
