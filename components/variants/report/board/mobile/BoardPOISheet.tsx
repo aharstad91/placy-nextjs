@@ -6,6 +6,7 @@ import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/components
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard, useActiveCategory, useActivePOI } from "../board-state";
 import { BoardRelatedPOICard } from "./BoardRelatedPOICard";
+import { BoardLiveTransport } from "./BoardLiveTransport";
 
 const SNAP_POINTS: (number | string)[] = [0.5, 0.9];
 const DEFAULT_SNAP: number | string = 0.5;
@@ -84,6 +85,9 @@ export function BoardPOISheet() {
                   {poi.address}
                 </div>
               )}
+
+              {/* Live transport-data — kun synlig for transport-POI-er */}
+              <BoardLiveTransport poi={poi.raw} />
 
               {/* Body */}
               {poi.body && (
