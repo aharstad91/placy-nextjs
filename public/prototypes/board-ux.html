@@ -972,8 +972,8 @@
       .desktop-poi-body p:last-child { margin-bottom: 0; }
 
       /* Related-POI-kort står seg bedre med hvit tint på lavendel-bg */
-      .desktop-poi .related-poi-card { background: rgba(255, 255, 255, 0.55); }
-      .desktop-poi .related-poi-card:hover { background: rgba(255, 255, 255, 0.8); }
+      .desktop-panel .related-poi-card { background: rgba(255, 255, 255, 0.55); }
+      .desktop-panel .related-poi-card:hover { background: rgba(255, 255, 255, 0.8); }
 
       /* Vis desktop UI på desktop */
       .desktop-rail, .desktop-panel { display: flex; flex-direction: column; }
@@ -1117,6 +1117,10 @@
               </div>
               <div class="desktop-poi-info" id="desktopPoiInfo"></div>
               <div class="desktop-poi-body" id="desktopPoiBody"></div>
+              <div class="related-pois" id="desktopPoiRelated" hidden>
+                <div class="related-pois-title">Andre i kategorien</div>
+                <div class="related-pois-list" id="desktopPoiRelatedList"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -1795,10 +1799,13 @@
       setDesktopCatTab('punkter');
       setPunkterView('detail');
 
-      // Andre POI-er i samme kategori (kun mobil — desktop bruker Punkter-list-view)
+      // Andre POI-er i samme kategori — både mobil og desktop POI-detail
       renderRelatedPois(cat, idx,
         document.getElementById('poiSheetRelatedList'),
         document.getElementById('poiSheetRelated'));
+      renderRelatedPois(cat, idx,
+        document.getElementById('desktopPoiRelatedList'),
+        document.getElementById('desktopPoiRelated'));
 
       // Back-chip viser kategori-konteksten man returnerer til
       poiBackLabel.textContent = cat.subtitle;
