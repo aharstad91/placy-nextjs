@@ -55,7 +55,10 @@ deferred:
 ---
 date: 2026-04-28
 action: Rapport-markører (2D + 3D) — lys disc m/ fylt farget Phosphor-ikon + kategorifarget ring, og fjerne POI-inline-ikon
-scope: Rapport-produktet, frontend kun. Worktree `refactor/rapport-markor-poi-inline-stil`.
+scope: Rapport-produktet, frontend kun.
+status: shipped — merget til main (47db048 over fa69709), branch + worktree ryddet, Trello #18 → Done
+trello: https://trello.com/c/8uIRsrw0
+plan: docs/plans/2026-04-28-003-refactor-rapport-marker-og-poi-inline-stil-plan.md
 files:
   - package.json (la til @phosphor-icons/react ^2.1.10)
   - lib/utils/map-icons-filled.ts (NY — Phosphor-mapping for alle 37 lucide-navn fra map-icons.ts)
