@@ -12,6 +12,7 @@ import { BoardMap } from "./BoardMap";
 import { BoardCategoryGrid } from "./mobile/BoardCategoryGrid";
 import { BoardPeekCard } from "./mobile/BoardPeekCard";
 import { BoardReadingModal } from "./mobile/BoardReadingModal";
+import { BoardPOISheet } from "./mobile/BoardPOISheet";
 
 interface Props {
   project: Project;
@@ -67,6 +68,7 @@ function BoardScaffold() {
       </div>
       <div className="lg:hidden">
         <BoardReadingModal />
+        <BoardPOISheet />
       </div>
 
       {/* Debug-overlay — fjernes når desktop-UI mountes i Unit 8 */}
