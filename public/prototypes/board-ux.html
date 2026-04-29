@@ -610,6 +610,66 @@
     .poi-sheet-body p { margin: 0 0 14px; }
     .poi-sheet-body p:last-child { margin-bottom: 0; }
 
+    /* Related POIs (delt mellom mobil-sheet og desktop-panel) */
+    .related-pois { margin-top: 22px; }
+    .related-pois-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin: 0 0 10px;
+    }
+    .related-pois-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .related-poi-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(15, 29, 68, 0.05);
+      border: none;
+      padding: 11px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      color: var(--text);
+      transition: background 160ms ease, transform 120ms ease;
+    }
+    .related-poi-card:hover { background: rgba(15, 29, 68, 0.09); }
+    .related-poi-card:active { transform: scale(0.98); }
+    .related-poi-icon {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .related-poi-text { flex: 1; min-width: 0; }
+    .related-poi-name {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .related-poi-info {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     /* State machine */
     .board[data-state="default"] .categories { transform: translateY(0); opacity: 1; }
     .board[data-state="default"] .peek { transform: translateY(110%); }
@@ -876,6 +936,10 @@
       .desktop-poi-body p { margin: 0 0 14px; }
       .desktop-poi-body p:last-child { margin-bottom: 0; }
 
+      /* Related-POI-kort står seg bedre med hvit tint på lavendel-bg */
+      .desktop-poi .related-poi-card { background: rgba(255, 255, 255, 0.55); }
+      .desktop-poi .related-poi-card:hover { background: rgba(255, 255, 255, 0.8); }
+
       /* Vis desktop UI på desktop */
       .desktop-rail, .desktop-panel { display: flex; flex-direction: column; }
       .desktop-panel { display: block; }
@@ -964,6 +1028,10 @@
             <span id="poiSheetInfo">…</span>
           </div>
           <div class="poi-sheet-body" id="poiSheetBody"></div>
+          <div class="related-pois" id="poiSheetRelated" hidden>
+            <div class="related-pois-title">Andre i kategorien</div>
+            <div class="related-pois-list" id="poiSheetRelatedList"></div>
+          </div>
         </div>
       </div>
 
@@ -1001,6 +1069,10 @@
           </div>
           <div class="desktop-poi-info" id="desktopPoiInfo"></div>
           <div class="desktop-poi-body" id="desktopPoiBody"></div>
+          <div class="related-pois" id="desktopPoiRelated" hidden>
+            <div class="related-pois-title">Andre i kategorien</div>
+            <div class="related-pois-list" id="desktopPoiRelatedList"></div>
+          </div>
         </section>
       </aside>
 
@@ -1547,6 +1619,34 @@
       }
     }
 
+    function renderRelatedPois(cat, currentIdx, listEl, wrapperEl) {
+      const others = cat.pois
+        .map((p, i) => ({ poi: p, idx: i }))
+        .filter(x => x.idx !== currentIdx)
+        .slice(0, 4);
+      listEl.innerHTML = '';
+      if (others.length === 0) {
+        wrapperEl.hidden = true;
+        return;
+      }
+      wrapperEl.hidden = false;
+      for (const { poi, idx } of others) {
+        const btn = document.createElement('button');
+        btn.className = 'related-poi-card';
+        btn.innerHTML = `
+          <div class="related-poi-icon" style="background:${cat.markerColor}">${cat.markerIcon}</div>
+          <div class="related-poi-text">
+            <div class="related-poi-name"></div>
+            <div class="related-poi-info"></div>
+          </div>
+        `;
+        btn.querySelector('.related-poi-name').textContent = poi.name;
+        btn.querySelector('.related-poi-info').textContent = poi.info;
+        btn.addEventListener('click', () => openPoi(cat.id, idx));
+        listEl.appendChild(btn);
+      }
+    }
+
     function openPoi(catId, idx) {
       const cat = CATEGORIES.find(c => c.id === catId);
       const poi = cat?.pois[idx];
@@ -1576,6 +1676,14 @@
       desktopPoiBody.innerHTML = (poi.body || []).map(p => `<p>${p}</p>`).join('');
       desktopPoiBackLabel.textContent = cat.subtitle;
       showDesktopSection('poi');
+
+      // Andre POI-er i samme kategori
+      renderRelatedPois(cat, idx,
+        document.getElementById('poiSheetRelatedList'),
+        document.getElementById('poiSheetRelated'));
+      renderRelatedPois(cat, idx,
+        document.getElementById('desktopPoiRelatedList'),
+        document.getElementById('desktopPoiRelated'));
 
       // Back-chip viser kategori-konteksten man returnerer til
       poiBackLabel.textContent = cat.subtitle;
