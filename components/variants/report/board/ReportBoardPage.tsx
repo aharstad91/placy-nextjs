@@ -47,7 +47,7 @@ function Inner({ project, enTranslations = {} }: Props) {
 
   return (
     <BoardProvider data={boardData}>
-      <BoardScaffold />
+      <BoardScaffold has3dAddon={effectiveProject.has3dAddon ?? false} />
     </BoardProvider>
   );
 }
@@ -76,14 +76,14 @@ function useIsDesktop(): boolean {
  * og må JS-gates — `useIsDesktop()` styrer mounting. Desktop-strip er gated
  * `hidden lg:flex` via CSS — bare ett tre vises av gangen.
  */
-function BoardScaffold() {
+function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
   const isDesktop = useIsDesktop();
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-stone-100">
       {/* Kart-container — absolute. På desktop forskjøvet 504px fra venstre. */}
       <div className="absolute inset-0 lg:left-[504px]">
-        <BoardMap />
+        <BoardMap has3dAddon={has3dAddon} />
       </div>
 
       {/* Mobile UI (< lg) — bottom-anchored sheet system. Drawers portaler til body, så vi gates JS-side. */}
