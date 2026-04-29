@@ -7,7 +7,7 @@ import type { SlotContext } from "@/components/map/UnifiedMapModal";
 import type { ReportTheme } from "./report-data";
 import { TRANSPORT_CATEGORIES } from "./report-data";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Zap, Car, ExternalLink, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Zap, Car, ExternalLink, Sparkles, ChevronDown } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { linkPOIsInText } from "@/lib/utils/story-text-linker";
 import { renderEmphasizedText } from "@/lib/utils/render-emphasized-text";
@@ -102,11 +102,11 @@ export default function ReportThemeSection({
 
   const [expanded, setExpanded] = useState(false);
 
-  // Ingen auto-scroll ved toggle — verken expand eller kollaps. Max-height-
-  // animasjonen alene er signal nok; auto-scroll oppleves som unødvendig
-  // viewport-bevegelse.
-  const handleToggle = useCallback(() => {
-    setExpanded((v) => !v);
+  // Disclosure er enveis: én klikk på "Les mer" expander, og holder seg
+  // expandert. Ingen "Vis mindre"-knapp — vi vil ikke at brukeren ved et
+  // uhell skjuler teksten igjen.
+  const handleExpand = useCallback(() => {
+    setExpanded(true);
   }, []);
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const openMap = useCallback(() => setMapDialogOpen(true), []);
@@ -344,15 +344,12 @@ export default function ReportThemeSection({
               </div>
             )}
 
-            {/* Toggle-knappen flytter seg: "Les mer" over disclosure (collapsed),
-                "Vis mindre" under disclosure (expanded). Unngår hakk i lese-
-                flyten der knappen ellers stod statisk mellom lead-tekst og
-                curated narrative. */}
+            {/* "Les mer"-knappen forsvinner ved klikk — disclosure er enveis. */}
             {!expanded && (
               <div className="mt-4 flex justify-center">
                 <button
                   type="button"
-                  onClick={handleToggle}
+                  onClick={handleExpand}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#d4cfc8] text-sm font-medium text-[#3a3530] shadow-sm hover:bg-[#faf9f7] hover:border-[#a89f92] hover:shadow-md active:scale-[0.98] transition-all"
                   aria-expanded={false}
                 >
@@ -385,19 +382,6 @@ export default function ReportThemeSection({
               )}
             </div>
 
-            {expanded && (
-              <div className="mt-6 flex justify-center">
-                <button
-                  type="button"
-                  onClick={handleToggle}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#d4cfc8] text-sm font-medium text-[#3a3530] shadow-sm hover:bg-[#faf9f7] hover:border-[#a89f92] hover:shadow-md active:scale-[0.98] transition-all"
-                  aria-expanded={true}
-                >
-                  Vis mindre
-                  <ChevronUp className="w-4 h-4" />
-                </button>
-              </div>
-            )}
           </>
         )}
     </>
