@@ -1,9 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { MapView3D, type Map3DInstance } from "@/components/map/map-view-3d";
-import { google3dAdapter } from "@/lib/map/map-adapter";
 import { useRouteData } from "@/lib/map/use-route-data";
 import { DEFAULT_CAMERA_LOCK } from "@/components/variants/report/blocks/report-3d-config";
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
@@ -95,58 +94,9 @@ export function BoardMap3D({ pendingCamera }: Props) {
     setMap3dInstance(m);
   }, []);
 
-  // Phase-driven camera moves. flyCameraTo via google3dAdapter — bevarer
-  // tilt/heading/range, kun center endres. For poi-phase setter vi en
-  // tettere range så POI'en faktisk fyller mer av synsfeltet.
-  useEffect(() => {
-    if (!map3dInstance) return;
-    const adapter = google3dAdapter(map3dInstance);
-
-    if (state.phase === "default") {
-      adapter.flyTo({
-        lat: data.home.coordinates.lat,
-        lng: data.home.coordinates.lng,
-      });
-      return;
-    }
-
-    if (state.phase === "poi" && activePOI) {
-      // For POI: pre-sett range strammere så vi havner nær. flyCameraTo
-      // bruker eksisterende range hvis vi ikke skriver ny — derfor mutere
-      // direkte før adapter-call.
-      try {
-        map3dInstance.range = 600;
-      } catch {
-        // Read-only på enkelte API-versjoner; no-op er trygt.
-      }
-      adapter.flyTo({
-        lat: activePOI.coordinates.lat,
-        lng: activePOI.coordinates.lng,
-      });
-      return;
-    }
-
-    // active / reading: sentrér på prosjektet med litt videre range så hele
-    // kategoriens POI-er typisk er innenfor synsfeltet (sensible default
-    // siden Map3DElement ikke har en fitBounds-primitiv).
-    if (state.phase === "active" || state.phase === "reading") {
-      try {
-        map3dInstance.range = 1500;
-      } catch {
-        // No-op.
-      }
-      adapter.flyTo({
-        lat: data.home.coordinates.lat,
-        lng: data.home.coordinates.lng,
-      });
-    }
-  }, [
-    map3dInstance,
-    state.phase,
-    activePOI,
-    data.home.coordinates.lat,
-    data.home.coordinates.lng,
-  ]);
+  // Bevisst valg: ingen phase-drevne camera-moves. Kartet holder posisjonen
+  // sin når kategori velges eller POI klikkes. Brukeren panner/zoomer manuelt.
+  // Initial view settes via defaultCenter/cameraLock ved mount.
 
   return (
     <div className="absolute inset-0">

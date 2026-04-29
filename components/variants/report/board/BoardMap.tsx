@@ -9,7 +9,7 @@ import {
   zoomToRange,
   rangeToZoom,
 } from "@/lib/utils/camera-map";
-import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
+import { useBoard, useActiveCategory } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
 import { HomeMarker } from "./HomeMarker";
 import { BoardPathLayer } from "./BoardPathLayer";
@@ -48,7 +48,6 @@ interface Props {
 export function BoardMap({ has3dAddon = false }: Props) {
   const { state, data, dispatch } = useBoard();
   const activeCategory = useActiveCategory();
-  const activePOI = useActivePOI();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
@@ -102,62 +101,9 @@ export function BoardMap({ has3dAddon = false }: Props) {
     applyIllustratedTheme(mapRef.current.getMap());
   }, []);
 
-  // FitBounds når kategori endres eller phase går default→active.
-  // Phase=poi håndteres i egen effekt nedenfor (fly-to-POI).
-  // Aktiv KUN i 2D-modus — 3D-camera styres av BoardMap3D.
-  useEffect(() => {
-    if (mapMode !== "mapbox") return;
-    if (!mapLoaded || !mapRef.current) return;
-    const map = mapRef.current;
-
-    if (state.phase === "default") {
-      // Bredt overview: senter på prosjektet med default-zoom
-      map.flyTo({
-        center: [data.home.coordinates.lng, data.home.coordinates.lat],
-        zoom: 13.5,
-        duration: 800,
-      });
-      return;
-    }
-
-    // I phase=poi flytter vi til POI'en — ikke fitBounds av kategorien
-    if (state.phase === "poi") return;
-
-    if (!activeCategory || activeCategory.pois.length === 0) return;
-
-    // Beregn bounds av home + aktiv kategoris POI-er
-    const lats = [
-      data.home.coordinates.lat,
-      ...activeCategory.pois.map((p) => p.coordinates.lat),
-    ];
-    const lngs = [
-      data.home.coordinates.lng,
-      ...activeCategory.pois.map((p) => p.coordinates.lng),
-    ];
-    const bounds: [[number, number], [number, number]] = [
-      [Math.min(...lngs), Math.min(...lats)],
-      [Math.max(...lngs), Math.max(...lats)],
-    ];
-
-    map.fitBounds(bounds, {
-      padding: { top: 100, bottom: 280, left: 60, right: 60 },
-      maxZoom: 15.5,
-      duration: 800,
-    });
-  }, [mapLoaded, mapMode, state.phase, activeCategory, data.home.coordinates]);
-
-  // Fly-to-POI når phase=poi eller aktiv POI endres (kun 2D-modus).
-  useEffect(() => {
-    if (mapMode !== "mapbox") return;
-    if (!mapLoaded || !mapRef.current) return;
-    if (state.phase !== "poi" || !activePOI) return;
-
-    mapRef.current.flyTo({
-      center: [activePOI.coordinates.lng, activePOI.coordinates.lat],
-      zoom: 15.5,
-      duration: 800,
-    });
-  }, [mapLoaded, mapMode, state.phase, activePOI]);
+  // Bevisst valg: ingen phase-drevne camera-moves. Kartet holder posisjonen
+  // sin når kategori velges eller POI klikkes. Brukeren panner/zoomer manuelt.
+  // Initial view settes via initialViewState på <Map>.
 
   // ---- Toggle-handler: lese kamera, sette pendingCamera, schedulere swap ----
   const getViewportDims = useCallback(
