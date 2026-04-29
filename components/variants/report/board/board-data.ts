@@ -98,15 +98,21 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     })
     .join("\n\n");
 
+  // Fallbacks når reportConfig.themes peker på en theme-id uten bransjeprofil-base
+  // (merge `{ ...undefined, ...rcTheme }` gir manglende name/icon/color).
+  const label = theme.name || theme.id;
+  const icon = theme.icon || "MapPin";
+  const color = theme.color || "#94a3b8"; // stone-400
+
   return {
     id,
-    label: theme.name,
+    label,
     question: theme.question,
     lead,
     body,
     illustration: theme.image,
-    icon: theme.icon,
-    color: theme.color,
+    icon,
+    color,
     pois: theme.allPOIs.map((p) => adaptPOI(p, id)),
   };
 }

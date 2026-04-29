@@ -93,11 +93,14 @@ function RailButton({
   );
 }
 
-/** Hex til rgba med alpha. Hopper over alle valideringer — vi vet farger er #rrggbb. */
-function hexWithAlpha(hex: string, alpha: number): string {
-  const clean = hex.replace("#", "");
+/** Hex til rgba med alpha. Defaulter til stone-400 hvis hex mangler/er ugyldig. */
+function hexWithAlpha(hex: string | undefined, alpha: number): string {
+  const clean = (hex ?? "#94a3b8").replace("#", "");
   const r = parseInt(clean.substring(0, 2), 16);
   const g = parseInt(clean.substring(2, 4), 16);
   const b = parseInt(clean.substring(4, 6), 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
+    return `rgba(148, 163, 184, ${alpha})`;
+  }
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
