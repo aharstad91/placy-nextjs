@@ -876,6 +876,41 @@
       .desktop-body p { margin: 0 0 14px; }
       .desktop-body p:last-child { margin-bottom: 0; }
 
+      /* Pill-tabs (Mac-app stil) */
+      .tabs {
+        display: inline-flex;
+        background: rgba(255, 255, 255, 0.45);
+        border-radius: 999px;
+        padding: 4px;
+        margin: 0 0 18px;
+        gap: 2px;
+      }
+      .tab {
+        appearance: none;
+        border: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--sheet-fg-muted);
+        padding: 7px 18px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
+      }
+      .tab:hover { color: var(--sheet-fg); }
+      .tab.active {
+        background: white;
+        color: var(--sheet-fg);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      .tab-panel { animation: fadeIn 200ms ease; }
+      .tab-panel[hidden] { display: none; }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
       /* POI panel (samme col som detail) */
       .desktop-back {
         appearance: none;
@@ -1051,8 +1086,20 @@
           <p class="desktop-eyebrow" id="desktopCatEyebrow"></p>
           <h1 class="desktop-title" id="desktopCatTitle"></h1>
           <p class="desktop-lead" id="desktopCatLead"></p>
-          <div class="desktop-image" id="desktopCatImage"></div>
-          <div class="desktop-body" id="desktopCatBody"></div>
+
+          <div class="tabs" role="tablist" id="desktopCatTabs">
+            <button class="tab active" data-tab="info" role="tab" aria-selected="true">Info</button>
+            <button class="tab" data-tab="punkter" role="tab" aria-selected="false">Punkter</button>
+          </div>
+
+          <div class="tab-panel" data-tab="info" role="tabpanel">
+            <div class="desktop-image" id="desktopCatImage"></div>
+            <div class="desktop-body" id="desktopCatBody"></div>
+          </div>
+
+          <div class="tab-panel" data-tab="punkter" role="tabpanel" hidden>
+            <div class="related-pois-list" id="desktopCatPoiList"></div>
+          </div>
         </section>
 
         <section class="desktop-poi" id="desktopPoi">
@@ -1456,6 +1503,21 @@
       desktopPoi.classList.toggle('active', name === 'poi');
     }
 
+    // === Tab-bytter for desktop-kategori ===
+    const desktopCatTabs = document.querySelectorAll('#desktopCatTabs .tab');
+    const desktopCatPanels = desktopCategory.querySelectorAll('.tab-panel');
+    function setDesktopCatTab(name) {
+      desktopCatTabs.forEach(t => {
+        const on = t.dataset.tab === name;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on);
+      });
+      desktopCatPanels.forEach(p => { p.hidden = p.dataset.tab !== name; });
+    }
+    desktopCatTabs.forEach(t => {
+      t.addEventListener('click', () => setDesktopCatTab(t.dataset.tab));
+    });
+
     function setActiveRail(catId) {
       for (const rc of railCards.querySelectorAll('.rail-card')) {
         rc.classList.toggle('active', rc.dataset.cat === catId);
@@ -1508,6 +1570,29 @@
       desktopCatLead.textContent = cat.lead;
       desktopCatImage.style.backgroundImage = `url('${cat.illustration}')`;
       desktopCatBody.innerHTML = cat.body.map(p => `<p>${p}</p>`).join('');
+
+      // Punkter-fanen: alle POI-er i kategorien som klikkbare kort
+      const poiList = document.getElementById('desktopCatPoiList');
+      poiList.innerHTML = '';
+      cat.pois.forEach((poi, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'related-poi-card';
+        btn.innerHTML = `
+          <div class="related-poi-icon" style="background:${cat.markerColor}">${cat.markerIcon}</div>
+          <div class="related-poi-text">
+            <div class="related-poi-name"></div>
+            <div class="related-poi-info"></div>
+          </div>
+        `;
+        btn.querySelector('.related-poi-name').textContent = poi.name;
+        btn.querySelector('.related-poi-info').textContent = poi.info;
+        btn.addEventListener('click', () => openPoi(cat.id, idx));
+        poiList.appendChild(btn);
+      });
+
+      // Reset til Info-fanen ved kategori-bytte
+      setDesktopCatTab('info');
+
       setActiveRail(catId);
       showDesktopSection('category');
 
