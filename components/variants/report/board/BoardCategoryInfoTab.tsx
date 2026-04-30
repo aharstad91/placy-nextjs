@@ -26,7 +26,7 @@ interface Props {
  * - Lead + body alltid synlig, med inline POI-popovers (linkPOIsInText)
  * - "Les mer om {label}" reveal grounding-narrativen + Google-chips
  *
- * Rendres av både BoardReadingModal (mobile) og BoardDetailPanel (desktop).
+ * Rendres av BoardDetailPanel (desktop) og BoardMobileSheet (mobile).
  */
 export function BoardCategoryInfoTab({
   category,

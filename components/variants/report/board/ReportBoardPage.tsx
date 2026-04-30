@@ -10,8 +10,6 @@ import { adaptBoardData } from "./board-data";
 import { BoardProvider } from "./board-state";
 import { BoardMap } from "./BoardMap";
 import { BoardCategoryGrid } from "./mobile/BoardCategoryGrid";
-import { BoardPeekCard } from "./mobile/BoardPeekCard";
-import { BoardReadingModal } from "./mobile/BoardReadingModal";
 import { BoardPOISheet } from "./mobile/BoardPOISheet";
 import { BoardDesktopShell } from "./desktop/BoardDesktopShell";
 
@@ -88,16 +86,14 @@ function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
         <BoardMap has3dAddon={has3dAddon} />
       </div>
 
-      {/* Mobile UI (< lg) — bottom-anchored sheet system. Drawers portaler til body, så vi gates JS-side. */}
+      {/* Mobile UI (< lg) — degradert mellom-tilstand mellom Unit 1 og Unit 7.
+          BoardMobileSheet erstatter alt dette i Unit 7. Inntil da: kun
+          BoardCategoryGrid + BoardPOISheet mounter (BoardPeekCard + BoardReadingModal slettet). */}
       {!isDesktop && (
         <>
           <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none">
-            <div className="relative">
-              <BoardCategoryGrid />
-              <BoardPeekCard />
-            </div>
+            <BoardCategoryGrid />
           </div>
-          <BoardReadingModal />
           <BoardPOISheet />
         </>
       )}
