@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { RouteData } from "@/lib/map/use-route-data";
 import type { Map3DInstance } from "./map-view-3d";
+import { pathMidpoint } from "@/components/variants/report/board/path-midpoint";
 
 /**
  * 3D walking-rute via Google Maps `Polyline3DElement`.
@@ -165,7 +166,16 @@ export function RouteLayer3D({ map3d, routeData }: RouteLayer3DProps) {
       return;
     }
 
-    const endCoord = routeData.coordinates[routeData.coordinates.length - 1];
+    // Plasser badge på midten av ruten i stedet for sluttpunktet, slik at den
+    // ikke dekker selve POI-markøren. pathMidpoint returnerer null når path-en
+    // er for kort til å være meningsfull (<3 koordinater) — da hopper vi over
+    // badge-rendering helt.
+    const midpoint = pathMidpoint(routeData.coordinates);
+    if (!midpoint) {
+      if (badgeRef.current?.parentNode) badgeRef.current.remove();
+      badgeRef.current = null;
+      return;
+    }
     const minutes = Math.round(routeData.travelMinutes);
 
     (async () => {
@@ -181,8 +191,8 @@ export function RouteLayer3D({ map3d, routeData }: RouteLayer3DProps) {
 
         const marker = new lib.Marker3DInteractiveElement({
           position: {
-            lat: endCoord.lat,
-            lng: endCoord.lng,
+            lat: midpoint.lat,
+            lng: midpoint.lng,
             altitude: 12, // litt høyere enn polyline (3m) for lesbarhet
           },
           altitudeMode: lib.AltitudeMode.RELATIVE_TO_GROUND,
