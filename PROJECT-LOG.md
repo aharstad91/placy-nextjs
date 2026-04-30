@@ -6,6 +6,34 @@
 
 ---
 
+## 2026-04-30 — Rapport-board: typografisk paritet mellom body og "Les mer"-disclosure
+
+### Bakgrunn
+I rapport-boardets kategori-Info-tab var tekst FØR "Les mer om {kategori}" tydelig mindre/annet enn tekst ETTER (grounding-content). Disclosure brukte `text-base md:text-lg text-[#4a4a4a] leading-[1.8]` (16/18px, `#4a4a4a`, line-height 1.8) — bevisst valgt for rapport-artikkel-leseopplevelsen — mens body i `BoardCategoryInfoTab` brukte `text-[15px] leading-relaxed text-stone-800` (15px, stone-800, ~1.625). Brå størrelse/farge-skifte midt i prosaflyten gjorde at disclosure føltes som et annet dokument.
+
+### Beslutninger
+- **Variant-prop på `ReportGroundingInline` og `ReportCuratedGrounded`** med `"article" | "compact"`. Default `"article"` — INGEN endring for rapport-artikkelen. Board passerer `variant="compact"`.
+- **Single source of truth via `VARIANT_CLASSES`-map** i hver komponent — unngår CSS-spaghetti i wrappers og gjør alternativene tydelige for fremtidige konsumenter.
+- **Compact-styling matcher body i `BoardCategoryInfoTab`:** `text-[15px] leading-relaxed text-stone-800` med `[&>p]:mb-3` for paragraf-spacing (vs `mb-5` i article-variant).
+- **Forkastet alternativer:** (a) wrapper-CSS-override `[&_*]:text-[15px]` — for spinkelt og oversetter dårlig til POI-popovers/lenker. (b) Lift styling helt ut — krever endring i begge konsumenter, lite gevinst.
+
+### Teknisk
+- `components/variants/report/ReportGroundingInline.tsx`: `GroundingVariant`-type eksportert, `VARIANT_CLASSES`-map, default `variant="article"`.
+- `components/variants/report/ReportCuratedGrounded.tsx`: samme mønster (egen `VARIANT_CLASSES` siden v2 har list-styling som v1 ikke har).
+- `components/variants/report/board/BoardCategoryInfoTab.tsx`: passerer `variant="compact"` på begge grenene (v1/v2 grounding).
+
+### Scope
+- Kun grounding-content-styling i board. POI-popovers, kilde-chips og rapport-artikkel uberørt.
+
+### Åpne spørsmål
+- Skulle `ReportGroundingChips` også få variant-støtte? Per nå ser de like ut i begge kontekster — ingen klage. Løses hvis det dukker opp.
+
+### Referanser
+- Trello: [p6voL5px](https://trello.com/c/p6voL5px)
+- Commit: `4770bf3` på `feat/board-text-parity`
+
+---
+
 ## 2026-04-30 — Rapport-board sub-kategori-filter (Punkter-tab)
 
 ### Bakgrunn
