@@ -27,7 +27,7 @@ export const DEFAULT_CAMERA_LOCK = {
   //   3000 var for romslig — man så hele Trondheim og mistet ankeret.
   minAltitude: 150,
   maxAltitude: 1200,
-  panHalfSideKm: 1.5,
+  panHalfSideKm: 4.5,
 } as const;
 
 /** Rapportens tab-kategorier (i visningsrekkefølge). */

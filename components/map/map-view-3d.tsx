@@ -233,18 +233,12 @@ function Map3DInner({
       e.stopPropagation();
     };
 
-    // Touch-paritet med desktop ctrlKey-hijack: touch-events har ingen ctrlKey
-    // vi kan spoofe, så vi kan ikke konvertere drag til orbit slik vi gjør på
-    // mus. Variant A: blokker ALL touch-bevegelse. Kameraet er statisk på touch
-    // — rotasjon skjer via Map3DControls-knapper som bruker flyCameraTo.
-    //
-    // Variant B (selektiv pinch via avstand-delta) ble forsøkt og forkastet —
-    // 2-finger-rotate hadde naturlige avstand-variasjoner som trigget pinch-
-    // blokken, så rotate-gesture ble effektivt ubrukelig uansett.
-    const blockAllTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
+    // EKSPERIMENT (plan 005): touch-blokking helt fjernet — vi prøver Googles
+    // native touch-gesture-handling (1-finger pan, pinch zoom, 2-finger rotate/
+    // tilt) i håp om at den glatte native-følelsen vinner over en låst statisk
+    // opplevelse. bounds + minAltitude/maxAltitude håndheves natively, så
+    // brukeren kan ikke skli helt vekk eller zoome ut av orbit-radien.
+    // Behold mus-hijack på desktop (ctrlKey-spoof) — den fungerer som forventet.
 
     // Dobbeltklikk-zoom er deaktivert: kameraet skal forbli forankret rundt
     // boligen. Google's WebGL-handler oppdager dobbeltklikk via egen pointer-
@@ -302,10 +296,9 @@ function Map3DInner({
     // Capture-phase så vi treffer før Google's shadow-DOM-listenere.
     // Dekker både pointer- og mouse-events for bred browser-støtte.
     const captureOpts = { capture: true, passive: true } as AddEventListenerOptions;
-    // Wheel, dblclick, og touch-block må være non-passive for at preventDefault skal fungere.
+    // Wheel og dblclick-blokk må være non-passive for at preventDefault skal fungere.
     const wheelOpts = { capture: true, passive: false } as AddEventListenerOptions;
     const dblOpts = { capture: true, passive: false } as AddEventListenerOptions;
-    const touchOpts = { capture: true, passive: false } as AddEventListenerOptions;
 
     // VIKTIG: blockDblClickFromPointer registreres FØR forceOrbitGesture så
     // stopImmediatePropagation på den andre klikket også stopper orbit-overstyringen.
@@ -319,8 +312,6 @@ function Map3DInner({
     container.addEventListener("wheel", blockZoomWheel, wheelOpts);
     container.addEventListener("dblclick", blockDblClickEvent, dblOpts);
     container.addEventListener("click", blockMultiClick, dblOpts);
-    container.addEventListener("touchmove", blockAllTouchMove, touchOpts);
-
     return () => {
       container.removeEventListener("pointerdown", blockDblClickFromPointer, dblOpts);
       container.removeEventListener("pointerdown", forceOrbitGesture, captureOpts);
@@ -330,7 +321,6 @@ function Map3DInner({
       container.removeEventListener("wheel", blockZoomWheel, wheelOpts);
       container.removeEventListener("dblclick", blockDblClickEvent, dblOpts);
       container.removeEventListener("click", blockMultiClick, dblOpts);
-      container.removeEventListener("touchmove", blockAllTouchMove, touchOpts);
     };
   }, [activated]);
 
