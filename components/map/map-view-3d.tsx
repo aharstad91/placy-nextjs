@@ -17,6 +17,7 @@ import { Marker3DPin } from "./Marker3DPin";
 import { ProjectSitePin } from "./ProjectSitePin";
 import { Map3DControls, type Map3DAny } from "./Map3DControls";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
+import { hexLightTint } from "@/lib/utils/marker-color";
 import { useWebGLCheck } from "./Map3DFallback";
 
 /** Type for map3d-instansen vi sender tilbake til foreldre. */
@@ -143,6 +144,7 @@ const Marker3DItem = memo(function Marker3DItem({
     >
       <Marker3DPin
         color={poi.category.color}
+        backgroundColor={hexLightTint(poi.category.color)}
         Icon={Icon}
         size={isActive ? 48 : 40}
         opacity={opacity}
@@ -378,7 +380,11 @@ function MapboxFallback({
             }}
           >
             <div style={{ cursor: "pointer" }}>
-              <Marker3DPin color={poi.category.color} Icon={Icon} />
+              <Marker3DPin
+                color={poi.category.color}
+                backgroundColor={hexLightTint(poi.category.color)}
+                Icon={Icon}
+              />
             </div>
           </MapboxMarker>
         );
