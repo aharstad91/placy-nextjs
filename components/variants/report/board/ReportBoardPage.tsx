@@ -64,18 +64,6 @@ function useIsDesktop(): boolean {
   return isDesktop;
 }
 
-/** Konverter sheet-snap-stage til map-padding-bottom (piksler).
- *  Brukes av BoardScaffold for å synke map.setPadding med bruker-snap.
- *  Tab-baren (96px) er alltid pinnet til viewport-bunn — derfor adderes
- *  TAB_BAR_PADDING uansett snap. Stage 3+ kappes til 280px så markører
- *  ikke forsvinner ved bytte ned. */
-const TAB_BAR_PADDING = 96;
-function snapToMapPadding(snap: number | string): number {
-  if (snap === "96px") return TAB_BAR_PADDING;
-  if (snap === "320px") return 320;
-  return 280;
-}
-
 /**
  * Board-shell: full-screen kart i bakgrunn. Adaptiv layout:
  * - Mobil (<lg): kart fyller hele viewporten. BoardMobileSheet (multi-snap) +
@@ -89,23 +77,22 @@ function snapToMapPadding(snap: number | string): number {
  * JS-gates — `useIsDesktop()` styrer mounting. Desktop-strip er gated `hidden lg:flex`
  * via CSS — bare ett tre vises av gangen.
  *
- * Mobil: BoardMobileSheet eksponerer onSnapChange som setter map-padding-bottom
- * så markører holdes synlige over sheet ved fremtidige fitBounds-kall.
+ * Bevisst valg: ingen map-padding-syncing per snap-stage. Vi har ingen
+ * fitBounds-trigger på snap-endringer, og Mapbox `setPadding` panner kartet
+ * automatisk for å holde center i padded-area — det skapte synlig "hopp" når
+ * brukeren byttet kategori. Sheet er pinnet over kartet visuelt; markører som
+ * havner under sheet er fortsatt navigerbare via Punkter-tab.
  *
  * NB: 480px = BoardDesktopShell-bredden. Endre begge i synk hvis justeres.
  */
 function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
   const isDesktop = useIsDesktop();
-  const [mapPaddingBottom, setMapPaddingBottom] = useState(0);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-stone-100">
       {/* Kart-container — absolute. På desktop forskjøvet 480px fra venstre. */}
       <div className="absolute inset-0 lg:left-[480px]">
-        <BoardMap
-          has3dAddon={has3dAddon}
-          mapPaddingBottom={isDesktop ? 0 : mapPaddingBottom}
-        />
+        <BoardMap has3dAddon={has3dAddon} />
       </div>
 
       {/* Mobile UI (< lg) — multi-snap sheet + pinnet tab-bar.
@@ -113,9 +100,7 @@ function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
           primær-navigasjon er alltid tilgjengelig. */}
       {!isDesktop && (
         <>
-          <BoardMobileSheet
-            onSnapChange={(snap) => setMapPaddingBottom(snapToMapPadding(snap))}
-          />
+          <BoardMobileSheet />
           <div className="fixed inset-x-0 bottom-0 z-50">
             <BoardCategoryTabBar />
           </div>

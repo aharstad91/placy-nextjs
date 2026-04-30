@@ -240,10 +240,19 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
           {/* Scrollbart innhold-slot. Phase-styres internt.
               `min-h-0` så flex-shrink fungerer ved lave stages.
               Padding-bottom = TAB_BAR_HEIGHT_PX så scroll-content ikke
-              skjules av den eksterne tab-baren ved stage 4 (full). */}
+              skjules av den eksterne tab-baren ved stage 4 (full).
+              `touchAction: "pan-y"` lar browseren håndtere native vertikal
+              scroll OG lar vaul få pointer-events for sheet-drag i parallell.
+              Default `touch-action: auto` introduserer en first-touch-delay
+              på iOS Safari mens browser avgjør scroll-vs-tap, som
+              materialiserer seg som "drag virker ikke første gang". */}
           <div
             className="flex-1 overflow-y-auto min-h-0"
-            style={{ paddingBottom: `${TAB_BAR_HEIGHT_PX}px` }}
+            style={{
+              paddingBottom: `${TAB_BAR_HEIGHT_PX}px`,
+              touchAction: "pan-y",
+              overscrollBehavior: "contain",
+            }}
           >
             {state.phase === "active" && cat && filteredCat && (
               <div className="px-5 pt-2">
