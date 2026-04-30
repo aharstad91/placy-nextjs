@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/components/ui/drawer";
+import { Drawer as DrawerPrimitive } from "vaul";
+import { Drawer, DrawerPortal } from "@/components/ui/drawer";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard, useActiveCategory, useActivePOI } from "../board-state";
 import { BoardPOIActionBar, BoardPOIDetails } from "../BoardPOIDetails";
@@ -114,11 +115,18 @@ export function BoardPOISheet() {
       snapPoints={SNAP_POINTS}
       activeSnapPoint={snap}
       setActiveSnapPoint={setSnap}
+      modal={false}
     >
       <DrawerPortal>
-        <DrawerOverlay />
-        <DrawerContent className="!h-auto !max-h-[85dvh] !mt-0 !p-0 !bg-stone-50 before:!hidden">
-          {/* Drag-handle leveres av shadcn DrawerContent for bottom-direction. */}
+        {/* Bruker DrawerPrimitive.Content direkte (ikke shadcn DrawerContent)
+            for å unngå auto-rendret DrawerOverlay. modal={false} på Drawer +
+            ingen overlay = brukeren ser kartet bak sheet uten mørkt slør. */}
+        <DrawerPrimitive.Content
+          data-slot="drawer-content"
+          className="group/drawer-content fixed z-50 flex h-auto flex-col bg-stone-50 inset-x-0 bottom-0 max-h-[85dvh] mt-0 p-0"
+        >
+          {/* Drag-handle (vaul rendrer ikke handle automatisk på Primitive.Content). */}
+          <div className="mx-auto mt-3 h-1.5 w-[100px] shrink-0 rounded-full bg-stone-300" />
 
           {/* Close-knapp */}
           <button
@@ -191,7 +199,7 @@ export function BoardPOISheet() {
               </div>
             </>
           )}
-        </DrawerContent>
+        </DrawerPrimitive.Content>
       </DrawerPortal>
     </Drawer>
   );
