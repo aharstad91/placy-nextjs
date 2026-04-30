@@ -237,12 +237,50 @@ function Map3DInner({
     // i Googles native gesture-handling, og touch-events har ingen ctrlKey
     // vi kan spoofe. Vi kan kun BLOKKERE — så 1-finger-touchmove preventDefaultes
     // før Google ser den. 2-finger-rotate beholdes som mobil orbit-ekvivalent.
-    // Pinch-zoom-blokkering håndteres separat (touchstart/touchmove med
-    // avstands-delta) — denne handler-en rører kun single-touch.
     const blockSingleTouchPan = (e: TouchEvent) => {
       if (e.touches.length === 1) {
         e.preventDefault();
         e.stopPropagation();
+      }
+    };
+
+    // Pinch-zoom-paritet med desktop wheel-block. Variant B: blokker kun når
+    // avstanden mellom de to første fingrene endres mer enn N px sammenlignet
+    // med touchstart — så pure rotate (avstand stabil) passerer uberørt.
+    // Hvis brukeren oppdager at de fortsatt kan zoome, vurder å falle tilbake
+    // til Variant A (blokker all multi-touchmove).
+    const PINCH_DELTA_THRESHOLD_PX = 10;
+    let initialPinchDist: number | null = null;
+
+    const pinchDistance = (touches: TouchList): number => {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.hypot(dx, dy);
+    };
+
+    const trackPinchStart = (e: TouchEvent) => {
+      if (e.touches.length >= 2) {
+        initialPinchDist = pinchDistance(e.touches);
+      }
+    };
+
+    const blockPinchZoom = (e: TouchEvent) => {
+      if (e.touches.length < 2) return;
+      // Sett baseline hvis touchstart ikke fyrte (sjelden — defensiv).
+      if (initialPinchDist === null) {
+        initialPinchDist = pinchDistance(e.touches);
+        return;
+      }
+      const currentDist = pinchDistance(e.touches);
+      if (Math.abs(currentDist - initialPinchDist) > PINCH_DELTA_THRESHOLD_PX) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    const resetPinchOnEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        initialPinchDist = null;
       }
     };
 
@@ -319,7 +357,11 @@ function Map3DInner({
     container.addEventListener("wheel", blockZoomWheel, wheelOpts);
     container.addEventListener("dblclick", blockDblClickEvent, dblOpts);
     container.addEventListener("click", blockMultiClick, dblOpts);
+    container.addEventListener("touchstart", trackPinchStart, touchOpts);
     container.addEventListener("touchmove", blockSingleTouchPan, touchOpts);
+    container.addEventListener("touchmove", blockPinchZoom, touchOpts);
+    container.addEventListener("touchend", resetPinchOnEnd, touchOpts);
+    container.addEventListener("touchcancel", resetPinchOnEnd, touchOpts);
 
     return () => {
       container.removeEventListener("pointerdown", blockDblClickFromPointer, dblOpts);
@@ -330,7 +372,11 @@ function Map3DInner({
       container.removeEventListener("wheel", blockZoomWheel, wheelOpts);
       container.removeEventListener("dblclick", blockDblClickEvent, dblOpts);
       container.removeEventListener("click", blockMultiClick, dblOpts);
+      container.removeEventListener("touchstart", trackPinchStart, touchOpts);
       container.removeEventListener("touchmove", blockSingleTouchPan, touchOpts);
+      container.removeEventListener("touchmove", blockPinchZoom, touchOpts);
+      container.removeEventListener("touchend", resetPinchOnEnd, touchOpts);
+      container.removeEventListener("touchcancel", resetPinchOnEnd, touchOpts);
     };
   }, [activated]);
 
