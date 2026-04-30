@@ -6,6 +6,29 @@
 
 ---
 
+## 2026-04-30 — 3D-kart sub-kategori-filter samkjørt med 2D + worktree-rydding
+
+### Bakgrunn
+Brukeren oppdaget at Filtrér-chips i venstre panel filtrerte accordion-lista (5/19) men ikke markørene på 3D-kartet — som fortsatt viste alle 19. 2D-kartet (`BoardMap.tsx`) hadde allerede `subFilter.hiddenIds`-filtreringen i `visiblePOIs`-memoen siden plan 001 (sub-category filter), men da 3D-versjonen ble bygget i en senere iterasjon ble samme filter glemt.
+
+### Fix
+- **`BoardMap3D.tsx`:** plukket `subFilter` fra `useBoard()`. La til samme filter-logikk i `visiblePOIs`-memoen som 2D-kartet bruker — `subFilter.hiddenIds.size === 0 ? activeCategory.pois : activeCategory.pois.filter(p => !subFilter.hiddenIds.has(p.raw.category.id))`. Inkluderte `subFilter.hiddenIds` i dep-arrayen så markørene re-renderes ved chip-toggle.
+- 1 fil, 12 linjer netto +. Trivial fiks som hørte til subcategory-filter-planen (001) men slapp gjennom fordi 3D-kartet ble splittet ut senere.
+
+### Worktree-rydding
+Sesjonen brukte fire worktrees parallelt (`3d-touch-lock`, `compact-ui`, `3d-filter-sync`, `board-mobile-ux`, `board-poi-details`). Etter alle merger til main: ryddet alle worktrees + slettet merged feature-branches lokalt. Endte med kun `placy-ralph` (main). Orphan `.next`-cache-mapper slettet manuelt — `git worktree remove` slipper dem ikke alltid.
+
+### Lærdom
+- **Samme filter-logikk på tvers av 2D/3D-versjoner** må eksplisitt verifiseres når en av dem splittes ut. `BoardMap` og `BoardMap3D` deler ikke en "visiblePOIs"-helper — hver har egen memo. Vurdér å ekstrahere felles selector i fremtiden hvis flere divergens-tilfeller dukker opp.
+- **Worktree-cleanup-rytme:** rydd worktrees umiddelbart etter merge, ikke vent til slutten av dagen — orphan-mapper hoper seg opp og blir uoversiktlig i Finder.
+
+### Referanser
+- Branch (kort levetid, slettet): `fix/3d-map-subfilter-sync`
+- Commit: `acd7270` → merget i `4428dde`
+- Relaterte plans: `docs/plans/2026-04-30-001-feat-rapport-board-subcategory-filter-plan.md` (originalfilteret)
+
+---
+
 ## 2026-04-30 — Rapport-board kompakt-UI: Discord-inspirert tett desktop-shell
 
 ### Bakgrunn
