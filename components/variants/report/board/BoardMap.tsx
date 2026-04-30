@@ -13,8 +13,8 @@ import { useBoard, useActiveCategory } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
 import { HomeMarker } from "./HomeMarker";
 import { BoardPathLayer } from "./BoardPathLayer";
+import { BoardPathMidpointMarker } from "./BoardPathMidpointMarker";
 import { BoardPOILabel } from "./BoardPOILabel";
-import { BoardTravelChip } from "./BoardTravelChip";
 import { BoardMap3D } from "./BoardMap3D";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
@@ -257,6 +257,7 @@ export function BoardMap({ has3dAddon = false }: Props) {
             ))}
 
             <BoardPathLayer />
+            <BoardPathMidpointMarker />
             <BoardPOILabel />
           </Map>
         </div>
@@ -275,9 +276,6 @@ export function BoardMap({ has3dAddon = false }: Props) {
           <Loader2 className="w-6 h-6 text-[#7a7062] animate-spin" />
         </div>
       )}
-
-      {/* HTML-overlay (utenfor Map): travel-chip plassert over POI-sheet */}
-      <BoardTravelChip />
 
       {/* 2D/3D-toggle øverst til høyre — kun synlig når 3D-add-on er kjøpt */}
       {has3dAddon && (
