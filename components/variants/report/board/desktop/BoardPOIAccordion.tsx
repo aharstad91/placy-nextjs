@@ -11,6 +11,7 @@ import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard } from "../board-state";
 import type { BoardCategory, BoardPOIId } from "../board-data";
 import { BoardLiveTransport } from "../mobile/BoardLiveTransport";
+import { markerCircleStyle } from "../marker-style";
 
 interface Props {
   category: BoardCategory;
@@ -120,6 +121,7 @@ export function BoardPOIAccordion({ category }: Props) {
         // bakeri gul osv.) — tema-fargen sier ikke noe nytt når man allerede
         // er inne i temaet.
         const subColor = poi.raw.category.color || category.color;
+        const circle = markerCircleStyle(subColor);
         return (
           <AccordionItem
             key={poi.id}
@@ -137,10 +139,14 @@ export function BoardPOIAccordion({ category }: Props) {
             >
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <div
-                  className="flex h-10 w-10 flex-none items-center justify-center rounded-full shadow-md"
-                  style={{ backgroundColor: subColor }}
+                  className="flex h-10 w-10 flex-none items-center justify-center rounded-full border-2"
+                  style={{
+                    borderColor: circle.borderColor,
+                    backgroundColor: circle.backgroundColor,
+                    color: circle.borderColor,
+                  }}
                 >
-                  <Icon className="h-5 w-5 text-white" weight="fill" />
+                  <Icon className="h-5 w-5" weight="fill" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold text-stone-900">

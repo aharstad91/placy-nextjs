@@ -2,6 +2,7 @@
 
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import type { BoardPOI } from "../board-data";
+import { markerCircleStyle } from "../marker-style";
 
 interface Props {
   poi: BoardPOI;
@@ -14,6 +15,7 @@ export function BoardRelatedPOICard({ poi, categoryColor, onClick }: Props) {
   // Sub-kategori-farge differensierer POIer innen temaet. Tema-fargen brukes
   // som fallback hvis sub-kat mangler farge.
   const subColor = poi.raw.category.color || categoryColor;
+  const circle = markerCircleStyle(subColor);
 
   return (
     <button
@@ -21,10 +23,14 @@ export function BoardRelatedPOICard({ poi, categoryColor, onClick }: Props) {
       className="w-full flex items-center gap-3 px-3.5 py-3 bg-white rounded-2xl border border-stone-200/80 shadow-[0_2px_8px_rgba(15,29,68,0.06)] text-left transition-all hover:shadow-[0_4px_14px_rgba(15,29,68,0.1)] hover:-translate-y-0.5 active:translate-y-0"
     >
       <div
-        className="flex-none w-10 h-10 rounded-full flex items-center justify-center shadow-md"
-        style={{ backgroundColor: subColor }}
+        className="flex-none w-10 h-10 rounded-full flex items-center justify-center border-2"
+        style={{
+          borderColor: circle.borderColor,
+          backgroundColor: circle.backgroundColor,
+          color: circle.borderColor,
+        }}
       >
-        <Icon className="w-5 h-5 text-white" weight="fill" />
+        <Icon className="w-5 h-5" weight="fill" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-stone-900 truncate">{poi.name}</div>
