@@ -139,14 +139,14 @@ export function BoardPOIAccordion({ category }: Props) {
             >
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <div
-                  className="flex h-10 w-10 flex-none items-center justify-center rounded-full border-2"
+                  className="flex h-8 w-8 flex-none items-center justify-center rounded-full border-2"
                   style={{
                     borderColor: circle.borderColor,
                     backgroundColor: circle.backgroundColor,
                     color: circle.borderColor,
                   }}
                 >
-                  <Icon className="h-5 w-5" weight="fill" />
+                  <Icon className="h-4 w-4" weight="fill" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold text-stone-900">

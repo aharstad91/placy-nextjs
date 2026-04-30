@@ -23,14 +23,14 @@ export function BoardRelatedPOICard({ poi, categoryColor, onClick }: Props) {
       className="w-full flex items-center gap-3 px-3.5 py-3 bg-white rounded-2xl border border-stone-200/80 shadow-[0_2px_8px_rgba(15,29,68,0.06)] text-left transition-all hover:shadow-[0_4px_14px_rgba(15,29,68,0.1)] hover:-translate-y-0.5 active:translate-y-0"
     >
       <div
-        className="flex-none w-10 h-10 rounded-full flex items-center justify-center border-2"
+        className="flex-none w-8 h-8 rounded-full flex items-center justify-center border-2"
         style={{
           borderColor: circle.borderColor,
           backgroundColor: circle.backgroundColor,
           color: circle.borderColor,
         }}
       >
-        <Icon className="w-5 h-5" weight="fill" />
+        <Icon className="w-4 h-4" weight="fill" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-stone-900 truncate">{poi.name}</div>
