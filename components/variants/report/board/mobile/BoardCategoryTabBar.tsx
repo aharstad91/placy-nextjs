@@ -8,33 +8,24 @@ import { useBoard } from "../board-state";
 import type { BoardCategory } from "../board-data";
 import { THEME_SCENE_SRC } from "../../theme-icons";
 
-export interface BoardCategoryTabBarProps {
-  /** Settes av sheet-shell — tab-bar dispatcher snap-justering ved kategori-bytte. */
-  onSnapChange?: (snap: number | string) => void;
-  /** Lese-tilgang til nåværende snap så same-category-tap kan bestemme om sheet
-   *  skal rises (snap < "320px") eller bli stående. */
-  currentSnap?: number | string | null;
-}
-
 /**
- * Persistent horisontal kategori-tab-bar i bunnen av BoardMobileSheet.
- * Hjem-knapp først (matcher desktop BoardRail), deretter alle kategorier
- * som thumbnail + tekst-label (12px under).
+ * Persistent horisontal kategori-tab-bar pinnet til viewport-bunn (Google
+ * Maps-stil). Hjem-knapp først (matcher desktop BoardRail), deretter alle
+ * kategorier som thumbnail + tekst-label (12px under).
+ *
+ * Mountes som søsken til BoardMobileSheet i BoardScaffold med høy z-index
+ * — alltid synlig, alltid over sheet og kart. Sheet kan dras ned uten å
+ * skjule denne primær-navigasjonen.
  *
  * Datasett kan ha 6–18 kategorier. ~6 knapper synlig per 390px-viewport;
  * resten oppdages via horisontal swipe + right-edge gradient-fade affordance
  * + scrollIntoView ved kategori-bytte.
  *
- * Klikk kategori → SELECT_CATEGORY + onSnapChange("320px") (kun hvis snap er
- * lavere). Same-category-tap → onSnapChange("320px") som recover-affordance.
- *
- * touchAction: pan-x på scroll-container er fallback hvis vaul handleOnly
- * ikke isolerer gesture-konflikten alene.
+ * Snap-styring: tab-bar dispatcher kun til BoardState (SELECT_CATEGORY,
+ * RESET_TO_DEFAULT). BoardMobileSheet sin egen useEffect-watcher på phase
+ * snapper sheet til riktig stage. Ingen direkte kobling.
  */
-export function BoardCategoryTabBar({
-  onSnapChange,
-  currentSnap,
-}: BoardCategoryTabBarProps) {
+export function BoardCategoryTabBar() {
   const { state, data, dispatch } = useBoard();
   const activeRef = useRef<HTMLButtonElement>(null);
   const activeCategoryId = state.activeCategoryId;
@@ -50,23 +41,17 @@ export function BoardCategoryTabBar({
 
   const handleHomeClick = () => {
     dispatch({ type: "RESET_TO_DEFAULT" });
-    onSnapChange?.("96px");
   };
 
   const handleCategoryClick = (cat: BoardCategory) => {
-    if (cat.id === activeCategoryId) {
-      // Same-category-tap: løft sheet hvis kollapset, ellers no-op.
-      if (currentSnap === "96px") onSnapChange?.("320px");
-      return;
-    }
+    if (cat.id === activeCategoryId) return;
     dispatch({ type: "SELECT_CATEGORY", id: cat.id });
-    if (currentSnap === "96px") onSnapChange?.("320px");
   };
 
   return (
     <nav
       aria-label="Kategorinavigasjon"
-      className="relative"
+      className="relative bg-stone-50 border-t border-stone-200/80"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div

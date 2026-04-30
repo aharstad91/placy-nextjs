@@ -9,6 +9,7 @@ import { transformToReportData } from "../report-data";
 import { adaptBoardData } from "./board-data";
 import { BoardProvider } from "./board-state";
 import { BoardMap } from "./BoardMap";
+import { BoardCategoryTabBar } from "./mobile/BoardCategoryTabBar";
 import { BoardMobileSheet } from "./mobile/BoardMobileSheet";
 import { BoardDesktopShell } from "./desktop/BoardDesktopShell";
 
@@ -65,16 +66,22 @@ function useIsDesktop(): boolean {
 
 /** Konverter sheet-snap-stage til map-padding-bottom (piksler).
  *  Brukes av BoardScaffold for å synke map.setPadding med bruker-snap.
- *  Stage 3+ kappes til 280px så markører ikke forsvinner ved bytte ned. */
+ *  Tab-baren (96px) er alltid pinnet til viewport-bunn — derfor adderes
+ *  TAB_BAR_PADDING uansett snap. Stage 3+ kappes til 280px så markører
+ *  ikke forsvinner ved bytte ned. */
+const TAB_BAR_PADDING = 96;
 function snapToMapPadding(snap: number | string): number {
-  if (snap === "96px") return 96;
+  if (snap === "96px") return TAB_BAR_PADDING;
   if (snap === "320px") return 320;
   return 280;
 }
 
 /**
  * Board-shell: full-screen kart i bakgrunn. Adaptiv layout:
- * - Mobil (<lg): kart fyller hele viewporten. BoardMobileSheet (multi-snap) på toppen.
+ * - Mobil (<lg): kart fyller hele viewporten. BoardMobileSheet (multi-snap) +
+ *   BoardCategoryTabBar (pinnet bunn) som søsken. Tab-bar er ALLTID synlig
+ *   over sheeten via z-50; sheet kan dras ned uten å skjule navigasjonen
+ *   (Google Maps-mønster).
  * - Desktop (>=lg): kart fyller alt til høyre for 480px-strip (rail + detalj-panel).
  *
  * BoardMap mountes ÉN gang. Conditional positioning via wrapper-div: `lg:left-[480px]`
@@ -101,12 +108,18 @@ function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
         />
       </div>
 
-      {/* Mobile UI (< lg) — multi-snap sheet med Hjem/kategori-tab-bar i bunnen.
-          Erstatter alle tidligere komponenter (CategoryGrid, PeekCard, ReadingModal, POISheet). */}
+      {/* Mobile UI (< lg) — multi-snap sheet + pinnet tab-bar.
+          Tab-bar mountes som søsken med z-50 (over sheet og kart) så
+          primær-navigasjon er alltid tilgjengelig. */}
       {!isDesktop && (
-        <BoardMobileSheet
-          onSnapChange={(snap) => setMapPaddingBottom(snapToMapPadding(snap))}
-        />
+        <>
+          <BoardMobileSheet
+            onSnapChange={(snap) => setMapPaddingBottom(snapToMapPadding(snap))}
+          />
+          <div className="fixed inset-x-0 bottom-0 z-50">
+            <BoardCategoryTabBar />
+          </div>
+        </>
       )}
 
       {/* Desktop UI (>= lg) — venstre rail + detalj-panel som 504px-strip */}

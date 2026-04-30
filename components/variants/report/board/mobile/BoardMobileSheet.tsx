@@ -19,16 +19,22 @@ import {
 } from "../BoardPOIDetails";
 import { SubCategoryFilter } from "../SubCategoryFilter";
 import { deriveSubCategories } from "../use-sub-category-filter";
-import { BoardCategoryTabBar } from "./BoardCategoryTabBar";
 import { BoardPunkterAccordion } from "./BoardPunkterAccordion";
 import { BoardTabs } from "./BoardTabs";
 
-// Snap-points: stage 1 (kun tab-bar) | stage 2 (peek) | stage 3 (halv) | stage 4 (full).
-// Mix av px-strings og prosent: tab-bar-høyde er kjent i piksler (uavhengig
-// av viewport), halv/full er meningsfulle som prosent. Stage 4 = 1.0 (full
-// viewport-høyde) — sheet dekker hele skjermen. Status-bar/notch håndteres
-// via safe-area-inset-top på drag-handle-marginen i Content-elementet.
+// Snap-points: stage 1 (skjult bak tab-bar) | stage 2 (peek) | stage 3 (halv) | stage 4 (full).
+// Tab-baren er pinnet til viewport-bunn UTENFOR sheeten (mountes i
+// BoardScaffold med z-50). Stage 1 = "96px" tilsvarer derfor tab-bar-høyden:
+// sheet er fullstendig dekket av tab-baren visuelt — kun kart + tab-bar
+// synes. Stage 2 (320px) = sheet stikker ~224px opp OVER tab-baren.
+// Stage 4 (1.0) = full viewport-høyde; tab-baren dekker bunn 96px av sheet,
+// men content kompenserer via padding-bottom-[96px] så ingenting kuttes.
 const SNAP_POINTS: (number | string)[] = ["96px", "320px", 0.5, 1];
+
+// Tab-bar dimensjon (px) — må matche faktisk render-høyde i
+// BoardCategoryTabBar. Brukes som padding-bottom på sheet-content slik at
+// rullbart innhold og pinned action-bar ikke skjules av tab-baren.
+const TAB_BAR_HEIGHT_PX = 96;
 
 // Cross-fade ved POI-bytte: fade-ut → swap → fade-inn. Total ~200ms.
 const FADE_OUT_MS = 100;
@@ -55,14 +61,23 @@ export interface BoardMobileSheetProps {
  * Multi-snap bottom-sheet (Google Maps-stil) for mobile board-flyt.
  * Erstatter BoardCategoryGrid + BoardPeekCard + BoardReadingModal + BoardPOISheet.
  *
- * Fire snap-stages: kollapset (kun tab-bar) | peek | halv | full.
+ * Fire snap-stages: skjult-bak-tab-bar | peek | halv | full.
  * Sheet er alltid mountet (`open=true`, `dismissible=false`), kart er
- * aldri sløret (`modal=false`, ingen overlay), kun handle drar (`handleOnly=true`).
+ * aldri sløret (`modal=false`, ingen overlay). Hele sheet er draggable
+ * (drag-handle, header og content alle reagerer på drag) — ekte app-feeling.
+ *
+ * Tab-baren er IKKE i sheeten — den mountes som søsken i BoardScaffold med
+ * z-50, alltid synlig over sheet og kart. Sheet kan dras helt ned uten å
+ * skjule primær-navigasjonen.
+ *
+ * Drag-til-å-lukke: hvis brukeren drar sheet ned til stage 1 (96px) mens
+ * en kategori eller POI er aktiv, dispatcher vi RESET_TO_DEFAULT — dvs.
+ * swipe-ned er en gyldig "lukk kategori"-gest.
  *
  * Phase-rendering:
- * - default: tomt content-område, kun tab-bar synlig (snap=96px)
- * - active: kategori-header + Beliggenhet/Punkter-tabs + content
- * - poi: tilbake-knapp + POI-header + BoardPOIDetails + pinned action-bar (cross-fade på bytte)
+ * - default: sheet skjult bak tab-bar (snap=96px)
+ * - active: kategori-header + Beliggenhet/Punkter-tabs + content (snap=320px)
+ * - poi: tilbake-knapp + POI-header + BoardPOIDetails + pinned action-bar (snap=0.5)
  */
 export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
   const { state, dispatch, data, subFilter } = useBoard();
@@ -81,6 +96,13 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
     if (next !== null && next !== lastNotifiedRef.current) {
       lastNotifiedRef.current = next;
       onSnapChange?.(next);
+    }
+    // Drag-ned-for-å-lukke: hvis brukeren snapper sheet til stage 1 mens en
+    // kategori/POI er aktiv, tolker vi det som "lukk". Phase-watcheren under
+    // setter da snap tilbake til "96px" (no-op) men nullstiller activeCategoryId
+    // og activePOIId så markørene viser oversikt igjen.
+    if (next === "96px" && state.phase !== "default") {
+      dispatch({ type: "RESET_TO_DEFAULT" });
     }
   };
 
@@ -192,39 +214,37 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
       setActiveSnapPoint={setSnap}
       dismissible={false}
       modal={false}
-      handleOnly={true}
     >
       <DrawerPortal>
         {/* DrawerPrimitive.Content direkte (ikke shadcn DrawerContent) for å
             droppe auto-overlay. Vaul antar at sheet-elementet har full
             viewport-høyde og at snap-points uttrykker SYNLIG høyde fra bunn:
             translateY = (viewportH - snapPx). Derfor h-[100dvh]; stage-4-snap
-            (1.0) gir hele viewporten synlig, stage 1 (96px) gir 96px synlig
-            — bare tab-baren. `pt-[env(safe-area-inset-top)]` skyver innhold
-            under iPhone-notch/status-bar når sheet er på 100%-snap. */}
+            (1.0) gir hele viewporten synlig, stage 1 (96px) gir tab-bar-
+            tilsvarende høyde synlig — som er dekket av tab-baren med z-50.
+            `pt-[env(safe-area-inset-top)]` skyver innhold under iPhone-notch/
+            status-bar når sheet er på 100%-snap.
+            handleOnly er IKKE satt — hele sheet er draggable for app-feeling.
+            Vaul håndterer scroll-vs-drag-konflikt automatisk: kun når content
+            er scrollet til topp (scrollTop=0), tar sheet over drag. */}
         <DrawerPrimitive.Content
           data-slot="board-mobile-sheet"
           className="fixed inset-x-0 bottom-0 z-30 flex h-[100dvh] flex-col bg-stone-50/95 backdrop-blur rounded-t-3xl shadow-[0_-4px_24px_rgba(15,29,68,0.08)] pt-[env(safe-area-inset-top)]"
         >
-          {/* Drag-handle (~24px med margin) + tab-bar (~96px) er alltid synlig
-              på tvers av snap-stages. De ligger ØVERST i sheet fordi vaul
-              translater hele elementet ned med (viewportH - snapPx) — toppen
-              av sheet er det som vises i den synlige snap-spalten.
-              Bruker DrawerPrimitive.Handle (ikke en stum div), siden
-              `handleOnly={true}` på Root betyr at vaul kun registrerer
-              drag-events på Handle-komponenten — ikke på sheet-content. */}
+          {/* Drag-handle ligger ØVERST i sheet fordi vaul translater hele
+              elementet ned med (viewportH - snapPx) — toppen av sheet er det
+              som vises i snap-spalten. Beholdes som visuell affordance selv
+              om hele sheet er draggable. */}
           <DrawerPrimitive.Handle className="mx-auto mt-3 mb-2 h-1.5 w-[100px] shrink-0 cursor-grab touch-none rounded-full bg-stone-300 active:cursor-grabbing" />
 
-          <div className="shrink-0 border-b border-stone-200/80 bg-stone-50">
-            <BoardCategoryTabBar
-              onSnapChange={setSnap}
-              currentSnap={snap}
-            />
-          </div>
-
           {/* Scrollbart innhold-slot. Phase-styres internt.
-              `min-h-0` så flex-shrink fungerer ved stage 1 (kollapser til 0). */}
-          <div className="flex-1 overflow-y-auto min-h-0">
+              `min-h-0` så flex-shrink fungerer ved lave stages.
+              Padding-bottom = TAB_BAR_HEIGHT_PX så scroll-content ikke
+              skjules av den eksterne tab-baren ved stage 4 (full). */}
+          <div
+            className="flex-1 overflow-y-auto min-h-0"
+            style={{ paddingBottom: `${TAB_BAR_HEIGHT_PX}px` }}
+          >
             {state.phase === "active" && cat && filteredCat && (
               <div className="px-5 pt-2">
                 <header className="flex items-start justify-between pb-3">
@@ -334,13 +354,15 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
               sheet-elementet. Synlig kun ved stage 4 (full) siden vaul kun
               eksponerer toppen av sheet via translation; på lavere stages er
               bunn av sheet utenfor viewporten. Apple/Google Maps-mønster:
-              actions vises når brukeren har dratt sheet helt opp. */}
+              actions vises når brukeren har dratt sheet helt opp.
+              margin-bottom = TAB_BAR_HEIGHT_PX så action-bar ikke skjules av
+              den eksterne tab-baren. */}
           {state.phase === "poi" && renderPoi && (
             <div
               className="shrink-0 border-t border-stone-200/80 bg-stone-50/95 backdrop-blur px-5 pt-3"
               style={{
-                paddingBottom:
-                  "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+                paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+                marginBottom: `${TAB_BAR_HEIGHT_PX}px`,
               }}
             >
               <BoardPOIActionBar poi={renderPoi.raw} />
