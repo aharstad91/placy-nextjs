@@ -6,6 +6,41 @@
 
 ---
 
+## 2026-04-30 — Rapport-board POI-kort: dynamisk innhold + farge-paritet på Hjem-kart
+
+### Bakgrunn
+POI-kortet i rapport-boardet (både desktop accordion og mobile sheet) viste kun ikon, navn, adresse og body-tekst. Mye data lå brakk på `POI`-typen — Google rating, åpningstider, telefon, nettside, busisnessStatus, event-data, child POIs (kjøpesenter→butikker), prisnivå, cover-bilde. ReportMapDrawer (gammel) og ExplorerPOICard (rik) hadde alt dette, men ingenting var portet til den nye board-flaten.
+
+Samtidig oppdaget bruker at samlekartet på Hjem brukte tema-farger (Mat=rød, Barn=rosa, ...) mens kategori-kartene brukte sub-kategori-farger (bar lilla, bakeri gul, restaurant rød). Samme POI fikk ulik farge når man vekslet mellom Hjem og en kategori-tab.
+
+### Beslutninger
+- **Felles `BoardPOIDetails`-komponent** for både desktop og mobil. Ren prop-API: `poi: POI` (+ valgfri `areaSlug`). Gjenbruker eksisterende `BoardLiveTransport`, `GoogleRating`, `shouldShowRating`, `computeIsOpen`, `isSafeUrl`. Ingen ny utility-fil.
+- **All visning er dynamisk gated** — rating på skole, prisindikator på park osv. blir aldri synlig. Ingen "vis tom verdi"-tilstand.
+- **Trust-flagg skjuler rating helt** når `trustFlags.length > 0` (mistenkelige POI-er). `trustScore`-threshold-gating droppet — ingen brukspunkt definerer threshold i dag, og prematur abstraksjon.
+- **"Utforsk"-knappen (Google AI Mode `udm=50`)** vises på alle POI-er som standard handling — ikke bare parents som i ReportMapDrawer. Spørringen er `${poi.name} ${poi.address || ""}` — adressen gir Google nok kontekst til å disambiguere flere steder med samme navn.
+- **Farge-fall-through harmonisert:** Hjem-kart bruker nå `p.raw.category.color || c.color` (sub-kat → tema-fallback) — samme som kategori-kartene. Samme POI = samme farge på tvers av phaser.
+- **Fjernet `opacity-60`-dimming på Hjem-kart.** Den var ment som "oversikt"-modus-signal, men gjorde POI-er mindre synlige enn på kategori-kartene. Aktiv POI skiller seg fortsatt via størrelse + tjukkere border.
+
+### Teknisk
+- **Ny:** `components/variants/report/board/BoardPOIDetails.tsx` (394 linjer). Layout: cover-bilde → BusinessStatus-banner → meta-rad (rating·pris·gå-tid) → event-piller (dato/tid/tags) → editorialHook (amber spotlight) → localInsight → description-fallback → anchor-summary → child POIs grid → BoardLiveTransport → åpningstider → action-knapper (Vis rute · Nettside · Ring · Utforsk · Mer info · Les mer · Google Maps).
+- **Modify:** `BoardPOIAccordion.tsx` + `BoardPOISheet.tsx` — bytter inn `<BoardPOIDetails poi={poi.raw} />` for body-rendering. Behold accordion-trigger og mobile-header.
+- **Modify:** `BoardMap.tsx` — `visiblePOIs`-memo bruker felles fall-through i begge phaser.
+- **Modify:** `BoardMarker.tsx` — fjernet `isDimmed`-prop og `opacity-60`-class.
+
+### Scope (sacred)
+- KUN board-POI-kort (rapport-boardet). Ikke ExplorerPOICard, ikke ReportMapDrawer, ikke poi-detaljside.
+- `next/image` for cover-bilde (per `CLAUDE.md`-regel) — `unoptimized` kun på proxy-URLer.
+
+### Åpne spørsmål
+- `areaSlug` er ikke tråd gjennom `ReportBoardPage` → `BoardPOIDetails` enda — så "Les mer"-lenken til POI-detaljside vises aldri i board. Hvis vi vil at den skal dukke opp, må `areaSlug` propes ned. Trolig egen oppgave når vi tar steg-for-steg POI-routing.
+- Skulle Hjem-markører fortsatt skille seg fra kategori-markører på et eller annet vis (utover størrelse på aktiv)? Per nå er de identiske — bruker bekreftet at det er ønskelig.
+
+### Referanser
+- Trello: [xniF3kwm](https://trello.com/c/xniF3kwm)
+- Branch: `feat/board-poi-dynamic-details` → merget til `main` (`104ec35` + farge-fix `32ebe71`)
+
+---
+
 ## 2026-04-30 — Rapport-board: typografisk paritet mellom body og "Les mer"-disclosure
 
 ### Bakgrunn
