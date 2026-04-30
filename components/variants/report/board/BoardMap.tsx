@@ -79,8 +79,12 @@ export function BoardMap({ has3dAddon = false }: Props) {
       : "opacity-100";
 
   // Markører som vises avhenger av phase:
-  // - default: alle kategorier, alle POI-er (oversiktsmodus)
-  // - active|reading|poi: kun aktiv kategoris POI-er, med sub-kategori-filter
+  // - default: alle kategorier, alle POI-er (oversiktsmodus). Bruk tema-fargen
+  //   så markører grupperer visuelt etter tema.
+  // - active|reading|poi: kun aktiv kategoris POI-er, med sub-kategori-filter.
+  //   Bruk sub-kategori-fargen så f.eks. bar (lilla), bakeri (gul), restaurant
+  //   (rød) skiller seg fra hverandre på kartet — tema-fargen sier ikke noe nytt
+  //   når man allerede har valgt temaet.
   const visiblePOIs = useMemo(() => {
     if (state.phase === "default") {
       return data.categories.flatMap((c) =>
@@ -96,8 +100,8 @@ export function BoardMap({ has3dAddon = false }: Props) {
           );
     return filtered.map((p) => ({
       poi: p,
-      color: activeCategory.color,
-      icon: activeCategory.icon,
+      color: p.raw.category.color || activeCategory.color,
+      icon: p.raw.category.icon || activeCategory.icon,
     }));
   }, [state.phase, data.categories, activeCategory, subFilter.hiddenIds]);
 

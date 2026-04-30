@@ -11,6 +11,9 @@ interface Props {
 
 export function BoardRelatedPOICard({ poi, categoryColor, onClick }: Props) {
   const Icon = getFilledIcon(poi.raw.category.icon);
+  // Sub-kategori-farge differensierer POIer innen temaet. Tema-fargen brukes
+  // som fallback hvis sub-kat mangler farge.
+  const subColor = poi.raw.category.color || categoryColor;
 
   return (
     <button
@@ -19,7 +22,7 @@ export function BoardRelatedPOICard({ poi, categoryColor, onClick }: Props) {
     >
       <div
         className="flex-none w-10 h-10 rounded-full flex items-center justify-center shadow-md"
-        style={{ backgroundColor: categoryColor }}
+        style={{ backgroundColor: subColor }}
       >
         <Icon className="w-5 h-5 text-white" weight="fill" />
       </div>
