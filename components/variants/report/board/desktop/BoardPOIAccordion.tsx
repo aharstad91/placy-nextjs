@@ -130,7 +130,7 @@ export function BoardPOIAccordion({ category }: Props) {
             className="rounded-2xl border border-stone-200/80 bg-white shadow-[0_2px_8px_rgba(15,29,68,0.06)] data-[state=open]:bg-white scroll-mt-2"
           >
             <AccordionTrigger
-              className="items-center gap-3 px-3.5 py-3 text-left hover:no-underline data-[state=open]:bg-stone-50/40 [&>svg]:text-stone-400"
+              className="min-w-0 items-center gap-3 px-3.5 py-3 text-left hover:no-underline data-[state=open]:bg-stone-50/40 [&>svg]:text-stone-400"
               style={
                 isActive
                   ? { boxShadow: `inset 3px 0 0 ${subColor}` }
