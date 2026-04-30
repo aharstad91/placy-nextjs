@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard } from "../board-state";
 import type { BoardCategory } from "../board-data";
+import { markerCircleStyle } from "../marker-style";
 import { THEME_SCENE_SRC } from "../../theme-icons";
 
 export function BoardCategoryGrid() {
@@ -47,6 +49,12 @@ function CategoryCard({
   const illustrationSrc =
     THEME_SCENE_SRC[category.id] ?? category.illustration?.src;
 
+  // Filled lucide-equivalent for kategoriens ikon. `getFilledIcon` faller
+  // tilbake til MapPin hvis ikon-navn er ukjent — sikrer at kortet alltid
+  // rendrer noe meningsfullt selv om kategori-data mangler ikon.
+  const Icon = getFilledIcon(category.icon);
+  const circle = markerCircleStyle(category.color);
+
   return (
     <button
       onClick={onSelect}
@@ -62,6 +70,22 @@ function CategoryCard({
             className="object-cover"
           />
         )}
+        {/* Kategori-ikon-hint (øvre venstre) — speiler marker-styling
+            (samme rounded-full + border-2 + tint som BoardMarker/POI-list)
+            slik at kart-markørene og grid-kortene leser som samme system.
+            Plassert i motsatt hjørne av count-badge for symmetri og for å
+            ikke skygge for illustrasjonens fokuspunkt eller spørsmålsteksten
+            under. */}
+        <div
+          className="absolute top-2.5 left-2.5 flex w-8 h-8 items-center justify-center rounded-full border-2 shadow-[0_2px_8px_rgba(15,29,68,0.18)]"
+          style={{
+            borderColor: circle.borderColor,
+            backgroundColor: circle.backgroundColor,
+            color: circle.borderColor,
+          }}
+        >
+          <Icon className="w-4 h-4" weight="fill" />
+        </div>
         <div
           className="absolute top-2.5 right-2.5 min-w-[26px] h-[26px] px-2 rounded-md flex items-center justify-center text-xs font-semibold text-white shadow-[0_2px_8px_rgba(27,45,92,0.35)]"
           style={{ backgroundColor: "#1a2952" }}
