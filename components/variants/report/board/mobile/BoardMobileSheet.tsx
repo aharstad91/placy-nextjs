@@ -25,8 +25,10 @@ import { BoardTabs } from "./BoardTabs";
 
 // Snap-points: stage 1 (kun tab-bar) | stage 2 (peek) | stage 3 (halv) | stage 4 (full).
 // Mix av px-strings og prosent: tab-bar-høyde er kjent i piksler (uavhengig
-// av viewport), halv/full er meningsfulle som prosent.
-const SNAP_POINTS: (number | string)[] = ["96px", "320px", 0.5, 0.92];
+// av viewport), halv/full er meningsfulle som prosent. Stage 4 = 1.0 (full
+// viewport-høyde) — sheet dekker hele skjermen. Status-bar/notch håndteres
+// via safe-area-inset-top på drag-handle-marginen i Content-elementet.
+const SNAP_POINTS: (number | string)[] = ["96px", "320px", 0.5, 1];
 
 // Cross-fade ved POI-bytte: fade-ut → swap → fade-inn. Total ~200ms.
 const FADE_OUT_MS = 100;
@@ -197,17 +199,21 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
             droppe auto-overlay. Vaul antar at sheet-elementet har full
             viewport-høyde og at snap-points uttrykker SYNLIG høyde fra bunn:
             translateY = (viewportH - snapPx). Derfor h-[100dvh]; stage-4-snap
-            (0.92) gir 92% synlig (≈776px på 844-høy viewport), stage 1 (96px)
-            gir 96px synlig — bare tab-baren. */}
+            (1.0) gir hele viewporten synlig, stage 1 (96px) gir 96px synlig
+            — bare tab-baren. `pt-[env(safe-area-inset-top)]` skyver innhold
+            under iPhone-notch/status-bar når sheet er på 100%-snap. */}
         <DrawerPrimitive.Content
           data-slot="board-mobile-sheet"
-          className="fixed inset-x-0 bottom-0 z-30 flex h-[100dvh] flex-col bg-stone-50/95 backdrop-blur rounded-t-3xl shadow-[0_-4px_24px_rgba(15,29,68,0.08)]"
+          className="fixed inset-x-0 bottom-0 z-30 flex h-[100dvh] flex-col bg-stone-50/95 backdrop-blur rounded-t-3xl shadow-[0_-4px_24px_rgba(15,29,68,0.08)] pt-[env(safe-area-inset-top)]"
         >
           {/* Drag-handle (~24px med margin) + tab-bar (~96px) er alltid synlig
               på tvers av snap-stages. De ligger ØVERST i sheet fordi vaul
               translater hele elementet ned med (viewportH - snapPx) — toppen
-              av sheet er det som vises i den synlige snap-spalten. */}
-          <div className="mx-auto mt-3 mb-2 h-1.5 w-[100px] shrink-0 rounded-full bg-stone-300" />
+              av sheet er det som vises i den synlige snap-spalten.
+              Bruker DrawerPrimitive.Handle (ikke en stum div), siden
+              `handleOnly={true}` på Root betyr at vaul kun registrerer
+              drag-events på Handle-komponenten — ikke på sheet-content. */}
+          <DrawerPrimitive.Handle className="mx-auto mt-3 mb-2 h-1.5 w-[100px] shrink-0 cursor-grab touch-none rounded-full bg-stone-300 active:cursor-grabbing" />
 
           <div className="shrink-0 border-b border-stone-200/80 bg-stone-50">
             <BoardCategoryTabBar
