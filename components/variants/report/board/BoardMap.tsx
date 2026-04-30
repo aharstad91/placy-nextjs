@@ -16,6 +16,7 @@ import { BoardPathLayer } from "./BoardPathLayer";
 import { BoardPOILabel } from "./BoardPOILabel";
 import { BoardTravelChip } from "./BoardTravelChip";
 import { BoardMap3D } from "./BoardMap3D";
+import { DEFAULT_CAMERA_LOCK } from "@/components/variants/report/blocks/report-3d-config";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -133,7 +134,7 @@ export function BoardMap({ has3dAddon = false }: Props) {
           const zoom = map.getZoom();
           const bearing = map.getBearing();
           const { w, h } = getViewportDims();
-          const tilt3d = 60;
+          const tilt3d = DEFAULT_CAMERA_LOCK.tilt;
           const range = zoomToRange(zoom, c.lat, tilt3d, w, h);
           setPendingCamera({
             lat: c.lat,

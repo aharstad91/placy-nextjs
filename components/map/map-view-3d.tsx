@@ -233,17 +233,26 @@ function Map3DInner({
       e.stopPropagation();
     };
 
+    // Dobbeltklikk-zoom er deaktivert: kameraet skal forbli forankret rundt
+    // boligen. Uten dette kan brukeren miste det fastlåste fokuset.
+    const blockDblClickZoom = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
     // Capture-phase så vi treffer før Google's shadow-DOM-listenere.
     // Dekker både pointer- og mouse-events for bred browser-støtte.
     const captureOpts = { capture: true, passive: true } as AddEventListenerOptions;
-    // Wheel må være non-passive for at preventDefault skal fungere.
+    // Wheel og dblclick må være non-passive for at preventDefault skal fungere.
     const wheelOpts = { capture: true, passive: false } as AddEventListenerOptions;
+    const dblClickOpts = { capture: true, passive: false } as AddEventListenerOptions;
 
     container.addEventListener("pointerdown", forceOrbitGesture, captureOpts);
     container.addEventListener("pointermove", forceOrbitGesture, captureOpts);
     container.addEventListener("mousedown", forceOrbitGesture, captureOpts);
     container.addEventListener("mousemove", forceOrbitGesture, captureOpts);
     container.addEventListener("wheel", blockZoomWheel, wheelOpts);
+    container.addEventListener("dblclick", blockDblClickZoom, dblClickOpts);
 
     return () => {
       container.removeEventListener("pointerdown", forceOrbitGesture, captureOpts);
@@ -251,6 +260,7 @@ function Map3DInner({
       container.removeEventListener("mousedown", forceOrbitGesture, captureOpts);
       container.removeEventListener("mousemove", forceOrbitGesture, captureOpts);
       container.removeEventListener("wheel", blockZoomWheel, wheelOpts);
+      container.removeEventListener("dblclick", blockDblClickZoom, dblClickOpts);
     };
   }, [activated]);
 
