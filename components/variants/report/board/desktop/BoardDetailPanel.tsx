@@ -25,17 +25,18 @@ export function BoardDetailPanel() {
   const filteredCat = useFilteredActiveCategory();
 
   // Tab-state lokal: "info" | "punkter".
-  // OPEN_POI (active→poi via accordion): sett til "punkter" så retur lander der.
-  // SELECT_CATEGORY (kategori-bytte): reset til "info".
+  // OPEN_POI (kart-marker eller accordion): alltid "punkter" — også når POI-en
+  // tilhører en annen kategori enn aktiv (da byttes kategori samtidig).
+  // SELECT_CATEGORY (rent kategori-bytte uten POI-kontekst): reset til "info".
   const [tab, setTab] = useState<"info" | "punkter">("info");
   const prevCategoryRef = useRef(state.activeCategoryId);
 
   useEffect(() => {
     const categoryChanged = prevCategoryRef.current !== state.activeCategoryId;
-    if (categoryChanged) {
-      setTab("info");
-    } else if (state.phase === "poi") {
+    if (state.phase === "poi") {
       setTab("punkter");
+    } else if (categoryChanged) {
+      setTab("info");
     }
     prevCategoryRef.current = state.activeCategoryId;
   }, [state.phase, state.activeCategoryId]);
