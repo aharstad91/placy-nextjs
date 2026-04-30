@@ -111,7 +111,7 @@ export function Map3DControls({
     "w-10 h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm border border-[#eae6e1] text-[#5d5348] hover:text-[#1a1a1a] hover:border-[#d4cfc8] hover:bg-white transition-colors shadow-sm";
 
   return (
-    <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2 select-none">
+    <div className="absolute top-1/2 right-4 -translate-y-1/2 z-10 flex flex-col gap-2 select-none">
       {/* Kompass — klikk for å resette heading til nord */}
       <button
         onClick={resetHeading}
