@@ -8,8 +8,13 @@ import { useBoard, useActiveCategory, useActivePOI } from "../board-state";
 import { BoardRelatedPOICard } from "./BoardRelatedPOICard";
 import { BoardPOIActionBar, BoardPOIDetails } from "../BoardPOIDetails";
 
-const SNAP_POINTS: (number | string)[] = [0.5, 0.85, 0.95];
-const DEFAULT_SNAP: number | string = 0.85;
+// Snap-points: 0.5 = peek (action-bar skjult, brukeren ser kart-konteksten),
+// 1 = full (hele sheet inkl. pinned action-bar synlig). Vaul tolker snap som
+// "andel av drawer-høyde synlig fra topp" — ved snap < 1 gjemmes action-bar
+// (siste flex-barnet) under viewport. Defaulter til full så rich content +
+// action-bar er synlig uten at brukeren må dra opp.
+const SNAP_POINTS: (number | string)[] = [0.5, 1];
+const DEFAULT_SNAP: number | string = 1;
 
 // Cross-fade ved POI-bytte: fade-ut → swap → fade-inn. Total ~200ms.
 const FADE_OUT_MS = 100;
