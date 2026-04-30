@@ -14,25 +14,16 @@ import {
   type SubCategoryFilterApi,
 } from "./use-sub-category-filter";
 
-export type BoardPhase = "default" | "active" | "reading" | "poi";
-
-export type BoardReadingTab = "info" | "punkter";
+export type BoardPhase = "default" | "active" | "poi";
 
 export interface BoardState {
   phase: BoardPhase;
   activeCategoryId: BoardCategoryId | null;
   activePOIId: BoardPOIId | null;
-  /**
-   * Initial tab for ReadingModal når den åpnes via OPEN_READING.
-   * Settes av action-payload; modal-en leser feltet ved open og styrer
-   * deretter sin egen lokale tab-state. undefined => default ("info").
-   */
-  readingTab: BoardReadingTab | undefined;
 }
 
 export type BoardAction =
   | { type: "SELECT_CATEGORY"; id: BoardCategoryId }
-  | { type: "OPEN_READING"; tab?: BoardReadingTab }
   | { type: "OPEN_POI"; id: BoardPOIId; categoryId?: BoardCategoryId }
   | { type: "BACK_TO_ACTIVE" }
   | { type: "RESET_TO_DEFAULT" };
@@ -41,46 +32,28 @@ export const initialBoardState: BoardState = {
   phase: "default",
   activeCategoryId: null,
   activePOIId: null,
-  readingTab: undefined,
 };
 
 export function boardReducer(state: BoardState, action: BoardAction): BoardState {
   switch (action.type) {
     case "SELECT_CATEGORY":
-      // Velger ny kategori — alltid landing på "active" uavhengig av forrige fase.
-      // Nullstiller readingTab så ny kategori ikke arver forrige valg.
       return {
         phase: "active",
         activeCategoryId: action.id,
         activePOIId: null,
-        readingTab: undefined,
-      };
-
-    case "OPEN_READING":
-      // Krever aktiv kategori — ellers no-op
-      if (!state.activeCategoryId) return state;
-      return {
-        ...state,
-        phase: "reading",
-        activePOIId: null,
-        readingTab: action.tab,
       };
 
     case "OPEN_POI": {
-      // categoryId kan være eksplisitt (f.eks. POI-marker-klikk fra default) eller arvet
       const categoryId = action.categoryId ?? state.activeCategoryId;
       if (!categoryId) return state;
       return {
         phase: "poi",
         activeCategoryId: categoryId,
         activePOIId: action.id,
-        readingTab: state.readingTab,
       };
     }
 
     case "BACK_TO_ACTIVE":
-      // Returnerer til "active" hvis vi har aktiv kategori, ellers default.
-      // Nullstiller readingTab så neste OPEN_READING starter friskt.
       if (!state.activeCategoryId) {
         return initialBoardState;
       }
@@ -88,7 +61,6 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         ...state,
         phase: "active",
         activePOIId: null,
-        readingTab: undefined,
       };
 
     case "RESET_TO_DEFAULT":
@@ -103,11 +75,6 @@ interface BoardContextValue {
   state: BoardState;
   dispatch: Dispatch<BoardAction>;
   data: BoardData;
-  /**
-   * Filter-state for sub-kategorier innen aktivt tema. Resetter automatisk
-   * ved kategori-bytte (kontekstuelt per tema). Påvirker både Punkter-lista
-   * og kart-markører i aktivt tema.
-   */
   subFilter: SubCategoryFilterApi;
 }
 
@@ -123,9 +90,6 @@ export function BoardProvider({
   const [state, dispatch] = useReducer(boardReducer, initialBoardState);
   const subFilter = useSubCategoryFilter(state.activeCategoryId);
 
-  // Hvis aktiv POI tilhører en sub-kategori som nettopp ble skjult, fall
-  // tilbake til "active"-fasen for å unngå "ghost"-active POI (markør borte
-  // men state peker fortsatt på den). Beregnes via lookup mot data.
   useEffect(() => {
     if (!state.activePOIId || !state.activeCategoryId) return;
     const cat = data.categories.find((c) => c.id === state.activeCategoryId);
@@ -156,14 +120,12 @@ export function useBoard() {
   return ctx;
 }
 
-/** Selector for aktiv kategori (eller null hvis phase=default eller ID ikke matcher). */
 export function useActiveCategory() {
   const { state, data } = useBoard();
   if (!state.activeCategoryId) return null;
   return data.categories.find((c) => c.id === state.activeCategoryId) ?? null;
 }
 
-/** Selector for aktiv POI (eller null). */
 export function useActivePOI() {
   const cat = useActiveCategory();
   const { state } = useBoard();
@@ -171,11 +133,6 @@ export function useActivePOI() {
   return cat.pois.find((p) => p.id === state.activePOIId) ?? null;
 }
 
-/**
- * Selector for aktivt tema med sub-kategori-filter applisert.
- * Returnerer en kopi av kategorien hvor `pois` er filtrert. `id`, `label`,
- * og andre felter er uendret slik at konsumenter kan bruke samme objekt-shape.
- */
 export function useFilteredActiveCategory() {
   const cat = useActiveCategory();
   const { subFilter } = useBoard();

@@ -6,6 +6,84 @@
 
 ---
 
+## 2026-04-30 (kveld) — Mobile board: multi-snap sheet med Google Maps-flyt
+
+### Kontekst
+Brukeren pivoterte mobile board-flyten: erstatte de fire separate komponentene (`BoardCategoryGrid`, `BoardPeekCard`, `BoardReadingModal`, `BoardPOISheet`) med ett multi-snap bottom-sheet inspirert av Google Maps-appen, med fire snap-stages og en alltid-synlig horisontal tab-bar i bunnen. Paritet-planen (2026-04-30-005) var ferdig kjørt to dager før, men brukeren ville ha en mer radikal restrukturering.
+
+### Plan og review
+- Plan: `docs/plans/2026-04-30-007-feat-mobile-board-multi-snap-sheet-plan.md`
+- 4 reviewere kjørt parallelt (coherence, feasibility, design, adversarial). 45 raw findings → 6 P1-funn fikset i planen før implementasjon.
+- Fikset i plan før /ce-work: Unit 1/7-rekkefølge (TS-compile-brudd), tab-bar med 18 temaer-overflow, sheet-drag vs tab-bar-scroll gesture-konflikt (handleOnly=true), tab-bar-labels (12px under thumbnails), readingTab fjernet helt fra BoardState, fitBounds greenfield-anerkjennelse i Unit 6.
+
+### Beslutninger
+
+- **State-machine reduseres til tre faser** (`default | active | poi`). `"reading"`-fasen og `OPEN_READING`-action slettes; tab-state for Beliggenhet/Punkter holdes som lokal `useState` inni sheet (ikke i `BoardState`).
+- **Atomisk sletting i Unit 1.** `BoardReadingModal`, `BoardPeekCard`, `BoardSwitcherChip` slettes i samme commit som state-machine-refactor — uten samtidig sletting feiler `tsc --noEmit` siden de leser `phase === "reading"` og dispatcher `OPEN_READING`.
+- **Vaul snap-points i blandet format:** `["96px", "320px", 0.5, 0.92]`. Verifisert at vaul støtter mix av number + string i samme array (allerede brukt i BoardPOISheet med `[0.5, 1]`).
+- **`dismissible={false}` + `modal={false}` + `handleOnly={true}` + ingen DrawerOverlay** — sheet er aldri lukket, kart aldri sløret av mørk slør, kun handle drar (gesture-konflikt med tab-bar horisontal-scroll løst).
+- **POI-detalj inne i samme sheet** (Google Maps-stil), ikke separat drawer. `OPEN_POI` → snap auto til 0.5, sheet rendrer BoardPOIDetails + pinned BoardPOIActionBar over tab-bar. Tilbake-knapp returnerer til active.
+- **Cross-fade ved POI-bytte** portet fra dagens `BoardPOISheet` (FADE_OUT_MS=100, FADE_IN_MS=100, last-click-wins via clearTimeout).
+- **Map-padding-bottom synkes via callback-prop** (`onSnapChange`) fra BoardMobileSheet til BoardScaffold. Konvertering: `"96px"`→96, `"320px"`→320, `0.5`/`0.92`→280 (kappet så markører ikke forsvinner ved bytte ned). Bruker `map.setPadding` (ikke fitBounds-trigger) — påvirker kun fremtidige fitBounds/flyTo-kall.
+- **Auto-snap ved phase-overgang via useEffect-watcher** på `state.phase`. Bruker-drag respekteres til neste phase-overgang.
+- **Tab-bar med 18 temaer:** horisontal scroll med `scrollIntoView` ved active-bytte, right-edge gradient-fade affordance, `touchAction: pan-x` på scroll-container som gesture-fallback. Hjem-knapp først, deretter alle kategorier som thumbnail (56×56) + label (12px under).
+
+### Implementasjon (7 enheter, alle landet)
+
+- Unit 1 (refactor): state-machine reduksjon + atomisk sletting av 3 komponenter
+- Unit 2 (feat): BoardMobileSheet shell — vaul Drawer med 4 snap-stages
+- Unit 3 (feat): BoardCategoryTabBar — Hjem + kategorier horisontal m/labels
+- Unit 4 (feat): sheet-content for default + active phase (kategori-header + tabs + content)
+- Unit 5 (feat): POI-detalj inni sheet med pinned action-bar + cross-fade
+- Unit 6 (feat): mapPaddingBottom-prop på BoardMap (setPadding-only, ingen fitBounds)
+- Unit 7 (feat): mount BoardMobileSheet, slett BoardCategoryGrid + BoardPOISheet, wire callback
+
+Alle units commited inkrementelt på `feat/board-mobile-multi-snap-sheet`. Verifisert: `tsc --noEmit` 0 errors, `npm run lint` 0 errors, `npm run build` grønn, `board-state.test.ts` 9/9 passerer.
+
+### Parkert / Åpne spørsmål
+
+- **Stage 2 (peek) eksakt høyde** — 320px er gjetning. Etter safe-area + tab-bar + drag-handle + header + tabs gir det ~70px body-tease. Justeres ved manuell QA.
+- **Stage 4 R8-tradeoff** — "kart alltid interaktivt" er funksjonelt feil ved 0.92-snap (bare 8% kart synlig). Vurder R8-omformulering eller drag-handle-prominence ved manuell QA.
+- **Cross-fade på phase=poi→active** — trigger kun på activePOIId-endring i dag. Phase-overgang bytter content brått. Kan utvides ved behov.
+- **Vaul mid-drag callback-frekvens** — uverifisert om `setActiveSnapPoint` kalles kontinuerlig under drag eller kun ved snap-stop. Throttle hvis kontinuerlig.
+- **Network error state inni sheet** — sheet er alltid mountet; hvis BoardPOIDetails feiler, viser content-area tomt mens tab-bar forblir. Defer til reell error-håndtering kreves.
+- **Pre-existing test failures** (`validator.test.ts` × 3) — ikke denne sesjonens ansvar (verifisert med stash).
+
+### Retning
+
+- BoardMobileSheet etablerer pattern for multi-snap mobile shells i Placy. Hvis det fester seg som konvensjon (Explorer, Guide), kandidat for solutions-doc under `docs/solutions/ui-patterns/`.
+- Mobile UX er nå strukturelt nærmere desktop sidekolonnen: samme delte komponenter (BoardCategoryInfoTab, SubCategoryFilter, BoardPunkterAccordion, BoardPOIDetails) brukes på begge plattformer, men shell-laget er adaptiv (sheet på mobil, rail+panel på desktop).
+- Paritet-plan-arbeidet (Unit 1 inline accordion, Unit 2 BoardPOIDetails-split, Unit 4 SubCategoryFilter chip-rad) er bevart — gjenbrukes i ny sheet uten endringer.
+
+### Observasjoner
+
+- **6 P1-funn fra doc-review fanget reelle problemer.** Spesielt Unit 1/7-rekkefølge — uten patch ville første commit knust TS-kompilering. Doc-review-fasen sparte ~30 min debugging.
+- **Atomisk sletting fungerte cleanly.** Selv om Unit 1 sletter 3 komponenter samtidig som state-machine-endring, var ordningen unik nok at intermediate states ikke trengte stub-er.
+- **Vaul `handleOnly={true}` er løsning på gesture-konflikt.** Dokumentert i type-def, men ikke i README — verdiøkende å notere.
+- **Inkrementelle commits per Unit gjør det lett å reversere ett steg om noe ikke fungerer.** 7 commits, hver med klart Unit-fokus.
+
+### Post-implementasjons-fix (samme dag)
+
+Browser-verifikasjon avdekket at sheet rendret feil: kun 28px synlig på stage 1 istedenfor 96px, og tab-baren havnet på sheet-y=1497 (utenfor viewporten). Tre koblede fix-er i `BoardMobileSheet.tsx` (commit `f561c1a`):
+
+1. **Sheet-content fra `h-[92dvh]` til `h-[100dvh]`.** Vaul antar full viewport-høyde og at snap-points uttrykker SYNLIG høyde fra bunn (`translateY = viewportH - snapPx`). Med 92dvh ble translation = 748 men sheet-h = 776, så kun differansen 28px ble synlig.
+2. **Tab-bar flyttet fra siste flex-child til rett etter drag-handle.** Vaul translater hele sheet ned, så de ØVERSTE pikslene av sheet er det som vises i snap-spalten — ikke de nederste. Mental modell var feil i opprinnelig design.
+3. **POI-action-bar som siste flex-child — synlig kun ved stage 4 (full).** Kompromiss: kan ikke "pinnes" til synlig viewport-bunn fordi sheet-bunn er utenfor viewporten på lavere stages. Apple/Google Maps-mønster: actions vises når sheet er dratt helt opp.
+
+Verifisert i chrome-devtools på 500×844 viewport:
+- ✓ Stage 1 (96px) viser tab-bar med Hjem + kategori-thumbnails
+- ✓ Klikk kategori → snap til 320px, viser "Mat & Drikke" header + Beliggenhet/Punkter-tabs + sub-kategori-chips
+- ✓ Klikk POI-markør på kart → poi-fase, snap 0.5, viser tilbake-knapp + POI-info + editorial highlight
+- ✓ Tilbake-knapp → tilbake til kategori-peek (Punkter-tab forblir aktiv)
+- ✓ Hjem-knapp → reset til default, alle kategori-markører tilbake
+- ✗ Drag-gester kunne ikke verifiseres via chrome-devtools (vaul ignorerer syntetiske pointer-events). Må testes manuelt.
+
+### Læring
+
+**Vaul snap-modell er motintuitiv.** Sheet-elementet må ha full viewport-høyde, og snap-points uttrykker hvor mange piksler **fra TOPPEN av sheet** som blir synlig (ikke "hvor stort sheet er"). Innhold som skal være synlig ved lave snap-stages må derfor være ØVERST i DOM, ikke nederst. Hvis Placy får flere multi-snap-sheets, hører dette hjemme i `docs/solutions/ui-patterns/vaul-snap-points-layout-mental-model.md`.
+
+---
+
 ## 2026-04-30 — 3D-kart sub-kategori-filter samkjørt med 2D + worktree-rydding
 
 ### Bakgrunn

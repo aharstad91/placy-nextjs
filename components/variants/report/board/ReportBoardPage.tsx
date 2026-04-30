@@ -9,10 +9,8 @@ import { transformToReportData } from "../report-data";
 import { adaptBoardData } from "./board-data";
 import { BoardProvider } from "./board-state";
 import { BoardMap } from "./BoardMap";
-import { BoardCategoryGrid } from "./mobile/BoardCategoryGrid";
-import { BoardPeekCard } from "./mobile/BoardPeekCard";
-import { BoardReadingModal } from "./mobile/BoardReadingModal";
-import { BoardPOISheet } from "./mobile/BoardPOISheet";
+import { BoardCategoryTabBar } from "./mobile/BoardCategoryTabBar";
+import { BoardMobileSheet } from "./mobile/BoardMobileSheet";
 import { BoardDesktopShell } from "./desktop/BoardDesktopShell";
 
 interface Props {
@@ -66,39 +64,61 @@ function useIsDesktop(): boolean {
   return isDesktop;
 }
 
+/** Konverter sheet-snap-stage til map-padding-bottom (piksler).
+ *  Brukes av BoardScaffold for å synke map.setPadding med bruker-snap.
+ *  Tab-baren (96px) er alltid pinnet til viewport-bunn — derfor adderes
+ *  TAB_BAR_PADDING uansett snap. Stage 3+ kappes til 280px så markører
+ *  ikke forsvinner ved bytte ned. */
+const TAB_BAR_PADDING = 96;
+function snapToMapPadding(snap: number | string): number {
+  if (snap === "96px") return TAB_BAR_PADDING;
+  if (snap === "320px") return 320;
+  return 280;
+}
+
 /**
  * Board-shell: full-screen kart i bakgrunn. Adaptiv layout:
- * - Mobil (<lg): kart fyller hele viewporten. Bottom-anchored sheets på toppen.
+ * - Mobil (<lg): kart fyller hele viewporten. BoardMobileSheet (multi-snap) +
+ *   BoardCategoryTabBar (pinnet bunn) som søsken. Tab-bar er ALLTID synlig
+ *   over sheeten via z-50; sheet kan dras ned uten å skjule navigasjonen
+ *   (Google Maps-mønster).
  * - Desktop (>=lg): kart fyller alt til høyre for 480px-strip (rail + detalj-panel).
  *
  * BoardMap mountes ÉN gang. Conditional positioning via wrapper-div: `lg:left-[480px]`
- * forskyver kart-containeren på desktop. Mobil-bottom-sheets (vaul) bruker portal
- * og må JS-gates — `useIsDesktop()` styrer mounting. Desktop-strip er gated
- * `hidden lg:flex` via CSS — bare ett tre vises av gangen.
+ * forskyver kart-containeren på desktop. Mobile sheet (vaul) bruker portal og må
+ * JS-gates — `useIsDesktop()` styrer mounting. Desktop-strip er gated `hidden lg:flex`
+ * via CSS — bare ett tre vises av gangen.
+ *
+ * Mobil: BoardMobileSheet eksponerer onSnapChange som setter map-padding-bottom
+ * så markører holdes synlige over sheet ved fremtidige fitBounds-kall.
  *
  * NB: 480px = BoardDesktopShell-bredden. Endre begge i synk hvis justeres.
  */
 function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
   const isDesktop = useIsDesktop();
+  const [mapPaddingBottom, setMapPaddingBottom] = useState(0);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-stone-100">
       {/* Kart-container — absolute. På desktop forskjøvet 480px fra venstre. */}
       <div className="absolute inset-0 lg:left-[480px]">
-        <BoardMap has3dAddon={has3dAddon} />
+        <BoardMap
+          has3dAddon={has3dAddon}
+          mapPaddingBottom={isDesktop ? 0 : mapPaddingBottom}
+        />
       </div>
 
-      {/* Mobile UI (< lg) — bottom-anchored sheet system. Drawers portaler til body, så vi gates JS-side. */}
+      {/* Mobile UI (< lg) — multi-snap sheet + pinnet tab-bar.
+          Tab-bar mountes som søsken med z-50 (over sheet og kart) så
+          primær-navigasjon er alltid tilgjengelig. */}
       {!isDesktop && (
         <>
-          <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none">
-            <div className="relative">
-              <BoardCategoryGrid />
-              <BoardPeekCard />
-            </div>
+          <BoardMobileSheet
+            onSnapChange={(snap) => setMapPaddingBottom(snapToMapPadding(snap))}
+          />
+          <div className="fixed inset-x-0 bottom-0 z-50">
+            <BoardCategoryTabBar />
           </div>
-          <BoardReadingModal />
-          <BoardPOISheet />
         </>
       )}
 
