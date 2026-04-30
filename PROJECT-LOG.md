@@ -6,6 +6,50 @@
 
 ---
 
+## 2026-04-30 — 3D-kart touch-paritet: tre eksperimenter, ingen vinner enda
+
+### Bakgrunn
+Rapport-boardets 3D-kart har en låst kamera-opplevelse på desktop: drag = orbit rundt eiendommen, scroll-zoom blokkert, dobbeltklikk-zoom blokkert. På mobil var dette IKKE låst — brukeren kunne panne fritt med én finger og pinch-zoome ut av orbit-radien. Mobil-shellen mounter samme `BoardMap`-komponent som desktop, men låse-mekanismene er implementert som mus-event-hijack (`forceOrbitGesture` med `ctrlKey=true`-spoof) som touch-events ikke trigger fordi `TouchEvent` ikke har `ctrlKey`.
+
+### Tre eksperimenter
+
+**Plan 003 → variant B (selektiv pinch-blokkering via avstand-delta)**
+- Idé: blokker 1-finger-pan, men la 2-finger-rotate passere ved å sammenligne finger-avstand mellom touchstart og touchmove. Stabil avstand = rotate (passerer), endring > 10px = pinch (blokk).
+- Test på iPhone: 2-finger-rotate hadde naturlige avstand-variasjoner (fingre er aldri perfekt synkroniserte i bevegelse) → terskel passert → rotate ble blokkert sammen med pinch. Effektivt ubrukelig.
+- Lærdom: ikke prøv å skille gesture-typer via heuristikker når Googles touch-handler har full visibility til finger-positioner og du ikke har det.
+
+**Plan 004 → variant A (blokker all touchmove) + UI-knapper**
+- Idé: blokker ALL touch-bevegelse. Kameraet er statisk på touch. Rotasjon delegeres til eksisterende `Map3DControls`-knapper (kompass + rotate-CCW/CW + tilt) som bruker Googles `flyCameraTo` med 400ms-animasjon — ingen race med samtidige gesturer.
+- Knappene flyttet fra `bottom-4 right-4` (skjult bak `BoardCategoryGrid`+`BoardPeekCard` på mobil) til `top-1/2 right-4 -translate-y-1/2` så de er synlige uansett bottom-sheet-tilstand. Tilt-knapper skjult på mobil (`hidden lg:flex`).
+- Test på iPhone: knappene fungerte teknisk, rotasjonen er smørbløt, men brukeren synes "det føles så lite låst" — paradoksalt nok mister kartet karakteren av å være "et levende 3D-kamera" når det er helt statisk på touch.
+
+**Plan 005 (vant) → full native gesture-handling + utvidet bounds**
+- Idé: gi opp blokking helt på touch. Behold mus-hijack på desktop (det fungerer), men la Google's native touch-handler styre alt: 1-finger-pan, pinch-zoom, 2-finger-rotate, tilt.
+- Bounds økt fra `panHalfSideKm: 1.5` (3km × 3km) til `4.5` (9km × 9km) etter mobil-test viste at brukeren traff omkretsen for raskt med strammere boks.
+- `minAltitude/maxAltitude` (150-1200m) holder zoom-radien — brukeren kan ikke zoome seg ut av orbit-følelsen selv om pinch er fri.
+- **Vant** etter test på iPhone via Vercel-preview: native-glatthet > konstruert "låst" opplevelse. Bevart Map3DControls-knappene på `top-1/2 right-4` som power-user-snarvei.
+
+### Beslutninger
+- **Mus-hijack på desktop beholdes** (orbit-as-default på drag) — dette fungerer som forventet.
+- **Touch slippes fri til Google native** — ingen JS-blokking. WebGL-clamps via `bounds`+altitude er sufficient ankring.
+- **Bounds tredoblet til 9km × 9km** — hadde vært for strammet på 3km på mobil.
+- **Map3DControls-knapper** på `top-1/2 right-4` beholdes — synlig over bottom-sheet på mobil, fungerer som tappable backup-rotasjon. Tilt skjult på mobil (`hidden lg:flex`).
+- **Worktree:** `feat/3d-touch-camera-lock` på `/Users/andreasharstad/Documents/placy-ralph-3d-touch-lock`. 8 commits, alle pushet til Vercel-preview.
+- **Plan 003 markert som superseded** av plan 004. Plan 004 ble selv overhalt av eksperimentet — touch-blokkingen er nå reversert, men knapp-positioneringen og tilt-skjulingen fra plan 004 beholdes.
+- **Institutional learning** oppdatert med variant A + lærdom om hvorfor variant B ikke virker. Bør oppdateres igjen for å reflektere at variant A også ble forkastet til fordel for native + utvidet bounds.
+
+### Åpne spørsmål
+- Skal vi vurdere native gesture-handling på desktop også? Mus-hijack fungerer, men konsistens på tvers av plattformer kan være verdt en runde — særlig hvis mus-orbit hindrer en del power-users som forventer pan/scroll-zoom.
+- Når skal `feat/3d-touch-camera-lock` merges til main? Native-versjonen er klar.
+- Bør institutional learning-dokumentet skrives om fra "Hvordan låse 3D-kameraet" til "Hvorfor vi sluttet å låse 3D-kameraet"? Lærdommen for fremtiden er: bounds + altitude-clamp er tilstrekkelig ankring, ikke kjemp mot Googles gesture-pipeline.
+
+### Referanser
+- Plans: `docs/plans/2026-04-30-003-feat-3d-map-touch-camera-lock-plan.md` (superseded), `docs/plans/2026-04-30-004-feat-3d-map-mobile-rotate-buttons-plan.md`
+- Worktree: `feat/3d-touch-camera-lock` på `/Users/andreasharstad/Documents/placy-ralph-3d-touch-lock`
+- Vercel preview: `placy-git-feat-3d-tou-d9e60e-andreas-harstads-projects-849bb7ff.vercel.app`
+
+---
+
 ## 2026-04-30 — Rapport-board POI-kort: dynamisk innhold + farge-paritet på Hjem-kart
 
 ### Bakgrunn
