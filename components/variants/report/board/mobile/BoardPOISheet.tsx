@@ -6,7 +6,7 @@ import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/components
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard, useActiveCategory, useActivePOI } from "../board-state";
 import { BoardRelatedPOICard } from "./BoardRelatedPOICard";
-import { BoardLiveTransport } from "./BoardLiveTransport";
+import { BoardPOIDetails } from "../BoardPOIDetails";
 
 const SNAP_POINTS: (number | string)[] = [0.5, 0.9];
 const DEFAULT_SNAP: number | string = 0.5;
@@ -86,19 +86,10 @@ export function BoardPOISheet() {
                 </div>
               )}
 
-              {/* Live transport-data — kun synlig for transport-POI-er */}
-              <BoardLiveTransport poi={poi.raw} />
-
-              {/* Body */}
-              {poi.body && (
-                <div className="text-stone-800 space-y-3 pt-4">
-                  {poi.body.split(/\n+/).map((p, i) => (
-                    <p key={i} className="leading-relaxed text-[15px]">
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              )}
+              {/* Dynamisk detalj-blokk: rating, åpningstider, knapper, live transport, child POIs — alt gated */}
+              <div className="pt-4">
+                <BoardPOIDetails poi={poi.raw} />
+              </div>
 
               {/* Andre i kategorien */}
               {related.length > 0 && (
