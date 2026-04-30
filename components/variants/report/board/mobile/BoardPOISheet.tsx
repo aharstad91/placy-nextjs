@@ -5,7 +5,6 @@ import { X } from "lucide-react";
 import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/components/ui/drawer";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard, useActiveCategory, useActivePOI } from "../board-state";
-import { BoardRelatedPOICard } from "./BoardRelatedPOICard";
 import { BoardPOIActionBar, BoardPOIDetails } from "../BoardPOIDetails";
 
 // Snap-points: 0.5 = peek (action-bar skjult, brukeren ser kart-konteksten),
@@ -100,11 +99,12 @@ export function BoardPOISheet() {
   const renderPoi = displayedPoi?.poi ?? poi;
   const Icon = renderPoi ? getFilledIcon(renderPoi.raw.category.icon) : null;
 
-  // Andre POI-er i kategorien (eks. aktiv POI selv)
-  const related =
-    renderCat && renderPoi
-      ? renderCat.pois.filter((p) => p.id !== renderPoi.id)
-      : [];
+  // Sub-kat-farge med tema-farge som fallback. Samme fall-through som
+  // BoardMarker / BoardPunkterAccordion / BoardMap — sikrer at samme POI har
+  // samme farge på kart og i sheet (f.eks. Trondheim Bysykkel grønn, ikke
+  // Transport-temaets blå).
+  const headerColor =
+    renderPoi?.raw.category.color || renderCat?.color || "#94a3b8";
 
   return (
     <Drawer
@@ -118,9 +118,8 @@ export function BoardPOISheet() {
     >
       <DrawerPortal>
         <DrawerOverlay />
-        <DrawerContent className="!h-[90dvh] !max-h-[90dvh] !mt-0 !p-0 !bg-stone-50 before:!hidden">
-          {/* Drag-handle (overrider shadcn-default som er hidden by default på bottom-direction) */}
-          <div className="mx-auto mt-3 h-1.5 w-[60px] rounded-full bg-stone-300 shrink-0" />
+        <DrawerContent className="!h-[75dvh] !max-h-[75dvh] !mt-0 !p-0 !bg-stone-50 before:!hidden">
+          {/* Drag-handle leveres av shadcn DrawerContent for bottom-direction. */}
 
           {/* Close-knapp */}
           <button
@@ -149,7 +148,7 @@ export function BoardPOISheet() {
                 <header className="flex items-start gap-3.5 pb-4 pr-12">
                   <div
                     className="flex-none w-12 h-12 rounded-full flex items-center justify-center shadow-md"
-                    style={{ backgroundColor: renderCat.color }}
+                    style={{ backgroundColor: headerColor }}
                   >
                     <Icon className="w-6 h-6 text-white" weight="fill" />
                   </div>
@@ -171,35 +170,12 @@ export function BoardPOISheet() {
                 )}
 
                 {/* Dynamisk detalj-blokk: rating, åpningstider, live transport, child POIs — alt gated.
-                    Action-bar skjules her (rendres som pinned bottom-bar utenfor scroll). */}
+                    Action-bar skjules her (rendres som pinned bottom-bar utenfor scroll).
+                    Sheet er fokusert på aktiv POI; for å bla mellom POIer i kategorien
+                    bruker brukeren Punkter-tab i ReadingModal eller map-markers. */}
                 <div className="pt-4">
                   <BoardPOIDetails poi={renderPoi.raw} hideActionBar />
                 </div>
-
-                {/* Andre i kategorien */}
-                {related.length > 0 && (
-                  <section className="pt-6">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 pb-3">
-                      Andre i kategorien
-                    </h3>
-                    <div className="space-y-2.5">
-                      {related.map((other) => (
-                        <BoardRelatedPOICard
-                          key={other.id}
-                          poi={other}
-                          categoryColor={renderCat.color}
-                          onClick={() =>
-                            dispatch({
-                              type: "OPEN_POI",
-                              id: other.id,
-                              categoryId: renderCat.id,
-                            })
-                          }
-                        />
-                      ))}
-                    </div>
-                  </section>
-                )}
               </div>
 
               {/* Pinned action-bar — alltid synlig nederst, utenfor scroll-området.

@@ -49,7 +49,7 @@ export function BoardPunkterAccordion({ category }: Props) {
       {category.pois.map((poi) => {
         const Icon = getFilledIcon(poi.raw.category.icon);
         // Sub-kategori-farge differensierer POIer innen temaet (samme logikk
-        // som BoardRelatedPOICard og desktop BoardPOIAccordion).
+        // som desktop BoardPOIAccordion og BoardMarker fall-through).
         const subColor = poi.raw.category.color || category.color;
         const circle = markerCircleStyle(subColor);
         return (
