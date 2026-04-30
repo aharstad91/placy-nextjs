@@ -44,9 +44,16 @@ interface Props {
    * toggle aldri lekker til prosjekter uten add-on.
    */
   has3dAddon?: boolean;
+  /**
+   * Bunn-padding i piksler. Brukes for å holde markører synlige over
+   * mobile bottom-sheet (BoardMobileSheet). Settes via setPadding på
+   * Mapbox-instansen — påvirker ikke kamera-pan, kun tolkningen av
+   * "senter" ved fremtidige fitBounds/flyTo. Default 0 (desktop).
+   */
+  mapPaddingBottom?: number;
 }
 
-export function BoardMap({ has3dAddon = false }: Props) {
+export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
   const mapRef = useRef<MapRef>(null);
@@ -116,6 +123,16 @@ export function BoardMap({ has3dAddon = false }: Props) {
     if (!mapRef.current) return;
     applyIllustratedTheme(mapRef.current.getMap());
   }, []);
+
+  // Sync map-padding-bottom med BoardMobileSheet snap-stage. Påvirker ikke
+  // kamera (ingen flyTo/fitBounds-trigger) — kun tolkning av "senter" for
+  // fremtidige kamera-bevegelser. Mobil-sheet sender ned padding via
+  // BoardScaffold; desktop sender 0.
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current.getMap();
+    map.setPadding({ top: 0, bottom: mapPaddingBottom, left: 0, right: 0 });
+  }, [mapLoaded, mapPaddingBottom]);
 
   // Bevisst valg: ingen phase-drevne camera-moves. Kartet holder posisjonen
   // sin når kategori velges eller POI klikkes. Brukeren panner/zoomer manuelt.
