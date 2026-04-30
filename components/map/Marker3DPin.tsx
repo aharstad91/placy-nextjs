@@ -7,21 +7,22 @@ import { useId } from "react";
  * SVG-based 3D marker pin for use as children of <Marker3D>.
  *
  * Google Maps 3D rasteriserer kun Pin/SVG/img som marker-innhold — ikke HTML,
- * og rasteriseringen støtter ikke CSS backdrop-filter. "Glass"-effekten må
- * derfor bygges med SVG-primitives: semi-transparent fyll lar satellitt-
- * fotot skinne gjennom, og en subtil radial gradient gir konveks dybde-
- * feel. En tynn kategorifarget ring beholder kategori-glanceability uten
- * mettet bg-disc.
+ * og rasteriseringen støtter ikke CSS backdrop-filter. Disc-mønsteret bygges
+ * med SVG-primitives: light-tint disc-bg (lys shade av kategori-fargen) +
+ * kategori-farget ring + ikon i samme farge gir samme visuelle språk som 2D-
+ * markørene og POI-cards i lista.
  *
- * Hvitt fylt ikon (Phosphor weight="fill") leser tydelig over den mørke,
- * tonete bakgrunnen mot fargerikt satellittbilde — der lys disc + farget
- * ikon ville drukne.
+ * Default-bakgrunn (`backgroundColor` ikke satt) er den nøytrale `#fafaf9`
+ * som beholder bakoverkompatibilitet for konsumenter som ikke har migrert.
  */
 export interface Marker3DPinProps {
-  /** Kategorifarge — hex eller CSS-farge. Brukes som ring rundt disc og badge-aksent. */
+  /** Kategorifarge — hex eller CSS-farge. Brukes som ring rundt disc og som ikon-fyll. */
   color: string;
-  /** Phosphor ikon-komponent (fra @phosphor-icons/react). Rendres hvit med weight="fill". */
+  /** Phosphor ikon-komponent (fra @phosphor-icons/react). Rendres med weight="fill" i `color`. */
   Icon: PhosphorIcon;
+  /** Disc-bakgrunnsfarge. Foretrukket bruk: pass `hexLightTint(color)` slik at bg blir
+   * en lys shade av kategori-fargen (matcher 2D-markørene). Default: nøytral off-white. */
+  backgroundColor?: string;
   /** Valgfritt tall-badge øverst til høyre */
   number?: number;
   /** Total størrelse i px — default 40 */
@@ -33,6 +34,7 @@ export interface Marker3DPinProps {
 export function Marker3DPin({
   color,
   Icon,
+  backgroundColor = "#fafaf9",
   number,
   size = 40,
   opacity,
@@ -41,7 +43,10 @@ export function Marker3DPin({
 
   const half = size / 2;
   const circleR = half - 3;
-  const iconSize = Math.round(size * 0.55);
+  // Ikon-ratio 0.50 matcher 2D-markørene og POI-cards i lista (40px sirkel
+  // → 20px ikon = h-5/w-5 i Tailwind). Tidligere 0.55 ga 22px ikon som så
+  // 2-3px større ut enn i lista.
+  const iconSize = Math.round(size * 0.5);
   const iconOffset = (size - iconSize) / 2;
 
   const badgeR = Math.round(size * 0.18);
@@ -73,12 +78,14 @@ export function Marker3DPin({
         </filter>
       </defs>
 
-      {/* Light disc with category-colored ring */}
+      {/* Light disc with category-colored ring. backgroundColor er typisk en
+          lys tint av `color` (matcher 2D-markørene), men kan også være en
+          nøytral off-white for legacy-konsumenter. */}
       <circle
         cx={half}
         cy={half}
         r={circleR}
-        fill="#fafaf9"
+        fill={backgroundColor}
         stroke={color}
         strokeWidth="2"
         filter={`url(#${shadowId})`}

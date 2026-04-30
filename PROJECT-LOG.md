@@ -6,6 +6,51 @@
 
 ---
 
+## 2026-04-30 — Travel-time-chip på path-midten (rapport-board)
+
+### Bakgrunn
+På rapport-board viste vi gangtid to ganger samtidig når en POI var aktiv:
+- `BoardTravelChip` — HTML-overlay sentrert horisontalt midt i viewporten
+- `RouteLayer3D` SVG-badge — rendret inn i 3D-kartet ved siste path-koordinat (= POI-en), dekket selve POI-markøren brukeren nettopp klikket
+
+Brukeren observerte begge på 3D-kartet samtidig og ba om at den HTML-baserte fjernes helt, og at 3D-badgen flyttes til midten av ruten i stedet for endepunktet.
+
+### Beslutninger
+- **Midpoint = middel-index av coordinates-arrayen.** Cumulative-distance er mer presist men over-engineering for walking-routes (50-300 punkter, <2km). Hvis det ser malplassert ut i praksis kan vi bytte til distance-basert senere.
+- **2D får path-midpoint chip også** (feature-paritet med 3D — bekreftet av brukeren). Begge moduser viser tid på samme sted: midt på ruten.
+- **Skjul chip når path har <3 koordinater.** En path med 0-2 punkter er bare en linje fra start til slutt — "midt" har ikke mening. `pathMidpoint` returnerer null.
+- **Felles helper i `path-midpoint.ts`** brukt av både 2D- og 3D-rendering. Sentral logikk = ett sannhetspunkt.
+- **Beholdt visuelt design** (klokkeikon + min-tekst, hvit pill, border, shadow) — kun plasseringen endres. Ingen design-iterasjon her.
+- **Beholdt dual-fetch** (`useRouteData` kalles fra både `BoardPathLayer` og chip-komponenten). Akseptert for prototype-stadium per memory `project_stage_prototype.md`. Hvis duplikat blir et problem senere: løft til delt context.
+
+### Teknisk
+- **`path-midpoint.ts` (ny):** `pathMidpoint(coordinates: readonly PathCoordinate[]): PathCoordinate | null`. Returnerer `coordinates[Math.floor(length/2)]` for ≥3 koordinater, null ellers. 7 tester.
+- **`BoardPathMidpointMarker.tsx` (ny):** react-map-gl `<Marker>` mountet i Mapbox-`<Map>`-treet. Samme render-gating som BoardTravelChip (phase=poi + routeData truthy) pluss midpoint-null-sjekk. `pointer-events: none` så marker-klikk på POI-er nær path-midten ikke blokkeres.
+- **`route-layer-3d.tsx` (oppdatert):** `endCoord` byttet ut med `pathMidpoint(routeData.coordinates)`. Hopper over badge-rendering hvis null. Resten av effect-logikken (lazy library-load, cancelled-flag, ref-cleanup) uendret.
+- **`BoardTravelChip.tsx` (slettet):** Per CLAUDE.md hygiene-regel — ingen out-kommentarer, slett.
+- **`readonly`-fix på `pathMidpoint`-signatur:** `RouteData.coordinates` er typet som readonly — helper-en aksepterer derfor `readonly PathCoordinate[]` så den kan motta begge.
+
+### Worktree
+Bygget i isolert worktree `placy-ralph-travel-time` på branch `feat/travel-time-path-midpoint`, basert på `feat/board-ux-rapport-variant`. Dev-server flyttet fra `placy-ralph-board` til `placy-ralph-travel-time` på port 3001 så endringene var synlige umiddelbart for brukeren.
+
+### Scope (ratifisert)
+- 4 lightweight units (helper, 2D-marker, 3D-update, slett legacy)
+- Ingen endring i `useRouteData`-kontrakten
+- Ingen endring i path-tegning/farge
+- Ingen segment-direksjoner, gatenavn eller manøver-pil
+- Frontend-only, ingen migrering
+
+### Åpne spørsmål
+- Hvis path-midten havner under bygg eller terreng på 3D-kartet, kan badge-en bli vanskelig å se. Foreløpig altitude=12m. Verifiseres i prod-bruk; fix er å heve altitude.
+- Cumulative-distance-midpoint vs. middel-index — middel er valgt for nå. Hvis brukeren rapporterer skjev plassering i praksis, switch til distance-basert.
+
+### Referanser
+- Plan: `docs/plans/2026-04-30-002-fix-rapport-board-travel-time-placement-plan.md`
+- Trello: [l1m9owjt](https://trello.com/c/l1m9owjt/23) (Backlog)
+- Tidligere relevant plan (kontekst): `docs/plans/2026-04-29-001-feat-board-ux-rapport-variant-plan.md`
+
+---
+
 ## 2026-04-30 — Rapport-board sub-kategori-filter (Punkter-tab)
 
 ### Bakgrunn

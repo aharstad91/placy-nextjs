@@ -10,9 +10,9 @@ import {
 import type { BoardCategory } from "../board-data";
 import { BoardTabs } from "../mobile/BoardTabs";
 import { BoardPOIAccordion } from "./BoardPOIAccordion";
+import { BoardCategoryInfoTab } from "../BoardCategoryInfoTab";
 import { SubCategoryFilter } from "../SubCategoryFilter";
 import { deriveSubCategories } from "../use-sub-category-filter";
-import { BoardCategoryInfoTab } from "../BoardCategoryInfoTab";
 
 /**
  * Desktop midt-panel (400px). Rendrer kategori-detalj med Beliggenhet/Punkter-tabs.
@@ -105,7 +105,7 @@ function CategoryDetail({
   tab,
   onTabChange,
 }: {
-  /** Original kategori — brukt for stabile felter (label, body, illustration, grounding). */
+  /** Original kategori — brukt for stabile felter (label, info, illustration). */
   category: BoardCategory;
   /** Kategori med sub-kategori-filter applisert — brukt for poi-listen. */
   filteredCategory: BoardCategory;

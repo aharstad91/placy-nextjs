@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { SubCategoryInfo } from "./use-sub-category-filter";
+import { markerCircleStyle } from "./marker-style";
 
 interface Props {
   subCategories: SubCategoryInfo[];
@@ -87,6 +88,7 @@ export function SubCategoryFilter({
           {subCategories.map((sub) => {
             const Icon = getFilledIcon(sub.icon);
             const isVisible = !hiddenIds.has(sub.id);
+            const circle = markerCircleStyle(sub.color);
             return (
               <button
                 key={sub.id}
@@ -97,12 +99,16 @@ export function SubCategoryFilter({
               >
                 <div
                   className={cn(
-                    "flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 border-white shadow-sm transition-all",
+                    "flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 transition-all",
                     !isVisible && "opacity-30 grayscale",
                   )}
-                  style={{ backgroundColor: sub.color || "#94a3b8" }}
+                  style={{
+                    borderColor: circle.borderColor,
+                    backgroundColor: circle.backgroundColor,
+                    color: circle.borderColor,
+                  }}
                 >
-                  <Icon className="h-3.5 w-3.5 text-white" weight="fill" />
+                  <Icon className="h-3.5 w-3.5" weight="fill" />
                 </div>
                 <span
                   className={cn(

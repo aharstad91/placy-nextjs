@@ -10,9 +10,9 @@ import {
 } from "../board-state";
 import { BoardRelatedPOICard } from "./BoardRelatedPOICard";
 import { BoardTabs } from "./BoardTabs";
+import { BoardCategoryInfoTab } from "../BoardCategoryInfoTab";
 import { SubCategoryFilter } from "../SubCategoryFilter";
 import { deriveSubCategories } from "../use-sub-category-filter";
-import { BoardCategoryInfoTab } from "../BoardCategoryInfoTab";
 
 export function BoardReadingModal() {
   const { state, dispatch, data, subFilter } = useBoard();
@@ -20,7 +20,7 @@ export function BoardReadingModal() {
   const filteredCat = useFilteredActiveCategory();
   const open = state.phase === "reading";
 
-  // Reset til Beliggenhet-tab ved hver åpning
+  // Reset til Info-tab ved hver åpning
   const [tab, setTab] = useState("info");
   useEffect(() => {
     if (open) setTab("info");
