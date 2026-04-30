@@ -6,6 +6,40 @@
 
 ---
 
+## 2026-04-30 — Rapport-board kategori-detalj: tab-omstilling + rapport-paritet i Beliggenhet
+
+### Beslutninger
+- **Header forenklet:** kicker og spørsmål-tittel (f.eks. "Er det et levende nabolag?") fjernet — `cat.label` er nå eneste tittel. Spørsmål-formuleringen var generisk per-kategori og ga ingen ekstra verdi over kategorinavnet.
+- **Tabs flyttet rett under tittelen, full bredde.** "Tabs er navigasjon i selve seksjonen" — de hører i topp, ikke under teksten. `BoardTabs` fikk valgfri `fullWidth`-prop (bevarer eksisterende inline-pill for andre callsteder).
+- **"Info" → "Beliggenhet".** Mer konkret etikett.
+- **Lead, illustrasjon og body flyttet INN i Beliggenhet-tabben.** Header er nå strippet til kun tittelen — hele kategori-narrativen ligger inni tabben.
+- **Rapport-paritet i body-rendering.** `/rapport`-mønsteret videreført til board: lead + body alltid synlig med POI-inline-popovers, "Les mer om {kategori}" reveal grounding (curatedNarrative v2 eller raw v1) + Google-chips. Erstatter den gamle truncate-baserte disclosure-en som bare viste del 1 uten POI-lenker.
+
+### Teknisk
+- **`BoardCategoryInfoTab.tsx` (ny, delt mellom mobile og desktop):** linkifiserer plain-text via eksisterende `linkPOIsInText` + `POIPopover` (gjenbruk fra rapport), rendrer grounding via eksisterende `ReportCuratedGrounded`/`ReportGroundingInline`/`ReportGroundingChips`. Disclosure animeres med grid-template-rows 0fr→1fr (matcher rapport).
+- **`BoardData.poisById`:** ny full POI-lookup-map (lowercase ID → POI) på tvers av alle kategorier. Grounding kan referere POIs i andre tema (f.eks. "Yogaskolen" nevnt i Trening-grounding men ranket høyere i annen kategori).
+- **`BoardCategory.grounding`:** tema-grounding tilgjengelig på board-nivå — adapter mapper `theme.grounding` rett gjennom.
+- **`body-truncate.ts` slettet.** Erstattet av rapport-stil disclosure. Per CLAUDE.md hygiene-regel — kommenterte ikke ut, slettet.
+
+### Worktree-gotcha (memory-verdig)
+Dev-server på `:3001` kjørte fra worktree `/Users/andreasharstad/Documents/placy-ralph-board` (branch `feat/board-ux-rapport-variant`), mens første runde med endringer ble gjort i hovedrepoet. Bruker så ingen forskjell før endringene ble speilet til worktreen. Sjekk `git worktree list` og hvor dev-serveren faktisk kjører før du redigerer.
+
+### Scope
+- Mobile reading-modal og desktop detail-panel (begge får samme oppførsel)
+- Beliggenhet-tab inneholder lead + bilde + body + Les mer-disclosure
+- Punkter-tab uendret
+
+### Åpne spørsmål
+- Skal POI-popover-klikk i board-konteksten dispatche `OPEN_POI` (zoome kart + bytte til Punkter-tab) i stedet for å bare vise quick-info-popover? Foreløpig brukt rapport-stil popover for konsistens.
+- Hva skjer med kategorier som mangler `theme.grounding`? Per nå skjules "Les mer"-knappen helt — som er riktig oppførsel, men avslører dataquality-gap mellom prosjekter med og uten grounding-pipeline kjørt.
+
+### Referanser
+- Mønster: `lib/curation/poi-linker.ts` (markdown-poi-uuid linker), `lib/utils/story-text-linker.ts` (plain-text POI-matching)
+- Brainstorm grounding: `docs/brainstorms/2026-04-19-unified-grounded-narrative-brainstorm.md`
+- Plan grounding: `docs/plans/2026-04-19-feat-unified-grounded-narrative-plan.md`
+
+---
+
 ## 2026-04-15 — 3D-kart koblet til ekte POI-data (distanse-opacity)
 
 ### Beslutninger

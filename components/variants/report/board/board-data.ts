@@ -1,4 +1,4 @@
-import type { POI } from "@/lib/types";
+import type { POI, ReportThemeGroundingView } from "@/lib/types";
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
 
 // Branded ID-typer forhindrer ID-blanding mellom theme-IDer og POI-IDer
@@ -29,6 +29,8 @@ export interface BoardCategory {
   lead: string;
   /** Lengre body-tekst for reading-modal Info-tab. Sammensatt av upperNarrative eller intro+bridgeText. */
   body: string;
+  /** Build-time Gemini-grounding for "Les mer"-disclosure. Skipper hvis udefinert (samme rendering som i rapport). */
+  grounding?: ReportThemeGroundingView;
   /** Optional banner-illustrasjon. */
   illustration?: ThemeIllustration;
   /** Lucide ikon-navn fra report-themes (brukes i rail og marker). */
@@ -51,6 +53,8 @@ export interface BoardHome {
 export interface BoardData {
   home: BoardHome;
   categories: BoardCategory[];
+  /** Lookup-map fra POI-id (lowercase) til full POI. Brukes av grounding-rendering for å resolve [text](poi:uuid)-lenker — kan referere POIs på tvers av kategorier. */
+  poisById: Map<string, POI>;
 }
 
 /**
@@ -69,6 +73,15 @@ export function adaptBoardData(report: ReportData): BoardData {
     .filter((t) => t.allPOIs.length > 0)
     .map((t) => adaptCategory(t));
 
+  // Bygg full POI-lookup på tvers av alle tema. Grounding kan referere POIs i andre kategorier
+  // (f.eks. "Yogaskolen" nevnt i Trening-grounding men ranket høyere i annen kategori).
+  const poisById = new Map<string, POI>();
+  for (const theme of report.themes) {
+    for (const poi of theme.allPOIs) {
+      poisById.set(poi.id.toLowerCase(), poi);
+    }
+  }
+
   return {
     home: {
       name: report.projectName,
@@ -78,6 +91,7 @@ export function adaptBoardData(report: ReportData): BoardData {
       heroIntro: report.heroIntro,
     },
     categories,
+    poisById,
   };
 }
 
@@ -116,6 +130,7 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     question: theme.question,
     lead,
     body,
+    grounding: theme.grounding,
     illustration: theme.image,
     icon,
     color,

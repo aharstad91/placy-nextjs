@@ -12,10 +12,10 @@ import { BoardTabs } from "../mobile/BoardTabs";
 import { BoardPOIAccordion } from "./BoardPOIAccordion";
 import { SubCategoryFilter } from "../SubCategoryFilter";
 import { deriveSubCategories } from "../use-sub-category-filter";
-import { truncateBody } from "../body-truncate";
+import { BoardCategoryInfoTab } from "../BoardCategoryInfoTab";
 
 /**
- * Desktop midt-panel (400px). Rendrer kategori-detalj med Info/Punkter-tabs.
+ * Desktop midt-panel (400px). Rendrer kategori-detalj med Beliggenhet/Punkter-tabs.
  * Punkter-tabben bruker accordion (BoardPOIAccordion) — ingen dedikert POI-subview.
  * Default-phase viser eiendomsbilde + intro.
  */
@@ -105,22 +105,14 @@ function CategoryDetail({
   tab,
   onTabChange,
 }: {
-  /** Original kategori — brukt for stabile felter (label, body, illustration). */
+  /** Original kategori — brukt for stabile felter (label, body, illustration, grounding). */
   category: BoardCategory;
   /** Kategori med sub-kategori-filter applisert — brukt for poi-listen. */
   filteredCategory: BoardCategory;
   tab: "info" | "punkter";
   onTabChange: (t: "info" | "punkter") => void;
 }) {
-  const { subFilter } = useBoard();
-
-  // Reset disclosure-state ved kategori-bytte.
-  const [bodyExpanded, setBodyExpanded] = useState(false);
-  useEffect(() => {
-    setBodyExpanded(false);
-  }, [category.id]);
-
-  const truncated = category.body ? truncateBody(category.body) : null;
+  const { data, subFilter } = useBoard();
 
   // Sub-kategorier deriveres fra ufiltrert kategori — filteret skal kunne
   // skjule/vise selv om aktuelt ingen er synlige.
@@ -137,49 +129,29 @@ function CategoryDetail({
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-6 py-6">
-      <header className="space-y-2 pb-5">
-        <div className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-          {category.label}
-        </div>
+      <header className="pb-5">
         <h2 className="text-2xl font-bold leading-tight text-stone-900">
-          {category.question || category.label}
+          {category.label}
         </h2>
-        {category.lead && (
-          <p className="text-base leading-relaxed text-stone-700">
-            {category.lead}
-          </p>
-        )}
       </header>
 
       <BoardTabs
         value={tab}
         onChange={(v) => onTabChange(v as "info" | "punkter")}
+        fullWidth
         tabs={[
-          { id: "info", label: "Info" },
+          { id: "info", label: "Beliggenhet" },
           { id: "punkter", label: punkterLabel },
         ]}
       />
 
       {tab === "info" && (
-        <div className="space-y-4 pb-6">
-          {category.illustration && (
-            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-stone-200">
-              <Image
-                src={category.illustration.src}
-                alt=""
-                fill
-                sizes="400px"
-                className="object-cover"
-              />
-            </div>
-          )}
-          {truncated && (
-            <CategoryBodyDisclosure
-              truncated={truncated}
-              expanded={bodyExpanded}
-              onToggle={() => setBodyExpanded((v) => !v)}
-            />
-          )}
+        <div className="pb-6">
+          <BoardCategoryInfoTab
+            category={category}
+            poisById={data.poisById}
+            imageSizes="400px"
+          />
         </div>
       )}
 
@@ -220,102 +192,6 @@ function EmptyFilterState({ onShowAll }: { onShowAll: () => void }) {
       >
         Vis alle igjen
       </button>
-    </div>
-  );
-}
-
-/**
- * Disclosure-blokk for category.body. Viser truncated tekst + "Les mer"-knapp;
- * ekspanderer til full tekst med grid-rows max-height-animasjon (ingen
- * auto-scroll, jf. memory `feedback_disclosure_animations.md`).
- *
- * Mønster: vi rendrer "extra" innhold (rest-paragrafene som er kuttet bort)
- * i en grid-container som animerer fra `grid-template-rows: 0fr` til `1fr`.
- * Truncated paragrafer er alltid synlige. Hvis første paragraf er trunkert
- * (kuttet midt i), vises rest-delen av den paragrafen som ekstra rad — slik
- * får leseren full tekst når expanded uten teksten flytter seg.
- */
-function CategoryBodyDisclosure({
-  truncated,
-  expanded,
-  onToggle,
-}: {
-  truncated: ReturnType<typeof truncateBody>;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  // Beregn hvilke paragrafer som er "rest" (kun synlig når expanded).
-  // Hvis første paragraf er kuttet (slutter med … eller er kortere enn full),
-  // tar vi tail-delen av den + alle resterende paragrafer.
-  const restParagraphs: string[] = [];
-  const truncatedFirst = truncated.truncatedParagraphs[0] ?? "";
-  const fullFirst = truncated.fullParagraphs[0] ?? "";
-  const firstIsCut = truncatedFirst !== fullFirst;
-
-  if (firstIsCut) {
-    // Trim trailing "…" fra truncated for matching, og bruk full-tail.
-    const matchPart = truncatedFirst.replace(/…$/, "").trimEnd();
-    const tail = fullFirst.startsWith(matchPart)
-      ? fullFirst.slice(matchPart.length).trimStart()
-      : fullFirst;
-    if (tail) restParagraphs.push(tail);
-    restParagraphs.push(...truncated.fullParagraphs.slice(1));
-  } else {
-    restParagraphs.push(
-      ...truncated.fullParagraphs.slice(truncated.truncatedParagraphs.length),
-    );
-  }
-
-  return (
-    <div className="space-y-3 text-stone-800">
-      <div className="space-y-3">
-        {truncated.truncatedParagraphs.map((p, i) => {
-          // Hvis første paragraf er kuttet OG vi er expanded, vis full første paragraf
-          // ved å droppe truncated-versjonen og la rest ta over.
-          if (i === 0 && firstIsCut && expanded) return null;
-          return (
-            <p key={`t-${i}`} className="text-[15px] leading-relaxed">
-              {p}
-            </p>
-          );
-        })}
-        {firstIsCut && expanded && (
-          <p key="full-first" className="text-[15px] leading-relaxed">
-            {fullFirst}
-          </p>
-        )}
-      </div>
-
-      {restParagraphs.length > 0 && (
-        <div
-          className="grid transition-[grid-template-rows] duration-300 ease-out"
-          style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
-          aria-hidden={!expanded}
-        >
-          <div className="overflow-hidden">
-            <div className="space-y-3 pt-3">
-              {(firstIsCut ? restParagraphs.slice(1) : restParagraphs).map(
-                (p, i) => (
-                  <p key={`r-${i}`} className="text-[15px] leading-relaxed">
-                    {p}
-                  </p>
-                ),
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {truncated.needsTruncation && (
-        <button
-          type="button"
-          onClick={onToggle}
-          className="rounded-full px-3 py-1.5 text-sm font-semibold text-stone-700 transition-colors hover:bg-stone-200/70"
-          aria-expanded={expanded}
-        >
-          {expanded ? "Vis mindre" : "Les mer"}
-        </button>
-      )}
     </div>
   );
 }
