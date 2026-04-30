@@ -49,7 +49,7 @@ export function BoardRail() {
 
         <div className="my-1 h-px w-6 bg-stone-200" aria-hidden="true" />
 
-        <nav className="flex w-full flex-col items-center gap-3 overflow-y-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="flex w-full flex-col items-center gap-5 overflow-y-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {data.categories.map((cat) => (
             <RailButton
               key={cat.id}
