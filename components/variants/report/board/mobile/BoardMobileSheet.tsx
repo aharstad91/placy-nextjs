@@ -194,14 +194,27 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
     >
       <DrawerPortal>
         {/* DrawerPrimitive.Content direkte (ikke shadcn DrawerContent) for å
-            droppe auto-overlay. h-[92dvh] matcher stage-4-snap; vaul translate-er
-            hele elementet basert på snap-stage, så ved stage 1 er kun bottom 96px synlig. */}
+            droppe auto-overlay. Vaul antar at sheet-elementet har full
+            viewport-høyde og at snap-points uttrykker SYNLIG høyde fra bunn:
+            translateY = (viewportH - snapPx). Derfor h-[100dvh]; stage-4-snap
+            (0.92) gir 92% synlig (≈776px på 844-høy viewport), stage 1 (96px)
+            gir 96px synlig — bare tab-baren. */}
         <DrawerPrimitive.Content
           data-slot="board-mobile-sheet"
-          className="fixed inset-x-0 bottom-0 z-30 flex h-[92dvh] flex-col bg-stone-50/95 backdrop-blur rounded-t-3xl shadow-[0_-4px_24px_rgba(15,29,68,0.08)]"
+          className="fixed inset-x-0 bottom-0 z-30 flex h-[100dvh] flex-col bg-stone-50/95 backdrop-blur rounded-t-3xl shadow-[0_-4px_24px_rgba(15,29,68,0.08)]"
         >
-          {/* Drag-handle. Synlig kun ved stage 2+ (over visible-area ved stage 1). */}
+          {/* Drag-handle (~24px med margin) + tab-bar (~96px) er alltid synlig
+              på tvers av snap-stages. De ligger ØVERST i sheet fordi vaul
+              translater hele elementet ned med (viewportH - snapPx) — toppen
+              av sheet er det som vises i den synlige snap-spalten. */}
           <div className="mx-auto mt-3 mb-2 h-1.5 w-[100px] shrink-0 rounded-full bg-stone-300" />
+
+          <div className="shrink-0 border-b border-stone-200/80 bg-stone-50">
+            <BoardCategoryTabBar
+              onSnapChange={setSnap}
+              currentSnap={snap}
+            />
+          </div>
 
           {/* Scrollbart innhold-slot. Phase-styres internt.
               `min-h-0` så flex-shrink fungerer ved stage 1 (kollapser til 0). */}
@@ -311,11 +324,14 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
             )}
           </div>
 
-          {/* Pinned action-bar — kun ved phase=poi. Persisterer (ingen fade)
-              for stabil visuell forankring under POI-bytte. */}
+          {/* Pinned action-bar — siste flex-child så den havner i bunn av
+              sheet-elementet. Synlig kun ved stage 4 (full) siden vaul kun
+              eksponerer toppen av sheet via translation; på lavere stages er
+              bunn av sheet utenfor viewporten. Apple/Google Maps-mønster:
+              actions vises når brukeren har dratt sheet helt opp. */}
           {state.phase === "poi" && renderPoi && (
             <div
-              className="shrink-0 border-t border-stone-200/80 bg-stone-50/95 backdrop-blur px-5 pt-3 pb-3"
+              className="shrink-0 border-t border-stone-200/80 bg-stone-50/95 backdrop-blur px-5 pt-3"
               style={{
                 paddingBottom:
                   "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
@@ -324,14 +340,6 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
               <BoardPOIActionBar poi={renderPoi.raw} />
             </div>
           )}
-
-          {/* Tab-bar — alltid synlig på tvers av snap-stages. */}
-          <div className="shrink-0 border-t border-stone-200/80 bg-stone-50">
-            <BoardCategoryTabBar
-              onSnapChange={setSnap}
-              currentSnap={snap}
-            />
-          </div>
         </DrawerPrimitive.Content>
       </DrawerPortal>
     </Drawer>
