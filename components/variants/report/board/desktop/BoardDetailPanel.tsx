@@ -129,8 +129,8 @@ function CategoryDetail({
       : `Punkter (${filteredCategory.pois.length})`;
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto px-5 py-5">
-      <header className="pb-4">
+    <div className="flex h-full flex-col overflow-y-auto px-4 py-4">
+      <header className="pb-3">
         <h2 className="text-2xl font-bold leading-tight text-stone-900">
           {category.label}
         </h2>

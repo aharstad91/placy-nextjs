@@ -6,7 +6,6 @@ import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard } from "../board-state";
 import type { BoardCategory } from "../board-data";
 import { THEME_SCENE_SRC } from "../../theme-icons";
-import { hexWithAlpha } from "../marker-style";
 import {
   Tooltip,
   TooltipContent,
@@ -15,7 +14,7 @@ import {
 } from "@/components/ui/tooltip";
 
 /**
- * Desktop venstre-rail (64px bred). Kun ikon/illustrasjon — kategori-label
+ * Desktop venstre-rail (72px bred). Kun ikon/illustrasjon — kategori-label
  * leveres via tooltip på hover. Discord-mønster.
  * Klikk Home → RESET_TO_DEFAULT. Klikk kategori → SELECT_CATEGORY.
  */
@@ -26,7 +25,7 @@ export function BoardRail() {
     <TooltipProvider>
       <aside
         aria-label="Kategorinavigasjon"
-        className="flex h-full w-[64px] flex-col items-center gap-1.5 border-r border-stone-200/80 bg-white/95 px-1 py-3 backdrop-blur"
+        className="flex h-full w-[72px] flex-col items-center gap-2 border-r border-stone-200/80 bg-white/95 px-2 py-4 backdrop-blur"
       >
         <Tooltip>
           <TooltipTrigger asChild>
@@ -35,10 +34,10 @@ export function BoardRail() {
               aria-label="Tilbake til oversikt"
               aria-current={state.phase === "default" ? "page" : undefined}
               onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
-              className={`flex h-12 w-full items-center justify-center rounded-2xl border transition-all ${
+              className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition-all ${
                 state.phase === "default"
-                  ? "border-stone-300 bg-stone-100 text-stone-900"
-                  : "border-transparent text-stone-600 hover:bg-stone-100/60"
+                  ? "border-stone-300 bg-stone-100 text-stone-900 shadow-sm"
+                  : "border-transparent text-stone-500 hover:bg-stone-100 hover:text-stone-900"
               }`}
             >
               <Home className="h-5 w-5" strokeWidth={2} />
@@ -49,7 +48,7 @@ export function BoardRail() {
 
         <div className="my-1 h-px w-6 bg-stone-200" aria-hidden="true" />
 
-        <nav className="flex w-full flex-col gap-1.5 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="flex w-full flex-col items-center gap-2 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {data.categories.map((cat) => (
             <RailButton
               key={cat.id}
@@ -86,24 +85,15 @@ function RailButton({
           onClick={onSelect}
           aria-current={active ? "page" : undefined}
           aria-label={category.label}
-          className={`group flex h-14 w-full items-center justify-center rounded-2xl border transition-all ${
-            active
-              ? "border-stone-300/60 shadow-[0_2px_8px_rgba(15,29,68,0.08)]"
-              : "border-transparent hover:bg-stone-100/60"
-          }`}
-          style={
-            active
-              ? {
-                  backgroundColor: hexWithAlpha(category.color, 0.12),
-                  boxShadow: `inset 3px 0 0 ${category.color}`,
-                }
-              : undefined
-          }
+          className="group flex h-12 w-12 items-center justify-center rounded-2xl transition-transform hover:scale-105 active:scale-95"
         >
           <div
-            className={`relative h-12 w-12 overflow-hidden rounded-xl bg-stone-100 transition-all ${
-              active ? "ring-2 ring-white shadow-sm" : ""
-            }`}
+            className="relative h-12 w-12 overflow-hidden rounded-xl transition-shadow"
+            style={{
+              boxShadow: active
+                ? `0 0 0 2px white, 0 0 0 4px ${category.color}, 0 4px 12px rgba(15,29,68,0.15)`
+                : `0 0 0 1px rgba(231, 229, 228, 0.8)`,
+            }}
           >
             {illustrationSrc ? (
               <Image
