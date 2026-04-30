@@ -43,7 +43,10 @@ export function Marker3DPin({
 
   const half = size / 2;
   const circleR = half - 3;
-  const iconSize = Math.round(size * 0.55);
+  // Ikon-ratio 0.50 matcher 2D-markørene og POI-cards i lista (40px sirkel
+  // → 20px ikon = h-5/w-5 i Tailwind). Tidligere 0.55 ga 22px ikon som så
+  // 2-3px større ut enn i lista.
+  const iconSize = Math.round(size * 0.5);
   const iconOffset = (size - iconSize) / 2;
 
   const badgeR = Math.round(size * 0.18);
