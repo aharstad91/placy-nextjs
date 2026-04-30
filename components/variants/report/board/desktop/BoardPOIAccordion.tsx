@@ -10,7 +10,7 @@ import {
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard } from "../board-state";
 import type { BoardCategory, BoardPOIId } from "../board-data";
-import { BoardLiveTransport } from "../mobile/BoardLiveTransport";
+import { BoardPOIDetails } from "../BoardPOIDetails";
 import { markerCircleStyle } from "../marker-style";
 
 interface Props {
@@ -160,17 +160,8 @@ export function BoardPOIAccordion({ category }: Props) {
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="px-3.5 pb-3.5 pt-0">
-              <BoardLiveTransport poi={poi.raw} />
-              {poi.body && (
-                <div className="space-y-3 pt-2 text-stone-800">
-                  {poi.body.split(/\n+/).map((p, i) => (
-                    <p key={i} className="text-[15px] leading-relaxed">
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              )}
+            <AccordionContent className="px-3.5 pb-3.5 pt-2">
+              <BoardPOIDetails poi={poi.raw} />
             </AccordionContent>
           </AccordionItem>
         );
