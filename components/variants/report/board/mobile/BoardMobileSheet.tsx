@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { Drawer, DrawerPortal } from "@/components/ui/drawer";
@@ -43,7 +44,12 @@ const FADE_IN_MS = 100;
 function getDefaultSnapForPhase(phase: BoardPhase): number | string {
   switch (phase) {
     case "default":
-      return "96px";
+      // Default-fase viser velkommen-content (boligprosjekt-info + CTA),
+      // matcher desktop BoardDetailPanel.DefaultEmptyState. Sheet er alltid
+      // synlig på peek så brukeren forstår hva siden handler om før de
+      // velger kategori. Bruker kan dra sheet ned til "96px" for å se mer
+      // av kartet hvis ønskelig.
+      return "320px";
     case "active":
       return "320px";
     case "poi":
@@ -254,6 +260,15 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
               overscrollBehavior: "contain",
             }}
           >
+            {state.phase === "default" && (
+              <DefaultHomeContent
+                heroImage={data.home.heroImage}
+                address={data.home.address}
+                name={data.home.name}
+                heroIntro={data.home.heroIntro}
+              />
+            )}
+
             {state.phase === "active" && cat && filteredCat && (
               <div className="px-5 pt-2">
                 <header className="flex items-start justify-between pb-3">
@@ -380,6 +395,56 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
         </DrawerPrimitive.Content>
       </DrawerPortal>
     </Drawer>
+  );
+}
+
+/** Velkommen-content i default-fase — speiler desktop BoardDetailPanel.
+ *  DefaultEmptyState. Brukes når ingen kategori er valgt, gir brukeren
+ *  prosjekt-kontekst (hero-bilde, navn, intro) før de utforsker. */
+function DefaultHomeContent({
+  heroImage,
+  address,
+  name,
+  heroIntro,
+}: {
+  heroImage?: string;
+  address?: string;
+  name: string;
+  heroIntro?: string;
+}) {
+  return (
+    <div className="flex flex-col">
+      {heroImage && (
+        <div className="relative aspect-[4/3] w-full flex-none bg-stone-200">
+          <Image
+            src={heroImage}
+            alt={name}
+            fill
+            sizes="100vw"
+            className="object-cover"
+            priority
+          />
+        </div>
+      )}
+      <div className="flex flex-col gap-3 px-5 py-5">
+        {address && (
+          <div className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+            {address}
+          </div>
+        )}
+        <h2 className="text-2xl font-bold leading-tight text-stone-900">
+          {name}
+        </h2>
+        {heroIntro && (
+          <p className="text-[15px] leading-relaxed text-stone-700">
+            {heroIntro}
+          </p>
+        )}
+        <p className="pt-2 text-sm text-stone-500">
+          Velg en kategori for å utforske nabolaget.
+        </p>
+      </div>
+    </div>
   );
 }
 
