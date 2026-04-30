@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { Home } from "lucide-react";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard } from "../board-state";
 import type { BoardCategory } from "../board-data";
+import { THEME_SCENE_SRC } from "../../theme-icons";
 
 /**
  * Desktop venstre-rail (104px bred). Viser Home øverst og kategori-ikoner under.
@@ -57,15 +59,18 @@ function RailButton({
   active: boolean;
   onSelect: () => void;
 }) {
-  const Icon = getFilledIcon(category.icon);
   const firstWord = category.label.split(/\s+/)[0];
+  // Akvarell-illustrasjon som rounded-xl kvadrat (matcher mobile category-grid +
+  // rapport-tema-chips). Bygger på `THEME_SCENE_SRC` slik at samme asset-mappe
+  // brukes overalt — én sannhetskilde for tema-illustrasjoner.
+  const illustrationSrc = THEME_SCENE_SRC[category.id];
 
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-current={active ? "page" : undefined}
-      className={`group flex h-[72px] w-full flex-col items-center justify-center gap-1 rounded-2xl border transition-all ${
+      className={`group flex h-[88px] w-full flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all ${
         active
           ? "border-stone-300/60 shadow-[0_2px_8px_rgba(15,29,68,0.08)]"
           : "border-transparent hover:bg-stone-100/60"
@@ -77,10 +82,21 @@ function RailButton({
       }
     >
       <div
-        className="flex h-9 w-9 items-center justify-center rounded-full shadow-sm"
-        style={{ backgroundColor: category.color }}
+        className={`relative h-14 w-14 overflow-hidden rounded-xl bg-stone-100 transition-all ${
+          active ? "ring-2 ring-white shadow-sm" : ""
+        }`}
       >
-        <Icon className="h-4 w-4 text-white" weight="fill" />
+        {illustrationSrc ? (
+          <Image
+            src={illustrationSrc}
+            alt=""
+            fill
+            sizes="56px"
+            className="object-cover"
+          />
+        ) : (
+          <FallbackIcon category={category} />
+        )}
       </div>
       <span
         className={`text-[11px] font-semibold leading-tight ${
@@ -90,6 +106,19 @@ function RailButton({
         {firstWord}
       </span>
     </button>
+  );
+}
+
+/**
+ * Fallback når et tema mangler akvarell-illustrasjon (f.eks. custom kategori
+ * uten asset i `THEME_SCENE_SRC`). Viser stone-100-bakgrunn med outline-ikon.
+ */
+function FallbackIcon({ category }: { category: BoardCategory }) {
+  const Icon = getFilledIcon(category.icon);
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <Icon className="h-6 w-6 text-stone-400" weight="duotone" />
+    </div>
   );
 }
 

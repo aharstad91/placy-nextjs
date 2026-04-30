@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useBoard } from "../board-state";
 import type { BoardCategory } from "../board-data";
+import { THEME_SCENE_SRC } from "../../theme-icons";
 
 export function BoardCategoryGrid() {
   const { state, data, dispatch } = useBoard();
@@ -41,15 +42,20 @@ function CategoryCard({
   category: BoardCategory;
   onSelect: () => void;
 }) {
+  // Foretrekk de nyere konkrete tema-illustrasjonene (themes/*.jpg) over
+  // category.illustration som kan peke på legacy-asset.
+  const illustrationSrc =
+    THEME_SCENE_SRC[category.id] ?? category.illustration?.src;
+
   return (
     <button
       onClick={onSelect}
       className="flex-none w-[168px] snap-start bg-white border border-stone-200/80 rounded-[18px] shadow-[0_4px_16px_rgba(15,29,68,0.08)] overflow-hidden text-left transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(15,29,68,0.14)] active:translate-y-0"
     >
       <div className="relative aspect-square bg-stone-100">
-        {category.illustration && (
+        {illustrationSrc && (
           <Image
-            src={category.illustration.src}
+            src={illustrationSrc}
             alt=""
             fill
             sizes="168px"
