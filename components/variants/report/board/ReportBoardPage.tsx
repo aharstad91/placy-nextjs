@@ -88,6 +88,27 @@ function useIsDesktop(): boolean {
 function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
   const isDesktop = useIsDesktop();
 
+  // Lås html/body-scroll mens board-siden er aktiv. Vaul portaler sheet til
+  // document.body med h-[100dvh] + ::after (200% bakgrunn nedenfor) — iOS
+  // Safari ekspanderer da document-høyden og lager en native vertikal
+  // scrollbar. Vi vil at hele viewporten er styrt av sheet+kart, ikke at
+  // brukeren skal kunne scrolle siden vertikalt.
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyOverscroll = body.style.overscrollBehavior;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      body.style.overscrollBehavior = prevBodyOverscroll;
+    };
+  }, []);
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-stone-100">
       {/* Kart-container — absolute. På desktop forskjøvet 480px fra venstre. */}
