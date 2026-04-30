@@ -28,8 +28,8 @@ interface Props {
   /** Område-slug brukt til "Les mer"-lenke (POI-detaljside). Skjules hvis udefinert. */
   areaSlug?: string | null;
   /**
-   * Skjul action-bar i bunnen av komponenten. Brukes av `BoardPOISheet` på mobil
-   * som rendrer `BoardPOIActionBar` separat som pinned bottom-bar.
+   * Skjul action-bar i bunnen av komponenten. Brukes av `BoardMobileSheet`
+   * som rendrer `BoardPOIActionBar` separat som pinned bottom-bar over tab-bar.
    */
   hideActionBar?: boolean;
 }
@@ -76,9 +76,9 @@ function formatEventDate(dateStr: string): string {
 
 /**
  * Action-knapp-rad for `BoardPOIDetails`. Eksportert separat slik at
- * `BoardPOISheet` kan rendre den som pinned bottom-bar utenfor scroll-området,
+ * `BoardMobileSheet` kan rendre den som pinned bottom-bar over tab-bar,
  * mens body-delen scroller inni sheet-en. Desktop accordion + mobile inline
- * accordion bruker fortsatt `BoardPOIDetails` med inline action-bar.
+ * accordion (i Punkter-tab) bruker fortsatt `BoardPOIDetails` med inline action-bar.
  *
  * Knapp-gating:
  * - Vis rute + Utforsk er alltid med (universale handlinger).
@@ -198,9 +198,9 @@ export function BoardPOIActionBar({ poi, areaSlug }: ActionBarProps) {
  * Komponenten kan trygt rendres for alle POIer — minimum-render er
  * Vis rute + Utforsk-knappene (universelle handlinger).
  *
- * `hideActionBar` brukes av `BoardPOISheet` på mobil, der action-bar pinnes
- * separat i bunnen utenfor scroll-området. Desktop accordion + mobile inline
- * accordion lar prop-en stå default `false` så de får action-bar inline.
+ * `hideActionBar` brukes av `BoardMobileSheet` (POI-fase), der action-bar pinnes
+ * separat over tab-bar. Desktop accordion + mobile inline accordion lar prop-en
+ * stå default `false` så de får action-bar inline.
  */
 export function BoardPOIDetails({ poi, areaSlug, hideActionBar = false }: Props) {
   // mymaps-domener må gå via image-proxy (ikke whitelisted i next.config.mjs)
