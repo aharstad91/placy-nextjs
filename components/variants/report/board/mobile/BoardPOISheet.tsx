@@ -7,11 +7,10 @@ import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard, useActiveCategory, useActivePOI } from "../board-state";
 import { BoardPOIActionBar, BoardPOIDetails } from "../BoardPOIDetails";
 
-// Snap-points: 0.5 = peek (action-bar skjult, brukeren ser kart-konteksten),
-// 1 = full (hele sheet inkl. pinned action-bar synlig). Vaul tolker snap som
-// "andel av drawer-høyde synlig fra topp" — ved snap < 1 gjemmes action-bar
-// (siste flex-barnet) under viewport. Defaulter til full så rich content +
-// action-bar er synlig uten at brukeren må dra opp.
+// Snap-points: 0.5 = peek (kart-konteksten synlig under), 1 = full (hele
+// sheet inkl. pinned action-bar). Drawer-høyden er natural til innholdet
+// (DrawerContent har h-auto max-h-[85dvh]), så snap-1 = natural-height,
+// ikke 85% av viewport. Sparse POIer får kort sheet, rich POIer får høyere.
 const SNAP_POINTS: (number | string)[] = [0.5, 1];
 const DEFAULT_SNAP: number | string = 1;
 
@@ -118,7 +117,7 @@ export function BoardPOISheet() {
     >
       <DrawerPortal>
         <DrawerOverlay />
-        <DrawerContent className="!h-[75dvh] !max-h-[75dvh] !mt-0 !p-0 !bg-stone-50 before:!hidden">
+        <DrawerContent className="!h-auto !max-h-[85dvh] !mt-0 !p-0 !bg-stone-50 before:!hidden">
           {/* Drag-handle leveres av shadcn DrawerContent for bottom-direction. */}
 
           {/* Close-knapp */}
