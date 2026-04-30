@@ -228,12 +228,17 @@ function Map3DInner({
     };
 
     // Zoom er deaktivert: blokker scroll-wheel før Google ser eventen.
-    // Touch-pinch håndteres ikke her — bruk evt. `touch-action` eller en
-    // pointercount-guard hvis pinch-zoom begynner å sniffe seg inn.
     const blockZoomWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
     };
+
+    // EKSPERIMENT (plan 005): touch-blokking helt fjernet — vi prøver Googles
+    // native touch-gesture-handling (1-finger pan, pinch zoom, 2-finger rotate/
+    // tilt) i håp om at den glatte native-følelsen vinner over en låst statisk
+    // opplevelse. bounds + minAltitude/maxAltitude håndheves natively, så
+    // brukeren kan ikke skli helt vekk eller zoome ut av orbit-radien.
+    // Behold mus-hijack på desktop (ctrlKey-spoof) — den fungerer som forventet.
 
     // Dobbeltklikk-zoom er deaktivert: kameraet skal forbli forankret rundt
     // boligen. Google's WebGL-handler oppdager dobbeltklikk via egen pointer-
@@ -307,7 +312,6 @@ function Map3DInner({
     container.addEventListener("wheel", blockZoomWheel, wheelOpts);
     container.addEventListener("dblclick", blockDblClickEvent, dblOpts);
     container.addEventListener("click", blockMultiClick, dblOpts);
-
     return () => {
       container.removeEventListener("pointerdown", blockDblClickFromPointer, dblOpts);
       container.removeEventListener("pointerdown", forceOrbitGesture, captureOpts);

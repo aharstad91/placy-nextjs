@@ -21,13 +21,15 @@ export const DEFAULT_CAMERA_LOCK = {
   tilt: 45,
   minTilt: 15,
   maxTilt: 75,
-  // Konservative altitude-grenser for å bevare "orbit rundt punktet"-følelsen:
+  // Altitude-grenser balansert med utvidet pan-bounds (4.5km) og fri native
+  // touch-gesture-handling: ankring sikres via bounds + altitude-clamp, ikke
+  // via gesture-blokking.
   // - minAltitude 150: kan zoome tett inn, men ikke helt ned i bakken
-  // - maxAltitude 1200: hindrer at brukeren zoomer seg ut av orbit-radien.
-  //   3000 var for romslig — man så hele Trondheim og mistet ankeret.
+  // - maxAltitude 2000: gir nok høyde til at brukeren får oversikt over
+  //   nabolaget. 1200 stoppet pinch-out for tidlig på mobil.
   minAltitude: 150,
-  maxAltitude: 1200,
-  panHalfSideKm: 1.5,
+  maxAltitude: 2000,
+  panHalfSideKm: 4.5,
 } as const;
 
 /** Rapportens tab-kategorier (i visningsrekkefølge). */
