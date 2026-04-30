@@ -145,17 +145,84 @@ export const DEFAULT_CAMERA_LOCK = {
    — center-drift vi så tidligere var kumulativ fra _gamle_ eksperimenter,
    ikke fra den nåværende orbit-hijack.
 
-## Gotchas
+## Touch-paritet — eget løsningssett
 
-### Touch har ikke `ctrlKey`
+`PointerEvent.ctrlKey` er alltid `false` på touch-events, så ctrlKey-hijack-en
+treffer kun mus. Google's touch-handler bruker `TouchEvent.touches.length` —
+ikke ctrlKey — for gesture-disambiguation, så vi kan ikke "fake" en orbit-
+gesture på touch slik vi gjør på desktop. Eneste tilgang er å BLOKKERE
+spesifikke touch-events i capture-phase.
 
-`PointerEvent.ctrlKey` er alltid `false` på touch-events. Hijack-en treffer
-kun mus. For touch bruker Google's default gesture-handling (`GREEDY`) —
-1-finger drag = rotate i noen konfigurasjoner, men generelt uforutsigbart.
+**Mobil paritet-mål:** kameraet skal ikke kunne pannes ut av orbit-radien
+eller pinch-zoomes ut av altitude-vinduet. 2-finger-rotate beholdes som
+mobil orbit-ekvivalent — akseptert ulikhet i gesture vs desktop.
 
-**Pinch-zoom på mobil er IKKE blokkert** av wheel-guarden vår. Hvis zoom
-må deaktiveres på touch også, trengs en `touchstart`-listener med
-multi-pointer-count-guard eller manuell pinch-blokker.
+### Implementasjon (i samme effect som mus-hijack)
+
+```tsx
+// Unit 1: 1-finger-drag = PAN i Googles touch-handler. Vi blokkerer.
+// 2-finger-gesturer (rotate/tilt/pinch) passerer uberørt.
+const blockSingleTouchPan = (e: TouchEvent) => {
+  if (e.touches.length === 1) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+};
+
+// Unit 2: Pinch detekteres via avstands-delta mellom de to første fingrene.
+// Stabil avstand (rotate) → passerer. Endring > 10px → pinch → blokker.
+const PINCH_DELTA_THRESHOLD_PX = 10;
+let initialPinchDist: number | null = null;
+
+const pinchDistance = (touches: TouchList): number => {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+};
+
+const trackPinchStart = (e: TouchEvent) => {
+  if (e.touches.length >= 2) initialPinchDist = pinchDistance(e.touches);
+};
+const blockPinchZoom = (e: TouchEvent) => {
+  if (e.touches.length < 2) return;
+  if (initialPinchDist === null) {
+    initialPinchDist = pinchDistance(e.touches);
+    return;
+  }
+  const currentDist = pinchDistance(e.touches);
+  if (Math.abs(currentDist - initialPinchDist) > PINCH_DELTA_THRESHOLD_PX) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+};
+const resetPinchOnEnd = (e: TouchEvent) => {
+  if (e.touches.length < 2) initialPinchDist = null;
+};
+
+const touchOpts = { capture: true, passive: false } as AddEventListenerOptions;
+container.addEventListener("touchstart", trackPinchStart, touchOpts);
+container.addEventListener("touchmove", blockSingleTouchPan, touchOpts);
+container.addEventListener("touchmove", blockPinchZoom, touchOpts);
+container.addEventListener("touchend", resetPinchOnEnd, touchOpts);
+container.addEventListener("touchcancel", resetPinchOnEnd, touchOpts);
+```
+
+### Variant A vs B — hvis variant B er upålitelig
+
+**Variant A (enkel)**: blokker ALL multi-touchmove uavhengig av avstand.
+Trygg, men dreper også 2-finger-rotate. Mobil 3D blir effektivt statisk.
+
+**Variant B (selektiv)**: dagens implementasjon. Avstands-delta skiller
+pinch fra rotate. Hvis brukerne fortsatt zoomer, juster `PINCH_DELTA_THRESHOLD_PX`
+ned (mer aggressiv blokkering) eller fall tilbake til variant A.
+
+### Hvorfor `passive: false` er kritisk
+
+`addEventListener` defaulter til `passive: true` for touch-events i moderne
+browsere — `preventDefault()` på en passive-listener er en no-op. Touch-
+blockerne MÅ deklarere `passive: false` for at preventDefault skal stoppe
+Google's interne handler. Capture-phase er også påkrevd (samme som
+wheel-block) for å nå før shadow-DOM-listenere.
 
 ### `Object.defineProperty` kan feile
 
@@ -180,3 +247,7 @@ containerRef er stabil gjennom hele MapView3D-lifecycle.
   `GestureHandling.NONE` — den dreper alt.
 - **Camera drift over tid?** Før du bygger snap-back: verifiser at det
   ikke er kumulativ drift fra tidligere eksperimenter. Hardt refresh.
+- **Touch-paritet?** ctrlKey-hijack fungerer ikke på touch (ingen ctrlKey
+  i TouchEvent). Blokker 1-finger-pan + pinch via touchmove i capture-phase
+  med `passive: false`. 2-finger-rotate beholdes som mobil orbit-ekvivalent.
+  Se "Touch-paritet — eget løsningssett" over.
