@@ -3,11 +3,16 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useReducer,
   type Dispatch,
   type ReactNode,
 } from "react";
 import type { BoardCategoryId, BoardPOIId, BoardData } from "./board-data";
+import {
+  useSubCategoryFilter,
+  type SubCategoryFilterApi,
+} from "./use-sub-category-filter";
 
 export type BoardPhase = "default" | "active" | "reading" | "poi";
 
@@ -75,6 +80,12 @@ interface BoardContextValue {
   state: BoardState;
   dispatch: Dispatch<BoardAction>;
   data: BoardData;
+  /**
+   * Filter-state for sub-kategorier innen aktivt tema. Resetter automatisk
+   * ved kategori-bytte (kontekstuelt per tema). Påvirker både Punkter-lista
+   * og kart-markører i aktivt tema.
+   */
+  subFilter: SubCategoryFilterApi;
 }
 
 const BoardContext = createContext<BoardContextValue | null>(null);
@@ -87,8 +98,28 @@ export function BoardProvider({
   children: ReactNode;
 }) {
   const [state, dispatch] = useReducer(boardReducer, initialBoardState);
+  const subFilter = useSubCategoryFilter(state.activeCategoryId);
+
+  // Hvis aktiv POI tilhører en sub-kategori som nettopp ble skjult, fall
+  // tilbake til "active"-fasen for å unngå "ghost"-active POI (markør borte
+  // men state peker fortsatt på den). Beregnes via lookup mot data.
+  useEffect(() => {
+    if (!state.activePOIId || !state.activeCategoryId) return;
+    const cat = data.categories.find((c) => c.id === state.activeCategoryId);
+    const poi = cat?.pois.find((p) => p.id === state.activePOIId);
+    if (!poi) return;
+    if (subFilter.hiddenIds.has(poi.raw.category.id)) {
+      dispatch({ type: "BACK_TO_ACTIVE" });
+    }
+  }, [
+    subFilter.hiddenIds,
+    state.activePOIId,
+    state.activeCategoryId,
+    data.categories,
+  ]);
+
   return (
-    <BoardContext.Provider value={{ state, dispatch, data }}>
+    <BoardContext.Provider value={{ state, dispatch, data, subFilter }}>
       {children}
     </BoardContext.Provider>
   );
@@ -115,4 +146,20 @@ export function useActivePOI() {
   const { state } = useBoard();
   if (!cat || !state.activePOIId) return null;
   return cat.pois.find((p) => p.id === state.activePOIId) ?? null;
+}
+
+/**
+ * Selector for aktivt tema med sub-kategori-filter applisert.
+ * Returnerer en kopi av kategorien hvor `pois` er filtrert. `id`, `label`,
+ * og andre felter er uendret slik at konsumenter kan bruke samme objekt-shape.
+ */
+export function useFilteredActiveCategory() {
+  const cat = useActiveCategory();
+  const { subFilter } = useBoard();
+  if (!cat) return null;
+  if (subFilter.hiddenIds.size === 0) return cat;
+  return {
+    ...cat,
+    pois: cat.pois.filter((p) => !subFilter.hiddenIds.has(p.raw.category.id)),
+  };
 }

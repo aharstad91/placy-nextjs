@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { useBoard, useActiveCategory } from "../board-state";
+import {
+  useBoard,
+  useActiveCategory,
+  useFilteredActiveCategory,
+} from "../board-state";
 import type { BoardCategory } from "../board-data";
 import { BoardTabs } from "../mobile/BoardTabs";
 import { BoardPOIAccordion } from "./BoardPOIAccordion";
+import { SubCategoryFilter } from "../SubCategoryFilter";
+import { deriveSubCategories } from "../use-sub-category-filter";
 import { truncateBody } from "../body-truncate";
 
 /**
@@ -16,6 +22,7 @@ import { truncateBody } from "../body-truncate";
 export function BoardDetailPanel() {
   const { state } = useBoard();
   const cat = useActiveCategory();
+  const filteredCat = useFilteredActiveCategory();
 
   // Tab-state lokal: "info" | "punkter".
   // OPEN_POI (active→poi via accordion): sett til "punkter" så retur lander der.
@@ -38,10 +45,15 @@ export function BoardDetailPanel() {
       aria-label="Kategori-detaljer"
       className="flex h-full w-[400px] flex-col border-r border-stone-200/80 bg-stone-50"
     >
-      {state.phase === "default" || !cat ? (
+      {state.phase === "default" || !cat || !filteredCat ? (
         <DefaultEmptyState />
       ) : (
-        <CategoryDetail category={cat} tab={tab} onTabChange={setTab} />
+        <CategoryDetail
+          category={cat}
+          filteredCategory={filteredCat}
+          tab={tab}
+          onTabChange={setTab}
+        />
       )}
     </section>
   );
@@ -89,13 +101,19 @@ function DefaultEmptyState() {
 
 function CategoryDetail({
   category,
+  filteredCategory,
   tab,
   onTabChange,
 }: {
+  /** Original kategori — brukt for stabile felter (label, body, illustration). */
   category: BoardCategory;
+  /** Kategori med sub-kategori-filter applisert — brukt for poi-listen. */
+  filteredCategory: BoardCategory;
   tab: "info" | "punkter";
   onTabChange: (t: "info" | "punkter") => void;
 }) {
+  const { subFilter } = useBoard();
+
   // Reset disclosure-state ved kategori-bytte.
   const [bodyExpanded, setBodyExpanded] = useState(false);
   useEffect(() => {
@@ -103,6 +121,19 @@ function CategoryDetail({
   }, [category.id]);
 
   const truncated = category.body ? truncateBody(category.body) : null;
+
+  // Sub-kategorier deriveres fra ufiltrert kategori — filteret skal kunne
+  // skjule/vise selv om aktuelt ingen er synlige.
+  const subCategories = useMemo(
+    () => deriveSubCategories(category),
+    [category],
+  );
+
+  const hasFilter = subCategories.length >= 2;
+  const punkterLabel =
+    hasFilter && subFilter.hiddenIds.size > 0
+      ? `Punkter (${filteredCategory.pois.length}/${category.pois.length})`
+      : `Punkter (${filteredCategory.pois.length})`;
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-6 py-6">
@@ -125,7 +156,7 @@ function CategoryDetail({
         onChange={(v) => onTabChange(v as "info" | "punkter")}
         tabs={[
           { id: "info", label: "Info" },
-          { id: "punkter", label: `Punkter (${category.pois.length})` },
+          { id: "punkter", label: punkterLabel },
         ]}
       />
 
@@ -154,9 +185,41 @@ function CategoryDetail({
 
       {tab === "punkter" && (
         <div className="pb-6">
-          <BoardPOIAccordion category={category} />
+          {hasFilter && (
+            <div className="pb-3">
+              <SubCategoryFilter
+                subCategories={subCategories}
+                hiddenIds={subFilter.hiddenIds}
+                onToggle={subFilter.toggle}
+                onToggleAll={subFilter.toggleAll}
+                variant="desktop"
+              />
+            </div>
+          )}
+          {filteredCategory.pois.length === 0 ? (
+            <EmptyFilterState onShowAll={subFilter.reset} />
+          ) : (
+            <BoardPOIAccordion category={filteredCategory} />
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function EmptyFilterState({ onShowAll }: { onShowAll: () => void }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-stone-200 bg-white/40 px-4 py-8 text-center">
+      <p className="text-sm text-stone-600">
+        Ingen punkter matcher det aktuelle filteret.
+      </p>
+      <button
+        type="button"
+        onClick={onShowAll}
+        className="mt-3 text-sm font-semibold text-stone-700 underline underline-offset-2 hover:text-stone-900"
+      >
+        Vis alle igjen
+      </button>
     </div>
   );
 }

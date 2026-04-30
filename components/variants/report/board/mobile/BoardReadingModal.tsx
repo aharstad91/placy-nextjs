@@ -1,17 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
 import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/components/ui/drawer";
-import { useBoard, useActiveCategory } from "../board-state";
+import {
+  useBoard,
+  useActiveCategory,
+  useFilteredActiveCategory,
+} from "../board-state";
 import { BoardRelatedPOICard } from "./BoardRelatedPOICard";
 import { BoardTabs } from "./BoardTabs";
+import { SubCategoryFilter } from "../SubCategoryFilter";
+import { deriveSubCategories } from "../use-sub-category-filter";
 import { truncateBody } from "../body-truncate";
 
 export function BoardReadingModal() {
-  const { state, dispatch } = useBoard();
+  const { state, dispatch, subFilter } = useBoard();
   const cat = useActiveCategory();
+  const filteredCat = useFilteredActiveCategory();
   const open = state.phase === "reading";
 
   // Reset til Info-tab ved hver åpning
@@ -27,6 +34,18 @@ export function BoardReadingModal() {
   }, [cat?.id, open]);
 
   const truncated = cat?.body ? truncateBody(cat.body) : null;
+
+  const subCategories = useMemo(
+    () => (cat ? deriveSubCategories(cat) : []),
+    [cat],
+  );
+  const hasFilter = subCategories.length >= 2;
+  const filteredCount = filteredCat?.pois.length ?? 0;
+  const totalCount = cat?.pois.length ?? 0;
+  const punkterLabel =
+    hasFilter && subFilter.hiddenIds.size > 0
+      ? `Punkter (${filteredCount}/${totalCount})`
+      : `Punkter (${filteredCount})`;
 
   return (
     <Drawer
@@ -68,7 +87,7 @@ export function BoardReadingModal() {
                 onChange={setTab}
                 tabs={[
                   { id: "info", label: "Info" },
-                  { id: "punkter", label: `Punkter (${cat.pois.length})` },
+                  { id: "punkter", label: punkterLabel },
                 ]}
               />
 
@@ -97,16 +116,46 @@ export function BoardReadingModal() {
 
               {tab === "punkter" && (
                 <div className="space-y-2.5">
-                  {cat.pois.map((poi) => (
-                    <BoardRelatedPOICard
-                      key={poi.id}
-                      poi={poi}
-                      categoryColor={cat.color}
-                      onClick={() =>
-                        dispatch({ type: "OPEN_POI", id: poi.id, categoryId: cat.id })
-                      }
-                    />
-                  ))}
+                  {hasFilter && (
+                    <div className="pb-1">
+                      <SubCategoryFilter
+                        subCategories={subCategories}
+                        hiddenIds={subFilter.hiddenIds}
+                        onToggle={subFilter.toggle}
+                        onToggleAll={subFilter.toggleAll}
+                        variant="mobile"
+                      />
+                    </div>
+                  )}
+                  {filteredCat && filteredCat.pois.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-stone-200 bg-white/40 px-4 py-8 text-center">
+                      <p className="text-sm text-stone-600">
+                        Ingen punkter matcher det aktuelle filteret.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={subFilter.reset}
+                        className="mt-3 text-sm font-semibold text-stone-700 underline underline-offset-2 hover:text-stone-900"
+                      >
+                        Vis alle igjen
+                      </button>
+                    </div>
+                  ) : (
+                    filteredCat?.pois.map((poi) => (
+                      <BoardRelatedPOICard
+                        key={poi.id}
+                        poi={poi}
+                        categoryColor={cat.color}
+                        onClick={() =>
+                          dispatch({
+                            type: "OPEN_POI",
+                            id: poi.id,
+                            categoryId: cat.id,
+                          })
+                        }
+                      />
+                    ))
+                  )}
                 </div>
               )}
             </div>
