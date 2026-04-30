@@ -1,9 +1,10 @@
 ---
 title: Mobile board — multi-snap sheet med Google Maps-flyt
 type: feat
-status: active
+status: completed
 date: 2026-04-30
 deepened: 2026-04-30
+completed: 2026-04-30
 ---
 
 # Mobile board — multi-snap sheet med Google Maps-flyt
