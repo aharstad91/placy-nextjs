@@ -9,18 +9,36 @@ import type { ReportThemeGroundingView } from "@/lib/types";
  * disclosure via DOM-gating. "Google foreslår også"-chips rendres inline per
  * tema via ReportGroundingChips. Aggregert kilder-footer rendres én gang i
  * bunn av rapporten via ReportSourcesAggregated.
+ *
+ * Variant:
+ * - "article" (default): leseopplevelse for rapport-artikkelen — `text-base md:text-lg`,
+ *   leading 1.8, mer paragraf-margin. Optimal for langlesing.
+ * - "compact": matcher kortere prosatekst i rapport-board-modaler/paneler —
+ *   `text-[15px] leading-relaxed text-stone-800`, mindre paragraf-margin. Bevarer
+ *   typografisk paritet med lead/body-tekst rundt seg.
  */
+export type GroundingVariant = "article" | "compact";
+
+const VARIANT_CLASSES: Record<GroundingVariant, string> = {
+  article:
+    "text-base md:text-lg text-[#4a4a4a] leading-[1.8] [&>p]:mb-5 [&>p:last-child]:mb-0",
+  compact:
+    "text-[15px] leading-relaxed text-stone-800 [&>p]:mb-3 [&>p:last-child]:mb-0",
+};
+
 export interface ReportGroundingInlineProps {
   grounding: ReportThemeGroundingView;
+  variant?: GroundingVariant;
 }
 
 export default function ReportGroundingInline({
   grounding,
+  variant = "article",
 }: ReportGroundingInlineProps) {
   return (
     <div>
 
-      <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8] [&>p]:mb-5 [&>p:last-child]:mb-0">
+      <div className={VARIANT_CLASSES[variant]}>
         <ReactMarkdown
           allowedElements={[
             "p",
