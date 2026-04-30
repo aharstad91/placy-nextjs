@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/tooltip";
 
 /**
- * Desktop venstre-rail (72px bred). Kun ikon/illustrasjon — kategori-label
- * leveres via tooltip på hover. Discord-mønster.
+ * Desktop venstre-rail (80px bred). Kun ikon/illustrasjon — kategori-label
+ * leveres via tooltip på hover. Discord-mønster. Bredde gir 8px luft hver side
+ * rundt 48px button + 4px active-ring — ellers klipper nav-overflow ringen.
  * Klikk Home → RESET_TO_DEFAULT. Klikk kategori → SELECT_CATEGORY.
  */
 export function BoardRail() {
@@ -25,7 +26,7 @@ export function BoardRail() {
     <TooltipProvider>
       <aside
         aria-label="Kategorinavigasjon"
-        className="flex h-full w-[72px] flex-col items-center gap-2 border-r border-stone-200/80 bg-white/95 px-2 py-4 backdrop-blur"
+        className="flex h-full w-[80px] flex-col items-center gap-2 border-r border-stone-200/80 bg-white/95 px-2 py-4 backdrop-blur"
       >
         <Tooltip>
           <TooltipTrigger asChild>
@@ -91,8 +92,8 @@ function RailButton({
             className="relative h-12 w-12 overflow-hidden rounded-xl transition-shadow"
             style={{
               boxShadow: active
-                ? `0 0 0 2px white, 0 0 0 4px ${category.color}, 0 4px 12px rgba(15,29,68,0.15)`
-                : `0 0 0 1px rgba(231, 229, 228, 0.8)`,
+                ? "0 0 0 2px white, 0 0 0 4px #1c1917, 0 4px 12px rgba(15,29,68,0.15)"
+                : "0 0 0 1px rgba(231, 229, 228, 0.8)",
             }}
           >
             {illustrationSrc ? (
