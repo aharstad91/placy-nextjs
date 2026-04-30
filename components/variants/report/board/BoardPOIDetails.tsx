@@ -27,6 +27,17 @@ interface Props {
   poi: POI;
   /** Område-slug brukt til "Les mer"-lenke (POI-detaljside). Skjules hvis udefinert. */
   areaSlug?: string | null;
+  /**
+   * Skjul action-bar i bunnen av komponenten. Brukes av `BoardPOISheet` på mobil
+   * som rendrer `BoardPOIActionBar` separat som pinned bottom-bar.
+   */
+  hideActionBar?: boolean;
+}
+
+interface ActionBarProps {
+  poi: POI;
+  /** Område-slug brukt til "Les mer"-lenke (POI-detaljside). Skjules hvis udefinert. */
+  areaSlug?: string | null;
 }
 
 const PRICE_CATEGORIES = new Set(["restaurant", "cafe", "bar", "bakery"]);
@@ -64,6 +75,114 @@ function formatEventDate(dateStr: string): string {
 }
 
 /**
+ * Action-knapp-rad for `BoardPOIDetails`. Eksportert separat slik at
+ * `BoardPOISheet` kan rendre den som pinned bottom-bar utenfor scroll-området,
+ * mens body-delen scroller inni sheet-en. Desktop accordion + mobile inline
+ * accordion bruker fortsatt `BoardPOIDetails` med inline action-bar.
+ *
+ * Knapp-gating:
+ * - Vis rute + Utforsk er alltid med (universale handlinger).
+ * - Nettside vises kun ved trygg `googleWebsite`.
+ * - Ring vises kun ved `googlePhone`.
+ * - Mer info (event) vises kun ved `eventUrl` + tryggURL og `eventDates`.
+ * - Les mer (POI-side) vises kun ved `areaSlug`.
+ * - Google Maps vises kun ved trygg `googleMapsUrl`.
+ */
+export function BoardPOIActionBar({ poi, areaSlug }: ActionBarProps) {
+  const directionsUrl = poi.googlePlaceId
+    ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
+    : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`;
+
+  // Google AI Mode-søk (udm=50). poi.address gir Google nok kontekst til å
+  // disambiguere når flere steder har samme navn.
+  const exploreQuery = poi.address ? `${poi.name} ${poi.address}` : poi.name;
+  const exploreUrl = `https://www.google.com/search?udm=50&q=${encodeURIComponent(exploreQuery)}`;
+
+  const poiPageUrl = areaSlug ? `/${areaSlug}/steder/${slugify(poi.name)}` : null;
+  const hasEvent = !!poi.eventDates?.length;
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <a
+        href={directionsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
+      >
+        <Navigation className="w-3.5 h-3.5" />
+        Vis rute
+      </a>
+
+      {poi.googleWebsite && isSafeUrl(poi.googleWebsite) && (
+        <a
+          href={poi.googleWebsite}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+        >
+          <Globe className="w-3.5 h-3.5" />
+          Nettside
+        </a>
+      )}
+
+      {poi.googlePhone && (
+        <a
+          href={`tel:${poi.googlePhone.replace(/\s+/g, "")}`}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors"
+        >
+          <Phone className="w-3.5 h-3.5" />
+          Ring
+        </a>
+      )}
+
+      <a
+        href={exploreUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+      >
+        <Sparkles className="w-3.5 h-3.5" />
+        Utforsk
+      </a>
+
+      {hasEvent && poi.eventUrl && isSafeUrl(poi.eventUrl) && (
+        <a
+          href={poi.eventUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          Mer info
+        </a>
+      )}
+
+      {poiPageUrl && (
+        <Link
+          href={poiPageUrl}
+          className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          Les mer
+        </Link>
+      )}
+
+      {poi.googleMapsUrl && isSafeUrl(poi.googleMapsUrl) && (
+        <a
+          href={poi.googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          Google Maps
+        </a>
+      )}
+    </div>
+  );
+}
+
+/**
  * Felles POI-detalj-blokk for rapport-board (mobile sheet + desktop accordion).
  *
  * Alle seksjoner gates dynamisk slik at irrelevante felter aldri vises:
@@ -78,8 +197,12 @@ function formatEventDate(dateStr: string): string {
  *
  * Komponenten kan trygt rendres for alle POIer — minimum-render er
  * Vis rute + Utforsk-knappene (universelle handlinger).
+ *
+ * `hideActionBar` brukes av `BoardPOISheet` på mobil, der action-bar pinnes
+ * separat i bunnen utenfor scroll-området. Desktop accordion + mobile inline
+ * accordion lar prop-en stå default `false` så de får action-bar inline.
  */
-export function BoardPOIDetails({ poi, areaSlug }: Props) {
+export function BoardPOIDetails({ poi, areaSlug, hideActionBar = false }: Props) {
   // mymaps-domener må gå via image-proxy (ikke whitelisted i next.config.mjs)
   const imageUrl = poi.featuredImage
     ? poi.featuredImage.includes("mymaps.usercontent.google.com")
@@ -134,18 +257,6 @@ export function BoardPOIDetails({ poi, areaSlug }: Props) {
       ? `${poi.eventTimeStart}–${poi.eventTimeEnd}`
       : poi.eventTimeStart
     : null;
-
-  // Action URLs
-  const directionsUrl = poi.googlePlaceId
-    ? `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&destination_place_id=${poi.googlePlaceId}&travelmode=walking`
-    : `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}&travelmode=walking`;
-
-  // Google AI Mode-søk (udm=50). poi.address gir Google nok kontekst til å
-  // disambiguere når flere steder har samme navn.
-  const exploreQuery = poi.address ? `${poi.name} ${poi.address}` : poi.name;
-  const exploreUrl = `https://www.google.com/search?udm=50&q=${encodeURIComponent(exploreQuery)}`;
-
-  const poiPageUrl = areaSlug ? `/${areaSlug}/steder/${slugify(poi.name)}` : null;
 
   const fallbackDescription =
     !poi.editorialHook && !poi.localInsight && poi.description
@@ -311,84 +422,12 @@ export function BoardPOIDetails({ poi, areaSlug }: Props) {
         </div>
       )}
 
-      {/* Action-knapper */}
-      <div className="flex items-center gap-2 flex-wrap pt-1">
-        <a
-          href={directionsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
-        >
-          <Navigation className="w-3.5 h-3.5" />
-          Vis rute
-        </a>
-
-        {poi.googleWebsite && isSafeUrl(poi.googleWebsite) && (
-          <a
-            href={poi.googleWebsite}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            Nettside
-          </a>
-        )}
-
-        {poi.googlePhone && (
-          <a
-            href={`tel:${poi.googlePhone.replace(/\s+/g, "")}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors"
-          >
-            <Phone className="w-3.5 h-3.5" />
-            Ring
-          </a>
-        )}
-
-        <a
-          href={exploreUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          Utforsk
-        </a>
-
-        {hasEvent && poi.eventUrl && isSafeUrl(poi.eventUrl) && (
-          <a
-            href={poi.eventUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Mer info
-          </a>
-        )}
-
-        {poiPageUrl && (
-          <Link
-            href={poiPageUrl}
-            className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Les mer
-          </Link>
-        )}
-
-        {poi.googleMapsUrl && isSafeUrl(poi.googleMapsUrl) && (
-          <a
-            href={poi.googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Google Maps
-          </a>
-        )}
-      </div>
+      {/* Action-knapper — skjules på mobile sheet (rendres som pinned bottom-bar). */}
+      {!hideActionBar && (
+        <div className="pt-1">
+          <BoardPOIActionBar poi={poi} areaSlug={areaSlug} />
+        </div>
+      )}
     </div>
   );
 }

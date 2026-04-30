@@ -16,15 +16,23 @@ import {
 
 export type BoardPhase = "default" | "active" | "reading" | "poi";
 
+export type BoardReadingTab = "info" | "punkter";
+
 export interface BoardState {
   phase: BoardPhase;
   activeCategoryId: BoardCategoryId | null;
   activePOIId: BoardPOIId | null;
+  /**
+   * Initial tab for ReadingModal når den åpnes via OPEN_READING.
+   * Settes av action-payload; modal-en leser feltet ved open og styrer
+   * deretter sin egen lokale tab-state. undefined => default ("info").
+   */
+  readingTab: BoardReadingTab | undefined;
 }
 
 export type BoardAction =
   | { type: "SELECT_CATEGORY"; id: BoardCategoryId }
-  | { type: "OPEN_READING" }
+  | { type: "OPEN_READING"; tab?: BoardReadingTab }
   | { type: "OPEN_POI"; id: BoardPOIId; categoryId?: BoardCategoryId }
   | { type: "BACK_TO_ACTIVE" }
   | { type: "RESET_TO_DEFAULT" };
@@ -33,22 +41,30 @@ export const initialBoardState: BoardState = {
   phase: "default",
   activeCategoryId: null,
   activePOIId: null,
+  readingTab: undefined,
 };
 
 export function boardReducer(state: BoardState, action: BoardAction): BoardState {
   switch (action.type) {
     case "SELECT_CATEGORY":
-      // Velger ny kategori — alltid landing på "active" uavhengig av forrige fase
+      // Velger ny kategori — alltid landing på "active" uavhengig av forrige fase.
+      // Nullstiller readingTab så ny kategori ikke arver forrige valg.
       return {
         phase: "active",
         activeCategoryId: action.id,
         activePOIId: null,
+        readingTab: undefined,
       };
 
     case "OPEN_READING":
       // Krever aktiv kategori — ellers no-op
       if (!state.activeCategoryId) return state;
-      return { ...state, phase: "reading", activePOIId: null };
+      return {
+        ...state,
+        phase: "reading",
+        activePOIId: null,
+        readingTab: action.tab,
+      };
 
     case "OPEN_POI": {
       // categoryId kan være eksplisitt (f.eks. POI-marker-klikk fra default) eller arvet
@@ -58,15 +74,22 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         phase: "poi",
         activeCategoryId: categoryId,
         activePOIId: action.id,
+        readingTab: state.readingTab,
       };
     }
 
     case "BACK_TO_ACTIVE":
-      // Returnerer til "active" hvis vi har aktiv kategori, ellers default
+      // Returnerer til "active" hvis vi har aktiv kategori, ellers default.
+      // Nullstiller readingTab så neste OPEN_READING starter friskt.
       if (!state.activeCategoryId) {
         return initialBoardState;
       }
-      return { ...state, phase: "active", activePOIId: null };
+      return {
+        ...state,
+        phase: "active",
+        activePOIId: null,
+        readingTab: undefined,
+      };
 
     case "RESET_TO_DEFAULT":
       return initialBoardState;

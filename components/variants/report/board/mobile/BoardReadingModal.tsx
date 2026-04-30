@@ -8,7 +8,7 @@ import {
   useActiveCategory,
   useFilteredActiveCategory,
 } from "../board-state";
-import { BoardRelatedPOICard } from "./BoardRelatedPOICard";
+import { BoardPunkterAccordion } from "./BoardPunkterAccordion";
 import { BoardTabs } from "./BoardTabs";
 import { BoardCategoryInfoTab } from "../BoardCategoryInfoTab";
 import { SubCategoryFilter } from "../SubCategoryFilter";
@@ -20,11 +20,13 @@ export function BoardReadingModal() {
   const filteredCat = useFilteredActiveCategory();
   const open = state.phase === "reading";
 
-  // Reset til Info-tab ved hver åpning
-  const [tab, setTab] = useState("info");
+  // Initial tab styres av state.readingTab (settes via OPEN_READING-action).
+  // Vi synker kun ved åpning eller når payload-tab endres — etter det eier
+  // brukerens egne tab-klikk lokal state inntil modalen lukkes.
+  const [tab, setTab] = useState<string>(state.readingTab ?? "info");
   useEffect(() => {
-    if (open) setTab("info");
-  }, [open]);
+    if (open) setTab(state.readingTab ?? "info");
+  }, [open, state.readingTab]);
 
   const subCategories = useMemo(
     () => (cat ? deriveSubCategories(cat) : []),
@@ -114,20 +116,9 @@ export function BoardReadingModal() {
                       </button>
                     </div>
                   ) : (
-                    filteredCat?.pois.map((poi) => (
-                      <BoardRelatedPOICard
-                        key={poi.id}
-                        poi={poi}
-                        categoryColor={cat.color}
-                        onClick={() =>
-                          dispatch({
-                            type: "OPEN_POI",
-                            id: poi.id,
-                            categoryId: cat.id,
-                          })
-                        }
-                      />
-                    ))
+                    filteredCat && (
+                      <BoardPunkterAccordion category={filteredCat} />
+                    )
                   )}
                 </div>
               )}

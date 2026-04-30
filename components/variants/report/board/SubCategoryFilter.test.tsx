@@ -12,7 +12,7 @@ const FOUR_SUBS: SubCategoryInfo[] = [
   { id: "pub", name: "Pub", icon: "Wine", color: "#ffff00", count: 4 },
 ];
 
-describe("SubCategoryFilter", () => {
+describe("SubCategoryFilter (desktop)", () => {
   it("returns null when there are fewer than 2 sub-categories", () => {
     const { container } = render(
       <SubCategoryFilter
@@ -176,5 +176,139 @@ describe("SubCategoryFilter", () => {
 
     expect(restaurantRow).toHaveAttribute("aria-pressed", "true");
     expect(bakeriRow).toHaveAttribute("aria-pressed", "false");
+  });
+});
+
+describe("SubCategoryFilter (mobile)", () => {
+  it("returns null when there are fewer than 2 sub-categories", () => {
+    const { container } = render(
+      <SubCategoryFilter
+        variant="mobile"
+        subCategories={[FOUR_SUBS[0]]}
+        hiddenIds={new Set()}
+        onToggle={() => {}}
+        onToggleAll={() => {}}
+      />,
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("renders chip per sub-category inline (no popover trigger)", () => {
+    render(
+      <SubCategoryFilter
+        variant="mobile"
+        subCategories={FOUR_SUBS}
+        hiddenIds={new Set()}
+        onToggle={() => {}}
+        onToggleAll={() => {}}
+      />,
+    );
+
+    // Alle sub-kat-navn er synlige direkte uten å trykke trigger
+    expect(screen.getByText("Restaurant")).toBeInTheDocument();
+    expect(screen.getByText("Bakeri")).toBeInTheDocument();
+    expect(screen.getByText("Kafé")).toBeInTheDocument();
+    expect(screen.getByText("Pub")).toBeInTheDocument();
+
+    // Ingen "Filtrér"-popover-trigger på mobile
+    expect(screen.queryByText("Filtrér")).not.toBeInTheDocument();
+  });
+
+  it("calls onToggle with sub-category id when chip clicked", () => {
+    const onToggle = vi.fn();
+    render(
+      <SubCategoryFilter
+        variant="mobile"
+        subCategories={FOUR_SUBS}
+        hiddenIds={new Set()}
+        onToggle={onToggle}
+        onToggleAll={() => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Bakeri"));
+    expect(onToggle).toHaveBeenCalledWith("bakeri");
+  });
+
+  it("aria-pressed reflects visibility state on each chip", () => {
+    render(
+      <SubCategoryFilter
+        variant="mobile"
+        subCategories={FOUR_SUBS}
+        hiddenIds={new Set(["bakeri"])}
+        onToggle={() => {}}
+        onToggleAll={() => {}}
+      />,
+    );
+
+    const restaurantChip = screen.getByText("Restaurant").closest("button")!;
+    const bakeriChip = screen.getByText("Bakeri").closest("button")!;
+
+    expect(restaurantChip).toHaveAttribute("aria-pressed", "true");
+    expect(bakeriChip).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("renders count per sub-category inline", () => {
+    render(
+      <SubCategoryFilter
+        variant="mobile"
+        subCategories={FOUR_SUBS}
+        hiddenIds={new Set()}
+        onToggle={() => {}}
+        onToggleAll={() => {}}
+      />,
+    );
+
+    expect(screen.getByText("12")).toBeInTheDocument();
+    expect(screen.getByText("8")).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(screen.getByText("4")).toBeInTheDocument();
+  });
+
+  it("renders 'Skjul alle' chip when all visible", () => {
+    render(
+      <SubCategoryFilter
+        variant="mobile"
+        subCategories={FOUR_SUBS}
+        hiddenIds={new Set()}
+        onToggle={() => {}}
+        onToggleAll={() => {}}
+      />,
+    );
+    expect(screen.getByText("Skjul alle")).toBeInTheDocument();
+  });
+
+  it("renders 'Vis alle' chip when partial or none visible", () => {
+    render(
+      <SubCategoryFilter
+        variant="mobile"
+        subCategories={FOUR_SUBS}
+        hiddenIds={new Set(["bakeri"])}
+        onToggle={() => {}}
+        onToggleAll={() => {}}
+      />,
+    );
+    expect(screen.getByText("Vis alle")).toBeInTheDocument();
+  });
+
+  it("calls onToggleAll with all sub-category ids when toggle-all chip clicked", () => {
+    const onToggleAll = vi.fn();
+    render(
+      <SubCategoryFilter
+        variant="mobile"
+        subCategories={FOUR_SUBS}
+        hiddenIds={new Set()}
+        onToggle={() => {}}
+        onToggleAll={onToggleAll}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Skjul alle"));
+    expect(onToggleAll).toHaveBeenCalledWith([
+      "restaurant",
+      "bakeri",
+      "kafé",
+      "pub",
+    ]);
   });
 });

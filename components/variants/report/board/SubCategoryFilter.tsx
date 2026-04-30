@@ -24,9 +24,11 @@ interface Props {
  *
  * Skjules helt når temaet har <2 sub-kategorier (ingen filter-verdi).
  *
- * Bruker shadcn Popover (Radix) som portaler til document.body — fungerer
- * også fra inne i vaul-drawer (mobile reading-modal). Hvis stacking-problemer
- * oppstår kan vi senere falle tilbake til inline disclosure.
+ * - Desktop-varianten bruker shadcn Popover (Radix) som portaler til
+ *   document.body — fungerer godt i tett desktop-layout.
+ * - Mobile-varianten rendrer en horisontal-scrollende chip-rad direkte
+ *   over POI-listen (ingen popover) — alltid synlig og kjapp å bruke
+ *   med tommelen.
  */
 export function SubCategoryFilter({
   subCategories,
@@ -37,11 +39,37 @@ export function SubCategoryFilter({
 }: Props) {
   if (subCategories.length < 2) return null;
 
+  if (variant === "mobile") {
+    return (
+      <MobileChipRow
+        subCategories={subCategories}
+        hiddenIds={hiddenIds}
+        onToggle={onToggle}
+        onToggleAll={onToggleAll}
+      />
+    );
+  }
+
+  return (
+    <DesktopPopover
+      subCategories={subCategories}
+      hiddenIds={hiddenIds}
+      onToggle={onToggle}
+      onToggleAll={onToggleAll}
+    />
+  );
+}
+
+function DesktopPopover({
+  subCategories,
+  hiddenIds,
+  onToggle,
+  onToggleAll,
+}: Omit<Props, "variant">) {
   const allIds = subCategories.map((s) => s.id);
   const visibleCount = subCategories.filter((s) => !hiddenIds.has(s.id)).length;
   const totalCount = subCategories.length;
-  const hasPartialFilter =
-    visibleCount > 0 && visibleCount < totalCount;
+  const hasPartialFilter = visibleCount > 0 && visibleCount < totalCount;
   const allHidden = visibleCount === 0;
   const allVisible = visibleCount === totalCount;
 
@@ -50,17 +78,12 @@ export function SubCategoryFilter({
     .reduce((sum, s) => sum + s.count, 0);
   const totalPoiCount = subCategories.reduce((sum, s) => sum + s.count, 0);
 
-  const isMobile = variant === "mobile";
-
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={cn(
-            "inline-flex items-center gap-2 rounded-full border border-stone-200/80 bg-white text-sm font-medium text-stone-700 shadow-sm transition-colors hover:bg-stone-50",
-            isMobile ? "h-9 px-3.5" : "h-9 px-3.5",
-          )}
+          className="inline-flex h-9 items-center gap-2 rounded-full border border-stone-200/80 bg-white px-3.5 text-sm font-medium text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
           aria-label={
             hasPartialFilter
               ? `Filter: ${visibleCount} av ${totalCount} sub-kategorier synlig`
@@ -79,11 +102,7 @@ export function SubCategoryFilter({
           <ChevronDown className="h-3.5 w-3.5 text-stone-400" />
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        sideOffset={6}
-        className="w-64 !p-1.5"
-      >
+      <PopoverContent align="start" sideOffset={6} className="w-64 !p-1.5">
         <div className="flex flex-col">
           {subCategories.map((sub) => {
             const Icon = getFilledIcon(sub.icon);
@@ -144,5 +163,84 @@ export function SubCategoryFilter({
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function MobileChipRow({
+  subCategories,
+  hiddenIds,
+  onToggle,
+  onToggleAll,
+}: Omit<Props, "variant">) {
+  const allIds = subCategories.map((s) => s.id);
+  const visibleCount = subCategories.filter((s) => !hiddenIds.has(s.id)).length;
+  const totalCount = subCategories.length;
+  const allVisible = visibleCount === totalCount;
+
+  return (
+    <div
+      className="-mx-5 flex gap-2 overflow-x-auto overflow-y-hidden px-5 pb-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      role="group"
+      aria-label="Filtrér sub-kategorier"
+    >
+      <button
+        type="button"
+        onClick={() => onToggleAll(allIds)}
+        className={cn(
+          "inline-flex h-9 flex-none items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors",
+          allVisible
+            ? "border-stone-300 bg-stone-100 text-stone-600"
+            : "border-stone-200/80 bg-white text-stone-700 shadow-sm hover:bg-stone-50",
+        )}
+        aria-label={allVisible ? "Skjul alle sub-kategorier" : "Vis alle sub-kategorier"}
+      >
+        {allVisible ? (
+          <EyeOff className="h-3.5 w-3.5 text-stone-500" />
+        ) : (
+          <Eye className="h-3.5 w-3.5 text-stone-500" />
+        )}
+        <span>{allVisible ? "Skjul alle" : "Vis alle"}</span>
+      </button>
+
+      {subCategories.map((sub) => {
+        const isVisible = !hiddenIds.has(sub.id);
+        const circle = markerCircleStyle(sub.color);
+        return (
+          <button
+            key={sub.id}
+            type="button"
+            onClick={() => onToggle(sub.id)}
+            aria-pressed={isVisible}
+            className={cn(
+              "inline-flex h-9 flex-none items-center gap-2 rounded-full border px-3 text-sm font-medium transition-colors",
+              isVisible
+                ? "border-stone-200/80 bg-white text-stone-700 shadow-sm hover:bg-stone-50"
+                : "border-stone-200 bg-stone-100 text-stone-400",
+            )}
+          >
+            <span
+              className={cn(
+                "h-3 w-3 flex-none rounded-full border-2 transition-all",
+                !isVisible && "opacity-30 grayscale",
+              )}
+              style={{
+                borderColor: circle.borderColor,
+                backgroundColor: circle.backgroundColor,
+              }}
+              aria-hidden="true"
+            />
+            <span className="whitespace-nowrap">{sub.name}</span>
+            <span
+              className={cn(
+                "tabular-nums text-xs",
+                isVisible ? "text-stone-400" : "text-stone-300",
+              )}
+            >
+              {sub.count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
