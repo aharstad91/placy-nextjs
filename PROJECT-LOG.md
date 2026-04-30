@@ -6,6 +6,44 @@
 
 ---
 
+## 2026-04-30 — Rapport-board 3D-kart: dblclick-blokk + senket default-tilt
+
+### Bakgrunn
+Bruker testet Wesselsløkka-rapporten i 3D-modus og oppdaget to UX-friksjoner: (1) dobbeltklikk på kartet flyttet kameraet bort fra det fastlåste fokuset rundt boligen, (2) start-tilt 60° ble for skrått — 3D-rendering ble krevende å lese og skygget for kart-konteksten. Bruker testet manuelt med tilt-kontrollene: presset "Tilt opp" til floor (15° = top-down/2D-look), så "Tilt ned" 2 nivåer (+30°) → landet på 45° som beste balanse.
+
+### Beslutninger
+- **Dblclick blokkeres for ALLE aktiverte MapView3D-instanser**, ikke bare board. Konsistent scope med eksisterende `blockZoomWheel`. Hvis ny konsument trenger dblclick, kan vi gjøre det opt-out via `cameraLock`-flagg senere.
+- **`DEFAULT_CAMERA_LOCK.tilt` (45°) som single source of truth** for både fallback (BoardMap3D) og 2D→3D-toggle (BoardMap). Hardkodet `tilt3d = 60` i toggle var kilden til drift.
+- **Pointer-counting + DOM-event som backup** for dblclick-deteksjon — DOM `dblclick` alene treffer ikke Google's interne WebGL-zoom-handler.
+
+### Teknisk
+- **`map-view-3d.tsx`:** la til `blockDblClickFromPointer` med 300ms/10px-terskel, `blockDblClickEvent` (dblclick), og `blockMultiClick` (click med detail >= 2). Alle i capture-fase, registrert FØR `forceOrbitGesture` så `stopImmediatePropagation` på det andre klikket også stopper orbit-overstyringen.
+- **`BoardMap.tsx:136`:** importerer `DEFAULT_CAMERA_LOCK` fra `report-3d-config.ts` og bruker `DEFAULT_CAMERA_LOCK.tilt` i stedet for hardkodet 60.
+- **Plan:** `docs/plans/2026-04-30-002-feat-3d-map-disable-dblclick-default-tilt-plan.md` (Lightweight, 2 units).
+
+### Bug-iterasjon (verdt å huske)
+Første implementasjon registrerte pointer-counting på BÅDE `pointerdown` OG `mousedown`. Browser fyrer begge for SAMME fysiske klikk → `mousedown` så `lastPointerDownTime` nettopp satt av `pointerdown` (dt ≈ 0ms, dx/dy = 0) og blokkerte ALL single-click drag. Fix: kun `pointerdown` for counting. Pointer-events og mouse-events er duplikate signaler for samme fysiske input — bruk én eller den andre, aldri begge i tids-baserte detektorer.
+
+### Worktree-gotcha (igjen!)
+Dev-server kjørte på `:3001` fra `placy-ralph-board`-worktreen (gammelt arbeid). Mine endringer var i hovedrepoet på branchen `feat/3d-map-dblclick-tilt`. Måtte starte ny dev på `:3002` fra hovedrepoet for å teste. `lsof -nP -iTCP:3000-3010 -sTCP:LISTEN` + `lsof -p $PID | grep cwd` er sjekken.
+
+### Scope (sacred)
+- Kun rapport-board-flyten + delt MapView3D
+- Ikke endre `minTilt`/`maxTilt`-grenser
+- Ikke 3D→2D-toggle-tilt (allerede 0°, korrekt)
+- Ikke touch-dobbeltap (Google's eget gesture-system, ikke DOM dblclick)
+
+### Åpne spørsmål
+- Bør `cameraLock` få et opt-out-flagg for dblclick-blokkering hvis fremtidige konsumenter (f.eks. en 3D-utforskningsmodus) trenger native zoom? Per nå default-on, bevisst valg for board-konteksten.
+
+### Referanser
+- Plan: `docs/plans/2026-04-30-002-feat-3d-map-disable-dblclick-default-tilt-plan.md`
+- Trello: [ufEfvKhO](https://trello.com/c/ufEfvKhO)
+- Commits: `5221368` (feat) + `32a6374` (fix dblclick pointer-counting)
+- Branch: `feat/3d-map-dblclick-tilt`
+
+---
+
 ## 2026-04-30 — Travel-time-chip på path-midten (rapport-board)
 
 ### Bakgrunn

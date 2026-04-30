@@ -235,24 +235,88 @@ function Map3DInner({
       e.stopPropagation();
     };
 
+    // Dobbeltklikk-zoom er deaktivert: kameraet skal forbli forankret rundt
+    // boligen. Google's WebGL-handler oppdager dobbeltklikk via egen pointer-
+    // tids-tracking, så DOM `dblclick`-eventet alene treffer ikke. Vi teller
+    // pointerdown selv og blokkerer den andre raske klikket.
+    const DBL_CLICK_THRESHOLD_MS = 300;
+    const DBL_CLICK_THRESHOLD_PX = 10;
+    let lastPointerDownTime = 0;
+    let lastPointerDownX = 0;
+    let lastPointerDownY = 0;
+
+    const blockDblClickFromPointer = (e: PointerEvent | MouseEvent) => {
+      if ((e as PointerEvent).pointerType === "touch") return;
+      if (e.button !== undefined && e.button !== 0) return;
+
+      const now = performance.now();
+      const dt = now - lastPointerDownTime;
+      const dx = Math.abs(e.clientX - lastPointerDownX);
+      const dy = Math.abs(e.clientY - lastPointerDownY);
+
+      if (
+        dt < DBL_CLICK_THRESHOLD_MS &&
+        dx < DBL_CLICK_THRESHOLD_PX &&
+        dy < DBL_CLICK_THRESHOLD_PX
+      ) {
+        // Dette er det andre klikket i en dobbeltklikk-sekvens. Stopp før
+        // Google ser den — stopImmediatePropagation hindrer også vår egen
+        // forceOrbitGesture-handler i å fyre på en zoom-klikk.
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        lastPointerDownTime = 0;
+        return;
+      }
+      lastPointerDownTime = now;
+      lastPointerDownX = e.clientX;
+      lastPointerDownY = e.clientY;
+    };
+
+    // Backup: blokkér også DOM-eventene `dblclick` og `click` med detail >= 2
+    // i tilfelle Google har en handler på dem.
+    const blockDblClickEvent = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    };
+    const blockMultiClick = (e: MouseEvent) => {
+      if (e.detail >= 2) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
     // Capture-phase så vi treffer før Google's shadow-DOM-listenere.
     // Dekker både pointer- og mouse-events for bred browser-støtte.
     const captureOpts = { capture: true, passive: true } as AddEventListenerOptions;
-    // Wheel må være non-passive for at preventDefault skal fungere.
+    // Wheel og dblclick-blokk må være non-passive for at preventDefault skal fungere.
     const wheelOpts = { capture: true, passive: false } as AddEventListenerOptions;
+    const dblOpts = { capture: true, passive: false } as AddEventListenerOptions;
 
+    // VIKTIG: blockDblClickFromPointer registreres FØR forceOrbitGesture så
+    // stopImmediatePropagation på den andre klikket også stopper orbit-overstyringen.
+    // Kun pointerdown — mousedown fyrer for samme fysiske klikk og ville feilaktig
+    // bli tolket som "andre klikk" (lastPointerDownTime nettopp satt av pointerdown).
+    container.addEventListener("pointerdown", blockDblClickFromPointer, dblOpts);
     container.addEventListener("pointerdown", forceOrbitGesture, captureOpts);
     container.addEventListener("pointermove", forceOrbitGesture, captureOpts);
     container.addEventListener("mousedown", forceOrbitGesture, captureOpts);
     container.addEventListener("mousemove", forceOrbitGesture, captureOpts);
     container.addEventListener("wheel", blockZoomWheel, wheelOpts);
+    container.addEventListener("dblclick", blockDblClickEvent, dblOpts);
+    container.addEventListener("click", blockMultiClick, dblOpts);
 
     return () => {
+      container.removeEventListener("pointerdown", blockDblClickFromPointer, dblOpts);
       container.removeEventListener("pointerdown", forceOrbitGesture, captureOpts);
       container.removeEventListener("pointermove", forceOrbitGesture, captureOpts);
       container.removeEventListener("mousedown", forceOrbitGesture, captureOpts);
       container.removeEventListener("mousemove", forceOrbitGesture, captureOpts);
       container.removeEventListener("wheel", blockZoomWheel, wheelOpts);
+      container.removeEventListener("dblclick", blockDblClickEvent, dblOpts);
+      container.removeEventListener("click", blockMultiClick, dblOpts);
     };
   }, [activated]);
 
