@@ -146,8 +146,9 @@ export function Map3DControls({
         </button>
       </div>
 
-      {/* Tilt opp / ned */}
-      <div className="flex flex-col rounded-full overflow-hidden border border-[#eae6e1]">
+      {/* Tilt opp / ned — skjult på mobil for å holde mobil-UX minimal.
+          Tilt-grenser håndheves uansett av cameraLock.minTilt/maxTilt natively. */}
+      <div className="hidden lg:flex flex-col rounded-full overflow-hidden border border-[#eae6e1]">
         <button
           onClick={() => tiltBy(-tiltStep)}
           className={`${btn} rounded-none border-0 border-b border-[#eae6e1]`}
