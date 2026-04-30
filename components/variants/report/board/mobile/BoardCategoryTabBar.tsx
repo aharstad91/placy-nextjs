@@ -11,7 +11,9 @@ import { THEME_SCENE_SRC } from "../../theme-icons";
 /**
  * Persistent horisontal kategori-tab-bar pinnet til viewport-bunn (Google
  * Maps-stil). Hjem-knapp først (matcher desktop BoardRail), deretter alle
- * kategorier som thumbnail + tekst-label (12px under).
+ * kategorier som thumbnail. Speiler tab-pattern fra BoardTabs (pill-bakgrunn,
+ * alltid én aktiv) — kategori-tittel vises i sheet-headeren, ikke som label
+ * under firkantene.
  *
  * Mountes som søsken til BoardMobileSheet i BoardScaffold med høy z-index
  * — alltid synlig, alltid over sheet og kart. Sheet kan dras ned uten å
@@ -51,11 +53,11 @@ export function BoardCategoryTabBar() {
   return (
     <nav
       aria-label="Kategorinavigasjon"
-      className="relative bg-stone-50 border-t border-stone-200/80"
+      className="relative bg-stone-200/70 backdrop-blur-md border-t border-stone-300/60"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div
-        className="flex gap-3 overflow-x-auto px-3 pt-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-3 overflow-x-auto px-3 pt-2.5 pb-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ touchAction: "pan-x" }}
       >
         <HomeButton
@@ -79,7 +81,7 @@ export function BoardCategoryTabBar() {
 
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-stone-50 to-transparent"
+        className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-stone-200/70 to-transparent"
       />
     </nav>
   );
@@ -95,23 +97,20 @@ function HomeButton({
   return (
     <button
       type="button"
-      aria-label="Tilbake til oversikt"
+      aria-label="Hjem"
       aria-current={active ? "page" : undefined}
       onClick={onClick}
-      className="flex shrink-0 flex-col items-center gap-1 pt-0.5 w-14"
+      className="flex shrink-0 items-center justify-center w-14"
     >
       <div
-        className={`flex h-14 w-14 items-center justify-center rounded-full border-2 transition-colors ${
+        className={`flex h-14 w-14 items-center justify-center rounded-2xl border-2 bg-gradient-to-br from-amber-50 to-stone-200 transition-all ${
           active
-            ? "border-stone-900 bg-stone-100 text-stone-900"
-            : "border-transparent bg-stone-100 text-stone-600"
+            ? "border-stone-900 text-stone-900 shadow-md"
+            : "border-transparent text-stone-700 shadow-sm"
         }`}
       >
         <Home className="h-6 w-6" strokeWidth={2} />
       </div>
-      <span className="text-[11px] font-medium text-stone-700 truncate max-w-[56px]">
-        Hjem
-      </span>
     </button>
   );
 }
@@ -134,7 +133,7 @@ const CategoryButton = forwardRef<
       aria-label={category.label}
       aria-current={active ? "page" : undefined}
       onClick={onClick}
-      className="flex shrink-0 snap-center flex-col items-center gap-1 pt-0.5 w-14"
+      className="flex shrink-0 snap-center items-center justify-center w-14"
     >
       <div
         className={`relative h-14 w-14 overflow-hidden rounded-2xl border-2 transition-all ${
@@ -157,9 +156,6 @@ const CategoryButton = forwardRef<
           </div>
         )}
       </div>
-      <span className="text-[11px] font-medium text-stone-700 truncate max-w-[56px]">
-        {category.label}
-      </span>
     </button>
   );
 });
