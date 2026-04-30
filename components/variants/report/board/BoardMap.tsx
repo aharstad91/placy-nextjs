@@ -46,7 +46,7 @@ interface Props {
 }
 
 export function BoardMap({ has3dAddon = false }: Props) {
-  const { state, data, dispatch } = useBoard();
+  const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -80,7 +80,7 @@ export function BoardMap({ has3dAddon = false }: Props) {
 
   // Markører som vises avhenger av phase:
   // - default: alle kategorier, alle POI-er (oversiktsmodus)
-  // - active|reading|poi: kun aktiv kategoris POI-er
+  // - active|reading|poi: kun aktiv kategoris POI-er, med sub-kategori-filter
   const visiblePOIs = useMemo(() => {
     if (state.phase === "default") {
       return data.categories.flatMap((c) =>
@@ -88,12 +88,18 @@ export function BoardMap({ has3dAddon = false }: Props) {
       );
     }
     if (!activeCategory) return [];
-    return activeCategory.pois.map((p) => ({
+    const filtered =
+      subFilter.hiddenIds.size === 0
+        ? activeCategory.pois
+        : activeCategory.pois.filter(
+            (p) => !subFilter.hiddenIds.has(p.raw.category.id),
+          );
+    return filtered.map((p) => ({
       poi: p,
       color: activeCategory.color,
       icon: activeCategory.icon,
     }));
-  }, [state.phase, data.categories, activeCategory]);
+  }, [state.phase, data.categories, activeCategory, subFilter.hiddenIds]);
 
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
