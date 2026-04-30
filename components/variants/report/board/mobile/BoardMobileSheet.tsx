@@ -3,14 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { Drawer, DrawerPortal } from "@/components/ui/drawer";
-import { X } from "lucide-react";
+import { ChevronLeft, X } from "lucide-react";
+import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import {
   useActiveCategory,
+  useActivePOI,
   useBoard,
   useFilteredActiveCategory,
   type BoardPhase,
 } from "../board-state";
 import { BoardCategoryInfoTab } from "../BoardCategoryInfoTab";
+import {
+  BoardPOIActionBar,
+  BoardPOIDetails,
+} from "../BoardPOIDetails";
 import { SubCategoryFilter } from "../SubCategoryFilter";
 import { deriveSubCategories } from "../use-sub-category-filter";
 import { BoardCategoryTabBar } from "./BoardCategoryTabBar";
@@ -21,6 +27,10 @@ import { BoardTabs } from "./BoardTabs";
 // Mix av px-strings og prosent: tab-bar-høyde er kjent i piksler (uavhengig
 // av viewport), halv/full er meningsfulle som prosent.
 const SNAP_POINTS: (number | string)[] = ["96px", "320px", 0.5, 0.92];
+
+// Cross-fade ved POI-bytte: fade-ut → swap → fade-inn. Total ~200ms.
+const FADE_OUT_MS = 100;
+const FADE_IN_MS = 100;
 
 function getDefaultSnapForPhase(phase: BoardPhase): number | string {
   switch (phase) {
@@ -49,13 +59,14 @@ export interface BoardMobileSheetProps {
  *
  * Phase-rendering:
  * - default: tomt content-område, kun tab-bar synlig (snap=96px)
- * - active: kategori-header + Beliggenhet/Punkter-tabs + content (Unit 4)
- * - poi: POI-header + BoardPOIDetails + pinned action-bar (Unit 5 — kommer)
+ * - active: kategori-header + Beliggenhet/Punkter-tabs + content
+ * - poi: tilbake-knapp + POI-header + BoardPOIDetails + pinned action-bar (cross-fade på bytte)
  */
 export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
   const { state, dispatch, data, subFilter } = useBoard();
   const cat = useActiveCategory();
   const filteredCat = useFilteredActiveCategory();
+  const poi = useActivePOI();
 
   // Snap-state lokal. Auto-synkroniseres med phase via watcher under.
   const [snap, setSnapInternal] = useState<number | string | null>(
@@ -90,6 +101,72 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
     }
     prevCategoryRef.current = state.activeCategoryId;
   }, [state.phase, state.activeCategoryId]);
+
+  // Cross-fade-state: vi rendrer det "viste" POI-id-et, som lagger ett tick
+  // bak aktiv POI under fade-ut. Når fade-ut er ferdig, swap-er vi til ny
+  // POI og kjører fade-inn. Rapid multi-click → timer resettes, last click wins.
+  // Mønster portet fra dagens BoardPOISheet (slettes i Unit 7).
+  const [displayedPoiId, setDisplayedPoiId] = useState<string | null>(
+    poi?.id ?? null,
+  );
+  const [bodyVisible, setBodyVisible] = useState(true);
+  const fadeOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isPOIPhase = state.phase === "poi";
+
+  useEffect(() => {
+    const targetId = poi?.id ?? null;
+
+    // Phase ikke poi: synkroniser uten animasjon.
+    if (!isPOIPhase) {
+      if (fadeOutTimerRef.current) {
+        clearTimeout(fadeOutTimerRef.current);
+        fadeOutTimerRef.current = null;
+      }
+      setDisplayedPoiId(targetId);
+      setBodyVisible(true);
+      return;
+    }
+
+    // Initiell mount eller ny POI fra null: vis direkte.
+    if (displayedPoiId === null && targetId !== null) {
+      setDisplayedPoiId(targetId);
+      setBodyVisible(true);
+      return;
+    }
+
+    // Allerede synkronisert: ingenting å gjøre.
+    if (displayedPoiId === targetId) return;
+
+    // POI byttet mens sheet er i poi-fase: fade-ut, swap, fade-inn.
+    if (fadeOutTimerRef.current) clearTimeout(fadeOutTimerRef.current);
+    setBodyVisible(false);
+    fadeOutTimerRef.current = setTimeout(() => {
+      setDisplayedPoiId(targetId);
+      setBodyVisible(true);
+      fadeOutTimerRef.current = null;
+    }, FADE_OUT_MS);
+
+    return () => {
+      if (fadeOutTimerRef.current) {
+        clearTimeout(fadeOutTimerRef.current);
+        fadeOutTimerRef.current = null;
+      }
+    };
+  }, [isPOIPhase, poi?.id, displayedPoiId]);
+
+  // Resolve "displayed" POI/cat fra board-data basert på displayedPoiId. Under
+  // fade-ut viser vi forrige POI-data; etter swap viser vi ny POI-data.
+  const displayedPoi = displayedPoiId
+    ? data.categories
+        .flatMap((c) => c.pois.map((p) => ({ poi: p, cat: c })))
+        .find((entry) => entry.poi.id === displayedPoiId) ?? null
+    : null;
+
+  const renderPoiCat = displayedPoi?.cat ?? cat;
+  const renderPoi = displayedPoi?.poi ?? poi;
+  const PoiIcon = renderPoi ? getFilledIcon(renderPoi.raw.category.icon) : null;
+  const poiHeaderColor =
+    renderPoi?.raw.category.color || renderPoiCat?.color || "#94a3b8";
 
   // Sub-kategorier deriveres fra ufiltrert kategori (UI-stable).
   const subCategories = useMemo(
@@ -188,10 +265,65 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
               </div>
             )}
 
-            {/* phase=poi: Unit 5 fyller med POI-header + BoardPOIDetails + cross-fade. */}
+            {state.phase === "poi" && renderPoi && renderPoiCat && PoiIcon && (
+              <div
+                className="px-5 pt-2 pb-4 transition-opacity ease-out"
+                style={{
+                  opacity: bodyVisible ? 1 : 0,
+                  transitionDuration: `${bodyVisible ? FADE_IN_MS : FADE_OUT_MS}ms`,
+                }}
+              >
+                <header className="flex items-start gap-3 pb-3">
+                  <button
+                    type="button"
+                    aria-label="Tilbake til kategori"
+                    onClick={() => dispatch({ type: "BACK_TO_ACTIVE" })}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/90 text-stone-700 shadow-sm hover:text-stone-900"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow-md"
+                    style={{ backgroundColor: poiHeaderColor }}
+                  >
+                    <PoiIcon className="h-6 w-6 text-white" weight="fill" />
+                  </div>
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <h2 className="text-xl font-bold leading-tight text-stone-900 truncate">
+                      {renderPoi.name}
+                    </h2>
+                    <div className="text-xs font-semibold uppercase tracking-wider text-stone-500 mt-0.5 truncate">
+                      {renderPoiCat.label}
+                    </div>
+                  </div>
+                </header>
+
+                {renderPoi.address && (
+                  <div className="text-sm text-stone-600 pb-4 border-b border-stone-200/80">
+                    {renderPoi.address}
+                  </div>
+                )}
+
+                <div className="pt-4">
+                  <BoardPOIDetails poi={renderPoi.raw} hideActionBar />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Pinned action-bar slot — Unit 5 fyller når phase=poi. */}
+          {/* Pinned action-bar — kun ved phase=poi. Persisterer (ingen fade)
+              for stabil visuell forankring under POI-bytte. */}
+          {state.phase === "poi" && renderPoi && (
+            <div
+              className="shrink-0 border-t border-stone-200/80 bg-stone-50/95 backdrop-blur px-5 pt-3 pb-3"
+              style={{
+                paddingBottom:
+                  "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+              }}
+            >
+              <BoardPOIActionBar poi={renderPoi.raw} />
+            </div>
+          )}
 
           {/* Tab-bar — alltid synlig på tvers av snap-stages. */}
           <div className="shrink-0 border-t border-stone-200/80 bg-stone-50">
