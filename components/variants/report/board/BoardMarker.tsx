@@ -10,11 +10,10 @@ interface Props {
   color: string;
   icon: string;
   isActive: boolean;
-  isDimmed: boolean;
   onClick: () => void;
 }
 
-export function BoardMarker({ poi, color, icon, isActive, isDimmed, onClick }: Props) {
+export function BoardMarker({ poi, color, icon, isActive, onClick }: Props) {
   const Icon = getFilledIcon(poi.raw.category.icon || icon);
   const circle = markerCircleStyle(color);
 
@@ -35,7 +34,7 @@ export function BoardMarker({ poi, color, icon, isActive, isDimmed, onClick }: P
           isActive
             ? "w-11 h-11 scale-110 border-[3px]"
             : "w-8 h-8 border-2"
-        } ${isDimmed && !isActive ? "opacity-60" : "opacity-100"}`}
+        }`}
         style={{
           borderColor: circle.borderColor,
           backgroundColor: circle.backgroundColor,
