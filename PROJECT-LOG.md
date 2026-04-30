@@ -82,6 +82,44 @@ Verifisert i chrome-devtools på 500×844 viewport:
 
 **Vaul snap-modell er motintuitiv.** Sheet-elementet må ha full viewport-høyde, og snap-points uttrykker hvor mange piksler **fra TOPPEN av sheet** som blir synlig (ikke "hvor stort sheet er"). Innhold som skal være synlig ved lave snap-stages må derfor være ØVERST i DOM, ikke nederst. Hvis Placy får flere multi-snap-sheets, hører dette hjemme i `docs/solutions/ui-patterns/vaul-snap-points-layout-mental-model.md`.
 
+### Iterasjon 2 (samme dag, sen kveld) — Google Maps-mønster-refactor + iPhone-fixes
+
+Etter første implementasjon avdekket browser-testing flere UX-issues. To runder fikser landet, deretter merge til main og iPhone-test fra brukeren.
+
+**Drag-handle og 100% snap (commit `7e79498`).** Bruker rapporterte at drag ikke beit i det hele tatt — heller ikke via "anchor stripa". Årsak: vår drag-handle var en stum `<div>`, ikke `DrawerPrimitive.Handle`. Med `handleOnly={true}` aktivert ignorerer vaul drag-events på alt annet enn Handle-komponenten — konsekvensen var at INGEN drag-events nådde sheet. Bytte til `DrawerPrimitive.Handle` med samme styling + `cursor-grab`/`touch-none` løste det. Samtidig økte vi stage 4 fra 0.92 til 1.0 etter ønske om "full mulig høyde" — sheet kan nå dras til 100%, status-bar/notch håndteres via `pt-[env(safe-area-inset-top)]`.
+
+**Google Maps-mønster: tab-bar ut av sheet (commit `8e712eb`).** Bruker foreslo å ta `BoardCategoryTabBar` UT av sheeten og pinne den til viewport-bunn med høy z-index — slik at sheet kan dras ned uten å skjule primær-navigasjonen, akkurat som Google Maps-appen. Tre koblede endringer:
+
+1. **`BoardCategoryTabBar` mountes som søsken** til BoardMobileSheet i BoardScaffold med `fixed inset-x-0 bottom-0 z-50`. API forenklet — `onSnapChange`/`currentSnap`-props fjernet siden tab-bar ikke lenger har tilgang til sheet-snap. Tab-bar dispatcher kun til BoardState; sheets `useEffect`-watcher på `phase` håndterer snap-justering.
+2. **`handleOnly={true}` fjernet** fra Drawer Root — hele sheet er nå draggable for ekte app-feeling. Vaul håndterer scroll-vs-drag automatisk: sheet tar over drag bare når content er scrollet til topp (`scrollTop=0`).
+3. **Drag-til-å-lukke:** `setSnap` dispatcher `RESET_TO_DEFAULT` når snap når `"96px"` mens phase ≠ default. Swipe-ned er nå en gyldig "lukk kategori"-gest.
+
+Sheet-content fikk `padding-bottom = 96px` (`TAB_BAR_HEIGHT_PX`) og POI-action-bar fikk `margin-bottom = 96px` så ingenting kuttes av tab-baren ved stage 4 (full).
+
+**Merge til main (commit `37ec66f`)** etter brukers ønske: "vi skal ha dette". Brukeren ville teste på ekte iPhone via Vercel preview/prod.
+
+**iPhone-test-fixes (commits `80daac6` + `b9971b0`).** Bruker rapporterte tre koblede issues fra Chrome på iPhone:
+
+1. **Kart-hopp ved kategori-bytte.** Hjem-markøren "hoppet" oppover når sheet snappet fra 96px til 320px. Årsak: `map.setPadding({bottom})` panner kartet automatisk for å holde center i padded-area. Vi har ingen `fitBounds`-trigger på snap-endringer, så padding-syncing løste et problem vi ikke har. Drop helt — markører som havner under sheet er navigerbare via Punkter-tab uansett.
+2. **Drag virker ikke første gang.** Scroll-container hadde default `touch-action: auto`, så iOS Safari/Chrome ventet på scroll-vs-tap-avgjørelse før vaul fikk pointer-event. Eksplisitt `touch-action: pan-y` lar browser håndtere native scroll OG vaul få pointer-events parallelt. `overscrollBehavior: contain` hindrer rubber-band.
+3. **Synlig vertikal scrollbar på siden.** `<body>` selv kunne scrolles. Sannsynlig årsak: vaul portaler sheet til `document.body` med `h-[100dvh]` + `::after` (200% bakgrunn nedenfor) som ekspanderer document-høyden. Lås `html.overflow` + `body.overflow` til `hidden` i en `useEffect` mens BoardScaffold er mounted, restoreres ved unmount.
+
+**Memory-update.** Bruker spurte om jeg bruker Vercel MCP-pluginen aktivt. Ærlig svar: nei i denne sesjonen — `claude mcp list` viser "Connected" men tool-schemas er ikke surfaced i `ToolSearch` før Claude Code-restart. Skrev `feedback_use_vercel_mcp.md` som instrukser meg til å bruke pluginen for deploy-status, preview-URLer, build-logger fremfor `gh`/dashboard-fallback når den er tilgjengelig.
+
+### Læring (iterasjon 2)
+
+- **`handleOnly={true}` krever `DrawerPrimitive.Handle`.** En stum `<div>` med visuell drag-handle-styling biter ikke; vaul lytter kun på Handle-komponentens onPress/onDrag når flagget er aktivert. Hvis vi vil ha "hele sheet draggable", drop `handleOnly`. Hvis vi vil ha "kun handle draggable", bruk Handle-komponenten.
+- **iOS Safari first-touch-delay er touch-action-styrt.** Default `touch-action: auto` på scroll-container introduserer en venteperiode mens browser avgjør om touch er scroll, drag eller noe annet. Eksplisitt `pan-y` (eller `pan-x` for horisontal scroll) eliminerer ventetiden — vaul får pointer-events umiddelbart. Bør være standard i alle vaul-sheets med scrollable content.
+- **Mapbox `setPadding` panner kartet** for å holde center i padded-area. Hvis man ikke har `fitBounds`-callback som faktisk bruker padding, ikke endre padding ved sheet-snap-overganger — det er en bivirkning ingen ber om.
+- **Body-scroll-lock på iOS er ikke implisitt.** `overflow-hidden` på en wrapper-div hindrer ikke body-scroll når noe er fixed-positionert til viewport-bunn med stor høyde. Direkte mutering av `html.style.overflow` + `body.style.overflow` med cleanup på unmount er den robuste fix.
+
+### Status
+
+- Branch `feat/board-mobile-multi-snap-sheet` mergt inn i main (commit `37ec66f`), pushet til origin.
+- 4 oppfølgings-commits direkte på main: `f561c1a`, `7e79498`, `8e712eb`, `80daac6`, `b9971b0`.
+- Vercel deployer prod automatisk fra main; bruker tester løpende på iPhone (Chrome).
+- Plan-fil status: `completed` (forblir uendret — iterasjons-fixene er små UX-justeringer, ikke nye features).
+
 ---
 
 ## 2026-04-30 — 3D-kart sub-kategori-filter samkjørt med 2D + worktree-rydding
