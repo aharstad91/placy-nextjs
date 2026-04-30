@@ -6,10 +6,10 @@ import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/components
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard, useActiveCategory, useActivePOI } from "../board-state";
 import { BoardRelatedPOICard } from "./BoardRelatedPOICard";
-import { BoardPOIDetails } from "../BoardPOIDetails";
+import { BoardPOIActionBar, BoardPOIDetails } from "../BoardPOIDetails";
 
-const SNAP_POINTS: (number | string)[] = [0.5, 0.9];
-const DEFAULT_SNAP: number | string = 0.5;
+const SNAP_POINTS: (number | string)[] = [0.5, 0.85, 0.95];
+const DEFAULT_SNAP: number | string = 0.85;
 
 export function BoardPOISheet() {
   const { state, dispatch } = useBoard();
@@ -57,61 +57,74 @@ export function BoardPOISheet() {
           </button>
 
           {cat && poi && Icon && (
-            <div
-              className="flex-1 overflow-y-auto px-5 pt-5 pb-8"
-              style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom, 0px))" }}
-            >
-              {/* Header: ikon-circle + navn + kategori-label */}
-              <header className="flex items-start gap-3.5 pb-4 pr-12">
-                <div
-                  className="flex-none w-12 h-12 rounded-full flex items-center justify-center shadow-md"
-                  style={{ backgroundColor: cat.color }}
-                >
-                  <Icon className="w-6 h-6 text-white" weight="fill" />
-                </div>
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <h2 className="text-xl font-bold leading-tight text-stone-900">
-                    {poi.name}
-                  </h2>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-stone-500 mt-1">
-                    {cat.label}
+            <>
+              {/* Scrollbart innhold — body. Action-bar er separat, pinned i bunnen. */}
+              <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
+                {/* Header: ikon-circle + navn + kategori-label */}
+                <header className="flex items-start gap-3.5 pb-4 pr-12">
+                  <div
+                    className="flex-none w-12 h-12 rounded-full flex items-center justify-center shadow-md"
+                    style={{ backgroundColor: cat.color }}
+                  >
+                    <Icon className="w-6 h-6 text-white" weight="fill" />
                   </div>
-                </div>
-              </header>
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <h2 className="text-xl font-bold leading-tight text-stone-900">
+                      {poi.name}
+                    </h2>
+                    <div className="text-xs font-semibold uppercase tracking-wider text-stone-500 mt-1">
+                      {cat.label}
+                    </div>
+                  </div>
+                </header>
 
-              {/* Info-linje: adresse */}
-              {poi.address && (
-                <div className="text-sm text-stone-600 pb-4 border-b border-stone-200/80">
-                  {poi.address}
-                </div>
-              )}
+                {/* Info-linje: adresse */}
+                {poi.address && (
+                  <div className="text-sm text-stone-600 pb-4 border-b border-stone-200/80">
+                    {poi.address}
+                  </div>
+                )}
 
-              {/* Dynamisk detalj-blokk: rating, åpningstider, knapper, live transport, child POIs — alt gated */}
-              <div className="pt-4">
-                <BoardPOIDetails poi={poi.raw} />
+                {/* Dynamisk detalj-blokk: rating, åpningstider, live transport, child POIs — alt gated.
+                    Action-bar skjules her (rendres som pinned bottom-bar utenfor scroll). */}
+                <div className="pt-4">
+                  <BoardPOIDetails poi={poi.raw} hideActionBar />
+                </div>
+
+                {/* Andre i kategorien */}
+                {related.length > 0 && (
+                  <section className="pt-6">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 pb-3">
+                      Andre i kategorien
+                    </h3>
+                    <div className="space-y-2.5">
+                      {related.map((other) => (
+                        <BoardRelatedPOICard
+                          key={other.id}
+                          poi={other}
+                          categoryColor={cat.color}
+                          onClick={() =>
+                            dispatch({ type: "OPEN_POI", id: other.id, categoryId: cat.id })
+                          }
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
 
-              {/* Andre i kategorien */}
-              {related.length > 0 && (
-                <section className="pt-6">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 pb-3">
-                    Andre i kategorien
-                  </h3>
-                  <div className="space-y-2.5">
-                    {related.map((other) => (
-                      <BoardRelatedPOICard
-                        key={other.id}
-                        poi={other}
-                        categoryColor={cat.color}
-                        onClick={() =>
-                          dispatch({ type: "OPEN_POI", id: other.id, categoryId: cat.id })
-                        }
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
+              {/* Pinned action-bar — alltid synlig nederst, utenfor scroll-området.
+                  Safe-area-inset-bottom håndteres på iOS slik at knappene ikke
+                  havner under hjemme-indikatoren. */}
+              <div
+                className="shrink-0 border-t border-stone-200/80 bg-stone-50/95 backdrop-blur px-5 pt-3 pb-3"
+                style={{
+                  paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+                }}
+              >
+                <BoardPOIActionBar poi={poi.raw} />
+              </div>
+            </>
           )}
         </DrawerContent>
       </DrawerPortal>
