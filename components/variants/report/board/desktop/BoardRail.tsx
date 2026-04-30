@@ -49,7 +49,7 @@ export function BoardRail() {
 
         <div className="my-1 h-px w-6 bg-stone-200" aria-hidden="true" />
 
-        <nav className="flex w-full flex-col items-center gap-2 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="flex w-full flex-col items-center gap-3 overflow-y-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {data.categories.map((cat) => (
             <RailButton
               key={cat.id}
@@ -86,15 +86,14 @@ function RailButton({
           onClick={onSelect}
           aria-current={active ? "page" : undefined}
           aria-label={category.label}
-          className="group flex h-12 w-12 items-center justify-center rounded-2xl transition-transform hover:scale-105 active:scale-95"
+          className="group flex h-12 w-12 items-center justify-center rounded-2xl"
         >
           <div
-            className="relative h-12 w-12 overflow-hidden rounded-xl transition-shadow"
-            style={{
-              boxShadow: active
-                ? "0 0 0 2px white, 0 0 0 4px #1c1917, 0 4px 12px rgba(15,29,68,0.15)"
-                : "0 0 0 1px rgba(231, 229, 228, 0.8)",
-            }}
+            className={
+              active
+                ? "relative h-12 w-12 overflow-hidden rounded-xl transition-shadow shadow-[0_0_0_2px_white,_0_0_0_4px_#1c1917,_0_4px_12px_rgba(15,29,68,0.15)]"
+                : "relative h-12 w-12 overflow-hidden rounded-xl transition-shadow shadow-[0_0_0_1px_rgba(231,229,228,0.8)] group-hover:shadow-[0_0_0_2px_white,_0_0_0_4px_#d6d3d1,_0_4px_12px_rgba(15,29,68,0.10)]"
+            }
           >
             {illustrationSrc ? (
               <Image
