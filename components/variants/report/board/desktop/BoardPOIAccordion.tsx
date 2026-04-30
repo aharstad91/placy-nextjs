@@ -160,7 +160,7 @@ export function BoardPOIAccordion({ category }: Props) {
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="px-3.5 pb-3.5 pt-2">
+            <AccordionContent className="px-3.5 pb-3 pt-1">
               <BoardPOIDetails poi={poi.raw} />
             </AccordionContent>
           </AccordionItem>
