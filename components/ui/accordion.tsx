@@ -66,12 +66,12 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
-      className="overflow-hidden px-4 text-sm data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up"
+      className="overflow-hidden text-sm data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up"
       {...props}
     >
       <div
         className={cn(
-          "pt-0 pb-4 [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
+          "px-4 pt-0 pb-4 [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
           className
         )}
       >

@@ -69,20 +69,22 @@ function useIsDesktop(): boolean {
 /**
  * Board-shell: full-screen kart i bakgrunn. Adaptiv layout:
  * - Mobil (<lg): kart fyller hele viewporten. Bottom-anchored sheets på toppen.
- * - Desktop (>=lg): kart fyller alt til høyre for 504px-strip (rail + detalj-panel).
+ * - Desktop (>=lg): kart fyller alt til høyre for 480px-strip (rail + detalj-panel).
  *
- * BoardMap mountes ÉN gang. Conditional positioning via wrapper-div: `lg:left-[504px]`
+ * BoardMap mountes ÉN gang. Conditional positioning via wrapper-div: `lg:left-[480px]`
  * forskyver kart-containeren på desktop. Mobil-bottom-sheets (vaul) bruker portal
  * og må JS-gates — `useIsDesktop()` styrer mounting. Desktop-strip er gated
  * `hidden lg:flex` via CSS — bare ett tre vises av gangen.
+ *
+ * NB: 480px = BoardDesktopShell-bredden. Endre begge i synk hvis justeres.
  */
 function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
   const isDesktop = useIsDesktop();
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-stone-100">
-      {/* Kart-container — absolute. På desktop forskjøvet 504px fra venstre. */}
-      <div className="absolute inset-0 lg:left-[504px]">
+      {/* Kart-container — absolute. På desktop forskjøvet 480px fra venstre. */}
+      <div className="absolute inset-0 lg:left-[480px]">
         <BoardMap has3dAddon={has3dAddon} />
       </div>
 

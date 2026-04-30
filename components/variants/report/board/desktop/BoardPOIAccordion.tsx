@@ -112,7 +112,7 @@ export function BoardPOIAccordion({ category }: Props) {
         type="multiple"
         value={openIds}
         onValueChange={handleValueChange}
-        className="flex flex-col gap-2.5 border-0 rounded-none overflow-visible"
+        className="flex flex-col gap-1.5 border-0 rounded-none overflow-visible"
       >
       {category.pois.map((poi) => {
         const Icon = getFilledIcon(poi.raw.category.icon);
@@ -130,14 +130,14 @@ export function BoardPOIAccordion({ category }: Props) {
             className="rounded-2xl border border-stone-200/80 bg-white shadow-[0_2px_8px_rgba(15,29,68,0.06)] data-[state=open]:bg-white scroll-mt-2"
           >
             <AccordionTrigger
-              className="min-w-0 items-center gap-3 px-3.5 py-3 text-left hover:no-underline data-[state=open]:bg-stone-50/40 [&>svg]:text-stone-400"
+              className="min-w-0 items-center gap-2.5 px-3.5 py-2.5 text-left hover:no-underline data-[state=open]:bg-stone-50/40 [&>svg]:text-stone-400"
               style={
                 isActive
                   ? { boxShadow: `inset 3px 0 0 ${subColor}` }
                   : undefined
               }
             >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 <div
                   className="flex h-8 w-8 flex-none items-center justify-center rounded-full border-2"
                   style={{
@@ -160,7 +160,7 @@ export function BoardPOIAccordion({ category }: Props) {
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="px-3.5 pb-3.5 pt-2">
+            <AccordionContent className="px-3.5 pb-3 pt-1">
               <BoardPOIDetails poi={poi.raw} />
             </AccordionContent>
           </AccordionItem>
