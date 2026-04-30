@@ -6,6 +6,50 @@
 
 ---
 
+## 2026-04-30 — Rapport-board sub-kategori-filter (Punkter-tab)
+
+### Bakgrunn
+Mat-tema på Nøstebukten Brygge har 31 POIs fordelt på bakeri, restaurant, pub og kafé. Lista var overveldende uten differensiering — sub-kategorien er rik på POI-en (`raw.category` med navn/ikon/farge), men ble aldri brukt visuelt utover marker-ikon.
+
+### Beslutninger
+- **Filter-state per kategori, resettes ved bytte.** Kontekstuelt — bytte av tema gir alltid alle synlige som default. Mental modell: "hver kategori har sitt fokus".
+- **Filter påvirker både liste og kart-markører i aktivt tema.** Konsistens — `Punkter (X/Y)` må matche synlige markører på kartet, ellers blir det forvirrende.
+- **Filter skjules når <2 sub-kategorier.** Ingen verdi i ett-valg-filter.
+- **Negativ form (`hiddenIds: Set<string>`).** Matcher Explorer-pattern (`disabledCategories`). Tom set = default "alt synlig".
+- **shadcn Popover (Radix portal-basert).** Fungerer både fra desktop-panel og innen vaul-drawer på mobil — portalering unngår stacking-konflikter.
+- **State i BoardContext, ikke reducer.** Reducer styrer navigasjon (phase + IDs); filter er rent visuelt. Adskilte concerns.
+- **Ghost-active-guard:** hvis aktiv POI tilhører en sub-kat som filtreres ut, dispatcher BoardProvider `BACK_TO_ACTIVE` automatisk så markør og state holdes konsistente.
+
+### Teknisk
+- **Ny hook:** `use-sub-category-filter.ts` med `useSubCategoryFilter(activeCategoryId)` + `deriveSubCategories(category)`. 15 tester.
+- **Ny komponent:** `SubCategoryFilter.tsx` — Popover-trigger med `Filtrér (X/Y)`-counter, checkbox-rader per sub-kat, "Skjul/Vis alle"-toggle. Returnerer `null` når <2 sub-kat. 11 tester.
+- **`BoardContext` utvidet** med `subFilter: SubCategoryFilterApi`-slot. Ny selector `useFilteredActiveCategory()` returnerer aktiv kategori med filter applisert (samme shape som `useActiveCategory`).
+- **`BoardMap.visiblePOIs`** filtrerer `activeCategory.pois` på `hiddenIds` når `phase !== "default"`. Default-phase oversiktsmodus uendret.
+- **Wiring:** `BoardDetailPanel` (desktop) + `BoardReadingModal` (mobil) viser `<SubCategoryFilter />` over Punkter-listen, tab-tellingen blir `(X/Y)` når filtrert, og tom-state med "Vis alle igjen" når filteret skjuler alle.
+- **Total:** 47 tester, alt passerer. Lint/TS rene.
+
+### Worktree-gotcha (igjen!)
+Dev-server på `:3001` kjørte fra worktree `placy-ralph-board` (branch `feat/board-ux-rapport-variant`). Implementerte først i hovedrepoet → committet → mergeret til main → pushet — men endringene var fortsatt usynlige for brukeren fordi dev-serveren leste fra worktree-branchen som var basert på 3eade03 (før mine commits). Måtte mergeret main inn i worktree-branchen og resolve konflikter mot Beliggenhet-tab-refactoren som lå der parallellt.
+
+Memory-note `feedback_worktree_dev_server.md` finnes allerede — sjekk **alltid** `lsof -p $PID | grep cwd` på dev-serveren før du tror endringene "ikke fungerer".
+
+### Scope (sacred — ratifisert i ce-plan-fasen)
+- 4 implementation units, Standard depth
+- Per aktivt tema (ikke på tvers)
+- Ikke "Andre i kategorien" i `BoardPOISheet` (relatert-list, ikke hovedlista)
+- Ikke URL-state (prototype, ingen delelink-krav)
+
+### Åpne spørsmål
+- Skal sub-kategori-ikoner i POI-accordion bruke sub-kategoriens egen farge (`poi.raw.category.color`) i stedet for tema-fargen? Per nå tema-farge for ren visuell identitet — kan vurderes for ekstra differensiering.
+- Mobil-stacking: Popover inni vaul-drawer fungerte tydeligvis, men ikke testet på alle iOS-versjoner. Hvis problemer dukker opp, fall tilbake til inline disclosure.
+
+### Referanser
+- Plan: `docs/plans/2026-04-30-001-feat-rapport-board-subcategory-filter-plan.md`
+- Mønster (gjenbrukt visuell logikk): `components/variants/explorer/ExplorerThemeChips.tsx`
+- Trello: [FiFza9Az](https://trello.com/c/FiFza9Az/19) (Backlog → kan flyttes til Done)
+
+---
+
 ## 2026-04-30 — Rapport-board kategori-detalj: tab-omstilling + rapport-paritet i Beliggenhet
 
 ### Beslutninger
