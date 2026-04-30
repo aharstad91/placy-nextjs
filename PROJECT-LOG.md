@@ -6,6 +6,150 @@
 
 ---
 
+## 2026-04-30 — Rapport-board kompakt-UI: Discord-inspirert tett desktop-shell
+
+### Bakgrunn
+Rapport-boardet hadde mye luft sammenlignet med tette produkter som Discord. Brukeren delte side-by-side-skjermbilde med rapport-board (104px rail + tekst-label per kategori, py-3 accordion-padding) vs Discord (smal icon-only sidebar med tooltip på hover, tette innholds-lister). Med 47+ POI-er per kategori føltes lufta som unødvendig spilt vertikal og horisontal plass. Brukeren ba om kompakt-modus.
+
+### Beslutninger
+- **Ikon-only rail med tooltip på hover** (Discord-mønster) framfor "stramt-men-med-tekst". Rail krympet 104→80px etter iterasjon — startet på 64px, men det klippet active-ringen mot nav-overflow-kanten på begge sider.
+- **Uniform active-farge (stone-900)** istedenfor per-kategori-farge i ringen rundt aktiv knapp. Likere visuelt vokabular, mindre fargestøy. Per-kategori-farge beholdes i markører på kart og i accordion-active-bar.
+- **Hover-ring som svakere active-variant** (stone-300 med samme form/skygge som active stone-900) — gir myk transition fra hover→active siden formen er identisk. Ingen scale-effekter på hover (brukeren foretrakk roligere overgang).
+- **Tooltip-delay 50ms** istedenfor 200ms default — føles responsiv. text-sm istedenfor text-xs (litt større font) i tooltip. Egen `components/ui/tooltip.tsx`-wrapper rundt radix-ui Tooltip (samme mønster som hover-card.tsx).
+- **AccordionContent-primitiven fikset:** flyttet `px-4` fra outer (hardcoded) til inner (default som kan overrides via className). Tidligere endte body 30px (16+14) inn fra card-edge mens header satt på 14px — nå aligner de begge på 14px. Eneste consumer i kodebasen var BoardPOIAccordion, så trygg ekstern endring.
+
+### Teknisk
+- **Ny:** `components/ui/tooltip.tsx` — TooltipProvider/Tooltip/TooltipTrigger/TooltipContent. Default delayDuration=50, side="right", sideOffset=8, stone-900 bg.
+- **Modify:** `BoardRail.tsx` — w-[104px] → w-[80px], px-3 py-5 → px-2 py-4. Hjem h-[72px] (ikon+tekst) → h-12 w-12 (kun ikon). Kategori-knapp h-[88px] → h-12 w-12, illustrasjon 56→48px. nav gap-1.5 → gap-5 (mye mer vertikal pust). nav py-1 lagt til (4px topp-luft så active-ring ikke klippes vertikalt). Active boxShadow: `0 0 0 2px white, 0 0 0 4px #1c1917, 0 4px 12px rgba(15,29,68,0.15)`. Hover boxShadow samme form med stone-300 og lettere skygge.
+- **Modify:** `BoardDetailPanel.tsx` — px-6 py-6 → px-4 py-4, header pb-5 → pb-3.
+- **Modify:** `BoardPOIAccordion.tsx` — Accordion gap-2.5 → gap-1.5, AccordionTrigger py-3 → py-2.5, inner content gap-3 → gap-2.5. AccordionContent pb-3.5 pt-2 → pb-3 pt-1.
+- **Modify:** `components/ui/accordion.tsx` — px-4 flyttet fra Content-outer til inner-default for å gi consumers ekte override-tilgang.
+- **Modify:** `BoardDesktopShell.tsx` + `ReportBoardPage.tsx` — shell-bredde 504px → 480px (40 px+ kart-bredde gevinst). NB-kommentar lagt til om at de to verdiene må holdes synket.
+
+### Iterasjon (basert på visuell testing)
+9 commits i alt — 4 fra plan 006 + 5 refine-iterasjoner basert på direkte feedback. Hovedlæringer:
+- **nav overflow-y-auto klipper også horisontalt** per CSS-spec → må ha tilstrekkelig padding/bredde rundt active-ring så ringen ikke ligger på content-edge
+- **Per-kategori active-farge ble visuell støy** — uniform mørk farge leser bedre på tvers
+- **Scale-effekter på hover ble for distraherende** — ring-utvidelse alene leverer affordansen
+- **Primitiv-padding-konflikter** mellom outer/inner Content-element gir snikende misalignment som er vanskelig å oppdage uten å lese primitiv-koden
+
+### Scope (sacred)
+- KUN desktop-shell. Mobil bottom-sheet (`BoardCategoryGrid`, `BoardPeekCard`, `BoardReadingModal`) berørt ikke — egen oppgave i plan 005.
+- Tema-illustrasjoner uendret. Kun visnings-størrelse krympet.
+
+### Åpne spørsmål
+- Skal andre 3D-kart-overflater (Explorer, Report-blokk) også få det nye Tooltip-mønsteret hvis de har sidebar-kategorier? Ikke i scope nå.
+- Bør shell-bredden bli en delt const istedenfor to magic numbers (BoardDesktopShell + ReportBoardPage)? NB-kommentar er lavfriksjon for nå, refactor hvis det endres ofte.
+
+### Referanser
+- Plan: `docs/plans/2026-04-30-006-feat-rapport-board-compact-ui-plan.md`
+- Branch: `feat/board-compact-ui` på `/Users/andreasharstad/Documents/placy-ralph-compact-ui`
+
+---
+
+## 2026-04-30 — Strategi: Propr som første distribusjonspartner (rapport-board go-to-market)
+
+### Bakgrunn
+Sparring-økt etter ny markedsutvikler-feedback: målgruppen er **eiendomsmeglere som distribusjonskanal**, ikke sluttbruker direkte. Annonseperioden (30-60 dager) er det naturlige eksperiment-vinduet. Andreas oppdaget Propr (16 990 listinger 2016-2026, ~1 700/år, prispakker 9 990 / 24 970 / 35 950) som potensiell første partner. Et live Propr-prospekt (Spro Havn, 322401) viser at Propr's nåværende "Nabolag"-element er svakt — Placy fyller hullet.
+
+### Beslutninger
+- **Manuell pipeline før automatisering.** /bestill-skjema droppes i pilot-fasen. /generate-bolig kjøres manuelt, hver rapport leses gjennom av Andreas før utsending. Skjemaet bygges når flaskehalsen er reell (~10+ ukentlige bestillinger).
+- **Kuratert produkt, ikke automatisk.** Disclaimer er ærlig om redaksjonell vurdering. I Propr-pitch eksplisitt: pilot-fasen er manuell QA, skala er noe pilot skal informere.
+- **Vis-don't-tell-åpning.** Generer Spro Havn-rapport, send personlig hilsen + lenke til Kjetil Eriksson (CEO) eller Karoline Gjersvik (driftssjef). Lever arbeid før du ber om noe.
+- **Sem & Johnsen-koblingen er strategisk vesentlig.** CEO Kjetil Eriksson var partner i Sem & Johnsen 15+ år. Driftssjef Karoline Gjersvik var eiendomsmeglerfullmektig samme sted. Propr-piloten er warm-intro-bro til premium-segmentet — ikke konkurranse mot det.
+- **Fire ikke-forhandlerbare avtalevilkår:** ikke-eksklusivitet, Placy-brand synlig (ikke white-label), ingen segmentlås, datarettighet til engagement-data.
+
+### Forventet impact
+Avtalen alene = 100-400k revenue/år (ikke selvbærende). Verdien ligger i **datavolum (1 700 rapporter/år), distribusjons-bevis, operasjonell tvang, logo-effekt, og warm-intro-broen til S&J via Kjetils nettverk**.
+
+### Risiko (justert)
+- Segment-lock-in til DIY-segmentet → ⬇️ vesentlig redusert pga S&J-bakgrunn i Propr-ledelsen. Mitigeres av brand-skille i avtalen.
+- Single-customer-konsentrasjon → reell. Aktiv parallell pitch til S&J fra mnd 3-4.
+- Skala-press → 1 700/år ikke realistisk å lese alle manuelt. QA-modning før volum.
+- Propr bygger selv etter 6-12 mnd → forsvar er kuratorial dybde (akvarell, narrative tone, grounding).
+
+### Neste skritt (denne uken)
+1. Generer Spro Havn-rapport, manuell gjennomlesning + redigering
+2. Skriv personlig hilsen til Kjetil/Karoline
+3. Send mail
+4. Følg opp én gang innen 14 dager hvis ingen respons
+
+### Åpne spørsmål
+- Disclaimer-formulering trenger juridisk gjennomlesning før første live-rapport
+- Pricing-modell forhandles med Propr (add-on vs pluss-pakke vs alle listinger)
+- Kontaktstrategi (mail vs LinkedIn vs varm intro) — Andreas ordner, ikke detaljert
+- Sem & Johnsen-utreach-timing: foreslått etter 30-60 dagers pilot med målbare data
+
+### Referanser
+- Brainstorm-dokument (full beslutningsgrunnlag): `docs/brainstorms/2026-04-30-propr-distribusjons-pilot-brainstorm.md`
+- Propr-data verifisert via WebFetch fra propr.no/om-oss og /priser
+- Markedsutvikler-sparring (uten dokumentert artefakt utover dette og brainstormen)
+
+---
+
+## 2026-04-30 — Rapport-board mobile UX-paritet: 6 enheter for å lukke gapet til desktop
+
+### Bakgrunn
+Etter at desktop-rapport-boardet fikk full POI-detalj-paritet (Trello [xniF3kwm](https://trello.com/c/xniF3kwm) — `BoardPOIDetails` med rating, åpningstider, businessStatus, action-knapper, child POIs, event-piller), sto mobil igjen som en "enklere variant" med 6 reelle UX-gap som chrome-mcp-flow-test avdekket: POI-listen var to klikk unna (CategoryGrid → PeekCard → Les mer → Punkter-tab), POI-list-kortene var flate (kun navn + adresse), `BoardPOISheet` defaultet til 0.5-snap så cover/rating/knapper falt under fold, kategori-grid-kortene viste ingen kategori-hint, sub-kategori-filter var skjult bak en popover, og POI-bytte i sheet byttet innholdet brått.
+
+Trello-kort: [fjjny5Ke](https://trello.com/c/fjjny5Ke) (#24). Plan: `docs/plans/2026-04-30-005-feat-rapport-board-mobile-ux-paritet-plan.md` — 6 implementation units i 3 faser. Alt arbeid utført i worktree `placy-ralph-board-mobile-ux` på branch `feat/board-mobile-ux-paritet`.
+
+### Beslutninger og strategi
+
+**Behold state-machine, introduser inline-list-pattern**
+- Phase `reading` → klikk POI i Punkter-listen utvider kortet inline med `BoardPOIDetails` (samme delte komponent som desktop accordion bruker). Ikke phase-bytte til `poi`. Brukeren beholder list-konteksten.
+- Phase `poi` reservert for map-marker-klikk → `BoardPOISheet` med pinned action-bar.
+- Ingen ny `HIGHLIGHT_POI`-action — vurdert og forkastet til fordel for lokal accordion-state. Begrunnelse: cover/rating/knapper på det inline-utvidede kortet er rik nok feedback; map-marker-highlight er redundant.
+
+**Split `BoardPOIDetails` for split-rendering**
+- Eksportert `BoardPOIActionBar` som egen sub-komponent. Hovedkomponent fikk `hideActionBar?: boolean`-prop.
+- Desktop accordion + mobile inline accordion: rendrer hele `BoardPOIDetails` (action-bar inline). Mobile sheet: rendrer body med `hideActionBar` + pinned `BoardPOIActionBar` separat. Én delt komponent, to render-moduser.
+
+**Vaul snap-points-overraskelsen**
+- Plan ba om `DEFAULT_SNAP=0.85` så rich content var over fold. Men vaul tolker snap som "andel av drawer-høyde synlig fra topp" — siden DrawerContent er `h-[90dvh]`, ble action-bar (siste flex-barnet) gjemt under viewport-kanten ved snap < 1.
+- Verifisert i browser via DOM-måling: drawer-bottom 971 vs viewport 844 → action-bar y=918-971 utenfor viewport.
+- Løsning: `SNAP_POINTS = [0.5, 1]` med default 1. Brukeren kan dra ned til peek (0.5) hvis kart-konteksten er ynsket, men sheet åpner alltid med action-bar synlig.
+
+**Cross-fade uten framer-motion**
+- Verifisert at framer-motion ikke er i `package.json`. CSS-only cross-fade implementert: lokal `displayedPoiId` lagger ett tick bak `useActivePOI()`, `bodyVisible`-flag driver opacity 1↔0 via inline transition. 100ms fade-ut + 100ms fade-inn (~200ms total). Action-bar og header persisterer (ikke fade) for stabilt visuelt anker.
+
+**OPEN_READING med tab-parameter**
+- `BoardReadingTab = "info" | "punkter"` + `readingTab`-felt på state. `OPEN_READING`-action utvides med valgfri `tab`-parameter. `SELECT_CATEGORY` og `BACK_TO_ACTIVE` nullstiller `readingTab` så tab-state ikke arves på tvers av kategorier. Brukerens manuelle tab-bytte mens modal er åpen bevares.
+
+### Implementation Units (alle ferdig, alle commits på `feat/board-mobile-ux-paritet`)
+
+1. **Unit 1** — `BoardPunkterAccordion` ny komponent (mirror av desktop `BoardPOIAccordion`-pattern). Multi-open, lokal state, rendrer `BoardPOIDetails` som content. `BoardReadingModal` Punkter-tab swappet til denne. `BoardRelatedPOICard` beholdt — fortsatt brukt av `BoardPOISheet` for "Andre i kategorien".
+2. **Unit 2** — `BoardPOIDetails`-split + `BoardPOISheet` pinned action-bar (flex-column med shrink-0 sibling). Safe-area-padding for iOS home indicator.
+3. **Unit 3** — `BoardPeekCard` to-knapp-rad: "Beliggenhet" (primær, navy) + "Punkter (N)" (sekundær, stone, disabled ved 0 POIer). State-machine utvidet med tab-parameter og readingTab-felt. 3 nye state-machine-tester.
+4. **Unit 4** — `SubCategoryFilter` mobile-variant rendrer chip-rad direkte (ikke popover). Reset-chip ("Vis alle"/"Skjul alle") venstre side. Edge-to-edge horizontal scroll. Desktop-popover urørt. 8 nye mobile-tester.
+5. **Unit 5** — Kategori-ikon-circle (lucide-ikon, kategori-farge) i øvre venstre hjørne av hver `CategoryCard`. Symmetrisk med count-badge øverst til høyre. Eksisterende illustrasjon urørt.
+6. **Unit 6** — Cross-fade ved POI-bytte i `BoardPOISheet`. Lagged single-layer fade-out/in. ~200ms total. Header og action-bar persisterer.
+
+### Verifisering
+- TSC: 0 errors
+- ESLint: 0 errors
+- Tests: 347/350 (3 pre-existing failures i `lib/curation/validator.test.ts`, ikke relatert)
+- Build: passerer
+- Browser-test (390x844 viewport, dev:3006): alle 6 units verifisert visuelt
+  - Hjem-grid: kategori-ikoner synlig på alle 6 kort ✓
+  - PeekCard: "Beliggenhet" + "Punkter (10)"-knapper ✓
+  - Punkter-tab: chip-rad ("Skjul alle" + "Restaurant 8" + "Bakeri 2") + 10 POI-accordion ✓
+  - POI-expand inline: cover-bilde + rating + action-knapper synlig ✓
+  - Map-marker → POISheet: full sheet, pinned action-bar synlig (Vis rute, Utforsk, Google Maps) ✓
+  - Marker-bytte: cross-fade fra VYDA Restaurant til Burger King ✓
+
+### Åpne spørsmål
+- **Cross-fade-feel**: action-bar persisterer mens body fader. Kanskje action-bar også burde fade for full enhet — krever brukertest for å avgjøre.
+- **Snap=1 ergonomi**: brukeren kan nå dra ned til 0.5 (peek) for å se kart, men 0.85-mellomstoppet er fjernet. Hvis brukere ønsker en mid-snap der action-bar fortsatt er synlig, må vi enten redusere DrawerContent-høyde eller endre vaul-pattern.
+
+### Referanser
+- Trello: [fjjny5Ke](https://trello.com/c/fjjny5Ke) (#24)
+- Plan: `docs/plans/2026-04-30-005-feat-rapport-board-mobile-ux-paritet-plan.md`
+- Worktree: `/Users/andreasharstad/Documents/placy-ralph-board-mobile-ux`
+- Branch: `feat/board-mobile-ux-paritet` (7 commits: 6 units + 1 snap-fix)
+
+---
+
 ## 2026-04-30 — 3D-kart touch-paritet: tre eksperimenter, ingen vinner enda
 
 ### Bakgrunn
