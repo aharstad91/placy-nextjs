@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/components/ui/drawer";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
@@ -11,8 +11,12 @@ import { BoardPOIActionBar, BoardPOIDetails } from "../BoardPOIDetails";
 const SNAP_POINTS: (number | string)[] = [0.5, 0.85, 0.95];
 const DEFAULT_SNAP: number | string = 0.85;
 
+// Cross-fade ved POI-bytte: fade-ut → swap → fade-inn. Total ~200ms.
+const FADE_OUT_MS = 100;
+const FADE_IN_MS = 100;
+
 export function BoardPOISheet() {
-  const { state, dispatch } = useBoard();
+  const { state, dispatch, data } = useBoard();
   const cat = useActiveCategory();
   const poi = useActivePOI();
   const open = state.phase === "poi";
@@ -25,10 +29,77 @@ export function BoardPOISheet() {
     if (open) setSnap(DEFAULT_SNAP);
   }, [open, state.activePOIId]);
 
-  const Icon = poi ? getFilledIcon(poi.raw.category.icon) : null;
+  // Cross-fade-state: vi rendrer det "viste" POI-id-et, som lagger ett tick
+  // bak aktiv POI under fade-ut. Når fade-ut er ferdig, swap-er vi til ny
+  // POI og kjører fade-inn. Rapid multi-click → timer resettes, last click wins.
+  const [displayedPoiId, setDisplayedPoiId] = useState<string | null>(
+    poi?.id ?? null
+  );
+  const [bodyVisible, setBodyVisible] = useState(true);
+  const fadeOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const targetId = poi?.id ?? null;
+
+    // Sheet ikke åpen: synkroniser uten animasjon.
+    if (!open) {
+      if (fadeOutTimerRef.current) {
+        clearTimeout(fadeOutTimerRef.current);
+        fadeOutTimerRef.current = null;
+      }
+      setDisplayedPoiId(targetId);
+      setBodyVisible(true);
+      return;
+    }
+
+    // Initiell mount eller ny POI fra null: vis direkte (fade-inn via mount).
+    if (displayedPoiId === null && targetId !== null) {
+      setDisplayedPoiId(targetId);
+      setBodyVisible(true);
+      return;
+    }
+
+    // Allerede synkronisert: ingenting å gjøre.
+    if (displayedPoiId === targetId) return;
+
+    // POI byttet mens sheet er åpent: fade-ut, swap, fade-inn.
+    // Rapid multi-click cancellerer pågående timer — last click wins.
+    if (fadeOutTimerRef.current) clearTimeout(fadeOutTimerRef.current);
+    setBodyVisible(false);
+    fadeOutTimerRef.current = setTimeout(() => {
+      setDisplayedPoiId(targetId);
+      setBodyVisible(true);
+      fadeOutTimerRef.current = null;
+    }, FADE_OUT_MS);
+
+    return () => {
+      // Cleanup ved unmount eller før neste effect-run
+      if (fadeOutTimerRef.current) {
+        clearTimeout(fadeOutTimerRef.current);
+        fadeOutTimerRef.current = null;
+      }
+    };
+  }, [open, poi?.id, displayedPoiId]);
+
+  // Resolve "displayed" POI/cat fra board-data basert på displayedPoiId. Under
+  // fade-ut viser vi forrige POI-data; etter swap viser vi ny POI-data.
+  // Under category-skift kan displayedPoi ligge i en annen kategori; vi søker
+  // bredt for å finne korrekt snapshot.
+  const displayedPoi = displayedPoiId
+    ? data.categories
+        .flatMap((c) => c.pois.map((p) => ({ poi: p, cat: c })))
+        .find((entry) => entry.poi.id === displayedPoiId) ?? null
+    : null;
+
+  const renderCat = displayedPoi?.cat ?? cat;
+  const renderPoi = displayedPoi?.poi ?? poi;
+  const Icon = renderPoi ? getFilledIcon(renderPoi.raw.category.icon) : null;
 
   // Andre POI-er i kategorien (eks. aktiv POI selv)
-  const related = cat && poi ? cat.pois.filter((p) => p.id !== poi.id) : [];
+  const related =
+    renderCat && renderPoi
+      ? renderCat.pois.filter((p) => p.id !== renderPoi.id)
+      : [];
 
   return (
     <Drawer
@@ -56,39 +127,48 @@ export function BoardPOISheet() {
             <X className="w-5 h-5" />
           </button>
 
-          {cat && poi && Icon && (
+          {renderCat && renderPoi && Icon && (
             <>
-              {/* Scrollbart innhold — body. Action-bar er separat, pinned i bunnen. */}
-              <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
+              {/* Scrollbart innhold — body. Action-bar er separat, pinned i bunnen.
+                  Body cross-fader ved POI-bytte (opacity-transition styres av
+                  bodyVisible-state). Action-bar persisterer for stabil visuell
+                  forankring. */}
+              <div
+                className="flex-1 overflow-y-auto px-5 pt-5 pb-4 transition-opacity ease-out"
+                style={{
+                  opacity: bodyVisible ? 1 : 0,
+                  transitionDuration: `${bodyVisible ? FADE_IN_MS : FADE_OUT_MS}ms`,
+                }}
+              >
                 {/* Header: ikon-circle + navn + kategori-label */}
                 <header className="flex items-start gap-3.5 pb-4 pr-12">
                   <div
                     className="flex-none w-12 h-12 rounded-full flex items-center justify-center shadow-md"
-                    style={{ backgroundColor: cat.color }}
+                    style={{ backgroundColor: renderCat.color }}
                   >
                     <Icon className="w-6 h-6 text-white" weight="fill" />
                   </div>
                   <div className="min-w-0 flex-1 pt-0.5">
                     <h2 className="text-xl font-bold leading-tight text-stone-900">
-                      {poi.name}
+                      {renderPoi.name}
                     </h2>
                     <div className="text-xs font-semibold uppercase tracking-wider text-stone-500 mt-1">
-                      {cat.label}
+                      {renderCat.label}
                     </div>
                   </div>
                 </header>
 
                 {/* Info-linje: adresse */}
-                {poi.address && (
+                {renderPoi.address && (
                   <div className="text-sm text-stone-600 pb-4 border-b border-stone-200/80">
-                    {poi.address}
+                    {renderPoi.address}
                   </div>
                 )}
 
                 {/* Dynamisk detalj-blokk: rating, åpningstider, live transport, child POIs — alt gated.
                     Action-bar skjules her (rendres som pinned bottom-bar utenfor scroll). */}
                 <div className="pt-4">
-                  <BoardPOIDetails poi={poi.raw} hideActionBar />
+                  <BoardPOIDetails poi={renderPoi.raw} hideActionBar />
                 </div>
 
                 {/* Andre i kategorien */}
@@ -102,9 +182,13 @@ export function BoardPOISheet() {
                         <BoardRelatedPOICard
                           key={other.id}
                           poi={other}
-                          categoryColor={cat.color}
+                          categoryColor={renderCat.color}
                           onClick={() =>
-                            dispatch({ type: "OPEN_POI", id: other.id, categoryId: cat.id })
+                            dispatch({
+                              type: "OPEN_POI",
+                              id: other.id,
+                              categoryId: renderCat.id,
+                            })
                           }
                         />
                       ))}
@@ -115,14 +199,15 @@ export function BoardPOISheet() {
 
               {/* Pinned action-bar — alltid synlig nederst, utenfor scroll-området.
                   Safe-area-inset-bottom håndteres på iOS slik at knappene ikke
-                  havner under hjemme-indikatoren. */}
+                  havner under hjemme-indikatoren. Persisterer (ingen fade) for
+                  stabil visuell forankring under POI-bytte. */}
               <div
                 className="shrink-0 border-t border-stone-200/80 bg-stone-50/95 backdrop-blur px-5 pt-3 pb-3"
                 style={{
                   paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
                 }}
               >
-                <BoardPOIActionBar poi={poi.raw} />
+                <BoardPOIActionBar poi={renderPoi.raw} />
               </div>
             </>
           )}
