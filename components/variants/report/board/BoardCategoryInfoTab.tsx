@@ -102,9 +102,13 @@ export function BoardCategoryInfoTab({
                   <ReportCuratedGrounded
                     grounding={grounding}
                     poisById={poisById}
+                    variant="compact"
                   />
                 ) : (
-                  <ReportGroundingInline grounding={grounding} />
+                  <ReportGroundingInline
+                    grounding={grounding}
+                    variant="compact"
+                  />
                 )}
                 <ReportGroundingChips grounding={grounding} />
               </div>

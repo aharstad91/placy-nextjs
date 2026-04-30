@@ -16,7 +16,18 @@ import POIPopover from "./POIPopover";
  * - ReactMarkdown med rehypeSanitize (whitelist av tags + poi/https-protokoller)
  * - POI-href-regex validering før render
  * - Render-time re-validering mot loaded POI-set (ghost-POIs → plain text)
+ *
+ * Variant: se ReportGroundingInline for full forklaring. Compact bevarer
+ * typografisk paritet med kortere prosatekst i board-modaler/paneler.
  */
+export type GroundingVariant = "article" | "compact";
+
+const VARIANT_CLASSES: Record<GroundingVariant, string> = {
+  article:
+    "text-base md:text-lg text-[#4a4a4a] leading-[1.8] [&>p]:mb-5 [&>p:last-child]:mb-0 [&>ul]:mb-5 [&>ol]:mb-5 [&_li]:ml-5 [&_li]:mb-1",
+  compact:
+    "text-[15px] leading-relaxed text-stone-800 [&>p]:mb-3 [&>p:last-child]:mb-0 [&>ul]:mb-3 [&>ol]:mb-3 [&_li]:ml-5 [&_li]:mb-1",
+};
 
 // POI href-format: poi:<id>. POI-IDer er heterogene (UUID, google-ChIJ…,
 // slug-stil). Regexen blokkerer href-injection; cross-tenant-sikkerhet ligger
@@ -42,16 +53,18 @@ const SANITIZE_SCHEMA = {
 export interface ReportCuratedGroundedProps {
   grounding: ReportThemeGroundingViewV2;
   poisById: Map<string, POI>;
+  variant?: GroundingVariant;
 }
 
 export default function ReportCuratedGrounded({
   grounding,
   poisById,
+  variant = "article",
 }: ReportCuratedGroundedProps) {
   return (
     <div>
 
-      <div className="text-base md:text-lg text-[#4a4a4a] leading-[1.8] [&>p]:mb-5 [&>p:last-child]:mb-0 [&>ul]:mb-5 [&>ol]:mb-5 [&_li]:ml-5 [&_li]:mb-1">
+      <div className={VARIANT_CLASSES[variant]}>
         <ReactMarkdown
           rehypePlugins={[[rehypeSanitize, SANITIZE_SCHEMA]]}
           urlTransform={(url) =>
