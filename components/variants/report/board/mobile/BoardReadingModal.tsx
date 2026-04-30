@@ -8,7 +8,7 @@ import {
   useActiveCategory,
   useFilteredActiveCategory,
 } from "../board-state";
-import { BoardRelatedPOICard } from "./BoardRelatedPOICard";
+import { BoardPunkterAccordion } from "./BoardPunkterAccordion";
 import { BoardTabs } from "./BoardTabs";
 import { BoardCategoryInfoTab } from "../BoardCategoryInfoTab";
 import { SubCategoryFilter } from "../SubCategoryFilter";
@@ -114,20 +114,9 @@ export function BoardReadingModal() {
                       </button>
                     </div>
                   ) : (
-                    filteredCat?.pois.map((poi) => (
-                      <BoardRelatedPOICard
-                        key={poi.id}
-                        poi={poi}
-                        categoryColor={cat.color}
-                        onClick={() =>
-                          dispatch({
-                            type: "OPEN_POI",
-                            id: poi.id,
-                            categoryId: cat.id,
-                          })
-                        }
-                      />
-                    ))
+                    filteredCat && (
+                      <BoardPunkterAccordion category={filteredCat} />
+                    )
                   )}
                 </div>
               )}
