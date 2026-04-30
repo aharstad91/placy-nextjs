@@ -129,8 +129,8 @@ function CategoryDetail({
       : `Punkter (${filteredCategory.pois.length})`;
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto px-6 py-6">
-      <header className="pb-5">
+    <div className="flex h-full flex-col overflow-y-auto px-5 py-5">
+      <header className="pb-4">
         <h2 className="text-2xl font-bold leading-tight text-stone-900">
           {category.label}
         </h2>
@@ -147,7 +147,7 @@ function CategoryDetail({
       />
 
       {tab === "info" && (
-        <div className="pb-6">
+        <div className="pb-5">
           <BoardCategoryInfoTab
             category={category}
             poisById={data.poisById}
@@ -157,7 +157,7 @@ function CategoryDetail({
       )}
 
       {tab === "punkter" && (
-        <div className="pb-6">
+        <div className="pb-5">
           {hasFilter && (
             <div className="pb-3">
               <SubCategoryFilter
