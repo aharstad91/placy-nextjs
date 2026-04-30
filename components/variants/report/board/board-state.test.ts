@@ -22,6 +22,7 @@ describe("boardReducer", () => {
         phase: "active",
         activeCategoryId: CAT_A,
         activePOIId: null,
+        readingTab: undefined,
       });
     });
 
@@ -30,12 +31,14 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        readingTab: undefined,
       };
       const next = boardReducer(start, { type: "SELECT_CATEGORY", id: CAT_B });
       expect(next).toEqual({
         phase: "active",
         activeCategoryId: CAT_B,
         activePOIId: null,
+        readingTab: undefined,
       });
     });
   });
@@ -46,6 +49,7 @@ describe("boardReducer", () => {
         phase: "active",
         activeCategoryId: CAT_A,
         activePOIId: null,
+        readingTab: undefined,
       };
       const next = boardReducer(start, { type: "OPEN_READING" });
       expect(next.phase).toBe("reading");
@@ -56,6 +60,47 @@ describe("boardReducer", () => {
       const next = boardReducer(initialBoardState, { type: "OPEN_READING" });
       expect(next).toBe(initialBoardState);
     });
+
+    it("without tab → readingTab undefined (default)", () => {
+      const start: BoardState = {
+        phase: "active",
+        activeCategoryId: CAT_A,
+        activePOIId: null,
+        readingTab: undefined,
+      };
+      const next = boardReducer(start, { type: "OPEN_READING" });
+      expect(next.readingTab).toBeUndefined();
+    });
+
+    it("with tab='punkter' → phase='reading' and readingTab='punkter'", () => {
+      const start: BoardState = {
+        phase: "active",
+        activeCategoryId: CAT_A,
+        activePOIId: null,
+        readingTab: undefined,
+      };
+      const next = boardReducer(start, {
+        type: "OPEN_READING",
+        tab: "punkter",
+      });
+      expect(next.phase).toBe("reading");
+      expect(next.readingTab).toBe("punkter");
+      expect(next.activeCategoryId).toBe(CAT_A);
+    });
+
+    it("with tab='info' → phase='reading' and readingTab='info'", () => {
+      const start: BoardState = {
+        phase: "active",
+        activeCategoryId: CAT_A,
+        activePOIId: null,
+        readingTab: undefined,
+      };
+      const next = boardReducer(start, {
+        type: "OPEN_READING",
+        tab: "info",
+      });
+      expect(next.readingTab).toBe("info");
+    });
   });
 
   describe("OPEN_POI", () => {
@@ -64,12 +109,14 @@ describe("boardReducer", () => {
         phase: "active",
         activeCategoryId: CAT_A,
         activePOIId: null,
+        readingTab: undefined,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next).toEqual({
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        readingTab: undefined,
       });
     });
 
@@ -78,12 +125,14 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        readingTab: undefined,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next).toEqual({
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_2,
+        readingTab: undefined,
       });
     });
 
@@ -97,6 +146,7 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        readingTab: undefined,
       });
     });
 
@@ -115,12 +165,14 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        readingTab: undefined,
       };
       const next = boardReducer(start, { type: "BACK_TO_ACTIVE" });
       expect(next).toEqual({
         phase: "active",
         activeCategoryId: CAT_A,
         activePOIId: null,
+        readingTab: undefined,
       });
     });
 
@@ -129,9 +181,11 @@ describe("boardReducer", () => {
         phase: "reading",
         activeCategoryId: CAT_A,
         activePOIId: null,
+        readingTab: "punkter",
       };
       const next = boardReducer(start, { type: "BACK_TO_ACTIVE" });
       expect(next.phase).toBe("active");
+      expect(next.readingTab).toBeUndefined();
     });
 
     it("without active category → resets to default", () => {
@@ -146,6 +200,7 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        readingTab: "punkter",
       };
       const next = boardReducer(start, { type: "RESET_TO_DEFAULT" });
       expect(next).toEqual(initialBoardState);

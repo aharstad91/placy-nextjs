@@ -10,6 +10,9 @@ export function BoardPeekCard() {
   // Synlig i active OG poi (sheet-en er fortsatt over). Skjul i default + reading.
   const visible = state.phase === "active";
 
+  const poiCount = cat?.pois.length ?? 0;
+  const punkterDisabled = poiCount === 0;
+
   return (
     <div
       className={`absolute inset-x-0 bottom-0 px-4 pt-3.5 transition-transform duration-[420ms] ease-[cubic-bezier(0.32,0.72,0.28,1)] pointer-events-auto ${
@@ -30,13 +33,21 @@ export function BoardPeekCard() {
         <p className="text-base leading-snug font-medium text-stone-900 m-0">
           {cat?.lead || cat?.question || "…"}
         </p>
-        <div className="flex items-center gap-2.5 mt-1">
+        <div className="flex items-center gap-2 mt-1">
           <button
             type="button"
-            onClick={() => dispatch({ type: "OPEN_READING" })}
+            onClick={() => dispatch({ type: "OPEN_READING", tab: "info" })}
             className="bg-[#1a2952] text-white px-[18px] py-2.5 rounded-full text-sm font-semibold transition-all hover:bg-[#25366d] active:scale-[0.97]"
           >
-            Les mer
+            Beliggenhet
+          </button>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: "OPEN_READING", tab: "punkter" })}
+            disabled={punkterDisabled}
+            className="bg-stone-100 text-stone-900 px-[18px] py-2.5 rounded-full text-sm font-semibold transition-all hover:bg-stone-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-stone-100 disabled:active:scale-100"
+          >
+            Punkter ({poiCount})
           </button>
         </div>
       </div>
