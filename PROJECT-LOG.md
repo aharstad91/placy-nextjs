@@ -62,6 +62,26 @@ Alle units commited inkrementelt på `feat/board-mobile-multi-snap-sheet`. Verif
 - **Vaul `handleOnly={true}` er løsning på gesture-konflikt.** Dokumentert i type-def, men ikke i README — verdiøkende å notere.
 - **Inkrementelle commits per Unit gjør det lett å reversere ett steg om noe ikke fungerer.** 7 commits, hver med klart Unit-fokus.
 
+### Post-implementasjons-fix (samme dag)
+
+Browser-verifikasjon avdekket at sheet rendret feil: kun 28px synlig på stage 1 istedenfor 96px, og tab-baren havnet på sheet-y=1497 (utenfor viewporten). Tre koblede fix-er i `BoardMobileSheet.tsx` (commit `f561c1a`):
+
+1. **Sheet-content fra `h-[92dvh]` til `h-[100dvh]`.** Vaul antar full viewport-høyde og at snap-points uttrykker SYNLIG høyde fra bunn (`translateY = viewportH - snapPx`). Med 92dvh ble translation = 748 men sheet-h = 776, så kun differansen 28px ble synlig.
+2. **Tab-bar flyttet fra siste flex-child til rett etter drag-handle.** Vaul translater hele sheet ned, så de ØVERSTE pikslene av sheet er det som vises i snap-spalten — ikke de nederste. Mental modell var feil i opprinnelig design.
+3. **POI-action-bar som siste flex-child — synlig kun ved stage 4 (full).** Kompromiss: kan ikke "pinnes" til synlig viewport-bunn fordi sheet-bunn er utenfor viewporten på lavere stages. Apple/Google Maps-mønster: actions vises når sheet er dratt helt opp.
+
+Verifisert i chrome-devtools på 500×844 viewport:
+- ✓ Stage 1 (96px) viser tab-bar med Hjem + kategori-thumbnails
+- ✓ Klikk kategori → snap til 320px, viser "Mat & Drikke" header + Beliggenhet/Punkter-tabs + sub-kategori-chips
+- ✓ Klikk POI-markør på kart → poi-fase, snap 0.5, viser tilbake-knapp + POI-info + editorial highlight
+- ✓ Tilbake-knapp → tilbake til kategori-peek (Punkter-tab forblir aktiv)
+- ✓ Hjem-knapp → reset til default, alle kategori-markører tilbake
+- ✗ Drag-gester kunne ikke verifiseres via chrome-devtools (vaul ignorerer syntetiske pointer-events). Må testes manuelt.
+
+### Læring
+
+**Vaul snap-modell er motintuitiv.** Sheet-elementet må ha full viewport-høyde, og snap-points uttrykker hvor mange piksler **fra TOPPEN av sheet** som blir synlig (ikke "hvor stort sheet er"). Innhold som skal være synlig ved lave snap-stages må derfor være ØVERST i DOM, ikke nederst. Hvis Placy får flere multi-snap-sheets, hører dette hjemme i `docs/solutions/ui-patterns/vaul-snap-points-layout-mental-model.md`.
+
 ---
 
 ## 2026-04-30 — 3D-kart sub-kategori-filter samkjørt med 2D + worktree-rydding
