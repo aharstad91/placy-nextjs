@@ -228,11 +228,22 @@ function Map3DInner({
     };
 
     // Zoom er deaktivert: blokker scroll-wheel før Google ser eventen.
-    // Touch-pinch håndteres ikke her — bruk evt. `touch-action` eller en
-    // pointercount-guard hvis pinch-zoom begynner å sniffe seg inn.
     const blockZoomWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
+    };
+
+    // Touch-paritet med desktop ctrlKey-hijack: 1-finger-drag på touch er PAN
+    // i Googles native gesture-handling, og touch-events har ingen ctrlKey
+    // vi kan spoofe. Vi kan kun BLOKKERE — så 1-finger-touchmove preventDefaultes
+    // før Google ser den. 2-finger-rotate beholdes som mobil orbit-ekvivalent.
+    // Pinch-zoom-blokkering håndteres separat (touchstart/touchmove med
+    // avstands-delta) — denne handler-en rører kun single-touch.
+    const blockSingleTouchPan = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     };
 
     // Dobbeltklikk-zoom er deaktivert: kameraet skal forbli forankret rundt
@@ -291,9 +302,10 @@ function Map3DInner({
     // Capture-phase så vi treffer før Google's shadow-DOM-listenere.
     // Dekker både pointer- og mouse-events for bred browser-støtte.
     const captureOpts = { capture: true, passive: true } as AddEventListenerOptions;
-    // Wheel og dblclick-blokk må være non-passive for at preventDefault skal fungere.
+    // Wheel, dblclick, og touch-block må være non-passive for at preventDefault skal fungere.
     const wheelOpts = { capture: true, passive: false } as AddEventListenerOptions;
     const dblOpts = { capture: true, passive: false } as AddEventListenerOptions;
+    const touchOpts = { capture: true, passive: false } as AddEventListenerOptions;
 
     // VIKTIG: blockDblClickFromPointer registreres FØR forceOrbitGesture så
     // stopImmediatePropagation på den andre klikket også stopper orbit-overstyringen.
@@ -307,6 +319,7 @@ function Map3DInner({
     container.addEventListener("wheel", blockZoomWheel, wheelOpts);
     container.addEventListener("dblclick", blockDblClickEvent, dblOpts);
     container.addEventListener("click", blockMultiClick, dblOpts);
+    container.addEventListener("touchmove", blockSingleTouchPan, touchOpts);
 
     return () => {
       container.removeEventListener("pointerdown", blockDblClickFromPointer, dblOpts);
@@ -317,6 +330,7 @@ function Map3DInner({
       container.removeEventListener("wheel", blockZoomWheel, wheelOpts);
       container.removeEventListener("dblclick", blockDblClickEvent, dblOpts);
       container.removeEventListener("click", blockMultiClick, dblOpts);
+      container.removeEventListener("touchmove", blockSingleTouchPan, touchOpts);
     };
   }, [activated]);
 
