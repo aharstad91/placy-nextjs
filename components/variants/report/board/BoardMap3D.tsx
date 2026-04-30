@@ -41,7 +41,7 @@ interface Props {
  * - poi-phase: fly til POI med en tettere range (1500 m → ~POI-nær zoom).
  */
 export function BoardMap3D({ pendingCamera }: Props) {
-  const { state, data, dispatch } = useBoard();
+  const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
 
@@ -53,14 +53,22 @@ export function BoardMap3D({ pendingCamera }: Props) {
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
 
   // Synlige POIer matcher 2D-logikken: alle i default-phase, kun aktiv kategori
-  // ellers. Bruker `raw` siden MapView3D forventer POI fra lib/types.
+  // ellers. Sub-kategori-filter applisert når en kategori er aktiv så markører
+  // på 3D-kartet samkjøres med Filtrér-chips og Punkter-lista.
+  // Bruker `raw` siden MapView3D forventer POI fra lib/types.
   const visiblePOIs = useMemo(() => {
     if (state.phase === "default") {
       return data.categories.flatMap((c) => c.pois.map((p) => p.raw));
     }
     if (!activeCategory) return [];
-    return activeCategory.pois.map((p) => p.raw);
-  }, [state.phase, data.categories, activeCategory]);
+    const filtered =
+      subFilter.hiddenIds.size === 0
+        ? activeCategory.pois
+        : activeCategory.pois.filter(
+            (p) => !subFilter.hiddenIds.has(p.raw.category.id),
+          );
+    return filtered.map((p) => p.raw);
+  }, [state.phase, data.categories, activeCategory, subFilter.hiddenIds]);
 
   // Default-camera: bruk pendingCamera hvis tilgjengelig (fra toggle), ellers
   // prosjektets home-koordinater + default 3D-tilt.
