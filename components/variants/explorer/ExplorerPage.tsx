@@ -174,6 +174,14 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
   // Event day filter — filters POIs by selected day (before travel time API calls)
   const showDayFilter = !!features?.dayFilter;
   const eventDays = useEventDays(basePOIs);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const poi of project.pois) {
+      counts[poi.category.id] = (counts[poi.category.id] ?? 0) + 1;
+    }
+    return counts;
+  }, [project.pois]);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const eventFilteredPOIs = useEventDayFilter(basePOIs, selectedDay);
 
@@ -831,6 +839,7 @@ export default function ExplorerPage({ project, themes, areaSlug, collection, in
           themes={themes}
           eventDays={eventDays}
           dayLabels={eventConfig?.dayLabels}
+          categoryCounts={categoryCounts}
         />
       )}
     </div>

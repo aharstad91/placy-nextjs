@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Compass, ChevronRight, ChevronLeft, Sparkles, X } from "lucide-react";
 import { useKompassStore } from "@/lib/kompass-store";
@@ -12,6 +13,7 @@ interface KompassOnboardingProps {
   themes: ThemeDefinition[];
   eventDays: string[];
   dayLabels?: Record<string, string>;
+  categoryCounts?: Record<string, number>;
 }
 
 const THEME_EMOJIS: Record<string, string> = {
@@ -21,6 +23,19 @@ const THEME_EMOJIS: Record<string, string> = {
   "of-folkeliv": "🎪",
   "of-kirke": "⛪",
   "of-utstilling": "🎨",
+};
+
+const THEME_ILLUSTRATIONS: Record<string, string> = {
+  "kn-familie": "/illustrations/kulturnatt-categories/familie.jpg",
+  "kn-utstilling": "/illustrations/kulturnatt-categories/utstilling.jpg",
+  "kn-museum": "/illustrations/kulturnatt-categories/museum.jpg",
+  "kn-annet": "/illustrations/kulturnatt-categories/annet.jpg",
+  "kn-musikk": "/illustrations/kulturnatt-categories/musikk.jpg",
+  "kn-teater": "/illustrations/kulturnatt-categories/teater.jpg",
+  "kn-mat": "/illustrations/kulturnatt-categories/mat.jpg",
+  "kn-verksted": "/illustrations/kulturnatt-categories/verksted.jpg",
+  "kn-foredrag": "/illustrations/kulturnatt-categories/foredrag.jpg",
+  "kn-film": "/illustrations/kulturnatt-categories/film.jpg",
 };
 
 const TIME_SLOTS: { id: TimeSlot; label: string; emoji: string; description: string }[] = [
@@ -33,6 +48,7 @@ export default function KompassOnboarding({
   themes,
   eventDays,
   dayLabels,
+  categoryCounts,
 }: KompassOnboardingProps) {
   const step = useKompassStore((s) => s.onboardingStep);
   const selectedThemes = useKompassStore((s) => s.selectedThemes);
@@ -97,7 +113,7 @@ export default function KompassOnboarding({
       />
 
       {/* Bottom sheet (mobile) / Modal (desktop) */}
-      <div className="relative w-full lg:w-[440px] lg:rounded-2xl bg-white rounded-t-2xl shadow-2xl animate-slide-up max-h-[85vh] flex flex-col">
+      <div className="relative w-full lg:w-[560px] lg:rounded-2xl bg-white rounded-t-2xl shadow-2xl animate-slide-up max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex-shrink-0 px-6 pt-5 pb-3">
           {/* Drag handle (mobile) */}
@@ -143,17 +159,59 @@ export default function KompassOnboarding({
                 Velg kategorier du er interessert i
               </p>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-3 gap-2">
                 {themes.map((theme) => {
                   const catId = theme.categories[0];
                   const isSelected = selectedThemes.includes(catId);
+                  const illustration = THEME_ILLUSTRATIONS[catId];
                   const emoji = THEME_EMOJIS[catId] ?? "📌";
+                  const count = theme.categories.reduce(
+                    (sum, id) => sum + (categoryCounts?.[id] ?? 0),
+                    0,
+                  );
+
+                  if (illustration) {
+                    return (
+                      <button
+                        key={catId}
+                        onClick={() => toggleTheme(catId)}
+                        className={cn(
+                          "flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 text-center transition-all overflow-hidden",
+                          isSelected
+                            ? "border-gray-900 bg-gray-50 shadow-sm"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        )}
+                      >
+                        <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-stone-50">
+                          <Image
+                            src={illustration}
+                            alt={theme.name}
+                            fill
+                            sizes="(max-width: 640px) 30vw, 130px"
+                            className="object-cover"
+                          />
+                        </div>
+                        <span className={cn(
+                          "text-sm font-semibold leading-tight px-0.5",
+                          isSelected ? "text-gray-900" : "text-gray-800"
+                        )}>
+                          {theme.name}
+                        </span>
+                        {count > 0 && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-stone-100 text-stone-700 text-[11px] font-medium tabular-nums leading-none">
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }
+
                   return (
                     <button
                       key={catId}
                       onClick={() => toggleTheme(catId)}
                       className={cn(
-                        "flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 text-left transition-all",
+                        "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border-2 text-center transition-all",
                         isSelected
                           ? "border-gray-900 bg-gray-50 shadow-sm"
                           : "border-gray-200 bg-white hover:border-gray-300"
@@ -161,11 +219,16 @@ export default function KompassOnboarding({
                     >
                       <span className="text-xl">{emoji}</span>
                       <span className={cn(
-                        "text-sm font-medium",
-                        isSelected ? "text-gray-900" : "text-gray-600"
+                        "text-sm font-semibold leading-tight",
+                        isSelected ? "text-gray-900" : "text-gray-800"
                       )}>
                         {theme.name}
                       </span>
+                      {count > 0 && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-stone-100 text-stone-700 text-[11px] font-medium tabular-nums leading-none">
+                          {count}
+                        </span>
+                      )}
                     </button>
                   );
                 })}

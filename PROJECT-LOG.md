@@ -3936,3 +3936,112 @@ Rett etter PR #68 (unified POI-carousel) merget. Brukeren pivoterte: i stedet fo
 - **Session-log-recovery virket.** Plan+brainstorm ble borte da worktree ble force-removed, men rekonstruert fra JSONL-session-loggen (initial Write + alle Edits applied i rekkefølge). Verdt å huske for neste gang worktree nuking skjer.
 - **Test-count: 10 nye tester for `getCuratedPOIs`** — hver TC fra plan pluss 3 edge cases. Alle grønne på første kjøring.
 - **Ingen runtime LLM-kall, ingen nye API-kall, ingen datamodell-endringer.** Ren UI-logikk pluss en util-funksjon. Build-time only.
+
+---
+
+## 2026-05-04 — Midtbyen Management-pitch: demo-arsenal + Kompass-illustrasjoner
+
+### Kontekst
+Møte med Nanna Berntsen (prosjektleder, Kulturnatt) i Midtbyen Management onsdag 6. mai. E-postkorrespondanse fra mars-april ledet hit. Trondheim Management AS opererer to merkevarer (Midtbyen + Visit Trondheim) fra samme bygning og samme daglige leder (Kirsten Schultz) — én pitch kan derfor serve begge målgrupper. Sesjonen var ikke en feature-build men en pre-møte-forberedelse: research, demo-verifisering, og en konkret kvalitetshev av Kulturnatt-Explorer.
+
+### Beslutninger
+
+- **Ikke erstatte Explorer med rapport-board for Kulturnatt-demoen.** Rapport-board har sterkere mobil-UX (vaul multi-snap, tab-bar), men forutsetter 7 faste reportConfig-tema og mangler "lagre til samling" som er killer-feature for festivalprogram. Pitch i stedet "Kulturnatt-Explorer slik den er" + "Wesselsløkka rapport-board som neste-gen mobil-arkitektur".
+- **Trondheim Management er ÉN organisasjon med to merkevarer.** Web-research avdekket org.nr 995 860 465, 84 ansatte, eid 1/3 hver av kommune/gårdeierforeningen/handelsstanden. Visit Trondheim AS er medeier og samlokalisert. Pitch begge merkevarer fra én POI-base.
+- **Demo-rekkefølge for møtet:** Kulturnatt-Explorer (mobil, deres eget case) → Wesselsløkka rapport-board (neste-gen) → Scandic Nidelven 3D rapport-board (turist-anker) → Scandic Nidelven `/for/.../trips` (kuraterte byvandringer — det Visit Trondheim mangler) → `/visit-trondheim`-pakken med 7 tematiske guider.
+- **Ikke pitch alle fem løsningene.** Pitch Kulturnatt + Trips/Guide-modellen, hold de andre i bakhånd.
+- **Wesselsløkka-akvarell krever still-life-komposisjon for thumbnail-størrelse.** Første runde av Kompass-illustrasjoner ble full arkitekturscener (musikk-v1.jpg etc.) — for komplekse ved ~125px og over på AI-fy. Andre runde brukte `themes/mat-drikke.jpg` og `themes/trening-aktivitet.jpg` som style-ankre → ren still-life DNA (3 ikoniske objekter, ingen mennesker, ingen bygninger).
+- **Sende `categoryCounts` som prop fra ExplorerPage til KompassOnboarding** istedet for å gi ned hele `project.pois`. Compute via `useMemo` over POI-listen, separation of concerns.
+
+### Levert
+
+- **3D add-on aktivert for Scandic Nidelven** — `PATCH projects.has_3d_addon=true` via Supabase REST. Toggle "Kart / 3D" vises nå i rapport-board, Google fotogrammetri-tiles fungerer over hele sentrum med POI-markører og walking-ruter overlay-et.
+- **10 still-life akvarell-illustrasjoner** i `public/illustrations/kulturnatt-categories/` — én per Kulturnatt-kategori (`familie`, `utstilling`, `museum`, `annet`, `musikk`, `teater`, `mat`, `verksted`, `foredrag`, `film`). Generert via `placy-illustrations`-skill med Wesselsløkka-stil-ankre. Kvadratisk, sentrert komposisjon, dempet palett.
+- **`KompassOnboarding.tsx` redesign:**
+  - Ny `THEME_ILLUSTRATIONS` mapping for `kn-*` kategori-IDer
+  - Vertikal kort-layout: illustrasjon over tema-navn over count-pill
+  - Grid `grid-cols-2` → `grid-cols-3` (10 kategorier i 4 rader)
+  - Modal-bredde `lg:w-[440px]` → `lg:w-[560px]` for å gi tre kort luft
+  - Tema-navn `text-sm font-semibold` (opp fra `text-[11px]`)
+  - Count vises som pill-badge: `bg-stone-100 text-stone-700 text-[11px] tabular-nums`
+- **`ExplorerPage.tsx`:** ny `categoryCounts` `useMemo` over `project.pois`, sendes ned som prop. Bakoverkompatibel — eldre prosjekter med `of-*` IDer faller fortsatt til emoji-layout (THEME_EMOJIS), bare med 3-spalter og count.
+
+### Verifisert
+
+- TypeScript: 0 feil etter alle endringer
+- 3D-rapport-board for Scandic Nidelven: visuelt verifisert i Chrome MCP — toggle, fotogrammetri, POI-markører, walking-rute fra hotellet
+- `/visit-trondheim`, `/trondheim/guide/badeplasser`, `/trondheim/guide/smak-trondheim`: alle 200 OK med editorial-kvalitet (Speilsalen, Credo, Fagn etc.)
+- `/for/scandic/scandic-nidelven/trips`: 200 OK, viser 4 kategorier + 3 kuraterte byvandringer med ekte bilder
+- Demo-arsenal er klart for møtet
+
+### Parkert / Åpne spørsmål
+
+- **Kategori-tab-baren til høyre i Explorer** (i bakgrunnen av Kompass-modalen) bruker fortsatt pin-emojis i stedet for de nye illustrasjonene. Egen komponent. Bør oppgraderes før møtet hvis tid.
+- **Scandic Lerkendal rapport-board** har generic placeholder-hero ("Explore what's nearby...") og feil adressefelt ("Dronningens gate 1" — Lerkendal er Klæbuveien). Ikke å vise.
+- **Radisson Blu Trondheim Airport rapport-board** er tom (kun rullebanen rundt). Ikke å vise.
+- **Visit Trondheim-pakken er fra februar.** Smoke-test av alle 7 guider ikke gjort i sesjonen — kan inneholde brutte bilder etter senere data-migrasjoner.
+- **Andre Kulturnatt-prosjekter** (Oslo Kulturnatt) bruker samme `kn-*` IDer → får automatisk illustrasjoner. Bonus, ikke testet.
+- **Hvis Midtbyen vil ha sin egen brand-tone** kan vi senere generere et nytt sett kulturnatt-trondheim-spesifikke illustrasjoner med Trondheim-arkitektur i bakgrunnen. For onsdag holder generic still-life i Wesselsløkka-stil.
+- **Endringer er ikke committed/pushet** — bruker har preferanse for å ikke push under prototype-iterasjon.
+
+### Retning
+
+- **Pitch-narrativet binder eiendom + events + turisme i én plattform-fortelling.** "Kulturnatt er ett event-case. Hotellet er turist-case. Bydelsguider er innholdsprodukt. Samme POI-base, samme motor." Det er differensiator vs en webutvikler som lager én ting.
+- **Trips/Guide-produktet er den sterke karten for Visit Trondheim.** Bergen Byguide finnes, Trondheim har ingenting tilsvarende — vi har det allerede bygget for Scandic Nidelven (Bakklandet & Bryggene, Smak av Trondheim, Midtbyen på 30 minutter). Selger "vi har bygget det dere trenger før dere spurte".
+- **Wesselsløkka-stilen som plattform-identitet** holder vekt. Når Kompass-modalen får 10 kvalitetsillustrasjoner i samme stil som rapport-tema-thumbnails, blir Explorer- og Report-produktene visuelt sammenbundet. Stil-konsistens på tvers av produkter er en kvalitetsmarkør Midtbyen vil oppfatte.
+
+### Observasjoner
+
+- **Hulk/portal kjørte på port 3000.** Brukte tid på å feilsøke "fetch failed" 500 før jeg innså at dev-serveren på 3000 IKKE var dette repoet. Rutemønsteret `/eiendom/[customer]/[project]` fantes tilfeldigvis i begge prosjekter. **Sjekk alltid `lsof -p PID | grep cwd` før du antar at localhost:3000 er ditt prosjekt.**
+- **Eksisterende illustrasjoner er den beste style-ankeren for nye.** For batch 2 av 7 brukte jeg `musikk-v2.jpg` (frisk-generert) som tredje anchor sammen med `themes/mat-drikke.jpg` og `themes/trening-aktivitet.jpg`. Resultatet ble mer konsistent enn batch 1. Skill-mønster: når du har generert ett kvalitetsbilde i ny serie, bruk det som anchor for resten.
+- **Komposisjon trumfer alt ved thumbnail-størrelse.** Mine første 3 illustrasjoner var fagmessig korrekte (Wesselsløkka-palett, ink-strek, dempet) men hadde feil komposisjon — full arkitekturscener er ikke gjenkjennelige ved 125px. Brukeren pekte på `themes/mat-drikke.jpg` (kaffe + croissant + bok) og det åpnet hele løsningen. **Reference > prinsipper.**
+- **Web-research-agenten leverte high-value brief på 3 minutter.** Hadde tatt en time å manuelt grave fram org.nr, eierandeler, og navn på Kirsten Schultz. Verdt å delegere når møteforberedelse er på minutt-skalaen.
+- **3D add-on er ren flag-toggle.** Ingen migrasjon, ingen revalidate-call i dev-mode — `unstable_cache` med 3600s revalidate er forgivende nok i Next.js dev. Hard reload var nok. Worth å huske for fremtidige feature-flag-toggles.
+- **Brukerens "ikke push"-preferanse holder også for større endringer.** Sesjonen leverte ny mappe (10 bilder) + 2 endrede filer + DB-flag-endring. Alt fortsatt uncommitted. Iterasjon foran solid commit-historie er riktig avveining for prototype-fasen.
+
+---
+
+## 2026-05-05 — Midtbyen-pitch: pris-strategi, markedssjef-vinkling, insiktslag som kjernepitch
+
+### Kontekst
+Dagen før møtet med Nanna Berntsen og Line Holm (markedsansvarlig) i Midtbyen Management. Sesjonen var ren strategisk sparring — ingen kode skrevet, ingen features bygget. Forberedelse av pitch-narrativ, pris-policy, og argumentasjons-struktur.
+
+### Beslutninger
+
+- **Ikke pitche pris i første møte, men ha pakker klare.** Nanna er prosjektleder (ikke beslutningstaker for budsjettpost), Line er markedssjef. Begge er evaluerere — ikke kjøpere. Anker-risiko ved å nevne tall for tidlig. Hold pakker i bakhånd; svar med rom hvis hun spør direkte.
+- **Tre pakke-anker for intern bruk** (ikke for å presentere, kun å ha klart):
+  - Pakke 1 (Kulturnatt event-only): 100k setup + 25k/år drift. Som "referansekunde-tilbud" kan droppes til 80k+20k.
+  - Pakke 2 (Midtbyen permanent sentrum-profil): 180k/år.
+  - Pakke 3 (Visit Trondheim guider + Midtbyen permanent kombo): 280k/år.
+- **Markedssjef-vinkling er sterkere enn prosjektleder-vinkling.** Line måles på besøkstall, kampanje-effekt, omsetning hos medlemmer, posisjonering vs. City Lade/Sirkus/Tiller. En markedsansvarlig som hører "innhold du kan gjenbruke + data du kan rapportere" lytter dypere enn en som hører "vi har bygget mobil-app".
+- **Insiktslaget er den sterkeste kjernepitchen.** Klikk-data, kategori-fordeling, top POI etter klikk/lagring, geografisk varmekart, døgnfordeling — dette er informasjon Midtbyen mangler i dag og ikke kan kjøpe andre steder. Det er den ene leveransen som binder Placy direkte til Lines KPI-er.
+
+### Pitch-arsenal forberedt for møtet
+
+- **Demo-rekkefølge:** Kulturnatt-Explorer (deres case) → Wesselsløkka rapport-board (neste-gen mobil-arkitektur) → Scandic Nidelven 3D rapport-board (turist-anker) → Scandic Nidelven `/trips` (det Visit Trondheim mangler) → `/visit-trondheim`-pakken (7 tematiske guider).
+- **Fire frasekroker for Line:**
+  1. *"Hver rapport vi lager blir et innholdsbibliotek du kan trekke fra resten av året."*
+  2. *"Etter Kulturnatt vil dere få en rapport som viser nøyaktig hvilke kategorier og programposter som engasjerte mest."*
+  3. *"Dere har et discovery-problem, ikke et synlighetsproblem — folk vet at sentrum finnes, men ikke hva som finnes der akkurat nå."*
+  4. *"Placy gir alltid-på markedsføring — innholdet ligger og jobber for dere når dere ikke gjør noe."*
+- **Strategisk åpningsspørsmål til Line:** *"Hvordan rapporterer dere effekt fra et arrangement som Kulturnatt i dag — hva er dere fornøyde med, hva skulle dere ønske dere hadde tall på?"* — anker for hele resten av møtet.
+
+### Parkert / Åpne spørsmål
+
+- **Insiktslag (klikk-/lagring-tracking + after-event-rapport)** er ikke bygget i prototype i dag. Ærlig framing i møtet: *"Det er en del av leveransen — bygges som en del av Kulturnatt-prosjektet."* Faktisk byggetid: 2-3 dagsverk.
+- **After-event-rapport-mockup** ble ikke bygget i sesjonen (tilbudt 30-45 min jobb). Bruker valgte å gå inn i møtet uten visuell mockup, beskrive muntlig.
+- **1-siders tilbudsnotat** for oppfølging dagen etter møtet ble tilbudt men ikke skrevet — venter på signal etter møtet om hvor varmt det er.
+- **Smoke-test av Visit Trondheim 7 guider** fortsatt ikke gjort. Risiko: brutte bilder etter senere data-migrasjoner. Lav sannsynlighet, men hvis Line vil dypdykk i én av dem live er det en eksponering.
+- **Kategori-tab-baren i Explorer-bakgrunnen** bruker fortsatt pin-emojis (ikke akvarell). Ikke fikset før møtet. Kompass-modalen er foran, så minimal eksponering.
+
+### Retning
+
+- **Pris er en samtale, ikke en presentasjon.** Hvis Nanna eller Line spør, gi rom (*"Et event-prosjekt med rapportering ligger typisk i størrelsen 80-150k, en permanent sentrumprofil 200-300k/år"*) heller enn et tall. Får hun ett tall sentrert hun seg om det.
+- **Posisjoner Placy som markedsføringskanal, ikke som verktøy.** Kjøpesenterargumentet: Midtbyen taper mot City Lade fordi kjøpesentre tilbyr enkelhet (alt på ett sted, vet hva som er der). Placy gjør Midtbyens fortrinn (mangfold, særpreg, opplevelse) like enkelt å oppdage. Det er strategisk merkeposisjonering, ikke en event-app.
+- **Bruk møtet til å avdekke Lines KPI-er** før du selger inn løsninger. Hvis hun måles på Insta-engasjement → vinkle innholdsleveranse. Hvis hun måles på besøkstall → vinkle insiktslaget. Hvis hun måles på medlems-omsetning → vinkle "alltid-på sentrumprofil som driver klikk til den enkelte aktør". Tilpass etter hva hun avslører.
+
+### Observasjoner
+
+- **En markedssjef vil høre andre ting enn en daglig leder.** Tech-snakk (Next.js, Mapbox, datamodell) tilfører null verdi; demoen viser teknologien. Hennes kjerne-spørsmål er "hva får jeg som hjelper meg gjøre min jobb bedre". Insiktslag + gjenbrukbart innhold + posisjonering vs. konkurrenter dekker det tre-ledds.
+- **Sparring uten leveranse er fortsatt verdifull sesjon.** Pre-møte-forberedelse er ikke "ekstra arbeid" — det øker odds for at de 14 timene møtet potensielt utløser av oppfølgingsarbeid blir på riktig premiss.
+- **Ærlighet om hva som er live vs. lovet er pitch-styrke, ikke svakhet.** Si rett ut "dette bygger vi som en del av leveransen" framfor å antyde at det er produsert. Reduserer risiko for at Line oppdager hullet senere og svekker tilliten.
