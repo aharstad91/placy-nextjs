@@ -10,12 +10,24 @@ Placy er en lokasjonsbasert plattform med tre produkter: **Explorer** (utforsk f
 |-----|---------|
 | `context/products.md` | **De tre produktene** — Explorer, Guide, Report. Målgrupper, differensiering, oppsummering. |
 | `context/placy-concept-spec.md` | Full teknisk/funksjonell spesifikasjon. Datamodell, UX, API-er, admin-verktøy. |
-| `PROJECT-LOG.md` | **Prosjektdagbok** — beslutninger, retning, åpne spørsmål. Les ved sesjonstart. |
+| `PROJECT-LOG.md` | **Worklog** — teknisk/operasjonell dagbok: kode-iterasjoner, plan-leveranser, bug-fix, refactor-beslutninger, åpne tekniske spørsmål. Les ved sesjonstart. |
+| `docs/strategy/` | **Business-logg** — forretnings- og produktstrategi: sporvalg, prising, kundeprospekter, distribusjonsavtaler. Start med `docs/strategy/LOG.md` for kronologisk overblikk, `aktor-map.md` for kontaktrelasjoner, og datert sesjons-dokument (`YYYY-MM-DD-<topic>-spor.md`) for detaljer. |
 | `PRD.md` | Gjeldende oppgaveliste og status |
 | `COMMANDS.md` | Alle kommandoer og scripts |
 | `docs/solutions/` | Dokumenterte løsninger på tidligere problemer (bugs, arkitektur-mønstre, konvensjoner), organisert per kategori med YAML-frontmatter (`module`, `tags`, `problem_type`). Relevant når du implementerer eller debugger i et dokumentert område. |
 
-**Når bruker sier "sjekk loggen":** Les `PROJECT-LOG.md` — spesielt siste sesjon. Bruk den som kontekst for sparring og beslutninger.
+**Når bruker sier "sjekk loggen" / "sjekk worklogen":** Les `PROJECT-LOG.md` — spesielt siste sesjon. Bruk den som kontekst for sparring og beslutninger på teknisk/operasjonelt nivå.
+
+**Når bruker sier "sjekk strategien" / "sjekk business-loggen":** Les `docs/strategy/LOG.md` — spesielt siste entries. Suppleres med `docs/strategy/aktor-map.md` for kontakt-status og datert sesjons-dokument for detaljer.
+
+**Når bruker tar opp tema som handler om strategi/kunder/prising/forretningsmodell:** Sjekk `docs/strategy/` *før* du gir råd — vi har allerede tatt beslutninger i flere spor (eiendom/Propr, events/Trondheim Management) og du skal ikke gjenta dem eller motsi dem uten å være eksplisitt om det.
+
+**Auto-prompt ved sesjon-slutt:**
+
+- **Strategi-sesjon avsluttes** (sporvalg, kunde-prospekter, prising, distribusjon, forretningsmodell — typisk når det er landet en beslutning, ny innsikt formulert, eller bruker eksplisitt sier "stoppe her"): prompt brukeren *"Skal jeg loggføre dette i business-loggen?"* og oppdater `docs/strategy/LOG.md` + evt. relevant datert sesjons-dokument hvis svaret er ja. Ingen prompt for korte sparring-økter uten landing.
+- **Utviklings-sesjon avsluttes** (feature ferdigstilt, refactor landet, bug fikset utenfor /full eller /ce-work): prompt brukeren *"Skal jeg loggføre dette i worklogen?"* og oppdater `PROJECT-LOG.md` hvis svaret er ja. /full og /ce-work håndterer dette automatisk og krever ikke ekstra prompt.
+
+Auto-prompten er *ja/nei*-spørsmål, ikke en åpen "vil du logge?". Bruker sier ja eller nei, og Claude handler.
 
 ## Kjernekonsepter
 
