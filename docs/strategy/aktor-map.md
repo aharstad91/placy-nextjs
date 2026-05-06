@@ -4,7 +4,7 @@
 > Oppdateres hver gang en relasjon endrer status (ny kontakt, nytt møte, ny rolle, parkert).
 > Roll-bytter og status-endringer noteres dato-stemplet i nøkkel-felter.
 
-**Sist oppdatert:** 2026-05-06
+**Sist oppdatert:** 2026-05-06 (kveld 2)
 
 ---
 
@@ -55,13 +55,43 @@
 
 ## Hoteller Trondheim
 
-Full liste i `docs/brainstorms/2026-02-05-kundeprospekter-trondheim-brainstorm.md`. Aktørene under er de som har hatt eller er nær Placy-kontakt.
+Full liste i `docs/brainstorms/2026-02-05-kundeprospekter-trondheim-brainstorm.md`. Hotell er **primært fase-1-spor for events/turist-pitchen** (besluttet 2026-05-06 kveld 2). VT (Kari) brukes som intro-mekanisme — versjon C-formulering ligger i `2026-05-06-events-spor-trondheim.md`.
 
-| Hotell | Status | Demo |
+**Pitch-prioritering for første pilot:**
+
+| # | Hotell | Pitch-prioritet | Status | Demo |
+|---|---|---|---|---|
+| 1 | **Britannia** | Topp prioritet — premium signal, markedssjef beslutter (uavhengig hotell, ikke kjede). 13 møterom + Britannia Hall. | Ingen kontakt. Mål: VT-intro fra Kari. | — |
+| 2 | **Nidaros Pilegrimsgård** | Topp prioritet — unikt konsept ved Nidarosdomen, markedssjef beslutter. Lavt volum, men case study-rikt. | Ingen kontakt. Mål: VT-intro fra Kari. | — |
+| 3 | **Scandic Nidelven** | Topp prioritet — eksisterende demo, 349 rom gir volum-data. Risiko: Scandic-Stockholm kan vetoe lokalt. | 2026-05-06: Demo eksisterer, vist til Kari/Sissel/Nanna i møtet. Ingen direkte kontakt. | `localhost:3009/eiendom/scandic/scandic-nidelven` |
+| 4 | Quality Hotel Prinsen | Tier 2 — etter første lukke. Strawberry-kjede-koordinering. | Ingen kontakt. | — |
+| 5 | Clarion Hotel Trondheim | Tier 2 — etter første lukke. Skandinavias største kongresshotell, 400 rom + 19 møterom. Strawberry-kjede. | Ingen kontakt. | — |
+| Andre Trondheim-hoteller | Tier 3 — etter case study foreligger. | — | — |
+
+---
+
+## Cruise / pilot-by-skalering (parkert til fase 3)
+
+**Status:** Identifisert som høyt-potensial fase-3-spor 2026-05-06 (kveld 2). Pilot-by-modell der Trondheim er testby som kan utvides til hele kystruten. Krever hotell-case study først for troverdighet, flerspråklig produkt (norsk + engelsk + tysk minimum), og lengre salgssyklus. Aktiveres ikke før første hotell-pilot har levert målbar engagement-data.
+
+| Org | Skala | Status | Inngangsvinkel |
+|---|---|---|---|
+| **Hurtigruten Group** | 7 skip, ~700k passasjerer/år, 32 anløpshavner | Parkert. Sannsynlig digital lead på HQ er beslutningstaker. | Cruise Norway (paraplyorg) eller Trondheim Havn KF som intro-mekanisme. |
+| **Havila Voyages** | 4 skip, 14 anløpshavner, norsk Sunnmøre-eierskap | Parkert. Mer manøvrerbart selskap, sannsynlig raskere first-yes enn Hurtigruten. | Samme — via Cruise Norway eller direkte HQ. |
+| **Cruise Norway** | Bransje-paraply for cruise i Norge, Bergen-basert | Parkert. Hvis stempler Placy som "anbefalt" → åpner mange dører samtidig. | Krever varm intro fra VT eller Trondheim Havn. |
+| **Trondheim Havn KF** | Eier av kommunen, kunde-relasjon til alle rederier | Parkert. Sannsynligvis sterkeste enkelt-inngangsvinkel når aktivt. | Via Sissel (MM) eller VT, eller direkte. |
+
+---
+
+## Transport (parkert)
+
+**Status:** Identifisert som langtids-spor men parkert pga. offentlig anskaffelse-treghet. Krever hotell-case study + cruise-validering før det er troverdig.
+
+| Org | Type | Status |
 |---|---|---|
-| **Scandic Nidelven** | 2026-05-06: Ingen kontakt. Demo eksisterer (rapport-board Mat & Drikke 3D + Trips "Bakklandet & Bryggene"). Ble vist til Kari/Sissel/Nanna i møtet. | `localhost:3009/eiendom/scandic/scandic-nidelven` |
-| Britannia Hotel | Ingen kontakt. Identifisert som premium-prospect. | — |
-| Clarion / Quality / Scandic-kjede | Ingen kontakt. Identifisert som volum-prospect. | — |
+| **Avinor (Værnes)** | Statlig flyplass-operatør | Parkert. Offentlig anskaffelse 6-12 mnd. |
+| **AtB** | Trøndelags kollektivtransport (flybuss + buss + tog) | Parkert. Offentlig anskaffelse. |
+| **Boreal** | Privat busselskap (kjører flybussen for AtB) | Parkert. |
 
 ---
 

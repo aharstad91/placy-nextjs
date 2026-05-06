@@ -14,6 +14,22 @@
 
 ---
 
+## 2026-05-06 (kveld 2) — Hotell-fokus først, performance pilot, cruise/Hurtigruten parkert
+
+**Beslutning:** Hotell er primært gå-til-marked-spor for events/turist-pitchen. Topp 3 prospects: Britannia, Nidaros Pilegrimsgård, Scandic Nidelven. Visit Trondheim (Kari Aarnes) brukes som intro-mekanisme — versjon C-formulering: *"vi tilbyr 30-60 dagers gratis pilot for 2-3 Trondheim-hoteller før sommer-sesongen, måler engagement, leverer case study du kan bruke i medlemsrapport — hvilke hoteller har mest nytte? Kan du sende intro?"* Performance pilot-modell: 30 dagers gratis + promosjons-forpliktelse fra hotellet + pre-avtalt konverterings-terskel + tidsbegrenset eksklusivitet → 1 490/mnd × 12 mnd ved suksess. Cruise-spor (Hurtigruten Group + Havila Voyages som pilot-by-skalering) **parkert til fase 3** — etter hotell-pilot har levert case study.
+
+**Begrunnelse:** Hoteller er stasjonære (forutsigbar salgssyklus, fast lobby for QR, samme markedssjef over tid), VT er medlemsorganisasjon for dem (lavt friksjon for varm intro), gjentatte gjester gir tidsserie-data vs. cruise som er punktdata. Eksisterende fundament: pricing finnes, Scandic-demo finnes, 17 hoteller listet i kundeprospekter. Cruise har større skalerings-potensiale (Hurtigruten 32 havner, Havila 14, pilot-by-modell elegant) men krever hotell-case study først for troverdighet, flerspråklig produkt (norsk + engelsk + tysk minimum), og lengre salgssyklus. Solo-Andreas kan ikke seriøst forfølge begge spor parallelt.
+
+**Avlastet:** Karis QR-utsagn fra møtet ("alle hoteller, cruise, Værnes, flybuss bør ha QR-kode") dekomprimert til 30+ separate salg, ikke ett bredt prosjekt. VT er anbefalingspartner / trust-signal, ikke betalende kunde eller gateway. Avinor (Værnes) og AtB (flybuss) parkert pga. offentlig anskaffelse-treghet. Butikker via Midtbyen Management er sekundært (lav pris-tolleranse for individuelt salg).
+
+**Detaljer:** `docs/strategy/2026-05-06-events-spor-trondheim.md` — oppdatert med diskusjons-seksjon "Sesjon 2026-05-06 kveld 2" som inneholder QR-distribusjons-analyse, pilot-by-modell-vurdering (parkert), performance pilot-struktur, og topp prospects med inngangsvinkler.
+
+**Status:** Aktiv — neste konkrete trinn er VT-intro-mail til Kari + 1-siders pilot-pakke. Tre åpne underbeslutninger: (1) konverterings-terskel-modell (låste tall / subjektiv / hybrid), (2) parallell vs sekvensiell pitch til 3 hoteller, (3) pris-justering etter pilot-data (holde 1 490/mnd eller revurdere).
+
+**Lukker tidligere åpne tema:** S1 (hvem blir første pilot) → hotell, S2 (VT som kunde vs partner) → partner/intro-mekanisme, S4 (cruise/turist-segment) → parkert til fase 3.
+
+---
+
 ## 2026-05-06 (kveld) — Strategi-arbeid formalisert som eget spor (business-logg)
 
 **Beslutning:** `docs/strategy/`-mappa opprettet for forretnings- og produktstrategi-dokumenter, separert fra `docs/brainstorms/` (tekniske feature-brainstorms) og `PROJECT-LOG.md` (worklog). Mappa inneholder:

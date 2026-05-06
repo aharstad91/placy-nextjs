@@ -134,6 +134,117 @@ Eller — alternativt — adresseres et tema om gangen ad-hoc i andre sesjoner u
 
 ---
 
+## Sesjon 2026-05-06 (kveld 2) — QR-distribusjons-analyse, hotell-fokus, performance pilot
+
+Dypere diskusjon om Karis utsagn om at "alle hoteller, cruise, Værnes, flybuss bør ha QR-kode på Placy". Sesjonen lukker tre åpne tema (S1, S2, S4) og åpner tre nye operasjonelle.
+
+### QR-distribusjons-analyse — hva Kari faktisk sa
+
+Aktørene som SKAL eie QR-kodene: hotellene, cruise-skipene, butikker, Værnes, flybussen. Aktøren som IKKE skal eie: VT selv (de "anbefaler", ikke "distribuerer").
+
+**Strategiske implikasjoner:**
+
+- **Forretningsmodell:** VT betaler ikke noe. Hver QR-aktør er separat kjøper. Eksisterende prising holder (Explorer 1 490/mnd per hotell, Report 25-35k engangs). VT er gratis trust signal, ikke revenue stream.
+- **Produkt:** Krever branding-fleksibilitet (white-label per aktør eller felles "Placy Trondheim" med scanneren-detektion). Åpent tema P4.
+- **Verdi for VT:** "Placy er anbefalt løsning for medlemmene" leverer på medlemsforpliktelse uten egen kostnad. Det er hvorfor Kari aktivt vil pushe.
+
+**Fellen:** "Alle aktørene" høres ut som ett bredt prosjekt. Det er det ikke — det er **30+ separate salg** med ulik beslutningstaker, salgssyklus og pris-tolleranse. Solo-Andreas kan ikke seriøst forfølge alle parallelt.
+
+| Aktør | Salgssyklus | Pris-tolleranse | Volum-effekt | Prioritet |
+|---|---|---|---|---|
+| Enkelthotell (markedssjef) | 30-60 dager | Middels-høy | Lav-middels | **Fase 1 — primær** |
+| Hotellkjede sentralt | 6-18 mnd | Høy | Veldig høy | Fase 2 |
+| Cruise (Hurtigruten/Havila) | Privat 2-6 mnd | Veldig høy | Veldig høy ved skala | Fase 3 — parkert |
+| Avinor (Værnes) | 6-12 mnd offentlig | Høy + byråkrati | Veldig høy | Parkert |
+| AtB (flybuss/kollektiv) | 6-12 mnd offentlig | Middels | Middels | Parkert |
+| Butikker individuelt | Lav pris-tolleranse | Lav | Lav | Aldri direkte — via MM |
+
+### Cruise pilot-by-modell — vurdert og parkert til fase 3
+
+Idé: Trondheim som pilotby for Hurtigruten Group (32 anløpshavner) eller Havila Voyages (14 havner). Hvis pilot lander, skaleres til hele ruten.
+
+**Hvorfor smart:**
+- Privat innkjøp (rask) vs Avinor (treg)
+- Pain point er bokstavelig talt produktet (8-10 timer i havn, ny by, mobil i hånd)
+- Skalering innbygd i pitchen
+- Ingen direkte konkurrent
+- Per-havn-arkitektur: plattform + branding er felles, POI-base + lokale guider er det som må bygges per by
+
+**Hva som kreves før pitch:**
+- (a) Hotell-case study med målbare engagement-tall
+- (b) Konkret pilot-tilbud (pris, scope, tidsramme)
+- (c) Skalerings-modell på papir (per-havn-pris × hele ruten)
+- (d) Flerspråklig skall (norsk + engelsk + tysk minimum)
+
+**Beslutning:** Parkert til fase 3 — etter hotell-pilot har levert case study. Hurtigruten/Havila ført inn i `aktor-map.md` som identifiserte men ikke-aktive prospects.
+
+### Performance pilot-modell — strukturert gratis pilot
+
+Andreas observerte at Placy har lave driftskostnader (~4-8 timer Andreas-tid per pilot-setup). Det betyr "gratis 30-60 dagers pilot" har lav marginalkostnad og høy data-verdi. Men ren "gratis prøve" har tre feller:
+
+| Felle | Mitigering |
+|---|---|
+| Passiv pilot = dårlig data ("vi prøvde, fikk 12 scans") | **Promosjons-forpliktelse** — avtalt minimum-eksponering (QR-plakat × N lokasjoner, in-room info-kort) |
+| Manglende konverterings-mekanisme (60-70% konverterer aldri) | **Pre-avtalt konverterings-terskel** — definert engagement-tall → automatisk overgang til 1 490/mnd × 12 mnd |
+| Presedens-effekt (alle krever gratis) | **Tidsbegrenset eksklusivitet** — første pilot får eksklusiv vindu, deretter åpent for andre |
+
+**Pilot-vilkår (foreløpig):**
+- 30 dagers gratis pilot for hotell (60 dager for cruise hvis senere relevant)
+- Branding: "Powered by Placy" + hotellets logo (per Propr-pilot brand-skille-policy)
+- Suksess-terskel: åpent — tre alternativer drøftet, ikke besluttet (alt 1 låste tall, alt 2 subjektivt, alt 3 hybrid med minimum-aktivitet + forhandling om endelig pris)
+
+### Hotell-fokus — beslutning og topp prospects
+
+**Beslutning:** Hotell er primær fase-1-spor. Stasjonære, forutsigbare, VT som intro-mekanisme, eksisterende fundament (pricing + demo + kundeprospekter), gjentatte gjester gir tidsserie-data.
+
+**Topp 3 prospects rangert for første lukke:**
+
+| # | Hotell | Beslutningskraft | Brand-effekt | Risiko |
+|---|---|---|---|---|
+| 1 | **Britannia** | Markedssjef beslutter (uavhengig) | Premium signal — åpner alle dører | Lav |
+| 2 | **Nidaros Pilegrimsgård** | Markedssjef beslutter (uavhengig, lite hotell) | Unikt konsept ved Nidarosdomen | Lav. Lavt volum, men case study-rikt |
+| 3 | **Scandic Nidelven** | Lokal markedssjef + sentral koordinering | Volum (349 rom) gir høyt brukstall | Middels — Scandic-Stockholm kan vetoe |
+
+Tier 2 (etter første lukke): Quality Hotel Prinsen, Clarion Hotel Trondheim. Krever Strawberry-kjede-koordinering.
+
+### VT-intro-mekanikken — versjon C-formulering
+
+Kari er medlemsorganisasjon for hotellene. Intro fra henne er ikke favør — det er medlemspleie. Tre versjoner ble vurdert:
+
+- A (svak): *"Kan du introdusere meg til hotellsjefene?"* — for bredt, krever at hun gjør jobben
+- B (medium): *"Kan du introdusere meg til markedssjefene på Britannia og Scandic Nidelven?"* — spesifikt, lite arbeid for henne
+- **C (sterk):** *"Vi tilbyr 30-60 dagers gratis pilot for 2-3 Trondheim-hoteller før sommer-sesongen, der vi måler engagement-data og leverer case study du kan bruke i medlemsrapporten din. Hvilke hoteller tror du vil ha mest nytte? Kan du sende kort intro?"* — gir Kari grunn til å pushe (data hun selv kan rapportere), spesifikt, lavt friksjon, attraktiv ramme for hotellene som mottar intro.
+
+**Valgt:** Versjon C. Binder VT-stempel + pilot-tilbud + intro i ett trekk.
+
+### Konkret first-step
+
+**Denne uken:**
+
+1. Sende oppfølgings-mail til Kari (versjon C-formulering) — be om intros til Britannia + Pilegrimsgård + Scandic Nidelven
+2. Forberede pilot-pakke: 1-siders dokument med pilot-vilkår, eksempel-QR, mockup av hotell-skall, suksess-metrikker
+3. Identifisere markedssjef-navn på de tre hotellene (5 min LinkedIn-søk per stk)
+
+**Når intros kommer:**
+
+4. Direkte mail til markedssjef (Kari som CC) — "her er pilot-tilbudet, kan vi ta 20 min?"
+5. Demo-møte → pilot-avtale signert → live-launch
+
+### Lukket i denne sesjonen
+
+- **S1** Hvem blir første pilot → hotell (Britannia / Pilegrimsgård / Scandic Nidelven)
+- **S2** VT som kunde vs partner → partner/intro-mekanisme, ikke betalende kunde
+- **S4** Cruise/turist-segment → parkert til fase 3
+
+### Nye åpne tema
+
+- [ ] **O5.** Konverterings-terskel-modell: alt 1 (låste tall) / alt 2 (subjektivt) / alt 3 (hybrid). Påvirker pilot-avtale-formuleringen.
+- [ ] **O6.** Parallell vs sekvensiell pitch — tre hoteller samtidig (høyere odds for første-yes, men risiko for å håndtere tre piloter parallelt) eller én om gangen?
+- [ ] **O7.** Pris-justering etter pilot-data — etter konvertering, holdes 1 490/mnd eller revurderes basert på faktisk engagement-volum?
+
+---
+
 ## Endringslogg
 
 - **2026-05-06**: Dokument opprettet. People-map etablert, hovedinnsikter fra møtet ført inn, 18 åpne tema kategorisert, beslutning om "begge spor, seriøs arbeidsdeling" landet.
+- **2026-05-06 (kveld 2)**: QR-distribusjons-analyse, cruise pilot-by-modell vurdert og parkert, performance pilot-strukturen formet (3 vilkår), hotell-fokus-beslutning landet, topp 3 prospects rangert, VT-intro-mekanikken landet på versjon C. Lukket S1/S2/S4. Åpnet O5/O6/O7.
