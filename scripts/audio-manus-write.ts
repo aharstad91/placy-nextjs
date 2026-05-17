@@ -1,38 +1,40 @@
 #!/usr/bin/env npx tsx
 /**
- * Audio-tour manus-generering — Steg 8c.1 i /generate-rapport.
+ * Audio-tour manus-pipeline — Steg 8c.1 i /generate-rapport.
  *
- * Genererer pitch-manus (~70 ord per spor) for Hjem + hver aktiv kategori
- * og PATCH-er products.config.reportConfig:
- *   - themes[].audio.manus = "<70-ord pitch>"
- *   - heroAudio.manus      = "<70-ord pitch>" (Hjem-spor)
- *   - audioVersion: 1
+ * Splittes i `prepare` + `apply` med skill-utført mellomsteg (samme mønster
+ * som scripts/curate-narrative.ts). Ingen Anthropic-API-key nødvendig —
+ * Claude Code-skill driver genereringen.
  *
- * Audio-binærer + URL/voice/model genereres av Steg 8c.2 (audio-tour-build.ts).
- * Mellom 8c.1 og 8c.2 leser Andreas manusene som QA-checkpoint før
- * ElevenLabs-quota brennes.
+ * Flyt:
+ *   1. `prepare <pid> [--force]`
+ *      → leser DB, bygger track-inputs (Hjem + aktive temaer)
+ *      → skriver .audio-staging/<pid>/<trackKey>.context.json per spor
+ *      → sletter evt. eksisterende .audio-staging/<pid>/<trackKey>.manus.md
+ *   2. (Skill leser hver context.json, skriver .manus.md per spor)
+ *   3. `apply <pid>`
+ *      → leser hver .manus.md, validerer (35-90 ord, banned-words)
+ *      → deep-merge PATCH til reportConfig.themes[].audio.manus +
+ *        reportConfig.heroAudio.manus + reportConfig.audioVersion = 1
+ *      → optimistic lock via updated_at + revalidateTag
+ *
+ * Steg 8c.2 (audio-tour-build.ts) henter manusene fra DB og kaller
+ * ElevenLabs — kjøres ETTER manuell QA av manusene.
  *
  * Usage:
- *   npx tsx scripts/audio-manus-write.ts <project_id>                 # dry-run
- *   npx tsx scripts/audio-manus-write.ts <project_id> --apply         # PATCH
- *   npx tsx scripts/audio-manus-write.ts <project_id> --apply --force # overskriv
- *
- * Mønster: følger scripts/gemini-grounding.ts (whitelist, optimistic lock,
- * Promise.allSettled, deep-merge PATCH, omit-on-failure, revalidateTag).
+ *   npx tsx scripts/audio-manus-write.ts prepare <project_id> [--force]
+ *   npx tsx scripts/audio-manus-write.ts apply <project_id>
  */
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { config } from "dotenv";
-import Anthropic from "@anthropic-ai/sdk";
-import pLimit from "p-limit";
 import {
   SYSTEM_PROMPT,
   buildManusPrompt,
 } from "../lib/audio-tour/manus-prompt";
 import {
   buildTrackInputs,
-  stripWrappingQuotes,
   validateManus,
   type BuildTrackInput,
 } from "../lib/audio-tour/manus";
@@ -45,8 +47,6 @@ config({ path: ".env.local" });
 
 // ─── Konfigurasjon ──────────────────────────────────────────────────────────
 
-const CLAUDE_MODEL = "claude-sonnet-4-5";
-const PARALLEL_LIMIT = 3;
 const TARGET_WORDS = 70;
 
 const ALLOWED_REPORTCONFIG_KEYS = new Set([
@@ -71,21 +71,21 @@ const ALLOWED_REPORTCONFIG_KEYS = new Set([
 // ─── CLI ────────────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
-const projectId = args.find((a) => !a.startsWith("--"));
-const APPLY = args.includes("--apply");
+const subcommand = args[0];
+const projectId = args[1];
 const FORCE = args.includes("--force");
-const DRY_RUN = !APPLY;
 
-if (!projectId) {
+if (!["prepare", "apply"].includes(subcommand) || !projectId) {
   console.error(
-    "Usage: npx tsx scripts/audio-manus-write.ts <project_id> [--apply] [--force]",
+    "Usage:\n" +
+      "  npx tsx scripts/audio-manus-write.ts prepare <project_id> [--force]\n" +
+      "  npx tsx scripts/audio-manus-write.ts apply <project_id>",
   );
   process.exit(1);
 }
 
 // ─── Env ────────────────────────────────────────────────────────────────────
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -97,6 +97,8 @@ function assert(condition: unknown, message: string): asserts condition {
     process.exit(1);
   }
 }
+assert(SUPABASE_URL, "Missing NEXT_PUBLIC_SUPABASE_URL");
+assert(SUPABASE_KEY, "Missing SUPABASE_SERVICE_ROLE_KEY");
 
 // ─── Supabase ───────────────────────────────────────────────────────────────
 
@@ -147,85 +149,18 @@ async function fetchProject(pid: string): Promise<ProjectRow> {
   return (body as ProjectRow[])[0];
 }
 
-// ─── Manus-generering per spor ──────────────────────────────────────────────
+// ─── Staging-paths ──────────────────────────────────────────────────────────
 
-interface ManusOutcome {
-  trackKey: string;
-  trackKind: BuildTrackInput["kind"];
-  trackLabel: string;
-  status: "success" | "error" | "skipped";
-  error?: string;
-  manus?: string;
-  wordCount?: number;
+function stagingDir(pid: string): string {
+  return path.resolve(".audio-staging", pid);
 }
 
-async function generateManusForTrack(
-  client: Anthropic,
-  input: BuildTrackInput,
-): Promise<ManusOutcome> {
-  const base: Pick<ManusOutcome, "trackKey" | "trackKind" | "trackLabel"> = {
-    trackKey: input.key,
-    trackKind: input.kind,
-    trackLabel: input.label,
-  };
+function contextPath(pid: string, trackKey: string): string {
+  return path.join(stagingDir(pid), `${trackKey}.context.json`);
+}
 
-  if (input.hasExistingManus && !FORCE) {
-    return {
-      ...base,
-      status: "skipped",
-      error: "eksisterende manus (bruk --force for å overskrive)",
-    };
-  }
-
-  const userPrompt = buildManusPrompt({
-    trackKind: input.kind,
-    areaName: input.areaName,
-    inputText: input.inputText,
-    categoryName: input.categoryName,
-    prevTrackSummary: input.prevTrackSummary,
-    targetWords: TARGET_WORDS,
-    lang: "no",
-  });
-
-  let raw: string;
-  try {
-    const msg = await client.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 400,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
-    });
-    const block = msg.content[0];
-    if (!block || block.type !== "text") {
-      return { ...base, status: "error", error: "Claude returnerte ikke-tekst-blokk" };
-    }
-    raw = block.text.trim();
-  } catch (err) {
-    return {
-      ...base,
-      status: "error",
-      error: `claude: ${(err as Error).message}`,
-    };
-  }
-
-  const cleaned = stripWrappingQuotes(raw);
-  const validation = validateManus(cleaned);
-  if (!validation.ok) {
-    return {
-      ...base,
-      status: "error",
-      error: `validering: ${validation.reason}`,
-      manus: cleaned,
-      wordCount: validation.wordCount,
-    };
-  }
-
-  return {
-    ...base,
-    status: "success",
-    manus: cleaned,
-    wordCount: validation.wordCount,
-  };
+function manusPath(pid: string, trackKey: string): string {
+  return path.join(stagingDir(pid), `${trackKey}.manus.md`);
 }
 
 // ─── Revalidation ───────────────────────────────────────────────────────────
@@ -254,17 +189,25 @@ async function revalidate(tag: string): Promise<void> {
   }
 }
 
-// ─── Main ───────────────────────────────────────────────────────────────────
+// ─── Prepare ────────────────────────────────────────────────────────────────
 
-async function main() {
-  assert(ANTHROPIC_API_KEY, "Missing ANTHROPIC_API_KEY in .env.local");
-  assert(SUPABASE_URL, "Missing NEXT_PUBLIC_SUPABASE_URL");
-  assert(SUPABASE_KEY, "Missing SUPABASE_SERVICE_ROLE_KEY");
+interface AudioContextFile {
+  project_id: string;
+  track_key: string;
+  track_kind: BuildTrackInput["kind"];
+  track_label: string;
+  area_name: string;
+  category_name?: string;
+  prev_track_summary?: string;
+  target_words: number;
+  system_prompt: string;
+  user_prompt: string;
+  input_text: string;
+}
 
-  console.log("=== Audio-tour manus ===");
-  console.log(`Project:   ${projectId}`);
-  console.log(`Mode:      ${DRY_RUN ? "DRY RUN" : "APPLY"}${FORCE ? " (force)" : ""}`);
-  console.log(`Model:     ${CLAUDE_MODEL}`);
+async function prepare(): Promise<void> {
+  console.log("=== audio-manus-write: PREPARE ===");
+  console.log(`Project: ${projectId}`);
   console.log();
 
   const [project, product] = await Promise.all([
@@ -275,9 +218,8 @@ async function main() {
   const existingRc =
     (existingConfig.reportConfig as ReportConfig | undefined) ?? {};
 
-  console.log(`Project:   ${project.name} (${project.url_slug})`);
-  console.log(`Product:   ${product.id}`);
-  console.log(`Updated:   ${product.updated_at}`);
+  console.log(`Project: ${project.name} (${project.url_slug})`);
+  console.log(`Product: ${product.id}`);
 
   const unknownKeys = Object.keys(existingRc).filter(
     (k) => !ALLOWED_REPORTCONFIG_KEYS.has(k),
@@ -292,13 +234,199 @@ async function main() {
   const inputs = buildTrackInputs(existingRc, project.name);
   if (inputs.length === 0) {
     console.log(
-      "Ingen spor å generere (mangler heroIntro og themes med input). Exit 0.",
+      "Ingen spor å klargjøre (mangler heroIntro og themes med input). Exit 0.",
     );
     return;
   }
-  console.log(`Spor:      ${inputs.length} (${inputs.map((i) => i.key).join(", ")})`);
+
+  const dir = stagingDir(projectId!);
+  fs.mkdirSync(dir, { recursive: true });
+
+  let prepared = 0;
+  let skipped = 0;
+
+  for (const input of inputs) {
+    if (input.hasExistingManus && !FORCE) {
+      console.log(
+        `⊘ ${input.key.padEnd(24)} eksisterende manus (--force for overwrite)`,
+      );
+      skipped += 1;
+      continue;
+    }
+
+    const userPrompt = buildManusPrompt({
+      trackKind: input.kind,
+      areaName: input.areaName,
+      inputText: input.inputText,
+      categoryName: input.categoryName,
+      prevTrackSummary: input.prevTrackSummary,
+      targetWords: TARGET_WORDS,
+      lang: "no",
+    });
+
+    const ctx: AudioContextFile = {
+      project_id: projectId!,
+      track_key: input.key,
+      track_kind: input.kind,
+      track_label: input.label,
+      area_name: input.areaName,
+      category_name: input.categoryName,
+      prev_track_summary: input.prevTrackSummary,
+      target_words: TARGET_WORDS,
+      system_prompt: SYSTEM_PROMPT,
+      user_prompt: userPrompt,
+      input_text: input.inputText,
+    };
+
+    fs.writeFileSync(
+      contextPath(projectId!, input.key),
+      JSON.stringify(ctx, null, 2),
+    );
+
+    const mp = manusPath(projectId!, input.key);
+    if (fs.existsSync(mp)) fs.unlinkSync(mp);
+
+    console.log(
+      `✓ ${input.key.padEnd(24)} context klar — ${input.kind === "home" ? "Hjem" : input.label}`,
+    );
+    prepared += 1;
+  }
+
+  console.log();
+  console.log(`Klargjort: ${prepared}, hoppet over: ${skipped}`);
+  console.log();
+  console.log("--- Neste steg ---");
+  console.log(`  Staging-katalog: ${dir}`);
+  console.log("  For hvert spor, les .context.json og skriv .manus.md");
+  console.log("    - system_prompt + user_prompt er inkludert i context.json");
+  console.log("    - manus.md skal kun inneholde selve pitchen (35-90 ord)");
+  console.log("    - ingen overskrifter, ingen anførselstegn, ren prosa");
+  console.log();
+  console.log(
+    `  npx tsx scripts/audio-manus-write.ts apply ${projectId}  # når alle manusene er skrevet`,
+  );
+}
+
+// ─── Apply ──────────────────────────────────────────────────────────────────
+
+interface ApplyOutcome {
+  trackKey: string;
+  status: "ok" | "missing" | "invalid";
+  manus?: string;
+  reason?: string;
+  wordCount?: number;
+}
+
+async function apply(): Promise<void> {
+  console.log("=== audio-manus-write: APPLY ===");
+  console.log(`Project: ${projectId}`);
   console.log();
 
+  const [project, product] = await Promise.all([
+    fetchProject(projectId!),
+    fetchReportProduct(projectId!),
+  ]);
+  const existingConfig = (product.config ?? {}) as Record<string, unknown>;
+  const existingRc =
+    (existingConfig.reportConfig as ReportConfig | undefined) ?? {};
+
+  console.log(`Project: ${project.name} (${project.url_slug})`);
+  console.log(`Product: ${product.id}`);
+  console.log(`Updated: ${product.updated_at}`);
+
+  const unknownKeys = Object.keys(existingRc).filter(
+    (k) => !ALLOWED_REPORTCONFIG_KEYS.has(k),
+  );
+  if (unknownKeys.length > 0) {
+    console.error(
+      `ABORT: ukjent reportConfig-nøkkel: ${unknownKeys.join(", ")} — utvid whitelist først`,
+    );
+    process.exit(1);
+  }
+
+  const inputs = buildTrackInputs(existingRc, project.name);
+  if (inputs.length === 0) {
+    console.log("Ingen spor å applisere. Exit 0.");
+    return;
+  }
+
+  const dir = stagingDir(projectId!);
+  if (!fs.existsSync(dir)) {
+    console.error(
+      `ABORT: staging-katalog mangler (${dir}). Kjør prepare først.`,
+    );
+    process.exit(1);
+  }
+
+  const outcomes: ApplyOutcome[] = [];
+  for (const input of inputs) {
+    const mp = manusPath(projectId!, input.key);
+    if (!fs.existsSync(mp)) {
+      outcomes.push({
+        trackKey: input.key,
+        status: input.hasExistingManus ? "ok" : "missing",
+        reason: input.hasExistingManus
+          ? "manus.md mangler, men DB har eksisterende — behold"
+          : "manus.md mangler",
+      });
+      continue;
+    }
+    const raw = fs.readFileSync(mp, "utf8").trim();
+    const validation = validateManus(raw);
+    if (!validation.ok) {
+      outcomes.push({
+        trackKey: input.key,
+        status: "invalid",
+        reason: validation.reason,
+        wordCount: validation.wordCount,
+      });
+      continue;
+    }
+    outcomes.push({
+      trackKey: input.key,
+      status: "ok",
+      manus: raw,
+      wordCount: validation.wordCount,
+    });
+  }
+
+  // Print sammendrag
+  console.log();
+  console.log("--- Per spor ---");
+  for (const o of outcomes) {
+    const mark =
+      o.status === "ok" && o.manus
+        ? "✓"
+        : o.status === "ok"
+          ? "⊘"
+          : o.status === "missing"
+            ? "✗"
+            : "✗";
+    const suffix =
+      o.status === "ok" && o.wordCount
+        ? `${o.wordCount} ord`
+        : o.reason ?? "";
+    console.log(`  ${mark} ${o.trackKey.padEnd(24)} ${suffix}`);
+  }
+  console.log();
+
+  const failed = outcomes.filter(
+    (o) => o.status === "invalid" || o.status === "missing",
+  );
+  if (failed.length > 0) {
+    console.error(
+      `ABORT: ${failed.length}/${outcomes.length} spor mangler eller er ugyldige. Fiks .manus.md og kjør apply på nytt.`,
+    );
+    process.exit(2);
+  }
+
+  const written = outcomes.filter((o) => o.manus);
+  if (written.length === 0) {
+    console.log("Ingen nye manus å skrive (alt er kun behold-eksisterende). Exit 0.");
+    return;
+  }
+
+  // Backup
   const backupDir = path.resolve(".", "backups");
   fs.mkdirSync(backupDir, { recursive: true });
   const backupPath = path.join(
@@ -307,73 +435,10 @@ async function main() {
   );
   fs.writeFileSync(backupPath, JSON.stringify(product, null, 2));
   console.log(`Backup:    ${backupPath}`);
-  console.log();
-
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-  const limit = pLimit(PARALLEL_LIMIT);
-  const started = Date.now();
-  const settled = await Promise.allSettled(
-    inputs.map((i) => limit(() => generateManusForTrack(client, i))),
-  );
-  const durationMs = Date.now() - started;
-  console.log(`Claude parallell: ${durationMs}ms (${inputs.length} spor)`);
-
-  const outcomes: ManusOutcome[] = settled.map((r, i) => {
-    if (r.status === "fulfilled") return r.value;
-    return {
-      trackKey: inputs[i].key,
-      trackKind: inputs[i].kind,
-      trackLabel: inputs[i].label,
-      status: "error",
-      error: `unexpected: ${(r.reason as Error)?.message ?? String(r.reason)}`,
-    };
-  });
-
-  console.log();
-  console.log("--- Per spor ---");
-  for (const o of outcomes) {
-    const mark =
-      o.status === "success" ? "✓" : o.status === "skipped" ? "⊘" : "✗";
-    const suffix = o.status === "success" ? `${o.wordCount} ord` : o.error;
-    console.log(`  ${mark} ${o.trackKey.padEnd(24)} ${suffix}`);
-  }
-  console.log();
-
-  const errorCount = outcomes.filter((o) => o.status === "error").length;
-  if (errorCount > 0) {
-    console.error(
-      `ABORT: ${errorCount}/${inputs.length} spor feilet. Ingen PATCH. Backup: ${backupPath}`,
-    );
-    process.exit(2);
-  }
-
-  const successCount = outcomes.filter((o) => o.status === "success").length;
-  if (successCount === 0 && outcomes.every((o) => o.status === "skipped")) {
-    console.log(
-      "Alle spor allerede generert (bruk --force for å overskrive). Exit 0.",
-    );
-    return;
-  }
-
-  if (DRY_RUN) {
-    console.log("--- DRY RUN — manus per spor ---");
-    for (const o of outcomes) {
-      if (o.status !== "success") continue;
-      console.log(`\n## ${o.trackKey} (${o.trackLabel}) — ${o.wordCount} ord`);
-      console.log(o.manus);
-    }
-    console.log();
-    console.log(
-      `DRY RUN ferdig. Re-kjør med --apply for å PATCH'e. Backup: ${backupPath}`,
-    );
-    return;
-  }
 
   const manusByKey = new Map<string, string>();
   for (const o of outcomes) {
-    if (o.status === "success" && o.manus) {
-      manusByKey.set(o.trackKey, o.manus);
-    }
+    if (o.manus) manusByKey.set(o.trackKey, o.manus);
   }
 
   const existingThemes = existingRc.themes ?? [];
@@ -435,8 +500,15 @@ async function main() {
   console.log("✓ Ferdig");
   console.log(`  Backup:   ${backupPath}`);
   console.log(
-    `  Neste:    QA manusene (re-kjør i dry-run for å se), så kjør audio-tour-build.ts (Steg 8c.2).`,
+    `  Neste:    Steg 8c.2 — npx tsx scripts/audio-tour-build.ts (TTS via ElevenLabs).`,
   );
+}
+
+// ─── Main ───────────────────────────────────────────────────────────────────
+
+async function main() {
+  if (subcommand === "prepare") await prepare();
+  else if (subcommand === "apply") await apply();
 }
 
 main().catch((err) => {

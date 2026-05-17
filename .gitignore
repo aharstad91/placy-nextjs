@@ -45,3 +45,4 @@ data/research/
 .mcp.json
 backups/
 .curation-staging/
+.audio-staging/
