@@ -7,11 +7,29 @@ import { useBoard } from "../board-state";
 import type { BoardCategory } from "../board-data";
 import { THEME_SCENE_SRC } from "../../theme-icons";
 import {
+  useAudioTourStore,
+  type AudioTrackCategoryId,
+} from "@/lib/stores/audio-tour-store";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+/** Hvilken track-kategori pulser akkurat nå?
+ *  - "home" pulser Hjem-knappen
+ *  - kategori-id pulser tilsvarende RailButton
+ *  - null = ingen pulse (tour idle/ended/error)
+ *
+ *  Tar med paused-state også slik at brukeren forstår hvor megleren *stoppet*
+ *  (track-konteksten skal ikke forsvinne ved pause). */
+function useTourActiveTrackCategory(): AudioTrackCategoryId | null {
+  return useAudioTourStore((s) => {
+    if (s.phase !== "playing" && s.phase !== "paused") return null;
+    return s.tracks[s.trackIndex]?.categoryId ?? null;
+  });
+}
 
 /**
  * Desktop venstre-rail (80px bred). Kun ikon/illustrasjon — kategori-label
@@ -21,6 +39,7 @@ import {
  */
 export function BoardRail() {
   const { state, data, dispatch } = useBoard();
+  const tourTrack = useTourActiveTrackCategory();
 
   return (
     <TooltipProvider>
@@ -35,6 +54,7 @@ export function BoardRail() {
               aria-label="Tilbake til oversikt"
               aria-current={state.phase === "default" ? "page" : undefined}
               onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
+              data-active-during-tour={tourTrack === "home" ? "true" : undefined}
               className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition-all ${
                 state.phase === "default"
                   ? "border-stone-300 bg-stone-100 text-stone-900 shadow-sm"
@@ -55,6 +75,7 @@ export function BoardRail() {
               key={cat.id}
               category={cat}
               active={state.activeCategoryId === cat.id}
+              pulsesDuringTour={tourTrack === cat.id}
               onSelect={() => dispatch({ type: "SELECT_CATEGORY", id: cat.id })}
             />
           ))}
@@ -67,10 +88,12 @@ export function BoardRail() {
 function RailButton({
   category,
   active,
+  pulsesDuringTour,
   onSelect,
 }: {
   category: BoardCategory;
   active: boolean;
+  pulsesDuringTour: boolean;
   onSelect: () => void;
 }) {
   // Akvarell-illustrasjon som rounded-xl kvadrat (matcher mobile category-grid +
@@ -86,6 +109,7 @@ function RailButton({
           onClick={onSelect}
           aria-current={active ? "page" : undefined}
           aria-label={category.label}
+          data-active-during-tour={pulsesDuringTour ? "true" : undefined}
           className="group flex h-12 w-12 items-center justify-center rounded-2xl"
         >
           <div

@@ -60,13 +60,16 @@ export function BoardCategoryInfoTab({
       )}
 
       {leadSegments.length > 0 && (
-        <p className="text-base leading-relaxed text-stone-700">
+        <p
+          data-board-body
+          className="text-base leading-relaxed text-stone-700"
+        >
           <LinkedSegments segments={leadSegments} />
         </p>
       )}
 
       {bodyParagraphs.length > 0 && (
-        <div className="space-y-3 text-stone-800">
+        <div data-board-body className="space-y-3 text-stone-800">
           {bodyParagraphs.map((para, i) => (
             <p key={i} className="text-[15px] leading-relaxed">
               <LinkedSegments segments={linkPOIsInText(para, rawPois)} />

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import TransitionProvider from "@/components/transitions/TransitionProvider";
 import "./globals.css";
+import "@/components/variants/report/board/audio-tour/tour-mode.css";
 
 const inter = Inter({
   subsets: ["latin"],

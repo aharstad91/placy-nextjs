@@ -49,10 +49,14 @@ export function BoardDetailPanel() {
   // (info-tab eller punkter-tab).
   const tourPhase = useAudioTourPhase();
   const showPlayerBanner = tourPhase !== "idle" && tourPhase !== "ended";
+  // Tour-mode-attr aktiveres når audio styrer opplevelsen — body-tekst
+  // dimmes (signaliserer "lytt") og aktiv rail-knapp pulser. Se tour-mode.css.
+  const tourActive = tourPhase === "playing" || tourPhase === "paused";
 
   return (
     <section
       aria-label="Kategori-detaljer"
+      data-tour-active={tourActive ? "true" : undefined}
       className="flex h-full w-[400px] flex-col border-r border-stone-200/80 bg-stone-50"
     >
       {showPlayerBanner && <PlayerBanner />}
@@ -98,7 +102,10 @@ function DefaultEmptyState() {
           {home.name}
         </h2>
         {home.heroIntro && (
-          <p className="text-[15px] leading-relaxed text-stone-700">
+          <p
+            data-board-body
+            className="text-[15px] leading-relaxed text-stone-700"
+          >
             {home.heroIntro}
           </p>
         )}

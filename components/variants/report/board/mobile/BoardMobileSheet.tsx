@@ -24,7 +24,10 @@ import { BoardPunkterAccordion } from "./BoardPunkterAccordion";
 import { BoardTabs } from "./BoardTabs";
 import { PlayerBanner } from "../audio-tour/PlayerBanner";
 import { StartTourButton } from "../audio-tour/StartTourButton";
-import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
+import {
+  useAudioTourPhase,
+  useAudioTourStore,
+} from "@/lib/stores/audio-tour-store";
 
 // Snap-points: stage 1 (skjult bak tab-bar) | stage 2 (peek) | stage 3 (halv) | stage 4 (full).
 // Tab-baren er pinnet til viewport-bunn UTENFOR sheeten (mountes i
@@ -95,6 +98,8 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
   const poi = useActivePOI();
   const tourPhase = useAudioTourPhase();
   const showPlayerBanner = tourPhase !== "idle" && tourPhase !== "ended";
+  // Tour-mode-attr aktiveres når audio styrer opplevelsen.
+  const tourActive = tourPhase === "playing" || tourPhase === "paused";
 
   // Snap-state lokal. Auto-synkroniseres med phase via watcher under.
   const [snap, setSnapInternal] = useState<number | string | null>(
@@ -108,12 +113,18 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
       lastNotifiedRef.current = next;
       onSnapChange?.(next);
     }
-    // Drag-ned-for-å-lukke: hvis brukeren snapper sheet til stage 1 mens en
-    // kategori/POI er aktiv, tolker vi det som "lukk". Phase-watcheren under
-    // setter da snap tilbake til "96px" (no-op) men nullstiller activeCategoryId
-    // og activePOIId så markørene viser oversikt igjen.
-    if (next === "96px" && state.phase !== "default") {
-      dispatch({ type: "RESET_TO_DEFAULT" });
+    // Drag-ned-til-bunn:
+    //  - Med aktiv audio-tour: tolker vi det som "lukk tour"-gest og kaller
+    //    store.close(). BoardContext får stå som det er — brukeren kan
+    //    fortsette å navigere etter at touren er avsluttet.
+    //  - Uten aktiv tour: opprinnelig oppførsel — RESET_TO_DEFAULT slik at
+    //    aktiv kategori/POI nullstilles og markørene viser oversikt igjen.
+    if (next === "96px") {
+      if (tourActive) {
+        useAudioTourStore.getState().close();
+      } else if (state.phase !== "default") {
+        dispatch({ type: "RESET_TO_DEFAULT" });
+      }
     }
   };
 
@@ -122,6 +133,20 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
     setSnap(getDefaultSnapForPhase(state.phase));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase]);
+
+  // Tour-snap-pin: ved overgang fra idle/ended → playing, snap sheet til
+  // "320px" så peek-content (banner + sheet-content) er synlig. Etter pin
+  // respekteres user-drag fritt. Paused→playing trigger IKKE re-pin slik at
+  // brukeren beholder posisjonen de leste i mens megleren tok pause.
+  const prevTourPhase = useRef(tourPhase);
+  useEffect(() => {
+    const prev = prevTourPhase.current;
+    prevTourPhase.current = tourPhase;
+    if ((prev === "idle" || prev === "ended") && tourPhase === "playing") {
+      setSnap("320px");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourPhase]);
 
   // Lokal tab-state for active-fasen. Reset til "info" ved kategori-bytte.
   const [tab, setTab] = useState<"info" | "punkter">("info");
@@ -240,6 +265,7 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
             er scrollet til topp (scrollTop=0), tar sheet over drag. */}
         <DrawerPrimitive.Content
           data-slot="board-mobile-sheet"
+          data-tour-active={tourActive ? "true" : undefined}
           className="fixed inset-x-0 bottom-0 z-30 flex h-[100dvh] flex-col bg-stone-50/95 backdrop-blur rounded-t-3xl shadow-[0_-4px_24px_rgba(15,29,68,0.08)] pt-[env(safe-area-inset-top)]"
         >
           {/* Drag-handle ligger ØVERST i sheet fordi vaul translater hele
@@ -446,7 +472,10 @@ function DefaultHomeContent({
           {name}
         </h2>
         {heroIntro && (
-          <p className="text-[15px] leading-relaxed text-stone-700">
+          <p
+            data-board-body
+            className="text-[15px] leading-relaxed text-stone-700"
+          >
             {heroIntro}
           </p>
         )}

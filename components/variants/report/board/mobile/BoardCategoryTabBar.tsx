@@ -7,6 +7,19 @@ import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard } from "../board-state";
 import type { BoardCategory } from "../board-data";
 import { THEME_SCENE_SRC } from "../../theme-icons";
+import {
+  useAudioTourStore,
+  type AudioTrackCategoryId,
+} from "@/lib/stores/audio-tour-store";
+
+/** Speil av samme hook i BoardRail. Holdt lokal for å unngå utilitsmodul
+ *  for én hook med to consumers. */
+function useTourActiveTrackCategory(): AudioTrackCategoryId | null {
+  return useAudioTourStore((s) => {
+    if (s.phase !== "playing" && s.phase !== "paused") return null;
+    return s.tracks[s.trackIndex]?.categoryId ?? null;
+  });
+}
 
 /**
  * Persistent horisontal kategori-tab-bar pinnet til viewport-bunn (Google
@@ -31,6 +44,7 @@ export function BoardCategoryTabBar() {
   const { state, data, dispatch } = useBoard();
   const activeRef = useRef<HTMLButtonElement>(null);
   const activeCategoryId = state.activeCategoryId;
+  const tourTrack = useTourActiveTrackCategory();
 
   useEffect(() => {
     if (!activeCategoryId) return;
@@ -62,6 +76,7 @@ export function BoardCategoryTabBar() {
       >
         <HomeButton
           active={state.phase === "default"}
+          pulsesDuringTour={tourTrack === "home"}
           onClick={handleHomeClick}
         />
 
@@ -73,6 +88,7 @@ export function BoardCategoryTabBar() {
               ref={isActive ? activeRef : null}
               category={cat}
               active={isActive}
+              pulsesDuringTour={tourTrack === cat.id}
               onClick={() => handleCategoryClick(cat)}
             />
           );
@@ -89,9 +105,11 @@ export function BoardCategoryTabBar() {
 
 function HomeButton({
   active,
+  pulsesDuringTour,
   onClick,
 }: {
   active: boolean;
+  pulsesDuringTour: boolean;
   onClick: () => void;
 }) {
   return (
@@ -100,6 +118,7 @@ function HomeButton({
       aria-label="Hjem"
       aria-current={active ? "page" : undefined}
       onClick={onClick}
+      data-active-during-tour={pulsesDuringTour ? "true" : undefined}
       className="flex shrink-0 items-center justify-center w-14"
     >
       <div
@@ -120,9 +139,10 @@ const CategoryButton = forwardRef<
   {
     category: BoardCategory;
     active: boolean;
+    pulsesDuringTour: boolean;
     onClick: () => void;
   }
->(function CategoryButton({ category, active, onClick }, ref) {
+>(function CategoryButton({ category, active, pulsesDuringTour, onClick }, ref) {
   const illustrationSrc = THEME_SCENE_SRC[category.id];
   const Icon = getFilledIcon(category.icon);
 
@@ -133,6 +153,7 @@ const CategoryButton = forwardRef<
       aria-label={category.label}
       aria-current={active ? "page" : undefined}
       onClick={onClick}
+      data-active-during-tour={pulsesDuringTour ? "true" : undefined}
       className="flex shrink-0 snap-center items-center justify-center w-14"
     >
       <div
