@@ -1,5 +1,13 @@
-import type { POI, ReportThemeGroundingView } from "@/lib/types";
+import type { POI, ReportThemeAudio, ReportThemeGroundingView } from "@/lib/types";
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
+
+/** Subset av ReportThemeAudio som er garantert komplett på runtime — kun
+ *  audio med url+manus eksponeres til board-laget. Builder-funksjonen i
+ *  adaptCategory/adaptBoardData filtrerer bort partial-audio (kun manus). */
+export interface BoardAudioTrack {
+  url: string;
+  manus: string;
+}
 
 // Branded ID-typer forhindrer ID-blanding mellom theme-IDer og POI-IDer
 // i state-reducer og dispatch-calls.
@@ -38,6 +46,8 @@ export interface BoardCategory {
   /** Kategori-farge (hex) brukt i markører, path-line, og UI-aksenter. */
   color: string;
   pois: BoardPOI[];
+  /** Audio-tour-spor for kategorien — kun satt når både url og manus eksisterer. */
+  audio?: BoardAudioTrack;
 }
 
 export interface BoardHome {
@@ -48,6 +58,8 @@ export interface BoardHome {
   heroImage?: string;
   /** Intro-tekst (fra reportConfig.heroIntro eller bransjeprofil-mal). Vist i default-detail-panel. */
   heroIntro?: string;
+  /** Hjem-spor for audio-tour — kun satt når både url og manus eksisterer. */
+  audio?: BoardAudioTrack;
 }
 
 export interface BoardData {
@@ -89,10 +101,21 @@ export function adaptBoardData(report: ReportData): BoardData {
       address: report.address,
       heroImage: report.heroImage,
       heroIntro: report.heroIntro,
+      audio: pickPlayableAudio(report.heroAudio),
     },
     categories,
     poisById,
   };
+}
+
+/** Returnerer { url, manus } kun når begge er definert — partial audio
+ *  (manus-only, før Steg 8c.2) blir undefined så board-laget vet at
+ *  spor ikke er klart. */
+function pickPlayableAudio(
+  audio: ReportThemeAudio | undefined,
+): BoardAudioTrack | undefined {
+  if (!audio?.url || !audio.manus) return undefined;
+  return { url: audio.url, manus: audio.manus };
 }
 
 function adaptCategory(theme: ReportTheme): BoardCategory {
@@ -135,6 +158,7 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     icon,
     color,
     pois: theme.allPOIs.map((p) => adaptPOI(p, id)),
+    audio: pickPlayableAudio(theme.audio),
   };
 }
 

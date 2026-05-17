@@ -13,6 +13,9 @@ import { BoardPOIAccordion } from "./BoardPOIAccordion";
 import { BoardCategoryInfoTab } from "../BoardCategoryInfoTab";
 import { SubCategoryFilter } from "../SubCategoryFilter";
 import { deriveSubCategories } from "../use-sub-category-filter";
+import { PlayerBanner } from "../audio-tour/PlayerBanner";
+import { StartTourButton } from "../audio-tour/StartTourButton";
+import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 
 /**
  * Desktop midt-panel (400px). Rendrer kategori-detalj med Beliggenhet/Punkter-tabs.
@@ -41,11 +44,18 @@ export function BoardDetailPanel() {
     prevCategoryRef.current = state.activeCategoryId;
   }, [state.phase, state.activeCategoryId]);
 
+  // Player-banner mountes sticky-top utenfor scroll-container slik at den
+  // forblir synlig når brukeren scroller seg gjennom kategori-content
+  // (info-tab eller punkter-tab).
+  const tourPhase = useAudioTourPhase();
+  const showPlayerBanner = tourPhase !== "idle" && tourPhase !== "ended";
+
   return (
     <section
       aria-label="Kategori-detaljer"
       className="flex h-full w-[400px] flex-col border-r border-stone-200/80 bg-stone-50"
     >
+      {showPlayerBanner && <PlayerBanner />}
       {state.phase === "default" || !cat || !filteredCat ? (
         <DefaultEmptyState />
       ) : (
@@ -92,6 +102,7 @@ function DefaultEmptyState() {
             {home.heroIntro}
           </p>
         )}
+        <StartTourButton />
         <p className="pt-2 text-sm text-stone-500">
           Velg en kategori for å utforske nabolaget.
         </p>

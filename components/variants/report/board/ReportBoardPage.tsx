@@ -12,6 +12,8 @@ import { BoardMap } from "./BoardMap";
 import { BoardCategoryTabBar } from "./mobile/BoardCategoryTabBar";
 import { BoardMobileSheet } from "./mobile/BoardMobileSheet";
 import { BoardDesktopShell } from "./desktop/BoardDesktopShell";
+import { AudioElementProvider } from "./audio-tour/use-audio-element";
+import { useAudioTourSync } from "./audio-tour/use-audio-tour-sync";
 
 interface Props {
   project: Project;
@@ -45,7 +47,9 @@ function Inner({ project, enTranslations = {} }: Props) {
 
   return (
     <BoardProvider data={boardData}>
-      <BoardScaffold has3dAddon={effectiveProject.has3dAddon ?? false} />
+      <AudioElementProvider>
+        <BoardScaffold has3dAddon={effectiveProject.has3dAddon ?? false} />
+      </AudioElementProvider>
     </BoardProvider>
   );
 }
@@ -87,6 +91,11 @@ function useIsDesktop(): boolean {
  */
 function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
   const isDesktop = useIsDesktop();
+
+  // Audio-tour ↔ BoardContext to-veis-sync. Effekten mountes på root så den
+  // overlever phase-overganger og portal-bytter (mobile sheet vs desktop
+  // shell). Se use-audio-tour-sync.ts for sync-regler.
+  useAudioTourSync();
 
   // Lås html/body-scroll mens board-siden er aktiv. Vaul portaler sheet til
   // document.body med h-[100dvh] + ::after (200% bakgrunn nedenfor) — iOS

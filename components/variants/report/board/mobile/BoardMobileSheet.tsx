@@ -22,6 +22,9 @@ import { SubCategoryFilter } from "../SubCategoryFilter";
 import { deriveSubCategories } from "../use-sub-category-filter";
 import { BoardPunkterAccordion } from "./BoardPunkterAccordion";
 import { BoardTabs } from "./BoardTabs";
+import { PlayerBanner } from "../audio-tour/PlayerBanner";
+import { StartTourButton } from "../audio-tour/StartTourButton";
+import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 
 // Snap-points: stage 1 (skjult bak tab-bar) | stage 2 (peek) | stage 3 (halv) | stage 4 (full).
 // Tab-baren er pinnet til viewport-bunn UTENFOR sheeten (mountes i
@@ -90,6 +93,8 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
   const cat = useActiveCategory();
   const filteredCat = useFilteredActiveCategory();
   const poi = useActivePOI();
+  const tourPhase = useAudioTourPhase();
+  const showPlayerBanner = tourPhase !== "idle" && tourPhase !== "ended";
 
   // Snap-state lokal. Auto-synkroniseres med phase via watcher under.
   const [snap, setSnapInternal] = useState<number | string | null>(
@@ -242,6 +247,11 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
               som vises i snap-spalten. Beholdes som visuell affordance selv
               om hele sheet er draggable. */}
           <DrawerPrimitive.Handle className="mx-auto mt-3 mb-2 h-1.5 w-[100px] shrink-0 cursor-grab touch-none rounded-full bg-stone-300 active:cursor-grabbing" />
+
+          {/* Player-banner pinnet over scroll-container når audio-tour er aktiv.
+              Plasseres mellom drag-handle og flex-1-scroll så den forblir
+              synlig på alle snap-stages og scroller ikke med content. */}
+          {showPlayerBanner && <PlayerBanner />}
 
           {/* Scrollbart innhold-slot. Phase-styres internt.
               `min-h-0` så flex-shrink fungerer ved lave stages.
@@ -440,6 +450,7 @@ function DefaultHomeContent({
             {heroIntro}
           </p>
         )}
+        <StartTourButton />
         <p className="pt-2 text-sm text-stone-500">
           Velg en kategori for å utforske nabolaget.
         </p>

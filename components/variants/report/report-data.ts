@@ -116,6 +116,8 @@ export interface ReportTheme {
   trails?: TrailCollection;
   /** Optional banner illustration (auto-cropped, natural aspect). Rendered under heading + intro. */
   image?: ThemeIllustration;
+  /** Build-time audio-tour-spor for kategorien (Steg 8c). */
+  audio?: import("@/lib/types").ReportThemeAudio;
 }
 
 export interface ThemeIllustration {
@@ -179,6 +181,8 @@ export interface ReportData {
   mapStyle?: string;
   /** Default heading for alle 3D-kart-instanser (0–359°). Undefined = nord (0). */
   initialHeading?: number;
+  /** Build-time audio-tour-spor for Hjem-panelet (Steg 8c). */
+  heroAudio?: import("@/lib/types").ReportThemeAudio;
 }
 
 export const TRANSPORT_CATEGORIES = new Set([
@@ -570,6 +574,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
         ? project.reportConfig?.trails
         : undefined,
       image: PROJECT_THEME_ILLUSTRATIONS[`${project.customer}_${project.urlSlug}`]?.[themeDef.id] ?? THEME_ILLUSTRATIONS[themeDef.id],
+      audio: themeDef.audio,
     });
   }
 
@@ -599,5 +604,6 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     cta: rc?.cta,
     mapStyle: rc?.mapStyle,
     initialHeading: PROJECT_3D_HEADINGS[`${project.customer}_${project.urlSlug}`],
+    heroAudio: rc?.heroAudio,
   };
 }

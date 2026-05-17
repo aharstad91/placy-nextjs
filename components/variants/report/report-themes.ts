@@ -1,4 +1,4 @@
-import type { Project, ReportThemeGrounding } from "@/lib/types";
+import type { Project, ReportThemeAudio, ReportThemeGrounding } from "@/lib/types";
 import type { ThemeDefinition } from "@/lib/themes";
 import {
   getBransjeprofil,
@@ -19,6 +19,8 @@ export interface ReportThemeDefinition extends ThemeDefinition {
   readMoreQuery?: string;
   /** Build-time Gemini-grounding (fra products.config). Zod-parses i report-data.ts. */
   grounding?: ReportThemeGrounding;
+  /** Build-time audio-tour-spor (fra products.config). */
+  audio?: ReportThemeAudio;
 }
 
 /**
