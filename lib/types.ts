@@ -273,6 +273,26 @@ export type ReportThemeGroundingViewV2 = z.infer<
   typeof ReportThemeGroundingV2Schema
 >;
 
+/**
+ * Build-time-generert audio-tour-data per kategori. Manus skrives av
+ * `scripts/audio-manus-write.ts` (Steg 8c.1), MP3 + url/voice/model av
+ * `scripts/audio-tour-build.ts` (Steg 8c.2). Omit (ikke null) ved feil.
+ * audio.manus eksisterer alene mellom Steg 8c.1 og 8c.2; full audio krever
+ * url+voice+model+generatedAt.
+ */
+export interface ReportThemeAudio {
+  /** Public URL — typisk `/audio/{projectSlug}/{categoryId}.mp3`. Mangler frem til Steg 8c.2. */
+  url?: string;
+  /** ElevenLabs voice-ID brukt for generering. */
+  voice?: string;
+  /** ElevenLabs model-ID (f.eks. `eleven_multilingual_v2`). */
+  model?: string;
+  /** ISO-8601 tidspunkt for ElevenLabs-kallet. */
+  generatedAt?: string;
+  /** LLM-generert pitch-manus (~70 ord) som ble sendt til TTS. */
+  manus: string;
+}
+
 export interface ReportThemeConfig {
   id: string;
   name: string;
@@ -288,6 +308,8 @@ export interface ReportThemeConfig {
   readMoreQuery?: string;
   /** Build-time-generert Gemini-grounding. Omit ved feil — ikke null. */
   grounding?: ReportThemeGrounding;
+  /** Build-time-generert audio-tour-spor for kategorien. Omit ved feil. */
+  audio?: ReportThemeAudio;
 }
 
 export interface BrokerInfo {
@@ -328,6 +350,10 @@ export interface ReportConfig {
   cta?: ReportCTA;
   mapStyle?: string;
   trails?: TrailCollection;
+  /** Build-time-generert audio-tour-spor for Hjem-panelet (Hjem er ikke en kategori). */
+  heroAudio?: ReportThemeAudio;
+  /** Bump for å tvinge re-gen av alle audio-spor på alle prosjekter. */
+  audioVersion?: 1;
 }
 
 // === Origin Mode (for Explorer geolocation behavior) ===

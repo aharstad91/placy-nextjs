@@ -53,6 +53,11 @@ const ALLOWED_REPORTCONFIG_KEYS = new Set([
   // Skill-kontekst-felt (ikke typet men lagret i DB — brukes av /generate-rapport)
   "motiver",
   "personas",
+  // Audio-tour-felt (Steg 8c). themes[].audio er nestet og dekkes av per-tema-strip;
+  // heroAudio + audioVersion er top-level. "audio" inkludert som future-safety.
+  "audio",
+  "audioVersion",
+  "heroAudio",
   // Deprecated but tolerated — old rows may still carry these
   "closingTitle",
   "closingText",
@@ -69,6 +74,9 @@ const PRESERVED_REPORTCONFIG_KEYS = [
   "trails",
   "motiver",
   "personas",
+  "audio",
+  "audioVersion",
+  "heroAudio",
 ];
 
 const TOTAL_FAILURE_THRESHOLD = 5; // ≥5 av 7 feilet → abort
