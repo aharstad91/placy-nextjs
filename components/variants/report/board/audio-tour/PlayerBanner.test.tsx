@@ -60,6 +60,7 @@ function makeBoardData(over: Partial<BoardData> = {}): BoardData {
       }),
     ],
     poisById: new Map(),
+    audioTourEnabled: true,
     ...over,
   };
 }

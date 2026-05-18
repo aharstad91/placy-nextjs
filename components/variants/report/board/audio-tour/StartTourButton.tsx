@@ -9,12 +9,15 @@ import {
 } from "@/lib/stores/audio-tour-store";
 
 /**
- * CTA i Hjem-panel som starter audio-touren. Renderes kun hvis BÅDE
+ * CTA i Hjem-panel som starter audio-touren. Renderes kun hvis ALLE:
+ *   - `data.audioTourEnabled === true` (eksplisitt opt-in per prosjekt), OG
  *   - `data.home.audio` finnes (Hjem-spor klar), OG
  *   - alle synlige kategorier har audio (helhetlig empty-state-policy).
  *
- * Manglende audio på én kategori → skjul CTA helt; vi vil ikke at brukeren
- * skal starte en tour som plutselig hopper over en kategori uten varsel.
+ * Eksplisitt opt-in tillater forhåndsgenerering av audio på prosjekter
+ * vi ikke er klar til å eksponere CTA-en på enda. Manglende audio på én
+ * kategori → skjul CTA; vi vil ikke at brukeren skal starte en tour som
+ * plutselig hopper over en kategori uten varsel.
  *
  * Track-rekkefølge: Hjem først, deretter kategorier i den rekkefølgen de
  * ligger i `boardData.categories` (som matcher `reportConfig.themes`-
@@ -27,7 +30,12 @@ export function StartTourButton() {
   const homeAudio = data.home.audio;
   const allCategoriesHaveAudio = data.categories.every((c) => c.audio);
 
-  if (!homeAudio || !allCategoriesHaveAudio || data.categories.length === 0) {
+  if (
+    !data.audioTourEnabled ||
+    !homeAudio ||
+    !allCategoriesHaveAudio ||
+    data.categories.length === 0
+  ) {
     return null;
   }
 

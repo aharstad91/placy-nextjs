@@ -67,6 +67,8 @@ export interface BoardData {
   categories: BoardCategory[];
   /** Lookup-map fra POI-id (lowercase) til full POI. Brukes av grounding-rendering for å resolve [text](poi:uuid)-lenker — kan referere POIs på tvers av kategorier. */
   poisById: Map<string, POI>;
+  /** Eksplisitt opt-in for audio-tour-CTA. Default false. */
+  audioTourEnabled: boolean;
 }
 
 /**
@@ -105,6 +107,7 @@ export function adaptBoardData(report: ReportData): BoardData {
     },
     categories,
     poisById,
+    audioTourEnabled: report.audioTourEnabled === true,
   };
 }
 

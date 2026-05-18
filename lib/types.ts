@@ -354,6 +354,10 @@ export interface ReportConfig {
   heroAudio?: ReportThemeAudio;
   /** Bump for å tvinge re-gen av alle audio-spor på alle prosjekter. */
   audioVersion?: 4;
+  /** Eksplisitt opt-in for "Start tour"-knapp. Default false — selv om
+   *  audio-spor er generert, skjules CTA inntil dette flagget settes per
+   *  prosjekt. Tillater forhåndsgenerering uten å eksponere på prod. */
+  audioTourEnabled?: boolean;
 }
 
 // === Origin Mode (for Explorer geolocation behavior) ===

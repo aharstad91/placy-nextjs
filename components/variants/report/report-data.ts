@@ -183,6 +183,9 @@ export interface ReportData {
   initialHeading?: number;
   /** Build-time audio-tour-spor for Hjem-panelet (Steg 8c). */
   heroAudio?: import("@/lib/types").ReportThemeAudio;
+  /** Eksplisitt opt-in: viser "Start tour"-knappen kun når dette er true,
+   *  selv om audio-spor er generert. */
+  audioTourEnabled?: boolean;
 }
 
 export const TRANSPORT_CATEGORIES = new Set([
@@ -605,5 +608,6 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     mapStyle: rc?.mapStyle,
     initialHeading: PROJECT_3D_HEADINGS[`${project.customer}_${project.urlSlug}`],
     heroAudio: rc?.heroAudio,
+    audioTourEnabled: rc?.audioTourEnabled,
   };
 }
