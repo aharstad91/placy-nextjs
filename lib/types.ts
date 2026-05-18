@@ -353,7 +353,7 @@ export interface ReportConfig {
   /** Build-time-generert audio-tour-spor for Hjem-panelet (Hjem er ikke en kategori). */
   heroAudio?: ReportThemeAudio;
   /** Bump for å tvinge re-gen av alle audio-spor på alle prosjekter. */
-  audioVersion?: 1;
+  audioVersion?: 4;
 }
 
 // === Origin Mode (for Explorer geolocation behavior) ===

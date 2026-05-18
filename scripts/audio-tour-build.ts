@@ -7,7 +7,7 @@
  *   - reportConfig.heroAudio.manus
  *   - reportConfig.themes[].audio.manus
  *
- * Genererer MP3 per spor via ElevenLabs (Daniel-voice + multilingual_v2),
+ * Genererer MP3 per spor via ElevenLabs (Erik / norsk + turbo_v2_5),
  * skriver dem til `public/audio/{projectSlug}/{filename}.mp3` og PATCH-er
  * audio-metadata tilbake til DB:
  *   - audio.url, audio.voice, audio.model, audio.generatedAt
@@ -30,7 +30,8 @@ import pLimit from "p-limit";
 import {
   generateAudio,
   ELEVENLABS_MODEL,
-  ELEVENLABS_VOICE_DANIEL,
+  ELEVENLABS_VOICE,
+  ELEVENLABS_VOICE_NAME,
 } from "../lib/audio-tour/elevenlabs-client";
 import {
   audioAbsPath,
@@ -255,7 +256,7 @@ async function main() {
   console.log("=== Audio-tour TTS-bygg ===");
   console.log(`Project: ${projectId}`);
   console.log(`Mode:    ${FORCE ? "FORCE (regenererer alle)" : "skip eksisterende"}`);
-  console.log(`Voice:   ${ELEVENLABS_VOICE_DANIEL} (Daniel)`);
+  console.log(`Voice:   ${ELEVENLABS_VOICE} (${ELEVENLABS_VOICE_NAME})`);
   console.log(`Model:   ${ELEVENLABS_MODEL}`);
   console.log();
 
@@ -393,7 +394,7 @@ async function main() {
     ...existingRc,
     themes: nextThemes,
     ...(nextHeroAudio ? { heroAudio: nextHeroAudio } : {}),
-    audioVersion: 1,
+    audioVersion: 4,
   };
   const nextConfig = { ...existingConfig, reportConfig: nextReportConfig };
 

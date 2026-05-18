@@ -4045,3 +4045,99 @@ Dagen før møtet med Nanna Berntsen og Line Holm (markedsansvarlig) i Midtbyen 
 - **En markedssjef vil høre andre ting enn en daglig leder.** Tech-snakk (Next.js, Mapbox, datamodell) tilfører null verdi; demoen viser teknologien. Hennes kjerne-spørsmål er "hva får jeg som hjelper meg gjøre min jobb bedre". Insiktslag + gjenbrukbart innhold + posisjonering vs. konkurrenter dekker det tre-ledds.
 - **Sparring uten leveranse er fortsatt verdifull sesjon.** Pre-møte-forberedelse er ikke "ekstra arbeid" — det øker odds for at de 14 timene møtet potensielt utløser av oppfølgingsarbeid blir på riktig premiss.
 - **Ærlighet om hva som er live vs. lovet er pitch-styrke, ikke svakhet.** Si rett ut "dette bygger vi som en del av leveransen" framfor å antyde at det er produsert. Reduserer risiko for at Line oppdager hullet senere og svekker tilliten.
+
+---
+
+## 2026-05-18 (sesjon) — Audio-tour TTS: ElevenLabs-feilsporing → Mia Starset → Azure TTS-pivot
+
+### Kontekst
+Etter at Unit 5 (tour-modus visuell signatur) landet på `feat/audio-tour`, oppgraderte brukeren til ElevenLabs Creator-tier og ba om norsk stemme på StasjonsKvartalet i stedet for Daniel-baseline (engelsk-trent + multilingual_v2). Sesjonen ble en lang feilsporing: ElevenLabs sin "norske" pipeline er feilkonfigurert i flere lag, vi landet til slutt på riktig oppskrift, men kvaliteten holdt ikke for stedsspesifikk megler-pitch. Vi pivoterte til Azure Speech Service.
+
+### Beslutninger
+
+- **ElevenLabs Creator-abonnement landet** (~$11 første mnd, $22 etter) for Professional Voice Cloning + 192kbps audio + 121k credits/mnd. Begrunnelse: stemme-kvalitet er kjerneteknologien for megler-pitch — ikke kutt der.
+- **API-oppskriften som matcher ElevenLabs UI-spilleren er `model_id: eleven_turbo_v2_5` + `language_code: "no"`.** `multilingual_v2` og `eleven_v3` gir svensk/dansk-fallback uansett hvor norsk Voice Library-stemmen er. `language_code: "nb"` returnerer HTTP 400 — kun `"no"` er støttet. Dette er udokumentert i deres TTS-API-docs men har vært klart fra nettverkssniff av UI.
+- **Mia Starset (`uNsWM1StCcpydKYOjKyu`)** valgt som ny stemme — Oslo-aksent, lys/klar, mest populær norsk i Voice Library (23k cloned). Erstattet Daniel som default i `lib/audio-tour/elevenlabs-client.ts`.
+- **Konstant-rename: `ELEVENLABS_VOICE_DANIEL` → `ELEVENLABS_VOICE` + ny `ELEVENLABS_VOICE_NAME`.** Daniel var feil framtid-binding (engelsk-trent stemme som default-konstant for norsk audio-tour). Også lagt til `ELEVENLABS_LANGUAGE_CODE = "no"` som default + ny `languageCode`-param på `generateAudio()`.
+- **`audioVersion` bumpet fra 1 → 2** i `lib/types.ts` og begge writer-scripts (`audio-manus-write.ts`, `audio-tour-build.ts`). Tvinger re-gen av alle audio-spor på alle prosjekter.
+- **Alle 8 spor regenerert for StasjonsKvartalet via `audio-tour-build.ts --force`.** MP3-ene i `public/audio/stasjonskvartalet/` er nå Mia Starset på turbo_v2_5 + norsk fonetikk-bucket. PATCH til Supabase OK (`audioVersion: 2`, nye `voice`/`model`/`generatedAt` per spor).
+- **Slettet `scripts/elevenlabs-validation.ts`** (gammel engelsk-stemme-validering — Daniel-baseline-runde — ikke lenger relevant). Per CLAUDE.md "ALDRI la dead code ligge".
+- **ElevenLabs-resultatet holder ikke for megler-pitch.** Inkonsistent uttale per ord — stedsnavn ("Brattørkaia", "Munkegata", "TMV-kaia") feiler delvis. "Norwegian preview"-modusen er skandinavisk-fellesfonetikk + community voice clone, ikke ekte norsk-trent. Brukeren signaliserte at det "ikke holder for poenget" — kvalitet er ikke forhandlingsbar her.
+- **Pivot til Azure Speech Service Norwegian Neural.** `nb-NO-PernilleNeural`/`IselinNeural`/`FinnNeural` er trent fra grunnen av på norsk, ikke skandinavisk-fellesmodell. Pris ~kr 150 per million tegn (Neural-tier) — trivielt for Placy-skala. Free F0-tier kunne ikke brukes (Norway East tilbyr ikke Free), så Standard S0 valgt. Subscription kom med $200 credit (30-dager).
+
+### Implementasjon (denne sesjonen)
+
+- `scripts/elevenlabs-norsk-validation.ts` — nytt script for norsk-stemme-validering. Testet 4 runder med ulike model/language_code-kombinasjoner. Erstattet det gamle engelsk-baseline-scriptet.
+- `lib/audio-tour/elevenlabs-client.ts` — bytte til Mia Starset + turbo_v2_5 + `language_code: "no"` i request body.
+- `scripts/audio-tour-build.ts` + `scripts/audio-manus-write.ts` — import-oppdateringer + audioVersion 2.
+- `lib/types.ts` — `audioVersion?: 2`.
+- `public/audio/stasjonskvartalet/*.mp3` — 8 spor regenerert.
+- Supabase `products` for StasjonsKvartalet — `reportConfig.audioVersion = 2`, alle `audio`-felter oppdatert (one batch PATCH, optimistic lock OK).
+- `scripts/azure-norsk-validation.ts` — nytt script for Azure-side-by-side. 3 Neural-stemmer (Pernille, Iselin, Finn) generert. Isak og Sofie returnerte HTTP 400 — sannsynligvis deprecated voice-IDer i Norway East-katalogen.
+- `.env.local` — `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION="norwayeast"` lagt til.
+
+### Parkert / Åpne spørsmål
+
+- **Azure-validering venter på lytting.** Tre MP3-er i `tmp/azure-norsk-validation/`. Brukeren skal vurdere konsistens, naturlighet og megler-energi mot Mia Starset-baseline. Hvis Azure leverer skikkelig: full vendor-bytte for produksjons-pipelinen.
+- **Hvis Azure også feiler på stedsnavn:** parker audio-tour-feature midlertidig, eller invester i ElevenLabs Professional Voice Cloning (30+ min studio-opptak av norsk stemme, beste resultat men 1-2 ukers forberedelse).
+- **ElevenLabs API-nøkkel + Azure key er i transkripsjon.** Brukeren bør rotere begge etter piloten hvis transkripsjon-persistens er en risiko.
+- **`scripts/audio-tour-build.ts` har fortsatt fasten kobling til ElevenLabs-klient.** Hvis vi committer på Azure, må generatoren abstrakteres mot en TTS-provider-interface (`generateAudio(text, voice, model)` med backend-toggle), eller en ny `scripts/audio-tour-build-azure.ts` skrives. Defer til Azure-validering er bekreftet.
+- **Mia Starset på turbo_v2_5 er fortsatt produksjons-pipelinen for nye prosjekter.** Hvis vi bytter til Azure, må også `generateAudio()` i klienten erstattes — dette er ikke et trivielt bytte. Anbefal å vente til Azure faktisk er bekreftet å levere før pipelinen flyttes.
+- **Unit 6 (TourEndScreen) og Unit 7 (pipeline-integration) er fortsatt deferred.** Brukeren signaliserte før denne sesjonen at audio-opplevelsen selv er det viktige nå, ikke flere units.
+
+### Retning
+
+- **Native-trent TTS slår alltid multilingual fallback for stedsspesifikke norske tekster.** Det er en arkitektonisk leksjon: for norsk Placy-innhold er nb-NO-native (Azure, Google) det riktige valget, ikke "stemmer fra Voice Library på multilingual-modell". ElevenLabs har voice-quality-edge for engelske projekter, men ikke for norske.
+- **Hvis Azure validerer godt: hele audio-tour-pipelinen bør abstraheres mot en `TtsProvider`-interface.** Da kan vi fortsette å bruke ElevenLabs for prosjekter på engelsk (eventuelle internasjonale piloter) og Azure for norske. Begge har samme `(text, voice, model) → mp3`-shape; abstraksjonen er en dags arbeid.
+- **Professional Voice Cloning er den langsiktige løsningen for Placy-signaturstemme.** Engangsinvestering (norsk megler-arketyp opptak), deretter ubegrenset bruk. Sett som strategisk beslutning når piloten er forbi MVP-fasen.
+
+### Observasjoner
+
+- **`language_code: "no"`-parameteren er ikke i ElevenLabs sin TTS-API-docs**, men er det som UI-spilleren bruker. Det tok 3 runder med credit-bruk å finne. Lesson: når UI virker men API ikke, sniff nettverket først (eller spør om nøkkel-parameter hver gang før credits brennes).
+- **ElevenLabs sin "Norwegian Voice Library"-merking er misvisende.** Stemmene er klonet av nordmenn, men modellen som genererer bruker skandinavisk-fellesfonetikk uansett. "Norsk stemme" i ElevenLabs betyr "norsk timbre", ikke "norsk fonetikk". Det er en kjent industri-svakhet i multilingual TTS-modeller.
+- **Brukeren har god kvalitetssans for når audio "ikke holder".** Vi rotterte 3 ganger i ElevenLabs-validering og kunne sannsynligvis ha rotert 2 til uten å lande, men Azure-pivot var riktig signal — fortjente å bli foreslått tidligere. Lesson: hvis vendor leverer inkonsistent på 2 forsøk, foreslå vendor-bytte før credit nr. 3.
+- **Azure-oppsettet tok ~10 min totalt (signup + Speech Service + key copy).** Lavere friksjon enn jeg antok. Verdt å huske som realistisk vendor-bytte-kostnad.
+- **`audioVersion` som `z.literal`-bump for cache-bust er samme mønster som `groundingVersion`.** Konsistent: Placy bumper et heltall i Zod-schema for å invalidere build-time-genererte assets uten å trenge auto-TTL. Anbefales å dokumentere som solutions-doc hvis vi får en tredje slikt cache-felt.
+
+### Etter Azure-pivot — landingen på Erik + manus-curatering (samme sesjon)
+
+**Azure feilet også.** `nb-NO-PernilleNeural`/`IselinNeural`/`FinnNeural` (Neural-stemmer trent fra grunnen av på norsk) leverte ikke merkbart bedre kvalitet enn ElevenLabs Mia Starset på samme StasjonsKvartalet-Hjem-manus. Brukerens vurdering: "ikke noe bedre enn ElevenLabs". Det utelukket Azure-veien og bekreftet at problemet ikke ligger i TTS-vendor — det ligger i en kombinasjon av stokastisk modell-output og uttale-vanskelige norske stedsnavn.
+
+**Brukeren konkluderte initielt: PVC er eneste vei.** Strategisk vurdering: bygge Placy-signaturstemme via Professional Voice Cloning (30+ min studio-opptak av norsk taler). Hyret stemmeskuespiller anbefalt over selv-opptak for kommersiell pilot mot Banenor/Propr — voice-branding på linje med visuell branding, engangskost <10k NOK.
+
+**Som siste sjekk testet vi Erik - Clear and Natural** (`EpYEY8MWJrUGskHBoNMA`, 2.8k cloned, 40-tallet mann, conversational). På samme oppskrift (`turbo_v2_5` + `language_code: "no"`) leverte Erik merkbart bedre norsk uttale enn Mia Starset på den korte test-pitchen — godkjent for produksjons-bytte.
+
+**Funn 1: ElevenLabs TTS er stokastisk per request.** Samme tekst med samme `voice_settings` gir ulik output per kall. Vi fikk Erik-produksjons-fila (full 8-spors-regen) til å lyde **dårligere** enn Erik-test-fila (samme manus, samme settings) — stokastisitet og lengre kontekst sampler ulike fonetikk-buckets. **Lesson: én god take på en kort tekst er ikke garanti for kvalitet over en full pitch.**
+
+**Funn 2: `stability`-parameteren låser uttalen.** Testet Erik @ stability 0.5 / 0.7 / 0.85 — brukeren landet på **0.75** som balanse mellom konsistens og megler-naturlighet. Høyere stability = mindre fonetikk-variasjon = mer forutsigbar uttale på problemord. For Placy hvor uttale-konsistens trumfer maks-naturlighet er 0.75 riktig default.
+
+**Funn 3: Manus-curatering er den reelle løsningen.** Sammenligning av to Hjem-manus avslørte at problemet er stedsnavn, ikke modellen:
+- *Gammelt manus:* "Stasjonskvartalet ligger på kaifronten mellom **Brattørkaia** og **TMV-kaia**, midt i Trondheim sentrum... **Midtbyen** og **Munkegata** nås på ti minutter til fots..." → mange uttale-eksplosiver
+- *Nytt manus:* "Drømmer du om en hverdag der hele verden ligger ved dine føtter, rett utenfor inngangsdøren? Stasjonskvartalet er Trondheims nye, pulserende knutepunkt..." → ett stedsnavn ("Midtbyen") som åpning av en setning der modellen er "frisk"
+
+Nytt Hjem-manus skrevet av brukeren (83 ord, megler-energi, du-perspektiv, "drømmer du om", "inngangsbilletten til et enklere og rikere byliv"). Synket via `audio-manus-write.ts apply` til Supabase + `.audio-staging/banenor-eiendom_stasjonskvartalet/home.manus.md`.
+
+**Landing:** Erik + `stability: 0.75` + nytt Hjem-manus + `turbo_v2_5` + `language_code: "no"`. `audioVersion` bumpet 2 → 3 → 4 (to bumper denne sesjonen). Alle 8 spor regenerert (`audio-tour-build --force`). Brukeren godkjente kvaliteten.
+
+### Implementasjon (forts.)
+
+- `lib/audio-tour/elevenlabs-client.ts` — Voice = Erik (`EpYEY8MWJrUGskHBoNMA`, "Erik"), stability bumpet 0.5 → 0.75.
+- `.audio-staging/banenor-eiendom_stasjonskvartalet/home.manus.md` — full omskriving til megler-narrativ med færre stedsnavn-eksplosiver.
+- Supabase `reportConfig.heroAudio.manus` synket via `audio-manus-write.ts apply` (validatoren bekreftet 83 ord, innenfor 35-90 range).
+- `audioVersion`: 4 i `lib/types.ts` + `scripts/audio-tour-build.ts` + `scripts/audio-manus-write.ts`.
+- `public/audio/stasjonskvartalet/*.mp3` — alle 8 spor regenerert (538 KB Hjem, 394-531 KB kategorier).
+- Supabase `audio.voice`/`audio.model`/`audio.generatedAt` PATCH-et per spor (optimistic lock OK).
+
+### Nye åpne spørsmål / ny retning
+
+- **Manus-curatering-guideline:** Brukeren signaliserte at "unngå stedsnavn der mulig" bør være en eksplisitt manus-skrive-regel for audio-tour-pitcher. Trondheim-spesifikke stedsnavn som "Brattørkaia", "TMV-kaia", "Munkegata", "Bispehaugen", "Nidelven" er uttale-eksplosiver. Tilsvarende gjelder andre byer (vi vil se det samme i Oslo/Bergen/Stavanger). **Skal dokumenteres i `lib/audio-tour/manus-prompt.ts`** så Claude Code-skill genererer mindre stedsnavn-tunge manus framover.
+- **Erik er midlertidig landing**, ikke endelig strategisk valg. PVC for Placy-signaturstemme er fortsatt riktig langsiktig — Erik er en community-voice-clone som kan endres eller depreceres av eieren. Når kommersiell pilot signeres med Banenor/Propr, invester i PVC.
+- **De 6 kategori-manusene er ikke omskrevet.** Mat-drikke nevner Fagn, Speilsalen, Britannia, Bakklandet, Solsiden, Jacobsen & Svart, Hevd, Godt Brød. Transport nevner Munkegata. Erik @ 0.75 leverer "ok-nok" på disse, men kvalitet er variabel. **Hvis vi vil ha jevn premium-kvalitet over alle 8 spor: omskriv kategori-manusene etter samme TTS-vennlige prinsipp** (færre stedsnavn, mer "for deg som"/du-perspektiv, mer narrativ enn telefonkatalog-aktig POI-opplisting). 4-6 timer arbeid.
+- **Det er motsetning mellom TTS-vennlig manus (færre stedsnavn) og innholds-verdi (konkrete steder gir lokalt anker).** For audio-tour er det riktig avveining mot konsistens, men selve rapport-board (tekst, kart, POI-popovers) skal ha alle stedsnavn fordi tekst-uttale ikke er et problem. Audio-manus er en EGEN content-form, ikke en avlesning av eksisterende tekst.
+
+### Observasjoner (forts.)
+
+- **PVC er ikke nødvendigvis "eneste vei" som vi trodde.** Det er en strategisk investering, men problemet kunne også løses med manus-curatering + parameter-tuning. Lesson: før man hopper på 1-2 ukers PVC-prosess, sjekk om problemet kan løses med (a) bedre seed/parameter eller (b) omskrevet tekst. Begge er timer-skala fix.
+- **Stokastisk TTS-output er en kjent industri-property, men vi hadde ikke internalisert det.** Det betyr at "én god test-take" er et utilstrekkelig validerings-grunnlag — vi må generere full produksjons-pipeline før vi committer på en stemme.
+- **Brukerens kvalitetssans landet riktig signal hver gang.** Mia Starset høres ok ut på test → "ikke godt nok" i produksjon. Azure høres ok ut → "ikke noe bedre enn ElevenLabs". Erik på 0.5 stability i produksjon → "dårligere enn eksempelet ditt". Ingen av disse var åpenbare for meg i forveien. Lesson: respekter når brukeren sier "ikke godt nok" — det er ikke pickiness, det er produkt-kvalitetssjekk.
+- **TTS-feature-utvikling er en samtale mellom modellen og manuset, ikke bare modellen.** Den endelige løsningen var like mye en manus-skrive-øvelse som en parameter-tweak. **For Placy framover: manus-prompt.ts må optimaliseres for TTS-vennlig output**, ikke bare for innholds-kvalitet. Det er en oppgave for senere når vi har et tredje prosjekt og kan se mønstre på tvers.
