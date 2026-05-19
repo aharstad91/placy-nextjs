@@ -4141,3 +4141,66 @@ Nytt Hjem-manus skrevet av brukeren (83 ord, megler-energi, du-perspektiv, "drø
 - **Stokastisk TTS-output er en kjent industri-property, men vi hadde ikke internalisert det.** Det betyr at "én god test-take" er et utilstrekkelig validerings-grunnlag — vi må generere full produksjons-pipeline før vi committer på en stemme.
 - **Brukerens kvalitetssans landet riktig signal hver gang.** Mia Starset høres ok ut på test → "ikke godt nok" i produksjon. Azure høres ok ut → "ikke noe bedre enn ElevenLabs". Erik på 0.5 stability i produksjon → "dårligere enn eksempelet ditt". Ingen av disse var åpenbare for meg i forveien. Lesson: respekter når brukeren sier "ikke godt nok" — det er ikke pickiness, det er produkt-kvalitetssjekk.
 - **TTS-feature-utvikling er en samtale mellom modellen og manuset, ikke bare modellen.** Den endelige løsningen var like mye en manus-skrive-øvelse som en parameter-tweak. **For Placy framover: manus-prompt.ts må optimaliseres for TTS-vennlig output**, ikke bare for innholds-kvalitet. Det er en oppgave for senere når vi har et tredje prosjekt og kan se mønstre på tvers.
+
+---
+
+## 2026-05-18 (forts.) — Rapport-board helhetlig narrativ: brainstorm + plan + spike-worktree
+
+### Kontekst
+Etter at audio-tour landet i good-enough (Erik + turbo_v2_5 + stability 0.75 på StasjonsKvartalet) ble neste spor å få *alt* til å henge sammen — board-UI, voice-over, kart, og POI-interaksjon som én flyt, ikke som tre konkurrerende modaliteter. Sesjonen var 99% planlegging / 1% setup: brainstorm → doc-review → plan → doc-review → worktree-isolert spike-strategi. Ingen kode skrevet. Audio-tour-piloten avdekket at dagens board (kategori-paginert med rik per-kategori-tekst + 47 POI-cards) ikke flyter med narrativ-modus; samtidig vil kurering ikke skalere til Propr-pilots 1700 listinger/år.
+
+### Beslutninger
+
+**Brainstorm — arkitektur-pivot:**
+- **KD1: Helhetlig scroll, ikke kategori-paginering.** Én scroll-container med Hjem + kategori-seksjoner + EndCTA. Scroll-tracking dispatcher SELECT_CATEGORY → kart-pins veksler. Inspirert av Reports tidligere scroll-synced-sticky-map-mønster (`docs/solutions/feature-implementations/report-scroll-synced-sticky-map-20260208.md`), bevisst gjenbrukt selv om Report siden pivoterte vekk fra det — board er map-driven utforskning, Report er lineær-lesning.
+- **KD2: Slank generisk pitch-tekst > rik kuratert.** Gemini-eksperiment viste at 60-90-ords "for deg som"-pitch føles komplett uten POI-card-krykker. Skalering 1-2 timer/prosjekt (KD6), ikke kurerings-marathon.
+- **KD3: Play-knapp som modus-toggle, ikke uavhengig spiller.** Manuell scroll vs autoscroll-med-fortelling. Per-kategori-play tillater mid-tour-inngang (R7b).
+- **KD4: POI-overlay over inline POI-cards.** Klikk-fra-markør → overlay viser POI + kategori-liste. Ingen "Se alle 47"-CTA i pilot.
+- **KD5: Én Gemini-grounding-kilde, to renderinger.** pitch-tekst og audio-manus deler grounding, men er separate content-former (pitch-tekst kan ha alle stedsnavn, audio-manus minimerer dem).
+- **KD7: Ingen irreversibel sletting før ekstern validering.** `lead`/`body`-felter beholdes som inert data for rollback.
+- **KD8: Audio er én av tre uavhengige ambisjoner.** Audio-off-versjonen (slank pitch + pins + overlay) må alene være bedre enn dagens detalj-tunge versjon. Audio er forsterker, ikke fundament.
+
+**Plan — 7 implementation units + 1 spike (post-plan-revisjon):**
+- Unit 1: pitchText pipeline (build-time CLI + skill + types) — additivt `pitchText`-felt, deler grounding med audio-manus
+- Unit 2: useBoardActiveSection-hook + source-discriminator (`{ source: "scroll" | "audio" | "rail" }`) på SELECT_CATEGORY
+- Unit 3: BoardScrollPanel desktop + scroll-driven kart
+- Unit 4: BoardMobileSheet continuous-scroll
+- Unit 5: POI-overlay (delt desktop sidebar / mobile sheet phase)
+- Unit 6: Audio-tour mode-toggle + autoscroll + split-brain (KD-Plan-2: audio er source-of-truth) + "Tilbake til lyden"-pill
+- Unit 7: Cleanup legacy-komponenter (gated på ekstern validering — KD7)
+- **Unit 0 (lagt til etter brukeren ba om revertibility-strategi):** Walking-skeleton spike i worktree-isolert gren. Validerer KD1 + KD2 mot ekstern bruker FØR Unit 1-7 starter. Carry-forwarder som baseline hvis validert; forkastes hvis ikke.
+
+**Plan-doc-review headless (6 personas, ce-scope-guardian auto-skipped per "Scope is Sacred"):**
+22 above-gate findings (8 P1 + 14 P2) + 8 FYI. To safe_auto-fixes applied silently: (1) ALLOWED_REPORTCONFIG_KEYS-whitelist-utvidelse til `scripts/audio-manus-write.ts` + `scripts/gemini-grounding.ts` for `pitchTextVersion`-feltet, (2) `pitchTextVersion?: z.literal(1)` → `pitchTextVersion?: 1` (matcher eksisterende `audioVersion?: 4`-mønster). De øvrige 20 P1/P2-funnene parkert til Unit 0-spiken har gitt empiri.
+
+**Worktree-strategi:**
+- `feat/board-narrativ-spike` opprettet fra `feat/audio-tour` HEAD (har audio-tour-koden + `audioTourEnabled`-flag som main mangler). Worktree på `/Users/andreasharstad/Documents/placy-ralph-board-spike`.
+- Brainstorm + plan committed på `feat/audio-tour` som `9de3ec3`, deretter fast-forward-merget inn i `feat/board-narrativ-spike` så filene er tilgjengelige i spike-worktreen.
+- Spike kjører på `PORT=3001 npm run dev` for å unngå konflikt med hovedrepoet (port 3000).
+
+### Implementasjon (denne sesjonen — kun docs + worktree-setup)
+
+- `docs/brainstorms/2026-05-18-rapport-board-helhetlig-narrativ-brainstorm.md` — 144 linjer. R1-R17 (board-struktur, audio-tour modus, POI-overlay, innhold-pipeline), KD1-KD8, Success Criteria, Scope Boundaries (med state-cleanup-obligasjoner + lead/body-retention), 4 Open Questions.
+- `docs/plans/2026-05-18-001-feat-rapport-board-helhetlig-narrativ-plan.md` — 672 linjer. 7 Implementation Units + Unit 0 spike (lagt til post-doc-review), 8 KD-Plans, ASCII state-coordination-diagram + mode-toggle-state-machine + build-pipeline-ordre, Risks/Dependencies, Documentation Notes.
+- Worktree `placy-ralph-board-spike` opprettet via `git worktree add`, `setup-worktree.sh` kjørt (symlink `.env.local`, `npm install`, ingen `.next`-cache å rydde).
+- Commit `9de3ec3` på `feat/audio-tour`: docs(rapport-board): brainstorm + plan for helhetlig narrativ + audio-tour modus. Fast-forward-merget til `feat/board-narrativ-spike`.
+
+### Parkert / Åpne spørsmål
+
+- **Spike-validering venter på Unit 0-eksekvering.** Spike-arbeidet starter i ny Claude-sesjon i spike-worktreen. Beslutningsgate: ekstern bruker (Kjetil/Karoline Propr eller Mathias BaneNor) responderer skriftlig innen 3-5 dager → continue eller forkast.
+- **20 P1/P2-funn fra plan-review parkert.** Inkluderer: heroIntro vs heroIntroPitch vs pitchText naming-inkonsistens, KD-Plan-4 hook-decision (ny `useBoardActiveSection` vs utvid eksisterende `useActiveSection`), Hjem-state-sentinel (null vs "home"), POI-overlay-interaksjon under audio-tour, performance/marker-thrashing-akseptansekriterium. Adresseres etter Unit 0-spike har gitt empirisk grunnlag for prioritering.
+- **Vercel preview er valgfritt.** Bruker validerer lokalt på `localhost:3001` først; push til Vercel-preview gjøres først når brukeren er klar for ekstern lytting.
+- **6 kategori-audio-manus på StasjonsKvartalet er ikke omskrevet** (parkert fra forrige sesjon — manus-curatering 4-6 timer). Står fortsatt åpen, ikke prioritert før spike er validert.
+
+### Retning
+
+- **Spike-first execution er en ny pattern for Placy.** Tidligere planer (mobile-multi-snap, audio-tour) gikk rett til Unit 1. Denne har et eksplisitt Unit 0 fordi premissene (KD1 scroll-tracking + KD2 slank-tekst) ikke kan validatere før de er i et ekte bruker-øye. Hvis spike-first fungerer her, kandidat for konvensjon ved fremtidige store UX-skift.
+- **Worktree-isolasjon er den naturlige risiko-mitigasjonen for store refactors.** Ingen main-touch, Vercel-preview valgfritt, full revert ved å forkaste grenen. Memory `feedback_worktree_dev_server` flagger viktigheten av port-isolering (3000 vs 3001).
+- **Audio-tour-arkitekturen er nå klar til å henge sammen med board-UI**, ikke leve ved siden av. KD-Plan-2 (audio er source-of-truth i split-brain) er den essensielle beslutningen som gjør det mulig.
+
+### Observasjoner
+
+- **`/ce-brainstorm` + `/ce-doc-review` interactive + `/ce-plan` + `/ce-doc-review` headless er en kraftig kjede for store UX-skift.** Brainstormens 2 root-funn (audio-tour ridd-along uten egen validering; slank-tekst-premiss testet på ett Gemini-eksempel) ble fanget før de fikk lov til å påvirke planen. Planens 22 above-gate-funn fungerte som krav-spesifikasjon for hva som må gjenåpnes etter spike.
+- **Scope is Sacred-policyen i CLAUDE.md fungerte:** ce-scope-guardian fyrte 5 funn under headless review, alle automatisk skipped med begrunnelsen "Scope is Sacred — scope ratified in brainstorm phase". Decision-primer-mekanikken sørget for at de ikke re-surfacer.
+- **Brukerens spørsmål "er det noe plan på en demo-prototype?" var den viktigste intervensjonen i sesjonen.** Uten det ville planen vært en 7-units-marathon med ekstern validering først i Unit 7. Unit 0 spike-strategien snur dette: validér KD1/KD2 i uke 1, ikke i uke 6. Lesson: når en stor refactor-plan er ferdig, spør alltid "hva er den minste falsifiserbare test av kjerne-premissene?".
+- **Plan-dokumentet er nå 672 linjer.** Det er langt, men holder seg lesbart fordi strukturen er forutsigbar (Implementation Units følger samme schema). Compounding-investering: neste plan-skriving går raskere fordi mønsteret er etablert.
