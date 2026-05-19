@@ -76,7 +76,13 @@ export function BoardRail() {
               category={cat}
               active={state.activeCategoryId === cat.id}
               pulsesDuringTour={tourTrack === cat.id}
-              onSelect={() => dispatch({ type: "SELECT_CATEGORY", id: cat.id })}
+              onSelect={() =>
+                dispatch({
+                  type: "SELECT_CATEGORY",
+                  id: cat.id,
+                  source: "rail",
+                })
+              }
             />
           ))}
         </nav>

@@ -87,26 +87,20 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
       : "opacity-100";
 
   // Markører som vises avhenger av phase:
-  // - default: alle kategorier, alle POI-er (oversiktsmodus).
-  // - active|reading|poi: kun aktiv kategoris POI-er, med sub-kategori-filter.
+  // - default: kun aktiv kategoris pins (scroll-drevet i Unit 0 spike). Når
+  //   ingen kategori aktiv (Hjem-state) skjules kategori-pins helt — kun
+  //   prosjekt-pinnen (HomeMarker) gjenstår, som gir kart-fokus til selve
+  //   eiendommen.
+  // - active|poi: kun aktiv kategoris POI-er, med sub-kategori-filter.
   //
   // Felles fargevalg på tvers av phaser: sub-kategori-fargen med tema-fargen
   // som fallback. Sub-kat differensierer f.eks. bar (lilla), bakeri (gul) og
   // restaurant (rød) innen Mat-tema — og siden samme POI vises i begge phaser
   // skal fargen være identisk når brukeren bytter mellom Hjem og kategori-tab.
   const visiblePOIs = useMemo(() => {
-    if (state.phase === "default") {
-      return data.categories.flatMap((c) =>
-        c.pois.map((p) => ({
-          poi: p,
-          color: p.raw.category.color || c.color,
-          icon: p.raw.category.icon || c.icon,
-        })),
-      );
-    }
     if (!activeCategory) return [];
     const filtered =
-      subFilter.hiddenIds.size === 0
+      state.phase === "default" || subFilter.hiddenIds.size === 0
         ? activeCategory.pois
         : activeCategory.pois.filter(
             (p) => !subFilter.hiddenIds.has(p.raw.category.id),
@@ -116,7 +110,7 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
       color: p.raw.category.color || activeCategory.color,
       icon: p.raw.category.icon || activeCategory.icon,
     }));
-  }, [state.phase, data.categories, activeCategory, subFilter.hiddenIds]);
+  }, [state.phase, activeCategory, subFilter.hiddenIds]);
 
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);

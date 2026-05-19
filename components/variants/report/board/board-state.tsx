@@ -22,8 +22,17 @@ export interface BoardState {
   activePOIId: BoardPOIId | null;
 }
 
+/**
+ * Source-discriminator (Unit 0 spike, full version in Unit 2): identifies *who*
+ * triggered the dispatch so subscribers can avoid feedback loops. For the spike,
+ * "scroll" and "rail" sources keep `phase: "default"` (continuous-scroll
+ * narrative); omitted/`"audio"` source retains the legacy "active" transition
+ * so audio-tour-sync and mobile dispatches behave as before.
+ */
+export type SelectCategorySource = "scroll" | "rail" | "audio";
+
 export type BoardAction =
-  | { type: "SELECT_CATEGORY"; id: BoardCategoryId }
+  | { type: "SELECT_CATEGORY"; id: BoardCategoryId; source?: SelectCategorySource }
   | { type: "OPEN_POI"; id: BoardPOIId; categoryId?: BoardCategoryId }
   | { type: "BACK_TO_ACTIVE" }
   | { type: "RESET_TO_DEFAULT" };
@@ -36,12 +45,18 @@ export const initialBoardState: BoardState = {
 
 export function boardReducer(state: BoardState, action: BoardAction): BoardState {
   switch (action.type) {
-    case "SELECT_CATEGORY":
+    case "SELECT_CATEGORY": {
+      // Spike: scroll-tracking and rail clicks stay in "default" phase so
+      // BoardScrollPanel keeps rendering. Other sources (omitted/audio)
+      // retain legacy "active" transition.
+      const stayInDefault =
+        action.source === "scroll" || action.source === "rail";
       return {
-        phase: "active",
+        phase: stayInDefault ? "default" : "active",
         activeCategoryId: action.id,
         activePOIId: null,
       };
+    }
 
     case "OPEN_POI": {
       const categoryId = action.categoryId ?? state.activeCategoryId;
