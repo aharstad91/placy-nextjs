@@ -458,7 +458,7 @@ async function apply(): Promise<void> {
     ...existingRc,
     themes: nextThemes,
     ...(nextHeroAudio ? { heroAudio: nextHeroAudio } : {}),
-    audioVersion: 4,
+    audioVersion: 5,
   };
   const nextConfig = { ...existingConfig, reportConfig: nextReportConfig };
 

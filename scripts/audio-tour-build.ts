@@ -32,6 +32,7 @@ import {
   ELEVENLABS_MODEL,
   ELEVENLABS_VOICE,
   ELEVENLABS_VOICE_NAME,
+  type AudioTimings,
 } from "../lib/audio-tour/elevenlabs-client";
 import {
   audioAbsPath,
@@ -180,6 +181,7 @@ interface TtsOutcome {
   bytesLen?: number;
   voice?: string;
   model?: string;
+  timings?: AudioTimings;
 }
 
 async function ttsTrack(track: TrackToBuild): Promise<TtsOutcome> {
@@ -195,7 +197,7 @@ async function ttsTrack(track: TrackToBuild): Promise<TtsOutcome> {
     };
   }
   try {
-    const { bytes, voice, model } = await generateAudio({
+    const { bytes, voice, model, timings } = await generateAudio({
       apiKey: ELEVENLABS_API_KEY!,
       text: track.manus,
     });
@@ -214,6 +216,7 @@ async function ttsTrack(track: TrackToBuild): Promise<TtsOutcome> {
       bytesLen: bytes.length,
       voice,
       model,
+      timings,
     };
   } catch (err) {
     return {
@@ -347,10 +350,16 @@ async function main() {
   const generatedAt = new Date().toISOString();
   const audioByKey = new Map<
     string,
-    { url: string; voice: string; model: string; generatedAt: string }
+    {
+      url: string;
+      voice: string;
+      model: string;
+      generatedAt: string;
+      timings: AudioTimings;
+    }
   >();
   for (const o of successOutcomes) {
-    if (!o.bytes || !o.voice || !o.model) continue;
+    if (!o.bytes || !o.voice || !o.model || !o.timings) continue;
     const dest = audioAbsPath(project.url_slug, o.trackKey);
     fs.writeFileSync(dest, o.bytes);
     console.log(`  ✓ wrote ${dest} (${((o.bytesLen ?? 0) / 1024).toFixed(0)} KB)`);
@@ -359,11 +368,12 @@ async function main() {
       voice: o.voice,
       model: o.model,
       generatedAt,
+      timings: o.timings,
     });
   }
   console.log();
 
-  // Build next reportConfig — keep manus, add url/voice/model/generatedAt
+  // Build next reportConfig — keep manus, add url/voice/model/generatedAt/timings
   const existingThemes = existingRc.themes ?? [];
   const nextThemes: ReportThemeConfig[] = existingThemes.map((t) => {
     const a = audioByKey.get(t.id);
@@ -375,6 +385,7 @@ async function main() {
       voice: a.voice,
       model: a.model,
       generatedAt: a.generatedAt,
+      timings: a.timings,
     };
     return { ...t, audio: nextAudio };
   });
@@ -387,6 +398,7 @@ async function main() {
         voice: homeAudio.voice,
         model: homeAudio.model,
         generatedAt: homeAudio.generatedAt,
+        timings: homeAudio.timings,
       }
     : existingRc.heroAudio;
 
@@ -394,7 +406,7 @@ async function main() {
     ...existingRc,
     themes: nextThemes,
     ...(nextHeroAudio ? { heroAudio: nextHeroAudio } : {}),
-    audioVersion: 4,
+    audioVersion: 5,
   };
   const nextConfig = { ...existingConfig, reportConfig: nextReportConfig };
 

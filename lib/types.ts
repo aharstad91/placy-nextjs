@@ -280,6 +280,18 @@ export type ReportThemeGroundingViewV2 = z.infer<
  * audio.manus eksisterer alene mellom Steg 8c.1 og 8c.2; full audio krever
  * url+voice+model+generatedAt.
  */
+/**
+ * Character-level alignment fra ElevenLabs /with-timestamps. Brukes til å
+ * synke karaoke-tekst med voice-over-posisjon. Arrays har samme lengde og
+ * korresponderer 1:1: characters[i] starter ved characterStartTimesSeconds[i]
+ * og slutter ved characterEndTimesSeconds[i].
+ */
+export interface ReportThemeAudioTimings {
+  characters: string[];
+  characterStartTimesSeconds: number[];
+  characterEndTimesSeconds: number[];
+}
+
 export interface ReportThemeAudio {
   /** Public URL — typisk `/audio/{projectSlug}/{categoryId}.mp3`. Mangler frem til Steg 8c.2. */
   url?: string;
@@ -291,6 +303,8 @@ export interface ReportThemeAudio {
   generatedAt?: string;
   /** LLM-generert pitch-manus (~70 ord) som ble sendt til TTS. */
   manus: string;
+  /** Character-level alignment fra /with-timestamps. Mangler på spor generert før audioVersion 5. */
+  timings?: ReportThemeAudioTimings;
 }
 
 export interface ReportThemeConfig {
@@ -353,7 +367,7 @@ export interface ReportConfig {
   /** Build-time-generert audio-tour-spor for Hjem-panelet (Hjem er ikke en kategori). */
   heroAudio?: ReportThemeAudio;
   /** Bump for å tvinge re-gen av alle audio-spor på alle prosjekter. */
-  audioVersion?: 4;
+  audioVersion?: 5;
   /** Eksplisitt opt-in for "Start tour"-knapp. Default false — selv om
    *  audio-spor er generert, skjules CTA inntil dette flagget settes per
    *  prosjekt. Tillater forhåndsgenerering uten å eksponere på prod. */

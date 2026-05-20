@@ -31,16 +31,24 @@ export interface GenerateAudioParams {
   outputFormat?: string;
 }
 
+export interface AudioTimings {
+  characters: string[];
+  characterStartTimesSeconds: number[];
+  characterEndTimesSeconds: number[];
+}
+
 export interface GenerateAudioResult {
   bytes: Buffer;
   voice: string;
   model: string;
+  timings: AudioTimings;
 }
 
 /**
- * Kaller ElevenLabs text-to-speech og returnerer MP3-buffer. Kaster
- * Error med HTTP-status + body-snippet ved feil — callere skal fange
- * og kontekstualisere i sin Promise.allSettled-handler.
+ * Kaller ElevenLabs text-to-speech /with-timestamps og returnerer MP3-buffer
+ * + character-level alignment. Kaster Error med HTTP-status + body-snippet
+ * ved feil — callere skal fange og kontekstualisere i sin Promise.allSettled-
+ * handler. turbo_v2_5 returnerer alignment verifisert empirisk 2026-05-20.
  */
 export async function generateAudio(
   params: GenerateAudioParams,
@@ -50,7 +58,7 @@ export async function generateAudio(
   const languageCode = params.languageCode ?? ELEVENLABS_LANGUAGE_CODE;
   const outputFormat = params.outputFormat ?? ELEVENLABS_OUTPUT_FORMAT;
 
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=${outputFormat}`;
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voice}/with-timestamps?output_format=${outputFormat}`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -70,6 +78,34 @@ export async function generateAudio(
     throw new Error(`ElevenLabs ${res.status}: ${body.slice(0, 300)}`);
   }
 
-  const bytes = Buffer.from(await res.arrayBuffer());
-  return { bytes, voice, model };
+  const json = (await res.json()) as {
+    audio_base64?: string;
+    alignment?: {
+      characters?: string[];
+      character_start_times_seconds?: number[];
+      character_end_times_seconds?: number[];
+    } | null;
+  };
+
+  if (!json.audio_base64) {
+    throw new Error("ElevenLabs /with-timestamps: missing audio_base64");
+  }
+  if (
+    !json.alignment ||
+    !json.alignment.characters ||
+    !json.alignment.character_start_times_seconds ||
+    !json.alignment.character_end_times_seconds
+  ) {
+    throw new Error(
+      "ElevenLabs /with-timestamps: missing alignment fields — model may not support timestamps",
+    );
+  }
+
+  const bytes = Buffer.from(json.audio_base64, "base64");
+  const timings: AudioTimings = {
+    characters: json.alignment.characters,
+    characterStartTimesSeconds: json.alignment.character_start_times_seconds,
+    characterEndTimesSeconds: json.alignment.character_end_times_seconds,
+  };
+  return { bytes, voice, model, timings };
 }
