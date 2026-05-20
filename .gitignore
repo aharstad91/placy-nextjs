@@ -47,3 +47,4 @@ backups/
 .curation-staging/
 .audio-staging/
 .tmp-screenshots/
+.spike-debug/

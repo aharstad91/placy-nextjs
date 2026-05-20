@@ -74,7 +74,7 @@ function useIsDesktop(): boolean {
  *   BoardCategoryTabBar (pinnet bunn) som søsken. Tab-bar er ALLTID synlig
  *   over sheeten via z-50; sheet kan dras ned uten å skjule navigasjonen
  *   (Google Maps-mønster).
- * - Desktop (>=lg): kart fyller alt til høyre for 480px-strip (rail + detalj-panel).
+ * - Desktop (>=lg): kart fyller alt til høyre for 480px-strip (rail + scroll-panel).
  *
  * BoardMap mountes ÉN gang. Conditional positioning via wrapper-div: `lg:left-[480px]`
  * forskyver kart-containeren på desktop. Mobile sheet (vaul) bruker portal og må
@@ -137,7 +137,7 @@ function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
         </>
       )}
 
-      {/* Desktop UI (>= lg) — venstre rail + detalj-panel som 504px-strip */}
+      {/* Desktop UI (>= lg) — venstre rail + scroll-panel som 480px-strip */}
       <BoardDesktopShell />
     </div>
   );

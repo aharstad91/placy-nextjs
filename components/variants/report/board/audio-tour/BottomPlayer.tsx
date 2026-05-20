@@ -1,0 +1,218 @@
+"use client";
+
+import Image from "next/image";
+import {
+  AlertCircle,
+  Headphones,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  X,
+} from "lucide-react";
+import { useBoard } from "../board-state";
+import {
+  useAudioTourActions,
+  useAudioTourMeta,
+  useAudioTourStore,
+  useCurrentTrack,
+  type AudioTrack,
+  type AudioTrackCategoryId,
+} from "@/lib/stores/audio-tour-store";
+
+/**
+ * Global bottom-sticky audio-player for board-narrativ. Morfer mellom to
+ * tilstander:
+ *
+ *  - **Idle** (tour ikke startet): "Start tour"-CTA med antall spor.
+ *  - **Aktiv** (playing/paused/error): mini-player med thumbnail, label,
+ *    transport-controls (prev / play-pause / next / close).
+ *
+ * Mountes som søsken til scroll-container i BoardScrollPanel — alltid
+ * synlig på bunnen av panelet.
+ *
+ * Gating: kun hvis audioTourEnabled + Hjem-audio + alle kategorier har audio.
+ */
+export function BottomPlayer() {
+  const { data } = useBoard();
+  const phase = useAudioTourStore((s) => s.phase);
+
+  const homeAudio = data.home.audio;
+  const allCategoriesHaveAudio = data.categories.every((c) => c.audio);
+
+  if (
+    !data.audioTourEnabled ||
+    !homeAudio ||
+    !allCategoriesHaveAudio ||
+    data.categories.length === 0
+  ) {
+    return null;
+  }
+
+  const isIdle = phase === "idle" || phase === "ended";
+
+  return (
+    <div className="border-t border-stone-200/80 bg-white text-stone-900 shadow-[0_-2px_12px_rgba(15,29,68,0.06)]">
+      {isIdle ? <IdleState /> : <ActiveState />}
+    </div>
+  );
+}
+
+function IdleState() {
+  const { data } = useBoard();
+  const { start } = useAudioTourActions();
+
+  const homeAudio = data.home.audio!;
+  const totalTracks = data.categories.length + 1;
+
+  const startTour = () => {
+    const tracks: AudioTrack[] = [
+      {
+        categoryId: "home" as AudioTrackCategoryId,
+        url: homeAudio.url,
+        manus: homeAudio.manus,
+      },
+      ...data.categories.map((c) => ({
+        categoryId: c.id,
+        url: c.audio!.url,
+        manus: c.audio!.manus,
+      })),
+    ];
+    start(tracks);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={startTour}
+      aria-label="Start tour fra Hjem"
+      className="flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-stone-50"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-900 text-white">
+        <Headphones className="h-5 w-5" />
+      </span>
+      <span className="flex min-w-0 flex-col">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          Megler-pitch · {totalTracks} spor
+        </span>
+        <span className="text-[14px] font-semibold leading-tight">
+          ▶ Start tour
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function ActiveState() {
+  const { data } = useBoard();
+  const { phase, trackIndex, trackCount, pauseReason } = useAudioTourMeta();
+  const { pause, resume, next, prev, close, retryTrack } =
+    useAudioTourActions();
+  const currentTrack = useCurrentTrack();
+
+  if (!currentTrack) return null;
+
+  const isHome = currentTrack.categoryId === "home";
+  const category = isHome
+    ? undefined
+    : data.categories.find((c) => c.id === currentTrack.categoryId);
+  const displayLabel = isHome ? "Hjem" : (category?.label ?? "");
+  const thumbnail = isHome ? data.home.heroImage : category?.illustration?.src;
+
+  const isPlaying = phase === "playing";
+  const isPaused = phase === "paused";
+  const isError = phase === "error";
+  const showResumeTour = isPaused && pauseReason === "category-clicked";
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-3">
+      {thumbnail && (
+        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-stone-100">
+          <Image
+            src={thumbnail}
+            alt=""
+            fill
+            sizes="44px"
+            className="object-cover"
+          />
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          <span>
+            Spor {trackIndex + 1}/{trackCount}
+          </span>
+          {isError && (
+            <span className="flex items-center gap-1 text-red-600">
+              <AlertCircle className="h-3 w-3" />
+              Lyd-feil
+            </span>
+          )}
+        </div>
+        <div className="truncate text-[14px] font-semibold leading-tight text-stone-900">
+          {displayLabel}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <button
+          type="button"
+          aria-label="Forrige spor"
+          disabled={trackIndex === 0}
+          onClick={prev}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <SkipBack className="h-4 w-4" />
+        </button>
+        {isError ? (
+          <button
+            type="button"
+            onClick={retryTrack}
+            className="mx-0.5 flex h-9 items-center gap-1.5 rounded-full bg-stone-900 px-3 text-xs font-semibold text-white transition hover:bg-stone-700"
+          >
+            <Play className="h-3.5 w-3.5" />
+            Prøv igjen
+          </button>
+        ) : showResumeTour ? (
+          <button
+            type="button"
+            onClick={resume}
+            className="mx-0.5 flex h-9 items-center gap-1.5 rounded-full bg-stone-900 px-3 text-xs font-semibold text-white transition hover:bg-stone-700"
+          >
+            <Play className="h-3.5 w-3.5" />
+            Fortsett tour
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label={isPlaying ? "Pause" : "Spill av"}
+            onClick={() => (isPlaying ? pause("manual") : resume())}
+            className="mx-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-stone-900 text-white transition hover:bg-stone-700"
+          >
+            {isPlaying ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="ml-0.5 h-4 w-4" />
+            )}
+          </button>
+        )}
+        <button
+          type="button"
+          aria-label="Neste spor"
+          disabled={trackIndex >= trackCount - 1}
+          onClick={next}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <SkipForward className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          aria-label="Avslutt tour"
+          onClick={close}
+          className="ml-0.5 flex h-9 w-9 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}

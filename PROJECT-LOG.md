@@ -6,6 +6,60 @@
 
 ---
 
+## 2026-05-19/20 — Rapport-board UX-iterasjon: spiller, kart-overblikk, POI-overlay
+
+### Kontekst
+Iterativ UX-runde på Unit 0 walking-skeleton-spike (`feat/board-narrativ-spike`). Brukeren styrte hver justering visuelt mot et mer Spotify-/Google Maps-aktig layout: bottom-sticky audio-spiller, dynamisk seksjonshøyde, full POI-oversikt i Hjem-state, og POI-detalj som overlay i stedet for "kapring" av sidebar. Avsluttet med ny audio-pipeline-runde for Stasjonskvartalet basert på nytt meglerpitch-manus.
+
+### Beslutninger
+
+- **BottomPlayer flyttet til bunn-sticky** (Spotify-mønster). Erstatter både top-PlayerBanner og chip-row. Morfer mellom idle ("▶ Start tour · N spor") og aktiv (thumbnail + label + transport-controls).
+- **Light theme på BottomPlayer.** Første iterasjon hadde dark `bg-stone-900` — brukeren ville lys for visuell ro med scroll-panel og kart.
+- **Kategori-segment-strip i player fjernet.** Klikkbare thumbnails per kategori i player ble vurdert "for mye nav" — kategori-bytte skjer via scroll, rail, eller kart-pin-klikk.
+- **Dynamisk seksjonshøyde** (`min-h-screen`/`min-h-[80vh]` fjernet). Innholdet bestemmer høyden — bruker scroller naturlig fra Hjem til Hverdagsliv til Mat & Drikke uten "én-seksjon-om-gangen"-friksjon.
+- **Hjem-state viser alle POIs ufiltrert** på tvers av kategorier. Hver pin har sin egen kategori-farge/ikon. Gir bruker overblikk over hele nabolaget før kategori-narrativet starter. Tidligere ble pins skjult i Hjem-state.
+- **Tour-mode fitBounds per kategori-skifte.** Når audio-tour er aktiv (`phase === playing | paused`), kalkulerer `BoardMap` LngLatBounds av synlige POIs + home og kaller `map.fitBounds` med `duration: 800ms`, `maxZoom: 15.5`. Gir visuell "view changes"-feedback per spor. Utenfor tour-mode holder kartet sin posisjon.
+- **POI-overlay-mønster** erstatter den gamle "kapringen" av scroll-panelet. Klikk på POI åpner overlay (z-20, `absolute inset-0`) over BoardScrollPanel:
+  - **Sticky kategori-header** øverst: tilbake-pil + kategori-thumbnail + "Spor X/N · Kategori-navn" + audio-transport-controls + X (lukk tour). Transport vises kun når tour er aktiv.
+  - **BACK_TO_DEFAULT-action** lukker overlay men beholder `activeCategoryId` — scroll-narrativet returnerer i samme posisjon, og audio-tour fortsetter uavbrutt.
+  - **BoardScrollPanel forblir mountet** i bakgrunnen — bevarer scroll-state og IO-observers under overlay.
+  - **BottomPlayer skjules** i overlay-modus (sticky header har transport-rollen).
+- **POI-overlay viser KUN den klikkede POI-en.** Første versjon hadde "Punkter i nærheten"-akkordion under det aktive kortet med promotion-mønster (klikk i listen → ny POI til toppen) — fjernet etter brukerfeedback om at det skapte visuelt hopp. Bytte mellom POIs skjer via kart-pin-klikk (samme `OPEN_POI`-dispatch som før).
+- **Nytt megler-pitch-manus** for Stasjonskvartalet — 6 av 7 spor + Hjem. Opplevelser-sporet beholdes uendret (brukeren leverte ikke manus for det). MP3-er regenerert via ElevenLabs (Erik / turbo_v2_5).
+
+### Implementasjon
+
+- `BottomPlayer.tsx` (ny) — idle + aktiv state, light theme, ingen kategori-strip.
+- `CategoryAudioButton.tsx` (ny) — per-kategori "Spill av denne seksjonen"-CTA i CategorySection.
+- `BoardPOIOverlay.tsx` (ny) — sticky header + alltid-åpen pinned POI-card. Bruker `BoardPOIDetails` direkte (ikke akkordion) for innholdet.
+- `board-state.tsx` — ny `BACK_TO_DEFAULT`-action (beholder `activeCategoryId`); `SELECT_CATEGORY` har source `"audio"` lagt til i `stayInDefault`-arbitrering.
+- `BoardMap.tsx` — `visiblePOIs`-useMemo viser alle POIs på tvers av kategorier i Hjem-state; ny tour-aktiv fitBounds-effect.
+- `BoardScrollPanel.tsx` — `programmaticScrollRef`-flag for å suppresse IO-tracking under audio-driven scroll; Effect 1 deps redusert til `[activeSectionId, dispatch]` (closure-capture for activeCategoryId) for å unngå feedback-loop; `hideBottomPlayer`-prop.
+- `BoardDesktopShell.tsx` — layered mount: BoardScrollPanel alltid mountet, overlay som absolute-positioned sibling når `phase !== "default"`.
+- `use-audio-tour-sync.ts` — sender `source: "audio"` på SELECT_CATEGORY så reducer holder phase="default" og overlay ikke åpner ved audio-driven kategori-bytte.
+- `BoardDetailPanel.tsx` slettet (ingen importerer den lenger; mobile bruker en helt egen flyt).
+- Nye MP3-filer skrevet til `public/audio/stasjonskvartalet/` for 7 spor (Opplevelser uendret).
+
+### Parkert / Åpne spørsmål
+
+- **Tour-aktiv overlay-modus** (transport-knapper i sticky header) ikke MCP-testet — Chrome MCP-click teller ikke som user-gesture for autoplay. Verifisert manuelt for idle-overlay; tour-aktiv speiler BottomPlayer ActiveState-logikk.
+- **TTS-kvalitet på nytt manus** ikke gjennomlyttet. Manuset har flere stedsnavn (Brattøra, Solsiden, Rockheim, Ladestien, Sjøgangen, Nye Trondheim S) som historisk har vært TTS-eksplosiver. Memory-noten om stedsnavn-curatering gjelder fortsatt — bruker må lytte gjennom og evt. justere manus før det signes.
+- **BACK_TO_ACTIVE** finnes fortsatt, brukes av POI-akkordion (mobile) og legacy-paths. Vurder rydding når mobile flyten oppdateres til samme overlay-mønster.
+- **Kontekst-blokk over pinned POI-card** ble flagget av bruker som "tar det etterpå" — plassholder/innhold ikke implementert.
+
+### Retning
+
+- Spike-fasen begynner å konvergere mot et stabilt mønster: scroll-narrativ + bottom-sticky player + overlay for fokus-modus. POI-bytting via kart (én sannhetskilde) gir renere mental modell enn dupliserte lister i sidebar.
+- Mobile-flyten er ikke berørt i denne sesjonen — BoardMobileSheet og BoardDetailPanel-logikken der er fortsatt på "kapring"-mønsteret. Når desktop-mønsteret stabiliserer seg, replikeres det til mobile.
+
+### Observasjoner
+
+- **Source-discriminator-mønsteret** (`SELECT_CATEGORY.source = "scroll" | "rail" | "audio"`) er nå robust nok til å overleve flere phase-overganger uten feedback-loops. Closure-capture i Effect 1 (deps reduced til kun `[activeSectionId, dispatch]`) løste race der external state-update triggret stale dispatch.
+- **`programmaticScrollRef` + `scrollend` + 900ms setTimeout-fallback** løste smooth-scroll-overshoot. Mønsteret kan dokumenteres senere hvis det dukker opp i andre scroll-koordinasjons-flyter.
+- **"Punkter i nærheten"-promotion-mønsteret feilet** — re-ordering av en synlig liste ved klikk er forvirrende. Tab-bar/segmented-nav er trygt; promotion av kort i scrollet liste er ikke. Verdt å huske ved fremtidig list-design.
+
+---
+
 ## 2026-04-30 (kveld) — Mobile board: multi-snap sheet med Google Maps-flyt
 
 ### Kontekst

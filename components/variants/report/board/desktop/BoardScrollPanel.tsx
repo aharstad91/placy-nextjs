@@ -5,8 +5,8 @@ import Image from "next/image";
 import { useBoard } from "../board-state";
 import type { BoardCategory, BoardCategoryId, BoardHome } from "../board-data";
 import { useBoardActiveSection } from "@/lib/hooks/useBoardActiveSection";
-import { PlayerBanner } from "../audio-tour/PlayerBanner";
-import { StartTourButton } from "../audio-tour/StartTourButton";
+import { BottomPlayer } from "../audio-tour/BottomPlayer";
+import { CategoryAudioButton } from "../audio-tour/CategoryAudioButton";
 import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 
 const HOME_SECTION_ID = "home";
@@ -15,30 +15,43 @@ const HOME_SECTION_ID = "home";
  * Unit 0 spike: single continuous scroll panel that replaces BoardDetailPanel
  * in phase="default". Renders Hjem (project intro) followed by one section per
  * category with slim pitch-stub text (theme.lead + theme.body). Scroll-tracking
- * via useBoardActiveSection dispatches SELECT_CATEGORY{source:"scroll"} so the
- * map veksler pins as the user scrolls through the narrative.
+ * via useBoardActiveSection dispatches SELECT_CATEGORY{source:"scroll"} så
+ * kart-pins følger scroll-narrativet.
  *
- * External activeCategoryId changes (e.g. rail click) cause the corresponding
- * section to scrollIntoView. Bi-directional sync is feedback-loop-safe because
- * the dispatch is idempotent when activeSectionId already matches.
- *
- * Audio-tour UI (PlayerBanner sticky-top, StartTourButton in Home-section) is
- * mounted so MP3-data (already present in boardData) is reachable from the
- * scroll-narrative shell. Components self-gate on `audioTourEnabled` and
- * tourPhase, so the spike still validates as audio-OFF on projects without the
- * flag.
+ * Audio-tour-UI er konsentrert i en bottom-sticky BottomPlayer: idle viser
+ * "Start tour"-CTA, aktiv viser mini-player med thumbnail, label og transport-
+ * controls. Per-kategori "Spill av denne seksjonen"-CTA i CategorySection lar
+ * bruker hoppe direkte til ett spor.
  */
-export function BoardScrollPanel() {
+export function BoardScrollPanel({
+  hideBottomPlayer = false,
+}: {
+  /** Skjul BottomPlayer når en overlay (POI) ligger oppå panelet — overlay-
+   *  headeren har transport-rollen i den modusen. */
+  hideBottomPlayer?: boolean;
+} = {}) {
   const { data, state, dispatch } = useBoard();
   const containerRef = useRef<HTMLDivElement>(null);
+  // Når true: vi animerer en programmatic scroll (audio/Home-RESET). IO vil
+  // fyre på alle mellomliggende seksjoner mens scroll passerer, og uten denne
+  // guarden ville scroll-tracking-effekten dispatche SELECT_CATEGORY for hver
+  // av dem — som ville rocket target-seksjonen ut av sentrum og gitt overshoot.
+  const programmaticScrollRef = useRef(false);
 
   const { activeSectionId, registerSectionRef } = useBoardActiveSection(
     containerRef,
     HOME_SECTION_ID,
   );
 
-  // Scroll → state: bubble visible section into BoardContext.
+  // Scroll → state: bubble visible section into BoardContext. Deps inkluderer
+  // KUN activeSectionId — effekten skal være enveis (scroll → state). Hadde
+  // state.activeCategoryId vært i deps, ville effekten fyrt på eksterne
+  // state-endringer (audio-tour-sync, player-jump) før IO rekker å oppdatere
+  // activeSectionId, og dispatch'et basert på utdatert initial-activeSectionId
+  // ("home") — som ville angret den eksterne endringen. Closure-capture leser
+  // state.activeCategoryId ved fire-time uansett.
   useEffect(() => {
+    if (programmaticScrollRef.current) return;
     if (!activeSectionId) return;
     if (activeSectionId === HOME_SECTION_ID) {
       if (state.activeCategoryId !== null) {
@@ -53,33 +66,49 @@ export function BoardScrollPanel() {
         source: "scroll",
       });
     }
-  }, [activeSectionId, state.activeCategoryId, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSectionId, dispatch]);
 
-  // State → scroll: when activeCategoryId changes externally (rail click,
-  // Home-marker RESET, audio-tour-sync), scroll the matching section into view.
-  // IMPORTANT: deps intentionally exclude `activeSectionId` — this effect must
-  // only react to *external* state changes. Including activeSectionId here
-  // creates a race where the effect fires with stale state.activeCategoryId
-  // during natural scroll (IO updates activeSectionId before the dispatched
-  // SELECT_CATEGORY has flushed), causing scroll-back-to-Home flicker.
-  // The activeSectionId closure is still read at fire time for the bail check.
+  // State → scroll: when activeCategoryId changes externally (audio-tour-sync,
+  // BottomPlayer category-jump, Home-marker RESET), scroll the matching section
+  // into view. programmaticScrollRef suppresses scroll-tracking dispatches
+  // during the smooth-scroll animation.
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
     const targetId = state.activeCategoryId ?? HOME_SECTION_ID;
     if (targetId === activeSectionId) return;
-    const target = containerRef.current.querySelector<HTMLElement>(
+    const target = container.querySelector<HTMLElement>(
       `[data-board-section="${CSS.escape(targetId)}"]`,
     );
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    if (!target) return;
+
+    programmaticScrollRef.current = true;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // scrollend er ikke universelt støttet (Safari < 17.4 mangler det), så vi
+    // har en setTimeout-fallback. Smooth scroll på normalt content tar typisk
+    // 300–600ms; 900ms gir buffer for lange hopp.
+    const clearGuard = () => {
+      programmaticScrollRef.current = false;
+    };
+    const fallback = window.setTimeout(clearGuard, 900);
+    const onScrollEnd = () => {
+      window.clearTimeout(fallback);
+      clearGuard();
+      container.removeEventListener("scrollend", onScrollEnd);
+    };
+    container.addEventListener("scrollend", onScrollEnd);
+
+    return () => {
+      window.clearTimeout(fallback);
+      container.removeEventListener("scrollend", onScrollEnd);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.activeCategoryId]);
 
-  // PlayerBanner sticky-top + body-dimming during active tour, mirroring
-  // BoardDetailPanel's tour-mode-attr pattern (see tour-mode.css).
+  // tour-mode-attribute for CSS body-dimming (tour-mode.css).
   const tourPhase = useAudioTourPhase();
-  const showPlayerBanner = tourPhase !== "idle" && tourPhase !== "ended";
   const tourActive = tourPhase === "playing" || tourPhase === "paused";
 
   return (
@@ -88,10 +117,9 @@ export function BoardScrollPanel() {
       data-tour-active={tourActive ? "true" : undefined}
       className="flex h-full w-[400px] flex-col border-r border-stone-200/80 bg-stone-50"
     >
-      {showPlayerBanner && <PlayerBanner />}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto pb-[60vh]"
+        className="flex-1 overflow-y-auto pb-[40vh]"
       >
         <HomeSection
           home={data.home}
@@ -105,6 +133,7 @@ export function BoardScrollPanel() {
           />
         ))}
       </div>
+      {!hideBottomPlayer && <BottomPlayer />}
     </section>
   );
 }
@@ -152,7 +181,6 @@ function HomeSection({
             {home.heroIntro}
           </p>
         )}
-        <StartTourButton />
       </div>
     </section>
   );
@@ -170,15 +198,16 @@ function CategorySection({
       id={category.id}
       data-board-section={category.id}
       ref={registerRef}
-      className="border-t border-stone-200/80 px-6 py-8"
+      className="flex flex-col border-t border-stone-200/80 px-6 py-8"
     >
       <h2 className="text-2xl font-bold leading-tight text-stone-900">
         {category.label}
       </h2>
+      <CategoryAudioButton category={category} />
       {category.lead && (
         <p
           data-board-body
-          className="mt-3 text-[15px] leading-relaxed text-stone-700"
+          className="mt-4 text-[15px] leading-relaxed text-stone-700"
         >
           {category.lead}
         </p>

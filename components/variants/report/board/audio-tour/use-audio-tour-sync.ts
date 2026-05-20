@@ -51,6 +51,7 @@ export function useAudioTourSync(): void {
       dispatch({
         type: "SELECT_CATEGORY",
         id: current.categoryId as BoardCategoryId,
+        source: "audio",
       });
     }
   }, [phase, trackIndex, tracks, dispatch]);
@@ -122,6 +123,7 @@ export function useAudioTourSync(): void {
       dispatch({
         type: "SELECT_CATEGORY",
         id: current.categoryId as BoardCategoryId,
+        source: "audio",
       });
     }
   }, [phase, trackIndex, tracks, boardState.activeCategoryId, dispatch]);

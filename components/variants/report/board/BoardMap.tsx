@@ -16,6 +16,7 @@ import { BoardPathLayer } from "./BoardPathLayer";
 import { BoardPathMidpointMarker } from "./BoardPathMidpointMarker";
 import { BoardPOILabel } from "./BoardPOILabel";
 import { BoardMap3D } from "./BoardMap3D";
+import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import { DEFAULT_CAMERA_LOCK } from "@/components/variants/report/blocks/report-3d-config";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
@@ -87,10 +88,10 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
       : "opacity-100";
 
   // Markører som vises avhenger av phase:
-  // - default: kun aktiv kategoris pins (scroll-drevet i Unit 0 spike). Når
-  //   ingen kategori aktiv (Hjem-state) skjules kategori-pins helt — kun
-  //   prosjekt-pinnen (HomeMarker) gjenstår, som gir kart-fokus til selve
-  //   eiendommen.
+  // - default + Hjem-state (ingen kategori aktiv): vis ALLE POIs på tvers av
+  //   kategorier ufiltrert, hver med sin egen kategori-farge/ikon. Gir bruker
+  //   overblikk over hele nabolaget før kategori-narrativet starter.
+  // - default + aktiv kategori (scroll-drevet): kun den kategoriens pins.
   // - active|poi: kun aktiv kategoris POI-er, med sub-kategori-filter.
   //
   // Felles fargevalg på tvers av phaser: sub-kategori-fargen med tema-fargen
@@ -98,6 +99,15 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
   // restaurant (rød) innen Mat-tema — og siden samme POI vises i begge phaser
   // skal fargen være identisk når brukeren bytter mellom Hjem og kategori-tab.
   const visiblePOIs = useMemo(() => {
+    if (state.phase === "default" && !activeCategory) {
+      return data.categories.flatMap((cat) =>
+        cat.pois.map((p) => ({
+          poi: p,
+          color: p.raw.category.color || cat.color,
+          icon: p.raw.category.icon || cat.icon,
+        })),
+      );
+    }
     if (!activeCategory) return [];
     const filtered =
       state.phase === "default" || subFilter.hiddenIds.size === 0
@@ -110,7 +120,7 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
       color: p.raw.category.color || activeCategory.color,
       icon: p.raw.category.icon || activeCategory.icon,
     }));
-  }, [state.phase, activeCategory, subFilter.hiddenIds]);
+  }, [state.phase, activeCategory, subFilter.hiddenIds, data.categories]);
 
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
@@ -128,9 +138,44 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
     map.setPadding({ top: 0, bottom: mapPaddingBottom, left: 0, right: 0 });
   }, [mapLoaded, mapPaddingBottom]);
 
-  // Bevisst valg: ingen phase-drevne camera-moves. Kartet holder posisjonen
-  // sin når kategori velges eller POI klikkes. Brukeren panner/zoomer manuelt.
-  // Initial view settes via initialViewState på <Map>.
+  // Tour-mode bounding-box-fit: når audio-tour er aktiv, rekalkuler kamera
+  // for hvert kategori-skifte slik at alle synlige markører (+ home) får
+  // plass. Gir visuell "view changes"-feedback per spor. Utenfor tour-mode
+  // holder kartet posisjonen sin (manuell pan/zoom).
+  const tourPhase = useAudioTourPhase();
+  const tourActive = tourPhase === "playing" || tourPhase === "paused";
+
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    if (!tourActive) return;
+    if (visiblePOIs.length === 0) return;
+    const map = mapRef.current.getMap();
+    let west = data.home.coordinates.lng;
+    let east = data.home.coordinates.lng;
+    let south = data.home.coordinates.lat;
+    let north = data.home.coordinates.lat;
+    for (const { poi } of visiblePOIs) {
+      const { lng, lat } = poi.coordinates;
+      if (lng < west) west = lng;
+      if (lng > east) east = lng;
+      if (lat < south) south = lat;
+      if (lat > north) north = lat;
+    }
+    map.fitBounds(
+      [
+        [west, south],
+        [east, north],
+      ],
+      { padding: 80, duration: 800, maxZoom: 15.5 },
+    );
+  }, [
+    tourActive,
+    activeCategory,
+    visiblePOIs,
+    mapLoaded,
+    data.home.coordinates.lng,
+    data.home.coordinates.lat,
+  ]);
 
   // ---- Toggle-handler: lese kamera, sette pendingCamera, schedulere swap ----
   const getViewportDims = useCallback(
