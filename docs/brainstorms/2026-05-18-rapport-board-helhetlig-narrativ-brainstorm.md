@@ -1,9 +1,12 @@
 ---
 date: 2026-05-18
+revised: 2026-05-20
 topic: rapport-board-helhetlig-narrativ
 ---
 
 # Rapport-board — fra detalj-fanget til helhetlig narrativ
+
+> **Revisjon 2026-05-20:** Skjerpet KD5 fra "to renderinger fra én kilde" til "én canonical tekst" (TTS-uttale parkert i PROJECT-LOG). Lagt til R18-R19b (karaoke ord-for-ord + cinematic sidebar-active-state), KD9 + KD10. Lukket Open Question #2.
 
 ## Problem Frame
 
@@ -41,13 +44,14 @@ De tre underliggende ambisjonene løses av distinkte mekanismer og evalueres hve
 | Editorial-skalering | Pitch-tekst-pipeline (R15-R17) |
 | UI-renhet | POI-overlay-pattern + fjerning av disclosure/Punkter-tab (R11-R14) |
 | Audio-som-modus | Audio-tour modus-toggle (R6-R10b) |
+| Tekst↔voice-koherens | Karaoke + cinematic sidebar (R18-R19b) |
 
 ## Requirements
 
 **Board-struktur**
 - R1. Boardet rendres som ett kontinuerlig scrollbart element (én scroll-container, ikke fan-paginering eller separate kategori-skjermer).
 - R2. Hjem-seksjonen kommer først i scrollen og inneholder *både* dagens bolig-hero (illustrasjon, prosjektnavn, konseptlinje) *og* en områdens elevator-pitch (~70 norske ord, Gemini-style varm narrativ-tone) som setter rammen for resten av seksjonene.
-- R3. Hver kategori-seksjon består av: kategori-tittel, kategori-illustrasjon (eksisterende), én generisk pitch-tekst (~60-90 norske ord, ingen lead/body-deling), og (når `audioTourEnabled === true` og kategorien har audio-spor) play-knapp for kategori-audio. Ingen "Les mer"-disclosure. Ingen Beligenhet/Punkter-toggle. I non-audio-modus fylles play-knapp-plassen av tekst-blokken — ingen ghost-knapp eller layout-skift.
+- R3. Hver kategori-seksjon består av: kategori-tittel, kategori-illustrasjon (eksisterende), én generisk pitch-tekst (~60-90 norske ord, ingen lead/body-deling), og (når `audioTourEnabled === true` og kategorien har audio-spor) play-knapp for kategori-audio. Ingen "Les mer"-disclosure. Ingen Beligenhet/Punkter-toggle. I non-audio-modus fylles play-knapp-plassen av tekst-blokken — ingen ghost-knapp eller layout-skift. Pitch-teksten rendres med token-grenser (`<span>` per ord) for å støtte karaoke-effekten i R18.
 - R4. Sidebar-rail med kategori-ikoner beholdes som scroll-navigasjon (klikk på ikon = scroll til seksjon). Den fungerer som visuell oversikt over hvor du er, ikke som en pagineringsmekanisme.
 - R5. **En ny scroll-tracking-mekanikk bygges for board-laget** basert på IntersectionObserver-mønsteret i `lib/hooks/useActiveSection.ts` (artikkel-laget). Den dispatcher `SELECT_CATEGORY` til BoardContext når en kategori-seksjon kommer i view, og må kunne skille programmatisk autoscroll fra bruker-scroll for å støtte audio-resync-logikken i R10. Dagens kategori-paginerings-tracking i board-laget fjernes — den eksisterende scroll-tracking finnes kun i artikkel-laget og kan ikke gjenbrukes som-er.
 - R5b. Hjem-seksjonen er ikke en kategori og har ingen POI-er. Når Hjem er aktiv scroll-seksjon, viser kartet kun prosjektets pin zoomet til nabolagsnivå — alle kategori-pins er skjult. Først ved scroll til første kategori-seksjon kommer kategori-pins inn.
@@ -77,7 +81,13 @@ De tre underliggende ambisjonene løses av distinkte mekanismer og evalueres hve
 - R15. Kategori-pitch-tekstene (~60-90 ord) genereres build-time via et nytt eller utvidet LLM-steg som tar imot eksisterende grounding (lead + body + Gemini-grounding) per kategori og produserer en pitch-stil narrativ. Et nytt `pitchText`-felt introduseres additivt på `BoardCategory`.
 - R15b. **Eksisterende `BoardCategory.lead`/`body` beholdes som data-felt** under bygg (input til pitch-generering) og forblir i datamodellen som inert data. De rendres ikke i UI, men slettes ikke før pilot-validering bekrefter at pitch-only fungerer for ekstern bruker (jf. KD7). Lav-kostnad-rollback hvis slank-tekst-premissen ikke holder.
 - R16. Hjem-elevator-pitchen (~70 ord) genereres tilsvarende, basert på områdens overordnede grounding + bolig-konsept. Lagres på `reportConfig.heroIntro` eller tilsvarende eksisterende felt — verifiseres mot dagens `reportConfig`-shape i plan-fasen.
-- R17. **Pitch-tekst og audio-manus deler én *kilde-grounding* (samme LLM-input), men er to renderinger:** (a) visuell pitch beholder stedsnavn for lokal forankring og SEO-verdi, (b) audio-manus deriveres med stedsnavn-reduksjon som siste step (per [[feedback-norsk-tts-stedsnavn]]). De er ikke samme tekst — to renderinger fra én kilde.
+- R17. **Én canonical tekst per kategori for visuell og auditiv levering.** Pitch-teksten som vises i sidebar er den samme teksten voice-over leser — ikke to renderinger. Stedsnavn beholdes i canonical-teksten for lokal forankring og SEO-verdi. **TTS-uttale av problemord** (kajakk, Nidelva, Bakklandet) er parkert som senere arbeid — jf. PROJECT-LOG 2026-05-20-entry. I pilot aksepteres Erik @ turbo_v2_5-uttale som "godt nok"; fonetisk-transform-pipeline eller PVC implementeres når audio-kvaliteten skal heves systematisk på tvers av prosjekter.
+
+**Karaoke-effekt og sidebar-fokus**
+- R18. **Karaoke ord-for-ord, kun i auto-modus.** Når voice-over spiller, lyser hvert ord opp i takt med uttalen (opacity 40% → 100%, 200ms ease-out per ord). I manual-modus rendres tekst i full opacity uten progress-effekt — scroll-basert estimering brukes ikke. Begrunnelse: scroll-basert karaoke ville være kunstig fordi øyet ikke leser linært; effektens verdi ligger i å vise hvor voice-over ER, ikke hvor brukeren tror han er.
+- R18b. **TTS-pipeline må bygge timing-data.** ElevenLabs `/v1/text-to-speech/{voice}/with-timestamps`-endpoint erstatter dagens flat-mp3-endpoint i `lib/audio-tour/elevenlabs-client.ts`. Character-level timing lagres per spor (nytt felt på audio-objekt, f.eks. `audio.timings: Array<{ character, start_ms, end_ms }>`) og brukes til token-mapping i front-end. Edge-cases (pause, scrub, hopp til neste spor) håndteres i plan-fase.
+- R19. **Cinematic sidebar-active-state, alltid på.** Inaktive kategorier: opacity 30%. Aktiv kategori: opacity 100%, scale 1.15, glow (kategori-farge, blur 20px, opacity 40%), rail-bg fader fra `bg-stone-100` mot transparent. Transition 400ms ease-out med slight bounce på scale. Effekten er alltid aktiv — i manual-modus drevet av scroll (`state.activeCategoryId` fra IntersectionObserver i R5), i auto-modus drevet av audio (`tourTrack` fra audio-tour-state). Samme visuelle uttrykk, ulik state-kilde.
+- R19b. **Aktiv-state-kilde-prioritet:** I split-brain-tilstanden (autoscroll pauset, audio spiller, bruker scroller) følger sidebar audio-staten (per eksisterende R10) — ikke scroll-staten. "Tilbake til lyden"-pillen er fortsatt mekanismen for å snappe scroll til audio-posisjonen.
 
 ## Success Criteria
 
@@ -93,6 +103,8 @@ Konseptet er validert når disse er sanne for StasjonsKvartalet-rapporten:
 - **"Føles ferdig" objektivt:** pitch-tekst er ≤90 ord, ingen åpenbare faktafeil, én lese-gjennom uten åpenbar feilbarhet → ship. Ingen polering-runder uten ekstern feedback-signal som trigger.
 - Et nytt eiendomsprosjekt kan i prinsippet bygges fra grounding alene uten redaksjonell touch (null-touch-default). 1-2 timer redaksjonell innsats reserveres premium-listinger eller spesialtilfeller — det er ikke skalerings-modusen (jf. KD6).
 - Audio-tour-opplevelsen kjennes naturlig integrert (ikke en player som flyter over en uvant kategorisert layout).
+- **Karaoke-effekten i auto-modus** synker visuelt med voice-over på ord-nivå (drift ≤200ms per ord på StasjonsKvartalet-spor), opprettholdes ved scrub/pause, og fryses på 100% når et spor avsluttes.
+- **Cinematic sidebar-active-state** er tydelig nok til at brukeren ser hvilken kategori som er aktiv uten å lese label-tekst, men ikke så dominant at den konkurrerer med innholds-området. Vurderes ok når intern-demo bekrefter "blikket trekkes mot riktig sted uten å bli forstyrret".
 
 ## Scope Boundaries
 
@@ -121,8 +133,9 @@ Per-kategori-play er konseptuelt "start tour herfra", ikke "spill bare denne kat
 **KD4: POI-overlay over inline POI-cards.**
 Inline POI-detaljer (Punkter-toggle, Les mer-disclosure) tilfører støy i en narrativ flyt. Markør-klikk er den mest direkte intent-signalen for "jeg vil vite mer om akkurat dette stedet". Overlay-pattern holder kategori-seksjonen ren.
 
-**KD5: Pitch-tekst og audio-manus deler kilde-grounding, men er to renderinger.**
-For å unngå editorial drift gjenbrukes samme LLM-grounding for begge utdata. Men renderingene er separate: visuell pitch beholder stedsnavn (lokal forankring, SEO-verdi), audio-manus deriveres med stedsnavn-reduksjon som siste step (per memory om norske TTS-stedsnavn-eksplosiver). Ikke ett delt felles manus — to renderinger fra én kilde.
+**KD5: Én canonical tekst per kategori — TTS-uttale parkert som senere arbeid.**
+*Tidligere versjon: "to renderinger fra én kilde". Skjerpet 2026-05-20 til én tekst.*
+Tekst i sidebar = tekst voice-over leser. Stedsnavn beholdes for lokal forankring og SEO-verdi. TTS-uttale av problemord (kajakk, Nidelva, Bakklandet) tas i en senere fase via fonetisk-transform-pipeline eller PVC (jf. PROJECT-LOG 2026-05-20). I pilot aksepteres dagens Erik @ turbo_v2_5-uttale som "godt nok"; opplevelses-koherens (én tekst, karaoke-synk) prioriteres over uttale-perfeksjon. Konsekvens: editorial drift mellom synlig tekst og audio-manus elimineres som mulighet — det er én tekst.
 
 **KD6: 1-2 timer/prosjekt er edit-target, ikke skalerings-target.**
 1700 listinger/år × 1-2 timer = 1-2 årsverk redaktør-arbeid — ikke nok for Propr-skala. 1-2 timer reserveres for premium-listinger eller spesialtilfeller som krever menneskelig touch. Default må være null-touch-bygg fra grounding alene; redaksjonell innsats er opt-in, ikke standard. Skalerings-modus og edit-modus valideres separat.
@@ -133,11 +146,25 @@ Slank-tekst-premissen (KD2) er bekreftet av ett Gemini-eksempel og forfatterens 
 **KD8: Audio er en av tre uavhengige ambisjoner, ikke fundamentet.**
 Refactoret bundler editorial-skalering, UI-renhet, og audio-som-modus. Disse løses av distinkte mekanismer (pitch-pipeline, overlay, audio-tour) og må evalueres hver for seg. Konsept-modus-tabellen (audio off vs on) i Konsept-i-ett-blikk er kontrakten for at dette holdes ortogonalt — om audio-piloten skulle reverseres, må kjernen fortsatt stå.
 
+**KD9: Karaoke ord-for-ord, kun i auto-modus.**
+*Lagt til 2026-05-20.*
+Karaoke-effekten visualiserer hvor voice-over ER i teksten — den er en *audio-forankret* effekt, ikke en generell lese-hjelp. I manual-modus er det ingen audio-forankring, og scroll-progress er en dårlig proxy fordi leseøyet hopper rundt i tekst, ikke beveger seg linært. Konsekvens: pipeline må bytte til `/with-timestamps`-endpoint og lagre character-level timing per spor. Token-mapping fra timing-array til DOM-spans skjer client-side på avspillingstidspunkt.
+
+**KD10: Cinematic sidebar-active-state, alltid på.**
+*Lagt til 2026-05-20. Lukker Open Question #2 fra opprinnelig brainstorm.*
+Sidebar-rail-en er oppgradert fra "navigasjons-affordance" til "aktivt fokus-element". Inaktive kategorier opacity 30%, aktiv opacity 100% + scale 1.15 + glow + rail-bg fader. Effekten kjøres i begge moduser (scroll-driven i manual, audio-driven i auto) for å bevare visuell koherens. Argumentet for "kun i auto" ble forkastet fordi manual-modus uten cinematic ville degenerere sidebar til en flat lab-strip uten visuell forankring — selv om brukeren leser i sitt eget tempo, er det fortsatt verdi i å se hvilken kategori-seksjon han er i.
+
 ## Open Questions
 
 **Tekstgenererings-prosess.** Skal pitch-tekstene genereres som en del av eksisterende `/generate-bolig`-pipeline (nytt steg som tar grounding inn), eller som en Claude Code-skill (slik audio-manus genereres i dag)? Den siste er mer fleksibel for iteration, første er mer reproduserbar. KD5 og KD6 lener mot pipeline-steg (reproduserbarhet for null-touch-bygg), men dette må bekreftes i plan-fasen.
 
-**Sidebar-highlight under autoscroll.** R10 sier audio er source-of-truth for sidebar-highlight i split-brain-state. Men under normal autoscroll (ikke split-brain): trenger ikon-highlight subtil pulse/glow for å indikere "her er pitchen nå", eller er statisk highlight tilstrekkelig? Visuell detalj, plan-fase.
+**~~Sidebar-highlight under autoscroll.~~** *Lukket 2026-05-20 av KD10 + R19: cinematic active-state med opacity 30/100, scale 1.15, glow og rail-bg-fade. Alltid på i begge moduser.*
+
+**Karaoke edge-cases.** R18b nevner timing-data og token-mapping. Plan-fase må håndtere: (a) bruker scrubber i player → karaoke-state må re-syncs til ny timestamp, (b) pause midt i ord → siste-spilte-ord forblir 100% opacity, neste går til 0%, (c) modus-bytte mid-track → karaoke-state nullstilles, (d) hopp til neste spor → forrige spors karaoke-state ryddes (kanskje med en fade-out på alle ord-spans).
+
+**Karaoke ved track-overgang.** Når voice-over glir fra ett spor til neste (autoscroll i R6b snapper scroll til ny seksjon): skal karaoke i forrige seksjon "fryses" på 100% opacity for alle ord, eller fade tilbake til base-opacity? Visuell detalj, plan-fase. Forslag: behold 100% for forrige (signaliserer "fullført"), start ny på 40%.
+
+**TTS-uttale-problemet henger.** KD5 parkerer dette som senere arbeid. Trigger for å re-åpne: (a) ekstern bruker melder uttale som distraherende, (b) vi tar PVC-investering i kommersiell pilot, (c) ElevenLabs lanserer pronunciation-support på turbo_v2_5. PROJECT-LOG 2026-05-20-entry holder TODO-listen.
 
 **Ekstern validerings-kanal.** Hvilken konkret megler-kontakt eller pilot-kjøper skal validere KD7-kriteriet? Kjetil/Karoline (Propr) er åpenbar kandidat — men når i Propr-pilot-flyten tas dette opp? Strategi-spørsmål, ikke teknisk.
 

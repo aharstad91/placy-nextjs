@@ -4278,3 +4278,24 @@ Nytt Hjem-manus skrevet av brukeren (83 ord, megler-energi, du-perspektiv, "drø
 - **Stokastisk TTS-output er en kjent industri-property, men vi hadde ikke internalisert det.** Det betyr at "én god test-take" er et utilstrekkelig validerings-grunnlag — vi må generere full produksjons-pipeline før vi committer på en stemme.
 - **Brukerens kvalitetssans landet riktig signal hver gang.** Mia Starset høres ok ut på test → "ikke godt nok" i produksjon. Azure høres ok ut → "ikke noe bedre enn ElevenLabs". Erik på 0.5 stability i produksjon → "dårligere enn eksempelet ditt". Ingen av disse var åpenbare for meg i forveien. Lesson: respekter når brukeren sier "ikke godt nok" — det er ikke pickiness, det er produkt-kvalitetssjekk.
 - **TTS-feature-utvikling er en samtale mellom modellen og manuset, ikke bare modellen.** Den endelige løsningen var like mye en manus-skrive-øvelse som en parameter-tweak. **For Placy framover: manus-prompt.ts må optimaliseres for TTS-vennlig output**, ikke bare for innholds-kvalitet. Det er en oppgave for senere når vi har et tredje prosjekt og kan se mønstre på tvers.
+
+## 2026-05-20 — TODO: TTS-uttale av problemord (parkert under board-narrativ-spike)
+
+### Kontekst
+
+Under brainstorm av sidebar↔voice-over-synk (`feat/board-narrativ-spike`, 2026-05-18-rapport-board-helhetlig-narrativ-brainstorm) kom det fram at hvis vi skal samkjøre én canonical tekst med voice-over (jf. brukerens auto/manual-modus-konsept), må vi løse TTS-uttale av problemord som "kajakk", "Nidelva", "Bakklandet" osv. Dagens Erik @ turbo_v2_5 uttaler disse rart.
+
+Vi har **ikke** løst dette nå — brukeren prioriterer UX/UI-opplevelsen i spiken og parkerer TTS-uttale-problemet som senere arbeid. LLM-er og TTS-tjenester blir bedre over tid, så det er ok å vente.
+
+### TODO når vi trenger å løse det
+
+- **Empirisk test:** Sjekk om ElevenLabs Pronunciation Dictionary (PLS-format) eller SSML `<phoneme>`-tags fungerer på `eleven_turbo_v2_5` per mai 2026. Per dokumentasjon ignoreres begge av turbo, men det kan ha endret seg.
+- **Hvis PLS ignoreres:** Bygg en fonetisk-overrides-mekanisme — én canonical tekst + mekanisk transform til TTS-input. Pronunciation-overrides-liste deles på tvers av prosjekter (kuraterbar `pronunciation-overrides.json` med problemord per region).
+- **Bytte til `/with-timestamps`-endpointen:** For karaoke-synk trenger vi character-level alignment. Krever pipeline-endring i `lib/audio-tour/elevenlabs-client.ts` + lagring av timing-data per spor.
+- **PVC-investering** (Professional Voice Clone) kan også løse problemet via training på norske stedsnavn, men det er en større strategisk investering — venter på kommersiell pilot.
+
+### Hvorfor det er ok å vente
+
+- Audio-tour er per i dag opt-in via `audioTourEnabled` (default false) — bare StasjonsKvartalet har det aktivert
+- Brukeren vurderer dagens kvalitet som "ganske god" på Erik
+- UX/UI-opplevelsen er det som driver spiken framover; uttale-fiks kan bygges på toppen senere uten å rive arkitekturen
