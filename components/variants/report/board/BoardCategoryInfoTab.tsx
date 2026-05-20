@@ -3,11 +3,16 @@
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Headphones } from "lucide-react";
 import type { POI } from "@/lib/types";
 import { linkPOIsInText, type TextSegment } from "@/lib/utils/story-text-linker";
 import POIPopover from "../POIPopover";
 import type { BoardCategory } from "./board-data";
+import {
+  useAudioTourPhase,
+  useCurrentTrack,
+} from "@/lib/stores/audio-tour-store";
+import { KaraokePitchText } from "./audio-tour/KaraokePitchText";
 
 const ReportCuratedGrounded = dynamic(() => import("../ReportCuratedGrounded"));
 const ReportGroundingInline = dynamic(() => import("../ReportGroundingInline"));
@@ -45,6 +50,17 @@ export function BoardCategoryInfoTab({
 
   const grounding = category.grounding;
 
+  // Karaoke vises kun mens dette sporet faktisk spilles (eller er paused på
+  // dette sporet). Bytter trackn over til annen kategori → karaoke for denne
+  // unmounter, ny kategori monterer sin egen blokk.
+  const phase = useAudioTourPhase();
+  const currentTrack = useCurrentTrack();
+  const isAudioActive =
+    (phase === "playing" || phase === "paused") &&
+    currentTrack?.categoryId === category.id;
+  const karaokeText = category.audio?.manus;
+  const karaokeTimings = category.audio?.timings;
+
   return (
     <div className="space-y-4">
       {category.illustration && (
@@ -55,6 +71,21 @@ export function BoardCategoryInfoTab({
             fill
             sizes={imageSizes}
             className="object-cover"
+          />
+        </div>
+      )}
+
+      {isAudioActive && karaokeText && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+          <div className="flex items-center gap-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700">
+            <Headphones className="h-3.5 w-3.5" aria-hidden />
+            Spilles av
+          </div>
+          <KaraokePitchText
+            text={karaokeText}
+            timings={karaokeTimings}
+            isActive={true}
+            className="text-[15px] leading-relaxed text-stone-800"
           />
         </div>
       )}

@@ -2,12 +2,17 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import { Headphones } from "lucide-react";
 import { useBoard } from "../board-state";
 import type { BoardCategory, BoardCategoryId, BoardHome } from "../board-data";
 import { useBoardActiveSection } from "@/lib/hooks/useBoardActiveSection";
 import { BottomPlayer } from "../audio-tour/BottomPlayer";
 import { CategoryAudioButton } from "../audio-tour/CategoryAudioButton";
-import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
+import {
+  useAudioTourPhase,
+  useCurrentTrack,
+} from "@/lib/stores/audio-tour-store";
+import { KaraokePitchText } from "../audio-tour/KaraokePitchText";
 
 const HOME_SECTION_ID = "home";
 
@@ -139,6 +144,14 @@ function HomeSection({
   home: BoardHome;
   registerRef: (el: HTMLElement | null) => void;
 }) {
+  const phase = useAudioTourPhase();
+  const currentTrack = useCurrentTrack();
+  const isAudioActive =
+    (phase === "playing" || phase === "paused") &&
+    currentTrack?.categoryId === "home";
+  const karaokeText = home.audio?.manus;
+  const karaokeTimings = home.audio?.timings;
+
   return (
     <section
       id={HOME_SECTION_ID}
@@ -167,6 +180,20 @@ function HomeSection({
         <h2 className="text-2xl font-bold leading-tight text-stone-900">
           {home.name}
         </h2>
+        {isAudioActive && karaokeText && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+            <div className="flex items-center gap-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700">
+              <Headphones className="h-3.5 w-3.5" aria-hidden />
+              Spilles av
+            </div>
+            <KaraokePitchText
+              text={karaokeText}
+              timings={karaokeTimings}
+              isActive={true}
+              className="text-[15px] leading-relaxed text-stone-800"
+            />
+          </div>
+        )}
         {home.heroIntro && (
           <p
             data-board-body
