@@ -1,12 +1,24 @@
-import type { POI, ReportThemeAudio, ReportThemeGroundingView } from "@/lib/types";
+import type {
+  POI,
+  ReportThemeAudio,
+  ReportThemeAudioTimings,
+  ReportThemeGroundingView,
+} from "@/lib/types";
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
+
+/** Re-eksport av character-level alignment for forbruk i board-laget
+ *  (KaraokePitchText). Holder import-graphen flat: komponenter
+ *  importerer fra board-data, ikke fra @/lib/types direkte. */
+export type BoardAudioTimings = ReportThemeAudioTimings;
 
 /** Subset av ReportThemeAudio som er garantert komplett på runtime — kun
  *  audio med url+manus eksponeres til board-laget. Builder-funksjonen i
- *  adaptCategory/adaptBoardData filtrerer bort partial-audio (kun manus). */
+ *  adaptCategory/adaptBoardData filtrerer bort partial-audio (kun manus).
+ *  timings er optional fordi spor generert før audioVersion 5 mangler det. */
 export interface BoardAudioTrack {
   url: string;
   manus: string;
+  timings?: BoardAudioTimings;
 }
 
 // Branded ID-typer forhindrer ID-blanding mellom theme-IDer og POI-IDer
@@ -111,14 +123,18 @@ export function adaptBoardData(report: ReportData): BoardData {
   };
 }
 
-/** Returnerer { url, manus } kun når begge er definert — partial audio
- *  (manus-only, før Steg 8c.2) blir undefined så board-laget vet at
- *  spor ikke er klart. */
+/** Returnerer { url, manus, timings? } kun når url+manus begge er definert
+ *  — partial audio (manus-only, før Steg 8c.2) blir undefined så board-
+ *  laget vet at spor ikke er klart. timings inkluderes når tilgjengelig
+ *  (audioVersion 5+); ellers omittes (komponent rendrer karaoke som
+ *  klartekst). */
 function pickPlayableAudio(
   audio: ReportThemeAudio | undefined,
 ): BoardAudioTrack | undefined {
   if (!audio?.url || !audio.manus) return undefined;
-  return { url: audio.url, manus: audio.manus };
+  const track: BoardAudioTrack = { url: audio.url, manus: audio.manus };
+  if (audio.timings) track.timings = audio.timings;
+  return track;
 }
 
 function adaptCategory(theme: ReportTheme): BoardCategory {
