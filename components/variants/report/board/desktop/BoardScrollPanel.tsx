@@ -214,6 +214,14 @@ function CategorySection({
   category: BoardCategory;
   registerRef: (el: HTMLElement | null) => void;
 }) {
+  const phase = useAudioTourPhase();
+  const currentTrack = useCurrentTrack();
+  const isAudioActive =
+    (phase === "playing" || phase === "paused") &&
+    currentTrack?.categoryId === category.id;
+  const karaokeText = category.audio?.manus;
+  const karaokeTimings = category.audio?.timings;
+
   return (
     <section
       id={category.id}
@@ -225,6 +233,20 @@ function CategorySection({
         {category.label}
       </h2>
       <CategoryAudioButton category={category} />
+      {isAudioActive && karaokeText && (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+          <div className="flex items-center gap-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700">
+            <Headphones className="h-3.5 w-3.5" aria-hidden />
+            Spilles av
+          </div>
+          <KaraokePitchText
+            text={karaokeText}
+            timings={karaokeTimings}
+            isActive={true}
+            className="text-[15px] leading-relaxed text-stone-800"
+          />
+        </div>
+      )}
       {category.lead && (
         <p
           data-board-body
