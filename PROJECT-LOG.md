@@ -6,6 +6,44 @@
 
 ---
 
+## 2026-05-20 — Karaoke ord-for-ord + cinematic sidebar (spike-MVP)
+
+### Kontekst
+6-unit spike som leverer R18-R19b + KD9-KD10 fra brainstorm 2026-05-18 (oppdatert 2026-05-20). Helt isolert fra R1-R17 (helhetlig scroll + POI-overlay + pitch-text-pipeline) — egen plan i `docs/plans/2026-05-20-001-feat-board-karaoke-cinematic-sidebar-plan.md`. Validert visuelt mot Stasjonskvartalet (`localhost:3002`) via Chrome MCP.
+
+### Implementasjon (6 units)
+
+- **Unit 1: TTS-pipeline til `/with-timestamps`.** Empirisk verifisert at `eleven_turbo_v2_5` faktisk returnerer character-level alignment for norsk tekst (33 tegn ↔ 33 timestamps mot snippet "Stasjonskvartalet er en ny bydel."). Pipeline kaller nå `/v1/text-to-speech/{voice}/with-timestamps?output_format=mp3_44100_128`, base64-dekoder MP3 og lagrer `audio.timings` (characters + characterStartTimesSeconds + characterEndTimesSeconds) i Supabase. `audioVersion` 4 → 5. Alle 8 Stasjonskvartalet-spor re-generert.
+- **Unit 2: Board-data-adapter.** `BoardAudioTrack` får `timings?: BoardAudioTimings`. `pickPlayableAudio` passer timings gjennom når det finnes. Legacy-spor uten timings rendres som klartekst.
+- **Unit 3: KaraokePitchText.** Pure `mapCharTimingsToWords` grupperer char-arrayet til ord-tokens (split på whitespace, bindestrek bryter ikke). Komponent forbruker `currentTime` fra `AudioElementContext` og rendrer `<span>` per ord med opacity 0.4 → 1.0 ved tokenets `startMs` (200ms ease-out). Fallback til klartekst når isActive=false, timings mangler, eller token-array er tom (data-korrupsjon).
+- **Unit 4: Layout-integrasjon.** KaraokePitchText monteres i amber-kort over lead/body i BoardCategoryInfoTab (detail-panel), HomeSection i BoardScrollPanel, OG CategorySection i BoardScrollPanel. Bug oppdaget under visuell test: glemt CategorySection i scroll-panel-visningen — den ble kun integrert i HomeSection. Fikset i separat commit.
+- **Unit 5: Cinematic sidebar-active-state.** Alltid-på effekt via `data-rail-state="active|inactive"`-attributt + utvidet `tour-mode.css`: inaktive faller til opacity 30%, aktiv står fram med scale 1.15 (desktop) / 1.08 (mobil) + drop-shadow i kategori-farge (via `--cat-glow` CSS variable). Rail-bg fader til halv-transparent via `data-cinematic-active`. R19b: når audio overrider scroll i split-brain, vinner `tourTrack` over `state.activeCategoryId` som kilde for cinematic-state.
+- **Unit 6: Visuell validering.** Verifisert via Chrome MCP at karaoke + cinematic samarbeider riktig på Stasjonskvartalet. Drift mellom audio-currentTime og lit-tokens: ved audio @ 23.08s / 36.22s (63.7%), 53/89 tokens lit (59.6%) — innenfor success-kriteriet ≤200ms (vi måler ord-overgang, ikke konstant drift).
+
+### Beslutninger
+
+- **Spike-scope sacred.** Brainstormen ratifiserte at R18-R19b + KD9-KD10 er én isolert leveranse, ikke en del av R1-R17-refactoren. Plan har 6 units, ingen P0/P1/P2-tiers, ingen "Future Work"-seksjon. Scope-guardian-funn (hvis triggers) skip-es per Placy-policy.
+- **TTS-uttale av problemord (kajakk, Nidelva, Bakklandet) parkert.** Notert i 2026-05-20-entry over. Karaoke virker på dagens spor med kjente uttalefeil. Forbedring kommer når kommersiell pilot trigger PVC-investering eller ElevenLabs lanserer pronunciation-support på turbo_v2_5.
+- **Karaoke vises kun ved aktiv avspilling.** Når audio ikke spiller dette sporet → karaoke-kort er unmounted, lead/body er primær tekst. Resolverer "to render-modus"-dobling fra brainstorm (KD5).
+- **R19b: audio vinner over scroll.** I split-brain (autoscroll pauset, audio fortsetter på Mat-drikke mens bruker scrollet til Transport) er `tourTrack` source-of-truth for cinematic-state. Eksisterende `useTourActiveTrackCategory`-hook leverer dette uten ny state.
+
+### Verifisering
+
+- 28/28 nye enhetstester passerer (board-data 13, karaoke-tokens 9, KaraokePitchText 7).
+- Hele test-suite kjørt — 3 pre-eksisterende failures i `lib/curation/validator.test.ts` (ikke relatert til denne spiken).
+- TypeScript-compile er rent.
+- ESLint via lint-staged passerer ved hver commit.
+- Visuelt på Chrome MCP: ord-for-ord karaoke synker korrekt. Cinematic-effekten dimer inaktive kategorier dramatisk; aktive står fram med farget glow.
+
+### Åpne for senere
+
+- **CSS-easing for karaoke-transition** fungerer som forventet (200ms ease-out) — ingen iterering nødvendig.
+- **Karaoke i mobil-modus** (BoardMobileSheet) ikke testet. Cinematic-effekten er der via `data-rail-state-compact`, men karaoke-blokken er kun integrert i desktop. Utsatt til desktop-MVP er bekreftet "føles riktig".
+- **Glow-fargen** er kategori-fargen (rgba med 0.5 alpha). Stone-fallback for kategorier uten farge. Ingen visuell ulempe oppdaget i validering — kan finjusteres ved tilbakemelding.
+- **Cinematic-effekt på 30% opacity for inaktive** kan oppleves dramatisk. Brainstorm-preview valgte "Cinematic — alt fader unna" som bevisst over "Cinematic-lite". Skal observere brukerrespons før eventuell tuning.
+
+---
+
 ## 2026-05-20 — Rapport-board: mini-popup ved markør (2D + 3D), parity-fikser
 
 ### Kontekst

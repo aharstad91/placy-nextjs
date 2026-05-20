@@ -145,7 +145,7 @@ Visual effect, both sources:
 
 ## Implementation Units
 
-- [ ] **Unit 1: TTS-pipeline-bytte til `/with-timestamps`**
+- [x] **Unit 1: TTS-pipeline-bytte til `/with-timestamps`**
 
 **Goal:** Bytte ElevenLabs-kall fra dagens flat-mp3-endpoint til `/with-timestamps`, returnere `{ bytes, voice, model, timings }`. Lagre timings i `ReportThemeAudio.timings` per spor og PATCH-e til Supabase. Bump `audioVersion` for å trigge re-gen.
 
@@ -184,7 +184,7 @@ Visual effect, both sources:
 
 ---
 
-- [ ] **Unit 2: Datamodell + board-data-adapter for timings**
+- [x] **Unit 2: Datamodell + board-data-adapter for timings**
 
 **Goal:** Gjennomføre `audio.timings` fra Supabase-lag til board-data-lag, slik at front-end-komponenter kan forbruke det per kategori og hjem.
 
@@ -216,7 +216,7 @@ Visual effect, both sources:
 
 ---
 
-- [ ] **Unit 3: `KaraokePitchText`-komponent**
+- [x] **Unit 3: `KaraokePitchText`-komponent**
 
 **Goal:** Pure komponent som rendrer audio-manus med ord-spans og opacity-state synket til `currentTime` fra audio-element-context.
 
@@ -257,7 +257,7 @@ Visual effect, both sources:
 
 ---
 
-- [ ] **Unit 4: Integrere `KaraokePitchText` i layout**
+- [x] **Unit 4: Integrere `KaraokePitchText` i layout**
 
 **Goal:** Vise `KaraokePitchText` over lead/body i `BoardCategoryInfoTab` (kategori-seksjoner) og i `BoardScrollPanel` (Hjem-seksjonen) når audio spiller på det aktuelle sporet.
 
@@ -291,7 +291,7 @@ Visual effect, both sources:
 
 ---
 
-- [ ] **Unit 5: Cinematic sidebar-active-state**
+- [x] **Unit 5: Cinematic sidebar-active-state**
 
 **Goal:** Oppgradere `BoardRail.tsx` (desktop) og `BoardCategoryTabBar.tsx` (mobile) til cinematic visuelt uttrykk: inaktive opacity 30%, aktiv opacity 100% + scale 1.15 + glow + rail-bg-fade.
 
@@ -331,7 +331,7 @@ Visual effect, both sources:
 
 ---
 
-- [ ] **Unit 6: Visuell validering og polering**
+- [x] **Unit 6: Visuell validering og polering**
 
 **Goal:** Verifisere at karaoke + cinematic "føles riktig" på Stasjonskvartalet-rapport-boardet. Iterere på CSS-detaljer (drift, opacity-kurve, glow-intensitet) basert på visuelt utfall.
 
