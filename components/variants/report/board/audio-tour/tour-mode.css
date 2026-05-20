@@ -48,3 +48,71 @@
     transition: none;
   }
 }
+
+/* Cinematic sidebar-active-state (R19, R19b, KD10 — Unit 5).
+ *
+ * Markeres via `data-rail-state="active|inactive"` på rail/tab-bar-knappen.
+ * Effekten er alltid på (ikke kun tour-modus): inaktive faller ut til 30%
+ * opacity, aktiv står fram med scale + glow. R19b: når audio overrides
+ * scroll i split-brain, drivet av tourTrack-override gjort i komponenten
+ * (samme `data-rail-state`-attributt, ulik state-kilde).
+ *
+ * --cat-glow er kategori-fargen, satt som inline CSS var slik at glow
+ * matcher kategori-tema. Fallback til mørk stone hvis ikke satt. */
+
+[data-rail-state] {
+  transition:
+    opacity 400ms ease-out,
+    transform 400ms ease-out,
+    filter 400ms ease-out;
+  transform-origin: center;
+}
+[data-rail-state="inactive"] {
+  opacity: 0.3;
+}
+[data-rail-state="active"] {
+  opacity: 1;
+  transform: scale(1.15);
+  filter: drop-shadow(0 4px 16px var(--cat-glow, rgba(28, 25, 23, 0.35)));
+}
+[data-rail-state-compact="active"] {
+  opacity: 1;
+  transform: scale(1.08);
+  filter: drop-shadow(0 4px 12px var(--cat-glow, rgba(28, 25, 23, 0.35)));
+}
+[data-rail-state-compact="inactive"] {
+  opacity: 0.3;
+}
+[data-rail-state-compact] {
+  transition:
+    opacity 400ms ease-out,
+    transform 400ms ease-out,
+    filter 400ms ease-out;
+  transform-origin: center;
+}
+
+/* Rail-bg fader når cinematic-active er på — fokus skifter til den ene
+ * fremhevede knappen, og rail-kontainerens stoff trekker seg unna. */
+[data-cinematic-active="true"] {
+  background-color: rgba(255, 255, 255, 0.4);
+  border-color: transparent;
+  transition:
+    background-color 400ms ease-out,
+    border-color 400ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-rail-state],
+  [data-rail-state-compact] {
+    transition: none;
+  }
+  [data-rail-state="active"] {
+    transform: scale(1.05);
+  }
+  [data-rail-state-compact="active"] {
+    transform: scale(1.04);
+  }
+  [data-cinematic-active="true"] {
+    transition: none;
+  }
+}

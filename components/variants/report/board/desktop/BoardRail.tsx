@@ -41,10 +41,19 @@ export function BoardRail() {
   const { state, data, dispatch } = useBoard();
   const tourTrack = useTourActiveTrackCategory();
 
+  // R19b: audio vinner over scroll i split-brain. Når tourTrack peker på en
+  // kategori (eller "home"), bruker vi den som "effective active" — selv om
+  // scroll-state divergerer. Cinematic-state speiler dette.
+  const effectiveActiveCategoryId =
+    tourTrack && tourTrack !== "home" ? tourTrack : state.activeCategoryId;
+  const homeEffectiveActive =
+    tourTrack === "home" || (tourTrack === null && state.phase === "default");
+
   return (
     <TooltipProvider>
       <aside
         aria-label="Kategorinavigasjon"
+        data-cinematic-active="true"
         className="flex h-full w-[80px] flex-col items-center gap-2 border-r border-stone-200/80 bg-white/95 px-2 py-4 backdrop-blur"
       >
         <Tooltip>
@@ -52,11 +61,12 @@ export function BoardRail() {
             <button
               type="button"
               aria-label="Tilbake til oversikt"
-              aria-current={state.phase === "default" ? "page" : undefined}
+              aria-current={homeEffectiveActive ? "page" : undefined}
               onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
               data-active-during-tour={tourTrack === "home" ? "true" : undefined}
-              className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition-all ${
-                state.phase === "default"
+              data-rail-state={homeEffectiveActive ? "active" : "inactive"}
+              className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${
+                homeEffectiveActive
                   ? "border-stone-300 bg-stone-100 text-stone-900 shadow-sm"
                   : "border-transparent text-stone-500 hover:bg-stone-100 hover:text-stone-900"
               }`}
@@ -74,7 +84,7 @@ export function BoardRail() {
             <RailButton
               key={cat.id}
               category={cat}
-              active={state.activeCategoryId === cat.id}
+              active={effectiveActiveCategoryId === cat.id}
               pulsesDuringTour={tourTrack === cat.id}
               onSelect={() =>
                 dispatch({
@@ -116,6 +126,8 @@ function RailButton({
           aria-current={active ? "page" : undefined}
           aria-label={category.label}
           data-active-during-tour={pulsesDuringTour ? "true" : undefined}
+          data-rail-state={active ? "active" : "inactive"}
+          style={{ ["--cat-glow" as string]: hexToGlow(category.color) }}
           className="group flex h-12 w-12 items-center justify-center rounded-2xl"
         >
           <div
@@ -142,6 +154,14 @@ function RailButton({
       <TooltipContent>{category.label}</TooltipContent>
     </Tooltip>
   );
+}
+
+/** Konverterer hex-farge til rgba med 0.4 alpha for cinematic-glow. */
+function hexToGlow(hex: string): string {
+  const m = /^#?([a-f0-9]{6})$/i.exec(hex);
+  if (!m) return "rgba(28, 25, 23, 0.35)";
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 0xff}, ${(n >> 8) & 0xff}, ${n & 0xff}, 0.5)`;
 }
 
 /**
