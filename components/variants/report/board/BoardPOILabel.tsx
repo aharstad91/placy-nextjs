@@ -2,6 +2,7 @@
 
 import { Marker } from "react-map-gl/mapbox";
 import { useBoard, useActivePOI } from "./board-state";
+import { useBoardPopupMode } from "./use-popup-mode";
 
 /**
  * Tekst-label som peker på aktiv POI på kartet.
@@ -16,8 +17,12 @@ import { useBoard, useActivePOI } from "./board-state";
 export function BoardPOILabel() {
   const { state } = useBoard();
   const activePOI = useActivePOI();
+  const popupMode = useBoardPopupMode();
 
   if (state.phase !== "poi" || !activePOI) return null;
+  // I mini-popup-mode tar BoardPOIMiniPopup over navn-visningen — skipp pillen
+  // for å unngå dobbel-label rett over markøren.
+  if (popupMode === "mini") return null;
 
   return (
     <Marker

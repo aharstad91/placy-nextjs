@@ -9,13 +9,15 @@ import {
   zoomToRange,
   rangeToZoom,
 } from "@/lib/utils/camera-map";
-import { useBoard, useActiveCategory } from "./board-state";
+import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
 import { HomeMarker } from "./HomeMarker";
 import { BoardPathLayer } from "./BoardPathLayer";
 import { BoardPathMidpointMarker } from "./BoardPathMidpointMarker";
 import { BoardPOILabel } from "./BoardPOILabel";
+import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
 import { BoardMap3D } from "./BoardMap3D";
+import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import { DEFAULT_CAMERA_LOCK } from "@/components/variants/report/blocks/report-3d-config";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
@@ -57,6 +59,8 @@ interface Props {
 export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
+  const activePOI = useActivePOI();
+  const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
@@ -142,19 +146,27 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
   // for hvert kategori-skifte slik at alle synlige markører (+ home) får
   // plass. Gir visuell "view changes"-feedback per spor. Utenfor tour-mode
   // holder kartet posisjonen sin (manuell pan/zoom).
+  //
+  // visiblePOIs lest via ref så effekten ikke re-fyrer på state.phase-skifte
+  // (default→poi ved marker-klikk gir ny array-identitet selv om innholdet er
+  // likt). Uten denne stabiliseringen flyttet kartet seg på hvert marker-klikk
+  // mens tour kjørte — samme bug som ble fikset for 3D-versjonen.
   const tourPhase = useAudioTourPhase();
   const tourActive = tourPhase === "playing" || tourPhase === "paused";
+  const visiblePOIsRef = useRef(visiblePOIs);
+  visiblePOIsRef.current = visiblePOIs;
 
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     if (!tourActive) return;
-    if (visiblePOIs.length === 0) return;
+    const pois = visiblePOIsRef.current;
+    if (pois.length === 0) return;
     const map = mapRef.current.getMap();
     let west = data.home.coordinates.lng;
     let east = data.home.coordinates.lng;
     let south = data.home.coordinates.lat;
     let north = data.home.coordinates.lat;
-    for (const { poi } of visiblePOIs) {
+    for (const { poi } of pois) {
       const { lng, lat } = poi.coordinates;
       if (lng < west) west = lng;
       if (lng > east) east = lng;
@@ -170,12 +182,17 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
     );
   }, [
     tourActive,
-    activeCategory,
-    visiblePOIs,
+    activeCategory?.id,
     mapLoaded,
     data.home.coordinates.lng,
     data.home.coordinates.lat,
   ]);
+
+  // Tidligere flyttet vi markøren inn i synlig kart-rom ved klikk (easeTo med
+  // offset for å klarere 480px-sidebar). Det føltes som om kartet "rykker" på
+  // hvert marker-klikk — matchet ikke 3D-modusen som holder kameraet i ro.
+  // Fjernet for parity. Popup kan teoretisk overlappe sidebar hvis markøren er
+  // helt i venstre kant, men det er en akseptabel kompromiss for ro-følelsen.
 
   // ---- Toggle-handler: lese kamera, sette pendingCamera, schedulere swap ----
   const getViewportDims = useCallback(
@@ -293,6 +310,11 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
             style={{ width: "100%", height: "100%" }}
             mapStyle={MAP_STYLE_STANDARD}
             onLoad={handleMapLoad}
+            onClick={() => {
+              // Markører kaller stopPropagation i sin onClick, så denne
+              // fyrer kun ved klikk på kart-bakgrunn. Lukk popup hvis åpen.
+              if (state.activePOIId) dispatch({ type: "BACK_TO_DEFAULT" });
+            }}
           >
             <HomeMarker
               coordinates={data.home.coordinates}
@@ -320,6 +342,7 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
             <BoardPathLayer />
             <BoardPathMidpointMarker />
             <BoardPOILabel />
+            {popupMode === "mini" && state.activePOIId && <BoardPOIMiniPopup />}
           </Map>
         </div>
       )}

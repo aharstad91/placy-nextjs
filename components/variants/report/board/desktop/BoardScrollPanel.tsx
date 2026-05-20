@@ -23,13 +23,7 @@ const HOME_SECTION_ID = "home";
  * controls. Per-kategori "Spill av denne seksjonen"-CTA i CategorySection lar
  * bruker hoppe direkte til ett spor.
  */
-export function BoardScrollPanel({
-  hideBottomPlayer = false,
-}: {
-  /** Skjul BottomPlayer når en overlay (POI) ligger oppå panelet — overlay-
-   *  headeren har transport-rollen i den modusen. */
-  hideBottomPlayer?: boolean;
-} = {}) {
+export function BoardScrollPanel() {
   const { data, state, dispatch } = useBoard();
   const containerRef = useRef<HTMLDivElement>(null);
   // Når true: vi animerer en programmatic scroll (audio/Home-RESET). IO vil
@@ -133,7 +127,7 @@ export function BoardScrollPanel({
           />
         ))}
       </div>
-      {!hideBottomPlayer && <BottomPlayer />}
+      <BottomPlayer />
     </section>
   );
 }

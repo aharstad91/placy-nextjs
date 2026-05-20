@@ -6,6 +6,89 @@
 
 ---
 
+## 2026-05-20 — Rapport-board: mini-popup ved markør (2D + 3D), parity-fikser
+
+### Kontekst
+Iterativ runde med fokus på POI-detalj-UX på desktop. Erstatter den gamle `BoardPOIOverlay`-flyten (full sidebar-overlay) med en mini-popup forankret over markøren — først som flag-protected eksperiment (`?popup=mini`), så som default. Spiket både for Mapbox 2D og Google Maps 3D, hvor 3D-versjonen krevde manuell perspektiv-projeksjon siden `Map3DElement` mangler `latLngToScreen`. Endte med å bringe 2D og 3D i full UX-parity wrt sidebar-state-maskin og marker-klikk-respons.
+
+### Beslutninger
+
+- **Mini-popup som default på desktop (≥lg).** Mobile beholder `BoardMobileSheet` (vaul snap-points-mønsteret). `useBoardPopupMode` returnerer `"mini"` på desktop, `"sheet"` på mobil — adaptiv komponent, ikke felles abstraksjon.
+- **`BoardPOIOverlay` + `BoardPOIAccordion` slettet.** Erstattes 1:1 av mini-popup. `BoardDesktopShell` reduseres til rail + scroll-panel uten overlay-lag. `BoardScrollPanel.hideBottomPlayer`-prop fjernet (ingen caller).
+- **Mini-popup-innhold er bevisst minimalt** — ikon + navn + adresse + 2 linjer editorial-tekst + én CTA ("Utforsk" → Google AI Mode). Tyngre innhold lever i scroll-narrativet.
+- **3D-popup bruker korrekt 3D perspektiv-projeksjon.** Tidligere ad-hoc-approks (`scale * 1000` uten depth-divisjon) drifted markant ved tilt/swivel og krevde "hide-during-motion"-fade for å skjule feilen. Ny formel: lat/lng → meter (med `cos(lat)` for lng) → heading-rotert til kamera-frame → tilt+altitude-transform → perspektiv-divisjon med depth. FOV=35° bekreftet eksakt fra Googles attribution-URL (`...35y...`). Hide-during-motion fjernet — popup tracker markøren smooth gjennom alle kamera-operasjoner.
+- **DOM-direct positioning** (`transform: translate3d` per RAF, ingen `setState`) — etter at popup ble synlig under bevegelse oppdaget brukeren "hopping" ved zoom. React-reconciliation per frame synkroniserte ikke med browser paint under tung Google-zoom-animasjon. `wrapperRef.style.transform = translate3d(...)` går rett til compositoren, ingen layout/paint, ingen React-overhead.
+- **Marker-klikk-respons: ingen auto-kamera-bevegelse.** Både 2D og 3D er nå "stille" ved marker-klikk — kameraet holder seg der brukeren plasserte det manuelt.
+  - 2D: fjernet `easeTo`-effekten som flyttet markøren inn i synlig kart-rom (var lagt inn for å klarere 480px-sidebar fra popup-en, men brukeren oppfattet det som "rykk").
+  - 3D: ingen auto-kamera-bevegelse fra start.
+  - Begge moduser: stabilisert tour-bounds-fit-effekten via `useRef` for `visiblePOIs` slik at effekten ikke re-fyrer ved `state.phase = default → poi` (samme array-innhold, ny identitet). Dep redusert fra `[visiblePOIs, activeCategory]` til `[activeCategory?.id]`. Tour-fitBounds fyrer nå kun ved reelle kategori-skifter, ikke ved marker-klikk i samme kategori.
+- **Klikk på kart-bakgrunn lukker popup.** 2D: `<Map onClick>` — markører kaller `stopPropagation`, så denne fyrer kun på tom bakgrunn. 3D: `gmp-click`-listener på map-elementet med `target.closest('gmp-marker-3d-interactive')`-filter for å ikke fyre på marker-klikk (de bubbler ellers).
+- **Scroll-drevet kategori-filter i 3D matcher 2D eksakt.** `BoardMap3D.visiblePOIs` justert: `default + ingen aktiv kategori` → alle POIs, `default + aktiv kategori` (scroll-drevet) → kun kategoriens POIs, `active|poi` → kategori + sub-filter. Verifisert: 145 → 47 (Mat) → 19 (Transport) → 145 ved scroll-rundtur.
+- **Tour-mode bounds-fit i 3D.** Speiler 2D-effekten. Google Maps 3D mangler native `fitBounds`, så vi konverterer bbox til `(center, range)` via aspect-aware horisontal FOV: `rangeForWidth = widthM/2 / tan(FOV_H/2)`, `rangeForHeight = heightM/2 / tan(FOV_V/2)`, `range = max(rangeForWidth, rangeForHeight) * 1.1`. Bruker `flyCameraTo` med 800ms duration. Padding-faktor iterert fra 1.6 → 1.15 → 1.1 etter brukerfeedback om at bounds zoomet for langt ut (årsak: vertikal FOV på diagonalen ga ~1.8× for stor range på 16:9-viewport).
+- **`MapView3D.freeMode`-prop**: dropper bounds, tilt-grenser, altitude-grenser og orbit-as-default-hijack når satt. Board-3D-modus bruker denne — brukeren får standard Google Maps gesture-handling (drag=pan, ctrl+drag=rotate, scroll=zoom). Annet 3D-bruk (overview, modal) beholder dagens lock.
+
+### Implementasjon
+
+Nye filer:
+- `components/variants/report/board/BoardPOIMiniPopup.tsx` (Mapbox 2D, `react-map-gl/mapbox` `<Popup>` med `anchor="bottom"`, `offset={28}`).
+- `components/variants/report/board/BoardPOI3DMiniPopup.tsx` (3D, manuell perspektiv-projeksjon per RAF, `@ts-nocheck`-pragma for løse Google-3D-typer).
+- `components/variants/report/board/use-popup-mode.ts` (`useBoardPopupMode` → `"mini" | "sheet"` basert på `matchMedia('(min-width: 1024px)')`).
+
+Slettet:
+- `components/variants/report/board/desktop/BoardPOIOverlay.tsx` (~232 linjer).
+- `components/variants/report/board/desktop/BoardPOIAccordion.tsx` (dead code, ingen import).
+
+Endret:
+- `BoardMap.tsx` — `<Map onClick>` lukker popup på bakgrunn-klikk; tour-fitBounds-deps stabilisert via `visiblePOIsRef`; `easeTo` på `activePOI` fjernet.
+- `BoardMap3D.tsx` — `freeMode`-flagg til MapView3D; bounds-fit-effekt (tour-mode); `gmp-click`-listener for bakgrunn-klikk; `visiblePOIsRef` for stabile deps; scroll-filter-logikk justert til 2D-parity.
+- `BoardPOILabel.tsx` — `if (popupMode === "mini") return null` for å unngå dobbel-label.
+- `BoardDesktopShell.tsx` — redusert til kun rail + scroll-panel.
+- `BoardScrollPanel.tsx` — `hideBottomPlayer`-prop fjernet.
+- `map-view-3d.tsx` — `freeMode?: boolean`-prop; conditional skip av bounds/tilt/altitude-grenser og orbit-hijack.
+- `app/globals.css` — `.board-mini-popup` z-index + rounded shadow på `.mapboxgl-popup-content`.
+
+### Parkert / Åpne spørsmål
+
+- **Sidebar-overlap-kompromiss i 2D.** Popup kan teoretisk overlappe 480px-sidebar hvis markøren er helt i venstre kant av synlig kart. Foreløpig akseptert for ro-følelsen. Kan løses med "render popup til høyre for markør hvis nær sidebar-kanten" senere hvis det blir et reelt problem.
+- **FOV-antakelse i 3D-projeksjon.** Hardkodet 35° vertikal FOV matcher Googles default på StasjonsKvartalet, men hvis Google endrer default eller vi havner i en kontekst med annen FOV, vil projeksjonen drifte. Bekreftet eksakt via attribution-URL — bekreft på nytt hvis vi observerer drift.
+- **Audio-tour-bounds-fit i 3D ikke MCP-verifisert.** Koden mirror 2D men flyCameraTo-animasjonen er ikke testet end-to-end gjennom tour-flyten. Brukeren har bekreftet at bounds funker visuelt for scroll-drevet kategori-skifte.
+- **Mobile 3D-popup** ikke spiket — `useBoardPopupMode` returnerer "sheet" på mobil, så 3D bruker også sheet-mønsteret på små skjermer. Hvis 3D-på-mobil skal ha samme mini-popup-følelse senere, må vi spike popup-overlapp-håndtering for bottom-sheet.
+
+### Retning
+
+- Spike-fasen konvergerer mot et stabilt mini-popup-mønster som er identisk i 2D og 3D. Marker-klikk gir lokalt, ikke-invasivt POI-detalj-vindu uten å kapre sidebar eller flytte kameraet. Kart-overblikk-følelsen er bevart.
+- Scope er fortsatt desktop. Mobile board-flyten (multi-snap sheet) er urørt i denne sesjonen og fortsatt på sin egen mental modell.
+
+### Observasjoner
+
+- **Manuell 3D perspektiv-projeksjon er gjennomførbart for HTML-overlay over WebGL-kart**, men FOV-antagelsen er en fragilitet. Verdt å sjekke om Google eksponerer FOV via API-en deres senere — det ville fjerne den siste empiriske konstanten.
+- **DOM-direct + `translate3d` for high-frequency overlay-positioning** slo `setState` per RAF-frame markant under tung GPU-konkurranse. Mønster å huske for andre overlay-typer (drag-handles, hover-tooltips).
+- **`useRef` for å stabilisere effect-deps** når en useMemo-verdi får ny identitet på phase-skifte uten innholds-endring. Klassisk React-fall-grube — `[activeCategory?.id]` istedenfor `[activeCategory, visiblePOIs]` løste auto-kamera-bevegelse-bug ved marker-klikk i tour-mode.
+- **`?popup=mini`-flag forkastet** til fordel for default-on. Flagget rakk aldri å gi meningsfull A/B-data — Mapbox-popup-mønsteret er åpenbart bedre enn full-sidebar-overlay, og parallell vedlikehold av to mønstre er ikke verd det i prototype-fasen.
+
+---
+
+## 2026-05-20 — Observasjon: overturisme og spredning som potensielt produktområde
+
+### Kontekst
+Bruker delte to signaler samme dag som peker mot turisme-/cruise-vertikalen som relevant for Placys produktthese (Explorer + Report + audio-tour kan løse "saueflokk-mentalitet" når besøkende mangler lokalkunnskap):
+
+1. **NRK Møre og Romsdal (2026-05-19):** 13 000 cruiseturister i Ålesund på én dag, tre skip samtidig. Klassisk trengselsproblem på 2–3 punkter mens resten av byen står tom. ([nrk.no/mr/...1.17890285](https://www.nrk.no/mr/nesten-13.000-cruiseturistar-kom-til-alesund-da-tre-turistbatar-la-til-kai-pa-same-dag-1.17890285))
+2. **Ålesundregionens Havnevesen FB-post (2026-05-19):** Seks gratis offentlige toaletter i sentrum + Fjellstua, presentert som flat JPG med markerte punkter på flyfoto. Havnestyret bevilget 300k. Posten snakker eksplisitt om "god skilting til attraksjoner, toaletter og opplevelser" som gir "bedre flyt i byen". Kommentar fra Gro Kibsgaard-Petersen: cruiseinntekter "gies tilbake til byen" — etablert finansieringskanal.
+
+### Observasjon
+- **Havnevesenet er en konkret aktør med mandat + budsjettlinje.** De er allerede i wayfinding/spredning-business-en, bare med analog formfaktor (skilt, FB-poster, statiske kart).
+- **Formfaktoren de bruker er primitiv** — flatt JPG med røde nummer-pins. En interaktiv Explorer-flate med "5 min gange fra cruisekaia"-filter + audio-tour er et åpenbart oppgrader-tilbud.
+- **Cruise-inntekter "tilbake til byen" er en etablert politisk-akseptert finansieringsmekanisme** som allerede betaler for toaletter. Kan i prinsippet betale for digital wayfinding like enkelt.
+
+### Status
+Ikke et committed spor — vi har ikke landet noe her. Notat for å samle signaler. Forventet at flere artikler/saker om overturisme og spredningsbehov dukker opp i norske kystbyer (Geiranger, Flåm, Bergen, Stavanger, Tromsø). Logger dem her etter hvert som de kommer.
+
+### Hvis det skal aktiveres som spor
+Trigger: tredje uavhengige signal (artikkel, samtale, prospekt-introduksjon), eller en direkte inbound fra Havnevesen / Visit-organisasjon / cruise-operatør. Da: opprett `docs/strategy/YYYY-MM-DD-cruise-overturisme-spor.md` og legg involverte aktører inn i `aktor-map.md`. Ikke nå.
+
+---
+
 ## 2026-05-19/20 — Rapport-board UX-iterasjon: spiller, kart-overblikk, POI-overlay
 
 ### Kontekst
