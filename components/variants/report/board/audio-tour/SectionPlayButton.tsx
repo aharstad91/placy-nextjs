@@ -49,7 +49,8 @@ export function SectionPlayButton({ target }: { target: PlayTarget }) {
 
   const targetId: AudioTrackCategoryId =
     target.kind === "home" ? "home" : target.category.id;
-  const targetLabel = target.kind === "home" ? "Hjem" : target.category.label;
+  const targetLabel =
+    target.kind === "home" ? "Nabolaget" : target.category.label;
 
   const currentTrack = tracks[trackIndex];
   const isThisActive = currentTrack?.categoryId === targetId;

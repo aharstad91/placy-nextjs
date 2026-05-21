@@ -139,6 +139,8 @@ describe("adaptBoardData", () => {
       name: "Test Prosjekt",
       coordinates: { lat: 63.4, lng: 10.4 },
       address: "Testveien 1, 0001 Test",
+      district: "Midtbyen",
+      city: "Trondheim",
     });
   });
 

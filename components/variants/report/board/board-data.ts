@@ -70,6 +70,10 @@ export interface BoardHome {
   heroImage?: string;
   /** Intro-tekst (fra reportConfig.heroIntro eller bransjeprofil-mal). Vist i default-detail-panel. */
   heroIntro?: string;
+  /** Bydel, eks. "Midtbyen". Brukes som subline i Nabolaget-seksjonen. */
+  district?: string;
+  /** By, eks. "Trondheim". Vises etter district i subline. */
+  city?: string;
   /** Hjem-spor for audio-tour — kun satt når både url og manus eksisterer. */
   audio?: BoardAudioTrack;
 }
@@ -115,6 +119,10 @@ export function adaptBoardData(report: ReportData): BoardData {
       address: report.address,
       heroImage: report.heroImage,
       heroIntro: report.heroIntro,
+      // TODO(spike): district/city skal komme fra ReportData/ProjectContainer
+      // når feltene er lagt til der. Hardkodet for Stasjonskvartalet-demoen.
+      district: "Midtbyen",
+      city: "Trondheim",
       audio: pickPlayableAudio(report.heroAudio),
     },
     categories,

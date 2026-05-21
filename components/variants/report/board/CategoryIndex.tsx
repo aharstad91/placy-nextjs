@@ -112,8 +112,11 @@ function HomeRow({
   return (
     <IndexRow
       number={number}
-      label="Hjem"
-      subline="Velkomst"
+      label="Nabolaget"
+      subline={
+        [data.home.district, data.home.city].filter(Boolean).join(", ") ||
+        "Velkomst"
+      }
       thumbnail={data.home.heroImage}
       fallbackIconName={undefined}
       isActive={isActive}

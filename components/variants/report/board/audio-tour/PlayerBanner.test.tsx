@@ -87,13 +87,13 @@ describe("PlayerBanner", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("viser '1/3 — Hjem' når tour starter på Hjem-sporet", () => {
+  it("viser '1/3 — Nabolaget' når tour starter på Hjem-sporet", () => {
     act(() => {
       useAudioTourStore.getState().start(TRACKS);
     });
     renderBanner();
     expect(screen.getByText("1/3")).toBeInTheDocument();
-    expect(screen.getByText("Hjem")).toBeInTheDocument();
+    expect(screen.getByText("Nabolaget")).toBeInTheDocument();
   });
 
   it("viser kategori-label når track-index peker på kategori-track", () => {

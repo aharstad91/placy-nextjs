@@ -3,7 +3,7 @@
 import { Marker } from "react-map-gl/mapbox";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import type { BoardPOI } from "./board-data";
-import { markerCircleStyle } from "./marker-style";
+import { hexLightTint, markerCircleStyle } from "./marker-style";
 
 interface Props {
   poi: BoardPOI;
@@ -16,6 +16,10 @@ interface Props {
 export function BoardMarker({ poi, color, icon, isActive, onClick }: Props) {
   const Icon = getFilledIcon(poi.raw.category.icon || icon);
   const circle = markerCircleStyle(color);
+  // Lysere border (~50% hvit-blanding) demper rammen så ikonet får primær
+  // visuell vekt — mindre detaljer per markør, men hue-identitet bevart.
+  // Aktiv markør beholder full farge for tydelig fokus-signal.
+  const inactiveBorder = hexLightTint(color, 0.5);
 
   return (
     <Marker
@@ -36,7 +40,7 @@ export function BoardMarker({ poi, color, icon, isActive, onClick }: Props) {
             : "w-8 h-8 border-2"
         }`}
         style={{
-          borderColor: circle.borderColor,
+          borderColor: isActive ? circle.borderColor : inactiveBorder,
           backgroundColor: circle.backgroundColor,
           color: circle.borderColor,
         }}

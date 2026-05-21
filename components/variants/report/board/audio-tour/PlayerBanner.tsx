@@ -42,7 +42,7 @@ export function PlayerBanner() {
   const category = isHome
     ? undefined
     : data.categories.find((c) => c.id === currentTrack.categoryId);
-  const displayLabel = isHome ? "Hjem" : (category?.label ?? "");
+  const displayLabel = isHome ? "Nabolaget" : (category?.label ?? "");
   const thumbnail = isHome ? data.home.heroImage : category?.illustration?.src;
 
   const isPlaying = phase === "playing";

@@ -129,20 +129,24 @@ export function BoardScrollPanel() {
           className="h-full overflow-y-auto pb-[40vh]"
         >
           <SidebarHero />
-          <CategoryIndex />
-          <HomeSection
-            home={data.home}
-            scrollActive={state.activeCategoryId === null}
-            registerRef={registerSectionRef(HOME_SECTION_ID)}
-          />
-          {data.categories.map((cat) => (
-            <CategorySection
-              key={cat.id}
-              category={cat}
-              scrollActive={state.activeCategoryId === cat.id}
-              registerRef={registerSectionRef(cat.id)}
+          <div className="flex flex-col gap-3 px-3 pt-3">
+            <div className="overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-sm">
+              <CategoryIndex />
+            </div>
+            <HomeSection
+              home={data.home}
+              scrollActive={state.activeCategoryId === null}
+              registerRef={registerSectionRef(HOME_SECTION_ID)}
             />
-          ))}
+            {data.categories.map((cat) => (
+              <CategorySection
+                key={cat.id}
+                category={cat}
+                scrollActive={state.activeCategoryId === cat.id}
+                registerRef={registerSectionRef(cat.id)}
+              />
+            ))}
+          </div>
         </div>
         {/* Soft fade i topp/bunn av scroll-flaten — gir 1.5-visible-rytmen
          *  myke kanter så tekst toner ut mot edge istedenfor å klippes. */}
@@ -243,12 +247,14 @@ function HomeSection({
       data-board-section={HOME_SECTION_ID}
       data-section-state={sectionState}
       ref={registerRef}
-      className="flex min-h-[65vh] flex-col border-t border-stone-200/60 px-6 py-12"
+      className="flex flex-col rounded-2xl border border-stone-200/70 bg-white px-6 py-6 shadow-sm"
     >
       <SectionHeader
         thumbnail={home.heroImage}
-        label="Hjem"
-        subline="Velkomst"
+        label="Nabolaget"
+        subline={
+          [home.district, home.city].filter(Boolean).join(", ") || "Velkomst"
+        }
         playButton={<SectionPlayButton target={{ kind: "home" }} />}
       />
       {karaokeText ? (
@@ -298,7 +304,7 @@ function CategorySection({
       data-board-section={category.id}
       data-section-state={sectionState}
       ref={registerRef}
-      className="flex min-h-[65vh] flex-col border-t border-stone-200/60 px-6 py-12"
+      className="flex flex-col rounded-2xl border border-stone-200/70 bg-white px-6 py-6 shadow-sm"
     >
       <SectionHeader
         thumbnail={THEME_SCENE_SRC[category.id]}

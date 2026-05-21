@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import Map, { type MapRef } from "react-map-gl/mapbox";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
+import { mutedColor } from "@/lib/themes/muted-palette";
 import ModeToggle from "@/components/map/ModeToggle";
 import {
   zoomToRange,
@@ -107,7 +108,7 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
       return data.categories.flatMap((cat) =>
         cat.pois.map((p) => ({
           poi: p,
-          color: p.raw.category.color || cat.color,
+          color: mutedColor(p.raw.category.color) ?? cat.color,
           icon: p.raw.category.icon || cat.icon,
         })),
       );
@@ -121,7 +122,7 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
           );
     return filtered.map((p) => ({
       poi: p,
-      color: p.raw.category.color || activeCategory.color,
+      color: mutedColor(p.raw.category.color) ?? activeCategory.color,
       icon: p.raw.category.icon || activeCategory.icon,
     }));
   }, [state.phase, activeCategory, subFilter.hiddenIds, data.categories]);
