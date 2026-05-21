@@ -16,7 +16,7 @@ import { CategoryFeaturedChips } from "../CategoryFeaturedChips";
 import { CategoryIndex } from "../CategoryIndex";
 import { SidebarHero } from "../SidebarHero";
 import { QueueOverlay } from "../QueueOverlay";
-import { THEME_SCENE_SRC } from "../../theme-icons";
+import { getCategoryIllustrationSrc } from "@/lib/themes/category-illustrations";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { pickFeaturedPOIs } from "@/lib/board/featured-pois";
 
@@ -197,21 +197,23 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center gap-4">
-      <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-100">
-        {thumbnail ? (
-          <Image
-            src={thumbnail}
-            alt=""
-            fill
-            sizes="56px"
-            className="object-cover"
-          />
-        ) : FallbackIcon ? (
-          <span className="flex h-full w-full items-center justify-center">
-            <FallbackIcon className="h-7 w-7 text-stone-400" weight="fill" />
-          </span>
-        ) : null}
-      </span>
+      {(thumbnail || FallbackIcon) && (
+        <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-100">
+          {thumbnail ? (
+            <Image
+              src={thumbnail}
+              alt=""
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
+          ) : FallbackIcon ? (
+            <span className="flex h-full w-full items-center justify-center">
+              <FallbackIcon className="h-7 w-7 text-stone-400" weight="fill" />
+            </span>
+          ) : null}
+        </span>
+      )}
       <span className="flex min-w-0 flex-1 flex-col">
         <h2 className="truncate text-xl font-bold leading-tight text-stone-900">
           {label}
@@ -219,6 +221,22 @@ function SectionHeader({
         <span className="text-[12px] text-stone-500">{subline}</span>
       </span>
       {playButton}
+    </div>
+  );
+}
+
+/** Full-bredde cover-illustrasjon på toppen av kortet. 3:2-aspect for
+ *  konsistent visuell vekt på tvers av kategorier. */
+function CardCover({ src }: { src: string }) {
+  return (
+    <div className="relative aspect-[3/2] w-full bg-stone-100">
+      <Image
+        src={src}
+        alt=""
+        fill
+        sizes="(max-width: 768px) 100vw, 376px"
+        className="object-cover"
+      />
     </div>
   );
 }
@@ -247,33 +265,35 @@ function HomeSection({
       data-board-section={HOME_SECTION_ID}
       data-section-state={sectionState}
       ref={registerRef}
-      className="flex flex-col rounded-2xl border border-stone-200/70 bg-white px-6 py-6 shadow-sm"
+      className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-sm"
     >
-      <SectionHeader
-        thumbnail={home.heroImage}
-        label="Nabolaget"
-        subline={
-          [home.district, home.city].filter(Boolean).join(", ") || "Velkomst"
-        }
-        playButton={<SectionPlayButton target={{ kind: "home" }} />}
-      />
-      {karaokeText ? (
-        <KaraokePitchText
-          text={karaokeText}
-          timings={karaokeTimings}
-          isActive={isAudioActive}
-          className="mt-4 text-base leading-relaxed text-stone-800"
+      {home.heroImage && <CardCover src={home.heroImage} />}
+      <div className="flex flex-col px-6 py-6">
+        <SectionHeader
+          label="Nabolaget"
+          subline={
+            [home.district, home.city].filter(Boolean).join(", ") || "Velkomst"
+          }
+          playButton={<SectionPlayButton target={{ kind: "home" }} />}
         />
-      ) : (
-        home.heroIntro && (
-          <p
-            data-board-body
+        {karaokeText ? (
+          <KaraokePitchText
+            text={karaokeText}
+            timings={karaokeTimings}
+            isActive={isAudioActive}
             className="mt-4 text-base leading-relaxed text-stone-800"
-          >
-            {home.heroIntro}
-          </p>
-        )
-      )}
+          />
+        ) : (
+          home.heroIntro && (
+            <p
+              data-board-body
+              className="mt-4 text-base leading-relaxed text-stone-800"
+            >
+              {home.heroIntro}
+            </p>
+          )
+        )}
+      </div>
     </section>
   );
 }
@@ -287,7 +307,7 @@ function CategorySection({
   scrollActive: boolean;
   registerRef: (el: HTMLElement | null) => void;
 }) {
-  const { dispatch } = useBoard();
+  const { data, dispatch } = useBoard();
   const progress = useAudioTourSectionProgress(category.id);
   const isAudioActive = progress === "active";
   const sectionState = deriveSectionState(progress, scrollActive);
@@ -297,6 +317,7 @@ function CategorySection({
     () => pickFeaturedPOIs(category.pois, FEATURED_CHIP_COUNT, category.id),
     [category.pois, category.id],
   );
+  const coverSrc = getCategoryIllustrationSrc(data.projectSlug, category.id);
 
   return (
     <section
@@ -304,59 +325,61 @@ function CategorySection({
       data-board-section={category.id}
       data-section-state={sectionState}
       ref={registerRef}
-      className="flex flex-col rounded-2xl border border-stone-200/70 bg-white px-6 py-6 shadow-sm"
+      className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-sm"
     >
-      <SectionHeader
-        thumbnail={THEME_SCENE_SRC[category.id]}
-        fallbackIcon={getFilledIcon(category.icon)}
-        label={category.label}
-        subline={`${category.pois.length} punkter`}
-        playButton={
-          <SectionPlayButton target={{ kind: "category", category }} />
-        }
-      />
-      {karaokeText ? (
-        <KaraokePitchText
-          text={karaokeText}
-          timings={karaokeTimings}
-          isActive={isAudioActive}
-          className="mt-4 text-base leading-relaxed text-stone-800"
+      {coverSrc && <CardCover src={coverSrc} />}
+      <div className="flex flex-col px-6 py-6">
+        <SectionHeader
+          fallbackIcon={coverSrc ? undefined : getFilledIcon(category.icon)}
+          label={category.label}
+          subline={`${category.pois.length} punkter`}
+          playButton={
+            <SectionPlayButton target={{ kind: "category", category }} />
+          }
         />
-      ) : (
-        <>
-          {category.lead && (
-            <p
-              data-board-body
-              className="mt-4 text-base leading-relaxed text-stone-800"
-            >
-              {category.lead}
-            </p>
-          )}
-          {category.body && (
-            <p
-              data-board-body
-              className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-stone-700"
-            >
-              {category.body}
-            </p>
-          )}
-        </>
-      )}
-      {featuredPois.length > 0 && (
-        <div className="mt-6">
-          <CategoryFeaturedChips
-            pois={featuredPois}
-            category={category}
-            onChipClick={(poi) =>
-              dispatch({
-                type: "OPEN_POI",
-                id: poi.id,
-                categoryId: category.id,
-              })
-            }
+        {karaokeText ? (
+          <KaraokePitchText
+            text={karaokeText}
+            timings={karaokeTimings}
+            isActive={isAudioActive}
+            className="mt-4 text-base leading-relaxed text-stone-800"
           />
-        </div>
-      )}
+        ) : (
+          <>
+            {category.lead && (
+              <p
+                data-board-body
+                className="mt-4 text-base leading-relaxed text-stone-800"
+              >
+                {category.lead}
+              </p>
+            )}
+            {category.body && (
+              <p
+                data-board-body
+                className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-stone-700"
+              >
+                {category.body}
+              </p>
+            )}
+          </>
+        )}
+        {featuredPois.length > 0 && (
+          <div className="mt-6">
+            <CategoryFeaturedChips
+              pois={featuredPois}
+              category={category}
+              onChipClick={(poi) =>
+                dispatch({
+                  type: "OPEN_POI",
+                  id: poi.id,
+                  categoryId: category.id,
+                })
+              }
+            />
+          </div>
+        )}
+      </div>
     </section>
   );
 }

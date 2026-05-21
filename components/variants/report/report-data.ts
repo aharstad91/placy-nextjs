@@ -162,6 +162,9 @@ const PROJECT_3D_HEADINGS: Record<string, number> = {
 
 export interface ReportData {
   projectName: string;
+  /** URL-slug, eks. "stasjonskvartalet". Brukes til å slå opp prosjekt-
+   *  spesifikke ressurser (illustrasjoner, audio-stier, etc.). */
+  projectSlug?: string;
   address: string;
   centerCoordinates: { lat: number; lng: number };
   heroMetrics: ReportHeroMetrics;
@@ -594,6 +597,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
   return {
     projectName: project.name,
+    projectSlug: project.urlSlug,
     address: project.pois[0]?.address ?? "",
     centerCoordinates: project.centerCoordinates,
     heroMetrics,

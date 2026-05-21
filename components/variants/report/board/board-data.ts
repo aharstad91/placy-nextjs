@@ -79,6 +79,9 @@ export interface BoardHome {
 }
 
 export interface BoardData {
+  /** URL-slug for prosjektet, eks. "stasjonskvartalet". Brukes til å slå opp
+   *  prosjekt-spesifikke illustrasjoner og andre ressurser. */
+  projectSlug?: string;
   home: BoardHome;
   categories: BoardCategory[];
   /** Lookup-map fra POI-id (lowercase) til full POI. Brukes av grounding-rendering for å resolve [text](poi:uuid)-lenker — kan referere POIs på tvers av kategorier. */
@@ -113,6 +116,7 @@ export function adaptBoardData(report: ReportData): BoardData {
   }
 
   return {
+    projectSlug: report.projectSlug,
     home: {
       name: report.projectName,
       coordinates: report.centerCoordinates,
