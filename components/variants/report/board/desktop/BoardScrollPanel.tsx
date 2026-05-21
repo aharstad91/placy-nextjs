@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import Image from "next/image";
 import { useBoard } from "../board-state";
-import type { BoardCategory, BoardCategoryId, BoardHome } from "../board-data";
+import type { BoardCategory, BoardCategoryId } from "../board-data";
 import { useBoardActiveSection } from "@/lib/hooks/useBoardActiveSection";
 import { BottomPlayer } from "../audio-tour/BottomPlayer";
 import { CategoryAudioButton } from "../audio-tour/CategoryAudioButton";
@@ -13,6 +12,8 @@ import {
 } from "@/lib/stores/audio-tour-store";
 import { KaraokePitchText } from "../audio-tour/KaraokePitchText";
 import { CategoryFeaturedChips } from "../CategoryFeaturedChips";
+import { CategoryIndex } from "../CategoryIndex";
+import { SidebarHero } from "../SidebarHero";
 import { pickFeaturedPOIs } from "@/lib/board/featured-pois";
 
 const FEATURED_CHIP_COUNT = 5;
@@ -20,16 +21,15 @@ const FEATURED_CHIP_COUNT = 5;
 const HOME_SECTION_ID = "home";
 
 /**
- * Unit 0 spike: single continuous scroll panel that replaces BoardDetailPanel
- * in phase="default". Renders Hjem (project intro) followed by one section per
- * category with slim pitch-stub text (theme.lead + theme.body). Scroll-tracking
- * via useBoardActiveSection dispatches SELECT_CATEGORY{source:"scroll"} så
- * kart-pins følger scroll-narrativet.
+ * Single continuous scroll panel. Hjem-seksjon (SidebarHero + CategoryIndex)
+ * etterfølges av én seksjon per kategori med pitch-tekst og featured chips.
+ * Scroll-tracking via useBoardActiveSection dispatcher SELECT_CATEGORY
+ * {source:"scroll"} så kart-pins følger scroll-narrativet.
  *
- * Audio-tour-UI er konsentrert i en bottom-sticky BottomPlayer: idle viser
- * "Start tour"-CTA, aktiv viser mini-player med thumbnail, label og transport-
- * controls. Per-kategori "Spill av denne seksjonen"-CTA i CategorySection lar
- * bruker hoppe direkte til ett spor.
+ * Spotify-anatomi: top-hero har stor play-knapp som primær audio-tour-CTA.
+ * Bottom-player rendres KUN under aktiv tour (idle/ended → null) — ingen
+ * dobbel CTA. Per-kategori CategoryAudioButton lar bruker hoppe direkte til
+ * ett spor; CategoryIndex øverst gir nav-snarvei til alle kategorier.
  */
 export function BoardScrollPanel() {
   const { data, state, dispatch } = useBoard();
@@ -125,7 +125,6 @@ export function BoardScrollPanel() {
           className="h-full overflow-y-auto pb-[40vh]"
         >
           <HomeSection
-            home={data.home}
             scrollActive={state.activeCategoryId === null}
             registerRef={registerSectionRef(HOME_SECTION_ID)}
           />
@@ -166,20 +165,20 @@ function deriveSectionState(
   return scrollActive ? "active" : "inactive";
 }
 
+/** Home-seksjonens scroll-trackede wrapper. Holder hero + indeks i samme IO-
+ *  enhet så de regnes som "home" mens brukeren leser dem. Hjem-pitchens
+ *  karaoke er bevisst utelatt — pitchen er audio-only (megler leser den)
+ *  og duplisering som ord-for-ord-tekst i topp ville konkurrert med audio.
+ *  Velkomst-teksten i SidebarHero er en kort, separat oppsummering. */
 function HomeSection({
-  home,
   scrollActive,
   registerRef,
 }: {
-  home: BoardHome;
   scrollActive: boolean;
   registerRef: (el: HTMLElement | null) => void;
 }) {
   const progress = useAudioTourSectionProgress("home");
-  const isAudioActive = progress === "active";
   const sectionState = deriveSectionState(progress, scrollActive);
-  const karaokeText = home.audio?.manus;
-  const karaokeTimings = home.audio?.timings;
 
   return (
     <section
@@ -187,47 +186,10 @@ function HomeSection({
       data-board-section={HOME_SECTION_ID}
       data-section-state={sectionState}
       ref={registerRef}
-      className="flex min-h-[65vh] flex-col"
+      className="flex flex-col"
     >
-      {home.heroImage && (
-        <div className="relative aspect-[4/3] w-full flex-none bg-stone-200">
-          <Image
-            src={home.heroImage}
-            alt={home.name}
-            fill
-            sizes="400px"
-            className="object-cover"
-            priority
-          />
-        </div>
-      )}
-      <div className="flex flex-col gap-3 px-6 py-6">
-        {home.address && (
-          <div className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-            {home.address}
-          </div>
-        )}
-        <h2 className="text-2xl font-bold leading-tight text-stone-900">
-          {home.name}
-        </h2>
-        {karaokeText ? (
-          <KaraokePitchText
-            text={karaokeText}
-            timings={karaokeTimings}
-            isActive={isAudioActive}
-            className="text-[15px] leading-relaxed text-stone-700"
-          />
-        ) : (
-          home.heroIntro && (
-            <p
-              data-board-body
-              className="text-[15px] leading-relaxed text-stone-700"
-            >
-              {home.heroIntro}
-            </p>
-          )
-        )}
-      </div>
+      <SidebarHero />
+      <CategoryIndex />
     </section>
   );
 }

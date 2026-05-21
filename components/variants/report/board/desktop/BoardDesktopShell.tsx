@@ -11,10 +11,9 @@ import { BoardScrollPanel } from "./BoardScrollPanel";
  * NB: `lg:left-[400px]` på kart-containeren i ReportBoardPage MÅ matche
  * denne bredden — endre begge i synk hvis bredden justeres.
  *
- * Rail (BoardRail) er skjult inntil videre — drives bevisst ut for å
- * tvinge fram kategori-navigasjon via scroll + player-UI istedenfor å
- * lene seg på en sidebar-krykke. Komponenten finnes fortsatt i tre-et
- * og kan remontes når en bedre navigasjon-løsning er klar.
+ * Kategori-navigasjon ligger som numerert CategoryIndex i top-hero
+ * (Spotify-mønster) — rail-komponenten er slettet, indeks-liste +
+ * scroll-tracking erstatter den.
  *
  * POI-detaljer på desktop håndteres av BoardPOIMiniPopup (forankret over
  * markøren i Mapbox 2D og Google 3D).

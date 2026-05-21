@@ -14,16 +14,15 @@ import {
 
 type RailStateCompact = "active" | "played" | "inactive";
 
-/** Speil av useTourActive i BoardRail. Idle/ended → scroll styrer. */
+/** Idle/ended → scroll styrer; ellers driver audio tab-staten. */
 function useTourActive(): boolean {
   return useAudioTourStore(
     (s) => s.phase === "playing" || s.phase === "paused" || s.phase === "error",
   );
 }
 
-/** Speil av deriveRailState i BoardRail.tsx — scroll/klikk eier "active"-
- *  slotten (UX-affordance), audio eier pulse + "played"-spor. Se JSdoc i
- *  BoardRail for full rasjonale. */
+/** Scroll/klikk eier "active"-slotten (UX-affordance så et meny-klikk alltid
+ *  føles bekreftet), audio eier pulse + "played"-spor. */
 function deriveRailState(
   tourActive: boolean,
   progress: ReturnType<typeof useAudioTourSectionProgress>,
@@ -36,7 +35,7 @@ function deriveRailState(
 
 /**
  * Persistent horisontal kategori-tab-bar pinnet til viewport-bunn (Google
- * Maps-stil). Hjem-knapp først (matcher desktop BoardRail), deretter alle
+ * Maps-stil). Hjem-knapp først, deretter alle
  * kategorier som thumbnail. Speiler tab-pattern fra BoardTabs (pill-bakgrunn,
  * alltid én aktiv) — kategori-tittel vises i sheet-headeren, ikke som label
  * under firkantene.
@@ -205,9 +204,7 @@ const CategoryButton = forwardRef<
   );
 });
 
-/** Speil av samme funksjon i BoardRail.tsx — konverterer hex til rgba med
- *  alpha for cinematic-glow. Holdt lokal for å unngå utilitsmodul for én
- *  ren funksjon med to consumers. */
+/** Konverterer hex-farge til rgba med 0.5 alpha for cinematic-glow. */
 function hexToGlow(hex: string): string {
   const m = /^#?([a-f0-9]{6})$/i.exec(hex);
   if (!m) return "rgba(28, 25, 23, 0.35)";
