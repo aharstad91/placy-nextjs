@@ -25,7 +25,13 @@ const WELCOME_MAX_WORDS = 50;
  * her er en kort velkomst (40-50 ord) som setter rammen uten å konkurrere
  * med audio.
  */
-export function SidebarHero() {
+export function SidebarHero({
+  imageSizes = "400px",
+}: {
+  /** next/image sizes — default matcher 400px desktop-sidebar. Mobil-sheet
+   *  bør sende "100vw" så bilde-prioritering matcher viewport-bredde. */
+  imageSizes?: string;
+} = {}) {
   const { data } = useBoard();
   const { canStart, totalTracks } = useStartTour();
 
@@ -43,7 +49,7 @@ export function SidebarHero() {
             src={data.home.heroImage}
             alt={data.home.name}
             fill
-            sizes="400px"
+            sizes={imageSizes}
             className="object-cover"
             priority
           />
