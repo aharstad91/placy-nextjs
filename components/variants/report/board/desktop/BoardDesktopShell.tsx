@@ -1,26 +1,27 @@
 "use client";
 
-import { BoardRail } from "./BoardRail";
 import { BoardScrollPanel } from "./BoardScrollPanel";
 
 /**
- * Desktop venstre-strip: rail (80px) + panel (400px) side ved side.
- * Total bredde 480px. Mountes absolutt-posisjonert på venstre side i
- * ReportBoardPage, mens BoardMap fyller resten av viewporten.
+ * Desktop venstre-strip: scroll-panel (400px). Mountes absolutt-posisjonert
+ * på venstre side i ReportBoardPage, mens BoardMap fyller resten av viewporten.
  *
  * Skjules på mobile (<lg) — der overtar bottom-anchored sheets.
  *
- * NB: `lg:left-[480px]` på kart-containeren i ReportBoardPage MÅ matche
+ * NB: `lg:left-[400px]` på kart-containeren i ReportBoardPage MÅ matche
  * denne bredden — endre begge i synk hvis bredden justeres.
  *
+ * Rail (BoardRail) er skjult inntil videre — drives bevisst ut for å
+ * tvinge fram kategori-navigasjon via scroll + player-UI istedenfor å
+ * lene seg på en sidebar-krykke. Komponenten finnes fortsatt i tre-et
+ * og kan remontes når en bedre navigasjon-løsning er klar.
+ *
  * POI-detaljer på desktop håndteres av BoardPOIMiniPopup (forankret over
- * markøren i Mapbox 2D og Google 3D). Sidebar viser kun scroll-narrativet
- * og rail — ingen overlay-card lenger.
+ * markøren i Mapbox 2D og Google 3D).
  */
 export function BoardDesktopShell() {
   return (
-    <div className="hidden lg:flex absolute inset-y-0 left-0 z-10 h-full w-[480px] shadow-[2px_0_24px_rgba(15,29,68,0.06)]">
-      <BoardRail />
+    <div className="hidden lg:flex absolute inset-y-0 left-0 z-10 h-full w-[400px] shadow-[2px_0_24px_rgba(15,29,68,0.06)]">
       <div className="relative h-full w-[400px]">
         <BoardScrollPanel />
       </div>

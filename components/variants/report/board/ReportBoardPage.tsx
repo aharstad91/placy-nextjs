@@ -74,9 +74,9 @@ function useIsDesktop(): boolean {
  *   BoardCategoryTabBar (pinnet bunn) som søsken. Tab-bar er ALLTID synlig
  *   over sheeten via z-50; sheet kan dras ned uten å skjule navigasjonen
  *   (Google Maps-mønster).
- * - Desktop (>=lg): kart fyller alt til høyre for 480px-strip (rail + scroll-panel).
+ * - Desktop (>=lg): kart fyller alt til høyre for 400px scroll-panel.
  *
- * BoardMap mountes ÉN gang. Conditional positioning via wrapper-div: `lg:left-[480px]`
+ * BoardMap mountes ÉN gang. Conditional positioning via wrapper-div: `lg:left-[400px]`
  * forskyver kart-containeren på desktop. Mobile sheet (vaul) bruker portal og må
  * JS-gates — `useIsDesktop()` styrer mounting. Desktop-strip er gated `hidden lg:flex`
  * via CSS — bare ett tre vises av gangen.
@@ -87,7 +87,9 @@ function useIsDesktop(): boolean {
  * brukeren byttet kategori. Sheet er pinnet over kartet visuelt; markører som
  * havner under sheet er fortsatt navigerbare via Punkter-tab.
  *
- * NB: 480px = BoardDesktopShell-bredden. Endre begge i synk hvis justeres.
+ * NB: 400px = BoardDesktopShell-bredden. Endre begge i synk hvis justeres.
+ * (Var 480px med rail; rail er skjult inntil videre for å presse fram bedre
+ * kategori-navigasjon i scroll + player-UI.)
  */
 function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
   const isDesktop = useIsDesktop();
@@ -120,8 +122,8 @@ function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-stone-100">
-      {/* Kart-container — absolute. På desktop forskjøvet 480px fra venstre. */}
-      <div className="absolute inset-0 lg:left-[480px]">
+      {/* Kart-container — absolute. På desktop forskjøvet 400px fra venstre. */}
+      <div className="absolute inset-0 lg:left-[400px]">
         <BoardMap has3dAddon={has3dAddon} />
       </div>
 
