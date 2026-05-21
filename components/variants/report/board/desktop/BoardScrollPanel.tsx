@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import Image from "next/image";
 import { useBoard } from "../board-state";
 import type { BoardCategory, BoardCategoryId, BoardHome } from "../board-data";
 import { useBoardActiveSection } from "@/lib/hooks/useBoardActiveSection";
 import { BottomPlayer } from "../audio-tour/BottomPlayer";
-import { CategoryAudioButton } from "../audio-tour/CategoryAudioButton";
+import { SectionPlayButton } from "../audio-tour/SectionPlayButton";
 import {
   useAudioTourPhase,
   useAudioTourSectionProgress,
@@ -15,6 +16,8 @@ import { CategoryFeaturedChips } from "../CategoryFeaturedChips";
 import { CategoryIndex } from "../CategoryIndex";
 import { SidebarHero } from "../SidebarHero";
 import { QueueOverlay } from "../QueueOverlay";
+import { THEME_SCENE_SRC } from "../../theme-icons";
+import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { pickFeaturedPOIs } from "@/lib/board/featured-pois";
 
 const FEATURED_CHIP_COUNT = 5;
@@ -170,6 +173,52 @@ function deriveSectionState(
   return scrollActive ? "active" : "inactive";
 }
 
+/** Felles header-anatomi for både Hjem og kategori-seksjoner — speiler
+ *  `IndexRow` i CategoryIndex (illustrasjon + tittel + subline) så bruker
+ *  gjenkjenner sporet både i spilleliste-indeksen og i selve seksjonen.
+ *  Til høyre sitter `SectionPlayButton` der `IndexRow` har chevron — samme
+ *  posisjon, samme "trykk for å spille av denne seksjonen"-affordanse. */
+function SectionHeader({
+  thumbnail,
+  fallbackIcon: FallbackIcon,
+  label,
+  subline,
+  playButton,
+}: {
+  thumbnail?: string;
+  fallbackIcon?: ReturnType<typeof getFilledIcon>;
+  label: string;
+  subline: string;
+  playButton: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-4">
+      <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-100">
+        {thumbnail ? (
+          <Image
+            src={thumbnail}
+            alt=""
+            fill
+            sizes="56px"
+            className="object-cover"
+          />
+        ) : FallbackIcon ? (
+          <span className="flex h-full w-full items-center justify-center">
+            <FallbackIcon className="h-7 w-7 text-stone-400" weight="fill" />
+          </span>
+        ) : null}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <h2 className="truncate text-xl font-bold leading-tight text-stone-900">
+          {label}
+        </h2>
+        <span className="text-[12px] text-stone-500">{subline}</span>
+      </span>
+      {playButton}
+    </div>
+  );
+}
+
 /** Hjem-seksjonen rendres som første "spor" i scroll-stream — på lik linje
  *  med kategori-seksjoner under indeksen. Karaoke-tekst aktiveres når Hjem-
  *  sporet spilles (auto-modus); ellers vises heroIntro som plain pitch. */
@@ -196,19 +245,24 @@ function HomeSection({
       ref={registerRef}
       className="flex min-h-[65vh] flex-col border-t border-stone-200/60 px-6 py-12"
     >
-      <h2 className="text-2xl font-bold leading-tight text-stone-900">Hjem</h2>
+      <SectionHeader
+        thumbnail={home.heroImage}
+        label="Hjem"
+        subline="Velkomst"
+        playButton={<SectionPlayButton target={{ kind: "home" }} />}
+      />
       {karaokeText ? (
         <KaraokePitchText
           text={karaokeText}
           timings={karaokeTimings}
           isActive={isAudioActive}
-          className="mt-4 text-[15px] leading-relaxed text-stone-700"
+          className="mt-4 text-base leading-relaxed text-stone-800"
         />
       ) : (
         home.heroIntro && (
           <p
             data-board-body
-            className="mt-4 text-[15px] leading-relaxed text-stone-700"
+            className="mt-4 text-base leading-relaxed text-stone-800"
           >
             {home.heroIntro}
           </p>
@@ -246,23 +300,28 @@ function CategorySection({
       ref={registerRef}
       className="flex min-h-[65vh] flex-col border-t border-stone-200/60 px-6 py-12"
     >
-      <h2 className="text-2xl font-bold leading-tight text-stone-900">
-        {category.label}
-      </h2>
-      <CategoryAudioButton category={category} />
+      <SectionHeader
+        thumbnail={THEME_SCENE_SRC[category.id]}
+        fallbackIcon={getFilledIcon(category.icon)}
+        label={category.label}
+        subline={`${category.pois.length} punkter`}
+        playButton={
+          <SectionPlayButton target={{ kind: "category", category }} />
+        }
+      />
       {karaokeText ? (
         <KaraokePitchText
           text={karaokeText}
           timings={karaokeTimings}
           isActive={isAudioActive}
-          className="mt-4 text-[15px] leading-relaxed text-stone-700"
+          className="mt-4 text-base leading-relaxed text-stone-800"
         />
       ) : (
         <>
           {category.lead && (
             <p
               data-board-body
-              className="mt-4 text-[15px] leading-relaxed text-stone-700"
+              className="mt-4 text-base leading-relaxed text-stone-800"
             >
               {category.lead}
             </p>
@@ -270,7 +329,7 @@ function CategorySection({
           {category.body && (
             <p
               data-board-body
-              className="mt-3 whitespace-pre-line text-[14px] leading-relaxed text-stone-600"
+              className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-stone-700"
             >
               {category.body}
             </p>
