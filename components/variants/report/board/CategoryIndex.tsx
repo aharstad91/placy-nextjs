@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Check, ChevronRight } from "lucide-react";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { useBoard } from "./board-state";
-import type { BoardCategory } from "./board-data";
+import type { BoardCategory, BoardCategoryId } from "./board-data";
 import { THEME_SCENE_SRC } from "../theme-icons";
 import {
   useAudioTourActions,
@@ -15,40 +15,87 @@ import {
 } from "@/lib/stores/audio-tour-store";
 
 /**
- * Numerert kategori-indeks — Spotify "Popular"-mønster, men for kategorier i
- * stedet for sanger. Erstatter `BoardRail` som primær kategori-nav siden rail
- * ble fjernet. Hjem er IKKE med i listen (Hjem er top-hero — duplisering ville
- * forvirret).
+ * Numerert spilleliste over alle spor — Hjem som #1, deretter kategoriene.
+ * Spotify "Popular"-mønster. Erstatter `BoardRail` som primær kategori-nav
+ * siden rail ble fjernet. Hjem er behandlet på lik linje med kategoriene
+ * (en av brukerens iter-A-beslutninger): samme thumbnail-format, samme klikk-
+ * semantikk, samme played/active-state.
  *
  * Klikk er modus-bevisst:
- * - **Idle/ended:** dispatcher SELECT_CATEGORY{source:"index"} → scroll-panelet
- *   scroller målseksjonen i sentrum (samme mekanikk som rail-klikk).
+ * - **Idle/ended:** dispatcher SELECT_CATEGORY/RESET_TO_DEFAULT → scroll-
+ *   panelet scroller målseksjonen i sentrum.
  * - **Aktiv tour (playing/paused/error):** bygger tracks (Hjem først + alle
- *   kategorier) og kaller goToTrack(targetIndex) — speil av CategoryAudio-
- *   Button. Re-spill viser ikke playedCategoryIds (sticky-semantikk i store).
+ *   kategorier) og kaller goToTrack(targetIndex).
  *
  * Played-state markeres med haket-ikon ved siden av nummeret. Active-state
- * fremhever raden via bg-tint. Begge bruker `useAudioTourSectionProgress`.
+ * fremhever raden via bg-tint.
  */
 export function CategoryIndex() {
   const { data } = useBoard();
 
   if (data.categories.length === 0) return null;
 
+  const totalRows = data.categories.length + 1; // +1 for Hjem
+
   return (
     <section
-      aria-label="Kategori-indeks"
-      className="px-6 pb-2 pt-3"
+      aria-label="Spor-indeks"
+      className="px-6 pb-2 pt-2"
     >
       <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-500">
-        I rapporten · {data.categories.length} kategorier
+        I rapporten · {totalRows} spor
       </h2>
       <ol className="-mx-2 flex flex-col">
+        <HomeRow number={1} />
         {data.categories.map((cat, i) => (
-          <CategoryRow key={cat.id} number={i + 1} category={cat} />
+          <CategoryRow key={cat.id} number={i + 2} category={cat} />
         ))}
       </ol>
     </section>
+  );
+}
+
+function HomeRow({ number }: { number: number }) {
+  const { data, state, dispatch } = useBoard();
+  const progress = useAudioTourSectionProgress("home");
+  const phase = useAudioTourStore((s) => s.phase);
+  const tracks = useAudioTourStore((s) => s.tracks);
+  const { start, goToTrack } = useAudioTourActions();
+
+  const tourActive =
+    phase === "playing" || phase === "paused" || phase === "error";
+  const isActive =
+    progress === "active" ||
+    (!tourActive && state.activeCategoryId === null);
+  const isPlayed = progress === "played";
+
+  const handleClick = () => {
+    if (!tourActive) {
+      dispatch({ type: "RESET_TO_DEFAULT" });
+      return;
+    }
+    if (!data.home.audio) return;
+    if (tracks.length === 0) {
+      const newTracks = buildTracks(data);
+      if (!newTracks) return;
+      start(newTracks);
+      goToTrack(0);
+      return;
+    }
+    goToTrack(0);
+  };
+
+  return (
+    <IndexRow
+      number={number}
+      label="Hjem"
+      subline="Velkomst"
+      thumbnail={data.home.heroImage}
+      fallbackIconName={undefined}
+      isActive={isActive}
+      isPlayed={isPlayed}
+      onClick={handleClick}
+    />
   );
 }
 
@@ -72,33 +119,15 @@ function CategoryRow({
     (!tourActive && state.activeCategoryId === category.id);
   const isPlayed = progress === "played";
 
-  const illustrationSrc = THEME_SCENE_SRC[category.id];
-  const FallbackIcon = getFilledIcon(category.icon);
-
   const handleClick = () => {
     if (!tourActive) {
-      // Idle/ended: scroll-snarvei — samme mekanikk som tidligere rail-klikk.
       dispatch({ type: "SELECT_CATEGORY", id: category.id, source: "index" });
       return;
     }
-    // Aktiv tour: jump audio til denne kategoriens spor. Hvis tracks ikke er
-    // bygd ennå (defensive — burde være umulig under aktiv tour), kall start()
-    // først. Speil av CategoryAudioButton-logikken.
-    const homeAudio = data.home.audio;
-    if (!homeAudio || !category.audio) return;
+    if (!category.audio) return;
     if (tracks.length === 0) {
-      const newTracks: AudioTrack[] = [
-        {
-          categoryId: "home" as AudioTrackCategoryId,
-          url: homeAudio.url,
-          manus: homeAudio.manus,
-        },
-        ...data.categories.map((c) => ({
-          categoryId: c.id,
-          url: c.audio!.url,
-          manus: c.audio!.manus,
-        })),
-      ];
+      const newTracks = buildTracks(data);
+      if (!newTracks) return;
       start(newTracks);
       const idx = newTracks.findIndex((t) => t.categoryId === category.id);
       if (idx !== -1) goToTrack(idx);
@@ -109,18 +138,53 @@ function CategoryRow({
   };
 
   return (
+    <IndexRow
+      number={number}
+      label={category.label}
+      subline={`${category.pois.length} punkter`}
+      thumbnail={THEME_SCENE_SRC[category.id]}
+      fallbackIconName={category.icon}
+      isActive={isActive}
+      isPlayed={isPlayed}
+      onClick={handleClick}
+    />
+  );
+}
+
+function IndexRow({
+  number,
+  label,
+  subline,
+  thumbnail,
+  fallbackIconName,
+  isActive,
+  isPlayed,
+  onClick,
+}: {
+  number: number;
+  label: string;
+  subline: string;
+  thumbnail?: string;
+  fallbackIconName?: string;
+  isActive: boolean;
+  isPlayed: boolean;
+  onClick: () => void;
+}) {
+  const FallbackIcon = fallbackIconName
+    ? getFilledIcon(fallbackIconName)
+    : null;
+
+  return (
     <li>
       <button
         type="button"
-        onClick={handleClick}
+        onClick={onClick}
         aria-current={isActive ? "true" : undefined}
         data-index-state={
           isActive ? "active" : isPlayed ? "played" : "default"
         }
         className={`group flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition ${
-          isActive
-            ? "bg-stone-200/60"
-            : "hover:bg-stone-100"
+          isActive ? "bg-stone-200/60" : "hover:bg-stone-100"
         }`}
       >
         <span
@@ -131,19 +195,19 @@ function CategoryRow({
           {isPlayed ? <Check className="mx-auto h-4 w-4" /> : number}
         </span>
         <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-stone-100">
-          {illustrationSrc ? (
+          {thumbnail ? (
             <Image
-              src={illustrationSrc}
+              src={thumbnail}
               alt=""
               fill
               sizes="40px"
               className="object-cover"
             />
-          ) : (
+          ) : FallbackIcon ? (
             <span className="flex h-full w-full items-center justify-center">
               <FallbackIcon className="h-5 w-5 text-stone-400" weight="fill" />
             </span>
-          )}
+          ) : null}
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span
@@ -151,11 +215,9 @@ function CategoryRow({
               isActive || isPlayed ? "text-stone-900" : "text-stone-800"
             }`}
           >
-            {category.label}
+            {label}
           </span>
-          <span className="text-[11px] text-stone-500">
-            {category.pois.length} punkter
-          </span>
+          <span className="text-[11px] text-stone-500">{subline}</span>
         </span>
         <ChevronRight
           className={`h-4 w-4 shrink-0 transition ${
@@ -167,4 +229,24 @@ function CategoryRow({
       </button>
     </li>
   );
+}
+
+/** Bygger Hjem-først track-array fra BoardData. Returnerer null hvis audio
+ *  mangler noe sted — defensive sjekk. Mirror av `useStartTour` men inline
+ *  for å unngå hook-kall i klikk-handler. */
+function buildTracks(data: ReturnType<typeof useBoard>["data"]): AudioTrack[] | null {
+  if (!data.home.audio) return null;
+  if (!data.categories.every((c) => c.audio)) return null;
+  return [
+    {
+      categoryId: "home" as AudioTrackCategoryId,
+      url: data.home.audio.url,
+      manus: data.home.audio.manus,
+    },
+    ...data.categories.map((c) => ({
+      categoryId: c.id as BoardCategoryId,
+      url: c.audio!.url,
+      manus: c.audio!.manus,
+    })),
+  ];
 }

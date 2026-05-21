@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useBoard } from "../board-state";
-import type { BoardCategory, BoardCategoryId } from "../board-data";
+import type { BoardCategory, BoardCategoryId, BoardHome } from "../board-data";
 import { useBoardActiveSection } from "@/lib/hooks/useBoardActiveSection";
 import { BottomPlayer } from "../audio-tour/BottomPlayer";
 import { CategoryAudioButton } from "../audio-tour/CategoryAudioButton";
@@ -124,7 +124,10 @@ export function BoardScrollPanel() {
           ref={containerRef}
           className="h-full overflow-y-auto pb-[40vh]"
         >
+          <SidebarHero />
+          <CategoryIndex />
           <HomeSection
+            home={data.home}
             scrollActive={state.activeCategoryId === null}
             registerRef={registerSectionRef(HOME_SECTION_ID)}
           />
@@ -165,20 +168,23 @@ function deriveSectionState(
   return scrollActive ? "active" : "inactive";
 }
 
-/** Home-seksjonens scroll-trackede wrapper. Holder hero + indeks i samme IO-
- *  enhet så de regnes som "home" mens brukeren leser dem. Hjem-pitchens
- *  karaoke er bevisst utelatt — pitchen er audio-only (megler leser den)
- *  og duplisering som ord-for-ord-tekst i topp ville konkurrert med audio.
- *  Velkomst-teksten i SidebarHero er en kort, separat oppsummering. */
+/** Hjem-seksjonen rendres som første "spor" i scroll-stream — på lik linje
+ *  med kategori-seksjoner under indeksen. Karaoke-tekst aktiveres når Hjem-
+ *  sporet spilles (auto-modus); ellers vises heroIntro som plain pitch. */
 function HomeSection({
+  home,
   scrollActive,
   registerRef,
 }: {
+  home: BoardHome;
   scrollActive: boolean;
   registerRef: (el: HTMLElement | null) => void;
 }) {
   const progress = useAudioTourSectionProgress("home");
+  const isAudioActive = progress === "active";
   const sectionState = deriveSectionState(progress, scrollActive);
+  const karaokeText = home.audio?.manus;
+  const karaokeTimings = home.audio?.timings;
 
   return (
     <section
@@ -186,10 +192,26 @@ function HomeSection({
       data-board-section={HOME_SECTION_ID}
       data-section-state={sectionState}
       ref={registerRef}
-      className="flex flex-col"
+      className="flex min-h-[65vh] flex-col border-t border-stone-200/60 px-6 py-12"
     >
-      <SidebarHero />
-      <CategoryIndex />
+      <h2 className="text-2xl font-bold leading-tight text-stone-900">Hjem</h2>
+      {karaokeText ? (
+        <KaraokePitchText
+          text={karaokeText}
+          timings={karaokeTimings}
+          isActive={isAudioActive}
+          className="mt-4 text-[15px] leading-relaxed text-stone-700"
+        />
+      ) : (
+        home.heroIntro && (
+          <p
+            data-board-body
+            className="mt-4 text-[15px] leading-relaxed text-stone-700"
+          >
+            {home.heroIntro}
+          </p>
+        )
+      )}
     </section>
   );
 }
