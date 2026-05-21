@@ -115,36 +115,65 @@ export function BoardScrollPanel() {
       data-tour-active={tourActive ? "true" : undefined}
       className="flex h-full w-[400px] flex-col border-r border-stone-200/80 bg-stone-50"
     >
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto pb-[40vh]"
-      >
-        <HomeSection
-          home={data.home}
-          registerRef={registerSectionRef(HOME_SECTION_ID)}
-        />
-        {data.categories.map((cat) => (
-          <CategorySection
-            key={cat.id}
-            category={cat}
-            registerRef={registerSectionRef(cat.id)}
+      <div className="relative flex-1 overflow-hidden">
+        <div
+          ref={containerRef}
+          className="h-full overflow-y-auto pb-[40vh]"
+        >
+          <HomeSection
+            home={data.home}
+            scrollActive={state.activeCategoryId === null}
+            registerRef={registerSectionRef(HOME_SECTION_ID)}
           />
-        ))}
+          {data.categories.map((cat) => (
+            <CategorySection
+              key={cat.id}
+              category={cat}
+              scrollActive={state.activeCategoryId === cat.id}
+              registerRef={registerSectionRef(cat.id)}
+            />
+          ))}
+        </div>
+        {/* Soft fade i topp/bunn av scroll-flaten — gir 1.5-visible-rytmen
+         *  myke kanter så tekst toner ut mot edge istedenfor å klippes. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b from-stone-50 to-transparent"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-stone-50 to-transparent"
+        />
       </div>
       <BottomPlayer />
     </section>
   );
 }
 
+/** Beregner data-section-state med scroll-fallback. Under aktiv tour vinner
+ *  tour-progress (played|active|unplayed); ellers driver scroll alene
+ *  (active|inactive). Speil av rail-prinsippet — uten tour er det scroll-
+ *  posisjonen som signaliserer "her er du." */
+function deriveSectionState(
+  tourProgress: ReturnType<typeof useAudioTourSectionProgress>,
+  scrollActive: boolean,
+): "played" | "active" | "unplayed" | "inactive" {
+  if (tourProgress !== null) return tourProgress;
+  return scrollActive ? "active" : "inactive";
+}
+
 function HomeSection({
   home,
+  scrollActive,
   registerRef,
 }: {
   home: BoardHome;
+  scrollActive: boolean;
   registerRef: (el: HTMLElement | null) => void;
 }) {
   const progress = useAudioTourSectionProgress("home");
   const isAudioActive = progress === "active";
+  const sectionState = deriveSectionState(progress, scrollActive);
   const karaokeText = home.audio?.manus;
   const karaokeTimings = home.audio?.timings;
 
@@ -152,9 +181,9 @@ function HomeSection({
     <section
       id={HOME_SECTION_ID}
       data-board-section={HOME_SECTION_ID}
-      data-section-state={progress ?? undefined}
+      data-section-state={sectionState}
       ref={registerRef}
-      className="flex flex-col"
+      className="flex min-h-[65vh] flex-col"
     >
       {home.heroImage && (
         <div className="relative aspect-[4/3] w-full flex-none bg-stone-200">
@@ -201,13 +230,16 @@ function HomeSection({
 
 function CategorySection({
   category,
+  scrollActive,
   registerRef,
 }: {
   category: BoardCategory;
+  scrollActive: boolean;
   registerRef: (el: HTMLElement | null) => void;
 }) {
   const progress = useAudioTourSectionProgress(category.id);
   const isAudioActive = progress === "active";
+  const sectionState = deriveSectionState(progress, scrollActive);
   const karaokeText = category.audio?.manus;
   const karaokeTimings = category.audio?.timings;
 
@@ -215,9 +247,9 @@ function CategorySection({
     <section
       id={category.id}
       data-board-section={category.id}
-      data-section-state={progress ?? undefined}
+      data-section-state={sectionState}
       ref={registerRef}
-      className="flex flex-col border-t border-stone-200/80 px-6 py-8"
+      className="flex min-h-[65vh] flex-col border-t border-stone-200/60 px-6 py-12"
     >
       <h2 className="text-2xl font-bold leading-tight text-stone-900">
         {category.label}

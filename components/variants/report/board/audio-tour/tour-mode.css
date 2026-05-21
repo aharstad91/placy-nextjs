@@ -17,6 +17,18 @@
   transition: opacity 240ms ease;
 }
 
+/* Alltid-på scroll-fokus: ikke-aktive seksjoner dempes til 0.5 så aktiv
+ * scroll-posisjon står klart fram. Aktiv seksjon på 1 (ingen regel).
+ * Tour-mode-rules under har høyere specificity og overstyrer når audio
+ * kjører — sterkere differensiering med 0.3 for unplayed. */
+[data-section-state="inactive"] [data-board-body],
+[data-section-state="inactive"] h2 {
+  opacity: 0.5;
+  transition:
+    opacity 240ms ease,
+    color 240ms ease;
+}
+
 /* Scroll-panel-seksjons-progress: turen behandles som 0–100% framdrift.
  *   - "unplayed": kommende spor — fader til 0.3 (matcher rail-cinematic).
  *   - "active":   spilles akkurat nå — karaoke driver per-ord-opacity.
