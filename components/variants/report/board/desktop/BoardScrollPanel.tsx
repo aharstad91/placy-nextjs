@@ -34,8 +34,21 @@ const HOME_SECTION_ID = "home";
  * Bottom-player rendres KUN under aktiv tour (idle/ended → null) — ingen
  * dobbel CTA. Per-kategori CategoryAudioButton lar bruker hoppe direkte til
  * ett spor; CategoryIndex øverst gir nav-snarvei til alle kategorier.
+ *
+ * Mobil-mounting: når BoardScrollPanel mountes inni mobile sheet, settes
+ * mountBottomPlayer={false} så player kan mountes som scaffold-sibling
+ * utenfor sheeten (alltid synlig, ikke følger med drag).
  */
-export function BoardScrollPanel() {
+interface BoardScrollPanelProps {
+  /** Når false: hopp over inline BottomPlayer-rendring. Mobil bruker dette
+   *  for å mounte player som fixed-bottom sibling i scaffold istedenfor.
+   *  Default true (desktop-oppførsel uendret). */
+  mountBottomPlayer?: boolean;
+}
+
+export function BoardScrollPanel({
+  mountBottomPlayer = true,
+}: BoardScrollPanelProps = {}) {
   const { data, state, dispatch } = useBoard();
   const containerRef = useRef<HTMLDivElement>(null);
   // Når true: vi animerer en programmatic scroll (audio/Home-RESET). IO vil
@@ -121,7 +134,7 @@ export function BoardScrollPanel() {
     <section
       aria-label="Nabolags-narrativ"
       data-tour-active={tourActive ? "true" : undefined}
-      className="relative flex h-full w-[400px] flex-col overflow-hidden border-r border-stone-200/80 bg-stone-50"
+      className="relative flex h-full w-full flex-col overflow-hidden bg-stone-50 lg:border-r lg:border-stone-200/80"
     >
       <div className="relative flex-1 overflow-hidden">
         <div
@@ -159,7 +172,7 @@ export function BoardScrollPanel() {
           className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-stone-50 to-transparent"
         />
       </div>
-      <BottomPlayer />
+      {mountBottomPlayer && <BottomPlayer />}
       <QueueOverlay />
     </section>
   );

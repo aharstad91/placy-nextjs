@@ -9,9 +9,9 @@ import { transformToReportData } from "../report-data";
 import { adaptBoardData } from "./board-data";
 import { BoardProvider } from "./board-state";
 import { BoardMap } from "./BoardMap";
-import { BoardCategoryTabBar } from "./mobile/BoardCategoryTabBar";
 import { BoardMobileSheet } from "./mobile/BoardMobileSheet";
 import { BoardDesktopShell } from "./desktop/BoardDesktopShell";
+import { BottomPlayer } from "./audio-tour/BottomPlayer";
 import { AudioElementProvider } from "./audio-tour/use-audio-element";
 import { useAudioTourSync } from "./audio-tour/use-audio-tour-sync";
 
@@ -70,11 +70,12 @@ function useIsDesktop(): boolean {
 
 /**
  * Board-shell: full-screen kart i bakgrunn. Adaptiv layout:
- * - Mobil (<lg): kart fyller hele viewporten. BoardMobileSheet (multi-snap) +
- *   BoardCategoryTabBar (pinnet bunn) som søsken. Tab-bar er ALLTID synlig
- *   over sheeten via z-50; sheet kan dras ned uten å skjule navigasjonen
- *   (Google Maps-mønster).
+ * - Mobil (<lg): kart fyller hele viewporten. BoardMobileSheet (bi-snap:
+ *   peek + full) + BottomPlayer som pinned bottom-bar (z-50, alltid synlig
+ *   når aktivt spor). Sheet mounter BoardScrollPanel som-er; player er
+ *   sibling utenfor sheet så den ikke følger med drag.
  * - Desktop (>=lg): kart fyller alt til høyre for 400px scroll-panel.
+ *   BottomPlayer rendres inni scroll-panelet (uendret).
  *
  * BoardMap mountes ÉN gang. Conditional positioning via wrapper-div: `lg:left-[400px]`
  * forskyver kart-containeren på desktop. Mobile sheet (vaul) bruker portal og må
@@ -85,11 +86,9 @@ function useIsDesktop(): boolean {
  * fitBounds-trigger på snap-endringer, og Mapbox `setPadding` panner kartet
  * automatisk for å holde center i padded-area — det skapte synlig "hopp" når
  * brukeren byttet kategori. Sheet er pinnet over kartet visuelt; markører som
- * havner under sheet er fortsatt navigerbare via Punkter-tab.
+ * havner under sheet på peek-stagen er fortsatt synlige i kartet over.
  *
  * NB: 400px = BoardDesktopShell-bredden. Endre begge i synk hvis justeres.
- * (Var 480px med rail; rail er skjult inntil videre for å presse fram bedre
- * kategori-navigasjon i scroll + player-UI.)
  */
 function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
   const isDesktop = useIsDesktop();
@@ -127,14 +126,15 @@ function BoardScaffold({ has3dAddon }: { has3dAddon: boolean }) {
         <BoardMap has3dAddon={has3dAddon} />
       </div>
 
-      {/* Mobile UI (< lg) — multi-snap sheet + pinnet tab-bar.
-          Tab-bar mountes som søsken med z-50 (over sheet og kart) så
-          primær-navigasjon er alltid tilgjengelig. */}
+      {/* Mobile UI (< lg) — bi-snap sheet (peek + full) + pinnet BottomPlayer.
+          Player mountes som søsken med z-50 så den alltid er synlig over
+          sheeten når et spor er aktivt (BottomPlayer returnerer null i
+          idle/ended). */}
       {!isDesktop && (
         <>
           <BoardMobileSheet />
           <div className="fixed inset-x-0 bottom-0 z-50">
-            <BoardCategoryTabBar />
+            <BottomPlayer />
           </div>
         </>
       )}
