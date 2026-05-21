@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { POI } from "@/lib/types";
 import { linkPOIsInText, type TextSegment } from "@/lib/utils/story-text-linker";
@@ -13,6 +13,11 @@ import {
   useCurrentTrack,
 } from "@/lib/stores/audio-tour-store";
 import { KaraokePitchText } from "./audio-tour/KaraokePitchText";
+import { CategoryFeaturedChips } from "./CategoryFeaturedChips";
+import { pickFeaturedPOIs } from "@/lib/board/featured-pois";
+import { useBoard } from "./board-state";
+
+const FEATURED_CHIP_COUNT = 5;
 
 const ReportCuratedGrounded = dynamic(() => import("../ReportCuratedGrounded"));
 const ReportGroundingInline = dynamic(() => import("../ReportGroundingInline"));
@@ -39,7 +44,12 @@ export function BoardCategoryInfoTab({
   imageSizes = "(min-width: 1024px) 400px, 100vw",
 }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const { dispatch } = useBoard();
   const rawPois = category.pois.map((p) => p.raw);
+  const featuredPois = useMemo(
+    () => pickFeaturedPOIs(category.pois, FEATURED_CHIP_COUNT, category.id),
+    [category.pois, category.id],
+  );
 
   // Karaoke-aktiv = dette sporet spilles (eller pauset). Audio-manus blir den
   // synlige body-teksten (en og samme tekst, karaoke-effekt på når audio kjører,
@@ -103,6 +113,20 @@ export function BoardCategoryInfoTab({
             </p>
           ))}
         </div>
+      )}
+
+      {featuredPois.length > 0 && (
+        <CategoryFeaturedChips
+          pois={featuredPois}
+          category={category}
+          onChipClick={(poi) =>
+            dispatch({
+              type: "OPEN_POI",
+              id: poi.id,
+              categoryId: category.id,
+            })
+          }
+        />
       )}
 
       {grounding && (

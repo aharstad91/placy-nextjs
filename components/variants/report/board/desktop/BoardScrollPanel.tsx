@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import { useBoard } from "../board-state";
 import type { BoardCategory, BoardCategoryId, BoardHome } from "../board-data";
@@ -12,6 +12,10 @@ import {
   useAudioTourSectionProgress,
 } from "@/lib/stores/audio-tour-store";
 import { KaraokePitchText } from "../audio-tour/KaraokePitchText";
+import { CategoryFeaturedChips } from "../CategoryFeaturedChips";
+import { pickFeaturedPOIs } from "@/lib/board/featured-pois";
+
+const FEATURED_CHIP_COUNT = 5;
 
 const HOME_SECTION_ID = "home";
 
@@ -237,11 +241,16 @@ function CategorySection({
   scrollActive: boolean;
   registerRef: (el: HTMLElement | null) => void;
 }) {
+  const { dispatch } = useBoard();
   const progress = useAudioTourSectionProgress(category.id);
   const isAudioActive = progress === "active";
   const sectionState = deriveSectionState(progress, scrollActive);
   const karaokeText = category.audio?.manus;
   const karaokeTimings = category.audio?.timings;
+  const featuredPois = useMemo(
+    () => pickFeaturedPOIs(category.pois, FEATURED_CHIP_COUNT, category.id),
+    [category.pois, category.id],
+  );
 
   return (
     <section
@@ -281,6 +290,21 @@ function CategorySection({
             </p>
           )}
         </>
+      )}
+      {featuredPois.length > 0 && (
+        <div className="mt-6">
+          <CategoryFeaturedChips
+            pois={featuredPois}
+            category={category}
+            onChipClick={(poi) =>
+              dispatch({
+                type: "OPEN_POI",
+                id: poi.id,
+                categoryId: category.id,
+              })
+            }
+          />
+        </div>
       )}
     </section>
   );
