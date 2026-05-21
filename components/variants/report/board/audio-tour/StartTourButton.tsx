@@ -1,65 +1,27 @@
 "use client";
 
 import { Headphones } from "lucide-react";
-import { useBoard } from "../board-state";
-import {
-  useAudioTourActions,
-  type AudioTrack,
-  type AudioTrackCategoryId,
-} from "@/lib/stores/audio-tour-store";
+import { useStartTour } from "./use-start-tour";
 
 /**
- * CTA i Hjem-panel som starter audio-touren. Renderes kun hvis ALLE:
- *   - `data.audioTourEnabled === true` (eksplisitt opt-in per prosjekt), OG
- *   - `data.home.audio` finnes (Hjem-spor klar), OG
- *   - alle synlige kategorier har audio (helhetlig empty-state-policy).
+ * CTA i Hjem-panel som starter audio-touren. Renderes kun hvis `useStartTour`
+ * rapporterer `canStart=true` (audioTourEnabled + Hjem-audio + alle kategorier
+ * har audio). Manglende audio på én kategori → skjul CTA; vi vil ikke at
+ * brukeren skal starte en tour som plutselig hopper over en kategori uten
+ * varsel.
  *
- * Eksplisitt opt-in tillater forhåndsgenerering av audio på prosjekter
- * vi ikke er klar til å eksponere CTA-en på enda. Manglende audio på én
- * kategori → skjul CTA; vi vil ikke at brukeren skal starte en tour som
- * plutselig hopper over en kategori uten varsel.
- *
- * Track-rekkefølge: Hjem først, deretter kategorier i den rekkefølgen de
- * ligger i `boardData.categories` (som matcher `reportConfig.themes`-
- * rekkefølgen). Dette gir megler-pitch-flyten en rød tråd.
+ * Track-rekkefølge styres av `useStartTour`: Hjem først, deretter kategorier
+ * i `boardData.categories`-rekkefølgen (matcher `reportConfig.themes`).
  */
 export function StartTourButton() {
-  const { data } = useBoard();
-  const { start } = useAudioTourActions();
+  const { canStart, totalTracks, startTour } = useStartTour();
 
-  const homeAudio = data.home.audio;
-  const allCategoriesHaveAudio = data.categories.every((c) => c.audio);
-
-  if (
-    !data.audioTourEnabled ||
-    !homeAudio ||
-    !allCategoriesHaveAudio ||
-    data.categories.length === 0
-  ) {
-    return null;
-  }
-
-  const tracks: AudioTrack[] = [
-    {
-      categoryId: "home" as AudioTrackCategoryId,
-      url: homeAudio.url,
-      manus: homeAudio.manus,
-    },
-    ...data.categories.map((c) => ({
-      categoryId: c.id,
-      // Safe — `allCategoriesHaveAudio` garanterer at audio er definert
-      // for hver kategori.
-      url: c.audio!.url,
-      manus: c.audio!.manus,
-    })),
-  ];
-
-  const totalTracks = tracks.length;
+  if (!canStart) return null;
 
   return (
     <button
       type="button"
-      onClick={() => start(tracks)}
+      onClick={startTour}
       className="group flex w-full items-center gap-3 rounded-2xl border border-stone-900/10 bg-stone-900 px-4 py-3.5 text-left text-white shadow-sm transition hover:bg-stone-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15">

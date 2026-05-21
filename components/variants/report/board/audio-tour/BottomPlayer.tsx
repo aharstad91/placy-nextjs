@@ -3,7 +3,6 @@
 import Image from "next/image";
 import {
   AlertCircle,
-  Headphones,
   Pause,
   Play,
   SkipBack,
@@ -16,90 +15,30 @@ import {
   useAudioTourMeta,
   useAudioTourStore,
   useCurrentTrack,
-  type AudioTrack,
-  type AudioTrackCategoryId,
 } from "@/lib/stores/audio-tour-store";
 
 /**
- * Global bottom-sticky audio-player for board-narrativ. Morfer mellom to
- * tilstander:
+ * Global bottom-sticky audio-player for board-narrativ. Kun synlig under aktiv
+ * tour (playing/paused/error). Idle/ended → returnerer null.
  *
- *  - **Idle** (tour ikke startet): "Start tour"-CTA med antall spor.
- *  - **Aktiv** (playing/paused/error): mini-player med thumbnail, label,
- *    transport-controls (prev / play-pause / next / close).
+ * Start-tour-CTA er flyttet til `SidebarHero.action-row` (stor play-knapp,
+ * Spotify-mønster). Bottom-player er kun controller-flate under aktiv tour —
+ * ingen dobbel CTA mellom topp og bunn.
  *
  * Mountes som søsken til scroll-container i BoardScrollPanel — alltid
- * synlig på bunnen av panelet.
- *
- * Gating: kun hvis audioTourEnabled + Hjem-audio + alle kategorier har audio.
+ * synlig på bunnen av panelet når tour kjører.
  */
 export function BottomPlayer() {
-  const { data } = useBoard();
   const phase = useAudioTourStore((s) => s.phase);
 
-  const homeAudio = data.home.audio;
-  const allCategoriesHaveAudio = data.categories.every((c) => c.audio);
-
-  if (
-    !data.audioTourEnabled ||
-    !homeAudio ||
-    !allCategoriesHaveAudio ||
-    data.categories.length === 0
-  ) {
+  if (phase === "idle" || phase === "ended") {
     return null;
   }
 
-  const isIdle = phase === "idle" || phase === "ended";
-
   return (
     <div className="border-t border-stone-200/80 bg-white text-stone-900 shadow-[0_-2px_12px_rgba(15,29,68,0.06)]">
-      {isIdle ? <IdleState /> : <ActiveState />}
+      <ActiveState />
     </div>
-  );
-}
-
-function IdleState() {
-  const { data } = useBoard();
-  const { start } = useAudioTourActions();
-
-  const homeAudio = data.home.audio!;
-  const totalTracks = data.categories.length + 1;
-
-  const startTour = () => {
-    const tracks: AudioTrack[] = [
-      {
-        categoryId: "home" as AudioTrackCategoryId,
-        url: homeAudio.url,
-        manus: homeAudio.manus,
-      },
-      ...data.categories.map((c) => ({
-        categoryId: c.id,
-        url: c.audio!.url,
-        manus: c.audio!.manus,
-      })),
-    ];
-    start(tracks);
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={startTour}
-      aria-label="Start tour fra Hjem"
-      className="flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-stone-50"
-    >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-900 text-white">
-        <Headphones className="h-5 w-5" />
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-          Megler-pitch · {totalTracks} spor
-        </span>
-        <span className="text-[14px] font-semibold leading-tight">
-          ▶ Start tour
-        </span>
-      </span>
-    </button>
   );
 }
 
