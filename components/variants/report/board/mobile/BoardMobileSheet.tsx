@@ -23,6 +23,7 @@ import { BoardPunkterAccordion } from "./BoardPunkterAccordion";
 import { BoardTabs } from "./BoardTabs";
 import { PlayerBanner } from "../audio-tour/PlayerBanner";
 import { SidebarHero } from "../SidebarHero";
+import { QueueOverlay } from "../QueueOverlay";
 import {
   useAudioTourPhase,
   useAudioTourStore,
@@ -422,6 +423,7 @@ export function BoardMobileSheet({ onSnapChange }: BoardMobileSheetProps = {}) {
               <BoardPOIActionBar poi={renderPoi.raw} />
             </div>
           )}
+          <QueueOverlay />
         </DrawerPrimitive.Content>
       </DrawerPortal>
     </Drawer>

@@ -14,6 +14,7 @@ import { KaraokePitchText } from "../audio-tour/KaraokePitchText";
 import { CategoryFeaturedChips } from "../CategoryFeaturedChips";
 import { CategoryIndex } from "../CategoryIndex";
 import { SidebarHero } from "../SidebarHero";
+import { QueueOverlay } from "../QueueOverlay";
 import { pickFeaturedPOIs } from "@/lib/board/featured-pois";
 
 const FEATURED_CHIP_COUNT = 5;
@@ -117,7 +118,7 @@ export function BoardScrollPanel() {
     <section
       aria-label="Nabolags-narrativ"
       data-tour-active={tourActive ? "true" : undefined}
-      className="flex h-full w-[400px] flex-col border-r border-stone-200/80 bg-stone-50"
+      className="relative flex h-full w-[400px] flex-col overflow-hidden border-r border-stone-200/80 bg-stone-50"
     >
       <div className="relative flex-1 overflow-hidden">
         <div
@@ -152,6 +153,7 @@ export function BoardScrollPanel() {
         />
       </div>
       <BottomPlayer />
+      <QueueOverlay />
     </section>
   );
 }

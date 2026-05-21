@@ -9,6 +9,7 @@ import {
   useCurrentTrack,
 } from "@/lib/stores/audio-tour-store";
 import { useAudioElement } from "./use-audio-element";
+import { useQueueOverlayStore } from "@/lib/stores/queue-overlay-store";
 
 /**
  * Player-banner som rendres sticky-top i panel/sheet når audio-tour er
@@ -31,6 +32,7 @@ export function PlayerBanner() {
   const currentTrack = useCurrentTrack();
   const { currentTime, duration } = useAudioElement();
   const { data } = useBoard();
+  const toggleQueue = useQueueOverlayStore((s) => s.toggle);
 
   if (phase === "idle" || phase === "ended" || !currentTrack) {
     return null;
@@ -63,50 +65,57 @@ export function PlayerBanner() {
       data-slot="audio-player-banner"
       className="flex items-center gap-3 border-b border-stone-200/80 bg-white/95 px-3 py-2.5 backdrop-blur"
     >
-      {thumbnail && (
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-stone-100">
-          <Image
-            src={thumbnail}
-            alt=""
-            fill
-            sizes="44px"
-            className="object-cover"
-          />
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={toggleQueue}
+        aria-label="Vis spilleliste"
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left transition hover:bg-stone-50"
+      >
+        {thumbnail && (
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-stone-100">
+            <Image
+              src={thumbnail}
+              alt=""
+              fill
+              sizes="44px"
+              className="object-cover"
+            />
+          </div>
+        )}
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
-            {trackIndex + 1}/{trackCount}
-          </span>
-          <span className="truncate text-sm font-semibold text-stone-900">
-            {displayLabel}
-          </span>
-          {isError && (
-            <span className="flex items-center gap-1 text-[11px] font-semibold text-red-600">
-              <AlertCircle className="h-3 w-3" />
-              Lyd-feil
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+              {trackIndex + 1}/{trackCount}
             </span>
-          )}
-        </div>
-        <div
-          className="mt-1.5 flex gap-1"
-          aria-label={`Spor ${trackIndex + 1} av ${trackCount}`}
-        >
-          {segments.map((fill, i) => (
-            <div
-              key={i}
-              className="h-1 flex-1 overflow-hidden rounded-full bg-stone-200"
-            >
+            <span className="truncate text-sm font-semibold text-stone-900">
+              {displayLabel}
+            </span>
+            {isError && (
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-red-600">
+                <AlertCircle className="h-3 w-3" />
+                Lyd-feil
+              </span>
+            )}
+          </div>
+          <div
+            className="mt-1.5 flex gap-1"
+            aria-label={`Spor ${trackIndex + 1} av ${trackCount}`}
+          >
+            {segments.map((fill, i) => (
               <div
-                className="h-full bg-stone-800 transition-[width] duration-150 ease-linear"
-                style={{ width: `${fill * 100}%` }}
-              />
-            </div>
-          ))}
+                key={i}
+                className="h-1 flex-1 overflow-hidden rounded-full bg-stone-200"
+              >
+                <div
+                  className="h-full bg-stone-800 transition-[width] duration-150 ease-linear"
+                  style={{ width: `${fill * 100}%` }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </button>
 
       <div className="flex shrink-0 items-center gap-0.5">
         <button

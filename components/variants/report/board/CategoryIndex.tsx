@@ -30,7 +30,18 @@ import {
  * Played-state markeres med haket-ikon ved siden av nummeret. Active-state
  * fremhever raden via bg-tint.
  */
-export function CategoryIndex() {
+export function CategoryIndex({
+  onItemSelected,
+  hideHeader = false,
+}: {
+  /** Kalles etter en row-klikk — brukt av QueueOverlay til å lukke seg
+   *  selv etter at brukeren har valgt et spor. Default no-op (indeks-i-
+   *  scroll-panelet trenger ikke lukke noe). */
+  onItemSelected?: () => void;
+  /** Skjul eyebrow-headeren — brukt når CategoryIndex mountes inni en
+   *  overlay som selv har header. */
+  hideHeader?: boolean;
+} = {}) {
   const { data } = useBoard();
 
   if (data.categories.length === 0) return null;
@@ -38,24 +49,34 @@ export function CategoryIndex() {
   const totalRows = data.categories.length + 1; // +1 for Hjem
 
   return (
-    <section
-      aria-label="Spor-indeks"
-      className="px-6 pb-2 pt-2"
-    >
-      <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-500">
-        I rapporten · {totalRows} spor
-      </h2>
+    <section aria-label="Spor-indeks" className="px-6 pb-2 pt-2">
+      {!hideHeader && (
+        <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+          I rapporten · {totalRows} spor
+        </h2>
+      )}
       <ol className="-mx-2 flex flex-col">
-        <HomeRow number={1} />
+        <HomeRow number={1} onItemSelected={onItemSelected} />
         {data.categories.map((cat, i) => (
-          <CategoryRow key={cat.id} number={i + 2} category={cat} />
+          <CategoryRow
+            key={cat.id}
+            number={i + 2}
+            category={cat}
+            onItemSelected={onItemSelected}
+          />
         ))}
       </ol>
     </section>
   );
 }
 
-function HomeRow({ number }: { number: number }) {
+function HomeRow({
+  number,
+  onItemSelected,
+}: {
+  number: number;
+  onItemSelected?: () => void;
+}) {
   const { data, state, dispatch } = useBoard();
   const progress = useAudioTourSectionProgress("home");
   const phase = useAudioTourStore((s) => s.phase);
@@ -72,6 +93,7 @@ function HomeRow({ number }: { number: number }) {
   const handleClick = () => {
     if (!tourActive) {
       dispatch({ type: "RESET_TO_DEFAULT" });
+      onItemSelected?.();
       return;
     }
     if (!data.home.audio) return;
@@ -80,9 +102,11 @@ function HomeRow({ number }: { number: number }) {
       if (!newTracks) return;
       start(newTracks);
       goToTrack(0);
+      onItemSelected?.();
       return;
     }
     goToTrack(0);
+    onItemSelected?.();
   };
 
   return (
@@ -102,9 +126,11 @@ function HomeRow({ number }: { number: number }) {
 function CategoryRow({
   number,
   category,
+  onItemSelected,
 }: {
   number: number;
   category: BoardCategory;
+  onItemSelected?: () => void;
 }) {
   const { data, state, dispatch } = useBoard();
   const progress = useAudioTourSectionProgress(category.id);
@@ -122,6 +148,7 @@ function CategoryRow({
   const handleClick = () => {
     if (!tourActive) {
       dispatch({ type: "SELECT_CATEGORY", id: category.id, source: "index" });
+      onItemSelected?.();
       return;
     }
     if (!category.audio) return;
@@ -131,10 +158,12 @@ function CategoryRow({
       start(newTracks);
       const idx = newTracks.findIndex((t) => t.categoryId === category.id);
       if (idx !== -1) goToTrack(idx);
+      onItemSelected?.();
       return;
     }
     const idx = tracks.findIndex((t) => t.categoryId === category.id);
     if (idx !== -1) goToTrack(idx);
+    onItemSelected?.();
   };
 
   return (

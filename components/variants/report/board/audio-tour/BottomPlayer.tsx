@@ -16,6 +16,7 @@ import {
   useAudioTourStore,
   useCurrentTrack,
 } from "@/lib/stores/audio-tour-store";
+import { useQueueOverlayStore } from "@/lib/stores/queue-overlay-store";
 
 /**
  * Global bottom-sticky audio-player for board-narrativ. Kun synlig under aktiv
@@ -48,6 +49,7 @@ function ActiveState() {
   const { pause, resume, next, prev, close, retryTrack } =
     useAudioTourActions();
   const currentTrack = useCurrentTrack();
+  const toggleQueue = useQueueOverlayStore((s) => s.toggle);
 
   if (!currentTrack) return null;
 
@@ -65,33 +67,40 @@ function ActiveState() {
 
   return (
     <div className="flex items-center gap-3 px-3 py-3">
-      {thumbnail && (
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-stone-100">
-          <Image
-            src={thumbnail}
-            alt=""
-            fill
-            sizes="44px"
-            className="object-cover"
-          />
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-          <span>
-            Spor {trackIndex + 1}/{trackCount}
-          </span>
-          {isError && (
-            <span className="flex items-center gap-1 text-red-600">
-              <AlertCircle className="h-3 w-3" />
-              Lyd-feil
+      <button
+        type="button"
+        onClick={toggleQueue}
+        aria-label="Vis spilleliste"
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left transition hover:bg-stone-50"
+      >
+        {thumbnail && (
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-stone-100">
+            <Image
+              src={thumbnail}
+              alt=""
+              fill
+              sizes="44px"
+              className="object-cover"
+            />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            <span>
+              Spor {trackIndex + 1}/{trackCount}
             </span>
-          )}
+            {isError && (
+              <span className="flex items-center gap-1 text-red-600">
+                <AlertCircle className="h-3 w-3" />
+                Lyd-feil
+              </span>
+            )}
+          </div>
+          <div className="truncate text-[14px] font-semibold leading-tight text-stone-900">
+            {displayLabel}
+          </div>
         </div>
-        <div className="truncate text-[14px] font-semibold leading-tight text-stone-900">
-          {displayLabel}
-        </div>
-      </div>
+      </button>
       <div className="flex shrink-0 items-center gap-0.5">
         <button
           type="button"
