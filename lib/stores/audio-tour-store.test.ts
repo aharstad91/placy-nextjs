@@ -157,3 +157,67 @@ describe("setError + retryTrack", () => {
     expect(useAudioTourStore.getState().phase).toBe("playing");
   });
 });
+
+describe("playedCategoryIds (sticky progress)", () => {
+  it("start() resetter playedCategoryIds til tom Set", () => {
+    useAudioTourStore.getState().start(TRACKS);
+    useAudioTourStore.getState().next();
+    expect(useAudioTourStore.getState().playedCategoryIds.has("home")).toBe(true);
+    useAudioTourStore.getState().start(TRACKS);
+    expect(useAudioTourStore.getState().playedCategoryIds.size).toBe(0);
+  });
+
+  it("next() markerer current som played før trackIndex økes", () => {
+    useAudioTourStore.getState().start(TRACKS);
+    useAudioTourStore.getState().next();
+    expect(useAudioTourStore.getState().playedCategoryIds.has("home")).toBe(true);
+    expect(useAudioTourStore.getState().trackIndex).toBe(1);
+  });
+
+  it("next() ved siste track markerer current OG setter phase=ended", () => {
+    useAudioTourStore.getState().start(TRACKS);
+    useAudioTourStore.getState().goToTrack(2); // siste
+    useAudioTourStore.getState().next();
+    const s = useAudioTourStore.getState();
+    expect(s.phase).toBe("ended");
+    expect(s.playedCategoryIds.has("transport" as BoardCategoryId)).toBe(true);
+    expect(s.playedCategoryIds.has("home")).toBe(true); // markert ved goToTrack
+  });
+
+  it("goToTrack() markerer current som played før jump", () => {
+    useAudioTourStore.getState().start(TRACKS);
+    useAudioTourStore.getState().goToTrack(2);
+    expect(useAudioTourStore.getState().playedCategoryIds.has("home")).toBe(true);
+    expect(useAudioTourStore.getState().trackIndex).toBe(2);
+  });
+
+  it("re-spill av tidligere seksjon viser IKKE bort played-status på andre", () => {
+    // home → mat-drikke → transport. Alle tre played.
+    useAudioTourStore.getState().start(TRACKS);
+    useAudioTourStore.getState().next(); // mark home, gå til mat
+    useAudioTourStore.getState().next(); // mark mat, gå til transport
+    // Hopp tilbake til mat-drikke (re-spill)
+    useAudioTourStore.getState().goToTrack(1);
+    const s = useAudioTourStore.getState();
+    expect(s.trackIndex).toBe(1);
+    expect(s.playedCategoryIds.has("home")).toBe(true);
+    expect(s.playedCategoryIds.has("mat-drikke" as BoardCategoryId)).toBe(true);
+    expect(s.playedCategoryIds.has("transport" as BoardCategoryId)).toBe(true);
+  });
+
+  it("prev() markerer current som played før decrement", () => {
+    useAudioTourStore.getState().start(TRACKS);
+    useAudioTourStore.getState().goToTrack(2);
+    useAudioTourStore.getState().prev();
+    const s = useAudioTourStore.getState();
+    expect(s.trackIndex).toBe(1);
+    expect(s.playedCategoryIds.has("transport" as BoardCategoryId)).toBe(true);
+  });
+
+  it("close() resetter playedCategoryIds", () => {
+    useAudioTourStore.getState().start(TRACKS);
+    useAudioTourStore.getState().next();
+    useAudioTourStore.getState().close();
+    expect(useAudioTourStore.getState().playedCategoryIds.size).toBe(0);
+  });
+});

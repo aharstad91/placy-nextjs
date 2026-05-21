@@ -17,6 +17,29 @@
   transition: opacity 240ms ease;
 }
 
+/* Scroll-panel-seksjons-progress: turen behandles som 0–100% framdrift.
+ *   - "unplayed": kommende spor — fader til 0.3 (matcher rail-cinematic).
+ *   - "active":   spilles akkurat nå — karaoke driver per-ord-opacity.
+ *   - "played":   ferdig spilt — beholder full opacity (karaoke-sluttilstand).
+ *                 Brukeren ser visuelt hvor langt han har kommet.
+ * Mer spesifikke selectors enn generisk data-board-body-regelen over →
+ * overrider den. Play-knappen (CategoryAudioButton) rammes ikke — interaktiv
+ * affordance brukeren skal kunne klikke for å hoppe til vilkårlig spor. */
+[data-tour-active] [data-section-state="unplayed"] [data-board-body],
+[data-tour-active] [data-section-state="unplayed"] h2 {
+  opacity: 0.3;
+  transition:
+    opacity 240ms ease,
+    color 240ms ease;
+}
+[data-tour-active] [data-section-state="played"] [data-board-body],
+[data-tour-active] [data-section-state="played"] h2,
+[data-tour-active] [data-section-state="active"] [data-board-body],
+[data-tour-active] [data-section-state="active"] h2 {
+  opacity: 1;
+  transition: opacity 240ms ease;
+}
+
 @keyframes tour-pulse {
   0% {
     box-shadow:

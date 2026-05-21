@@ -67,7 +67,11 @@ export function CategoryAudioButton({ category }: { category: BoardCategory }) {
     ];
     const targetIndex = newTracks.findIndex((t) => t.categoryId === category.id);
     if (targetIndex === -1) return;
-    start(newTracks);
+    // Start kun hvis turen er fersk — start() resetter playedCategoryIds, og
+    // re-spill av en seksjon under pågående tour skal IKKE viske progresjon.
+    if (phase === "idle" || tracks.length === 0) {
+      start(newTracks);
+    }
     goToTrack(targetIndex);
   };
 

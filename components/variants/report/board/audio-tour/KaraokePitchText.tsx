@@ -40,7 +40,19 @@ export function KaraokePitchText({
   const currentTime = audioCtx?.currentTime ?? 0;
   const tokens = useMemo(() => mapCharTimingsToWords(timings), [timings]);
 
-  if (!isActive || tokens.length === 0) {
+  if (!isActive) {
+    // Plain-tekst fallback når dette sporet ikke spiller. Dim'es som vanlig
+    // body-tekst under tour (data-board-body) — vi peker oppmerksomheten mot
+    // den seksjonen som faktisk leses opp.
+    return (
+      <p data-board-body className={className}>
+        {text}
+      </p>
+    );
+  }
+  if (tokens.length === 0) {
+    // Aktivt spor men tomme tokens (legacy uten timings eller data-korrupsjon)
+    // — ikke dim, dette ER den aktive seksjonen, bare uten karaoke-effekt.
     return <p className={className}>{text}</p>;
   }
 

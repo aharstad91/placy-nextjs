@@ -3,7 +3,7 @@
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { ChevronDown, Headphones } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { POI } from "@/lib/types";
 import { linkPOIsInText, type TextSegment } from "@/lib/utils/story-text-linker";
 import POIPopover from "../POIPopover";
@@ -41,18 +41,9 @@ export function BoardCategoryInfoTab({
   const [expanded, setExpanded] = useState(false);
   const rawPois = category.pois.map((p) => p.raw);
 
-  const leadSegments = category.lead
-    ? linkPOIsInText(category.lead, rawPois)
-    : [];
-  const bodyParagraphs = category.body
-    ? category.body.split(/\n+/).filter((p) => p.trim().length > 0)
-    : [];
-
-  const grounding = category.grounding;
-
-  // Karaoke vises kun mens dette sporet faktisk spilles (eller er paused på
-  // dette sporet). Bytter trackn over til annen kategori → karaoke for denne
-  // unmounter, ny kategori monterer sin egen blokk.
+  // Karaoke-aktiv = dette sporet spilles (eller pauset). Audio-manus blir den
+  // synlige body-teksten (en og samme tekst, karaoke-effekt på når audio kjører,
+  // plain ellers). Lead/body brukes kun som fallback når manus mangler.
   const phase = useAudioTourPhase();
   const currentTrack = useCurrentTrack();
   const isAudioActive =
@@ -60,6 +51,17 @@ export function BoardCategoryInfoTab({
     currentTrack?.categoryId === category.id;
   const karaokeText = category.audio?.manus;
   const karaokeTimings = category.audio?.timings;
+
+  const leadSegments =
+    !karaokeText && category.lead
+      ? linkPOIsInText(category.lead, rawPois)
+      : [];
+  const bodyParagraphs =
+    !karaokeText && category.body
+      ? category.body.split(/\n+/).filter((p) => p.trim().length > 0)
+      : [];
+
+  const grounding = category.grounding;
 
   return (
     <div className="space-y-4">
@@ -75,19 +77,13 @@ export function BoardCategoryInfoTab({
         </div>
       )}
 
-      {isAudioActive && karaokeText && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
-          <div className="flex items-center gap-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700">
-            <Headphones className="h-3.5 w-3.5" aria-hidden />
-            Spilles av
-          </div>
-          <KaraokePitchText
-            text={karaokeText}
-            timings={karaokeTimings}
-            isActive={true}
-            className="text-[15px] leading-relaxed text-stone-800"
-          />
-        </div>
+      {karaokeText && (
+        <KaraokePitchText
+          text={karaokeText}
+          timings={karaokeTimings}
+          isActive={isAudioActive}
+          className="text-base leading-relaxed text-stone-700"
+        />
       )}
 
       {leadSegments.length > 0 && (

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
-import { Headphones } from "lucide-react";
 import { useBoard } from "../board-state";
 import type { BoardCategory, BoardCategoryId, BoardHome } from "../board-data";
 import { useBoardActiveSection } from "@/lib/hooks/useBoardActiveSection";
@@ -10,7 +9,7 @@ import { BottomPlayer } from "../audio-tour/BottomPlayer";
 import { CategoryAudioButton } from "../audio-tour/CategoryAudioButton";
 import {
   useAudioTourPhase,
-  useCurrentTrack,
+  useAudioTourSectionProgress,
 } from "@/lib/stores/audio-tour-store";
 import { KaraokePitchText } from "../audio-tour/KaraokePitchText";
 
@@ -144,11 +143,8 @@ function HomeSection({
   home: BoardHome;
   registerRef: (el: HTMLElement | null) => void;
 }) {
-  const phase = useAudioTourPhase();
-  const currentTrack = useCurrentTrack();
-  const isAudioActive =
-    (phase === "playing" || phase === "paused") &&
-    currentTrack?.categoryId === "home";
+  const progress = useAudioTourSectionProgress("home");
+  const isAudioActive = progress === "active";
   const karaokeText = home.audio?.manus;
   const karaokeTimings = home.audio?.timings;
 
@@ -156,6 +152,7 @@ function HomeSection({
     <section
       id={HOME_SECTION_ID}
       data-board-section={HOME_SECTION_ID}
+      data-section-state={progress ?? undefined}
       ref={registerRef}
       className="flex flex-col"
     >
@@ -180,27 +177,22 @@ function HomeSection({
         <h2 className="text-2xl font-bold leading-tight text-stone-900">
           {home.name}
         </h2>
-        {isAudioActive && karaokeText && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
-            <div className="flex items-center gap-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700">
-              <Headphones className="h-3.5 w-3.5" aria-hidden />
-              Spilles av
-            </div>
-            <KaraokePitchText
-              text={karaokeText}
-              timings={karaokeTimings}
-              isActive={true}
-              className="text-[15px] leading-relaxed text-stone-800"
-            />
-          </div>
-        )}
-        {home.heroIntro && (
-          <p
-            data-board-body
+        {karaokeText ? (
+          <KaraokePitchText
+            text={karaokeText}
+            timings={karaokeTimings}
+            isActive={isAudioActive}
             className="text-[15px] leading-relaxed text-stone-700"
-          >
-            {home.heroIntro}
-          </p>
+          />
+        ) : (
+          home.heroIntro && (
+            <p
+              data-board-body
+              className="text-[15px] leading-relaxed text-stone-700"
+            >
+              {home.heroIntro}
+            </p>
+          )
         )}
       </div>
     </section>
@@ -214,11 +206,8 @@ function CategorySection({
   category: BoardCategory;
   registerRef: (el: HTMLElement | null) => void;
 }) {
-  const phase = useAudioTourPhase();
-  const currentTrack = useCurrentTrack();
-  const isAudioActive =
-    (phase === "playing" || phase === "paused") &&
-    currentTrack?.categoryId === category.id;
+  const progress = useAudioTourSectionProgress(category.id);
+  const isAudioActive = progress === "active";
   const karaokeText = category.audio?.manus;
   const karaokeTimings = category.audio?.timings;
 
@@ -226,6 +215,7 @@ function CategorySection({
     <section
       id={category.id}
       data-board-section={category.id}
+      data-section-state={progress ?? undefined}
       ref={registerRef}
       className="flex flex-col border-t border-stone-200/80 px-6 py-8"
     >
@@ -233,35 +223,32 @@ function CategorySection({
         {category.label}
       </h2>
       <CategoryAudioButton category={category} />
-      {isAudioActive && karaokeText && (
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
-          <div className="flex items-center gap-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700">
-            <Headphones className="h-3.5 w-3.5" aria-hidden />
-            Spilles av
-          </div>
-          <KaraokePitchText
-            text={karaokeText}
-            timings={karaokeTimings}
-            isActive={true}
-            className="text-[15px] leading-relaxed text-stone-800"
-          />
-        </div>
-      )}
-      {category.lead && (
-        <p
-          data-board-body
+      {karaokeText ? (
+        <KaraokePitchText
+          text={karaokeText}
+          timings={karaokeTimings}
+          isActive={isAudioActive}
           className="mt-4 text-[15px] leading-relaxed text-stone-700"
-        >
-          {category.lead}
-        </p>
-      )}
-      {category.body && (
-        <p
-          data-board-body
-          className="mt-3 whitespace-pre-line text-[14px] leading-relaxed text-stone-600"
-        >
-          {category.body}
-        </p>
+        />
+      ) : (
+        <>
+          {category.lead && (
+            <p
+              data-board-body
+              className="mt-4 text-[15px] leading-relaxed text-stone-700"
+            >
+              {category.lead}
+            </p>
+          )}
+          {category.body && (
+            <p
+              data-board-body
+              className="mt-3 whitespace-pre-line text-[14px] leading-relaxed text-stone-600"
+            >
+              {category.body}
+            </p>
+          )}
+        </>
       )}
     </section>
   );
