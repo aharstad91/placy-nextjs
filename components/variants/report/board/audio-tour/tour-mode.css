@@ -93,6 +93,11 @@
 [data-rail-state="inactive"] {
   opacity: 0.3;
 }
+[data-rail-state="played"] {
+  /* "Du har vært her" — full opacity, men ingen scale/glow så den ikke
+   * konkurrerer med active. Speil av scroll-panel-sections-played-state. */
+  opacity: 1;
+}
 [data-rail-state="active"] {
   opacity: 1;
   transform: scale(1.15);
@@ -102,6 +107,9 @@
   opacity: 1;
   transform: scale(1.08);
   filter: drop-shadow(0 4px 12px var(--cat-glow, rgba(28, 25, 23, 0.35)));
+}
+[data-rail-state-compact="played"] {
+  opacity: 1;
 }
 [data-rail-state-compact="inactive"] {
   opacity: 0.3;

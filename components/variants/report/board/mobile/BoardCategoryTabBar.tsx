@@ -8,17 +8,30 @@ import { useBoard } from "../board-state";
 import type { BoardCategory } from "../board-data";
 import { THEME_SCENE_SRC } from "../../theme-icons";
 import {
+  useAudioTourSectionProgress,
   useAudioTourStore,
-  type AudioTrackCategoryId,
 } from "@/lib/stores/audio-tour-store";
 
-/** Speil av samme hook i BoardRail. Holdt lokal for å unngå utilitsmodul
- *  for én hook med to consumers. */
-function useTourActiveTrackCategory(): AudioTrackCategoryId | null {
-  return useAudioTourStore((s) => {
-    if (s.phase !== "playing" && s.phase !== "paused") return null;
-    return s.tracks[s.trackIndex]?.categoryId ?? null;
-  });
+type RailStateCompact = "active" | "played" | "inactive";
+
+/** Speil av useTourActive i BoardRail. Idle/ended → scroll styrer. */
+function useTourActive(): boolean {
+  return useAudioTourStore(
+    (s) => s.phase === "playing" || s.phase === "paused" || s.phase === "error",
+  );
+}
+
+/** Speil av deriveRailState i BoardRail.tsx — scroll/klikk eier "active"-
+ *  slotten (UX-affordance), audio eier pulse + "played"-spor. Se JSdoc i
+ *  BoardRail for full rasjonale. */
+function deriveRailState(
+  tourActive: boolean,
+  progress: ReturnType<typeof useAudioTourSectionProgress>,
+  scrollActive: boolean,
+): RailStateCompact {
+  if (scrollActive) return "active";
+  if (tourActive && progress !== null && progress !== "unplayed") return "played";
+  return "inactive";
 }
 
 /**
@@ -39,19 +52,14 @@ function useTourActiveTrackCategory(): AudioTrackCategoryId | null {
  * Snap-styring: tab-bar dispatcher kun til BoardState (SELECT_CATEGORY,
  * RESET_TO_DEFAULT). BoardMobileSheet sin egen useEffect-watcher på phase
  * snapper sheet til riktig stage. Ingen direkte kobling.
+ *
+ * Rail-state-compact speiler audio-tour-progress per spor (active|played|
+ * inactive) når turen er aktiv; ellers driver scroll-state den ene aktive.
  */
 export function BoardCategoryTabBar() {
   const { state, data, dispatch } = useBoard();
   const activeRef = useRef<HTMLButtonElement>(null);
   const activeCategoryId = state.activeCategoryId;
-  const tourTrack = useTourActiveTrackCategory();
-
-  // R19b: audio vinner over scroll. Cinematic-state speiler tourTrack når den
-  // er satt, ellers state.activeCategoryId.
-  const effectiveActiveCategoryId =
-    tourTrack && tourTrack !== "home" ? tourTrack : activeCategoryId;
-  const homeEffectiveActive =
-    tourTrack === "home" || (tourTrack === null && state.phase === "default");
 
   useEffect(() => {
     if (!activeCategoryId) return;
@@ -83,24 +91,19 @@ export function BoardCategoryTabBar() {
         style={{ touchAction: "pan-x" }}
       >
         <HomeButton
-          active={homeEffectiveActive}
-          pulsesDuringTour={tourTrack === "home"}
+          scrollActive={state.phase === "default"}
           onClick={handleHomeClick}
         />
 
-        {data.categories.map((cat) => {
-          const isActive = effectiveActiveCategoryId === cat.id;
-          return (
-            <CategoryButton
-              key={cat.id}
-              ref={isActive ? activeRef : null}
-              category={cat}
-              active={isActive}
-              pulsesDuringTour={tourTrack === cat.id}
-              onClick={() => handleCategoryClick(cat)}
-            />
-          );
-        })}
+        {data.categories.map((cat) => (
+          <CategoryButton
+            key={cat.id}
+            ref={cat.id === activeCategoryId ? activeRef : null}
+            category={cat}
+            scrollActive={cat.id === activeCategoryId}
+            onClick={() => handleCategoryClick(cat)}
+          />
+        ))}
       </div>
 
       <div
@@ -112,27 +115,32 @@ export function BoardCategoryTabBar() {
 }
 
 function HomeButton({
-  active,
-  pulsesDuringTour,
+  scrollActive,
   onClick,
 }: {
-  active: boolean;
-  pulsesDuringTour: boolean;
+  scrollActive: boolean;
   onClick: () => void;
 }) {
+  const tourActive = useTourActive();
+  const progress = useAudioTourSectionProgress("home");
+  const railState = deriveRailState(tourActive, progress, scrollActive);
+  const isActive = railState === "active";
+
   return (
     <button
       type="button"
       aria-label="Hjem"
-      aria-current={active ? "page" : undefined}
+      aria-current={isActive ? "page" : undefined}
       onClick={onClick}
-      data-active-during-tour={pulsesDuringTour ? "true" : undefined}
-      data-rail-state-compact={active ? "active" : "inactive"}
+      data-active-during-tour={
+        tourActive && progress === "active" ? "true" : undefined
+      }
+      data-rail-state-compact={railState}
       className="flex shrink-0 items-center justify-center w-14"
     >
       <div
         className={`flex h-14 w-14 items-center justify-center rounded-2xl border-2 bg-gradient-to-br from-amber-50 to-stone-200 ${
-          active
+          isActive
             ? "border-stone-900 text-stone-900 shadow-md"
             : "border-transparent text-stone-700 shadow-sm"
         }`}
@@ -147,29 +155,34 @@ const CategoryButton = forwardRef<
   HTMLButtonElement,
   {
     category: BoardCategory;
-    active: boolean;
-    pulsesDuringTour: boolean;
+    scrollActive: boolean;
     onClick: () => void;
   }
->(function CategoryButton({ category, active, pulsesDuringTour, onClick }, ref) {
+>(function CategoryButton({ category, scrollActive, onClick }, ref) {
   const illustrationSrc = THEME_SCENE_SRC[category.id];
   const Icon = getFilledIcon(category.icon);
+  const tourActive = useTourActive();
+  const progress = useAudioTourSectionProgress(category.id);
+  const railState = deriveRailState(tourActive, progress, scrollActive);
+  const isActive = railState === "active";
 
   return (
     <button
       ref={ref}
       type="button"
       aria-label={category.label}
-      aria-current={active ? "page" : undefined}
+      aria-current={isActive ? "page" : undefined}
       onClick={onClick}
-      data-active-during-tour={pulsesDuringTour ? "true" : undefined}
-      data-rail-state-compact={active ? "active" : "inactive"}
+      data-active-during-tour={
+        tourActive && progress === "active" ? "true" : undefined
+      }
+      data-rail-state-compact={railState}
       style={{ ["--cat-glow" as string]: hexToGlow(category.color) }}
       className="flex shrink-0 snap-center items-center justify-center w-14"
     >
       <div
         className={`relative h-14 w-14 overflow-hidden rounded-2xl border-2 ${
-          active
+          isActive
             ? "border-stone-900 shadow-md"
             : "border-transparent shadow-sm"
         }`}
