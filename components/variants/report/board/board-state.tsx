@@ -25,12 +25,12 @@ export interface BoardState {
 /**
  * Source-discriminator (Unit 0 spike, full version in Unit 2): identifies *who*
  * triggered the dispatch so subscribers can avoid feedback loops. For the spike,
- * "scroll", "rail", and "audio" sources keep `phase: "default"` (continuous-
- * scroll narrative — audio playback should drive the scroll-panel, not open
- * legacy BoardDetailPanel). Omitted source retains the legacy "active"
- * transition for mobile and any unmigrated callers.
+ * "scroll", "rail", "index", and "audio" sources keep `phase: "default"`
+ * (continuous-scroll narrative — audio playback should drive the scroll-panel,
+ * not open legacy BoardDetailPanel). Omitted source retains the legacy
+ * "active" transition for mobile and any unmigrated callers.
  */
-export type SelectCategorySource = "scroll" | "rail" | "audio";
+export type SelectCategorySource = "scroll" | "rail" | "index" | "audio";
 
 export type BoardAction =
   | { type: "SELECT_CATEGORY"; id: BoardCategoryId; source?: SelectCategorySource }
@@ -55,6 +55,7 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
       const stayInDefault =
         action.source === "scroll" ||
         action.source === "rail" ||
+        action.source === "index" ||
         action.source === "audio";
       return {
         phase: stayInDefault ? "default" : "active",
