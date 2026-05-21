@@ -6,6 +6,51 @@
 
 ---
 
+## 2026-05-21 — Karaoke + cinematic: unifisert pitch-tekst, progress per seksjon, sticky played-set
+
+### Kontekst
+Iterativ runde basert på bruker-feedback etter MVP-leveransen 2026-05-20. Tre tema, drevet av visuelle observasjoner i Chrome MCP-test:
+1. Amber-card-blokken med karaoke føltes som dobbel-rendring (manus over og lead/body under samtidig).
+2. Differensiering mellom aktiv og inaktive scroll-panel-seksjoner var ikke sterk nok — tour-mode-dimmingen til 0.5 var for subtil.
+3. Re-spill av en allerede-spilt seksjon nullstilte fremover-progress på de andre seksjonene.
+
+### Implementasjon
+
+- **Drop amber-card, audio-manus blir THE body-tekst.** I scroll-panel HomeSection + CategorySection og i InfoTab: KaraokePitchText håndterer både plain (audio idle) og karaoke (audio aktiv). Lead/body kun som fallback når `audio.manus` mangler. Tradeoff: inline POI-popovers fra lead/body forsvinner der manus finnes.
+- **KaraokePitchText-fallback dimmes som vanlig body-tekst.** `isActive=false` → `data-board-body` settes på `<p>` slik at tour-mode-CSS dimmer den. Aktiv karaoke har IKKE data-board-body — opacity drives per ord av karaoke-spans.
+- **Sterkere cinematic-differensiering i scroll-panel.** `data-section-state="played|active|unplayed"` på `<section>` i HomeSection + CategorySection. CSS overrider den generiske `data-board-body`-regelen: inaktive seksjoners tittel + body fader til 0.3 (matcher rail). Play-knappen forblir 1.0 — interaktiv affordance.
+- **Progress-state per seksjon.** Ny `useAudioTourSectionProgress(categoryId)`-selector kobler `tracks + trackIndex + phase + playedCategoryIds`-set til `"played" | "active" | "unplayed" | null`. Turen behandles som 0–100% framdrift: ferdigspilte beholder full opacity (lik karaoke-sluttilstand der alle ord er lit), aktiv har karaoke i fart, kommende fader til 0.3.
+- **Sticky played-set i audio-tour-store.** `playedCategoryIds: Set<AudioTrackCategoryId>` i state. `markCurrentAsPlayed`-helper kjøres før hver `next/prev/goToTrack` — re-spill av en seksjon endrer ikke status på andre. `start()` resetter set (frisk tur), `close()` resetter set.
+- **CategoryAudioButton kaller `start()` kun fra idle.** Re-spill av seksjon under pågående tour kaller kun `goToTrack(targetIndex)` — `start()` ville nullstilt played-set. Buggen som forårsaket regresjon i 2-bilde-iterasjonen.
+- **7 nye vitest-tester** låser inn sticky played-set-oppførselen: reset ved start, mark før trackIndex-bytte, sticky ved re-spill, prev/next/goToTrack-paths, ended-state med last mark, close-reset.
+
+### Beslutninger
+
+- **Manus blir den kanoniske teksten.** Bruker valgte eksplisitt "Manus blir den ene teksten — drop lead/body" via AskUserQuestion. Reverserer 2026-05-18-beslutningen om to separate content-former. Begrunnelse: visuell dobling føltes feil, og karaoke krever timings → manus er den eneste teksten karaoke kan binde til. Konsekvens: POI-popovers fra lead/body droppes der manus eksisterer (notert som åpen).
+- **"Cinematic — alt fader unna" forsterket til scroll-panel-innholdet.** Tidligere kun rail (Unit 5 i gårsdagens MVP). Nå hele inaktive seksjoners tittel + body til 0.3. Brainstorm 2026-05-18 (linje 89/107) støttet: "tydelig nok at brukeren ser hvilken kategori som er aktiv uten å lese label-tekst".
+- **Progress 0–100% modell over binær active/inactive.** Brainstorm 2026-05-18 (linje 165) hadde notert "behold 100% for forrige (signaliserer 'fullført'), start ny på 40%". Implementerte som tre states — played holder samme styling som karaoke-sluttilstand (full opacity).
+- **Sticky played-set løses begge endene.** Bruker oppdaget regresjon der re-spill av Hverdagsliv mid-tour resatte Barn/Mat til unplayed. Roten: CategoryAudioButton kalte `start()` ubetinget, som nullstilte playedCategoryIds. Løsning: (1) `markCurrentAsPlayed` sikrer at sticky-set bygges opp gjennom hele turen, (2) CategoryAudioButton kaller `start()` kun fra idle-state.
+- **Skip-til-neste markerer skipped som "played".** UX-valg i `next()`-implementasjonen — skipping en seksjon teller som "user har akkordert" og setter den til played. Enklere mental model enn å skille "fullført" fra "skipped".
+
+### Verifisering
+
+- 24/24 audio-tour-store-tester passerer (7 nye for sticky played-set).
+- KaraokePitchText 7/7 passerer (uendret etter data-board-body-tillegg på fallback).
+- TypeScript-compile rent (én tur tilbake under commit pga manglende `as BoardCategoryId`-cast i tester — fikset).
+- ESLint via lint-staged passerer.
+- Visuelt verifisert via Chrome MCP: hopp 3 spor frem (Mat aktiv, Home/Hverdagsliv/Barn played, Natur/Transport/Trening unplayed) → klikk "Spill av Hverdagsliv" → Hverdagsliv blir active, Home/Barn/Mat forblir played, resten unplayed. ✓
+
+### Åpne for senere
+
+- **POI-popover-tap i InfoTab.** Inline POI-lenker via `linkPOIsInText` i lead/body forsvinner der `audio.manus` finnes. Mulig løsning: utvid KaraokePitchText til å rendre POI-popovers innimellom karaoke-spans. Deferred — bruker valgte "manus blir teksten" bevisst.
+- **Mobil-progress.** Sticky played-set virker globalt, men `data-section-state` er kun satt på desktop BoardScrollPanel-seksjoner. Mobil-sheet bør også få progress-fade. Utsatt med mobil-karaoke-integrasjon.
+- **Scrubbing tilbake innenfor et spor.** Audio-element kan scrubbes; sticky-set markerer kun ved trackIndex-bytte. Hvis bruker scrubber tilbake mid-track, ingen visuell endring på played-status — som er OK (vi snakker progress mellom spor, ikke innenfor).
+
+### Commit
+- `dfc1831 feat(rapport-board): unifisert pitch-tekst + progress-state per seksjon` (7 filer, +326/-165). Ikke pushet per prototype-vanen.
+
+---
+
 ## 2026-05-20 — Karaoke ord-for-ord + cinematic sidebar (spike-MVP)
 
 ### Kontekst
