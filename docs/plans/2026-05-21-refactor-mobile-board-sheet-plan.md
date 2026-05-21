@@ -169,7 +169,7 @@ Ingen. Vaul-Drawer-API er allerede brukt i kodebasen; ingen ny ekstern teknologi
 
 ---
 
-- [ ] **Unit 3: Slett legacy mobile-filer + `BoardPOIDetails`**
+- [x] **Unit 3: Slett legacy mobile-filer + `BoardPOIDetails`**
 
 **Goal:** Fjern alle dead-code-filer nå som ny `BoardMobileSheet` ikke lenger refererer dem.
 
