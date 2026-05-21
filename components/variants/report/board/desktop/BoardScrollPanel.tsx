@@ -378,7 +378,11 @@ function CategorySection({
           </>
         )}
         {featuredPois.length > 0 && (
-          <div className="mt-6">
+          // POI-chips skjules på mobil i denne spiken — chip-tap dispatcher
+          // OPEN_POI som ville vise mini-popup på kart bak sheet (delvis
+          // skjult/ikke-synlig på peek). POI-tap-koordinasjon for mobil
+          // (snap-til-peek + kart-fly-to) er deferred til separat oppgave.
+          <div className="mt-6 hidden lg:block">
             <CategoryFeaturedChips
               pois={featuredPois}
               category={category}
