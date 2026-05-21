@@ -8,7 +8,10 @@ import { BoardScrollPanel } from "../desktop/BoardScrollPanel";
 // Bi-snap: peek (30% av viewport) som default + full (100%). Brukeren drar
 // manuelt mellom stages. Ingen auto-snap ved play eller phase-events —
 // brukeren styrer sheet-posisjon hele tiden.
-const SNAP_PEEK = "30%";
+//
+// Vaul snap-points: number 0-1 = fraction of viewport visible (NOT "30%" —
+// vaul tolker prosent-strenger som px og resulterer i nesten-skjult sheet).
+const SNAP_PEEK = 0.3;
 const SNAP_FULL = 1;
 const SNAP_POINTS: (number | string)[] = [SNAP_PEEK, SNAP_FULL];
 
