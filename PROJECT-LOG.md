@@ -6,6 +6,48 @@
 
 ---
 
+## 2026-05-21 — Rail-progress: scroll/klikk eier `active`, audio eier pulse + played-spor
+
+### Kontekst
+Forrige iterasjon ga scroll-panel-seksjonene progress-state (played | active | unplayed) som visuelt speil av tour-fremdrift. Sidebar/tab-baren hang igjen med kun `active | inactive` — alle ikke-aktive ble dimmet til 0.3, også de som allerede var narrert. Samme regresjon som vi nettopp fikset i body-teksten.
+
+I tillegg: brukerens R19b-regel ("audio vinner over scroll i split-brain") gjorde at klikk på en rail-ikon under aktiv tour ikke ga visuell respons — rail-en holdt audio-current som "active". UX-feel: dødt klikk.
+
+### Implementasjon
+Tre uavhengige visuelle signaler under aktiv tour:
+- `data-rail-state="active"` (scale + ring): scroll/klikket ikon. Overstyrer R19b kun for denne ene slotten.
+- `data-rail-state="played"` (full opacity, ingen scale): kategorier som er gjennomgått ELLER spilles nå men ikke er scroll-active. Sticky via samme `playedCategoryIds` som scroll-panel-progress.
+- `data-active-during-tour` (pulse): hvilken kategori audio nå narrerer. Kan ligge på samme ikon som "active" (passiv lyttemodus) eller annet ikon (etter klikk).
+
+`deriveRailState` (gjenbrukt i begge filer): scrollActive → "active" alltid; tourActive + progress !== "unplayed" → "played"; ellers "inactive". Idle/ended → scroll alene driver.
+
+Endrede filer:
+- `components/variants/report/board/desktop/BoardRail.tsx` — bytte lokal `useTourActiveTrackCategory` mot `useAudioTourSectionProgress` per kategori + Home. Splittet HomeRailButton ut som egen komponent for å rendere selectoren per knapp.
+- `components/variants/report/board/mobile/BoardCategoryTabBar.tsx` — samme mønster med `data-rail-state-compact`.
+- `components/variants/report/board/audio-tour/tour-mode.css` — nye regler `[data-rail-state="played"]` og `-compact="played"` (opacity 1, ingen scale/glow).
+
+### Beslutninger
+- **R19b-overstyring for `active`-slot, ikke for pulse**: Audio beholder pulse + played-spor (full opacity), så det er fortsatt tydelig "hvor megleren er." Brukerens klikk får bare lov å overstyre den ene visuelle "selected"-slotten. Begrunnet av UX-test: dødt meny-klikk føltes feil.
+- **Phase=ended → scroll alene**: BottomPlayer/PlayerBanner skjules ved `ended`, så rail bør også droppe tour-mode-cues. Ren navigasjon-modus.
+- **Ingen separat "klikket-men-ikke-aktiv"-state**: Klikk under tour scroller panelet og setter scrollActive umiddelbart. Trenger ikke en fjerde state.
+
+### Verifisering
+- `tsc --noEmit` → 0 feil
+- `npm run lint` → 0 errors (kun pre-existing warnings)
+- 24/24 tester i `audio-tour-store.test.ts` passerer
+- Side rendrer rent (kun pre-existing Mapbox-warnings i konsoll)
+- Manuell røyk-test bekreftet at endringen fungerer (vil finspisses videre)
+
+### Åpne for senere
+- Mobile tab-bar er ikke manuelt verifisert med browser-test (kun desktop). Bør sjekkes når mobil-flyt prioriteres.
+- Hover-state under tour er uendret — kan ha rare interaksjoner mellom hover-shadow på inactive-knapp og data-active-during-tour-pulse. Ikke observert som problem, men ikke testet eksplisitt.
+- "Tour ended"-overgang: hva er den ideelle UX? I dag forsvinner played-stylingen brått; kunne vurdere en kort overgang.
+
+### Commit
+- `698c836` feat(rapport-board): rail-progress + klikk-eier-active under audio-tour
+
+---
+
 ## 2026-05-21 — Karaoke + cinematic: unifisert pitch-tekst, progress per seksjon, sticky played-set
 
 ### Kontekst
