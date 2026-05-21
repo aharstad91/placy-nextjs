@@ -6,6 +6,62 @@
 
 ---
 
+## 2026-05-21 — Scroll-rytme + featured POI-chips (sidebar↔kart-synergi prøvd og delvis forkastet)
+
+### Kontekst
+Etter at tour-progress-state + rail-state landet (forrige entry), føltes scroll-panel-seksjonene fortsatt litt "knappe" — tre kategorier synlige samtidig stjal fokus fra én. Pluss: kategori-seksjonene var sterkt tekst-tunge etter at vi unifiserte manus + lead/body til én tekst, og hadde ingen direkte kobling til POI-laget.
+
+To-stegs iterasjon:
+1. Layout-grep: gjøre seksjoner høyere så vi får 1.5-visible-rytme + soft kanter
+2. Content-grep: fylle seksjoner med strukturelle elementer som peker mot konkrete POIs
+
+### Implementasjon
+
+**Steg 1 — 1.5-visible scroll-rytme:**
+- `min-h-[65vh]` per kategori-seksjon — neste seksjon peeker som "hint om fortsettelse"
+- Top/bottom-gradient på scroll-flata (10px/16px) for soft kanter
+- `data-section-state` får scroll-fallback: tour-progress hvis aktiv, ellers `active|inactive` fra `state.activeCategoryId`
+- Alltid-på `[data-section-state="inactive"]` CSS-regel (opacity 0.5) — speil av rail-prinsippet utenfor tour
+- Border softet til stone-200/60, `py-12` for mer luft
+
+**Steg 2 — Featured POI-chips (planlagt via /ce-plan):**
+- Plan: `docs/plans/2026-05-21-feat-featured-poi-chips-plan.md` (6 units, ingen P-tiers, ingen scope-guardian-trigger)
+- `lib/board/featured-pois.ts` — deterministisk seeded shuffle (cyrb53 + Mulberry32), `FEATURED_POI_COUNT = 5`. Random-shim med TODO mot fremtidig curator-flyt
+- `CategoryFeaturedChips`-komponent: horisontal chip-cloud, navn + kategori-ikon, klikkbar
+- Integrert i `BoardScrollPanel` (desktop) + `BoardCategoryInfoTab` (mobil) — `OPEN_POI`-dispatch ved klikk
+- 8/8 tester grønne (determinisme, clipping, immutability, edge-cases)
+
+**Steg 3 — Map-labels prøvd og forkastet:**
+- `FeaturedPOILabels`-komponent: navne-pillen over hver featured POI på kartet, samme utvalg som chips
+- Visuell verifisering: 5 labels × alle kategorier i default-modus = ~35 navne-pillen som dekket kartet
+- Effekten ble motsatt av intendert: labels *trakk fokus vekk fra chips* istedenfor å forsterke synergien
+- Slettet komponent + unmount (per CLAUDE.md hygiene — ikke kommentere ut, slette)
+
+### Beslutninger
+- **Random-shuffle som prototype-shim:** Megler/kunde vil i produksjon kunne velge top-N per kategori manuelt. Helper har TODO som peker dit. Naturlig avstigningssted.
+- **Chips alene eier featured-uttrykket:** Synergi mellom sidebar og kart ble ikke det vi håpet på. Lærdom: visuell kompleksitet på *to* flater samtidig vinner ikke automatisk over fokusert kompleksitet på én flate.
+- **Sentralisert `FEATURED_POI_COUNT`:** Holdt i `lib/board/featured-pois.ts` så chips og (om vi skulle reaktivere) labels ikke kan divergere ved tilfeldighet.
+- **3D-kart ikke berørt:** `BoardMap3D.tsx` har aldri fått labels (vi forkastet 2D-labels først). Hvis vi gjenintroduserer kart-labels senere, må også 3D-variant vurderes — eller bygges som ren 2D-feature.
+
+### Verifisering
+- `tsc --noEmit` → 0 feil
+- `npm run lint` → 0 errors (kun pre-existing warnings)
+- `vitest run lib/board/` → 8/8 grønne
+- Browser-test: scroll gjennom kategorier, sjekket 1.5-rytme, chips synlige, kart rent etter labels-revert
+
+### Åpne for senere
+- **Curator-UI for featured-POIs per kategori:** Trenger admin-flyt der megler/kunde plukker top-N. Datafelt på `BoardCategory` (f.eks. `featuredPoiIds?: BoardPOIId[]`) + UI for å velge. Random-shim erstattes da.
+- **Klikk på chip → kart-fokus:** I dag åpner klikk POI-overlay. Vurder om hover/click skal også flytte/zoome kart til POI-en.
+- **Walk-time per chip:** "Lily · 4 min" hvis travel-times er hydrert per POI.
+- **Map-feedback når chip hovres:** Lettere alternativ til persistente labels — kun den hovrede POI-en får label/highlight midlertidig. Mindre støy.
+
+### Commits
+- `441ee76` feat(rapport-board): 1.5-visible scroll-rytme + plan for featured POI-chips
+- `de5cb93` feat(rapport-board): featured POI-chips + map-labels (synergi sidebar↔kart)
+- `8922acb` revert(rapport-board): drop FeaturedPOILabels — kart-labels ble visuell støy
+
+---
+
 ## 2026-05-21 — Rail-progress: scroll/klikk eier `active`, audio eier pulse + played-spor
 
 ### Kontekst
