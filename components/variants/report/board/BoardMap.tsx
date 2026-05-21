@@ -16,7 +16,6 @@ import { BoardPathLayer } from "./BoardPathLayer";
 import { BoardPathMidpointMarker } from "./BoardPathMidpointMarker";
 import { BoardPOILabel } from "./BoardPOILabel";
 import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
-import { FeaturedPOILabels } from "./FeaturedPOILabels";
 import { BoardMap3D } from "./BoardMap3D";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
@@ -342,7 +341,6 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
 
             <BoardPathLayer />
             <BoardPathMidpointMarker />
-            <FeaturedPOILabels />
             <BoardPOILabel />
             {popupMode === "mini" && state.activePOIId && <BoardPOIMiniPopup />}
           </Map>
