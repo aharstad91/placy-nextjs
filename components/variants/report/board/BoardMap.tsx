@@ -99,33 +99,44 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
   // - default + aktiv kategori (scroll-drevet): kun den kategoriens pins.
   // - active|poi: kun aktiv kategoris POI-er, med sub-kategori-filter.
   //
+  // For å unngå hard 0↔1 overgang ved kategori-skifte rendres ALLE POI-er
+  // alltid med stabil DOM-identitet, og synlighet styres via `isVisible`-flag
+  // som BoardMarker fader via CSS-transition. Mapbox holder markør-projeksjonen
+  // stabil mens fade kjører.
+  //
   // Felles fargevalg på tvers av phaser: sub-kategori-fargen med tema-fargen
   // som fallback. Sub-kat differensierer f.eks. bar (lilla), bakeri (gul) og
-  // restaurant (rød) innen Mat-tema — og siden samme POI vises i begge phaser
-  // skal fargen være identisk når brukeren bytter mellom Hjem og kategori-tab.
-  const visiblePOIs = useMemo(() => {
+  // restaurant (rød) innen Mat-tema.
+  const markerStates = useMemo(() => {
+    const visibleIds = new Set<string>();
     if (state.phase === "default" && !activeCategory) {
-      return data.categories.flatMap((cat) =>
-        cat.pois.map((p) => ({
-          poi: p,
-          color: mutedColor(p.raw.category.color) ?? cat.color,
-          icon: p.raw.category.icon || cat.icon,
-        })),
-      );
+      for (const cat of data.categories) {
+        for (const p of cat.pois) visibleIds.add(p.id);
+      }
+    } else if (activeCategory) {
+      const useFilter =
+        state.phase !== "default" && subFilter.hiddenIds.size > 0;
+      for (const p of activeCategory.pois) {
+        if (useFilter && subFilter.hiddenIds.has(p.raw.category.id)) continue;
+        visibleIds.add(p.id);
+      }
     }
-    if (!activeCategory) return [];
-    const filtered =
-      state.phase === "default" || subFilter.hiddenIds.size === 0
-        ? activeCategory.pois
-        : activeCategory.pois.filter(
-            (p) => !subFilter.hiddenIds.has(p.raw.category.id),
-          );
-    return filtered.map((p) => ({
-      poi: p,
-      color: mutedColor(p.raw.category.color) ?? activeCategory.color,
-      icon: p.raw.category.icon || activeCategory.icon,
-    }));
+    return data.categories.flatMap((cat) =>
+      cat.pois.map((p) => ({
+        poi: p,
+        color: mutedColor(p.raw.category.color) ?? cat.color,
+        icon: p.raw.category.icon || cat.icon,
+        isVisible: visibleIds.has(p.id),
+      })),
+    );
   }, [state.phase, activeCategory, subFilter.hiddenIds, data.categories]);
+
+  // Synlige POI-er for kamera-fit (tour-bounds). Inkluderer ikke fade-out-
+  // markører — kamera skal følge faktisk-synlig content, ikke DOM-mengden.
+  const visiblePOIs = useMemo(
+    () => markerStates.filter((m) => m.isVisible),
+    [markerStates],
+  );
 
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
@@ -323,13 +334,14 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
               onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
             />
 
-            {visiblePOIs.map(({ poi, color, icon }) => (
+            {markerStates.map(({ poi, color, icon, isVisible }) => (
               <BoardMarker
                 key={poi.id}
                 poi={poi}
                 color={color}
                 icon={icon}
                 isActive={state.activePOIId === poi.id}
+                isVisible={isVisible}
                 onClick={() =>
                   dispatch({
                     type: "OPEN_POI",

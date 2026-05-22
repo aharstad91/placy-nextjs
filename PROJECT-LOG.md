@@ -6,6 +6,51 @@
 
 ---
 
+## 2026-05-22 — Fade-animasjon på kart-markører ved kategori-skifte (2D + 3D)
+
+### Kontekst
+Bruker observerte at mye skjer samtidig ved kategori-skifte (scroll, kamera-fit, markør-mengde-endring) og at instant 0↔1 markør-toggling skapte en "hard overgang" som gjorde det vanskelig å lese hva som faktisk endret seg på kartet. Eksisterende kode unmountet `BoardMarker` ved kategori-skifte (filtrert array via `visiblePOIs`), så markører bare forsvant uten transition.
+
+### Implementasjon
+Spike i to deler:
+
+**2D (`BoardMarker.tsx` + `BoardMap.tsx`):**
+- `markerStates` rendrer ALLE POI-er alltid (DOM-stabil identitet på tvers av kategori-skifter), `isVisible: boolean` styrer fade via inline CSS-transition: `opacity 300ms ease-out, transform 300ms ease-out` (+ width/height/border-width 200ms for active-state-skift)
+- Inline transition framfor Tailwind `transition-[opacity,transform,...]` — Tailwind arbitrary-value med kommaseparert liste ble tolket som `transition-all` og fade fyrte ikke
+- `pointer-events: none` på faded-out markører så de ikke fanger klikk-bobler bak
+- `visiblePOIs` derived fra `markerStates.filter(isVisible)` for kamera-fit-effekten (tour-bounds) — kameraet skal følge target, ikke DOM-mengden
+
+**3D (`BoardMap3D.tsx` + ny `use-tweened-opacities.ts`):**
+- Google Maps 3D rasteriserer SVG-markører per render — CSS-transition fungerer ikke. Løst via rAF-tween-hook som driver `opacities`-map som React-state mot target-verdier over 300ms ease-out (cubic)
+- Render alle POI-er via `allPOIs`-flatmap; faktisk-synlige avledet for kamera-fit, identisk pattern som 2D
+
+### Verifikasjon
+Chrome DevTools MCP + rAF-sampling av computed opacity:
+- Pre-fade: 63/63 fullt synlige (opacity 1.0)
+- t=58 ms: 45 markører i fading-bracket (0.05 < opacity < 0.95) + 18 fullt synlige
+- t=58–256 ms: 45 markører fader fra 1→0 jevnt
+- t=296+ ms: 45 markører fullt nedfadet (0.0), 18 synlige
+
+Screenshot midt i overgang (`screenshot-marker-fade-3-mid.png`) viser delvis-fade-markører rundt kartet samtidig med Mat-kategoriens fullt-opake markører.
+
+### Beslutninger
+- **Render union framfor exit-animation-queue** — 63 markører er innenfor Mapbox' komfortsone; én DOM-tre stabilt på tvers av kategori-skifter gir enklere mental modell og null mount/unmount-jitter. Alternativ (track exiting markers + delayed-unmount) er mer kode for liten gevinst
+- **Inline transition-style framfor Tailwind arbitrary** — Tailwind 3 JIT parser ikke kommaseparerte properties pålitelig; inline `transition: "opacity 300ms ..."` er trivielt og garantert applied
+- **rAF-tween-hook for 3D istedenfor CSS** — Google Maps rasteriserer SVG per render, så CSS-transitions blir kuttet. Eksisterende `opacities`-prop på `MapView3D`/`Marker3DPin` var allerede der; vi bare driver den fra en interpolerende state istedenfor å sende rene 0/1
+- **300 ms ease-out** — matcher kamera-fit-duration (800 ms tour-flyTo) konseptuelt ved at fade fullføres godt før kameraet har stabilisert seg. Føles "raskt nok" til ikke å forsinke flow, men tregt nok til å bli oppfattet
+
+### Lærdomspunkter
+- Tailwind arbitrary-value-syntax for multi-property transition (`transition-[opacity,transform,...]`) er upålitelig — falt tilbake til `all`. Inline style er enklere når property-listen er ikke-trivial
+- IntersectionObserver i `useBoardActiveSection` reagerer ikke pålitelig på programmatisk `scrollIntoView` i Chrome MCP (debounce + observer-timing). Ekte user-scroll fungerer; klikk-dispatch via UI-element trigget kategori-skiftet og lot fade verifiseres
+- 3D-toggle krever `has3dAddon=true` på prosjekt — ferjemannsveien-10 har ikke flagget, så 3D-fade-pathen kan ikke visuelt verifiseres her uten å aktivere addon på prosjektnivå
+
+### Åpne punkter
+- 3D visuell verifikasjon — krever et prosjekt med `has3dAddon=true` eller midlertidig overstyring. Logikk er likt mønster som 2D, men perf-profilen er anderledes (45 markører × ~18 frames × SVG-raster i Google Maps = ~810 raster-ops over 300ms)
+- Ved perf-problem i 3D kan vi snappe til 0/1 istedenfor smooth tween — eller halvere durationen
+- Endringer er uncommittet i working tree per prototype-policy (`feat/board-narrativ-spike`)
+
+---
+
 ## 2026-05-21 — Mobil board-sheet adopterer desktop scroll-panel + hero-CTA-pille
 
 ### Kontekst

@@ -10,10 +10,23 @@ interface Props {
   color: string;
   icon: string;
   isActive: boolean;
+  /**
+   * Når false fader markøren ut (opacity + scale) i stedet for å unmounte.
+   * Beholder DOM-identitet på tvers av kategori-skifter så Mapbox ikke må
+   * re-projisere markører og fade kan animeres i CSS.
+   */
+  isVisible: boolean;
   onClick: () => void;
 }
 
-export function BoardMarker({ poi, color, icon, isActive, onClick }: Props) {
+export function BoardMarker({
+  poi,
+  color,
+  icon,
+  isActive,
+  isVisible,
+  onClick,
+}: Props) {
   const Icon = getFilledIcon(poi.raw.category.icon || icon);
   const circle = markerCircleStyle(color);
   // Lysere border (~50% hvit-blanding) demper rammen så ikonet får primær
@@ -28,21 +41,32 @@ export function BoardMarker({ poi, color, icon, isActive, onClick }: Props) {
       anchor="bottom"
       offset={[0, 0]}
       onClick={(e) => {
+        if (!isVisible) return;
         e.originalEvent.stopPropagation();
         onClick();
       }}
-      style={{ cursor: "pointer", zIndex: isActive ? 5 : 1 }}
+      style={{
+        cursor: isVisible ? "pointer" : "default",
+        zIndex: isActive ? 5 : 1,
+        pointerEvents: isVisible ? "auto" : "none",
+      }}
     >
       <div
-        className={`relative flex items-center justify-center rounded-full shadow-md transition-all duration-200 ${
-          isActive
-            ? "w-11 h-11 scale-110 border-[3px]"
-            : "w-8 h-8 border-2"
+        className={`relative flex items-center justify-center rounded-full shadow-md ${
+          isActive ? "w-11 h-11 border-[3px]" : "w-8 h-8 border-2"
         }`}
         style={{
           borderColor: isActive ? circle.borderColor : inactiveBorder,
           backgroundColor: circle.backgroundColor,
           color: circle.borderColor,
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible
+            ? isActive
+              ? "scale(1.1)"
+              : "scale(1)"
+            : "scale(0.5)",
+          transition:
+            "opacity 300ms ease-out, transform 300ms ease-out, width 200ms ease-out, height 200ms ease-out, border-width 200ms ease-out",
         }}
       >
         <Icon className={isActive ? "w-5 h-5" : "w-4 h-4"} weight="fill" />

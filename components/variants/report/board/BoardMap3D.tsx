@@ -9,6 +9,7 @@ import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
+import { useTweenedOpacities } from "./use-tweened-opacities";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
 // RouteLayer3D lazy-loaded — samme bundling-strategi som ReportThemeSection
@@ -56,26 +57,45 @@ export function BoardMap3D({ pendingCamera }: Props) {
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
 
-  // Synlige POIer speiler 2D-logikken (BoardMap.visiblePOIs):
-  // - default + ingen aktiv kategori (Hjem, scroll på toppen): alle POIs.
-  // - default + aktiv kategori (scroll-drevet inn i kategori-seksjon):
-  //   kun den kategoriens POIs, ufiltrert (sub-filter er kun chip-drevet).
+  // For å fade markører ved kategori-skifte rendres ALLE POI-er alltid med
+  // stabil DOM-identitet, og synlighet styres via `opacities`-map som
+  // useTweenedOpacities animerer per rAF (Google rasteriserer SVG per render,
+  // så CSS-transitions virker ikke — opacity må drives som React-state).
+  //
+  // - default + ingen aktiv kategori (Hjem): alle POIs synlige (opacity 1).
+  // - default/active + aktiv kategori: kun den kategoriens POIs synlige.
   // - active|poi: kun aktiv kategoris POIs, med sub-filter applisert.
-  // MapView3D forventer raw POI fra lib/types og leser farge/ikon fra
-  // poi.category, så ingen separat color/icon-map trengs her.
-  const visiblePOIs = useMemo(() => {
+  const allPOIs = useMemo(
+    () => data.categories.flatMap((c) => c.pois.map((p) => p.raw)),
+    [data.categories],
+  );
+
+  const visibleIds = useMemo(() => {
+    const ids = new Set<string>();
     if (state.phase === "default" && !activeCategory) {
-      return data.categories.flatMap((c) => c.pois.map((p) => p.raw));
+      for (const cat of data.categories) {
+        for (const p of cat.pois) ids.add(p.id);
+      }
+    } else if (activeCategory) {
+      const useFilter =
+        state.phase !== "default" && subFilter.hiddenIds.size > 0;
+      for (const p of activeCategory.pois) {
+        if (useFilter && subFilter.hiddenIds.has(p.raw.category.id)) continue;
+        ids.add(p.id);
+      }
     }
-    if (!activeCategory) return [];
-    const filtered =
-      state.phase === "default" || subFilter.hiddenIds.size === 0
-        ? activeCategory.pois
-        : activeCategory.pois.filter(
-            (p) => !subFilter.hiddenIds.has(p.raw.category.id),
-          );
-    return filtered.map((p) => p.raw);
+    return ids;
   }, [state.phase, data.categories, activeCategory, subFilter.hiddenIds]);
+
+  const allIds = useMemo(() => allPOIs.map((p) => p.id), [allPOIs]);
+  const opacities = useTweenedOpacities(allIds, visibleIds, 300);
+
+  // Faktisk-synlige POI-er (target=1) brukt av kamera-fit. Markører som er
+  // mid-fade-out ekskluderes så kameraet følger målet, ikke DOM-mengden.
+  const visiblePOIs = useMemo(
+    () => allPOIs.filter((p) => visibleIds.has(p.id)),
+    [allPOIs, visibleIds],
+  );
 
   // Default-camera: bruk pendingCamera hvis tilgjengelig (fra toggle), ellers
   // prosjektets home-koordinater + default 3D-tilt.
@@ -215,7 +235,8 @@ export function BoardMap3D({ pendingCamera }: Props) {
         center={initialCenter}
         cameraLock={cameraLock}
         freeMode
-        pois={visiblePOIs}
+        pois={allPOIs}
+        opacities={opacities}
         activePOIId={activePOI?.id ?? null}
         onPOIClick={(poiId) => {
           // Slå opp kategori-id fra board-data så OPEN_POI vet hvor
