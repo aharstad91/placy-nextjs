@@ -263,13 +263,24 @@ function IndexRow({
   );
 }
 
-/** Bygger Hjem-først track-array fra BoardData. Returnerer null hvis audio
- *  mangler noe sted — defensive sjekk. Mirror av `useStartTour` men inline
- *  for å unngå hook-kall i klikk-handler. */
+/** Bygger track-array fra BoardData — welcome først (hvis finnes), så Hjem,
+ *  kategorier, og valgfri outro sist. Returnerer null hvis Hjem-audio eller
+ *  en kategori-audio mangler — defensiv sjekk. Welcome og outro er optionale:
+ *  hvis de ikke finnes, droppes de stille. Mirror av `useStartTour` men
+ *  inline for å unngå hook-kall i klikk-handler. */
 function buildTracks(data: ReturnType<typeof useBoard>["data"]): AudioTrack[] | null {
   if (!data.home.audio) return null;
   if (!data.categories.every((c) => c.audio)) return null;
   return [
+    ...(data.welcome
+      ? [
+          {
+            categoryId: "welcome" as AudioTrackCategoryId,
+            url: data.welcome.url,
+            manus: data.welcome.manus,
+          },
+        ]
+      : []),
     {
       categoryId: "home" as AudioTrackCategoryId,
       url: data.home.audio.url,
@@ -280,5 +291,14 @@ function buildTracks(data: ReturnType<typeof useBoard>["data"]): AudioTrack[] | 
       url: c.audio!.url,
       manus: c.audio!.manus,
     })),
+    ...(data.outro
+      ? [
+          {
+            categoryId: "outro" as AudioTrackCategoryId,
+            url: data.outro.url,
+            manus: data.outro.manus,
+          },
+        ]
+      : []),
   ];
 }

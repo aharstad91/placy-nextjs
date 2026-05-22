@@ -11,8 +11,14 @@ import type { BoardCategoryId } from "@/components/variants/report/board/board-d
  * skjer i `use-audio-tour-sync.ts`.
  */
 
-/** Kategori-nøkkel for ett spor. "home" er Hjem-pitchen som ikke har egen BoardCategory. */
-export type AudioTrackCategoryId = BoardCategoryId | "home";
+/** Kategori-nøkkel for ett spor. "welcome" er tour-host-prat (kun ved
+ *  tour-start), "home" er Hjem-pitchen og "outro" er avslutnings-sporet —
+ *  ingen av dem er BoardCategory-er. */
+export type AudioTrackCategoryId =
+  | BoardCategoryId
+  | "welcome"
+  | "home"
+  | "outro";
 
 export interface AudioTrack {
   categoryId: AudioTrackCategoryId;

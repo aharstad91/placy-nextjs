@@ -1,15 +1,17 @@
 #!/usr/bin/env npx tsx
 /**
  * Tar staged manus fra .curation-staging/<projectSlug>/<spor>.md og PATCHer
- * `products.config.reportConfig.heroAudio.manus` + `themes[].audio.manus`
- * for matchende prosjekt.
+ * `products.config.reportConfig.welcomeAudio.manus`, `heroAudio.manus`,
+ * `themes[].audio.manus`, og `outroAudio.manus` for matchende prosjekt.
  *
  * Nullstiller audio.url, audio.voice, audio.model, audio.generatedAt og
  * audio.timings for hvert touched spor — så `audio-tour-build.ts` regenererer
  * MP3 + karaoke-timings uten --force.
  *
  * Spor-mapping:
+ *   welcome.md → welcomeAudio (tour-host-prat, ikke en theme)
  *   nabolaget.md → heroAudio (heroAudio.manus, ikke en theme)
+ *   outro.md → outroAudio (avslutningsspor, ikke en theme)
  *   <theme-id>.md → themes[].audio.manus  (mat-drikke, barn-oppvekst, etc.)
  *
  * Usage:
@@ -70,7 +72,9 @@ interface Theme {
 }
 
 interface ReportConfig {
+  welcomeAudio?: ThemeAudio;
   heroAudio?: ThemeAudio;
+  outroAudio?: ThemeAudio;
   themes?: Theme[];
   [k: string]: unknown;
 }
@@ -125,12 +129,25 @@ async function main() {
   const rc: ReportConfig =
     (existingConfig.reportConfig as ReportConfig | undefined) ?? {};
 
+  // Build new welcomeAudio (from welcome.md)
+  const welcomeManus = manusBySpor["welcome"];
+  const nextWelcome = welcomeManus
+    ? clearAudioMeta(rc.welcomeAudio, welcomeManus)
+    : rc.welcomeAudio;
+
   // Build new heroAudio (from nabolaget.md)
   const heroManus = manusBySpor["nabolaget"];
   const nextHero = heroManus ? clearAudioMeta(rc.heroAudio, heroManus) : rc.heroAudio;
 
+  // Build new outroAudio (from outro.md)
+  const outroManus = manusBySpor["outro"];
+  const nextOutro = outroManus ? clearAudioMeta(rc.outroAudio, outroManus) : rc.outroAudio;
+
   // Build new themes
-  const touched: string[] = heroManus ? ["heroAudio (nabolaget)"] : [];
+  const touched: string[] = [];
+  if (welcomeManus) touched.push("welcomeAudio (welcome)");
+  if (heroManus) touched.push("heroAudio (nabolaget)");
+  if (outroManus) touched.push("outroAudio (outro)");
   const nextThemes: Theme[] = (rc.themes ?? []).map((t) => {
     const newManus = manusBySpor[t.id];
     if (!newManus) return t;
@@ -142,7 +159,9 @@ async function main() {
 
   const nextRc: ReportConfig = {
     ...rc,
+    welcomeAudio: nextWelcome,
     heroAudio: nextHero,
+    outroAudio: nextOutro,
     themes: nextThemes,
   };
   const nextConfig = { ...existingConfig, reportConfig: nextRc };

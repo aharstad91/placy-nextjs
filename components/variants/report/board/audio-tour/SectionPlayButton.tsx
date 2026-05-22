@@ -10,11 +10,13 @@ import {
   type AudioTrackCategoryId,
 } from "@/lib/stores/audio-tour-store";
 
-/** Hvilket spor knappen kontrollerer — Hjem-sporet (track 0) eller en navngitt
- *  kategori (track-indeks slås opp via id-matching mot `tracks`-array). */
+/** Hvilket spor knappen kontrollerer — Hjem-sporet (track 0), en navngitt
+ *  kategori (track-indeks slås opp via id-matching mot `tracks`-array), eller
+ *  outro-sporet (siste track). */
 export type PlayTarget =
   | { kind: "home" }
-  | { kind: "category"; category: BoardCategory };
+  | { kind: "category"; category: BoardCategory }
+  | { kind: "outro" };
 
 /**
  * Kompakt rund play/pause-knapp som sitter til høyre i en seksjons-header
@@ -37,7 +39,9 @@ export function SectionPlayButton({ target }: { target: PlayTarget }) {
   const trackIndex = useAudioTourStore((s) => s.trackIndex);
   const tracks = useAudioTourStore((s) => s.tracks);
 
+  const welcomeAudio = data.welcome;
   const homeAudio = data.home.audio;
+  const outroAudio = data.outro;
   const allCategoriesHaveAudio = data.categories.every((c) => c.audio);
 
   if (!data.audioTourEnabled || !homeAudio || !allCategoriesHaveAudio) {
@@ -46,11 +50,22 @@ export function SectionPlayButton({ target }: { target: PlayTarget }) {
   if (target.kind === "category" && !target.category.audio) {
     return null;
   }
+  if (target.kind === "outro" && !outroAudio) {
+    return null;
+  }
 
   const targetId: AudioTrackCategoryId =
-    target.kind === "home" ? "home" : target.category.id;
+    target.kind === "home"
+      ? "home"
+      : target.kind === "outro"
+        ? "outro"
+        : target.category.id;
   const targetLabel =
-    target.kind === "home" ? "Nabolaget" : target.category.label;
+    target.kind === "home"
+      ? "Nabolaget"
+      : target.kind === "outro"
+        ? "Oppsummert"
+        : target.category.label;
 
   const currentTrack = tracks[trackIndex];
   const isThisActive = currentTrack?.categoryId === targetId;
@@ -67,6 +82,15 @@ export function SectionPlayButton({ target }: { target: PlayTarget }) {
       return;
     }
     const newTracks: AudioTrack[] = [
+      ...(welcomeAudio
+        ? [
+            {
+              categoryId: "welcome" as AudioTrackCategoryId,
+              url: welcomeAudio.url,
+              manus: welcomeAudio.manus,
+            },
+          ]
+        : []),
       {
         categoryId: "home" as AudioTrackCategoryId,
         url: homeAudio.url,
@@ -77,6 +101,15 @@ export function SectionPlayButton({ target }: { target: PlayTarget }) {
         url: c.audio!.url,
         manus: c.audio!.manus,
       })),
+      ...(outroAudio
+        ? [
+            {
+              categoryId: "outro" as AudioTrackCategoryId,
+              url: outroAudio.url,
+              manus: outroAudio.manus,
+            },
+          ]
+        : []),
     ];
     const newIndex = newTracks.findIndex((t) => t.categoryId === targetId);
     if (newIndex === -1) return;

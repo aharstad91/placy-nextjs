@@ -364,8 +364,17 @@ export interface ReportConfig {
   cta?: ReportCTA;
   mapStyle?: string;
   trails?: TrailCollection;
+  /** Tour-host-prat som spilles når brukeren starter guidet tur. Ikke en
+   *  kategori — rendres som karaoke inni accordion under "Start guidet tur"-
+   *  CTAen i SidebarHero. Auto-overgang til heroAudio (Nabolaget) når
+   *  welcome er ferdig. */
+  welcomeAudio?: ReportThemeAudio;
   /** Build-time-generert audio-tour-spor for Hjem-panelet (Hjem er ikke en kategori). */
   heroAudio?: ReportThemeAudio;
+  /** Avslutnings-spor som spilles etter siste kategori. Ikke en kategori —
+   *  rendres i bunn av sidebar over megler-kortet og telles ikke i
+   *  CategoryIndex. */
+  outroAudio?: ReportThemeAudio;
   /** Bump for å tvinge re-gen av alle audio-spor på alle prosjekter. */
   audioVersion?: 5;
   /** Eksplisitt opt-in for "Start tour"-knapp. Default false — selv om

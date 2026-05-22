@@ -146,6 +146,16 @@ interface TrackToBuild {
 function collectTracks(reportConfig: ReportConfig): TrackToBuild[] {
   const tracks: TrackToBuild[] = [];
 
+  const welcomeManus = reportConfig.welcomeAudio?.manus;
+  if (welcomeManus && welcomeManus.trim().length > 0) {
+    tracks.push({
+      key: "welcome",
+      label: "Velkomst",
+      manus: welcomeManus,
+      hasExistingUrl: Boolean(reportConfig.welcomeAudio?.url),
+    });
+  }
+
   const heroManus = reportConfig.heroAudio?.manus;
   if (heroManus && heroManus.trim().length > 0) {
     tracks.push({
@@ -164,6 +174,16 @@ function collectTracks(reportConfig: ReportConfig): TrackToBuild[] {
       label: t.name,
       manus,
       hasExistingUrl: Boolean(t.audio?.url),
+    });
+  }
+
+  const outroManus = reportConfig.outroAudio?.manus;
+  if (outroManus && outroManus.trim().length > 0) {
+    tracks.push({
+      key: "outro",
+      label: "Outro",
+      manus: outroManus,
+      hasExistingUrl: Boolean(reportConfig.outroAudio?.url),
     });
   }
 
@@ -390,6 +410,18 @@ async function main() {
     return { ...t, audio: nextAudio };
   });
 
+  const welcomeAudio = audioByKey.get("welcome");
+  const nextWelcomeAudio: ReportThemeAudio | undefined = welcomeAudio
+    ? {
+        ...(existingRc.welcomeAudio ?? { manus: "" }),
+        url: welcomeAudio.url,
+        voice: welcomeAudio.voice,
+        model: welcomeAudio.model,
+        generatedAt: welcomeAudio.generatedAt,
+        timings: welcomeAudio.timings,
+      }
+    : existingRc.welcomeAudio;
+
   const homeAudio = audioByKey.get("home");
   const nextHeroAudio: ReportThemeAudio | undefined = homeAudio
     ? {
@@ -402,10 +434,24 @@ async function main() {
       }
     : existingRc.heroAudio;
 
+  const outroAudio = audioByKey.get("outro");
+  const nextOutroAudio: ReportThemeAudio | undefined = outroAudio
+    ? {
+        ...(existingRc.outroAudio ?? { manus: "" }),
+        url: outroAudio.url,
+        voice: outroAudio.voice,
+        model: outroAudio.model,
+        generatedAt: outroAudio.generatedAt,
+        timings: outroAudio.timings,
+      }
+    : existingRc.outroAudio;
+
   const nextReportConfig: ReportConfig = {
     ...existingRc,
     themes: nextThemes,
+    ...(nextWelcomeAudio ? { welcomeAudio: nextWelcomeAudio } : {}),
     ...(nextHeroAudio ? { heroAudio: nextHeroAudio } : {}),
+    ...(nextOutroAudio ? { outroAudio: nextOutroAudio } : {}),
     audioVersion: 5,
   };
   const nextConfig = { ...existingConfig, reportConfig: nextReportConfig };

@@ -184,8 +184,12 @@ export interface ReportData {
   mapStyle?: string;
   /** Default heading for alle 3D-kart-instanser (0–359°). Undefined = nord (0). */
   initialHeading?: number;
+  /** Tour-host-prat som spilles ved start av guidet tur. */
+  welcomeAudio?: import("@/lib/types").ReportThemeAudio;
   /** Build-time audio-tour-spor for Hjem-panelet (Steg 8c). */
   heroAudio?: import("@/lib/types").ReportThemeAudio;
+  /** Avslutnings-spor som spilles etter siste kategori. */
+  outroAudio?: import("@/lib/types").ReportThemeAudio;
   /** Eksplisitt opt-in: viser "Start tour"-knappen kun når dette er true,
    *  selv om audio-spor er generert. */
   audioTourEnabled?: boolean;
@@ -611,7 +615,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     cta: rc?.cta,
     mapStyle: rc?.mapStyle,
     initialHeading: PROJECT_3D_HEADINGS[`${project.customer}_${project.urlSlug}`],
+    welcomeAudio: rc?.welcomeAudio,
     heroAudio: rc?.heroAudio,
+    outroAudio: rc?.outroAudio,
     audioTourEnabled: rc?.audioTourEnabled,
   };
 }

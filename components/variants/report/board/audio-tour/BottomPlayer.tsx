@@ -53,12 +53,25 @@ function ActiveState() {
 
   if (!currentTrack) return null;
 
+  const isWelcome = currentTrack.categoryId === "welcome";
   const isHome = currentTrack.categoryId === "home";
-  const category = isHome
-    ? undefined
-    : data.categories.find((c) => c.id === currentTrack.categoryId);
-  const displayLabel = isHome ? "Nabolaget" : (category?.label ?? "");
-  const thumbnail = isHome ? data.home.heroImage : category?.illustration?.src;
+  const isOutro = currentTrack.categoryId === "outro";
+  const category =
+    isWelcome || isHome || isOutro
+      ? undefined
+      : data.categories.find((c) => c.id === currentTrack.categoryId);
+  const displayLabel = isWelcome
+    ? "Velkomst"
+    : isHome
+      ? "Nabolaget"
+      : isOutro
+        ? "Oppsummert"
+        : (category?.label ?? "");
+  const thumbnail = isHome
+    ? data.home.heroImage
+    : isWelcome || isOutro
+      ? undefined
+      : category?.illustration?.src;
 
   const isPlaying = phase === "playing";
   const isPaused = phase === "paused";

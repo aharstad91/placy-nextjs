@@ -6,6 +6,160 @@
 
 ---
 
+## 2026-05-22 — Zoom-baserte markører (rapport-board): brainstorm → plan → Unit 1-3 implementert
+
+### Kontekst
+Bruker observerte to problemer med dagens BoardMarker:
+1. **Lav zoom = kaos**: ~50 markører overlapping over Trondheim sentrum, kategorier konkurrerer om plass, ikon-detaljer går tapt
+2. **Høy zoom = anonym**: markøren forblir farget sirkel uten POI-navn, brukeren må klikke for å vite hva det er
+
+Referansebilde: Snapchat-Maps-mønster der nær-zoom rendrer POI-navn som tekst-label horisontalt ved siden av sirkulær markør.
+
+Sjekk av `/docs` viste at lignende arbeid ble gjort i februar (`docs/plans/2026-02-08-feat-adaptive-zoom-markers-illustrated-map-plan.md`) — `AdaptiveMarker` + `useMapZoomState` finnes for Explorer/ReportInteractiveMap. Men labels ble deaktivert i commit `c9ff333` ("cleaner map at all zoom levels"), og label-budget-logikken ligger dormant. Board-kartet (vår spike-kontekst) bruker ikke `AdaptiveMarker` i det hele tatt — den har sin egen enklere `BoardMarker.tsx`.
+
+### Workflow
+Full ce-pipeline kjørt med review-iterasjoner på begge artefakter:
+- **`/ce-brainstorm`** → `docs/brainstorms/2026-05-22-board-zoom-baserte-markorer-brainstorm.md`. Dialog avklarte: 3 tiers (dot/icon/icon+label), kun POI-navn på label, standardisert farge (stone-900), text-shadow halo, høy zoom-terskel (~16) for label, aktiv markør viser alltid label, dot-mønster ved lav zoom for kollisjons-håndtering.
+- **`ce-doc-review` runde 1** på brainstorm-doc: 23 funn (P1: 10, P2: 9, FYI: 4). LFG-anvendt — viktigste landinger: R10/R7/R1-konflikt (aktiv på dot-tier), per-markør `zoomTier`-prop fordi Mapbox `<Marker>` rendres i egen DOM-rot, `BoardPOILabel.tsx` deprecates, parallel-impl ikke ratifisert uten verifisering.
+- **`/ce-plan`** → `docs/plans/2026-05-22-001-feat-board-zoom-baserte-markorer-plan.md`. 5 implementation units, Standard scope.
+- **`ce-doc-review` runde 2** på plan-doc: 28 funn (P1: 7, P2: 16, FYI: 5). LFG-anvendt — kritiske faktafeil og arkitektur-korrigeringer:
+  - **Faktafeil**: planen sa `w-11 h-11 = 36px`. Verifisert: `w-11` = 44 px (Tailwind 11 × 4 = 44).
+  - **Anchor-geometri**: flex-row `[ikon | label]` med `anchor="bottom"` ankrer container-midten, ikke ikon-sirkelen. Flyttet label til absolute-positioned (`left: 100%`) utenfor `<Marker>`-bbox.
+  - **Mini-popup dobbel-navn**: `BoardPOIMiniPopup` viser allerede `{poi.name}`. La til R10c: `popupMode === "mini" && isActive` → suppress inline-label.
+  - **DOM-struktur**: planen sa fade er på `<Marker>`, men dagens BoardMarker setter opacity på *inner-div*. Korrigert.
+  - **Tier-flash**: useEffect kjører etter render. Lazy `useState`-init via `mapRef.current?.getMap?.().getZoom()` minimerer flash til max én render-cycle.
+  - **Unit 4/5 swap**: kalibrering kommer FØR `BoardPOILabel`-sletting → fallback-mulighet.
+
+### Implementasjon (Unit 1-3 landet, Unit 4-5 pending)
+
+**Unit 1 — `useBoardZoomTier`-hook** (`components/variants/report/board/use-board-zoom-tier.ts`):
+- React-state-driven (returnerer `BoardZoomTier`), ikke DOM-attribute som `useMapZoomState`. Begrunnelse: per-prop er idiomatisk React for ~50 markører; å endre eksisterende hook ville berørt to call-sites (ExplorerMap, ReportInteractiveMap) som er out-of-scope.
+- Eksporterer `computeZoomTier(zoom)` + konstantene `DOT_BREAKPOINT = 13`, `LABEL_BREAKPOINT = 16` for testbarhet og fremtidig kalibrering.
+- Lazy `useState`-init prøver `mapRef.current?.getMap?.().getZoom()` ved første render → unngår tier-flash hvis map-ref er klar.
+- `useEffect` (på `mapLoaded`) lytter på `map.on("zoom", ...)` og kjører `updateTier` umiddelbart for å plukke opp ekte verdi.
+- `useRef`-guard hindrer duplicate setState når Mapbox fyrer zoom-event 60 fps under gestures.
+- `DEBUG_ZOOM = true` logger hver tier-overgang via `console.log` (eslint-disable-next-line). Settes false når terskler er kalibrert.
+
+**Unit 2 — `BoardMarker.tsx` med tre slot-elementer** (kunne ikke gjenbruke `AdaptiveMarker` siden den er DOM-attribute-driven):
+- Inner-container med eksplisitt størrelse (44 px aktiv, 32 px ellers) + `overflow: visible`. Bærer `isVisible`-fade (eksisterende kategori-fade, 300 ms på opacity + transform).
+- Tre absolute-positioned søsken-elementer i inner-container, alle alltid i DOM, opacity-toggled:
+  - `<Dot/>` — 8 px farget prikk sentrert (`translate(-50%, -50%)`). Opacity 1 ved `effectiveTier === "dot"`.
+  - `<IconCircle/>` — dagens sirkel med border + ikon, absolute-sentrert. Opacity 1 ved `effectiveTier !== "dot"`. Active = 44 px + border-3, inactive = 32 px + border-2.
+  - `<Label/>` (`<span aria-hidden="true">`) — `position: absolute; left: 100%; margin-left: 8px`. Opacity 1 ved (`effectiveTier === "icon+label"` || `isActive`) && !`suppressLabel`. Font 10 px, stone-900, text-shadow dobbel hvit halo, max-width 120 px med ellipsis. `-webkit-font-smoothing: antialiased`.
+- `effectiveTier = isActive && zoomTier === "dot" ? "icon" : zoomTier` implementerer R10 (aktiv promoteres fra dot til icon).
+- `<Dot/>` og `<IconCircle/>` sentrert på samme akse — tap-koordinat flytter seg ikke ved promotion.
+- Alle har `transition: opacity 200ms ease-out` (R11). Kategori-fade (300 ms) på inner-div og tier-fade (200 ms) på label multipliseres av nettleseren.
+- `React.memo` med custom comparator (`poi.id, color, icon, isActive, isVisible, zoomTier, suppressLabel`).
+
+**Unit 3 — `BoardMap.tsx`-integrasjon**:
+- Importer + kall `useBoardZoomTier(mapRef, mapLoaded)` etter `useState`-deklarasjoner.
+- For hver `<BoardMarker>` i `markerStates.map(...)`: beregn `suppressLabel = popupMode === "mini" && state.activePOIId === poi.id` inline. Pass `zoomTier` + `suppressLabel` som nye props.
+- Ingen endringer på `markerStates`, `visiblePOIs`, tour-fitBounds eller 2D/3D-toggle-logikken.
+
+### Verifikasjon
+- `npx tsc --noEmit`: 0 type-feil.
+- `npm run lint` på tre nye/endrede filer: 0 errors, 0 warnings.
+- Dev-server kjører på `http://localhost:3000/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board` (port 3000).
+- **Visuell kalibrering (Unit 4) deferred** — Chrome MCP-profil låst, og bruker valgte å stoppe sesjonen før manuell kalibrering.
+
+### Beslutninger
+- **Ny hook framfor `useMapZoomState`-reuse**: Verifisert at den eksisterende returnerer `void` og skriver DOM-attribute. Vår per-prop-tilnærming krever React-state-return per markør. Å endre return-type ville berørt to call-sites out-of-scope. Ny hook = 70 linjer inkl. kommentarer.
+- **Per-prop framfor data-zoom-state-container**: Mapbox `<Marker>` rendres i `.mapboxgl-marker` (inni `.mapboxgl-map`), så descendant-CSS *kunne* fungert teknisk. Men det ville krevd Board-spesifikk CSS i `globals.css` (eller scoped-modul) — per-prop er idiomatisk React for ~50 markører × én re-render per tier-cross.
+- **Absolute-positioned label, ikke flex-sibling**: Bevarer `anchor="bottom"`-semantikk — `<Marker>`-bbox = ikon-sirkel-bbox, label er utenfor flow. Ikon-sirkelens bunn-senter pinnes til POI-koordinaten uansett om label er synlig.
+- **`BoardPOILabel` ikke slettet i denne sesjonen** — Unit 5 conditional på Unit 4 go/no-go. Side-by-side visuell sammenligning av pille (52 px over) vs inline (8 px høyre) er en del av kalibreringen.
+- **Dot-tier hit-area via inner-container-størrelse, ikke padding**: Container = 32 px ved inaktiv → hit-area = 32 × 32 (over 24 × 24-kravet). Padding-strategien fra planen ble forenklet siden container-størrelsen alene holder.
+
+### Lærdomspunkter
+- **Mini-popup-konflikt var skjult dobbel-rendering** — review-runde 2 oppdaget at `BoardPOIMiniPopup` allerede viser `{poi.name}`. Uten R10c-suppress ville aktiv POI fått navnet rendret to ganger på desktop. Kun fanget i feasibility/design-lens/adversarial-review, ikke i brainstorm.
+- **`w-N` Tailwind-konvertering: 4 px × N, ikke 9 px × N** — `w-11` = 44 px, ikke 36 (som plan-utkast hevdet). Kontrollerte ved å lese BoardMarker.tsx direkte.
+- **`useState`-lazy-init er det rette stedet for synkron initial-state-beregning** — `useEffect` kjører etter render. Hvis du trenger korrekt state ved første render OG hooken har en async-trigger (`mapLoaded`), løses det med lazy `useState(() => compute())` + `useEffect`-retry.
+- **`ce-doc-review` runde 2 fanget faktafeil som runde 1 ikke kunne**: Plan-doc-review verifiserte mot kodebase (feasibility-reviewer leste BoardMarker.tsx og fant w-11 = 44 px). Brainstorm-review gjorde ikke det fordi brainstorm ikke nevnte tall.
+
+### Åpne punkter
+- **Unit 4 kalibrering**: 8 oppgaver står i planen (POI-tetthet ved zoom 16, text-shadow vs illustrert palett, mini-popup-konflikt-validering, pille-vs-inline-sammenligning, tier-overgang smooth, multiplikativ opacity, dot-tap-target på mobil, active-label under tour). Krever dev-server + visuell verifikasjon på faktisk Stasjonskvartalet-data.
+- **Unit 5 sletting av `BoardPOILabel.tsx`** — conditional på Unit 4 go-no-go.
+- **3D-versjon (`BoardMap3D.tsx` + `Marker3DPin`)** deferred til egen plan-runde — Google rasteriserer SVG per render, så samme rAF-tween-mønster fra `useTweenedOpacities` må gjenbrukes.
+- **Filer uncommittet** per prototype-policy: brainstorm-doc, plan-doc, `use-board-zoom-tier.ts`, `BoardMarker.tsx`, `BoardMap.tsx`, denne worklog-entryen. Bundle separat fra andre sesjoners ucommitted endringer (CategoryIndex, SidebarHero, audio-tour-filer osv.).
+
+---
+
+## 2026-05-22 — Audio-tour-utvidelser: line-karaoke, manus-curator v3, outro+megler, welcome-accordion
+
+### Kontekst
+Lang sesjon på `feat/board-narrativ-spike` som drev audio-tour-flata fra "fungerer" til "designet". Fem koblede arbeidsblokker, alle drevet av bruker-observasjoner under live lytt-test:
+- Karaoke ord-for-ord skapte for høy kognitiv last
+- Audio-manus hadde vanilla-LLM-stil (forrige iter krevde 13 runder)
+- Ingen avslutning på turen + ingen megler-CTA
+- Nabolaget-spor blandet velkomst + områdebeskrivelse
+- TTS vinglet ved korte setninger med punktum
+
+### Implementasjon
+
+**Block 1: `manus-curator` skill + Stasjonskvartalet regenerert** (commit `7421d05`)
+- Ny `.claude/skills/manus-curator/SKILL.md` med v3-format: 0 POI-navn (unntak skole), 5 setn cap, 60–75 ord, 20–25 sek TTS, "ingen smørøyet/perfekt plassert"
+- 3 anker-eksempler + 3 anti-eksempler i `references/` — modellen lærer av sammenligning, ikke regler alene
+- Pipeline: `lytt-test-curation-staging.ts` (TTS preview i `.curation-staging/<slug>/audio-preview/`), `apply-curation-staging.ts` (PATCHer Supabase med optimistic lock på `updated_at`)
+- Stasjonskvartalet: 7 spor regenerert (Nabolaget + 6 kategorier), alle innenfor format
+
+**Block 2: Linjenivå-karaoke + stagger-wash** (commit `ceaa8aa`)
+- `KaraokePitchText` refaktorert: ord = atomisk enhet med stable timings, linjer detekteres dynamisk via `useLayoutEffect` + `getBoundingClientRect().top` (2px-tolerance for sub-pixel jitter)
+- Stagger: 35 ms delay per ord, 300 ms duration → ~475 ms wash per 6-ords linje
+- `karaoke-tokens.ts` eksporterer `mapCharTimingsToWords`; linje-grupperingen lever i komponenten siden den er DOM-avhengig
+- 6 nye/oppdaterte tester (alle passerer)
+
+**Block 3: Outro-spor + megler-kort i bunn av sidebar**
+- `outroAudio?: ReportThemeAudio` i `ReportConfig` (parallelt med `heroAudio`)
+- `BoardData.outro?: BoardAudioTrack` + `BoardData.brokers?: BrokerInfo[]` (eksisterende `BrokerInfo`-type gjenbrukt)
+- `OutroSection` (karaoke som `HomeSection`) + `MeglerSection` (statisk kontakt-kort med foto + Ring/E-post-knapper) i `BoardScrollPanel`
+- `AudioTrackCategoryId` utvidet med `"outro"`; `buildTracks`-pattern oppdatert i 3 steder (`useStartTour`, `CategoryIndex.buildTracks`, `SectionPlayButton`)
+- Section-label: "Avslutning" → "Oppsummert" (bruker-feedback: speiler manusets oppsummerende formulering)
+- DEMO-broker-placeholder for Stasjonskvartalet PATCHet via REST (Wesselslokka-stil)
+
+**Block 4: Manus-iterasjon — nabolaget + outro**
+Lytt-test-drevne TTS-fikser:
+- "til fots" → "ti minutters gange" (TTS-uttale "fooots")
+- "blomsterbed", "grønne lunger" → "parker", "lekeplasser" (uleselig av Erik)
+- "2028" → "Når Stasjonskvartalet står ferdig" (tidsregel: unngå hard-dato)
+- Stasjonskvartalet-navn brukt for ofte → kun i welcome
+- Kjøper-perspektiv etablert: "hvordan det oppleves å bo i nærmiljøet"
+- Pause-affordanse i intro speiles i outroens setn 2 ("utforske på egen hånd" — eksplisitt tematisk eko)
+
+**Block 5: Welcome-spor splittet ut + accordion-UI**
+- Diagnose: stemmevingling ved korte setninger (`eleven_turbo_v2_5` reset-er internal voice state mellom punktum-avsluttede setninger) + informasjonsarkitektur-feil (velkomst + intro-til-turen + pause-affordanse hører ikke til Nabolaget-kategorien)
+- Strukturell fix: egen `welcome.md` (47 ord, ~15 sek) for tour-host-prat; slanket `nabolaget.md` (53 ord, ~20 sek) til ren områdebeskrivelse med "Området" som referent (siden welcome etablerer Stasjonskvartalet)
+- Bonus: hver MP3 = egen TTS-ytring → ingen reset-vingling. Natural pause når audio-element switcher
+- `welcomeAudio?: ReportThemeAudio` i `ReportConfig` → `BoardData.welcome` → `welcome.mp3` i `public/audio/{slug}/`
+- `AudioTrackCategoryId` utvidet med `"welcome"`; buildTracks legger welcome **først** (før home)
+- `SidebarHero.TourCTAPill` → `TourCTAAccordion`: klikk ekspanderer pillen nedover via Tailwind grid-rows-[0fr]→[1fr] (300 ms ease-out), karaoke-tekst rendres inni accordion mens welcome-audio spilles
+- Auto-scroll til Nabolaget-section når `trackIndex` skifter `welcome` → `home` (useRef + useEffect-pattern, kun fyrer én gang per overgang)
+- Hvis prosjektet ikke har `welcomeAudio` → CTA-pillen oppfører seg som før (én klikk → direkte tour, ingen ekspansjon)
+
+### Beslutninger
+- **Linjenivå framfor ord eller setning** — bruker-test: ord-for-ord var kognitiv overload, hele setning betyr 3-4 linjer lyser samtidig (visuelt sprang). Linje matcher hvordan øyet leser
+- **Stagger-wash framfor binær opacity** — 35 ms × ord gir organisk "neon-vask"-effekt, ikke alle-på-en-gang. Brukerens første feedback etter implementering: "ah kult, bra!"
+- **`welcomeAudio`/`outroAudio` parallelt med `heroAudio`** — fremfor å integrere som "speciale themes[]". Renere semantikk: dette er tour-meta (welcome) og avslutning (outro), ikke kategorier
+- **CategoryIndex teller IKKE welcome/outro** — indeks-lista er for *innhold*, ikke for tour-host-prat eller CTA-rampe. `totalTracks` i SidebarHero (Spor X/Y) inkluderer alle 9 spor — det er progresjons-metrikk
+- **Em-dash istedenfor punktum i bridge-overganger** — turbo_v2_5 unngår voice-reset hvis bridge bindes til neste setning i én ytring. Punktum etter kort setn → vingling. Holdt for andre overganger der vi *vil* ha pause
+- **Splittet welcome ut framfor å patche vinglingen i nabolaget-spor** — strukturell fix løser to ting samtidig: TTS-stabilitet OG informasjonsarkitektur. Tour-host-prat hører hjemme i CTA-rampen, ikke i scroll-narrativet
+- **Accordion framfor inline expand i scroll-panelet** — ekspand-effekten er konsentrert til CTA-en hvor brukeren har fokus. Visuell feedback "noe skjer" konkurrerer ikke med scroll-rytmen
+
+### Lærdomspunkter
+- **TTS stokastisk per request** — kan ikke validere uttale på et kort snippet; må kjøre full manus. Stedsnavn er eksplosiver ("til fots" → "fooots", "blomsterbed" → kaos). Curatering > vendor-bytte
+- **`eleven_turbo_v2_5` voice-state-reset mellom setninger** — kan forårsake hørbar vingling i volum/tone ved korte setninger med punktum. Løsninger: lengre setninger (>15 ord) i én ytring, eller egen MP3 per logisk blokk
+- **DOM-måling for linje-detektering** — `getBoundingClientRect().top` med 2px-tolerance fanger sub-pixel jitter pålitelig på tvers av sidebar-breddevariasjoner. `useLayoutEffect` (ikke `useEffect`) så måling skjer før paint
+- **Tailwind grid-rows-[0fr]→[1fr] accordion-trick** — clean accordion-animasjon uten max-height-kalkulering eller measurement. Krever `overflow-hidden` på child og `grid` på parent
+- **Apply-script nullstiller `audio.url` for ALLE staged manus** — det betyr en run av audio-build regenererer alle filer i staging, ikke bare endrede. Akseptabelt for prototype, men en diff-check ville spart 70% ElevenLabs-kost ved iterasjon
+
+### Åpne punkter
+- **iPhone-validering av accordion** — visuell verifikasjon på faktisk mobil-bredde (Chrome MCP har min-width 500px); Vercel preview hvis ønskelig
+- **REVALIDATE_SECRET ikke satt** i `.env.local` — ISR cache invalidation kjøres ikke automatisk etter audio-build; krever hard-reload av siden
+- **Megler-data er DEMO-placeholder** — bruker bør erstatte med ekte BaneNOR Eiendom-kontakt før noen ser dette eksternt
+- **Block 5 uncommittet** i working tree per prototype-policy. `feat/board-narrativ-spike` har commits `7421d05` + `ceaa8aa` over `bc32e88`; outro/megler-arbeidet og welcome-accordion er fortsatt staged for vurdering
+- **Apply-script diff-check** — kunne hoppe over uendrede manus for å unngå unødvendig TTS-regen (sparer ElevenLabs-kost ved iterativ curation)
+- **"Opplevelser"-kategori** har eksisterende audio.url i DB men ingen manus i `.curation-staging/` — overlever audio-build via skip. Verifiser at curated manus eksisterer eller fjern fra config
+
+---
+
 ## 2026-05-22 — Fade-animasjon på kart-markører ved kategori-skifte (2D + 3D)
 
 ### Kontekst

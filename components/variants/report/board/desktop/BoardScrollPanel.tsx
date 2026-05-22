@@ -2,8 +2,15 @@
 
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import Image from "next/image";
+import { Mail, Phone } from "lucide-react";
 import { useBoard } from "../board-state";
-import type { BoardCategory, BoardCategoryId, BoardHome } from "../board-data";
+import type {
+  BoardAudioTrack,
+  BoardCategory,
+  BoardCategoryId,
+  BoardHome,
+} from "../board-data";
+import type { BrokerInfo } from "@/lib/types";
 import { useBoardActiveSection } from "@/lib/hooks/useBoardActiveSection";
 import { BottomPlayer } from "../audio-tour/BottomPlayer";
 import { SectionPlayButton } from "../audio-tour/SectionPlayButton";
@@ -13,7 +20,6 @@ import {
 } from "@/lib/stores/audio-tour-store";
 import { KaraokePitchText } from "../audio-tour/KaraokePitchText";
 import { CategoryFeaturedChips } from "../CategoryFeaturedChips";
-import { CategoryIndex } from "../CategoryIndex";
 import { SidebarHero } from "../SidebarHero";
 import { QueueOverlay } from "../QueueOverlay";
 import { getCategoryIllustrationSrc } from "@/lib/themes/category-illustrations";
@@ -143,9 +149,6 @@ export function BoardScrollPanel({
         >
           <SidebarHero />
           <div className="flex flex-col gap-3 px-3 pt-3">
-            <div className="overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-sm">
-              <CategoryIndex />
-            </div>
             <HomeSection
               home={data.home}
               scrollActive={state.activeCategoryId === null}
@@ -159,6 +162,10 @@ export function BoardScrollPanel({
                 registerRef={registerSectionRef(cat.id)}
               />
             ))}
+            {data.outro && <OutroSection outro={data.outro} />}
+            {data.brokers && data.brokers.length > 0 && (
+              <MeglerSection brokers={data.brokers} />
+            )}
           </div>
         </div>
         {/* Soft fade i topp/bunn av scroll-flaten — gir 1.5-visible-rytmen
@@ -308,6 +315,103 @@ function HomeSection({
         )}
       </div>
     </section>
+  );
+}
+
+/** Outro-spor i bunn av scroll-panelet. Spilles automatisk etter siste
+ *  kategori (audio-tour-store legger outro sist i tracks). IKKE registrert i
+ *  scroll-tracking — outro er ikke en BoardCategory, så scroll-til-outro skal
+ *  ikke dispatche SELECT_CATEGORY. Karaoke aktiveres når
+ *  `useAudioTourSectionProgress("outro") === "active"`. */
+function OutroSection({ outro }: { outro: BoardAudioTrack }) {
+  const progress = useAudioTourSectionProgress("outro");
+  const isAudioActive = progress === "active";
+
+  return (
+    <section
+      data-board-section="outro"
+      data-section-state={progress ?? "inactive"}
+      className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-sm"
+    >
+      <div className="flex flex-col px-6 py-6">
+        <SectionHeader
+          label="Oppsummert"
+          subline="Fri utforsking"
+          playButton={<SectionPlayButton target={{ kind: "outro" }} />}
+        />
+        <KaraokePitchText
+          text={outro.manus}
+          timings={outro.timings}
+          isActive={isAudioActive}
+          className="mt-4 text-base leading-relaxed text-stone-800"
+        />
+      </div>
+    </section>
+  );
+}
+
+/** Megler-kontaktkort i bunn av sidebar. Statisk — ingen audio, ingen
+ *  scroll-tracking. Vises kun når BoardData har brokers. Mønster: foto +
+ *  navn + tittel + telefon/e-post-knapper per megler. */
+function MeglerSection({ brokers }: { brokers: BrokerInfo[] }) {
+  return (
+    <section
+      data-board-section="megler"
+      className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-sm"
+    >
+      <div className="flex flex-col gap-4 px-6 py-6">
+        <h2 className="text-base font-semibold text-stone-900">
+          Spørsmål? Ta kontakt.
+        </h2>
+        <div className="flex flex-col gap-4">
+          {brokers.map((broker) => (
+            <BrokerCard key={`${broker.name}-${broker.email}`} broker={broker} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BrokerCard({ broker }: { broker: BrokerInfo }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-stone-100">
+        {broker.photoUrl && (
+          <Image
+            src={broker.photoUrl}
+            alt={broker.name}
+            fill
+            sizes="56px"
+            className="object-cover"
+          />
+        )}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[15px] font-semibold leading-tight text-stone-900">
+          {broker.name}
+        </span>
+        <span className="truncate text-[12px] text-stone-500">
+          {broker.title} · {broker.officeName}
+        </span>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <a
+            href={`tel:${broker.phone.replace(/\s+/g, "")}`}
+            className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-stone-700"
+          >
+            <Phone className="h-3.5 w-3.5" />
+            Ring
+          </a>
+          <a
+            href={`mailto:${broker.email}`}
+            className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-stone-700 transition hover:bg-stone-50"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            E-post
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
 

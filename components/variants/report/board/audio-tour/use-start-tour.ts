@@ -32,7 +32,9 @@ export function useStartTour(): UseStartTour {
   const { data } = useBoard();
   const { start } = useAudioTourActions();
 
+  const welcomeAudio = data.welcome;
   const homeAudio = data.home.audio;
+  const outroAudio = data.outro;
   const allCategoriesHaveAudio = data.categories.every((c) => c.audio);
   const canStart =
     !!data.audioTourEnabled &&
@@ -40,11 +42,28 @@ export function useStartTour(): UseStartTour {
     allCategoriesHaveAudio &&
     data.categories.length > 0;
 
-  const totalTracks = canStart ? data.categories.length + 1 : 0;
+  // Welcome + outro inkluderes i count og tracks når de finnes — fullverdige
+  // spor som spilles automatisk hhv før første kategori og etter siste.
+  // Telles utenfor "kategori-antall" i CategoryIndex, men inn i totalTracks.
+  const totalTracks = canStart
+    ? data.categories.length +
+      1 +
+      (welcomeAudio ? 1 : 0) +
+      (outroAudio ? 1 : 0)
+    : 0;
 
   const startTour = () => {
     if (!canStart || !homeAudio) return;
     const tracks: AudioTrack[] = [
+      ...(welcomeAudio
+        ? [
+            {
+              categoryId: "welcome" as AudioTrackCategoryId,
+              url: welcomeAudio.url,
+              manus: welcomeAudio.manus,
+            },
+          ]
+        : []),
       {
         categoryId: "home" as AudioTrackCategoryId,
         url: homeAudio.url,
@@ -55,6 +74,15 @@ export function useStartTour(): UseStartTour {
         url: c.audio!.url,
         manus: c.audio!.manus,
       })),
+      ...(outroAudio
+        ? [
+            {
+              categoryId: "outro" as AudioTrackCategoryId,
+              url: outroAudio.url,
+              manus: outroAudio.manus,
+            },
+          ]
+        : []),
     ];
     start(tracks);
   };

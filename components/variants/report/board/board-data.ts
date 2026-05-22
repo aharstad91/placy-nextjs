@@ -1,4 +1,5 @@
 import type {
+  BrokerInfo,
   POI,
   ReportThemeAudio,
   ReportThemeAudioTimings,
@@ -84,6 +85,17 @@ export interface BoardData {
   projectSlug?: string;
   home: BoardHome;
   categories: BoardCategory[];
+  /** Tour-host-prat som spilles ved start av guidet tur. Rendres som
+   *  karaoke-tekst inni accordion under "Start guidet tur"-CTAen, ikke som
+   *  egen scroll-seksjon. Telles ikke i CategoryIndex. */
+  welcome?: BoardAudioTrack;
+  /** Avslutnings-spor som spilles etter siste kategori. Rendres som eget
+   *  kort i bunn av sidebar over megler-kortet — er IKKE en kategori og
+   *  telles ikke i CategoryIndex. */
+  outro?: BoardAudioTrack;
+  /** Megler-kontakter til kontakt-kortet i bunn av sidebar. Tomt/undefined
+   *  → ingen kort vises. */
+  brokers?: BrokerInfo[];
   /** Lookup-map fra POI-id (lowercase) til full POI. Brukes av grounding-rendering for å resolve [text](poi:uuid)-lenker — kan referere POIs på tvers av kategorier. */
   poisById: Map<string, POI>;
   /** Eksplisitt opt-in for audio-tour-CTA. Default false. */
@@ -130,6 +142,9 @@ export function adaptBoardData(report: ReportData): BoardData {
       audio: pickPlayableAudio(report.heroAudio),
     },
     categories,
+    welcome: pickPlayableAudio(report.welcomeAudio),
+    outro: pickPlayableAudio(report.outroAudio),
+    brokers: report.brokers,
     poisById,
     audioTourEnabled: report.audioTourEnabled === true,
   };
