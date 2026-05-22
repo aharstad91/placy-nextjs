@@ -6,6 +6,87 @@
 
 ---
 
+## 2026-05-21 — Mobil board-sheet adopterer desktop scroll-panel + hero-CTA-pille
+
+### Kontekst
+Spotify-anatomi-doc-en (samme dato, tidligere) landet desktop med mål "én komponent-arkitektur for desktop og mobil" — men deferred mobil-implementasjonen. Mobile-flata levde på ~928 LOC divergent kode (`BoardMobileSheet` med 4-snap vaul + multi-phase content, `BoardCategoryTabBar` med bunn-nav, `BoardPOIDetails`/`BoardPunkterAccordion` med Punkter-tab-flyt). Bruker viste mockup av desktop-sidebar rendret på mobil-bredde og ba om at samme arkitektur skulle gjelde begge plattformer.
+
+### Implementasjon
+Brainstorm → plan → work-flyt:
+
+**Brainstorm** (`docs/brainstorms/2026-05-21-mobile-board-sheet-requirements.md`): Bi-snap (peek default + full), bunn-tab-bar fjernes helt, audio-player pinnet sibling utenfor sheet, POI-tap-koordinasjon defereres som no-op placeholders.
+
+**Plan** (`docs/plans/2026-05-21-refactor-mobile-board-sheet-plan.md`): 3 units Lightweight. Avdekket under planning at `BoardLiveTransport` brukes også av `BoardPOIDetails` (ikke kun mobile/) — `BoardPOIDetails` har bare mobile-consumers og kan også slettes. Plan utvidet til 5 slett-filer (~1.3K LOC ut).
+
+**Work-commits:**
+- `090a27e` Ny minimal `BoardMobileSheet` (~50 LOC) som mounter `<BoardScrollPanel />` + `mountBottomPlayer?: boolean`-prop på BoardScrollPanel (default true, mobil sender false) + scaffold-integrasjon (BottomPlayer som fixed-bottom z-50 sibling, BoardCategoryTabBar fjernet)
+- `2fc3a1e` Slett 5 legacy-filer: BoardCategoryTabBar, BoardPunkterAccordion, BoardTabs, BoardLiveTransport, BoardPOIDetails (914 LOC ut)
+- `d20139c` Fix vaul snap-point: `"30%"`-streng tolkes som ~30px, må være `0.3` (number fraction)
+- `2fd15cb` Skjul `CategoryFeaturedChips` på mobil via `hidden lg:block` — chips dispatcher OPEN_POI ved tap men mini-popup på kart bak sheet er ikke synlig på peek
+
+**Design-iterasjon post-spike** (basert på bruker-feedback i samme sesjon):
+- Fjernet `<CategoryIndex />` fra scroll-panel — første spor (Nabolaget) kommer rett under hero, ingen tabell-aktig nav-flate over kort
+- `SidebarHero` action-row redesignet fra liten rund play (40-48px) til bred CTA-pille: `[▶ 45px][Start guidet tur / 7 spor · audio-fortelling][›]` — full bredde, white bg + border-stone-200 (klikk-feel), chevron-affordance, phase-cycling (idle→start / playing→pause / paused→fortsett / error→prøv-igjen)
+- Smooth-scroll til Nabolaget-seksjon ved Start tour-klikk så fokus matcher hva som leses opp (direkte `scrollIntoView` i rAF — eksisterende state→scroll-mekanikk skipper når activeSection allerede er home)
+- Fjernet "Del rapport"-knapp (disabled placeholder uansett)
+
+### Beslutninger
+- **`mountBottomPlayer`-prop framfor å flytte BottomPlayer ut av BoardScrollPanel** — minimal risk for desktop, mobil mounter selv som scaffold-sibling
+- **POI-tap som no-op + chips skjult på mobil** — full POI-tap-koordinering (snap-til-peek + kart-fly-to + mini-popup) er separat oppgave; pragmatisk for spike
+- **Lightweight plan utvidet til logisk konsekvens-cleanup** — `BoardPOIDetails`-sletting kom inn under planning, ikke i requirements. Innenfor scope siden det er dependency-graf-konsekvens, ikke nye features
+- **Vaul snap-format-lærdom** — alltid number 0-1 (fraction) eller px-string ("96px"), aldri prosent-streng ("30%"). Verifisert manuelt via Chrome DevTools mobile emulation
+
+### Lærdomspunkter
+- `/full`-stil flyt (brainstorm → plan → work) virker for selv små refactor-oppgaver — tydelig artefakt-spor (requirements-doc + plan-doc) og scope-låsing
+- Chrome DevTools MCP mobile emulation har min-width 500px — kan ikke teste 375-iPhone 1:1. Workaround: stole på Tailwind-breakpoints + visuell rimelighet ved 500px
+- Bot-block-content fra annen sesjon i `PROJECT-LOG.md` ekskluderes fra mine commits — git status sjekkes før hver `git add`
+
+### Åpne punkter
+- POI-detail-flyt på mobil (chip-tap → snap-til-peek + kart-fly-to + mini-popup) — separat oppgave når det blir tid
+- POI-lenker i grounding/karaoke-tekst — defereres; rendres som tekst men link-styling-fjerning ikke utført
+- `KaraokePitchText.tsx` + `karaoke-tokens.ts` har 3 tsc-feil fra eldre commit (`dfc1831`/`8036dde`) — eksisterende tech debt, fikses i egen runde
+- Ingen push gjort (per prototype-policy) — branch `feat/board-narrativ-spike` har 4 nye commits over `bc32e88`
+
+---
+
+## 2026-05-21 — Pre-launch: blokker bot-crawl på placy.no (Vercel-forbruk)
+
+### Kontekst
+Bruker delte Vercel-forbruksdashboard og spurte "vi er jo ikke live engang, hva er all denne trafikken?" — store oransje stolper på Function/Edge Invocations, blå på Fast Data Transfer. Diagnose etter å ha lest `app/robots.ts` + `app/sitemap.ts`: placy.no er teknisk live og indekserbar, og siten *ber aktivt om crawl*:
+
+- `robots.ts` har `allow: "/"` for alle UA-er — kun `/admin`, `/api`, `/for`, `/trips`, `/test-3d`, `/kart` disallowed
+- `sitemap.ts` genererer URL per POI × område × locale (NO+EN, `/steder/<slug>` + `/places/<slug>`) + alle kategori-slugs + guides + `changeFrequency: "weekly"` på alt — tusenvis av URLer som inviterer Googlebot/Bingbot/GPTBot/ClaudeBot/Ahrefs/Semrush/etc til ukentlig re-crawl
+- Hver SSR-render trigger Supabase + API-routes som wrapper Google Places/Mapbox/Entur
+
+Bruker var tydelig: ingen SEO-verdi i denne fasen, kan faktisk skade (indeksering av halvferdige sider, AI-trening på prematur tekst).
+
+### Implementasjon
+Worktree: `chore/prelaunch-bot-block` (commit `cb4ed9e`, fast-forward push til `main`).
+
+- `app/robots.ts` → `disallow: "/"` for `*`, sitemap-pekeren fjernet
+- `app/sitemap.ts` → `return []` (slettet ~125 linjer Supabase-query-logikk; original ligger i git-historikk)
+
+Reverser ved lansering — minimal og synlig diff.
+
+### Begrensninger
+- robots.txt er frivillig. Googlebot/Bingbot/ClaudeBot/GPTBot respekterer det. Bad scrapers og enkelte SEO-verktøy ignorerer.
+- Indekserte sider forsvinner ikke automatisk — krever Search Console-fjerning eller `noindex`-meta hvis det haster.
+- Hvis residual bot-trafikk fortsatt er ille om en uke: Vercel Deployment Protection (password) eller middleware-block av UA er nukleære alternativer.
+
+### Forventet effekt på forbruk
+- **Function/Edge Invocations:** sannsynligvis 50–80% nedgang innen 1–7 dager etter at Googlebot/Bingbot fanger nye robots.txt (typisk re-check 1–24t)
+- **Fast Data Transfer:** følger Function-tallet — mindre SSR = mindre HTML over wire. Statisk asset-bandwidth (illustrasjoner, MP3) endres bare hvis scrapers stopper å hamre på dem
+- **Build Minutes:** uendret — avhenger av push-frekvensen din, ikke crawl
+- **Image Optimization:** følger SSR-volumet
+- Steady state vil fortsatt ha noe trafikk fra bad bots + din egen iPhone-testing via prod
+
+### Åpne punkter
+- Verifiser `https://placy.no/robots.txt` viser `Disallow: /` når deploy er grønn
+- Sjekk Vercel-grafen om ~1 uke — hvis fortsatt høyt, vurder Deployment Protection
+- Rydd opp `placy-ralph-prelaunch`-worktree når komfortabel: `git worktree remove ../placy-ralph-prelaunch && git branch -d chore/prelaunch-bot-block`
+
+---
+
 ## 2026-05-21 — Scroll-rytme + featured POI-chips (sidebar↔kart-synergi prøvd og delvis forkastet)
 
 ### Kontekst
