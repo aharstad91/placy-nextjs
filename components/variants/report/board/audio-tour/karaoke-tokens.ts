@@ -1,9 +1,12 @@
 import type { BoardAudioTimings } from "../board-data";
 
+const WHITESPACE_RE = /\s/;
+
 /**
  * Ord-token avledet fra ElevenLabs char-level alignment. `startMs`/`endMs`
- * tilsvarer første og siste tegn i tokenet, slik at karaoke-effekten kan
- * skifte opacity ved tokenets start uten å vente på siste tegn.
+ * tilsvarer første og siste tegn i tokenet. Ord er den minste enheten med
+ * stabile timings — linjer grupperes dynamisk via DOM-måling i
+ * `KaraokePitchText`.
  */
 export interface KaraokeToken {
   text: string;
@@ -12,8 +15,6 @@ export interface KaraokeToken {
   charStartIndex: number;
   charEndIndex: number;
 }
-
-const WHITESPACE_RE = /\s/;
 
 /**
  * Mapper character-level timings til ord-tokens. Bruker `timings.characters`

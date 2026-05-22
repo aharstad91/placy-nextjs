@@ -11,8 +11,9 @@ function withAudioContext(currentTime: number, children: React.ReactNode) {
   );
 }
 
-// Token 0 starter på 0.1s slik at currentTime=0 < startMs gir opacity 0.4
-// (ekte ElevenLabs-respons har også typisk en liten lead-pause).
+// "en to tre" — alle ord på én linje i jsdom (ingen layout-engine, alle
+// getBoundingClientRect-er returnerer top=0). I praksis betyr det at hele
+// teksten utgjør én linje, og line-startMs = første ords startMs (100ms).
 const helloTimings = {
   characters: ["e", "n", " ", "t", "o", " ", "t", "r", "e"],
   characterStartTimesSeconds: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
@@ -42,7 +43,7 @@ describe("KaraokePitchText", () => {
     expect(document.querySelector("[data-karaoke='active']")).toBeNull();
   });
 
-  it("isActive=true og currentTime=0 → alle tokens har opacity 0.4", () => {
+  it("isActive=true → rendrer ord-spans med data-line-index", () => {
     render(
       withAudioContext(
         0,
@@ -51,53 +52,39 @@ describe("KaraokePitchText", () => {
     );
     const root = document.querySelector("[data-karaoke='active']");
     expect(root).not.toBeNull();
-    const tokens = root!.querySelectorAll("[data-token-index]");
-    expect(tokens).toHaveLength(3);
-    tokens.forEach((tok) => {
-      expect((tok as HTMLElement).style.opacity).toBe("0.4");
-      expect(tok.getAttribute("data-token-lit")).toBe("false");
-    });
+    const wordSpans = root!.querySelectorAll("[data-line-index]");
+    expect(wordSpans).toHaveLength(3);
   });
 
-  it("currentTime=0.5s tenner ord som starter ≤500ms (en, to)", () => {
+  it("currentTime før første ords startMs → alle ord er dim (opacity 0.4)", () => {
     render(
       withAudioContext(
-        0.5,
+        0.05, // 50ms — før første ord (100ms)
         <KaraokePitchText text="en to tre" timings={helloTimings} isActive={true} />,
       ),
     );
-    const tokens = document.querySelectorAll("[data-token-index]");
-    expect((tokens[0] as HTMLElement).style.opacity).toBe("1");
-    expect(tokens[0].getAttribute("data-token-lit")).toBe("true");
-    expect((tokens[1] as HTMLElement).style.opacity).toBe("1");
-    expect((tokens[2] as HTMLElement).style.opacity).toBe("0.4");
+    const wordSpans = document.querySelectorAll("[data-line-index]");
+    wordSpans.forEach((span) => {
+      expect((span as HTMLElement).style.opacity).toBe("0.4");
+      expect(span.getAttribute("data-line-lit")).toBe("false");
+    });
   });
 
-  it("currentTime forbi siste token → alle tokens er lit", () => {
+  it("currentTime forbi linjens startMs → alle ord på linjen er lit (jsdom: én linje)", () => {
     render(
       withAudioContext(
-        1.0,
+        0.5, // 500ms — godt forbi linje 0's startMs på 100ms
         <KaraokePitchText text="en to tre" timings={helloTimings} isActive={true} />,
       ),
     );
-    const tokens = document.querySelectorAll("[data-token-index]");
-    tokens.forEach((tok) => {
-      expect((tok as HTMLElement).style.opacity).toBe("1");
+    const wordSpans = document.querySelectorAll("[data-line-index]");
+    wordSpans.forEach((span) => {
+      expect((span as HTMLElement).style.opacity).toBe("1");
+      expect(span.getAttribute("data-line-lit")).toBe("true");
     });
   });
 
-  it("rendrer uten AudioElementProvider — currentTime defaulter til 0", () => {
-    render(
-      <KaraokePitchText text="en to tre" timings={helloTimings} isActive={true} />,
-    );
-    const tokens = document.querySelectorAll("[data-token-index]");
-    expect(tokens).toHaveLength(3);
-    tokens.forEach((tok) => {
-      expect((tok as HTMLElement).style.opacity).toBe("0.4");
-    });
-  });
-
-  it("token-mapper får tom array → fallback til klartekst", () => {
+  it("ord-mapper får tom array → fallback til klartekst", () => {
     const corrupt = {
       characters: ["a", "b"],
       characterStartTimesSeconds: [0],

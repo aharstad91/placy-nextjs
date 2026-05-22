@@ -1,11 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mapCharTimingsToWords } from "./karaoke-tokens";
 
-function timings(
-  chars: string[],
-  starts: number[],
-  ends: number[],
-) {
+function timings(chars: string[], starts: number[], ends: number[]) {
   return {
     characters: chars,
     characterStartTimesSeconds: starts,
