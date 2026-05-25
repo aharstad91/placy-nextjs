@@ -71,7 +71,7 @@ const TRACKS: AudioTrack[] = [
   { categoryId: "transport" as BoardCategoryId, url: "/audio/sk/transport.mp3", manus: "t" },
 ];
 
-function renderBanner(data: BoardData = makeBoardData(), audio = { currentTime: 0, duration: 60 }) {
+function renderBanner(data: BoardData = makeBoardData(), audio = { currentTime: 0, duration: 60, unlock: async () => {} }) {
   return render(
     <BoardProvider data={data}>
       <AudioElementContext.Provider value={audio}>

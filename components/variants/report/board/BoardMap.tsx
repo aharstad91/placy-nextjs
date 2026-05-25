@@ -12,6 +12,7 @@ import {
 } from "@/lib/utils/camera-map";
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
+import { useBoardZoomTier } from "./use-board-zoom-tier";
 import { HomeMarker } from "./HomeMarker";
 import { BoardPathLayer } from "./BoardPathLayer";
 import { BoardPathMidpointMarker } from "./BoardPathMidpointMarker";
@@ -64,6 +65,11 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
   const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Zoom-tier styrer BoardMarker-rendering (dot/icon/icon+label). Lazy
+  // useState-init i hooken leser map.getZoom() ved første render; useEffect-
+  // retry plukker opp ekte verdi ved mapLoaded=true (også ved 3D→2D-toggle).
+  const zoomTier = useBoardZoomTier(mapRef, mapLoaded);
 
   // ---- 2D/3D-state-maskin ----
   const [mapMode, setMapMode] = useState<MapMode>("mapbox");
@@ -334,23 +340,31 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
               onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
             />
 
-            {markerStates.map(({ poi, color, icon, isVisible }) => (
-              <BoardMarker
-                key={poi.id}
-                poi={poi}
-                color={color}
-                icon={icon}
-                isActive={state.activePOIId === poi.id}
-                isVisible={isVisible}
-                onClick={() =>
-                  dispatch({
-                    type: "OPEN_POI",
-                    id: poi.id,
-                    categoryId: poi.categoryId,
-                  })
-                }
-              />
-            ))}
+            {markerStates.map(({ poi, color, icon, isVisible }) => {
+              const isActive = state.activePOIId === poi.id;
+              // R10c: når mini-popup viser POI-navn, undertrykk inline-label
+              // for aktiv markør så vi ikke får dobbel-navn-rendering.
+              const suppressLabel = popupMode === "mini" && isActive;
+              return (
+                <BoardMarker
+                  key={poi.id}
+                  poi={poi}
+                  color={color}
+                  icon={icon}
+                  isActive={isActive}
+                  isVisible={isVisible}
+                  zoomTier={zoomTier}
+                  suppressLabel={suppressLabel}
+                  onClick={() =>
+                    dispatch({
+                      type: "OPEN_POI",
+                      id: poi.id,
+                      categoryId: poi.categoryId,
+                    })
+                  }
+                />
+              );
+            })}
 
             <BoardPathLayer />
             <BoardPathMidpointMarker />

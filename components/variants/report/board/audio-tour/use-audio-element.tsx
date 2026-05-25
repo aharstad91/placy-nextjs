@@ -32,6 +32,11 @@ import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
 export interface AudioElementContextValue {
   currentTime: number;
   duration: number;
+  /** iOS Safari låser opp `<audio>`-elementet etter første `play()`-kall
+   *  innenfor user-gesture-stack. Kalles fra click-handler før første
+   *  audio-tour-start når UI ikke kan stole på at samme tap utløser
+   *  `useAudioTourStore.start()` (f.eks. Reels-intro-unlock-knapp). */
+  unlock: () => Promise<void>;
 }
 
 /** Eksponert for testing — `PlayerBanner.test.tsx` wrapper med dette
@@ -39,7 +44,23 @@ export interface AudioElementContextValue {
 export const AudioElementContext =
   createContext<AudioElementContextValue | null>(null);
 
-export function AudioElementProvider({ children }: { children: ReactNode }) {
+interface AudioElementProviderProps {
+  children: ReactNode;
+  /** Når true (default), auto-skip til neste spor i tracks-arrayet ved
+   *  audio.onended (board-tour-mønster). Når false, pause i stedet — kaller
+   *  i tillegg `onTrackEnded` hvis gitt så konsumenten kan reagere på
+   *  per-spor-slutt uten å gå videre. Reels-routen bruker false. */
+  autoAdvance?: boolean;
+  /** Kalles når et spor slutter naturlig (audio.onended) OG autoAdvance er
+   *  false. Brukes av Reels-orchestrator for å fade til map-fase. */
+  onTrackEnded?: () => void;
+}
+
+export function AudioElementProvider({
+  children,
+  autoAdvance = true,
+  onTrackEnded,
+}: AudioElementProviderProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -47,6 +68,7 @@ export function AudioElementProvider({ children }: { children: ReactNode }) {
   // Hent stable action-refs + reaktive felter separat — undgår at hele
   // sync-effekten re-runs hver gang trackIndex endrer seg pga ny action-ref.
   const next = useAudioTourStore((s) => s.next);
+  const pause = useAudioTourStore((s) => s.pause);
   const setError = useAudioTourStore((s) => s.setError);
   const phase = useAudioTourStore((s) => s.phase);
   const trackIndex = useAudioTourStore((s) => s.trackIndex);
@@ -84,7 +106,12 @@ export function AudioElementProvider({ children }: { children: ReactNode }) {
     const onLoadedMetadata = () => setDuration(audio.duration || 0);
     const onEnded = () => {
       setCurrentTime(0);
-      next();
+      if (autoAdvance) {
+        next();
+      } else {
+        pause("manual");
+        onTrackEnded?.();
+      }
     };
     const onError = () => setError();
     audio.addEventListener("timeupdate", onTime);
@@ -97,10 +124,30 @@ export function AudioElementProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
-  }, [next, setError]);
+  }, [autoAdvance, next, pause, onTrackEnded, setError]);
+
+  const unlock = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    // iOS unlocker `<audio>`-elementet etter første `play()`-kall i user-
+    // gesture-stack. For å garantere at en src eksisterer (ellers henger
+    // play() i Chrome), bruk en data-URL med 0.1s stillhet.
+    if (!audio.src) {
+      audio.src =
+        "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAACcQCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgP////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAnEMnYRZAAAAAAAAAAAAAAAAAAAA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+    }
+    try {
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+    } catch {
+      // Selv ved error har play() blitt forsøkt i gesture-stack — iOS
+      // unlocker elementet uansett.
+    }
+  };
 
   return (
-    <AudioElementContext.Provider value={{ currentTime, duration }}>
+    <AudioElementContext.Provider value={{ currentTime, duration, unlock }}>
       <audio ref={audioRef} preload="metadata" className="sr-only" />
       {children}
     </AudioElementContext.Provider>

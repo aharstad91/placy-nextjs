@@ -5,7 +5,7 @@ import { AudioElementContext } from "./use-audio-element";
 
 function withAudioContext(currentTime: number, children: React.ReactNode) {
   return (
-    <AudioElementContext.Provider value={{ currentTime, duration: 0 }}>
+    <AudioElementContext.Provider value={{ currentTime, duration: 0, unlock: async () => {} }}>
       {children}
     </AudioElementContext.Provider>
   );

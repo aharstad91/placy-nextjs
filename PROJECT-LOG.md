@@ -6,6 +6,369 @@
 
 ---
 
+## 2026-05-25 (natt) — Transport-kategori: Level B beats-match + gjenbrukbar compose-pipeline
+
+### Kontekst
+Andre kategori-bg etter natur — denne uten Veo, kun Ken Burns på stills (test av billig produksjons-pipeline). Sesjonen avdekket den kritiske innsikten om **manus + bilde-synkronisering** og produserte et gjenbrukbart pipeline-script som baker den inn.
+
+### Sentral innsikt: Reels-manus ≠ audio-tour-manus
+Audio-tour-manus er produktivt-skrevet for walked-through-format (rapporten i rapport-board). Det fungerer ikke for Reels-formatet fordi:
+1. Lengde er for høy (25-30 sek per kategori vs. SOME-pacing-vindu ~15-20 sek)
+2. Tema-vekt er ubalansert (transport-manus brukte 50% på tog selv om manus nevner 6 transport-moduser — øyet leser det som "tog er det viktige")
+3. Setningsstruktur tar ikke hensyn til at bildet kan bytte med setning
+
+**Reels-manus-prinsipper landet:**
+- Ett tema per setning (bilde kan bytte ved punktum)
+- Balansert vekt på det som nevnes (hver modus får sitt eget visuelle slot)
+- Tegne-budget ~15-20 sek per kategori
+- Stedsnavn minimeres for TTS (memory: norske stedsnavn er TTS-eksplosiver)
+
+### Implementasjon: Level B (beats-match)
+Vi har fire teoretiske nivåer av manus-bilde-synkronisering. Vi implementerte Level B:
+
+| Nivå | Beskrivelse | Innsats | Kostnad |
+|------|-------------|---------|---------|
+| A | Tema-match (riktig kategori-stemning) | Lav | Lav |
+| **B** | **Cut-punkter ved setningsenden** | Medium | Medium |
+| C | Sub-cuts innen setning (komma-split, keyword-match) | Høy | Høy |
+| D | Veo-motion timet til ord-konsept (audio-conditional generation) | Veldig høy | Eksisterer ikke ennå |
+
+Level B implementert via ny `scripts/compose-reels-bg.ts`:
+- Tar timings JSON fra ElevenLabs `/with-timestamps`
+- Auto-detekterer setningsende (`.` `!` `?`) som cut-punkter
+- `--extra-splits` lar manus spesifisere ekstra cut-punkter (Level C lite) ved søke-strenger som `"bysykkel,"`
+- Renderer hver beat som separat Ken Burns mp4 med variabel duration
+- Concat via demuxer (ikke filter-graph — lærdom fra transport v1 hvor filter_complex med 5 zoompan-inputs ga "samme bilde i alle slots")
+
+Resultat: Manus-leveransen om "tog" vises faktisk mens lokaltog er på skjermen. Naturlig overgang fra "buss" til "hurtigbåt" landet ved setningsenden uten manuell timing.
+
+### Reels-audio må holdes separat fra audio-tour-audio
+Første forsøk byttet ut `public/audio/stasjonskvartalet/transport.mp3` med ny VO. **Det er feil** fordi:
+- Audio-tour i rapport-board bruker samme MP3
+- Timings ligger i Supabase og refererer til *originale* manus
+- Karaoke ville da spille NYTT audio men markere ord fra GAMMELT manus → broken UX
+
+**Korrekt pattern:** Reels-audio er en **override-akse**, ikke en replacement.
+
+Implementert via `CATEGORY_REELS_AUDIO`-map i `components/variants/report/reels/reels-data.ts`:
+```ts
+const CATEGORY_REELS_AUDIO: Record<string, BoardAudioTrack> = {
+  transport: {
+    url: "/audio/stasjonskvartalet/transport-reels.mp3",  // ny fil
+    manus: "...",                                         // ny manus
+    timings: transportReelsTimings,                       // ny timings
+  },
+};
+// I builder: audio: CATEGORY_REELS_AUDIO[c.id] ?? c.audio
+```
+
+Audio-tour fortsetter å bruke originalen, Reels plukker overrideren når den finnes.
+
+### Bonus: video-bg pauses ved phase-change
+Brukerens observasjon: når VO slutter og sheet går fra `reel` → `map-quarter`, skal også bg-videoen fryse — bilde-flowen er del av samme narrative som stemmen.
+
+Fikset i `CategoryReel.tsx`:
+```tsx
+const shouldPlay = currentPhase === "reel";
+```
+
+Phase-change → pause(). Frame fryser på siste posisjon.
+
+### Veo-pipeline: negativPrompt-patch landet
+Forberedelse for neste Veo-runde basert på timelapse-funn fra natur-kategorien:
+- `scripts/animate-scene-veo.ts` patchet med `--negative-prompt`-flag
+- Default negativ-prompt: `"timelapse, time-lapse, hyperlapse, accelerated motion, fast-forward, sped up, fast clouds, fast-moving clouds, dramatic motion, jittery motion, camera zoom, camera pan, camera shake, motion blur, flickering, cartoon, animation, illustration"`
+- Default positiv-prompt forsterket: `"real-time playback speed, nearly stationary clouds with barely perceptible drift"`
+- Default duration: 8s (Veo API krever 4-8)
+- Bruker beslutter: kjør ikke ny Veo-genereing før bedre bildemateriale ligger klart
+
+### Strategisk avklaring: Google Places-bilder er ikke brukbare
+Brukeren spurte om vi kan bruke Google Places API-bilder som input til Veo/komposisjon. **Nei** av flere grunner:
+1. Google Maps Platform ToS section 3.3 forbyr eksplisitt bruk som AI/ML-input
+2. Fotograf eier opphavsretten, ikke Google
+3. Attribusjons-krav (`html_attributions`) passer dårlig på animert SOME-video
+
+Lovlige kilder: megler/byggherre selv, kunde-uploadet med rettighets-checkbox, stock-kommersielt + AI-modifisering, AI-generert fra scratch, egen Placy-foto-pipeline.
+
+### Asset-output for transport-kategorien
+- `public/audio/stasjonskvartalet/transport-reels.mp3` — 25.1 sek, ny manus
+- `data/reels-audio/transport.timings.json` — alignment for ny manus
+- `public/reels/categories/transport.mp4` — 25.2 sek, 7 Ken Burns-beats
+- `public/audio/stasjonskvartalet/transport.mp3` — **UENDRET** (audio-tour beholder originalen)
+
+### Nye filer
+- `scripts/voiceover-reels-transport.ts` — VO-generering fra hardkodet manus (ad-hoc, generaliseres senere hvis behov)
+- `scripts/compose-reels-bg.ts` — gjenbrukbar Level B compose-pipeline
+- `components/variants/report/reels/reels-data.ts` — `CATEGORY_REELS_AUDIO`-override + timings JSON-import
+
+### Status
+Transport-kategori levert med Level B sync. Bruker validerte UX i nettleser: "wow dette ble langt bedre med en eneste gang!". Naturlig overgang buss→hurtigbåt eksplisitt nevnt som suksessfaktor. Pipeline-script klar for neste kategori-bygg. Veo-pipelinen klar for re-bruk når bedre bildemateriale er på plass.
+
+### Neste utforskning (parkert)
+- Generisk `scripts/voiceover-reels.ts` (tar manus fra fil/CLI, ikke hardkodet per kategori)
+- Auto-deployment-steg: kopiere assets til public/ + oppdatere CATEGORY_REELS_AUDIO automatisk
+- Level C-pipeline: keyword-extractor (LLM build-time) + image-to-concept-map for fullt semantisk sync
+- Tilsvarende manus + bilde-pakker for resterende kategorier (mat-drikke, hverdagsliv, opplevelser, trening-aktivitet, barn-oppvekst)
+
+---
+
+## 2026-05-25 (kveld) — Veo-pipeline: natur-kategori-bg + læringer fra produksjons-bruk
+
+### Kontekst
+Første gang vi kjørte Veo-pipelinen på en hel kategori-bilde-pakke (5 bilder for natur-friluftsliv) for å erstatte placeholder-`scene1-4.mp4`-loops i Rapport-Reels med kategori-spesifikke video-bakgrunner. Sesjonen avdekket flere produksjons-relevante mønstre i Veo 3.0 fast som påvirker hvordan pipelinen må designes for skalering.
+
+### Pipeline-resultat
+- **Input**: 5 stillbilder i `~/Desktop/placy-test/natur/` (kajakk på Nidelva, skogvann m/ender, sjø-uteservering, marina golden hour, Munkholmen)
+- **Output**: `public/reels/categories/natur-friluftsliv.mp4` — 20 sek, 5 × 4-sek hard-cut concat, 9:16
+- **Compose**: ffmpeg single-pass med trim=1:5 per klipp (skip første sekund hvor motion er svak)
+- **Wiring**: `CATEGORY_VIDEO_BG`-map i `reels-data.ts` per kategori-id, fallback til scene1-4-syklus for kategorier uten dedikert bg
+
+### Produksjons-læringer
+
+**1. Veo 3.0 fast krever `durationSeconds` mellom 4-8.** Vi prøvde først 5 sek (`script default = 5`) og fikk 400 INVALID_ARGUMENT. Bekreftet via dok at intervallet er smalere enn antatt. Default i script oppdatert til 8 sek.
+
+**2. RAI-filter er kontekst-blindt.** Solnedgangs-bading med voksne svømmere ble blokkert med `"can't create videos from input images containing photorealistic children"`. Modellen kan ikke skille voksne-i-vannet fra barn-i-vannet på distanse. Konsekvens: bilder med personer i vann/strand-aktivitet er høyrisiko. Erstatningsbilde (kajakk-padlere med ryggen til kamera) gikk gjennom uten flagg. **Praksis-regel**: unngå bilder med uskarpe/distale figurer i bilde-kuratering — modellen "ser barn" når den er usikker.
+
+**3. "Drifting clouds" → timelapse-effekt.** Veos trening har sterk prior for å akselerere sky-bevegelse (sannsynligvis pga. dominans av timelapse-content i treningsdata). Selv eksplisitte ord som "subtle", "gentle", "slow" i positiv prompt overrider ikke denne prioren. Brukerens øye fanger det umiddelbart som unaturlig.
+
+**4. `negativePrompt`-parameter løser timelapse-problemet.** Veo API støtter `negativePrompt` i `parameters`-blokken. Patchet `scripts/animate-scene-veo.ts` med default negativ-prompt: `"timelapse, time-lapse, hyperlapse, accelerated motion, fast-forward, sped up, fast clouds, fast-moving clouds, dramatic motion, jittery motion, camera zoom, camera pan, camera shake, motion blur, flickering, cartoon, animation, illustration"`. Default positiv-prompt forsterket med `"real-time playback speed, nearly stationary clouds with barely perceptible drift"`.
+
+**5. Rate-limiting ved parallell-genereing.** 5 parallelle Veo-jobber traff 429 RESOURCE_EXHAUSTED på ca. 40% av jobbene. Quota-vinduet er per-minute (resettet etter 90 sek). For produksjon: **max 3 parallelle Veo-kall**, eller sekvensiell genereing med 60s buffer mellom.
+
+**6. Veo-kostnad er fortsatt lav nok for prototype-fase.** ~$0.10/sek for Veo 3.0 fast (8s = $0.80 per klipp). 5-klipp-kategori ≈ $4. 7 kategorier × 5 klipp = $28 per komplett prosjekt. RAI-avviste requests koster $0 (ingen video produsert). Fortsatt billig nok til at iterative re-genereing er overkommelig under utvikling.
+
+### Strategisk pivot: generic-per-kategori i stedet for per-prosjekt
+Sparring etter natur-resultatet landet en viktig produkt-beslutning: **bildene skal være generic per kategori, ikke per prosjekt.** Forankring:
+
+- **Google Places Photos kan IKKE brukes**: Google Maps Platform ToS section 3.3 forbyr eksplisitt bruk av deres content som input til AI/ML-modeller. Selv om Places API gir oss bilder-tilgang, er ToS-grensen klar. Pluss: opphavsrett på fotografen er separat akse, og attribusjons-krav (`html_attributions`) passer dårlig på animert SOME-video.
+- **Placys brand-DNA støtter generic**: vi har allerede landet at "Placys differensiator er nærområde-data, ikke storytelling" (jf. 2026-05-24 manus-pivot). Reelen viser kategori-mood; spesifisiteten kommer fra kart + POI + voice over.
+- **Skalerings-konsekvens**: 7 kategorier × 5 klipp = 35 klipp totalt for alle Placy-prosjekter (gjenbrukes på tvers). Ikke 35 × N prosjekter. Veo-kost flyttes fra per-prosjekt-aktivitet til engangs-asset-bygging.
+- **Premium-tier i fremtiden**: meglere/byggherrer kan override med egne lisenierte bilder for ekstra brand-spesifisitet. Standard SaaS-mønster — base + add-on.
+
+### Praktisk neste steg
+- Curate generic-bildepakker per kategori (5-8 bilder hver) fra lisensiert kilde (Pexels Pro, Unsplash+, eller egen fotograf)
+- Krav til bilder: matchende lys-tid, lite store sky-områder (timelapse-risiko), ingen ambiguous-alder-figurer (RAI-risiko)
+- Kjør oppdatert Veo-pipeline med negativPrompt på bildene
+- Gjenbruk på tvers av alle Placy-prosjekter via `CATEGORY_VIDEO_BG`-map
+
+### Endrede filer
+- `scripts/animate-scene-veo.ts` — `--negative-prompt`-flag, default-prompts forsterket, durations default 8s
+- `components/variants/report/reels/reels-data.ts` — `CATEGORY_VIDEO_BG` per kategori-id med fallback-syklus
+- `public/reels/categories/natur-friluftsliv.mp4` — første produksjons-asset
+
+### Artefakter
+- `~/Desktop/placy-test/natur/output/natur-{en,to,tre,fire,fire-1}.mp4` (5 × 8-sek Veo-klipp, råmaterialet)
+- `~/Desktop/placy-test/natur/output/natur.mp4` (sammensatt 20-sek)
+
+### Status
+Veo-pipeline validert som produksjons-klart for Rapport-Reels. Negative-prompt-patchen står klar for neste batch-kjøring. Bilde-anskaffelse blir nå produkt-blokker, ikke teknisk-blokker.
+
+---
+
+## 2026-05-25 — Rapport-Reels: mobil-first vertikal feed-prototype (v1 → v17)
+
+### Kontekst
+Bygget ny mobil-route `/eiendom/banenor-eiendom/stasjonskvartalet/rapport-reels` — TikTok-style vertikal feed der hver kategori er ett kort, med bunn-sheet som ekspanderer til fullskjerm Mapbox. Initial implementasjon (v1, Units 1-9) levert via `/ce-work` på plan `2026-05-24-001-feat-rapport-reels-stasjonskvartalet-plan.md`. Deretter 17 rapide UX-iterasjoner basert på løpende brukertesting.
+
+### Arkitektur
+- **Route**: `app/eiendom/[customer]/[slug]/rapport-reels/page.tsx` (async params, Next 14)
+- **State**: React Context + useReducer (`ReelsContext`) for fasiner og kort-index; Zustand `useAudioTourStore` for audio
+- **Komposisjon**: `DesktopGate → ReelsProvider → ReelsAudioShell → ReelsOrchestrator → MapLayer + ReelsStack`
+- **Scroll**: CSS `scroll-snap-type: y mandatory` + `IntersectionObserver` (thresholds 0.5/0.7/0.9) — ingen Swiper-framework
+- **Kart**: Én Mapbox-instans gjenbrukt på tvers av kort (WebGL context-limit). `react-map-gl/mapbox` v8 + vanilla mapbox-gl. Gestures via dynamiske props, ikke imperative `.enable()`-kall (props vinner ved re-render).
+- **Audio**: Utvidet `AudioElementContext` med `autoAdvance` (default true; Reels bruker false) + `onTrackEnded` callback. iOS Safari unlock via data-URL silence-MP3 før `play()`.
+- **Markører**: Gjenbruker eksisterende `BoardMarker` + `HomeMarker` + `useBoardZoomTier` fra board-spiken — ingen ny markør-impl.
+
+### Sheet-fase-mekanikk (endelig modell)
+Fem faser i `ReelsPhase`:
+1. **intro** (intro-video full-screen, sheet skjult)
+2. **reel** (10% peek) — sheet over video, audio spilles, mørk overlay + "Klikk for å åpne kart"-CTA
+3. **map-quarter** (20%) — VO ferdig, sheet "våkner", markører fades inn
+4. **map-half** (50%) — tap aktiverer kartet visuelt
+5. **map-full** (100%) — fullskjerm-kart med pan/zoom, chevron-down → tilbake til `reel` (10%)
+
+Tap-progresjon: peek → half (pause VO), quarter → half (VO allerede ferdig), half → full. Chevron i full lukker helt tilbake til peek (ikke half).
+
+### Kritiske bugs fikset
+- **Audio restart ved phase-change**: `state.currentPhase` var i `useReelsAudioOrchestration` deps → fjernet. Confirmation via brukerens diagnose-output (`audioCurrentTime: 2.265`).
+- **Mapbox canvas ikke resize ved container-høyde-endring**: La til `ResizeObserver` i `ReelsMap` som kaller `map.resize()` ved container size-change.
+- **Mapbox gestures ikke aktiv i map-full**: react-map-gl re-syncher props ved hver render og overstyrer imperative kall. Fikset ved å bruke `dragPan={gesturesEnabled}` etc. som dynamiske props. La også til `pointer-events: none` på `ReelsStack`-container i map-full så touch når Mapbox-canvas under (z-0). Chevron har explicit `pointer-events: auto`.
+- **iOS audio play() hang ved tom src**: `unlock()` setter nå data-URL silence-MP3 før `play()`.
+- **Audio overlapp ved card-bytte**: Page Visibility API pause + cleanup via `close()` på unmount.
+
+### UX-iterasjons-historikk (v2-v17)
+- **v2**: Reduser fra 2 MVP-kategorier → alle kategorier med audio + illustrasjon
+- **v3**: Bytt fra remount-per-kort til persistent-Mapbox med fade-in/out på markører
+- **v4**: Stopp autoplay mellom kort (autoAdvance=false), bruker må swipe
+- **v5**: Karaoke-teleprompter (maks 2 setninger om gangen, aktiv + neste på opacity-50) — bygget `KaraokeTeleprompter.tsx` over eksisterende `mapTokensToSentences`
+- **v6**: Tap-to-skip i peek pauser VO og hopper til map-half
+- **v7-v9**: Sheet-mekanikk forfining — 90% bredde + 5% margin i peek, 100% bredde fra quarter+; rounded-top, side-padding 8px, top-padding 16px; ingen border-radius i full
+- **v10**: Lys bakgrunn på header-area så sheet ikke ser transparent ut når den vokser 10→50%
+- **v11**: VO-end ekspander til 20% (map-quarter), ikke 50% — bruker må aktivt tappe for videre
+- **v12**: Video-bakgrunn fra `~/Desktop/placy-test/output/scene{1-4}.mp4` med cyklisk mapping per kort. Mørk bunn-gradient (`from-black/95 via-black/60 to-transparent` over bottom 50%) for tekst-kontrast.
+- **v13**: Dark mode på sheet (`bg-stone-900`) — mer subtil mot mørk gradient i video
+- **v14**: Fjern bunn-padding på kart-area, sort overlay + "Klikk for å åpne kart"-pill i peek/quarter
+- **v15**: Chevron i map-full lukker til `reel` (10%), ikke `map-half` — full reset til opprinnelig state
+- **v16**: Topp-gradient lagt til for å maske hard kant ved swipe mellom video-loops (`h-1/4`, lett styrke)
+- **v17**: Topp-gradient matchet bunn-styrke (`from-black/95 via-black/60 to-transparent` over `h-1/5`) — myk overgang ved kort-bytte
+
+### Nye filer
+- `components/variants/report/reels/ReportReelsPage.tsx` — main composition + `MapLayer`
+- `components/variants/report/reels/CategoryReel.tsx` — per-kategori card med video-bg, karaoke, gradient-stack
+- `components/variants/report/reels/IntroReel.tsx`
+- `components/variants/report/reels/ReelsStack.tsx` — scroll-snap container
+- `components/variants/report/reels/ReelsMap.tsx` — Mapbox med ResizeObserver, fitBounds, gesture-gating
+- `components/variants/report/reels/KaraokeTeleprompter.tsx` — 2-setning-vindu over `KaraokePitchText`
+- `components/variants/report/reels/reels-state.tsx` — Context + reducer
+- `components/variants/report/reels/reels-data.ts` — `buildReelsCards` med cyklisk video-mapping
+- `components/variants/report/reels/use-reels-audio-orchestration.ts` — phase-driven audio control
+- `components/variants/report/reels/DesktopGate.tsx`
+- `app/eiendom/[customer]/[slug]/rapport-reels/page.tsx`
+
+### Endrede filer
+- `components/variants/report/board/audio-tour/use-audio-element.tsx` — la til `autoAdvance` prop, `onTrackEnded` callback, `unlock()`-metode via context
+- `components/variants/report/board/audio-tour/karaoke-tokens.ts` — la til `KaraokeSentence` interface + `mapTokensToSentences`
+
+### Status
+Demobar mobile-prototype landet. Audio-orchestrering, Mapbox gestures, karaoke-vindu, video-bakgrunner og sheet-mekanikk validert i Chrome MCP. Kjente mangler: video-bakgrunner er placeholder fra Desktop (skal kobles til per-kategori Veo-output når pipelinen er klar), kun Stasjonskvartalet, mobile-only (desktop redirect-to-board).
+
+### Neste utforskning (parkert)
+- Per-kategori Veo-animasjoner av Placys illustrasjoner som video-bakgrunn (erstatter scene1-4-loops)
+- Andre prosjekter enn Stasjonskvartalet
+- Konsolidering vs. parallell-rute mot dagens rapport-board
+
+---
+
+## 2026-05-24 (kveld) — Placy Reels: manus-iterasjon → Placy-native kategori-format
+
+### Kontekst
+Etter at tech-spike og dokumentasjon (brainstorm + strategi-noter) var landet, kjørte ekstern SOME-research via `ce-web-researcher` og brukte funn til å bygge alternative manus-versjoner for A/B-grunnlag. Sesjonen avdekket at research-anbefalingene (persona-format) traff Placy-DNA-en feil — vi pivottet til en mye sterkere Placy-native struktur basert på rapport-anatomien.
+
+### Research-pivot: persona forkastet, kategori-anatomi adoptert
+
+Først bygget persona-versjon (Maria, 24.7s) per research-anbefaling om at "persona aktiverer identifikasjon sterkest for eiendom". Bruker reagerte umiddelbart:
+
+> "Eneste med persona er at det må egentlig være en 'ekte' person. Og det Placy skal være best på er lokasjon, få frem et nærområde."
+
+Kritisk innsikt — to ting research-fasen ikke fanget:
+1. **Fake persona bryter tillits-kontrakten** — vi har allerede én strikk på AI-animasjon, kan ikke samtidig finne på personer. Målgruppen merker det selv om de ikke artikulerer det.
+2. **Placys differensiator er nærområde-data, ikke storytelling** — vi konkurrerer ikke mot eiendoms-meglerens fortelling, vi konkurrerer mot deres områdebeskrivelse. Reels må reflektere Placys produkt-anatomi: kuratert kategori-struktur.
+
+Konsekvens: Reels skal være "trailer for rapporten" — hver scene presenterer en kategori, intro etablerer prosjektet, CTA inviterer til dypere utforsking. Brand-koherent når seeren klikker QR'en og møter samme struktur.
+
+### Funnet: Placys egne illustrasjoner er scene-materialet
+
+Søk i hovedrepoet avdekket 8 illustrasjoner per prosjekt i `public/illustrations/`:
+- `stasjonskvartalet-hero.jpg`
+- `stasjonskvartalet-mat-drikke.jpg`, `-transport.jpg`, `-natur-friluftsliv.jpg`, `-opplevelser.jpg`, `-trening-aktivitet.jpg`, `-hverdagsliv.jpg`, `-barn-oppvekst.jpg`
+
+Beslutning: Reels skal animere disse illustrasjonene via Veo, ikke stockfoto. Resultat:
+- 1:1 visuell konsistens mellom Reel og rapport (samme illustrasjon på SOME som på nettsiden)
+- Skalering blir trivielt: hvert Placy-prosjekt har allerede sin illustrasjons-pakke, Reel-pipelinen kan auto-velge bilder basert på kategori-mapping
+- Eliminerer behovet for meglerens stockfoto (som blant annet gav oss kafé-bilde fra ikke-Trondheim i tech-spike)
+
+For denne iterasjonen brukte vi fortsatt eksisterende Veo-klipp som visuell placeholder for å fokusere på manus-retningen — bilde-bytte kommer i neste iterasjon.
+
+### Manus-iterasjon (4 runder)
+
+**v1 (Mariadagsreise-persona):** 24.7s — forkastet pga. "ekte person"-problem.
+
+**v2 (kategori-versjon, brukerens forslag):** Lang intro + kategori-rapsing + "playsee.no"-trick for å unngå TTS-uttale-feil på "Placy".
+- Result: 21s. Funket på intro-tonen ("tyngde, bra"). Kategori-rapsing trengte mykere overgang ("steder" må inn). "playsee.no"-tricken FEILET — Erik klarte ikke å lande "Placy" via fonetisk skrivemåte.
+
+**v3 (justert kategori, "lenke i bio"-CTA):** Kategori med "se steder i nærheten av X, Y, Z..." (mykere flyt), CTA endret til "Hele nabolaget — utforsk det selv".
+- Result: 19.9s. Bra flyt, men "lenke i bio" for SOME-spesifikk hvis Reels også skal fungere som klikkbar ad.
+
+**v4 (endelig kategori):**
+- Intro: *"Velkommen til Stasjonskvartalet, Trondheims nyeste bykvartal hvor du vil få muligheten til å leve midt i en levende bydel."*
+- Kategori: *"Se steder i nærheten innen mat, transport, hverdagsliv med mer."*
+- Outro: *"Trykk på linken for å utforske området på egenhånd."*
+- Result: 13.65s tale, 14.1s video. **Midt i SOME-completion-sweet-spot (11-18s).**
+
+Brukerens egen redaksjons-innsikt landet manuset: kuttet "leve livet midt i byen, der sjø, kultur og rekreasjon smelter sammen" fordi det var kategorisk redundans med selve kategori-rapsingen. 3 kategorier + "med mer" antyder bredde uten å være listete. Generisk handlings-CTA fungerer for både organisk SOME og klikkbar ad.
+
+### Tech-justeringer
+
+**Variant-spesifikke durations i `scripts/compose-some-video.ts`:**
+```ts
+const DURATIONS = {
+  dagsreise: { scene: 4.8, endCard: 5.5 },  // 24.7s total
+  persona:   { scene: 4.8, endCard: 5.5 },  // 24.7s total
+  kategori:  { scene: 2.4, endCard: 4.5 },  // 14.1s total
+};
+```
+
+Kategori-versjonen er ~14 sek istedenfor 25 fordi voice over er kortere og research-anbefalingen er klar: stramt > langtrukket på SOME.
+
+**TTS-uttale-lærdom (utvider [feedback_norsk_tts_stedsnavn]):** ElevenLabs Erik turbo_v2_5 sliter med "Placy" uansett skrivemåte. "playsee.no" ble ikke lest som "Placy", men som "playsi-no" eller liknende. Konsekvens for Placy Reels: **navnet droppes fra voice over** — bruk generisk "området" eller "nabolaget" med visuelt Placy-branding i end-card istedenfor.
+
+### Artefakter
+- `~/Desktop/placy-test/output/composed-some-dagsreise.mp4` (24.7s, original spike)
+- `~/Desktop/placy-test/output/composed-some-persona.mp4` (24.7s, forkastet pga. fake-persona)
+- `~/Desktop/placy-test/output/composed-some-kategori.mp4` (14.1s, **endelig retning**)
+- `~/Desktop/placy-test/output/voiceover-kategori.mp3` (13.65s, 38 ord, 50 ord inkl. pauser-markup)
+
+### Neste utforskning (parkert for nå)
+- Bygge Veo-animasjoner av Placys egne illustrasjoner (transport, mat-drikke, natur-friluftsliv, hverdagsliv) for endelig visuell-mapping
+- Polert end-card-design (Placy-logo + QR + AI-disclaimer per research)
+- Tekst-overlay synkronisert med voice over (research: 85% ser SOME på mute)
+- **Nytt spor: Reels in-context i Placy Rapport** — hvordan bruke per-kategori-Reels innenfor rapporten (animerte illustrasjoner, modal-videoer, kobling til audio-tour). Brainstormet i `docs/brainstorms/2026-05-24-placy-reels-brainstorm.md`.
+
+### Status
+Manus-mal landet og demobar. Tech-pipeline klar for skalering til andre prosjekter. SOME-generering "roes ned" — neste prioritet er hvordan Reels integreres tilbake i Placy-rapporten som visuell-laget i selve produktet.
+
+---
+
+## 2026-05-24 — Spike: SOME-video (Innsalg av nærområdet) — proof of concept
+
+### Kontekst
+Nytt produktkonsept brainstormet med Markus: 10-30 sek vertikale (9:16) video-teasers for nærområde, ment for SOME-distribusjon av meglere som funnel inn til Placy Rapport. Sammensetning: AI-manipulerte stillbilder med subtil ambient bevegelse + voice over (samme Erik turbo_v2_5-pipeline som audio-tour). Bruksområde A: Placy lager videoer til megler-innsalgsdemoer (Stasjonskvartalet først). Bruksområde B (senere): meglere selv-genererer for sine prosjekter, skalerbart til Propr-volum (~1700/år).
+
+### Tech-stack validert
+- **Image-to-video**: Google Veo 3.0 fast (`veo-3.0-fast-generate-001`) via Gemini API (`predictLongRunning` endpoint). 8s 9:16 fra stillbilde. Replicate Kling 2.1 ble forsøkt først men konto manglet kreditt. `scripts/animate-scene-veo.ts`.
+- **Voice over**: Eksisterende `lib/audio-tour/elevenlabs-client.ts`, 5 scener satt sammen med `<break time="0.4s" />` SSML. `scripts/voiceover-some.ts`. 22s, 51 ord, 348 KB MP3.
+- **Komposisjon**: ffmpeg single-pass via `filter_complex`. `scripts/compose-some-video.ts`.
+
+### Kritisk lærdom: single-pass eliminerer audio-drift
+Første forsøk gikk gjennom multiple ffmpeg-passeringer (trim → concat → mux). Selv med MP3 → WAV mellomsteg ga dette periodisk audio-drift ("lyder bra noen sek, så forsvinner den, så kommer stemmen tilbake"). Diagnose: timing-mismatch mellom passeringer kompounder, og concat-demuxer + separat audio-mux er ikke deterministisk på frame-grenser.
+
+**Løsning**: én ffmpeg-invokasjon med komplett `-filter_complex`-pipeline:
+- 4 video-input + 1 image-input (`-loop 1 -t`) + 1 audio-input
+- Per video: `trim → setpts → scale → crop → setsar → fps` til [v0..v3]
+- Image: `scale → crop → zoompan` (Ken Burns 1.0→1.05) → [v4]
+- `concat=n=5:v=1:a=0` → [outv]
+- `apad=whole_dur=24.7` på audio → [outa]
+- Output: libx264 CRF 20 + AAC 192k, `-t 24.7` hard-stopp
+
+Resultat: stabil audio hele veien, 24.7s, 720×1280, 9.4 MB.
+
+### Avveid og forkastet: hosted composers (Creatomate)
+Brukt 1-2 timer på Creatomate `/v2/renders` med source-JSON da ffmpeg-multipass hadde drift. Output kom tilbake som 480×270 5sek MP4 uansett input-parametre (render_scale: 0.375). Trolig trial-plan-cap, men ble irrelevant: single-pass ffmpeg løste drift-problemet uten ekstern tjeneste. **Kostnaden alene gjør hosted composers feil retning på spike-stadium** — Creatomate Growth-plan starter på $129/mnd, vs ffmpeg-lokalt som er $0. Hosted komposisjon parkert som "vurder ved skalering hvis cloud-rendering blir påkrevd".
+
+### Konsept-validering
+- Stasjonskvartalet-manus (5 setn, 51 ord, ~22s): "Morgenen våkner over kanalen. […] Stasjonskvartalet. Se hele nabolaget hos Placy." Erik-stemme leverer som forventet, samme kvalitet som audio-tour.
+- Veo gir overbevisende ambient motion på vann, himmel, bakgrunnsfigurer. Bruker: "haha dette er veldig bra!".
+- **Negativ lærdom**: detalj-bevegelser (kaffe-damp på scene 2) ble urealistisk overdrevet. Begrensning: hold image-to-video-prompts til miljø/ambient (vann, vind, mennesker i bakgrunnen), ikke objekt-detaljer.
+
+### Artefakter
+- `scripts/animate-scene-veo.ts` — Veo image-to-video pipeline
+- `scripts/voiceover-some.ts` — ElevenLabs voice over for SOME-manus
+- `scripts/compose-some-video.ts` — single-pass ffmpeg-komposisjon
+- `~/Desktop/placy-test/output/composed-some.mp4` — første demobare versjon (Stasjonskvartalet)
+
+### Åpne spørsmål / pending
+- **Scene 2 må erstattes** før kunde-demo (kafé-bildet er ikke Trondheim).
+- **End-card-design**: scene5.jpg er statisk og lite "kuratert". Trenger logo + QR-kode + tydelig CTA-tekst, eventuelt animert.
+- **Bakgrunnsmusikk**: ikke testet, kan gi mer SOME-feel.
+- **Dedikert worktree**: når dette går fra spike til produkt, opprett `placy-ralph-some-video` for å rydde Veo/composer-scripts og isolere fra board-spike.
+- **Creatomate-key i .env.local** ble brukt for testing — bør roteres siden den ble delt i chat under spike.
+- **Skaleringsplan for Propr-volum (1700/år)**: ikke utredet. Veo-pricing per 8s-klipp + ElevenLabs per ord må regnes mot self-serve-prising for meglere. Komposisjons-laget er $0 takket være ffmpeg.
+
+### Status
+Proof of concept ferdig. Tech-stacken (Veo + ElevenLabs + ffmpeg) er bekreftet å fungere ende-til-ende, output er demoable. Neste fase er produkt-vurdering: gå videre med dedikert worktree + polering, eller parker spiken til vi har klient-pull.
+
+---
+
 ## 2026-05-22 — Zoom-baserte markører (rapport-board): brainstorm → plan → Unit 1-3 implementert
 
 ### Kontekst

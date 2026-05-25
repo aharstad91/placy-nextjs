@@ -16,6 +16,56 @@ export interface KaraokeToken {
   charEndIndex: number;
 }
 
+export interface KaraokeSentence {
+  /** Sammenslått tekst — ord separert med enkelt mellomrom. */
+  text: string;
+  /** Ord-index i tokens-arrayen (start og slutt, inklusivt). */
+  startTokenIdx: number;
+  endTokenIdx: number;
+  /** Character-offsets i original `characters`-array (inklusivt). */
+  charStartIdx: number;
+  charEndIdx: number;
+  startMs: number;
+  endMs: number;
+}
+
+const SENTENCE_TERMINATOR_RE = /[.!?…]/;
+
+/**
+ * Grupper ord-tokens til setninger basert på terminating punctuation
+ * (`.`, `!`, `?`, `…`). Siste blokk uten terminator regnes som siste
+ * setning. Brukes av teleprompter-rendering for vindu-basert visning.
+ */
+export function mapTokensToSentences(
+  tokens: KaraokeToken[],
+): KaraokeSentence[] {
+  const sentences: KaraokeSentence[] = [];
+  if (tokens.length === 0) return sentences;
+
+  let start = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    const last = t.text[t.text.length - 1];
+    const isLast = i === tokens.length - 1;
+    if (SENTENCE_TERMINATOR_RE.test(last) || isLast) {
+      const startToken = tokens[start];
+      const endToken = t;
+      const slice = tokens.slice(start, i + 1);
+      sentences.push({
+        text: slice.map((tok) => tok.text).join(" "),
+        startTokenIdx: start,
+        endTokenIdx: i,
+        charStartIdx: startToken.charStartIndex,
+        charEndIdx: endToken.charEndIndex,
+        startMs: startToken.startMs,
+        endMs: endToken.endMs,
+      });
+      start = i + 1;
+    }
+  }
+  return sentences;
+}
+
 /**
  * Mapper character-level timings til ord-tokens. Bruker `timings.characters`
  * som autoritativ kilde — ElevenLabs kan ha normalisert tekst (f.eks. tall
