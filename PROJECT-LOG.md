@@ -110,6 +110,25 @@ Transport-kategori levert med Level B sync. Bruker validerte UX i nettleser: "wo
 - Level C-pipeline: keyword-extractor (LLM build-time) + image-to-concept-map for fullt semantisk sync
 - Tilsvarende manus + bilde-pakker for resterende kategorier (mat-drikke, hverdagsliv, opplevelser, trening-aktivitet, barn-oppvekst)
 
+### Iterasjon 2 — manus-rebalanse + Imagen 4 bildeling-bilde
+Etter første transport-leveranse med 6 setninger ble mikromobilitet-trioen (bysykkel/elsparkesykkel/bildeling) for kort visuelt — 0.95s og 1.26s per modus mid-i-siste-setning via `--extra-splits`. Rebalansering:
+
+- **Manus utvidet til 8 setninger** der hver mikro-modus får egen setning (~3-4 sek hver)
+- **Bildeling-bilde generert via Imagen 4** (`imagen-4.0-generate-001`) — 3 mørke biler i parkeringskjeller med subtile logo-emblemer, Hyre-vibe uten brand-navn. Per Google Maps Platform ToS-lærdom (se forrige seksjon) kan vi ikke bruke Places-bilder, så generert-fra-scratch er den lovlige løsningen.
+- **Pure Level B** (ingen `--extra-splits` lenger) — hver setning er én visuell beat. Naturlig pacing 2.7-6.0 sek per beat.
+- **Tog-setningen utvidet** med eksplisitte endepunkter ("direkte sørover til Oslo, og direkte nordover til Bodø, med stopp på Værnes lufthavn underveis") etter brukerens tilbakemelding om at original-manus fikk det til å høres ut som toget bare kjørte til Værnes.
+- **Bysykkel-formulering korrigert** — "Flere bysykkel-stasjoner i nærheten — bysykler leies med app." (bikes are leased, ikke stations).
+
+Final transport.mp4: 29.30 sek, 8 beats, 4.8 MB, deployed til `public/reels/categories/transport.mp4`.
+
+### Nytt verktøy: `scripts/generate-image-imagen.ts`
+Tar `--prompt`, `--output`, `--aspect` (1:1, 3:4, 4:3, 9:16, 16:9), `--samples`, `--model`. Default-modell `imagen-4.0-generate-001`. Brukes når vi trenger fotorealistiske bilder for Reels-bg som vi ikke har lisensiert kildemateriale for. Imagen 3 finnes ikke lenger via Gemini API — kun Imagen 4-varianter (`imagen-4.0-generate-001`, `-fast-generate-001`, `-ultra-generate-001`) + Gemini-native (`gemini-2.5-flash-image`, `gemini-3.1-flash-image-preview`).
+
+### Brukerens tilbakemelding på flowen
+> "jeg liker veldig godt flyten her ... veldig fin og naturlig overgang fra buss til hurtigbåt"
+
+Validering av Level B-prinsippet — naturlig sync oppstår når manuset er strukturert med ett tema per setning + cuts ligger på setningsenden. Brukerens øye fanget det umiddelbart.
+
 ---
 
 ## 2026-05-25 (kveld) — Veo-pipeline: natur-kategori-bg + læringer fra produksjons-bruk
