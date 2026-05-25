@@ -4,6 +4,7 @@ import type {
   BoardCategoryId,
   BoardData,
 } from "../board/board-data";
+import type { BrokerInfo } from "@/lib/types";
 import { getCategoryIllustrationSrc } from "@/lib/themes/category-illustrations";
 import type { AudioTrack } from "@/lib/stores/audio-tour-store";
 import transportReelsTimings from "@/data/reels-audio/transport.timings.json";
@@ -11,6 +12,18 @@ import transportReelsTimings from "@/data/reels-audio/transport.timings.json";
 export interface IntroReelCard {
   kind: "intro";
   videoSrc: string;
+}
+
+/** "Nabolaget" — første audio-card etter intro. Speiler home-spor fra
+ *  audio-tour, men i reel-format (video-bg eller hero-bilde, karaoke-VO).
+ *  Markørene på kartet viser hele neighbourhood-en (default-state). */
+export interface HomeReelCard {
+  kind: "home";
+  label: string;
+  subline?: string;
+  illustrationSrc: string;
+  videoBgSrc?: string;
+  audio: BoardAudioTrack;
 }
 
 export interface CategoryReelCard {
@@ -29,7 +42,37 @@ export interface CategoryReelCard {
   icon: string;
 }
 
-export type ReelsCard = IntroReelCard | CategoryReelCard;
+/** Oppsummering — spilles etter siste kategori. Karaoke-VO med overblikks-
+ *  bilde av prosjektet. */
+export interface OutroReelCard {
+  kind: "outro";
+  label: string;
+  illustrationSrc: string;
+  videoBgSrc?: string;
+  audio: BoardAudioTrack;
+}
+
+/** Megler-kontaktkort — statisk slutt-card uten audio. Knapper for tlf/e-post. */
+export interface MeglerReelCard {
+  kind: "megler";
+  label: string;
+  brokers: BrokerInfo[];
+}
+
+/** Audio-bærende kort som driver tracks-arrayen til audio-store. Intro og
+ *  megler har ingen audio. */
+export type AudioBearingCard = HomeReelCard | CategoryReelCard | OutroReelCard;
+
+export type ReelsCard =
+  | IntroReelCard
+  | HomeReelCard
+  | CategoryReelCard
+  | OutroReelCard
+  | MeglerReelCard;
+
+export function isAudioBearing(card: ReelsCard): card is AudioBearingCard {
+  return card.kind === "home" || card.kind === "category" || card.kind === "outro";
+}
 
 // Per-kategori video-bakgrunner. Når en kategori-id har dedikert Veo-
 // generert klipp, brukes det. Resten faller tilbake til scene1-4 i syklus.
@@ -69,15 +112,33 @@ export function buildReelsCards(
   boardData: BoardData,
   introVideoSrc: string,
 ): ReelsCard[] {
-  const intro: IntroReelCard = { kind: "intro", videoSrc: introVideoSrc };
+  const cards: ReelsCard[] = [];
 
-  const categoryCards: CategoryReelCard[] = boardData.categories
+  cards.push({ kind: "intro", videoSrc: introVideoSrc });
+
+  if (boardData.home.audio && boardData.home.heroImage) {
+    cards.push({
+      kind: "home",
+      label: "Nabolaget",
+      subline:
+        [boardData.home.district, boardData.home.city]
+          .filter(Boolean)
+          .join(", ") || undefined,
+      illustrationSrc: boardData.home.heroImage,
+      audio: boardData.home.audio,
+    });
+  }
+
+  boardData.categories
     .filter((c): c is BoardCategory & { audio: BoardAudioTrack } => !!c.audio)
-    .map((c, idx) => {
+    .forEach((c, idx) => {
       const illustrationSrc =
-        getCategoryIllustrationSrc(boardData.projectSlug, c.id) ?? c.illustration?.src ?? "";
-      return {
-        kind: "category" as const,
+        getCategoryIllustrationSrc(boardData.projectSlug, c.id) ??
+        c.illustration?.src ??
+        "";
+      if (!illustrationSrc) return;
+      cards.push({
+        kind: "category",
         categoryId: c.id,
         label: c.label,
         lead: c.lead,
@@ -89,27 +150,63 @@ export function buildReelsCards(
         pois: c.pois,
         color: c.color,
         icon: c.icon,
-      };
-    })
-    .filter((c) => !!c.illustrationSrc);
+      });
+    });
 
-  return [intro, ...categoryCards];
+  if (boardData.outro && boardData.home.heroImage) {
+    cards.push({
+      kind: "outro",
+      label: "Oppsummert",
+      illustrationSrc: boardData.home.heroImage,
+      audio: boardData.outro,
+    });
+  }
+
+  if (boardData.brokers && boardData.brokers.length > 0) {
+    cards.push({
+      kind: "megler",
+      label: "Ta kontakt",
+      brokers: boardData.brokers,
+    });
+  }
+
+  return cards;
 }
 
+/** Bygger audio-tour-tracks-arrayen fra alle audio-bærende cards i samme
+ *  rekkefølge som de vises i feeden. Brukes av use-reels-audio-orchestration. */
 export function buildCategoryTracks(cards: ReelsCard[]): AudioTrack[] {
-  return cards
-    .filter((c): c is CategoryReelCard => c.kind === "category")
-    .map((c) => ({
-      categoryId: c.categoryId,
-      url: c.audio.url,
-      manus: c.audio.manus,
-    }));
+  return cards.filter(isAudioBearing).map((c) => ({
+    categoryId: c.kind === "category" ? c.categoryId : c.kind,
+    url: c.audio.url,
+    manus: c.audio.manus,
+  }));
 }
 
-export function cardIndexToAudioIndex(cardIndex: number): number {
-  return cardIndex - 1;
+/** Mapper cardIndex → audioIndex (indeks i tracks-arrayen). Returnerer -1
+ *  hvor cardet ikke har audio (intro, megler). */
+export function cardIndexToAudioIndex(
+  cards: ReelsCard[],
+  cardIndex: number,
+): number {
+  let audioIndex = -1;
+  for (let i = 0; i <= cardIndex && i < cards.length; i++) {
+    if (isAudioBearing(cards[i])) audioIndex++;
+  }
+  return cards[cardIndex] && isAudioBearing(cards[cardIndex]) ? audioIndex : -1;
 }
 
-export function audioIndexToCardIndex(audioIndex: number): number {
-  return audioIndex + 1;
+/** Mapper audioIndex → cardIndex. */
+export function audioIndexToCardIndex(
+  cards: ReelsCard[],
+  audioIndex: number,
+): number {
+  let seen = -1;
+  for (let i = 0; i < cards.length; i++) {
+    if (isAudioBearing(cards[i])) {
+      seen++;
+      if (seen === audioIndex) return i;
+    }
+  }
+  return -1;
 }

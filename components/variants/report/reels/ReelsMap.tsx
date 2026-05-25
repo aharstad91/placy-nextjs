@@ -15,9 +15,13 @@ const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 interface Props {
   home: BoardHome;
+  /** Når true: kartet er en permanent panel (desktop 2-kolonner). Gestures
+   *  alltid på, markører alltid synlige for aktiv kategori, ingen
+   *  sheet-relaterte fitBounds-triggers fra phase. */
+  desktopMode?: boolean;
 }
 
-export function ReelsMap({ home }: Props) {
+export function ReelsMap({ home, desktopMode = false }: Props) {
   const { state } = useReels();
   const mapRef = useRef<MapRef | null>(null);
   const cancelTokenRef = useRef(0);
@@ -28,15 +32,16 @@ export function ReelsMap({ home }: Props) {
   const activeCategoryCard: CategoryReelCard | null =
     activeCard?.kind === "category" ? activeCard : null;
   const activeCategoryId = activeCategoryCard?.categoryId ?? null;
-  // Kart synlig fra reel-peek til map-full. Markører vises fra map-quarter
-  // (når VO er ferdig og sheet "våkner" — bruker har signal om POI-er).
-  // Gestures kun i map-full.
-  const mapVisible = state.currentPhase !== "intro";
+  // Mobil-sheet: kart synlig fra reel-peek til map-full. Markører vises fra
+  // map-quarter (når VO er ferdig og sheet "våkner"). Gestures kun i map-full.
+  // Desktop: alltid alt på — kartet er en permanent panel uten sheet-mekanikk.
+  const mapVisible = desktopMode || state.currentPhase !== "intro";
   const markersVisible =
+    desktopMode ||
     state.currentPhase === "map-quarter" ||
     state.currentPhase === "map-half" ||
     state.currentPhase === "map-full";
-  const gesturesEnabled = state.currentPhase === "map-full";
+  const gesturesEnabled = desktopMode || state.currentPhase === "map-full";
 
   // Samle alle category-POIer fra alle kort så markører kan persistere
   // på kartet med fade-in/out i stedet for remount.
@@ -112,7 +117,10 @@ export function ReelsMap({ home }: Props) {
 
   // I reel-peek (15%): når kartet bare er en bunn-stripe, sentrer på hjem
   // med høy padding så hjem-markøren ligger sentralt i det synlige vinduet.
+  // Desktop: kartet er permanent panel, sentrer ikke per phase — fitBounds-
+  // effekten over håndterer aktiv kategori.
   useEffect(() => {
+    if (desktopMode) return;
     if (state.currentPhase !== "reel" || !mapLoaded) return;
     const map = mapRef.current?.getMap();
     if (!map) return;
@@ -125,7 +133,7 @@ export function ReelsMap({ home }: Props) {
       });
     });
     return () => cancelAnimationFrame(raf);
-  }, [state.currentPhase, mapLoaded, home.coordinates.lng, home.coordinates.lat]);
+  }, [desktopMode, state.currentPhase, mapLoaded, home.coordinates.lng, home.coordinates.lat]);
 
   // Gestures kontrolleres via react-map-gl-props i Map-elementet under.
   // Imperative `map.dragPan.enable()`-kall fungerer ikke når react-map-gl

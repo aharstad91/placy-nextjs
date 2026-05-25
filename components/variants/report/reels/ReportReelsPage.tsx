@@ -1,31 +1,33 @@
 "use client";
 
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import type { Project } from "@/lib/types";
 import type { TranslationMap } from "@/lib/supabase/translations";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { transformToReportData } from "../report-data";
 import { adaptBoardData } from "../board/board-data";
-import { DesktopGate } from "./DesktopGate";
+import { BoardProvider, useBoard } from "../board/board-state";
+import { BoardMap } from "../board/BoardMap";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsStack } from "./ReelsStack";
 import { IntroReel } from "./IntroReel";
 import { CategoryReel } from "./CategoryReel";
+import { MeglerReel } from "./MeglerReel";
 import { ReelsMap } from "./ReelsMap";
-import { buildReelsCards } from "./reels-data";
+import { buildReelsCards, cardIndexToAudioIndex } from "./reels-data";
 import { AudioElementProvider } from "../board/audio-tour/use-audio-element";
 import { useReelsAudioOrchestration } from "./use-reels-audio-orchestration";
 import { useAudioTourActions } from "@/lib/stores/audio-tour-store";
+import type { BoardHome } from "../board/board-data";
 
 const INTRO_VIDEO_SRC = "/reels/stasjonskvartalet/intro.mp4";
 
 interface Props {
   project: Project;
   enTranslations?: TranslationMap;
-  customer: string;
-  projectSlug: string;
 }
 
 export default function ReportReelsPage(props: Props) {
@@ -36,7 +38,7 @@ export default function ReportReelsPage(props: Props) {
   );
 }
 
-function Inner({ project, enTranslations = {}, customer, projectSlug }: Props) {
+function Inner({ project, enTranslations = {} }: Props) {
   const { locale } = useLocale();
 
   const effectiveProject = useMemo(
@@ -56,27 +58,70 @@ function Inner({ project, enTranslations = {}, customer, projectSlug }: Props) {
     [boardData],
   );
 
+  const has3dAddon = project.has3dAddon ?? false;
+
   return (
-    <DesktopGate fallbackHref={`/eiendom/${customer}/${projectSlug}/rapport-board`}>
-      <ReelsProvider cards={cards}>
+    <ReelsProvider cards={cards}>
+      <BoardProvider data={boardData}>
+        <BoardReelsSync />
         <ReelsAudioShell>
           <ReelsOrchestrator>
-            <div className="relative h-[100dvh] w-full bg-black overflow-hidden">
-              <MapLayer home={boardData.home} />
-              <ReelsStack renderCard={(i) => <CardRouter cardIndex={i} />} />
-            </div>
+            <ResponsiveLayout home={boardData.home} has3dAddon={has3dAddon} />
           </ReelsOrchestrator>
         </ReelsAudioShell>
-      </ReelsProvider>
-    </DesktopGate>
+      </BoardProvider>
+    </ReelsProvider>
   );
+}
+
+/**
+ * Speiler aktiv Reels-card til BoardContext. Når brukeren swiper til en
+ * kategori-reel, dispatcher vi SELECT_CATEGORY (source: "audio") så
+ * BoardMap kan fade markører til den kategoriens POI-er. Source="audio"
+ * holder BoardContext i "default"-phase — vi vil ikke trigge legacy
+ * mobile "active"-overgangen.
+ *
+ * Intro-cardet resetter BoardContext til default → BoardMap viser alle
+ * POI-er på tvers av kategorier som overblikks-tilstand.
+ */
+function BoardReelsSync() {
+  const { state: reelsState } = useReels();
+  const { state: boardState, dispatch } = useBoard();
+
+  useEffect(() => {
+    const card = reelsState.cards[reelsState.activeIndex];
+    if (!card) return;
+    if (card.kind === "category") {
+      if (boardState.activeCategoryId !== card.categoryId) {
+        dispatch({
+          type: "SELECT_CATEGORY",
+          id: card.categoryId,
+          source: "audio",
+        });
+      }
+    } else {
+      // intro, home, outro, megler — vis alle POI-er som overblikk
+      if (boardState.activeCategoryId !== null) {
+        dispatch({ type: "RESET_TO_DEFAULT" });
+      }
+    }
+  }, [
+    reelsState.activeIndex,
+    reelsState.cards,
+    boardState.activeCategoryId,
+    dispatch,
+  ]);
+
+  return null;
 }
 
 function ReelsAudioShell({ children }: { children: React.ReactNode }) {
   const { state, setPhase } = useReels();
   // Når et spor slutter naturlig: hev sheet til 20% (map-quarter). Bruker
   // må aktivt tappe for å gå videre — sheet "våkner" men ekspander ikke
-  // til halv/full uten gesture.
+  // til halv/full uten gesture. På desktop er map-quarter en no-op visuelt
+  // (kartet er alltid synlig høyre), men vi setter fortsatt phase så
+  // markører blir synlige (markersVisible kobler seg til map-quarter+).
   const handleTrackEnded = () => {
     if (state.currentPhase === "reel") {
       setPhase("map-quarter");
@@ -94,7 +139,48 @@ function ReelsOrchestrator({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function MapLayer({ home }: { home: ReturnType<typeof adaptBoardData>["home"] }) {
+/**
+ * Adaptiv layout:
+ * - Mobil (<lg): full-screen reels-stack med bottom-anchored MapLayer-sheet
+ *   (10% peek → 100% full). Phase styrer sheet-høyde. Som dagens reels-route.
+ * - Desktop (>=lg): 2-kolonner. 400px reels-feed venstre, BoardMap fyller
+ *   resten høyre, alltid synlig. Sheet-mekanikken er off; kartet er ikke en
+ *   sheet men en permanent panel. Phase styrer fortsatt marker-visibility
+ *   og audio.
+ */
+function ResponsiveLayout({
+  home,
+  has3dAddon,
+}: {
+  home: BoardHome;
+  has3dAddon: boolean;
+}) {
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+  if (isDesktop) {
+    return (
+      <div className="flex h-[100dvh] w-full bg-stone-100 overflow-hidden">
+        <div className="relative w-[400px] shrink-0 h-full bg-black">
+          <ReelsStack
+            renderCard={(i) => <CardRouter cardIndex={i} desktopMode />}
+          />
+        </div>
+        <div className="relative flex-1 h-full">
+          <BoardMap has3dAddon={has3dAddon} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-[100dvh] w-full bg-black overflow-hidden">
+      <MapLayer home={home} />
+      <ReelsStack renderCard={(i) => <CardRouter cardIndex={i} />} />
+    </div>
+  );
+}
+
+function MapLayer({ home }: { home: BoardHome }) {
   const { state, setPhase } = useReels();
   const { pause } = useAudioTourActions();
   if (!state.mapMounted) return null;
@@ -238,7 +324,13 @@ function MapLayer({ home }: { home: ReturnType<typeof adaptBoardData>["home"] })
   );
 }
 
-function CardRouter({ cardIndex }: { cardIndex: number }) {
+function CardRouter({
+  cardIndex,
+  desktopMode = false,
+}: {
+  cardIndex: number;
+  desktopMode?: boolean;
+}) {
   const { state } = useReels();
   const card = state.cards[cardIndex];
   const isActive = state.activeIndex === cardIndex;
@@ -247,5 +339,16 @@ function CardRouter({ cardIndex }: { cardIndex: number }) {
   if (card.kind === "intro") {
     return <IntroReel card={card} isActive={isActive} />;
   }
-  return <CategoryReel card={card} cardIndex={cardIndex} isActive={isActive} />;
+  if (card.kind === "megler") {
+    return <MeglerReel card={card} isActive={isActive} desktopMode={desktopMode} />;
+  }
+  const audioIndex = cardIndexToAudioIndex(state.cards, cardIndex);
+  return (
+    <CategoryReel
+      card={card}
+      audioIndex={audioIndex}
+      isActive={isActive}
+      desktopMode={desktopMode}
+    />
+  );
 }

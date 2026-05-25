@@ -77,8 +77,6 @@ export default async function EiendomReportReelsPage({ params }: PageProps) {
       <ReportReelsPage
         project={projectData}
         enTranslations={enTranslations}
-        customer={customer}
-        projectSlug={projectSlug}
       />
     </div>
   );

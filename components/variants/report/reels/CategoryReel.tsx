@@ -2,15 +2,20 @@
 
 import Image from "next/image";
 import { useEffect, useRef } from "react";
-import type { CategoryReelCard } from "./reels-data";
+import type { AudioBearingCard } from "./reels-data";
 import { useReels } from "./reels-state";
 import { KaraokeTeleprompter } from "./KaraokeTeleprompter";
 import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
 
 interface Props {
-  card: CategoryReelCard;
-  cardIndex: number;
+  /** Et hvilket som helst audio-bærende card (home, category, outro). */
+  card: AudioBearingCard;
+  /** Index i audio-tour-store sin tracks-array. -1 hvis cardet ikke har audio. */
+  audioIndex: number;
   isActive: boolean;
+  /** Når true: ingen sheet-mekanikk under cardet — karaoke ankres til
+   *  bunn-kant, video skjules ikke i map-full. Brukes i 2-kolonner desktop. */
+  desktopMode?: boolean;
 }
 
 // Sheet-høyde-progresjon — driver karaoke-posisjonen som ligger like over.
@@ -24,8 +29,8 @@ const SHEET_HEIGHT_PCT = {
   "map-full": 100,
 } as const;
 
-export function CategoryReel({ card, cardIndex, isActive }: Props) {
-  const { state, setPhase, markMapMounted } = useReels();
+export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }: Props) {
+  const { state, markMapMounted } = useReels();
   const currentPhase = isActive ? state.currentPhase : null;
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -47,19 +52,30 @@ export function CategoryReel({ card, cardIndex, isActive }: Props) {
     }
   }, [currentPhase]);
 
-  const audioIndex = cardIndex - 1;
   const isCurrentAudio = useAudioTourStore(
-    (s) => s.trackIndex === audioIndex && s.tracks.length > audioIndex,
+    (s) =>
+      audioIndex >= 0 &&
+      s.trackIndex === audioIndex &&
+      s.tracks.length > audioIndex,
   );
 
-  const karaokeActive = isActive && currentPhase === "reel" && isCurrentAudio;
+  // Desktop: karaoke aktiveres så lenge cardet er aktivt + dets spor spilles.
+  // Phase er irrelevant fordi sheet ikke finnes.
+  const karaokeActive = desktopMode
+    ? isActive && isCurrentAudio
+    : isActive && currentPhase === "reel" && isCurrentAudio;
 
-  const sheetHeightPct =
-    currentPhase && currentPhase !== "intro"
+  // Desktop: ingen sheet, karaoke ankres på bunn-kant (5%-marg).
+  // Mobil: følger sheet-høyde (10–100%).
+  const sheetHeightPct = desktopMode
+    ? 5
+    : currentPhase && currentPhase !== "intro"
       ? SHEET_HEIGHT_PCT[currentPhase]
       : SHEET_HEIGHT_PCT.reel;
 
-  const isFull = currentPhase === "map-full";
+  // map-full er en mobil-tilstand. På desktop er den irrelevant — kartet
+  // er en separat permanent panel, ikke en utvidet sheet.
+  const isFull = !desktopMode && currentPhase === "map-full";
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
