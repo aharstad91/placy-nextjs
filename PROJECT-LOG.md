@@ -5346,3 +5346,10 @@ Documents hadde fire parallelle `placy-ralph*`-mapper akkumulert fra flere workt
 - **`git worktree remove --force` etterlot «Directory not empty»** pga. `.env.local`-symlinken fra `setup-worktree.sh` + `node_modules`. Git-registreringen ble likevel ryddet (`worktree list` rent); restmappa måtte `rm -rf`-es manuelt fra utsiden. Verdt å merke for fremtidig worktree-opprydding.
 - **chrome-devtools-MCP hadde stale browser-state** (flere MCP-server-instanser, «browser already running» uten faktisk Chrome-prosess). Visuell screenshot blokkert — validerte i stedet via curl + innholds-markører + dev-logg, som er konklusivt for «rute rendrer». Ikke et problem med selve siden.
 - **`feat/board-narrativ-spike` var en ren superset av `feat/audio-tour`** (branchet fra den, 0 bak `main`), så merge-rekkefølgen ga null kode-konflikt — kun docs-logger kolliderte. Lesson: når en spike-branch er strengt additiv over parent, er konsolidering tilbake til main trygt og nesten konfliktfritt.
+
+### Oppfølging (samme dag) — `main` pushet + Vercel-deploy grønt
+
+- **`main` pushet til origin** på brukerens forespørsel: ren fast-forward `cb4ed9e..fbbce78`. Hele rapport-board-konsolideringen ligger nå på GitHubs `main`.
+- **Vercel Production-deploy trigget og fullført grønt** (deployment `4889985522`, Vercel-status `success`). Deploy-URL: `placy-9rpvlw07j-andreas-harstads-projects-849bb7ff.vercel.app`.
+- **`*.vercel.app`-deploy-URL ga 401 "Authentication Required"** ved curl — det er Vercel **Deployment Protection (SSO)** på deploy-URL-en, ikke en app-feil. Live tilgang via innlogget Vercel-sesjon eller custom produksjonsdomene. Verifiseringen av at ruten rendrer ble gjort lokalt (HTTP 200, fullt innhold) før push.
+- **Verktøy-merknad:** Ingen Vercel-MCP var koblet til sesjonen til tross for `feedback_use_vercel_mcp`. Deploy-status ble hentet via `gh api .../commits/<sha>/status` (Vercel rapporterer som commit-status `context=Vercel`) + `.../deployments?environment=Production` for `environment_url`. Fungerer som fallback når MCP mangler.
