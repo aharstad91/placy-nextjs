@@ -76,6 +76,14 @@ export interface MapView3DProps {
   };
   /** Per-POI opacity — poi.id → opacity (0–1). Default 1 for alle. */
   opacities?: Record<string, number>;
+  /**
+   * Når true: standard Google Maps 3D-gesture-modell — drag panner, ctrl+drag
+   * roterer, scroll zoomer, ingen bounds eller altitude/tilt-grenser, ingen
+   * orbit-as-default-hijack. Brukes i rapport-board hvor brukeren skal kunne
+   * utforske fritt. Default false beholder dagens orbit-låste board-modus for
+   * andre kontekster (overview, modal-versjoner).
+   */
+  freeMode?: boolean;
 }
 
 /**
@@ -182,13 +190,17 @@ function Map3DInner({
   mapId,
   projectSite,
   opacities,
+  freeMode = false,
 }: MapView3DProps) {
-  const minTilt = cameraLock.minTilt;
-  const maxTilt = cameraLock.maxTilt;
-  const minAltitude = cameraLock.minAltitude;
-  const maxAltitude = cameraLock.maxAltitude;
+  // freeMode dropper alle camera-låser så brukeren får standard Google Maps
+  // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
+  // estetisk fokus på prosjekt-tomten.
+  const minTilt = freeMode ? undefined : cameraLock.minTilt;
+  const maxTilt = freeMode ? undefined : cameraLock.maxTilt;
+  const minAltitude = freeMode ? undefined : cameraLock.minAltitude;
+  const maxAltitude = freeMode ? undefined : cameraLock.maxAltitude;
   const panHalfSideKm = cameraLock.panHalfSideKm ?? 5;
-  const bounds = squareBoundsAround(center, panHalfSideKm);
+  const bounds = freeMode ? undefined : squareBoundsAround(center, panHalfSideKm);
 
   // Fanger map3d-instansen lokalt så Map3DControls (utenfor Map3D-treet)
   // kan bruke den direkte — useMap3D(mapId) er upålitelig utenfor Map3D.
@@ -206,8 +218,11 @@ function Map3DInner({
 
   // Orbit-as-default: override ctrlKey=true på mus-drags, så Google ser ROTATE.
   // Kun venstre musetast; scroll/touch/shift forblir uberørt.
+  // I freeMode skipper vi hele hijack-en — brukeren får standard Google Maps
+  // gesture-modell (drag=pan, ctrl+drag=rotate, scroll=zoom, dblclick=zoom).
   useEffect(() => {
     if (!activated) return;
+    if (freeMode) return;
     const container = containerRef.current;
     if (!container) return;
 
@@ -322,7 +337,7 @@ function Map3DInner({
       container.removeEventListener("dblclick", blockDblClickEvent, dblOpts);
       container.removeEventListener("click", blockMultiClick, dblOpts);
     };
-  }, [activated]);
+  }, [activated, freeMode]);
 
 
   // Bruker Googles native gesture-handling. Bounds + altitude-grenser

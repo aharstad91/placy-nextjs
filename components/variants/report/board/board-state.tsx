@@ -22,10 +22,21 @@ export interface BoardState {
   activePOIId: BoardPOIId | null;
 }
 
+/**
+ * Source-discriminator (Unit 0 spike, full version in Unit 2): identifies *who*
+ * triggered the dispatch so subscribers can avoid feedback loops. For the spike,
+ * "scroll", "rail", "index", and "audio" sources keep `phase: "default"`
+ * (continuous-scroll narrative — audio playback should drive the scroll-panel,
+ * not open legacy BoardDetailPanel). Omitted source retains the legacy
+ * "active" transition for mobile and any unmigrated callers.
+ */
+export type SelectCategorySource = "scroll" | "rail" | "index" | "audio";
+
 export type BoardAction =
-  | { type: "SELECT_CATEGORY"; id: BoardCategoryId }
+  | { type: "SELECT_CATEGORY"; id: BoardCategoryId; source?: SelectCategorySource }
   | { type: "OPEN_POI"; id: BoardPOIId; categoryId?: BoardCategoryId }
   | { type: "BACK_TO_ACTIVE" }
+  | { type: "BACK_TO_DEFAULT" }
   | { type: "RESET_TO_DEFAULT" };
 
 export const initialBoardState: BoardState = {
@@ -36,12 +47,22 @@ export const initialBoardState: BoardState = {
 
 export function boardReducer(state: BoardState, action: BoardAction): BoardState {
   switch (action.type) {
-    case "SELECT_CATEGORY":
+    case "SELECT_CATEGORY": {
+      // Spike: scroll-tracking, rail clicks, and audio-tour-sync stay in
+      // "default" phase so BoardScrollPanel keeps rendering. Only legacy
+      // callers without an explicit source (mobile category-grid) trigger
+      // the "active" transition.
+      const stayInDefault =
+        action.source === "scroll" ||
+        action.source === "rail" ||
+        action.source === "index" ||
+        action.source === "audio";
       return {
-        phase: "active",
+        phase: stayInDefault ? "default" : "active",
         activeCategoryId: action.id,
         activePOIId: null,
       };
+    }
 
     case "OPEN_POI": {
       const categoryId = action.categoryId ?? state.activeCategoryId;
@@ -60,6 +81,16 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
       return {
         ...state,
         phase: "active",
+        activePOIId: null,
+      };
+
+    case "BACK_TO_DEFAULT":
+      // Lukke POI-overlay: tilbake til scroll-narrativ-fasen men behold
+      // activeCategoryId så scroll-posisjon og audio-tour-state forblir
+      // konsistent. activePOIId nullstilles fordi POI-overlay er borte.
+      return {
+        ...state,
+        phase: "default",
         activePOIId: null,
       };
 

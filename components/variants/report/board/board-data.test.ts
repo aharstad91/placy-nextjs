@@ -139,6 +139,68 @@ describe("adaptBoardData", () => {
       name: "Test Prosjekt",
       coordinates: { lat: 63.4, lng: 10.4 },
       address: "Testveien 1, 0001 Test",
+      district: "Midtbyen",
+      city: "Trondheim",
+    });
+  });
+
+  describe("audio adapter", () => {
+    const timingsFixture = {
+      characters: ["a", "b", "c"],
+      characterStartTimesSeconds: [0.0, 0.1, 0.2],
+      characterEndTimesSeconds: [0.1, 0.2, 0.3],
+    };
+
+    it("kategori med url+manus+timings → audio inkluderer alle tre", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        audio: {
+          url: "/audio/x.mp3",
+          manus: "manus-tekst",
+          timings: timingsFixture,
+        },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].audio).toEqual({
+        url: "/audio/x.mp3",
+        manus: "manus-tekst",
+        timings: timingsFixture,
+      });
+    });
+
+    it("kategori med url+manus uten timings → audio uten timings-felt", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        audio: { url: "/audio/x.mp3", manus: "manus-tekst" },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].audio).toEqual({
+        url: "/audio/x.mp3",
+        manus: "manus-tekst",
+      });
+      expect(data.categories[0].audio?.timings).toBeUndefined();
+    });
+
+    it("kategori med kun manus (mangler url) → audio er undefined", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        audio: { manus: "manus-tekst" },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].audio).toBeUndefined();
+    });
+
+    it("heroAudio gjennomføres til home.audio med timings", () => {
+      const data = adaptBoardData({
+        ...makeReportData([makeTheme("x", [makePOI("p1")])]),
+        heroAudio: {
+          url: "/audio/hjem.mp3",
+          manus: "hjem-manus",
+          timings: timingsFixture,
+        },
+      });
+      expect(data.home.audio).toEqual({
+        url: "/audio/hjem.mp3",
+        manus: "hjem-manus",
+        timings: timingsFixture,
+      });
     });
   });
 });

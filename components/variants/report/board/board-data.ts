@@ -1,5 +1,26 @@
-import type { POI, ReportThemeGroundingView } from "@/lib/types";
+import type {
+  BrokerInfo,
+  POI,
+  ReportThemeAudio,
+  ReportThemeAudioTimings,
+  ReportThemeGroundingView,
+} from "@/lib/types";
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
+
+/** Re-eksport av character-level alignment for forbruk i board-laget
+ *  (KaraokePitchText). Holder import-graphen flat: komponenter
+ *  importerer fra board-data, ikke fra @/lib/types direkte. */
+export type BoardAudioTimings = ReportThemeAudioTimings;
+
+/** Subset av ReportThemeAudio som er garantert komplett på runtime — kun
+ *  audio med url+manus eksponeres til board-laget. Builder-funksjonen i
+ *  adaptCategory/adaptBoardData filtrerer bort partial-audio (kun manus).
+ *  timings er optional fordi spor generert før audioVersion 5 mangler det. */
+export interface BoardAudioTrack {
+  url: string;
+  manus: string;
+  timings?: BoardAudioTimings;
+}
 
 // Branded ID-typer forhindrer ID-blanding mellom theme-IDer og POI-IDer
 // i state-reducer og dispatch-calls.
@@ -38,6 +59,8 @@ export interface BoardCategory {
   /** Kategori-farge (hex) brukt i markører, path-line, og UI-aksenter. */
   color: string;
   pois: BoardPOI[];
+  /** Audio-tour-spor for kategorien — kun satt når både url og manus eksisterer. */
+  audio?: BoardAudioTrack;
 }
 
 export interface BoardHome {
@@ -48,13 +71,35 @@ export interface BoardHome {
   heroImage?: string;
   /** Intro-tekst (fra reportConfig.heroIntro eller bransjeprofil-mal). Vist i default-detail-panel. */
   heroIntro?: string;
+  /** Bydel, eks. "Midtbyen". Brukes som subline i Nabolaget-seksjonen. */
+  district?: string;
+  /** By, eks. "Trondheim". Vises etter district i subline. */
+  city?: string;
+  /** Hjem-spor for audio-tour — kun satt når både url og manus eksisterer. */
+  audio?: BoardAudioTrack;
 }
 
 export interface BoardData {
+  /** URL-slug for prosjektet, eks. "stasjonskvartalet". Brukes til å slå opp
+   *  prosjekt-spesifikke illustrasjoner og andre ressurser. */
+  projectSlug?: string;
   home: BoardHome;
   categories: BoardCategory[];
+  /** Tour-host-prat som spilles ved start av guidet tur. Rendres som
+   *  karaoke-tekst inni accordion under "Start guidet tur"-CTAen, ikke som
+   *  egen scroll-seksjon. Telles ikke i CategoryIndex. */
+  welcome?: BoardAudioTrack;
+  /** Avslutnings-spor som spilles etter siste kategori. Rendres som eget
+   *  kort i bunn av sidebar over megler-kortet — er IKKE en kategori og
+   *  telles ikke i CategoryIndex. */
+  outro?: BoardAudioTrack;
+  /** Megler-kontakter til kontakt-kortet i bunn av sidebar. Tomt/undefined
+   *  → ingen kort vises. */
+  brokers?: BrokerInfo[];
   /** Lookup-map fra POI-id (lowercase) til full POI. Brukes av grounding-rendering for å resolve [text](poi:uuid)-lenker — kan referere POIs på tvers av kategorier. */
   poisById: Map<string, POI>;
+  /** Eksplisitt opt-in for audio-tour-CTA. Default false. */
+  audioTourEnabled: boolean;
 }
 
 /**
@@ -83,16 +128,40 @@ export function adaptBoardData(report: ReportData): BoardData {
   }
 
   return {
+    projectSlug: report.projectSlug,
     home: {
       name: report.projectName,
       coordinates: report.centerCoordinates,
       address: report.address,
       heroImage: report.heroImage,
       heroIntro: report.heroIntro,
+      // TODO(spike): district/city skal komme fra ReportData/ProjectContainer
+      // når feltene er lagt til der. Hardkodet for Stasjonskvartalet-demoen.
+      district: "Midtbyen",
+      city: "Trondheim",
+      audio: pickPlayableAudio(report.heroAudio),
     },
     categories,
+    welcome: pickPlayableAudio(report.welcomeAudio),
+    outro: pickPlayableAudio(report.outroAudio),
+    brokers: report.brokers,
     poisById,
+    audioTourEnabled: report.audioTourEnabled === true,
   };
+}
+
+/** Returnerer { url, manus, timings? } kun når url+manus begge er definert
+ *  — partial audio (manus-only, før Steg 8c.2) blir undefined så board-
+ *  laget vet at spor ikke er klart. timings inkluderes når tilgjengelig
+ *  (audioVersion 5+); ellers omittes (komponent rendrer karaoke som
+ *  klartekst). */
+function pickPlayableAudio(
+  audio: ReportThemeAudio | undefined,
+): BoardAudioTrack | undefined {
+  if (!audio?.url || !audio.manus) return undefined;
+  const track: BoardAudioTrack = { url: audio.url, manus: audio.manus };
+  if (audio.timings) track.timings = audio.timings;
+  return track;
 }
 
 function adaptCategory(theme: ReportTheme): BoardCategory {
@@ -135,6 +204,7 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     icon,
     color,
     pois: theme.allPOIs.map((p) => adaptPOI(p, id)),
+    audio: pickPlayableAudio(theme.audio),
   };
 }
 

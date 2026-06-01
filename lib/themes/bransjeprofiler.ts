@@ -49,13 +49,16 @@ export interface Bransjeprofil {
  * Eiendom - Bolig: 7 temaer basert på meglerens vanligste spørsmål fra boligkjøpere.
  * Se docs/solutions/architecture-patterns/bransjeprofil-eiendom-bolig-20260303.md
  */
+// Interpolert mellom Tailwind 400 og 500 (~450-nivå) — dempet sammenlignet
+// med 500, men ikke vasket ut som 400 på lys kart-bakgrunn.
+// Spike-iterasjon 2026-05-21.
 const BOLIG_THEMES: ThemeDefinition[] = [
   {
     id: "barn-oppvekst",
     name: "Barn & Aktivitet",
     icon: "GraduationCap",
     categories: ["skole", "barnehage", "lekeplass", "idrett"],
-    color: "#f59e0b",
+    color: "#f8ae17",
   },
   {
     id: "hverdagsliv",
@@ -74,35 +77,35 @@ const BOLIG_THEMES: ThemeDefinition[] = [
       "bank",
       "post",
     ],
-    color: "#22c55e",
+    color: "#36d16f",
   },
   {
     id: "mat-drikke",
     name: "Mat & Drikke",
     icon: "UtensilsCrossed",
     categories: ["restaurant", "cafe", "bar", "bakery"],
-    color: "#ef4444",
+    color: "#f35a5a",
   },
   {
     id: "opplevelser",
     name: "Opplevelser",
     icon: "Landmark",
     categories: ["museum", "library", "cinema", "bowling", "amusement", "theatre"],
-    color: "#0ea5e9",
+    color: "#23b1f0",
   },
   {
     id: "natur-friluftsliv",
     name: "Natur & Friluftsliv",
     icon: "Trees",
     categories: ["park", "outdoor", "badeplass"],
-    color: "#10b981",
+    color: "#22c68d",
   },
   {
     id: "trening-aktivitet",
     name: "Trening & Aktivitet",
     icon: "Dumbbell",
     categories: ["gym", "swimming", "spa", "fitness_park"],
-    color: "#ec4899",
+    color: "#f05da7",
   },
   {
     id: "transport",
@@ -118,7 +121,7 @@ const BOLIG_THEMES: ThemeDefinition[] = [
       "taxi",
       "charging_station",
     ],
-    color: "#3b82f6",
+    color: "#4d93f8",
   },
 ];
 

@@ -6,6 +6,1092 @@
 
 ---
 
+## 2026-05-26 — Transport-reels: bilde-resync + manus-iterasjon for 6 kategorier
+
+### Kontekst
+Stasjonskvartalets transport-reel hadde feil bilde-til-setning-mapping (bildene cuttet på feil tema), og brukeren hadde skrevet nytt voice-over-manuskript manuelt for de fleste kategoriene. Sesjonen rettet transport-synkingen, bygde opp et komplett, kuratert bilde-sett for transport, og regenererte 6 voice-overs fra det nye manuskriptet.
+
+### Transport: bilde-til-setning-mapping rettet og utvidet
+Gammel `transport.mp4` mappet bilder feil (tog-setning fikk buss-bilde osv.) og brukte ikke `transport-bildeling.png`. Ny mapping er 9 beats (2 extra-splits: `byregionen`, `bysykler`):
+
+| # | Setning | Bilde |
+|---|---------|-------|
+| 1 | Sentralstasjon | transport-en (stasjon-interiør) |
+| 2 | Tog Oslo/Bodø | transport-tog (SJ-tog, bruker-foto) |
+| 3 | Værnes/flybuss | transport-flyplass (lufthavn-interiør, bruker-foto) |
+| 4a | Buss-stoppene | transport-2 (metrobuss) |
+| 4b | Hurtigbåt | transport-2-3 (hurtigbåt) |
+| 5a | Bysykler | transport-bysykkel |
+| 5b | Elsparkesykler | transport-sparkesykkel |
+| 6 | Delebil | transport-delebil-app (app-i-bil, bruker-foto) |
+| 7 | Taxi | transport-taxi (Imagen-generert taxi-skilt) |
+
+### AI-genererte bilder via Imagen (eier rettigheter)
+To bilder manglet lisensiert kildemateriale → generert via `generate-image-imagen.ts` (imagen-4.0-generate-001, 9:16):
+- **Taxi (S7):** Flere forsøk. Generiske "biler i kø" ble forkastet (farge/skilt-design avslører land). Vinner ble et **blått Taxi-skilt på stolpe** i blue-hour med snø-fjell — skiltet bærer fortellingen, ikke bilen. Imagen hallusinerte først (kvinne i sari) på en RAI-tung prompt; kortere/konkret prompt løste det.
+- **Delebil (S6) — ikke brukt til slutt:** genererte blå/grå varebil (nikker til Hyre uten lesbar logo), men bruker valgte heller eget app-i-bil-foto.
+
+### Manus-iterasjon: 6 nye voice-overs fra bruker-skrevet manuskript
+Bruker skrev `~/Downloads/Stasjonskvartalet — Voice-over manuskript.md` manuelt. Regenererte mp3+timings for mat-drikke, transport, natur, hverdagsliv, trening, barn-oppvekst. Nabolaget (placeholder) og opplevelser (mangler i doc) ble hoppet over. Tre TTS-rettelser i trening-manuset: `Promonaden`→`Promenaden`, `24/7`→`døgnet rundt`, `boxing`→`boksing`.
+
+### Åpent: bg-video-resync for mat-drikke + natur
+Ny audio endret timings. Transport ble resynket (samme 7 setninger). Men mat-drikke (4→5 setninger) og natur (5→7 setninger) fikk flere setninger enn de har bilder til — bg-videoene er ute av sync til vi har 1 nytt mat-bilde (take-away) + 2 nye natur-bilder. Hverdagsliv/trening/oppvekst bruker generisk scene-syklus og er upåvirket.
+
+### Filer endret
+- `scripts/voiceover-reels-{mat-drikke,transport,natur,hverdagsliv,trening,barn-oppvekst}.ts` — nye MANUS
+- `scripts/compose-reels-bg.ts` — oppdatert transport-eksempel i docstring
+- `public/reels/categories/transport.mp4` — regenerert (9 beats, ny mapping + nye timings)
+- `public/audio/stasjonskvartalet/*-reels.mp3` (6 filer) + `data/reels-audio/*.timings.json` (6 filer)
+- Nye bruker-/AI-bilder i `~/Desktop/placy-test/transport/` (transport-tog, -flyplass, -delebil-app, -taxi)
+
+---
+
+## 2026-05-25 (kveld) — Rapport-board konsolidert med reels-feed: adaptiv shell + Apple Maps-paradigme
+
+### Kontekst
+`/rapport-reels` (mobil-first feed) og `/rapport-board` (sidebar + kart) levde parallelt — to ulike state-systemer over samme datasett, og sidebar-innholdet duplikerte mye av det reels-feeden alt formidlet. Sesjonen sammenslo dem til én adaptiv shell: reels-feed er nå hoved-narrativet på begge breakpoints, kartet er den persistente konteksten ved siden av.
+
+### Beslutninger landet
+
+**Reels-først, ikke sidebar-først.** Den vertikale feeden er hoveddrivkraften for "story-flowen" (intro → nabolaget → kategorier → outro → megler). På desktop ligger den til venstre, kartet til høyre. På mobil overtar feeden hele skjermen og kartet flyttes inn i en bottom-sheet med peek/quarter/half/full-faser (samme paradigme som /rapport-reels alltid har hatt).
+
+**Sidebar-innholdet ble nye reel-kort.** Hjem, outro og megler-kontakter — alt som tidligere bodde i SidebarHero/QueueOverlay/BottomPlayer — er nå egne kort i feeden. Ny `MeglerReel.tsx` (statisk, ingen audio). `AudioBearingCard`-union (`home | category | outro`) skiller audio-bærende kort fra intro/megler i `cardIndexToAudioIndex`-mappingen mot audio-tour-store.
+
+**State-broer: BoardReelsSync.** Reels har egen `ReelsProvider`, board har egen `BoardProvider`. Bro-komponenten dispatcher `SELECT_CATEGORY` (source: `audio`) til BoardContext når aktiv reel er et kategori-kort, og `RESET_TO_DEFAULT` for intro/home/outro/megler. `source: "audio"` holder BoardContext i `default`-phase så markører fader uten å trigge legacy mobile "active"-overgangen som ikke gir mening her.
+
+**`/rapport-reels`-routen lever videre som alias.** Brukerens beslutning: behold midlertidig, slett senere når vi vet at ingenting eksternt peker på den.
+
+### Cleanup
+19 filer slettet i samme commit (`14861eb`): hele `components/variants/report/board/desktop/`, `components/variants/report/board/mobile/`, `BoardScrollPanel`, `SidebarHero`, `CategoryIndex`, `CategoryFeaturedChips`, `QueueOverlay`, `BoardCategoryInfoTab`, `BottomPlayer`, `SectionPlayButton`, `PlayerBanner`, `StartTourButton`, `useStartTour`, `use-audio-tour-sync`, `DesktopGate`, samt `lib/hooks/useBoardActiveSection.ts` og `lib/board/featured-pois.ts`. Per kvalitetsstandard: når noe nytt erstatter noe gammelt — slett umiddelbart. +384/-2933.
+
+Separat commit (`4eec0ce`) ryddet 14 committed screenshot-PNG-er fra repo-root (eldre spike-sesjoner).
+
+### Iterasjon 2 — Apple Maps-paradigme på desktop
+Etter første merge lå sidebar og kart side-by-side (400px + flex-1). Bruker viste Apple Maps-referanse: sidebaren skal "flyte" over kartet med padding rundt + avrundede hjørner + skygge. Kartet skal gå helt under sidebaren.
+
+Endring i `ResponsiveLayout`:
+```tsx
+<div className="relative h-[100dvh] w-full bg-stone-100 overflow-hidden">
+  <div className="absolute inset-0">
+    <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={432} />
+  </div>
+  <div className="absolute left-4 top-4 bottom-4 w-[400px] z-20 rounded-3xl overflow-hidden bg-black shadow-2xl ring-1 ring-black/5">
+    <ReelsStack renderCard={(i) => <CardRouter cardIndex={i} desktopMode />} />
+  </div>
+</div>
+```
+
+### Iterasjon 3 — fitBounds må respektere sidebar-okkluderingen
+Bruker observerte: når en kategori aktiveres og kartet zoomer inn på POI-bounds, lander markørene midt i viewportet — også bak sidebar. Bounds-fit må kompensere for okkluderingen.
+
+**2D (`BoardMap.tsx`):** ny `mapPaddingLeft`-prop sendes til Mapbox `setPadding({left})` (påvirker tolkningen av "senter" for fremtidige kamera-bevegelser) og inkluderes i `fitBounds`-padding-objektet (80 + mapPaddingLeft).
+
+**3D (`BoardMap3D.tsx`):** Google Maps 3D mangler en native `fitBounds`-API, så vi bygde manuell kompensasjon i tour-mode-fitten:
+1. Skalér `rangeForWidth` opp med `1/visibleFraction` (innholdet skal passe i smalere synlig region)
+2. Forskyv `center.lng` østover med `(mapPaddingLeft / 2)` piksler konvertert til meter via `meters_per_pixel = 2·range·tan(FOV_H/2) / W_px`
+
+`mapPaddingLeft={432}` på desktop = 16 ytre + 400 sidebar + 16 indre gap. Mobil er uendret (0).
+
+### Filer endret
+- `app/eiendom/[customer]/[project]/rapport-board/page.tsx` — bytter `ReportBoardPage` ut med `ReportReelsPage`
+- `components/variants/report/reels/ReportReelsPage.tsx` — adaptiv ResponsiveLayout + BoardProvider-wrapper + BoardReelsSync
+- `components/variants/report/reels/reels-data.ts` — `HomeReelCard`/`OutroReelCard`/`MeglerReelCard`-typer + `AudioBearingCard`-union + `cardIndexToAudioIndex` cards-array-aware
+- `components/variants/report/reels/MeglerReel.tsx` — ny (statisk kontaktkort)
+- `components/variants/report/reels/CategoryReel.tsx` — `audioIndex`-prop + `desktopMode`-flag
+- `components/variants/report/reels/use-reels-audio-orchestration.ts` — mapper via cards-array (intro+megler pauser audio)
+- `components/variants/report/board/BoardMap.tsx` — `mapPaddingLeft`-prop på 2D
+- `components/variants/report/board/BoardMap3D.tsx` — `mapPaddingLeft`-prop på 3D med center-shift + range-skalering
+
+### Status
+Konsolidering landet og verifisert visuelt på desktop. Markørene plasseres nå til høyre for sidebaren ved kategori-skifte i både 2D og 3D. Mobil-flow uendret (peek-sheet → quarter → half → full). 78 board-relaterte tester passerer; 3 pre-eksisterende `validator.test.ts`-feil (norsk æ/ø/å) urørt.
+
+### Neste utforskning (parkert)
+- Slette `/rapport-reels`-routen når vi vet at ingenting eksternt peker på den
+- Vurder om `BoardReelsSync` skal flyttes til en delt hook om/når flere shell-varianter dukker opp
+- 3D-popup-posisjonering ved tett zoom — kan bli okkludert av sidebar når POI ligger langt vest
+
+---
+
+## 2026-05-25 (natt) — Transport-kategori: Level B beats-match + gjenbrukbar compose-pipeline
+
+### Kontekst
+Andre kategori-bg etter natur — denne uten Veo, kun Ken Burns på stills (test av billig produksjons-pipeline). Sesjonen avdekket den kritiske innsikten om **manus + bilde-synkronisering** og produserte et gjenbrukbart pipeline-script som baker den inn.
+
+### Sentral innsikt: Reels-manus ≠ audio-tour-manus
+Audio-tour-manus er produktivt-skrevet for walked-through-format (rapporten i rapport-board). Det fungerer ikke for Reels-formatet fordi:
+1. Lengde er for høy (25-30 sek per kategori vs. SOME-pacing-vindu ~15-20 sek)
+2. Tema-vekt er ubalansert (transport-manus brukte 50% på tog selv om manus nevner 6 transport-moduser — øyet leser det som "tog er det viktige")
+3. Setningsstruktur tar ikke hensyn til at bildet kan bytte med setning
+
+**Reels-manus-prinsipper landet:**
+- Ett tema per setning (bilde kan bytte ved punktum)
+- Balansert vekt på det som nevnes (hver modus får sitt eget visuelle slot)
+- Tegne-budget ~15-20 sek per kategori
+- Stedsnavn minimeres for TTS (memory: norske stedsnavn er TTS-eksplosiver)
+
+### Implementasjon: Level B (beats-match)
+Vi har fire teoretiske nivåer av manus-bilde-synkronisering. Vi implementerte Level B:
+
+| Nivå | Beskrivelse | Innsats | Kostnad |
+|------|-------------|---------|---------|
+| A | Tema-match (riktig kategori-stemning) | Lav | Lav |
+| **B** | **Cut-punkter ved setningsenden** | Medium | Medium |
+| C | Sub-cuts innen setning (komma-split, keyword-match) | Høy | Høy |
+| D | Veo-motion timet til ord-konsept (audio-conditional generation) | Veldig høy | Eksisterer ikke ennå |
+
+Level B implementert via ny `scripts/compose-reels-bg.ts`:
+- Tar timings JSON fra ElevenLabs `/with-timestamps`
+- Auto-detekterer setningsende (`.` `!` `?`) som cut-punkter
+- `--extra-splits` lar manus spesifisere ekstra cut-punkter (Level C lite) ved søke-strenger som `"bysykkel,"`
+- Renderer hver beat som separat Ken Burns mp4 med variabel duration
+- Concat via demuxer (ikke filter-graph — lærdom fra transport v1 hvor filter_complex med 5 zoompan-inputs ga "samme bilde i alle slots")
+
+Resultat: Manus-leveransen om "tog" vises faktisk mens lokaltog er på skjermen. Naturlig overgang fra "buss" til "hurtigbåt" landet ved setningsenden uten manuell timing.
+
+### Reels-audio må holdes separat fra audio-tour-audio
+Første forsøk byttet ut `public/audio/stasjonskvartalet/transport.mp3` med ny VO. **Det er feil** fordi:
+- Audio-tour i rapport-board bruker samme MP3
+- Timings ligger i Supabase og refererer til *originale* manus
+- Karaoke ville da spille NYTT audio men markere ord fra GAMMELT manus → broken UX
+
+**Korrekt pattern:** Reels-audio er en **override-akse**, ikke en replacement.
+
+Implementert via `CATEGORY_REELS_AUDIO`-map i `components/variants/report/reels/reels-data.ts`:
+```ts
+const CATEGORY_REELS_AUDIO: Record<string, BoardAudioTrack> = {
+  transport: {
+    url: "/audio/stasjonskvartalet/transport-reels.mp3",  // ny fil
+    manus: "...",                                         // ny manus
+    timings: transportReelsTimings,                       // ny timings
+  },
+};
+// I builder: audio: CATEGORY_REELS_AUDIO[c.id] ?? c.audio
+```
+
+Audio-tour fortsetter å bruke originalen, Reels plukker overrideren når den finnes.
+
+### Bonus: video-bg pauses ved phase-change
+Brukerens observasjon: når VO slutter og sheet går fra `reel` → `map-quarter`, skal også bg-videoen fryse — bilde-flowen er del av samme narrative som stemmen.
+
+Fikset i `CategoryReel.tsx`:
+```tsx
+const shouldPlay = currentPhase === "reel";
+```
+
+Phase-change → pause(). Frame fryser på siste posisjon.
+
+### Veo-pipeline: negativPrompt-patch landet
+Forberedelse for neste Veo-runde basert på timelapse-funn fra natur-kategorien:
+- `scripts/animate-scene-veo.ts` patchet med `--negative-prompt`-flag
+- Default negativ-prompt: `"timelapse, time-lapse, hyperlapse, accelerated motion, fast-forward, sped up, fast clouds, fast-moving clouds, dramatic motion, jittery motion, camera zoom, camera pan, camera shake, motion blur, flickering, cartoon, animation, illustration"`
+- Default positiv-prompt forsterket: `"real-time playback speed, nearly stationary clouds with barely perceptible drift"`
+- Default duration: 8s (Veo API krever 4-8)
+- Bruker beslutter: kjør ikke ny Veo-genereing før bedre bildemateriale ligger klart
+
+### Strategisk avklaring: Google Places-bilder er ikke brukbare
+Brukeren spurte om vi kan bruke Google Places API-bilder som input til Veo/komposisjon. **Nei** av flere grunner:
+1. Google Maps Platform ToS section 3.3 forbyr eksplisitt bruk som AI/ML-input
+2. Fotograf eier opphavsretten, ikke Google
+3. Attribusjons-krav (`html_attributions`) passer dårlig på animert SOME-video
+
+Lovlige kilder: megler/byggherre selv, kunde-uploadet med rettighets-checkbox, stock-kommersielt + AI-modifisering, AI-generert fra scratch, egen Placy-foto-pipeline.
+
+### Asset-output for transport-kategorien
+- `public/audio/stasjonskvartalet/transport-reels.mp3` — 25.1 sek, ny manus
+- `data/reels-audio/transport.timings.json` — alignment for ny manus
+- `public/reels/categories/transport.mp4` — 25.2 sek, 7 Ken Burns-beats
+- `public/audio/stasjonskvartalet/transport.mp3` — **UENDRET** (audio-tour beholder originalen)
+
+### Nye filer
+- `scripts/voiceover-reels-transport.ts` — VO-generering fra hardkodet manus (ad-hoc, generaliseres senere hvis behov)
+- `scripts/compose-reels-bg.ts` — gjenbrukbar Level B compose-pipeline
+- `components/variants/report/reels/reels-data.ts` — `CATEGORY_REELS_AUDIO`-override + timings JSON-import
+
+### Status
+Transport-kategori levert med Level B sync. Bruker validerte UX i nettleser: "wow dette ble langt bedre med en eneste gang!". Naturlig overgang buss→hurtigbåt eksplisitt nevnt som suksessfaktor. Pipeline-script klar for neste kategori-bygg. Veo-pipelinen klar for re-bruk når bedre bildemateriale er på plass.
+
+### Neste utforskning (parkert)
+- Generisk `scripts/voiceover-reels.ts` (tar manus fra fil/CLI, ikke hardkodet per kategori)
+- Auto-deployment-steg: kopiere assets til public/ + oppdatere CATEGORY_REELS_AUDIO automatisk
+- Level C-pipeline: keyword-extractor (LLM build-time) + image-to-concept-map for fullt semantisk sync
+- Tilsvarende manus + bilde-pakker for resterende kategorier (mat-drikke, hverdagsliv, opplevelser, trening-aktivitet, barn-oppvekst)
+
+### Iterasjon 2 — manus-rebalanse + Imagen 4 bildeling-bilde
+Etter første transport-leveranse med 6 setninger ble mikromobilitet-trioen (bysykkel/elsparkesykkel/bildeling) for kort visuelt — 0.95s og 1.26s per modus mid-i-siste-setning via `--extra-splits`. Rebalansering:
+
+- **Manus utvidet til 8 setninger** der hver mikro-modus får egen setning (~3-4 sek hver)
+- **Bildeling-bilde generert via Imagen 4** (`imagen-4.0-generate-001`) — 3 mørke biler i parkeringskjeller med subtile logo-emblemer, Hyre-vibe uten brand-navn. Per Google Maps Platform ToS-lærdom (se forrige seksjon) kan vi ikke bruke Places-bilder, så generert-fra-scratch er den lovlige løsningen.
+- **Pure Level B** (ingen `--extra-splits` lenger) — hver setning er én visuell beat. Naturlig pacing 2.7-6.0 sek per beat.
+- **Tog-setningen utvidet** med eksplisitte endepunkter ("direkte sørover til Oslo, og direkte nordover til Bodø, med stopp på Værnes lufthavn underveis") etter brukerens tilbakemelding om at original-manus fikk det til å høres ut som toget bare kjørte til Værnes.
+- **Bysykkel-formulering korrigert** — "Flere bysykkel-stasjoner i nærheten — bysykler leies med app." (bikes are leased, ikke stations).
+
+Final transport.mp4: 29.30 sek, 8 beats, 4.8 MB, deployed til `public/reels/categories/transport.mp4`.
+
+### Nytt verktøy: `scripts/generate-image-imagen.ts`
+Tar `--prompt`, `--output`, `--aspect` (1:1, 3:4, 4:3, 9:16, 16:9), `--samples`, `--model`. Default-modell `imagen-4.0-generate-001`. Brukes når vi trenger fotorealistiske bilder for Reels-bg som vi ikke har lisensiert kildemateriale for. Imagen 3 finnes ikke lenger via Gemini API — kun Imagen 4-varianter (`imagen-4.0-generate-001`, `-fast-generate-001`, `-ultra-generate-001`) + Gemini-native (`gemini-2.5-flash-image`, `gemini-3.1-flash-image-preview`).
+
+### Brukerens tilbakemelding på flowen
+> "jeg liker veldig godt flyten her ... veldig fin og naturlig overgang fra buss til hurtigbåt"
+
+Validering av Level B-prinsippet — naturlig sync oppstår når manuset er strukturert med ett tema per setning + cuts ligger på setningsenden. Brukerens øye fanget det umiddelbart.
+
+---
+
+## 2026-05-25 (kveld) — Veo-pipeline: natur-kategori-bg + læringer fra produksjons-bruk
+
+### Kontekst
+Første gang vi kjørte Veo-pipelinen på en hel kategori-bilde-pakke (5 bilder for natur-friluftsliv) for å erstatte placeholder-`scene1-4.mp4`-loops i Rapport-Reels med kategori-spesifikke video-bakgrunner. Sesjonen avdekket flere produksjons-relevante mønstre i Veo 3.0 fast som påvirker hvordan pipelinen må designes for skalering.
+
+### Pipeline-resultat
+- **Input**: 5 stillbilder i `~/Desktop/placy-test/natur/` (kajakk på Nidelva, skogvann m/ender, sjø-uteservering, marina golden hour, Munkholmen)
+- **Output**: `public/reels/categories/natur-friluftsliv.mp4` — 20 sek, 5 × 4-sek hard-cut concat, 9:16
+- **Compose**: ffmpeg single-pass med trim=1:5 per klipp (skip første sekund hvor motion er svak)
+- **Wiring**: `CATEGORY_VIDEO_BG`-map i `reels-data.ts` per kategori-id, fallback til scene1-4-syklus for kategorier uten dedikert bg
+
+### Produksjons-læringer
+
+**1. Veo 3.0 fast krever `durationSeconds` mellom 4-8.** Vi prøvde først 5 sek (`script default = 5`) og fikk 400 INVALID_ARGUMENT. Bekreftet via dok at intervallet er smalere enn antatt. Default i script oppdatert til 8 sek.
+
+**2. RAI-filter er kontekst-blindt.** Solnedgangs-bading med voksne svømmere ble blokkert med `"can't create videos from input images containing photorealistic children"`. Modellen kan ikke skille voksne-i-vannet fra barn-i-vannet på distanse. Konsekvens: bilder med personer i vann/strand-aktivitet er høyrisiko. Erstatningsbilde (kajakk-padlere med ryggen til kamera) gikk gjennom uten flagg. **Praksis-regel**: unngå bilder med uskarpe/distale figurer i bilde-kuratering — modellen "ser barn" når den er usikker.
+
+**3. "Drifting clouds" → timelapse-effekt.** Veos trening har sterk prior for å akselerere sky-bevegelse (sannsynligvis pga. dominans av timelapse-content i treningsdata). Selv eksplisitte ord som "subtle", "gentle", "slow" i positiv prompt overrider ikke denne prioren. Brukerens øye fanger det umiddelbart som unaturlig.
+
+**4. `negativePrompt`-parameter løser timelapse-problemet.** Veo API støtter `negativePrompt` i `parameters`-blokken. Patchet `scripts/animate-scene-veo.ts` med default negativ-prompt: `"timelapse, time-lapse, hyperlapse, accelerated motion, fast-forward, sped up, fast clouds, fast-moving clouds, dramatic motion, jittery motion, camera zoom, camera pan, camera shake, motion blur, flickering, cartoon, animation, illustration"`. Default positiv-prompt forsterket med `"real-time playback speed, nearly stationary clouds with barely perceptible drift"`.
+
+**5. Rate-limiting ved parallell-genereing.** 5 parallelle Veo-jobber traff 429 RESOURCE_EXHAUSTED på ca. 40% av jobbene. Quota-vinduet er per-minute (resettet etter 90 sek). For produksjon: **max 3 parallelle Veo-kall**, eller sekvensiell genereing med 60s buffer mellom.
+
+**6. Veo-kostnad er fortsatt lav nok for prototype-fase.** ~$0.10/sek for Veo 3.0 fast (8s = $0.80 per klipp). 5-klipp-kategori ≈ $4. 7 kategorier × 5 klipp = $28 per komplett prosjekt. RAI-avviste requests koster $0 (ingen video produsert). Fortsatt billig nok til at iterative re-genereing er overkommelig under utvikling.
+
+### Strategisk pivot: generic-per-kategori i stedet for per-prosjekt
+Sparring etter natur-resultatet landet en viktig produkt-beslutning: **bildene skal være generic per kategori, ikke per prosjekt.** Forankring:
+
+- **Google Places Photos kan IKKE brukes**: Google Maps Platform ToS section 3.3 forbyr eksplisitt bruk av deres content som input til AI/ML-modeller. Selv om Places API gir oss bilder-tilgang, er ToS-grensen klar. Pluss: opphavsrett på fotografen er separat akse, og attribusjons-krav (`html_attributions`) passer dårlig på animert SOME-video.
+- **Placys brand-DNA støtter generic**: vi har allerede landet at "Placys differensiator er nærområde-data, ikke storytelling" (jf. 2026-05-24 manus-pivot). Reelen viser kategori-mood; spesifisiteten kommer fra kart + POI + voice over.
+- **Skalerings-konsekvens**: 7 kategorier × 5 klipp = 35 klipp totalt for alle Placy-prosjekter (gjenbrukes på tvers). Ikke 35 × N prosjekter. Veo-kost flyttes fra per-prosjekt-aktivitet til engangs-asset-bygging.
+- **Premium-tier i fremtiden**: meglere/byggherrer kan override med egne lisenierte bilder for ekstra brand-spesifisitet. Standard SaaS-mønster — base + add-on.
+
+### Praktisk neste steg
+- Curate generic-bildepakker per kategori (5-8 bilder hver) fra lisensiert kilde (Pexels Pro, Unsplash+, eller egen fotograf)
+- Krav til bilder: matchende lys-tid, lite store sky-områder (timelapse-risiko), ingen ambiguous-alder-figurer (RAI-risiko)
+- Kjør oppdatert Veo-pipeline med negativPrompt på bildene
+- Gjenbruk på tvers av alle Placy-prosjekter via `CATEGORY_VIDEO_BG`-map
+
+### Endrede filer
+- `scripts/animate-scene-veo.ts` — `--negative-prompt`-flag, default-prompts forsterket, durations default 8s
+- `components/variants/report/reels/reels-data.ts` — `CATEGORY_VIDEO_BG` per kategori-id med fallback-syklus
+- `public/reels/categories/natur-friluftsliv.mp4` — første produksjons-asset
+
+### Artefakter
+- `~/Desktop/placy-test/natur/output/natur-{en,to,tre,fire,fire-1}.mp4` (5 × 8-sek Veo-klipp, råmaterialet)
+- `~/Desktop/placy-test/natur/output/natur.mp4` (sammensatt 20-sek)
+
+### Status
+Veo-pipeline validert som produksjons-klart for Rapport-Reels. Negative-prompt-patchen står klar for neste batch-kjøring. Bilde-anskaffelse blir nå produkt-blokker, ikke teknisk-blokker.
+
+---
+
+## 2026-05-25 — Rapport-Reels: mobil-first vertikal feed-prototype (v1 → v17)
+
+### Kontekst
+Bygget ny mobil-route `/eiendom/banenor-eiendom/stasjonskvartalet/rapport-reels` — TikTok-style vertikal feed der hver kategori er ett kort, med bunn-sheet som ekspanderer til fullskjerm Mapbox. Initial implementasjon (v1, Units 1-9) levert via `/ce-work` på plan `2026-05-24-001-feat-rapport-reels-stasjonskvartalet-plan.md`. Deretter 17 rapide UX-iterasjoner basert på løpende brukertesting.
+
+### Arkitektur
+- **Route**: `app/eiendom/[customer]/[slug]/rapport-reels/page.tsx` (async params, Next 14)
+- **State**: React Context + useReducer (`ReelsContext`) for fasiner og kort-index; Zustand `useAudioTourStore` for audio
+- **Komposisjon**: `DesktopGate → ReelsProvider → ReelsAudioShell → ReelsOrchestrator → MapLayer + ReelsStack`
+- **Scroll**: CSS `scroll-snap-type: y mandatory` + `IntersectionObserver` (thresholds 0.5/0.7/0.9) — ingen Swiper-framework
+- **Kart**: Én Mapbox-instans gjenbrukt på tvers av kort (WebGL context-limit). `react-map-gl/mapbox` v8 + vanilla mapbox-gl. Gestures via dynamiske props, ikke imperative `.enable()`-kall (props vinner ved re-render).
+- **Audio**: Utvidet `AudioElementContext` med `autoAdvance` (default true; Reels bruker false) + `onTrackEnded` callback. iOS Safari unlock via data-URL silence-MP3 før `play()`.
+- **Markører**: Gjenbruker eksisterende `BoardMarker` + `HomeMarker` + `useBoardZoomTier` fra board-spiken — ingen ny markør-impl.
+
+### Sheet-fase-mekanikk (endelig modell)
+Fem faser i `ReelsPhase`:
+1. **intro** (intro-video full-screen, sheet skjult)
+2. **reel** (10% peek) — sheet over video, audio spilles, mørk overlay + "Klikk for å åpne kart"-CTA
+3. **map-quarter** (20%) — VO ferdig, sheet "våkner", markører fades inn
+4. **map-half** (50%) — tap aktiverer kartet visuelt
+5. **map-full** (100%) — fullskjerm-kart med pan/zoom, chevron-down → tilbake til `reel` (10%)
+
+Tap-progresjon: peek → half (pause VO), quarter → half (VO allerede ferdig), half → full. Chevron i full lukker helt tilbake til peek (ikke half).
+
+### Kritiske bugs fikset
+- **Audio restart ved phase-change**: `state.currentPhase` var i `useReelsAudioOrchestration` deps → fjernet. Confirmation via brukerens diagnose-output (`audioCurrentTime: 2.265`).
+- **Mapbox canvas ikke resize ved container-høyde-endring**: La til `ResizeObserver` i `ReelsMap` som kaller `map.resize()` ved container size-change.
+- **Mapbox gestures ikke aktiv i map-full**: react-map-gl re-syncher props ved hver render og overstyrer imperative kall. Fikset ved å bruke `dragPan={gesturesEnabled}` etc. som dynamiske props. La også til `pointer-events: none` på `ReelsStack`-container i map-full så touch når Mapbox-canvas under (z-0). Chevron har explicit `pointer-events: auto`.
+- **iOS audio play() hang ved tom src**: `unlock()` setter nå data-URL silence-MP3 før `play()`.
+- **Audio overlapp ved card-bytte**: Page Visibility API pause + cleanup via `close()` på unmount.
+
+### UX-iterasjons-historikk (v2-v17)
+- **v2**: Reduser fra 2 MVP-kategorier → alle kategorier med audio + illustrasjon
+- **v3**: Bytt fra remount-per-kort til persistent-Mapbox med fade-in/out på markører
+- **v4**: Stopp autoplay mellom kort (autoAdvance=false), bruker må swipe
+- **v5**: Karaoke-teleprompter (maks 2 setninger om gangen, aktiv + neste på opacity-50) — bygget `KaraokeTeleprompter.tsx` over eksisterende `mapTokensToSentences`
+- **v6**: Tap-to-skip i peek pauser VO og hopper til map-half
+- **v7-v9**: Sheet-mekanikk forfining — 90% bredde + 5% margin i peek, 100% bredde fra quarter+; rounded-top, side-padding 8px, top-padding 16px; ingen border-radius i full
+- **v10**: Lys bakgrunn på header-area så sheet ikke ser transparent ut når den vokser 10→50%
+- **v11**: VO-end ekspander til 20% (map-quarter), ikke 50% — bruker må aktivt tappe for videre
+- **v12**: Video-bakgrunn fra `~/Desktop/placy-test/output/scene{1-4}.mp4` med cyklisk mapping per kort. Mørk bunn-gradient (`from-black/95 via-black/60 to-transparent` over bottom 50%) for tekst-kontrast.
+- **v13**: Dark mode på sheet (`bg-stone-900`) — mer subtil mot mørk gradient i video
+- **v14**: Fjern bunn-padding på kart-area, sort overlay + "Klikk for å åpne kart"-pill i peek/quarter
+- **v15**: Chevron i map-full lukker til `reel` (10%), ikke `map-half` — full reset til opprinnelig state
+- **v16**: Topp-gradient lagt til for å maske hard kant ved swipe mellom video-loops (`h-1/4`, lett styrke)
+- **v17**: Topp-gradient matchet bunn-styrke (`from-black/95 via-black/60 to-transparent` over `h-1/5`) — myk overgang ved kort-bytte
+
+### Nye filer
+- `components/variants/report/reels/ReportReelsPage.tsx` — main composition + `MapLayer`
+- `components/variants/report/reels/CategoryReel.tsx` — per-kategori card med video-bg, karaoke, gradient-stack
+- `components/variants/report/reels/IntroReel.tsx`
+- `components/variants/report/reels/ReelsStack.tsx` — scroll-snap container
+- `components/variants/report/reels/ReelsMap.tsx` — Mapbox med ResizeObserver, fitBounds, gesture-gating
+- `components/variants/report/reels/KaraokeTeleprompter.tsx` — 2-setning-vindu over `KaraokePitchText`
+- `components/variants/report/reels/reels-state.tsx` — Context + reducer
+- `components/variants/report/reels/reels-data.ts` — `buildReelsCards` med cyklisk video-mapping
+- `components/variants/report/reels/use-reels-audio-orchestration.ts` — phase-driven audio control
+- `components/variants/report/reels/DesktopGate.tsx`
+- `app/eiendom/[customer]/[slug]/rapport-reels/page.tsx`
+
+### Endrede filer
+- `components/variants/report/board/audio-tour/use-audio-element.tsx` — la til `autoAdvance` prop, `onTrackEnded` callback, `unlock()`-metode via context
+- `components/variants/report/board/audio-tour/karaoke-tokens.ts` — la til `KaraokeSentence` interface + `mapTokensToSentences`
+
+### Status
+Demobar mobile-prototype landet. Audio-orchestrering, Mapbox gestures, karaoke-vindu, video-bakgrunner og sheet-mekanikk validert i Chrome MCP. Kjente mangler: video-bakgrunner er placeholder fra Desktop (skal kobles til per-kategori Veo-output når pipelinen er klar), kun Stasjonskvartalet, mobile-only (desktop redirect-to-board).
+
+### Neste utforskning (parkert)
+- Per-kategori Veo-animasjoner av Placys illustrasjoner som video-bakgrunn (erstatter scene1-4-loops)
+- Andre prosjekter enn Stasjonskvartalet
+- Konsolidering vs. parallell-rute mot dagens rapport-board
+
+---
+
+## 2026-05-24 (kveld) — Placy Reels: manus-iterasjon → Placy-native kategori-format
+
+### Kontekst
+Etter at tech-spike og dokumentasjon (brainstorm + strategi-noter) var landet, kjørte ekstern SOME-research via `ce-web-researcher` og brukte funn til å bygge alternative manus-versjoner for A/B-grunnlag. Sesjonen avdekket at research-anbefalingene (persona-format) traff Placy-DNA-en feil — vi pivottet til en mye sterkere Placy-native struktur basert på rapport-anatomien.
+
+### Research-pivot: persona forkastet, kategori-anatomi adoptert
+
+Først bygget persona-versjon (Maria, 24.7s) per research-anbefaling om at "persona aktiverer identifikasjon sterkest for eiendom". Bruker reagerte umiddelbart:
+
+> "Eneste med persona er at det må egentlig være en 'ekte' person. Og det Placy skal være best på er lokasjon, få frem et nærområde."
+
+Kritisk innsikt — to ting research-fasen ikke fanget:
+1. **Fake persona bryter tillits-kontrakten** — vi har allerede én strikk på AI-animasjon, kan ikke samtidig finne på personer. Målgruppen merker det selv om de ikke artikulerer det.
+2. **Placys differensiator er nærområde-data, ikke storytelling** — vi konkurrerer ikke mot eiendoms-meglerens fortelling, vi konkurrerer mot deres områdebeskrivelse. Reels må reflektere Placys produkt-anatomi: kuratert kategori-struktur.
+
+Konsekvens: Reels skal være "trailer for rapporten" — hver scene presenterer en kategori, intro etablerer prosjektet, CTA inviterer til dypere utforsking. Brand-koherent når seeren klikker QR'en og møter samme struktur.
+
+### Funnet: Placys egne illustrasjoner er scene-materialet
+
+Søk i hovedrepoet avdekket 8 illustrasjoner per prosjekt i `public/illustrations/`:
+- `stasjonskvartalet-hero.jpg`
+- `stasjonskvartalet-mat-drikke.jpg`, `-transport.jpg`, `-natur-friluftsliv.jpg`, `-opplevelser.jpg`, `-trening-aktivitet.jpg`, `-hverdagsliv.jpg`, `-barn-oppvekst.jpg`
+
+Beslutning: Reels skal animere disse illustrasjonene via Veo, ikke stockfoto. Resultat:
+- 1:1 visuell konsistens mellom Reel og rapport (samme illustrasjon på SOME som på nettsiden)
+- Skalering blir trivielt: hvert Placy-prosjekt har allerede sin illustrasjons-pakke, Reel-pipelinen kan auto-velge bilder basert på kategori-mapping
+- Eliminerer behovet for meglerens stockfoto (som blant annet gav oss kafé-bilde fra ikke-Trondheim i tech-spike)
+
+For denne iterasjonen brukte vi fortsatt eksisterende Veo-klipp som visuell placeholder for å fokusere på manus-retningen — bilde-bytte kommer i neste iterasjon.
+
+### Manus-iterasjon (4 runder)
+
+**v1 (Mariadagsreise-persona):** 24.7s — forkastet pga. "ekte person"-problem.
+
+**v2 (kategori-versjon, brukerens forslag):** Lang intro + kategori-rapsing + "playsee.no"-trick for å unngå TTS-uttale-feil på "Placy".
+- Result: 21s. Funket på intro-tonen ("tyngde, bra"). Kategori-rapsing trengte mykere overgang ("steder" må inn). "playsee.no"-tricken FEILET — Erik klarte ikke å lande "Placy" via fonetisk skrivemåte.
+
+**v3 (justert kategori, "lenke i bio"-CTA):** Kategori med "se steder i nærheten av X, Y, Z..." (mykere flyt), CTA endret til "Hele nabolaget — utforsk det selv".
+- Result: 19.9s. Bra flyt, men "lenke i bio" for SOME-spesifikk hvis Reels også skal fungere som klikkbar ad.
+
+**v4 (endelig kategori):**
+- Intro: *"Velkommen til Stasjonskvartalet, Trondheims nyeste bykvartal hvor du vil få muligheten til å leve midt i en levende bydel."*
+- Kategori: *"Se steder i nærheten innen mat, transport, hverdagsliv med mer."*
+- Outro: *"Trykk på linken for å utforske området på egenhånd."*
+- Result: 13.65s tale, 14.1s video. **Midt i SOME-completion-sweet-spot (11-18s).**
+
+Brukerens egen redaksjons-innsikt landet manuset: kuttet "leve livet midt i byen, der sjø, kultur og rekreasjon smelter sammen" fordi det var kategorisk redundans med selve kategori-rapsingen. 3 kategorier + "med mer" antyder bredde uten å være listete. Generisk handlings-CTA fungerer for både organisk SOME og klikkbar ad.
+
+### Tech-justeringer
+
+**Variant-spesifikke durations i `scripts/compose-some-video.ts`:**
+```ts
+const DURATIONS = {
+  dagsreise: { scene: 4.8, endCard: 5.5 },  // 24.7s total
+  persona:   { scene: 4.8, endCard: 5.5 },  // 24.7s total
+  kategori:  { scene: 2.4, endCard: 4.5 },  // 14.1s total
+};
+```
+
+Kategori-versjonen er ~14 sek istedenfor 25 fordi voice over er kortere og research-anbefalingen er klar: stramt > langtrukket på SOME.
+
+**TTS-uttale-lærdom (utvider [feedback_norsk_tts_stedsnavn]):** ElevenLabs Erik turbo_v2_5 sliter med "Placy" uansett skrivemåte. "playsee.no" ble ikke lest som "Placy", men som "playsi-no" eller liknende. Konsekvens for Placy Reels: **navnet droppes fra voice over** — bruk generisk "området" eller "nabolaget" med visuelt Placy-branding i end-card istedenfor.
+
+### Artefakter
+- `~/Desktop/placy-test/output/composed-some-dagsreise.mp4` (24.7s, original spike)
+- `~/Desktop/placy-test/output/composed-some-persona.mp4` (24.7s, forkastet pga. fake-persona)
+- `~/Desktop/placy-test/output/composed-some-kategori.mp4` (14.1s, **endelig retning**)
+- `~/Desktop/placy-test/output/voiceover-kategori.mp3` (13.65s, 38 ord, 50 ord inkl. pauser-markup)
+
+### Neste utforskning (parkert for nå)
+- Bygge Veo-animasjoner av Placys egne illustrasjoner (transport, mat-drikke, natur-friluftsliv, hverdagsliv) for endelig visuell-mapping
+- Polert end-card-design (Placy-logo + QR + AI-disclaimer per research)
+- Tekst-overlay synkronisert med voice over (research: 85% ser SOME på mute)
+- **Nytt spor: Reels in-context i Placy Rapport** — hvordan bruke per-kategori-Reels innenfor rapporten (animerte illustrasjoner, modal-videoer, kobling til audio-tour). Brainstormet i `docs/brainstorms/2026-05-24-placy-reels-brainstorm.md`.
+
+### Status
+Manus-mal landet og demobar. Tech-pipeline klar for skalering til andre prosjekter. SOME-generering "roes ned" — neste prioritet er hvordan Reels integreres tilbake i Placy-rapporten som visuell-laget i selve produktet.
+
+---
+
+## 2026-05-24 — Spike: SOME-video (Innsalg av nærområdet) — proof of concept
+
+### Kontekst
+Nytt produktkonsept brainstormet med Markus: 10-30 sek vertikale (9:16) video-teasers for nærområde, ment for SOME-distribusjon av meglere som funnel inn til Placy Rapport. Sammensetning: AI-manipulerte stillbilder med subtil ambient bevegelse + voice over (samme Erik turbo_v2_5-pipeline som audio-tour). Bruksområde A: Placy lager videoer til megler-innsalgsdemoer (Stasjonskvartalet først). Bruksområde B (senere): meglere selv-genererer for sine prosjekter, skalerbart til Propr-volum (~1700/år).
+
+### Tech-stack validert
+- **Image-to-video**: Google Veo 3.0 fast (`veo-3.0-fast-generate-001`) via Gemini API (`predictLongRunning` endpoint). 8s 9:16 fra stillbilde. Replicate Kling 2.1 ble forsøkt først men konto manglet kreditt. `scripts/animate-scene-veo.ts`.
+- **Voice over**: Eksisterende `lib/audio-tour/elevenlabs-client.ts`, 5 scener satt sammen med `<break time="0.4s" />` SSML. `scripts/voiceover-some.ts`. 22s, 51 ord, 348 KB MP3.
+- **Komposisjon**: ffmpeg single-pass via `filter_complex`. `scripts/compose-some-video.ts`.
+
+### Kritisk lærdom: single-pass eliminerer audio-drift
+Første forsøk gikk gjennom multiple ffmpeg-passeringer (trim → concat → mux). Selv med MP3 → WAV mellomsteg ga dette periodisk audio-drift ("lyder bra noen sek, så forsvinner den, så kommer stemmen tilbake"). Diagnose: timing-mismatch mellom passeringer kompounder, og concat-demuxer + separat audio-mux er ikke deterministisk på frame-grenser.
+
+**Løsning**: én ffmpeg-invokasjon med komplett `-filter_complex`-pipeline:
+- 4 video-input + 1 image-input (`-loop 1 -t`) + 1 audio-input
+- Per video: `trim → setpts → scale → crop → setsar → fps` til [v0..v3]
+- Image: `scale → crop → zoompan` (Ken Burns 1.0→1.05) → [v4]
+- `concat=n=5:v=1:a=0` → [outv]
+- `apad=whole_dur=24.7` på audio → [outa]
+- Output: libx264 CRF 20 + AAC 192k, `-t 24.7` hard-stopp
+
+Resultat: stabil audio hele veien, 24.7s, 720×1280, 9.4 MB.
+
+### Avveid og forkastet: hosted composers (Creatomate)
+Brukt 1-2 timer på Creatomate `/v2/renders` med source-JSON da ffmpeg-multipass hadde drift. Output kom tilbake som 480×270 5sek MP4 uansett input-parametre (render_scale: 0.375). Trolig trial-plan-cap, men ble irrelevant: single-pass ffmpeg løste drift-problemet uten ekstern tjeneste. **Kostnaden alene gjør hosted composers feil retning på spike-stadium** — Creatomate Growth-plan starter på $129/mnd, vs ffmpeg-lokalt som er $0. Hosted komposisjon parkert som "vurder ved skalering hvis cloud-rendering blir påkrevd".
+
+### Konsept-validering
+- Stasjonskvartalet-manus (5 setn, 51 ord, ~22s): "Morgenen våkner over kanalen. […] Stasjonskvartalet. Se hele nabolaget hos Placy." Erik-stemme leverer som forventet, samme kvalitet som audio-tour.
+- Veo gir overbevisende ambient motion på vann, himmel, bakgrunnsfigurer. Bruker: "haha dette er veldig bra!".
+- **Negativ lærdom**: detalj-bevegelser (kaffe-damp på scene 2) ble urealistisk overdrevet. Begrensning: hold image-to-video-prompts til miljø/ambient (vann, vind, mennesker i bakgrunnen), ikke objekt-detaljer.
+
+### Artefakter
+- `scripts/animate-scene-veo.ts` — Veo image-to-video pipeline
+- `scripts/voiceover-some.ts` — ElevenLabs voice over for SOME-manus
+- `scripts/compose-some-video.ts` — single-pass ffmpeg-komposisjon
+- `~/Desktop/placy-test/output/composed-some.mp4` — første demobare versjon (Stasjonskvartalet)
+
+### Åpne spørsmål / pending
+- **Scene 2 må erstattes** før kunde-demo (kafé-bildet er ikke Trondheim).
+- **End-card-design**: scene5.jpg er statisk og lite "kuratert". Trenger logo + QR-kode + tydelig CTA-tekst, eventuelt animert.
+- **Bakgrunnsmusikk**: ikke testet, kan gi mer SOME-feel.
+- **Dedikert worktree**: når dette går fra spike til produkt, opprett `placy-ralph-some-video` for å rydde Veo/composer-scripts og isolere fra board-spike.
+- **Creatomate-key i .env.local** ble brukt for testing — bør roteres siden den ble delt i chat under spike.
+- **Skaleringsplan for Propr-volum (1700/år)**: ikke utredet. Veo-pricing per 8s-klipp + ElevenLabs per ord må regnes mot self-serve-prising for meglere. Komposisjons-laget er $0 takket være ffmpeg.
+
+### Status
+Proof of concept ferdig. Tech-stacken (Veo + ElevenLabs + ffmpeg) er bekreftet å fungere ende-til-ende, output er demoable. Neste fase er produkt-vurdering: gå videre med dedikert worktree + polering, eller parker spiken til vi har klient-pull.
+
+---
+
+## 2026-05-22 — Zoom-baserte markører (rapport-board): brainstorm → plan → Unit 1-3 implementert
+
+### Kontekst
+Bruker observerte to problemer med dagens BoardMarker:
+1. **Lav zoom = kaos**: ~50 markører overlapping over Trondheim sentrum, kategorier konkurrerer om plass, ikon-detaljer går tapt
+2. **Høy zoom = anonym**: markøren forblir farget sirkel uten POI-navn, brukeren må klikke for å vite hva det er
+
+Referansebilde: Snapchat-Maps-mønster der nær-zoom rendrer POI-navn som tekst-label horisontalt ved siden av sirkulær markør.
+
+Sjekk av `/docs` viste at lignende arbeid ble gjort i februar (`docs/plans/2026-02-08-feat-adaptive-zoom-markers-illustrated-map-plan.md`) — `AdaptiveMarker` + `useMapZoomState` finnes for Explorer/ReportInteractiveMap. Men labels ble deaktivert i commit `c9ff333` ("cleaner map at all zoom levels"), og label-budget-logikken ligger dormant. Board-kartet (vår spike-kontekst) bruker ikke `AdaptiveMarker` i det hele tatt — den har sin egen enklere `BoardMarker.tsx`.
+
+### Workflow
+Full ce-pipeline kjørt med review-iterasjoner på begge artefakter:
+- **`/ce-brainstorm`** → `docs/brainstorms/2026-05-22-board-zoom-baserte-markorer-brainstorm.md`. Dialog avklarte: 3 tiers (dot/icon/icon+label), kun POI-navn på label, standardisert farge (stone-900), text-shadow halo, høy zoom-terskel (~16) for label, aktiv markør viser alltid label, dot-mønster ved lav zoom for kollisjons-håndtering.
+- **`ce-doc-review` runde 1** på brainstorm-doc: 23 funn (P1: 10, P2: 9, FYI: 4). LFG-anvendt — viktigste landinger: R10/R7/R1-konflikt (aktiv på dot-tier), per-markør `zoomTier`-prop fordi Mapbox `<Marker>` rendres i egen DOM-rot, `BoardPOILabel.tsx` deprecates, parallel-impl ikke ratifisert uten verifisering.
+- **`/ce-plan`** → `docs/plans/2026-05-22-001-feat-board-zoom-baserte-markorer-plan.md`. 5 implementation units, Standard scope.
+- **`ce-doc-review` runde 2** på plan-doc: 28 funn (P1: 7, P2: 16, FYI: 5). LFG-anvendt — kritiske faktafeil og arkitektur-korrigeringer:
+  - **Faktafeil**: planen sa `w-11 h-11 = 36px`. Verifisert: `w-11` = 44 px (Tailwind 11 × 4 = 44).
+  - **Anchor-geometri**: flex-row `[ikon | label]` med `anchor="bottom"` ankrer container-midten, ikke ikon-sirkelen. Flyttet label til absolute-positioned (`left: 100%`) utenfor `<Marker>`-bbox.
+  - **Mini-popup dobbel-navn**: `BoardPOIMiniPopup` viser allerede `{poi.name}`. La til R10c: `popupMode === "mini" && isActive` → suppress inline-label.
+  - **DOM-struktur**: planen sa fade er på `<Marker>`, men dagens BoardMarker setter opacity på *inner-div*. Korrigert.
+  - **Tier-flash**: useEffect kjører etter render. Lazy `useState`-init via `mapRef.current?.getMap?.().getZoom()` minimerer flash til max én render-cycle.
+  - **Unit 4/5 swap**: kalibrering kommer FØR `BoardPOILabel`-sletting → fallback-mulighet.
+
+### Implementasjon (Unit 1-3 landet, Unit 4-5 pending)
+
+**Unit 1 — `useBoardZoomTier`-hook** (`components/variants/report/board/use-board-zoom-tier.ts`):
+- React-state-driven (returnerer `BoardZoomTier`), ikke DOM-attribute som `useMapZoomState`. Begrunnelse: per-prop er idiomatisk React for ~50 markører; å endre eksisterende hook ville berørt to call-sites (ExplorerMap, ReportInteractiveMap) som er out-of-scope.
+- Eksporterer `computeZoomTier(zoom)` + konstantene `DOT_BREAKPOINT = 13`, `LABEL_BREAKPOINT = 16` for testbarhet og fremtidig kalibrering.
+- Lazy `useState`-init prøver `mapRef.current?.getMap?.().getZoom()` ved første render → unngår tier-flash hvis map-ref er klar.
+- `useEffect` (på `mapLoaded`) lytter på `map.on("zoom", ...)` og kjører `updateTier` umiddelbart for å plukke opp ekte verdi.
+- `useRef`-guard hindrer duplicate setState når Mapbox fyrer zoom-event 60 fps under gestures.
+- `DEBUG_ZOOM = true` logger hver tier-overgang via `console.log` (eslint-disable-next-line). Settes false når terskler er kalibrert.
+
+**Unit 2 — `BoardMarker.tsx` med tre slot-elementer** (kunne ikke gjenbruke `AdaptiveMarker` siden den er DOM-attribute-driven):
+- Inner-container med eksplisitt størrelse (44 px aktiv, 32 px ellers) + `overflow: visible`. Bærer `isVisible`-fade (eksisterende kategori-fade, 300 ms på opacity + transform).
+- Tre absolute-positioned søsken-elementer i inner-container, alle alltid i DOM, opacity-toggled:
+  - `<Dot/>` — 8 px farget prikk sentrert (`translate(-50%, -50%)`). Opacity 1 ved `effectiveTier === "dot"`.
+  - `<IconCircle/>` — dagens sirkel med border + ikon, absolute-sentrert. Opacity 1 ved `effectiveTier !== "dot"`. Active = 44 px + border-3, inactive = 32 px + border-2.
+  - `<Label/>` (`<span aria-hidden="true">`) — `position: absolute; left: 100%; margin-left: 8px`. Opacity 1 ved (`effectiveTier === "icon+label"` || `isActive`) && !`suppressLabel`. Font 10 px, stone-900, text-shadow dobbel hvit halo, max-width 120 px med ellipsis. `-webkit-font-smoothing: antialiased`.
+- `effectiveTier = isActive && zoomTier === "dot" ? "icon" : zoomTier` implementerer R10 (aktiv promoteres fra dot til icon).
+- `<Dot/>` og `<IconCircle/>` sentrert på samme akse — tap-koordinat flytter seg ikke ved promotion.
+- Alle har `transition: opacity 200ms ease-out` (R11). Kategori-fade (300 ms) på inner-div og tier-fade (200 ms) på label multipliseres av nettleseren.
+- `React.memo` med custom comparator (`poi.id, color, icon, isActive, isVisible, zoomTier, suppressLabel`).
+
+**Unit 3 — `BoardMap.tsx`-integrasjon**:
+- Importer + kall `useBoardZoomTier(mapRef, mapLoaded)` etter `useState`-deklarasjoner.
+- For hver `<BoardMarker>` i `markerStates.map(...)`: beregn `suppressLabel = popupMode === "mini" && state.activePOIId === poi.id` inline. Pass `zoomTier` + `suppressLabel` som nye props.
+- Ingen endringer på `markerStates`, `visiblePOIs`, tour-fitBounds eller 2D/3D-toggle-logikken.
+
+### Verifikasjon
+- `npx tsc --noEmit`: 0 type-feil.
+- `npm run lint` på tre nye/endrede filer: 0 errors, 0 warnings.
+- Dev-server kjører på `http://localhost:3000/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board` (port 3000).
+- **Visuell kalibrering (Unit 4) deferred** — Chrome MCP-profil låst, og bruker valgte å stoppe sesjonen før manuell kalibrering.
+
+### Beslutninger
+- **Ny hook framfor `useMapZoomState`-reuse**: Verifisert at den eksisterende returnerer `void` og skriver DOM-attribute. Vår per-prop-tilnærming krever React-state-return per markør. Å endre return-type ville berørt to call-sites out-of-scope. Ny hook = 70 linjer inkl. kommentarer.
+- **Per-prop framfor data-zoom-state-container**: Mapbox `<Marker>` rendres i `.mapboxgl-marker` (inni `.mapboxgl-map`), så descendant-CSS *kunne* fungert teknisk. Men det ville krevd Board-spesifikk CSS i `globals.css` (eller scoped-modul) — per-prop er idiomatisk React for ~50 markører × én re-render per tier-cross.
+- **Absolute-positioned label, ikke flex-sibling**: Bevarer `anchor="bottom"`-semantikk — `<Marker>`-bbox = ikon-sirkel-bbox, label er utenfor flow. Ikon-sirkelens bunn-senter pinnes til POI-koordinaten uansett om label er synlig.
+- **`BoardPOILabel` ikke slettet i denne sesjonen** — Unit 5 conditional på Unit 4 go/no-go. Side-by-side visuell sammenligning av pille (52 px over) vs inline (8 px høyre) er en del av kalibreringen.
+- **Dot-tier hit-area via inner-container-størrelse, ikke padding**: Container = 32 px ved inaktiv → hit-area = 32 × 32 (over 24 × 24-kravet). Padding-strategien fra planen ble forenklet siden container-størrelsen alene holder.
+
+### Lærdomspunkter
+- **Mini-popup-konflikt var skjult dobbel-rendering** — review-runde 2 oppdaget at `BoardPOIMiniPopup` allerede viser `{poi.name}`. Uten R10c-suppress ville aktiv POI fått navnet rendret to ganger på desktop. Kun fanget i feasibility/design-lens/adversarial-review, ikke i brainstorm.
+- **`w-N` Tailwind-konvertering: 4 px × N, ikke 9 px × N** — `w-11` = 44 px, ikke 36 (som plan-utkast hevdet). Kontrollerte ved å lese BoardMarker.tsx direkte.
+- **`useState`-lazy-init er det rette stedet for synkron initial-state-beregning** — `useEffect` kjører etter render. Hvis du trenger korrekt state ved første render OG hooken har en async-trigger (`mapLoaded`), løses det med lazy `useState(() => compute())` + `useEffect`-retry.
+- **`ce-doc-review` runde 2 fanget faktafeil som runde 1 ikke kunne**: Plan-doc-review verifiserte mot kodebase (feasibility-reviewer leste BoardMarker.tsx og fant w-11 = 44 px). Brainstorm-review gjorde ikke det fordi brainstorm ikke nevnte tall.
+
+### Åpne punkter
+- **Unit 4 kalibrering**: 8 oppgaver står i planen (POI-tetthet ved zoom 16, text-shadow vs illustrert palett, mini-popup-konflikt-validering, pille-vs-inline-sammenligning, tier-overgang smooth, multiplikativ opacity, dot-tap-target på mobil, active-label under tour). Krever dev-server + visuell verifikasjon på faktisk Stasjonskvartalet-data.
+- **Unit 5 sletting av `BoardPOILabel.tsx`** — conditional på Unit 4 go-no-go.
+- **3D-versjon (`BoardMap3D.tsx` + `Marker3DPin`)** deferred til egen plan-runde — Google rasteriserer SVG per render, så samme rAF-tween-mønster fra `useTweenedOpacities` må gjenbrukes.
+- **Filer uncommittet** per prototype-policy: brainstorm-doc, plan-doc, `use-board-zoom-tier.ts`, `BoardMarker.tsx`, `BoardMap.tsx`, denne worklog-entryen. Bundle separat fra andre sesjoners ucommitted endringer (CategoryIndex, SidebarHero, audio-tour-filer osv.).
+
+---
+
+## 2026-05-22 — Audio-tour-utvidelser: line-karaoke, manus-curator v3, outro+megler, welcome-accordion
+
+### Kontekst
+Lang sesjon på `feat/board-narrativ-spike` som drev audio-tour-flata fra "fungerer" til "designet". Fem koblede arbeidsblokker, alle drevet av bruker-observasjoner under live lytt-test:
+- Karaoke ord-for-ord skapte for høy kognitiv last
+- Audio-manus hadde vanilla-LLM-stil (forrige iter krevde 13 runder)
+- Ingen avslutning på turen + ingen megler-CTA
+- Nabolaget-spor blandet velkomst + områdebeskrivelse
+- TTS vinglet ved korte setninger med punktum
+
+### Implementasjon
+
+**Block 1: `manus-curator` skill + Stasjonskvartalet regenerert** (commit `7421d05`)
+- Ny `.claude/skills/manus-curator/SKILL.md` med v3-format: 0 POI-navn (unntak skole), 5 setn cap, 60–75 ord, 20–25 sek TTS, "ingen smørøyet/perfekt plassert"
+- 3 anker-eksempler + 3 anti-eksempler i `references/` — modellen lærer av sammenligning, ikke regler alene
+- Pipeline: `lytt-test-curation-staging.ts` (TTS preview i `.curation-staging/<slug>/audio-preview/`), `apply-curation-staging.ts` (PATCHer Supabase med optimistic lock på `updated_at`)
+- Stasjonskvartalet: 7 spor regenerert (Nabolaget + 6 kategorier), alle innenfor format
+
+**Block 2: Linjenivå-karaoke + stagger-wash** (commit `ceaa8aa`)
+- `KaraokePitchText` refaktorert: ord = atomisk enhet med stable timings, linjer detekteres dynamisk via `useLayoutEffect` + `getBoundingClientRect().top` (2px-tolerance for sub-pixel jitter)
+- Stagger: 35 ms delay per ord, 300 ms duration → ~475 ms wash per 6-ords linje
+- `karaoke-tokens.ts` eksporterer `mapCharTimingsToWords`; linje-grupperingen lever i komponenten siden den er DOM-avhengig
+- 6 nye/oppdaterte tester (alle passerer)
+
+**Block 3: Outro-spor + megler-kort i bunn av sidebar**
+- `outroAudio?: ReportThemeAudio` i `ReportConfig` (parallelt med `heroAudio`)
+- `BoardData.outro?: BoardAudioTrack` + `BoardData.brokers?: BrokerInfo[]` (eksisterende `BrokerInfo`-type gjenbrukt)
+- `OutroSection` (karaoke som `HomeSection`) + `MeglerSection` (statisk kontakt-kort med foto + Ring/E-post-knapper) i `BoardScrollPanel`
+- `AudioTrackCategoryId` utvidet med `"outro"`; `buildTracks`-pattern oppdatert i 3 steder (`useStartTour`, `CategoryIndex.buildTracks`, `SectionPlayButton`)
+- Section-label: "Avslutning" → "Oppsummert" (bruker-feedback: speiler manusets oppsummerende formulering)
+- DEMO-broker-placeholder for Stasjonskvartalet PATCHet via REST (Wesselslokka-stil)
+
+**Block 4: Manus-iterasjon — nabolaget + outro**
+Lytt-test-drevne TTS-fikser:
+- "til fots" → "ti minutters gange" (TTS-uttale "fooots")
+- "blomsterbed", "grønne lunger" → "parker", "lekeplasser" (uleselig av Erik)
+- "2028" → "Når Stasjonskvartalet står ferdig" (tidsregel: unngå hard-dato)
+- Stasjonskvartalet-navn brukt for ofte → kun i welcome
+- Kjøper-perspektiv etablert: "hvordan det oppleves å bo i nærmiljøet"
+- Pause-affordanse i intro speiles i outroens setn 2 ("utforske på egen hånd" — eksplisitt tematisk eko)
+
+**Block 5: Welcome-spor splittet ut + accordion-UI**
+- Diagnose: stemmevingling ved korte setninger (`eleven_turbo_v2_5` reset-er internal voice state mellom punktum-avsluttede setninger) + informasjonsarkitektur-feil (velkomst + intro-til-turen + pause-affordanse hører ikke til Nabolaget-kategorien)
+- Strukturell fix: egen `welcome.md` (47 ord, ~15 sek) for tour-host-prat; slanket `nabolaget.md` (53 ord, ~20 sek) til ren områdebeskrivelse med "Området" som referent (siden welcome etablerer Stasjonskvartalet)
+- Bonus: hver MP3 = egen TTS-ytring → ingen reset-vingling. Natural pause når audio-element switcher
+- `welcomeAudio?: ReportThemeAudio` i `ReportConfig` → `BoardData.welcome` → `welcome.mp3` i `public/audio/{slug}/`
+- `AudioTrackCategoryId` utvidet med `"welcome"`; buildTracks legger welcome **først** (før home)
+- `SidebarHero.TourCTAPill` → `TourCTAAccordion`: klikk ekspanderer pillen nedover via Tailwind grid-rows-[0fr]→[1fr] (300 ms ease-out), karaoke-tekst rendres inni accordion mens welcome-audio spilles
+- Auto-scroll til Nabolaget-section når `trackIndex` skifter `welcome` → `home` (useRef + useEffect-pattern, kun fyrer én gang per overgang)
+- Hvis prosjektet ikke har `welcomeAudio` → CTA-pillen oppfører seg som før (én klikk → direkte tour, ingen ekspansjon)
+
+### Beslutninger
+- **Linjenivå framfor ord eller setning** — bruker-test: ord-for-ord var kognitiv overload, hele setning betyr 3-4 linjer lyser samtidig (visuelt sprang). Linje matcher hvordan øyet leser
+- **Stagger-wash framfor binær opacity** — 35 ms × ord gir organisk "neon-vask"-effekt, ikke alle-på-en-gang. Brukerens første feedback etter implementering: "ah kult, bra!"
+- **`welcomeAudio`/`outroAudio` parallelt med `heroAudio`** — fremfor å integrere som "speciale themes[]". Renere semantikk: dette er tour-meta (welcome) og avslutning (outro), ikke kategorier
+- **CategoryIndex teller IKKE welcome/outro** — indeks-lista er for *innhold*, ikke for tour-host-prat eller CTA-rampe. `totalTracks` i SidebarHero (Spor X/Y) inkluderer alle 9 spor — det er progresjons-metrikk
+- **Em-dash istedenfor punktum i bridge-overganger** — turbo_v2_5 unngår voice-reset hvis bridge bindes til neste setning i én ytring. Punktum etter kort setn → vingling. Holdt for andre overganger der vi *vil* ha pause
+- **Splittet welcome ut framfor å patche vinglingen i nabolaget-spor** — strukturell fix løser to ting samtidig: TTS-stabilitet OG informasjonsarkitektur. Tour-host-prat hører hjemme i CTA-rampen, ikke i scroll-narrativet
+- **Accordion framfor inline expand i scroll-panelet** — ekspand-effekten er konsentrert til CTA-en hvor brukeren har fokus. Visuell feedback "noe skjer" konkurrerer ikke med scroll-rytmen
+
+### Lærdomspunkter
+- **TTS stokastisk per request** — kan ikke validere uttale på et kort snippet; må kjøre full manus. Stedsnavn er eksplosiver ("til fots" → "fooots", "blomsterbed" → kaos). Curatering > vendor-bytte
+- **`eleven_turbo_v2_5` voice-state-reset mellom setninger** — kan forårsake hørbar vingling i volum/tone ved korte setninger med punktum. Løsninger: lengre setninger (>15 ord) i én ytring, eller egen MP3 per logisk blokk
+- **DOM-måling for linje-detektering** — `getBoundingClientRect().top` med 2px-tolerance fanger sub-pixel jitter pålitelig på tvers av sidebar-breddevariasjoner. `useLayoutEffect` (ikke `useEffect`) så måling skjer før paint
+- **Tailwind grid-rows-[0fr]→[1fr] accordion-trick** — clean accordion-animasjon uten max-height-kalkulering eller measurement. Krever `overflow-hidden` på child og `grid` på parent
+- **Apply-script nullstiller `audio.url` for ALLE staged manus** — det betyr en run av audio-build regenererer alle filer i staging, ikke bare endrede. Akseptabelt for prototype, men en diff-check ville spart 70% ElevenLabs-kost ved iterasjon
+
+### Åpne punkter
+- **iPhone-validering av accordion** — visuell verifikasjon på faktisk mobil-bredde (Chrome MCP har min-width 500px); Vercel preview hvis ønskelig
+- **REVALIDATE_SECRET ikke satt** i `.env.local` — ISR cache invalidation kjøres ikke automatisk etter audio-build; krever hard-reload av siden
+- **Megler-data er DEMO-placeholder** — bruker bør erstatte med ekte BaneNOR Eiendom-kontakt før noen ser dette eksternt
+- **Block 5 uncommittet** i working tree per prototype-policy. `feat/board-narrativ-spike` har commits `7421d05` + `ceaa8aa` over `bc32e88`; outro/megler-arbeidet og welcome-accordion er fortsatt staged for vurdering
+- **Apply-script diff-check** — kunne hoppe over uendrede manus for å unngå unødvendig TTS-regen (sparer ElevenLabs-kost ved iterativ curation)
+- **"Opplevelser"-kategori** har eksisterende audio.url i DB men ingen manus i `.curation-staging/` — overlever audio-build via skip. Verifiser at curated manus eksisterer eller fjern fra config
+
+---
+
+## 2026-05-22 — Fade-animasjon på kart-markører ved kategori-skifte (2D + 3D)
+
+### Kontekst
+Bruker observerte at mye skjer samtidig ved kategori-skifte (scroll, kamera-fit, markør-mengde-endring) og at instant 0↔1 markør-toggling skapte en "hard overgang" som gjorde det vanskelig å lese hva som faktisk endret seg på kartet. Eksisterende kode unmountet `BoardMarker` ved kategori-skifte (filtrert array via `visiblePOIs`), så markører bare forsvant uten transition.
+
+### Implementasjon
+Spike i to deler:
+
+**2D (`BoardMarker.tsx` + `BoardMap.tsx`):**
+- `markerStates` rendrer ALLE POI-er alltid (DOM-stabil identitet på tvers av kategori-skifter), `isVisible: boolean` styrer fade via inline CSS-transition: `opacity 300ms ease-out, transform 300ms ease-out` (+ width/height/border-width 200ms for active-state-skift)
+- Inline transition framfor Tailwind `transition-[opacity,transform,...]` — Tailwind arbitrary-value med kommaseparert liste ble tolket som `transition-all` og fade fyrte ikke
+- `pointer-events: none` på faded-out markører så de ikke fanger klikk-bobler bak
+- `visiblePOIs` derived fra `markerStates.filter(isVisible)` for kamera-fit-effekten (tour-bounds) — kameraet skal følge target, ikke DOM-mengden
+
+**3D (`BoardMap3D.tsx` + ny `use-tweened-opacities.ts`):**
+- Google Maps 3D rasteriserer SVG-markører per render — CSS-transition fungerer ikke. Løst via rAF-tween-hook som driver `opacities`-map som React-state mot target-verdier over 300ms ease-out (cubic)
+- Render alle POI-er via `allPOIs`-flatmap; faktisk-synlige avledet for kamera-fit, identisk pattern som 2D
+
+### Verifikasjon
+Chrome DevTools MCP + rAF-sampling av computed opacity:
+- Pre-fade: 63/63 fullt synlige (opacity 1.0)
+- t=58 ms: 45 markører i fading-bracket (0.05 < opacity < 0.95) + 18 fullt synlige
+- t=58–256 ms: 45 markører fader fra 1→0 jevnt
+- t=296+ ms: 45 markører fullt nedfadet (0.0), 18 synlige
+
+Screenshot midt i overgang (`screenshot-marker-fade-3-mid.png`) viser delvis-fade-markører rundt kartet samtidig med Mat-kategoriens fullt-opake markører.
+
+### Beslutninger
+- **Render union framfor exit-animation-queue** — 63 markører er innenfor Mapbox' komfortsone; én DOM-tre stabilt på tvers av kategori-skifter gir enklere mental modell og null mount/unmount-jitter. Alternativ (track exiting markers + delayed-unmount) er mer kode for liten gevinst
+- **Inline transition-style framfor Tailwind arbitrary** — Tailwind 3 JIT parser ikke kommaseparerte properties pålitelig; inline `transition: "opacity 300ms ..."` er trivielt og garantert applied
+- **rAF-tween-hook for 3D istedenfor CSS** — Google Maps rasteriserer SVG per render, så CSS-transitions blir kuttet. Eksisterende `opacities`-prop på `MapView3D`/`Marker3DPin` var allerede der; vi bare driver den fra en interpolerende state istedenfor å sende rene 0/1
+- **300 ms ease-out** — matcher kamera-fit-duration (800 ms tour-flyTo) konseptuelt ved at fade fullføres godt før kameraet har stabilisert seg. Føles "raskt nok" til ikke å forsinke flow, men tregt nok til å bli oppfattet
+
+### Lærdomspunkter
+- Tailwind arbitrary-value-syntax for multi-property transition (`transition-[opacity,transform,...]`) er upålitelig — falt tilbake til `all`. Inline style er enklere når property-listen er ikke-trivial
+- IntersectionObserver i `useBoardActiveSection` reagerer ikke pålitelig på programmatisk `scrollIntoView` i Chrome MCP (debounce + observer-timing). Ekte user-scroll fungerer; klikk-dispatch via UI-element trigget kategori-skiftet og lot fade verifiseres
+- 3D-toggle krever `has3dAddon=true` på prosjekt — ferjemannsveien-10 har ikke flagget, så 3D-fade-pathen kan ikke visuelt verifiseres her uten å aktivere addon på prosjektnivå
+
+### Åpne punkter
+- 3D visuell verifikasjon — krever et prosjekt med `has3dAddon=true` eller midlertidig overstyring. Logikk er likt mønster som 2D, men perf-profilen er anderledes (45 markører × ~18 frames × SVG-raster i Google Maps = ~810 raster-ops over 300ms)
+- Ved perf-problem i 3D kan vi snappe til 0/1 istedenfor smooth tween — eller halvere durationen
+- Endringer er uncommittet i working tree per prototype-policy (`feat/board-narrativ-spike`)
+
+---
+
+## 2026-05-21 — Mobil board-sheet adopterer desktop scroll-panel + hero-CTA-pille
+
+### Kontekst
+Spotify-anatomi-doc-en (samme dato, tidligere) landet desktop med mål "én komponent-arkitektur for desktop og mobil" — men deferred mobil-implementasjonen. Mobile-flata levde på ~928 LOC divergent kode (`BoardMobileSheet` med 4-snap vaul + multi-phase content, `BoardCategoryTabBar` med bunn-nav, `BoardPOIDetails`/`BoardPunkterAccordion` med Punkter-tab-flyt). Bruker viste mockup av desktop-sidebar rendret på mobil-bredde og ba om at samme arkitektur skulle gjelde begge plattformer.
+
+### Implementasjon
+Brainstorm → plan → work-flyt:
+
+**Brainstorm** (`docs/brainstorms/2026-05-21-mobile-board-sheet-requirements.md`): Bi-snap (peek default + full), bunn-tab-bar fjernes helt, audio-player pinnet sibling utenfor sheet, POI-tap-koordinasjon defereres som no-op placeholders.
+
+**Plan** (`docs/plans/2026-05-21-refactor-mobile-board-sheet-plan.md`): 3 units Lightweight. Avdekket under planning at `BoardLiveTransport` brukes også av `BoardPOIDetails` (ikke kun mobile/) — `BoardPOIDetails` har bare mobile-consumers og kan også slettes. Plan utvidet til 5 slett-filer (~1.3K LOC ut).
+
+**Work-commits:**
+- `090a27e` Ny minimal `BoardMobileSheet` (~50 LOC) som mounter `<BoardScrollPanel />` + `mountBottomPlayer?: boolean`-prop på BoardScrollPanel (default true, mobil sender false) + scaffold-integrasjon (BottomPlayer som fixed-bottom z-50 sibling, BoardCategoryTabBar fjernet)
+- `2fc3a1e` Slett 5 legacy-filer: BoardCategoryTabBar, BoardPunkterAccordion, BoardTabs, BoardLiveTransport, BoardPOIDetails (914 LOC ut)
+- `d20139c` Fix vaul snap-point: `"30%"`-streng tolkes som ~30px, må være `0.3` (number fraction)
+- `2fd15cb` Skjul `CategoryFeaturedChips` på mobil via `hidden lg:block` — chips dispatcher OPEN_POI ved tap men mini-popup på kart bak sheet er ikke synlig på peek
+
+**Design-iterasjon post-spike** (basert på bruker-feedback i samme sesjon):
+- Fjernet `<CategoryIndex />` fra scroll-panel — første spor (Nabolaget) kommer rett under hero, ingen tabell-aktig nav-flate over kort
+- `SidebarHero` action-row redesignet fra liten rund play (40-48px) til bred CTA-pille: `[▶ 45px][Start guidet tur / 7 spor · audio-fortelling][›]` — full bredde, white bg + border-stone-200 (klikk-feel), chevron-affordance, phase-cycling (idle→start / playing→pause / paused→fortsett / error→prøv-igjen)
+- Smooth-scroll til Nabolaget-seksjon ved Start tour-klikk så fokus matcher hva som leses opp (direkte `scrollIntoView` i rAF — eksisterende state→scroll-mekanikk skipper når activeSection allerede er home)
+- Fjernet "Del rapport"-knapp (disabled placeholder uansett)
+
+### Beslutninger
+- **`mountBottomPlayer`-prop framfor å flytte BottomPlayer ut av BoardScrollPanel** — minimal risk for desktop, mobil mounter selv som scaffold-sibling
+- **POI-tap som no-op + chips skjult på mobil** — full POI-tap-koordinering (snap-til-peek + kart-fly-to + mini-popup) er separat oppgave; pragmatisk for spike
+- **Lightweight plan utvidet til logisk konsekvens-cleanup** — `BoardPOIDetails`-sletting kom inn under planning, ikke i requirements. Innenfor scope siden det er dependency-graf-konsekvens, ikke nye features
+- **Vaul snap-format-lærdom** — alltid number 0-1 (fraction) eller px-string ("96px"), aldri prosent-streng ("30%"). Verifisert manuelt via Chrome DevTools mobile emulation
+
+### Lærdomspunkter
+- `/full`-stil flyt (brainstorm → plan → work) virker for selv små refactor-oppgaver — tydelig artefakt-spor (requirements-doc + plan-doc) og scope-låsing
+- Chrome DevTools MCP mobile emulation har min-width 500px — kan ikke teste 375-iPhone 1:1. Workaround: stole på Tailwind-breakpoints + visuell rimelighet ved 500px
+- Bot-block-content fra annen sesjon i `PROJECT-LOG.md` ekskluderes fra mine commits — git status sjekkes før hver `git add`
+
+### Åpne punkter
+- POI-detail-flyt på mobil (chip-tap → snap-til-peek + kart-fly-to + mini-popup) — separat oppgave når det blir tid
+- POI-lenker i grounding/karaoke-tekst — defereres; rendres som tekst men link-styling-fjerning ikke utført
+- `KaraokePitchText.tsx` + `karaoke-tokens.ts` har 3 tsc-feil fra eldre commit (`dfc1831`/`8036dde`) — eksisterende tech debt, fikses i egen runde
+- Ingen push gjort (per prototype-policy) — branch `feat/board-narrativ-spike` har 4 nye commits over `bc32e88`
+
+---
+
+## 2026-05-21 — Pre-launch: blokker bot-crawl på placy.no (Vercel-forbruk)
+
+### Kontekst
+Bruker delte Vercel-forbruksdashboard og spurte "vi er jo ikke live engang, hva er all denne trafikken?" — store oransje stolper på Function/Edge Invocations, blå på Fast Data Transfer. Diagnose etter å ha lest `app/robots.ts` + `app/sitemap.ts`: placy.no er teknisk live og indekserbar, og siten *ber aktivt om crawl*:
+
+- `robots.ts` har `allow: "/"` for alle UA-er — kun `/admin`, `/api`, `/for`, `/trips`, `/test-3d`, `/kart` disallowed
+- `sitemap.ts` genererer URL per POI × område × locale (NO+EN, `/steder/<slug>` + `/places/<slug>`) + alle kategori-slugs + guides + `changeFrequency: "weekly"` på alt — tusenvis av URLer som inviterer Googlebot/Bingbot/GPTBot/ClaudeBot/Ahrefs/Semrush/etc til ukentlig re-crawl
+- Hver SSR-render trigger Supabase + API-routes som wrapper Google Places/Mapbox/Entur
+
+Bruker var tydelig: ingen SEO-verdi i denne fasen, kan faktisk skade (indeksering av halvferdige sider, AI-trening på prematur tekst).
+
+### Implementasjon
+Worktree: `chore/prelaunch-bot-block` (commit `cb4ed9e`, fast-forward push til `main`).
+
+- `app/robots.ts` → `disallow: "/"` for `*`, sitemap-pekeren fjernet
+- `app/sitemap.ts` → `return []` (slettet ~125 linjer Supabase-query-logikk; original ligger i git-historikk)
+
+Reverser ved lansering — minimal og synlig diff.
+
+### Begrensninger
+- robots.txt er frivillig. Googlebot/Bingbot/ClaudeBot/GPTBot respekterer det. Bad scrapers og enkelte SEO-verktøy ignorerer.
+- Indekserte sider forsvinner ikke automatisk — krever Search Console-fjerning eller `noindex`-meta hvis det haster.
+- Hvis residual bot-trafikk fortsatt er ille om en uke: Vercel Deployment Protection (password) eller middleware-block av UA er nukleære alternativer.
+
+### Forventet effekt på forbruk
+- **Function/Edge Invocations:** sannsynligvis 50–80% nedgang innen 1–7 dager etter at Googlebot/Bingbot fanger nye robots.txt (typisk re-check 1–24t)
+- **Fast Data Transfer:** følger Function-tallet — mindre SSR = mindre HTML over wire. Statisk asset-bandwidth (illustrasjoner, MP3) endres bare hvis scrapers stopper å hamre på dem
+- **Build Minutes:** uendret — avhenger av push-frekvensen din, ikke crawl
+- **Image Optimization:** følger SSR-volumet
+- Steady state vil fortsatt ha noe trafikk fra bad bots + din egen iPhone-testing via prod
+
+### Åpne punkter
+- Verifiser `https://placy.no/robots.txt` viser `Disallow: /` når deploy er grønn
+- Sjekk Vercel-grafen om ~1 uke — hvis fortsatt høyt, vurder Deployment Protection
+- Rydd opp `placy-ralph-prelaunch`-worktree når komfortabel: `git worktree remove ../placy-ralph-prelaunch && git branch -d chore/prelaunch-bot-block`
+
+---
+
+## 2026-05-21 — Scroll-rytme + featured POI-chips (sidebar↔kart-synergi prøvd og delvis forkastet)
+
+### Kontekst
+Etter at tour-progress-state + rail-state landet (forrige entry), føltes scroll-panel-seksjonene fortsatt litt "knappe" — tre kategorier synlige samtidig stjal fokus fra én. Pluss: kategori-seksjonene var sterkt tekst-tunge etter at vi unifiserte manus + lead/body til én tekst, og hadde ingen direkte kobling til POI-laget.
+
+To-stegs iterasjon:
+1. Layout-grep: gjøre seksjoner høyere så vi får 1.5-visible-rytme + soft kanter
+2. Content-grep: fylle seksjoner med strukturelle elementer som peker mot konkrete POIs
+
+### Implementasjon
+
+**Steg 1 — 1.5-visible scroll-rytme:**
+- `min-h-[65vh]` per kategori-seksjon — neste seksjon peeker som "hint om fortsettelse"
+- Top/bottom-gradient på scroll-flata (10px/16px) for soft kanter
+- `data-section-state` får scroll-fallback: tour-progress hvis aktiv, ellers `active|inactive` fra `state.activeCategoryId`
+- Alltid-på `[data-section-state="inactive"]` CSS-regel (opacity 0.5) — speil av rail-prinsippet utenfor tour
+- Border softet til stone-200/60, `py-12` for mer luft
+
+**Steg 2 — Featured POI-chips (planlagt via /ce-plan):**
+- Plan: `docs/plans/2026-05-21-feat-featured-poi-chips-plan.md` (6 units, ingen P-tiers, ingen scope-guardian-trigger)
+- `lib/board/featured-pois.ts` — deterministisk seeded shuffle (cyrb53 + Mulberry32), `FEATURED_POI_COUNT = 5`. Random-shim med TODO mot fremtidig curator-flyt
+- `CategoryFeaturedChips`-komponent: horisontal chip-cloud, navn + kategori-ikon, klikkbar
+- Integrert i `BoardScrollPanel` (desktop) + `BoardCategoryInfoTab` (mobil) — `OPEN_POI`-dispatch ved klikk
+- 8/8 tester grønne (determinisme, clipping, immutability, edge-cases)
+
+**Steg 3 — Map-labels prøvd og forkastet:**
+- `FeaturedPOILabels`-komponent: navne-pillen over hver featured POI på kartet, samme utvalg som chips
+- Visuell verifisering: 5 labels × alle kategorier i default-modus = ~35 navne-pillen som dekket kartet
+- Effekten ble motsatt av intendert: labels *trakk fokus vekk fra chips* istedenfor å forsterke synergien
+- Slettet komponent + unmount (per CLAUDE.md hygiene — ikke kommentere ut, slette)
+
+### Beslutninger
+- **Random-shuffle som prototype-shim:** Megler/kunde vil i produksjon kunne velge top-N per kategori manuelt. Helper har TODO som peker dit. Naturlig avstigningssted.
+- **Chips alene eier featured-uttrykket:** Synergi mellom sidebar og kart ble ikke det vi håpet på. Lærdom: visuell kompleksitet på *to* flater samtidig vinner ikke automatisk over fokusert kompleksitet på én flate.
+- **Sentralisert `FEATURED_POI_COUNT`:** Holdt i `lib/board/featured-pois.ts` så chips og (om vi skulle reaktivere) labels ikke kan divergere ved tilfeldighet.
+- **3D-kart ikke berørt:** `BoardMap3D.tsx` har aldri fått labels (vi forkastet 2D-labels først). Hvis vi gjenintroduserer kart-labels senere, må også 3D-variant vurderes — eller bygges som ren 2D-feature.
+
+### Verifisering
+- `tsc --noEmit` → 0 feil
+- `npm run lint` → 0 errors (kun pre-existing warnings)
+- `vitest run lib/board/` → 8/8 grønne
+- Browser-test: scroll gjennom kategorier, sjekket 1.5-rytme, chips synlige, kart rent etter labels-revert
+
+### Åpne for senere
+- **Curator-UI for featured-POIs per kategori:** Trenger admin-flyt der megler/kunde plukker top-N. Datafelt på `BoardCategory` (f.eks. `featuredPoiIds?: BoardPOIId[]`) + UI for å velge. Random-shim erstattes da.
+- **Klikk på chip → kart-fokus:** I dag åpner klikk POI-overlay. Vurder om hover/click skal også flytte/zoome kart til POI-en.
+- **Walk-time per chip:** "Lily · 4 min" hvis travel-times er hydrert per POI.
+- **Map-feedback når chip hovres:** Lettere alternativ til persistente labels — kun den hovrede POI-en får label/highlight midlertidig. Mindre støy.
+
+### Commits
+- `441ee76` feat(rapport-board): 1.5-visible scroll-rytme + plan for featured POI-chips
+- `de5cb93` feat(rapport-board): featured POI-chips + map-labels (synergi sidebar↔kart)
+- `8922acb` revert(rapport-board): drop FeaturedPOILabels — kart-labels ble visuell støy
+
+---
+
+## 2026-05-21 — Rail-progress: scroll/klikk eier `active`, audio eier pulse + played-spor
+
+### Kontekst
+Forrige iterasjon ga scroll-panel-seksjonene progress-state (played | active | unplayed) som visuelt speil av tour-fremdrift. Sidebar/tab-baren hang igjen med kun `active | inactive` — alle ikke-aktive ble dimmet til 0.3, også de som allerede var narrert. Samme regresjon som vi nettopp fikset i body-teksten.
+
+I tillegg: brukerens R19b-regel ("audio vinner over scroll i split-brain") gjorde at klikk på en rail-ikon under aktiv tour ikke ga visuell respons — rail-en holdt audio-current som "active". UX-feel: dødt klikk.
+
+### Implementasjon
+Tre uavhengige visuelle signaler under aktiv tour:
+- `data-rail-state="active"` (scale + ring): scroll/klikket ikon. Overstyrer R19b kun for denne ene slotten.
+- `data-rail-state="played"` (full opacity, ingen scale): kategorier som er gjennomgått ELLER spilles nå men ikke er scroll-active. Sticky via samme `playedCategoryIds` som scroll-panel-progress.
+- `data-active-during-tour` (pulse): hvilken kategori audio nå narrerer. Kan ligge på samme ikon som "active" (passiv lyttemodus) eller annet ikon (etter klikk).
+
+`deriveRailState` (gjenbrukt i begge filer): scrollActive → "active" alltid; tourActive + progress !== "unplayed" → "played"; ellers "inactive". Idle/ended → scroll alene driver.
+
+Endrede filer:
+- `components/variants/report/board/desktop/BoardRail.tsx` — bytte lokal `useTourActiveTrackCategory` mot `useAudioTourSectionProgress` per kategori + Home. Splittet HomeRailButton ut som egen komponent for å rendere selectoren per knapp.
+- `components/variants/report/board/mobile/BoardCategoryTabBar.tsx` — samme mønster med `data-rail-state-compact`.
+- `components/variants/report/board/audio-tour/tour-mode.css` — nye regler `[data-rail-state="played"]` og `-compact="played"` (opacity 1, ingen scale/glow).
+
+### Beslutninger
+- **R19b-overstyring for `active`-slot, ikke for pulse**: Audio beholder pulse + played-spor (full opacity), så det er fortsatt tydelig "hvor megleren er." Brukerens klikk får bare lov å overstyre den ene visuelle "selected"-slotten. Begrunnet av UX-test: dødt meny-klikk føltes feil.
+- **Phase=ended → scroll alene**: BottomPlayer/PlayerBanner skjules ved `ended`, så rail bør også droppe tour-mode-cues. Ren navigasjon-modus.
+- **Ingen separat "klikket-men-ikke-aktiv"-state**: Klikk under tour scroller panelet og setter scrollActive umiddelbart. Trenger ikke en fjerde state.
+
+### Verifisering
+- `tsc --noEmit` → 0 feil
+- `npm run lint` → 0 errors (kun pre-existing warnings)
+- 24/24 tester i `audio-tour-store.test.ts` passerer
+- Side rendrer rent (kun pre-existing Mapbox-warnings i konsoll)
+- Manuell røyk-test bekreftet at endringen fungerer (vil finspisses videre)
+
+### Åpne for senere
+- Mobile tab-bar er ikke manuelt verifisert med browser-test (kun desktop). Bør sjekkes når mobil-flyt prioriteres.
+- Hover-state under tour er uendret — kan ha rare interaksjoner mellom hover-shadow på inactive-knapp og data-active-during-tour-pulse. Ikke observert som problem, men ikke testet eksplisitt.
+- "Tour ended"-overgang: hva er den ideelle UX? I dag forsvinner played-stylingen brått; kunne vurdere en kort overgang.
+
+### Commit
+- `698c836` feat(rapport-board): rail-progress + klikk-eier-active under audio-tour
+
+---
+
+## 2026-05-21 — Karaoke + cinematic: unifisert pitch-tekst, progress per seksjon, sticky played-set
+
+### Kontekst
+Iterativ runde basert på bruker-feedback etter MVP-leveransen 2026-05-20. Tre tema, drevet av visuelle observasjoner i Chrome MCP-test:
+1. Amber-card-blokken med karaoke føltes som dobbel-rendring (manus over og lead/body under samtidig).
+2. Differensiering mellom aktiv og inaktive scroll-panel-seksjoner var ikke sterk nok — tour-mode-dimmingen til 0.5 var for subtil.
+3. Re-spill av en allerede-spilt seksjon nullstilte fremover-progress på de andre seksjonene.
+
+### Implementasjon
+
+- **Drop amber-card, audio-manus blir THE body-tekst.** I scroll-panel HomeSection + CategorySection og i InfoTab: KaraokePitchText håndterer både plain (audio idle) og karaoke (audio aktiv). Lead/body kun som fallback når `audio.manus` mangler. Tradeoff: inline POI-popovers fra lead/body forsvinner der manus finnes.
+- **KaraokePitchText-fallback dimmes som vanlig body-tekst.** `isActive=false` → `data-board-body` settes på `<p>` slik at tour-mode-CSS dimmer den. Aktiv karaoke har IKKE data-board-body — opacity drives per ord av karaoke-spans.
+- **Sterkere cinematic-differensiering i scroll-panel.** `data-section-state="played|active|unplayed"` på `<section>` i HomeSection + CategorySection. CSS overrider den generiske `data-board-body`-regelen: inaktive seksjoners tittel + body fader til 0.3 (matcher rail). Play-knappen forblir 1.0 — interaktiv affordance.
+- **Progress-state per seksjon.** Ny `useAudioTourSectionProgress(categoryId)`-selector kobler `tracks + trackIndex + phase + playedCategoryIds`-set til `"played" | "active" | "unplayed" | null`. Turen behandles som 0–100% framdrift: ferdigspilte beholder full opacity (lik karaoke-sluttilstand der alle ord er lit), aktiv har karaoke i fart, kommende fader til 0.3.
+- **Sticky played-set i audio-tour-store.** `playedCategoryIds: Set<AudioTrackCategoryId>` i state. `markCurrentAsPlayed`-helper kjøres før hver `next/prev/goToTrack` — re-spill av en seksjon endrer ikke status på andre. `start()` resetter set (frisk tur), `close()` resetter set.
+- **CategoryAudioButton kaller `start()` kun fra idle.** Re-spill av seksjon under pågående tour kaller kun `goToTrack(targetIndex)` — `start()` ville nullstilt played-set. Buggen som forårsaket regresjon i 2-bilde-iterasjonen.
+- **7 nye vitest-tester** låser inn sticky played-set-oppførselen: reset ved start, mark før trackIndex-bytte, sticky ved re-spill, prev/next/goToTrack-paths, ended-state med last mark, close-reset.
+
+### Beslutninger
+
+- **Manus blir den kanoniske teksten.** Bruker valgte eksplisitt "Manus blir den ene teksten — drop lead/body" via AskUserQuestion. Reverserer 2026-05-18-beslutningen om to separate content-former. Begrunnelse: visuell dobling føltes feil, og karaoke krever timings → manus er den eneste teksten karaoke kan binde til. Konsekvens: POI-popovers fra lead/body droppes der manus eksisterer (notert som åpen).
+- **"Cinematic — alt fader unna" forsterket til scroll-panel-innholdet.** Tidligere kun rail (Unit 5 i gårsdagens MVP). Nå hele inaktive seksjoners tittel + body til 0.3. Brainstorm 2026-05-18 (linje 89/107) støttet: "tydelig nok at brukeren ser hvilken kategori som er aktiv uten å lese label-tekst".
+- **Progress 0–100% modell over binær active/inactive.** Brainstorm 2026-05-18 (linje 165) hadde notert "behold 100% for forrige (signaliserer 'fullført'), start ny på 40%". Implementerte som tre states — played holder samme styling som karaoke-sluttilstand (full opacity).
+- **Sticky played-set løses begge endene.** Bruker oppdaget regresjon der re-spill av Hverdagsliv mid-tour resatte Barn/Mat til unplayed. Roten: CategoryAudioButton kalte `start()` ubetinget, som nullstilte playedCategoryIds. Løsning: (1) `markCurrentAsPlayed` sikrer at sticky-set bygges opp gjennom hele turen, (2) CategoryAudioButton kaller `start()` kun fra idle-state.
+- **Skip-til-neste markerer skipped som "played".** UX-valg i `next()`-implementasjonen — skipping en seksjon teller som "user har akkordert" og setter den til played. Enklere mental model enn å skille "fullført" fra "skipped".
+
+### Verifisering
+
+- 24/24 audio-tour-store-tester passerer (7 nye for sticky played-set).
+- KaraokePitchText 7/7 passerer (uendret etter data-board-body-tillegg på fallback).
+- TypeScript-compile rent (én tur tilbake under commit pga manglende `as BoardCategoryId`-cast i tester — fikset).
+- ESLint via lint-staged passerer.
+- Visuelt verifisert via Chrome MCP: hopp 3 spor frem (Mat aktiv, Home/Hverdagsliv/Barn played, Natur/Transport/Trening unplayed) → klikk "Spill av Hverdagsliv" → Hverdagsliv blir active, Home/Barn/Mat forblir played, resten unplayed. ✓
+
+### Åpne for senere
+
+- **POI-popover-tap i InfoTab.** Inline POI-lenker via `linkPOIsInText` i lead/body forsvinner der `audio.manus` finnes. Mulig løsning: utvid KaraokePitchText til å rendre POI-popovers innimellom karaoke-spans. Deferred — bruker valgte "manus blir teksten" bevisst.
+- **Mobil-progress.** Sticky played-set virker globalt, men `data-section-state` er kun satt på desktop BoardScrollPanel-seksjoner. Mobil-sheet bør også få progress-fade. Utsatt med mobil-karaoke-integrasjon.
+- **Scrubbing tilbake innenfor et spor.** Audio-element kan scrubbes; sticky-set markerer kun ved trackIndex-bytte. Hvis bruker scrubber tilbake mid-track, ingen visuell endring på played-status — som er OK (vi snakker progress mellom spor, ikke innenfor).
+
+### Commit
+- `dfc1831 feat(rapport-board): unifisert pitch-tekst + progress-state per seksjon` (7 filer, +326/-165). Ikke pushet per prototype-vanen.
+
+---
+
+## 2026-05-20 — Karaoke ord-for-ord + cinematic sidebar (spike-MVP)
+
+### Kontekst
+6-unit spike som leverer R18-R19b + KD9-KD10 fra brainstorm 2026-05-18 (oppdatert 2026-05-20). Helt isolert fra R1-R17 (helhetlig scroll + POI-overlay + pitch-text-pipeline) — egen plan i `docs/plans/2026-05-20-001-feat-board-karaoke-cinematic-sidebar-plan.md`. Validert visuelt mot Stasjonskvartalet (`localhost:3002`) via Chrome MCP.
+
+### Implementasjon (6 units)
+
+- **Unit 1: TTS-pipeline til `/with-timestamps`.** Empirisk verifisert at `eleven_turbo_v2_5` faktisk returnerer character-level alignment for norsk tekst (33 tegn ↔ 33 timestamps mot snippet "Stasjonskvartalet er en ny bydel."). Pipeline kaller nå `/v1/text-to-speech/{voice}/with-timestamps?output_format=mp3_44100_128`, base64-dekoder MP3 og lagrer `audio.timings` (characters + characterStartTimesSeconds + characterEndTimesSeconds) i Supabase. `audioVersion` 4 → 5. Alle 8 Stasjonskvartalet-spor re-generert.
+- **Unit 2: Board-data-adapter.** `BoardAudioTrack` får `timings?: BoardAudioTimings`. `pickPlayableAudio` passer timings gjennom når det finnes. Legacy-spor uten timings rendres som klartekst.
+- **Unit 3: KaraokePitchText.** Pure `mapCharTimingsToWords` grupperer char-arrayet til ord-tokens (split på whitespace, bindestrek bryter ikke). Komponent forbruker `currentTime` fra `AudioElementContext` og rendrer `<span>` per ord med opacity 0.4 → 1.0 ved tokenets `startMs` (200ms ease-out). Fallback til klartekst når isActive=false, timings mangler, eller token-array er tom (data-korrupsjon).
+- **Unit 4: Layout-integrasjon.** KaraokePitchText monteres i amber-kort over lead/body i BoardCategoryInfoTab (detail-panel), HomeSection i BoardScrollPanel, OG CategorySection i BoardScrollPanel. Bug oppdaget under visuell test: glemt CategorySection i scroll-panel-visningen — den ble kun integrert i HomeSection. Fikset i separat commit.
+- **Unit 5: Cinematic sidebar-active-state.** Alltid-på effekt via `data-rail-state="active|inactive"`-attributt + utvidet `tour-mode.css`: inaktive faller til opacity 30%, aktiv står fram med scale 1.15 (desktop) / 1.08 (mobil) + drop-shadow i kategori-farge (via `--cat-glow` CSS variable). Rail-bg fader til halv-transparent via `data-cinematic-active`. R19b: når audio overrider scroll i split-brain, vinner `tourTrack` over `state.activeCategoryId` som kilde for cinematic-state.
+- **Unit 6: Visuell validering.** Verifisert via Chrome MCP at karaoke + cinematic samarbeider riktig på Stasjonskvartalet. Drift mellom audio-currentTime og lit-tokens: ved audio @ 23.08s / 36.22s (63.7%), 53/89 tokens lit (59.6%) — innenfor success-kriteriet ≤200ms (vi måler ord-overgang, ikke konstant drift).
+
+### Beslutninger
+
+- **Spike-scope sacred.** Brainstormen ratifiserte at R18-R19b + KD9-KD10 er én isolert leveranse, ikke en del av R1-R17-refactoren. Plan har 6 units, ingen P0/P1/P2-tiers, ingen "Future Work"-seksjon. Scope-guardian-funn (hvis triggers) skip-es per Placy-policy.
+- **TTS-uttale av problemord (kajakk, Nidelva, Bakklandet) parkert.** Notert i 2026-05-20-entry over. Karaoke virker på dagens spor med kjente uttalefeil. Forbedring kommer når kommersiell pilot trigger PVC-investering eller ElevenLabs lanserer pronunciation-support på turbo_v2_5.
+- **Karaoke vises kun ved aktiv avspilling.** Når audio ikke spiller dette sporet → karaoke-kort er unmounted, lead/body er primær tekst. Resolverer "to render-modus"-dobling fra brainstorm (KD5).
+- **R19b: audio vinner over scroll.** I split-brain (autoscroll pauset, audio fortsetter på Mat-drikke mens bruker scrollet til Transport) er `tourTrack` source-of-truth for cinematic-state. Eksisterende `useTourActiveTrackCategory`-hook leverer dette uten ny state.
+
+### Verifisering
+
+- 28/28 nye enhetstester passerer (board-data 13, karaoke-tokens 9, KaraokePitchText 7).
+- Hele test-suite kjørt — 3 pre-eksisterende failures i `lib/curation/validator.test.ts` (ikke relatert til denne spiken).
+- TypeScript-compile er rent.
+- ESLint via lint-staged passerer ved hver commit.
+- Visuelt på Chrome MCP: ord-for-ord karaoke synker korrekt. Cinematic-effekten dimer inaktive kategorier dramatisk; aktive står fram med farget glow.
+
+### Åpne for senere
+
+- **CSS-easing for karaoke-transition** fungerer som forventet (200ms ease-out) — ingen iterering nødvendig.
+- **Karaoke i mobil-modus** (BoardMobileSheet) ikke testet. Cinematic-effekten er der via `data-rail-state-compact`, men karaoke-blokken er kun integrert i desktop. Utsatt til desktop-MVP er bekreftet "føles riktig".
+- **Glow-fargen** er kategori-fargen (rgba med 0.5 alpha). Stone-fallback for kategorier uten farge. Ingen visuell ulempe oppdaget i validering — kan finjusteres ved tilbakemelding.
+- **Cinematic-effekt på 30% opacity for inaktive** kan oppleves dramatisk. Brainstorm-preview valgte "Cinematic — alt fader unna" som bevisst over "Cinematic-lite". Skal observere brukerrespons før eventuell tuning.
+
+---
+
+## 2026-05-20 — Rapport-board: mini-popup ved markør (2D + 3D), parity-fikser
+
+### Kontekst
+Iterativ runde med fokus på POI-detalj-UX på desktop. Erstatter den gamle `BoardPOIOverlay`-flyten (full sidebar-overlay) med en mini-popup forankret over markøren — først som flag-protected eksperiment (`?popup=mini`), så som default. Spiket både for Mapbox 2D og Google Maps 3D, hvor 3D-versjonen krevde manuell perspektiv-projeksjon siden `Map3DElement` mangler `latLngToScreen`. Endte med å bringe 2D og 3D i full UX-parity wrt sidebar-state-maskin og marker-klikk-respons.
+
+### Beslutninger
+
+- **Mini-popup som default på desktop (≥lg).** Mobile beholder `BoardMobileSheet` (vaul snap-points-mønsteret). `useBoardPopupMode` returnerer `"mini"` på desktop, `"sheet"` på mobil — adaptiv komponent, ikke felles abstraksjon.
+- **`BoardPOIOverlay` + `BoardPOIAccordion` slettet.** Erstattes 1:1 av mini-popup. `BoardDesktopShell` reduseres til rail + scroll-panel uten overlay-lag. `BoardScrollPanel.hideBottomPlayer`-prop fjernet (ingen caller).
+- **Mini-popup-innhold er bevisst minimalt** — ikon + navn + adresse + 2 linjer editorial-tekst + én CTA ("Utforsk" → Google AI Mode). Tyngre innhold lever i scroll-narrativet.
+- **3D-popup bruker korrekt 3D perspektiv-projeksjon.** Tidligere ad-hoc-approks (`scale * 1000` uten depth-divisjon) drifted markant ved tilt/swivel og krevde "hide-during-motion"-fade for å skjule feilen. Ny formel: lat/lng → meter (med `cos(lat)` for lng) → heading-rotert til kamera-frame → tilt+altitude-transform → perspektiv-divisjon med depth. FOV=35° bekreftet eksakt fra Googles attribution-URL (`...35y...`). Hide-during-motion fjernet — popup tracker markøren smooth gjennom alle kamera-operasjoner.
+- **DOM-direct positioning** (`transform: translate3d` per RAF, ingen `setState`) — etter at popup ble synlig under bevegelse oppdaget brukeren "hopping" ved zoom. React-reconciliation per frame synkroniserte ikke med browser paint under tung Google-zoom-animasjon. `wrapperRef.style.transform = translate3d(...)` går rett til compositoren, ingen layout/paint, ingen React-overhead.
+- **Marker-klikk-respons: ingen auto-kamera-bevegelse.** Både 2D og 3D er nå "stille" ved marker-klikk — kameraet holder seg der brukeren plasserte det manuelt.
+  - 2D: fjernet `easeTo`-effekten som flyttet markøren inn i synlig kart-rom (var lagt inn for å klarere 480px-sidebar fra popup-en, men brukeren oppfattet det som "rykk").
+  - 3D: ingen auto-kamera-bevegelse fra start.
+  - Begge moduser: stabilisert tour-bounds-fit-effekten via `useRef` for `visiblePOIs` slik at effekten ikke re-fyrer ved `state.phase = default → poi` (samme array-innhold, ny identitet). Dep redusert fra `[visiblePOIs, activeCategory]` til `[activeCategory?.id]`. Tour-fitBounds fyrer nå kun ved reelle kategori-skifter, ikke ved marker-klikk i samme kategori.
+- **Klikk på kart-bakgrunn lukker popup.** 2D: `<Map onClick>` — markører kaller `stopPropagation`, så denne fyrer kun på tom bakgrunn. 3D: `gmp-click`-listener på map-elementet med `target.closest('gmp-marker-3d-interactive')`-filter for å ikke fyre på marker-klikk (de bubbler ellers).
+- **Scroll-drevet kategori-filter i 3D matcher 2D eksakt.** `BoardMap3D.visiblePOIs` justert: `default + ingen aktiv kategori` → alle POIs, `default + aktiv kategori` (scroll-drevet) → kun kategoriens POIs, `active|poi` → kategori + sub-filter. Verifisert: 145 → 47 (Mat) → 19 (Transport) → 145 ved scroll-rundtur.
+- **Tour-mode bounds-fit i 3D.** Speiler 2D-effekten. Google Maps 3D mangler native `fitBounds`, så vi konverterer bbox til `(center, range)` via aspect-aware horisontal FOV: `rangeForWidth = widthM/2 / tan(FOV_H/2)`, `rangeForHeight = heightM/2 / tan(FOV_V/2)`, `range = max(rangeForWidth, rangeForHeight) * 1.1`. Bruker `flyCameraTo` med 800ms duration. Padding-faktor iterert fra 1.6 → 1.15 → 1.1 etter brukerfeedback om at bounds zoomet for langt ut (årsak: vertikal FOV på diagonalen ga ~1.8× for stor range på 16:9-viewport).
+- **`MapView3D.freeMode`-prop**: dropper bounds, tilt-grenser, altitude-grenser og orbit-as-default-hijack når satt. Board-3D-modus bruker denne — brukeren får standard Google Maps gesture-handling (drag=pan, ctrl+drag=rotate, scroll=zoom). Annet 3D-bruk (overview, modal) beholder dagens lock.
+
+### Implementasjon
+
+Nye filer:
+- `components/variants/report/board/BoardPOIMiniPopup.tsx` (Mapbox 2D, `react-map-gl/mapbox` `<Popup>` med `anchor="bottom"`, `offset={28}`).
+- `components/variants/report/board/BoardPOI3DMiniPopup.tsx` (3D, manuell perspektiv-projeksjon per RAF, `@ts-nocheck`-pragma for løse Google-3D-typer).
+- `components/variants/report/board/use-popup-mode.ts` (`useBoardPopupMode` → `"mini" | "sheet"` basert på `matchMedia('(min-width: 1024px)')`).
+
+Slettet:
+- `components/variants/report/board/desktop/BoardPOIOverlay.tsx` (~232 linjer).
+- `components/variants/report/board/desktop/BoardPOIAccordion.tsx` (dead code, ingen import).
+
+Endret:
+- `BoardMap.tsx` — `<Map onClick>` lukker popup på bakgrunn-klikk; tour-fitBounds-deps stabilisert via `visiblePOIsRef`; `easeTo` på `activePOI` fjernet.
+- `BoardMap3D.tsx` — `freeMode`-flagg til MapView3D; bounds-fit-effekt (tour-mode); `gmp-click`-listener for bakgrunn-klikk; `visiblePOIsRef` for stabile deps; scroll-filter-logikk justert til 2D-parity.
+- `BoardPOILabel.tsx` — `if (popupMode === "mini") return null` for å unngå dobbel-label.
+- `BoardDesktopShell.tsx` — redusert til kun rail + scroll-panel.
+- `BoardScrollPanel.tsx` — `hideBottomPlayer`-prop fjernet.
+- `map-view-3d.tsx` — `freeMode?: boolean`-prop; conditional skip av bounds/tilt/altitude-grenser og orbit-hijack.
+- `app/globals.css` — `.board-mini-popup` z-index + rounded shadow på `.mapboxgl-popup-content`.
+
+### Parkert / Åpne spørsmål
+
+- **Sidebar-overlap-kompromiss i 2D.** Popup kan teoretisk overlappe 480px-sidebar hvis markøren er helt i venstre kant av synlig kart. Foreløpig akseptert for ro-følelsen. Kan løses med "render popup til høyre for markør hvis nær sidebar-kanten" senere hvis det blir et reelt problem.
+- **FOV-antakelse i 3D-projeksjon.** Hardkodet 35° vertikal FOV matcher Googles default på StasjonsKvartalet, men hvis Google endrer default eller vi havner i en kontekst med annen FOV, vil projeksjonen drifte. Bekreftet eksakt via attribution-URL — bekreft på nytt hvis vi observerer drift.
+- **Audio-tour-bounds-fit i 3D ikke MCP-verifisert.** Koden mirror 2D men flyCameraTo-animasjonen er ikke testet end-to-end gjennom tour-flyten. Brukeren har bekreftet at bounds funker visuelt for scroll-drevet kategori-skifte.
+- **Mobile 3D-popup** ikke spiket — `useBoardPopupMode` returnerer "sheet" på mobil, så 3D bruker også sheet-mønsteret på små skjermer. Hvis 3D-på-mobil skal ha samme mini-popup-følelse senere, må vi spike popup-overlapp-håndtering for bottom-sheet.
+
+### Retning
+
+- Spike-fasen konvergerer mot et stabilt mini-popup-mønster som er identisk i 2D og 3D. Marker-klikk gir lokalt, ikke-invasivt POI-detalj-vindu uten å kapre sidebar eller flytte kameraet. Kart-overblikk-følelsen er bevart.
+- Scope er fortsatt desktop. Mobile board-flyten (multi-snap sheet) er urørt i denne sesjonen og fortsatt på sin egen mental modell.
+
+### Observasjoner
+
+- **Manuell 3D perspektiv-projeksjon er gjennomførbart for HTML-overlay over WebGL-kart**, men FOV-antagelsen er en fragilitet. Verdt å sjekke om Google eksponerer FOV via API-en deres senere — det ville fjerne den siste empiriske konstanten.
+- **DOM-direct + `translate3d` for high-frequency overlay-positioning** slo `setState` per RAF-frame markant under tung GPU-konkurranse. Mønster å huske for andre overlay-typer (drag-handles, hover-tooltips).
+- **`useRef` for å stabilisere effect-deps** når en useMemo-verdi får ny identitet på phase-skifte uten innholds-endring. Klassisk React-fall-grube — `[activeCategory?.id]` istedenfor `[activeCategory, visiblePOIs]` løste auto-kamera-bevegelse-bug ved marker-klikk i tour-mode.
+- **`?popup=mini`-flag forkastet** til fordel for default-on. Flagget rakk aldri å gi meningsfull A/B-data — Mapbox-popup-mønsteret er åpenbart bedre enn full-sidebar-overlay, og parallell vedlikehold av to mønstre er ikke verd det i prototype-fasen.
+
+---
+
+## 2026-05-20 — Observasjon: overturisme og spredning som potensielt produktområde
+
+### Kontekst
+Bruker delte to signaler samme dag som peker mot turisme-/cruise-vertikalen som relevant for Placys produktthese (Explorer + Report + audio-tour kan løse "saueflokk-mentalitet" når besøkende mangler lokalkunnskap):
+
+1. **NRK Møre og Romsdal (2026-05-19):** 13 000 cruiseturister i Ålesund på én dag, tre skip samtidig. Klassisk trengselsproblem på 2–3 punkter mens resten av byen står tom. ([nrk.no/mr/...1.17890285](https://www.nrk.no/mr/nesten-13.000-cruiseturistar-kom-til-alesund-da-tre-turistbatar-la-til-kai-pa-same-dag-1.17890285))
+2. **Ålesundregionens Havnevesen FB-post (2026-05-19):** Seks gratis offentlige toaletter i sentrum + Fjellstua, presentert som flat JPG med markerte punkter på flyfoto. Havnestyret bevilget 300k. Posten snakker eksplisitt om "god skilting til attraksjoner, toaletter og opplevelser" som gir "bedre flyt i byen". Kommentar fra Gro Kibsgaard-Petersen: cruiseinntekter "gies tilbake til byen" — etablert finansieringskanal.
+
+### Observasjon
+- **Havnevesenet er en konkret aktør med mandat + budsjettlinje.** De er allerede i wayfinding/spredning-business-en, bare med analog formfaktor (skilt, FB-poster, statiske kart).
+- **Formfaktoren de bruker er primitiv** — flatt JPG med røde nummer-pins. En interaktiv Explorer-flate med "5 min gange fra cruisekaia"-filter + audio-tour er et åpenbart oppgrader-tilbud.
+- **Cruise-inntekter "tilbake til byen" er en etablert politisk-akseptert finansieringsmekanisme** som allerede betaler for toaletter. Kan i prinsippet betale for digital wayfinding like enkelt.
+
+### Status
+Ikke et committed spor — vi har ikke landet noe her. Notat for å samle signaler. Forventet at flere artikler/saker om overturisme og spredningsbehov dukker opp i norske kystbyer (Geiranger, Flåm, Bergen, Stavanger, Tromsø). Logger dem her etter hvert som de kommer.
+
+### Hvis det skal aktiveres som spor
+Trigger: tredje uavhengige signal (artikkel, samtale, prospekt-introduksjon), eller en direkte inbound fra Havnevesen / Visit-organisasjon / cruise-operatør. Da: opprett `docs/strategy/YYYY-MM-DD-cruise-overturisme-spor.md` og legg involverte aktører inn i `aktor-map.md`. Ikke nå.
+
+---
+
+## 2026-05-19/20 — Rapport-board UX-iterasjon: spiller, kart-overblikk, POI-overlay
+
+### Kontekst
+Iterativ UX-runde på Unit 0 walking-skeleton-spike (`feat/board-narrativ-spike`). Brukeren styrte hver justering visuelt mot et mer Spotify-/Google Maps-aktig layout: bottom-sticky audio-spiller, dynamisk seksjonshøyde, full POI-oversikt i Hjem-state, og POI-detalj som overlay i stedet for "kapring" av sidebar. Avsluttet med ny audio-pipeline-runde for Stasjonskvartalet basert på nytt meglerpitch-manus.
+
+### Beslutninger
+
+- **BottomPlayer flyttet til bunn-sticky** (Spotify-mønster). Erstatter både top-PlayerBanner og chip-row. Morfer mellom idle ("▶ Start tour · N spor") og aktiv (thumbnail + label + transport-controls).
+- **Light theme på BottomPlayer.** Første iterasjon hadde dark `bg-stone-900` — brukeren ville lys for visuell ro med scroll-panel og kart.
+- **Kategori-segment-strip i player fjernet.** Klikkbare thumbnails per kategori i player ble vurdert "for mye nav" — kategori-bytte skjer via scroll, rail, eller kart-pin-klikk.
+- **Dynamisk seksjonshøyde** (`min-h-screen`/`min-h-[80vh]` fjernet). Innholdet bestemmer høyden — bruker scroller naturlig fra Hjem til Hverdagsliv til Mat & Drikke uten "én-seksjon-om-gangen"-friksjon.
+- **Hjem-state viser alle POIs ufiltrert** på tvers av kategorier. Hver pin har sin egen kategori-farge/ikon. Gir bruker overblikk over hele nabolaget før kategori-narrativet starter. Tidligere ble pins skjult i Hjem-state.
+- **Tour-mode fitBounds per kategori-skifte.** Når audio-tour er aktiv (`phase === playing | paused`), kalkulerer `BoardMap` LngLatBounds av synlige POIs + home og kaller `map.fitBounds` med `duration: 800ms`, `maxZoom: 15.5`. Gir visuell "view changes"-feedback per spor. Utenfor tour-mode holder kartet sin posisjon.
+- **POI-overlay-mønster** erstatter den gamle "kapringen" av scroll-panelet. Klikk på POI åpner overlay (z-20, `absolute inset-0`) over BoardScrollPanel:
+  - **Sticky kategori-header** øverst: tilbake-pil + kategori-thumbnail + "Spor X/N · Kategori-navn" + audio-transport-controls + X (lukk tour). Transport vises kun når tour er aktiv.
+  - **BACK_TO_DEFAULT-action** lukker overlay men beholder `activeCategoryId` — scroll-narrativet returnerer i samme posisjon, og audio-tour fortsetter uavbrutt.
+  - **BoardScrollPanel forblir mountet** i bakgrunnen — bevarer scroll-state og IO-observers under overlay.
+  - **BottomPlayer skjules** i overlay-modus (sticky header har transport-rollen).
+- **POI-overlay viser KUN den klikkede POI-en.** Første versjon hadde "Punkter i nærheten"-akkordion under det aktive kortet med promotion-mønster (klikk i listen → ny POI til toppen) — fjernet etter brukerfeedback om at det skapte visuelt hopp. Bytte mellom POIs skjer via kart-pin-klikk (samme `OPEN_POI`-dispatch som før).
+- **Nytt megler-pitch-manus** for Stasjonskvartalet — 6 av 7 spor + Hjem. Opplevelser-sporet beholdes uendret (brukeren leverte ikke manus for det). MP3-er regenerert via ElevenLabs (Erik / turbo_v2_5).
+
+### Implementasjon
+
+- `BottomPlayer.tsx` (ny) — idle + aktiv state, light theme, ingen kategori-strip.
+- `CategoryAudioButton.tsx` (ny) — per-kategori "Spill av denne seksjonen"-CTA i CategorySection.
+- `BoardPOIOverlay.tsx` (ny) — sticky header + alltid-åpen pinned POI-card. Bruker `BoardPOIDetails` direkte (ikke akkordion) for innholdet.
+- `board-state.tsx` — ny `BACK_TO_DEFAULT`-action (beholder `activeCategoryId`); `SELECT_CATEGORY` har source `"audio"` lagt til i `stayInDefault`-arbitrering.
+- `BoardMap.tsx` — `visiblePOIs`-useMemo viser alle POIs på tvers av kategorier i Hjem-state; ny tour-aktiv fitBounds-effect.
+- `BoardScrollPanel.tsx` — `programmaticScrollRef`-flag for å suppresse IO-tracking under audio-driven scroll; Effect 1 deps redusert til `[activeSectionId, dispatch]` (closure-capture for activeCategoryId) for å unngå feedback-loop; `hideBottomPlayer`-prop.
+- `BoardDesktopShell.tsx` — layered mount: BoardScrollPanel alltid mountet, overlay som absolute-positioned sibling når `phase !== "default"`.
+- `use-audio-tour-sync.ts` — sender `source: "audio"` på SELECT_CATEGORY så reducer holder phase="default" og overlay ikke åpner ved audio-driven kategori-bytte.
+- `BoardDetailPanel.tsx` slettet (ingen importerer den lenger; mobile bruker en helt egen flyt).
+- Nye MP3-filer skrevet til `public/audio/stasjonskvartalet/` for 7 spor (Opplevelser uendret).
+
+### Parkert / Åpne spørsmål
+
+- **Tour-aktiv overlay-modus** (transport-knapper i sticky header) ikke MCP-testet — Chrome MCP-click teller ikke som user-gesture for autoplay. Verifisert manuelt for idle-overlay; tour-aktiv speiler BottomPlayer ActiveState-logikk.
+- **TTS-kvalitet på nytt manus** ikke gjennomlyttet. Manuset har flere stedsnavn (Brattøra, Solsiden, Rockheim, Ladestien, Sjøgangen, Nye Trondheim S) som historisk har vært TTS-eksplosiver. Memory-noten om stedsnavn-curatering gjelder fortsatt — bruker må lytte gjennom og evt. justere manus før det signes.
+- **BACK_TO_ACTIVE** finnes fortsatt, brukes av POI-akkordion (mobile) og legacy-paths. Vurder rydding når mobile flyten oppdateres til samme overlay-mønster.
+- **Kontekst-blokk over pinned POI-card** ble flagget av bruker som "tar det etterpå" — plassholder/innhold ikke implementert.
+
+### Retning
+
+- Spike-fasen begynner å konvergere mot et stabilt mønster: scroll-narrativ + bottom-sticky player + overlay for fokus-modus. POI-bytting via kart (én sannhetskilde) gir renere mental modell enn dupliserte lister i sidebar.
+- Mobile-flyten er ikke berørt i denne sesjonen — BoardMobileSheet og BoardDetailPanel-logikken der er fortsatt på "kapring"-mønsteret. Når desktop-mønsteret stabiliserer seg, replikeres det til mobile.
+
+### Observasjoner
+
+- **Source-discriminator-mønsteret** (`SELECT_CATEGORY.source = "scroll" | "rail" | "audio"`) er nå robust nok til å overleve flere phase-overganger uten feedback-loops. Closure-capture i Effect 1 (deps reduced til kun `[activeSectionId, dispatch]`) løste race der external state-update triggret stale dispatch.
+- **`programmaticScrollRef` + `scrollend` + 900ms setTimeout-fallback** løste smooth-scroll-overshoot. Mønsteret kan dokumenteres senere hvis det dukker opp i andre scroll-koordinasjons-flyter.
+- **"Punkter i nærheten"-promotion-mønsteret feilet** — re-ordering av en synlig liste ved klikk er forvirrende. Tab-bar/segmented-nav er trygt; promotion av kort i scrollet liste er ikke. Verdt å huske ved fremtidig list-design.
+
+---
+
 ## 2026-04-30 (kveld) — Mobile board: multi-snap sheet med Google Maps-flyt
 
 ### Kontekst
@@ -4045,3 +5131,120 @@ Dagen før møtet med Nanna Berntsen og Line Holm (markedsansvarlig) i Midtbyen 
 - **En markedssjef vil høre andre ting enn en daglig leder.** Tech-snakk (Next.js, Mapbox, datamodell) tilfører null verdi; demoen viser teknologien. Hennes kjerne-spørsmål er "hva får jeg som hjelper meg gjøre min jobb bedre". Insiktslag + gjenbrukbart innhold + posisjonering vs. konkurrenter dekker det tre-ledds.
 - **Sparring uten leveranse er fortsatt verdifull sesjon.** Pre-møte-forberedelse er ikke "ekstra arbeid" — det øker odds for at de 14 timene møtet potensielt utløser av oppfølgingsarbeid blir på riktig premiss.
 - **Ærlighet om hva som er live vs. lovet er pitch-styrke, ikke svakhet.** Si rett ut "dette bygger vi som en del av leveransen" framfor å antyde at det er produsert. Reduserer risiko for at Line oppdager hullet senere og svekker tilliten.
+
+---
+
+## 2026-05-18 (sesjon) — Audio-tour TTS: ElevenLabs-feilsporing → Mia Starset → Azure TTS-pivot
+
+### Kontekst
+Etter at Unit 5 (tour-modus visuell signatur) landet på `feat/audio-tour`, oppgraderte brukeren til ElevenLabs Creator-tier og ba om norsk stemme på StasjonsKvartalet i stedet for Daniel-baseline (engelsk-trent + multilingual_v2). Sesjonen ble en lang feilsporing: ElevenLabs sin "norske" pipeline er feilkonfigurert i flere lag, vi landet til slutt på riktig oppskrift, men kvaliteten holdt ikke for stedsspesifikk megler-pitch. Vi pivoterte til Azure Speech Service.
+
+### Beslutninger
+
+- **ElevenLabs Creator-abonnement landet** (~$11 første mnd, $22 etter) for Professional Voice Cloning + 192kbps audio + 121k credits/mnd. Begrunnelse: stemme-kvalitet er kjerneteknologien for megler-pitch — ikke kutt der.
+- **API-oppskriften som matcher ElevenLabs UI-spilleren er `model_id: eleven_turbo_v2_5` + `language_code: "no"`.** `multilingual_v2` og `eleven_v3` gir svensk/dansk-fallback uansett hvor norsk Voice Library-stemmen er. `language_code: "nb"` returnerer HTTP 400 — kun `"no"` er støttet. Dette er udokumentert i deres TTS-API-docs men har vært klart fra nettverkssniff av UI.
+- **Mia Starset (`uNsWM1StCcpydKYOjKyu`)** valgt som ny stemme — Oslo-aksent, lys/klar, mest populær norsk i Voice Library (23k cloned). Erstattet Daniel som default i `lib/audio-tour/elevenlabs-client.ts`.
+- **Konstant-rename: `ELEVENLABS_VOICE_DANIEL` → `ELEVENLABS_VOICE` + ny `ELEVENLABS_VOICE_NAME`.** Daniel var feil framtid-binding (engelsk-trent stemme som default-konstant for norsk audio-tour). Også lagt til `ELEVENLABS_LANGUAGE_CODE = "no"` som default + ny `languageCode`-param på `generateAudio()`.
+- **`audioVersion` bumpet fra 1 → 2** i `lib/types.ts` og begge writer-scripts (`audio-manus-write.ts`, `audio-tour-build.ts`). Tvinger re-gen av alle audio-spor på alle prosjekter.
+- **Alle 8 spor regenerert for StasjonsKvartalet via `audio-tour-build.ts --force`.** MP3-ene i `public/audio/stasjonskvartalet/` er nå Mia Starset på turbo_v2_5 + norsk fonetikk-bucket. PATCH til Supabase OK (`audioVersion: 2`, nye `voice`/`model`/`generatedAt` per spor).
+- **Slettet `scripts/elevenlabs-validation.ts`** (gammel engelsk-stemme-validering — Daniel-baseline-runde — ikke lenger relevant). Per CLAUDE.md "ALDRI la dead code ligge".
+- **ElevenLabs-resultatet holder ikke for megler-pitch.** Inkonsistent uttale per ord — stedsnavn ("Brattørkaia", "Munkegata", "TMV-kaia") feiler delvis. "Norwegian preview"-modusen er skandinavisk-fellesfonetikk + community voice clone, ikke ekte norsk-trent. Brukeren signaliserte at det "ikke holder for poenget" — kvalitet er ikke forhandlingsbar her.
+- **Pivot til Azure Speech Service Norwegian Neural.** `nb-NO-PernilleNeural`/`IselinNeural`/`FinnNeural` er trent fra grunnen av på norsk, ikke skandinavisk-fellesmodell. Pris ~kr 150 per million tegn (Neural-tier) — trivielt for Placy-skala. Free F0-tier kunne ikke brukes (Norway East tilbyr ikke Free), så Standard S0 valgt. Subscription kom med $200 credit (30-dager).
+
+### Implementasjon (denne sesjonen)
+
+- `scripts/elevenlabs-norsk-validation.ts` — nytt script for norsk-stemme-validering. Testet 4 runder med ulike model/language_code-kombinasjoner. Erstattet det gamle engelsk-baseline-scriptet.
+- `lib/audio-tour/elevenlabs-client.ts` — bytte til Mia Starset + turbo_v2_5 + `language_code: "no"` i request body.
+- `scripts/audio-tour-build.ts` + `scripts/audio-manus-write.ts` — import-oppdateringer + audioVersion 2.
+- `lib/types.ts` — `audioVersion?: 2`.
+- `public/audio/stasjonskvartalet/*.mp3` — 8 spor regenerert.
+- Supabase `products` for StasjonsKvartalet — `reportConfig.audioVersion = 2`, alle `audio`-felter oppdatert (one batch PATCH, optimistic lock OK).
+- `scripts/azure-norsk-validation.ts` — nytt script for Azure-side-by-side. 3 Neural-stemmer (Pernille, Iselin, Finn) generert. Isak og Sofie returnerte HTTP 400 — sannsynligvis deprecated voice-IDer i Norway East-katalogen.
+- `.env.local` — `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION="norwayeast"` lagt til.
+
+### Parkert / Åpne spørsmål
+
+- **Azure-validering venter på lytting.** Tre MP3-er i `tmp/azure-norsk-validation/`. Brukeren skal vurdere konsistens, naturlighet og megler-energi mot Mia Starset-baseline. Hvis Azure leverer skikkelig: full vendor-bytte for produksjons-pipelinen.
+- **Hvis Azure også feiler på stedsnavn:** parker audio-tour-feature midlertidig, eller invester i ElevenLabs Professional Voice Cloning (30+ min studio-opptak av norsk stemme, beste resultat men 1-2 ukers forberedelse).
+- **ElevenLabs API-nøkkel + Azure key er i transkripsjon.** Brukeren bør rotere begge etter piloten hvis transkripsjon-persistens er en risiko.
+- **`scripts/audio-tour-build.ts` har fortsatt fasten kobling til ElevenLabs-klient.** Hvis vi committer på Azure, må generatoren abstrakteres mot en TTS-provider-interface (`generateAudio(text, voice, model)` med backend-toggle), eller en ny `scripts/audio-tour-build-azure.ts` skrives. Defer til Azure-validering er bekreftet.
+- **Mia Starset på turbo_v2_5 er fortsatt produksjons-pipelinen for nye prosjekter.** Hvis vi bytter til Azure, må også `generateAudio()` i klienten erstattes — dette er ikke et trivielt bytte. Anbefal å vente til Azure faktisk er bekreftet å levere før pipelinen flyttes.
+- **Unit 6 (TourEndScreen) og Unit 7 (pipeline-integration) er fortsatt deferred.** Brukeren signaliserte før denne sesjonen at audio-opplevelsen selv er det viktige nå, ikke flere units.
+
+### Retning
+
+- **Native-trent TTS slår alltid multilingual fallback for stedsspesifikke norske tekster.** Det er en arkitektonisk leksjon: for norsk Placy-innhold er nb-NO-native (Azure, Google) det riktige valget, ikke "stemmer fra Voice Library på multilingual-modell". ElevenLabs har voice-quality-edge for engelske projekter, men ikke for norske.
+- **Hvis Azure validerer godt: hele audio-tour-pipelinen bør abstraheres mot en `TtsProvider`-interface.** Da kan vi fortsette å bruke ElevenLabs for prosjekter på engelsk (eventuelle internasjonale piloter) og Azure for norske. Begge har samme `(text, voice, model) → mp3`-shape; abstraksjonen er en dags arbeid.
+- **Professional Voice Cloning er den langsiktige løsningen for Placy-signaturstemme.** Engangsinvestering (norsk megler-arketyp opptak), deretter ubegrenset bruk. Sett som strategisk beslutning når piloten er forbi MVP-fasen.
+
+### Observasjoner
+
+- **`language_code: "no"`-parameteren er ikke i ElevenLabs sin TTS-API-docs**, men er det som UI-spilleren bruker. Det tok 3 runder med credit-bruk å finne. Lesson: når UI virker men API ikke, sniff nettverket først (eller spør om nøkkel-parameter hver gang før credits brennes).
+- **ElevenLabs sin "Norwegian Voice Library"-merking er misvisende.** Stemmene er klonet av nordmenn, men modellen som genererer bruker skandinavisk-fellesfonetikk uansett. "Norsk stemme" i ElevenLabs betyr "norsk timbre", ikke "norsk fonetikk". Det er en kjent industri-svakhet i multilingual TTS-modeller.
+- **Brukeren har god kvalitetssans for når audio "ikke holder".** Vi rotterte 3 ganger i ElevenLabs-validering og kunne sannsynligvis ha rotert 2 til uten å lande, men Azure-pivot var riktig signal — fortjente å bli foreslått tidligere. Lesson: hvis vendor leverer inkonsistent på 2 forsøk, foreslå vendor-bytte før credit nr. 3.
+- **Azure-oppsettet tok ~10 min totalt (signup + Speech Service + key copy).** Lavere friksjon enn jeg antok. Verdt å huske som realistisk vendor-bytte-kostnad.
+- **`audioVersion` som `z.literal`-bump for cache-bust er samme mønster som `groundingVersion`.** Konsistent: Placy bumper et heltall i Zod-schema for å invalidere build-time-genererte assets uten å trenge auto-TTL. Anbefales å dokumentere som solutions-doc hvis vi får en tredje slikt cache-felt.
+
+### Etter Azure-pivot — landingen på Erik + manus-curatering (samme sesjon)
+
+**Azure feilet også.** `nb-NO-PernilleNeural`/`IselinNeural`/`FinnNeural` (Neural-stemmer trent fra grunnen av på norsk) leverte ikke merkbart bedre kvalitet enn ElevenLabs Mia Starset på samme StasjonsKvartalet-Hjem-manus. Brukerens vurdering: "ikke noe bedre enn ElevenLabs". Det utelukket Azure-veien og bekreftet at problemet ikke ligger i TTS-vendor — det ligger i en kombinasjon av stokastisk modell-output og uttale-vanskelige norske stedsnavn.
+
+**Brukeren konkluderte initielt: PVC er eneste vei.** Strategisk vurdering: bygge Placy-signaturstemme via Professional Voice Cloning (30+ min studio-opptak av norsk taler). Hyret stemmeskuespiller anbefalt over selv-opptak for kommersiell pilot mot Banenor/Propr — voice-branding på linje med visuell branding, engangskost <10k NOK.
+
+**Som siste sjekk testet vi Erik - Clear and Natural** (`EpYEY8MWJrUGskHBoNMA`, 2.8k cloned, 40-tallet mann, conversational). På samme oppskrift (`turbo_v2_5` + `language_code: "no"`) leverte Erik merkbart bedre norsk uttale enn Mia Starset på den korte test-pitchen — godkjent for produksjons-bytte.
+
+**Funn 1: ElevenLabs TTS er stokastisk per request.** Samme tekst med samme `voice_settings` gir ulik output per kall. Vi fikk Erik-produksjons-fila (full 8-spors-regen) til å lyde **dårligere** enn Erik-test-fila (samme manus, samme settings) — stokastisitet og lengre kontekst sampler ulike fonetikk-buckets. **Lesson: én god take på en kort tekst er ikke garanti for kvalitet over en full pitch.**
+
+**Funn 2: `stability`-parameteren låser uttalen.** Testet Erik @ stability 0.5 / 0.7 / 0.85 — brukeren landet på **0.75** som balanse mellom konsistens og megler-naturlighet. Høyere stability = mindre fonetikk-variasjon = mer forutsigbar uttale på problemord. For Placy hvor uttale-konsistens trumfer maks-naturlighet er 0.75 riktig default.
+
+**Funn 3: Manus-curatering er den reelle løsningen.** Sammenligning av to Hjem-manus avslørte at problemet er stedsnavn, ikke modellen:
+- *Gammelt manus:* "Stasjonskvartalet ligger på kaifronten mellom **Brattørkaia** og **TMV-kaia**, midt i Trondheim sentrum... **Midtbyen** og **Munkegata** nås på ti minutter til fots..." → mange uttale-eksplosiver
+- *Nytt manus:* "Drømmer du om en hverdag der hele verden ligger ved dine føtter, rett utenfor inngangsdøren? Stasjonskvartalet er Trondheims nye, pulserende knutepunkt..." → ett stedsnavn ("Midtbyen") som åpning av en setning der modellen er "frisk"
+
+Nytt Hjem-manus skrevet av brukeren (83 ord, megler-energi, du-perspektiv, "drømmer du om", "inngangsbilletten til et enklere og rikere byliv"). Synket via `audio-manus-write.ts apply` til Supabase + `.audio-staging/banenor-eiendom_stasjonskvartalet/home.manus.md`.
+
+**Landing:** Erik + `stability: 0.75` + nytt Hjem-manus + `turbo_v2_5` + `language_code: "no"`. `audioVersion` bumpet 2 → 3 → 4 (to bumper denne sesjonen). Alle 8 spor regenerert (`audio-tour-build --force`). Brukeren godkjente kvaliteten.
+
+### Implementasjon (forts.)
+
+- `lib/audio-tour/elevenlabs-client.ts` — Voice = Erik (`EpYEY8MWJrUGskHBoNMA`, "Erik"), stability bumpet 0.5 → 0.75.
+- `.audio-staging/banenor-eiendom_stasjonskvartalet/home.manus.md` — full omskriving til megler-narrativ med færre stedsnavn-eksplosiver.
+- Supabase `reportConfig.heroAudio.manus` synket via `audio-manus-write.ts apply` (validatoren bekreftet 83 ord, innenfor 35-90 range).
+- `audioVersion`: 4 i `lib/types.ts` + `scripts/audio-tour-build.ts` + `scripts/audio-manus-write.ts`.
+- `public/audio/stasjonskvartalet/*.mp3` — alle 8 spor regenerert (538 KB Hjem, 394-531 KB kategorier).
+- Supabase `audio.voice`/`audio.model`/`audio.generatedAt` PATCH-et per spor (optimistic lock OK).
+
+### Nye åpne spørsmål / ny retning
+
+- **Manus-curatering-guideline:** Brukeren signaliserte at "unngå stedsnavn der mulig" bør være en eksplisitt manus-skrive-regel for audio-tour-pitcher. Trondheim-spesifikke stedsnavn som "Brattørkaia", "TMV-kaia", "Munkegata", "Bispehaugen", "Nidelven" er uttale-eksplosiver. Tilsvarende gjelder andre byer (vi vil se det samme i Oslo/Bergen/Stavanger). **Skal dokumenteres i `lib/audio-tour/manus-prompt.ts`** så Claude Code-skill genererer mindre stedsnavn-tunge manus framover.
+- **Erik er midlertidig landing**, ikke endelig strategisk valg. PVC for Placy-signaturstemme er fortsatt riktig langsiktig — Erik er en community-voice-clone som kan endres eller depreceres av eieren. Når kommersiell pilot signeres med Banenor/Propr, invester i PVC.
+- **De 6 kategori-manusene er ikke omskrevet.** Mat-drikke nevner Fagn, Speilsalen, Britannia, Bakklandet, Solsiden, Jacobsen & Svart, Hevd, Godt Brød. Transport nevner Munkegata. Erik @ 0.75 leverer "ok-nok" på disse, men kvalitet er variabel. **Hvis vi vil ha jevn premium-kvalitet over alle 8 spor: omskriv kategori-manusene etter samme TTS-vennlige prinsipp** (færre stedsnavn, mer "for deg som"/du-perspektiv, mer narrativ enn telefonkatalog-aktig POI-opplisting). 4-6 timer arbeid.
+- **Det er motsetning mellom TTS-vennlig manus (færre stedsnavn) og innholds-verdi (konkrete steder gir lokalt anker).** For audio-tour er det riktig avveining mot konsistens, men selve rapport-board (tekst, kart, POI-popovers) skal ha alle stedsnavn fordi tekst-uttale ikke er et problem. Audio-manus er en EGEN content-form, ikke en avlesning av eksisterende tekst.
+
+### Observasjoner (forts.)
+
+- **PVC er ikke nødvendigvis "eneste vei" som vi trodde.** Det er en strategisk investering, men problemet kunne også løses med manus-curatering + parameter-tuning. Lesson: før man hopper på 1-2 ukers PVC-prosess, sjekk om problemet kan løses med (a) bedre seed/parameter eller (b) omskrevet tekst. Begge er timer-skala fix.
+- **Stokastisk TTS-output er en kjent industri-property, men vi hadde ikke internalisert det.** Det betyr at "én god test-take" er et utilstrekkelig validerings-grunnlag — vi må generere full produksjons-pipeline før vi committer på en stemme.
+- **Brukerens kvalitetssans landet riktig signal hver gang.** Mia Starset høres ok ut på test → "ikke godt nok" i produksjon. Azure høres ok ut → "ikke noe bedre enn ElevenLabs". Erik på 0.5 stability i produksjon → "dårligere enn eksempelet ditt". Ingen av disse var åpenbare for meg i forveien. Lesson: respekter når brukeren sier "ikke godt nok" — det er ikke pickiness, det er produkt-kvalitetssjekk.
+- **TTS-feature-utvikling er en samtale mellom modellen og manuset, ikke bare modellen.** Den endelige løsningen var like mye en manus-skrive-øvelse som en parameter-tweak. **For Placy framover: manus-prompt.ts må optimaliseres for TTS-vennlig output**, ikke bare for innholds-kvalitet. Det er en oppgave for senere når vi har et tredje prosjekt og kan se mønstre på tvers.
+
+## 2026-05-20 — TODO: TTS-uttale av problemord (parkert under board-narrativ-spike)
+
+### Kontekst
+
+Under brainstorm av sidebar↔voice-over-synk (`feat/board-narrativ-spike`, 2026-05-18-rapport-board-helhetlig-narrativ-brainstorm) kom det fram at hvis vi skal samkjøre én canonical tekst med voice-over (jf. brukerens auto/manual-modus-konsept), må vi løse TTS-uttale av problemord som "kajakk", "Nidelva", "Bakklandet" osv. Dagens Erik @ turbo_v2_5 uttaler disse rart.
+
+Vi har **ikke** løst dette nå — brukeren prioriterer UX/UI-opplevelsen i spiken og parkerer TTS-uttale-problemet som senere arbeid. LLM-er og TTS-tjenester blir bedre over tid, så det er ok å vente.
+
+### TODO når vi trenger å løse det
+
+- **Empirisk test:** Sjekk om ElevenLabs Pronunciation Dictionary (PLS-format) eller SSML `<phoneme>`-tags fungerer på `eleven_turbo_v2_5` per mai 2026. Per dokumentasjon ignoreres begge av turbo, men det kan ha endret seg.
+- **Hvis PLS ignoreres:** Bygg en fonetisk-overrides-mekanisme — én canonical tekst + mekanisk transform til TTS-input. Pronunciation-overrides-liste deles på tvers av prosjekter (kuraterbar `pronunciation-overrides.json` med problemord per region).
+- **Bytte til `/with-timestamps`-endpointen:** For karaoke-synk trenger vi character-level alignment. Krever pipeline-endring i `lib/audio-tour/elevenlabs-client.ts` + lagring av timing-data per spor.
+- **PVC-investering** (Professional Voice Clone) kan også løse problemet via training på norske stedsnavn, men det er en større strategisk investering — venter på kommersiell pilot.
+
+### Hvorfor det er ok å vente
+
+- Audio-tour er per i dag opt-in via `audioTourEnabled` (default false) — bare StasjonsKvartalet har det aktivert
+- Brukeren vurderer dagens kvalitet som "ganske god" på Erik
+- UX/UI-opplevelsen er det som driver spiken framover; uttale-fiks kan bygges på toppen senere uten å rive arkitekturen

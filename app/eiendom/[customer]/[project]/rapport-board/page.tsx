@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import { getProductAsync, getProjectAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
-import { getAreaSlugForProject } from "@/lib/public-queries";
-import ReportBoardPage from "@/components/variants/report/board/ReportBoardPage";
+import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
 
 const getCachedReportProduct = (customer: string, projectSlug: string) =>
@@ -23,12 +22,10 @@ interface PageProps {
     customer: string;
     project: string;
   }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function EiendomReportBoardPage({ params, searchParams }: PageProps) {
+export default async function EiendomReportBoardPage({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
-  const resolvedSearchParams = await searchParams;
 
   let projectData = await getCachedReportProduct(customer, projectSlug);
 
@@ -46,12 +43,6 @@ export default async function EiendomReportBoardPage({ params, searchParams }: P
   const poiIds = projectData.pois.map((p) => p.id);
   const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
   const enTranslations = await getProjectTranslations("en", poiIds, themeIds, projectData.id);
-
-  const areaSlug = await getAreaSlugForProject(projectData.id);
-
-  const rawThemes = typeof resolvedSearchParams.themes === "string"
-    ? resolvedSearchParams.themes.split(",")
-    : undefined;
 
   const themeStyle: React.CSSProperties = {};
   const t = projectData.theme;
@@ -82,15 +73,11 @@ export default async function EiendomReportBoardPage({ params, searchParams }: P
   }
 
   return (
-    <div style={themeStyle} className="min-h-screen bg-background text-foreground flex flex-col">
-      <main className="flex-1">
-        <ReportBoardPage
-          project={projectData}
-          enTranslations={enTranslations}
-          areaSlug={areaSlug}
-          primaryThemeIds={rawThemes}
-        />
-      </main>
+    <div style={themeStyle} className="min-h-screen bg-background text-foreground">
+      <ReportReelsPage
+        project={projectData}
+        enTranslations={enTranslations}
+      />
     </div>
   );
 }

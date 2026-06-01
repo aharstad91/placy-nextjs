@@ -14,6 +14,23 @@
 
 ---
 
+## 2026-05-24 — Placy Reels lansert som tverr-sporvalg-asset
+
+**Beslutning:** SOME-video-konseptet brainstormet med Markus får navnet **Placy Reels** og defineres som funnel-asset for ALLE Placy-produkter (Explorer/Guide/Report), ikke et separat produkt. Tech-spike validert (Veo 3.0 fast + ElevenLabs Erik + ffmpeg single-pass) med Stasjonskvartalet-pilot, per-video variabel kost ~$1-3. Reels bakes inn i eksisterende pilot-pakker som tilleggs-verdi (hotell-pilot 1490/mnd får Explorer + Reels, ikke prising-separasjon i fase 1). Pipelinen designes cross-vertical fra dag 1 (bolig + hotell + event + cruise + DMO) selv om aktive spor per LOG.md-beslutning 2026-05-06 forblir uendret (hotell først, cruise til fase 3).
+
+**Begrunnelse:** Reels er strategisk hevarm med liten downside: gratis komposisjons-lag (ffmpeg), nesten-gratis variabel kost, men forsterker salgsargumentet i hvert eksisterende spor med en konkret SOME-distribuerbar asset som målgrupper faktisk ser. Hotell-spor: pre-arrival excitement vs. lobby-QR. Event-spor: ferdig markedsføringsverktøy til arrangør, ikke bare Placy-link. Megler-spor: SOME-funnel inn til Rapport. Cross-vertical-design fra start unngår teknisk gjeld når cruise/DMO-faser åpner. Markus' "voice over er gull på mobile flater" + tech-spike-resultat ("haha dette er veldig bra!") gir produkt-konfidens.
+
+**Avlastet:** Reels endrer ikke prioriteringen i 2026-05-06-beslutningen. Det erstatter ikke profesjonelle visningsvideoer for premium-prosjekter. Det krever ikke separat GTM i fase 1. Self-serve-UI for meglere (Propr-skalering) er separat utviklings-faseproblem, ikke MVP. End-card-design er kjent gap som må lukkes før ekstern demo. Varemerke-verifikasjon av "Reels" mot Meta er åpent punkt med plan B-navn (Placy Stories/Teaser/Snippets).
+
+**Detaljer:**
+- `docs/brainstorms/2026-05-24-placy-reels-brainstorm.md` — produkt-konseptet (navn, formål, målgrupper, MVP, tech-pipeline, åpne spørsmål)
+- `docs/strategy/2026-05-24-placy-reels-cross-vertical.md` — strategisk plassering (hvordan Reels forsterker hvert eksisterende spor, prising-bake-inn, cruise-design-from-day-1)
+- `PROJECT-LOG.md` 2026-05-24 — tech-spike-verifikasjon
+
+**Status:** Aktiv — neste konkrete trinn er (1) SOME-best-practice-research for short-form lokasjons-marketing, (2) alternativ manus-versjon for Stasjonskvartalet (A/B-grunnlag), (3) polert end-card-design før kunde-demo, (4) demo i pågående megler-samtaler + bake inn i hotell-pilot-pitch når VT-intro materialiserer.
+
+---
+
 ## 2026-05-06 (kveld 2) — Hotell-fokus først, performance pilot, cruise/Hurtigruten parkert
 
 **Beslutning:** Hotell er primært gå-til-marked-spor for events/turist-pitchen. Topp 3 prospects: Britannia, Nidaros Pilegrimsgård, Scandic Nidelven. Visit Trondheim (Kari Aarnes) brukes som intro-mekanisme — versjon C-formulering: *"vi tilbyr 30-60 dagers gratis pilot for 2-3 Trondheim-hoteller før sommer-sesongen, måler engagement, leverer case study du kan bruke i medlemsrapport — hvilke hoteller har mest nytte? Kan du sende intro?"* Performance pilot-modell: 30 dagers gratis + promosjons-forpliktelse fra hotellet + pre-avtalt konverterings-terskel + tidsbegrenset eksklusivitet → 1 490/mnd × 12 mnd ved suksess. Cruise-spor (Hurtigruten Group + Havila Voyages som pilot-by-skalering) **parkert til fase 3** — etter hotell-pilot har levert case study.

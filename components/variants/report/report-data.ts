@@ -116,6 +116,8 @@ export interface ReportTheme {
   trails?: TrailCollection;
   /** Optional banner illustration (auto-cropped, natural aspect). Rendered under heading + intro. */
   image?: ThemeIllustration;
+  /** Build-time audio-tour-spor for kategorien (Steg 8c). */
+  audio?: import("@/lib/types").ReportThemeAudio;
 }
 
 export interface ThemeIllustration {
@@ -160,6 +162,9 @@ const PROJECT_3D_HEADINGS: Record<string, number> = {
 
 export interface ReportData {
   projectName: string;
+  /** URL-slug, eks. "stasjonskvartalet". Brukes til å slå opp prosjekt-
+   *  spesifikke ressurser (illustrasjoner, audio-stier, etc.). */
+  projectSlug?: string;
   address: string;
   centerCoordinates: { lat: number; lng: number };
   heroMetrics: ReportHeroMetrics;
@@ -179,6 +184,15 @@ export interface ReportData {
   mapStyle?: string;
   /** Default heading for alle 3D-kart-instanser (0–359°). Undefined = nord (0). */
   initialHeading?: number;
+  /** Tour-host-prat som spilles ved start av guidet tur. */
+  welcomeAudio?: import("@/lib/types").ReportThemeAudio;
+  /** Build-time audio-tour-spor for Hjem-panelet (Steg 8c). */
+  heroAudio?: import("@/lib/types").ReportThemeAudio;
+  /** Avslutnings-spor som spilles etter siste kategori. */
+  outroAudio?: import("@/lib/types").ReportThemeAudio;
+  /** Eksplisitt opt-in: viser "Start tour"-knappen kun når dette er true,
+   *  selv om audio-spor er generert. */
+  audioTourEnabled?: boolean;
 }
 
 export const TRANSPORT_CATEGORIES = new Set([
@@ -570,6 +584,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
         ? project.reportConfig?.trails
         : undefined,
       image: PROJECT_THEME_ILLUSTRATIONS[`${project.customer}_${project.urlSlug}`]?.[themeDef.id] ?? THEME_ILLUSTRATIONS[themeDef.id],
+      audio: themeDef.audio,
     });
   }
 
@@ -586,6 +601,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
   return {
     projectName: project.name,
+    projectSlug: project.urlSlug,
     address: project.pois[0]?.address ?? "",
     centerCoordinates: project.centerCoordinates,
     heroMetrics,
@@ -599,5 +615,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     cta: rc?.cta,
     mapStyle: rc?.mapStyle,
     initialHeading: PROJECT_3D_HEADINGS[`${project.customer}_${project.urlSlug}`],
+    welcomeAudio: rc?.welcomeAudio,
+    heroAudio: rc?.heroAudio,
+    outroAudio: rc?.outroAudio,
+    audioTourEnabled: rc?.audioTourEnabled,
   };
 }

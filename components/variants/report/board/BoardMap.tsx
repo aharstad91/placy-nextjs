@@ -4,18 +4,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import Map, { type MapRef } from "react-map-gl/mapbox";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
+import { mutedColor } from "@/lib/themes/muted-palette";
 import ModeToggle from "@/components/map/ModeToggle";
 import {
   zoomToRange,
   rangeToZoom,
 } from "@/lib/utils/camera-map";
-import { useBoard, useActiveCategory } from "./board-state";
+import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
+import { useBoardZoomTier } from "./use-board-zoom-tier";
 import { HomeMarker } from "./HomeMarker";
 import { BoardPathLayer } from "./BoardPathLayer";
 import { BoardPathMidpointMarker } from "./BoardPathMidpointMarker";
 import { BoardPOILabel } from "./BoardPOILabel";
+import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
 import { BoardMap3D } from "./BoardMap3D";
+import { useBoardPopupMode } from "./use-popup-mode";
+import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import { DEFAULT_CAMERA_LOCK } from "@/components/variants/report/blocks/report-3d-config";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
@@ -51,13 +56,31 @@ interface Props {
    * "senter" ved fremtidige fitBounds/flyTo. Default 0 (desktop).
    */
   mapPaddingBottom?: number;
+  /**
+   * Venstre-padding i piksler. Brukes på desktop-reels-layouten der
+   * sidebaren flyter over kartets venstre kant. Holder fitBounds borte
+   * fra den okkluderte regionen så alle markører lander til høyre for
+   * sidebar. Default 0 (mobil + ren rapport-board uten sidebar).
+   */
+  mapPaddingLeft?: number;
 }
 
-export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
+export function BoardMap({
+  has3dAddon = false,
+  mapPaddingBottom = 0,
+  mapPaddingLeft = 0,
+}: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
+  const activePOI = useActivePOI();
+  const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Zoom-tier styrer BoardMarker-rendering (dot/icon/icon+label). Lazy
+  // useState-init i hooken leser map.getZoom() ved første render; useEffect-
+  // retry plukker opp ekte verdi ved mapLoaded=true (også ved 3D→2D-toggle).
+  const zoomTier = useBoardZoomTier(mapRef, mapLoaded);
 
   // ---- 2D/3D-state-maskin ----
   const [mapMode, setMapMode] = useState<MapMode>("mapbox");
@@ -87,36 +110,50 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
       : "opacity-100";
 
   // Markører som vises avhenger av phase:
-  // - default: alle kategorier, alle POI-er (oversiktsmodus).
-  // - active|reading|poi: kun aktiv kategoris POI-er, med sub-kategori-filter.
+  // - default + Hjem-state (ingen kategori aktiv): vis ALLE POIs på tvers av
+  //   kategorier ufiltrert, hver med sin egen kategori-farge/ikon. Gir bruker
+  //   overblikk over hele nabolaget før kategori-narrativet starter.
+  // - default + aktiv kategori (scroll-drevet): kun den kategoriens pins.
+  // - active|poi: kun aktiv kategoris POI-er, med sub-kategori-filter.
+  //
+  // For å unngå hard 0↔1 overgang ved kategori-skifte rendres ALLE POI-er
+  // alltid med stabil DOM-identitet, og synlighet styres via `isVisible`-flag
+  // som BoardMarker fader via CSS-transition. Mapbox holder markør-projeksjonen
+  // stabil mens fade kjører.
   //
   // Felles fargevalg på tvers av phaser: sub-kategori-fargen med tema-fargen
   // som fallback. Sub-kat differensierer f.eks. bar (lilla), bakeri (gul) og
-  // restaurant (rød) innen Mat-tema — og siden samme POI vises i begge phaser
-  // skal fargen være identisk når brukeren bytter mellom Hjem og kategori-tab.
-  const visiblePOIs = useMemo(() => {
-    if (state.phase === "default") {
-      return data.categories.flatMap((c) =>
-        c.pois.map((p) => ({
-          poi: p,
-          color: p.raw.category.color || c.color,
-          icon: p.raw.category.icon || c.icon,
-        })),
-      );
+  // restaurant (rød) innen Mat-tema.
+  const markerStates = useMemo(() => {
+    const visibleIds = new Set<string>();
+    if (state.phase === "default" && !activeCategory) {
+      for (const cat of data.categories) {
+        for (const p of cat.pois) visibleIds.add(p.id);
+      }
+    } else if (activeCategory) {
+      const useFilter =
+        state.phase !== "default" && subFilter.hiddenIds.size > 0;
+      for (const p of activeCategory.pois) {
+        if (useFilter && subFilter.hiddenIds.has(p.raw.category.id)) continue;
+        visibleIds.add(p.id);
+      }
     }
-    if (!activeCategory) return [];
-    const filtered =
-      subFilter.hiddenIds.size === 0
-        ? activeCategory.pois
-        : activeCategory.pois.filter(
-            (p) => !subFilter.hiddenIds.has(p.raw.category.id),
-          );
-    return filtered.map((p) => ({
-      poi: p,
-      color: p.raw.category.color || activeCategory.color,
-      icon: p.raw.category.icon || activeCategory.icon,
-    }));
-  }, [state.phase, data.categories, activeCategory, subFilter.hiddenIds]);
+    return data.categories.flatMap((cat) =>
+      cat.pois.map((p) => ({
+        poi: p,
+        color: mutedColor(p.raw.category.color) ?? cat.color,
+        icon: p.raw.category.icon || cat.icon,
+        isVisible: visibleIds.has(p.id),
+      })),
+    );
+  }, [state.phase, activeCategory, subFilter.hiddenIds, data.categories]);
+
+  // Synlige POI-er for kamera-fit (tour-bounds). Inkluderer ikke fade-out-
+  // markører — kamera skal følge faktisk-synlig content, ikke DOM-mengden.
+  const visiblePOIs = useMemo(
+    () => markerStates.filter((m) => m.isVisible),
+    [markerStates],
+  );
 
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
@@ -131,12 +168,76 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current.getMap();
-    map.setPadding({ top: 0, bottom: mapPaddingBottom, left: 0, right: 0 });
-  }, [mapLoaded, mapPaddingBottom]);
+    map.setPadding({
+      top: 0,
+      bottom: mapPaddingBottom,
+      left: mapPaddingLeft,
+      right: 0,
+    });
+  }, [mapLoaded, mapPaddingBottom, mapPaddingLeft]);
 
-  // Bevisst valg: ingen phase-drevne camera-moves. Kartet holder posisjonen
-  // sin når kategori velges eller POI klikkes. Brukeren panner/zoomer manuelt.
-  // Initial view settes via initialViewState på <Map>.
+  // Tour-mode bounding-box-fit: når audio-tour er aktiv, rekalkuler kamera
+  // for hvert kategori-skifte slik at alle synlige markører (+ home) får
+  // plass. Gir visuell "view changes"-feedback per spor. Utenfor tour-mode
+  // holder kartet posisjonen sin (manuell pan/zoom).
+  //
+  // visiblePOIs lest via ref så effekten ikke re-fyrer på state.phase-skifte
+  // (default→poi ved marker-klikk gir ny array-identitet selv om innholdet er
+  // likt). Uten denne stabiliseringen flyttet kartet seg på hvert marker-klikk
+  // mens tour kjørte — samme bug som ble fikset for 3D-versjonen.
+  const tourPhase = useAudioTourPhase();
+  const tourActive = tourPhase === "playing" || tourPhase === "paused";
+  const visiblePOIsRef = useRef(visiblePOIs);
+  visiblePOIsRef.current = visiblePOIs;
+
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    if (!tourActive) return;
+    const pois = visiblePOIsRef.current;
+    if (pois.length === 0) return;
+    const map = mapRef.current.getMap();
+    let west = data.home.coordinates.lng;
+    let east = data.home.coordinates.lng;
+    let south = data.home.coordinates.lat;
+    let north = data.home.coordinates.lat;
+    for (const { poi } of pois) {
+      const { lng, lat } = poi.coordinates;
+      if (lng < west) west = lng;
+      if (lng > east) east = lng;
+      if (lat < south) south = lat;
+      if (lat > north) north = lat;
+    }
+    map.fitBounds(
+      [
+        [west, south],
+        [east, north],
+      ],
+      {
+        padding: {
+          top: 80,
+          bottom: 80 + mapPaddingBottom,
+          left: 80 + mapPaddingLeft,
+          right: 80,
+        },
+        duration: 800,
+        maxZoom: 15.5,
+      },
+    );
+  }, [
+    tourActive,
+    activeCategory?.id,
+    mapLoaded,
+    data.home.coordinates.lng,
+    data.home.coordinates.lat,
+    mapPaddingBottom,
+    mapPaddingLeft,
+  ]);
+
+  // Tidligere flyttet vi markøren inn i synlig kart-rom ved klikk (easeTo med
+  // offset for å klarere 480px-sidebar). Det føltes som om kartet "rykker" på
+  // hvert marker-klikk — matchet ikke 3D-modusen som holder kameraet i ro.
+  // Fjernet for parity. Popup kan teoretisk overlappe sidebar hvis markøren er
+  // helt i venstre kant, men det er en akseptabel kompromiss for ro-følelsen.
 
   // ---- Toggle-handler: lese kamera, sette pendingCamera, schedulere swap ----
   const getViewportDims = useCallback(
@@ -254,6 +355,11 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
             style={{ width: "100%", height: "100%" }}
             mapStyle={MAP_STYLE_STANDARD}
             onLoad={handleMapLoad}
+            onClick={() => {
+              // Markører kaller stopPropagation i sin onClick, så denne
+              // fyrer kun ved klikk på kart-bakgrunn. Lukk popup hvis åpen.
+              if (state.activePOIId) dispatch({ type: "BACK_TO_DEFAULT" });
+            }}
           >
             <HomeMarker
               coordinates={data.home.coordinates}
@@ -261,26 +367,36 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
               onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
             />
 
-            {visiblePOIs.map(({ poi, color, icon }) => (
-              <BoardMarker
-                key={poi.id}
-                poi={poi}
-                color={color}
-                icon={icon}
-                isActive={state.activePOIId === poi.id}
-                onClick={() =>
-                  dispatch({
-                    type: "OPEN_POI",
-                    id: poi.id,
-                    categoryId: poi.categoryId,
-                  })
-                }
-              />
-            ))}
+            {markerStates.map(({ poi, color, icon, isVisible }) => {
+              const isActive = state.activePOIId === poi.id;
+              // R10c: når mini-popup viser POI-navn, undertrykk inline-label
+              // for aktiv markør så vi ikke får dobbel-navn-rendering.
+              const suppressLabel = popupMode === "mini" && isActive;
+              return (
+                <BoardMarker
+                  key={poi.id}
+                  poi={poi}
+                  color={color}
+                  icon={icon}
+                  isActive={isActive}
+                  isVisible={isVisible}
+                  zoomTier={zoomTier}
+                  suppressLabel={suppressLabel}
+                  onClick={() =>
+                    dispatch({
+                      type: "OPEN_POI",
+                      id: poi.id,
+                      categoryId: poi.categoryId,
+                    })
+                  }
+                />
+              );
+            })}
 
             <BoardPathLayer />
             <BoardPathMidpointMarker />
             <BoardPOILabel />
+            {popupMode === "mini" && state.activePOIId && <BoardPOIMiniPopup />}
           </Map>
         </div>
       )}
@@ -288,7 +404,10 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
       {/* Google 3D-lag */}
       {showGoogle3d && (
         <div className={`absolute inset-0 ${google3dOpacity}`}>
-          <BoardMap3D pendingCamera={pendingCamera} />
+          <BoardMap3D
+            pendingCamera={pendingCamera}
+            mapPaddingLeft={mapPaddingLeft}
+          />
         </div>
       )}
 

@@ -273,6 +273,40 @@ export type ReportThemeGroundingViewV2 = z.infer<
   typeof ReportThemeGroundingV2Schema
 >;
 
+/**
+ * Build-time-generert audio-tour-data per kategori. Manus skrives av
+ * `scripts/audio-manus-write.ts` (Steg 8c.1), MP3 + url/voice/model av
+ * `scripts/audio-tour-build.ts` (Steg 8c.2). Omit (ikke null) ved feil.
+ * audio.manus eksisterer alene mellom Steg 8c.1 og 8c.2; full audio krever
+ * url+voice+model+generatedAt.
+ */
+/**
+ * Character-level alignment fra ElevenLabs /with-timestamps. Brukes til å
+ * synke karaoke-tekst med voice-over-posisjon. Arrays har samme lengde og
+ * korresponderer 1:1: characters[i] starter ved characterStartTimesSeconds[i]
+ * og slutter ved characterEndTimesSeconds[i].
+ */
+export interface ReportThemeAudioTimings {
+  characters: string[];
+  characterStartTimesSeconds: number[];
+  characterEndTimesSeconds: number[];
+}
+
+export interface ReportThemeAudio {
+  /** Public URL — typisk `/audio/{projectSlug}/{categoryId}.mp3`. Mangler frem til Steg 8c.2. */
+  url?: string;
+  /** ElevenLabs voice-ID brukt for generering. */
+  voice?: string;
+  /** ElevenLabs model-ID (f.eks. `eleven_multilingual_v2`). */
+  model?: string;
+  /** ISO-8601 tidspunkt for ElevenLabs-kallet. */
+  generatedAt?: string;
+  /** LLM-generert pitch-manus (~70 ord) som ble sendt til TTS. */
+  manus: string;
+  /** Character-level alignment fra /with-timestamps. Mangler på spor generert før audioVersion 5. */
+  timings?: ReportThemeAudioTimings;
+}
+
 export interface ReportThemeConfig {
   id: string;
   name: string;
@@ -288,6 +322,8 @@ export interface ReportThemeConfig {
   readMoreQuery?: string;
   /** Build-time-generert Gemini-grounding. Omit ved feil — ikke null. */
   grounding?: ReportThemeGrounding;
+  /** Build-time-generert audio-tour-spor for kategorien. Omit ved feil. */
+  audio?: ReportThemeAudio;
 }
 
 export interface BrokerInfo {
@@ -328,6 +364,23 @@ export interface ReportConfig {
   cta?: ReportCTA;
   mapStyle?: string;
   trails?: TrailCollection;
+  /** Tour-host-prat som spilles når brukeren starter guidet tur. Ikke en
+   *  kategori — rendres som karaoke inni accordion under "Start guidet tur"-
+   *  CTAen i SidebarHero. Auto-overgang til heroAudio (Nabolaget) når
+   *  welcome er ferdig. */
+  welcomeAudio?: ReportThemeAudio;
+  /** Build-time-generert audio-tour-spor for Hjem-panelet (Hjem er ikke en kategori). */
+  heroAudio?: ReportThemeAudio;
+  /** Avslutnings-spor som spilles etter siste kategori. Ikke en kategori —
+   *  rendres i bunn av sidebar over megler-kortet og telles ikke i
+   *  CategoryIndex. */
+  outroAudio?: ReportThemeAudio;
+  /** Bump for å tvinge re-gen av alle audio-spor på alle prosjekter. */
+  audioVersion?: 5;
+  /** Eksplisitt opt-in for "Start tour"-knapp. Default false — selv om
+   *  audio-spor er generert, skjules CTA inntil dette flagget settes per
+   *  prosjekt. Tillater forhåndsgenerering uten å eksponere på prod. */
+  audioTourEnabled?: boolean;
 }
 
 // === Origin Mode (for Explorer geolocation behavior) ===

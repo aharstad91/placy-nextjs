@@ -45,3 +45,6 @@ data/research/
 .mcp.json
 backups/
 .curation-staging/
+.audio-staging/
+.tmp-screenshots/
+.spike-debug/

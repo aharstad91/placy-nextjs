@@ -267,6 +267,16 @@ gmp-popover::part(dialog) {
   background: transparent;
 }
 
+/* Board mini-popup — forankret på aktiv POI-markør, må overstyre andre markører
+   (inkl. hjem-markørens navn-pille) som ellers stacker oppå. */
+.board-mini-popup {
+  z-index: 20;
+}
+.board-mini-popup .mapboxgl-popup-content {
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(15, 29, 68, 0.18);
+}
+
 /* ===================================
    Skeleton Loading - GPU Optimized
    =================================== */
