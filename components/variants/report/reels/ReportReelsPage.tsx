@@ -2,6 +2,7 @@
 
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import type { Project } from "@/lib/types";
@@ -148,7 +149,7 @@ function ReelsOrchestrator({ children }: { children: React.ReactNode }) {
  *   sheet men en permanent panel. Phase styrer fortsatt marker-visibility
  *   og audio.
  */
-function ResponsiveLayout({
+function ResponsiveLayoutInner({
   home,
   has3dAddon,
 }: {
@@ -158,15 +159,22 @@ function ResponsiveLayout({
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   if (isDesktop) {
+    // Apple Maps-paradigme: kartet fyller hele viewportet, sidebaren flyter
+    // over med padding rundt + avrundede hjørner + skygge. Kartets pan/zoom
+    // og 3D-toggle sitter da fortsatt aktivt under hele bakgrunnen.
+    //
+    // mapPaddingLeft=472 (16 ytre + 440 sidebar + 16 indre gap) holder
+    // fitBounds-resultatet ute av sidebar-okkluderingen. Sidebar er
+    // 9:16 (440×782) sentrert vertikalt, max-h klipper på korte skjermer.
     return (
-      <div className="flex h-[100dvh] w-full bg-stone-100 overflow-hidden">
-        <div className="relative w-[400px] shrink-0 h-full bg-black">
+      <div className="relative h-[100dvh] w-full bg-stone-100 overflow-hidden">
+        <div className="absolute inset-0">
+          <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={472} />
+        </div>
+        <div className="absolute left-4 top-4 w-[440px] aspect-[9/16] max-h-[calc(100vh-2rem)] z-20 rounded-3xl overflow-hidden bg-black shadow-2xl ring-1 ring-black/5">
           <ReelsStack
             renderCard={(i) => <CardRouter cardIndex={i} desktopMode />}
           />
-        </div>
-        <div className="relative flex-1 h-full">
-          <BoardMap has3dAddon={has3dAddon} />
         </div>
       </div>
     );
@@ -179,6 +187,18 @@ function ResponsiveLayout({
     </div>
   );
 }
+
+// SSR vs client mismatch på desktop/mobil-treet (useMediaQuery returnerer
+// false på SSR uansett viewport). Bypass-er hele hydration-fasen ved å
+// laste layouten kun på klient — placeholderen rendres på server og første
+// client-tick, så swappes til ekte tree.
+const ResponsiveLayout = dynamic(
+  () => Promise.resolve(ResponsiveLayoutInner),
+  {
+    ssr: false,
+    loading: () => <div className="h-[100dvh] w-full bg-black" />,
+  },
+);
 
 function MapLayer({ home }: { home: BoardHome }) {
   const { state, setPhase } = useReels();

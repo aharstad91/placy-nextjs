@@ -30,12 +30,13 @@
  * Antall bilder må matche antall beats. Beats = setninger i timings +
  * eventuelle extra-splits.
  *
- * Eksempel for transport-kategorien:
+ * Eksempel for transport-kategorien (9 beats, 2 splits — stasjon/tog/flybuss/
+ * buss/båt/bysykkel/elsparkesykkel/delebil/taxi):
  *   npx tsx scripts/compose-reels-bg.ts \
  *     --timings ~/Desktop/placy-test/transport/output/voiceover-transport-reels-timings.json \
  *     --image-dir ~/Desktop/placy-test/transport \
- *     --images "transport-en.jpg,transport-2-1.jpg,transport-2-2.jpg,transport-2.jpg,transport-2-3.jpg,transport-bysykkel.jpg,transport-sparkesykkel.jpg" \
- *     --extra-splits "bysykkel," \
+ *     --images "transport-en.jpg,transport-tog.png,transport-flyplass.png,transport-2.jpg,transport-2-3.jpg,transport-bysykkel.jpg,transport-sparkesykkel.jpg,transport-delebil-app.png,transport-taxi.png" \
+ *     --extra-splits "byregionen,bysykler" \
  *     --output ~/Desktop/placy-test/transport/output/transport.mp4
  */
 

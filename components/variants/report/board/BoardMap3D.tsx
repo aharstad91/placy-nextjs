@@ -28,6 +28,12 @@ interface Props {
    * `defaultCenter` så toggle ikke nullstiller kart-posisjonen.
    */
   pendingCamera: PendingCamera | null;
+  /**
+   * Sidebar-okkludering på venstre side i piksler. Bounds-fit i tour-mode
+   * skalerer range opp og forskyver center.lng østover slik at alle markører
+   * lander til høyre for sidebar (speiler 2D-padding-mønsteret).
+   */
+  mapPaddingLeft?: number;
 }
 
 /**
@@ -44,7 +50,7 @@ interface Props {
  *   over POI-er er en dokumentert begrensning — se nederst.)
  * - poi-phase: fly til POI med en tettere range (1500 m → ~POI-nær zoom).
  */
-export function BoardMap3D({ pendingCamera }: Props) {
+export function BoardMap3D({ pendingCamera, mapPaddingLeft = 0 }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
@@ -198,9 +204,28 @@ export function BoardMap3D({ pendingCamera }: Props) {
     const FOV_H = 2 * Math.atan(Math.tan(FOV_V / 2) * aspect);
     const rangeForWidth = widthM / 2 / Math.tan(FOV_H / 2);
     const rangeForHeight = heightM / 2 / Math.tan(FOV_V / 2);
+    // Sidebar-kompensasjon: når mapPaddingLeft > 0 okkluderer sidebar venstre
+    // del av viewportet. Vi må (1) skalere widthM-range opp 1/visibleFraction
+    // så innholdet får plass i smalere synlig region, (2) flytte center.lng
+    // østover så bounds-midten lander midt i synlig region.
+    const visibleFraction = Math.max(
+      0.1,
+      (rect.width - mapPaddingLeft) / Math.max(1, rect.width),
+    );
+    const adjustedRangeForWidth = rangeForWidth / visibleFraction;
     // 1.1× padding-faktor: ~10 % margin. Floor på 200m unngår ekstrem
     // zoom-inn ved single-POI-bounds.
-    const range = Math.max(200, Math.max(rangeForWidth, rangeForHeight) * 1.1);
+    const range = Math.max(
+      200,
+      Math.max(adjustedRangeForWidth, rangeForHeight) * 1.1,
+    );
+    // Shift center østover: i pixel-rom skal center lande på
+    // (W + padding_left)/2, dvs forskyvning padding_left/2 piksler. Konverter
+    // til meter ved ny range (full viewport-bredde = 2·range·tan(FOV_H/2)).
+    const metersPerPixel =
+      (2 * range * Math.tan(FOV_H / 2)) / Math.max(1, rect.width);
+    const shiftMeters = (mapPaddingLeft / 2) * metersPerPixel;
+    const shiftedCenterLng = centerLng + shiftMeters / metersPerDegLng;
     (map3dInstance as {
       flyCameraTo?: (opts: {
         endCamera: {
@@ -213,7 +238,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
       }) => void;
     }).flyCameraTo?.({
       endCamera: {
-        center: { lat: centerLat, lng: centerLng, altitude: 0 },
+        center: { lat: centerLat, lng: shiftedCenterLng, altitude: 0 },
         tilt: DEFAULT_CAMERA_LOCK.tilt,
         range,
         heading: 0,
@@ -226,6 +251,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
     map3dInstance,
     data.home.coordinates.lng,
     data.home.coordinates.lat,
+    mapPaddingLeft,
   ]);
 
   return (

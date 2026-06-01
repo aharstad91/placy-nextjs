@@ -22,14 +22,13 @@ if (!API_KEY) {
 }
 
 const MANUS = [
-  "Stasjonskvartalet er i samme bygg som nye Trondheim Sentralstasjon.",
-  "Her har du umiddelbar tilgang til tog og buss.",
-  "Toget går direkte sørover til Oslo, og direkte nordover til Bodø, med stopp på Værnes lufthavn underveis.",
-  "Bussholdeplassene rundt kvartalet dekker hele byregionen.",
-  "Hurtigbåter går fra Pirterminalen, fem minutter unna.",
-  "Flere bysykkel-stasjoner i nærheten — bysykler leies med app.",
-  "Mange tjenester innen elsparkesykler, som står spredt og i stasjoner i nærheten.",
-  "Og bildeling gir deg bil når du trenger større turer.",
+  "Nye Trondheim Sentralstasjon er nærmeste nabo, og det gir muligheten til å gå rett ut til alle former for transport.",
+  "Skal du langt, tar toget deg direkte sørover til Oslo, og nordover til Bodø.",
+  "Toget stopper ved Trondheim lufthavn, Værnes, og flybuss kjører med jevne mellomrom fra holdeplasser et par minutter unna.",
+  "Bussholdeplasser rundt kvartalet dekker hele byregionen, og du når hurtigbåtterminalen på fem minutters gange.",
+  "Det er enkelt å komme seg på farten, da det står bysykler og elsparkesykler klare for bruk i umiddelbar nærhet.",
+  "Og er det behov for bil, finner du dedikerte delebiler med både person- og varebiler i nærheten.",
+  "Til slutt er det også verdt å nevne at det er en dedikert taxi-holdeplass to minutter unna døra.",
 ].join(" ");
 
 const OUTPUT_DIR = path.join(

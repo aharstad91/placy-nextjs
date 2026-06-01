@@ -62,7 +62,7 @@ export function ReelsStack({ renderCard }: Props) {
             sectionRefs.current[i] = el;
           }}
           data-card-index={i}
-          className="h-[100dvh] w-full snap-start snap-always relative"
+          className="h-full w-full snap-start snap-always relative"
         >
           {renderCard(i)}
         </section>

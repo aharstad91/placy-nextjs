@@ -6,6 +6,112 @@
 
 ---
 
+## 2026-05-26 — Transport-reels: bilde-resync + manus-iterasjon for 6 kategorier
+
+### Kontekst
+Stasjonskvartalets transport-reel hadde feil bilde-til-setning-mapping (bildene cuttet på feil tema), og brukeren hadde skrevet nytt voice-over-manuskript manuelt for de fleste kategoriene. Sesjonen rettet transport-synkingen, bygde opp et komplett, kuratert bilde-sett for transport, og regenererte 6 voice-overs fra det nye manuskriptet.
+
+### Transport: bilde-til-setning-mapping rettet og utvidet
+Gammel `transport.mp4` mappet bilder feil (tog-setning fikk buss-bilde osv.) og brukte ikke `transport-bildeling.png`. Ny mapping er 9 beats (2 extra-splits: `byregionen`, `bysykler`):
+
+| # | Setning | Bilde |
+|---|---------|-------|
+| 1 | Sentralstasjon | transport-en (stasjon-interiør) |
+| 2 | Tog Oslo/Bodø | transport-tog (SJ-tog, bruker-foto) |
+| 3 | Værnes/flybuss | transport-flyplass (lufthavn-interiør, bruker-foto) |
+| 4a | Buss-stoppene | transport-2 (metrobuss) |
+| 4b | Hurtigbåt | transport-2-3 (hurtigbåt) |
+| 5a | Bysykler | transport-bysykkel |
+| 5b | Elsparkesykler | transport-sparkesykkel |
+| 6 | Delebil | transport-delebil-app (app-i-bil, bruker-foto) |
+| 7 | Taxi | transport-taxi (Imagen-generert taxi-skilt) |
+
+### AI-genererte bilder via Imagen (eier rettigheter)
+To bilder manglet lisensiert kildemateriale → generert via `generate-image-imagen.ts` (imagen-4.0-generate-001, 9:16):
+- **Taxi (S7):** Flere forsøk. Generiske "biler i kø" ble forkastet (farge/skilt-design avslører land). Vinner ble et **blått Taxi-skilt på stolpe** i blue-hour med snø-fjell — skiltet bærer fortellingen, ikke bilen. Imagen hallusinerte først (kvinne i sari) på en RAI-tung prompt; kortere/konkret prompt løste det.
+- **Delebil (S6) — ikke brukt til slutt:** genererte blå/grå varebil (nikker til Hyre uten lesbar logo), men bruker valgte heller eget app-i-bil-foto.
+
+### Manus-iterasjon: 6 nye voice-overs fra bruker-skrevet manuskript
+Bruker skrev `~/Downloads/Stasjonskvartalet — Voice-over manuskript.md` manuelt. Regenererte mp3+timings for mat-drikke, transport, natur, hverdagsliv, trening, barn-oppvekst. Nabolaget (placeholder) og opplevelser (mangler i doc) ble hoppet over. Tre TTS-rettelser i trening-manuset: `Promonaden`→`Promenaden`, `24/7`→`døgnet rundt`, `boxing`→`boksing`.
+
+### Åpent: bg-video-resync for mat-drikke + natur
+Ny audio endret timings. Transport ble resynket (samme 7 setninger). Men mat-drikke (4→5 setninger) og natur (5→7 setninger) fikk flere setninger enn de har bilder til — bg-videoene er ute av sync til vi har 1 nytt mat-bilde (take-away) + 2 nye natur-bilder. Hverdagsliv/trening/oppvekst bruker generisk scene-syklus og er upåvirket.
+
+### Filer endret
+- `scripts/voiceover-reels-{mat-drikke,transport,natur,hverdagsliv,trening,barn-oppvekst}.ts` — nye MANUS
+- `scripts/compose-reels-bg.ts` — oppdatert transport-eksempel i docstring
+- `public/reels/categories/transport.mp4` — regenerert (9 beats, ny mapping + nye timings)
+- `public/audio/stasjonskvartalet/*-reels.mp3` (6 filer) + `data/reels-audio/*.timings.json` (6 filer)
+- Nye bruker-/AI-bilder i `~/Desktop/placy-test/transport/` (transport-tog, -flyplass, -delebil-app, -taxi)
+
+---
+
+## 2026-05-25 (kveld) — Rapport-board konsolidert med reels-feed: adaptiv shell + Apple Maps-paradigme
+
+### Kontekst
+`/rapport-reels` (mobil-first feed) og `/rapport-board` (sidebar + kart) levde parallelt — to ulike state-systemer over samme datasett, og sidebar-innholdet duplikerte mye av det reels-feeden alt formidlet. Sesjonen sammenslo dem til én adaptiv shell: reels-feed er nå hoved-narrativet på begge breakpoints, kartet er den persistente konteksten ved siden av.
+
+### Beslutninger landet
+
+**Reels-først, ikke sidebar-først.** Den vertikale feeden er hoveddrivkraften for "story-flowen" (intro → nabolaget → kategorier → outro → megler). På desktop ligger den til venstre, kartet til høyre. På mobil overtar feeden hele skjermen og kartet flyttes inn i en bottom-sheet med peek/quarter/half/full-faser (samme paradigme som /rapport-reels alltid har hatt).
+
+**Sidebar-innholdet ble nye reel-kort.** Hjem, outro og megler-kontakter — alt som tidligere bodde i SidebarHero/QueueOverlay/BottomPlayer — er nå egne kort i feeden. Ny `MeglerReel.tsx` (statisk, ingen audio). `AudioBearingCard`-union (`home | category | outro`) skiller audio-bærende kort fra intro/megler i `cardIndexToAudioIndex`-mappingen mot audio-tour-store.
+
+**State-broer: BoardReelsSync.** Reels har egen `ReelsProvider`, board har egen `BoardProvider`. Bro-komponenten dispatcher `SELECT_CATEGORY` (source: `audio`) til BoardContext når aktiv reel er et kategori-kort, og `RESET_TO_DEFAULT` for intro/home/outro/megler. `source: "audio"` holder BoardContext i `default`-phase så markører fader uten å trigge legacy mobile "active"-overgangen som ikke gir mening her.
+
+**`/rapport-reels`-routen lever videre som alias.** Brukerens beslutning: behold midlertidig, slett senere når vi vet at ingenting eksternt peker på den.
+
+### Cleanup
+19 filer slettet i samme commit (`14861eb`): hele `components/variants/report/board/desktop/`, `components/variants/report/board/mobile/`, `BoardScrollPanel`, `SidebarHero`, `CategoryIndex`, `CategoryFeaturedChips`, `QueueOverlay`, `BoardCategoryInfoTab`, `BottomPlayer`, `SectionPlayButton`, `PlayerBanner`, `StartTourButton`, `useStartTour`, `use-audio-tour-sync`, `DesktopGate`, samt `lib/hooks/useBoardActiveSection.ts` og `lib/board/featured-pois.ts`. Per kvalitetsstandard: når noe nytt erstatter noe gammelt — slett umiddelbart. +384/-2933.
+
+Separat commit (`4eec0ce`) ryddet 14 committed screenshot-PNG-er fra repo-root (eldre spike-sesjoner).
+
+### Iterasjon 2 — Apple Maps-paradigme på desktop
+Etter første merge lå sidebar og kart side-by-side (400px + flex-1). Bruker viste Apple Maps-referanse: sidebaren skal "flyte" over kartet med padding rundt + avrundede hjørner + skygge. Kartet skal gå helt under sidebaren.
+
+Endring i `ResponsiveLayout`:
+```tsx
+<div className="relative h-[100dvh] w-full bg-stone-100 overflow-hidden">
+  <div className="absolute inset-0">
+    <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={432} />
+  </div>
+  <div className="absolute left-4 top-4 bottom-4 w-[400px] z-20 rounded-3xl overflow-hidden bg-black shadow-2xl ring-1 ring-black/5">
+    <ReelsStack renderCard={(i) => <CardRouter cardIndex={i} desktopMode />} />
+  </div>
+</div>
+```
+
+### Iterasjon 3 — fitBounds må respektere sidebar-okkluderingen
+Bruker observerte: når en kategori aktiveres og kartet zoomer inn på POI-bounds, lander markørene midt i viewportet — også bak sidebar. Bounds-fit må kompensere for okkluderingen.
+
+**2D (`BoardMap.tsx`):** ny `mapPaddingLeft`-prop sendes til Mapbox `setPadding({left})` (påvirker tolkningen av "senter" for fremtidige kamera-bevegelser) og inkluderes i `fitBounds`-padding-objektet (80 + mapPaddingLeft).
+
+**3D (`BoardMap3D.tsx`):** Google Maps 3D mangler en native `fitBounds`-API, så vi bygde manuell kompensasjon i tour-mode-fitten:
+1. Skalér `rangeForWidth` opp med `1/visibleFraction` (innholdet skal passe i smalere synlig region)
+2. Forskyv `center.lng` østover med `(mapPaddingLeft / 2)` piksler konvertert til meter via `meters_per_pixel = 2·range·tan(FOV_H/2) / W_px`
+
+`mapPaddingLeft={432}` på desktop = 16 ytre + 400 sidebar + 16 indre gap. Mobil er uendret (0).
+
+### Filer endret
+- `app/eiendom/[customer]/[project]/rapport-board/page.tsx` — bytter `ReportBoardPage` ut med `ReportReelsPage`
+- `components/variants/report/reels/ReportReelsPage.tsx` — adaptiv ResponsiveLayout + BoardProvider-wrapper + BoardReelsSync
+- `components/variants/report/reels/reels-data.ts` — `HomeReelCard`/`OutroReelCard`/`MeglerReelCard`-typer + `AudioBearingCard`-union + `cardIndexToAudioIndex` cards-array-aware
+- `components/variants/report/reels/MeglerReel.tsx` — ny (statisk kontaktkort)
+- `components/variants/report/reels/CategoryReel.tsx` — `audioIndex`-prop + `desktopMode`-flag
+- `components/variants/report/reels/use-reels-audio-orchestration.ts` — mapper via cards-array (intro+megler pauser audio)
+- `components/variants/report/board/BoardMap.tsx` — `mapPaddingLeft`-prop på 2D
+- `components/variants/report/board/BoardMap3D.tsx` — `mapPaddingLeft`-prop på 3D med center-shift + range-skalering
+
+### Status
+Konsolidering landet og verifisert visuelt på desktop. Markørene plasseres nå til høyre for sidebaren ved kategori-skifte i både 2D og 3D. Mobil-flow uendret (peek-sheet → quarter → half → full). 78 board-relaterte tester passerer; 3 pre-eksisterende `validator.test.ts`-feil (norsk æ/ø/å) urørt.
+
+### Neste utforskning (parkert)
+- Slette `/rapport-reels`-routen når vi vet at ingenting eksternt peker på den
+- Vurder om `BoardReelsSync` skal flyttes til en delt hook om/når flere shell-varianter dukker opp
+- 3D-popup-posisjonering ved tett zoom — kan bli okkludert av sidebar når POI ligger langt vest
+
+---
+
 ## 2026-05-25 (natt) — Transport-kategori: Level B beats-match + gjenbrukbar compose-pipeline
 
 ### Kontekst

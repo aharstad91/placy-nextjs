@@ -56,9 +56,20 @@ interface Props {
    * "senter" ved fremtidige fitBounds/flyTo. Default 0 (desktop).
    */
   mapPaddingBottom?: number;
+  /**
+   * Venstre-padding i piksler. Brukes på desktop-reels-layouten der
+   * sidebaren flyter over kartets venstre kant. Holder fitBounds borte
+   * fra den okkluderte regionen så alle markører lander til høyre for
+   * sidebar. Default 0 (mobil + ren rapport-board uten sidebar).
+   */
+  mapPaddingLeft?: number;
 }
 
-export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
+export function BoardMap({
+  has3dAddon = false,
+  mapPaddingBottom = 0,
+  mapPaddingLeft = 0,
+}: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
@@ -157,8 +168,13 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current.getMap();
-    map.setPadding({ top: 0, bottom: mapPaddingBottom, left: 0, right: 0 });
-  }, [mapLoaded, mapPaddingBottom]);
+    map.setPadding({
+      top: 0,
+      bottom: mapPaddingBottom,
+      left: mapPaddingLeft,
+      right: 0,
+    });
+  }, [mapLoaded, mapPaddingBottom, mapPaddingLeft]);
 
   // Tour-mode bounding-box-fit: når audio-tour er aktiv, rekalkuler kamera
   // for hvert kategori-skifte slik at alle synlige markører (+ home) får
@@ -196,7 +212,16 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
         [west, south],
         [east, north],
       ],
-      { padding: 80, duration: 800, maxZoom: 15.5 },
+      {
+        padding: {
+          top: 80,
+          bottom: 80 + mapPaddingBottom,
+          left: 80 + mapPaddingLeft,
+          right: 80,
+        },
+        duration: 800,
+        maxZoom: 15.5,
+      },
     );
   }, [
     tourActive,
@@ -204,6 +229,8 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
     mapLoaded,
     data.home.coordinates.lng,
     data.home.coordinates.lat,
+    mapPaddingBottom,
+    mapPaddingLeft,
   ]);
 
   // Tidligere flyttet vi markøren inn i synlig kart-rom ved klikk (easeTo med
@@ -377,7 +404,10 @@ export function BoardMap({ has3dAddon = false, mapPaddingBottom = 0 }: Props) {
       {/* Google 3D-lag */}
       {showGoogle3d && (
         <div className={`absolute inset-0 ${google3dOpacity}`}>
-          <BoardMap3D pendingCamera={pendingCamera} />
+          <BoardMap3D
+            pendingCamera={pendingCamera}
+            mapPaddingLeft={mapPaddingLeft}
+          />
         </div>
       )}
 
