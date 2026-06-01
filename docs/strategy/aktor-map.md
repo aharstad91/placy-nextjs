@@ -4,7 +4,7 @@
 > Oppdateres hver gang en relasjon endrer status (ny kontakt, nytt møte, ny rolle, parkert).
 > Roll-bytter og status-endringer noteres dato-stemplet i nøkkel-felter.
 
-**Sist oppdatert:** 2026-05-06 (kveld 2)
+**Sist oppdatert:** 2026-05-08
 
 ---
 
@@ -16,7 +16,7 @@
 
 | Person | Rolle | Status | Sett Placy? |
 |---|---|---|---|
-| **Nanna Berntsen** | Prosjektleder arrangement / Kultur- og programansvarlig | 2026-05-06: Hovedkontakt etter introduksjonsmøte. Skal ta intern prat på huset, deretter melde tilbake. | Hele Placy-presentasjon (Kulturnatt-prototyp + Scandic Explorer + Scandic Trips) |
+| **Nanna Berntsen** | Prosjektleder arrangement / Kultur- og programansvarlig | 2026-05-06: Hovedkontakt etter introduksjonsmøte. Skal ta intern prat på huset, deretter melde tilbake. 2026-05-08: Fellesmail sendt med Kulturnatt-prototype-link og oppsummering. | Hele Placy-presentasjon (Kulturnatt-prototyp + Scandic Explorer + Scandic Trips) |
 | **Philip** | Frivillig (Kulturnatt + Christmas Market) | 2026-05-06: I møtet, ikke beslutningstaker. Bakgrunn fra film/TV-produksjon. | Samme |
 | **Isabelle** | Kulturnatt-medarbeider, rolle ukjent | 2026-05-06: På video i første del av møtet. | Samme |
 
@@ -25,14 +25,15 @@
 
 | Person | Rolle | Status | Sett Placy? |
 |---|---|---|---|
-| **Sissel Piene** | Arrangementskoordinator | 2026-05-06: Kom inn senere i møtet. Identifisert siden 2023 som koordinator (Adressa). Skal ta intern prat med Nanna + sende info til "Cicero og Karesan" (?). | Samme som Nanna |
+| **Sissel Piene** | Arrangementskoordinator (leie av byrom og standplass) | 2026-05-06: Kom inn senere i møtet. Identifisert siden 2023 som koordinator (Adressa). Skal ta intern prat med Nanna. Ba eksplisitt om at Andreas sender oppfølgings-info til Sissel + Kari (talegjenkjenning hørte "Cicero og Karesan"). 2026-05-08: Fellesmail sendt — leverte på den eksplisitte asken. | Samme som Nanna |
 
 ### Visit Trondheim
 **Org:** Partnerfinansiert reiselivsorganisasjon. Markedsfører kun for medlemsnettverk. Egen event-side er utdatert (per egen observasjon i møtet).
 
 | Person | Rolle | Status | Sett Placy? |
 |---|---|---|---|
-| **Kari Aarnes** | Markedssjef | 2026-05-06: 20 min intro i dag. Trigget mest av transport-info-vinkelen (taxi/buss/Værnes). Foreslo at hotell/cruise/butikker skal eie QR-kodene, ikke VT selv. | Kulturnatt-prototyp + Scandic Explorer + Scandic Trips |
+| **Kari Aarnes** | Markedssjef | 2026-05-06: 20 min intro i dag. Trigget mest av transport-info-vinkelen (taxi/buss/Værnes). Foreslo at hotell/cruise/butikker skal eie QR-kodene, ikke VT selv. 2026-05-08: Fellesmail sendt med Kulturnatt-link. Hotell-pilot-pakke + versjon C-formulering kommer som separat mail (utvidet til også å be om felles møte med Kari + Susanne på Convention Bureau). | Kulturnatt-prototyp + Scandic Explorer + Scandic Trips |
+| **Susanne Gau Klein** | Head of Trondheim Convention Bureau (avdeling av VT, fokus konferanse-/messe-marked) | 2026-05-08: Identifisert via VTs hjemmeside (visittrondheim.no/trondheim-convention-bureau). Use case fra møtet: konferansegjester med 2-4 timer mellom sesjoner — treffer Placys USP for kuratert lokal innsikt. Plan: spør Kari om felles møte i versjon C-mail. Ingen direkte kontakt enda. Kontakt: susanne@visittrondheim.no, +47 930 82 635. | Ingenting |
 
 ### Konsertbyen Trondheim
 **Org:** Felles markedsføringsplattform for 12 konsertscener i Trondheim. Etablert 2023 (Adressa). Drevet av Scenesnakk (interesseforeningen for helårsarrangører).

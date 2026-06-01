@@ -14,6 +14,18 @@
 
 ---
 
+## 2026-05-08 — Fellesmail sendt til Kulturnatt/Midtbyen Mgmt/VT-trio
+
+**Beslutning:** Fellesmail sendt til Nanna Berntsen (Kulturnatt), Sissel Piene (Midtbyen Management) og Kari Aarnes (Visit Trondheim) som oppfølging fra introduksjonsmøtet 2026-05-06. Subject: *"Takk for møtet — her er Kulturnatt-prototypen"*. Innhold: takk + kort oppsummering av møtepunkter (TRD Events som levende feed, multi-nettsted-arkitektur, næring på midtbyen.no) + Kulturnatt-prototype-URL + flag-løfte om dedikert mail til Kari. Myk CTA (*"tar gjerne en runde to når dere har snakket internt"*). Bevisst ingen pris/pitch — strukturert som hold-varm.
+
+**Begrunnelse:** Sissel ba i møtet eksplisitt om at Andreas sender oppfølgings-info til Sissel + Kari (talegjenkjent som "Cicero og Karesan", korrigert 2026-05-08). Mailen leverer på den asken og holder Nanna varm mens hun er i intern prat. Bevisst ingen ide-liste eller produktforslag — det ville flyttet mailen fra hold-varm til pitch og presset mottakerne til å reagere på Andreas' agenda istedenfor å lande egen prioritering.
+
+**Detaljer:** `docs/strategy/2026-05-06-events-spor-trondheim.md` — sesjons-dokument fra møtet, inneholder versjon C-formulering og topp 3 hotell-prospects. `aktor-map.md` oppdatert med send-status for alle tre mottakere.
+
+**Status:** Aktiv — venter på respons. Neste konkrete trinn: dedikert versjon C-mail til Kari (hotell-pilot + felles møte med Susanne på Convention Bureau).
+
+---
+
 ## 2026-05-06 (kveld 2) — Hotell-fokus først, performance pilot, cruise/Hurtigruten parkert
 
 **Beslutning:** Hotell er primært gå-til-marked-spor for events/turist-pitchen. Topp 3 prospects: Britannia, Nidaros Pilegrimsgård, Scandic Nidelven. Visit Trondheim (Kari Aarnes) brukes som intro-mekanisme — versjon C-formulering: *"vi tilbyr 30-60 dagers gratis pilot for 2-3 Trondheim-hoteller før sommer-sesongen, måler engagement, leverer case study du kan bruke i medlemsrapport — hvilke hoteller har mest nytte? Kan du sende intro?"* Performance pilot-modell: 30 dagers gratis + promosjons-forpliktelse fra hotellet + pre-avtalt konverterings-terskel + tidsbegrenset eksklusivitet → 1 490/mnd × 12 mnd ved suksess. Cruise-spor (Hurtigruten Group + Havila Voyages som pilot-by-skalering) **parkert til fase 3** — etter hotell-pilot har levert case study.

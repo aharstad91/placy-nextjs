@@ -96,6 +96,7 @@ Alle åpne tema fra dagens diskusjon. Hver kan bli sin egen mini-brainstorm — 
 - [ ] **S3.** Hva er tilbudet til Kulturnatt 2026 (pris, scope, leveranse, deadline)?
 - [ ] **S4.** Cruise/turist-segmentet — hvordan kommer vi inn der uten å være kunde av VT direkte?
 - [ ] **S5.** Forholdet til Propr-piloten — fokus, ikke pivot. Konkret arbeidsdeling per uke?
+- [ ] **S6.** Convention Bureau-segmentet (lagt til 2026-05-08) — Trondheim Convention Bureau som distinkt segment under VT-paraply. Konferanse-/messe-marked, "tidsfattig premium"-målgruppe (2-4 timer mellom sesjoner). Susanne Gau Klein identifisert. Inngangsvinkel: be Kari om felles møte med Kari + Susanne via versjon C-mail. Distinkt fra hotell-pilot men overlapper på Britannia/Clarion (konferanse-hub).
 
 ### Produkt / teknisk (hvordan bygges det)
 
@@ -248,3 +249,4 @@ Kari er medlemsorganisasjon for hotellene. Intro fra henne er ikke favør — de
 
 - **2026-05-06**: Dokument opprettet. People-map etablert, hovedinnsikter fra møtet ført inn, 18 åpne tema kategorisert, beslutning om "begge spor, seriøs arbeidsdeling" landet.
 - **2026-05-06 (kveld 2)**: QR-distribusjons-analyse, cruise pilot-by-modell vurdert og parkert, performance pilot-strukturen formet (3 vilkår), hotell-fokus-beslutning landet, topp 3 prospects rangert, VT-intro-mekanikken landet på versjon C. Lukket S1/S2/S4. Åpnet O5/O6/O7.
+- **2026-05-08**: Convention Bureau-spor lagt til som S6 — Susanne Gau Klein identifisert via visittrondheim.no/trondheim-convention-bureau. Plan: be Kari om felles møte med Kari + Susanne i versjon C-mail. Aktor-map oppdatert med Susanne under VT-blokken.
