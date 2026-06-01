@@ -5313,3 +5313,36 @@ Etter at audio-tour landet i good-enough (Erik + turbo_v2_5 + stability 0.75 på
 - **Scope is Sacred-policyen i CLAUDE.md fungerte:** ce-scope-guardian fyrte 5 funn under headless review, alle automatisk skipped med begrunnelsen "Scope is Sacred — scope ratified in brainstorm phase". Decision-primer-mekanikken sørget for at de ikke re-surfacer.
 - **Brukerens spørsmål "er det noe plan på en demo-prototype?" var den viktigste intervensjonen i sesjonen.** Uten det ville planen vært en 7-units-marathon med ekstern validering først i Unit 7. Unit 0 spike-strategien snur dette: validér KD1/KD2 i uke 1, ikke i uke 6. Lesson: når en stor refactor-plan er ferdig, spør alltid "hva er den minste falsifiserbare test av kjerne-premissene?".
 - **Plan-dokumentet er nå 672 linjer.** Det er langt, men holder seg lesbart fordi strukturen er forutsigbar (Implementation Units følger samme schema). Compounding-investering: neste plan-skriving går raskere fordi mønsteret er etablert.
+
+---
+
+## 2026-06-01 — Mappe-konsolidering: 4 arbeidsmapper → 1 (rapport-board merget til main)
+
+### Kontekst
+
+Documents hadde fire parallelle `placy-ralph*`-mapper akkumulert fra flere worktree-/spike-økter: hovedrepoet (`placy-ralph`, på `feat/audio-tour`), board-spike-worktreen (`feat/board-narrativ-spike` med rapport-board-arbeidet kjørende på `:3002`), prelaunch-worktreen (`chore/prelaunch-bot-block`, allerede på `origin/main`), og en foreldreløs `placy-ralph-board-poi-details` (kun en `.next`-cache, ikke lenger et git-worktree). Mål: kollapse til **én** mappe der rapport-board-koden bevares, og med eksplisitt akseptanse på at linken `/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board` fortsatt fungerer.
+
+### Beslutninger
+
+- **Sluttilstand: merge alt inn i `main`** (ikke bare la branchene leve side-om-side). Brukervalg via to spørsmål: (1) merge rapport-board inn i `main`, (2) push backup først.
+- **Backup før destruktiv operasjon.** Både `feat/board-narrativ-spike` og `feat/audio-tour` var kun lokale (aldri pushet). Pushet begge til origin *før* worktrees ble fjernet — naturlig milepæl, bryter ikke `feedback_no_auto_push`.
+- **Worktree-fjerning ≠ branch-sletting.** Alle 30+ brancher + 13 stashes bevart urørt i `.git`; kun de fysiske worktree-mappene + den foreldreløse cache-mappa ble slettet.
+- **`main` pushes IKKE automatisk.** Rapport-board er backupet via `feat/board-narrativ-spike` på origin. `main`-push utelatt bevisst (oppdaterer delt branch / kan trigge Vercel-deploy) — venter på eksplisitt ønske.
+
+### Implementasjon
+
+1. **Bevart ucommittet arbeid:** 40 filer på board-spike (reels-VO + timings + mp3 + kategori-video for alle 7 kategorier, manus-maler, BoardMap-justeringer) committet som `077afe3`. 7 kast-screenshots i repo-rot slettet (matchet tidligere `rydd opp screenshot-png`-commit). 3 strategi-docs på audio-tour committet som `00c17a3`.
+2. **Backup-push:** begge brancher til origin.
+3. **Merge til main:** FF `main` → `origin/main` (henter bot-block `cb4ed9e`, robots/sitemap), deretter `--no-ff` merge av `feat/board-narrativ-spike` (konfliktfri — rørte ikke robots/sitemap) og `feat/audio-tour` (konflikt i `PROJECT-LOG.md` + `docs/strategy/LOG.md`, **union-løst** — begge entries beholdt). Resultat: `a3cf0c4`.
+4. **Riv ned:** fjernet prelaunch- + board-spike-worktrees, slettet foreldreløs `poi-details`. Endte med kun `/Users/andreasharstad/Documents/placy-ralph`.
+
+### Validering
+
+- Rapport-board-linken: HTTP **200**, `<title>` = "Stasjonskvartalet – Nabolagsrapport (Board)", fullt innhold rendret (Stasjonskvartalet ×52, reels-kategoriene ×228, POI/kategori ×862, Mapbox ×285). Ruten kompilerte rent (`✓ Compiled .../rapport-board`, 10543 moduler).
+- `npx tsc --noEmit`: 0 typefeil på merge-resultatet.
+
+### Observasjoner
+
+- **`git worktree remove --force` etterlot «Directory not empty»** pga. `.env.local`-symlinken fra `setup-worktree.sh` + `node_modules`. Git-registreringen ble likevel ryddet (`worktree list` rent); restmappa måtte `rm -rf`-es manuelt fra utsiden. Verdt å merke for fremtidig worktree-opprydding.
+- **chrome-devtools-MCP hadde stale browser-state** (flere MCP-server-instanser, «browser already running» uten faktisk Chrome-prosess). Visuell screenshot blokkert — validerte i stedet via curl + innholds-markører + dev-logg, som er konklusivt for «rute rendrer». Ikke et problem med selve siden.
+- **`feat/board-narrativ-spike` var en ren superset av `feat/audio-tour`** (branchet fra den, 0 bak `main`), så merge-rekkefølgen ga null kode-konflikt — kun docs-logger kolliderte. Lesson: når en spike-branch er strengt additiv over parent, er konsolidering tilbake til main trygt og nesten konfliktfritt.
