@@ -6,6 +6,33 @@
 
 ---
 
+## 2026-06-02 (kveld, sen) — Veo image-to-video for arkitektur-render + `--aspect`-flagg
+
+### Kontekst
+Bruker ville animere et liggende arkitektur-render (havnefront-boligprosjekt, marina i forgrunnen) til en **rolig video, eksplisitt IKKE timelapse**, via Veo (Gemini API, `scripts/animate-scene-veo.ts`). Tre iterasjoner før «godt nok». Sentral lærdom om hvordan man styrer Veo til selektiv, subtil bevegelse uten timelapse — direkte overførbart til Reels-pipelinen.
+
+### `--aspect`-flagg lagt til
+`animate-scene-veo.ts` var hardkodet til `9:16` (Reels-vertikal). Et liggende 4:3-render (1500×1125) ble da beskåret til en smal midtstripe. La til `--aspect 9:16|16:9|1:1` — **default forblir `9:16`** så Reels-pipelinen er urørt. Trådet gjennom `parseArgs` → `startOperation.parameters.aspectRatio` → `tryWithModel` → `main`-logg. 16:9-render bevarer hele bygg-rekka.
+
+### Veo-prompting-læring (det viktigste)
+- **v1 — navngitte bevegelige objekter feiler.** Prompt sa «a red kayak drifts slowly» + «people stroll». Veo prøvde å animere dem som subjekter og mistet object-permanence: **kajakken løste seg opp/forsvant ~4 s, båter morpha inn/ut, folk kom og gikk.** Bekrefter `Veo overdriver objekt-detaljer`-memoryen — men spesifikt: *navngi aldri små bevegelige objekter i en arkitektur-render.*
+- **v2 — «frys alt» baker over i timelapse.** Cinemagraph-prompt («alt frosset, kun skyer/vann beveger seg») gjorde at Veo dumpet hele bevegelsesbudsjettet i det eneste den fikk lov til: skyene racet → **hele bildet ble en timelapse**, som var hovedklagen.
+- **v3 — riktig mønster: frys det strukturelle + navngi 2–3 små real-time-bevegelser.** Frøs bygg/vann/brygge/båter + himmel, navnga eksplisitt: (1) fugleflokk flyr bortover, (2) folk sitter i kajakk med små bevegelser, (3) et par går på promenaden. Kjørt på **full `veo-3.0-generate-001`** (bedre temporal koherens enn `veo-3.0-fast` for selektiv subtil bevegelse; ~54 s vs ~47 s). Resultat «godt nok»: fugler flyr fint. Rest-artefakter: skyene drifter fortsatt litt, kajakken drev mot venstre + en nr. 2 dukket opp (1→2).
+- **Iboende konflikt:** «fugler som flyr» og «frosset himmel» drar mot hverandre — fuglene bor i himmelen, så himmelen kan ikke fryses helt. Realistisk mål: *fugler flyr, skyer knapt rører seg.*
+
+### Verifiseringsmetode
+`ffmpeg -vf fps=2` → 16 frames, så full-res region-crops (kajakk, himmel, promenade) lest visuelt og sammenlignet start→midt→slutt. **Begrensning:** fotgjengere er ~10–15 px på 720p-kilde → kan ikke spores frame-for-frame; flimring/popping ser bruker bedre i full avspilling enn jeg i nedsamplede stillbilder. Sagt eksplisitt til bruker fremfor å overclaime.
+
+### Status / åpne tråder
+- **v3 beholdt:** `~/Desktop/placy-veo-havn-v3/2.mp4` (16:9, 8 s). v4-spakene kjent hvis ønsket: lås kajakk til én stasjonær + press skyene hardere mot frosne.
+- v1/v2 + temp-frames i `/tmp` ikke ryddet (bruker tok ikke stilling).
+- Uforpliktede strategi-docs (`docs/strategy/LOG.md`, `2026-06-02-megler-stemme-kloning-spor.md`) fra tidligere i sesjonen rørt ikke i denne committen.
+
+### Nøkkelfil
+- `scripts/animate-scene-veo.ts` — `--aspect`-flagg (default `9:16`)
+
+---
+
 ## 2026-06-02 (kveld) — Per-kategori kamera-waypoints (A→B + cut) → produktisert + merget til main
 
 ### Kontekst

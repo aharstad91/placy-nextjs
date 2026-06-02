@@ -48,7 +48,7 @@ function parseArgs() {
   if (args.length < 2) {
     console.error(
       "Usage: animate-scene-veo.ts <input-image> <output-dir> " +
-        "[--prompt \"...\"] [--negative-prompt \"...\"] [--duration 8] [--model <modelname>]",
+        "[--prompt \"...\"] [--negative-prompt \"...\"] [--duration 8] [--model <modelname>] [--aspect 9:16|16:9|1:1]",
     );
     process.exit(1);
   }
@@ -61,15 +61,17 @@ function parseArgs() {
   let negativePrompt = DEFAULT_NEGATIVE_PROMPT;
   let duration = 8;
   let model = DEFAULT_MODEL;
+  let aspect = "9:16";
 
   for (let i = 2; i < args.length; i++) {
     if (args[i] === "--prompt" && args[i + 1]) prompt = args[++i];
     else if (args[i] === "--negative-prompt" && args[i + 1]) negativePrompt = args[++i];
     else if (args[i] === "--duration" && args[i + 1]) duration = Number(args[++i]);
     else if (args[i] === "--model" && args[i + 1]) model = args[++i];
+    else if (args[i] === "--aspect" && args[i + 1]) aspect = args[++i];
   }
 
-  return { input, outputDir, prompt, negativePrompt, duration, model };
+  return { input, outputDir, prompt, negativePrompt, duration, model, aspect };
 }
 
 async function imageToBase64(filepath: string): Promise<{ data: string; mime: string }> {
@@ -99,6 +101,7 @@ async function startOperation(opts: {
   imageB64: string;
   mimeType: string;
   duration: number;
+  aspect: string;
 }): Promise<VeoOperation> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:predictLongRunning?key=${API_KEY}`;
   const body = {
@@ -110,7 +113,7 @@ async function startOperation(opts: {
       },
     }],
     parameters: {
-      aspectRatio: "9:16",
+      aspectRatio: opts.aspect,
       personGeneration: "allow_adult",
       durationSeconds: opts.duration,
       negativePrompt: opts.negativePrompt,
@@ -176,6 +179,7 @@ async function tryWithModel(model: string, opts: {
   imageB64: string;
   mimeType: string;
   duration: number;
+  aspect: string;
 }): Promise<VeoOperation> {
   console.log(`\nTrying model: ${model}`);
   const op = await startOperation({ model, ...opts });
@@ -186,7 +190,7 @@ async function tryWithModel(model: string, opts: {
 }
 
 async function main() {
-  const { input, outputDir, prompt, negativePrompt, duration, model } = parseArgs();
+  const { input, outputDir, prompt, negativePrompt, duration, model, aspect } = parseArgs();
   await fs.mkdir(outputDir, { recursive: true });
 
   const stem = path.basename(input, path.extname(input));
@@ -197,7 +201,7 @@ async function main() {
   console.log(`  output:          ${outputFile}`);
   console.log(`  prompt:          ${prompt}`);
   console.log(`  negativePrompt:  ${negativePrompt}`);
-  console.log(`  duration:        ${duration}s, aspect: 9:16, audio: off\n`);
+  console.log(`  duration:        ${duration}s, aspect: ${aspect}, audio: off\n`);
 
   console.log("Encoding image…");
   const { data: imageB64, mime: mimeType } = await imageToBase64(input);
@@ -209,7 +213,7 @@ async function main() {
 
   for (const m of tryModels) {
     try {
-      op = await tryWithModel(m, { prompt, negativePrompt, imageB64, mimeType, duration });
+      op = await tryWithModel(m, { prompt, negativePrompt, imageB64, mimeType, duration, aspect });
       if (op.error) {
         console.error(`  ✗ ${m}: ${op.error.message}`);
         lastError = new Error(op.error.message);
