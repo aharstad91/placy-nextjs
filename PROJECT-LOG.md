@@ -6,6 +6,43 @@
 
 ---
 
+## 2026-06-02 — 3D rapport-board: cinematic drone-orbit-kamera + WebGL-flimring fikset
+
+### Kontekst
+3D-modusen på rapport-board (Google Photorealistic 3D Tiles) skulle gi wow-effekt, men flimret ved hvert kategori-skifte under audio-tour/reels-avspilling. To problemer var flettet sammen: (1) en ekte WebGL-bug, og (2) feil kamera-paradigme. Sesjonen kjørte en A/B-test i to worktrees (static vs cinematic), fant og fikset bug-en, reviderte kamera-modellen, og merget kun kart-jobben til main.
+
+### WebGL-flimringen var en ekte bug, ikke "design"
+Først feildiagnostisert som iboende tile-streaming. Bruker presset tilbake med konsoll-screenshot (21 errors / 1660 warnings) — korrekt. Rot-årsak: den staggered opacity-revealen (`revealOpacities` → `opacities`-prop → `Marker3DPin opacity`) animerte hver markørs opacity 0→1 i steg. Google 3D **re-rasteriserer SVG-markøren per opacity-endring**, og hver rasterisering spant opp en WebGL-kontekst som aldri ble frigjort. 18 oversikts-pins = nøyaktig 18 "Too many active WebGL contexts" + 256 "deleteVertexArray: wrong context"-feil per mount → flimring. Fiks: markører monteres på full opacity, ingen opacity-churn. `use-tweened-opacities.ts` slettet.
+
+**Læring:** Animer ALDRI per-frame props (opacity o.l.) på Google `Marker3D`-SVG-er — hver render = ny rasterisering = ny WebGL-kontekst uten cleanup. Statiske markører er eneste trygge mønster.
+
+### Kamera: fra "fit-alle-pins" til fast-avstand drone-orbit
+Det opprinnelige cinematic-kameraet rammet inn ALLE pins i en kategori (`composeBboxCamera` fitBounds). For populære kategorier (mat-drikke ~200 spisesteder spredt over byen) tvang det kameraet til orbit-høyde der man ikke relaterer til innholdet. Revidert modell:
+
+- **Fast avstand** (`HERO_RANGE`), kun **kameravinkel** (heading mot kategori-centroiden) endres per kategori — zoomer aldri ut. Prosjektet holdes i fokus på en avstand der innholdet er lesbart.
+- **Kontinuerlig drone-orbit:** native `flyCameraAround({ repeatCount: Infinity })` — GPU-drevet, sømløs intern loop. IKKE rAF/flyCameraTo-loop (den kodebasen vet hakker). Verifiserte at metoden finnes i `@types/google.maps` + vis.gl-wrapperen; `rounds` er deprecated → bruker `repeatCount`.
+- **Pause/resume:** bruker-interaksjon (pointerdown/wheel/touchstart) stopper orbiten via `stopCameraAnimation`; gjenopptas etter `IDLE_RESUME_MS` (5s). Åpnet POI stopper orbit + flyr tett inn; lukking gjenopptar.
+- **Orbit-senter = prosjektet selv**, IKKE sidebar-forskjøvet. `flyCameraAround` sirkler rundt `camera.center`; en 472px sidebar-shift ville fått bygget til å vandre i sirkel under orbiten. Med venstre-sidebar lander bygget i skjerm-senter, godt til høyre for baren.
+
+Justerbare knapper i `BoardMap3D.tsx`: `HERO_RANGE=650`, `OVERVIEW_RANGE=900`, `HERO_TILT=60`, `ORBIT_ROUND_MS=90000`, `IDLE_RESUME_MS=5000`, `REAIM_FLY_MS=1600`.
+
+### Selektiv merge til main (commit b1b9b9f)
+Cinematic-branchen var basert på `f9c7e9f` (før sidebar-committen `32b9513`), så en full branch-merge ville revertert sidebaren. Verifiserte null overlapp mellom sidebar-committen og de 5 kart-filene, genererte patch fra cinematic working-tree, dry-run mot main → ren apply. Stagede eksplisitt kun kart-filene. Gates på main: tsc 0, lint 0, `npm run build` grønn, tester 141/143. Ikke pushet (prototype-flyt).
+
+### Åpent: pre-eksisterende rød reels-test
+2 tester i `reels-data.test.ts` var allerede røde på main før denne sesjonen: sidebar-committen `32b9513` la til reels-audio-overriden (`CATEGORY_REELS_AUDIO`) i `reels-data.ts` men oppdaterte ikke test-assertion (forventer fortsatt `/audio/mat-drikke.mp3` vs override `/audio/stasjonskvartalet/mat-drikke-reels.mp3`). 2-linjers fiks, men reels-jobb — lot den ligge per "kun kart-relevant til main".
+
+### Filer endret (commit b1b9b9f)
+- `components/variants/report/board/BoardMap3D.tsx` — drone-orbit-kamera-director + WebGL-fiks (fjernet opacity-reveal)
+- `components/variants/report/board/board-data.ts` — nytt `topRankedPois`-felt på `BoardCategory` (oversikts-ankersett: top-3 score-rangert/kategori)
+- `components/variants/report/board/use-tweened-opacities.ts` — **slettet** (kilden til flimringen)
+- `components/variants/report/board/use-sub-category-filter.test.ts` + `reels/__tests__/reels-data.test.ts` — test-fixtures (følger board-data-typen)
+
+### Worktrees fortsatt åpne
+`placy-ralph-3d-static` (variant A, :3001) + `placy-ralph-3d-cinematic` (variant B, :3002) — kan ryddes nå som kart-jobben er i main.
+
+---
+
 ## 2026-05-26 — Transport-reels: bilde-resync + manus-iterasjon for 6 kategorier
 
 ### Kontekst
