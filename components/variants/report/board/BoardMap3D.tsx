@@ -10,6 +10,7 @@ import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { CameraModeToggle, type CameraMode } from "./CameraModeToggle";
 import { CameraCutOverlay } from "./CameraCutOverlay";
+import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import { cn } from "@/lib/utils";
@@ -77,6 +78,14 @@ export function BoardMap3D({ pendingCamera }: Props) {
 
   // Kameramodus: auto (drone-orbit) eller fri (brukeren styrer). Default auto.
   const [cameraMode, setCameraMode] = useState<CameraMode>("auto");
+
+  // Dev-only authoring-modus (?author=1) for å fange kamera-waypoints. Lest én
+  // gang ved mount; aldri eksponert i produksjon med mindre flagget settes.
+  const [authorMode] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("author") === "1",
+  );
 
   // Narrativ-synk-kilder (begge stabile — endrer kun ved track-/fase-skifte,
   // IKKE ~4 Hz som useAudioElement; holder marker-treet utenfor re-render-flommen).
@@ -306,6 +315,13 @@ export function BoardMap3D({ pendingCamera }: Props) {
       </div>
       {popupMode === "mini" && state.activePOIId && (
         <BoardPOI3DMiniPopup map3d={map3dInstance} />
+      )}
+      {authorMode && (
+        <CameraWaypointAuthor
+          map3dInstance={map3dInstance}
+          activeCategoryId={activeCategory?.id ?? null}
+          className="absolute bottom-3 left-3 z-20"
+        />
       )}
     </div>
   );
