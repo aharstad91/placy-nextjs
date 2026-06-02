@@ -10,6 +10,7 @@ import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { CameraModeToggle, type CameraMode } from "./CameraModeToggle";
 import { useBoard3DCamera } from "./use-board-3d-camera";
+import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import type { POI } from "@/lib/types";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
@@ -74,6 +75,26 @@ export function BoardMap3D({ pendingCamera }: Props) {
 
   // Kameramodus: auto (drone-orbit) eller fri (brukeren styrer). Default auto.
   const [cameraMode, setCameraMode] = useState<CameraMode>("auto");
+
+  // Narrativ-synk-kilder (begge stabile — endrer kun ved track-/fase-skifte,
+  // IKKE ~4 Hz som useAudioElement; holder marker-treet utenfor re-render-flommen).
+  const currentTrack = useCurrentTrack();
+  const audioPhase = useAudioTourPhase();
+  const audioDurationMs =
+    currentTrack?.durationSec != null
+      ? Math.round(currentTrack.durationSec * 1000)
+      : undefined;
+  const audioPaused = audioPhase === "paused";
+
+  // prefers-reduced-motion: statisk hold på A i stedet for A→B-drift (KD-10).
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   // Oversikts-ankersett: top-3 score-rangerte POI-er per kategori (~18–21 stk).
   // Brukes når ingen kategori spiller (intro/home/outro/megler). Score-rangert
@@ -177,7 +198,6 @@ export function BoardMap3D({ pendingCamera }: Props) {
   // state-maskin med token-kansellering (use-board-3d-camera). Kategori-skifte
   // uten waypoints rører IKKE kameraet (orbiten går uavbrutt videre). Markørene
   // er statiske (full opacity) — ingen opacity-reveal (WebGL-kontekst-churn).
-  // audio-duration/paused + reduced-motion wires i Unit 3.
   useBoard3DCamera({
     map3dInstance,
     cameraMode,
@@ -185,9 +205,9 @@ export function BoardMap3D({ pendingCamera }: Props) {
     activePOI: activePOICoords,
     projectSlug: data.projectSlug,
     activeCategoryId: activeCategory?.id ?? null,
-    audioDurationMs: undefined,
-    audioPaused: false,
-    reducedMotion: false,
+    audioDurationMs,
+    audioPaused,
+    reducedMotion,
   });
 
   // Interaksjons-lyttere: drag/scroll/touch på kart-bakgrunnen → fri modus. I
