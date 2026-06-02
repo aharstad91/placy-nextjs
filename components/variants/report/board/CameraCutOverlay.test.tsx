@@ -3,12 +3,12 @@ import { render } from "@testing-library/react";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 
 describe("CameraCutOverlay", () => {
-  it("er opak når visible (svart cut)", () => {
+  it("er opak når visible (lys cut)", () => {
     const { container } = render(<CameraCutOverlay visible label="Mat & Drikke" />);
     const root = container.firstElementChild as HTMLElement;
     expect(root.className).toContain("opacity-100");
     expect(root.className).not.toContain("opacity-0");
-    expect(root.className).toContain("bg-black");
+    expect(root.className).toContain("bg-white");
   });
 
   it("er gjennomsiktig når ikke visible", () => {
