@@ -1,16 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
 import Map, { type MapRef } from "react-map-gl/mapbox";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 import { mutedColor } from "@/lib/themes/muted-palette";
 import ModeToggle from "@/components/map/ModeToggle";
-import {
-  zoomToRange,
-  rangeToZoom,
-} from "@/lib/utils/camera-map";
-import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
+import { rangeToZoom } from "@/lib/utils/camera-map";
+import { useBoard, useActiveCategory } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
 import { useBoardZoomTier } from "./use-board-zoom-tier";
 import { HomeMarker } from "./HomeMarker";
@@ -21,26 +17,26 @@ import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
 import { BoardMap3D } from "./BoardMap3D";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
-import { DEFAULT_CAMERA_LOCK } from "@/components/variants/report/blocks/report-3d-config";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 /**
- * 4-state machine for safe WebGL context-switching mellom Mapbox 2D og
- * Google Photorealistic 3D Tiles. Mønsteret er kopiert fra
- * `UnifiedMapModal` — se docs/solutions/architecture-patterns/
- * unified-map-modal-2d-3d-toggle-20260415.md for rationale.
+ * Persistent-3D-modell for WebGL-trygt 2D/3D-bytte.
  *
- * - 'mapbox'          → kun Mapbox aktiv
- * - 'switching-to-3d' → Mapbox unmount + 150ms teardown for loseContext()
- * - 'google3d'        → kun Google 3D aktiv
- * - 'switching-to-2d' → Google 3D unmount + 350ms GC-vindu
+ * Google Map3DElement (gmp-map-3d) eksponerer IKKE sitt WebGL-canvas (ingen
+ * shadow root, intet query-bart <canvas>), så vi kan ikke kalle
+ * WEBGL_lose_context.loseContext() slik Mapbox gjør i map.remove(). Eneste
+ * leak-frie strategi er derfor å ALDRI unmounte 3D-kartet: når prosjektet har
+ * 3D-add-on er Google 3D den faste base-motoren (mountet én gang), og Mapbox
+ * 2D er et sekundært overlay som mountes ved behov og frigjør konteksten sin
+ * selv ved unmount. Prosjekter uten add-on kjører ren Mapbox 2D som før.
+ *
+ * Erstatter den gamle 4-tilstands unmount/teardown-maskinen som lekket én
+ * Google-WebGL-kontekst per 3D→2D-toggle (→ "Too many active WebGL contexts"
+ * → kaskade av deleteVertexArray-feil). Se docs/solutions/architecture-
+ * patterns/unified-map-modal-2d-3d-toggle-20260415.md.
  */
-type MapMode = "mapbox" | "switching-to-3d" | "google3d" | "switching-to-2d";
-
-const MAPBOX_TEARDOWN_MS = 150;
-const GOOGLE3D_TEARDOWN_MS = 350;
 
 interface Props {
   /**
@@ -72,7 +68,6 @@ export function BoardMap({
 }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
-  const activePOI = useActivePOI();
   const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -82,32 +77,17 @@ export function BoardMap({
   // retry plukker opp ekte verdi ved mapLoaded=true (også ved 3D→2D-toggle).
   const zoomTier = useBoardZoomTier(mapRef, mapLoaded);
 
-  // ---- 2D/3D-state-maskin ----
-  const [mapMode, setMapMode] = useState<MapMode>("mapbox");
+  // ---- Persistent-3D + 2D-overlay ----
+  // view = hvilken motor som ligger FREMST. 3D-basen forblir montert uansett
+  // når add-on finnes. Default 3D når add-on finnes, ellers ren 2D.
+  const [view, setView] = useState<"2d" | "3d">(has3dAddon ? "3d" : "2d");
   const [pendingCamera, setPendingCamera] = useState<PendingCamera | null>(
     null,
   );
-  const switchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapBodyRef = useRef<HTMLDivElement | null>(null);
 
-  const isSwitching =
-    mapMode === "switching-to-3d" || mapMode === "switching-to-2d";
-  const showMapbox =
-    mapMode === "mapbox" || mapMode === "switching-to-3d";
-  const showGoogle3d =
-    mapMode === "google3d" || mapMode === "switching-to-2d";
-
-  const toggleValue: "2d" | "3d" =
-    mapMode === "google3d" || mapMode === "switching-to-3d" ? "3d" : "2d";
-
-  const mapboxOpacity =
-    mapMode === "switching-to-3d"
-      ? "opacity-0 transition-opacity duration-150"
-      : "opacity-100";
-  const google3dOpacity =
-    mapMode === "switching-to-2d"
-      ? "opacity-0 transition-opacity duration-[350ms]"
-      : "opacity-100";
+  // Mapbox vises som base (ikke-addon-prosjekt) eller som overlay i 2D-view.
+  const showMapbox = !has3dAddon || view === "2d";
 
   // Markører som vises avhenger av phase:
   // - default + Hjem-state (ingen kategori aktiv): vis ALLE POIs på tvers av
@@ -251,47 +231,20 @@ export function BoardMap({
 
   const handleModeChange = useCallback(
     (mode: "2d" | "3d") => {
-      // Spam-click guard: ignorer klikk under transition.
-      if (isSwitching) return;
-
-      if (mode === "3d" && mapMode === "mapbox") {
-        const map = mapRef.current?.getMap?.();
-        if (map) {
-          const c = map.getCenter();
-          const zoom = map.getZoom();
-          const bearing = map.getBearing();
-          const { w, h } = getViewportDims();
-          const tilt3d = DEFAULT_CAMERA_LOCK.tilt;
-          const range = zoomToRange(zoom, c.lat, tilt3d, w, h);
-          setPendingCamera({
-            lat: c.lat,
-            lng: c.lng,
-            zoom,
-            range,
-            heading: bearing,
-            tilt: tilt3d,
-          });
-        } else {
-          // Fallback hvis kart-ref ikke er klar (sjelden):
-          setPendingCamera({
-            lat: data.home.coordinates.lat,
-            lng: data.home.coordinates.lng,
-          });
-        }
-        setMapMode("switching-to-3d");
-        switchTimerRef.current = setTimeout(() => {
-          setMapMode("google3d");
-          switchTimerRef.current = null;
-        }, MAPBOX_TEARDOWN_MS);
-      } else if (mode === "2d" && mapMode === "google3d") {
-        // Vi har ikke en lokal Map3DInstance-ref her (BoardMap3D eier den
-        // internt). For 3D→2D-toggle bruker vi prosjektets center som
-        // fallback-camera så Mapbox havner i en kjent posisjon. Dette er en
-        // bevisst forenkling for board-varianten — å trekke ref-en opp ville
-        // krevd prop-drilling som er enklere unngått siden Mapbox-defaulten
-        // (initialViewState rundt home) er en helt brukbar landing.
+      if (mode === view) return;
+      if (mode === "2d") {
+        // 3D → 2D: mount Mapbox-overlayet. BoardMap3D eier 3D-kamera-instansen
+        // internt, så vi har ikke kameraet her — Mapbox lander på prosjekt-
+        // senter (kjent, grei posisjon). 3D-basen forblir montert under.
         const { w, h } = getViewportDims();
-        const fallbackZoom = rangeToZoom(900, data.home.coordinates.lat, 0, w, h);
+        const fallbackZoom = rangeToZoom(
+          900,
+          data.home.coordinates.lat,
+          0,
+          w,
+          h,
+        );
+        setMapLoaded(false);
         setPendingCamera({
           lat: data.home.coordinates.lat,
           lng: data.home.coordinates.lng,
@@ -300,28 +253,15 @@ export function BoardMap({
           heading: 0,
           tilt: 0,
         });
-        setMapMode("switching-to-2d");
-        switchTimerRef.current = setTimeout(() => {
-          setMapMode("mapbox");
-          switchTimerRef.current = null;
-        }, GOOGLE3D_TEARDOWN_MS);
+        setView("2d");
+      } else {
+        // 2D → 3D: unmount Mapbox-overlayet (map.remove() frigjør WebGL-
+        // konteksten). 3D-basen ligger allerede under og avdekkes momentant.
+        setView("3d");
       }
     },
-    [
-      isSwitching,
-      mapMode,
-      getViewportDims,
-      data.home.coordinates.lat,
-      data.home.coordinates.lng,
-    ],
+    [view, getViewportDims, data.home.coordinates.lat, data.home.coordinates.lng],
   );
-
-  // Cleanup timer ved unmount
-  useEffect(() => {
-    return () => {
-      if (switchTimerRef.current) clearTimeout(switchTimerRef.current);
-    };
-  }, []);
 
   if (!TOKEN) {
     return (
@@ -333,13 +273,22 @@ export function BoardMap({
 
   return (
     <div ref={mapBodyRef} className="absolute inset-0">
-      {!mapLoaded && mapMode === "mapbox" && (
-        <div className="absolute inset-0 z-20 bg-[#f0ece6] animate-pulse" />
+      {/* Google 3D base-motor — persistent når add-on finnes. Mountes én gang
+          og rives ALDRI ned (kan ikke frigjøre Google-WebGL-konteksten
+          manuelt). Mapbox-overlayet legger seg oppå når brukeren velger 2D. */}
+      {has3dAddon && (
+        <div className="absolute inset-0">
+          <BoardMap3D pendingCamera={null} mapPaddingLeft={mapPaddingLeft} />
+        </div>
       )}
 
-      {/* Mapbox 2D-lag */}
+      {/* Mapbox 2D — base for ikke-addon-prosjekter, ellers et overlay i
+          2D-view. Unmountes ved retur til 3D; map.remove() frigjør konteksten. */}
       {showMapbox && (
-        <div className={`absolute inset-0 ${mapboxOpacity}`}>
+        <div className={`absolute inset-0 ${has3dAddon ? "z-[5]" : ""}`}>
+          {!mapLoaded && (
+            <div className="absolute inset-0 z-20 bg-[#f0ece6] animate-pulse" />
+          )}
           <Map
             ref={mapRef}
             mapboxAccessToken={TOKEN}
@@ -401,31 +350,11 @@ export function BoardMap({
         </div>
       )}
 
-      {/* Google 3D-lag */}
-      {showGoogle3d && (
-        <div className={`absolute inset-0 ${google3dOpacity}`}>
-          <BoardMap3D
-            pendingCamera={pendingCamera}
-            mapPaddingLeft={mapPaddingLeft}
-          />
-        </div>
-      )}
-
-      {/* Spinner under switching */}
-      {isSwitching && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/30 pointer-events-none">
-          <Loader2 className="w-6 h-6 text-[#7a7062] animate-spin" />
-        </div>
-      )}
-
-      {/* 2D/3D-toggle øverst til høyre — kun synlig når 3D-add-on er kjøpt */}
+      {/* 2D/3D-toggle øverst til høyre — kun synlig når 3D-add-on er kjøpt.
+          3D er default; toggle til 2D legger Mapbox-overlayet oppå. */}
       {has3dAddon && (
         <div className="absolute top-3 right-3 z-30">
-          <ModeToggle
-            value={toggleValue}
-            onChange={handleModeChange}
-            disabled={isSwitching}
-          />
+          <ModeToggle value={view} onChange={handleModeChange} />
         </div>
       )}
     </div>
