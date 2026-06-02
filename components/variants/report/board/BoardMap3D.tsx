@@ -9,6 +9,7 @@ import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { CameraModeToggle, type CameraMode } from "./CameraModeToggle";
+import { CameraCutOverlay } from "./CameraCutOverlay";
 import { useBoard3DCamera } from "./use-board-3d-camera";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import type { POI } from "@/lib/types";
@@ -198,7 +199,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
   // state-maskin med token-kansellering (use-board-3d-camera). Kategori-skifte
   // uten waypoints rører IKKE kameraet (orbiten går uavbrutt videre). Markørene
   // er statiske (full opacity) — ingen opacity-reveal (WebGL-kontekst-churn).
-  useBoard3DCamera({
+  const { cutVisible } = useBoard3DCamera({
     map3dInstance,
     cameraMode,
     home: data.home.coordinates,
@@ -251,6 +252,11 @@ export function BoardMap3D({ pendingCamera }: Props) {
         }}
       />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />
+      <CameraCutOverlay
+        visible={cutVisible}
+        label={activeCategory?.label}
+        color={activeCategory?.color}
+      />
       <CameraModeToggle
         mode={cameraMode}
         onModeChange={setCameraMode}

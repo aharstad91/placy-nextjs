@@ -37,6 +37,10 @@ export const POI_TILT = 60;
 export const POI_FLY_MS = 900;
 /** Fallback A→B-varighet når verken config-override eller audio-lengde finnes (ms). */
 export const DEFAULT_CINEMATIC_MS = 16000;
+/** Cut-transition: fade inn/ut-varighet (ms). Matcher CSS-transition på overlayet. */
+export const CUT_FADE_MS = 250;
+/** Cut-transition: hold svart etter instant-hopp så tiles rekker å laste (ms). */
+export const CUT_SETTLE_MS = 300;
 
 /** Bearing (grader, 0 = nord) fra punkt A mot punkt B. Ren. */
 export function bearingBetween(
