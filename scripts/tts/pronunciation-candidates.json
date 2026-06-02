@@ -1,0 +1,10 @@
+{
+  "_comment": "Tuning-input for å høre hvordan Erik uttaler ulike omstavinger. Hvert ord testes i en naturlig bære-setning ({W} = ordet). candidates[0] er original-stavingen (referanse). Kjør: node scripts/tts/tune-pronunciation.mjs — lytt i /tmp/tts-tune, velg vinner per ord og legg i scripts/tts/pronunciation-no.json.",
+  "tests": [
+    { "word": "kajakk", "carrier": "Rett ved sjøen kan du leie en {W} på en fin sommerdag.", "candidates": ["kajakk", "ka-jakk", "kajak", "kaják"] },
+    { "word": "turn", "carrier": "På treningssenteret kan du drive med {W} og styrke.", "candidates": ["turn", "tørn", "tørnn"] },
+    { "word": "Nidelva", "carrier": "Ta en rolig kveldstur langs {W}.", "candidates": ["Nidelva", "Nid-elva", "nid-elva", "Nidelvaa"] },
+    { "word": "Bakklandet", "carrier": "Det er kort vei bort til {W}.", "candidates": ["Bakklandet", "Bakk-landet"] },
+    { "word": "Stasjonskvartalet", "carrier": "Velkommen til {W} i Trondheim sentrum.", "candidates": ["Stasjonskvartalet", "Stasjons-kvartalet"] }
+  ]
+}

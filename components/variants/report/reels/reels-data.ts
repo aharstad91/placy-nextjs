@@ -103,12 +103,16 @@ export function isAudioBearing(card: ReelsCard): card is AudioBearingCard {
   );
 }
 
-// Per-kategori video-bakgrunner. Når en kategori-id har dedikert Veo-
-// generert klipp, brukes det. Resten faller tilbake til scene1-4 i syklus.
+// Per-kategori video-bakgrunner. Når en kategori-id har dedikert klipp,
+// brukes det; resten faller tilbake til scene1-4 i syklus. trening-aktivitet
+// + hverdagsliv er klippet fra de proff-produserte Stasjonskvartalet-filmene
+// (Mann som løper / Kvinne i handlegate), center-croppet 16:9→9:16 til 720x1280.
 const CATEGORY_VIDEO_BG: Record<string, string> = {
   "natur-friluftsliv": "/reels/categories/natur-friluftsliv.mp4",
   "transport": "/reels/categories/transport.mp4",
   "mat-drikke": "/reels/categories/mat-drikke.mp4",
+  "trening-aktivitet": "/reels/categories/trening-aktivitet.mp4",
+  "hverdagsliv": "/reels/categories/hverdagsliv.mp4",
 };
 
 const FALLBACK_VIDEO_BG = [
@@ -117,6 +121,35 @@ const FALLBACK_VIDEO_BG = [
   "/reels/categories/scene3.mp4",
   "/reels/categories/scene4.mp4",
 ];
+
+/**
+ * Avleder poster-bildet (videoens FØRSTE frame) fra en video-bg-sti etter
+ * konvensjon: samme sti, men `.jpg` i stedet for `.mp4`. Posterne genereres
+ * build-time av `scripts/generate-reels-posters.mjs`.
+ *
+ * Brukes to steder: (1) preview-kortet i DesktopStorySidebar viser denne
+ * stillbilde-frame-en når kategorien IKKE er aktiv — slik at preview matcher
+ * videoen som spilles når kortet blir aktivt; (2) `<video poster>` på det
+ * aktive kortet, så første frame vises umiddelbart uten svart blink før
+ * videoen laster. Returnerer undefined når kortet ikke har video-bg (da
+ * faller preview tilbake til det statiske illustrasjonsbildet).
+ */
+export function posterForVideo(videoBgSrc: string | undefined): string | undefined {
+  if (!videoBgSrc) return undefined;
+  return videoBgSrc.replace(/\.mp4$/i, ".jpg");
+}
+
+/**
+ * Lengden på et lydspor i sekunder, avledet fra siste karakter-slutt-tid i
+ * timings-dataen (ElevenLabs character-alignment). Brukes til lengde-pillen
+ * på preview-kortene. Returnerer undefined når sporet mangler timings (spor
+ * fra før audioVersion 5), så pillen bare vises når vi faktisk vet lengden.
+ */
+export function audioDurationSec(audio: BoardAudioTrack | undefined): number | undefined {
+  const ends = audio?.timings?.characterEndTimesSeconds;
+  if (!ends || ends.length === 0) return undefined;
+  return ends[ends.length - 1];
+}
 
 // Reels-spesifikk audio (kortere/bilde-aligned manus). Når en kategori har
 // override her, brukes denne i stedet for audio-tour-versjonen fra board-
@@ -291,6 +324,25 @@ export function cardIndexToAudioIndex(
     if (isAudioBearing(cards[i])) audioIndex++;
   }
   return cards[cardIndex] && isAudioBearing(cards[cardIndex]) ? audioIndex : -1;
+}
+
+/** Indeks til første audio-bærende card (welcome/home/kategori/outro).
+ *  Brukes av desktop-sidebaren til å starte avspillingen fra "Start"-knappen. */
+export function firstAudioBearingIndex(cards: ReelsCard[]): number {
+  return cards.findIndex(isAudioBearing);
+}
+
+/** Indeks til neste audio-bærende card etter `fromIndex`, eller -1 om ingen.
+ *  Driver desktop auto-advance: når et spor slutter, ruller løpebåndet til
+ *  neste kapittel. Hopper over ikke-audio-cards (intro/megler). */
+export function nextAudioBearingIndex(
+  cards: ReelsCard[],
+  fromIndex: number,
+): number {
+  for (let i = fromIndex + 1; i < cards.length; i++) {
+    if (isAudioBearing(cards[i])) return i;
+  }
+  return -1;
 }
 
 /** Mapper audioIndex → cardIndex. */

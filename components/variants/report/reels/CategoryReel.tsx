@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef } from "react";
 import type { AudioBearingCard } from "./reels-data";
+import { posterForVideo } from "./reels-data";
 import { useReels } from "./reels-state";
 import { KaraokeTeleprompter } from "./KaraokeTeleprompter";
 import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
@@ -91,6 +92,7 @@ export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }
           <video
             ref={videoRef}
             src={card.videoBgSrc}
+            poster={posterForVideo(card.videoBgSrc)}
             muted
             loop
             playsInline
@@ -109,9 +111,13 @@ export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }
             />
           )
         )}
-        {/* Topp-gradient — samme styrke som bunn for å maske hard kant
-            mellom video-loops ved swipe mellom kort. 20% høyde. */}
-        <div className="absolute inset-x-0 top-0 h-1/5 bg-gradient-to-b from-black/95 via-black/60 to-transparent pointer-events-none" />
+        {/* Topp-gradient — KUN mobil. Der masker den hard kant mellom
+            video-loops ved swipe mellom kort. På desktop (sidebar-løpebånd)
+            er det ingen swipe-loop å maske, så vi dropper den for ren
+            video-topp. 20% høyde. */}
+        {!desktopMode && (
+          <div className="absolute inset-x-0 top-0 h-1/5 bg-gradient-to-b from-black/95 via-black/60 to-transparent pointer-events-none" />
+        )}
         {/* Bunn-gradient — dekker bottom 50% av cardet (over karaoke +
             label) for tekst-kontrast. */}
         <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />

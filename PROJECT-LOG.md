@@ -5353,3 +5353,242 @@ Documents hadde fire parallelle `placy-ralph*`-mapper akkumulert fra flere workt
 - **Vercel Production-deploy trigget og fullført grønt** (deployment `4889985522`, Vercel-status `success`). Deploy-URL: `placy-9rpvlw07j-andreas-harstads-projects-849bb7ff.vercel.app`.
 - **`*.vercel.app`-deploy-URL ga 401 "Authentication Required"** ved curl — det er Vercel **Deployment Protection (SSO)** på deploy-URL-en, ikke en app-feil. Live tilgang via innlogget Vercel-sesjon eller custom produksjonsdomene. Verifiseringen av at ruten rendrer ble gjort lokalt (HTTP 200, fullt innhold) før push.
 - **Verktøy-merknad:** Ingen Vercel-MCP var koblet til sesjonen til tross for `feedback_use_vercel_mcp`. Deploy-status ble hentet via `gh api .../commits/<sha>/status` (Vercel rapporterer som commit-status `context=Vercel`) + `.../deployments?environment=Production` for `environment_url`. Fungerer som fallback når MCP mangler.
+
+---
+
+## 2026-06-01 — "Velkommen" + "Nabolaget" manglet i reels-feeden: duplikat-produkt, ikke slettet feature
+
+### Symptom
+
+Brukeren husket at Stasjonskvartalet tidligere hadde en velkomst-VO ("en slags velkommen") og et "Nabolaget"-spor, og så at de ikke dukket opp i desktop-reels-sidebaren på `/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board`. Feeden startet rett på første kategori (Hverdagsliv) — ingen "Velkommen"- eller "Nabolaget"-kort.
+
+### Diagnose (4-agent workflow + curl-markører)
+
+- **Ingenting var slettet.** Kode (`WelcomeReelCard`/`HomeReelCard` i `reels-data.ts:205-225`), lyd (`public/audio/stasjonskvartalet/welcome.mp3` + `hjem.mp3` + `outro.mp3`), hero (`stasjonskvartalet-hero.jpg`) og manus (`docs/manus/stasjonskvartalet-voice-over.md`, seksjon "1. Velkomst" + "2. Nabolaget (Hero)") finnes alle på HEAD.
+- **"Nabolaget" er IKKE en kategori** — det er `home`-kortet (label "Nabolaget", `heroAudio`-spor). Det fantes aldri en `nabolaget`-kategori i bolig-profilen (kun definert i `NAERING_THEMES`, ubrukt her).
+- **Rot-årsak: to dupliserte report-produkter i Supabase.** `banenor-eiendom_stasjonskvartalet` (UTEN bindestrek, produkt `eb94072a`) hadde `welcomeAudio`/`heroAudio`/`outroAudio`/`heroImage`. `bane-nor-eiendom_stasjonskvartalet` (MED bindestrek, produkt `ce09a269`) — som den kanoniske URL-en treffer — manglet alle fire. Begge kortene (welcome + home) gates på `boardData.home.heroImage`, så uten hero-bildet faller **begge** ut stille. Begge kunde-slugs svarer HTTP 200, så feilen var usynlig fra URL-en.
+
+### Fiks (data-only, ingen kodeendring)
+
+- Kopierte `welcomeAudio` + `heroAudio` + `outroAudio` + `heroImage` (+ `audioVersion: 5`) fra `eb94072a` → `ce09a269` sin `config.reportConfig` via PostgREST PATCH. **`themes`/POI-er urørt** (spread bevarte dem — derfor viste kategoriene seg hele tiden). Audio-filene + hero er statiske `public/`-assets kun nøklet på prosjekt-slug `stasjonskvartalet`, så de virker på begge kunde-radene.
+- **Cache-bust:** Sidens `unstable_cache` (tag `product:bane-nor-eiendom_stasjonskvartalet`, `revalidate: 3600`) serverte stale data etter PATCH. `/api/revalidate` krever `REVALIDATE_SECRET` som dev-serveren ikke hadde lastet; `/api/admin/revalidate` buster bare en global `SUPABASE_CACHE_TAG` + `revalidatePath` — ingen av dem traff den tag-spesifikke entryen. Løst med en engangs-route som kalte `revalidateTag` på den eksakte taggen, **slettet umiddelbart etterpå**.
+
+### Validering
+
+- Servert payload på kanonisk URL: `Velkommen til Stasjonskvartalet` / `kaifronten mellom Brattørkaia` / `stasjonskvartalet-hero.jpg` / `welcome.mp3` / `hjem.mp3` — alle 0 → 1 treff etter fiks.
+- A11y-tree + screenshot (1440×900): løpebåndet leder nå med **Velkommen** (Introduksjon) → **Nabolaget** (Midtbyen, Trondheim) → 7 kategorier → **Oppsummert**.
+
+### Observasjoner / lærdom
+
+- **Duplikat-produkt-fellen:** to nær-identiske kunde-slugs (`banenor-eiendom` vs `bane-nor-eiendom`) gir to produktrader. Config-arbeid (her: audio-build) traff den ene, kanonisk URL traff den andre. Sjekk **alltid** at config-endringer lander på raden URL-en faktisk resolver — `id`-spesifikk REST-query per kunde-slug avslører duplikater raskt.
+- **`unstable_cache`-entryer med egen `tag` bustes KUN av `revalidateTag(<den taggen>)`.** Verken `revalidatePath` på ruten eller `revalidateTag` på en annen (global) tag cascader inn i den. Hadde `REVALIDATE_SECRET` vært i `.env.local`, ville `/api/revalidate?tag=...` vært riktig verktøy uten engangs-route.
+- **Åpne oppfølginger (ikke gjort — brukeren valgte patch-only):** (1) duplikat-produktet `banenor-eiendom` består, begge URL-er svarer 200 — ren dedup-opprydding gjenstår. (2) `welcomeAudio`/`heroAudio`/`outroAudio` mangler ord-`timings`, så de tre kortene viser manus som klartekst uten karaoke-highlight (kategori-reelsene har timings via `data/reels-audio/`). Identisk med den fungerende raden — ikke en regresjon.
+
+---
+
+## 2026-06-01 — Desktop reels-sidebar: UI-polish + preview-poster (videoens første frame)
+
+### Kontekst
+
+Visuell iterasjon på desktop-`DesktopStorySidebar` (kun `>=1024px`) basert på løpende brukertesting. Fire endringer: tre rene CSS/markup-justeringer + én liten feature (preview-poster) som også fikk gjenbrukbar standard-støtte.
+
+### Endringer
+
+1. **Fjernet rød accent-border på aktivt kort.** Det aktive kortet hadde en inline `boxShadow`-ring i kategoriens `card.color` (oppfattet som rød border). Fjernet ringen (beholdt `shadow-lg` for dybde) + den nå-ubrukte `accent`-feltet i `CardView`/`toCardView`.
+2. **Bredere sidebar + konsistent padding.** `w-[390px]` → `w-[438px]` (+48px). Header `px-5 pb-4` → `px-6 pb-5`. Løpebånd `px-4 py-4` → `px-6 py-6` og `space-y-3` → `space-y-6` — jevn **24px-rytme** rundt og mellom kortene (matcher sidepaddingen). Preview-kortets bredde endret fra `w-full` → samme høyde-drevne `w-[calc((100dvh-17rem)*0.5625)]` som det aktive kortet, så venstre/høyre-kant flukter i løpebåndet.
+3. **Topp-video-gradient av på desktop, beholdt på mobil.** Gradienten i `CategoryReel` (toppen av video-bg) gated på `!desktopMode`. Alle audio-kort (welcome/home/kategori/outro) går gjennom `CategoryReel`, så ett gate dekker alle. Bunn-gradienten beholdt (tekst-kontrast).
+4. **Preview = videoens FØRSTE frame (poster).** Tidligere viste inaktive kategori-kort et separat illustrasjonsbilde (`illustrationSrc`) som ikke matchet videoen som spilles når kortet blir aktivt. Nå viser preview-en videoens første frame (f.eks. Transport → togstasjonshallen).
+
+### Preview-poster — implementasjon (gjenbrukbar standard)
+
+- **`scripts/generate-reels-posters.mjs`** (+ `npm run generate:reels-posters`): henter første frame (`ffmpeg -ss 0 -frames:v 1 -vf scale=720:-2 -q:v 3`) av hver `public/reels/categories/*.mp4` til en `<navn>.jpg` ved siden av. Idempotent (hopper over poster nyere enn videoen; `--force` regenererer). Genererte 7 postere (54–243 KB).
+- **`posterForVideo(videoBgSrc)`** i `reels-data.ts` — konvensjon `.mp4` → `.jpg`. Brukes to steder: preview-kortet (`toCardView` prioriterer poster, faller tilbake til `illustrationSrc` når kortet ikke har video — welcome/home/outro har ingen video, så de bruker hero-bildet) og `<video poster>` på det aktive kortet (bonus: første frame vises umiddelbart, ingen svart blink før videoen laster).
+- **Standard for nye prosjekter:** legg kategori-video i `public/reels/categories/`, kjør scriptet — posteren plukkes opp automatisk via konvensjonen. Ingen kodeendring per prosjekt.
+
+### Validering
+
+- `npx tsc --noEmit` rent, ESLint rent på alle endrede filer.
+- Chrome MCP (1440×900): bekreftet rød border borte, 24px-rytme, ren video-topp, og preview-`src`-er = postere (Transport → `transport.jpg`, Mat → `mat-drikke.jpg`, Natur → `natur-friluftsliv.jpg`, fallback-kategorier → `scene*.jpg`, welcome/home/outro → `stasjonskvartalet-hero.jpg`).
+
+### Filer
+
+`DesktopStorySidebar.tsx`, `CategoryReel.tsx`, `reels-data.ts`, `package.json`, ny `scripts/generate-reels-posters.mjs` + 7 genererte `public/reels/categories/*.jpg`. Mobil urørt (gradient kun gated for desktop; sidebaren er desktop-only). Ikke committet (prototype).
+
+---
+
+## 2026-06-01 — Research: "maks POI-tetthet per kategori" + Google API-kostnad (ingen kode endret)
+
+### Kontekst
+
+Brukeren vil vise styrke i tech-stacken på rapport-board ved å få inn **langt flere POI-er per kategori** ("kan vi få inn 200 matsteder bare for å vise at vi kan?"), og ba om en rapport på om dette koster noe i API-kall (primært Google). Bruker bekreftet at de har **alle** Google Maps Platform-API-er aktivert (inkl. Places API (New)) og er åpne for å bygge ny pipeline. Sesjonen var ren research (workflow + bakgrunnsagent, adversariell pris-verifisering mot offisielle Google-kilder, juni 2026) — **ingen kodeendring**.
+
+### Funn — kodebasen
+
+- **Rot-årsak til ~20-taket:** `lib/generators/poi-discovery.ts:122` `discoverGooglePlaces()` gjør **ett** legacy Nearby Search-kall per kategori og leser **kun første side** (ingen `next_page_token`). `maxResultsPerCategory` (default 20; hardkodet **15** i `app/api/generate/route.ts:75`) er bare en `slice`-grense, ikke en hent-mer-mekanisme. Setter du 200 får du fortsatt 20.
+- **Visning kappes uavhengig:** `report-data.ts:216` `INITIAL_VISIBLE_COUNT=6`, `:213` `SUB_SECTION_THRESHOLD=15`, `:233-241` per-kategori caps (bus/tram/bike=5, idrett=3), `:577` `topRanked=10`.
+- **"200 per kategori" = to problemer:** (A) hente 200 fra kildene, (B) vise 200 meningsfullt. Begge må løses.
+- **Vi eier allerede en gratis OSM-pipe:** `lib/generators/trail-fetcher.ts` (Overpass, 2 fallback-endepunkter, retry/timeout). Kan utvides fra `relation[route]` til `node[amenity=...]` for å hente alle matsteder i ett gratis kall.
+
+### Funn — Google harde grenser (verifisert)
+
+- **Per enkeltsøk er alt kappet:** Nearby Search (New) = **20**, ingen paginering. Text Search (New) = **60** (3 sider à 20, `pageToken`). Legacy Nearby = 60. Nearby rangerer på *prominence* → du får de N viktigste, ikke alle.
+- **Places Aggregate API (`computeInsights`, GA):** `INSIGHT_COUNT` gir **ubegrenset totaltall** ("347 restauranter innen 2 km", filtre på type/status/pris/minRating). `INSIGHT_PLACES` gir place-IDs **kun når antall ≤ 100**. Pro-tier, **$10/1000 ≈ $0,01/kall**, 5 000 gratis/mnd.
+- **Konsekvens:** Ingen Google-endepunkt lister 200 individuelle i ett kall. 200+ individuelle krever **grid + type-fan-out** (mange søk slått sammen på `place_id`, ~150 kall) — eller gratis OSM.
+- **Grounding Lite** (LLM/MCP) og **Places UI Kit** (frontend-widgets) er irrelevante her. **Maps Datasets API** kan hoste egen/OSM-POI-data (gratis, 500 MB/fil) men er kun lagring+render, ikke query.
+
+### Funn — kostnad (verifisert mot developers.google.com, juni 2026)
+
+- **$200/mnd-krediten er fjernet (1. mars 2025)**, erstattet av **per-SKU fri-kvote/mnd:** Essentials 10 000 · Pro 5 000 · Enterprise 1 000 · IDs-Only (Text Search/Details) **ubegrenset, $0**. Nullstilles månedlig.
+- **Priser /1000 etter kvote:** Nearby (New) Pro $32 · Place Details Essentials $5 / Pro $17 / Enterprise $20 (rating/hours/website) / +Atmosphere $25 (reviews) · **Place Photos $7** · Aggregate $10.
+- **Demo-kostnad:** Headline-tetthetstall via Aggregate = **~øre per rapport** (10 kategorier ≈ $0,10, gratis-kvote dekker ~500 rapporter/mnd). Gratis-stien (OSM/Overture) = **$0** uansett volum. Verste fall (Google-rating+foto på mange hundre POI-er, mange rapporter samme mnd, forbi alle kvoter) ≈ **~$32 (~340 kr)/prosjekt** marginalt. Historikk bekrefter at **foto var 71 %** av kostnaden (`docs/solutions/.../google-places-photo-cost-reduction`).
+
+### Ærlig tak — Trondheim
+
+Restauranter alene 1 km fra bolig utenfor sentrum: 20–60. Alle spisesteder 2 km fra sentrum: 200–280. **"200 restauranter" alene er ikke ærlig** (restaurant-bare ≈ 80–120). Forsvarlig framing: "200+ spisesteder innen 2 km", eller sterkere: bredde — "340 steder fordelt på 11 kategorier".
+
+### Anbefalt stack (best of all worlds)
+
+1. **TALL (headline-styrke):** Places Aggregate `INSIGHT_COUNT` — autoritativt, øre/kall, cache på build.
+2. **LISTE (200+ pins):** OSM Overpass → Supabase PostGIS — gratis, ubegrenset, gjenbruk `trail-fetcher`-mønsteret.
+3. **KVALITET (kun det viste):** Google Place Details (rating/foto) på subsettet som faktisk rendres — holder foto-kostnaden nede.
+
+Filer ved evt. implementasjon: ny `discoverGooglePlacesV2` i `poi-discovery.ts`, `api/generate:75` + `api/admin/import:91`, visningsgrenser i `report-data.ts:213-241`.
+
+### Valg + implementasjon (samme dag) — OSM-pins shippet til stasjonskvartalet
+
+Bruker valgte **"200 ekte pins (gratis)"** via AskUserQuestion (av tre PoC-er: Aggregate-tall, OSM→Supabase, `discoverGooglePlacesV2`). Bygde og kjørte det ende-til-ende.
+
+- **Nytt script `scripts/seed-osm-pois.ts`** (gjenbrukbart + reverserbart): Overpass-spørring (2 fallback-endepunkter, samme mønster som `trail-fetcher.ts`) for mat-amenities (`restaurant|fast_food|cafe|ice_cream|bar|pub|biergarten` + `shop=bakery|pastry`) → mapper til Placy-kategorier → dedup → seeder til **tre** tabeller (`pois` + `project_pois` + `product_pois` for alle produkter). Flagg: `--dry-run`, `--cleanup` (sletter alle `osm-*` for prosjektet), `--radius`.
+- **Datamodell bekreftet:** board leser snittet av `project_pois`-pool og report-produktets `product_pois`. `trust_score = NULL` slipper gjennom `filterTrustedPOIs` (queries.ts:51). FK krever at `category_id` finnes i `categories` (restaurant/cafe/bar/bakery finnes alle).
+- **Dedup tunet:** første forsøk (25m uansett kategori) droppet 132 ekte steder i tett sentrum. Strammet til: identisk punkt <8m (uansett), samme-kategori <12m, eller samme normaliserte navn <200m. Resultat: 263 OSM-mat → **208 nye** etter dedup (47 same-spot, 8 same-name).
+- **Resultat på `bane-nor-eiendom_stasjonskvartalet`:** mat-POI-er gikk fra 43 → **251** (restaurant 15→125, cafe 10→68, bar 9→42, bakeri 9→16). Verifisert i DB + i servert board-payload (alle 208 `osm-*`-IDer til stede, 124/66/42/16 mat-markører).
+- **Cache-bust:** `REVALIDATE_SECRET` ikke satt → brukte engangs-route (`/api/revalidate-once` → `revalidateTag("product:bane-nor-eiendom_stasjonskvartalet")`), **slettet umiddelbart** (samme presedens som duplikat-produkt-fiksen tidligere i dag). Dev-server :3000 reflekterte endringen.
+- **Mekaniske sjekker:** ESLint 0, `tsc --noEmit` 0 (måtte rydde foreldreløs `.next/types/app/api/revalidate-once` etter sletting av engangs-route).
+
+### Utvidelse til alle kategorier (2026-06-02)
+
+Bruker ba om "samme på de andre kategoriene". Telte først faktisk OSM-tetthet (gratis Overpass-count) for data-grunnet forventning per tema, så utvidet scriptet.
+
+- **`seed-osm-pois.ts` generalisert:** `AMENITY_MAP`/`SHOP_MAP` → ett `TAG_MAP` (`amenity`/`shop`/`leisure`/`tourism`/`natural`), Overpass-spørring bygges fra `nwr[key~...]`-blokker, rapport grupperes per tema via `CATEGORY_THEME`. Dedup/seed/cleanup uendret.
+- **Transport bevisst utelatt** — eies av Entur + Bysykkel (sanntid, autoritativt).
+- **Config-bug funnet + fikset:** report grupperer POI→tema på **eksakt** `category_id` (`report-data.ts:488` `new Set(themeDef.categories)`), og config-temaet opplevelser listet `movie_theater`/`theater` som **ikke finnes** som kategorier (ekte: `cinema`/`theatre`). PATCHet `config.reportConfig.themes[opplevelser].categories` med `cinema`+`theatre` — fikser samtidig 3 foreldreløse kino-POI-er.
+- **Seedet 314 nye** (primær Overpass 504 → fallback kumi.systems). Cache-bust via engangs-route, slettet. Verifisert i payload: St. Olavs hospital, Olavshallen, Nova kino, Bunnpris, Videnskabers Selskab.
+- **Sluttresultat: 178 → 700 POI-er, alt $0.** Per tema: mat-drikke 252, hverdagsliv 189, barn-oppvekst 74, opplevelser 58, natur 48, trening 20, transport 59. ESLint 0, tsc 0.
+
+### Åpent / neste steg
+
+- **Aggregate-tallet (headline "vis styrke") ikke bygd** — gjenstår som billig tillegg (~øre/rapport) hvis et stort tetthetstall skal vises i UI.
+- **OSM-pins mangler rating/foto** (Googles unike data). Rendres som kart-pins, sorteres etter rated POI-er — bevisst tetthets-lag. Enrich-pass på vist subsett deferred.
+- **Trening tynt i OSM** (kun 8 nye) — vurder Google-sweep kun for gym/spa hvis den skal være like tett.
+- **Defaults brukt:** kun navngitte POI-er (101 navnløse lekeplasser + 65 navnløse outdoor utelatt — kan slås på for maks kart-tetthet); shopping begrenset til kjøpesenter/varehus.
+- Full research med kilder ligger i sesjonen; pris-tabellen er adversarielt verifisert.
+
+---
+
+## 2026-06-02 — Desktop reels-sidebar (forts.): interaktivitet + info-tetthet på preview-kort
+
+Fortsettelse av sidebar-arbeidet fra forrige entry («Desktop reels-sidebar: UI-polish + preview-poster»). Tre brukerbestilte endringer på preview-kortene i `DesktopStorySidebar`.
+
+### Endringer
+
+1. **Fjernet lead-paragrafen fra preview-kortene, beholdt tittelen.** Mindre støy — preview-en er nå bilde + pills + kategori-tittel. (`view.subtitle`-blokken fjernet fra preview-render; selve `subtitle`-feltet beholdt på `CardView` siden det ikke koster noe.)
+2. **Lyd-lengde-pill ved siden av «X steder».** Ny pill med `Volume2`-ikon + `mm:ss`. Poenget (brukerens): sted-antall ≠ lyd-lengde — en kategori kan ha 40 steder men bare 0:32 lyd. Observert: Natur **8 steder / 0:49**, Mat **40 / 0:32**, Hverdagsliv **18 / 0:13**. Lengden avledes fra siste `characterEndTimesSeconds` i timings-dataen via ny **`audioDurationSec(audio)`** i `reels-data.ts` — gratis (timings allerede lastet), presis, og pillen skjules automatisk når et spor mangler timings (spor < audioVersion 5).
+3. **Hover play/pause-CTA.**
+   - Inaktivt preview-kort: ▶-ikon fader inn i en sirkel ved hover (`pointer-events-none`-overlay så kortets `onClick`=`activateCard` fortsatt fyrer overalt).
+   - Aktivt kort: ny overlay-`<button>` (`group-hover:opacity-100`, `focus-visible` for tastatur) som veksler play/pause via `togglePlayActive` — `playing`→`pause("manual")`, `paused`/`error`→`resume()`, `idle`/`ended`→`activateCard(activeIndex)`. Samme store-logikk som header-knappen.
+
+### Validering
+
+- `tsc --noEmit` 0, ESLint 0 på endrede filer.
+- Chrome MCP (1440×900): bekreftet paragraf borte + begge pills (a11y: «18 STEDER 0:13 Hverdagsliv» osv.), ▶-CTA fader inn på inaktivt kort, og aktivt kort (Mat & Drikke, spiller) viser ⏸-ikon på hover + header «Pause».
+
+### Filer
+
+`DesktopStorySidebar.tsx`, `reels-data.ts`. Mobil urørt (sidebaren er desktop-only). Ikke committet (prototype).
+
+> NB: parallell sesjon seedet samtidig OSM-mat-POI-er på samme produkt (entry rett over) — sted-tallene i pills (f.eks. Mat 40) reflekterer det datasettet, ikke en regresjon herfra.
+
+---
+
+## 2026-06-02 — Proff-video → kategori-reel-bakgrunner (segmentert + wiret inn)
+
+To proff-produserte livsstilsfilmer for Stasjonskvartalet (Bane NOR) lå på brukerens Desktop: `27.juni-Bane-Nor-Kvinne-30-1.mp4` (1280×720 16:9, ~43s) og `…-Mann-30-1.mp4` (~47s). Begge er cinematic montasjer med VO + musikk: Kvinne (bysykkel/kafé/handlegate/lounge → drone), Mann (kaffe/stasjon/Stu-badstuer/fjordbad/**løping**/Skansen → drone). Idé: klippe segmenter og bruke dem som video-bakgrunn i de respektive kategori-reelsene.
+
+### Analyse (uten STT — kun visuelt)
+
+- Kunne ikke transkribere VO (ingen whisper i PATH). Brukte `ffprobe` (metadata) + `ffmpeg`-kontaktark (1s-granularitet, celle N ≈ N sek) for å lage tidsstemplet shot-list per video, og leste frames som bilder.
+- Segment→kategori-mapping: Trening←Mann-løping, Mat-drikke←Kvinne-kafé, Hverdagsliv←Kvinne-handlegate, Transport←Mann-stasjon, Natur←Mann-Skansen/fjord, Hero/outro←drone fra begge. **Gap: Barn & Oppvekst** har ingen dekning i noen av videoene (verken barn/familie/skole).
+
+### Levert: to kategorier wiret inn
+
+- **Trening & Aktivitet** ← Mann 0:24–0:47 (løping → kyst → drone-finale)
+- **Hverdagsliv** ← Kvinne 0:12–0:26 (handlegate → lounge → sykkel)
+- Begge: `ffmpeg` center-crop 16:9→9:16 (`crop=404:720:438:0,scale=720:1280:flags=lanczos`), `-an` (stum — kategorien har egen VO), 720×1280 for å matche eksisterende klipp-format. Lagt i `public/reels/categories/`, postere via `generate:reels-posters`, og to nye entries i `CATEGORY_VIDEO_BG` (`reels-data.ts`). Verifisert i Chrome MCP: preview viser klippets første frame, aktivt kort spiller croppet klipp bak karaoke.
+
+### Nøkkel-innsikt: klipp-lengde må matche VO-lengden
+
+Første cut var for korte (5s/6s) → loopet **~8×/~2×** under VO-ene (Trening 0:41, Hverdagsliv 0:13). På desktop stopper bg-videoen når VO-en slutter (auto-advance til neste kategori), så **klipp ≥ VO-lengde = spiller gjennom én gang**. Re-cut: Hverdagsliv 14s (≥13s → ingen loop), Trening 23s (~1.8× loop).
+
+- **Trening-avveiningen:** zero-loop ville krevd ~41s, men det eneste 41s-segmentet inkluderer dress+kaffe-introen (0:06) → preview åpnet på en forretningsmann med kaffe (feil for "Trening"). Valgte 23s som **åpner on-theme på løpingen** og aksepterer én halv-loop framfor å fylle med off-theme footage. Posterne åpner nå riktig (løpende mann / kvinne m/sykkel+handlepose).
+- VO-lengde hentes fra `audioDurationSec` (siste `characterEndTimesSeconds` i timings) — samme kilde som lyd-lengde-pillen.
+
+### Åpent / neste steg
+
+- **Barn & Oppvekst** mangler kildemateriale — står på generisk fallback-scene.
+- **Transport** beholdt eksisterende klipp (stasjonshall m/perrong-skilting er mest "transport"; Mann-i-dress er svakere).
+- **Mat & Drikke / Natur** har egne klipp som *også* looper (Natur 20s under 0:49 VO ≈ 2.4×, Mat 1.25×) — fikses naturlig hvis de byttes til proff-footage med VO-matchet lengde.
+- **Velkommen / Nabolaget / Oppsummert** bruker fortsatt stillbilde; drone-shotsene ville fungert som video-bg.
+- Originalfilmene ligger på `~/Desktop` (ikke i repo). Filmenes egen VO/musikk er ubrukt (kun bildet gjenbrukes).
+
+### Filer
+
+`reels-data.ts` (CATEGORY_VIDEO_BG +2), nye `public/reels/categories/{trening-aktivitet,hverdagsliv}.{mp4,jpg}`. Untracked, ikke committet (prototype).
+
+---
+
+## 2026-06-02 — Norsk TTS-uttale: diagnose + skalerbart alias-ordliste-system
+
+Tok tak i at ElevenLabs feiluttaler norske ord/stedsnavn ("kajakk"→"kaaajak", "turn"→"tøørn", stedsnavn). Research (workflow + agenter, verifisert mot offisielle docs) + empirisk testing landet både en *diagnose* og et *gjenbrukbart system*.
+
+### Diagnose (research, verifisert mot ElevenLabs-docs)
+
+- **Det er to separate problemer.** (1) Feil SPRÅK (dansk/svensk fallback) og (2) feil UTTALE av enkeltord.
+- **Feil språk = manglende `language_code`-håndhevelse.** `language_code` (som *tvinger* output-språk) støttes KUN på `eleven_turbo_v2_5` og `eleven_flash_v2_5` — IKKE `eleven_v3` (auto-detekterer; norsk ↔ dansk-drift). Primærkilde: ElevenLabs-feilmelding (GitHub pipecat#901). Vår pipeline sender `language_code: "no"` + turbo honorerer det → derfor funket turbo. Brukerens v3/flash-på-svensk var auto-detect uten håndhevelse. **«Erik» er en ekte norsk stemme** (`accent: oslo, language: no`) — ikke confounden.
+- **Ingen bedre ElevenLabs-modell for norsk:** `flash_v2_5` = `turbo_v2_5` (sistnevnte deprecated), `v3` verre (mister håndhevelse + 5000-tegns grense), `multilingual_v2` har ikke norsk. A/B-test (Erik, samme setning) bekreftet: dagens oppsett er best.
+- **Feil uttale kan ikke fikses på modellnivå** for norsk på vår modell: phoneme/IPA-tags er engelsk-only + kun `flash_v2`; pronunciation-dictionaries virker ikke på turbo_v2_5. Eneste spak = **alias-omstaving av teksten**. Modellen er dessuten **stokastisk per kall** (kajakk traff «denne gangen» = flaks, ikke fiks). Azure nb-NO er eneste vei til *garantert* IPA-kontroll (+ ord-timings), men ofrer Eriks naturlighet — deferred.
+
+### Bygget: skalerbart alias-ordliste-system
+
+- **Ordliste:** `scripts/tts/pronunciation-no.json` (`aliases`-map). Kirurgisk — kun ord der en omstaving *empirisk* slår originalen.
+- **Tuning-verktøy:** `scripts/tts/tune-pronunciation.mjs` (hør kandidater i bære-setning, filter på ord + N takes) + `confirm-pronunciation.mjs` (N-takes konsistens-/regresjons-sjekk) + `pronunciation-candidates.json`.
+- **Produksjons-modul:** `lib/audio-tour/pronunciation.ts` — `applyPronunciation` bytter ord **kun på TTS-input**; `remapTimingsToOriginal` mapper character-timings tilbake til ORIGINAL-staving (karaoke leser `timings.characters`, så uten remap ville den vist "kaják"). Trygg fallback til rå-alignment hvis alignment ikke matcher (f.eks. fremtidig tekst-normalisering). Verifisert: ElevenLabs normaliserer IKKE tall i alignment ("200" beholdes) → index-basert remap er eksakt.
+- **Innkobling:** sentralt i `generateAudio` (default-på, leser ordlista) → dekker alle 9 build-scriptene (audio-tour + 7 reels + some) uten endring i dem. 8 enhetstester (apply + remap + lengde-invariant + guard-fallback + karaoke-tokenizer-kompat). `tsc` + ESLint rent; 34/34 audio-tour-tester grønne.
+
+### Tunede vinnere (testet via harness, bekreftet 5× konsistent)
+
+| Ord | Resultat |
+|-----|----------|
+| **kajakk** | → **`kaják`** (aksenten vant; original kun 🟡, `ka-jakk` 🔴) |
+| **Nidelva** | → **`Nid-elva`** (original 🟡) |
+| turn / Bakklandet / Stasjonskvartalet | **behold original** (🟢; `turn`→`tørn` ble 🔴) |
+
+**Lærdom:** omstaving kan SKADE — `turn`→`tørn` ble verre. Aldri auto-bindestrek; test per ord, bekreft over flere takes (stokastisitet).
+
+### Utrulling
+
+- **Kun `natur-friluftsliv`-reels** inneholdt ord fra ordlista (kajakk + Nidelva i live-manus). Regenerert (3 takes, valgte take 1) → `public/audio/stasjonskvartalet/natur-friluftsliv-reels.mp3` + `data/reels-audio/natur-friluftsliv.timings.json`. Verifisert: 819 tegn, original staving i transcript, ingen alias-lekkasje. Surgical med vilje — andre spor urørt for å unngå stokastisk re-rulling av spor som alt er bra.
+
+### Konsept videre (etablert arbeidsflyt)
+
+Dette er et **løpende system**: nytt problemord → legg kandidat i `pronunciation-candidates.json` → `tune` (hør) → `confirm` (N takes) → legg vinner i `pronunciation-no.json` → regenerer kun spor med ordet. Fiksen påføres automatisk på all fremtidig generering via `generateAudio`.
+
+### Åpent
+
+- **Stale `reels-data.ts` natur-manus:** text-prop ≠ live-manus (karaoke leser timings, så bryter ingenting nå). Rydd ved anledning.
+- **`turbo_v2_5` er deprecated** (= `flash_v2_5`); vurder ID-bytte + sikre `language_code: "no"` som påkrevd.
+- **Azure nb-NO** som vei til garantert IPA-kontroll hvis alias ikke strekker til.
+- **Per-prosjekt-override** (`.curation-staging/{prosjekt}/pronunciation.json`) er forberedt i designet, ikke koblet inn enda.
+
+### Filer
+
+NYE: `lib/audio-tour/pronunciation.ts`, `lib/audio-tour/pronunciation.test.ts`, `scripts/tts/{pronunciation-no.json,pronunciation-candidates.json,tune-pronunciation.mjs,confirm-pronunciation.mjs}`. ENDRET: `lib/audio-tour/elevenlabs-client.ts`, `data/reels-audio/natur-friluftsliv.timings.json`, `public/audio/stasjonskvartalet/natur-friluftsliv-reels.mp3`. Untracked/ikke committet (prototype).

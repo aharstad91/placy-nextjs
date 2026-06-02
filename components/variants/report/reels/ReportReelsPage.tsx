@@ -14,11 +14,16 @@ import { BoardProvider, useBoard } from "../board/board-state";
 import { BoardMap } from "../board/BoardMap";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsStack } from "./ReelsStack";
+import { DesktopStorySidebar } from "./DesktopStorySidebar";
 import { IntroReel } from "./IntroReel";
 import { CategoryReel } from "./CategoryReel";
 import { MeglerReel } from "./MeglerReel";
 import { ReelsMap } from "./ReelsMap";
-import { buildReelsCards, cardIndexToAudioIndex } from "./reels-data";
+import {
+  buildReelsCards,
+  cardIndexToAudioIndex,
+  nextAudioBearingIndex,
+} from "./reels-data";
 import { AudioElementProvider } from "../board/audio-tour/use-audio-element";
 import { useReelsAudioOrchestration } from "./use-reels-audio-orchestration";
 import { useAudioTourActions } from "@/lib/stores/audio-tour-store";
@@ -117,13 +122,30 @@ function BoardReelsSync() {
 }
 
 function ReelsAudioShell({ children }: { children: React.ReactNode }) {
-  const { state, setPhase } = useReels();
-  // Når et spor slutter naturlig: hev sheet til 20% (map-quarter). Bruker
-  // må aktivt tappe for å gå videre — sheet "våkner" men ekspander ikke
-  // til halv/full uten gesture. På desktop er map-quarter en no-op visuelt
-  // (kartet er alltid synlig høyre), men vi setter fortsatt phase så
-  // markører blir synlige (markersVisible kobler seg til map-quarter+).
+  const { state, setPhase, setActiveIndex } = useReels();
+  const { next: audioNext } = useAudioTourActions();
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  // Når et spor slutter naturlig:
+  // - Desktop: auto-advance til neste audio-bærende kapittel slik at
+  //   løpebåndet i sidebaren spiller kategoriene én etter én (som mobil-
+  //   feeden, men uten swipe). Siste spor → terminal "ended"-fase.
+  // - Mobil: hev sheet til 20% (map-quarter). Bruker må aktivt tappe for å
+  //   gå videre — sheet "våkner" men ekspander ikke uten gesture.
   const handleTrackEnded = () => {
+    if (isDesktop) {
+      const next = nextAudioBearingIndex(state.cards, state.activeIndex);
+      if (next !== -1) {
+        setActiveIndex(next);
+      } else {
+        // Siste audio-bærende kapittel ferdig. autoAdvance=false betyr at
+        // store.next() — den eneste veien til phase "ended" — aldri ble kalt
+        // (onended pauset bare). Vi kaller den eksplisitt så touren når
+        // terminal "ended"; da viser sidebar-knappen "Spill av på nytt" og
+        // restart fungerer rent (i stedet for å henge på "Fortsett").
+        audioNext();
+      }
+      return;
+    }
     if (state.currentPhase === "reel") {
       setPhase("map-quarter");
     }
@@ -159,22 +181,19 @@ function ResponsiveLayoutInner({
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   if (isDesktop) {
-    // Apple Maps-paradigme: kartet fyller hele viewportet, sidebaren flyter
-    // over med padding rundt + avrundede hjørner + skygge. Kartets pan/zoom
-    // og 3D-toggle sitter da fortsatt aktivt under hele bakgrunnen.
-    //
-    // mapPaddingLeft=472 (16 ytre + 440 sidebar + 16 indre gap) holder
-    // fitBounds-resultatet ute av sidebar-okkluderingen. Sidebar er
-    // 9:16 (440×782) sentrert vertikalt, max-h klipper på korte skjermer.
+    // Adaptiv desktop: full-høyde storytelling-sidebar (300px) ved siden av
+    // kartet i flex-flow — IKKE mobil-reelen tvunget inn i en flytende 9:16-
+    // ramme. Kartet fyller resten (flex-1). Sidebaren ligger ved siden av,
+    // ikke over, så mapPaddingLeft trenger bare en liten gutter (16).
+    // Mobil-branchen under er urørt.
     return (
-      <div className="relative h-[100dvh] w-full bg-stone-100 overflow-hidden">
-        <div className="absolute inset-0">
-          <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={472} />
-        </div>
-        <div className="absolute left-4 top-4 w-[440px] aspect-[9/16] max-h-[calc(100vh-2rem)] z-20 rounded-3xl overflow-hidden bg-black shadow-2xl ring-1 ring-black/5">
-          <ReelsStack
-            renderCard={(i) => <CardRouter cardIndex={i} desktopMode />}
-          />
+      <div className="flex h-[100dvh] w-full overflow-hidden bg-stone-100">
+        <DesktopStorySidebar
+          home={home}
+          renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
+        />
+        <div className="relative h-full flex-1">
+          <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} />
         </div>
       </div>
     );

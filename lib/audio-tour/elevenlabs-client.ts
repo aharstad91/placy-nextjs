@@ -9,6 +9,12 @@
  * å trigge re-gen av alle spor.
  */
 
+import {
+  applyPronunciation,
+  remapTimingsToOriginal,
+  loadPronunciationAliases,
+} from "./pronunciation";
+
 export const ELEVENLABS_VOICE = "EpYEY8MWJrUGskHBoNMA";
 export const ELEVENLABS_VOICE_NAME = "Erik";
 export const ELEVENLABS_MODEL = "eleven_turbo_v2_5";
@@ -29,6 +35,10 @@ export interface GenerateAudioParams {
   modelId?: string;
   languageCode?: string;
   outputFormat?: string;
+  /** Uttale-overstyring (original-ord → alias-staving). Påføres KUN på TTS-
+   *  input; timings remappes til original-teksten så karaoke beholder riktig
+   *  staving. Default: scripts/tts/pronunciation-no.json. Send `{}` for å skru av. */
+  pronunciationAliases?: Record<string, string>;
 }
 
 export interface AudioTimings {
@@ -58,6 +68,11 @@ export async function generateAudio(
   const languageCode = params.languageCode ?? ELEVENLABS_LANGUAGE_CODE;
   const outputFormat = params.outputFormat ?? ELEVENLABS_OUTPUT_FORMAT;
 
+  // Uttale-overstyring: bytt problemord til alias-staving KUN på TTS-input.
+  // Original-teksten beholdes for timing-remap (karaoke) lenger ned.
+  const aliases = params.pronunciationAliases ?? loadPronunciationAliases();
+  const { ttsText, segments, changed } = applyPronunciation(params.text, aliases);
+
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voice}/with-timestamps?output_format=${outputFormat}`;
   const res = await fetch(url, {
     method: "POST",
@@ -66,7 +81,7 @@ export async function generateAudio(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      text: params.text,
+      text: ttsText,
       model_id: model,
       language_code: languageCode,
       voice_settings: ELEVENLABS_VOICE_SETTINGS,
@@ -102,10 +117,34 @@ export async function generateAudio(
   }
 
   const bytes = Buffer.from(json.audio_base64, "base64");
-  const timings: AudioTimings = {
-    characters: json.alignment.characters,
-    characterStartTimesSeconds: json.alignment.character_start_times_seconds,
-    characterEndTimesSeconds: json.alignment.character_end_times_seconds,
+
+  // Rå-alignment gjelder TTS-teksten (alias-staving). Hvis vi byttet ord,
+  // remap timings tilbake til ORIGINAL-teksten så karaoke viser riktig staving.
+  // Faller tilbake til rå-alignment hvis remap ikke er trygt (returnerer null).
+  const rawChars = json.alignment.characters;
+  const rawStarts = json.alignment.character_start_times_seconds;
+  const rawEnds = json.alignment.character_end_times_seconds;
+  let timings: AudioTimings = {
+    characters: rawChars,
+    characterStartTimesSeconds: rawStarts,
+    characterEndTimesSeconds: rawEnds,
   };
+  if (changed) {
+    const remapped = remapTimingsToOriginal(
+      params.text,
+      ttsText,
+      rawChars,
+      rawStarts,
+      rawEnds,
+      segments,
+    );
+    if (remapped) {
+      timings = remapped;
+    } else {
+      console.warn(
+        `[pronunciation] timing-remap hoppet over (alignment matchet ikke TTS-tekst) — karaoke kan vise alias-staving for: "${params.text.slice(0, 50)}…"`,
+      );
+    }
+  }
   return { bytes, voice, model, timings };
 }

@@ -1,0 +1,12 @@
+{
+  "_comment": "Norsk uttale-overstyring for ElevenLabs (Erik / eleven_turbo_v2_5 + language_code 'no'). Påføres KUN på TTS-input rett før API-kallet — vist manus + karaoke-transkript beholder original staving (krever timing-remap ved ordgrense). KIRURGISK: kun ord der en omstaving empirisk slår originalen (testet via scripts/tts/tune-pronunciation.mjs). Omstaving kan skade — se _tested_kept_original.",
+  "aliases": {
+    "kajakk": "kaják",
+    "Nidelva": "Nid-elva"
+  },
+  "_tested_kept_original": {
+    "turn": "original 🟢; 'tørn'/'tørnn' ble verre (🔴) — IKKE omstav",
+    "Bakklandet": "original 🟢 — ingen endring nødvendig",
+    "Stasjonskvartalet": "original 🟢 — ingen endring nødvendig"
+  }
+}
