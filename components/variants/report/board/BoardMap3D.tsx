@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapView3D, type Map3DInstance } from "@/components/map/map-view-3d";
 import { useRouteData } from "@/lib/map/use-route-data";
 import { DEFAULT_CAMERA_LOCK } from "@/components/variants/report/blocks/report-3d-config";
@@ -12,6 +12,7 @@ import { CameraModeToggle, type CameraMode } from "./CameraModeToggle";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { useBoard3DCamera } from "./use-board-3d-camera";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
+import { cn } from "@/lib/utils";
 import type { POI } from "@/lib/types";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
@@ -211,6 +212,33 @@ export function BoardMap3D({ pendingCamera }: Props) {
     reducedMotion,
   });
 
+  // Recovery-hint: når brukeren tar over ved å DRA (ikke ved å klikke Fri), er
+  // det ikke åpenbart at kameraet «frøs» med vilje. En kort, transient melding
+  // peker tilbake til Auto-knappen. Vises kun ved implisitt takeover; eksplisitt
+  // toggle-klikk skjuler den (brukeren vet da hva som skjer).
+  const [showFreeHint, setShowFreeHint] = useState(false);
+  const cameraModeRef = useRef(cameraMode);
+  cameraModeRef.current = cameraMode;
+  const freeHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerFreeHint = useCallback(() => {
+    setShowFreeHint(true);
+    if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
+    freeHintTimerRef.current = setTimeout(() => setShowFreeHint(false), 3500);
+  }, []);
+
+  // Toggle-klikk: skjul recovery-hint (brukeren styrer modus bevisst).
+  const handleModeChange = useCallback((mode: CameraMode) => {
+    setShowFreeHint(false);
+    setCameraMode(mode);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
+    };
+  }, []);
+
   // Interaksjons-lyttere: drag/scroll/touch på kart-bakgrunnen → fri modus. I
   // freeMode hijacker ikke MapView3D pekeren, så vi lytter direkte. Marker-tap er
   // content-interaksjon (åpner POI), ikke kamera-grep — derfor filtreres de ut.
@@ -221,7 +249,11 @@ export function BoardMap3D({ pendingCamera }: Props) {
     const onGrab = (e: Event) => {
       const target = e.target as HTMLElement | null;
       if (target && target.closest("gmp-marker-3d-interactive")) return;
-      setCameraMode((m) => (m === "auto" ? "free" : m));
+      // Kun implisitt takeover (auto → fri) trigger recovery-hinten.
+      if (cameraModeRef.current === "auto") {
+        setCameraMode("free");
+        triggerFreeHint();
+      }
     };
     el.addEventListener("pointerdown", onGrab);
     el.addEventListener("wheel", onGrab, { passive: true });
@@ -231,7 +263,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
       el.removeEventListener("wheel", onGrab);
       el.removeEventListener("touchstart", onGrab);
     };
-  }, [map3dInstance]);
+  }, [map3dInstance, triggerFreeHint]);
 
   return (
     <div className="absolute inset-0">
@@ -259,9 +291,19 @@ export function BoardMap3D({ pendingCamera }: Props) {
       />
       <CameraModeToggle
         mode={cameraMode}
-        onModeChange={setCameraMode}
+        onModeChange={handleModeChange}
         className="absolute left-3 top-3 z-10"
       />
+      <div
+        role="status"
+        className={cn(
+          "pointer-events-none absolute left-3 top-[3.75rem] z-10 max-w-[15rem] rounded-xl bg-stone-900/85 px-3 py-2 text-xs font-medium text-white shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-opacity duration-300",
+          showFreeHint ? "opacity-100" : "opacity-0",
+        )}
+      >
+        Du styrer kameraet nå — trykk <span className="font-semibold">Auto</span>{" "}
+        for å la dronen fortsette.
+      </div>
       {popupMode === "mini" && state.activePOIId && (
         <BoardPOI3DMiniPopup map3d={map3dInstance} />
       )}
