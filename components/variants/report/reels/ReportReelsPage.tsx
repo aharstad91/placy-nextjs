@@ -1,13 +1,14 @@
 "use client";
 
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import type { Project } from "@/lib/types";
 import type { TranslationMap } from "@/lib/supabase/translations";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import { cn } from "@/lib/utils";
 import { transformToReportData } from "../report-data";
 import { adaptBoardData } from "../board/board-data";
 import { BoardProvider, useBoard } from "../board/board-state";
@@ -15,6 +16,7 @@ import { BoardMap } from "../board/BoardMap";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsStack } from "./ReelsStack";
 import { DesktopStorySidebar } from "./DesktopStorySidebar";
+import { DesktopReportSplash } from "./DesktopReportSplash";
 import { IntroReel } from "./IntroReel";
 import { CategoryReel } from "./CategoryReel";
 import { MeglerReel } from "./MeglerReel";
@@ -23,11 +25,24 @@ import {
   buildReelsCards,
   cardIndexToAudioIndex,
   nextAudioBearingIndex,
+  firstAudioBearingIndex,
 } from "./reels-data";
-import { AudioElementProvider } from "../board/audio-tour/use-audio-element";
+import {
+  AudioElementProvider,
+  useAudioElement,
+} from "../board/audio-tour/use-audio-element";
 import { useReelsAudioOrchestration } from "./use-reels-audio-orchestration";
-import { useAudioTourActions } from "@/lib/stores/audio-tour-store";
-import type { BoardHome } from "../board/board-data";
+import {
+  useAudioTourActions,
+  useAudioTourStore,
+} from "@/lib/stores/audio-tour-store";
+import { getCategoryIllustrationSrc } from "@/lib/themes/category-illustrations";
+import {
+  getProjectLogoSrc,
+  getProjectSplashImage,
+  getProjectSplashVideo,
+} from "@/lib/themes/project-brand";
+import type { BoardData, BoardHome } from "../board/board-data";
 
 const INTRO_VIDEO_SRC = "/reels/stasjonskvartalet/intro.mp4";
 
@@ -72,7 +87,7 @@ function Inner({ project, enTranslations = {} }: Props) {
         <BoardReelsSync />
         <ReelsAudioShell>
           <ReelsOrchestrator>
-            <ResponsiveLayout home={boardData.home} has3dAddon={has3dAddon} />
+            <ResponsiveLayout boardData={boardData} has3dAddon={has3dAddon} />
           </ReelsOrchestrator>
         </ReelsAudioShell>
       </BoardProvider>
@@ -172,29 +187,118 @@ function ReelsOrchestrator({ children }: { children: React.ReactNode }) {
  *   og audio.
  */
 function ResponsiveLayoutInner({
-  home,
+  boardData,
   has3dAddon,
 }: {
-  home: BoardHome;
+  boardData: BoardData;
   has3dAddon: boolean;
 }) {
+  const home = boardData.home;
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
+  // --- Velkomst-splash (kun desktop) ---
+  // Splash ligger som lag OPPÅ board-opplevelsen. Kartet (én WebGL-instans)
+  // mountes først ved "play" → 3D-kartet laster og flyr inn der, og bevares
+  // montert ved re-åpning så orbiten ikke re-initialiseres.
+  const { state, setActiveIndex, markAudioUnlocked } = useReels();
+  const { unlock } = useAudioElement();
+  const phase = useAudioTourStore((s) => s.phase);
+  const { pause, resume, goToTrack } = useAudioTourActions();
+  const [splashVisible, setSplashVisible] = useState(true);
+  const [boardRevealed, setBoardRevealed] = useState(false);
+
+  const firstIdx = firstAudioBearingIndex(state.cards);
+  const notStarted = !state.audioUnlocked || phase === "idle";
+
+  const handlePlay = async () => {
+    setSplashVisible(false);
+    setBoardRevealed(true);
+    if (notStarted) {
+      if (!state.audioUnlocked) {
+        await unlock();
+        markAudioUnlocked();
+      }
+      if (firstIdx !== -1) setActiveIndex(firstIdx);
+    } else if (phase === "ended") {
+      // Restart fra første kapittel — speiler sidebarens "Spill av på nytt".
+      if (firstIdx !== -1) setActiveIndex(firstIdx);
+      goToTrack(0);
+    } else if (phase === "paused" || phase === "error") {
+      resume();
+    }
+  };
+
+  const handleReopenSplash = () => {
+    setSplashVisible(true);
+    if (phase === "playing") pause("manual");
+  };
+
+  const primaryLabel = notStarted
+    ? "Start opplevelsen"
+    : phase === "ended"
+      ? "Spill av på nytt"
+      : "Fortsett";
+
+  const splashCategories = useMemo(
+    () =>
+      boardData.categories.map((c) => ({
+        id: c.id,
+        label: c.label,
+        color: c.color,
+        image:
+          getCategoryIllustrationSrc(boardData.projectSlug, c.id) ??
+          c.illustration?.src,
+      })),
+    [boardData.categories, boardData.projectSlug],
+  );
+  const logoSrc = getProjectLogoSrc(boardData.projectSlug);
+  const splashHero =
+    getProjectSplashImage(boardData.projectSlug) ?? home.heroImage;
+  const splashVideo = getProjectSplashVideo(boardData.projectSlug);
+  const subline =
+    [home.district, home.city].filter(Boolean).join(", ") || undefined;
+
   if (isDesktop) {
-    // Adaptiv desktop: full-høyde storytelling-sidebar (300px) ved siden av
-    // kartet i flex-flow — IKKE mobil-reelen tvunget inn i en flytende 9:16-
-    // ramme. Kartet fyller resten (flex-1). Sidebaren ligger ved siden av,
-    // ikke over, så mapPaddingLeft trenger bare en liten gutter (16).
-    // Mobil-branchen under er urørt.
+    // Adaptiv desktop: full-høyde storytelling-sidebar ved siden av kartet i
+    // flex-flow. Sidebar + kart får en entré-animasjon (glir/skalerer inn) ved
+    // "play" mens splash-laget fader ut → følelsen av at kartet "flyr inn".
+    // Mobil-branchen under er urørt (bruker IntroReel-videoen som splash).
     return (
-      <div className="flex h-[100dvh] w-full overflow-hidden bg-stone-100">
-        <DesktopStorySidebar
-          home={home}
-          renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
-        />
-        <div className="relative h-full flex-1">
-          <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} />
+      <div className="relative flex h-[100dvh] w-full overflow-hidden bg-stone-100">
+        <div
+          className={cn(
+            "h-full shrink-0 transition-all duration-700 ease-out",
+            boardRevealed ? "translate-x-0 opacity-100" : "-translate-x-6 opacity-0",
+          )}
+        >
+          <DesktopStorySidebar
+            home={home}
+            logoSrc={logoSrc}
+            onLogoClick={handleReopenSplash}
+            renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
+          />
         </div>
+        <div
+          className={cn(
+            "relative h-full flex-1 transition-all duration-700 ease-out",
+            boardRevealed ? "scale-100 opacity-100" : "scale-[1.04] opacity-0",
+          )}
+        >
+          {boardRevealed && (
+            <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} />
+          )}
+        </div>
+        <DesktopReportSplash
+          visible={splashVisible}
+          name={home.name}
+          subline={subline}
+          logoSrc={logoSrc}
+          heroImage={splashHero}
+          heroVideo={splashVideo}
+          categories={splashCategories}
+          primaryLabel={primaryLabel}
+          onPlay={handlePlay}
+        />
       </div>
     );
   }
@@ -215,7 +319,7 @@ const ResponsiveLayout = dynamic(
   () => Promise.resolve(ResponsiveLayoutInner),
   {
     ssr: false,
-    loading: () => <div className="h-[100dvh] w-full bg-black" />,
+    loading: () => <div className="h-[100dvh] w-full bg-[#f2e9dc]" />,
   },
 );
 

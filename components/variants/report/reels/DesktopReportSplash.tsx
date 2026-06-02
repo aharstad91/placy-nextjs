@@ -1,0 +1,271 @@
+"use client";
+
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { ChevronDown, Play } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export interface SplashCategory {
+  id: string;
+  label: string;
+  color: string;
+  image?: string;
+}
+
+interface Props {
+  /** Styrer om laget er synlig. Komponenten holdes alltid montert (én
+   *  kart-instans bak), og veksler kun opacity/pointer-events — så re-åpning
+   *  er momentan og bakgrunns-videoen aldri re-initialiseres. */
+  visible: boolean;
+  /** Prosjektnavn, eks. "Stasjonskvartalet". */
+  name: string;
+  /** Bydel + by, eks. "Midtbyen, Trondheim". */
+  subline?: string;
+  /** Logo-SVG (prosjekt-brand). Mangler → tekst-wordmark vises i stedet. */
+  logoSrc?: string;
+  /** Crisp hero-render i høyre panel (fallback når heroVideo mangler). */
+  heroImage?: string;
+  /** Hero-video (16:9) i høyre panel — overstyrer heroImage når satt. Poster
+   *  avledes ved å bytte `.mp4` → `.jpg`. */
+  heroVideo?: string;
+  /** Valgfri intro-tekst — faller tilbake til standard velkomst-copy. */
+  intro?: string;
+  /** Kategori-teaser ("dette utforsker vi") — gjenbruk av kategori-bildene. */
+  categories: SplashCategory[];
+  /** Knappe-tekst: "Start opplevelsen" / "Fortsett" / "Spill av på nytt". */
+  primaryLabel: string;
+  /** Trykk play → dropp splash, fly inn kartet, start/forsett guidet tur. */
+  onPlay: () => void;
+}
+
+const DEFAULT_INTRO =
+  "Vi tar deg med på en guidet tur gjennom nabolaget — transport, hverdagsliv, " +
+  "mat og uteliv, natur og opplevelser rett utenfor døra. Trykk play, så viser " +
+  "vi deg hva som ligger i gangavstand.";
+
+/**
+ * Velkomst-splash for rapport-board (desktop, >=1024px). Ligger som et lag
+ * OPPÅ board-opplevelsen (kart + sidebar) og kan re-åpnes uten refresh.
+ * Komposisjon: venstre kolonne med logo, velkomst-copy, play-knapp og en
+ * kategori-teaser; høyre kolonne med crisp prosjekt-render. Bak alt ligger en
+ * rolig, sterkt sløret bakgrunns-video som gir et hint av bevegelse ("hva er
+ * området som rører seg bak her"). Mobil bruker IntroReel-videoen i stedet.
+ */
+export function DesktopReportSplash({
+  visible,
+  name,
+  subline,
+  logoSrc,
+  heroImage,
+  heroVideo,
+  intro,
+  categories,
+  primaryLabel,
+  onPlay,
+}: Props) {
+  const heroPoster = heroVideo?.replace(/\.mp4$/i, ".jpg");
+  // Stagger-inn av innholdet ved første visning. Settes én gang via rAF etter
+  // mount; re-åpning re-staggrer ikke (lag-opacity tar overgangen).
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Scroll/swipe nedover = samme som "Start opplevelsen". Uten dette føles
+  // splashen klaustrofobisk (man prøver å scrolle og ingenting skjer).
+  // Akkumulerer wheel/touch-delta og trigger onPlay én gang per visning.
+  useEffect(() => {
+    if (!visible) return;
+    let acc = 0;
+    let fired = false;
+    let touchStartY: number | null = null;
+
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      onPlay();
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY <= 0) return; // kun nedover
+      acc += e.deltaY;
+      if (acc > 24) fire();
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0]?.clientY ?? null;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchStartY == null) return;
+      const dy = touchStartY - (e.touches[0]?.clientY ?? touchStartY);
+      if (dy > 32) fire(); // finger opp = scroll ned
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [visible, onPlay]);
+
+  const stagger = (i: number) =>
+    ({
+      transitionDelay: shown ? `${120 + i * 90}ms` : "0ms",
+    }) as React.CSSProperties;
+
+  const itemCls = cn(
+    "transition-all duration-700 ease-out",
+    shown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+  );
+
+  return (
+    <div
+      className={cn(
+        "fixed inset-0 z-50 overflow-hidden bg-[#f2e9dc] transition-opacity duration-[600ms] ease-out",
+        visible ? "opacity-100" : "pointer-events-none opacity-0",
+      )}
+      aria-hidden={!visible}
+    >
+      <div className="relative mx-auto flex h-full w-full max-w-[1440px] items-center gap-10 px-10 lg:gap-16 lg:px-20">
+        {/* Venstre kolonne */}
+        <div className="flex w-full max-w-[480px] flex-col">
+          <div className={itemCls} style={stagger(0)}>
+            {logoSrc ? (
+              <Image
+                src={logoSrc}
+                alt={name}
+                width={168}
+                height={65}
+                unoptimized
+                priority
+                className="h-14 w-auto"
+              />
+            ) : (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+                Bli kjent med
+              </p>
+            )}
+          </div>
+
+          <div className={cn(itemCls, "mt-9")} style={stagger(1)}>
+            {logoSrc && (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+                Bli kjent med nabolaget
+              </p>
+            )}
+            <h1 className="mt-2 text-4xl font-bold leading-[1.08] tracking-tight text-stone-900 lg:text-5xl">
+              Velkommen til {name}
+            </h1>
+            {subline && (
+              <p className="mt-2 text-base font-medium text-stone-500">{subline}</p>
+            )}
+          </div>
+
+          <p
+            className={cn(itemCls, "mt-5 max-w-[440px] text-[15px] leading-relaxed text-stone-600")}
+            style={stagger(2)}
+          >
+            {intro || DEFAULT_INTRO}
+          </p>
+
+          <div className={cn(itemCls, "mt-7")} style={stagger(3)}>
+            <button
+              type="button"
+              onClick={onPlay}
+              className="inline-flex items-center gap-2.5 rounded-full bg-stone-900 px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-stone-700 hover:scale-[1.02] active:scale-[0.99]"
+            >
+              <Play size={18} className="fill-white" />
+              {primaryLabel}
+            </button>
+          </div>
+
+          {categories.length > 0 && (
+            <div className={cn(itemCls, "mt-10")} style={stagger(4)}>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+                Dette utforsker vi
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {categories.map((c) => (
+                  <span
+                    key={c.id}
+                    className="inline-flex items-center gap-2 rounded-full border border-stone-300/70 bg-white/55 py-1 pl-1 pr-3 backdrop-blur-sm"
+                  >
+                    <span
+                      className="relative block h-7 w-7 shrink-0 overflow-hidden rounded-full"
+                      style={{ boxShadow: `0 0 0 2px ${c.color}` }}
+                    >
+                      {c.image ? (
+                        <Image
+                          src={c.image}
+                          alt=""
+                          fill
+                          sizes="28px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <span
+                          className="block h-full w-full"
+                          style={{ backgroundColor: c.color }}
+                        />
+                      )}
+                    </span>
+                    <span className="text-xs font-medium text-stone-700">
+                      {c.label}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Scroll-cue — signaliserer at man kan bla (eller trykke) for å starte. */}
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-7 flex flex-col items-center gap-1 text-stone-500 transition-opacity duration-700",
+            shown ? "opacity-100" : "opacity-0",
+          )}
+          style={{ transitionDelay: shown ? "600ms" : "0ms" }}
+        >
+          <span className="text-[11px] font-medium uppercase tracking-[0.16em]">
+            Bla for å starte
+          </span>
+          <ChevronDown className="h-4 w-4 animate-bounce" />
+        </div>
+
+        {/* Høyre kolonne — prosjekt-video (16:9), fallback til render */}
+        {(heroVideo || heroImage) && (
+          <div
+            className={cn(itemCls, "relative hidden flex-1 lg:block")}
+            style={stagger(2)}
+          >
+            <div className="relative aspect-video w-full overflow-hidden rounded-3xl shadow-2xl ring-1 ring-black/5">
+              {heroVideo ? (
+                <video
+                  src={heroVideo}
+                  poster={heroPoster}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <Image
+                  src={heroImage as string}
+                  alt={`${name} – illustrasjon`}
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 50vw, 0px"
+                  className="object-cover"
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

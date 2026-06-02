@@ -37,6 +37,10 @@ interface Props {
   /** Rendrer det aktive kortets media (video/bilde-bg + karaoke-VO). Gjenbruk
    *  av CardRouter/CategoryReel i desktopMode — samme presentasjon som mobil. */
   renderActiveCard: (cardIndex: number) => React.ReactNode;
+  /** Prosjekt-logo (SVG). Vises klikkbar i header → re-åpner velkomst-splash. */
+  logoSrc?: string;
+  /** Trykk på logo → animer splash-laget inn igjen (ingen refresh). */
+  onLogoClick?: () => void;
 }
 
 interface CardView {
@@ -95,7 +99,12 @@ function toCardView(card: ReelsCard): CardView {
   }
 }
 
-export function DesktopStorySidebar({ home, renderActiveCard }: Props) {
+export function DesktopStorySidebar({
+  home,
+  renderActiveCard,
+  logoSrc,
+  onLogoClick,
+}: Props) {
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
   const { unlock } = useAudioElement();
   const { pause, resume, goToTrack } = useAudioTourActions();
@@ -172,8 +181,25 @@ export function DesktopStorySidebar({ home, renderActiveCard }: Props) {
 
   return (
     <aside className="relative z-20 flex h-full w-[438px] shrink-0 flex-col border-r border-stone-200 bg-white shadow-xl">
-      {/* Header — tittel + play/pause */}
+      {/* Header — logo (→ velkomst) + tittel + play/pause */}
       <div className="shrink-0 border-b border-stone-200/80 px-6 pb-5 pt-6">
+        {logoSrc && (
+          <button
+            type="button"
+            onClick={onLogoClick}
+            aria-label="Tilbake til velkomst"
+            className="mb-4 block transition-opacity hover:opacity-70"
+          >
+            <Image
+              src={logoSrc}
+              alt={home.name}
+              width={132}
+              height={51}
+              unoptimized
+              className="h-9 w-auto"
+            />
+          </button>
+        )}
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
           Bli kjent med
         </p>
