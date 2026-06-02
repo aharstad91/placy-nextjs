@@ -12,9 +12,11 @@ import { CameraModeToggle, type CameraMode } from "./CameraModeToggle";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
+import { deriveCategoryCamera } from "./board-3d-camera-director";
+import { getCategoryCamera } from "./camera-tours";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import { cn } from "@/lib/utils";
-import type { POI } from "@/lib/types";
+import type { POI, CategoryCameraConfig } from "@/lib/types";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
 // RouteLayer3D lazy-loaded — samme bundling-strategi som ReportThemeSection
@@ -204,6 +206,21 @@ export function BoardMap3D({ pendingCamera }: Props) {
     [activePOI],
   );
 
+  // Kamera-config for aktiv kategori: eksplisitt autorert (camera-tours) har
+  // forrang; ellers utledes A→B-buen fra kategoriens topp-POI-er + hjemmet
+  // (deriveCategoryCamera) så cinematic-bevegelsen fungerer uten hand-autoring.
+  const categoryConfig = useMemo<CategoryCameraConfig | undefined>(() => {
+    if (!activeCategory) return undefined;
+    const explicit = getCategoryCamera(data.projectSlug ?? "", activeCategory.id);
+    if (explicit) return explicit;
+    const src =
+      activeCategory.topRankedPois.length > 0
+        ? activeCategory.topRankedPois
+        : activeCategory.pois;
+    const coords = src.map((p) => p.coordinates);
+    return deriveCategoryCamera(data.home.coordinates, coords) ?? undefined;
+  }, [activeCategory, data.projectSlug, data.home.coordinates]);
+
   // ── Kamera-director ─────────────────────────────────────────────────────
   // Drone-orbit + POI-fokus + (kommende) cinematic A→B, styrt av en eksplisitt
   // state-maskin med token-kansellering (use-board-3d-camera). Kategori-skifte
@@ -214,8 +231,8 @@ export function BoardMap3D({ pendingCamera }: Props) {
     cameraMode,
     home: data.home.coordinates,
     activePOI: activePOICoords,
-    projectSlug: data.projectSlug,
     activeCategoryId: activeCategory?.id ?? null,
+    categoryConfig,
     audioDurationMs,
     audioPaused,
     reducedMotion,

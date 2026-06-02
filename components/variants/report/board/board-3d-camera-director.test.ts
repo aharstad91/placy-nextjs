@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   decideCameraIntent,
   bearingBetween,
+  haversineMeters,
+  deriveCategoryCamera,
   ORBIT_RANGE,
   POI_RANGE,
   DEFAULT_CINEMATIC_MS,
@@ -167,5 +169,60 @@ describe("decideCameraIntent", () => {
       baseInput({ activeCategoryId: "x", categoryConfig: config(), audioPaused: true }),
     );
     if (intent.kind === "cinematic") expect(intent.paused).toBe(true);
+  });
+});
+
+describe("haversineMeters", () => {
+  it("er 0 for samme punkt", () => {
+    expect(haversineMeters(home, home)).toBe(0);
+  });
+
+  it("gir ~111 m per 0.001° breddegrad", () => {
+    const d = haversineMeters({ lat: 63.0, lng: 10.0 }, { lat: 63.001, lng: 10.0 });
+    expect(d).toBeGreaterThan(105);
+    expect(d).toBeLessThan(118);
+  });
+});
+
+describe("deriveCategoryCamera", () => {
+  it("returnerer null uten POI-er", () => {
+    expect(deriveCategoryCamera(home, [])).toBeNull();
+  });
+
+  it("sentrerer A og B på midtpunktet mellom hjem og POI-tyngdepunkt", () => {
+    const poi = { lat: 63.425, lng: 10.41 };
+    const cfg = deriveCategoryCamera(home, [poi])!;
+    const expectedMid = {
+      lat: Number(((home.lat + poi.lat) / 2).toFixed(6)),
+      lng: Number(((home.lng + poi.lng) / 2).toFixed(6)),
+    };
+    expect(cfg.a.lat).toBe(expectedMid.lat);
+    expect(cfg.a.lng).toBe(expectedMid.lng);
+    expect(cfg.b!.lat).toBe(expectedMid.lat);
+  });
+
+  it("A og B svinger en bue (ulik heading, ±DRIFT rundt hjem→innhold)", () => {
+    const cfg = deriveCategoryCamera(home, [{ lat: 63.42, lng: 10.42 }])!;
+    expect(cfg.a.heading).not.toBe(cfg.b!.heading);
+    // 44° spenn (±22) — tar høyde for 360-wrap.
+    const diff = Math.abs(((cfg.a.heading - cfg.b!.heading + 540) % 360) - 180);
+    expect(diff).toBeCloseTo(44, 0);
+  });
+
+  it("klamper range innenfor [350, 850] (aldri orbit-høyde)", () => {
+    const near = deriveCategoryCamera(home, [{ lat: home.lat + 0.0005, lng: home.lng }])!;
+    expect(near.a.range).toBeGreaterThanOrEqual(350);
+    const far = deriveCategoryCamera(home, [{ lat: home.lat + 0.2, lng: home.lng + 0.2 }])!;
+    expect(far.a.range).toBeLessThanOrEqual(850);
+  });
+
+  it("bruker tyngdepunktet av flere POI-er", () => {
+    const cfg = deriveCategoryCamera(home, [
+      { lat: 63.42, lng: 10.4 },
+      { lat: 63.44, lng: 10.42 },
+    ])!;
+    // tyngdepunkt = (63.43, 10.41); midt mot hjem (63.435,10.398) ≈ (63.4325, 10.404)
+    expect(cfg.a.lat).toBeCloseTo(63.4325, 3);
+    expect(cfg.a.lng).toBeCloseTo(10.404, 3);
   });
 });

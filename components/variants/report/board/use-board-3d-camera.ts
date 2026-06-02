@@ -12,7 +12,7 @@ import {
   CUT_FADE_MS,
   CUT_SETTLE_MS,
 } from "./board-3d-camera-director";
-import { getCategoryCamera } from "./camera-tours";
+import type { CategoryCameraConfig } from "@/lib/types";
 
 interface Params {
   /** Map3DElement-instansen (cast til FlyCapableMap internt), eller null. */
@@ -22,8 +22,10 @@ interface Params {
   /** Aktiv POIs koordinater, eller null. Bør være memoisert av kalleren så
    *  effekt-deps holder seg stabile. */
   activePOI: { lat: number; lng: number } | null;
-  projectSlug: string | undefined;
   activeCategoryId: string | null;
+  /** Aktiv kategoris kamera-config (eksplisitt eller utledet), løst av kalleren.
+   *  Bør være memoisert så effekt-deps holder seg stabile. */
+  categoryConfig: CategoryCameraConfig | undefined;
   /** Voice-over-lengde (ms) for aktiv kategori, eller undefined. */
   audioDurationMs: number | undefined;
   audioPaused: boolean;
@@ -55,8 +57,8 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
     cameraMode,
     home,
     activePOI,
-    projectSlug,
     activeCategoryId,
+    categoryConfig,
     audioDurationMs,
     audioPaused,
     reducedMotion,
@@ -70,11 +72,6 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
   useEffect(() => {
     if (!map3dInstance) return;
     const map = map3dInstance as FlyCapableMap;
-
-    const categoryConfig =
-      activeCategoryId && projectSlug
-        ? getCategoryCamera(projectSlug, activeCategoryId)
-        : undefined;
 
     const intent = decideCameraIntent({
       cameraMode,
@@ -174,8 +171,8 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
     cameraMode,
     home,
     activePOI,
-    projectSlug,
     activeCategoryId,
+    categoryConfig,
     audioDurationMs,
     audioPaused,
     reducedMotion,

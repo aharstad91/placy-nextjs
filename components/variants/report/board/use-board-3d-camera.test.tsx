@@ -4,17 +4,9 @@ import { useBoard3DCamera } from "./use-board-3d-camera";
 import { CUT_FADE_MS, CUT_SETTLE_MS } from "./board-3d-camera-director";
 import type { CategoryCameraConfig } from "@/lib/types";
 
-// Kamera-config injiseres via mock så vi kan drive cinematic-grenen uten ekte data.
-const { mockGetCategoryCamera } = vi.hoisted(() => ({
-  mockGetCategoryCamera: vi.fn(),
-}));
-vi.mock("./camera-tours", () => ({
-  getCategoryCamera: mockGetCategoryCamera,
-  getCameraTour: vi.fn(),
-}));
-
 const poseA = { lat: 63.43, lng: 10.39, range: 500, tilt: 60, heading: 200 };
 const poseB = { lat: 63.432, lng: 10.395, range: 450, tilt: 62, heading: 240 };
+const config: CategoryCameraConfig = { a: poseA, b: poseB };
 
 function makeMap() {
   return {
@@ -30,8 +22,8 @@ const props = (map: unknown, overrides: Partial<Props> = {}): Props => ({
   cameraMode: "auto",
   home: { lat: 63.435, lng: 10.398 },
   activePOI: null,
-  projectSlug: "stasjonskvartalet",
   activeCategoryId: "mat-drikke",
+  categoryConfig: config,
   audioDurationMs: 20000,
   audioPaused: false,
   reducedMotion: false,
@@ -40,7 +32,6 @@ const props = (map: unknown, overrides: Partial<Props> = {}): Props => ({
 
 beforeEach(() => {
   vi.useFakeTimers();
-  mockGetCategoryCamera.mockReset();
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -48,7 +39,6 @@ afterEach(() => {
 
 describe("useBoard3DCamera — cut-transition", () => {
   it("kjører fade → instant hopp til A → settle → fade ut + A→B", () => {
-    mockGetCategoryCamera.mockReturnValue({ a: poseA, b: poseB } as CategoryCameraConfig);
     const map = makeMap();
     const { result } = renderHook((p: Props) => useBoard3DCamera(p), {
       initialProps: props(map),
@@ -74,7 +64,6 @@ describe("useBoard3DCamera — cut-transition", () => {
   });
 
   it("kategori-skifte i settle-vinduet kansellerer gammel A→B (token-guard)", () => {
-    mockGetCategoryCamera.mockReturnValue({ a: poseA, b: poseB } as CategoryCameraConfig);
     const map = makeMap();
     const { result, rerender } = renderHook((p: Props) => useBoard3DCamera(p), {
       initialProps: props(map, { activeCategoryId: "mat-drikke" }),
@@ -87,8 +76,14 @@ describe("useBoard3DCamera — cut-transition", () => {
     // gammel settle-timer (→ gammel A→B mot poseB) ryddes.
     const poseA2 = { ...poseA, lat: 63.5 };
     const poseB2 = { ...poseB, lat: 63.433 };
-    mockGetCategoryCamera.mockReturnValue({ a: poseA2, b: poseB2 } as CategoryCameraConfig);
-    act(() => rerender(props(map, { activeCategoryId: "transport" })));
+    act(() =>
+      rerender(
+        props(map, {
+          activeCategoryId: "transport",
+          categoryConfig: { a: poseA2, b: poseB2 },
+        }),
+      ),
+    );
 
     // Kjør HELE den nye cut-en (fade + settle).
     act(() => vi.advanceTimersByTime(CUT_FADE_MS + CUT_SETTLE_MS));
@@ -102,7 +97,6 @@ describe("useBoard3DCamera — cut-transition", () => {
   });
 
   it("redusert bevegelse: instant hopp til A, ingen cut-overlay, ingen A→B", () => {
-    mockGetCategoryCamera.mockReturnValue({ a: poseA, b: poseB } as CategoryCameraConfig);
     const map = makeMap();
     const { result } = renderHook((p: Props) => useBoard3DCamera(p), {
       initialProps: props(map, { reducedMotion: true }),
@@ -118,7 +112,6 @@ describe("useBoard3DCamera — cut-transition", () => {
   });
 
   it("pauset audio fryser bevegelsen (ingen fly-kall, ingen cut)", () => {
-    mockGetCategoryCamera.mockReturnValue({ a: poseA, b: poseB } as CategoryCameraConfig);
     const map = makeMap();
     const { result } = renderHook((p: Props) => useBoard3DCamera(p), {
       initialProps: props(map, { audioPaused: true }),
@@ -131,9 +124,10 @@ describe("useBoard3DCamera — cut-transition", () => {
   });
 
   it("A-only config: cut → orbit ved A (ingen B-fly)", () => {
-    mockGetCategoryCamera.mockReturnValue({ a: poseA } as CategoryCameraConfig);
     const map = makeMap();
-    renderHook((p: Props) => useBoard3DCamera(p), { initialProps: props(map) });
+    renderHook((p: Props) => useBoard3DCamera(p), {
+      initialProps: props(map, { categoryConfig: { a: poseA } }),
+    });
 
     act(() => vi.advanceTimersByTime(CUT_FADE_MS)); // hopp til A
     act(() => vi.advanceTimersByTime(CUT_SETTLE_MS)); // settle → startMove
@@ -144,10 +138,9 @@ describe("useBoard3DCamera — cut-transition", () => {
 
 describe("useBoard3DCamera — orbit/free uten config", () => {
   it("ingen config → orbit-fallback (fly inn + orbit), ingen cut-overlay", () => {
-    mockGetCategoryCamera.mockReturnValue(undefined);
     const map = makeMap();
     const { result } = renderHook((p: Props) => useBoard3DCamera(p), {
-      initialProps: props(map),
+      initialProps: props(map, { categoryConfig: undefined }),
     });
 
     expect(result.current.cutVisible).toBe(false);
@@ -157,10 +150,9 @@ describe("useBoard3DCamera — orbit/free uten config", () => {
   });
 
   it("free-modus → stopper, ingen fly", () => {
-    mockGetCategoryCamera.mockReturnValue(undefined);
     const map = makeMap();
     renderHook((p: Props) => useBoard3DCamera(p), {
-      initialProps: props(map, { cameraMode: "free" }),
+      initialProps: props(map, { cameraMode: "free", categoryConfig: undefined }),
     });
     expect(map.stopCameraAnimation).toHaveBeenCalled();
     expect(map.flyCameraTo).not.toHaveBeenCalled();

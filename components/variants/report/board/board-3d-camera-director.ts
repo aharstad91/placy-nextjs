@@ -1,4 +1,4 @@
-import type { CategoryCameraConfig } from "@/lib/types";
+import type { CameraPose, CategoryCameraConfig } from "@/lib/types";
 
 /** Et 3D-kamera klart for flyCameraTo / flyCameraAround. */
 export interface Hero3DCamera {
@@ -56,6 +56,70 @@ export function bearingBetween(
     Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
   const deg = (Math.atan2(y, x) * 180) / Math.PI;
   return (deg + 360) % 360;
+}
+
+/** Avstand i meter mellom to lat/lng-punkt (haversine). Ren. */
+export function haversineMeters(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+): number {
+  const R = 6371000;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+// ── Auto-utledet framing ────────────────────────────────────────────────────
+// Når en kategori IKKE har eksplisitte waypoints, utleder vi A/B fra kategoriens
+// POI-tyngdepunkt + hjemmet. Kameraet sentreres på midtpunktet mellom hjem og
+// innhold (så BEGGE er i bildet — R1), og svinger en rolig bue (heading ±DRIFT)
+// rundt det punktet under voice-overen — «dronen flyr rundt nabolaget». Range
+// skaleres med hjem→innhold-avstanden, men KLAMPES så en spredt kategori aldri
+// havner i orbit-høyde (den lærdommen). Eksplisitt config overstyrer alltid.
+const DERIVE_TILT = 60;
+const DERIVE_DRIFT_DEG = 22;
+const DERIVE_RANGE_MIN = 350;
+const DERIVE_RANGE_MAX = 850;
+
+/**
+ * Utleder en CategoryCameraConfig (A→B-bue) fra hjem + kategoriens POI-er.
+ * Returnerer null når det ikke er noen POI-er (→ orbit-fallback i directoren).
+ */
+export function deriveCategoryCamera(
+  home: { lat: number; lng: number },
+  poiCoords: { lat: number; lng: number }[],
+): CategoryCameraConfig | null {
+  if (poiCoords.length === 0) return null;
+  let latSum = 0;
+  let lngSum = 0;
+  for (const p of poiCoords) {
+    latSum += p.lat;
+    lngSum += p.lng;
+  }
+  const centroid = { lat: latSum / poiCoords.length, lng: lngSum / poiCoords.length };
+  const mid = {
+    lat: (home.lat + centroid.lat) / 2,
+    lng: (home.lng + centroid.lng) / 2,
+  };
+  const dist = haversineMeters(home, centroid);
+  const range = Math.min(
+    DERIVE_RANGE_MAX,
+    Math.max(DERIVE_RANGE_MIN, Math.round(dist * 1.6 + 200)),
+  );
+  const base = bearingBetween(home, centroid);
+  const pose = (headingOffset: number): CameraPose => ({
+    lat: Number(mid.lat.toFixed(6)),
+    lng: Number(mid.lng.toFixed(6)),
+    range,
+    tilt: DERIVE_TILT,
+    heading: ((base + headingOffset) % 360 + 360) % 360,
+  });
+  return { a: pose(-DERIVE_DRIFT_DEG), b: pose(DERIVE_DRIFT_DEG) };
 }
 
 /** Gjør en autorert CameraPose om til et Hero3DCamera (altitude alltid 0). */
