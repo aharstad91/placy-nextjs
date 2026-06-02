@@ -307,6 +307,33 @@ export interface ReportThemeAudio {
   timings?: ReportThemeAudioTimings;
 }
 
+/**
+ * Et autorert kamera-punkt for 3D-rapport-boardets per-kategori drone-bevegelse.
+ * Mapper 1:1 på Google Maps 3D `CameraOptions` (center + range/tilt/heading).
+ * `range` = avstand fra senter (m), `tilt` 0–90 (0 = rett ned), `heading` 0–360.
+ */
+export interface CameraPose {
+  lat: number;
+  lng: number;
+  range: number;
+  tilt: number;
+  heading: number;
+}
+
+/**
+ * Per-kategori kamera-konfig: dronen flyr fra `a` (start) til `b` (slutt) under
+ * kategoriens voice-over. `b` valgfri — utelatt = rolig orbit ved `a`.
+ * `moveDurationMs` overstyrer den audio-avledede varigheten (sjelden brukt).
+ *
+ * Lagres prototype-lokalt (se components/variants/report/board/camera-tours.ts).
+ * Prod-promotering til `ReportThemeConfig.camera` (Supabase) er deferert.
+ */
+export interface CategoryCameraConfig {
+  a: CameraPose;
+  b?: CameraPose;
+  moveDurationMs?: number;
+}
+
 export interface ReportThemeConfig {
   id: string;
   name: string;

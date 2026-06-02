@@ -310,6 +310,9 @@ export function buildCategoryTracks(cards: ReelsCard[]): AudioTrack[] {
     categoryId: c.kind === "category" ? c.categoryId : c.kind,
     url: c.audio.url,
     manus: c.audio.manus,
+    // durationSec avledet fra karaoke-timings — gjør A→B-kamerabevegelsens
+    // varighet kjent SYNKRONT ved cut-tid (uten å vente på <audio> loadedmetadata).
+    durationSec: audioDurationSec(c.audio),
   }));
 }
 

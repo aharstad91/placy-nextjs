@@ -60,9 +60,11 @@ describe("buildReelsCards", () => {
   });
 
   it("filtrerer ut kategorier uten audio", () => {
+    // Bruk kategori-id-er som IKKE finnes i CATEGORY_REELS_AUDIO-overriden,
+    // så makeCategory-audioen (eller mangelen på den) faktisk avgjør filteret.
     const data = makeBoardData([
-      makeCategory("mat-drikke", { audio: undefined }),
-      makeCategory("transport"),
+      makeCategory("kultur", { audio: undefined }),
+      makeCategory("shopping"),
     ]);
 
     const cards = buildReelsCards(data, "/reels/intro.mp4");
@@ -70,7 +72,7 @@ describe("buildReelsCards", () => {
     expect(cards).toHaveLength(2);
     expect(cards[1].kind).toBe("category");
     if (cards[1].kind === "category") {
-      expect(cards[1].categoryId).toBe("transport");
+      expect(cards[1].categoryId).toBe("shopping");
     }
   });
 
@@ -91,18 +93,42 @@ describe("buildReelsCards", () => {
 
 describe("buildCategoryTracks", () => {
   it("returnerer kun category-cards som AudioTrack[]", () => {
-    const data = makeBoardData([makeCategory("mat-drikke"), makeCategory("transport")]);
+    // Ikke-overridede kategori-id-er, så makeCategory-audioen flyter gjennom.
+    const data = makeBoardData([makeCategory("kultur"), makeCategory("shopping")]);
     const cards = buildReelsCards(data, "/reels/intro.mp4");
 
     const tracks = buildCategoryTracks(cards);
 
     expect(tracks).toHaveLength(2);
     expect(tracks[0]).toEqual({
-      categoryId: "mat-drikke",
-      url: "/audio/mat-drikke.mp3",
-      manus: "mat-drikke manus",
+      categoryId: "kultur",
+      url: "/audio/kultur.mp3",
+      manus: "kultur manus",
+      durationSec: undefined,
     });
-    expect(tracks[1].categoryId).toBe("transport");
+    expect(tracks[1].categoryId).toBe("shopping");
+  });
+
+  it("populerer durationSec fra karaoke-timings (siste end-tid)", () => {
+    const data = makeBoardData([
+      makeCategory("kultur", {
+        audio: {
+          url: "/audio/kultur.mp3",
+          manus: "kultur manus",
+          timings: {
+            characters: ["a", "b"],
+            characterStartTimesSeconds: [0, 6],
+            characterEndTimesSeconds: [6, 12.5],
+          },
+        },
+      }),
+    ]);
+    const cards = buildReelsCards(data, "/reels/intro.mp4");
+
+    const tracks = buildCategoryTracks(cards);
+
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].durationSec).toBe(12.5);
   });
 
   it("returnerer tom array når ingen category-cards", () => {
