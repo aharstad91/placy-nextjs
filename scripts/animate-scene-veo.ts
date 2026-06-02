@@ -23,6 +23,7 @@
  */
 
 import { config } from "dotenv";
+import { execFileSync } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -48,7 +49,7 @@ function parseArgs() {
   if (args.length < 2) {
     console.error(
       "Usage: animate-scene-veo.ts <input-image> <output-dir> " +
-        "[--prompt \"...\"] [--negative-prompt \"...\"] [--duration 8] [--model <modelname>] [--aspect 9:16|16:9|1:1]",
+        "[--prompt \"...\"] [--negative-prompt \"...\"] [--duration 8] [--model <modelname>] [--aspect 9:16|16:9|1:1] [--no-precrop]",
     );
     process.exit(1);
   }
@@ -62,6 +63,7 @@ function parseArgs() {
   let duration = 8;
   let model = DEFAULT_MODEL;
   let aspect = "9:16";
+  let precrop = true;
 
   for (let i = 2; i < args.length; i++) {
     if (args[i] === "--prompt" && args[i + 1]) prompt = args[++i];
@@ -69,9 +71,47 @@ function parseArgs() {
     else if (args[i] === "--duration" && args[i + 1]) duration = Number(args[++i]);
     else if (args[i] === "--model" && args[i + 1]) model = args[++i];
     else if (args[i] === "--aspect" && args[i + 1]) aspect = args[++i];
+    else if (args[i] === "--no-precrop") precrop = false;
   }
 
-  return { input, outputDir, prompt, negativePrompt, duration, model, aspect };
+  return { input, outputDir, prompt, negativePrompt, duration, model, aspect, precrop };
+}
+
+/**
+ * Senter-crop bildet til mål-aspect FØR Veo. Veo letterboxer ellers ALT som
+ * ikke matcher --aspect med svarte felt (et 1:1-bilde til 16:9 → brede felt
+ * på sidene). Ved å gi Veo et bilde som allerede har riktig forhold, fyller
+ * den rammen. Returnerer sti til croppet temp-fil (eller original ved feil).
+ */
+function cropImageToAspect(
+  input: string,
+  aspect: string,
+  outputDir: string,
+): string {
+  const [arW, arH] = aspect.split(":").map(Number);
+  if (!arW || !arH) return input;
+  const cropDir = path.join(outputDir, ".precrop");
+  const cropped = path.join(cropDir, `${path.basename(input, path.extname(input))}-${arW}x${arH}.png`);
+  try {
+    execFileSync("/bin/mkdir", ["-p", cropDir]);
+    // Senter-crop til største rektangel som matcher arW:arH (ffmpeg crop er sentrert).
+    execFileSync(
+      "ffmpeg",
+      [
+        "-y",
+        "-i", input,
+        "-vf", `crop='min(iw,ih*${arW}/${arH})':'min(ih,iw*${arH}/${arW})'`,
+        cropped,
+      ],
+      { stdio: ["ignore", "ignore", "ignore"] },
+    );
+    return cropped;
+  } catch (err) {
+    console.warn(
+      `[precrop] hoppet over (ffmpeg feilet: ${(err as Error).message.slice(0, 80)}) — Veo kan letterboxe`,
+    );
+    return input;
+  }
 }
 
 async function imageToBase64(filepath: string): Promise<{ data: string; mime: string }> {
@@ -190,21 +230,25 @@ async function tryWithModel(model: string, opts: {
 }
 
 async function main() {
-  const { input, outputDir, prompt, negativePrompt, duration, model, aspect } = parseArgs();
+  const { input, outputDir, prompt, negativePrompt, duration, model, aspect, precrop } = parseArgs();
   await fs.mkdir(outputDir, { recursive: true });
 
   const stem = path.basename(input, path.extname(input));
   const outputFile = path.join(outputDir, `${stem}.mp4`);
 
+  // Pre-crop input til --aspect så Veo ikke letterboxer (svarte felt).
+  const sourceImage = precrop ? cropImageToAspect(input, aspect, outputDir) : input;
+
   console.log(`\nanimate-scene-veo`);
   console.log(`  input:           ${input}`);
+  if (sourceImage !== input) console.log(`  pre-cropped:     ${sourceImage} (→ ${aspect})`);
   console.log(`  output:          ${outputFile}`);
   console.log(`  prompt:          ${prompt}`);
   console.log(`  negativePrompt:  ${negativePrompt}`);
   console.log(`  duration:        ${duration}s, aspect: ${aspect}, audio: off\n`);
 
   console.log("Encoding image…");
-  const { data: imageB64, mime: mimeType } = await imageToBase64(input);
+  const { data: imageB64, mime: mimeType } = await imageToBase64(sourceImage);
   console.log(`  base64 size: ${(imageB64.length / 1024).toFixed(0)} KB, mime: ${mimeType}`);
 
   const tryModels = [model, ...FALLBACK_MODELS.filter(m => m !== model)];

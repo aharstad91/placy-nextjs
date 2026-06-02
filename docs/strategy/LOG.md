@@ -14,6 +14,32 @@
 
 ---
 
+## 2026-06-02 — Marketer/HomeKey kartlagt som konkurrent/benchmark
+
+**Beslutning:** Marketer Real Estate Technologies (Oslo, 2016, ~68 ansatte, ~$26,9M reist, ~32 % NO-markedsandel nybygg, rebrander til HomeKey.ai / M360-plattform) kartlagt som proptech-aktøren bak Stasjonskvartalets boligvelger + 3D-flythrough-intro. Posisjonering landet: **ikke konkurrér på transaksjonslaget** (boligvelger/annonser/CRM — de har skala + kapital), **konkurrér/komplementér på kontekstlaget** (lokasjons-/nabolagsintelligens via Report) der de er tynne. Marketer er potensiell distribusjons-partner (Placy som innholdslag inni deres boligvelger) ELLER fremtidig konkurrent hvis de utvider inn i område-innhold.
+
+**Begrunnelse:** Stasjonskvartalet (klient vi jobber med) har kjøpt en Marketer-leveranse — synlig på `stasjonskvartalet.no/boligvelger`. Flythrough-videoen deres (3D-bymodell + prosjektets arkitekt-modell plassert inn + waypoint-kamera) er nettopp det rapport-boardet vårt gjør *live* på ekte Google-fotogrammetri. Det gir både en teknisk benchmark og et klart bilde av hvor Placy IKKE bør slåss head-on. Antatt prising: flythrough alene ~20–60k NOK, full kampanje 6–7-sifret — vs. Placys ~120 kr for hele image-to-video-showcasen (unit-economics-argument).
+
+**Detaljer:** `docs/strategy/2026-06-02-marketer-homekey-konkurrent.md` — full profil, leveranse-teknikk, pris-estimat, differensiering (transaksjonslag vs kontekstlag), partner-vs-konkurrent.
+
+**Status:** Aktiv — konkurrent-intel, ikke kontakt. Åpent: bekreft Stasjonskvartalets utbygger + DNBs rolle; vurder partner-tilnærming til Marketer/HomeKey.
+
+---
+
+## 2026-06-02 — Megler-stemme-kloning som personaliserings- og avtale-spak
+
+**Beslutning:** ElevenLabs voice cloning anerkjennes som fremtidig grep med to dokumenterte bruk: (a) **per-megler personalisering** — gjenskap meglerens egen stemme så Rapport/Reels/audio-tour høres ut som *deres* megler, tilbudt som premium-oppgradering; (b) **dialekt-stemme som kjede-avtale-spak** — en lokal dialekt-husstemme (f.eks. trønder) som komponent i en meglerkjede-avtale. Default forblir nøytral husstemme ("Erik"); kloning er oppside-akse, ikke MVP-krav. Endrer ikke prioriteringen i 2026-05-06-beslutningen.
+
+**Begrunnelse:** Teknisk nesten gratis å innføre — pipelinen tar allerede `voiceId` som parameter, så en klone er en konfig-akse, ikke en ombygging. Personlig megler-stemme er differensiator mot statiske områdesider i boligkjøper-segmentet; lokal dialekt-stemme er et eksklusivt, lavmarginalkost-salgsargument *til* en kjede og autentisitet *til* deres kunder. To veier i ElevenLabs: IVC (1–2 min opptak, few-shot) for spike/demo, PVC (30 min–3 t, fine-tuner) for produkt.
+
+**Avlastet:** Ikke et aktivt spor — hotell-prioritet står. Per-megler-onboarding (opptaks-/klone-rutine) og self-serve er separate utviklings-fasespørsmål, ikke MVP. Samtykke-/opphørs-flyt for navngitt stemme er uløst og blokkerer ekstern pilot. Emosjonell respons (tillitsbyggende vs. creepy) er udokumentert og må valideres.
+
+**Detaljer:** `docs/strategy/2026-06-02-megler-stemme-kloning-spor.md` — IVC vs PVC-sammenligning, de to grepene utdypet, samtykke/jus/opphør, risici, neste steg.
+
+**Status:** Hypotese — ikke validert. Neste konkrete trinn: IVC-spike (én megler, ~2 min opptak, swap `voiceId` i ett Reels-spor, lytt) før PVC-investering.
+
+---
+
 ## 2026-05-24 — Placy Reels lansert som tverr-sporvalg-asset
 
 **Beslutning:** SOME-video-konseptet brainstormet med Markus får navnet **Placy Reels** og defineres som funnel-asset for ALLE Placy-produkter (Explorer/Guide/Report), ikke et separat produkt. Tech-spike validert (Veo 3.0 fast + ElevenLabs Erik + ffmpeg single-pass) med Stasjonskvartalet-pilot, per-video variabel kost ~$1-3. Reels bakes inn i eksisterende pilot-pakker som tilleggs-verdi (hotell-pilot 1490/mnd får Explorer + Reels, ikke prising-separasjon i fase 1). Pipelinen designes cross-vertical fra dag 1 (bolig + hotell + event + cruise + DMO) selv om aktive spor per LOG.md-beslutning 2026-05-06 forblir uendret (hotell først, cruise til fase 3).

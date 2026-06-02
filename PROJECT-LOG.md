@@ -6,6 +6,36 @@
 
 ---
 
+## 2026-06-02 (natt) — Multi-bilde showcase-reel (stills + video) + Veo pillarbox-fiks
+
+### Kontekst
+Fortsettelse av image-to-video-økten. Mål: fremheve evnen «gi oss renderene, vi gir deg levende video». Lagde Veo-videoer av de to gjenværende Stasjonskvartalet-renderene (takterrasse 3:2, gårdsrom 1:1) → tre Veo-videoer totalt (+ havn fra forrige entry). Bygde to nye komposisjons-verktøy og oppdaget/fikset en Veo letterbox-felle. Konseptet vurdert bevist av bruker.
+
+### To nye komposisjons-scripts (gratis lokal ffmpeg, ingen API)
+- **`scripts/compose-slideshow.ts`** — kryss-fade-rotasjon mellom STILLS med subtil Ken Burns. VO-fritt, normaliserer vilkårlige aspect ratios til felles format (`--fit cover|blur`). Søster til `compose-reels-bg.ts` (som er VO-synket HARD-CUT) — dette er VO-fritt med KRYSS-FADE, for hero-/loop-bakgrunner.
+- **`scripts/compose-video-crossfade.ts`** — kjeder ferdige VIDEOER med xfade (bevarer bevegelsen i hvert klipp). Auto-detekterer + fjerner Veos pillarbox-felt (`cropdetect`) og cover-fyller til mål-format. Lager også web-komprimert variant + poster-fallback (første frame, for `<video poster=…>`).
+
+### NØKKELLÆRDOM: Veo pillarboxer alt som ikke matcher `--aspect`
+`parameters.aspectRatio` setter bare CONTAINER-formatet (16:9 → 1280x720), men Veo FYLLER ikke rammen — den letterboxer input med svarte felt. Målt via `cropdetect`/`signalstats` (YAVG≈16 = svart): 1:1-input → 280px sidefelt, 4:3 → 160px, 3:2 → 100px. Manifesterte seg som «video nr. 2 har annet format» (gårdsrommet var kvadratisk → mest synlig).
+- **Fiks 1 (post, ingen re-gen):** `compose-video-crossfade` cropdetecter + cover-fyller hvert klipp → reel ren. Bevarer den verifiserte bevegelsen.
+- **Fiks 2 (durabel):** `animate-scene-veo` pre-cropper nå input til `--aspect` FØR Veo (senter-crop via ffmpeg `crop='min(iw,ih*AR)':...'`). Verifisert: 1500x1500 → 1500x844 = nøyaktig 16:9. `--no-precrop` for å skru av. Fremtidige renders pillarboxes aldri.
+
+### Kost (Veo, Gemini API, juni 2026-priser)
+Fast @720p $0,10/s, full (m/lyd) $0,40/s. Økten: 2 fast + 3 full × 8 s = **$11,20 ≈ ~123 kr**. Per ferdig levert video ~35 kr. Mislykkede genereringer belastes ikke (alle 5 gikk gjennom). Slideshow/reel/crop/komprimering = 0 kr (lokal ffmpeg).
+
+### Leveranse
+`~/Desktop/placy-video-reel/`: `reel.mp4` (3 videoer krysstonet, 22 s, 1280x720) + `reel-web.mp4` (5 MB) + `reel-poster.jpg` + `enkeltvideoer/{terrasse,gaardsrom,havn}-16x9.mp4` (felt-frie). Stills-slideshow: `~/Desktop/placy-slideshow/rotasjon.mp4`.
+
+### Åpne tråder / status
+- **Uforpliktet:** de to nye scriptene + precrop-endringen i `animate-scene-veo.ts` er IKKE committet (bruker valgte kun worklog denne gangen).
+- **Branch:** `--aspect`-committen (22daa18) ligger på `main`, upushet — branch-valg står åpent.
+- **Deferred til behov:** aspect-ratio art-direction (ikke-16:9 master-format, eller hånd-crop per bilde for å styre nøyaktig beskjæring). Kvadratisk kilde → 16:9 cover-crop mister topp/bunn — uunngåelig uten formatendring.
+
+### Nøkkelfiler
+- `scripts/compose-slideshow.ts` (ny), `scripts/compose-video-crossfade.ts` (ny), `scripts/animate-scene-veo.ts` (pre-crop til `--aspect`)
+
+---
+
 ## 2026-06-02 (kveld, sen) — Veo image-to-video for arkitektur-render + `--aspect`-flagg
 
 ### Kontekst
