@@ -6,6 +6,58 @@
 
 ---
 
+## 2026-06-03 — 3D-bygningsmodell på Google Photorealistic 3D Tiles + flythrough-video (demo-spike)
+
+### Kontekst
+Bevise at vi kan matche/over-skalere Marketers pre-bakte flythrough (se `docs/strategy/2026-06-02-marketer-homekey-konkurrent.md`): plassere en 3D-bygningsmodell inn i Google sine ekte fotogrammetri-tiles og fly en regissert kamerabane inn på den — interaktivt i rapport-boardet OG eksportert til video. Kjørt via `/ce-work` mot planen `docs/plans/2026-06-02-002-feat-3d-modell-paa-google-tiles-demo-plan.md` i egen worktree (`feat/3d-model-on-tiles`). Mål satt underveis av bruker: «fungerende flythrough som kjører i Google Maps 3D, så vi får gjenskapt video fra konteksten.» Levert.
+
+### Hva ble bygget
+- **`Model3DElement`-lag** (`components/map/model-layer-3d.tsx`, NY): imperativt 3D-barn som speiler `route-layer-3d.tsx` 1:1 — én langlevet instans per `map3d` (cachet i ref), MUTÉR props (aldri remount → unngår GPU-buffer-leak), `cancelled`-guard + ref-double-check etter `importLibrary`-await (StrictMode), append-kun-når-`!parentNode`, remove+null-ref ved unmount. Montert i `BoardMap3D.tsx` ved siden av `RouteLayer3D` (lazy `dynamic`).
+- **`Board3DModel`-type** (`lib/types.ts`): mapper 1:1 på Google `Model3DElementOptions` (`src`/`position`/`orientation`/`scale`/`altitudeMode`) → ekte arkitekt-`.glb` kan byttes inn uten kodeendring.
+- **Prototype-lokal modell-config** (`components/variants/report/board/board-models.ts`, NY): speiler `camera-tours.ts` (slug → `Board3DModel`). `position` utelatt → faller tilbake til `data.home.coordinates` (single-sourced fra Supabase). `CLAMP_TO_GROUND`, skala `{x:60,y:34,z:46}` m.
+- **Placeholder-`.glb`** (`public/models/placeholder-massing.glb` + `scripts/gen-placeholder-massing-glb.mjs`, NY): nullavhengighets-script som emitterer en gyldig 892-byte binær glTF 2.0 enhetskube (base i y=0, `doubleSided`). Google støtter KUN `.glb` (ikke rå glTF-JSON). Skala/orientering tunes via config.
+- **Modell-framing-waypoints** (`camera-tours.ts`): `stasjonskvartalet.transport` A→B (vid by-kontekst → nærbilde på bygget), autorert mot tiles via `?author=1`. Gjenbruker director uendret.
+- **CDP-video-capture** (`scripts/capture-3d-flythrough.mjs`, NY): fanger flythrough via `Page.startScreencast` (vanlige screenshots timer ut på kontinuerlig-rendrende gmp-map-3d). Egen headed Chrome (ekte GPU), skjuler app-chrome (sidebar/toggles) men beholder Google-attribusjon (ToS), driver kameraet med samme `flyCameraTo` som directoren, ffmpeg-assembler.
+
+### Sentrale tekniske funn
+- vis.gl `@vis.gl/react-google-maps@1.8.3` har INGEN `<Model3D>` React-wrapper → må gå imperativt (importLibrary + `new lib.Model3DElement` + `map3d.append`).
+- `@types/google.maps@3.64.0` har ALLEREDE `Model3DElement` (+ i `Maps3DLibrary`) → ingen lokal `.d.ts`-augmentering nødvendig. `skipLibCheck:true` sameksisterer med eksisterende Marker3D-augmentering.
+- `Model3DElement` er Preview/Experimental (gratis, ingen SLA), eksponert på `weekly`-kanalen vis.gl bruker.
+- Stasjonskvartalet-senter `63.436523, 10.400747` (Sjøgangen 7) — fra Supabase `projects.center_lat/lng`, eksakt match mot Nominatim-geokoding.
+
+### Verifisering (frisk Chrome via chrome-devtools MCP + CDP-capture)
+- Modell rendrer stabilt på tiles: nøyaktig 1 `gmp-model-3d` (ingen StrictMode-dupe), appendet til `GMP-MAP-3D`, `src` same-origin, posisjon = modell-senter, `CLAMP_TO_GROUND` (base på terreng), stående oppreist. **Ingen WebGL-kontekst-feil, ingen model-load/CORS-feil** i konsollen.
+- Flythrough fyrer i produktet: trigget «transport»-kapittelet → directoren fløy A→B og landet på bygget (range 250, tilt 66, sentrert på modell).
+- **Video levert**: `~/Desktop/placy-3d-flythrough/` → `flythrough.mp4` (1280×720, 30fps, ~9s, clean hero — vid Trondheim-kontekst → nedstigning → landing på bygget), `flythrough-web.mp4` (4.7 MB), `flythrough-poster.jpg`, `flythrough-in-board.mp4` (med sidebar — beviser at den kjører live i boardet). 794 screencast-frames over 9s.
+
+### Tomt-kollisjon (Unit 5) + mitigering
+Stasjonskvartalet er ubygget → finnes ikke i Googles tiles. Modellen lander derfor oppå Brattøras eksisterende jernbanespor/tomt. Observert i alle frames. **Mitigering: kamera-framing** — vid A viser hele nabolags-konteksten (bygget merket «Nybygg 2028»), B rammer bygget som tydelig hero med byen bak og sporene som forgrunns-infrastruktur. Full skjuling av tomt-regionen er deferert (eget grep).
+
+### Asset-grensesnitt (Unit 7)
+Bekreftet config-drevet: `ModelLayer3D` leser `model.src` generisk → `Model3DElement.src`. Bytt til ekte arkitekt-`.glb` = endre `src`-strengen i `board-models.ts` (eller erstatt fila). Ingen kodeendring. Peker mot rekonstruksjons-tasken (turntable-renders → glTF).
+
+### Kvalitet
+- `tsc` 0, `eslint` 0 (egne filer), `npm run build` OK, `camera-tours` 9/9 tester.
+- **3 pre-eksisterende test-feil i `lib/curation/validator.test.ts`** (egennavn-ekstraksjon/æøå) — IKKE relatert til denne spiken; bekreftet at de feiler også på base-commit med endringene stashed. Utenfor scope.
+- Adversarisk code-review (lifecycle/WebGL-invarianter): ingen kritiske funn; laget speiler `route-layer-3d` trofast. Ett hardnings-funn adressert: dokumentert koblings-invariant (kamera-coords MÅ = home-koordinat) i `camera-tours.ts`.
+
+### Kjente begrensninger / deferred
+- Reduced-motion → director holder statisk på A (vid), ikke nærbilde B (director-oppførsel, utenfor scope).
+- Placeholder-massing er en boks (ikke ekte arkitektur). Rekonstruksjon fra klient-renders = egen task.
+- `Model3DElement` Preview-API — verifiser ved GA. ToS/billing for ekstern video-distribusjon avklares før bruk utenfor demo.
+- IP-grense: kun rekonstruér fra klient-eide renders; aldri ship modell rekonstruert fra konkurrent-CDN.
+
+### Strategisk
+Validerer Marketer-benchmark-tesen: vi LEIER Googles globale fotorealistiske by som tjeneste og trenger bare prosjektets modell plassert inn — vs. Marketer som bygger egen by-modell per leveranse. Skaleringsfortrinn bekreftet teknisk.
+
+### Nøkkelfiler
+`components/map/model-layer-3d.tsx`, `components/variants/report/board/{board-models.ts,BoardMap3D.tsx,camera-tours.ts}`, `lib/types.ts` (`Board3DModel`), `public/models/placeholder-massing.glb`, `scripts/{gen-placeholder-massing-glb,capture-3d-flythrough}.mjs`.
+
+### Status
+Committet til `feat/3d-model-on-tiles` (egen worktree). Ikke pushet/merget (prototype-rytme — venter på bruker). Video-deliverables på `~/Desktop/placy-3d-flythrough/`.
+
+---
+
 ## 2026-06-02 (kveld→natt) — Velkomst-splash + 3D default map-engine + WebGL-kontekst-lekkasje fikset
 
 ### Kontekst
