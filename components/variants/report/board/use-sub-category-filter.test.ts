@@ -36,6 +36,7 @@ function makeCategory(id: string, pois: POI[]): BoardCategory {
       categoryId: id as BoardCategoryId,
       raw: p,
     })),
+    topRankedPois: [],
   };
 }
 

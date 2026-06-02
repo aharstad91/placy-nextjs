@@ -21,6 +21,7 @@ function makeCategory(
     illustration: { src: `/illustrations/stasjonskvartalet-${id}.jpg`, width: 100, height: 100 },
     audio: { url: `/audio/${id}.mp3`, manus: `${id} manus` },
     pois: [] as BoardPOI[],
+    topRankedPois: [] as BoardPOI[],
     ...overrides,
   };
 }

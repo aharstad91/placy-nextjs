@@ -8,8 +8,7 @@ import { DEFAULT_CAMERA_LOCK } from "@/components/variants/report/blocks/report-
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
-import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
-import { useTweenedOpacities } from "./use-tweened-opacities";
+import type { POI } from "@/lib/types";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
 // RouteLayer3D lazy-loaded — samme bundling-strategi som ReportThemeSection
@@ -29,28 +28,129 @@ interface Props {
    */
   pendingCamera: PendingCamera | null;
   /**
-   * Sidebar-okkludering på venstre side i piksler. Bounds-fit i tour-mode
-   * skalerer range opp og forskyver center.lng østover slik at alle markører
-   * lander til høyre for sidebar (speiler 2D-padding-mønsteret).
+   * Sidebar-okkludering på venstre side i piksler. Beholdt for grensesnitt-
+   * paritet med 2D-varianten; den cinematiske drone-orbiten IGNORERER den og
+   * sentrerer på prosjektet (se composeFixedHero) for stabil orbit. Prosjektet
+   * lander i skjerm-senter, godt til høyre for sidebaren.
    */
   mapPaddingLeft?: number;
 }
 
+/** Et 3D-kamera klart for flyCameraTo. */
+interface HeroCamera {
+  center: { lat: number; lng: number; altitude: number };
+  range: number;
+  tilt: number;
+  heading: number;
+}
+
+type FlyCapableMap = {
+  flyCameraTo?: (opts: { endCamera: HeroCamera; durationMillis: number }) => void;
+  /** Native Google Maps 3D drone-orbit: sirkler rundt camera.center, én
+   *  revolusjon per `durationMillis`, gjentatt `repeatCount` ganger (Infinity =
+   *  evig, sømløst loopet internt av Google). GPU-drevet og smooth. */
+  flyCameraAround?: (opts: {
+    camera: HeroCamera;
+    durationMillis: number;
+    repeatCount?: number;
+  }) => void;
+  /** Stopper enhver pågående fly/orbit-animasjon umiddelbart. */
+  stopCameraAnimation?: () => void;
+};
+
+/** Fly-varighet ved POI-åpning / fly-back (ms). */
+const POI_FLY_MS = 900;
+
+/** FAST avstand (meter) fra prosjektet i kategori-hero. Kameraet zoomer ALDRI
+ *  ut for å ramme alle POI-er — en kategori spredt over byen ville da havne i
+ *  orbit-høyde der man ikke relaterer til innholdet. I stedet står dronen på
+ *  fast avstand og bytter kun VINKEL (heading) mellom kategoriene. Juster for å
+ *  komme nærmere/lengre fra bygget. */
+const HERO_RANGE = 650;
+/** FAST avstand i oversikt (intro/outro/megler) — litt videre for å etablere stedet. */
+const OVERVIEW_RANGE = 900;
+/** Tilt på hero-kamera per kategori (grader; høyere = mer skrått/dramatisk). */
+const HERO_TILT = 60;
+/** Tilt i oversikt — litt flatere. */
+const OVERVIEW_TILT = 50;
+/** Tilt ved åpnet POI — tettest og mest skrått. */
+const POI_TILT = 60;
+/** Range ved åpnet POI. */
+const POI_RANGE = 300;
+
+// ── Drone-orbit ───────────────────────────────────────────────────────────
+// Kameraet sirkler rolig rundt prosjektet hele tiden (som et helikopter), så
+// scenen alltid lever. Bruker Googles native `flyCameraAround` (GPU-drevet og
+// smooth — IKKE en rAF/flyCameraTo-loop, som denne kodebasen vet hakker).
+/** Varighet for én full revolusjon (ms). Høyere = roligere orbit. Orbiten
+ *  looper evig (repeatCount: Infinity) til den stoppes. */
+const ORBIT_ROUND_MS = 90000;
+/** Varighet på re-aim/resume-flyet inn til hero før orbiten (gjen)starter (ms). */
+const REAIM_FLY_MS = 1600;
+/** Idle-tid etter siste bruker-interaksjon før orbiten gjenopptas (ms). */
+const IDLE_RESUME_MS = 5000;
+
+/** Bearing (grader, 0 = nord) fra punkt A mot punkt B. */
+function bearingBetween(
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+): number {
+  const lat1 = (from.lat * Math.PI) / 180;
+  const lat2 = (to.lat * Math.PI) / 180;
+  const dLng = ((to.lng - from.lng) * Math.PI) / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) -
+    Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  const deg = (Math.atan2(y, x) * 180) / Math.PI;
+  return (deg + 360) % 360;
+}
+
 /**
- * 3D-modus av board-kartet.
+ * Komponerer et hero-kamera på FAST avstand fra et senterpunkt (prosjektet).
+ *
+ * I motsetning til en fitBounds-sweep (som zoomer langt ut når en kategori er
+ * spredt over hele byen) står kameraet alltid `range` meter fra `center` og
+ * endrer kun heading/tilt. Det holder bygget i fokus på en avstand der man
+ * faktisk relaterer til innholdet — brukeren kan zoome/panne fritt derfra.
+ *
+ * Senteret er prosjektet selv — IKKE sidebar-forskjøvet. Drone-orbiten sirkler
+ * rundt camera.center, så center må være bygget for at det skal stå stabilt i
+ * bildet mens kameraet går rundt. (En sidebar-forskyvning ville plassert bygget
+ * utenfor orbit-senteret → bygget ville vandret i en sirkel under orbiten.) Med
+ * venstre-sidebar lander prosjektet i skjerm-senter, godt til høyre for baren.
+ */
+function composeFixedHero(opts: {
+  center: { lat: number; lng: number };
+  range: number;
+  tilt: number;
+  heading: number;
+}): HeroCamera {
+  const { center, range, tilt, heading } = opts;
+  return {
+    center: { lat: center.lat, lng: center.lng, altitude: 0 },
+    range,
+    tilt,
+    heading,
+  };
+}
+
+/**
+ * 3D-modus av board-kartet — VARIANT B (cinematic hero-shots).
  *
  * - Bruker `MapView3D` fra components/map (Google Photorealistic 3D Tiles).
- * - Lytter på board-state phases og flyer kameraet via `google3dAdapter`.
+ * - Kameraet sirkler rolig rundt prosjektet på FAST avstand (drone/helikopter),
+ *   så scenen alltid lever. Ved kategori-skifte svinger dronen til en ny vinkel
+ *   (heading fra tomten mot kategori-centroiden) og fortsetter orbiten — den
+ *   zoomer ALDRI ut for å ramme alle pins. Bruker-interaksjon pauser orbiten;
+ *   den gjenopptas etter en kort idle-periode. Se «Kamera-director» under.
+ * - Markørene monteres på full opacity (ingen opacity-reveal — den churnet
+ *   Google 3D's SVG-rasterisering og eksploderte WebGL-kontekster).
+ * - Kun de relevante markørene mountes: aktiv kategoris POI-er under avspilling,
+ *   et kuratert top-3/kategori-ankersett i oversikt.
  * - Tegner walking-rute fra Home → aktiv POI via `RouteLayer3D`.
- *
- * Bevisste forenklinger sammenlignet med 2D-versjonen:
- * - Default-phase: ingen fitBounds (Google 3D har ikke en native fitBounds-API
- *   for `Map3DElement`), men `defaultCenter` + `cameraLock.range` gir oversikt.
- * - active-phase: fly til prosjektets center med default range. (Bounds-fit
- *   over POI-er er en dokumentert begrensning — se nederst.)
- * - poi-phase: fly til POI med en tettere range (1500 m → ~POI-nær zoom).
  */
-export function BoardMap3D({ pendingCamera, mapPaddingLeft = 0 }: Props) {
+export function BoardMap3D({ pendingCamera }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
@@ -63,45 +163,28 @@ export function BoardMap3D({ pendingCamera, mapPaddingLeft = 0 }: Props) {
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
 
-  // For å fade markører ved kategori-skifte rendres ALLE POI-er alltid med
-  // stabil DOM-identitet, og synlighet styres via `opacities`-map som
-  // useTweenedOpacities animerer per rAF (Google rasteriserer SVG per render,
-  // så CSS-transitions virker ikke — opacity må drives som React-state).
-  //
-  // - default + ingen aktiv kategori (Hjem): alle POIs synlige (opacity 1).
-  // - default/active + aktiv kategori: kun den kategoriens POIs synlige.
-  // - active|poi: kun aktiv kategoris POIs, med sub-filter applisert.
-  const allPOIs = useMemo(
-    () => data.categories.flatMap((c) => c.pois.map((p) => p.raw)),
+  // Oversikts-ankersett: top-3 score-rangerte POI-er per kategori (~18–21 stk).
+  // Brukes når ingen kategori spiller (intro/home/outro/megler). Score-rangert
+  // via topRankedPois, IKKE distanse-sortert.
+  const overviewPOIs = useMemo(
+    () => data.categories.flatMap((c) => c.topRankedPois.slice(0, 3).map((p) => p.raw)),
     [data.categories],
   );
 
-  const visibleIds = useMemo(() => {
-    const ids = new Set<string>();
-    if (state.phase === "default" && !activeCategory) {
-      for (const cat of data.categories) {
-        for (const p of cat.pois) ids.add(p.id);
-      }
-    } else if (activeCategory) {
-      const useFilter =
-        state.phase !== "default" && subFilter.hiddenIds.size > 0;
+  // Markørsettet som faktisk mountes. Når en kategori spiller: kun den
+  // kategoriens POI-er (sub-filtrert). Ellers: det kuraterte ankersettet.
+  const markerPOIs = useMemo<POI[]>(() => {
+    if (activeCategory) {
+      const useFilter = state.phase !== "default" && subFilter.hiddenIds.size > 0;
+      const result: POI[] = [];
       for (const p of activeCategory.pois) {
         if (useFilter && subFilter.hiddenIds.has(p.raw.category.id)) continue;
-        ids.add(p.id);
+        result.push(p.raw);
       }
+      return result;
     }
-    return ids;
-  }, [state.phase, data.categories, activeCategory, subFilter.hiddenIds]);
-
-  const allIds = useMemo(() => allPOIs.map((p) => p.id), [allPOIs]);
-  const opacities = useTweenedOpacities(allIds, visibleIds, 300);
-
-  // Faktisk-synlige POI-er (target=1) brukt av kamera-fit. Markører som er
-  // mid-fade-out ekskluderes så kameraet følger målet, ikke DOM-mengden.
-  const visiblePOIs = useMemo(
-    () => allPOIs.filter((p) => visibleIds.has(p.id)),
-    [allPOIs, visibleIds],
-  );
+    return overviewPOIs;
+  }, [activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
 
   // Default-camera: bruk pendingCamera hvis tilgjengelig (fra toggle), ellers
   // prosjektets home-koordinater + default 3D-tilt.
@@ -135,6 +218,22 @@ export function BoardMap3D({ pendingCamera, mapPaddingLeft = 0 }: Props) {
     setMap3dInstance(m);
   }, []);
 
+  // Stabil click-handler — sitter i Marker3DItems memo-props, så en fersk inline
+  // arrow per render ville defeate memo for HVER markør. useCallback bevarer
+  // referansen så memo holder (S1).
+  const handlePOIClick = useCallback(
+    (poiId: string) => {
+      for (const cat of data.categories) {
+        const found = cat.pois.find((p) => p.id === poiId);
+        if (found) {
+          dispatch({ type: "OPEN_POI", id: found.id, categoryId: cat.id });
+          return;
+        }
+      }
+    },
+    [data.categories, dispatch],
+  );
+
   // Klikk på kart-bakgrunn (ikke markør) → lukk POI-popup. Speiler 2D-mappens
   // onClick på <Map>. gmp-click fyrer for alle klikk i map-elementet inkludert
   // marker-klikk (bubbler), så vi filtrerer på e.target.closest for å unngå at
@@ -151,108 +250,186 @@ export function BoardMap3D({ pendingCamera, mapPaddingLeft = 0 }: Props) {
     return () => el.removeEventListener("gmp-click", onMapClick);
   }, [map3dInstance, state.activePOIId, dispatch]);
 
-  // Tour-mode bounding-box-fit (speiler BoardMap.tsx 2D-logikken): når
-  // audio-tour kjører, rekalkuler kameraet for hvert kategori-skifte slik at
-  // alle synlige markører + home får plass. Gir samme "view changes"-feedback
-  // per spor som 2D. Utenfor tour-mode holder kartet posisjonen sin.
-  //
-  // Google Maps 3D mangler en native `fitBounds`, så vi konverterer bbox til
-  // (center, range): center = midtpunkt, range = halvdiagonal / tan(FOV/2)
-  // med padding-faktor. FOV=35° matcher det Google faktisk bruker (confirmed
-  // via attribution-URL parameters).
-  const tourPhase = useAudioTourPhase();
-  const tourActive = tourPhase === "playing" || tourPhase === "paused";
+  // ── Hero-kamera-komposisjon ────────────────────────────────────────────
+  // En hero-frame for en kategori: kameraet står på FAST avstand (HERO_RANGE)
+  // fra prosjektet, og heading peker fra prosjektet mot kategoriens tyngdepunkt
+  // — hver kategori får dermed en egen, meningsbærende kameravinkel («vi snur
+  // oss mot mat-strøket») UTEN å zoome ut for å ramme alle pins.
+  const composeCategoryHero = useCallback(
+    (catPOIs: POI[]): HeroCamera | null => {
+      if (catPOIs.length === 0) return null;
+      const home = data.home.coordinates;
 
-  // visiblePOIs er en ny array-referanse hver gang state.phase endres (default
-  // ↔ poi) selv om innholdet er likt. Med visiblePOIs i dep-arrayen ville
-  // bounds-fit fyrt på hvert marker-klikk (phase=default→poi) — som gir uønsket
-  // auto-zoom/drag. Lest via ref slik at effekten kun re-fyrer på reelle
-  // kategori-skifter (activeCategory.id) eller tour-state-endringer.
-  const visiblePOIsRef = useRef(visiblePOIs);
-  visiblePOIsRef.current = visiblePOIs;
+      const centroid = catPOIs.reduce(
+        (acc, p) => {
+          acc.lat += p.coordinates.lat;
+          acc.lng += p.coordinates.lng;
+          return acc;
+        },
+        { lat: 0, lng: 0 },
+      );
+      centroid.lat /= catPOIs.length;
+      centroid.lng /= catPOIs.length;
 
-  useEffect(() => {
-    if (!tourActive) return;
-    if (!map3dInstance) return;
-    const pois = visiblePOIsRef.current;
-    if (pois.length === 0) return;
-    let west = data.home.coordinates.lng;
-    let east = data.home.coordinates.lng;
-    let south = data.home.coordinates.lat;
-    let north = data.home.coordinates.lat;
-    for (const poi of pois) {
-      const { lng, lat } = poi.coordinates;
-      if (lng < west) west = lng;
-      if (lng > east) east = lng;
-      if (lat < south) south = lat;
-      if (lat > north) north = lat;
-    }
-    const centerLat = (south + north) / 2;
-    const centerLng = (west + east) / 2;
-    const metersPerDegLat = 111320;
-    const metersPerDegLng =
-      111320 * Math.cos((centerLat * Math.PI) / 180);
-    const widthM = (east - west) * metersPerDegLng;
-    const heightM = (north - south) * metersPerDegLat;
-    // Bruk horisontal FOV (avledet fra vertikal FOV + viewport-aspect) som
-    // begrensende dimensjon — for 16:9-viewport er horisontal FOV ~59°, mye
-    // bredere enn 35° vertikal. Naive «vertikal FOV på diagonal» ga ~1.8×
-    // for stor range. Beregn range separat for width og height, ta max.
-    const rect = (map3dInstance as unknown as HTMLElement).getBoundingClientRect();
-    const aspect = rect.width / Math.max(1, rect.height);
-    const FOV_V = (35 * Math.PI) / 180;
-    const FOV_H = 2 * Math.atan(Math.tan(FOV_V / 2) * aspect);
-    const rangeForWidth = widthM / 2 / Math.tan(FOV_H / 2);
-    const rangeForHeight = heightM / 2 / Math.tan(FOV_V / 2);
-    // Sidebar-kompensasjon: når mapPaddingLeft > 0 okkluderer sidebar venstre
-    // del av viewportet. Vi må (1) skalere widthM-range opp 1/visibleFraction
-    // så innholdet får plass i smalere synlig region, (2) flytte center.lng
-    // østover så bounds-midten lander midt i synlig region.
-    const visibleFraction = Math.max(
-      0.1,
-      (rect.width - mapPaddingLeft) / Math.max(1, rect.width),
-    );
-    const adjustedRangeForWidth = rangeForWidth / visibleFraction;
-    // 1.1× padding-faktor: ~10 % margin. Floor på 200m unngår ekstrem
-    // zoom-inn ved single-POI-bounds.
-    const range = Math.max(
-      200,
-      Math.max(adjustedRangeForWidth, rangeForHeight) * 1.1,
-    );
-    // Shift center østover: i pixel-rom skal center lande på
-    // (W + padding_left)/2, dvs forskyvning padding_left/2 piksler. Konverter
-    // til meter ved ny range (full viewport-bredde = 2·range·tan(FOV_H/2)).
-    const metersPerPixel =
-      (2 * range * Math.tan(FOV_H / 2)) / Math.max(1, rect.width);
-    const shiftMeters = (mapPaddingLeft / 2) * metersPerPixel;
-    const shiftedCenterLng = centerLng + shiftMeters / metersPerDegLng;
-    (map3dInstance as {
-      flyCameraTo?: (opts: {
-        endCamera: {
-          center: { lat: number; lng: number; altitude: number };
-          tilt: number;
-          range: number;
-          heading: number;
-        };
-        durationMillis: number;
-      }) => void;
-    }).flyCameraTo?.({
-      endCamera: {
-        center: { lat: centerLat, lng: shiftedCenterLng, altitude: 0 },
-        tilt: DEFAULT_CAMERA_LOCK.tilt,
-        range,
+      return composeFixedHero({
+        center: home,
+        range: HERO_RANGE,
+        tilt: HERO_TILT,
+        heading: bearingBetween(home, centroid),
+      });
+    },
+    [data.home.coordinates],
+  );
+
+  // Oversikts-hero: fast avstand (litt videre), nord-opp ro. Brukes i intro/
+  // outro/megler-fasene der ingen kategori spiller.
+  const composeOverviewHero = useCallback(
+    (): HeroCamera =>
+      composeFixedHero({
+        center: data.home.coordinates,
+        range: OVERVIEW_RANGE,
+        tilt: OVERVIEW_TILT,
         heading: 0,
-      },
-      durationMillis: 800,
+      }),
+    [data.home.coordinates],
+  );
+
+  // ── Kamera-director: drone-orbit + re-aim + POI-fokus ───────────────────
+  // Modellen: i browsing-tilstand (kategori eller oversikt) sirkler kameraet
+  // rolig rundt prosjektet på fast avstand (flyCameraAround). Ved kategori-
+  // skifte svinger dronen til en ny vinkel (heading mot kategori-centroiden) og
+  // fortsetter orbiten derfra. Bruker-interaksjon pauser orbiten; den gjenopptas
+  // IDLE_RESUME_MS etter siste interaksjon. Åpnet POI stopper orbiten og flyr
+  // tett inn; lukking gjenopptar. Markørene er statiske (full opacity) — ingen
+  // opacity-reveal, som ville churnet Google 3D's SVG-rasterisering og eksplodert
+  // WebGL-kontekster.
+
+  // Ferskeste ønskede hero-kamera, lest on-demand. Holdes i ref så orbit-loopen
+  // alltid leser gjeldende tilstand uten å måtte re-bindes (latest-ref-mønster).
+  const heroCameraRef = useRef<() => HeroCamera | null>(() => null);
+  heroCameraRef.current = () =>
+    activeCategory
+      ? composeCategoryHero(activeCategory.pois.map((p) => p.raw))
+      : composeOverviewHero();
+
+  // Fersk activePOI for resume-guarden (ikke gjenoppta orbit mens POI er åpen).
+  const activePOIRef = useRef(activePOI);
+  activePOIRef.current = activePOI;
+
+  const orbitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Sann når orbiten SKAL gå (browsing + ikke pauset av interaksjon).
+  const orbitDesiredRef = useRef(false);
+
+  const clearCameraTimers = useCallback(() => {
+    if (orbitTimerRef.current) {
+      clearTimeout(orbitTimerRef.current);
+      orbitTimerRef.current = null;
+    }
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = null;
+    }
+  }, []);
+
+  // Starter den kontinuerlige drone-orbiten. repeatCount: Infinity lar Google
+  // loope internt → sømløst, ingen seam mellom revolusjoner. Stoppes med
+  // stopCameraAnimation (ved interaksjon eller POI-fokus).
+  const startOrbit = useCallback(() => {
+    if (!orbitDesiredRef.current) return;
+    const map = map3dInstance as unknown as FlyCapableMap | null;
+    const cam = heroCameraRef.current();
+    if (!map?.flyCameraAround || !cam) return;
+    map.flyCameraAround({
+      camera: cam,
+      durationMillis: ORBIT_ROUND_MS,
+      repeatCount: Infinity,
     });
-  }, [
-    tourActive,
-    activeCategory?.id,
-    map3dInstance,
-    data.home.coordinates.lng,
-    data.home.coordinates.lat,
-    mapPaddingLeft,
-  ]);
+  }, [map3dInstance]);
+
+  // Svinger rolig inn til gjeldende hero (re-aim) og starter så orbiten. Brukt
+  // ved kategori-skifte, ved mount og ved resume etter idle. orbitTimerRef
+  // holder kun re-aim→orbit-overleveringen (orbiten selv looper i Google).
+  const flyToHeroThenOrbit = useCallback(() => {
+    const map = map3dInstance as unknown as FlyCapableMap | null;
+    const cam = heroCameraRef.current();
+    if (!map?.flyCameraTo || !cam) return;
+    clearCameraTimers();
+    orbitDesiredRef.current = true;
+    map.stopCameraAnimation?.();
+    map.flyCameraTo({ endCamera: cam, durationMillis: REAIM_FLY_MS });
+    orbitTimerRef.current = setTimeout(startOrbit, REAIM_FLY_MS);
+  }, [map3dInstance, clearCameraTimers, startOrbit]);
+
+  // Pauser orbiten ved interaksjon og planlegger gjenopptak etter idle.
+  const pauseOrbitForInteraction = useCallback(() => {
+    const map = map3dInstance as unknown as FlyCapableMap | null;
+    clearCameraTimers();
+    orbitDesiredRef.current = false;
+    map?.stopCameraAnimation?.();
+    resumeTimerRef.current = setTimeout(() => {
+      if (activePOIRef.current) return; // POI-fokus eier kameraet.
+      flyToHeroThenOrbit();
+    }, IDLE_RESUME_MS);
+  }, [map3dInstance, clearCameraTimers, flyToHeroThenOrbit]);
+
+  // Interaksjons-lyttere: drag/scroll/touch på kartet pauser orbiten. I freeMode
+  // hijacker ikke MapView3D pekeren, så vi lytter direkte. Programmatiske
+  // fly/orbit trigger ikke disse — kun ekte bruker-input.
+  useEffect(() => {
+    if (!map3dInstance) return;
+    const el = map3dInstance as unknown as HTMLElement;
+    const onInteract = () => pauseOrbitForInteraction();
+    el.addEventListener("pointerdown", onInteract);
+    el.addEventListener("wheel", onInteract, { passive: true });
+    el.addEventListener("touchstart", onInteract, { passive: true });
+    return () => {
+      el.removeEventListener("pointerdown", onInteract);
+      el.removeEventListener("wheel", onInteract);
+      el.removeEventListener("touchstart", onInteract);
+    };
+  }, [map3dInstance, pauseOrbitForInteraction]);
+
+  // Director: reagerer på kategori-/POI-skifte.
+  // - POI åpen → stopp orbit, fly tett inn (range 300, tilt 60).
+  // - Browsing (kategori/oversikt) → re-aim til hero + (gjen)start orbit.
+  useEffect(() => {
+    if (!map3dInstance) return;
+    const map = map3dInstance as unknown as FlyCapableMap;
+    clearCameraTimers();
+
+    if (activePOI) {
+      orbitDesiredRef.current = false;
+      map.stopCameraAnimation?.();
+      const home = data.home.coordinates;
+      map.flyCameraTo?.({
+        endCamera: {
+          center: {
+            lat: activePOI.raw.coordinates.lat,
+            lng: activePOI.raw.coordinates.lng,
+            altitude: 0,
+          },
+          range: POI_RANGE,
+          tilt: POI_TILT,
+          heading: bearingBetween(home, activePOI.raw.coordinates),
+        },
+        durationMillis: POI_FLY_MS,
+      });
+      return;
+    }
+
+    flyToHeroThenOrbit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory?.id, activePOI?.id, map3dInstance, flyToHeroThenOrbit]);
+
+  // Rydd timere + stopp animasjon ved unmount.
+  useEffect(() => {
+    return () => {
+      clearCameraTimers();
+      const map = map3dInstance as unknown as FlyCapableMap | null;
+      map?.stopCameraAnimation?.();
+    };
+  }, [map3dInstance, clearCameraTimers]);
 
   return (
     <div className="absolute inset-0">
@@ -261,25 +438,9 @@ export function BoardMap3D({ pendingCamera, mapPaddingLeft = 0 }: Props) {
         center={initialCenter}
         cameraLock={cameraLock}
         freeMode
-        pois={allPOIs}
-        opacities={opacities}
+        pois={markerPOIs}
         activePOIId={activePOI?.id ?? null}
-        onPOIClick={(poiId) => {
-          // Slå opp kategori-id fra board-data så OPEN_POI vet hvor
-          // POI'en hører hjemme (matcher 2D-marker-click semantikk i
-          // BoardMap → BoardMarker.onClick → dispatch).
-          for (const cat of data.categories) {
-            const found = cat.pois.find((p) => p.id === poiId);
-            if (found) {
-              dispatch({
-                type: "OPEN_POI",
-                id: found.id,
-                categoryId: cat.id,
-              });
-              return;
-            }
-          }
-        }}
+        onPOIClick={handlePOIClick}
         onMapReady={handleMapReady}
         activated
         projectSite={{

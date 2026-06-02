@@ -59,6 +59,10 @@ export interface BoardCategory {
   /** Kategori-farge (hex) brukt i markører, path-line, og UI-aksenter. */
   color: string;
   pois: BoardPOI[];
+  /** Score-rangerte (byTierThenScore) topp-POI-er fra theme.topRanked. Brukes av
+   *  3D-board for å bygge et kuratert anker-sett (top-3/kategori) i oversikts-state
+   *  — bevisst forskjellig fra `pois` som er DISTANSE-sortert. */
+  topRankedPois: BoardPOI[];
   /** Audio-tour-spor for kategorien — kun satt når både url og manus eksisterer. */
   audio?: BoardAudioTrack;
 }
@@ -204,6 +208,9 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     icon,
     color,
     pois: theme.allPOIs.map((p) => adaptPOI(p, id)),
+    // topRanked er score-rangert (byTierThenScore), ikke distanse-sortert som
+    // allPOIs. Adapteres på samme måte så board-laget får samme BoardPOI-form.
+    topRankedPois: theme.topRanked.map((p) => adaptPOI(p, id)),
     audio: pickPlayableAudio(theme.audio),
   };
 }
