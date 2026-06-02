@@ -334,6 +334,37 @@ export interface CategoryCameraConfig {
   moveDurationMs?: number;
 }
 
+/**
+ * En 3D-bygningsmodell (glTF/`.glb`) plassert på Google Photorealistic 3D Tiles
+ * via `Model3DElement`. Mapper 1:1 på Google sine `Model3DElementOptions` så en
+ * ekte arkitekt-modell kan byttes inn uten kodeendring (bare `.glb`, kjerne-PBR,
+ * ingen glTF-extensions).
+ *
+ * `position` valgfri — utelatt = prosjektets home-koordinat (single-sourced fra
+ * Supabase via board-data). `scale` som tall = uniform; som `{x,y,z}` = ulik
+ * skala per akse (grov massing fra en enhetskube). `altitudeMode` default
+ * `CLAMP_TO_GROUND` (basen følger terrenget; modell-origo i y=0).
+ *
+ * Lagres prototype-lokalt (se components/variants/report/board/board-models.ts),
+ * speiler camera-tours.ts. Prod-promotering til Supabase er deferert.
+ */
+export interface Board3DModel {
+  /** URL til en `.glb` (binær glTF). Kun `.glb` støttes av Model3DElement. */
+  src: string;
+  /** Plassering; utelatt = prosjektets home-koordinat. `altitude` i meter. */
+  position?: { lat: number; lng: number; altitude?: number };
+  /** Rotasjon i grader. `heading` = kompass; `tilt`/`roll` reiser modellen. */
+  orientation?: { heading?: number; tilt?: number; roll?: number };
+  /** Uniform skala (tall) eller per-akse `{x,y,z}`. Default 1. */
+  scale?: number | { x: number; y: number; z: number };
+  /** Høydemodus. Default `CLAMP_TO_GROUND` (base på terreng). */
+  altitudeMode?:
+    | "ABSOLUTE"
+    | "CLAMP_TO_GROUND"
+    | "RELATIVE_TO_GROUND"
+    | "RELATIVE_TO_MESH";
+}
+
 export interface ReportThemeConfig {
   id: string;
   name: string;

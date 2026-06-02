@@ -14,6 +14,7 @@ import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
 import { deriveCategoryCamera } from "./board-3d-camera-director";
 import { getCategoryCamera } from "./camera-tours";
+import { getBoardModel } from "./board-models";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import { cn } from "@/lib/utils";
 import type { POI, CategoryCameraConfig } from "@/lib/types";
@@ -25,6 +26,15 @@ const RouteLayer3D = dynamic(
   () =>
     import("@/components/map/route-layer-3d").then((mod) => ({
       default: mod.RouteLayer3D,
+    })),
+  { ssr: false },
+);
+
+// ModelLayer3D lazy-loaded — samme bundling-strategi som RouteLayer3D.
+const ModelLayer3D = dynamic(
+  () =>
+    import("@/components/map/model-layer-3d").then((mod) => ({
+      default: mod.ModelLayer3D,
     })),
   { ssr: false },
 );
@@ -74,6 +84,13 @@ export function BoardMap3D({ pendingCamera }: Props) {
   // Walking-rute for RouteLayer3D — samme hook som BoardPathLayer (2D).
   const poiForRoute = state.phase === "poi" && activePOI ? activePOI.raw : null;
   const { data: routeData } = useRouteData(poiForRoute, data.home.coordinates);
+
+  // 3D-bygningsmodell for prosjektet (prototype-lokal config, mirror
+  // camera-tours). Ukjent slug → null (kart uten modell, graceful).
+  const boardModel = useMemo(
+    () => getBoardModel(data.projectSlug ?? "") ?? null,
+    [data.projectSlug],
+  );
 
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
@@ -310,6 +327,11 @@ export function BoardMap3D({ pendingCamera }: Props) {
         }}
       />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />
+      <ModelLayer3D
+        map3d={map3dInstance}
+        model={boardModel}
+        fallbackPosition={data.home.coordinates}
+      />
       <CameraCutOverlay
         visible={cutVisible}
         label={activeCategory?.label}
