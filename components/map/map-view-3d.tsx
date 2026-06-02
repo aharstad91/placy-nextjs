@@ -144,7 +144,10 @@ const Marker3DItem = memo(function Marker3DItem({
       position={{
         lat: poi.coordinates.lat,
         lng: poi.coordinates.lng,
-        altitude: isActive ? 20 : 0,
+        // Hev over taknivå (ikke 0) så bakke-markører ikke okkluderes av 3D-
+        // byggene og blinker inn/ut når kameraet beveger seg. Aktiv litt høyere
+        // så den løftes tydelig frem. (Hjem-markøren ligger på 30 av samme grunn.)
+        altitude: isActive ? 28 : 18,
       }}
       altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
       onClick={() => onPOIClick?.(poi.id)}
