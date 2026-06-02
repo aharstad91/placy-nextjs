@@ -6,6 +6,48 @@
 
 ---
 
+## 2026-06-02 (kveld) — Per-kategori kamera-waypoints (A→B + cut) → produktisert + merget til main
+
+### Kontekst
+Bygde videre på morgenens drone-orbit (entry under). Bruker redirigerte: orbiten re-aimet på hvert kategori-skifte uten å gi mening, og 5s-auto-resume var feil. Ny retning landet via sparring → `/ce-plan` → `/ce-work`: **hver kategori får autorerte waypoints A→B** (dronen flyr rolig A→B under kategoriens voice-over), og **kategori-skifte = cut** (overlay fade → instant hopp → fade) i stedet for en meningsløs fly-over på tvers (Stasjonskvartalet ligger nord ved vannet — naiv orbit viser vann, ikke innhold). Plan: `docs/plans/2026-06-02-001-feat-3d-board-per-category-camera-waypoints-plan.md` (doc-review-styrket, 7 units, 2 faser). Merget til main + repo-konsolidering på slutten.
+
+### Kamera-director omskrevet til state-maskin (fikset Fri-stop-racet)
+Den gamle effekt-/timer-/ref-floka i `BoardMap3D` hadde et StrictMode-dobbel-kjørings-race: en foreldet `setTimeout(startOrbit)` restartet orbiten etter at `Fri` hadde stoppet den → `Fri` stoppet ikke pålitelig. Løst ved å skille ut en **ren `decideCameraIntent`** (testbar, `orbit|cinematic|poi|free`) + en tynn hook (`use-board-3d-camera.ts`) som utfører intent med **token-kansellering** ("siste-kall-vinner"; hver utsatt callback sjekker `token === tokenRef.current`). `stopCameraAnimation` er ikke pålitelig på rå `Map3DElement` (læring fra `map-adapter-pattern`-doc) → token er den egentlige garden. Verifisert live: auto orbiterer → Fri fryser (heading stabil) → Auto gjenopptar.
+
+### A→B cinematic + cut-transition
+- **A→B synket til voice-over:** `flyCameraTo(B, durationMillis = VO-lengde)`. Varigheten hentes SYNKRONT ved cut-tid fra `track.durationSec` (avledet av karaoke-timings — `buildCategoryTracks` populerer nå feltet) fordi live `useAudioElement().duration` er 0 til `loadedmetadata` fyrer. `flyCameraTo`-easing er fast ease-in-out (lineær er ikke støttet uten rAF-anti-mønsteret) — akseptert.
+- **Cut:** `flyCameraTo({durationMillis: 0})` = atomisk teleport. Sekvens: overlay fade-in → hopp til neste A (skjult bak overlay) → settle for tile-load → fade-out + start A→B. Alle cut-timere token-guardet.
+- **Cut-overlay er LYST** (hvit bakgrunn, sort kategori-label) — bruker-ønske (var svart først).
+- **Reduced-motion:** statisk hold på A (ingen drift, instant cut). **Audio-pause:** fryser A→B.
+
+### Auto-utledet framing (avvik fra planen — bevisst)
+Unit 7 skulle hand-autorere A/B via `?author=1`. Chrome-MCP koblet fra midt i, så jeg kunne verken fly-og-fange poser eller se framingen. I stedet **utledes A/B fra kategoriens topp-POI-er + hjemmet** (`deriveCategoryCamera`): sentrert på midtpunktet hjem↔innhold (så bygget er i bildet — R1), svinger ±22° rundt det, range klampet [350,850] m (aldri orbit-høyde). Eksplisitt `camera-tours.ts`-config overstyrer alltid (fine-tuning via `?author=1` → JSON til clipboard). Konsekvens: cinematic + cut fungerer live for ALLE kategorier nå, og det løste skalerings-spørsmålet doc-review (product-lens) reiste. Verifisert: Mat&Drikke (249 POI) → bred oversikt sørover mot innholdet; Transport (13 POI ved stasjonen) → tett — begge med hjemmet forankret, aldri mot vannet.
+
+### Markører "kom og gikk" — okklusjon, ikke mount-churn
+Bruker la merke til at pins blinket inn/ut. Verifisert: settet er stabilt (19 montert). Rot-årsak: inaktive markører lå på `altitude: 0` → Google 3D okkluderte dem bak byggene når kameraet beveget seg. Fiks: hev til 18 (aktiv 28), på linje med hjem-markøren (30) → svever over takene, holder seg synlige. `components/map/map-view-3d.tsx`.
+
+### Operasjonell læring: `npm run build` ⨯ `next dev` samtidig
+`npm run build` (PR-gate) kjørt mot samme repo som en levende `npm run dev` overskrev dev-serverens `.next` med prod-chunks → `Cannot find module './vendor-chunks/@supabase.js'` → alle ruter 500. `rm -rf .next` under levende dev wedget prosessen → måtte restarte dev-serveren. **Regel: kjør aldri `npm run build` i samme mappe som en levende dev-server — bygg fra worktree eller stopp dev først.**
+
+### Merge + repo-konsolidering
+- `feat/3d-camera-waypoints` (11 commits) fast-forward-merget til **main** og **pushet til origin** (`fbbce78..872c8a2`) → main er nå kanonisk kilde, Vercel deployer. Ren `npm run build` (exit 0) før merge.
+- Slettet **37 branches**: 23 merget inn i main + 14 umergete som lå trygt på origin (gjenopprettbare). Fjernet A/B-worktreene `placy-ralph-3d-static` + `placy-ralph-3d-cinematic` + deres branches.
+- **Bevart 2 branches med lokal-bare commits** (finnes ingen andre steder): `feat/generate-bolig` (3) + `feat/megler-theme-intro` (4) — venter på brukers valg (slett/push/behold).
+
+### Åpne tråder
+- Cut-kadens: cut mellom HVER seksjon kan føles som lysbildeserie i auto-advance (doc-review flagget) — vurder first-entry-uten-cut / "ingen cut hvis flytt under terskel". Feel-test.
+- Lys cut kan være et lyst blink — kan dempes til off-white (`bg-stone-50`) hvis for sterkt.
+- Mat&Drikke-framing er bred (citywide spredning) — bias mot nærmeste topp-POI-er, eller autorer eksplisitt.
+- Pre-eksisterende reels-test-assertion fikset underveis (override-id-kollisjon). Uforpliktede strategi-docs (`LOG.md`, `megler-stemme-kloning-spor.md`) rørt ikke.
+
+### Nøkkelfiler (på main)
+- `board-3d-camera-director.ts` (ren beslutning + `deriveCategoryCamera` + konstanter), `use-board-3d-camera.ts` (hook, token-kansellering, cut-orkestrering)
+- `CameraModeToggle.tsx` (auto/fri), `CameraCutOverlay.tsx` (lys cut), `CameraWaypointAuthor.tsx` (`?author=1`), `camera-tours.ts` (lokal config + clamp)
+- `BoardMap3D.tsx` (orkestrering), `map-view-3d.tsx` (markør-altitude), `reels-data.ts` (`durationSec`), `lib/types.ts` (`CameraPose`/`CategoryCameraConfig`)
+- Tester: director (24), hook+overlay (12), camera-tours (9), author (5)
+
+---
+
 ## 2026-06-02 — 3D rapport-board: cinematic drone-orbit-kamera + WebGL-flimring fikset
 
 ### Kontekst
