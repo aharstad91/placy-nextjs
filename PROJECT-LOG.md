@@ -6,6 +6,23 @@
 
 ---
 
+## 2026-06-03 — Category-player sidebar + roligere kamera + ekte video-pause (branch)
+
+Branch `feat/category-player-sidebar`. Bruker meldte at rapport-board har **for mye samtidig bevegelse** (video i kategori-bildet + kart-kamera + voice-over = kognitiv overload). To grep:
+
+**1. Roligere kart-kamera.** Auto-utledet A→B-drift-bue halvert (`DERIVE_DRIFT_DEG` 22→12, eksportert; sveip 44°→24°) og idle-orbit senket (`ORBIT_ROUND_MS` 90s→140s/runde). A→B er fortsatt tidssatt til VO-lengden, så «hastigheten» = bue/varighet — mindre bue = roligere. Konstanter, lett å skru videre.
+
+**2. Sidebar → "category player".** Scroll-løpebåndet (ekspandert aktivt kort + scroll-stabel av previews) byttet mot en fast, scroll-fri player: header → ett aktivt 9:16-kort → klikkbar, statisk thumbnail-rad i bunn. Kategori-bytte skifter kun det aktive kort-komponentet (CardRouter håndterer alle kort-typer, inkl. megler via MeglerReel). Avledet fra brukerens skisse.
+- **Fortsett-knappen fjernet** → state-drevet play/pause-**overlay på selve kortet**: vedvarende Play + scrim når pauset/ferdig, hover-Pause når det spiller. Kun på audio-bærende kort.
+- **Ekte video-pause:** bg-videoen var bundet til Reels-fasen (`currentPhase === "reel"`) som forblir "reel" selv ved audio-pause → videoen rullet i bakgrunnen. Nå bundet til **audio-fasen** på desktop (`isActive && isCurrentAudio && phase === "playing"`) → fryser på siste frame ved pause. Fjernet `autoPlay` så den ikke blafrer i gang. Mobil beholder sheet-fase-styringen.
+- **Hover-tooltip per thumbnail** (kategori-navn) i rommet knappen frigjorde; bilde/dot i egen `overflow-hidden`-wrapper så tooltip ikke klippes.
+- **Megler** er nå siste chapter; den ubrukte persistente `BrokerProfileCard` (lagd tidligere for sidebar-bunn) **slettet** — `MeglerReel` viser kontakten. Megler-data (`getProjectBrokers` + board-data-fallback + portrett) beholdt. *Åpent: vil bruker ha megler persistent synlig et sted? Da re-introduseres et kort (i git-historikk).*
+- Carry-over fra forrige batch som også landet her: beige (#f2e9dc) sidebar + beige cut-overlay.
+
+**Status:** Exploration-branch, bruker godkjente retningen ("riktig retning"). Ikke merget til main, ikke pushet. Gates: kamera 27/27, tsc 0, eslint 0. (3 røde tester i `lib/curation/validator.test.ts` er pre-eksisterende/urelatert.)
+
+---
+
 ## 2026-06-02 (kveld→natt) — Velkomst-splash + 3D default map-engine + WebGL-kontekst-lekkasje fikset
 
 ### Kontekst
