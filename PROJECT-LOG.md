@@ -58,6 +58,36 @@ Committet til `feat/3d-model-on-tiles` (egen worktree). Ikke pushet/merget (prot
 
 ---
 
+## 2026-06-03 (forts.) — Flythrough-kinematografi: fra waypoints til oval-spiral låst på objektet
+
+### Kontekst
+Bruker ville iterere på flythrough-FØLELSEN (ikke modell-plasseringen). Mål: en Marketer-stil film som bygger LOKASJONS-INNSIKT — «fly til objektet fra en avstand så folk ser hvor det ligger» — og som FØLES som flyging, ikke som diskrete waypoints.
+
+### Iterasjoner (alle validert mot tiles i Chrome via chrome-devtools MCP, capturet via CDP-screencast)
+1. **4-waypoint modell-framing** (`flythrough-v1-clustered.mp4`): vid etablering → sveip → innflyvning → hero, alle sentrert nær modellen. Innførte overlap-chaining (neste ben fyres før forrige er ferdig), gap-klamping (`MAX_GAP` — tile-load-stall blir innhent, ikke flersekunders frys) og hero-hold (siste frame holdes `HOLD_END_MS`, ellers kuttes landingen).
+2. **Nidarosdomen by-flythrough, 6 waypoints** (`flythrough-v2-nidaros.mp4`): åpner på Nidarosdomen, translaterer ~1 km nordover gjennom Midtbyen til hero på bygget. «Får frem byen.»
+3. **Oval-spiral låst på objektet** (gjeldende `flythrough.mp4`): kameraet ser alltid på bygget (center=M), orbiterer ~250° mens range spiraler inn 1100→300 m, med oval utbuling midtveis (`ECC·sin`) for spenning.
+
+### Sentralt teknisk skifte (iter 3)
+- **Frame-drevet kamera** i stedet for `flyCameraTo`-chaining: `requestAnimationFrame` + direkte camera-props (`map.center/range/tilt/heading`) ~85 fps. Verifisert at direkte prop-set reflekteres momentant.
+- **Én global trapes-easing** (ramp opp [0,0.16], konstant [0.16,0.84], ramp ned [0.84,1]) → konstant fart i midten, mykt KUN i start/slutt. Dette fjernet ease-in/out PER waypoint, som var grunnen til at iter 1–2 «så ut som waypoints».
+- **Pin-skjuling**: kategori-POI-pins (vis.gl `<Marker3D>` → `gmp-marker-3d-interactive`) re-monteres per zoom-tier. `display:none` er upålitelig (WebGL-baket), og en MutationObserver som DETACHER dem **krasjer React** (`NotFoundError: removeChild` — node React fortsatt eier). Løst rent med produkt-flagg **`?film=1`** i `BoardMap3D` → `markerPOIs → []` (render-nivå, race-fritt). Prosjekt-label + modell beholdes.
+
+### Produkt-retning notert (ikke bygget ennå)
+Bruker-innsikt: **utvid objekt-pin'en med et BILDE** som default-opplevelse → kjør uten 3D-modell i utgangspunktet, og tilby **3D-modell som addon** når datagrunnlag finnes. Lar oss levere lokasjons-flythrough + visuell objekt-identitet selv før en `.glb` eksisterer. Åpen tråd for neste iterasjon.
+
+### Kvalitet / verifisering
+- `tsc` 0, `eslint` 0 (endrede filer). Capture jevn: ~85 fps, ingen mid-flight-frys, objektet sentrert hele veien, ren film (0 pins), hero-landing mot fjorden.
+- Verifisert poser s=0/0.5/1 + full film (start/orbit/hero) på frisk board i Chrome.
+
+### Nøkkelfiler
+`scripts/capture-3d-flythrough.mjs` (oval-spiral-motor: `PATH`, `poseAt`, `runFlythrough` rAF-drive), `components/variants/report/board/BoardMap3D.tsx` (`?film=1`-flagg).
+
+### Status
+Committet til `feat/3d-model-on-tiles`. Ikke pushet/merget. Deliverables på `~/Desktop/placy-3d-flythrough/`: `flythrough.mp4` (oval-spiral, gjeldende), `flythrough-web.mp4`, `flythrough-poster.jpg`, `flythrough-in-board.mp4`, + `flythrough-v1-clustered.mp4` / `flythrough-v2-nidaros.mp4` (tidligere iterasjoner, for A/B).
+
+---
+
 ## 2026-06-02 (kveld→natt) — Velkomst-splash + 3D default map-engine + WebGL-kontekst-lekkasje fikset
 
 ### Kontekst
