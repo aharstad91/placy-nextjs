@@ -42,7 +42,7 @@ export default function PortraitHero({
       <div className="relative z-10 max-w-prose mx-auto px-6 pb-20 md:pb-28 w-full">
         <h1
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white leading-[1.05] tracking-tight mb-6"
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          style={{ fontFamily: "var(--font-figtree), system-ui, sans-serif" }}
         >
           {title}
         </h1>

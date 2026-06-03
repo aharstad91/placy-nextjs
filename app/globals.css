@@ -39,7 +39,7 @@
 }
 
 body {
-  font-family: var(--font-inter), Inter, system-ui, sans-serif;
+  font-family: var(--font-figtree), system-ui, sans-serif;
 }
 
 /* Skjul standard Mapbox POI-labels (kun admin-verktøy bruker Mapbox nå) */

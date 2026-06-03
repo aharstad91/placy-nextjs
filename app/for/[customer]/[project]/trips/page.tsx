@@ -36,7 +36,7 @@ export default async function TripsPage({ params }: PageProps) {
     return (
       <main className="min-h-screen bg-[#FAF8F5] flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="font-serif text-2xl text-[#1A1A1A] mb-2">
+          <h1 className="text-2xl text-[#1A1A1A] mb-2">
             Ingen turer tilgjengelig
           </h1>
           <p className="text-[#6B6560]">

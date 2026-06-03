@@ -17,7 +17,7 @@ export default function PortraitClosing({
           <div className="w-12 h-[1px] bg-[#c9a84c] mb-10" />
           <h2
             className="text-2xl md:text-3xl text-[#1a1a1a] leading-tight mb-10"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            style={{ fontFamily: "var(--font-figtree), system-ui, sans-serif" }}
           >
             {title}
           </h2>

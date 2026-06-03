@@ -70,8 +70,7 @@ const config: Config = {
         "4xl": "2rem",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        serif: ["Georgia", "Cambria", "Times New Roman", "Times", "serif"],
+        sans: ["var(--font-figtree)", "system-ui", "sans-serif"],
       },
       keyframes: {
         fadeInSlide: {

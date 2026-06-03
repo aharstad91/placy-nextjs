@@ -56,7 +56,7 @@ function Inner({ project, enTranslations = {}, primaryThemeIds }: Props) {
   const allThemes = [...primaryThemes, ...secondaryThemes];
 
   return (
-    <div className="font-[family-name:var(--font-inter)] text-[#1a1a1a]">
+    <div className="text-[#1a1a1a]">
       <ParaformHero
         projectName={reportData.projectName}
         heroIntro={reportData.heroIntro}
