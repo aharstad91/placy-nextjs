@@ -14,6 +14,18 @@
 
 ---
 
+## 2026-06-03 — Innsikt: «nærområde» er bransjens vinnerterm for lokasjon (copy/posisjonering)
+
+**Innsikt:** EiendomsMegler 1 (landets største meglerkjede) bruker «nærområde» som sentralt begrep i sin nasjonale selger-kampanje: *«Selge bolig? Vi kjenner ditt nærområde, vår erfaring er din fordel.»* Av synonymene **beliggenhet / nabolag / nærområde / område** ser **«nærområde»** ut til å treffe best i bransje-copy — det signaliserer lokalkunnskap og nærhet uten å være så klinisk som «beliggenhet» eller så avgrenset som «nabolag».
+
+**Konsekvens for Placy:** Report er nettopp et nærområde-produkt (kontekstlaget rundt boligen — det Marketer/HomeKey er tynne på, jf. entry 2026-06-02). Vi bør lene oss på **«nærområde»** i copy/pitch mot meglere og i selve rapport-boardet (overskrifter, splash-tekst, seksjons-labels) fremfor «beliggenhet»/«nabolag». Aligner Placys språk med det markedslederen allerede har normalisert hos kjøper/selger.
+
+**Detaljer:** Observert i EiendomsMegler 1-display-annonse (selger-funnel). Ingen egen sesjons-doc — copy-signal, ikke beslutning. Relatert: konkurranse-/kontekstlag-posisjoneringen i 2026-06-02 Marketer/HomeKey-entry.
+
+**Status:** Innsikt — informerer copy/posisjonering på eiendomssporet. Ikke validert i egen test.
+
+---
+
 ## 2026-06-02 — Marketer/HomeKey kartlagt som konkurrent/benchmark
 
 **Beslutning:** Marketer Real Estate Technologies (Oslo, 2016, ~68 ansatte, ~$26,9M reist, ~32 % NO-markedsandel nybygg, rebrander til HomeKey.ai / M360-plattform) kartlagt som proptech-aktøren bak Stasjonskvartalets boligvelger + 3D-flythrough-intro. Posisjonering landet: **ikke konkurrér på transaksjonslaget** (boligvelger/annonser/CRM — de har skala + kapital), **konkurrér/komplementér på kontekstlaget** (lokasjons-/nabolagsintelligens via Report) der de er tynne. Marketer er potensiell distribusjons-partner (Placy som innholdslag inni deres boligvelger) ELLER fremtidig konkurrent hvis de utvider inn i område-innhold.

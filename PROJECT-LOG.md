@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-06-03 — Notat: «nærområde» er bransjens vinnerterm for lokasjon
+
+Copy/posisjonerings-signal observert i felt: EiendomsMegler 1 (landets største meglerkjede) kjører nasjonal selger-kampanje med begrepet **«nærområde»** — *«Selge bolig? Vi kjenner ditt nærområde, vår erfaring er din fordel.»* Av beliggenhet / nabolag / nærområde / område ser **«nærområde»** ut til å treffe best i bransjen: lokalkunnskap + nærhet, uten å være klinisk («beliggenhet») eller for snevert («nabolag»).
+
+**Implikasjon for copy:** Report *er* et nærområde-produkt. Lene oss på «nærområde» i rapport-board-copy (splash-tekst, seksjons-overskrifter, labels) og i pitch mot meglere — aligner med markedslederens språk. Full kontekst i `docs/strategy/LOG.md` (2026-06-03-entry).
+
+---
+
 ## 2026-06-03 — Category-player sidebar + roligere kamera + ekte video-pause
 
 Branch `feat/category-player-sidebar`. Bruker meldte at rapport-board har **for mye samtidig bevegelse** (video i kategori-bildet + kart-kamera + voice-over = kognitiv overload). To grep:
