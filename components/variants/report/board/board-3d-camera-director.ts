@@ -166,6 +166,9 @@ export type CameraIntent =
 
 export interface CameraDecisionInputs {
   cameraMode: "auto" | "free";
+  /** Intro-flythrough eier kameraet (velkommen-beat i produktet eller ?fly=1-
+   *  capture) → director-en yield-er; den frame-drevne innflyvningen styrer. */
+  introActive: boolean;
   home: { lat: number; lng: number };
   /** Aktiv POI sine koordinater, eller null. */
   activePOI: { lat: number; lng: number } | null;
@@ -188,6 +191,7 @@ export interface CameraDecisionInputs {
  * denne og utfører resultatet.
  *
  * Prioritet:
+ *  0. `introActive` — intro-flythrough eier kameraet; director-en no-op'er (free).
  *  1. `free` — brukeren styrer; ingen programmatisk bevegelse.
  *  2. `poi` — en POI er åpen; fly tett inn.
  *  3. `cinematic` — auto + aktiv kategori MED waypoints; A→B (eller hold).
@@ -195,6 +199,11 @@ export interface CameraDecisionInputs {
  */
 export function decideCameraIntent(input: CameraDecisionInputs): CameraIntent {
   const { cameraMode, home, activePOI, activeCategoryId, categoryConfig } = input;
+
+  // Intro-flythrough kjører (velkommen-beat / ?fly=1) → den frame-for-frame-
+  // drevne innflyvningen i BoardMap3D eier kameraet. Director-en må ikke røre
+  // det (ellers kjemper orbit/cinematic mot flyturen). Free = ren no-op.
+  if (input.introActive) return { kind: "free" };
 
   if (cameraMode === "free") return { kind: "free" };
 
