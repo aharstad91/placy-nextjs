@@ -27,8 +27,10 @@ export const ORBIT_RANGE = 650;
 export const ORBIT_TILT = 60;
 /** Start-heading for orbiten (orbiten går 360°, så dette er bare startpunkt). */
 export const ORBIT_HEADING = 0;
-/** Varighet for én full orbit-revolusjon (ms). Looper evig (repeatCount: Infinity). */
-export const ORBIT_ROUND_MS = 90000;
+/** Varighet for én full orbit-revolusjon (ms). Looper evig (repeatCount: Infinity).
+ *  Bevisst rolig (140s/runde) — idle-orbiten skal være knapt merkbar drift, ikke
+ *  en bevegelse man "følger med på" oppå video + voice-over (kognitiv ro). */
+export const ORBIT_ROUND_MS = 140000;
 /** Inn-fly-varighet til orbit-hero før orbiten (gjen)starter (ms). */
 export const REAIM_FLY_MS = 1600;
 /** Range/tilt + fly-varighet ved åpnet POI (tett og skrått). */
@@ -82,7 +84,11 @@ export function haversineMeters(
 // skaleres med hjem→innhold-avstanden, men KLAMPES så en spredt kategori aldri
 // havner i orbit-høyde (den lærdommen). Eksplisitt config overstyrer alltid.
 const DERIVE_TILT = 60;
-const DERIVE_DRIFT_DEG = 22;
+/** Heading-drift (grader) til hver side av hjem→innhold-bæringen. A→B-sveipet
+ *  blir 2×denne. Bevisst lav (12° → 24° totalt) så den auto-utledede dronen gir
+ *  rolig parallakse/dybde uten å bli en bevegelse man må følge kognitivt oppå
+ *  video + voice-over. Eksportert så testen kan utlede sveip-spennet herfra. */
+export const DERIVE_DRIFT_DEG = 12;
 const DERIVE_RANGE_MIN = 350;
 const DERIVE_RANGE_MAX = 850;
 
