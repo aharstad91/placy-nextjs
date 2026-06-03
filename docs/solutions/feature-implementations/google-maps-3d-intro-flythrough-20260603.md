@@ -11,13 +11,17 @@ root_cause: "flyCameraTo har innebygd ease-in/out PER kall → chaining gir hopp
 # Skalerbar intro-flythrough på Google 3D-tiles
 
 Gjenbrukbar "Marketer-stil" intro pr. prosjekt: en oval-spiral LÅST på objektet
-(bygget), spilt live i rapport-boardet via `?fly=1` og tatt opp til video av et
-capture-script. Tre ikke-åpenbare problemer løst underveis.
+(bygget). Spilt live i rapport-boardet på TO måter — **(a)** automatisk når bruker
+trykker «Start opplevelsen» (koblet til **velkommen**-beaten — se egen seksjon under),
+og **(b)** via `?fly=1` for video-capture — og tatt opp til video av et capture-script.
+Tre ikke-åpenbare problemer løst underveis.
 
 ## Filer
 - `components/variants/report/board/board-intro-flythrough.ts` — motoren (`IntroPathConfig`, `DEFAULT_INTRO_PATH`, `introPoseAt`, `runIntroFlythrough`).
 - `components/variants/report/board/board-intros.ts` — per-prosjekt-tuning (`getBoardIntro(slug)`), mønster som `board-models.ts` / `camera-tours.ts`.
-- `components/variants/report/board/BoardMap3D.tsx` — `?fly=1`/`?film=1`-flagg + effekt.
+- `components/variants/report/board/BoardMap3D.tsx` — `introActive`-utleding (`flyMode || isWelcomeBeat`) + `?fly=1`/`?film=1`-flagg + flythrough-effekt.
+- `components/variants/report/board/board-3d-camera-director.ts` — `introActive`-input (prioritet 0 → `{kind:"free"}`, director yield-er).
+- `components/variants/report/board/use-board-3d-camera.ts` — sender `introActive` inn i director-en.
 - `scripts/capture-3d-flythrough.mjs` — åpner `?fly=1` og TAR OPP (driver ikke kameraet).
 
 ## Gotcha 1 — flyCameraTo gir "waypoint"-følelse; driv kameraet frame-for-frame
@@ -43,8 +47,9 @@ const frame = (ts) => { const t = (ts - t0) / durationMs; apply(ease(t)); if (t<
   ramp ned [0.84,1]. Konstant fart i midten = ingen ease per waypoint.
 - "Oval"/spenning: behold `center` låst på objektet, sveip `heading` ~250° mens
   `range` spiraler inn, og la `range` bule ut midtveis (`* (1 + ecc*sin(π·s))`).
-- For at directoren ikke skal kjempe imot: sett board-kameramodus til `"free"`
-  (da returnerer `decideCameraIntent` `{kind:"free"}` og rører ikke kameraet).
+- For at directoren ikke skal kjempe imot: når flythrough-en eier kameraet er
+  `introActive` true (capture: `flyMode`; live: velkommen-beaten) → `decideCameraIntent`
+  returnerer `{kind:"free"}` (prioritet 0) og rører ikke kameraet.
 
 ## Gotcha 2 — å skjule 3D-POI-pins fra DOM KRASJER React
 
@@ -62,9 +67,9 @@ leses i `BoardMap3D` og gater markør-settet:
 
 ```ts
 const markerPOIs = useMemo(() => {
-  if (filmMode || flyMode) return [];   // ren film: ingen kategori-pins
+  if (filmMode || introActive) return [];   // film ELLER intro-innflyvning: ingen kategori-pins
   ...
-}, [filmMode, flyMode, ...]);
+}, [filmMode, introActive, ...]);
 ```
 
 Prosjekt-label (`projectSite`/`gmp-marker-3d`) + 3D-modellen er egne props og
@@ -82,6 +87,30 @@ påvirkes ikke.
   flythrough-en (`?fly=1`); scriptet åpner `?fly=1` og TAR OPP, synket via et
   window-signal boardet setter: `window.__placyIntroFly = "settling"|"running"|"done"`.
 
+## Auto-trigger på velkommen-beaten (live, ikke bare capture)
+
+Intro-en er selve inngangen til opplevelsen, ikke bare en capture-modus: «Start
+opplevelsen» hopper til **velkommen**-beaten, og flythrough-en kjører da automatisk.
+Koblet uten ny arkitektur — gjenbruker director-yield + frame-driften:
+
+- **Deteksjon:** velkommen-sporet bærer `categoryId: "welcome"`; `BoardMap3D` utleder
+  `const introActive = flyMode || isWelcomeBeat`. Samme `introActive` (a) får directoren
+  til å yield-e og (b) skjuler pins (Gotcha 2).
+- **Varighet synket til VO:** `flyDurationMs = max(MIN_INTRO_FLY_MS, audioDurationMs − settleMs)`
+  → flyturen lander akkurat når velkommen-stemmen er ferdig (`?fly=1`-capture beholder
+  path-ens egen `durationMs`, ikke VO-skalert).
+- **Pause fryser, restarter ikke:** `runIntroFlythrough` tar en `isPaused?()`-callback lest
+  PER frame; frame-loopen akkumulerer kun ikke-pauset tid (`elapsed += ts − last` når ikke
+  pauset) → resume fortsetter der den slapp i stedet for å hoppe hele pause-spennet.
+- **Reduced-motion:** `staticOnly`-opsjonen holder den vide etablerings-posituren (s=0) og
+  fyrer `settling→done` uten rAF-bevegelse.
+- **Handoff:** når velkommen-beaten avsluttes (auto-advance til neste kategori) blir
+  `introActive` false → effekten ryddes (`cancel()`), og per-kategori-directoren overtar
+  med sin cut/cinematic. NB: `cancel()` setter ikke fase `"done"` (kun den naturlige
+  path-fullføringen gjør det) → `window.__placyIntroFly` kan fryse på `"running"` ved
+  beat-bytte. Harmløst: ingen leser globalen i live-stien (kun capture-scriptet, og der
+  fullfører path-en naturlig).
+
 ## Skalering pr. prosjekt
 - Banen er relativ til `target` (prosjektets `home`-koordinat) → ETHVERT prosjekt
   får standard-intro fra `DEFAULT_INTRO_PATH` uten config.
@@ -92,8 +121,18 @@ påvirkes ikke.
 ## Verifisering
 Validér ALLTID mot ekte tiles i frisk Chrome (chrome-devtools MCP): jump til poser
 s=0/0.5/1, sjekk at objektet er sentrert (center==target), banen ikke går under
-terreng, pins er borte. `?fly=1`-fasene: settling→running→done. Tester:
-`board-intro-flythrough.test.ts` (ren `introPoseAt` + config-merge).
+terreng, pins er borte. `?fly=1`-fasene: settling→running→done.
+
+**Live velkommen-trigger (verifisert 2026-06-03):** trykk «Start opplevelsen», sample
+`window.__placyIntroFly` + `gmp-map-3d`-kameraet (`heading/range/tilt`) hver 250ms. Forventet
+bue for Stasjonskvartalet: settling @ heading 20°/range 1150m/tilt 67° → running sveiper
+heading 20°→270° mens range spiraler 1150m→300m og tilt eases til 62° over ~VO-lengden →
+glatt handoff til per-kategori-directoren. (NB: kjør worktree-server på egen port — :3000
+kan serveres fra `main` uten branchen.)
+
+Tester: `board-intro-flythrough.test.ts` (`introPoseAt` + config-merge + `staticOnly` +
+pause-freeze), `board-3d-camera-director.test.ts` (`introActive` → free, vinner over kategori),
+`use-board-3d-camera.test.tsx` (director yield-er ved `introActive`).
 
 ## Relatert
 - `google-maps-3d-camera-control-iteration-20260415.md` (tidligere kamera-funn)

@@ -6,6 +6,26 @@
 
 ---
 
+## 2026-06-03 (forts. 3) — Intro-flythrough koblet til velkommen-beaten (Start → fly inn)
+
+Branch `feat/board-flyin-intro` (worktree), merget til main (`9a81bf5`). Fram til nå kjørte intro-flythrough-en (oval-spiral låst på bygget) KUN via `?fly=1` — altså bare for video-capture. Bruker ville at den skulle være selve intro-en til opplevelsen: **trykk «Start opplevelsen» → kartet flyr inn fra vidt nærområde til hero**, koblet til **velkommen**-kategorien. Poenget er å introdusere nærområdet ved å fly inn og vise det først (aligner med «nærområde»-notatet øverst).
+
+**Mekanikk (ingen ny arkitektur — gjenbruker det som fantes):**
+- **Koblingspunkt:** velkommen-sporet bærer `categoryId: "welcome"`, og «Start» hopper nettopp dit. `BoardMap3D` oppdager beaten → `introActive = flyMode || isWelcomeBeat`.
+- **Director-handoff:** `decideCameraIntent` får `introActive` som prioritet 0 → returnerer `{kind:"free"}` under hele velkommen-beaten (ingen orbit/cinematic-kamp mot innflyvningen). Når VO-en slutter og auto-advance går til «Nabolaget» → `introActive` false → per-kategori-directoren overtar, pins dukker opp igjen.
+- **Varighet** skaleres til velkommen-VO-en (`flyDurationMs = max(MIN_INTRO_FLY_MS=8000, audioDurationMs − settleMs)`) → flyturen lander akkurat idet stemmen er ferdig.
+- **Pause** fryser flyturen der den slapp (`isPaused`-callback lest per frame, akkumulerer kun aktiv tid — ingen restart). **Reduced-motion** → `staticOnly`: statisk vidt nærområde, ingen rAF-bevegelse.
+- **Pins skjult under intro:** `markerPOIs`-gaten endret `flyMode` → `introActive`.
+- `?fly=1`-capture uendret (flyMode holder `introActive` true hele veien).
+
+**Hvorfor den «manglet»:** dev-serveren på :3000 serveres fra hovedmappa (`main`), som ikke hadde branchen — feature lå isolert i worktree (`feat/board-flyin-intro`). Verifisert på worktree-server :3002, deretter merget.
+
+**Verifisering (Chrome MCP, live på :3002):** samplet `window.__placyIntroFly` + 3D-kamera hver 250ms etter «Start». Hele buen: **settling** heading 20°/range 1150m/tilt 67° (Stasjonskvartalets tunede innflyvning) → **running** sveiper heading 20°→270° mens range spiraler 1150m→300m og tilt eases til 62° over ~13s (= velkommen-VO-lengden) → glatt handoff (heading 270°→276°, jevn pull-back) til per-kategori-kameraet. Løser opprinnelig problem: lander vendt sør inn i Midtbyen med POI-ene, ikke nord mot vann.
+
+**Gates:** tsc 0, eslint 0, 137/137 board-tester (6 nye: director-yield × 2, hook-yield, `staticOnly`, pause-freeze, + introActive i baseInput), build OK. Solutions-doc oppdatert (auto-default-oppfølgingen lukket).
+
+---
+
 ## 2026-06-03 — Notat: «nærområde» er bransjens vinnerterm for lokasjon
 
 Copy/posisjonerings-signal observert i felt: EiendomsMegler 1 (landets største meglerkjede) kjører nasjonal selger-kampanje med begrepet **«nærområde»** — *«Selge bolig? Vi kjenner ditt nærområde, vår erfaring er din fordel.»* Av beliggenhet / nabolag / nærområde / område ser **«nærområde»** ut til å treffe best i bransjen: lokalkunnskap + nærhet, uten å være klinisk («beliggenhet») eller for snevert («nabolag»).
