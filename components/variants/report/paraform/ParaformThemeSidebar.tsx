@@ -63,7 +63,7 @@ export default function ParaformThemeSidebar({ themes }: Props) {
                   isActive ? "text-[#1a1a1a]" : "text-[#6a6a6a] hover:text-[#1a1a1a]",
                 )}
               >
-                <span className="font-[family-name:var(--font-serif)] text-lg leading-tight">
+                <span className="text-lg leading-tight">
                   {theme.name}
                 </span>
                 <span className="text-xs tabular-nums text-[#a89f8c]">

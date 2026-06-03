@@ -33,7 +33,7 @@ export default function PortraitChapter({
         {/* Chapter title */}
         <h2
           className="text-3xl md:text-4xl text-[#1a1a1a] leading-tight mb-10 md:mb-14"
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          style={{ fontFamily: "var(--font-figtree), system-ui, sans-serif" }}
         >
           {chapter.title}
         </h2>

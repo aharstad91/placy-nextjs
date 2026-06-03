@@ -22,7 +22,7 @@ export default function StoryHero({ projectName, heroIntro, themes }: StoryHeroP
     <header className="mb-16 md:mb-24">
       {/* Project name */}
       <h1 className="text-4xl md:text-5xl font-semibold text-[#1a1a1a] tracking-tight mb-6"
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+          style={{ fontFamily: "var(--font-figtree), system-ui, sans-serif" }}>
         {projectName}
       </h1>
 

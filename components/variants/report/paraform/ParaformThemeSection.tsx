@@ -28,7 +28,7 @@ export default function ParaformThemeSection({ theme, index, isLast }: Props) {
       style={isLast ? undefined : { borderBottom: "1px solid #e8e3d8" }}
     >
       <div className="mb-3 flex items-center gap-3">
-        <span className="font-[family-name:var(--font-serif)] text-sm tabular-nums text-[#a89f8c]">
+        <span className="text-sm tabular-nums text-[#a89f8c]">
           {String(index + 1).padStart(2, "0")}
         </span>
         <span className="text-xs uppercase tracking-[0.22em] text-[#8a8275]">
@@ -36,7 +36,7 @@ export default function ParaformThemeSection({ theme, index, isLast }: Props) {
         </span>
       </div>
 
-      <h2 className="font-[family-name:var(--font-serif)] text-4xl md:text-5xl text-[#1a1a1a] leading-[1.1] tracking-tight mb-6">
+      <h2 className="text-4xl md:text-5xl text-[#1a1a1a] leading-[1.1] tracking-tight mb-6">
         {theme.name}
       </h2>
 

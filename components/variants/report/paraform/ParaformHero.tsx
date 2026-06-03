@@ -12,7 +12,7 @@ export default function ParaformHero({ projectName, heroIntro, themesCount, poiC
         Nabolagsrapport
       </p>
 
-      <h1 className="font-[family-name:var(--font-serif)] text-5xl md:text-7xl text-[#1a1a1a] leading-[1.05] tracking-tight mb-8 max-w-[820px]">
+      <h1 className="text-5xl md:text-7xl text-[#1a1a1a] leading-[1.05] tracking-tight mb-8 max-w-[820px]">
         {projectName}
       </h1>
 
@@ -24,13 +24,13 @@ export default function ParaformHero({ projectName, heroIntro, themesCount, poiC
 
       <div className="flex items-end gap-12 md:gap-20 border-t border-[#e8e3d8] pt-8">
         <div>
-          <p className="font-[family-name:var(--font-serif)] text-5xl md:text-6xl text-[#1a1a1a] leading-none mb-2">
+          <p className="text-5xl md:text-6xl text-[#1a1a1a] leading-none mb-2">
             {poiCount}
           </p>
           <p className="text-sm text-[#6a6a6a]">steder kartlagt</p>
         </div>
         <div>
-          <p className="font-[family-name:var(--font-serif)] text-5xl md:text-6xl text-[#1a1a1a] leading-none mb-2">
+          <p className="text-5xl md:text-6xl text-[#1a1a1a] leading-none mb-2">
             {themesCount}
           </p>
           <p className="text-sm text-[#6a6a6a]">temaer</p>

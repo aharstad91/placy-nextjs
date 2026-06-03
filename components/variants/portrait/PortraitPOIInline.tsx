@@ -97,7 +97,7 @@ export default function PortraitPOIInline({
         </div>
         <h3
           className="text-xl md:text-2xl text-[#1a1a1a] mb-2"
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          style={{ fontFamily: "var(--font-figtree), system-ui, sans-serif" }}
         >
           {googleUrl ? (
             <a

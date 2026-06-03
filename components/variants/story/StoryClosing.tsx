@@ -21,7 +21,7 @@ export default function StoryClosing({ projectName, explorerUrl, reportUrl }: St
 
       <h2
         className="text-2xl md:text-3xl font-semibold text-[#1a1a1a] mb-4"
-        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+        style={{ fontFamily: "var(--font-figtree), system-ui, sans-serif" }}
       >
         Utforsk nabolaget videre
       </h2>

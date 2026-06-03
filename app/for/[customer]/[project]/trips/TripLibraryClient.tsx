@@ -165,7 +165,7 @@ function FeaturedTripCard({ item }: { item: TripItem }) {
 
         {/* Content overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h3 className="font-serif text-xl font-semibold text-white leading-tight mb-1">
+          <h3 className="text-xl font-semibold text-white leading-tight mb-1">
             {item.title}
           </h3>
           <p className="text-sm text-white/80 line-clamp-1 mb-2">
@@ -228,7 +228,7 @@ function TripCard({ item }: { item: TripItem }) {
 
       {/* Title and metadata */}
       <div className="mt-3">
-        <h3 className="font-serif text-base font-semibold leading-tight line-clamp-2 text-[#1A1A1A] group-hover:text-[#C45C3A] transition-colors">
+        <h3 className="text-base font-semibold leading-tight line-clamp-2 text-[#1A1A1A] group-hover:text-[#C45C3A] transition-colors">
           {item.title}
         </h3>
         <div className="mt-1 flex items-center gap-2 text-xs text-[#6B6560]">
@@ -262,7 +262,7 @@ function CategoryRow({
   return (
     <section id={`trip-category-${category}`} className="mt-10 first:mt-6">
       <div className="flex items-center justify-between mb-4 px-4">
-        <h2 className="font-serif text-lg font-semibold text-[#1A1A1A]">
+        <h2 className="text-lg font-semibold text-[#1A1A1A]">
           {label}
         </h2>
         <ChevronRight className="w-5 h-5 text-stone-400" />
@@ -372,7 +372,7 @@ export default function TripLibraryClient({
         <p className="text-xs font-medium uppercase tracking-wider text-[#9a9288] mb-1">
           Trondheim
         </p>
-        <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mb-1">
+        <h1 className="text-2xl font-bold text-[#1A1A1A] mb-1">
           Utforsk turer
         </h1>
         <div className="mb-4" />
@@ -423,7 +423,7 @@ export default function TripLibraryClient({
       {!searchTerm && featuredItems.length > 0 && (
         <section className="mt-10">
           <div className="flex items-center justify-between mb-4 px-4">
-            <h2 className="font-serif text-lg font-semibold text-[#1A1A1A]">
+            <h2 className="text-lg font-semibold text-[#1A1A1A]">
               Anbefalt
             </h2>
           </div>

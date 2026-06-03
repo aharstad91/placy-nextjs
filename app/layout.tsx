@@ -1,21 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, Newsreader } from "next/font/google";
+import { Figtree } from "next/font/google";
 import TransitionProvider from "@/components/transitions/TransitionProvider";
 import "./globals.css";
 import "@/components/variants/report/board/audio-tour/tour-mode.css";
 
-const inter = Inter({
+// Figtree er Placys eneste typeface (variabel font, 300–900) — brukt for
+// både UI/brødtekst og redaksjonelle overskrifter.
+const figtree = Figtree({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
-});
-
-const newsreader = Newsreader({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-serif",
-  style: ["normal", "italic"],
-  weight: ["400", "500", "600", "700"],
+  variable: "--font-figtree",
 });
 
 export const metadata: Metadata = {
@@ -30,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="no" className={`${inter.variable} ${newsreader.variable}`}>
+    <html lang="no" className={figtree.variable}>
       <head>
         <link rel="preconnect" href="https://api.mapbox.com" />
         <link rel="dns-prefetch" href="https://api.mapbox.com" />

@@ -197,7 +197,7 @@ export default function TripPreview({
 
         {/* Stop list */}
         <div className="px-5 sm:px-8 py-8">
-          <h2 className="font-serif text-xl font-semibold text-[#1A1A1A] mb-5">
+          <h2 className="text-xl font-semibold text-[#1A1A1A] mb-5">
             Stopp på turen
           </h2>
           <ol className="space-y-4">
@@ -273,7 +273,7 @@ export default function TripPreview({
 
             {/* Stop list */}
             <div className="py-6">
-              <h2 className="font-serif text-xl font-semibold text-[#1A1A1A] mb-6">
+              <h2 className="text-xl font-semibold text-[#1A1A1A] mb-6">
                 Stopp på turen
               </h2>
               <ol className="space-y-5">
@@ -387,7 +387,7 @@ function HeroOverlay({
 
       {/* Title over hero */}
       <div className={`absolute bottom-0 left-0 right-0 ${paddingClass}`}>
-        <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
           {trip.title}
         </h1>
         {trip.city && (
