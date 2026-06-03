@@ -14,6 +14,7 @@ import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
 import { deriveCategoryCamera } from "./board-3d-camera-director";
 import { getCategoryCamera } from "./camera-tours";
+import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import { cn } from "@/lib/utils";
 import type { POI, CategoryCameraConfig } from "@/lib/types";
@@ -307,6 +308,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
           lat: data.home.coordinates.lat,
           lng: data.home.coordinates.lng,
           name: data.home.name,
+          imageSrc: getProjectPinThumbnail(data.projectSlug),
         }}
       />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />

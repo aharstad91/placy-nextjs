@@ -80,6 +80,8 @@ interface ReportThemeSectionProps {
   has3dAddon: boolean;
   /** Hele prosjektets POI-set — brukes til POI-chip-lookup i curated grounded narrative. */
   allProjectPOIs?: POI[];
+  /** Thumbnail (data-URI) for prosjektmarkøren på 3D-kartet. */
+  projectImageSrc?: string;
 }
 
 export default function ReportThemeSection({
@@ -92,6 +94,7 @@ export default function ReportThemeSection({
   areaSlug,
   has3dAddon,
   allProjectPOIs,
+  projectImageSrc,
 }: ReportThemeSectionProps) {
   const { locale } = useLocale();
   const Icon = getIcon(theme.icon);
@@ -427,6 +430,7 @@ export default function ReportThemeSection({
           pois={theme.allPOIs}
           center={center}
           projectName={projectName}
+          projectImageSrc={projectImageSrc}
         />
       )}
       bottomSlot={(ctx) => {
@@ -588,6 +592,7 @@ interface Google3DSlotContentProps {
   pois: POI[];
   center: Coordinates;
   projectName?: string;
+  projectImageSrc?: string;
 }
 
 function Google3DSlotContent({
@@ -596,6 +601,7 @@ function Google3DSlotContent({
   pois,
   center,
   projectName,
+  projectImageSrc,
 }: Google3DSlotContentProps) {
   // Lokal map3d-state for deklarativ RouteLayer3D-mount. UnifiedMapModal har
   // sin egen ref via ctx.registerGoogle3dMap; vi speiler den her slik at
@@ -640,6 +646,7 @@ function Google3DSlotContent({
                 lat: center.lat,
                 lng: center.lng,
                 name: projectName,
+                imageSrc: projectImageSrc,
               }
             : undefined
         }
