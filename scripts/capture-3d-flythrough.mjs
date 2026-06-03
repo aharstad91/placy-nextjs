@@ -9,12 +9,15 @@
  * streamer frames mens scenen rendrer — samme mekanisme som DevTools' egen opptaks-
  * funksjon — og gir en jevn fangst av en GPU-drevet flythrough.
  *
- * Flythrough-en er en Marketer-stil INTRO-FILM: en kontinuerlig 4-waypoint-bue
- * (vid etablering → sveip → innflyvning → hero-landing på modellen). Den bruker
- * samme `flyCameraTo`-primitiv som kamera-directoren (board-3d-camera-director /
- * use-board-3d-camera), men selve 4-punkts-banen er foreløpig capture-lokal
- * (POC) — den er IKKE promotert til directorens 2-punkts (a→b) per-kategori-
- * modell ennå. Modellen (ModelLayer3D) er allerede montert i boardet.
+ * Flythrough-en er en Marketer-stil BY-FILM: en kontinuerlig 6-waypoint-reise
+ * som åpner på Nidarosdomen og glir nordover gjennom Midtbyen til en hero-
+ * landing på modellen ved fjorden (kameraet translaterer ~1 km, ikke bare zoom).
+ * Den bruker samme `flyCameraTo`-primitiv som kamera-directoren (board-3d-
+ * camera-director / use-board-3d-camera), men selve waypoint-banen er foreløpig
+ * capture-lokal (POC) — den er IKKE promotert til directorens 2-punkts (a→b)
+ * per-kategori-modell ennå. Modellen (ModelLayer3D) er allerede montert i
+ * boardet. Kategori-POI-pins skjules under opptak for en ren film (FLY_PINS=1
+ * beholder dem).
  *
  * Output: JPG-frames + concat.txt (med per-frame varighet fra screencast-
  * timestamps) i FRAME_DIR. Bygg mp4 etterpå med ffmpeg (se scripts kommentar nederst).
@@ -45,28 +48,31 @@ const CHROME =
   process.env.FLY_CHROME ||
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
-// ── Kamera-bane: Marketer-stil intro-film, 4 waypoints ───────────────────────
-// Sentrert rundt modell-koordinatet (Sjøgangen 7 / Stasjonskvartalet, Brattøra).
-// Filmen er GJENNOMGÅENDE: heading svinger ~135° mens range kollapser 1600→235 m
-// og sentrene glir inn på modellen → en kontinuerlig "fly inn over byen og land
-// på bygget"-bue (W1 vid etablering → W2 sveip → W3 innflyvning → W4 hero på
-// modellen). Hvert ben fyres OVERLAP_MS FØR forrige er ferdig, så farten aldri
-// faller til null på et waypoint — det er det som gir den sømløse Marketer-
-// følelsen i stedet for "hopp-stopp-hopp". Tunes mot tiles i Chrome.
+// ── Kamera-bane: Marketer-stil by-flythrough, 6 waypoints ────────────────────
+// Åpner på NIDAROSDOMEN (byens landemerke) og glir nordover gjennom Midtbyen,
+// over Nidelva og stasjonen, og lander på modellen ved fjorden (Brattøra).
+// Kameraet TRANSLATERER ~1 km langs sør→nord-korridoren (ikke bare zoom mot ett
+// punkt) → en ekte hero-by-flythrough som "får frem byen" før den ender på
+// bygget. 6 fordelte waypoints, gjennomgående via overlap-chaining (hvert ben
+// fyres OVERLAP_MS FØR forrige er ferdig → farten faller aldri til null på et
+// waypoint = sømløst, ikke hopp-stopp). Validert mot tiles i Chrome (alle
+// framinger + ren film). Modellen er M; Nidarosdomen ≈ 63.4270, 10.3969.
 const M = { lat: 63.436523, lng: 10.400747 };
 const WAYPOINTS = [
-  { center: { lat: M.lat - 0.0016, lng: M.lng + 0.0011, altitude: 0 }, range: 1600, tilt: 60, heading: 205 }, // W1 vid etablering (fjord + by)
-  { center: { lat: M.lat - 0.0008, lng: M.lng + 0.0006, altitude: 0 }, range: 950, tilt: 63, heading: 250 }, // W2 sveip over Brattøra
-  { center: { lat: M.lat - 0.0003, lng: M.lng + 0.0002, altitude: 0 }, range: 480, tilt: 66, heading: 300 }, // W3 innflyvning
-  { center: { lat: M.lat - 0.0001, lng: M.lng - 0.0002, altitude: 0 }, range: 320, tilt: 63, heading: 332 }, // W4 hero på modellen (mot fjorden)
+  { center: { lat: 63.42705, lng: 10.39685, altitude: 0 }, range: 600, tilt: 64, heading: 357 }, // W1 Nidarosdomen (hero-åpning)
+  { center: { lat: 63.429112, lng: 10.397663, altitude: 0 }, range: 545, tilt: 64, heading: 354 }, // W2 over Midtbyen
+  { center: { lat: 63.431174, lng: 10.398477, altitude: 0 }, range: 495, tilt: 64, heading: 350 }, // W3 sentrum / Nidelva
+  { center: { lat: 63.433142, lng: 10.399253, altitude: 0 }, range: 445, tilt: 63, heading: 345 }, // W4 mot Solsiden / stasjon
+  { center: { lat: 63.435017, lng: 10.399992, altitude: 0 }, range: 390, tilt: 63, heading: 339 }, // W5 stasjon / Brattøra-kant
+  { center: { lat: 63.436423, lng: 10.400547, altitude: 0 }, range: 320, tilt: 63, heading: 332 }, // W6 hero-landing på modellen (mot fjorden)
 ];
-// Per-ben-varighet (ms), ett tall per ben (W1→W2, W2→W3, W3→W4). Et lengre
-// etableringsben + kortere innflyvning gir tilnærmet konstant fart → jevnere
-// (de store range/heading-spranga tidlig dekkes saktere). Validert mot tiles.
-const LEG_DURATIONS = [6200, 5200, 4800];
+// Per-ben-varighet (ms), ett tall per ben (5 ben). Litt raskere enn forrige
+// iterasjon + jevnt tempo → dynamisk by-reise; marginalt lengre på åpningsbenet
+// (Nidarosdomen-reveal) og slutt-benet (settle på bygget). Validert mot tiles.
+const LEG_DURATIONS = [3400, 3100, 3000, 3000, 3300];
 const OVERLAP_MS = Number(process.env.FLY_OVERLAP_MS || 500); // start neste ben så tidlig
-const HOLD_START_MS = 1400; // hold på W1 før bevegelsen starter
-const HOLD_END_MS = 2600; // hold på modellen (W4) til slutt
+const HOLD_START_MS = 1100; // kort hold på Nidarosdomen før reisen
+const HOLD_END_MS = 2400; // dvel på hero-bygget til slutt
 const TILES_SETTLE_MS = 4500; // la tiles ved W1 streame inn før opptak
 const MAX_GAP = 0.25; // klamp mid-flight frame-gaps (tile-load-stall → innhent, ikke frys)
 
@@ -217,6 +223,25 @@ async function main() {
     return false;
   })()`);
   if (!ready) throw new Error("map/model not ready");
+
+  // Skjul kategori-POI-pins for en ren cinematisk film. Pins er React-rendret
+  // (vis.gl <Marker3D> → gmp-marker-3d-interactive) og RE-MONTERES av boardet
+  // per zoom-tier mens kameraet beveger seg → et engangs-skjul (display:none)
+  // slås av igjen. En MutationObserver som DETACHER hver interaktiv markør ved
+  // innsetting holder dem borte gjennom hele flythrough-en (vis.gl rydder
+  // imperativt → ingen React-desync, verifisert uten konsoll-feil). Prosjekt-
+  // labelen (gmp-marker-3d) + modellen beholdes. Sett FLY_PINS=1 for å beholde.
+  if (process.env.FLY_PINS !== "1") {
+    await evalPage(`(()=>{
+      const map=document.querySelector('gmp-map-3d');if(!map)return false;
+      if(!window.__pinKiller){
+        window.__pinKiller=new MutationObserver(ms=>{for(const mu of ms)for(const n of mu.addedNodes){if(n.tagName&&n.tagName.toLowerCase()==='gmp-marker-3d-interactive'){try{n.remove()}catch{}}}});
+        window.__pinKiller.observe(map,{childList:true,subtree:true});
+      }
+      document.querySelectorAll('gmp-marker-3d-interactive').forEach(m=>{try{m.remove()}catch{}});
+      return true;
+    })()`);
+  }
 
   // Ren hero-modus: skjul alle ikke-kart-søsken oppover ancestor-kjeden
   // (fjerner sidebar + Auto/Fri-toggle + nav + overlays) og utvid kart-stien
