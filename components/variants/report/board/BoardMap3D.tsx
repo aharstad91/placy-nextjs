@@ -15,6 +15,11 @@ import { useBoard3DCamera } from "./use-board-3d-camera";
 import { deriveCategoryCamera } from "./board-3d-camera-director";
 import { getCategoryCamera } from "./camera-tours";
 import { getBoardModel } from "./board-models";
+import { getBoardIntro } from "./board-intros";
+import {
+  runIntroFlythrough,
+  type CameraDrivableMap3D,
+} from "./board-intro-flythrough";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import { cn } from "@/lib/utils";
 import type { POI, CategoryCameraConfig } from "@/lib/types";
@@ -95,8 +100,14 @@ export function BoardMap3D({ pendingCamera }: Props) {
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
 
-  // Kameramodus: auto (drone-orbit) eller fri (brukeren styrer). Default auto.
-  const [cameraMode, setCameraMode] = useState<CameraMode>("auto");
+  // Kameramodus: auto (drone-orbit) eller fri (brukeren styrer). Default auto —
+  // men ?fly=1 starter i "free" så directoren ikke kjemper mot intro-flythrough-en.
+  const [cameraMode, setCameraMode] = useState<CameraMode>(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("fly") === "1"
+      ? "free"
+      : "auto",
+  );
 
   // Dev-only authoring-modus (?author=1) for å fange kamera-waypoints. Lest én
   // gang ved mount; aldri eksponert i produksjon med mindre flagget settes.
@@ -115,6 +126,15 @@ export function BoardMap3D({ pendingCamera }: Props) {
     () =>
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("film") === "1",
+  );
+
+  // Fly-modus (?fly=1): spill intro-flythrough (oval-spiral låst på objektet)
+  // live i kartet. Impliserer film-modus (pins skjult) + "free" cameraMode (over),
+  // og kjøres av effekten lenger ned når map3d-instansen er klar.
+  const [flyMode] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("fly") === "1",
   );
 
   // Narrativ-synk-kilder (begge stabile — endrer kun ved track-/fase-skifte,
@@ -148,7 +168,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
   // Markørsettet som faktisk mountes. Når en kategori spiller: kun den
   // kategoriens POI-er (sub-filtrert). Ellers: det kuraterte ankersettet.
   const markerPOIs = useMemo<POI[]>(() => {
-    if (filmMode) return []; // ren film: ingen kategori-pins (se filmMode-kommentar)
+    if (filmMode || flyMode) return []; // ren film: ingen kategori-pins (se filmMode-kommentar)
     if (activeCategory) {
       const useFilter = state.phase !== "default" && subFilter.hiddenIds.size > 0;
       const result: POI[] = [];
@@ -159,7 +179,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
       return result;
     }
     return overviewPOIs;
-  }, [filmMode, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
+  }, [filmMode, flyMode, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
 
   // Default-camera: bruk pendingCamera hvis tilgjengelig (fra toggle), ellers
   // prosjektets home-koordinater + default 3D-tilt.
@@ -266,6 +286,31 @@ export function BoardMap3D({ pendingCamera }: Props) {
     audioPaused,
     reducedMotion,
   });
+
+  // ── Intro-flythrough (?fly=1) ────────────────────────────────────────────
+  // Spill oval-spiralen (board-intro-flythrough) live i kartet når map3d er klar.
+  // cameraMode er allerede "free" (se init) så directoren over rører ikke kameraet
+  // — vi driver det selv frame-for-frame. window.__placyIntroFly eksponerer fasen
+  // (settling→running→done) så capture-scriptet kan åpne ?fly=1 og synke opptaket.
+  // Deps er primitive (home lat/lng) så effekten ikke restarter på re-render.
+  const homeLat = data.home.coordinates.lat;
+  const homeLng = data.home.coordinates.lng;
+  // Per-prosjekt intro-tuning (innflyvnings-retning etc.); ukjent slug → {} → ren
+  // standard-intro. Stabil ref via slug-dep så effekten ikke restarter.
+  const introPath = useMemo(
+    () => getBoardIntro(data.projectSlug ?? ""),
+    [data.projectSlug],
+  );
+  useEffect(() => {
+    if (!flyMode || !map3dInstance) return;
+    return runIntroFlythrough(map3dInstance as unknown as CameraDrivableMap3D, {
+      target: { lat: homeLat, lng: homeLng },
+      path: introPath,
+      onPhase: (phase) => {
+        (window as unknown as { __placyIntroFly?: string }).__placyIntroFly = phase;
+      },
+    });
+  }, [flyMode, map3dInstance, homeLat, homeLng, introPath]);
 
   // Recovery-hint: når brukeren tar over ved å DRA (ikke ved å klikke Fri), er
   // det ikke åpenbart at kameraet «frøs» med vilje. En kort, transient melding
