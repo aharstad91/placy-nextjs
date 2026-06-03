@@ -6,6 +6,7 @@ import type { Project } from "@/lib/types";
 import type { TranslationMap } from "@/lib/supabase/translations";
 import { transformToReportData, type ReportTheme } from "./report-data";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
+import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import ReportHero from "./ReportHero";
 import ReportThemeChipsRow from "./ReportThemeChipsRow";
@@ -139,6 +140,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
             pois={effectiveProject.pois}
             has3dAddon={effectiveProject.has3dAddon ?? false}
             initialHeading={reportData.initialHeading}
+            projectImageSrc={getProjectPinThumbnail(project.urlSlug)}
           />
         </div>
       )}
