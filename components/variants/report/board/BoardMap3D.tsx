@@ -14,6 +14,12 @@ import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
 import { deriveCategoryCamera } from "./board-3d-camera-director";
 import { getCategoryCamera } from "./camera-tours";
+import { getBoardModel } from "./board-models";
+import { getBoardIntro } from "./board-intros";
+import {
+  runIntroFlythrough,
+  type CameraDrivableMap3D,
+} from "./board-intro-flythrough";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import type { POI, CategoryCameraConfig } from "@/lib/types";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
@@ -24,6 +30,15 @@ const RouteLayer3D = dynamic(
   () =>
     import("@/components/map/route-layer-3d").then((mod) => ({
       default: mod.RouteLayer3D,
+    })),
+  { ssr: false },
+);
+
+// ModelLayer3D lazy-loaded — samme bundling-strategi som RouteLayer3D.
+const ModelLayer3D = dynamic(
+  () =>
+    import("@/components/map/model-layer-3d").then((mod) => ({
+      default: mod.ModelLayer3D,
     })),
   { ssr: false },
 );
@@ -82,6 +97,13 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
   const poiForRoute = state.phase === "poi" && activePOI ? activePOI.raw : null;
   const { data: routeData } = useRouteData(poiForRoute, data.home.coordinates);
 
+  // 3D-bygningsmodell for prosjektet (prototype-lokal config, mirror
+  // camera-tours). Ukjent slug → null (kart uten modell, graceful).
+  const boardModel = useMemo(
+    () => getBoardModel(data.projectSlug ?? "") ?? null,
+    [data.projectSlug],
+  );
+
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
 
@@ -91,6 +113,26 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
     () =>
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("author") === "1",
+  );
+
+  // Film/capture-modus (?film=1): dropp kategori-POI-pins for en ren cinematisk
+  // flythrough-fangst. Pins re-monteres per zoom-tier, så å fjerne dem via DOM
+  // utenfra krasjer React (removeChild-race på en node React fortsatt eier) —
+  // vi dropper dem heller på render-nivå her (markerPOIs → []). Prosjekt-labelen
+  // (projectSite) + 3D-modellen er egne props og påvirkes ikke.
+  const [filmMode] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("film") === "1",
+  );
+
+  // Fly-modus (?fly=1): spill intro-flythrough (oval-spiral låst på objektet)
+  // live i kartet. Impliserer film-modus (pins skjult) + "free" cameraMode (over),
+  // og kjøres av effekten lenger ned når map3d-instansen er klar.
+  const [flyMode] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("fly") === "1",
   );
 
   // Narrativ-synk-kilder (begge stabile — endrer kun ved track-/fase-skifte,
@@ -124,6 +166,7 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
   // Markørsettet som faktisk mountes. Når en kategori spiller: kun den
   // kategoriens POI-er (sub-filtrert). Ellers: det kuraterte ankersettet.
   const markerPOIs = useMemo<POI[]>(() => {
+    if (filmMode || flyMode) return []; // ren film: ingen kategori-pins (se filmMode-kommentar)
     if (activeCategory) {
       const useFilter = state.phase !== "default" && subFilter.hiddenIds.size > 0;
       const result: POI[] = [];
@@ -134,7 +177,7 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
       return result;
     }
     return overviewPOIs;
-  }, [activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
+  }, [filmMode, flyMode, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
 
   // Default-camera: bruk pendingCamera hvis tilgjengelig (fra toggle), ellers
   // prosjektets home-koordinater + default 3D-tilt.
@@ -242,9 +285,33 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
     reducedMotion,
   });
 
+  // ── Intro-flythrough (?fly=1) ────────────────────────────────────────────
+  // Spill oval-spiralen (board-intro-flythrough) live i kartet når map3d er klar.
+  // cameraMode er allerede "free" (init i BoardMap når ?fly=1) så directoren over
+  // rører ikke kameraet — vi driver det selv frame-for-frame. window.__placyIntroFly
+  // eksponerer fasen (settling→running→done) så capture-scriptet kan synke opptaket.
+  // Deps er primitive (home lat/lng) så effekten ikke restarter på re-render.
+  const homeLat = data.home.coordinates.lat;
+  const homeLng = data.home.coordinates.lng;
+  // Per-prosjekt intro-tuning (innflyvnings-retning etc.); ukjent slug → {} → ren
+  // standard-intro. Stabil ref via slug-dep så effekten ikke restarter.
+  const introPath = useMemo(
+    () => getBoardIntro(data.projectSlug ?? ""),
+    [data.projectSlug],
+  );
+  useEffect(() => {
+    if (!flyMode || !map3dInstance) return;
+    return runIntroFlythrough(map3dInstance as unknown as CameraDrivableMap3D, {
+      target: { lat: homeLat, lng: homeLng },
+      path: introPath,
+      onPhase: (phase) => {
+        (window as unknown as { __placyIntroFly?: string }).__placyIntroFly = phase;
+      },
+    });
+  }, [flyMode, map3dInstance, homeLat, homeLng, introPath]);
+
   // cameraMode styres nå av BoardMap (felles BoardMapControls). Vi speiler den i
-  // en ref så drag-lytteren kan lese gjeldende modus uten å re-subscribe ved hvert
-  // modus-skifte.
+  // en ref så drag-lytteren kan lese gjeldende modus uten å re-subscribe.
   const cameraModeRef = useRef(cameraMode);
   cameraModeRef.current = cameraMode;
 
@@ -293,6 +360,11 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
         }}
       />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />
+      <ModelLayer3D
+        map3d={map3dInstance}
+        model={boardModel}
+        fallbackPosition={data.home.coordinates}
+      />
       <CameraCutOverlay
         visible={cutVisible}
         label={activeCategory?.label}

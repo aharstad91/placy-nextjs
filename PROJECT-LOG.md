@@ -6,7 +6,7 @@
 
 ---
 
-## 2026-06-03 — Category-player sidebar + roligere kamera + ekte video-pause (branch)
+## 2026-06-03 — Category-player sidebar + roligere kamera + ekte video-pause
 
 Branch `feat/category-player-sidebar`. Bruker meldte at rapport-board har **for mye samtidig bevegelse** (video i kategori-bildet + kart-kamera + voice-over = kognitiv overload). To grep:
 
@@ -19,7 +19,116 @@ Branch `feat/category-player-sidebar`. Bruker meldte at rapport-board har **for 
 - **Megler** er nå siste chapter; den ubrukte persistente `BrokerProfileCard` (lagd tidligere for sidebar-bunn) **slettet** — `MeglerReel` viser kontakten. Megler-data (`getProjectBrokers` + board-data-fallback + portrett) beholdt. *Åpent: vil bruker ha megler persistent synlig et sted? Da re-introduseres et kort (i git-historikk).*
 - Carry-over fra forrige batch som også landet her: beige (#f2e9dc) sidebar + beige cut-overlay.
 
-**Status:** Exploration-branch, bruker godkjente retningen ("riktig retning"). Ikke merget til main, ikke pushet. Gates: kamera 27/27, tsc 0, eslint 0. (3 røde tester i `lib/curation/validator.test.ts` er pre-eksisterende/urelatert.)
+**3. Samlet kart-kontroll-pille.** Auto/Fri + Kart/3D slått sammen til ÉN pille (ny `BoardMapControls`) sentrert nederst-midt — bevisst plassering: Google-attribusjonen er låst nederst-venstre (kan ikke flyttes per Googles vilkår), Mapbox nederst-høyre, midten er fri. `cameraMode` løftet fra BoardMap3D til BoardMap så begge toggles deler komponent; drag-takeover varsles via `onDragTakeover`. Slettet `CameraModeToggle` (oppslukt av pillen). Auto/Fri skjules i 2D.
+
+**Status:** Godkjent av bruker ("dette ser bra ut"), merget til main. Gates: kamera 27/27, tsc 0, eslint 0. (3 røde tester i `lib/curation/validator.test.ts` er pre-eksisterende/urelatert.)
+
+---
+## 2026-06-03 — 3D-bygningsmodell på Google Photorealistic 3D Tiles + flythrough-video (demo-spike)
+
+### Kontekst
+Bevise at vi kan matche/over-skalere Marketers pre-bakte flythrough (se `docs/strategy/2026-06-02-marketer-homekey-konkurrent.md`): plassere en 3D-bygningsmodell inn i Google sine ekte fotogrammetri-tiles og fly en regissert kamerabane inn på den — interaktivt i rapport-boardet OG eksportert til video. Kjørt via `/ce-work` mot planen `docs/plans/2026-06-02-002-feat-3d-modell-paa-google-tiles-demo-plan.md` i egen worktree (`feat/3d-model-on-tiles`). Mål satt underveis av bruker: «fungerende flythrough som kjører i Google Maps 3D, så vi får gjenskapt video fra konteksten.» Levert.
+
+### Hva ble bygget
+- **`Model3DElement`-lag** (`components/map/model-layer-3d.tsx`, NY): imperativt 3D-barn som speiler `route-layer-3d.tsx` 1:1 — én langlevet instans per `map3d` (cachet i ref), MUTÉR props (aldri remount → unngår GPU-buffer-leak), `cancelled`-guard + ref-double-check etter `importLibrary`-await (StrictMode), append-kun-når-`!parentNode`, remove+null-ref ved unmount. Montert i `BoardMap3D.tsx` ved siden av `RouteLayer3D` (lazy `dynamic`).
+- **`Board3DModel`-type** (`lib/types.ts`): mapper 1:1 på Google `Model3DElementOptions` (`src`/`position`/`orientation`/`scale`/`altitudeMode`) → ekte arkitekt-`.glb` kan byttes inn uten kodeendring.
+- **Prototype-lokal modell-config** (`components/variants/report/board/board-models.ts`, NY): speiler `camera-tours.ts` (slug → `Board3DModel`). `position` utelatt → faller tilbake til `data.home.coordinates` (single-sourced fra Supabase). `CLAMP_TO_GROUND`, skala `{x:60,y:34,z:46}` m.
+- **Placeholder-`.glb`** (`public/models/placeholder-massing.glb` + `scripts/gen-placeholder-massing-glb.mjs`, NY): nullavhengighets-script som emitterer en gyldig 892-byte binær glTF 2.0 enhetskube (base i y=0, `doubleSided`). Google støtter KUN `.glb` (ikke rå glTF-JSON). Skala/orientering tunes via config.
+- **Modell-framing-waypoints** (`camera-tours.ts`): `stasjonskvartalet.transport` A→B (vid by-kontekst → nærbilde på bygget), autorert mot tiles via `?author=1`. Gjenbruker director uendret.
+- **CDP-video-capture** (`scripts/capture-3d-flythrough.mjs`, NY): fanger flythrough via `Page.startScreencast` (vanlige screenshots timer ut på kontinuerlig-rendrende gmp-map-3d). Egen headed Chrome (ekte GPU), skjuler app-chrome (sidebar/toggles) men beholder Google-attribusjon (ToS), driver kameraet med samme `flyCameraTo` som directoren, ffmpeg-assembler.
+
+### Sentrale tekniske funn
+- vis.gl `@vis.gl/react-google-maps@1.8.3` har INGEN `<Model3D>` React-wrapper → må gå imperativt (importLibrary + `new lib.Model3DElement` + `map3d.append`).
+- `@types/google.maps@3.64.0` har ALLEREDE `Model3DElement` (+ i `Maps3DLibrary`) → ingen lokal `.d.ts`-augmentering nødvendig. `skipLibCheck:true` sameksisterer med eksisterende Marker3D-augmentering.
+- `Model3DElement` er Preview/Experimental (gratis, ingen SLA), eksponert på `weekly`-kanalen vis.gl bruker.
+- Stasjonskvartalet-senter `63.436523, 10.400747` (Sjøgangen 7) — fra Supabase `projects.center_lat/lng`, eksakt match mot Nominatim-geokoding.
+
+### Verifisering (frisk Chrome via chrome-devtools MCP + CDP-capture)
+- Modell rendrer stabilt på tiles: nøyaktig 1 `gmp-model-3d` (ingen StrictMode-dupe), appendet til `GMP-MAP-3D`, `src` same-origin, posisjon = modell-senter, `CLAMP_TO_GROUND` (base på terreng), stående oppreist. **Ingen WebGL-kontekst-feil, ingen model-load/CORS-feil** i konsollen.
+- Flythrough fyrer i produktet: trigget «transport»-kapittelet → directoren fløy A→B og landet på bygget (range 250, tilt 66, sentrert på modell).
+- **Video levert**: `~/Desktop/placy-3d-flythrough/` → `flythrough.mp4` (1280×720, 30fps, ~9s, clean hero — vid Trondheim-kontekst → nedstigning → landing på bygget), `flythrough-web.mp4` (4.7 MB), `flythrough-poster.jpg`, `flythrough-in-board.mp4` (med sidebar — beviser at den kjører live i boardet). 794 screencast-frames over 9s.
+
+### Tomt-kollisjon (Unit 5) + mitigering
+Stasjonskvartalet er ubygget → finnes ikke i Googles tiles. Modellen lander derfor oppå Brattøras eksisterende jernbanespor/tomt. Observert i alle frames. **Mitigering: kamera-framing** — vid A viser hele nabolags-konteksten (bygget merket «Nybygg 2028»), B rammer bygget som tydelig hero med byen bak og sporene som forgrunns-infrastruktur. Full skjuling av tomt-regionen er deferert (eget grep).
+
+### Asset-grensesnitt (Unit 7)
+Bekreftet config-drevet: `ModelLayer3D` leser `model.src` generisk → `Model3DElement.src`. Bytt til ekte arkitekt-`.glb` = endre `src`-strengen i `board-models.ts` (eller erstatt fila). Ingen kodeendring. Peker mot rekonstruksjons-tasken (turntable-renders → glTF).
+
+### Kvalitet
+- `tsc` 0, `eslint` 0 (egne filer), `npm run build` OK, `camera-tours` 9/9 tester.
+- **3 pre-eksisterende test-feil i `lib/curation/validator.test.ts`** (egennavn-ekstraksjon/æøå) — IKKE relatert til denne spiken; bekreftet at de feiler også på base-commit med endringene stashed. Utenfor scope.
+- Adversarisk code-review (lifecycle/WebGL-invarianter): ingen kritiske funn; laget speiler `route-layer-3d` trofast. Ett hardnings-funn adressert: dokumentert koblings-invariant (kamera-coords MÅ = home-koordinat) i `camera-tours.ts`.
+
+### Kjente begrensninger / deferred
+- Reduced-motion → director holder statisk på A (vid), ikke nærbilde B (director-oppførsel, utenfor scope).
+- Placeholder-massing er en boks (ikke ekte arkitektur). Rekonstruksjon fra klient-renders = egen task.
+- `Model3DElement` Preview-API — verifiser ved GA. ToS/billing for ekstern video-distribusjon avklares før bruk utenfor demo.
+- IP-grense: kun rekonstruér fra klient-eide renders; aldri ship modell rekonstruert fra konkurrent-CDN.
+
+### Strategisk
+Validerer Marketer-benchmark-tesen: vi LEIER Googles globale fotorealistiske by som tjeneste og trenger bare prosjektets modell plassert inn — vs. Marketer som bygger egen by-modell per leveranse. Skaleringsfortrinn bekreftet teknisk.
+
+### Nøkkelfiler
+`components/map/model-layer-3d.tsx`, `components/variants/report/board/{board-models.ts,BoardMap3D.tsx,camera-tours.ts}`, `lib/types.ts` (`Board3DModel`), `public/models/placeholder-massing.glb`, `scripts/{gen-placeholder-massing-glb,capture-3d-flythrough}.mjs`.
+
+### Status
+Committet til `feat/3d-model-on-tiles` (egen worktree). Ikke pushet/merget (prototype-rytme — venter på bruker). Video-deliverables på `~/Desktop/placy-3d-flythrough/`.
+
+---
+
+## 2026-06-03 (forts. 2) — Skalerbar per-prosjekt intro-flythrough (live ?fly=1)
+
+### Kontekst
+Bruker godkjente oval-spiral-følelsen og ba om wrap-up: gjør intro-en til en **gjenbrukbar standard-intro per prosjekt** — skalerbar, slik at andre prosjekter får den. To delproblemer løst i tillegg: (a) brukeren forventet å se filmen på board-URL-en (den var en capturet video, ikke noe som spilte live), (b) banen var hardkodet/duplisert.
+
+### Hva ble bygget
+- **`board-intro-flythrough.ts`** (NY): config-drevet motor (`IntroPathConfig` + `DEFAULT_INTRO_PATH`). Oval-spiral LÅST på objektet (center = target, relativ til target → funker for ETHVERT prosjekt på home-koordinatet). Frame-for-frame rAF + direkte camera-props, én global trapes-easing (konstant fart i midten). `introPoseAt` er ren + eksportert for test. `runIntroFlythrough(map, {target, path, onPhase})` merger per-prosjekt-config over default.
+- **`board-intros.ts`** (NY): per-prosjekt-tuning keyed på slug (mønster som board-models/camera-tours). Ukjent slug → `{}` → ren default-intro. Stasjonskvartalet: `startHeading:20` (inn fra Nidarosdomen) + `rangeStart:1150`.
+- **`?fly=1` i BoardMap3D**: spiller intro-en LIVE i kartet (cameraMode init "free" så directoren ikke kjemper imot; pins skjult via samme render-gate som `?film=1`; per-prosjekt-config slått opp via `getBoardIntro`). Eksponerer fase på `window.__placyIntroFly`.
+- **`capture-3d-flythrough.mjs`**: DRIVER ikke lenger kameraet — åpner `?fly=1` og TAR OPP mens boardet spiller intro-en (synker på `window.__placyIntroFly`: settling→running→done). Fjernet all duplisert kamera-matte → én kilde til banen.
+- **`board-intro-flythrough.test.ts`** (NY): 8 tester (objekt sentrert hele banen, start/hero-poser, oval-utbuling, heading-wrap, per-prosjekt-config + default-merge).
+
+### Hvorfor produkt-flagg, ikke DOM-manipulasjon (pins)
+MutationObserver som detacher `gmp-marker-3d-interactive` KRASJET React (`NotFoundError: removeChild` — node React fortsatt eier, re-monteres per zoom-tier). Løst rent med `?film=1`/`?fly=1` → `markerPOIs → []` på render-nivå (race-fritt).
+
+### Kvalitet
+`tsc` 0, `eslint` 0, **board-tester 132/132** (8 nye), `npm run build` OK. Live verifisert i Chrome (`?fly=1`: settling→running→done, objekt sentrert, pins skjult) + board-drevet capture.
+
+### Skalering / neste steg
+Nytt prosjekt får standard-intro automatisk (sentrert på home); tuning = én linje i `board-intros.ts`. Å gjøre intro-en til **auto-default** (uten `?fly=1`, med handoff til directoren etterpå) er en liten oppfølging. Capture for andre prosjekter: sett `FLY_URL` til prosjektets board.
+
+### Status
+Committet til `feat/3d-model-on-tiles`. Ikke pushet. Godkjent look = `~/Desktop/placy-3d-flythrough/flythrough.mp4` (+ v1–v5 tidligere iterasjoner for A/B).
+
+---
+
+## 2026-06-03 (forts.) — Flythrough-kinematografi: fra waypoints til oval-spiral låst på objektet
+
+### Kontekst
+Bruker ville iterere på flythrough-FØLELSEN (ikke modell-plasseringen). Mål: en Marketer-stil film som bygger LOKASJONS-INNSIKT — «fly til objektet fra en avstand så folk ser hvor det ligger» — og som FØLES som flyging, ikke som diskrete waypoints.
+
+### Iterasjoner (alle validert mot tiles i Chrome via chrome-devtools MCP, capturet via CDP-screencast)
+1. **4-waypoint modell-framing** (`flythrough-v1-clustered.mp4`): vid etablering → sveip → innflyvning → hero, alle sentrert nær modellen. Innførte overlap-chaining (neste ben fyres før forrige er ferdig), gap-klamping (`MAX_GAP` — tile-load-stall blir innhent, ikke flersekunders frys) og hero-hold (siste frame holdes `HOLD_END_MS`, ellers kuttes landingen).
+2. **Nidarosdomen by-flythrough, 6 waypoints** (`flythrough-v2-nidaros.mp4`): åpner på Nidarosdomen, translaterer ~1 km nordover gjennom Midtbyen til hero på bygget. «Får frem byen.»
+3. **Oval-spiral låst på objektet** (gjeldende `flythrough.mp4`): kameraet ser alltid på bygget (center=M), orbiterer ~250° mens range spiraler inn 1100→300 m, med oval utbuling midtveis (`ECC·sin`) for spenning.
+
+### Sentralt teknisk skifte (iter 3)
+- **Frame-drevet kamera** i stedet for `flyCameraTo`-chaining: `requestAnimationFrame` + direkte camera-props (`map.center/range/tilt/heading`) ~85 fps. Verifisert at direkte prop-set reflekteres momentant.
+- **Én global trapes-easing** (ramp opp [0,0.16], konstant [0.16,0.84], ramp ned [0.84,1]) → konstant fart i midten, mykt KUN i start/slutt. Dette fjernet ease-in/out PER waypoint, som var grunnen til at iter 1–2 «så ut som waypoints».
+- **Pin-skjuling**: kategori-POI-pins (vis.gl `<Marker3D>` → `gmp-marker-3d-interactive`) re-monteres per zoom-tier. `display:none` er upålitelig (WebGL-baket), og en MutationObserver som DETACHER dem **krasjer React** (`NotFoundError: removeChild` — node React fortsatt eier). Løst rent med produkt-flagg **`?film=1`** i `BoardMap3D` → `markerPOIs → []` (render-nivå, race-fritt). Prosjekt-label + modell beholdes.
+
+### Produkt-retning notert (ikke bygget ennå)
+Bruker-innsikt: **utvid objekt-pin'en med et BILDE** som default-opplevelse → kjør uten 3D-modell i utgangspunktet, og tilby **3D-modell som addon** når datagrunnlag finnes. Lar oss levere lokasjons-flythrough + visuell objekt-identitet selv før en `.glb` eksisterer. Åpen tråd for neste iterasjon.
+
+### Kvalitet / verifisering
+- `tsc` 0, `eslint` 0 (endrede filer). Capture jevn: ~85 fps, ingen mid-flight-frys, objektet sentrert hele veien, ren film (0 pins), hero-landing mot fjorden.
+- Verifisert poser s=0/0.5/1 + full film (start/orbit/hero) på frisk board i Chrome.
+
+### Nøkkelfiler
+`scripts/capture-3d-flythrough.mjs` (oval-spiral-motor: `PATH`, `poseAt`, `runFlythrough` rAF-drive), `components/variants/report/board/BoardMap3D.tsx` (`?film=1`-flagg).
+
+### Status
+Committet til `feat/3d-model-on-tiles`. Ikke pushet/merget. Deliverables på `~/Desktop/placy-3d-flythrough/`: `flythrough.mp4` (oval-spiral, gjeldende), `flythrough-web.mp4`, `flythrough-poster.jpg`, `flythrough-in-board.mp4`, + `flythrough-v1-clustered.mp4` / `flythrough-v2-nidaros.mp4` (tidligere iterasjoner, for A/B).
 
 ---
 

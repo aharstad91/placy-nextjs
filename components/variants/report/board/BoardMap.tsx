@@ -91,7 +91,14 @@ export function BoardMap({
   // kontroll-komponent (BoardMapControls) sentrert nederst. cameraMode mates
   // ned til BoardMap3D for kamera-directoren; toggelen i BoardMapControls
   // skriver den. Recovery-hinten vises når brukeren tar over ved DRAG (auto→fri).
-  const [cameraMode, setCameraMode] = useState<CameraMode>("auto");
+  // Default auto (drone-orbit) — men ?fly=1 starter i "free" så kamera-directoren
+  // ikke kjemper mot intro-flythrough-en (board-intro-flythrough i BoardMap3D).
+  const [cameraMode, setCameraMode] = useState<CameraMode>(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("fly") === "1"
+      ? "free"
+      : "auto",
+  );
   const [showFreeHint, setShowFreeHint] = useState(false);
   const freeHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
