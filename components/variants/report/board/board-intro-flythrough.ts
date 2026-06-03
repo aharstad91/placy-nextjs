@@ -65,6 +65,11 @@ export const DEFAULT_INTRO_PATH: IntroPathConfig = {
   settleMs: 3500,
 };
 
+/** Nedre grense for flytur-varigheten når den skaleres til velkommen-VO-en
+ *  (produkt-koblingen i BoardMap3D). En kort velkomst skal ikke gi en frenetisk
+ *  innflyvning — vi gulver heller flyturen og lar director-en overta etterpå. */
+export const MIN_INTRO_FLY_MS = 8000;
+
 export interface IntroFlythroughOptions {
   /** Objektet — kameraets låste look-at (typisk prosjektets home-koordinat). */
   target: { lat: number; lng: number };
@@ -72,6 +77,12 @@ export interface IntroFlythroughOptions {
   path?: Partial<IntroPathConfig>;
   /** Fase-callback (settling → running → done). Brukes bl.a. for capture-synk. */
   onPhase?: (phase: IntroFlythroughPhase) => void;
+  /** prefers-reduced-motion: hopp til den vide etablerings-posituren (s=0) og
+   *  HOLD — vis nærområdet uten flytur. Ingen rAF, ingen bevegelse. */
+  staticOnly?: boolean;
+  /** Lest hver frame. Når den returnerer true fryses flyturen (f.eks. velkommen-
+   *  VO pauset) og gjenopptas der den slapp — ingen restart fra start. */
+  isPaused?: () => boolean;
 }
 
 const EASE_IN = 0.16;
@@ -111,12 +122,17 @@ export function introPoseAt(
  * umiddelbart, lar tiles streame inn (settleMs), kjører så oval-spiralen frame-
  * for-frame til hero. Returnerer en `cancel`-funksjon (kall ved unmount eller
  * manuell takeover) som stopper rAF + timere umiddelbart.
+ *
+ * `staticOnly` (prefers-reduced-motion): hold den vide etablerings-posituren og
+ * ferdig — ingen rAF, ingen bevegelse. `isPaused` leses hver frame: når den er
+ * true fryses flyturen (akkumulerer ikke tid) og gjenopptas smooth der den slapp
+ * — brukes til å fryse innflyvningen når velkommen-VO-en pauses.
  */
 export function runIntroFlythrough(
   map: CameraDrivableMap3D,
   opts: IntroFlythroughOptions,
 ): () => void {
-  const { target, onPhase } = opts;
+  const { target, onPhase, staticOnly, isPaused } = opts;
   const path: IntroPathConfig = { ...DEFAULT_INTRO_PATH, ...opts.path };
   let cancelled = false;
   let rafId = 0;
@@ -129,17 +145,30 @@ export function runIntroFlythrough(
     map.heading = p.heading;
   };
 
-  apply(0); // hopp til start-posituren før tile-settle
+  apply(0); // hopp til vid etablerings-positur før tile-settle
   onPhase?.("settling");
+
+  // Redusert bevegelse: hold den vide etablerings-posituren (allerede satt via
+  // apply(0)) og ferdig — vis nærområdet statisk, ingen flytur.
+  if (staticOnly) {
+    onPhase?.("done");
+    return () => {
+      cancelled = true;
+    };
+  }
 
   const settleTimer = setTimeout(() => {
     if (cancelled) return;
     onPhase?.("running");
-    let t0: number | null = null;
+    let last: number | null = null;
+    let elapsed = 0; // aktiv (ikke-pauset) tid langs banen
     const frame = (ts: number) => {
       if (cancelled) return;
-      if (t0 === null) t0 = ts;
-      const t = Math.min(1, (ts - t0) / path.durationMs);
+      if (last === null) last = ts;
+      // Akkumuler kun mens IKKE pauset → pause fryser, resume fortsetter smooth.
+      if (!isPaused?.()) elapsed += ts - last;
+      last = ts;
+      const t = Math.min(1, elapsed / path.durationMs);
       apply(ease(t));
       if (t < 1) {
         rafId = requestAnimationFrame(frame);

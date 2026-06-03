@@ -19,6 +19,7 @@ const baseInput = (
   overrides: Partial<CameraDecisionInputs> = {},
 ): CameraDecisionInputs => ({
   cameraMode: "auto",
+  introActive: false,
   home,
   activePOI: null,
   activeCategoryId: null,
@@ -43,6 +44,24 @@ describe("decideCameraIntent", () => {
     expect(decideCameraIntent(baseInput({ cameraMode: "free" }))).toEqual({
       kind: "free",
     });
+  });
+
+  it("introActive → free (intro-flythrough eier kameraet, director yield-er)", () => {
+    expect(decideCameraIntent(baseInput({ introActive: true }))).toEqual({
+      kind: "free",
+    });
+  });
+
+  it("introActive vinner over auto + aktiv kategori (ingen orbit/cinematic-kamp)", () => {
+    const intent = decideCameraIntent(
+      baseInput({
+        introActive: true,
+        cameraMode: "auto",
+        activeCategoryId: "mat-drikke",
+        categoryConfig: config(),
+      }),
+    );
+    expect(intent.kind).toBe("free");
   });
 
   it("aktiv POI → poi-pose tett inn, heading mot POI", () => {

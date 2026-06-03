@@ -18,6 +18,8 @@ interface Params {
   /** Map3DElement-instansen (cast til FlyCapableMap internt), eller null. */
   map3dInstance: unknown | null;
   cameraMode: "auto" | "free";
+  /** Intro-flythrough eier kameraet → director-en yield-er (ingen orbit/cinematic). */
+  introActive: boolean;
   home: { lat: number; lng: number };
   /** Aktiv POIs koordinater, eller null. Bør være memoisert av kalleren så
    *  effekt-deps holder seg stabile. */
@@ -55,6 +57,7 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
   const {
     map3dInstance,
     cameraMode,
+    introActive,
     home,
     activePOI,
     activeCategoryId,
@@ -75,6 +78,7 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
 
     const intent = decideCameraIntent({
       cameraMode,
+      introActive,
       home,
       activePOI,
       activeCategoryId,
@@ -169,6 +173,7 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
   }, [
     map3dInstance,
     cameraMode,
+    introActive,
     home,
     activePOI,
     activeCategoryId,

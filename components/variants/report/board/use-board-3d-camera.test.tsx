@@ -20,6 +20,7 @@ type Props = Parameters<typeof useBoard3DCamera>[0];
 const props = (map: unknown, overrides: Partial<Props> = {}): Props => ({
   map3dInstance: map,
   cameraMode: "auto",
+  introActive: false,
   home: { lat: 63.435, lng: 10.398 },
   activePOI: null,
   activeCategoryId: "mat-drikke",
@@ -115,6 +116,20 @@ describe("useBoard3DCamera — cut-transition", () => {
     const map = makeMap();
     const { result } = renderHook((p: Props) => useBoard3DCamera(p), {
       initialProps: props(map, { audioPaused: true }),
+    });
+
+    expect(result.current.cutVisible).toBe(false);
+    act(() => vi.advanceTimersByTime(CUT_FADE_MS + CUT_SETTLE_MS));
+    expect(map.flyCameraTo).not.toHaveBeenCalled();
+    expect(map.flyCameraAround).not.toHaveBeenCalled();
+  });
+
+  it("introActive: director yield-er — ingen fly-kall selv med aktiv kategori", () => {
+    const map = makeMap();
+    // Intro-flythrough-en eier kameraet; director-en skal ikke røre det selv om
+    // en kategori er aktiv (ellers kjemper orbit/cinematic mot innflyvningen).
+    const { result } = renderHook((p: Props) => useBoard3DCamera(p), {
+      initialProps: props(map, { introActive: true, activeCategoryId: "mat-drikke" }),
     });
 
     expect(result.current.cutVisible).toBe(false);

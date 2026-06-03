@@ -18,6 +18,8 @@ import { getBoardModel } from "./board-models";
 import { getBoardIntro } from "./board-intros";
 import {
   runIntroFlythrough,
+  MIN_INTRO_FLY_MS,
+  DEFAULT_INTRO_PATH,
   type CameraDrivableMap3D,
 } from "./board-intro-flythrough";
 import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
@@ -146,6 +148,15 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
       : undefined;
   const audioPaused = audioPhase === "paused";
 
+  // Velkommen-beaten driver intro-flythrough-en (innflyvningen som introduserer
+  // området). Velkommen-sporet bærer categoryId "welcome" (buildCategoryTracks),
+  // og «Start opplevelsen» hopper nettopp dit (firstAudioBearingIndex). Sammen med
+  // ?fly=1-capture er dette de to tilfellene der innflyvningen EIER kameraet:
+  // director-en yield-er (introActive) og kategori-pins skjules for en ren
+  // etablering av nærområdet. Selve flyturen kjøres av effekten lenger ned.
+  const isWelcomeBeat = currentTrack?.categoryId === "welcome";
+  const introActive = flyMode || isWelcomeBeat;
+
   // prefers-reduced-motion: statisk hold på A i stedet for A→B-drift (KD-10).
   const [reducedMotion, setReducedMotion] = useState(false);
   useEffect(() => {
@@ -167,7 +178,9 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
   // Markørsettet som faktisk mountes. Når en kategori spiller: kun den
   // kategoriens POI-er (sub-filtrert). Ellers: det kuraterte ankersettet.
   const markerPOIs = useMemo<POI[]>(() => {
-    if (filmMode || flyMode) return []; // ren film: ingen kategori-pins (se filmMode-kommentar)
+    // Ren etablering: ingen kategori-pins under intro-flythrough (velkommen-beat
+    // / ?fly=1) eller ?film=1-capture — kun nærområdet (se filmMode-kommentar).
+    if (filmMode || introActive) return [];
     if (activeCategory) {
       const useFilter = state.phase !== "default" && subFilter.hiddenIds.size > 0;
       const result: POI[] = [];
@@ -178,7 +191,7 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
       return result;
     }
     return overviewPOIs;
-  }, [filmMode, flyMode, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
+  }, [filmMode, introActive, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
 
   // Default-camera: bruk pendingCamera hvis tilgjengelig (fra toggle), ellers
   // prosjektets home-koordinater + default 3D-tilt.
@@ -277,6 +290,7 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
   const { cutVisible } = useBoard3DCamera({
     map3dInstance,
     cameraMode,
+    introActive,
     home: data.home.coordinates,
     activePOI: activePOICoords,
     activeCategoryId: activeCategory?.id ?? null,
@@ -286,12 +300,18 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
     reducedMotion,
   });
 
-  // ── Intro-flythrough (?fly=1) ────────────────────────────────────────────
-  // Spill oval-spiralen (board-intro-flythrough) live i kartet når map3d er klar.
-  // cameraMode er allerede "free" (init i BoardMap når ?fly=1) så directoren over
-  // rører ikke kameraet — vi driver det selv frame-for-frame. window.__placyIntroFly
-  // eksponerer fasen (settling→running→done) så capture-scriptet kan synke opptaket.
-  // Deps er primitive (home lat/lng) så effekten ikke restarter på re-render.
+  // ── Intro-flythrough (velkommen-beat + ?fly=1) ───────────────────────────
+  // Den regisserte oval-spiralen (board-intro-flythrough) er selve introduksjonen
+  // av området: åpner vidt på nærområdet og flyr inn på objektet. Den eier
+  // kameraet — director-en yield-er via introActive — og kjører i to tilfeller:
+  //  • PRODUKT: velkommen-beaten. Trigges når brukeren trykker «Start
+  //    opplevelsen» (→ welcome-kortet aktivt → welcome-sporet spiller). Flytur-
+  //    varigheten skaleres til velkommen-VO-en (settle + flytur = VO-lengde) så de
+  //    lander sammen, og fryses (uten restart) hvis VO-en pauses (audioPausedRef).
+  //    prefers-reduced-motion → statisk vidt nærområde, ingen flytur.
+  //  • CAPTURE: ?fly=1 (ingen audio) — uendret, driver capture-scriptet med
+  //    default-varighet uavhengig av reduced-motion.
+  // window.__placyIntroFly eksponerer fasen (settling→running→done) for capture.
   const homeLat = data.home.coordinates.lat;
   const homeLng = data.home.coordinates.lng;
   // Per-prosjekt intro-tuning (innflyvnings-retning etc.); ukjent slug → {} → ren
@@ -300,21 +320,50 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
     () => getBoardIntro(data.projectSlug ?? ""),
     [data.projectSlug],
   );
+  // Pause leses via ref hver frame (ikke effekt-dep) så pause/resume fryser
+  // flyturen der den slapp i stedet for å restarte den.
+  const audioPausedRef = useRef(audioPaused);
+  audioPausedRef.current = audioPaused;
   useEffect(() => {
-    if (!flyMode || !map3dInstance) return;
-    return runIntroFlythrough(map3dInstance as unknown as CameraDrivableMap3D, {
+    if (!introActive || !map3dInstance) return;
+    const map = map3dInstance as unknown as CameraDrivableMap3D;
+    // Velkommen-beaten (ikke capture) skalerer flyturen til VO-en; capture bruker
+    // default-varigheten fra DEFAULT_INTRO_PATH.
+    const settleMs = introPath.settleMs ?? DEFAULT_INTRO_PATH.settleMs;
+    const flyDurationMs =
+      isWelcomeBeat && !flyMode && audioDurationMs
+        ? Math.max(MIN_INTRO_FLY_MS, audioDurationMs - settleMs)
+        : undefined;
+    return runIntroFlythrough(map, {
       target: { lat: homeLat, lng: homeLng },
-      path: introPath,
+      path: { ...introPath, ...(flyDurationMs ? { durationMs: flyDurationMs } : {}) },
+      // Redusert bevegelse gjelder kun produkt-beaten; capture skal alltid fly.
+      staticOnly: isWelcomeBeat && !flyMode && reducedMotion,
+      isPaused: () => audioPausedRef.current,
       onPhase: (phase) => {
         (window as unknown as { __placyIntroFly?: string }).__placyIntroFly = phase;
       },
     });
-  }, [flyMode, map3dInstance, homeLat, homeLng, introPath]);
+  }, [
+    introActive,
+    isWelcomeBeat,
+    flyMode,
+    map3dInstance,
+    homeLat,
+    homeLng,
+    introPath,
+    audioDurationMs,
+    reducedMotion,
+  ]);
 
   // cameraMode styres nå av BoardMap (felles BoardMapControls). Vi speiler den i
   // en ref så drag-lytteren kan lese gjeldende modus uten å re-subscribe.
   const cameraModeRef = useRef(cameraMode);
   cameraModeRef.current = cameraMode;
+  // Intro-flythrough-en eier kameraet → drag skal ikke kapre det midt i
+  // innflyvningen (ellers kjemper bruker-drag mot den frame-drevne flyturen).
+  const introActiveRef = useRef(introActive);
+  introActiveRef.current = introActive;
 
   // Interaksjons-lyttere: drag/scroll/touch på kart-bakgrunnen → fri modus. I
   // freeMode hijacker ikke MapView3D pekeren, så vi lytter direkte. Marker-tap er
@@ -326,6 +375,8 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
     const onGrab = (e: Event) => {
       const target = e.target as HTMLElement | null;
       if (target && target.closest("gmp-marker-3d-interactive")) return;
+      // Under intro-flythrough eier innflyvningen kameraet — ikke kapre det.
+      if (introActiveRef.current) return;
       // Kun implisitt takeover (auto → fri) varsler BoardMap, som setter fri-modus
       // + viser recovery-hinten.
       if (cameraModeRef.current === "auto") {
