@@ -9,10 +9,12 @@
  * streamer frames mens scenen rendrer — samme mekanisme som DevTools' egen opptaks-
  * funksjon — og gir en jevn fangst av en GPU-drevet flythrough.
  *
- * Flythrough-en drives av SAMME `flyCameraTo` som kamera-directoren bruker
- * (board-3d-camera-director / use-board-3d-camera), så videoen representerer det
- * som faktisk kjører i produktet. Modellen (ModelLayer3D) er allerede montert i
- * boardet.
+ * Flythrough-en er en Marketer-stil INTRO-FILM: en kontinuerlig 4-waypoint-bue
+ * (vid etablering → sveip → innflyvning → hero-landing på modellen). Den bruker
+ * samme `flyCameraTo`-primitiv som kamera-directoren (board-3d-camera-director /
+ * use-board-3d-camera), men selve 4-punkts-banen er foreløpig capture-lokal
+ * (POC) — den er IKKE promotert til directorens 2-punkts (a→b) per-kategori-
+ * modell ennå. Modellen (ModelLayer3D) er allerede montert i boardet.
  *
  * Output: JPG-frames + concat.txt (med per-frame varighet fra screencast-
  * timestamps) i FRAME_DIR. Bygg mp4 etterpå med ffmpeg (se scripts kommentar nederst).
@@ -43,16 +45,30 @@ const CHROME =
   process.env.FLY_CHROME ||
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
-// Kamera-bane: sentrert på modell-koordinatet (Sjøgangen 7 / Stasjonskvartalet).
-// A = vid + høyt (by-kontekst), B = tett nærbilde på bygget. Heading roterer
-// under nedstigningen → en dynamisk "fly inn og land på bygget"-bue.
-const MODEL = { lat: 63.436523, lng: 10.400747, altitude: 0 };
-const A = { center: MODEL, range: 1250, tilt: 57, heading: 150 };
-const B = { center: MODEL, range: 250, tilt: 67, heading: 238 };
-const HOLD_A_MS = 1200;
-const MOVE_MS = 8500;
-const HOLD_B_MS = 2200;
-const TILES_SETTLE_A_MS = 4000; // la tiles ved A streame inn før opptak
+// ── Kamera-bane: Marketer-stil intro-film, 4 waypoints ───────────────────────
+// Sentrert rundt modell-koordinatet (Sjøgangen 7 / Stasjonskvartalet, Brattøra).
+// Filmen er GJENNOMGÅENDE: heading svinger ~135° mens range kollapser 1600→235 m
+// og sentrene glir inn på modellen → en kontinuerlig "fly inn over byen og land
+// på bygget"-bue (W1 vid etablering → W2 sveip → W3 innflyvning → W4 hero på
+// modellen). Hvert ben fyres OVERLAP_MS FØR forrige er ferdig, så farten aldri
+// faller til null på et waypoint — det er det som gir den sømløse Marketer-
+// følelsen i stedet for "hopp-stopp-hopp". Tunes mot tiles i Chrome.
+const M = { lat: 63.436523, lng: 10.400747 };
+const WAYPOINTS = [
+  { center: { lat: M.lat - 0.0016, lng: M.lng + 0.0011, altitude: 0 }, range: 1600, tilt: 60, heading: 205 }, // W1 vid etablering (fjord + by)
+  { center: { lat: M.lat - 0.0008, lng: M.lng + 0.0006, altitude: 0 }, range: 950, tilt: 63, heading: 250 }, // W2 sveip over Brattøra
+  { center: { lat: M.lat - 0.0003, lng: M.lng + 0.0002, altitude: 0 }, range: 480, tilt: 66, heading: 300 }, // W3 innflyvning
+  { center: { lat: M.lat - 0.0001, lng: M.lng - 0.0002, altitude: 0 }, range: 320, tilt: 63, heading: 332 }, // W4 hero på modellen (mot fjorden)
+];
+// Per-ben-varighet (ms), ett tall per ben (W1→W2, W2→W3, W3→W4). Et lengre
+// etableringsben + kortere innflyvning gir tilnærmet konstant fart → jevnere
+// (de store range/heading-spranga tidlig dekkes saktere). Validert mot tiles.
+const LEG_DURATIONS = [6200, 5200, 4800];
+const OVERLAP_MS = Number(process.env.FLY_OVERLAP_MS || 500); // start neste ben så tidlig
+const HOLD_START_MS = 1400; // hold på W1 før bevegelsen starter
+const HOLD_END_MS = 2600; // hold på modellen (W4) til slutt
+const TILES_SETTLE_MS = 4500; // la tiles ved W1 streame inn før opptak
+const MAX_GAP = 0.25; // klamp mid-flight frame-gaps (tile-load-stall → innhent, ikke frys)
 
 // ── CDP plumbing ─────────────────────────────────────────────────────────────
 let chrome, ws;
@@ -229,9 +245,9 @@ async function main() {
     console.log("map rect after clean:", JSON.stringify(mapRect));
   }
 
-  // Sett startpose A umiddelbart, la tiles streame inn.
-  await fly(A, 0);
-  await sleep(TILES_SETTLE_A_MS);
+  // Sett start-pose (W1) umiddelbart, la tiles streame inn før opptak.
+  await fly(WAYPOINTS[0], 0);
+  await sleep(TILES_SETTLE_MS);
 
   // ── opptak ──
   await send("Page.startScreencast", {
@@ -241,10 +257,19 @@ async function main() {
     maxHeight: H,
     everyNthFrame: 1,
   });
-  await sleep(HOLD_A_MS);
-  await fly(B, MOVE_MS); // jevn nedstigning A→B (GPU-timet easing)
-  await sleep(MOVE_MS + 300);
-  await sleep(HOLD_B_MS);
+  await sleep(HOLD_START_MS);
+
+  // Kjør benene W1→W2→W3→W4. Fyr neste ben OVERLAP_MS før forrige er ferdig så
+  // farten aldri faller til null på et waypoint (sømløs, ikke hopp-stopp). Siste
+  // ben får full varighet + slack så landingen rekker å fullføre før hold.
+  for (let i = 1; i < WAYPOINTS.length; i++) {
+    const dur = LEG_DURATIONS[i - 1] ?? 5200;
+    await fly(WAYPOINTS[i], dur); // GPU-timet easing per ben
+    const isLast = i === WAYPOINTS.length - 1;
+    await sleep(isLast ? dur + 300 : dur - OVERLAP_MS);
+  }
+
+  await sleep(HOLD_END_MS); // hold på modellen
   await send("Page.stopScreencast");
   await sleep(300);
 
@@ -255,10 +280,24 @@ async function main() {
     const name = `frame-${String(i).padStart(5, "0")}.jpg`;
     writeFileSync(`${FRAME_DIR}/${name}`, Buffer.from(f.data, "base64"));
     lines.push(`file '${name}'`);
-    const dur =
-      i < frames.length - 1
-        ? Math.max(0.001, frames[i + 1].ts - f.ts)
-        : 0.12;
+    // Per-frame-varighet:
+    //  • Siste frame: holdes HOLD_END_MS — under slutt-holdet er scenen statisk
+    //    så screencast slutter å emittere; vi gir landings-framet hele hold-
+    //    varigheten → filmen DVELER på hero-bygget i stedet for å kutte idet
+    //    kameraet lander.
+    //  • Frame 0: beholder sin naturlige gap = åpnings-holdet på W1 (vid etabl.).
+    //  • Alle andre: KLAMPES til MAX_GAP. Streaming-fotogrammetri staller av og
+    //    til mens GPU laster tiles → screencast lager da en flere-sekunders gap
+    //    som ville blitt en frys MIDT i bevegelsen. Klamping gjør en slik stall
+    //    til et kjapt innhent i stedet for en synlig frys (ikke-deterministisk
+    //    per opptak, så dette må håndteres robust, ikke håpes bort).
+    let dur;
+    if (i === frames.length - 1) {
+      dur = HOLD_END_MS / 1000;
+    } else {
+      const gap = Math.max(0.001, frames[i + 1].ts - f.ts);
+      dur = i === 0 ? gap : Math.min(gap, MAX_GAP);
+    }
     lines.push(`duration ${dur.toFixed(4)}`);
   });
   if (frames.length) {
