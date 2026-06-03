@@ -9,15 +9,15 @@
  * streamer frames mens scenen rendrer — samme mekanisme som DevTools' egen opptaks-
  * funksjon — og gir en jevn fangst av en GPU-drevet flythrough.
  *
- * Flythrough-en er en Marketer-stil BY-FILM: en kontinuerlig 6-waypoint-reise
- * som åpner på Nidarosdomen og glir nordover gjennom Midtbyen til en hero-
- * landing på modellen ved fjorden (kameraet translaterer ~1 km, ikke bare zoom).
- * Den bruker samme `flyCameraTo`-primitiv som kamera-directoren (board-3d-
- * camera-director / use-board-3d-camera), men selve waypoint-banen er foreløpig
- * capture-lokal (POC) — den er IKKE promotert til directorens 2-punkts (a→b)
- * per-kategori-modell ennå. Modellen (ModelLayer3D) er allerede montert i
- * boardet. Kategori-POI-pins skjules under opptak for en ren film (FLY_PINS=1
- * beholder dem).
+ * Flythrough-en er en Marketer-stil OVAL-SPIRAL låst på objektet: kameraet ser
+ * alltid på bygget (center=M) og orbiterer ~250° mens range spiraler inn fra
+ * avstand (lokasjons-innsikt) til hero-nærbilde, med en oval utbuling midtveis
+ * (spenning). I motsetning til waypoint-chaining drives banen FRAME-FOR-FRAME
+ * (rAF + direkte camera-props) med ÉN global easing → konstant fart i midten,
+ * mykt kun i start/slutt (ingen ease per waypoint = føles som ekte flyging).
+ * Banen er capture-lokal (POC) — IKKE promotert til directorens per-kategori-
+ * modell ennå. Modellen (ModelLayer3D) er allerede montert i boardet. Kategori-
+ * POI-pins skjules via produkt-flagget ?film=1 (FLY_PINS=1 beholder dem).
  *
  * Output: JPG-frames + concat.txt (med per-frame varighet fra screencast-
  * timestamps) i FRAME_DIR. Bygg mp4 etterpå med ffmpeg (se scripts kommentar nederst).
@@ -48,33 +48,39 @@ const CHROME =
   process.env.FLY_CHROME ||
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
-// ── Kamera-bane: Marketer-stil by-flythrough, 6 waypoints ────────────────────
-// Åpner på NIDAROSDOMEN (byens landemerke) og glir nordover gjennom Midtbyen,
-// over Nidelva og stasjonen, og lander på modellen ved fjorden (Brattøra).
-// Kameraet TRANSLATERER ~1 km langs sør→nord-korridoren (ikke bare zoom mot ett
-// punkt) → en ekte hero-by-flythrough som "får frem byen" før den ender på
-// bygget. 6 fordelte waypoints, gjennomgående via overlap-chaining (hvert ben
-// fyres OVERLAP_MS FØR forrige er ferdig → farten faller aldri til null på et
-// waypoint = sømløst, ikke hopp-stopp). Validert mot tiles i Chrome (alle
-// framinger + ren film). Modellen er M; Nidarosdomen ≈ 63.4270, 10.3969.
-const M = { lat: 63.436523, lng: 10.400747 };
-const WAYPOINTS = [
-  { center: { lat: 63.42705, lng: 10.39685, altitude: 0 }, range: 600, tilt: 64, heading: 357 }, // W1 Nidarosdomen (hero-åpning)
-  { center: { lat: 63.429112, lng: 10.397663, altitude: 0 }, range: 545, tilt: 64, heading: 354 }, // W2 over Midtbyen
-  { center: { lat: 63.431174, lng: 10.398477, altitude: 0 }, range: 495, tilt: 64, heading: 350 }, // W3 sentrum / Nidelva
-  { center: { lat: 63.433142, lng: 10.399253, altitude: 0 }, range: 445, tilt: 63, heading: 345 }, // W4 mot Solsiden / stasjon
-  { center: { lat: 63.435017, lng: 10.399992, altitude: 0 }, range: 390, tilt: 63, heading: 339 }, // W5 stasjon / Brattøra-kant
-  { center: { lat: 63.436423, lng: 10.400547, altitude: 0 }, range: 320, tilt: 63, heading: 332 }, // W6 hero-landing på modellen (mot fjorden)
-];
-// Per-ben-varighet (ms), ett tall per ben (5 ben). Litt raskere enn forrige
-// iterasjon + jevnt tempo → dynamisk by-reise; marginalt lengre på åpningsbenet
-// (Nidarosdomen-reveal) og slutt-benet (settle på bygget). Validert mot tiles.
-const LEG_DURATIONS = [3400, 3100, 3000, 3000, 3300];
-const OVERLAP_MS = Number(process.env.FLY_OVERLAP_MS || 500); // start neste ben så tidlig
-const HOLD_START_MS = 1100; // kort hold på Nidarosdomen før reisen
-const HOLD_END_MS = 2400; // dvel på hero-bygget til slutt
-const TILES_SETTLE_MS = 4500; // la tiles ved W1 streame inn før opptak
+// ── Kamera-bane: Marketer-stil oval-spiral LÅST på objektet ──────────────────
+// Kameraet er låst på objektet (center = M hele tiden) og orbiterer mens range
+// spiraler inn fra avstand (lokasjons-innsikt: du ser HVOR bygget ligger ift.
+// fjord/by) til et hero-nærbilde. range buler ut midtveis (ECC·sin) → en
+// bankende OVAL bue (spenning), ikke en flat sirkel. Drives FRAME-FOR-FRAME
+// (requestAnimationFrame + direkte camera-props, ~85 fps) med ÉN global trapes-
+// easing: ramp opp i starten, KONSTANT fart i midten, ramp ned på slutten. Det
+// fjerner ease-in/out PER waypoint (det som fikk forrige iterasjon til å føles
+// som diskrete waypoints). Validert mot tiles i Chrome (s=0/0.5/1).
+const M = { lat: 63.436523, lng: 10.400747 }; // objektet — kameraets låste look-at
+const PATH = {
+  R0: 1100, R1: 300, // range: avstand (kontekst) → hero (spiral inn)
+  T0: 68, T1: 62, // tilt: litt mer ovenfra på avstand → skrå hero
+  H0: 220, SWEEP: -250, // heading: start + total sveip (°); negativ = med klokka
+  ECC: 0.15, // oval: hvor mye range buler ut midtveis (sin-bue) → spenning
+};
+const FLY_DURATION_MS = Number(process.env.FLY_DUR_MS || 16000); // total bevegelse (eased)
+const EASE_IN = 0.16; // andel av tiden brukt på å akselerere i starten
+const EASE_OUT = 0.16; // andel brukt på å bremse til slutt (midten = konstant fart)
+const HOLD_START_MS = 900; // kort hold på avstands-etableringen
+const HOLD_END_MS = 2200; // dvel på hero-bygget til slutt
+const TILES_SETTLE_MS = 4500; // la tiles på avstand streame inn før opptak
 const MAX_GAP = 0.25; // klamp mid-flight frame-gaps (tile-load-stall → innhent, ikke frys)
+
+/** Kamera-positur ved bane-parameter s∈[0,1] (ren — samme formel i rAF + init). */
+function poseAt(s) {
+  const base = PATH.R0 + (PATH.R1 - PATH.R0) * s;
+  return {
+    range: base * (1 + PATH.ECC * Math.sin(Math.PI * s)),
+    tilt: PATH.T0 + (PATH.T1 - PATH.T0) * s,
+    heading: ((PATH.H0 + PATH.SWEEP * s) % 360 + 360) % 360,
+  };
+}
 
 // ── CDP plumbing ─────────────────────────────────────────────────────────────
 let chrome, ws;
@@ -137,12 +143,59 @@ async function evalPage(expression, awaitPromise = true) {
   return r.result?.value;
 }
 
-function fly(pose, durationMillis) {
+/** Sett kamera momentant via direkte props, låst på M (for init-posituren). */
+function setCameraInstant(pose) {
   return evalPage(
-    `(()=>{const m=document.querySelector('gmp-map-3d');if(!m)return false;m.flyCameraTo({endCamera:${JSON.stringify(
-      pose,
-    )},durationMillis:${durationMillis}});return true;})()`,
+    `(()=>{const m=document.querySelector('gmp-map-3d');if(!m)return false;` +
+      `m.center={lat:${M.lat},lng:${M.lng},altitude:0};` +
+      `m.range=${pose.range};m.tilt=${pose.tilt};m.heading=${pose.heading};return true;})()`,
     false,
+  );
+}
+
+/**
+ * Kjør hele oval-spiralen frame-for-frame i siden (requestAnimationFrame, direkte
+ * camera-props). Én global trapes-easing (ramp opp [0,EI], konstant [EI,1-EO],
+ * ramp ned [1-EO,1]) → konstant fart i midten, mykt start/slutt, INGEN ease per
+ * waypoint. Resolver når bevegelsen er ferdig (awaitPromise=true).
+ */
+function runFlythrough() {
+  const C = JSON.stringify({
+    M,
+    PATH,
+    DUR: FLY_DURATION_MS,
+    EI: EASE_IN,
+    EO: EASE_OUT,
+  });
+  return evalPage(
+    `(()=>{
+      const C=${C};
+      const map=document.querySelector('gmp-map-3d'); if(!map) return false;
+      const v=1/(1-C.EI/2-C.EO/2); // topp-fart så total normalisert distanse = 1
+      function ease(t){
+        if(t<C.EI) return v*t*t/(2*C.EI);                       // ramp opp
+        if(t<1-C.EO) return v*C.EI/2 + v*(t-C.EI);              // konstant fart
+        const u=t-(1-C.EO);
+        return v*C.EI/2 + v*(1-C.EO-C.EI) + v*(u - u*u/(2*C.EO)); // ramp ned
+      }
+      return new Promise(res=>{
+        let t0=null;
+        function fr(ts){
+          if(t0===null)t0=ts;
+          const t=Math.min(1,(ts-t0)/C.DUR);
+          const s=ease(t);
+          const base=C.PATH.R0+(C.PATH.R1-C.PATH.R0)*s;
+          const range=base*(1+C.PATH.ECC*Math.sin(Math.PI*s));
+          const tilt=C.PATH.T0+(C.PATH.T1-C.PATH.T0)*s;
+          const heading=((C.PATH.H0+C.PATH.SWEEP*s)%360+360)%360;
+          map.center={lat:C.M.lat,lng:C.M.lng,altitude:0};
+          map.range=range; map.tilt=tilt; map.heading=heading;
+          if(t<1) requestAnimationFrame(fr); else res(true);
+        }
+        requestAnimationFrame(fr);
+      });
+    })()`,
+    true,
   );
 }
 
@@ -151,6 +204,13 @@ async function main() {
   mkdirSync(FRAME_DIR, { recursive: true });
   const profile = "/tmp/placy-fly-chrome-profile";
   rmSync(profile, { recursive: true, force: true });
+
+  // Legg på ?film=1 (med mindre FLY_PINS=1) → boardet dropper kategori-POI-pins
+  // på render-nivå for en ren cinematisk film (trygt, ingen DOM-race).
+  const pageUrl =
+    process.env.FLY_PINS === "1"
+      ? URL
+      : URL + (URL.includes("?") ? "&" : "?") + "film=1";
 
   chrome = spawn(
     CHROME,
@@ -163,7 +223,7 @@ async function main() {
       "--disable-features=Translate,MediaRouter",
       "--hide-crash-restore-bubble",
       "--autoplay-policy=no-user-gesture-required",
-      URL,
+      pageUrl,
     ],
     { stdio: "ignore" },
   );
@@ -224,24 +284,11 @@ async function main() {
   })()`);
   if (!ready) throw new Error("map/model not ready");
 
-  // Skjul kategori-POI-pins for en ren cinematisk film. Pins er React-rendret
-  // (vis.gl <Marker3D> → gmp-marker-3d-interactive) og RE-MONTERES av boardet
-  // per zoom-tier mens kameraet beveger seg → et engangs-skjul (display:none)
-  // slås av igjen. En MutationObserver som DETACHER hver interaktiv markør ved
-  // innsetting holder dem borte gjennom hele flythrough-en (vis.gl rydder
-  // imperativt → ingen React-desync, verifisert uten konsoll-feil). Prosjekt-
-  // labelen (gmp-marker-3d) + modellen beholdes. Sett FLY_PINS=1 for å beholde.
-  if (process.env.FLY_PINS !== "1") {
-    await evalPage(`(()=>{
-      const map=document.querySelector('gmp-map-3d');if(!map)return false;
-      if(!window.__pinKiller){
-        window.__pinKiller=new MutationObserver(ms=>{for(const mu of ms)for(const n of mu.addedNodes){if(n.tagName&&n.tagName.toLowerCase()==='gmp-marker-3d-interactive'){try{n.remove()}catch{}}}});
-        window.__pinKiller.observe(map,{childList:true,subtree:true});
-      }
-      document.querySelectorAll('gmp-marker-3d-interactive').forEach(m=>{try{m.remove()}catch{}});
-      return true;
-    })()`);
-  }
+  // Kategori-POI-pins skjules via produkt-flagget ?film=1 (lagt på URL-en under,
+  // med mindre FLY_PINS=1) → boardet render'er dem ikke i det hele tatt. Vi gjør
+  // det IKKE fra DOM her: pins re-monteres per zoom-tier, og å fjerne dem utenfra
+  // krasjer React (removeChild-race på en node React fortsatt eier). Render-nivå
+  // i BoardMap3D (markerPOIs → []) er den trygge, race-frie måten.
 
   // Ren hero-modus: skjul alle ikke-kart-søsken oppover ancestor-kjeden
   // (fjerner sidebar + Auto/Fri-toggle + nav + overlays) og utvid kart-stien
@@ -270,8 +317,8 @@ async function main() {
     console.log("map rect after clean:", JSON.stringify(mapRect));
   }
 
-  // Sett start-pose (W1) umiddelbart, la tiles streame inn før opptak.
-  await fly(WAYPOINTS[0], 0);
+  // Sett start-posituren (s=0, avstand) umiddelbart, la tiles streame inn.
+  await setCameraInstant(poseAt(0));
   await sleep(TILES_SETTLE_MS);
 
   // ── opptak ──
@@ -282,19 +329,14 @@ async function main() {
     maxHeight: H,
     everyNthFrame: 1,
   });
-  await sleep(HOLD_START_MS);
+  await sleep(HOLD_START_MS); // kort hold på avstands-etableringen
 
-  // Kjør benene W1→W2→W3→W4. Fyr neste ben OVERLAP_MS før forrige er ferdig så
-  // farten aldri faller til null på et waypoint (sømløs, ikke hopp-stopp). Siste
-  // ben får full varighet + slack så landingen rekker å fullføre før hold.
-  for (let i = 1; i < WAYPOINTS.length; i++) {
-    const dur = LEG_DURATIONS[i - 1] ?? 5200;
-    await fly(WAYPOINTS[i], dur); // GPU-timet easing per ben
-    const isLast = i === WAYPOINTS.length - 1;
-    await sleep(isLast ? dur + 300 : dur - OVERLAP_MS);
-  }
+  // Kjør hele oval-spiralen som ÉN kontinuerlig, frame-drevet bevegelse (rAF i
+  // siden). Ingen ben/overlap → ingen ease per waypoint. awaitPromise venter til
+  // bevegelsen er ferdig.
+  await runFlythrough();
 
-  await sleep(HOLD_END_MS); // hold på modellen
+  await sleep(HOLD_END_MS); // dvel på hero-bygget
   await send("Page.stopScreencast");
   await sleep(300);
 

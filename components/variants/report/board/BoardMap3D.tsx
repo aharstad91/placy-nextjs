@@ -106,6 +106,17 @@ export function BoardMap3D({ pendingCamera }: Props) {
       new URLSearchParams(window.location.search).get("author") === "1",
   );
 
+  // Film/capture-modus (?film=1): dropp kategori-POI-pins for en ren cinematisk
+  // flythrough-fangst. Pins re-monteres per zoom-tier, så å fjerne dem via DOM
+  // utenfra krasjer React (removeChild-race på en node React fortsatt eier) —
+  // vi dropper dem heller på render-nivå her (markerPOIs → []). Prosjekt-labelen
+  // (projectSite) + 3D-modellen er egne props og påvirkes ikke.
+  const [filmMode] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("film") === "1",
+  );
+
   // Narrativ-synk-kilder (begge stabile — endrer kun ved track-/fase-skifte,
   // IKKE ~4 Hz som useAudioElement; holder marker-treet utenfor re-render-flommen).
   const currentTrack = useCurrentTrack();
@@ -137,6 +148,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
   // Markørsettet som faktisk mountes. Når en kategori spiller: kun den
   // kategoriens POI-er (sub-filtrert). Ellers: det kuraterte ankersettet.
   const markerPOIs = useMemo<POI[]>(() => {
+    if (filmMode) return []; // ren film: ingen kategori-pins (se filmMode-kommentar)
     if (activeCategory) {
       const useFilter = state.phase !== "default" && subFilter.hiddenIds.size > 0;
       const result: POI[] = [];
@@ -147,7 +159,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
       return result;
     }
     return overviewPOIs;
-  }, [activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
+  }, [filmMode, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
 
   // Default-camera: bruk pendingCamera hvis tilgjengelig (fra toggle), ellers
   // prosjektets home-koordinater + default 3D-tilt.
