@@ -58,6 +58,32 @@ Committet til `feat/3d-model-on-tiles` (egen worktree). Ikke pushet/merget (prot
 
 ---
 
+## 2026-06-03 (forts. 2) — Skalerbar per-prosjekt intro-flythrough (live ?fly=1)
+
+### Kontekst
+Bruker godkjente oval-spiral-følelsen og ba om wrap-up: gjør intro-en til en **gjenbrukbar standard-intro per prosjekt** — skalerbar, slik at andre prosjekter får den. To delproblemer løst i tillegg: (a) brukeren forventet å se filmen på board-URL-en (den var en capturet video, ikke noe som spilte live), (b) banen var hardkodet/duplisert.
+
+### Hva ble bygget
+- **`board-intro-flythrough.ts`** (NY): config-drevet motor (`IntroPathConfig` + `DEFAULT_INTRO_PATH`). Oval-spiral LÅST på objektet (center = target, relativ til target → funker for ETHVERT prosjekt på home-koordinatet). Frame-for-frame rAF + direkte camera-props, én global trapes-easing (konstant fart i midten). `introPoseAt` er ren + eksportert for test. `runIntroFlythrough(map, {target, path, onPhase})` merger per-prosjekt-config over default.
+- **`board-intros.ts`** (NY): per-prosjekt-tuning keyed på slug (mønster som board-models/camera-tours). Ukjent slug → `{}` → ren default-intro. Stasjonskvartalet: `startHeading:20` (inn fra Nidarosdomen) + `rangeStart:1150`.
+- **`?fly=1` i BoardMap3D**: spiller intro-en LIVE i kartet (cameraMode init "free" så directoren ikke kjemper imot; pins skjult via samme render-gate som `?film=1`; per-prosjekt-config slått opp via `getBoardIntro`). Eksponerer fase på `window.__placyIntroFly`.
+- **`capture-3d-flythrough.mjs`**: DRIVER ikke lenger kameraet — åpner `?fly=1` og TAR OPP mens boardet spiller intro-en (synker på `window.__placyIntroFly`: settling→running→done). Fjernet all duplisert kamera-matte → én kilde til banen.
+- **`board-intro-flythrough.test.ts`** (NY): 8 tester (objekt sentrert hele banen, start/hero-poser, oval-utbuling, heading-wrap, per-prosjekt-config + default-merge).
+
+### Hvorfor produkt-flagg, ikke DOM-manipulasjon (pins)
+MutationObserver som detacher `gmp-marker-3d-interactive` KRASJET React (`NotFoundError: removeChild` — node React fortsatt eier, re-monteres per zoom-tier). Løst rent med `?film=1`/`?fly=1` → `markerPOIs → []` på render-nivå (race-fritt).
+
+### Kvalitet
+`tsc` 0, `eslint` 0, **board-tester 132/132** (8 nye), `npm run build` OK. Live verifisert i Chrome (`?fly=1`: settling→running→done, objekt sentrert, pins skjult) + board-drevet capture.
+
+### Skalering / neste steg
+Nytt prosjekt får standard-intro automatisk (sentrert på home); tuning = én linje i `board-intros.ts`. Å gjøre intro-en til **auto-default** (uten `?fly=1`, med handoff til directoren etterpå) er en liten oppfølging. Capture for andre prosjekter: sett `FLY_URL` til prosjektets board.
+
+### Status
+Committet til `feat/3d-model-on-tiles`. Ikke pushet. Godkjent look = `~/Desktop/placy-3d-flythrough/flythrough.mp4` (+ v1–v5 tidligere iterasjoner for A/B).
+
+---
+
 ## 2026-06-03 (forts.) — Flythrough-kinematografi: fra waypoints til oval-spiral låst på objektet
 
 ### Kontekst
