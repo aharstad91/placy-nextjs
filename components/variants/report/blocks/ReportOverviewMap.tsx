@@ -31,6 +31,8 @@ interface ReportOverviewMapProps {
   has3dAddon: boolean;
   /** Default heading for alle 3D-kart-instanser (0–359°). 0 = nord. */
   initialHeading?: number;
+  /** Thumbnail (data-URI) for prosjektmarkøren på 3D-kartet. */
+  projectImageSrc?: string;
 }
 
 export default function ReportOverviewMap({
@@ -40,6 +42,7 @@ export default function ReportOverviewMap({
   pois,
   has3dAddon,
   initialHeading,
+  projectImageSrc,
 }: ReportOverviewMapProps) {
   const effectiveCameraLock = useMemo(
     () => ({ ...DEFAULT_CAMERA_LOCK, heading: initialHeading ?? 0 }),
@@ -216,6 +219,7 @@ export default function ReportOverviewMap({
               lng: mapCenter.lng,
               name: projectName,
               subtitle: "Nybygg 2028",
+              imageSrc: projectImageSrc,
             }}
           />
         )}

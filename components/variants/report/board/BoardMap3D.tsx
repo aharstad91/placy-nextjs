@@ -20,6 +20,7 @@ import {
   runIntroFlythrough,
   type CameraDrivableMap3D,
 } from "./board-intro-flythrough";
+import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import type { POI, CategoryCameraConfig } from "@/lib/types";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
@@ -357,6 +358,7 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
           lat: data.home.coordinates.lat,
           lng: data.home.coordinates.lng,
           name: data.home.name,
+          imageSrc: getProjectPinThumbnail(data.projectSlug),
         }}
       />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />

@@ -73,6 +73,8 @@ export interface MapView3DProps {
     lng: number;
     name: string;
     subtitle?: string;
+    /** Kvadratisk thumbnail (data-URI) for markøren. Undefined → bygnings-glyph. */
+    imageSrc?: string;
   };
   /** Per-POI opacity — poi.id → opacity (0–1). Default 1 for alle. */
   opacities?: Record<string, number>;
@@ -388,6 +390,7 @@ function Map3DInner({
             <ProjectSitePin
               name={projectSite.name}
               subtitle={projectSite.subtitle}
+              imageSrc={projectSite.imageSrc}
             />
           </Marker3D>
         )}

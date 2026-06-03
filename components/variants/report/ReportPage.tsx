@@ -6,6 +6,7 @@ import type { Project } from "@/lib/types";
 import type { TranslationMap } from "@/lib/supabase/translations";
 import { transformToReportData, type ReportTheme } from "./report-data";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
+import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import ReportHero from "./ReportHero";
 import ReportThemeChipsRow from "./ReportThemeChipsRow";
@@ -42,6 +43,10 @@ export default function ReportPage(props: ReportPageProps) {
 
 function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeIds }: ReportPageProps) {
   const { locale } = useLocale();
+
+  // Thumbnail (data-URI) for prosjektmarkøren — delt på tvers av samlekart og
+  // per-tema-kart. Undefined → ProjectSitePin faller tilbake til bygnings-glyph.
+  const projectImageSrc = getProjectPinThumbnail(project.urlSlug);
 
   const effectiveProject = useMemo(
     () => applyTranslations(project, locale, enTranslations),
@@ -139,6 +144,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
             pois={effectiveProject.pois}
             has3dAddon={effectiveProject.has3dAddon ?? false}
             initialHeading={reportData.initialHeading}
+            projectImageSrc={projectImageSrc}
           />
         </div>
       )}
@@ -160,6 +166,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
               areaSlug={areaSlug}
               has3dAddon={effectiveProject.has3dAddon ?? false}
               allProjectPOIs={reportData.allProjectPOIs}
+              projectImageSrc={projectImageSrc}
             />
           </div>
         ))}
@@ -185,6 +192,7 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
                   variant="secondary"
                   has3dAddon={effectiveProject.has3dAddon ?? false}
                   allProjectPOIs={reportData.allProjectPOIs}
+                  projectImageSrc={projectImageSrc}
                 />
               </div>
             ))}
