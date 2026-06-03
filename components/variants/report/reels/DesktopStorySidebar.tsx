@@ -2,30 +2,39 @@
 
 import Image from "next/image";
 import { useEffect, useRef } from "react";
-import { Pause, Play, Volume2 } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import { useReels } from "./reels-state";
 import { useAudioElement } from "../board/audio-tour/use-audio-element";
 import {
   useAudioTourActions,
   useAudioTourStore,
 } from "@/lib/stores/audio-tour-store";
-import { firstAudioBearingIndex, posterForVideo, audioDurationSec } from "./reels-data";
+import {
+  firstAudioBearingIndex,
+  isAudioBearing,
+  posterForVideo,
+} from "./reels-data";
 import type { ReelsCard } from "./reels-data";
 import type { BoardHome } from "../board/board-data";
 
 /**
  * Desktop-adaptiv storytelling-lane (kun >=1024px, rendres fra
- * ResponsiveLayoutInner i ReportReelsPage). Erstatter den gamle "mobil-reel
- * i flytende 9:16-ramme"-løsningen med en full-høyde sidebar der kategoriene
- * ligger på et løpebånd — ~2.5 synlige om gangen.
+ * ResponsiveLayoutInner i ReportReelsPage).
+ *
+ * Player-modell (erstatter det gamle scroll-løpebåndet): ÉN aktiv chapter vises
+ * stort i 9:16-kortet, og kategoriene komprimeres til en klikkbar thumbnail-rad
+ * i bunn — en "spiller" der hele historien er synlig på én skjerm uten scroll.
+ * Mål: dempe kognitiv last. I stedet for en stabel kort som beveger seg under
+ * scroll (oppå video + kart-bevegelse + voice-over), skifter nå KUN det aktive
+ * kort-komponentet ved kategori-bytte. Thumbnailene er statiske postere (ingen
+ * autoplay), så raden i seg selv tilfører ingen bevegelse.
  *
  * Avspilling gjenbruker mobil-maskineriet 1:1:
- * - Det AKTIVE kortet ekspanderer og rendrer det ekte `CategoryReel`
- *   (via `renderActiveCard` = CardRouter desktopMode) → samme video/bilde-bg
- *   + karaoke-voice-over-transcript som mobil-feeden. Ingen endring i den
- *   delte komponenten, så det unike fra mobil bevares.
- * - "Start"-knappen låser opp audio (samme `unlock()`-gesture som IntroReel)
- *   og setter activeIndex; `useReelsAudioOrchestration` starter touren.
+ * - Det aktive kortet rendrer den ekte `CategoryReel`/`MeglerReel` via
+ *   `renderActiveCard` (CardRouter desktopMode) → samme video/karaoke-VO som
+ *   mobil-feeden. Ingen endring i de delte komponentene.
+ * - "Start/Fortsett"-knappen låser opp audio (samme `unlock()`-gesture som
+ *   IntroReel) og setter activeIndex; `useReelsAudioOrchestration` driver touren.
  * - Auto-advance håndteres i ReelsAudioShell.handleTrackEnded (desktop).
  *
  * Mobil-komponenten (ReelsStack + CardRouter-stack) er urørt og brukes
@@ -34,8 +43,9 @@ import type { BoardHome } from "../board/board-data";
 
 interface Props {
   home: BoardHome;
-  /** Rendrer det aktive kortets media (video/bilde-bg + karaoke-VO). Gjenbruk
-   *  av CardRouter/CategoryReel i desktopMode — samme presentasjon som mobil. */
+  /** Rendrer det aktive kortets media (video/bilde-bg + karaoke-VO, eller
+   *  megler-kort). Gjenbruk av CardRouter i desktopMode — samme presentasjon
+   *  som mobil. */
   renderActiveCard: (cardIndex: number) => React.ReactNode;
   /** Prosjekt-logo (SVG). Vises klikkbar i header → re-åpner velkomst-splash. */
   logoSrc?: string;
@@ -43,57 +53,19 @@ interface Props {
   onLogoClick?: () => void;
 }
 
-interface CardView {
-  title: string;
-  subtitle?: string;
-  image?: string;
-  meta?: string;
-  /** Lengden på kategoriens lydspor i sekunder (avledet fra timings). */
-  durationSec?: number;
-}
-
-/** mm:ss for lyd-lengde-pillen. 44.164 → "0:44". */
-function formatDuration(sec: number): string {
-  const total = Math.round(sec);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function toCardView(card: ReelsCard): CardView {
-  // Preview-bildet prioriterer videoens første frame (poster) når kortet har
-  // en video-bg — slik at det inaktive preview-kortet matcher det som faktisk
-  // spilles når kategorien blir aktiv. Faller tilbake til det statiske
-  // illustrasjonsbildet når kortet ikke har video.
+/** Poster/tittel for thumbnail-raden. Megler har ikke media → portrett brukes. */
+function thumbView(card: ReelsCard): { title: string; image?: string } {
   switch (card.kind) {
     case "welcome":
-      return {
-        title: card.label,
-        subtitle: "Introduksjon",
-        image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc,
-      };
+      return { title: card.label, image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc };
     case "home":
-      return {
-        title: card.label,
-        subtitle: card.subline,
-        image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc,
-      };
+      return { title: card.label, image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc };
     case "category":
-      return {
-        title: card.label,
-        subtitle: card.lead,
-        image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc,
-        meta: `${card.pois.length} steder`,
-        durationSec: audioDurationSec(card.audio),
-      };
+      return { title: card.label, image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc };
     case "outro":
-      return {
-        title: card.label,
-        subtitle: "Oppsummering",
-        image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc,
-      };
+      return { title: card.label, image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc };
     case "megler":
-      return { title: card.label, subtitle: "Kontakt megler" };
+      return { title: card.label, image: card.brokers[0]?.photoUrl };
     default:
       return { title: "" };
   }
@@ -109,9 +81,12 @@ export function DesktopStorySidebar({
   const { unlock } = useAudioElement();
   const { pause, resume, goToTrack } = useAudioTourActions();
   const phase = useAudioTourStore((s) => s.phase);
-  const activeRef = useRef<HTMLDivElement | null>(null);
+  const activeThumbRef = useRef<HTMLButtonElement | null>(null);
 
-  // Løpebåndet viser alt unntatt intro-video-splashen.
+  // Thumbnail-raden viser alle chapters unntatt intro-video-splashen. Megler
+  // er med som siste chapter (kontakt) — CardRouter rendrer MeglerReel i det
+  // aktive arealet når den velges, så modellen "bytte = skift aktivt kort"
+  // holder for alle kort-typer.
   const items = state.cards
     .map((card, index) => ({ card, index }))
     .filter(({ card }) => card.kind !== "intro");
@@ -124,12 +99,22 @@ export function DesktopStorySidebar({
   // faktisk startet — da står phase fortsatt "idle". Begge skal vise "Start".
   const notStarted = !state.audioUnlocked || phase === "idle";
 
-  // Anchor-switch: det aktive kortet er scroll-ankeret. Når storien avanserer
-  // (klikk eller auto-advance), ankrer vi det aktive kortet til toppen — spilte
-  // kapitler glir opp og ut, og den resterende høyden viser neste kategori som
-  // peek. Hele løpebåndet vandrer dermed nedover i takt med historien.
+  const activeCard = state.cards[state.activeIndex];
+  // Før touren starter peker activeIndex på intro (splash dekker sidebaren da).
+  // Vis et rolig stillbilde av første chapter i kort-arealet i stedet for å
+  // (auto)spille intro-videoen bak splashen.
+  const activeIsIntro = !activeCard || activeCard.kind === "intro";
+  const activeIsAudio = !!activeCard && isAudioBearing(activeCard);
+  const firstChapterImage = items[0] ? thumbView(items[0].card).image : undefined;
+
+  // Hold det aktive chapter-thumbnailet synlig i raden når storien avanserer
+  // (klikk eller auto-advance) — sentrer det horisontalt.
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    activeThumbRef.current?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
   }, [state.activeIndex]);
 
   const activateCard = async (index: number) => {
@@ -140,7 +125,9 @@ export function DesktopStorySidebar({
     setActiveIndex(index);
   };
 
-  const handlePrimary = () => {
+  // Samlet transport-toggle. Drevet av klikk på selve kort-overlayet (knappen
+  // under kortet er fjernet): pause/resume/replay avhengig av state.
+  const handleToggle = () => {
     if (notStarted) {
       if (firstIdx !== -1) void activateCard(firstIdx);
       return;
@@ -148,9 +135,8 @@ export function DesktopStorySidebar({
     if (isPlaying) {
       pause("manual");
     } else if (phase === "ended") {
-      // Restart fra første kapittel. setActiveIndex flytter scroll-ankeret
-      // tilbake til toppen; goToTrack(0) garanterer at audio-touren faktisk
-      // re-spiller selv om activeIndex allerede skulle peke på første kort.
+      // Restart fra første kapittel. setActiveIndex flytter ankeret tilbake;
+      // goToTrack(0) garanterer at audio-touren faktisk re-spiller.
       if (firstIdx !== -1) setActiveIndex(firstIdx);
       goToTrack(0);
     } else {
@@ -158,31 +144,10 @@ export function DesktopStorySidebar({
     }
   };
 
-  // Klikk på det AKTIVE kortet (hover viser play/pause-ikon) veksler avspilling
-  // for sporet som allerede er i gang. Idle/ended → (re)start fra dette kortet.
-  const togglePlayActive = () => {
-    if (isPlaying) {
-      pause("manual");
-    } else if (phase === "paused" || phase === "error") {
-      resume();
-    } else {
-      void activateCard(state.activeIndex);
-    }
-  };
-
-  const primaryLabel = notStarted
-    ? "Start opplevelsen"
-    : isPlaying
-      ? "Pause"
-      : phase === "ended"
-        ? "Spill av på nytt"
-        : "Fortsett";
-  const PrimaryIcon = isPlaying ? Pause : Play;
-
   return (
-    <aside className="relative z-20 flex h-full w-[438px] shrink-0 flex-col border-r border-stone-200 bg-white shadow-xl">
-      {/* Header — logo (→ velkomst) + tittel + play/pause */}
-      <div className="shrink-0 border-b border-stone-200/80 px-6 pb-5 pt-6">
+    <aside className="relative z-20 flex h-full w-[438px] shrink-0 flex-col border-r border-black/5 bg-[#f2e9dc] shadow-xl">
+      {/* Header — logo (→ velkomst) + tittel. Ingen divider; ren look som skisse. */}
+      <div className="shrink-0 px-6 pb-3 pt-6">
         {logoSrc && (
           <button
             type="button"
@@ -207,106 +172,104 @@ export function DesktopStorySidebar({
           {home.name}
         </h2>
         {subline && <p className="mt-0.5 text-sm text-stone-500">{subline}</p>}
-        <button
-          type="button"
-          onClick={handlePrimary}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-stone-700"
-        >
-          <PrimaryIcon size={15} className="fill-white" />
-          {primaryLabel}
-        </button>
       </div>
 
-      {/* Løpebånd — aktivt kort spiller i mobil-aspect (9:16) så video får
-          høyde og teksten ikke ligger oppå; resten av høyden peeker neste
-          kategori. scroll-padding gir ankeret litt luft fra toppen. */}
-      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6 [scroll-padding-top:0.75rem] [scrollbar-width:thin]">
-        {items.map(({ card, index }, pos) => {
-          const view = toCardView(card);
+      {/* Aktivt chapter — ett kort i 9:16 (samme format som mobil-reelen). Fyller
+          tilgjengelig høyde; bredden følger 9:16 og klampes så den aldri går
+          bredere enn sidebaren. */}
+      <div className="flex min-h-0 flex-1 items-center justify-center px-6">
+        <div className="group relative aspect-[9/16] h-full max-h-[640px] overflow-hidden rounded-2xl bg-black shadow-lg">
+          {activeIsIntro ? (
+            firstChapterImage && (
+              <Image
+                src={firstChapterImage}
+                alt=""
+                fill
+                sizes="372px"
+                className="object-cover opacity-90"
+              />
+            )
+          ) : (
+            renderActiveCard(state.activeIndex)
+          )}
+          {/* State-drevet transport-overlay (erstatter knappen under kortet):
+              spiller → skjult, vises som Pause ved hover; pauset/ferdig →
+              vedvarende Play + scrim så kortet leses som ekte pauset. Kun på
+              spillbare (audio-bærende) kort. */}
+          {activeIsAudio && (
+            <button
+              type="button"
+              onClick={handleToggle}
+              aria-label={isPlaying ? "Pause" : "Spill av"}
+              className={`absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300 ${
+                isPlaying
+                  ? "opacity-0 hover:opacity-100 focus-visible:opacity-100"
+                  : "opacity-100"
+              }`}
+            >
+              {!isPlaying && <span className="absolute inset-0 bg-black/30" />}
+              <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-black/50 ring-1 ring-white/40 backdrop-blur-sm">
+                {isPlaying ? (
+                  <Pause size={26} className="fill-white text-white" />
+                ) : (
+                  <Play size={26} className="translate-x-0.5 fill-white text-white" />
+                )}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Player-rad — komprimerte, klikkbare chapter-thumbnails. Statiske
+          postere (ingen bevegelse). Aktiv = ring + full opasitet; resten dimmes.
+          Hover viser kategori-navnet som tooltip over thumbnailet (knappen er
+          borte → rom til det). Horisontal scroll når det er flere chapters enn
+          som får plass; ekstra topp-padding gir tooltipen rom uten klipping. */}
+      <div className="flex shrink-0 gap-2 overflow-x-auto px-6 pb-6 pt-9 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {items.map(({ card, index }) => {
+          const view = thumbView(card);
           const isActive = state.activeIndex === index;
-
-          if (isActive) {
-            // Ekspandert "spiller nå"-kort — rendrer den ekte CategoryReel i
-            // EKSAKT 9:16 (samme format som mobil-reelen) så video/karaoke-
-            // komposisjonen er gjenbrukbar. Høyde-drevet: kortet skaleres til
-            // tilgjengelig viewport-høyde (minus header + peek) og bredden
-            // utledes fra 9:16 — slik fyller reelen alltid uten å klippe
-            // teksten, og resten av høyden peeker neste kategori(er).
-            return (
-              <div
-                key={index}
-                ref={activeRef}
-                className="group relative mx-auto h-[calc(100dvh-17rem)] max-h-[660px] w-[calc((100dvh-17rem)*0.5625)] max-w-[372px] shrink-0 scroll-mt-3 overflow-hidden rounded-2xl bg-black shadow-lg"
-              >
-                {renderActiveCard(index)}
-                {/* Hover-overlay: play/pause-veksling for sporet som spilles. */}
-                <button
-                  type="button"
-                  onClick={togglePlayActive}
-                  aria-label={isPlaying ? "Pause" : "Spill av"}
-                  className="absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 focus-visible:opacity-100"
-                >
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/45 ring-1 ring-white/40 backdrop-blur-sm">
-                    {isPlaying ? (
-                      <Pause size={24} className="fill-white text-white" />
-                    ) : (
-                      <Play size={24} className="translate-x-0.5 fill-white text-white" />
-                    )}
-                  </span>
-                </button>
-              </div>
-            );
-          }
-
-          // Kompakt preview
           return (
             <button
               key={index}
+              ref={isActive ? activeThumbRef : undefined}
               type="button"
-              onClick={() => {
-                void activateCard(index);
-              }}
-              className="group relative mx-auto block h-[128px] w-[calc((100dvh-17rem)*0.5625)] max-w-[372px] shrink-0 scroll-mt-3 overflow-hidden rounded-2xl text-left opacity-90 transition-all duration-300 hover:opacity-100 hover:shadow-md"
+              onClick={() => void activateCard(index)}
+              aria-label={view.title}
+              aria-current={isActive}
+              className={`group/thumb relative h-14 w-14 shrink-0 snap-center rounded-xl transition-all duration-300 ${
+                isActive
+                  ? "ring-2 ring-stone-900 ring-offset-2 ring-offset-[#f2e9dc]"
+                  : "opacity-55 hover:opacity-90"
+              }`}
             >
-              {view.image ? (
-                <Image
-                  src={view.image}
-                  alt={view.title}
-                  fill
-                  sizes="300px"
-                  priority={pos < 2}
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-stone-800" />
-              )}
-              <div className="absolute inset-x-0 bottom-0 top-1/4 bg-gradient-to-t from-black/90 via-black/45 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-3">
-                {(view.meta || view.durationSec != null) && (
-                  <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                    {view.meta && (
-                      <span className="inline-block rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
-                        {view.meta}
-                      </span>
-                    )}
-                    {view.durationSec != null && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
-                        <Volume2 size={10} />
-                        {formatDuration(view.durationSec)}
-                      </span>
-                    )}
-                  </div>
+              <span className="absolute inset-0 overflow-hidden rounded-xl">
+                {view.image ? (
+                  <Image
+                    src={view.image}
+                    alt=""
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="absolute inset-0 bg-stone-700" />
                 )}
-                <h3 className="text-base font-bold leading-tight text-white drop-shadow">
-                  {view.title}
-                </h3>
-              </div>
-              {/* Hover-CTA: play-ikon fader inn som signal om at kortet er spillbart. */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/45 ring-1 ring-white/40 backdrop-blur-sm">
-                  <Play size={20} className="translate-x-px fill-white text-white" />
-                </span>
-              </div>
+                {/* Aktiv-markør: liten play/pause-dot nede til høyre. */}
+                {isActive && (
+                  <span className="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-stone-900/80">
+                    {isPlaying ? (
+                      <Pause size={9} className="fill-white text-white" />
+                    ) : (
+                      <Play size={9} className="translate-x-px fill-white text-white" />
+                    )}
+                  </span>
+                )}
+              </span>
+              {/* Hover-tooltip: kategori-navn over thumbnailet. */}
+              <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-stone-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover/thumb:opacity-100">
+                {view.title}
+              </span>
             </button>
           );
         })}

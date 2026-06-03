@@ -6,6 +6,7 @@ import type {
   ReportThemeGroundingView,
 } from "@/lib/types";
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
+import { getProjectBrokers } from "@/lib/themes/project-brand";
 
 /** Re-eksport av character-level alignment for forbruk i board-laget
  *  (KaraokePitchText). Holder import-graphen flat: komponenter
@@ -148,7 +149,11 @@ export function adaptBoardData(report: ReportData): BoardData {
     categories,
     welcome: pickPlayableAudio(report.welcomeAudio),
     outro: pickPlayableAudio(report.outroAudio),
-    brokers: report.brokers,
+    // Ekte reportConfig.brokers vinner; ellers demo-fallback per prosjekt
+    // (Stasjonskvartalet inntil brokers finnes i Supabase). Se project-brand.ts.
+    brokers: report.brokers?.length
+      ? report.brokers
+      : getProjectBrokers(report.projectSlug),
     poisById,
     audioTourEnabled: report.audioTourEnabled === true,
   };

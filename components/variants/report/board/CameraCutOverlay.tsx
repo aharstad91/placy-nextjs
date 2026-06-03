@@ -28,7 +28,7 @@ export function CameraCutOverlay({ visible, label, color, className }: Props) {
     <div
       aria-hidden
       className={cn(
-        "pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-white transition-opacity duration-[250ms] ease-out",
+        "pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-[#f2e9dc] transition-opacity duration-[250ms] ease-out",
         visible ? "opacity-100" : "opacity-0",
         className,
       )}

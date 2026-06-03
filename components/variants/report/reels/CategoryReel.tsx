@@ -39,26 +39,32 @@ export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }
     if (isActive) markMapMounted();
   }, [isActive, markMapMounted]);
 
-  // Video spiller kun i reel-fasen (mens VO går). Når VO slutter og sheet
-  // går til map-quarter, fryser bg-videoen på siste frame — bildene er en
-  // del av samme narrative som stemmen, så de skal stoppe sammen.
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    const shouldPlay = currentPhase === "reel";
-    if (shouldPlay) {
-      void v.play().catch(() => {});
-    } else {
-      v.pause();
-    }
-  }, [currentPhase]);
-
   const isCurrentAudio = useAudioTourStore(
     (s) =>
       audioIndex >= 0 &&
       s.trackIndex === audioIndex &&
       s.tracks.length > audioIndex,
   );
+  const audioPhase = useAudioTourStore((s) => s.phase);
+
+  // Bg-videoen skal stoppe SAMMEN med voice-overen — bildene er del av samme
+  // narrative som stemmen.
+  // - Desktop (player): bind til audio-fasen. Når brukeren pauser, fryser
+  //   videoen på siste frame så kortet føles ekte pauset og ikke tar kognitiv
+  //   last i bakgrunnen. Spiller kun når DETTE kortets spor faktisk går.
+  // - Mobil: behold sheet-fase-styringen (video fryser når sheet ekspanderer).
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const shouldPlay = desktopMode
+      ? isActive && isCurrentAudio && audioPhase === "playing"
+      : currentPhase === "reel";
+    if (shouldPlay) {
+      void v.play().catch(() => {});
+    } else {
+      v.pause();
+    }
+  }, [desktopMode, isActive, isCurrentAudio, audioPhase, currentPhase]);
 
   // Desktop: karaoke aktiveres så lenge cardet er aktivt + dets spor spilles.
   // Phase er irrelevant fordi sheet ikke finnes.
@@ -96,7 +102,6 @@ export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }
             muted
             loop
             playsInline
-            autoPlay
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (

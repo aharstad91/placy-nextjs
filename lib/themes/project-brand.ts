@@ -1,3 +1,5 @@
+import type { BrokerInfo } from "@/lib/types";
+
 // Prosjekt-spesifikke brand-assets (logo + splash-hero) for velkomst-skjermen.
 // Speiler mønsteret i `category-illustrations.ts`: kjente prosjekter har egne
 // filer under `/illustrations/<slug>-logo.svg` og `/illustrations/<slug>-splash.jpg`.
@@ -30,4 +32,25 @@ export function getProjectSplashVideo(slug: string | undefined): string | undefi
     return `/illustrations/${slug}-splash-video.mp4`;
   }
   return undefined;
+}
+
+// Demo-megler-fallback for kjente prosjekter, brukt INNTIL ekte data finnes i
+// reportConfig.brokers (Supabase). Speiler district/city-hardkodingen i
+// adaptBoardData — ekte data overstyrer alltid (se board-data.ts).
+const PROJECT_BROKERS: Record<string, BrokerInfo[]> = {
+  stasjonskvartalet: [
+    {
+      name: "Tonje Følstad",
+      title: "Prosjektmegler",
+      phone: "980 40 191",
+      email: "tonje.folstad@dnbeiendom.no",
+      photoUrl: "/illustrations/stasjonskvartalet-broker-tonje.jpg",
+      officeName: "DNB Eiendom",
+    },
+  ],
+};
+
+/** Demo-meglere for kjente prosjekter. Tom liste når ingen finnes. */
+export function getProjectBrokers(slug: string | undefined): BrokerInfo[] {
+  return (slug && PROJECT_BROKERS[slug]) || [];
 }

@@ -8,7 +8,7 @@ import { DEFAULT_CAMERA_LOCK } from "@/components/variants/report/blocks/report-
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
-import { CameraModeToggle, type CameraMode } from "./CameraModeToggle";
+import { type CameraMode } from "./BoardMapControls";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
@@ -21,7 +21,6 @@ import {
   type CameraDrivableMap3D,
 } from "./board-intro-flythrough";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
-import { cn } from "@/lib/utils";
 import type { POI, CategoryCameraConfig } from "@/lib/types";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
@@ -57,6 +56,12 @@ interface Props {
    * Prosjektet lander i skjerm-senter, godt til høyre for sidebaren.
    */
   mapPaddingLeft?: number;
+  /** Kameramodus (auto/fri), løftet til BoardMap så Auto/Fri-toggelen kan bo i
+   *  den felles BoardMapControls-komponenten nederst-midt. */
+  cameraMode: CameraMode;
+  /** Kalles når brukeren tar over kameraet ved å DRA i 3D-kartet (auto → fri).
+   *  BoardMap setter fri-modus + viser recovery-hinten. */
+  onDragTakeover: () => void;
 }
 
 /**
@@ -67,11 +72,13 @@ interface Props {
  *   så scenen alltid lever. Det er ÉN kontinuerlig orbit — den re-aimes IKKE ved
  *   kategori-skifte (det bytter bare hvilke markører som vises). Kameraet zoomer
  *   ALDRI ut for å ramme alle pins.
- * - To kamera-moduser, styrt av `CameraModeToggle` (auto ⇄ fri):
+ * - To kamera-moduser (auto ⇄ fri), styrt av Auto/Fri-toggelen i den felles
+ *   `BoardMapControls` (rendret av BoardMap). cameraMode kommer inn som prop:
  *     • auto → kontinuerlig drone-orbit.
  *     • fri  → orbiten stopper, brukeren styrer vinkelen selv.
- *   Drar/zoomer brukeren i kartet settes modus til «fri» automatisk (ingen
- *   auto-reset etter X sekunder — brukeren gir kontrollen tilbake med ett klikk).
+ *   Drar/zoomer brukeren i kartet varsles BoardMap via onDragTakeover, som
+ *   setter «fri» + viser recovery-hint (ingen auto-reset — ett klikk gir
+ *   kontrollen tilbake til dronen).
  * - Åpnet POI stopper orbiten og flyr tett inn; lukking gjenopptar orbiten hvis
  *   modus er auto, ellers blir kameraet stående (fri modus eier vinkelen).
  * - Markørene monteres på full opacity (ingen opacity-reveal — den churnet
@@ -80,7 +87,7 @@ interface Props {
  *   et kuratert top-3/kategori-ankersett i oversikt.
  * - Tegner walking-rute fra Home → aktiv POI via `RouteLayer3D`.
  */
-export function BoardMap3D({ pendingCamera }: Props) {
+export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
@@ -99,15 +106,6 @@ export function BoardMap3D({ pendingCamera }: Props) {
 
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
-
-  // Kameramodus: auto (drone-orbit) eller fri (brukeren styrer). Default auto —
-  // men ?fly=1 starter i "free" så directoren ikke kjemper mot intro-flythrough-en.
-  const [cameraMode, setCameraMode] = useState<CameraMode>(() =>
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("fly") === "1"
-      ? "free"
-      : "auto",
-  );
 
   // Dev-only authoring-modus (?author=1) for å fange kamera-waypoints. Lest én
   // gang ved mount; aldri eksponert i produksjon med mindre flagget settes.
@@ -289,9 +287,9 @@ export function BoardMap3D({ pendingCamera }: Props) {
 
   // ── Intro-flythrough (?fly=1) ────────────────────────────────────────────
   // Spill oval-spiralen (board-intro-flythrough) live i kartet når map3d er klar.
-  // cameraMode er allerede "free" (se init) så directoren over rører ikke kameraet
-  // — vi driver det selv frame-for-frame. window.__placyIntroFly eksponerer fasen
-  // (settling→running→done) så capture-scriptet kan åpne ?fly=1 og synke opptaket.
+  // cameraMode er allerede "free" (init i BoardMap når ?fly=1) så directoren over
+  // rører ikke kameraet — vi driver det selv frame-for-frame. window.__placyIntroFly
+  // eksponerer fasen (settling→running→done) så capture-scriptet kan synke opptaket.
   // Deps er primitive (home lat/lng) så effekten ikke restarter på re-render.
   const homeLat = data.home.coordinates.lat;
   const homeLng = data.home.coordinates.lng;
@@ -312,32 +310,10 @@ export function BoardMap3D({ pendingCamera }: Props) {
     });
   }, [flyMode, map3dInstance, homeLat, homeLng, introPath]);
 
-  // Recovery-hint: når brukeren tar over ved å DRA (ikke ved å klikke Fri), er
-  // det ikke åpenbart at kameraet «frøs» med vilje. En kort, transient melding
-  // peker tilbake til Auto-knappen. Vises kun ved implisitt takeover; eksplisitt
-  // toggle-klikk skjuler den (brukeren vet da hva som skjer).
-  const [showFreeHint, setShowFreeHint] = useState(false);
+  // cameraMode styres nå av BoardMap (felles BoardMapControls). Vi speiler den i
+  // en ref så drag-lytteren kan lese gjeldende modus uten å re-subscribe.
   const cameraModeRef = useRef(cameraMode);
   cameraModeRef.current = cameraMode;
-  const freeHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const triggerFreeHint = useCallback(() => {
-    setShowFreeHint(true);
-    if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
-    freeHintTimerRef.current = setTimeout(() => setShowFreeHint(false), 3500);
-  }, []);
-
-  // Toggle-klikk: skjul recovery-hint (brukeren styrer modus bevisst).
-  const handleModeChange = useCallback((mode: CameraMode) => {
-    setShowFreeHint(false);
-    setCameraMode(mode);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
-    };
-  }, []);
 
   // Interaksjons-lyttere: drag/scroll/touch på kart-bakgrunnen → fri modus. I
   // freeMode hijacker ikke MapView3D pekeren, så vi lytter direkte. Marker-tap er
@@ -349,10 +325,10 @@ export function BoardMap3D({ pendingCamera }: Props) {
     const onGrab = (e: Event) => {
       const target = e.target as HTMLElement | null;
       if (target && target.closest("gmp-marker-3d-interactive")) return;
-      // Kun implisitt takeover (auto → fri) trigger recovery-hinten.
+      // Kun implisitt takeover (auto → fri) varsler BoardMap, som setter fri-modus
+      // + viser recovery-hinten.
       if (cameraModeRef.current === "auto") {
-        setCameraMode("free");
-        triggerFreeHint();
+        onDragTakeover();
       }
     };
     el.addEventListener("pointerdown", onGrab);
@@ -363,7 +339,7 @@ export function BoardMap3D({ pendingCamera }: Props) {
       el.removeEventListener("wheel", onGrab);
       el.removeEventListener("touchstart", onGrab);
     };
-  }, [map3dInstance, triggerFreeHint]);
+  }, [map3dInstance, onDragTakeover]);
 
   return (
     <div className="absolute inset-0">
@@ -394,21 +370,9 @@ export function BoardMap3D({ pendingCamera }: Props) {
         label={activeCategory?.label}
         color={activeCategory?.color}
       />
-      <CameraModeToggle
-        mode={cameraMode}
-        onModeChange={handleModeChange}
-        className="absolute left-3 top-3 z-10"
-      />
-      <div
-        role="status"
-        className={cn(
-          "pointer-events-none absolute left-3 top-[3.75rem] z-10 max-w-[15rem] rounded-xl bg-stone-900/85 px-3 py-2 text-xs font-medium text-white shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-opacity duration-300",
-          showFreeHint ? "opacity-100" : "opacity-0",
-        )}
-      >
-        Du styrer kameraet nå — trykk <span className="font-semibold">Auto</span>{" "}
-        for å la dronen fortsette.
-      </div>
+      {/* Auto/Fri + Kart/3D-kontrollene bor nå i den felles BoardMapControls
+          (rendret av BoardMap, sentrert nederst-midt). Drag-takeover-lytteren
+          over varsler BoardMap via onDragTakeover. */}
       {popupMode === "mini" && state.activePOIId && (
         <BoardPOI3DMiniPopup map3d={map3dInstance} />
       )}

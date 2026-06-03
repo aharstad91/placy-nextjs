@@ -7,6 +7,7 @@ import {
   ORBIT_RANGE,
   POI_RANGE,
   DEFAULT_CINEMATIC_MS,
+  DERIVE_DRIFT_DEG,
   type CameraDecisionInputs,
   type CameraIntent,
 } from "./board-3d-camera-director";
@@ -204,9 +205,10 @@ describe("deriveCategoryCamera", () => {
   it("A og B svinger en bue (ulik heading, ±DRIFT rundt hjem→innhold)", () => {
     const cfg = deriveCategoryCamera(home, [{ lat: 63.42, lng: 10.42 }])!;
     expect(cfg.a.heading).not.toBe(cfg.b!.heading);
-    // 44° spenn (±22) — tar høyde for 360-wrap.
+    // Sveip-spennet er 2×DERIVE_DRIFT_DEG (±drift) — utledet fra konstanten så
+    // den følger med når vi justerer kamera-roen. Tar høyde for 360-wrap.
     const diff = Math.abs(((cfg.a.heading - cfg.b!.heading + 540) % 360) - 180);
-    expect(diff).toBeCloseTo(44, 0);
+    expect(diff).toBeCloseTo(2 * DERIVE_DRIFT_DEG, 0);
   });
 
   it("klamper range innenfor [350, 850] (aldri orbit-høyde)", () => {

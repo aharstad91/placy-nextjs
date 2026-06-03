@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, { type MapRef } from "react-map-gl/mapbox";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 import { mutedColor } from "@/lib/themes/muted-palette";
-import ModeToggle from "@/components/map/ModeToggle";
+import { BoardMapControls, type CameraMode } from "./BoardMapControls";
 import { rangeToZoom } from "@/lib/utils/camera-map";
 import { useBoard, useActiveCategory } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
@@ -85,6 +85,44 @@ export function BoardMap({
     null,
   );
   const mapBodyRef = useRef<HTMLDivElement | null>(null);
+
+  // ---- Kameramodus (auto/fri) + recovery-hint ----
+  // Løftet hit (fra BoardMap3D) så Auto/Fri + Kart/3D kan bo i ÉN felles
+  // kontroll-komponent (BoardMapControls) sentrert nederst. cameraMode mates
+  // ned til BoardMap3D for kamera-directoren; toggelen i BoardMapControls
+  // skriver den. Recovery-hinten vises når brukeren tar over ved DRAG (auto→fri).
+  // Default auto (drone-orbit) — men ?fly=1 starter i "free" så kamera-directoren
+  // ikke kjemper mot intro-flythrough-en (board-intro-flythrough i BoardMap3D).
+  const [cameraMode, setCameraMode] = useState<CameraMode>(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("fly") === "1"
+      ? "free"
+      : "auto",
+  );
+  const [showFreeHint, setShowFreeHint] = useState(false);
+  const freeHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Eksplisitt toggle-klikk: sett modus + skjul hint (brukeren styrer bevisst).
+  const handleCameraModeChange = useCallback((mode: CameraMode) => {
+    if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
+    setShowFreeHint(false);
+    setCameraMode(mode);
+  }, []);
+
+  // Implisitt takeover via drag i 3D-kartet (varslet fra BoardMap3D): sett fri +
+  // vis en transient hint som peker tilbake til Auto.
+  const handleDragTakeover = useCallback(() => {
+    setCameraMode("free");
+    setShowFreeHint(true);
+    if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
+    freeHintTimerRef.current = setTimeout(() => setShowFreeHint(false), 3500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
+    };
+  }, []);
 
   // Mapbox vises som base (ikke-addon-prosjekt) eller som overlay i 2D-view.
   const showMapbox = !has3dAddon || view === "2d";
@@ -278,7 +316,12 @@ export function BoardMap({
           manuelt). Mapbox-overlayet legger seg oppå når brukeren velger 2D. */}
       {has3dAddon && (
         <div className="absolute inset-0">
-          <BoardMap3D pendingCamera={null} mapPaddingLeft={mapPaddingLeft} />
+          <BoardMap3D
+            pendingCamera={null}
+            mapPaddingLeft={mapPaddingLeft}
+            cameraMode={cameraMode}
+            onDragTakeover={handleDragTakeover}
+          />
         </div>
       )}
 
@@ -350,12 +393,17 @@ export function BoardMap({
         </div>
       )}
 
-      {/* 2D/3D-toggle øverst til høyre — kun synlig når 3D-add-on er kjøpt.
-          3D er default; toggle til 2D legger Mapbox-overlayet oppå. */}
+      {/* Felles kontroll-cluster (Auto/Fri + Kart/3D) sentrert nederst-midt —
+          kun når 3D-add-on er kjøpt. Bunn-midten er fri for Google-crediten
+          (låst nederst-venstre) og Mapbox-attribusjonen (nederst-høyre). */}
       {has3dAddon && (
-        <div className="absolute top-3 right-3 z-30">
-          <ModeToggle value={view} onChange={handleModeChange} />
-        </div>
+        <BoardMapControls
+          view={view}
+          onViewChange={handleModeChange}
+          cameraMode={cameraMode}
+          onCameraModeChange={handleCameraModeChange}
+          showFreeHint={showFreeHint}
+        />
       )}
     </div>
   );
