@@ -8,7 +8,7 @@ describe("CameraCutOverlay", () => {
     const root = container.firstElementChild as HTMLElement;
     expect(root.className).toContain("opacity-100");
     expect(root.className).not.toContain("opacity-0");
-    expect(root.className).toContain("bg-white");
+    expect(root.className).toContain("bg-[#f2e9dc]");
   });
 
   it("er gjennomsiktig når ikke visible", () => {
