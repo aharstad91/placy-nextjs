@@ -603,8 +603,10 @@ export function DesktopStorySidebar({
 
       {/* Konstant kontakt-footer — megler vises alltid nederst (ikke gjemt som
           siste thumbnail). Ring/E-post er direkte tel:/mailto:-lenker, så den
-          fungerer uavhengig av reel-spilleren. Lyst tema som matcher sidebaren. */}
-      {meglerCard && meglerCard.brokers.length > 0 && (
+          fungerer uavhengig av reel-spilleren. Lyst tema som matcher sidebaren.
+          KUN i player-løpet: empty-state (uten voice-over) har sin egen nøytrale
+          megler-placeholder i SidebarContentPreview, så vi unngår dobbel footer. */}
+      {hasPlayableContent && meglerCard && meglerCard.brokers.length > 0 && (
         <div className="shrink-0 border-t border-black/5 px-6 pb-6 pt-4">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
             {meglerCard.label}
