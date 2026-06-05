@@ -167,12 +167,28 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  // Oversikts-ankersett: top-3 score-rangerte POI-er per kategori (~18–21 stk).
-  // Brukes når ingen kategori spiller (intro/home/outro/megler). Score-rangert
-  // via topRankedPois, IKKE distanse-sortert.
+  // Har prosjektet voice-over (reels-lyd)? Da finnes en guidet tur som driller
+  // inn per kategori, og overblikket holdes rent med et kuratert anker-sett
+  // (top-3 score-rangert per kategori, ~18–21 stk). UTEN voice-over finnes ingen
+  // tur å drille med, så hele nabolaget vises samtidig (alle POI-er) — kartet
+  // blir da selve verdien i overblikks-state.
+  const hasVoiceOver = useMemo(
+    () =>
+      data.categories.some((c) => !!c.audio || !!c.reelsAudio) ||
+      !!data.welcome ||
+      !!data.home.audio ||
+      !!data.outro,
+    [data.categories, data.welcome, data.home.audio, data.outro],
+  );
+
+  // Oversikts-sett. Brukes når ingen kategori spiller (intro/home/outro/megler).
+  // Kategoriene er disjunkte, så ingen duplikater.
   const overviewPOIs = useMemo(
-    () => data.categories.flatMap((c) => c.topRankedPois.slice(0, 3).map((p) => p.raw)),
-    [data.categories],
+    () =>
+      hasVoiceOver
+        ? data.categories.flatMap((c) => c.topRankedPois.slice(0, 3).map((p) => p.raw))
+        : data.categories.flatMap((c) => c.pois.map((p) => p.raw)),
+    [data.categories, hasVoiceOver],
   );
 
   // Markørsettet som faktisk mountes. Når en kategori spiller: kun den
