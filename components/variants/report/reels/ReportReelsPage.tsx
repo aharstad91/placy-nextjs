@@ -114,7 +114,14 @@ function BoardReelsSync() {
   const { state: reelsState } = useReels();
   const { state: boardState, dispatch } = useBoard();
 
+  // Reels-feeden driver kategori-valget KUN når den faktisk har kategori-kort
+  // (prosjekt med reels-lyd). I empty-state (ingen reels-lyd → ingen kategori-
+  // kort) driver sidebaren kategori-valget manuelt; da skal ikke denne synken
+  // nullstille det (ellers undoes klikk umiddelbart).
+  const reelsDriveCategories = reelsState.cards.some((c) => c.kind === "category");
+
   useEffect(() => {
+    if (!reelsDriveCategories) return;
     const card = reelsState.cards[reelsState.activeIndex];
     if (!card) return;
     if (card.kind === "category") {
@@ -132,6 +139,7 @@ function BoardReelsSync() {
       }
     }
   }, [
+    reelsDriveCategories,
     reelsState.activeIndex,
     reelsState.cards,
     boardState.activeCategoryId,

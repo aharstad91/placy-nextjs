@@ -15,7 +15,8 @@ import {
   posterForVideo,
 } from "./reels-data";
 import type { ReelsCard } from "./reels-data";
-import type { BoardHome } from "../board/board-data";
+import type { BoardCategoryId, BoardHome } from "../board/board-data";
+import { useBoard } from "../board/board-state";
 
 /**
  * Desktop-adaptiv storytelling-lane (kun >=1024px, rendres fra
@@ -75,55 +76,77 @@ interface Props {
  */
 export function SidebarContentPreview({
   categories,
+  activeCategoryId,
+  onSelect,
 }: {
   categories: SidebarPreviewCategory[];
+  activeCategoryId?: string | null;
+  /** Klikk på et temakort → velg kategorien på board-et (cut-overlay + drone-
+   *  flyvning + markør-filtrering). Aktiv kategori re-klikket → tilbake til overblikk. */
+  onSelect?: (id: string) => void;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-6 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {categories.map((c) => (
-        <div
-          key={c.id}
-          className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white/60 p-2.5"
-        >
-          <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-200">
-            {c.image && (
-              <Image src={c.image} alt="" fill sizes="56px" className="object-cover" />
-            )}
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Scroll-område: kategori-kortene. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {categories.map((c) => {
+          const isActive = activeCategoryId === c.id;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onSelect?.(c.id)}
+              aria-current={isActive}
+              className={`flex w-full items-center gap-3 rounded-2xl border bg-white/60 p-2.5 text-left transition hover:bg-white ${
+                isActive
+                  ? "border-stone-900 ring-1 ring-stone-900"
+                  : "border-black/5"
+              }`}
+            >
+              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-200">
+                {c.image && (
+                  <Image src={c.image} alt="" fill sizes="56px" className="object-cover" />
+                )}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="truncate text-sm font-semibold text-stone-900">{c.label}</p>
+                  <span className="shrink-0 text-[11px] font-medium text-stone-400">
+                    {c.count} steder
+                  </span>
+                </div>
+                {c.lead && (
+                  <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-stone-500">
+                    {c.lead}
+                  </p>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Author/megler — sticky i bunn av sidebaren (scroller ikke med kategori-
+          lista). Nøytral placeholder, fylles per prosjekt. Speiler megler-kortets
+          struktur (avatar + navn + Ring/E-post) i lys variant. */}
+      <div className="shrink-0 border-t border-black/5 px-6 pb-6 pt-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white/60 p-3">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-200 text-stone-400">
+            <User size={20} />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="truncate text-sm font-semibold text-stone-900">{c.label}</p>
-              <span className="shrink-0 text-[11px] font-medium text-stone-400">
-                {c.count} steder
+            <p className="text-sm font-semibold text-stone-900">Ansvarlig megler</p>
+            <p className="text-[12px] text-stone-400">Kontaktinfo legges til per prosjekt</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200/70 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
+                <Phone className="h-3.5 w-3.5" />
+                Ring
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
+                <Mail className="h-3.5 w-3.5" />
+                E-post
               </span>
             </div>
-            {c.lead && (
-              <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-stone-500">
-                {c.lead}
-              </p>
-            )}
-          </div>
-        </div>
-      ))}
-
-      {/* Author/megler — nøytral placeholder (fylles per prosjekt). Speiler
-          megler-kortets struktur (avatar + navn + Ring/E-post) i lys variant. */}
-      <div className="mt-1 flex items-center gap-3 rounded-2xl border border-black/5 bg-white/60 p-3">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-200 text-stone-400">
-          <User size={20} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-stone-900">Ansvarlig megler</p>
-          <p className="text-[12px] text-stone-400">Kontaktinfo legges til per prosjekt</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200/70 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
-              <Phone className="h-3.5 w-3.5" />
-              Ring
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
-              <Mail className="h-3.5 w-3.5" />
-              E-post
-            </span>
           </div>
         </div>
       </div>
@@ -157,10 +180,27 @@ export function DesktopStorySidebar({
   previewCategories = [],
 }: Props) {
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
+  const { state: boardState, dispatch: boardDispatch } = useBoard();
   const { unlock } = useAudioElement();
   const { pause, resume, goToTrack } = useAudioTourActions();
   const phase = useAudioTourStore((s) => s.phase);
   const activeThumbRef = useRef<HTMLButtonElement | null>(null);
+
+  // Empty-state (uten voice-over): klikk på et temakort velger kategorien på
+  // board-et → cream cut-overlay + per-kategori drone-flyvning + markører
+  // filtrert til kategorien. Klikk på aktiv kategori igjen → tilbake til
+  // overblikk (alle markører). Source "rail" holder board-fasen "default".
+  const handleSelectPreviewCategory = (id: string) => {
+    if (boardState.activeCategoryId === id) {
+      boardDispatch({ type: "RESET_TO_DEFAULT" });
+    } else {
+      boardDispatch({
+        type: "SELECT_CATEGORY",
+        id: id as BoardCategoryId,
+        source: "rail",
+      });
+    }
+  };
 
   // Thumbnail-raden viser alle chapters unntatt intro-video-splashen. Megler
   // er med som siste chapter (kontakt) — CardRouter rendrer MeglerReel i det
@@ -257,7 +297,11 @@ export function DesktopStorySidebar({
       </div>
 
       {!hasPlayableContent ? (
-        <SidebarContentPreview categories={previewCategories} />
+        <SidebarContentPreview
+          categories={previewCategories}
+          activeCategoryId={boardState.activeCategoryId}
+          onSelect={handleSelectPreviewCategory}
+        />
       ) : (
         <>
       {/* Aktivt chapter — ett kort i 9:16 (samme format som mobil-reelen). Fyller

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import {
   SidebarContentPreview,
   type SidebarPreviewCategory,
@@ -49,6 +49,15 @@ describe("SidebarContentPreview (empty state)", () => {
     expect(getByText("19 steder")).toBeTruthy();
     expect(getByText(/Valentinlyst senter/)).toBeTruthy();
     expect(getByText(/Linje 12/)).toBeTruthy();
+  });
+
+  it("kaller onSelect med kategori-id ved klikk på temakort", () => {
+    const onSelect = vi.fn();
+    const { getByText } = render(
+      <SidebarContentPreview categories={categories} onSelect={onSelect} />,
+    );
+    fireEvent.click(getByText("Hverdagsliv"));
+    expect(onSelect).toHaveBeenCalledWith("hverdagsliv");
   });
 
   it("rendrer uten lead/bilde uten å krasje", () => {
