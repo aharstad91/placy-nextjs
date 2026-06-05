@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef } from "react";
-import { Mail, Pause, Phone, Play, User } from "lucide-react";
+import { Mail, Map as MapIcon, Pause, Phone, Play, User } from "lucide-react";
 import { useReels } from "./reels-state";
 import { useAudioElement } from "../board/audio-tour/use-audio-element";
 import {
@@ -78,17 +78,46 @@ export function SidebarContentPreview({
   categories,
   activeCategoryId,
   onSelect,
+  onShowAll,
 }: {
   categories: SidebarPreviewCategory[];
   activeCategoryId?: string | null;
   /** Klikk på et temakort → velg kategorien på board-et (cut-overlay + drone-
    *  flyvning + markør-filtrering). Aktiv kategori re-klikket → tilbake til overblikk. */
   onSelect?: (id: string) => void;
+  /** Klikk på "Hele nabolaget" → reset board til overblikk (alle markører). */
+  onShowAll?: () => void;
 }) {
+  const total = categories.reduce((sum, c) => sum + c.count, 0);
+  const noneActive = !activeCategoryId;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Scroll-område: kategori-kortene. */}
+      {/* Scroll-område: "Hele nabolaget" (reset/overblikk) + kategori-kortene. */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <button
+          type="button"
+          onClick={onShowAll}
+          aria-current={noneActive}
+          className={`flex w-full items-center gap-3 rounded-2xl border bg-white/60 p-2.5 text-left transition hover:bg-white ${
+            noneActive ? "border-stone-900 ring-1 ring-stone-900" : "border-black/5"
+          }`}
+        >
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-stone-900 text-white">
+            <MapIcon size={22} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="truncate text-sm font-semibold text-stone-900">Hele nabolaget</p>
+              <span className="shrink-0 text-[11px] font-medium text-stone-400">
+                {total} steder
+              </span>
+            </div>
+            <p className="mt-0.5 text-[12px] leading-snug text-stone-500">
+              Vis alle steder på kartet
+            </p>
+          </div>
+        </button>
+
         {categories.map((c) => {
           const isActive = activeCategoryId === c.id;
           return (
@@ -301,6 +330,7 @@ export function DesktopStorySidebar({
           categories={previewCategories}
           activeCategoryId={boardState.activeCategoryId}
           onSelect={handleSelectPreviewCategory}
+          onShowAll={() => boardDispatch({ type: "RESET_TO_DEFAULT" })}
         />
       ) : (
         <>

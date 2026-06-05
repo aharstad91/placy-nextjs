@@ -60,6 +60,17 @@ describe("SidebarContentPreview (empty state)", () => {
     expect(onSelect).toHaveBeenCalledWith("hverdagsliv");
   });
 
+  it("viser 'Hele nabolaget'-rad med total og kaller onShowAll ved klikk", () => {
+    const onShowAll = vi.fn();
+    const { getByText } = render(
+      <SidebarContentPreview categories={categories} onShowAll={onShowAll} />,
+    );
+    expect(getByText("Hele nabolaget")).toBeTruthy();
+    expect(getByText("32 steder")).toBeTruthy(); // 13 + 19
+    fireEvent.click(getByText("Hele nabolaget"));
+    expect(onShowAll).toHaveBeenCalled();
+  });
+
   it("rendrer uten lead/bilde uten å krasje", () => {
     const { getByText } = render(
       <SidebarContentPreview
@@ -67,6 +78,5 @@ describe("SidebarContentPreview (empty state)", () => {
       />,
     );
     expect(getByText("Tema X")).toBeTruthy();
-    expect(getByText("0 steder")).toBeTruthy();
   });
 });
