@@ -32,11 +32,11 @@ const categories: SidebarPreviewCategory[] = [
 ];
 
 describe("SidebarContentPreview (empty state)", () => {
-  it("posisjonerer lydturen som et kommende tillegg", () => {
+  it("viser nøytral megler-placeholder i bunn", () => {
     const { getByText } = render(
       <SidebarContentPreview categories={categories} />,
     );
-    expect(getByText("Guidet lydtur kommer")).toBeTruthy();
+    expect(getByText("Ansvarlig megler")).toBeTruthy();
   });
 
   it("viser hvert tema med label, POI-antall og lead", () => {

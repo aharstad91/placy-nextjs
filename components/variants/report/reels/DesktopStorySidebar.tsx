@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef } from "react";
-import { Headphones, Pause, Play } from "lucide-react";
+import { Mail, Pause, Phone, Play, User } from "lucide-react";
 import { useReels } from "./reels-state";
 import { useAudioElement } from "../board/audio-tour/use-audio-element";
 import {
@@ -80,19 +80,6 @@ export function SidebarContentPreview({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-6 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="flex items-start gap-3 rounded-2xl bg-stone-900/[0.04] p-4">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-900 text-white">
-          <Headphones size={18} />
-        </span>
-        <div>
-          <p className="text-sm font-semibold text-stone-900">Guidet lydtur kommer</p>
-          <p className="mt-0.5 text-[13px] leading-snug text-stone-500">
-            Nabolagsrapporten er klar — bla gjennom temaene under. Den fortalte
-            lydturen legges til som neste steg.
-          </p>
-        </div>
-      </div>
-
       {categories.map((c) => (
         <div
           key={c.id}
@@ -102,10 +89,6 @@ export function SidebarContentPreview({
             {c.image && (
               <Image src={c.image} alt="" fill sizes="56px" className="object-cover" />
             )}
-            <span
-              className="absolute inset-x-0 bottom-0 h-1"
-              style={{ backgroundColor: c.color }}
-            />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
@@ -122,6 +105,28 @@ export function SidebarContentPreview({
           </div>
         </div>
       ))}
+
+      {/* Author/megler — nøytral placeholder (fylles per prosjekt). Speiler
+          megler-kortets struktur (avatar + navn + Ring/E-post) i lys variant. */}
+      <div className="mt-1 flex items-center gap-3 rounded-2xl border border-black/5 bg-white/60 p-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-200 text-stone-400">
+          <User size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-stone-900">Ansvarlig megler</p>
+          <p className="text-[12px] text-stone-400">Kontaktinfo legges til per prosjekt</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200/70 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
+              <Phone className="h-3.5 w-3.5" />
+              Ring
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
+              <Mail className="h-3.5 w-3.5" />
+              E-post
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
