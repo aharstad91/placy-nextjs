@@ -1,0 +1,47 @@
+{
+  "name": "Wesselsløkka",
+  "customer": "broset-utvikling-as",
+  "center": {
+    "lat": 63.422074,
+    "lng": 10.450617
+  },
+  "radius": 1500,
+
+  "discover": {
+    "_comment": "Bred discovery rundt Brøset — mange punkter per kategori. Lav minRating for å maksimere bredde; kvalitet kureres ved review før Supabase-ingest.",
+    "googleCategories": [
+      "restaurant",
+      "cafe",
+      "bar",
+      "bakery",
+      "gym",
+      "supermarket",
+      "pharmacy",
+      "bank",
+      "post_office",
+      "shopping_mall",
+      "museum",
+      "library",
+      "park",
+      "movie_theater",
+      "doctor",
+      "dentist",
+      "hair_care",
+      "liquor_store",
+      "spa"
+    ],
+    "minRating": 0,
+    "maxResultsPerCategory": 20,
+    "includeTransport": true
+  },
+
+  "themes": [
+    { "id": "mat-drikke", "title": "Mat & Drikke" },
+    { "id": "transport", "title": "Transport & Mobilitet" },
+    { "id": "trening-aktivitet", "title": "Trening & Aktivitet" },
+    { "id": "hverdagsliv", "title": "Hverdagsliv" },
+    { "id": "natur-friluftsliv", "title": "Natur & Friluftsliv" },
+    { "id": "barn-oppvekst", "title": "Barn & Oppvekst" },
+    { "id": "opplevelser", "title": "Opplevelser" }
+  ]
+}
