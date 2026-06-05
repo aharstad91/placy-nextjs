@@ -239,7 +239,9 @@ function ResponsiveLayoutInner({
   };
 
   const primaryLabel = notStarted
-    ? "Start opplevelsen"
+    ? firstIdx === -1
+      ? "Utforsk nabolaget"
+      : "Start opplevelsen"
     : phase === "ended"
       ? "Spill av på nytt"
       : "Fortsett";
@@ -250,6 +252,22 @@ function ResponsiveLayoutInner({
         id: c.id,
         label: c.label,
         color: c.color,
+        image:
+          getCategoryIllustrationSrc(boardData.projectSlug, c.id, boardData.assets) ??
+          c.illustration?.src,
+      })),
+    [boardData.categories, boardData.projectSlug, boardData.assets],
+  );
+  // Lett-vekts kategori-oversikt for sidebarens empty state (prosjekt uten
+  // reels-lyd). Speiler splashCategories, men med POI-antall + lead.
+  const previewCategories = useMemo(
+    () =>
+      boardData.categories.map((c) => ({
+        id: c.id,
+        label: c.label,
+        color: c.color,
+        count: c.pois.length,
+        lead: c.lead,
         image:
           getCategoryIllustrationSrc(boardData.projectSlug, c.id, boardData.assets) ??
           c.illustration?.src,
@@ -280,6 +298,7 @@ function ResponsiveLayoutInner({
             home={home}
             logoSrc={logoSrc}
             onLogoClick={handleReopenSplash}
+            previewCategories={previewCategories}
             renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
           />
         </div>

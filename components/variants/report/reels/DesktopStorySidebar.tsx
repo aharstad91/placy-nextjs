@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef } from "react";
-import { Pause, Play } from "lucide-react";
+import { Headphones, Pause, Play } from "lucide-react";
 import { useReels } from "./reels-state";
 import { useAudioElement } from "../board/audio-tour/use-audio-element";
 import {
@@ -41,6 +41,17 @@ import type { BoardHome } from "../board/board-data";
  * fortsatt <1024px.
  */
 
+/** Lett-vekts kategori-data for den bla-bare oversikten (empty state). Bygd i
+ *  ReportReelsPage fra boardData.categories. */
+export interface SidebarPreviewCategory {
+  id: string;
+  label: string;
+  color: string;
+  count: number;
+  lead?: string;
+  image?: string;
+}
+
 interface Props {
   home: BoardHome;
   /** Rendrer det aktive kortets media (video/bilde-bg + karaoke-VO, eller
@@ -51,6 +62,68 @@ interface Props {
   logoSrc?: string;
   /** Trykk på logo → animer splash-laget inn igjen (ingen refresh). */
   onLogoClick?: () => void;
+  /** Kategori-oversikt vist når prosjektet ikke har reels-lyd ennå (ingen
+   *  audio-bærende kort). Da vises en bla-bar oversikt i stedet for spilleren. */
+  previewCategories?: SidebarPreviewCategory[];
+}
+
+/**
+ * Empty state: bla-bar nabolagsoversikt vist når prosjektet ikke har produsert
+ * reels-lyd ennå. Bruker dataene som ALLEREDE finnes (temaer + POI-antall + lead)
+ * og posisjonerer den fortalte lydturen som et kommende tillegg — i stedet for
+ * et tomt, svart spiller-kort.
+ */
+export function SidebarContentPreview({
+  categories,
+}: {
+  categories: SidebarPreviewCategory[];
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-6 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex items-start gap-3 rounded-2xl bg-stone-900/[0.04] p-4">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-900 text-white">
+          <Headphones size={18} />
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-stone-900">Guidet lydtur kommer</p>
+          <p className="mt-0.5 text-[13px] leading-snug text-stone-500">
+            Nabolagsrapporten er klar — bla gjennom temaene under. Den fortalte
+            lydturen legges til som neste steg.
+          </p>
+        </div>
+      </div>
+
+      {categories.map((c) => (
+        <div
+          key={c.id}
+          className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white/60 p-2.5"
+        >
+          <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-200">
+            {c.image && (
+              <Image src={c.image} alt="" fill sizes="56px" className="object-cover" />
+            )}
+            <span
+              className="absolute inset-x-0 bottom-0 h-1"
+              style={{ backgroundColor: c.color }}
+            />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="truncate text-sm font-semibold text-stone-900">{c.label}</p>
+              <span className="shrink-0 text-[11px] font-medium text-stone-400">
+                {c.count} steder
+              </span>
+            </div>
+            {c.lead && (
+              <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-stone-500">
+                {c.lead}
+              </p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /** Poster/tittel for thumbnail-raden. Megler har ikke media → portrett brukes. */
@@ -76,6 +149,7 @@ export function DesktopStorySidebar({
   renderActiveCard,
   logoSrc,
   onLogoClick,
+  previewCategories = [],
 }: Props) {
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
   const { unlock } = useAudioElement();
@@ -94,6 +168,9 @@ export function DesktopStorySidebar({
   const subline = [home.district, home.city].filter(Boolean).join(", ");
   const isPlaying = phase === "playing";
   const firstIdx = firstAudioBearingIndex(state.cards);
+  // Ingen audio-bærende kort = prosjektet har ikke produsert reels-lyd ennå.
+  // Da vises den bla-bare oversikten i stedet for det (tomme) spiller-kortet.
+  const hasPlayableContent = firstIdx !== -1;
   // "Ikke startet" dekker to tilfeller: (1) audio aldri unlocket, og (2) audio
   // unlocket via klikk på et ikke-audio-kort (megler/intro) uten at touren
   // faktisk startet — da står phase fortsatt "idle". Begge skal vise "Start".
@@ -174,6 +251,10 @@ export function DesktopStorySidebar({
         {subline && <p className="mt-0.5 text-sm text-stone-500">{subline}</p>}
       </div>
 
+      {!hasPlayableContent ? (
+        <SidebarContentPreview categories={previewCategories} />
+      ) : (
+        <>
       {/* Aktivt chapter — ett kort i 9:16 (samme format som mobil-reelen). Fyller
           tilgjengelig høyde; bredden følger 9:16 og klampes så den aldri går
           bredere enn sidebaren. */}
@@ -274,6 +355,8 @@ export function DesktopStorySidebar({
           );
         })}
       </div>
+        </>
+      )}
     </aside>
   );
 }
