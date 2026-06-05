@@ -116,6 +116,96 @@ describe("buildReelsCards", () => {
       expect(cards[1].categoryId).toBe("kultur");
     }
   });
+
+  it("velkommen-kortet bruker welcomeVideoSrc som video-bakgrunn", () => {
+    const data: BoardData = {
+      ...makeBoardData([makeCategory("kultur")]),
+      welcome: { url: "/audio/welcome.mp3", manus: "velkommen" },
+      home: {
+        name: "Stasjonskvartalet",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        address: "Test 1",
+        heroImage: "/illustrations/hero.jpg",
+      },
+    };
+
+    const cards = buildReelsCards(data, "/reels/intro.mp4", "/reels/welcome.mp4");
+    const welcome = cards.find((c) => c.kind === "welcome");
+
+    expect(welcome).toBeDefined();
+    if (welcome?.kind === "welcome") {
+      expect(welcome.videoBgSrc).toBe("/reels/welcome.mp4");
+      // Stillbildet beholdes som fallback (poster/no-video-state).
+      expect(welcome.illustrationSrc).toBe("/illustrations/hero.jpg");
+    }
+  });
+
+  it("velkommen-kortet faller tilbake til stillbilde uten welcomeVideoSrc", () => {
+    const data: BoardData = {
+      ...makeBoardData([makeCategory("kultur")]),
+      welcome: { url: "/audio/welcome.mp3", manus: "velkommen" },
+      home: {
+        name: "Stasjonskvartalet",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        address: "Test 1",
+        heroImage: "/illustrations/hero.jpg",
+      },
+    };
+
+    const cards = buildReelsCards(data, "/reels/intro.mp4");
+    const welcome = cards.find((c) => c.kind === "welcome");
+
+    expect(welcome?.kind === "welcome" && welcome.videoBgSrc).toBeUndefined();
+  });
+
+  it("oppsummert-kortet bruker welcomeVideoSrc som video-bakgrunn (symmetri start↔slutt)", () => {
+    const data: BoardData = {
+      ...makeBoardData([makeCategory("kultur")]),
+      outro: { url: "/audio/outro.mp3", manus: "oppsummert" },
+      home: {
+        name: "Stasjonskvartalet",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        address: "Test 1",
+        heroImage: "/illustrations/hero.jpg",
+      },
+    };
+
+    const cards = buildReelsCards(data, "/reels/intro.mp4", "/reels/welcome.mp4");
+    const outro = cards.find((c) => c.kind === "outro");
+
+    expect(outro).toBeDefined();
+    if (outro?.kind === "outro") {
+      expect(outro.videoBgSrc).toBe("/reels/welcome.mp4");
+      expect(outro.illustrationSrc).toBe("/illustrations/hero.jpg");
+    }
+  });
+
+  it("nabolaget-kortet bruker homeVideoSrc som video-bakgrunn", () => {
+    const data: BoardData = {
+      ...makeBoardData([makeCategory("kultur")]),
+      home: {
+        name: "Stasjonskvartalet",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        address: "Test 1",
+        heroImage: "/illustrations/hero.jpg",
+        audio: { url: "/audio/home.mp3", manus: "nabolaget" },
+      },
+    };
+
+    const cards = buildReelsCards(
+      data,
+      "/reels/intro.mp4",
+      undefined,
+      "/reels/nabolaget.mp4",
+    );
+    const home = cards.find((c) => c.kind === "home");
+
+    expect(home).toBeDefined();
+    if (home?.kind === "home") {
+      expect(home.videoBgSrc).toBe("/reels/nabolaget.mp4");
+      expect(home.illustrationSrc).toBe("/illustrations/hero.jpg");
+    }
+  });
 });
 
 describe("buildCategoryTracks", () => {

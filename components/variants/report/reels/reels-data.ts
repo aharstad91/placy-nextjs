@@ -148,6 +148,8 @@ export function audioDurationSec(audio: BoardAudioTrack | undefined): number | u
 export function buildReelsCards(
   boardData: BoardData,
   introVideoSrc: string,
+  welcomeVideoSrc?: string,
+  homeVideoSrc?: string,
 ): ReelsCard[] {
   const cards: ReelsCard[] = [];
 
@@ -158,6 +160,12 @@ export function buildReelsCards(
       kind: "welcome",
       label: "Velkommen",
       illustrationSrc: boardData.home.heroImage,
+      // Velkommen-kortet får splash-videoen (center-croppet til 9:16) som
+      // levende bakgrunn i stedet for det flate hero-stillbildet — samme
+      // footage som splash-panelet, i riktig høydeformat. Faller tilbake til
+      // illustrationSrc om welcome-videoen mangler. Poster avledes .mp4→.jpg
+      // (se posterForVideo).
+      ...(welcomeVideoSrc ? { videoBgSrc: welcomeVideoSrc } : {}),
       audio: boardData.welcome,
     });
   }
@@ -171,6 +179,10 @@ export function buildReelsCards(
           .filter(Boolean)
           .join(", ") || undefined,
       illustrationSrc: boardData.home.heroImage,
+      // Nabolaget-kortet får en Ken Burns-loop av faktiske nabolags-foto
+      // (Solsiden + Bakke gangbru) som levende bakgrunn. Faller tilbake til
+      // illustrationSrc om home-videoen mangler. Poster avledes .mp4→.jpg.
+      ...(homeVideoSrc ? { videoBgSrc: homeVideoSrc } : {}),
       audio: boardData.home.audio,
     });
   }
@@ -207,6 +219,10 @@ export function buildReelsCards(
       kind: "outro",
       label: "Oppsummert",
       illustrationSrc: boardData.home.heroImage,
+      // Oppsummert-kortet får samme levende bakgrunn som Velkommen (splash-videoen,
+      // center-croppet 16:9→9:16) — rammer inn opplevelsen symmetrisk start↔slutt.
+      // Faller tilbake til hero-stillbildet om welcome-videoen mangler.
+      ...(welcomeVideoSrc ? { videoBgSrc: welcomeVideoSrc } : {}),
       audio: boardData.outro,
     });
   }

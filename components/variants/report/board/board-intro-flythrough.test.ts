@@ -61,7 +61,7 @@ describe("getBoardIntro — per-prosjekt skalerbarhet", () => {
   it("gir per-prosjekt-overstyringer for kjent slug", () => {
     const cfg = getBoardIntro("stasjonskvartalet");
     expect(cfg.startHeading).toBe(20);
-    expect(cfg.rangeStart).toBe(1150);
+    expect(cfg.rangeStart).toBe(1600);
   });
 
   it("gir tomt objekt (→ ren default-intro) for ukjent slug", () => {

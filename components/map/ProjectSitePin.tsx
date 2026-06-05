@@ -22,6 +22,14 @@ interface ProjectSitePinProps {
   subtitle?: string;
   /** Kvadratisk thumbnail som data-URI (jpeg/png). Undefined → bygnings-glyph. */
   imageSrc?: string;
+  /**
+   * Skala på hele chip-en (1 = intrinsisk størrelse). Google 3D-markører er
+   * skjerm-forankret (konstant px uansett zoom), så MapView3D mater inn en
+   * range-avhengig skala her: moderat tett innpå, mindre når man trekker ut til
+   * oversikt. Påvirker kun `width`/`height` — `viewBox` er uendret, så alt
+   * innhold skalerer uniformt og teksten holder seg skarp ved re-rasterisering.
+   */
+  scale?: number;
 }
 
 const FONT = "system-ui,-apple-system,Helvetica Neue,sans-serif";
@@ -45,6 +53,7 @@ export function ProjectSitePin({
   name,
   subtitle = "Nybygg 2028",
   imageSrc,
+  scale = 1,
 }: ProjectSitePinProps) {
   // Estimert tekstbredde (system-ui): navn 17px bold ≈ 9.8px/tegn,
   // undertittel 13px ≈ 7.4px/tegn (+ aksent-prikk).
@@ -70,8 +79,8 @@ export function ProjectSitePin({
 
   return (
     <svg
-      width={totalW}
-      height={totalH}
+      width={totalW * scale}
+      height={totalH * scale}
       viewBox={`0 0 ${totalW} ${totalH}`}
       xmlns="http://www.w3.org/2000/svg"
     >

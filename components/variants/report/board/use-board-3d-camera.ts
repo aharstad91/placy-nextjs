@@ -127,9 +127,41 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
       case "poi":
         map.flyCameraTo?.({ endCamera: intent.pose, durationMillis: POI_FLY_MS });
         return;
-      case "orbit":
-        flyInThenOrbit(intent.hero);
+      case "orbit": {
+        // Orbit→orbit (uavbrutt), kald første-mount, eller retur fra POI: myk
+        // fly-inn til orbit-hero, ingen cut.
+        if (!intent.cut) {
+          flyInThenOrbit(intent.hero);
+          return;
+        }
+        // Redusert bevegelse: instant hopp til orbit-hero, ingen fade.
+        if (reducedMotion) {
+          map.flyCameraTo?.({ endCamera: intent.hero, durationMillis: 0 });
+          map.flyCameraAround?.({
+            camera: intent.hero,
+            durationMillis: ORBIT_ROUND_MS,
+            repeatCount: Infinity,
+          });
+          return;
+        }
+        // Cut INN i orbit (velkommen-innflyvning → nabolaget): fade til cream →
+        // instant hopp til orbit-hero (skjult bak laget) → settle for tile-load →
+        // fade ut + start orbit. Samme mekanikk som cinematic-cut; maskerer den
+        // meningsløse fly-overen fra innflyvnings-landingen til orbit-startpunktet.
+        setCutVisible(true);
+        later(() => {
+          map.flyCameraTo?.({ endCamera: intent.hero, durationMillis: 0 });
+          later(() => {
+            setCutVisible(false);
+            map.flyCameraAround?.({
+              camera: intent.hero,
+              durationMillis: ORBIT_ROUND_MS,
+              repeatCount: Infinity,
+            });
+          }, CUT_SETTLE_MS);
+        }, CUT_FADE_MS);
         return;
+      }
       case "cinematic": {
         if (intent.paused) return; // frys: ikke (re)start bevegelse mens VO er pauset
 

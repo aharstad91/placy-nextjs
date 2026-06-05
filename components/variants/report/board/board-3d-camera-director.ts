@@ -23,8 +23,10 @@ export type FlyCapableMap = {
 /** FAST avstand (m) fra prosjektet under orbit. Kameraet zoomer ALDRI ut for å
  *  ramme alle pins — det står på fast avstand der man relaterer til innholdet. */
 export const ORBIT_RANGE = 650;
-/** Tilt under orbit (grader; 0 = rett ned, 90 = horisont). */
-export const ORBIT_TILT = 60;
+/** Tilt under orbit (grader; 0 = rett ned, 90 = horisont). Bevisst høyt
+ *  vinklet (mer ovenfra) → mindre horisont/fjern-geometri i bildet = færre
+ *  tiles å hente og mindre å tegne, uten å miste nærområde-konteksten. */
+export const ORBIT_TILT = 50;
 /** Start-heading for orbiten (orbiten går 360°, så dette er bare startpunkt). */
 export const ORBIT_HEADING = 0;
 /** Varighet for én full orbit-revolusjon (ms). Looper evig (repeatCount: Infinity).
@@ -37,10 +39,21 @@ export const REAIM_FLY_MS = 1600;
 export const POI_RANGE = 300;
 export const POI_TILT = 60;
 export const POI_FLY_MS = 900;
+/** Oppsummerings-positur ("Oppsummert"-beaten): kameraet trekkes litt ut til et
+ *  rolig oversiktsbilde av hele nabolaget, og kontrollen gis til brukeren (fri).
+ *  Range bevisst videre enn orbit (650) men ikke fugleperspektiv. Drevet
+ *  imperativt fra BoardMap3D (director-en er no-op i fri), så ingen orbit
+ *  overstyrer den. */
+export const SUMMARY_RANGE = 1100;
+export const SUMMARY_TILT = 52;
+export const SUMMARY_FLY_MS = 2500;
 /** Fallback A→B-varighet når verken config-override eller audio-lengde finnes (ms). */
 export const DEFAULT_CINEMATIC_MS = 16000;
-/** Cut-transition: fade inn/ut-varighet (ms). Matcher CSS-transition på overlayet. */
-export const CUT_FADE_MS = 250;
+/** Cut-transition: fade inn/ut-varighet (ms). Eneste sannhetskilde — CameraCutOverlay
+ *  leser denne og setter CSS-transition-varigheten fra den, så fade og kamera-hopp
+ *  aldri kan desynke (hopper skjer ved t = CUT_FADE_MS, når laget er helt dekkende).
+ *  Bevisst rolig (myk inn/ut) så kapittel-skiftet leses, ikke oppfattes som et kutt. */
+export const CUT_FADE_MS = 550;
 /** Cut-transition: hold svart etter instant-hopp så tiles rekker å laste (ms). */
 export const CUT_SETTLE_MS = 300;
 
@@ -83,13 +96,20 @@ export function haversineMeters(
 // rundt det punktet under voice-overen — «dronen flyr rundt nabolaget». Range
 // skaleres med hjem→innhold-avstanden, men KLAMPES så en spredt kategori aldri
 // havner i orbit-høyde (den lærdommen). Eksplisitt config overstyrer alltid.
-const DERIVE_TILT = 60;
+// Mer ovenfra (lavere tilt) enn før (var 60) → høyere blikk, mindre horisont/
+// fjern-geometri = færre tiles. Matcher ORBIT_TILT for et koherent 3D-look.
+const DERIVE_TILT = 50;
 /** Heading-drift (grader) til hver side av hjem→innhold-bæringen. A→B-sveipet
  *  blir 2×denne. Bevisst lav (12° → 24° totalt) så den auto-utledede dronen gir
  *  rolig parallakse/dybde uten å bli en bevegelse man må følge kognitivt oppå
  *  video + voice-over. Eksportert så testen kan utlede sveip-spennet herfra. */
 export const DERIVE_DRIFT_DEG = 12;
-const DERIVE_RANGE_MIN = 350;
+// Gulvet er bevisst høyt (≈ mat-drikke/hverdagsliv sitt nivå, målt mot ekte
+// data): tett-klyngede kategorier (få meter fra hjemmet) traff før et lavt gulv
+// (350) og endte FOR NÆRE objektet — POI-ene falt utenfor bildet. Hele poenget
+// med kategori-kameraet er å vise nærområdet, så vi holder alle kategoriene minst
+// like vidt som de spredte (mat-drikke 850 / hverdagsliv 811). Maks holdes på 850.
+const DERIVE_RANGE_MIN = 810;
 const DERIVE_RANGE_MAX = 850;
 
 /**
@@ -145,7 +165,16 @@ function poseToHero(pose: CategoryCameraConfig["a"]): Hero3DCamera {
 export type CameraIntent =
   | { kind: "free" }
   | { kind: "poi"; pose: Hero3DCamera }
-  | { kind: "orbit"; hero: Hero3DCamera }
+  | {
+      kind: "orbit";
+      hero: Hero3DCamera;
+      /** Sann når vi går INN i orbit fra en annen kamera-kontekst (velkommen-
+       *  innflyvningen [free] eller et cinematic kategori-skifte) → krever en cut-
+       *  transition som maskerer fly-overen fra det fjerne kameraet til orbit-
+       *  startpunktet. Usann ved orbit→orbit (uavbrutt), kald første-mount, eller
+       *  retur fra en åpnet POI (myk fly-tilbake). */
+      cut: boolean;
+    }
   | {
       kind: "cinematic";
       /** Hvilken kategori denne cinematic-beaten gjelder (for cut-deteksjon). */
@@ -242,8 +271,17 @@ export function decideCameraIntent(input: CameraDecisionInputs): CameraIntent {
     };
   }
 
+  // Cut INN i orbit når forrige kamera-kontekst var noe annet enn orbit/POI:
+  //  • free → orbit: velkommen-innflyvningen er ferdig og nabolaget (uten
+  //    waypoints) overtar — ELLER bruker re-engasjerer auto etter manuell pan.
+  //  • cinematic → orbit: kategori-skifte fra en waypoint-kategori til en uten.
+  // Orbit→orbit holder vi uavbrutt (ingen cut), og prev=null (kald første-mount)
+  // + retur fra en åpnet POI fly-er mykt inn uten cream-flash.
+  const prev = input.prevIntent;
+  const cut = prev != null && prev.kind !== "orbit" && prev.kind !== "poi";
   return {
     kind: "orbit",
+    cut,
     hero: {
       center: { lat: home.lat, lng: home.lng, altitude: 0 },
       range: ORBIT_RANGE,

@@ -1,7 +1,7 @@
 "use client";
 
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
@@ -46,9 +46,35 @@ import type { BoardData, BoardHome } from "../board/board-data";
 
 /** Intro-video pr. prosjekt etter slug-konvensjon: `/reels/{slug}/intro.mp4`.
  *  Mangler filen (nytt prosjekt uten produsert intro) → tom src, og IntroReel
- *  faller tilbake til svart bakgrunn med start-knapp. */
+ *  faller tilbake til svart bakgrunn med start-knapp (videoen har ingen poster,
+ *  så et 404 gir ikke ødelagt bilde — bare svart). */
 function introVideoSrc(projectSlug: string | undefined): string {
   return projectSlug ? `/reels/${projectSlug}/intro.mp4` : "";
+}
+
+// Prosjekter med produsert reels-montasje (velkommen + nabolaget levende
+// bakgrunner). I motsetning til intro-videoen bruker disse kortene posterForVideo
+// (.mp4 → .jpg), så en 404-poster ville gitt et ødelagt bilde i sidebar/
+// CategoryReel. Derfor gates de eksplisitt per slug (samme mønster som
+// PIN_THUMBNAILS) — nytt prosjekt legges til her når montasjene er lastet opp
+// under /reels/<slug>/. Uten montasje → undefined → kortet faller tilbake til
+// illustrasjonsbildet.
+const REELS_MONTAGE_PROJECTS = new Set<string>(["stasjonskvartalet"]);
+
+// Velkommen-kortets levende bakgrunn (splash-montasjen, center-croppet til 9:16):
+// `/reels/{slug}/welcome.mp4`. Undefined utenfor REELS_MONTAGE_PROJECTS.
+function welcomeVideoSrc(projectSlug: string | undefined): string | undefined {
+  return projectSlug && REELS_MONTAGE_PROJECTS.has(projectSlug)
+    ? `/reels/${projectSlug}/welcome.mp4`
+    : undefined;
+}
+
+// Nabolaget-kortets levende bakgrunn (Ken Burns + kryss-fade-loop, 9:16):
+// `/reels/{slug}/nabolaget.mp4`. Undefined utenfor REELS_MONTAGE_PROJECTS.
+function homeVideoSrc(projectSlug: string | undefined): string | undefined {
+  return projectSlug && REELS_MONTAGE_PROJECTS.has(projectSlug)
+    ? `/reels/${projectSlug}/nabolaget.mp4`
+    : undefined;
 }
 
 interface Props {
@@ -80,7 +106,13 @@ function Inner({ project, enTranslations = {} }: Props) {
   const boardData = useMemo(() => adaptBoardData(reportData), [reportData]);
 
   const cards = useMemo(
-    () => buildReelsCards(boardData, introVideoSrc(boardData.projectSlug)),
+    () =>
+      buildReelsCards(
+        boardData,
+        introVideoSrc(boardData.projectSlug),
+        welcomeVideoSrc(boardData.projectSlug),
+        homeVideoSrc(boardData.projectSlug),
+      ),
     [boardData],
   );
 
@@ -149,21 +181,48 @@ function BoardReelsSync() {
   return null;
 }
 
+/** Pause (ms) mellom kategori-kapitler ved auto-advance — et lite pust så VO-en
+ *  ikke hopper rett fra én kategori til neste. Justeres her. */
+const CATEGORY_ADVANCE_PAUSE_MS = 1000;
+
 function ReelsAudioShell({ children }: { children: React.ReactNode }) {
   const { state, setPhase, setActiveIndex } = useReels();
   const { next: audioNext } = useAudioTourActions();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+  // Liten pust mellom kategoriene: når en kategoris VO slutter, vent et beat
+  // før vi auto-advancer til neste (= ny VO + kamera-cut). Uten den føltes
+  // skiftet for brått; cream-cut-overlayet myknet det visuelt, dette gir også
+  // audioen rom. Cancellerbar (ref) så manuell navigasjon i pausen ikke blir
+  // overstyrt av en foreldet timer.
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    // Avbryt en ventende auto-advance når activeIndex endrer seg på ANNEN måte
+    // (manuelt thumbnail-klikk i pausen) og ved unmount.
+    return () => {
+      if (advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = null;
+      }
+    };
+  }, [state.activeIndex]);
+
   // Når et spor slutter naturlig:
-  // - Desktop: auto-advance til neste audio-bærende kapittel slik at
-  //   løpebåndet i sidebaren spiller kategoriene én etter én (som mobil-
-  //   feeden, men uten swipe). Siste spor → terminal "ended"-fase.
+  // - Desktop: auto-advance til neste audio-bærende kapittel (etter en kort
+  //   pause) slik at løpebåndet i sidebaren spiller kategoriene én etter én
+  //   (som mobil-feeden, men uten swipe). Siste spor → terminal "ended"-fase.
   // - Mobil: hev sheet til 20% (map-quarter). Bruker må aktivt tappe for å
   //   gå videre — sheet "våkner" men ekspander ikke uten gesture.
   const handleTrackEnded = () => {
     if (isDesktop) {
       const next = nextAudioBearingIndex(state.cards, state.activeIndex);
       if (next !== -1) {
-        setActiveIndex(next);
+        // Hold gjeldende kapittel et beat før skiftet (pust mellom kategoriene).
+        if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = setTimeout(() => {
+          advanceTimerRef.current = null;
+          setActiveIndex(next);
+        }, CATEGORY_ADVANCE_PAUSE_MS);
       } else {
         // Siste audio-bærende kapittel ferdig. autoAdvance=false betyr at
         // store.next() — den eneste veien til phase "ended" — aldri ble kalt
@@ -210,9 +269,12 @@ function ResponsiveLayoutInner({
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   // --- Velkomst-splash (kun desktop) ---
-  // Splash ligger som lag OPPÅ board-opplevelsen. Kartet (én WebGL-instans)
-  // mountes først ved "play" → 3D-kartet laster og flyr inn der, og bevares
-  // montert ved re-åpning så orbiten ikke re-initialiseres.
+  // Splash ligger som lag OPPÅ board-opplevelsen (fixed inset-0 z-50, opakt).
+  // Kartet (én WebGL-instans) mountes UMIDDELBART ved sidelast — bak splashen —
+  // så Google 3D-API + tiles rekker å varmes opp FØR velkommen-flyover-en starter
+  // (ellers streamet tiles inn MIDT i introen → hakking og lav kvalitet). Splashen
+  // dekker oppvarmingen; ved "play" fader den ut og avdekker det allerede varme
+  // kartet. Bevares montert ved re-åpning så orbiten ikke re-initialiseres.
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
   const { unlock } = useAudioElement();
   const phase = useAudioTourStore((s) => s.phase);
@@ -312,13 +374,15 @@ function ResponsiveLayoutInner({
         </div>
         <div
           className={cn(
-            "relative h-full flex-1 transition-all duration-700 ease-out",
-            boardRevealed ? "scale-100 opacity-100" : "scale-[1.04] opacity-0",
+            "relative h-full flex-1 transition-transform duration-700 ease-out",
+            boardRevealed ? "scale-100" : "scale-[1.04]",
           )}
         >
-          {boardRevealed && (
-            <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} />
-          )}
+          {/* Alltid montert — også bak splashen — for tile-oppvarming (se kommentar
+              over handlePlay). Opacity holdes 100 så WebGL faktisk rendrer/streamer
+              under det opake splash-laget; entréen er kun en subtil scale-settle ved
+              reveal. Splash-kryssfaden står for selve avdekkingen. */}
+          <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} />
         </div>
         <DesktopReportSplash
           visible={splashVisible}

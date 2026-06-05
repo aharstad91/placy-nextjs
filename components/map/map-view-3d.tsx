@@ -14,6 +14,7 @@ import Map, { Marker as MapboxMarker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { POI } from "@/lib/types";
 import { Marker3DPin } from "./Marker3DPin";
+import { RevealLayer3D, type RevealItem } from "./RevealLayer3D";
 import { ProjectSitePin } from "./ProjectSitePin";
 import { Map3DControls, type Map3DAny } from "./Map3DControls";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
@@ -78,6 +79,17 @@ export interface MapView3DProps {
   };
   /** Per-POI opacity — poi.id → opacity (0–1). Default 1 for alle. */
   opacities?: Record<string, number>;
+  /**
+   * Reveal-sett (blobs + legend-pins) som tegnes inn sekvensielt på velkommen +
+   * oppsummering — etableringen av nærområdet. Vises KUN når `showReveal` er true;
+   * rendres som et eget lag (RevealLayer3D), helt adskilt fra `pois`-pinnene så vi
+   * ikke rører den vanlige marker-stien.
+   */
+  revealItems?: RevealItem[];
+  /** Når true: vis reveal-laget. Default false. */
+  showReveal?: boolean;
+  /** Når false: vises uten stagger/bounce (prefers-reduced-motion). Default true. */
+  animateReveal?: boolean;
   /**
    * Når true: standard Google Maps 3D-gesture-modell — drag panner, ctrl+drag
    * roterer, scroll zoomer, ingen bounds eller altitude/tilt-grenser, ingen
@@ -184,6 +196,56 @@ const Marker3DItem = memo(function Marker3DItem({
  * mus. For touch bruker vi Google's default gesture-handling (GestureHandling.GREEDY).
  */
 
+// ── Prosjektmarkør: range-avhengig skala ──────────────────────────────────
+// Google 3D-markører er skjerm-forankret (konstant px uansett zoom), så uten
+// dette dominerer chip-en både tett innpå (dekker nabo-POI-er) og uttrukket
+// (blokkerer oversikten). Vi holder en moderat størrelse fra default-range og
+// innover, og krymper jevnt mot oversikt. Alle fire tall + steget er ment å
+// finjusteres på følelse.
+const PIN_NEAR_RANGE = 700; // ≤ dette (zoomet inn) → PIN_MAX_SCALE (flatt)
+const PIN_FAR_RANGE = 3000; // ≥ dette (zoomet ut) → PIN_MIN_SCALE (flatt)
+const PIN_MAX_SCALE = 0.85;
+const PIN_MIN_SCALE = 0.5;
+const PIN_SCALE_STEP = 0.04; // kvantisering → re-rasteriser kun ved steg-skifte
+
+function scaleForRange(range: number): number {
+  const span = PIN_FAR_RANGE - PIN_NEAR_RANGE;
+  const t = Math.min(1, Math.max(0, (range - PIN_NEAR_RANGE) / span));
+  const raw = PIN_MAX_SCALE + t * (PIN_MIN_SCALE - PIN_MAX_SCALE);
+  return Math.round(raw / PIN_SCALE_STEP) * PIN_SCALE_STEP;
+}
+
+/**
+ * Leser kamera-range live fra Map3D-elementet og returnerer en kvantisert skala
+ * for prosjektmarkøren. rAF-poll (ett tall-avlesning per frame, neglisjerbart) i
+ * stedet for `gmp-`-event — robust mot både bruker-zoom og programmatisk fly, og
+ * `setState` fyrer KUN når det kvantiserte steget endres, så SVG-en (og dermed
+ * WebGL-rasteren) bare oppdateres ved et faktisk størrelses-hopp, ikke per frame.
+ */
+function useProjectPinScale(map: Map3DInstance | null): number {
+  const [scale, setScale] = useState(PIN_MAX_SCALE);
+  useEffect(() => {
+    if (!map) return;
+    const m = map as unknown as { range?: number };
+    let raf = 0;
+    let last = -1;
+    const tick = () => {
+      const r = m.range ?? 0;
+      if (r > 0) {
+        const s = scaleForRange(r);
+        if (s !== last) {
+          last = s;
+          setScale(s);
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [map]);
+  return scale;
+}
+
 function Map3DInner({
   center,
   cameraLock,
@@ -195,6 +257,9 @@ function Map3DInner({
   mapId,
   projectSite,
   opacities,
+  revealItems,
+  showReveal = false,
+  animateReveal = true,
   freeMode = false,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
@@ -210,6 +275,8 @@ function Map3DInner({
   // Fanger map3d-instansen lokalt så Map3DControls (utenfor Map3D-treet)
   // kan bruke den direkte — useMap3D(mapId) er upålitelig utenfor Map3D.
   const [mapInstance, setMapInstance] = useState<Map3DInstance | null>(null);
+  // Range-avhengig skala på prosjektmarkøren (krymper når man trekker ut).
+  const projectPinScale = useProjectPinScale(mapInstance);
   const handleReady = useCallback(
     (m: Map3DInstance | null) => {
       setMapInstance(m);
@@ -391,6 +458,7 @@ function Map3DInner({
               name={projectSite.name}
               subtitle={projectSite.subtitle}
               imageSrc={projectSite.imageSrc}
+              scale={projectPinScale}
             />
           </Marker3D>
         )}
@@ -404,6 +472,12 @@ function Map3DInner({
             onPOIClick={onPOIClick}
           />
         ))}
+
+        {/* Reveal-lag (velkommen + oppsummering) — eget marker-sett (blobs +
+            legend-pins), adskilt fra pinnene over. Vises kun når showReveal. */}
+        {showReveal && revealItems && revealItems.length > 0 && (
+          <RevealLayer3D items={revealItems} animate={animateReveal} />
+        )}
       </Map3D>
       {activated && (
         <Map3DControls

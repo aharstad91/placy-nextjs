@@ -15,23 +15,26 @@ import type { CameraPose, CategoryCameraConfig } from "@/lib/types";
  */
 const CAMERA_TOURS: Record<string, Record<string, CategoryCameraConfig>> = {
   stasjonskvartalet: {
-    // Modell-landing (Unit 3): under "transport"-kapittelet flyr kameraet fra
-    // vid by-kontekst (A) og lander tett på 3D-bygningsmodellen (B) på tomta
-    // ved kollektivknutepunktet. Begge poser er sentrert på modell-koordinatet
-    // (Sjøgangen 7) → en ren "senk kameraet ned på bygget"-bevegelse.
+    // Tomte-landing (Unit 3): under "transport"-kapittelet flyr kameraet fra
+    // vid by-kontekst (A) og lander tett på prosjekt-tomta (B) ved
+    // kollektivknutepunktet. Begge poser er sentrert på prosjekt-koordinatet
+    // (Sjøgangen 7) → en ren "senk kameraet ned på tomta"-bevegelse.
     // Autorert mot tiles i browser (?author=1). MERK: reduced-motion → director
-    // holder statisk på A (vid) — modellen er synlig, men ikke i nærbilde
-    // (director-oppførsel, utenfor scope å endre her).
+    // holder statisk på A (vid) — utenfor scope å endre her.
     //
-    // VIKTIG (koblings-invariant): disse lat/lng MÅ være lik prosjektets
-    // home-koordinat (data.home.coordinates ← Supabase projects.center_lat/lng
-    // for stasjonskvartalet), siden ModelLayer3D plasserer modellen DER (board-
-    // models.ts utelater position → faller tilbake til home). Verifisert
-    // sammenfallende 2026-06-03 (63.436523, 10.400747). Endres prosjekt-senteret
-    // i Supabase, MÅ disse oppdateres, ellers lander kameraet ved siden av bygget.
+    // Disse lat/lng er prosjektets home-koordinat (data.home.coordinates ←
+    // Supabase projects.center_lat/lng for stasjonskvartalet). Verifisert
+    // 2026-06-03 (63.436523, 10.400747). Endres prosjekt-senteret i Supabase
+    // bør disse oppdateres så kameraet fortsatt lander på tomta.
+    // Establishing → settle: åpner vidt (A, range 1150) og senker seg til et
+    // oversiktsnivå (B, range 810) ved kollektivknutepunktet. B-range matcher
+    // gulvet de deriverte kategoriene bruker (DERIVE_RANGE_MIN) så transport ikke
+    // lander tettere enn resten — POI-ene (stasjon, holdeplasser, hurtigbåt) blir
+    // synlige. NB: var range 260 (dramatisk dykk helt ned på tomta); hevet for
+    // konsistent zoom-gulv på alle kategorier. Senk B igjen for å få dykket tilbake.
     transport: {
-      a: { lat: 63.436523, lng: 10.400747, range: 1150, tilt: 60, heading: 200 },
-      b: { lat: 63.436523, lng: 10.400747, range: 260, tilt: 66, heading: 200 },
+      a: { lat: 63.436523, lng: 10.400747, range: 1150, tilt: 50, heading: 200 },
+      b: { lat: 63.436523, lng: 10.400747, range: 810, tilt: 52, heading: 200 },
       moveDurationMs: 9000,
     },
   },
