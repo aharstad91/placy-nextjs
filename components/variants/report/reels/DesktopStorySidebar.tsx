@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
-import { Pause, Play } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
+import { Mail, Pause, Phone, Play, RotateCcw } from "lucide-react";
 import { useReels } from "./reels-state";
 import { useAudioElement } from "../board/audio-tour/use-audio-element";
 import {
@@ -14,7 +14,7 @@ import {
   isAudioBearing,
   posterForVideo,
 } from "./reels-data";
-import type { ReelsCard } from "./reels-data";
+import type { MeglerReelCard, ReelsCard } from "./reels-data";
 import type { BoardHome } from "../board/board-data";
 
 /**
@@ -71,6 +71,136 @@ function thumbView(card: ReelsCard): { title: string; image?: string } {
   }
 }
 
+/**
+ * Sammenhengende fremdrifts-strek for HELE reelen, drevet av faktisk
+ * avspillingstid — som en låt på Spotify. Track-lengdene (durationSec, avledet
+ * synkront fra karaoke-timings) summeres til reelens totale lengde; baren fyller
+ * (sum av spilte spor + tid i aktivt spor) / total, så den kryper jevnt på tvers
+ * av alle kapitler i konstant sann-tids-fart. Mangler noen lengder faller vi
+ * tilbake til like store segment per kapittel (fortsatt sømløst).
+ *
+ * STEG-MARKØRER: baren leses som ÉN 100 %-strek, men tynne (1,5px) vertikale
+ * «notch»-streker i footer-fargen kutter den ved hver kategori-grense — en subtil
+ * antydning om at løpet er kategori-inndelt, uten å splitte baren i separate
+ * seksjoner. Grensene ligger på samme lengde-vektede punkter som fyllet bruker
+ * (kumulativ andel av total varighet), så strek og fyll alltid flukter.
+ *
+ * SØMLØSHET (60 fps): <audio> sender bare `timeupdate` ~4 Hz (hver 250 ms), så å
+ * binde bredden rett til `currentTime` gir 250 ms-steg. I stedet kjører en rAF-
+ * loop som EKSTRAPOLERER posisjonen mellom samplene via wall-clock (estCt =
+ * sist kjente currentTime + tid gått siden). Bredden settes IMPERATIVT på fill-
+ * elementet — React har ingen width i JSX, så 4 Hz re-render rører den aldri og
+ * vi slipper å re-rendre per frame. Hvert ekte timeupdate re-ankrer estimatet
+ * (ingen drift); overshoot klampes til sporets lengde.
+ *
+ * Track-boundary: når et spor slutter holder desktop et lite "pust" der audio er
+ * pauset og currentTime = 0 FØR trackIndex avanserer. Det ville gitt et synlig
+ * tilbakehopp til kapittel-start; `heldRef` demper det ved å aldri la baren falle
+ * så lenge vi står på (eller avanserer forbi) samme spor. Ekte tilbake-navigasjon
+ * (klikk på tidligere kapittel → lavere trackIndex, eller re-start) slipper gjennom.
+ */
+function StoryProgressBar() {
+  const { currentTime, duration } = useAudioElement();
+  const trackIndex = useAudioTourStore((s) => s.trackIndex);
+  const tracks = useAudioTourStore((s) => s.tracks);
+  const phase = useAudioTourStore((s) => s.phase);
+
+  // Ferske verdier til rAF-loopen (bundet én gang) uten å re-binde hver render.
+  const stateRef = useRef({ trackIndex, tracks, phase, duration });
+  stateRef.current = { trackIndex, tracks, phase, duration };
+
+  // Anker for ekstrapolering: siste kjente (currentTime, wall-clock). Re-ankres
+  // ved hvert nytt sample + ved spor-/fase-skifte.
+  const anchorRef = useRef({ ct: 0, wall: 0 });
+  useEffect(() => {
+    anchorRef.current = { ct: currentTime, wall: performance.now() };
+  }, [currentTime, trackIndex, phase]);
+
+  const heldRef = useRef({ trackIndex: -1, pct: 0 });
+  const fillRef = useRef<HTMLDivElement | null>(null);
+  // Sett 0% i commit (callback-ref kjører før paint) → ingen full-bredde-blink
+  // før første rAF-frame. React styrer ikke bredden videre (ingen width i JSX).
+  const setFill = useCallback((el: HTMLDivElement | null) => {
+    fillRef.current = el;
+    if (el) el.style.width = "0%";
+  }, []);
+
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const { trackIndex, tracks, phase, duration } = stateRef.current;
+      const durs = tracks.map((t) => t.durationSec ?? 0);
+      const curDur = durs[trackIndex] || duration || 0;
+      // Estimert tid i aktivt spor: sist kjente currentTime + tid gått (kun mens
+      // vi spiller). Klampes til sporets lengde så vi ikke overshooter.
+      let estCt = anchorRef.current.ct;
+      if (phase === "playing" && anchorRef.current.wall > 0) {
+        estCt += (performance.now() - anchorRef.current.wall) / 1000;
+      }
+      const within = curDur > 0 ? Math.min(1, Math.max(0, estCt / curDur)) : 0;
+
+      let pct = 0;
+      if (phase === "ended") {
+        pct = 100;
+      } else if (tracks.length > 0) {
+        if (durs.every((d) => d > 0)) {
+          // Sann-tids-vekting: bar-posisjon = forløpt tid / total tid.
+          const total = durs.reduce((s, d) => s + d, 0);
+          const before = durs.slice(0, trackIndex).reduce((s, d) => s + d, 0);
+          pct = Math.min(100, ((before + within * durs[trackIndex]) / total) * 100);
+        } else {
+          // Fallback: like store segment per kapittel når lengder mangler.
+          pct = Math.min(100, ((trackIndex + within) / tracks.length) * 100);
+        }
+      }
+
+      // Monoton guard mot track-boundary-tilbakehoppet (se komponent-doc).
+      const held = heldRef.current;
+      if (trackIndex >= held.trackIndex && pct < held.pct) pct = held.pct;
+      heldRef.current = { trackIndex, pct };
+
+      if (fillRef.current) fillRef.current.style.width = `${pct}%`;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Kategori-grenser som andel (0–1) av total — samme lengde-vekting som fyllet,
+  // så notch-strekene flukter med der baren faktisk skifter kapittel. Beregnes i
+  // render (billig). Hopper over 0 % og 100 % (kantene runder uansett av).
+  const durs = tracks.map((t) => t.durationSec ?? 0);
+  const weighted = durs.length > 1 && durs.every((d) => d > 0);
+  const total = durs.reduce((s, d) => s + d, 0);
+  const boundaries: number[] = [];
+  if (tracks.length > 1) {
+    let acc = 0;
+    for (let i = 0; i < tracks.length - 1; i++) {
+      acc += weighted ? durs[i] : 1;
+      boundaries.push(weighted ? acc / total : (i + 1) / tracks.length);
+    }
+  }
+
+  return (
+    <div className="px-3 pt-3">
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div ref={setFill} className="h-full rounded-full bg-white/90" />
+        {/* Subtile steg-streker ved hver kategori-grense (footer-fargen kutter
+            baren med en 1,5px notch). Ligger oppå fyllet så de vises både på
+            spilt og uspilt del. */}
+        {boundaries.map((frac, i) => (
+          <span
+            key={i}
+            aria-hidden
+            className="absolute inset-y-0 w-[1.5px] bg-[#1a1510]"
+            style={{ left: `${frac * 100}%` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function DesktopStorySidebar({
   home,
   renderActiveCard,
@@ -83,16 +213,23 @@ export function DesktopStorySidebar({
   const phase = useAudioTourStore((s) => s.phase);
   const activeThumbRef = useRef<HTMLButtonElement | null>(null);
 
-  // Thumbnail-raden viser alle chapters unntatt intro-video-splashen. Megler
-  // er med som siste chapter (kontakt) — CardRouter rendrer MeglerReel i det
-  // aktive arealet når den velges, så modellen "bytte = skift aktivt kort"
-  // holder for alle kort-typer.
+  // Thumbnail-raden viser alle chapters unntatt intro-video-splashen og megler.
+  // Megler er trukket ut til en konstant kontakt-footer nederst (vises alltid),
+  // i stedet for å ligge gjemt som siste thumbnail i kategori-raden.
   const items = state.cards
     .map((card, index) => ({ card, index }))
-    .filter(({ card }) => card.kind !== "intro");
+    .filter(({ card }) => card.kind !== "intro" && card.kind !== "megler");
+
+  const meglerCard = state.cards.find(
+    (card): card is MeglerReelCard => card.kind === "megler",
+  );
 
   const subline = [home.district, home.city].filter(Boolean).join(", ");
   const isPlaying = phase === "playing";
+  // Hele reelen ferdigspilt (siste spor slutt → store-fase "ended"): vis et
+  // replay-ikon i transport-overlayet i stedet for Play. Klikk restarter fra
+  // første kapittel (handleToggle håndterer "ended" → setActiveIndex+goToTrack).
+  const isEnded = phase === "ended";
   const firstIdx = firstAudioBearingIndex(state.cards);
   // "Ikke startet" dekker to tilfeller: (1) audio aldri unlocket, og (2) audio
   // unlocket via klikk på et ikke-audio-kort (megler/intro) uten at touren
@@ -161,24 +298,24 @@ export function DesktopStorySidebar({
               width={132}
               height={51}
               unoptimized
-              className="h-9 w-auto"
+              className="h-[54px] w-auto"
             />
           </button>
         )}
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
-          Bli kjent med
-        </p>
-        <h2 className="mt-1 text-xl font-bold leading-tight text-stone-900">
+        <h2 className="text-xl font-bold leading-tight text-stone-900">
           {home.name}
         </h2>
         {subline && <p className="mt-0.5 text-sm text-stone-500">{subline}</p>}
       </div>
 
-      {/* Aktivt chapter — ett kort i 9:16 (samme format som mobil-reelen). Fyller
-          tilgjengelig høyde; bredden følger 9:16 og klampes så den aldri går
-          bredere enn sidebaren. */}
-      <div className="flex min-h-0 flex-1 items-center justify-center px-6">
-        <div className="group relative aspect-[9/16] h-full max-h-[640px] overflow-hidden rounded-2xl bg-black shadow-lg">
+      {/* Reel + player som ÉN sammenhengende card — INGEN gap mellom dem. Den ytre
+          wrapperen eier radius og skygge for HELE enheten (overflow-hidden runder
+          begge ender); den mørke reelen ligger øverst (flex-1) og den mørke
+          player-footeren limt rett under. mx-6 flukter med logo/tittel. */}
+      <div className="mx-6 mb-4 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl shadow-lg">
+        {/* Reel-arealet — mørkt, fyller resten av høyden. Topphjørnene avrundes av
+            wrapperens overflow-hidden; bunnen er rett og møter playeren sømløst. */}
+        <div className="group relative min-h-0 flex-1 bg-black">
           {activeIsIntro ? (
             firstChapterImage && (
               <Image
@@ -200,7 +337,7 @@ export function DesktopStorySidebar({
             <button
               type="button"
               onClick={handleToggle}
-              aria-label={isPlaying ? "Pause" : "Spill av"}
+              aria-label={isPlaying ? "Pause" : isEnded ? "Spill av på nytt" : "Spill av"}
               className={`absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300 ${
                 isPlaying
                   ? "opacity-0 hover:opacity-100 focus-visible:opacity-100"
@@ -211,6 +348,8 @@ export function DesktopStorySidebar({
               <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-black/50 ring-1 ring-white/40 backdrop-blur-sm">
                 {isPlaying ? (
                   <Pause size={26} className="fill-white text-white" />
+                ) : isEnded ? (
+                  <RotateCcw size={26} className="text-white" />
                 ) : (
                   <Play size={26} className="translate-x-0.5 fill-white text-white" />
                 )}
@@ -218,62 +357,134 @@ export function DesktopStorySidebar({
             </button>
           )}
         </div>
+
+        {/* Player-footer — mørk seksjon limt RETT under reelen (samme card, ingen
+            gap). "Dark mode": footeren leses som én enhet med den svarte reelen,
+            men en varm near-black (#1a1510, et hakk lysere enn reelens #000) gjør
+            at den fortsatt fremstår som en hevet player-flate. Kategori-navn og
+            n/total-teller er fjernet for et renere, mer integrert uttrykk — progress-
+            streken og thumbnail-raden deler samme side-padding så alt flukter. */}
+        <div className="shrink-0 bg-[#1a1510]">
+          {/* Progress — avrundet strek inni playeren, med samme side-padding (px-3)
+              som thumbnail-raden under så de flukter. Drevet av faktisk avspillingstid
+              over HELE reelen (Spotify-stil sammenhengende fyll); se StoryProgressBar. */}
+          <StoryProgressBar />
+
+          {/* Player-rad — thumbnails tett under progress-streken. KUN den indre raden
+              scroller (overflow-x-auto klipper y). Kategori-navn vises via native
+              `title` på hover (ingen styled boble → ingen klipping/død plass mot den
+              tette layouten). Fade-overlays på begge kanter toner mot bakgrunnen. */}
+          <div className="relative">
+            <div className="flex gap-2 overflow-x-auto px-3 pb-3 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {items.map(({ card, index }) => {
+                const view = thumbView(card);
+                const isActive = state.activeIndex === index;
+                return (
+                  <button
+                    key={index}
+                    ref={isActive ? activeThumbRef : undefined}
+                    type="button"
+                    onClick={() => void activateCard(index)}
+                    aria-label={view.title}
+                    title={view.title}
+                    aria-current={isActive}
+                    className={`relative h-14 w-14 shrink-0 snap-center rounded-xl transition-all duration-300 ${
+                      isActive
+                        ? "ring-2 ring-white ring-offset-2 ring-offset-[#1a1510]"
+                        : "opacity-55 hover:opacity-90"
+                    }`}
+                  >
+                    <span className="absolute inset-0 overflow-hidden rounded-xl">
+                      {view.image ? (
+                        <Image
+                          src={view.image}
+                          alt=""
+                          fill
+                          sizes="56px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <span className="absolute inset-0 bg-stone-700" />
+                      )}
+                      {/* Aktiv-markør: liten play/pause-dot nede til høyre. */}
+                      {isActive && (
+                        <span className="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-stone-900/80">
+                          {isPlaying ? (
+                            <Pause size={9} className="fill-white text-white" />
+                          ) : isEnded ? (
+                            <RotateCcw size={9} className="text-white" />
+                          ) : (
+                            <Play size={9} className="translate-x-px fill-white text-white" />
+                          )}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Fade-out mot footer-bakgrunnen på begge kanter — dekker hele thumbnail-
+                båndet (inset-y-0). Matcher den mørke footer-tonen. */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#1a1510] to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#1a1510] to-transparent" />
+          </div>
+        </div>
       </div>
 
-      {/* Player-rad — komprimerte, klikkbare chapter-thumbnails. Statiske
-          postere (ingen bevegelse). Aktiv = ring + full opasitet; resten dimmes.
-          Hover viser kategori-navnet som tooltip over thumbnailet (knappen er
-          borte → rom til det). Horisontal scroll når det er flere chapters enn
-          som får plass; ekstra topp-padding gir tooltipen rom uten klipping. */}
-      <div className="flex shrink-0 gap-2 overflow-x-auto px-6 pb-6 pt-9 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {items.map(({ card, index }) => {
-          const view = thumbView(card);
-          const isActive = state.activeIndex === index;
-          return (
-            <button
-              key={index}
-              ref={isActive ? activeThumbRef : undefined}
-              type="button"
-              onClick={() => void activateCard(index)}
-              aria-label={view.title}
-              aria-current={isActive}
-              className={`group/thumb relative h-14 w-14 shrink-0 snap-center rounded-xl transition-all duration-300 ${
-                isActive
-                  ? "ring-2 ring-stone-900 ring-offset-2 ring-offset-[#f2e9dc]"
-                  : "opacity-55 hover:opacity-90"
-              }`}
-            >
-              <span className="absolute inset-0 overflow-hidden rounded-xl">
-                {view.image ? (
-                  <Image
-                    src={view.image}
-                    alt=""
-                    fill
-                    sizes="56px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <span className="absolute inset-0 bg-stone-700" />
-                )}
-                {/* Aktiv-markør: liten play/pause-dot nede til høyre. */}
-                {isActive && (
-                  <span className="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-stone-900/80">
-                    {isPlaying ? (
-                      <Pause size={9} className="fill-white text-white" />
-                    ) : (
-                      <Play size={9} className="translate-x-px fill-white text-white" />
-                    )}
+      {/* Konstant kontakt-footer — megler vises alltid nederst (ikke gjemt som
+          siste thumbnail). Ring/E-post er direkte tel:/mailto:-lenker, så den
+          fungerer uavhengig av reel-spilleren. Lyst tema som matcher sidebaren. */}
+      {meglerCard && meglerCard.brokers.length > 0 && (
+        <div className="shrink-0 border-t border-black/5 px-6 pb-6 pt-4">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+            {meglerCard.label}
+          </p>
+          <div className="flex flex-col gap-3">
+            {meglerCard.brokers.map((broker) => (
+              <div
+                key={`${broker.name}-${broker.email}`}
+                className="flex items-center gap-3"
+              >
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-stone-200">
+                  {broker.photoUrl && (
+                    <Image
+                      src={broker.photoUrl}
+                      alt={broker.name}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-sm font-semibold leading-tight text-stone-900">
+                    {broker.name}
                   </span>
-                )}
-              </span>
-              {/* Hover-tooltip: kategori-navn over thumbnailet. */}
-              <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-stone-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover/thumb:opacity-100">
-                {view.title}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                  <span className="truncate text-[12px] text-stone-500">
+                    {broker.title} · {broker.officeName}
+                  </span>
+                  <div className="mt-1.5 flex flex-wrap gap-2">
+                    <a
+                      href={`tel:${broker.phone.replace(/\s+/g, "")}`}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-stone-700"
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      Ring
+                    </a>
+                    <a
+                      href={`mailto:${broker.email}`}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-[12px] font-semibold text-stone-800 transition hover:bg-black/5"
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      E-post
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

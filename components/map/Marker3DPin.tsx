@@ -29,6 +29,9 @@ export interface Marker3DPinProps {
   size?: number;
   /** Opacity for hele pin-SVG-en — 0–1, default 1. Rasteriseres av Google Maps 3D. */
   opacity?: number;
+  /** Skala 0–~1.1 på innholdet (bounce-inn) rundt senter. Default 1 (ingen skalering).
+   *  Brukes av RevealLayer3D for å animere legend-pins inn likt blobbene. */
+  scale?: number;
 }
 
 export function Marker3DPin({
@@ -38,10 +41,17 @@ export function Marker3DPin({
   number,
   size = 40,
   opacity,
+  scale = 1,
 }: Marker3DPinProps) {
   const shadowId = useId();
 
   const half = size / 2;
+  // Skaler HELE innholdet rundt senter (bounce-inn). Utelates ved scale 1 så det
+  // ikke ligger en identitets-transform igjen når markøren har settlet.
+  const contentTransform =
+    scale === 1
+      ? undefined
+      : `translate(${half} ${half}) scale(${scale}) translate(${-half} ${-half})`;
   const circleR = half - 3;
   // Ikon-ratio 0.50 matcher 2D-markørene og POI-cards i lista (40px sirkel
   // → 20px ikon = h-5/w-5 i Tailwind). Tidligere 0.55 ga 22px ikon som så
@@ -78,6 +88,7 @@ export function Marker3DPin({
         </filter>
       </defs>
 
+      <g transform={contentTransform}>
       {/* Light disc with category-colored ring. backgroundColor er typisk en
           lys tint av `color` (matcher 2D-markørene), men kan også være en
           nøytral off-white for legacy-konsumenter. */}
@@ -125,6 +136,7 @@ export function Marker3DPin({
           </text>
         </g>
       )}
+      </g>
     </svg>
   );
 }

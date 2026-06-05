@@ -164,6 +164,43 @@ describe("useBoard3DCamera — orbit/free uten config", () => {
     expect(map.flyCameraAround).toHaveBeenCalledTimes(1); // orbit startet
   });
 
+  it("inn i orbit fra innflyvning (free) → cut-overlay maskerer fly-overen", () => {
+    const map = makeMap();
+    // Start i intro: introActive → director yield-er (free), ingen bevegelse.
+    const { result, rerender } = renderHook((p: Props) => useBoard3DCamera(p), {
+      initialProps: props(map, {
+        introActive: true,
+        activeCategoryId: null,
+        categoryConfig: undefined,
+      }),
+    });
+    expect(result.current.cutVisible).toBe(false);
+    expect(map.flyCameraTo).not.toHaveBeenCalled();
+
+    // Innflyvningen er ferdig → nabolaget (uten waypoints) overtar = orbit + cut.
+    act(() =>
+      rerender(
+        props(map, {
+          introActive: false,
+          activeCategoryId: "nabolaget",
+          categoryConfig: undefined,
+        }),
+      ),
+    );
+    expect(result.current.cutVisible).toBe(true); // cream-fade inn
+    expect(map.flyCameraTo).not.toHaveBeenCalled(); // hopp venter på fade-in
+
+    // Etter fade-in: instant hopp til orbit-hero (skjult bak cream).
+    act(() => vi.advanceTimersByTime(CUT_FADE_MS));
+    expect(map.flyCameraTo).toHaveBeenCalledTimes(1);
+    expect(map.flyCameraTo.mock.calls[0][0].durationMillis).toBe(0);
+
+    // Etter settle: fade ut + start orbit.
+    act(() => vi.advanceTimersByTime(CUT_SETTLE_MS));
+    expect(result.current.cutVisible).toBe(false);
+    expect(map.flyCameraAround).toHaveBeenCalledTimes(1);
+  });
+
   it("free-modus → stopper, ingen fly", () => {
     const map = makeMap();
     renderHook((p: Props) => useBoard3DCamera(p), {

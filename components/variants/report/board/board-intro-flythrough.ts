@@ -56,8 +56,10 @@ export interface IntroPathConfig {
 export const DEFAULT_INTRO_PATH: IntroPathConfig = {
   rangeStart: 1150,
   rangeEnd: 300,
-  tiltStart: 67,
-  tiltEnd: 62,
+  // Høyere blikk (mer ovenfra) enn før (var 67/62) → mindre horisont, færre
+  // tiles på den vide etablerings-posituren (range 1150 = mest tile-hungrig).
+  tiltStart: 57,
+  tiltEnd: 52,
   startHeading: 20,
   sweepDeg: 250,
   ovalEccentricity: 0.15,
@@ -69,6 +71,22 @@ export const DEFAULT_INTRO_PATH: IntroPathConfig = {
  *  (produkt-koblingen i BoardMap3D). En kort velkomst skal ikke gi en frenetisk
  *  innflyvning — vi gulver heller flyturen og lar director-en overta etterpå. */
 export const MIN_INTRO_FLY_MS = 8000;
+
+/** Settle (tile-streaming-hold) for den LIVE velkommen-beaten. Bevisst kort:
+ *  default-settlen på 3500 ms ga en merkbar «død» pause (~3,5 s) etter at
+ *  splash-en lukket før innflyvningen i det hele tatt begynte å bevege seg.
+ *  Banen sin ease-in (myk akselerasjon i starten) dekker resten av tile-
+ *  innlastingen. Capture (?fly=1) beholder DEFAULT_INTRO_PATH.settleMs for
+ *  knivskarpe tiles i opptak — kun produkt-beaten kortes ned. */
+export const WELCOME_INTRO_SETTLE_MS = 1200;
+
+/** Heading-sveip (grader) for den LIVE velkommen-beaten — bevisst lavere enn
+ *  banens egen `sweepDeg` så innflyvningen blir en roligere PUSH-IN i stedet for
+ *  en orbit rundt objektet. Da svinger ikke blob-prikkene (geo-forankret) rundt
+ *  skjermen mens de tegnes inn; de leses som en rolig avsløring av nærområdet.
+ *  Landings-headingen bevares (se BoardMap3D) ved å skyve startHeading tilsvarende
+ *  opp, så framingen ved hero er uendret. Capture (?fly=1) beholder full sweep. */
+export const WELCOME_CALM_SWEEP_DEG = 90;
 
 export interface IntroFlythroughOptions {
   /** Objektet — kameraets låste look-at (typisk prosjektets home-koordinat). */

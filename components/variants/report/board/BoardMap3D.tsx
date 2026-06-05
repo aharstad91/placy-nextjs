@@ -12,17 +12,27 @@ import { type CameraMode } from "./BoardMapControls";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
-import { deriveCategoryCamera } from "./board-3d-camera-director";
+import {
+  deriveCategoryCamera,
+  SUMMARY_RANGE,
+  SUMMARY_TILT,
+  SUMMARY_FLY_MS,
+  type FlyCapableMap,
+} from "./board-3d-camera-director";
 import { getCategoryCamera } from "./camera-tours";
-import { getBoardModel } from "./board-models";
+import { selectBlobPOIs } from "./blob-pois";
 import { getBoardIntro } from "./board-intros";
 import {
   runIntroFlythrough,
   MIN_INTRO_FLY_MS,
+  WELCOME_INTRO_SETTLE_MS,
+  WELCOME_CALM_SWEEP_DEG,
   DEFAULT_INTRO_PATH,
   type CameraDrivableMap3D,
 } from "./board-intro-flythrough";
 import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
+import { getDistanceMeters } from "@/lib/map-utils";
+import type { RevealItem } from "@/components/map/RevealLayer3D";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import type { POI, CategoryCameraConfig } from "@/lib/types";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
@@ -37,14 +47,18 @@ const RouteLayer3D = dynamic(
   { ssr: false },
 );
 
-// ModelLayer3D lazy-loaded — samme bundling-strategi som RouteLayer3D.
-const ModelLayer3D = dynamic(
-  () =>
-    import("@/components/map/model-layer-3d").then((mod) => ({
-      default: mod.ModelLayer3D,
-    })),
-  { ssr: false },
-);
+/** Antall «blob»-prikker (nærmeste POI-er) som tegnes inn under velkommen-
+ *  flyover-en. Mange små farge-prikker formidler bredden i nabolaget («se hvor
+ *  mye som ligger rundt deg»); kaskaden komprimeres adaptivt så alle rekker inn
+ *  innenfor velkommen-beaten (se RevealLayer3D). Slice-es mot antall tilgjengelige
+ *  POI-er, så et høyt tall ≈ «hele nabolaget». */
+const BLOB_LIMIT = 120;
+
+/** Antall vanlige «legend»-pins per kategori på velkommen + oppsummering: de
+ *  NÆRMESTE POI-ene per kategori vises med ikon + farge, som et lesbart holdepunkt
+ *  for hva blob-prikkene representerer. Nærmeste (pois er distanse-sortert) så
+ *  legend-pinnene ligger i blob-klyngen, ikke langt unna. */
+const LEGEND_PER_CATEGORY = 3;
 
 interface Props {
   /**
@@ -100,13 +114,6 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
   const poiForRoute = state.phase === "poi" && activePOI ? activePOI.raw : null;
   const { data: routeData } = useRouteData(poiForRoute, data.home.coordinates);
 
-  // 3D-bygningsmodell for prosjektet (prototype-lokal config, mirror
-  // camera-tours). Ukjent slug → null (kart uten modell, graceful).
-  const boardModel = useMemo(
-    () => getBoardModel(data.projectSlug ?? "") ?? null,
-    [data.projectSlug],
-  );
-
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
 
@@ -122,7 +129,7 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
   // flythrough-fangst. Pins re-monteres per zoom-tier, så å fjerne dem via DOM
   // utenfra krasjer React (removeChild-race på en node React fortsatt eier) —
   // vi dropper dem heller på render-nivå her (markerPOIs → []). Prosjekt-labelen
-  // (projectSite) + 3D-modellen er egne props og påvirkes ikke.
+  // (projectSite) er en egen prop og påvirkes ikke.
   const [filmMode] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -157,6 +164,17 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
   const isWelcomeBeat = currentTrack?.categoryId === "welcome";
   const introActive = flyMode || isWelcomeBeat;
 
+  // Nabolaget-beaten (home-sporet bærer categoryId "home" — se buildCategoryTracks)
+  // viser HELE nabolaget: alle POI-er på tvers av kategoriene som VANLIGE pins,
+  // i stedet for det kuraterte top-3/kategori-ankersettet. Det er etableringen av
+  // «se hvor mye som ligger rundt deg» i pin-format (velkommen-beaten viser det
+  // tilsvarende som animerte blobs).
+  const isHomeBeat = currentTrack?.categoryId === "home";
+
+  // Oppsummerings-beaten ("Oppsummert"). BoardMap setter fri-modus + viser hinten
+  // når denne spiller; her trekker vi kameraet litt ut til et oversiktsbilde.
+  const isOutroBeat = currentTrack?.categoryId === "outro";
+
   // prefers-reduced-motion: statisk hold på A i stedet for A→B-drift (KD-10).
   const [reducedMotion, setReducedMotion] = useState(false);
   useEffect(() => {
@@ -168,19 +186,54 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
   }, []);
 
   // Oversikts-ankersett: top-3 score-rangerte POI-er per kategori (~18–21 stk).
-  // Brukes når ingen kategori spiller (intro/home/outro/megler). Score-rangert
-  // via topRankedPois, IKKE distanse-sortert.
+  // Brukes på beats uten kategori og uten eget POI-sett (intro/megler). Nabolaget
+  // og Oppsummert viser derimot hele nabolaget (allPOIs). Score-rangert via
+  // topRankedPois, IKKE distanse-sortert.
   const overviewPOIs = useMemo(
     () => data.categories.flatMap((c) => c.topRankedPois.slice(0, 3).map((p) => p.raw)),
     [data.categories],
   );
 
+  // Hele nabolaget: alle POI-er på tvers av kategoriene, deduplikert (samme sted
+  // kan ligge i flere kategorier — beholder første forekomst). Brukt på Nabolaget-
+  // beaten (isHomeBeat) så kartet viser ALT vi har, ikke bare ankersettet.
+  const allPOIs = useMemo<POI[]>(() => {
+    const seen = new Set<string>();
+    const result: POI[] = [];
+    for (const c of data.categories) {
+      for (const p of c.pois) {
+        if (seen.has(p.raw.id)) continue;
+        seen.add(p.raw.id);
+        result.push(p.raw);
+      }
+    }
+    return result;
+  }, [data.categories]);
+
+  // Legend-pins: nærmeste POI per kategori (pois er distanse-sortert → [0] er
+  // nærmest). Vises som vanlige pins (ikon + farge) på velkommen + oppsummering
+  // så blob-prikkene får et lesbart holdepunkt. Ligger i blob-klyngen nær hjemmet.
+  const legendPOIs = useMemo<POI[]>(
+    () =>
+      data.categories.flatMap((c) =>
+        c.pois.slice(0, LEGEND_PER_CATEGORY).map((p) => p.raw),
+      ),
+    [data.categories],
+  );
+  const legendIds = useMemo(
+    () => new Set(legendPOIs.map((p) => p.id)),
+    [legendPOIs],
+  );
+
   // Markørsettet som faktisk mountes. Når en kategori spiller: kun den
   // kategoriens POI-er (sub-filtrert). Ellers: det kuraterte ankersettet.
   const markerPOIs = useMemo<POI[]>(() => {
-    // Ren etablering: ingen kategori-pins under intro-flythrough (velkommen-beat
-    // / ?fly=1) eller ?film=1-capture — kun nærområdet (se filmMode-kommentar).
-    if (filmMode || introActive) return [];
+    // Capture (?film=1 / ?fly=1): helt rent kart, ingen pins.
+    if (filmMode || flyMode) return [];
+    // Velkommen + Oppsummering (start/slutt): INGEN statiske pins her — både
+    // legend-pins og blobs animeres inn via reveal-laget (revealItems) på lik
+    // linje, så de ikke popper inn ferdig mens prikkene fortsatt spretter.
+    if (isWelcomeBeat || isOutroBeat) return [];
     if (activeCategory) {
       const useFilter = state.phase !== "default" && subFilter.hiddenIds.size > 0;
       const result: POI[] = [];
@@ -190,8 +243,32 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
       }
       return result;
     }
-    return overviewPOIs;
-  }, [filmMode, introActive, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs]);
+    // Nabolaget → hele nabolaget (alle POI); ellers (megler) → ankersettet.
+    return isHomeBeat ? allPOIs : overviewPOIs;
+  }, [filmMode, flyMode, isWelcomeBeat, isOutroBeat, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs, isHomeBeat, allPOIs]);
+
+  // Reveal-sett (velkommen + oppsummering): legend-pins (nærmeste per kategori,
+  // vist som fulle pins) + blobs (de nærmeste POI-ene som farge-prikker, legend
+  // ekskludert så vi ikke får prikk-under-ikon). Slått sammen og DISTANSE-sortert
+  // (nærmest først) så pins og prikker animeres inn på lik linje i én kaskade.
+  // Vises på den LIVE velkommen-/oppsummerings-beaten — ikke i ?film=1/?fly=1.
+  const revealItems = useMemo<RevealItem[]>(() => {
+    const home = data.home.coordinates;
+    const blobs = selectBlobPOIs(home, data.categories, BLOB_LIMIT, legendIds);
+    const items: { item: RevealItem; dist: number }[] = [
+      ...legendPOIs.map((poi) => ({
+        item: { kind: "pin" as const, poi },
+        dist: getDistanceMeters(home, poi.coordinates),
+      })),
+      ...blobs.map((poi) => ({
+        item: { kind: "blob" as const, poi },
+        dist: getDistanceMeters(home, poi.coordinates),
+      })),
+    ];
+    items.sort((a, b) => a.dist - b.dist);
+    return items.map((i) => i.item);
+  }, [data.home.coordinates, data.categories, legendPOIs, legendIds]);
+  const showReveal = (isWelcomeBeat || isOutroBeat) && !filmMode;
 
   // Default-camera: bruk pendingCamera hvis tilgjengelig (fra toggle), ellers
   // prosjektets home-koordinater + default 3D-tilt.
@@ -327,18 +404,42 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
   useEffect(() => {
     if (!introActive || !map3dInstance) return;
     const map = map3dInstance as unknown as CameraDrivableMap3D;
-    // Velkommen-beaten (ikke capture) skalerer flyturen til VO-en; capture bruker
-    // default-varigheten fra DEFAULT_INTRO_PATH.
-    const settleMs = introPath.settleMs ?? DEFAULT_INTRO_PATH.settleMs;
+    // Produkt-velkommen-beaten (ikke capture) får KORT settle så innflyvningen
+    // ikke føles treg (default 3,5s ga en død pause etter splash før bevegelse),
+    // og skalerer flyturen til VO-en. Capture (?fly=1) beholder default-settlen
+    // (skarpe tiles i opptak) og default-varigheten.
+    const isProductWelcome = isWelcomeBeat && !flyMode;
+    const settleMs = isProductWelcome
+      ? WELCOME_INTRO_SETTLE_MS
+      : introPath.settleMs ?? DEFAULT_INTRO_PATH.settleMs;
     const flyDurationMs =
-      isWelcomeBeat && !flyMode && audioDurationMs
+      isProductWelcome && audioDurationMs
         ? Math.max(MIN_INTRO_FLY_MS, audioDurationMs - settleMs)
         : undefined;
+    // Live-velkommen får en roligere PUSH-IN: vi demper heading-sveipen så
+    // blob-prikkene ikke svinger rundt skjermen, men bevarer landings-framingen
+    // ved å skyve startHeading tilsvarende opp (end = start + sweep holdes likt).
+    // Capture (?fly=1) beholder banens fulle sveip for det cinematiske opptaket.
+    const baseSweep = introPath.sweepDeg ?? DEFAULT_INTRO_PATH.sweepDeg;
+    const baseStart = introPath.startHeading ?? DEFAULT_INTRO_PATH.startHeading;
+    const calmSweep = Math.min(WELCOME_CALM_SWEEP_DEG, baseSweep);
+    const calmOverride = isProductWelcome
+      ? {
+          startHeading: baseStart + (baseSweep - calmSweep),
+          sweepDeg: calmSweep,
+          ovalEccentricity: 0,
+        }
+      : {};
     return runIntroFlythrough(map, {
       target: { lat: homeLat, lng: homeLng },
-      path: { ...introPath, ...(flyDurationMs ? { durationMs: flyDurationMs } : {}) },
+      path: {
+        ...introPath,
+        ...calmOverride,
+        settleMs,
+        ...(flyDurationMs ? { durationMs: flyDurationMs } : {}),
+      },
       // Redusert bevegelse gjelder kun produkt-beaten; capture skal alltid fly.
-      staticOnly: isWelcomeBeat && !flyMode && reducedMotion,
+      staticOnly: isProductWelcome && reducedMotion,
       isPaused: () => audioPausedRef.current,
       onPhase: (phase) => {
         (window as unknown as { __placyIntroFly?: string }).__placyIntroFly = phase;
@@ -355,6 +456,28 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
     audioDurationMs,
     reducedMotion,
   ]);
+
+  // ── Oppsummering: trekk kameraet ut til oversikt (én gang) ───────────────
+  // Når outro-beaten spiller setter BoardMap modus til "free" (+ hint). Director-
+  // en er da no-op (free) og stopper enhver orbit, så denne imperative fly-en
+  // holder seg uforstyrret. Effekten er registrert ETTER useBoard3DCamera, så i
+  // commit-en der modus blir "free" kjører director-ens stopp FØR denne fly-en.
+  // Avhenger av (isOutroBeat, cameraMode) → fyrer én gang når begge er sanne, og
+  // re-flyr ikke på stabile deps. Trykker brukeren Auto (modus≠free) overtar
+  // director-en med orbit igjen (matcher hintens «trykk Auto»).
+  useEffect(() => {
+    if (!isOutroBeat || cameraMode !== "free" || !map3dInstance) return;
+    const map = map3dInstance as unknown as FlyCapableMap;
+    map.flyCameraTo?.({
+      endCamera: {
+        center: { lat: homeLat, lng: homeLng, altitude: 0 },
+        range: SUMMARY_RANGE,
+        tilt: SUMMARY_TILT,
+        heading: 0,
+      },
+      durationMillis: SUMMARY_FLY_MS,
+    });
+  }, [isOutroBeat, cameraMode, map3dInstance, homeLat, homeLng]);
 
   // cameraMode styres nå av BoardMap (felles BoardMapControls). Vi speiler den i
   // en ref så drag-lytteren kan lese gjeldende modus uten å re-subscribe.
@@ -401,6 +524,9 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
         cameraLock={cameraLock}
         freeMode
         pois={markerPOIs}
+        revealItems={revealItems}
+        showReveal={showReveal}
+        animateReveal={!reducedMotion}
         activePOIId={activePOI?.id ?? null}
         onPOIClick={handlePOIClick}
         onMapReady={handleMapReady}
@@ -413,14 +539,15 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
         }}
       />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />
-      <ModelLayer3D
-        map3d={map3dInstance}
-        model={boardModel}
-        fallbackPosition={data.home.coordinates}
-      />
       <CameraCutOverlay
         visible={cutVisible}
-        label={activeCategory?.label}
+        // Kategorier bruker sin egen label; Nabolaget/Oppsummert har ingen
+        // activeCategory, men skal også få kapittel-tekst på cream-cuten —
+        // speiler reels-kortenes labels. Farge faller tilbake til nøytral.
+        label={
+          activeCategory?.label ??
+          (isHomeBeat ? "Nabolaget" : isOutroBeat ? "Oppsummert" : undefined)
+        }
         color={activeCategory?.color}
       />
       {/* Auto/Fri + Kart/3D-kontrollene bor nå i den felles BoardMapControls

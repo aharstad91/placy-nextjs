@@ -101,6 +101,61 @@ describe("decideCameraIntent", () => {
     expect(decideCameraIntent(baseInput()).kind).toBe("orbit");
   });
 
+  it("cut INN i orbit fra free (velkommen-innflyvning → nabolaget uten waypoints)", () => {
+    const intent = decideCameraIntent(
+      baseInput({
+        activeCategoryId: "nabolaget",
+        categoryConfig: undefined,
+        prevIntent: { kind: "free" },
+      }),
+    );
+    expect(intent.kind).toBe("orbit");
+    if (intent.kind === "orbit") expect(intent.cut).toBe(true);
+  });
+
+  it("cut INN i orbit fra cinematic (kategori-skifte til en uten waypoints)", () => {
+    const prev: CameraIntent = {
+      kind: "cinematic",
+      categoryId: "mat-drikke",
+      a: { center: { lat: home.lat, lng: home.lng, altitude: 0 }, range: 500, tilt: 60, heading: 200 },
+      b: null,
+      durationMs: 16000,
+      cut: false,
+      reducedMotion: false,
+      paused: false,
+    };
+    const intent = decideCameraIntent(baseInput({ prevIntent: prev }));
+    expect(intent.kind).toBe("orbit");
+    if (intent.kind === "orbit") expect(intent.cut).toBe(true);
+  });
+
+  it("orbit→orbit holder uavbrutt (ingen cut)", () => {
+    const prev: CameraIntent = {
+      kind: "orbit",
+      cut: false,
+      hero: { center: { lat: home.lat, lng: home.lng, altitude: 0 }, range: ORBIT_RANGE, tilt: 50, heading: 0 },
+    };
+    const intent = decideCameraIntent(baseInput({ prevIntent: prev }));
+    expect(intent.kind).toBe("orbit");
+    if (intent.kind === "orbit") expect(intent.cut).toBe(false);
+  });
+
+  it("kald første-mount (prevIntent null) → orbit uten cut (ingen cream-flash)", () => {
+    const intent = decideCameraIntent(baseInput());
+    expect(intent.kind).toBe("orbit");
+    if (intent.kind === "orbit") expect(intent.cut).toBe(false);
+  });
+
+  it("retur fra åpnet POI → orbit uten cut (myk fly-tilbake)", () => {
+    const prev: CameraIntent = {
+      kind: "poi",
+      pose: { center: { lat: home.lat, lng: home.lng, altitude: 0 }, range: POI_RANGE, tilt: 60, heading: 0 },
+    };
+    const intent = decideCameraIntent(baseInput({ prevIntent: prev }));
+    expect(intent.kind).toBe("orbit");
+    if (intent.kind === "orbit") expect(intent.cut).toBe(false);
+  });
+
   it("auto + kategori MED config → cinematic A→B, cut:true ved første beat", () => {
     const intent = decideCameraIntent(
       baseInput({
@@ -230,9 +285,9 @@ describe("deriveCategoryCamera", () => {
     expect(diff).toBeCloseTo(2 * DERIVE_DRIFT_DEG, 0);
   });
 
-  it("klamper range innenfor [350, 850] (aldri orbit-høyde)", () => {
+  it("klamper range innenfor [810, 850] (tett-klyngede kat aldri for nære)", () => {
     const near = deriveCategoryCamera(home, [{ lat: home.lat + 0.0005, lng: home.lng }])!;
-    expect(near.a.range).toBeGreaterThanOrEqual(350);
+    expect(near.a.range).toBeGreaterThanOrEqual(810);
     const far = deriveCategoryCamera(home, [{ lat: home.lat + 0.2, lng: home.lng + 0.2 }])!;
     expect(far.a.range).toBeLessThanOrEqual(850);
   });

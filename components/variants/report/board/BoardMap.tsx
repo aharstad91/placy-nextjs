@@ -16,7 +16,7 @@ import { BoardPOILabel } from "./BoardPOILabel";
 import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
 import { BoardMap3D } from "./BoardMap3D";
 import { useBoardPopupMode } from "./use-popup-mode";
-import { useAudioTourPhase } from "@/lib/stores/audio-tour-store";
+import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -123,6 +123,29 @@ export function BoardMap({
       if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
     };
   }, []);
+
+  // ---- Oppsummering ("Oppsummert"-beaten): gi kameraet til brukeren ----
+  // Når outro-sporet spiller går vi fra auto til fri og viser recovery-hinten, så
+  // brukeren kan utforske hele nabolaget fritt mens oppsummeringen leses (BoardMap3D
+  // trekker kameraet litt ut samtidig). Når man FORLATER outro igjen (f.eks. swiper
+  // tilbake til en kategori, eller spiller av på nytt) gjenopprettes auto, ellers
+  // ville kategori-kameraet stå dødt i fri. wasOutroRef sikrer at vi kun rører
+  // modusen på outro-overgangen — ikke ved mount (bevarer ?fly=1-start i fri).
+  const currentTrack = useCurrentTrack();
+  const isOutroBeat = currentTrack?.categoryId === "outro";
+  const wasOutroRef = useRef(false);
+  useEffect(() => {
+    if (isOutroBeat) {
+      setCameraMode("free");
+      setShowFreeHint(true);
+      if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
+      freeHintTimerRef.current = setTimeout(() => setShowFreeHint(false), 5000);
+      wasOutroRef.current = true;
+    } else if (wasOutroRef.current) {
+      setCameraMode("auto");
+      wasOutroRef.current = false;
+    }
+  }, [isOutroBeat]);
 
   // Mapbox vises som base (ikke-addon-prosjekt) eller som overlay i 2D-view.
   const showMapbox = !has3dAddon || view === "2d";

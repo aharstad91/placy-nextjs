@@ -1,7 +1,7 @@
 "use client";
 
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
@@ -45,6 +45,14 @@ import {
 import type { BoardData, BoardHome } from "../board/board-data";
 
 const INTRO_VIDEO_SRC = "/reels/stasjonskvartalet/intro.mp4";
+// Velkommen-kortets levende bakgrunn: splash-videoen (samme Veo-montasje som
+// høyre splash-panel), center-croppet 16:9 → 9:16 (720×1280) via ffmpeg så den
+// fyller det stående kortet uten ekstra crop. Eget klipp fra intro-flythrough-en.
+const WELCOME_VIDEO_SRC = "/reels/stasjonskvartalet/welcome.mp4";
+// Nabolaget-kortets levende bakgrunn: Ken Burns + kryss-fade-loop bygd fra to
+// Trondheim-stills (Solsiden/Bryggen + Bakke gangbru) via compose-slideshow.ts.
+// 9:16 (1080×1920). Kildebilder ligger i klientmappa (reels-src).
+const HOME_VIDEO_SRC = "/reels/stasjonskvartalet/nabolaget.mp4";
 
 interface Props {
   project: Project;
@@ -75,7 +83,13 @@ function Inner({ project, enTranslations = {} }: Props) {
   const boardData = useMemo(() => adaptBoardData(reportData), [reportData]);
 
   const cards = useMemo(
-    () => buildReelsCards(boardData, INTRO_VIDEO_SRC),
+    () =>
+      buildReelsCards(
+        boardData,
+        INTRO_VIDEO_SRC,
+        WELCOME_VIDEO_SRC,
+        HOME_VIDEO_SRC,
+      ),
     [boardData],
   );
 
@@ -136,21 +150,48 @@ function BoardReelsSync() {
   return null;
 }
 
+/** Pause (ms) mellom kategori-kapitler ved auto-advance — et lite pust så VO-en
+ *  ikke hopper rett fra én kategori til neste. Justeres her. */
+const CATEGORY_ADVANCE_PAUSE_MS = 1000;
+
 function ReelsAudioShell({ children }: { children: React.ReactNode }) {
   const { state, setPhase, setActiveIndex } = useReels();
   const { next: audioNext } = useAudioTourActions();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+  // Liten pust mellom kategoriene: når en kategoris VO slutter, vent et beat
+  // før vi auto-advancer til neste (= ny VO + kamera-cut). Uten den føltes
+  // skiftet for brått; cream-cut-overlayet myknet det visuelt, dette gir også
+  // audioen rom. Cancellerbar (ref) så manuell navigasjon i pausen ikke blir
+  // overstyrt av en foreldet timer.
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    // Avbryt en ventende auto-advance når activeIndex endrer seg på ANNEN måte
+    // (manuelt thumbnail-klikk i pausen) og ved unmount.
+    return () => {
+      if (advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = null;
+      }
+    };
+  }, [state.activeIndex]);
+
   // Når et spor slutter naturlig:
-  // - Desktop: auto-advance til neste audio-bærende kapittel slik at
-  //   løpebåndet i sidebaren spiller kategoriene én etter én (som mobil-
-  //   feeden, men uten swipe). Siste spor → terminal "ended"-fase.
+  // - Desktop: auto-advance til neste audio-bærende kapittel (etter en kort
+  //   pause) slik at løpebåndet i sidebaren spiller kategoriene én etter én
+  //   (som mobil-feeden, men uten swipe). Siste spor → terminal "ended"-fase.
   // - Mobil: hev sheet til 20% (map-quarter). Bruker må aktivt tappe for å
   //   gå videre — sheet "våkner" men ekspander ikke uten gesture.
   const handleTrackEnded = () => {
     if (isDesktop) {
       const next = nextAudioBearingIndex(state.cards, state.activeIndex);
       if (next !== -1) {
-        setActiveIndex(next);
+        // Hold gjeldende kapittel et beat før skiftet (pust mellom kategoriene).
+        if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = setTimeout(() => {
+          advanceTimerRef.current = null;
+          setActiveIndex(next);
+        }, CATEGORY_ADVANCE_PAUSE_MS);
       } else {
         // Siste audio-bærende kapittel ferdig. autoAdvance=false betyr at
         // store.next() — den eneste veien til phase "ended" — aldri ble kalt
@@ -197,9 +238,12 @@ function ResponsiveLayoutInner({
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   // --- Velkomst-splash (kun desktop) ---
-  // Splash ligger som lag OPPÅ board-opplevelsen. Kartet (én WebGL-instans)
-  // mountes først ved "play" → 3D-kartet laster og flyr inn der, og bevares
-  // montert ved re-åpning så orbiten ikke re-initialiseres.
+  // Splash ligger som lag OPPÅ board-opplevelsen (fixed inset-0 z-50, opakt).
+  // Kartet (én WebGL-instans) mountes UMIDDELBART ved sidelast — bak splashen —
+  // så Google 3D-API + tiles rekker å varmes opp FØR velkommen-flyover-en starter
+  // (ellers streamet tiles inn MIDT i introen → hakking og lav kvalitet). Splashen
+  // dekker oppvarmingen; ved "play" fader den ut og avdekker det allerede varme
+  // kartet. Bevares montert ved re-åpning så orbiten ikke re-initialiseres.
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
   const { unlock } = useAudioElement();
   const phase = useAudioTourStore((s) => s.phase);
@@ -280,13 +324,15 @@ function ResponsiveLayoutInner({
         </div>
         <div
           className={cn(
-            "relative h-full flex-1 transition-all duration-700 ease-out",
-            boardRevealed ? "scale-100 opacity-100" : "scale-[1.04] opacity-0",
+            "relative h-full flex-1 transition-transform duration-700 ease-out",
+            boardRevealed ? "scale-100" : "scale-[1.04]",
           )}
         >
-          {boardRevealed && (
-            <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} />
-          )}
+          {/* Alltid montert — også bak splashen — for tile-oppvarming (se kommentar
+              over handlePlay). Opacity holdes 100 så WebGL faktisk rendrer/streamer
+              under det opake splash-laget; entréen er kun en subtil scale-settle ved
+              reveal. Splash-kryssfaden står for selve avdekkingen. */}
+          <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} />
         </div>
         <DesktopReportSplash
           visible={splashVisible}

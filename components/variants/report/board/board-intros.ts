@@ -3,7 +3,7 @@ import type { IntroPathConfig } from "./board-intro-flythrough";
 /**
  * Per-prosjekt tuning av intro-flythrough-en (oval-spiral låst på objektet).
  *
- * Speiler board-models.ts / camera-tours.ts: keyed på prosjekt-slug → DELVIS
+ * Speiler camera-tours.ts: keyed på prosjekt-slug → DELVIS
  * `IntroPathConfig`. ETHVERT prosjekt får en standard-intro fra
  * `DEFAULT_INTRO_PATH` (board-intro-flythrough.ts) UTEN en oppføring her — dette
  * er bare for site-spesifikk tuning. Det vanligste å justere:
@@ -18,11 +18,24 @@ import type { IntroPathConfig } from "./board-intro-flythrough";
  * deferert (mønster som de andre board-*-konfigene).
  */
 const BOARD_INTROS: Record<string, Partial<IntroPathConfig>> = {
-  // Stasjonskvartalet (Brattøra): fly inn fra Nidarosdomen-retningen (kamera SSW
-  // av objektet ved start), litt større range pga. det åpne fjord-/by-tablået.
+  // Stasjonskvartalet (Brattøra): roligere, videre innflyvning som etablerer hele
+  // nærområdet i stedet for å zoome tett på selve bygget.
+  //  • startHeading 20 — fly inn fra Nidarosdomen-retningen (kamera SSW av objektet
+  //    ved start). Beholdt.
+  //  • rangeStart 1600 — åpner videre enn default (1150) → mer dramatisk etablering
+  //    av fjord-/by-tablået. NB: videre = mest tile-hungrig; verifiser pop-in på
+  //    kald cache mot den korte velkommen-settlen.
+  //  • rangeEnd 480 — lander løsere enn default (300) → hero viser kvartalet/området,
+  //    ikke bare fasaden.
+  //  • sweepDeg 150 — kortere oval-sveip enn default (250) → roligere, mer rett-inn.
+  //    Landing-heading = 20+150 = 170° ≈ vendt sør inn i Midtbyen (der POI-ene er).
+  //  • ovalEccentricity 0 — ren spiral uten midtveis-utbuling.
   stasjonskvartalet: {
     startHeading: 20,
-    rangeStart: 1150,
+    rangeStart: 1600,
+    rangeEnd: 480,
+    sweepDeg: 150,
+    ovalEccentricity: 0,
   },
 };
 

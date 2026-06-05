@@ -6,6 +6,159 @@
 
 ---
 
+## 2026-06-05 (forts. 3) — Prosjektmarkør: range-avhengig størrelse
+
+Kort direkte sesjon (main, dev :3000). Bruker meldte at prosjekt-chip-en (`ProjectSitePin` — hvit listing-kort med thumbnail + «Nybygg 2028» over tomta) er **for stor både tett innpå og uttrukket**. Rotårsak: Google 3D-`Marker3D` er skjerm-forankret → konstant px uansett zoom, så chip-en dekker nabo-POI-er når man er zoomet inn og blokkerer oversikten når man er trukket ut.
+
+**Fix: range-avhengig skala.**
+- `ProjectSitePin` fikk `scale`-prop (default 1) — multipliserer kun `width`/`height`, `viewBox` uendret → uniform skalering, skarp tekst ved re-rasterisering. Andre bruk (overview-kart) uberørt siden default = 1.
+- `map-view-3d.tsx`: ny `useProjectPinScale(map)` leser `map.range` live via **rAF-poll** (ett tall per frame; valgt fremfor `gmp-`-event for robusthet mot både bruker-zoom og programmatisk `flyCameraTo`). `setState` fyrer KUN når den **kvantiserte** skalaen (steg 0.04) endres → SVG/WebGL-raster oppdateres bare ved et faktisk størrelses-hopp, ikke per frame (samme churn-disiplin som markørene).
+- Kurve: flat `PIN_MAX_SCALE=0.85` ved range ≤700 (zoomet inn), lineær ned til `PIN_MIN_SCALE=0.5` ved range ≥3000 (oversikt). Default-views (~900–1100) lander ~0.8. Alle 5 konstantene øverst i fila er ment for finjustering på følelse.
+
+**Gates:** tsc 0, eslint 0, rute-200. Ikke pushet.
+
+**Åpent / deferred:**
+- **Kurve-følelse ikke verifisert live** (Chrome låst) — default-shots kan bli for små ved 0.8, eller zoomet-inn-cap (0.85) fortsatt litt stor. Skru konstantene.
+- **Anker-drift:** Marker3D forankrer trolig på SVG-senteret, så pil-spissen flytter et lite hakk når chip-en krymper. Neppe merkbart; hvis den «vandrer» ved zoom må anker-/altitude-offset justeres.
+
+---
+
+## 2026-06-05 (forts. 2) — Progress-bar: stegvise kategori-markører
+
+Kort direkte sesjon (main, dev :3000), forlengelse av reels-player-arbeidet. Bruker ville ha **«steg» i progress-baren** for å antyde at løpet er kategori-inndelt. `StoryProgressBar` i `DesktopStorySidebar.tsx`.
+
+**Iterasjon 1 (forkastet): separate story-segmenter.** Bygde Instagram/Snapchat-stil: ett `flex`-segment per kapittel (egen track-bg + fyll), atskilt av `gap-1`, lengde-vektet bredde, hvert fylles 0→100% uavhengig via rAF. Teknisk ryddig, men bruker mistenkte (riktig) at det skapte **mer forvirring enn nytte** — baren ble lest som separate seksjoner, ikke ett løp.
+
+**Iterasjon 2 (landet): sammenhengende bar + subtile notch-streker.** Tilbake til den kontinuerlige Spotify-stil-baren (uendret fyll-logikk fra forrige sesjon), men med tynne **1,5px vertikale streker i footer-fargen (`#1a1510`)** som «kutter» baren ved hver kategori-grense. Baren leses fortsatt som ÉN 100%-strek; strekene er bare en subtil antydning om kapittel-inndelingen. Strekene ligger oppå fyllet (`absolute inset-y-0`, `aria-hidden`) → synlige på både spilt og uspilt del.
+
+**Detalj som var viktig:** grensene beregnes med **samme lengde-vekting** som fyllet (kumulativ andel av total `durationSec`), så notch og fyll alltid flukter — streken treffer nøyaktig der baren skifter kapittel. Fallback til like store steg når sporlengder mangler; 0%/100% hoppes over (kantene avrundes uansett). Tracks-settet = samme som thumbnail-raden (velkommen, nabolaget, N kategorier, oppsummert).
+
+**Lærdom:** stegvis ≠ segmentert. «Vis at det er kapitler» løses bedre med subtile delelinjer i én bar enn med fysisk adskilte segmenter — sistnevnte signaliserer «separate ting», ikke «ett løp med etapper».
+
+**Gates:** tsc 0, eslint 0, rute-200 (curl recompile). Ikke pushet. Live-look ikke verifisert (Chrome låst) — fargen/bredden (`w-[1.5px] bg-[#1a1510]`) er ett sted å justere hvis for sterk/svak.
+
+---
+
+## 2026-06-05 (forts.) — Blob-reveal på start/slutt, kamera-tuning, pre-warm + replay
+
+Direkte sesjon (main, dev :3000), drevet av brukerens skjermbilder. Stor batch på rapport-board (`/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board`). **Live Chrome-verifisering var ikke mulig** (chrome-devtools MCP-profilen var låst av brukerens egen åpne nettleser hele sesjonen) → verifisert via `tsc`/`eslint`/Vitest + rute-200 (curl recompile) + bruker bekreftet visuelt underveis. Ikke pushet (prototype-iterasjon).
+
+**1. Blob-markører på velkommen-flyover (nytt mønster).** Bruker ville ikke ha «tomt kart med bare objektet» under velkomsten — heller antyde nærområdet. Bygde et eget, lett markør-lag adskilt fra den vanlige pin-stien:
+- `components/map/BlobMarker3D.tsx` — minimal SVG farge-disc (én sirkel + hvit ring + soft shadow), `scale`-drevet. Bevisst billig å rasterisere.
+- `components/variants/report/board/blob-pois.ts` — `selectBlobPOIs(home, categories, limit, excludeIds?)`: nærmeste-N på tvers av kategorier (`getDistanceMeters`), deduplikert, kategori-farge bevart. Ren/testbar (Vitest).
+- Sekvensiell inntegning med easeOutBack-bounce, **adaptivt stagger-vindu** (`REVEAL_WINDOW_MS=4200` delt på antall → tettere kaskade ved flere, ikke lengre) og **quantisert scale** så settlede markører ikke re-rendres (`memo`) → bare ~få markører re-rasteriseres per frame (WebGL-churn-disiplin, samme grunn som vanlige pins holdes på fast opacity).
+
+**2. Roligere push-in på LIVE velkommen.** `WELCOME_CALM_SWEEP_DEG=90` (`board-intro-flythrough.ts`) demper heading-sveipen så blobbene ikke svinger rundt skjermen; **bevarer landings-framingen** generisk ved å skyve `startHeading` tilsvarende opp (end = start+sweep konstant). `?fly=1`-capture beholder full sveip.
+
+**3. Pre-warm av 3D-kartet bak splash (bug-fix).** Bruker meldte hakking/lav kvalitet idet flyover-en startet. Rotårsak: i `ReportReelsPage.tsx` var `<BoardMap>` gated bak `boardRevealed` (kun true ved play) → Google-API + tiles begynte å streame MIDT i introen. Fix: mount kartet **umiddelbart ved sidelast** bak det opake splash-laget (`fixed inset-0 z-50`), kun `scale`-settle som entré (opacity holdes 100 — `opacity:0` kan throttles av nettleseren så oppvarmingen ikke skjer).
+
+**4. Kategori zoom-ut (for nære → punktene falt utenfor bildet).** Målte faktisk derivert range per kategori (midlertidig server-side logg i `page.tsx`, fjernet etterpå): mat-drikke 850 / hverdagsliv 811 (bra), men natur/barn/trening 724–734 (for nær). Hevet `DERIVE_RANGE_MIN` 350→**810** (`board-3d-camera-director.ts`) så tett-klyngede kategorier løftes til samme nivå. `transport` eksplisitt `b.range` 260→**810** (`camera-tours.ts`) — mistet det dramatiske «dykket ned på tomta», men POI-ene blir synlige (kan senkes igjen). Clamp-test oppdatert til `[810,850]`.
+
+**5. «Oppsummert»-beaten — gi kameraet til brukeren.** Ved outro-sporet: auto→**fri** + recovery-hint vises + kameraet trekkes ut til oversikt (`SUMMARY_RANGE=1100`, imperativ `flyCameraTo` i `BoardMap3D` — director er no-op i fri, så ingen orbit overstyrer). Gjenoppretter **auto** når man forlater outro (`wasOutroRef`, ellers ville kategori-kameraet stå dødt i fri; vakter mot mount/`?fly=1`-start). Outro fikk dessuten **samme video-reel som velkommen** (`welcome.mp4`) → symmetri start↔slutt.
+
+**6. CameraCutOverlay-label for ikke-kategori-beats.** Cream-cuten hentet teksten fra `activeCategory?.label` → tom på Nabolaget/Oppsummert (ingen aktiv kategori). Nå faller den tilbake til «Nabolaget»/«Oppsummert».
+
+**7. Replay-ikon når reelen er ferdig (`DesktopStorySidebar.tsx`).** Klikk-for-restart fantes allerede (`handleToggle` håndterer `phase==="ended"` → `setActiveIndex(first)` + `goToTrack(0)`); manglet kun ikonet. `phase==="ended"` → `RotateCcw` (+ liten markør-dot) i stedet for Play. Desktop-only (mobil `ReelsStack` ikke rørt).
+
+**8. Legend-pins + generalisert reveal-lag.** Restart-bug (mange vanlige pins hang igjen i fly-in) ga idé: blob-prikker sier ikke *hva* de er. Løsning på begge: velkommen + oppsummering viser nå **blobs + nærmeste-N-per-kategori som vanlige legend-pins** (ikon + farge = lesbart holdepunkt). Generaliserte `BlobLayer3D` → **`RevealLayer3D`** som tegner inn både prikker og fulle pins i **én distanse-sortert kaskade** (nærmest først), begge animeres inn på lik linje. La til `scale`-prop på `Marker3DPin`; `selectBlobPOIs` fikk `excludeIds` (legend ekskluderes fra blob-settet → ingen prikk-under-ikon). Bug-en løst som bieffekt: outro+velkommen viser nå **samme** sett → ingen masse-unmount å henge igjen (før: outro=alle-pins → velkommen=tom). Bruker ba til slutt om å **tredoble legend (1→3/kat)** og **doble blobs (60→120)**.
+
+**Markør-modell per beat (resultat):** intro/megler → kuratert ankersett (top-3/kat); velkommen + oppsummering → reveal-lag (blobs + legend, `markerPOIs=[]`); **Nabolaget → ALLE POI** som vanlige pins; kategori → kategoriens pins; `?film=1`/`?fly=1`-capture → tomt.
+
+**Gates:** tsc 0, eslint 0; Vitest grønt på berørte (blob-pois 6/6, reels-data 10/10, camera-director 27/27). `npm run build` bevisst hoppet over (dev kjørte — build-mot-samme-`.next` korrupterer cachen, jf. forrige sesjon).
+
+**Lærdom verdt å huske:**
+- **Google 3D marker-animasjon:** per-frame innholds-endring = re-rasterisering. Sekvensiell stagger (få om gangen) + quantisert prop + `memo` holder churn bounded; ikke animer hele settet samtidig.
+- **Pre-warm bak splash:** `opacity:0`-elementer kan throttles av nettleseren → hold full opacity og dekk med et opakt overlay-lag i stedet.
+- **Masse-unmount henger igjen i Google 3D:** transisjon fra mange pins → tomt rakk ikke å rydde før fly-in. Symmetriske, små markør-sett på inn-/ut-beaten unngår det.
+
+**Åpent / deferred:**
+- **Ytelse:** ~141 markører (120 blobs + ~21 legend) animeres på velkommen/oppsummering under bevegende kamera — ikke verifisert live (Chrome låst). Hvis det hakker: senk `BLOB_LIMIT`/`LEGEND_PER_CATEGORY` eller drop sprett på de fulle pinnene. **Bør cold-cache-testes.**
+- **Legend-pins** er full størrelse/opacity (lesbarhet); bruker nevnte «nedprioritert» — kan dempes (mindre/svakere) hvis blobbene skal forbli helten.
+- **transport** mistet tomte-dykket (260→810) — senk `b.range` igjen hvis savnet.
+- **opplevelser** dukket ikke opp i range-målingen (6 av 7 kategorier logget) — bekreft at opplevelser-beaten faktisk vises i feeden; mulig cache-staleness i målingen.
+- **Restart→velkommen** re-animerer ikke blobbene (reveal-laget remountes ikke siden `showReveal` er true på både outro og velkommen) — minor polish.
+
+---
+
+## 2026-06-05 — Reels-player: dark mode + Spotify-stil sammenhengende progress
+
+Direkte sesjon (main, dev :3000). UI-iterasjon på `DesktopStorySidebar.tsx` (desktop reels-player på `/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board`), drevet av brukerens skjermbilder. Alt verifisert live i Chrome (chrome-devtools MCP) med både `getBoundingClientRect`-måling og fill-width-sampling — ikke bare screenshot-øyemål.
+
+**Utgangspunkt (fra forrige, komprimerte sesjon):** reel + player limt til ett sammenhengende kort (ingen gap, 4px sort border b/l/r mot cream-sidebaren), kategori + progress flyttet til topp.
+
+**1. «Dark mode» på player-footeren.** Footeren var cream (`#fbf7f0`); bruker ville at den skulle lese som én enhet med den svarte reelen (som allerede har sort gradient). Byttet til varm near-black `#1a1510` (et hakk lysere enn reelens `#000` → fremstår som hevet player-flate). **ALLE koblede farger flippet, ikke bare bg:** divider (svak `white/[0.07]`-hårlinje — sort er usynlig mot mørkt), label/teller, progress track (`white/10`) + fill (`white/90`), aktiv-thumbnail-ring + ring-offset (må matche ny bg ellers cream-halo), og fade-gradientene på begge kanter (fadet til cream → ga lyse smell på mørk bg). Verifisert 0 cream-rester i kortet.
+
+**2. Fjernet kategori-navn + «n / total»-teller.** Bruker ville ha renere uttrykk; progress-streken skulle stå alene. **Slettet dead code** (per CLAUDE.md): `MorphingLabel`-komponenten + `currentLabel`/posisjon-tellerne, foreldreløse imports (`useState`, `cn`), OG `morph-letter-in`/`morph-label-out`-keyframene i `app/globals.css` (kun brukt av MorphingLabel). Hover-navn beholdt via native `title` på thumbnailene.
+
+**3. Progress-bar: kapittel-steg → sammenhengende «som en Spotify-låt».** Var `currentNumber/total` (hoppet ~11% per kapittel). Bruker ville ha 0–100% over HELE reelen, sømløst. Ny `StoryProgressBar`:
+- **Sann-tids-vekting:** track-lengder (`durationSec`, synkront fra karaoke-timings) summeres til reelens totallengde; bar = (sum spilte spor + tid i aktivt spor) / total. Verifisert: 10,2 s inn i 16,7 s velkommen-spor = 3,7% → total reel ≈ 278 s, velkommen korrekt en liten tidlig skive. Fallback til like store segment per kapittel hvis lengder mangler.
+- **Monoton guard (kritisk):** ved spor-slutt holder desktop et «pust» (`CATEGORY_ADVANCE_PAUSE_MS`) der `currentTime` nullstilles FØR `trackIndex` avanserer → ville gitt synlig tilbakehopp til kapittel-start. `heldRef` lar aldri baren falle så lenge vi står på / avanserer forbi samme spor; ekte tilbake-nav (lavere `trackIndex` / re-start) slipper gjennom.
+
+**4. Sømløshet på 60 fps (rAF-ekstrapolering).** Bruker meldte at baren fortsatt var «stegvis» — `<audio>` sender bare `timeupdate` ~4 Hz (250 ms). Løsning: rAF-loop som ekstrapolerer posisjon mellom samplene via wall-clock (`estCt = sist currentTime + tid gått, kun mens playing`), skriver bredden **imperativt** på fill-elementet (React har ingen `width` i JSX → 4 Hz re-render rører den aldri, ingen re-render per frame). Hvert ekte `timeupdate` re-ankrer (ingen drift); overshoot klampes til sporlengde; callback-ref setter 0% i commit (ingen full-bredde-blink). CSS-transition droppet (rAF eier bredden). **Verifisert:** 25/25 distinkte width-verdier ved 120 ms-sampling (ville vært ~12 med 250 ms-platåer hvis fortsatt event-bundet).
+
+**5. Progress-bar inset + avrundet.** Var full-bleed; bruker ville ha samme side-padding som thumbnailene + avrunding. `px-3 pt-3`-wrapper (venstre/høyre-inset målt 12px = thumbnail-inset), `rounded-full` på track + fill (avrundet ledende kant). Leses nå som en contained pille som flukter med thumbnail-raden.
+
+**6. Fjernet 4px sort ramme på kortet.** Den sorte `border-b/l/r-4` (lagt til tidligere for å integrere kortet mot cream-sidebaren) skar seg ut mot reelen nå som footeren er mørk. Fjernet → bare `rounded-2xl shadow-lg overflow-hidden` igjen (radius 16px + myk skygge beholdt, `borderWidth: 0` verifisert). Rene avrundede hjørner.
+
+**Gates:** tsc 0, eslint 0, reels-tester 21/21. **Ikke pushet** (prototype-iterasjon, per bruker-preferanse).
+
+**Lærdom verdt å huske:** Audio-/media-progress som skal være «buttery» kan ikke bindes til `timeupdate` (for grov, ~4 Hz) — driv den med rAF + wall-clock-ekstrapolering og imperativ bredde. Mønsteret (anker ved hvert sample + monoton guard for boundary-reset) er gjenbrukbart for enhver media-scrubber i kodebasen.
+
+**Åpent / deferred:**
+- Manuell thumbnail-hopp snapper baren umiddelbart (rAF eier bredden, ingen ease). Tilbudt ~200 ms slide på hopp hvis ønskelig — ikke bestilt.
+- Top-padding (12px) og inset (= thumbnails) er tuning-knapper; kan strammes mot sømmen / utvides forbi gradienten på forespørsel.
+
+---
+
+## 2026-06-03 (forts. 5) — Pust mellom kategorier + høyere kamera-vinkel (færre tiles)
+
+Direkte sesjon (main, dev :3000). To kategori-overgangs-grep, begge verifisert live i Chrome (chrome-devtools MCP).
+
+**1. Ett sekunds pause mellom kategori-skiftene (`ReportReelsPage.tsx` → `ReelsAudioShell`).** Bruker meldte at VO-en hoppet for brått fra én kategori til neste (cream-cut-faden hjalp visuelt i forrige batch, men audioen trengte rom). Ny `CATEGORY_ADVANCE_PAUSE_MS = 1000`: når en kategoris VO slutter naturlig holder vi gjeldende kapittel et beat før auto-advance til neste (= ny VO + kamera-cut). **Cancellerbar** via `advanceTimerRef` + `useEffect`-cleanup på `state.activeIndex` → manuelt thumbnail-klikk i pausen avbryter den ventende (foreldede) advancen i stedet for å bli overstyrt. Gjelder kun naturlig track-slutt (auto-advance), ikke pause/manuell nav. **Verifisert:** `welcome.mp3` sluttet → `hjem.mp3` startet 1073 ms senere (1000 ms timer + ~73 ms last).
+
+**2. Høyere kamera-vinkel for 3D-looket — mer ovenfra = færre tiles/mindre grafikk.** Bruker ba om å «gå opp et hakk» på default-vinkelen. Tilt-semantikk: 0 = rett ned, 90 = horisont → **lavere tilt = mer ovenfra** = mindre horisont/fjern-geometri i bildet = færre tiles å hente + mindre å tegne. Senket ~10° på alle roaming-/etablerings-visningene:
+- `ORBIT_TILT` 60→**50** (idle-orbit), `DERIVE_TILT` 60→**50** (auto-utledet kamera for de fleste kategorier) — begge i `board-3d-camera-director.ts`.
+- Intro-flythrough `DEFAULT_INTRO_PATH` `tiltStart` 67→**57**, `tiltEnd` 62→**52** (`board-intro-flythrough.ts`) — den vide range-1150-etableringen er mest tile-hungrig, så her er gevinsten størst.
+- `camera-tours.ts` `stasjonskvartalet.transport` A 60→**50**, B 66→**56**.
+- **`POI_TILT` beholdt på 60** — åpnet POI er en bevisst tett/skrå nærvisning (lite fotavtrykk = få tiles uansett). Lett å senke om ønskelig.
+- Ingen test asserter de faktiske tilt-konstantene (intro-testen er relativ til `DEFAULT_INTRO_PATH`; camera-tours-testen tester kun klamping/defined) → trygt å justere. Verdiene er rene tuning-knapper — kan skrus videre (50→45/40) for enda høyere blikk.
+
+**Driftsnotat (lærdom):** `npm run build` kjørt mens dev-serveren (`npm run dev`) var oppe korrupterte `.next` («Cannot find module './vendor-chunks/zod.js'»). Fikset ved kill :3000 → `rm -rf .next` → restart dev. **Ikke kjør produksjons-build mot samme `.next` som en kjørende dev-server** (samme grunn som worktree-scriptet sletter `.next`).
+
+**Gates:** tsc 0, eslint 0, 137/137 board-tester. (Hoppet over `npm run build` bevisst — rene konstant-/timing-endringer, og build-mens-dev-kjører er nettopp det som korrupterte cachen.)
+
+**Åpent / deferred:**
+- **Finjuster pause-lengden + kamera-vinkelen** visuelt sammen med bruker (begge er enkle tuning-konstanter).
+- **VO in/outro per kategori:** bruker vil gi VO-en tydeligere avslutning/oppstart per kategori (manus/audio-grep) — pausen gir nå rommet, men selve lyden trenger inn-/utklang. Samme VO-punkt som i (forts. 4).
+
+---
+
+## 2026-06-03 (forts. 4) — Sidebar-finpuss, roligere cut-fade, raskere velkommen-fly-in + 3D-modell fjernet
+
+Direkte sesjon (ingen worktree — main, dev :3000). Fire grep på rapport-board (`/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board`), drevet av brukerens skjermbilder. Alle endringer verifisert live i Chrome (chrome-devtools MCP) + empirisk måling.
+
+**1. Sidebar-layout (`DesktopStorySidebar.tsx`).**
+- «Bli kjent med»-eyebrow fjernet (tittelen står nå rett under logo). *NB: splash-en sin egen «BLI KJENT MED NABOLAGET» er et annet element, urørt.*
+- Logo forstørret: `h-9` → `h-[54px]` (~50% — bruker ba om «litt større» to ganger).
+- **Reel-kortet rettet opp:** var vertikalt sentrert + `aspect-[9/16] h-full max-h-[640px]` → høyde-drevet bredde fløt utover høyre = asymmetrisk padding, og `max-h`-cappen etterlot død luft som dyttet kategori-raden vekk. Nå `w-full h-full` (full bredde, fyller resterende høyde) → symmetrisk venstre/høyre-padding flukter med logo/tittel, og kategori-raden ligger tett under reelen. Aspect-lås droppet; media er `object-cover` så 9:16-reelen cropper pent.
+- **Megler trukket ut av thumbnail-raden til en konstant kontakt-footer nederst** (vises alltid, lyst tema, Ring/E-post som direkte `tel:`/`mailto:`). Var tidligere gjemt som siste thumbnail (jf. forrige sesjons åpne spørsmål — nå besvart: ja, persistent synlig). `items`-filteret ekskluderer nå `intro` + `megler`.
+
+**2. Roligere cut-overlay-fade (`CameraCutOverlay.tsx` + `board-3d-camera-director.ts`).** Cream-laget ved kategori-skifte fadet for brått. `CUT_FADE_MS` 250→**550 ms**, easing `ease-out`→**`ease-in-out`** (mykt i begge ender). Gjorde `CUT_FADE_MS` til **eneste sannhetskilde**: overlayet leser konstanten og setter CSS-transition-varigheten via inline style → fade og kamera-hopp kan ikke desynke (hoppet skjer ved `t = CUT_FADE_MS` når laget er helt dekkende).
+
+**3. Velkommen-fly-in startet 3–4 s for sent — diagnostisert + fikset.** Empirisk måling (instrumentert `window.__placyIntroFly` + klikk-tidsstempel): klikk→`settling` = **89 ms** (audio-pipeline er synkron, IKKE gatet på mp3-load), `settling`→`running` = **3510 ms**. Rotårsak: `settleMs = 3500` i `runIntroFlythrough` — `apply(0)` snapper kamera til vid etablerings-positur, så holder 3,5 s (tile-streaming-buffer) før rAF-bevegelsen starter. Fix: ny `WELCOME_INTRO_SETTLE_MS = 1200` (`board-intro-flythrough.ts`), brukt som **per-beat override kun for live velkommen** (`isWelcomeBeat && !flyMode`) i `BoardMap3D.tsx` — `?fly=1`-capture beholder default 3500 (skarpe tiles i opptak; capture-scriptet har dessuten egen `CLEAN_SETTLE_MS`). Etter fix: klikk→bevegelse **3599 ms → 1368 ms** (~62 % raskere). *Tradeoff: kortere settle = risiko for tile-pop-in på kald cache (verifisert OK på varm cache her).*
+
+**4. 3D-bygningsmodellen fjernet fra boardet (reverserer demo-spiken fra entry over).** Bruker ville bare ha **prosjekt-popupen** («Stasjonskvartalet · Nybygg 2026», `projectSite`-pin) på objektets posisjon — ikke placeholder-kuben. Fjernet `<ModelLayer3D>` + `boardModel`-memo + `getBoardModel`/dynamic-import fra `BoardMap3D.tsx`. **Slettet dead code** (per CLAUDE.md): `board-models.ts`, `components/map/model-layer-3d.tsx`, `public/models/placeholder-massing.glb` (+ tom `public/models/`), og foreldreløs `Board3DModel`-interface i `lib/types.ts`. Stale kommentarer ryddet i `camera-tours.ts` (modell-landing → tomte-landing) + `board-intros.ts`. `projectSite`-popupen er fullstendig uavhengig (egen `Marker3D` i `map-view-3d.tsx`) → urørt. `camera-tours`-dataen (transport A→B) beholdt — lander nå på tomta i stedet for modellen.
+
+**Verifisering / metode.** Diagnose (#3) + slette-plan (#4) kjørt gjennom en **workflow (4 agenter): parallell investigate → adversarisk verify**. Begge funn holdt (delay-verdict 0.88, removal-verdict 0.90); verify-agenten fanget at capture-scriptet ville skades av å røre delt `DEFAULT_INTRO_PATH.settleMs` → bekreftet per-beat override som riktig, og flagget `Board3DModel`-interfacet som ekstra dead code (tatt med).
+
+**Gates:** tsc 0, eslint 0, **137/137 board-tester**, `npm run build` OK.
+
+**Åpent / deferred:**
+- **Finjuster velkommen-settle «snart»** (brukerens ord). Valg: (a) ned mot 0,5–0,8 s med liten kald-cache-pop-in-risiko, (b) pre-varme vid-shot-tiles under splash → trygt ~0,5 s uten pop-in, (c) behold 1,2 s. Cold-cache-verifisering (tøm Chrome-cache) anbefalt før låsing av verdi.
+- **Voice-over per kategori:** bruker vil jobbe med tydeligere avslutning/oppstart av VO per kategori (manus/audio-grep, ikke kode) — koblet til at kategori-overgangen skal leses bedre.
+
+---
+
 ## 2026-06-03 (forts. 3) — Intro-flythrough koblet til velkommen-beaten (Start → fly inn)
 
 Branch `feat/board-flyin-intro` (worktree), merget til main (`9a81bf5`). Fram til nå kjørte intro-flythrough-en (oval-spiral låst på bygget) KUN via `?fly=1` — altså bare for video-capture. Bruker ville at den skulle være selve intro-en til opplevelsen: **trykk «Start opplevelsen» → kartet flyr inn fra vidt nærområde til hero**, koblet til **velkommen**-kategorien. Poenget er å introdusere nærområdet ved å fly inn og vise det først (aligner med «nærområde»-notatet øverst).
