@@ -49,6 +49,8 @@ function makeReportData(themes: ReportTheme[]): ReportData {
   return {
     projectName: "Test Prosjekt",
     address: "Testveien 1, 0001 Test",
+    district: "Midtbyen",
+    city: "Trondheim",
     centerCoordinates: { lat: 63.4, lng: 10.4 },
     heroMetrics: {} as ReportData["heroMetrics"],
     themes,
@@ -142,6 +144,24 @@ describe("adaptBoardData", () => {
       district: "Midtbyen",
       city: "Trondheim",
     });
+  });
+
+  it("tråder assets-flagg fra reportData til boardData", () => {
+    const assetsFixture = {
+      brand: true,
+      customIllustrations: true,
+      pinThumbnail: false,
+    };
+    const data = adaptBoardData({
+      ...makeReportData([makeTheme("x", [makePOI("p1")])]),
+      assets: assetsFixture,
+    });
+    expect(data.assets).toEqual(assetsFixture);
+  });
+
+  it("assets er undefined når reportData mangler det", () => {
+    const data = adaptBoardData(makeReportData([makeTheme("x", [makePOI("p1")])]));
+    expect(data.assets).toBeUndefined();
   });
 
   describe("audio adapter", () => {

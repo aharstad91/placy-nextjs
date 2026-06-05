@@ -44,7 +44,12 @@ import {
 } from "@/lib/themes/project-brand";
 import type { BoardData, BoardHome } from "../board/board-data";
 
-const INTRO_VIDEO_SRC = "/reels/stasjonskvartalet/intro.mp4";
+/** Intro-video pr. prosjekt etter slug-konvensjon: `/reels/{slug}/intro.mp4`.
+ *  Mangler filen (nytt prosjekt uten produsert intro) → tom src, og IntroReel
+ *  faller tilbake til svart bakgrunn med start-knapp. */
+function introVideoSrc(projectSlug: string | undefined): string {
+  return projectSlug ? `/reels/${projectSlug}/intro.mp4` : "";
+}
 
 interface Props {
   project: Project;
@@ -75,7 +80,7 @@ function Inner({ project, enTranslations = {} }: Props) {
   const boardData = useMemo(() => adaptBoardData(reportData), [reportData]);
 
   const cards = useMemo(
-    () => buildReelsCards(boardData, INTRO_VIDEO_SRC),
+    () => buildReelsCards(boardData, introVideoSrc(boardData.projectSlug)),
     [boardData],
   );
 
@@ -246,15 +251,15 @@ function ResponsiveLayoutInner({
         label: c.label,
         color: c.color,
         image:
-          getCategoryIllustrationSrc(boardData.projectSlug, c.id) ??
+          getCategoryIllustrationSrc(boardData.projectSlug, c.id, boardData.assets) ??
           c.illustration?.src,
       })),
-    [boardData.categories, boardData.projectSlug],
+    [boardData.categories, boardData.projectSlug, boardData.assets],
   );
-  const logoSrc = getProjectLogoSrc(boardData.projectSlug);
+  const logoSrc = getProjectLogoSrc(boardData.projectSlug, boardData.assets);
   const splashHero =
-    getProjectSplashImage(boardData.projectSlug) ?? home.heroImage;
-  const splashVideo = getProjectSplashVideo(boardData.projectSlug);
+    getProjectSplashImage(boardData.projectSlug, boardData.assets) ?? home.heroImage;
+  const splashVideo = getProjectSplashVideo(boardData.projectSlug, boardData.assets);
   const subline =
     [home.district, home.city].filter(Boolean).join(", ") || undefined;
 

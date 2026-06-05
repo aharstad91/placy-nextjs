@@ -59,9 +59,7 @@ describe("buildReelsCards", () => {
     ]);
   });
 
-  it("filtrerer ut kategorier uten audio", () => {
-    // Bruk kategori-id-er som IKKE finnes i CATEGORY_REELS_AUDIO-overriden,
-    // så makeCategory-audioen (eller mangelen på den) faktisk avgjør filteret.
+  it("filtrerer ut kategorier uten audio og uten reelsAudio", () => {
     const data = makeBoardData([
       makeCategory("kultur", { audio: undefined }),
       makeCategory("shopping"),
@@ -74,6 +72,35 @@ describe("buildReelsCards", () => {
     if (cards[1].kind === "category") {
       expect(cards[1].categoryId).toBe("shopping");
     }
+  });
+
+  it("bruker reelsAudio fremfor audio-tour-sporet når begge finnes", () => {
+    const data = makeBoardData([
+      makeCategory("transport", {
+        audio: { url: "/audio/tour.mp3", manus: "tour manus" },
+        reelsAudio: { url: "/audio/reels.mp3", manus: "reels manus" },
+      }),
+    ]);
+
+    const tracks = buildCategoryTracks(buildReelsCards(data, "/reels/intro.mp4"));
+
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].url).toBe("/audio/reels.mp3");
+    expect(tracks[0].manus).toBe("reels manus");
+  });
+
+  it("inkluderer kategori som kun har reelsAudio (ingen audio-tour-spor)", () => {
+    const data = makeBoardData([
+      makeCategory("transport", {
+        audio: undefined,
+        reelsAudio: { url: "/audio/reels.mp3", manus: "reels manus" },
+      }),
+    ]);
+
+    const cards = buildReelsCards(data, "/reels/intro.mp4");
+
+    expect(cards).toHaveLength(2);
+    expect(cards[1].kind).toBe("category");
   });
 
   it("bevarer kategori-rekkefølgen fra boardData", () => {
@@ -93,7 +120,6 @@ describe("buildReelsCards", () => {
 
 describe("buildCategoryTracks", () => {
   it("returnerer kun category-cards som AudioTrack[]", () => {
-    // Ikke-overridede kategori-id-er, så makeCategory-audioen flyter gjennom.
     const data = makeBoardData([makeCategory("kultur"), makeCategory("shopping")]);
     const cards = buildReelsCards(data, "/reels/intro.mp4");
 

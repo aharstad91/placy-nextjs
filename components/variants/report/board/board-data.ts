@@ -1,6 +1,7 @@
 import type {
   BrokerInfo,
   POI,
+  ProjectAssetFlags,
   ReportThemeAudio,
   ReportThemeAudioTimings,
   ReportThemeGroundingView,
@@ -66,6 +67,8 @@ export interface BoardCategory {
   topRankedPois: BoardPOI[];
   /** Audio-tour-spor for kategorien — kun satt når både url og manus eksisterer. */
   audio?: BoardAudioTrack;
+  /** Reels-spesifikt lydspor — overstyrer `audio` i reels-feeden. Per-prosjekt fra Supabase. */
+  reelsAudio?: BoardAudioTrack;
 }
 
 export interface BoardHome {
@@ -105,6 +108,8 @@ export interface BoardData {
   poisById: Map<string, POI>;
   /** Eksplisitt opt-in for audio-tour-CTA. Default false. */
   audioTourEnabled: boolean;
+  /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
+  assets?: ProjectAssetFlags;
 }
 
 /**
@@ -140,10 +145,9 @@ export function adaptBoardData(report: ReportData): BoardData {
       address: report.address,
       heroImage: report.heroImage,
       heroIntro: report.heroIntro,
-      // TODO(spike): district/city skal komme fra ReportData/ProjectContainer
-      // når feltene er lagt til der. Hardkodet for Stasjonskvartalet-demoen.
-      district: "Midtbyen",
-      city: "Trondheim",
+      // Bydel/by fra reportConfig (Supabase). Undefined → subline skjules.
+      district: report.district,
+      city: report.city,
       audio: pickPlayableAudio(report.heroAudio),
     },
     categories,
@@ -156,6 +160,7 @@ export function adaptBoardData(report: ReportData): BoardData {
       : getProjectBrokers(report.projectSlug),
     poisById,
     audioTourEnabled: report.audioTourEnabled === true,
+    assets: report.assets,
   };
 }
 
@@ -217,6 +222,7 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     // allPOIs. Adapteres på samme måte så board-laget får samme BoardPOI-form.
     topRankedPois: theme.topRanked.map((p) => adaptPOI(p, id)),
     audio: pickPlayableAudio(theme.audio),
+    reelsAudio: pickPlayableAudio(theme.reelsAudio),
   };
 }
 

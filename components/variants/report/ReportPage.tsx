@@ -46,7 +46,10 @@ function ReportPageInner({ project, enTranslations = {}, areaSlug, primaryThemeI
 
   // Thumbnail (data-URI) for prosjektmarkøren — delt på tvers av samlekart og
   // per-tema-kart. Undefined → ProjectSitePin faller tilbake til bygnings-glyph.
-  const projectImageSrc = getProjectPinThumbnail(project.urlSlug);
+  const projectImageSrc = getProjectPinThumbnail(
+    project.urlSlug,
+    project.reportConfig?.assets,
+  );
 
   const effectiveProject = useMemo(
     () => applyTranslations(project, locale, enTranslations),

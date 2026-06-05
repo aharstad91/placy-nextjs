@@ -409,7 +409,7 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
           lat: data.home.coordinates.lat,
           lng: data.home.coordinates.lng,
           name: data.home.name,
-          imageSrc: getProjectPinThumbnail(data.projectSlug),
+          imageSrc: getProjectPinThumbnail(data.projectSlug, data.assets),
         }}
       />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />

@@ -57,7 +57,14 @@ const ALLOWED_REPORTCONFIG_KEYS = new Set([
   // heroAudio + audioVersion er top-level. "audio" inkludert som future-safety.
   "audio",
   "audioVersion",
+  "audioTourEnabled",
+  "welcomeAudio",
   "heroAudio",
+  "outroAudio",
+  // Produktiserings-felt (Plan A) — per-prosjekt lokasjon + asset-flagg
+  "district",
+  "city",
+  "assets",
   // Deprecated but tolerated — old rows may still carry these
   "closingTitle",
   "closingText",
@@ -76,7 +83,13 @@ const PRESERVED_REPORTCONFIG_KEYS = [
   "personas",
   "audio",
   "audioVersion",
+  "audioTourEnabled",
+  "welcomeAudio",
   "heroAudio",
+  "outroAudio",
+  "district",
+  "city",
+  "assets",
 ];
 
 const TOTAL_FAILURE_THRESHOLD = 5; // ≥5 av 7 feilet → abort

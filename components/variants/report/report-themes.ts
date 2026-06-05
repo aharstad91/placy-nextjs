@@ -21,6 +21,8 @@ export interface ReportThemeDefinition extends ThemeDefinition {
   grounding?: ReportThemeGrounding;
   /** Build-time audio-tour-spor (fra products.config). */
   audio?: ReportThemeAudio;
+  /** Reels-spesifikt lydspor (fra products.config) — overstyrer audio i reels-feeden. */
+  reelsAudio?: ReportThemeAudio;
 }
 
 /**

@@ -382,6 +382,10 @@ export interface ReportThemeConfig {
   grounding?: ReportThemeGrounding;
   /** Build-time-generert audio-tour-spor for kategorien. Omit ved feil. */
   audio?: ReportThemeAudio;
+  /** Reels-spesifikt lydspor (kortere, bilde-aligned manus) som overstyrer
+   *  `audio` i reels-feeden. Audio-tour i rapport beholder `audio`. Per-prosjekt
+   *  i Supabase — erstatter den gamle hardkodede CATEGORY_REELS_AUDIO-mappen. */
+  reelsAudio?: ReportThemeAudio;
 }
 
 export interface BrokerInfo {
@@ -409,9 +413,33 @@ export interface ReportCTA {
   shareTitle?: string;
 }
 
+/**
+ * Per-prosjekt opt-in for prosjekt-spesifikke asset-filer. Erstatter de gamle
+ * hardkodede slug-settene (PROJECTS_WITH_BRAND / PROJECTS_WITH_CUSTOM_ILLUSTRATIONS)
+ * — et nytt prosjekt skrur på flagget i Supabase når filene er lastet opp, uten
+ * kodeendring. Når et flagg er av, faller render-laget tilbake (tekst-wordmark,
+ * generiske tema-illustrasjoner, bygnings-glyph-pin). Filene følger slug-
+ * konvensjonen: `/illustrations/{slug}-logo.svg`, `-splash.jpg`,
+ * `-splash-video.mp4`, `-{categoryId}.jpg`, `-pin-thumb.jpg`.
+ */
+export interface ProjectAssetFlags {
+  /** Egen logo + splash-hero + splash-video finnes for prosjektet. */
+  brand?: boolean;
+  /** Egne kategori-illustrasjoner (`{slug}-{categoryId}.jpg`) finnes. */
+  customIllustrations?: boolean;
+  /** Egen kvadratisk pin-thumbnail (`{slug}-pin-thumb.jpg`) finnes for 3D-markøren. */
+  pinThumbnail?: boolean;
+}
+
 export interface ReportConfig {
   label?: string;
   heroIntro?: string;
+  /** Bydel, eks. "Midtbyen". Subline i Nabolaget-seksjonen + splash. */
+  district?: string;
+  /** By, eks. "Trondheim". Vises etter district i subline. */
+  city?: string;
+  /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
+  assets?: ProjectAssetFlags;
   /** Path (absolute or /public) til illustrasjon som vises i hero + summary. Optional. */
   heroImage?: string;
   themes?: ReportThemeConfig[];

@@ -63,7 +63,14 @@ const ALLOWED_REPORTCONFIG_KEYS = new Set([
   "personas",
   "audio",
   "audioVersion",
+  "audioTourEnabled",
+  "welcomeAudio",
   "heroAudio",
+  "outroAudio",
+  // Produktiserings-felt (Plan A)
+  "district",
+  "city",
+  "assets",
   "closingTitle",
   "closingText",
 ]);

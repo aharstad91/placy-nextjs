@@ -7,6 +7,7 @@ import type {
   BrokerInfo,
   ReportCTA,
   ReportThemeGroundingView,
+  ProjectAssetFlags,
 } from "@/lib/types";
 import { ReportThemeGroundingViewSchema } from "@/lib/types";
 import { getReportThemes } from "./report-themes";
@@ -118,6 +119,8 @@ export interface ReportTheme {
   image?: ThemeIllustration;
   /** Build-time audio-tour-spor for kategorien (Steg 8c). */
   audio?: import("@/lib/types").ReportThemeAudio;
+  /** Reels-spesifikt lydspor (overstyrer audio i reels-feeden). Per-prosjekt fra Supabase. */
+  reelsAudio?: import("@/lib/types").ReportThemeAudio;
 }
 
 export interface ThemeIllustration {
@@ -166,6 +169,12 @@ export interface ReportData {
    *  spesifikke ressurser (illustrasjoner, audio-stier, etc.). */
   projectSlug?: string;
   address: string;
+  /** Bydel, eks. "Midtbyen" (fra reportConfig). Subline i Nabolaget + splash. */
+  district?: string;
+  /** By, eks. "Trondheim" (fra reportConfig). */
+  city?: string;
+  /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
+  assets?: ProjectAssetFlags;
   centerCoordinates: { lat: number; lng: number };
   heroMetrics: ReportHeroMetrics;
   themes: ReportTheme[];
@@ -585,6 +594,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
         : undefined,
       image: PROJECT_THEME_ILLUSTRATIONS[`${project.customer}_${project.urlSlug}`]?.[themeDef.id] ?? THEME_ILLUSTRATIONS[themeDef.id],
       audio: themeDef.audio,
+      reelsAudio: themeDef.reelsAudio,
     });
   }
 
@@ -603,6 +613,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     projectName: project.name,
     projectSlug: project.urlSlug,
     address: project.pois[0]?.address ?? "",
+    district: rc?.district,
+    city: rc?.city,
+    assets: rc?.assets,
     centerCoordinates: project.centerCoordinates,
     heroMetrics,
     themes,
