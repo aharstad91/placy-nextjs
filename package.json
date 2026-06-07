@@ -9,6 +9,7 @@
     "lint": "eslint app/ lib/ components/ middleware.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "create-report": "npx tsx scripts/provision-rapport.ts",
     "generate:story": "npx tsx scripts/generate-story.ts",
     "generate:reels-posters": "node scripts/generate-reels-posters.mjs",
     "migrate:supabase": "npx tsx scripts/migrate-to-supabase.ts",

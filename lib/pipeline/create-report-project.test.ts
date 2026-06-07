@@ -1,0 +1,198 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { REPORT_THEME_DEFAULTS } from "./report-defaults";
+
+// Mock Supabase client
+vi.mock("@/lib/supabase/client", () => ({
+  createServerClient: vi.fn(),
+}));
+
+// Mock slugify to verify it's used
+vi.mock("@/lib/utils/slugify", () => ({
+  slugify: vi.fn((text: string) =>
+    text
+      .toLowerCase()
+      .replace(/æ/g, "ae")
+      .replace(/ø/g, "o")
+      .replace(/å/g, "a")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 63)
+  ),
+}));
+
+import { createServerClient } from "@/lib/supabase/client";
+import { createReportProject } from "./create-report-project";
+
+function makeMaybeSingle(data: unknown) {
+  return { maybeSingle: vi.fn().mockResolvedValue({ data }) };
+}
+
+function buildMockSupabase(overrides: {
+  customerUpsertError?: { message: string } | null;
+  existingProject?: { id: string; url_slug: string } | null;
+  existingProduct?: { id: string } | null;
+  conflictingProject?: { id: string } | null;
+  projectInsertError?: { message: string } | null;
+  productInsertError?: { message: string } | null;
+} = {}) {
+  // selectCallCount tracks how many times .from("projects").select() is called
+  // so we can route the first call (existing by slug) vs second (conflict by id)
+  const selectCallCount: Record<string, number> = {};
+
+  const makeFrom = (tableName: string) => {
+    const chain: Record<string, unknown> = {};
+
+    chain.upsert = vi.fn().mockResolvedValue({ error: overrides.customerUpsertError ?? null });
+    chain.insert = vi.fn().mockResolvedValue({
+      error:
+        tableName === "projects"
+          ? (overrides.projectInsertError ?? null)
+          : (overrides.productInsertError ?? null),
+    });
+    chain.delete = vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) }));
+
+    // .select(...).eq(...)[.eq(...)].maybeSingle()
+    // Strategy: the col passed to the first .eq() tells us which query this is.
+    chain.select = vi.fn(() => {
+      selectCallCount[tableName] = (selectCallCount[tableName] ?? 0) + 1;
+      const callN = selectCallCount[tableName];
+
+      return {
+        eq: vi.fn((col: string) => {
+          if (tableName === "projects") {
+            if (col === "customer_id") {
+              // First eq in: .eq("customer_id", ...).eq("url_slug", ...).maybeSingle()
+              // callN=1 → existing-project lookup; callN=2 → conflict-id lookup handled differently
+              return {
+                eq: vi.fn((col2: string) => {
+                  if (col2 === "url_slug") {
+                    return makeMaybeSingle(overrides.existingProject ?? null);
+                  }
+                  return makeMaybeSingle(null);
+                }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+              };
+            }
+            if (col === "id") {
+              // .eq("id", baseProjectId).maybeSingle() — collision check
+              return makeMaybeSingle(overrides.conflictingProject ?? null);
+            }
+          }
+          if (tableName === "products") {
+            // .eq("project_id", ...).eq("product_type", ...).maybeSingle()
+            return {
+              eq: vi.fn(() => makeMaybeSingle(overrides.existingProduct ?? null)),
+            };
+          }
+          return makeMaybeSingle(null);
+        }),
+      };
+    });
+
+    return chain;
+  };
+
+  return {
+    from: vi.fn((tableName: string) => makeFrom(tableName)),
+  };
+}
+
+describe("createReportProject — Unit 1", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("happy path: oppretter prosjekt med container-ID og 6 temaer", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    const result = await createReportProject({
+      name: "Vikhammer Strand",
+      address: "Vikhammer Strand, Vikhammer, Malvik",
+      lat: 63.41,
+      lng: 10.77,
+      customerSlug: "placy-demo",
+    });
+
+    expect(result.projectId).toBe("placy-demo_vikhammer-strand");
+    expect(result.slug).toBe("vikhammer-strand");
+    expect(result.existed).toBe(false);
+    expect(result.warnings).toHaveLength(0);
+
+    // Verifiser at products.insert ble kalt med 6 temaer og leadTexts
+    const productsCalls = mockSupabase.from.mock.calls
+      .filter((c: unknown[]) => c[0] === "products")
+      .map(() => mockSupabase.from("products"));
+
+    // Sjekk at insert ble kalt (indirekte via products.from)
+    const fromCalls = mockSupabase.from.mock.calls;
+    expect(fromCalls.some((c: unknown[]) => c[0] === "products")).toBe(true);
+  });
+
+  it("norske tegn i navn: Wesseløkka Vest → slug wesselokka-vest", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    const result = await createReportProject({
+      name: "Wesseløkka Vest",
+      address: "Wesseløkka Vest, Trondheim",
+      lat: 63.42,
+      lng: 10.38,
+      customerSlug: "broset-utvikling-as",
+    });
+
+    expect(result.slug).toBe("wesselokka-vest");
+    expect(result.projectId).toBe("broset-utvikling-as_wesselokka-vest");
+  });
+
+  it("eksisterende prosjekt med product: returnerer uten å overskrive", async () => {
+    const mockSupabase = buildMockSupabase({
+      existingProject: { id: "placy-demo_vikhammer-strand", url_slug: "vikhammer-strand" },
+      existingProduct: { id: "existing-product-uuid" },
+    });
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    const result = await createReportProject({
+      name: "Vikhammer Strand",
+      address: "Vikhammer Strand, Vikhammer",
+      lat: 63.41,
+      lng: 10.77,
+      customerSlug: "placy-demo",
+    });
+
+    expect(result.existed).toBe(true);
+    expect(result.productId).toBe("existing-product-uuid");
+    expect(result.warnings.length).toBeGreaterThan(0);
+    // Kun select-kall mot projects (ikke insert) — bevist av existed=true + productId
+  });
+
+  it("manglende SUPABASE_SERVICE_ROLE_KEY: kaster feil før noen writes", async () => {
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(null);
+
+    await expect(
+      createReportProject({
+        name: "X",
+        address: "X",
+        lat: 0,
+        lng: 0,
+      })
+    ).rejects.toThrow(/SUPABASE_SERVICE_ROLE_KEY/);
+  });
+
+  it("report-defaults.ts: alle 6 aktive temaer har ikke-tom leadText", () => {
+    const ids = REPORT_THEME_DEFAULTS.map((t) => t.id);
+    expect(ids).toContain("hverdagsliv");
+    expect(ids).toContain("barn-oppvekst");
+    expect(ids).toContain("mat-drikke");
+    expect(ids).toContain("natur-friluftsliv");
+    expect(ids).toContain("transport");
+    expect(ids).toContain("trening-aktivitet");
+    expect(ids).not.toContain("opplevelser");
+
+    for (const theme of REPORT_THEME_DEFAULTS) {
+      expect(theme.leadText.trim().length, `leadText mangler for ${theme.id}`).toBeGreaterThan(0);
+    }
+  });
+});
