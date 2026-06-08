@@ -1,6 +1,6 @@
 "use client";
 
-import { Bus, Bike, Car } from "lucide-react";
+import { Bike, Car } from "lucide-react";
 import type { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
@@ -18,32 +18,29 @@ export function POIRealtimeSection({ realtimeData }: POIRealtimeSectionProps) {
   return (
     <div className="bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100 space-y-2">
       {hasEntur && (
-        <div>
-          <div className="flex items-center gap-1 text-xs text-gray-500 mb-1.5">
-            <Bus className="w-3 h-3" />
-            <span>Neste avganger</span>
-          </div>
-          <div className="space-y-1">
-            {realtimeData.entur!.departures.slice(0, 3).map((dep, i) => (
-              <div key={i} className="flex items-center gap-1.5 text-xs">
+        <div className="space-y-1">
+          {realtimeData.entur!.departures.slice(0, 3).map((dep, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-xs">
+              <span
+                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  dep.isRealtime ? "bg-green-500" : "bg-gray-300"
+                }`}
+              />
+              <span className="flex-1 truncate text-gray-700">
                 <span
-                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                    dep.isRealtime ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                />
-                <span
-                  className="font-semibold min-w-[2rem]"
+                  className="font-semibold"
                   style={dep.lineColor ? { color: dep.lineColor } : undefined}
                 >
                   {dep.lineCode}
                 </span>
-                <span className="text-gray-500 flex-1 truncate">{dep.destination}</span>
-                <span className="text-gray-600 shrink-0">
-                  {formatRelativeDepartureTime(dep.departureTime)}
-                </span>
-              </div>
-            ))}
-          </div>
+                {": "}
+                {dep.destination}
+              </span>
+              <span className="text-gray-600 shrink-0">
+                {formatRelativeDepartureTime(dep.departureTime)}
+              </span>
+            </div>
+          ))}
         </div>
       )}
 

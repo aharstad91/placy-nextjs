@@ -43,9 +43,23 @@ async function fetchEntur(stopPlaceId: string, signal: AbortSignal) {
   const response = await fetch(`/api/entur?stopPlaceId=${stopPlaceId}&limit=5`, { signal });
   if (!response.ok) throw new Error("Failed to fetch Entur data");
   const result = await response.json();
+
+  // Flat `departures` fra API-et er kun første avgang per retning (1 per quay) —
+  // tenkt for kart-tooltips. For avgangslista vil vi ha de N neste uansett
+  // retning, så vi merger alle quay-avganger og sorterer på avgangstid.
+  // Fallback til flat `departures` hvis quays mangler.
+  const quays: Array<{ departures: EnturDeparture[] }> = result.quays || [];
+  const merged: EnturDeparture[] = quays.length
+    ? quays.flatMap((q) => q.departures)
+    : result.departures || [];
+  merged.sort(
+    (a, b) =>
+      new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime(),
+  );
+
   return {
     stopName: result.stopPlace?.name || "Unknown",
-    departures: result.departures || [],
+    departures: merged,
   };
 }
 
