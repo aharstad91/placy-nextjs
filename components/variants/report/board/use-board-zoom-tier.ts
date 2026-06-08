@@ -16,7 +16,7 @@ export const LABEL_BREAKPOINT = 16;
  * Mens vi kalibrerer logges hver tier-overgang. Settes false når terskler er
  * låst (jf. plan Unit 4 verification).
  */
-const DEBUG_ZOOM = true;
+const DEBUG_ZOOM = false;
 
 export function computeZoomTier(zoom: number): BoardZoomTier {
   if (zoom < DOT_BREAKPOINT) return "dot";
