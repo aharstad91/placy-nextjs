@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-06-08 (forts. 6) — Sanntids transport-data i rapport-board-popups + bysykkel "Stengt"-bug
+
+Branch-sesjon (`feat/board-popup-transport-live-data`, dev :3000). Mål: få sanntids kollektiv-avganger og bysykkel-tilgjengelighet tilbake i rapport-board — kritisk for næringseiendom (pendler-/jobbreise-perspektiv). Research + `/ce-plan` + `/ce-work`.
+
+**1. Diagnose: koden fantes, men board-popupene var aldri koblet til.** Hele transport-stacken (Entur/Bysykkel/Hyre/Mobility-APIer, `useRealtimeData`, `useTransportDashboard`) var allerede implementert og brukt i `ReportMapDrawer` (gammel rapport) + Explorer-kort. Men `rapport-board` bruker en egen popup-arkitektur (`BoardPOIMiniPopup` 2D + `BoardPOI3DMiniPopup` 3D) som kun viste ikon/navn/«Utforsk». Live-data manglet bare *der*.
+
+**2. Løsning (3 units):** Ekstraherte `RealtimeSection` fra `ReportMapDrawer` til delt `components/variants/report/blocks/POIRealtimeSection.tsx`, koblet den inn i begge board-popupene via `useRealtimeData(poi.raw)`. `BoardPOI.raw` bærer hele POI-objektet inkl. `enturStopplaceId`/`bysykkelStationId`/`hyreStationId`, så ingen datamodell-endring trengtes. Hooks plassert FØR early-return (React-regel). Render gates på `realtimeData.lastUpdated` → ingen layout-hopp mens fetch pågår. rAF-posisjoneringen i 3D-popupen er uavhengig av React-state — ingen konflikt.
+
+**3. Code-review fanget tilstand-lekkasje:** ved bytte transport-POI A→B viste `useRealtimeData` A-s avganger under B-s navn til B-s fetch fullførte (gammel `lastUpdated` tok optimistisk gren). Fikset med synkron state-reset på `poiId`-endring. Fjernet også ubrukt `poi`-prop fra `POIRealtimeSection` (falsk kobling mot 3 kall-steder).
+
+**4. Bysykkel-bug oppdaget live — alle stasjoner viste "(Stengt)".** GBFS-feeden returnerer `is_installed`/`is_renting` som **boolean** (`true`/`false`), men koden sjekket `=== 1` (integer). `true === 1` er `false` i JS → alle 73 stasjoner alltid stengt, året rundt. TypeScript fanget det ikke (interface deklarerte `number`). Ny `isStationOpen`-helper bruker `Boolean()` (håndterer både boolean og legacy 1/0). Fikset overalt siden alle konsumenter leser samme `/api/bysykkel`. **Lærdom dokumentert:** `docs/solutions/api-integration/gbfs-boolean-vs-integer-station-status-20260608.md` — aldri `=== 1` mot eksterne GBFS-status-felt; verifiser felt-type mot rå respons.
+
+**5. Verifikasjon:** Entur-API testet live (Hesthagen NSR:StopPlace:41620 → linje 18/2/11/1 sanntid). Bysykkel-API etter fiks: `isOpen: true`. `npx tsc --noEmit` + `npm run lint` grønne. **Fast-Refresh-felle:** ny fil + import-endringer i 3 komponenter krevde hard-refresh i nettleser før klient-bundlen plukket opp endringen — verdt å huske ved «koden er der men vises ikke».
+
+**Deferred:** mobil bottom-sheet transport-data (komponenten finnes ikke som fil ennå) — board-popup-arbeidet dekker kun `popupMode === "mini"` (desktop). Plan: `docs/plans/2026-06-08-001-feat-board-popup-transport-live-data-plan.md`. Ikke merget til main ennå.
+
+---
+
 ## 2026-06-08 (forts. 5) — Veo 3.1 intro-video for Teknostallen + splashVideo-flagg + branch→main merge
 
 Direkte sesjon (main, dev :3000). Mål: lage en splash-intro-video til Teknostallen rapport-board etter samme «gi oss renderene → levende video»-mønster som Stasjonskvartalet, via Gemini Veo. Avsluttet med å committe + merge hele det akkumulerte rapport-board-arbeidet til main, fikse pre-eksisterende røde tester, og deploye.
