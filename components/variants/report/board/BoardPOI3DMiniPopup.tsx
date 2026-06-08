@@ -141,7 +141,7 @@ export function BoardPOI3DMiniPopup({ map3d }: Props) {
           </p>
         )}
 
-        {isTransportPOI && realtimeData.lastUpdated && (
+        {isTransportPOI && (
           <div className="mt-1.5 px-3">
             <POIRealtimeSection realtimeData={realtimeData} />
           </div>

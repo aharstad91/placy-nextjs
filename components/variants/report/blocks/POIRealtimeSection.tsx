@@ -12,8 +12,31 @@ export function POIRealtimeSection({ realtimeData }: POIRealtimeSectionProps) {
   const hasEntur = realtimeData.entur && realtimeData.entur.departures.length > 0;
   const hasBysykkel = !!realtimeData.bysykkel;
   const hasHyre = !!realtimeData.hyre;
+  const hasAny = hasEntur || hasBysykkel || hasHyre;
 
-  if (!hasEntur && !hasBysykkel && !hasHyre) return null;
+  // Første henting pågår (ingen data ennå) — vis skeleton så brukeren ser
+  // at noe er på vei. Faller tilbake til null hvis hentingen ble ferdig uten
+  // data (loading=false, hasAny=false).
+  if (!hasAny && realtimeData.loading) {
+    return (
+      <div className="bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100">
+        <div className="space-y-1.5 animate-pulse">
+          {[68, 56, 44].map((width, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-200 shrink-0" />
+              <span
+                className="h-2.5 rounded bg-gray-200"
+                style={{ width: `${width}%` }}
+              />
+              <span className="ml-auto h-2.5 w-6 rounded bg-gray-200 shrink-0" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAny) return null;
 
   return (
     <div className="bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100 space-y-2">
