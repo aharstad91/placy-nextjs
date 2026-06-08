@@ -30,9 +30,15 @@ import {
   DEFAULT_CUSTOMER,
 } from "@/lib/pipeline/create-report-project";
 import { importPublicPois } from "@/lib/pipeline/import-public-pois";
-import { enrichReportPois } from "@/lib/pipeline/enrich-report-pois";
+import {
+  enrichReportPois,
+  NAERING_GOOGLE_CATEGORIES,
+} from "@/lib/pipeline/enrich-report-pois";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
-import { getDiscoveryRadius } from "@/lib/pipeline/report-defaults";
+import {
+  getDiscoveryRadius,
+  type ReportProfile,
+} from "@/lib/pipeline/report-defaults";
 import { createServerClient } from "@/lib/supabase/client";
 
 // ── Arg-parsing ───────────────────────────────────────────────────────────
@@ -51,11 +57,18 @@ function parseArgs() {
   const dryRun = has("--dry-run");
   const allowUpdate = has("--update");
   const confirmCoordsStr = get("--confirm-coords");
+  const profileStr = get("--profile") ?? "bolig";
 
   if (!name || !address) {
     console.error("Bruk: --name <prosjektnavn> --address <adresse>");
     process.exit(1);
   }
+
+  if (profileStr !== "bolig" && profileStr !== "naering") {
+    console.error('--profile må være "bolig" eller "naering"');
+    process.exit(1);
+  }
+  const profile = profileStr as ReportProfile;
 
   let confirmCoords: { lat: number; lng: number } | undefined;
   if (confirmCoordsStr) {
@@ -67,7 +80,7 @@ function parseArgs() {
     confirmCoords = { lat, lng };
   }
 
-  return { name, address, customer, dryRun, allowUpdate, confirmCoords };
+  return { name, address, customer, dryRun, allowUpdate, confirmCoords, profile };
 }
 
 // ── Logging ───────────────────────────────────────────────────────────────
@@ -87,7 +100,7 @@ async function revalidateProject(customer: string, slug: string) {
   const path = `/eiendom/${customer}/${slug}/rapport-board`;
 
   // Prøv /api/admin/revalidate (krever ADMIN_ENABLED på prod)
-  const prodUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://placy.app";
+  const prodUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.placy.no";
   try {
     const res = await fetch(`${prodUrl}/api/admin/revalidate`, {
       method: "POST",
@@ -164,7 +177,7 @@ async function acceptanceCheck(
   // 4. Vis URL-er
   section("Leveranse");
   const localUrl = `http://localhost:3000/eiendom/${customer}/${slug}/rapport-board`;
-  const prodUrl = `https://placy.app/eiendom/${customer}/${slug}/rapport-board`;
+  const prodUrl = `https://www.placy.no/eiendom/${customer}/${slug}/rapport-board`;
   log(`Lokal: ${localUrl}`);
   log(`Prod:  ${prodUrl}`);
 
@@ -174,7 +187,7 @@ async function acceptanceCheck(
 // ── Hoved-pipeline ────────────────────────────────────────────────────────
 
 async function main() {
-  const { name, address, customer, dryRun, allowUpdate, confirmCoords } =
+  const { name, address, customer, dryRun, allowUpdate, confirmCoords, profile } =
     parseArgs();
 
   // Sjekk env-variabler FØR noen writes
@@ -255,10 +268,11 @@ async function main() {
     log("\n── Dry-run: plan ──");
     log(`Prosjektnavn: ${name}`);
     log(`Kunde: ${customer}`);
+    log(`Profil: ${profile}`);
     log(`Adresse: ${placeName}`);
     log(`Koordinater: ${lat}, ${lng}`);
     log(`Kommune: ${komInfo?.kommunenavn ?? "ukjent"} (${kommunenummer ?? "ukjent"})`);
-    log(`Discovery radius: ${getDiscoveryRadius(city)} m`);
+    log(`Discovery radius: ${getDiscoveryRadius(city, profile)} m`);
     log("\nIngen Supabase-writes (--dry-run)");
     process.exit(0);
   }
@@ -275,6 +289,7 @@ async function main() {
     city,
     kommunenavn: komInfo?.kommunenavn,
     updateCoords: allowUpdate,
+    profile,
   });
 
   for (const w of projectResult.warnings) log(w);
@@ -284,20 +299,24 @@ async function main() {
       `\nProsjekt ${projectResult.projectId} eksisterer allerede.`
     );
     warn("Bruk --update for å re-kjøre pipelinen mot eksisterende prosjekt.");
-    warn(`URL: https://placy.app/eiendom/${projectResult.customerSlug}/${projectResult.slug}/rapport-board`);
+    warn(`URL: https://www.placy.no/eiendom/${projectResult.customerSlug}/${projectResult.slug}/rapport-board`);
     process.exit(0);
   }
 
   log(`Prosjekt-ID: ${projectResult.projectId}`);
   log(`Produkt-ID:  ${projectResult.productId}`);
 
-  const radiusMeters = getDiscoveryRadius(city);
+  const radiusMeters = getDiscoveryRadius(city, profile);
   log(`Discovery radius: ${radiusMeters} m`);
 
   // ── Steg 3: Offentlige POI-er (NSR, Barnehagefakta, Overpass) ──────────
   section("Steg 3: Offentlige POI-er");
 
-  if (kommunenummer) {
+  if (profile === "naering") {
+    log(
+      "Hopper over skoler/barnehager/idrett (nærings-profil — ikke relevant for kontorbygg)",
+    );
+  } else if (kommunenummer) {
     const pubResult = await importPublicPois({
       projectId: projectResult.projectId,
       lat,
@@ -321,6 +340,7 @@ async function main() {
     lat,
     lng,
     radiusMeters,
+    categories: profile === "naering" ? NAERING_GOOGLE_CATEGORIES : undefined,
   });
   log(`Google Places: ${enrichResult.google.total} POI-er (${enrichResult.google.new} nye, ${enrichResult.google.updated} oppdaterte)`);
   log(`Foto: ${enrichResult.photos.updated} oppdatert, ${enrichResult.photos.skipped} hoppet over`);

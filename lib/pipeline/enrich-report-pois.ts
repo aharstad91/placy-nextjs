@@ -27,6 +27,24 @@ export const BOLIG_GOOGLE_CATEGORIES = [
   "spa",
 ];
 
+/** Google Places-kategorier for næringsprofilen: hotel inn (gjeste-/kunde-
+ *  overnatting + møtefasiliteter), shopping_mall + spa ut (bolig-tyngde). */
+export const NAERING_GOOGLE_CATEGORIES = [
+  "restaurant",
+  "cafe",
+  "bar",
+  "bakery",
+  "supermarket",
+  "pharmacy",
+  "gym",
+  "park",
+  "museum",
+  "library",
+  "movie_theater",
+  "hair_care",
+  "hotel",
+];
+
 export interface EnrichReportPoisResult {
   google: {
     total: number;
@@ -47,8 +65,11 @@ export async function enrichReportPois(options: {
   lat: number;
   lng: number;
   radiusMeters: number;
+  /** Google Places-kategorier å hente. Default boligprofilen. */
+  categories?: string[];
 }): Promise<EnrichReportPoisResult> {
   const { projectId, lat, lng, radiusMeters } = options;
+  const categories = options.categories ?? BOLIG_GOOGLE_CATEGORIES;
   const warnings: string[] = [];
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -66,7 +87,7 @@ export async function enrichReportPois(options: {
   try {
     googleResult = await importPOIsToProject({
       circles: [{ lat, lng, radiusMeters }],
-      categories: BOLIG_GOOGLE_CATEGORIES,
+      categories,
       projectId,
       includeEntur: true,
       includeBysykkel: true,

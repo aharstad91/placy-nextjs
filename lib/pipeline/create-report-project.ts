@@ -9,8 +9,9 @@
 import { createServerClient } from "@/lib/supabase/client";
 import { slugify } from "@/lib/utils/slugify";
 import {
-  REPORT_THEME_DEFAULTS,
   getDiscoveryRadius,
+  getThemeDefaults,
+  type ReportProfile,
   type ReportThemeDefault,
 } from "@/lib/pipeline/report-defaults";
 
@@ -39,6 +40,9 @@ export interface ReportProjectOptions {
   kommunenavn?: string;
   /** Oppdater koordinater selv om prosjektet finnes fra før */
   updateCoords?: boolean;
+  /** Profil: "bolig" (default) eller "naering" — styrer temaer, radius,
+   *  venue_type og tags. */
+  profile?: ReportProfile;
 }
 
 export interface ReportProjectResult {
@@ -80,6 +84,8 @@ export async function createReportProject(
   }
 
   const customerSlug = options.customerSlug ?? DEFAULT_CUSTOMER;
+  const profile = options.profile ?? "bolig";
+  const isNaering = profile === "naering";
   const warnings: string[] = [];
 
   // 1. Upsert kunde
@@ -114,7 +120,7 @@ export async function createReportProject(
 
     // Oppdater koordinater hvis --update er satt
     if (options.updateCoords) {
-      const discoveryRadius = getDiscoveryRadius(options.city);
+      const discoveryRadius = getDiscoveryRadius(options.city, profile);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from("projects") as any)
         .update({
@@ -145,13 +151,13 @@ export async function createReportProject(
 
     // Prosjekt finnes, men mangler report-produkt — opprett det
     const productId = crypto.randomUUID();
-    const discoveryRadius = getDiscoveryRadius(options.city);
+    const discoveryRadius = getDiscoveryRadius(options.city, profile);
     const { error: prodError } = await supabase.from("products").insert({
       id: productId,
       project_id: existing.id,
       product_type: "report",
       story_title: `Nabolaget rundt ${options.name}`,
-      config: buildReportConfig(REPORT_THEME_DEFAULTS, discoveryRadius),
+      config: buildReportConfig(getThemeDefaults(profile), discoveryRadius),
     });
     if (prodError) {
       throw new Error(`Kunne ikke opprette rapport-produkt: ${prodError.message}`);
@@ -186,7 +192,7 @@ export async function createReportProject(
   }
 
   // 5. Opprett prosjekt
-  const discoveryRadius = getDiscoveryRadius(options.city);
+  const discoveryRadius = getDiscoveryRadius(options.city, profile);
   const projectInsert = {
     id: projectId,
     customer_id: customerSlug,
@@ -194,9 +200,11 @@ export async function createReportProject(
     url_slug: slug,
     center_lat: options.lat,
     center_lng: options.lng,
-    venue_type: "residential" as const,
-    venue_context: "suburban",
-    tags: ["Eiendom - Bolig"],
+    venue_type: (isNaering ? "commercial" : "residential") as
+      | "commercial"
+      | "residential",
+    venue_context: isNaering ? "urban" : "suburban",
+    tags: [isNaering ? "Eiendom - Næring" : "Eiendom - Bolig"],
     has_3d_addon: true,
     discovery_circles: [
       { lat: options.lat, lng: options.lng, radiusMeters: discoveryRadius },
@@ -219,7 +227,7 @@ export async function createReportProject(
     project_id: projectId,
     product_type: "report",
     story_title: `Nabolaget rundt ${options.name}`,
-    config: buildReportConfig(REPORT_THEME_DEFAULTS, discoveryRadius),
+    config: buildReportConfig(getThemeDefaults(profile), discoveryRadius),
   });
 
   if (productError) {
