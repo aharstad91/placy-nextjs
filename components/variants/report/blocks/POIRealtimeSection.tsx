@@ -1,0 +1,73 @@
+"use client";
+
+import { Bus, Bike, Car } from "lucide-react";
+import type { POI } from "@/lib/types";
+import type { useRealtimeData } from "@/lib/hooks/useRealtimeData";
+import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
+
+interface POIRealtimeSectionProps {
+  realtimeData: ReturnType<typeof useRealtimeData>;
+  poi: POI;
+}
+
+export function POIRealtimeSection({ realtimeData }: POIRealtimeSectionProps) {
+  const hasEntur = realtimeData.entur && realtimeData.entur.departures.length > 0;
+  const hasBysykkel = !!realtimeData.bysykkel;
+  const hasHyre = !!realtimeData.hyre;
+
+  if (!hasEntur && !hasBysykkel && !hasHyre) return null;
+
+  return (
+    <div className="bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100 space-y-2">
+      {hasEntur && (
+        <div>
+          <div className="flex items-center gap-1 text-xs text-gray-500 mb-1.5">
+            <Bus className="w-3 h-3" />
+            <span>Neste avganger</span>
+          </div>
+          <div className="space-y-1">
+            {realtimeData.entur!.departures.slice(0, 3).map((dep, i) => (
+              <div key={i} className="flex items-center gap-1.5 text-xs">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    dep.isRealtime ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span
+                  className="font-semibold min-w-[2rem]"
+                  style={dep.lineColor ? { color: dep.lineColor } : undefined}
+                >
+                  {dep.lineCode}
+                </span>
+                <span className="text-gray-500 flex-1 truncate">{dep.destination}</span>
+                <span className="text-gray-600 shrink-0">
+                  {formatRelativeDepartureTime(dep.departureTime)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {hasBysykkel && (
+        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+          <Bike className="w-3 h-3 text-blue-500" />
+          <span>
+            {realtimeData.bysykkel!.availableBikes} ledige sykler &middot;{" "}
+            {realtimeData.bysykkel!.availableDocks} ledige låser
+          </span>
+          {!realtimeData.bysykkel!.isOpen && (
+            <span className="text-red-500 ml-1">(Stengt)</span>
+          )}
+        </div>
+      )}
+
+      {hasHyre && (
+        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+          <Car className="w-3 h-3 text-emerald-500" />
+          <span>{realtimeData.hyre!.numVehiclesAvailable} biler ledige</span>
+        </div>
+      )}
+    </div>
+  );
+}

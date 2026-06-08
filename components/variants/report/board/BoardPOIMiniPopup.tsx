@@ -5,6 +5,8 @@ import { Sparkles, X } from "lucide-react";
 import { useBoard, useActivePOI } from "./board-state";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle } from "./marker-style";
+import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
+import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
 
 /**
  * Mapbox 2D mini-popup forankret til aktiv POI-markør.
@@ -17,6 +19,13 @@ import { markerCircleStyle } from "./marker-style";
 export function BoardPOIMiniPopup() {
   const { dispatch } = useBoard();
   const poi = useActivePOI();
+  const isTransportPOI = !!(
+    poi?.raw.enturStopplaceId ||
+    poi?.raw.bysykkelStationId ||
+    poi?.raw.hyreStationId
+  );
+  const realtimeData = useRealtimeData(isTransportPOI && poi ? poi.raw : null);
+
   if (!poi) return null;
 
   const Icon = getFilledIcon(poi.raw.category.icon);
@@ -75,6 +84,12 @@ export function BoardPOIMiniPopup() {
           <p className="mt-1.5 px-3 line-clamp-2 text-[13px] leading-snug text-stone-700">
             {poi.body}
           </p>
+        )}
+
+        {isTransportPOI && realtimeData.lastUpdated && (
+          <div className="mt-1.5 px-3">
+            <POIRealtimeSection realtimeData={realtimeData} poi={poi.raw} />
+          </div>
         )}
 
         <div className="mt-2.5 px-3 pb-3">

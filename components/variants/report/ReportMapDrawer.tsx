@@ -16,14 +16,11 @@ import {
   ExternalLink,
   MapPin,
   BookOpen,
-  Bus,
-  Bike,
-  Car,
   ShoppingBag,
 } from "lucide-react";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { isSafeUrl } from "@/lib/utils/url";
-import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
+import { POIRealtimeSection } from "./blocks/POIRealtimeSection";
 
 interface ReportMapDrawerProps {
   poi: POI;
@@ -226,7 +223,7 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
 
             {/* Realtime transport data */}
             {isTransportPOI && realtimeData.lastUpdated && (
-              <RealtimeSection realtimeData={realtimeData} poi={poi} />
+              <POIRealtimeSection realtimeData={realtimeData} poi={poi} />
             )}
 
             {/* Opening hours */}
@@ -349,7 +346,7 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
             )}
             {/* Realtime transport data — mobile */}
             {isTransportPOI && realtimeData.lastUpdated && (
-              <RealtimeSection realtimeData={realtimeData} poi={poi} />
+              <POIRealtimeSection realtimeData={realtimeData} poi={poi} />
             )}
             <div className="flex items-center gap-3">
               <a
@@ -380,72 +377,3 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
   );
 }
 
-// --- Realtime data section for transport POIs ---
-
-function RealtimeSection({
-  realtimeData,
-  poi,
-}: {
-  realtimeData: ReturnType<typeof useRealtimeData>;
-  poi: POI;
-}) {
-  const hasEntur = realtimeData.entur && realtimeData.entur.departures.length > 0;
-  const hasBysykkel = !!realtimeData.bysykkel;
-  const hasHyre = !!realtimeData.hyre;
-
-  if (!hasEntur && !hasBysykkel && !hasHyre) return null;
-
-  return (
-    <div className="bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100 space-y-2">
-      {/* Entur departures */}
-      {hasEntur && (
-        <div>
-          <div className="flex items-center gap-1 text-xs text-gray-500 mb-1.5">
-            <Bus className="w-3 h-3" />
-            <span>Neste avganger</span>
-          </div>
-          <div className="space-y-1">
-            {realtimeData.entur!.departures.slice(0, 3).map((dep, i) => (
-              <div key={i} className="flex items-center gap-1.5 text-xs">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                    dep.isRealtime ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                />
-                <span className="font-semibold min-w-[2rem]" style={dep.lineColor ? { color: dep.lineColor } : undefined}>
-                  {dep.lineCode}
-                </span>
-                <span className="text-gray-500 flex-1 truncate">{dep.destination}</span>
-                <span className="text-gray-600 shrink-0">
-                  {formatRelativeDepartureTime(dep.departureTime)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Bysykkel */}
-      {hasBysykkel && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-          <Bike className="w-3 h-3 text-blue-500" />
-          <span>
-            {realtimeData.bysykkel!.availableBikes} ledige sykler &middot;{" "}
-            {realtimeData.bysykkel!.availableDocks} ledige låser
-          </span>
-          {!realtimeData.bysykkel!.isOpen && (
-            <span className="text-red-500 ml-1">(Stengt)</span>
-          )}
-        </div>
-      )}
-
-      {/* Hyre */}
-      {hasHyre && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-          <Car className="w-3 h-3 text-emerald-500" />
-          <span>{realtimeData.hyre!.numVehiclesAvailable} biler ledige</span>
-        </div>
-      )}
-    </div>
-  );
-}

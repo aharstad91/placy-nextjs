@@ -8,6 +8,8 @@ import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle } from "./marker-style";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
 import { projectLatLngToScreen } from "@/components/map/project-latlng-to-screen";
+import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
+import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
 // merknad: hide-during-motion ble tidligere brukt for å skjule popup under
 // kamera-bevegelse fordi den gamle approksimasjonen drifted. Med korrekt
 // perspektiv-projeksjon tracker popupen markøren smooth — fjernet.
@@ -35,6 +37,12 @@ export function BoardPOI3DMiniPopup({ map3d }: Props) {
   const poi = useActivePOI();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | undefined>(undefined);
+  const isTransportPOI = !!(
+    poi?.raw.enturStopplaceId ||
+    poi?.raw.bysykkelStationId ||
+    poi?.raw.hyreStationId
+  );
+  const realtimeData = useRealtimeData(isTransportPOI && poi ? poi.raw : null);
 
   // Per-frame projeksjon. Skriver direkte til DOM (`transform: translate3d`)
   // istedenfor å gå via React setState — setState hver frame trigger React-
@@ -131,6 +139,12 @@ export function BoardPOI3DMiniPopup({ map3d }: Props) {
           <p className="mt-1.5 px-3 line-clamp-2 text-[13px] leading-snug text-stone-700">
             {poi.body}
           </p>
+        )}
+
+        {isTransportPOI && realtimeData.lastUpdated && (
+          <div className="mt-1.5 px-3">
+            <POIRealtimeSection realtimeData={realtimeData} poi={poi.raw} />
+          </div>
         )}
 
         <div className="mt-2.5 px-3 pb-3">
