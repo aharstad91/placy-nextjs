@@ -46,6 +46,16 @@ function buildMockSupabase() {
       }
       if (table === "project_pois") {
         return {
+          // linkNaturPois: hent gamle natur-lenker (select.eq), fjern dem
+          // (delete.eq.in) og upsert nye.
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }),
+          delete: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockResolvedValue({ error: null }),
+            }),
+          }),
           upsert: vi.fn().mockResolvedValue(linkResult),
         };
       }

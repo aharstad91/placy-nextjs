@@ -40,7 +40,11 @@ function buildMockSupabase(poiList = [NEAR_POI, FAR_POI]) {
       }
       if (table === "product_pois") {
         return {
-          upsert: vi.fn().mockResolvedValue({ error: null }),
+          // Ren re-hydrering: delete → insert, deretter update for featured.
+          delete: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: null }),
+          }),
+          insert: vi.fn().mockResolvedValue({ error: null }),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               eq: vi.fn().mockResolvedValue({ error: null }),

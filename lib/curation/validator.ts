@@ -79,22 +79,18 @@ export type ValidateResult =
  * positives på ord som "Tilbudet", "Bussnettet", "Øvrige".
  */
 export function extractProperNouns(text: string): string[] {
-  // Finn alle kapitaliserte ord + deres posisjon
+  // Finn alle kapitaliserte ord
   const nounRe = /[A-ZÆØÅ][a-zæøåA-ZÆØÅ]+/g;
   const nouns = new Set<string>();
   let match: RegExpExecArray | null;
   while ((match = nounRe.exec(text)) !== null) {
     const word = match[0];
-    const pos = match.index;
 
-    // Hopp over stopord
+    // Filtrer kun på kjente leading-cap-stoppord (setningsstartere som "Her",
+    // "Det", "Og"). Egennavn som tilfeldigvis starter en setning ("Solsiden
+    // senter er…", "Ålesund ligger…") skal fortsatt fanges — de skilles fra
+    // vanlige setningsstartere via stoppordlista, ikke via posisjon.
     if (LEADING_CAP_STOPWORDS.has(word)) continue;
-
-    // Hopp over setningsstartere (ord rett etter . ! ? eller start-of-text)
-    // Ser bakover: første ikke-whitespace-tegn må være . ! ? eller ingenting
-    let i = pos - 1;
-    while (i >= 0 && /\s/.test(text[i])) i--;
-    if (i < 0 || /[.!?]/.test(text[i])) continue;
 
     nouns.add(word);
   }
