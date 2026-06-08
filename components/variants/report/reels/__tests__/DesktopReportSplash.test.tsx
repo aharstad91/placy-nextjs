@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
-import { DesktopReportSplash, type SplashCategory } from "../DesktopReportSplash";
+import { DesktopReportSplash } from "../DesktopReportSplash";
 
 // next/image trenger ikke optimizer-stien i jsdom — render som vanlig img.
 // Strip Next-spesifikke props (fill/priority/unoptimized/sizes) så React ikke
@@ -20,16 +20,10 @@ vi.mock("next/image", () => ({
   },
 }));
 
-const categories: SplashCategory[] = [
-  { id: "mat-drikke", label: "Mat & Drikke", color: "#ff8800", image: "/x.jpg" },
-  { id: "transport", label: "Transport", color: "#3366ff" },
-];
-
 const baseProps = {
   visible: true,
   name: "Stasjonskvartalet",
   subline: "Midtbyen, Trondheim",
-  categories,
   primaryLabel: "Start opplevelsen",
   onPlay: () => {},
 };
@@ -66,18 +60,11 @@ describe("DesktopReportSplash", () => {
     expect(getByAltText("Stasjonskvartalet")).toBeTruthy();
   });
 
-  it("faller tilbake til tekst-wordmark uten logoSrc", () => {
-    const { getByText, queryByAltText } = render(
+  it("skjuler logo-blokk uten logoSrc", () => {
+    const { queryByAltText } = render(
       <DesktopReportSplash {...baseProps} />,
     );
     expect(queryByAltText("Stasjonskvartalet")).toBeNull();
-    expect(getByText("Bli kjent med")).toBeTruthy();
-  });
-
-  it("rendrer kategori-teaser med labels", () => {
-    const { getByText } = render(<DesktopReportSplash {...baseProps} />);
-    expect(getByText("Mat & Drikke")).toBeTruthy();
-    expect(getByText("Transport")).toBeTruthy();
   });
 
   it("kaller onPlay ved klikk på play-knappen", () => {

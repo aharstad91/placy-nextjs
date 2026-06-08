@@ -206,6 +206,8 @@ export interface ReportData {
   /** Eksplisitt opt-in: viser "Start tour"-knappen kun når dette er true,
    *  selv om audio-spor er generert. */
   audioTourEnabled?: boolean;
+  /** Eiendomstype — videresende fra Project for splash-copy og fremtidig tilpasning. */
+  venueType?: "hotel" | "residential" | "commercial" | null;
 }
 
 export const TRANSPORT_CATEGORIES = new Set([
@@ -637,5 +639,6 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     heroAudio: rc?.heroAudio,
     outroAudio: rc?.outroAudio,
     audioTourEnabled: rc?.audioTourEnabled,
+    venueType: project.venueType ?? null,
   };
 }

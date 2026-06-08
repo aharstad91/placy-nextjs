@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ChevronUp, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { SplashCategory } from "./DesktopReportSplash";
 
 interface Props {
   /** Styrer synlighet. Komponenten holdes montert (kartet varmes opp bak) og
@@ -23,8 +22,6 @@ interface Props {
   heroVideo?: string;
   /** Valgfri intro-tekst — faller tilbake til standard velkomst-copy. */
   intro?: string;
-  /** Kategori-teaser ("dette utforsker vi") — horisontal chip-rad. */
-  categories: SplashCategory[];
   /** Knappe-tekst: "Start opplevelsen" / "Fortsett" / "Spill av på nytt". */
   primaryLabel: string;
   /** Trykk play / swipe opp → dropp splash, fly inn kartet, start tur. */
@@ -32,12 +29,12 @@ interface Props {
 }
 
 const DEFAULT_INTRO =
-  "Vi tar deg med på en guidet tur gjennom nabolaget — bli kjent med hva som " +
+  "Vi tar deg med på en guidet tur gjennom nærområdet — bli kjent med hva som " +
   "ligger i gangavstand.";
 
 /**
  * Mobil velkomst-splash for rapport-board (<1024px). Portrait, full-bleed
- * hero (video/bilde) med velkomst-copy + kategori-teaser + CTA forankret mot
+ * hero (video/bilde) med velkomst-copy + CTA forankret mot
  * bunn (tommel-rekkevidde). Ligger som lag OPPÅ board-opplevelsen (kart +
  * reels) på z-50, og kan re-åpnes uten refresh — kartet bak forblir montert
  * og varmt. Speiler DesktopReportSplash, men én kolonne. Erstatter den gamle
@@ -51,7 +48,6 @@ export function MobileReportSplash({
   heroImage,
   heroVideo,
   intro,
-  categories,
   primaryLabel,
   onPlay,
 }: Props) {
@@ -136,10 +132,10 @@ export function MobileReportSplash({
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/15 to-black/90 pointer-events-none" />
       </div>
 
-      {/* Topp: logo / eyebrow. */}
-      <div className="absolute inset-x-0 top-0 px-6 pt-[max(1.25rem,env(safe-area-inset-top))]">
-        <div className={itemCls} style={stagger(0)}>
-          {logoSrc ? (
+      {/* Topp: logo (vises kun når prosjektet har brand-logo). */}
+      {logoSrc && (
+        <div className="absolute inset-x-0 top-0 px-6 pt-[max(1.25rem,env(safe-area-inset-top))]">
+          <div className={itemCls} style={stagger(0)}>
             <Image
               src={logoSrc}
               alt={name}
@@ -149,21 +145,14 @@ export function MobileReportSplash({
               priority
               className="h-11 w-auto drop-shadow-lg [filter:brightness(0)_invert(1)]"
             />
-          ) : (
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
-              Bli kjent med
-            </p>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Bunn-blokk: copy + kategori-teaser + CTA + swipe-hint. */}
+      {/* Bunn-blokk: copy + CTA + swipe-hint. */}
       <div className="absolute inset-x-0 bottom-0 flex flex-col gap-4 px-6 pb-[max(1.75rem,env(safe-area-inset-bottom))]">
         <div className={itemCls} style={stagger(1)}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
-            Bli kjent med nabolaget
-          </p>
-          <h1 className="mt-1.5 text-3xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-md">
+          <h1 className="text-3xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-md">
             Velkommen til {name}
           </h1>
           {subline && (
@@ -177,33 +166,6 @@ export function MobileReportSplash({
         >
           {intro || DEFAULT_INTRO}
         </p>
-
-        {categories.length > 0 && (
-          <div className={itemCls} style={stagger(3)}>
-            <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
-              {categories.map((c) => (
-                <span
-                  key={c.id}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/25 bg-white/10 py-1 pl-1 pr-3 backdrop-blur-md"
-                >
-                  <span
-                    className="relative block h-7 w-7 shrink-0 overflow-hidden rounded-full"
-                    style={{ boxShadow: `0 0 0 2px ${c.color}` }}
-                  >
-                    {c.image ? (
-                      <Image src={c.image} alt="" fill sizes="28px" className="object-cover" />
-                    ) : (
-                      <span className="block h-full w-full" style={{ backgroundColor: c.color }} />
-                    )}
-                  </span>
-                  <span className="whitespace-nowrap text-xs font-medium text-white/90">
-                    {c.label}
-                  </span>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         <button
           type="button"

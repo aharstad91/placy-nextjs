@@ -137,6 +137,8 @@ export interface BoardData {
   audioTourEnabled: boolean;
   /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
   assets?: ProjectAssetFlags;
+  /** Eiendomstype — styrer splash-intro-copy og fremtidig tilpasning. */
+  venueType?: "hotel" | "residential" | "commercial" | null;
 }
 
 /**
@@ -190,6 +192,7 @@ export function adaptBoardData(report: ReportData): BoardData {
     poisById,
     audioTourEnabled: report.audioTourEnabled === true,
     assets: report.assets,
+    venueType: report.venueType ?? null,
   };
 }
 

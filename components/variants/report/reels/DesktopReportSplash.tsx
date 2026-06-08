@@ -5,13 +5,6 @@ import { useEffect, useState } from "react";
 import { ChevronDown, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface SplashCategory {
-  id: string;
-  label: string;
-  color: string;
-  image?: string;
-}
-
 interface Props {
   /** Styrer om laget er synlig. Komponenten holdes alltid montert (én
    *  kart-instans bak), og veksler kun opacity/pointer-events — så re-åpning
@@ -30,8 +23,6 @@ interface Props {
   heroVideo?: string;
   /** Valgfri intro-tekst — faller tilbake til standard velkomst-copy. */
   intro?: string;
-  /** Kategori-teaser ("dette utforsker vi") — gjenbruk av kategori-bildene. */
-  categories: SplashCategory[];
   /** Knappe-tekst: "Start opplevelsen" / "Fortsett" / "Spill av på nytt". */
   primaryLabel: string;
   /** Trykk play → dropp splash, fly inn kartet, start/forsett guidet tur. */
@@ -39,15 +30,15 @@ interface Props {
 }
 
 const DEFAULT_INTRO =
-  "Vi tar deg med på en guidet tur gjennom nabolaget — transport, hverdagsliv, " +
+  "Vi tar deg med på en guidet tur gjennom nærområdet — transport, hverdagsliv, " +
   "mat og uteliv, natur og opplevelser rett utenfor døra. Trykk play, så viser " +
   "vi deg hva som ligger i gangavstand.";
 
 /**
  * Velkomst-splash for rapport-board (desktop, >=1024px). Ligger som et lag
  * OPPÅ board-opplevelsen (kart + sidebar) og kan re-åpnes uten refresh.
- * Komposisjon: venstre kolonne med logo, velkomst-copy, play-knapp og en
- * kategori-teaser; høyre kolonne med crisp prosjekt-render. Bak alt ligger en
+ * Komposisjon: venstre kolonne med logo, velkomst-copy og play-knapp;
+ * høyre kolonne med crisp prosjekt-render. Bak alt ligger en
  * rolig, sterkt sløret bakgrunns-video som gir et hint av bevegelse ("hva er
  * området som rører seg bak her"). Mobil bruker IntroReel-videoen i stedet.
  */
@@ -59,7 +50,6 @@ export function DesktopReportSplash({
   heroImage,
   heroVideo,
   intro,
-  categories,
   primaryLabel,
   onPlay,
 }: Props) {
@@ -131,8 +121,8 @@ export function DesktopReportSplash({
       <div className="relative mx-auto flex h-full w-full max-w-[1440px] items-center gap-10 px-10 lg:gap-16 lg:px-20">
         {/* Venstre kolonne */}
         <div className="flex w-full max-w-[480px] flex-col">
-          <div className={itemCls} style={stagger(0)}>
-            {logoSrc ? (
+          {logoSrc && (
+            <div className={itemCls} style={stagger(0)}>
               <Image
                 src={logoSrc}
                 alt={name}
@@ -142,20 +132,11 @@ export function DesktopReportSplash({
                 priority
                 className="h-14 w-auto"
               />
-            ) : (
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-                Bli kjent med
-              </p>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className={cn(itemCls, "mt-9")} style={stagger(1)}>
-            {logoSrc && (
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-                Bli kjent med nabolaget
-              </p>
-            )}
-            <h1 className="mt-2 text-4xl font-bold leading-[1.08] tracking-tight text-stone-900 lg:text-5xl">
+          <div className={cn(itemCls, logoSrc ? "mt-9" : "mt-0")} style={stagger(1)}>
+            <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-stone-900 lg:text-5xl">
               Velkommen til {name}
             </h1>
             {subline && (
@@ -181,44 +162,6 @@ export function DesktopReportSplash({
             </button>
           </div>
 
-          {categories.length > 0 && (
-            <div className={cn(itemCls, "mt-10")} style={stagger(4)}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
-                Dette utforsker vi
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {categories.map((c) => (
-                  <span
-                    key={c.id}
-                    className="inline-flex items-center gap-2 rounded-full border border-stone-300/70 bg-white/55 py-1 pl-1 pr-3 backdrop-blur-sm"
-                  >
-                    <span
-                      className="relative block h-7 w-7 shrink-0 overflow-hidden rounded-full"
-                      style={{ boxShadow: `0 0 0 2px ${c.color}` }}
-                    >
-                      {c.image ? (
-                        <Image
-                          src={c.image}
-                          alt=""
-                          fill
-                          sizes="28px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <span
-                          className="block h-full w-full"
-                          style={{ backgroundColor: c.color }}
-                        />
-                      )}
-                    </span>
-                    <span className="text-xs font-medium text-stone-700">
-                      {c.label}
-                    </span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Scroll-cue — signaliserer at man kan bla (eller trykke) for å starte. */}

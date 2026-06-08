@@ -354,26 +354,21 @@ function ResponsiveLayoutInner({
 
   const primaryLabel = notStarted
     ? firstIdx === -1
-      ? "Utforsk nabolaget"
+      ? "Utforsk nærområdet"
       : "Start opplevelsen"
     : phase === "ended"
       ? "Spill av på nytt"
       : "Fortsett";
 
-  const splashCategories = useMemo(
-    () =>
-      boardData.categories.map((c) => ({
-        id: c.id,
-        label: c.label,
-        color: c.color,
-        image:
-          getCategoryIllustrationSrc(boardData.projectSlug, c.id, boardData.assets) ??
-          c.illustration?.src,
-      })),
-    [boardData.categories, boardData.projectSlug, boardData.assets],
-  );
+  const splashIntro =
+    boardData.venueType === "commercial"
+      ? "Vi tar deg med på en guidet tur i nærområdet — restauranter, transport, trenings- og servicetilbud rett utenfor kontordøren. Trykk play, og se hva som ligger i gangavstand."
+      : boardData.venueType === "hotel"
+        ? "Utforsk nærområdet til hotellet — restauranter, severdigheter, transport og opplevelser rett utenfor lobbyen. Trykk play, og se hva som ligger i gangavstand."
+        : undefined;
+
   // Lett-vekts kategori-oversikt for sidebarens empty state (prosjekt uten
-  // reels-lyd). Speiler splashCategories, men med POI-antall + lead.
+  // reels-lyd) — med POI-antall + lead.
   const previewCategories = useMemo(
     () =>
       boardData.categories.map((c) => ({
@@ -437,7 +432,7 @@ function ResponsiveLayoutInner({
           logoSrc={logoSrc}
           heroImage={splashHero}
           heroVideo={splashVideo}
-          categories={splashCategories}
+          intro={splashIntro}
           primaryLabel={primaryLabel}
           onPlay={handlePlay}
         />
@@ -456,7 +451,7 @@ function ResponsiveLayoutInner({
         logoSrc={logoSrc}
         heroImage={splashHero}
         heroVideo={splashVideo}
-        categories={splashCategories}
+        intro={splashIntro}
         primaryLabel={primaryLabel}
         onPlay={handlePlay}
       />
