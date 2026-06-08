@@ -6,6 +6,221 @@
 
 ---
 
+## 2026-06-08 (forts. 4) — Teknostallen nivå-2 editorial seeding (næringsprofil, alle 5 kategorier)
+
+Direkte sesjon (main, dev :3000), verifisert live i Chrome. Ingen kodeendring — ren data-seeding. Mål: tekst + 3 highlight-POIer per kategori på Teknostallen (`http://localhost:3000/eiendom/klp-eiendom/teknostallen/rapport-board`), som matcher nivå-2-drill-in (Overvik). Featuren var allerede bygget; det som manglet var `editorial` på Teknostallens `products.config` i Supabase.
+
+**Næringsperspektiv (viktig):** Teknostallen er næringsbygg. All brødtekst skrives fra arbeidsplass-/leietaker-vinkel («ansatte», «jobbreisen», «lunsjturen», «bedriften tar imot gjester») — IKKE beboer-vinkel (Overvik-mønsteret). En bevisst avsats i seedings-mønsteret for næring vs. bolig.
+
+**Seeding (read-modify-write PATCH):** Fem temaer fikk `editorial.body` + `editorial.highlightPoiIds` (3 per tema):
+
+| Tema | Highlights |
+|------|-----------|
+| Mat & Drikke | Snurr Teknostallen · Slabberas Teknobyen · Glød Asian Fusion |
+| Transport & Mobilitet | Hesthagen bussholdeplass · Trondheim Bysykkel: Abels gate · Lerkendal stasjon |
+| Trening & Aktivitet | 3T-Teknostallen · Impulse Fitness · Sit Gløshaugen Idrettsbygg |
+| Hverdagstjenester | Extra Elgeseter · Sykehusapoteket i Trondheim · Prince Frisør Mekonen |
+| Nabolaget | Elgeseter park · Scandic Lerkendal · Trondheim Kunstmuseum |
+
+**Gotcha (ny lærdom, dokumentert):** `adaptCategory` resolver `highlightPoiIds` mot `theme.allPOIs` — og det er det **filtrerte** board-settet (28 av 42 POIer for Teknostallen), ikke hele DB-kategorien. Første seeding valgte Høgskoleparken og Finalebanen Aktivitetspark som nabolag-highlights; begge fantes i Supabase men ble stille filtrert bort av `report-data.ts` (child-POI-merging + relevans-filter). Resulterte i kun 1 av 3 chips live. Fix: bekreft alle tiltenkte highlights finnes som faktiske board-markører (a11y-snapshot via Chrome MCP er raskeste metode). Byttet til Elgeseter park, Scandic Lerkendal og Trondheim Kunstmuseum — alle bekreftet board-survivors. Dokumentert som ny `⚠️`-seksjon i `docs/solutions/feature-implementations/placy-basic-tier-drill-in-20260608.md`.
+
+**Filterkjeden (fremtidig referanse):**
+1. Per-kategori-cap (`bus`/`tram`/`bike` beholder kun 5 nærmeste, `idrett` 3, `skole` skolekrets)
+2. Child-POI-merging (parent_poi_id → inn i parent, ikke highlight-kandidat)
+3. Relevans-/visningsfilter (board viser f.eks. 28 av 42)
+
+**`unstable_cache`-cache-bust:** Som under Overvik-seeding krever data-PATCH i dev full `rm -rf .next/cache` + restart (in-memory cache buster ikke av disk-sletting alene; `REVALIDATE_SECRET` ikke satt lokalt).
+
+**Supabase-lokasjon:** JSONB-konfig på `products` for `klp-eiendom_teknostallen`. Data er i prod-DB. Nivå-2-koden er på branch `feat/rapport-nivaa2-kategori-detalj` (ikke deployet) → `drill-in` er synlig lokalt, men ikke på prod-KLP-lenken ennå.
+
+**Endrede filer:** Ingen kode. `docs/solutions/feature-implementations/placy-basic-tier-drill-in-20260608.md` (⚠️-seksjon lagt til). Temp-filer (`.tmp-seed-teknostallen-editorial.py`, backup-JSON) slettet.
+
+---
+
+## 2026-06-08 (forts. 3) — Prosjekt-pin skalering: lærdom om Marker3D vs HTML-overlay (landet på debounced)
+
+Direkte sesjon (main, dev :3000), live-verifisert i Chrome. Bruker så at prosjekt-pinnen ("Teknostallen / Nybygg 2028") «hoppet» i størrelse ved zoom. Tre forsøk, med en gjenbrukbar lærdom:
+
+1. **Lerp på Marker3D-skala (0,005-steg):** mykere, men fortsatt 1px-hopp PR. TEKSTLINJE — fordi Marker3D rasteriserer SVG-en til en 3D-tekstur, og tekst-baselinjer runder til ulike heltalls-piksler ved ulike rasteriserings-størrelser. Forkastet.
+2. **HTML-overlay + CSS `transform: scale()`** (ProjectSiteOverlay, projisert hver frame via uttrukket `project-latlng-to-screen.ts`): helt jevn uniform skala (GPU, sub-piksel, ingen re-raster) — MEN ga posisjons-**jitter** under draging. Et HTML-overlay kan ikke synke 100 % med Googles GPU-rendrede 3D-markører hver frame (henger ett frame etter, + følsomt for range-fluktuasjon over terreng). Forkastet for en alltid-synlig pin.
+3. **Landet: debounced Marker3D-skala.** Skalaen er FROSSET mens kameraet beveger seg (range endrer seg → ingen re-raster → ingen hopp/jitter under drag/zoom/fly), og justeres rent ÉN gang når kameraet har stått i ro `PIN_SETTLE_MS` (220ms). Marker3D = alltid Google-native forankret (null jitter). Eneste rest-artefakt: én ren størrelses-justering ved ro (begge linjer samtidig → ingen pr-linje-hopping).
+
+**Kjerne-lærdom (gjenbrukbar):** For en alltid-synlig markør på Google Maps 3D kan man IKKE få både (a) perfekt native-synket posisjon og (b) kontinuerlig jevn størrelses-skala samtidig — Marker3D gir (a) men re-rasteriserer ved skala-endring; HTML-overlay gir (b) men jitter under bevegelse. Løsning: behold Marker3D og unngå skala-endring under bevegelse (debounce til ro). Vurder docs/solutions-notat hvis dette dukker opp igjen.
+
+**Beholdt fra forsøk 2:** `components/map/project-latlng-to-screen.ts` (uttrukket perspektiv-projeksjon, nå delt med `BoardPOI3DMiniPopup` — ren DRY-refaktor, uendret popup-oppførsel). **Slettet:** `ProjectSiteOverlay.tsx` (blindvei).
+
+**Endrede filer:** `components/map/map-view-3d.tsx` (debounced `useProjectPinScale`), `BoardPOI3DMiniPopup.tsx` (bruker delt projeksjon), `BoardMap3D.tsx` (ryddet overlay-prop). tsc + lint grønt. **Ikke pushet** (localhost → prod ved deploy).
+
+---
+
+## 2026-06-08 (forts. 2) — Næringsprofil i provision-pipeline + KLP Teknostallen-demo + intro-koreografi + pin z-index
+
+Direkte sesjon (main, dev :3000), verifisert live i Chrome (chrome-devtools MCP). Drevet av KLP Eiendom-prospekt: bruker har «fot innenfor» en forvalter og ville sende en næringsdemo. (Strategi-konteksten hører i business-loggen — denne entryen er det tekniske.)
+
+**1. `--profile naering` i `create-report`-pipelinen.** `provision-rapport` produserte kun bolig-profilen (skole/barnehage/natur). La til en nærings-profil som deler motor men snur fokus til ansatt/besøkende:
+- `report-defaults.ts`: `NAERING_THEME_DEFAULTS` (5 temaer: Mat & Drikke, Transport, Trening, Hverdagstjenester, Nabolaget), `NAERING_DISCOVERY_RADIUS` (Trondheim 1500m), `ReportProfile`-type + `getThemeDefaults(profile)`, profil-aware `getDiscoveryRadius`.
+- `create-report-project.ts`: `profile`-param → temaer + `venue_type: commercial` + `tags: ["Eiendom - Næring"]` + `venue_context: urban`.
+- `enrich-report-pois.ts`: `NAERING_GOOGLE_CATEGORIES` (hotel inn, shopping_mall/spa ut) + `categories`-param.
+- `scripts/provision-rapport.ts`: `--profile`-flagg, hopper over NSR/Barnehagefakta for næring, sender næring-kategorier/radius.
+- Kategori-slugene verifisert mot `GOOGLE_CATEGORY_MAP` (poi-discovery.ts): `movie_theater→cinema`, `hair_care→haircare`, `hotel→hotel`.
+
+**2. Provisjonert KLP-demo:** `npx tsx scripts/provision-rapport.ts --name "Teknostallen" --address "Teknostallen, Trondheim" --profile naering --customer klp-eiendom --confirm-coords 63.41564485129074,10.395992943215594`. Resultat: 151 POI-er, 16 kategorier, 5 temaer, ingen skole/barnehage. Live: `https://www.placy.no/eiendom/klp-eiendom/teknostallen/rapport-board`.
+
+**3. Bug-fiks i scriptet: `placy.app` → `www.placy.no`.** Scriptet hardkodet feil prod-domene (utdatert) → printet feil leveranse-URL OG revalidering traff feil domene (feilet alltid). Kanonisk domene er `www.placy.no` (placy.no 307→www). Fikset begge stedene + `revalidateProject`-fallback.
+
+**4. Hero-bilde for Teknostallen:** lastet ned KLP-render → `public/projects/teknostallen-hero.jpg`, satt `reportConfig.heroImage` via PATCH (temaer urørt, merge). Samme felt som Stasjonskvartalet. (NB: `unstable_cache` er disk-persistert i `.next/cache` — krever `revalidateTag`/secret eller cache-clear for å se data-endring lokalt; prod friskes ved deploy/TTL.)
+
+**5. Z-index: prosjekt-pin alltid øverst (`map-view-3d.tsx`).** POI-markører la seg oppå objekt-pinnen i 3D (høyde alene styrer ikke tegnerekkefølge). Prosjekt-pin fikk `zIndex={1_000_000}`, POI-markører `zIndex={1}` (vis.gl `Marker3D` videresender `Marker3DElement.zIndex`).
+
+**6. Intro-markør-koreografi (basic-tier «Utforsk nabolaget»).** Markørene blinket inn ved load/klikk og «resatt» seg når fly-in startet. Fiks:
+- `handlePlay`: `START_INTRO` dispatches SYNKRONT før reveal (batches med splash-skjul).
+- `BoardMap3D`: ny `introFlyPhase`-state (`idle→settling→running→done`) fra flyturens `onPhase`. `markerPOIs`: rent kart ved idle/settling/running (basic-tier), statiske oversiktspins først ved `done` (`!basicIntroActive && introFlyPhase==="done"`-gate hindrer blink ved re-play). `showReveal`: reveal-kaskaden kjører på `running` (parallelt med flyturen, ~0,9s etter at bevegelsen begynner via RevealLayer3D START_DELAY).
+- Verifisert tidslinje (markør-count hver 0,5s): load=1, settle=1, running-start=1, +1s→10→21→…→99 (kaskade parallelt med fly), done=99. «Fly-in først, så punkter inn samtidig».
+
+**Verifisert:** lint + `tsc --noEmit` grønt per steg; full sekvens drevet live i Chrome. **Endrede filer:** `report-defaults.ts`, `create-report-project.ts`, `enrich-report-pois.ts`, `scripts/provision-rapport.ts`, `.claude/commands/provision-rapport.md`, `board-data.ts` (summary/cta — fra forrige), `map-view-3d.tsx`, `BoardMap3D.tsx`, `ReportReelsPage.tsx`. **Ny:** `public/projects/teknostallen-hero.jpg`.
+
+**Ikke pushet** (kode kun på localhost → prod-KLP-lenken får intro-koreografi + z-index + hero ved deploy; næringsdata + hero-data ligger allerede i prod-DB). Working tree har også parallell-økt-endringer (basic-tier kamera i BoardMap.tsx/BoardMapControls.tsx, nivå-2-drill-in).
+
+---
+
+## 2026-06-08 (forts.) — Placy Basic nivå 2: gated kategori-drill-in (egendefinert tekst + highlight-POIer)
+
+Konsept-arbeid + implementasjon (`/ce-work`, branch `feat/rapport-nivaa2-kategori-detalj`). Etablerte en **1-2-3 tier-modell** for rapport-board som gjør produktet trinnvis selgbart:
+
+- **Bra (nivå 1):** Overvik-demoen som den er — auto-genererte POI-er + kategorier, ingen kuratering. Klikk på temakort = velg på kart.
+- **Bedre (nivå 2):** nivå 1 + **kuratert drill-in detalj-panel** per kategori (egendefinert tekst + et par highlight-POIer å referere til). DENNE sesjonen.
+- **Best (nivå 3):** Stasjonskvartalet — full kuratering + reels + voice-over (uendret, gated av `hasVoiceOver`).
+
+**Beslutning (AskUserQuestion): gated, ikke alltid-på.** Panelet er det som *skiller* nivå 1 fra 2 — en kategori får drill-in KUN når den har kuratert `editorial`. Eksplisitt presence-marker, ikke overlessing av auto-felt (`body` er alltid fylt fra grounding → kan ikke være gate).
+
+**Datamodell (gjenbruker `reportConfig.themes[]`, ingen ny tabell):**
+- `ReportThemeEditorial` `{ body, highlightPoiIds?, image? }` på `ReportThemeConfig` (+ `ReportThemeDefinition` for merge-typing). Trådet `ReportTheme → BoardCategory.editorial`.
+- `adaptCategory` resolver `highlightPoiIds` mot kategoriens POIs til render-klare `{id, navn}`-chips (ukjente IDer ignoreres) og **gater bort** editorial når verken body eller highlights finnes → kategorien forblir nivå 1.
+
+**UI (`DesktopStorySidebar`):** `SidebarContentPreview` swapper scroll-området til `CategoryDetailView` når aktiv kategori har editorial (megler-footer blir stående i begge). Chevron-affordans på nivå-2-kort. Tilbake-pil → `RESET_TO_DEFAULT`. Highlight-chips → `OPEN_POI` (kameraet flyr til punktet, panelet blir stående). Nivå-1-kategorier og Stasjonskvartalet uendret.
+
+**Seeding:** Overvik `barn-oppvekst` fikk editorial i Supabase (beboer-orientert/fakta-tekst + Ranheim skole / Markaplassen skole / Ranheimsfjæra barnehage som highlights). Skrevet via read-modify-write PATCH på `products.config` (jsonb).
+
+**Cache-gotcha (dokumentert i docs/solutions):** rapport-board-page wrapper produkt-henting i `unstable_cache` (tag `product:{customer}_{slug}`, revalidate 3600s) som holdes *in-memory* i dev. Disk-sletting + `revalidatePath` (via `/api/admin/revalidate`) buster IKKE den tag-keyede entryen; `/api/revalidate?tag=…` krever `REVALIDATE_SECRET` (ikke satt). Måtte be om dev-restart for å se endringen. Lærdom: for Supabase-config-endringer under demo-iterasjon → restart eller sett `REVALIDATE_SECRET`.
+
+**Live-verifisering (chrome-devtools MCP, Overvik):** Markør-filtrering FUNGERER i både 3D (66 → 29 barn, 66 → 8 mat + prosjekt-pin) og 2D (9 opaque / 58 faded). **Kunne ikke reprodusere** den rapporterte «filtrering fungerer ikke lengre» — `markerPOIs`/`markerStates`-logikken er intakt og uendret av denne featuren. Avventer bruker-bekreftelse på spesifikk flyt.
+
+**Tweaks etter første demo:** hero-bilde i panelet `h-36 → h-44` + `object-center` (proper cover); brødtekst `13px → 14px`.
+
+**Kvalitet:** `tsc` rent · ESLint 0 errors · **270/270 tester** (+6 board-data editorial-mapping, +6 sidebar drill-in). Branch ikke merget/committet (uforpliktet fly-in-arbeid lå i samme to filer; unngår å blande to features).
+
+### Åpent / neste steg
+
+- **Filtrering-bug ikke reprodusert** — be bruker beskrive eksakt flyt (2D/3D, hvilken kategori, hva som vises) hvis det fortsatt oppleves.
+- **Mobil drill-in** deferred til desktop er validert (samme panel-swap → bottom-sheet senere).
+- Evt. seede flere Overvik-kategorier med editorial for en rikere nivå-2-demo.
+- Branch må committes/merges + evt. deploy når bruker er klar.
+
+### Filer
+
+ENDRET: `lib/types.ts`, `components/variants/report/report-data.ts`, `report-themes.ts`, `board/board-data.ts` (+`.test.ts`), `reels/DesktopStorySidebar.tsx` (+`__tests__/DesktopStorySidebar.test.tsx`), `reels/ReportReelsPage.tsx`. Supabase: `products.config` for `placy-demo_overvik` (barn-oppvekst editorial). NY docs: `docs/solutions/feature-implementations/placy-basic-tier-drill-in-20260608.md`.
+
+---
+
+## 2026-06-08 — Rapport-board bugfikser (popup, markør, intro-kontroller, thumbnails, outro) + duplikat-kunde ryddet
+
+Direkte sesjon (main, dev :3000), live Chrome-verifisering (chrome-devtools MCP) på Stasjonskvartalet. Fem UI-fikser i delte board/reels-komponenter + en data-rydding av duplikat-kunde.
+
+**UI-fikser (alle i delte komponenter → gjelder begge kunder/ruter):**
+1. **Skjul kart-kontroll-pille under intro-flythrough.** `BoardMapControls` fikk `controlsReady`-prop: wrappet i `absolute inset-0 pointer-events-none`-div med `transition-[opacity,transform]`; `controlsReady={!isWelcomeBeat}` fra `BoardMap`. Skjult (translateY 16px, opacity 0) under welcome-beat (kartet er låst der), animerer inn fra bunn når nabolaget overtar. Uten voice-over alltid synlig (bakover-kompatibelt). *(Bruker la senere til `compact`-variant — urørt av meg.)*
+2. **Fjernet høyre-side 3D-kontroller** (roter/tilt/nord-reset) fra `map-view-3d.tsx` — `Map3DControls`-render + import + foreldede kommentarer. Komponenten beholdt for evt. gjeninnføring (Trello-backlog `wEguzLlI`, flyttet til Done).
+3. **Popup-posisjon forskjøvet til høyre.** `BoardPOI3DMiniPopup.calculateScreenPosition` la til `rect.left/top` (viewport-koord), men `fixed`-elementet har en CSS-transformert ancestor (reels `scale-100`) → origo er containerens hjørne → dobbel offset = popup langt til høyre for markøren. Fix: returner koordinater relativt til kart-elementets hjørne (uten `rect.left/top`).
+4. **Markør hoppet ved klikk.** Aktiv markør hadde `altitude 28 vs 18` (+10m hopp) og `size 48 vs 40`. Popup er allerede aktiv-indikatoren → fjernet begge delta-ene (fast 18/40). `ALTITUDE_M` i popup-projeksjon rettet 20→18. `isActive`-prop ryddet ut av `Marker3DItem` + `MapView3DProps` + 3 kall.
+5. **Manglende reels-thumbnails.** Tre kategori-thumbnails (56px) ble blanke: Next.js **dev image-optimizer deadlocker** ved samtidige on-demand-kall (de 3 siste i køen hang permanent som `[pending]`). Råfilene serverte 200/304. Fix: `unoptimized` på thumbnail-`<Image>` i `DesktopStorySidebar` — serverer den allerede-små statiske JPG-en direkte (fortsatt `next/image`, ESLint-regelen holder). Robust i dev+prod.
+6. **Outro viste intro-fly-in-effekt.** Oppsummerings-beaten gjenbrukte reveal-kaskaden (blobs+legend-pins animert inn) som åpningen, og `markerPOIs` returnerte `[]`. Bruker ville se HELE nabolaget med fulle markører på slutten. Fix i `BoardMap3D`: outro → `markerPOIs = allPOIs` (fulle markører); `showReveal` fjernet `isOutroBeat` (reveal-kaskaden forbeholdt åpningen). Outro-kamera-uttrekk til oversikt beholdt.
+
+**Data-rydding: duplikat-kunde slettet.** Oppdaget at `bane-nor-eiendom` og `banenor-eiendom` er to separate kunderecords, hver med eget Stasjonskvartalet-prosjekt (rutene `rapport-board`/`rapport-reels` er forøvrig identiske — rendrer samme `ReportReelsPage`, kun `<title>` skiller). `bane-nor-eiendom` er kanonisk (700 POIs, oppdatert 2026-06-02, ekte megler Tonje Følstad/DNB + logo); `banenor-eiendom` var eldre stub (240 POIs, placeholder-megler). Bruker valgte å beholde `bane-nor-eiendom`. Slettet duplikatet via psql i transaksjon, trygg rekkefølge: `DELETE projects` (cascader til products/project_pois/product_pois/product_categories/theme_stories/story_sections) → `DELETE customers` (`projects.customer_id` har ingen cascade → RESTRICT). **POI-pool urørt** (delt — sletting ville brutt kanonisk prosjekt). Verifisert mot DB: duplikat = `[]`, kanonisk uberørt (700 project_pois, 2 produkter).
+
+**Restpunkt:** Gammel `banenor-eiendom`-URL svarer fortsatt 200 lokalt pga. `unstable_cache` (1t TTL); `REVALIDATE_SECRET` ikke i `.env.local` så ikke bustbar lokalt — utløper selv / ved dev-restart. I prod busts av deploy/revalidate-webhook.
+
+**Gates:** `tsc --noEmit` ✓, `npm run lint` ✓ (0 errors), board+reels-tester 198/198 ✓. Ikke pushet.
+
+---
+
+## 2026-06-07 — Mobil rapport-board: desktop-paritet (3D-kart, splash, flythrough, dynamisk kart-sheet, summary)
+
+Lang direkte sesjon (main, dev :3000), drevet av live Chrome-verifisering (chrome-devtools MCP) på Stasjonskvartalet i mobil-emulering (390×844). Mål fra bruker: mobil-MVP-en manglet alle desktop-forbedringene — alt på desktop skal kunne nås på mobil. Kartlagt gap via understand-workflow (6 agenter), deretter implementert i 8 units.
+
+**Utgangspunkt (gapet):** Mobil kjørte en parallell legacy-layout (`ReelsStack` fullskjerm-feed + `MapLayer`-sheet med 2D `ReelsMap`). `has3dAddon` fløt inn i `ResponsiveLayout` men ble ALDRI sendt til `MapLayer` → mobil fikk aldri 3D-kartet, splash, flythrough, auto/fri/kart/3d-kontroller eller summary. Data/state-kontrakten (`board-data`, `reels-data`, kortmodell, `BoardReelsSync`, `useReelsAudioOrchestration`) var allerede delt → dette ble en layout-rebuild, ikke data-rebuild.
+
+**Arkitektur-beslutning (bruker valgte via AskUserQuestion): Model A — reels fullskjerm + kart-sheet.** Beholdt den immersive TikTok-feeden; kartet er en bunn-sheet som blir 3D. Avvist Model B (kart som base + reel-sheet). Begrunnelse: bevarer eksisterende feel + matcher brukerens #5-formulering ("kart-sheet 10→40%"). Welcome-beaten auto-ekspanderer kartet til fullskjerm så flythrough-en blir helten (#2).
+
+**Levert (8 units, alle verifisert live):**
+1. **3D-kart på mobil** — `MapLayer` rendrer nå `<BoardMap has3dAddon compactControls>` i stedet for `ReelsMap`. Slettet død `ReelsMap.tsx`. Aktiv kategoris POI-er synces via eksisterende `BoardReelsSync`.
+2. **Eager mount** — `markMapMounted()` ved sidelast (mobil) så Google-3D-tiles varmes opp bak splashen før flythrough.
+3. **`MobileReportSplash.tsx`** (ny) — portrait full-bleed splash (hero + logo + copy + kategori-chips + CTA + swipe-opp), gjenbruker desktop `handlePlay`/`splashCategories`. Robust empty-state ("Utforsk nabolaget").
+4. **Splash→flythrough→kategori-handoff** — `handleTrackEnded` auto-advancer kart-fremtunge beats (welcome→home→første kategori); kart-sheeten kollapser til peek når kategori-reelen overtar. `ReelsStack` fikk scroll-follow: programmatisk `activeIndex` (handlePlay/auto-advance) scroller feeden (IO-suppresjon mot loop).
+5. **Dynamisk kart-sheet** — beat-drevet høyde: welcome/home/outro = fullskjerm; kategori = peek 10% → snap-1 40% → full 100%. `SHEET_HEIGHT_PCT` oppdatert (10/40/65/100). "Fortsett →"-skip på map-forward beats.
+6. **Kompakt `BoardMapControls`** — ny `compact`-prop (smalere segmenter, 44px touch, løftet posisjon), tres via `BoardMap.compactControls`. Desktop urørt (default false).
+7. **`SummaryReel.tsx`** (ny) + `SummaryReelCard`-kind — visuelt summary-kort (headline + insights + CTA) etter outro, før megler. Gated på `boardData.summary` (plumbet `summary`/`cta` inn i `BoardData` via `adaptBoardData`). KUN Brøset/wesselslokka har strukturert summary i Supabase → der vises kortet; Stasjonskvartalet faller tilbake til outro-recap + megler. Filtrert ut av desktop-thumbnail-raden.
+8. **Verifisering** — full reise verifisert live på mobil; desktop-regresjonssjekk OK (sidebar + 3D-kart uendret). `npm run lint` ✓, `tsc --noEmit` ✓, `npm run build` ✓ (rapport-board 463 kB), ingen console-errors.
+
+**Nye filer:** `components/variants/report/reels/MobileReportSplash.tsx`, `SummaryReel.tsx`. **Slettet:** `ReelsMap.tsx`. **Endret:** `ReportReelsPage.tsx`, `ReelsStack.tsx`, `CategoryReel.tsx`, `reels-data.ts`, `board-data.ts`, `BoardMap.tsx`, `BoardMapControls.tsx`, `DesktopStorySidebar.tsx`.
+
+**Gotcha (lært):** Kjørte `npm run build` mens `next dev` kjørte mot samme `.next` → dev-serveren brøt (404 på chunks). Fix: drep dev, `rm -rf .next`, restart `npm run dev`. **Ikke bygg prod mot en kjørende dev-server.**
+
+**Kjente iterate-senere-punkter:** (1) "Klikk for å åpne kart"-prompten vises også i 40%-snap (bør kun i peek). (2) Scroll opp fra welcome på mobil avdekker det nå vestigiale intro-video-kortet. (3) Welcome-flythrough mangler karaoke-caption over kartet (kun audio). Detaljer + resumpsjonsplan i `docs/plans/2026-06-07-001-feat-mobil-rapport-board-parity-plan.md`.
+
+**Ikke pushet** (prototype-iterasjon). Working tree inneholder også urelaterte endringer fra parallell økt (board-3d-camera-director, board-intro-flythrough, board-state, BoardMap3D m.fl.) — ikke rørt av denne sesjonen.
+
+---
+
+## 2026-06-05 (forts. 5) — Kartkontrollen skjult under voice-over intro-flythrough + fjernet høyre-side-kontroller
+
+Kort direkte sesjon (main, dev :3000).
+
+**Problem 1:** Auto/Fri/Kart/3D-pillen (bunn-midten) var synlig under intro-flythrough der kartet er låst — brukeren kan ikke bruke kontrollene uansett, og de forstyrrer det rene flytbildet.
+
+**Fix: `controlsReady`-prop på `BoardMapControls`.** Wrapte returverdien i en `absolute inset-0 pointer-events-none`-div med `transition-[opacity,transform] duration-500 ease-out`. Pillen fikk `pointer-events-auto` for å beholde klikk. `controlsReady={false}` → `translate-y-4 opacity-0`. `controlsReady={true}` → `translate-y-0 opacity-100` (animerer inn fra bunn). I `BoardMap.tsx` beregnes `isWelcomeBeat = currentTrack?.categoryId === "welcome"` og sendes ned som `controlsReady={!isWelcomeBeat}`. Uten voice-over vil `isWelcomeBeat` aldri bli `true` → kontrollene alltid synlige (bakover-kompatibelt).
+
+**Problem 2:** Høyre-side-knappene (roter mot/med klokka, tilt opp/ned, nord-reset-kompass) i `Map3DControls` er sjelden brukt og tar unødvendig plass i en presentasjons-kontekst.
+
+**Fix:** Fjernet `Map3DControls`-render-blokken fra `map-view-3d.tsx`, ryddet import og to foreldede kommentarer. `Map3DControls.tsx` er intakt og kan gjeninnføres ved behov (Trello-backlog-kort: wEguzLlI, nå Done).
+
+**Verifisert live** på Stasjonskvartalet rapport-reels (has voice-over): kontroller skjult under flythrough (opacity=0, translateY=16px), animerte inn (opacity=1, translateY=0) etter welcome-beaten. Høyre-side-kontroller fraværende.
+
+---
+
+## 2026-06-05 (forts. 4) — Auto-provisjonering: basic rapport-board pipeline
+
+Sesjon med kontekst-komprimering midt i (token-grense). Bygget `provision:rapport`-pipelinen fra scratch — én kommando tar prosjektnavn + adresse → geocoder → interaktiv koordinat-bekreftelse → kjører autonomt → leverer public URL.
+
+**Nye filer:**
+- `lib/pipeline/report-defaults.ts` — statiske tema-defaults (6 temaer, leadText, farger, kategorier, discovery-radius per by)
+- `lib/pipeline/geocode.ts` — direkte Mapbox + Kartverket kommuneinfo-kall (ingen dev-server-dependency)
+- `lib/pipeline/create-report-project.ts` — opprett kunde (upsert) + prosjekt + rapport-produkt med full config
+- `lib/pipeline/import-public-pois.ts` — NSR (skoler), Barnehagefakta, Overpass, linkNaturPois. Fail-soft per kilde
+- `lib/pipeline/enrich-report-pois.ts` — Google Places (14 kategorier) + Entur + Bysykkel + CDN-foto
+- `lib/pipeline/hydrate-report.ts` — product_pois + featured-scoring (haversine + rating, topp 3/kat, maks 1500m) + product_categories
+- `scripts/provision-rapport.ts` — full CLI med argparsing, dry-run, --update, akseptansesjekk
+- `.claude/commands/provision-rapport.md` — slash-command-dokumentasjon
+- 4 tilhørende testfiler, 20 nye tester
+
+**Sentral design-beslutning: deterministic POI-IDs som PK.** Første kjøring feiler med «no unique constraint matching ON CONFLICT specification» — PostgREST's `onConflict` krever standard unique constraint, ikke partial unique index. Eksisterende scripts bruker `onConflict: "id"` med deterministiske ID-er (`nsr-{orgNr}`, `bhf-{id}`, `osm-{type}{id}`). Fikset `import-public-pois.ts` til samme mønster; partial unique indexes `idx_pois_nsr_id` / `idx_pois_osm_id` eksisterte allerede (migrasjon 068 var no-op).
+
+**Bug fix: enrich-rapportering.** `importPOIsToProject` kaster i CLI-kontekst (revalidatePath). Catch-blokken returnerte opprinnelig `{ total: 0 }` — men data var skrevet. Fix: spør `project_pois COUNT` fra DB i catch-blokken for korrekt rapportering.
+
+**E2E-test: Vikhammer Strand (placy-demo/vikhammer-strand).** Manuell kjøring med `--confirm-coords 63.437329,10.625312` (Malvik). Resultat: 28 POIs, 13 kategorier, 5 av 6 temaer (Natur falt ut pga < 2 POIs). Chrome-screenshot bekreftet: sidebar med tema-kort + lead-tekster, 3D-kart, kartmarkører, CTA. Akseptansesjekk grønn.
+
+**Kjente gap for Vikhammer (ikke relevant for Trondheim-fokus):**
+- NSR NaceKode-mismatch: Vikhammer ungdomsskole tagget 85.201 (barneskole) → barneskolen ikke hentet. Fix: name-basert override
+- `doctor` ikke i `BOLIG_GOOGLE_CATEGORIES` → Saksvik legekontor mangler
+- Natur krever ≥2 POIs (THEME_MIN_POIS=2) og linkNaturPois finner bare eksisterende DB-POIs (Trondheim-data)
+- Overpass feiler HTTP 406 (mulig rate-limit/server policy)
+
+**Tests:** 540/543 (3 pre-existing failures i `lib/curation/validator.test.ts` — uberørt). Alle 20 nye tester grønne.
+
+**Deferred:**
+- Napolitana restaurant mulig utenfor 2500m radius — ikke undersøkt
+- Overpass 406 — bytt server eller bruk Google Places `outdoor`/`park` med høyere antall for natur
+
+---
+
 ## 2026-06-05 (forts. 3) — Prosjektmarkør: range-avhengig størrelse
 
 Kort direkte sesjon (main, dev :3000). Bruker meldte at prosjekt-chip-en (`ProjectSitePin` — hvit listing-kort med thumbnail + «Nybygg 2028» over tomta) er **for stor både tett innpå og uttrukket**. Rotårsak: Google 3D-`Marker3D` er skjerm-forankret → konstant px uansett zoom, så chip-en dekker nabo-POI-er når man er zoomet inn og blokkerer oversikten når man er trukket ut.
