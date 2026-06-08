@@ -6,7 +6,27 @@
 
 ---
 
-## 2026-06-08 (forts. 4) — Teknostallen nivå-2 editorial seeding (næringsprofil, alle 5 kategorier)
+## 2026-06-08 (forts. 5) — Veo 3.1 intro-video for Teknostallen + splashVideo-flagg + branch→main merge
+
+Direkte sesjon (main, dev :3000). Mål: lage en splash-intro-video til Teknostallen rapport-board etter samme «gi oss renderene → levende video»-mønster som Stasjonskvartalet, via Gemini Veo. Avsluttet med å committe + merge hele det akkumulerte rapport-board-arbeidet til main, fikse pre-eksisterende røde tester, og deploye.
+
+**1. Veo-pipeline oppgradert til 3.1.** `scripts/animate-scene-veo.ts`: default-modell → `veo-3.1-generate-preview` (nyere enn 3.0 — bedre prompt-adherens/koherens), nytt `--resolution`-flagg (720p/1080p). **Ny lærdom:** Gemini API avviser `generateAudio` (400 INVALID_ARGUMENT) for disse modellene — lyd genereres alltid og strippes i komposisjonen (VO lager lyden). Veos lyd-bundling reiste et vendor-spørsmål (se åpen tråd).
+
+**2. Tre klipp generert (720p, 16:9, Veo 3.1), to beholdt.** Flyfoto (drone-drift over kvartalet) + atrium (push-in til fontenen) → rene, ingen morfing. Sporvei-fasaden droppet: første gen ble timelapse (blåtime-skyene racet — `frys-alt`-fellen), re-gen med streng cinemagraph-prompt fjernet timelapsen MEN fikk artefakter (biler på gangvei, fugler inn i bygg). Reel = flyfoto → push-in atrium, 15 s, krysstonet via `compose-video-crossfade` (lyd strippet). **Metodelærdom:** 3-frame start/slutt-sjekk bommet på timelapse (endepunktene lignet) — verifiser tett (6+ frames + skyregion-crop) på bevegelse.
+
+**3. Wiret via nytt `splashVideo`-flagg (ikke `brand`).** `brand` gater også logo + splash-stillbilde (finnes ikke for Teknostallen). La til `ProjectAssetFlags.splashVideo`; `getProjectSplashVideo` gater nå på `assets.splashVideo || assets.brand` (bakover-kompatibelt). Reel → `public/illustrations/teknostallen-splash-video.mp4` (+ `.jpg`-poster). Supabase: `assets.splashVideo: true` PATCH-et (read-modify-write merge). Cache-caveat: `unstable_cache` → vises live ved deploy.
+
+**4. Hele branchen merget til main.** `feat/rapport-nivaa2-kategori-detalj` lå på samme commit som main (`efea2ce`); alt arbeid var ucommittet i working tree (~35 filer på tvers av nivå-2 drill-in, intro-koreografi, basic-kamera, mobil-parity, provision-pipeline, Veo-intro). Committet i 4 logiske commits + fast-forward merge → main. Pushet til origin.
+
+**5. Fikset 11 pre-eksisterende røde tester** (lå på `efea2ce`, ikke fra denne sesjonen):
+- `hydrate-report` / `import-public-pois`: stale Supabase-mocks — kilden gikk over til delete→insert re-hydrering, mockene hadde fortsatt `upsert`/manglet `.delete`/`.select`/`.insert`. Oppdatert mockene til å matche kall-kjedene.
+- `validator.extractProperNouns`: droppet egennavn ved setningsstart (Solsiden, Ålesund) pga. `.!?`-posisjonsfiltrering. Fjernet posisjonsfilteret — setningsstartere skilles via `LEADING_CAP_STOPWORDS` (Her/Det/Og…), ikke posisjon. 577/577 grønne.
+
+**Deploy:** pushet til main → Vercel produksjons-deploy (build verifisert via GitHub commit-status). Splash-videoen vises på KLP-lenken når deployen er live.
+
+**Åpen tråd — video-vendor-eval (deferred):** Veo bunter lyd vi ikke trenger inn i sekundprisen ($0,40/s). For Auto-tier-volum (Propr ~1700 listinger/år) bør vi evaluere video-only-alternativer (Seedance 2.0, Kling, eller Veo 3.1 Lite no-audio-tier ~$0,03/s) på pris/kvalitet/integrasjon. IKKE nå (prototype-beløp er støy + Veo-prompt-kunnskap er modell-spesifikk eiendel) — gjøres som strategisk spike når video industrialiseres.
+
+
 
 Direkte sesjon (main, dev :3000), verifisert live i Chrome. Ingen kodeendring — ren data-seeding. Mål: tekst + 3 highlight-POIer per kategori på Teknostallen (`http://localhost:3000/eiendom/klp-eiendom/teknostallen/rapport-board`), som matcher nivå-2-drill-in (Overvik). Featuren var allerede bygget; det som manglet var `editorial` på Teknostallens `products.config` i Supabase.
 
