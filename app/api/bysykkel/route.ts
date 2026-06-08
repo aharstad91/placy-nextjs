@@ -10,10 +10,22 @@ interface StationStatus {
   station_id: string;
   num_bikes_available: number;
   num_docks_available: number;
-  is_installed: number;
-  is_renting: number;
-  is_returning: number;
+  // GBFS sender boolean (true/false) i Trondheim-feeden, men eldre/andre
+  // feeder bruker integer 1/0. Aksepter begge og normaliser via isStationOpen.
+  is_installed: boolean | number;
+  is_renting: boolean | number;
+  is_returning: boolean | number;
   last_reported: number;
+}
+
+/**
+ * Stasjonen er åpen når den er installert OG leier ut. GBFS-feltene er
+ * boolean i Trondheim-feeden (`true`/`false`) men kan være integer (`1`/`0`)
+ * i andre feeder — `Boolean()` håndterer begge. Tidligere `=== 1`-sjekk ga
+ * alltid `false` mot boolean-feeden, så alle stasjoner ble vist som "Stengt".
+ */
+function isStationOpen(status: StationStatus): boolean {
+  return Boolean(status.is_installed) && Boolean(status.is_renting);
 }
 
 interface StationInfo {
@@ -134,8 +146,7 @@ export async function GET(request: NextRequest) {
               name: nearest.info.name,
               availableBikes: nearest.status.num_bikes_available,
               availableDocks: nearest.status.num_docks_available,
-              isOpen:
-                nearest.status.is_installed === 1 && nearest.status.is_renting === 1,
+              isOpen: isStationOpen(nearest.status),
               distance: Math.round(nearest.distance),
               walkMin: Math.max(1, Math.round(nearest.distance / 80)),
               coordinates: { lat: nearest.info.lat, lng: nearest.info.lon },
@@ -171,7 +182,7 @@ export async function GET(request: NextRequest) {
         name: info?.name || "Unknown",
         availableBikes: status.num_bikes_available,
         availableDocks: status.num_docks_available,
-        isOpen: status.is_installed === 1 && status.is_renting === 1,
+        isOpen: isStationOpen(status),
         capacity: info?.capacity,
         coordinates: info
           ? { lat: info.lat, lng: info.lon }
@@ -188,7 +199,7 @@ export async function GET(request: NextRequest) {
         name: info?.name || "Unknown",
         availableBikes: status.num_bikes_available,
         availableDocks: status.num_docks_available,
-        isOpen: status.is_installed === 1 && status.is_renting === 1,
+        isOpen: isStationOpen(status),
         capacity: info?.capacity,
         coordinates: info
           ? { lat: info.lat, lng: info.lon }
