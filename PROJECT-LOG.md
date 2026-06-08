@@ -20,6 +20,11 @@ Branch-sesjon (`feat/board-popup-transport-live-data`, dev :3000). Mål: få san
 
 **5. Verifikasjon:** Entur-API testet live (Hesthagen NSR:StopPlace:41620 → linje 18/2/11/1 sanntid). Bysykkel-API etter fiks: `isOpen: true`. `npx tsc --noEmit` + `npm run lint` grønne. **Fast-Refresh-felle:** ny fil + import-endringer i 3 komponenter krevde hard-refresh i nettleser før klient-bundlen plukket opp endringen — verdt å huske ved «koden er der men vises ikke».
 
+**6. UX-iterasjon på avgangslista (etter live-gjennomgang):**
+- **3 tidssorterte avganger (ikke 2).** Flat `departures` fra `/api/entur` er kun *første avgang per retning* (1 per quay) — tenkt for kart-tooltips. Populære stopp viste derfor bare 2. `useRealtimeData` merger nå alle quay-avganger (`flatMap`) og sorterer på avgangstid → de 3 faktisk neste uansett retning. Gjelder alle konsumenter (delt hook).
+- **Kompakt layout.** Fjernet «Neste avganger»-header + ikon; slo sammen `linjekode + ":" + destinasjon` tett (droppet `min-w`-spacing) for tettere rader.
+- **Skeleton-loader.** 1-2s-hentingen viste tomrom. `POIRealtimeSection` viser nå en pulserende 3-raders skeleton (speiler avgangslista) mens `loading` er aktiv uten data; faller til `null` hvis ferdig uten data. Kall-stedene gater på `isTransportPOI` alene (ikke `lastUpdated`) så skeletonen vises straks.
+
 **Deferred:** mobil bottom-sheet transport-data (komponenten finnes ikke som fil ennå) — board-popup-arbeidet dekker kun `popupMode === "mini"` (desktop). Plan: `docs/plans/2026-06-08-001-feat-board-popup-transport-live-data-plan.md`. Ikke merget til main ennå.
 
 ---
