@@ -4,7 +4,7 @@ import type {
   BoardCategoryId,
   BoardData,
 } from "../board/board-data";
-import type { BrokerInfo } from "@/lib/types";
+import type { BrokerInfo, ReportCTA } from "@/lib/types";
 import { getCategoryIllustrationSrc } from "@/lib/themes/category-illustrations";
 import type { AudioTrack } from "@/lib/stores/audio-tour-store";
 
@@ -64,6 +64,20 @@ export interface OutroReelCard {
   audio: BoardAudioTrack;
 }
 
+/** Visuelt oppsummerings-kort — statisk, uten audio. Headline + insight-
+ *  punkter + CTA. Vises rett før megler-kortet, men KUN for prosjekter med
+ *  strukturert summary-data (headline). Uten data hoppes kortet over og
+ *  finalen blir outro-recap + megler (som før). */
+export interface SummaryReelCard {
+  kind: "summary";
+  label: string;
+  headline: string;
+  insights: string[];
+  cta?: ReportCTA;
+  /** Første megler — brukt til mailto-fallback når cta.leadUrl mangler. */
+  broker?: BrokerInfo;
+}
+
 /** Megler-kontaktkort — statisk slutt-card uten audio. Knapper for tlf/e-post. */
 export interface MeglerReelCard {
   kind: "megler";
@@ -85,6 +99,7 @@ export type ReelsCard =
   | HomeReelCard
   | CategoryReelCard
   | OutroReelCard
+  | SummaryReelCard
   | MeglerReelCard;
 
 export function isAudioBearing(card: ReelsCard): card is AudioBearingCard {
@@ -224,6 +239,19 @@ export function buildReelsCards(
       // Faller tilbake til hero-stillbildet om welcome-videoen mangler.
       ...(welcomeVideoSrc ? { videoBgSrc: welcomeVideoSrc } : {}),
       audio: boardData.outro,
+    });
+  }
+
+  // Visuelt oppsummerings-kort — kun når strukturert summary-data finnes.
+  // Plasseres etter outro-recap, før megler-kontakt.
+  if (boardData.summary?.headline && boardData.summary.insights?.length) {
+    cards.push({
+      kind: "summary",
+      label: "Oppsummert",
+      headline: boardData.summary.headline,
+      insights: boardData.summary.insights,
+      cta: boardData.cta,
+      broker: boardData.brokers?.[0],
     });
   }
 

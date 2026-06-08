@@ -12,14 +12,29 @@ interface Props {
   /** Kameramodus (auto/fri) — kun relevant i 3D. */
   cameraMode: CameraMode;
   onCameraModeChange: (mode: CameraMode) => void;
+  /** Vis Auto/Fri-segmentet. false (basic-tier uten voice-over) → kun Kart/3D.
+   *  Auto-modus orbiterer KUN når `autoOrbit` (= hasVoiceOver) er på; uten
+   *  voice-over er "Auto" en tom modus (kameraet står stille), så toggelen
+   *  skjules og pillen krymper til motor-byttet. Default true. */
+  showCameraMode?: boolean;
   /** Recovery-hint synlig — transient melding når brukeren tok over kameraet
    *  ved å dra (auto → fri implisitt). */
   showFreeHint?: boolean;
+  /** Kontrollene er klare til å brukes. false = skjult (brukes under intro-
+   *  flythrough der kart-interaksjon er deaktivert). Animerer inn fra bunn
+   *  med opacity når den går fra false → true. Default true. */
+  controlsReady?: boolean;
+  /** Kompakt mobil-variant: smalere segmenter, touch-vennlig høyde (44px) og
+   *  litt løftet posisjon så pillen klarer kart-sheetens bunnkant og Google-
+   *  attribusjonen. Default false (desktop). */
+  compact?: boolean;
 }
 
 /** Segment-bredde (px) for Auto/Fri. Tommelen og hver knapp deler denne så
- *  `translateX(SEG)` lander tommelen presist på Fri-segmentet. */
-const SEG = 76;
+ *  `translateX(seg)` lander tommelen presist på Fri-segmentet. Kompakt mobil
+ *  bruker en smalere verdi. */
+const SEG_DEFAULT = 76;
+const SEG_COMPACT = 62;
 
 const CAMERA_SEGMENTS: { mode: CameraMode; label: string; aria: string }[] = [
   {
@@ -56,19 +71,32 @@ export function BoardMapControls({
   onViewChange,
   cameraMode,
   onCameraModeChange,
+  showCameraMode = true,
   showFreeHint = false,
+  controlsReady = true,
+  compact = false,
 }: Props) {
-  const is3d = view === "3d";
+  // Auto/Fri vises kun i 3D OG når det finnes en orbit å vise (voice-over-tier).
+  const showCamera = view === "3d" && showCameraMode;
   const isFree = cameraMode === "free";
+  const seg = compact ? SEG_COMPACT : SEG_DEFAULT;
+  // Touch-vennlig høyde på mobil (44px) vs. kompakt desktop (32px).
+  const btnH = compact ? "h-11" : "h-8";
 
   return (
-    <>
-      {/* Recovery-hint — sentrert over pillen, kun 3D + etter drag-takeover. */}
-      {is3d && (
+    <div
+      className={cn(
+        "pointer-events-none absolute inset-0 z-30 transition-[opacity,transform] duration-500 ease-out",
+        controlsReady ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+      )}
+    >
+      {/* Recovery-hint — sentrert over pillen, kun når Auto/Fri finnes + etter
+          drag-takeover. Skjules på basic-tier (ingen Auto-knapp å peke på). */}
+      {showCamera && (
         <div
           role="status"
           className={cn(
-            "pointer-events-none absolute bottom-[4.75rem] left-1/2 z-30 max-w-[20rem] -translate-x-1/2 rounded-xl bg-stone-900/85 px-3 py-2 text-center text-xs font-medium text-white shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-opacity duration-300",
+            "pointer-events-none absolute bottom-[4.75rem] left-1/2 max-w-[20rem] -translate-x-1/2 rounded-xl bg-stone-900/85 px-3 py-2 text-center text-xs font-medium text-white shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-opacity duration-300",
             showFreeHint ? "opacity-100" : "opacity-0",
           )}
         >
@@ -77,45 +105,54 @@ export function BoardMapControls({
         </div>
       )}
 
-      {/* Samlet pille, sentrert nederst. */}
-      <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/50 bg-white/80 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
-        {/* Auto/Fri — segment-kontroll med glidende tommel (kun 3D). */}
-        {is3d && (
+      {/* Samlet pille, sentrert nederst. Mobil løftes litt så den klarer
+          kart-sheetens bunnkant og Google-attribusjonen. */}
+      <div
+        className={cn(
+          "pointer-events-auto absolute left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/50 bg-white/80 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md",
+          compact ? "bottom-7" : "bottom-5",
+        )}
+      >
+        {/* Auto/Fri — segment-kontroll med glidende tommel (kun 3D + voice-over). */}
+        {showCamera && (
           <>
             <div role="group" aria-label="Kameramodus" className="relative flex items-center">
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-stone-900 shadow-sm transition-transform duration-[420ms] ease-[cubic-bezier(0.34,1.4,0.5,1)]"
+                className={cn(
+                  "pointer-events-none absolute inset-y-0 left-0 rounded-full bg-stone-900 shadow-sm transition-transform duration-[420ms] ease-[cubic-bezier(0.34,1.4,0.5,1)]",
+                )}
                 style={{
-                  width: SEG,
-                  transform: isFree ? `translateX(${SEG}px)` : "translateX(0)",
+                  width: seg,
+                  transform: isFree ? `translateX(${seg}px)` : "translateX(0)",
                 }}
               />
-              {CAMERA_SEGMENTS.map((seg) => {
-                const active = seg.mode === cameraMode;
-                const Icon = seg.mode === "auto" ? Orbit : Hand;
+              {CAMERA_SEGMENTS.map((segment) => {
+                const active = segment.mode === cameraMode;
+                const Icon = segment.mode === "auto" ? Orbit : Hand;
                 return (
                   <button
-                    key={seg.mode}
+                    key={segment.mode}
                     type="button"
-                    onClick={() => onCameraModeChange(seg.mode)}
+                    onClick={() => onCameraModeChange(segment.mode)}
                     aria-pressed={active}
-                    aria-label={seg.aria}
-                    style={{ width: SEG }}
+                    aria-label={segment.aria}
+                    style={{ width: seg }}
                     className={cn(
-                      "relative z-[1] inline-flex h-8 items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
+                      "relative z-[1] inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
+                      btnH,
                       active ? "text-white" : "text-stone-500 hover:text-stone-700",
                     )}
                   >
                     <Icon
                       className={cn(
                         "h-4 w-4",
-                        seg.mode === "auto" &&
+                        segment.mode === "auto" &&
                           active &&
                           "animate-[spin_7s_linear_infinite]",
                       )}
                     />
-                    <span>{seg.label}</span>
+                    <span>{segment.label}</span>
                   </button>
                 );
               })}
@@ -138,7 +175,8 @@ export function BoardMapControls({
                 aria-pressed={active}
                 aria-label={opt.aria}
                 className={cn(
-                  "inline-flex h-8 items-center justify-center rounded-full px-3.5 text-sm font-medium transition-colors duration-200",
+                  "inline-flex items-center justify-center rounded-full px-3.5 text-sm font-medium transition-colors duration-200",
+                  btnH,
                   active
                     ? "bg-stone-900 text-white shadow-sm"
                     : "text-stone-500 hover:text-stone-700",
@@ -150,6 +188,6 @@ export function BoardMapControls({
           })}
         </div>
       </div>
-    </>
+    </div>
   );
 }

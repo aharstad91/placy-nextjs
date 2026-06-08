@@ -11,6 +11,9 @@ export function ReelsStack({ renderCard }: Props) {
   const { state, setActiveIndex } = useReels();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
+  // Undertrykker IntersectionObserver-en mens vi scroller programmatisk (auto-
+  // advance / handlePlay), så IO ikke setter en mellom-index midt i hoppet.
+  const suppressIORef = useRef(false);
 
   useEffect(() => {
     const sections = sectionRefs.current.filter((s): s is HTMLElement => !!s);
@@ -18,6 +21,7 @@ export function ReelsStack({ renderCard }: Props) {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        if (suppressIORef.current) return;
         let bestEntry: IntersectionObserverEntry | null = null;
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
@@ -41,10 +45,27 @@ export function ReelsStack({ renderCard }: Props) {
     return () => observer.disconnect();
   }, [setActiveIndex, state.cards.length]);
 
+  // Scroll-follow: når activeIndex settes UTENFRA (handlePlay → welcome,
+  // auto-advance welcome→home→kategori), scroll feeden dit. Brukerens egen
+  // swipe driver IO som allerede matcher scrollTop, så da er dette en no-op.
+  useEffect(() => {
+    const c = containerRef.current;
+    const section = sectionRefs.current[state.activeIndex];
+    if (!c || !section) return;
+    const target = section.offsetTop;
+    if (Math.abs(c.scrollTop - target) < 8) return; // allerede der (swipe)
+    suppressIORef.current = true;
+    c.scrollTop = target; // umiddelbart — overgangen skjer bak fullskjerm-kartet
+    const t = setTimeout(() => {
+      suppressIORef.current = false;
+    }, 250);
+    return () => clearTimeout(t);
+  }, [state.activeIndex]);
+
   // Lås scroll når et card er i map-full — bruker pan'er kartet, ikke scroller.
   // I tillegg: pointer-events: none på containeren så touch-events går rett
-  // til ReelsMap (z-0). Interaktive knapper i CategoryReel setter selv
-  // pointer-events: auto for å overstyre.
+  // til kart-sheeten (BoardMap, z-15 over feeden). Interaktive knapper i
+  // CategoryReel setter selv pointer-events: auto for å overstyre.
   const inMapFull = state.currentPhase === "map-full";
 
   return (

@@ -334,6 +334,27 @@ export interface CategoryCameraConfig {
   moveDurationMs?: number;
 }
 
+/**
+ * Nivå-2 (Bedre) kuratert kategori-innhold. TILSTEDEVÆRELSEN av dette objektet
+ * (med ikke-tom body eller minst én highlight) er gating-signalet: en kategori
+ * med editorial får et drill-in detalj-panel i rapport-board-sidebaren. Uten det
+ * beholder kategorien nivå-1-oppførselen (klikk = velg på kart, intet panel).
+ * Lagres per tema i products.config.reportConfig.themes[].editorial og kan
+ * overskrives senere uten kodeendring — slik blir 1→2-oppgraderingen et felt-
+ * fyll i Supabase. Nivå 3 (voice-over/reels) ligger fortsatt på `reelsAudio`.
+ */
+export interface ReportThemeEditorial {
+  /** Kuratert brødtekst (kort avsnitt, dobbelt linjeskift = nytt avsnitt). */
+  body: string;
+  /** POI-IDer å trekke frem som «verdt å merke seg» — rendres som klikkbare
+   *  chips i panelet → kameraet flyr til punktet (OPEN_POI). Refererer POIs i
+   *  samme kategori; ukjente IDer ignoreres ved mapping. */
+  highlightPoiIds?: string[];
+  /** Path (/public eller absolutt) til kuratert bilde øverst i panelet.
+   *  Faller tilbake til kategori-illustrasjonen når utelatt. */
+  image?: string;
+}
+
 export interface ReportThemeConfig {
   id: string;
   name: string;
@@ -345,6 +366,8 @@ export interface ReportThemeConfig {
   upperNarrative?: string;
   leadText?: string;
   categoryDescriptions?: Record<string, string>;
+  /** Nivå-2 kuratert detalj-innhold. Omit → kategorien er nivå-1 (intet panel). */
+  editorial?: ReportThemeEditorial;
   /** Google AI Mode-søk (udm=50) for "Les mer"-knapp. Short, generic query — Google handler fersk detalj. */
   readMoreQuery?: string;
   /** Build-time-generert Gemini-grounding. Omit ved feil — ikke null. */
@@ -394,6 +417,10 @@ export interface ReportCTA {
 export interface ProjectAssetFlags {
   /** Egen logo + splash-hero + splash-video finnes for prosjektet. */
   brand?: boolean;
+  /** Kun splash-video (`{slug}-splash-video.mp4` + `.jpg`-poster) finnes — uten
+   *  logo/splash-hero. Lar et prosjekt få levende splash-bakgrunn uten å skru på
+   *  hele `brand`-flagget (som også krever logo + splash-stillbilde). */
+  splashVideo?: boolean;
   /** Egne kategori-illustrasjoner (`{slug}-{categoryId}.jpg`) finnes. */
   customIllustrations?: boolean;
   /** Egen kvadratisk pin-thumbnail (`{slug}-pin-thumb.jpg`) finnes for 3D-markøren. */

@@ -16,7 +16,6 @@ import type { POI } from "@/lib/types";
 import { Marker3DPin } from "./Marker3DPin";
 import { RevealLayer3D, type RevealItem } from "./RevealLayer3D";
 import { ProjectSitePin } from "./ProjectSitePin";
-import { Map3DControls, type Map3DAny } from "./Map3DControls";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { hexLightTint } from "@/lib/utils/marker-color";
 import { useWebGLCheck } from "./Map3DFallback";
@@ -57,7 +56,6 @@ export interface MapView3DProps {
   center: { lat: number; lng: number; altitude?: number };
   cameraLock: CameraLock;
   pois: POI[];
-  activePOIId?: string | null;
   onPOIClick?: (poiId: string) => void;
   /** False = passiv preview (ingen interaksjon), True = full interaktivitet. Default true. */
   activated?: boolean;
@@ -143,12 +141,10 @@ function MapReadyBridge({
  */
 const Marker3DItem = memo(function Marker3DItem({
   poi,
-  isActive,
   opacity,
   onPOIClick,
 }: {
   poi: POI;
-  isActive: boolean;
   opacity: number;
   onPOIClick?: (id: string) => void;
 }) {
@@ -159,19 +155,23 @@ const Marker3DItem = memo(function Marker3DItem({
         lat: poi.coordinates.lat,
         lng: poi.coordinates.lng,
         // Hev over taknivå (ikke 0) så bakke-markører ikke okkluderes av 3D-
-        // byggene og blinker inn/ut når kameraet beveger seg. Aktiv litt høyere
-        // så den løftes tydelig frem. (Hjem-markøren ligger på 30 av samme grunn.)
-        altitude: isActive ? 28 : 18,
+        // byggene og blinker inn/ut når kameraet beveger seg.
+        // (Hjem-markøren ligger på 30 av samme grunn.)
+        altitude: 18,
       }}
       altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
       onClick={() => onPOIClick?.(poi.id)}
       title={poi.name}
+      // Lav zIndex så POI-markører ALDRI tegnes oppå prosjektmarkøren
+      // (som har zIndex 1_000_000). I 3D bestemmer ikke altitude tegne-
+      // rekkefølgen alene — zIndex er den eksplisitte spaken.
+      zIndex={1}
     >
       <Marker3DPin
         color={poi.category.color}
         backgroundColor={hexLightTint(poi.category.color)}
         Icon={Icon}
-        size={isActive ? 48 : 40}
+        size={40}
         opacity={opacity}
       />
     </Marker3D>
@@ -206,21 +206,28 @@ const PIN_NEAR_RANGE = 700; // ≤ dette (zoomet inn) → PIN_MAX_SCALE (flatt)
 const PIN_FAR_RANGE = 3000; // ≥ dette (zoomet ut) → PIN_MIN_SCALE (flatt)
 const PIN_MAX_SCALE = 0.85;
 const PIN_MIN_SCALE = 0.5;
-const PIN_SCALE_STEP = 0.04; // kvantisering → re-rasteriser kun ved steg-skifte
+/** ms kameraet må stå i ro før prosjekt-pinnen justerer størrelse. */
+const PIN_SETTLE_MS = 220;
 
 function scaleForRange(range: number): number {
   const span = PIN_FAR_RANGE - PIN_NEAR_RANGE;
   const t = Math.min(1, Math.max(0, (range - PIN_NEAR_RANGE) / span));
-  const raw = PIN_MAX_SCALE + t * (PIN_MIN_SCALE - PIN_MAX_SCALE);
-  return Math.round(raw / PIN_SCALE_STEP) * PIN_SCALE_STEP;
+  return PIN_MAX_SCALE + t * (PIN_MIN_SCALE - PIN_MAX_SCALE);
 }
 
 /**
- * Leser kamera-range live fra Map3D-elementet og returnerer en kvantisert skala
- * for prosjektmarkøren. rAF-poll (ett tall-avlesning per frame, neglisjerbart) i
- * stedet for `gmp-`-event — robust mot både bruker-zoom og programmatisk fly, og
- * `setState` fyrer KUN når det kvantiserte steget endres, så SVG-en (og dermed
- * WebGL-rasteren) bare oppdateres ved et faktisk størrelses-hopp, ikke per frame.
+ * Range-avhengig skala for prosjektmarkøren (Marker3D) — DEBOUNCED.
+ *
+ * Marker3D rasteriserer SVG-en til en 3D-tekstur, så hver størrelse er en ny
+ * raster. Endrer vi størrelsen UNDER bevegelse (drag/zoom/fly) får vi enten
+ * synlige re-raster-hopp (linjene runder ulikt pr. trinn) eller — om vi flytter
+ * pinnen til et HTML-overlay for jevn CSS-skala — posisjons-jitter fordi
+ * overlayet ikke kan synke 100 % med Googles GPU-render hver frame.
+ *
+ * Løsning: FRYS skalaen mens kameraet beveger seg (range endrer seg) → ingen
+ * re-raster, ingen hopp, ingen jitter. Når kameraet har stått i ro i
+ * PIN_SETTLE_MS justeres størrelsen rent ÉN gang (begge tekstlinjer sammen, så
+ * ingen pr-linje-hopping). Marker3D = alltid eksakt forankret (Google-native).
  */
 function useProjectPinScale(map: Map3DInstance | null): number {
   const [scale, setScale] = useState(PIN_MAX_SCALE);
@@ -228,14 +235,23 @@ function useProjectPinScale(map: Map3DInstance | null): number {
     if (!map) return;
     const m = map as unknown as { range?: number };
     let raf = 0;
-    let last = -1;
-    const tick = () => {
+    let prevRange = -1;
+    let stableSince = 0;
+    let applied = -1;
+    const tick = (ts: number) => {
       const r = m.range ?? 0;
       if (r > 0) {
-        const s = scaleForRange(r);
-        if (s !== last) {
-          last = s;
-          setScale(s);
+        if (Math.abs(r - prevRange) > 0.5) {
+          // Kamera i bevegelse → frys skala, nullstill ro-timer.
+          prevRange = r;
+          stableSince = ts;
+        } else if (ts - stableSince >= PIN_SETTLE_MS) {
+          // I ro lenge nok → juster størrelse én gang.
+          const s = scaleForRange(r);
+          if (Math.abs(s - applied) > 0.001) {
+            applied = s;
+            setScale(s);
+          }
         }
       }
       raf = requestAnimationFrame(tick);
@@ -250,7 +266,6 @@ function Map3DInner({
   center,
   cameraLock,
   pois,
-  activePOIId,
   onPOIClick,
   onMapReady,
   activated = true,
@@ -272,8 +287,6 @@ function Map3DInner({
   const panHalfSideKm = cameraLock.panHalfSideKm ?? 5;
   const bounds = freeMode ? undefined : squareBoundsAround(center, panHalfSideKm);
 
-  // Fanger map3d-instansen lokalt så Map3DControls (utenfor Map3D-treet)
-  // kan bruke den direkte — useMap3D(mapId) er upålitelig utenfor Map3D.
   const [mapInstance, setMapInstance] = useState<Map3DInstance | null>(null);
   // Range-avhengig skala på prosjektmarkøren (krymper når man trekker ut).
   const projectPinScale = useProjectPinScale(mapInstance);
@@ -414,8 +427,6 @@ function Map3DInner({
 
   // Bruker Googles native gesture-handling. Bounds + altitude-grenser
   // håndheves av Google i WebGL → butter smooth, ingen JS-kamp.
-  // Map3DControls må være SØSKEN til Map3D (ikke barn), ellers blir
-  // div-ene absorbert i custom element sin shadow DOM.
   return (
     // touch-action: none er påkrevd for at Google Maps 3D (WebGL custom element)
     // skal motta touch-events på mobil. Uten dette fanger nettleseren touch som
@@ -453,6 +464,9 @@ function Map3DInner({
             }}
             altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
             title={projectSite.name}
+            // Alltid øverst — ingen POI-markør skal okkludere prosjekt-
+            // pinnen (POI-markører har zIndex 1).
+            zIndex={1_000_000}
           >
             <ProjectSitePin
               name={projectSite.name}
@@ -467,7 +481,6 @@ function Map3DInner({
           <Marker3DItem
             key={poi.id}
             poi={poi}
-            isActive={activePOIId === poi.id}
             opacity={opacities?.[poi.id] ?? 1}
             onPOIClick={onPOIClick}
           />
@@ -479,16 +492,6 @@ function Map3DInner({
           <RevealLayer3D items={revealItems} animate={animateReveal} />
         )}
       </Map3D>
-      {activated && (
-        <Map3DControls
-          map3d={mapInstance as unknown as Map3DAny | null}
-          minTilt={minTilt ?? 15}
-          maxTilt={maxTilt ?? 75}
-          minAltitude={minAltitude ?? 100}
-          maxAltitude={maxAltitude ?? 5000}
-          showZoom={false}
-        />
-      )}
     </div>
   );
 }

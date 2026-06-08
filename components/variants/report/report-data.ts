@@ -7,6 +7,7 @@ import type {
   BrokerInfo,
   ReportCTA,
   ReportThemeGroundingView,
+  ReportThemeEditorial,
   ProjectAssetFlags,
 } from "@/lib/types";
 import { ReportThemeGroundingViewSchema } from "@/lib/types";
@@ -100,6 +101,9 @@ export interface ReportTheme {
   readMoreQuery?: string;
   /** Build-time Gemini-grounding, Zod-validated. Undefined = skjul "Utdyp med Google AI"-knappen. */
   grounding?: ReportThemeGroundingView;
+  /** Nivå-2 kuratert detalj-innhold (fra reportConfig.themes[].editorial).
+   *  Tilstedeværelse gater drill-in-panelet i rapport-board. */
+  editorial?: ReportThemeEditorial;
   stats: ReportThemeStats;
   /** All POIs sorted by tier then score. First INITIAL_VISIBLE_COUNT shown, rest behind "Hent flere". */
   pois: POI[];
@@ -573,6 +577,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       leadText: (themeDef as { leadText?: string }).leadText,
       readMoreQuery: themeDef.readMoreQuery,
       grounding: parseGroundingOrLog(themeDef.grounding, project, themeDef.id),
+      editorial: themeDef.editorial,
       stats: {
         totalPOIs: filtered.length,
         ratedPOIs: themeStats.ratedCount,

@@ -20,6 +20,13 @@ export interface BoardState {
   phase: BoardPhase;
   activeCategoryId: BoardCategoryId | null;
   activePOIId: BoardPOIId | null;
+  /**
+   * Basic-tier (uten voice-over): den auto-genererte intro-flythrough-en kjører
+   * nå og EIER kameraet. Settes av «Utforsk nabolaget»-klikket (ingen welcome-
+   * beat å henge den på når prosjektet mangler reels-lyd), og nullstilles når
+   * flyturen lander (END_INTRO) eller brukeren navigerer (kategori/POI/reset).
+   */
+  introPlaying: boolean;
 }
 
 /**
@@ -37,12 +44,15 @@ export type BoardAction =
   | { type: "OPEN_POI"; id: BoardPOIId; categoryId?: BoardCategoryId }
   | { type: "BACK_TO_ACTIVE" }
   | { type: "BACK_TO_DEFAULT" }
-  | { type: "RESET_TO_DEFAULT" };
+  | { type: "RESET_TO_DEFAULT" }
+  | { type: "START_INTRO" }
+  | { type: "END_INTRO" };
 
 export const initialBoardState: BoardState = {
   phase: "default",
   activeCategoryId: null,
   activePOIId: null,
+  introPlaying: false,
 };
 
 export function boardReducer(state: BoardState, action: BoardAction): BoardState {
@@ -61,6 +71,8 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         phase: stayInDefault ? "default" : "active",
         activeCategoryId: action.id,
         activePOIId: null,
+        // Navigasjon avbryter en pågående basic-intro (brukeren tok over).
+        introPlaying: false,
       };
     }
 
@@ -71,6 +83,7 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         phase: "poi",
         activeCategoryId: categoryId,
         activePOIId: action.id,
+        introPlaying: false,
       };
     }
 
@@ -96,6 +109,12 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
 
     case "RESET_TO_DEFAULT":
       return initialBoardState;
+
+    case "START_INTRO":
+      return { ...state, introPlaying: true };
+
+    case "END_INTRO":
+      return { ...state, introPlaying: false };
 
     default:
       return state;

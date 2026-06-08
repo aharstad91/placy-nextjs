@@ -73,6 +73,41 @@ export function bearingBetween(
   return (deg + 360) % 360;
 }
 
+// ── Nabolags-spredning → zoom-skalering (basic-tier) ────────────────────────
+// Basic-tier-prosjekter varierer sterkt i tetthet: et tett urbant objekt har
+// mange POI-er på få hundre meter, et forstadsobjekt har færre, spredt utover.
+// Ett fast orbit-range (650) blir derfor enten for trangt (forstad → punktene
+// faller utenfor) eller for vidt (urbant → tomt). Vi måler den FAKTISKE
+// spredningen og skalerer zoom-en etter den (avtalt med produkteier).
+
+/**
+ * Nabolags-spredning: avstand (m) fra `home` til POI-en ved gitt `percentile`
+ * (default 0.85 → ignorerer de ytterste uteliggerne så én fjern POI ikke blåser
+ * opp rammen). Klampet til et fornuftig spenn. Ren funksjon.
+ */
+export function computeSpreadRadiusM(
+  home: { lat: number; lng: number },
+  coords: { lat: number; lng: number }[],
+  percentile = 0.85,
+): number {
+  if (coords.length === 0) return 800;
+  const dists = coords.map((c) => haversineMeters(home, c)).sort((a, b) => a - b);
+  const idx = Math.min(
+    dists.length - 1,
+    Math.max(0, Math.floor(percentile * (dists.length - 1))),
+  );
+  return Math.max(400, Math.min(2500, dists[idx]));
+}
+
+/**
+ * Hvile-/orbit-range (m) skalert til nabolags-spredningen. `ORBIT_RANGE` (650)
+ * er gulvet — tett urbant nabolag holder den trange dronen; spredte forsteder
+ * trekkes ut (mindre zoom) så punktene rundt objektet faktisk er i bildet.
+ */
+export function orbitRangeForSpread(spreadM: number): number {
+  return Math.round(Math.max(ORBIT_RANGE, Math.min(1600, spreadM * 1.25)));
+}
+
 /** Avstand i meter mellom to lat/lng-punkt (haversine). Ren. */
 export function haversineMeters(
   a: { lat: number; lng: number },
@@ -212,6 +247,16 @@ export interface CameraDecisionInputs {
   reducedMotion: boolean;
   /** Forrige intent (for cut-deteksjon). */
   prevIntent: CameraIntent | null;
+  /** Hvile-/orbit-range (m), skalert til nabolags-spredningen. Udefinert →
+   *  ORBIT_RANGE (650). Brukes kun i basic-tier (uten voice-over); voice-over-
+   *  prosjekter beholder den tunede 650-orbiten. */
+  orbitRange?: number;
+  /** Skal idle-tilstanden orbitere? `false` → kameraet HOLDER der det er (free
+   *  no-op) i stedet for å fly inn i en drone-orbit. Basic-tier (uten voice-over)
+   *  setter false: etter den auto-genererte intro-flythrough-en skal kameraet bli
+   *  stående der flyturen landet — ikke re-aimes til orbit-vinkelen (mister tråden).
+   *  Udefinert/true → orbit som før (voice-over-prosjekter). */
+  autoOrbit?: boolean;
 }
 
 /**
@@ -271,6 +316,11 @@ export function decideCameraIntent(input: CameraDecisionInputs): CameraIntent {
     };
   }
 
+  // Basic-tier (autoOrbit === false): ingen idle-orbit. Kameraet HOLDER der det
+  // er (free no-op) → etter intro-flythrough-en blir det stående der flyturen
+  // landet, i stedet for å re-aime til orbit-vinkelen og «miste tråden».
+  if (input.autoOrbit === false) return { kind: "free" };
+
   // Cut INN i orbit når forrige kamera-kontekst var noe annet enn orbit/POI:
   //  • free → orbit: velkommen-innflyvningen er ferdig og nabolaget (uten
   //    waypoints) overtar — ELLER bruker re-engasjerer auto etter manuell pan.
@@ -284,7 +334,7 @@ export function decideCameraIntent(input: CameraDecisionInputs): CameraIntent {
     cut,
     hero: {
       center: { lat: home.lat, lng: home.lng, altitude: 0 },
-      range: ORBIT_RANGE,
+      range: input.orbitRange ?? ORBIT_RANGE,
       tilt: ORBIT_TILT,
       heading: ORBIT_HEADING,
     },

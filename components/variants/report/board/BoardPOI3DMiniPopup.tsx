@@ -7,6 +7,7 @@ import { useBoard, useActivePOI } from "./board-state";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle } from "./marker-style";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
+import { projectLatLngToScreen } from "@/components/map/project-latlng-to-screen";
 // merknad: hide-during-motion ble tidligere brukt for å skjule popup under
 // kamera-bevegelse fordi den gamle approksimasjonen drifted. Med korrekt
 // perspektiv-projeksjon tracker popupen markøren smooth — fjernet.
@@ -25,76 +26,9 @@ interface Props {
  * tilte etterpå — popupen følger med, men drift øker proporsjonalt.
  */
 
-/**
- * Full 3D perspective-projeksjon fra (lat, lng, altitude) til skjerm-koord.
- *
- * Trinn:
- *   1. World-delta i meter (lokal flat-approks med cos(lat) for lng)
- *   2. Rotér til kamera-frame med heading (azimuth fra nord, med klokken)
- *   3. Tilt + altitude → kamera-frame (right, up_on_screen, depth)
- *   4. Perspektiv-divisjon med depth, multipliser med focal length fra FOV
- *
- * Konvensjon:
- *   - heading=0 → kamera ser nord; forward-aksen = +north
- *   - heading=90 → kamera ser øst; forward-aksen = +east
- *   - tilt=0 → top-down; tilt=90 → horisontal
- *   - active markør har altitude=20m (matcher Marker3D-rendering i map-view-3d.tsx)
- *
- * Den tidligere approksimasjonen brukte fast `scale * 1000` uten perspektiv-
- * divisjon, så punkter langt fra sentrum projiserte feil — særlig ved høy tilt.
- * Dette er ekte perspektiv-math og treffer Google's egne markører.
- */
-const FOV_Y_RAD = (35 * Math.PI) / 180; // estimat — Google Maps 3D eksponerer ikke FOV
-const ALTITUDE_M = 20; // matcher Marker3D `altitude: isActive ? 20 : 0`
-const METERS_PER_DEG_LAT = 111320;
-
-function calculateScreenPosition(
-  map3d: Map3DInstance,
-  lat: number,
-  lng: number,
-): { x: number; y: number } | null {
-  try {
-    const rect = (map3d as unknown as HTMLElement).getBoundingClientRect();
-    const center = (map3d as { center?: { lat: number; lng: number } }).center;
-    if (!center) return null;
-    const heading = (map3d as { heading?: number }).heading ?? 0;
-    const tilt = (map3d as { tilt?: number }).tilt ?? 0;
-    const range = (map3d as { range?: number }).range ?? 1200;
-
-    // 1. World-delta → meter
-    const metersPerDegLng =
-      METERS_PER_DEG_LAT * Math.cos((center.lat * Math.PI) / 180);
-    const dxEast = (lng - center.lng) * metersPerDegLng;
-    const dyNorth = (lat - center.lat) * METERS_PER_DEG_LAT;
-
-    // 2. Roter til kamera-frame: (east, north) → (right, forward)
-    const h = (heading * Math.PI) / 180;
-    const cosH = Math.cos(h);
-    const sinH = Math.sin(h);
-    const right = dxEast * cosH - dyNorth * sinH;
-    const forward = dxEast * sinH + dyNorth * cosH;
-
-    // 3. Tilt + altitude → kamera-frame koordinater
-    //   x_cam = right
-    //   y_cam = forward*cos(t) + altitude*sin(t)   (positiv = oppover på skjerm)
-    //   z_cam = range + forward*sin(t) - altitude*cos(t)   (depth)
-    const t = (tilt * Math.PI) / 180;
-    const cosT = Math.cos(t);
-    const sinT = Math.sin(t);
-    const xCam = right;
-    const yCam = forward * cosT + ALTITUDE_M * sinT;
-    const zCam = range + forward * sinT - ALTITUDE_M * cosT;
-    if (zCam <= 1) return null; // bak kameraet, hopp over
-
-    // 4. Perspektiv-projeksjon
-    const focal = rect.height / (2 * Math.tan(FOV_Y_RAD / 2));
-    const screenX = rect.width / 2 + (focal * xCam) / zCam;
-    const screenY = rect.height / 2 - (focal * yCam) / zCam;
-    return { x: rect.left + screenX, y: rect.top + screenY };
-  } catch {
-    return null;
-  }
-}
+// Projeksjon (lat/lng → skjerm) er delt med prosjekt-pin-overlayet — se
+// `@/components/map/project-latlng-to-screen`. POI-markørene ligger på
+// altitude 18 (matcher Marker3D i map-view-3d.tsx).
 
 export function BoardPOI3DMiniPopup({ map3d }: Props) {
   const { dispatch } = useBoard();
@@ -117,10 +51,11 @@ export function BoardPOI3DMiniPopup({ map3d }: Props) {
     const update = () => {
       const el = wrapperRef.current;
       if (el) {
-        const p = calculateScreenPosition(
+        const p = projectLatLngToScreen(
           map3d,
           poi.coordinates.lat,
           poi.coordinates.lng,
+          18,
         );
         if (p) {
           // −28: matcher Mapbox 2D-popupens offset slik at bunn-kanten lander

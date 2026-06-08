@@ -32,6 +32,12 @@ interface Params {
   audioDurationMs: number | undefined;
   audioPaused: boolean;
   reducedMotion: boolean;
+  /** Hvile-/orbit-range (m), skalert til nabolags-spredningen (basic-tier).
+   *  Udefinert → ORBIT_RANGE. */
+  orbitRange?: number;
+  /** Skal idle-tilstanden orbitere? `false` (basic-tier) → kameraet holder der
+   *  det er etter intro-flythrough-en i stedet for å fly inn i en orbit. */
+  autoOrbit?: boolean;
 }
 
 export interface Board3DCameraState {
@@ -65,6 +71,8 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
     audioDurationMs,
     audioPaused,
     reducedMotion,
+    orbitRange,
+    autoOrbit,
   } = params;
 
   const tokenRef = useRef(0);
@@ -86,6 +94,8 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
       audioDurationMs,
       audioPaused,
       reducedMotion,
+      orbitRange,
+      autoOrbit,
       prevIntent: prevIntentRef.current,
     });
     prevIntentRef.current = intent;
@@ -213,6 +223,8 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
     audioDurationMs,
     audioPaused,
     reducedMotion,
+    orbitRange,
+    autoOrbit,
   ]);
 
   // Rydd timere + stopp animasjon ved unmount / map-bytte.

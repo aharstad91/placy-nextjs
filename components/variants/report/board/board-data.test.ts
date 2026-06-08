@@ -164,6 +164,69 @@ describe("adaptBoardData", () => {
     expect(data.assets).toBeUndefined();
   });
 
+  describe("editorial (nivå-2) adapter", () => {
+    it("resolver highlightPoiIds til {id, navn} mot kategoriens POIs", () => {
+      const theme = makeTheme("x", [makePOI("p1"), makePOI("p2")], {
+        editorial: {
+          body: "Kuratert brødtekst om området.",
+          highlightPoiIds: ["p2", "p1"],
+        },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].editorial).toEqual({
+        body: "Kuratert brødtekst om området.",
+        image: undefined,
+        highlights: [
+          { id: "p2", name: "POI p2" },
+          { id: "p1", name: "POI p1" },
+        ],
+      });
+    });
+
+    it("ignorerer highlightPoiIds som ikke finnes i kategorien", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        editorial: { body: "Tekst", highlightPoiIds: ["p1", "ukjent"] },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].editorial?.highlights).toEqual([
+        { id: "p1", name: "POI p1" },
+      ]);
+    });
+
+    it("beholder image-pathen når satt", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        editorial: { body: "Tekst", image: "/illustrations/x-custom.jpg" },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].editorial?.image).toBe("/illustrations/x-custom.jpg");
+    });
+
+    it("kategori uten editorial → editorial undefined (nivå 1)", () => {
+      const data = adaptBoardData(makeReportData([makeTheme("x", [makePOI("p1")])]));
+      expect(data.categories[0].editorial).toBeUndefined();
+    });
+
+    it("editorial med tom body og ingen resolvede highlights → undefined (gating)", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        editorial: { body: "   ", highlightPoiIds: ["finnes-ikke"] },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].editorial).toBeUndefined();
+    });
+
+    it("editorial med kun highlights (tom body) → beholdes", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        editorial: { body: "", highlightPoiIds: ["p1"] },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].editorial).toEqual({
+        body: "",
+        image: undefined,
+        highlights: [{ id: "p1", name: "POI p1" }],
+      });
+    });
+  });
+
   describe("audio adapter", () => {
     const timingsFixture = {
       characters: ["a", "b", "c"],

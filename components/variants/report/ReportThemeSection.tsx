@@ -624,7 +624,6 @@ function Google3DSlotContent({
         center={{ lat: center.lat, lng: center.lng, altitude: 0 }}
         cameraLock={DEFAULT_CAMERA_LOCK}
         pois={pois}
-        activePOIId={ctx.activePOI}
         onPOIClick={(poiId) => {
           // Parity med 2D-marker-click: scroll korresponderende kort i
           // visning (AC-4). Kartet er allerede sentrert rundt markøren —

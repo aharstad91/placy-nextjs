@@ -59,12 +59,15 @@ interface Props {
    * sidebar. Default 0 (mobil + ren rapport-board uten sidebar).
    */
   mapPaddingLeft?: number;
+  /** Kompakt, touch-vennlig kontroll-pille (mobil kart-sheet). Default false. */
+  compactControls?: boolean;
 }
 
 export function BoardMap({
   has3dAddon = false,
   mapPaddingBottom = 0,
   mapPaddingLeft = 0,
+  compactControls = false,
 }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
@@ -86,19 +89,35 @@ export function BoardMap({
   );
   const mapBodyRef = useRef<HTMLDivElement | null>(null);
 
+  // ---- Voice-over-tier ----
+  // Speiler signalet i BoardMap3D: med voice-over finnes en kuratert tur å
+  // guide gjennom (auto-orbit + Auto/Fri-toggel gir mening). UTEN voice-over
+  // (basic-tier) er "Auto" en tom modus — `autoOrbit` er av, så kameraet bare
+  // står stille. Da skjules Auto/Fri-segmentet (pillen krymper til Kart/3D).
+  const hasVoiceOver = useMemo(
+    () =>
+      data.categories.some((c) => !!c.audio || !!c.reelsAudio) ||
+      !!data.welcome ||
+      !!data.home.audio ||
+      !!data.outro,
+    [data.categories, data.welcome, data.home.audio, data.outro],
+  );
+
   // ---- Kameramodus (auto/fri) + recovery-hint ----
   // Løftet hit (fra BoardMap3D) så Auto/Fri + Kart/3D kan bo i ÉN felles
   // kontroll-komponent (BoardMapControls) sentrert nederst. cameraMode mates
   // ned til BoardMap3D for kamera-directoren; toggelen i BoardMapControls
   // skriver den. Recovery-hinten vises når brukeren tar over ved DRAG (auto→fri).
-  // Default auto (drone-orbit) — men ?fly=1 starter i "free" så kamera-directoren
-  // ikke kjemper mot intro-flythrough-en (board-intro-flythrough i BoardMap3D).
-  const [cameraMode, setCameraMode] = useState<CameraMode>(() =>
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("fly") === "1"
+  // Default auto (drone-orbit) — men ?fly=1 OG basic-tier (ingen orbit) starter i
+  // "free" så kamera-directoren ikke kjemper mot intro-flythrough-en og ikke
+  // fryser kameraet i en tom auto-hold (board-intro-flythrough i BoardMap3D).
+  const [cameraMode, setCameraMode] = useState<CameraMode>(() => {
+    if (!hasVoiceOver) return "free";
+    return typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("fly") === "1"
       ? "free"
-      : "auto",
-  );
+      : "auto";
+  });
   const [showFreeHint, setShowFreeHint] = useState(false);
   const freeHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -132,6 +151,7 @@ export function BoardMap({
   // ville kategori-kameraet stå dødt i fri. wasOutroRef sikrer at vi kun rører
   // modusen på outro-overgangen — ikke ved mount (bevarer ?fly=1-start i fri).
   const currentTrack = useCurrentTrack();
+  const isWelcomeBeat = currentTrack?.categoryId === "welcome";
   const isOutroBeat = currentTrack?.categoryId === "outro";
   const wasOutroRef = useRef(false);
   useEffect(() => {
@@ -425,7 +445,10 @@ export function BoardMap({
           onViewChange={handleModeChange}
           cameraMode={cameraMode}
           onCameraModeChange={handleCameraModeChange}
+          showCameraMode={hasVoiceOver}
           showFreeHint={showFreeHint}
+          controlsReady={!isWelcomeBeat}
+          compact={compactControls}
         />
       )}
     </div>

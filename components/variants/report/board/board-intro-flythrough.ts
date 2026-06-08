@@ -88,6 +88,31 @@ export const WELCOME_INTRO_SETTLE_MS = 1200;
  *  opp, så framingen ved hero er uendret. Capture (?fly=1) beholder full sweep. */
 export const WELCOME_CALM_SWEEP_DEG = 90;
 
+/** Varighet (ms) for basic-tier sin auto-intro. Ingen voice-over å skalere mot
+ *  (som welcome-beaten gjør), så en fast, rolig innflyvning. */
+export const BASIC_INTRO_FLY_MS = 9000;
+
+/**
+ * Bygg en basic-tier intro-bane skalert til nabolagets hvile-range (`restRange`
+ * = den spredning-skalerte orbit-rangen). Flyturen LANDER på `restRange` så
+ * overgangen til hvile-orbiten er sømløs (ingen zoom-snap), og åpner ~1,8× så
+ * vidt for en etablering av nærområdet. Rolig push-in (lav sweep, ingen oval)
+ * så blob-prikkene avsløres jevnt uten å svinge rundt skjermen — samme ro som
+ * den live velkommen-beaten, men uten audio-synk.
+ */
+export function buildBasicIntroPath(restRange: number): Partial<IntroPathConfig> {
+  return {
+    rangeStart: Math.min(3000, Math.round(restRange * 1.8)),
+    rangeEnd: restRange,
+    tiltStart: DEFAULT_INTRO_PATH.tiltStart,
+    tiltEnd: DEFAULT_INTRO_PATH.tiltEnd,
+    sweepDeg: WELCOME_CALM_SWEEP_DEG,
+    ovalEccentricity: 0,
+    durationMs: BASIC_INTRO_FLY_MS,
+    settleMs: WELCOME_INTRO_SETTLE_MS,
+  };
+}
+
 export interface IntroFlythroughOptions {
   /** Objektet — kameraets låste look-at (typisk prosjektets home-koordinat). */
   target: { lat: number; lng: number };

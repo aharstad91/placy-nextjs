@@ -20,13 +20,16 @@ interface Props {
 }
 
 // Sheet-høyde-progresjon — driver karaoke-posisjonen som ligger like over.
-//   reel      → 15% (peek)
-//   map-half  → 50%
-//   map-full  → 100% (karaoke skjult)
+// Snap-stigen følger bruker-ønsket: peek 10% → snap-1 40% → full 100%
+// (map-half er en mellomtilstand brukt ved enkelte overganger).
+//   reel         → 10% (peek)
+//   map-quarter  → 40% (snap-1)
+//   map-half     → 65%
+//   map-full     → 100% (karaoke skjult)
 const SHEET_HEIGHT_PCT = {
   reel: 10,
-  "map-quarter": 20,
-  "map-half": 50,
+  "map-quarter": 40,
+  "map-half": 65,
   "map-full": 100,
 } as const;
 

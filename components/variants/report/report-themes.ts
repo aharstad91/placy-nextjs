@@ -1,4 +1,9 @@
-import type { Project, ReportThemeAudio, ReportThemeGrounding } from "@/lib/types";
+import type {
+  Project,
+  ReportThemeAudio,
+  ReportThemeEditorial,
+  ReportThemeGrounding,
+} from "@/lib/types";
 import type { ThemeDefinition } from "@/lib/themes";
 import {
   getBransjeprofil,
@@ -23,6 +28,8 @@ export interface ReportThemeDefinition extends ThemeDefinition {
   audio?: ReportThemeAudio;
   /** Reels-spesifikt lydspor (fra products.config) — overstyrer audio i reels-feeden. */
   reelsAudio?: ReportThemeAudio;
+  /** Nivå-2 kuratert detalj-innhold (fra products.config). Gater drill-in-panelet. */
+  editorial?: ReportThemeEditorial;
 }
 
 /**

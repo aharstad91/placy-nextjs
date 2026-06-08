@@ -205,7 +205,6 @@ export default function ReportOverviewMap({
             center={mapCenter}
             cameraLock={effectiveCameraLock}
             pois={visiblePois}
-            activePOIId={ctx.activePOI}
             onPOIClick={(id) =>
               ctx.setActivePOI(ctx.activePOI === id ? null : id)
             }

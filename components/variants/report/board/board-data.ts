@@ -2,6 +2,8 @@ import type {
   BrokerInfo,
   POI,
   ProjectAssetFlags,
+  ReportCTA,
+  ReportSummary,
   ReportThemeAudio,
   ReportThemeAudioTimings,
   ReportThemeGroundingView,
@@ -42,6 +44,23 @@ export interface BoardPOI {
   raw: POI;
 }
 
+/**
+ * Nivå-2 (Bedre) kuratert detalj-innhold for en kategori. Render-klart: highlight-
+ * POIs er allerede resolvet til {id, navn} mot kategoriens POIs, så sidebaren
+ * slipper å slå opp. Tilstedeværelse av dette objektet er gating-signalet for
+ * drill-in detalj-panelet (se DesktopStorySidebar). adaptCategory utelater det
+ * når theme.editorial mangler ELLER har verken body eller resolvede highlights.
+ */
+export interface BoardCategoryEditorial {
+  /** Kuratert brødtekst (dobbelt linjeskift = nytt avsnitt). */
+  body: string;
+  /** Path til kuratert bilde, eller undefined (sidebaren faller tilbake til
+   *  kategori-illustrasjonen). */
+  image?: string;
+  /** «Verdt å merke seg» — klikkbare chips → OPEN_POI. */
+  highlights: { id: BoardPOIId; name: string }[];
+}
+
 export interface BoardCategory {
   id: BoardCategoryId;
   /** Kategori-navn vist i rail og som peek-eyebrow (f.eks. "Barn & Oppvekst"). */
@@ -54,6 +73,8 @@ export interface BoardCategory {
   body: string;
   /** Build-time Gemini-grounding for "Les mer"-disclosure. Skipper hvis udefinert (samme rendering som i rapport). */
   grounding?: ReportThemeGroundingView;
+  /** Nivå-2 kuratert detalj-innhold. Tilstedeværelse gater drill-in-panelet. */
+  editorial?: BoardCategoryEditorial;
   /** Optional banner-illustrasjon. */
   illustration?: ThemeIllustration;
   /** Lucide ikon-navn fra report-themes (brukes i rail og marker). */
@@ -104,6 +125,12 @@ export interface BoardData {
   /** Megler-kontakter til kontakt-kortet i bunn av sidebar. Tomt/undefined
    *  → ingen kort vises. */
   brokers?: BrokerInfo[];
+  /** Strukturert oppsummering (headline + insights) — driver det visuelle
+   *  oppsummerings-kortet på slutten (SummaryReelCard). Undefined → kortet
+   *  vises ikke (finalen er da outro-recap + megler). */
+  summary?: ReportSummary;
+  /** Call-to-action-config (lead-URL, primær-label) for oppsummerings-kortet. */
+  cta?: ReportCTA;
   /** Lookup-map fra POI-id (lowercase) til full POI. Brukes av grounding-rendering for å resolve [text](poi:uuid)-lenker — kan referere POIs på tvers av kategorier. */
   poisById: Map<string, POI>;
   /** Eksplisitt opt-in for audio-tour-CTA. Default false. */
@@ -158,6 +185,8 @@ export function adaptBoardData(report: ReportData): BoardData {
     brokers: report.brokers?.length
       ? report.brokers
       : getProjectBrokers(report.projectSlug),
+    summary: report.summary,
+    cta: report.cta,
     poisById,
     audioTourEnabled: report.audioTourEnabled === true,
     assets: report.assets,
@@ -207,6 +236,25 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
   const icon = theme.icon || "MapPin";
   const color = theme.color || "#94a3b8"; // stone-400
 
+  // Nivå-2 editorial: resolve highlight-POI-IDer mot kategoriens POIs (id+navn)
+  // så sidebaren får render-klare chips. Ukjente IDer ignoreres. Gates bort når
+  // det verken finnes brødtekst eller resolvede highlights — da er det ikke ekte
+  // nivå-2-innhold og drill-in-panelet skal ikke vises (kategorien er nivå 1).
+  const editorial = ((): BoardCategoryEditorial | undefined => {
+    if (!theme.editorial) return undefined;
+    const trimmedBody = theme.editorial.body?.trim() ?? "";
+    const highlights = (theme.editorial.highlightPoiIds ?? [])
+      .map((pid) => theme.allPOIs.find((p) => p.id === pid))
+      .filter((p): p is POI => Boolean(p))
+      .map((p) => ({ id: p.id as BoardPOIId, name: p.name }));
+    if (!trimmedBody && highlights.length === 0) return undefined;
+    return {
+      body: trimmedBody,
+      image: theme.editorial.image,
+      highlights,
+    };
+  })();
+
   return {
     id,
     label,
@@ -214,6 +262,7 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     lead,
     body,
     grounding: theme.grounding,
+    editorial,
     illustration: theme.image,
     icon,
     color,

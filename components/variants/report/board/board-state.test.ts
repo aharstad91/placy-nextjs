@@ -22,6 +22,7 @@ describe("boardReducer", () => {
         phase: "active",
         activeCategoryId: CAT_A,
         activePOIId: null,
+        introPlaying: false,
       });
     });
 
@@ -30,13 +31,25 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        introPlaying: false,
       };
       const next = boardReducer(start, { type: "SELECT_CATEGORY", id: CAT_B });
       expect(next).toEqual({
         phase: "active",
         activeCategoryId: CAT_B,
         activePOIId: null,
+        introPlaying: false,
       });
+    });
+
+    it("aborts a running intro (navigation takes over)", () => {
+      const start: BoardState = { ...initialBoardState, introPlaying: true };
+      const next = boardReducer(start, {
+        type: "SELECT_CATEGORY",
+        id: CAT_A,
+        source: "rail",
+      });
+      expect(next.introPlaying).toBe(false);
     });
   });
 
@@ -46,12 +59,14 @@ describe("boardReducer", () => {
         phase: "active",
         activeCategoryId: CAT_A,
         activePOIId: null,
+        introPlaying: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next).toEqual({
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        introPlaying: false,
       });
     });
 
@@ -60,12 +75,14 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        introPlaying: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next).toEqual({
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_2,
+        introPlaying: false,
       });
     });
 
@@ -79,6 +96,7 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        introPlaying: false,
       });
     });
 
@@ -97,12 +115,14 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        introPlaying: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_ACTIVE" });
       expect(next).toEqual({
         phase: "active",
         activeCategoryId: CAT_A,
         activePOIId: null,
+        introPlaying: false,
       });
     });
 
@@ -118,9 +138,23 @@ describe("boardReducer", () => {
         phase: "poi",
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
+        introPlaying: true,
       };
       const next = boardReducer(start, { type: "RESET_TO_DEFAULT" });
       expect(next).toEqual(initialBoardState);
+    });
+  });
+
+  describe("START_INTRO / END_INTRO", () => {
+    it("START_INTRO sets introPlaying without touching phase/category", () => {
+      const next = boardReducer(initialBoardState, { type: "START_INTRO" });
+      expect(next).toEqual({ ...initialBoardState, introPlaying: true });
+    });
+
+    it("END_INTRO clears introPlaying", () => {
+      const start: BoardState = { ...initialBoardState, introPlaying: true };
+      const next = boardReducer(start, { type: "END_INTRO" });
+      expect(next.introPlaying).toBe(false);
     });
   });
 });

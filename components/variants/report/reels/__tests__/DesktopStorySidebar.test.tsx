@@ -80,3 +80,103 @@ describe("SidebarContentPreview (empty state)", () => {
     expect(getByText("Tema X")).toBeTruthy();
   });
 });
+
+const editorialCategories: SidebarPreviewCategory[] = [
+  {
+    id: "barn",
+    label: "Barn & Oppvekst",
+    color: "#f59e0b",
+    count: 29,
+    lead: "Skoler og barnehager for familier.",
+    editorial: {
+      body: "Oppvekstmiljøet er trygt og grønt.\n\nFlere skoler i gangavstand.",
+      highlights: [
+        { id: "poi-skole", name: "Ranheim skole" },
+        { id: "poi-bhg", name: "Presthus barnehage" },
+      ],
+    },
+  },
+  {
+    id: "mat",
+    label: "Mat & Drikke",
+    color: "#ef4444",
+    count: 8,
+    lead: "Restauranter i nærområdet.",
+  },
+];
+
+describe("SidebarContentPreview — nivå-2 drill-in", () => {
+  it("viser detalj-panel når aktiv kategori har editorial", () => {
+    const { getByText, queryByText } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+      />,
+    );
+    // Detalj-innhold synlig
+    expect(getByText(/Oppvekstmiljøet er trygt/)).toBeTruthy();
+    expect(getByText("Verdt å merke seg")).toBeTruthy();
+    expect(getByText("Ranheim skole")).toBeTruthy();
+    // Index-lista er borte (ingen "Hele nabolaget"-rad mens detalj vises)
+    expect(queryByText("Hele nabolaget")).toBeNull();
+  });
+
+  it("splitter body på dobbelt linjeskift til avsnitt", () => {
+    const { getByText } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+      />,
+    );
+    expect(getByText("Oppvekstmiljøet er trygt og grønt.")).toBeTruthy();
+    expect(getByText("Flere skoler i gangavstand.")).toBeTruthy();
+  });
+
+  it("tilbake-pil kaller onShowAll", () => {
+    const onShowAll = vi.fn();
+    const { getByText } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+        onShowAll={onShowAll}
+      />,
+    );
+    fireEvent.click(getByText("Alle kategorier"));
+    expect(onShowAll).toHaveBeenCalled();
+  });
+
+  it("klikk på highlight-chip kaller onOpenPoi med poiId + categoryId", () => {
+    const onOpenPoi = vi.fn();
+    const { getByText } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+        onOpenPoi={onOpenPoi}
+      />,
+    );
+    fireEvent.click(getByText("Presthus barnehage"));
+    expect(onOpenPoi).toHaveBeenCalledWith("poi-bhg", "barn");
+  });
+
+  it("aktiv kategori UTEN editorial viser fortsatt index-lista (nivå 1)", () => {
+    const { getByText } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="mat"
+      />,
+    );
+    // Index synlig (ingen drill-in for nivå-1-kategori)
+    expect(getByText("Hele nabolaget")).toBeTruthy();
+    expect(getByText("Barn & Oppvekst")).toBeTruthy();
+  });
+
+  it("megler-footer vises også i detalj-visning", () => {
+    const { getByText } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+      />,
+    );
+    expect(getByText("Ansvarlig megler")).toBeTruthy();
+  });
+});

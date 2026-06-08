@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import {
   introPoseAt,
   runIntroFlythrough,
+  buildBasicIntroPath,
+  BASIC_INTRO_FLY_MS,
   DEFAULT_INTRO_PATH,
+  WELCOME_CALM_SWEEP_DEG,
   type IntroPathConfig,
   type IntroFlythroughPhase,
   type CameraDrivableMap3D,
@@ -144,5 +147,23 @@ describe("runIntroFlythrough — pause fryser flyturen (isPaused)", () => {
     cancel();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+});
+
+describe("buildBasicIntroPath", () => {
+  it("lander på hvile-rangen (sømløs overgang til orbit)", () => {
+    expect(buildBasicIntroPath(900).rangeEnd).toBe(900);
+  });
+
+  it("åpner vidt (~1,8×) men klamper til maks 3000 m", () => {
+    expect(buildBasicIntroPath(900).rangeStart).toBe(1620);
+    expect(buildBasicIntroPath(2000).rangeStart).toBe(3000);
+  });
+
+  it("bruker rolig push-in (lav sweep, ingen oval) og fast varighet", () => {
+    const p = buildBasicIntroPath(1000);
+    expect(p.sweepDeg).toBe(WELCOME_CALM_SWEEP_DEG);
+    expect(p.ovalEccentricity).toBe(0);
+    expect(p.durationMs).toBe(BASIC_INTRO_FLY_MS);
   });
 });

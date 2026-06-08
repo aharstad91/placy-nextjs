@@ -3,8 +3,11 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef } from "react";
 import {
+  ArrowLeft,
+  ChevronRight,
   Mail,
   Map as MapIcon,
+  MapPin,
   Pause,
   Phone,
   Play,
@@ -23,7 +26,7 @@ import {
   posterForVideo,
 } from "./reels-data";
 import type { MeglerReelCard, ReelsCard } from "./reels-data";
-import type { BoardCategoryId, BoardHome } from "../board/board-data";
+import type { BoardCategoryId, BoardPOIId, BoardHome } from "../board/board-data";
 import { useBoard } from "../board/board-state";
 
 /**
@@ -59,6 +62,14 @@ export interface SidebarPreviewCategory {
   count: number;
   lead?: string;
   image?: string;
+  /** Nivå-2 (Bedre) kuratert detalj-innhold. Tilstedeværelse gjør temakortet til
+   *  en drill-in: klikk åpner et detalj-panel som tar over scroll-området i
+   *  stedet for kun å velge kategorien på kartet. Render-klart fra board-data. */
+  editorial?: {
+    body: string;
+    image?: string;
+    highlights: { id: string; name: string }[];
+  };
 }
 
 interface Props {
@@ -87,81 +98,125 @@ export function SidebarContentPreview({
   activeCategoryId,
   onSelect,
   onShowAll,
+  onOpenPoi,
 }: {
   categories: SidebarPreviewCategory[];
   activeCategoryId?: string | null;
   /** Klikk på et temakort → velg kategorien på board-et (cut-overlay + drone-
    *  flyvning + markør-filtrering). Aktiv kategori re-klikket → tilbake til overblikk. */
   onSelect?: (id: string) => void;
-  /** Klikk på "Hele nabolaget" → reset board til overblikk (alle markører). */
+  /** Klikk på "Hele nabolaget" / tilbake-pil → reset board til overblikk (alle markører). */
   onShowAll?: () => void;
+  /** Klikk på en highlight-chip i detalj-panelet → åpne POI på kartet (kameraet
+   *  flyr til punktet). Kun relevant for nivå-2-kategorier. */
+  onOpenPoi?: (poiId: string, categoryId: string) => void;
 }) {
   const total = categories.reduce((sum, c) => sum + c.count, 0);
   const noneActive = !activeCategoryId;
+
+  // Nivå-2 gating: er den aktive kategorien en med kuratert editorial? I så fall
+  // tar detalj-panelet over scroll-området (megler-footeren under blir stående).
+  // Uten editorial (nivå 1) viser vi index-lista som før — det aktive kortet
+  // ringes bare som markering.
+  const activeCat = activeCategoryId
+    ? categories.find((c) => c.id === activeCategoryId)
+    : undefined;
+  const detail = activeCat?.editorial;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Scroll-område: "Hele nabolaget" (reset/overblikk) + kategori-kortene. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <button
-          type="button"
-          onClick={onShowAll}
-          aria-current={noneActive}
-          className={`flex w-full items-center gap-3 rounded-2xl border bg-white/60 p-2.5 text-left transition hover:bg-white ${
-            noneActive ? "border-stone-900 ring-1 ring-stone-900" : "border-black/5"
-          }`}
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-stone-900 text-white">
-            <MapIcon size={22} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="truncate text-sm font-semibold text-stone-900">Hele nabolaget</p>
-              <span className="shrink-0 text-[11px] font-medium text-stone-400">
-                {total} steder
-              </span>
-            </div>
-            <p className="mt-0.5 text-[12px] leading-snug text-stone-500">
-              Vis alle steder på kartet
-            </p>
-          </div>
-        </button>
-
-        {categories.map((c) => {
-          const isActive = activeCategoryId === c.id;
-          return (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => onSelect?.(c.id)}
-              aria-current={isActive}
-              className={`flex w-full items-center gap-3 rounded-2xl border bg-white/60 p-2.5 text-left transition hover:bg-white ${
-                isActive
-                  ? "border-stone-900 ring-1 ring-stone-900"
-                  : "border-black/5"
-              }`}
-            >
-              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-200">
-                {c.image && (
-                  <Image src={c.image} alt="" fill sizes="56px" className="object-cover" />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="truncate text-sm font-semibold text-stone-900">{c.label}</p>
-                  <span className="shrink-0 text-[11px] font-medium text-stone-400">
-                    {c.count} steder
-                  </span>
-                </div>
-                {c.lead && (
-                  <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-stone-500">
-                    {c.lead}
-                  </p>
-                )}
+      {detail ? (
+        <CategoryDetailView
+          category={activeCat!}
+          detail={detail}
+          onBack={onShowAll}
+          onOpenPoi={onOpenPoi}
+        />
+      ) : (
+        /* Scroll-område: "Hele nabolaget" (reset/overblikk) + kategori-kortene. */
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <button
+            type="button"
+            onClick={onShowAll}
+            aria-current={noneActive}
+            className={`group flex w-full cursor-pointer items-center gap-3 rounded-2xl border bg-white/60 p-2.5 text-left transition-all duration-150 hover:bg-white ${
+              noneActive
+                ? "border-stone-900 ring-1 ring-stone-900"
+                : "border-black/5 hover:border-stone-500 hover:ring-1 hover:ring-stone-500"
+            }`}
+          >
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-stone-900 text-white">
+              <MapIcon size={22} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="truncate text-sm font-semibold text-stone-900">Hele nabolaget</p>
+                <span className="shrink-0 text-[11px] font-medium text-stone-400">
+                  {total} steder
+                </span>
               </div>
-            </button>
-          );
-        })}
-      </div>
+              <p className="mt-0.5 text-[12px] leading-snug text-stone-500">
+                Vis alle steder på kartet
+              </p>
+            </div>
+          </button>
+
+          {categories.map((c) => {
+            const isActive = activeCategoryId === c.id;
+            const hasDetail = !!c.editorial;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => onSelect?.(c.id)}
+                aria-current={isActive}
+                className={`group flex w-full cursor-pointer items-center gap-3 rounded-2xl border bg-white/60 p-2.5 text-left transition-all duration-150 hover:bg-white ${
+                  isActive
+                    ? "border-stone-900 ring-1 ring-stone-900"
+                    : "border-black/5 hover:border-stone-500 hover:ring-1 hover:ring-stone-500"
+                }`}
+              >
+                <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-200">
+                  {c.image && (
+                    <Image
+                      src={c.image}
+                      alt=""
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="truncate text-sm font-semibold text-stone-900">{c.label}</p>
+                    <span className="shrink-0 text-[11px] font-medium text-stone-400">
+                      {c.count} steder
+                    </span>
+                  </div>
+                  {c.lead && (
+                    <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-stone-500">
+                      {c.lead}
+                    </p>
+                  )}
+                </div>
+                {/* Nivå-2 affordans: chevron som markert MINI-KNAPP — innrammet
+                    sirkel som fylles mørk + nudger på hover, så kortet leses som
+                    klikkbart og åpner et detalj-panel. På et nivå-2-board har ALLE
+                    kort kuratering (tier er per prosjekt), så denne er uniform. */}
+                {hasDetail && (
+                  <span
+                    aria-hidden
+                    className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-full bg-stone-100 text-stone-500 ring-1 ring-black/5 transition-colors duration-150 group-hover:bg-stone-900 group-hover:text-white group-hover:ring-stone-900"
+                  >
+                    <ChevronRight size={16} />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Author/megler — sticky i bunn av sidebaren (scroller ikke med kategori-
           lista). Nøytral placeholder, fylles per prosjekt. Speiler megler-kortets
@@ -187,6 +242,105 @@ export function SidebarContentPreview({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Nivå-2 drill-in: kuratert detalj-panel for én kategori. Tar over scroll-området
+ * i empty-state-sidebaren mens megler-footeren under blir stående. Tilbake-pilen
+ * sender tilbake til index-lista (reset board → alle markører). Highlight-chips er
+ * klikkbare → POI åpnes på kartet (kameraet flyr dit).
+ */
+function CategoryDetailView({
+  category,
+  detail,
+  onBack,
+  onOpenPoi,
+}: {
+  category: SidebarPreviewCategory;
+  detail: NonNullable<SidebarPreviewCategory["editorial"]>;
+  onBack?: () => void;
+  onOpenPoi?: (poiId: string, categoryId: string) => void;
+}) {
+  // Dobbelt linjeskift = nytt avsnitt; enkelt nivå er nok for kuratert tekst.
+  const paragraphs = detail.body
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const heroImage = detail.image ?? category.image;
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Tilbake-rad (standard nav-mønster) → index med alle kategorier. */}
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-3 -ml-1 inline-flex w-fit items-center gap-1.5 rounded-full px-1.5 py-1 text-[13px] font-semibold text-stone-600 transition hover:bg-black/5 hover:text-stone-900"
+      >
+        <ArrowLeft size={16} />
+        Alle kategorier
+      </button>
+
+      {heroImage && (
+        <div className="relative mb-4 h-44 w-full shrink-0 overflow-hidden rounded-2xl bg-stone-200">
+          <Image
+            src={heroImage}
+            alt=""
+            fill
+            sizes="390px"
+            className="object-cover object-center"
+          />
+        </div>
+      )}
+
+      <h3 className="text-lg font-bold leading-tight text-stone-900">{category.label}</h3>
+      <p className="mt-0.5 text-[12px] font-medium text-stone-400">
+        {category.count} steder i nærheten
+      </p>
+
+      {paragraphs.length > 0 && (
+        <div className="mt-3 space-y-3">
+          {paragraphs.map((p, i) => (
+            <p key={i} className="text-[14px] leading-relaxed text-stone-600">
+              {p}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {detail.highlights.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+            Verdt å merke seg
+          </p>
+          <div className="flex flex-col gap-2">
+            {detail.highlights.map((h) => (
+              <button
+                key={h.id}
+                type="button"
+                onClick={() => onOpenPoi?.(h.id, category.id)}
+                className="group flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-black/5 bg-white/60 px-3 py-2.5 text-left transition-colors duration-150 hover:border-stone-400 hover:bg-white"
+              >
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
+                  style={{ backgroundColor: category.color }}
+                >
+                  <MapPin size={14} />
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-stone-800">
+                  {h.name}
+                </span>
+                <ChevronRight
+                  size={16}
+                  className="shrink-0 text-stone-300 transition-colors duration-150 group-hover:text-stone-600"
+                  aria-hidden
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -369,12 +523,18 @@ export function DesktopStorySidebar({
     }
   };
 
-  // Thumbnail-raden viser alle chapters unntatt intro-video-splashen og megler.
-  // Megler er trukket ut til en konstant kontakt-footer nederst (vises alltid),
-  // i stedet for å ligge gjemt som siste thumbnail i kategori-raden.
+  // Thumbnail-raden viser alle chapters unntatt intro-video-splashen, megler
+  // og det visuelle summary-kortet. Megler er trukket ut til en konstant
+  // kontakt-footer nederst (vises alltid); summary-kortet er en mobil-finale
+  // og surfaces ikke i desktop-løpebåndet (desktop-recap er outro-sporet).
   const items = state.cards
     .map((card, index) => ({ card, index }))
-    .filter(({ card }) => card.kind !== "intro" && card.kind !== "megler");
+    .filter(
+      ({ card }) =>
+        card.kind !== "intro" &&
+        card.kind !== "megler" &&
+        card.kind !== "summary",
+    );
 
   const meglerCard = state.cards.find(
     (card): card is MeglerReelCard => card.kind === "megler",
@@ -473,6 +633,13 @@ export function DesktopStorySidebar({
           activeCategoryId={boardState.activeCategoryId}
           onSelect={handleSelectPreviewCategory}
           onShowAll={() => boardDispatch({ type: "RESET_TO_DEFAULT" })}
+          onOpenPoi={(poiId, categoryId) =>
+            boardDispatch({
+              type: "OPEN_POI",
+              id: poiId as BoardPOIId,
+              categoryId: categoryId as BoardCategoryId,
+            })
+          }
         />
       ) : (
         <>
@@ -569,6 +736,13 @@ export function DesktopStorySidebar({
                           alt=""
                           fill
                           sizes="56px"
+                          // De statiske poster-/illustrasjons-JPG-ene er allerede
+                          // små; å sende dem gjennom next/image-optimizeren for en
+                          // 56px-thumbnail gir ingen visuell gevinst og lar dev-
+                          // optimizeren deadlocke ved samtidige on-demand-kall (de
+                          // siste i køen henger → blanke thumbnails). Server filen
+                          // direkte i stedet — robust i både dev og prod.
+                          unoptimized
                           className="object-cover"
                         />
                       ) : (

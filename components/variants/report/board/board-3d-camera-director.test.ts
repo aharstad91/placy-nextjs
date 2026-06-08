@@ -4,6 +4,8 @@ import {
   bearingBetween,
   haversineMeters,
   deriveCategoryCamera,
+  computeSpreadRadiusM,
+  orbitRangeForSpread,
   ORBIT_RANGE,
   POI_RANGE,
   DEFAULT_CINEMATIC_MS,
@@ -300,5 +302,118 @@ describe("deriveCategoryCamera", () => {
     // tyngdepunkt = (63.43, 10.41); midt mot hjem (63.435,10.398) ≈ (63.4325, 10.404)
     expect(cfg.a.lat).toBeCloseTo(63.4325, 3);
     expect(cfg.a.lng).toBeCloseTo(10.404, 3);
+  });
+});
+
+describe("computeSpreadRadiusM", () => {
+  it("faller tilbake til 800 m uten POI-er", () => {
+    expect(computeSpreadRadiusM(home, [])).toBe(800);
+  });
+
+  it("klamper til minst 400 m for en tett klynge", () => {
+    const tight = Array.from({ length: 10 }, (_, i) => ({
+      lat: home.lat + i * 0.00005,
+      lng: home.lng,
+    }));
+    expect(computeSpreadRadiusM(home, tight)).toBe(400);
+  });
+
+  it("klamper til maks 2500 m for ekstremt spredte punkter", () => {
+    const wide = [{ lat: home.lat + 0.5, lng: home.lng + 0.5 }];
+    expect(computeSpreadRadiusM(home, wide)).toBe(2500);
+  });
+
+  it("ignorerer uteliggere via persentil (85% som default)", () => {
+    // 9 punkter ~500 m unna + én ekstrem utligger; 85-persentilen treffer ikke
+    // utliggeren, så radiusen reflekterer klyngen, ikke den fjerne POI-en.
+    const cluster = Array.from({ length: 9 }, () => ({
+      lat: home.lat + 0.0045,
+      lng: home.lng,
+    }));
+    const withOutlier = [...cluster, { lat: home.lat + 0.3, lng: home.lng }];
+    const r = computeSpreadRadiusM(home, withOutlier);
+    expect(r).toBeLessThan(1000);
+  });
+});
+
+describe("orbitRangeForSpread", () => {
+  it("holder ORBIT_RANGE-gulvet for tette nabolag", () => {
+    expect(orbitRangeForSpread(400)).toBe(ORBIT_RANGE);
+  });
+
+  it("trekker ut (større range) for spredte forsteder", () => {
+    expect(orbitRangeForSpread(1200)).toBeGreaterThan(ORBIT_RANGE);
+  });
+
+  it("klamper til maks 1600 m", () => {
+    expect(orbitRangeForSpread(2500)).toBe(1600);
+  });
+});
+
+describe("decideCameraIntent — skalert orbit-range", () => {
+  it("bruker orbitRange i orbit-hero når satt", () => {
+    const intent = decideCameraIntent({
+      cameraMode: "auto",
+      introActive: false,
+      home,
+      activePOI: null,
+      activeCategoryId: null,
+      categoryConfig: undefined,
+      audioDurationMs: undefined,
+      audioPaused: false,
+      reducedMotion: false,
+      orbitRange: 1400,
+      prevIntent: null,
+    });
+    expect(intent.kind).toBe("orbit");
+    if (intent.kind === "orbit") expect(intent.hero.range).toBe(1400);
+  });
+
+  it("faller tilbake til ORBIT_RANGE uten orbitRange", () => {
+    const intent = decideCameraIntent({
+      cameraMode: "auto",
+      introActive: false,
+      home,
+      activePOI: null,
+      activeCategoryId: null,
+      categoryConfig: undefined,
+      audioDurationMs: undefined,
+      audioPaused: false,
+      reducedMotion: false,
+      prevIntent: null,
+    });
+    if (intent.kind === "orbit") expect(intent.hero.range).toBe(ORBIT_RANGE);
+  });
+});
+
+describe("decideCameraIntent — autoOrbit:false (basic-tier hold)", () => {
+  const idleAuto = {
+    cameraMode: "auto" as const,
+    introActive: false,
+    home,
+    activePOI: null,
+    activeCategoryId: null,
+    categoryConfig: undefined,
+    audioDurationMs: undefined,
+    audioPaused: false,
+    reducedMotion: false,
+    prevIntent: null,
+  };
+
+  it("idle holder kameraet (free) i stedet for å orbitere", () => {
+    expect(decideCameraIntent({ ...idleAuto, autoOrbit: false }).kind).toBe("free");
+  });
+
+  it("orbiterer fortsatt når autoOrbit ikke er satt", () => {
+    expect(decideCameraIntent(idleAuto).kind).toBe("orbit");
+  });
+
+  it("åpnet POI flyr fortsatt inn selv med autoOrbit:false", () => {
+    const intent = decideCameraIntent({
+      ...idleAuto,
+      autoOrbit: false,
+      activePOI: { lat: 63.42, lng: 10.41 },
+    });
+    expect(intent.kind).toBe("poi");
   });
 });
