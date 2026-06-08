@@ -30,8 +30,11 @@ import path from "node:path";
 config({ path: path.resolve(process.cwd(), ".env.local") });
 
 const API_KEY = process.env.GEMINI_API_KEY;
-const DEFAULT_MODEL = "veo-3.0-fast-generate-001";
-const FALLBACK_MODELS = ["veo-3.0-generate-001", "veo-2.0-generate-001"];
+// Veo 3.1 (juni 2026): nyere modell enn 3.0 — bedre prompt-adherens, realisme og
+// bevegelses-koherens, og støtter eksplisitt oppløsning (720p/1080p). Lyd genereres
+// uansett men strippes i komposisjonen (VO lager all lyd) → vi ber om generateAudio:false.
+const DEFAULT_MODEL = "veo-3.1-generate-preview";
+const FALLBACK_MODELS = ["veo-3.1-fast-generate-preview", "veo-3.0-generate-001"];
 
 if (!API_KEY) {
   console.error("Mangler GEMINI_API_KEY i .env.local");
@@ -49,7 +52,7 @@ function parseArgs() {
   if (args.length < 2) {
     console.error(
       "Usage: animate-scene-veo.ts <input-image> <output-dir> " +
-        "[--prompt \"...\"] [--negative-prompt \"...\"] [--duration 8] [--model <modelname>] [--aspect 9:16|16:9|1:1] [--no-precrop]",
+        "[--prompt \"...\"] [--negative-prompt \"...\"] [--duration 8] [--model <modelname>] [--aspect 9:16|16:9|1:1] [--resolution 720p|1080p] [--no-precrop]",
     );
     process.exit(1);
   }
@@ -63,6 +66,7 @@ function parseArgs() {
   let duration = 8;
   let model = DEFAULT_MODEL;
   let aspect = "9:16";
+  let resolution = "720p";
   let precrop = true;
 
   for (let i = 2; i < args.length; i++) {
@@ -71,10 +75,11 @@ function parseArgs() {
     else if (args[i] === "--duration" && args[i + 1]) duration = Number(args[++i]);
     else if (args[i] === "--model" && args[i + 1]) model = args[++i];
     else if (args[i] === "--aspect" && args[i + 1]) aspect = args[++i];
+    else if (args[i] === "--resolution" && args[i + 1]) resolution = args[++i];
     else if (args[i] === "--no-precrop") precrop = false;
   }
 
-  return { input, outputDir, prompt, negativePrompt, duration, model, aspect, precrop };
+  return { input, outputDir, prompt, negativePrompt, duration, model, aspect, resolution, precrop };
 }
 
 /**
@@ -142,6 +147,7 @@ async function startOperation(opts: {
   mimeType: string;
   duration: number;
   aspect: string;
+  resolution: string;
 }): Promise<VeoOperation> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:predictLongRunning?key=${API_KEY}`;
   const body = {
@@ -154,9 +160,13 @@ async function startOperation(opts: {
     }],
     parameters: {
       aspectRatio: opts.aspect,
+      resolution: opts.resolution,
       personGeneration: "allow_adult",
       durationSeconds: opts.duration,
       negativePrompt: opts.negativePrompt,
+      // NB: `generateAudio` støttes IKKE av Gemini API for disse modellene (400
+      // INVALID_ARGUMENT) — lyd genereres alltid og strippes i komposisjonen
+      // (compose-video-crossfade dropper lydsporet; VO lager all lyd vi trenger).
     },
   };
   const res = await fetch(url, {
@@ -220,6 +230,7 @@ async function tryWithModel(model: string, opts: {
   mimeType: string;
   duration: number;
   aspect: string;
+  resolution: string;
 }): Promise<VeoOperation> {
   console.log(`\nTrying model: ${model}`);
   const op = await startOperation({ model, ...opts });
@@ -230,7 +241,7 @@ async function tryWithModel(model: string, opts: {
 }
 
 async function main() {
-  const { input, outputDir, prompt, negativePrompt, duration, model, aspect, precrop } = parseArgs();
+  const { input, outputDir, prompt, negativePrompt, duration, model, aspect, resolution, precrop } = parseArgs();
   await fs.mkdir(outputDir, { recursive: true });
 
   const stem = path.basename(input, path.extname(input));
@@ -245,7 +256,7 @@ async function main() {
   console.log(`  output:          ${outputFile}`);
   console.log(`  prompt:          ${prompt}`);
   console.log(`  negativePrompt:  ${negativePrompt}`);
-  console.log(`  duration:        ${duration}s, aspect: ${aspect}, audio: off\n`);
+  console.log(`  duration:        ${duration}s, aspect: ${aspect}, resolution: ${resolution}, audio: off\n`);
 
   console.log("Encoding image…");
   const { data: imageB64, mime: mimeType } = await imageToBase64(sourceImage);
@@ -257,7 +268,7 @@ async function main() {
 
   for (const m of tryModels) {
     try {
-      op = await tryWithModel(m, { prompt, negativePrompt, imageB64, mimeType, duration, aspect });
+      op = await tryWithModel(m, { prompt, negativePrompt, imageB64, mimeType, duration, aspect, resolution });
       if (op.error) {
         console.error(`  ✗ ${m}: ${op.error.message}`);
         lastError = new Error(op.error.message);

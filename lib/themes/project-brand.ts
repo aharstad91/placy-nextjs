@@ -41,12 +41,14 @@ export function getProjectSplashImage(
 
 /** Dedikert splash-video (16:9) som spilles i høyre panel i stedet for et
  *  stillbilde. Poster avledes ved å bytte `.mp4` → `.jpg` (samme filnavn).
- *  Undefined → høyre panel faller tilbake til splash-render/heroImage. */
+ *  Gates av enten `brand` (full pakke) eller `splashVideo` (kun video, uten
+ *  logo/splash-hero) — sistnevnte lar et prosjekt få levende splash uten å måtte
+ *  ha logo. Undefined → høyre panel faller tilbake til splash-render/heroImage. */
 export function getProjectSplashVideo(
   slug: string | undefined,
   assets: ProjectAssetFlags | undefined,
 ): string | undefined {
-  if (slug && assets?.brand) {
+  if (slug && (assets?.splashVideo || assets?.brand)) {
     return `/illustrations/${slug}-splash-video.mp4`;
   }
   return undefined;
