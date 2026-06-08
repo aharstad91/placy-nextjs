@@ -87,10 +87,14 @@ export function useRealtimeData(poi: POI | null): RealtimeData {
 
     const controller = new AbortController();
 
+    // Clear previous POI's data immediately so stale departures don't show
+    // under the new POI while its fetch is in flight.
+    setData({ loading: true, error: null, lastUpdated: null });
+
     async function fetchData() {
       if (controller.signal.aborted) return;
 
-      // Only show loading skeleton on initial fetch, not polling updates
+      // Suppress loading skeleton on polling updates (lastUpdated already set).
       setData(prev => prev.lastUpdated
         ? { ...prev, error: null }
         : { ...prev, loading: true, error: null, entur: undefined, bysykkel: undefined, hyre: undefined }

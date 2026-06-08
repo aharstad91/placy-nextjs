@@ -88,7 +88,7 @@ export function BoardPOIMiniPopup() {
 
         {isTransportPOI && realtimeData.lastUpdated && (
           <div className="mt-1.5 px-3">
-            <POIRealtimeSection realtimeData={realtimeData} poi={poi.raw} />
+            <POIRealtimeSection realtimeData={realtimeData} />
           </div>
         )}
 

@@ -223,7 +223,7 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
 
             {/* Realtime transport data */}
             {isTransportPOI && realtimeData.lastUpdated && (
-              <POIRealtimeSection realtimeData={realtimeData} poi={poi} />
+              <POIRealtimeSection realtimeData={realtimeData} />
             )}
 
             {/* Opening hours */}
@@ -346,7 +346,7 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
             )}
             {/* Realtime transport data — mobile */}
             {isTransportPOI && realtimeData.lastUpdated && (
-              <POIRealtimeSection realtimeData={realtimeData} poi={poi} />
+              <POIRealtimeSection realtimeData={realtimeData} />
             )}
             <div className="flex items-center gap-3">
               <a

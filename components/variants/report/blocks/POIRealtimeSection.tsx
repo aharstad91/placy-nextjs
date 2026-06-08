@@ -1,13 +1,11 @@
 "use client";
 
 import { Bus, Bike, Car } from "lucide-react";
-import type { POI } from "@/lib/types";
 import type { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
 
 interface POIRealtimeSectionProps {
   realtimeData: ReturnType<typeof useRealtimeData>;
-  poi: POI;
 }
 
 export function POIRealtimeSection({ realtimeData }: POIRealtimeSectionProps) {
