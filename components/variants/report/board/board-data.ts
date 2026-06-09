@@ -57,8 +57,16 @@ export interface BoardCategoryEditorial {
   /** Path til kuratert bilde, eller undefined (sidebaren faller tilbake til
    *  kategori-illustrasjonen). */
   image?: string;
-  /** «Verdt å merke seg» — klikkbare chips → OPEN_POI. */
-  highlights: { id: BoardPOIId; name: string }[];
+  /** «Verdt å merke seg» — klikkbare chips → OPEN_POI. Transport-koblings-IDer
+   *  tråes med så sidebar-radene kan vise live avgangstider/bysykkel-status
+   *  (samme sanntidsdata som kart-popupene). */
+  highlights: {
+    id: BoardPOIId;
+    name: string;
+    enturStopplaceId?: string;
+    bysykkelStationId?: string;
+    hyreStationId?: string;
+  }[];
 }
 
 export interface BoardCategory {
@@ -249,7 +257,13 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     const highlights = (theme.editorial.highlightPoiIds ?? [])
       .map((pid) => theme.allPOIs.find((p) => p.id === pid))
       .filter((p): p is POI => Boolean(p))
-      .map((p) => ({ id: p.id as BoardPOIId, name: p.name }));
+      .map((p) => ({
+        id: p.id as BoardPOIId,
+        name: p.name,
+        enturStopplaceId: p.enturStopplaceId,
+        bysykkelStationId: p.bysykkelStationId,
+        hyreStationId: p.hyreStationId,
+      }));
     if (!trimmedBody && highlights.length === 0) return undefined;
     return {
       body: trimmedBody,

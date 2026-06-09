@@ -28,6 +28,8 @@ import {
 import type { MeglerReelCard, ReelsCard } from "./reels-data";
 import type { BoardCategoryId, BoardPOIId, BoardHome } from "../board/board-data";
 import { useBoard } from "../board/board-state";
+import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
+import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
 
 /**
  * Desktop-adaptiv storytelling-lane (kun >=1024px, rendres fra
@@ -68,7 +70,13 @@ export interface SidebarPreviewCategory {
   editorial?: {
     body: string;
     image?: string;
-    highlights: { id: string; name: string }[];
+    highlights: {
+      id: string;
+      name: string;
+      enturStopplaceId?: string;
+      bysykkelStationId?: string;
+      hyreStationId?: string;
+    }[];
   };
 }
 
@@ -316,29 +324,75 @@ function CategoryDetailView({
           </p>
           <div className="flex flex-col gap-2">
             {detail.highlights.map((h) => (
-              <button
+              <POIHighlightRow
                 key={h.id}
-                type="button"
-                onClick={() => onOpenPoi?.(h.id, category.id)}
-                className="group flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-black/5 bg-white/60 px-3 py-2.5 text-left transition-colors duration-150 hover:border-stone-400 hover:bg-white"
-              >
-                <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
-                  style={{ backgroundColor: category.color }}
-                >
-                  <MapPin size={14} />
-                </span>
-                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-stone-800">
-                  {h.name}
-                </span>
-                <ChevronRight
-                  size={16}
-                  className="shrink-0 text-stone-300 transition-colors duration-150 group-hover:text-stone-600"
-                  aria-hidden
-                />
-              </button>
+                highlight={h}
+                color={category.color}
+                onOpen={() => onOpenPoi?.(h.id, category.id)}
+              />
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type HighlightItem = NonNullable<
+  SidebarPreviewCategory["editorial"]
+>["highlights"][number];
+
+/**
+ * En «Verdt å merke seg»-rad. Klikkbar header (åpner POI på kartet) + — for
+ * transport-POI-er (buss/bysykkel/tog/bildeling) — en live sanntidstabell under,
+ * samme data og komponent som kart-popupene bruker. For næringseiendom er
+ * jobbreisen et kjøpsargument, så avgangstider rett i sidebaren er høy verdi.
+ *
+ * Ikke-transport-highlights rendrer kun header (sanntidsseksjonen returnerer
+ * null), så raden ser ut som før utenfor transport-kategorien.
+ */
+function POIHighlightRow({
+  highlight,
+  color,
+  onOpen,
+}: {
+  highlight: HighlightItem;
+  color: string;
+  onOpen: () => void;
+}) {
+  const isTransport = !!(
+    highlight.enturStopplaceId ||
+    highlight.bysykkelStationId ||
+    highlight.hyreStationId
+  );
+  // Hooket er null-trygt: ikke-transport-rader poller ikke.
+  const realtimeData = useRealtimeData(isTransport ? highlight : null);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-black/5 bg-white/60 transition-colors duration-150 hover:border-stone-400 hover:bg-white">
+      <button
+        type="button"
+        onClick={onOpen}
+        className="group flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-left"
+      >
+        <span
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
+          style={{ backgroundColor: color }}
+        >
+          <MapPin size={14} />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-stone-800">
+          {highlight.name}
+        </span>
+        <ChevronRight
+          size={16}
+          className="shrink-0 text-stone-300 transition-colors duration-150 group-hover:text-stone-600"
+          aria-hidden
+        />
+      </button>
+      {isTransport && (
+        <div className="px-3 pb-2.5">
+          <POIRealtimeSection realtimeData={realtimeData} />
         </div>
       )}
     </div>

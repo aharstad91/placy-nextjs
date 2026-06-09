@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { POI } from "@/lib/types";
+
+/** Minimal POI-form sanntidshooket trenger — kun id + transport-koblings-IDer.
+ *  Full `POI` tilfredsstiller denne (alle felt finnes), så eksisterende kall er
+ *  uendret. Lar lettvekts-kontekster (sidebar-highlights) drive hooket uten å
+ *  tråde hele POI-objektet gjennom flere lag. */
+export interface RealtimePOI {
+  id: string;
+  enturStopplaceId?: string;
+  bysykkelStationId?: string;
+  hyreStationId?: string;
+}
 
 // Types for realtime data
 export interface EnturDeparture {
@@ -81,7 +91,7 @@ async function fetchHyre(stationId: string, signal: AbortSignal) {
   return await response.json() as HyreStatus;
 }
 
-export function useRealtimeData(poi: POI | null): RealtimeData {
+export function useRealtimeData(poi: RealtimePOI | null): RealtimeData {
   const [data, setData] = useState<RealtimeData>({
     loading: false,
     error: null,
