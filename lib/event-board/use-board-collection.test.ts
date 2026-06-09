@@ -34,6 +34,39 @@ describe("useBoardCollection (Unit 5)", () => {
     expect(result.current.has("p1")).toBe(false);
   });
 
+  it("R6: returnerende bruker (egne IDer) + ?c= REPRODUSERER samlingen — ingen merge", () => {
+    // En returnerende bruker har en persistert samling for SAMME prosjekt.
+    // `setProject` clearer kun ved prosjekt-BYTTE, så disse IDene overlever.
+    useCollectionStore.setState({
+      projectId: "kulturnatt-2025",
+      collectionPOIs: ["A", "B"],
+    });
+
+    const { result } = renderHook(() =>
+      useBoardCollection("kulturnatt-2025", true, ["C", "D"], "shared-cd"),
+    );
+
+    // Den delte lenken skal REPRODUSERE ["C","D"], ikke addere til ["A","B"].
+    expect(result.current.collectionPoiList).toEqual(["C", "D"]);
+    expect(result.current.collectionPoiIds).toEqual(new Set(["C", "D"]));
+    expect(result.current.has("A")).toBe(false);
+    expect(result.current.has("B")).toBe(false);
+  });
+
+  it("ren navigasjon uten ?c= rører IKKE en eksisterende samling (samme prosjekt)", () => {
+    useCollectionStore.setState({
+      projectId: "kulturnatt-2025",
+      collectionPOIs: ["A", "B"],
+    });
+
+    const { result } = renderHook(() =>
+      useBoardCollection("kulturnatt-2025", true),
+    );
+
+    // Ingen slug → seed-effekten er no-op → brukerens egen samling er intakt.
+    expect(result.current.collectionPoiList).toEqual(["A", "B"]);
+  });
+
   it("ugyldig slug (poiIds undefined) → tom samling, ingen krasj", () => {
     const { result } = renderHook(() =>
       useBoardCollection("kulturnatt-2025", true, undefined, undefined),

@@ -118,4 +118,23 @@ describe("DesktopReportSplash", () => {
     expect(container.querySelector("video")).toBeNull();
     expect(getByAltText("Stasjonskvartalet – illustrasjon")).toBeTruthy();
   });
+
+  // B1 / D3: event-board-splashen får event-labelen ("Utforsk programmet") via
+  // deriveSplashPrimaryLabel. Verifiser at play-knappen (det første brukeren ser)
+  // viser event-labelen og IKKE boligrapportens eiendoms-streng "Utforsk
+  // nærområdet". `intro` settes til event-copy så body også speiler event-modus.
+  it("rendrer event-label på play-knappen, ikke 'Utforsk nærområdet'", () => {
+    const { getByRole, queryByRole } = render(
+      <DesktopReportSplash
+        {...baseProps}
+        primaryLabel="Utforsk programmet"
+        intro="Utforsk programmet på kartet — se hva som skjer, hvor og når."
+      />,
+    );
+    const button = getByRole("button", { name: /Utforsk programmet/ });
+    expect(button).toBeTruthy();
+    expect(button.textContent).not.toMatch(/nærområdet/i);
+    // Ingen knapp med boligrapportens basic-label.
+    expect(queryByRole("button", { name: /Utforsk nærområdet/ })).toBeNull();
+  });
 });

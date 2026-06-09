@@ -246,6 +246,32 @@ describe("EventBoardPage (rute, D1)", () => {
     expect(getByTestId("reels-stub").getAttribute("data-collection-slug")).toBe("");
   });
 
+  it("slug fra et ANNET prosjekt (project_id-mismatch) → ingen collection-prop", async () => {
+    getProductAsyncMock.mockResolvedValue(makeKulturnattProject());
+    // Slug finnes, men tilhører et annet prosjekt enn det som åpnes.
+    getCollectionBySlugMock.mockResolvedValue({
+      id: "col2",
+      slug: "from-other",
+      project_id: "et-annet-prosjekt",
+      poi_ids: ["x1", "x2"],
+      email: null,
+      created_at: "2026-06-09T00:00:00Z",
+    });
+
+    const ui = await EventBoardPage({
+      params: makeParams("kulturnatt-trondheim", "kulturnatt-2025"),
+      searchParams: makeSearchParams({ c: "from-other" }),
+    });
+    const { getByTestId } = render(ui);
+
+    // Oppslaget skjedde, men IDene fra prosjekt A seedes IKKE inn i prosjekt B.
+    expect(getCollectionBySlugMock).toHaveBeenCalledWith("from-other");
+    const stub = getByTestId("reels-stub");
+    expect(stub.getAttribute("data-event-mode")).toBe("true");
+    expect(stub.getAttribute("data-collection-slug")).toBe("");
+    expect(stub.getAttribute("data-collection-pois")).toBe("");
+  });
+
   it("ugyldig/utløpt slug → getCollectionBySlug null → tom samling, ingen krasj", async () => {
     getProductAsyncMock.mockResolvedValue(makeKulturnattProject());
     getCollectionBySlugMock.mockResolvedValue(null);

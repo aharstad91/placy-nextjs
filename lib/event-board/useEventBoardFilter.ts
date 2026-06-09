@@ -57,13 +57,19 @@ export function useEventBoardFilter(
     selectedTimeSlots,
   );
 
-  // D6: re-sortér dato-bevisst (useKompassFilter sorterer dato-blindt på tid
-  // alene) og bygg dag-seksjons-aggregatet. buildDaySections sorterer internt,
-  // og den flate `recommended` flater seksjonene ut → samme rekkefølge begge
-  // steder (deterministisk).
+  // D6: bygg dag-seksjons-aggregatet dato-bevisst. `useKompassFilter` sorterer
+  // KUN på tid (HH:MM), dato-blindt — DEN indre sorten er bevisst en no-op her:
+  // `buildDaySections` re-sorterer dato-bevisst (dato-anker + tid) internt og
+  // OVERSKRIVER rekkefølgen fra `kompassRecommended` fullstendig (C3). En
+  // fremtidig leser skal derfor IKKE anta at rekkefølgen ut av `useKompassFilter`
+  // betyr noe for event-board — kun medlemskapet (hvilke POIer som passerte
+  // filteret) brukes. (useKompassFilter er delt med Explorer og forblir urørt.)
+  //
+  // C1: `selectedDay` mates inn så fler-dags-POIer som kjører den valgte dagen
+  // ankres til DEN dagens seksjon — seksjons-overskriften matcher dag-filteret.
   const sections = useMemo(
-    () => buildDaySections(kompassRecommended),
-    [kompassRecommended],
+    () => buildDaySections(kompassRecommended, selectedDay),
+    [kompassRecommended, selectedDay],
   );
 
   const recommended = useMemo(

@@ -23,7 +23,6 @@ export function BoardCollectionDrawer({
   onClose,
   collectionPois,
   onRemove,
-  onClearAll,
   projectId,
 }: {
   open: boolean;
@@ -31,7 +30,6 @@ export function BoardCollectionDrawer({
   /** De lagrede event-POIene (allerede resolvert fra collection-IDene). */
   collectionPois: BoardPOI[];
   onRemove: (poiId: string) => void;
-  onClearAll: () => void;
   projectId: string;
 }) {
   const [view, setView] = useState<DrawerView>("list");
@@ -91,8 +89,11 @@ export function BoardCollectionDrawer({
     }
   };
 
+  // Lukk dialogen og nullstill den flyktige drawer-tilstanden (view/e-post/
+  // resultat/feil) — men BEHOLD samlingen. Å lukke "Samlingen er klar!" (via
+  // «Fortsett å utforske», X eller Escape) skal IKKE slette brukerens events;
+  // delingen er en ikke-destruktiv handling.
   const handleFinish = () => {
-    onClearAll();
     setView("list");
     setEmail("");
     setResult(null);

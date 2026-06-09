@@ -9,6 +9,10 @@ interface CollectionState {
   addToCollection: (poiId: string) => void;
   removeFromCollection: (poiId: string) => void;
   clearCollection: () => void;
+  /** Erstatt hele samlingen med et eksakt sett IDer (dedupet, rekkefølge bevart).
+   *  Brukes ved rehydrering av en delt `?c=`-lenke: den delte samlingen skal
+   *  REPRODUSERES, ikke merges med en eksisterende lokal samling. */
+  setCollection: (poiIds: string[]) => void;
   isInCollection: (poiId: string) => boolean;
 }
 
@@ -37,6 +41,9 @@ export const useCollectionStore = create<CollectionState>()(
 
       clearCollection: () => set({ collectionPOIs: [] }),
 
+      setCollection: (poiIds: string[]) =>
+        set({ collectionPOIs: Array.from(new Set(poiIds)) }),
+
       isInCollection: (poiId: string) => get().collectionPOIs.includes(poiId),
     }),
     {
@@ -54,5 +61,6 @@ export const useCollection = () =>
       addToCollection: state.addToCollection,
       removeFromCollection: state.removeFromCollection,
       clearCollection: state.clearCollection,
+      setCollection: state.setCollection,
     }))
   );

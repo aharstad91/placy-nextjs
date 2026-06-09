@@ -94,5 +94,44 @@ describe("event-day-sections", () => {
     it("tomt input → ingen seksjoner", () => {
       expect(buildDaySections([])).toEqual([]);
     });
+
+    it("fler-dags-POI + selectedDay → ankres til den VALGTE dagen, ikke tidligste (C1)", () => {
+      // Et arrangement som går dag1 OG dag3 (Festspillene/Olavsfest-virkelighet).
+      // Uten selectedDay ankres det til tidligste dato (dag1). Med selectedDay=dag3
+      // skal seksjons-overskriften matche dag-filteret → POIen under dag3-seksjonen.
+      const flerDags = poi("fler-dags", ["2026-05-23", "2026-05-25"], "15:00");
+      const kunDag3 = poi("kun-dag3", ["2026-05-25"], "12:00");
+
+      // Default-anker (ingen valgt dag): fler-dags havner under dag1.
+      const defaultSections = buildDaySections([flerDags, kunDag3]);
+      expect(defaultSections.map((s) => s.dateKey)).toEqual([
+        "2026-05-23",
+        "2026-05-25",
+      ]);
+      expect(defaultSections[0].pois.map((p) => p.id)).toEqual(["fler-dags"]);
+      expect(defaultSections[1].pois.map((p) => p.id)).toEqual(["kun-dag3"]);
+
+      // Med selectedDay=dag3: fler-dags ankres til dag3 sammen med kun-dag3.
+      const day3Sections = buildDaySections(
+        [flerDags, kunDag3],
+        "2026-05-25",
+      );
+      expect(day3Sections.map((s) => s.dateKey)).toEqual(["2026-05-25"]);
+      // Tid-sortert innen dag3: kun-dag3 (12:00) før fler-dags (15:00).
+      expect(day3Sections[0].pois.map((p) => p.id)).toEqual([
+        "kun-dag3",
+        "fler-dags",
+      ]);
+    });
+
+    it("selectedDay som POIen IKKE kjører → faller tilbake til tidligste-anker", () => {
+      // POI går kun dag1; selectedDay=dag2 (matcher ikke). Ankeret skal forbli
+      // tidligste dato — i praksis er en slik POI uansett filtrert bort av
+      // useKompassFilter før buildDaySections kalles, men funksjonen er robust.
+      const kunDag1 = poi("kun-dag1", ["2026-05-23"], "10:00");
+      const sections = buildDaySections([kunDag1], "2026-05-24");
+      expect(sections.map((s) => s.dateKey)).toEqual(["2026-05-23"]);
+      expect(sections[0].pois.map((p) => p.id)).toEqual(["kun-dag1"]);
+    });
   });
 });

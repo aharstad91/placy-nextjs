@@ -38,6 +38,7 @@ import {
   cardIndexToAudioIndex,
   nextAudioBearingIndex,
   firstAudioBearingIndex,
+  deriveSplashPrimaryLabel,
 } from "./reels-data";
 import {
   AudioElementProvider,
@@ -239,7 +240,6 @@ function Inner({
             onClose={() => setCollectionDrawerOpen(false)}
             collectionPois={collectionBoardPois}
             onRemove={collectionApi.remove}
-            onClearAll={collectionApi.clear}
             projectId={project.id}
           />
         )}
@@ -480,13 +480,16 @@ function ResponsiveLayoutInner({
     if (phase === "playing") pause("manual");
   };
 
-  const primaryLabel = notStarted
-    ? firstIdx === -1
-      ? "Utforsk nærområdet"
-      : "Start opplevelsen"
-    : phase === "ended"
-      ? "Spill av på nytt"
-      : "Fortsett";
+  // D3: i event-modus finnes ingen audio-tur (firstIdx === -1) → boligrapportens
+  // basic-label "Utforsk nærområdet" ville ellers stått på selve play-knappen
+  // (det første brukeren ser). Forgrenes på eventMode (samme mønster som
+  // splashIntro under) i en ren, enhetstestbar helper.
+  const primaryLabel = deriveSplashPrimaryLabel({
+    eventMode,
+    notStarted,
+    firstIdx,
+    ended: phase === "ended",
+  });
 
   // D3: event-modus har egen, megler/eiendoms-fri splash-copy (ingen "nærområdet
   // til hotellet"/"utenfor kontordøren"). Boligrapport-copyen er uendret.
@@ -559,7 +562,7 @@ function ResponsiveLayoutInner({
               over handlePlay). Opacity holdes 100 så WebGL faktisk rendrer/streamer
               under det opake splash-laget; entréen er kun en subtil scale-settle ved
               reveal. Splash-kryssfaden står for selve avdekkingen. */}
-          <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} />
+          <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} eventMode={eventMode} />
         </div>
         <DesktopReportSplash
           visible={splashVisible}

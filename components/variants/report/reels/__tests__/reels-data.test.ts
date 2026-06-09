@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { buildReelsCards, buildCategoryTracks } from "../reels-data";
+import {
+  buildReelsCards,
+  buildCategoryTracks,
+  deriveSplashPrimaryLabel,
+} from "../reels-data";
 import type {
   BoardCategory,
   BoardCategoryId,
@@ -249,5 +253,77 @@ describe("buildCategoryTracks", () => {
 
   it("returnerer tom array når ingen category-cards", () => {
     expect(buildCategoryTracks([{ kind: "intro", videoSrc: "/x" }])).toEqual([]);
+  });
+});
+
+describe("deriveSplashPrimaryLabel (B1 / D3)", () => {
+  // Regresjonsfanger: event-board har ingen audio-tur (firstIdx === -1), så uten
+  // event-grenen falt knappen tilbake til boligrapportens "Utforsk nærområdet"
+  // — en eiendoms-streng som bryter D3. Dette er nøyaktig scenarioet som var
+  // ufanget før fiksen.
+  it("event-modus gir 'Utforsk programmet' — ALDRI 'nærområdet'", () => {
+    const label = deriveSplashPrimaryLabel({
+      eventMode: true,
+      notStarted: true,
+      firstIdx: -1, // events har ingen audio → ville ellers gitt boligrapport-fallback
+      ended: false,
+    });
+    expect(label).toBe("Utforsk programmet");
+    expect(label).not.toMatch(/nærområdet/i);
+  });
+
+  it("event-modus er eiendoms-fri uansett tur-state (D3)", () => {
+    for (const notStarted of [true, false]) {
+      for (const firstIdx of [-1, 0, 3]) {
+        for (const ended of [true, false]) {
+          const label = deriveSplashPrimaryLabel({
+            eventMode: true,
+            notStarted,
+            firstIdx,
+            ended,
+          });
+          expect(label).toBe("Utforsk programmet");
+          expect(label).not.toMatch(/nærområdet/i);
+        }
+      }
+    }
+  });
+
+  it("boligrapport uten audio beholder 'Utforsk nærområdet' (uendret)", () => {
+    expect(
+      deriveSplashPrimaryLabel({
+        eventMode: false,
+        notStarted: true,
+        firstIdx: -1,
+        ended: false,
+      }),
+    ).toBe("Utforsk nærområdet");
+  });
+
+  it("boligrapport med audio: 'Start opplevelsen' / 'Fortsett' / 'Spill av på nytt'", () => {
+    expect(
+      deriveSplashPrimaryLabel({
+        eventMode: false,
+        notStarted: true,
+        firstIdx: 1,
+        ended: false,
+      }),
+    ).toBe("Start opplevelsen");
+    expect(
+      deriveSplashPrimaryLabel({
+        eventMode: false,
+        notStarted: false,
+        firstIdx: 1,
+        ended: false,
+      }),
+    ).toBe("Fortsett");
+    expect(
+      deriveSplashPrimaryLabel({
+        eventMode: false,
+        notStarted: false,
+        firstIdx: 1,
+        ended: true,
+      }),
+    ).toBe("Spill av på nytt");
   });
 });

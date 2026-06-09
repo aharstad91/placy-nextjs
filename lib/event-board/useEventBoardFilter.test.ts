@@ -79,6 +79,29 @@ describe("useEventBoardFilter (Unit 4)", () => {
     expect(r.sections[1].pois.map((p) => p.id)).toEqual(["d3-15"]);
   });
 
+  it("fler-dags-POI + velg dag3 → vises under dag3-seksjonen, ikke dag1 (C1)", () => {
+    // Et arrangement som går dag1 OG dag3 (Festspillene/Olavsfest-virkelighet).
+    // Velger man dag3 via dag-chip: POIen passerer useKompassFilter (eventDates
+    // includes dag3) og er synlig, og seksjons-overskriften skal MATCHE dag3 —
+    // ikke motsi filteret ved å vise den under dag1.
+    const pois = [
+      poi("fler-dags", "t", ["2026-05-23", "2026-05-25"], "15:00"),
+      poi("kun-dag3", "t", ["2026-05-25"], "12:00"),
+      poi("kun-dag1", "t", ["2026-05-23"], "09:00"),
+    ];
+    const r = render(pois, [], "2026-05-25");
+    // kun-dag1 er filtrert bort (kjører ikke dag3); de to andre er synlige.
+    expect(r.visiblePoiIds).toEqual(new Set(["fler-dags", "kun-dag3"]));
+    // Én seksjon — dag3 — og den inneholder begge synlige POIer.
+    expect(r.sections.map((s) => s.dateKey)).toEqual(["2026-05-25"]);
+    expect(r.sections[0].pois.map((p) => p.id)).toEqual([
+      "kun-dag3",
+      "fler-dags",
+    ]);
+    // Den flate lista speiler seksjonene (samme rekkefølge).
+    expect(r.recommended.map((p) => p.id)).toEqual(["kun-dag3", "fler-dags"]);
+  });
+
   it("single-day (Kulturnatt) → isSingleDay true (R13: read-only dag-label)", () => {
     const pois = [
       poi("a", "t", ["2025-09-12"], "18:00"),

@@ -42,11 +42,28 @@ export interface EventDaySection {
   pois: POI[];
 }
 
-/** Første event-dato på en POI, eller `UNDATED_KEY` hvis ingen. */
-function firstDateKey(poi: POI): string {
+/**
+ * Dato-anker for en POI: hvilken dag-seksjon den havner under (D6).
+ *
+ * Semantikk:
+ * - Default (`selectedDay == null`): den TIDLIGSTE (leksikografisk minste, dvs.
+ *   kronologisk første for ISO-datoer) av POIens `eventDates` brukes som anker.
+ *   En fler-dags-POI ankres da til sin første dag. `[...].sort()` muterer ikke
+ *   kilde-arrayet — `poi.eventDates` forblir urørt.
+ * - Når et dag-filter er aktivt (`selectedDay` satt) OG POIen kjører den dagen
+ *   (`eventDates.includes(selectedDay)`): bruk `selectedDay` som anker. Dette
+ *   gjør at en fler-dags-POI (f.eks. Festspillene/Olavsfest over flere dager)
+ *   havner under DEN VALGTE dagens seksjon — så seksjons-overskriften matcher
+ *   det aktive filteret i stedet for å motsi det (C1). Matcher POIen ikke den
+ *   valgte dagen, faller den tilbake til tidligste-dato-ankeret (men den er da
+ *   uansett filtrert bort av `useKompassFilter` før den når hit).
+ * - Ingen `eventDates`: `UNDATED_KEY` (sorteres sist).
+ */
+function dateAnchorKey(poi: POI, selectedDay: string | null): string {
   if (poi.eventDates && poi.eventDates.length > 0) {
-    // Bevar kilde-rekkefølgen, men bruk den TIDLIGSTE datoen som sorteringsanker
-    // (en POI kan ha flere datoer — den sorteres på sin første forekomst).
+    if (selectedDay && poi.eventDates.includes(selectedDay)) {
+      return selectedDay;
+    }
     return [...poi.eventDates].sort()[0];
   }
   return UNDATED_KEY;
@@ -61,10 +78,17 @@ function timeKey(poi: POI): string {
  * Dato-bevisst sammenligning: DATO først (R16: dato+tid stigende), så tid;
  * stabilt navne-tiebreak så rekkefølgen er deterministisk på tvers av renders.
  * Udaterte (UNDATED_KEY) og timeless (TIMELESS_TIME) faller naturlig sist fordi
- * sentinel-nøklene er leksikografisk størst.
+ * sentinel-nøklene er leksikografisk størst. `selectedDay` styrer dato-ankeret
+ * for fler-dags-POIer (se `dateAnchorKey`).
  */
-export function compareByDateThenTime(a: POI, b: POI): number {
-  const dateCmp = firstDateKey(a).localeCompare(firstDateKey(b));
+export function compareByDateThenTime(
+  a: POI,
+  b: POI,
+  selectedDay: string | null = null,
+): number {
+  const dateCmp = dateAnchorKey(a, selectedDay).localeCompare(
+    dateAnchorKey(b, selectedDay),
+  );
   if (dateCmp !== 0) return dateCmp;
   const timeCmp = timeKey(a).localeCompare(timeKey(b));
   if (timeCmp !== 0) return timeCmp;
@@ -74,10 +98,14 @@ export function compareByDateThenTime(a: POI, b: POI): number {
 /**
  * Dato-bevisst flat sortering (R16). Erstatter `useKompassFilter`s dato-blinde
  * tid-sortering når event-board konsumerer resultatet — sorterer på
- * `eventDates[0] + eventTimeStart`, ikke tid alene.
+ * dato-anker + `eventTimeStart`, ikke tid alene. `selectedDay` (valgfri) ankrer
+ * fler-dags-POIer til den valgte dagen (C1).
  */
-export function sortByDateThenTime(pois: POI[]): POI[] {
-  return [...pois].sort(compareByDateThenTime);
+export function sortByDateThenTime(
+  pois: POI[],
+  selectedDay: string | null = null,
+): POI[] {
+  return [...pois].sort((a, b) => compareByDateThenTime(a, b, selectedDay));
 }
 
 /**
@@ -86,11 +114,19 @@ export function sortByDateThenTime(pois: POI[]): POI[] {
  *
  * Dette er aggregatet både den flate filter-lista (Variant A) og et fremtidig
  * Program-view (Variant B) bygger på — fler-dags-korrekt fra fundamentet (D6).
+ *
+ * `selectedDay` (valgfri): når et dag-filter er aktivt, ankres fler-dags-POIer
+ * som kjører den valgte dagen til DEN dagens seksjon (via `dateAnchorKey`), så
+ * seksjons-overskriften matcher det aktive dag-filteret i stedet for å motsi
+ * det (C1). Uten `selectedDay` ankres hver POI til sin tidligste dato.
  */
-export function buildDaySections(pois: POI[]): EventDaySection[] {
+export function buildDaySections(
+  pois: POI[],
+  selectedDay: string | null = null,
+): EventDaySection[] {
   const byDate = new Map<string, POI[]>();
   for (const poi of pois) {
-    const key = firstDateKey(poi);
+    const key = dateAnchorKey(poi, selectedDay);
     const bucket = byDate.get(key);
     if (bucket) bucket.push(poi);
     else byDate.set(key, [poi]);
@@ -103,7 +139,7 @@ export function buildDaySections(pois: POI[]): EventDaySection[] {
   return sortedKeys.map((dateKey) => ({
     dateKey,
     isUndated: dateKey === UNDATED_KEY,
-    pois: sortByDateThenTime(byDate.get(dateKey)!),
+    pois: sortByDateThenTime(byDate.get(dateKey)!, selectedDay),
   }));
 }
 

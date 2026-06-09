@@ -18,6 +18,7 @@ import { BoardMap3D } from "./BoardMap3D";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
+import { computeFitBounds, shouldFitToProgram } from "./board-camera-fit";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -62,6 +63,13 @@ interface Props {
   mapPaddingLeft?: number;
   /** Kompakt, touch-vennlig kontroll-pille (mobil kart-sheet). Default false. */
   compactControls?: boolean;
+  /**
+   * Event-board-modus. Events har ingen audio-tour (tour-fitten fyrer aldri),
+   * så når dette er satt rammer kartet inn HELE programmet ved første last og
+   * hver gang et filter nullstilles (ro-tilstand). Default false (boligrapport
+   * beholder default-senteret som før). Se den event-modus ro-fit-effekten under.
+   */
+  eventMode?: boolean;
 }
 
 export function BoardMap({
@@ -69,6 +77,7 @@ export function BoardMap({
   mapPaddingBottom = 0,
   mapPaddingLeft = 0,
   compactControls = false,
+  eventMode = false,
 }: Props) {
   const { state, data, dispatch, subFilter, visiblePoiIds, collectionPoiIds } = useBoard();
   const activeCategory = useActiveCategory();
@@ -268,48 +277,37 @@ export function BoardMap({
   const visiblePOIsRef = useRef(visiblePOIs);
   visiblePOIsRef.current = visiblePOIs;
 
-  useEffect(() => {
+  // Felles fit-bounds-rutine for kamera-rammingen. Rammer inn de nå-synlige
+  // markørene (lest via ref så vi aldri trigger på array-identitet) sammen med
+  // home-koordinatene. Muterer Mapbox-instansen (fitBounds) — den unmountes
+  // aldri (ingen WebGL-lekk). No-op uten markører (behold posisjon).
+  // Scalar home-deps (lng/lat) holder callbacken stabil selv om koordinat-
+  // objektet får ny identitet uten verdiendring.
+  const homeLng = data.home.coordinates.lng;
+  const homeLat = data.home.coordinates.lat;
+  const fitToVisiblePois = useCallback(() => {
     if (!mapLoaded || !mapRef.current) return;
-    if (!tourActive) return;
-    const pois = visiblePOIsRef.current;
-    if (pois.length === 0) return;
-    const map = mapRef.current.getMap();
-    let west = data.home.coordinates.lng;
-    let east = data.home.coordinates.lng;
-    let south = data.home.coordinates.lat;
-    let north = data.home.coordinates.lat;
-    for (const { poi } of pois) {
-      const { lng, lat } = poi.coordinates;
-      if (lng < west) west = lng;
-      if (lng > east) east = lng;
-      if (lat < south) south = lat;
-      if (lat > north) north = lat;
-    }
-    map.fitBounds(
-      [
-        [west, south],
-        [east, north],
-      ],
-      {
-        padding: {
-          top: 80,
-          bottom: 80 + mapPaddingBottom,
-          left: 80 + mapPaddingLeft,
-          right: 80,
-        },
-        duration: 800,
-        maxZoom: 15.5,
-      },
+    const bounds = computeFitBounds(
+      visiblePOIsRef.current.map((m) => m.poi.coordinates),
+      { lng: homeLng, lat: homeLat },
     );
-  }, [
-    tourActive,
-    activeCategory?.id,
-    mapLoaded,
-    data.home.coordinates.lng,
-    data.home.coordinates.lat,
-    mapPaddingBottom,
-    mapPaddingLeft,
-  ]);
+    if (!bounds) return; // ingen markører → behold posisjon
+    mapRef.current.getMap().fitBounds([bounds.sw, bounds.ne], {
+      padding: {
+        top: 80,
+        bottom: 80 + mapPaddingBottom,
+        left: 80 + mapPaddingLeft,
+        right: 80,
+      },
+      duration: 800,
+      maxZoom: 15.5,
+    });
+  }, [mapLoaded, homeLng, homeLat, mapPaddingBottom, mapPaddingLeft]);
+
+  useEffect(() => {
+    if (!tourActive) return;
+    fitToVisiblePois();
+  }, [tourActive, activeCategory?.id, fitToVisiblePois]);
 
   // Event-board filter-fit (Unit 4): events har ingen audio-tour (tourActive er
   // alltid false), så tour-fitten over fyrer aldri. I stedet fitter vi kameraet
@@ -329,48 +327,27 @@ export function BoardMap({
     [visiblePoiIds],
   );
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current) return;
-    if (visibleIdsKey === null) return; // ikke event-board
+    if (visibleIdsKey === null) return; // ro-tilstand / boligrapport — ro-fitten under eier kameraet
     if (tourActive) return; // tour-fitten eier kameraet hvis aktiv
-    const pois = visiblePOIsRef.current;
-    if (pois.length === 0) return; // 0 treff → behold posisjon (tomtilstand i lista)
-    const map = mapRef.current.getMap();
-    let west = data.home.coordinates.lng;
-    let east = data.home.coordinates.lng;
-    let south = data.home.coordinates.lat;
-    let north = data.home.coordinates.lat;
-    for (const { poi } of pois) {
-      const { lng, lat } = poi.coordinates;
-      if (lng < west) west = lng;
-      if (lng > east) east = lng;
-      if (lat < south) south = lat;
-      if (lat > north) north = lat;
-    }
-    map.fitBounds(
-      [
-        [west, south],
-        [east, north],
-      ],
-      {
-        padding: {
-          top: 80,
-          bottom: 80 + mapPaddingBottom,
-          left: 80 + mapPaddingLeft,
-          right: 80,
-        },
-        duration: 800,
-        maxZoom: 15.5,
-      },
-    );
-  }, [
-    visibleIdsKey,
-    tourActive,
-    mapLoaded,
-    data.home.coordinates.lng,
-    data.home.coordinates.lat,
-    mapPaddingBottom,
-    mapPaddingLeft,
-  ]);
+    fitToVisiblePois();
+  }, [visibleIdsKey, tourActive, fitToVisiblePois]);
+
+  // Event-board ro-fit (B2/B3): events har ingen audio-tour, så tour-fitten over
+  // fyrer aldri, og filter-fitten fyrer kun NÅR et filter er aktivt. Uten dette
+  // åpner kartet på default-senteret (ikke rammet rundt programmet), og å NULLSTILLE
+  // et filter zoomet ikke ut igjen (asymmetri: sette filter zoomet inn, fjerne det
+  // beholdt posisjon). Her fitter vi til HELE programmet hver gang vi er i ro-tilstand
+  // (`visibleIdsKey === null` = intet aktivt filter): i ro-tilstand er `visiblePOIs`
+  // alle markørene (phase "default", ingen aktiv kategori). Effekten er one-shot per
+  // ro-inngang — den re-fyrer kun når `visibleIdsKey` skifter (→ null ved nullstilling,
+  // eller initielt null ved last), ALDRI per render i ro (nøkkelen står stabil null).
+  // Dermed: initial fit ved last OG re-fit ved nullstilling, uten WebGL-churn.
+  // Gated på `eventMode` så boligrapporter beholder default-senteret som før.
+  useEffect(() => {
+    if (!shouldFitToProgram({ eventMode, mapLoaded, tourActive, visibleIdsKey }))
+      return;
+    fitToVisiblePois();
+  }, [eventMode, mapLoaded, tourActive, visibleIdsKey, fitToVisiblePois]);
 
   // Tidligere flyttet vi markøren inn i synlig kart-rom ved klikk (easeTo med
   // offset for å klarere 480px-sidebar). Det føltes som om kartet "rykker" på

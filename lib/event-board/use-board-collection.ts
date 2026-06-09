@@ -58,6 +58,7 @@ export function useBoardCollection(
     addToCollection,
     removeFromCollection,
     clearCollection,
+    setCollection,
   } = useCollection();
 
   // Scope samlingen til prosjektet. `setProject` no-op-er når id er uendret, så
@@ -70,14 +71,18 @@ export function useBoardCollection(
 
   // Rehydrer delt samling (server → store) ÉN gang per slug. Gates på slug så
   // brukerens egne add/remove etterpå ikke re-seedes på hver render. Ugyldig/
-  // utløpt slug → `initialPoiIds` undefined → ingen seeding (tom samling).
+  // utløpt slug → `initialPoiIds` undefined → ingen seeding (samlingen røres
+  // ikke; ren navigasjon uten `?c=` skal IKKE clear-e brukerens egen samling).
+  //
+  // R6: en delt lenke skal REPRODUSERE samlingen, ikke merge med en eksisterende.
+  // `setProject` clearer kun ved prosjekt-BYTTE — en returnerende bruker som
+  // åpner `?c=` for SAMME prosjekt har fortsatt sine egne IDer i den persisterte
+  // storen. Derfor `setCollection` (erstatt hele settet), ikke `addToCollection`
+  // (som ville addert de delte IDene oppå de eksisterende).
   useEffect(() => {
     if (!enabled) return;
     if (!initialSlug || !initialPoiIds || initialPoiIds.length === 0) return;
-    // setProject over har allerede scopet/cleret; legg de delte POIene inn.
-    for (const id of initialPoiIds) {
-      addToCollection(id);
-    }
+    setCollection(initialPoiIds);
     // Kjør kun når enabled/slug/prosjekt endrer seg — ikke ved hver add/remove.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, initialSlug, projectId]);

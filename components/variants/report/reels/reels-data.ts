@@ -298,6 +298,28 @@ export function firstAudioBearingIndex(cards: ReelsCard[]): number {
   return cards.findIndex(isAudioBearing);
 }
 
+/**
+ * Velger play-knappens label på velkomst-splashen (desktop + mobil).
+ *
+ * D3: event-board har ingen audio-tur (`firstIdx === -1`), så boligrapportens
+ * basic-fallback "Utforsk nærområdet" ville ellers stått på selve play-knappen
+ * — en eiendoms-streng som bryter D3 ("null megler/eiendoms-strenger på
+ * event-board"). I event-modus returnerer vi en program-passende, eiendoms-fri
+ * label uavhengig av tur-state. Boligrapport-grenen er uendret.
+ */
+export function deriveSplashPrimaryLabel(opts: {
+  eventMode: boolean;
+  notStarted: boolean;
+  firstIdx: number;
+  ended: boolean;
+}): string {
+  if (opts.eventMode) return "Utforsk programmet";
+  if (opts.notStarted) {
+    return opts.firstIdx === -1 ? "Utforsk nærområdet" : "Start opplevelsen";
+  }
+  return opts.ended ? "Spill av på nytt" : "Fortsett";
+}
+
 /** Indeks til neste audio-bærende card etter `fromIndex`, eller -1 om ingen.
  *  Driver desktop auto-advance: når et spor slutter, ruller løpebåndet til
  *  neste kapittel. Hopper over ikke-audio-cards (intro/megler). */

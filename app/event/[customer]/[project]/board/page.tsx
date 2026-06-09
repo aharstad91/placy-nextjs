@@ -69,14 +69,21 @@ export default async function EventBoardPage({ params, searchParams }: PageProps
 
   // ?c=<slug> → rehydrer delt samling (eiendom-presedens). Ugyldig/utløpt slug
   // → getCollectionBySlug returnerer null → collection forblir undefined.
+  //
+  // Prosjekt-scoping: samlingen lagrer `project_id` (= `project.id` ved
+  // opprettelse, se /api/collections + BoardCollectionDrawer). En slug fra
+  // prosjekt A åpnet på prosjekt B ville ellers seede A-sine POI-IDer inn i B
+  // (som ikke finnes der → forvirrende tom highlight). Krever match mot
+  // `projectData.id`; mismatch behandles som ingen samling.
   const collectionSlug =
     typeof resolvedSearchParams.c === "string" ? resolvedSearchParams.c : undefined;
   const collectionRow = collectionSlug
     ? await getCollectionBySlug(collectionSlug)
     : null;
-  const collection = collectionRow
-    ? { slug: collectionRow.slug, poiIds: collectionRow.poi_ids }
-    : undefined;
+  const collection =
+    collectionRow && collectionRow.project_id === projectData.id
+      ? { slug: collectionRow.slug, poiIds: collectionRow.poi_ids }
+      : undefined;
 
   // Theme-CSS-var-wrapper (speiler rapport-board minimalt). Events har som regel
   // ingen `theme` → themeStyle blir `{}` og skallet bruker default Tailwind-

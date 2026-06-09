@@ -95,6 +95,7 @@ export function EventMobileSheet({
         <BoardMap
           has3dAddon={has3dAddon}
           compactControls
+          eventMode
           mapPaddingBottom={Math.round((SHEET_HEIGHT_PCT.peek / 100) * 700)}
         />
       </div>
