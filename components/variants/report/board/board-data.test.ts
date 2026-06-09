@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { adaptBoardData } from "./board-data";
+import type { BoardPOI } from "./board-data";
 import type { ReportData, ReportTheme } from "../report-data";
 import type { POI } from "@/lib/types";
 
@@ -133,6 +134,44 @@ describe("adaptBoardData", () => {
     const poi = makePOI("p1");
     const data = adaptBoardData(makeReportData([makeTheme("themex", [poi])]));
     expect(data.categories[0].pois[0].categoryId).toBe("themex");
+  });
+
+  describe("event-display-felter (Unit 1 — additivt)", () => {
+    it("boligrapport-POI har ikke event-display-felter satt (adaptBoardData rører dem ikke)", () => {
+      const poi = makePOI("p1", {
+        eventDates: ["2025-09-12"],
+        eventTimeStart: "18:00",
+        eventTimeEnd: "23:00",
+      });
+      const data = adaptBoardData(makeReportData([makeTheme("x", [poi])]));
+      const boardPoi = data.categories[0].pois[0];
+      // Display-feltene er event-native (Unit 2-adapteren setter dem). adaptBoardData
+      // skal la dem være undefined selv om kilde-POIen tilfeldigvis har event-data.
+      expect(boardPoi.eventDates).toBeUndefined();
+      expect(boardPoi.eventTimeStart).toBeUndefined();
+      expect(boardPoi.eventTimeEnd).toBeUndefined();
+      // Kilde-data er fortsatt tilgjengelig via raw (D5 — filteret leser her).
+      expect(boardPoi.raw.eventDates).toEqual(["2025-09-12"]);
+      expect(boardPoi.raw.eventTimeStart).toBe("18:00");
+    });
+
+    it("BoardPOI godtar event-display-felter (additiv, optional kontrakt)", () => {
+      const poi = makePOI("p1");
+      const board = adaptBoardData(makeReportData([makeTheme("x", [poi])]));
+      // Konstruer en BoardPOI med event-felter for å verifisere at typen er additiv
+      // og branded-ID-kontrakten består.
+      const withEvent: BoardPOI = {
+        ...board.categories[0].pois[0],
+        eventDates: ["2025-09-12", "2025-09-13"],
+        eventTimeStart: "18:00",
+        eventTimeEnd: "23:00",
+      };
+      expect(withEvent.eventDates).toEqual(["2025-09-12", "2025-09-13"]);
+      expect(withEvent.eventTimeStart).toBe("18:00");
+      expect(withEvent.eventTimeEnd).toBe("23:00");
+      // Branded ID bevart.
+      expect(withEvent.id).toBe(board.categories[0].pois[0].id);
+    });
   });
 
   it("home er bygget fra projectName + centerCoordinates + address", () => {

@@ -40,6 +40,14 @@ export interface BoardPOI {
   body?: string;
   /** Kategori-IDen POI tilhører i board-modellen — brukes når vi opener POI uten å vite hvilken kategori. */
   categoryId: BoardCategoryId;
+  /** Event-datoer (ISO, eks. ["2025-09-12"]) — display-only. Filteret leser
+   *  `raw.eventDates` (D5), ikke dette feltet. Undefined for boligrapporter
+   *  (adaptBoardData setter det aldri). */
+  eventDates?: string[];
+  /** Event-starttid (HH:MM, eks. "18:00") — display-only. Undefined for boligrapporter. */
+  eventTimeStart?: string;
+  /** Event-sluttid (HH:MM, eks. "23:00") — display-only. Undefined for boligrapporter. */
+  eventTimeEnd?: string;
   /** Original POI bevart for fall-through-tilgang (Google rating, photos, opening hours, etc.). */
   raw: POI;
 }
