@@ -1,7 +1,7 @@
 "use client";
 
 import { Bookmark, CalendarDays, Clock, MapPin, RotateCcw } from "lucide-react";
-import { useBoard } from "../board-state";
+import { useBoard, useActivePOI } from "../board-state";
 import type {
   BoardCategory,
   BoardCategoryId,
@@ -19,6 +19,7 @@ import {
   TIMELESS_BUCKET_LABEL,
 } from "@/lib/event-board/event-filter-constants";
 import type { EventDaySection } from "@/lib/event-board/event-day-sections";
+import { EventDetailPanel } from "./EventDetailPanel";
 
 /**
  * Event-board filter-panel (Unit 4) — den DELTE sidebar-overflaten som surfacer
@@ -54,6 +55,7 @@ export function EventFilterPanel({
 }) {
   const { state, dispatch } = useBoard();
   const activePoiId = state.activePOIId;
+  const activePoi = useActivePOI();
   const { selectedThemes, selectedDay, selectedTimeSlots } =
     useKompassSelections();
   const { toggleTheme, setSelectedDay, toggleTimeSlot, resetKompass } =
@@ -67,6 +69,25 @@ export function EventFilterPanel({
     });
 
   const collectionCount = collection?.collectionPoiIds.size ?? 0;
+
+  // Unit 6 (R15): per-event drill-in. Når et event er åpnet (OPEN_POI →
+  // phase "poi") tar detalj-panelet over hele sidebar-overflaten — NET-NEW
+  // panel, IKKE den editorial-gatede CategoryDetailView. Kamera-fly-to til
+  // venuen håndteres av det eksisterende board-kameraet (drevet av
+  // state.activePOIId), så her trengs ingen ny fly-to-søm.
+  if (state.phase === "poi" && activePoi) {
+    const cat = categories.find((c) => c.id === activePoi.categoryId);
+    const color =
+      cat?.color ?? activePoi.raw.category.color ?? "#94a3b8";
+    return (
+      <EventDetailPanel
+        poi={activePoi}
+        color={color}
+        collection={collection}
+        onBack={() => dispatch({ type: "BACK_TO_DEFAULT" })}
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
