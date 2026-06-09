@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProductAsync, getProjectAsync } from "@/lib/data-server";
 import { getBransjeprofil } from "@/lib/themes";
+import { getCollectionBySlug } from "@/lib/supabase/queries";
 import { eventToBoardData } from "@/lib/event-board/event-board-data";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
@@ -15,6 +16,7 @@ interface PageProps {
     customer: string;
     project: string;
   }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 /**
@@ -35,9 +37,17 @@ interface PageProps {
  *
  * Events starter i 2D med mindre `has3dAddon` er satt på prosjektet (det er
  * default `false`); `ReportReelsPage` leser `project.has3dAddon`.
+ *
+ * "Min samling" (Unit 5, R6): `?c=<slug>` → `getCollectionBySlug` →
+ * preselekterte POI-IDer som rehydreres i board-ruten. Presedensen er
+ * `app/eiendom/[customer]/[project]/page.tsx` (faktisk `getCollectionBySlug`-
+ * oppslag), IKKE event-Explorer-rutens boolske `c`-sjekk. Ugyldig/utløpt slug
+ * → `getCollectionBySlug` returnerer `null` → ingen collection-prop (tom
+ * samling, ingen krasj).
  */
-export default async function EventBoardPage({ params }: PageProps) {
+export default async function EventBoardPage({ params, searchParams }: PageProps) {
   const { customer, project: projectSlug } = await params;
+  const resolvedSearchParams = (await searchParams) ?? {};
 
   // Prøv ny hierarki først, fall tilbake til legacy (speiler event-Explorer-ruten).
   let projectData = await getProductAsync(customer, projectSlug, "explorer");
@@ -56,6 +66,17 @@ export default async function EventBoardPage({ params }: PageProps) {
   // og fremtidig feature-gating (dayFilter/agendaView i senere units).
   const profil = getBransjeprofil(projectData.tags);
   const boardData = eventToBoardData(projectData, profil.features);
+
+  // ?c=<slug> → rehydrer delt samling (eiendom-presedens). Ugyldig/utløpt slug
+  // → getCollectionBySlug returnerer null → collection forblir undefined.
+  const collectionSlug =
+    typeof resolvedSearchParams.c === "string" ? resolvedSearchParams.c : undefined;
+  const collectionRow = collectionSlug
+    ? await getCollectionBySlug(collectionSlug)
+    : null;
+  const collection = collectionRow
+    ? { slug: collectionRow.slug, poiIds: collectionRow.poi_ids }
+    : undefined;
 
   // Theme-CSS-var-wrapper (speiler rapport-board minimalt). Events har som regel
   // ingen `theme` → themeStyle blir `{}` og skallet bruker default Tailwind-
@@ -90,7 +111,11 @@ export default async function EventBoardPage({ params }: PageProps) {
 
   return (
     <div style={themeStyle} className="min-h-screen bg-background text-foreground">
-      <ReportReelsPage project={projectData} boardData={boardData} />
+      <ReportReelsPage
+        project={projectData}
+        boardData={boardData}
+        collection={collection}
+      />
     </div>
   );
 }

@@ -37,6 +37,7 @@ import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
 import { EventFilterPanel } from "../board/event/EventFilterPanel";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
+import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
 
 /**
  * Desktop-adaptiv storytelling-lane (kun >=1024px, rendres fra
@@ -109,6 +110,11 @@ interface Props {
   eventFilter?: EventBoardFilterResult | null;
   /** Board-kategoriene — gir EventFilterPanel tema-chip-etiketter/farger. */
   categories?: BoardCategory[];
+  /** Unit 5: "Min samling"-søm. Når satt får EventFilterPanel lagre-toggle per
+   *  rad + samling-affordance. Null/undefined for boligrapporter. */
+  collection?: BoardCollectionApi | null;
+  /** Unit 5: åpne samling-draweren (del-URL/QR). */
+  onOpenCollection?: () => void;
 }
 
 /**
@@ -579,6 +585,8 @@ export function DesktopStorySidebar({
   noBrokers = false,
   eventFilter = null,
   categories = [],
+  collection = null,
+  onOpenCollection,
 }: Props) {
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
   const { state: boardState, dispatch: boardDispatch } = useBoard();
@@ -711,7 +719,12 @@ export function DesktopStorySidebar({
         /* Unit 4: event-modus → filter-panel (tema/dag/tid + dato-seksjonert
            liste + tomtilstand). Erstatter både SidebarContentPreview og
            player-løpet — events har ingen audio og er filter-drevet. */
-        <EventFilterPanel filter={eventFilter} categories={categories} />
+        <EventFilterPanel
+          filter={eventFilter}
+          categories={categories}
+          collection={collection}
+          onOpenCollection={onOpenCollection}
+        />
       ) : !hasPlayableContent ? (
         <SidebarContentPreview
           categories={previewCategories}

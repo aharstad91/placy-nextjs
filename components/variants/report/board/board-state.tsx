@@ -138,6 +138,15 @@ interface BoardContextValue {
    * navigasjons-state. Reduseren forblir uendret.
    */
   visiblePoiIds?: Set<string>;
+  /**
+   * Event-board "Min samling"-søm (Unit 5): POI-IDer brukeren har lagret i sin
+   * samling (eller som er rehydrert fra en delt `?c=`-lenke). Når satt highlighter
+   * `BoardMarker` disse med en egen "collection"-ring så de skiller seg ut på
+   * kartet — uavhengig av `visiblePoiIds` (et lagret event er fortsatt highlightet
+   * når et tema/dag/tid-filter er aktivt). `undefined` (boligrapport) → ingen
+   * collection-highlight. Container-nivå state, derivert fra `collection-store`.
+   */
+  collectionPoiIds?: Set<string>;
 }
 
 const BoardContext = createContext<BoardContextValue | null>(null);
@@ -145,11 +154,14 @@ const BoardContext = createContext<BoardContextValue | null>(null);
 export function BoardProvider({
   data,
   visiblePoiIds,
+  collectionPoiIds,
   children,
 }: {
   data: BoardData;
   /** Se `BoardContextValue.visiblePoiIds`. */
   visiblePoiIds?: Set<string>;
+  /** Se `BoardContextValue.collectionPoiIds`. */
+  collectionPoiIds?: Set<string>;
   children: ReactNode;
 }) {
   const [state, dispatch] = useReducer(boardReducer, initialBoardState);
@@ -172,7 +184,7 @@ export function BoardProvider({
 
   return (
     <BoardContext.Provider
-      value={{ state, dispatch, data, subFilter, visiblePoiIds }}
+      value={{ state, dispatch, data, subFilter, visiblePoiIds, collectionPoiIds }}
     >
       {children}
     </BoardContext.Provider>

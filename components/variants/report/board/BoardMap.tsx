@@ -70,7 +70,7 @@ export function BoardMap({
   mapPaddingLeft = 0,
   compactControls = false,
 }: Props) {
-  const { state, data, dispatch, subFilter, visiblePoiIds } = useBoard();
+  const { state, data, dispatch, subFilter, visiblePoiIds, collectionPoiIds } = useBoard();
   const activeCategory = useActiveCategory();
   const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
@@ -212,6 +212,9 @@ export function BoardMap({
         color: mutedColor(p.raw.category.color) ?? cat.color,
         icon: p.raw.category.icon || cat.icon,
         isVisible: visibleIds.has(p.id),
+        // Unit 5: event-board "Min samling"-highlight. Lagrede POIer får en egen
+        // ring (BoardMarker.inCollection). Uberørt for boligrapporter (undefined).
+        inCollection: collectionPoiIds?.has(p.id) ?? false,
       })),
     );
   }, [
@@ -220,6 +223,7 @@ export function BoardMap({
     subFilter.hiddenIds,
     data.categories,
     visiblePoiIds,
+    collectionPoiIds,
   ]);
 
   // Synlige POI-er for kamera-fit (tour-bounds). Inkluderer ikke fade-out-
@@ -476,7 +480,7 @@ export function BoardMap({
               onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
             />
 
-            {markerStates.map(({ poi, color, icon, isVisible }) => {
+            {markerStates.map(({ poi, color, icon, isVisible, inCollection }) => {
               const isActive = state.activePOIId === poi.id;
               // R10c: når mini-popup viser POI-navn, undertrykk inline-label
               // for aktiv markør så vi ikke får dobbel-navn-rendering.
@@ -489,6 +493,7 @@ export function BoardMap({
                   icon={icon}
                   isActive={isActive}
                   isVisible={isVisible}
+                  inCollection={inCollection}
                   zoomTier={zoomTier}
                   suppressLabel={suppressLabel}
                   onClick={() =>

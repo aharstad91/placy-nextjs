@@ -8,6 +8,7 @@ import type {
   BoardData,
 } from "../board-data";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
+import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
 import { useKompassStore } from "@/lib/kompass-store";
 import type { POI } from "@/lib/types";
 
@@ -78,6 +79,20 @@ function renderPanel(
       <EventFilterPanel filter={filter} categories={categories} />
     </BoardProvider>,
   );
+}
+
+function makeCollection(
+  over: Partial<BoardCollectionApi> = {},
+): BoardCollectionApi {
+  return {
+    collectionPoiIds: new Set(),
+    collectionPoiList: [],
+    toggle: vi.fn(),
+    remove: vi.fn(),
+    clear: vi.fn(),
+    has: () => false,
+    ...over,
+  };
 }
 
 describe("EventFilterPanel (Unit 4)", () => {
@@ -181,5 +196,87 @@ describe("EventFilterPanel (Unit 4)", () => {
     expect(getByText("Tidlig")).toBeTruthy();
     expect(getByText("Sent")).toBeTruthy();
     expect(getByText("18:00")).toBeTruthy();
+  });
+
+  // === Unit 5: "Min samling"-UI ===
+
+  it("uten collection-prop → ingen samling-affordance/lagre-toggle", () => {
+    const filter = makeFilter({
+      filteredCount: 1,
+      recommended: [rawPoi("Konsert", "t", ["2025-09-12"], "20:00")],
+      sections: [
+        {
+          dateKey: "2025-09-12",
+          isUndated: false,
+          pois: [rawPoi("Konsert", "t", ["2025-09-12"], "20:00")],
+        },
+      ],
+    });
+    const { queryByText, queryByLabelText } = renderPanel(filter, [
+      cat("t", "Tema", "#000"),
+    ]);
+    expect(queryByText("Min samling")).toBeNull();
+    expect(queryByLabelText(/i samling/)).toBeNull();
+  });
+
+  it("lagre-toggle kaller collection.toggle med POI-id (legg i samling)", () => {
+    const collection = makeCollection();
+    const filter = makeFilter({
+      filteredCount: 1,
+      recommended: [rawPoi("Konsert", "t", ["2025-09-12"], "20:00")],
+      sections: [
+        {
+          dateKey: "2025-09-12",
+          isUndated: false,
+          pois: [rawPoi("Konsert", "t", ["2025-09-12"], "20:00")],
+        },
+      ],
+    });
+    const { getByLabelText } = render(
+      <BoardProvider data={boardData}>
+        <EventFilterPanel
+          filter={filter}
+          categories={[cat("t", "Tema", "#000")]}
+          collection={collection}
+        />
+      </BoardProvider>,
+    );
+    fireEvent.click(getByLabelText("Legg Konsert i samling"));
+    expect(collection.toggle).toHaveBeenCalledWith("Konsert");
+  });
+
+  it("samling-affordance: viser antall og åpner draweren ved klikk (≥1 lagret)", () => {
+    const onOpen = vi.fn();
+    const collection = makeCollection({
+      collectionPoiIds: new Set(["Konsert"]),
+      collectionPoiList: ["Konsert"],
+      has: (id) => id === "Konsert",
+    });
+    const filter = makeFilter({
+      filteredCount: 1,
+      recommended: [rawPoi("Konsert", "t", ["2025-09-12"], "20:00")],
+      sections: [
+        {
+          dateKey: "2025-09-12",
+          isUndated: false,
+          pois: [rawPoi("Konsert", "t", ["2025-09-12"], "20:00")],
+        },
+      ],
+    });
+    const { getByText } = render(
+      <BoardProvider data={boardData}>
+        <EventFilterPanel
+          filter={filter}
+          categories={[cat("t", "Tema", "#000")]}
+          collection={collection}
+          onOpenCollection={onOpen}
+        />
+      </BoardProvider>,
+    );
+    const affordance = getByText("Min samling").closest("button")!;
+    expect(affordance.textContent).toContain("1");
+    expect(affordance).not.toBeDisabled();
+    fireEvent.click(affordance);
+    expect(onOpen).toHaveBeenCalled();
   });
 });

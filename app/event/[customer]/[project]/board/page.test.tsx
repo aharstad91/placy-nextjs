@@ -23,6 +23,13 @@ vi.mock("@/lib/data-server", () => ({
   getProjectAsync: (...args: unknown[]) => getProjectAsyncMock(...args),
 }));
 
+// Unit 5: ?c=<slug>-rehydrering. Mockes per test så vi kan verifisere at ruten
+// faktisk slår opp samlingen (eiendom-presedens) og trer poiIds inn i skallet.
+const getCollectionBySlugMock = vi.fn();
+vi.mock("@/lib/supabase/queries", () => ({
+  getCollectionBySlug: (...args: unknown[]) => getCollectionBySlugMock(...args),
+}));
+
 // getBransjeprofil beholdes ekte (ren funksjon, ingen IO) — adapteren bruker
 // features kun for paritet. Vi mocker den ikke.
 
@@ -33,11 +40,18 @@ vi.mock("@/components/variants/report/reels/ReportReelsPage", () => ({
   default: ({
     boardData,
     project,
+    collection,
   }: {
     boardData?: BoardData;
     project: Project;
+    collection?: { slug: string; poiIds: string[] };
   }) => (
-    <div data-testid="reels-stub" data-event-mode={boardData !== undefined}>
+    <div
+      data-testid="reels-stub"
+      data-event-mode={boardData !== undefined}
+      data-collection-slug={collection?.slug ?? ""}
+      data-collection-pois={(collection?.poiIds ?? []).join(",")}
+    >
       <span data-testid="project-name">{project.name}</span>
       {boardData?.categories.map((c) => (
         <span key={c.id} data-testid="board-category">
@@ -102,11 +116,18 @@ function makeParams(customer: string, project: string) {
   return Promise.resolve({ customer, project });
 }
 
+function makeSearchParams(
+  sp: Record<string, string> = {},
+): Promise<Record<string, string | string[] | undefined>> {
+  return Promise.resolve(sp);
+}
+
 describe("EventBoardPage (rute, D1)", () => {
   beforeEach(() => {
     notFoundMock.mockClear();
     getProductAsyncMock.mockReset();
     getProjectAsyncMock.mockReset();
+    getCollectionBySlugMock.mockReset();
   });
 
   it("rendrer board-skallet med event-data via eventToBoardData (event-modus)", async () => {
@@ -114,6 +135,7 @@ describe("EventBoardPage (rute, D1)", () => {
 
     const ui = await EventBoardPage({
       params: makeParams("kulturnatt-trondheim", "kulturnatt-2025"),
+      searchParams: makeSearchParams(),
     });
     const { getByTestId, getAllByTestId } = render(ui);
 
@@ -133,6 +155,7 @@ describe("EventBoardPage (rute, D1)", () => {
 
     const ui = await EventBoardPage({
       params: makeParams("kulturnatt-trondheim", "kulturnatt-2025"),
+      searchParams: makeSearchParams(),
     });
     const { container } = render(ui);
 
@@ -149,6 +172,7 @@ describe("EventBoardPage (rute, D1)", () => {
 
     const ui = await EventBoardPage({
       params: makeParams("kulturnatt-trondheim", "kulturnatt-2025"),
+      searchParams: makeSearchParams(),
     });
     const { getByTestId } = render(ui);
     expect(getByTestId("reels-stub").getAttribute("data-event-mode")).toBe("true");
@@ -159,7 +183,10 @@ describe("EventBoardPage (rute, D1)", () => {
     getProjectAsyncMock.mockResolvedValue(null);
 
     await expect(
-      EventBoardPage({ params: makeParams("ukjent", "finnes-ikke") }),
+      EventBoardPage({
+        params: makeParams("ukjent", "finnes-ikke"),
+        searchParams: makeSearchParams(),
+      }),
     ).rejects.toThrow("NEXT_NOT_FOUND");
     expect(notFoundMock).toHaveBeenCalled();
   });
@@ -172,8 +199,68 @@ describe("EventBoardPage (rute, D1)", () => {
     });
 
     await expect(
-      EventBoardPage({ params: makeParams("x", "y") }),
+      EventBoardPage({
+        params: makeParams("x", "y"),
+        searchParams: makeSearchParams(),
+      }),
     ).rejects.toThrow("NEXT_NOT_FOUND");
     expect(notFoundMock).toHaveBeenCalled();
+  });
+
+  // === Unit 5: ?c=-rehydrering (R6) ===
+
+  it("?c=<slug> → getCollectionBySlug → poiIds trees inn i skallet (rehydrering)", async () => {
+    getProductAsyncMock.mockResolvedValue(makeKulturnattProject());
+    getCollectionBySlugMock.mockResolvedValue({
+      id: "col1",
+      slug: "abc123",
+      project_id: "kulturnatt-2025",
+      poi_ids: ["p1", "p2", "p3"],
+      email: null,
+      created_at: "2026-06-09T00:00:00Z",
+    });
+
+    const ui = await EventBoardPage({
+      params: makeParams("kulturnatt-trondheim", "kulturnatt-2025"),
+      searchParams: makeSearchParams({ c: "abc123" }),
+    });
+    const { getByTestId } = render(ui);
+
+    // Ruten slo faktisk opp samlingen (ikke bare parset paramet).
+    expect(getCollectionBySlugMock).toHaveBeenCalledWith("abc123");
+    const stub = getByTestId("reels-stub");
+    expect(stub.getAttribute("data-collection-slug")).toBe("abc123");
+    expect(stub.getAttribute("data-collection-pois")).toBe("p1,p2,p3");
+  });
+
+  it("ingen ?c= → ingen collection-oppslag, ingen collection-prop", async () => {
+    getProductAsyncMock.mockResolvedValue(makeKulturnattProject());
+
+    const ui = await EventBoardPage({
+      params: makeParams("kulturnatt-trondheim", "kulturnatt-2025"),
+      searchParams: makeSearchParams(),
+    });
+    const { getByTestId } = render(ui);
+
+    expect(getCollectionBySlugMock).not.toHaveBeenCalled();
+    expect(getByTestId("reels-stub").getAttribute("data-collection-slug")).toBe("");
+  });
+
+  it("ugyldig/utløpt slug → getCollectionBySlug null → tom samling, ingen krasj", async () => {
+    getProductAsyncMock.mockResolvedValue(makeKulturnattProject());
+    getCollectionBySlugMock.mockResolvedValue(null);
+
+    const ui = await EventBoardPage({
+      params: makeParams("kulturnatt-trondheim", "kulturnatt-2025"),
+      searchParams: makeSearchParams({ c: "finnes-ikke" }),
+    });
+    const { getByTestId } = render(ui);
+
+    expect(getCollectionBySlugMock).toHaveBeenCalledWith("finnes-ikke");
+    const stub = getByTestId("reels-stub");
+    // Ruten render-er fortsatt (event-modus) men uten collection-prop.
+    expect(stub.getAttribute("data-event-mode")).toBe("true");
+    expect(stub.getAttribute("data-collection-slug")).toBe("");
+    expect(stub.getAttribute("data-collection-pois")).toBe("");
   });
 });

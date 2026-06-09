@@ -17,6 +17,11 @@ import {
   useEventBoardFilter,
   type EventBoardFilterResult,
 } from "@/lib/event-board/useEventBoardFilter";
+import {
+  useBoardCollection,
+  type BoardCollectionApi,
+} from "@/lib/event-board/use-board-collection";
+import { BoardCollectionDrawer } from "../board/event/BoardCollectionDrawer";
 import { useKompassSelections } from "@/lib/kompass-store";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsStack } from "./ReelsStack";
@@ -94,6 +99,12 @@ interface Props {
    * som før — boligrapport-oppførselen er uendret.
    */
   boardData?: BoardData;
+  /**
+   * Unit 5: rehydrert "Min samling" fra en delt `?c=<slug>`-lenke (ruten kaller
+   * `getCollectionBySlug` — eiendom-presedens). `undefined` når ingen delt lenke
+   * eller ugyldig/utløpt slug (→ tom samling, ingen krasj). Kun event-modus.
+   */
+  collection?: { slug: string; poiIds: string[] };
 }
 
 export default function ReportReelsPage(props: Props) {
@@ -104,7 +115,12 @@ export default function ReportReelsPage(props: Props) {
   );
 }
 
-function Inner({ project, enTranslations = {}, boardData: inputBoardData }: Props) {
+function Inner({
+  project,
+  enTranslations = {},
+  boardData: inputBoardData,
+  collection,
+}: Props) {
   const { locale } = useLocale();
 
   // D3: event-modus er signalert av at boardData kommer inn som input (event-
@@ -172,9 +188,37 @@ function Inner({ project, enTranslations = {}, boardData: inputBoardData }: Prop
       ? eventFilter.visiblePoiIds
       : undefined;
 
+  // Unit 5: "Min samling". Hooken kalles ubetinget (hook-reglene) men er inert i
+  // report-modus (`enabled=false`) så en aktiv Explorer-samling ikke clobbres.
+  // Rehydrerer den delte `?c=`-samlingen (server → store) i event-modus, og gir
+  // markør-highlight (collectionPoiIds) + lagre-toggle/del-drawer (collection).
+  const collectionApi = useBoardCollection(
+    project.id,
+    eventMode,
+    collection?.poiIds,
+    collection?.slug,
+  );
+  const collectionPoiIds = eventMode ? collectionApi.collectionPoiIds : undefined;
+  const [collectionDrawerOpen, setCollectionDrawerOpen] = useState(false);
+
+  // Resolve lagrede collection-IDer → BoardPOI for drawer-visningen. Slår opp i
+  // alle kategoriers POIer (samlingen kan spenne kategorier).
+  const collectionBoardPois = useMemo(() => {
+    if (!eventMode) return [];
+    const all = boardData.categories.flatMap((c) => c.pois);
+    const byId = new Map(all.map((p) => [String(p.id), p]));
+    return collectionApi.collectionPoiList
+      .map((id) => byId.get(id))
+      .filter((p): p is (typeof all)[number] => p !== undefined);
+  }, [eventMode, boardData.categories, collectionApi.collectionPoiList]);
+
   return (
     <ReelsProvider cards={cards}>
-      <BoardProvider data={boardData} visiblePoiIds={visiblePoiIds}>
+      <BoardProvider
+        data={boardData}
+        visiblePoiIds={visiblePoiIds}
+        collectionPoiIds={collectionPoiIds}
+      >
         <BoardReelsSync />
         <ReelsAudioShell>
           <ReelsOrchestrator>
@@ -183,9 +227,21 @@ function Inner({ project, enTranslations = {}, boardData: inputBoardData }: Prop
               has3dAddon={has3dAddon}
               eventMode={eventMode}
               eventFilter={eventMode ? eventFilter : null}
+              collection={eventMode ? collectionApi : null}
+              onOpenCollection={() => setCollectionDrawerOpen(true)}
             />
           </ReelsOrchestrator>
         </ReelsAudioShell>
+        {eventMode && (
+          <BoardCollectionDrawer
+            open={collectionDrawerOpen}
+            onClose={() => setCollectionDrawerOpen(false)}
+            collectionPois={collectionBoardPois}
+            onRemove={collectionApi.remove}
+            onClearAll={collectionApi.clear}
+            projectId={project.id}
+          />
+        )}
       </BoardProvider>
     </ReelsProvider>
   );
@@ -343,6 +399,8 @@ function ResponsiveLayoutInner({
   has3dAddon,
   eventMode,
   eventFilter,
+  collection,
+  onOpenCollection,
 }: {
   boardData: BoardData;
   has3dAddon: boolean;
@@ -351,6 +409,10 @@ function ResponsiveLayoutInner({
   /** Unit 4: event-board filter-resultat (liste/seksjoner/dag-state). Null for
    *  boligrapporter. Drives av kompass-store; brukes av EventFilterPanel. */
   eventFilter: EventBoardFilterResult | null;
+  /** Unit 5: "Min samling"-søm (lagre-toggle/del-drawer). Null for boligrapporter. */
+  collection: BoardCollectionApi | null;
+  /** Unit 5: åpne samling-draweren. */
+  onOpenCollection: () => void;
 }) {
   const home = boardData.home;
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -481,6 +543,8 @@ function ResponsiveLayoutInner({
             noBrokers={eventMode}
             eventFilter={eventFilter}
             categories={boardData.categories}
+            collection={collection}
+            onOpenCollection={onOpenCollection}
             renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
           />
         </div>

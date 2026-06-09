@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Clock, MapPin, RotateCcw } from "lucide-react";
+import { Bookmark, CalendarDays, Clock, MapPin, RotateCcw } from "lucide-react";
 import { useBoard } from "../board-state";
 import type {
   BoardCategory,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/kompass-store";
 import { formatEventDay } from "@/lib/hooks/useEventDayFilter";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
+import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
 import {
   TIME_BUCKETS,
   TIMELESS_BUCKET_LABEL,
@@ -39,10 +40,17 @@ import type { EventDaySection } from "@/lib/event-board/event-day-sections";
 export function EventFilterPanel({
   filter,
   categories,
+  collection,
+  onOpenCollection,
 }: {
   filter: EventBoardFilterResult;
   /** Board-kategoriene (for tema-chip-etiketter/farger). */
   categories: BoardCategory[];
+  /** Unit 5: "Min samling"-søm. Når satt rendres en lagre-toggle per event-rad
+   *  + en samling-affordance i topp. Null/undefined → ingen collection-UI. */
+  collection?: BoardCollectionApi | null;
+  /** Åpne samling-draweren (del-URL/QR). Kun relevant når `collection` er satt. */
+  onOpenCollection?: () => void;
 }) {
   const { state, dispatch } = useBoard();
   const activePoiId = state.activePOIId;
@@ -58,10 +66,33 @@ export function EventFilterPanel({
       categoryId: categoryId as BoardCategoryId,
     });
 
+  const collectionCount = collection?.collectionPoiIds.size ?? 0;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Filter-kontroller — sticky topp så lista scroller under dem. */}
       <div className="shrink-0 space-y-3 px-6 pb-3 pt-1">
+        {/* Unit 5: "Min samling"-affordance. Persistent i topp (synlig i alle
+            filter-tilstander) — viser antall lagrede og åpner del-draweren. */}
+        {collection && (
+          <button
+            type="button"
+            onClick={onOpenCollection}
+            disabled={collectionCount === 0}
+            className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-[13px] font-semibold transition ${
+              collectionCount > 0
+                ? "bg-sky-500 text-white hover:bg-sky-600"
+                : "cursor-default bg-white/60 text-stone-400 ring-1 ring-black/5"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Bookmark size={15} className="shrink-0" />
+              Min samling
+            </span>
+            <span>{collectionCount}</span>
+          </button>
+        )}
+
         {/* Dag-kontroll (R13). */}
         <DayControl
           days={filter.days}
@@ -115,6 +146,7 @@ export function EventFilterPanel({
               categories={categories}
               activePoiId={activePoiId}
               onOpenPoi={openPoi}
+              collection={collection}
             />
           ))}
         </div>
@@ -212,11 +244,13 @@ function DaySectionBlock({
   categories,
   activePoiId,
   onOpenPoi,
+  collection,
 }: {
   section: EventDaySection;
   categories: BoardCategory[];
   activePoiId: string | null;
   onOpenPoi: (poiId: string, categoryId: string) => void;
+  collection?: BoardCollectionApi | null;
 }) {
   const heading = section.isUndated
     ? TIMELESS_BUCKET_LABEL
@@ -236,34 +270,62 @@ function DaySectionBlock({
               ? `${poi.eventTimeStart}–${poi.eventTimeEnd}`
               : poi.eventTimeStart
             : "Tidspunkt ikke oppgitt";
+          const saved = collection?.has(poi.id) ?? false;
           return (
-            <button
+            <div
               key={poi.id}
-              type="button"
-              onClick={() => onOpenPoi(poi.id, poi.category.id)}
-              aria-current={activePoiId === poi.id}
-              className={`group flex w-full cursor-pointer items-start gap-3 rounded-2xl border bg-white/60 p-2.5 text-left transition-all duration-150 hover:bg-white ${
+              className={`group flex w-full items-start gap-2 rounded-2xl border bg-white/60 p-2.5 transition-all duration-150 hover:bg-white ${
                 activePoiId === poi.id
                   ? "border-stone-900 ring-1 ring-stone-900"
                   : "border-black/5 hover:border-stone-500 hover:ring-1 hover:ring-stone-500"
               }`}
             >
-              <span
-                className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
-                style={{ backgroundColor: color }}
+              <button
+                type="button"
+                onClick={() => onOpenPoi(poi.id, poi.category.id)}
+                aria-current={activePoiId === poi.id}
+                className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left"
               >
-                <MapPin size={16} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-stone-900">
-                  {poi.name}
+                <span
+                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
+                  style={{ backgroundColor: color }}
+                >
+                  <MapPin size={16} />
                 </span>
-                <span className="mt-0.5 flex items-center gap-1.5 text-[12px] text-stone-500">
-                  <Clock size={12} className="shrink-0 text-stone-400" />
-                  {time}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-stone-900">
+                    {poi.name}
+                  </span>
+                  <span className="mt-0.5 flex items-center gap-1.5 text-[12px] text-stone-500">
+                    <Clock size={12} className="shrink-0 text-stone-400" />
+                    {time}
+                  </span>
                 </span>
-              </span>
-            </button>
+              </button>
+
+              {/* Unit 5: lagre-toggle. Egen knapp (ikke nestet i rad-knappen) så
+                  klikk på bokmerket ikke åpner POI-en. */}
+              {collection && (
+                <button
+                  type="button"
+                  onClick={() => collection.toggle(poi.id)}
+                  aria-pressed={saved}
+                  aria-label={
+                    saved ? `Fjern ${poi.name} fra samling` : `Legg ${poi.name} i samling`
+                  }
+                  className={`mt-0.5 shrink-0 rounded-full p-1.5 transition ${
+                    saved
+                      ? "text-sky-500"
+                      : "text-stone-300 hover:text-stone-500"
+                  }`}
+                >
+                  <Bookmark
+                    size={16}
+                    fill={saved ? "currentColor" : "none"}
+                  />
+                </button>
+              )}
+            </div>
           );
         })}
       </div>

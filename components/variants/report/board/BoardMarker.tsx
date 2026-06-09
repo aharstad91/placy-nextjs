@@ -19,6 +19,13 @@ interface Props {
    */
   isVisible: boolean;
   /**
+   * Unit 5: event-board "Min samling". Når true tegnes en egen highlight-ring
+   * rundt markøren (uavhengig av `isActive`/`isVisible`) så et lagret event
+   * skiller seg ut på kartet — også når et tema/dag/tid-filter er aktivt.
+   * Default false (boligrapporter har ingen samling-highlight).
+   */
+  inCollection?: boolean;
+  /**
    * Zoom-tier fra `useBoardZoomTier`. Styrer hvilken sub-element som er
    * synlig: `dot` viser kun farget prikk, `icon` viser ikon-sirkel,
    * `icon+label` viser ikon-sirkel + POI-navn.
@@ -39,6 +46,7 @@ function BoardMarkerImpl({
   icon,
   isActive,
   isVisible,
+  inCollection = false,
   zoomTier,
   suppressLabel,
   onClick,
@@ -98,6 +106,30 @@ function BoardMarkerImpl({
           overflow: "visible",
         }}
       >
+        {/* Unit 5: "Min samling"-ring. Tegnes BAK ikon-sirkelen/prikken (lavere i
+            stacking-rekkefølgen, pointer-events:none) som en bookmark-aksent rundt
+            markøren. Skalerer med container så den omkranser både dot- og icon-
+            tier. Kun synlig for lagrede events. */}
+        {inCollection && (
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              width: containerSize + 10,
+              height: containerSize + 10,
+              borderRadius: "50%",
+              border: "2.5px solid #0ea5e9",
+              boxShadow: "0 0 0 2px rgba(255,255,255,0.9)",
+              pointerEvents: "none",
+              opacity: isVisible ? 1 : 0,
+              transition: "opacity 200ms ease-out",
+            }}
+          />
+        )}
+
         {/* Dot — absolute centered. Vises ved effectiveTier="dot" (kun
             inaktive markører ved lav zoom). Tap-koordinat = container-senter
             (samme som IconCircle), så promotion til icon flytter ikke
@@ -189,6 +221,7 @@ export const BoardMarker = React.memo(
     prev.icon === next.icon &&
     prev.isActive === next.isActive &&
     prev.isVisible === next.isVisible &&
+    prev.inCollection === next.inCollection &&
     prev.zoomTier === next.zoomTier &&
     prev.suppressLabel === next.suppressLabel,
 );
