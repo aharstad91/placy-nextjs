@@ -180,3 +180,69 @@ describe("SidebarContentPreview — nivå-2 drill-in", () => {
     expect(getByText("Ansvarlig megler")).toBeTruthy();
   });
 });
+
+// D3: event-modus (`noBrokers`) undertrykker megler/eiendoms-chrome. Akseptanse-
+// krav: NULL megler/eiendoms-strenger på event-board, uten å endre boligrapport-
+// oppførselen (default `noBrokers=false` viser footeren — testet over).
+const eventCategories: SidebarPreviewCategory[] = [
+  {
+    id: "kn-musikk",
+    label: "Musikk",
+    color: "#a855f7",
+    count: 12,
+    lead: "Konserter og live musikk gjennom hele kvelden.",
+  },
+  {
+    id: "kn-kunst",
+    label: "Kunst & Utstilling",
+    color: "#f59e0b",
+    count: 7,
+    lead: "Gallerier og utstillinger åpne for publikum.",
+  },
+];
+
+describe("SidebarContentPreview — event-modus (noBrokers, D3)", () => {
+  it("undertrykker megler-placeholder-footeren når noBrokers er satt", () => {
+    const { queryByText } = render(
+      <SidebarContentPreview categories={eventCategories} noBrokers />,
+    );
+    // NULL megler/eiendoms-strenger.
+    expect(queryByText("Ansvarlig megler")).toBeNull();
+    expect(queryByText("Kontaktinfo legges til per prosjekt")).toBeNull();
+  });
+
+  it("undertrykker megler-footeren også i nivå-2 detalj-visning (event)", () => {
+    const eventEditorial: SidebarPreviewCategory[] = [
+      {
+        id: "kn-musikk",
+        label: "Musikk",
+        color: "#a855f7",
+        count: 12,
+        editorial: {
+          body: "Konsertprogram gjennom hele kvelden.",
+          highlights: [{ id: "ev-1", name: "Domkirken" }],
+        },
+      },
+    ];
+    const { queryByText, getByText } = render(
+      <SidebarContentPreview
+        categories={eventEditorial}
+        activeCategoryId="kn-musikk"
+        noBrokers
+      />,
+    );
+    // Detalj-innholdet rendres fortsatt …
+    expect(getByText(/Konsertprogram/)).toBeTruthy();
+    // … men ingen megler-strenger.
+    expect(queryByText("Ansvarlig megler")).toBeNull();
+  });
+
+  it("viser fortsatt event-kategoriene (innhold uendret av noBrokers)", () => {
+    const { getByText } = render(
+      <SidebarContentPreview categories={eventCategories} noBrokers />,
+    );
+    expect(getByText("Musikk")).toBeTruthy();
+    expect(getByText("12 steder")).toBeTruthy();
+    expect(getByText("Kunst & Utstilling")).toBeTruthy();
+  });
+});

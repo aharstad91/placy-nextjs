@@ -81,6 +81,14 @@ function homeVideoSrc(projectSlug: string | undefined): string | undefined {
 interface Props {
   project: Project;
   enTranslations?: TranslationMap;
+  /**
+   * Event-rute (D2): ferdig-bygget BoardData fra `eventToBoardData`. Når satt
+   * brukes den DIREKTE (report-pipelinen `transformToReportData`/`adaptBoardData`
+   * hoppes over), og skallet går i event-modus (D3): ingen megler/eiendoms-chrome.
+   * Når utelatt (report-rute) bygges BoardData via `adaptBoardData(reportData)`
+   * som før — boligrapport-oppførselen er uendret.
+   */
+  boardData?: BoardData;
 }
 
 export default function ReportReelsPage(props: Props) {
@@ -91,20 +99,30 @@ export default function ReportReelsPage(props: Props) {
   );
 }
 
-function Inner({ project, enTranslations = {} }: Props) {
+function Inner({ project, enTranslations = {}, boardData: inputBoardData }: Props) {
   const { locale } = useLocale();
+
+  // D3: event-modus er signalert av at boardData kommer inn som input (event-
+  // rute). Da undertrykkes megler/eiendoms-chrome (footer + splash-copy).
+  const eventMode = inputBoardData !== undefined;
 
   const effectiveProject = useMemo(
     () => applyTranslations(project, locale, enTranslations),
     [project, locale, enTranslations],
   );
 
+  // D2: report-rute bygger BoardData via report-pipelinen; event-rute leverer
+  // den ferdig (`inputBoardData`). useMemo-grenen unngår å kjøre report-
+  // transformasjonen unødvendig i event-modus.
   const reportData = useMemo(
-    () => transformToReportData(effectiveProject, locale),
-    [effectiveProject, locale],
+    () => (inputBoardData ? null : transformToReportData(effectiveProject, locale)),
+    [inputBoardData, effectiveProject, locale],
   );
 
-  const boardData = useMemo(() => adaptBoardData(reportData), [reportData]);
+  const boardData = useMemo(
+    () => inputBoardData ?? adaptBoardData(reportData!),
+    [inputBoardData, reportData],
+  );
 
   const cards = useMemo(
     () =>
@@ -125,7 +143,11 @@ function Inner({ project, enTranslations = {} }: Props) {
         <BoardReelsSync />
         <ReelsAudioShell>
           <ReelsOrchestrator>
-            <ResponsiveLayout boardData={boardData} has3dAddon={has3dAddon} />
+            <ResponsiveLayout
+              boardData={boardData}
+              has3dAddon={has3dAddon}
+              eventMode={eventMode}
+            />
           </ReelsOrchestrator>
         </ReelsAudioShell>
       </BoardProvider>
@@ -283,9 +305,12 @@ function ReelsOrchestrator({ children }: { children: React.ReactNode }) {
 function ResponsiveLayoutInner({
   boardData,
   has3dAddon,
+  eventMode,
 }: {
   boardData: BoardData;
   has3dAddon: boolean;
+  /** D3: event-modus undertrykker megler/eiendoms-chrome (footer + splash-copy). */
+  eventMode: boolean;
 }) {
   const home = boardData.home;
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -360,8 +385,11 @@ function ResponsiveLayoutInner({
       ? "Spill av på nytt"
       : "Fortsett";
 
-  const splashIntro =
-    boardData.venueType === "commercial"
+  // D3: event-modus har egen, megler/eiendoms-fri splash-copy (ingen "nærområdet
+  // til hotellet"/"utenfor kontordøren"). Boligrapport-copyen er uendret.
+  const splashIntro = eventMode
+    ? "Utforsk programmet på kartet — se hva som skjer, hvor og når. Trykk play, og finn opplevelsene i nærheten."
+    : boardData.venueType === "commercial"
       ? "Vi tar deg med på en guidet tur i nærområdet — restauranter, transport, trenings- og servicetilbud rett utenfor kontordøren. Trykk play, og se hva som ligger i gangavstand."
       : boardData.venueType === "hotel"
         ? "Utforsk nærområdet til hotellet — restauranter, severdigheter, transport og opplevelser rett utenfor lobbyen. Trykk play, og se hva som ligger i gangavstand."
@@ -410,6 +438,7 @@ function ResponsiveLayoutInner({
             logoSrc={logoSrc}
             onLogoClick={handleReopenSplash}
             previewCategories={previewCategories}
+            noBrokers={eventMode}
             renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
           />
         </div>

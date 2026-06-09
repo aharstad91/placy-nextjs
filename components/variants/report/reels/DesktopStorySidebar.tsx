@@ -93,6 +93,9 @@ interface Props {
   /** Kategori-oversikt vist når prosjektet ikke har reels-lyd ennå (ingen
    *  audio-bærende kort). Da vises en bla-bar oversikt i stedet for spilleren. */
   previewCategories?: SidebarPreviewCategory[];
+  /** D3: event-modus undertrykker megler/eiendoms-chrome (placeholder-footeren
+   *  i empty-state). Boligrapporter sender ikke dette → footeren vises som før. */
+  noBrokers?: boolean;
 }
 
 /**
@@ -107,6 +110,7 @@ export function SidebarContentPreview({
   onSelect,
   onShowAll,
   onOpenPoi,
+  noBrokers = false,
 }: {
   categories: SidebarPreviewCategory[];
   activeCategoryId?: string | null;
@@ -118,6 +122,9 @@ export function SidebarContentPreview({
   /** Klikk på en highlight-chip i detalj-panelet → åpne POI på kartet (kameraet
    *  flyr til punktet). Kun relevant for nivå-2-kategorier. */
   onOpenPoi?: (poiId: string, categoryId: string) => void;
+  /** D3: event-modus undertrykker megler-placeholder-footeren. Default false
+   *  (boligrapport) → footeren vises som før. */
+  noBrokers?: boolean;
 }) {
   const total = categories.reduce((sum, c) => sum + c.count, 0);
   const noneActive = !activeCategoryId;
@@ -228,28 +235,31 @@ export function SidebarContentPreview({
 
       {/* Author/megler — sticky i bunn av sidebaren (scroller ikke med kategori-
           lista). Nøytral placeholder, fylles per prosjekt. Speiler megler-kortets
-          struktur (avatar + navn + Ring/E-post) i lys variant. */}
-      <div className="shrink-0 border-t border-black/5 px-6 pb-6 pt-3">
-        <div className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white/60 p-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-200 text-stone-400">
-            <User size={20} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-stone-900">Ansvarlig megler</p>
-            <p className="text-[12px] text-stone-400">Kontaktinfo legges til per prosjekt</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200/70 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
-                <Phone className="h-3.5 w-3.5" />
-                Ring
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
-                <Mail className="h-3.5 w-3.5" />
-                E-post
-              </span>
+          struktur (avatar + navn + Ring/E-post) i lys variant. D3: undertrykt i
+          event-modus (events har ingen megler/eiendom). */}
+      {!noBrokers && (
+        <div className="shrink-0 border-t border-black/5 px-6 pb-6 pt-3">
+          <div className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white/60 p-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-200 text-stone-400">
+              <User size={20} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-stone-900">Ansvarlig megler</p>
+              <p className="text-[12px] text-stone-400">Kontaktinfo legges til per prosjekt</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200/70 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
+                  <Phone className="h-3.5 w-3.5" />
+                  Ring
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
+                  <Mail className="h-3.5 w-3.5" />
+                  E-post
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -553,6 +563,7 @@ export function DesktopStorySidebar({
   logoSrc,
   onLogoClick,
   previewCategories = [],
+  noBrokers = false,
 }: Props) {
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
   const { state: boardState, dispatch: boardDispatch } = useBoard();
@@ -685,6 +696,7 @@ export function DesktopStorySidebar({
         <SidebarContentPreview
           categories={previewCategories}
           activeCategoryId={boardState.activeCategoryId}
+          noBrokers={noBrokers}
           onSelect={handleSelectPreviewCategory}
           onShowAll={() => boardDispatch({ type: "RESET_TO_DEFAULT" })}
           onOpenPoi={(poiId, categoryId) =>
