@@ -22,6 +22,7 @@ import {
   type BoardCollectionApi,
 } from "@/lib/event-board/use-board-collection";
 import { BoardCollectionDrawer } from "../board/event/BoardCollectionDrawer";
+import { EventMobileSheet } from "../board/event/EventMobileSheet";
 import { useKompassSelections } from "@/lib/kompass-store";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsStack } from "./ReelsStack";
@@ -572,6 +573,23 @@ function ResponsiveLayoutInner({
           onPlay={handlePlay}
         />
       </div>
+    );
+  }
+
+  // Unit 7 (R7/R17): event-board er mobile-first via en bottom-sheet over et
+  // persistent kart — IKKE den audio-drevne reels-stacken (events har ingen
+  // audio/karaoke). Boligrapportenes mobil-sti (reels + splash) er urørt og
+  // rendres uendret under. EventMobileSheet eier sin egen map-mount, så vi
+  // hopper over MapLayer/ReelsStack/splash i event-modus.
+  if (eventMode && eventFilter) {
+    return (
+      <EventMobileSheet
+        has3dAddon={has3dAddon}
+        eventFilter={eventFilter}
+        categories={boardData.categories}
+        collection={collection}
+        onOpenCollection={onOpenCollection}
+      />
     );
   }
 
