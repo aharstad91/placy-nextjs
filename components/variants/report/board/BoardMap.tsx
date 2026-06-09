@@ -17,6 +17,7 @@ import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
 import { BoardMap3D } from "./BoardMap3D";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
+import { intersectVisible } from "@/lib/event-board/marker-visibility";
 import type { PendingCamera } from "@/components/map/UnifiedMapModal";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -69,7 +70,7 @@ export function BoardMap({
   mapPaddingLeft = 0,
   compactControls = false,
 }: Props) {
-  const { state, data, dispatch, subFilter } = useBoard();
+  const { state, data, dispatch, subFilter, visiblePoiIds } = useBoard();
   const activeCategory = useActiveCategory();
   const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
@@ -186,19 +187,25 @@ export function BoardMap({
   // som fallback. Sub-kat differensierer f.eks. bar (lilla), bakeri (gul) og
   // restaurant (rød) innen Mat-tema.
   const markerStates = useMemo(() => {
-    const visibleIds = new Set<string>();
+    const baseVisible = new Set<string>();
     if (state.phase === "default" && !activeCategory) {
       for (const cat of data.categories) {
-        for (const p of cat.pois) visibleIds.add(p.id);
+        for (const p of cat.pois) baseVisible.add(p.id);
       }
     } else if (activeCategory) {
       const useFilter =
         state.phase !== "default" && subFilter.hiddenIds.size > 0;
       for (const p of activeCategory.pois) {
         if (useFilter && subFilter.hiddenIds.has(p.raw.category.id)) continue;
-        visibleIds.add(p.id);
+        baseVisible.add(p.id);
       }
     }
+    // Event-board markør-filter-søm (Unit 4): intersekt med det tema/dag/tid-
+    // filtrerte settet. `subFilter` (sub-kategori innen aktiv kategori) og dette
+    // event-filteret KOMPONERER — en markør må passere begge for å vises. Når
+    // `visiblePoiIds` er undefined (boligrapport, eller event uten aktivt filter)
+    // er settet uberørt → ren phase-/kategori-synlighet som før.
+    const visibleIds = intersectVisible(baseVisible, visiblePoiIds);
     return data.categories.flatMap((cat) =>
       cat.pois.map((p) => ({
         poi: p,
@@ -207,7 +214,13 @@ export function BoardMap({
         isVisible: visibleIds.has(p.id),
       })),
     );
-  }, [state.phase, activeCategory, subFilter.hiddenIds, data.categories]);
+  }, [
+    state.phase,
+    activeCategory,
+    subFilter.hiddenIds,
+    data.categories,
+    visiblePoiIds,
+  ]);
 
   // Synlige POI-er for kamera-fit (tour-bounds). Inkluderer ikke fade-out-
   // markører — kamera skal følge faktisk-synlig content, ikke DOM-mengden.
@@ -287,6 +300,67 @@ export function BoardMap({
   }, [
     tourActive,
     activeCategory?.id,
+    mapLoaded,
+    data.home.coordinates.lng,
+    data.home.coordinates.lat,
+    mapPaddingBottom,
+    mapPaddingLeft,
+  ]);
+
+  // Event-board filter-fit (Unit 4): events har ingen audio-tour (tourActive er
+  // alltid false), så tour-fitten over fyrer aldri. I stedet fitter vi kameraet
+  // til det FILTRERTE settet hver gang `visiblePoiIds` endrer innhold — så kartet
+  // zoomer til de matchende events når brukeren velger tema/dag/tid. Kun aktivt
+  // når `visiblePoiIds` er definert (event-board); boligrapporter (undefined)
+  // berøres ikke. Gated på !tourActive så vi aldri kjemper mot tour-fitten.
+  //
+  // Nøkkelen er en stabil join av sorterte synlige IDer (ikke Set-identiteten),
+  // så effekten kun re-fyrer ved FAKTISK innholdsendring — Mapbox-instansen
+  // muteres (fitBounds), den unmountes aldri (ingen WebGL-lekk, ingen remount).
+  const visibleIdsKey = useMemo(
+    () =>
+      visiblePoiIds
+        ? Array.from(visiblePoiIds).sort().join(",")
+        : null,
+    [visiblePoiIds],
+  );
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    if (visibleIdsKey === null) return; // ikke event-board
+    if (tourActive) return; // tour-fitten eier kameraet hvis aktiv
+    const pois = visiblePOIsRef.current;
+    if (pois.length === 0) return; // 0 treff → behold posisjon (tomtilstand i lista)
+    const map = mapRef.current.getMap();
+    let west = data.home.coordinates.lng;
+    let east = data.home.coordinates.lng;
+    let south = data.home.coordinates.lat;
+    let north = data.home.coordinates.lat;
+    for (const { poi } of pois) {
+      const { lng, lat } = poi.coordinates;
+      if (lng < west) west = lng;
+      if (lng > east) east = lng;
+      if (lat < south) south = lat;
+      if (lat > north) north = lat;
+    }
+    map.fitBounds(
+      [
+        [west, south],
+        [east, north],
+      ],
+      {
+        padding: {
+          top: 80,
+          bottom: 80 + mapPaddingBottom,
+          left: 80 + mapPaddingLeft,
+          right: 80,
+        },
+        duration: 800,
+        maxZoom: 15.5,
+      },
+    );
+  }, [
+    visibleIdsKey,
+    tourActive,
     mapLoaded,
     data.home.coordinates.lng,
     data.home.coordinates.lat,

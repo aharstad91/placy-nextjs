@@ -126,15 +126,30 @@ interface BoardContextValue {
   dispatch: Dispatch<BoardAction>;
   data: BoardData;
   subFilter: SubCategoryFilterApi;
+  /**
+   * Event-board markør-filter-søm (Unit 4): POI-IDer som er synlige etter
+   * tema/dag/tid-filtrering. Når satt intersekter `BoardMap` den inn i
+   * markør-synligheten (∩ `markerStates.visibleIds`) og kamera-fitter på det
+   * filtrerte settet. `undefined` (boligrapport / event uten aktivt filter)
+   * → ingen markør-begrensning, ren phase-/kategori-drevet synlighet som før.
+   *
+   * Holdes som container-nivå state (ikke en reducer-action): filteret er
+   * derivert fra Zustand-kompass-state + raw-POIene, ikke en del av board-ets
+   * navigasjons-state. Reduseren forblir uendret.
+   */
+  visiblePoiIds?: Set<string>;
 }
 
 const BoardContext = createContext<BoardContextValue | null>(null);
 
 export function BoardProvider({
   data,
+  visiblePoiIds,
   children,
 }: {
   data: BoardData;
+  /** Se `BoardContextValue.visiblePoiIds`. */
+  visiblePoiIds?: Set<string>;
   children: ReactNode;
 }) {
   const [state, dispatch] = useReducer(boardReducer, initialBoardState);
@@ -156,7 +171,9 @@ export function BoardProvider({
   ]);
 
   return (
-    <BoardContext.Provider value={{ state, dispatch, data, subFilter }}>
+    <BoardContext.Provider
+      value={{ state, dispatch, data, subFilter, visiblePoiIds }}
+    >
       {children}
     </BoardContext.Provider>
   );

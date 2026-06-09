@@ -13,6 +13,11 @@ import { transformToReportData } from "../report-data";
 import { adaptBoardData } from "../board/board-data";
 import { BoardProvider, useBoard } from "../board/board-state";
 import { BoardMap } from "../board/BoardMap";
+import {
+  useEventBoardFilter,
+  type EventBoardFilterResult,
+} from "@/lib/event-board/useEventBoardFilter";
+import { useKompassSelections } from "@/lib/kompass-store";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsStack } from "./ReelsStack";
 import { DesktopStorySidebar } from "./DesktopStorySidebar";
@@ -137,9 +142,39 @@ function Inner({ project, enTranslations = {}, boardData: inputBoardData }: Prop
 
   const has3dAddon = project.has3dAddon ?? false;
 
+  // Event-board filter (Unit 4). D5: filteret kjører på `raw`-POIene — vi mater
+  // `boardData.categories.flatMap(c => c.pois.map(p => p.raw))` inn i
+  // `useEventBoardFilter` (som komponerer `useKompassFilter` uendret). Kun aktivt
+  // i event-modus; boligrapporter får `undefined` visiblePoiIds (ingen
+  // markør-begrensning). Resultatet trades inn i BoardProvider-konteksten så
+  // BoardMap intersekter det inn i markør-synligheten, OG ned i sidebaren via
+  // EventFilterPanel (liste + chips + tomtilstand).
+  const rawPois = useMemo(
+    () =>
+      eventMode
+        ? boardData.categories.flatMap((c) => c.pois.map((p) => p.raw))
+        : [],
+    [eventMode, boardData.categories],
+  );
+  const { selectedThemes, selectedDay, selectedTimeSlots } =
+    useKompassSelections();
+  const eventFilter = useEventBoardFilter(
+    rawPois,
+    selectedThemes,
+    selectedDay,
+    selectedTimeSlots,
+  );
+  // Når intet filter er aktivt sender vi `undefined` (ikke hele settet) så
+  // markør-sømmen forblir helt no-op og kamera-fitten ikke kjører i ro-tilstand
+  // — board-et viser da alle markører via den vanlige phase-/kategori-stien.
+  const visiblePoiIds =
+    eventMode && eventFilter.hasActiveFilter
+      ? eventFilter.visiblePoiIds
+      : undefined;
+
   return (
     <ReelsProvider cards={cards}>
-      <BoardProvider data={boardData}>
+      <BoardProvider data={boardData} visiblePoiIds={visiblePoiIds}>
         <BoardReelsSync />
         <ReelsAudioShell>
           <ReelsOrchestrator>
@@ -147,6 +182,7 @@ function Inner({ project, enTranslations = {}, boardData: inputBoardData }: Prop
               boardData={boardData}
               has3dAddon={has3dAddon}
               eventMode={eventMode}
+              eventFilter={eventMode ? eventFilter : null}
             />
           </ReelsOrchestrator>
         </ReelsAudioShell>
@@ -306,11 +342,15 @@ function ResponsiveLayoutInner({
   boardData,
   has3dAddon,
   eventMode,
+  eventFilter,
 }: {
   boardData: BoardData;
   has3dAddon: boolean;
   /** D3: event-modus undertrykker megler/eiendoms-chrome (footer + splash-copy). */
   eventMode: boolean;
+  /** Unit 4: event-board filter-resultat (liste/seksjoner/dag-state). Null for
+   *  boligrapporter. Drives av kompass-store; brukes av EventFilterPanel. */
+  eventFilter: EventBoardFilterResult | null;
 }) {
   const home = boardData.home;
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -439,6 +479,8 @@ function ResponsiveLayoutInner({
             onLogoClick={handleReopenSplash}
             previewCategories={previewCategories}
             noBrokers={eventMode}
+            eventFilter={eventFilter}
+            categories={boardData.categories}
             renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
           />
         </div>

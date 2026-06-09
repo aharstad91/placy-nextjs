@@ -26,10 +26,17 @@ import {
   posterForVideo,
 } from "./reels-data";
 import type { MeglerReelCard, ReelsCard } from "./reels-data";
-import type { BoardCategoryId, BoardPOIId, BoardHome } from "../board/board-data";
+import type {
+  BoardCategory,
+  BoardCategoryId,
+  BoardPOIId,
+  BoardHome,
+} from "../board/board-data";
 import { useBoard } from "../board/board-state";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
+import { EventFilterPanel } from "../board/event/EventFilterPanel";
+import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
 
 /**
  * Desktop-adaptiv storytelling-lane (kun >=1024px, rendres fra
@@ -96,6 +103,12 @@ interface Props {
   /** D3: event-modus undertrykker megler/eiendoms-chrome (placeholder-footeren
    *  i empty-state). Boligrapporter sender ikke dette → footeren vises som før. */
   noBrokers?: boolean;
+  /** Unit 4: event-board filter-resultat. Når satt (event-modus) rendres
+   *  EventFilterPanel (tema/dag/tid-chips + dato-seksjonert liste + tomtilstand)
+   *  i stedet for SidebarContentPreview. Null/undefined for boligrapporter. */
+  eventFilter?: EventBoardFilterResult | null;
+  /** Board-kategoriene — gir EventFilterPanel tema-chip-etiketter/farger. */
+  categories?: BoardCategory[];
 }
 
 /**
@@ -564,6 +577,8 @@ export function DesktopStorySidebar({
   onLogoClick,
   previewCategories = [],
   noBrokers = false,
+  eventFilter = null,
+  categories = [],
 }: Props) {
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
   const { state: boardState, dispatch: boardDispatch } = useBoard();
@@ -692,7 +707,12 @@ export function DesktopStorySidebar({
         {subline && <p className="mt-0.5 text-sm text-stone-500">{subline}</p>}
       </div>
 
-      {!hasPlayableContent ? (
+      {eventFilter ? (
+        /* Unit 4: event-modus → filter-panel (tema/dag/tid + dato-seksjonert
+           liste + tomtilstand). Erstatter både SidebarContentPreview og
+           player-løpet — events har ingen audio og er filter-drevet. */
+        <EventFilterPanel filter={eventFilter} categories={categories} />
+      ) : !hasPlayableContent ? (
         <SidebarContentPreview
           categories={previewCategories}
           activeCategoryId={boardState.activeCategoryId}
