@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-06-09 — Kulturnatt event-board portert til rapport-board-arkitektur (Variant A valgt)
+
+Branch-sesjon (`feat/event-board-foundation`, ultracode). Mål: porte Kulturnatt-2025-prototypen fra den gamle Explorer-arkitekturen over til den nye rapport-board-arkitekturen (venstre sidebar + persistent 3D/2D-kart + live transport), og håndtere festival/tidsperiode-dimensjonen. `/ce-brainstorm` → `/ce-plan` → `/ce-work`, deretter en to-variant-sammenligning bygd i parallelle worktrees.
+
+**1. Fundament (event-native adapter + board-rute).** Ny `lib/event-board/`-stack: `eventToBoardData`-adapter som produserer `BoardData` direkte fra Explorer-prosjektdata (bypasser report-curering `transformToReportData`/`getReportThemes`), `useEventBoardFilter` (komponerer `useKompassFilter` på rå POI-er → `visiblePoiIds`/seksjoner), `event-day-sections.ts` (dato-bevisst `buildDaySections` + `dateAnchorKey`, håndterer fler-dags), tid-bøtter, markør-synlighets-intersect, `use-board-collection` (Min samling + `?c=`). Rute `app/event/[customer]/[project]/board/page.tsx`. `ReportReelsPage` fikk valgfri `boardData`-input + event-modus-routing; `DesktopStorySidebar` `noBrokers` undertrykker megler-chrome (events har ingen audio).
+
+**2. Sentrale beslutninger.** Event-native adapter (D1, egen `/event/`-namespace), `boardData?` valgfri prop (D2, bakover-kompatibel mot boligrapport), ingen-audio event-modus (D3, undertrykk megler-chrome), additive valgfrie event-felt (D4), filter på `raw` POI (D5), dato-bevisst sortering + dag-seksjoner (D6), arvet transport (D7).
+
+**3. To navigasjonsvarianter bygd + sammenlignet live (worktree = variant).** Fundamentet ble tagget (`event-board-foundation-frozen`) og **realiserer Variant A** = filter-drevet dato-seksjonert event-liste (`EventFilterPanel`: Tema/Dag/Tid-chips + liste, alt på ett plan). **Variant B** (`EventHybridPanel`, egen worktree) = `[Kategorier | Program]`-segment-toggle der Program gjenbruker den dato-seksjonerte listen (faktorert ut til delt `EventProgramList`) og Kategorier er en ny board-aktig kategori-grid. Bygd via fan-out-workflow (3 read-maps → 1 byggeagent → 3 adversariske reviewers). 688/688 tester (+8 nye), tsc + eslint rene, boligrapport urørt, R17 verifisert (aktiv fane er lokal UI-state, frakoblet kompass-filter).
+
+**4. Beslutning: Variant A vant.** Live-sammenligning på Kulturnatt (én kveld) + fler-dags (Olavsfest/Festspillene). **Why:** Kategorier-fanen i B duplikerte jobben til Tema-chipsene (begge skjærer etter kategori) → ekstra navigasjonslag uten ny verdi; Program-tidslinjen er dessuten degenerert til én dag-seksjon på én-kvelds-festivaler. Variant A er den renere modellen.
+
+**5. Merge.** `feat/event-board-foundation` (9 commits) fast-forward-merget til `main`. Variant B beholdt på branch `feat/event-board-variant-b` (EventHybridPanel) for referanse, ikke merget. Ikke pushet. Beslutning lagret i auto-memory (`project_kulturnatt_event_board_variant`).
+
+**Deferred:** produksjonsherding av vinner-varianten (egen oppgave). Event-sporet er forøvrig strategisk parkert (se business-logg/2026-06-09) — denne port-jobben var teknisk bestilt uavhengig.
+
+---
+
 ## 2026-06-08 (forts. 6) — Sanntids transport-data i rapport-board-popups + bysykkel "Stengt"-bug
 
 Branch-sesjon (`feat/board-popup-transport-live-data`, dev :3000). Mål: få sanntids kollektiv-avganger og bysykkel-tilgjengelighet tilbake i rapport-board — kritisk for næringseiendom (pendler-/jobbreise-perspektiv). Research + `/ce-plan` + `/ce-work`.
