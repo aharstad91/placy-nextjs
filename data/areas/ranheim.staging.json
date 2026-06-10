@@ -1,0 +1,48 @@
+{
+  "_instructions": [
+    "MAL — ikke ekte innhold. Fylles ut under Unit 6 (Ranheim-kuratering).",
+    "boundary: ERSTATT MED HÅNDTEGNET POLYGON — tegn Ranheim-grensen på https://geojson.io, kopier geometry-objektet (type + coordinates) hit. Punktene under er dummy-hjørner rundt Ranheim-senteret (63.4350, 10.5200). GeoJSON bruker [lng, lat]-rekkefølge, og ytre ring må være lukket (første punkt == siste punkt).",
+    "report_editorial: én nøkkel per bolig-tema-id (REPORT_THEME_DEFAULTS i lib/pipeline/report-defaults.ts). body = kuratert drill-in-tekst (3-5 setninger, ingen forgjengelige fakta, highlight-agnostisk — navngi ikke chip-POIer). highlightCandidates = POI-IDer i kurator-prioritert rekkefølge, 4-6 per tema. image utelates til den trengs.",
+    "Kandidat-meny: npx tsx scripts/curate-area.ts --list-pois <projectId>[,<projectId>...] [--theme <temaId>]",
+    "Opplasting: npx tsx scripts/curate-area.ts --dry-run (plan), deretter npx tsx scripts/curate-area.ts for write."
+  ],
+  "areaId": "ranheim",
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [10.505, 63.428],
+        [10.535, 63.428],
+        [10.535, 63.442],
+        [10.505, 63.442],
+        [10.505, 63.428]
+      ]
+    ]
+  },
+  "report_editorial": {
+    "hverdagsliv": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "barn-oppvekst": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "mat-drikke": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "natur-friluftsliv": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "transport": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "trening-aktivitet": {
+      "body": "",
+      "highlightCandidates": []
+    }
+  }
+}
