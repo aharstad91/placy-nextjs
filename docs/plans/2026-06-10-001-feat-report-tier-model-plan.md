@@ -94,7 +94,7 @@ Fra origin-dokumentet, uendret:
 >
 > **Forutsetning før Fase 1 (rekkefølge):** (1) fang pre-løft-fixturen (Unit 2) fra Grilstad-worktreen/branchen mens den fortsatt er pre-løft; (2) merge `feat/grilstad-marina-board` til main fra main-checkouten (branchen er checked out i worktree `../placy-ralph-grilstad` — kan ikke merges «inn i seg selv»); (3) `git worktree remove ../placy-ralph-grilstad` per worktree-policy. `feat/event-board-foundation` (nåværende checkout) er 0 commits foran main og blokkerer ikke.
 
-- [ ] **Unit 1: `reportTier`-felt + Zod-skjema**
+- [x] **Unit 1: `reportTier`-felt + Zod-skjema**
 
 **Goal:** Deklarasjonsfeltet finnes i typene med dokumentert semantikk.
 
@@ -120,7 +120,7 @@ Fra origin-dokumentet, uendret:
 
 **Verification:** `npx tsc --noEmit` rent; skjema-testene passerer.
 
-- [ ] **Unit 2: Validator-kjerne + fixtures (inkl. pre-løft Grilstad)**
+- [x] **Unit 2: Validator-kjerne + fixtures (inkl. pre-løft Grilstad)**
 
 **Goal:** Ren funksjon som gitt prosjektdata + slug returnerer strukturerte mangler mot deklarert nivå — bevist mot pre-løft Grilstad-tilstanden.
 
@@ -158,7 +158,7 @@ Fra origin-dokumentet, uendret:
 
 **Verification:** Alle scenarier passerer i `npm test`; falsifikasjonstesten beviser at validatoren hadde fanget dagens Grilstad.
 
-- [ ] **Unit 3: CLI-script over begge datakilder**
+- [x] **Unit 3: CLI-script over begge datakilder**
 
 **Goal:** `npm run validate:tier` validerer alle prosjekter — lokal JSON + Supabase — og feiler høylytt.
 
@@ -182,7 +182,7 @@ Fra origin-dokumentet, uendret:
 
 **Verification:** Kjørt mot reell tilstand: rapporterer alle lokale prosjekter + Supabase-prosjektene; Teknostallen/StasjonsKvartalet dukker opp; exit-koder korrekte (test med bevisst feil-deklarasjon lokalt).
 
-- [ ] **Unit 4: Interaktiv nivå-deklarasjon i pipelinene + acceptanceCheck**
+- [x] **Unit 4: Interaktiv nivå-deklarasjon i pipelinene + acceptanceCheck**
 
 **Goal:** Provisjonering spør «hvilket nivå?» og skriver `reportTier`; acceptance-fasen validerer mot det.
 
