@@ -172,11 +172,16 @@ export function validateReportTier(
         detail: "has3dAddon må være true — kino-kamera krever 3D-kart-addonet",
       });
     }
+    // brand-assets er WARNING, ikke error: per skall/placeholder-filosofien
+    // (2026-06-10) deklareres nivået, og brand (logo/splash/video) fylles inn
+    // når grafikken finnes. Manglende brand blokkerer ikke nivå 3 — den synes
+    // som en gjenstående oppgave. Sett `assets.brand: true` når filene
+    // (placeholder eller ekte) ligger på slug-konvensjonen.
     if (rc?.assets?.brand !== true) {
       findings.push({
-        level: "error",
+        level: "warning",
         check: "brand-assets",
-        detail: "assets.brand må være true — og brand-filene må faktisk finnes før flagget settes (presence-marker, ikke ønske)",
+        detail: "assets.brand er ikke satt — legg inn logo/splash/splash-video (placeholder eller ekte) og flipp flagget for full brand",
       });
     }
   }

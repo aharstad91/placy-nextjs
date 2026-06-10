@@ -88,8 +88,9 @@ describe("validateReportTier — falsifikasjon mot pre-løft Grilstad", () => {
       poiIds: grilstad.poiIds,
     });
 
+    // brand-assets er warning, ikke error → kun camera-tours + has3d-addon blokkerer.
     expect(errorChecks(findings)).toEqual(
-      new Set(["camera-tours", "has3d-addon", "brand-assets"]),
+      new Set(["camera-tours", "has3d-addon"]),
     );
 
     // Allerede til stede pre-løft → skal IKKE rapporteres som mangler:
@@ -98,8 +99,10 @@ describe("validateReportTier — falsifikasjon mot pre-løft Grilstad", () => {
     expect(errorChecks(findings).has("editorial")).toBe(false);
     expect(errorChecks(findings).has("vo")).toBe(false);
 
-    // Alle highlightPoiIds resolver mot POI-poolen → ingen warnings.
-    expect(findings.filter((f) => f.level === "warning")).toHaveLength(0);
+    // brand-assets surfacer som warning (skall/placeholder-filosofien),
+    // highlightPoiIds resolver alle → ingen highlight-warnings.
+    const warnings = findings.filter((f) => f.level === "warning");
+    expect(warnings.map((w) => w.check)).toEqual(["brand-assets"]);
   });
 
   it("samme tilstand deklarert nivå 2 består (ærlig re-deklarering)", () => {
@@ -240,12 +243,14 @@ describe("validateReportTier — nivå 3", () => {
     );
   });
 
-  it("assets.brand false/mangler feiler", () => {
+  it("assets.brand false/mangler gir warning, ikke error (skall-filosofi)", () => {
     const input = base();
     input.reportConfig.assets = { brand: false };
-    expect(errorChecks(validateReportTier(input))).toEqual(
-      new Set(["brand-assets"]),
-    );
+    const findings = validateReportTier(input);
+    expect(errors(findings)).toEqual([]);
+    expect(findings.filter((f) => f.level === "warning").map((f) => f.check)).toEqual([
+      "brand-assets",
+    ]);
   });
 });
 
