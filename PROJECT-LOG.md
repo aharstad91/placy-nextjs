@@ -28,10 +28,20 @@ Bruker påpekte at StasjonsKvartalet HAR audio-tur + reels på live. Kodegjennom
 
 **Read-only-simulering mot prod:** Teknostallen deklarert 1 → OK. StasjonsKvartalet deklarert 3 → mangler KUN editorial ×7 (drill-in-tekstene er aldri skrevet i prod) — kurateringsarbeid, ikke config-fiks.
 
+### Grilstad løftet til nivå 3 (Unit 6–8 levert, samme sesjon)
+
+Produkteier valgte å faktisk få Grilstad opp på nivå 3. To avklaringer underveis:
+- **brand-assets → warning + skall/placeholder-filosofi:** «vi legger inn alle elementer, men mangler det filer/grafikk er det tomme skall/placeholders — enkelt å jobbe seg frem til innhold.» Validatoren nedgraderte brand-assets fra error til warning. Grilstad fikk placeholder-skall: logo-wordmark-SVG, splash = hero-kopi, still-video via ffmpeg + poster; `assets.brand: true` rendrer rent og byttes trivielt til ekte grafikk.
+- **camera-tours:** produkteier verifiserer selv i browser. Jeg autorerte A→B-startposer for natur-friluftsliv + marina-batliv (sentrert på prosjekt-koordinatet 63.43826/10.50872 — IKKE tile-verifisert), orbit-fallback for resten.
+
+**Unit 7 (reels-VO):** Nytt `scripts/reels-voiceover-build-local.ts` (npm `build:reels-vo-local`) — itererer `reelsAudio`, skriver `{tema}-reels.mp3` med defensiv -reels-suffiks-guard. Genererte alle 7 Grilstad-spor (Erik/turbo_v2_5, karaoke-timings); tour-mp3-ene byte-urørt (git-verifisert). **NB norske stedsnavn ikke i uttale-ordlista (Grilstadfjæra, Ladestien, Rotvoll, Ranheim, Sjøparken) — må gjennomlyttes.**
+
+`has3dAddon: true` + `reportTier: 3` → **Grilstad består `validate:tier` på nivå 3** (1 warning: brand kan byttes til ekte grafikk). 716/716 tester, tsc + lint rene.
+
 ### Åpent / neste steg
 
-- **Unit 5 (klassifisering, PROD-MUTASJON — `/effort xhigh` før kjøring):** Teknostallen → `reportTier: 1` (består). StasjonsKvartalet → `3` krever først editorial på alle 7 temaer (produkteier-beslutning: skriv kuratering, eller vent med 3-deklarasjonen). Ingen audio-re-seed nødvendig. Teknostallens products-rad identifiseres via project-id-mapping.
-- **Unit 6–8 (Grilstad-løft til ekte nivå 3):** camera-poser autoreres interaktivt i browser (`?author=1`; start natur-friluftsliv + marina-batliv), brand-assets må bekreftes/produseres før `assets.brand: true`, reels-VO ×7 genereres på egen filnøkkel `{theme-id}-reels.mp3` (ALDRI overskrive tour-mp3 — karaoke ryker) og gjennomlyttes (stokastisk TTS, norske stedsnavn: Fullriggerøya, Grilstadfjæra, Ladestien).
+- **Grilstad browser-runde (din, på :3001 `/eiendom/grilstad-marina/byggetrinn-4/rapport-board`):** (1) lytt gjennom de 7 reels-sporene — særlig stedsnavn-uttale; regenerer stokastisk dårlige spor med `npm run build:reels-vo-local data/projects/grilstad-marina/byggetrinn-4.json --force`, legg evt. alias i `scripts/tts/pronunciation-no.json`. (2) Finjuster camera-startposene via `?author=1`, lim eksakte poser inn i `camera-tours.ts` under `byggetrinn-4`. (3) Bytt placeholder-brand til ekte logo/splash/video når klart.
+- **Unit 5 (klassifisering av ANDRE prosjekter, PROD-MUTASJON — `/effort xhigh` før kjøring):** Teknostallen → `reportTier: 1` (består). StasjonsKvartalet → `3` krever først editorial på alle 7 temaer (produkteier-beslutning: skriv kuratering, eller vent med 3-deklarasjonen). Ingen audio-re-seed nødvendig. Teknostallens products-rad identifiseres via project-id-mapping.
 - Worktree-opprydding: `git worktree remove ../placy-ralph-grilstad` når sesjonen er ferdig; main er 16 commits foran origin (ikke pushet).
 
 ---
