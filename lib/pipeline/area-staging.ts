@@ -79,7 +79,9 @@ export const BoundarySchema = z.discriminatedUnion("type", [
 
 // ── report_editorial ──────────────────────────────────────────────────────
 
-const ThemeEditorialStagingSchema = z
+/** Eksportert: arve-steget (inherit-area-editorial) validerer hver
+ *  tema-entry i `areas.report_editorial` med samme skjema som staging. */
+export const ThemeEditorialStagingSchema = z
   .object({
     // Kan være tom i mal — gating (body ELLER ≥1 highlight) skjer ved arv
     body: z.string(),

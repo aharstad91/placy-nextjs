@@ -20,9 +20,12 @@
  *                   interaktivt; non-TTY defaulter til 1.
  */
 
-import { config } from "dotenv";
+// MÅ stå først: tsx hoister statiske imports, så env må lastes via en
+// side-effect-modul FØR lib/supabase/client.ts evalueres — ellers blir den
+// modul-nivå anon-klienten (som queries.ts/editorial-arven bygger på)
+// permanent null. Se scripts/load-env.ts.
+import "./load-env";
 import * as readline from "readline";
-config({ path: ".env.local" });
 
 import {
   geocodeAddress,
@@ -39,6 +42,7 @@ import {
 } from "@/lib/pipeline/enrich-report-pois";
 import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
+import { inheritAreaEditorial } from "@/lib/pipeline/inherit-area-editorial";
 import {
   getDiscoveryRadius,
   type ReportProfile,
@@ -466,12 +470,44 @@ async function main() {
   log(`product_categories: ${hydrateResult.categoriesPopulated} kategorier`);
   for (const w of hydrateResult.warnings) warn(w);
 
-  // ── Steg 7: Revalidering ───────────────────────────────────────────────
-  section("Steg 7: Revalidering");
+  // ── Steg 7: Nabolags-editorial ─────────────────────────────────────────
+  // Fail-soft (warnings) — UNNTATT skrive-/optimistisk-lås-feil som kaster
+  // og avbryter provisjoneringen (aldri delvis editorial i config).
+  section("Steg 7: Nabolags-editorial");
+
+  const inheritResult = await inheritAreaEditorial({
+    projectId: projectResult.projectId,
+    customerSlug: projectResult.customerSlug,
+    projectSlug: projectResult.slug,
+    lat,
+    lng,
+  });
+  for (const w of inheritResult.warnings) warn(w);
+  if (inheritResult.skipped) {
+    log("nivå 1 — ingen kuratert område for punktet (ingen editorial arvet)");
+  } else {
+    log(`Område: ${inheritResult.areaName}`);
+    log(
+      inheritResult.themesInherited.length > 0
+        ? `Temaer arvet: ${inheritResult.themesInherited.join(", ")} (${inheritResult.themesInherited.length})`
+        : "Temaer arvet: ingen (se advarsler over)"
+    );
+    log(`Highlights beholdt: ${inheritResult.highlights.kept}`);
+    if (inheritResult.highlights.dropped.length > 0) {
+      // R9-loggen er et suksesskriterium (Unit 7-evalueringen leser denne)
+      log(`Highlights droppet: ${inheritResult.highlights.dropped.length}`);
+      for (const d of inheritResult.highlights.dropped) {
+        log(`   · [${d.themeId}] ${d.id} — ${d.reason}`);
+      }
+    }
+  }
+
+  // ── Steg 8: Revalidering ───────────────────────────────────────────────
+  section("Steg 8: Revalidering");
   await revalidateProject(projectResult.customerSlug, projectResult.slug);
 
-  // ── Steg 8: Akseptansesjekk ───────────────────────────────────────────
-  section("Steg 8: Akseptansesjekk");
+  // ── Steg 9: Akseptansesjekk ───────────────────────────────────────────
+  section("Steg 9: Akseptansesjekk");
   const passed = await acceptanceCheck(
     projectResult.productId,
     projectResult.projectId,

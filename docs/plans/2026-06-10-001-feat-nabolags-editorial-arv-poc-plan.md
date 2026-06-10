@@ -210,7 +210,7 @@ Fase 3 = innhold + bevis (Unit 6–7). Rekkefølge = avhengighetsrekkefølge.
 
 ### Fase 1 — Fundament
 
-- [ ] **Unit 1: Migrasjon — `areas.report_editorial` + delt point-in-polygon-util**
+- [x] **Unit 1: Migrasjon — `areas.report_editorial` + delt point-in-polygon-util**
 
 **Goal:** Datamodellen og geo-verktøyet som alt annet bygger på.
 
@@ -245,7 +245,7 @@ Fase 3 = innhold + bevis (Unit 6–7). Rekkefølge = avhengighetsrekkefølge.
 **Verification:** Migrasjon kjørt og verifisert mot prod-DB (kolonnen synlig via REST);
 `npm test` grønn inkl. uendrede school-zones-tester.
 
-- [ ] **Unit 2: Område-oppslag — `findAreaForPoint`**
+- [x] **Unit 2: Område-oppslag — `findAreaForPoint`**
 
 **Goal:** Gitt lat/lng, finn `areas`-raden med polygon som inneholder punktet (R2).
 
@@ -284,7 +284,7 @@ Fase 3 = innhold + bevis (Unit 6–7). Rekkefølge = avhengighetsrekkefølge.
 **Verification:** Enhetstester grønne; manuell kjøring med kjent Ranheim-koordinat
 returnerer riktig rad.
 
-- [ ] **Unit 3: Trust-scoring som pipeline-steg**
+- [x] **Unit 3: Trust-scoring som pipeline-steg**
 
 **Goal:** Ingen **Google-POI** på et nytt rapport-board har `trust_score = null` ved normal
 kjøring — read-time-filteret biter (R8). Offentlige kilde-POIer (NSR/Barnehagefakta/
@@ -341,7 +341,7 @@ skoler/barnehager etter steget.
 
 ### Fase 2 — Arv
 
-- [ ] **Unit 4: Editorial-arv med highlight-fallback — `inheritAreaEditorial`**
+- [x] **Unit 4: Editorial-arv med highlight-fallback — `inheritAreaEditorial`**
 
 **Goal:** Kjernen i PoC-en: arv nabolagets editorial inn i prosjekt-config med
 board-validerte highlights og årsaks-logging (R4, R6, R7, R9).
@@ -412,7 +412,7 @@ inheritAreaEditorial({ projectId, customerSlug, projectSlug, lat, lng }) →
 **Verification:** Provisjonér Ranheim-adresse → drill-in synlig på boardet med riktige
 chips; orkestrator-loggen viser kept/dropped med årsaker; `board-data.test.ts` uendret grønn.
 
-- [ ] **Unit 5: Kurateringsverktøy — staging-format + `curate-area`-script**
+- [x] **Unit 5: Kurateringsverktøy — staging-format + `curate-area`-script**
 
 **Goal:** Operatør-flyt for å få polygon + kuratert editorial inn i `areas`-raden.
 
