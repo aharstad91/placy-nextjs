@@ -4,6 +4,7 @@ import type {
   ReportThemeAudio,
   ReportThemeEditorial,
 } from "@/lib/types";
+import { getProjectBrokers } from "@/lib/themes/project-brand";
 import {
   OptionalReportTierSchema,
   type ReportTier,
@@ -21,7 +22,7 @@ import {
  *   Nivå 2 (+Editorial): `editorial` (ikke-tom body eller ≥1 highlight) på ALLE temaer.
  *   Nivå 3 (Maks):       nivå 2 + spillbart VO-spor på alle temaer og
  *                        welcome/hjem/outro + camera-tours-entry for sluggen +
- *                        has3dAddon + assets.brand.
+ *                        has3dAddon + ansvarlig megler + assets.brand.
  *
  * VO-kravet speiler render-laget 1:1: boardet spiller
  * `pickPlayable(reelsAudio) ?? pickPlayable(audio)` der playable = manus+url
@@ -39,7 +40,7 @@ import {
 export interface ReportTierFinding {
   level: "error" | "warning";
   /** Stabil sjekk-id: invalid-tier | editorial | vo | camera-tours |
-   *  has3d-addon | brand-assets | highlight-poi */
+   *  has3d-addon | brokers | brand-assets | highlight-poi */
   check: string;
   detail: string;
 }
@@ -170,6 +171,19 @@ export function validateReportTier(
         level: "error",
         check: "has3d-addon",
         detail: "has3dAddon må være true — kino-kamera krever 3D-kart-addonet",
+      });
+    }
+    // Ansvarlig megler-blokk (slutt-card under reels). Speiler boardets gating:
+    // reportConfig.brokers vinner, ellers demo-fallback i project-brand.ts.
+    // Mangler begge → ingen megler-card rendres. Warning per skall-filosofien:
+    // placeholder-megler er nok struktur, ekte kontaktinfo fylles inn.
+    const hasBrokers =
+      (rc?.brokers?.length ?? 0) > 0 || getProjectBrokers(project.slug).length > 0;
+    if (!hasBrokers) {
+      findings.push({
+        level: "warning",
+        check: "brokers",
+        detail: "ingen ansvarlig megler — legg inn reportConfig.brokers (placeholder eller ekte) for megler-blokken under reels",
       });
     }
     // brand-assets er WARNING, ikke error: per skall/placeholder-filosofien

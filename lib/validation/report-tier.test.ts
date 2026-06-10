@@ -46,6 +46,16 @@ function completeTier3Config(themeIds = ["transport", "mat-drikke"]): ReportConf
     reportTier: 3,
     audioTourEnabled: true,
     assets: { brand: true },
+    brokers: [
+      {
+        name: "Test Megler",
+        title: "Prosjektmegler",
+        phone: "000 00 000",
+        email: "test@example.no",
+        photoUrl: "",
+        officeName: "Testmegleren",
+      },
+    ],
     welcomeAudio: fullAudio("welcome"),
     heroAudio: fullAudio("hjem"),
     outroAudio: fullAudio("outro"),
@@ -99,10 +109,12 @@ describe("validateReportTier — falsifikasjon mot pre-løft Grilstad", () => {
     expect(errorChecks(findings).has("editorial")).toBe(false);
     expect(errorChecks(findings).has("vo")).toBe(false);
 
-    // brand-assets surfacer som warning (skall/placeholder-filosofien),
+    // brand-assets + brokers surfacer som warnings (skall/placeholder-filosofien),
     // highlightPoiIds resolver alle → ingen highlight-warnings.
     const warnings = findings.filter((f) => f.level === "warning");
-    expect(warnings.map((w) => w.check)).toEqual(["brand-assets"]);
+    expect(new Set(warnings.map((w) => w.check))).toEqual(
+      new Set(["brand-assets", "brokers"]),
+    );
   });
 
   it("samme tilstand deklarert nivå 2 består (ærlig re-deklarering)", () => {
@@ -251,6 +263,32 @@ describe("validateReportTier — nivå 3", () => {
     expect(findings.filter((f) => f.level === "warning").map((f) => f.check)).toEqual([
       "brand-assets",
     ]);
+  });
+
+  it("manglende brokers gir warning, ikke error (megler-blokk)", () => {
+    const input = base();
+    input.slug = "uten-demo-megler"; // ikke i project-brand.ts PROJECT_BROKERS
+    input.reportConfig.brokers = undefined;
+    const findings = validateReportTier(input);
+    expect(errors(findings)).toEqual([]);
+    expect(findings.filter((f) => f.level === "warning").map((f) => f.check)).toContain(
+      "brokers",
+    );
+  });
+
+  it("demo-megler-fallback (kjent slug) tilfredsstiller megler-kravet uten reportConfig.brokers", () => {
+    const input = base();
+    input.slug = "stasjonskvartalet"; // har demo-megler i project-brand.ts
+    input.reportConfig.brokers = undefined;
+    expect(validateReportTier(input).filter((f) => f.check === "brokers")).toEqual([]);
+  });
+
+  it("placeholder-broker (≥1) tilfredsstiller megler-kravet", () => {
+    const input = base();
+    input.reportConfig.brokers = [
+      { name: "X (placeholder)", title: "Megler", phone: "0", email: "x@y.no", photoUrl: "", officeName: "Z" },
+    ];
+    expect(validateReportTier(input).filter((f) => f.check === "brokers")).toEqual([]);
   });
 });
 
