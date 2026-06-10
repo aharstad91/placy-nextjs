@@ -77,7 +77,7 @@ const grilstad = JSON.parse(
 ) as unknown as GrilstadFixture;
 
 describe("validateReportTier — falsifikasjon mot pre-løft Grilstad", () => {
-  it("deklarert nivå 3 feiler med nøyaktig de fire reelle manglene", () => {
+  it("deklarert nivå 3 feiler med nøyaktig de tre reelle manglene", () => {
     // Camera-status er FROSSET i fixturen (cameraToursEntry: false) — live
     // getCameraTour-oppslag ville brutt beviset når Unit 6 legger inn entryen.
     const findings = validateReportTier({
@@ -89,18 +89,14 @@ describe("validateReportTier — falsifikasjon mot pre-løft Grilstad", () => {
     });
 
     expect(errorChecks(findings)).toEqual(
-      new Set(["reels-vo", "camera-tours", "has3d-addon", "brand-assets"]),
+      new Set(["camera-tours", "has3d-addon", "brand-assets"]),
     );
-    // Alle 7 temaer mangler reels-VO-url (manus finnes, mp3 er ikke generert)
-    const reels = errors(findings).filter((f) => f.check === "reels-vo");
-    expect(reels).toHaveLength(7);
-    for (const f of reels) expect(f.detail).toContain("mangler url");
 
     // Allerede til stede pre-løft → skal IKKE rapporteres som mangler:
-    // editorial (alle 7), audio-tur (alle 7 + welcome/hero/outro), audioTourEnabled.
+    // editorial (alle 7) og VO (manus-only reelsAudio faller tilbake til
+    // spillbart audio-tur-spor — nøyaktig slik boardet spiller den live).
     expect(errorChecks(findings).has("editorial")).toBe(false);
-    expect(errorChecks(findings).has("tour-audio")).toBe(false);
-    expect(errorChecks(findings).has("audio-tour-enabled")).toBe(false);
+    expect(errorChecks(findings).has("vo")).toBe(false);
 
     // Alle highlightPoiIds resolver mot POI-poolen → ingen warnings.
     expect(findings.filter((f) => f.level === "warning")).toHaveLength(0);
@@ -199,34 +195,40 @@ describe("validateReportTier — nivå 3", () => {
     expect(errors(validateReportTier(base()))).toEqual([]);
   });
 
-  it("audio med manus men uten url feiler (manus-only mellom Steg 8c.1 og 8c.2)", () => {
+  it("reels-VO alene holder som VO-spor (StasjonsKvartalet-modellen)", () => {
+    const input = base();
+    for (const t of input.reportConfig.themes!) t.audio = undefined;
+    expect(errors(validateReportTier(input))).toEqual([]);
+  });
+
+  it("audio-tur alene holder som VO-spor (Grilstad-modellen)", () => {
+    const input = base();
+    for (const t of input.reportConfig.themes!) t.reelsAudio = undefined;
+    expect(errors(validateReportTier(input))).toEqual([]);
+  });
+
+  it("manus-only på begge spor = ikke spillbart → vo-error", () => {
     const input = base();
     input.reportConfig.themes![0].audio = { manus: "Bare manus, ingen mp3." };
-    const findings = validateReportTier(input);
-    const errs = errors(findings);
+    input.reportConfig.themes![0].reelsAudio = { manus: "Heller ingen mp3 her." };
+    const errs = errors(validateReportTier(input));
     expect(errs).toHaveLength(1);
-    expect(errs[0].check).toBe("tour-audio");
-    expect(errs[0].detail).toContain("mangler url");
+    expect(errs[0].check).toBe("vo");
+    expect(errs[0].detail).toContain(input.reportConfig.themes![0].id);
   });
 
-  it("komplett audio men audioTourEnabled false/mangler feiler", () => {
+  it("audioTourEnabled sjekkes ikke (dødt flagg på boardet)", () => {
     const input = base();
     input.reportConfig.audioTourEnabled = false;
-    expect(errorChecks(validateReportTier(input))).toEqual(
-      new Set(["audio-tour-enabled"]),
-    );
-    delete input.reportConfig.audioTourEnabled;
-    expect(errorChecks(validateReportTier(input))).toEqual(
-      new Set(["audio-tour-enabled"]),
-    );
+    expect(errors(validateReportTier(input))).toEqual([]);
   });
 
-  it("manglende welcome/hero/outro-url feiler per spor", () => {
+  it("manglende welcome/hjem/outro-VO feiler per spor", () => {
     const input = base();
     input.reportConfig.outroAudio = { manus: "Outro uten mp3." };
     const errs = errors(validateReportTier(input));
     expect(errs).toHaveLength(1);
-    expect(errs[0].check).toBe("tour-audio");
+    expect(errs[0].check).toBe("vo");
     expect(errs[0].detail).toContain("outro");
   });
 

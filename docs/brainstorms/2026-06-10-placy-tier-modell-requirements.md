@@ -25,6 +25,14 @@ Merk: 3D-kart og live transport er **nivå 1**-innhold — ikke nivå 3-differen
 
 Nivå 2 er en provisorisk mellomtier — ikke solgt eller priset; den skiller editorial-innhold fra full fortelling og er ingen kommersiell forpliktelse før strategi-loggen sier noe annet (salget opererer i dag med to trinn: basic/maks).
 
+### Justering 2026-06-10 (etter live-verifisering, ratifisert av produkteier)
+
+Premisset «render-gatingen er `rc.audioTourEnabled`» viste seg å gjelde den gamle rapport-siden, ikke boardet. Boardet gater på *lyd-tilstedeværelse*: spiller `pickPlayable(reelsAudio) ?? pickPlayable(audio)` der spillbart = manus+url. Verifisert mot live StasjonsKvartalet (fungerer med kun reels-VO i config) og Grilstad (fungerer med kun tour-spor). Konsekvens — modellen forenkles:
+
+- **Nivå 3 audio-krav = spillbart VO-spor per tema + welcome/hjem/outro.** Hvilket av de to sporene (reelsAudio/audio) som bærer VO-en er implementasjonsakse, ikke nivå-krav.
+- **`audioTourEnabled` droppes som krav** — dødt flagg på boardet (ingen UI-konsument).
+- Kjernen i modellen står: produkteier deklarerer nivået ved oppsett (enkel sjekk i starten), hvert nivå har en kravliste med required elements, validatoren sier fra når noe mangler.
+
 ## Requirements
 
 **Nivå-deklarasjon**

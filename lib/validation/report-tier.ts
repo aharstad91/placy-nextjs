@@ -12,17 +12,24 @@ import {
 /**
  * Nivå-validering for rapport-boardet.
  *
- * Deklarert `reportTier` (1/2/3) er sannhetskilden for tiltenkt leveransenivå;
- * denne validatoren sjekker at deklarasjonen er fullt dekket av faktisk innhold.
- * Sjekklisten speiler nivå-definisjonstabellen 1:1 (se
+ * Deklarert `reportTier` (1/2/3) er kontrakten — satt av produkteier ved
+ * oppsett. Hvert nivå har en enkel liste required elements; validatoren
+ * sjekker at de er fylt inn (se
  * docs/brainstorms/2026-06-10-placy-tier-modell-requirements.md):
  *
  *   Nivå 1 (Basic):     ingen krav utover grunnoppsettet — alltid grønn.
  *   Nivå 2 (+Editorial): `editorial` (ikke-tom body eller ≥1 highlight) på ALLE temaer.
- *   Nivå 3 (Maks):       nivå 2 + audioTourEnabled + audio-tur (manus+url) på alle
- *                        temaer og welcome/hero/outro + reels-VO (manus+url) på alle
- *                        temaer + camera-tours-entry for sluggen + has3dAddon +
- *                        assets.brand.
+ *   Nivå 3 (Maks):       nivå 2 + spillbart VO-spor på alle temaer og
+ *                        welcome/hjem/outro + camera-tours-entry for sluggen +
+ *                        has3dAddon + assets.brand.
+ *
+ * VO-kravet speiler render-laget 1:1: boardet spiller
+ * `pickPlayable(reelsAudio) ?? pickPlayable(audio)` der playable = manus+url
+ * (board-data.ts `pickPlayableAudio`, reels-data.ts `c.reelsAudio ?? c.audio`).
+ * Hvilket av de to sporene som bærer VO-en er en implementasjonsakse, ikke et
+ * nivå-krav — StasjonsKvartalet kjører på reelsAudio, Grilstad på audio.
+ * `audioTourEnabled` er et dødt flagg på boardet og sjekkes ikke
+ * (verifisert 2026-06-10: ingen UI-konsument).
  *
  * Ren funksjon uten I/O — camera-tours-oppslaget injiseres av driveren
  * (CLI-script, Vitest, acceptanceCheck) så kjernen er offline-testbar.
@@ -31,9 +38,8 @@ import {
 
 export interface ReportTierFinding {
   level: "error" | "warning";
-  /** Stabil sjekk-id: invalid-tier | editorial | audio-tour-enabled |
-   *  tour-audio | reels-vo | camera-tours | has3d-addon | brand-assets |
-   *  highlight-poi */
+  /** Stabil sjekk-id: invalid-tier | editorial | vo | camera-tours |
+   *  has3d-addon | brand-assets | highlight-poi */
   check: string;
   detail: string;
 }
@@ -56,12 +62,19 @@ function hasEditorialContent(e: ReportThemeEditorial | undefined): boolean {
   return (e.body?.trim().length ?? 0) > 0 || (e.highlightPoiIds?.length ?? 0) > 0;
 }
 
-/** Hvilke deler av et audio-spor som mangler for full nivå 3-dekning. */
-function missingAudioParts(a: ReportThemeAudio | undefined): string[] {
-  const missing: string[] = [];
-  if (!a?.manus?.trim()) missing.push("manus");
-  if (!a?.url) missing.push("url");
-  return missing;
+/** Speiler board-data.ts `pickPlayableAudio`: spillbart = manus+url. */
+function isPlayable(a: ReportThemeAudio | undefined): boolean {
+  return Boolean(a?.url && a?.manus?.trim());
+}
+
+/** Effektivt VO-spor slik boardet velger det: reelsAudio vinner når spillbart,
+ *  ellers audio-tur-sporet (reels-data.ts `c.reelsAudio ?? c.audio` på
+ *  pickPlayable-filtrerte spor). */
+function hasPlayableVO(theme: {
+  audio?: ReportThemeAudio;
+  reelsAudio?: ReportThemeAudio;
+}): boolean {
+  return isPlayable(theme.reelsAudio) || isPlayable(theme.audio);
 }
 
 export function validateReportTier(
@@ -122,46 +135,26 @@ export function validateReportTier(
   }
 
   if (tier === 3) {
-    // Render-gatingen for audio-turen er `rc.audioTourEnabled` — komplett audio
-    // med flagget av er usynlig for brukeren (nøyaktig «halv nivå 3»-feilmoden).
-    if (rc?.audioTourEnabled !== true) {
-      findings.push({
-        level: "error",
-        check: "audio-tour-enabled",
-        detail: "audioTourEnabled må være true — uten flagget skjules hele audio-turen i render-laget",
-      });
-    }
     const standalone = [
       ["welcome", rc?.welcomeAudio],
-      ["hero", rc?.heroAudio],
+      ["hjem", rc?.heroAudio],
       ["outro", rc?.outroAudio],
     ] as const;
     for (const [label, audio] of standalone) {
-      if (!audio?.url) {
+      if (!isPlayable(audio)) {
         findings.push({
           level: "error",
-          check: "tour-audio",
-          detail: `${label}-sporet mangler url`,
+          check: "vo",
+          detail: `${label}-sporet mangler spillbar VO (manus+url)`,
         });
       }
     }
     for (const t of themes) {
-      const missing = missingAudioParts(t.audio);
-      if (missing.length > 0) {
+      if (!hasPlayableVO(t)) {
         findings.push({
           level: "error",
-          check: "tour-audio",
-          detail: `${t.id}: audio-tur-sporet mangler ${missing.join("+")}`,
-        });
-      }
-    }
-    for (const t of themes) {
-      const missing = missingAudioParts(t.reelsAudio);
-      if (missing.length > 0) {
-        findings.push({
-          level: "error",
-          check: "reels-vo",
-          detail: `${t.id}: reels-VO mangler ${missing.join("+")}`,
+          check: "vo",
+          detail: `${t.id}: mangler spillbart VO-spor (reelsAudio eller audio med manus+url)`,
         });
       }
     }

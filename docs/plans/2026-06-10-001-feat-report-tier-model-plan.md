@@ -72,6 +72,14 @@ Fra origin-dokumentet, uendret:
 - **Branch-rekkefølge: `feat/grilstad-marina-board` merges til main FØRST** — Grilstad-data og `audio-tour-build-local.ts` finnes kun der (verifisert: fraværende fra main); tier-arbeidet starter fra merged main. Pre-løft-fixturen (Unit 2) fanges fra branchen FØR merge og før Unit 6–7 endrer den; worktreen ryddes med `git worktree remove` etter merge.
 - **Reels-VO på egen filnøkkel `{theme-id}-reels.mp3`** — audio-turen eier `/audio/{slug}/{theme-id}.mp3`; kollisjon ødelegger karaoke (auto-memory + reels-data-fallback).
 
+## Justering 2026-06-10 (etter live-verifisering)
+
+Origin-dokumentets premiss om `audioTourEnabled`-gating var feil for boardet (dødt flagg, ingen UI-konsument); boardet spiller `pickPlayable(reelsAudio) ?? pickPlayable(audio)`. Ratifisert forenkling (se origin-addendum):
+
+- **Validatorens nivå 3-sjekk:** spillbart VO-spor (manus+url på reelsAudio ELLER audio) per tema + welcome/hjem/outro. `audioTourEnabled`- og separate tour/reels-sjekker er fjernet.
+- **Unit 5 forenkles:** StasjonsKvartalet trenger INGEN audio-re-seed (reels-VO-ene i prod ER VO-dekningen — live verifisert). Det reelle gapet for nivå 3-deklarasjon er **editorial på alle 7 temaer (aldri skrevet i prod)** — kurateringsarbeid, ikke config-fiks. Produkteier avgjør: skriv editorial, eller vent med 3-deklarasjonen.
+- **Unit 7 (Grilstad reels-VO) står som planlagt build-arbeid** (manusene er ferdigskrevet; kortere bilde-alignede spor er den bedre reels-opplevelsen), men er ikke lenger en tier-gate — Grilstad har spillbar VO via tour-sporene allerede.
+
 ## Open Questions
 
 ### Resolved During Planning
@@ -85,7 +93,7 @@ Fra origin-dokumentet, uendret:
 - Hvilke Grilstad-kategorier som får A→B-kino vs. orbit: autoreres mot 3D-tiles i browser (`?author=1`) — StasjonsKvartalet har kun `transport` som A→B; start med 1–2 signatur-kategorier (natur-friluftsliv, marina-batliv) og vurder visuelt. Full kino på alle 7 er trolig over-regi.
 - Eksakt struktur på valideringsfunn (warning vs. error-kategorier for highlightPoiIds-drops) — avgjøres når validatoren skrives.
 - Om `broset-utvikling-as/wesselslokka.json` har editorial nok til nivå 2 eller defaulter til 1 — avgjøres ved kjøring av validatoren i Unit 5. (scandic er Guide, utenfor scope.)
-- **StasjonsKvartalet audio-tilstand (blokker for Unit 5 nivå 3-deklarasjon):** er audio-turen bevisst avslått i prod, eller er `themes[].audio` tapt i en tidligere config-klobring? Svaret avgjør om re-seedingen er restore (fra `public/audio/stasjonskvartalet/` + bevart manus) eller full re-generering.
+- ~~StasjonsKvartalet audio-tilstand~~ **Besvart 2026-06-10:** ingenting er tapt — boardet spiller reels-VO-ene som ligger i prod; tour-sporene var aldri seedet og trengs ikke. Se «Justering 2026-06-10».
 - **Teknostallens products-rad:** identifiseres entydig via project-id-mapping før PATCH (ingen åpenbar slug-match i prod-dump).
 
 ## Implementation Units
