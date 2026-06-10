@@ -6,6 +6,30 @@
 
 ---
 
+## 2026-06-10 — Placy nivå-modell (reportTier): Fase 1 + pipeline-integrasjon (Unit 1–4 av 8)
+
+Gjenopptatt sesjon etter krasj: brainstorm + plan for nivå-modellen (1=Basic / 2=+Editorial / 3=Maks) lå ferdig men uncommitted i event-board-worktreen — ingen kode var startet. Dokumentene flyttet til ny branch `feat/report-tier-model` og Fase 1 + Unit 4 implementert. Plan: `docs/plans/2026-06-10-001-feat-report-tier-model-plan.md`.
+
+**0. Forutsetninger.** `feat/grilstad-marina-board` fast-forward-merget til main (Grilstad-data + `audio-tour-build-local.ts` fantes kun der; tier-arbeidet bygger på dem). Ikke pushet. Worktree `placy-ralph-grilstad` står igjen (sesjonens cwd) — ryddes etter sesjon.
+
+**1. Unit 1 — deklarasjonsfeltet.** `ReportConfig.reportTier?: 1|2|3` (lib/types.ts; navnet unngår `poiTier`-kollisjon) + Zod-literal-union `lib/validation/report-tier-schema.ts` (avviser `"3"`, 0, 4). `undefined` → nivå 1. Render-laget gater IKKE på feltet.
+
+**2. Unit 2 — validator-kjerne + falsifikasjonsbevis.** `lib/validation/report-tier.ts`: ren funksjon, funn som data (`{level, check, detail}[]`), camera-tours-oppslag injiseres. Sjekkliste speiler nivå-tabellen 1:1 (nivå 2: editorial på ALLE temaer; nivå 3: + audioTourEnabled + audio-tur manus+url alle temaer/welcome/hero/outro + reels-VO + camera-tours + has3dAddon + assets.brand) + warning for highlightPoiIds som ikke resolver. **R4-beviset:** pre-løft Grilstad-fixture (`__fixtures__/grilstad-pre-lift.json`, timings strippet, camera-status FROSSET i fixturen så beviset overlever Unit 6-løftet) deklarert nivå 3 → feiler med nøyaktig `reels-vo` ×7, `camera-tours`, `has3d-addon`, `brand-assets` — og ingenting annet. 22 tester + sveip over lokale JSON-prosjekter.
+
+**3. Unit 3 — `npm run validate:tier`.** Tynn driver over begge datakilder (lokal JSON + Supabase products, config-parsing tåler jsonb og json-string), `--local-only` for offline, exit 1 ved under-leveranse. Kjørt mot reell tilstand: **26 prosjekter (2 lokale + 24 Supabase), 0 under-levert** (alle nivå 1-default). Bevisst feil-deklarasjon (Grilstad nivå 3 lokalt) → exit 1 med navngitt mangelliste. Dokumentert i COMMANDS.md.
+
+**4. Unit 4 — pipelinene deklarerer.** `provision-rapport.ts`: `--tier 1|2|3`-flagg + readline-prompt (non-TTY → 1); `acceptanceCheck()` kjører validatoren mot nettopp-skrevet config og feiler ved under-leveranse. `create-report-project.ts`: `reportTier` skrives i initial config (begge insert-stier); utelatt option → feltet utelates. `generate-story.ts`: samme flagg/prompt. **Bifunn fikset:** `generate-story --update` mistet hele eksisterende `reportConfig` (`...newProject`-spread i merge) — audio/editorial/trails ville røket ved re-generering; bevares nå eksplisitt via `{...existingProject?.reportConfig, ...}`.
+
+**Verifisering:** 712/712 tester, `tsc --noEmit` rent, ESLint 0 errors. 6 commits på `feat/report-tier-model`.
+
+### Åpent / neste steg
+
+- **Unit 5 (klassifisering, PROD-MUTASJON — `/effort xhigh` før kjøring):** Teknostallen → `reportTier: 1`, StasjonsKvartalet → `3`. Blokker: StasjonsKvartalet mangler `themes[].audio` + `audioTourEnabled` HELT i prod (kun reelsAudio finnes; tour-mp3-ene ligger i `public/audio/stasjonskvartalet/`) — **bevisst avslått eller config-klobring?** Svaret avgjør restore vs. re-generering. Teknostallens products-rad må identifiseres via project-id-mapping.
+- **Unit 6–8 (Grilstad-løft til ekte nivå 3):** camera-poser autoreres interaktivt i browser (`?author=1`; start natur-friluftsliv + marina-batliv), brand-assets må bekreftes/produseres før `assets.brand: true`, reels-VO ×7 genereres på egen filnøkkel `{theme-id}-reels.mp3` (ALDRI overskrive tour-mp3 — karaoke ryker) og gjennomlyttes (stokastisk TTS, norske stedsnavn: Fullriggerøya, Grilstadfjæra, Ladestien).
+- Worktree-opprydding: `git worktree remove ../placy-ralph-grilstad` når sesjonen er ferdig; main er 16 commits foran origin (ikke pushet).
+
+---
+
 ## 2026-06-09 — Kulturnatt event-board portert til rapport-board-arkitektur (Variant A valgt)
 
 Branch-sesjon (`feat/event-board-foundation`, ultracode). Mål: porte Kulturnatt-2025-prototypen fra den gamle Explorer-arkitekturen over til den nye rapport-board-arkitekturen (venstre sidebar + persistent 3D/2D-kart + live transport), og håndtere festival/tidsperiode-dimensjonen. `/ce-brainstorm` → `/ce-plan` → `/ce-work`, deretter en to-variant-sammenligning bygd i parallelle worktrees.
