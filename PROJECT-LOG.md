@@ -6,6 +6,28 @@
 
 ---
 
+## 2026-06-10 (forts.) — POI-popup-bugen landet: reprodusert generelt, fikset, deployet og live-verifisert
+
+Fortsettelse av nivå-modell-sesjonen. Brukeren fant under Grilstad-browser-runden at markør-klikk ikke ga popup. Root-cause var allerede funnet og fikset (commit `80787ff`), men deploy ble holdt tilbake av bekymring for live demo-boards (Teknostallen/StasjonsKvartalet). Denne økten beviste at fiksen var trygg — og at bugen faktisk lå live.
+
+**1. Bugen er generell, ikke Grilstad-spesifikk.** `BoardReelsSync`-effekten i `ReportReelsPage` wiper eksplisitt POI-valg: `OPEN_POI` setter `activeCategoryId` → effekten re-kjører → aktivt reels-kort er ikke-kategori (welcome/hjem/outro/megler) → `RESET_TO_DEFAULT` i samme commit-syklus → popup fjernes **før paint**. Tilstands-avhengigheten forklarte det tilsynelatende falske negative fra forrige økt: på et kategori-kort som matcher POI-ens kategori overlever popupen (det var det brukeren traff i skjermbildet sitt) — på ikke-kategori-kortene dør den stille.
+
+**2. Baseline-bevis via MutationObserver.** DOM-sampling bommer på wipen (skjer før paint), så reproen brukte MutationObserver: lokal StasjonsKvartalet UTEN fiksen → klikk på Nabolaget-kortet ga `add` → `rm` av popup-noden («Dronningens Tenner») i samme syklus, popup aldri synlig. MED fiksen (identisk prosedyre, samme markør): kun `add`, popup består, lukkes pent med ×, sync gjenopptas. Fiksen er en ren early-return (`phase === "poi"` → return) som bare *hindrer* en reset — Teknostallen (0 reels-kort → `reelsDriveCategories=false`) går aldri inn i effekten.
+
+**3. Testteknikk verdt å huske:** (a) frys reels-kort ved å pause `<audio>` (auto-advance skjer på `ended`); (b) hopp mellom kort med `audio.currentTime = duration - 0.5`; (c) markører i 3D-kart klikkes via `dispatchEvent(new CustomEvent('gmp-click', {bubbles, composed}))` på `gmp-marker-3d-interactive`; (d) markørene monteres først ETTER welcome-kortet.
+
+**4. Deploy: merge + push alt (produkteier-valg).** `feat/report-tier-model` (13 commits) fast-forwardet til main, `npm run build` grønn, pushet til origin — 24 commits totalt live (Kulturnatt event-board, hele tier-modellen, Grilstad nivå 3, popup-fiksen). Vercel-deploy verifisert grønn via GitHub commit-status (Vercel MCP ikke tilkoblet i sesjonen).
+
+**5. Live-verifisering:** identisk MutationObserver-prosedyre mot www.placy.no/…/stasjonskvartalet/rapport-board → kun `add`, popup består på Nabolaget-kortet. Bugen som lå i produksjon (markør-klikk gjorde ingenting i welcome/hjem/outro-vinduene) er fikset live.
+
+### Åpent / neste steg (uendret fra forrige entry, minus deploy)
+
+- Grilstad browser-runde (reels-lytting/stedsnavn, camera-poser via `?author=1`, ekte brand-assets) — nå mot live eller :3001.
+- Unit 5 (prod-klassifisering av Teknostallen/StasjonsKvartalet — `/effort xhigh` før kjøring).
+- Worktree-opprydding: `git worktree remove ../placy-ralph-grilstad`. Main er nå **synk med origin** (pushet denne økten).
+
+---
+
 ## 2026-06-10 — Placy nivå-modell (reportTier): Fase 1 + pipeline-integrasjon (Unit 1–4 av 8)
 
 Gjenopptatt sesjon etter krasj: brainstorm + plan for nivå-modellen (1=Basic / 2=+Editorial / 3=Maks) lå ferdig men uncommitted i event-board-worktreen — ingen kode var startet. Dokumentene flyttet til ny branch `feat/report-tier-model` og Fase 1 + Unit 4 implementert. Plan: `docs/plans/2026-06-10-001-feat-report-tier-model-plan.md`.
