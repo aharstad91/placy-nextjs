@@ -1,0 +1,123 @@
+{
+  "reviewer": "reliability",
+  "findings": [
+    {
+      "title": "fetchPlaceDetails: no timeout on Google Places HTTP call",
+      "severity": "P1",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/google-places/fetch-place-details.ts",
+      "line": 56,
+      "confidence": 0.92,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": true,
+      "why_it_matters": "The `fetch(url)` call at line 56 has no AbortSignal/timeout. If Google Places API hangs, `enrichTrustSignals` workers stall indefinitely. The concurrency pool (enrichTrustSignals, batchValidateTrust) limits *parallel* slots but does not limit *per-request wall time*. A single slow worker holds a slot open forever, eventually blocking all 10 slots and hanging the entire pipeline invocation. The trust-validate route was also affected but is now sharing this codepath, so the same pre-existing gap applies to both.",
+      "evidence": "`fetch(url)` with no `signal` option at lib/google-places/fetch-place-details.ts:56. checkWebsite in poi-trust.ts has a 3s AbortController timeout (line 272), but fetchPlaceDetails does not.",
+      "suggested_fix": "Add `const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 10_000); try { const response = await fetch(url, { signal: controller.signal }); ... } finally { clearTimeout(timer); }` in fetchPlaceDetails. Or extract a shared `fetchWithTimeout` helper."
+    },
+    {
+      "title": "batchValidateTrust concurrency pool: no .catch on checkWebsite, pool can deadlock if checkWebsite throws",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/utils/poi-trust.ts",
+      "line": 366,
+      "confidence": 0.72,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": true,
+      "why_it_matters": "The pool at line 366 calls `checkWebsite(url).then(...)` with no `.catch()`. `checkWebsite` has an internal try/catch and currently cannot throw — it always returns a `WebsiteCheckResult`. However, if a future change to `checkWebsite` allows a throw path (or a Node/runtime upgrade causes `fetch` to throw in a new case), the rejection would be unhandled: `running` would never decrement, the pool would eventually exhaust all slots and the outer `Promise<void>` would never resolve, hanging `batchValidateTrust` indefinitely. The new pipeline-step (`validateReportTrust`) calls `batchValidateTrust` serially, so a deadlock here halts the provisioning run with no timeout.",
+      "evidence": "lib/utils/poi-trust.ts:366 — `checkWebsite(url).then((result) => { ... })` with no `.catch()` handler. The outer Promise has no reject path and no overall timeout.",
+      "suggested_fix": "Add `.catch((e) => { domainResults.set(domain, { responds: false, isSuspicious: false }); /* log e */ })` before `.then()`, or chain it after. Also add an overall promise-level timeout/race to prevent permanent hangs."
+    },
+    {
+      "title": "inherit-area-editorial: REST GET/PATCH fetch calls have no timeout",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts",
+      "line": 191,
+      "confidence": 0.85,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Two bare `fetch()` calls with no AbortSignal: the products GET at line 191 and the products PATCH at line 327. If Supabase REST is slow or a TCP connection hangs, the pipeline step (and the entire provisioning run) stalls indefinitely. Pipeline scripts run unattended; there is no outer watchdog. Because inheritAreaEditorial throws on PATCH failure (fail-loud contract), a hung PATCH also blocks the step from completing normally or failing cleanly.",
+      "evidence": "`fetch(getUrl.toString(), { headers })` at line 191, `fetch(patchUrl.toString(), { method: 'PATCH', ... })` at line 327 — neither has a `signal` option.",
+      "suggested_fix": "Wrap both calls with an AbortController and a 30s timeout (Supabase REST calls are fast under normal conditions). Pattern already exists in checkWebsite (poi-trust.ts:271-272)."
+    },
+    {
+      "title": "curate-area.ts: REST GET/PATCH fetch calls have no timeout",
+      "severity": "P3",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/scripts/curate-area.ts",
+      "line": 92,
+      "confidence": 0.85,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "fetchAreaRow (line 92) and the PATCH (line 221) are bare fetch() calls. If Supabase REST hangs, the curation script hangs indefinitely. Lower severity than the pipeline finding because this is a manually-invoked operator script, not an automated provisioning run.",
+      "evidence": "`fetch(url, { headers: restHeaders() })` at line 92 and `fetch(patchUrl, { method: 'PATCH', ... })` at line 221 — no signal.",
+      "suggested_fix": "Same AbortController + 30s timeout pattern."
+    },
+    {
+      "title": "trust-step partial state: per-POI scoring writes without transaction — mid-run crash leaves board in mixed-score state",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/validate-report-trust.ts",
+      "line": 688,
+      "confidence": 0.82,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Trust scores are written one POI at a time in a for-loop (lines 684-700). If the process is killed mid-loop (OOM, Ctrl-C, network drop), some POIs have scores and others remain null. The null ones are visible (\"null = vis\" contract), so the board is not broken, but the stillNull list emitted at step-end will be absent. On re-run, the already-scored POIs are correctly skipped (line 105 — `trust_score != null` check), so re-runs are safe and idempotent. The residual risk is that a partial run produces no stillNull summary, so the operator QA-gate (Unit 7: \"klarér stillNull before counting board as evaluated\") is silently skipped.",
+      "evidence": "validate-report-trust.ts:684-700 — sequential `updatePOITrustScore` calls in a for-loop. The idempotency guard at line 105 (`if (row.trust_score != null) { result.skipped++ }`) confirms re-runs are safe, but there is no detection of a prior partial run or any way to re-surface the stillNull list for already-partially-scored batches.",
+      "suggested_fix": "Low priority for PoC. Advisory: after the scoring loop completes, re-query the DB for Google-POIs still at null and include them in a persistent log file (e.g., `<projectId>-trust-audit.json`), so the stillNull list survives a partial/re-run and the QA gate is always completable."
+    },
+    {
+      "title": "enrichTrustSignals: concurrency pool has no reject path — outer Promise can never reject, but resolve() is never called when enrichEntries is non-empty and all workers succeed silently",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/google-places/trust-enrichment.ts",
+      "line": 84,
+      "confidence": 0.75,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "The outer `new Promise<void>(resolve => ...)` (line 84) has no reject path and no overall timeout. The `.finally()` block calls `resolve()` only when `running === 0 && idx >= enrichEntries.length`. If a future code path inside the `.then()` block throws (e.g., the async supabase update rejects in a way that escapes `.catch()`), `running` would never decrement and `resolve()` would never fire — hanging `enrichTrustSignals` forever and blocking `validateReportTrust`. Currently the `.catch(e)` chain prevents this, so the current code is safe. The gap is the absence of a time-based escape hatch: if the pool hangs for any reason, the provisioning script hangs with no recovery path.",
+      "evidence": "trust-enrichment.ts:84 — `new Promise<void>((resolve) => { ... })` with no reject and no timeout race.",
+      "suggested_fix": "Wrap the pool in `Promise.race([poolPromise, new Promise((_, reject) => setTimeout(() => reject(new Error('enrichTrustSignals timeout')), 120_000))])`. Alternatively, use `p-limit` or a proper async pool that surfaces timeouts."
+    }
+  ],
+  "residual_risks": [
+    {
+      "title": "Trust-step writes are per-POI sequential — no atomicity guarantee across the batch",
+      "description": "The plan explicitly states fail-soft per POI and requires QA-clearance of stillNull. The per-POI write pattern (vs. a single batch upsert) is intentional for visibility, but means there is no database-level guarantee that all POIs in a batch are scored together. The risk is fully mitigated by the idempotency check (trust_score != null → skip) and the QA gate, but only if the operator actually re-runs on partial failure.",
+      "severity": "low"
+    },
+    {
+      "title": "getProductFromSupabase / transformToReportData called from pipeline context — dynamic import defers but doesn't eliminate the 'use client' import risk",
+      "description": "inherit-area-editorial.ts uses dynamic import() to defer loading report-data.ts and queries.ts. The plan documents this as a known gotcha with a spike gate (Unit 2). The dynamic import correctly isolates the module from the static graph. The residual risk is that if transformToReportData or its transitive dependencies perform side effects at import time that fail in a tsx/Node context (e.g., useContext calls, next/navigation, next/image evaluated at module level rather than component level), the dynamic import will reject. The risk is bounded to the pipeline script context only; the rendered board is unaffected.",
+      "severity": "medium"
+    },
+    {
+      "title": "Optimistic lock on products.updated_at: two concurrent provisioning runs for the same project will cause the second PATCH to hit 0 rows and throw",
+      "description": "The fail-loud contract on optimistic-lock failure is correct per plan. However, the error message instructs the operator to re-run the step — but a re-run re-reads updated_at and succeeds only if no further concurrent write happens. In practice, this is a PoC with a single operator. For the pipeline as designed, this is acceptable.",
+      "severity": "low"
+    }
+  ],
+  "testing_gaps": [
+    {
+      "title": "No test covers enrichTrustSignals pool behavior when all fetch calls fail (all failedPoiIds)",
+      "description": "The pool's resolve() fires only when running===0 && idx>=length. The .finally() block handles individual failures correctly, but there is no test that exercises a 100%-failure batch to verify the outer Promise actually resolves (vs. hangs). A unit test with a mocked fetchPlaceDetails that always throws would pin this.",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/google-places/trust-enrichment.ts"
+    },
+    {
+      "title": "No test for inherit-area-editorial when GET products returns HTTP 5xx (should be fail-soft, currently handled as warning+skip)",
+      "description": "The GET failure path at line 191 returns `{ ...result, skipped: true }` and pushes a warning. This is the correct fail-soft behavior. However, there is no test asserting this path, so a refactor that accidentally makes it throw would not be caught.",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts"
+    },
+    {
+      "title": "No test for validate-report-trust when re-run against a partially-scored project (idempotency guarantee)",
+      "description": "The idempotency check (trust_score != null → skip) is code-covered by the 'allerede scoret POI → skippes' test scenario in the plan, but the diff does not show this test implemented in validate-report-trust.test.ts. If the test is absent, a regression in the skip check would re-score already-processed POIs.",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/validate-report-trust.test.ts"
+    }
+  ]
+}

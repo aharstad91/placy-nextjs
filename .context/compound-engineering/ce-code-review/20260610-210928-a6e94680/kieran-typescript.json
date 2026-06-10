@@ -1,0 +1,123 @@
+{
+  "reviewer": "kieran-typescript",
+  "findings": [
+    {
+      "title": "patches.get() called without non-null assertion produces ReportThemeEditorial | undefined type widening in nextThemes",
+      "severity": "P1",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts",
+      "line": 316,
+      "confidence": 0.88,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Line 316 calls `patches.get(theme.id)` inside the `patches.has(theme.id)` branch. TypeScript's return type for `Map.get()` is `V | undefined` — it does not narrow inside a ternary condition guard the way `if (map.has(k))` would in a block. The spread `{ ...theme, editorial: patches.get(theme.id) }` therefore types `editorial` as `ReportThemeEditorial | undefined`, which is assignable to `ConfigTheme['editorial']` (which is also `ReportThemeEditorial | undefined`) so the compiler does not reject it. But the semantic intent is to always write a defined value here, and the test in scenario (h) only passes because the mock returns the right value — a future refactor that changes the conditional shape could silently introduce `undefined` editorials.",
+      "evidence": "lib/pipeline/inherit-area-editorial.ts line 315-317: `const nextThemes = configThemes.map((theme) => patches.has(theme.id) ? { ...theme, editorial: patches.get(theme.id) } : theme);` — `patches.get()` inside a ternary guard is not narrowed.",
+      "suggested_fix": "Replace `patches.get(theme.id)` with `patches.get(theme.id)!` (non-null assertion is safe here because the branch is guarded by `patches.has(theme.id)`) or extract: `const editorial = patches.get(theme.id); return editorial ? { ...theme, editorial } : theme;`"
+    },
+    {
+      "title": "enrichTrustSignals concurrency pool never rejects — an unhandled rejection inside `.then()` that throws synchronously would escape and the outer Promise<void> would hang",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/google-places/trust-enrichment.ts",
+      "line": 84,
+      "confidence": 0.78,
+      "autofix_class": "manual",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "The Promise executor passed to `new Promise<void>` only captures `resolve`, never `reject`. The `.catch()` on each fetch chain handles async errors correctly, but if the synchronous `supabase.from().update().eq()` call itself throws (e.g. because the client is garbage-collected mid-run or the API surface changes), the error is caught by `.catch()`, which is fine. However, any synchronous throw inside the while-loop body in `next()` (for example an exception from `enrichEntries[idx++]` or a future code change in the loop) would propagate upward to the executor without being caught, and the Promise would never settle (hang). The `.finally()` path that calls `resolve()` when `running === 0` is the only exit — there is no `reject` path. In a Node.js pipeline script this means the process hangs indefinitely on a coding error.",
+      "evidence": "`await new Promise<void>((resolve) => { const next = () => { ... }; next(); });` — no `reject` parameter captured; no try/catch around the `next()` body.",
+      "suggested_fix": "Add `reject` to the executor signature and wrap the `next()` body in try/catch that calls `reject(e)` for unhandled sync exceptions, or convert the concurrency pool to use a proper p-limit or a simple recursive async queue that naturally propagates rejections."
+    },
+    {
+      "title": "InheritAreaEditorialResult.skipped is optional, creating ambiguity between 'explicitly false' and 'not set' at the call-site in provision-rapport.ts",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts",
+      "line": 57,
+      "confidence": 0.82,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "`skipped?: boolean` means the field can be `true`, `false`, or `undefined`. The orchestrator at `scripts/provision-rapport.ts` line 486 checks `if (inheritResult.skipped)` — which is correct for the common case. But the result initializer (line 137) sets no `skipped` field, so for a successful run `skipped` is `undefined`, not `false`. Any downstream consumer that wants to distinguish 'inherited' from 'skipped' must rely on truthiness rather than a precise boolean check. This is a structural imprecision that makes the type harder to trust, especially as more callers are added in slice 2/3.",
+      "evidence": "`skipped?: boolean` in `InheritAreaEditorialResult`; initializer at line 137 does not set `skipped`; success path at line 354 returns without setting `skipped` (remains `undefined`).",
+      "suggested_fix": "Use a discriminated union: `type InheritAreaEditorialResult = { skipped: true; warnings: string[] } | { skipped: false; areaName: string; themesInherited: string[]; highlights: ...; warnings: string[] }`. This makes the type self-documenting and narrows correctly in both branches."
+    },
+    {
+      "title": "rows[0] cast to CuratedArea without verifying report_editorial is a non-array object — array JSON value would pass isPolygonGeometry check but fail at runtime",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/find-area-for-point.ts",
+      "line": 113,
+      "confidence": 0.72,
+      "autofix_class": "manual",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Line 113 checks `row.report_editorial === null || typeof row.report_editorial !== 'object'`. However `typeof [] === 'object'` in JavaScript, so a DB row where `report_editorial` was accidentally stored as a JSON array (e.g. `[]`) passes the guard and the row is cast to `CuratedArea` with `report_editorial` typed as `AreaReportEditorial` (= `Record<string, unknown>`). `Object.entries([])` returns indices as keys, and the arve-steget would try to parse array indices as theme IDs, silently producing zero valid themes and an unhelpful warning. The guard should also exclude arrays.",
+      "evidence": "lib/pipeline/find-area-for-point.ts line 113: `row.report_editorial === null || typeof row.report_editorial !== 'object'` — does not exclude `Array.isArray(row.report_editorial)`.",
+      "suggested_fix": "Change to: `if (row.report_editorial === null || typeof row.report_editorial !== 'object' || Array.isArray(row.report_editorial))`"
+    },
+    {
+      "title": "curate-area.ts uses SUPABASE_KEY! (non-null assertion) before the env-check guard",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/scripts/curate-area.ts",
+      "line": 73,
+      "confidence": 0.85,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "`restHeaders()` is defined at module-level scope (line 71-76) and uses `SUPABASE_KEY!`. The env-check guard that validates `SUPABASE_URL` and `SUPABASE_KEY` is inside `main()` (line 374-380). If `restHeaders()` is ever called before `main()` runs — or if the module is imported in a test that doesn't stub the env — the non-null assertion hides the `undefined` and produces `'undefined'` as the literal apikey string in the Authorization header, which silently sends authenticated requests with a broken key. The guard is fine but the assertion at the definition site is structurally misleading.",
+      "evidence": "`const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;` (line 43, typed `string | undefined`) is used as `SUPABASE_KEY!` inside `restHeaders()` at line 73.",
+      "suggested_fix": "Either assert inside `restHeaders()` after the guard has already run (e.g. use `SUPABASE_KEY as string` with a comment pointing at the guard), or restructure so `restHeaders()` throws with a clear message if the key is absent: `if (!SUPABASE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set');`"
+    },
+    {
+      "title": "AreaReportEditorial typed as Record<string, unknown> flows into Object.entries loop — per-theme value is unknown, Zod parsing is correct but the cast `row as CuratedArea` widens boundary to the union type without coordinate-depth checking",
+      "severity": "P3",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/find-area-for-point.ts",
+      "line": 26,
+      "confidence": 0.65,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "`AreaReportEditorial = Record<string, unknown>` is an explicit design choice (comment at line 24-26 documents it) and the arve-steget defends with `ThemeEditorialStagingSchema.safeParse`. This is acceptable. The observation is that the `isPolygonGeometry` type guard at line 52-59 accepts a geometry whose `coordinates` is any array — it does not check array depth (Polygon is `number[][][]`, MultiPolygon is `number[][][][]`). `pointInGeometry` casts coordinates with `as number[][]` and `as number[][][][]` based solely on the `type` field. A row where `type === 'Polygon'` but `coordinates` has the wrong depth would produce `undefined`/`NaN` in the ray-cast arithmetic and return `false` (miss), not throw. This is fail-safe but silently wrong — a corrupted polygon would produce a permanent level-1 fallback with no warning.",
+      "evidence": "lib/utils/geo.ts lines 130-132: `return pointInPolygon(x, y, geometry.coordinates[0] as number[][])` — the cast silences the type mismatch if `coordinates` is `number[][][]` (MultiPolygon depth).",
+      "suggested_fix": "Advisory: add a depth check in `isPolygonGeometry` or add a coordinate validation step in `pointInGeometry` that warns on unexpected depth before returning false. Not blocking."
+    }
+  ],
+  "residual_risks": [
+    {
+      "risk": "Dynamic import of `@/components/variants/report/report-data` in `inheritAreaEditorial` — the module-header comment correctly documents the 'use client' chain risk and the load-env workaround, but this pattern cannot be statically type-checked or caught by tsc. If `transformToReportData` changes its signature (e.g. stricter parameter type), the call at line 167 will fail at runtime in the pipeline without a compile-time error. The test mocks the import so this is not caught by the test suite either.",
+      "severity": "medium",
+      "mitigation": "Spike noted in plan (Unit 2 Fase 1-spike). If the spike confirms the import works, add a runtime type-guard on the returned `board` object before accessing `board.themes`. The current code accesses `board.themes.map(...)` without checking if `board` or `themes` is defined."
+    },
+    {
+      "risk": "The `enrichTrustSignals` concurrency pool's `resolve()` is only called when `idx >= enrichEntries.length && running === 0` inside `.finally()`. If `concurrency` is larger than `enrichEntries.length`, the `while` loop exits normally after launching all tasks (all within the same `next()` invocation), but `resolve()` is only called from `.finally()` — so the Promise does resolve correctly. However this logic is non-obvious and any edit to the while-loop exit condition (e.g. changing `&&` to `||`) would create a hang. Low blast radius because it is a script, not server code.",
+      "severity": "low",
+      "mitigation": "Convert to an explicit async queue or use Promise.allSettled on batches."
+    },
+    {
+      "risk": "`validateReportTrust` re-reads enriched POI rows from DB (step 4) after enrichment. If a POI was enriched successfully but the re-read returns fewer rows than expected (due to a concurrent delete or a transient query error), the affected POIs end up in `stillNull` via the set-difference check at lines 163-166. This is the documented 'defensive' behavior, but a transient DB hiccup would cause permanent QA burden (the stillNull list must be manually cleared). There is no retry or distinguishing between 'not enriched because of real failure' vs 'not enriched because of transient re-read failure'.",
+      "severity": "low",
+      "mitigation": "Acceptable for a PoC. In slice 2 consider separating the 'enrichment failed' and 'reread failed' stillNull reasons."
+    }
+  ],
+  "testing_gaps": [
+    {
+      "gap": "No test for `inheritAreaEditorial` when `transformToReportData` returns a project where `board.themes` is empty (no themes matched). The code at line 168 calls `board.themes.map(...)` — if `transformToReportData` returns something without a `.themes` array (e.g. because the dynamic import chain changes), this would throw at runtime with a non-descriptive error rather than the expected fail-soft + warning.",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.test.ts",
+      "priority": "medium"
+    },
+    {
+      "gap": "`enrichTrustSignals` has no unit tests of its own — it is exercised indirectly through `validate-report-trust.test.ts` which mocks `fetchPlaceDetails`. The concurrency pool logic (the hand-rolled scheduler) is never directly tested with concurrency > 1. A test with `concurrency: 2` and 5 entries where entries 2 and 4 fail would confirm the pool drains correctly.",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/google-places/trust-enrichment.ts",
+      "priority": "low"
+    },
+    {
+      "gap": "No test for `findAreaForPoint` when `report_editorial` is a JSON array (`[]`) — the current guard allows arrays through and casts to `CuratedArea`. If this gap is not addressed, the array-as-editorial scenario would silently pass the guard, reach `Object.entries`, produce zero patches, and log a misleading 'ingen temaer å arve' warning instead of the correct 'ugyldig report_editorial' warning.",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/find-area-for-point.test.ts",
+      "priority": "medium"
+    }
+  ]
+}

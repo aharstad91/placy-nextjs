@@ -1,0 +1,13 @@
+{
+  "reviewer": "project-standards",
+  "findings": [],
+  "residual_risks": [
+    {
+      "description": "scripts/curate-area.ts bruker det gamle mønsteret (import dotenv, deretter config()-kall) istedenfor den nye import \"./load-env\"-sidemodus. Dokumentert i scripts/load-env.ts og provision-rapport.ts: tsx hoister statiske imports OVER et inline config()-kall, så @/lib/supabase/client evalueres FØR .env.local lastes, og anon-klienten blir permanent null. curate-area.ts kaller createServerClient() i listPoiCandidates() — denne vil stille returnere null i TSX-kontekst, noe som gir en uventet process.exit() i stedet for en tydelig env-feil. Ikke en CLAUDE.md-regel i seg selv, men et kjent mønster som vil gjøre scriptet upålitelig.",
+      "severity": "operational",
+      "file": "scripts/curate-area.ts",
+      "line": 1349
+    }
+  ],
+  "testing_gaps": []
+}

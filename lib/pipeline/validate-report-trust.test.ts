@@ -47,11 +47,14 @@ function buildMockSupabase(opts: {
   projectPois: Array<{ poi_id: string }>;
   rows: MockRow[];
   projectPoisError?: { message: string } | null;
+  /** Feil på N-te pois-SELECT (1-basert) — 2 = re-lesingen etter enrichment */
+  poisReadErrorOnCall?: number;
 }) {
   // Levende rad-kopier: enrichment-updates muteres inn slik at re-lesingen
   // (andre .in()-kallet) ser enrichede signaler — som ekte DB
   const rows = opts.rows.map((r) => ({ ...r }));
   const updates: Array<{ id: string; payload: Record<string, unknown> }> = [];
+  let poisReadCalls = 0;
 
   return {
     rows,
@@ -70,12 +73,19 @@ function buildMockSupabase(opts: {
       if (table === "pois") {
         return {
           select: vi.fn(() => ({
-            in: vi.fn((_col: string, ids: string[]) =>
-              Promise.resolve({
+            in: vi.fn((_col: string, ids: string[]) => {
+              poisReadCalls++;
+              if (opts.poisReadErrorOnCall === poisReadCalls) {
+                return Promise.resolve({
+                  data: null,
+                  error: { message: "re-read boom" },
+                });
+              }
+              return Promise.resolve({
                 data: rows.filter((r) => ids.includes(r.id)),
                 error: null,
-              })
-            ),
+              });
+            }),
           })),
           update: vi.fn((payload: Record<string, unknown>) => ({
             eq: vi.fn((_col: string, id: string) => {
@@ -332,5 +342,59 @@ describe("validateReportTrust — Unit 3", () => {
     expect(result.scored).toBe(0);
     expect(result.stillNull).toEqual([]);
     expect(result.warnings.some((w) => w.includes("connection refused"))).toBe(true);
+  });
+
+  it("re-lesing etter enrichment feiler → alle kandidater i stillNull, ingen exception", async () => {
+    const rows = [googleRow(1), googleRow(2)];
+    const mock = buildMockSupabase({
+      projectPois: rows.map((r) => ({ poi_id: r.id })),
+      rows,
+      poisReadErrorOnCall: 2, // andre pois-SELECT = re-lesingen
+    });
+    useMockSupabase(mock);
+
+    const result = await validateReportTrust({ projectId: "p1" });
+
+    expect(result.scored).toBe(0);
+    expect(result.stillNull.sort()).toEqual(["Kafé 1", "Kafé 2"]);
+    expect(
+      result.warnings.some((w) => w.includes("Re-lesing etter enrichment feilet"))
+    ).toBe(true);
+    expect(batchValidateTrustMock).not.toHaveBeenCalled();
+    expect(updatePOITrustScoreMock).not.toHaveBeenCalled();
+  });
+
+  it("tomt project_pois-resultat (ingen feil) → scored 0 og warning, ingen exception", async () => {
+    const mock = buildMockSupabase({ projectPois: [], rows: [] });
+    useMockSupabase(mock);
+
+    const result = await validateReportTrust({ projectId: "p1" });
+
+    expect(result.scored).toBe(0);
+    expect(result.stillNull).toEqual([]);
+    expect(result.warnings.some((w) => w.includes("Ingen POI-er koblet"))).toBe(true);
+    expect(fetchPlaceDetailsMock).not.toHaveBeenCalled();
+    expect(batchValidateTrustMock).not.toHaveBeenCalled();
+  });
+
+  it("place not found (fetchPlaceDetails → null) → POI i stillNull, scores ikke med degraderte signaler", async () => {
+    const rows = [googleRow(1), googleRow(2)];
+    useMockSupabase(supabaseFor(rows));
+
+    fetchPlaceDetailsMock.mockImplementation(async (placeId) => {
+      if (placeId === "ChIJ-1") return null;
+      return ENRICHED_DETAILS;
+    });
+
+    const result = await validateReportTrust({ projectId: "p1" });
+
+    expect(result.scored).toBe(1);
+    expect(result.stillNull).toEqual(["Kafé 1"]);
+    expect(result.warnings.some((w) => w.includes("Place not found"))).toBe(true);
+
+    // POI-en scores IKKE med null-signaler (ville gitt 0.45 og stille skjuling)
+    const scoredIds = batchValidateTrustMock.mock.calls[0][0].map((p) => p.id);
+    expect(scoredIds).not.toContain("google-ChIJ-1");
+    expect(updatePOITrustScoreMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -44,6 +44,20 @@ import type { ReportThemeEditorial } from "@/lib/types";
 /** Visningstaket — kurateringen har 4–6 kandidater per tema som slack. */
 const MAX_HIGHLIGHTS = 3;
 
+/** Timeout på Supabase REST-kall — henger aldri evig (mønster: checkWebsite). */
+const REST_TIMEOUT_MS = 30_000;
+
+/** fetch med AbortController-timeout — timeout/nettverksfeil kaster som annen fetch-feil. */
+async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export type HighlightDropReason = "ikke-i-db" | "under-trust" | "utenfor-board";
 
 export interface DroppedHighlight {
@@ -188,7 +202,17 @@ export async function inheritAreaEditorial(options: {
   getUrl.searchParams.set("product_type", "eq.report");
   getUrl.searchParams.set("select", "id,config,updated_at");
 
-  const getRes = await fetch(getUrl.toString(), { headers });
+  // Timeout/nettverksfeil på GET er fail-soft (som !ok): warning + skip,
+  // ingenting skrevet — kun skrivefeil skal kaste høylytt (se modulheader).
+  let getRes: Response;
+  try {
+    getRes = await fetchWithTimeout(getUrl.toString(), { headers });
+  } catch (e) {
+    result.warnings.push(
+      `⚠️  Henting av products-rad feilet (${e instanceof Error ? e.message : "ukjent"}) — editorial-arv hoppet over (ingenting skrevet)`
+    );
+    return { ...result, skipped: true };
+  }
   if (!getRes.ok) {
     result.warnings.push(
       `⚠️  Henting av products-rad feilet (${getRes.status}) — editorial-arv hoppet over (ingenting skrevet)`
@@ -260,7 +284,17 @@ export async function inheritAreaEditorial(options: {
     const boardIds = boardPoiIdsByTheme.get(themeId);
     const survivors: string[] = [];
     for (const candidate of entry.highlightCandidates) {
-      if (survivors.length >= MAX_HIGHLIGHTS) break;
+      if (survivors.length >= MAX_HIGHLIGHTS) {
+        // Forbi capen (R9-valg, dokumentert): off-board-kandidater logges
+        // FORTSATT som droppet — de er utilgjengelige uansett cap, og skal
+        // synliggjøre systematiske tilgjengelighetsproblemer i Unit 7.
+        // On-board-kandidater forbi capen logges IKKE — de er ikke droppet,
+        // bare forbi visningstaket (ingen egen «forbi-cap»-årsak).
+        if (!boardIds?.has(candidate)) {
+          pendingDrops.push({ themeId, id: candidate });
+        }
+        continue;
+      }
       if (survivors.includes(candidate)) continue; // duplikat i kandidatlisten
       if (boardIds?.has(candidate)) {
         survivors.push(candidate);
@@ -312,9 +346,10 @@ export async function inheritAreaEditorial(options: {
   //    aktuelle tema-objektene — alt annet på temaet (grounding, leadText,
   //    audio, …) og alt annet i config overlever urørt. Optimistisk lås på
   //    updated_at; 0 rader → høylytt feil (aldri stille retry).
-  const nextThemes = configThemes.map((theme) =>
-    patches.has(theme.id) ? { ...theme, editorial: patches.get(theme.id) } : theme
-  );
+  const nextThemes = configThemes.map((theme) => {
+    const editorial = patches.get(theme.id);
+    return editorial ? { ...theme, editorial } : theme;
+  });
   const nextConfig = {
     ...existingConfig,
     reportConfig: { ...rc, themes: nextThemes },
@@ -324,18 +359,27 @@ export async function inheritAreaEditorial(options: {
   patchUrl.searchParams.set("id", `eq.${product.id}`);
   patchUrl.searchParams.set("updated_at", `eq.${product.updated_at}`);
 
-  const patchRes = await fetch(patchUrl.toString(), {
-    method: "PATCH",
-    headers: {
-      ...headers,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify({
-      // Bevar lagringsformen: var config en JSON-streng, skriv streng tilbake
-      config: configWasString ? JSON.stringify(nextConfig) : nextConfig,
-    }),
-  });
+  // Timeout/nettverksfeil på PATCH feiler HØYLYTT — som annen PATCH-feil
+  // (aldri stille/delvis skriving).
+  let patchRes: Response;
+  try {
+    patchRes = await fetchWithTimeout(patchUrl.toString(), {
+      method: "PATCH",
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        // Bevar lagringsformen: var config en JSON-streng, skriv streng tilbake
+        config: configWasString ? JSON.stringify(nextConfig) : nextConfig,
+      }),
+    });
+  } catch (e) {
+    throw new Error(
+      `PATCH av products.config feilet (${e instanceof Error ? e.message : "ukjent"}) — INGEN temaer skrevet`
+    );
+  }
 
   if (!patchRes.ok) {
     throw new Error(

@@ -1,0 +1,143 @@
+{
+  "reviewer": "testing",
+  "findings": [
+    {
+      "title": "inherit-area-editorial: 'getProductFromSupabase returns null' branch untested",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts",
+      "line": 160,
+      "confidence": 0.95,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Line 160-164 returns { skipped: true } when getProductFromSupabase returns null. The test suite always mocks getProductFromSupabaseMock with a non-null value in beforeEach (line 189-196). No test sets it to null to exercise this path. This path differs from 'point outside polygon' — it means the project doesn't exist in Supabase, and the test would confirm the warning text and that no fetch calls are made.",
+      "evidence": "inherit-area-editorial.ts:160 'if (!project) { ... return { ...result, skipped: true }'. Test beforeEach at inherit-area-editorial.test.ts:188-192 always provides non-null; no test overrides with null. The stubFetch helper is only checked for 'not called' in the (b)-scenario, not in this scenario.",
+      "suggested_fix": "Add: it('getProductFromSupabase returns null → skipped, no fetch', async () => { findAreaForPointMock.mockResolvedValue(curatedArea({...})); getProductFromSupabaseMock.mockResolvedValue(null); const { fetchMock } = stubFetch(); const result = await inheritAreaEditorial(ARGS); expect(result.skipped).toBe(true); expect(fetchMock).not.toHaveBeenCalled(); });"
+    },
+    {
+      "title": "inherit-area-editorial: corrupt config JSON-string path throws but is untested",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts",
+      "line": 217,
+      "confidence": 0.92,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Lines 213-220 throw when config is a string that cannot be JSON.parsed. The plan explicitly calls out 'Korrupt streng → høylytt feil'. Test (i) exercises the valid-JSON-string branch but never passes a syntactically invalid string. This is a documented high-consequence path (silent corrupt config would bypass all tier-2 gating).",
+      "evidence": "inherit-area-editorial.ts:217-219: 'throw new Error(`products.config for ${product.id} er korrupt JSON-streng`...)'. Searched inherit-area-editorial.test.ts for 'korrupt', 'corrupt', 'JSON.parse' — only found the valid string path tested in scenario (i).",
+      "suggested_fix": "Add test with productRows: [productRow('{invalid-json')] and expect rejects.toThrow(/korrupt JSON-streng/)."
+    },
+    {
+      "title": "inherit-area-editorial: empty config.reportConfig.themes path (line 227-231) untested",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts",
+      "line": 227,
+      "confidence": 0.90,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Lines 227-231 return skipped when configThemes is empty (e.g., a freshly-provisioned project where reportConfig.themes hasn't been written yet). No test provides a product with themes:[] or missing reportConfig. All tests use baseConfig() which always has 2 themes. This path is a real operational scenario during pipeline runs.",
+      "evidence": "inherit-area-editorial.ts:227: 'if (configThemes.length === 0)'. All stubFetch calls in tests use default productRows which calls productRow() which calls baseConfig() which always provides non-empty themes array.",
+      "suggested_fix": "Add test with productRows: [productRow({ reportConfig: { themes: [] } })] and verify result.skipped is true and no PATCH is issued."
+    },
+    {
+      "title": "inherit-area-editorial: mock of transformToReportData means highlight-match logic not actually tested end-to-end",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.test.ts",
+      "line": 457,
+      "confidence": 0.82,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "transformToReportData is mocked at the module level (line 457-459), meaning the tests verify only the inherit step's OWN logic (the Set-lookup against board.themes[].allPOIs). The question from the review context — 'does the real transformToReportData pipeline (category-caps, child-merge, school-zone filter) actually affect which candidates survive?' — is not answered by these tests. The Teknostallen-gotcha described in the plan happened precisely because a filter was not replicated correctly; the current tests would pass even if the integration via the real transform path were broken. The plan's Unit 4 integration scenario ('after inheritance, adaptCategory shows chips for exactly survivors') is partially addressed by test (a), but it uses a manually-constructed board() fixture, not the real transform.",
+      "evidence": "inherit-area-editorial.test.ts:457: 'vi.mock(\"@/components/variants/report/report-data\", ...)'. board() fixture builds a simplified structure; school-zone filter, category-caps, child-merge never execute. plan line 408-410 says 'verified via existing board-data-tests + one new integration scenario on config-form' — the integration scenario is not present in this diff.",
+      "suggested_fix": "No unit-test fix possible without loading the real 'use client' chain. Document explicitly that the integration gap is deferred to manual Unit-7 verification (the plan already states this). Optionally add a comment in the test file noting the mock boundary."
+    },
+    {
+      "title": "validate-report-trust: re-read-after-enrichment failure path (line 154-159) has no test",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/validate-report-trust.ts",
+      "line": 154,
+      "confidence": 0.85,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Lines 149-159 re-read POI rows from Supabase after enrichment so scoring sees updated signals. If this read fails, all candidates go to stillNull and the function returns early. No test exercises this path. The mock in buildMockSupabase always succeeds on pois.select().in(). A DB connectivity blip between enrichment and re-read would silently leave all POIs in stillNull — important to have pinned.",
+      "evidence": "validate-report-trust.ts:154: 'if (rereadError || !enrichedRows || enrichedRows.length === 0)'. Searched validate-report-trust.test.ts for 're-lesing', 'reread', 'enrichedRows' — only a comment was found, no failure-path test.",
+      "suggested_fix": "Add a test where buildMockSupabase returns an error on the second pois.select().in() call (re-read). Verify result.stillNull contains the names of all candidates."
+    },
+    {
+      "title": "validate-report-trust: empty-project_pois branch (no POIs, no error) has no test",
+      "severity": "P3",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/validate-report-trust.ts",
+      "line": 73,
+      "confidence": 0.82,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Line 73-75: if projectPois is empty (valid empty result, no error), the function returns early with a warning. The existing project_pois-feil test covers the error case. The empty-but-no-error case (new project with no POIs yet linked) is not covered. Minor, but the warning message is the operational signal an operator would see.",
+      "evidence": "validate-report-trust.ts:73: 'if (!projectPois || projectPois.length === 0)'. buildMockSupabase with projectPois:[] and no projectPoisError is not used in any test.",
+      "suggested_fix": "Add test with supabaseFor([]) (which sets projectPois to []), assert result.scored === 0 and result.warnings[0] contains 'Ingen POI-er'."
+    },
+    {
+      "title": "geo.test.ts: no test verifying school-zones behavior is preserved after extraction (integration equivalence)",
+      "severity": "P3",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/utils/geo.test.ts",
+      "line": 1,
+      "confidence": 0.75,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "The plan's Unit 1 test scenario explicitly requires 'existing school-zones.test.ts passes unchanged after extraction'. The school-zones.test.ts tests still call getSchoolZone (which now delegates to pointInGeometry from geo.ts via UTM conversion), and those tests do exercise the extracted function indirectly. However geo.test.ts has no test that cross-validates results of pointInGeometry against an independently-verified UTM-coordinate school-zone polygon, which would lock the extraction equivalence. The school-zones tests do this indirectly via named schools (e.g., 'SINGSAKER') — which is actually sufficient for behavioral equivalence. Risk is low but the explicit integration pin from the plan is missing from geo.test.ts.",
+      "evidence": "geo.test.ts line 112 comment 'Pinned from the original school-zones behavior' refers to hole-ignoring semantics, not equivalence across the UTM→WGS84 coordinate system change. school-zones.test.ts is unchanged and continues to pass (uses real geodata), providing indirect coverage.",
+      "suggested_fix": "Advisory only: the existing school-zones.test.ts already provides indirect equivalence coverage. No change required unless a future refactor breaks the UTM path."
+    },
+    {
+      "title": "inherit-area-editorial: duplicate POI-IDs in highlightCandidates — dedup path untested",
+      "severity": "P3",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts",
+      "line": 569,
+      "confidence": 0.78,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Line 569: 'if (survivors.includes(candidate)) continue;' silently deduplicates POI IDs in the candidate list. No test verifies that a duplicate does not inflate the kept count or appears twice in the written highlightPoiIds. If the dedup logic had a bug (e.g., the wrong set was checked), a curator entering a duplicate would silently get double-counted kept highlights.",
+      "evidence": "inherit-area-editorial.ts:569: 'if (survivors.includes(candidate)) continue'. No test in inherit-area-editorial.test.ts passes highlightCandidates with a repeated ID.",
+      "suggested_fix": "Add a case with highlightCandidates: ['c1', 'c1', 'c2'] and board poiIds ['c1', 'c2']; assert highlights.kept === 2 and highlightPoiIds === ['c1', 'c2']."
+    }
+  ],
+  "residual_risks": [
+    {
+      "risk": "The mocked transformToReportData means the integration between 'area editorial → actually-visible chips via real board data pipeline' is not tested. The full chain (category-caps, child-merge, school-zone filter, trust filter in filterTrustedPOIs) may differ from the simple Set-lookup the tests exercise. This is mitigated only by Unit-7 manual verification on real boards.",
+      "severity": "medium",
+      "mitigation_present": "Plan acknowledges this and defers to Unit-7 rubric evaluation. Existing board-data.test.ts pins adaptCategory behavior."
+    },
+    {
+      "risk": "The trust-enrichment.ts concurrency pool (promise-based self-scheduling) has no unit tests in the diff. The pool is tested indirectly via validate-report-trust's happy-path test (10 POIs, concurrency 10). Concurrency lower than batch size, or cancel-mid-pool, is not exercised.",
+      "severity": "low",
+      "mitigation_present": "Trust-enrichment is shared code refactored from the existing route; the route was already in production. Happy-path test with 10 POIs exercises the pool at full concurrency."
+    },
+    {
+      "risk": "area-staging.test.ts test on line 89-106 reads data/areas/ranheim.staging.json from disk at test-time. If that file contains placeholder/incomplete editorial (e.g., empty highlightCandidates), the test passes but gives false assurance about real curation being present. The test only checks that all 6 theme keys exist, not that bodies or candidates are non-empty.",
+      "severity": "low",
+      "mitigation_present": "This is intentional — Unit 5 and 6 are sequential; the file is a template at this stage. The test is correctly scoped to structural validation only."
+    }
+  ],
+  "testing_gaps": [
+    "inherit-area-editorial.ts lines 160-164 (getProductFromSupabase returns null → skipped): no test",
+    "inherit-area-editorial.ts lines 217-219 (corrupt JSON-string config → throws): no test",
+    "inherit-area-editorial.ts lines 227-231 (empty configThemes → skipped): no test",
+    "inherit-area-editorial.ts line 569 (duplicate POI-ID dedup in highlightCandidates): no test",
+    "validate-report-trust.ts lines 149-159 (re-read after enrichment fails → stillNull + early return): no test",
+    "validate-report-trust.ts lines 73-75 (empty projectPois, no error → warning + return): no test",
+    "No integration test exercising the real transformToReportData pipeline (mocked throughout); full-chain correctness depends on Unit-7 manual QA"
+  ]
+}

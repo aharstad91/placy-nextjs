@@ -202,19 +202,20 @@ afterEach(() => {
 // ── Scenarier ─────────────────────────────────────────────────────────────
 
 describe("inheritAreaEditorial", () => {
-  it("(a) område + kandidater overlever → editorial skrevet med inntil 3 highlights i kurator-rekkefølge", async () => {
+  it("(a) område + kandidater overlever → inntil 3 highlights i kurator-rekkefølge; forbi capen logges off-board som droppet, on-board ikke", async () => {
     findAreaForPointMock.mockResolvedValue(
       curatedArea({
         "mat-drikke": {
           body: "Ranheim har et godt mattilbud.",
-          highlightCandidates: ["c1", "c2", "c3", "c4"],
+          highlightCandidates: ["c1", "c2", "c3", "c4", "off5"],
         },
       })
     );
-    // Alle 4 kandidater finnes på boardet → kun de 3 FØRSTE beholdes
+    // c1–c4 finnes på boardet → kun de 3 FØRSTE beholdes; off5 er off-board
     transformToReportDataMock.mockReturnValue(
       board([{ id: "mat-drikke", poiIds: ["other", "c4", "c3", "c2", "c1"] }])
     );
+    mockPoisLookup([{ id: "off5", trust_score: 0.9 }]);
     const { patchCalls } = stubFetch();
 
     const result = await inheritAreaEditorial(ARGS);
@@ -223,7 +224,11 @@ describe("inheritAreaEditorial", () => {
     expect(result.areaName).toBe("Ranheim");
     expect(result.themesInherited).toEqual(["mat-drikke"]);
     expect(result.highlights.kept).toBe(3);
-    expect(result.highlights.dropped).toEqual([]);
+    // R9 forbi capen: on-board c4 logges IKKE (bare forbi visningstaket),
+    // off-board off5 logges FORTSATT som droppet (utilgjengelig uansett cap)
+    expect(result.highlights.dropped).toEqual([
+      { themeId: "mat-drikke", id: "off5", reason: "utenfor-board" },
+    ]);
 
     const config = writtenConfig(patchCalls);
     const theme = config.reportConfig.themes.find((t) => t.id === "mat-drikke")!;
@@ -496,5 +501,86 @@ describe("inheritAreaEditorial", () => {
     const theme = config.reportConfig.themes.find((t) => t.id === "mat-drikke")!;
     expect(theme.editorial).toEqual({ body: "Tekst.", highlightPoiIds: ["c1"] });
     expect(theme.leadText).toBe("Lead som skal overleve");
+  });
+
+  it("(j) prosjekt ikke funnet (getProductFromSupabase → null) → skipped, ingen REST-kall", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": { body: "Tekst.", highlightCandidates: ["c1"] },
+      })
+    );
+    getProductFromSupabaseMock.mockResolvedValue(null);
+    const { fetchMock } = stubFetch();
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    expect(result.skipped).toBe(true);
+    expect(result.themesInherited).toEqual([]);
+    expect(result.warnings.some((w) => w.includes("ikke funnet"))).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("(k) config er korrupt JSON-streng → kaster høylytt, ingen PATCH", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": { body: "Tekst.", highlightCandidates: ["c1"] },
+      })
+    );
+    transformToReportDataMock.mockReturnValue(
+      board([{ id: "mat-drikke", poiIds: ["c1"] }])
+    );
+    const { patchCalls } = stubFetch({
+      productRows: [productRow("{ikke gyldig json")],
+    });
+
+    await expect(inheritAreaEditorial(ARGS)).rejects.toThrow(/korrupt JSON-streng/);
+    expect(patchCalls).toHaveLength(0);
+  });
+
+  it("(l) tom reportConfig.themes → skipped med warning, ingen PATCH", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": { body: "Tekst.", highlightCandidates: ["c1"] },
+      })
+    );
+    transformToReportDataMock.mockReturnValue(
+      board([{ id: "mat-drikke", poiIds: ["c1"] }])
+    );
+    const { patchCalls } = stubFetch({
+      productRows: [productRow({ reportConfig: { themes: [] } })],
+    });
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    expect(result.skipped).toBe(true);
+    expect(
+      result.warnings.some((w) => w.includes("themes mangler/er tom"))
+    ).toBe(true);
+    expect(patchCalls).toHaveLength(0);
+  });
+
+  it("(m) duplikat POI-id i highlightCandidates dedupliseres — kept teller unike", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": { body: "Tekst.", highlightCandidates: ["c1", "c1", "c2"] },
+      })
+    );
+    transformToReportDataMock.mockReturnValue(
+      board([{ id: "mat-drikke", poiIds: ["c1", "c2"] }])
+    );
+    const { patchCalls } = stubFetch();
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    expect(result.highlights.kept).toBe(2);
+    expect(result.highlights.dropped).toEqual([]);
+
+    const theme = writtenConfig(patchCalls).reportConfig.themes.find(
+      (t) => t.id === "mat-drikke"
+    )!;
+    expect(theme.editorial).toEqual({
+      body: "Tekst.",
+      highlightPoiIds: ["c1", "c2"],
+    });
   });
 });

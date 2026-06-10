@@ -87,42 +87,65 @@ export async function enrichTrustSignals(options: {
         const entry = enrichEntries[idx++];
         running++;
 
-        fetchPlaceDetails(entry.placeId, googleApiKey, TRUST_ENRICHMENT_FIELDS)
-          .then(async (details) => {
-            if (!details) return; // place not found — scorer på eksisterende signaler
-            const { error } = await supabase
-              .from("pois")
-              .update({
-                google_website: details.website || null,
-                google_business_status: details.businessStatus || null,
-                google_price_level: details.priceLevel ?? null,
-                google_rating: details.rating ?? null,
-                google_review_count: details.reviewCount ?? null,
-              })
-              .eq("id", entry.poiId);
-            if (error) {
+        try {
+          fetchPlaceDetails(entry.placeId, googleApiKey, TRUST_ENRICHMENT_FIELDS)
+            .then(async (details) => {
+              if (!details) {
+                // Place not found: importen nuller signalene, så POI-en ville
+                // scoret 0.45 (no_website) og forsvunnet stille fra boardet.
+                // Behandles som feil → havner i stillNull og QA-gates (Unit 7).
+                result.errors.push(
+                  `Place not found in Google API for ${entry.poiId} (place_id: ${entry.placeId})`
+                );
+                result.failedPoiIds.push(entry.poiId);
+                return;
+              }
+              const { error } = await supabase
+                .from("pois")
+                .update({
+                  google_website: details.website || null,
+                  google_business_status: details.businessStatus || null,
+                  google_price_level: details.priceLevel ?? null,
+                  google_rating: details.rating ?? null,
+                  google_review_count: details.reviewCount ?? null,
+                })
+                .eq("id", entry.poiId);
+              if (error) {
+                result.errors.push(
+                  `Enrichment DB update failed for ${entry.poiId}: ${error.message}`
+                );
+                result.failedPoiIds.push(entry.poiId);
+              } else {
+                result.enriched++;
+              }
+            })
+            .catch((e) => {
               result.errors.push(
-                `Enrichment DB update failed for ${entry.poiId}: ${error.message}`
+                `Enrichment failed for ${entry.poiId}: ${e instanceof Error ? e.message : "unknown"}`
               );
               result.failedPoiIds.push(entry.poiId);
-            } else {
-              result.enriched++;
-            }
-          })
-          .catch((e) => {
-            result.errors.push(
-              `Enrichment failed for ${entry.poiId}: ${e instanceof Error ? e.message : "unknown"}`
-            );
-            result.failedPoiIds.push(entry.poiId);
-          })
-          .finally(() => {
-            running--;
-            if (idx >= enrichEntries.length && running === 0) {
-              resolve();
-            } else {
-              next();
-            }
-          });
+            })
+            .finally(() => {
+              running--;
+              if (idx >= enrichEntries.length && running === 0) {
+                resolve();
+              } else {
+                next();
+              }
+            });
+        } catch (e) {
+          // Synkron throw (f.eks. mock/feilkonfigurasjon) skal aldri etterlate
+          // Promise-en uresolved — poolen må alltid telles ned (deadlock-vern).
+          result.errors.push(
+            `Enrichment failed for ${entry.poiId}: ${e instanceof Error ? e.message : "unknown"}`
+          );
+          result.failedPoiIds.push(entry.poiId);
+          running--;
+          if (idx >= enrichEntries.length && running === 0) {
+            resolve();
+          }
+          // ellers: while-løkka fortsetter og plukker neste entry
+        }
       }
     };
     next();

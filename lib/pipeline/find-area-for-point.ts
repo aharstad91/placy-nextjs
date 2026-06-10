@@ -109,8 +109,13 @@ export async function findAreaForPoint(options: {
       continue;
     }
     // Defensivt: query-filteret garanterer non-null, men en ikke-objekt-verdi
-    // (f.eks. feillagret streng) skal aldri gi arv.
-    if (row.report_editorial === null || typeof row.report_editorial !== "object") {
+    // (f.eks. feillagret streng eller array — typeof [] === "object") skal
+    // aldri gi arv.
+    if (
+      row.report_editorial === null ||
+      typeof row.report_editorial !== "object" ||
+      Array.isArray(row.report_editorial)
+    ) {
       warnings.push(
         `⚠️  Område ${row.id} har ugyldig report_editorial — hoppet over`
       );

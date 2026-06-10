@@ -29,10 +29,12 @@
  * staging BEHOLDES.
  */
 
-import { config } from "dotenv";
+// MÅ stå først: tsx hoister statiske imports, så env må lastes via en
+// side-effect-modul FØR lib/supabase/client.ts evalueres — ellers blir den
+// modul-nivå anon-klienten permanent null. Se scripts/load-env.ts.
+import "./load-env";
 import * as fs from "node:fs";
 import * as readline from "readline";
-config({ path: ".env.local" });
 
 import { parseAreaStaging } from "@/lib/pipeline/area-staging";
 import { REPORT_THEME_DEFAULTS } from "@/lib/pipeline/report-defaults";
@@ -44,6 +46,9 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 /** Antall POI-ider per .in()-spørring — holder request-URLene trygt korte. */
 const POI_CHUNK_SIZE = 100;
+
+/** Timeout på Supabase REST-kall — henger aldri evig (mønster: checkWebsite). */
+const REST_TIMEOUT_MS = 30_000;
 
 // ── Arg-parsing ───────────────────────────────────────────────────────────
 
@@ -69,10 +74,22 @@ function parseArgs() {
 //    apply-curation-staging.ts) ──────────────────────────────────────────
 
 function restHeaders(): Record<string, string> {
+  if (!SUPABASE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY ikke satt");
   return {
-    apikey: SUPABASE_KEY!,
+    apikey: SUPABASE_KEY,
     Authorization: `Bearer ${SUPABASE_KEY}`,
   };
+}
+
+/** fetch med AbortController-timeout — timeout/nettverksfeil kaster som annen fetch-feil. */
+async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 interface AreaRow {
@@ -89,7 +106,7 @@ async function fetchAreaRow(areaId: string): Promise<AreaRow | null> {
   const url =
     `${SUPABASE_URL}/rest/v1/areas?id=eq.${encodeURIComponent(areaId)}` +
     `&select=id,name_no,level,center_lat,center_lng,boundary,report_editorial`;
-  const res = await fetch(url, { headers: restHeaders() });
+  const res = await fetchWithTimeout(url, { headers: restHeaders() });
   if (!res.ok) {
     throw new Error(`GET areas feilet: ${res.status} ${await res.text()}`);
   }
@@ -218,7 +235,7 @@ async function applyStaging(opts: { file: string; dryRun: boolean; yes: boolean 
   }
 
   const patchUrl = `${SUPABASE_URL}/rest/v1/areas?id=eq.${encodeURIComponent(staging.areaId)}`;
-  const res = await fetch(patchUrl, {
+  const res = await fetchWithTimeout(patchUrl, {
     method: "PATCH",
     headers: {
       ...restHeaders(),

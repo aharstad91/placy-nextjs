@@ -1,0 +1,72 @@
+{
+  "reviewer": "correctness",
+  "findings": [
+    {
+      "title": "Candidates past the MAX_HIGHLIGHTS cap that are off-board are never added to pendingDrops — R9 log silently undercounts 'utenfor-board' drops when the cap is reached before all candidates are checked",
+      "severity": "P2",
+      "file": "lib/pipeline/inherit-area-editorial.ts",
+      "line": 263,
+      "confidence": 0.90,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "The loop breaks at `if (survivors.length >= MAX_HIGHLIGHTS) break` before checking whether the remaining candidates are on the board. Any candidates at positions 4+ that are off-board (or not in DB) are never pushed to pendingDrops and therefore never appear in the R9 log. The evaluation rubric in Unit 7 distinguishes 'candidate not picked because 3 were already found' from 'candidate dropped because it was not available'. Overflow candidates that are off-board are invisible in the log, potentially masking systematic availability issues. Example: candidates = [c1, c2, c3, c4(off-board), c5(off-board)], boardIds = {c1,c2,c3}. survivors=[c1,c2,c3], c4 and c5 never reach the pendingDrops push. R9 log shows 0 drops.",
+      "evidence": [
+        "lib/pipeline/inherit-area-editorial.ts line 263: `if (survivors.length >= MAX_HIGHLIGHTS) break;`",
+        "The break exits the loop entirely, skipping all remaining candidates regardless of board membership",
+        "Test (a) in inherit-area-editorial.test.ts confirms this: 4 candidates on board → survivors=[c1,c2,c3], drops=[] — c4 is silently not logged"
+      ],
+      "suggested_fix": "Continue scanning after the cap is reached to collect off-board candidates for R9 logging, even when survivors are already full: `if (survivors.length >= MAX_HIGHLIGHTS) { if (!boardIds?.has(candidate)) pendingDrops.push({ themeId, id: candidate }); continue; }`. Update test (a) to explicitly verify that candidates beyond the cap that are off-board ARE logged."
+    },
+    {
+      "title": "enrichTrustSignals does not increment `enriched` when fetchPlaceDetails returns null (place not found) — place-not-found POIs proceed to scoring with null signals and score 0.45, hitting the trust filter",
+      "severity": "P2",
+      "file": "lib/google-places/trust-enrichment.ts",
+      "line": 92,
+      "confidence": 0.82,
+      "autofix_class": "manual",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "When `fetchPlaceDetails` returns null (the Google Places API found no place for the given place_id), the `.then()` callback returns early with `if (!details) return`. The POI is neither added to `failedPoiIds` nor to `enriched`. It is therefore NOT in `excludedIds`, so it proceeds to `toScore`. After re-reading from DB (still null website), `batchValidateTrust` scores it with null website (→ `no_website` flag, 0.45 score < MIN_TRUST_SCORE=0.5). This POI then gets filtered off the board by `filterTrustedPOIs`, but it was never added to `stillNull` in `validate-report-trust.ts`. The QA gate (stillNull must be cleared before a board is counted as evaluated) won't catch it. A deleted/unresolvable Google business would silently get scored low and disappear from the board without operator notification.",
+      "evidence": [
+        "lib/google-places/trust-enrichment.ts line 92: `if (!details) return; // place not found — scorer på eksisterende signaler`",
+        "The comment says it will score on existing signals, but existing signals are null (import-pois.ts explicitly nulls google_website/google_business_status)",
+        "lib/pipeline/validate-report-trust.ts lines 120-136: `excludedIds` only collects `enrichResult.failedPoiIds`, not place-not-found cases",
+        "A place-not-found POI is not in stillNull and not in excludedIds — it scores 0.45 and disappears silently"
+      ],
+      "suggested_fix": "In enrichTrustSignals, treat `details === null` as a reason to add the POI to `failedPoiIds` (with a descriptive error like 'Place not found in Google API'). This ensures validate-report-trust.ts adds these POIs to `stillNull` for QA clearance. Alternatively, add a separate `notFoundIds` field to the result so callers can distinguish 'fetch error' from 'not found'."
+    },
+    {
+      "title": "classifyDroppedCandidates classifies a POI as 'utenfor-board' when it is in DB with a null trust_score but not on the board — the real reason may be 'under-trust' if it was a Google POI that failed enrichment (null → trust filter → invisible)",
+      "severity": "P3",
+      "file": "lib/pipeline/inherit-area-editorial.ts",
+      "line": 115,
+      "confidence": 0.72,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "The classification logic at line 115 checks `row.trust_score != null && row.trust_score < MIN_TRUST_SCORE`. A Google POI with `trust_score = null` (unscored — e.g., enrichment failed and it ended up in stillNull) passes the null check (null != null is false) and falls through to `utenfor-board`. But `filterTrustedPOIs` has `null = vis` semantics, meaning null-trust POIs ARE shown on the board. If such a null-trust POI is not on the board, the reason is NOT trust — it IS genuinely utenfor-board for another reason. So this classification is actually correct for the null-trust case. However, if a Google POI was scored to 0.3 by the pipeline and IS excluded by filterTrustedPOIs, but then the candidate appears in a later re-provisioning where validateReportTrust re-scores it (skipped because already scored), the classification as 'under-trust' would be correct. The edge case that could mislead: a POI that failed enrichment AND failed to get scored (null trust) but IS NOT on the board for other reasons (radius, category) would be logged 'utenfor-board' when the trust might have been 'under-trust' in a previous run. R9 log may give misleading diagnostic signals in re-run scenarios.",
+      "evidence": [
+        "lib/pipeline/inherit-area-editorial.ts line 115: `row.trust_score != null && row.trust_score < MIN_TRUST_SCORE`",
+        "null trust_score → falls to 'utenfor-board' — correct for null=vis semantics, potentially misleading for re-run diagnostics"
+      ],
+      "suggested_fix": "Advisory only. Document in classifyDroppedCandidates that 'utenfor-board' is also the catch-all for null-trust POIs that failed enrichment. Consider adding a separate 'null-trust' or 'enrichment-failed' reason for cases where the POI has google_place_id but null trust_score, to help distinguish pipeline failures from geographic exclusions in Unit 7 analysis."
+    }
+  ],
+  "residual_risks": [
+    "The board-set used for highlight resolution is computed via getProductFromSupabase → transformToReportData. This call uses the Supabase anon client (via getProductFromSupabase, which is dynamically imported). If the anon client's RLS policies differ from service-role (e.g., the product row is not public), the board-set may be empty even though the product exists, causing all highlights to be classified as 'utenfor-board'. This is only a risk if products are not publicly readable — worth verifying in the PoC run.",
+    "The `areas.report_editorial` JSONB is validated by ThemeEditorialStagingSchema at arv-time (inherit-area-editorial.ts line 240), but the schema does NOT validate that highlightCandidates are non-empty strings when read from the DB (only staging validation enforces this). If the DB contains malformed area data (e.g., from a manual edit), the arv step logs a warning and skips the theme — no crash. This is intentional fail-soft behavior but worth noting.",
+    "The concurrent enrichment pool in enrichTrustSignals could in theory call resolve() and then have subsequent .finally() handlers mutate `result.enriched`/`result.errors`/`result.failedPoiIds` after the `await` resumes. In practice this cannot happen with JavaScript's single-threaded event loop — all microtasks from the current turn complete before the next await resumes — but the code pattern makes this non-obvious to future maintainers.",
+    "curate-area.ts imports createServerClient statically but uses it only in --list-pois mode (call-time). The module-level SUPABASE_URL / SUPABASE_KEY constants are assigned correctly after `config()` runs. However, if this script is ever refactored to use `createServerClient()` at module init level (e.g., assigning it to a module-level variable), the load-env gotcha would apply. A comment noting why the old pattern (inline config()) works here while provision-rapport.ts needs load-env would prevent a future regression."
+  ],
+  "testing_gaps": [
+    "No test covers the behavior when enrichTrustSignals returns a null-details (place not found) case in the context of validate-report-trust.ts pipeline step — specifically: does the POI score 0.45 and silently disappear from the board, or does it appear in stillNull?",
+    "No test covers the case where MAX_HIGHLIGHTS cap is reached while there are still off-board candidates remaining in the list (e.g., [on-board, on-board, on-board, off-board]). The current tests only verify drops BEFORE the cap (candidates 1-3 off-board, candidate 4 on-board) or NO drops (all on-board).",
+    "No integration test for the full pipeline order (trust → hydrate → inherit) to verify that a newly-scored low-trust POI (scored in step 5) is correctly excluded from the board (step 7) and classified as 'under-trust' in R9.",
+    "The area-staging.test.ts does not test duplicate entries in highlightCandidates (e.g., ['poi-a', 'poi-a', 'poi-b']) — the staging schema allows them, and the arv-step silently deduplicates without logging, which could confuse the R9 report.",
+    "No test for findAreaForPoint when the DB returns a row where `report_editorial` is a valid object but empty `{}` (no theme keys). The current test covers null editorial but not an empty object. The arv-step would process it: Object.entries({}) → no iterations → patches empty → 'Ingen temaer å arve' warning. This is correct but untested."
+  ]
+}

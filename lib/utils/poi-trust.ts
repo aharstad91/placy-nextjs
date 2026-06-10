@@ -363,15 +363,23 @@ export async function batchValidateTrust(
       while (running < concurrency && idx < domainEntries.length) {
         const [domain, url] = domainEntries[idx++];
         running++;
-        checkWebsite(url).then((result) => {
-          domainResults.set(domain, result);
-          running--;
-          if (idx >= domainEntries.length && running === 0) {
-            resolve();
-          } else {
-            next();
-          }
-        });
+        checkWebsite(url)
+          .then((result) => {
+            domainResults.set(domain, result);
+          })
+          .catch(() => {
+            // checkWebsite skal aldri kaste, men en uventet feil må ikke
+            // etterlate poolen uresolved (deadlock-vern) — nøytralt resultat
+            domainResults.set(domain, { responds: false, isSuspicious: false });
+          })
+          .finally(() => {
+            running--;
+            if (idx >= domainEntries.length && running === 0) {
+              resolve();
+            } else {
+              next();
+            }
+          });
       }
     };
     next();
