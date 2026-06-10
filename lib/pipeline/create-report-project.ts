@@ -14,6 +14,7 @@ import {
   type ReportProfile,
   type ReportThemeDefault,
 } from "@/lib/pipeline/report-defaults";
+import type { ReportTier } from "@/lib/validation/report-tier-schema";
 
 export const DEFAULT_CUSTOMER = "placy-demo";
 
@@ -43,6 +44,9 @@ export interface ReportProjectOptions {
   /** Profil: "bolig" (default) eller "naering" — styrer temaer, radius,
    *  venue_type og tags. */
   profile?: ReportProfile;
+  /** Deklarert leveransenivå (1/2/3) — skrives i initial reportConfig.
+   *  Utelatt → feltet utelates (nivå 1-default-semantikk). */
+  reportTier?: ReportTier;
 }
 
 export interface ReportProjectResult {
@@ -57,9 +61,14 @@ export interface ReportProjectResult {
   warnings: string[];
 }
 
-function buildReportConfig(themes: ReportThemeDefault[], discoveryRadiusMeters: number) {
+function buildReportConfig(
+  themes: ReportThemeDefault[],
+  discoveryRadiusMeters: number,
+  reportTier?: ReportTier,
+) {
   return {
     reportConfig: {
+      ...(reportTier !== undefined && { reportTier }),
       themes: themes.map((t) => ({
         id: t.id,
         name: t.name,
@@ -157,7 +166,7 @@ export async function createReportProject(
       project_id: existing.id,
       product_type: "report",
       story_title: `Nabolaget rundt ${options.name}`,
-      config: buildReportConfig(getThemeDefaults(profile), discoveryRadius),
+      config: buildReportConfig(getThemeDefaults(profile), discoveryRadius, options.reportTier),
     });
     if (prodError) {
       throw new Error(`Kunne ikke opprette rapport-produkt: ${prodError.message}`);
@@ -227,7 +236,7 @@ export async function createReportProject(
     project_id: projectId,
     product_type: "report",
     story_title: `Nabolaget rundt ${options.name}`,
-    config: buildReportConfig(getThemeDefaults(profile), discoveryRadius),
+    config: buildReportConfig(getThemeDefaults(profile), discoveryRadius, options.reportTier),
   });
 
   if (productError) {

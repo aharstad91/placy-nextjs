@@ -15,6 +15,9 @@
  *   --dry-run       Geocode + plan uten Supabase-writes
  *   --confirm-coords lat,lng  Hopp over interaktiv bekreftelse
  *   --update        Tillat re-kjøring mot eksisterende prosjekt
+ *   --tier 1|2|3    Deklarert leveransenivå (hopp over interaktiv prompt).
+ *                   1=Basic, 2=+Editorial, 3=Maks. Uten flagg spørres det
+ *                   interaktivt; non-TTY defaulter til 1.
  */
 
 import { config } from "dotenv";
@@ -40,6 +43,16 @@ import {
   type ReportProfile,
 } from "@/lib/pipeline/report-defaults";
 import { createServerClient } from "@/lib/supabase/client";
+import {
+  ReportTierSchema,
+  type ReportTier,
+} from "@/lib/validation/report-tier-schema";
+import {
+  validateReportTier,
+  summarizeTierFindings,
+} from "@/lib/validation/report-tier";
+import { getCameraTour } from "@/components/variants/report/board/camera-tours";
+import type { ReportConfig } from "@/lib/types";
 
 // ── Arg-parsing ───────────────────────────────────────────────────────────
 
@@ -80,7 +93,45 @@ function parseArgs() {
     confirmCoords = { lat, lng };
   }
 
-  return { name, address, customer, dryRun, allowUpdate, confirmCoords, profile };
+  let reportTier: ReportTier | undefined;
+  const tierStr = get("--tier");
+  if (tierStr !== undefined) {
+    const parsed = ReportTierSchema.safeParse(Number(tierStr));
+    if (!parsed.success) {
+      console.error("--tier må være 1, 2 eller 3");
+      process.exit(1);
+    }
+    reportTier = parsed.data;
+  }
+
+  return { name, address, customer, dryRun, allowUpdate, confirmCoords, profile, reportTier };
+}
+
+// ── Nivå-deklarasjon ──────────────────────────────────────────────────────
+
+/** Interaktiv nivå-prompt (R3b) — speiler koordinat-bekreftelsens mønster.
+ *  Non-TTY (CI/pipe) defaulter til 1 uten å henge på stdin. */
+async function askReportTier(): Promise<ReportTier> {
+  if (!process.stdin.isTTY) {
+    log("Nivå: 1 (Basic) — non-interaktiv kjøring, bruk --tier for å overstyre");
+    return 1;
+  }
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const svar = await new Promise<string>((resolve) => {
+    rl.question(
+      "\nHvilket nivå skal boardet leveres på? 1=Basic, 2=+Editorial, 3=Maks [1]: ",
+      resolve
+    );
+  });
+  rl.close();
+  const trimmed = svar.trim();
+  if (trimmed === "") return 1;
+  const parsed = ReportTierSchema.safeParse(Number(trimmed));
+  if (!parsed.success) {
+    console.error("Ugyldig nivå — må være 1, 2 eller 3");
+    process.exit(1);
+  }
+  return parsed.data;
 }
 
 // ── Logging ───────────────────────────────────────────────────────────────
@@ -124,6 +175,7 @@ async function revalidateProject(customer: string, slug: string) {
 
 async function acceptanceCheck(
   productId: string,
+  projectId: string,
   customer: string,
   slug: string
 ): Promise<boolean> {
@@ -163,6 +215,32 @@ async function acceptanceCheck(
     log(`✓ Alle 6 temaer har leadText`);
   }
 
+  // 2b. Nivå-validering: deklarert reportTier må være fullt dekket av
+  // nettopp-skrevet config (lib/validation/report-tier.ts).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: projectRow } = await (supabase.from("projects") as any)
+    .select("has_3d_addon")
+    .eq("id", projectId)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reportConfig = (product?.config as any)?.reportConfig as ReportConfig | undefined;
+  const tierFindings = validateReportTier({
+    slug,
+    reportConfig,
+    has3dAddon: projectRow?.has_3d_addon ?? undefined,
+    cameraTour: getCameraTour(slug),
+  });
+  const tierErrors = tierFindings.filter((f) => f.level === "error");
+  if (tierErrors.length > 0) {
+    warn(`✗ nivå: ${summarizeTierFindings(reportConfig?.reportTier, tierFindings)}`);
+    for (const f of tierErrors) warn(`   · [${f.check}] ${f.detail}`);
+    warn("   Utveier: fullfør manglene, eller re-deklarer ned (oppdater reportTier)");
+    ok = false;
+  } else {
+    log(`✓ nivå: ${summarizeTierFindings(reportConfig?.reportTier, tierFindings)}`);
+    for (const f of tierFindings) warn(`   ⚠ [${f.check}] ${f.detail}`);
+  }
+
   // 3. ≥1 POI i minst 4 av 6 temaer (advarsel, ikke feil)
   const { data: pois } = await supabase
     .from("product_pois")
@@ -187,7 +265,7 @@ async function acceptanceCheck(
 // ── Hoved-pipeline ────────────────────────────────────────────────────────
 
 async function main() {
-  const { name, address, customer, dryRun, allowUpdate, confirmCoords, profile } =
+  const { name, address, customer, dryRun, allowUpdate, confirmCoords, profile, reportTier: tierFlag } =
     parseArgs();
 
   // Sjekk env-variabler FØR noen writes
@@ -269,6 +347,7 @@ async function main() {
     log(`Prosjektnavn: ${name}`);
     log(`Kunde: ${customer}`);
     log(`Profil: ${profile}`);
+    log(`Nivå: ${tierFlag ?? "1 (default — bruk --tier for å overstyre)"}`);
     log(`Adresse: ${placeName}`);
     log(`Koordinater: ${lat}, ${lng}`);
     log(`Kommune: ${komInfo?.kommunenavn ?? "ukjent"} (${kommunenummer ?? "ukjent"})`);
@@ -276,6 +355,10 @@ async function main() {
     log("\nIngen Supabase-writes (--dry-run)");
     process.exit(0);
   }
+
+  // Nivå-deklarasjon (R3b): flagg, ellers interaktiv prompt
+  const reportTier = tierFlag ?? (await askReportTier());
+  log(`Nivå: ${reportTier}`);
 
   // ── Steg 2: Opprett prosjekt ───────────────────────────────────────────
   section("Steg 2: Opprett prosjekt");
@@ -290,6 +373,7 @@ async function main() {
     kommunenavn: komInfo?.kommunenavn,
     updateCoords: allowUpdate,
     profile,
+    reportTier,
   });
 
   for (const w of projectResult.warnings) log(w);
@@ -368,6 +452,7 @@ async function main() {
   section("Steg 7: Akseptansesjekk");
   const passed = await acceptanceCheck(
     projectResult.productId,
+    projectResult.projectId,
     projectResult.customerSlug,
     projectResult.slug
   );

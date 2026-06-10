@@ -13,12 +13,17 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import * as readline from "readline";
 import { config } from "dotenv";
 
 // Load environment variables
 config({ path: ".env.local" });
 
 import { Project, Coordinates, Category } from "../lib/types";
+import {
+  ReportTierSchema,
+  type ReportTier,
+} from "../lib/validation/report-tier-schema";
 import {
   discoverPOIs,
   DiscoveredPOI,
@@ -89,6 +94,39 @@ async function main() {
 
   const inputPath = args[0];
   const isUpdate = args.includes("--update");
+
+  // Nivå-deklarasjon (R3b): --tier-flagg, ellers interaktiv prompt.
+  // Non-TTY uten flagg → feltet utelates (nivå 1-default-semantikk).
+  let reportTier: ReportTier | undefined;
+  const tierIdx = args.indexOf("--tier");
+  if (tierIdx >= 0) {
+    const parsed = ReportTierSchema.safeParse(Number(args[tierIdx + 1]));
+    if (!parsed.success) {
+      console.error("❌ --tier må være 1, 2 eller 3");
+      process.exit(1);
+    }
+    reportTier = parsed.data;
+  } else if (process.stdin.isTTY) {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const svar = await new Promise<string>((resolve) => {
+      rl.question(
+        "Hvilket nivå skal boardet leveres på? 1=Basic, 2=+Editorial, 3=Maks [1]: ",
+        resolve
+      );
+    });
+    rl.close();
+    const trimmed = svar.trim();
+    if (trimmed !== "") {
+      const parsed = ReportTierSchema.safeParse(Number(trimmed));
+      if (!parsed.success) {
+        console.error("❌ Ugyldig nivå — må være 1, 2 eller 3");
+        process.exit(1);
+      }
+      reportTier = parsed.data;
+    } else {
+      reportTier = 1;
+    }
+  }
 
   // Validate input file exists
   if (!fs.existsSync(inputPath)) {
@@ -218,6 +256,13 @@ async function main() {
   );
 
   // === Step 4: Build Project Object ===
+  // reportConfig: bevar eksisterende felter (audio, editorial m.m. — merge-laget
+  // sprer ...newProject og ville ellers mistet dem), legg trails/reportTier på topp.
+  const mergedReportConfig = {
+    ...existingProject?.reportConfig,
+    ...(trailData && trailData.features.length > 0 && { trails: trailData }),
+    ...(reportTier !== undefined && { reportTier }),
+  };
   const newProject: Project = {
     id: slugify(baseName),
     name: input.name,
@@ -228,8 +273,8 @@ async function main() {
     categories: allCategories,
     pois: poisWithTravelTimes.map((p) => convertToPOI(p as DiscoveredPOI & { travelTime?: { walk?: number; bike?: number; car?: number } })),
     story,
-    ...(trailData && trailData.features.length > 0 && {
-      reportConfig: { trails: trailData },
+    ...(Object.keys(mergedReportConfig).length > 0 && {
+      reportConfig: mergedReportConfig,
     }),
   };
 
@@ -290,6 +335,7 @@ Options:
   --update            Oppdater eksisterende data (merger ny data)
   --skip-travel-times Skip reisetidsberegning (bruker frontend runtime)
   --skip-trails       Skip henting av sykkelruter/turstier fra Overpass
+  --tier 1|2|3        Deklarert leveransenivå (hopp over interaktiv prompt)
   --help, -h          Vis denne hjelpeteksten
 
 Eksempel:
