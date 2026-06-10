@@ -272,6 +272,12 @@ function BoardReelsSync() {
     if (!reelsDriveCategories) return;
     const card = reelsState.cards[reelsState.activeIndex];
     if (!card) return;
+    // Eksplisitt POI-valg (bruker klikket en markør) tar presedens over passiv
+    // reels-sync. Uten denne guarden lukker syncen popupen i samme tick den
+    // åpnes: OPEN_POI setter activeCategoryId, effekten re-kjører, ser at det
+    // ikke matcher gjeldende reels-kort, og dispatcher RESET/SELECT som wiper
+    // activePOIId. Når brukeren lukker popupen (phase ≠ "poi") gjenopptas syncen.
+    if (boardState.phase === "poi") return;
     if (card.kind === "category") {
       if (boardState.activeCategoryId !== card.categoryId) {
         dispatch({
@@ -291,6 +297,7 @@ function BoardReelsSync() {
     reelsState.activeIndex,
     reelsState.cards,
     boardState.activeCategoryId,
+    boardState.phase,
     dispatch,
   ]);
 
