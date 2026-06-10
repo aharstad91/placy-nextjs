@@ -37,6 +37,7 @@ import {
   enrichReportPois,
   NAERING_GOOGLE_CATEGORIES,
 } from "@/lib/pipeline/enrich-report-pois";
+import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import {
   getDiscoveryRadius,
@@ -430,8 +431,29 @@ async function main() {
   log(`Foto: ${enrichResult.photos.updated} oppdatert, ${enrichResult.photos.skipped} hoppet over`);
   for (const w of enrichResult.warnings) warn(w);
 
-  // ── Steg 5: Hydrering ──────────────────────────────────────────────────
-  section("Steg 5: Hydrering");
+  // ── Steg 5: Trust-validering ───────────────────────────────────────────
+  section("Steg 5: Trust-validering");
+
+  const trustResult = await validateReportTrust({
+    projectId: projectResult.projectId,
+  });
+  log(`Trust-scoret: ${trustResult.scored} Google-POI-er`);
+  log(
+    `Hoppet over: ${trustResult.skipped} (manual_override/allerede scoret), ${trustResult.skippedPublic} offentlige kilde-POI-er (beholder null = vis)`
+  );
+  for (const w of trustResult.warnings) warn(w);
+  if (trustResult.stillNull.length > 0) {
+    warn(
+      `\n⚠️  ${trustResult.stillNull.length} Google-POI-er mangler fortsatt trust-score (vises ufiltrert på boardet):`
+    );
+    for (const poiName of trustResult.stillNull) warn(`   · ${poiName}`);
+    warn(
+      "   Listen MÅ QA-klareres (hver POI manuelt verifisert levende) før boardet telles som evaluert."
+    );
+  }
+
+  // ── Steg 6: Hydrering ──────────────────────────────────────────────────
+  section("Steg 6: Hydrering");
 
   const hydrateResult = await hydrateReport({
     projectId: projectResult.projectId,
@@ -444,12 +466,12 @@ async function main() {
   log(`product_categories: ${hydrateResult.categoriesPopulated} kategorier`);
   for (const w of hydrateResult.warnings) warn(w);
 
-  // ── Steg 6: Revalidering ───────────────────────────────────────────────
-  section("Steg 6: Revalidering");
+  // ── Steg 7: Revalidering ───────────────────────────────────────────────
+  section("Steg 7: Revalidering");
   await revalidateProject(projectResult.customerSlug, projectResult.slug);
 
-  // ── Steg 7: Akseptansesjekk ───────────────────────────────────────────
-  section("Steg 7: Akseptansesjekk");
+  // ── Steg 8: Akseptansesjekk ───────────────────────────────────────────
+  section("Steg 8: Akseptansesjekk");
   const passed = await acceptanceCheck(
     projectResult.productId,
     projectResult.projectId,

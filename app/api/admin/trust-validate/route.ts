@@ -10,9 +10,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/client";
 import {
-  fetchPlaceDetails,
-  TRUST_ENRICHMENT_FIELDS,
-} from "@/lib/google-places/fetch-place-details";
+  enrichTrustSignals,
+  mapPoiRowToPOIForTrust,
+} from "@/lib/google-places/trust-enrichment";
 import {
   batchValidateTrust,
   type TrustFlag,
@@ -157,65 +157,17 @@ export async function POST(request: NextRequest) {
     const batch = toProcess.slice(0, MAX_POIS_PER_REQUEST);
     const hasMore = toProcess.length > MAX_POIS_PER_REQUEST;
 
-    // 5. Enrich POIs missing Google data
+    // 5. Enrich POIs missing Google data (delt med pipeline-steget
+    //    lib/pipeline/validate-report-trust.ts)
     if (!body.skipEnrichment && googleApiKey) {
-      const toEnrich = batch.filter(
-        (poi) => poi.google_place_id && !poi.google_website
-      );
-
-      if (toEnrich.length > 0) {
-        // Concurrency pool for enrichment
-        let running = 0;
-        let idx = 0;
-        const enrichEntries = toEnrich.map((poi) => ({
-          poiId: poi.id,
-          placeId: poi.google_place_id as string,
-        }));
-
-        await new Promise<void>((resolve) => {
-          if (enrichEntries.length === 0) { resolve(); return; }
-
-          const next = () => {
-            while (running < body.concurrency && idx < enrichEntries.length) {
-              const entry = enrichEntries[idx++];
-              running++;
-
-              fetchPlaceDetails(entry.placeId, googleApiKey, TRUST_ENRICHMENT_FIELDS)
-                .then(async (details) => {
-                  if (details) {
-                    try {
-                      await supabase
-                        .from("pois")
-                        .update({
-                          google_website: details.website || null,
-                          google_business_status: details.businessStatus || null,
-                          google_price_level: details.priceLevel ?? null,
-                          google_rating: details.rating ?? null,
-                          google_review_count: details.reviewCount ?? null,
-                        })
-                        .eq("id", entry.poiId);
-                      stats.enriched++;
-                    } catch (e) {
-                      errors.push(`Enrichment DB update failed for ${entry.poiId}: ${e instanceof Error ? e.message : "unknown"}`);
-                    }
-                  }
-                })
-                .catch((e) => {
-                  errors.push(`Enrichment failed for ${entry.poiId}: ${e instanceof Error ? e.message : "unknown"}`);
-                })
-                .finally(() => {
-                  running--;
-                  if (idx >= enrichEntries.length && running === 0) {
-                    resolve();
-                  } else {
-                    next();
-                  }
-                });
-            }
-          };
-          next();
-        });
-      }
+      const enrichResult = await enrichTrustSignals({
+        supabase,
+        pois: batch,
+        googleApiKey,
+        concurrency: body.concurrency,
+      });
+      stats.enriched = enrichResult.enriched;
+      errors.push(...enrichResult.errors);
     }
 
     // 6. Re-read enriched POIs for scoring
@@ -234,22 +186,8 @@ export async function POST(request: NextRequest) {
       } satisfies TrustValidateResponse);
     }
 
-    // 7. Map DB rows to POI type for batchValidateTrust
-    const poisForScoring: POI[] = enrichedPois.map((row) => ({
-      id: row.id,
-      name: row.name,
-      coordinates: { lat: row.lat, lng: row.lng },
-      address: row.address ?? undefined,
-      category: { id: row.category_id ?? "", name: "", icon: "", color: "" },
-      googlePlaceId: row.google_place_id ?? undefined,
-      googleRating: row.google_rating ?? undefined,
-      googleReviewCount: row.google_review_count ?? undefined,
-      googleWebsite: row.google_website ?? undefined,
-      googleBusinessStatus: row.google_business_status ?? undefined,
-      googlePriceLevel: row.google_price_level ?? undefined,
-      trustScore: row.trust_score ?? undefined,
-      trustFlags: (row.trust_flags as string[]) ?? [],
-    }));
+    // 7. Map DB rows to POI type for batchValidateTrust (delt mapping)
+    const poisForScoring: POI[] = enrichedPois.map(mapPoiRowToPOIForTrust);
 
     // 8. Run Layer 1+2 batch validation
     const results = await batchValidateTrust(poisForScoring, body.concurrency);
