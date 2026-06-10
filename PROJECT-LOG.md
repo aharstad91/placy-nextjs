@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-06-10 (kveld) — Nabolags-editorial-arv PoC: TESEN HOLDER — nivå 2 på vilkårlig Ranheim-adresse
+
+Full /ce-brainstorm → /ce-plan → /ce-work-løype i worktree `../placy-ralph-nabolag` (branch `feat/nabolags-editorial-arv`, fra origin/main). Bygget: migrasjon 069 (`areas.report_editorial`), trust-scoring som automatisk pipeline-steg (kun Google-POIer — offentlige beholder null, unngår masse-skjuling av skoler), `findAreaForPoint` (PiP via delt geo-util), `inheritAreaEditorial` (arv + highlight-fallback fra kuratert kandidatliste, R9-årsakslogging, atomisk config-PATCH), `curate-area`-script (staging-validering + `--list-pois` kandidatmeny). 7-persona code review → 17 fixes (bl.a. QA-gate-hull ved place-not-found, env-hoisting-bombe, timeouts). 773/773 tester, tsc/lint/build grønne.
+
+**PoC-resultat:** Ranheim kuratert (6 temaer, curator-stemme, Andreas godkjent), 3 spredte adresser arvet samme kuratering med per-adresse-korrekte highlights (vest fikk Grilstad-POIer, øst fikk Olderdalen/Hansbakken, midt fikk stasjonen/skolen), 0 døde chips, kontrollpunkt utenfor → ren nivå 1. Live: `placy.no/eiendom/placy-demo/{hans-collins-veg-1b,horgvegen-4,martin-barstads-veg-23c}/rapport-board`. Funn-dokument med rubrikk-vurdering: `docs/brainstorms/2026-06-10-nabolags-editorial-arv-poc-funn.md`. Kurateringskostnad ~1 t/nabolag → 30–50 nabolag er bounded.
+
+**Nøkkelfunn:** kommunens skolekrets er smalere enn markeds-Ranheim (2 av 3 lokalkjente adresser utenfor; polygon v2 = krets + adresse-korreksjoner); ULF-AN-kandidaten fanget av lokalkunnskap (verdien menneskelig kuratering tilfører); grunnkrets-union er slice 2-verktøyet for resten av firkommune-området. Plan: `docs/plans/2026-06-10-001-feat-nabolags-editorial-arv-poc-plan.md` (completed). Strategisk kontekst (Propr på vent, kjede-først) loggføres i `docs/strategy/LOG.md` separat.
+
+---
+
 ## 2026-06-10 (forts.) — POI-popup-bugen landet: reprodusert generelt, fikset, deployet og live-verifisert
 
 Fortsettelse av nivå-modell-sesjonen. Brukeren fant under Grilstad-browser-runden at markør-klikk ikke ga popup. Root-cause var allerede funnet og fikset (commit `80787ff`), men deploy ble holdt tilbake av bekymring for live demo-boards (Teknostallen/StasjonsKvartalet). Denne økten beviste at fiksen var trygg — og at bugen faktisk lå live.

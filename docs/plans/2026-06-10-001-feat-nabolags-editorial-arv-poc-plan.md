@@ -1,7 +1,7 @@
 ---
 title: "feat: Nabolags-editorial-arv PoC — slice 1 (Ranheim)"
 type: feat
-status: active
+status: completed
 date: 2026-06-10
 origin: docs/brainstorms/2026-06-10-nabolags-editorial-arv-requirements.md
 ---
@@ -456,7 +456,7 @@ chips; orkestrator-loggen viser kept/dropped med årsaker; `board-data.test.ts` 
 
 ### Fase 3 — Innhold og bevis
 
-- [ ] **Unit 6: Ranheim-kuratering (innholdsarbeid)**
+- [x] **Unit 6: Ranheim-kuratering (innholdsarbeid)**
 
 **Goal:** Alle 6 bolig-temaer kuratert for Ranheim, godkjent av Andreas, med tidslogging.
 
@@ -491,7 +491,7 @@ godkjenning per tema + Unit 5-valideringen.
 **Verification:** `areas`-raden har godkjent editorial for alle 6 temaer; tidslogg finnes;
 staging-fila committet.
 
-- [ ] **Unit 7: PoC-evaluering — falsifiseringsrubrikk + 3 adresser**
+- [x] **Unit 7: PoC-evaluering — falsifiseringsrubrikk + 3 adresser**
 
 **Goal:** Tese-dommen: generér 3 varians-maksimerende adresser og evaluer mot
 pre-registrert rubrikk.
