@@ -11,6 +11,7 @@
 
 import barneskolekretserRaw from "@/data/geo/trondheim/barneskolekrets.json";
 import ungskolekretserRaw from "@/data/geo/trondheim/ungskolekrets.json";
+import { pointInGeometry, type GeoJsonPolygonGeometry } from "@/lib/utils/geo";
 
 // ---------- Types ----------
 
@@ -21,10 +22,7 @@ interface SchoolZoneResult {
 
 interface GeoJsonFeature {
   type: "Feature";
-  geometry: {
-    type: "Polygon" | "MultiPolygon";
-    coordinates: number[][][] | number[][][][];
-  };
+  geometry: GeoJsonPolygonGeometry;
   properties: Record<string, unknown>;
 }
 
@@ -86,51 +84,6 @@ function wgs84ToUtm32(lat: number, lon: number): { easting: number; northing: nu
           ((61 - 58 * T + T * T + 600 * C - 330 * ep2) * A * A * A * A * A * A) / 720));
 
   return { easting, northing };
-}
-
-// ---------- Point-in-Polygon ----------
-
-/**
- * Ray-casting point-in-polygon test.
- * Polygon is an array of [x, y] coordinate pairs (closed ring).
- */
-function pointInPolygon(x: number, y: number, polygon: number[][]): boolean {
-  let inside = false;
-  const n = polygon.length;
-  let j = n - 1;
-
-  for (let i = 0; i < n; i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
-      inside = !inside;
-    }
-    j = i;
-  }
-
-  return inside;
-}
-
-/**
- * Check if a point falls within any ring of a geometry (Polygon or MultiPolygon).
- */
-function pointInGeometry(
-  x: number,
-  y: number,
-  geometry: GeoJsonFeature["geometry"]
-): boolean {
-  if (geometry.type === "Polygon") {
-    // First ring is the exterior boundary
-    return pointInPolygon(x, y, geometry.coordinates[0] as number[][]);
-  }
-  if (geometry.type === "MultiPolygon") {
-    // Check each polygon in the multi-polygon
-    return (geometry.coordinates as number[][][][]).some((polygon) =>
-      pointInPolygon(x, y, polygon[0])
-    );
-  }
-  return false;
 }
 
 // ---------- Public API ----------

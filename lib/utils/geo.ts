@@ -1,8 +1,9 @@
 /**
  * Geospatial Utilities
  *
- * Shared functions for distance calculations and bounding box operations.
- * Used by both poi-discovery.ts and queries.ts.
+ * Shared functions for distance calculations, bounding box operations,
+ * and point-in-polygon tests.
+ * Used by poi-discovery.ts, queries.ts, and school-zones.ts.
  */
 
 /**
@@ -72,6 +73,71 @@ export function isValidCoordinates(lat: number, lng: number): boolean {
     lng >= -180 &&
     lng <= 180
   );
+}
+
+// ---------- Point-in-Polygon ----------
+
+/**
+ * GeoJSON Polygon or MultiPolygon geometry.
+ * Coordinate pairs are [x, y] — for WGS84 GeoJSON that means [lng, lat].
+ */
+export interface GeoJsonPolygonGeometry {
+  type: "Polygon" | "MultiPolygon";
+  coordinates: number[][][] | number[][][][];
+}
+
+/**
+ * Ray-casting point-in-polygon test.
+ * Polygon is an array of [x, y] coordinate pairs (closed ring).
+ *
+ * Coordinate-system agnostic: point and ring must use the same planar system —
+ * [lng, lat] for WGS84 GeoJSON (pass x = lng, y = lat), or projected
+ * coordinates like UTM (pass x = easting, y = northing).
+ *
+ * Boundary semantics are half-open (classic ray-cast): points exactly on the
+ * lower/left edges count as inside, points on the upper/right edges as outside.
+ */
+export function pointInPolygon(x: number, y: number, polygon: number[][]): boolean {
+  let inside = false;
+  const n = polygon.length;
+  let j = n - 1;
+
+  for (let i = 0; i < n; i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+    j = i;
+  }
+
+  return inside;
+}
+
+/**
+ * Check if a point falls within any ring of a geometry (Polygon or MultiPolygon).
+ *
+ * Only exterior rings are tested — holes (interior rings) are ignored, so a
+ * point inside a hole still counts as inside. This preserves the original
+ * school-zones behavior.
+ */
+export function pointInGeometry(
+  x: number,
+  y: number,
+  geometry: GeoJsonPolygonGeometry
+): boolean {
+  if (geometry.type === "Polygon") {
+    // First ring is the exterior boundary
+    return pointInPolygon(x, y, geometry.coordinates[0] as number[][]);
+  }
+  if (geometry.type === "MultiPolygon") {
+    // Check each polygon in the multi-polygon
+    return (geometry.coordinates as number[][][][]).some((polygon) =>
+      pointInPolygon(x, y, polygon[0])
+    );
+  }
+  return false;
 }
 
 /**
