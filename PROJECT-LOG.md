@@ -22,9 +22,15 @@ Gjenopptatt sesjon etter krasj: brainstorm + plan for nivå-modellen (1=Basic / 
 
 **Verifisering:** 712/712 tester, `tsc --noEmit` rent, ESLint 0 errors. 6 commits på `feat/report-tier-model`.
 
+### Avklart samme dag: nivå 3-kravet forenklet etter live-verifisering
+
+Bruker påpekte at StasjonsKvartalet HAR audio-tur + reels på live. Kodegjennomgang viste hvorfor: boardet gater på lyd-*tilstedeværelse* (`pickPlayable(reelsAudio) ?? pickPlayable(audio)`, playable = manus+url), IKKE på `audioTourEnabled` — flagget er dødt på boardet (ingen UI-konsument; gjaldt den gamle rapport-siden). Ratifisert forenkling (produkteier: «simpel definering — jeg setter nivået, hvert nivå har required elements»): nivå 3 audio-krav = spillbart VO-spor per tema + welcome/hjem/outro; reelsAudio vs audio er implementasjonsakse. Validator + tester + docs oppdatert; falsifikasjonsbeviset er nå camera-tours + has3d-addon + brand-assets (Grilstads VO fungerer live via tour-sporene). 714/714 tester.
+
+**Read-only-simulering mot prod:** Teknostallen deklarert 1 → OK. StasjonsKvartalet deklarert 3 → mangler KUN editorial ×7 (drill-in-tekstene er aldri skrevet i prod) — kurateringsarbeid, ikke config-fiks.
+
 ### Åpent / neste steg
 
-- **Unit 5 (klassifisering, PROD-MUTASJON — `/effort xhigh` før kjøring):** Teknostallen → `reportTier: 1`, StasjonsKvartalet → `3`. Blokker: StasjonsKvartalet mangler `themes[].audio` + `audioTourEnabled` HELT i prod (kun reelsAudio finnes; tour-mp3-ene ligger i `public/audio/stasjonskvartalet/`) — **bevisst avslått eller config-klobring?** Svaret avgjør restore vs. re-generering. Teknostallens products-rad må identifiseres via project-id-mapping.
+- **Unit 5 (klassifisering, PROD-MUTASJON — `/effort xhigh` før kjøring):** Teknostallen → `reportTier: 1` (består). StasjonsKvartalet → `3` krever først editorial på alle 7 temaer (produkteier-beslutning: skriv kuratering, eller vent med 3-deklarasjonen). Ingen audio-re-seed nødvendig. Teknostallens products-rad identifiseres via project-id-mapping.
 - **Unit 6–8 (Grilstad-løft til ekte nivå 3):** camera-poser autoreres interaktivt i browser (`?author=1`; start natur-friluftsliv + marina-batliv), brand-assets må bekreftes/produseres før `assets.brand: true`, reels-VO ×7 genereres på egen filnøkkel `{theme-id}-reels.mp3` (ALDRI overskrive tour-mp3 — karaoke ryker) og gjennomlyttes (stokastisk TTS, norske stedsnavn: Fullriggerøya, Grilstadfjæra, Ladestien).
 - Worktree-opprydding: `git worktree remove ../placy-ralph-grilstad` når sesjonen er ferdig; main er 16 commits foran origin (ikke pushet).
 
