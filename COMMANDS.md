@@ -23,6 +23,16 @@ npm run build
 npm run lint
 ```
 
+### Valider nivå-deklarasjoner (rapport-board)
+```bash
+npm run validate:tier                  # lokal JSON + Supabase
+npm run validate:tier -- --local-only  # offline, kun data/projects/
+```
+Sjekker at deklarert `reportConfig.reportTier` (1 = Basic, 2 = +Editorial,
+3 = Maks) er fullt dekket av faktisk innhold (editorial, audio-tur, reels-VO,
+camera-tours, 3D-addon, brand-assets). Exit 1 ved under-leveranse — kjør før
+kunde-sending. Ved avvik: fullfør manglene eller re-deklarer ned.
+
 ---
 
 ## Story Generator
