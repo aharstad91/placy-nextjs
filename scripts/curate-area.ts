@@ -1,8 +1,9 @@
 #!/usr/bin/env npx tsx
 /**
- * Kuratér nabolags-område: last staging-JSON (håndtegnet polygon + kuratert
- * report_editorial) opp til eksisterende `areas`-rad, eller list POI-kandidater
- * per bolig-tema som kurateringsmeny.
+ * Kuratér nabolags-område: last staging-JSON (polygon + kuratert
+ * report_editorial) opp til `areas` — OPPRETTER raden hvis den ikke finnes
+ * (krever `meta`-blokk), ellers OPPDATERER den. Eller list POI-kandidater per
+ * bolig-tema som kurateringsmeny.
  *
  * Usage:
  *   npx tsx scripts/curate-area.ts --dry-run
@@ -23,10 +24,12 @@
  *
  * Skrivemønster (dokumentert valg): `areas` har INGEN `updated_at`-kolonne, så
  * optimistisk lås à la apply-curation-staging.ts er ikke mulig her. Dette er en
- * én-operatør-PoC — vi bruker enkel GET → klient-side spread-merge → PATCH på
- * id. Merge-semantikk: staging overskriver `boundary` og de
- * `report_editorial`-temaene den har; eksisterende temaer som ikke er i
- * staging BEHOLDES.
+ * én-operatør-PoC — vi bruker enkel GET → branch:
+ *   - finnes ikke raden: INSERT (POST) fra `meta` + boundary + report_editorial
+ *   - finnes raden: klient-side spread-merge → PATCH på id. Merge-semantikk:
+ *     staging overskriver `boundary` og de `report_editorial`-temaene den har;
+ *     eksisterende temaer som ikke er i staging BEHOLDES. `meta` ignoreres ved
+ *     update (endrer aldri identitet på en eksisterende rad).
  */
 
 // MÅ stå først: tsx hoister statiske imports, så env må lastes via en
@@ -159,28 +162,59 @@ async function applyStaging(opts: { file: string; dryRun: boolean; yes: boolean 
   );
 
   const row = await fetchAreaRow(staging.areaId);
-  if (!row) {
+  const mode: "create" | "update" = row ? "update" : "create";
+
+  // Opprettelse krever meta-blokk (NOT NULL-feltene ved INSERT). Uten meta og
+  // uten eksisterende rad kan vi verken PATCHe eller INSERTe.
+  if (mode === "create" && !staging.meta) {
     console.error(
-      `Feil: ingen areas-rad med id='${staging.areaId}' — slice 1 forventer eksisterende rad (migrasjon 050)`
+      `Feil: ingen areas-rad med id='${staging.areaId}', og staging mangler 'meta'-blokk.\n` +
+        `      Kjør 'npx tsx scripts/fetch-area-boundary.ts --kommune <nr> --out ${opts.file}'\n` +
+        `      for å generere et skjelett med meta, eller legg til meta manuelt\n` +
+        `      (name_no/name_en/slug_no/slug_en/center_lat/center_lng).`
     );
     process.exit(1);
   }
 
-  // Klient-side merge (se header: areas mangler updated_at → ingen optimistisk lås)
-  const existingEditorial = row.report_editorial ?? {};
+  // Editorial: ved create finnes ingen eksisterende → bruk staging direkte.
+  // Ved update: klient-side merge (areas mangler updated_at → ingen optimistisk lås).
+  const existingEditorial = row?.report_editorial ?? {};
   const nextEditorial = { ...existingEditorial, ...staging.report_editorial };
 
   // ── Plan ──
-  console.log(
-    `\n── Plan for areas.id='${row.id}' (${row.name_no ?? "uten navn"}, level=${row.level ?? "?"}) ──`
-  );
+  if (mode === "create" && staging.meta) {
+    const m = staging.meta;
+    console.log(
+      `\n── Plan for areas.id='${staging.areaId}' (NY RAD) ──`
+    );
+    console.log(
+      `OPPRETTER rad: name_no='${m.name_no}', slug_no='${m.slug_no}', level=${m.level}, ` +
+        `senter=${m.center_lat},${m.center_lng}` +
+        (m.zoom_level !== undefined ? `, zoom=${m.zoom_level}` : "") +
+        (m.parent_id ? `, parent=${m.parent_id}` : "") +
+        (m.postal_codes ? `, postnr=[${m.postal_codes.join(",")}]` : "")
+    );
+  } else {
+    console.log(
+      `\n── Plan for areas.id='${staging.areaId}' (${row?.name_no ?? "uten navn"}, level=${row?.level ?? "?"}) ──`
+    );
+    if (staging.meta) {
+      console.log(
+        "ℹ️  Raden finnes — meta-blokken ignoreres (kun boundary + report_editorial oppdateres)"
+      );
+    }
+  }
   const outerRingPoints =
     staging.boundary.type === "Polygon"
       ? staging.boundary.coordinates[0].length
       : staging.boundary.coordinates.reduce((sum, poly) => sum + poly[0].length, 0);
   console.log(
     `boundary: settes (${staging.boundary.type}, ${outerRingPoints} punkter i ytre ring) — ` +
-      (row.boundary ? "ERSTATTER eksisterende boundary" : "raden har ingen boundary i dag")
+      (mode === "create"
+        ? "ny rad"
+        : row?.boundary
+          ? "ERSTATTER eksisterende boundary"
+          : "raden har ingen boundary i dag")
   );
 
   console.log("report_editorial:");
@@ -225,8 +259,9 @@ async function applyStaging(opts: { file: string; dryRun: boolean; yes: boolean 
   }
 
   if (!opts.yes) {
+    const verb = mode === "create" ? "Opprett rad med" : "Skriv";
     const ok = await confirm(
-      `\nSkriv boundary + ${stagingThemeIds.length} temaer til areas.id='${staging.areaId}'? [J/n]: `
+      `\n${verb} boundary + ${stagingThemeIds.length} temaer til areas.id='${staging.areaId}'? [J/n]: `
     );
     if (!ok) {
       console.log("Avbrutt — ingen writes");
@@ -234,31 +269,73 @@ async function applyStaging(opts: { file: string; dryRun: boolean; yes: boolean 
     }
   }
 
-  const patchUrl = `${SUPABASE_URL}/rest/v1/areas?id=eq.${encodeURIComponent(staging.areaId)}`;
-  const res = await fetchWithTimeout(patchUrl, {
-    method: "PATCH",
-    headers: {
-      ...restHeaders(),
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify({
+  if (mode === "create" && staging.meta) {
+    // INSERT ny rad. report_editorial = staging direkte (ingen eksisterende).
+    const m = staging.meta;
+    const insertRow: Record<string, unknown> = {
+      id: staging.areaId,
+      name_no: m.name_no,
+      name_en: m.name_en,
+      slug_no: m.slug_no,
+      slug_en: m.slug_en,
+      level: m.level,
+      center_lat: m.center_lat,
+      center_lng: m.center_lng,
       boundary: staging.boundary,
-      report_editorial: nextEditorial,
-    }),
-  });
-  if (!res.ok) {
-    console.error(`PATCH feilet: ${res.status} ${await res.text()}`);
-    process.exit(1);
+      report_editorial: staging.report_editorial,
+    };
+    if (m.zoom_level !== undefined) insertRow.zoom_level = m.zoom_level;
+    if (m.parent_id !== undefined) insertRow.parent_id = m.parent_id;
+    if (m.postal_codes !== undefined) insertRow.postal_codes = m.postal_codes;
+
+    const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/areas`, {
+      method: "POST",
+      headers: {
+        ...restHeaders(),
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify(insertRow),
+    });
+    if (!res.ok) {
+      console.error(`INSERT feilet: ${res.status} ${await res.text()}`);
+      process.exit(1);
+    }
+    const inserted = (await res.json()) as AreaRow[];
+    if (!Array.isArray(inserted) || inserted.length === 0) {
+      console.error("INSERT returnerte 0 rader — opprettelse mislyktes");
+      process.exit(1);
+    }
+    console.log(
+      `\n✓ areas.id='${staging.areaId}' OPPRETTET (boundary + ${Object.keys(staging.report_editorial).length} temaer i report_editorial)`
+    );
+  } else {
+    const patchUrl = `${SUPABASE_URL}/rest/v1/areas?id=eq.${encodeURIComponent(staging.areaId)}`;
+    const res = await fetchWithTimeout(patchUrl, {
+      method: "PATCH",
+      headers: {
+        ...restHeaders(),
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        boundary: staging.boundary,
+        report_editorial: nextEditorial,
+      }),
+    });
+    if (!res.ok) {
+      console.error(`PATCH feilet: ${res.status} ${await res.text()}`);
+      process.exit(1);
+    }
+    const patched = (await res.json()) as AreaRow[];
+    if (!Array.isArray(patched) || patched.length === 0) {
+      console.error("PATCH traff 0 rader — sjekk at areas-raden fortsatt finnes");
+      process.exit(1);
+    }
+    console.log(
+      `\n✓ areas.id='${staging.areaId}' oppdatert (boundary + ${Object.keys(nextEditorial).length} temaer i report_editorial)`
+    );
   }
-  const patched = (await res.json()) as AreaRow[];
-  if (!Array.isArray(patched) || patched.length === 0) {
-    console.error("PATCH traff 0 rader — sjekk at areas-raden fortsatt finnes");
-    process.exit(1);
-  }
-  console.log(
-    `\n✓ areas.id='${staging.areaId}' oppdatert (boundary + ${Object.keys(nextEditorial).length} temaer i report_editorial)`
-  );
   console.log(
     `Verifiser (REST): ${SUPABASE_URL}/rest/v1/areas?id=eq.${staging.areaId}&select=id,boundary,report_editorial`
   );

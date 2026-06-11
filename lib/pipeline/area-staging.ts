@@ -111,6 +111,36 @@ const ReportEditorialSchema = z
     }
   });
 
+// ── meta (valgfri — kun nødvendig for å OPPRETTE en ny areas-rad) ───────────
+
+/**
+ * Identitetsfeltene en `areas`-rad trenger ved INSERT (migrasjon 018/050).
+ * Utelates når raden allerede finnes (curate-area PATCHer da kun boundary +
+ * report_editorial). NOT NULL i tabellen: name_no, name_en, slug_no, slug_en,
+ * center_lat, center_lng — derfor påkrevd her. `level`/`zoom_level` har
+ * DB-defaults, `parent_id`/`postal_codes` er nullable.
+ */
+export const AreaMetaSchema = z
+  .object({
+    name_no: z.string().min(1, "meta.name_no må være ikke-tom"),
+    name_en: z.string().min(1, "meta.name_en må være ikke-tom"),
+    slug_no: z.string().min(1, "meta.slug_no må være ikke-tom"),
+    slug_en: z.string().min(1, "meta.slug_en må være ikke-tom"),
+    center_lat: z
+      .number()
+      .min(-90, "meta.center_lat utenfor [-90, 90]")
+      .max(90, "meta.center_lat utenfor [-90, 90]"),
+    center_lng: z
+      .number()
+      .min(-180, "meta.center_lng utenfor [-180, 180]")
+      .max(180, "meta.center_lng utenfor [-180, 180]"),
+    level: z.enum(["city", "bydel", "strok"]).default("city"),
+    zoom_level: z.number().int("meta.zoom_level må være heltall").optional(),
+    parent_id: z.string().min(1).optional(),
+    postal_codes: z.array(z.string().min(1)).optional(),
+  })
+  .strict();
+
 // ── Toppnivå ──────────────────────────────────────────────────────────────
 
 export const AreaStagingSchema = z
@@ -118,11 +148,14 @@ export const AreaStagingSchema = z
     /** Fritekst-instruksjoner i malen — ignoreres av pipelinen */
     _instructions: z.unknown().optional(),
     areaId: z.string().min(1, "areaId må være en ikke-tom streng"),
+    /** Kun nødvendig når curate-area skal OPPRETTE raden (INSERT) */
+    meta: AreaMetaSchema.optional(),
     boundary: BoundarySchema,
     report_editorial: ReportEditorialSchema,
   })
   .strict();
 
+export type AreaMeta = z.infer<typeof AreaMetaSchema>;
 export type AreaStaging = z.infer<typeof AreaStagingSchema>;
 export type AreaStagingBoundary = z.infer<typeof BoundarySchema>;
 export type ThemeEditorialStaging = z.infer<typeof ThemeEditorialStagingSchema>;

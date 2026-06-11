@@ -36,6 +36,17 @@ function validStaging() {
   };
 }
 
+function validMeta() {
+  return {
+    name_no: "Malvik",
+    name_en: "Malvik",
+    slug_no: "malvik",
+    slug_en: "malvik",
+    center_lat: 63.42,
+    center_lng: 10.74,
+  };
+}
+
 function expectFailure(raw: unknown): string[] {
   const result = parseAreaStaging(raw);
   expect(result.success).toBe(false);
@@ -97,6 +108,64 @@ describe("parseAreaStaging — gyldig staging", () => {
         "trening-aktivitet",
       ].sort()
     );
+  });
+});
+
+// ── meta-blokk (opprettelse av ny areas-rad) ───────────────────────────────
+
+describe("parseAreaStaging — meta-blokk", () => {
+  it("meta er valgfri — staging uten meta validerer (PATCH-tilfellet)", () => {
+    const result = parseAreaStaging(validStaging());
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error("unreachable");
+    expect(result.data.meta).toBeUndefined();
+  });
+
+  it("gyldig meta validerer og defaulter level til 'city'", () => {
+    const staging = { ...validStaging(), meta: validMeta() };
+    const result = parseAreaStaging(staging);
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error("unreachable");
+    expect(result.data.meta?.name_no).toBe("Malvik");
+    expect(result.data.meta?.level).toBe("city");
+  });
+
+  it("eksplisitt level/zoom_level/postal_codes bevares", () => {
+    const staging = {
+      ...validStaging(),
+      meta: { ...validMeta(), level: "strok", zoom_level: 14, postal_codes: ["7560", "7563"] },
+    };
+    const result = parseAreaStaging(staging);
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error("unreachable");
+    expect(result.data.meta?.level).toBe("strok");
+    expect(result.data.meta?.zoom_level).toBe(14);
+    expect(result.data.meta?.postal_codes).toEqual(["7560", "7563"]);
+  });
+
+  it("meta uten påkrevd felt avvises (manglende name_no)", () => {
+    const meta = validMeta() as Record<string, unknown>;
+    delete meta.name_no;
+    const errors = expectFailure({ ...validStaging(), meta });
+    expect(errors.some((e) => e.includes("name_no"))).toBe(true);
+  });
+
+  it("meta.center_lng utenfor [-180, 180] avvises", () => {
+    const staging = { ...validStaging(), meta: { ...validMeta(), center_lng: 200 } };
+    const errors = expectFailure(staging);
+    expect(errors.some((e) => e.includes("center_lng"))).toBe(true);
+  });
+
+  it("ugyldig level-enum avvises", () => {
+    const staging = { ...validStaging(), meta: { ...validMeta(), level: "kommune" } };
+    const errors = expectFailure(staging);
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it("ukjent meta-nøkkel avvises (strict — fanger typo)", () => {
+    const staging = { ...validStaging(), meta: { ...validMeta(), centre_lat: 63.4 } };
+    const errors = expectFailure(staging);
+    expect(errors.length).toBeGreaterThan(0);
   });
 });
 
