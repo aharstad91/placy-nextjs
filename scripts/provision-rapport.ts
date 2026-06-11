@@ -220,6 +220,40 @@ async function acceptanceCheck(
     log(`✓ Alle 6 temaer har leadText`);
   }
 
+  // 2c. Min-chips QA-flagg (informativt, ikke feil) — temaer som FIKK editorial
+  // (nivå 2-arv) men har <2 highlight-chips. Body-only (0 chips + body) er en
+  // legitim, bevisst tilstand (slice 1-funn: tynn POI-dekning vises som
+  // kuratert body alene); 1 chip flagges som «tynt». INGEN suppresjon —
+  // kuratert body vises alltid; dette er kun en kurator-vink, ikke visningslogikk.
+  const inheritedThemes = (
+    themes as Array<{
+      id?: string;
+      editorial?: { body?: string; highlightPoiIds?: unknown[] };
+    }>
+  ).filter((t) => t.editorial);
+  if (inheritedThemes.length > 0) {
+    const thin: string[] = [];
+    for (const t of inheritedThemes) {
+      const chips = Array.isArray(t.editorial?.highlightPoiIds)
+        ? t.editorial!.highlightPoiIds!.length
+        : 0;
+      const hasBody = (t.editorial?.body ?? "").trim().length > 0;
+      if (chips >= 2) continue;
+      if (chips === 1) {
+        thin.push(`'${t.id}' (1 chip — tynt, vurder flere kandidater)`);
+      } else if (hasBody) {
+        thin.push(`'${t.id}' (body-only, 0 chips — bevisst tilstand)`);
+      } else {
+        thin.push(`'${t.id}' (0 chips, ingen body — sjekk gating)`);
+      }
+    }
+    if (thin.length > 0) {
+      warn(`⚠️  QA min-chips: ${thin.length} arvet tema med <2 chips: ${thin.join(", ")}`);
+    } else {
+      log(`✓ QA min-chips: alle ${inheritedThemes.length} arvede temaer har ≥2 chips`);
+    }
+  }
+
   // 2b. Nivå-validering: deklarert reportTier må være fullt dekket av
   // nettopp-skrevet config (lib/validation/report-tier.ts).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -6,6 +6,69 @@
 
 ---
 
+## 2026-06-11 (forts. 2) — Sentrum + Tyholt kuratert: 5-strøk demo-grunnmur komplett
+
+Siste to av de fem valgte strøkene (Sentrum, Lade, Ranheim, Charlottenlund, Tyholt). Samme løype som Lade/Charlottenlund; den kreative delen (12 bodies) fan-et ut til 2 parallelle Fable-agenter (én per strøk — genuint uavhengig: ulike meny-/staging-filer, ingen delte redigeringer), Opus orkestrerte og verifiserte.
+
+**Polygon-funn — skolekretser ≠ strøk-navn:** Verken «Sentrum» eller «Tyholt» finnes som barneskolekrets. Løst empirisk via point-in-polygon mot kjente referansepunkter:
+- **Tyholt = BERG-krets** (rent enkelt-treff: alle Tyholt-punkter faller i BERG).
+- **Sentrum = SINGSAKER + BISPEHAUGEN unionert** (Midtbyen straddler to kretser: Torvet/Kalvskinnet i SINGSAKER, Solsiden/Bakklandet i BISPEHAUGEN). `extract-skolekrets-boundary.py` utvidet til å ta FLERE kretsnavn (`--krets A B`) og unione som MultiPolygon.
+- **Kjent begrensning (logget, ikke blokkerende):** SINGSAKER+BISPEHAUGEN mangler nordvest-Midtbyen (Kongens gate vest, Munkegata nord, Kalvskinnet — ligger i ILA-krets). Å legge til hele ILA ville blåse Sentrum vestover til Ila/Marienborg (for stort). Union-en er et godt «indre sentrum øst + Bakklandet + Solsiden + Singsaker»-fotavtrykk — der megler-demoer av sentrumsleiligheter typisk ligger. Demo-adresser valgt sentralt (Munkegata 26/Torvet, Beddingen 14/Solsiden, Tidemands gate 22/Singsaker).
+
+**Resultat:** 6 adresser provisjonert (Geonorge-koordinater). Tetthet bekrefter sentrumsfortrinnet: Sentrum 224–288 POI-er, Tyholt 176–234. Alle 6 temaer arvet på alle 6 boards, businessStatus-sjekk av alle 38 google-kandidater → **alle OPERATIONAL** (ingen La Perla denne gang). Alle 6 tier 2-validert. **Render-verifisert** (ikke bare validert): dev-server, begge board-typer HTTP 200, editorial-fraser (Tyholttårnet/Kuhaugen/Estenstadmarka, Trondheim Torg/Bakklandet/Stiftsgårdsparken) bekreftet i servert HTML.
+
+Live: `placy.no/eiendom/placy-demo/{munkegata-26,beddingen-14,tidemands-gate-22,asbjornsens-gate-41,kong-inges-gate-49a,lars-onsagers-veg-5}/rapport-board`
+
+**5-strøk demo-grunnmuren er nå komplett** (Sentrum/Lade/Ranheim/Charlottenlund/Tyholt = 15 board-adresser live). **Neste:** Ranheim/Charlottenlund-overlapp-beslutning, business_status-gate i trust-pipelinen, ~20 gjenstående strøk + kost-per-board-metrikk for slice 3-selvbetjening, evt. skolekrets-drevet skoletildeling per adresse.
+
+---
+
+## 2026-06-11 (forts.) — Trondheim-pivot: Lade + Charlottenlund kuratert på strøk-skala
+
+Retningsskifte etter Malvik-funnet: **Trondheim-only, per strøk/skolekrets** («der har vi mest data å skalere på» — Andreas). Kommune-skala forkastet som markedsenhet; nabokommuner deferret. Mål: demo-dekning for meglerkjede-utrulling — 5 strøk valgt (Sentrum, Lade, Ranheim ✓, Charlottenlund, Tyholt), Lade + Charlottenlund først.
+
+**Bygget:**
+- `scripts/extract-skolekrets-boundary.py` — krets fra `data/geo/trondheim/barneskolekrets.json` (EPSG:25832→WGS84 via pyproj), skriver staging-skjelett. Søsterverktøy til fetch-area-boundary.ts; gjenbrukes for ~20 gjenstående strøk.
+- `scripts/set-report-tier.ts` — generalisert tier-bump (jsonb-vs-streng + optimistisk lås), erstatter engangs-scriptet fra Malvik. Flyten provision tier 1 → kuratér → re-provision → bump er nå standard per strøk.
+
+**Funn — polygon-overlapp:** CHARLOTTENLUND-kretsen overlapper Ranheim v2 reelt (45 vertekser — hull-utvidelsen vestover fra slice 1). `findAreaForPoint` tar vilkårlig «første treff» ved multi-match. Håndtert nå ved å velge demo-adresser utenfor sonen; **åpen beslutning:** trimme Ranheim v2 tilbake til krets, eller deterministisk prioritet i oppslaget. Lade↔Charlottenlund-«overlapp» er kun delt kretsgrense (ray-cast-kant), ikke reell.
+
+**Resultat:** 6 adresser provisjonert (Geonorge-verifiserte koordinater; Mapbox ikke brukt til koordinater), alle traff riktig strøk. Tetthet bekrefter Trondheim-fortrinnet: Lade 113–176 POI-er, Charlottenlund 65–95 (Malvik 22–31, Ranheim 82). Etter kuratering + re-arv: 14–18 highlights beholdt per board (Malvik: 9–11), min-chips grønn på 5/6 (Konglevegen transport body-only — SE-hjørnet, langt fra Leangen stasjon). Alle 6 validerer tier 2.
+
+**Kuratering:** 12 tema-bodies draftet i hovedløkka (Fable; underagent traff sesjonsgrense), curator-stemme + Andreas' no-årstall-regel fra Malvik anvendt fra start. WebSearch-verifisert (Charlottenlund ungdomsskole Tunvegen ✓, Ringve-museet i botanisk hage ✓; metrobuss-linjenr IKKE verifisert → droppet). businessStatus-batch-sjekk av alle 37 google-kandidater FØR review (La Perla-rutinen) — alle OPERATIONAL. ULF-AN bokseklubb nå kuratert inn der den hører hjemme (Charlottenlundhallen) — full sirkel fra slice 1-feilplasseringen. Andreas: «bare ship det her, så får vi revidere fortløpende» — tekstene er live og revideres løpende.
+
+Live: `placy.no/eiendom/placy-demo/{sleipnes-vei-12b,haakon-viis-gate-13,ostmarkveien-26e,churchills-veg-17f,ranheimsvegen-13a,konglevegen-11b}/rapport-board`
+
+**Neste:** Sentrum + Tyholt (samme løype, ~45 min/strøk), Ranheim/Charlottenlund-overlapp-beslutning, business_status-gate i trust-pipelinen, evt. skolekrets-drevet skoletildeling per adresse.
+
+---
+
+## 2026-06-11 — Nabolags-editorial-arv slice 2: Malvik (typologi-test på kommune-skala)
+
+Slice 2 i worktree `../placy-ralph-nabolag` (branch `feat/nabolag-slice2-malvik`). Seriellt, token-bevisst (Opus-orkestrering, Fable-underagent for editorial), ingen full ce-pipeline — gjentakelse av bevist Ranheim-mønster.
+
+**Bygget (4 enheter):**
+- `scripts/fetch-area-boundary.ts` — henter offisiell kommunegrense fra Kartverket kommuneinfo (`/kommuner/{nr}/omrade`, NLOD, rights-clean), normaliserer (avrund 6 des. + lukk ringer), validerer mot `BoundarySchema`, skriver staging-skjelett m/ meta forhåndsutfylt.
+- `area-staging.ts` — valgfri `meta`-blokk (NOT NULL-feltene ved INSERT: name_no/en, slug_no/en, center_lat/lng + level/zoom/parent/postal valgfri). +7 tester (18 totalt).
+- `curate-area.ts` — **upsert**: finnes ikke raden + har meta → INSERT (POST); finnes → PATCH som før (meta ignoreres, anti-clobber). Fjernet «slice 1 forventer eksisterende rad»-hardfeilen.
+- `provision-rapport.ts` steg 9 — **min-chips QA-flagg** (informativt): arvet tema med <2 chips flagges (1=«tynt», 0+body=«body-only, bevisst tilstand»). Ingen suppresjon/visningslogikk.
+
+**Datagrunnlag:** Malvik = kommune 5031 (verifisert mot Kartverket sok). Kommunegrense som ÉN MultiPolygon (3 polygoner, 1095 vertekser). **Grunnkrets-union deferret** — kommunegrensen er strengt bedre når målet ER hele kommunen; grunnkrets-union tjener først sitt formål ved kommune-SUBSETT (Stjørdal/Melhus), og krever et geometri-bibliotek (ingen i repoet). Andreas valgte kommunegrense.
+
+**Adresser (autoritativt via Geonorge adresse-API, ikke Mapbox):** Saxe Viks veg 33 (Saksvik, vest), Bjørnmyra 6A (Sveberg, midt), Nessvegen 17 (Hommelvik, øst). Mapbox bommet på Bjørnmyra (matchet «Svebergvegen 6», ~1,1 km feil) — Geonorge ga riktig. Alle 3 INNENFOR polygonet (steg 7 «Område: Malvik» på alle).
+
+**Resultat — arv fungerer på kommune-skala:** alle 6 temaer arvet på alle 3 adresser, nivå 2 ✓ (reportTier bumpet 1→2 etter kuratering — `--update` rører aldri config, så tier ble satt via read-modify-write). **Transport-dekning bevist:** begge stasjoner som kandidater → Saksvik beholdt Vikhammer stasjon, Hommelvik beholdt Hommelvik stasjon, Sveberg falt til bussholdeplasser (begge stasjoner >4 km). Ranheim-lærdommen løst.
+
+**Nøkkelfunn:**
+1. **Kommune-skala fungerer teknisk, men er ikke den naturlige markedsenheten.** Andreas (lokalkunnskap): vest (Saksvik/Vikhammer) orienterer mot Trondheim/Ranheim, øst (Muruvik/Hommelvik) mot Stjørdal. Én kommune-tekst holder, men curating-enheten bør trolig være tettsted-klynge, ikke hel kommune, i de tetteste markedene. «Vi må starte en plass» — akseptert for nå.
+2. **Trust-pipelinen er blind for nedleggelser.** La Perla (Saksvik) scoret trust 0.95 men er `CLOSED_TEMPORARILY` på Google (nedlagt ~1 år). `pois`-tabellen lagrer ingen `business_status`; trust bygger på website/price/reviews — alt overlever nedleggelse. Konkret instans av den deferrede «feilklassifiserings-sjekken». Fanget av Andreas, bekreftet via Google Places `businessStatus`. Batch-sjekket alle 19 google-highlights → kun La Perla nedlagt (fjernet). **Anbefaling:** fang `business_status` i enrichment, gate ikke-OPERATIONAL.
+3. **Editorial-prinsipp fra Andreas:** dropp årstall/historikk — også verifiserte historiske fakta (Café Rampa 1880, Midtsandtangen militærleir, Impulse 2024). Curator-skillen anbefaler historisk form som trygg for forgjengelige fakta; Andreas foretrekker presens «hva som ER der». Curator-stemme-nyanse notert i minne.
+4. **Min-chips-virkelighet:** tynnere dekning enn Ranheim (22–31 POI vs 82). `barn-oppvekst` konsekvent 1 chip per adresse (skoler ligger spredt, langt fra hver adresse). Body-only er legitim tilstand.
+
+Editorial kuratert av Fable-underagent (curator-skill + WebSearch-verifisering, kildeliste), Andreas review. Live: `placy.no/eiendom/placy-demo/{saxe-viks-veg-33,bjornmyra-6,nessvegen-17}/rapport-board`. 109 tester grønne, tsc/lint rene.
+
+---
+
 ## 2026-06-10 (kveld) — Nabolags-editorial-arv PoC: TESEN HOLDER — nivå 2 på vilkårlig Ranheim-adresse
 
 Full /ce-brainstorm → /ce-plan → /ce-work-løype i worktree `../placy-ralph-nabolag` (branch `feat/nabolags-editorial-arv`, fra origin/main). Bygget: migrasjon 069 (`areas.report_editorial`), trust-scoring som automatisk pipeline-steg (kun Google-POIer — offentlige beholder null, unngår masse-skjuling av skoler), `findAreaForPoint` (PiP via delt geo-util), `inheritAreaEditorial` (arv + highlight-fallback fra kuratert kandidatliste, R9-årsakslogging, atomisk config-PATCH), `curate-area`-script (staging-validering + `--list-pois` kandidatmeny). 7-persona code review → 17 fixes (bl.a. QA-gate-hull ved place-not-found, env-hoisting-bombe, timeouts). 773/773 tester, tsc/lint/build grønne.
