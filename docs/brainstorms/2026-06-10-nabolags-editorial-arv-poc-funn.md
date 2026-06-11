@@ -100,3 +100,43 @@ nivå 1-degradering utenfor polygonet.
 - Grunnkrets-union (SSB/Geonorge) som polygon-verktøy for resten av firkommune-området
 - Drop-årsak-rapporten (R9) bør få megler-vennlig formatering når trainees overtar kuratering
 - Feilklassifiserings-sjekk i trust-pipelinen (fra plan: Deferred)
+
+## Slice 2 — Malvik (typologi-test, gjennomført 2026-06-11)
+
+Andreas-adresser: Saxe Viks veg 33 (Saksvik/vest), Bjørnmyra 6A (Sveberg/midt),
+Nessvegen 17 (Hommelvik/øst). Område = HELE Malvik kommune (5031), ett polygon
+fra Kartverket kommunegrense (NLOD). Alle 3 innenfor; alle 6 temaer arvet; nivå 2.
+
+**Lukket fra slice-2-input over:**
+- *Transport-dekning:* løst ved å kuratere BEGGE stasjoner som kandidater.
+  Per-adresse-resolusjon ga Saksvik→Vikhammer stasjon, Hommelvik→Hommelvik
+  stasjon, Sveberg→bussholdeplasser (begge stasjoner >4 km). Ranheim-funnet løst.
+- *Min-chips-regel:* implementert som QA-flagg i provision steg 9 (informativt,
+  ikke suppresjon). Body-only bekreftet som legitim tilstand. `barn-oppvekst`
+  konsekvent 1 chip per adresse (skoler spredt utover kommunen).
+- *Grunnkrets-union:* DEFERRET bevisst. Kommunegrensen er strengt bedre når
+  enheten ER hele kommunen; grunnkrets-union tjener først subsett-tilfellet
+  (Stjørdal/Melhus) og krever geometri-bibliotek. Bygde `fetch-area-boundary.ts`
+  (Kartverket) i stedet.
+- *Feilklassifiserings-sjekk:* fikk konkret instans — La Perla (Saksvik) scoret
+  trust 0.95 men er CLOSED_TEMPORARILY på Google (nedlagt ~1 år). `pois` lagrer
+  ingen `business_status`; trust bygger på website/price/reviews som overlever
+  nedleggelse. Fanget av Andreas' lokalkunnskap. **Anbefaling slice 3:** fang
+  `business_status` i enrichment, gate ikke-OPERATIONAL.
+
+**Nytt hovedfunn — markedsenhet vs. administrativ enhet:**
+Kommune-skala fungerer TEKNISK (én tekst arvet rent på tvers av 30 km), men er
+ikke den naturlige markedsenheten. Vest (Saksvik/Vikhammer) orienterer mot
+Trondheim/Ranheim, øst (Muruvik/Hommelvik) mot Stjørdal. For tette markeder bør
+curating-enheten trolig være tettsted-klynge, ikke hel kommune. Akseptert for nå
+(«vi må starte en plass»), men dette er retningen for hvordan områder skal kuttes
+i slice 3.
+
+**Curator-stemme-nyanse:** Andreas vil IKKE ha årstall/historikk i bodyene — også
+verifiserte historiske fakta (byggeår, militærleir-historikk, åpningsår).
+Curator-skillen anbefaler historisk form som trygt; Andreas foretrekker presens
+«hva som ER der». Notert i minne (feedback).
+
+**Verktøy-læring:** `provision --update` rører aldri config (anti-clobber), så
+`reportTier` bumpes ikke ved re-provisjonering — provisjonér på mål-nivå fra
+start, eller bump via read-modify-write (gjort her: 1→2 etter kuratering).
