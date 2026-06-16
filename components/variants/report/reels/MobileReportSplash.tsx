@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import { ChevronUp, Play } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowUpRight, ChevronUp, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -22,10 +22,19 @@ interface Props {
   heroVideo?: string;
   /** Valgfri intro-tekst — faller tilbake til standard velkomst-copy. */
   intro?: string;
+  /** Overstyrer overskriften "Velkommen til {name}" (brukes i embed-modus). */
+  headline?: string;
   /** Knappe-tekst: "Start opplevelsen" / "Fortsett" / "Spill av på nytt". */
   primaryLabel: string;
   /** Trykk play / swipe opp → dropp splash, fly inn kartet, start tur. */
   onPlay: () => void;
+  /**
+   * Embed-modus: splashen vises inni en iframe på en ekstern nettside. Da:
+   * ingen swipe-to-start (knappen er eneste utløser), ingen logo, og knappen
+   * åpner full Placy-opplevelse i ny fane (target=_blank) i stedet for å starte
+   * turen inline. URL avledes fra gjeldende side med `?embed` fjernet.
+   */
+  embed?: boolean;
 }
 
 const DEFAULT_INTRO =
@@ -48,10 +57,21 @@ export function MobileReportSplash({
   heroImage,
   heroVideo,
   intro,
+  headline,
   primaryLabel,
   onPlay,
+  embed = false,
 }: Props) {
   const heroPoster = heroVideo?.replace(/\.mp4$/i, ".jpg");
+
+  // Embed: knappen lenker til full Placy-opplevelse i ny fane (gjeldende side
+  // uten `?embed`). Iframen kjenner sin egen placy.no-URL → peker korrekt.
+  const embedHref = useMemo(() => {
+    if (!embed || typeof window === "undefined") return undefined;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("embed");
+    return url.toString();
+  }, [embed]);
 
   // Stagger-inn ved første visning (rAF etter mount). Re-åpning re-staggrer
   // ikke (lag-opacity tar overgangen).
@@ -65,7 +85,8 @@ export function MobileReportSplash({
   // Akkumulerer touch-delta og fyrer onPlay én gang per visning.
   const touchStartY = useRef<number | null>(null);
   useEffect(() => {
-    if (!visible) return;
+    // Embed: ingen swipe-to-start. Knappen (ny fane) er eneste utløser.
+    if (!visible || embed) return;
     let fired = false;
     const fire = () => {
       if (fired) return;
@@ -86,7 +107,7 @@ export function MobileReportSplash({
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
     };
-  }, [visible, onPlay]);
+  }, [visible, embed, onPlay]);
 
   const stagger = (i: number) =>
     ({ transitionDelay: shown ? `${120 + i * 80}ms` : "0ms" }) as React.CSSProperties;
@@ -132,8 +153,8 @@ export function MobileReportSplash({
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/15 to-black/90 pointer-events-none" />
       </div>
 
-      {/* Topp: logo (vises kun når prosjektet har brand-logo). */}
-      {logoSrc && (
+      {/* Topp: logo (vises kun når prosjektet har brand-logo; skjult i embed). */}
+      {logoSrc && !embed && (
         <div className="absolute inset-x-0 top-0 px-6 pt-[max(1.25rem,env(safe-area-inset-top))]">
           <div className={itemCls} style={stagger(0)}>
             <Image
@@ -153,7 +174,7 @@ export function MobileReportSplash({
       <div className="absolute inset-x-0 bottom-0 flex flex-col gap-4 px-6 pb-[max(1.75rem,env(safe-area-inset-bottom))]">
         <div className={itemCls} style={stagger(1)}>
           <h1 className="text-3xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-md">
-            Velkommen til {name}
+            {headline || `Velkommen til ${name}`}
           </h1>
           {subline && (
             <p className="mt-1.5 text-sm font-medium text-white/75">{subline}</p>
@@ -167,32 +188,50 @@ export function MobileReportSplash({
           {intro || DEFAULT_INTRO}
         </p>
 
-        <button
-          type="button"
-          onClick={onPlay}
-          className={cn(
-            itemCls,
-            "mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-white px-7 py-4 text-base font-semibold text-stone-900 shadow-2xl transition-transform duration-200 active:scale-[0.98]",
-          )}
-          style={stagger(4)}
-        >
-          <Play size={18} className="fill-stone-900" />
-          {primaryLabel}
-        </button>
+        {embed ? (
+          <a
+            href={embedHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              itemCls,
+              "mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-white px-7 py-4 text-base font-semibold text-stone-900 shadow-2xl transition-transform duration-200 active:scale-[0.98]",
+            )}
+            style={stagger(4)}
+          >
+            {primaryLabel}
+            <ArrowUpRight size={18} />
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onPlay}
+            className={cn(
+              itemCls,
+              "mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-white px-7 py-4 text-base font-semibold text-stone-900 shadow-2xl transition-transform duration-200 active:scale-[0.98]",
+            )}
+            style={stagger(4)}
+          >
+            <Play size={18} className="fill-stone-900" />
+            {primaryLabel}
+          </button>
+        )}
 
-        {/* Swipe-hint — signaliserer at man også kan dra opp for å starte. */}
-        <div
-          className={cn(
-            "pointer-events-none flex flex-col items-center gap-0.5 text-white/60 transition-opacity duration-700",
-            shown ? "opacity-100" : "opacity-0",
-          )}
-          style={{ transitionDelay: shown ? "640ms" : "0ms" }}
-        >
-          <ChevronUp className="h-4 w-4 animate-bounce" />
-          <span className="text-[10px] font-medium uppercase tracking-[0.16em]">
-            Swipe opp for å starte
-          </span>
-        </div>
+        {/* Swipe-hint — kun standalone. I embed er knappen eneste utløser. */}
+        {!embed && (
+          <div
+            className={cn(
+              "pointer-events-none flex flex-col items-center gap-0.5 text-white/60 transition-opacity duration-700",
+              shown ? "opacity-100" : "opacity-0",
+            )}
+            style={{ transitionDelay: shown ? "640ms" : "0ms" }}
+          >
+            <ChevronUp className="h-4 w-4 animate-bounce" />
+            <span className="text-[10px] font-medium uppercase tracking-[0.16em]">
+              Swipe opp for å starte
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

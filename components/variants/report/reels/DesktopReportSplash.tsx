@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { ChevronDown, Play } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, ChevronDown, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -23,10 +23,20 @@ interface Props {
   heroVideo?: string;
   /** Valgfri intro-tekst — faller tilbake til standard velkomst-copy. */
   intro?: string;
+  /** Overstyrer overskriften "Velkommen til {name}" (brukes i embed-modus). */
+  headline?: string;
   /** Knappe-tekst: "Start opplevelsen" / "Fortsett" / "Spill av på nytt". */
   primaryLabel: string;
   /** Trykk play → dropp splash, fly inn kartet, start/forsett guidet tur. */
   onPlay: () => void;
+  /**
+   * Embed-modus: splashen vises inni en iframe på en ekstern nettside (megler-
+   * side). Da: ingen scroll-/swipe-to-start (knappen er eneste utløser), ingen
+   * logo, og knappen er en lenke som åpner full Placy-opplevelse i ny fane
+   * (target=_blank) i stedet for å starte turen inline. URL avledes fra
+   * gjeldende side med `?embed` fjernet.
+   */
+  embed?: boolean;
 }
 
 const DEFAULT_INTRO =
@@ -50,10 +60,22 @@ export function DesktopReportSplash({
   heroImage,
   heroVideo,
   intro,
+  headline,
   primaryLabel,
   onPlay,
+  embed = false,
 }: Props) {
   const heroPoster = heroVideo?.replace(/\.mp4$/i, ".jpg");
+
+  // Embed-modus: knappen lenker til full Placy-opplevelse i ny fane. URL =
+  // gjeldende side uten `?embed` (iframe-en kjenner sin egen placy.no-URL, så
+  // dette peker korrekt til standalone-ruten — ikke meglerens side).
+  const embedHref = useMemo(() => {
+    if (!embed || typeof window === "undefined") return undefined;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("embed");
+    return url.toString();
+  }, [embed]);
   // Stagger-inn av innholdet ved første visning. Settes én gang via rAF etter
   // mount; re-åpning re-staggrer ikke (lag-opacity tar overgangen).
   const [shown, setShown] = useState(false);
@@ -66,7 +88,9 @@ export function DesktopReportSplash({
   // splashen klaustrofobisk (man prøver å scrolle og ingenting skjer).
   // Akkumulerer wheel/touch-delta og trigger onPlay én gang per visning.
   useEffect(() => {
-    if (!visible) return;
+    // Embed-modus: ingen scroll-to-start. Knappen (ny fane) er eneste utløser —
+    // ellers ville en scroll forbi iframen på meglerens side trigge "start".
+    if (!visible || embed) return;
     let acc = 0;
     let fired = false;
     let touchStartY: number | null = null;
@@ -98,7 +122,7 @@ export function DesktopReportSplash({
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
     };
-  }, [visible, onPlay]);
+  }, [visible, embed, onPlay]);
 
   const stagger = (i: number) =>
     ({
@@ -121,7 +145,7 @@ export function DesktopReportSplash({
       <div className="relative mx-auto flex h-full w-full max-w-[1440px] items-center gap-10 px-10 lg:gap-16 lg:px-20">
         {/* Venstre kolonne */}
         <div className="flex w-full max-w-[480px] flex-col">
-          {logoSrc && (
+          {logoSrc && !embed && (
             <div className={itemCls} style={stagger(0)}>
               <Image
                 src={logoSrc}
@@ -135,9 +159,9 @@ export function DesktopReportSplash({
             </div>
           )}
 
-          <div className={cn(itemCls, logoSrc ? "mt-9" : "mt-0")} style={stagger(1)}>
+          <div className={cn(itemCls, logoSrc && !embed ? "mt-9" : "mt-0")} style={stagger(1)}>
             <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-stone-900 lg:text-5xl">
-              Velkommen til {name}
+              {headline || `Velkommen til ${name}`}
             </h1>
             {subline && (
               <p className="mt-2 text-base font-medium text-stone-500">{subline}</p>
@@ -152,31 +176,45 @@ export function DesktopReportSplash({
           </p>
 
           <div className={cn(itemCls, "mt-7")} style={stagger(3)}>
-            <button
-              type="button"
-              onClick={onPlay}
-              className="inline-flex items-center gap-2.5 rounded-full bg-stone-900 px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-stone-700 hover:scale-[1.02] active:scale-[0.99]"
-            >
-              <Play size={18} className="fill-white" />
-              {primaryLabel}
-            </button>
+            {embed ? (
+              <a
+                href={embedHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2.5 rounded-full bg-stone-900 px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-stone-700 hover:scale-[1.02] active:scale-[0.99]"
+              >
+                {primaryLabel}
+                <ArrowUpRight size={18} />
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={onPlay}
+                className="inline-flex items-center gap-2.5 rounded-full bg-stone-900 px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-stone-700 hover:scale-[1.02] active:scale-[0.99]"
+              >
+                <Play size={18} className="fill-white" />
+                {primaryLabel}
+              </button>
+            )}
           </div>
 
         </div>
 
-        {/* Scroll-cue — signaliserer at man kan bla (eller trykke) for å starte. */}
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-x-0 bottom-7 flex flex-col items-center gap-1 text-stone-500 transition-opacity duration-700",
-            shown ? "opacity-100" : "opacity-0",
-          )}
-          style={{ transitionDelay: shown ? "600ms" : "0ms" }}
-        >
-          <span className="text-[11px] font-medium uppercase tracking-[0.16em]">
-            Bla for å starte
-          </span>
-          <ChevronDown className="h-4 w-4 animate-bounce" />
-        </div>
+        {/* Scroll-cue — kun standalone. I embed er knappen eneste utløser. */}
+        {!embed && (
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-7 flex flex-col items-center gap-1 text-stone-500 transition-opacity duration-700",
+              shown ? "opacity-100" : "opacity-0",
+            )}
+            style={{ transitionDelay: shown ? "600ms" : "0ms" }}
+          >
+            <span className="text-[11px] font-medium uppercase tracking-[0.16em]">
+              Bla for å starte
+            </span>
+            <ChevronDown className="h-4 w-4 animate-bounce" />
+          </div>
+        )}
 
         {/* Høyre kolonne — prosjekt-video (16:9), fallback til render */}
         {(heroVideo || heroImage) && (
