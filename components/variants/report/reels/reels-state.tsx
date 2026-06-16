@@ -36,15 +36,13 @@ export interface ReelsState {
    */
   teaserArmed: boolean;
   audioUnlocked: boolean;
-  mapMounted: boolean;
 }
 
 export type ReelsAction =
   | { type: "SET_ACTIVE_INDEX"; index: number }
   | { type: "SET_MAP_OPEN"; open: boolean }
   | { type: "SET_TEASER_ARMED"; armed: boolean }
-  | { type: "MARK_AUDIO_UNLOCKED" }
-  | { type: "MARK_MAP_MOUNTED" };
+  | { type: "MARK_AUDIO_UNLOCKED" };
 
 function defaultPhaseForCard(card: ReelsCard | undefined): ReelsPhase {
   if (!card) return "intro";
@@ -91,9 +89,6 @@ export function reelsReducer(state: ReelsState, action: ReelsAction): ReelsState
     case "MARK_AUDIO_UNLOCKED":
       if (state.audioUnlocked) return state;
       return { ...state, audioUnlocked: true };
-    case "MARK_MAP_MOUNTED":
-      if (state.mapMounted) return state;
-      return { ...state, mapMounted: true };
     default:
       return state;
   }
@@ -106,7 +101,6 @@ interface ReelsContextValue {
   setMapOpen: (open: boolean) => void;
   setTeaserArmed: (armed: boolean) => void;
   markAudioUnlocked: () => void;
-  markMapMounted: () => void;
 }
 
 const ReelsContext = createContext<ReelsContextValue | null>(null);
@@ -125,7 +119,6 @@ export function ReelsProvider({ cards, children }: ProviderProps) {
       mapOpen: defaultMapOpenForCard(cards[0]),
       teaserArmed: false,
       audioUnlocked: false,
-      mapMounted: false,
     }),
     [cards],
   );
@@ -140,7 +133,6 @@ export function ReelsProvider({ cards, children }: ProviderProps) {
       setMapOpen: (open) => dispatch({ type: "SET_MAP_OPEN", open }),
       setTeaserArmed: (armed) => dispatch({ type: "SET_TEASER_ARMED", armed }),
       markAudioUnlocked: () => dispatch({ type: "MARK_AUDIO_UNLOCKED" }),
-      markMapMounted: () => dispatch({ type: "MARK_MAP_MOUNTED" }),
     }),
     [state],
   );

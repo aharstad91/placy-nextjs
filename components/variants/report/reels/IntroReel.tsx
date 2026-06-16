@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { IntroReelCard } from "./reels-data";
 import { useReels } from "./reels-state";
 import { useAudioElement } from "../board/audio-tour/use-audio-element";
@@ -14,7 +14,6 @@ export function IntroReel({ card, isActive }: Props) {
   const { state, markAudioUnlocked } = useReels();
   const { unlock } = useAudioElement();
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [hintVisible, setHintVisible] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -40,13 +39,6 @@ export function IntroReel({ card, isActive }: Props) {
     return () =>
       document.removeEventListener("visibilitychange", onVisibilityChange);
   }, [isActive]);
-
-  useEffect(() => {
-    if (!state.audioUnlocked || !isActive) return;
-    setHintVisible(true);
-    const t = setTimeout(() => setHintVisible(false), 3000);
-    return () => clearTimeout(t);
-  }, [state.audioUnlocked, isActive]);
 
   const handleUnlock = async () => {
     await unlock();
@@ -81,24 +73,6 @@ export function IntroReel({ card, isActive }: Props) {
         </div>
       )}
 
-      {state.audioUnlocked && hintVisible && (
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center text-white/90 animate-bounce">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m18 15-6-6-6 6" />
-          </svg>
-          <span className="text-sm font-medium">Swipe opp</span>
-        </div>
-      )}
     </div>
   );
 }

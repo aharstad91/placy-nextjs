@@ -319,9 +319,12 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
   // audioen rom. Cancellerbar (ref) så manuell navigasjon i pausen ikke blir
   // overstyrt av en foreldet timer.
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Fersk state til timer-callbacken (fire-time-guard) uten å re-binde noe.
+  const stateRef = useRef(state);
+  stateRef.current = state;
   useEffect(() => {
     // Avbryt en ventende auto-advance når activeIndex endrer seg på ANNEN måte
-    // (manuelt thumbnail-klikk i pausen) og ved unmount.
+    // (manuell navigasjon i pausen) og ved unmount.
     return () => {
       if (advanceTimerRef.current) {
         clearTimeout(advanceTimerRef.current);
@@ -339,6 +342,21 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
       advanceTimerRef.current = null;
     }
   }, [state.mapOpen]);
+
+  // Backgrounding: visibilitychange pauser audioen (ingen auto-resume, se
+  // use-reels-audio-orchestration). En ventende kategori-teaser-advance skal IKKE
+  // overleve i bakgrunnen og fyre ved retur — det ville rykket brukeren fremover
+  // uten initiativ. Kanseller derfor timeren når fanen skjules.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden" && advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = null;
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
 
   // Når et spor slutter naturlig:
   // - Desktop: auto-advance til neste audio-bærende kapittel (etter en kort
@@ -368,9 +386,9 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
     }
     // Mobil: kart-fremtunge beats (welcome/home) auto-advancer videre slik at
     // flythrough → nabolags-oversikt → første kategori henger sammen (som
-    // desktop). Når home-sporet slutter lander vi på første kategori, kart-
-    // sheeten kollapser til peek og kategori-reelen tar over fullskjerm — den
-    // naturlige overgangen fra fly-in til innhold.
+    // desktop). Når home-sporet slutter lander vi på første kategori, og
+    // SET_ACTIVE_INDEX nullstiller flaten til historie (defaultMapOpenForCard) —
+    // den naturlige overgangen fra fly-in (kart-flate) til innhold (historie).
     const endedCard = state.cards[state.activeIndex];
     if (endedCard && (endedCard.kind === "welcome" || endedCard.kind === "home")) {
       const next = nextAudioBearingIndex(state.cards, state.activeIndex);
@@ -399,9 +417,16 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
       if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
       const nextAudio = nextAudioBearingIndex(state.cards, state.activeIndex);
       const next = nextAudio !== -1 ? nextAudio : state.activeIndex + 1;
+      const scheduledIndex = state.activeIndex;
       advanceTimerRef.current = setTimeout(() => {
         advanceTimerRef.current = null;
-        if (next < state.cards.length) setActiveIndex(next);
+        // Fire-time-guard mot kanseller-hull (les fersk state via ref): avanser
+        // kun hvis vi fortsatt står på samme kategori-kort, teaseren er armet, og
+        // kartet ikke er åpnet. Fanger bl.a. segment-tapp på SAMME kapittel (som
+        // reduceren no-op-er → activeIndex-cleanupen treffer ikke) via teaserArmed.
+        const s = stateRef.current;
+        if (s.activeIndex !== scheduledIndex || s.mapOpen || !s.teaserArmed) return;
+        if (next < s.cards.length) setActiveIndex(next);
         else audioNext();
       }, CATEGORY_TEASER_MS);
     }
@@ -420,12 +445,12 @@ function ReelsOrchestrator({ children }: { children: React.ReactNode }) {
 
 /**
  * Adaptiv layout:
- * - Mobil (<lg): full-screen reels-stack med bottom-anchored MapLayer-sheet
- *   (10% peek → 100% full). Phase styrer sheet-høyde. Som dagens reels-route.
+ * - Mobil (<lg): to-flate-modell — historie-flaten rendrer det aktive kortet,
+ *   kart-flaten et persistent fullskjerm-kart; `mapOpen` veksler mellom dem.
+ *   Navigasjon via ReelsTransport (play/pause + tappbare segment-hopp) +
+ *   auto-advance — ingen scroll-feed/snap-sheet (den gamle modellen er borte).
  * - Desktop (>=lg): 2-kolonner. 400px reels-feed venstre, BoardMap fyller
- *   resten høyre, alltid synlig. Sheet-mekanikken er off; kartet er ikke en
- *   sheet men en permanent panel. Phase styrer fortsatt marker-visibility
- *   og audio.
+ *   resten høyre, alltid synlig. Phase styrer marker-visibility og audio.
  */
 function ResponsiveLayoutInner({
   boardData,
@@ -457,19 +482,13 @@ function ResponsiveLayoutInner({
   // (ellers streamet tiles inn MIDT i introen → hakking og lav kvalitet). Splashen
   // dekker oppvarmingen; ved "play" fader den ut og avdekker det allerede varme
   // kartet. Bevares montert ved re-åpning så orbiten ikke re-initialiseres.
-  const { state, setActiveIndex, setMapOpen, markAudioUnlocked, markMapMounted } =
-    useReels();
+  const { state, setActiveIndex, setMapOpen, markAudioUnlocked } = useReels();
   const { dispatch: boardDispatch } = useBoard();
   const { unlock } = useAudioElement();
 
-  // Eager-mount kartet ved sidelast (mobil) så Google-3D-tiles varmes opp BAK
-  // splashen — flythrough-en starter da på et varmt kart (ingen tile-streaming
-  // midt i fly-in-en). MapLayer holder intro-beaten fullskjerm men opacity 0
-  // bak splashen. Speiler desktop som mounter BoardMap umiddelbart. No-op på
-  // desktop (MapLayer rendres ikke der).
-  useEffect(() => {
-    markMapMounted();
-  }, [markMapMounted]);
+  // Kartet mountes ubetinget i mobil-render (og i desktop-panelet), så Google-
+  // 3D-tiles varmes opp BAK splashen — flythrough-en starter da på et varmt kart
+  // (ingen tile-streaming midt i fly-in-en). Det persistente kartet rives aldri.
   const phase = useAudioTourStore((s) => s.phase);
   const { pause, resume, goToTrack } = useAudioTourActions();
   const [splashVisible, setSplashVisible] = useState(true);
@@ -613,10 +632,10 @@ function ResponsiveLayoutInner({
   }
 
   // Unit 7 (R7/R17): event-board er mobile-first via en bottom-sheet over et
-  // persistent kart — IKKE den audio-drevne reels-stacken (events har ingen
-  // audio/karaoke). Boligrapportenes mobil-sti (reels + splash) er urørt og
-  // rendres uendret under. EventMobileSheet eier sin egen map-mount, så vi
-  // hopper over MapLayer/ReelsStack/splash i event-modus.
+  // persistent kart — IKKE den audio-drevne to-flate-opplevelsen (events har
+  // ingen audio/karaoke). Boligrapportenes mobil-sti (to-flate + transport +
+  // splash) rendres uendret under. EventMobileSheet eier sin egen map-mount, så
+  // vi hopper over den i event-modus.
   if (eventMode && eventFilter) {
     return (
       <EventMobileSheet

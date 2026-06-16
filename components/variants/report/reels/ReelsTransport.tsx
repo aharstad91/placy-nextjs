@@ -3,7 +3,12 @@
 import { Pause, Play } from "lucide-react";
 import { useReels } from "./reels-state";
 import { StoryProgressBar } from "./StoryProgressBar";
-import { audioIndexToCardIndex, nextAudioBearingIndex } from "./reels-data";
+import {
+  audioIndexToCardIndex,
+  cardIndexToAudioIndex,
+  firstAudioBearingIndex,
+  nextAudioBearingIndex,
+} from "./reels-data";
 import {
   useAudioTourActions,
   useAudioTourStore,
@@ -26,8 +31,8 @@ import {
  * den gatingen ligger i ReportReelsPage.
  */
 export function ReelsTransport() {
-  const { state, setActiveIndex, setMapOpen } = useReels();
-  const { pause, resume } = useAudioTourActions();
+  const { state, setActiveIndex, setMapOpen, setTeaserArmed } = useReels();
+  const { pause, resume, goToTrack } = useAudioTourActions();
   const phase = useAudioTourStore((s) => s.phase);
   const trackIndex = useAudioTourStore((s) => s.trackIndex);
   const trackCount = useAudioTourStore((s) => s.tracks.length);
@@ -39,13 +44,32 @@ export function ReelsTransport() {
   const isCategory = beatKind === "category";
 
   const togglePlay = () => {
-    if (phase === "playing") pause("manual");
-    else resume();
+    if (phase === "playing") {
+      pause("manual");
+      return;
+    }
+    // På ikke-audio-kort (summary/megler) eller når touren er ferdig: «spill av
+    // på nytt» fra første kapittel i stedet for å gjenoppta et stale outro-spor
+    // (trackIndex står igjen på outro når man parkerer på et ikke-audio-kort).
+    const activeAudioIdx = cardIndexToAudioIndex(state.cards, state.activeIndex);
+    if (activeAudioIdx < 0 || phase === "ended") {
+      const first = firstAudioBearingIndex(state.cards);
+      if (first >= 0) {
+        setActiveIndex(first);
+        goToTrack(0);
+      }
+      return;
+    }
+    resume();
   };
 
   // R5: tapp et progress-segment → hopp til det kapittelet (audio-spor-indeks
   // → cardIndex via samme rute som desktop-thumbnailene).
   const handleSeek = (chapterIndex: number) => {
+    // Eksplisitt navigasjon → avvæpne en ev. ventende teaser-advance (fire-time-
+    // guarden i ReelsAudioShell sjekker teaserArmed; dekker også segment-tapp på
+    // samme kapittel, som reduceren ellers no-op-er).
+    setTeaserArmed(false);
     const cardIdx = audioIndexToCardIndex(state.cards, chapterIndex);
     if (cardIdx >= 0) setActiveIndex(cardIdx);
   };

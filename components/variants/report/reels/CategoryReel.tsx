@@ -19,13 +19,9 @@ interface Props {
 }
 
 export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }: Props) {
-  const { state, markMapMounted } = useReels();
+  const { state } = useReels();
   const currentPhase = isActive ? state.currentPhase : null;
   const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    if (isActive) markMapMounted();
-  }, [isActive, markMapMounted]);
 
   const isCurrentAudio = useAudioTourStore(
     (s) =>

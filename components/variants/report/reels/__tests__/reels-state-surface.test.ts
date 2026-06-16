@@ -27,7 +27,6 @@ function baseState(overrides: Partial<ReelsState> = {}): ReelsState {
     mapOpen: false,
     teaserArmed: false,
     audioUnlocked: false,
-    mapMounted: false,
     ...overrides,
   };
 }
