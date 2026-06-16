@@ -21,6 +21,14 @@ export interface ReelsState {
   cards: ReelsCard[];
   activeIndex: number;
   currentPhase: ReelsPhase;
+  /**
+   * To-flate-modellen (mobil): true = kart-flate aktiv, false = historie-flate.
+   * Avledes per beat (`defaultMapOpenForCard`) og nullstilles ved kapittel-bytte
+   * så ingen flate-tilstand henger over til neste kort (fjerner lock-bug-klassen
+   * — exits blir flate-koblet, ikke beat-koblet). Lever side om side med
+   * `currentPhase` mens den gamle MapLayer-snap-modellen fases ut.
+   */
+  mapOpen: boolean;
   audioUnlocked: boolean;
   mapMounted: boolean;
 }
@@ -28,12 +36,24 @@ export interface ReelsState {
 export type ReelsAction =
   | { type: "SET_ACTIVE_INDEX"; index: number }
   | { type: "SET_PHASE"; phase: ReelsPhase }
+  | { type: "SET_MAP_OPEN"; open: boolean }
   | { type: "MARK_AUDIO_UNLOCKED" }
   | { type: "MARK_MAP_MOUNTED" };
 
 function defaultPhaseForCard(card: ReelsCard | undefined): ReelsPhase {
   if (!card) return "intro";
   return card.kind === "intro" ? "intro" : "reel";
+}
+
+/**
+ * Default flate per beat i to-flate-modellen: map-forward beats (welcome / home /
+ * outro) er kart-primære → kart-flate; kategori / summary / megler / intro →
+ * historie-flate. Kalles av reduceren ved hvert kapittel-bytte. Kun meningsfull
+ * for audio-bærende rapporter; no-audio-stien rendrer ikke to-flate-modellen.
+ */
+export function defaultMapOpenForCard(card: ReelsCard | undefined): boolean {
+  if (!card) return false;
+  return card.kind === "welcome" || card.kind === "home" || card.kind === "outro";
 }
 
 export function reelsReducer(state: ReelsState, action: ReelsAction): ReelsState {
@@ -45,11 +65,16 @@ export function reelsReducer(state: ReelsState, action: ReelsAction): ReelsState
         ...state,
         activeIndex: action.index,
         currentPhase: defaultPhaseForCard(card),
+        // Nullstill flate per beat → ingen kart-tilstand henger over (lock-bug-vern).
+        mapOpen: defaultMapOpenForCard(card),
       };
     }
     case "SET_PHASE":
       if (state.currentPhase === action.phase) return state;
       return { ...state, currentPhase: action.phase };
+    case "SET_MAP_OPEN":
+      if (state.mapOpen === action.open) return state;
+      return { ...state, mapOpen: action.open };
     case "MARK_AUDIO_UNLOCKED":
       if (state.audioUnlocked) return state;
       return { ...state, audioUnlocked: true };
@@ -66,6 +91,7 @@ interface ReelsContextValue {
   dispatch: Dispatch<ReelsAction>;
   setActiveIndex: (index: number) => void;
   setPhase: (phase: ReelsPhase) => void;
+  setMapOpen: (open: boolean) => void;
   markAudioUnlocked: () => void;
   markMapMounted: () => void;
 }
@@ -83,6 +109,7 @@ export function ReelsProvider({ cards, children }: ProviderProps) {
       cards,
       activeIndex: 0,
       currentPhase: defaultPhaseForCard(cards[0]),
+      mapOpen: defaultMapOpenForCard(cards[0]),
       audioUnlocked: false,
       mapMounted: false,
     }),
@@ -97,6 +124,7 @@ export function ReelsProvider({ cards, children }: ProviderProps) {
       dispatch,
       setActiveIndex: (index) => dispatch({ type: "SET_ACTIVE_INDEX", index }),
       setPhase: (phase) => dispatch({ type: "SET_PHASE", phase }),
+      setMapOpen: (open) => dispatch({ type: "SET_MAP_OPEN", open }),
       markAudioUnlocked: () => dispatch({ type: "MARK_AUDIO_UNLOCKED" }),
       markMapMounted: () => dispatch({ type: "MARK_MAP_MOUNTED" }),
     }),

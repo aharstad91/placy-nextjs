@@ -70,6 +70,14 @@ interface Props {
    * beholder default-senteret som før). Se den event-modus ro-fit-effekten under.
    */
   eventMode?: boolean;
+  /**
+   * Når false: kartet er ikke-interaktivt (historie-flate / teaser-glimt i den
+   * mobile to-flate-modellen). Et gjennomsiktig pointer-events-skjold legges over
+   * kart-laget så pan/zoom/drag ikke når kart-motorene — Google 3D har ingen
+   * `GestureHandling.NONE`, så skjoldet er mekanismen; Mapbox-2D får i tillegg
+   * `interactive={false}`. Kontroll-clusteret skjules da også. Default true.
+   */
+  interactive?: boolean;
 }
 
 export function BoardMap({
@@ -78,6 +86,7 @@ export function BoardMap({
   mapPaddingLeft = 0,
   compactControls = false,
   eventMode = false,
+  interactive = true,
 }: Props) {
   const { state, data, dispatch, subFilter, visiblePoiIds, collectionPoiIds } = useBoard();
   const activeCategory = useActiveCategory();
@@ -444,6 +453,7 @@ export function BoardMap({
             }}
             style={{ width: "100%", height: "100%" }}
             mapStyle={MAP_STYLE_STANDARD}
+            interactive={interactive}
             onLoad={handleMapLoad}
             onClick={() => {
               // Markører kaller stopPropagation i sin onClick, så denne
@@ -492,10 +502,25 @@ export function BoardMap({
         </div>
       )}
 
+      {/* Ikke-interaktiv tilstand (historie-flate / teaser-glimt): gjennomsiktig
+          pointer-events-skjold over begge kart-motorene. Google 3D har ingen
+          GestureHandling.NONE, så dette skjoldet er den eneste måten å hindre
+          pan/zoom/drag (og onDragTakeover) på den persistente 3D-instansen.
+          z-10 ligger over 3D-base (z-0) og Mapbox-overlay (z-5); kontroll-
+          clusteret (under) skjules uansett når !interactive. */}
+      {!interactive && (
+        <div
+          aria-hidden
+          className="absolute inset-0 z-10"
+          style={{ touchAction: "none" }}
+        />
+      )}
+
       {/* Felles kontroll-cluster (Auto/Fri + Kart/3D) sentrert nederst-midt —
-          kun når 3D-add-on er kjøpt. Bunn-midten er fri for Google-crediten
-          (låst nederst-venstre) og Mapbox-attribusjonen (nederst-høyre). */}
-      {has3dAddon && (
+          kun når 3D-add-on er kjøpt OG kartet er den aktive (interaktive) flaten.
+          Bunn-midten er fri for Google-crediten (låst nederst-venstre) og
+          Mapbox-attribusjonen (nederst-høyre). */}
+      {has3dAddon && interactive && (
         <BoardMapControls
           view={view}
           onViewChange={handleModeChange}
