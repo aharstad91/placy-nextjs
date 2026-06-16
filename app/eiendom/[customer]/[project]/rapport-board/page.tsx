@@ -22,10 +22,18 @@ interface PageProps {
     customer: string;
     project: string;
   }>;
+  searchParams: Promise<{ embed?: string }>;
 }
 
-export default async function EiendomReportBoardPage({ params }: PageProps) {
+export default async function EiendomReportBoardPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { customer, project: projectSlug } = await params;
+  // `?embed=1` (eller bare `?embed`): siden limes inn i en iframe på en ekstern
+  // nettside → lett splash-teaser i stedet for full board-opplevelse.
+  const { embed: embedParam } = await searchParams;
+  const embed = embedParam === "1" || embedParam === "" || embedParam === "true";
 
   let projectData = await getCachedReportProduct(customer, projectSlug);
 
@@ -77,6 +85,7 @@ export default async function EiendomReportBoardPage({ params }: PageProps) {
       <ReportReelsPage
         project={projectData}
         enTranslations={enTranslations}
+        embed={embed}
       />
     </div>
   );

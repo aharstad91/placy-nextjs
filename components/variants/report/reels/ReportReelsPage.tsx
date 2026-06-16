@@ -107,6 +107,13 @@ interface Props {
    * eller ugyldig/utløpt slug (→ tom samling, ingen krasj). Kun event-modus.
    */
   collection?: { slug: string; poiIds: string[] };
+  /**
+   * Embed-modus (`?embed=1`): siden vises inni en iframe på en ekstern nettside
+   * (megler-side, der Placy limes inn der kartet var). Da rendres KUN en lett
+   * splash-teaser med egen "selg inn"-copy (ingen logo) og en knapp som åpner
+   * full opplevelse i ny fane — ingen 3D-kart/reels/audio lastes i iframen.
+   */
+  embed?: boolean;
 }
 
 export default function ReportReelsPage(props: Props) {
@@ -122,6 +129,7 @@ function Inner({
   enTranslations = {},
   boardData: inputBoardData,
   collection,
+  embed = false,
 }: Props) {
   const { locale } = useLocale();
 
@@ -231,6 +239,7 @@ function Inner({
               eventFilter={eventMode ? eventFilter : null}
               collection={eventMode ? collectionApi : null}
               onOpenCollection={() => setCollectionDrawerOpen(true)}
+              embed={embed}
             />
           </ReelsOrchestrator>
         </ReelsAudioShell>
@@ -409,6 +418,7 @@ function ResponsiveLayoutInner({
   eventFilter,
   collection,
   onOpenCollection,
+  embed,
 }: {
   boardData: BoardData;
   has3dAddon: boolean;
@@ -421,6 +431,8 @@ function ResponsiveLayoutInner({
   collection: BoardCollectionApi | null;
   /** Unit 5: åpne samling-draweren. */
   onOpenCollection: () => void;
+  /** Embed-modus: render kun splash-teaser (se Props.embed). */
+  embed: boolean;
 }) {
   const home = boardData.home;
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -532,6 +544,35 @@ function ResponsiveLayoutInner({
   const splashVideo = getProjectSplashVideo(boardData.projectSlug, boardData.assets);
   const subline =
     [home.district, home.city].filter(Boolean).join(", ") || undefined;
+
+  // Embed-modus: render KUN splash-teaseren (ingen kart/reels/audio i iframen).
+  // Egen "selg inn"-copy — på meglerens side har leseren allerede scrollet forbi
+  // seksjoner som ønsker velkommen, så "Velkommen til {navn}" føltes rart. Her
+  // selger vi i stedet inn at man kan utforske hele nabolaget. Knappen åpner full
+  // opplevelse i ny fane (håndteres i splash-komponenten). Logo skjules.
+  if (embed) {
+    const embedHeadline = `Bli kjent med nærområdet til ${home.name}`;
+    const embedIntro =
+      "Se hva som ligger rett utenfor døra — transport, hverdagsliv, mat og " +
+      "uteliv, natur og opplevelser, alt i gangavstand. Åpne den interaktive " +
+      "guiden og utforsk nabolaget på kartet.";
+    const embedLabel = "Utforsk nabolaget";
+    const Splash = isDesktop ? DesktopReportSplash : MobileReportSplash;
+    return (
+      <Splash
+        visible
+        embed
+        name={home.name}
+        subline={subline}
+        headline={embedHeadline}
+        heroImage={splashHero}
+        heroVideo={splashVideo}
+        intro={embedIntro}
+        primaryLabel={embedLabel}
+        onPlay={() => {}}
+      />
+    );
+  }
 
   if (isDesktop) {
     // Adaptiv desktop: full-høyde storytelling-sidebar ved siden av kartet i
