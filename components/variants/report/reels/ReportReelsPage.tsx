@@ -114,6 +114,14 @@ interface Props {
    * full opplevelse i ny fane — ingen 3D-kart/reels/audio lastes i iframen.
    */
   embed?: boolean;
+  /**
+   * Ankommet fra embedet (`?from=embed`): brukeren klikket «Utforsk nabolaget» i
+   * teaseren og landet på full standalone-side. Da viser vi en "Klar"-gate —
+   * kartet varmes opp bak en loader, så ett bevisst lyd-trykk starter turen — i
+   * stedet for å gjenta velkomst-splashen (føltes som «start på nytt»). Lyd
+   * krever et brukertrykk i denne fanen (nettleser-policy), derfor knapp.
+   */
+  fromEmbed?: boolean;
 }
 
 export default function ReportReelsPage(props: Props) {
@@ -130,6 +138,7 @@ function Inner({
   boardData: inputBoardData,
   collection,
   embed = false,
+  fromEmbed = false,
 }: Props) {
   const { locale } = useLocale();
 
@@ -240,6 +249,7 @@ function Inner({
               collection={eventMode ? collectionApi : null}
               onOpenCollection={() => setCollectionDrawerOpen(true)}
               embed={embed}
+              fromEmbed={fromEmbed}
             />
           </ReelsOrchestrator>
         </ReelsAudioShell>
@@ -402,6 +412,11 @@ function ReelsOrchestrator({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Oppvarmingstid (ms) for "Klar"-gaten (fromEmbed): hvor lenge kartet får varme
+ *  opp bak loaderen før play-knappen aktiveres. Sidenavigasjonen har alt brukt
+ *  litt warmup-budsjett, så ~2,2s holder for at fly-inn blir glatt. Justeres her. */
+const GATE_WARMUP_MS = 2200;
+
 /**
  * Adaptiv layout:
  * - Mobil (<lg): full-screen reels-stack med bottom-anchored MapLayer-sheet
@@ -419,6 +434,7 @@ function ResponsiveLayoutInner({
   collection,
   onOpenCollection,
   embed,
+  fromEmbed,
 }: {
   boardData: BoardData;
   has3dAddon: boolean;
@@ -433,6 +449,8 @@ function ResponsiveLayoutInner({
   onOpenCollection: () => void;
   /** Embed-modus: render kun splash-teaser (se Props.embed). */
   embed: boolean;
+  /** Ankommet fra embed (`?from=embed`): "Klar"-gate i stedet for velkomst-splash. */
+  fromEmbed: boolean;
 }) {
   const home = boardData.home;
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -460,6 +478,17 @@ function ResponsiveLayoutInner({
   const { pause, resume, goToTrack } = useAudioTourActions();
   const [splashVisible, setSplashVisible] = useState(true);
   const [boardRevealed, setBoardRevealed] = useState(false);
+
+  // "Klar"-gate (fromEmbed): kartet varmes opp bak splashen et par sekunder før
+  // play-knappen aktiveres, så det bevisste lyd-trykket gir en momentan, glatt
+  // fly-inn (ikke kald tile-streaming). Standalone direkte-besøk: ingen gate
+  // (gateWarm starter true → ingen loader-forsinkelse).
+  const [gateWarm, setGateWarm] = useState(!fromEmbed);
+  useEffect(() => {
+    if (!fromEmbed) return;
+    const t = setTimeout(() => setGateWarm(true), GATE_WARMUP_MS);
+    return () => clearTimeout(t);
+  }, [fromEmbed]);
 
   const firstIdx = firstAudioBearingIndex(state.cards);
   const notStarted = !state.audioUnlocked || phase === "idle";
@@ -545,6 +574,27 @@ function ResponsiveLayoutInner({
   const subline =
     [home.district, home.city].filter(Boolean).join(", ") || undefined;
 
+  // "Klar"-gate (fromEmbed): brukeren har nettopp uttrykt intensjon i embedet, så
+  // i stedet for å gjenta "Velkommen til {navn}" viser vi en kort "klar"-melding,
+  // varmer opp kartet bak en loader (gateWarm), og lander på ett bevisst trykk som
+  // låser opp lyden (nettleser-policy) + avdekker det varme kartet. hasAudioGuide
+  // → lyd-hint + "Spill av guiden"; basic-tier → "Utforsk nabolaget" uten lyd-hint.
+  const hasAudioGuide = firstIdx !== -1;
+  const splashHeadline = fromEmbed ? "Nabolaget er klart" : undefined;
+  const splashIntroFinal = fromEmbed
+    ? hasAudioGuide
+      ? "Trykk play, så flyr vi inn i nabolaget og forteller deg hva som ligger i gangavstand."
+      : "Trykk play, så flyr vi inn i nabolaget og viser deg hva som ligger i gangavstand."
+    : splashIntro;
+  const splashPrimaryLabel = fromEmbed
+    ? hasAudioGuide
+      ? "Spill av guiden"
+      : "Utforsk nabolaget"
+    : primaryLabel;
+  const gateLoading = fromEmbed && !gateWarm;
+  const gatePulse = fromEmbed && gateWarm;
+  const gateSubtext = fromEmbed && hasAudioGuide ? "🔊 Med lyd · guidet tur" : undefined;
+
   // Embed-modus: render KUN splash-teaseren (ingen kart/reels/audio i iframen).
   // Egen "selg inn"-copy — på meglerens side har leseren allerede scrollet forbi
   // seksjoner som ønsker velkommen, så "Velkommen til {navn}" føltes rart. Her
@@ -619,9 +669,13 @@ function ResponsiveLayoutInner({
           logoSrc={logoSrc}
           heroImage={splashHero}
           heroVideo={splashVideo}
-          intro={splashIntro}
-          primaryLabel={primaryLabel}
+          intro={splashIntroFinal}
+          headline={splashHeadline}
+          primaryLabel={splashPrimaryLabel}
           onPlay={handlePlay}
+          loading={gateLoading}
+          pulse={gatePulse}
+          ctaSubtext={gateSubtext}
         />
       </div>
     );
@@ -655,9 +709,13 @@ function ResponsiveLayoutInner({
         logoSrc={logoSrc}
         heroImage={splashHero}
         heroVideo={splashVideo}
-        intro={splashIntro}
-        primaryLabel={primaryLabel}
+        intro={splashIntroFinal}
+        headline={splashHeadline}
+        primaryLabel={splashPrimaryLabel}
         onPlay={handlePlay}
+        loading={gateLoading}
+        pulse={gatePulse}
+        ctaSubtext={gateSubtext}
       />
     </div>
   );
