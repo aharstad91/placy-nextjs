@@ -10,12 +10,10 @@ import {
 } from "react";
 import type { ReelsCard } from "./reels-data";
 
-export type ReelsPhase =
-  | "intro"
-  | "reel"
-  | "map-quarter"
-  | "map-half"
-  | "map-full";
+// To-flate-modellen erstattet den gamle sheet-snap-stigen; kun disse to
+// fasene gjenstår: "intro" (splash-oppvarming) og "reel" (aktivt kort vist).
+// Selve historie↔kart-vekslingen lever nå i `mapOpen`.
+export type ReelsPhase = "intro" | "reel";
 
 export interface ReelsState {
   cards: ReelsCard[];
@@ -29,14 +27,22 @@ export interface ReelsState {
    * `currentPhase` mens den gamle MapLayer-snap-modellen fases ut.
    */
   mapOpen: boolean;
+  /**
+   * Progress-gated kart-teaser (B1/R8): armes når en kategoris VO er ferdig
+   * (track-ended), så et ikke-interaktivt kart-glimt kan stige opp på historie-
+   * flaten. Varig flagg (overlever backgrounding — audio pauses ved tab-hidden,
+   * så VO fullføres aldri usett). Nullstilles per beat (SET_ACTIVE_INDEX) og ved
+   * kart-åpning (SET_MAP_OPEN open=true, teaseren er konsumert).
+   */
+  teaserArmed: boolean;
   audioUnlocked: boolean;
   mapMounted: boolean;
 }
 
 export type ReelsAction =
   | { type: "SET_ACTIVE_INDEX"; index: number }
-  | { type: "SET_PHASE"; phase: ReelsPhase }
   | { type: "SET_MAP_OPEN"; open: boolean }
+  | { type: "SET_TEASER_ARMED"; armed: boolean }
   | { type: "MARK_AUDIO_UNLOCKED" }
   | { type: "MARK_MAP_MOUNTED" };
 
@@ -67,14 +73,21 @@ export function reelsReducer(state: ReelsState, action: ReelsAction): ReelsState
         currentPhase: defaultPhaseForCard(card),
         // Nullstill flate per beat → ingen kart-tilstand henger over (lock-bug-vern).
         mapOpen: defaultMapOpenForCard(card),
+        // Ny beat → forrige kapittels teaser er ikke lenger relevant.
+        teaserArmed: false,
       };
     }
-    case "SET_PHASE":
-      if (state.currentPhase === action.phase) return state;
-      return { ...state, currentPhase: action.phase };
     case "SET_MAP_OPEN":
       if (state.mapOpen === action.open) return state;
-      return { ...state, mapOpen: action.open };
+      // Åpne kart → teaseren er konsumert (skjul glimtet).
+      return {
+        ...state,
+        mapOpen: action.open,
+        teaserArmed: action.open ? false : state.teaserArmed,
+      };
+    case "SET_TEASER_ARMED":
+      if (state.teaserArmed === action.armed) return state;
+      return { ...state, teaserArmed: action.armed };
     case "MARK_AUDIO_UNLOCKED":
       if (state.audioUnlocked) return state;
       return { ...state, audioUnlocked: true };
@@ -90,8 +103,8 @@ interface ReelsContextValue {
   state: ReelsState;
   dispatch: Dispatch<ReelsAction>;
   setActiveIndex: (index: number) => void;
-  setPhase: (phase: ReelsPhase) => void;
   setMapOpen: (open: boolean) => void;
+  setTeaserArmed: (armed: boolean) => void;
   markAudioUnlocked: () => void;
   markMapMounted: () => void;
 }
@@ -110,6 +123,7 @@ export function ReelsProvider({ cards, children }: ProviderProps) {
       activeIndex: 0,
       currentPhase: defaultPhaseForCard(cards[0]),
       mapOpen: defaultMapOpenForCard(cards[0]),
+      teaserArmed: false,
       audioUnlocked: false,
       mapMounted: false,
     }),
@@ -123,8 +137,8 @@ export function ReelsProvider({ cards, children }: ProviderProps) {
       state,
       dispatch,
       setActiveIndex: (index) => dispatch({ type: "SET_ACTIVE_INDEX", index }),
-      setPhase: (phase) => dispatch({ type: "SET_PHASE", phase }),
       setMapOpen: (open) => dispatch({ type: "SET_MAP_OPEN", open }),
+      setTeaserArmed: (armed) => dispatch({ type: "SET_TEASER_ARMED", armed }),
       markAudioUnlocked: () => dispatch({ type: "MARK_AUDIO_UNLOCKED" }),
       markMapMounted: () => dispatch({ type: "MARK_MAP_MOUNTED" }),
     }),

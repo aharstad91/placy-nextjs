@@ -1,7 +1,7 @@
 "use client";
 
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
@@ -25,7 +25,8 @@ import { BoardCollectionDrawer } from "../board/event/BoardCollectionDrawer";
 import { EventMobileSheet } from "../board/event/EventMobileSheet";
 import { useKompassSelections } from "@/lib/kompass-store";
 import { ReelsProvider, useReels } from "./reels-state";
-import { ReelsStack } from "./ReelsStack";
+import { ReelsTransport } from "./ReelsTransport";
+import { MapTeaser } from "./MapTeaser";
 import { DesktopStorySidebar } from "./DesktopStorySidebar";
 import { DesktopReportSplash } from "./DesktopReportSplash";
 import { MobileReportSplash } from "./MobileReportSplash";
@@ -301,8 +302,14 @@ function BoardReelsSync() {
  *  ikke hopper rett fra én kategori til neste. Justeres her. */
 const CATEGORY_ADVANCE_PAUSE_MS = 1000;
 
+/** Teaser-vindu (ms): hvor lenge kart-glimtet står ved kategori-VO-slutt FØR
+ *  passiv auto-advance til neste kapittel (R8/R9). Lengre enn pusten over så
+ *  brukeren rekker å lese «Utforsk på kart» og evt. tappe. Justeres mot
+ *  mobil-emulering. */
+const CATEGORY_TEASER_MS = 3500;
+
 function ReelsAudioShell({ children }: { children: React.ReactNode }) {
-  const { state, setPhase, setActiveIndex } = useReels();
+  const { state, setActiveIndex, setTeaserArmed } = useReels();
   const { next: audioNext } = useAudioTourActions();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
@@ -323,12 +330,22 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
     };
   }, [state.activeIndex]);
 
+  // Kart-entry (teaser-tapp / manuell «Kart →») kansellerer en ventende
+  // kategori-teaser-advance: kart-åpning endrer ikke activeIndex, så cleanupen
+  // over treffer den ikke. Mens brukeren er på kart-flaten skal touren stå.
+  useEffect(() => {
+    if (state.mapOpen && advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+  }, [state.mapOpen]);
+
   // Når et spor slutter naturlig:
   // - Desktop: auto-advance til neste audio-bærende kapittel (etter en kort
   //   pause) slik at løpebåndet i sidebaren spiller kategoriene én etter én
   //   (som mobil-feeden, men uten swipe). Siste spor → terminal "ended"-fase.
-  // - Mobil: hev sheet til 20% (map-quarter). Bruker må aktivt tappe for å
-  //   gå videre — sheet "våkner" men ekspander ikke uten gesture.
+  // - Mobil (to-flate): welcome/home auto-advancer videre; kategori-VO-slutt
+  //   armer kart-teaser + et timet, passivt auto-advance (se kategori-grenen).
   const handleTrackEnded = () => {
     if (isDesktop) {
       const next = nextAudioBearingIndex(state.cards, state.activeIndex);
@@ -366,12 +383,21 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
       }
       return;
     }
-    // Kategori-spor: hev kart-sheeten til snap-1 (40%) så kartet "våkner" og
-    // bruker kan utforske POI-ene; videre navigasjon er manuell swipe. Outro
-    // håndteres IKKE her — den blir stående i fullskjerm fri-utforsking
-    // (map-forward beat) til bruker swiper/Fortsett til finalen.
-    if (endedCard?.kind === "category" && state.currentPhase === "reel") {
-      setPhase("map-quarter");
+    // Kategori-spor (to-flate-modell): arm kart-teaseren (glimt stiger opp på
+    // historie-flaten) og start et timet, passivt auto-advance til neste
+    // kapittel (R8/R9). Ignorerer bruker → touren går videre selv; tapper hen
+    // teaseren / åpner kart → mapOpen-effekten over kansellerer timeren og
+    // touren står. Erstatter den gamle map-quarter-parkeringen (manuell swipe).
+    if (endedCard?.kind === "category") {
+      setTeaserArmed(true);
+      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+      const nextAudio = nextAudioBearingIndex(state.cards, state.activeIndex);
+      const next = nextAudio !== -1 ? nextAudio : state.activeIndex + 1;
+      advanceTimerRef.current = setTimeout(() => {
+        advanceTimerRef.current = null;
+        if (next < state.cards.length) setActiveIndex(next);
+        else audioNext();
+      }, CATEGORY_TEASER_MS);
     }
   };
   return (
@@ -425,7 +451,8 @@ function ResponsiveLayoutInner({
   // (ellers streamet tiles inn MIDT i introen → hakking og lav kvalitet). Splashen
   // dekker oppvarmingen; ved "play" fader den ut og avdekker det allerede varme
   // kartet. Bevares montert ved re-åpning så orbiten ikke re-initialiseres.
-  const { state, setActiveIndex, markAudioUnlocked, markMapMounted } = useReels();
+  const { state, setActiveIndex, setMapOpen, markAudioUnlocked, markMapMounted } =
+    useReels();
   const { dispatch: boardDispatch } = useBoard();
   const { unlock } = useAudioElement();
 
@@ -596,10 +623,92 @@ function ResponsiveLayoutInner({
     );
   }
 
+  // --- Mobil: to-flate-modell (historie ↔ kart) + vedvarende transport ---
+  const activeCardMobile = state.cards[state.activeIndex];
+  const beatKindMobile = activeCardMobile?.kind;
+  const isMapForwardBeatMobile =
+    beatKindMobile === "welcome" ||
+    beatKindMobile === "home" ||
+    beatKindMobile === "outro";
+  const isCategoryBeatMobile = beatKindMobile === "category";
+  // R17: uten spillbar lyd faller mobil tilbake til splash + (basic) kart-
+  // utforsking — da er kartet primær-flaten og transporten rendres ikke.
+  const hasAudioMobile = firstIdx !== -1;
+  const mapIsSurface = state.mapOpen || !hasAudioMobile;
+  const teaserVisible =
+    state.teaserArmed && !state.mapOpen && isCategoryBeatMobile;
+
+  // Persistent kart-container-geometri:
+  //  - kart-flate (mapIsSurface): fullskjerm, interaktivt, z-20 over historie.
+  //  - teaser: bunn-stripe (~38%), ikke-interaktivt, z-20 (glir opp via height-
+  //    transition — samme persistente instans avslørt).
+  //  - ellers (historie): fullskjerm BAK historie (z-0), varmt + ikke-interaktivt.
+  const mapStyle: CSSProperties = mapIsSurface
+    ? { inset: 0, zIndex: 20 }
+    : teaserVisible
+      ? { left: 0, right: 0, bottom: 0, top: "auto", height: "38%", zIndex: 20 }
+      : { inset: 0, zIndex: 0 };
+
   return (
-    <div className="relative h-[100dvh] w-full bg-black overflow-hidden">
-      <MapLayer has3dAddon={has3dAddon} />
-      <ReelsStack renderCard={(i) => <CardRouter cardIndex={i} />} />
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-black">
+      {/* Persistent kart — alltid montert (varmt + teaser-glimt = samme instans).
+          interactive kun på kart-flaten (R13); ellers pointer-events-skjold. */}
+      <div
+        className="absolute overflow-hidden transition-all duration-500 ease-out"
+        style={mapStyle}
+      >
+        <BoardMap has3dAddon={has3dAddon} interactive={mapIsSurface} compactControls />
+
+        {/* Teaser CTA-lag (B1) — over skjoldet; tapp åpner kart-flate (R9). */}
+        {teaserVisible && <MapTeaser />}
+
+        {/* Kart-flate-exit for kategori (R14): chevron topp-venstre + «← Tilbake»
+            i transporten = to veier ut. */}
+        {state.mapOpen && isCategoryBeatMobile && (
+          <button
+            type="button"
+            onClick={() => setMapOpen(false)}
+            aria-label="Lukk kart"
+            className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] z-30 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-lg active:scale-95"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        )}
+
+        {/* Map-forward beat (welcome/home/outro): label-caption mens VO-en leses
+            over kartet (kart er innholdet her — ingen kort-video, som før). */}
+        {state.mapOpen && isMapForwardBeatMobile && activeCardMobile?.label && (
+          <div className="pointer-events-none absolute inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-30 flex justify-center">
+            <span className="rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm">
+              {activeCardMobile.label}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Historie-flate — kun når kart ikke er aktiv flate. Rendrer det aktive
+          kortet direkte (ingen scroll-feed; navigasjon via transport + auto-advance). */}
+      {!mapIsSurface && (
+        <div className="absolute inset-0 z-10">
+          <CardRouter cardIndex={state.activeIndex} />
+        </div>
+      )}
+
+      {/* Vedvarende transport — etter lyd-unlock (R18), kun med spillbar lyd (R17). */}
+      {hasAudioMobile && state.audioUnlocked && <ReelsTransport />}
+
       <MobileReportSplash
         visible={splashVisible}
         name={home.name}
@@ -626,180 +735,6 @@ const ResponsiveLayout = dynamic(
     loading: () => <div className="h-[100dvh] w-full bg-[#f2e9dc]" />,
   },
 );
-
-function MapLayer({ has3dAddon }: { has3dAddon: boolean }) {
-  const { state, setPhase, setActiveIndex } = useReels();
-  const { pause } = useAudioTourActions();
-  if (!state.mapMounted) return null;
-
-  const activeCard = state.cards[state.activeIndex];
-  const beatKind = activeCard?.kind;
-  // Kart-fremtunge beats: kartet fyller skjermen (welcome-flythrough +
-  // nabolags-oversikt + oppsummerings-utforsking). intro varmes opp i samme
-  // fullskjerm-tilstand BAK splashen, så Google-3D-tiles er klare når
-  // flythrough-en starter.
-  const isIntroCard = beatKind === "intro";
-  const isMapForwardBeat =
-    beatKind === "welcome" || beatKind === "home" || beatKind === "outro";
-
-  const isPeek = state.currentPhase === "reel";
-  const isQuarter = state.currentPhase === "map-quarter";
-  const isHalf = state.currentPhase === "map-half";
-  const isFullPhase = state.currentPhase === "map-full";
-
-  // Fullskjerm-kart når: bruker har ekspandert til full, ELLER beaten er
-  // kart-fremtung (welcome/home/outro), ELLER intro (oppvarming bak splash).
-  const mapFullscreen = isFullPhase || isMapForwardBeat || isIntroCard;
-
-  // Snap-stige (kategori): peek 10% → snap-1 40% → full 100%.
-  const heightPct = mapFullscreen ? 100 : isQuarter ? 40 : isHalf ? 65 : 10;
-  // Peek er eneste med margin; resten full bredde.
-  const peekInset = isPeek && !mapFullscreen;
-  const widthPct = peekInset ? 90 : 100;
-  const insetXPct = peekInset ? 5 : 0;
-  const radiusClass = mapFullscreen ? "rounded-none" : "rounded-t-3xl";
-
-  // Header (drag-handle + tap-to-expand) kun for kategori-sheet i delvis høyde.
-  const showHeader = !mapFullscreen;
-  // Chevron-collapse vises kun når bruker SELV har ekspandert en kategori til
-  // full (ikke under kart-fremtunge beats — der eier flythrough/oversikt skjermen).
-  const showCollapse = isFullPhase && !isMapForwardBeat && !isIntroCard;
-  // CTA-prompt på det dempede kart-vinduet i peek/snap-1 (kun kategori).
-  const showOpenPrompt = (isPeek || isQuarter) && !mapFullscreen;
-
-  // Sheet-tap (kategori): peek 10% → snap-1 40% → full 100%.
-  const handleSheetTap = () => {
-    if (isPeek) {
-      pause("manual");
-      setPhase("map-quarter");
-    } else if (isQuarter || isHalf) {
-      setPhase("map-full");
-    }
-  };
-
-  // "Fortsett" under kart-fremtunge beats — hopp til neste audio-bærende
-  // kapittel (welcome → home → første kategori …). Lar bruker komme videre
-  // uten å vente ut VO-en; auto-advance (handleTrackEnded) gjør det samme når
-  // sporet spiller ferdig av seg selv.
-  const advanceBeat = () => {
-    // Neste audio-beat (welcome→home→kategori). På outro (siste audio) finnes
-    // ingen — da går vi til neste kort (summary/megler) for å lande på finalen.
-    const nextAudio = nextAudioBearingIndex(state.cards, state.activeIndex);
-    const next = nextAudio !== -1 ? nextAudio : state.activeIndex + 1;
-    if (next < state.cards.length) setActiveIndex(next);
-  };
-
-  const headerPx = 56;
-
-  return (
-    <div
-      className={`absolute bottom-0 z-[15] transition-all duration-500 ease-out overflow-hidden shadow-2xl bg-stone-900 ${radiusClass}`}
-      style={{
-        height: `${heightPct}%`,
-        width: `${widthPct}%`,
-        left: `${insetXPct}%`,
-        // intro varmes opp bak splashen → fullskjerm men usynlig.
-        opacity: isIntroCard ? 0 : 1,
-      }}
-    >
-      {/* Kart-area — sitter under header (kategori delvis høyde). I fullskjerm
-          trekker den helt til viewport-edges. */}
-      <div
-        className="absolute transition-all duration-500 ease-out overflow-hidden"
-        style={{
-          top: mapFullscreen ? 0 : headerPx + (isPeek ? 0 : 16),
-          bottom: 0,
-          left: mapFullscreen ? 0 : 8,
-          right: mapFullscreen ? 0 : 8,
-          borderRadius: mapFullscreen ? 0 : "16px 16px 0 0",
-        }}
-      >
-        <BoardMap has3dAddon={has3dAddon} compactControls />
-
-        {/* Mørk overlay + CTA — synlig i peek/snap-1 (kategori) når kart-
-            vinduet er smalt. pointer-events:none så tap propagerer til
-            header-button under. */}
-        {showOpenPrompt && (
-          <div className="absolute inset-0 transition-opacity duration-500 ease-out pointer-events-none flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/55" />
-            <div className="relative flex items-center gap-1.5 rounded-full bg-white text-stone-900 px-3 py-1.5 text-xs font-semibold shadow-2xl whitespace-nowrap">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-stone-700 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-stone-900" />
-              </span>
-              Klikk for å åpne kart
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Header (handle + label) — kun kategori-sheet i delvis høyde. */}
-      {showHeader && (
-        <button
-          onClick={handleSheetTap}
-          aria-label={isPeek ? "Vis kart" : "Utvid kart"}
-          className="absolute inset-x-0 top-0 z-10 flex flex-col items-center justify-center bg-stone-900"
-          style={{ pointerEvents: "auto", height: headerPx }}
-        >
-          <div className="h-1.5 w-12 rounded-full bg-white/40" />
-          <span
-            className={`mt-2 text-white/90 font-medium ${
-              isPeek ? "text-sm" : "text-xs uppercase tracking-widest"
-            }`}
-          >
-            {isPeek ? "Trykk for å se kart" : "Trykk for å utforske"}
-          </span>
-        </button>
-      )}
-
-      {/* Kart-fremtung beat (welcome/home/outro): caption nede + "Fortsett"-
-          skip. Lar flythrough/oversikt eie skjermen mens VO leses. */}
-      {isMapForwardBeat && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-3 bg-gradient-to-t from-black/70 to-transparent px-5 pb-7 pt-16">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/90 drop-shadow">
-            {activeCard?.label}
-          </span>
-          <button
-            onClick={advanceBeat}
-            style={{ pointerEvents: "auto" }}
-            className="shrink-0 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-stone-900 shadow-lg backdrop-blur-sm active:scale-[0.97]"
-          >
-            Fortsett →
-          </button>
-        </div>
-      )}
-
-      {/* Bruker-ekspandert kategori i full: chevron-collapse + swipe-hint. */}
-      {showCollapse && (
-        <>
-          <button
-            onClick={() => setPhase("reel")}
-            style={{ pointerEvents: "auto" }}
-            className="absolute top-6 left-6 z-20 rounded-full bg-white/95 text-black h-10 w-10 flex items-center justify-center shadow-lg"
-            aria-label="Lukk kart"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <div className="absolute top-6 right-6 z-20 text-white text-xs pointer-events-none bg-black/60 rounded-full px-3 py-1.5 backdrop-blur-sm select-none">
-            Swipe opp for neste
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 function CardRouter({
   cardIndex,

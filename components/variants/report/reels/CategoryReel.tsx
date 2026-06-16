@@ -14,24 +14,9 @@ interface Props {
   /** Index i audio-tour-store sin tracks-array. -1 hvis cardet ikke har audio. */
   audioIndex: number;
   isActive: boolean;
-  /** Når true: ingen sheet-mekanikk under cardet — karaoke ankres til
-   *  bunn-kant, video skjules ikke i map-full. Brukes i 2-kolonner desktop. */
+  /** Når true: 2-kolonner desktop — karaoke ankres til bunn-kant (5%-marg). */
   desktopMode?: boolean;
 }
-
-// Sheet-høyde-progresjon — driver karaoke-posisjonen som ligger like over.
-// Snap-stigen følger bruker-ønsket: peek 10% → snap-1 40% → full 100%
-// (map-half er en mellomtilstand brukt ved enkelte overganger).
-//   reel         → 10% (peek)
-//   map-quarter  → 40% (snap-1)
-//   map-half     → 65%
-//   map-full     → 100% (karaoke skjult)
-const SHEET_HEIGHT_PCT = {
-  reel: 10,
-  "map-quarter": 40,
-  "map-half": 65,
-  "map-full": 100,
-} as const;
 
 export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }: Props) {
   const { state, markMapMounted } = useReels();
@@ -55,7 +40,9 @@ export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }
   // - Desktop (player): bind til audio-fasen. Når brukeren pauser, fryser
   //   videoen på siste frame så kortet føles ekte pauset og ikke tar kognitiv
   //   last i bakgrunnen. Spiller kun når DETTE kortets spor faktisk går.
-  // - Mobil: behold sheet-fase-styringen (video fryser når sheet ekspanderer).
+  // - Mobil (to-flate): historie-flaten rendrer kun det aktive kortet, så vi
+  //   spiller bg-videoen mens kortet vises (currentPhase "reel"). Når brukeren
+  //   åpner kart-flaten unmountes historie-flaten → videoen stopper.
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -70,33 +57,20 @@ export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }
   }, [desktopMode, isActive, isCurrentAudio, audioPhase, currentPhase]);
 
   // Desktop: karaoke aktiveres så lenge cardet er aktivt + dets spor spilles.
-  // Phase er irrelevant fordi sheet ikke finnes.
+  // Mobil: aktivt kort i historie-flate (currentPhase "reel") + dets spor.
   const karaokeActive = desktopMode
     ? isActive && isCurrentAudio
     : isActive && currentPhase === "reel" && isCurrentAudio;
 
-  // Desktop: ingen sheet, karaoke ankres på bunn-kant (5%-marg).
-  // Mobil: følger sheet-høyde (10–100%).
-  const sheetHeightPct = desktopMode
-    ? 5
-    : currentPhase && currentPhase !== "intro"
-      ? SHEET_HEIGHT_PCT[currentPhase]
-      : SHEET_HEIGHT_PCT.reel;
-
-  // map-full er en mobil-tilstand. På desktop er den irrelevant — kartet
-  // er en separat permanent panel, ikke en utvidet sheet.
-  const isFull = !desktopMode && currentPhase === "map-full";
+  // Karaoke-ankerhøyde fra bunn. Desktop: 5%-marg (ingen sheet). Mobil
+  // (to-flate): fast lav anker som klarerer den vedvarende transport-baren —
+  // den gamle sheet-snap-stigen (peek/quarter/half/full) finnes ikke lenger.
+  const karaokeBottomPct = desktopMode ? 5 : 10;
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
       {/* Bakgrunns-lag — video (om tilgjengelig) eller statisk illustrasjon */}
-      <div
-        className="absolute inset-0 transition-opacity duration-500 ease-out"
-        style={{
-          opacity: isFull ? 0 : 1,
-          pointerEvents: isFull ? "none" : "auto",
-        }}
-      >
+      <div className="absolute inset-0">
         {card.videoBgSrc ? (
           <video
             ref={videoRef}
@@ -120,9 +94,8 @@ export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }
           )
         )}
         {/* Topp-gradient — KUN mobil. Der masker den hard kant mellom
-            video-loops ved swipe mellom kort. På desktop (sidebar-løpebånd)
-            er det ingen swipe-loop å maske, så vi dropper den for ren
-            video-topp. 20% høyde. */}
+            video-loops ved kort-bytte. På desktop (sidebar-løpebånd) er det
+            ingen loop å maske, så vi dropper den for ren video-topp. 20% høyde. */}
         {!desktopMode && (
           <div className="absolute inset-x-0 top-0 h-1/5 bg-gradient-to-b from-black/95 via-black/60 to-transparent pointer-events-none" />
         )}
@@ -131,14 +104,11 @@ export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }
         <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
       </div>
 
-      {/* Karaoke + label — posisjonert like over sheet (3% gap).
-          Flytter dynamisk når sheet vokser. Skjules i map-full. */}
+      {/* Karaoke + label — posisjonert like over transport-baren (mobil) eller
+          bunn-kant (desktop). */}
       <div
         className="absolute left-0 right-0 px-6 z-10 transition-all duration-500 ease-out"
-        style={{
-          bottom: `${sheetHeightPct + 3}%`,
-          opacity: isFull ? 0 : 1,
-        }}
+        style={{ bottom: `${karaokeBottomPct + 3}%` }}
       >
         <div
           className="inline-block text-[11px] uppercase tracking-[0.15em] text-white/95 mb-3 font-semibold"
@@ -153,10 +123,6 @@ export function CategoryReel({ card, audioIndex, isActive, desktopMode = false }
           className="text-white text-lg leading-snug font-semibold"
         />
       </div>
-
-      {/* Map-full kontroller (chevron, swipe-hint) rendres i MapLayer. */}
     </div>
   );
 }
-
-export { SHEET_HEIGHT_PCT };

@@ -25,6 +25,7 @@ function baseState(overrides: Partial<ReelsState> = {}): ReelsState {
     activeIndex: 0,
     currentPhase: "intro",
     mapOpen: false,
+    teaserArmed: false,
     audioUnlocked: false,
     mapMounted: false,
     ...overrides,
@@ -93,5 +94,40 @@ describe("reelsReducer — flate-tilstand (mapOpen)", () => {
   it("SET_MAP_OPEN er en no-op (samme referanse) når verdien er uendret", () => {
     const state = baseState({ mapOpen: true });
     expect(reelsReducer(state, { type: "SET_MAP_OPEN", open: true })).toBe(state);
+  });
+});
+
+describe("reelsReducer — kart-teaser (teaserArmed)", () => {
+  it("SET_TEASER_ARMED armer/avvæpner glimtet", () => {
+    const armed = reelsReducer(baseState({ activeIndex: 2 }), {
+      type: "SET_TEASER_ARMED",
+      armed: true,
+    });
+    expect(armed.teaserArmed).toBe(true);
+  });
+
+  it("SET_MAP_OPEN(true) konsumerer (skjuler) teaseren", () => {
+    const next = reelsReducer(
+      baseState({ activeIndex: 2, teaserArmed: true }),
+      { type: "SET_MAP_OPEN", open: true },
+    );
+    expect(next.mapOpen).toBe(true);
+    expect(next.teaserArmed).toBe(false);
+  });
+
+  it("SET_MAP_OPEN(false) lar teaser-flagget stå urørt", () => {
+    const next = reelsReducer(
+      baseState({ activeIndex: 2, mapOpen: true, teaserArmed: false }),
+      { type: "SET_MAP_OPEN", open: false },
+    );
+    expect(next.mapOpen).toBe(false);
+  });
+
+  it("SET_ACTIVE_INDEX nullstiller teaserArmed (forrige kapittels teaser borte)", () => {
+    const next = reelsReducer(
+      baseState({ activeIndex: 2, teaserArmed: true }),
+      { type: "SET_ACTIVE_INDEX", index: 3 },
+    );
+    expect(next.teaserArmed).toBe(false);
   });
 });
