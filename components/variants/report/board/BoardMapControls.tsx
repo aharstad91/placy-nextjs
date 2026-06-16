@@ -199,20 +199,22 @@ export function BoardMapControls({
       >
         {freeHint}
 
-        {/* Popover med kontrollene — folder ut OVER FAB-en. */}
+        {/* Popover med kontrollene — folder ut UNDER FAB-en (topp-høyre). */}
         {fabOpen && (
-          <div className="pointer-events-auto absolute bottom-[4.75rem] left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/50 bg-white/85 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
+          <div className="pointer-events-auto absolute right-4 top-16 flex items-center gap-1 rounded-full border border-white/50 bg-white/85 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
             {controlsBody}
           </div>
         )}
 
-        {/* ⚙ FAB — bunn-midt (fri sone mellom Google- og Mapbox-attribusjon). */}
+        {/* ⚙ FAB — topp-høyre. Bunn-midt er nå opptatt av den vedvarende
+            transport-baren; topp-høyre klarer transporten, map-forward-captionen
+            (topp-midt) og lukk-chevronen (topp-venstre). */}
         <button
           type="button"
           onClick={() => setFabOpen((o) => !o)}
           aria-label="Kart-innstillinger"
           aria-expanded={fabOpen}
-          className="pointer-events-auto absolute bottom-7 left-1/2 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full border border-white/50 bg-white/80 text-stone-700 shadow-lg ring-1 ring-black/5 backdrop-blur-md active:scale-95"
+          className="pointer-events-auto absolute right-4 top-[max(1rem,env(safe-area-inset-top))] flex h-11 w-11 items-center justify-center rounded-full border border-white/50 bg-white/80 text-stone-700 shadow-lg ring-1 ring-black/5 backdrop-blur-md active:scale-95"
         >
           {fabOpen ? <X className="h-5 w-5" /> : <SlidersHorizontal className="h-5 w-5" />}
         </button>

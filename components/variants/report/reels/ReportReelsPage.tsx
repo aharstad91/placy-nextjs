@@ -388,7 +388,13 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
     // kapittel (R8/R9). Ignorerer bruker → touren går videre selv; tapper hen
     // teaseren / åpner kart → mapOpen-effekten over kansellerer timeren og
     // touren står. Erstatter den gamle map-quarter-parkeringen (manuell swipe).
-    if (endedCard?.kind === "category") {
+    //
+    // R9-race-vern: hvis VO-en slutter MENS brukeren allerede er på kart-flaten
+    // (mapOpen=true), skal vi IKKE arme teaser/timer — da ville et auto-advance
+    // rykket brukeren av kartet midt i utforskingen. Bruker styrer selv videre
+    // via transporten (Fortsett/segment) når hen er tilbake på historie-flaten.
+    // (Welcome/home over auto-chainer bevisst videre — de ER kart-primære.)
+    if (endedCard?.kind === "category" && !state.mapOpen) {
       setTeaserArmed(true);
       if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
       const nextAudio = nextAudioBearingIndex(state.cards, state.activeIndex);
