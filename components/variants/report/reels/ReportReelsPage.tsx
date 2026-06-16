@@ -29,6 +29,7 @@ import { ReelsStack } from "./ReelsStack";
 import { DesktopStorySidebar } from "./DesktopStorySidebar";
 import { DesktopReportSplash } from "./DesktopReportSplash";
 import { MobileReportSplash } from "./MobileReportSplash";
+import { EmbedArrivalLoader } from "./EmbedArrivalLoader";
 import { IntroReel } from "./IntroReel";
 import { CategoryReel } from "./CategoryReel";
 import { MeglerReel } from "./MeglerReel";
@@ -412,11 +413,6 @@ function ReelsOrchestrator({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/** Oppvarmingstid (ms) for "Klar"-gaten (fromEmbed): hvor lenge kartet får varme
- *  opp bak loaderen før play-knappen aktiveres. Sidenavigasjonen har alt brukt
- *  litt warmup-budsjett, så ~2,2s holder for at fly-inn blir glatt. Justeres her. */
-const GATE_WARMUP_MS = 2200;
-
 /**
  * Adaptiv layout:
  * - Mobil (<lg): full-screen reels-stack med bottom-anchored MapLayer-sheet
@@ -478,17 +474,6 @@ function ResponsiveLayoutInner({
   const { pause, resume, goToTrack } = useAudioTourActions();
   const [splashVisible, setSplashVisible] = useState(true);
   const [boardRevealed, setBoardRevealed] = useState(false);
-
-  // "Klar"-gate (fromEmbed): kartet varmes opp bak splashen et par sekunder før
-  // play-knappen aktiveres, så det bevisste lyd-trykket gir en momentan, glatt
-  // fly-inn (ikke kald tile-streaming). Standalone direkte-besøk: ingen gate
-  // (gateWarm starter true → ingen loader-forsinkelse).
-  const [gateWarm, setGateWarm] = useState(!fromEmbed);
-  useEffect(() => {
-    if (!fromEmbed) return;
-    const t = setTimeout(() => setGateWarm(true), GATE_WARMUP_MS);
-    return () => clearTimeout(t);
-  }, [fromEmbed]);
 
   const firstIdx = firstAudioBearingIndex(state.cards);
   const notStarted = !state.audioUnlocked || phase === "idle";
@@ -574,26 +559,14 @@ function ResponsiveLayoutInner({
   const subline =
     [home.district, home.city].filter(Boolean).join(", ") || undefined;
 
-  // "Klar"-gate (fromEmbed): brukeren har nettopp uttrykt intensjon i embedet, så
-  // i stedet for å gjenta "Velkommen til {navn}" viser vi en kort "klar"-melding,
-  // varmer opp kartet bak en loader (gateWarm), og lander på ett bevisst trykk som
-  // låser opp lyden (nettleser-policy) + avdekker det varme kartet. hasAudioGuide
-  // → lyd-hint + "Spill av guiden"; basic-tier → "Utforsk nabolaget" uten lyd-hint.
+  // Ankommet fra embed (`?from=embed`): sentrert "laster inn"-skjerm (logo + hero
+  // + tekst + fremdriftslinje → knapp). hasAudioGuide styrer "Henter stemmen…"-
+  // steget; notStarted styrer om loaderen varmer opp (første ankomst) eller hopper
+  // rett til 100% (re-åpning).
   const hasAudioGuide = firstIdx !== -1;
-  const splashHeadline = fromEmbed ? "Nabolaget er klart" : undefined;
-  const splashIntroFinal = fromEmbed
-    ? hasAudioGuide
-      ? "Trykk play, så flyr vi inn i nabolaget og forteller deg hva som ligger i gangavstand."
-      : "Trykk play, så flyr vi inn i nabolaget og viser deg hva som ligger i gangavstand."
-    : splashIntro;
-  const splashPrimaryLabel = fromEmbed
-    ? hasAudioGuide
-      ? "Spill av guiden"
-      : "Utforsk nabolaget"
-    : primaryLabel;
-  const gateLoading = fromEmbed && !gateWarm;
-  const gatePulse = fromEmbed && gateWarm;
-  const gateSubtext = fromEmbed && hasAudioGuide ? "🔊 Med lyd · guidet tur" : undefined;
+  const loaderHeadline = "Bli kjent med nærområdet";
+  const loaderIntro =
+    "Transport, hverdagsliv, mat, natur og opplevelser — alt i gangavstand.";
 
   // Embed-modus: render KUN splash-teaseren (ingen kart/reels/audio i iframen).
   // Egen "selg inn"-copy — på meglerens side har leseren allerede scrollet forbi
@@ -662,21 +635,33 @@ function ResponsiveLayoutInner({
               reveal. Splash-kryssfaden står for selve avdekkingen. */}
           <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} eventMode={eventMode} />
         </div>
-        <DesktopReportSplash
-          visible={splashVisible}
-          name={home.name}
-          subline={subline}
-          logoSrc={logoSrc}
-          heroImage={splashHero}
-          heroVideo={splashVideo}
-          intro={splashIntroFinal}
-          headline={splashHeadline}
-          primaryLabel={splashPrimaryLabel}
-          onPlay={handlePlay}
-          loading={gateLoading}
-          pulse={gatePulse}
-          ctaSubtext={gateSubtext}
-        />
+        {fromEmbed ? (
+          <EmbedArrivalLoader
+            visible={splashVisible}
+            projectName={home.name}
+            headline={loaderHeadline}
+            subline={subline}
+            intro={loaderIntro}
+            logoSrc={logoSrc}
+            heroImage={splashHero}
+            heroVideo={splashVideo}
+            hasAudio={hasAudioGuide}
+            warm={!notStarted}
+            onEnter={handlePlay}
+          />
+        ) : (
+          <DesktopReportSplash
+            visible={splashVisible}
+            name={home.name}
+            subline={subline}
+            logoSrc={logoSrc}
+            heroImage={splashHero}
+            heroVideo={splashVideo}
+            intro={splashIntro}
+            primaryLabel={primaryLabel}
+            onPlay={handlePlay}
+          />
+        )}
       </div>
     );
   }
@@ -702,21 +687,33 @@ function ResponsiveLayoutInner({
     <div className="relative h-[100dvh] w-full bg-black overflow-hidden">
       <MapLayer has3dAddon={has3dAddon} />
       <ReelsStack renderCard={(i) => <CardRouter cardIndex={i} />} />
-      <MobileReportSplash
-        visible={splashVisible}
-        name={home.name}
-        subline={subline}
-        logoSrc={logoSrc}
-        heroImage={splashHero}
-        heroVideo={splashVideo}
-        intro={splashIntroFinal}
-        headline={splashHeadline}
-        primaryLabel={splashPrimaryLabel}
-        onPlay={handlePlay}
-        loading={gateLoading}
-        pulse={gatePulse}
-        ctaSubtext={gateSubtext}
-      />
+      {fromEmbed ? (
+        <EmbedArrivalLoader
+          visible={splashVisible}
+          projectName={home.name}
+          headline={loaderHeadline}
+          subline={subline}
+          intro={loaderIntro}
+          logoSrc={logoSrc}
+          heroImage={splashHero}
+          heroVideo={splashVideo}
+          hasAudio={hasAudioGuide}
+          warm={!notStarted}
+          onEnter={handlePlay}
+        />
+      ) : (
+        <MobileReportSplash
+          visible={splashVisible}
+          name={home.name}
+          subline={subline}
+          logoSrc={logoSrc}
+          heroImage={splashHero}
+          heroVideo={splashVideo}
+          intro={splashIntro}
+          primaryLabel={primaryLabel}
+          onPlay={handlePlay}
+        />
+      )}
     </div>
   );
 }

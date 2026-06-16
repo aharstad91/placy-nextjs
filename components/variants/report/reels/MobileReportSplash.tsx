@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, ChevronUp, Loader2, Play } from "lucide-react";
+import { ArrowUpRight, ChevronUp, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -35,12 +35,6 @@ interface Props {
    * turen inline. URL avledes fra gjeldende side med `?embed` fjernet.
    */
   embed?: boolean;
-  /** "Klar"-gate (fra embed): deaktivert loader-knapp til kartet er varmt. */
-  loading?: boolean;
-  /** Pulser CTA-knappen når "Klar"-gaten er ferdig oppvarmet (invitér til trykk). */
-  pulse?: boolean;
-  /** Liten tekst under knappen, eks. "🔊 Med lyd · guidet tur". */
-  ctaSubtext?: string;
 }
 
 const DEFAULT_INTRO =
@@ -67,9 +61,6 @@ export function MobileReportSplash({
   primaryLabel,
   onPlay,
   embed = false,
-  loading = false,
-  pulse = false,
-  ctaSubtext,
 }: Props) {
   const heroPoster = heroVideo?.replace(/\.mp4$/i, ".jpg");
 
@@ -96,9 +87,8 @@ export function MobileReportSplash({
   // Akkumulerer touch-delta og fyrer onPlay én gang per visning.
   const touchStartY = useRef<number | null>(null);
   useEffect(() => {
-    // Embed: ingen swipe-to-start (knappen åpner ny fane). "Klar"-gate under
-    // oppvarming (loading): heller ikke swipe-start, ellers kald fly-inn.
-    if (!visible || embed || loading) return;
+    // Embed: ingen swipe-to-start. Knappen (ny fane) er eneste utløser.
+    if (!visible || embed) return;
     let fired = false;
     const fire = () => {
       if (fired) return;
@@ -119,7 +109,7 @@ export function MobileReportSplash({
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
     };
-  }, [visible, embed, loading, onPlay]);
+  }, [visible, embed, onPlay]);
 
   const stagger = (i: number) =>
     ({ transitionDelay: shown ? `${120 + i * 80}ms` : "0ms" }) as React.CSSProperties;
@@ -214,28 +204,13 @@ export function MobileReportSplash({
             {primaryLabel}
             <ArrowUpRight size={18} />
           </a>
-        ) : loading ? (
-          // "Klar"-gate under oppvarming: deaktivert loader-knapp.
-          <button
-            type="button"
-            disabled
-            className={cn(
-              itemCls,
-              "mt-1 inline-flex w-full cursor-default items-center justify-center gap-2.5 rounded-full bg-white/70 px-7 py-4 text-base font-semibold text-stone-900/80 shadow-2xl",
-            )}
-            style={stagger(4)}
-          >
-            <Loader2 size={18} className="animate-spin" />
-            Gjør klar nabolaget…
-          </button>
         ) : (
           <button
             type="button"
             onClick={onPlay}
             className={cn(
               itemCls,
-              "relative mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-white px-7 py-4 text-base font-semibold text-stone-900 shadow-2xl transition-transform duration-200 active:scale-[0.98]",
-              pulse && "animate-pulse",
+              "mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-white px-7 py-4 text-base font-semibold text-stone-900 shadow-2xl transition-transform duration-200 active:scale-[0.98]",
             )}
             style={stagger(4)}
           >
@@ -244,15 +219,8 @@ export function MobileReportSplash({
           </button>
         )}
 
-        {/* CTA-subtekst (eks. lyd-hint) — sentrert under knappen. */}
-        {ctaSubtext && !loading && (
-          <p className="-mt-1 text-center text-[13px] font-medium text-white/75">
-            {ctaSubtext}
-          </p>
-        )}
-
-        {/* Swipe-hint — kun standalone direkte. Skjules i embed og "Klar"-gaten. */}
-        {!embed && !loading && !pulse && (
+        {/* Swipe-hint — kun standalone. I embed er knappen eneste utløser. */}
+        {!embed && (
           <div
             className={cn(
               "pointer-events-none flex flex-col items-center gap-0.5 text-white/60 transition-opacity duration-700",

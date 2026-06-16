@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, ChevronDown, Loader2, Play } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -37,17 +37,6 @@ interface Props {
    * gjeldende side med `?embed` fjernet.
    */
   embed?: boolean;
-  /**
-   * "Klar"-gate (fra embed): kartet varmes opp bak splashen. Når true vises
-   * knappen i en deaktivert loader-tilstand ("Gjør klar…") til oppvarmingen er
-   * ferdig — da settes `loading` til false og knappen aktiveres. Hindrer at en
-   * tidlig klikk gir kald fly-inn.
-   */
-  loading?: boolean;
-  /** Pulser play-knappen (brukes når "Klar"-gaten er ferdig oppvarmet → invitér). */
-  pulse?: boolean;
-  /** Liten tekst under knappen, eks. "🔊 Med lyd · guidet tur". */
-  ctaSubtext?: string;
 }
 
 const DEFAULT_INTRO =
@@ -75,9 +64,6 @@ export function DesktopReportSplash({
   primaryLabel,
   onPlay,
   embed = false,
-  loading = false,
-  pulse = false,
-  ctaSubtext,
 }: Props) {
   const heroPoster = heroVideo?.replace(/\.mp4$/i, ".jpg");
 
@@ -105,10 +91,9 @@ export function DesktopReportSplash({
   // splashen klaustrofobisk (man prøver å scrolle og ingenting skjer).
   // Akkumulerer wheel/touch-delta og trigger onPlay én gang per visning.
   useEffect(() => {
-    // Embed-modus: ingen scroll-to-start (knappen åpner ny fane). "Klar"-gate
-    // under oppvarming (loading): heller ikke scroll-start, ellers ville en
-    // tidlig scroll gi kald fly-inn før kartet er varmt.
-    if (!visible || embed || loading) return;
+    // Embed-modus: ingen scroll-to-start. Knappen (ny fane) er eneste utløser —
+    // ellers ville en scroll forbi iframen på meglerens side trigge "start".
+    if (!visible || embed) return;
     let acc = 0;
     let fired = false;
     let touchStartY: number | null = null;
@@ -140,7 +125,7 @@ export function DesktopReportSplash({
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
     };
-  }, [visible, embed, loading, onPlay]);
+  }, [visible, embed, onPlay]);
 
   const stagger = (i: number) =>
     ({
@@ -193,7 +178,7 @@ export function DesktopReportSplash({
             {intro || DEFAULT_INTRO}
           </p>
 
-          <div className={cn(itemCls, "mt-7 flex flex-col items-start gap-2.5")} style={stagger(3)}>
+          <div className={cn(itemCls, "mt-7")} style={stagger(3)}>
             {embed ? (
               <a
                 href={embedHref}
@@ -204,44 +189,22 @@ export function DesktopReportSplash({
                 {primaryLabel}
                 <ArrowUpRight size={18} />
               </a>
-            ) : loading ? (
-              // "Klar"-gate under oppvarming: deaktivert loader-knapp.
+            ) : (
               <button
                 type="button"
-                disabled
-                className="inline-flex cursor-default items-center gap-2.5 rounded-full bg-stone-900/60 px-7 py-3.5 text-base font-semibold text-white/90 shadow-lg"
+                onClick={onPlay}
+                className="inline-flex items-center gap-2.5 rounded-full bg-stone-900 px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-stone-700 hover:scale-[1.02] active:scale-[0.99]"
               >
-                <Loader2 size={18} className="animate-spin" />
-                Gjør klar nabolaget…
+                <Play size={18} className="fill-white" />
+                {primaryLabel}
               </button>
-            ) : (
-              <div className="relative">
-                {pulse && (
-                  <span
-                    className="pointer-events-none absolute -inset-1 rounded-full bg-stone-900/20 animate-ping"
-                    aria-hidden
-                  />
-                )}
-                <button
-                  type="button"
-                  onClick={onPlay}
-                  className="relative inline-flex items-center gap-2.5 rounded-full bg-stone-900 px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-stone-700 hover:scale-[1.02] active:scale-[0.99]"
-                >
-                  <Play size={18} className="fill-white" />
-                  {primaryLabel}
-                </button>
-              </div>
-            )}
-            {ctaSubtext && !loading && (
-              <span className="text-[13px] font-medium text-stone-500">{ctaSubtext}</span>
             )}
           </div>
 
         </div>
 
-        {/* Scroll-cue — kun standalone direkte. Skjules i embed og i "Klar"-gaten
-            (fromEmbed), der det bevisste knappetrykket er poenget. */}
-        {!embed && !loading && !pulse && (
+        {/* Scroll-cue — kun standalone. I embed er knappen eneste utløser. */}
+        {!embed && (
           <div
             className={cn(
               "pointer-events-none absolute inset-x-0 bottom-7 flex flex-col items-center gap-1 text-stone-500 transition-opacity duration-700",
