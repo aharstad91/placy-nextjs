@@ -657,7 +657,12 @@ function ResponsiveLayoutInner({
         className="absolute overflow-hidden transition-all duration-500 ease-out"
         style={mapStyle}
       >
-        <BoardMap has3dAddon={has3dAddon} interactive={mapIsSurface} compactControls />
+        <BoardMap
+          has3dAddon={has3dAddon}
+          interactive={mapIsSurface}
+          compactControls
+          collapsedControls
+        />
 
         {/* Teaser CTA-lag (B1) — over skjoldet; tapp åpner kart-flate (R9). */}
         {teaserVisible && <MapTeaser />}

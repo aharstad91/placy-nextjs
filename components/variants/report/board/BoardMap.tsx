@@ -78,6 +78,11 @@ interface Props {
    * `interactive={false}`. Kontroll-clusteret skjules da også. Default true.
    */
   interactive?: boolean;
+  /**
+   * Kollaps kart-kontrollene til ett ⚙ FAB (mobil to-flate, R11) — sendes videre
+   * til BoardMapControls `collapsed`. Default false (full pille på desktop/event).
+   */
+  collapsedControls?: boolean;
 }
 
 export function BoardMap({
@@ -87,6 +92,7 @@ export function BoardMap({
   compactControls = false,
   eventMode = false,
   interactive = true,
+  collapsedControls = false,
 }: Props) {
   const { state, data, dispatch, subFilter, visiblePoiIds, collectionPoiIds } = useBoard();
   const activeCategory = useActiveCategory();
@@ -530,6 +536,7 @@ export function BoardMap({
           showFreeHint={showFreeHint}
           controlsReady={!isWelcomeBeat}
           compact={compactControls}
+          collapsed={collapsedControls}
         />
       )}
     </div>
