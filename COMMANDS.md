@@ -23,6 +23,16 @@ npm run build
 npm run lint
 ```
 
+### Valider nivå-deklarasjoner (rapport-board)
+```bash
+npm run validate:tier                  # lokal JSON + Supabase
+npm run validate:tier -- --local-only  # offline, kun data/projects/
+```
+Sjekker at deklarert `reportConfig.reportTier` (1 = Basic, 2 = +Editorial,
+3 = Maks) er fullt dekket av faktisk innhold (editorial, spillbare VO-spor,
+camera-tours, 3D-addon, brand-assets). Exit 1 ved under-leveranse — kjør før
+kunde-sending. Ved avvik: fullfør manglene eller re-deklarer ned.
+
 ---
 
 ## Story Generator
@@ -82,6 +92,36 @@ Oppdaterer `opening_hours_json` fra Google Places API for POI-er med utdaterte d
 |--------|----------|-------------------|
 | `refresh-photo-urls.ts` | Annenhver uke | ~500 Photo calls (~$1.50) |
 | `refresh-opening-hours.ts` | Månedlig | ~500 Details calls (~$8.50) |
+
+---
+
+## Nabolags-kuratering (curate-area)
+
+### Last opp staging til `areas` (polygon + report_editorial)
+```bash
+npx tsx scripts/curate-area.ts --dry-run                                  # valider + plan, ingen writes
+npx tsx scripts/curate-area.ts                                            # interaktiv bekreftelse før write
+npx tsx scripts/curate-area.ts --file data/areas/ranheim.staging.json --yes
+```
+Leser staging-fil (default `data/areas/ranheim.staging.json`), validerer via
+`lib/pipeline/area-staging.ts` (tema-IDer mot `REPORT_THEME_DEFAULTS`, GeoJSON
+Polygon/MultiPolygon med lukkede ringer, POI-IDer som ikke-tomme strenger — aldri
+UUID) og PATCHer eksisterende `areas`-rad. Merge-semantikk: staging overskriver
+`boundary` og temaene den har; eksisterende `report_editorial`-temaer som ikke er
+i staging beholdes. NB: `areas` mangler `updated_at` → ingen optimistisk lås
+(én-operatør-PoC, dokumentert i script-headeren).
+
+### List POI-kandidater per tema (kurateringsmeny)
+```bash
+npx tsx scripts/curate-area.ts --list-pois <projectId>                          # alle 6 bolig-temaer
+npx tsx scripts/curate-area.ts --list-pois <p1>,<p2>,<p3> --theme mat-drikke    # union av 3 prosjekter, ett tema
+```
+Read-only. Henter POIer fra ett eller flere provisjonerte prosjekter
+(`project_pois` → `pois`, UNION med dedup på poi-id), filtrert per temaets
+kategorier og sortert på avstand fra områdets senter (`--area`, default
+`ranheim`). Output per kandidat: avstand i meter, trust-score, navn, poi-id —
+kopier IDer inn i `highlightCandidates` i kurator-prioritert rekkefølge
+(4-6 per tema).
 
 ---
 
@@ -202,4 +242,4 @@ Reisetider beregnes av frontend ved runtime.
 
 ---
 
-*Sist oppdatert: 2026-01-24*
+*Sist oppdatert: 2026-06-10*

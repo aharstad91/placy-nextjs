@@ -1,0 +1,42 @@
+{
+  "_comment": "Grilstad Marina – Byggetrinn 4 (Bølgen, Fyret, Havneleilighetene, Holmen). Felles nabolags-board for alle fire bygg på Fullriggerøya.",
+  "name": "Grilstad Marina",
+  "customer": "grilstad-marina",
+  "center": {
+    "lat": 63.43826463524003,
+    "lng": 10.508718316912484
+  },
+  "radius": 2000,
+
+  "discover": {
+    "googleCategories": [
+      "restaurant",
+      "cafe",
+      "bar",
+      "bakery",
+      "supermarket",
+      "pharmacy",
+      "bank",
+      "post_office",
+      "hair_care",
+      "doctor",
+      "dentist",
+      "liquor_store",
+      "shopping_mall",
+      "gym",
+      "spa",
+      "park"
+    ],
+    "minRating": 0,
+    "maxResultsPerCategory": 20,
+    "includeTransport": true
+  },
+
+  "themes": [
+    { "id": "natur-friluftsliv", "title": "Sjø, strand & friluft", "categories": ["park", "outdoor", "badeplass"] },
+    { "id": "mat-drikke", "title": "Mat & Drikke", "categories": ["restaurant", "cafe", "bar", "bakery"] },
+    { "id": "hverdagsliv", "title": "Hverdagsliv", "categories": ["supermarket", "pharmacy", "bank", "post", "haircare", "doctor", "dentist", "liquor_store", "shopping"] },
+    { "id": "trening-aktivitet", "title": "Trening & Helse", "categories": ["gym", "spa"] },
+    { "id": "transport", "title": "Transport & Mobilitet", "categories": ["bus", "bike", "parking"] }
+  ]
+}

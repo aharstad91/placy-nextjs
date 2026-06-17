@@ -151,6 +151,16 @@ const THEME_ILLUSTRATIONS: Record<string, ThemeIllustration> = {
 
 /** Project-specific illustration overrides — use when a project needs a different visual character than the defaults. */
 const PROJECT_THEME_ILLUSTRATIONS: Record<string, Record<string, ThemeIllustration>> = {
+  // Grilstad Marina – byggetrinn 4. Foto fra salgsprospektet (Marius Rua m.fl.).
+  // marina-batliv er et prosjekt-spesifikt tema uten default-illustrasjon, så
+  // den MÅ ligge her for å få banner-bilde. Øvrige temaer (hverdagsliv,
+  // trening-aktivitet, transport) faller tilbake til generiske defaults.
+  "grilstad-marina_byggetrinn-4": {
+    "natur-friluftsliv": { src: "/illustrations/grilstad-marina-natur-friluftsliv.jpg", width: 797, height: 621 },
+    "marina-batliv":     { src: "/illustrations/grilstad-marina-marina-batliv.jpg",     width: 798, height: 613 },
+    "mat-drikke":        { src: "/illustrations/grilstad-marina-mat-drikke.jpg",        width: 400, height: 614 },
+    "barn-oppvekst":     { src: "/illustrations/grilstad-marina-barn-oppvekst.jpg",     width: 798, height: 598 },
+  },
   "banenor-eiendom_stasjonskvartalet": {
     hverdagsliv:        { src: "/illustrations/stasjonskvartalet-hverdagsliv.jpg",      width: 1264, height: 848 },
     "barn-oppvekst":    { src: "/illustrations/stasjonskvartalet-barn-oppvekst.jpg",     width: 1264, height: 848 },

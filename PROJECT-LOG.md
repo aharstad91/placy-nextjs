@@ -40,62 +40,156 @@ Branch `feat/mobil-rapport-board-ux` (fra `feat/event-board-foundation`), 6 comm
 
 ---
 
-## 2026-06-10 (kveld) — Hotell-dashboard iterasjon 2: kort-karusell, tre mat-kort, thumbs, AI-lenker
+## 2026-06-11 (forts. 2) — Sentrum + Tyholt kuratert: 5-strøk demo-grunnmur komplett
 
-Fortsettelse i samme worktree (`../placy-ralph-hotell`, branch `feat/hotell-dashboard`, dev :3002). To commits (`15f7d04`, `2286eb3`), ikke pushet. Bento-gridet fra MVP-en er erstattet med horisontal kort-karusell etter UI/UX-feedback fra Andreas. Parkert her foreløpig — neste arbeid på flaten skjer på direkte bestilling.
+Siste to av de fem valgte strøkene (Sentrum, Lade, Ranheim, Charlottenlund, Tyholt). Samme løype som Lade/Charlottenlund; den kreative delen (12 bodies) fan-et ut til 2 parallelle Fable-agenter (én per strøk — genuint uavhengig: ulike meny-/staging-filer, ingen delte redigeringer), Opus orkestrerte og verifiserte.
 
-**1. Karusell-layout (erstatter bento-grid).** Horisontal scroll-snap-rekke: nøyaktig 3,5 kort synlig på desktop (`w-[calc((100vw-7rem)/3.5)]`), ~1,2 på mobil (`w-[82vw]`) — samme swipe-mønster begge steder. Kort er **75dvh faste uten intern scroll** (var 90 i første utkast, justert ned samme sesjon): de er smakebiter, dybden ligger i kart-drill-in. Native CSS scroll-snap, ingen swiper.js-avhengighet. Slide-affordance med tre standard mønstre: peek av neste kort, klikkbare paginerings-dots som følger scrollen (aktiv = emerald-pill), pil-knapper på desktop (disabled i endene). «Vis på kart» løftet til full-bredde emerald-knapp med kart-ikon — kortets klart tydeligste CTA. Radantall per kort kalibrert mot 75dvh og verifisert `scrollHeight == clientHeight` på alle seks kort.
+**Polygon-funn — skolekretser ≠ strøk-navn:** Verken «Sentrum» eller «Tyholt» finnes som barneskolekrets. Løst empirisk via point-in-polygon mot kjente referansepunkter:
+- **Tyholt = BERG-krets** (rent enkelt-treff: alle Tyholt-punkter faller i BERG).
+- **Sentrum = SINGSAKER + BISPEHAUGEN unionert** (Midtbyen straddler to kretser: Torvet/Kalvskinnet i SINGSAKER, Solsiden/Bakklandet i BISPEHAUGEN). `extract-skolekrets-boundary.py` utvidet til å ta FLERE kretsnavn (`--krets A B`) og unione som MultiPolygon.
+- **Kjent begrensning (logget, ikke blokkerende):** SINGSAKER+BISPEHAUGEN mangler nordvest-Midtbyen (Kongens gate vest, Munkegata nord, Kalvskinnet — ligger i ILA-krets). Å legge til hele ILA ville blåse Sentrum vestover til Ila/Marienborg (for stort). Union-en er et godt «indre sentrum øst + Bakklandet + Solsiden + Singsaker»-fotavtrykk — der megler-demoer av sentrumsleiligheter typisk ligger. Demo-adresser valgt sentralt (Munkegata 26/Torvet, Beddingen 14/Solsiden, Tidemands gate 22/Singsaker).
 
-**2. Mat & drikke splittet i tre kort:** Restauranter / Pub & bar / Kaféer (kafé inkluderer bakeri). Kort-definisjonene er nå presentasjonslag (`HOTELL_TILE_DEFS` i `hotell-board-data.ts`) frikoblet fra provisjonerings-temaene — alle tre mat-kort driller inn til samme `?tema=mat-drikke` på boardet via `boardTheme`-felt. Hotellets utsalg fordelt per kort via `tileId` på `HotelVenue` (Speilsalen+Jonathan Grill→restauranter, Vinbaren→pub-bar, Palmehaven→kaféer).
+**Resultat:** 6 adresser provisjonert (Geonorge-koordinater). Tetthet bekrefter sentrumsfortrinnet: Sentrum 224–288 POI-er, Tyholt 176–234. Alle 6 temaer arvet på alle 6 boards, businessStatus-sjekk av alle 38 google-kandidater → **alle OPERATIONAL** (ingen La Perla denne gang). Alle 6 tier 2-validert. **Render-verifisert** (ikke bare validert): dev-server, begge board-typer HTTP 200, editorial-fraser (Tyholttårnet/Kuhaugen/Estenstadmarka, Trondheim Torg/Bakklandet/Stiftsgårdsparken) bekreftet i servert HTML.
 
-**3. Transport-kortet utvidet:** nærmeste buss (live Entur, beholdt) + **to** nærmeste bysykkelstativ (live GBFS) + tre statiske rader fra ny `staticTransport`-config per hotell i `hotel-venues.ts`: taxiholdeplass Dronningens gate, Værnesekspressen, elsparkesykler (Ryde/Voi — ingen scooter-API i stacken, statisk tekst). **4. Shopping mall-first:** kjøpesentre (kategori `shopping`) alltid øverst — Byhaven/Olavskvartalet/Trondheim Torg; Mercurgarden ryker på kvalitetsgulvet (<4,0) men minimumskravet ≥3 sentre holdes — deretter enkeltbutikker med diversity-cap 2/kategori.
+Live: `placy.no/eiendom/placy-demo/{munkegata-26,beddingen-14,tidemands-gate-22,asbjornsens-gate-41,kong-inges-gate-49a,lars-onsagers-veg-5}/rapport-board`
 
-**5. 64×64-thumbs uten API-kost:** gjenbruker `featuredImage` lagret under enrichment (lh3.googleusercontent, allerede whitelistet i next.config) — **null nye Google photo-kall** (koster penger). Gotcha: gamle lagrede foto-URL-er 403-er etter en stund → `onError`-fallback i `Thumb` til kategori-tonet placeholder-pin. 403-ene synes fortsatt som konsoll-støy, UI alltid helt. **6. Google AI Mode-lenke per POI:** diskret sparkle-ikonknapp ytterst på raden → `google.com/search?udm=50&q=<navn>, <gateadresse>` i ny fane — adressen disambiguerer kjedenavn (Espresso House). Én touch-target i bredden, radene holder seg luftige.
-
-**Verifisering:** Chrome MCP 390px + 1440px — klipping-måling per kort, dots-sync ved programmatisk scroll, pil-klikk, AI-href, live avganger/bysykkel-ledighet. tsc rent, 0 lint-errors, 719/719 tester. **Kjent småplukk:** dots ligger rundt folden på små telefoner (header + 75dvh + dots > 100vh) — krymp mobil-header eller flytt dots opp hvis det plager; 403-konsollstøy fra utløpte bilde-URL-er (kosmetisk, vurder foto-refresh-script senere).
-
----
-
-## 2026-06-10 — Hotell-nærområde-dashboard (Britannia-prototype) — ny vertikal på rapport-board-fundamentet
-
-Sesjon i ny worktree `../placy-ralph-hotell` (branch `feat/hotell-dashboard`, dev :3002), committet lokalt (`ff0f4c3`), ikke pushet. Startet som sparring → `/ce-brainstorm` → doc-review (5 persona-agenter) → direkte bygging med Chrome MCP-verifisering. **Strategisk kontekst:** hotell-aksen eksplisitt reaktivert som avgrenset parallell-spor (amender 2026-06-09-parkeringen — se `docs/strategy/LOG.md` 2026-06-10). Requirements + MVP-designbeslutninger: `docs/brainstorms/2026-06-10-hotell-naromrade-dashboard-requirements.md`.
-
-**1. Konsept:** White-label nærområde-flate for hotellgjester — QR på rom/lobby → `/hotell/britannia/britannia-hotel`: liste-først bento-forside («nærmeste X») i hotellets navn, med hotellets egne utsalg øverst i mat-lista («Hos oss på hotellet» — Speilsalen/Palmehaven/Jonathan Grill/Vinbaren, uten rating-badge, unntatt kvalitetsgulv, og filtrert UT av nabolisten). Fire ruter: Mat & Drikke, Transport (live Entur + bysykkel via delt `useRealtimeData`/`POIRealtimeSection`), Severdigheter & Kultur, Shopping. Gåtid = haversine × 1,3 gatenett-faktor / 80 m/min (bevisst uten Mapbox Matrix-avhengighet). Kartet er drill-in per rute, ikke forside. Norsk v1; `noindex` til Britannia-samtykke (varemerkebruk pre-kontakt).
-
-**2. Pipeline-utvidelse:** Ny `--profile hotell` i `provision-rapport.ts` — `HOTELL_THEME_DEFAULTS` (4 temaer), 800 m sentrums-radius, `venue_type: "hotel"`, `HOTELL_GOOGLE_CATEGORIES` (gjeste-vinkel: severdigheter/klesbutikker inn, gym/frisør/lege ut). **To nye Google-kategorier i `poi-discovery.ts`:** `tourist_attraction` (id `attraction` — valid-types må inkludere `church`/`place_of_worship`, ellers filtrerer junk-guarden bort Nidarosdomen) og `clothing_store`. Kategorier auto-upsertes ved import (`import-pois.ts`) → ingen migrasjon. Britannia provisjonert: 213 POI-er, 11 holdeplasser m/Entur-ID, 28 bysykkelstasjoner m/stasjons-ID.
-
-**3. Rangeringslogikk (`lib/hotell-board/hotell-board-data.ts`):** Avstandssortert med rating-gulv (4,0) KUN for `CATEGORIES_WITH_RATING` (review-funn fra 3 personas: globalt gulv ville filtrert Nidarosdomen på irrelevant rating); tom rute faller tilbake til ufiltrert. **Severdigheter rangeres attraction-først på Google-rating som signifikans-proxy** (badge vises fortsatt ikke) — ren avstand lot PoMo/bibliotek skvise ut domkirka (sett live i Chrome, fikset). **Shopping har kategori-diversitet** (maks 2 per kategori) så Vinmonopolet/apotek/kjøpesenter ikke skvises av klesbutikk-tetthet. Hotell-utsalg som kodekonstant (`hotel-venues.ts`) nøklet på `customer_urlSlug` — flyttes til products.config ved hotell #2 (ship-over-refactor).
-
-**4. Kart-drill-in uten ISR-regresjon:** Ny `BoardDeepLink` (klient, montert i `ReportReelsPage`) leser `?tema=<kategori-id>` fra `window.location` ved mount og dispatcher `SELECT_CATEGORY` (source `index`). Bevisst IKKE `searchParams` server-side / `useSearchParams` — begge ville gjort den ISR-cachede rapport-board-ruta dynamisk. Verifisert objektivt: med `?tema=severdigheter` viser kartet kun severdigheter-markører, uten param alle ~150.
-
-**5. Verifisering:** Chrome MCP mobil (390px) + iPad (1024px) — bento-layout, «Hos oss»-seksjon, live avganger («Nå»-visning), bysykkel-status, drill-in. Tre innholds-patcher i Supabase etter visuell sjekk (engelske Google-navn → Nidarosdomen, Vitensenteret i Trondheim, Kristiansten festning). tsc rent, 0 lint-errors, 719/719 tester, ren konsoll. Kjent capture-begrensning: gmp-map-3d screenshotter svart — verifisert via a11y-snapshot i stedet.
-
-**Kjente gap (neste iterasjon):** engelske Google-navn på flere board-markører (kun drill-in-flaten), boardets splash/intro ligger mellom «Vis på kart» og kartet (vurder skip ved `?tema=`), engelsk språkdrakt er pilot-krav, transport-fallback ved API-feil er kodet men ikke feilinjisert-testet. **Outreach-mekanisme mot Britannias markedssjef er åpen strategibeslutning** (eies av Andreas, flagget i strategi-loggen).
+**5-strøk demo-grunnmuren er nå komplett** (Sentrum/Lade/Ranheim/Charlottenlund/Tyholt = 15 board-adresser live). **Neste:** Ranheim/Charlottenlund-overlapp-beslutning, business_status-gate i trust-pipelinen, ~20 gjenstående strøk + kost-per-board-metrikk for slice 3-selvbetjening, evt. skolekrets-drevet skoletildeling per adresse.
 
 ---
 
-## 2026-06-09 — Splash-rydding + venueType-copy + live transport i sidebar-rader
+## 2026-06-11 (forts.) — Trondheim-pivot: Lade + Charlottenlund kuratert på strøk-skala
 
-Direkte sesjon (main, dev :3000), verifisert lokalt + deployet til prod i to omganger. Mål: stramme opp Teknostallen-splashen før demo-utsendelse til næringseiendom, og få sanntids transport-data inn der det teller for næring.
+Retningsskifte etter Malvik-funnet: **Trondheim-only, per strøk/skolekrets** («der har vi mest data å skalere på» — Andreas). Kommune-skala forkastet som markedsenhet; nabokommuner deferret. Mål: demo-dekning for meglerkjede-utrulling — 5 strøk valgt (Sentrum, Lade, Ranheim ✓, Charlottenlund, Tyholt), Lade + Charlottenlund først.
 
-**1. Splash-intro ryddet (begge varianter).** Fjernet «Bli kjent med»-eyebrow (logo-fallback + logo-variant), «Dette utforsker vi»-label og kategori-chip-raden — chipsene la til støy uten å si noe. Konsekvent **«nærområdet»** i stedet for «nabolaget» (jf. Eiendomsmegler1-læring øverst i loggen). Splash er nå: (logo hvis brand) → tittel → subline → intro → play. Slettet død `SplashCategory`-type + `splashCategories`-memo; `previewCategories` (sidebar empty-state) urørt.
+**Bygget:**
+- `scripts/extract-skolekrets-boundary.py` — krets fra `data/geo/trondheim/barneskolekrets.json` (EPSG:25832→WGS84 via pyproj), skriver staging-skjelett. Søsterverktøy til fetch-area-boundary.ts; gjenbrukes for ~20 gjenstående strøk.
+- `scripts/set-report-tier.ts` — generalisert tier-bump (jsonb-vs-streng + optimistisk lås), erstatter engangs-scriptet fra Malvik. Flyten provision tier 1 → kuratér → re-provision → bump er nå standard per strøk.
 
-**2. venueType-tilpasset intro-copy.** `venueType` (`hotel`/`residential`/`commercial`) tråes nå `Project → ReportData → BoardData`. `commercial` får kontor-vinklet copy («restauranter, transport, trenings- og servicetilbud rett utenfor kontordøren»), `hotel` lobby-vinklet, bolig/udefinert standard. Teknostallen er `commercial` → treffer leietaker-perspektivet.
+**Funn — polygon-overlapp:** CHARLOTTENLUND-kretsen overlapper Ranheim v2 reelt (45 vertekser — hull-utvidelsen vestover fra slice 1). `findAreaForPoint` tar vilkårlig «første treff» ved multi-match. Håndtert nå ved å velge demo-adresser utenfor sonen; **åpen beslutning:** trimme Ranheim v2 tilbake til krets, eller deterministisk prioritet i oppslaget. Lade↔Charlottenlund-«overlapp» er kun delt kretsgrense (ray-cast-kant), ikke reell.
 
-**3. Live transport-data i kategori-detalj-radene (sidebar).** Samme `POIRealtimeSection` (Entur-avganger + bysykkel/bildeling) som kart-popupene viser nå også under hver transport-POI i «Verdt å merke seg». For næringseiendom er jobbreisen et kjøpsargument — avgangstider rett i sidebaren er høy verdi. Implementasjon:
-- `useRealtimeData` tar nå minimal `RealtimePOI`-form (id + transport-IDer) i stedet for hele `POI`; `POI` tilfredsstiller typen → alle eksisterende kall (3 popups + drawer) uendret.
-- `board-data.ts` tråder `enturStopplaceId`/`bysykkelStationId`/`hyreStationId` inn i `editorial.highlights`.
-- Ny `POIHighlightRow` kaller hooket null-trygt; ikke-transport-highlights rendrer kun header (`POIRealtimeSection` returnerer null) → restaurant-/trenings-rader ser ut som før.
+**Resultat:** 6 adresser provisjonert (Geonorge-verifiserte koordinater; Mapbox ikke brukt til koordinater), alle traff riktig strøk. Tetthet bekrefter Trondheim-fortrinnet: Lade 113–176 POI-er, Charlottenlund 65–95 (Malvik 22–31, Ranheim 82). Etter kuratering + re-arv: 14–18 highlights beholdt per board (Malvik: 9–11), min-chips grønn på 5/6 (Konglevegen transport body-only — SE-hjørnet, langt fra Leangen stasjon). Alle 6 validerer tier 2.
 
-**Cache-avklaring (kunde-relevant).** Ruten har ISR: `export const revalidate = 3600` + `unstable_cache` (tag `product:{customer}_{slug}`). Konklusjon til bruker: nytt Vercel-deploy får **isolert, kald cache** → kode/UI-endringer er live umiddelbart, ingen manuell flush. `revalidate = 3600` gjelder kun Supabase-**innhold** innen ett deployments levetid (endrer du DB-tekst uten deploy: opptil 1t lag, eller `revalidateTag`). Live transport-data hentes client-side → alltid ferskt. Ny kunde med ren browser får alltid siste versjon på første klikk.
+**Kuratering:** 12 tema-bodies draftet i hovedløkka (Fable; underagent traff sesjonsgrense), curator-stemme + Andreas' no-årstall-regel fra Malvik anvendt fra start. WebSearch-verifisert (Charlottenlund ungdomsskole Tunvegen ✓, Ringve-museet i botanisk hage ✓; metrobuss-linjenr IKKE verifisert → droppet). businessStatus-batch-sjekk av alle 37 google-kandidater FØR review (La Perla-rutinen) — alle OPERATIONAL. ULF-AN bokseklubb nå kuratert inn der den hører hjemme (Charlottenlundhallen) — full sirkel fra slice 1-feilplasseringen. Andreas: «bare ship det her, så får vi revidere fortløpende» — tekstene er live og revideres løpende.
 
-**Deploy:** to commits til main (`3c83026` splash, `fd631d5` sidebar-transport) → Vercel prod-deploy, begge verifisert «success» via GitHub commit-status. TypeScript rent, 0 lint-errors, 576/576 tester (én splash-test fjernet med kategori-teaseren). Splash verifisert live på placy.no (hard-reload avdekket at første visning var browser-cache).
+Live: `placy.no/eiendom/placy-demo/{sleipnes-vei-12b,haakon-viis-gate-13,ostmarkveien-26e,churchills-veg-17f,ranheimsvegen-13a,konglevegen-11b}/rapport-board`
+
+**Neste:** Sentrum + Tyholt (samme løype, ~45 min/strøk), Ranheim/Charlottenlund-overlapp-beslutning, business_status-gate i trust-pipelinen, evt. skolekrets-drevet skoletildeling per adresse.
 
 ---
 
-## 2026-06-09 — KLP-utsendelse (Teknostallen-demo) + Adressa-oppfølging
+## 2026-06-11 — Nabolags-editorial-arv slice 2: Malvik (typologi-test på kommune-skala)
 
-Ikke-teknisk sesjon (outreach). Teknostallen-demo (`placy.no/eiendom/klp-eiendom/teknostallen/rapport-board`, basic-tier) sendt på e-post til Kine i KLP — åpner næringseiendom-sporet. Mailen leder med Teknostallen (basic: 3D-kart, POI, reisetider, sanntids buss/bysykkel — **ingen** reels/video) og peker på Stasjonskvartalet-fullversjonen (`placy.no/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board`) som «maksversjon» med reels + redaksjonell historiefortelling (Adressa Studio). Adressa-oppfølging (Hanne Mathisen + Berit Hongset, ansvarlige for Stasjonskvartalet/Diamanten) under utforming — re-aktivering med Stasjonskvartalet-demolink. **Strategisk logg:** `docs/strategy/LOG.md` + `aktor-map.md` (ny aktør KLP Eiendom + Adressa Studio).
+Slice 2 i worktree `../placy-ralph-nabolag` (branch `feat/nabolag-slice2-malvik`). Seriellt, token-bevisst (Opus-orkestrering, Fable-underagent for editorial), ingen full ce-pipeline — gjentakelse av bevist Ranheim-mønster.
+
+**Bygget (4 enheter):**
+- `scripts/fetch-area-boundary.ts` — henter offisiell kommunegrense fra Kartverket kommuneinfo (`/kommuner/{nr}/omrade`, NLOD, rights-clean), normaliserer (avrund 6 des. + lukk ringer), validerer mot `BoundarySchema`, skriver staging-skjelett m/ meta forhåndsutfylt.
+- `area-staging.ts` — valgfri `meta`-blokk (NOT NULL-feltene ved INSERT: name_no/en, slug_no/en, center_lat/lng + level/zoom/parent/postal valgfri). +7 tester (18 totalt).
+- `curate-area.ts` — **upsert**: finnes ikke raden + har meta → INSERT (POST); finnes → PATCH som før (meta ignoreres, anti-clobber). Fjernet «slice 1 forventer eksisterende rad»-hardfeilen.
+- `provision-rapport.ts` steg 9 — **min-chips QA-flagg** (informativt): arvet tema med <2 chips flagges (1=«tynt», 0+body=«body-only, bevisst tilstand»). Ingen suppresjon/visningslogikk.
+
+**Datagrunnlag:** Malvik = kommune 5031 (verifisert mot Kartverket sok). Kommunegrense som ÉN MultiPolygon (3 polygoner, 1095 vertekser). **Grunnkrets-union deferret** — kommunegrensen er strengt bedre når målet ER hele kommunen; grunnkrets-union tjener først sitt formål ved kommune-SUBSETT (Stjørdal/Melhus), og krever et geometri-bibliotek (ingen i repoet). Andreas valgte kommunegrense.
+
+**Adresser (autoritativt via Geonorge adresse-API, ikke Mapbox):** Saxe Viks veg 33 (Saksvik, vest), Bjørnmyra 6A (Sveberg, midt), Nessvegen 17 (Hommelvik, øst). Mapbox bommet på Bjørnmyra (matchet «Svebergvegen 6», ~1,1 km feil) — Geonorge ga riktig. Alle 3 INNENFOR polygonet (steg 7 «Område: Malvik» på alle).
+
+**Resultat — arv fungerer på kommune-skala:** alle 6 temaer arvet på alle 3 adresser, nivå 2 ✓ (reportTier bumpet 1→2 etter kuratering — `--update` rører aldri config, så tier ble satt via read-modify-write). **Transport-dekning bevist:** begge stasjoner som kandidater → Saksvik beholdt Vikhammer stasjon, Hommelvik beholdt Hommelvik stasjon, Sveberg falt til bussholdeplasser (begge stasjoner >4 km). Ranheim-lærdommen løst.
+
+**Nøkkelfunn:**
+1. **Kommune-skala fungerer teknisk, men er ikke den naturlige markedsenheten.** Andreas (lokalkunnskap): vest (Saksvik/Vikhammer) orienterer mot Trondheim/Ranheim, øst (Muruvik/Hommelvik) mot Stjørdal. Én kommune-tekst holder, men curating-enheten bør trolig være tettsted-klynge, ikke hel kommune, i de tetteste markedene. «Vi må starte en plass» — akseptert for nå.
+2. **Trust-pipelinen er blind for nedleggelser.** La Perla (Saksvik) scoret trust 0.95 men er `CLOSED_TEMPORARILY` på Google (nedlagt ~1 år). `pois`-tabellen lagrer ingen `business_status`; trust bygger på website/price/reviews — alt overlever nedleggelse. Konkret instans av den deferrede «feilklassifiserings-sjekken». Fanget av Andreas, bekreftet via Google Places `businessStatus`. Batch-sjekket alle 19 google-highlights → kun La Perla nedlagt (fjernet). **Anbefaling:** fang `business_status` i enrichment, gate ikke-OPERATIONAL.
+3. **Editorial-prinsipp fra Andreas:** dropp årstall/historikk — også verifiserte historiske fakta (Café Rampa 1880, Midtsandtangen militærleir, Impulse 2024). Curator-skillen anbefaler historisk form som trygg for forgjengelige fakta; Andreas foretrekker presens «hva som ER der». Curator-stemme-nyanse notert i minne.
+4. **Min-chips-virkelighet:** tynnere dekning enn Ranheim (22–31 POI vs 82). `barn-oppvekst` konsekvent 1 chip per adresse (skoler ligger spredt, langt fra hver adresse). Body-only er legitim tilstand.
+
+Editorial kuratert av Fable-underagent (curator-skill + WebSearch-verifisering, kildeliste), Andreas review. Live: `placy.no/eiendom/placy-demo/{saxe-viks-veg-33,bjornmyra-6,nessvegen-17}/rapport-board`. 109 tester grønne, tsc/lint rene.
+
+---
+
+## 2026-06-10 (kveld) — Nabolags-editorial-arv PoC: TESEN HOLDER — nivå 2 på vilkårlig Ranheim-adresse
+
+Full /ce-brainstorm → /ce-plan → /ce-work-løype i worktree `../placy-ralph-nabolag` (branch `feat/nabolags-editorial-arv`, fra origin/main). Bygget: migrasjon 069 (`areas.report_editorial`), trust-scoring som automatisk pipeline-steg (kun Google-POIer — offentlige beholder null, unngår masse-skjuling av skoler), `findAreaForPoint` (PiP via delt geo-util), `inheritAreaEditorial` (arv + highlight-fallback fra kuratert kandidatliste, R9-årsakslogging, atomisk config-PATCH), `curate-area`-script (staging-validering + `--list-pois` kandidatmeny). 7-persona code review → 17 fixes (bl.a. QA-gate-hull ved place-not-found, env-hoisting-bombe, timeouts). 773/773 tester, tsc/lint/build grønne.
+
+**PoC-resultat:** Ranheim kuratert (6 temaer, curator-stemme, Andreas godkjent), 3 spredte adresser arvet samme kuratering med per-adresse-korrekte highlights (vest fikk Grilstad-POIer, øst fikk Olderdalen/Hansbakken, midt fikk stasjonen/skolen), 0 døde chips, kontrollpunkt utenfor → ren nivå 1. Live: `placy.no/eiendom/placy-demo/{hans-collins-veg-1b,horgvegen-4,martin-barstads-veg-23c}/rapport-board`. Funn-dokument med rubrikk-vurdering: `docs/brainstorms/2026-06-10-nabolags-editorial-arv-poc-funn.md`. Kurateringskostnad ~1 t/nabolag → 30–50 nabolag er bounded.
+
+**Nøkkelfunn:** kommunens skolekrets er smalere enn markeds-Ranheim (2 av 3 lokalkjente adresser utenfor; polygon v2 = krets + adresse-korreksjoner); ULF-AN-kandidaten fanget av lokalkunnskap (verdien menneskelig kuratering tilfører); grunnkrets-union er slice 2-verktøyet for resten av firkommune-området. Plan: `docs/plans/2026-06-10-001-feat-nabolags-editorial-arv-poc-plan.md` (completed). Strategisk kontekst (Propr på vent, kjede-først) loggføres i `docs/strategy/LOG.md` separat.
+
+---
+
+## 2026-06-10 (forts.) — POI-popup-bugen landet: reprodusert generelt, fikset, deployet og live-verifisert
+
+Fortsettelse av nivå-modell-sesjonen. Brukeren fant under Grilstad-browser-runden at markør-klikk ikke ga popup. Root-cause var allerede funnet og fikset (commit `80787ff`), men deploy ble holdt tilbake av bekymring for live demo-boards (Teknostallen/StasjonsKvartalet). Denne økten beviste at fiksen var trygg — og at bugen faktisk lå live.
+
+**1. Bugen er generell, ikke Grilstad-spesifikk.** `BoardReelsSync`-effekten i `ReportReelsPage` wiper eksplisitt POI-valg: `OPEN_POI` setter `activeCategoryId` → effekten re-kjører → aktivt reels-kort er ikke-kategori (welcome/hjem/outro/megler) → `RESET_TO_DEFAULT` i samme commit-syklus → popup fjernes **før paint**. Tilstands-avhengigheten forklarte det tilsynelatende falske negative fra forrige økt: på et kategori-kort som matcher POI-ens kategori overlever popupen (det var det brukeren traff i skjermbildet sitt) — på ikke-kategori-kortene dør den stille.
+
+**2. Baseline-bevis via MutationObserver.** DOM-sampling bommer på wipen (skjer før paint), så reproen brukte MutationObserver: lokal StasjonsKvartalet UTEN fiksen → klikk på Nabolaget-kortet ga `add` → `rm` av popup-noden («Dronningens Tenner») i samme syklus, popup aldri synlig. MED fiksen (identisk prosedyre, samme markør): kun `add`, popup består, lukkes pent med ×, sync gjenopptas. Fiksen er en ren early-return (`phase === "poi"` → return) som bare *hindrer* en reset — Teknostallen (0 reels-kort → `reelsDriveCategories=false`) går aldri inn i effekten.
+
+**3. Testteknikk verdt å huske:** (a) frys reels-kort ved å pause `<audio>` (auto-advance skjer på `ended`); (b) hopp mellom kort med `audio.currentTime = duration - 0.5`; (c) markører i 3D-kart klikkes via `dispatchEvent(new CustomEvent('gmp-click', {bubbles, composed}))` på `gmp-marker-3d-interactive`; (d) markørene monteres først ETTER welcome-kortet.
+
+**4. Deploy: merge + push alt (produkteier-valg).** `feat/report-tier-model` (13 commits) fast-forwardet til main, `npm run build` grønn, pushet til origin — 24 commits totalt live (Kulturnatt event-board, hele tier-modellen, Grilstad nivå 3, popup-fiksen). Vercel-deploy verifisert grønn via GitHub commit-status (Vercel MCP ikke tilkoblet i sesjonen).
+
+**5. Live-verifisering:** identisk MutationObserver-prosedyre mot www.placy.no/…/stasjonskvartalet/rapport-board → kun `add`, popup består på Nabolaget-kortet. Bugen som lå i produksjon (markør-klikk gjorde ingenting i welcome/hjem/outro-vinduene) er fikset live.
+
+### Åpent / neste steg (uendret fra forrige entry, minus deploy)
+
+- Grilstad browser-runde (reels-lytting/stedsnavn, camera-poser via `?author=1`, ekte brand-assets) — nå mot live eller :3001.
+- Unit 5 (prod-klassifisering av Teknostallen/StasjonsKvartalet — `/effort xhigh` før kjøring).
+- Worktree-opprydding: `git worktree remove ../placy-ralph-grilstad`. Main er nå **synk med origin** (pushet denne økten).
+
+---
+
+## 2026-06-10 — Placy nivå-modell (reportTier): Fase 1 + pipeline-integrasjon (Unit 1–4 av 8)
+
+Gjenopptatt sesjon etter krasj: brainstorm + plan for nivå-modellen (1=Basic / 2=+Editorial / 3=Maks) lå ferdig men uncommitted i event-board-worktreen — ingen kode var startet. Dokumentene flyttet til ny branch `feat/report-tier-model` og Fase 1 + Unit 4 implementert. Plan: `docs/plans/2026-06-10-001-feat-report-tier-model-plan.md`.
+
+**0. Forutsetninger.** `feat/grilstad-marina-board` fast-forward-merget til main (Grilstad-data + `audio-tour-build-local.ts` fantes kun der; tier-arbeidet bygger på dem). Ikke pushet. Worktree `placy-ralph-grilstad` står igjen (sesjonens cwd) — ryddes etter sesjon.
+
+**1. Unit 1 — deklarasjonsfeltet.** `ReportConfig.reportTier?: 1|2|3` (lib/types.ts; navnet unngår `poiTier`-kollisjon) + Zod-literal-union `lib/validation/report-tier-schema.ts` (avviser `"3"`, 0, 4). `undefined` → nivå 1. Render-laget gater IKKE på feltet.
+
+**2. Unit 2 — validator-kjerne + falsifikasjonsbevis.** `lib/validation/report-tier.ts`: ren funksjon, funn som data (`{level, check, detail}[]`), camera-tours-oppslag injiseres. Sjekkliste speiler nivå-tabellen 1:1 (nivå 2: editorial på ALLE temaer; nivå 3: + audioTourEnabled + audio-tur manus+url alle temaer/welcome/hero/outro + reels-VO + camera-tours + has3dAddon + assets.brand) + warning for highlightPoiIds som ikke resolver. **R4-beviset:** pre-løft Grilstad-fixture (`__fixtures__/grilstad-pre-lift.json`, timings strippet, camera-status FROSSET i fixturen så beviset overlever Unit 6-løftet) deklarert nivå 3 → feiler med nøyaktig `reels-vo` ×7, `camera-tours`, `has3d-addon`, `brand-assets` — og ingenting annet. 22 tester + sveip over lokale JSON-prosjekter.
+
+**3. Unit 3 — `npm run validate:tier`.** Tynn driver over begge datakilder (lokal JSON + Supabase products, config-parsing tåler jsonb og json-string), `--local-only` for offline, exit 1 ved under-leveranse. Kjørt mot reell tilstand: **26 prosjekter (2 lokale + 24 Supabase), 0 under-levert** (alle nivå 1-default). Bevisst feil-deklarasjon (Grilstad nivå 3 lokalt) → exit 1 med navngitt mangelliste. Dokumentert i COMMANDS.md.
+
+**4. Unit 4 — pipelinene deklarerer.** `provision-rapport.ts`: `--tier 1|2|3`-flagg + readline-prompt (non-TTY → 1); `acceptanceCheck()` kjører validatoren mot nettopp-skrevet config og feiler ved under-leveranse. `create-report-project.ts`: `reportTier` skrives i initial config (begge insert-stier); utelatt option → feltet utelates. `generate-story.ts`: samme flagg/prompt. **Bifunn fikset:** `generate-story --update` mistet hele eksisterende `reportConfig` (`...newProject`-spread i merge) — audio/editorial/trails ville røket ved re-generering; bevares nå eksplisitt via `{...existingProject?.reportConfig, ...}`.
+
+**Verifisering:** 712/712 tester, `tsc --noEmit` rent, ESLint 0 errors. 6 commits på `feat/report-tier-model`.
+
+### Avklart samme dag: nivå 3-kravet forenklet etter live-verifisering
+
+Bruker påpekte at StasjonsKvartalet HAR audio-tur + reels på live. Kodegjennomgang viste hvorfor: boardet gater på lyd-*tilstedeværelse* (`pickPlayable(reelsAudio) ?? pickPlayable(audio)`, playable = manus+url), IKKE på `audioTourEnabled` — flagget er dødt på boardet (ingen UI-konsument; gjaldt den gamle rapport-siden). Ratifisert forenkling (produkteier: «simpel definering — jeg setter nivået, hvert nivå har required elements»): nivå 3 audio-krav = spillbart VO-spor per tema + welcome/hjem/outro; reelsAudio vs audio er implementasjonsakse. Validator + tester + docs oppdatert; falsifikasjonsbeviset er nå camera-tours + has3d-addon + brand-assets (Grilstads VO fungerer live via tour-sporene). 714/714 tester.
+
+**Read-only-simulering mot prod:** Teknostallen deklarert 1 → OK. StasjonsKvartalet deklarert 3 → mangler KUN editorial ×7 (drill-in-tekstene er aldri skrevet i prod) — kurateringsarbeid, ikke config-fiks.
+
+### Grilstad løftet til nivå 3 (Unit 6–8 levert, samme sesjon)
+
+Produkteier valgte å faktisk få Grilstad opp på nivå 3. To avklaringer underveis:
+- **brand-assets → warning + skall/placeholder-filosofi:** «vi legger inn alle elementer, men mangler det filer/grafikk er det tomme skall/placeholders — enkelt å jobbe seg frem til innhold.» Validatoren nedgraderte brand-assets fra error til warning. Grilstad fikk placeholder-skall: logo-wordmark-SVG, splash = hero-kopi, still-video via ffmpeg + poster; `assets.brand: true` rendrer rent og byttes trivielt til ekte grafikk.
+- **camera-tours:** produkteier verifiserer selv i browser. Jeg autorerte A→B-startposer for natur-friluftsliv + marina-batliv (sentrert på prosjekt-koordinatet 63.43826/10.50872 — IKKE tile-verifisert), orbit-fallback for resten.
+
+**Unit 7 (reels-VO):** Nytt `scripts/reels-voiceover-build-local.ts` (npm `build:reels-vo-local`) — itererer `reelsAudio`, skriver `{tema}-reels.mp3` med defensiv -reels-suffiks-guard. Genererte alle 7 Grilstad-spor (Erik/turbo_v2_5, karaoke-timings); tour-mp3-ene byte-urørt (git-verifisert). **NB norske stedsnavn ikke i uttale-ordlista (Grilstadfjæra, Ladestien, Rotvoll, Ranheim, Sjøparken) — må gjennomlyttes.**
+
+`has3dAddon: true` + `reportTier: 3` → **Grilstad består `validate:tier` på nivå 3** (1 warning: brand kan byttes til ekte grafikk). 716/716 tester, tsc + lint rene.
+
+### Åpent / neste steg
+
+- **Grilstad browser-runde (din, på :3001 `/eiendom/grilstad-marina/byggetrinn-4/rapport-board`):** (1) lytt gjennom de 7 reels-sporene — særlig stedsnavn-uttale; regenerer stokastisk dårlige spor med `npm run build:reels-vo-local data/projects/grilstad-marina/byggetrinn-4.json --force`, legg evt. alias i `scripts/tts/pronunciation-no.json`. (2) Finjuster camera-startposene via `?author=1`, lim eksakte poser inn i `camera-tours.ts` under `byggetrinn-4`. (3) Bytt placeholder-brand til ekte logo/splash/video når klart.
+- **Unit 5 (klassifisering av ANDRE prosjekter, PROD-MUTASJON — `/effort xhigh` før kjøring):** Teknostallen → `reportTier: 1` (består). StasjonsKvartalet → `3` krever først editorial på alle 7 temaer (produkteier-beslutning: skriv kuratering, eller vent med 3-deklarasjonen). Ingen audio-re-seed nødvendig. Teknostallens products-rad identifiseres via project-id-mapping.
+- Worktree-opprydding: `git worktree remove ../placy-ralph-grilstad` når sesjonen er ferdig; main er 16 commits foran origin (ikke pushet).
+
+---
+
+## 2026-06-09 — Kulturnatt event-board portert til rapport-board-arkitektur (Variant A valgt)
+
+Branch-sesjon (`feat/event-board-foundation`, ultracode). Mål: porte Kulturnatt-2025-prototypen fra den gamle Explorer-arkitekturen over til den nye rapport-board-arkitekturen (venstre sidebar + persistent 3D/2D-kart + live transport), og håndtere festival/tidsperiode-dimensjonen. `/ce-brainstorm` → `/ce-plan` → `/ce-work`, deretter en to-variant-sammenligning bygd i parallelle worktrees.
+
+**1. Fundament (event-native adapter + board-rute).** Ny `lib/event-board/`-stack: `eventToBoardData`-adapter som produserer `BoardData` direkte fra Explorer-prosjektdata (bypasser report-curering `transformToReportData`/`getReportThemes`), `useEventBoardFilter` (komponerer `useKompassFilter` på rå POI-er → `visiblePoiIds`/seksjoner), `event-day-sections.ts` (dato-bevisst `buildDaySections` + `dateAnchorKey`, håndterer fler-dags), tid-bøtter, markør-synlighets-intersect, `use-board-collection` (Min samling + `?c=`). Rute `app/event/[customer]/[project]/board/page.tsx`. `ReportReelsPage` fikk valgfri `boardData`-input + event-modus-routing; `DesktopStorySidebar` `noBrokers` undertrykker megler-chrome (events har ingen audio).
+
+**2. Sentrale beslutninger.** Event-native adapter (D1, egen `/event/`-namespace), `boardData?` valgfri prop (D2, bakover-kompatibel mot boligrapport), ingen-audio event-modus (D3, undertrykk megler-chrome), additive valgfrie event-felt (D4), filter på `raw` POI (D5), dato-bevisst sortering + dag-seksjoner (D6), arvet transport (D7).
+
+**3. To navigasjonsvarianter bygd + sammenlignet live (worktree = variant).** Fundamentet ble tagget (`event-board-foundation-frozen`) og **realiserer Variant A** = filter-drevet dato-seksjonert event-liste (`EventFilterPanel`: Tema/Dag/Tid-chips + liste, alt på ett plan). **Variant B** (`EventHybridPanel`, egen worktree) = `[Kategorier | Program]`-segment-toggle der Program gjenbruker den dato-seksjonerte listen (faktorert ut til delt `EventProgramList`) og Kategorier er en ny board-aktig kategori-grid. Bygd via fan-out-workflow (3 read-maps → 1 byggeagent → 3 adversariske reviewers). 688/688 tester (+8 nye), tsc + eslint rene, boligrapport urørt, R17 verifisert (aktiv fane er lokal UI-state, frakoblet kompass-filter).
+
+**4. Beslutning: Variant A vant.** Live-sammenligning på Kulturnatt (én kveld) + fler-dags (Olavsfest/Festspillene). **Why:** Kategorier-fanen i B duplikerte jobben til Tema-chipsene (begge skjærer etter kategori) → ekstra navigasjonslag uten ny verdi; Program-tidslinjen er dessuten degenerert til én dag-seksjon på én-kvelds-festivaler. Variant A er den renere modellen.
+
+**5. Merge.** `feat/event-board-foundation` (9 commits) fast-forward-merget til `main`. Variant B beholdt på branch `feat/event-board-variant-b` (EventHybridPanel) for referanse, ikke merget. Ikke pushet. Beslutning lagret i auto-memory (`project_kulturnatt_event_board_variant`).
+
+**Deferred:** produksjonsherding av vinner-varianten (egen oppgave). Event-sporet er forøvrig strategisk parkert (se business-logg/2026-06-09) — denne port-jobben var teknisk bestilt uavhengig.
 
 ---
 

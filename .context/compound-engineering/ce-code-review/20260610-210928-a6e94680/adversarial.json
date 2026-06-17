@@ -1,0 +1,129 @@
+{
+  "reviewer": "adversarial",
+  "findings": [
+    {
+      "title": "Silent global trust-score write for stale/deleted place_id filters POI from all boards without any warning",
+      "severity": "P1",
+      "file": "lib/google-places/trust-enrichment.ts",
+      "line": 92,
+      "confidence": 0.90,
+      "autofix_class": "manual",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "A POI whose Google place_id has become stale (place closed/merged/deprecated by Google) silently scores below MIN_TRUST_SCORE (0.45) and is globally filtered from every board that shares it — the operator sees no entry in `stillNull`, no warning, and no indication that a legitimate-looking place was removed. This is the worst class of failure: invisible data corruption in prod.",
+      "evidence": [
+        "Trigger: a Google POI exists in pois table with google_place_id='google-ChIJ_STALE_XYZ', google_website=null (nulled by Steg 4 import, lib/pipeline/import-pois.ts line 170), trust_score=null.",
+        "In enrichTrustSignals (trust-enrichment.ts line 72-77): the POI passes the filter `poi.google_place_id && !poi.google_website` → added to enrichEntries.",
+        "fetchPlaceDetails(stale_id, ...) returns null (data.status !== 'OK') — trust-enrichment.ts line 64-65 in fetch-place-details.ts.",
+        "Back in enrichTrustSignals line 92: `if (!details) return;` — the .then() handler returns early WITHOUT recording an error and WITHOUT adding the poiId to failedPoiIds.",
+        ".finally() runs: running--, idx check → next(). The POI is NOT added to result.failedPoiIds, NOT in result.errors.",
+        "In validate-report-trust.ts line 136: `for (const id of enrichResult.failedPoiIds) excludedIds.add(id)` — this POI is NOT in excludedIds.",
+        "validate-report-trust.ts line 144: `const toScore = candidates.filter(c => !excludedIds.has(c.id))` — POI remains in toScore.",
+        "Re-read from pois table (line 149-160): google_website is still null (DB was never updated), google_business_status still null.",
+        "batchValidateTrust scores it: BASE_SCORE(0.6) - no_website_penalty(0.15) = 0.45. No OPERATIONAL bonus, no review-count bonus (zero reviews after Steg 4 nuked the field).",
+        "updatePOITrustScore writes 0.45 to the GLOBAL pois table (shared across all projects).",
+        "The POI is NOT added to result.stillNull (line 173-177 in validate-report-trust.ts: only added when batchValidateTrust returns no entry OR persistering throws).",
+        "Orchestrator output shows: 'Trust-scoret: N Google-POI-er' with no mention of this POI. Operator has zero signal.",
+        "filterTrustedPOIs in read-time path now filters this POI from every board in every project that shares it via project_pois."
+      ],
+      "suggested_fix": "In enrichTrustSignals, when fetchPlaceDetails returns null (place not found), add poiId to failedPoiIds so validate-report-trust excludes it from scoring and adds it to stillNull. Specifically: change `if (!details) return;` to `if (!details) { result.failedPoiIds.push(entry.poiId); return; }` at trust-enrichment.ts line 92. A place that has been removed from Google's API should be treated as an enrichment failure, not a successful no-op."
+    },
+    {
+      "title": "Cross-project silent POI removal: trust-scoring for project A permanently changes visibility in all existing live boards sharing the same POI",
+      "severity": "P1",
+      "file": "lib/pipeline/validate-report-trust.ts",
+      "line": 179,
+      "confidence": 0.85,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "validateReportTrust is NEW in this diff and makes trust-scoring automatic on every provisioning. It writes to the global pois table (not project-scoped). A POI that was visible in existing live boards (trust_score=null, 'null=vis' semantic) gets scored below 0.5 and disappears from those boards without any provisioning or notification for those projects. The 'null=vis' backward-compatibility guarantee silently breaks for any POI that scores low in a new provisioning.",
+      "evidence": [
+        "Existing project B has POI 'google-ChIJ_CAFE' linked via project_pois with trust_score=null (visible under 'null=vis' rule from filterTrustedPOIs).",
+        "New provisioning of project A (different address, same neighborhood) runs Steg 5: validateReportTrust({ projectId: A }).",
+        "validate-report-trust.ts line 63-78: fetches project_pois for project A → gets poiIds including 'google-ChIJ_CAFE' (same physical place, imported for both projects).",
+        "Enrichment + scoring runs for 'google-ChIJ_CAFE'. If the cafe has no website or low review count, score may be 0.45.",
+        "updatePOITrustScore writes trust_score=0.45 to pois table without any project scoping (mutations.ts line 612-619: `.eq('id', poiId)` only).",
+        "Project B's board now omits 'google-ChIJ_CAFE' at read-time because filterTrustedPOIs sees 0.45 < 0.5.",
+        "No warning is emitted for project B. The provisioning output only mentions project A. The operator of project B (potentially a different person) has no notification."
+      ],
+      "suggested_fix": "Document this side-effect prominently in the orchestrator output and in COMMANDS.md. For PoC: acceptable given single-project Ranheim usage. For production: consider a project-scoped trust override table or a pre-flight check that lists existing projects that would be affected by scoring. At minimum, add a warning in the orchestrator: 'Trust-scoring skriver globalt til pois-tabellen — sjekk at ingen eksisterende boards mister POI-er.'"
+    },
+    {
+      "title": "curate-area.ts uses inline dotenv config() after hoisted static imports, creating a latent module-level supabase=null bomb if dependency chain grows",
+      "severity": "P2",
+      "file": "scripts/curate-area.ts",
+      "line": 35,
+      "confidence": 0.80,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "In ESM (and tsx), static import declarations are hoisted and evaluated before any inline code runs. curate-area.ts has `config({ path: '.env.local' })` at line 35 as inline code, but all static imports (including `createServerClient` from lib/supabase/client.ts) are evaluated BEFORE it. This means the module-level `export const supabase` in client.ts is initialized with null envvars. Currently safe because curate-area doesn't use the module-level `supabase` export. But queries.ts (which IS statically evaluated in client.ts's module graph if imported transitively) also initializes its supabase usage from the module-level export. If any future import added to curate-area's chain transitively uses the module-level `supabase` instead of `createServerClient()`, all DB calls silently fail with no error message — client.ts line 7-11 only logs a warn(), not an error, and returns null instead of throwing.",
+      "evidence": [
+        "ESM execution order in curate-area.ts: all static imports (lines 32-40) are hoisted and evaluated first.",
+        "lib/supabase/client.ts is evaluated during this hoisting phase: lines 4-5 read NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY which are null at this point → `export const supabase = null` (line 13-20).",
+        "Line 35: `config({ path: '.env.local' })` runs AFTER all imports — too late for the module-level client.",
+        "queries.ts (already in module cache from static evaluation) has `import { supabase } from './client'` → its `supabase` reference is the null export.",
+        "Current safety: curate-area.ts never imports queries.ts, and uses `createServerClient()` (line 278, 40) which reads envvars at call-time (client.ts line 29) → works correctly after inline config() runs.",
+        "Failure trigger: adding `import { getProjectPois } from '@/lib/supabase/queries'` anywhere in curate-area.ts's static import graph. All calls to `supabase.from(...)` in queries.ts would throw on null reference, silently or with misleading 'Supabase not configured' messages.",
+        "provision-rapport.ts avoids this correctly: `import './load-env'` is the first static import, ensuring load-env.ts (which runs config()) completes before client.ts evaluates."
+      ],
+      "suggested_fix": "Replace the inline `config()` call and `import { config } from 'dotenv'` in curate-area.ts with `import './load-env'` as the first import, matching provision-rapport.ts's pattern. Remove lines 32 and 35 from curate-area.ts and add `import './load-env';` as line 27 (first import after the shebang/jsdoc block)."
+    },
+    {
+      "title": "Point exactly on polygon boundary produces non-deterministic area assignment between re-runs: flaky editorial inheritance for Ranheim edge addresses",
+      "severity": "P2",
+      "file": "lib/utils/geo.ts",
+      "line": 107,
+      "confidence": 0.72,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "The ray-cast algorithm (pointInPolygon) uses a half-open boundary semantic: points on the lower/left edges are inside, upper/right edges are outside (per the geo.ts docstring). For a hand-drawn Ranheim polygon, a property near the polygon boundary could geocode to a coordinate that lands exactly on the polygon edge. Whether it inherits Ranheim editorial or falls to tier-1 depends on which edge of the polygon it's on. More critically: Unit 7 requires a 'kontrollkjøring UTENFOR polygonet' to verify R2 fallback. If the control address geocodes to a point that is exactly on the boundary, the test result is undefined and not reproducible across re-runs (geocoding rounding could place it on different coordinate representations).",
+      "evidence": [
+        "pointInPolygon (geo.ts line 100-116) uses: `if (yi > y !== yj > y && x < (...) + xi) { inside = !inside; }`",
+        "Boundary semantics are documented as 'half-open (classic ray-cast): points exactly on the lower/left edges count as inside, points on the upper/right edges as outside' — geo.ts line 93-96.",
+        "Ranheim boundary is hand-drawn (Unit 6). Precision of geojson.io-drawn polygon coordinates is ~5-6 decimal places (≈1m accuracy). Geocoding returns 5-6 decimal places.",
+        "For an address near the polygon edge, the geocoded coordinate may have floating-point rounding that puts it exactly on an edge segment. The ray-cast result depends on which edge orientation this falls on.",
+        "For Unit 7's control address 'UTENFOR polygonet': if the operator chooses an address close to the border to test boundary conditions, the result could flip between runs if the polygon is re-drawn with slightly different precision or if geocoding returns slightly different results.",
+        "The plan's falsification criterion (i) checks for editorial correctness per address — a flaky boundary could make one of the three test addresses intermittently get/not get editorial arv, masking a real inheritance failure."
+      ],
+      "suggested_fix": "For PoC: choose the control 'utenfor polygon' address at least 100m from the nearest polygon edge to avoid boundary ambiguity. Document this in the Unit 7 rubric. For production: note that boundary semantics are defined and consistent, so flakiness only occurs at the exact edge (probability approaches zero for real addresses)."
+    },
+    {
+      "title": "Duplicate POI ID in highlightCandidates list silently shrinks survivors without R9 log entry, making kept-count appear lower than curation intended",
+      "severity": "P3",
+      "file": "lib/pipeline/inherit-area-editorial.ts",
+      "line": 264,
+      "confidence": 0.82,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "If a curator accidentally enters the same POI ID twice in highlightCandidates (e.g., during copy-paste of ranheim.staging.json), the duplicate is silently skipped at line 264 (`continue`) without being added to pendingDrops. The R9 log reports fewer kept highlights than the curator expected, with no explanation. Combined with the MAX_HIGHLIGHTS=3 cap, a list of ['A','B','A','C','D'] would only keep A+B (2 survivors from 4 unique candidates) when the curator intended A+B+C, because the second 'A' consumed a candidate slot before being deduplicated. The operator log shows 'Highlights droppet: 2' but only lists C and D, with no mention that A appeared twice.",
+      "evidence": [
+        "inherit-area-editorial.ts line 262-269: the candidates loop processes highlightCandidates in order.",
+        "Line 264: `if (survivors.includes(candidate)) continue;` — duplicate silently skipped, not added to pendingDrops.",
+        "pendingDrops only accumulates candidates that were NOT in boardIds (line 268), not deduplication skips.",
+        "classifyDroppedCandidates (line 293-301) only classifies ids in pendingDrops — duplicate ids never reach it.",
+        "Result.highlights.dropped only contains R9 entries from pendingDrops — the duplicate entry has no trace in output.",
+        "Example: candidates=['A','A','B','C','D'], boardIds={A,B,C,D}. First 'A': survivors=['A']. Second 'A': duplicate, continue (no pendingDrop). 'B': survivors=['A','B']. 'C': survivors=['A','B','C'] (MAX_HIGHLIGHTS hit). 'D': MAX_HIGHLIGHTS reached, break. survivors=['A','B','C']=3, kept=3, dropped=['D']. But if no duplicate, 'D' still wouldn't be included. The bug surface is when duplicate consumes a candidate slot before dedup and MAX_HIGHLIGHTS is hit: candidates=['A','B','A','C'], boardIds={A,B,C}. First 'A': survivors=['A']. 'B': survivors=['A','B']. Second 'A': duplicate, continue. 'C': survivors=['A','B','C']. All 3 slots used. Result: correct here. Worst case: candidates=['A','A','A','B','C'], boardIds={A,B,C}. 'A','A skip','A skip','B','C' → survivors=['A','B','C']. Still correct. The issue is purely in the R9 log — no functional impact on board highlights, but the dropped log is misleading."
+      ],
+      "suggested_fix": "Collect duplicates into a dedicated log entry rather than silently skipping. Replace the `continue` with a log of `{ themeId, id: candidate, reason: 'duplikat-i-kandidatliste' }` pushed to result.warnings. Alternatively, pre-deduplicate highlightCandidates before the loop."
+    }
+  ],
+  "residual_risks": [
+    "Re-run (--update) for an address whose trust-scored POIs have since permanently closed: the already-scored POIs (trust_score != null) are skipped by validateReportTrust but remain on the board if their score was ≥0.5. A PERMANENTLY_CLOSED status update from Google is never picked up without a manual force-rescore.",
+    "The optimistic lock in inheritAreaEditorial is on products.updated_at. If hydrateReport (Steg 6) updates the products table (changing updated_at), and then inheritAreaEditorial (Steg 7) reads the row, the lock timestamp in product.updated_at is the POST-hydrate timestamp. Concurrent run of a second provisioning for the same project (possible with --update) between Steg 6 and Steg 7 would cause the lock to fail loudly — this is intended. No silent failure here.",
+    "findAreaForPoint queries ALL areas with boundary+report_editorial. As more neighborhoods are curated in slice 2+, a point near the border of overlapping polygons falls to 'first match' which is non-deterministic (depends on DB row order). Plan acknowledges this as 'first and log warning' — acceptable for slice 1 with one area."
+  ],
+  "testing_gaps": [
+    "No test covers the fetchPlaceDetails-returns-null path in enrichTrustSignals: a POI with google_place_id but invalid/stale place_id that returns status='NOT_FOUND' from Google. The current test scenarios in validate-report-trust.test.ts only test the happy path (enrichment succeeds) and the skip paths (manual_override, already scored). The silent-filter scenario requires mocking fetchPlaceDetails to return null and asserting the POI ends up in stillNull.",
+    "No test covers the cross-project trust contamination scenario: two projects sharing a POI, one provisioned, asserting the other project's board visibility is not affected without operator awareness.",
+    "No integration test covers what happens when transformToReportData is called from inheritAreaEditorial with a project that has zero POIs in a theme (boardPoiIdsByTheme.get(themeId) returns undefined). The code has `boardIds?.has(candidate)` (line 265) which handles undefined correctly, but no test pins this behavior."
+  ]
+}

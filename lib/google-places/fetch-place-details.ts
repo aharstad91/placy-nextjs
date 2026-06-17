@@ -37,6 +37,9 @@ export const TRUST_ENRICHMENT_FIELDS = [
   "user_ratings_total",
 ];
 
+/** Timeout mot Google Places API — henger aldri evig (mønster: checkWebsite). */
+const PLACE_DETAILS_TIMEOUT_MS = 10_000;
+
 /**
  * Fetch place details from Google Places API.
  *
@@ -53,7 +56,16 @@ export async function fetchPlaceDetails(
   const fieldsParam = fields.join(",");
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fieldsParam}&key=${apiKey}`;
 
-  const response = await fetch(url);
+  // Timeout kaster (AbortError) — samme feilhåndtering som annen fetch-feil
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PLACE_DETAILS_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     throw new Error(`Google Places API error: ${response.status}`);

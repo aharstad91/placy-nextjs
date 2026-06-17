@@ -38,6 +38,24 @@ const CAMERA_TOURS: Record<string, Record<string, CategoryCameraConfig>> = {
       moveDurationMs: 9000,
     },
   },
+  // Grilstad Marina (byggetrinn 4, Fullriggerøya). STARTPOSER — autorert mot
+  // prosjekt-koordinatet (63.43826, 10.50872), IKKE verifisert mot 3D-tiles
+  // ennå. Signatur-kategoriene (sjø/marina) får A→B "senk kameraet ned mot
+  // vannet"; resten faller tilbake til orbit. Finjuster via ?author=1 i browser
+  // (CameraWaypointAuthor) og lim inn de eksakte posene her. Headingene peker
+  // mot fjorden/marinaen (nord-/nordvest-vendt) — verifiser retning visuelt.
+  "byggetrinn-4": {
+    "natur-friluftsliv": {
+      a: { lat: 63.43826, lng: 10.50872, range: 1100, tilt: 50, heading: 20 },
+      b: { lat: 63.43826, lng: 10.50872, range: 760, tilt: 55, heading: 20 },
+      moveDurationMs: 9000,
+    },
+    "marina-batliv": {
+      a: { lat: 63.43826, lng: 10.50872, range: 1000, tilt: 48, heading: 340 },
+      b: { lat: 63.43826, lng: 10.50872, range: 700, tilt: 53, heading: 340 },
+      moveDurationMs: 9000,
+    },
+  },
 };
 
 /** Normaliserer en pose defensivt: tilt klampes 0–90, heading til [0,360),

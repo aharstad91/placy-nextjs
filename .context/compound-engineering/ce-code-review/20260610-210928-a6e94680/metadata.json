@@ -1,0 +1,10 @@
+{
+  "run_id": "20260610-210928-a6e94680",
+  "branch": "feat/nabolags-editorial-arv",
+  "head_sha": "99aefd43531705579ca1edfb03d0395daeeb57b0",
+  "verdict": "Ready with fixes (applied)",
+  "completed_at": "2026-06-10T19:30:20Z",
+  "reviewers": ["correctness","testing","maintainability","project-standards","adversarial","reliability","kieran-typescript"],
+  "applied": "11 safe_auto + 6 gated (ce-work-autoritet, begrunnet): place-not-found->stillNull, load-env i curate-area, timeout fetchPlaceDetails/inherit/curate, R9 cap-logging, pool-robusthet x2, type-narrow, Array.isArray-guard, env-throw + 8 test-tillegg",
+  "residual_skipped_as_todos": "ProductRow-dup, REST-headers-dup, discriminated-union (ship-over-refactor-policy, pre-customer PoC); advisory: global trust-skriving (by design, dokumentert), polygon-grense-flakiness (Unit 7-rubrikk), mocked-transform-grense (Unit 7 manuell QA)"
+}

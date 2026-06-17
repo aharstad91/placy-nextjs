@@ -1,0 +1,95 @@
+{
+  "reviewer": "maintainability",
+  "findings": [
+    {
+      "title": "ProductRow interface duplicated in apply-curation-staging.ts and inherit-area-editorial.ts",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts",
+      "line": 75,
+      "confidence": 0.90,
+      "autofix_class": "manual",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "Two separate `interface ProductRow { id, config, updated_at }` declarations exist: one in scripts/apply-curation-staging.ts (line 82) and one in lib/pipeline/inherit-area-editorial.ts (line 75). They diverge on the `config` field — apply-curation-staging types it as `{ reportConfig?: ReportConfig; [k: string]: unknown } | null` while inherit-area-editorial types it as `unknown`. Any future change to the products table schema requires updating both, with no compile-time link ensuring they stay in sync. The inherit-area-editorial version is in a lib module that is meant to be reusable; the apply-curation-staging version is script-local.",
+      "evidence": "grep -n 'interface ProductRow' scripts/apply-curation-staging.ts lib/pipeline/inherit-area-editorial.ts — two independent definitions, different config typings",
+      "suggested_fix": "Extract a shared `ProductRow` (with `config: unknown`) to a small type-only file such as lib/supabase/product-row.ts and import from both call sites."
+    },
+    {
+      "title": "REST-auth header construction duplicated between curate-area.ts (restHeaders()) and inherit-area-editorial.ts (inline object)",
+      "severity": "P2",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/scripts/curate-area.ts",
+      "line": 71,
+      "confidence": 0.85,
+      "autofix_class": "manual",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "curate-area.ts defines a `restHeaders()` helper that returns `{ apikey: SUPABASE_KEY, Authorization: 'Bearer ...' }`. inherit-area-editorial.ts constructs an identical object inline at lines 181-184. A third copy also exists in apply-curation-staging.ts (lines 119-122, inlined into the fetch call). If the Supabase REST auth convention ever changes (e.g. adding a required header), all three places must be updated independently. The pattern is already proven to drift — curate-area uses a module-level `SUPABASE_KEY` constant while inherit-area-editorial reads `serviceKey` from process.env inline at the call site.",
+      "evidence": "curate-area.ts:71-76 restHeaders(); inherit-area-editorial.ts:181-184 inline object; apply-curation-staging.ts:119 inline in fetchRes headers",
+      "suggested_fix": "Extract a `makeSupabaseRestHeaders(serviceKey: string)` utility to lib/supabase/rest-headers.ts. Both scripts and the pipeline module import from it."
+    },
+    {
+      "title": "Coordinate range validation duplicated: area-staging Zod superRefine vs geo.ts isValidCoordinates",
+      "severity": "P3",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/area-staging.ts",
+      "line": 30,
+      "confidence": 0.82,
+      "autofix_class": "advisory",
+      "owner": "downstream-resolver",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "area-staging.ts (lines 30-43) contains a Zod `superRefine` that checks `lng in [-180, 180]` and `lat in [-90, 90]` with Norwegian error messages. lib/utils/geo.ts already exports `isValidCoordinates(lat, lng)` with the same bounds plus finiteness checks. Two separate implementations of the same rule will diverge the moment someone tightens one (e.g. strips poles at ±90) without updating the other. The Zod version also omits the `isFinite` guard present in geo.ts.",
+      "evidence": "area-staging.ts:30-43 inline range checks; geo.ts:65-76 isValidCoordinates with isFinite",
+      "suggested_fix": "The Zod superRefine can delegate: `if (!isValidCoordinates(pos[1], pos[0])) ctx.addIssue(...)`. This unifies the rule in one place while preserving the user-facing Norwegian error message."
+    },
+    {
+      "title": "curate-area.ts uses inline dotenv config() instead of load-env.ts, but it imports createServerClient transitively — risk of silent null client",
+      "severity": "P1",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/scripts/curate-area.ts",
+      "line": 32,
+      "confidence": 0.80,
+      "autofix_class": "manual",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "why_it_matters": "The load-env.ts module's entire purpose (documented in its 18-line header) is to fire dotenv BEFORE tsx hoists static imports of lib/supabase/client.ts — which evaluates the module-level anon client once and caches it. curate-area.ts imports `{ createServerClient } from '@/lib/supabase/client'` (line 40) using a static import, AND loads env via `config({ path: '.env.local' })` at line 35 — but this inline call happens after tsx has already hoisted and evaluated the static imports, meaning client.ts runs with empty env variables. provision-rapport.ts (the other new script in this diff) correctly uses `import './load-env'` as its first import. apply-curation-staging.ts also uses the inline pattern, but it does NOT import createServerClient — it only reads SUPABASE_URL/KEY directly from process.env after dotenv runs, which is safe. curate-area.ts is different: it calls createServerClient() at line 278 (listPoiCandidates), so the module-cache risk applies directly.",
+      "evidence": "provision-rapport.ts:27 'import \"./load-env\"'; curate-area.ts:32-35 inline config(); curate-area.ts:40 static import createServerClient; load-env.ts header explains the hoist problem",
+      "suggested_fix": "Replace the inline dotenv block in curate-area.ts with `import './load-env';` as the first import, matching provision-rapport.ts. Remove the `import { config } from 'dotenv'` and `config(...)` lines."
+    },
+    {
+      "title": "Redundant intermediate ConfigTheme interface in inherit-area-editorial.ts — shadows typed config structure already parsed inline",
+      "severity": "P3",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts",
+      "line": 69,
+      "confidence": 0.72,
+      "autofix_class": "advisory",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "why_it_matters": "inherit-area-editorial.ts defines a local `ConfigTheme` interface (`{ id: string; editorial?: ReportThemeEditorial; [k: string]: unknown }`) at line 69. This type is used for casting at line 226 and then later spread at lines 315-317. The `[k: string]: unknown` index signature makes it structurally the same as `Record<string, unknown> & { id: string }`, which means TypeScript does not enforce that `editorial` actually belongs to the same domain type as `ReportThemeEditorial`. The actual shape being manipulated is already expressed by `ReportThemeEditorial` from lib/types.ts. The extra interface is a documentation-only type that won't catch drift between ConfigTheme.editorial and the canonical ReportThemeEditorial type.",
+      "evidence": "inherit-area-editorial.ts:69-73 ConfigTheme; apply-curation-staging.ts:68-80 has its own similar Theme/ReportConfig interfaces — same pattern, two copies",
+      "suggested_fix": "Use `{ id: string; editorial?: ReportThemeEditorial; [k: string]: unknown }` inline or import an existing domain type. Not worth extracting to a shared module unless apply-curation-staging.ts is also migrated."
+    }
+  ],
+  "residual_risks": [
+    {
+      "risk": "curate-area.ts env-loading race (P1 finding #4) is not covered by any test — the failure mode is a silent null Supabase client that returns no rows rather than an error. This is easy to miss in manual testing if the correct env happens to be loaded by a prior process in the same terminal session.",
+      "mitigation": "Run curate-area.ts --dry-run in a fresh shell (no NEXT_PUBLIC_SUPABASE_URL in env before launch) and verify it fails loudly rather than silently returning 'ingen areas-rad'."
+    },
+    {
+      "risk": "The configWasString round-trip in inherit-area-editorial.ts is a bespoke defensive workaround for a database schema inconsistency (some rows store config as JSON string, others as jsonb). validate-report-tier.ts has the same silent try/catch pattern. If this inconsistency is ever resolved by a migration, the workaround code will silently keep working — but if a future developer removes it assuming it's dead code, they'll break old rows.",
+      "mitigation": "Add a short comment to inherit-area-editorial.ts pointing to the migration that resolves the inconsistency, or add a database-level CHECK constraint. The current inline comment at line 207-210 is good but does not link to the migration."
+    }
+  ],
+  "testing_gaps": [
+    {
+      "gap": "No test covers the load-env interaction for curate-area.ts or apply-curation-staging.ts. The inherit-area-editorial.test.ts suite mocks fetch and Supabase, but the actual env-loading timing (the hoist problem) is only testable via an integration test that spawns a subprocess with a clean env.",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/scripts/curate-area.ts"
+    },
+    {
+      "gap": "The configWasString → JSON.stringify round-trip in inherit-area-editorial.ts is tested in inherit-area-editorial.test.ts (line 493 checks `typeof body.config === 'string'`), but only for the write path. There is no test asserting that a row where config arrives as a jsonb object (not string) is correctly handled without double-stringification.",
+      "file": "/Users/andreasharstad/Documents/placy-ralph-nabolag/lib/pipeline/inherit-area-editorial.ts"
+    }
+  ]
+}

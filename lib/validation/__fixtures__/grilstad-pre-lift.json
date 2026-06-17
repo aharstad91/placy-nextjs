@@ -1,0 +1,229 @@
+{
+  "_comment": "Snapshot av tier-relevante felter fra data/projects/grilstad-marina/byggetrinn-4.json FØR nivå 3-løftet (plan Unit 6-7). Falsifikasjonsbevis for validatoren (R4): deklarert nivå 3 skal feile med camera-tours, has3dAddon, brand-assets og reels-VO-urler. audio.timings er strippet (kun presence sjekkes). IKKE oppdater etter løftet — pre-løft-tilstanden ER poenget.",
+  "slug": "byggetrinn-4",
+  "has3dAddon": null,
+  "cameraToursEntry": false,
+  "poiIds": [
+    "google-ChIJc86qU4owbUYR_uhWRYTL8R0",
+    "google-ChIJ3UeeRKcxbUYRiW4pdqjXjfU",
+    "google-ChIJNe4i_4owbUYRaRRfP1vXeEA",
+    "google-ChIJRTCl-IowbUYRFcNuL7_vqUQ",
+    "google-ChIJAZJxPH0wbUYRIhPNoAT-Jyw",
+    "google-ChIJA5JxPH0wbUYRrkahHZqp7HI",
+    "google-ChIJRTCl-IowbUYR0835CLZ0TrE",
+    "google-ChIJ1xp4FIkxbUYREY5RSpdzW_I",
+    "google-ChIJj4EJVDIwbUYRGQfnBklj3zk",
+    "google-ChIJ4yHnKF4wbUYRvC3nrWwBIcs",
+    "google-ChIJV82_lH0wbUYRsh9ew46i92k",
+    "google-ChIJt6hpxVMxbUYRDEs-lLem5g8",
+    "google-ChIJXVJPUYowbUYRtv1_KOdpTFc",
+    "google-ChIJ8QQ3630wbUYRUMm48wRgbVc",
+    "google-ChIJXctPUYowbUYRr9WGctzKmVM",
+    "google-ChIJr7X-f2c6bUYRbg7TDHQi-h8",
+    "google-ChIJ00zWIgAxbUYRYL2odOOOMiI",
+    "google-ChIJbTaNm7QxbUYR2Ea6H5n7tjo",
+    "entur-NSR-StopPlace-60260",
+    "entur-NSR-StopPlace-60261",
+    "entur-NSR-StopPlace-42157",
+    "entur-NSR-StopPlace-60259",
+    "entur-NSR-StopPlace-61665",
+    "grilstad-marina-trondheim-batforening",
+    "grilstad-marina-kajakk",
+    "grilstad-marina-fullriggeroya",
+    "grilstad-marina-sjoparken",
+    "grilstad-marina-ladestien",
+    "grilstad-marina-fullriggerskogen",
+    "grilstad-marina-grillstadfjaera-barnehage",
+    "grilstad-marina-grilstad-fus-barnehage",
+    "grilstad-marina-ranheim-skole",
+    "grilstad-marina-ranheim-idrettspark",
+    "grilstad-marina-turomradet"
+  ],
+  "reportConfig": {
+    "label": "Grilstad Marina",
+    "assets": null,
+    "audioTourEnabled": true,
+    "audioVersion": 5,
+    "welcomeAudio": {
+      "url": "/audio/byggetrinn-4/welcome.mp3",
+      "voice": "EpYEY8MWJrUGskHBoNMA",
+      "model": "eleven_turbo_v2_5",
+      "generatedAt": "2026-06-09T21:13:55.637Z",
+      "manus": "Velkommen til Grilstad Marina. Du står ytterst på Fullriggerøya, med fjorden på alle kanter og Trondheim sentrum bare et kvarter unna. La meg ta deg gjennom nabolaget — fra badestrand og marina til hverdagen som ligger noen minutter fra døra."
+    },
+    "heroAudio": {
+      "url": "/audio/byggetrinn-4/hjem.mp3",
+      "voice": "EpYEY8MWJrUGskHBoNMA",
+      "model": "eleven_turbo_v2_5",
+      "generatedAt": "2026-06-09T21:13:55.637Z",
+      "manus": "Grilstad Marina er bygd ut på Fullriggerøya, helt ytterst mot Trondheimsfjorden. Her bor du med sjøen på alle kanter, en badestrand med dansk sand, og en marina med plass til over fem hundre båter. Samtidig ligger dagligvarer, barnehager og buss bare noen minutter unna."
+    },
+    "outroAudio": {
+      "url": "/audio/byggetrinn-4/outro.mp3",
+      "voice": "EpYEY8MWJrUGskHBoNMA",
+      "model": "eleven_turbo_v2_5",
+      "generatedAt": "2026-06-09T21:13:55.637Z",
+      "manus": "Det er nærheten til sjøen som gjør Grilstad Marina spesielt — badestrand, marina og turstier rett utenfor, med byen et kvarter unna. Vil du vite mer om byggetrinn 4, tar megleren gjerne en prat."
+    },
+    "themes": [
+      {
+        "id": "natur-friluftsliv",
+        "name": "Sjø, strand & friluft",
+        "categories": [],
+        "editorial": {
+          "body": "Grilstadfjæra badeplass er sørvendt og avrundet, med utedusj, sittebenker, grillplasser og et eget område for badstuer. Sjøparken er et grøntdrag mellom næring og bolig, og Ladestien starter rett utenfor og følger fjorden videre mot Rotvollfjæra og inn mot sentrum.\n\nSom en del av utbyggingen kommer også Fullriggerskogen — et nytt turområde på øya med gang- og sykkelvei, lekeplasser og oppholdsarealer.",
+          "highlightPoiIds": [
+            "google-ChIJ00zWIgAxbUYRYL2odOOOMiI",
+            "grilstad-marina-sjoparken",
+            "grilstad-marina-ladestien"
+          ]
+        },
+        "audio": {
+          "url": "/audio/byggetrinn-4/natur-friluftsliv.mp3",
+          "voice": "EpYEY8MWJrUGskHBoNMA",
+          "model": "eleven_turbo_v2_5",
+          "generatedAt": "2026-06-09T21:13:55.637Z",
+          "manus": "Her bor du med sjøen på alle kanter. Grilstadfjæra badestrand har finkornet sand hentet fra Danmark, sørvendt og skjermet, med utedusj, grillplasser og badstuer. Sjøparken binder området sammen med grønt, og Ladestien starter rett utenfor døra — den følger fjorden helt inn til Trondheim sentrum. Et nytt turområde, Fullriggerskogen, er på vei."
+        },
+        "reelsAudio": {
+          "manus": "Grilstadfjæra badestrand har finkornet sand hentet fra Danmark. Stranda er sørvendt og skjermet, med utedusj, grillplasser og badstuer. Sjøparken er et grøntdrag tvers gjennom området. Ladestien starter rett utenfor og følger fjorden inn mot sentrum."
+        }
+      },
+      {
+        "id": "marina-batliv",
+        "name": "Marina & båtliv",
+        "categories": [
+          "marina"
+        ],
+        "editorial": {
+          "body": "Marinaen åpnet i 2015 og driftes av Trondheim Båtforening, som tildeler båtplasser. På marinaen ligger Flipper Kafé, og du kan leie kajakklagerplass og padle rett ut i fjorden eller rundt båthavna og kanalen.\n\nOmrådet har blitt et populært turmål med sittegrupper og møtesteder langs vannet — her tar du både spaserturen og joggeturen i frisk sjøluft.",
+          "highlightPoiIds": [
+            "grilstad-marina-trondheim-batforening",
+            "grilstad-marina-kajakk",
+            "grilstad-marina-fullriggeroya"
+          ]
+        },
+        "audio": {
+          "url": "/audio/byggetrinn-4/marina-batliv.mp3",
+          "voice": "EpYEY8MWJrUGskHBoNMA",
+          "model": "eleven_turbo_v2_5",
+          "generatedAt": "2026-06-09T21:13:55.637Z",
+          "manus": "Båtlivet er en stor del av hverdagen på Fullriggerøya. Den offentlige marinaen åpnet i 2015 og har plass til nærmere fem hundre og tjue fritidsbåter, driftet av Trondheim Båtforening. Vil du heller padle, kan du leie kajakklagerplass ved Flipper Kafé og ta turen rundt båthavna eller rett ut i fjorden."
+        },
+        "reelsAudio": {
+          "manus": "Marinaen har plass til nærmere fem hundre og tjue fritidsbåter. Den åpnet i 2015 og driftes av Trondheim Båtforening. Ved Flipper Kafé kan du leie kajakklagerplass. Herfra padler du rundt båthavna eller rett ut i fjorden."
+        }
+      },
+      {
+        "id": "mat-drikke",
+        "name": "Mat & Drikke",
+        "categories": [],
+        "editorial": {
+          "body": "Flipper Kafé serverer alt fra salater og burgere til nydelige rekesmørbrød, både innendørs og på uteserveringen mot sjøen. Her finnes også shuffleboard og selskapslokaler som kan leies til alt fra bedriftsfester til konfirmasjoner.\n\nFor et større utvalg ligger Grilstad Næring og Ranheim noen minutter unna.",
+          "highlightPoiIds": [
+            "google-ChIJ3UeeRKcxbUYRiW4pdqjXjfU"
+          ]
+        },
+        "audio": {
+          "url": "/audio/byggetrinn-4/mat-drikke.mp3",
+          "voice": "EpYEY8MWJrUGskHBoNMA",
+          "model": "eleven_turbo_v2_5",
+          "generatedAt": "2026-06-09T21:13:55.637Z",
+          "manus": "Flipper Kafé er hjertet i nabolaget, praktisk plassert på marinaen med utsikt over sjøen og båthavna. Her får du alt fra salater og burgere til rekesmørbrød, både innendørs og på uteserveringen. Inne finner du også shuffleboard, og lokalene kan leies til selskap. Trenger du mer, ligger Grilstad Næring noen minutter unna."
+        },
+        "reelsAudio": {
+          "manus": "Flipper Kafé ligger på marinaen med utsikt over båthavna. På menyen står alt fra salater og burgere til rekesmørbrød. Inne finner du også shuffleboard. Et større utvalg finnes på Grilstad Næring noen minutter unna."
+        }
+      },
+      {
+        "id": "hverdagsliv",
+        "name": "Hverdagsliv",
+        "categories": [],
+        "editorial": {
+          "body": "Extra Grilstad tar dagligvarene, og Vitusapotek, frisør, tannleger og legesenter ligger tett samlet like ved. Grilstad mall samler flere butikker og tjenester under ett tak.\n\nDu slipper bilen til det meste av hverdagen.",
+          "highlightPoiIds": [
+            "google-ChIJNe4i_4owbUYRaRRfP1vXeEA",
+            "google-ChIJt6hpxVMxbUYRDEs-lLem5g8"
+          ]
+        },
+        "audio": {
+          "url": "/audio/byggetrinn-4/hverdagsliv.mp3",
+          "voice": "EpYEY8MWJrUGskHBoNMA",
+          "model": "eleven_turbo_v2_5",
+          "generatedAt": "2026-06-09T21:13:55.637Z",
+          "manus": "Hverdagen er enkel her. På Grilstad Næring ligger Extra for dagligvarer, sammen med apotek, frisør, tannlege og legesenter — alt i gangavstand. Grilstad mall samler flere butikker og tjenester under ett tak. Det meste av det daglige ordner du uten å sette deg i bilen."
+        },
+        "reelsAudio": {
+          "manus": "Extra Grilstad dekker dagligvarene. Apotek, frisør og tannlege ligger tett samlet på Grilstad Næring. Grilstad mall samler flere butikker under ett tak. Det meste ordner du i gangavstand."
+        }
+      },
+      {
+        "id": "trening-aktivitet",
+        "name": "Trening & Helse",
+        "categories": [],
+        "editorial": {
+          "body": "Til styrke og kondisjon har du Impulse Grilstad i nærområdet og 3T på Ranheim. Den største arenaen er likevel Ladestien — en av byens mest populære traséer for løping, gåturer og rekreasjon langs sjøen.",
+          "highlightPoiIds": [
+            "google-ChIJXctPUYowbUYRr9WGctzKmVM",
+            "grilstad-marina-ladestien"
+          ]
+        },
+        "audio": {
+          "url": "/audio/byggetrinn-4/trening-aktivitet.mp3",
+          "voice": "EpYEY8MWJrUGskHBoNMA",
+          "model": "eleven_turbo_v2_5",
+          "generatedAt": "2026-06-09T21:13:55.637Z",
+          "manus": "Vil du holde deg i form, har du Impulse Grilstad i nabolaget og 3T på Ranheim. Men den beste treningsarenaen er gratis: Ladestien starter rett utenfor og er en av byens mest populære traséer for løping og gåturer langs sjøen."
+        },
+        "reelsAudio": {
+          "manus": "Impulse Grilstad ligger i nabolaget. På Ranheim finner du 3T. Ladestien gir deg løpetrasé langs fjorden rett utenfor døra. Stien er en populær arena for løping og gåturer."
+        }
+      },
+      {
+        "id": "barn-oppvekst",
+        "name": "Barn & oppvekst",
+        "categories": [],
+        "editorial": {
+          "body": "Grillstadfjæra barnehage og Grilstad FUS barnehage ligger begge i nabolaget. Ranheim skole og Ranheim Idrettspark dekker skolegang og organisert idrett.\n\nSelve nabolaget er bilfritt mellom husene, med lekeplasser, sandvolleyballbane og griller i turområdet.",
+          "highlightPoiIds": [
+            "grilstad-marina-grillstadfjaera-barnehage",
+            "grilstad-marina-ranheim-skole",
+            "grilstad-marina-turomradet"
+          ]
+        },
+        "audio": {
+          "url": "/audio/byggetrinn-4/barn-oppvekst.mp3",
+          "voice": "EpYEY8MWJrUGskHBoNMA",
+          "model": "eleven_turbo_v2_5",
+          "generatedAt": "2026-06-09T21:13:55.637Z",
+          "manus": "For barnefamilier ligger alt til rette. To barnehager — Grillstadfjæra og Grilstad FUS — er innen gangavstand, og Ranheim skole med idrettspark ligger like ved. Selve nabolaget er bilfritt mellom husene, med lekeplasser, sandvolleyballbane og griller i turområdet."
+        },
+        "reelsAudio": {
+          "manus": "To barnehager ligger i gangavstand. Ranheim skole og idrettspark er like ved. Turområdet har lekeplasser og sandvolleyballbane. Mellom husene er det bilfritt og trygt for barna."
+        }
+      },
+      {
+        "id": "transport",
+        "name": "Transport & Mobilitet",
+        "categories": [],
+        "editorial": {
+          "body": "Bussholdeplassene på Strindfjordvegen, Skonnertvegen og Grilstadkleiva binder Grilstad til resten av byen, og Rotvoll stasjon gir togforbindelse.\n\nMed bil eller sykkel langs fjorden når du Trondheim sentrum på rundt et kvarter.",
+          "highlightPoiIds": [
+            "entur-NSR-StopPlace-60260",
+            "entur-NSR-StopPlace-61665"
+          ]
+        },
+        "audio": {
+          "url": "/audio/byggetrinn-4/transport.mp3",
+          "voice": "EpYEY8MWJrUGskHBoNMA",
+          "model": "eleven_turbo_v2_5",
+          "generatedAt": "2026-06-09T21:13:55.637Z",
+          "manus": "Du kommer deg lett til og fra. Fire bussholdeplasser ligger i nabolaget, og Rotvoll stasjon gir togforbindelse noen minutter unna. Med bil eller sykkel langs fjorden er du i Trondheim sentrum på rundt et kvarter."
+        },
+        "reelsAudio": {
+          "manus": "Fire bussholdeplasser ligger i nabolaget. Rotvoll stasjon gir togforbindelse noen minutter unna. Med sykkel følger du fjorden inn mot byen. Sentrum når du på rundt et kvarter."
+        }
+      }
+    ]
+  }
+}

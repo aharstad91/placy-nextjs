@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="56" viewBox="0 0 240 56">
+  <!-- PLACEHOLDER brand-logo for Grilstad Marina byggetrinn 4. Tekst-wordmark
+       i prosjektets primærfarge (#a8542f). Bytt ut med ekte logo-SVG når den
+       finnes — samme filnavn, ingen kodeendring. -->
+  <rect width="240" height="56" fill="none"/>
+  <text x="0" y="24" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-weight="700" letter-spacing="1.5" fill="#a8542f">GRILSTAD</text>
+  <text x="0" y="46" font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="400" letter-spacing="6" fill="#a8542f">MARINA</text>
+</svg>

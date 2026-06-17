@@ -40,16 +40,21 @@ function buildMockSupabase(overrides: {
   // selectCallCount tracks how many times .from("projects").select() is called
   // so we can route the first call (existing by slug) vs second (conflict by id)
   const selectCallCount: Record<string, number> = {};
+  // Captured insert payloads per table — lets tests assert on written config
+  const inserts: { table: string; payload: Record<string, unknown> }[] = [];
 
   const makeFrom = (tableName: string) => {
     const chain: Record<string, unknown> = {};
 
     chain.upsert = vi.fn().mockResolvedValue({ error: overrides.customerUpsertError ?? null });
-    chain.insert = vi.fn().mockResolvedValue({
-      error:
-        tableName === "projects"
-          ? (overrides.projectInsertError ?? null)
-          : (overrides.productInsertError ?? null),
+    chain.insert = vi.fn((payload: Record<string, unknown>) => {
+      inserts.push({ table: tableName, payload });
+      return Promise.resolve({
+        error:
+          tableName === "projects"
+            ? (overrides.projectInsertError ?? null)
+            : (overrides.productInsertError ?? null),
+      });
     });
     chain.delete = vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) }));
 
@@ -96,7 +101,16 @@ function buildMockSupabase(overrides: {
 
   return {
     from: vi.fn((tableName: string) => makeFrom(tableName)),
+    inserts,
   };
+}
+
+function findProductConfig(
+  inserts: { table: string; payload: Record<string, unknown> }[]
+): { reportConfig?: { reportTier?: number } } {
+  const productInsert = inserts.find((i) => i.table === "products");
+  expect(productInsert).toBeDefined();
+  return productInsert!.payload.config as { reportConfig?: { reportTier?: number } };
 }
 
 describe("createReportProject — Unit 1", () => {
@@ -179,6 +193,58 @@ describe("createReportProject — Unit 1", () => {
         lng: 0,
       })
     ).rejects.toThrow(/SUPABASE_SERVICE_ROLE_KEY/);
+  });
+
+  it("reportTier-option skrives i initial config (Unit 4/R3b)", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    await createReportProject({
+      name: "Tier Test",
+      address: "Tier Test, Trondheim",
+      lat: 63.4,
+      lng: 10.4,
+      customerSlug: "placy-demo",
+      reportTier: 2,
+    });
+
+    expect(findProductConfig(mockSupabase.inserts).reportConfig?.reportTier).toBe(2);
+  });
+
+  it("uten reportTier-option utelates feltet (nivå 1-default)", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    await createReportProject({
+      name: "Default Tier",
+      address: "Default Tier, Trondheim",
+      lat: 63.4,
+      lng: 10.4,
+      customerSlug: "placy-demo",
+    });
+
+    const config = findProductConfig(mockSupabase.inserts);
+    expect(config.reportConfig).toBeDefined();
+    expect("reportTier" in (config.reportConfig ?? {})).toBe(false);
+  });
+
+  it("reportTier skrives også når prosjekt finnes men mangler report-produkt", async () => {
+    const mockSupabase = buildMockSupabase({
+      existingProject: { id: "placy-demo_tier-test", url_slug: "tier-test" },
+      existingProduct: null,
+    });
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    await createReportProject({
+      name: "Tier Test",
+      address: "Tier Test, Trondheim",
+      lat: 63.4,
+      lng: 10.4,
+      customerSlug: "placy-demo",
+      reportTier: 3,
+    });
+
+    expect(findProductConfig(mockSupabase.inserts).reportConfig?.reportTier).toBe(3);
   });
 
   it("report-defaults.ts: alle 6 aktive temaer har ikke-tom leadText", () => {

@@ -58,4 +58,23 @@ describe("getCategoryCamera", () => {
   it("returnerer undefined for ukjent kategori i kjent prosjekt", () => {
     expect(getCategoryCamera("stasjonskvartalet", "finnes-ikke")).toBeUndefined();
   });
+
+  it("Grilstad (byggetrinn-4) har A→B-poser for signatur-kategoriene", () => {
+    for (const cat of ["natur-friluftsliv", "marina-batliv"]) {
+      const cam = getCategoryCamera("byggetrinn-4", cat);
+      expect(cam, cat).toBeDefined();
+      expect(cam!.b, `${cat} mangler B-pose (A→B-kino)`).toBeDefined();
+    }
+  });
+
+  it("Grilstad-poser klampes gyldig (tilt 0–90, heading 0–360, range ≥1)", () => {
+    const cam = getCategoryCamera("byggetrinn-4", "marina-batliv")!;
+    for (const pose of [cam.a, cam.b!]) {
+      expect(pose.tilt).toBeGreaterThanOrEqual(0);
+      expect(pose.tilt).toBeLessThanOrEqual(90);
+      expect(pose.heading).toBeGreaterThanOrEqual(0);
+      expect(pose.heading).toBeLessThan(360);
+      expect(pose.range).toBeGreaterThanOrEqual(1);
+    }
+  });
 });

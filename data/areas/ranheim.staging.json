@@ -1,0 +1,154 @@
+{
+  "_instructions": "Ranheim kuratert 2026-06-10 (Andreas godkjent; ULF-AN fjernet — Charlottenlundhallen). Boundary v2 = krets + markeds-korreksjoner.",
+  "areaId": "ranheim",
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          10.479728,
+          63.437039
+        ],
+        [
+          10.480267,
+          63.435659
+        ],
+        [
+          10.503816,
+          63.414865
+        ],
+        [
+          10.504844,
+          63.414199
+        ],
+        [
+          10.506934,
+          63.412957
+        ],
+        [
+          10.510473,
+          63.411317
+        ],
+        [
+          10.513782,
+          63.411249
+        ],
+        [
+          10.518327,
+          63.411299
+        ],
+        [
+          10.535545,
+          63.420253
+        ],
+        [
+          10.545245,
+          63.426709
+        ],
+        [
+          10.545929,
+          63.428076
+        ],
+        [
+          10.545393,
+          63.429455
+        ],
+        [
+          10.543719,
+          63.430638
+        ],
+        [
+          10.541161,
+          63.431444
+        ],
+        [
+          10.505773,
+          63.441686
+        ],
+        [
+          10.487928,
+          63.440545
+        ],
+        [
+          10.484847,
+          63.440303
+        ],
+        [
+          10.482206,
+          63.439552
+        ],
+        [
+          10.480409,
+          63.438406
+        ],
+        [
+          10.479728,
+          63.437039
+        ]
+      ]
+    ]
+  },
+  "report_editorial": {
+    "hverdagsliv": {
+      "body": "Hverdagen på Ranheim er samlet langs aksen mellom Grilstad og Ranheim sentrum — dagligvare, apotek og frisør ligger der folk faktisk beveger seg. Grilstad-platået har vokst frem som bydelens tyngdepunkt for daglige ærend, mens Olderdalen dekker den østlige delen. Trenger du mer, ligger handelsområdene på Lade like vest for bydelen. Resultatet er et nabolag der ukehandelen sjelden krever turen inn til byen.",
+      "highlightCandidates": [
+        "google-ChIJNe4i_4owbUYRaRRfP1vXeEA",
+        "google-ChIJt6hpxVMxbUYRDEs-lLem5g8",
+        "google-ChIJRTCl-IowbUYRFcNuL7_vqUQ",
+        "google-ChIJrSNSbnkwbUYRS6a-0KZx9mI",
+        "google-ChIJA5JxPH0wbUYRrkahHZqp7HI"
+      ]
+    },
+    "barn-oppvekst": {
+      "body": "Ranheim er bygget for barnefamilier — bokstavelig talt: utbyggingen av fjæra-områdene har skjedd med barnehager, lekeplasser og skolevei som premiss, ikke etterpåklokskap. Ranheim skole ligger sentralt i bydelen, og barnehagedekningen strekker seg fra Grilstadfjæra til Presthus. Lekeplassene ligger spredt gjennom boligfeltene, aldri langt fra en inngangsdør. Mellom skole, idrettspark og fjære ligger det meste av en barndom i gangavstand.",
+      "highlightCandidates": [
+        "7a3f2a06-4fa0-401a-aef5-f686ddf62988",
+        "6657eda5-23d3-4f6f-936f-70cd2ef53399",
+        "2aa32541-6473-4e11-a3d9-4b075779cee7",
+        "fb36fad3-2735-43fa-afd8-04b58629a51b",
+        "lekeplass-grillstadfj-ra-lek",
+        "lekeplass-hulderveien-lek"
+      ]
+    },
+    "mat-drikke": {
+      "body": "Mat-tilbudet på Ranheim er nabolagets eget: kafeer ved fjæra der søndagsturen gjerne ender, ferske bakervarer til helgefrokosten, og pizza- og sushisteder som redder hverdagskveldene. Utbyggingen i Grilstadfjæra og på Overvik har trukket med seg nye spisesteder og kaffebarer, og tilbudet vokser i takt med bydelen. Det meste ligger i gang- eller sykkelavstand fra boligfeltene — gjerne med fjorden som nærmeste nabo.",
+      "highlightCandidates": [
+        "google-ChIJ3UeeRKcxbUYRiW4pdqjXjfU",
+        "google-ChIJsZDEHsAxbUYRW2W4iQwcdWU",
+        "google-ChIJc86qU4owbUYR_uhWRYTL8R0",
+        "google-ChIJGe_PpX8wbUYRZIqtZ99Y0M0",
+        "google-ChIJPY2s9UMxbUYRTbDlR1EVVuQ"
+      ]
+    },
+    "natur-friluftsliv": {
+      "body": "Få bydeler i Trondheim har fjorden så tett på som Ranheim. Strandlinjen er én sammenhengende rekke av badeplasser og fjæreområder — fra Grilstadstranda via Tømmerstranda til Hansbakkfjæra — bundet sammen av turstien langs sjøen. Sørover venter Estenstadmarka med turterreng og skiløyper rett fra boligfeltene. Kontrasten er sjelden: saltvann på den ene siden av bydelen, marka på den andre.",
+      "highlightCandidates": [
+        "badeplass-grilstadstranda",
+        "park-grillstadfj-ra",
+        "badeplass-t-mmerstranda",
+        "park-ranheim-stasjonspark",
+        "badeplass-hansbakkfj-ra",
+        "E5F5BBBB-646B-421F-93A4-5508B03182DB"
+      ]
+    },
+    "transport": {
+      "body": "Ranheim er en av få bydeler i Trondheim med egen togstasjon — lokaltoget tar deg til Trondheim S på rundt ti minutter, og videre mot Værnes uten bytte. Busstilbudet dekker boligfeltene langs både fjæra og høydedraget, og E6 ligger rett ved for de bilbaserte dagene. For en bydel øst for byen er Ranheim uvanlig godt koblet på.",
+      "highlightCandidates": [
+        "entur-NSR-StopPlace-33",
+        "bus-ranheim",
+        "bus-ranheim-idrettsplass",
+        "bus-grilstadkleiva",
+        "bus-olderdalen"
+      ]
+    },
+    "trening-aktivitet": {
+      "body": "Idretten er Ranheims kulturhus. Ranheim IL, stiftet i 1901, har fostret både eliteseriefotball og et av byens mest aktive breddemiljøer — idrettsparken midt i bydelen fylles fra morgen til kveld. Treningssentrene har fulgt boligveksten på Grilstad og i bydelssenteret. Og når verken bane eller sal frister, fungerer fjæra og marka som treningsrom hele året.",
+      "highlightCandidates": [
+        "google-ChIJ8QQ3630wbUYRUMm48wRgbVc",
+        "google-ChIJXVJPUYowbUYRtv1_KOdpTFc",
+        "google-ChIJXctPUYowbUYRr9WGctzKmVM",
+        "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM"
+      ]
+    }
+  }
+}
