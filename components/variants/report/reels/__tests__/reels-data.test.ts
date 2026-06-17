@@ -3,6 +3,7 @@ import {
   buildReelsCards,
   buildCategoryTracks,
   deriveSplashPrimaryLabel,
+  nowPlayingView,
 } from "../reels-data";
 import type {
   BoardCategory,
@@ -253,6 +254,64 @@ describe("buildCategoryTracks", () => {
 
   it("returnerer tom array når ingen category-cards", () => {
     expect(buildCategoryTracks([{ kind: "intro", videoSrc: "/x" }])).toEqual([]);
+  });
+});
+
+describe("nowPlayingView (spiller-nå-kort)", () => {
+  // Full kapittel-rekke: intro(0) welcome(1) home(2) mat-drikke(3) transport(4) outro(5).
+  const board: BoardData = {
+    ...makeBoardData([
+      makeCategory("mat-drikke", {
+        label: "Mat & drikke",
+        pois: Array.from({ length: 12 }) as unknown as BoardPOI[],
+      }),
+      makeCategory("transport", {
+        label: "Transport",
+        pois: Array.from({ length: 5 }) as unknown as BoardPOI[],
+      }),
+    ]),
+    welcome: { url: "/audio/welcome.mp3", manus: "v" },
+    outro: { url: "/audio/outro.mp3", manus: "o" },
+    home: {
+      name: "Stasjonskvartalet",
+      coordinates: { lat: 63.4, lng: 10.4 },
+      address: "Test 1",
+      heroImage: "/illustrations/hero.jpg",
+      district: "Midtbyen",
+      city: "Trondheim",
+      audio: { url: "/audio/home.mp3", manus: "h" },
+    },
+  };
+  const cards = buildReelsCards(board, "/reels/intro.mp4");
+
+  it("kategori: tittel = label, meta = «N steder · pos/antall» blant kategoriene", () => {
+    const mat = nowPlayingView(cards, 3);
+    expect(mat.title).toBe("Mat & drikke");
+    expect(mat.meta).toBe("12 steder · 1/2");
+    expect(mat.image).toBeTruthy();
+
+    const transport = nowPlayingView(cards, 4);
+    expect(transport.title).toBe("Transport");
+    expect(transport.meta).toBe("5 steder · 2/2");
+  });
+
+  it("kategori uten steder: meta dropper stedsantallet", () => {
+    const single = buildReelsCards(
+      makeBoardData([makeCategory("tomt", { label: "Tomt", pois: [] })]),
+      "/reels/intro.mp4",
+    );
+    // cards: intro(0) tomt(1)
+    expect(nowPlayingView(single, 1).meta).toBe("1/1");
+  });
+
+  it("welcome/home/outro får passende undertekst (ikke kategori-meta)", () => {
+    expect(nowPlayingView(cards, 1).meta).toBe("Introduksjon");
+    expect(nowPlayingView(cards, 2).meta).toBe("Midtbyen, Trondheim");
+    expect(nowPlayingView(cards, 5).meta).toBe("Oppsummering");
+  });
+
+  it("indeks utenfor rekkevidde gir tomt kort (ingen krasj)", () => {
+    expect(nowPlayingView(cards, 99)).toEqual({ title: "", meta: "" });
   });
 });
 

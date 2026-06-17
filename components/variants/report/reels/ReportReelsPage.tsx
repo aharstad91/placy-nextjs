@@ -1,8 +1,15 @@
 "use client";
 
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import dynamic from "next/dynamic";
+import { MapPin } from "lucide-react";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import type { Project } from "@/lib/types";
@@ -26,7 +33,7 @@ import { EventMobileSheet } from "../board/event/EventMobileSheet";
 import { useKompassSelections } from "@/lib/kompass-store";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsTransport } from "./ReelsTransport";
-import { MapTeaser } from "./MapTeaser";
+import { ReelSwipeStack } from "./ReelSwipeStack";
 import { DesktopStorySidebar } from "./DesktopStorySidebar";
 import { DesktopReportSplash } from "./DesktopReportSplash";
 import { MobileReportSplash } from "./MobileReportSplash";
@@ -401,6 +408,24 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
       }
       return;
     }
+    // Outro (recap, kart-flate) er siste audio-bærende kapittel. Auto-advance til
+    // finale-kortet (megler/summary) — ellers ville touren parkert på outro over
+    // kartet uten vei videre: swipe-navigasjon dekker kun kategori-beats, og den
+    // tidligere triaden (som steg outro→finale) er fjernet. Speiler welcome/home-
+    // auto-advancen, men +1 (ikke nextAudio) fordi finale-kortene er audio-frie.
+    if (endedCard?.kind === "outro") {
+      const next = state.activeIndex + 1;
+      if (next < state.cards.length) {
+        if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = setTimeout(() => {
+          advanceTimerRef.current = null;
+          setActiveIndex(next);
+        }, CATEGORY_ADVANCE_PAUSE_MS);
+      } else {
+        audioNext();
+      }
+      return;
+    }
     // Kategori-spor (to-flate-modell): arm kart-teaseren (glimt stiger opp på
     // historie-flaten) og start et timet, passivt auto-advance til neste
     // kapittel (R8/R9). Ignorerer bruker → touren går videre selv; tapper hen
@@ -442,6 +467,36 @@ function ReelsOrchestrator({ children }: { children: React.ReactNode }) {
   useReelsAudioOrchestration();
   return <>{children}</>;
 }
+
+/** Peek-sheet-geometri: toppen på 55% gir EKSPANDERT (etter-VO) ~45%-høyt kart-
+ *  reveal, og bunnen ligger rett over transporten (h-11 + py-3 + safe-area) så
+ *  ramme + bar møtes sømløst som én sammenhengende mørk flate. */
+const PEEK_TOP = "55%";
+const TRANSPORT_OFFSET = "calc(4.25rem + env(safe-area-inset-bottom))";
+
+/** Ramme-fargen matcher transportens `bg-stone-900/95` så sheet + bar leses som
+ *  én flate. Ramma lages med `border` (ikke padding-wrapper) fordi `BoardMap` er
+ *  `absolute inset-0` og MÅ forbli direkte barn av containeren — en ekstra
+ *  wrapper ville remountet den persistente WebGL-instansen. */
+const SHEET_BORDER = "rgba(28, 25, 23, 0.95)";
+
+/** Geometri/ramme/transform-overgangen ved flate-skifte (minimert ↔ ekspandert ↔
+ *  fullskjerm ↔ bak). To DISKRETE peek-tilstander (ingen progress-drevet vekst):
+ *  minimert under VO, ekspandert når VO er ferdig — derfor er `transform`
+ *  (translateY) en ren CSS-transition her, ikke rAF-drevet. */
+const SHEET_TRANSITION =
+  "top 500ms ease-out, bottom 500ms ease-out, left 500ms ease-out, " +
+  "right 500ms ease-out, border-width 450ms ease-out, " +
+  "border-color 400ms ease-out, border-radius 450ms ease-out, " +
+  "transform 500ms ease-out";
+
+/** Synlig høyde (px) på peek-sheeten i MINIMERT default-tilstand (mens VO spiller):
+ *  sheeten dyttes ned bak transporten så bare en lav ~125px-stripe vises — nok til
+ *  det mørke sløret + «Se N punkter»-CTA-en (under), lavt nok til å IKKE krasje med
+ *  karaoke-teksten over (funn 3.1). Ved VO-slutt (teaserArmed) går den til
+ *  translateY(0) = full ekspandert reveal («naturlig neste steg»). translateY i px
+ *  (ikke %) holder stripa fast ~125px uansett skjermhøyde. */
+const PEEK_MINIMIZED_VISIBLE = "125px";
 
 /**
  * Adaptiv layout:
@@ -491,6 +546,10 @@ function ResponsiveLayoutInner({
   // (ingen tile-streaming midt i fly-in-en). Det persistente kartet rives aldri.
   const phase = useAudioTourStore((s) => s.phase);
   const { pause, resume, goToTrack } = useAudioTourActions();
+  // En aktiv vertikal swipe på kategori-flaten (ReelSwipeStack) løfter historie-
+  // flaten over kart-peeken (z-index) så det inn-glidende slidet ikke klippes av
+  // peek-sheeten. Play/pause + swipe-navigasjon eier ReelSwipeStack selv.
+  const [isDragging, setIsDragging] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
   const [boardRevealed, setBoardRevealed] = useState(false);
 
@@ -660,37 +719,132 @@ function ResponsiveLayoutInner({
   // utforsking — da er kartet primær-flaten og transporten rendres ikke.
   const hasAudioMobile = firstIdx !== -1;
   const mapIsSurface = state.mapOpen || !hasAudioMobile;
-  const teaserVisible =
-    state.teaserArmed && !state.mapOpen && isCategoryBeatMobile;
+  // Kart-peek-sheet: på kategori-beats (historie-flate) LIGGER kartet klart som en
+  // sheet i bunn — i to DISKRETE tilstander (ingen progress-drevet vekst):
+  //  - minimert (default, under VO): kun en lav ~100px-stripe vises — nok til CTA,
+  //    lavt nok til å IKKE krasje med karaoke-teksten over (3.1).
+  //  - ekspandert (teaserArmed = VO ferdig): sheeten reises til full peek-høyde —
+  //    «nå kan du utforske». teaserArmed armes ved kategori-VO-slutt og driver
+  //    fortsatt auto-advance-timeren (ReelsAudioShell).
+  // Krever spillbar lyd + unlock + at kartet ikke allerede er åpnet fullskjerm.
+  const peekActive =
+    isCategoryBeatMobile &&
+    !state.mapOpen &&
+    hasAudioMobile &&
+    state.audioUnlocked;
+  const peekExpanded = peekActive && state.teaserArmed;
+  // Antall punkter i den aktive kategorien — driver «Se N punkter»-CTA-en på
+  // peek-sløret. Kun kategori-kort har `pois` (peekActive gates på det), men
+  // type-narrow eksplisitt for trygghet.
+  const peekPlaceCount =
+    activeCardMobile?.kind === "category" ? activeCardMobile.pois.length : 0;
 
-  // Persistent kart-container-geometri:
-  //  - kart-flate (mapIsSurface): fullskjerm, interaktivt, z-20 over historie.
-  //  - teaser: bunn-stripe (~38%), ikke-interaktivt, z-20 (glir opp via height-
-  //    transition — samme persistente instans avslørt).
-  //  - ellers (historie): fullskjerm BAK historie (z-0), varmt + ikke-interaktivt.
+  // Persistent kart-container — én instans, flate-tilstander styrt rent av state
+  // (ingen rAF). SHEET_TRANSITION animerer geometri + ramme + transform.
+  //  - fullskjerm (mapIsSurface): inset 0, interaktivt, z-20 over historie.
+  //  - peek (peekActive): dokket bunn-sheet (top 55% → rett over transporten),
+  //    mørk ramme + avrundet topp, z-20; ikke-interaktivt (tapp = ekspandér).
+  //    translateY: minimert default, 0 når ekspandert (teaserArmed).
+  //  - ellers (summary/megler/intro bak historie): fullskjerm bak, z-0, varmt.
+  // Kun longhand-kanter/-hjørner (ikke `border*`-shorthand): peek-varianten setter
+  // KUN topp+sider (ingen bunn-kant) og kun topp-hjørnene, og å blande shorthand +
+  // longhand for samme verdi gir en React-styling-advarsel når den ene fjernes.
+  const sheetFrame = {
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderStyle: "solid" as const,
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderLeftWidth: 0,
+    borderColor: "transparent",
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    transform: "translateY(0)",
+    transition: SHEET_TRANSITION,
+  };
   const mapStyle: CSSProperties = mapIsSurface
-    ? { inset: 0, zIndex: 20 }
-    : teaserVisible
-      ? { left: 0, right: 0, bottom: 0, top: "auto", height: "38%", zIndex: 20 }
-      : { inset: 0, zIndex: 0 };
+    ? { ...sheetFrame, zIndex: 20 }
+    : peekActive
+      ? {
+          ...sheetFrame,
+          top: PEEK_TOP,
+          // Forankret helt i bunn (bak transporten), IKKE over den: kartet løper
+          // sømløst ned til skjermkanten og transporten ligger oppå — ingen mørk
+          // glipe mellom kart og bar (funn: «den må være helt i bunn»).
+          bottom: 0,
+          zIndex: 20,
+          // 12px ramme på topp+sider (transportens px-3/py-3 → kartinnholdet flukter
+          // med play-knappen/menyen). INGEN bunn-kant — kartet skal møte transporten
+          // rett, uten et 12px dødt bånd.
+          borderTopWidth: 12,
+          borderRightWidth: 12,
+          borderLeftWidth: 12,
+          borderColor: SHEET_BORDER,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          // Minimert: skjul alt unntatt ~100px OVER transporten (transport-høyde +
+          // 100px dyttes ned, resten ligger bak baren). Ekspandert: translateY(0).
+          transform: peekExpanded
+            ? "translateY(0)"
+            : `translateY(calc(100% - ${TRANSPORT_OFFSET} - ${PEEK_MINIMIZED_VISIBLE}))`,
+        }
+      : { ...sheetFrame, zIndex: 0 };
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-black">
-      {/* Persistent kart — alltid montert (varmt + teaser-glimt = samme instans).
-          interactive kun på kart-flaten (R13); ellers pointer-events-skjold. */}
-      <div
-        className="absolute overflow-hidden transition-all duration-500 ease-out"
-        style={mapStyle}
-      >
+      {/* Persistent kart — alltid montert (varmt + peek = samme instans).
+          interactive kun på kart-flaten (R13); ellers pointer-events-skjold.
+          Geometri + translateY (minimert/ekspandert) styres av mapStyle og
+          animeres av SHEET_TRANSITION (ren CSS, ingen rAF). */}
+      <div className="absolute overflow-hidden" style={mapStyle}>
         <BoardMap
           has3dAddon={has3dAddon}
           interactive={mapIsSurface}
           compactControls
           collapsedControls
+          // Story-mode-peek (kategori, sekundær flate): kompakte farge-prikker i
+          // stedet for fulle ikon-pins → mindre fargestøy på lite format (3.2).
+          // Fullskjerm-kart (mapOpen) → peekActive=false → fulle pins igjen.
+          compactMarkers={peekActive}
         />
 
-        {/* Teaser CTA-lag (B1) — over skjoldet; tapp åpner kart-flate (R9). */}
-        {teaserVisible && <MapTeaser />}
+        {/* Peek: hele sheeten er tappbar → ekspandér til fullskjerm. Et mørkt slør
+            gjør peeken til et tydelig «tapp for å utforske»-kort i stedet for et
+            konkurrerende live-kart (markørene anes svakt under sløret), med en
+            «Se N punkter»-CTA som forteller hva som venter. Over kartets
+            pointer-events-skjold (z-20). */}
+        {peekActive && (
+          <>
+            <button
+              type="button"
+              onClick={() => setMapOpen(true)}
+              aria-label={`Se ${peekPlaceCount} punkter på kart`}
+              className="absolute inset-0 z-20 bg-black/60"
+            >
+              {/* CTA sentrert i den synlige minimerte stripa (toppbåndet, minus
+                  12px topp-ramme). Toppforankret → glir oppover sammen med kartet
+                  når sheeten ekspanderer (ingen hopp). */}
+              <span
+                className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-center"
+                style={{ height: `calc(${PEEK_MINIMIZED_VISIBLE} - 12px)` }}
+              >
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-900/60 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/10 backdrop-blur-sm">
+                  <MapPin size={16} />
+                  Se {peekPlaceCount} punkter
+                </span>
+              </span>
+            </button>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-2 z-30 h-1 w-9 -translate-x-1/2 rounded-full bg-white/45"
+            />
+          </>
+        )}
 
         {/* Kart-flate-exit for kategori (R14): chevron topp-venstre + «← Tilbake»
             i transporten = to veier ut. */}
@@ -728,11 +882,18 @@ function ResponsiveLayoutInner({
         )}
       </div>
 
-      {/* Historie-flate — kun når kart ikke er aktiv flate. Rendrer det aktive
-          kortet direkte (ingen scroll-feed; navigasjon via transport + auto-advance). */}
+      {/* Historie-flate — kun når kart ikke er aktiv flate. Kategori-beats får
+          ReelSwipeStack (vertikal swipe-carousel mellom kategoriene + tapp=pause);
+          summary/megler rendres direkte (egne knapper + scroll, ingen swipe).
+          z-index løftes over peek-sheeten (z-20) MENS man drar (isDragging) så det
+          inn-glidende slidet ikke klippes — ellers z-10 (peek åpner som før). */}
       {!mapIsSurface && (
-        <div className="absolute inset-0 z-10">
-          <CardRouter cardIndex={state.activeIndex} />
+        <div className="absolute inset-0" style={{ zIndex: isDragging ? 25 : 10 }}>
+          {isCategoryBeatMobile ? (
+            <ReelSwipeStack phase={phase} onDraggingChange={setIsDragging} />
+          ) : (
+            <CardRouter cardIndex={state.activeIndex} />
+          )}
         </div>
       )}
 

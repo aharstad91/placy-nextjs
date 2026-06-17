@@ -83,6 +83,12 @@ interface Props {
    * til BoardMapControls `collapsed`. Default false (full pille på desktop/event).
    */
   collapsedControls?: boolean;
+  /**
+   * Når true: kategori-POI-ene rendres som kompakte farge-prikker i stedet for
+   * fulle ikon-pins (mobil story-mode-peek — sekundær flate, mindre visuell støy
+   * på lite format). Sendes videre til BoardMap3D. Default false.
+   */
+  compactMarkers?: boolean;
 }
 
 export function BoardMap({
@@ -93,6 +99,7 @@ export function BoardMap({
   eventMode = false,
   interactive = true,
   collapsedControls = false,
+  compactMarkers = false,
 }: Props) {
   const { state, data, dispatch, subFilter, visiblePoiIds, collectionPoiIds } = useBoard();
   const activeCategory = useActiveCategory();
@@ -434,6 +441,7 @@ export function BoardMap({
             mapPaddingLeft={mapPaddingLeft}
             cameraMode={cameraMode}
             onDragTakeover={handleDragTakeover}
+            compactMarkers={compactMarkers}
           />
         </div>
       )}

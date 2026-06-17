@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -37,6 +38,11 @@ export interface AudioElementContextValue {
    *  audio-tour-start når UI ikke kan stole på at samme tap utløser
    *  `useAudioTourStore.start()` (f.eks. Reels-intro-unlock-knapp). */
   unlock: () => Promise<void>;
+  /** Demp/avdemp VO-en. Bor her (ikke i tour-store) fordi mute er en ren
+   *  egenskap ved `<audio>`-elementet — phase/track er uberørt. Persisterer på
+   *  tvers av spor-bytter (samme element). Forbrukes av transport-menyen. */
+  muted: boolean;
+  toggleMuted: () => void;
 }
 
 /** Eksponert for testing — `PlayerBanner.test.tsx` wrapper med dette
@@ -64,6 +70,8 @@ export function AudioElementProvider({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const toggleMuted = useCallback(() => setMuted((m) => !m), []);
 
   // Hent stable action-refs + reaktive felter separat — undgår at hele
   // sync-effekten re-runs hver gang trackIndex endrer seg pga ny action-ref.
@@ -97,6 +105,14 @@ export function AudioElementProvider({
       audio.pause();
     }
   }, [phase]);
+
+  // Effekt 2b: speil mute-state til elementet. `audio.muted` persisterer på
+  // tvers av src-bytter, men vi setter den her så den overlever ev. element-
+  // re-attach og holdes som single source of truth.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) audio.muted = muted;
+  }, [muted]);
 
   // Effekt 3: audio-event-handlers — én gang per mount.
   useEffect(() => {
@@ -147,7 +163,9 @@ export function AudioElementProvider({
   };
 
   return (
-    <AudioElementContext.Provider value={{ currentTime, duration, unlock }}>
+    <AudioElementContext.Provider
+      value={{ currentTime, duration, unlock, muted, toggleMuted }}
+    >
       <audio ref={audioRef} preload="metadata" className="sr-only" />
       {children}
     </AudioElementContext.Provider>

@@ -248,6 +248,36 @@ gmp-popover::part(dialog) {
   }
 }
 
+/* "Spiller nå"-teller: rull-overgang når aktivt kapittel skifter (odometer-
+   følelse — innholdet ruller ett hakk i takt med stemmen). roll-up = fremover
+   (nytt kapittel stiger inn nedenfra), roll-down = bakover (inn ovenfra).
+   Foreldreelementet er overflow-hidden, så det inn-rullende innholdet klippes
+   til en «slot». */
+@keyframes nowplaying-roll-up {
+  from { opacity: 0; transform: translateY(90%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nowplaying-roll-down {
+  from { opacity: 0; transform: translateY(-90%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-nowplaying-roll-up {
+  animation: nowplaying-roll-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-nowplaying-roll-down {
+  animation: nowplaying-roll-down 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-nowplaying-roll-up,
+  .animate-nowplaying-roll-down {
+    animation: none;
+  }
+}
+
 /* Mapbox popup styling */
 .mapboxgl-popup-content {
   padding: 0;

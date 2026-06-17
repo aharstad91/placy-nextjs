@@ -24,9 +24,9 @@ import {
 import {
   firstAudioBearingIndex,
   isAudioBearing,
-  posterForVideo,
+  thumbView,
 } from "./reels-data";
-import type { MeglerReelCard, ReelsCard } from "./reels-data";
+import type { MeglerReelCard } from "./reels-data";
 import type {
   BoardCategory,
   BoardCategoryId,
@@ -427,24 +427,6 @@ function POIHighlightRow({
       )}
     </div>
   );
-}
-
-/** Poster/tittel for thumbnail-raden. Megler har ikke media → portrett brukes. */
-function thumbView(card: ReelsCard): { title: string; image?: string } {
-  switch (card.kind) {
-    case "welcome":
-      return { title: card.label, image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc };
-    case "home":
-      return { title: card.label, image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc };
-    case "category":
-      return { title: card.label, image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc };
-    case "outro":
-      return { title: card.label, image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc };
-    case "megler":
-      return { title: card.label, image: card.brokers[0]?.photoUrl };
-    default:
-      return { title: "" };
-  }
 }
 
 export function DesktopStorySidebar({

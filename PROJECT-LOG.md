@@ -6,6 +6,99 @@
 
 ---
 
+## 2026-06-17 — Mobil-transport redesignet: swipe-carousel + «spiller nå»-velger (live iPhone-iterasjon)
+
+Fortsettelse på `feat/mobil-rapport-board-ux` (fra 2026-06-16-rebygget). Interaktiv iterasjon med Andreas på iPhone-emulering — alt **ukommittert/ikke pushet** (per regel: vent til Andreas sier fra). Smal, seriell UI-jobb (ikke multi-agent — UI-iterasjon).
+
+**1. Spiller-triaden (⏮ ▶/⏸ ⏭) fjernet.** Navigasjon flyttet til vertikal swipe på videoflaten + play/pause på tapp. Slettet (git har historikk), ikke skjult.
+
+**2. «Spiller nå»-kortet ble transportens primær-element.** Bordet, klikkbar chip i samme høyde som ⋯-knappen (44px, `border-white/15` + `bg-white/5`) → tydelig «velger»-look med ⌄ ytterst (combobox-uttrykk). Tapp åpner kapittelvelger-popover (samme mønster som ⋯-menyen): lister alle kategorier med fargeprikk + antall, aktiv markert med `AudioLines`-indikator, tapp hopper dit (`setActiveIndex` → orchestration). Odometer-rull ved kapittelskifte: tittel/meta ruller ett hakk (opp = fremover, ned = bakover) via nye `globals.css`-keyframes (`nowplaying-roll-up/down`, reduced-motion-fallback).
+
+**3. Vertikal swipe-carousel (ny `ReelSwipeStack.tsx`) — swiper.js-følelsen.** Videoen følger fingeren under drag (track-transform styrt imperativt via ref, ingen re-render pr. move), nabo-kategori glir inn (poster = videoens første frame → sømløs handoff til fullt kort), snapper til neste/forrige på slipp eller spretter tilbake under terskel (distanse 80px *eller* flikk-velocity). Motstand (gummibånd) på blokk-kantene (første↓/siste↑ → Nabolaget/Oppsummert er kart-flater → diskret `advanceBeat`/`prevBeat`). **Pointer-events, ikke touch** — kritisk: touch-only virket på ekte iPhone men var død ved trackpad-drag i Chrome-emulatoren. Peek-sheeten dekkes under drag (historie-flate z-løftes over peek z-20, under transport z-30) så inn-glidende slide ikke klippes. Layout-effect re-sentrerer sporet før paint ved kort-bytte → ingen blink. Tapp=pause guardet mot drag (`didSwipe`).
+
+**4. `outro → finale`-auto-advance.** Triaden var eneste vei outro→megler; uten den ble kontakt-kortet uoppnåelig. La til auto-advance (speiler welcome/home-mønsteret) så megler nås etter recap.
+
+**Nye filer:** `ReelSwipeStack.tsx`, `use-reels-beat-nav.ts`. **Endret:** `ReportReelsPage.tsx` (swipe-wiring + isDragging-z + outro-advance), `ReelsTransport.tsx` (triade ut), `NowPlayingCard.tsx` (velger/odometer/chip), `app/globals.css`.
+
+**Verifisering (Chrome iPhone 390×844, Stasjonskvartalet 3D+audio):** triade borte; kapittelvelger med aktiv-indikator + hopp; odometer roll-up/down bekreftet på både velger-hopp og swipe; swipe begge retninger via pointer (mus *og* touch); drag følger fingeren (track `translateY(-140px)` mid-drag) → snap → re-sentrering sømløst; tapp=pause guardet; `outro→megler` bekreftet. `tsc` rent, `eslint` rent, **58/58 reels-tester grønne**. **Neste:** Andreas reviewer visuelt + pusher/PR; swipe-terskel/kurve + evt. swipe-animasjon også ved velger-hopp (i dag diskret bytte) kan finjusteres; «steder vs punkter»-ordvalg står åpent.
+
+---
+
+## 2026-06-16 — Mobil rapport-board rebygd til to-flate-modell (autonomt /full-løp)
+
+Branch `feat/mobil-rapport-board-ux` (fra `feat/event-board-foundation`), 6 commits, **ikke pushet**. Kjørt som fullt autonomt `/full`-løp (brainstorm → plan → tech-audit → work → code-review → compound) etter at Andreas meldte 7 UX-funn fra iPhone-gjennomgang og dro.
+
+**Problemet:** mobil presset narrativ avspilling og kart-utforskning inn i én bottom-sheet med fire snap-states + beat-koblede affordanser → for mye chrome, dobbel CTA, pan/zoom-bar mini-kart, død «Swipe opp»-hint, ingen avspillings-GUI, og en lock-bug på «oppsummering» (fullskjerm-kart dekket feeden, ingen vei ut).
+
+**Løsningen — to flater + én vedvarende transport:** erstattet 4-snap-enumet med avledet `mapOpen`-flate (historie ↔ kart), nullstilt per beat → exits ble flate-koblet, ikke beat-koblet (lock-bug umulig). Ny `ReelsTransport` (play/pause + segmentert progress + tappbare segment-hopp + n/total + kontekstuell veksler) på begge flater. Progress-gated kart-teaser (samme persistente `gmp-map-3d` avslørt + pointer-events-skjold). ⚙ FAB-progressiv avsløring av Auto/Fri/Kart/3D. Slettet gammel `MapLayer` + `ReelsStack`; `StoryProgressBar` ekstrahert til delt modul (desktop byte-identisk).
+
+**Tech-audit (YELLOW) fanget før kode:** B2 pekte på feil fil (`handleTrackEnded` bor i ReelsAudioShell, ikke orchestration), `CategoryReel` leser `currentPhase`, `MapView3D.tsx`-sti finnes ikke, ingen mobil no-audio-fallback (kun splash+3D), A3 måtte være additiv. Alt korrigert i planene.
+
+**Code-review + emulering fanget 4 ekte bugs:** (1) ⚙ FAB kolliderte med transport → topp-høyre; (2) advance-timer overlevde backgrounding + seek-til-samme-kapittel → fire-time-guard + visibilitychange-clear; (3) race der VO-slutt på kart-flaten rykket bruker av kartet → `!mapOpen`-guard; (4) play på summary/megler spilte stale outro-VO → restart-fra-start. Fjernet dødt `mapMounted`-state + IntroReel «Swipe opp»-orphan.
+
+**Verifisering:** Chrome devtools iPhone (390×844) på Stasjonskvartalet (3D+audio) — hele flyten gjennomgått, lock-bugen bekreftet borte, alle 9 transport-segmenter tappbare hele veien. `npm run build` exit 0, tsc rent, 54 reels-tester grønne, lint rent. **Neste:** Andreas reviewer visuelt + pusher/PR når tilbake; teaser-timing (`CATEGORY_TEASER_MS=3500`) + teaser-glimt-høyde (38%) kan finjusteres; fake-timers-test for advance-timer er deferred. Doc: `docs/solutions/architecture-patterns/mobile-two-surface-reels-model-20260616.md`.
+
+---
+
+## 2026-06-10 (kveld) — Hotell-dashboard iterasjon 2: kort-karusell, tre mat-kort, thumbs, AI-lenker
+
+Fortsettelse i samme worktree (`../placy-ralph-hotell`, branch `feat/hotell-dashboard`, dev :3002). To commits (`15f7d04`, `2286eb3`), ikke pushet. Bento-gridet fra MVP-en er erstattet med horisontal kort-karusell etter UI/UX-feedback fra Andreas. Parkert her foreløpig — neste arbeid på flaten skjer på direkte bestilling.
+
+**1. Karusell-layout (erstatter bento-grid).** Horisontal scroll-snap-rekke: nøyaktig 3,5 kort synlig på desktop (`w-[calc((100vw-7rem)/3.5)]`), ~1,2 på mobil (`w-[82vw]`) — samme swipe-mønster begge steder. Kort er **75dvh faste uten intern scroll** (var 90 i første utkast, justert ned samme sesjon): de er smakebiter, dybden ligger i kart-drill-in. Native CSS scroll-snap, ingen swiper.js-avhengighet. Slide-affordance med tre standard mønstre: peek av neste kort, klikkbare paginerings-dots som følger scrollen (aktiv = emerald-pill), pil-knapper på desktop (disabled i endene). «Vis på kart» løftet til full-bredde emerald-knapp med kart-ikon — kortets klart tydeligste CTA. Radantall per kort kalibrert mot 75dvh og verifisert `scrollHeight == clientHeight` på alle seks kort.
+
+**2. Mat & drikke splittet i tre kort:** Restauranter / Pub & bar / Kaféer (kafé inkluderer bakeri). Kort-definisjonene er nå presentasjonslag (`HOTELL_TILE_DEFS` i `hotell-board-data.ts`) frikoblet fra provisjonerings-temaene — alle tre mat-kort driller inn til samme `?tema=mat-drikke` på boardet via `boardTheme`-felt. Hotellets utsalg fordelt per kort via `tileId` på `HotelVenue` (Speilsalen+Jonathan Grill→restauranter, Vinbaren→pub-bar, Palmehaven→kaféer).
+
+**3. Transport-kortet utvidet:** nærmeste buss (live Entur, beholdt) + **to** nærmeste bysykkelstativ (live GBFS) + tre statiske rader fra ny `staticTransport`-config per hotell i `hotel-venues.ts`: taxiholdeplass Dronningens gate, Værnesekspressen, elsparkesykler (Ryde/Voi — ingen scooter-API i stacken, statisk tekst). **4. Shopping mall-first:** kjøpesentre (kategori `shopping`) alltid øverst — Byhaven/Olavskvartalet/Trondheim Torg; Mercurgarden ryker på kvalitetsgulvet (<4,0) men minimumskravet ≥3 sentre holdes — deretter enkeltbutikker med diversity-cap 2/kategori.
+
+**5. 64×64-thumbs uten API-kost:** gjenbruker `featuredImage` lagret under enrichment (lh3.googleusercontent, allerede whitelistet i next.config) — **null nye Google photo-kall** (koster penger). Gotcha: gamle lagrede foto-URL-er 403-er etter en stund → `onError`-fallback i `Thumb` til kategori-tonet placeholder-pin. 403-ene synes fortsatt som konsoll-støy, UI alltid helt. **6. Google AI Mode-lenke per POI:** diskret sparkle-ikonknapp ytterst på raden → `google.com/search?udm=50&q=<navn>, <gateadresse>` i ny fane — adressen disambiguerer kjedenavn (Espresso House). Én touch-target i bredden, radene holder seg luftige.
+
+**Verifisering:** Chrome MCP 390px + 1440px — klipping-måling per kort, dots-sync ved programmatisk scroll, pil-klikk, AI-href, live avganger/bysykkel-ledighet. tsc rent, 0 lint-errors, 719/719 tester. **Kjent småplukk:** dots ligger rundt folden på små telefoner (header + 75dvh + dots > 100vh) — krymp mobil-header eller flytt dots opp hvis det plager; 403-konsollstøy fra utløpte bilde-URL-er (kosmetisk, vurder foto-refresh-script senere).
+
+---
+
+## 2026-06-10 — Hotell-nærområde-dashboard (Britannia-prototype) — ny vertikal på rapport-board-fundamentet
+
+Sesjon i ny worktree `../placy-ralph-hotell` (branch `feat/hotell-dashboard`, dev :3002), committet lokalt (`ff0f4c3`), ikke pushet. Startet som sparring → `/ce-brainstorm` → doc-review (5 persona-agenter) → direkte bygging med Chrome MCP-verifisering. **Strategisk kontekst:** hotell-aksen eksplisitt reaktivert som avgrenset parallell-spor (amender 2026-06-09-parkeringen — se `docs/strategy/LOG.md` 2026-06-10). Requirements + MVP-designbeslutninger: `docs/brainstorms/2026-06-10-hotell-naromrade-dashboard-requirements.md`.
+
+**1. Konsept:** White-label nærområde-flate for hotellgjester — QR på rom/lobby → `/hotell/britannia/britannia-hotel`: liste-først bento-forside («nærmeste X») i hotellets navn, med hotellets egne utsalg øverst i mat-lista («Hos oss på hotellet» — Speilsalen/Palmehaven/Jonathan Grill/Vinbaren, uten rating-badge, unntatt kvalitetsgulv, og filtrert UT av nabolisten). Fire ruter: Mat & Drikke, Transport (live Entur + bysykkel via delt `useRealtimeData`/`POIRealtimeSection`), Severdigheter & Kultur, Shopping. Gåtid = haversine × 1,3 gatenett-faktor / 80 m/min (bevisst uten Mapbox Matrix-avhengighet). Kartet er drill-in per rute, ikke forside. Norsk v1; `noindex` til Britannia-samtykke (varemerkebruk pre-kontakt).
+
+**2. Pipeline-utvidelse:** Ny `--profile hotell` i `provision-rapport.ts` — `HOTELL_THEME_DEFAULTS` (4 temaer), 800 m sentrums-radius, `venue_type: "hotel"`, `HOTELL_GOOGLE_CATEGORIES` (gjeste-vinkel: severdigheter/klesbutikker inn, gym/frisør/lege ut). **To nye Google-kategorier i `poi-discovery.ts`:** `tourist_attraction` (id `attraction` — valid-types må inkludere `church`/`place_of_worship`, ellers filtrerer junk-guarden bort Nidarosdomen) og `clothing_store`. Kategorier auto-upsertes ved import (`import-pois.ts`) → ingen migrasjon. Britannia provisjonert: 213 POI-er, 11 holdeplasser m/Entur-ID, 28 bysykkelstasjoner m/stasjons-ID.
+
+**3. Rangeringslogikk (`lib/hotell-board/hotell-board-data.ts`):** Avstandssortert med rating-gulv (4,0) KUN for `CATEGORIES_WITH_RATING` (review-funn fra 3 personas: globalt gulv ville filtrert Nidarosdomen på irrelevant rating); tom rute faller tilbake til ufiltrert. **Severdigheter rangeres attraction-først på Google-rating som signifikans-proxy** (badge vises fortsatt ikke) — ren avstand lot PoMo/bibliotek skvise ut domkirka (sett live i Chrome, fikset). **Shopping har kategori-diversitet** (maks 2 per kategori) så Vinmonopolet/apotek/kjøpesenter ikke skvises av klesbutikk-tetthet. Hotell-utsalg som kodekonstant (`hotel-venues.ts`) nøklet på `customer_urlSlug` — flyttes til products.config ved hotell #2 (ship-over-refactor).
+
+**4. Kart-drill-in uten ISR-regresjon:** Ny `BoardDeepLink` (klient, montert i `ReportReelsPage`) leser `?tema=<kategori-id>` fra `window.location` ved mount og dispatcher `SELECT_CATEGORY` (source `index`). Bevisst IKKE `searchParams` server-side / `useSearchParams` — begge ville gjort den ISR-cachede rapport-board-ruta dynamisk. Verifisert objektivt: med `?tema=severdigheter` viser kartet kun severdigheter-markører, uten param alle ~150.
+
+**5. Verifisering:** Chrome MCP mobil (390px) + iPad (1024px) — bento-layout, «Hos oss»-seksjon, live avganger («Nå»-visning), bysykkel-status, drill-in. Tre innholds-patcher i Supabase etter visuell sjekk (engelske Google-navn → Nidarosdomen, Vitensenteret i Trondheim, Kristiansten festning). tsc rent, 0 lint-errors, 719/719 tester, ren konsoll. Kjent capture-begrensning: gmp-map-3d screenshotter svart — verifisert via a11y-snapshot i stedet.
+
+**Kjente gap (neste iterasjon):** engelske Google-navn på flere board-markører (kun drill-in-flaten), boardets splash/intro ligger mellom «Vis på kart» og kartet (vurder skip ved `?tema=`), engelsk språkdrakt er pilot-krav, transport-fallback ved API-feil er kodet men ikke feilinjisert-testet. **Outreach-mekanisme mot Britannias markedssjef er åpen strategibeslutning** (eies av Andreas, flagget i strategi-loggen).
+
+---
+
+## 2026-06-09 — Splash-rydding + venueType-copy + live transport i sidebar-rader
+
+Direkte sesjon (main, dev :3000), verifisert lokalt + deployet til prod i to omganger. Mål: stramme opp Teknostallen-splashen før demo-utsendelse til næringseiendom, og få sanntids transport-data inn der det teller for næring.
+
+**1. Splash-intro ryddet (begge varianter).** Fjernet «Bli kjent med»-eyebrow (logo-fallback + logo-variant), «Dette utforsker vi»-label og kategori-chip-raden — chipsene la til støy uten å si noe. Konsekvent **«nærområdet»** i stedet for «nabolaget» (jf. Eiendomsmegler1-læring øverst i loggen). Splash er nå: (logo hvis brand) → tittel → subline → intro → play. Slettet død `SplashCategory`-type + `splashCategories`-memo; `previewCategories` (sidebar empty-state) urørt.
+
+**2. venueType-tilpasset intro-copy.** `venueType` (`hotel`/`residential`/`commercial`) tråes nå `Project → ReportData → BoardData`. `commercial` får kontor-vinklet copy («restauranter, transport, trenings- og servicetilbud rett utenfor kontordøren»), `hotel` lobby-vinklet, bolig/udefinert standard. Teknostallen er `commercial` → treffer leietaker-perspektivet.
+
+**3. Live transport-data i kategori-detalj-radene (sidebar).** Samme `POIRealtimeSection` (Entur-avganger + bysykkel/bildeling) som kart-popupene viser nå også under hver transport-POI i «Verdt å merke seg». For næringseiendom er jobbreisen et kjøpsargument — avgangstider rett i sidebaren er høy verdi. Implementasjon:
+- `useRealtimeData` tar nå minimal `RealtimePOI`-form (id + transport-IDer) i stedet for hele `POI`; `POI` tilfredsstiller typen → alle eksisterende kall (3 popups + drawer) uendret.
+- `board-data.ts` tråder `enturStopplaceId`/`bysykkelStationId`/`hyreStationId` inn i `editorial.highlights`.
+- Ny `POIHighlightRow` kaller hooket null-trygt; ikke-transport-highlights rendrer kun header (`POIRealtimeSection` returnerer null) → restaurant-/trenings-rader ser ut som før.
+
+**Cache-avklaring (kunde-relevant).** Ruten har ISR: `export const revalidate = 3600` + `unstable_cache` (tag `product:{customer}_{slug}`). Konklusjon til bruker: nytt Vercel-deploy får **isolert, kald cache** → kode/UI-endringer er live umiddelbart, ingen manuell flush. `revalidate = 3600` gjelder kun Supabase-**innhold** innen ett deployments levetid (endrer du DB-tekst uten deploy: opptil 1t lag, eller `revalidateTag`). Live transport-data hentes client-side → alltid ferskt. Ny kunde med ren browser får alltid siste versjon på første klikk.
+
+**Deploy:** to commits til main (`3c83026` splash, `fd631d5` sidebar-transport) → Vercel prod-deploy, begge verifisert «success» via GitHub commit-status. TypeScript rent, 0 lint-errors, 576/576 tester (én splash-test fjernet med kategori-teaseren). Splash verifisert live på placy.no (hard-reload avdekket at første visning var browser-cache).
+
+---
+
+## 2026-06-09 — KLP-utsendelse (Teknostallen-demo) + Adressa-oppfølging
+
+Ikke-teknisk sesjon (outreach). Teknostallen-demo (`placy.no/eiendom/klp-eiendom/teknostallen/rapport-board`, basic-tier) sendt på e-post til Kine i KLP — åpner næringseiendom-sporet. Mailen leder med Teknostallen (basic: 3D-kart, POI, reisetider, sanntids buss/bysykkel — **ingen** reels/video) og peker på Stasjonskvartalet-fullversjonen (`placy.no/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board`) som «maksversjon» med reels + redaksjonell historiefortelling (Adressa Studio). Adressa-oppfølging (Hanne Mathisen + Berit Hongset, ansvarlige for Stasjonskvartalet/Diamanten) under utforming — re-aktivering med Stasjonskvartalet-demolink. **Strategisk logg:** `docs/strategy/LOG.md` + `aktor-map.md` (ny aktør KLP Eiendom + Adressa Studio).
+
+---
+
 ## 2026-06-08 (forts. 6) — Sanntids transport-data i rapport-board-popups + bysykkel "Stengt"-bug
 
 Branch-sesjon (`feat/board-popup-transport-live-data`, dev :3000). Mål: få sanntids kollektiv-avganger og bysykkel-tilgjengelighet tilbake i rapport-board — kritisk for næringseiendom (pendler-/jobbreise-perspektiv). Research + `/ce-plan` + `/ce-work`.

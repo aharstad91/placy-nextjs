@@ -148,6 +148,74 @@ export function posterForVideo(videoBgSrc: string | undefined): string | undefin
 }
 
 /**
+ * Poster/tittel for thumbnail-visning (desktop-stripa + mobil-rail). Audio-bærende
+ * kort bruker video-posteren (eller illustrasjonen); megler har ikke media →
+ * portrett brukes. Intro/summary har ingen thumbnail.
+ */
+export function thumbView(card: ReelsCard): { title: string; image?: string } {
+  switch (card.kind) {
+    case "welcome":
+    case "home":
+    case "category":
+    case "outro":
+      return {
+        title: card.label,
+        image: posterForVideo(card.videoBgSrc) ?? card.illustrationSrc,
+      };
+    case "megler":
+      return { title: card.label, image: card.brokers[0]?.photoUrl };
+    default:
+      return { title: "" };
+  }
+}
+
+/**
+ * "Spiller nå"-visning for mobil-transporten (Spotify-mønster): poster + tittel
+ * + meta-linje. Erstatter den abstrakte thumbnail-railen med ETT konkret, kjent
+ * now-playing-element som svarer «hva spilles, og hvor i løypa er jeg».
+ *
+ * Meta-linja er kort og kort-spesifikk:
+ *  - kategori: `{n} steder · {pos}/{antall kategorier}` (pos blant KATEGORIENE,
+ *    ikke hele tracks-arrayen — «kategori = sang»).
+ *  - welcome/home/outro/summary/megler: en passende undertekst.
+ */
+export function nowPlayingView(
+  cards: ReelsCard[],
+  cardIndex: number,
+): { title: string; meta: string; image?: string } {
+  const card = cards[cardIndex];
+  if (!card) return { title: "", meta: "" };
+  const image = thumbView(card).image;
+  const title = "label" in card ? card.label : "";
+  switch (card.kind) {
+    case "category": {
+      const categories = cards.filter(
+        (c): c is CategoryReelCard => c.kind === "category",
+      );
+      const pos = categories.indexOf(card) + 1;
+      const places = card.pois.length;
+      const meta =
+        places > 0
+          ? `${places} steder · ${pos}/${categories.length}`
+          : `${pos}/${categories.length}`;
+      return { title, meta, image };
+    }
+    case "welcome":
+      return { title, meta: "Introduksjon", image };
+    case "home":
+      return { title, meta: card.subline ?? "Nabolaget", image };
+    case "outro":
+      return { title, meta: "Oppsummering", image };
+    case "summary":
+      return { title, meta: "Oppsummering", image };
+    case "megler":
+      return { title, meta: "Ta kontakt", image };
+    default:
+      return { title, meta: "", image };
+  }
+}
+
+/**
  * Lengden på et lydspor i sekunder, avledet fra siste karakter-slutt-tid i
  * timings-dataen (ElevenLabs character-alignment). Brukes til lengde-pillen
  * på preview-kortene. Returnerer undefined når sporet mangler timings (spor
@@ -328,6 +396,20 @@ export function nextAudioBearingIndex(
   fromIndex: number,
 ): number {
   for (let i = fromIndex + 1; i < cards.length; i++) {
+    if (isAudioBearing(cards[i])) return i;
+  }
+  return -1;
+}
+
+/** Indeks til FORRIGE audio-bærende card før `fromIndex`, eller -1 om ingen.
+ *  Driver mobil-transportens ⏮-knapp (forrige kapittel). Speil av
+ *  `nextAudioBearingIndex`; hopper over ikke-audio-cards (intro/summary/megler),
+ *  så ⏮ fra summary/megler lander på outro. */
+export function prevAudioBearingIndex(
+  cards: ReelsCard[],
+  fromIndex: number,
+): number {
+  for (let i = fromIndex - 1; i >= 0; i--) {
     if (isAudioBearing(cards[i])) return i;
   }
   return -1;

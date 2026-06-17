@@ -14,6 +14,7 @@ import Map, { Marker as MapboxMarker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { POI } from "@/lib/types";
 import { Marker3DPin } from "./Marker3DPin";
+import { BlobMarker3D } from "./BlobMarker3D";
 import { RevealLayer3D, type RevealItem } from "./RevealLayer3D";
 import { ProjectSitePin } from "./ProjectSitePin";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
@@ -77,6 +78,14 @@ export interface MapView3DProps {
   };
   /** Per-POI opacity — poi.id → opacity (0–1). Default 1 for alle. */
   opacities?: Record<string, number>;
+  /**
+   * Når true: `pois` rendres som kompakte farge-prikker (`BlobMarker3D`) i
+   * stedet for fulle ikon-pins. Brukes i mobil story-mode-peek (sekundær flate)
+   * der full pin-tegning blir for fargerikt/krevende på lite format — samme
+   * lav-kognitiv-last-uttrykk som velkommen-beatens reveal-prikker. Default false
+   * (desktop + fullskjerm-kart beholder fulle pins).
+   */
+  compactMarkers?: boolean;
   /**
    * Reveal-sett (blobs + legend-pins) som tegnes inn sekvensielt på velkommen +
    * oppsummering — etableringen av nærområdet. Vises KUN når `showReveal` er true;
@@ -179,6 +188,38 @@ const Marker3DItem = memo(function Marker3DItem({
 });
 
 /**
+ * Kompakt markør — ren farge-prikk (`BlobMarker3D`) uten ikon/badge. Brukes når
+ * `compactMarkers` er på (mobil story-mode-peek): mange POI-er på lite format
+ * tegnes som lette prikker i stedet for fulle pins → mindre WebGL-raster, lavere
+ * kognitiv last, mindre visuell støy. Memoizert som den fulle varianten.
+ */
+const CompactMarker3DItem = memo(function CompactMarker3DItem({
+  poi,
+  opacity,
+  onPOIClick,
+}: {
+  poi: POI;
+  opacity: number;
+  onPOIClick?: (id: string) => void;
+}) {
+  return (
+    <Marker3D
+      position={{
+        lat: poi.coordinates.lat,
+        lng: poi.coordinates.lng,
+        altitude: 16,
+      }}
+      altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
+      onClick={() => onPOIClick?.(poi.id)}
+      title={poi.name}
+      zIndex={1}
+    >
+      <BlobMarker3D color={poi.category.color} opacity={opacity} />
+    </Marker3D>
+  );
+});
+
+/**
  * Orbit-as-default: Hijacker pointer/mouse-events på wrapper-divens capture-phase
  * og tvinger `ctrlKey=true` på mus-drags. Google's interne gesture-handler
  * tolker da alle drags som ROTATE (det som normalt krever Ctrl+drag) —
@@ -276,6 +317,7 @@ function Map3DInner({
   showReveal = false,
   animateReveal = true,
   freeMode = false,
+  compactMarkers = false,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -477,14 +519,23 @@ function Map3DInner({
           </Marker3D>
         )}
 
-        {pois.map((poi) => (
-          <Marker3DItem
-            key={poi.id}
-            poi={poi}
-            opacity={opacities?.[poi.id] ?? 1}
-            onPOIClick={onPOIClick}
-          />
-        ))}
+        {pois.map((poi) =>
+          compactMarkers ? (
+            <CompactMarker3DItem
+              key={poi.id}
+              poi={poi}
+              opacity={opacities?.[poi.id] ?? 1}
+              onPOIClick={onPOIClick}
+            />
+          ) : (
+            <Marker3DItem
+              key={poi.id}
+              poi={poi}
+              opacity={opacities?.[poi.id] ?? 1}
+              onPOIClick={onPOIClick}
+            />
+          ),
+        )}
 
         {/* Reveal-lag (velkommen + oppsummering) — eget marker-sett (blobs +
             legend-pins), adskilt fra pinnene over. Vises kun når showReveal. */}

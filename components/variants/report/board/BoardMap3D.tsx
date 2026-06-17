@@ -83,6 +83,9 @@ interface Props {
   /** Kalles når brukeren tar over kameraet ved å DRA i 3D-kartet (auto → fri).
    *  BoardMap setter fri-modus + viser recovery-hinten. */
   onDragTakeover: () => void;
+  /** Når true: kategori-POI-ene rendres som kompakte farge-prikker (mobil
+   *  story-mode-peek, sekundær flate) i stedet for fulle ikon-pins. Default false. */
+  compactMarkers?: boolean;
 }
 
 /**
@@ -108,7 +111,12 @@ interface Props {
  *   et kuratert top-3/kategori-ankersett i oversikt.
  * - Tegner walking-rute fra Home → aktiv POI via `RouteLayer3D`.
  */
-export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props) {
+export function BoardMap3D({
+  pendingCamera,
+  cameraMode,
+  onDragTakeover,
+  compactMarkers = false,
+}: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
@@ -638,6 +646,7 @@ export function BoardMap3D({ pendingCamera, cameraMode, onDragTakeover }: Props)
         cameraLock={cameraLock}
         freeMode
         pois={markerPOIs}
+        compactMarkers={compactMarkers}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}
