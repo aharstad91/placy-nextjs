@@ -10,6 +10,15 @@
  * `google_website`/`google_business_status` eksplisitt — uten denne fasen
  * scorer alle legitime Google-POIer `no_website` (0.45 < MIN_TRUST_SCORE)
  * og filtreres feilaktig bort.
+ *
+ * `facebook_url` POPULERES IKKE her: det er et manuelt/seed-felt (migration 033)
+ * + passthrough-mappinger som kun videresender eksisterende verdi. Enrichment
+ * skal ALDRI forsøke å fylle det (PRD 4 Unit 2 AC5).
+ *
+ * `google_rating`/`google_review_count` er REFRESH-felt med bevart import-verdi
+ * (`import-pois.ts`). De overskrives KUN når Place Details faktisk returnerer en
+ * verdi — manglende felt nulles IKKE (AC6: unngå stille data-tap; samme vern som
+ * foto-pathen i photo-api.ts).
  */
 
 import {
@@ -100,15 +109,27 @@ export async function enrichTrustSignals(options: {
                 result.failedPoiIds.push(entry.poiId);
                 return;
               }
+              // AC6: rating/review_count er refresh-felt med bevart import-verdi
+              // — overskriv KUN når Place Details returnerer en verdi, ellers
+              // ville `?? null` stille nulle ut eksisterende import-data.
+              const update: {
+                google_website: string | null;
+                google_business_status: string | null;
+                google_price_level: number | null;
+                google_rating?: number;
+                google_review_count?: number;
+              } = {
+                google_website: details.website || null,
+                google_business_status: details.businessStatus || null,
+                google_price_level: details.priceLevel ?? null,
+              };
+              if (details.rating !== undefined) update.google_rating = details.rating;
+              if (details.reviewCount !== undefined) {
+                update.google_review_count = details.reviewCount;
+              }
               const { error } = await supabase
                 .from("pois")
-                .update({
-                  google_website: details.website || null,
-                  google_business_status: details.businessStatus || null,
-                  google_price_level: details.priceLevel ?? null,
-                  google_rating: details.rating ?? null,
-                  google_review_count: details.reviewCount ?? null,
-                })
+                .update(update)
                 .eq("id", entry.poiId);
               if (error) {
                 result.errors.push(
