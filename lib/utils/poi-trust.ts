@@ -39,6 +39,15 @@ export const ALL_TRUST_FLAGS = [
 
 export type TrustFlag = typeof ALL_TRUST_FLAGS[number];
 
+/** Runtime-sett avledet fra samme single-source som TrustFlag-typen.
+ *  Brukes til å validere flag-verdier ved utrygge grenser (DB/admin-input). */
+export const VALID_TRUST_FLAGS: ReadonlySet<TrustFlag> = new Set(ALL_TRUST_FLAGS);
+
+/** Parse-guard: er verdien et gyldig TrustFlag? (avviser ukjente strenger/ikke-strenger) */
+export function isTrustFlag(value: unknown): value is TrustFlag {
+  return typeof value === "string" && VALID_TRUST_FLAGS.has(value as TrustFlag);
+}
+
 export interface TrustSignals {
   // Layer 1: Google data
   hasWebsite: boolean;
