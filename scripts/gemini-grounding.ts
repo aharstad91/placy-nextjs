@@ -35,6 +35,7 @@ import type {
   ReportThemeGrounding,
   ReportThemeGroundingSource,
 } from "../lib/types";
+import { isValidProjectIdShape } from "../lib/pipeline/project-id";
 
 config({ path: ".env.local" });
 
@@ -105,6 +106,19 @@ const DRY_RUN = !APPLY;
 if (!projectId) {
   console.error(
     "Usage: npx tsx scripts/gemini-grounding.ts <project_id> [--apply] [--force]",
+  );
+  process.exit(1);
+}
+
+// Form-vakt (Unit 07.8 AC2): project_id MÅ ha `{customer}_{slug}`-container-form
+// fordi cache-tag = `product:${projectId}`. En feilskrevet ID uten denne formen
+// ville ellers stille buste en ikke-eksisterende tag (revalidateTag no-op) — og
+// senere feile på fetch-asserten med en mindre tydelig melding. Fang det her.
+if (!isValidProjectIdShape(projectId)) {
+  console.error(
+    `Ugyldig project_id: "${projectId}". Forventet container-form {customer}_{slug} ` +
+      `(små bokstaver, tall og bindestrek, skjøtt med ett underscore), ` +
+      `f.eks. "intern_wesselslokka". Cache-tag blir product:${projectId}.`,
   );
   process.exit(1);
 }
@@ -469,7 +483,8 @@ async function main() {
   }
   console.log("Post-write: tema-felter (ex grounding) uendret");
 
-  // 11. Revalidate — tag matcher page-side wrapper (lib/data-server.ts getReportProductCached)
+  // 11. Revalidate — tag matcher page-side wrapper (getCachedReportProduct i
+  // rapport*/page.tsx, som tagger product:${customer}_${slug} via unstable_cache).
   await revalidate(`product:${projectId}`);
 
   console.log();
