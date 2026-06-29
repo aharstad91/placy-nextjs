@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { adaptBoardData } from "./board-data";
+import { adaptBoardData, isPlayableAudio, pickPlayableAudio } from "./board-data";
 import type { BoardPOI } from "./board-data";
 import type { ReportData, ReportTheme } from "../report-data";
-import type { POI } from "@/lib/types";
+import type { POI, ReportThemeAudio } from "@/lib/types";
 
 function makePOI(id: string, overrides: Partial<POI> = {}): POI {
   return {
@@ -356,5 +356,29 @@ describe("adaptBoardData — poisById + topRankedPois (r05.1 AC)", () => {
     const data = adaptBoardData(makeReportData([theme]));
     expect(data.categories[0].pois.map((p) => p.id)).toEqual(["a", "b", "c"]);
     expect(data.categories[0].topRankedPois.map((p) => p.id)).toEqual(["c", "a"]);
+  });
+});
+
+describe("isPlayableAudio + pickPlayableAudio (r05.2 — trim-variant, single source)", () => {
+  it("isPlayableAudio: url + ikke-tom manus → true", () => {
+    expect(isPlayableAudio({ url: "/a.mp3", manus: "manus" })).toBe(true);
+  });
+
+  it("isPlayableAudio: whitespace-only manus → false (konsolidert trim-variant)", () => {
+    expect(isPlayableAudio({ url: "/a.mp3", manus: "   " })).toBe(false);
+  });
+
+  it("isPlayableAudio: mangler url / tom manus / undefined → false", () => {
+    expect(isPlayableAudio({ manus: "m" } as ReportThemeAudio)).toBe(false);
+    expect(isPlayableAudio({ url: "/a.mp3", manus: "" })).toBe(false);
+    expect(isPlayableAudio(undefined)).toBe(false);
+  });
+
+  it("pickPlayableAudio: whitespace-only manus → undefined (samme trim som predikatet)", () => {
+    expect(pickPlayableAudio({ url: "/a.mp3", manus: "   " })).toBeUndefined();
+  });
+
+  it("pickPlayableAudio: gyldig → BoardAudioTrack (url + manus, timings når satt)", () => {
+    expect(pickPlayableAudio({ url: "/a.mp3", manus: "m" })).toEqual({ url: "/a.mp3", manus: "m" });
   });
 });

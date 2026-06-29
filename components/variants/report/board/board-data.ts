@@ -207,12 +207,32 @@ export function adaptBoardData(report: ReportData): BoardData {
  *  laget vet at spor ikke er klart. timings inkluderes når tilgjengelig
  *  (audioVersion 5+); ellers omittes (komponent rendrer karaoke som
  *  klartekst). */
-function pickPlayableAudio(
+/**
+ * Single source for VO-seleksjon (PRD 5 / r05.2). Ren boolean selection-test:
+ * audio er spillbar KUN når både `url` og en IKKE-tom (trimmet) `manus` finnes.
+ * Trim-varianten er konsolidert hit — whitespace-only manus ('   ') teller IKKE
+ * lenger som spillbar.
+ *
+ * Konsumenter: render (PRD 9 — viser VO betinget) + PRD 14 audio-store, som et
+ * ortogonalt data-presence-flagg. VO-seleksjon er NIVÅ-UAVHENGIG — PRD 2 er IKKE
+ * konsument (nivå-2-readiness sjekker ikke VO; den gamle report-tier.ts-duplikaten
+ * isPlayable/hasPlayableVO ble fjernet i PRD 2, ikke her).
+ */
+export function isPlayableAudio(a: ReportThemeAudio | undefined): boolean {
+  return Boolean(a?.url && a?.manus?.trim());
+}
+
+/**
+ * Bygg et spillbart BoardAudioTrack, eller undefined. Deler EKSAKT samme
+ * trim-betingelse som `isPlayableAudio` (én kilde, ingen drift).
+ */
+export function pickPlayableAudio(
   audio: ReportThemeAudio | undefined,
 ): BoardAudioTrack | undefined {
-  if (!audio?.url || !audio.manus) return undefined;
-  const track: BoardAudioTrack = { url: audio.url, manus: audio.manus };
-  if (audio.timings) track.timings = audio.timings;
+  if (!isPlayableAudio(audio)) return undefined;
+  // isPlayableAudio garanterer url-truthy + ikke-tom manus.
+  const track: BoardAudioTrack = { url: audio!.url!, manus: audio!.manus };
+  if (audio!.timings) track.timings = audio!.timings;
   return track;
 }
 
