@@ -109,4 +109,71 @@ describe("validateCuratedNarrative", () => {
     const result = validateCuratedNarrative(withInflection, reference);
     expect(result.ok).toBe(true);
   });
+
+  // AC4 (KRITISK): DANGEROUS_CHARS_RE UTEN /g i validator — lastIndex-gotcha.
+  // Et globalt regex har persistent lastIndex; .test() ville da gi falsk
+  // negativ på andre kall (søket starter forbi det farlige tegnet). Gjentatte
+  // kall MÅ avvise konsistent. Låser at /g IKKE "konsistens-fikses" inn for å
+  // matche sanitize-input.ts (som DERIMOT bruker /g — fordi .replace trenger det).
+  it("avviser farlige tegn konsistent ved gjentatte kall (no-/g)", () => {
+    const dangerous = LONG_VALID + "​"; // zero-width til slutt
+    for (let i = 0; i < 3; i++) {
+      const result = validateCuratedNarrative(dangerous, reference);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.join(" ")).toMatch(/zero-width|control|RTL/i);
+      }
+    }
+  });
+
+  // AC2: proper nouns matches case-insensitivt mot referansesettet.
+  it("matcher proper nouns case-insensitivt", () => {
+    const ref = {
+      geminiNarrative: "Stedet er kjent.",
+      poiNames: ["BYHAVEN", "MIDTBYEN"],
+    };
+    const curated =
+      "Byhaven og Midtbyen er sentrale strøk med butikker og kafeer. " +
+      "Her bor du nært det meste du trenger i en travel hverdag.";
+    const result = validateCuratedNarrative(curated, ref);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings).toEqual([]);
+  });
+
+  // AC2: substring-match ("Byhaven" i referansenavnet "Byhaven senter").
+  it("matcher proper noun som substring av referansenavn", () => {
+    const ref = {
+      geminiNarrative: "Området er fint.",
+      poiNames: ["Byhaven senter"],
+    };
+    const curated =
+      "Byhaven er et populært sted med mange butikker og spisesteder. " +
+      "Her finner du alt fra dagligvarer til klær i et hyggelig miljø.";
+    const result = validateCuratedNarrative(curated, ref);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings).toEqual([]);
+  });
+
+  // AC3: grensen ≤3 ukjente = warning (ok), >3 = error (sannsynlig hallusinering).
+  it("nøyaktig 3 ukjente = warning (ok); 4 ukjente = error", () => {
+    const ref = {
+      geminiNarrative: "Torget og Solsiden er kjente steder.",
+      poiNames: ["Torget", "Solsiden"],
+    };
+    const threeUnknown =
+      "Torget ligger sentralt og Solsiden er like ved. Alfaplass og " +
+      "Betaplass og Gammaplass finnes i nabolaget for nysgjerrige sjeler.";
+    const three = validateCuratedNarrative(threeUnknown, ref);
+    expect(three.ok).toBe(true);
+    if (three.ok) expect(three.warnings.length).toBeGreaterThan(0);
+
+    const fourUnknown =
+      "Torget ligger sentralt og Solsiden er like ved. Alfaplass og " +
+      "Betaplass og Gammaplass og Deltaplass finnes i et levende nabolag.";
+    const four = validateCuratedNarrative(fourUnknown, ref);
+    expect(four.ok).toBe(false);
+    if (!four.ok) {
+      expect(four.errors.join(" ")).toMatch(/unknown|hallucination/i);
+    }
+  });
 });

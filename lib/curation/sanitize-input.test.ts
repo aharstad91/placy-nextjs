@@ -10,14 +10,14 @@ describe("sanitizeGeminiInput", () => {
   });
 
   it("stripper zero-width chars", () => {
-    const input = "Byhaven\u200B er fint.\u200C"; // zero-width space + non-joiner
+    const input = "Byhaven​ er fint.‌"; // zero-width space + non-joiner
     const result = sanitizeGeminiInput(input);
     expect(result.sanitized).toBe("Byhaven er fint.");
     expect(result.strippedChars).toBeGreaterThan(0);
   });
 
   it("stripper RTL-override", () => {
-    const input = "Byhaven er\u202E bra.";
+    const input = "Byhaven er‮ bra.";
     const result = sanitizeGeminiInput(input);
     expect(result.sanitized).toBe("Byhaven er bra.");
   });
@@ -40,5 +40,42 @@ describe("sanitizeGeminiInput", () => {
     const result = sanitizeGeminiInput(input, { maxLength: 50 });
     expect(result.sanitized.length).toBe(50);
     expect(result.truncated).toBe(true);
+  });
+
+  // AC1: DANGEROUS_CHARS_RE MED /g — replace-all, ikke bare første treff.
+  // Låser /g eksplisitt (regresjon hvis noen "konsistens-fikser" bort /g her).
+  it("stripper ALLE farlige tegn (replace-all via /g) + teller dem", () => {
+    const input = "a​b‌c﻿d"; // zero-width space + non-joiner + BOM
+    const result = sanitizeGeminiInput(input);
+    expect(result.sanitized).toBe("abcd");
+    expect(result.strippedChars).toBe(3);
+  });
+
+  it("stripper BOM (U+FEFF)", () => {
+    const result = sanitizeGeminiInput("﻿Byhaven er fint.");
+    expect(result.sanitized).toBe("Byhaven er fint.");
+    expect(result.strippedChars).toBe(1);
+  });
+
+  it("stripper kontroll-tegn men beholder \\n og \\t", () => {
+    // U+0001 er farlig; \t (U+0009) + \n (U+000A) ligger i regex-hullene og bevares
+    const input = "abcd\te\nf";
+    const result = sanitizeGeminiInput(input);
+    expect(result.sanitized).toBe("abcd\te\nf");
+    expect(result.strippedChars).toBe(1);
+  });
+
+  it("teller flere markdown-lenker", () => {
+    const input = "[A](http://a.no) og [B](http://b.no) og [C](http://c.no)";
+    const result = sanitizeGeminiInput(input);
+    expect(result.sanitized).toBe("A og B og C");
+    expect(result.strippedLinks).toBe(3);
+  });
+
+  it("truncated=false når under max-lengde", () => {
+    const result = sanitizeGeminiInput("kort tekst");
+    expect(result.truncated).toBe(false);
+    expect(result.strippedLinks).toBe(0);
+    expect(result.strippedChars).toBe(0);
   });
 });
