@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   decideCameraIntent,
   bearingBetween,
@@ -8,6 +10,8 @@ import {
   orbitRangeForSpread,
   ORBIT_RANGE,
   POI_RANGE,
+  SUMMARY_RANGE,
+  CUT_FADE_MS,
   DEFAULT_CINEMATIC_MS,
   DERIVE_DRIFT_DEG,
   type CameraDecisionInputs,
@@ -415,5 +419,49 @@ describe("decideCameraIntent — autoOrbit:false (basic-tier hold)", () => {
       activePOI: { lat: 63.42, lng: 10.41 },
     });
     expect(intent.kind).toBe("poi");
+  });
+});
+
+// AC2: alle kamera-konstanter portet VERBATIM. Pinner de manifest-enumererte
+// verdiene direkte (de øvrige testene bruker dem kun som referanse → en stille
+// drift i en verdi ville ikke feilet noe). DERIVE_RANGE_MIN=810 er modul-privat
+// og pinnes indirekte via deriveCategoryCamera-klampen [810,850] over.
+describe("kamera-konstanter — verbatim-pinning (AC2)", () => {
+  it("ORBIT_RANGE = 650 (fast orbit-avstand, zoomer aldri ut for å ramme pins)", () => {
+    expect(ORBIT_RANGE).toBe(650);
+  });
+
+  it("POI_RANGE = 300 (tett inn ved åpnet POI)", () => {
+    expect(POI_RANGE).toBe(300);
+  });
+
+  it("SUMMARY_RANGE = 1100 (videre enn orbit, ikke fugleperspektiv)", () => {
+    expect(SUMMARY_RANGE).toBe(1100);
+  });
+
+  it("CUT_FADE_MS = 550 (cut-transition fade-varighet)", () => {
+    expect(CUT_FADE_MS).toBe(550);
+  });
+});
+
+// AC2: CUT_FADE_MS er ENESTE sannhetskilde — CameraCutOverlay + use-board-3d-camera
+// MÅ lese konstanten fra directoren (ikke redefinere `550`), ellers kan CSS-faden
+// og kamera-hoppet desynke. Source-nivå-vakt mot drift. (Leser fila via
+// process.cwd() — `import.meta.url`-URLer kaster under jsdom, memory-gotcha.)
+describe("CUT_FADE_MS — eneste sannhetskilde (AC2)", () => {
+  const read = (rel: string) =>
+    readFileSync(join(process.cwd(), "components/variants/report/board", rel), "utf8");
+
+  it("CameraCutOverlay importerer CUT_FADE_MS fra directoren og hardkoder ikke 550", () => {
+    const src = read("CameraCutOverlay.tsx");
+    expect(src).toMatch(/import\s*\{[^}]*\bCUT_FADE_MS\b[^}]*\}\s*from\s*["']\.\/board-3d-camera-director["']/);
+    expect(src).toMatch(/transitionDuration:\s*`\$\{CUT_FADE_MS\}ms`/);
+    expect(src).not.toContain("550");
+  });
+
+  it("use-board-3d-camera importerer CUT_FADE_MS fra directoren og hardkoder ikke 550", () => {
+    const src = read("use-board-3d-camera.ts");
+    expect(src).toMatch(/\bCUT_FADE_MS\b[\s\S]*from\s*["']\.\/board-3d-camera-director["']/);
+    expect(src).not.toContain("550");
   });
 });
