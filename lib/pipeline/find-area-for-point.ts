@@ -40,15 +40,6 @@ export interface FindAreaForPointResult {
   warnings: string[];
 }
 
-/** Rå rad fra Supabase før boundary/editorial-validering. */
-interface RawAreaRow {
-  id: string;
-  name_no: string;
-  level: string | null;
-  boundary: unknown;
-  report_editorial: unknown;
-}
-
 function isPolygonGeometry(value: unknown): value is GeoJsonPolygonGeometry {
   if (typeof value !== "object" || value === null) return false;
   const geom = value as { type?: unknown; coordinates?: unknown };
@@ -79,14 +70,14 @@ export async function findAreaForPoint(options: {
 
   // Kun kuraterte områder: boundary OG report_editorial må være satt.
   // supabase-js kaster aldri — { data, error } håndteres eksplisitt.
-  // `areas` er ikke i de genererte Database-typene (kun public-client-
-  // konsumenter til nå) — cast forbi table-name-unionen, radene valideres
-  // runtime under (repo-presedens: create-report-project.ts).
-  const { data, error }: {
-    data: RawAreaRow[] | null;
-    error: { message: string } | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } = await (supabase.from as any)("areas")
+  // v2-lesesti (PRD 8 Unit 1 / INDEX note #7): `areas` finnes KUN i v2-schemaet
+  // (re-provisjonert via PRD 3, ikke i `public`). v2-typene (r01.6) gjør
+  // `.schema("v2").from("areas")` fullt typet → det tidligere
+  // `(supabase.from as any)`-castet er fjernet (Unit 1 AC5). boundary/
+  // report_editorial er `Json | null` i typene og valideres runtime under.
+  const { data, error } = await supabase
+    .schema("v2")
+    .from("areas")
     .select("id, name_no, level, boundary, report_editorial")
     .not("boundary", "is", null)
     .not("report_editorial", "is", null);
@@ -108,13 +99,18 @@ export async function findAreaForPoint(options: {
       );
       continue;
     }
+    // Fang den narrowede boundary i en lokal const før videre kall (TS mister
+    // property-narrowing av row.boundary over funksjonskall ellers).
+    const boundary = row.boundary;
+
     // Defensivt: query-filteret garanterer non-null, men en ikke-objekt-verdi
     // (f.eks. feillagret streng eller array — typeof [] === "object") skal
     // aldri gi arv.
+    const editorial = row.report_editorial;
     if (
-      row.report_editorial === null ||
-      typeof row.report_editorial !== "object" ||
-      Array.isArray(row.report_editorial)
+      editorial === null ||
+      typeof editorial !== "object" ||
+      Array.isArray(editorial)
     ) {
       warnings.push(
         `⚠️  Område ${row.id} har ugyldig report_editorial — hoppet over`
@@ -122,8 +118,16 @@ export async function findAreaForPoint(options: {
       continue;
     }
     // GeoJSON-koordinater er [lng, lat] → x = lng, y = lat
-    if (pointInGeometry(lng, lat, row.boundary)) {
-      matches.push(row as CuratedArea);
+    if (pointInGeometry(lng, lat, boundary)) {
+      // boundary/editorial er runtime-validert over → bygg CuratedArea
+      // eksplisitt (ingen cast; v2-typene gir resten).
+      matches.push({
+        id: row.id,
+        name_no: row.name_no,
+        level: row.level,
+        boundary,
+        report_editorial: editorial,
+      });
     }
   }
 

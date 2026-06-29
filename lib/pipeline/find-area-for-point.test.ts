@@ -78,10 +78,17 @@ function buildMockSupabase(
     };
   }
 
+  // v2-lesesti (r08.1): koden gjør supabase.schema("v2").from("areas").select(...).
+  // .schema("v2") returnerer et objekt med .from (samme fromMock) slik at testene
+  // kan verifisere v2-targetingen (Unit 1 AC1) OG at .from ikke nås ved tidlig retur.
+  const fromMock = vi.fn(() => ({
+    select: vi.fn(() => makeChain(overrides.rows ?? [])),
+  }));
+  const schemaMock = vi.fn(() => ({ from: fromMock }));
+
   return {
-    from: vi.fn(() => ({
-      select: vi.fn(() => makeChain(overrides.rows ?? [])),
-    })),
+    schema: schemaMock,
+    from: fromMock,
     notCalls,
   };
 }
@@ -237,7 +244,28 @@ describe("findAreaForPoint — Unit 2", () => {
 
     expect(result.area).toBeNull();
     expect(result.warnings).toHaveLength(1);
+    expect(mockSupabase.schema).not.toHaveBeenCalled();
     expect(mockSupabase.from).not.toHaveBeenCalled();
+  });
+
+  it("oppslaget treffer v2-schemaet (.schema('v2').from('areas')) — Unit 1 AC1", async () => {
+    const mockSupabase = buildMockSupabase({
+      rows: [
+        {
+          id: "ranheim",
+          name_no: "Ranheim",
+          level: "strok",
+          boundary: ranheimBoundary,
+          report_editorial: ranheimEditorial,
+        },
+      ],
+    });
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    await findAreaForPoint({ lat: 63.43, lng: 10.52 });
+
+    expect(mockSupabase.schema).toHaveBeenCalledWith("v2");
+    expect(mockSupabase.from).toHaveBeenCalledWith("areas");
   });
 
   it("Supabase ikke konfigurert → kaster (config-feil, ikke runtime-fallback)", async () => {
