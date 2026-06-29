@@ -74,6 +74,7 @@ function parseArgs() {
   const customer = get("--customer") ?? DEFAULT_CUSTOMER;
   const dryRun = has("--dry-run");
   const allowUpdate = has("--update");
+  const has3dAddon = has("--addon-3d");
   const confirmCoordsStr = get("--confirm-coords");
   const profileStr = get("--profile") ?? "bolig";
 
@@ -109,7 +110,7 @@ function parseArgs() {
     reportTier = parsed.data;
   }
 
-  return { name, address, customer, dryRun, allowUpdate, confirmCoords, profile, reportTier };
+  return { name, address, customer, dryRun, allowUpdate, has3dAddon, confirmCoords, profile, reportTier };
 }
 
 // ── Nivå-deklarasjon ──────────────────────────────────────────────────────
@@ -297,7 +298,7 @@ async function acceptanceCheck(
 // ── Hoved-pipeline ────────────────────────────────────────────────────────
 
 async function main() {
-  const { name, address, customer, dryRun, allowUpdate, confirmCoords, profile, reportTier: tierFlag } =
+  const { name, address, customer, dryRun, allowUpdate, has3dAddon, confirmCoords, profile, reportTier: tierFlag } =
     parseArgs();
 
   // Sjekk env-variabler FØR noen writes
@@ -406,6 +407,7 @@ async function main() {
     updateCoords: allowUpdate,
     profile,
     reportTier,
+    has3dAddon,
   });
 
   for (const w of projectResult.warnings) log(w);

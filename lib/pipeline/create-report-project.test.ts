@@ -99,10 +99,23 @@ function buildMockSupabase(overrides: {
     return chain;
   };
 
-  return {
+  // v2-skrivesti (r03.5): koden gjør baseClient.schema("v2").from(...) →
+  // .schema returnerer samme mock (som har .from).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mock: any = {
     from: vi.fn((tableName: string) => makeFrom(tableName)),
     inserts,
   };
+  mock.schema = vi.fn(() => mock);
+  return mock;
+}
+
+function findProjectInsert(
+  inserts: { table: string; payload: Record<string, unknown> }[]
+): Record<string, unknown> {
+  const projectInsert = inserts.find((i) => i.table === "projects");
+  expect(projectInsert).toBeDefined();
+  return projectInsert!.payload;
 }
 
 function findProductConfig(
@@ -245,6 +258,56 @@ describe("createReportProject — Unit 1", () => {
     });
 
     expect(findProductConfig(mockSupabase.inserts).reportConfig?.reportTier).toBe(2);
+  });
+
+  it("AC2: has_3d_addon default false (ikke hardkodet true) — ortogonalt render-flagg", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    await createReportProject({
+      name: "Addon Default",
+      address: "Addon Default, Trondheim",
+      lat: 63.4,
+      lng: 10.4,
+      customerSlug: "placy-demo",
+    });
+
+    const insert = findProjectInsert(mockSupabase.inserts);
+    expect(insert.has_3d_addon).toBe(false);
+    // v2 NOT-NULL-felt satt eksplisitt
+    expect(insert.version).toBe(1);
+    expect(insert.default_product).toBe("report");
+  });
+
+  it("AC2: has3dAddon=true → has_3d_addon true (CLI --addon-3d)", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    await createReportProject({
+      name: "Addon On",
+      address: "Addon On, Trondheim",
+      lat: 63.4,
+      lng: 10.4,
+      customerSlug: "placy-demo",
+      has3dAddon: true,
+    });
+
+    expect(findProjectInsert(mockSupabase.inserts).has_3d_addon).toBe(true);
+  });
+
+  it("AC4: uten customerSlug brukes reservert default-kunde 'intern' → intern_<slug>", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    const result = await createReportProject({
+      name: "Intern Test",
+      address: "Intern Test, Trondheim",
+      lat: 63.4,
+      lng: 10.4,
+    });
+
+    expect(result.customerSlug).toBe("intern");
+    expect(result.projectId).toBe("intern_intern-test");
   });
 
   it("report-defaults.ts: alle 6 aktive temaer har ikke-tom leadText", () => {
