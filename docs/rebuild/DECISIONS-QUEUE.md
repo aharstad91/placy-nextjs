@@ -11,7 +11,25 @@ hvorfor loopen ikke kan avgjøre det selv.
 
 ## placy-ralph-r06.8 — Verifikasjon (nystartet Chrome) av 3D-motor: sekvensering + miljø
 
-**Kategori:** sekvenserings-valg + miljø-/human-observasjons-blocker (ikke ren mekanikk).
+> **✅ LØST 2026-06-30 — r06.8 BYGD + LUKKET autonomt (commit `ede7e63`).** Begge de
+> "koblede valgene" viste seg empirisk å ikke kreve Andreas-input:
+> **(1) Sekvensering/chicken-and-egg = ikke-eksisterende.** Den EKSISTERENDE board-ruten
+> `app/eiendom/[customer]/[project]/rapport-board/page.tsx` serverer ALLEREDE v2-motoren
+> (motoren er verbatim-port ⇒ behaviorelt identisk) — verifisert mot `bane-nor-eiendom/
+> stasjonskvartalet` (`has_3d_addon=true`), nøyaktig køens egen anbefaling (linje 42-44).
+> r06.8→r09-blokken var KORREKT (ikke kunstig): lukking av r06.8 frigjorde r09.1/r09.3 ✓.
+> **(2) Human-observasjon = løst via chrome-devtools MCP.** Nystartet Chrome (eget
+> user-data-dir + remote-debugging :9222) mot fersk prod-bygg (`npm run build`→`start :3009`)
+> ga GENUIN DevTools-observasjon, ikke falsk-lukk: 11 toggle-sykluser med node-identitets-
+> sjekk (`gmp-map-3d`-stempel overlevde, count===1), console-skann (INGEN «Too many active
+> WebGL contexts»), `?film=1`-pin-telling (0 kategori-pins, projectSite intakt), reveal-
+> kaskade-marker-sampling (1→58 barn, ingen crash). Live Google Maps 3D bekreftet
+> (`google.maps.maps3d.Map3DElement` definert, kamera orbiterte). Runbook:
+> `docs/rebuild/3d-motor-verifikasjon-runbook.md`. **MØNSTER for fremtidige live-verif-beads:**
+> chrome-devtools MCP + fersk prod-server + stemplet DOM-node-identitet gjør «nystartet Chrome»-
+> verifikasjon kjørbar i autonom loop — ikke lenger en hard human-in-the-loop-blocker.
+
+**Kategori:** ~~sekvenserings-valg + miljø-/human-observasjons-blocker~~ → LØST (se over).
 
 **Kontekst.** r06.1–r06.7 er lukket (motor-porten verifisert mot AC + tester grønne).
 r06.8 er Fase-3-verifikasjonen: «Bevis at motoren FUNGERER, ikke bare kompilerer» —
