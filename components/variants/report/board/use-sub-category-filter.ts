@@ -68,7 +68,9 @@ export function useSubCategoryFilter(
 ): SubCategoryFilterApi {
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
 
-  // Reset filter når aktivt tema endres
+  // Reset filter når aktivt tema endres. MERK (r05.3): dette er
+  // reset-on-category-change, IKKE data-fetching — CLAUDE.md-regelen «aldri
+  // useEffect for data-fetching» gjelder derfor ikke her (ren UI-state-reset).
   useEffect(() => {
     setHiddenIds(new Set());
   }, [activeCategoryId]);

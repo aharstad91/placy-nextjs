@@ -36,6 +36,11 @@ export interface BoardState {
  * (continuous-scroll narrative — audio playback should drive the scroll-panel,
  * not open legacy BoardDetailPanel). Omitted source retains the legacy
  * "active" transition for mobile and any unmigrated callers.
+ *
+ * ÅPENT Q7 (r05.3): diskriminatoren er selv-deklarert spike-arv
+ * (CARRY-OVER-MANIFEST.md:254 «kan forenkles»), MEN den bærer en live
+ * feedback-loop-guard som PRD 9 avhenger av — portet VERBATIM, IKKE forenklet.
+ * Eventuell forenkling avklares i Q7, ikke her.
  */
 export type SelectCategorySource = "scroll" | "rail" | "index" | "audio";
 
@@ -205,6 +210,12 @@ export function useActiveCategory() {
   return data.categories.find((c) => c.id === state.activeCategoryId) ?? null;
 }
 
+/**
+ * Board-versjonen av useActivePOI (r05.3). MERK navnekollisjon: dette er DISTINKT
+ * fra Explorer-storens `useActivePOI` (lib/store.ts:46) — board-laget driver POI-
+ * seleksjon via denne Context-reduceren, ikke Explorer-Zustand-storen. Importer
+ * fra board-state, ikke @/lib/store, i board-komponenter.
+ */
 export function useActivePOI() {
   const cat = useActiveCategory();
   const { state } = useBoard();
