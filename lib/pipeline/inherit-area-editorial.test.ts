@@ -162,23 +162,32 @@ function writtenConfig(patchCalls: FetchCall[]) {
   };
 }
 
-/** Mock pois-oppslaget som R9-klassifiseringen bruker. */
+/**
+ * Mock pois-oppslaget som R9-klassifiseringen bruker. Koden går via
+ * `supabase.schema("v2").from("pois")` (v2-targeting, INDEX note #7) →
+ * `.schema(...)` returnerer et objekt med samme `.from`-kjede. Returnerer
+ * `schemaMock` slik at tester kan asserte at v2-schemaet ble valgt.
+ */
 function mockPoisLookup(
   rows: Array<{ id: string; trust_score: number | null }>,
   error: { message: string } | null = null
 ) {
-  createServerClientMock.mockReturnValue({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        in: vi.fn((_col: string, ids: string[]) =>
-          Promise.resolve({
-            data: error ? null : rows.filter((r) => ids.includes(r.id)),
-            error,
-          })
-        ),
-      })),
+  const fromMock = vi.fn(() => ({
+    select: vi.fn(() => ({
+      in: vi.fn((_col: string, ids: string[]) =>
+        Promise.resolve({
+          data: error ? null : rows.filter((r) => ids.includes(r.id)),
+          error,
+        })
+      ),
     })),
+  }));
+  const schemaMock = vi.fn(() => ({ from: fromMock }));
+  createServerClientMock.mockReturnValue({
+    schema: schemaMock,
+    from: fromMock,
   } as never);
+  return { schemaMock, fromMock };
 }
 
 // ── Oppsett ───────────────────────────────────────────────────────────────
@@ -582,5 +591,59 @@ describe("inheritAreaEditorial", () => {
       body: "Tekst.",
       highlightPoiIds: ["c1", "c2"],
     });
+  });
+
+  // ── v2-targeting (AC4 + AC2): rå REST + R9-oppslag treffer v2-schemaet ─────
+
+  it("(n) AC4 — products GET bruker Accept-Profile: v2, PATCH bruker Content-Profile: v2 (rå REST → v2.products)", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": { body: "Tekst.", highlightCandidates: ["c1"] },
+      })
+    );
+    transformToReportDataMock.mockReturnValue(
+      board([{ id: "mat-drikke", poiIds: ["c1"] }])
+    );
+    const { getCalls, patchCalls } = stubFetch();
+
+    await inheritAreaEditorial(ARGS);
+
+    // GET leser fra v2-schemaet
+    const getHeaders = getCalls[0].init?.headers as Record<string, string>;
+    expect(getHeaders["Accept-Profile"]).toBe("v2");
+    // base-headers (apikey/Authorization) bevart sammen med profil-headeren
+    expect(getHeaders.apikey).toBe("test-service-key");
+    expect(getHeaders.Authorization).toBe("Bearer test-service-key");
+
+    // PATCH skriver til v2-schemaet
+    const patchHeaders = patchCalls[0].init?.headers as Record<string, string>;
+    expect(patchHeaders["Content-Profile"]).toBe("v2");
+    expect(patchHeaders["Content-Type"]).toBe("application/json");
+    expect(patchHeaders.Prefer).toBe("return=representation");
+  });
+
+  it("(o) AC2 — R9-klassifiseringen slår opp i v2.pois (.schema('v2'), ikke legacy public.pois)", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": { body: "Tekst.", highlightCandidates: ["paa-board", "off"] },
+      })
+    );
+    transformToReportDataMock.mockReturnValue(
+      board([{ id: "mat-drikke", poiIds: ["paa-board"] }])
+    );
+    // "off" havner i pendingDrops → tvinger R9-oppslaget til å kjøre
+    const { schemaMock, fromMock } = mockPoisLookup([
+      { id: "off", trust_score: 0.9 },
+    ]);
+    stubFetch();
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    // R9 kjørte og klassifiserte den off-board kandidaten via v2-oppslaget
+    expect(result.highlights.dropped).toEqual([
+      { themeId: "mat-drikke", id: "off", reason: "utenfor-board" },
+    ]);
+    expect(schemaMock).toHaveBeenCalledWith("v2");
+    expect(fromMock).toHaveBeenCalledWith("pois");
   });
 });

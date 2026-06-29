@@ -8,7 +8,10 @@
  *      config urørt (R2: nivå 1-fallback)
  *   2. Board-settet beregnes via SAMME kodesti som rendering
  *      (`getProductFromSupabase` → `transformToReportData`) — aldri
- *      replikerte filtre som kan drifte
+ *      replikerte filtre som kan drifte. Den underliggende lese-stien
+ *      (`getProductFromSupabase`) treffer `v2`-schemaet (AC1 / INDEX note #7);
+ *      selve read-path-retargetingen eies av read-path-PRD-en og koordineres
+ *      der (utenfor denne filas scope) — arve-steget KALLER bare stien
  *   3. Per tema i `area.report_editorial`: gå gjennom `highlightCandidates`
  *      i kurator-prioritert rekkefølge, behold de første inntil
  *      MAX_HIGHLIGHTS som finnes i temaets filtrerte `allPOIs`. Hver droppet
@@ -114,7 +117,13 @@ async function classifyDroppedCandidates(
   const supabase = createServerClient();
   if (!supabase) return fallbackAll("Supabase ikke konfigurert");
 
+  // v2-targeting (INDEX note #7): board-settet (AC1) leses fra v2-schemaet og
+  // trust-scorene lever på `v2.pois` i rebuilden — R9-reconciliasjonen MÅ
+  // derfor slå opp i SAMME data-univers (`.schema("v2")`), ikke legacy
+  // `public.pois` (slette-listen). Reconciliasjon mot feil schema ville
+  // mis-klassifisere (v2-POI uten public-tvilling → feilaktig "ikke-i-db").
   const { data, error } = await supabase
+    .schema("v2")
     .from("pois")
     .select("id, trust_score")
     .in("id", ids);
@@ -202,11 +211,16 @@ export async function inheritAreaEditorial(options: {
   getUrl.searchParams.set("product_type", "eq.report");
   getUrl.searchParams.set("select", "id,config,updated_at");
 
+  // v2-targeting (AC4 / INDEX note #7): rå REST treffer `public` som default —
+  // `Accept-Profile: v2` på GET / `Content-Profile: v2` på PATCH velger
+  // `v2.products`. v2 er eksponert via `pgrst.db_schemas = 'public,…,v2'`.
   // Timeout/nettverksfeil på GET er fail-soft (som !ok): warning + skip,
   // ingenting skrevet — kun skrivefeil skal kaste høylytt (se modulheader).
   let getRes: Response;
   try {
-    getRes = await fetchWithTimeout(getUrl.toString(), { headers });
+    getRes = await fetchWithTimeout(getUrl.toString(), {
+      headers: { ...headers, "Accept-Profile": "v2" },
+    });
   } catch (e) {
     result.warnings.push(
       `⚠️  Henting av products-rad feilet (${e instanceof Error ? e.message : "ukjent"}) — editorial-arv hoppet over (ingenting skrevet)`
@@ -367,6 +381,9 @@ export async function inheritAreaEditorial(options: {
       method: "PATCH",
       headers: {
         ...headers,
+        // v2-targeting (AC4): Content-Profile velger v2-schemaet for både
+        // skrivingen og return=representation-rader. Skriver `v2.products`.
+        "Content-Profile": "v2",
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
