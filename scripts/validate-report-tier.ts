@@ -2,7 +2,7 @@
 /**
  * validate:tier — nivå-vakthund for rapport-boardet.
  *
- * Validerer at deklarert `reportConfig.reportTier` (1/2/3) er fullt dekket av
+ * Validerer at deklarert `reportConfig.reportTier` (1/2) er fullt dekket av
  * faktisk innhold, over BEGGE datakilder:
  *   - lokal JSON: data/projects/*\/*.json (prototype-prosjekter)
  *   - Supabase:   products-rader med product_type=report (kunde-boards)
@@ -28,7 +28,6 @@ import {
   summarizeTierFindings,
   type ReportTierFinding,
 } from "../lib/validation/report-tier";
-import { getCameraTour } from "../components/variants/report/board/camera-tours";
 
 config({ path: ".env.local" });
 
@@ -48,14 +47,11 @@ function runProject(
   source: Row["source"],
   slug: string,
   reportConfig: ReportConfig | undefined,
-  has3dAddon: boolean | undefined,
   poiIds: string[] | undefined,
 ): void {
   const findings = validateReportTier({
     slug,
     reportConfig,
-    has3dAddon,
-    cameraTour: getCameraTour(slug),
     poiIds,
   });
   const declared = reportConfig?.reportTier;
@@ -86,7 +82,6 @@ function runLocal(): void {
     let project: {
       urlSlug?: string;
       productType?: string;
-      has3dAddon?: boolean;
       reportConfig?: ReportConfig;
       pois?: { id: string }[];
     };
@@ -103,7 +98,6 @@ function runLocal(): void {
       "lokal",
       project.urlSlug ?? path.basename(file, ".json"),
       project.reportConfig,
-      project.has3dAddon,
       project.pois?.map((p) => p.id),
     );
   }
@@ -128,7 +122,7 @@ async function runSupabase(): Promise<boolean> {
   };
 
   const [projectsRes, productsRes] = await Promise.all([
-    fetch(`${SUPABASE_URL}/rest/v1/projects?select=id,url_slug,has_3d_addon`, {
+    fetch(`${SUPABASE_URL}/rest/v1/projects?select=id,url_slug`, {
       headers,
     }),
     fetch(
@@ -146,7 +140,6 @@ async function runSupabase(): Promise<boolean> {
   const projects = (await projectsRes.json()) as {
     id: string;
     url_slug: string;
-    has_3d_addon: boolean | null;
   }[];
   const products = (await productsRes.json()) as {
     id: string;
@@ -175,7 +168,6 @@ async function runSupabase(): Promise<boolean> {
       "supabase",
       slug,
       cfg.reportConfig as ReportConfig | undefined,
-      project?.has_3d_addon ?? undefined,
       undefined,
     );
   }

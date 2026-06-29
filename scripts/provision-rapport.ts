@@ -15,8 +15,8 @@
  *   --dry-run       Geocode + plan uten Supabase-writes
  *   --confirm-coords lat,lng  Hopp over interaktiv bekreftelse
  *   --update        Tillat re-kjøring mot eksisterende prosjekt
- *   --tier 1|2|3    Deklarert leveransenivå (hopp over interaktiv prompt).
- *                   1=Basic, 2=+Editorial, 3=Maks. Uten flagg spørres det
+ *   --tier 1|2      Deklarert leveransenivå (hopp over interaktiv prompt).
+ *                   1=Basic, 2=+Editorial. Uten flagg spørres det
  *                   interaktivt; non-TTY defaulter til 1.
  */
 
@@ -56,7 +56,6 @@ import {
   validateReportTier,
   summarizeTierFindings,
 } from "@/lib/validation/report-tier";
-import { getCameraTour } from "@/components/variants/report/board/camera-tours";
 import type { ReportConfig } from "@/lib/types";
 
 // ── Arg-parsing ───────────────────────────────────────────────────────────
@@ -103,7 +102,7 @@ function parseArgs() {
   if (tierStr !== undefined) {
     const parsed = ReportTierSchema.safeParse(Number(tierStr));
     if (!parsed.success) {
-      console.error("--tier må være 1, 2 eller 3");
+      console.error("--tier må være 1 eller 2");
       process.exit(1);
     }
     reportTier = parsed.data;
@@ -124,7 +123,7 @@ async function askReportTier(): Promise<ReportTier> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const svar = await new Promise<string>((resolve) => {
     rl.question(
-      "\nHvilket nivå skal boardet leveres på? 1=Basic, 2=+Editorial, 3=Maks [1]: ",
+      "\nHvilket nivå skal boardet leveres på? 1=Basic, 2=+Editorial [1]: ",
       resolve
     );
   });
@@ -133,7 +132,7 @@ async function askReportTier(): Promise<ReportTier> {
   if (trimmed === "") return 1;
   const parsed = ReportTierSchema.safeParse(Number(trimmed));
   if (!parsed.success) {
-    console.error("Ugyldig nivå — må være 1, 2 eller 3");
+    console.error("Ugyldig nivå — må være 1 eller 2");
     process.exit(1);
   }
   return parsed.data;
@@ -257,17 +256,10 @@ async function acceptanceCheck(
   // 2b. Nivå-validering: deklarert reportTier må være fullt dekket av
   // nettopp-skrevet config (lib/validation/report-tier.ts).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: projectRow } = await (supabase.from("projects") as any)
-    .select("has_3d_addon")
-    .eq("id", projectId)
-    .maybeSingle();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const reportConfig = (product?.config as any)?.reportConfig as ReportConfig | undefined;
   const tierFindings = validateReportTier({
     slug,
     reportConfig,
-    has3dAddon: projectRow?.has_3d_addon ?? undefined,
-    cameraTour: getCameraTour(slug),
   });
   const tierErrors = tierFindings.filter((f) => f.level === "error");
   if (tierErrors.length > 0) {

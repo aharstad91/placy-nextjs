@@ -102,7 +102,7 @@ async function main() {
   if (tierIdx >= 0) {
     const parsed = ReportTierSchema.safeParse(Number(args[tierIdx + 1]));
     if (!parsed.success) {
-      console.error("❌ --tier må være 1, 2 eller 3");
+      console.error("❌ --tier må være 1 eller 2");
       process.exit(1);
     }
     reportTier = parsed.data;
@@ -110,7 +110,7 @@ async function main() {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     const svar = await new Promise<string>((resolve) => {
       rl.question(
-        "Hvilket nivå skal boardet leveres på? 1=Basic, 2=+Editorial, 3=Maks [1]: ",
+        "Hvilket nivå skal boardet leveres på? 1=Basic, 2=+Editorial [1]: ",
         resolve
       );
     });
@@ -119,7 +119,7 @@ async function main() {
     if (trimmed !== "") {
       const parsed = ReportTierSchema.safeParse(Number(trimmed));
       if (!parsed.success) {
-        console.error("❌ Ugyldig nivå — må være 1, 2 eller 3");
+        console.error("❌ Ugyldig nivå — må være 1 eller 2");
         process.exit(1);
       }
       reportTier = parsed.data;
@@ -335,7 +335,7 @@ Options:
   --update            Oppdater eksisterende data (merger ny data)
   --skip-travel-times Skip reisetidsberegning (bruker frontend runtime)
   --skip-trails       Skip henting av sykkelruter/turstier fra Overpass
-  --tier 1|2|3        Deklarert leveransenivå (hopp over interaktiv prompt)
+  --tier 1|2          Deklarert leveransenivå (hopp over interaktiv prompt)
   --help, -h          Vis denne hjelpeteksten
 
 Eksempel:

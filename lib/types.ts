@@ -466,11 +466,13 @@ export interface ReportConfig {
   /** Deklarert leveransenivå for rapport-boardet — det kunden har kjøpt,
    *  eller det demoen er bygget for å vise. 1 = Basic (3D-kart, POI-er,
    *  reisetider, live transport), 2 = +Editorial (kuratert drill-in på alle
-   *  kategorier), 3 = Maks (+ audio-tur, reels-VO, camera-tours, brand).
-   *  `undefined` → nivå 1. Render-laget gater IKKE på feltet — det er
-   *  deklarasjon + validering (lib/validation/report-tier.ts), ikke en
-   *  runtime-bryter. Navnet unngår kollisjon med POI-ens `poiTier`. */
-  reportTier?: 1 | 2 | 3;
+   *  kategorier, admin-only). `undefined` → nivå 1. Ortogonale render-akser
+   *  (3D, VO, camera-tours, brokers, brand) gates IKKE på feltet — de drives
+   *  av egne flagg/data-presence (docs/rebuild/tier-kjerne-vs-overflate.md).
+   *  Feltet er deklarasjon + lett nivå-2-readiness-sjekk
+   *  (lib/validation/report-tier.ts), ikke en runtime-bryter. Navnet unngår
+   *  kollisjon med POI-ens `poiTier`. */
+  reportTier?: 1 | 2;
 }
 
 // === Origin Mode (for Explorer geolocation behavior) ===

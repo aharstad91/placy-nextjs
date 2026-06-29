@@ -38,7 +38,7 @@ function parseArgs(): { tier: ReportTier; dryRun: boolean; projectIds: string[] 
     tierIdx >= 0 ? Number(args[tierIdx + 1]) : NaN
   );
   if (!tierParsed.success) {
-    console.error("Bruk: --tier 1|2|3 [--dry-run] <projectId…>");
+    console.error("Bruk: --tier 1|2 [--dry-run] <projectId…>");
     process.exit(1);
   }
   const dryRun = args.includes("--dry-run");

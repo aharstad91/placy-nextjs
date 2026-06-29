@@ -241,10 +241,10 @@ describe("createReportProject — Unit 1", () => {
       lat: 63.4,
       lng: 10.4,
       customerSlug: "placy-demo",
-      reportTier: 3,
+      reportTier: 2,
     });
 
-    expect(findProductConfig(mockSupabase.inserts).reportConfig?.reportTier).toBe(3);
+    expect(findProductConfig(mockSupabase.inserts).reportConfig?.reportTier).toBe(2);
   });
 
   it("report-defaults.ts: alle 6 aktive temaer har ikke-tom leadText", () => {

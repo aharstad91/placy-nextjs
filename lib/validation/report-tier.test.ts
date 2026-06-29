@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ReportConfig, ReportThemeConfig } from "@/lib/types";
-import { getCameraTour } from "@/components/variants/report/board/camera-tours";
 import {
   validateReportTier,
   summarizeTierFindings,
@@ -19,10 +18,6 @@ function errorChecks(findings: ReportTierFinding[]): Set<string> {
   return new Set(errors(findings).map((f) => f.check));
 }
 
-function fullAudio(id: string) {
-  return { manus: `Manus for ${id}.`, url: `/audio/test/${id}.mp3` };
-}
-
 function theme(
   id: string,
   overrides: Partial<ReportThemeConfig> = {},
@@ -34,110 +29,19 @@ function theme(
     categories: [id],
     color: "#000000",
     editorial: { body: `Kuratert tekst om ${id}.` },
-    audio: fullAudio(id),
-    reelsAudio: fullAudio(`${id}-reels`),
     ...overrides,
   };
 }
 
-/** Komplett nivå 3-config, StasjonsKvartalet-formet. */
-function completeTier3Config(themeIds = ["transport", "mat-drikke"]): ReportConfig {
-  return {
-    reportTier: 3,
-    audioTourEnabled: true,
-    assets: { brand: true },
-    brokers: [
-      {
-        name: "Test Megler",
-        title: "Prosjektmegler",
-        phone: "000 00 000",
-        email: "test@example.no",
-        photoUrl: "",
-        officeName: "Testmegleren",
-      },
-    ],
-    welcomeAudio: fullAudio("welcome"),
-    heroAudio: fullAudio("hjem"),
-    outroAudio: fullAudio("outro"),
-    themes: themeIds.map((id) => theme(id)),
-  };
-}
-
-const CAMERA_TOUR = {
-  transport: {
-    a: { lat: 63.43, lng: 10.4, range: 1000, tilt: 50, heading: 200 },
-  },
-};
-
-// ─── Pre-løft Grilstad-fixture (R4-falsifikasjonsbevis) ─────────────────────
-
-interface GrilstadFixture {
-  slug: string;
-  has3dAddon: boolean | null;
-  cameraToursEntry: boolean;
-  poiIds: string[];
-  reportConfig: ReportConfig;
-}
-
-const grilstad = JSON.parse(
-  fs.readFileSync(
-    path.join(__dirname, "__fixtures__", "grilstad-pre-lift.json"),
-    "utf-8",
-  ),
-) as unknown as GrilstadFixture;
-
-describe("validateReportTier — falsifikasjon mot pre-løft Grilstad", () => {
-  it("deklarert nivå 3 feiler med nøyaktig de tre reelle manglene", () => {
-    // Camera-status er FROSSET i fixturen (cameraToursEntry: false) — live
-    // getCameraTour-oppslag ville brutt beviset når Unit 6 legger inn entryen.
-    const findings = validateReportTier({
-      slug: grilstad.slug,
-      reportConfig: { ...grilstad.reportConfig, reportTier: 3 },
-      has3dAddon: grilstad.has3dAddon ?? undefined,
-      cameraTour: grilstad.cameraToursEntry ? CAMERA_TOUR : undefined,
-      poiIds: grilstad.poiIds,
-    });
-
-    // brand-assets er warning, ikke error → kun camera-tours + has3d-addon blokkerer.
-    expect(errorChecks(findings)).toEqual(
-      new Set(["camera-tours", "has3d-addon"]),
-    );
-
-    // Allerede til stede pre-løft → skal IKKE rapporteres som mangler:
-    // editorial (alle 7) og VO (manus-only reelsAudio faller tilbake til
-    // spillbart audio-tur-spor — nøyaktig slik boardet spiller den live).
-    expect(errorChecks(findings).has("editorial")).toBe(false);
-    expect(errorChecks(findings).has("vo")).toBe(false);
-
-    // brand-assets + brokers surfacer som warnings (skall/placeholder-filosofien),
-    // highlightPoiIds resolver alle → ingen highlight-warnings.
-    const warnings = findings.filter((f) => f.level === "warning");
-    expect(new Set(warnings.map((w) => w.check))).toEqual(
-      new Set(["brand-assets", "brokers"]),
-    );
-  });
-
-  it("samme tilstand deklarert nivå 2 består (ærlig re-deklarering)", () => {
-    const findings = validateReportTier({
-      slug: grilstad.slug,
-      reportConfig: { ...grilstad.reportConfig, reportTier: 2 },
-      has3dAddon: grilstad.has3dAddon ?? undefined,
-      cameraTour: undefined,
-      poiIds: grilstad.poiIds,
-    });
-    expect(errors(findings)).toEqual([]);
-  });
-});
-
 // ─── Kjerne-scenarier ───────────────────────────────────────────────────────
 
 describe("validateReportTier — nivå 1", () => {
-  it("nivå 1-config uten editorial/audio består", () => {
+  it("nivå 1-config uten editorial består", () => {
     const findings = validateReportTier({
       slug: "basic",
       reportConfig: {
         reportTier: 1,
-        themes: [theme("transport", { editorial: undefined, audio: undefined, reelsAudio: undefined })],
+        themes: [theme("transport", { editorial: undefined })],
       },
     });
     expect(errors(findings)).toEqual([]);
@@ -178,6 +82,18 @@ describe("validateReportTier — nivå 2", () => {
     expect(errs[0].detail).toContain("transport");
   });
 
+  it("highlight alene (tom body) teller som editorial", () => {
+    const findings = validateReportTier({
+      slug: "highlight-only",
+      reportConfig: {
+        reportTier: 2,
+        themes: [theme("a", { editorial: { body: "", highlightPoiIds: ["poi-1"] } })],
+      },
+      poiIds: ["poi-1"],
+    });
+    expect(errors(findings)).toEqual([]);
+  });
+
   it("tom body uten highlights teller ikke som editorial", () => {
     const findings = validateReportTier({
       slug: "empty-body",
@@ -189,111 +105,30 @@ describe("validateReportTier — nivå 2", () => {
     expect(errorChecks(findings)).toEqual(new Set(["editorial"]));
   });
 
-  it("nivå ≥2 uten temaer feiler", () => {
+  it("nivå 2 uten temaer feiler", () => {
     const findings = validateReportTier({
       slug: "no-themes",
       reportConfig: { reportTier: 2 },
     });
     expect(errorChecks(findings)).toEqual(new Set(["editorial"]));
   });
-});
 
-describe("validateReportTier — nivå 3", () => {
-  const base = () => ({
-    slug: "stasjonskvartalet",
-    reportConfig: completeTier3Config(),
-    has3dAddon: true,
-    cameraTour: CAMERA_TOUR,
-  });
-
-  it("komplett nivå 3-config består", () => {
-    expect(errors(validateReportTier(base()))).toEqual([]);
-  });
-
-  it("reels-VO alene holder som VO-spor (StasjonsKvartalet-modellen)", () => {
-    const input = base();
-    for (const t of input.reportConfig.themes!) t.audio = undefined;
-    expect(errors(validateReportTier(input))).toEqual([]);
-  });
-
-  it("audio-tur alene holder som VO-spor (Grilstad-modellen)", () => {
-    const input = base();
-    for (const t of input.reportConfig.themes!) t.reelsAudio = undefined;
-    expect(errors(validateReportTier(input))).toEqual([]);
-  });
-
-  it("manus-only på begge spor = ikke spillbart → vo-error", () => {
-    const input = base();
-    input.reportConfig.themes![0].audio = { manus: "Bare manus, ingen mp3." };
-    input.reportConfig.themes![0].reelsAudio = { manus: "Heller ingen mp3 her." };
-    const errs = errors(validateReportTier(input));
-    expect(errs).toHaveLength(1);
-    expect(errs[0].check).toBe("vo");
-    expect(errs[0].detail).toContain(input.reportConfig.themes![0].id);
-  });
-
-  it("audioTourEnabled sjekkes ikke (dødt flagg på boardet)", () => {
-    const input = base();
-    input.reportConfig.audioTourEnabled = false;
-    expect(errors(validateReportTier(input))).toEqual([]);
-  });
-
-  it("manglende welcome/hjem/outro-VO feiler per spor", () => {
-    const input = base();
-    input.reportConfig.outroAudio = { manus: "Outro uten mp3." };
-    const errs = errors(validateReportTier(input));
-    expect(errs).toHaveLength(1);
-    expect(errs[0].check).toBe("vo");
-    expect(errs[0].detail).toContain("outro");
-  });
-
-  it("tom camera-tour-entry teller som manglende", () => {
-    const input = base();
-    input.cameraTour = {} as typeof CAMERA_TOUR;
-    expect(errorChecks(validateReportTier(input))).toEqual(
-      new Set(["camera-tours"]),
-    );
-  });
-
-  it("assets.brand false/mangler gir warning, ikke error (skall-filosofi)", () => {
-    const input = base();
-    input.reportConfig.assets = { brand: false };
-    const findings = validateReportTier(input);
-    expect(errors(findings)).toEqual([]);
-    expect(findings.filter((f) => f.level === "warning").map((f) => f.check)).toEqual([
-      "brand-assets",
-    ]);
-  });
-
-  it("manglende brokers gir warning, ikke error (megler-blokk)", () => {
-    const input = base();
-    input.slug = "uten-demo-megler"; // ikke i project-brand.ts PROJECT_BROKERS
-    input.reportConfig.brokers = undefined;
-    const findings = validateReportTier(input);
-    expect(errors(findings)).toEqual([]);
-    expect(findings.filter((f) => f.level === "warning").map((f) => f.check)).toContain(
-      "brokers",
-    );
-  });
-
-  it("demo-megler-fallback (kjent slug) tilfredsstiller megler-kravet uten reportConfig.brokers", () => {
-    const input = base();
-    input.slug = "stasjonskvartalet"; // har demo-megler i project-brand.ts
-    input.reportConfig.brokers = undefined;
-    expect(validateReportTier(input).filter((f) => f.check === "brokers")).toEqual([]);
-  });
-
-  it("placeholder-broker (≥1) tilfredsstiller megler-kravet", () => {
-    const input = base();
-    input.reportConfig.brokers = [
-      { name: "X (placeholder)", title: "Megler", phone: "0", email: "x@y.no", photoUrl: "", officeName: "Z" },
-    ];
-    expect(validateReportTier(input).filter((f) => f.check === "brokers")).toEqual([]);
+  it("ortogonale akser (VO/3D/brokers/brand) sjekkes IKKE på nivå 2", () => {
+    // Nivå 2 uten audio, has_3d_addon, camera-tours, brokers eller brand —
+    // alt skal være grønt fordi editorial er den eneste nivå-2-gaten.
+    const findings = validateReportTier({
+      slug: "editorial-only",
+      reportConfig: {
+        reportTier: 2,
+        themes: [theme("a"), theme("b")],
+      },
+    });
+    expect(findings).toEqual([]);
   });
 });
 
 describe("validateReportTier — ugyldig deklarasjon", () => {
-  it.each([[4], ["3"], [0]])("reportTier %j avvises", (bad) => {
+  it.each([[4], ["2"], [0], [3]])("reportTier %j avvises", (bad) => {
     const findings = validateReportTier({
       slug: "bad",
       reportConfig: { reportTier: bad } as unknown as ReportConfig,
@@ -340,17 +175,16 @@ describe("validateReportTier — highlight-resolusjon", () => {
 });
 
 describe("summarizeTierFindings", () => {
-  it("oppsummerer i «deklarert nivå 3, mangler: …»-stil", () => {
+  it("oppsummerer i «deklarert nivå 2, mangler: …»-stil", () => {
     const findings: ReportTierFinding[] = [
-      { level: "error", check: "camera-tours", detail: "x" },
-      { level: "error", check: "has3d-addon", detail: "y" },
-      { level: "error", check: "has3d-addon", detail: "z" },
+      { level: "error", check: "editorial", detail: "x" },
+      { level: "error", check: "editorial", detail: "y" },
       { level: "warning", check: "highlight-poi", detail: "w" },
     ];
-    expect(summarizeTierFindings(3, findings)).toBe(
-      "deklarert nivå 3, mangler: camera-tours, has3d-addon",
+    expect(summarizeTierFindings(2, findings)).toBe(
+      "deklarert nivå 2, mangler: editorial",
     );
-    expect(summarizeTierFindings(3, [])).toBe("nivå 3 OK");
+    expect(summarizeTierFindings(2, [])).toBe("nivå 2 OK");
     expect(summarizeTierFindings(undefined, [])).toBe("nivå 1 OK");
   });
 });
@@ -375,7 +209,6 @@ describe("lokale prosjekter (data/projects)", () => {
     for (const file of files) {
       const project = JSON.parse(fs.readFileSync(file, "utf-8")) as {
         urlSlug?: string;
-        has3dAddon?: boolean;
         reportConfig?: ReportConfig;
         pois?: { id: string }[];
       };
@@ -385,8 +218,6 @@ describe("lokale prosjekter (data/projects)", () => {
       const findings = validateReportTier({
         slug,
         reportConfig: project.reportConfig,
-        has3dAddon: project.has3dAddon,
-        cameraTour: getCameraTour(slug),
         poiIds: project.pois?.map((p) => p.id),
       });
       expect

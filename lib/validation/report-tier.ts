@@ -1,58 +1,39 @@
-import type {
-  CategoryCameraConfig,
-  ReportConfig,
-  ReportThemeAudio,
-  ReportThemeEditorial,
-} from "@/lib/types";
-import { getProjectBrokers } from "@/lib/themes/project-brand";
+import type { ReportConfig, ReportThemeEditorial } from "@/lib/types";
 import {
   OptionalReportTierSchema,
   type ReportTier,
 } from "./report-tier-schema";
 
 /**
- * Nivå-validering for rapport-boardet.
+ * Lett nivå-2-readiness-sjekk for rapport-boardet (to-nivå-modell).
  *
- * Deklarert `reportTier` (1/2/3) er kontrakten — satt av produkteier ved
- * oppsett. Hvert nivå har en enkel liste required elements; validatoren
- * sjekker at de er fylt inn (se
- * docs/brainstorms/2026-06-10-placy-tier-modell-requirements.md):
+ * Deklarert `reportTier` (1/2) er kontrakten — satt av produkteier ved oppsett:
  *
- *   Nivå 1 (Basic):     ingen krav utover grunnoppsettet — alltid grønn.
+ *   Nivå 1 (default): autonomt generert, ingen krav utover grunnoppsettet — alltid grønn.
  *   Nivå 2 (+Editorial): `editorial` (ikke-tom body eller ≥1 highlight) på ALLE temaer.
- *   Nivå 3 (Maks):       nivå 2 + spillbart VO-spor på alle temaer og
- *                        welcome/hjem/outro + camera-tours-entry for sluggen +
- *                        has3dAddon + ansvarlig megler + assets.brand.
  *
- * VO-kravet speiler render-laget 1:1: boardet spiller
- * `pickPlayable(reelsAudio) ?? pickPlayable(audio)` der playable = manus+url
- * (board-data.ts `pickPlayableAudio`, reels-data.ts `c.reelsAudio ?? c.audio`).
- * Hvilket av de to sporene som bærer VO-en er en implementasjonsakse, ikke et
- * nivå-krav — StasjonsKvartalet kjører på reelsAudio, Grilstad på audio.
- * `audioTourEnabled` er et dødt flagg på boardet og sjekkes ikke
- * (verifisert 2026-06-10: ingen UI-konsument).
+ * Sjekken validerer KUN det som faktisk definerer nivå 2 + to trivielle
+ * data-sjekker (invalid-tier, highlight-poi). De ortogonale render-aksene
+ * (3D, VO, camera-tours, brokers, brand) gates IKKE her — de drives av egne
+ * flagg/data-presence i render-laget (PRD 9), ikke av nivå. Se kontrakten i
+ * docs/rebuild/tier-kjerne-vs-overflate.md §3/§4/§6.
  *
- * Ren funksjon uten I/O — camera-tours-oppslaget injiseres av driveren
- * (CLI-script, Vitest, acceptanceCheck) så kjernen er offline-testbar.
- * Funn er data, ingen throws; driverne oversetter til exit-koder/feilmeldinger.
+ * Ren funksjon uten I/O og uten render-lag-import — kun `poiIds` injiseres
+ * (for highlight-resolusjon) så kjernen er offline-testbar. Funn er data,
+ * ingen throws; driverne oversetter til exit-koder/feilmeldinger.
  */
 
 export interface ReportTierFinding {
   level: "error" | "warning";
-  /** Stabil sjekk-id: invalid-tier | editorial | vo | camera-tours |
-   *  has3d-addon | brokers | brand-assets | highlight-poi */
+  /** Stabil sjekk-id: invalid-tier | editorial | highlight-poi */
   check: string;
   detail: string;
 }
 
 export interface ReportTierProject {
-  /** url-slug — brukes i funn-tekster og av driveren til camera-tours-oppslag. */
+  /** url-slug — brukes i funn-tekster. */
   slug: string;
   reportConfig?: ReportConfig;
-  /** Bor utenfor reportConfig (Project/ProjectContainer-nivå, `has_3d_addon` i Supabase). */
-  has3dAddon?: boolean;
-  /** Resultatet av `getCameraTour(slug)` — injiseres så kjernen er ren. */
-  cameraTour?: Record<string, CategoryCameraConfig>;
   /** Prosjektets POI-ider for highlight-resolusjon. Utelatt → sjekken hoppes over
    *  (f.eks. Supabase-driveren som ikke henter POI-pool). */
   poiIds?: string[];
@@ -61,21 +42,6 @@ export interface ReportTierProject {
 function hasEditorialContent(e: ReportThemeEditorial | undefined): boolean {
   if (!e) return false;
   return (e.body?.trim().length ?? 0) > 0 || (e.highlightPoiIds?.length ?? 0) > 0;
-}
-
-/** Speiler board-data.ts `pickPlayableAudio`: spillbart = manus+url. */
-function isPlayable(a: ReportThemeAudio | undefined): boolean {
-  return Boolean(a?.url && a?.manus?.trim());
-}
-
-/** Effektivt VO-spor slik boardet velger det: reelsAudio vinner når spillbart,
- *  ellers audio-tur-sporet (reels-data.ts `c.reelsAudio ?? c.audio` på
- *  pickPlayable-filtrerte spor). */
-function hasPlayableVO(theme: {
-  audio?: ReportThemeAudio;
-  reelsAudio?: ReportThemeAudio;
-}): boolean {
-  return isPlayable(theme.reelsAudio) || isPlayable(theme.audio);
 }
 
 export function validateReportTier(
@@ -91,7 +57,7 @@ export function validateReportTier(
       {
         level: "error",
         check: "invalid-tier",
-        detail: `ugyldig reportTier-verdi ${JSON.stringify(rawTier)} — må være 1, 2 eller 3 (tall)`,
+        detail: `ugyldig reportTier-verdi ${JSON.stringify(rawTier)} — må være 1 eller 2 (tall)`,
       },
     ];
   }
@@ -116,7 +82,7 @@ export function validateReportTier(
     }
   }
 
-  if (tier >= 2) {
+  if (tier === 2) {
     if (themes.length === 0) {
       findings.push({
         level: "error",
@@ -135,75 +101,10 @@ export function validateReportTier(
     }
   }
 
-  if (tier === 3) {
-    const standalone = [
-      ["welcome", rc?.welcomeAudio],
-      ["hjem", rc?.heroAudio],
-      ["outro", rc?.outroAudio],
-    ] as const;
-    for (const [label, audio] of standalone) {
-      if (!isPlayable(audio)) {
-        findings.push({
-          level: "error",
-          check: "vo",
-          detail: `${label}-sporet mangler spillbar VO (manus+url)`,
-        });
-      }
-    }
-    for (const t of themes) {
-      if (!hasPlayableVO(t)) {
-        findings.push({
-          level: "error",
-          check: "vo",
-          detail: `${t.id}: mangler spillbart VO-spor (reelsAudio eller audio med manus+url)`,
-        });
-      }
-    }
-    if (!project.cameraTour || Object.keys(project.cameraTour).length === 0) {
-      findings.push({
-        level: "error",
-        check: "camera-tours",
-        detail: `ingen camera-tours-entry for slug "${project.slug}" (components/variants/report/board/camera-tours.ts)`,
-      });
-    }
-    if (project.has3dAddon !== true) {
-      findings.push({
-        level: "error",
-        check: "has3d-addon",
-        detail: "has3dAddon må være true — kino-kamera krever 3D-kart-addonet",
-      });
-    }
-    // Ansvarlig megler-blokk (slutt-card under reels). Speiler boardets gating:
-    // reportConfig.brokers vinner, ellers demo-fallback i project-brand.ts.
-    // Mangler begge → ingen megler-card rendres. Warning per skall-filosofien:
-    // placeholder-megler er nok struktur, ekte kontaktinfo fylles inn.
-    const hasBrokers =
-      (rc?.brokers?.length ?? 0) > 0 || getProjectBrokers(project.slug).length > 0;
-    if (!hasBrokers) {
-      findings.push({
-        level: "warning",
-        check: "brokers",
-        detail: "ingen ansvarlig megler — legg inn reportConfig.brokers (placeholder eller ekte) for megler-blokken under reels",
-      });
-    }
-    // brand-assets er WARNING, ikke error: per skall/placeholder-filosofien
-    // (2026-06-10) deklareres nivået, og brand (logo/splash/video) fylles inn
-    // når grafikken finnes. Manglende brand blokkerer ikke nivå 3 — den synes
-    // som en gjenstående oppgave. Sett `assets.brand: true` når filene
-    // (placeholder eller ekte) ligger på slug-konvensjonen.
-    if (rc?.assets?.brand !== true) {
-      findings.push({
-        level: "warning",
-        check: "brand-assets",
-        detail: "assets.brand er ikke satt — legg inn logo/splash/splash-video (placeholder eller ekte) og flipp flagget for full brand",
-      });
-    }
-  }
-
   return findings;
 }
 
-/** «deklarert nivå 3, mangler: camera-tours, has3d-addon»-stil for drivere. */
+/** «deklarert nivå 2, mangler: editorial»-stil for drivere. */
 export function summarizeTierFindings(
   declared: ReportTier | undefined,
   findings: ReportTierFinding[],

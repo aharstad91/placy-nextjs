@@ -5,20 +5,20 @@ import {
 } from "./report-tier-schema";
 
 describe("ReportTierSchema", () => {
-  it("godtar nivå 1, 2 og 3", () => {
+  it("godtar nivå 1 og 2", () => {
     expect(ReportTierSchema.parse(1)).toBe(1);
     expect(ReportTierSchema.parse(2)).toBe(2);
-    expect(ReportTierSchema.parse(3)).toBe(3);
   });
 
-  it("avviser tall utenfor 1–3", () => {
+  it("avviser tall utenfor 1–2 (inkl. det gamle nivå 3)", () => {
     expect(ReportTierSchema.safeParse(0).success).toBe(false);
+    expect(ReportTierSchema.safeParse(3).success).toBe(false);
     expect(ReportTierSchema.safeParse(4).success).toBe(false);
     expect(ReportTierSchema.safeParse(-1).success).toBe(false);
   });
 
-  it("avviser string-representasjon (\"3\")", () => {
-    expect(ReportTierSchema.safeParse("3").success).toBe(false);
+  it("avviser string-representasjon (\"2\")", () => {
+    expect(ReportTierSchema.safeParse("2").success).toBe(false);
     expect(ReportTierSchema.safeParse("1").success).toBe(false);
   });
 
