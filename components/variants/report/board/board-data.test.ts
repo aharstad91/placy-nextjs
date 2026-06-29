@@ -381,4 +381,65 @@ describe("isPlayableAudio + pickPlayableAudio (r05.2 — trim-variant, single so
   it("pickPlayableAudio: gyldig → BoardAudioTrack (url + manus, timings når satt)", () => {
     expect(pickPlayableAudio({ url: "/a.mp3", manus: "m" })).toEqual({ url: "/a.mp3", manus: "m" });
   });
+
+  // REGRESJONS-VAKT (r05.7 / §5.4-konsolidering): isPlayableAudio og
+  // pickPlayableAudio DELER eksakt samme trim-betingelse (én kilde —
+  // pickPlayableAudio kaller isPlayableAudio). Beviser at board-laget endrer
+  // VO-seleksjon fra dagens whitespace-truthy til trim-variant (matcher PRD 2s
+  // gamle isPlayable). Whitespace-only manus er det divergente tilfellet.
+  it("isPlayableAudio og pickPlayableAudio deler trim-betingelsen (whitespace-only manus)", () => {
+    const whitespaceManus: ReportThemeAudio = { url: "/a.mp3", manus: "   " };
+    // Begge enige om at whitespace-only manus IKKE er spillbar.
+    expect(isPlayableAudio(whitespaceManus)).toBe(false);
+    expect(pickPlayableAudio(whitespaceManus)).toBeUndefined();
+
+    // ...og enige om at ekte manus ER spillbar (samme inngang, samme svar).
+    const realManus: ReportThemeAudio = { url: "/a.mp3", manus: " ekte " };
+    expect(isPlayableAudio(realManus)).toBe(true);
+    expect(pickPlayableAudio(realManus)).toEqual({ url: "/a.mp3", manus: " ekte " });
+  });
+
+  // Symmetri-sjekk over hele grensen: for ethvert input gir pickPlayableAudio en
+  // definert track HVIS OG BARE HVIS isPlayableAudio er true (ingen drift mulig).
+  it("pickPlayableAudio er definert ⟺ isPlayableAudio er true (full ekvivalens)", () => {
+    const cases: (ReportThemeAudio | undefined)[] = [
+      undefined,
+      { url: "/a.mp3", manus: "m" },
+      { url: "/a.mp3", manus: "" },
+      { url: "/a.mp3", manus: "   " },
+      { manus: "m" } as ReportThemeAudio,
+      { url: "/a.mp3" } as ReportThemeAudio,
+    ];
+    for (const c of cases) {
+      expect(pickPlayableAudio(c) !== undefined).toBe(isPlayableAudio(c));
+    }
+  });
+});
+
+// DØDT FLAGG (r05.7 / §5 + §10 Q4): `audioTourEnabled` er bevart som FELT i
+// BoardData (PRD 6/9 leser BoardData-shapen) men brukes ALDRI som gating —
+// gating = spillbar-VO-tilstedeværelse (pickPlayableAudio), ikke dette flagget.
+// adaptBoardData speiler kun report.audioTourEnabled (strikt ===true) videre;
+// ingen UI-konsument. Disse testene låser den passive passthrough-semantikken
+// så ingen ved et uhell gjeninnfører gating-bruk.
+describe("audioTourEnabled (dødt flagg — passthrough, ikke gating)", () => {
+  it("defaulter til false når report.audioTourEnabled mangler", () => {
+    const data = adaptBoardData(makeReportData([makeTheme("x", [makePOI("p1")])]));
+    expect(data.audioTourEnabled).toBe(false);
+  });
+
+  it("speiler report.audioTourEnabled===true videre (strikt boolean, ikke truthy)", () => {
+    const dataTrue = adaptBoardData({
+      ...makeReportData([makeTheme("x", [makePOI("p1")])]),
+      audioTourEnabled: true,
+    });
+    expect(dataTrue.audioTourEnabled).toBe(true);
+
+    // Ikke-true verdi → false (=== true-sjekk, ikke truthy-coercion).
+    const dataTruthy = adaptBoardData({
+      ...makeReportData([makeTheme("x", [makePOI("p1")])]),
+      audioTourEnabled: 1 as unknown as boolean,
+    });
+    expect(dataTruthy.audioTourEnabled).toBe(false);
+  });
 });

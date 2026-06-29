@@ -3,6 +3,11 @@ import type { Project, POI, ReportThemeConfig } from "@/lib/types";
 import { applyTranslations } from "./apply-translations";
 import type { TranslationMap } from "@/lib/supabase/translations";
 
+// SIGNATUR-FORANKRING (r05.7 / §10 Q3): faktisk kode-signatur er
+// `applyTranslations(project, locale, translations)` — `project` FØRST
+// (apply-translations.ts:13), IKKE brief-rekkefølgen `(locale, project, ...)`.
+// Alle kall under bruker den ratifiserte (project, locale, translations)-formen.
+
 // applyTranslations only reads project.id, project.pois[].{id,editorialHook,localInsight}
 // and project.reportConfig.{heroIntro,themes[].{id,bridgeText}} — the rest of the
 // Project surface is irrelevant, so we cast a minimal fixture (same idiom as
