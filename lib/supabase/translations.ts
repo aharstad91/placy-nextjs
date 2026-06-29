@@ -4,9 +4,11 @@
  * Norwegian texts live in POI/product fields (canonical source).
  * English overrides are stored in the translations table.
  *
- * SERVER ONLY — do not import in client components.
+ * SERVER ONLY — the `server-only` import below makes a client-component
+ * import fail at build-time (enforced, not just documented).
  */
 
+import "server-only";
 import { supabase, isSupabaseConfigured } from "./client";
 import type { Locale } from "@/lib/i18n/strings";
 
@@ -34,7 +36,8 @@ export async function getProjectTranslations(
   const allEntityIds = [...poiIds, ...themeIds, ...productThemeIds, reportProductId];
   if (allEntityIds.length === 0) return {};
 
-  // TODO: Remove type casts after regenerating Supabase types to include translations table
+  // TODO(PRD 1): Remove this any-cast once PRD 1 regenerates DB types including the
+  // `translations` table (lib/supabase/types.ts). Until then the table is untyped.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from("translations")
