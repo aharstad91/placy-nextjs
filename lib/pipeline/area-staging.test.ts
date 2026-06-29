@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { parseAreaStaging } from "./area-staging";
+import { parseAreaStaging, ThemeEditorialStagingSchema } from "./area-staging";
+import { REPORT_THEME_DEFAULTS } from "./report-defaults";
 
 // ── Test-fixtures ─────────────────────────────────────────────────────────
 
@@ -242,5 +243,75 @@ describe("parseAreaStaging — valideringsfeil", () => {
     const staging = { ...validStaging(), reportEditorial: {} };
     const errors = expectFailure(staging);
     expect(errors.length).toBeGreaterThan(0);
+  });
+});
+
+// ── Bolig-profil-grense (AC4b) ──────────────────────────────────────────────
+
+describe("parseAreaStaging — bolig-profil-grense (AC4b)", () => {
+  it("hverdagstjenester (et NÆRINGS-tema) avvises som ukjent i bolig-scope", () => {
+    // VALID_THEME_IDS er avledet fra REPORT_THEME_DEFAULTS (bolig), IKKE
+    // getThemeDefaults(profile). Staging av et rent nærings-tema
+    // (hverdagstjenester/nabolaget) er derfor en dokumentert no-op: avvist som
+    // ukjent i bolig-scope, selv om id-en er et gyldig NAERING_THEME_DEFAULTS-tema.
+    const staging = validStaging();
+    (staging.report_editorial as Record<string, unknown>)["hverdagstjenester"] = {
+      body: "Dagligvare på vei til jobb.",
+      highlightCandidates: [],
+    };
+    const errors = expectFailure(staging);
+    const themeError = errors.find((e) => e.includes('"hverdagstjenester"'));
+    expect(themeError).toBeDefined();
+    expect(themeError).toContain("Ukjent tema-id");
+  });
+});
+
+// ── VALID_THEME_IDS-avledning (AC4) + eksportert kontrakt (AC2) ──────────────
+
+describe("VALID_THEME_IDS-avledning + ThemeEditorialStagingSchema-kontrakt", () => {
+  it("aksepterer ALLE 6 bolig-tema-IDer fra REPORT_THEME_DEFAULTS, uten duplikat (AC4)", () => {
+    // Avledet fra taksonomien (PRD 2), ikke hardkodet: nøyaktig 6, ingen duplikat.
+    expect(REPORT_THEME_DEFAULTS).toHaveLength(6);
+    const ids = REPORT_THEME_DEFAULTS.map((t) => t.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    // Hver gyldig bolig-tema-id passerer som report_editorial-nøkkel.
+    const report_editorial = Object.fromEntries(
+      ids.map((id) => [id, { body: "", highlightCandidates: [] }]),
+    );
+    const result = parseAreaStaging({
+      areaId: "x",
+      boundary: { type: "Polygon", coordinates: [closedRing()] },
+      report_editorial,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("ThemeEditorialStagingSchema er eksportert, .strict() og image? er ikke-tom (AC2)", () => {
+    // Arve-steget (inherit-area-editorial.ts:39/:264) gjenbruker dette skjemaet
+    // for å validere hver report_editorial-entry — kontrakten må holde.
+    expect(
+      ThemeEditorialStagingSchema.safeParse({
+        body: "t",
+        highlightCandidates: [],
+        ukjentFelt: 1,
+      }).success,
+    ).toBe(false);
+    expect(
+      ThemeEditorialStagingSchema.safeParse({ body: "t", highlightCandidates: [] }).success,
+    ).toBe(true);
+    expect(
+      ThemeEditorialStagingSchema.safeParse({
+        body: "t",
+        highlightCandidates: [],
+        image: "",
+      }).success,
+    ).toBe(false);
+    expect(
+      ThemeEditorialStagingSchema.safeParse({
+        body: "t",
+        highlightCandidates: [],
+        image: "scene.jpg",
+      }).success,
+    ).toBe(true);
   });
 });
