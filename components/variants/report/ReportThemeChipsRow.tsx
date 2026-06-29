@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { ReportTheme } from "./report-data";
-import { THEME_SCENE_SRC } from "./theme-icons";
+import { THEME_SCENE_SRC } from "@/lib/themes/theme-scene-src";
 
 interface ReportThemeChipsRowProps {
   themes: ReportTheme[];

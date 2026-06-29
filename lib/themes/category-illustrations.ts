@@ -1,4 +1,4 @@
-import { THEME_SCENE_SRC } from "@/components/variants/report/theme-icons";
+import { THEME_SCENE_SRC } from "@/lib/themes/theme-scene-src";
 import type { ProjectAssetFlags } from "@/lib/types";
 
 // Prosjekt-spesifikke kategori-illustrasjoner finnes som
