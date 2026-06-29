@@ -2,37 +2,30 @@
 
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
-import type { BoardCategoryId } from "@/components/variants/report/board/board-data";
+import type {
+  AudioTrack,
+  AudioTourPhase,
+  AudioTrackCategoryId,
+  UseAudioTourPhase,
+  UseCurrentTrack,
+} from "@/lib/audio-tour/beat-signal-contract";
 
 /**
  * Ephemeral, non-persisted Zustand-store for audio-tour-state. Sibling
  * til lib/stores/kompass-store.ts. Tour-state lever IKKE i BoardState
  * (per 2026-04-30 reading-phase-cleanup-disiplin) — sync til BoardContext
  * skjer i `use-audio-tour-sync.ts`.
+ *
+ * Beat-signal-typene (`AudioTrack`/`AudioTourPhase`/`AudioTrackCategoryId`) +
+ * selektor-signaturene eies av den hoistede Lag-2-kontrakten
+ * `@/lib/audio-tour/beat-signal-contract` (rC1) — denne store-en KONSUMERER og
+ * re-eksporterer dem for bakover-kompatibel import-flate. PRD 14s owner-impl
+ * (r14.6) skal honorere kontrakten verbatim.
  */
 
-/** Kategori-nøkkel for ett spor. "welcome" er tour-host-prat (kun ved
- *  tour-start), "home" er Hjem-pitchen og "outro" er avslutnings-sporet —
- *  ingen av dem er BoardCategory-er. */
-export type AudioTrackCategoryId =
-  | BoardCategoryId
-  | "welcome"
-  | "home"
-  | "outro";
-
-export interface AudioTrack {
-  categoryId: AudioTrackCategoryId;
-  url: string;
-  manus: string;
-  durationSec?: number;
-}
-
-export type AudioTourPhase =
-  | "idle"
-  | "playing"
-  | "paused"
-  | "ended"
-  | "error";
+// Re-eksporter kontrakt-typene for en bakover-kompatibel import-flate
+// (reels-data.ts m.fl. + testene importerer disse fra store-en).
+export type { AudioTrack, AudioTourPhase, AudioTrackCategoryId };
 
 export type PauseReason = "manual" | "category-clicked" | "audio-error";
 
@@ -185,13 +178,13 @@ export const useAudioTourStore = create<AudioTourState>()((set, get) => {
 
 // ─── Selector hooks ─────────────────────────────────────────────────────────
 
-export function useAudioTourPhase(): AudioTourPhase {
-  return useAudioTourStore((s) => s.phase);
-}
+// Beat-signal-selektorene (rC1-kontrakt). Type-bundet til kontrakt-signaturene
+// så owner-impl (r14.6) ikke kan drifte — håndhevd av beat-signal-contract.test.
+export const useAudioTourPhase: UseAudioTourPhase = () =>
+  useAudioTourStore((s) => s.phase);
 
-export function useCurrentTrack(): AudioTrack | undefined {
-  return useAudioTourStore((s) => s.tracks[s.trackIndex]);
-}
+export const useCurrentTrack: UseCurrentTrack = () =>
+  useAudioTourStore((s) => s.tracks[s.trackIndex]);
 
 export function useAudioTourMeta() {
   return useAudioTourStore(

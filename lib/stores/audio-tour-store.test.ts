@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useAudioTourStore, type AudioTrack } from "./audio-tour-store";
-import type { BoardCategoryId } from "@/components/variants/report/board/board-data";
+import type { BoardCategoryId } from "@/lib/board/board-types";
 
 const TRACKS: AudioTrack[] = [
   {
