@@ -326,3 +326,35 @@ describe("adaptBoardData", () => {
     });
   });
 });
+
+describe("adaptBoardData — poisById + topRankedPois (r05.1 AC)", () => {
+  it("poisById bruker LOWERCASE-nøkler (case-insensitiv grounding-resolusjon)", () => {
+    const data = adaptBoardData(
+      makeReportData([makeTheme("hverdagsliv", [makePOI("ABC-123")])])
+    );
+    expect(data.poisById.has("abc-123")).toBe(true);
+    expect(data.poisById.has("ABC-123")).toBe(false);
+  });
+
+  it("poisById dekker POIs på tvers av ALLE tema (cross-theme grounding-resolusjon)", () => {
+    // Grounding i ett tema kan referere en POI som lever i et annet tema
+    // (board-data.ts:166-167). poisById bygges fra report.themes (unfiltered),
+    // ikke fra ett enkelt tema, så slik resolusjon virker.
+    const themeA = makeTheme("hverdagsliv", [makePOI("a1")]);
+    const themeB = makeTheme("transport", [makePOI("b1")]);
+    const data = adaptBoardData(makeReportData([themeA, themeB]));
+    expect(data.poisById.has("a1")).toBe(true);
+    expect(data.poisById.has("b1")).toBe(true);
+  });
+
+  it("topRankedPois er score-rangert (theme.topRanked), separat fra distanse-sorterte pois", () => {
+    const a = makePOI("a");
+    const b = makePOI("b");
+    const c = makePOI("c");
+    // pois (distanse) i én rekkefølge, topRanked (score) i en annen
+    const theme = makeTheme("hverdagsliv", [a, b, c], { topRanked: [c, a] });
+    const data = adaptBoardData(makeReportData([theme]));
+    expect(data.categories[0].pois.map((p) => p.id)).toEqual(["a", "b", "c"]);
+    expect(data.categories[0].topRankedPois.map((p) => p.id)).toEqual(["c", "a"]);
+  });
+});

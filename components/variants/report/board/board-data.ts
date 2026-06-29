@@ -5,31 +5,21 @@ import type {
   ReportCTA,
   ReportSummary,
   ReportThemeAudio,
-  ReportThemeAudioTimings,
   ReportThemeGroundingView,
 } from "@/lib/types";
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
 import { getProjectBrokers } from "@/lib/themes/project-brand";
+import type {
+  BoardAudioTimings,
+  BoardAudioTrack,
+  BoardCategoryId,
+  BoardPOIId,
+} from "@/lib/board/board-types";
 
-/** Re-eksport av character-level alignment for forbruk i board-laget
- *  (KaraokePitchText). Holder import-graphen flat: komponenter
- *  importerer fra board-data, ikke fra @/lib/types direkte. */
-export type BoardAudioTimings = ReportThemeAudioTimings;
-
-/** Subset av ReportThemeAudio som er garantert komplett på runtime — kun
- *  audio med url+manus eksponeres til board-laget. Builder-funksjonen i
- *  adaptCategory/adaptBoardData filtrerer bort partial-audio (kun manus).
- *  timings er optional fordi spor generert før audioVersion 5 mangler det. */
-export interface BoardAudioTrack {
-  url: string;
-  manus: string;
-  timings?: BoardAudioTimings;
-}
-
-// Branded ID-typer forhindrer ID-blanding mellom theme-IDer og POI-IDer
-// i state-reducer og dispatch-calls.
-export type BoardCategoryId = string & { readonly __brand: "BoardCategoryId" };
-export type BoardPOIId = string & { readonly __brand: "BoardPOIId" };
+// Kanonisk type-hjem er lib/board/board-types.ts (PRD 5 / r05.1). Importeres for
+// intern bruk + re-eksporteres her så komponenter beholder en bakover-kompatibel
+// import-flate (de importerer fra board-data, ikke @/lib/types).
+export type { BoardAudioTimings, BoardAudioTrack, BoardCategoryId, BoardPOIId };
 
 export interface BoardPOI {
   id: BoardPOIId;
