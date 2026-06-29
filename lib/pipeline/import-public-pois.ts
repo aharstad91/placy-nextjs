@@ -2,8 +2,13 @@
  * Offentlige POI-kildar for basic-tier rapport-pipeline:
  * NSR (skoler), Barnehagefakta (barnehager), Overpass (idrettsanlegg).
  *
- * Deterministisk og seriell. Fail-soft per kilde — logg + fortsett.
+ * Deterministisk og seriell. Fail-soft per kilde — logg + fortsett (aldri abort).
  * Dedup via nsr_id/barnehagefakta_id/osm_id (DB-partial unique indexes).
+ *
+ * Skriver mot v2-skjemaet (`.schema('v2')`, PRD 3 / r03.4) — DISTINKT fra
+ * Google-discovery (import-pois.ts), aldri merget (manifest-patch konflikt #3).
+ * Nærings-profil hopper over denne kilden i sin helhet på kaller-nivå
+ * (provision-rapport.ts) — skoler/barnehager/idrett er ikke relevant for kontorbygg.
  */
 
 import { createServerClient } from "@/lib/supabase/client";
@@ -440,24 +445,57 @@ export interface ImportPublicPoisOptions {
   kommunenummer: string;
 }
 
+/**
+ * Kjør én kilde fail-soft (AC5 — aldri abort): en feil (fetch ELLER DB-skriving,
+ * inkl. en kastet `upsertAndLink`) logges som warning + telles 0, slik at de
+ * andre kildene kjører videre. De interne import*-funksjonene fail-softer allerede
+ * fetch-feil; denne wrapperen vokter også DB-skrive-feil som ellers ville propagert.
+ */
+async function runSource(
+  label: string,
+  warnings: string[],
+  fn: () => Promise<number>
+): Promise<number> {
+  try {
+    return await fn();
+  } catch (err) {
+    warnings.push(
+      `${label}: feilet (${err instanceof Error ? err.message : String(err)}). Pipeline fortsetter uten denne kilden.`
+    );
+    return 0;
+  }
+}
+
 export async function importPublicPois(
   options: ImportPublicPoisOptions
 ): Promise<ImportPublicPoisResult> {
-  const supabase = createServerClient();
-  if (!supabase) {
+  const baseClient = createServerClient();
+  if (!baseClient) {
     throw new Error("Supabase ikke konfigurert");
   }
+  // v2-skrivesti (PRD 3 / r03.4): scoped klient castes til public-typen (v2/public
+  // paritet) så alle helper-signaturer + .from()/.select()-kall er uendret; runtime
+  // treffer v2. Samme mønster som import-pois/mutations (Andreas: Option A).
+  const supabase = baseClient.schema("v2") as unknown as typeof baseClient;
 
   const { projectId, lat, lng, radiusMeters, kommunenummer } = options;
   const warnings: string[] = [];
 
-  // Seriell utførelse per kilde (maskin-hensyn)
-  const nsr = await importNSR(supabase, projectId, lat, lng, radiusMeters, kommunenummer, warnings);
-  const barnehagefakta = await importBarnehagefakta(supabase, projectId, lat, lng, radiusMeters, warnings);
-  const overpass = await importOverpass(supabase, projectId, lat, lng, radiusMeters, warnings);
+  // Seriell utførelse per kilde (maskin-hensyn), hver fail-soft (aldri abort).
+  const nsr = await runSource("NSR", warnings, () =>
+    importNSR(supabase, projectId, lat, lng, radiusMeters, kommunenummer, warnings)
+  );
+  const barnehagefakta = await runSource("Barnehagefakta", warnings, () =>
+    importBarnehagefakta(supabase, projectId, lat, lng, radiusMeters, warnings)
+  );
+  const overpass = await runSource("Overpass", warnings, () =>
+    importOverpass(supabase, projectId, lat, lng, radiusMeters, warnings)
+  );
 
   // Link eksisterende natur-POI-er fra DB (ingen external API)
-  const naturLinked = await linkNaturPois(supabase, projectId, lat, lng, radiusMeters, warnings);
+  const naturLinked = await runSource("Natur", warnings, () =>
+    linkNaturPois(supabase, projectId, lat, lng, radiusMeters, warnings)
+  );
   if (naturLinked > 0) {
     warnings.push(`ℹ️  Natur: linket ${naturLinked} eksisterende POI-er fra DB`);
   }

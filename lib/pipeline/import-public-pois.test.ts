@@ -33,6 +33,9 @@ function buildMockSupabase() {
   const naturResult = { data: [], error: null };
 
   const mockSupabase = {
+    // v2-skrivesti (r03.4): koden gjør baseClient.schema("v2").from(...) →
+    // .schema("v2") returnerer samme mock (som har .from).
+    schema: vi.fn(() => mockSupabase),
     from: vi.fn((table: string) => {
       if (table === "pois") {
         return {
@@ -148,6 +151,54 @@ describe("importPublicPois — Unit 2", () => {
     const result = await importPublicPois(BASE_OPTIONS);
     // Kun 1 navngitt POI − mocked returnerer 1 ID
     expect(result.counts.overpass).toBe(1);
+  });
+
+  it("v2-skrivesti: alle kall går via .schema('v2')", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ elements: [] }), status: 200 } as Response);
+
+    await importPublicPois(BASE_OPTIONS);
+
+    expect(mockSupabase.schema).toHaveBeenCalledWith("v2");
+  });
+
+  it("AC5: DB-upsert-feil i NSR → NSR fail-soft (0 + warning), andre kilder kjører videre (aldri abort)", async () => {
+    const mockSupabase = buildMockSupabase();
+    // NSR-upserten feiler på DB-nivå → upsertAndLink kaster → må fanges per kilde
+    mockSupabase.from = vi.fn((table: string) => {
+      if (table === "pois") {
+        return {
+          upsert: vi.fn().mockReturnValue({
+            select: vi.fn().mockResolvedValue({ data: null, error: { message: "DB nede" } }),
+          }),
+          select: vi.fn().mockReturnValue({ in: vi.fn().mockResolvedValue({ data: [], error: null }) }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [], error: null }) }),
+        delete: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ in: vi.fn().mockResolvedValue({ error: null }) }) }),
+        upsert: vi.fn().mockResolvedValue({ error: null }),
+      };
+    });
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(NSR_RESPONSES.threeSkoler), status: 200 } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response) // barnehagefakta tom
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ elements: [] }), status: 200 } as Response); // overpass tom
+
+    // Skal IKKE kaste — fail-soft fanger DB-feilen
+    const result = await importPublicPois(BASE_OPTIONS);
+
+    expect(result.counts.nsr).toBe(0);
+    expect(result.warnings.some((w) => w.includes("NSR: feilet"))).toBe(true);
+    // De andre kildene kjørte videre (tomme responser → "ingen"-warnings)
+    expect(result.warnings.some((w) => w.includes("Barnehagefakta: ingen"))).toBe(true);
+    expect(result.warnings.some((w) => w.includes("Overpass: ingen"))).toBe(true);
   });
 
   it("NSR-timeout → advarsel logges, pipeline fortsetter (overpass + bhf telles)", async () => {
