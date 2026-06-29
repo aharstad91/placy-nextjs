@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import type { Map as MapboxMap } from "mapbox-gl";
 import { mapboxAdapter, google3dAdapter, type GoogleMap3D } from "./map-adapter";
 
@@ -176,5 +178,70 @@ describe("google3dAdapter", () => {
         }),
       }),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit 06.5 — board-facade-grense (AC4)
+//
+// map-adapter.ts er reference-only og dør med scroll-modalen (UnifiedMapModal).
+// Boardets cancel/flyTo går via useBoard3DCamera (token-kansellering), IKKE via
+// map-adapter. AC4: "map-adapter.ts har INGEN board-konsument etter porten."
+// Source-nivå-vakt mot drift — leser filene via process.cwd() fordi
+// import.meta.url-fil-URLer kaster under jsdom-env (memory-gotcha).
+// ---------------------------------------------------------------------------
+describe("Unit 06.5 — board-facade-grense (AC4)", () => {
+  const boardDir = join(process.cwd(), "components/variants/report/board");
+  const boardFiles = readdirSync(boardDir).filter(
+    (f) => (f.endsWith(".ts") || f.endsWith(".tsx")) && !f.includes(".test."),
+  );
+
+  it("ingen board-fil importerer map-adapter (boardet bruker useBoard3DCamera)", () => {
+    const offenders = boardFiles.filter((f) =>
+      /from\s*["'][^"']*map\/map-adapter["']/.test(
+        readFileSync(join(boardDir, f), "utf8"),
+      ),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it("BoardMap3D bruker useBoard3DCamera som cancel/flyTo-fasade", () => {
+    const src = readFileSync(join(boardDir, "BoardMap3D.tsx"), "utf8");
+    expect(src).toMatch(
+      /import\s*\{[^}]*\buseBoard3DCamera\b[^}]*\}\s*from\s*["']\.\/use-board-3d-camera["']/,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit 06.5 — mapboxAdapter-cut er CUTOVER-DEFERRED (AC3)
+//
+// AC3 ber om at mapboxAdapter-grenen FJERNES. Den er cutover-koblet: eneste
+// gjenværende konsument er den reference-only scroll-modalen (UnifiedMapModal),
+// som AC4 eksplisitt sier skal FORLATES urørt til cutover (PendingCamera-typen
+// re-hjemles i Unit 7 først — PRD 06 §filtabell, l.119). UnifiedMapModal er
+// dessuten LIVE-rendret (ReportThemeSection/ReportOverviewMap) og type-checket
+// (tsconfig **/*.tsx), så å kutte mapboxAdapter nå bryter tsc. Denne sentinelen
+// låser koblingen: når UnifiedMapModal mister mapboxAdapter-bruken ved cutover,
+// feiler testen → signal om at AC3-kuttet nå kan fullføres.
+// ---------------------------------------------------------------------------
+describe("mapboxAdapter — cutover-deferred cut (AC3)", () => {
+  it("konsumeres fortsatt av reference-only UnifiedMapModal (kuttet utsatt til cutover)", () => {
+    const src = readFileSync(
+      join(process.cwd(), "components/map/UnifiedMapModal.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/\bmapboxAdapter\b/);
+  });
+
+  it("google3dAdapter er den bevarte cancel/flyTo-fasaden (tilt/heading/range)", () => {
+    // AC3-delen som ER innfridd nå: google3dAdapter bevarer 3D-posituren.
+    const map3d = createGoogle3DMock({ tilt: 70, heading: 30, range: 800 });
+    google3dAdapter(map3d).flyTo({ lat: 63.5, lng: 10.5 });
+    expect(map3d.flyCameraTo.mock.calls[0][0].endCamera).toMatchObject({
+      tilt: 70,
+      heading: 30,
+      range: 800,
+    });
   });
 });
