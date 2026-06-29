@@ -70,16 +70,19 @@ export async function hydrateReport(options: {
   centerLat: number;
   centerLng: number;
 }): Promise<HydrateReportResult> {
-  const supabase = createServerClient();
-  if (!supabase) {
+  const baseClient = createServerClient();
+  if (!baseClient) {
     throw new Error("Supabase ikke konfigurert");
   }
+  // v2-skrivesti (PRD 3 / r03.6 AC8): product_pois/product_categories-hydrering +
+  // POI-les går mot v2. v2-typene (r01.6) lar as-any-castene fjernes.
+  const db = baseClient.schema("v2");
 
   const { projectId, productId, centerLat, centerLng } = options;
   const warnings: string[] = [];
 
   // 1. Hent alle POI-er koblet til prosjektet
-  const { data: projectPois, error: ppError } = await supabase
+  const { data: projectPois, error: ppError } = await db
     .from("project_pois")
     .select("poi_id")
     .eq("project_id", projectId);
@@ -93,17 +96,22 @@ export async function hydrateReport(options: {
   const poiIds = projectPois.map((p) => p.poi_id);
 
   // 2. Slett eksisterende product_pois og re-insert fra project_pois (ren re-hydrering)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from("product_pois") as any).delete().eq("product_id", productId);
+  await db.from("product_pois").delete().eq("product_id", productId);
 
-  const productPoiRows = poiIds.map((poi_id) => ({ product_id: productId, poi_id }));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: linkError } = await (supabase.from("product_pois") as any)
+  // featured settes SIST (batch nedenfor) — ved re-link er alle false. v2.product_pois
+  // .featured er NOT NULL uten default (baseline 070:311) → eksplisitt false.
+  const productPoiRows = poiIds.map((poi_id) => ({
+    product_id: productId,
+    poi_id,
+    featured: false,
+  }));
+  const { error: linkError } = await db
+    .from("product_pois")
     .insert(productPoiRows);
   if (linkError) throw new Error(`product_pois linking feilet: ${linkError.message}`);
 
   // 3. Hent POI-data for scoring
-  const { data: poisData, error: poisError } = await supabase
+  const { data: poisData, error: poisError } = await db
     .from("pois")
     .select("id, category_id, lat, lng, google_rating, google_review_count")
     .in("id", poiIds);
@@ -159,18 +167,18 @@ export async function hydrateReport(options: {
     featuredIds.push(...catPois.slice(0, FEATURED_TOP_N).map((p) => p.id));
   }
 
-  // Marker featured
+  // Marker featured — ÉN batch-oppdatering (AC4), ikke per-POI-løkke
   let featuredMarked = 0;
-  for (const poiId of featuredIds) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: featError } = await (supabase.from("product_pois") as any)
+  if (featuredIds.length > 0) {
+    const { error: featError } = await db
+      .from("product_pois")
       .update({ featured: true })
       .eq("product_id", productId)
-      .eq("poi_id", poiId);
+      .in("poi_id", featuredIds);
     if (featError) {
-      warnings.push(`⚠️  Kunne ikke markere featured for POI ${poiId}: ${featError.message}`);
+      warnings.push(`⚠️  Kunne ikke markere featured: ${featError.message}`);
     } else {
-      featuredMarked++;
+      featuredMarked = featuredIds.length;
     }
   }
 
@@ -190,14 +198,11 @@ export async function hydrateReport(options: {
     }))
     .sort((a, b) => a.display_order - b.display_order);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from("product_categories") as any)
-    .delete()
-    .eq("product_id", productId);
+  await db.from("product_categories").delete().eq("product_id", productId);
 
   if (categoryRows.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: catError } = await (supabase.from("product_categories") as any)
+    const { error: catError } = await db
+      .from("product_categories")
       .insert(categoryRows);
     if (catError) {
       throw new Error(`product_categories insert feilet: ${catError.message}`);

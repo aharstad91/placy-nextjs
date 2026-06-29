@@ -29,7 +29,9 @@ const BUS_POI: TestPoi = { id: "bus-dronningens-gate", category_id: "bus", lat: 
 function buildMockSupabase(poiList = [NEAR_POI, FAR_POI]) {
   const projectPoisData = poiList.map((p) => ({ poi_id: p.id }));
 
-  return {
+  const mock = {
+    // v2-skrivesti (r03.6): koden gjør baseClient.schema("v2").from(...).
+    schema: vi.fn(),
     from: vi.fn((table: string) => {
       if (table === "project_pois") {
         return {
@@ -40,14 +42,15 @@ function buildMockSupabase(poiList = [NEAR_POI, FAR_POI]) {
       }
       if (table === "product_pois") {
         return {
-          // Ren re-hydrering: delete → insert, deretter update for featured.
+          // Ren re-hydrering: delete → insert, deretter ÉN batch-update for
+          // featured: .update({featured:true}).eq("product_id").in("poi_id", ids)
           delete: vi.fn().mockReturnValue({
             eq: vi.fn().mockResolvedValue({ error: null }),
           }),
           insert: vi.fn().mockResolvedValue({ error: null }),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              eq: vi.fn().mockResolvedValue({ error: null }),
+              in: vi.fn().mockResolvedValue({ error: null }),
             }),
           }),
         };
@@ -70,6 +73,8 @@ function buildMockSupabase(poiList = [NEAR_POI, FAR_POI]) {
       return {};
     }),
   };
+  mock.schema.mockReturnValue(mock);
+  return mock;
 }
 
 describe("hydrateReport — Unit 4", () => {
@@ -92,6 +97,10 @@ describe("hydrateReport — Unit 4", () => {
 
     expect(result.productPoisLinked).toBe(1);
     expect(result.warnings.some((w) => w.includes("0 av 0"))).toBe(false);
+    // AC4: NEAR_POI (innenfor 1500m) markeres featured via ÉN batch-update
+    expect(result.featuredMarked).toBe(1);
+    // AC8: v2-skrivesti
+    expect(mockSupabase.schema).toHaveBeenCalledWith("v2");
   });
 
   it("POI langt unna (>1500m) featured IKKE — høy rating til tross", async () => {

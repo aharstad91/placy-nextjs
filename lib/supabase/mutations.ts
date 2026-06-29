@@ -609,7 +609,8 @@ const VALID_TRUST_FLAGS = new Set<string>(ALL_TRUST_FLAGS);
 export async function updatePOITrustScore(
   poiId: string,
   trustScore: number,
-  trustFlags: string[]
+  trustFlags: string[],
+  opts: { schema?: "public" | "v2" } = {}
 ): Promise<void> {
   // Validate score range
   if (trustScore < 0 || trustScore > 1) {
@@ -628,7 +629,14 @@ export async function updatePOITrustScore(
     throw new Error("Supabase ikke konfigurert");
   }
 
-  const { error } = await supabase
+  // v2-skrivesti (PRD 3): scoring-write går mot v2; legacy-kallere (admin trust-
+  // validate-route) bruker default "public" og er uberørt. v2/public paritet → cast.
+  const db =
+    opts.schema === "v2"
+      ? (supabase.schema("v2") as unknown as typeof supabase)
+      : supabase;
+
+  const { error } = await db
     .from("pois")
     .update({
       trust_score: trustScore,

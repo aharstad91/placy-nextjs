@@ -56,9 +56,11 @@ function buildMockSupabase(opts: {
   const updates: Array<{ id: string; payload: Record<string, unknown> }> = [];
   let poisReadCalls = 0;
 
-  return {
+  const mock = {
     rows,
     updates,
+    // v2-skrivesti (r03.6): koden gjør baseClient.schema("v2").from(...).
+    schema: vi.fn(),
     from: vi.fn((table: string) => {
       if (table === "project_pois") {
         return {
@@ -100,6 +102,8 @@ function buildMockSupabase(opts: {
       return {};
     }),
   };
+  mock.schema.mockReturnValue(mock);
+  return mock;
 }
 
 function useMockSupabase(mock: ReturnType<typeof buildMockSupabase>) {
@@ -219,6 +223,15 @@ describe("validateReportTrust — Unit 3", () => {
     expect(result.skipped).toBe(0);
     expect(result.skippedPublic).toBe(0);
     expect(result.stillNull).toEqual([]);
+
+    // AC8: v2-skrivesti — reads via schema("v2") + scoring-write med schema:"v2"
+    expect(mock.schema).toHaveBeenCalledWith("v2");
+    expect(updatePOITrustScoreMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Number),
+      expect.any(Array),
+      { schema: "v2" }
+    );
   });
 
   it("NSR-skole uten website (ingen google_place_id) → skippes, IKKE scoret — masse-skjulings-regresjonen", async () => {

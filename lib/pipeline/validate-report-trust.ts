@@ -41,10 +41,13 @@ export async function validateReportTrust(options: {
   projectId: string;
   concurrency?: number;
 }): Promise<ValidateReportTrustResult> {
-  const supabase = createServerClient();
-  if (!supabase) {
+  const baseClient = createServerClient();
+  if (!baseClient) {
     throw new Error("Supabase ikke konfigurert");
   }
+  // v2-skrivesti (PRD 3 / r03.6 AC8): trust re-les + scoring-write går mot v2.
+  // Cast til public-typen (paritet) så reads + enrichTrustSignals-param er uendret.
+  const supabase = baseClient.schema("v2") as unknown as typeof baseClient;
 
   const { projectId } = options;
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
@@ -176,7 +179,7 @@ export async function validateReportTrust(options: {
       continue;
     }
     try {
-      await updatePOITrustScore(poi.id, trust.score, trust.flags);
+      await updatePOITrustScore(poi.id, trust.score, trust.flags, { schema: "v2" });
       result.scored++;
     } catch (e) {
       result.warnings.push(
