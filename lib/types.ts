@@ -194,7 +194,9 @@ export interface ReportThemeGroundingSource {
  * backup. Per-tema — v1 og v2 kan coexist i samme themes[]-array.
  */
 export interface ReportThemeGrounding {
-  /** Markdown-prosa, min 200 tegn. Raw Gemini-output for v1, råbackup for v2. */
+  /** Markdown-prosa. Zod `min(1)` er den autoritative grensen (IKKE 200) —
+   *  V1/V2-skjemaene under er kontrakten, ikke denne docstringen. Raw
+   *  Gemini-output for v1, råbackup for v2. */
   narrative: string;
   sources: ReportThemeGroundingSource[];
   /** Google Search-attribution-HTML — DOMPurify-sanert. Renders via dangerouslySetInnerHTML. */
@@ -203,6 +205,10 @@ export interface ReportThemeGrounding {
   fetchedAt: string;
   /** Per-tema version-flagg. Tillater partial rollout v1→v2. */
   groundingVersion: 1 | 2;
+  /** Debug-only metadata. Bevares på v1 (V1Schema `.passthrough()`), men
+   *  STRIPPES på v2 ved view-parse (V2Schema declarer ikke `meta` og er ikke
+   *  `.passthrough()`). Bevisst: PRD 5/9 skal ALDRI lese `meta` post-parse på
+   *  v2 — kun rå storage/debug, utenfor v2-render-viewet. */
   meta: {
     model: "gemini-2.5-flash";
     /** Debug-only — Gemini sine auto-genererte søk. */
@@ -241,6 +247,16 @@ export const ReportThemeGroundingV1Schema = z
   })
   .passthrough();
 
+/**
+ * V2-render-view: curated narrative + POI-lenker er primær rendering-kilde.
+ *
+ * Bevisst META-ASYMMETRI vs V1: V2Schema declarer IKKE `meta` og er IKKE
+ * `.passthrough()`, så `meta` (debug-only model/searchQueries) STRIPPES når
+ * en v2-rad parses gjennom view-skjemaet. Det er tilsiktet — `meta` er rå
+ * storage/debug og hører ikke hjemme i v2-render-viewet. PRD 5/9 skal ALDRI
+ * lese `meta` post-parse på v2. (V1 beholder `meta` via `.passthrough()` for
+ * rollout-toleranse mens curation pågår.)
+ */
 export const ReportThemeGroundingV2Schema = z.object({
   /** Raw Gemini-output beholdt som backup. */
   narrative: z.string().min(1),

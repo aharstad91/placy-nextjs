@@ -108,6 +108,32 @@ describe("ReportThemeGroundingViewSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("v2 view-parse STRIPPER meta (bevisst asymmetri — debug-only utenfor v2-view)", () => {
+    const v2WithMeta = {
+      ...valid,
+      groundingVersion: 2 as const,
+      curatedNarrative:
+        "En kuratert unified tekst med minst hundre tegn. Den har POI-lenker og flyter sømløst. Her er enda en setning for å sikre lengden.",
+      curatedAt: "2026-04-19T08:00:00Z",
+      poiLinksUsed: ["bus-dronningens-gate"],
+      meta: { model: "gemini-2.5-flash", searchQueries: ["q1"] },
+    };
+    const result = ReportThemeGroundingViewSchema.safeParse(v2WithMeta);
+    expect(result.success).toBe(true);
+    // V2Schema declarer ikke meta og er ikke .passthrough() → meta strippes.
+    expect(result.success && "meta" in result.data).toBe(false);
+  });
+
+  it("v1 view-parse BEHOLDER meta (passthrough — rollout-toleranse)", () => {
+    const v1WithMeta = {
+      ...valid,
+      meta: { model: "gemini-2.5-flash", searchQueries: ["q1"] },
+    };
+    const result = ReportThemeGroundingViewSchema.safeParse(v1WithMeta);
+    expect(result.success).toBe(true);
+    expect(result.success && "meta" in result.data).toBe(true);
+  });
+
   it("accepts non-UUID POI ids in poiLinksUsed", () => {
     // POI-tabellen i Placy har heterogene IDer (UUID, google-ChIJ…, slug-stil).
     // Schema må akseptere alle — sikkerheten ligger i whitelist-oppslaget
