@@ -1,7 +1,7 @@
 -- ============================================================================
 -- 070_baseline.sql — Placy v2 kanonisk baseline-skjema
 -- ============================================================================
--- Sommer-rebuild 2026 · PRD 1 (prd-datamodell-supabase) · Unit 01.1
+-- Sommer-rebuild 2026 · PRD 1 (prd-datamodell-supabase) · Units 01.1 + 01.2
 --
 -- Dette er den KANONISKE, AUTORITATIVE DDL-en som erstatter 69 inkrementelle
 -- migrasjoner (001–069) som lese-/forståelses-kontrakt. Den oppretter hele det
@@ -38,9 +38,9 @@
 --   • UNIQUE: category_slugs(locale, slug) [rute-oppslag] + translations(locale,
 --     entity_type, entity_id, field) [i18n upsert-nøkkel, PRD 5] — load-bearing.
 --
--- IKKE I DENNE FILEN ENNÅ (legges til i samme fil av senere units):
---   • `v2.events`-tabell + indekser + CHECK  → PRD 1 Unit 2 (bead r01.2)
---   • RLS-policies + GRANT/USAGE på v2.*       → PRD 1 Unit 5 (bead r01.5)
+-- IKKE I DENNE FILEN ENNÅ (legges til i samme fil av PRD 1 Unit 5 / bead r01.5):
+--   • RLS-policies + GRANT/USAGE på v2.* (ENABLE ROW LEVEL SECURITY + policies
+--     på alle 14 v2-tabeller). Events-tabellen er lagt til (Unit 2, nederst).
 --
 -- ERD: docs/rebuild/baseline-erd.md (mermaid — 13 tabeller + events).
 -- ============================================================================
@@ -325,12 +325,38 @@ CREATE TABLE v2.product_categories (
 
 
 -- ============================================================================
--- NESTE SEKSJONER (samme fil, legges til av senere units — IKKE en del av r01.1):
---   PRD 1 Unit 2 (r01.2):  CREATE TABLE v2.events (8 kol) + indekser
---                          (project_id,created_at)/(event_type,created_at) +
---                          event_type CHECK (board_viewed/category_opened/
---                          voiceover_played/poi_clicked, utvidbart).
---   PRD 1 Unit 5 (r01.5):  GRANT USAGE ON SCHEMA v2 + tabellrettigheter til
---                          anon/authenticated/service_role; ENABLE ROW LEVEL
---                          SECURITY + policies på alle 14 v2-tabeller.
+-- events (8) — engasjements-instrumentering (greenfield, PRD 1 Unit 2 / r01.2)
+--   Data-moat fra linje 1. Aggregert/anonymt; ingen individuell tracking uten
+--   samtykke. session_id er en anonym, ikke-personidentifiserende økt-nøkkel
+--   (eies/genereres server-side av PRD 13 — aldri i Zustand). payload (jsonb)
+--   holdes som en ÅPEN konvolutt for Moat-2-kontekst (PRD 13) — IKKE lås event-
+--   formen til en naken {category_id} når Fase-1-loggeren bygges; data logget
+--   uten kontekst kan aldri repareres. CHECK-settet utvides via senere migrasjon
+--   + EVENT_TYPES-bump (to-stegs grense, PRD 13).
+-- ============================================================================
+CREATE TABLE v2.events (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  event_type text NOT NULL,
+  project_id text,
+  product_id text,
+  poi_id text,
+  payload jsonb,
+  session_id text,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT events_event_type_check CHECK (
+    event_type IN ('board_viewed', 'category_opened', 'voiceover_played', 'poi_clicked')
+  )
+);
+
+CREATE INDEX events_project_created_idx ON v2.events (project_id, created_at);
+CREATE INDEX events_type_created_idx ON v2.events (event_type, created_at);
+
+
+-- ============================================================================
+-- NESTE SEKSJON (samme fil, legges til av PRD 1 Unit 5 / bead r01.5):
+--   GRANT USAGE ON SCHEMA v2 + tabellrettigheter til anon/authenticated/
+--   service_role; ENABLE ROW LEVEL SECURITY + policies på alle 14 v2-tabeller
+--   (events = INSERT-only for service_role; place_knowledge anon-les gated på
+--   display_ready = true).
 -- ============================================================================
