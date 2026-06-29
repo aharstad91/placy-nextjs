@@ -30,6 +30,12 @@
  *     staging overskriver `boundary` og de `report_editorial`-temaene den har;
  *     eksisterende temaer som ikke er i staging BEHOLDES. `meta` ignoreres ved
  *     update (endrer aldri identitet på en eksisterende rad).
+ *
+ * READ-MODIFY-WRITE-KJERNEN ligger i `@/lib/pipeline/apply-area-staging.ts`
+ * (Unit 4) — delt med den fremtidige PRD-15-overflaten. Dette scriptet er kun
+ * CLI-skallet: arg-parsing, dry-run-plan/diff, interaktiv bekreftelse og
+ * `--list-pois`-kandidatmenyen. Write-logikken (GET → INSERT/PATCH mot
+ * `v2.areas`) delegeres til kjernen; `ok:false` oversettes til `process.exit(1)`.
  */
 
 // MÅ stå først: tsx hoister statiske imports, så env må lastes via en
@@ -40,6 +46,11 @@ import * as fs from "node:fs";
 import * as readline from "readline";
 
 import { parseAreaStaging } from "@/lib/pipeline/area-staging";
+import {
+  fetchAreaRow,
+  writeAreaStaging,
+  type AreaStagingDeps,
+} from "@/lib/pipeline/apply-area-staging";
 import { REPORT_THEME_DEFAULTS } from "@/lib/pipeline/report-defaults";
 import { calculateDistance } from "@/lib/utils/geo";
 import { createServerClient } from "@/lib/supabase/client";
@@ -49,9 +60,6 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 /** Antall POI-ider per .in()-spørring — holder request-URLene trygt korte. */
 const POI_CHUNK_SIZE = 100;
-
-/** Timeout på Supabase REST-kall — henger aldri evig (mønster: checkWebsite). */
-const REST_TIMEOUT_MS = 30_000;
 
 // ── Arg-parsing ───────────────────────────────────────────────────────────
 
@@ -73,48 +81,18 @@ function parseArgs() {
   };
 }
 
-// ── Supabase REST (areas er ikke i typed Database — rå REST som
-//    apply-curation-staging.ts) ──────────────────────────────────────────
+// ── REST-deps for kjernen (areas er ikke i typed Database — rå REST) ────────
+//
+// `fetchAreaRow`/`writeAreaStaging` importeres fra @/lib/pipeline/apply-area-staging.
+// Service-key i header (apikey/Authorization), aldri i URL.
 
-function restHeaders(): Record<string, string> {
-  if (!SUPABASE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY ikke satt");
-  return {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
-  };
-}
-
-/** fetch med AbortController-timeout — timeout/nettverksfeil kaster som annen fetch-feil. */
-async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REST_TIMEOUT_MS);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
+function restDeps(): AreaStagingDeps {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY mangler i .env.local"
+    );
   }
-}
-
-interface AreaRow {
-  id: string;
-  name_no: string | null;
-  level: string | null;
-  center_lat: number | null;
-  center_lng: number | null;
-  boundary: unknown | null;
-  report_editorial: Record<string, unknown> | null;
-}
-
-async function fetchAreaRow(areaId: string): Promise<AreaRow | null> {
-  const url =
-    `${SUPABASE_URL}/rest/v1/areas?id=eq.${encodeURIComponent(areaId)}` +
-    `&select=id,name_no,level,center_lat,center_lng,boundary,report_editorial`;
-  const res = await fetchWithTimeout(url, { headers: restHeaders() });
-  if (!res.ok) {
-    throw new Error(`GET areas feilet: ${res.status} ${await res.text()}`);
-  }
-  const rows = (await res.json()) as AreaRow[];
-  return rows[0] ?? null;
+  return { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_KEY };
 }
 
 // ── Interaktiv bekreftelse ────────────────────────────────────────────────
@@ -161,7 +139,8 @@ async function applyStaging(opts: { file: string; dryRun: boolean; yes: boolean 
     `✓ Staging validert: areaId='${staging.areaId}', ${stagingThemeIds.length} temaer`
   );
 
-  const row = await fetchAreaRow(staging.areaId);
+  const deps = restDeps();
+  const row = await fetchAreaRow(staging.areaId, deps);
   const mode: "create" | "update" = row ? "update" : "create";
 
   // Opprettelse krever meta-blokk (NOT NULL-feltene ved INSERT). Uten meta og
@@ -178,8 +157,9 @@ async function applyStaging(opts: { file: string; dryRun: boolean; yes: boolean 
 
   // Editorial: ved create finnes ingen eksisterende → bruk staging direkte.
   // Ved update: klient-side merge (areas mangler updated_at → ingen optimistisk lås).
+  // Merge-semantikken eies av kjernens `mergeEditorial`; her brukes
+  // `existingEditorial` kun til diff-presentasjonen under.
   const existingEditorial = row?.report_editorial ?? {};
-  const nextEditorial = { ...existingEditorial, ...staging.report_editorial };
 
   // ── Plan ──
   if (mode === "create" && staging.meta) {
@@ -269,73 +249,19 @@ async function applyStaging(opts: { file: string; dryRun: boolean; yes: boolean 
     }
   }
 
-  if (mode === "create" && staging.meta) {
-    // INSERT ny rad. report_editorial = staging direkte (ingen eksisterende).
-    const m = staging.meta;
-    const insertRow: Record<string, unknown> = {
-      id: staging.areaId,
-      name_no: m.name_no,
-      name_en: m.name_en,
-      slug_no: m.slug_no,
-      slug_en: m.slug_en,
-      level: m.level,
-      center_lat: m.center_lat,
-      center_lng: m.center_lng,
-      boundary: staging.boundary,
-      report_editorial: staging.report_editorial,
-    };
-    if (m.zoom_level !== undefined) insertRow.zoom_level = m.zoom_level;
-    if (m.parent_id !== undefined) insertRow.parent_id = m.parent_id;
-    if (m.postal_codes !== undefined) insertRow.postal_codes = m.postal_codes;
-
-    const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/areas`, {
-      method: "POST",
-      headers: {
-        ...restHeaders(),
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body: JSON.stringify(insertRow),
-    });
-    if (!res.ok) {
-      console.error(`INSERT feilet: ${res.status} ${await res.text()}`);
-      process.exit(1);
-    }
-    const inserted = (await res.json()) as AreaRow[];
-    if (!Array.isArray(inserted) || inserted.length === 0) {
-      console.error("INSERT returnerte 0 rader — opprettelse mislyktes");
-      process.exit(1);
-    }
-    console.log(
-      `\n✓ areas.id='${staging.areaId}' OPPRETTET (boundary + ${Object.keys(staging.report_editorial).length} temaer i report_editorial)`
-    );
-  } else {
-    const patchUrl = `${SUPABASE_URL}/rest/v1/areas?id=eq.${encodeURIComponent(staging.areaId)}`;
-    const res = await fetchWithTimeout(patchUrl, {
-      method: "PATCH",
-      headers: {
-        ...restHeaders(),
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body: JSON.stringify({
-        boundary: staging.boundary,
-        report_editorial: nextEditorial,
-      }),
-    });
-    if (!res.ok) {
-      console.error(`PATCH feilet: ${res.status} ${await res.text()}`);
-      process.exit(1);
-    }
-    const patched = (await res.json()) as AreaRow[];
-    if (!Array.isArray(patched) || patched.length === 0) {
-      console.error("PATCH traff 0 rader — sjekk at areas-raden fortsatt finnes");
-      process.exit(1);
-    }
-    console.log(
-      `\n✓ areas.id='${staging.areaId}' oppdatert (boundary + ${Object.keys(nextEditorial).length} temaer i report_editorial)`
-    );
+  // Write-logikken (INSERT m/ meta ELLER spread-merge PATCH mot v2.areas)
+  // delegeres til kjernen. Vi sender raden vi allerede leste over for planen
+  // (unngår dobbel-GET + holder plan==write konsistent). `ok:false` → exit(1).
+  const result = await writeAreaStaging(staging, row, deps);
+  if (!result.ok) {
+    console.error(`Feil: ${result.error}`);
+    process.exit(1);
   }
+  console.log(
+    result.mode === "create"
+      ? `\n✓ areas.id='${result.areaId}' OPPRETTET (boundary + ${result.themesWritten} temaer i report_editorial)`
+      : `\n✓ areas.id='${result.areaId}' oppdatert (boundary + ${result.themesWritten} temaer i report_editorial)`
+  );
   console.log(
     `Verifiser (REST): ${SUPABASE_URL}/rest/v1/areas?id=eq.${staging.areaId}&select=id,boundary,report_editorial`
   );
@@ -375,8 +301,8 @@ async function listPoiCandidates(opts: {
     process.exit(1);
   }
 
-  // Områdesenter for avstandsberegning
-  const area = await fetchAreaRow(opts.areaId);
+  // Områdesenter for avstandsberegning (v2.areas via kjernens fetchAreaRow)
+  const area = await fetchAreaRow(opts.areaId, restDeps());
   if (!area || area.center_lat == null || area.center_lng == null) {
     console.error(`Feil: fant ikke areas-rad med senter for id='${opts.areaId}'`);
     process.exit(1);
@@ -387,10 +313,12 @@ async function listPoiCandidates(opts: {
     `Kandidat-meny for ${area.name_no ?? opts.areaId} (senter ${centerLat}, ${centerLng})\n`
   );
 
-  // UNION av POI-ider på tvers av prosjektene (dedup på poi-id)
+  // UNION av POI-ider på tvers av prosjektene (dedup på poi-id).
+  // v2-targeting (AC3): board-settet lever i v2 → les v2.project_pois/v2.pois.
   const poiIdSet = new Set<string>();
   for (const projectId of opts.projectIds) {
     const { data, error } = await supabase
+      .schema("v2")
       .from("project_pois")
       .select("poi_id")
       .eq("project_id", projectId);
@@ -420,6 +348,7 @@ async function listPoiCandidates(opts: {
   for (let i = 0; i < poiIds.length; i += POI_CHUNK_SIZE) {
     const chunk = poiIds.slice(i, i + POI_CHUNK_SIZE);
     const { data, error } = await supabase
+      .schema("v2")
       .from("pois")
       .select("id, name, category_id, lat, lng, trust_score")
       .in("id", chunk);
