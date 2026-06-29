@@ -48,16 +48,11 @@ import {
   getDiscoveryRadius,
   type ReportProfile,
 } from "@/lib/pipeline/report-defaults";
-import { createServerClient } from "@/lib/supabase/client";
 import {
   ReportTierSchema,
   type ReportTier,
 } from "@/lib/validation/report-tier-schema";
-import {
-  validateReportTier,
-  summarizeTierFindings,
-} from "@/lib/validation/report-tier";
-import type { ReportConfig } from "@/lib/types";
+import { runAcceptanceCheck } from "@/lib/pipeline/provision-acceptance";
 
 // ── Arg-parsing ───────────────────────────────────────────────────────────
 
@@ -175,124 +170,6 @@ async function revalidateProject(customer: string, slug: string) {
   warn(`ℹ️  Revalidering ikke tilgjengelig — nytt prosjekt rendrer ferskt ved første request`);
   log(`   Tag: ${tag}`);
   log(`   Path: ${path}`);
-}
-
-// ── Akseptansesjekk ───────────────────────────────────────────────────────
-
-async function acceptanceCheck(
-  productId: string,
-  projectId: string,
-  customer: string,
-  slug: string
-): Promise<boolean> {
-  const supabase = createServerClient();
-  if (!supabase) {
-    warn("⚠️  Kan ikke verifisere — Supabase ikke konfigurert");
-    return false;
-  }
-
-  let ok = true;
-
-  // 1. product_categories ikke tom
-  const { data: cats } = await supabase
-    .from("product_categories")
-    .select("category_id")
-    .eq("product_id", productId);
-  const catCount = cats?.length ?? 0;
-  if (catCount === 0) {
-    warn("✗ product_categories er tom — board viser 0 av 0 steder");
-    ok = false;
-  } else {
-    log(`✓ product_categories: ${catCount} kategorier`);
-  }
-
-  // 2. Config har 6 temaer med leadText
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: product } = await (supabase.from("products") as any)
-    .select("config")
-    .eq("id", productId)
-    .single();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const themes = (product?.config as any)?.reportConfig?.themes ?? [];
-  const themesWithLead = themes.filter((t: { leadText?: string }) => t.leadText?.trim());
-  if (themesWithLead.length < 6) {
-    warn(`⚠️  Kun ${themesWithLead.length}/6 temaer har leadText`);
-  } else {
-    log(`✓ Alle 6 temaer har leadText`);
-  }
-
-  // 2c. Min-chips QA-flagg (informativt, ikke feil) — temaer som FIKK editorial
-  // (nivå 2-arv) men har <2 highlight-chips. Body-only (0 chips + body) er en
-  // legitim, bevisst tilstand (slice 1-funn: tynn POI-dekning vises som
-  // kuratert body alene); 1 chip flagges som «tynt». INGEN suppresjon —
-  // kuratert body vises alltid; dette er kun en kurator-vink, ikke visningslogikk.
-  const inheritedThemes = (
-    themes as Array<{
-      id?: string;
-      editorial?: { body?: string; highlightPoiIds?: unknown[] };
-    }>
-  ).filter((t) => t.editorial);
-  if (inheritedThemes.length > 0) {
-    const thin: string[] = [];
-    for (const t of inheritedThemes) {
-      const chips = Array.isArray(t.editorial?.highlightPoiIds)
-        ? t.editorial!.highlightPoiIds!.length
-        : 0;
-      const hasBody = (t.editorial?.body ?? "").trim().length > 0;
-      if (chips >= 2) continue;
-      if (chips === 1) {
-        thin.push(`'${t.id}' (1 chip — tynt, vurder flere kandidater)`);
-      } else if (hasBody) {
-        thin.push(`'${t.id}' (body-only, 0 chips — bevisst tilstand)`);
-      } else {
-        thin.push(`'${t.id}' (0 chips, ingen body — sjekk gating)`);
-      }
-    }
-    if (thin.length > 0) {
-      warn(`⚠️  QA min-chips: ${thin.length} arvet tema med <2 chips: ${thin.join(", ")}`);
-    } else {
-      log(`✓ QA min-chips: alle ${inheritedThemes.length} arvede temaer har ≥2 chips`);
-    }
-  }
-
-  // 2b. Nivå-validering: deklarert reportTier må være fullt dekket av
-  // nettopp-skrevet config (lib/validation/report-tier.ts).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const reportConfig = (product?.config as any)?.reportConfig as ReportConfig | undefined;
-  const tierFindings = validateReportTier({
-    slug,
-    reportConfig,
-  });
-  const tierErrors = tierFindings.filter((f) => f.level === "error");
-  if (tierErrors.length > 0) {
-    warn(`✗ nivå: ${summarizeTierFindings(reportConfig?.reportTier, tierFindings)}`);
-    for (const f of tierErrors) warn(`   · [${f.check}] ${f.detail}`);
-    warn("   Utveier: fullfør manglene, eller re-deklarer ned (oppdater reportTier)");
-    ok = false;
-  } else {
-    log(`✓ nivå: ${summarizeTierFindings(reportConfig?.reportTier, tierFindings)}`);
-    for (const f of tierFindings) warn(`   ⚠ [${f.check}] ${f.detail}`);
-  }
-
-  // 3. ≥1 POI i minst 4 av 6 temaer (advarsel, ikke feil)
-  const { data: pois } = await supabase
-    .from("product_pois")
-    .select("poi_id")
-    .eq("product_id", productId);
-  const poiCount = pois?.length ?? 0;
-  log(`✓ product_pois: ${poiCount} POI-er`);
-  if (poiCount < 10) {
-    warn("⚠️  Færre enn 10 POI-er — boardet kan bli tynt");
-  }
-
-  // 4. Vis URL-er
-  section("Leveranse");
-  const localUrl = `http://localhost:3000/eiendom/${customer}/${slug}/rapport-board`;
-  const prodUrl = `https://www.placy.no/eiendom/${customer}/${slug}/rapport-board`;
-  log(`Lokal: ${localUrl}`);
-  log(`Prod:  ${prodUrl}`);
-
-  return ok;
 }
 
 // ── Hoved-pipeline ────────────────────────────────────────────────────────
@@ -538,14 +415,22 @@ async function main() {
 
   // ── Steg 9: Akseptansesjekk ───────────────────────────────────────────
   section("Steg 9: Akseptansesjekk");
-  const passed = await acceptanceCheck(
-    projectResult.productId,
-    projectResult.projectId,
-    projectResult.customerSlug,
-    projectResult.slug
-  );
+  const acceptance = await runAcceptanceCheck({
+    productId: projectResult.productId,
+    customer: projectResult.customerSlug,
+    slug: projectResult.slug,
+  });
+  for (const f of acceptance.findings) {
+    const line = f.level === "pass" ? `✓ ${f.message}` : `${f.level === "error" ? "✗" : "⚠️ "} ${f.message}`;
+    if (f.level === "pass") log(line);
+    else warn(line);
+    for (const d of f.details ?? []) warn(`   · ${d}`);
+  }
+  section("Leveranse");
+  log(`Lokal: ${acceptance.urls.local}`);
+  log(`Prod:  ${acceptance.urls.prod}`);
 
-  if (!passed) {
+  if (!acceptance.ok) {
     warn("\n⚠️  En eller flere akseptansesjekker feilet — se advarslene over");
     process.exit(1);
   }
