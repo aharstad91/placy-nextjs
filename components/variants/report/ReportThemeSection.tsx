@@ -26,7 +26,7 @@ import dynamic from "next/dynamic";
 import { SkeletonReportMap } from "@/components/ui/SkeletonReportMap";
 import { useTransportDashboard } from "@/lib/hooks/useTransportDashboard";
 import { formatRelativeDepartureTime } from "@/lib/utils/format-time";
-import { DEFAULT_CAMERA_LOCK } from "./blocks/report-3d-config";
+import { DEFAULT_CAMERA_LOCK } from "@/components/map/motor-camera";
 
 const ReportThemeMap = dynamic(() => import("./ReportThemeMap"), {
   ssr: false,

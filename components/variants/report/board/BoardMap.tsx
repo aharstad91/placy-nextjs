@@ -19,7 +19,7 @@ import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
 import { computeFitBounds, shouldFitToProgram } from "./board-camera-fit";
-import type { PendingCamera } from "@/components/map/UnifiedMapModal";
+import type { PendingCamera } from "@/components/map/motor-camera";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 

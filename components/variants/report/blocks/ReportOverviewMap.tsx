@@ -6,8 +6,8 @@ import UnifiedMapModal, { type SlotContext } from "@/components/map/UnifiedMapMo
 import ReportThemeMap from "@/components/variants/report/ReportThemeMap";
 import ReportMapPreviewCard from "@/components/variants/report/ReportMapPreviewCard";
 import type { POI } from "@/lib/types";
+import { DEFAULT_CAMERA_LOCK } from "@/components/map/motor-camera";
 import {
-  DEFAULT_CAMERA_LOCK,
   MAP3D_TAB_IDS,
   MAP3D_TAB_LABELS,
   filterPoisByTab,

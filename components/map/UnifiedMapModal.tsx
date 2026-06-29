@@ -21,6 +21,9 @@ import type { ReactNode } from "react";
 import type { POI } from "@/lib/types";
 import type { MapRef } from "react-map-gl/mapbox";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
+// `PendingCamera` ble re-hjemlet i motor-laget (Unit 06.7); importeres for intern
+// bruk her og re-eksporteres lenger ned for kildekompatibilitet.
+import type { PendingCamera } from "./motor-camera";
 
 /**
  * Discriminator for the activation source.
@@ -45,23 +48,9 @@ type ActivePOISource = "card" | "marker";
  */
 type MapMode = "mapbox" | "switching-to-3d" | "google3d" | "switching-to-2d";
 
-/**
- * Camera state carried over between mode switches.
- * Stores enough info to initialize either engine at the position
- * where the other engine left off.
- */
-export type PendingCamera = {
-  lat: number;
-  lng: number;
-  /** Mapbox zoom level (set when coming from Mapbox, or converted from range) */
-  zoom?: number;
-  /** Google 3D range in meters (set when coming from 3D, or converted from zoom) */
-  range?: number;
-  /** Compass heading in degrees (0=north, clockwise) */
-  heading?: number;
-  /** Tilt from nadir in degrees (Mapbox pitch / Google tilt) */
-  tilt?: number;
-};
+// Re-eksport av den motor-eide `PendingCamera` (definert i `./motor-camera`) for
+// kildekompatibilitet — board-filene importerer den IKKE herfra lenger (Unit 06.7).
+export type { PendingCamera };
 
 /** Context passed to render-slots so they can register engine refs and receive pendingCamera. */
 export interface SlotContext {
