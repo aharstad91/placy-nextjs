@@ -1,12 +1,15 @@
 /**
- * Google Places-discovery, Entur, Bysykkel og foto-henting for basic-tier rapport.
+ * Google Places-discovery (+ Entur, Bysykkel) for rapport-provisjon.
  *
- * Gjenbruker `lib/pipeline/import-pois.ts` (allerede uten dev-server) og
- * `lib/utils/fetch-poi-photos.ts` (direkte Supabase REST, ingen proxy).
+ * Gjenbruker `lib/pipeline/import-pois.ts` (allerede uten dev-server).
+ *
+ * FOTO-FASE DEFERRED → PRD 4 Unit 4 (egen foto-task, eier-beslutning 2026-06-27):
+ * `fetchAndCachePOIPhotos`-kallet wires inn igjen når foto-tasken lander. Inntil
+ * da rendres POI-er med kategorifarge/pin (no-photo-fallback i PRD 5/9), og
+ * resultatet rapporterer ikke et `photos`-ledd.
  */
 
 import { importPOIsToProject } from "@/lib/pipeline/import-pois";
-import { fetchAndCachePOIPhotos } from "@/lib/utils/fetch-poi-photos";
 import { createServerClient } from "@/lib/supabase/client";
 
 /** Google Places-kategorier for boligprofilen */
@@ -52,11 +55,6 @@ export interface EnrichReportPoisResult {
     updated: number;
     byCategory: Record<string, number>;
   };
-  photos: {
-    updated: number;
-    skipped: number;
-    failed: number;
-  };
   warnings: string[];
 }
 
@@ -74,7 +72,6 @@ export async function enrichReportPois(options: {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error("NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY mangler");
@@ -121,34 +118,11 @@ export async function enrichReportPois(options: {
     );
   }
 
-  // Steg 2: Foto-batch (CDN-URL-er, ingen proxy)
-  let photos = { updated: 0, skipped: 0, failed: 0 };
-  if (googleApiKey) {
-    try {
-      const photoResult = await fetchAndCachePOIPhotos(
-        projectId,
-        supabaseUrl,
-        serviceRoleKey,
-        googleApiKey
-      );
-      photos = {
-        updated: photoResult.updated,
-        skipped: photoResult.skipped,
-        failed: photoResult.failed,
-      };
-      if (photoResult.failed > 0) {
-        warnings.push(`⚠️  ${photoResult.failed} POI-er fikk ikke foto (de bruker kategorifarge)`);
-      }
-    } catch (err) {
-      warnings.push(`⚠️  Foto-henting feilet: ${err}. POI-er bruker kategorifarge.`);
-    }
-  } else {
-    warnings.push("⚠️  GOOGLE_PLACES_API_KEY mangler — ingen foto-henting");
-  }
+  // Steg 2 (FOTO) DEFERRED → PRD 4 Unit 4. Når foto-tasken lander, wires
+  // fetchAndCachePOIPhotos inn her og `photos` legges tilbake i resultatet.
 
   return {
     google: googleResult,
-    photos,
     warnings,
   };
 }

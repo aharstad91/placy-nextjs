@@ -447,8 +447,10 @@ async function main() {
     warn("⚠️  Hopper over NSR/Barnehagefakta — kommunenummer ukjent");
   }
 
-  // ── Steg 4: Google Places, foto ────────────────────────────────────────
-  section("Steg 4: Google Places + foto");
+  // ── Steg 4: Google Places ──────────────────────────────────────────────
+  // Foto-fasen er DEFERRED → PRD 4 Unit 4 (egen foto-task). POI-er rendres med
+  // kategorifarge inntil foto-tasken lander og enrichReportPois får photos-ledd.
+  section("Steg 4: Google Places");
 
   const enrichResult = await enrichReportPois({
     projectId: projectResult.projectId,
@@ -458,7 +460,6 @@ async function main() {
     categories: profile === "naering" ? NAERING_GOOGLE_CATEGORIES : undefined,
   });
   log(`Google Places: ${enrichResult.google.total} POI-er (${enrichResult.google.new} nye, ${enrichResult.google.updated} oppdaterte)`);
-  log(`Foto: ${enrichResult.photos.updated} oppdatert, ${enrichResult.photos.skipped} hoppet over`);
   for (const w of enrichResult.warnings) warn(w);
 
   // ── Steg 5: Trust-validering ───────────────────────────────────────────
