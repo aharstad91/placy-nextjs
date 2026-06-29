@@ -653,12 +653,24 @@ export async function updatePOITier(
     throw new Error("Supabase ikke konfigurert");
   }
 
-  // Only write editorial fields if currently null (preserve hand-crafted content)
-  const { data: existing } = await supabase
+  // Only write editorial fields if currently null (preserve hand-crafted content).
+  // Port-with-rewrite (PRD 4 Unit 6 AC2): the original destructured only
+  // `{ data: existing }` without an error check. On a select failure `existing`
+  // becomes `undefined`, `existing?.editorial_hook === null` is `false`, and the
+  // editorial guard is skipped SILENTLY — writing nothing, with no error surfaced
+  // (in conflict with AC1's "no silent swallow"). Check the error and throw so an
+  // undefined-existing can never quietly bypass the editorial-preservation guard.
+  const { data: existing, error: existingError } = await supabase
     .from("pois")
     .select("editorial_hook, local_insight, editorial_sources")
     .eq("id", poiId)
     .single();
+
+  if (existingError) {
+    throw new Error(
+      `Kunne ikke lese eksisterende POI ${poiId} før tier-oppdatering: ${existingError.message}`
+    );
+  }
 
   const updatePayload: Record<string, unknown> = {
     poi_tier: data.poi_tier,
