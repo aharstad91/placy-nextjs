@@ -10,7 +10,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "create-report": "npx tsx scripts/provision-rapport.ts",
-    "generate:story": "npx tsx scripts/generate-story.ts",
     "validate:tier": "npx tsx scripts/validate-report-tier.ts",
     "build:reels-vo-local": "npx tsx scripts/reels-voiceover-build-local.ts",
     "generate:reels-posters": "node scripts/generate-reels-posters.mjs",

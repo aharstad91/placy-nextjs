@@ -1,6 +1,13 @@
 /**
  * Travel Times Module
  * Beregner reisetider via Mapbox Matrix API
+ *
+ * TODO (PRD 3 / r03.1-oppfølging, bead placy-ralph-*): FORELØPIG FORELDREløS.
+ * Eneste konsument var scripts/generate-story.ts (slettet i r03.1). v2-pipelinen
+ * (lib/pipeline/provision.ts) har INGEN reisetid-precompute-steg (de 9 ratifiserte
+ * stegene utelater det, jf. PRD K6). ÅPENT board-feature-spørsmål: skal v2-boardet
+ * ha build-time reisetid-precompute (da: wire denne inn i provision-kjernen) eller
+ * droppes den (da: slett denne filen)? Ikke slettet her — avgjørelsen tas i egen bead.
  */
 
 import { Coordinates, TravelMode } from "../types";
