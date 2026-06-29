@@ -1,4 +1,3 @@
-// @ts-nocheck — Google Maps 3D-typer er løse; følger samme pragma som Map3DActionButtons.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
