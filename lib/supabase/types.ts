@@ -1020,6 +1020,676 @@ export type Database = {
     Enums: {};
     CompositeTypes: {};
   };
+  v2: {
+    Tables: {
+      areas: {
+        Row: {
+          active: boolean | null
+          boundary: Json | null
+          center_lat: number
+          center_lng: number
+          created_at: string | null
+          description_en: string | null
+          description_no: string | null
+          id: string
+          level: string
+          name_en: string
+          name_no: string
+          parent_id: string | null
+          postal_codes: string[] | null
+          report_editorial: Json | null
+          slug_en: string
+          slug_no: string
+          zoom_level: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          boundary?: Json | null
+          center_lat: number
+          center_lng: number
+          created_at?: string | null
+          description_en?: string | null
+          description_no?: string | null
+          id: string
+          level: string
+          name_en: string
+          name_no: string
+          parent_id?: string | null
+          postal_codes?: string[] | null
+          report_editorial?: Json | null
+          slug_en: string
+          slug_no: string
+          zoom_level?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          boundary?: Json | null
+          center_lat?: number
+          center_lng?: number
+          created_at?: string | null
+          description_en?: string | null
+          description_no?: string | null
+          id?: string
+          level?: string
+          name_en?: string
+          name_no?: string
+          parent_id?: string | null
+          postal_codes?: string[] | null
+          report_editorial?: Json | null
+          slug_en?: string
+          slug_no?: string
+          zoom_level?: number | null
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          color: string
+          created_at: string | null
+          icon: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color: string
+          created_at?: string | null
+          icon: string
+          id: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          icon?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      category_slugs: {
+        Row: {
+          category_id: string
+          intro_text: string | null
+          locale: string
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+        }
+        Insert: {
+          category_id: string
+          intro_text?: string | null
+          locale: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+        }
+        Update: {
+          category_id?: string
+          intro_text?: string | null
+          locale?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json | null
+          poi_id: string | null
+          product_id: string | null
+          project_id: string | null
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json | null
+          poi_id?: string | null
+          product_id?: string | null
+          project_id?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          poi_id?: string | null
+          product_id?: string | null
+          project_id?: string | null
+          session_id?: string | null
+        }
+        Relationships: []
+      }
+      generation_requests: {
+        Row: {
+          address: string
+          address_normalized: string
+          address_slug: string
+          completed_at: string | null
+          consent_given: boolean
+          created_at: string
+          customer_id: string | null
+          email: string
+          error_message: string | null
+          geocoded_city: string | null
+          geocoded_lat: number | null
+          geocoded_lng: number | null
+          housing_type: string
+          id: string
+          project_id: string | null
+          result_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          address_normalized: string
+          address_slug: string
+          completed_at?: string | null
+          consent_given: boolean
+          created_at?: string
+          customer_id?: string | null
+          email: string
+          error_message?: string | null
+          geocoded_city?: string | null
+          geocoded_lat?: number | null
+          geocoded_lng?: number | null
+          housing_type: string
+          id?: string
+          project_id?: string | null
+          result_url?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          address_normalized?: string
+          address_slug?: string
+          completed_at?: string | null
+          consent_given?: boolean
+          created_at?: string
+          customer_id?: string | null
+          email?: string
+          error_message?: string | null
+          geocoded_city?: string | null
+          geocoded_lat?: number | null
+          geocoded_lng?: number | null
+          housing_type?: string
+          id?: string
+          project_id?: string | null
+          result_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      place_knowledge: {
+        Row: {
+          area_id: string | null
+          confidence: string
+          created_at: string
+          display_ready: boolean | null
+          fact_text: string
+          fact_text_en: string | null
+          id: string
+          poi_id: string | null
+          sort_order: number | null
+          source_name: string | null
+          source_url: string | null
+          structured_data: Json | null
+          topic: string
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          area_id?: string | null
+          confidence: string
+          created_at?: string
+          display_ready?: boolean | null
+          fact_text: string
+          fact_text_en?: string | null
+          id: string
+          poi_id?: string | null
+          sort_order?: number | null
+          source_name?: string | null
+          source_url?: string | null
+          structured_data?: Json | null
+          topic: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          area_id?: string | null
+          confidence?: string
+          created_at?: string
+          display_ready?: boolean | null
+          fact_text?: string
+          fact_text_en?: string | null
+          id?: string
+          poi_id?: string | null
+          sort_order?: number | null
+          source_name?: string | null
+          source_url?: string | null
+          structured_data?: Json | null
+          topic?: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      pois: {
+        Row: {
+          address: string | null
+          anchor_summary: string | null
+          area_id: string | null
+          barnehagefakta_id: string | null
+          bysykkel_station_id: string | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          editorial_hook: string | null
+          editorial_sources: string[] | null
+          entur_stopplace_id: string | null
+          event_dates: string[] | null
+          event_description: string | null
+          event_tags: string[] | null
+          event_time_end: string | null
+          event_time_start: string | null
+          event_url: string | null
+          facebook_url: string | null
+          featured_image: string | null
+          gallery_images: string[] | null
+          google_business_status: string | null
+          google_maps_url: string | null
+          google_phone: string | null
+          google_place_id: string | null
+          google_price_level: number | null
+          google_rating: number | null
+          google_review_count: number | null
+          google_website: string | null
+          hyre_station_id: string | null
+          id: string
+          is_chain: boolean | null
+          is_local_gem: boolean | null
+          lat: number
+          lng: number
+          local_insight: string | null
+          name: string
+          nsr_id: string | null
+          opening_hours_json: Json | null
+          opening_hours_updated_at: string | null
+          osm_id: string | null
+          parent_poi_id: string | null
+          photo_reference: string | null
+          photo_resolved_at: string | null
+          poi_metadata: Json | null
+          poi_tier: number | null
+          source: string | null
+          story_priority: string | null
+          tier_evaluated_at: string | null
+          tier_reason: string | null
+          trust_flags: string[]
+          trust_score: number | null
+          trust_score_updated_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          anchor_summary?: string | null
+          area_id?: string | null
+          barnehagefakta_id?: string | null
+          bysykkel_station_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          editorial_hook?: string | null
+          editorial_sources?: string[] | null
+          entur_stopplace_id?: string | null
+          event_dates?: string[] | null
+          event_description?: string | null
+          event_tags?: string[] | null
+          event_time_end?: string | null
+          event_time_start?: string | null
+          event_url?: string | null
+          facebook_url?: string | null
+          featured_image?: string | null
+          gallery_images?: string[] | null
+          google_business_status?: string | null
+          google_maps_url?: string | null
+          google_phone?: string | null
+          google_place_id?: string | null
+          google_price_level?: number | null
+          google_rating?: number | null
+          google_review_count?: number | null
+          google_website?: string | null
+          hyre_station_id?: string | null
+          id: string
+          is_chain?: boolean | null
+          is_local_gem?: boolean | null
+          lat: number
+          lng: number
+          local_insight?: string | null
+          name: string
+          nsr_id?: string | null
+          opening_hours_json?: Json | null
+          opening_hours_updated_at?: string | null
+          osm_id?: string | null
+          parent_poi_id?: string | null
+          photo_reference?: string | null
+          photo_resolved_at?: string | null
+          poi_metadata?: Json | null
+          poi_tier?: number | null
+          source?: string | null
+          story_priority?: string | null
+          tier_evaluated_at?: string | null
+          tier_reason?: string | null
+          trust_flags?: string[]
+          trust_score?: number | null
+          trust_score_updated_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          anchor_summary?: string | null
+          area_id?: string | null
+          barnehagefakta_id?: string | null
+          bysykkel_station_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          editorial_hook?: string | null
+          editorial_sources?: string[] | null
+          entur_stopplace_id?: string | null
+          event_dates?: string[] | null
+          event_description?: string | null
+          event_tags?: string[] | null
+          event_time_end?: string | null
+          event_time_start?: string | null
+          event_url?: string | null
+          facebook_url?: string | null
+          featured_image?: string | null
+          gallery_images?: string[] | null
+          google_business_status?: string | null
+          google_maps_url?: string | null
+          google_phone?: string | null
+          google_place_id?: string | null
+          google_price_level?: number | null
+          google_rating?: number | null
+          google_review_count?: number | null
+          google_website?: string | null
+          hyre_station_id?: string | null
+          id?: string
+          is_chain?: boolean | null
+          is_local_gem?: boolean | null
+          lat?: number
+          lng?: number
+          local_insight?: string | null
+          name?: string
+          nsr_id?: string | null
+          opening_hours_json?: Json | null
+          opening_hours_updated_at?: string | null
+          osm_id?: string | null
+          parent_poi_id?: string | null
+          photo_reference?: string | null
+          photo_resolved_at?: string | null
+          poi_metadata?: Json | null
+          poi_tier?: number | null
+          source?: string | null
+          story_priority?: string | null
+          tier_evaluated_at?: string | null
+          tier_reason?: string | null
+          trust_flags?: string[]
+          trust_score?: number | null
+          trust_score_updated_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      product_categories: {
+        Row: {
+          category_id: string
+          display_order: number | null
+          product_id: string
+        }
+        Insert: {
+          category_id: string
+          display_order?: number | null
+          product_id: string
+        }
+        Update: {
+          category_id?: string
+          display_order?: number | null
+          product_id?: string
+        }
+        Relationships: []
+      }
+      product_pois: {
+        Row: {
+          category_override_id: string | null
+          featured: boolean
+          poi_id: string
+          product_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          category_override_id?: string | null
+          featured: boolean
+          poi_id: string
+          product_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          category_override_id?: string | null
+          featured?: boolean
+          poi_id?: string
+          product_id?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          product_type: string
+          project_id: string
+          story_hero_images: string[] | null
+          story_intro_text: string | null
+          story_title: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          config: Json
+          created_at?: string
+          id: string
+          product_type: string
+          project_id: string
+          story_hero_images?: string[] | null
+          story_intro_text?: string | null
+          story_title?: string | null
+          updated_at?: string
+          version: number
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          product_type?: string
+          project_id?: string
+          story_hero_images?: string[] | null
+          story_intro_text?: string | null
+          story_title?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      project_pois: {
+        Row: {
+          poi_id: string
+          project_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          poi_id: string
+          project_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          poi_id?: string
+          project_id?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          center_lat: number
+          center_lng: number
+          created_at: string
+          customer_id: string
+          default_product: string
+          description: string | null
+          discovery_circles: Json | null
+          has_3d_addon: boolean
+          homepage_url: string | null
+          id: string
+          name: string
+          short_id: string
+          tags: string[] | null
+          theme: Json | null
+          updated_at: string
+          url_slug: string
+          venue_context: string | null
+          venue_type: string | null
+          version: number
+          welcome_image: string | null
+          welcome_tagline: string | null
+          welcome_title: string | null
+        }
+        Insert: {
+          center_lat: number
+          center_lng: number
+          created_at?: string
+          customer_id: string
+          default_product: string
+          description?: string | null
+          discovery_circles?: Json | null
+          has_3d_addon?: boolean
+          homepage_url?: string | null
+          id: string
+          name: string
+          short_id: string
+          tags?: string[] | null
+          theme?: Json | null
+          updated_at?: string
+          url_slug: string
+          venue_context?: string | null
+          venue_type?: string | null
+          version: number
+          welcome_image?: string | null
+          welcome_tagline?: string | null
+          welcome_title?: string | null
+        }
+        Update: {
+          center_lat?: number
+          center_lng?: number
+          created_at?: string
+          customer_id?: string
+          default_product?: string
+          description?: string | null
+          discovery_circles?: Json | null
+          has_3d_addon?: boolean
+          homepage_url?: string | null
+          id?: string
+          name?: string
+          short_id?: string
+          tags?: string[] | null
+          theme?: Json | null
+          updated_at?: string
+          url_slug?: string
+          venue_context?: string | null
+          venue_type?: string | null
+          version?: number
+          welcome_image?: string | null
+          welcome_tagline?: string | null
+          welcome_title?: string | null
+        }
+        Relationships: []
+      }
+      translations: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          field: string
+          id: string
+          locale: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          field: string
+          id?: string
+          locale: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          field?: string
+          id?: string
+          locale?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  };
 };
 
 // Helper types for easier access
