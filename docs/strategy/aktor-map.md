@@ -4,7 +4,25 @@
 > Oppdateres hver gang en relasjon endrer status (ny kontakt, nytt møte, ny rolle, parkert).
 > Roll-bytter og status-endringer noteres dato-stemplet i nøkkel-felter.
 
-**Sist oppdatert:** 2026-05-08
+**Sist oppdatert:** 2026-06-27
+
+---
+
+## Kommersialisering / partnere
+
+### Aleksander (kommersialiseringspartner — eiendomssporet)
+**Rolle:** Forretningsutvikler. Bakgrunn fra business-studier + E3/E365. Har jobbet med Andreas i mange år. «Aino» gjør research for ham (bl.a. dronevideo-prising).
+
+| Person | Rolle | Status |
+|---|---|---|
+| **Aleksander** | Forretningsutvikler / potensiell kommersialiseringspartner | 2026-06-23: Så full demo (Stasjonskvartalet + bolig-eksempler). Tilbød å gjøre kommersialiseringsjobben på eiendomssporet — kjøre utbygger-møter sammen, no cure/no pay → opsjon på eierandel ved revenue-milestone (~500k). Andreas positiv. Anbefaler **utbygger-først**. **Neste:** term sheet (andel/pris/revenue-def) før møtene; mulig telefon før Andreas' ferie. Detaljer: `2026-06-23-aleksander-kommersialisering-utbygger-spor.md`. |
+
+### Markus (forretningsutvikler — Bergen / mulig partner nr. 2)
+**Rolle:** Forretningsutvikler, Bergen-basert, driver eget team. Brainstormet Placy Reels-konseptet (2026-05-24). 3.–4. sparring med Andreas.
+
+| Person | Rolle | Status |
+|---|---|---|
+| **Markus** | Forretningsutvikler / mulig kommersialiseringspartner nr. 2 (Bergen-spor) | 2026-06-25: Så full demo (nivå 1 + nivå 2). Anbefaler **motsatt av Aleksander — bruktmegler-først**, ikke utbygger (utbygger = engangskunde/org-salg/seigt; 85–90 % av volum er brukt; megler har full myndighet = lavthengende frukt). Pris per boenhet (~790–1 500). Sterkeste bidrag: lokalkunnskap-DB som Placy-eid IP (moat) + innsikts-rapport til megler før visning. Åpnet døra mykt for samarbeid («ring i sommeren», Bergen som naturlig by nr. 2) — **åpnet dør, ikke commitment**. **Neste:** avklar om han inviteres inn som partner nr. 2 eller holdes som rådgiver. Detaljer: `2026-06-25-markus-bruktmegler-vs-utbygger.md`. |
 
 ---
 
@@ -96,13 +114,59 @@ Full liste i `docs/brainstorms/2026-02-05-kundeprospekter-trondheim-brainstorm.m
 
 ---
 
+## Eiendom (utbygger-spor)
+
+Spydspiss-segmentet per 2026-06-23 (`2026-06-23-aleksander-kommersialisering-utbygger-spor.md`). Utbyggere = høy margin, korte beslutningsveier. Møter planlegges «etter sommeren». Åpent: hvem er første target.
+
+| Org / Person | Rolle | Status / inngangsvinkel |
+|---|---|---|
+| **Koteng Eiendom** | Lokal utbygger — eier hele Leangen + siste rest av Grilstad Marina. Egne meglere. | 2026-06-23: Identifisert som attraktiv — korte beslutningsveier, selger noe av det dyreste i Trondheim, gode marginer. Ingen kontakt. |
+| **Brøseth Utvikling AS** (brøseth.no) | Lokal utbygger («Trym»). | 2026-06-23: Andreas kjenner eier/toppsjef («Copret») på toppnivå — kan ordne møte. Ingen kontakt enda. |
+| **Sunnland** | Megler/utbygger-kontakt nede på Grilstad. | 2026-06-23: God kontakt — har solgt 3 boliger gjennom Andreas. «Genial for private også» — mulig bro inn til både nybygg og privat. |
+| **KLP Eiendom** | Eiendomsforvalter (Teknostallen-demo finnes). | 2026-06-23: «Ser på det i august» når tilbake. Liker flybuss/transport-info-visningen. |
+| **Sunnland-nettverket / nybygg-meglere** | «Katrine og Ane» m.fl. — kjøper/videreselger prosjekterte kontrakter. | 2026-06-23: Andreas' nybygg-nettverk; inngang via prosjektmeglere. |
+
+## Megler (premium / kjede — masse-spor)
+
+> **2026-06-25 (Markus-prat):** Markus anbefaler **bruktmegler-først**, ikke sekvensert etter utbygger. Claude-syntese: led med megler (nivå 1) + kjør utbygger parallelt (nivå 2). Dette segmentet er dermed re-aktivert som mulig *første* betalte pilot, ikke bare etterfølger. Detaljer: `2026-06-25-markus-bruktmegler-vs-utbygger.md`.
+>
+> **2026-06-27 (premium-single):** Tredje rung lagt til mellom volum-megler (~1–2k) og utbygger (250k): **kuratert nærområde-board for topp-eiendom på bruktmarkedet**, bundlet i meglerens markedspakke. **Pris: list/anker ~19–25k (posisjonert som nærområde-intelligens), forvent validert transaksjon 12–18k** — pris hänger på kategori-posisjonering, ikke film-anker (faktisk film kostet ~6–12k, ikke 15–40k). Detaljer: `2026-06-27-premium-single-bruktmarked-spor.md`.
+
+| Org / Person | Rolle | Status / inngangsvinkel |
+|---|---|---|
+| **Nylander & Partners — Vidar Stene** | Megler på Ranheimslivegen 31 B (enebolig, 14,99M, full medieproduksjon: dronevideo + boligfilm + megler på kamera m/ VO). `partners.no/eiendom/159956`. | 2026-06-27: **Pilot-eksemplar for premium-single** — ligger på Ranheim (Andreas' lokalkunnskap-strøk). Ingen kontakt. Brukes som mal for august-test (be Christian/Frank Robert om tilsvarende kommende listing → bundle nærområde-board). |
+| **Huy Rebel Production** | Boligfilm-/drone-videograf (Trondheim) — filmet Ranheimslivegen-listingen. Dronefilm/dronefoto fra 5 000,– ink. mva, boligfilm «ta kontakt», «kombiner og få rabatt». huyrebel.com. | 2026-06-27: **Mulig footage-kilde + distribusjonskanal** — sitter i rommet med megler/selger. (a) gjenbruk film i Placy-board m/ tillatelse; (b) videograf upselger nærområde-board oppå filmen. Deres «dronefoto til nærmiljøet» = pene luftbilder, ikke interaktivt board → differensiering holder. Ingen kontakt. |
+| **EiendomsMegler 1 (Søndre/Søre)** | Landets største kjede, ~60% av Trondheim-markedet. | Andreas var «vinner» i Søndre 2017. Top-down-vei: Reinsberg + leder nybolig (historisk Tonje Borthen; «Monica» i Søre). Aleksander mener utbygger-direkte er mer målrettet enn top-down i kjeden. |
+| **Frank Robert** (Megler1 Ranheim) | Superselger / nærområde-spesialist. ~100 eiendommer hittil i år. 45-sek nærområde-video → 160k visninger. | Kandidat for custom megler-stemme (jf. 2026-06-02 stemme-kloning-spor). **2026-06-25: kandidat for første betalte bruktmegler-pilot (august).** Andreas snakket med ham om dette i 2017, kom aldri inn (sommer). Ingen aktiv kontakt. |
+| **Christian** (avdelingsleder secondhand, «Drivstad» / EM1) | Megler — har solgt 3 boliger for Andreas. | 2026-06-25: Sterkeste varme bruktmegler-kontakt. Markus' poeng: «hvorfor har du ikke snakket med en megler du kjenner godt?» **Kandidat for første betalte pilot (august).** |
+| **Privatmegleren — Kristoffer** | Megler, nabo av Andreas. | 2026-06-23: Andreas skal snakke med ham. Også kilde til Fable-vs-Opus-vurderingen. |
+| Norvik m.fl. | Eksklusiv-profilerte kjeder | Nevnt som premium-alternativ til massen. Ingen kontakt. |
+
+---
+
+## Distribusjon (eiendom — etter PMF)
+
+| Org | Rolle | Status |
+|---|---|---|
+| **Adresseavisen Marked / Polaris Media** | Mediekonsern — kunne distribuert Placy internt i Polaris-systemet for en cut. | 2026-06-23: Andreas var inn til Adresseavisen Marked med Stasjonskvartalet; de var åpne, så inntjeningsmulighet. **Park til etter PMF** (start direkte først). |
+
+---
+
+## Proptech-benchmark / mulig plattform-partner (eiendom)
+
+| Org | Rolle | Status / inngangsvinkel |
+|---|---|---|
+| **Norkart** | Norsk geodata/proptech-aktør. Leverer **«3D Solforhold» (Solkart)** som er *plattform-bundlet på partners.no* (alle listings). Forbruker ~100 kr, per listing til megler ~0, kjede-lisens = B2B SaaS. ArcGIS Maps SDK + norske geodata. | 2026-06-27: **Benchmark/konkurrent** (samme kategori som Marketer/HomeKey) — commodity-geodata + kjede-plattformrelasjoner, kan utvide sol → nærområde. Også **markedsbevis for grunnpakke-modellen** (autonomt embeddet geodata-widget, kjede-distribuert) = nivå-1-analogen. Mulig plattform-partner. Moat mot dem = de to data-moatene (lokalkunnskap-IP + engasjement). Ingen kontakt. Detaljer: `2026-06-27-premium-single-bruktmarked-spor.md` seksjon 7. |
+
+---
+
 ## Eiendom (Propr-spor)
 
-Egen brainstorm: `docs/brainstorms/2026-04-30-propr-distribusjons-pilot-brainstorm.md`.
+Egen brainstorm: `docs/brainstorms/2026-04-30-propr-distribusjons-pilot-brainstorm.md`. **Parkert** til fordel for kjede/utbygger-først (jf. 2026-06-23 + minne).
 
 | Person/Org | Rolle | Status |
 |---|---|---|
-| **Kjetil Eriksson** | CEO Propr (ex-partner Sem & Johnsen 15+ år) | 2026-04-30: Identifisert som første-kontakt for Propr-pilot. Spro Havn-rapport skal genereres og sendes som vis-don't-tell-åpning. |
+| **Kjetil Eriksson** | CEO Propr (ex-partner Sem & Johnsen 15+ år) | 2026-04-30: Identifisert som første-kontakt for Propr-pilot. Spro Havn-rapport skal genereres og sendes som vis-don't-tell-åpning. Parkert per 2026-06-23. |
 | **Karoline Gjersvik** | Driftssjef Propr (ex-eiendomsmeglerfullmektig Sem & Johnsen) | 2026-04-30: Sekundær kontakt. |
 
 ---
