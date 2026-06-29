@@ -1,7 +1,7 @@
 -- ============================================================================
 -- 070_baseline.sql — Placy v2 kanonisk baseline-skjema
 -- ============================================================================
--- Sommer-rebuild 2026 · PRD 1 (prd-datamodell-supabase) · Units 01.1 + 01.2
+-- Sommer-rebuild 2026 · PRD 1 (prd-datamodell-supabase) · Units 01.1 + 01.2 + 01.5
 --
 -- Dette er den KANONISKE, AUTORITATIVE DDL-en som erstatter 69 inkrementelle
 -- migrasjoner (001–069) som lese-/forståelses-kontrakt. Den oppretter hele det
@@ -38,9 +38,9 @@
 --   • UNIQUE: category_slugs(locale, slug) [rute-oppslag] + translations(locale,
 --     entity_type, entity_id, field) [i18n upsert-nøkkel, PRD 5] — load-bearing.
 --
--- IKKE I DENNE FILEN ENNÅ (legges til i samme fil av PRD 1 Unit 5 / bead r01.5):
---   • RLS-policies + GRANT/USAGE på v2.* (ENABLE ROW LEVEL SECURITY + policies
---     på alle 14 v2-tabeller). Events-tabellen er lagt til (Unit 2, nederst).
+-- FILEN ER KOMPLETT (Units 01.1 schema + 01.2 events + 01.5 RLS/GRANT, nederst).
+-- Neste steg er IKKE en filendring: PRD 1 Unit 7 / bead r01.7 KJØRER denne filen
+-- mot Supabase-prod via psql (additivt, men irreversibelt mot prod → /effort xhigh).
 --
 -- ERD: docs/rebuild/baseline-erd.md (mermaid — 13 tabeller + events).
 -- ============================================================================
@@ -354,9 +354,63 @@ CREATE INDEX events_type_created_idx ON v2.events (event_type, created_at);
 
 
 -- ============================================================================
--- NESTE SEKSJON (samme fil, legges til av PRD 1 Unit 5 / bead r01.5):
---   GRANT USAGE ON SCHEMA v2 + tabellrettigheter til anon/authenticated/
---   service_role; ENABLE ROW LEVEL SECURITY + policies på alle 14 v2-tabeller
---   (events = INSERT-only for service_role; place_knowledge anon-les gated på
---   display_ready = true).
+-- RLS + GRANT — tilgangskontrakt på DB-nivå (PRD 1 Unit 5 / bead r01.5)
+-- ----------------------------------------------------------------------------
+-- service_role BYPASSER RLS (Supabase-default, BYPASSRLS) → all skriving +
+-- admin-lesing skjer server-side via service_role. «Skriv kun service-role»
+-- (AC3) oppnås derfor ved å IKKE gi anon/authenticated noen skrive-policy —
+-- ikke ved en eksplisitt service-role-skrive-policy. anon/authenticated får
+-- KUN SELECT på det publiserings-klare board-data-settet (10 tabeller), og
+-- place_knowledge kun der display_ready = true (AC4). customers /
+-- generation_requests (PII) / events (instrumentering) er IKKE anon-lesbare —
+-- de er låst til service_role (ingen GRANT + ingen policy).
+--
+-- Forutsetter at v2 er lagt til i Supabase Settings → API → Exposed schemas
+-- (engangs-config, PRD 1 Åpent spm #7 / Unit 7). Rollene anon/authenticated/
+-- service_role finnes i Supabase fra før (opprettes IKKE her).
 -- ============================================================================
+
+-- Schema- + tabell-GRANTs (table-privilege; RLS-policy styrer rad-tilgang i tillegg)
+GRANT USAGE ON SCHEMA v2 TO anon, authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA v2 TO service_role;
+GRANT SELECT ON
+  v2.pois, v2.products, v2.projects, v2.areas, v2.categories, v2.category_slugs,
+  v2.translations, v2.product_pois, v2.product_categories, v2.project_pois,
+  v2.place_knowledge
+TO anon, authenticated;
+
+-- Aktiver RLS på alle 14 v2-tabeller (default-deny for ikke-bypass-roller)
+ALTER TABLE v2.areas               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.categories          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.category_slugs      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.customers           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.generation_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.place_knowledge     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.pois                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.product_categories  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.product_pois        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.products            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.project_pois        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.projects            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.translations        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v2.events              ENABLE ROW LEVEL SECURITY;
+
+-- Anon/authenticated SELECT på publiserings-klare board-data (10 tabeller)
+CREATE POLICY pois_anon_select               ON v2.pois               FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY products_anon_select           ON v2.products           FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY projects_anon_select           ON v2.projects           FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY areas_anon_select              ON v2.areas              FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY categories_anon_select         ON v2.categories         FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY category_slugs_anon_select     ON v2.category_slugs     FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY translations_anon_select       ON v2.translations       FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY product_pois_anon_select       ON v2.product_pois       FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY product_categories_anon_select ON v2.product_categories FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY project_pois_anon_select       ON v2.project_pois       FOR SELECT TO anon, authenticated USING (true);
+
+-- place_knowledge: anon/authenticated ser KUN display_ready (moat-IP ikke rå)
+CREATE POLICY place_knowledge_display_ready_select ON v2.place_knowledge
+  FOR SELECT TO anon, authenticated USING (display_ready = true);
+
+-- customers, generation_requests, events: INGEN anon/authenticated-policy →
+-- kun service_role (RLS-bypass). events skrives av server-action (service_role);
+-- ingen anon-skriv (AC3). Ingen skrive-policy noe sted = skriving kun service_role.
