@@ -48,3 +48,4 @@ backups/
 .audio-staging/
 .tmp-screenshots/
 .spike-debug/
+ralph-logs/
