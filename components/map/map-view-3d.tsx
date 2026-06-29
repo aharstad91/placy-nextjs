@@ -10,8 +10,6 @@ import {
   useMap3D,
   GestureHandling,
 } from "@vis.gl/react-google-maps";
-import Map, { Marker as MapboxMarker } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
 import type { POI } from "@/lib/types";
 import { Marker3DPin } from "./Marker3DPin";
 import { BlobMarker3D } from "./BlobMarker3D";
@@ -19,7 +17,7 @@ import { RevealLayer3D, type RevealItem } from "./RevealLayer3D";
 import { ProjectSitePin } from "./ProjectSitePin";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { hexLightTint } from "@/lib/utils/marker-color";
-import { useWebGLCheck } from "./Map3DFallback";
+import { useWebGLCheck } from "./use-webgl-check";
 
 /** Type for map3d-instansen vi sender tilbake til foreldre. */
 export type Map3DInstance = google.maps.maps3d.Map3DElement;
@@ -30,7 +28,8 @@ export type Map3DInstance = google.maps.maps3d.Map3DElement;
  * Bruker Googles native gesture-handling (drag = pan/rotate via modifiers,
  * scroll = zoom, shift+drag = tilt). Smørbløt som Google Maps 3D selv.
  *
- * WebGL-detection faller tilbake til Mapbox 2D-satellitt inline.
+ * Når WebGL ikke er tilgjengelig vises en statisk tekst-tilstand (ingen
+ * Mapbox-fallback — motoren har 0 Mapbox i hot path).
  */
 
 export interface CameraLock {
@@ -222,24 +221,6 @@ const CompactMarker3DItem = memo(function CompactMarker3DItem({
   );
 });
 
-/**
- * Orbit-as-default: Hijacker pointer/mouse-events på wrapper-divens capture-phase
- * og tvinger `ctrlKey=true` på mus-drags. Google's interne gesture-handler
- * tolker da alle drags som ROTATE (det som normalt krever Ctrl+drag) —
- * brukeren spinner rundt center-punktet uten å kunne panne bort.
- *
- * Hvorfor event-hijacking og ikke JS-basert kamera-styring:
- * - Tidligere forsøk med rAF + flyCameraTo + manuell mouse-tracking ga hakking
- * - Google's native ROTATE-gesture er allerede smørbløt (WebGL-drevet)
- * - Ved å la Google kjøre sin egen gesture med fakes Ctrl, får vi smoothness gratis
- *
- * Scroll (zoom) og shift+drag (tilt) er uendret — Googles default. Vi rører kun
- * mus-drags uten modifier for å konvertere PAN → ROTATE.
- *
- * Touch: touch-events har ikke ctrlKey-felt, så denne hijack-en treffer kun
- * mus. For touch bruker vi Google's default gesture-handling (GestureHandling.GREEDY).
- */
-
 // ── Prosjektmarkør: range-avhengig skala ──────────────────────────────────
 // Google 3D-markører er skjerm-forankret (konstant px uansett zoom), så uten
 // dette dominerer chip-en både tett innpå (dekker nabo-POI-er) og uttrukket
@@ -344,132 +325,12 @@ function Map3DInner({
     [onMapReady],
   );
 
-  // Container-ref for orbit-hijack (capture-phase event-listener).
+  // Container-ref for touch-action-containeren (touch-action:none-divet under).
+  // Boardet kjører alltid freeMode → Googles native gesture-modell (drag=pan,
+  // ctrl+drag=rotate, scroll=zoom, pinch/2-finger på touch). Den gamle orbit-
+  // hijack-en (ctrlKey-spoof + zoom/dblclick-blokk) var no-op i freeMode og er
+  // derfor fjernet (CARRY-OVER «dropp orbit-hijack»).
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  // Orbit-as-default: override ctrlKey=true på mus-drags, så Google ser ROTATE.
-  // Kun venstre musetast; scroll/touch/shift forblir uberørt.
-  // I freeMode skipper vi hele hijack-en — brukeren får standard Google Maps
-  // gesture-modell (drag=pan, ctrl+drag=rotate, scroll=zoom, dblclick=zoom).
-  useEffect(() => {
-    if (!activated) return;
-    if (freeMode) return;
-    const container = containerRef.current;
-    if (!container) return;
-
-    const forceOrbitGesture = (e: PointerEvent | MouseEvent) => {
-      // Kun venstre musetast, kun når Ctrl ikke allerede holdes.
-      // Touch (pointerType === 'touch') skipper vi — de har ikke ctrlKey.
-      if ((e as PointerEvent).pointerType === "touch") return;
-      if (e.button !== undefined && e.button !== 0) return;
-      if (e.ctrlKey) return;
-      try {
-        Object.defineProperty(e, "ctrlKey", {
-          get: () => true,
-          configurable: true,
-        });
-      } catch {
-        // Ignorer — noen eventer kan være non-configurable.
-      }
-    };
-
-    // Zoom er deaktivert: blokker scroll-wheel før Google ser eventen.
-    const blockZoomWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
-    // EKSPERIMENT (plan 005): touch-blokking helt fjernet — vi prøver Googles
-    // native touch-gesture-handling (1-finger pan, pinch zoom, 2-finger rotate/
-    // tilt) i håp om at den glatte native-følelsen vinner over en låst statisk
-    // opplevelse. bounds + minAltitude/maxAltitude håndheves natively, så
-    // brukeren kan ikke skli helt vekk eller zoome ut av orbit-radien.
-    // Behold mus-hijack på desktop (ctrlKey-spoof) — den fungerer som forventet.
-
-    // Dobbeltklikk-zoom er deaktivert: kameraet skal forbli forankret rundt
-    // boligen. Google's WebGL-handler oppdager dobbeltklikk via egen pointer-
-    // tids-tracking, så DOM `dblclick`-eventet alene treffer ikke. Vi teller
-    // pointerdown selv og blokkerer den andre raske klikket.
-    const DBL_CLICK_THRESHOLD_MS = 300;
-    const DBL_CLICK_THRESHOLD_PX = 10;
-    let lastPointerDownTime = 0;
-    let lastPointerDownX = 0;
-    let lastPointerDownY = 0;
-
-    const blockDblClickFromPointer = (e: PointerEvent | MouseEvent) => {
-      if ((e as PointerEvent).pointerType === "touch") return;
-      if (e.button !== undefined && e.button !== 0) return;
-
-      const now = performance.now();
-      const dt = now - lastPointerDownTime;
-      const dx = Math.abs(e.clientX - lastPointerDownX);
-      const dy = Math.abs(e.clientY - lastPointerDownY);
-
-      if (
-        dt < DBL_CLICK_THRESHOLD_MS &&
-        dx < DBL_CLICK_THRESHOLD_PX &&
-        dy < DBL_CLICK_THRESHOLD_PX
-      ) {
-        // Dette er det andre klikket i en dobbeltklikk-sekvens. Stopp før
-        // Google ser den — stopImmediatePropagation hindrer også vår egen
-        // forceOrbitGesture-handler i å fyre på en zoom-klikk.
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        lastPointerDownTime = 0;
-        return;
-      }
-      lastPointerDownTime = now;
-      lastPointerDownX = e.clientX;
-      lastPointerDownY = e.clientY;
-    };
-
-    // Backup: blokkér også DOM-eventene `dblclick` og `click` med detail >= 2
-    // i tilfelle Google har en handler på dem.
-    const blockDblClickEvent = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    };
-    const blockMultiClick = (e: MouseEvent) => {
-      if (e.detail >= 2) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    };
-
-    // Capture-phase så vi treffer før Google's shadow-DOM-listenere.
-    // Dekker både pointer- og mouse-events for bred browser-støtte.
-    const captureOpts = { capture: true, passive: true } as AddEventListenerOptions;
-    // Wheel og dblclick-blokk må være non-passive for at preventDefault skal fungere.
-    const wheelOpts = { capture: true, passive: false } as AddEventListenerOptions;
-    const dblOpts = { capture: true, passive: false } as AddEventListenerOptions;
-
-    // VIKTIG: blockDblClickFromPointer registreres FØR forceOrbitGesture så
-    // stopImmediatePropagation på den andre klikket også stopper orbit-overstyringen.
-    // Kun pointerdown — mousedown fyrer for samme fysiske klikk og ville feilaktig
-    // bli tolket som "andre klikk" (lastPointerDownTime nettopp satt av pointerdown).
-    container.addEventListener("pointerdown", blockDblClickFromPointer, dblOpts);
-    container.addEventListener("pointerdown", forceOrbitGesture, captureOpts);
-    container.addEventListener("pointermove", forceOrbitGesture, captureOpts);
-    container.addEventListener("mousedown", forceOrbitGesture, captureOpts);
-    container.addEventListener("mousemove", forceOrbitGesture, captureOpts);
-    container.addEventListener("wheel", blockZoomWheel, wheelOpts);
-    container.addEventListener("dblclick", blockDblClickEvent, dblOpts);
-    container.addEventListener("click", blockMultiClick, dblOpts);
-    return () => {
-      container.removeEventListener("pointerdown", blockDblClickFromPointer, dblOpts);
-      container.removeEventListener("pointerdown", forceOrbitGesture, captureOpts);
-      container.removeEventListener("pointermove", forceOrbitGesture, captureOpts);
-      container.removeEventListener("mousedown", forceOrbitGesture, captureOpts);
-      container.removeEventListener("mousemove", forceOrbitGesture, captureOpts);
-      container.removeEventListener("wheel", blockZoomWheel, wheelOpts);
-      container.removeEventListener("dblclick", blockDblClickEvent, dblOpts);
-      container.removeEventListener("click", blockMultiClick, dblOpts);
-    };
-  }, [activated, freeMode]);
-
 
   // Bruker Googles native gesture-handling. Bounds + altitude-grenser
   // håndheves av Google i WebGL → butter smooth, ingen JS-kamp.
@@ -555,80 +416,19 @@ function Map3DInner({
   );
 }
 
-/**
- * Mapbox 2D satellitt-fallback når WebGL ikke er tilgjengelig.
- * Bygget inline her (Map3DFallback er en tekst-liste, ikke kart).
- */
-function MapboxFallback({
-  center,
-  pois,
-  onPOIClick,
-}: {
-  center: { lat: number; lng: number };
-  pois: POI[];
-  onPOIClick?: (poiId: string) => void;
-}) {
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
-  if (!token) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100 p-8 text-center">
-        <p className="text-sm text-gray-500">
-          Kart ikke tilgjengelig — mangler Mapbox-nøkkel.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <Map
-      mapboxAccessToken={token}
-      initialViewState={{
-        longitude: center.lng,
-        latitude: center.lat,
-        zoom: 15,
-      }}
-      style={{ width: "100%", height: "100%" }}
-      mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
-    >
-      {pois.map((poi) => {
-        const Icon = getFilledIcon(poi.category.icon);
-        return (
-          <MapboxMarker
-            key={poi.id}
-            longitude={poi.coordinates.lng}
-            latitude={poi.coordinates.lat}
-            anchor="center"
-            onClick={(e) => {
-              e.originalEvent.stopPropagation();
-              onPOIClick?.(poi.id);
-            }}
-          >
-            <div style={{ cursor: "pointer" }}>
-              <Marker3DPin
-                color={poi.category.color}
-                backgroundColor={hexLightTint(poi.category.color)}
-                Icon={Icon}
-              />
-            </div>
-          </MapboxMarker>
-        );
-      })}
-    </Map>
-  );
-}
-
 export function MapView3D(props: MapView3DProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const { isAvailable } = useWebGLCheck();
 
   if (!isAvailable) {
+    // Ingen Mapbox-fallback (0 Mapbox i motorens hot path). gmp-map-3d krever
+    // WebGL → statisk tekst-tilstand når nettleseren ikke støtter det.
     return (
-      <MapboxFallback
-        center={props.center}
-        pois={props.pois}
-        onPOIClick={props.onPOIClick}
-      />
+      <div className="w-full h-full flex items-center justify-center bg-gray-100 p-8 text-center">
+        <p className="text-sm text-gray-500">
+          3D-kart er ikke tilgjengelig i denne nettleseren.
+        </p>
+      </div>
     );
   }
 
