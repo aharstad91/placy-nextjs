@@ -43,3 +43,29 @@ sesjon mot et kjørende board. Bygges derfor IKKE autonomt; venter på avklaring
 en human-attendert sesjon mot eksisterende prod-board (verbatim-port ⇒ samme motor-atferd),
 og fjern den kunstige r06.8→r09-blokkeringen slik at PRD 9-skallet kan porteres parallelt.
 Ikke ratifisert — Andreas avgjør.
+
+---
+
+## OBS (funnet under r07.7 AC2-verifikasjon) — legacy `app/api/eiendom/tekst` runtime-LLM-rute
+
+**Kategori:** scope-/produkt-valg (fjern vs. port en eksisterende feature-rute) — IKKE en r07.7-blocker.
+
+**Kontekst.** r07.7 (kuraterings-orkestratoren) er bygget og verifisert: curate-narrative.ts
+bruker build-time skill-dans, importerer IKKE `@anthropic-ai/sdk`, og har ingen runtime-LLM-
+kall (AC2 holder for curation-flyten). MEN under AC2-sveipet («ingen Anthropic-runtime-kall
+fra `app/`») dukket det opp ÉN pre-eksisterende runtime-LLM-rute som IKKE er en del av PRD 7:
+`app/api/eiendom/tekst/route.ts` (`import Anthropic from "@anthropic-ai/sdk"` →
+`anthropic.messages.create(...)` ved request-tid). Den genererer eiendoms-selvbetjent
+nabolagstekst og er bygget på den DØDE `targetAudience: family|young|senior`-modellen
+(jf. memory `project_report_tier_model` + r03.8-kommentaren «family/young/senior-modellen død»).
+
+**Det åpne spørsmålet.** Ruten bryter den globale CLAUDE.md-regelen «ALDRI runtime LLM-kall —
+build-time only» OG hviler på en utfaset datamodell. Skal den (a) **slettes** (kodebase-hygiene,
+hvis eiendom-selvbetjent-tekst er erstattet av Gemini+Fable build-time-kuratering per Beslutning
+13 / `project_editorial_gemini_fable`), eller (b) **portes/beholdes** fordi en live eiendoms-
+flate fortsatt kaller den?
+
+**Hvorfor loopen ikke avgjør selv.** Å slette en feature-rute er et destruktivt scope-valg
+(mulig live forbruker) som ligger UTENFOR PRD 7. Det er ingen PRD/kode-avstemming loopen kan
+utlede — det krever at Andreas vet om eiendoms-selvbetjent-tekst fortsatt er i bruk eller er
+superseded. Flagges her; r07.7 ble IKKE blokkert på den (curation-AC2 er oppfylt på egne premisser).
