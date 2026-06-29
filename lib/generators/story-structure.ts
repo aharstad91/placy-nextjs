@@ -11,7 +11,7 @@ import {
   POI,
   Category,
 } from "../types";
-import { DiscoveredPOI } from "./poi-discovery";
+import { DiscoveredPOI } from "@/lib/pipeline/poi-discovery";
 import { slugify } from "../utils/slugify";
 
 // === Types ===

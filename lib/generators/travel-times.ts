@@ -4,7 +4,7 @@
  */
 
 import { Coordinates, TravelMode } from "../types";
-import { DiscoveredPOI } from "./poi-discovery";
+import { DiscoveredPOI } from "@/lib/pipeline/poi-discovery";
 
 // === Types ===
 

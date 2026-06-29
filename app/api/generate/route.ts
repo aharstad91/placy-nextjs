@@ -10,7 +10,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { Project, Coordinates } from "@/lib/types";
-import { discoverPOIs, DiscoveredPOI } from "@/lib/generators/poi-discovery";
+import { discoverPOIs, DiscoveredPOI } from "@/lib/pipeline/poi-discovery";
 import { generateStoryStructure, convertToPOI, ThemeConfig } from "@/lib/generators/story-structure";
 import { mergeProjectData } from "@/lib/generators/merge-data";
 import { slugify } from "@/lib/utils/slugify";

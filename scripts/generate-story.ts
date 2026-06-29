@@ -29,7 +29,7 @@ import {
   DiscoveredPOI,
   GOOGLE_CATEGORY_MAP,
   TRANSPORT_CATEGORIES,
-} from "../lib/generators/poi-discovery";
+} from "../lib/pipeline/poi-discovery";
 import { calculateTravelTimes, applyTravelTimesToPOIs } from "../lib/generators/travel-times";
 import {
   generateStoryStructure,

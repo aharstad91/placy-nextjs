@@ -4,7 +4,7 @@
  */
 
 import type { DbPoi, DbCategory } from "@/lib/supabase/types";
-import type { DiscoveredPOI } from "./poi-discovery";
+import type { DiscoveredPOI } from "@/lib/pipeline/poi-discovery";
 import { generateStoryStructure, DEFAULT_THEMES, type StoryGeneratorConfig, type ThemeConfig } from "./story-structure";
 import type {
   GeneratedStructure,

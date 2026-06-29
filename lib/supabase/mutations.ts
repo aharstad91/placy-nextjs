@@ -448,7 +448,8 @@ export async function updateProjectStoryMetadata(
  * Upsert categories (simple upsert, no preservation needed)
  */
 export async function upsertCategories(
-  categories: Array<{ id: string; name: string; icon: string; color: string }>
+  categories: Array<{ id: string; name: string; icon: string; color: string }>,
+  opts: { schema?: "public" | "v2" } = {}
 ): Promise<void> {
   const supabase = createServerClient();
   if (!supabase) {
@@ -457,7 +458,15 @@ export async function upsertCategories(
 
   if (categories.length === 0) return;
 
-  const { error } = await supabase
+  // v2-skrivesti (PRD 3): provision-pipelinen sender schema:"v2"; legacy-kallere
+  // (admin-import-route) bruker default "public" og er uberørt. v2 og public har
+  // identisk tabell-form (paritet, PRD 1) → den scopede klienten castes til
+  // public-typen så .from() typer entydig; runtime treffer valgt schema.
+  const db =
+    opts.schema === "v2"
+      ? (supabase.schema("v2") as unknown as typeof supabase)
+      : supabase;
+  const { error } = await db
     .from("categories")
     .upsert(categories, { onConflict: "id" });
 
@@ -478,7 +487,8 @@ export async function upsertCategories(
  * editorial_sources, featured_image, description
  */
 export async function upsertPOIsWithEditorialPreservation(
-  pois: POIImportData[]
+  pois: POIImportData[],
+  opts: { schema?: "public" | "v2" } = {}
 ): Promise<POIUpsertResult> {
   const supabase = createServerClient();
   if (!supabase) {
@@ -489,9 +499,18 @@ export async function upsertPOIsWithEditorialPreservation(
 
   if (pois.length === 0) return result;
 
+  // v2-skrivesti (PRD 3): provision-pipelinen sender schema:"v2"; legacy-kallere
+  // (admin-import-route) bruker default "public" og er uberørt. v2 og public har
+  // identisk tabell-form (paritet, PRD 1) → den scopede klienten castes til
+  // public-typen så .from() typer entydig; runtime treffer valgt schema.
+  const db =
+    opts.schema === "v2"
+      ? (supabase.schema("v2") as unknown as typeof supabase)
+      : supabase;
+
   // Fetch existing POIs to preserve their editorial content
   const poiIds = pois.map(p => p.id);
-  const { data: existingPois, error: fetchError } = await supabase
+  const { data: existingPois, error: fetchError } = await db
     .from("pois")
     .select("id, editorial_hook, local_insight, story_priority, editorial_sources, featured_image, description, trust_score, trust_flags, trust_score_updated_at, google_website, google_business_status, google_price_level, poi_tier, tier_reason, is_chain, is_local_gem, poi_metadata, tier_evaluated_at")
     .in("id", poiIds);
@@ -555,7 +574,7 @@ export async function upsertPOIsWithEditorialPreservation(
   });
 
   // Upsert merged data
-  const { error: upsertError } = await supabase
+  const { error: upsertError } = await db
     .from("pois")
     .upsert(mergedPois, { onConflict: "id" });
 

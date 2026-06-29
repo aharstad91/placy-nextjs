@@ -88,22 +88,18 @@ describe("enrichReportPois — Unit 7 (foto-fase DEFERRED → Unit 4)", () => {
     expect(result.warnings.some((w) => w.includes("7 kommersielle"))).toBe(true);
   });
 
-  it("AC2: revalidatePath-feil fra importPOIsToProject fanges (CLI) → leser DB-antall, fortsetter", async () => {
-    importMock.mockRejectedValue(
-      new Error("revalidatePath is not available in this context")
+  it("AC2 (cache-isolasjon): importfeil kaster — ingen revalidatePath-svelging arvet", async () => {
+    // import-pois rører ikke lenger revalidatePath (r03.3), så enrich har ingen
+    // msg.includes("revalidatePath")-svelge-gren. Enhver importfeil får kaste.
+    importMock.mockRejectedValue(new Error("Google Places quota exceeded"));
+    await expect(enrichReportPois(BASE_OPTIONS)).rejects.toThrow(
+      /Google Places import feilet/,
     );
 
-    const result = await enrichReportPois(BASE_OPTIONS);
-
-    // Skal ikke kaste, men advare
-    expect(result.warnings.some((w) => w.includes("revalidatePath"))).toBe(true);
-    // Uten ekte Supabase-klient settes google-tall til 0 (returverdien gikk tapt i throw)
-    expect(result.google.total).toBe(0);
-  });
-
-  it("AC2: ikke-revalidatePath-feil fra import → kaster (ekte feil, ikke svelg)", async () => {
-    importMock.mockRejectedValue(new Error("Google Places quota exceeded"));
-
+    // Også en revalidatePath-formet feil skal nå KASTE (ikke svelges) — landmina er borte
+    importMock.mockRejectedValue(
+      new Error("revalidatePath is not available in this context"),
+    );
     await expect(enrichReportPois(BASE_OPTIONS)).rejects.toThrow(
       /Google Places import feilet/,
     );

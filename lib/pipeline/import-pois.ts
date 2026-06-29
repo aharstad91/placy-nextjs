@@ -1,17 +1,20 @@
 /**
- * Reusable POI import pipeline
+ * Reusable POI import pipeline (PRD 3 / r03.3).
  *
  * Extracts the core import logic from app/api/admin/import/route.ts
  * so it can be called from CLI scripts, server actions, or API routes.
+ *
+ * Skriver mot v2-skjemaet (`.schema('v2')`) — referanse-board re-provisjoneres
+ * inn i v2. Discovery-funksjonene (`./poi-discovery`) returnerer rene resultater;
+ * denne modulen rører ikke cache-invalidering (revalidatePath fjernet, PRD 7-arch).
  */
 
-import { revalidatePath } from "next/cache";
 import {
   discoverGooglePlaces,
   discoverEnturStops,
   discoverBysykkelStations,
   DiscoveredPOI,
-} from "@/lib/generators/poi-discovery";
+} from "./poi-discovery";
 import {
   upsertPOIsWithEditorialPreservation,
   upsertCategories,
@@ -74,13 +77,23 @@ async function fetchExistingPOIsInBoundingBox(
   const supabase = createServerClient();
   if (!supabase) return [];
 
-  const { data } = await supabase
+  const { data, error } = await supabase
+    .schema("v2")
     .from("pois")
     .select("id, google_place_id, entur_stopplace_id, bysykkel_station_id")
     .gte("lat", bbox.minLat)
     .lte("lat", bbox.maxLat)
     .gte("lng", bbox.minLng)
     .lte("lng", bbox.maxLng);
+
+  if (error) {
+    // Dedup-tap (ikke abort): uten eksisterende-POI-lista re-inserteres POIer
+    // som allerede finnes. Logges eksplisitt (AC7 — ingen stille return []).
+    console.error(
+      `[import-pois] Kunne ikke hente eksisterende POIer for dedup: ${error.message}`
+    );
+    return [];
+  }
 
   return data || [];
 }
@@ -198,16 +211,30 @@ function getUniqueCategoriesFromPOIs(pois: DiscoveredPOI[]) {
   return categories;
 }
 
-/** Link POIs to project and all its products, then revalidate public pages */
+/**
+ * Link POIs to project and all its products.
+ *
+ * Cache-isolasjon (PRD 3): denne modulen SKRIVER kun data og rører ikke
+ * cache-invalidering. `revalidatePath` er bevisst fjernet — den kastet i
+ * CLI-kontekst og tvang en `msg.includes("revalidatePath")`-svelge-landmine
+ * oppstrøms. Cache-busting flyttes til ett eksplisitt steg (PRD 7-arkitektur).
+ */
 async function addPOIsToProject(projectId: string, poiIds: string[]) {
   const supabase = createServerClient();
   if (!supabase || poiIds.length === 0) return;
+  const db = supabase.schema("v2");
 
   // Get existing links to avoid duplicates
-  const { data: existingLinks } = await supabase
+  const { data: existingLinks, error: linksError } = await db
     .from("project_pois")
     .select("poi_id")
     .eq("project_id", projectId);
+
+  if (linksError) {
+    console.error(
+      `[import-pois] Kunne ikke hente project_pois-lenker for ${projectId}: ${linksError.message}`
+    );
+  }
 
   const existingPoiIds = new Set((existingLinks || []).map((l) => l.poi_id));
   const newLinks = poiIds
@@ -215,36 +242,48 @@ async function addPOIsToProject(projectId: string, poiIds: string[]) {
     .map((poiId) => ({ project_id: projectId, poi_id: poiId }));
 
   if (newLinks.length > 0) {
-    await supabase.from("project_pois").insert(newLinks);
+    const { error: insertError } = await db.from("project_pois").insert(newLinks);
+    if (insertError) {
+      console.error(
+        `[import-pois] project_pois-insert feilet for ${projectId}: ${insertError.message}`
+      );
+    }
   }
 
   // Auto-add to all products in this project (Explorer, Report, Guide)
-  const { data: products } = await supabase
+  const { data: products, error: productsError } = await db
     .from("products")
     .select("id")
     .eq("project_id", projectId);
 
-  if (products && products.length > 0) {
-    const productPoiRows = products.flatMap((product) =>
-      poiIds.map((poiId) => ({ product_id: product.id, poi_id: poiId }))
+  if (productsError) {
+    console.error(
+      `[import-pois] Kunne ikke hente produkter for ${projectId}: ${productsError.message}`
     );
-    await supabase
+  }
+
+  if (products && products.length > 0) {
+    // v2.product_pois.featured er NOT NULL uten default (baseline 070:311) — sett
+    // eksplisitt false ved lenking. Hydreringen (r03.6) markerer featured=true for
+    // de utvalgte POIene senere; en POI er ikke featured bare ved å bli lenket.
+    const productPoiRows = products.flatMap((product) =>
+      poiIds.map((poiId) => ({
+        product_id: product.id,
+        poi_id: poiId,
+        featured: false,
+      }))
+    );
+    const { error: productPoisError } = await db
       .from("product_pois")
       .upsert(productPoiRows, {
         onConflict: "product_id,poi_id",
         ignoreDuplicates: true,
       });
-  }
-
-  // Revalidate public pages so Explorer/Report show new POIs immediately
-  const { data: project } = await supabase
-    .from("projects")
-    .select("customer_id, url_slug")
-    .eq("id", projectId)
-    .single();
-
-  if (project) {
-    revalidatePath(`/${project.customer_id}/${project.url_slug}`, "layout");
+    if (productPoisError) {
+      console.error(
+        `[import-pois] product_pois-upsert feilet for ${projectId}: ${productPoisError.message}`
+      );
+    }
   }
 }
 
@@ -374,7 +413,7 @@ export async function importPOIsToProject(options: {
   // 6. Ensure categories exist (foreign key constraint)
   const uniqueCategories = getUniqueCategoriesFromPOIs(allDiscovered);
   if (uniqueCategories.length > 0) {
-    await upsertCategories(uniqueCategories);
+    await upsertCategories(uniqueCategories, { schema: "v2" });
   }
 
   // 7. Convert to import format and batch upsert
@@ -384,7 +423,9 @@ export async function importPOIsToProject(options: {
   ];
 
   if (poisToUpsert.length > 0) {
-    const result = await upsertPOIsWithEditorialPreservation(poisToUpsert);
+    const result = await upsertPOIsWithEditorialPreservation(poisToUpsert, {
+      schema: "v2",
+    });
     if (result.errors.length > 0) {
       console.error(
         `[importPOIsToProject] Upsert errors:`,

@@ -13,7 +13,7 @@ import {
   DiscoveredPOI,
   GOOGLE_CATEGORY_MAP,
   TRANSPORT_CATEGORIES,
-} from "@/lib/generators/poi-discovery";
+} from "@/lib/pipeline/poi-discovery";
 import {
   upsertPOIsWithEditorialPreservation,
   upsertCategories,

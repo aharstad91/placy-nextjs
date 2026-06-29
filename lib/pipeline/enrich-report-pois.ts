@@ -10,7 +10,6 @@
  */
 
 import { importPOIsToProject } from "@/lib/pipeline/import-pois";
-import { createServerClient } from "@/lib/supabase/client";
 
 /** Google Places-kategorier for boligprofilen */
 export const BOLIG_GOOGLE_CATEGORIES = [
@@ -78,8 +77,9 @@ export async function enrichReportPois(options: {
   }
 
   // Steg 1: Google Places + Entur + Bysykkel
-  // importPOIsToProject kaller revalidatePath til slutt — i CLI-kontekst kaster
-  // dette, men data er allerede skrevet. Fanger feilen og fortsetter.
+  // Cache-isolasjon (PRD 3 / r03.3): import-pois rører ikke lenger
+  // revalidatePath, så ingen `msg.includes("revalidatePath")`-svelge-landmine
+  // arves — returverdien er alltid intakt. Ekte importfeil får kaste.
   let googleResult: Awaited<ReturnType<typeof importPOIsToProject>>;
   try {
     googleResult = await importPOIsToProject({
@@ -93,23 +93,7 @@ export async function enrichReportPois(options: {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    // revalidatePath kaster i CLI-kontekst — ignorer, data er skrevet
-    if (msg.includes("revalidatePath") || msg.includes("cache")) {
-      warnings.push(`ℹ️  revalidatePath ikke tilgjengelig i CLI — ignorerer (data er skrevet)`);
-      // Les faktisk antall fra DB siden returnverdien gikk tapt i throw
-      const supabase = createServerClient();
-      let total = 0;
-      if (supabase) {
-        const { count } = await supabase
-          .from("project_pois")
-          .select("*", { count: "exact", head: true })
-          .eq("project_id", projectId);
-        total = count ?? 0;
-      }
-      googleResult = { total, new: total, updated: 0, byCategory: {} };
-    } else {
-      throw new Error(`Google Places import feilet: ${msg}`);
-    }
+    throw new Error(`Google Places import feilet: ${msg}`);
   }
 
   if (googleResult.total < 10) {
