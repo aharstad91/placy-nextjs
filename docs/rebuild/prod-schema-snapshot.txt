@@ -1,0 +1,275 @@
+# Placy prod-skjema-snapshot (introspisert 2026-06-26) — grunnlag for migrasjons-kollaps i prd-datamodell
+# 24 tabeller. KEEPER vs LEGACY-klassifisering i carry-over-manifestet.
+
+areas	id	text	NO
+areas	name_no	text	NO
+areas	name_en	text	NO
+areas	slug_no	text	NO
+areas	slug_en	text	NO
+areas	description_no	text	YES
+areas	description_en	text	YES
+areas	center_lat	numeric	NO
+areas	center_lng	numeric	NO
+areas	zoom_level	integer	YES
+areas	active	boolean	YES
+areas	created_at	timestamp with time zone	YES
+areas	parent_id	text	YES
+areas	level	text	NO
+areas	boundary	jsonb	YES
+areas	postal_codes	ARRAY	YES
+areas	report_editorial	jsonb	YES
+categories	id	text	NO
+categories	name	text	NO
+categories	icon	text	NO
+categories	color	text	NO
+categories	created_at	timestamp with time zone	YES
+category_slugs	category_id	text	NO
+category_slugs	locale	text	NO
+category_slugs	slug	text	NO
+category_slugs	seo_title	text	YES
+category_slugs	seo_description	text	YES
+category_slugs	intro_text	text	YES
+collections	id	text	NO
+collections	slug	text	NO
+collections	project_id	text	NO
+collections	email	text	YES
+collections	poi_ids	ARRAY	NO
+collections	created_at	timestamp with time zone	NO
+customers	id	text	NO
+customers	name	text	NO
+customers	created_at	timestamp with time zone	YES
+generation_requests	id	uuid	NO
+generation_requests	address	text	NO
+generation_requests	address_normalized	text	NO
+generation_requests	email	text	NO
+generation_requests	housing_type	text	NO
+generation_requests	status	text	NO
+generation_requests	geocoded_lat	double precision	YES
+generation_requests	geocoded_lng	double precision	YES
+generation_requests	geocoded_city	text	YES
+generation_requests	address_slug	text	NO
+generation_requests	project_id	text	YES
+generation_requests	result_url	text	YES
+generation_requests	error_message	text	YES
+generation_requests	consent_given	boolean	NO
+generation_requests	created_at	timestamp with time zone	NO
+generation_requests	updated_at	timestamp with time zone	NO
+generation_requests	completed_at	timestamp with time zone	YES
+generation_requests	customer_id	text	YES
+place_knowledge	id	text	NO
+place_knowledge	poi_id	text	YES
+place_knowledge	area_id	text	YES
+place_knowledge	topic	text	NO
+place_knowledge	fact_text	text	NO
+place_knowledge	fact_text_en	text	YES
+place_knowledge	structured_data	jsonb	YES
+place_knowledge	confidence	text	NO
+place_knowledge	source_url	text	YES
+place_knowledge	source_name	text	YES
+place_knowledge	sort_order	integer	YES
+place_knowledge	display_ready	boolean	YES
+place_knowledge	created_at	timestamp with time zone	NO
+place_knowledge	updated_at	timestamp with time zone	NO
+place_knowledge	verified_at	timestamp with time zone	YES
+pois	id	text	NO
+pois	name	text	NO
+pois	lat	numeric	NO
+pois	lng	numeric	NO
+pois	address	text	YES
+pois	category_id	text	YES
+pois	google_place_id	text	YES
+pois	google_rating	numeric	YES
+pois	google_review_count	integer	YES
+pois	google_maps_url	text	YES
+pois	photo_reference	text	YES
+pois	editorial_hook	text	YES
+pois	local_insight	text	YES
+pois	story_priority	text	YES
+pois	editorial_sources	ARRAY	YES
+pois	featured_image	text	YES
+pois	description	text	YES
+pois	entur_stopplace_id	text	YES
+pois	bysykkel_station_id	text	YES
+pois	hyre_station_id	text	YES
+pois	created_at	timestamp with time zone	YES
+pois	updated_at	timestamp with time zone	YES
+pois	trust_score	numeric	YES
+pois	trust_flags	ARRAY	NO
+pois	trust_score_updated_at	timestamp with time zone	YES
+pois	google_website	text	YES
+pois	google_business_status	text	YES
+pois	google_price_level	integer	YES
+pois	poi_tier	smallint	YES
+pois	tier_reason	text	YES
+pois	is_chain	boolean	YES
+pois	is_local_gem	boolean	YES
+pois	poi_metadata	jsonb	YES
+pois	tier_evaluated_at	timestamp with time zone	YES
+pois	area_id	text	YES
+pois	opening_hours_json	jsonb	YES
+pois	google_phone	text	YES
+pois	opening_hours_updated_at	timestamp with time zone	YES
+pois	facebook_url	text	YES
+pois	gallery_images	ARRAY	YES
+pois	photo_resolved_at	timestamp with time zone	YES
+pois	source	text	YES
+pois	nsr_id	text	YES
+pois	barnehagefakta_id	text	YES
+pois	osm_id	text	YES
+pois	event_dates	ARRAY	YES
+pois	event_time_start	text	YES
+pois	event_time_end	text	YES
+pois	event_description	text	YES
+pois	event_url	text	YES
+pois	event_tags	ARRAY	YES
+pois	parent_poi_id	text	YES
+pois	anchor_summary	text	YES
+product_categories	product_id	text	NO
+product_categories	category_id	text	NO
+product_categories	display_order	integer	YES
+product_pois	product_id	text	NO
+product_pois	poi_id	text	NO
+product_pois	category_override_id	text	YES
+product_pois	sort_order	integer	YES
+product_pois	featured	boolean	NO
+products	id	text	NO
+products	project_id	text	NO
+products	product_type	text	NO
+products	config	jsonb	NO
+products	story_title	text	YES
+products	story_intro_text	text	YES
+products	story_hero_images	ARRAY	YES
+products	version	integer	NO
+products	created_at	timestamp with time zone	NO
+products	updated_at	timestamp with time zone	NO
+project_pois	project_id	text	NO
+project_pois	poi_id	text	NO
+project_pois	sort_order	integer	YES
+project_pois_legacy	project_id	text	NO
+project_pois_legacy	poi_id	text	NO
+project_trips	id	text	NO
+project_trips	project_id	text	NO
+project_trips	trip_id	text	NO
+project_trips	sort_order	integer	YES
+project_trips	enabled	boolean	YES
+project_trips	start_poi_id	text	YES
+project_trips	start_name	text	YES
+project_trips	start_description	text	YES
+project_trips	start_transition_text	text	YES
+project_trips	reward_title	text	YES
+project_trips	reward_description	text	YES
+project_trips	reward_code	text	YES
+project_trips	reward_validity_days	integer	YES
+project_trips	welcome_text	text	YES
+projects	id	text	NO
+projects	customer_id	text	NO
+projects	name	text	NO
+projects	url_slug	text	NO
+projects	center_lat	numeric	NO
+projects	center_lng	numeric	NO
+projects	description	text	YES
+projects	version	integer	NO
+projects	created_at	timestamp with time zone	NO
+projects	updated_at	timestamp with time zone	NO
+projects	short_id	text	NO
+projects	venue_type	text	YES
+projects	discovery_circles	jsonb	YES
+projects	welcome_tagline	text	YES
+projects	default_product	text	NO
+projects	welcome_image	text	YES
+projects	welcome_title	text	YES
+projects	tags	ARRAY	YES
+projects	theme	jsonb	YES
+projects	homepage_url	text	YES
+projects	has_3d_addon	boolean	NO
+projects	venue_context	text	YES
+projects_legacy	id	text	NO
+projects_legacy	customer_id	text	YES
+projects_legacy	name	text	NO
+projects_legacy	url_slug	text	NO
+projects_legacy	center_lat	numeric	NO
+projects_legacy	center_lng	numeric	NO
+projects_legacy	story_title	text	YES
+projects_legacy	story_intro_text	text	YES
+projects_legacy	story_hero_images	ARRAY	YES
+projects_legacy	created_at	timestamp with time zone	YES
+projects_legacy	updated_at	timestamp with time zone	YES
+projects_legacy	parent_project_id	text	YES
+projects_legacy	lens_slug	text	YES
+projects_legacy	lens_config	jsonb	YES
+projects_legacy	generated_at	timestamp with time zone	YES
+projects_legacy	product_type	text	NO
+section_pois	section_id	text	NO
+section_pois	poi_id	text	NO
+section_pois	sort_order	integer	NO
+story_sections	id	text	NO
+story_sections	project_id	text	YES
+story_sections	type	text	NO
+story_sections	sort_order	integer	NO
+story_sections	category_label	text	YES
+story_sections	title	text	YES
+story_sections	bridge_text	text	YES
+story_sections	content	text	YES
+story_sections	images	ARRAY	YES
+story_sections	theme_story_id	text	YES
+story_sections	created_at	timestamp with time zone	YES
+theme_section_pois	section_id	text	NO
+theme_section_pois	poi_id	text	NO
+theme_section_pois	sort_order	integer	NO
+theme_stories	id	text	NO
+theme_stories	project_id	text	YES
+theme_stories	slug	text	NO
+theme_stories	title	text	NO
+theme_stories	bridge_text	text	YES
+theme_stories	illustration	text	YES
+theme_stories	sort_order	integer	NO
+theme_stories	created_at	timestamp with time zone	YES
+theme_story_sections	id	text	NO
+theme_story_sections	theme_story_id	text	YES
+theme_story_sections	title	text	NO
+theme_story_sections	description	text	YES
+theme_story_sections	images	ARRAY	YES
+theme_story_sections	sort_order	integer	NO
+theme_story_sections	created_at	timestamp with time zone	YES
+translations	id	uuid	NO
+translations	locale	text	NO
+translations	entity_type	text	NO
+translations	entity_id	text	NO
+translations	field	text	NO
+translations	value	text	NO
+translations	created_at	timestamp with time zone	NO
+translations	updated_at	timestamp with time zone	NO
+trip_stops	id	text	NO
+trip_stops	trip_id	text	NO
+trip_stops	poi_id	text	NO
+trip_stops	sort_order	integer	NO
+trip_stops	name_override	text	YES
+trip_stops	description_override	text	YES
+trip_stops	image_url_override	text	YES
+trip_stops	transition_text	text	YES
+trip_stops	local_insight	text	YES
+trips	id	text	NO
+trips	title	text	NO
+trips	description	text	YES
+trips	url_slug	text	NO
+trips	cover_image_url	text	YES
+trips	category	text	YES
+trips	difficulty	text	YES
+trips	season	text	YES
+trips	tags	ARRAY	YES
+trips	featured	boolean	YES
+trips	city	text	NO
+trips	region	text	YES
+trips	country	text	YES
+trips	center_lat	numeric	NO
+trips	center_lng	numeric	NO
+trips	distance_meters	numeric	YES
+trips	duration_minutes	integer	YES
+trips	stop_count	integer	YES
+trips	default_reward_title	text	YES
+trips	default_reward_description	text	YES
+trips	created_by	text	YES
+trips	published	boolean	YES
+trips	created_at	timestamp with time zone	NO
+trips	updated_at	timestamp with time zone	NO
+trips	default_mode	text	NO

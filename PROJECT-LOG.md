@@ -6,6 +6,72 @@
 
 ---
 
+## 2026-06-28 — Moat-strategi brodd til rebuild-PRD-ene: to build-input-rapporter (Lokalkunnskap + Innsikt)
+
+Etter strategi-sparringen denne uka (Moat 1 + Moat 2 designet/skjerpet — full kontekst i `docs/strategy/LOG.md`, entries 2026-06-27 (forts. 2) + 2026-06-28) produsert **én build-input-rapport per moat** som bygger bro fra forretnings-/produktdesignet til de eksisterende rebuild-PRD-ene (08 + 13). Ikke nye PRD-er — input rebuild-sesjonen folder inn. Andreas: «jeg får dem inn i nye v2 av placy nå.»
+
+**Metode:** Leste PRD 08 (lokalkunnskap) + PRD 13 (instrumentering) + 00-INDEX i sin helhet, gap-analyserte mot strategi-designet (kontekst-konvolutt, ⭐⭐-signaler, viewport-heat maps, strøk-aggregering, attributert «Meglers tanker», megler-UGC-flywheel). Skrev IKKE i PRD-ene selv (parallell rebuild-sesjon eier de filene → kollisjonsrisiko); rapportene er additive nye filer.
+
+**Leveranse:**
+- `docs/rebuild/moat-1-lokalkunnskap-build-input.md`
+- `docs/rebuild/moat-2-innsikt-build-input.md`
+
+**Funn — Moat 1 (PRD 8):** Moden og strategisk på linje. Kjernen riktig bygget (Placy-eid kuraterings-IP, delt strøk-DB, provenance-felt, ÉN-kanon-tenancy); Lag A/B mapper rent (Lag A-ingest = PRD 3, Lag B-kuratering = PRD 8). Gap er **additive/post-MVP**: (1) megler-UGC-flaten mangler eier (faller mellom PRD 12/15), (2) «Meglers tanker» bør navngis i deferred-sporet med attributert/de-attributert-splitten, (3) freshness/re-verifisering + kryss-moat-løkke = noterte skylder. Blokkerer ikke MVP.
+
+**Funn — Moat 2 (PRD 13) — det tidskritiske:** Arkitektur riktig (ÉN events-strøm sliced per board, anonym/aggregert, server-only, fra Lag 1), men **event-skjemaet er for tynt for moaten slik den nå er designet.** Fire gap, hvorav to er 🔴 må-fikse-før-Fase-1-bygges: (1) **ingen kontekst-konvolutt** → events confounded fra dag 1 (Ranheim skole/Ladestien); billig fiks (kontekst rir i `payload`-jsonb, ingen migrasjon) men IRREVERSIBEL (Fase 1 logger tidlig Ranheim-volum = valideringsdataen; logget kontekstløst = tapt for alltid). (2) **de to ⭐⭐-signalene mangler** (`route_requested` «fra boligen til X» — directions finnes alt i PRD 11; `search_intent` «hva leter du etter»-nudge — net-ny board-feature i PRD 9); bør i startsettet, ikke deferres. (3) ingen viewport-capture → ingen heat maps. (4) `getEngagementStats` er per-board only — mangler strøk-aggregering (strøk-aggregatet ER moaten; per-board er anekdote). UX-som-instrument (travel-mode synlig, logg presentert kategori-rekkefølge) berører PRD 5/9.
+
+**Den ene setningen:** PRD 1s `events`-skjema + PRD 13s Fase-1-event-form må reconciles med kontekst-konvolutt + ⭐⭐-signaler FØR logger-kjernen bygges.
+
+**Status:** Levert. Andreas integrerer i v2-rebuilden. Strategi-siden ferdig-logget i business-loggen; denne entryen dekker den operasjonelle broa. Ikke pushet (prototype-regel + parallell sesjon).
+
+---
+
+## 2026-06-26 — Beslutning: parallell from-scratch-rebuild med Fable over sommeren (foundation-først)
+
+**Andreas' beslutning** (etter strategi-øktene med Aleksander/Markus, jf. `docs/strategy/2026-06-25-markus-bruktmegler-vs-utbygger.md`): bygge Placy **helt fra bunnen av, på siden, med Fable**, over sommeren. Mål: «fart i august» + «100 % klart til produksjon». 10+ mnd utvikling i alle retninger har gjort miljøet til «et eneste stort rot»; fresh build skal være spisset mot det produktet Placy faktisk skal bli.
+
+**Claude-sparring (kontekst for beslutningen):** Anbefalingen var opprinnelig *ikke* full rewrite nå (retning er aktivt omstridt — megler vs utbygger; `feedback_ship_over_refactor` sier utsett arkitektur-refactor til kunde stiller krav; sommeren er eneste stille vindu og bør gå til data-moaten). **Det som snudde stansen til grønt lys:** «på siden / parallelt» fjerner hovedinnvendingen (august-demoen havner ikke i biter), og Fable gjør kostnaden lav. Founder-kall respektert — med guardrails.
+
+**Den ene reframen som holder:** «100 % klart til produksjon» kan ikke gjelde *produktet* (segment/features avhenger av august-markedsinput) — kun **foundationen**. Bygg den direksjons-agnostiske kjernen 100 %, hold segment-overflaten (nivå-2-kuratering, samlekart) **tynn og swappbar** så august-læring slottes inn uten ny re-rebuild.
+
+**Guardrails for at en from-scratch-build lykkes (ikke havner på 80 % i august):**
+1. **Rebuildens MVP = august-salgsassetet.** Første leveranse = ett rent, **instrumentert**, Ranheim-dypt **nivå-1-board** (autonomt) man kan vise Christian/Frank Robert. Da er rebuild og moat-build (#1 lokal-DB + #2 engasjement-stats, jf. strategi-doc) *samme jobb*, ikke konkurrenter om sommer-fokus.
+2. **Bygg data-moaten inn i foundationen fra linje 1** — instrumentering (POI-klikk/dwell/seksjon, aggregert) + lokalkunnskap-DB-skjema. Det gamle rotet mangler dette; fresh build er det rette øyeblikket. Data er rewrite-trygt; det overlever koden.
+3. **Port læringer, ikke kode.** Gamle repo = referanse/spec, ikke base. Keeper-kjerne kjent uansett segment: 3D-motoren (persistent gmp-map-3d, jf. `project_3d_default_map_engine`), autonom board-generering, data-pipeline.
+4. **Håndhev CLAUDE.md-arkitekturreglene fra linje 1** (ingen useEffect-fetching, server components, `@/lib/supabase`-wrappers, `@/`-imports, next/image). Reglene finnes nettopp for å hindre rotet — clean slate til å følge dem.
+5. **Vokt second-system-effekten:** ikke bygg abstraksjoner for innbilte nivå-2-/samlekart-fremtider; spisset for nivå 1 + data, ekstensjonspunkter ikke utbygd.
+6. **Fallback-regel:** gamle demo holdes deploybar til ny når demo-paritet. **Hard sjekkpunkt ~tidlig august:** når rebuilden ikke har demo-paritet (ett Ranheim-board) → august-salg kjører på gamle demo, rebuild fortsetter etter. Rebuilden får ikke holde salgsmotoren som gissel.
+
+**Arkitektur-prinsipp (Andreas, 2026-06-26): nivå 1/2/3 = ÉN Placy, ikke flere versjoner.** Nivå 2/3 = nivå 1 + flere kapabiliteter *aktivert* + tettere UI — ikke forket kode. **Felles:** data-modell, board-generering, 3D-motor, deployment, instrumentering, auth, POI-/lokalkunnskap-DB. **Tier-styrt (config):** hvilke moduler som mountes (VO/audio, video-reels, fly-around/establishing, kuratert vs. autonom copy) + UI-tetthet. Tier = **runtime capability-manifest**, ikke build-time-fork; et nivå-1-board *er* et nivå-2-board med kapabiliteter av. Konsistent med `project_report_tier_model` (tier = deklarasjon + enkel kravliste, ikke over-engineer). **To watch-outs:** (a) **Del nedover stacken, diverger oppover** (Andreas-presisering 2026-06-26): logikk, data, pipeline, infra *og* design-primitiver = delt, én kilde til sannhet (aldri dupliser logikk → drift). UX-*komposisjonen* per tier står fri til å divergere **bevisst** der opplevelsen krever det (jf. `feedback_mobile_native_ux`: adaptive komponenter når mønstre divergerer, ikke tvunget felles). Synden er duplisert logikk/utilsiktet drift — IKKE bevisst UX-divergens. Gjenbruk infra aggressivt, men la det aldri begrense beste UX per nivå. (b) **lazy-load kapabilitet-moduler** så et nivå-1-board ikke betaler for nivå-2-vekt (video/VO) når av — beskytter nivå-1s ~null marginalkost (hele per-enhet-pris-tesen, 1–2k/enhet volum). **Bonus:** delt kjerne → instrumentering + lokal-DB mater begge tiers' data-moat automatisk (instrumenter én gang).
+
+**Status:** Besluttet, ikke startet. Parallelt spor (egen worktree/repo). Hovedrepoets `main` (inkl. ukommittert establishing-shot-arbeid + `feat/mobil-rapport-board-ux`) berøres ikke av rebuilden før demo-paritet er nådd.
+
+---
+
+## 2026-06-22 — Strøk-«establishing shot»: fra helikopter-spline → rett dronetur (3D rapport-board, `?establishing=1`) — PARKERT, usikker
+
+Live iPhone/Chrome-iterasjon med Andreas (startet 2026-06-21). Smal, seriell UI/kamera-jobb (ikke multi-agent). Alt **lokalt/ukommittert på `main`** (per prototype-regel: vent på Andreas). Ingen VO/lyd — ren visuell komposisjon. **Status: parkert — Andreas «usikker, vanskelig dette. vi jobbe mer med det siden».** Kode står igjen i siste tilstand (rett dronetur), ingen beslutning landet.
+
+**Opphav:** Andreas kom over «London From Above» (Google Earth-flythrough mellom POI-er, tekst-labels + musikk, ingen VO). Ønsket: en **kategori-uavhengig strøk-/nabolags-establishing-flyover** for nivå 2/3 av rapport-boardet, som etablerer *området* (ikke bare én adresse) og lages én gang per strøk. Konkretisert på Grilstad/Ranheim/Charlottenlund.
+
+**Reisen gjennom kamera-grammatikk (dokumentert fordi hver pivot var en læring):**
+1. **Multi-waypoint m/ eksplisitt heading per beat** (svingte 250°→20°→200°…) → «null sammenheng med skifte mellom hvert waypoint». Forkastet.
+2. **Sammenhengende inn-spiral / tangent-drevet heading.** Heading utledes fra rutas tangent (kameraet ser alltid dit det flyr, trekker bak look-at). Fjerner jump-cuts *strukturelt*. Andreas tegnet 6→7 waypoints; Claude la marina-home (`63.43826, 10.50872`) som siste «peil-inn»-punkt (lande på objektet). Bedre, men …
+3. **Arc-length-resampling + centripetal Catmull-Rom** for å fikse ujevn fart («kamera hopper fra punkt til punkt»). Objektivt verifisert konstant bakke-fart (ratio 1.22). MEN: U-vendinger ga heading-whip (~71°/s), og Andreas: spline-gjennom-mange-punkter blir alltid «taggete» + for høy kognitiv last med all høyde-/retningsendring. Forkastet *hele waypoint-spline-tankegangen*.
+4. **NÅVÆRENDE (parkert): rett, flat dronetur.** ÉN rett linje øst→vest, KONSTANT høyde (range 1700) + KONSTANT tilt (58) + KONSTANT heading (288° VNV) — «som å fly en drone rett fra side til side». Ingen sving/zoom/descent → lav kognitiv last. **Lander IKKE på objektet** lenger (krysser forbi; marina på høyre kant m/ hero-pin). Poenget flyttet til *punktene*: sirkelpunktene (POI-blobs) innenfor ±750 m av flylinja tegnes inn **progressivt i fly-over-orden** etter hvert som kameraet passerer dem.
+
+**Progressiv reveal (ny mekanikk i steg 4):** `selectFlyoverBlobs(start,end,…)` projiserer POI-er på flylinja, korridor-filtrerer (perp-avstand ≤ 750 m) og sorterer på `at` (posisjon langs linja). `RevealItem` fikk valgfri `at`; `RevealLayer3D` fikk POSITIONAL-modus + `windowMs`-prop → når alle items har `at` settes appearAt = `at`·windowMs (i stedet for indeks-stagger), og windowMs ≈ 0,9·flyturen. Resultat: jevn strøm av sirkler i takt med kryssingen, ikke et «poff» på starten. WebGL-churn-disiplinen beholdt (settlede markører fryser, memo stopper re-raster).
+
+**Arkitektur:** Isolert `?establishing=1`-modus som AND-er bort produksjonens welcome/basic-intro (unngår to kamera-drivere som slåss). Per-slug config i `board-establishing-shots.ts` (kun `byggetrinn-4` wiret). `window.__placyEstablishing` eksponerer fase for verifisering. Splash bypasses for flagget i `ReportReelsPage.tsx`.
+
+**Filer (nåværende tilstand):** `board-establishing-flythrough.ts` (animator: centripetal CR + buelengde-resampling + tangent-heading; `establishingPoseAt`/`poseAt`/`buildDensePath` rene+testbare, `runEstablishingFlythrough` rAF-loop), `board-establishing-shots.ts` (rett 2-punkts dronetur for byggetrinn-4), `board-establishing-flythrough.test.ts` (11 tester, inkl. konstant-fart), `blob-pois.ts` (+`selectFlyoverBlobs`), `blob-pois.test.ts` (5 tester). **Endret:** `BoardMap3D.tsx` (establishing-mode wiring, flyover-reveal-gren, `revealWindowMs`), `map-view-3d.tsx` (`revealWindowMs`-prop), `RevealLayer3D.tsx` (positional `at`-modus + `windowMs`), `ReportReelsPage.tsx` (splash-bypass). **Slettet:** `/sparring`-skillen (`.claude/commands/sparring.md` + `context/sparring-prompt.md`).
+
+**Verifisering (Chrome devtools, Grilstad byggetrinn-4 3D):** rett dronetur bekreftet — range/tilt/heading helt konstant (1700/58/288°) fra start til slutt; sirkelpunktene strømmer inn i fly-over-orden (få på øst-åpningen, hele korridoren tegnet inn ved vest-enden). 16 tester grønne (11 flythrough + 5 flyover-blob), `tsc` rent, `eslint` rent.
+
+**Åpne spørsmål / neste (når gjenopptatt):** Andreas usikker på om rett-dronetur-modellen funker i det hele tatt. Mulige tråder: (a) tetthet/bredde på sirkel-korridoren (±750 m, maks 160), (b) høyde (1700 konstant — lavere = tydeligere sirkler), (c) tempo (34 s), (d) tilt (58° forover vs mer top-down), (e) om den skal ende sentrert på marinaen likevel. Ingen av disse er bestilt — venter på Andreas. Generalisering per-strøk/area-keyed + preview-deploy fortsatt deferred.
+
+---
+
 ## 2026-06-17 — Mobil-transport redesignet: swipe-carousel + «spiller nå»-velger (live iPhone-iterasjon)
 
 Fortsettelse på `feat/mobil-rapport-board-ux` (fra 2026-06-16-rebygget). Interaktiv iterasjon med Andreas på iPhone-emulering — alt **ukommittert/ikke pushet** (per regel: vent til Andreas sier fra). Smal, seriell UI-jobb (ikke multi-agent — UI-iterasjon).
@@ -6512,3 +6578,59 @@ Dette er et **løpende system**: nytt problemord → legg kandidat i `pronunciat
 ### Filer
 
 NYE: `lib/audio-tour/pronunciation.ts`, `lib/audio-tour/pronunciation.test.ts`, `scripts/tts/{pronunciation-no.json,pronunciation-candidates.json,tune-pronunciation.mjs,confirm-pronunciation.mjs}`. ENDRET: `lib/audio-tour/elevenlabs-client.ts`, `data/reels-audio/natur-friluftsliv.timings.json`, `public/audio/stasjonskvartalet/natur-friluftsliv-reels.mp3`. Untracked/ikke committet (prototype).
+
+---
+
+## 2026-06-28 — Helhetlig pre-beads-audit + remediering av rebuild-PRD-ene (autonomt)
+
+Siste gate før beads-ifisering av de 15 rebuild-PRD-ene (`docs/rebuild/prd/`). Kjørt autonomt (Andreas ikke til stede, goal satt).
+
+### Metode (2 workflows + manuell sluttføring)
+
+- **Audit (16 agenter):** 15 per-PRD-auditører mot ratifisert canon (00-INDEX note #1–#13) → 1 synteseleder (kryss-PRD-tråder + over-engineering-linse + GO/NO-GO). ~1,6M tokens.
+- **Remediering (30 agenter):** edit→verify-pipeline, én editor + én uavhengig verifikator per PRD, pre-resolverte handlingslister. ~2,6M tokens. 14/15 ren ved første verify; PRD 9 hadde én residual.
+- **Sluttføring (manuell):** PRD 9 §1 + PRD 1 diagram-label-residualer, 00-INDEX-banking (note #14 + status-blokk; agentene fikk ikke røre INDEX), grep-sveip på tvers av alle 15.
+
+### Dom: NO-GO → GO etter remediering
+
+Synteselederens dom var NO-GO men «marginalt og kurerbart»: 10/15 allerede beads-klare. **Alle 6 blokkere + PRD 13 v2-build-blokker var kontrakt-/dokumentasjons-korreksjoner av allerede-ratifiserte beslutninger — 0 arkitektur-redesign, 0 feature-scope-endring.** Over-engineering-linse: ren (eneste reelle over-abstraksjon, `TIER_CAPABILITIES`-matrisen, ble drept 27.06; restene var stale pekere).
+
+**Remediert:** revalidate-dobbel-build (7→12), foto-defer-motsigelse (3↔4), `intern`-fallback (3), getProjectBrokers-cycle (5↔9), `TIER_CAPABILITIES`/validator-stale-symboler (9↔2), `BoardCategoryId`-type-hjem (14→5), v2-targeting-sweep (3/4/5/8/13). De fire deferred kryss-PRD-trådene (VO/nivå-3-validering, patch-#4, 7↔8 editorial-lagring, foto-defer) løst og banket.
+
+### Resultat
+
+- 15/15 PRD-er verifisert rene. **Beads-dom: GO.**
+- Full rapport: `docs/rebuild/AUDIT-2026-06-28.md`. Kanonisk banking: `00-INDEX.md` note #14.
+- **Utestående eier-skjønn (IKKE avgjort autonomt):** segment-adapter golden-output-test-trim (PRD 7 Unit 5, død legacy-konsument) — flagget, ikke anvendt.
+- **Neste stadium (ikke startet — krever eksplisitt go):** beads dependency-graf → ralphy build-loop.
+- Ingenting pushet (prototype-regel); alle edits lokale.
+
+---
+
+## 2026-06-28 — Beads-ifisering: rebuild-avhengighetsgrafen materialisert i `bd`
+
+Etter audit-GO: materialisert hele rebuild-backloggen som beads dependency-graf (input til byggeloopen). Andreas ga go («fortsett»).
+
+### Hva ble bygd (IKKE produkt-kode — selve oppgave-/avhengighetsgrafen)
+
+- **Ekstraksjon (16-agent workflow):** 15 per-PRD-ekstraktorer (én per PRD, uavhengige filer) + 1 konsistens-kritiker. Strukturert output → **108 implementation units** fra de 15 PRD-ene, mekanisk ren (0 dub-nøkler, alle intra-deps resolverer, declared==actual). Kritiker-dom GO med 2 patcher.
+- **Materialisering (deterministisk generator, `scratchpad/materialize_beads.py`):** 124 beads i `bd`-storen:
+  - 15 epics `placy-ralph-r01..r15` (label `rebuild,prd-NN,layer-L`)
+  - 108 units `placy-ralph-rNN.M` (dotted-ID → auto parent-child til epiken)
+  - 1 hoist-kontrakt `placy-ralph-rC1` (beat-signal-selector, Lag-2-stub) — løser 14→9/10 lag-back-edge
+  - **343 blocks-edges:** intra-PRD-ordning + epic→epic (lag-struktur) + leaf-gating (nedstrøms entry-units → oppstrøms ikke-deferred leaf-units) + 15 forward kryss-PRD-kontrakter. 6 inversjons-/injeksjons-kontrakter bevisst IKKE wiret (ville invertert lag/laget sykel).
+- **Patcher anvendt:** (1) 14.6↔14.7 intra-sykel brutt (droppet 14.6→14.7); (2) beat-signal hoistet til `rC1`. Deferred units (01.3 public-drop, 04.4/04.5 foto) satt `deferred`-status → skjult fra `bd ready`.
+
+### Verifisering
+
+- `bd dep cycles`: **ingen sykler** (global DAG-sjekk i generator + bd-bekreftet).
+- `bd ready` → **`placy-ralph-r01.1`** (baseline v2-schema) som eneste Lag-0-rot. Resten korrekt gated; deferred ekskludert.
+- 343/343 edges bekreftet via direkte tabell-telling. Committet til Dolt-historikk.
+
+### Gotcha (banket i memory): `bd`/Dolt ustabil under bulk-skriv
+
+`bd`-på-Dolt henger/timer ut etter ~200 sekvensielle skriv — cycle-check-spørringen per `dep add` timer ut på mysql-koblingen, verst på høy-konnektivitets-noder (09.8/06.8/14.8-leaf-gating). Løst med: fresh-server-per-pass (`bd dolt stop/start`) + idempotent re-kjøring; de siste 30 edgene cycle-checken aldri klarte ble satt inn **direkte via Dolt-SQL** (`dolt --host 127.0.0.1 --port 14304 --user root --password "" --no-tls sql`, tabell `dependencies`) — trygt fordi grafen var DAG-bevist. **`--sandbox` BLOKKERER skriv (ikke bruk).** Relevant før byggeloopen, som også skriver mye til `bd`.
+
+### Neste stadium (ikke startet — krever eksplisitt go)
+
+Byggeloopen: goal-drevet de første PRD-ene (start `r01.1`) → ralph for bulken. `bd ready` driver; loopen må kjøre `bd epic close-eligible` når units lukkes. Ingenting pushet.
