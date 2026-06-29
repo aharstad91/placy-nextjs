@@ -30,6 +30,7 @@ import * as readline from "readline";
 import {
   geocodeAddress,
   getKommunenummer,
+  meetsGeocodeConfidence,
 } from "@/lib/pipeline/geocode";
 import {
   createReportProject,
@@ -326,8 +327,8 @@ async function main() {
       process.exit(1);
     }
     const best = results[0];
-    if (best.relevance < 0.5) {
-      console.error(`Geocode-relevance for lav (${best.relevance}) — sjekk adresse`);
+    if (!meetsGeocodeConfidence(best)) {
+      console.error(`Geocode-confidence for lav (${best.confidence}) — sjekk adresse`);
       process.exit(1);
     }
     lat = best.lat;
@@ -336,7 +337,7 @@ async function main() {
     city = best.city;
     log(`Plassering: ${placeName}`);
     log(`Koordinater: ${lat}, ${lng}`);
-    log(`Relevance: ${best.relevance}`);
+    log(`Confidence: ${best.confidence}`);
     log(`Kart:       https://www.google.com/maps?q=${lat},${lng}`);
 
     // Interaktiv bekreftelse
