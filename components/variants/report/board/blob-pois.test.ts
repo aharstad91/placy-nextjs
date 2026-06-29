@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { selectFlyoverBlobs } from "./blob-pois";
+import { selectBlobPOIs, selectFlyoverBlobs } from "./blob-pois";
 import type { BoardCategory } from "./board-data";
 import type { POI } from "@/lib/types";
 
@@ -78,5 +78,40 @@ describe("selectFlyoverBlobs — korridor + fly-over-orden", () => {
       50,
     );
     expect(res.filter((r) => r.poi.id === "dup")).toHaveLength(1);
+  });
+});
+
+const HOME = { lat: 0, lng: 0 };
+
+describe("selectBlobPOIs — nærhet-sortert + ekskludering (AC4)", () => {
+  it("sorterer på NÆRHET, ikke score/input-rekkefølge (nærmest først)", () => {
+    const near = poi("near", 0.0001, 0); // ~11 m
+    const mid = poi("mid", 0.001, 0); // ~110 m
+    const far = poi("far", 0.01, 0); // ~1105 m
+    // gitt i vilkårlig rekkefølge — resultatet skal være distanse-sortert
+    const res = selectBlobPOIs(HOME, [cat([far, near, mid])], 10);
+    expect(res.map((p) => p.id)).toEqual(["near", "mid", "far"]);
+  });
+
+  it("ekskluderer POI-er i excludeIds (ingen blob oppå legend-pin)", () => {
+    const a = poi("a", 0.0001, 0);
+    const b = poi("b", 0.001, 0);
+    const res = selectBlobPOIs(HOME, [cat([a, b])], 10, new Set(["a"]));
+    expect(res.map((p) => p.id)).toEqual(["b"]);
+  });
+
+  it("dedupliserer POI-id på tvers av kategorier", () => {
+    const shared = poi("dup", 0.0005, 0);
+    const res = selectBlobPOIs(HOME, [cat([shared]), cat([shared])], 10);
+    expect(res.filter((p) => p.id === "dup")).toHaveLength(1);
+  });
+
+  it("respekterer limit (beholder de nærmeste) og klamrer negativ limit til 0", () => {
+    const near = poi("near", 0.0001, 0);
+    const mid = poi("mid", 0.001, 0);
+    const far = poi("far", 0.01, 0);
+    const capped = selectBlobPOIs(HOME, [cat([far, near, mid])], 2);
+    expect(capped.map((p) => p.id)).toEqual(["near", "mid"]);
+    expect(selectBlobPOIs(HOME, [cat([near, mid, far])], -5)).toHaveLength(0);
   });
 });
