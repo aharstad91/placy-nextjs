@@ -586,6 +586,19 @@ function ResponsiveLayoutInner({
   const [splashVisible, setSplashVisible] = useState(true);
   const [boardRevealed, setBoardRevealed] = useState(false);
 
+  // Establishing-shot-modus (?establishing=1): hopp over velkomst-splashen og
+  // avdekk det persistente kartet med en gang, UTEN å starte audio — så strøk-
+  // flythrough-en (BoardMap3D, board-establishing-shots) blir synlig som ren
+  // visuell komposisjon. Effekt (ikke useState-initializer) for å unngå
+  // hydration-mismatch; flyturen venter uansett på map-ready + settle (2,8 s).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("establishing") !== "1")
+      return;
+    setSplashVisible(false);
+    setBoardRevealed(true);
+  }, []);
+
   const firstIdx = firstAudioBearingIndex(state.cards);
   const notStarted = !state.audioUnlocked || phase === "idle";
 

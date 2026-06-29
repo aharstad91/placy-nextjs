@@ -23,8 +23,12 @@ import { hexLightTint } from "@/lib/utils/marker-color";
  */
 
 /** Ett element i inntegningen. "blob" = liten farge-prikk; "pin" = full
- *  legend-pin (ikon + farge) som gir et lesbart holdepunkt for prikkene. */
-export type RevealItem = { kind: "blob" | "pin"; poi: POI };
+ *  legend-pin (ikon + farge) som gir et lesbart holdepunkt for prikkene.
+ *  `at` (valgfri, 0–1): posisjon langs en rett flylinje. Når ALLE items har `at`
+ *  kjører laget i POSITIONAL-modus — hver markør dukker opp ved sin `at`-andel av
+ *  `windowMs` i stedet for indeks-stagger → punktene tegnes inn i fly-over-orden,
+ *  i takt med at kameraet passerer dem. */
+export type RevealItem = { kind: "blob" | "pin"; poi: POI; at?: number };
 
 /** Forsinkelse før første markør dukker opp (ms) — lar tile-settle + starten på
  *  push-in-en passere så markørene følger kamera-bevegelsen, ikke den døde pausen. */
@@ -100,28 +104,39 @@ const RevealMarker = memo(function RevealMarker({
 export function RevealLayer3D({
   items,
   animate = true,
+  windowMs = REVEAL_WINDOW_MS,
 }: {
   items: RevealItem[];
   animate?: boolean;
+  /** Tidsvindu kaskaden skal spenne over (ms). I positional-modus (alle items har
+   *  `at`) settes denne ≈ flyturens varighet så punktene tegnes inn i takt med at
+   *  kameraet flyr forbi dem. Default = REVEAL_WINDOW_MS (indeks-stagger-modus). */
+  windowMs?: number;
 }) {
   const [elapsed, setElapsed] = useState(animate ? 0 : Number.POSITIVE_INFINITY);
   const rafRef = useRef(0);
   const startRef = useRef<number | null>(null);
 
-  // Adaptivt stagger-intervall: hele kaskaden skal rekke innenfor REVEAL_WINDOW_MS
-  // uansett antall (klamret så få ikke blir trege / mange ikke et «poff»).
+  // POSITIONAL-modus: alle markører har en `at`-andel langs flylinja → appearAt
+  // utledes av `at` * windowMs (fly-over-orden). Ellers: adaptivt indeks-stagger
+  // (hele kaskaden innenfor windowMs uansett antall, klamret).
+  const positional = items.length > 0 && items.every((it) => typeof it.at === "number");
   const staggerMs =
-    items.length > 1
+    !positional && items.length > 1
       ? Math.min(
           MAX_STAGGER_MS,
-          Math.max(MIN_STAGGER_MS, REVEAL_WINDOW_MS / (items.length - 1)),
+          Math.max(MIN_STAGGER_MS, windowMs / (items.length - 1)),
         )
       : 0;
 
+  const appearAts = items.map((it, i) =>
+    positional
+      ? START_DELAY_MS + Math.min(1, Math.max(0, it.at as number)) * windowMs
+      : START_DELAY_MS + i * staggerMs,
+  );
+
   const total =
-    items.length > 0
-      ? START_DELAY_MS + (items.length - 1) * staggerMs + BOUNCE_MS
-      : 0;
+    items.length > 0 ? Math.max(...appearAts) + BOUNCE_MS : 0;
 
   useEffect(() => {
     if (!animate || items.length === 0) return;
@@ -144,7 +159,7 @@ export function RevealLayer3D({
   return (
     <>
       {items.map((item, i) => {
-        const appearAt = START_DELAY_MS + i * staggerMs;
+        const appearAt = appearAts[i];
         if (elapsed < appearAt) return null; // ikke mountet ennå (sekvensiell)
         const raw = bounceScale(elapsed - appearAt);
         // Kvantiser så settlede markører (skala 1) får identisk prop hver frame →

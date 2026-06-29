@@ -97,6 +97,9 @@ export interface MapView3DProps {
   showReveal?: boolean;
   /** Når false: vises uten stagger/bounce (prefers-reduced-motion). Default true. */
   animateReveal?: boolean;
+  /** Tidsvindu reveal-kaskaden spenner over (ms). Settes ≈ flyturens varighet i
+   *  establishing-modus (positional reveal) så punktene tegnes inn i fly-over-takt. */
+  revealWindowMs?: number;
   /**
    * Når true: standard Google Maps 3D-gesture-modell — drag panner, ctrl+drag
    * roterer, scroll zoomer, ingen bounds eller altitude/tilt-grenser, ingen
@@ -316,6 +319,7 @@ function Map3DInner({
   revealItems,
   showReveal = false,
   animateReveal = true,
+  revealWindowMs,
   freeMode = false,
   compactMarkers = false,
 }: MapView3DProps) {
@@ -540,7 +544,11 @@ function Map3DInner({
         {/* Reveal-lag (velkommen + oppsummering) — eget marker-sett (blobs +
             legend-pins), adskilt fra pinnene over. Vises kun når showReveal. */}
         {showReveal && revealItems && revealItems.length > 0 && (
-          <RevealLayer3D items={revealItems} animate={animateReveal} />
+          <RevealLayer3D
+            items={revealItems}
+            animate={animateReveal}
+            windowMs={revealWindowMs}
+          />
         )}
       </Map3D>
     </div>

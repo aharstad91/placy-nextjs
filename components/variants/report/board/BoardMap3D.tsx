@@ -23,7 +23,7 @@ import {
   type FlyCapableMap,
 } from "./board-3d-camera-director";
 import { getCategoryCamera } from "./camera-tours";
-import { selectBlobPOIs } from "./blob-pois";
+import { selectBlobPOIs, selectFlyoverBlobs } from "./blob-pois";
 import { getBoardIntro } from "./board-intros";
 import {
   runIntroFlythrough,
@@ -34,6 +34,11 @@ import {
   DEFAULT_INTRO_PATH,
   type CameraDrivableMap3D,
 } from "./board-intro-flythrough";
+import {
+  runEstablishingFlythrough,
+  type EstablishingPhase,
+} from "./board-establishing-flythrough";
+import { getEstablishingShot } from "./board-establishing-shots";
 import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
 import { getDistanceMeters } from "@/lib/map-utils";
 import type { RevealItem } from "@/components/map/RevealLayer3D";
@@ -57,6 +62,12 @@ const RouteLayer3D = dynamic(
  *  innenfor velkommen-beaten (se RevealLayer3D). Slice-es mot antall tilgjengelige
  *  POI-er, så et høyt tall ≈ «hele nabolaget». */
 const BLOB_LIMIT = 120;
+
+/** Establishing-droneturen (rett linje): hvor nær flylinja en POI må ligge for å
+ *  tegnes inn som sirkelpunkt (meter til siden for ruta), og maks antall. Bred nok
+ *  korridor til å føles rikt, men fortsatt «nær flyvningen». */
+const FLYOVER_CORRIDOR_M = 750;
+const FLYOVER_BLOB_LIMIT = 160;
 
 /** Antall vanlige «legend»-pins per kategori på velkommen + oppsummering: de
  *  NÆRMESTE POI-ene per kategori vises med ikon + farge, som et lesbart holdepunkt
@@ -157,6 +168,24 @@ export function BoardMap3D({
       new URLSearchParams(window.location.search).get("fly") === "1",
   );
 
+  // Establishing-shot-modus (?establishing=1): spill den multi-waypoint strøk-
+  // flythrough-en (board-establishing-shots) live, UTEN voice-over/lyd — ren
+  // visuell komposisjon vi itererer på. En egen flate fra welcome/basic-introen:
+  // den eier kameraet (introActive-en under AND-er bort welcome/basic når denne er
+  // på), skjuler statiske pins, og fyrer reveal-kaskaden (blobs + pins) når banen
+  // stiger over platået. Kun aktiv hvis strøket faktisk har en bane konfigurert.
+  const [establishingFlag] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("establishing") === "1",
+  );
+  const establishingShot = useMemo(
+    () =>
+      establishingFlag ? getEstablishingShot(data.projectSlug ?? "") : undefined,
+    [establishingFlag, data.projectSlug],
+  );
+  const establishingMode = !!establishingShot;
+
   // Narrativ-synk-kilder (begge stabile — endrer kun ved track-/fase-skifte,
   // IKKE ~4 Hz som useAudioElement; holder marker-treet utenfor re-render-flommen).
   const currentTrack = useCurrentTrack();
@@ -181,7 +210,11 @@ export function BoardMap3D({
   // så dette er den tredje måten innflyvningen kan eie kameraet på (i tillegg til
   // welcome-beaten og ?fly=1-capture).
   const basicIntroActive = state.introPlaying;
-  const introActive = flyMode || isWelcomeBeat || basicIntroActive;
+  // Establishing-shot-modus AND-er bort welcome/basic-introen: når ?establishing=1
+  // er på eier den multi-waypoint-flythrough-en kameraet alene (egen effekt
+  // lenger ned), så vi unngår at to animatorer kjemper om kamera-posituren.
+  const introActive =
+    (flyMode || isWelcomeBeat || basicIntroActive) && !establishingMode;
 
   // Basic-intro flythrough-fase, satt fra flyturens onPhase. Styrer markør-
   // koreografien (basic-tier, uten voice-over):
@@ -193,6 +226,11 @@ export function BoardMap3D({
   const [introFlyPhase, setIntroFlyPhase] = useState<
     "idle" | "settling" | "running" | "done"
   >("idle");
+
+  // Establishing-shot reveal-gate: flippes true når flythrough-en passerer
+  // bloomAtProgress (kameraet stiger over platået) → reveal-kaskaden (blobs + pins)
+  // fyrer da, ikke under de vide etablerings-beatene (rent fjord-blikk i åpningen).
+  const [bloomStarted, setBloomStarted] = useState(false);
 
   // Nabolaget-beaten (home-sporet bærer categoryId "home" — se buildCategoryTracks)
   // viser HELE nabolaget: alle POI-er på tvers av kategoriene som VANLIGE pins,
@@ -294,8 +332,9 @@ export function BoardMap3D({
   // Markørsettet som faktisk mountes. Når en kategori spiller: kun den
   // kategoriens POI-er (sub-filtrert). Ellers: det kuraterte ankersettet.
   const markerPOIs = useMemo<POI[]>(() => {
-    // Capture (?film=1 / ?fly=1): helt rent kart, ingen pins.
-    if (filmMode || flyMode) return [];
+    // Capture (?film=1 / ?fly=1) + establishing-shot: helt rent kart, ingen
+    // statiske pins (reveal-kaskaden eier markørene under establishing).
+    if (filmMode || flyMode || establishingMode) return [];
     // Kategori-valg vinner alltid (også hvis et reveal-vindu fortsatt teller ned).
     if (activeCategory) {
       const useFilter = state.phase !== "default" && subFilter.hiddenIds.size > 0;
@@ -323,7 +362,7 @@ export function BoardMap3D({
     }
     // Audio-tier idle / megler → ankersettet.
     return overviewPOIs;
-  }, [filmMode, flyMode, isWelcomeBeat, isOutroBeat, basicIntroActive, hasVoiceOver, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs, isHomeBeat, allPOIs]);
+  }, [filmMode, flyMode, establishingMode, isWelcomeBeat, isOutroBeat, basicIntroActive, hasVoiceOver, activeCategory, state.phase, subFilter.hiddenIds, overviewPOIs, isHomeBeat, allPOIs]);
 
   // Reveal-sett (velkommen + oppsummering): legend-pins (nærmeste per kategori,
   // vist som fulle pins) + blobs (de nærmeste POI-ene som farge-prikker, legend
@@ -331,6 +370,22 @@ export function BoardMap3D({
   // (nærmest først) så pins og prikker animeres inn på lik linje i én kaskade.
   // Vises på den LIVE velkommen-/oppsummerings-beaten — ikke i ?film=1/?fly=1.
   const revealItems = useMemo<RevealItem[]>(() => {
+    // Establishing-dronetur (rett linje): sirkelpunktene nær flylinja, sortert i
+    // FLY-OVER-orden (`at` = posisjon langs linja). RevealLayer3D positional-modus
+    // tegner dem inn i takt med at kameraet passerer dem. Ingen legend-pins her —
+    // ren strøm av små sirkelpunkter, som Andreas ba om.
+    if (establishingMode && establishingShot) {
+      const wps = establishingShot.waypoints;
+      const start = wps[0];
+      const end = wps[wps.length - 1];
+      return selectFlyoverBlobs(
+        start,
+        end,
+        data.categories,
+        FLYOVER_CORRIDOR_M,
+        FLYOVER_BLOB_LIMIT,
+      ).map((f) => ({ kind: "blob" as const, poi: f.poi, at: f.at }));
+    }
     const home = data.home.coordinates;
     const blobs = selectBlobPOIs(home, data.categories, BLOB_LIMIT, legendIds);
     const items: { item: RevealItem; dist: number }[] = [
@@ -345,7 +400,17 @@ export function BoardMap3D({
     ];
     items.sort((a, b) => a.dist - b.dist);
     return items.map((i) => i.item);
-  }, [data.home.coordinates, data.categories, legendPOIs, legendIds]);
+  }, [establishingMode, establishingShot, data.home.coordinates, data.categories, legendPOIs, legendIds]);
+
+  // Establishing-kaskaden spenner over (nesten) hele flyturen så sirkelpunktene
+  // tegnes inn i takt med kryssingen — ikke i et komprimert «poff» på starten.
+  const revealWindowMs = useMemo(
+    () =>
+      establishingMode && establishingShot
+        ? Math.round(establishingShot.durationMs * 0.9)
+        : undefined,
+    [establishingMode, establishingShot],
+  );
   // Reveal-kaskaden (blobs + legend-pins som animeres inn):
   //  • velkommen-beat (audio-tier): synket til VO-en, som før.
   //  • basic-intro: kjører PARALLELT med flyturen, men starter FØRST når kameraet
@@ -358,7 +423,8 @@ export function BoardMap3D({
   // "running" — uten denne garden ble kaskaden hengende oppå de vanlige markørene.
   const showReveal =
     (isWelcomeBeat ||
-      (!hasVoiceOver && basicIntroActive && introFlyPhase === "running")) &&
+      (!hasVoiceOver && basicIntroActive && introFlyPhase === "running") ||
+      (establishingMode && bloomStarted)) &&
     !filmMode &&
     !activeCategory;
 
@@ -459,7 +525,7 @@ export function BoardMap3D({
   const { cutVisible } = useBoard3DCamera({
     map3dInstance,
     cameraMode,
-    introActive,
+    introActive: introActive || establishingMode,
     home: data.home.coordinates,
     activePOI: activePOICoords,
     activeCategoryId: activeCategory?.id ?? null,
@@ -579,6 +645,34 @@ export function BoardMap3D({
     reducedMotion,
   ]);
 
+  // ── Establishing-shot-flythrough (?establishing=1) ───────────────────────
+  // Multi-waypoint strøk-sveip (board-establishing-shots), uten audio. Egen flate
+  // fra welcome/basic-introen: den eier kameraet (introActive||establishingMode →
+  // director yield-er), og fyrer reveal-kaskaden (blobs + pins) når banen passerer
+  // bloomAtProgress — kameraet stiger over platået idet prikkene tegnes inn.
+  // prefers-reduced-motion → hold første waypoint + vis reveal statisk (ingen
+  // flytur). Egne deps (ikke audio): restarter ikke på narrativ-synk.
+  useEffect(() => {
+    if (!establishingMode || !establishingShot || !map3dInstance) return;
+    const map = map3dInstance as unknown as CameraDrivableMap3D;
+    setBloomStarted(false);
+    const bloomAt = establishingShot.bloomAtProgress;
+    return runEstablishingFlythrough(map, {
+      path: establishingShot,
+      staticOnly: reducedMotion,
+      onProgress: (s) => {
+        if (s >= bloomAt) setBloomStarted(true);
+      },
+      onPhase: (phase: EstablishingPhase) => {
+        (window as unknown as { __placyEstablishing?: string }).__placyEstablishing =
+          phase;
+        // Reduced-motion: ingen flytur → vis reveal med en gang så strøket ikke
+        // står tomt på den statiske åpnings-posituren.
+        if (phase === "done" && reducedMotion) setBloomStarted(true);
+      },
+    });
+  }, [establishingMode, establishingShot, map3dInstance, reducedMotion]);
+
   // ── Oppsummering: trekk kameraet ut til oversikt (én gang) ───────────────
   // Når outro-beaten spiller setter BoardMap modus til "free" (+ hint). Director-
   // en er da no-op (free) og stopper enhver orbit, så denne imperative fly-en
@@ -608,7 +702,7 @@ export function BoardMap3D({
   // Intro-flythrough-en eier kameraet → drag skal ikke kapre det midt i
   // innflyvningen (ellers kjemper bruker-drag mot den frame-drevne flyturen).
   const introActiveRef = useRef(introActive);
-  introActiveRef.current = introActive;
+  introActiveRef.current = introActive || establishingMode;
 
   // Interaksjons-lyttere: drag/scroll/touch på kart-bakgrunnen → fri modus. I
   // freeMode hijacker ikke MapView3D pekeren, så vi lytter direkte. Marker-tap er
@@ -650,6 +744,7 @@ export function BoardMap3D({
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}
+        revealWindowMs={revealWindowMs}
         onPOIClick={handlePOIClick}
         onMapReady={handleMapReady}
         activated
