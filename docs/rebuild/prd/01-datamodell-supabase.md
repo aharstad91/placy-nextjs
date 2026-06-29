@@ -346,6 +346,7 @@ Denne PRD-en dekker IKKE (trekkes via kontrakt-kartet):
 | Re-seed av evt. verdifullt kuratert `public`-innhold inn i `v2` (valgfritt) | Egen valgfri task hvis noe i `public` viser seg verdt å beholde; default er ferskt `v2` |
 | Migrasjon-arkivering av de 69 gamle filene (oppryddingstask) | Egen oppryddings-PR etter at `v2`-baseline er verifisert (Fase 3) |
 | Trimming av gammel `public`-rettet `queries.ts`/`mutations.ts`-kode (54 legacy-refs) | Cutover/opprydding sammen med `public`-legacy-drop (Unit 3) — gammel kode lever mot `public` til da |
+| **Trim av døde Trip/Guide/scroll-symboler i `lib/types.ts`** (Unit 6 AC2 — `StorySection`/`ThemeStory`/`Trip`/`TrailCollection` m.fl.) + sletting av ubrukt `lib/supabase/database.types.ts` (0 importer; live type er `types.ts`) | **Cutover (Unit 3)** — symbolene har 17 filer levende `public`-kode-konsumenter; å fjerne dem nå ville brutt tsc. Koblet til `public`-koden som lever til da. (r01.6 AC2-utsettelse, eier-beslutning 2026-06-29; v2-type-awareness er allerede levert i r01.6 del 1.) |
 | `events`-retensjon/partisjonering | **PRD 13** — utsatt til volum tilsier det (prototype-stadium, ikke over-engineer) |
 
 ---
