@@ -337,6 +337,13 @@ export async function getPOIBySlug(
   return null;
 }
 
+// AC5 consumer-gap: getHighlightPOIs/getCuratedPOIs referenced only in
+// app/(public)/[area]/page.tsx, app/(public)/visit-trondheim/page.tsx, and
+// EN-equivalents. No components/ consumers. Dead-on-arrival in rebuild (PRD 1
+// LEGACY delete-list); port preserves trust-gate moat guard. v2.pois has no FK
+// constraints (baseline 070 §29 "INGEN FOREIGN KEY-constraints") → cannot use
+// categories!inner() PostgREST join; two-query approach used instead.
+
 export async function getHighlightPOIs(
   areaId: string,
   limit = 12
@@ -344,26 +351,31 @@ export async function getHighlightPOIs(
   const client = createPublicClient();
   if (!client) return [];
 
-  const { data, error } = await client
+  const v2db = client.schema("v2");
+
+  const { data: poisData, error: poisError } = await v2db
     .from("pois")
-    .select("*, categories!inner(id, name, icon, color)")
+    .select("*")
     .eq("area_id", areaId)
     .eq("poi_tier", 1)
     .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`)
     .order("google_rating", { ascending: false, nullsFirst: true })
     .limit(limit);
 
-  if (error || !data) return [];
+  if (poisError) {
+    console.error("[getHighlightPOIs] v2.pois query failed:", poisError);
+    return [];
+  }
 
-  return data.map((poi) => {
-    const cat = poi.categories as unknown as { id: string; name: string; icon: string; color: string };
-    return transformPublicPOI(poi, {
-      id: cat.id,
-      name: cat.name,
-      icon: cat.icon,
-      color: cat.color,
-    });
-  });
+  const pois = poisData ?? [];
+  if (pois.length === 0) return [];
+
+  const categoryIds = Array.from(new Set(pois.map((p) => p.category_id).filter(Boolean))) as string[];
+  const catMap = await fetchV2Categories(v2db, categoryIds);
+
+  return pois
+    .filter((poi) => poi.category_id && catMap.has(poi.category_id))
+    .map((poi) => transformPublicPOI(poi as unknown as Record<string, unknown>, catMap.get(poi.category_id!)!));
 }
 
 export async function getCuratedPOIs(
@@ -379,9 +391,12 @@ export async function getCuratedPOIs(
   const client = createPublicClient();
   if (!client) return [];
 
-  let query = client
+  const v2db = client.schema("v2");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query: any = v2db
     .from("pois")
-    .select("*, categories!inner(id, name, icon, color)")
+    .select("*")
     .eq("area_id", areaId)
     .or(`trust_score.is.null,trust_score.gte.${MIN_TRUST_SCORE}`);
 
@@ -412,19 +427,52 @@ export async function getCuratedPOIs(
     query = query.limit(options.limit);
   }
 
-  const { data, error } = await query;
+  const { data: poisData, error: poisError } = await query;
 
-  if (error || !data) return [];
+  if (poisError) {
+    console.error("[getCuratedPOIs] v2.pois query failed:", poisError);
+    return [];
+  }
 
-  return data.map((poi) => {
-    const cat = poi.categories as unknown as { id: string; name: string; icon: string; color: string };
-    return transformPublicPOI(poi, {
-      id: cat.id,
-      name: cat.name,
-      icon: cat.icon,
-      color: cat.color,
+  const pois = (poisData ?? []) as Record<string, unknown>[];
+  if (pois.length === 0) return [];
+
+  const categoryIds = Array.from(new Set(pois.map((p) => p.category_id as string | null).filter(Boolean))) as string[];
+  const catMap = await fetchV2Categories(v2db, categoryIds);
+
+  return pois
+    .filter((poi) => poi.category_id && catMap.has(poi.category_id as string))
+    .map((poi) => transformPublicPOI(poi, catMap.get(poi.category_id as string)!));
+}
+
+/** Fetch v2.categories by IDs and return as a Map for O(1) join. */
+async function fetchV2Categories(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  v2db: any,
+  categoryIds: string[]
+): Promise<Map<string, Category>> {
+  if (categoryIds.length === 0) return new Map();
+
+  const { data, error } = await v2db
+    .from("categories")
+    .select("id, name, icon, color")
+    .in("id", categoryIds);
+
+  if (error) {
+    console.error("[fetchV2Categories] v2.categories query failed:", error);
+    return new Map();
+  }
+
+  const map = new Map<string, Category>();
+  for (const cat of data ?? []) {
+    map.set(cat.id as string, {
+      id: cat.id as string,
+      name: cat.name as string,
+      icon: cat.icon as string,
+      color: cat.color as string,
     });
-  });
+  }
+  return map;
 }
 
 export async function getSimilarPOIs(
@@ -461,8 +509,15 @@ export async function getSimilarPOIs(
 }
 
 // ============================================
-// Place Knowledge queries (public — RLS enforced)
+// Place Knowledge queries (v2 — RLS enforced, display_ready-gate)
 // ============================================
+//
+// AC5 consumer-gap: grep-verified — getPlaceKnowledge/getPlaceKnowledgeBatch/
+// getAreaKnowledge are referenced ONLY in app/(public)/[area]/steder/[slug]/page.tsx
+// and app/(public)/en/[area]/places/[slug]/page.tsx (legacy SEO routes). No
+// components/ consumers exist. These functions are dead-on-arrival in rebuild
+// (PRD 1 LEGACY delete-list); port justified solely as moat-IP boundary
+// preservation (display_ready-gate + trust-gate + injection-guards).
 
 function transformPlaceKnowledge(row: DbPlaceKnowledge): PlaceKnowledge {
   return {
@@ -488,6 +543,7 @@ export async function getPlaceKnowledge(poiId: string): Promise<PlaceKnowledge[]
   if (!client) return [];
 
   const { data, error } = await client
+    .schema("v2")
     .from("place_knowledge")
     .select("*")
     .eq("poi_id", poiId)
@@ -495,8 +551,11 @@ export async function getPlaceKnowledge(poiId: string): Promise<PlaceKnowledge[]
     .order("sort_order")
     .order("created_at");
 
-  if (error || !data) return [];
-  return data.map(transformPlaceKnowledge);
+  if (error) {
+    console.error("[getPlaceKnowledge] v2.place_knowledge query failed:", error);
+    return [];
+  }
+  return (data ?? []).map((row) => transformPlaceKnowledge(row as unknown as DbPlaceKnowledge));
 }
 
 /** Batch-fetch knowledge for multiple POIs (max 100 IDs). */
@@ -510,19 +569,23 @@ export async function getPlaceKnowledgeBatch(
   if (!client) return {};
 
   const { data, error } = await client
+    .schema("v2")
     .from("place_knowledge")
     .select("*")
     .in("poi_id", limitedIds)
     .eq("display_ready", true)
     .order("sort_order");
 
-  if (error || !data) return {};
+  if (error) {
+    console.error("[getPlaceKnowledgeBatch] v2.place_knowledge batch query failed:", error);
+    return {};
+  }
 
   const result: Record<string, PlaceKnowledge[]> = {};
-  for (const row of data) {
+  for (const row of data ?? []) {
     const id = row.poi_id as string;
     if (!result[id]) result[id] = [];
-    result[id].push(transformPlaceKnowledge(row));
+    result[id].push(transformPlaceKnowledge(row as unknown as DbPlaceKnowledge));
   }
   return result;
 }
@@ -533,6 +596,7 @@ export async function getAreaKnowledge(areaId: string): Promise<PlaceKnowledge[]
   if (!client) return [];
 
   const { data, error } = await client
+    .schema("v2")
     .from("place_knowledge")
     .select("*")
     .eq("area_id", areaId)
@@ -540,6 +604,9 @@ export async function getAreaKnowledge(areaId: string): Promise<PlaceKnowledge[]
     .order("sort_order")
     .order("created_at");
 
-  if (error || !data) return [];
-  return data.map(transformPlaceKnowledge);
+  if (error) {
+    console.error("[getAreaKnowledge] v2.place_knowledge query failed:", error);
+    return [];
+  }
+  return (data ?? []).map((row) => transformPlaceKnowledge(row as unknown as DbPlaceKnowledge));
 }
