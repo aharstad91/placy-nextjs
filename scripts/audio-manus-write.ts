@@ -15,7 +15,7 @@
  *   3. `apply <pid>`
  *      → leser hver .manus.md, validerer (35-90 ord, banned-words)
  *      → deep-merge PATCH til reportConfig.themes[].audio.manus +
- *        reportConfig.heroAudio.manus + reportConfig.audioVersion = 1
+ *        reportConfig.heroAudio.manus + reportConfig.audioVersion = 5
  *      → optimistic lock via updated_at + revalidateTag
  *
  * Steg 8c.2 (audio-tour-build.ts) henter manusene fra DB og kaller
