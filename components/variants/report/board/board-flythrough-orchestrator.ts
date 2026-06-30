@@ -16,6 +16,7 @@ import {
   WELCOME_CALM_SWEEP_DEG,
   DEFAULT_INTRO_PATH,
   type CameraDrivableMap3D,
+  type IntroPathConfig,
 } from "./board-intro-flythrough";
 import {
   runEstablishingFlythrough,
@@ -53,6 +54,72 @@ export function deriveIntroActive(args: {
 }): boolean {
   const { flyMode, isWelcomeBeat, basicIntroActive, establishingMode } = args;
   return (flyMode || isWelcomeBeat || basicIntroActive) && !establishingMode;
+}
+
+/** Beslutningen for produkt-welcome- vs. capture-grenen av intro-flythrough-en. */
+export interface IntroFlightPlan {
+  /** Settle før flyturen starter: kort velkommen-settle (produkt) vs. default (capture, AC4). */
+  settleMs: number;
+  /**
+   * Skalert flyturvarighet for produkt-welcome (settle + flytur = VO-lengde, gulvet
+   * av `MIN_INTRO_FLY_MS`); `undefined` → banens egen `durationMs` (capture/uten VO).
+   */
+  flyDurationMs: number | undefined;
+  /**
+   * Calm-sweep PUSH-IN-overstyring for produkt-welcome (demper heading-sveipen,
+   * bevarer landings-framingen); `{}` for capture så banens fulle sveip beholdes (AC4).
+   */
+  calmOverride: Partial<IntroPathConfig>;
+  /** Redusert bevegelse gjelder KUN produkt-beaten, aldri capture (AC4). */
+  staticOnly: boolean;
+}
+
+/**
+ * Ren choreografi-beslutning for produkt-welcome- og capture-grenen (AC3/AC4):
+ * settle, VO-skalert flyturvarighet, calm-sweep-override og static-only. Basic-tier-
+ * grenen (AC2) lever for seg fordi den lander på hvile-rangen og dispatcher
+ * `END_INTRO`. Eksportert som ren funksjon for enhetstesting; effekten under
+ * konsumerer den verbatim. `isProductWelcome = isWelcomeBeat && !flyMode` — capture
+ * (`?fly=1`) er aldri produkt-welcome selv om begge flagg skulle stå samtidig.
+ */
+export function deriveIntroFlightPlan(args: {
+  isWelcomeBeat: boolean;
+  flyMode: boolean;
+  audioDurationMs: number | undefined;
+  reducedMotion: boolean;
+  introPath: Partial<IntroPathConfig>;
+}): IntroFlightPlan {
+  const { isWelcomeBeat, flyMode, audioDurationMs, reducedMotion, introPath } = args;
+  const isProductWelcome = isWelcomeBeat && !flyMode;
+  // Produkt-velkommen får KORT settle så innflyvningen ikke føles treg; capture
+  // (?fly=1) beholder banens default-settle for skarpe tiles i opptaket.
+  const settleMs = isProductWelcome
+    ? WELCOME_INTRO_SETTLE_MS
+    : introPath.settleMs ?? DEFAULT_INTRO_PATH.settleMs;
+  // Skaler flyturen til VO-en (settle + flytur = VO-lengde) med MIN_INTRO_FLY_MS-gulv.
+  const flyDurationMs =
+    isProductWelcome && audioDurationMs
+      ? Math.max(MIN_INTRO_FLY_MS, audioDurationMs - settleMs)
+      : undefined;
+  // Live-velkommen får roligere PUSH-IN: demp heading-sveipen, men bevar landings-
+  // framingen ved å skyve startHeading tilsvarende opp (end = start + sweep holdes likt).
+  const baseSweep = introPath.sweepDeg ?? DEFAULT_INTRO_PATH.sweepDeg;
+  const baseStart = introPath.startHeading ?? DEFAULT_INTRO_PATH.startHeading;
+  const calmSweep = Math.min(WELCOME_CALM_SWEEP_DEG, baseSweep);
+  const calmOverride: Partial<IntroPathConfig> = isProductWelcome
+    ? {
+        startHeading: baseStart + (baseSweep - calmSweep),
+        sweepDeg: calmSweep,
+        ovalEccentricity: 0,
+      }
+    : {};
+  return {
+    settleMs,
+    flyDurationMs,
+    calmOverride,
+    // Redusert bevegelse gjelder kun produkt-beaten; capture skal alltid fly.
+    staticOnly: isProductWelcome && reducedMotion,
+  };
 }
 
 export interface UseBoardFlythroughParams {
@@ -147,32 +214,16 @@ export function useBoardFlythrough({
       });
     }
 
-    // Produkt-velkommen-beaten (ikke capture) får KORT settle så innflyvningen
-    // ikke føles treg (default 3,5s ga en død pause etter splash før bevegelse),
-    // og skalerer flyturen til VO-en. Capture (?fly=1) beholder default-settlen
-    // (skarpe tiles i opptak) og default-varigheten.
-    const isProductWelcome = isWelcomeBeat && !flyMode;
-    const settleMs = isProductWelcome
-      ? WELCOME_INTRO_SETTLE_MS
-      : introPath.settleMs ?? DEFAULT_INTRO_PATH.settleMs;
-    const flyDurationMs =
-      isProductWelcome && audioDurationMs
-        ? Math.max(MIN_INTRO_FLY_MS, audioDurationMs - settleMs)
-        : undefined;
-    // Live-velkommen får en roligere PUSH-IN: vi demper heading-sveipen så
-    // blob-prikkene ikke svinger rundt skjermen, men bevarer landings-framingen
-    // ved å skyve startHeading tilsvarende opp (end = start + sweep holdes likt).
-    // Capture (?fly=1) beholder banens fulle sveip for det cinematiske opptaket.
-    const baseSweep = introPath.sweepDeg ?? DEFAULT_INTRO_PATH.sweepDeg;
-    const baseStart = introPath.startHeading ?? DEFAULT_INTRO_PATH.startHeading;
-    const calmSweep = Math.min(WELCOME_CALM_SWEEP_DEG, baseSweep);
-    const calmOverride = isProductWelcome
-      ? {
-          startHeading: baseStart + (baseSweep - calmSweep),
-          sweepDeg: calmSweep,
-          ovalEccentricity: 0,
-        }
-      : {};
+    // Produkt-velkommen-beaten (ikke capture) får KORT settle + VO-skalert flytur +
+    // calm-sweep PUSH-IN; capture (?fly=1) beholder banens default-settle og fulle
+    // sveip. Beslutningen er hjemlet som ren funksjon (`deriveIntroFlightPlan`, AC3/AC4).
+    const { settleMs, flyDurationMs, calmOverride, staticOnly } = deriveIntroFlightPlan({
+      isWelcomeBeat,
+      flyMode,
+      audioDurationMs,
+      reducedMotion,
+      introPath,
+    });
     return runIntroFlythrough(map, {
       target: { lat: homeLat, lng: homeLng },
       path: {
@@ -181,8 +232,7 @@ export function useBoardFlythrough({
         settleMs,
         ...(flyDurationMs ? { durationMs: flyDurationMs } : {}),
       },
-      // Redusert bevegelse gjelder kun produkt-beaten; capture skal alltid fly.
-      staticOnly: isProductWelcome && reducedMotion,
+      staticOnly,
       isPaused: () => audioPausedRef.current,
       onPhase: (phase) => {
         (window as unknown as { __placyIntroFly?: string }).__placyIntroFly = phase;
