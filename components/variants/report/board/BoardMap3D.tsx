@@ -12,8 +12,7 @@ import { type CameraMode } from "./BoardMapControls";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
-import { deriveCategoryCamera } from "./board-3d-camera-director";
-import { getCategoryCamera } from "./camera-tours";
+import { deriveCategoryCameraConfig } from "./board-category-camera";
 import { getEstablishingShot } from "./board-establishing-shots";
 import { useBoardMarkerSet } from "./use-board-marker-set";
 import {
@@ -335,17 +334,17 @@ export function BoardMap3D({
   // Kamera-config for aktiv kategori: eksplisitt autorert (camera-tours) har
   // forrang; ellers utledes A→B-buen fra kategoriens topp-POI-er + hjemmet
   // (deriveCategoryCamera) så cinematic-bevegelsen fungerer uten hand-autoring.
-  const categoryConfig = useMemo<CategoryCameraConfig | undefined>(() => {
-    if (!activeCategory) return undefined;
-    const explicit = getCategoryCamera(data.projectSlug ?? "", activeCategory.id);
-    if (explicit) return explicit;
-    const src =
-      activeCategory.topRankedPois.length > 0
-        ? activeCategory.topRankedPois
-        : activeCategory.pois;
-    const coords = src.map((p) => p.coordinates);
-    return deriveCategoryCamera(data.home.coordinates, coords) ?? undefined;
-  }, [activeCategory, data.projectSlug, data.home.coordinates]);
+  // Forrangs-logikken bor som ren funksjon (deriveCategoryCameraConfig, Unit 4 AC1)
+  // — PRD 10 komponerer PRD 6-mekanismen + PRD 9-DATAen, re-hjemler ingen (AC3).
+  const categoryConfig = useMemo<CategoryCameraConfig | undefined>(
+    () =>
+      deriveCategoryCameraConfig(
+        activeCategory,
+        data.projectSlug ?? "",
+        data.home.coordinates,
+      ),
+    [activeCategory, data.projectSlug, data.home.coordinates],
+  );
 
   // ── Kamera-director ─────────────────────────────────────────────────────
   // Drone-orbit + POI-fokus + (kommende) cinematic A→B, styrt av en eksplisitt
