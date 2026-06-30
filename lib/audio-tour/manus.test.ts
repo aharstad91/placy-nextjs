@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it, expect } from "vitest";
 import {
   buildTrackInputs,
@@ -8,6 +10,7 @@ import {
   MIN_WORDS,
   MAX_WORDS,
 } from "./manus";
+import { TARGET_WORDS } from "./manus-prompt";
 import type { ReportConfig, ReportThemeConfig } from "../types";
 
 const HEAVY_PITCH = Array.from({ length: 70 }, (_, i) => `ord${i}`).join(" ");
@@ -41,6 +44,74 @@ function makeTheme(over: Partial<ReportThemeConfig> = {}): ReportThemeConfig {
     ...over,
   };
 }
+
+describe("ren domene-modul (AC4: ingen runtime-LLM)", () => {
+  // Les kilden via process.cwd() (ikke import.meta.url — kaster under jsdom).
+  const src = readFileSync(
+    join(process.cwd(), "lib/audio-tour/manus.ts"),
+    "utf8",
+  );
+  // Skann KODEN, ikke doc-kommentarene (header-prosaen sier eksplisitt at
+  // modulen testes "uten Anthropic-side-effekter" — det ordet er ikke et kall).
+  const code = src
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+
+  it("har ingen runtime-LLM- eller nettverks-kall", () => {
+    expect(code).not.toMatch(/@anthropic-ai|messages\.create/);
+    expect(code).not.toMatch(/\bfetch\s*\(/);
+    expect(code).not.toMatch(/x-goog-api-key|xi-api-key/);
+  });
+
+  it("importerer kun TYPE fra manus-prompt (reference-only-grense)", () => {
+    // Eneste manus-prompt-referansen er en `import type` — ingen verdi-import
+    // som ville dratt inn prompt-bygging i den rene domene-modulen.
+    const promptImports =
+      code.match(/import[^;]*from\s+["']\.\/manus-prompt["']/g) ?? [];
+    expect(promptImports).toHaveLength(1);
+    expect(promptImports[0]).toMatch(/import\s+type/);
+  });
+});
+
+describe("ord-grense-reconciliation (PRD 14 Unit 2)", () => {
+  it("pinner de kanoniske aksept-grensene (guardrail-bånd)", () => {
+    // Drift-vakt: endrer noen disse må reconciliation-headeren i manus.ts
+    // (mål vs. bånd) re-vurderes — ikke stille endring.
+    expect(MIN_WORDS).toBe(35);
+    expect(MAX_WORDS).toBe(90);
+  });
+
+  it("genererings-målet (~70) ligger INNE i aksept-båndet", () => {
+    // Kjernen i reconciliationen: målet og båndet er ortogonale roller.
+    // Hvis målet noensinne flyttes utenfor [MIN, MAX] er valideringen
+    // garantert å forkaste mål-treffende manus — den motsetningen fanges her.
+    expect(MIN_WORDS).toBeLessThanOrEqual(TARGET_WORDS);
+    expect(TARGET_WORDS).toBeLessThanOrEqual(MAX_WORDS);
+  });
+
+  it("aksepterer et manus på akkurat mål-ordtellingen", () => {
+    const atTarget = Array.from({ length: TARGET_WORDS }, () => "ord").join(" ");
+    const r = validateManus(atTarget);
+    expect(r.ok).toBe(true);
+    expect(r.wordCount).toBe(TARGET_WORDS);
+  });
+
+  it("aksepterer båndets ytterpunkter (MIN og MAX inklusiv)", () => {
+    const atMin = Array.from({ length: MIN_WORDS }, () => "ord").join(" ");
+    const atMax = Array.from({ length: MAX_WORDS }, () => "ord").join(" ");
+    expect(validateManus(atMin).ok).toBe(true);
+    expect(validateManus(atMax).ok).toBe(true);
+  });
+
+  it("forkaster akkurat utenfor båndet (MIN-1 og MAX+1)", () => {
+    const belowMin = Array.from({ length: MIN_WORDS - 1 }, () => "ord").join(" ");
+    const aboveMax = Array.from({ length: MAX_WORDS + 1 }, () => "ord").join(" ");
+    expect(validateManus(belowMin).ok).toBe(false);
+    expect(validateManus(belowMin).reason).toContain("for kort");
+    expect(validateManus(aboveMax).ok).toBe(false);
+    expect(validateManus(aboveMax).reason).toContain("for langt");
+  });
+});
 
 describe("countWords", () => {
   it("teller enkle ord", () => {

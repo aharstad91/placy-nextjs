@@ -3,6 +3,21 @@
  *
  * Holdes separat fra scripts/audio-manus-write.ts slik at de kan testes
  * uten Anthropic- eller Supabase-side-effekter.
+ *
+ * ── Ord-grense-reconciliation (PRD 14 Unit 2) ───────────────────────────────
+ * To ortogonale roller, IKKE to konkurrerende grenser:
+ *
+ *   • MÅL (genererings-hint):   ~70 ord  →  {@link TARGET_WORDS} i manus-prompt.ts.
+ *     Det Claude bes treffe per spor (~30 sek lest opp på visning).
+ *   • BÅND (aksept-guardrail):  MIN_WORDS=35 .. MAX_WORDS=90  →  her.
+ *     Post-hoc-validatoren (`validateManus`) avviser spor UTENFOR båndet.
+ *
+ * Båndet er bevisst SJENERØST rundt målet (70 ∈ [35, 90]) slik at manus som
+ * lander litt under/over ~70 ikke forkastes — vi vil ikke regenerere et godt
+ * spor fordi det ble 62 eller 81 ord. Et hardt cap PÅ målet (f.eks. max 70)
+ * ville avvist gyldige nær-mål-spor. Derfor er det INGEN konflikt å «velge»
+ * mellom 35/90 og ~70: målet og båndet eksisterer på hver sin akse.
+ * Drift-vakt: se manus.test.ts (MIN_WORDS ≤ TARGET_WORDS ≤ MAX_WORDS).
  */
 
 import type {
@@ -12,7 +27,9 @@ import type {
 } from "../types";
 import type { TrackKind } from "./manus-prompt";
 
+/** Nedre aksept-grense (guardrail). Se header for mål vs. bånd. */
 export const MIN_WORDS = 35;
+/** Øvre aksept-grense (guardrail). Se header for mål vs. bånd. */
 export const MAX_WORDS = 90;
 
 /**

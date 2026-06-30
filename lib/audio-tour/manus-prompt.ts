@@ -7,10 +7,23 @@
  * Register: muntlig — som om megler står foran kjøper på visning. Ikke
  * artikkel-prosa. Ingen "vi anbefaler"; kurateringen er anbefalingen.
  *
- * Banned-words og 70-ord-cap valideres post-hoc i kallende skript.
+ * Banned-words og ord-grense valideres post-hoc i kallende skript
+ * (`manus.ts` → `validateManus`).
  */
 
 export type TrackKind = "home" | "category";
+
+/**
+ * Kanonisk genererings-mål for ett manus-spor (curator-pitch, ~30 sek lest).
+ *
+ * Dette er MÅLET prompten ber Claude treffe — ikke en hard grense. Den harde
+ * aksept-grensen håndheves post-hoc av `validateManus` (`manus.ts`) som et
+ * sjenerøst bånd `MIN_WORDS=35..MAX_WORDS=90` rundt dette målet (70 ∈ båndet).
+ * Mål og bånd er ortogonale roller — single-source her slik at de tre
+ * tidligere `70`-litteralene (default-param, prompt-tekst, kallende skript)
+ * ikke kan drifte fra hverandre.
+ */
+export const TARGET_WORDS = 70;
 
 export interface ManusPromptParams {
   trackKind: TrackKind;
@@ -33,7 +46,7 @@ export interface ManusPromptParams {
    * trackKind/categoryName, ikke fra forrige manus (cirkularitet).
    */
   prevTrackSummary?: string;
-  /** Mål-ordtelling. Default 70. */
+  /** Mål-ordtelling. Default {@link TARGET_WORDS} (70). */
   targetWords?: number;
   /** Språk. Default "no". Hardkodet i pilot — `en` kan re-aktiveres senere. */
   lang?: "no" | "en";
@@ -72,7 +85,7 @@ export function buildManusPrompt(params: ManusPromptParams): string {
     inputText,
     categoryName,
     prevTrackSummary,
-    targetWords = 70,
+    targetWords = TARGET_WORDS,
     lang = "no",
   } = params;
 

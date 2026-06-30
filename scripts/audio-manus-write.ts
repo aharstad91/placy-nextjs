@@ -31,6 +31,7 @@ import * as path from "node:path";
 import { config } from "dotenv";
 import {
   SYSTEM_PROMPT,
+  TARGET_WORDS,
   buildManusPrompt,
 } from "../lib/audio-tour/manus-prompt";
 import {
@@ -46,8 +47,8 @@ import type {
 config({ path: ".env.local" });
 
 // ─── Konfigurasjon ──────────────────────────────────────────────────────────
-
-const TARGET_WORDS = 70;
+// TARGET_WORDS importeres fra manus-prompt (single-source, se reconciliation
+// dokumentert i manus.ts-header).
 
 const ALLOWED_REPORTCONFIG_KEYS = new Set([
   "label",
