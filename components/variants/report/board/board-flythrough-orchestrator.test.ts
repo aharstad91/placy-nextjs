@@ -210,3 +210,83 @@ describe("BoardMap3D — dekomponerings-invarianter (Unit 06.7)", () => {
     expect(src).toMatch(/deriveIntroActive\(/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Establishing-choreografi-orkestrering (PRD 10 Unit 10.2). De pure mekanismene
+// (runEstablishingFlythrough, deriveIntroActive AND-out) er behovs-testet
+// andre steder (board-establishing-flythrough.test.ts + describe over); her
+// guardes WIRING-invariantene som lever inne i React-effekter/JSX og som
+// verbatim-porten må bevare. Kilde-leses via process.cwd() (ikke jsdom-render),
+// samme stil som dekomponerings-invariantene over.
+// ---------------------------------------------------------------------------
+describe("Establishing-shot-flythrough — orkestrerings-invarianter (Unit 10.2)", () => {
+  const orchSrc = readFileSync(
+    join(process.cwd(), "components/variants/report/board/board-flythrough-orchestrator.ts"),
+    "utf8",
+  );
+  const boardSrc = readFileSync(
+    join(process.cwd(), "components/variants/report/board/BoardMap3D.tsx"),
+    "utf8",
+  );
+  const shellSrc = readFileSync(
+    join(process.cwd(), "components/variants/report/reels/ReportReelsPage.tsx"),
+    "utf8",
+  );
+
+  it("AC1: establishingFlag leser ?establishing=1; establishingShot = getEstablishingShot(slug); establishingMode = !!establishingShot", () => {
+    expect(boardSrc).toMatch(/get\("establishing"\)\s*===\s*"1"/);
+    expect(boardSrc).toMatch(/getEstablishingShot\(/);
+    expect(boardSrc).toMatch(/establishingMode\s*=\s*!!establishingShot/);
+  });
+
+  it("AC2: establishing-effekten kjører runEstablishingFlythrough med path=establishingShot, staticOnly=reducedMotion", () => {
+    // Effekt-vakten: ukjent slug → establishingShot=undefined → no-op (ikke krasj).
+    expect(orchSrc).toMatch(
+      /if\s*\(!establishingMode\s*\|\|\s*!establishingShot\s*\|\|\s*!map3dInstance\)\s*return;/,
+    );
+    expect(orchSrc).toMatch(/runEstablishingFlythrough\(/);
+    expect(orchSrc).toMatch(/path:\s*establishingShot/);
+    expect(orchSrc).toMatch(/staticOnly:\s*reducedMotion/);
+  });
+
+  it("AC2/AC3: onProgress flipper bloom når s >= bloomAtProgress (reset til false når effekten (re)kjører)", () => {
+    expect(orchSrc).toMatch(/bloomAt\s*=\s*establishingShot\.bloomAtProgress/);
+    expect(orchSrc).toMatch(/setBloomStarted\(false\)/); // reset ved effekt-start
+    expect(orchSrc).toMatch(/onProgress:\s*\(s\)\s*=>\s*\{[\s\S]*?if\s*\(s\s*>=\s*bloomAt\)\s*setBloomStarted\(true\)/);
+  });
+
+  it("AC2: reduced-motion (ingen flytur) fyrer bloom på 'done' så strøket ikke står tomt på statisk positur", () => {
+    expect(orchSrc).toMatch(
+      /if\s*\(phase\s*===\s*"done"\s*&&\s*reducedMotion\)\s*setBloomStarted\(true\)/,
+    );
+  });
+
+  it("AC3: showReveal gates på (establishingMode && bloomStarted) — kaskaden venter til kameraet stiger over platået", () => {
+    expect(boardSrc).toMatch(/establishingMode\s*&&\s*bloomStarted/);
+  });
+
+  it("AC4: establishingMode AND-er bort intro-eierne (mates inn i deriveIntroActive) OG ORes inn til director så den yield-er", () => {
+    // AND-out: establishingMode er ett av deriveIntroActive-argumentene.
+    expect(boardSrc).toMatch(/deriveIntroActive\(\{[\s\S]*?establishingMode[\s\S]*?\}\)/);
+    // Director-yield: introActive || establishingMode mates til useBoard3DCamera.
+    expect(boardSrc).toMatch(/introActive:\s*introActive\s*\|\|\s*establishingMode/);
+  });
+
+  it("AC5: window.__placyEstablishing settes per fase i onPhase", () => {
+    expect(orchSrc).toMatch(/onPhase:\s*\(phase[\s\S]*?__placyEstablishing/);
+    expect(orchSrc).toMatch(/__placyEstablishing\s*=\s*\n?\s*phase/);
+  });
+
+  it("AC6: cross-file splash-skip-kontrakt — shell (PRD 9) og choreografi (PRD 10) deler KUN URL-strengen 'establishing'", () => {
+    // PRD 10-siden: BoardMap3D leser flagget og eier choreografien.
+    expect(boardSrc).toMatch(/get\("establishing"\)/);
+    // PRD 9-siden (shell): samme flagg-streng hopper over splash + avdekker board.
+    expect(shellSrc).toMatch(/get\("establishing"\)\s*!==\s*"1"/);
+    expect(shellSrc).toMatch(/setSplashVisible\(false\)/);
+    expect(shellSrc).toMatch(/setBoardRevealed\(true\)/);
+    // Choreografi-filene importerer/redigerer IKKE shell-filen (én-veis kobling
+    // via flagg-strengen, ikke via modul-avhengighet).
+    expect(orchSrc).not.toMatch(/ReportReelsPage/);
+    expect(boardSrc).not.toMatch(/ReportReelsPage/);
+  });
+});
