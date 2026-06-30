@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Mapbox Directions API proxy
-// Brukes for å beregne reisetider mellom prosjekt-sentrum og POI-er
-// Supports both origin/destination and multi-waypoint (waypoints) formats
+// Mapbox Directions API proxy — eierskap: PRD 11 (data-lag); PRD 6 eier polyline-render.
+// Eierskap: /api/directions + useRouteData → PRD 11; BoardPathLayer/RouteLayer3D → PRD 6.
+//
+// MAPBOX TOKEN-SIKKERHET: access_token sendes som URL-querystring — dette er IKKE et
+// hemmelig-nøkkel-brudd. NEXT_PUBLIC_MAPBOX_TOKEN er bevisst offentlig/klient-eksponert
+// og finnes allerede i nettleserbundlet. Mapbox Directions/Matrix støtter KUN query-param-auth
+// (ingen Authorization-header). Ekte hardening = URL-restriksjoner + scope-begrensning i
+// Mapbox-kontrollpanelet. Proxy-garantien: logg aldri full request-URL med token.
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -46,7 +51,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Mapbox Directions API URL
+    // access_token i URL er Mapbox-kontrakten for offentlige tokens (se kommentar øverst).
+    // Logg aldri `url`-variabelen — den inneholder tokenet i querystring.
     const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?access_token=${mapboxToken}&geometries=geojson&overview=full`;
 
     const response = await fetch(url);

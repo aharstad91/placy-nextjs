@@ -5,15 +5,17 @@ import { z } from "zod";
 import type { POI } from "@/lib/types";
 
 /**
- * Delt walking-rute-hook for UnifiedMapModal.
+ * Walking-rute-data-hook for board-kontekst (PRD 11 data-lag; PRD 6 eier polyline-render).
+ * Live konsumenter: BoardMap3D (3D-rute), BoardPathLayer (2D-overlay),
+ * BoardPathMidpointMarker (midpoint-marker). Kalles med `activePOI` + `projectCenter`
+ * (= home-koordinaten fra board-data, PRD 5).
  *
- * - AbortController: cancel forrige fetch ved rask POI-switch (AC-19)
- * - Zod-validering: maks 500 coords, finite numbers (AC-20, DoS-guard)
- * - 200ms debounce: forhindrer API-spam ved rask klikking (AC-21)
- * - Silent på feil (AC-11): caller beslutter UI, ingen toast
+ * - AbortController: avbryter forrige fetch ved rask POI-switch (forventet)
+ * - Zod-validering: maks 500 coords, finite numbers (DoS-guard)
+ * - 200ms debounce: forhindrer API-spam ved rask klikking
+ * - Silent på feil: caller beslutter UI, ingen toast
  *
  * Cache-strategi V1: single-slot (useState nullstilles ved ny activePOI).
- * Post-V1: LRU keyed på `${poi.id}|${project.lat},${project.lng}` hvis behov.
  */
 
 const DirectionsResponseSchema = z.object({
