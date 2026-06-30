@@ -13,6 +13,7 @@ import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
 import { deriveCategoryCameraConfig } from "./board-category-camera";
+import { readBoardUrlFlagsFromWindow } from "./board-url-flags";
 import { getEstablishingShot } from "./board-establishing-shots";
 import { useBoardMarkerSet } from "./use-board-marker-set";
 import {
@@ -103,44 +104,18 @@ export function BoardMap3D({
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
 
-  // Dev-only authoring-modus (?author=1) for å fange kamera-waypoints. Lest én
-  // gang ved mount; aldri eksponert i produksjon med mindre flagget settes.
-  const [authorMode] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("author") === "1",
-  );
-
-  // Film/capture-modus (?film=1): dropp kategori-POI-pins for en ren cinematisk
-  // flythrough-fangst. Pins re-monteres per zoom-tier, så å fjerne dem via DOM
-  // utenfra krasjer React (removeChild-race på en node React fortsatt eier) —
-  // vi dropper dem heller på render-nivå (markerPOIs → [] i useBoardMarkerSet).
-  // Prosjekt-labelen (projectSite) er en egen prop og påvirkes ikke.
-  const [filmMode] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("film") === "1",
-  );
-
-  // Fly-modus (?fly=1): spill intro-flythrough (oval-spiral låst på objektet)
-  // live i kartet. Impliserer film-modus (pins skjult) + "free" cameraMode (over),
-  // og kjøres av useBoardFlythrough når map3d-instansen er klar.
-  const [flyMode] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("fly") === "1",
-  );
-
-  // Establishing-shot-modus (?establishing=1): spill den multi-waypoint strøk-
-  // flythrough-en (board-establishing-shots) live, UTEN voice-over/lyd — ren
-  // visuell komposisjon vi itererer på. En egen flate fra welcome/basic-introen:
-  // den eier kameraet (introActive-en under AND-er bort welcome/basic når denne er
-  // på), skjuler statiske pins, og fyrer reveal-kaskaden (blobs + pins) når banen
-  // stiger over platået. Kun aktiv hvis strøket faktisk har en bane konfigurert.
-  const [establishingFlag] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("establishing") === "1",
+  // URL-flagg-state lest ÉN gang ved mount (board-url-flags hjemler kontrakten:
+  // hvilke flagg finnes + semantikk — AC1/AC6). Semantikk i korthet:
+  //   ?author=1       → CameraWaypointAuthor-mount (dev-only kamera-autoring).
+  //   ?film=1         → rent kart for capture: kategori-pins droppes på RENDER-nivå
+  //                     (markerPOIs → [] i useBoardMarkerSet) — ALDRI via DOM-fjerning
+  //                     (removeChild-race). projectSite-labelen er egen prop, upåvirket.
+  //   ?fly=1          → live intro-flythrough; impliserer film-modus (pins skjult) +
+  //                     'free' cameraMode (BoardMap.tsx, PRD 9 — én av to free-triggere).
+  //   ?establishing=1 → multi-waypoint strøk-flythrough uten voice-over; blir
+  //                     establishingMode kun hvis strøket har en bane (getEstablishingShot).
+  const [{ authorMode, filmMode, flyMode, establishingFlag }] = useState(
+    readBoardUrlFlagsFromWindow,
   );
   const establishingShot = useMemo(
     () =>

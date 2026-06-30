@@ -181,8 +181,12 @@ describe("BoardMap3D — dekomponerings-invarianter (Unit 06.7)", () => {
   );
 
   it("AC6: CameraWaypointAuthor rendres fortsatt kun bak authorMode (?author=1)", () => {
-    // authorMode leses fra ?author=1; komponenten mountes bak {authorMode && ...}.
-    expect(src).toMatch(/get\("author"\)\s*===\s*"1"/);
+    // authorMode leses fra ?author=1 via board-url-flags (Unit 10.5-homing av URL-
+    // flagg-kontrakten); destruktureres fra den rene leseren og mountes bak
+    // {authorMode && ...}. Selve ?author=1-lesningen guardes i board-url-flags.test.ts.
+    expect(src).toMatch(
+      /\[\{\s*authorMode,[\s\S]*?\}\]\s*=\s*useState\(\s*readBoardUrlFlagsFromWindow/,
+    );
     expect(src).toMatch(/\{authorMode\s*&&\s*\(?\s*[\s\S]*?<CameraWaypointAuthor/);
   });
 
@@ -233,8 +237,12 @@ describe("Establishing-shot-flythrough — orkestrerings-invarianter (Unit 10.2)
     "utf8",
   );
 
-  it("AC1: establishingFlag leser ?establishing=1; establishingShot = getEstablishingShot(slug); establishingMode = !!establishingShot", () => {
-    expect(boardSrc).toMatch(/get\("establishing"\)\s*===\s*"1"/);
+  it("AC1: establishingFlag leser ?establishing=1 (via board-url-flags); establishingShot = getEstablishingShot(slug); establishingMode = !!establishingShot", () => {
+    // ?establishing=1-lesningen er homet i board-url-flags (Unit 10.5); BoardMap3D
+    // destrukturerer establishingFlag fra den rene leseren og eier choreografien.
+    expect(boardSrc).toMatch(
+      /establishingFlag\s*\}\]\s*=\s*useState\(\s*readBoardUrlFlagsFromWindow/,
+    );
     expect(boardSrc).toMatch(/getEstablishingShot\(/);
     expect(boardSrc).toMatch(/establishingMode\s*=\s*!!establishingShot/);
   });
@@ -278,8 +286,14 @@ describe("Establishing-shot-flythrough — orkestrerings-invarianter (Unit 10.2)
   });
 
   it("AC6: cross-file splash-skip-kontrakt — shell (PRD 9) og choreografi (PRD 10) deler KUN URL-strengen 'establishing'", () => {
-    // PRD 10-siden: BoardMap3D leser flagget og eier choreografien.
-    expect(boardSrc).toMatch(/get\("establishing"\)/);
+    // PRD 10-siden: ?establishing=1-lesningen er homet i board-url-flags (Unit 10.5),
+    // og BoardMap3D konsumerer flagget + eier choreografien via samme URL-streng.
+    const urlFlagsSrc = readFileSync(
+      join(process.cwd(), "components/variants/report/board/board-url-flags.ts"),
+      "utf8",
+    );
+    expect(urlFlagsSrc).toMatch(/get\("establishing"\)\s*===\s*"1"/);
+    expect(boardSrc).toMatch(/from\s*"\.\/board-url-flags"/);
     // PRD 9-siden (shell): samme flagg-streng hopper over splash + avdekker board.
     expect(shellSrc).toMatch(/get\("establishing"\)\s*!==\s*"1"/);
     expect(shellSrc).toMatch(/setSplashVisible\(false\)/);
