@@ -1,6 +1,24 @@
 import type { CameraPose, CategoryCameraConfig } from "@/lib/types";
 
 /**
+ * EIERSKAPS-GRENSE — DATA vs MEKANISME (PRD 9 Unit 09.5):
+ *
+ *   DATA (eies her, PRD 9): `CAMERA_TOURS`-recorden (autorerte per-prosjekt
+ *   A→B-waypoints) + `clampPose`-normaliseringen + de to rene accessorene
+ *   `getCameraTour` (rå tur-record) og `getCategoryCamera` (klampet kategori-pose).
+ *   Disse leser/normaliserer DATA og har ingen kunnskap om kamera-orkestrering.
+ *
+ *   MEKANISME (eies av PRD 6): `deriveCategoryCamera` (fallback-utledning av A→B
+ *   fra topp-POI-er + hjemmet) bor i `board-3d-camera-director.ts` (r06.4), og
+ *   konsumpsjonen/orkestreringen skjer i `BoardMap3D.tsx:340` — eksplisitt
+ *   `getCategoryCamera` har forrang, ellers `deriveCategoryCamera`-fallback.
+ *
+ * Søster-DATA-records av samme klasse (også PRD 9-eid, samme defer-til-DB-skjebne):
+ * `BOARD_INTROS` (board-intros.ts, konsumert av 06.4 `getBoardIntro` + r10.1) og
+ * `ESTABLISHING_SHOTS` (board-establishing-shots.ts, konsumert av r10.2).
+ */
+
+/**
  * Prototype-lokal kilde til per-kategori kamera-waypoints for 3D-rapport-boardet.
  *
  * Keyed på prosjekt-slug → kategori-id → {a, b?, moveDurationMs?}. Dette er
@@ -71,7 +89,19 @@ export function clampPose(pose: CameraPose): CameraPose {
   };
 }
 
-/** Hele kamera-turen for et prosjekt, eller `undefined` for ukjent slug. */
+/**
+ * Hele (RÅ, uklampede) kamera-turen for et prosjekt, eller `undefined` for ukjent
+ * slug. Returnerer DATA-recorden direkte — i motsetning til `getCategoryCamera`
+ * som klamper posene før retur.
+ *
+ * KONSUMPSJONS-STATUS (AC3): accessoren hadde tidligere bærende konsumenter i
+ * provisjon (provision-rapport) + tier-validatoren (validate-report-tier) +
+ * report-tier.test, MEN r02.2 fjernet `cameraTour`/`getCameraTour` fra tier-
+ * validatoren (3D er ortogonalt render-flagg, ikke nivå-krav) og r03.7 droppet
+ * den fra provision-acceptance. Per i dag: 0 live ikke-test-konsumenter. Accessoren
+ * BEHOLDES likevel (test-dekket, signatur bevart verbatim) — den er en stabil
+ * lese-kontrakt for senere DB/JSON-flytting av CAMERA_TOURS. IKKE slett.
+ */
 export function getCameraTour(
   slug: string,
 ): Record<string, CategoryCameraConfig> | undefined {

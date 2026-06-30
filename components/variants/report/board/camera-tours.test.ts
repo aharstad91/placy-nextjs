@@ -40,7 +40,7 @@ describe("clampPose", () => {
   });
 });
 
-describe("getCameraTour", () => {
+describe("getCameraTour (DATA-accessor — rå record)", () => {
   it("returnerer undefined for ukjent slug", () => {
     expect(getCameraTour("ukjent-prosjekt")).toBeUndefined();
   });
@@ -48,9 +48,28 @@ describe("getCameraTour", () => {
   it("returnerer et (muligens tomt) objekt for kjent slug", () => {
     expect(getCameraTour("stasjonskvartalet")).toBeDefined();
   });
+
+  // AC1/demo-data-integritet: live-demo-boardet (stasjonskvartalet, has_3d_addon)
+  // har en autorert `transport`-tur — vernet mot utilsiktet sletting av DATA.
+  it("stasjonskvartalet har en autorert 'transport'-tur (live-demo-board)", () => {
+    const tour = getCameraTour("stasjonskvartalet");
+    expect(tour?.transport).toBeDefined();
+    expect(tour!.transport.b, "transport mangler B-pose (A→B-kino)").toBeDefined();
+  });
+
+  // AC2: getCameraTour er DATA-accessoren — den returnerer den RÅ recorden uten
+  // å klampe. getCategoryCamera (mekanisme-accessoren) klamper. Lås distinksjonen
+  // ved å bevise at getCameraTour ikke normaliserer headingen til [0,360).
+  it("returnerer RÅ poser (klamper IKKE — i motsetning til getCategoryCamera)", () => {
+    const raw = getCameraTour("byggetrinn-4")!["marina-batliv"];
+    expect(raw.a.heading).toBe(340); // urørt rå-verdi
+    // getCategoryCamera ville klampet en out-of-range heading; her er rå == klampet
+    // fordi DATA-en allerede er gyldig, men accessoren har ulik kontrakt.
+    expect(raw.moveDurationMs).toBe(9000);
+  });
 });
 
-describe("getCategoryCamera", () => {
+describe("getCategoryCamera (mekanisme-accessor — klampet kopi)", () => {
   it("returnerer undefined for ukjent slug", () => {
     expect(getCategoryCamera("ukjent", "mat-drikke")).toBeUndefined();
   });
@@ -76,5 +95,25 @@ describe("getCategoryCamera", () => {
       expect(pose.heading).toBeLessThan(360);
       expect(pose.range).toBeGreaterThanOrEqual(1);
     }
+  });
+
+  // AC2: mekanisme-accessoren returnerer NYE (klampede) pose-objekter, ikke
+  // referansen til den rå DATA-recorden — så orkestreringen i BoardMap3D aldri
+  // muterer kilden. Bevises ved referanse-ulikhet mot getCameraTour-recorden.
+  it("returnerer klampede KOPIER (ikke samme referanse som rå DATA)", () => {
+    const raw = getCameraTour("byggetrinn-4")!["marina-batliv"];
+    const cam = getCategoryCamera("byggetrinn-4", "marina-batliv")!;
+    expect(cam).not.toBe(raw);
+    expect(cam.a).not.toBe(raw.a);
+    expect(cam.b).not.toBe(raw.b);
+    // verdi-paritet bevart for allerede-gyldig DATA
+    expect(cam.a).toEqual(raw.a);
+  });
+
+  // AC1: moveDurationMs slippes uendret gjennom accessoren (audio-uavhengig
+  // override-akse — eies ikke av klampen).
+  it("bevarer moveDurationMs gjennom accessoren", () => {
+    const cam = getCategoryCamera("byggetrinn-4", "marina-batliv")!;
+    expect(cam.moveDurationMs).toBe(9000);
   });
 });
