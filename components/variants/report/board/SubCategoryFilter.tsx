@@ -20,6 +20,17 @@ interface Props {
 }
 
 /**
+ * @reference-only — KOMPONENTEN har INGEN live JSX-mount (PRD 9 Unit 4 AC2 /
+ * §4-verdict, kontroll-runde 2026-06-27). `grep <SubCategoryFilter` finner kun
+ * treff i `SubCategoryFilter.test.tsx`; 0 non-test imports. Det som LEVER er
+ * HOOKEN `use-sub-category-filter.ts` (`deriveSubCategories`/`useSubCategoryFilter`),
+ * wired i `board-state.tsx` og eid av PRD 5 — IKKE denne komponenten.
+ *
+ * Klassifisering: behold som referanse (analog med PRD 6s `Map3DActionButtons`);
+ * IKKE port som aktiv skall-UI, IKKE slett. Hvis en live mount senere oppstår
+ * (reviewer bekrefter fremtidig bruk, §10 Q1): re-vurder. Reference-only-statusen
+ * er låst av source-guarden i `SubCategoryFilter.test.tsx`.
+ *
  * Filter for sub-kategorier innen et tema. Renderes over Punkter-listen.
  *
  * Skjules helt når temaet har <2 sub-kategorier (ingen filter-verdi).

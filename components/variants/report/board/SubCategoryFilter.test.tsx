@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { SubCategoryFilter } from "./SubCategoryFilter";
 import type { SubCategoryInfo } from "./use-sub-category-filter";
 
@@ -310,5 +312,54 @@ describe("SubCategoryFilter (mobile)", () => {
       "kafé",
       "pub",
     ]);
+  });
+});
+
+/**
+ * PRD 9 Unit 4 AC2 — reference-only source-guard. KOMPONENTEN `SubCategoryFilter`
+ * har INGEN live JSX-mount og 0 non-test imports; det som lever er HOOKEN
+ * `use-sub-category-filter` (PRD 5). Denne guarden låser klassifiseringen: hvis
+ * noen senere wirer komponenten inn som aktiv skall-UI feiler testen, og §10 Q1
+ * må re-vurderes eksplisitt før den blir live.
+ */
+describe("SubCategoryFilter — reference-only-klassifisering (AC2)", () => {
+  function scanImporters() {
+    const roots = ["components", "lib", "app"];
+    const importers: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        if (entry === "node_modules" || entry === ".next") continue;
+        const full = join(dir, entry);
+        const st = statSync(full);
+        if (st.isDirectory()) {
+          walk(full);
+        } else if (/\.(ts|tsx)$/.test(entry) && !/\.test\.tsx?$/.test(entry)) {
+          const src = readFileSync(full, "utf8");
+          // Importerer KOMPONENTEN `SubCategoryFilter` (ikke hooken/typen
+          // `useSubCategoryFilter`/`SubCategoryFilterApi`) fra ./SubCategoryFilter.
+          if (
+            /import\s*\{[^}]*\bSubCategoryFilter\b[^}]*\}\s*from\s*["'][^"']*\/SubCategoryFilter["']/.test(
+              src,
+            )
+          ) {
+            importers.push(full);
+          }
+        }
+      }
+    };
+    for (const r of roots) walk(join(process.cwd(), r));
+    return importers;
+  }
+
+  it("har 0 non-test imports av komponenten (reference-only)", () => {
+    expect(scanImporters()).toHaveLength(0);
+  });
+
+  it("bærer @reference-only-klassifiserings-headeren", () => {
+    const src = readFileSync(
+      join(process.cwd(), "components/variants/report/board/SubCategoryFilter.tsx"),
+      "utf8",
+    );
+    expect(src).toContain("@reference-only");
   });
 });

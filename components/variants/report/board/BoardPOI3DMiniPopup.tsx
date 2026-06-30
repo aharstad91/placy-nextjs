@@ -25,6 +25,11 @@ interface Props {
  * Drift-håndtering: ved POI-åpning fly-er vi kameraet inn til en tilt≈30°
  * (nær-top-down) hvor projeksjonen er nær eksakt. Brukeren kan fortsatt
  * tilte etterpå — popupen følger med, men drift øker proporsjonalt.
+ *
+ * No-photo-fallback (PRD 9 Unit 4 AC5; foto DEFERRED): identisk med 2D-popupen
+ * rendrer denne ALDRI et POI-foto — identiteten er kategorifargen + ikonet
+ * (`markerCircleStyle(color)` + `getFilledIcon`). 3D-markørene er allerede
+ * kategorifarge-baserte (PRD 6), så pin-laget er upåvirket av manglende foto.
  */
 
 // Projeksjon (lat/lng → skjerm) er delt med prosjekt-pin-overlayet — se

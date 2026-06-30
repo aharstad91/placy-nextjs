@@ -15,6 +15,13 @@ import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
  * og én CTA ("Utforsk"). Brukes på desktop (lg+); mobil bruker BoardMobileSheet.
  * 3D-varianten er BoardPOI3DMiniPopup med samme innholds-layout, men manuell
  * skjerm-projisering siden Google Maps 3D mangler native popup-anchor.
+ *
+ * No-photo-fallback (PRD 9 Unit 4 AC5; foto DEFERRED — INDEX note #9 / PRD 4):
+ * popupen rendrer ALDRI et POI-foto. Identiteten er kategorifargen + ikonet
+ * (sirkelen nedenfor, `markerCircleStyle(color)` + `getFilledIcon`). Board-POI-
+ * modellen (`BoardPOI`) bærer ikke noe `featured_image`-felt, så skallet kan
+ * aldri anta at et bilde finnes — ingen broken image, ingen crash. Når foto-
+ * tasken lander byttes/legges fallback-en til uten skall-endring.
  */
 export function BoardPOIMiniPopup() {
   const { dispatch } = useBoard();
