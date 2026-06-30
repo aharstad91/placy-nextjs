@@ -465,3 +465,28 @@ describe("CUT_FADE_MS — eneste sannhetskilde (AC2)", () => {
     expect(src).not.toContain("550");
   });
 });
+
+// r10.6 AC1: PRD 10 eier koreografi-BRUKEN — CameraCutOverlay-mounten i BoardMap3D.tsx
+// bruker cutVisible fra useBoard3DCamera (PRD 6), label-ternary per beat-signal, og
+// activeCategory?.color. Source-vakt sikrer at eierskaps-grensen ikke drifter.
+describe("CameraCutOverlay-koreografi (r10.6 AC1 — PRD 10 bruker PRD 6s komponent)", () => {
+  const boardMap3D = readFileSync(
+    join(process.cwd(), "components/variants/report/board/BoardMap3D.tsx"),
+    "utf8"
+  );
+
+  it("CameraCutOverlay mountes med visible={cutVisible} fra useBoard3DCamera", () => {
+    expect(boardMap3D).toMatch(/<CameraCutOverlay[\s\S]*?visible=\{cutVisible\}/);
+  });
+
+  it("label-ternary: activeCategory?.label med home/outro-fallback", () => {
+    // Verifiserer nøyaktig beat-signal-mønster: kategori-label → Nabolaget → Oppsummert → undefined
+    expect(boardMap3D).toMatch(
+      /activeCategory\?\.label\s*\?\?\s*\(\s*isHomeBeat\s*\?\s*["']Nabolaget["']\s*:\s*isOutroBeat\s*\?\s*["']Oppsummert["']\s*:\s*undefined\s*\)/
+    );
+  });
+
+  it("color fra activeCategory?.color (ingen hardkodet farge)", () => {
+    expect(boardMap3D).toMatch(/color=\{activeCategory\?\.color\}/);
+  });
+});
