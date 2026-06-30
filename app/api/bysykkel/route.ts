@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Trondheim Bysykkel GBFS API
+// Trondheim Bysykkel GBFS API.
+//
+// PROTOTYPE-SCOPE (PRD 11 Unit 2 AC5): GBFS-feeden er hardkodet til
+// Trondheim. Dette er en bevisst prototype-antakelse — proxyen er IKKE
+// generalisert til andre byer i denne porten. Generalisering (feed-URL per
+// by / per prosjekt-kommune) er deferred til en senere unit.
 const STATION_STATUS_URL =
   "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_status.json";
 const STATION_INFO_URL =

@@ -52,7 +52,11 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify({
         query: STATION_QUERY,
         variables: {
-          lat: 63.43,  // Trondheim center
+          // PROTOTYPE-SCOPE (PRD 11 Unit 2 AC5): senteret er hardkodet til
+          // Trondheim. Bevisst prototype-antakelse — IKKE generalisert til
+          // prosjektets faktiske koordinater i denne porten. Generalisering
+          // (senter fra board-koordinater) er deferred til en senere unit.
+          lat: 63.43, // Trondheim center
           lon: 10.4,
           range: 15000,
         },
