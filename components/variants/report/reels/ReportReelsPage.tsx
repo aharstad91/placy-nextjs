@@ -34,9 +34,6 @@ import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsTransport } from "./ReelsTransport";
 import { ReelSwipeStack } from "./ReelSwipeStack";
 import { DesktopStorySidebar } from "./DesktopStorySidebar";
-import { DesktopReportSplash } from "./DesktopReportSplash";
-import { MobileReportSplash } from "./MobileReportSplash";
-import { EmbedArrivalLoader } from "./EmbedArrivalLoader";
 import { IntroReel } from "./IntroReel";
 import { CategoryReel } from "./CategoryReel";
 import { MeglerReel } from "./MeglerReel";
@@ -56,7 +53,6 @@ import {
   AudioElementProvider,
   useAudioElement,
 } from "../board/audio-tour/use-audio-element";
-import { useReelsAudioOrchestration } from "./use-reels-audio-orchestration";
 import {
   useAudioTourActions,
   useAudioTourStore,
@@ -68,6 +64,58 @@ import {
   getProjectSplashVideo,
 } from "@/lib/themes/project-brand";
 import type { BoardData } from "../board/board-data";
+
+// ── Lazy-load-grenser (PRD 9 Unit 7 / PRD 2 Beslutning 14) ──────────────────
+// De tre verifiserte tunge nivå-2-/ortogonale modulene `dynamic()`-importeres
+// så et nivå-1-board (uten `assets.brand`/reels-video, uten spillbar VO) ikke
+// betaler koden deres i entry-chunken. Hver `import()` får et STABILT chunk-navn
+// (`webpackChunkName`) så bundle-beviset (docs/rebuild/board-skall-bundle-bevis.md
+// + scripts/verify-board-bundle.mjs) kan assertere fravær/tilstedeværelse mot
+// NAVNGITTE identifikatorer. Second-system-vakt (Unit 7 AC3): KUN disse tre —
+// ingen spekulativ lazy-grense.
+//
+//  1. reels/splash-<video>-pipeline + kuratert hero-asset-lasting:
+//     DesktopReportSplash / MobileReportSplash / EmbedArrivalLoader rendrer både
+//     splash-<video> (reels-video, `assets.splashVideo`) OG den kuraterte
+//     hero-asseten (`getProjectSplashImage`/`getProjectSplashVideo` → next/image
+//     + <video>). De to PRD-2-modulene er co-lokalisert i splash-cluster-en
+//     by-construction — begge fraværende fra entry-chunken etter splittingen.
+//  2. voiceover-orchestration: ReelsAudioOrchestrator (wrapper rundt
+//     use-reels-audio-orchestration), egen chunk.
+//
+// ssr:false er trygt + bevisst: splash-cluster-en rendres uansett kun bak
+// `ResponsiveLayout` (selv `ssr:false`), og orchestration-hooken kjører rene
+// klient-effekter (audio). loading=null for splash (overlay; `visible`-prop-en
+// styrer fade internt — en cream-placeholder ville feilaktig dekket board-et
+// når splash skal være skjult).
+const DesktopReportSplash = dynamic(
+  () =>
+    import(
+      /* webpackChunkName: "report-splash-desktop" */ "./DesktopReportSplash"
+    ).then((m) => m.DesktopReportSplash),
+  { ssr: false, loading: () => null },
+);
+const MobileReportSplash = dynamic(
+  () =>
+    import(
+      /* webpackChunkName: "report-splash-mobile" */ "./MobileReportSplash"
+    ).then((m) => m.MobileReportSplash),
+  { ssr: false, loading: () => null },
+);
+const EmbedArrivalLoader = dynamic(
+  () =>
+    import(
+      /* webpackChunkName: "report-embed-arrival" */ "./EmbedArrivalLoader"
+    ).then((m) => m.EmbedArrivalLoader),
+  { ssr: false, loading: () => null },
+);
+const ReelsAudioOrchestrator = dynamic(
+  () =>
+    import(
+      /* webpackChunkName: "reels-audio-orchestration" */ "./ReelsAudioOrchestrator"
+    ),
+  { ssr: false },
+);
 
 interface Props {
   project: Project;
@@ -219,18 +267,19 @@ function Inner({
       >
         <BoardReelsSync />
         <ReelsAudioShell>
-          <ReelsOrchestrator>
-            <ResponsiveLayout
-              boardData={boardData}
-              has3dAddon={has3dAddon}
-              eventMode={eventMode}
-              eventFilter={eventMode ? eventFilter : null}
-              collection={eventMode ? collectionApi : null}
-              onOpenCollection={() => setCollectionDrawerOpen(true)}
-              embed={embed}
-              fromEmbed={fromEmbed}
-            />
-          </ReelsOrchestrator>
+          {/* Voiceover-orchestration: lazy søsken (egen chunk), kjører hooken
+              uten å forsinke layout-treet. Erstatter den gamle wrapper-formen. */}
+          <ReelsAudioOrchestrator />
+          <ResponsiveLayout
+            boardData={boardData}
+            has3dAddon={has3dAddon}
+            eventMode={eventMode}
+            eventFilter={eventMode ? eventFilter : null}
+            collection={eventMode ? collectionApi : null}
+            onOpenCollection={() => setCollectionDrawerOpen(true)}
+            embed={embed}
+            fromEmbed={fromEmbed}
+          />
         </ReelsAudioShell>
         {eventMode && (
           <BoardCollectionDrawer
@@ -414,11 +463,6 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
       {children}
     </AudioElementProvider>
   );
-}
-
-function ReelsOrchestrator({ children }: { children: React.ReactNode }) {
-  useReelsAudioOrchestration();
-  return <>{children}</>;
 }
 
 /** Peek-sheet-geometri: toppen på 55% gir EKSPANDERT (etter-VO) ~45%-høyt kart-
