@@ -290,3 +290,75 @@ describe("Establishing-shot-flythrough — orkestrerings-invarianter (Unit 10.2)
     expect(boardSrc).not.toMatch(/ReportReelsPage/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Outro summary-fly-choreografi (PRD 10 Unit 10.3). Den imperative oppsummerings-
+// flyturen (isOutroBeat → flyCameraTo SUMMARY_*) lever inne i en React-effekt og
+// er koblet til board-skallet (PRD 9) via cameraMode='free'-yieldet. Disse
+// WIRING-invariantene kan ikke testes som rene funksjoner; vi guarder dem via
+// kilde-lesing (samme stil som establishing-blokken over). Pose-matematikken bak
+// SUMMARY_* er behovs-testet i board-3d-camera-director.test.ts.
+// ---------------------------------------------------------------------------
+describe("Outro summary-fly — orkestrerings-invarianter (Unit 10.3)", () => {
+  const orchSrc = readFileSync(
+    join(process.cwd(), "components/variants/report/board/board-flythrough-orchestrator.ts"),
+    "utf8",
+  );
+  const boardSrc = readFileSync(
+    join(process.cwd(), "components/variants/report/board/BoardMap3D.tsx"),
+    "utf8",
+  );
+  const shellSrc = readFileSync(
+    join(process.cwd(), "components/variants/report/board/BoardMap.tsx"),
+    "utf8",
+  );
+
+  it("AC1: outro-effekten fyrer KUN når isOutroBeat && cameraMode === 'free' && map3dInstance", () => {
+    expect(orchSrc).toMatch(
+      /if\s*\(!isOutroBeat\s*\|\|\s*cameraMode\s*!==\s*"free"\s*\|\|\s*!map3dInstance\)\s*return;/,
+    );
+  });
+
+  it("AC1: flyCameraTo bruker SUMMARY_RANGE/SUMMARY_TILT (PRD 6-konstanter) + durationMillis = SUMMARY_FLY_MS", () => {
+    expect(orchSrc).toMatch(/flyCameraTo\?\.\(/);
+    expect(orchSrc).toMatch(/range:\s*SUMMARY_RANGE/);
+    expect(orchSrc).toMatch(/tilt:\s*SUMMARY_TILT/);
+    expect(orchSrc).toMatch(/durationMillis:\s*SUMMARY_FLY_MS/);
+    // SUMMARY_* importeres fra director-en (PRD 6 eier konstantene, ikke PRD 10).
+    expect(orchSrc).toMatch(
+      /import\s*\{[\s\S]*?SUMMARY_RANGE[\s\S]*?SUMMARY_TILT[\s\S]*?SUMMARY_FLY_MS[\s\S]*?\}\s*from\s*"\.\/board-3d-camera-director"/,
+    );
+  });
+
+  it("AC1: effekten er én-gangs på (isOutroBeat, cameraMode) — re-flyr ikke på stabile deps", () => {
+    // Dep-arrayet inneholder isOutroBeat + cameraMode, men IKKE audio/narrativ-synk-
+    // deps (audioDurationMs, reducedMotion) som ville re-fyre uttrekket.
+    expect(orchSrc).toMatch(
+      /\[isOutroBeat,\s*cameraMode,\s*map3dInstance,\s*homeLat,\s*homeLng\]/,
+    );
+  });
+
+  it("AC2: outro-effekten (useBoardFlythrough) registreres ETTER useBoard3DCamera i BoardMap3D", () => {
+    const directorIdx = boardSrc.indexOf("useBoard3DCamera({");
+    const flythroughIdx = boardSrc.indexOf("useBoardFlythrough({");
+    expect(directorIdx).toBeGreaterThan(-1);
+    expect(flythroughIdx).toBeGreaterThan(-1);
+    // Rekkefølge-invariant: director-ens stopp kjører FØR summary-fly i commit-en
+    // der modus blir 'free'. Brytes rekkefølgen kjemper director og fly om posituren.
+    expect(directorIdx).toBeLessThan(flythroughIdx);
+  });
+
+  it("AC3: board-skallet (PRD 9) eier cameraMode='free'-yieldet på outro-beaten", () => {
+    expect(shellSrc).toMatch(/isOutroBeat\s*=\s*currentTrack\?\.categoryId\s*===\s*"outro"/);
+    // På outro: bytt til 'free' (director no-op) — på FORLAT-outro: gjenopprett 'auto'.
+    expect(shellSrc).toMatch(/if\s*\(isOutroBeat\)\s*\{[\s\S]*?setCameraMode\("free"\)/);
+    expect(shellSrc).toMatch(/wasOutroRef[\s\S]*?setCameraMode\("auto"\)/);
+  });
+
+  it("AC3: PRD 10 KONSUMERER cameraMode (orchestratoren setter den aldri selv)", () => {
+    // Orchestratoren leser cameraMode som param, men eier ikke modus-state:
+    // ingen setCameraMode-kall lekker inn i choreografi-laget.
+    expect(orchSrc).toMatch(/cameraMode:\s*CameraMode/);
+    expect(orchSrc).not.toMatch(/setCameraMode/);
+  });
+});
