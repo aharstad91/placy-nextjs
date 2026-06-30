@@ -33,6 +33,7 @@ from pathlib import Path
 from pyproj import Transformer
 
 DATASET = Path("data/geo/trondheim/barneskolekrets.json")
+# GENERERT fra lib/themes/theme-ids.ts — ikke rediger manuelt
 THEME_IDS = [
     "hverdagsliv",
     "barn-oppvekst",
