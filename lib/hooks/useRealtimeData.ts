@@ -103,6 +103,12 @@ export function useRealtimeData(poi: RealtimePOI | null): RealtimeData {
   const hyreId = poi?.hyreStationId;
   const poiId = poi?.id;
 
+  // ARCHITECTURE AFFIRMATION — not a rule violation.
+  // CLAUDE.md forbids useEffect for server/Supabase data fetching (must be RSC).
+  // This useEffect polls Placy-owned /api proxy routes for live transport data
+  // (departures, bike availability) that cannot be pre-rendered. This is the
+  // established, explicitly allowed exception (CARRY-OVER 7/344-347; PRD 11 §4).
+  // No Supabase calls are made here.
   useEffect(() => {
     if (!poiId || (!enturId && !bysykkelId && !hyreId)) {
       setData({ loading: false, error: null, lastUpdated: null });
