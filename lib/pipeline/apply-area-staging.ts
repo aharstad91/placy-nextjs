@@ -24,9 +24,9 @@
  * oversetter `ok:false` til `process.exit(1)`. 0-rader-PATCH er en `ok:false`-feil.
  *
  * sha256-dedup (AC5, ikke påkrevd nå): HVIS kjernen senere skal skrive
- * `place_knowledge`-rader, er dedup-mønsteret fra `scripts/backfill-knowledge.ts:82–84`
- * (`computeHash(poiId, topic, normalisert factText)` via `createHash("sha256")` +
- * existing-hash-set) tilgjengelig for gjenbruk. `areas`-kuratering skriver IKKE
+ * `place_knowledge`-rader, er sha256-dedup-mønsteret (`computeHash(poiId, topic,
+ * normalisert factText)` via `createHash("sha256")` + existing-hash-set) tilgjengelig
+ * for gjenbruk. `areas`-kuratering skriver IKKE
  * `place_knowledge` i denne PRD-en, så ingen dedup implementeres her.
  */
 
