@@ -8,6 +8,7 @@ import {
   introVideoSrc,
   welcomeVideoSrc,
   homeVideoSrc,
+  posterForVideo,
   CATEGORY_ADVANCE_PAUSE_MS,
   CATEGORY_TEASER_MS,
   nowPlayingView,
@@ -417,6 +418,28 @@ describe("introVideoSrc / welcomeVideoSrc / homeVideoSrc", () => {
     expect(homeVideoSrc("annet-prosjekt")).toBeUndefined();
     expect(welcomeVideoSrc(undefined)).toBeUndefined();
     expect(homeVideoSrc(undefined)).toBeUndefined();
+  });
+});
+
+describe("posterForVideo (reels-video-UX, .mp4 → .jpg)", () => {
+  it("avleder poster ved å bytte .mp4 → .jpg (samme sti)", () => {
+    expect(posterForVideo("/reels/categories/natur-friluftsliv.mp4")).toBe(
+      "/reels/categories/natur-friluftsliv.jpg",
+    );
+  });
+
+  it("er case-insensitiv på filendelsen", () => {
+    expect(posterForVideo("/reels/x/CLIP.MP4")).toBe("/reels/x/CLIP.jpg");
+  });
+
+  it("bytter kun den avsluttende .mp4 (ikke .mp4 midt i stien)", () => {
+    expect(posterForVideo("/reels/a.mp4.dir/clip.mp4")).toBe(
+      "/reels/a.mp4.dir/clip.jpg",
+    );
+  });
+
+  it("returnerer undefined uten video-bg (→ statisk illustrasjon-fallback)", () => {
+    expect(posterForVideo(undefined)).toBeUndefined();
   });
 });
 

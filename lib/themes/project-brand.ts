@@ -13,6 +13,9 @@ import { STASJONSKVARTALET_PIN_THUMB } from "./stasjonskvartalet-pin-thumb";
 // rasteriseres til en WebGL-tekstur (kan ikke være en slug-path-fil som de andre
 // assetene). Nytt prosjekt legger til sin egen URI her og setter
 // `assets.pinThumbnail` i Supabase.
+// TODO(supabase): demo-data — flytt pin-thumbnail-URI-ene til provisjon/Supabase
+// (per-prosjekt asset-rad) så nye prosjekter ikke krever kodeendring. Beholdt
+// verbatim i denne porten (prototype).
 const PIN_THUMBNAILS: Record<string, string> = {
   stasjonskvartalet: STASJONSKVARTALET_PIN_THUMB,
 };
@@ -57,6 +60,9 @@ export function getProjectSplashVideo(
 // Demo-megler-fallback for kjente prosjekter, brukt INNTIL ekte data finnes i
 // reportConfig.brokers (Supabase). Speiler district/city-hardkodingen i
 // adaptBoardData — ekte data overstyrer alltid (se board-data.ts).
+// TODO(supabase): demo-data — flytt megler-fallback til provisjon/Supabase
+// (reportConfig.brokers), så denne hardkodede slug-tabellen kan slettes. Beholdt
+// verbatim i denne porten (prototype).
 const PROJECT_BROKERS: Record<string, BrokerInfo[]> = {
   stasjonskvartalet: [
     {
