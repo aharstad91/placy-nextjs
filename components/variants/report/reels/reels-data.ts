@@ -228,6 +228,45 @@ export function audioDurationSec(audio: BoardAudioTrack | undefined): number | u
 }
 
 
+// ---------------------------------------------------------------------------
+// Reels-video-kilde-derivasjon (per prosjekt-slug). Trukket ut av
+// ReportReelsPage (PRD 9 Unit 2 — ingen forretningslogikk i komponenter).
+// REELS_MONTAGE_PROJECTS er et PRD-9-eid DATA-flagg (§5.4).
+// ---------------------------------------------------------------------------
+
+/** Intro-video pr. prosjekt etter slug-konvensjon: `/reels/{slug}/intro.mp4`.
+ *  Mangler filen (nytt prosjekt uten produsert intro) → tom src, og IntroReel
+ *  faller tilbake til svart bakgrunn med start-knapp (videoen har ingen poster,
+ *  så et 404 gir ikke ødelagt bilde — bare svart). */
+export function introVideoSrc(projectSlug: string | undefined): string {
+  return projectSlug ? `/reels/${projectSlug}/intro.mp4` : "";
+}
+
+// Prosjekter med produsert reels-montasje (velkommen + nabolaget levende
+// bakgrunner). I motsetning til intro-videoen bruker disse kortene posterForVideo
+// (.mp4 → .jpg), så en 404-poster ville gitt et ødelagt bilde i sidebar/
+// CategoryReel. Derfor gates de eksplisitt per slug (samme mønster som
+// PIN_THUMBNAILS) — nytt prosjekt legges til her når montasjene er lastet opp
+// under /reels/<slug>/. Uten montasje → undefined → kortet faller tilbake til
+// illustrasjonsbildet.
+export const REELS_MONTAGE_PROJECTS = new Set<string>(["stasjonskvartalet"]);
+
+// Velkommen-kortets levende bakgrunn (splash-montasjen, center-croppet til 9:16):
+// `/reels/{slug}/welcome.mp4`. Undefined utenfor REELS_MONTAGE_PROJECTS.
+export function welcomeVideoSrc(projectSlug: string | undefined): string | undefined {
+  return projectSlug && REELS_MONTAGE_PROJECTS.has(projectSlug)
+    ? `/reels/${projectSlug}/welcome.mp4`
+    : undefined;
+}
+
+// Nabolaget-kortets levende bakgrunn (Ken Burns + kryss-fade-loop, 9:16):
+// `/reels/{slug}/nabolaget.mp4`. Undefined utenfor REELS_MONTAGE_PROJECTS.
+export function homeVideoSrc(projectSlug: string | undefined): string | undefined {
+  return projectSlug && REELS_MONTAGE_PROJECTS.has(projectSlug)
+    ? `/reels/${projectSlug}/nabolaget.mp4`
+    : undefined;
+}
+
 export function buildReelsCards(
   boardData: BoardData,
   introVideoSrc: string,
@@ -388,6 +427,27 @@ export function deriveSplashPrimaryLabel(opts: {
   return opts.ended ? "Spill av på nytt" : "Fortsett";
 }
 
+/**
+ * Velkomst-splashens intro-copy. D3: event-modus har egen, megler/eiendoms-fri
+ * copy (ingen "nærområdet til hotellet"/"utenfor kontordøren"). Boligrapport
+ * forgrener på venueType (commercial/hotel); residential/ukjent → undefined
+ * (splashen viser da ingen intro-paragraf). Trukket ut av ResponsiveLayoutInner
+ * (PRD 9 Unit 2 — ren, enhetstestbar helper, samme mønster som
+ * deriveSplashPrimaryLabel).
+ */
+export function deriveSplashIntro(opts: {
+  eventMode: boolean;
+  venueType: BoardData["venueType"];
+}): string | undefined {
+  if (opts.eventMode)
+    return "Utforsk programmet på kartet — se hva som skjer, hvor og når. Trykk play, og finn opplevelsene i nærheten.";
+  if (opts.venueType === "commercial")
+    return "Vi tar deg med på en guidet tur i nærområdet — restauranter, transport, trenings- og servicetilbud rett utenfor kontordøren. Trykk play, og se hva som ligger i gangavstand.";
+  if (opts.venueType === "hotel")
+    return "Utforsk nærområdet til hotellet — restauranter, severdigheter, transport og opplevelser rett utenfor lobbyen. Trykk play, og se hva som ligger i gangavstand.";
+  return undefined;
+}
+
 /** Indeks til neste audio-bærende card etter `fromIndex`, eller -1 om ingen.
  *  Driver desktop auto-advance: når et spor slutter, ruller løpebåndet til
  *  neste kapittel. Hopper over ikke-audio-cards (intro/megler). */
@@ -428,4 +488,97 @@ export function audioIndexToCardIndex(
     }
   }
   return -1;
+}
+
+// ---------------------------------------------------------------------------
+// Audio-bærende navigasjons-orkestrering (track-ended auto-advance).
+// Ren beslutnings-funksjon trukket ut av ReportReelsPage.ReelsAudioShell
+// (PRD 9 Unit 2): den AVGJØR hva som skjer når et VO-spor slutter naturlig;
+// komponenten EKSEKVERER (timere/refs/dispatch/setTeaserArmed). Holder den tunge
+// to-flate-logikken testbar uten å mocke React-timere.
+// ---------------------------------------------------------------------------
+
+/** Pause (ms) mellom kategori-kapitler ved auto-advance — et lite pust så VO-en
+ *  ikke hopper rett fra én kategori til neste. */
+export const CATEGORY_ADVANCE_PAUSE_MS = 1000;
+
+/** Teaser-vindu (ms): hvor lenge kart-glimtet står ved kategori-VO-slutt FØR
+ *  passiv auto-advance til neste kapittel (R8/R9). Lengre enn pusten over så
+ *  brukeren rekker å lese «Utforsk på kart» og evt. tappe. */
+export const CATEGORY_TEASER_MS = 3500;
+
+export type TrackEndedAction =
+  /** Gjør ingenting (kategori med kart åpent, eller intro/summary/megler). */
+  | { type: "none" }
+  /** Kall audioNext() NÅ — eneste vei til terminal "ended"-fase. */
+  | { type: "endTour" }
+  /** Planlegg setActiveIndex(targetIndex) etter delayMs. Kanselleres av
+   *  activeIndex-cleanup ved manuell navigasjon (ingen fire-time-guard). */
+  | { type: "advance"; targetIndex: number; delayMs: number }
+  /** Arm kart-teaseren og planlegg en fire-time-guard'et advance: ved fire-tid
+   *  avbrytes den hvis brukeren har navigert bort (activeIndex ≠ guardIndex),
+   *  åpnet kartet (mapOpen), eller avvæpnet teaseren. targetIndex utenfor cards
+   *  ved fire-tid → audioNext() i stedet (terminal). */
+  | {
+      type: "teaserAdvance";
+      targetIndex: number;
+      delayMs: number;
+      guardIndex: number;
+    };
+
+/**
+ * Avgjør auto-advance-handlingen når et VO-spor slutter naturlig.
+ * - Desktop: advance til neste audio-bærende kapittel (etter pust), ellers
+ *   endTour (siste kapittel ferdig → nå terminal "ended" så "Spill av på nytt").
+ * - Mobil welcome/home (kart-fremtunge beats): advance videre, ellers none.
+ * - Mobil outro: advance til finale-kortet (+1, audio-frie megler/summary),
+ *   ellers endTour.
+ * - Mobil kategori, KUN når kartet ikke er åpent: arm teaser + guard'et advance.
+ *   (Slutter VO-en mens brukeren er på kart-flaten skal touren stå → none.)
+ * - Ellers: none.
+ */
+export function decideTrackEndedAction(opts: {
+  isDesktop: boolean;
+  cards: ReelsCard[];
+  activeIndex: number;
+  mapOpen: boolean;
+}): TrackEndedAction {
+  const { isDesktop, cards, activeIndex, mapOpen } = opts;
+
+  if (isDesktop) {
+    const next = nextAudioBearingIndex(cards, activeIndex);
+    return next !== -1
+      ? { type: "advance", targetIndex: next, delayMs: CATEGORY_ADVANCE_PAUSE_MS }
+      : { type: "endTour" };
+  }
+
+  const endedCard = cards[activeIndex];
+  if (!endedCard) return { type: "none" };
+
+  if (endedCard.kind === "welcome" || endedCard.kind === "home") {
+    const next = nextAudioBearingIndex(cards, activeIndex);
+    return next !== -1
+      ? { type: "advance", targetIndex: next, delayMs: CATEGORY_ADVANCE_PAUSE_MS }
+      : { type: "none" };
+  }
+
+  if (endedCard.kind === "outro") {
+    const next = activeIndex + 1;
+    return next < cards.length
+      ? { type: "advance", targetIndex: next, delayMs: CATEGORY_ADVANCE_PAUSE_MS }
+      : { type: "endTour" };
+  }
+
+  if (endedCard.kind === "category" && !mapOpen) {
+    const nextAudio = nextAudioBearingIndex(cards, activeIndex);
+    const next = nextAudio !== -1 ? nextAudio : activeIndex + 1;
+    return {
+      type: "teaserAdvance",
+      targetIndex: next,
+      delayMs: CATEGORY_TEASER_MS,
+      guardIndex: activeIndex,
+    };
+  }
+
+  return { type: "none" };
 }

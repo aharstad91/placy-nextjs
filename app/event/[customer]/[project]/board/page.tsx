@@ -32,8 +32,9 @@ interface PageProps {
  * chrome.
  *
  * `enTranslations` utelates (default `{}`) — events har ikke kuratert oversettelse.
- * `mapbox-gl.css` er garantert via `ReportReelsPage.tsx` (top-level import), så
- * ingen ekstra layout-import er nødvendig.
+ * `mapbox-gl.css` lastes av event-layouten (`app/event/layout.tsx`, CDN-<link>),
+ * så ingen komponent-import er nødvendig (den døde top-level-importen i
+ * `ReportReelsPage.tsx` er fjernet — PRD 9 Unit 2).
  *
  * Events starter i 2D med mindre `has3dAddon` er satt på prosjektet (det er
  * default `false`); `ReportReelsPage` leser `project.has3dAddon`.

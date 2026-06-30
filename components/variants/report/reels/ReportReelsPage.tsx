@@ -1,6 +1,5 @@
 "use client";
 
-import "mapbox-gl/dist/mapbox-gl.css";
 import {
   useEffect,
   useMemo,
@@ -45,9 +44,13 @@ import { SummaryReel } from "./SummaryReel";
 import {
   buildReelsCards,
   cardIndexToAudioIndex,
-  nextAudioBearingIndex,
   firstAudioBearingIndex,
   deriveSplashPrimaryLabel,
+  deriveSplashIntro,
+  decideTrackEndedAction,
+  introVideoSrc,
+  welcomeVideoSrc,
+  homeVideoSrc,
 } from "./reels-data";
 import {
   AudioElementProvider,
@@ -65,39 +68,6 @@ import {
   getProjectSplashVideo,
 } from "@/lib/themes/project-brand";
 import type { BoardData } from "../board/board-data";
-
-/** Intro-video pr. prosjekt etter slug-konvensjon: `/reels/{slug}/intro.mp4`.
- *  Mangler filen (nytt prosjekt uten produsert intro) → tom src, og IntroReel
- *  faller tilbake til svart bakgrunn med start-knapp (videoen har ingen poster,
- *  så et 404 gir ikke ødelagt bilde — bare svart). */
-function introVideoSrc(projectSlug: string | undefined): string {
-  return projectSlug ? `/reels/${projectSlug}/intro.mp4` : "";
-}
-
-// Prosjekter med produsert reels-montasje (velkommen + nabolaget levende
-// bakgrunner). I motsetning til intro-videoen bruker disse kortene posterForVideo
-// (.mp4 → .jpg), så en 404-poster ville gitt et ødelagt bilde i sidebar/
-// CategoryReel. Derfor gates de eksplisitt per slug (samme mønster som
-// PIN_THUMBNAILS) — nytt prosjekt legges til her når montasjene er lastet opp
-// under /reels/<slug>/. Uten montasje → undefined → kortet faller tilbake til
-// illustrasjonsbildet.
-const REELS_MONTAGE_PROJECTS = new Set<string>(["stasjonskvartalet"]);
-
-// Velkommen-kortets levende bakgrunn (splash-montasjen, center-croppet til 9:16):
-// `/reels/{slug}/welcome.mp4`. Undefined utenfor REELS_MONTAGE_PROJECTS.
-function welcomeVideoSrc(projectSlug: string | undefined): string | undefined {
-  return projectSlug && REELS_MONTAGE_PROJECTS.has(projectSlug)
-    ? `/reels/${projectSlug}/welcome.mp4`
-    : undefined;
-}
-
-// Nabolaget-kortets levende bakgrunn (Ken Burns + kryss-fade-loop, 9:16):
-// `/reels/{slug}/nabolaget.mp4`. Undefined utenfor REELS_MONTAGE_PROJECTS.
-function homeVideoSrc(projectSlug: string | undefined): string | undefined {
-  return projectSlug && REELS_MONTAGE_PROJECTS.has(projectSlug)
-    ? `/reels/${projectSlug}/nabolaget.mp4`
-    : undefined;
-}
 
 interface Props {
   project: Project;
@@ -332,16 +302,6 @@ function BoardReelsSync() {
   return null;
 }
 
-/** Pause (ms) mellom kategori-kapitler ved auto-advance — et lite pust så VO-en
- *  ikke hopper rett fra én kategori til neste. Justeres her. */
-const CATEGORY_ADVANCE_PAUSE_MS = 1000;
-
-/** Teaser-vindu (ms): hvor lenge kart-glimtet står ved kategori-VO-slutt FØR
- *  passiv auto-advance til neste kapittel (R8/R9). Lengre enn pusten over så
- *  brukeren rekker å lese «Utforsk på kart» og evt. tappe. Justeres mot
- *  mobil-emulering. */
-const CATEGORY_TEASER_MS = 3500;
-
 function ReelsAudioShell({ children }: { children: React.ReactNode }) {
   const { state, setActiveIndex, setTeaserArmed } = useReels();
   const { next: audioNext } = useAudioTourActions();
@@ -392,95 +352,61 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
-  // Når et spor slutter naturlig:
-  // - Desktop: auto-advance til neste audio-bærende kapittel (etter en kort
-  //   pause) slik at løpebåndet i sidebaren spiller kategoriene én etter én
-  //   (som mobil-feeden, men uten swipe). Siste spor → terminal "ended"-fase.
-  // - Mobil (to-flate): welcome/home auto-advancer videre; kategori-VO-slutt
-  //   armer kart-teaser + et timet, passivt auto-advance (se kategori-grenen).
+  // Når et spor slutter naturlig avgjør `decideTrackEndedAction` (reels-data, ren
+  // + enhetstestbar) HVA som skal skje; denne callbacken EKSEKVERER beslutningen
+  // (timere/refs/dispatch/setTeaserArmed). Beslutnings-grenene (desktop-advance,
+  // welcome/home-chain, outro→finale, kategori-teaser, terminal endTour) og deres
+  // begrunnelser er dokumentert ved funksjonen.
   const handleTrackEnded = () => {
-    if (isDesktop) {
-      const next = nextAudioBearingIndex(state.cards, state.activeIndex);
-      if (next !== -1) {
-        // Hold gjeldende kapittel et beat før skiftet (pust mellom kategoriene).
-        if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-        advanceTimerRef.current = setTimeout(() => {
-          advanceTimerRef.current = null;
-          setActiveIndex(next);
-        }, CATEGORY_ADVANCE_PAUSE_MS);
-      } else {
+    const action = decideTrackEndedAction({
+      isDesktop,
+      cards: state.cards,
+      activeIndex: state.activeIndex,
+      mapOpen: state.mapOpen,
+    });
+    switch (action.type) {
+      case "none":
+        return;
+      case "endTour":
         // Siste audio-bærende kapittel ferdig. autoAdvance=false betyr at
         // store.next() — den eneste veien til phase "ended" — aldri ble kalt
-        // (onended pauset bare). Vi kaller den eksplisitt så touren når
-        // terminal "ended"; da viser sidebar-knappen "Spill av på nytt" og
-        // restart fungerer rent (i stedet for å henge på "Fortsett").
+        // (onended pauset bare). Kall den eksplisitt så touren når terminal
+        // "ended"; da viser sidebar-knappen "Spill av på nytt" og restart
+        // fungerer rent (i stedet for å henge på "Fortsett").
         audioNext();
-      }
-      return;
-    }
-    // Mobil: kart-fremtunge beats (welcome/home) auto-advancer videre slik at
-    // flythrough → nabolags-oversikt → første kategori henger sammen (som
-    // desktop). Når home-sporet slutter lander vi på første kategori, og
-    // SET_ACTIVE_INDEX nullstiller flaten til historie (defaultMapOpenForCard) —
-    // den naturlige overgangen fra fly-in (kart-flate) til innhold (historie).
-    const endedCard = state.cards[state.activeIndex];
-    if (endedCard && (endedCard.kind === "welcome" || endedCard.kind === "home")) {
-      const next = nextAudioBearingIndex(state.cards, state.activeIndex);
-      if (next !== -1) {
+        return;
+      case "advance": {
+        // Hold gjeldende kapittel et beat før skiftet (pust mellom kategoriene).
+        // Kanselleres av activeIndex-cleanupen ved manuell navigasjon i pausen.
         if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+        const target = action.targetIndex;
         advanceTimerRef.current = setTimeout(() => {
           advanceTimerRef.current = null;
-          setActiveIndex(next);
-        }, CATEGORY_ADVANCE_PAUSE_MS);
+          setActiveIndex(target);
+        }, action.delayMs);
+        return;
       }
-      return;
-    }
-    // Outro (recap, kart-flate) er siste audio-bærende kapittel. Auto-advance til
-    // finale-kortet (megler/summary) — ellers ville touren parkert på outro over
-    // kartet uten vei videre: swipe-navigasjon dekker kun kategori-beats, og den
-    // tidligere triaden (som steg outro→finale) er fjernet. Speiler welcome/home-
-    // auto-advancen, men +1 (ikke nextAudio) fordi finale-kortene er audio-frie.
-    if (endedCard?.kind === "outro") {
-      const next = state.activeIndex + 1;
-      if (next < state.cards.length) {
+      case "teaserAdvance": {
+        // Kategori-spor (to-flate): arm kart-teaseren (glimt stiger opp på
+        // historie-flaten) + start et timet, passivt auto-advance. Ignorerer
+        // bruker → touren går videre selv; tapper hen teaseren / åpner kart →
+        // mapOpen-effekten over kansellerer timeren og touren står.
+        setTeaserArmed(true);
         if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+        const { targetIndex, guardIndex, delayMs } = action;
         advanceTimerRef.current = setTimeout(() => {
           advanceTimerRef.current = null;
-          setActiveIndex(next);
-        }, CATEGORY_ADVANCE_PAUSE_MS);
-      } else {
-        audioNext();
+          // Fire-time-guard mot kanseller-hull (les fersk state via ref): avanser
+          // kun hvis vi fortsatt står på samme kategori-kort, teaseren er armet, og
+          // kartet ikke er åpnet. Fanger bl.a. segment-tapp på SAMME kapittel (som
+          // reduceren no-op-er → activeIndex-cleanupen treffer ikke) via teaserArmed.
+          const s = stateRef.current;
+          if (s.activeIndex !== guardIndex || s.mapOpen || !s.teaserArmed) return;
+          if (targetIndex < s.cards.length) setActiveIndex(targetIndex);
+          else audioNext();
+        }, delayMs);
+        return;
       }
-      return;
-    }
-    // Kategori-spor (to-flate-modell): arm kart-teaseren (glimt stiger opp på
-    // historie-flaten) og start et timet, passivt auto-advance til neste
-    // kapittel (R8/R9). Ignorerer bruker → touren går videre selv; tapper hen
-    // teaseren / åpner kart → mapOpen-effekten over kansellerer timeren og
-    // touren står. Erstatter den gamle map-quarter-parkeringen (manuell swipe).
-    //
-    // R9-race-vern: hvis VO-en slutter MENS brukeren allerede er på kart-flaten
-    // (mapOpen=true), skal vi IKKE arme teaser/timer — da ville et auto-advance
-    // rykket brukeren av kartet midt i utforskingen. Bruker styrer selv videre
-    // via transporten (Fortsett/segment) når hen er tilbake på historie-flaten.
-    // (Welcome/home over auto-chainer bevisst videre — de ER kart-primære.)
-    if (endedCard?.kind === "category" && !state.mapOpen) {
-      setTeaserArmed(true);
-      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-      const nextAudio = nextAudioBearingIndex(state.cards, state.activeIndex);
-      const next = nextAudio !== -1 ? nextAudio : state.activeIndex + 1;
-      const scheduledIndex = state.activeIndex;
-      advanceTimerRef.current = setTimeout(() => {
-        advanceTimerRef.current = null;
-        // Fire-time-guard mot kanseller-hull (les fersk state via ref): avanser
-        // kun hvis vi fortsatt står på samme kategori-kort, teaseren er armet, og
-        // kartet ikke er åpnet. Fanger bl.a. segment-tapp på SAMME kapittel (som
-        // reduceren no-op-er → activeIndex-cleanupen treffer ikke) via teaserArmed.
-        const s = stateRef.current;
-        if (s.activeIndex !== scheduledIndex || s.mapOpen || !s.teaserArmed) return;
-        if (next < s.cards.length) setActiveIndex(next);
-        else audioNext();
-      }, CATEGORY_TEASER_MS);
     }
   };
   return (
@@ -650,13 +576,11 @@ function ResponsiveLayoutInner({
 
   // D3: event-modus har egen, megler/eiendoms-fri splash-copy (ingen "nærområdet
   // til hotellet"/"utenfor kontordøren"). Boligrapport-copyen er uendret.
-  const splashIntro = eventMode
-    ? "Utforsk programmet på kartet — se hva som skjer, hvor og når. Trykk play, og finn opplevelsene i nærheten."
-    : boardData.venueType === "commercial"
-      ? "Vi tar deg med på en guidet tur i nærområdet — restauranter, transport, trenings- og servicetilbud rett utenfor kontordøren. Trykk play, og se hva som ligger i gangavstand."
-      : boardData.venueType === "hotel"
-        ? "Utforsk nærområdet til hotellet — restauranter, severdigheter, transport og opplevelser rett utenfor lobbyen. Trykk play, og se hva som ligger i gangavstand."
-        : undefined;
+  // Derivasjonen bor i reels-data (ren + testbar).
+  const splashIntro = deriveSplashIntro({
+    eventMode,
+    venueType: boardData.venueType,
+  });
 
   // Lett-vekts kategori-oversikt for sidebarens empty state (prosjekt uten
   // reels-lyd) — med POI-antall + lead.

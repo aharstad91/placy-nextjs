@@ -3,7 +3,15 @@ import {
   buildReelsCards,
   buildCategoryTracks,
   deriveSplashPrimaryLabel,
+  deriveSplashIntro,
+  decideTrackEndedAction,
+  introVideoSrc,
+  welcomeVideoSrc,
+  homeVideoSrc,
+  CATEGORY_ADVANCE_PAUSE_MS,
+  CATEGORY_TEASER_MS,
   nowPlayingView,
+  type ReelsCard,
 } from "../reels-data";
 import type {
   BoardCategory,
@@ -384,5 +392,179 @@ describe("deriveSplashPrimaryLabel (B1 / D3)", () => {
         ended: true,
       }),
     ).toBe("Spill av på nytt");
+  });
+});
+
+// --- Uttrukket fra ReportReelsPage (PRD 9 Unit 2) ---------------------------
+
+describe("introVideoSrc / welcomeVideoSrc / homeVideoSrc", () => {
+  it("introVideoSrc følger slug-konvensjonen, tom uten slug", () => {
+    expect(introVideoSrc("stasjonskvartalet")).toBe(
+      "/reels/stasjonskvartalet/intro.mp4",
+    );
+    expect(introVideoSrc(undefined)).toBe("");
+  });
+
+  it("welcome/home-video kun for montasje-prosjekter (allowlist-gate)", () => {
+    expect(welcomeVideoSrc("stasjonskvartalet")).toBe(
+      "/reels/stasjonskvartalet/welcome.mp4",
+    );
+    expect(homeVideoSrc("stasjonskvartalet")).toBe(
+      "/reels/stasjonskvartalet/nabolaget.mp4",
+    );
+    // Utenfor allowlist → undefined (faller tilbake til illustrasjonsbildet).
+    expect(welcomeVideoSrc("annet-prosjekt")).toBeUndefined();
+    expect(homeVideoSrc("annet-prosjekt")).toBeUndefined();
+    expect(welcomeVideoSrc(undefined)).toBeUndefined();
+    expect(homeVideoSrc(undefined)).toBeUndefined();
+  });
+});
+
+describe("deriveSplashIntro", () => {
+  it("event-modus gir egen, eiendoms-fri copy uavhengig av venueType", () => {
+    const intro = deriveSplashIntro({ eventMode: true, venueType: "hotel" });
+    expect(intro).toContain("Utforsk programmet på kartet");
+    expect(intro).not.toContain("hotellet");
+  });
+
+  it("forgrener boligrapport-copy på venueType", () => {
+    expect(deriveSplashIntro({ eventMode: false, venueType: "commercial" })).toContain(
+      "kontordøren",
+    );
+    expect(deriveSplashIntro({ eventMode: false, venueType: "hotel" })).toContain(
+      "hotellet",
+    );
+  });
+
+  it("residential / ukjent / null → undefined (ingen intro-paragraf)", () => {
+    expect(
+      deriveSplashIntro({ eventMode: false, venueType: "residential" }),
+    ).toBeUndefined();
+    expect(deriveSplashIntro({ eventMode: false, venueType: null })).toBeUndefined();
+    expect(
+      deriveSplashIntro({ eventMode: false, venueType: undefined }),
+    ).toBeUndefined();
+  });
+});
+
+describe("decideTrackEndedAction", () => {
+  const audio = { url: "x", manus: "y" };
+  const intro: ReelsCard = { kind: "intro", videoSrc: "v" };
+  const welcome: ReelsCard = {
+    kind: "welcome",
+    label: "Velkommen",
+    illustrationSrc: "i",
+    audio,
+  };
+  const home: ReelsCard = {
+    kind: "home",
+    label: "Nabolaget",
+    illustrationSrc: "i",
+    audio,
+  };
+  const outro: ReelsCard = {
+    kind: "outro",
+    label: "Oppsummert",
+    illustrationSrc: "i",
+    audio,
+  };
+  const megler: ReelsCard = { kind: "megler", label: "Ta kontakt", brokers: [] };
+  const cat = (id = "transport"): ReelsCard => ({
+    kind: "category",
+    categoryId: id as BoardCategoryId,
+    label: id,
+    lead: "",
+    illustrationSrc: "i",
+    audio,
+    pois: [],
+    color: "#000",
+    icon: "MapPin",
+  });
+
+  describe("desktop", () => {
+    it("advancer til neste audio-bærende kapittel (med pust)", () => {
+      const cards = [intro, cat("a"), cat("b")];
+      expect(
+        decideTrackEndedAction({ isDesktop: true, cards, activeIndex: 1, mapOpen: false }),
+      ).toEqual({ type: "advance", targetIndex: 2, delayMs: CATEGORY_ADVANCE_PAUSE_MS });
+    });
+
+    it("siste audio-bærende kapittel → endTour (terminal ended)", () => {
+      const cards = [intro, cat("a")];
+      expect(
+        decideTrackEndedAction({ isDesktop: true, cards, activeIndex: 1, mapOpen: true }),
+      ).toEqual({ type: "endTour" });
+    });
+  });
+
+  describe("mobil welcome/home (kart-fremtunge beats)", () => {
+    it("advancer videre når neste audio-kapittel finnes", () => {
+      const cards = [intro, welcome, home, cat("a")];
+      expect(
+        decideTrackEndedAction({ isDesktop: false, cards, activeIndex: 1, mapOpen: false }),
+      ).toEqual({ type: "advance", targetIndex: 2, delayMs: CATEGORY_ADVANCE_PAUSE_MS });
+    });
+
+    it("ingen neste → none (ingen audioNext)", () => {
+      const cards = [intro, welcome];
+      expect(
+        decideTrackEndedAction({ isDesktop: false, cards, activeIndex: 1, mapOpen: false }),
+      ).toEqual({ type: "none" });
+    });
+  });
+
+  describe("mobil outro (→ finale-kort)", () => {
+    it("advancer +1 til audio-frie finale-kort", () => {
+      const cards = [intro, cat("a"), outro, megler];
+      expect(
+        decideTrackEndedAction({ isDesktop: false, cards, activeIndex: 2, mapOpen: false }),
+      ).toEqual({ type: "advance", targetIndex: 3, delayMs: CATEGORY_ADVANCE_PAUSE_MS });
+    });
+
+    it("outro som siste kort → endTour", () => {
+      const cards = [intro, cat("a"), outro];
+      expect(
+        decideTrackEndedAction({ isDesktop: false, cards, activeIndex: 2, mapOpen: false }),
+      ).toEqual({ type: "endTour" });
+    });
+  });
+
+  describe("mobil kategori (to-flate teaser)", () => {
+    it("arm teaser + guard'et advance til neste audio-kapittel når kartet er lukket", () => {
+      const cards = [intro, cat("a"), cat("b"), megler];
+      expect(
+        decideTrackEndedAction({ isDesktop: false, cards, activeIndex: 1, mapOpen: false }),
+      ).toEqual({
+        type: "teaserAdvance",
+        targetIndex: 2,
+        delayMs: CATEGORY_TEASER_MS,
+        guardIndex: 1,
+      });
+    });
+
+    it("uten neste audio-kapittel sikter teaseren mot +1 (finale-kort)", () => {
+      const cards = [intro, cat("a"), megler];
+      expect(
+        decideTrackEndedAction({ isDesktop: false, cards, activeIndex: 1, mapOpen: false }),
+      ).toEqual({
+        type: "teaserAdvance",
+        targetIndex: 2,
+        delayMs: CATEGORY_TEASER_MS,
+        guardIndex: 1,
+      });
+    });
+
+    it("R9-race-vern: kategori-VO-slutt mens kartet er åpent → none", () => {
+      const cards = [intro, cat("a"), cat("b")];
+      expect(
+        decideTrackEndedAction({ isDesktop: false, cards, activeIndex: 1, mapOpen: true }),
+      ).toEqual({ type: "none" });
+    });
+  });
+
+  it("out-of-range activeIndex (mobil) → none (ingen krasj)", () => {
+    expect(
+      decideTrackEndedAction({ isDesktop: false, cards: [intro], activeIndex: 9, mapOpen: false }),
+    ).toEqual({ type: "none" });
   });
 });
