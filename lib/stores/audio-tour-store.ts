@@ -13,8 +13,9 @@ import type {
 /**
  * Ephemeral, non-persisted Zustand-store for audio-tour-state. Sibling
  * til lib/stores/kompass-store.ts. Tour-state lever IKKE i BoardState
- * (per 2026-04-30 reading-phase-cleanup-disiplin) — sync til BoardContext
- * skjer i `use-audio-tour-sync.ts`.
+ * (per 2026-04-30 reading-phase-cleanup-disiplin). Runtime-playback
+ * orkestreres mot ReelsContext i `use-reels-audio-orchestration.ts`
+ * (binder store-actions til swipe-nav); ingen BoardContext-sync-hook.
  *
  * Beat-signal-typene (`AudioTrack`/`AudioTourPhase`/`AudioTrackCategoryId`) +
  * selektor-signaturene eies av den hoistede Lag-2-kontrakten
@@ -186,17 +187,6 @@ export const useAudioTourPhase: UseAudioTourPhase = () =>
 export const useCurrentTrack: UseCurrentTrack = () =>
   useAudioTourStore((s) => s.tracks[s.trackIndex]);
 
-export function useAudioTourMeta() {
-  return useAudioTourStore(
-    useShallow((s) => ({
-      phase: s.phase,
-      trackIndex: s.trackIndex,
-      trackCount: s.tracks.length,
-      pauseReason: s.pauseReason,
-    })),
-  );
-}
-
 export function useAudioTourActions() {
   return useAudioTourStore(
     useShallow((s) => ({
@@ -209,54 +199,6 @@ export function useAudioTourActions() {
       close: s.close,
       setError: s.setError,
       retryTrack: s.retryTrack,
-    })),
-  );
-}
-
-/** Per-seksjon progress-state for scroll-panel-cinematic.
- *
- * - "played":   denne kategoriens spor er ferdigspilt (trackIndex har passert)
- *               eller hele turen er ferdig — vises i full opacity som karaoke-
- *               sluttilstand. Brukeren ser visuelt hvor langt han har kommet.
- * - "active":   dette sporet spilles eller er pauset akkurat nå — karaoke
- *               kjører på teksten.
- * - "unplayed": sporet ligger lengre fram i køen — fader til 0.3.
- *
- * Returns null når phase === "idle" (tour ikke startet) eller når kategorien
- * ikke er i tracks-arrayet. Da skal seksjonen ikke dimmes. */
-export type AudioTourSectionProgress = "played" | "active" | "unplayed";
-
-export function useAudioTourSectionProgress(
-  categoryId: AudioTrackCategoryId,
-): AudioTourSectionProgress | null {
-  return useAudioTourStore((s) => {
-    if (s.phase === "idle") return null;
-    const idx = s.tracks.findIndex((t) => t.categoryId === categoryId);
-    if (idx === -1) return null;
-    // Active vinner over played — re-spill av en allerede-played seksjon
-    // gjør den active igjen, men endrer ikke de andre.
-    if (
-      idx === s.trackIndex &&
-      (s.phase === "playing" || s.phase === "paused" || s.phase === "error")
-    ) {
-      return "active";
-    }
-    // Played er sticky: én gang i playedCategoryIds, alltid played innenfor
-    // denne turen. Ved phase=ended er alle som ble nådd ferdig — men set-en
-    // dekker dette allerede via next()/markCurrentAsPlayed-kjeden.
-    if (s.playedCategoryIds.has(categoryId)) return "played";
-    return "unplayed";
-  });
-}
-
-/** Synkroniserings-API for use-audio-tour-sync.ts. */
-export function useAudioTourSyncTargets() {
-  return useAudioTourStore(
-    useShallow((s) => ({
-      phase: s.phase,
-      trackIndex: s.trackIndex,
-      tracks: s.tracks,
-      pause: s.pause,
     })),
   );
 }
