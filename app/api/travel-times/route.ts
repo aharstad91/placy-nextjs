@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Mapbox Matrix API proxy
-// Calculates travel times from one origin to multiple destinations in a single request
+// Mapbox Matrix API proxy — eierskap: PRD 11 Unit 6 (klassifisert reference-only).
+// INGEN live board-konsument: eneste runtime-konsument er useTravelTimes → dead ExplorerPage.
+// Build-time precompute er PRD 3. Proxyen beholdes som referanse for fremtidig dashboard-gjenoppbygging.
+//
+// MAPBOX TOKEN-SIKKERHET: access_token sendes som URL-querystring — dette er IKKE et
+// hemmelig-nøkkel-brudd. NEXT_PUBLIC_MAPBOX_TOKEN er bevisst offentlig/klient-eksponert
+// og finnes allerede i nettleserbundlet. Mapbox Matrix støtter KUN query-param-auth
+// (ingen Authorization-header). Ekte hardening = URL-restriksjoner + scope-begrensning i
+// Mapbox-kontrollpanelet. Logg aldri full request-URL med token.
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
