@@ -149,7 +149,7 @@ async function startOperation(opts: {
   aspect: string;
   resolution: string;
 }): Promise<VeoOperation> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:predictLongRunning?key=${API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:predictLongRunning`;
   const body = {
     instances: [{
       prompt: opts.prompt,
@@ -171,7 +171,7 @@ async function startOperation(opts: {
   };
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": API_KEY! },
     body: JSON.stringify(body),
   });
   const txt = await res.text();
@@ -183,9 +183,9 @@ async function startOperation(opts: {
 
 async function pollOperation(operationName: string): Promise<VeoOperation> {
   const startTime = Date.now();
-  const url = `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/${operationName}`;
   while (true) {
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: { "x-goog-api-key": API_KEY! } });
     if (!res.ok) {
       const txt = await res.text();
       throw new Error(`Poll failed (${res.status}): ${txt}`);
@@ -213,6 +213,10 @@ function extractVideoUri(op: VeoOperation): string | null {
 }
 
 async function downloadVideo(uri: string, dest: string): Promise<void> {
+  // AC1b: media-download URI er Google-returnert (video.uri fra Veo response).
+  // Empirisk verifisering av header-auth for disse URIene er ikke mulig uten
+  // faktisk Veo-respons. Nøkkel beholdes i query-param inntil bekreftet at
+  // `x-goog-api-key`-header aksepteres av media-nedlastingsendepunktet.
   const url = uri.includes("?") ? `${uri}&key=${API_KEY}` : `${uri}?key=${API_KEY}`;
   const res = await fetch(url);
   if (!res.ok) {
