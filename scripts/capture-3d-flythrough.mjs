@@ -168,6 +168,9 @@ async function main() {
     ws.on("open", res);
     ws.on("error", rej);
   });
+  let loadEventResolve;
+  const loadEventFired = new Promise((res) => { loadEventResolve = res; });
+
   ws.on("message", (buf) => {
     const m = JSON.parse(buf.toString());
     if (m.id && pending.has(m.id)) {
@@ -175,6 +178,8 @@ async function main() {
       pending.delete(m.id);
       if (m.error) reject(new Error(JSON.stringify(m.error)));
       else resolve(m.result);
+    } else if (m.method === "Page.loadEventFired") {
+      loadEventResolve?.();
     } else if (m.method === "Page.screencastFrame") {
       const { data, metadata, sessionId } = m.params;
       frames.push({ ts: metadata.timestamp, data });
@@ -192,7 +197,10 @@ async function main() {
     mobile: false,
   });
 
-  await sleep(3500); // initial board load
+  // Vent på at siden er ferdig lastet (load-event), deretter la React hydration + 3D
+  // initialisering sluttføres. Fastkodet 3500ms var for kort ved kald Chrome-profil.
+  await Promise.race([loadEventFired, sleep(8000)]);
+  await sleep(3000); // hydration + tile-stream buffer
 
   // Avvis splash (wheel-gest) + start opplevelsen → boardet avdekkes og starter
   // intro-flythrough-en (?fly=1 → free mode + flythrough-effekt). Ingen Fri-klikk:
@@ -206,13 +214,14 @@ async function main() {
     return true;
   })()`);
 
-  // Vent på at kartet + modellen er klare.
+  // Vent på at kartet er klart (gmp-map-3d initialisert med center).
+  // gmp-model-3d er ikke krav — v2-boardet har ikke 3D-bygningsmodell montert.
   const ready = await evalPage(`(async()=>{
     const s=(ms)=>new Promise(r=>setTimeout(r,ms));
-    for(let i=0;i<60;i++){const m=document.querySelector('gmp-map-3d');if(m&&document.querySelector('gmp-model-3d')&&m.center)return true;await s(500);}
+    for(let i=0;i<60;i++){const m=document.querySelector('gmp-map-3d');if(m&&m.center)return true;await s(500);}
     return false;
   })()`);
-  if (!ready) throw new Error("map/model not ready");
+  if (!ready) throw new Error("map not ready");
 
   // Vent på at boardets intro-flythrough har startet (fase "settling"). Bygget er
   // alt i senter, kameraet på start-posituren (avstand). Pins er allerede skjult
