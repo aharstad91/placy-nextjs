@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useAudioTourActions, useAudioTourStore } from "@/lib/stores/audio-tour-store";
 import { useReels } from "./reels-state";
 import { buildCategoryTracks, cardIndexToAudioIndex } from "./reels-data";
+import { logEvent } from "@/lib/instrumentation/log-event";
 
 /**
  * Orchestrerer audio-tour-store mot ReelsContext:
@@ -36,6 +37,10 @@ export function useReelsAudioOrchestration() {
       // Første gang: bygg hele tracks-arrayen og start tour
       start(tracks);
       startedRef.current = true;
+      const startTrack = tracks[audioIndex] ?? tracks[0];
+      if (startTrack) {
+        void logEvent({ eventType: "voiceover_played", payload: { voiceover_segment: startTrack.categoryId } }).catch(() => {});
+      }
       if (audioIndex !== 0) {
         goToTrack(audioIndex);
       }
@@ -43,6 +48,10 @@ export function useReelsAudioOrchestration() {
     }
 
     // Sub­sekvente swiper: bytt spor
+    const nextTrack = tracks[audioIndex];
+    if (nextTrack) {
+      void logEvent({ eventType: "voiceover_played", payload: { voiceover_segment: nextTrack.categoryId } }).catch(() => {});
+    }
     goToTrack(audioIndex);
   }, [
     state.audioUnlocked,

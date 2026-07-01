@@ -39,6 +39,7 @@ import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
 import { EventFilterPanel } from "../board/event/EventFilterPanel";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
 import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
+import { logEvent } from "@/lib/instrumentation/log-event";
 
 /**
  * Desktop-adaptiv storytelling-lane (kun >=1024px, rendres fra
@@ -461,6 +462,7 @@ export function DesktopStorySidebar({
         id: id as BoardCategoryId,
         source: "rail",
       });
+      void logEvent({ eventType: "category_opened", payload: { category_id: id } }).catch(() => {});
     }
   };
 

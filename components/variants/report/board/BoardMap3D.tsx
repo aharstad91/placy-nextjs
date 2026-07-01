@@ -24,6 +24,7 @@ import {
 import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import type { CategoryCameraConfig } from "@/lib/types";
+import { logEvent } from "@/lib/instrumentation/log-event";
 
 // RouteLayer3D lazy-loaded — samme bundling-strategi som ReportThemeSection
 // (tunge Google Maps-imports holdes ute av 2D-bundlen).
@@ -273,6 +274,7 @@ export function BoardMap3D({
         const found = cat.pois.find((p) => p.id === poiId);
         if (found) {
           dispatch({ type: "OPEN_POI", id: found.id, categoryId: cat.id });
+          void logEvent({ eventType: "poi_clicked", poiId: found.id, payload: { category_id: cat.id } }).catch(() => {});
           return;
         }
       }

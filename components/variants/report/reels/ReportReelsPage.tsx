@@ -30,6 +30,7 @@ import {
 import { BoardCollectionDrawer } from "../board/event/BoardCollectionDrawer";
 import { EventMobileSheet } from "../board/event/EventMobileSheet";
 import { useKompassSelections } from "@/lib/kompass-store";
+import { logEvent } from "@/lib/instrumentation/log-event";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsTransport } from "./ReelsTransport";
 import { ReelSwipeStack } from "./ReelSwipeStack";
@@ -246,6 +247,12 @@ function Inner({
   );
   const collectionPoiIds = eventMode ? collectionApi.collectionPoiIds : undefined;
   const [collectionDrawerOpen, setCollectionDrawerOpen] = useState(false);
+
+  // Moat-2 board_viewed — én gang ved mount (ikke embed-teaser).
+  useEffect(() => {
+    if (embed) return;
+    void logEvent({ eventType: "board_viewed", projectId: project.id }).catch(() => {});
+  }, [embed, project.id]);
 
   // Resolve lagrede collection-IDer → BoardPOI for drawer-visningen. Slår opp i
   // alle kategoriers POIer (samlingen kan spenne kategorier).
