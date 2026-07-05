@@ -14,7 +14,7 @@ systemene den kjører (se PRD 15 §3 for eierskaps-kartet).
 | 1. Kvalitets-port (stemme-/kvalitets-kontrakt) | Unit 1 | `placy-ralph-r15.1` | **FERDIG** (dette dokumentet) |
 | 2. Area-editorial-kurering | Unit 2 | `placy-ralph-r15.2` | **FERDIG** (dette dokumentet) |
 | 3. Grounding-QA + manus-curering | Unit 3 | `placy-ralph-r15.3` | **FERDIG** (dette dokumentet) |
-| 4. Overflate-fylling (ProjectAssetFlags + broker/pin) | Unit 4 | `placy-ralph-r15.4` | fylles av r15.4 |
+| 4. Overflate-fylling (ProjectAssetFlags + broker/pin) | Unit 4 | `placy-ralph-r15.4` | **FERDIG** (dette dokumentet) |
 | 5. Reels/audio-regi | Unit 5 | `placy-ralph-r15.5` | **FERDIG** (dette dokumentet) |
 | 6. Samlekart-klassifisering + scope-grense | Unit 6 | `placy-ralph-r15.6` | fylles av r15.6 |
 | Verifikasjons-runbook (validator-binding) | Unit 7 | `placy-ralph-r15.7` | egen fil: `nivaa-2-kurerings-verifikasjon-runbook.md` |
@@ -300,6 +300,113 @@ LEGACY-rute på den døde `targetAudience`-modellen, UTENFOR kurerings-dansen, a
 Andreas-gated i `docs/rebuild/DECISIONS-QUEUE.md` (r07.7-funn; slett-vs-port avgjøres
 der, og bead `placy-ralph-03t` skal ESLint-håndheve regelen maskinelt). Kurerings-
 arbeidsflytens sti har null runtime-LLM.
+
+---
+
+## 4. Overflate-fylling — ProjectAssetFlags + broker/pin-data (Unit 4)
+
+Arbeidsflyten som fyller **PRD 9s nivå-2-overflate per prosjekt**: sette
+`ProjectAssetFlags`-verdier + levere asset-filer, og erstatte demo-broker/pin-data med
+ekte per-prosjekt-data. PRD 9 eier modellen (`lib/themes/project-brand.ts`) og
+rendringen; PRD 1 eier typene (`ProjectAssetFlags`/`BrokerInfo`); PRD 15 fyller KUN
+VERDIENE — reportConfig-verdier produseres via Supabase, ikke kode (PRD 15 Unit 4
+«Filer»-noten). Alle linje-refs verifisert 2026-07-05.
+
+**REF-DRIFT (dokumentert som i seksjon 5):** bead-/PRD-tekstens `project-brand.ts`-refs
+har driftet konsistent ~4–6 linjer (header-kommentarer lagt til i porten): gate-refs
+`:25/:51/:85` → faktisk `:28/:54/:91`; `PROJECT_BROKERS :60-71` → `:66-77`;
+`getProjectBrokers :74` → `:80-82`; `PIN_THUMBNAILS :81-89` → `:19-21` (oppslaget) +
+`:87-94` (getter). `lib/types.ts:445` (brokers) → faktisk `:461`.
+
+### 4.1 De to aktiverings-aksene (begge capability-data-drevet, ulike felter)
+
+**(a) Asset-flagg-gatede assets** — operatøren setter `ProjectAssetFlags`
+(`lib/types.ts:433-444`, lagret i `reportConfig.assets`, `:454`) OG leverer filene etter
+slug-konvensjonen. Modellen gater HVERT asset på sitt flagg og returnerer `undefined`
+når flagget mangler:
+
+| Flagg | Getter (gate) | Fil(er) operatøren leverer |
+|---|---|---|
+| `brand` | `getProjectLogoSrc` (`project-brand.ts:24`, gate `:28`) + `getProjectSplashImage` (`:35`, gate `:39`) | `/illustrations/{slug}-logo.svg` + `{slug}-splash.jpg` |
+| `splashVideo` (eller `brand`) | `getProjectSplashVideo` (`:50`, gate `:54` — `splashVideo \|\| brand`) | `/illustrations/{slug}-splash-video.mp4` (+ `.jpg`-poster, avledes ved filendelse-bytte) |
+| `customIllustrations` | `getCategoryIllustrationSrc` (`lib/themes/category-illustrations.ts:13`, gate `:18`) | `/illustrations/{slug}-{categoryId}.jpg` per bolig-tema |
+| `pinThumbnail` | `getProjectPinThumbnail` (`:87`, gate `:91`) → slår opp i `PIN_THUMBNAILS` (`:19-21`) | Kvadratisk **data-URI** (rasteriseres til WebGL-tekstur på 3D-markøren — kan IKKE være fil-sti som de andre; `ProjectSitePin` faller tilbake til bygnings-glyph uten) |
+
+`splashVideo`-flagget finnes nettopp for å gi et prosjekt levende splash UTEN å kreve
+hele `brand`-pakken (logo + splash-hero) — dokumentert i både typen
+(`lib/types.ts:436-439`) og getteren (`project-brand.ts:45-49`).
+
+**(b) Broker-data-tilstedeværelse** — INGEN flagg. Operatøren erstatter
+demo-`PROJECT_BROKERS` (`project-brand.ts:66-77`, i dag kun stasjonskvartalet/DNB) med
+ekte per-prosjekt-data i `reportConfig.brokers` (`lib/types.ts:461`, type `BrokerInfo`
+`:399-409`). `getProjectBrokers(slug)` (`:80-82`) tar KUN `slug` og er IKKE flagg-gated;
+lese-stien er `board-data.ts:191-195`: **ekte `reportConfig.brokers` vinner alltid**
+(`report.brokers?.length ? report.brokers : getProjectBrokers(...)`) — demo-tabellen er
+fallback INNTIL ekte data finnes. Nedstrøms er megler-kortet i feeden gated på samme
+data-tilstedeværelse (`reels-data.ts:365-369`: kort kun når `brokers.length > 0`) —
+konsistent med PRD 2 §5.4s brokers-tilstedeværelses-sjekk.
+
+### 4.2 Aktivering via capability, ALDRI tier (patch #4)
+
+Assets aktiveres av flagg; brokers av data-tilstedeværelse. Begge er
+capability-data-drevet — ALDRI en `if (reportTier)`-bryter. `undefined`-asset eller
+tomme brokers → boardet faller tilbake til nivå-1-uttrykket UTEN tier-sjekk
+(tekst-wordmark i stedet for logo, `home.heroImage` i stedet for splash-render/-video,
+generiske tema-illustrasjoner, bygnings-glyph-pin, intet megler-kort).
+
+**Grep-verifikasjon (kjørt 2026-07-05):** `grep -rn "reportTier"` over
+`project-brand.ts` + `ReportReelsPage.tsx` + `BoardMap3D.tsx` + `board-data.ts` +
+`reels-data.ts` → **0 treff**.
+
+### 4.3 Arbeidsflyten per prosjekt (fylle-stegene)
+
+| Steg | Hva | Grense |
+|---|---|---|
+| 1. Lever asset-filer | Filene over i `public/illustrations/` etter slug-konvensjonen. Kvalitet: stills produsert via `placy-illustrations`-skillen (Wesselsløkka-akvarell) der de er illustrasjoner. | PRD 15 leverer FILER |
+| 2. Sett flaggene | Patch `products.config.reportConfig.assets` i Supabase (v2) — kun flaggene for filer som FAKTISK er levert. Ingen dedikert CLI; verdier produseres via Supabase (dashboard/SQL/REST med service-role), evt. ved provisjon (PRD 3). | Verdier via Supabase, ikke kode |
+| 3. Ekte brokers | Skriv `reportConfig.brokers` (`BrokerInfo[]`) — koordinert med PRD 3-provisjon der relevant (`09:188`); megler-foto til `public/illustrations/`. | PRD 3 eier skrive-pathen ved oppsett |
+| 4. Reels-video-valg | Se 4.4. | PRD 14 produserer filene |
+| 5. Verifiser | Boardet i nettleser: flagget overflate synlig, uflagget faller tilbake. Fullføringskriteriet er Unit 7-validatoren (egen runbook-fil) — aldri en runtime-gate. | Unit 7 |
+
+**Prototype-unntak (flagget, IKKE noe arbeidsflyten løser):** to fylle-punkter krever i
+dag KODE-endring, begge markert `TODO(supabase)` av PRD 9-porten for flytting til
+provisjon/Supabase: (1) `PIN_THUMBNAILS`-oppslaget (`project-brand.ts:16-18`) — nytt
+prosjekt legger data-URI-en i tabellen + setter `assets.pinThumbnail`; (2)
+demo-`PROJECT_BROKERS` (`:63-65`) — slettes når ekte brokers finnes i Supabase.
+Migreringen er PRD 9-/PRD 3-domene; runbooken dokumenterer dagens faktiske dans.
+
+### 4.4 Reels-video-asset-valget (splash-video + montasje-allowlist)
+
+Arbeidsflyten BESLUTTER om et prosjekt får levende video-overflate; selve video-FILENE
+produseres av **PRD 14 Unit 5-pipelinen** (seksjon 5.3: `animate-scene-veo.ts` /
+`compose-reels-bg.ts` / `compose-video-crossfade.ts` / posters). To beslektede men
+ULIKE mekanismer fylles:
+
+- **`assets.splashVideo`-flagget** (akse (a)) gater splash-videoen
+  `{slug}-splash-video.mp4` i velkomst-skjermen (`getProjectSplashVideo:50-54`).
+- **`REELS_MONTAGE_PROJECTS`-allowlisten** (`reels-data.ts:252`, PRD-9-eid DATA-flagg —
+  §5.4-kommentaren `:234`) gater de levende kort-bakgrunnene `welcomeVideoSrc` (`:257`)
+  / `homeVideoSrc` (`:265`) → `/reels/{slug}/welcome.mp4` + `nabolaget.mp4`. Eksplisitt
+  slug-gating fordi kortene avleder poster via `.mp4`→`.jpg` — en 404-poster ville gitt
+  ødelagt bilde (kommentar `:245-251`). PRD 15 FYLLER allowlisten (legg til slug når
+  montasjene er lastet opp under `/reels/<slug>/`); gating-mekanismen eies av PRD 9.
+
+Uten montasje/video faller kortene tilbake til illustrasjonsbildet — delvis
+video-dekning er gyldig regi, ikke en feil (samme fallback-prinsipp som
+reels-VO-overriden i 5.2 lag 4).
+
+### 4.5 Render-grensen: stills via next/image, modellen urørt
+
+PRD 15 fyller DATAEN PRD 9 rendrer (`09:185`) — den porterer/endrer ALDRI
+`project-brand.ts`, splash-clusteret eller pin-rendringen. Overflaten som konsumerer
+verdiene (verifisert 2026-07-05): `ReportReelsPage.tsx:678-681` (logo/splash-hero/
+splash-video → `DesktopReportSplash`/`MobileReportSplash`/`EmbedArrivalLoader`),
+`BoardMap3D.tsx:438` (pin-thumbnail). Stills rendres via `next/image` i
+render-komponentene (alle tre splash-/loader-komponentene importerer `next/image` —
+CLAUDE.md-regelen håndheves der overflaten rendrer, PRD 9-grense); PRD 15 leverer
+asset-FILER, aldri render-kode. Det bevisste unntaket fra fil-konvensjonen er
+pin-thumbnailen (data-URI → WebGL-tekstur, 4.1-tabellen) — et render-teknisk krav
+PRD 9 eier, ikke et arbeidsflyt-valg.
 
 ---
 
