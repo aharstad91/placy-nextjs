@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useAudioTourActions, useAudioTourStore } from "@/lib/stores/audio-tour-store";
 import { useReels } from "./reels-state";
 import { buildCategoryTracks, cardIndexToAudioIndex } from "./reels-data";
-import { logEvent } from "@/lib/instrumentation/log-event";
+import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 
 /**
  * Orchestrerer audio-tour-store mot ReelsContext:
@@ -18,6 +18,7 @@ import { logEvent } from "@/lib/instrumentation/log-event";
 export function useReelsAudioOrchestration() {
   const { state } = useReels();
   const { start, goToTrack, pause, close } = useAudioTourActions();
+  const engagement = useEngagement();
   const startedRef = useRef(false);
 
   const tracks = useMemo(() => buildCategoryTracks(state.cards), [state.cards]);
@@ -39,7 +40,9 @@ export function useReelsAudioOrchestration() {
       startedRef.current = true;
       const startTrack = tracks[audioIndex] ?? tracks[0];
       if (startTrack) {
-        void logEvent({ eventType: "voiceover_played", payload: { voiceover_segment: startTrack.categoryId } }).catch(() => {});
+        engagement.emit("voiceover_played", {
+          payload: { voiceover_segment: startTrack.categoryId },
+        });
       }
       if (audioIndex !== 0) {
         goToTrack(audioIndex);
@@ -50,7 +53,9 @@ export function useReelsAudioOrchestration() {
     // Sub­sekvente swiper: bytt spor
     const nextTrack = tracks[audioIndex];
     if (nextTrack) {
-      void logEvent({ eventType: "voiceover_played", payload: { voiceover_segment: nextTrack.categoryId } }).catch(() => {});
+      engagement.emit("voiceover_played", {
+        payload: { voiceover_segment: nextTrack.categoryId },
+      });
     }
     goToTrack(audioIndex);
   }, [
@@ -61,6 +66,7 @@ export function useReelsAudioOrchestration() {
     start,
     goToTrack,
     pause,
+    engagement,
   ]);
 
   // NB: track-ended-overgang håndteres via AudioElementProvider sitt

@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+// Audit-fiks 2026-07-05: oppstrøms-API uten timeout holder rute-funksjonen
+// åpen ubestemt ved treg leverandør (connection-utsulting under last).
+const UPSTREAM_TIMEOUT_MS = 8000;
+
 
 // Trondheim Bysykkel GBFS API.
 //
@@ -58,6 +62,7 @@ async function getStationInfo(): Promise<Map<string, StationInfo>> {
     headers: {
       "Client-Identifier": "placy-neighborhood-stories",
     },
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -102,6 +107,7 @@ export async function GET(request: NextRequest) {
         "Client-Identifier": "placy-neighborhood-stories",
       },
       next: { revalidate: 60 }, // Cache for 60 seconds
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (!statusResponse.ok) {

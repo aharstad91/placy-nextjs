@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+// Audit-fiks 2026-07-05: oppstrøms-API uten timeout holder rute-funksjonen
+// åpen ubestemt ved treg leverandør (connection-utsulting under last).
+const UPSTREAM_TIMEOUT_MS = 8000;
+
 
 // Mapbox Directions API proxy — eierskap: PRD 11 (data-lag); PRD 6 eier polyline-render.
 // Eierskap: /api/directions + useRouteData → PRD 11; BoardPathLayer/RouteLayer3D → PRD 6.
@@ -55,7 +59,9 @@ export async function GET(request: NextRequest) {
     // Logg aldri `url`-variabelen — den inneholder tokenet i querystring.
     const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?access_token=${mapboxToken}&geometries=geojson&overview=full`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
 
     if (!response.ok) {
       throw new Error(`Mapbox API error: ${response.status}`);

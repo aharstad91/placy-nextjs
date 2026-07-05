@@ -30,7 +30,11 @@ import {
 import { BoardCollectionDrawer } from "../board/event/BoardCollectionDrawer";
 import { EventMobileSheet } from "../board/event/EventMobileSheet";
 import { useKompassSelections } from "@/lib/kompass-store";
-import { logEvent } from "@/lib/instrumentation/log-event";
+import {
+  EngagementProvider,
+  useEngagementEmitter,
+} from "@/lib/instrumentation/engagement-scope";
+import type { EngagementContextEnvelope } from "@/lib/instrumentation/event-types";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsTransport } from "./ReelsTransport";
 import { ReelSwipeStack } from "./ReelSwipeStack";
@@ -248,11 +252,29 @@ function Inner({
   const collectionPoiIds = eventMode ? collectionApi.collectionPoiIds : undefined;
   const [collectionDrawerOpen, setCollectionDrawerOpen] = useState(false);
 
+  // Moat-2 engagement-scope (audit-fiks 2026-07-05): ÉN emitter per board-
+  // mount bærer project_id + økt-nøkkel + kontekst-konvolutt for ALLE fire
+  // emit-sites — board_viewed her, poi_clicked/category_opened/
+  // voiceover_played via EngagementProvider nedover i treet.
+  const engagementEnvelope = useMemo<EngagementContextEnvelope>(
+    () => ({
+      mode: eventMode ? "event" : "report",
+      has_3d_addon: has3dAddon,
+      categories_presented: boardData.categories.map((c) => String(c.id)),
+      locale,
+    }),
+    [eventMode, has3dAddon, boardData.categories, locale],
+  );
+  const engagement = useEngagementEmitter({
+    projectId: project.id,
+    envelope: engagementEnvelope,
+  });
+
   // Moat-2 board_viewed — én gang ved mount (ikke embed-teaser).
   useEffect(() => {
     if (embed) return;
-    void logEvent({ eventType: "board_viewed", projectId: project.id }).catch(() => {});
-  }, [embed, project.id]);
+    engagement.emit("board_viewed");
+  }, [embed, engagement]);
 
   // Resolve lagrede collection-IDer → BoardPOI for drawer-visningen. Slår opp i
   // alle kategoriers POIer (samlingen kan spenne kategorier).
@@ -266,6 +288,7 @@ function Inner({
   }, [eventMode, boardData.categories, collectionApi.collectionPoiList]);
 
   return (
+    <EngagementProvider emitter={engagement}>
     <ReelsProvider cards={cards}>
       <BoardProvider
         data={boardData}
@@ -299,6 +322,7 @@ function Inner({
         )}
       </BoardProvider>
     </ReelsProvider>
+    </EngagementProvider>
   );
 }
 

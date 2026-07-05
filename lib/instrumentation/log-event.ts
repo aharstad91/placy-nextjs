@@ -5,14 +5,20 @@
 
 import { createServerClient } from "@/lib/supabase/client";
 import { isEventType, type EventType } from "./event-types";
-import { generateSessionId } from "./session-id";
+import { generateSessionId, isSessionIdShape } from "./session-id";
 
 export interface LogEventInput {
   eventType: EventType;
   projectId?: string;
   productId?: string;
   poiId?: string; // kun for poi_clicked
-  payload?: Record<string, unknown>; // { category_id } | { voiceover_segment } | ...
+  payload?: Record<string, unknown>; // { category_id, context } | { voiceover_segment, context } | ...
+  /**
+   * Klient-generert økt-nøkkel (én per board-mount, engagement-scope.tsx).
+   * Valideres med `isSessionIdShape` — ugyldig/fraværende → fersk server-id
+   * (eventet beholdes, grupperingen degraderes for akkurat det eventet).
+   */
+  sessionId?: string;
 }
 
 /**
@@ -25,11 +31,12 @@ export interface LogEventInput {
  * for provisjon/admin), men her fail-SOFTer vi rundt det kastet. Feil logges (ingen
  * stille swallow — CLAUDE.md), men kastes aldri videre. Tier-agnostisk (G6).
  *
- * session_id injiseres server-side (§5.4) og settes ALDRI av kalleren. NB: id-en
- * genereres per kall i denne baselinen; deling på tvers av events i SAMME board-
- * render-økt (gruppering for aggregering) wires inn når PRD 9 etablerer render-
- * sesjons-konteksten (emit-sites, Unit 5). Personvern-invarianten (anonym, ikke-PII,
- * ikke persistert) holder uansett.
+ * session_id (§5.4): emit-sitene deler ÉN klient-generert økt-nøkkel per
+ * board-mount via `EngagementEmitter` (engagement-scope.tsx) — det er den som
+ * grupperer en økts events for aggregering. Server-side håndheves KUN formen
+ * (opaque UUID v4 via `isSessionIdShape`); ugyldig/fraværende → fersk
+ * server-generert id. Personvern-invarianten (anonym, ikke-PII, aldri
+ * persistert på tvers av økter) holder i begge stier.
  */
 export async function logEvent(input: LogEventInput): Promise<void> {
   try {
@@ -48,7 +55,9 @@ export async function logEvent(input: LogEventInput): Promise<void> {
         product_id: input.productId ?? null,
         poi_id: input.poiId ?? null,
         payload: (input.payload ?? null) as never,
-        session_id: generateSessionId(),
+        session_id: isSessionIdShape(input.sessionId)
+          ? input.sessionId
+          : generateSessionId(),
       });
 
     if (error) {

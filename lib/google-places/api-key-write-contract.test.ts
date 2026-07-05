@@ -12,14 +12,21 @@ import { dirname, join } from "node:path";
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 
-/** Alle kilde-.ts i lib/google-places (ekskl. test-filer). */
+// Audit-lærdom 2026-07-05: testen skannet KUN sin egen mappe mens et reelt
+// `&key=${apiKey}`-brudd lå i lib/pipeline/poi-discovery.ts — grønn test ga
+// falsk trygghet. Skann derfor ALLE mapper som gjør Google-API-kall.
+const SCANNED_DIRS = [DIR, join(DIR, "..", "pipeline")];
+
+/** Alle kilde-.ts i de skannede mappene (ekskl. test-filer). */
 function sourceFiles(): string[] {
-  return readdirSync(DIR)
-    .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
-    .map((f) => join(DIR, f));
+  return SCANNED_DIRS.flatMap((dir) =>
+    readdirSync(dir)
+      .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
+      .map((f) => join(dir, f)),
+  );
 }
 
-describe("AC5 (a): GOOGLE_PLACES_API_KEY ALDRI i URL-querystring (lib/google-places/**)", () => {
+describe("AC5 (a): GOOGLE_PLACES_API_KEY ALDRI i URL-querystring (lib/google-places/** + lib/pipeline/**)", () => {
   it("ingen kildefil interpolerer nøkkelen inn i en ?key=/&key=-querystring", () => {
     for (const file of sourceFiles()) {
       const src = readFileSync(file, "utf8");
@@ -32,10 +39,15 @@ describe("AC5 (a): GOOGLE_PLACES_API_KEY ALDRI i URL-querystring (lib/google-pla
   });
 
   it("Google-API-kallende filer bruker X-Goog-Api-Key header-auth", () => {
-    // fetch-place-details + photo-api treffer Google API direkte → må bruke header.
-    for (const name of ["fetch-place-details.ts", "photo-api.ts"]) {
-      const src = readFileSync(join(DIR, name), "utf8");
-      expect(src, `${name} mangler header-auth`).toContain("X-Goog-Api-Key");
+    // Filer som treffer Google API direkte → må bruke header.
+    const headerAuthFiles = [
+      join(DIR, "fetch-place-details.ts"),
+      join(DIR, "photo-api.ts"),
+      join(DIR, "..", "pipeline", "poi-discovery.ts"),
+    ];
+    for (const file of headerAuthFiles) {
+      const src = readFileSync(file, "utf8");
+      expect(src, `${file} mangler header-auth`).toContain("X-Goog-Api-Key");
     }
   });
 });

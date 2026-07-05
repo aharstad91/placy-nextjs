@@ -6,6 +6,56 @@
 
 ---
 
+## 2026-07-05 — Fable-full-audit av build-loopen (6 parallelle auditorer) + P0/P1-fiks samme sesjon
+
+**Hvorfor:** Opus 4.8-loopen la 74 commits (entry under); dette blir produksjonsmiljøet Placy selger på. Andreas ba om adversariell kvalitetssikring med Fable før loopen gjenopptas. 6 parallelle audit-agenter etterprøvde commit-påstandene (ikke stolte på dem): datamodell/RLS, Moat-2-instrumentering, provisjon/trust/admin, board-kjernen, transport/audio/grounding, testkvalitet+regelsveip. Read-only prod-verifikasjon via psql inkludert.
+
+**Hovedfunn (dommen):** Fundamentet og board-kjernen HOLDER — men instrumenteringen (selve moaten) hadde tre P0 som alle traff det som var flagget som irreversibelt:
+
+- 🔴 **P0×3 (PRD 13):** (1) kontekst-konvolutten fra moat-2-rapporten ble ALDRI implementert (0 av 19 prod-events hadde context — nettopp det som var «umulig å reparere i ettertid»); (2) 3 av 4 event-typer logget uten `project_id` → aldri attribuerbare (`getEngagementStats` ser dem aldri); (3) `session_id` generert per event (19 rader = 19 «økter») → null økt-gruppering. Loopen bygde Fase-1-loggeren uten å ta konvolutt-beslutningen PRD 13 selv flagget som «ta den NÅR loggeren bygges».
+- 🟠 **P1:** Google-nøkkel i URL-querystring i `poi-discovery.ts` (legacy nearbysearch) — og kontraktstesten som skulle fange det skannet feil mappe (grønn test, falsk trygghet). De seks transport-proxyene uten timeout + uautentisert/ingen rate-limit. r13.3 lukket uten at verifikasjons-leveransene fantes (19 umerkede test-rader ligger i prod). Runtime-LLM-ruten `app/api/eiendom/tekst` bekreftet (kjent, i DECISIONS-QUEUE).
+- 🟡 **Testkvalitet:** kjernen (kamera-matte, karaoke, Zod, proxyer) har EKTE atferdstester, men et lag «AC-kontrakt-guards» er kildetekst-regex (anti-sletting-tripwires, ikke atferdsbevis). Kun 1 av 8 CLAUDE.md-regler håndheves maskinelt av ESLint.
+- ✅ **Rent:** datamodell/RLS (14/14 v2-tabeller byte-eksakt paritet, deny-by-default verifisert empirisk begge retninger, editorial-data bevart, `public` urørt), WebGL-context-vernet (statisk trace av hele mount-kjeden — ingen unmount-hull), verbatim-portene (0 tapt funksjonalitet, 42/42 filer diffet), reels-override-aksen (karaoke KAN ikke ødelegges), SSRF/DOMPurify/TTS-låser, PRD 3/4-pipelinen. Viktig kontekst: PRD 12 (admin) er IKKE bygget (alle r12-beads åpne) — dagens vern er kun `ADMIN_ENABLED`-env.
+
+**Fikset samme sesjon (autonomt):**
+1. **P0-clusteret:** ny `lib/instrumentation/engagement-scope.tsx` — ÉN `EngagementEmitter` per board-mount (bygget i `ReportReelsPage`, delt via `EngagementProvider`) injiserer `project_id` + delt klient-generert økt-nøkkel (UUID v4, shape-validert server-side via `isSessionIdShape`) + kontekst-konvolutt (`mode`/`has_3d_addon`/`categories_presented`/`locale` i `payload.context`) i ALLE fire emit-sites. Økt-nøkkel i ref (overlever locale-bytte). Strøk avledes ved aggregering (project→koordinat→find-area-for-point), bæres ikke i konvolutten. 7 nye tester + 3 nye logEvent-tester.
+2. **poi-discovery portert** til Places API (New) `searchNearby` (POST, `X-Goog-Api-Key` + FieldMask, 10s timeout) — nøkkel ute av URL. Kontraktstesten utvidet til å skanne `lib/pipeline/` (lærdommen: skann alle mapper som kaller Google).
+3. **8s `AbortSignal.timeout`** på alle 9 oppstrøms-fetches i de seks transport-proxyene.
+4. **REVALIDATE_SECRET maskert** i gemini-grounding-feillogg.
+5. PRD 13 fikk datert resolusjonsnote; emit-site-spec revidert til emitter-mønsteret.
+
+**Til Andreas (DECISIONS-QUEUE, fire nye):** (1) wipe de 19 pre-fiks-eventene i prod (destruktiv — anbefalt), (2) rate-limit på proxyene før salgstrafikk (anbefalt: gjenbruk eiendom/tekst-mønsteret på Mapbox-rutene), (3) prioritere r12.1/r12.2 admin-auth opp i frontieren, (4) test-beviskraft-uplift + ESLint-håndheving av de 7 uhåndhevede reglene. Pluss den eksisterende: eiendom/tekst-ruten (slett vs. port).
+
+**Status:** Alle porter grønne etter fiks (lint 0 errors, tsc ren, tester grønne, build OK). Frontier etter dette: r11.7, r14.8, r15-epicen, r03.8 — pluss beslutningene over.
+
+---
+
+## 2026-06-29 → 2026-07-01 — Steg-1 build-loop kjørt: 74 commits, PRD 3–14-frontier bygget og verifisert (backfylt 2026-07-05)
+
+**Hva skjedde:** Den goal-drevne build-loopen (beads-graf + `ralphy.sh` headless-iterasjoner, Opus 4.8) kjørte tre dager og la **74 commits** på main (60 upushet per 01.07). Mønster per bead: verbatim-port/verify av eksisterende kode mot v2-arkitekturen + AC-kontrakt-guards + tester + mekaniske porter (tsc/lint/vitest/build). Test-suiten vokste til **1492 grønne**. Steg-2-broa beads↔ralph ble bygget først (`f837c9a`) — loopen konsumerer nå beads direkte (retter tidligere notat om at broa manglet).
+
+**Leveranser per PRD:**
+- **PRD 3 (provisjon):** r03.1–r03.7 — TTY-løs 9-stegs orkestrator-kjerne ekstrahert, `generate-story.ts` slettet, Mapbox Geocoding v6 + typet confidence-gate, discovery (Google + public-source, distinkte) med v2-skrivesti, trust-orkestrering + hydrering, `create-report-project` v2 (`--addon-3d`, intern-default). Kode-komplett; r03.8 (self-serve convergence) åpen.
+- **PRD 4 (trust):** r04.6/r04.7 — poi-tier-skrivekontrakt forankret, `enrichReportPois` portert (foto-fase deferred per PRD-beslutning).
+- **PRD 5 (board-data/state):** r05.1–r05.7 komplett — kanonisk board-types-hjem, `pickPlayableAudio` single-source, server-only-hardet i18n-boundary, purity-låste tester (bridge-text, category-score), test-port capstone.
+- **PRD 6 (3D-motor):** r06.1–r06.8 komplett — MapView3D portert m/ WebGL-context-vern (Mapbox kuttet fra hot path), screen-projisert 2D-overlay, kamera-primitiver/-fasade verifisert, BoardMap3D dekomponert. r06.8 prod-verifikasjon i nystartet Chrome kjørt **autonomt** via chrome-devtools MCP (11 toggle-sykluser, ingen WebGL-context-lekkasje) — runbook + gjenbrukbart mønster for live-verif-beads etablert (`docs/rebuild/3d-motor-verifikasjon-runbook.md`).
+- **PRD 7 (grounding/kuratering):** r07.5–r07.8 — POI-linker konsolidert (felles kjerne + to adaptere), integritetslag + kuratering-orkestrator verifisert m/ AC-invariant-låsing, cache-revalidering shape-guard.
+- **PRD 8 (lokalkunnskap-moat):** r08.1–r08.7 — find-area-for-point/area-staging/inherit-area-editorial v2-retargetet, kurator-kjerne ekstrahert (`apply-area-staging` + curate-area-rewire), lese-sti portert (`place_knowledge` + curated/highlight-POIs), Sem & Johnsen-data-bevaring, TS→Python THEME_IDS-kodegen m/ drift-vakt.
+- **PRD 9 (board-skall):** r09.1–r09.8 **KOMPLETT** — RSC board-side, BoardMap-wrapper, UI-komponenter, camera-tours-DATA (DATA/MEKANISME-grense), project-brand + nivå-2-UX, `dynamic()`-lazy-grenser m/ bundle-bevis, live-verifisert mot prod.
+- **PRD 10 (kamera/flythrough):** r10.1–r10.8 **KOMPLETT** — intro/establishing/outro-choreografi m/ orkestrerings-invariant-tester, autorert kategori-tour-komposisjon, URL-flagg-kontrakt (`?film`/`?fly`), capture-pipeline-port + kamera-flythrough-verifikasjon m/ mekaniske porter.
+- **PRD 11 (transport):** r11.1–r11.6 — alle proxyer (Entur/mobility/car-share/directions/travel-times) + `useRealtimeData`/`use-route-data` + `POIRealtimeSection` verify-portet m/ AC-kontrakt-guards. r11.7 (live-verif på board) åpen.
+- **PRD 13 (instrumentering):** r13.4/r13.5 — emit-site-spec + fire fire-and-forget Moat-2 call-sites wiret inn i board-skallet (kjernen logger→leser var prod-verifisert fra før).
+- **PRD 14 (audio/reels):** r14.1–r14.7 — build-time TTS-kjerne m/ recipe-lock-guards, manus-domenelogikk m/ ord-grense-reconciliation, tour-bygger, reels-VO-override-akse m/ karaoke-vern, playback-store + dead-hook-sletting, karaoke-sync-cluster m/ teleprompter-tester. r14.5: Veo API-nøkkel flyttet til `x-goog-api-key`-header + 9 døde scripts slettet. r14.8 (full pipeline-verif) åpen.
+- **Infra:** rC1 beat-signal-kontrakt hoisted som Lag-2-stub (løser PRD 10→14 lag-back-edge).
+
+**Loop-stopp:** Runnen 30.06 22:09 → 01.07 09:53 stoppet på stuck=2/2 fordi iterasjon 9/10 traff Opus session-limit — **ikke** tom for byggbare beads. Åpen frontier: r11.7, r14.8, r15.1–r15.7 (hele nivå-2-kuraterings-epicen), r03.8.
+
+**Decisions-queue-status:** r06.8 løst autonomt (se over). ÅPEN: legacy `app/api/eiendom/tekst` runtime-LLM-rute (bryter build-time-only-regelen, bygget på død `targetAudience`-modell) — fjern vs. port er et produktvalg Andreas eier.
+
+**Neste:** Fable-audit av hele build-loop-leveransen (kvalitetssikring før prod/salg) + gjenopptak av loopen på åpen frontier. Egen logg-entry når auditen er landet.
+
+---
+
 ## 2026-06-28 — Moat-strategi brodd til rebuild-PRD-ene: to build-input-rapporter (Lokalkunnskap + Innsikt)
 
 Etter strategi-sparringen denne uka (Moat 1 + Moat 2 designet/skjerpet — full kontekst i `docs/strategy/LOG.md`, entries 2026-06-27 (forts. 2) + 2026-06-28) produsert **én build-input-rapport per moat** som bygger bro fra forretnings-/produktdesignet til de eksisterende rebuild-PRD-ene (08 + 13). Ikke nye PRD-er — input rebuild-sesjonen folder inn. Andreas: «jeg får dem inn i nye v2 av placy nå.»

@@ -34,11 +34,32 @@ describe("logEvent", () => {
     expect(row.session_id.length).toBeGreaterThan(0);
   });
 
-  it("kalleren kan IKKE sette session_id (injiseres server-side)", async () => {
+  it("kalleren kan IKKE sette session_id direkte (kun validert sessionId-input)", async () => {
     insertMock.mockResolvedValue({ error: null });
     // @ts-expect-error session_id finnes ikke på LogEventInput
     await logEvent({ eventType: "board_viewed", session_id: "spoofed" });
     expect(insertMock.mock.calls[0][0].session_id).not.toBe("spoofed");
+  });
+
+  it("gyldig klient-sessionId (UUID v4) → brukes verbatim (økt-gruppering)", async () => {
+    insertMock.mockResolvedValue({ error: null });
+    const clientId = "6f1e0d3a-2b4c-4e5f-89ab-0123456789ab";
+    await logEvent({ eventType: "board_viewed", sessionId: clientId });
+    await logEvent({ eventType: "poi_clicked", poiId: "x", sessionId: clientId });
+    expect(insertMock.mock.calls[0][0].session_id).toBe(clientId);
+    expect(insertMock.mock.calls[1][0].session_id).toBe(clientId);
+  });
+
+  it("ugyldig sessionId-form (ikke-UUID) → avvises, fersk server-id i stedet", async () => {
+    insertMock.mockResolvedValue({ error: null });
+    await logEvent({
+      eventType: "board_viewed",
+      sessionId: "andreas@example.com", // PII-/injection-forsøk
+    });
+    const row = insertMock.mock.calls[0][0];
+    expect(row.session_id).not.toBe("andreas@example.com");
+    expect(typeof row.session_id).toBe("string");
+    expect(row.session_id.length).toBeGreaterThan(0);
   });
 
   it("ukjent event_type → ingen INSERT, kaster ikke", async () => {

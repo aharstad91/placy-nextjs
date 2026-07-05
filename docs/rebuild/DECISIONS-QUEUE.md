@@ -87,3 +87,50 @@ flate fortsatt kaller den?
 (mulig live forbruker) som ligger UTENFOR PRD 7. Det er ingen PRD/kode-avstemming loopen kan
 utlede — det krever at Andreas vet om eiendoms-selvbetjent-tekst fortsatt er i bruk eller er
 superseded. Flagges her; r07.7 ble IKKE blokkert på den (curation-AC2 er oppfylt på egne premisser).
+
+---
+
+## AUDIT 2026-07-05 — fire beslutninger Andreas eier (fra Fable-full-audit av build-loopen)
+
+Full audit-kontekst: PROJECT-LOG.md-entry 2026-07-05. Kode-fiksene (P0-instrumentering,
+Google-key-header-port, proxy-timeouts, secret-maskering) er ALLEREDE utført autonomt —
+punktene under er de gjenværende valgene som krever eier-dom.
+
+### 1. Wipe de 19 pre-fiks-eventene i v2.events (destruktiv prod-handling)
+
+**Kontekst.** Alle 19 rader i v2.events er test-/verifikasjonsartefakter fra r13.3,
+logget FØR audit-fiksen: uten kontekst-konvolutt, 14 av dem uten project_id, alle med
+unik session_id. De er ubrukelige som moat-data og forurenser fremtidig aggregering
+(ingen `payload.context`-nøkkel å filtrere på er i seg selv filteret — men eksplisitt
+wipe er renere). **Anbefaling:** slett alle rader eldre enn audit-fiks-deploy
+(`DELETE FROM v2.events WHERE payload IS NULL OR NOT payload ? 'context'`) — men
+DELETE i prod er Andreas-gated per regel.
+
+### 2. Rate-limit/vern på de åpne transport-proxyene (infra-valg)
+
+**Kontekst.** De seks proxyene (entur/bysykkel/hyre/mobility/directions/travel-times) er
+uautentiserte og uten rate-limit — hvem som helst kan bruke Placys Mapbox-kvote (Directions/
+Matrix koster per kall). Timeout er fikset (8s); rate-limit krever et infra-valg (per-IP
+in-memory à la eiendom/tekst-ruten, Vercel Firewall, eller Upstash). Prototype-volum gjør
+dette tolerabelt NÅ, men det bør inn før salgs-trafikk. **Anbefaling:** gjenbruk
+rate-limit-mønsteret fra `app/api/eiendom/tekst/route.ts` på directions + travel-times
+(de som koster penger) som minste inngrep.
+
+### 3. PRD 12 admin-auth før salg (sekvensering)
+
+**Kontekst.** PRD 12 er IKKE bygget (alle r12-beads åpne). Dagens admin-vern er kun
+`ADMIN_ENABLED`-env — ingen per-bruker-auth, ingen noindex på admin-sider. Bevisst
+MVP-valg i PRD-en, men «produksjonsmiljø vi selger på» endrer risikobildet.
+**Spørsmål:** skal r12.1/r12.2 (requireAdmin + middleware-gate) prioriteres opp
+i frontieren (foran r15-epicen)?
+
+### 4. Test-beviskraft-uplift + ESLint-håndheving (kvalitetsinvestering)
+
+**Kontekst.** Test-auditen fant at flere «AC-kontrakt-guards» er kildetekst-regex
+(curate-narrative/audio-tour-build/flythrough-wiring) — anti-sletting-tripwires, ikke
+atferdsbevis. Og kun 1 av 8 CLAUDE.md-kjerneregler håndheves maskinelt (det er slik
+runtime-LLM-ruten og key-i-URL overlevde). **Forslag:** (a) løft de 3–4 bærende
+invariantene (0-rad-abort, revalidate-rekkefølge, intro/outro-wiring) til
+eksekverings-tester, (b) legg ESLint no-restricted-imports for `@anthropic-ai/sdk` i
+`app/`-runtime + utvid key-i-URL-kontraktstesten (delvis gjort — skanner nå
+lib/pipeline). Kan kjøres som egen bead-klynge; sett prioritet.

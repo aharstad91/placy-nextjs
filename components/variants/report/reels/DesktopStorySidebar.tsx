@@ -39,7 +39,7 @@ import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
 import { EventFilterPanel } from "../board/event/EventFilterPanel";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
 import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
-import { logEvent } from "@/lib/instrumentation/log-event";
+import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 
 /**
  * Desktop-adaptiv storytelling-lane (kun >=1024px, rendres fra
@@ -444,6 +444,7 @@ export function DesktopStorySidebar({
 }: Props) {
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
   const { state: boardState, dispatch: boardDispatch } = useBoard();
+  const engagement = useEngagement();
   const { unlock } = useAudioElement();
   const { pause, resume, goToTrack } = useAudioTourActions();
   const phase = useAudioTourStore((s) => s.phase);
@@ -462,7 +463,7 @@ export function DesktopStorySidebar({
         id: id as BoardCategoryId,
         source: "rail",
       });
-      void logEvent({ eventType: "category_opened", payload: { category_id: id } }).catch(() => {});
+      engagement.emit("category_opened", { payload: { category_id: id } });
     }
   };
 

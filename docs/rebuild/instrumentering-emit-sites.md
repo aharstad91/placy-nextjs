@@ -3,6 +3,18 @@
 **Eier:** PRD 13 (Unit 4) — spec-dokument  
 **Implementasjon:** PRD 9 Unit 5 (logEvent-kall inn i board-skallet)
 
+> **⚠ REVIDERT av audit-fiks 2026-07-05 — `EngagementEmitter` erstatter direkte `logEvent`-kall.**
+> Fable-auditen fant tre P0 i implementasjonen av denne specen: ingen kontekst-konvolutt,
+> `project_id` kun på `board_viewed`, og fersk `session_id` per event. Kall-mønsteret er
+> derfor endret: emit-sites kaller nå `useEngagement().emit(eventType, extras)` fra
+> `lib/instrumentation/engagement-scope.tsx` — emitteren (bygget ÉN gang per board-mount i
+> `ReportReelsPage` og delt via `EngagementProvider`) injiserer `projectId`, delt økt-nøkkel
+> og kontekst-konvolutt (`payload.context`: `mode`/`has_3d_addon`/`categories_presented`/`locale`)
+> i HVERT event. Fire-and-forget-/fail-soft-kontrakten under gjelder uendret (bakt inn i
+> `emit`). Field-mapping-blokkene under viser det OPPRINNELIGE mønsteret og leses som
+> hendelses-spesifikke felt (`poiId`, `category_id`, `voiceover_segment`) — scope-feltene
+> kommer nå fra emitteren. NB: `projectId` er `project.id` (stabil UUID), ikke `project.slug`.
+
 ---
 
 ## Formål

@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+// Audit-fiks 2026-07-05: oppstrøms-API uten timeout holder rute-funksjonen
+// åpen ubestemt ved treg leverandør (connection-utsulting under last).
+const UPSTREAM_TIMEOUT_MS = 8000;
+
 
 // Mapbox Matrix API proxy — eierskap: PRD 11 Unit 6 (klassifisert reference-only).
 // INGEN live board-konsument: eneste runtime-konsument er useTravelTimes → dead ExplorerPage.
@@ -72,7 +76,9 @@ export async function POST(request: NextRequest) {
 
     const url = `https://api.mapbox.com/directions-matrix/v1/mapbox/${mapboxProfile}/${coordinates}?access_token=${mapboxToken}&sources=0&destinations=${destinationIndices}&annotations=duration`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -177,7 +183,9 @@ export async function GET(request: NextRequest) {
 
     const url = `https://api.mapbox.com/directions-matrix/v1/mapbox/${mapboxProfile}/${coordinates}?access_token=${mapboxToken}&sources=0&destinations=${destinationIndices}&annotations=duration`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
 
     if (!response.ok) {
       throw new Error(`Mapbox API error: ${response.status}`);

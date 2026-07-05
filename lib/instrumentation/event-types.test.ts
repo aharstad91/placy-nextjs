@@ -54,18 +54,31 @@ describe("isEventType", () => {
 });
 
 describe("payload-typer (kompiler-tids-kontrakt)", () => {
-  it("har riktige payload-former per event-type", () => {
+  it("har riktige payload-former per event-type (inkl. kontekst-konvolutten)", () => {
     // Disse assignmentene kompilerer KUN hvis EventPayloads/PayloadFor er korrekt.
-    const categoryOpened: PayloadFor<"category_opened"> = { category_id: "cafe" };
+    const envelope = {
+      mode: "report" as const,
+      has_3d_addon: true,
+      categories_presented: ["home", "natur"],
+      locale: "no",
+    };
+    const categoryOpened: PayloadFor<"category_opened"> = {
+      category_id: "cafe",
+      context: envelope,
+    };
     const voiceoverPlayed: PayloadFor<"voiceover_played"> = {
       voiceover_segment: "intro",
+      context: envelope,
     };
-    const boardViewed: PayloadFor<"board_viewed"> = undefined;
-    const poiClicked: PayloadFor<"poi_clicked"> = undefined;
+    const boardViewed: PayloadFor<"board_viewed"> = { context: envelope };
+    const poiClicked: PayloadFor<"poi_clicked"> = {
+      category_id: "cafe",
+      context: envelope,
+    };
 
     expect(categoryOpened.category_id).toBe("cafe");
     expect(voiceoverPlayed.voiceover_segment).toBe("intro");
-    expect(boardViewed).toBeUndefined();
-    expect(poiClicked).toBeUndefined();
+    expect(boardViewed.context?.mode).toBe("report");
+    expect(poiClicked.context?.categories_presented).toEqual(["home", "natur"]);
   });
 });

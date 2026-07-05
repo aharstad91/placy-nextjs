@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+// Audit-fiks 2026-07-05: oppstrøms-API uten timeout holder rute-funksjonen
+// åpen ubestemt ved treg leverandør (connection-utsulting under last).
+const UPSTREAM_TIMEOUT_MS = 8000;
+
 
 /**
  * Aggregates free-floating micromobility vehicles from Entur Mobility v2 API.
@@ -72,6 +76,7 @@ export async function GET(request: NextRequest) {
         "Content-Type": "application/json",
         "ET-Client-Name": "placy-neighborhood-stories",
       },
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       body: JSON.stringify({
         query: VEHICLES_QUERY,
         variables: {

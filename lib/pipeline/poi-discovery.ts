@@ -108,16 +108,32 @@ const VALID_TYPES_FOR_CATEGORY: Record<string, Set<string>> = {
   hotel: new Set(["lodging", "hotel"]),
 };
 
+// Places API (New) searchNearby-resultat (audit-fiks 2026-07-05: portet fra
+// legacy nearbysearch som KUN støtter nøkkel i querystring — CLAUDE.md-brudd).
 interface GooglePlaceResult {
-  place_id: string;
-  name: string;
-  geometry: { location: { lat: number; lng: number } };
+  id: string;
+  displayName?: { text?: string };
+  location?: { latitude: number; longitude: number };
   rating?: number;
-  user_ratings_total?: number;
-  business_status?: string;
-  vicinity?: string;
+  userRatingCount?: number;
+  businessStatus?: string;
+  shortFormattedAddress?: string;
   types?: string[];
 }
+
+// Feltmaske = eksakt det discovery-filteret/POI-byggingen konsumerer.
+const NEARBY_FIELD_MASK = [
+  "places.id",
+  "places.displayName",
+  "places.location",
+  "places.types",
+  "places.rating",
+  "places.userRatingCount",
+  "places.businessStatus",
+  "places.shortFormattedAddress",
+].join(",");
+
+const NEARBY_TIMEOUT_MS = 10_000;
 
 export async function discoverGooglePlaces(
   config: DiscoveryConfig,
@@ -142,22 +158,51 @@ export async function discoverGooglePlaces(
     console.log(`  → Søker etter ${category}...`);
 
     try {
-      const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${config.center.lat},${config.center.lng}&radius=${config.radius}&type=${category}&key=${apiKey}`;
+      // Places API (New) searchNearby: POST med nøkkel i X-Goog-Api-Key-header
+      // (ALDRI querystring — leker i logs; speiler fetch-place-details.ts).
+      // maxResultCount er API-capped på 20 — samme første-side-grense som
+      // legacy-kallet hadde (ingen pagetoken-håndtering fantes).
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), NEARBY_TIMEOUT_MS);
+      let response: Response;
+      try {
+        response = await fetch(
+          "https://places.googleapis.com/v1/places:searchNearby",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Goog-Api-Key": apiKey,
+              "X-Goog-FieldMask": NEARBY_FIELD_MASK,
+            },
+            body: JSON.stringify({
+              includedTypes: [category],
+              maxResultCount: Math.min(20, maxPerCategory),
+              locationRestriction: {
+                circle: {
+                  center: {
+                    latitude: config.center.lat,
+                    longitude: config.center.lng,
+                  },
+                  radius: config.radius,
+                },
+              },
+            }),
+            signal: controller.signal,
+          },
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
 
-      const response = await fetch(url);
       if (!response.ok) {
         console.error(`    ✗ Feil ved søk etter ${category}: ${response.status}`);
         continue;
       }
 
+      // New API returnerer tomt objekt (ingen `places`-nøkkel) ved null treff.
       const data = await response.json();
-
-      if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-        console.error(`    ✗ Google API feil: ${data.status}`);
-        continue;
-      }
-
-      const places: GooglePlaceResult[] = data.results || [];
+      const places: GooglePlaceResult[] = data.places || [];
       const categoryDef = GOOGLE_CATEGORY_MAP[category] || {
         id: category,
         name: category,
@@ -167,12 +212,18 @@ export async function discoverGooglePlaces(
 
       let addedCount = 0;
       for (const place of places) {
+        // FieldMask garanterer feltene, men vern mot delvise objekter.
+        const placeName = place.displayName?.text;
+        if (!placeName || !place.location) {
+          continue;
+        }
+
         // Filter by actual distance (Google API treats radius as preference, not strict)
         const distance = calculateDistance(
           config.center.lat,
           config.center.lng,
-          place.geometry.location.lat,
-          place.geometry.location.lng
+          place.location.latitude,
+          place.location.longitude
         );
         if (distance > config.radius) {
           continue;
@@ -193,13 +244,15 @@ export async function discoverGooglePlaces(
         }
 
         // Quality filter chain (business_status → distance → quality → name_mismatch)
+        // New API bruker samme businessStatus-enum-strenger som legacy
+        // (OPERATIONAL/CLOSED_TEMPORARILY/CLOSED_PERMANENTLY).
         totalEvaluated++;
         const qualityResult = evaluateGooglePlaceQuality(
           {
-            name: place.name,
-            business_status: place.business_status,
+            name: placeName,
+            business_status: place.businessStatus,
             rating: place.rating,
-            user_ratings_total: place.user_ratings_total,
+            user_ratings_total: place.userRatingCount,
           },
           categoryDef.id,
           distance,
@@ -214,8 +267,8 @@ export async function discoverGooglePlaces(
           break;
         }
 
-        // Create POI ID with source prefix (using Google place_id for stability)
-        const id = generatePoiId("google", place.name, place.place_id);
+        // Create POI ID with source prefix (using Google place id for stability)
+        const id = generatePoiId("google", placeName, place.id);
 
         // Check for duplicates
         if (allPOIs.some((p) => p.id === id)) {
@@ -224,16 +277,16 @@ export async function discoverGooglePlaces(
 
         allPOIs.push({
           id,
-          name: place.name,
+          name: placeName,
           coordinates: {
-            lat: place.geometry.location.lat,
-            lng: place.geometry.location.lng,
+            lat: place.location.latitude,
+            lng: place.location.longitude,
           },
-          address: place.vicinity,
+          address: place.shortFormattedAddress,
           category: categoryDef,
-          googlePlaceId: place.place_id,
+          googlePlaceId: place.id,
           googleRating: place.rating,
-          googleReviewCount: place.user_ratings_total,
+          googleReviewCount: place.userRatingCount,
           source: "google",
         });
 

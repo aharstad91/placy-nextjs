@@ -24,7 +24,7 @@ import {
 import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import type { CategoryCameraConfig } from "@/lib/types";
-import { logEvent } from "@/lib/instrumentation/log-event";
+import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 
 // RouteLayer3D lazy-loaded — samme bundling-strategi som ReportThemeSection
 // (tunge Google Maps-imports holdes ute av 2D-bundlen).
@@ -94,6 +94,7 @@ export function BoardMap3D({
   compactMarkers = false,
 }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
+  const engagement = useEngagement();
   const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
   const popupMode = useBoardPopupMode();
@@ -274,12 +275,15 @@ export function BoardMap3D({
         const found = cat.pois.find((p) => p.id === poiId);
         if (found) {
           dispatch({ type: "OPEN_POI", id: found.id, categoryId: cat.id });
-          void logEvent({ eventType: "poi_clicked", poiId: found.id, payload: { category_id: cat.id } }).catch(() => {});
+          engagement.emit("poi_clicked", {
+            poiId: found.id,
+            payload: { category_id: cat.id },
+          });
           return;
         }
       }
     },
-    [data.categories, dispatch],
+    [data.categories, dispatch, engagement],
   );
 
   // Klikk på kart-bakgrunn (ikke markør) → lukk POI-popup. Speiler 2D-mappens

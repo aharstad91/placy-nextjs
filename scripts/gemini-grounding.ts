@@ -263,11 +263,14 @@ async function revalidate(tag: string): Promise<void> {
     return;
   }
   const url = `${SITE_URL}/api/revalidate?tag=${encodeURIComponent(tag)}&secret=${encodeURIComponent(REVALIDATE_SECRET)}`;
+  // Audit-fiks 2026-07-05: logg ALDRI url-varianten med secret — maskert
+  // variant til feil-meldingen (bruker fyller inn $REVALIDATE_SECRET selv).
+  const redactedUrl = url.replace(/([?&]secret=)[^&]*/, "$1***");
   try {
     const res = await fetch(url);
     if (!res.ok) {
       console.warn(
-        `revalidateTag feilet (${res.status}). Dev-server kanskje ikke oppe. Manuelt: curl "${url}"`,
+        `revalidateTag feilet (${res.status}). Dev-server kanskje ikke oppe. Manuelt: curl "${redactedUrl}" (erstatt *** med REVALIDATE_SECRET)`,
       );
       return;
     }

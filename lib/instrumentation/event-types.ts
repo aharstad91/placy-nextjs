@@ -28,15 +28,43 @@ export function isEventType(value: unknown): value is EventType {
   );
 }
 
-// Typede payloads per event-type. board_viewed og poi_clicked bærer INGEN
-// payload — poi_clicket sin poi_id går i top-level events.poi_id (PRD 13 §5.3),
-// ikke i payload. category_opened/voiceover_played har hver sin hendelses-
-// spesifikke payload.
+/**
+ * Kontekst-konvolutten (moat-2-build-input §2 Gap 1 — DET irreversible kravet):
+ * rir i `payload.context` på HVERT event så tidlig volum aldri logges
+ * confounded (et skole-klikk kan skilles fra «utforsker Ladestien»). Events
+ * logget uten konvolutt kan ikke repareres i ettertid — de 19 pre-fiks-radene
+ * i prod (uten `context`-nøkkel) er nettopp derfor ubrukelige som moat-data.
+ *
+ * Feltene er board-render-øktens statiske ramme; hendelses-spesifikke felt
+ * (`category_id` osv.) ligger ved siden av konvolutten i payload. `area_id`
+ * bæres IKKE her — strøk avledes stabilt server-side ved aggregering via
+ * `project_id` → prosjektkoordinat → `find-area-for-point` (PRD 8).
+ * Utvidelse (f.eks. travel_mode, viewport) er additivt — payload er jsonb.
+ */
+export interface EngagementContextEnvelope {
+  /** Board-flate: boligrapport eller event-board (D3-modusen). */
+  mode: "report" | "event";
+  /** Ortogonalt render-flagg — 3D-motor aktiv på boardet. */
+  has_3d_addon: boolean;
+  /** Presentert kategori-rekkefølge (id-er, i faktisk vist rekkefølge). */
+  categories_presented: string[];
+  /** UI-locale ved emit (no/en). */
+  locale: string;
+}
+
+// Typede payloads per event-type. poi_clicket sin poi_id går i top-level
+// events.poi_id (PRD 13 §5.3), ikke i payload; poi_clicked bærer i tillegg
+// kategorien klikket skjedde i. ALLE payloads bærer kontekst-konvolutten
+// (`context`) — optional i typen kun for bakoverkompatible/degraderte stier;
+// emit-sitene skal alltid sende den (via EngagementEmitter).
 export interface EventPayloads {
-  board_viewed: undefined;
-  category_opened: { category_id: string };
-  voiceover_played: { voiceover_segment: string };
-  poi_clicked: undefined;
+  board_viewed: { context?: EngagementContextEnvelope };
+  category_opened: { category_id: string; context?: EngagementContextEnvelope };
+  voiceover_played: {
+    voiceover_segment: string;
+    context?: EngagementContextEnvelope;
+  };
+  poi_clicked: { category_id?: string; context?: EngagementContextEnvelope };
 }
 
 // Hjelpetype: payload-formen for en gitt event-type (undefined der ingen payload).
