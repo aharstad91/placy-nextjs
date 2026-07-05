@@ -16,7 +16,7 @@ systemene den kjører (se PRD 15 §3 for eierskaps-kartet).
 | 3. Grounding-QA + manus-curering | Unit 3 | `placy-ralph-r15.3` | **FERDIG** (dette dokumentet) |
 | 4. Overflate-fylling (ProjectAssetFlags + broker/pin) | Unit 4 | `placy-ralph-r15.4` | **FERDIG** (dette dokumentet) |
 | 5. Reels/audio-regi | Unit 5 | `placy-ralph-r15.5` | **FERDIG** (dette dokumentet) |
-| 6. Samlekart-klassifisering + scope-grense | Unit 6 | `placy-ralph-r15.6` | fylles av r15.6 |
+| 6. Samlekart-klassifisering + scope-grense | Unit 6 | `placy-ralph-r15.6` | **FERDIG** (dette dokumentet) |
 | Verifikasjons-runbook (validator-binding) | Unit 7 | `placy-ralph-r15.7` | egen fil: `nivaa-2-kurerings-verifikasjon-runbook.md` |
 
 ---
@@ -509,3 +509,67 @@ lagrede filer ved render. Ingen ElevenLabs-/TTS-kall fra `app/`-runtime (grep-ve
 i 3.5 — `elevenlabs`-signaturen var del av sveipet). Runtime-playbacken av sporene
 (audio-tour-store + reels-orchestration + karaoke) er PRD 14s domene, video-UX-en
 PRD 9s — begge utenfor kurerings-arbeidsflyten.
+
+---
+
+## 6. Samlekart-klassifisering + scope-grense — hold overflaten tynn (Unit 6)
+
+Dette er en ren klassifiserings-beslutning (ingen kode endres): samlekart/multi-board er
+**UT-AV-SCOPE** for nivå-2-kurerings-arbeidsflyten. Beslutningen finnes for å hindre at
+død katalog-kode trekkes inn i arbeidsflyten og gjør segment-overflaten tykk — runbookens
+seksjon 1–5 refererer ingen av artefaktene under, og det skal forbli slik.
+
+### 6.1 De TO samlekart-artefaktene — begge døde spor, begge ut-av-scope
+
+Det finnes to distinkte «samlekart»-artefakter i kodebasen. Ingen av dem er
+rebuild-boardet, og ingen av dem kureres i denne arbeidsflyten:
+
+**(a) Explorer/Guide-katalogen — `lib/curated-lists.ts`.** `CuratedList`/`CURATED_LISTS`
+mater `/[area]/guide/[slug]`-SEO-micrositen (`app/(public)/` — 15 filer, manifest-status
+`n/a`: «Explorer/Guide-katalog») pluss visit-trondheim-sidene og de gamle
+admin-oversiktene (`app/admin/page.tsx:5`, `app/admin/public/page.tsx:13`). Dette er det
+døde Explorer/Guide-sporet. Gjenopptak er en **separat Explorer/Guide-resume-task** —
+IKKE nivå-2-kurering (PRD 15 §5 Deferred, rad «Samlekart/multi-board som AKTIV
+funksjonalitet»).
+
+**(b) Rapport-produktets eget «Samlekart» — overview-kartet i den GAMLE scroll-rapporten.**
+`ReportPage.tsx:143` monterer `ReportOverviewMap` (dynamic import `:22`) via delt
+`ReportMapPreviewCard` (`ReportMapPreviewCard.tsx:25` dokumenterer delingen). Manifest
+klassifiserer hele den aktive scroll-komponent-familien `n/a` («kun /rapport») — dette er
+IKKE rebuild-boardet. Eneste biten som keepes derfra er den DELTE `report-3d-config`-en
+(`DEFAULT_CAMERA_LOCK`), som boardet allerede eier via PRD 9 — komponenten selv bæres
+ikke inn.
+
+**Grep-verifisert (2026-07-05):** `curated-lists`, `ReportOverviewMap`,
+`ReportMapPreviewCard` og `ReportCuratedGrounded` har **null treff** i
+`components/variants/report/reels/` og `components/variants/report/board/` —
+rebuild-boardet (`ReportReelsPage`/`BoardMap3D`) konsumerer ingen av dem.
+
+### 6.2 `ReportCuratedGrounded.tsx` — død renderer, ikke PRD-9-eid
+
+`ReportCuratedGrounded.tsx` er en grounding-narrative-RENDERER hvis eneste konsument er
+den gamle scroll-artikkelen (`ReportThemeSection.tsx:367`, dynamic import `:42` — «v1
+bruker ReportGroundingInline, v2 bruker ReportCuratedGrounded»). Den rendres aldri av
+rebuild-boardet, manifestet merker den `n/a` (samme rad som ReportOverviewMap), og PRD 9
+verken porterer eller eier den (grep i `docs/rebuild/prd/09-*.md` = 0 treff).
+
+Grensen mot seksjon 3 i denne runbooken: PRD 15 produserer og QA-er grounding-**DATAEN**
+(`curatedNarrative` via `curate-narrative`-dansen, seksjon 3) — hvordan den dataen
+RENDRES er PRD 9s domene, og denne døde komponenten er ikke en del av det domenet.
+
+### 6.3 `ReportConfig.motiver` — board-data, ikke kurerings-arbeidsflyt
+
+`ReportConfig.motiver` (`lib/types.ts:458–459`: «Tre nabolags-motiver fra
+/generate-rapport. Vises i intro-kort ved samlekart.») er et **board-data-felt** —
+PRD 5/9-concern. At feltets docstring nevner samlekart endrer ikke eierskapet:
+kurerings-arbeidsflyten leser eller skriver det ikke, og ingen seksjon i denne runbooken
+har et steg som rører det.
+
+### 6.4 Scope-invarianten: tynn segment-overflate
+
+Klassifiseringen håndhever rebuild-prinsippet om tynn/swappbar segment-overflate
+(memory `project_summer_rebuild`): kurerings-arbeidsflyten består KUN av de fem
+arbeidsflyt-aksene i seksjon 1–5, som alle konsumerer levende rebuild-kjerner
+(PRD 7/8/9/14). Ingen død katalog-kode (curated-lists, scroll-rapport-komponenter,
+døde renderere) er en del av arbeidsflyten — og en fremtidig Explorer/Guide-resume
+endrer ikke DENNE runbooken; den får sin egen task med eget eierskap.
