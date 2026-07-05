@@ -8,6 +8,9 @@ const eslintConfig = [
     rules: {
       // === Strict rules (error) ===
       "prefer-const": "error",
+      // ALDRI <img> — bruk next/image (CLAUDE.md-arkitekturregel; 0 brudd
+      // ved skjerping 2026-07-06, audit-bead 03t)
+      "@next/next/no-img-element": "error",
       "no-restricted-imports": [
         "error",
         {
@@ -23,7 +26,6 @@ const eslintConfig = [
 
       // === Advisory rules (warn) ===
       "no-console": ["warn", { allow: ["error", "warn"] }],
-      "@next/next/no-img-element": "warn",
       "@next/next/no-html-link-for-pages": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
@@ -37,6 +39,51 @@ const eslintConfig = [
       "react-hooks/refs": "off",
       "react-hooks/purity": "off",
       "react-hooks/immutability": "off",
+    },
+  },
+  // ALDRI runtime-LLM i app/ (CLAUDE.md: build-time only) — SDK-importer
+  // gir error i app-runtime; build-time (scripts/, lib/gemini/) er unntatt
+  // under. Audit-bead 03t: runtime-LLM-ruten overlevde fordi regelen ikke
+  // var maskinell.
+  {
+    files: ["app/**/*"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@supabase/supabase-js",
+              message:
+                "Import from @/lib/supabase instead of @supabase/supabase-js directly.",
+            },
+            {
+              name: "@anthropic-ai/sdk",
+              message:
+                "ALDRI runtime-LLM i app/ — build-time only (scripts/ + lib/gemini/). CLAUDE.md LLM-regel.",
+            },
+            {
+              name: "@google/generative-ai",
+              message:
+                "ALDRI runtime-LLM i app/ — build-time only (scripts/ + lib/gemini/). CLAUDE.md LLM-regel.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Legacy dead-track-flater (Explorer/portrait/trip + gammel scroll-rapport)
+  // beholder warn for <img> — de slettes ved cutover (r01.3), ikke porteres.
+  // ALL levende/ny kode har error (blokken over). Audit-bead 03t.
+  {
+    files: [
+      "components/variants/explorer/**/*",
+      "components/variants/portrait/**/*",
+      "components/variants/trip/**/*",
+      "components/variants/report/ReportDensityMap.tsx",
+    ],
+    rules: {
+      "@next/next/no-img-element": "warn",
     },
   },
   // Allow {} in Supabase generated type definitions

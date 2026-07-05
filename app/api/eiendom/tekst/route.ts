@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+// KJENT runtime-LLM-brudd, Andreas-gated: docs/rebuild/DECISIONS-QUEUE.md
+// («eiendom/tekst: slett vs. port til build-time») — disable fjernes når
+// beslutningen lander. Ny kode får ALDRI denne disablen (audit-bead 03t).
+// eslint-disable-next-line no-restricted-imports
 import Anthropic from "@anthropic-ai/sdk";
 import { calculateDistance } from "@/lib/utils/geo";
 import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
