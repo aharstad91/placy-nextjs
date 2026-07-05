@@ -2,6 +2,12 @@ import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { isSupabaseConfigured, createServerClient } from "@/lib/supabase/client";
 
+export const metadata = {
+  title: "Prosjekter | Placy",
+  description: "Oversikt over Placy-prosjekter — interaktive nabolagskart og guidede turer.",
+};
+
+
 export const dynamic = "force-dynamic";
 
 interface ProjectRow {

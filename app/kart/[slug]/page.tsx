@@ -2,6 +2,13 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/client";
 import { eiendomUrl } from "@/lib/urls";
 
+// Redirect-stub (legacy /kart/<slug>) — skal ikke indekseres.
+export const metadata = {
+  title: "Placy-kart",
+  robots: { index: false, follow: false },
+};
+
+
 export const dynamic = "force-dynamic";
 
 interface PageProps {

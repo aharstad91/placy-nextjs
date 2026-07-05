@@ -1,6 +1,13 @@
 import { redirect, notFound } from "next/navigation";
 import { getProductAsync, getProjectAsync, getBaseSlug } from "@/lib/data-server";
 
+// Legacy-redirect (/customer/slug/trip) — skal ikke indekseres.
+export const metadata = {
+  title: "Tur | Placy",
+  robots: { index: false, follow: false },
+};
+
+
 interface PageProps {
   params: Promise<{
     customer: string;
