@@ -109,7 +109,11 @@ export function middleware(request: NextRequest) {
   // /en/... → English public passthrough
   if (firstSegment === "en") return NextResponse.next();
 
-  // /admin/... → Admin passthrough
+  // /admin/... → PASSTHROUGH, IKKE guard (eksplisitt valg, PRD 12 Unit 2 AC3).
+  // Autoritativ admin-tilgangskontroll er ADMIN_ENABLED per side/route via
+  // lib/admin/require-admin.ts — det finnes ingen per-bruker-auth å gate på i
+  // middleware. En EKTE middleware-guard bygges først hvis kunde-auth innføres
+  // (deferred, PRD 12 §10 Q1). Ikke les denne branchen som en sikkerhetsgrense.
   if (firstSegment === "admin") return NextResponse.next();
 
   // /trondheim/... → Norwegian public passthrough
