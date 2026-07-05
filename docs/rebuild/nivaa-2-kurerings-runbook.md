@@ -15,7 +15,7 @@ systemene den kjører (se PRD 15 §3 for eierskaps-kartet).
 | 2. Area-editorial-kurering | Unit 2 | `placy-ralph-r15.2` | **FERDIG** (dette dokumentet) |
 | 3. Grounding-QA + manus-curering | Unit 3 | `placy-ralph-r15.3` | **FERDIG** (dette dokumentet) |
 | 4. Overflate-fylling (ProjectAssetFlags + broker/pin) | Unit 4 | `placy-ralph-r15.4` | fylles av r15.4 |
-| 5. Reels/audio-regi | Unit 5 | `placy-ralph-r15.5` | fylles av r15.5 |
+| 5. Reels/audio-regi | Unit 5 | `placy-ralph-r15.5` | **FERDIG** (dette dokumentet) |
 | 6. Samlekart-klassifisering + scope-grense | Unit 6 | `placy-ralph-r15.6` | fylles av r15.6 |
 | Verifikasjons-runbook (validator-binding) | Unit 7 | `placy-ralph-r15.7` | egen fil: `nivaa-2-kurerings-verifikasjon-runbook.md` |
 
@@ -300,3 +300,105 @@ LEGACY-rute på den døde `targetAudience`-modellen, UTENFOR kurerings-dansen, a
 Andreas-gated i `docs/rebuild/DECISIONS-QUEUE.md` (r07.7-funn; slett-vs-port avgjøres
 der, og bead `placy-ralph-03t` skal ESLint-håndheve regelen maskinelt). Kurerings-
 arbeidsflytens sti har null runtime-LLM.
+
+---
+
+## 5. Reels/audio-regi — kjører PRD 14s pipeline + override-akse (Unit 5)
+
+Regien av PRD 14s reels/audio-pipeline: operatøren beslutter **HVILKE reels** (hvilke
+temaer får reels-VO) og **HVILKEN stemme**, og KJØRER pipelinen. PRD 14 eier byggeren,
+TTS-kjernen, override-mekanismen og reels-video-pipelinen (`14:75` 15-prov-raden /
+`14:209` deferred-raden: «Nivå-2 menneskelig kurerings-arbeidsflyt som KJØRER pipelinen
++ override-aksen» → PRD 15). Manus er pipeline-INPUT (PRD 14-domene), ikke story-text
+(PRD 7) — skillet er banket i `14:206-209`-deferred-tabellen. Denne seksjonen re-hjemler
+ingenting av det; den dokumenterer kjøringen. Alle linje-refs verifisert 2026-07-05.
+
+### 5.1 Arbeidsflyten: manus → QA → bygg → verifiser
+
+| Steg | Hva | Kilde |
+|---|---|---|
+| 1. Manus per tema | Operatør skriver reels-manus via **manus-curator-skillens Steg 1–7** (seksjon 3.3) mot kvalitets-porten i seksjon 1 — spesielt reels-reglene 1.3 #6–8 (ett tema per setning — cut-punkter ligger på setningsende; fakta-orientert; beboer-perspektiv) + ord-målet 60–75 (1.4). Staging-beslutning i `.curation-staging/<prosjekt>/<spor>.md` FØR noe bygges (invariant 1.5). | `manus-curator:83-116`; seksjon 1/3.3 |
+| 2. Manus inn i prosjektet | Godkjent manus legges i `reportConfig.themes[].reelsAudio.manus` i prosjekt-JSON (`data/projects/<kunde>/<slug>.json`). Byggeren plukker KUN temaer med ikke-tomt `reelsAudio.manus` (`:82-92`) — tilstedeværelse av manus ER regi-beslutningen «dette temaet får reels-VO». | `reels-voiceover-build-local.ts:82-92` |
+| 3. Kjør byggeren | `npx tsx scripts/reels-voiceover-build-local.ts data/projects/<kunde>/<slug>.json [--force]` (npm-alias `build:reels-vo-local`, `package.json:14`). Uten `--force` hoppes temaer med eksisterende `url` over (`:43/:113-117`); `PARALLEL_LIMIT=2` (ElevenLabs free-plan, `:38`); `MIN_BYTES=5000`-vern (`:39`). | PRD 14 Unit 4-porten (r14.4) |
+| 4. Output committes som PAR | mp3 til `public/audio/<slug>/{themeId}-reels.mp3` + `reelsAudio`-objektet (url/voice/model/generatedAt/manus/timings) skrevet tilbake i prosjekt-JSON. **mp3 + timings committes ALLTID sammen** — TTS er stokastisk, en regenerert mp3 matcher aldri gamle timings; en regenerert mp3 som IKKE skal beholdes MÅ `git restore`-s (r14.8-runbooken `:63-66`). | `audio-reels-verifikasjon-runbook.md` |
+| 5. Verifiser full pipeline | Se 5.4 — aldri snippet-validering. | memory `feedback_tts_validation` |
+
+### 5.2 Override-disiplinen (karaoke-vernet) — respekteres, endres ALDRI her
+
+`reelsAudio` er en **OVERRIDE-akse, ikke replacement** (memory
+`reference_reels_audio_override`): reels-sporet overstyrer tour-sporet i feeden, men
+tour-fila `{themeId}.mp3` skrives ALDRI over. Vernet er PRD 14s kontrakt (PRD 14
+Unit 4-blokken `14:255-265`; beadens `14:252-258`-ref har driftet noen linjer) og består
+av fire lag arbeidsflyten kjører INNENFOR:
+
+1. **Egen filnøkkel:** trackKey er `{themeId}-reels` (`reels-voiceover-build-local.ts:86`)
+   → `audioFilename` gir `{trackKey}.mp3` for alt ≠ "home" (`storage-paths.ts:11-12`),
+   så reels-fila blir `{themeId}-reels.mp3` — kolliderer by-construction aldri med
+   tour-`{themeId}.mp3`. Ingen endring i `storage-paths.ts` var nødvendig.
+2. **Defensiv suffiks-abort:** byggeren kaster hvis trackKey mangler `-reels`-suffiks
+   (`:130-132`) — defense-in-depth før disk-write (`:133`).
+3. **Tour-bygget rører aldri `reelsAudio`:** speilvernet i søsterscriptet
+   (`audio-tour-build-local.ts:14-15`) — de to aksene kan aldri skrive i hverandres filer.
+4. **Feed-override med fallback:** `const audio = c.reelsAudio ?? c.audio`
+   (`reels-data.ts:316`) + filter `!!c.reelsAudio || !!c.audio` (`:313`) — temaer uten
+   reels-VO faller tilbake til tour-sporet per tema; delvis reels-dekning er gyldig
+   regi, ikke en feil. (PRD 14-teksten siterer eldre `:277/:273-274` — linjene driftet
+   etter r14.5.) Override-linjen er PRD 14s AUDIO-akse i den PRD 9-eide fila; testdekket
+   i `reels-data.test.ts:76/:91/:106`.
+
+Arbeidsflyten regisserer innenfor disiplinen — den endrer aldri filnøkkel-logikk,
+abort eller override-linjen. Live-bevis for hele vernet (shasum før/etter: KUN
+`{tema}-reels.mp3` endret, tour-mp3 + 15 andre byte-identiske) står i r14.8-runbooken.
+
+### 5.3 Regi-beslutningene: hvilke reels, hvilken stemme
+
+- **HVILKE reels:** per tema, via data-tilstedeværelse (`reelsAudio.manus` finnes) —
+  ALDRI en `reportTier`-/`audioTourEnabled`-bryter (PRD 14 Unit 4 AC6; memory
+  `reference_audio_tour_pipeline`: gating = spillbar lyd-tilstedeværelse). Alle
+  bolig-temaer kan få reels-VO; regien velger fritt delmengde.
+- **HVILKEN stemme:** default-regien er PRD 14s konstanter — Erik
+  (`EpYEY8MWJrUGskHBoNMA`) / `eleven_turbo_v2_5` / `language_code "no"` / stability 0.75
+  (`elevenlabs-client.ts:18-25`). `generateAudio` tar `voiceId`/`modelId`/`languageCode`
+  per kall (`:66-68`), så en annen stemme-regi er et PARAMETERVALG i kjøringen — aldri
+  en endring av klienten (PRD 14-eid). Memory-kontekst: ingen bedre ElevenLabs-modell
+  for norsk finnes; `language_code` håndheves kun av turbo/flash
+  (`feedback_norsk_tts_stedsnavn`).
+- **Norske stedsnavn:** via PRD 14s alias-ordliste `scripts/tts/pronunciation-no.json`
+  (lastes default av `generateAudio`, `elevenlabs-client.ts:73`) —
+  `applyPronunciation` bytter KUN på TTS-input, `remapTimingsToOriginal` mapper
+  karaoke-timings tilbake til ORIGINAL staving (`pronunciation.ts:67/:130/:188`).
+  ALDRI ad-hoc respelling i selve manuset — alias-staving skal aldri nå DOM/karaoke
+  (mismatch logges, `elevenlabs-client.ts:145`).
+- **Reels-VIDEO (mp4 + poster):** produseres av PRD 14 Unit 5-pipelinen
+  (`animate-scene-veo.ts` / `compose-reels-bg.ts` / `compose-video-crossfade.ts` /
+  `generate-reels-posters.mjs`, npm `generate:reels-posters`) — PRD 15 KJØRER den,
+  eier den ikke. Cut-punktene i `compose-reels-bg` aligneres mot setningsende i
+  ElevenLabs-timings (Level B) — derfor manus-regelen «ett tema per setning» (1.3 #6).
+  HVILKE prosjekter som får `splashVideo`/montage (`REELS_MONTAGE_PROJECTS`-allowlisten)
+  er overflate-fyllings-stoff → seksjon 4 (Unit 4/r15.4), ikke denne seksjonen.
+
+### 5.4 TTS-validering på FULL pipeline — aldri snippet
+
+Modellen er **stokastisk per request** (memory `feedback_tts_validation`): et kort
+test-snippet beviser ingenting om produksjons-manuset. Validering av ny reels-VO kjøres
+derfor ALLTID som fullt produksjons-manus gjennom ekte `generateAudio` (samme sti som
+bygget) før commit. Referanse-verifikasjonen med bevis-tabell er r14.8-runbooken
+(`docs/rebuild/audio-reels-verifikasjon-runbook.md`): fullt manus → mp3 >
+`MIN_BYTES` + alignment-lengder konsistente + timings remappet til original staving;
+temp-JSON-kopi med ett tema + `--force` er det dokumenterte trikset for å validere ETT
+spor uten å TTS-e alle temaene på nytt.
+
+Merk arbeidsdelingen: maskinvernet i reels-byggeren er `MIN_BYTES` + suffiks-abort —
+byggeren kjører IKKE `validateManus` (ord-båndet 35/90 håndheves i PRD 14s
+manus-skrive-sti, `audio-manus-write.ts:383`). Kvalitets-porten i seksjon 1/3.3 er
+derfor den reelle manus-porten FØR bygg; karaoke-korrekthet verifiseres i nettleser
+som del av Unit 7-verifikasjonen (egen runbook-fil, se seksjonskartet).
+
+### 5.5 Build-time, lagret output — ingen runtime-TTS (invariant)
+
+Hele regien er **build-time** (invariant 1.5): TTS skjer i CLI-scriptet, output LAGRES
+(mp3-filer i `public/audio/` + timings i prosjekt-JSON) og committes; boardet leser kun
+lagrede filer ved render. Ingen ElevenLabs-/TTS-kall fra `app/`-runtime (grep-verifisert
+i 3.5 — `elevenlabs`-signaturen var del av sveipet). Runtime-playbacken av sporene
+(audio-tour-store + reels-orchestration + karaoke) er PRD 14s domene, video-UX-en
+PRD 9s — begge utenfor kurerings-arbeidsflyten.
