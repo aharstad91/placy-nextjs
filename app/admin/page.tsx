@@ -14,6 +14,12 @@ import {
   ChevronRight,
   Database,
 } from "lucide-react";
+import { requireAdmin } from "@/lib/admin/require-admin";
+
+export const metadata = {
+  title: "Dashboard | Placy Admin",
+  robots: { index: false, follow: false },
+};
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -57,9 +63,7 @@ function StatCard({ icon, title, count, description, href, disabled }: StatCardP
 }
 
 export default async function AdminPage() {
-  if (process.env.ADMIN_ENABLED !== "true") {
-    redirect("/");
-  }
+  requireAdmin();
 
   const supabase = createServerClient();
 

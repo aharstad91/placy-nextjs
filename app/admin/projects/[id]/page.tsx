@@ -14,10 +14,14 @@ import type {
   DbProjectCategory,
   DbCustomer,
 } from "@/lib/supabase/types";
+import { requireAdmin } from "@/lib/admin/require-admin";
+
+export const metadata = {
+  title: "Prosjekt | Placy Admin",
+  robots: { index: false, follow: false },
+};
 
 export const dynamic = "force-dynamic";
-
-const adminEnabled = process.env.ADMIN_ENABLED === "true";
 
 function parseStringArray(json: string): string[] {
   const parsed: unknown = JSON.parse(json);
@@ -88,9 +92,7 @@ export default async function ProjectDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  if (!adminEnabled) {
-    redirect("/");
-  }
+  requireAdmin();
 
   // URL param is the short_id (7-character nanoid)
   const { id: shortId } = await params;

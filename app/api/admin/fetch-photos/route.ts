@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchAndCachePOIPhotos } from "@/lib/utils/fetch-poi-photos";
+import { requireAdminApi } from "@/lib/admin/require-admin";
 
 export async function POST(request: NextRequest) {
-  const adminEnabled = process.env.ADMIN_ENABLED === "true";
-  if (!adminEnabled) {
-    return NextResponse.json({ error: "Admin not enabled" }, { status: 403 });
-  }
+  const gate = requireAdminApi();
+  if (gate) return gate;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

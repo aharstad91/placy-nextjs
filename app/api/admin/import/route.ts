@@ -20,6 +20,7 @@ import {
   POIImportData,
 } from "@/lib/supabase/mutations";
 import { createServerClient } from "@/lib/supabase/client";
+import { requireAdminApi } from "@/lib/admin/require-admin";
 
 // Allowed Google Places categories
 const ALLOWED_CATEGORIES = [
@@ -320,9 +321,8 @@ async function addPOIsToProject(projectId: string, poiIds: string[]) {
 
 export async function POST(request: NextRequest) {
   // 1. Admin check
-  if (process.env.ADMIN_ENABLED !== "true") {
-    return NextResponse.json({ error: "Admin ikke aktivert" }, { status: 403 });
-  }
+  const gate = requireAdminApi();
+  if (gate) return gate;
 
   // 2. Validate request body with Zod
   let body: ImportRequest;

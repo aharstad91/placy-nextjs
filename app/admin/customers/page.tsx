@@ -3,8 +3,13 @@ import { Suspense } from "react";
 import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
 import { CustomersAdminClient } from "./customers-admin-client";
+import { requireAdmin } from "@/lib/admin/require-admin";
 
-const adminEnabled = process.env.ADMIN_ENABLED === "true";
+export const metadata = {
+  title: "Kunder | Placy Admin",
+  robots: { index: false, follow: false },
+};
+
 
 // Server Actions
 async function createCustomer(formData: FormData) {
@@ -110,9 +115,7 @@ async function deleteCustomer(formData: FormData) {
 }
 
 export default async function AdminCustomersPage() {
-  if (!adminEnabled) {
-    redirect("/");
-  }
+  requireAdmin();
 
   const supabase = createServerClient();
 

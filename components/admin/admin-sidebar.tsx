@@ -7,8 +7,6 @@ import {
   LayoutDashboard,
   Users,
   FolderOpen,
-  Globe,
-  Route,
   MapPin,
   Tag,
   Sparkles,
@@ -19,12 +17,13 @@ import {
 
 type NavLink = { href: string; label: string; icon: LucideIcon; exact?: boolean };
 
+// Keeper-settet (PRD 12 Unit 1 AC2). Droppet: Trips (dødt Guide-spor, slettes
+// i Unit 7) og «Offentlige sider» (/admin/public — siden LEVER men holdes ute
+// av minimal-nav; PRD 8 avgjør skjebnen).
 const NAV_ITEMS: NavLink[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/customers", label: "Kunder", icon: Users },
   { href: "/admin/projects", label: "Prosjekter", icon: FolderOpen },
-  { href: "/admin/public", label: "Offentlige sider", icon: Globe },
-  { href: "/admin/trips", label: "Trips", icon: Route },
   { href: "/admin/pois", label: "POI-er", icon: MapPin },
   { href: "/admin/categories", label: "Kategorier", icon: Tag },
   { href: "/admin/generate", label: "Generator", icon: Sparkles },

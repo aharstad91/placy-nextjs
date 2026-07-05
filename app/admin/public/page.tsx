@@ -12,10 +12,15 @@ import {
 import { createPublicClient } from "@/lib/supabase/public-client";
 import { CURATED_LISTS } from "@/lib/curated-lists";
 import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
+import { requireAdmin } from "@/lib/admin/require-admin";
+
+export const metadata = {
+  title: "Offentlige sider | Placy Admin",
+  robots: { index: false, follow: false },
+};
+
 
 export const dynamic = "force-dynamic";
-
-const adminEnabled = process.env.ADMIN_ENABLED === "true";
 
 // Known landing pages (hardcoded routes in app/(public)/)
 const LANDING_PAGES = [
@@ -54,9 +59,7 @@ interface GuideStats {
 }
 
 export default async function AdminPublicPage() {
-  if (!adminEnabled) {
-    redirect("/");
-  }
+  requireAdmin();
 
   const supabase = createPublicClient();
 

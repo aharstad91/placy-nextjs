@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/client";
+import { requireAdminApi } from "@/lib/admin/require-admin";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: NextRequest) {
-  if (process.env.ADMIN_ENABLED !== "true") {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  const gate = requireAdminApi();
+  if (gate) return gate;
 
   const supabase = createServerClient();
   if (!supabase) {

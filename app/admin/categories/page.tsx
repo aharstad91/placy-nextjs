@@ -3,8 +3,13 @@ import { Suspense } from "react";
 import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
 import { CategoriesAdminClient } from "./categories-admin-client";
+import { requireAdmin } from "@/lib/admin/require-admin";
 
-const adminEnabled = process.env.ADMIN_ENABLED === "true";
+export const metadata = {
+  title: "Kategorier | Placy Admin",
+  robots: { index: false, follow: false },
+};
+
 
 // Server Actions
 async function createCategory(formData: FormData) {
@@ -99,9 +104,7 @@ async function deleteCategory(formData: FormData) {
 }
 
 export default async function AdminCategoriesPage() {
-  if (!adminEnabled) {
-    redirect("/");
-  }
+  requireAdmin();
 
   const supabase = createServerClient();
 

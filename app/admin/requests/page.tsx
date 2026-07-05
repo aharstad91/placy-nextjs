@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/client";
 import RequestsAdminClient from "./requests-admin-client";
+import { requireAdmin } from "@/lib/admin/require-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function RequestsPage() {
-  if (process.env.ADMIN_ENABLED !== "true") {
-    redirect("/");
-  }
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {
@@ -30,5 +29,6 @@ export default async function RequestsPage() {
 }
 
 export const metadata = {
+  robots: { index: false, follow: false },
   title: "Requests | Admin",
 };

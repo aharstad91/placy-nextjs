@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/client";
 import { z } from "zod";
+import { requireAdminApi } from "@/lib/admin/require-admin";
 
 const NORWAY_BOUNDS = {
   minLat: 57.0,
@@ -24,9 +25,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (process.env.ADMIN_ENABLED !== "true") {
-    return NextResponse.json({ error: "Admin ikke aktivert" }, { status: 403 });
-  }
+  const gate = requireAdminApi();
+  if (gate) return gate;
 
   const { id: projectId } = await params;
 

@@ -7,8 +7,13 @@ import type { DbCustomer } from "@/lib/supabase/types";
 import * as fs from "fs";
 import * as path from "path";
 import { nanoid } from "nanoid";
+import { requireAdmin } from "@/lib/admin/require-admin";
 
-const adminEnabled = process.env.ADMIN_ENABLED === "true";
+export const metadata = {
+  title: "Prosjekter | Placy Admin",
+  robots: { index: false, follow: false },
+};
+
 
 // Scan JSON project files from data/projects/
 function getJSONProjects() {
@@ -237,9 +242,7 @@ async function deleteProject(formData: FormData) {
 }
 
 export default async function AdminProjectsPage() {
-  if (!adminEnabled) {
-    redirect("/");
-  }
+  requireAdmin();
 
   const supabase = createServerClient();
 

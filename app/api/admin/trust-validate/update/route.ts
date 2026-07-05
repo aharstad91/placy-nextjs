@@ -11,6 +11,7 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/client";
 import { ALL_TRUST_FLAGS } from "@/lib/utils/poi-trust";
 import { updatePOITrustScore } from "@/lib/supabase/mutations";
+import { requireAdminApi } from "@/lib/admin/require-admin";
 
 const UpdateSchema = z.object({
   poiId: z.string().min(1),
@@ -28,9 +29,8 @@ function checkBearerAuth(request: NextRequest): boolean {
 
 export async function POST(request: NextRequest) {
   // 1. Admin + bearer token check
-  if (process.env.ADMIN_ENABLED !== "true") {
-    return NextResponse.json({ error: "Admin ikke aktivert" }, { status: 403 });
-  }
+  const gate = requireAdminApi();
+  if (gate) return gate;
   if (!checkBearerAuth(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

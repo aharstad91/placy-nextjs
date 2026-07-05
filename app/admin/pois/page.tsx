@@ -4,13 +4,18 @@ import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
 import { POIAdminClient } from "./poi-admin-client";
 import type { DbCategory, DbPoi } from "@/lib/supabase/types";
+import { requireAdmin } from "@/lib/admin/require-admin";
+
+export const metadata = {
+  title: "POI-er | Placy Admin",
+  robots: { index: false, follow: false },
+};
+
 
 // Force dynamic rendering - admin pages need fresh data
 export const dynamic = "force-dynamic";
 
 // Auth check - redirect if admin not enabled
-const adminEnabled = process.env.ADMIN_ENABLED === "true";
-
 // Server Actions
 async function createPOI(formData: FormData) {
   "use server";
@@ -114,9 +119,7 @@ async function updatePOI(formData: FormData) {
 
 export default async function AdminPOIsPage() {
   // Redirect if admin not enabled
-  if (!adminEnabled) {
-    redirect("/");
-  }
+  requireAdmin();
 
   const supabase = createServerClient();
 

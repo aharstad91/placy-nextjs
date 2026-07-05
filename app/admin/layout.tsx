@@ -10,12 +10,11 @@ export default function AdminLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Ingen ekstern Mapbox-CSS (PRD 12 Unit 1 AC1): admin-skallet drar ikke
+  // Mapbox-2D inn — 3D-motoren er Google gmp-map-3d, og radius-kartet i
+  // Generator erstattes i Unit 4.
   return (
     <div className="min-h-screen bg-gray-50">
-      <link
-        href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css"
-        rel="stylesheet"
-      />
       <AdminSidebar
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}

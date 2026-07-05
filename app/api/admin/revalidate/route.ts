@@ -1,13 +1,13 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_CACHE_TAG } from "@/lib/supabase/public-client";
+import { requireAdminApi } from "@/lib/admin/require-admin";
 
 const MAX_PATHS = 20;
 
 export async function POST(request: NextRequest) {
-  if (process.env.ADMIN_ENABLED !== "true") {
-    return NextResponse.json({ error: "Admin ikke aktivert" }, { status: 403 });
-  }
+  const gate = requireAdminApi();
+  if (gate) return gate;
 
   let body: { paths?: unknown };
   try {

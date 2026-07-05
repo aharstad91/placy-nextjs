@@ -19,6 +19,7 @@ import {
 } from "@/lib/utils/poi-trust";
 import { updatePOITrustScore } from "@/lib/supabase/mutations";
 import type { POI } from "@/lib/types";
+import { requireAdminApi } from "@/lib/admin/require-admin";
 
 const MAX_POIS_PER_REQUEST = 100;
 
@@ -54,9 +55,8 @@ function checkBearerAuth(request: NextRequest): boolean {
 
 export async function POST(request: NextRequest) {
   // 1. Admin + bearer token check
-  if (process.env.ADMIN_ENABLED !== "true") {
-    return NextResponse.json({ error: "Admin ikke aktivert" }, { status: 403 });
-  }
+  const gate = requireAdminApi();
+  if (gate) return gate;
   if (!checkBearerAuth(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
