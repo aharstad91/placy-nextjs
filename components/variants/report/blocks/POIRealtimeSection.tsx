@@ -36,7 +36,19 @@ export function POIRealtimeSection({ realtimeData }: POIRealtimeSectionProps) {
     );
   }
 
-  if (!hasAny) return null;
+  // Delvis degradasjon (PRD 11 Unit 7 AC4): en kilde nede skal aldri velte
+  // blokken. Feilet ALT (error satt, ingen data), vis meldingen i stedet for
+  // null — ellers ser POI-en ut som om den mangler transport-kobling.
+  if (!hasAny) {
+    if (realtimeData.error) {
+      return (
+        <div className="bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100">
+          <p className="text-xs text-gray-400">{realtimeData.error}</p>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <div className="bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100 space-y-2">
@@ -85,6 +97,10 @@ export function POIRealtimeSection({ realtimeData }: POIRealtimeSectionProps) {
           <Car className="w-3 h-3 text-emerald-500" />
           <span>{realtimeData.hyre!.numVehiclesAvailable} biler ledige</span>
         </div>
+      )}
+
+      {realtimeData.error && (
+        <p className="text-xs text-gray-400">{realtimeData.error}</p>
       )}
     </div>
   );

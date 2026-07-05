@@ -165,6 +165,33 @@ describe("POIRealtimeSection", () => {
     });
   });
 
+  describe("delvis degradasjon (PRD 11 Unit 7 AC4)", () => {
+    it("én kilde nede: viser de andre + degradasjonsmelding", () => {
+      const data: RealtimeData = {
+        ...EMPTY,
+        bysykkel: BYSYKKEL_OPEN,
+        error: "Noe sanntidsdata er utilgjengelig",
+      };
+      const { getByText } = render(<POIRealtimeSection realtimeData={data} />);
+      expect(getByText("4 ledige sykler · 8 ledige låser")).not.toBeNull();
+      expect(getByText("Noe sanntidsdata er utilgjengelig")).not.toBeNull();
+    });
+
+    it("alle kilder nede: viser melding, ikke null (ikke total-svikt)", () => {
+      const data: RealtimeData = {
+        ...EMPTY,
+        error: "Noe sanntidsdata er utilgjengelig",
+      };
+      const { getByText } = render(<POIRealtimeSection realtimeData={data} />);
+      expect(getByText("Noe sanntidsdata er utilgjengelig")).not.toBeNull();
+    });
+
+    it("ingen kobling (ingen error): fortsatt null", () => {
+      const { container } = render(<POIRealtimeSection realtimeData={EMPTY} />);
+      expect(container.firstChild).toBeNull();
+    });
+  });
+
   describe("presentation purity (AC3 + AC6)", () => {
     it("renders no <img> elements", () => {
       const data: RealtimeData = {
