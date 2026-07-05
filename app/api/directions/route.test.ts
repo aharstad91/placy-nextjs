@@ -190,6 +190,44 @@ describe("directions GET — error-håndtering (AC1)", () => {
 // AC2 — Mapbox token-i-URL: offentlig token + aldri logg URL
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Rate-limit (bead 3uc) — 429 over grensen, andre IP-er upåvirket
+// ---------------------------------------------------------------------------
+
+describe("directions GET — per-IP rate-limit (3uc)", () => {
+  // NB: limiteren er modul-nivå og deler tilstand over hele testfila.
+  // Testene her bruker dedikerte IP-er så de ikke berører "unknown"-bøtta
+  // som resten av fila bruker (godt under 60 kall totalt).
+  const okBody = {
+    routes: [{ duration: 60, distance: 200, geometry: { type: "LineString", coordinates: [[0, 0], [1, 1]] } }],
+  };
+
+  function reqFrom(ip: string) {
+    return new NextRequest(
+      "http://localhost/api/directions?origin=0,0&destination=1,1",
+      { headers: { "x-forwarded-for": ip } },
+    );
+  }
+
+  it("returnerer 429 uten oppstrøms-kall når per-IP-grensen (60/min) er brukt opp", async () => {
+    stubFetchOk(okBody);
+    for (let i = 0; i < 60; i++) {
+      expect((await GET(reqFrom("198.51.100.10"))).status).toBe(200);
+    }
+    const res = await GET(reqFrom("198.51.100.10"));
+    expect(res.status).toBe(429);
+    // Oppstrøms Mapbox skal IKKE belastes for avviste kall.
+    expect(vi.mocked(global.fetch)).toHaveBeenCalledTimes(60);
+  });
+
+  it("struper ikke andre IP-er når én IP er over grensen", async () => {
+    stubFetchOk(okBody);
+    // 198.51.100.10 er allerede strupet fra forrige test (samme modul-instans).
+    expect((await GET(reqFrom("198.51.100.10"))).status).toBe(429);
+    expect((await GET(reqFrom("198.51.100.20"))).status).toBe(200);
+  });
+});
+
 describe("directions source-vakt — token-i-URL + aldri-logg-garanti (AC2)", () => {
   const src = readFileSync(
     join(process.cwd(), "app", "api", "directions", "route.ts"),

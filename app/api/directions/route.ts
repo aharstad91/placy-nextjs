@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 // Audit-fiks 2026-07-05: oppstrøms-API uten timeout holder rute-funksjonen
 // åpen ubestemt ved treg leverandør (connection-utsulting under last).
 const UPSTREAM_TIMEOUT_MS = 8000;
+
+// Audit-fiks 2026-07-05 (DECISIONS-QUEUE #2): uautentisert proxy mot betalt
+// Mapbox-API trenger per-IP-grense. 60/min er romslig for legitim board-bruk
+// (initial-load fyrer ~10-20 kall), men stopper kvote-tapping.
+const limiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
 
 
 // Mapbox Directions API proxy — eierskap: PRD 11 (data-lag); PRD 6 eier polyline-render.
@@ -14,6 +20,10 @@ const UPSTREAM_TIMEOUT_MS = 8000;
 // Mapbox-kontrollpanelet. Proxy-garantien: logg aldri full request-URL med token.
 
 export async function GET(request: NextRequest) {
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const origin = searchParams.get("origin");
   const destination = searchParams.get("destination");

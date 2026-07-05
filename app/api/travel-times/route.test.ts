@@ -328,3 +328,54 @@ describe("travel-times source-vakt — token-i-URL + aldri-logg-garanti (AC1)", 
     expect(src).toContain("INGEN live board-konsument");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Rate-limit (bead 3uc) — 429 over grensen, delt kvote POST+GET, andre IP-er OK
+// ---------------------------------------------------------------------------
+
+describe("travel-times — per-IP rate-limit (3uc)", () => {
+  // NB: limiteren er modul-nivå og deler tilstand over hele testfila.
+  // Testene her bruker dedikerte IP-er så de ikke berører "unknown"-bøtta
+  // som resten av fila bruker (godt under 60 kall totalt).
+  function postFrom(ip: string) {
+    return POST(
+      new NextRequest("http://localhost/api/travel-times", {
+        method: "POST",
+        headers: { "x-forwarded-for": ip },
+        body: JSON.stringify({
+          origin: { lat: 63.43, lng: 10.4 },
+          destinations: [{ lat: 63.44, lng: 10.41 }],
+        }),
+      }),
+    );
+  }
+
+  it("POST returnerer 429 uten oppstrøms-kall når per-IP-grensen (60/min) er brukt opp", async () => {
+    stubFetchOk(matrixOkBody());
+    for (let i = 0; i < 60; i++) {
+      expect((await postFrom("198.51.100.30")).status).toBe(200);
+    }
+    const res = await postFrom("198.51.100.30");
+    expect(res.status).toBe(429);
+    // Oppstrøms Mapbox skal IKKE belastes for avviste kall.
+    expect(vi.mocked(global.fetch)).toHaveBeenCalledTimes(60);
+  });
+
+  it("GET deler kvote med POST (samme rute, samme limiter-instans)", async () => {
+    stubFetchOk(matrixOkBody());
+    // 198.51.100.30 er strupet via POST i forrige test (samme modul-instans).
+    const res = await GET(
+      new NextRequest(
+        "http://localhost/api/travel-times?origin=63.43,10.4&destinations=63.44,10.41",
+        { headers: { "x-forwarded-for": "198.51.100.30" } },
+      ),
+    );
+    expect(res.status).toBe(429);
+    expect(vi.mocked(global.fetch)).not.toHaveBeenCalled();
+  });
+
+  it("struper ikke andre IP-er når én IP er over grensen", async () => {
+    stubFetchOk(matrixOkBody());
+    expect((await postFrom("198.51.100.40")).status).toBe(200);
+  });
+});

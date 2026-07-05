@@ -2,30 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
 import { calculateDistance } from "@/lib/utils/geo";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 
 export const maxDuration = 30;
 
-// --- Rate limiting ---
-const rateLimit = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 5;
-const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimit.get(ip);
-
-  if (!entry || now >= entry.resetAt) {
-    rateLimit.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return true;
-  }
-
-  if (entry.count >= RATE_LIMIT) {
-    return false;
-  }
-
-  entry.count++;
-  return true;
-}
+// --- Rate limiting: 5 genereringer per IP per time (LLM-kall koster) ---
+const limiter = createRateLimiter({ limit: 5, windowMs: 60 * 60 * 1000 });
 
 // --- Input validation ---
 const TekstRequestSchema = z.object({
@@ -151,8 +133,7 @@ Bruk norsk bokmål. Skriv i tredjeperson (ikke "du").`;
 
 export async function POST(request: NextRequest) {
   // Rate limiting
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (!checkRateLimit(ip)) {
+  if (!limiter.check(getClientIp(request.headers))) {
     return NextResponse.json(
       { error: "For mange forespørsler. Prøv igjen om en time." },
       { status: 429 }
