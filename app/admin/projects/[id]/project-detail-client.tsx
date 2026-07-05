@@ -90,8 +90,17 @@ interface ProjectDetailClientProps {
   updateProjectTripOverride: (formData: FormData) => Promise<void>;
   updateProjectTags: (formData: FormData) => Promise<void>;
   updateProjectHas3dAddon: (formData: FormData) => Promise<void>;
+  setProjectReportTier: (formData: FormData) => Promise<ReportTierActionResult>;
   updateDefaultProduct: (formData: FormData) => Promise<void>;
   deleteProduct: (formData: FormData) => Promise<void>;
+}
+
+/** Resultat fra tier-setteren: ny deklarasjon + readiness-forhåndsvisning
+ *  (PRD 12 Unit 3 AC2) — funn er informasjon, aldri render-gating. */
+export interface ReportTierActionResult {
+  reportTier?: 1 | 2;
+  findings: { level: "error" | "warning"; check: string; detail: string }[];
+  error?: string;
 }
 
 export function ProjectDetailClient({
@@ -118,6 +127,7 @@ export function ProjectDetailClient({
   updateProjectTripOverride,
   updateProjectTags,
   updateProjectHas3dAddon,
+  setProjectReportTier,
   updateDefaultProduct,
   deleteProduct,
 }: ProjectDetailClientProps) {
@@ -169,6 +179,7 @@ export function ProjectDetailClient({
                 updateProject={updateProject}
                 updateProjectTags={updateProjectTags}
                 updateProjectHas3dAddon={updateProjectHas3dAddon}
+                setProjectReportTier={setProjectReportTier}
               />
               <DiscoveryCirclesEditor
                 projectId={project.id}
@@ -245,9 +256,10 @@ interface DetailsTabProps {
   updateProject: (formData: FormData) => Promise<void>;
   updateProjectTags: (formData: FormData) => Promise<void>;
   updateProjectHas3dAddon: (formData: FormData) => Promise<void>;
+  setProjectReportTier: (formData: FormData) => Promise<ReportTierActionResult>;
 }
 
-function DetailsTab({ project, customers, updateProject, updateProjectTags, updateProjectHas3dAddon }: DetailsTabProps) {
+function DetailsTab({ project, customers, updateProject, updateProjectTags, updateProjectHas3dAddon, setProjectReportTier }: DetailsTabProps) {
   const [customerId, setCustomerId] = useState(project.customer_id || "");
   const [name, setName] = useState(project.name);
   const [urlSlug, setUrlSlug] = useState(project.url_slug);
@@ -444,6 +456,124 @@ function DetailsTab({ project, customers, updateProject, updateProjectTags, upda
           </div>
         </label>
       </div>
+
+      <ReportTierSection project={project} setProjectReportTier={setProjectReportTier} />
+    </div>
+  );
+}
+
+/** Nivå-deklarasjon per report-produkt (PRD 12 Unit 3): read-modify-write av
+ *  products.config.reportConfig.reportTier via server-action, med readiness-
+ *  funn som forhåndsvisning. Deklarasjon+validering — ALDRI render-gating. */
+function ReportTierSection({
+  project,
+  setProjectReportTier,
+}: {
+  project: ProjectWithRelations;
+  setProjectReportTier: (formData: FormData) => Promise<ReportTierActionResult>;
+}) {
+  const reportProduct = (project.products || []).find(
+    (p) => p.product_type === "report"
+  );
+  const configTier = (() => {
+    const cfg = reportProduct?.config as
+      | { reportConfig?: { reportTier?: unknown } }
+      | null
+      | undefined;
+    const raw = cfg?.reportConfig?.reportTier;
+    return raw === 1 || raw === 2 ? raw : undefined;
+  })();
+
+  const [tier, setTier] = useState<1 | 2 | undefined>(configTier);
+  const [saving, setSaving] = useState(false);
+  const [tierError, setTierError] = useState<string | null>(null);
+  const [findings, setFindings] = useState<
+    ReportTierActionResult["findings"] | null
+  >(null);
+
+  if (!reportProduct) return null;
+
+  const applyTier = async (next: 1 | 2 | undefined) => {
+    setSaving(true);
+    setTierError(null);
+    setFindings(null);
+    try {
+      const formData = new FormData();
+      formData.set("productId", reportProduct.id);
+      formData.set("shortId", project.short_id);
+      formData.set("customerSlug", project.customer_id || "");
+      formData.set("projectSlug", project.url_slug);
+      formData.set("reportTier", next === undefined ? "" : String(next));
+      const result = await setProjectReportTier(formData);
+      if (result.error) {
+        setTierError(result.error);
+        return;
+      }
+      setTier(result.reportTier);
+      setFindings(result.findings);
+    } catch (err) {
+      setTierError(err instanceof Error ? err.message : "Kunne ikke sette nivå");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 pt-6 border-t border-gray-200">
+      <h3 className="text-sm font-semibold text-gray-900 mb-1">Rapport-nivå</h3>
+      <p className="text-xs text-gray-500 mb-3">
+        Deklarert leveransenivå (products.config). Validatoren sjekker dekning —
+        den gater aldri render.
+      </p>
+      <div className="flex items-center gap-2">
+        {([1, 2] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            disabled={saving}
+            onClick={() => applyTier(t)}
+            className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 ${
+              tier === t
+                ? "border-gray-900 bg-gray-50 ring-1 ring-gray-900 text-gray-900"
+                : "border-gray-200 text-gray-600 hover:border-gray-300"
+            }`}
+          >
+            Nivå {t}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={saving || tier === undefined}
+          onClick={() => applyTier(undefined)}
+          className="px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40"
+        >
+          Fjern deklarasjon (nivå 1-default)
+        </button>
+      </div>
+      {tierError && (
+        <p className="mt-2 text-xs text-red-600 bg-red-50 rounded px-3 py-2">{tierError}</p>
+      )}
+      {findings && findings.length > 0 && (
+        <ul className="mt-3 space-y-1">
+          {findings.map((f, i) => (
+            <li
+              key={i}
+              className={`text-xs rounded px-3 py-1.5 ${
+                f.level === "error"
+                  ? "bg-red-50 text-red-700"
+                  : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              [{f.check}] {f.detail}
+            </li>
+          ))}
+        </ul>
+      )}
+      {findings && findings.length === 0 && (
+        <p className="mt-3 text-xs text-emerald-700 bg-emerald-50 rounded px-3 py-1.5">
+          Readiness-sjekken er grønn for deklarert nivå.
+        </p>
+      )}
     </div>
   );
 }

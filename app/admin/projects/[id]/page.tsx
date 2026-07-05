@@ -15,6 +15,7 @@ import type {
   DbCustomer,
 } from "@/lib/supabase/types";
 import { requireAdmin } from "@/lib/admin/require-admin";
+import { setReportTier } from "@/lib/admin/set-report-tier";
 
 export const metadata = {
   title: "Prosjekt | Placy Admin",
@@ -84,6 +85,8 @@ export interface ProductWithPois {
   id: string;
   product_type: string;
   story_title: string | null;
+  /** JSONB — bl.a. reportConfig.reportTier (tier-setteren, Unit 3) */
+  config: unknown;
   product_pois: Array<{ poi_id: string }>;
 }
 
@@ -215,6 +218,7 @@ export default async function ProjectDetailPage({
       id,
       product_type,
       story_title,
+      config,
       product_pois (poi_id)
     `)
     .eq("project_id", projectId)
@@ -835,6 +839,32 @@ export default async function ProjectDetailPage({
     revalidatePath(`/admin/projects/${shortId}`);
   }
 
+  async function setProjectReportTier(formData: FormData) {
+    "use server";
+
+    const productId = getRequiredString(formData, "productId");
+    const shortId = getRequiredString(formData, "shortId");
+    const customerSlug = getOptionalString(formData, "customerSlug");
+    const projectSlug = getOptionalString(formData, "projectSlug");
+    const rawTier = formData.get("reportTier");
+    const reportTier =
+      rawTier === null || rawTier === "" ? undefined : Number(rawTier);
+
+    try {
+      const result = await setReportTier({ productId, reportTier });
+      revalidatePath(`/admin/projects/${shortId}`);
+      if (customerSlug && projectSlug) {
+        revalidatePath(`/eiendom/${customerSlug}/${projectSlug}/rapport-board`);
+      }
+      return { reportTier: result.reportTier, findings: result.findings };
+    } catch (err) {
+      return {
+        findings: [],
+        error: err instanceof Error ? err.message : "Kunne ikke sette nivå",
+      };
+    }
+  }
+
   return (
     <ProjectDetailClient
       project={projectWithRelations as ProjectWithRelations}
@@ -860,6 +890,7 @@ export default async function ProjectDetailPage({
       updateProjectTripOverride={updateProjectTripOverride}
       updateProjectTags={updateProjectTags}
       updateProjectHas3dAddon={updateProjectHas3dAddon}
+      setProjectReportTier={setProjectReportTier}
       updateDefaultProduct={updateDefaultProduct}
       deleteProduct={deleteProduct}
     />
