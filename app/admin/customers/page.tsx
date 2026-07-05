@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
@@ -37,6 +36,7 @@ async function createCustomer(formData: FormData) {
 
   // Check if slug already exists
   const { data: existing } = await supabase
+    .schema("v2")
     .from("customers")
     .select("id")
     .eq("id", id)
@@ -44,7 +44,7 @@ async function createCustomer(formData: FormData) {
 
   const finalId = existing ? `${id}-${crypto.randomUUID().slice(0, 8)}` : id;
 
-  const { error } = await supabase.from("customers").insert({
+  const { error } = await supabase.schema("v2").from("customers").insert({
     id: finalId,
     name,
   });
@@ -72,6 +72,7 @@ async function updateCustomer(formData: FormData) {
   }
 
   const { error } = await supabase
+    .schema("v2")
     .from("customers")
     .update({ name })
     .eq("id", id);
@@ -95,6 +96,7 @@ async function deleteCustomer(formData: FormData) {
 
   // Check if customer has projects
   const { count } = await supabase
+    .schema("v2")
     .from("projects")
     .select("*", { count: "exact", head: true })
     .eq("customer_id", id);
@@ -105,7 +107,7 @@ async function deleteCustomer(formData: FormData) {
     );
   }
 
-  const { error } = await supabase.from("customers").delete().eq("id", id);
+  const { error } = await supabase.schema("v2").from("customers").delete().eq("id", id);
 
   if (error) {
     throw new Error(`Kunne ikke slette kunde: ${error.message}`);
@@ -136,6 +138,7 @@ export default async function AdminCustomersPage() {
 
   // Fetch customers
   const { data: customers, error } = await supabase
+    .schema("v2")
     .from("customers")
     .select("*")
     .order("name");
@@ -152,9 +155,14 @@ export default async function AdminCustomersPage() {
   }
 
   // Get project counts per customer
-  const { data: projectCounts } = await supabase
+  const { data: projectCounts, error: countError } = await supabase
+    .schema("v2")
     .from("projects")
     .select("customer_id");
+
+  if (countError) {
+    console.error("Kunne ikke hente prosjekt-tellinger:", countError.message);
+  }
 
   const countMap: Record<string, number> = {};
   if (projectCounts) {

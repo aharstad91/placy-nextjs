@@ -1693,6 +1693,8 @@ export type Database = {
 };
 
 // Helper types for easier access
+export type TablesV2<T extends keyof Database["v2"]["Tables"]> =
+  Database["v2"]["Tables"][T]["Row"];
 export type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
 export type InsertTables<T extends keyof Database["public"]["Tables"]> =

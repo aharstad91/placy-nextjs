@@ -3,8 +3,13 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Map, { Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox";
+// Bundlet lokalt — admin-skallet drar ALDRI ekstern Mapbox-CSS (PRD 12 Unit 1 AC1)
+import "mapbox-gl/dist/mapbox-gl.css";
 import { MapPin, Trash2, Plus, Search, ChevronDown, X, Check, Loader2 } from "lucide-react";
-import type { DbCategory, DbPoi } from "@/lib/supabase/types";
+import type { TablesV2 } from "@/lib/supabase/types";
+
+type DbCategory = TablesV2<"categories">;
+type DbPoi = TablesV2<"pois">;
 import { AdminSecondaryNav, SecondaryNavTrigger } from "@/components/admin/admin-secondary-nav";
 import { MAP_STYLE_DEFAULT } from "@/lib/themes/map-styles";
 
@@ -397,7 +402,9 @@ export function POIAdminClient({
     setDescription(poi.description || "");
     setEditorialHook(poi.editorial_hook || "");
     setLocalInsight(poi.local_insight || "");
-    setStoryPriority(poi.story_priority || "");
+    setStoryPriority(
+      (poi.story_priority as "must_have" | "nice_to_have" | "filler" | null) || "",
+    );
     setShowMoreFields(!!(poi.description || poi.editorial_hook || poi.local_insight || poi.story_priority));
     setPanelState("editing");
     // Open secondary nav on mobile when editing

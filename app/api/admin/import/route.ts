@@ -142,6 +142,7 @@ async function fetchExistingPOIsInBoundingBox(bbox: BoundingBox) {
   if (!supabase) return [];
 
   const { data } = await supabase
+    .schema("v2")
     .from("pois")
     .select("id, google_place_id, entur_stopplace_id, bysykkel_station_id")
     .gte("lat", bbox.minLat)
@@ -279,6 +280,7 @@ async function addPOIsToProject(projectId: string, poiIds: string[]) {
 
   // Get existing links to avoid duplicates
   const { data: existingLinks } = await supabase
+    .schema("v2")
     .from("project_pois")
     .select("poi_id")
     .eq("project_id", projectId);
@@ -289,26 +291,30 @@ async function addPOIsToProject(projectId: string, poiIds: string[]) {
     .map((poiId) => ({ project_id: projectId, poi_id: poiId }));
 
   if (newLinks.length > 0) {
-    await supabase.from("project_pois").insert(newLinks);
+    await supabase.schema("v2").from("project_pois").insert(newLinks);
   }
 
   // Auto-add to all products in this project (Explorer, Report, Guide)
   const { data: products } = await supabase
+    .schema("v2")
     .from("products")
     .select("id")
     .eq("project_id", projectId);
 
   if (products && products.length > 0) {
     const productPoiRows = products.flatMap((product) =>
-      poiIds.map((poiId) => ({ product_id: product.id, poi_id: poiId }))
+      // v2-paritet-gap: featured er NOT NULL uten default (r03.3-mønsteret)
+      poiIds.map((poiId) => ({ product_id: product.id, poi_id: poiId, featured: false }))
     );
     await supabase
+      .schema("v2")
       .from("product_pois")
       .upsert(productPoiRows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
   }
 
   // Revalidate public pages so Explorer/Report show new POIs immediately
   const { data: project } = await supabase
+    .schema("v2")
     .from("projects")
     .select("customer_id, url_slug")
     .eq("id", projectId)
@@ -473,7 +479,7 @@ export async function POST(request: NextRequest) {
     // Ensure categories exist first (foreign key constraint)
     const uniqueCategories = getUniqueCategoriesFromPOIs(allDiscovered);
     if (uniqueCategories.length > 0) {
-      await upsertCategories(uniqueCategories);
+      await upsertCategories(uniqueCategories, { schema: "v2" });
     }
 
     // Convert to import format
@@ -484,7 +490,7 @@ export async function POST(request: NextRequest) {
 
     // Batch upsert POIs (preserves editorial content)
     if (poisToUpsert.length > 0) {
-      const result = await upsertPOIsWithEditorialPreservation(poisToUpsert);
+      const result = await upsertPOIsWithEditorialPreservation(poisToUpsert, { schema: "v2" });
       if (result.errors.length > 0) {
         errors.push(...result.errors);
       }

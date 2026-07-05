@@ -10,7 +10,9 @@ import {
   Tag,
   MapPin,
 } from "lucide-react";
-import type { DbCategory } from "@/lib/supabase/types";
+import type { TablesV2 } from "@/lib/supabase/types";
+
+type DbCategory = TablesV2<"categories">;
 import { ConfirmDialog, IconPicker, ColorPicker, ICON_MAP } from "@/components/admin";
 
 type CategoryWithCount = DbCategory & { poiCount: number };

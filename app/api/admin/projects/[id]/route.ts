@@ -55,6 +55,7 @@ export async function PATCH(
 
   // Cast needed: discovery_circles column added in migration 013 but Supabase types not regenerated
   const { error } = await supabase
+    .schema("v2")
     .from("projects")
     .update({ discovery_circles: parsed.data.discovery_circles } as Record<string, unknown>)
     .eq("id", projectId);
@@ -66,6 +67,7 @@ export async function PATCH(
   // Fetch short_id for revalidation path
   // Cast needed: short_id column added in migration but Supabase types not regenerated
   const { data: proj } = await supabase
+    .schema("v2")
     .from("projects")
     .select("short_id")
     .eq("id", projectId)

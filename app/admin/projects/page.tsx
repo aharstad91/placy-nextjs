@@ -91,6 +91,7 @@ async function createProject(formData: FormData) {
 
   // Check if url_slug is unique for this customer
   const { data: existing } = await supabase
+    .schema("v2")
     .from("projects")
     .select("id")
     .eq("customer_id", customerId)
@@ -104,7 +105,9 @@ async function createProject(formData: FormData) {
   // Create project container with generated short_id
   const containerId = `${customerId}_${urlSlug}`;
   const shortId = nanoid(7);
-  const { error: containerError } = await supabase.from("projects").insert({
+  // v2-paritet-gap: version/default_product er NOT NULL uten default — settes
+  // eksplisitt (samme mønster som create-report-project r03.5).
+  const { error: containerError } = await supabase.schema("v2").from("projects").insert({
     id: containerId,
     short_id: shortId,
     customer_id: customerId,
@@ -112,6 +115,8 @@ async function createProject(formData: FormData) {
     url_slug: urlSlug,
     center_lat: centerLat,
     center_lng: centerLng,
+    version: 1,
+    default_product: productType,
   });
 
   if (containerError) {
@@ -120,15 +125,17 @@ async function createProject(formData: FormData) {
 
   // Create first product
   const productId = crypto.randomUUID();
-  const { error: productError } = await supabase.from("products").insert({
+  const { error: productError } = await supabase.schema("v2").from("products").insert({
     id: productId,
     project_id: containerId,
     product_type: productType as "explorer" | "report" | "guide",
+    config: {},
+    version: 1,
   });
 
   if (productError) {
     // Rollback container
-    await supabase.from("projects").delete().eq("id", containerId);
+    await supabase.schema("v2").from("projects").delete().eq("id", containerId);
     throw new Error(`Kunne ikke opprette produkt: ${productError.message}`);
   }
 
@@ -163,7 +170,7 @@ async function deleteProject(formData: FormData) {
 
   if (deleteType === "product") {
     // Delete single product (CASCADE will handle product_pois, product_categories)
-    const { error } = await supabase.from("products").delete().eq("id", id);
+    const { error } = await supabase.schema("v2").from("products").delete().eq("id", id);
     if (error) {
       throw new Error(`Kunne ikke slette produkt: ${error.message}`);
     }
@@ -175,63 +182,11 @@ async function deleteProject(formData: FormData) {
     // - product_categories (CASCADE from products)
     // - project_pois (CASCADE)
 
-    // But we need to handle legacy tables manually (theme_stories, story_sections)
-    // Get all products for this container
-    const { data: products } = await supabase
-      .from("products")
-      .select("id")
-      .eq("project_id", id);
-
-    const productIds = (products || []).map((p) => p.id);
-
-    // Delete legacy story data for each product
-    for (const productId of productIds) {
-      // Get theme stories
-      const { data: themeStories } = await supabase
-        .from("theme_stories")
-        .select("id")
-        .eq("project_id", productId);
-
-      if (themeStories && themeStories.length > 0) {
-        const themeStoryIds = themeStories.map((ts) => ts.id);
-
-        const { data: themeSections } = await supabase
-          .from("theme_story_sections")
-          .select("id")
-          .in("theme_story_id", themeStoryIds);
-
-        if (themeSections && themeSections.length > 0) {
-          const themeSectionIds = themeSections.map((s) => s.id);
-          await supabase
-            .from("theme_section_pois")
-            .delete()
-            .in("section_id", themeSectionIds);
-        }
-
-        await supabase
-          .from("theme_story_sections")
-          .delete()
-          .in("theme_story_id", themeStoryIds);
-
-        await supabase.from("theme_stories").delete().eq("project_id", productId);
-      }
-
-      // Delete story sections
-      const { data: sections } = await supabase
-        .from("story_sections")
-        .select("id")
-        .eq("project_id", productId);
-
-      if (sections && sections.length > 0) {
-        const sectionIds = sections.map((s) => s.id);
-        await supabase.from("section_pois").delete().in("section_id", sectionIds);
-      }
-
-      await supabase.from("story_sections").delete().eq("project_id", productId);
-    }
-
+    // v2 har INGEN legacy story-tabeller (theme_stories/story_sections er
+    // droppet i baselinen) — CASCADE på projects tar products/product_pois/
+    // product_categories/project_pois.
     // Finally delete the project container (CASCADE handles the rest)
-    const { error } = await supabase.from("projects").delete().eq("id", id);
+    const { error } = await supabase.schema("v2").from("projects").delete().eq("id", id);
 
     if (error) {
       throw new Error(`Kunne ikke slette prosjekt: ${error.message}`);
@@ -261,17 +216,41 @@ export default async function AdminProjectsPage() {
     );
   }
 
-  // Fetch project containers with products
-  const { data: projectContainers, error: projectsError } = await supabase
+  // Fetch project containers + products i to queries (v2-typene bærer ikke
+  // relasjons-metadata for nested select) og grupper i JS.
+  const { data: projectRows, error: projectsError } = await supabase
+    .schema("v2")
     .from("projects")
-    .select(`
-      *,
-      products (*)
-    `)
+    .select("*")
     .order("created_at", { ascending: false });
+
+  const { data: productRows, error: productsError } = await supabase
+    .schema("v2")
+    .from("products")
+    .select("id, project_id, product_type, story_title");
+
+  if (productsError) {
+    console.error("Kunne ikke hente produkter:", productsError.message);
+  }
+
+  const productsByProject = new Map<
+    string,
+    Array<{ id: string; product_type: string; story_title: string | null }>
+  >();
+  for (const pr of productRows || []) {
+    const list = productsByProject.get(pr.project_id) ?? [];
+    list.push({ id: pr.id, product_type: pr.product_type, story_title: pr.story_title });
+    productsByProject.set(pr.project_id, list);
+  }
+
+  const projectContainers = (projectRows || []).map((row) => ({
+    ...row,
+    products: productsByProject.get(row.id) ?? [],
+  }));
 
   // Fetch customers for dropdown
   const { data: customers, error: customersError } = await supabase
+    .schema("v2")
     .from("customers")
     .select("id, name")
     .order("name");
@@ -302,8 +281,7 @@ export default async function AdminProjectsPage() {
     .filter((container) => container.customer_id !== null)
     .map((container) => ({
       id: container.id,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      short_id: (container as any).short_id as string | undefined,
+      short_id: container.short_id,
       name: container.name,
       customer_id: container.customer_id!,
       url_slug: container.url_slug,

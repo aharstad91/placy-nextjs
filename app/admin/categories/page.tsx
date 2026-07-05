@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
@@ -29,7 +28,7 @@ async function createCategory(formData: FormData) {
     throw new Error("Alle felt er påkrevd");
   }
 
-  const { error } = await supabase.from("categories").insert({
+  const { error } = await supabase.schema("v2").from("categories").insert({
     id,
     name,
     icon,
@@ -61,6 +60,7 @@ async function updateCategory(formData: FormData) {
   }
 
   const { error } = await supabase
+    .schema("v2")
     .from("categories")
     .update({ name, icon, color })
     .eq("id", id);
@@ -84,6 +84,7 @@ async function deleteCategory(formData: FormData) {
 
   // Check if category is used by any POIs
   const { count } = await supabase
+    .schema("v2")
     .from("pois")
     .select("*", { count: "exact", head: true })
     .eq("category_id", id);
@@ -94,7 +95,7 @@ async function deleteCategory(formData: FormData) {
     );
   }
 
-  const { error } = await supabase.from("categories").delete().eq("id", id);
+  const { error } = await supabase.schema("v2").from("categories").delete().eq("id", id);
 
   if (error) {
     throw new Error(`Kunne ikke slette kategori: ${error.message}`);
@@ -125,6 +126,7 @@ export default async function AdminCategoriesPage() {
 
   // Fetch categories with POI count using a subquery
   const { data: categories, error } = await supabase
+    .schema("v2")
     .from("categories")
     .select("*")
     .order("name");
@@ -141,9 +143,14 @@ export default async function AdminCategoriesPage() {
   }
 
   // Get POI counts per category
-  const { data: poiCounts } = await supabase
+  const { data: poiCounts, error: countError } = await supabase
+    .schema("v2")
     .from("pois")
     .select("category_id");
+
+  if (countError) {
+    console.error("Kunne ikke hente POI-tellinger:", countError.message);
+  }
 
   const countMap: Record<string, number> = {};
   if (poiCounts) {

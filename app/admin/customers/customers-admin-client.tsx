@@ -10,7 +10,9 @@ import {
   Users,
   FolderOpen,
 } from "lucide-react";
-import type { DbCustomer } from "@/lib/supabase/types";
+import type { TablesV2 } from "@/lib/supabase/types";
+
+type DbCustomer = TablesV2<"customers">;
 import { ConfirmDialog } from "@/components/admin";
 
 type CustomerWithCount = DbCustomer & { projectCount: number };

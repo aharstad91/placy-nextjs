@@ -1,9 +1,10 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
 import { POIAdminClient } from "./poi-admin-client";
-import type { DbCategory, DbPoi } from "@/lib/supabase/types";
+import type { TablesV2 } from "@/lib/supabase/types";
+
+type DbPoi = TablesV2<"pois">;
 import { requireAdmin } from "@/lib/admin/require-admin";
 
 export const metadata = {
@@ -36,7 +37,7 @@ async function createPOI(formData: FormData) {
   const localInsight = formData.get("localInsight") as string | null;
   const storyPriority = formData.get("storyPriority") as "must_have" | "nice_to_have" | "filler" | null;
 
-  const { error } = await supabase.from("pois").insert({
+  const { error } = await supabase.schema("v2").from("pois").insert({
     id,
     name,
     lat,
@@ -67,7 +68,7 @@ async function deletePOI(formData: FormData) {
 
   const id = formData.get("id") as string;
 
-  const { error } = await supabase.from("pois").delete().eq("id", id);
+  const { error } = await supabase.schema("v2").from("pois").delete().eq("id", id);
 
   if (error) {
     throw new Error(`Failed to delete POI: ${error.message}`);
@@ -96,6 +97,7 @@ async function updatePOI(formData: FormData) {
   const storyPriority = formData.get("storyPriority") as "must_have" | "nice_to_have" | "filler" | null;
 
   const { error } = await supabase
+    .schema("v2")
     .from("pois")
     .update({
       name,
@@ -144,6 +146,7 @@ export default async function AdminPOIsPage() {
 
   while (true) {
     const { data, error } = await supabase
+      .schema("v2")
       .from("pois")
       .select("*")
       .order("created_at", { ascending: false })
@@ -166,6 +169,7 @@ export default async function AdminPOIsPage() {
 
   // Fetch categories
   const { data: categories, error: categoriesError } = await supabase
+    .schema("v2")
     .from("categories")
     .select("*")
     .order("name");
