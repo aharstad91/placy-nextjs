@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-07-05→06 — Fable-direktebygg: 17 beads, PRD 11+15 komplett, HELE r12-admin-epicen levert + sikkerhetssveip
+
+**Kontekst:** Org-ens månedlige spend-limit drepte ralph-loopen (headless `claude -p` avvist: «You've hit your org's monthly spend limit») — Claude bygde videre DIREKTE i den interaktive sesjonen, samme bead-disiplin (bd ready → bygg mot AC → porter → close → commit).
+
+**Levert (17 beads):**
+- **PRD 15 KOMPLETT:** r15.6 (samlekart klassifisert ut-av-scope) + r15.7 (verifikasjons-runbook + LIVE nivå-2-verify i nystartet Chrome mot byggetrinn-4: kuratert editorial + branding + reels-override-audio med korrekt karaoke; `validate:tier` → 46 prosjekter, 0 under-levert).
+- **PRD 11 KOMPLETT:** r11.7 transport live-verifisert (entur/bysykkel/hyre-proxyer curlet live; 3D- og 2D-popup med ekte avganger i browser; 60s-poll uten remount; fast-switch AbortError; walk-rute). **Funn fikset:** degradasjonsmeldingen fantes i hook-state men ingen konsument rendret den — POIRealtimeSection viser den nå. Datagap dokumentert: ingen prosjekter har hyre-koblinger eller transport-highlights.
+- **r03.8 self-serve-konvergens:** én pipeline (provisionReportBoard), v2, pending→completed/failed-status-maskin, GET-polling uten PII, ÉN adaptiv generer-form (megler valgfri → intern-kunde), 4 døde filer slettet. **Avvik fra låst beslutning:** `unstable_after()` finnes ikke i Next 14.2 (kom i Next 15) — samme ratifiserte semantikk levert via ny `lib/utils/run-after-response.ts` (Vercel waitUntil-pickup / detached promise).
+- **HELE r12-ADMIN-EPICEN (7/7):** r12.1 delt `requireAdmin()`-gate (server-only; 16 keeper-flater konvertert, 0 inline ADMIN_ENABLED igjen, noindex overalt, Mapbox-CSS ut av admin) · r12.2 middleware-guard-valg dokumentert + legacy-301 pinnet med tester · r12.3 reportTier-setter (RMW mot v2-JSONB + readiness-preview) · r12.4 kanonisk provisjon-inngang (Generator → PRD 3-kjernen, fire-and-poll; Mapbox-radius-UI + story-writer-kall slettet) · r12.5 requests-flate på v2 + REELL retry (re-kjører pipelinen) · r12.6 fire liste-sider + import-API re-typet til v2 (droppede tabell-referanser slettet) · r12.7 død admin slettet (trips/stories/editorial/import-stub + /api/generate + /api/story-writer).
+- **Audit-beads:** 03t ESLint-hardening (runtime-LLM-import i app/ = error; no-img-element = error for levende kode) · rik metadata på 4 kundevendte pages · xqb instrumenterings-verify-script + runbook (prod-rund-tur grønn; **funn: v2.events 19→100 rader — Moat 2 samler ekte engasjement**) · whp test-beviskraft (PATCH-med-lås + revalidate-sekvens ekstrahert til delt modul med eksekverings-tester).
+- **Sikkerhetssveip (Andreas-bestilt «finn forbedringer»):** `npm audit fix` lukket 20 av 22 sårbarheter (transitive; package.json uendret). Gjenstår kun Next-16-krevende (breaking major — Andreas-beslutning) + bundlet postcss. Nosniff + Referrer-Policy-headers globalt (bevisst ingen frame-restriksjoner — boards embeddes).
+
+**Åpent/nytt:** placy-ralph-9ao (admin detalj-side v2-port — project_categories finnes ikke i v2, modellen flyttet til product_categories; til den er portet gir v2-liste→v1-detalj notFound for nye prosjekter). 2nj/aod venter Andreas-skjønn. Gates ved sesjonslutt: tsc 0, lint 0 err, 1587 tester, build OK. ~95 commits upushet (push-beslutning er Andreas').
+
 ## 2026-07-05 — Fable-full-audit av build-loopen (6 parallelle auditorer) + P0/P1-fiks samme sesjon
 
 **Hvorfor:** Opus 4.8-loopen la 74 commits (entry under); dette blir produksjonsmiljøet Placy selger på. Andreas ba om adversariell kvalitetssikring med Fable før loopen gjenopptas. 6 parallelle audit-agenter etterprøvde commit-påstandene (ikke stolte på dem): datamodell/RLS, Moat-2-instrumentering, provisjon/trust/admin, board-kjernen, transport/audio/grounding, testkvalitet+regelsveip. Read-only prod-verifikasjon via psql inkludert.
