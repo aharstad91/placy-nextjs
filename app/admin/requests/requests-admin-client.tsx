@@ -1,9 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import type { DbGenerationRequest } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 import { ExternalLink, RotateCcw, Loader2 } from "lucide-react";
+
+/** v2.generation_requests-rad (feltene flaten viser). housing_type bærer
+ *  PROFILEN (bolig|naering) etter r03.8 — family/young/senior-modellen er
+ *  død, men labels beholdes for evt. gamle rader. */
+export interface GenerationRequestRow {
+  id: string;
+  address: string;
+  email: string;
+  housing_type: string;
+  status: string;
+  address_slug: string;
+  result_url: string | null;
+  error_message: string | null;
+  created_at: string;
+}
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -13,13 +27,15 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 const HOUSING_LABELS: Record<string, string> = {
+  bolig: "Bolig",
+  naering: "Næring",
   family: "Familie",
   young: "Ung",
   senior: "Senior",
 };
 
 interface Props {
-  requests: DbGenerationRequest[];
+  requests: GenerationRequestRow[];
 }
 
 export default function RequestsAdminClient({ requests: initialRequests }: Props) {
