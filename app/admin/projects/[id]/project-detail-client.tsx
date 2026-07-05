@@ -31,17 +31,14 @@ import {
   ConfirmDialog,
   ICON_MAP,
 } from "@/components/admin";
-import type {
-  DbCategory,
-  DbProjectCategory,
-  DbCustomer,
-} from "@/lib/supabase/types";
+import type { DbCustomer, TablesV2 } from "@/lib/supabase/types";
+
+type DbCategory = TablesV2<"categories">;
 import type { ProjectWithRelations, ProductWithPois } from "./page";
 import { DiscoveryCirclesEditor } from "./discovery-circles-editor";
 import { ImportTab } from "./import-tab";
 
 // NOTE: "Kategorier"-fanen er skjult — prosjekt-kategorier brukes ikke i praksis.
-// Vurder å fjerne CategoriesTab og relatert kode helt hvis det forblir ubrukt.
 const TABS = [
   { id: "details", label: "Detaljer" },
   // { id: "categories", label: "Kategorier" },
@@ -69,9 +66,6 @@ interface ProjectDetailClientProps {
     categories: { id: string; name: string; color: string } | null;
   }>;
   updateProject: (formData: FormData) => Promise<void>;
-  createProjectCategory: (formData: FormData) => Promise<void>;
-  updateProjectCategory: (formData: FormData) => Promise<void>;
-  deleteProjectCategory: (formData: FormData) => Promise<void>;
   addPoiToProject: (formData: FormData) => Promise<void>;
   batchAddPoisToProject: (formData: FormData) => Promise<void>;
   removePoiFromProject: (formData: FormData) => Promise<void>;
@@ -101,9 +95,6 @@ export function ProjectDetailClient({
   globalCategories,
   allPois,
   updateProject,
-  createProjectCategory,
-  updateProjectCategory,
-  deleteProjectCategory,
   addPoiToProject,
   batchAddPoisToProject,
   removePoiFromProject,
@@ -177,7 +168,6 @@ export function ProjectDetailClient({
               />
             </div>
           )}
-          {/* NOTE: CategoriesTab skjult — prosjekt-kategorier brukes ikke. Fjern helt hvis det forblir ubrukt. */}
           {activeTab === "pois" && (
             <PoisTab
               project={project}
@@ -551,304 +541,6 @@ function ReportTierSection({
           Readiness-sjekken er grønn for deklarert nivå.
         </p>
       )}
-    </div>
-  );
-}
-
-// ============ CATEGORIES TAB ============
-
-interface CategoriesTabProps {
-  project: ProjectWithRelations;
-  createProjectCategory: (formData: FormData) => Promise<void>;
-  updateProjectCategory: (formData: FormData) => Promise<void>;
-  deleteProjectCategory: (formData: FormData) => Promise<void>;
-}
-
-function CategoriesTab({
-  project,
-  createProjectCategory,
-  updateProjectCategory,
-  deleteProjectCategory,
-}: CategoriesTabProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] =
-    useState<DbProjectCategory | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<DbProjectCategory | null>(
-    null
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Form state
-  const [categoryName, setCategoryName] = useState("");
-  const [categoryIcon, setCategoryIcon] = useState("MapPin");
-  const [categoryColor, setCategoryColor] = useState("#3b82f6");
-
-  // Count POIs per category
-  const poiCountByCategory = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const pp of project.project_pois) {
-      if (pp.project_category_id) {
-        counts[pp.project_category_id] =
-          (counts[pp.project_category_id] || 0) + 1;
-      }
-    }
-    return counts;
-  }, [project.project_pois]);
-
-  const openCreateModal = () => {
-    setEditingCategory(null);
-    setCategoryName("");
-    setCategoryIcon("MapPin");
-    setCategoryColor("#3b82f6");
-    setError(null);
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (category: DbProjectCategory) => {
-    setEditingCategory(category);
-    setCategoryName(category.name);
-    setCategoryIcon(category.icon);
-    setCategoryColor(category.color);
-    setError(null);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingCategory(null);
-    setError(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      formData.set("projectId", project.id);
-      formData.set("shortId", project.short_id);
-      formData.set("name", categoryName);
-      formData.set("icon", categoryIcon);
-      formData.set("color", categoryColor);
-
-      if (editingCategory) {
-        formData.set("id", editingCategory.id);
-        await updateProjectCategory(formData);
-      } else {
-        await createProjectCategory(formData);
-      }
-
-      closeModal();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Noe gikk galt");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setIsSubmitting(true);
-
-    try {
-      const formData = new FormData();
-      formData.set("id", deleteTarget.id);
-      formData.set("shortId", project.short_id);
-      await deleteProjectCategory(formData);
-      setDeleteTarget(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Kunne ikke slette");
-      setDeleteTarget(null);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const projectCategories = project.project_categories || [];
-
-  if (projectCategories.length === 0 && !isModalOpen) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-        <Tag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          Ingen prosjekt-kategorier
-        </h3>
-        <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-          Opprett en kategori for å tilpasse kategoriseringen av POI-er i dette
-          prosjektet.
-        </p>
-        <button
-          onClick={openCreateModal}
-          className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 flex items-center gap-2 text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all mx-auto"
-        >
-          <Plus className="w-4 h-4" /> Ny kategori
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      {error && !isModalOpen && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-gray-500">
-          {projectCategories.length} kategori
-          {projectCategories.length !== 1 && "er"}
-        </p>
-        <button
-          onClick={openCreateModal}
-          className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 flex items-center gap-2 text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all"
-        >
-          <Plus className="w-4 h-4" /> Ny kategori
-        </button>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {projectCategories.map((cat) => {
-          const IconComponent = ICON_MAP[cat.icon] || MapPin;
-          const poiCount = poiCountByCategory[cat.id] || 0;
-
-          return (
-            <div
-              key={cat.id}
-              className="flex items-center gap-4 p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
-            >
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: cat.color }}
-              >
-                <IconComponent className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">{cat.name}</div>
-                <div className="text-sm text-gray-500">
-                  {poiCount} POI-er bruker denne kategorien
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => openEditModal(cat)}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Rediger"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setDeleteTarget(cat)}
-                  disabled={poiCount > 0}
-                  className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  title={
-                    poiCount > 0
-                      ? "Kan ikke slette - kategorien er i bruk"
-                      : "Slett"
-                  }
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Create/Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {editingCategory ? "Rediger kategori" : "Ny kategori"}
-              </h2>
-              <button
-                onClick={closeModal}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-gray-600">
-                  Navn *
-                </label>
-                <input
-                  type="text"
-                  value={categoryName}
-                  onChange={(e) => setCategoryName(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all"
-                  placeholder="F.eks. Sentrum Øst"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-gray-600">
-                  Ikon
-                </label>
-                <IconPicker value={categoryIcon} onChange={setCategoryIcon} />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-gray-600">
-                  Farge
-                </label>
-                <ColorPicker value={categoryColor} onChange={setCategoryColor} />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-                >
-                  Avbryt
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Lagrer...
-                    </>
-                  ) : editingCategory ? (
-                    "Oppdater"
-                  ) : (
-                    "Opprett"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation */}
-      <ConfirmDialog
-        isOpen={!!deleteTarget}
-        title="Slett kategori"
-        message={`Er du sikker på at du vil slette kategorien "${deleteTarget?.name}"?`}
-        confirmLabel="Slett"
-        variant="danger"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
     </div>
   );
 }

@@ -8,11 +8,9 @@ import {
   getOptionalNumber,
   getRequiredNumber,
 } from "@/lib/utils/form-data";
-import type {
-  DbCategory,
-  DbProjectCategory,
-  DbCustomer,
-} from "@/lib/supabase/types";
+import type { DbCustomer, TablesV2 } from "@/lib/supabase/types";
+
+type DbCategory = TablesV2<"categories">;
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { setReportTier } from "@/lib/admin/set-report-tier";
 
@@ -63,10 +61,8 @@ export interface ProjectWithRelations {
   has_3d_addon: boolean;
   customers: Pick<DbCustomer, "id" | "name"> | null;
   discovery_circles: Array<{ lat: number; lng: number; radiusMeters: number }> | null;
-  project_categories: DbProjectCategory[];
   project_pois: Array<{
     poi_id: string;
-    project_category_id: string | null;
     pois: {
       id: string;
       name: string;
@@ -112,6 +108,7 @@ export default async function ProjectDetailPage({
 
   // First try by short_id (new format)
   const { data: projectByShortId, error: shortIdError } = await supabase
+    .schema("v2")
     .from("projects")
     .select(
       `
@@ -139,6 +136,7 @@ export default async function ProjectDetailPage({
   } else {
     // Fall back to lookup by full id (backward compatibility)
     const { data: projectById, error: idError } = await supabase
+      .schema("v2")
       .from("projects")
       .select(
         `
@@ -174,80 +172,123 @@ export default async function ProjectDetailPage({
   // Use the full project.id for subsequent queries
   const projectId = project.id;
 
-  // Try to fetch project_categories (may not exist if migration not run)
-  let projectCategories: DbProjectCategory[] = [];
-  const { data: categories } = await supabase
-    .from("project_categories")
-    .select("*")
+  // project_pois + pois + kategorier i splittede queries (v2-typene bærer
+  // ikke relasjons-metadata for nested select; v2.project_pois har ingen
+  // project_category_id — den modellen er død).
+  const { data: projectPoiLinks, error: linksError } = await supabase
+    .schema("v2")
+    .from("project_pois")
+    .select("poi_id")
     .eq("project_id", projectId);
-  if (categories) {
-    projectCategories = categories;
+  if (linksError) {
+    console.error("Kunne ikke hente project_pois:", linksError.message);
   }
 
-  // Fetch project_pois with nested data
-  // Note: project_category_id only exists after migration 005 is applied
-  const { data: projectPoisData } = await supabase
-    .from("project_pois")
-    .select(
-      `
-      poi_id,
-      pois (
-        id,
-        name,
-        lat,
-        lng,
-        category_id,
-        google_rating,
-        categories (*)
-      )
-    `
-    )
-    .eq("project_id", projectId);
+  const linkedPoiIds = (projectPoiLinks || []).map((l) => l.poi_id);
+  const { data: linkedPois, error: linkedPoisError } = linkedPoiIds.length
+    ? await supabase
+        .schema("v2")
+        .from("pois")
+        .select("id, name, lat, lng, category_id, google_rating")
+        .in("id", linkedPoiIds)
+    : { data: [], error: null };
+  if (linkedPoisError) {
+    console.error("Kunne ikke hente POI-er:", linkedPoisError.message);
+  }
 
-  // Add project_category_id as null for each POI (until migration is applied)
-  const projectPoisWithCategory = (projectPoisData || []).map((pp) => ({
-    ...pp,
-    project_category_id: null,
+  const { data: allCategories, error: allCatError } = await supabase
+    .schema("v2")
+    .from("categories")
+    .select("*");
+  if (allCatError) {
+    console.error("Kunne ikke hente kategorier:", allCatError.message);
+  }
+  const categoryById = new Map((allCategories || []).map((c) => [c.id, c]));
+
+  const projectPoisWithCategory = (linkedPois || []).map((poi) => ({
+    poi_id: poi.id,
+    pois: {
+      id: poi.id,
+      name: poi.name,
+      lat: Number(poi.lat),
+      lng: Number(poi.lng),
+      category_id: poi.category_id,
+      google_rating: poi.google_rating === null ? null : Number(poi.google_rating),
+      categories: poi.category_id ? (categoryById.get(poi.category_id) ?? null) : null,
+    },
   }));
 
-  // Fetch products with their selected POIs
-  const { data: productsData } = await supabase
+  // Fetch products + product_pois i splittede queries (v2)
+  const { data: productRows, error: productsError } = await supabase
+    .schema("v2")
     .from("products")
-    .select(`
-      id,
-      product_type,
-      story_title,
-      config,
-      product_pois (poi_id)
-    `)
+    .select("id, product_type, story_title, config")
     .eq("project_id", projectId)
     .order("product_type");
+  if (productsError) {
+    console.error("Kunne ikke hente produkter:", productsError.message);
+  }
+
+  const productIds = (productRows || []).map((pr) => pr.id);
+  const { data: productPoiRows, error: ppError } = productIds.length
+    ? await supabase
+        .schema("v2")
+        .from("product_pois")
+        .select("product_id, poi_id")
+        .in("product_id", productIds)
+    : { data: [], error: null };
+  if (ppError) {
+    console.error("Kunne ikke hente product_pois:", ppError.message);
+  }
+
+  const poisByProduct = new Map<string, Array<{ poi_id: string }>>();
+  for (const rowPp of productPoiRows || []) {
+    const list = poisByProduct.get(rowPp.product_id) ?? [];
+    list.push({ poi_id: rowPp.poi_id });
+    poisByProduct.set(rowPp.product_id, list);
+  }
+
+  const productsData = (productRows || []).map((pr) => ({
+    ...pr,
+    product_pois: poisByProduct.get(pr.id) ?? [],
+  }));
 
   // Combine into the expected structure
   const projectWithRelations = {
     ...project,
-    project_categories: projectCategories,
     project_pois: projectPoisWithCategory,
-    products: (productsData || []) as ProductWithPois[],
+    products: productsData as ProductWithPois[],
   };
 
   // Fetch all customers for dropdown
   const { data: customers } = await supabase
+    .schema("v2")
     .from("customers")
     .select("id, name")
     .order("name");
 
-  // Fetch all global categories for dropdown
-  const { data: globalCategories } = await supabase
-    .from("categories")
-    .select("*")
+  // Global kategorier til dropdown — gjenbruker allCategories-fetchen over
+  const globalCategories = [...(allCategories || [])].sort((a, b) =>
+    a.name.localeCompare(b.name, "nb")
+  );
+
+  // Fetch all POIs for "Add POI" modal — kategori-info komponeres fra
+  // categoryById (v2-typene mangler relasjons-metadata for nested select)
+  const { data: allPoiRows } = await supabase
+    .schema("v2")
+    .from("pois")
+    .select("id, name, category_id")
     .order("name");
 
-  // Fetch all POIs for "Add POI" modal (with category for grouping)
-  const { data: allPois } = await supabase
-    .from("pois")
-    .select("id, name, category_id, categories(id, name, color)")
-    .order("name");
+  const allPois = (allPoiRows || []).map((poi) => {
+    const cat = poi.category_id ? categoryById.get(poi.category_id) : undefined;
+    return {
+      id: poi.id,
+      name: poi.name,
+      category_id: poi.category_id,
+      categories: cat ? { id: cat.id, name: cat.name, color: cat.color } : null,
+    };
+  });
 
   // Get project city for geo-suggestions
   // Find customer city from existing data or project coords
@@ -270,9 +311,10 @@ export default async function ProjectDetailPage({
     if (!supabase) throw new Error("Database not configured");
 
     const { error } = await supabase
+      .schema("v2")
       .from("projects")
       .update({
-        customer_id: customerId,
+        customer_id: customerId ?? undefined,
         name,
         url_slug: urlSlug,
         center_lat: centerLat,
@@ -285,115 +327,6 @@ export default async function ProjectDetailPage({
     revalidatePath("/admin/projects");
   }
 
-  async function createProjectCategory(formData: FormData) {
-    "use server";
-
-    const projectId = getRequiredString(formData, "projectId");
-    const shortId = getRequiredString(formData, "shortId");
-    const name = getRequiredString(formData, "name");
-    const icon = getRequiredString(formData, "icon");
-    const color = getRequiredString(formData, "color");
-
-    const supabase = createServerClient();
-    if (!supabase) throw new Error("Database not configured");
-
-    const { error } = await supabase.from("project_categories").insert({
-      project_id: projectId,
-      name,
-      icon,
-      color,
-    });
-
-    if (error) {
-      if (error.code === "23505") {
-        throw new Error(
-          "En kategori med dette navnet finnes allerede i prosjektet."
-        );
-      }
-      throw new Error(error.message);
-    }
-
-    revalidatePath(`/admin/projects/${shortId}`);
-  }
-
-  async function updateProjectCategory(formData: FormData) {
-    "use server";
-
-    const id = getRequiredString(formData, "id");
-    const shortId = getRequiredString(formData, "shortId");
-    const name = getRequiredString(formData, "name");
-    const icon = getRequiredString(formData, "icon");
-    const color = getRequiredString(formData, "color");
-
-    const supabase = createServerClient();
-    if (!supabase) throw new Error("Database not configured");
-
-    const { error } = await supabase
-      .from("project_categories")
-      .update({ name, icon, color })
-      .eq("id", id);
-
-    if (error) {
-      if (error.code === "23505") {
-        throw new Error(
-          "En kategori med dette navnet finnes allerede i prosjektet."
-        );
-      }
-      throw new Error(error.message);
-    }
-
-    revalidatePath(`/admin/projects/${shortId}`);
-  }
-
-  async function deleteProjectCategory(formData: FormData) {
-    "use server";
-
-    const id = getRequiredString(formData, "id");
-    const shortId = getRequiredString(formData, "shortId");
-
-    const supabase = createServerClient();
-    if (!supabase) throw new Error("Database not configured");
-
-    // Check if any POIs use this category
-    const { count } = await supabase
-      .from("project_pois")
-      .select("*", { count: "exact", head: true })
-      .eq("project_category_id", id);
-
-    if (count && count > 0) {
-      throw new Error(`Kan ikke slette. Kategorien brukes av ${count} POI-er.`);
-    }
-
-    const { error } = await supabase
-      .from("project_categories")
-      .delete()
-      .eq("id", id);
-
-    if (error) throw new Error(error.message);
-    revalidatePath(`/admin/projects/${shortId}`);
-  }
-
-  async function updateProjectPoiCategory(formData: FormData) {
-    "use server";
-
-    const projectId = getRequiredString(formData, "projectId");
-    const shortId = getRequiredString(formData, "shortId");
-    const poiId = getRequiredString(formData, "poiId");
-    const projectCategoryId = getOptionalString(formData, "projectCategoryId");
-
-    const supabase = createServerClient();
-    if (!supabase) throw new Error("Database not configured");
-
-    const { error } = await supabase
-      .from("project_pois")
-      .update({ project_category_id: projectCategoryId })
-      .eq("project_id", projectId)
-      .eq("poi_id", poiId);
-
-    if (error) throw new Error(error.message);
-    revalidatePath(`/admin/projects/${shortId}`);
-  }
-
   async function addPoiToProject(formData: FormData) {
     "use server";
 
@@ -404,7 +337,7 @@ export default async function ProjectDetailPage({
     const supabase = createServerClient();
     if (!supabase) throw new Error("Database not configured");
 
-    const { error } = await supabase.from("project_pois").insert({
+    const { error } = await supabase.schema("v2").from("project_pois").insert({
       project_id: projectId,
       poi_id: poiId,
     });
@@ -418,13 +351,15 @@ export default async function ProjectDetailPage({
 
     // Auto-add to all products in this project
     const { data: products } = await supabase
+      .schema("v2")
       .from("products")
       .select("id")
       .eq("project_id", projectId);
 
     if (products && products.length > 0) {
-      const rows = products.map((p) => ({ product_id: p.id, poi_id: poiId }));
+      const rows = products.map((p) => ({ product_id: p.id, poi_id: poiId, featured: false }));
       await supabase
+        .schema("v2")
         .from("product_pois")
         .upsert(rows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
     }
@@ -450,6 +385,7 @@ export default async function ProjectDetailPage({
     }));
 
     const { error } = await supabase
+      .schema("v2")
       .from("project_pois")
       .upsert(rows, { onConflict: "project_id,poi_id", ignoreDuplicates: true });
 
@@ -457,15 +393,17 @@ export default async function ProjectDetailPage({
 
     // Auto-add to all products in this project
     const { data: products } = await supabase
+      .schema("v2")
       .from("products")
       .select("id")
       .eq("project_id", projectId);
 
     if (products && products.length > 0) {
       const productPoiRows = products.flatMap((product) =>
-        poiIds.map((poiId) => ({ product_id: product.id, poi_id: poiId }))
+        poiIds.map((poiId) => ({ product_id: product.id, poi_id: poiId, featured: false }))
       );
       await supabase
+        .schema("v2")
         .from("product_pois")
         .upsert(productPoiRows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
     }
@@ -487,12 +425,14 @@ export default async function ProjectDetailPage({
 
     // Also remove from all products in this project (cascade cleanup)
     const { data: products } = await supabase
+      .schema("v2")
       .from("products")
       .select("id")
       .eq("project_id", projectId);
 
     if (products && products.length > 0) {
       await supabase
+        .schema("v2")
         .from("product_pois")
         .delete()
         .in("product_id", products.map((p) => p.id))
@@ -500,6 +440,7 @@ export default async function ProjectDetailPage({
     }
 
     const { error } = await supabase
+      .schema("v2")
       .from("project_pois")
       .delete()
       .eq("project_id", projectId)
@@ -524,9 +465,10 @@ export default async function ProjectDetailPage({
     const supabase = createServerClient();
     if (!supabase) throw new Error("Database not configured");
 
-    const { error } = await supabase.from("product_pois").insert({
+    const { error } = await supabase.schema("v2").from("product_pois").insert({
       product_id: productId,
       poi_id: poiId,
+      featured: false,
     });
 
     if (error) {
@@ -558,12 +500,10 @@ export default async function ProjectDetailPage({
     if (!supabase) throw new Error("Database not configured");
 
     // Batch insert - Supabase handles duplicates with upsert
-    const rows = poiIds.map((poiId) => ({
-      product_id: productId,
-      poi_id: poiId,
-    }));
+    const rows = poiIds.map((poiId) => ({ product_id: productId, poi_id: poiId, featured: false }));
 
     const { error } = await supabase
+      .schema("v2")
       .from("product_pois")
       .upsert(rows, { onConflict: "product_id,poi_id", ignoreDuplicates: true });
 
@@ -591,6 +531,7 @@ export default async function ProjectDetailPage({
 
     // Batch delete
     const { error } = await supabase
+      .schema("v2")
       .from("product_pois")
       .delete()
       .eq("product_id", productId)
@@ -616,6 +557,7 @@ export default async function ProjectDetailPage({
     if (!supabase) throw new Error("Database not configured");
 
     const { error } = await supabase
+      .schema("v2")
       .from("product_pois")
       .delete()
       .eq("product_id", productId)
@@ -643,6 +585,7 @@ export default async function ProjectDetailPage({
 
     // Check if this product type already exists for the project
     const { data: existing } = await supabase
+      .schema("v2")
       .from("products")
       .select("id")
       .eq("project_id", projectId)
@@ -654,10 +597,12 @@ export default async function ProjectDetailPage({
     }
 
     const newProductId = crypto.randomUUID();
-    const { error } = await supabase.from("products").insert({
+    const { error } = await supabase.schema("v2").from("products").insert({
       id: newProductId,
       project_id: projectId,
       product_type: productType,
+      config: {},
+      version: 1,
     });
 
     if (error) throw new Error(error.message);
@@ -675,10 +620,10 @@ export default async function ProjectDetailPage({
     if (!supabase) throw new Error("Database not configured");
 
     // Delete POI links first, then the product
-    await supabase.from("product_pois").delete().eq("product_id", productId);
-    await supabase.from("product_categories").delete().eq("product_id", productId);
+    await supabase.schema("v2").from("product_pois").delete().eq("product_id", productId);
+    await supabase.schema("v2").from("product_categories").delete().eq("product_id", productId);
 
-    const { error } = await supabase.from("products").delete().eq("id", productId);
+    const { error } = await supabase.schema("v2").from("products").delete().eq("id", productId);
     if (error) throw new Error(error.message);
 
     revalidatePath(`/admin/projects/${shortId}`);
@@ -696,6 +641,7 @@ export default async function ProjectDetailPage({
     if (!supabase) throw new Error("Database not configured");
 
     const { error } = await supabase
+      .schema("v2")
       .from("projects")
       .update({ default_product: defaultProduct } as Record<string, unknown>)
       .eq("id", id);
@@ -716,6 +662,7 @@ export default async function ProjectDetailPage({
     if (!supabase) throw new Error("Database not configured");
 
     const { error } = await supabase
+      .schema("v2")
       .from("projects")
       .update({ tags })
       .eq("id", id);
@@ -736,6 +683,7 @@ export default async function ProjectDetailPage({
     if (!supabase) throw new Error("Database not configured");
 
     const { error } = await supabase
+      .schema("v2")
       .from("projects")
       .update({ has_3d_addon: enabled } as Record<string, unknown>)
       .eq("id", id);
@@ -777,9 +725,6 @@ export default async function ProjectDetailPage({
       globalCategories={globalCategories || []}
       allPois={allPois || []}
       updateProject={updateProject}
-      createProjectCategory={createProjectCategory}
-      updateProjectCategory={updateProjectCategory}
-      deleteProjectCategory={deleteProjectCategory}
       addPoiToProject={addPoiToProject}
       batchAddPoisToProject={batchAddPoisToProject}
       removePoiFromProject={removePoiFromProject}
