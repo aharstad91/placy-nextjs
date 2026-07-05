@@ -31,6 +31,20 @@ const nextConfig = {
       },
     ],
   },
+  // Trygge security-headers (audit-sveip 2026-07-06). BEVISST ingen
+  // X-Frame-Options/frame-ancestors: boards embeddes i kunde-iframes
+  // (embed-modus er en produktflate). CSP deferred til cutover-herding.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
   // Redirects for gamle demo-URL-er som nå lever under /eiendom/
   async redirects() {
     return [
