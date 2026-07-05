@@ -13,7 +13,7 @@ systemene den kjører (se PRD 15 §3 for eierskaps-kartet).
 |---|---|---|---|
 | 1. Kvalitets-port (stemme-/kvalitets-kontrakt) | Unit 1 | `placy-ralph-r15.1` | **FERDIG** (dette dokumentet) |
 | 2. Area-editorial-kurering | Unit 2 | `placy-ralph-r15.2` | **FERDIG** (dette dokumentet) |
-| 3. Grounding-QA + manus-curering | Unit 3 | `placy-ralph-r15.3` | fylles av r15.3 |
+| 3. Grounding-QA + manus-curering | Unit 3 | `placy-ralph-r15.3` | **FERDIG** (dette dokumentet) |
 | 4. Overflate-fylling (ProjectAssetFlags + broker/pin) | Unit 4 | `placy-ralph-r15.4` | fylles av r15.4 |
 | 5. Reels/audio-regi | Unit 5 | `placy-ralph-r15.5` | fylles av r15.5 |
 | 6. Samlekart-klassifisering + scope-grense | Unit 6 | `placy-ralph-r15.6` | fylles av r15.6 |
@@ -209,3 +209,94 @@ Alt area-editorial-innhold produseres **build-time/manuelt** gjennom stegene i 2
 ALDRI runtime-generert (invariant 1.5). `body`-tekstene skal passere kvalitets-porten i
 seksjon 1, spesielt: **nabolags-editorial i PRESENS** — beskriv hva som ER der, ikke
 byggeår/historikk (1.3 regel 1, memory `feedback_editorial_no_years_history`).
+
+---
+
+## 3. Grounding-QA + manus-curering — regi over PRD 7-output (Unit 3)
+
+Den menneskelige godkjennings-/QA-dansen over PRD 7s grounding-output
+(`grounding.narrative` → `curatedNarrative`), pluss manus-curatering utover grounding.
+**PRD 15 bygger INGEN ny QA-infrastruktur** — den formaliserer det menneskelige
+review-steget i den EKSISTERENDE prepare→skill→apply-dansen (PRD 7 Åpne spørsmål #5).
+PRD 7 eier orkestrator-implementasjonen og grounding-genereringen (`07:90`,
+`scripts/curate-narrative.ts`-raden i keeper-kartet); PRD 15 QA-er og godkjenner
+OUTPUTEN (`07:190` — «Nivå-2 kuratering-ARBEIDSFLYT (redaksjonell QA, godkjenning,
+manus-curatering utover grounding) → PRD 15»). Ingen del av denne seksjonen re-hjemler
+grounding-generering eller story-text-/POI-linker-familien (`lib/curation/poi-linker` +
+`lib/utils/story-text-linker`, PRD 7 Unit 5).
+
+### 3.1 Dansen: prepare → skill skriver → operatør godkjenner → apply
+
+Orkestratoren er `scripts/curate-narrative.ts` (PRD 7, «Steg 2.7 i /generate-rapport»,
+`generate-rapport:211-223`). Claude kan ikke kalles som API her (ingen key) — scriptet
+er derfor splittet i `prepare` + `apply` med skill-utført mellomsteg
+(`curate-narrative.ts:6-7`, flyt-dokumentert `:9-13`). Alle linje-refs verifisert
+2026-07-05.
+
+| Steg | Hva | Kilde |
+|---|---|---|
+| 0. Forutsetning | Temaet har grounding (`groundingVersion: 1`) fra PRD 7s grounding-orkestrator. Uten grounding hopper prepare over temaet. | `gemini-grounding.ts` (r07.3); skip `:221-225` |
+| 1. `prepare <pid>` | Skriver `.curation-staging/<pid>/<theme>.context.json` per tema: **sanitized** gemini-narrative (`sanitizeGeminiInput`, `:252` — prompt-injection-forsvar mellom LLM-ledd), source-domener, tema-filtrert `poi_set` (kun gyldige UUID-er, `:206/:243-249`), `target_length` 600–800 (`:266-267`), `fetchedAt`. Sletter evt. gammel `.curated.md` så skillet ser fresh state (`:273-275`). Idempotens: tema med `curatedAt >= fetchedAt` på v2 hoppes over uten `--force` (`:228-240`). | `curate-narrative.ts:188-294`; path-helpers `:171-181` |
+| 2. Skill/operatør skriver | Claude Code (skill-utført mellomsteg) leser `.context.json` og skriver `.curated.md` per tema — 600–800 tegn kuratert narrativ i Placy-stemmen. Teksten skrives MOT kvalitets-porten i seksjon 1. | `generate-rapport:220/:233`; build-time |
+| 3. **Operatør GODKJENNER** | **Det formaliserte PRD 15-steget:** operatøren LESER hver `.curated.md` mot QA-porten i 3.2 og godkjenner — først DA trigges `apply`. Beslutningen ligger ALLTID mellom generering og Supabase-patch (invariant 1.5). Avvist tekst: rediger `.curated.md` (eller re-kjør mellomsteget) og les på nytt. | menneskelig review — ingen tooling |
+| 4. `apply <pid>` | Backup av hele produkt-raden FØR mutations (`backups/products-curate-*.json`, `:322-330`) → per tema: `validateCuratedNarrative` (`:359`) + `linkPoisInMarkdown` POI-UUID-whitelist (`:384`) + audit-logg av rå output (`backups/curation-audit-*.jsonl`, `:389-403`) → 0 vellykkede temaer ⇒ ABORT uten write (`:428-431`); feilede temaer BEHOLDER v1 (`:433-438`, v1/v2 coexist per tema `:447-459`) → ÉN samlet PATCH med `updated_at=eq`-optimistisk lås (`:464-467`), 0 rader ⇒ concurrent-write-abort (`:487-493`) → `revalidate product:<pid>` (`:497-510`). | `curate-narrative.ts:307-514` |
+
+`.curation-staging/` og `backups/` er arbeidsflyt-ARTEFAKTER, ikke kode — begge
+gitignored (`.gitignore:46-47`). `--theme <id>` avgrenser begge faser til ett tema.
+
+### 3.2 QA-porten for grounding-output (hva operatøren faktisk sjekker)
+
+Operatørens godkjenning (steg 3) er IKKE en ny sjekkliste — det er kvalitets-porten i
+seksjon 1 anvendt på `.curated.md`, pluss grounding-spesifikke punkter:
+
+1. **Stemme + 9-punkts sjekkliste + tidsregel** (seksjon 1.1) — inkl. presens-regelen
+   for nabolagstekst (1.3 regel 1).
+2. **Grounding-troskap** — teksten påstår ingenting grounding ikke støtter (samme
+   prinsipp som `manus-curator:49`). Merk arbeidsdelingen mot maskinvernet: validatoren
+   fanger proper nouns som ikke finnes i gemini-narrative ∪ `poi_set.name`
+   (anti-hallusinering, `lib/curation/validator.ts` — `07:87`), men SEMANTISK troskap
+   (antall, plassering, kausalitet) er operatørens ansvar.
+3. **Lengde-mål vs bånd** (samme mål/bånd-mønster som 1.4): context-fila angir MÅLET
+   600–800 tegn (`:266-267`); validatorens harde bånd er min 100 / max 1200 tegn
+   (`07:87`). Operatøren sikter på målet; båndet avgjør maskinell aksept.
+4. **POI-lenke-rimelighet i etterkant:** `apply`-outputen viser tegn + antall
+   POI-lenker per tema (`:420`) — avvik (0 lenker på POI-tungt tema) er signal om å
+   re-kjøre med justert tekst. Selve linkingen eies av PRD 7.
+
+### 3.3 Manus-curatering utover grounding (manus-curator-skillen)
+
+Manus (TTS-input for audio/reels) er en ANNEN teksttype enn curatedNarrative
+(story-text) og har sin EGEN eksisterende dans — `manus-curator`-skillens Steg 1–7
+(`manus-curator:83-116`): hent grounding fra Supabase → identifiser hva grounding
+faktisk støtter → velg strukturmønster → skriv 5 setninger → sjekkliste mot hard rules
+→ sammenlign mot ankereksempel → **lagre i staging** `.curation-staging/<prosjekt>/<spor>.md`
+med frontmatter — «brukerens beslutning før patching til Supabase» (`manus-curator:115-116`).
+Ingen ny pipeline; skillen ER arbeidsflyten.
+
+Manus-QA-en bruker stemme-kontrakten (seksjon 1) som godkjennings-port: 9-punkts
+sjekkliste (`curator:97-109`) + **tidsregelen som HOVEDPORT** (`manus-curator:48`) +
+**grounding-troskap** (`manus-curator:49`). Ord-grensen konsumeres fra PRD 14
+(mål 60–75 / bånd 35–90 — seksjon 1.4); nedstrøms TTS-bygg og reels-regi er
+seksjon 5-stoff (PRD 14 eier pipelinen, `audio-manus-write.ts` → `validateManus`).
+
+### 3.4 Eierskaps-grenser (respekteres, endres ikke her)
+
+| Hva | Eier | PRD 15s rolle |
+|---|---|---|
+| Grounding-generering (`gemini-grounding.ts`) + orkestrator (`curate-narrative.ts`) | PRD 7 (`07:89-90`) | KJØRER scriptene; endrer dem aldri |
+| POI-linker (`lib/curation/poi-linker`) + validator + sanitizer | PRD 7 (`07:85-87`) | Konsumerer via `apply`; re-hjemler aldri |
+| Manus-domenet (`manus.ts`-båndet, TTS-kjernen) | PRD 14 | Skriver manus via skill; QA-er mot porten |
+| Redaksjonell QA/godkjenning av output | **PRD 15** (`07:190`) | Steg 3 i 3.1 + 3.2/3.3-portene |
+
+### 3.5 Build-time — ingen runtime-LLM (verifikasjon)
+
+Hele dansen er build-time: Claude er skill-utført mellomsteg, aldri API-kall
+(`curate-narrative.ts:6-7`); Gemini-kallet skjer i PRD 7s build-time
+grounding-orkestrator. **Grep-verifikasjon (kjørt 2026-07-05)** av `app/` +
+`components/` for LLM-/TTS-SDK-signaturer (`generativelanguage`, `api.anthropic`,
+`anthropic-ai`, `GEMINI_API`, `x-goog-api-key`, `elevenlabs`): eneste LLM-treff er
+`app/api/eiendom/tekst/route.ts:3` (`@anthropic-ai/sdk`) — en pre-eksisterende
+LEGACY-rute på den døde `targetAudience`-modellen, UTENFOR kurerings-dansen, allerede
+Andreas-gated i `docs/rebuild/DECISIONS-QUEUE.md` (r07.7-funn; slett-vs-port avgjøres
+der, og bead `placy-ralph-03t` skal ESLint-håndheve regelen maskinelt). Kurerings-
+arbeidsflytens sti har null runtime-LLM.
