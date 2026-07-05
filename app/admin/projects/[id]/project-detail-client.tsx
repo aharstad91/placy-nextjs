@@ -39,8 +39,6 @@ import type {
 import type { ProjectWithRelations, ProductWithPois } from "./page";
 import { DiscoveryCirclesEditor } from "./discovery-circles-editor";
 import { ImportTab } from "./import-tab";
-import { TripsTab } from "./trips-tab";
-import type { Trip, ProjectTrip } from "@/lib/types";
 
 // NOTE: "Kategorier"-fanen er skjult — prosjekt-kategorier brukes ikke i praksis.
 // Vurder å fjerne CategoriesTab og relatert kode helt hvis det forblir ubrukt.
@@ -49,7 +47,6 @@ const TABS = [
   // { id: "categories", label: "Kategorier" },
   { id: "products", label: "Produkter" },
   { id: "pois", label: "POI-er" },
-  { id: "trips", label: "Trips" },
   { id: "import", label: "Import" },
 ] as const;
 
@@ -71,8 +68,6 @@ interface ProjectDetailClientProps {
     category_id: string | null;
     categories: { id: string; name: string; color: string } | null;
   }>;
-  projectTrips: ProjectTrip[];
-  allTrips: Trip[];
   updateProject: (formData: FormData) => Promise<void>;
   createProjectCategory: (formData: FormData) => Promise<void>;
   updateProjectCategory: (formData: FormData) => Promise<void>;
@@ -85,9 +80,6 @@ interface ProjectDetailClientProps {
   batchAddPoisToProduct: (formData: FormData) => Promise<void>;
   batchRemovePoisFromProduct: (formData: FormData) => Promise<void>;
   createProduct: (formData: FormData) => Promise<void>;
-  linkTripToProject: (formData: FormData) => Promise<void>;
-  unlinkTripFromProject: (formData: FormData) => Promise<void>;
-  updateProjectTripOverride: (formData: FormData) => Promise<void>;
   updateProjectTags: (formData: FormData) => Promise<void>;
   updateProjectHas3dAddon: (formData: FormData) => Promise<void>;
   setProjectReportTier: (formData: FormData) => Promise<ReportTierActionResult>;
@@ -108,8 +100,6 @@ export function ProjectDetailClient({
   customers,
   globalCategories,
   allPois,
-  projectTrips,
-  allTrips,
   updateProject,
   createProjectCategory,
   updateProjectCategory,
@@ -122,9 +112,6 @@ export function ProjectDetailClient({
   batchAddPoisToProduct,
   batchRemovePoisFromProduct,
   createProduct,
-  linkTripToProject,
-  unlinkTripFromProject,
-  updateProjectTripOverride,
   updateProjectTags,
   updateProjectHas3dAddon,
   setProjectReportTier,
@@ -211,16 +198,6 @@ export function ProjectDetailClient({
               createProduct={createProduct}
               updateDefaultProduct={updateDefaultProduct}
               deleteProduct={deleteProduct}
-            />
-          )}
-          {activeTab === "trips" && (
-            <TripsTab
-              project={project}
-              projectTrips={projectTrips}
-              allTrips={allTrips}
-              linkTripToProject={linkTripToProject}
-              unlinkTripFromProject={unlinkTripFromProject}
-              updateProjectTripOverride={updateProjectTripOverride}
             />
           )}
           {activeTab === "import" && (
