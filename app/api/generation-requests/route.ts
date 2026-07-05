@@ -1,37 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { createServerClient } from "@/lib/supabase/client";
 import { slugify } from "@/lib/utils/slugify";
-import { eiendomUrl } from "@/lib/urls";
-import { createGeneratedProject } from "@/lib/pipeline/create-project";
-import { importPOIsToProject } from "@/lib/pipeline/import-pois";
-import { getHousingCategories } from "@/lib/pipeline/housing-categories";
-import type { HousingType } from "@/lib/pipeline/housing-categories";
+import { provisionReportBoard } from "@/lib/pipeline/provision";
+import { DEFAULT_CUSTOMER } from "@/lib/pipeline/create-report-project";
+import type { ReportProfile } from "@/lib/pipeline/report-defaults";
 
-const RESERVED_SLUGS = ["generer", "tekst", "admin", "api"];
+/**
+ * Self-serve adresse→rapport-board (PRD 3 Unit 8).
+ *
+ * ÉN pipeline: ruta kaller Unit 1-orkestreringskjernen (provisionReportBoard)
+ * — v1-modulene for prosjekt-opprettelse og den tredje kategorimodellen er
+ * slettet. housing_type-kolonnen bærer nå profilen (bolig|naering);
+ * family/young/senior-modellen er død.
+ *
+ * Async-grense (RATIFISERT 2026-06-29): HTTP-svaret returnerer umiddelbart
+ * med pending + provisorisk URL; pipelinen fullfører in-process via
+ * runAfterResponse (waitUntil-pickup / detached promise — se helperen for
+ * hvorfor ikke Next 15s after-API) og oppdaterer raden til completed/failed.
+ * INGEN ekstern jobbkø. Klienten poller GET ?id=<uuid>.
+ *
+ * Slug-eierskap: createReportProject eier prosjekt-sluggen (fra name).
+ * address_slug her er REQUEST-radens nøkkel (dup/kollisjons-sjekk);
+ * result_url settes post-completion fra result.slug (autoritativ).
+ *
+ * PII-grense (PRD 1 RLS): generation_requests (email+consent) er
+ * service-role-only. GET-svaret eksponerer ALDRI email.
+ */
+
+export const maxDuration = 300;
+
+const RESERVED_SLUGS = ["generer", "tekst", "admin", "api", DEFAULT_CUSTOMER];
 
 const GenerationRequestSchema = z.object({
   address: z.string().min(5).max(200).trim(),
   email: z.string().email().max(254),
-  housingType: z.enum(["family", "young", "senior"]),
   lat: z.number().min(57).max(72),
   lng: z.number().min(4).max(32),
   city: z.string().max(100),
-  slug: z.string().min(3).max(100).regex(/^[a-z0-9-]+$/),
   consentGiven: z.literal(true),
-  brokerage: z.string().min(2).max(200).trim(),
+  /** Valgfritt: uten meglerkontor havner boardet under reservert `intern`. */
+  brokerage: z.string().min(2).max(200).trim().optional(),
+  profile: z.enum(["bolig", "naering"]).default("bolig"),
 });
 
-function normalizeAddress(address: string): string {
-  return address
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim()
-    .normalize("NFC");
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{3,4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function boardUrl(customer: string, slug: string): string {
+  return `/eiendom/${customer}/${slug}/rapport-board`;
 }
 
+function normalizeAddress(address: string): string {
+  return address.toLowerCase().replace(/\s+/g, " ").trim().normalize("NFC");
+}
+
+type Db = ReturnType<
+  NonNullable<ReturnType<typeof createServerClient>>["schema"]
+>;
+
 async function getOrCreateCustomer(
-  supabase: ReturnType<typeof createServerClient>,
+  db: Db,
   brokerageName: string
 ): Promise<string> {
   const customerSlug = slugify(brokerageName);
@@ -40,10 +70,13 @@ async function getOrCreateCustomer(
     throw new Error(`Ugyldig meglerkontor-navn: "${brokerageName}"`);
   }
 
-  // Upsert: insert if not exists, ignore on conflict (race-safe)
-  await supabase!
+  // Upsert med lesbart navn (createReportProject upserter kun id=name=slug)
+  const { error } = await db
     .from("customers")
     .upsert({ id: customerSlug, name: brokerageName }, { onConflict: "id" });
+  if (error) {
+    throw new Error(`Kunne ikke opprette kunde: ${error.message}`);
+  }
 
   return customerSlug;
 }
@@ -56,6 +89,7 @@ export async function POST(request: NextRequest) {
   if (!supabase) {
     return NextResponse.json({ error: "Database not configured" }, { status: 500 });
   }
+  const db = supabase.schema("v2");
 
   let body: unknown;
   try {
@@ -72,130 +106,192 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { address, email, housingType, lat, lng, city, slug, consentGiven, brokerage } = parsed.data;
+  const { address, email, lat, lng, city, brokerage, profile } = parsed.data;
   const normalized = normalizeAddress(address);
 
-  // Get or create customer from brokerage name
-  let customerSlug: string;
-  try {
-    customerSlug = await getOrCreateCustomer(supabase, brokerage);
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Kunne ikke opprette kunde" },
-      { status: 400 }
-    );
+  // Kunde: meglerkontor → egen customer; ellers reservert intern-kunde
+  // (intern_<slug> via createReportProject sin DEFAULT_CUSTOMER-fallback).
+  let customerSlug: string = DEFAULT_CUSTOMER;
+  if (brokerage) {
+    try {
+      customerSlug = await getOrCreateCustomer(db, brokerage);
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Kunne ikke opprette kunde" },
+        { status: 400 }
+      );
+    }
   }
 
-  // Check for recent duplicate
+  // 7-dagers duplikat-sjekk på normalisert adresse
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from("generation_requests")
-    .select("address_slug, status, customer_id")
+    .select("id, address_slug, status, customer_id, result_url")
     .eq("address_normalized", normalized)
     .gte("created_at", sevenDaysAgo)
     .limit(1);
 
   if (existing && existing.length > 0) {
-    const existingCustomer = existing[0].customer_id ?? customerSlug;
+    const row = existing[0];
+    const existingCustomer = row.customer_id ?? customerSlug;
     return NextResponse.json({
-      slug: existing[0].address_slug,
-      url: eiendomUrl(existingCustomer, existing[0].address_slug),
+      id: row.id,
+      slug: row.address_slug,
+      url: row.result_url ?? boardUrl(existingCustomer, row.address_slug),
+      status: row.status,
       message: "Denne adressen er allerede forespurt",
       existing: true,
     });
   }
 
-  // Check slug collision, append suffix if needed
-  let finalSlug = slug;
-  const { data: slugExists } = await supabase
+  // Request-slug med kollisjons-suffiks (request-radens nøkkel — prosjekt-
+  // sluggen eies av createReportProject og kan avvike).
+  const baseSlug = slugify(address.split(",")[0]);
+  let finalSlug = baseSlug;
+  const { data: slugExists } = await db
     .from("generation_requests")
     .select("id")
-    .eq("address_slug", slug)
+    .eq("address_slug", baseSlug)
     .limit(1);
-
   if (slugExists && slugExists.length > 0) {
-    const suffix = crypto.randomUUID().slice(0, 6);
-    finalSlug = `${slug}-${suffix}`;
+    finalSlug = `${baseSlug}-${crypto.randomUUID().slice(0, 6)}`;
   }
 
-  // Insert with customer_id
-  const { error } = await supabase.from("generation_requests").insert({
-    address,
-    address_normalized: normalized,
-    email,
-    housing_type: housingType,
-    geocoded_lat: lat,
-    geocoded_lng: lng,
-    geocoded_city: city,
-    address_slug: finalSlug,
-    consent_given: consentGiven,
-    customer_id: customerSlug,
-  });
+  // Insert pending (v2: status + housing_type er NOT NULL uten default)
+  const { data: inserted, error: insertError } = await db
+    .from("generation_requests")
+    .insert({
+      address,
+      address_normalized: normalized,
+      email,
+      housing_type: profile,
+      status: "pending",
+      geocoded_lat: lat,
+      geocoded_lng: lng,
+      geocoded_city: city,
+      address_slug: finalSlug,
+      consent_given: true,
+      customer_id: customerSlug,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    console.error("Failed to insert generation request:", error.message, error.code);
+  if (insertError || !inserted) {
+    console.error(
+      "Failed to insert generation request:",
+      insertError?.message,
+      insertError?.code
+    );
     return NextResponse.json({ error: "Kunne ikke lagre forespørsel" }, { status: 500 });
   }
 
-  // === Pipeline: Generate project + import POIs ===
-  const resultUrl = eiendomUrl(customerSlug, finalSlug);
-  let pipelineSuccess = false;
+  const requestId: string = inserted.id;
+  const provisionalUrl = boardUrl(customerSlug, finalSlug);
 
-  try {
-    // 1. Create project + explorer product in Supabase
-    const { projectId } = await createGeneratedProject({
-      customerSlug,
-      slug: finalSlug,
-      address,
-      lat,
-      lng,
-      housingType: housingType as HousingType,
-    });
+  // Pipeline etter HTTP-svaret — in-process, ingen jobbkø (ratifisert grense).
+  runAfterResponse(async () => {
+    try {
+      const result = await provisionReportBoard({
+        name: address,
+        address,
+        customer: customerSlug,
+        profile: profile as ReportProfile,
+        has3dAddon: false,
+        allowUpdate: false,
+        confirmCoords: { lat, lng },
+        placeName: address,
+        city,
+      });
 
-    // 2. Import POIs from Google Places + Entur + Bysykkel
-    const categories = getHousingCategories(housingType as HousingType);
-    const importResult = await importPOIsToProject({
-      circles: [{ lat, lng, radiusMeters: 2000 }],
-      categories,
-      projectId,
-      includeEntur: true,
-      includeBysykkel: true,
-    });
+      // aborted (prosjektet fantes) er et OK-utfall for bestilleren: boardet
+      // finnes — pek result_url dit og marker completed.
+      const resultUrl = boardUrl(result.customerSlug, result.slug);
+      await db
+        .from("generation_requests")
+        .update({
+          status: "completed",
+          project_id: result.projectId,
+          result_url: resultUrl,
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
 
-    console.log(`[Pipeline] Imported ${importResult.total} POIs for ${address}`);
+      await sendConfirmationEmail(
+        email,
+        address,
+        `https://placy.no${resultUrl}`,
+        true
+      ).catch((err) => console.error("Failed to send confirmation email:", err));
+    } catch (err) {
+      console.error("[Pipeline] Failed:", err);
+      await db
+        .from("generation_requests")
+        .update({
+          status: "failed",
+          error_message: err instanceof Error ? err.message : "Ukjent feil",
+        })
+        .eq("id", requestId);
 
-    // 3. Update request to completed
-    await supabase.from("generation_requests").update({
-      status: "completed",
-      project_id: projectId,
-      result_url: resultUrl,
-      completed_at: new Date().toISOString(),
-    }).eq("address_slug", finalSlug);
-
-    pipelineSuccess = true;
-  } catch (err) {
-    console.error("[Pipeline] Failed:", err);
-    await supabase.from("generation_requests").update({
-      status: "failed",
-      error_message: err instanceof Error ? err.message : "Ukjent feil",
-    }).eq("address_slug", finalSlug);
-  }
-
-  // Send confirmation email
-  const projectUrl = `https://placy.no${resultUrl}`;
-  await sendConfirmationEmail(email, address, projectUrl, pipelineSuccess).catch((err) =>
-    console.error("Failed to send confirmation email:", err)
-  );
+      await sendConfirmationEmail(
+        email,
+        address,
+        `https://placy.no${provisionalUrl}`,
+        false
+      ).catch((emailErr) =>
+        console.error("Failed to send confirmation email:", emailErr)
+      );
+    }
+  });
 
   return NextResponse.json({
+    id: requestId,
     slug: finalSlug,
-    url: resultUrl,
-    message: pipelineSuccess ? "Nabolagskart generert" : "Forespørsel mottatt — generering pågår",
-    status: pipelineSuccess ? "completed" : "failed",
+    url: provisionalUrl,
+    status: "pending",
+    message: "Forespørsel mottatt — nabolagskartet genereres",
   });
 }
 
-async function sendConfirmationEmail(to: string, address: string, projectUrl: string, ready: boolean) {
+/** Polling-endepunkt (AC6): status/result_url per request-id. ALDRI email. */
+export async function GET(request: NextRequest) {
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id || !UUID_RE.test(id)) {
+    return NextResponse.json({ error: "Ugyldig id" }, { status: 400 });
+  }
+
+  const supabase = createServerClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Database not configured" }, { status: 500 });
+  }
+
+  const { data, error } = await supabase
+    .schema("v2")
+    .from("generation_requests")
+    .select("status, result_url, error_message")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: "Oppslag feilet" }, { status: 500 });
+  }
+  if (!data) {
+    return NextResponse.json({ error: "Ikke funnet" }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    status: data.status,
+    resultUrl: data.result_url,
+    errorMessage: data.error_message,
+  });
+}
+
+async function sendConfirmationEmail(
+  to: string,
+  address: string,
+  projectUrl: string,
+  ready: boolean
+) {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) return;
 

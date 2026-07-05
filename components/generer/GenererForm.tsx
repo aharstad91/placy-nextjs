@@ -1,54 +1,99 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AddressAutocomplete from "@/components/inputs/AddressAutocomplete";
 import type { AddressResult } from "@/components/inputs/AddressAutocomplete";
-import { slugify } from "@/lib/utils/slugify";
 import { MapPin, CheckCircle, Loader2 } from "lucide-react";
 
-type HousingType = "family" | "young" | "senior";
+/**
+ * DEN ene self-serve-formen (PRD 3 Unit 8) — adaptiv: meglerkontor er
+ * VALGFRITT (uten → boardet havner under reservert `intern`-kunde).
+ * Boligtype-velgeren (family/young/senior) er død — pipelinen bruker
+ * profil (bolig-default) og rapport-temamodellen.
+ *
+ * Async-kontrakt: POST svarer pending + id umiddelbart; formen poller
+ * GET ?id= til completed/failed (pipelinen kjører in-process på serveren).
+ */
 
-const HOUSING_OPTIONS: { value: HousingType; label: string; description: string }[] = [
-  { value: "family", label: "Familie", description: "Skole, barnehage, lekeplass, idrett" },
-  { value: "young", label: "Ung / Førstegangskjøper", description: "Cafe, bar, trening, kollektiv" },
-  { value: "senior", label: "Senior", description: "Lege, apotek, dagligvare, park" },
-];
+interface SubmitResult {
+  id: string;
+  slug: string;
+  url: string;
+  status: string;
+  existing?: boolean;
+}
 
-export default function GenererClient() {
+const POLL_INTERVAL_MS = 5000;
+const POLL_TIMEOUT_MS = 6 * 60 * 1000; // litt over serverens maxDuration
+
+export default function GenererForm() {
   const [selectedAddress, setSelectedAddress] = useState<AddressResult | null>(null);
-  const [housingType, setHousingType] = useState<HousingType>("family");
   const [email, setEmail] = useState("");
   const [brokerage, setBrokerage] = useState("");
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{ slug: string; url: string; existing?: boolean } | null>(null);
+  const [result, setResult] = useState<SubmitResult | null>(null);
+  const [liveStatus, setLiveStatus] = useState<string | null>(null);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const pollStop = useRef(false);
 
-  const canSubmit = selectedAddress && email && brokerage && consent && !submitting;
+  const canSubmit = selectedAddress && email && consent && !submitting;
+
+  // Poll status til completed/failed (eller timeout → e-post-fallback-tekst)
+  useEffect(() => {
+    if (!result || result.status !== "pending") return;
+    pollStop.current = false;
+    const startedAt = Date.now();
+
+    const tick = async () => {
+      if (pollStop.current) return;
+      if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+        setLiveStatus("timeout");
+        return;
+      }
+      try {
+        const res = await fetch(`/api/generation-requests?id=${result.id}`);
+        if (res.ok) {
+          const data: { status: string; resultUrl: string | null } = await res.json();
+          if (data.status === "completed" || data.status === "failed") {
+            setLiveStatus(data.status);
+            if (data.resultUrl) setResultUrl(data.resultUrl);
+            return;
+          }
+        }
+      } catch {
+        // nettverksglipp under polling er ufarlig — prøv igjen neste tick
+      }
+      setTimeout(tick, POLL_INTERVAL_MS);
+    };
+
+    const timer = setTimeout(tick, POLL_INTERVAL_MS);
+    return () => {
+      pollStop.current = true;
+      clearTimeout(timer);
+    };
+  }, [result]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAddress || !email || !brokerage || !consent) return;
+    if (!selectedAddress || !email || !consent) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
-      const slug = slugify(selectedAddress.address.split(",")[0]);
-
       const res = await fetch("/api/generation-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           address: selectedAddress.address,
           email,
-          housingType,
           lat: selectedAddress.lat,
           lng: selectedAddress.lng,
           city: selectedAddress.city,
-          slug,
           consentGiven: true,
-          brokerage,
+          ...(brokerage.trim() ? { brokerage: brokerage.trim() } : {}),
         }),
       });
 
@@ -60,6 +105,8 @@ export default function GenererClient() {
       }
 
       setResult(data);
+      if (data.status && data.status !== "pending") setLiveStatus(data.status);
+      if (data.url && data.status === "completed") setResultUrl(data.url);
     } catch {
       setError("Kunne ikke sende forespørsel. Prøv igjen.");
     } finally {
@@ -67,32 +114,61 @@ export default function GenererClient() {
     }
   };
 
-  // Confirmation view
+  // Confirmation view med live status
   if (result) {
+    const done = liveStatus === "completed";
+    const failed = liveStatus === "failed";
+    const timedOut = liveStatus === "timeout";
+    const displayUrl = resultUrl ?? result.url;
+
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
-          <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
+          {done ? (
+            <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
+          ) : failed ? (
+            <MapPin className="w-16 h-16 text-red-400 mx-auto mb-6" />
+          ) : (
+            <Loader2 className="w-16 h-16 text-gray-400 mx-auto mb-6 animate-spin" />
+          )}
           <h1 className="text-2xl font-bold text-gray-900 mb-3">
-            {result.existing ? "Kart allerede forespurt" : "Forespørsel mottatt!"}
+            {result.existing
+              ? "Kart allerede forespurt"
+              : done
+                ? "Nabolagskartet er klart!"
+                : failed
+                  ? "Genereringen feilet"
+                  : "Forespørsel mottatt!"}
           </h1>
           <p className="text-gray-600 mb-6">
-            {result.existing
-              ? "Denne adressen har allerede et kart under generering."
-              : "Nabolagskartet genereres. Det tar vanligvis 5-10 minutter."}
+            {failed
+              ? "Noe gikk galt under genereringen. Vi har registrert feilen — prøv gjerne igjen senere."
+              : done
+                ? "Kartet er generert og klart til å deles."
+                : timedOut
+                  ? "Genereringen tar lengre tid enn vanlig. Du får en e-post når kartet er klart."
+                  : result.existing
+                    ? "Denne adressen har allerede et kart under generering."
+                    : "Nabolagskartet genereres — dette tar vanligvis noen minutter. Du kan vente her, eller lukke siden og få lenken på e-post."}
           </p>
-          <div className="bg-gray-50 rounded-xl p-6 mb-6">
-            <p className="text-sm text-gray-500 mb-2">Kartet vil være tilgjengelig på:</p>
-            <a
-              href={result.url}
-              className="text-lg font-mono font-semibold text-gray-900 hover:text-emerald-600 transition-colors break-all"
-            >
-              placy.no{result.url}
-            </a>
-          </div>
-          <p className="text-sm text-gray-500">
-            Bokmerke denne lenken — du kan sjekke statusen når som helst.
-          </p>
+          {!failed && (
+            <div className="bg-gray-50 rounded-xl p-6 mb-6">
+              <p className="text-sm text-gray-500 mb-2">
+                {done ? "Kartet er tilgjengelig på:" : "Kartet vil være tilgjengelig på:"}
+              </p>
+              <a
+                href={displayUrl}
+                className="text-lg font-mono font-semibold text-gray-900 hover:text-emerald-600 transition-colors break-all"
+              >
+                placy.no{displayUrl}
+              </a>
+            </div>
+          )}
+          {!done && !failed && (
+            <p className="text-sm text-gray-500">
+              Bokmerke denne lenken — du kan sjekke statusen når som helst.
+            </p>
+          )}
         </div>
       </div>
     );
@@ -107,7 +183,8 @@ export default function GenererClient() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Lag nabolagskart</h1>
           <p className="text-gray-600">
-            Skriv inn adressen til boligen du selger, og vi genererer et interaktivt nabolagskart du kan dele med kjøpere.
+            Skriv inn adressen til boligen du selger, og vi genererer et interaktivt
+            nabolagskart du kan dele med kjøpere.
           </p>
         </div>
 
@@ -129,10 +206,11 @@ export default function GenererClient() {
             )}
           </div>
 
-          {/* Brokerage */}
+          {/* Brokerage (valgfritt) */}
           <div>
             <label htmlFor="brokerage" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Meglerkontor
+              Meglerkontor{" "}
+              <span className="font-normal text-gray-400">(valgfritt)</span>
             </label>
             <input
               id="brokerage"
@@ -140,37 +218,8 @@ export default function GenererClient() {
               value={brokerage}
               onChange={(e) => setBrokerage(e.target.value)}
               placeholder="F.eks. Eiendomsmegler Krogsveen"
-              required
               className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             />
-          </div>
-
-          {/* Housing type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Boligtype
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {HOUSING_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setHousingType(opt.value)}
-                  className={`p-3 rounded-lg border text-left transition-colors ${
-                    housingType === opt.value
-                      ? "border-gray-900 bg-gray-50 ring-1 ring-gray-900"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="text-sm font-medium text-gray-900 block">
-                    {opt.label}
-                  </span>
-                  <span className="text-xs text-gray-500 block mt-0.5">
-                    {opt.description}
-                  </span>
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Email */}
@@ -198,7 +247,8 @@ export default function GenererClient() {
               className="mt-1 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
             />
             <span className="text-sm text-gray-600">
-              Jeg godtar at e-postadressen min lagres for å motta varsling når kartet er klart.
+              Jeg godtar at e-postadressen min lagres for å motta varsling når kartet
+              er klart.
             </span>
           </label>
 

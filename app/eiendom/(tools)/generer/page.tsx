@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import GenererClient from "./generer-client";
+import GenererForm from "@/components/generer/GenererForm";
 
 export const metadata: Metadata = {
   title: "Lag nabolagskart | Placy",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function EiendomGenererPage() {
-  return <GenererClient />;
+  return <GenererForm />;
 }
