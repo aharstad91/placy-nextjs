@@ -210,8 +210,17 @@ describe("BoardMap3D — dekomponerings-invarianter (Unit 06.7)", () => {
     expect(src).toMatch(/autoOrbit:\s*hasVoiceOver/);
   });
 
-  it("bruker deriveIntroActive for det AND-ede intro-flagget (AC2)", () => {
-    expect(src).toMatch(/deriveIntroActive\(/);
+  it("bruker deriveIntroActive for det AND-ede intro-flagget (AC2) — med ALLE fire eiere", () => {
+    // Skjerpet (audit-bead whp): ikke bare at funksjonen kalles, men at
+    // kall-objektet bærer alle fire intro-eierne — en mutasjon som dropper
+    // f.eks. establishingMode fra wiringen blir rød her. Selve AND-semantikken
+    // er EKSEKVERINGS-testet i describe-blokkene øverst i denne fila; full
+    // render-harness av BoardMap3D ble vurdert og avvist (krever mocking av
+    // hele board-konteksten for å bevise det samme som arg-formen + de pure
+    // testene allerede dekker).
+    expect(src).toMatch(
+      /deriveIntroActive\(\{\s*flyMode,\s*isWelcomeBeat,\s*basicIntroActive,\s*establishingMode,\s*\}\)/,
+    );
   });
 });
 

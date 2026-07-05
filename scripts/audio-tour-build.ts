@@ -27,6 +27,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { config } from "dotenv";
 import pLimit from "p-limit";
+import { patchThenRevalidate } from "../lib/pipeline/patch-product-config";
 import {
   generateAudio,
   ELEVENLABS_MODEL,
@@ -456,44 +457,34 @@ async function main() {
   };
   const nextConfig = { ...existingConfig, reportConfig: nextReportConfig };
 
-  // PATCH med optimistic lock
-  const patchUrl = new URL(`${SUPABASE_URL}/rest/v1/products`);
-  patchUrl.searchParams.set("id", `eq.${product.id}`);
-  patchUrl.searchParams.set("updated_at", `eq.${product.updated_at}`);
-
-  const patchRes = await fetch(patchUrl.toString(), {
-    method: "PATCH",
-    headers: {
-      apikey: SUPABASE_KEY!,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify({ config: nextConfig }),
+  // PATCH med optimistic lock + revalidate KUN ved suksess (delt modul,
+  // eksekverings-testet i lib/pipeline/patch-product-config.test.ts)
+  const patchResult = await patchThenRevalidate({
+    supabaseUrl: SUPABASE_URL!,
+    supabaseKey: SUPABASE_KEY!,
+    productId: product.id,
+    updatedAt: product.updated_at,
+    config: nextConfig,
+    revalidate: () => revalidate(`product:${projectId}`),
   });
 
-  if (!patchRes.ok) {
-    const text = await patchRes.text();
-    console.error(`PATCH feilet: ${patchRes.status} ${text}`);
-    console.error(
-      `MP3-filene ligger på disk, men DB ble ikke oppdatert. Backup: ${backupPath}`,
-    );
+  if (!patchResult.ok) {
+    if (patchResult.reason === "http") {
+      console.error(`PATCH feilet: ${patchResult.status} ${patchResult.body}`);
+      console.error(
+        `MP3-filene ligger på disk, men DB ble ikke oppdatert. Backup: ${backupPath}`,
+      );
+    } else {
+      console.error(
+        "PATCH påvirket 0 rader — concurrent write. config er endret siden vi leste.",
+      );
+      console.error(
+        `MP3-filer er skrevet, men DB ikke oppdatert. Kjør scriptet på nytt. Backup: ${backupPath}`,
+      );
+    }
     process.exit(1);
   }
-
-  const patched = (await patchRes.json()) as ReportProduct[];
-  if (!Array.isArray(patched) || patched.length === 0) {
-    console.error(
-      "PATCH påvirket 0 rader — concurrent write. config er endret siden vi leste.",
-    );
-    console.error(
-      `MP3-filer er skrevet, men DB ikke oppdatert. Kjør scriptet på nytt. Backup: ${backupPath}`,
-    );
-    process.exit(1);
-  }
-  console.log(`PATCH OK. ${patched.length} rad oppdatert.`);
-
-  await revalidate(`product:${projectId}`);
+  console.log(`PATCH OK. ${patchResult.rows} rad oppdatert.`);
 
   console.log();
   console.log("✓ Ferdig");

@@ -17,6 +17,10 @@ import { dirname, join } from "node:path";
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const buildSrc = readFileSync(join(DIR, "audio-tour-build.ts"), "utf8");
+const patchModuleSrc = readFileSync(
+  join(process.cwd(), "lib/pipeline/patch-product-config.ts"),
+  "utf8",
+);
 const localSrc = readFileSync(join(DIR, "audio-tour-build-local.ts"), "utf8");
 const manusSrc = readFileSync(join(DIR, "audio-manus-write.ts"), "utf8");
 
@@ -52,15 +56,17 @@ describe("r14.3 AC1 — to-fase: Phase 1 TTS parallelt in-memory + MIN_BYTES, ab
   });
 });
 
-describe("r14.3 AC2 — optimistisk lås på updated_at", () => {
-  it("PATCH-en bruker updated_at=eq som optimistisk lås", () => {
-    expect(buildSrc).toMatch(
-      /searchParams\.set\("updated_at", `eq\.\$\{product\.updated_at\}`\)/,
-    );
+describe("r14.3 AC2 — optimistisk lås på updated_at (via delt modul, whp)", () => {
+  // Selve låsen + 0-rad-atferden er EKSEKVERINGS-testet i
+  // lib/pipeline/patch-product-config.test.ts. Her pinner vi kun at
+  // scriptet konsumerer modulen med lest updated_at.
+  it("scriptet sender lest updated_at inn i patchThenRevalidate", () => {
+    expect(buildSrc).toMatch(/patchThenRevalidate\(/);
+    expect(buildSrc).toMatch(/updatedAt: product\.updated_at/);
   });
 
   it("0-rad PATCH → concurrent-write-abort med re-kjør-instruks (ingen stille suksess)", () => {
-    expect(buildSrc).toMatch(/patched\.length === 0/);
+    expect(patchModuleSrc).toMatch(/patched\.length === 0/);
     expect(buildSrc).toMatch(/concurrent write/);
     expect(buildSrc).toMatch(/Kj(ø|o)r scriptet p(å|a) nytt/i);
   });
@@ -111,21 +117,22 @@ describe("r14.3 AC5 — PATCH via rå fetch med service-role i header + bevart e
   });
 
   it("PATCH-feil (!ok) håndteres med eksplisitt exit, ikke stille svelg", () => {
-    expect(buildSrc).toMatch(/if \(!patchRes\.ok\)/);
+    expect(patchModuleSrc).toMatch(/if \(!patchRes\.ok\)/);
+    expect(buildSrc).toMatch(/if \(!patchResult\.ok\)/);
     expect(buildSrc).toMatch(/process\.exit\(1\)/);
   });
 });
 
 describe("r14.3 AC6 — revalidateTag(product:{customer}_{slug}) etter PATCH", () => {
   it("DB-byggeren revaliderer product:${projectId} (== product:{customer}_{slug} per PRD 7 K1)", () => {
-    expect(buildSrc).toMatch(/await revalidate\(`product:\$\{projectId\}`\)/);
+    expect(buildSrc).toMatch(/revalidate: \(\) => revalidate\(`product:\$\{projectId\}`\)/);
     expect(buildSrc).toMatch(/\/api\/revalidate\?tag=/);
   });
 
-  it("revalidate skjer ETTER vellykket PATCH (ikke før)", () => {
-    const patchIdx = buildSrc.indexOf("PATCH OK.");
-    const revalidateIdx = buildSrc.indexOf("await revalidate(`product:");
-    expect(patchIdx).toBeGreaterThan(0);
-    expect(revalidateIdx).toBeGreaterThan(patchIdx);
+  it("revalidate skjer ETTER vellykket PATCH (ikke før) — EKSEKVERINGS-testet", () => {
+    // Sekvensen bevises med mock.invocationCallOrder i
+    // lib/pipeline/patch-product-config.test.ts (auditens mutasjon fanges der).
+    // Kilde-pinning her: scriptet går via patchThenRevalidate, aldri egen sekvens.
+    expect(buildSrc).toMatch(/patchThenRevalidate\(/);
   });
 });

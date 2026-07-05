@@ -36,6 +36,7 @@ import {
 } from "../lib/curation/poi-linker";
 import { sanitizeGeminiInput } from "../lib/curation/sanitize-input";
 import { validateCuratedNarrative } from "../lib/curation/validator";
+import { patchThenRevalidate } from "../lib/pipeline/patch-product-config";
 import type {
   ReportThemeConfig,
   ReportThemeGrounding,
@@ -461,53 +462,43 @@ async function apply(): Promise<void> {
   const nextReportConfig = { ...existingRc, themes: nextThemes };
   const nextConfig = { ...existingConfig, reportConfig: nextReportConfig };
 
-  // PATCH med optimistic lock
-  const patchUrl = new URL(`${SUPABASE_URL}/rest/v1/products`);
-  patchUrl.searchParams.set("id", `eq.${product.id}`);
-  patchUrl.searchParams.set("updated_at", `eq.${product.updated_at}`);
-
-  const patchRes = await fetch(patchUrl.toString(), {
-    method: "PATCH",
-    headers: {
-      apikey: SUPABASE_KEY!,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
+  // PATCH med optimistic lock + revalidate KUN ved suksess (delt modul,
+  // eksekverings-testet i lib/pipeline/patch-product-config.test.ts)
+  const patchResult = await patchThenRevalidate({
+    supabaseUrl: SUPABASE_URL!,
+    supabaseKey: SUPABASE_KEY!,
+    productId: product.id,
+    updatedAt: product.updated_at,
+    config: nextConfig,
+    revalidate: async () => {
+      if (!REVALIDATE_SECRET) {
+        console.warn("REVALIDATE_SECRET ikke satt — hopper over revalidateTag.");
+        return;
+      }
+      const tag = `product:${projectId}`;
+      const revUrl = `${SITE_URL}/api/revalidate?tag=${encodeURIComponent(tag)}&secret=${encodeURIComponent(REVALIDATE_SECRET)}`;
+      try {
+        const r = await fetch(revUrl);
+        if (r.ok) console.log(`revalidateTag OK: ${tag}`);
+        else console.warn(`revalidateTag feilet: ${r.status}`);
+      } catch (err) {
+        console.warn(`revalidateTag-fetch kastet: ${(err as Error).message}`);
+      }
     },
-    body: JSON.stringify({ config: nextConfig }),
   });
 
-  if (!patchRes.ok) {
-    const text = await patchRes.text();
-    console.error(`\nPATCH feilet: ${patchRes.status} ${text}`);
-    console.error(`Backup: ${backupPath}`);
-    process.exit(1);
-  }
-  const patched = (await patchRes.json()) as ReportProductRow[];
-  if (!Array.isArray(patched) || patched.length === 0) {
-    console.error(
-      "\nPATCH påvirket 0 rader — concurrent write. Kjør scriptet på nytt.",
-    );
-    console.error(`Backup: ${backupPath}`);
-    process.exit(1);
-  }
-  console.log(`\nPATCH OK. ${patched.length} rad oppdatert.`);
-
-  // Revalidate
-  if (REVALIDATE_SECRET) {
-    // Build project-tag fra project_id (samme mønster som Steg 2.5)
-    const tag = `product:${projectId}`;
-    const revUrl = `${SITE_URL}/api/revalidate?tag=${encodeURIComponent(tag)}&secret=${encodeURIComponent(REVALIDATE_SECRET)}`;
-    try {
-      const r = await fetch(revUrl);
-      if (r.ok) console.log(`revalidateTag OK: ${tag}`);
-      else console.warn(`revalidateTag feilet: ${r.status}`);
-    } catch (err) {
-      console.warn(`revalidateTag-fetch kastet: ${(err as Error).message}`);
+  if (!patchResult.ok) {
+    if (patchResult.reason === "http") {
+      console.error(`\nPATCH feilet: ${patchResult.status} ${patchResult.body}`);
+    } else {
+      console.error(
+        "\nPATCH påvirket 0 rader — concurrent write. Kjør scriptet på nytt.",
+      );
     }
-  } else {
-    console.warn("REVALIDATE_SECRET ikke satt — hopper over revalidateTag.");
+    console.error(`Backup: ${backupPath}`);
+    process.exit(1);
   }
+  console.log(`\nPATCH OK. ${patchResult.rows} rad oppdatert.`);
 
   console.log(`\n✓ Ferdig. ${successCount}/${outcomes.length} kuratert til v2.`);
   console.log(`  Backup: ${backupPath}`);

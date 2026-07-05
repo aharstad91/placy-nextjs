@@ -69,13 +69,14 @@ describe("curate-narrative AC4 — PATCH: v2-bump + optimistic lock + revalidate
   });
 
   it("PATCH-er med updated_at=eq optimistic lock", () => {
-    expect(src).toMatch(
-      /searchParams\.set\("updated_at", `eq\.\$\{product\.updated_at\}`\)/,
-    );
+    // Låsen bor nå i den delte modulen (eksekverings-testet i
+    // lib/pipeline/patch-product-config.test.ts); scriptet sender lest verdi.
+    expect(src).toMatch(/patchThenRevalidate\(/);
+    expect(src).toMatch(/updatedAt: product\.updated_at/);
   });
 
   it("0-rad PATCH → abort (ingen stille suksess ved concurrent write)", () => {
-    expect(src).toMatch(/patched\.length === 0/);
+    expect(src).toMatch(/patchResult\.reason === "http"/);
     expect(src).toMatch(/0 rader[\s\S]*?concurrent write/);
   });
 
