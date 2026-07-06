@@ -20,7 +20,8 @@ vi.mock("@/lib/pipeline/travel-times", () => ({ computeProjectTravelTimes: vi.fn
 vi.mock("@/lib/pipeline/inherit-area-editorial", () => ({ inheritAreaEditorial: vi.fn() }));
 vi.mock("@/lib/pipeline/provision-acceptance", () => ({ runAcceptanceCheck: vi.fn() }));
 
-import { geocodeAddress, getKommunenummer } from "@/lib/pipeline/geocode";
+import { geocodeAddress, getKommunenummer, meetsGeocodeConfidence } from "@/lib/pipeline/geocode";
+import { NAERING_GOOGLE_CATEGORIES } from "@/lib/pipeline/enrich-report-pois";
 import { createReportProject } from "@/lib/pipeline/create-report-project";
 import { importPublicPois } from "@/lib/pipeline/import-public-pois";
 import { enrichReportPois } from "@/lib/pipeline/enrich-report-pois";
@@ -146,5 +147,43 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     setHappyDefaults(true);
     await provisionReportBoard({ ...BASE, confirmCoords: { lat: 1, lng: 2 } });
     expect(m.travel).not.toHaveBeenCalled();
+  });
+
+  it("geocode uten treff → KASTER før noen writes (aldri board på feil sted)", async () => {
+    m.geocode.mockResolvedValue([]);
+    await expect(provisionReportBoard(BASE)).rejects.toThrow(/Finner ikke adresse/);
+    expect(m.project).not.toHaveBeenCalled();
+  });
+
+  it("lav geocode-confidence → KASTER før noen writes (gaten er load-bearing)", async () => {
+    // En svak match (feil gate/nabolag) ville gitt et komplett, plausibelt
+    // board rundt FEIL punkt — den dyreste stille feilen i hele pipelinen.
+    vi.mocked(meetsGeocodeConfidence).mockReturnValueOnce(false);
+    await expect(provisionReportBoard(BASE)).rejects.toThrow(/confidence/i);
+    expect(m.project).not.toHaveBeenCalled();
+  });
+
+  it("Kartverket-oppslag feiler (kommunenummer null) → offentlige POI-er skippes med varsel, resten kjører", async () => {
+    // Stille-tap-kontrakten: uten kommunenummer mister boardet NSR-skolene,
+    // men provisjonen skal varsle og fullføre — ikke kaste, ikke skippe stille.
+    m.kommune.mockResolvedValue(null);
+    const warned: string[] = [];
+    const result = await provisionReportBoard(BASE, {
+      log() {}, warn: (msg) => warned.push(msg), section() {},
+    });
+    expect(m.publicPois).not.toHaveBeenCalled();
+    expect(warned.some((w) => w.includes("kommunenummer ukjent"))).toBe(true);
+    expect(result.acceptance?.ok).toBe(true);
+    expect(m.enrich).toHaveBeenCalled();
+  });
+
+  it("profil→kategoriliste: bolig sender undefined (BOLIG-default i enrich), næring sender NAERING_GOOGLE_CATEGORIES", async () => {
+    await provisionReportBoard({ ...BASE, confirmCoords: { lat: 1, lng: 2 } });
+    expect(m.enrich.mock.calls[0][0].categories).toBeUndefined();
+
+    vi.clearAllMocks();
+    setHappyDefaults();
+    await provisionReportBoard({ ...BASE, profile: "naering", confirmCoords: { lat: 1, lng: 2 } });
+    expect(m.enrich.mock.calls[0][0].categories).toEqual(NAERING_GOOGLE_CATEGORIES);
   });
 });

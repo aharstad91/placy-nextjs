@@ -90,6 +90,27 @@ describe("calculateTravelTimes — Matrix-motoren", () => {
     expect(result.slice(24).every((r) => r.walk === 5)).toBe(true);
   });
 
+  it("koordinat-rekkefølgen i Matrix-URL-en er lng,lat (Mapbox-konvensjonen) — bytta akser gir plausible men gale tider", async () => {
+    // En lat/lng-swap her ville gitt reisetider fra et punkt i Indiahavet —
+    // tallene ser fortsatt ut som minutter, så feilen er 100 % stille på boardet.
+    const fetchMock = vi.fn<(url: string) => Promise<ReturnType<typeof matrixOk>>>(
+      async () => matrixOk([120])
+    );
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    await calculateTravelTimes(
+      { lat: 63.43, lng: 10.4 },
+      [{ id: "poi-x", coordinates: { lat: 63.44, lng: 10.41 } }],
+      TOKEN,
+      ["walk"]
+    );
+
+    const url = fetchMock.mock.calls[0][0];
+    // origo først (lng,lat), deretter destinasjonen (lng,lat)
+    expect(url).toContain("/10.4,63.43;10.41,63.44?");
+    expect(url).toContain("/mapbox/walking/");
+  });
+
   it("null-durasjon (uoppnåelig destinasjon) → walk utelates for den POI-en", async () => {
     vi.stubGlobal(
       "fetch",

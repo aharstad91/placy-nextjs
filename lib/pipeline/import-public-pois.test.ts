@@ -224,6 +224,69 @@ describe("importPublicPois — Unit 2", () => {
     expect(result.warnings.some((w) => w.includes("Overpass: ingen"))).toBe(true);
   });
 
+  it("seeding-FEIL aborterer IKKE — kildene skriver POI-er likevel, kun warning (rapportert funn: original-bugen kan gjenoppstå ved transient DB-feil)", async () => {
+    // Pinner dagens fail-soft-policy: runSource fanger upsertCategories-kast og
+    // fortsetter. Konsekvens: en DB-hikke i seedingen gjenskaper nøyaktig
+    // «Barn & Oppvekst forsvinner»-bugen (POI-er med udefinert kategori →
+    // «Ukjent» på boardet) med bare en warning som spor. Endres policyen til
+    // abort-on-seed-failure (anbefalt vurdert), skal denne testen oppdateres.
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+    vi.mocked(upsertCategories).mockRejectedValueOnce(new Error("DB nede"));
+
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(NSR_RESPONSES.threeSkoler), status: 200 } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ elements: [] }), status: 200 } as Response);
+
+    const result = await importPublicPois(BASE_OPTIONS);
+
+    expect(result.warnings.some((w) => w.includes("Kategorier: feilet"))).toBe(true);
+    // Kildene kjørte videre og skrev POI-er til tross for useedede kategorier
+    expect(result.counts.nsr).toBe(1);
+  });
+
+  it("re-kjøring: eksisterende POI med samme nsr_id men annen DB-id → remappes til eksisterende id (ingen duplikat/unique-krasj)", async () => {
+    // upsertAndLink-pre-lookupen er dedup-vernet på tvers av pipeliner: uten
+    // den ville en re-provisjonering enten krasjet på partial unique index
+    // (fanget fail-soft → skolen STILLE borte fra boardet) eller skapt duplikat.
+    const upsertPayloads: Array<Array<{ id: string }>> = [];
+    const mockSupabase = buildMockSupabase();
+    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
+      if (table === "pois") {
+        return {
+          upsert: vi.fn().mockImplementation((rows: Array<{ id: string }>) => {
+            upsertPayloads.push(rows);
+            return {
+              select: vi.fn().mockResolvedValue({ data: rows.map((r) => ({ id: r.id })), error: null }),
+            };
+          }),
+          select: vi.fn().mockReturnValue({
+            // Pre-lookup på kilde-ID: skolen finnes allerede under legacy-uuid
+            in: vi.fn().mockResolvedValue({
+              data: [{ id: "legacy-uuid-1001", nsr_id: "nsr-1001" }],
+              error: null,
+            }),
+          }),
+        };
+      }
+      return buildMockSupabase().from(table);
+    });
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([NSR_RESPONSES.threeSkoler[0]]), status: 200 } as Response) // kun Alfaskolen (nsr-1001)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ elements: [] }), status: 200 } as Response);
+
+    const result = await importPublicPois(BASE_OPTIONS);
+
+    expect(result.counts.nsr).toBe(1);
+    const nsrPayload = upsertPayloads.find((rows) => rows.some((r) => r.id.includes("1001")));
+    expect(nsrPayload).toBeDefined();
+    expect(nsrPayload![0].id).toBe("legacy-uuid-1001");
+  });
+
   it("seeder kategori-definisjonene (skole/barnehage/idrett) FØR kildene skriver POI-er (cutover-funn 2026-07-06)", async () => {
     const mockSupabase = buildMockSupabase();
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);

@@ -134,6 +134,88 @@ describe("hydrateReport — Unit 4", () => {
     expect(result.featuredMarked).toBe(1);
   });
 
+  it("featured-cap: 4 kvalifiserte i samme kategori → kun topp 3 markeres (høyest score vinner)", async () => {
+    // Fire restauranter innen 1500 m — 'best' har høyest rating/review-vekt og
+    // MÅ være blant de tre. Capen (FEATURED_TOP_N=3) er stille: en regresjon
+    // til «alle featured» ville oversvømt boardet uten feilmelding.
+    const fourNear: TestPoi[] = [
+      { id: "r-best", category_id: "restaurant", lat: 63.412, lng: 10.77, google_rating: 4.9, google_review_count: 500 },
+      { id: "r-2", category_id: "restaurant", lat: 63.413, lng: 10.77, google_rating: 4.5, google_review_count: 200 },
+      { id: "r-3", category_id: "restaurant", lat: 63.414, lng: 10.77, google_rating: 4.2, google_review_count: 100 },
+      { id: "r-worst", category_id: "restaurant", lat: 63.4145, lng: 10.77, google_rating: 3.1, google_review_count: 5 },
+    ];
+    const featuredIn: string[][] = [];
+    const mockSupabase = buildMockSupabase(fourNear);
+    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
+      if (table === "product_pois") {
+        return {
+          delete: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+          insert: vi.fn().mockResolvedValue({ error: null }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockImplementation(async (_col: string, ids: string[]) => {
+                featuredIn.push(ids);
+                return { error: null };
+              }),
+            }),
+          }),
+        };
+      }
+      return buildMockSupabase(fourNear).from(table);
+    });
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    const result = await hydrateReport(BASE_OPTIONS);
+
+    expect(result.featuredMarked).toBe(3);
+    expect(featuredIn).toHaveLength(1);
+    expect(featuredIn[0]).toHaveLength(3);
+    expect(featuredIn[0]).toContain("r-best");
+    expect(featuredIn[0]).not.toContain("r-worst");
+  });
+
+  it("display_order følger bolig-temarekkefølgen; kategori uten tema-hjem → 999 (rapportert funn: profil-blind)", async () => {
+    // hydrateReport bruker REPORT_THEME_DEFAULTS ubetinget — også for nærings-
+    // boards (rapportert funn). Denne pinner dagens kontrakt: rekkefølgen
+    // kommer fra bolig-temaenes flatMap, og en kategori utenfor alle bolig-
+    // temaer (f.eks. museum) sorteres sist med 999.
+    const mixed: TestPoi[] = [
+      { id: "p-museum", category_id: "museum", lat: 63.412, lng: 10.77, google_rating: 4.0, google_review_count: 10 },
+      { id: "p-rest", category_id: "restaurant", lat: 63.413, lng: 10.77, google_rating: 4.0, google_review_count: 10 },
+      { id: "p-skole", category_id: "skole", lat: 63.414, lng: 10.77, google_rating: null, google_review_count: null },
+    ];
+    const insertedRows: Array<{ category_id: string; display_order: number }>[] = [];
+    const mockSupabase = buildMockSupabase(mixed);
+    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
+      if (table === "product_categories") {
+        return {
+          delete: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+          insert: vi.fn().mockImplementation(async (rows) => {
+            insertedRows.push(rows);
+            return { error: null };
+          }),
+        };
+      }
+      return buildMockSupabase(mixed).from(table);
+    });
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    const result = await hydrateReport(BASE_OPTIONS);
+
+    expect(result.categoriesPopulated).toBe(3);
+    expect(insertedRows).toHaveLength(1);
+    const rows = insertedRows[0];
+    const orderOf = (cat: string) => rows.find((r) => r.category_id === cat)!.display_order;
+    // skole (Barn & Oppvekst, tema 2) kommer før restaurant (Mat & Drikke, tema 3)
+    expect(orderOf("skole")).toBeLessThan(orderOf("restaurant"));
+    // museum finnes ikke i noe bolig-tema → 999 (sist)
+    expect(orderOf("museum")).toBe(999);
+    // radene er sortert stigende på display_order
+    expect(rows.map((r) => r.display_order)).toEqual(
+      [...rows.map((r) => r.display_order)].sort((a, b) => a - b)
+    );
+  });
+
   it("ingen POI-er koblet → returner 0-tall og advarsel", async () => {
     const mockSupabase = buildMockSupabase([]);
     // Override project_pois.select → tom liste
