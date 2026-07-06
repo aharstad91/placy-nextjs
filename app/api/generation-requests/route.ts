@@ -6,6 +6,7 @@ import { slugify } from "@/lib/utils/slugify";
 import { provisionReportBoard } from "@/lib/pipeline/provision";
 import { DEFAULT_CUSTOMER } from "@/lib/pipeline/create-report-project";
 import type { ReportProfile } from "@/lib/pipeline/report-defaults";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 
 /**
  * Self-serve adresse→rapport-board (PRD 3 Unit 8).
@@ -30,6 +31,12 @@ import type { ReportProfile } from "@/lib/pipeline/report-defaults";
  */
 
 export const maxDuration = 300;
+
+// Audit-fiks 2026-07-06: selvbetjent provisjonerings-endepunkt uten rate limit
+// er åpent for (a) ubegrenset billet API-spend (Gemini + Google Places + Mapbox)
+// og (b) e-post-bombing fra placy.no-domenet. Stram grense: provisjonering er
+// dyr og 5 kall/min per IP er mer enn nok for legitim selvbetjening.
+const postLimiter = createRateLimiter({ limit: 5, windowMs: 60_000 });
 
 const RESERVED_SLUGS = ["generer", "tekst", "admin", "api", DEFAULT_CUSTOMER];
 
@@ -82,6 +89,10 @@ async function getOrCreateCustomer(
 }
 
 export async function POST(request: NextRequest) {
+  if (!postLimiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }

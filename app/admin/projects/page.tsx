@@ -15,6 +15,7 @@ export const metadata = {
 // Server Actions
 async function createProject(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {
@@ -91,6 +92,7 @@ async function createProject(formData: FormData) {
 
 async function deleteProject(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const id = formData.get("id") as string;
   const deleteType = formData.get("type") as string || "container";

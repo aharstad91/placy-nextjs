@@ -12,6 +12,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./"),
+      // server-only throws in non-Next.js runtimes (Vitest/jsdom). Alias it to
+      // a no-op so tests that mock the importing module can still run. The real
+      // build-time enforcement comes from Next.js, not Vitest.
+      "server-only": path.resolve(__dirname, "vitest-server-only-stub.ts"),
     },
   },
 });

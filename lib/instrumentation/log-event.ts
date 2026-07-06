@@ -4,8 +4,10 @@
 // Skriver til v2.events via service-role-klienten — aldri klient→Supabase direkte.
 
 import { createServerClient } from "@/lib/supabase/client";
-import { isEventType, type EventType } from "./event-types";
+import { type EventType } from "./event-types";
 import { generateSessionId, isSessionIdShape } from "./session-id";
+import { parseLogEventInput } from "./event-schema";
+import { allowEvent } from "./event-throttle";
 
 export interface LogEventInput {
   eventType: EventType;
@@ -40,8 +42,29 @@ export interface LogEventInput {
  */
 export async function logEvent(input: LogEventInput): Promise<void> {
   try {
-    if (!isEventType(input.eventType)) {
-      console.warn(`[logEvent] ukjent event_type avvist: ${String(input.eventType)}`);
+    // (1) SKJEMA-VALIDERING (audit-herding 2026-07-06): inputen valideres FØR
+    // insert. Kjent event_type + typet payload per event-type (ukjente PAYLOAD-
+    // nøkler avvist), id-feltene på forventet form, total-størrelse kappet.
+    // Ugyldig → stille drop (fail-soft: aldri kast mot kalleren). `sessionId`
+    // plukkes bevisst IKKE av validatoren — den valideres på FORM under og
+    // degraderer (fersk server-id) i stedet for å droppe eventet.
+    const parsed = parseLogEventInput(input);
+    if (!parsed.ok) {
+      console.warn(`[logEvent] input avvist av validering: ${parsed.reason}`);
+      return;
+    }
+    const clean = parsed.data;
+
+    // (2) session_id (§5.4): kun FORMEN håndheves (opaque UUID v4). Ugyldig/
+    // fraværende → fersk server-id (eventet beholdes, kun grupperingen degraderes).
+    const sessionId = isSessionIdShape(input.sessionId)
+      ? input.sessionId
+      : generateSessionId();
+
+    // (3) VOLUM-DEMPING (audit-herding 2026-07-06): kveler replay-loops mot et
+    // kjent project_id. Dempet event droppes stille — fail-soft-kontrakten holder
+    // (ingen kast, render uberørt). Se event-throttle.ts for lag-valget.
+    if (!allowEvent({ sessionId, projectId: clean.projectId })) {
       return;
     }
 
@@ -50,14 +73,13 @@ export async function logEvent(input: LogEventInput): Promise<void> {
       .schema("v2")
       .from("events")
       .insert({
-        event_type: input.eventType,
-        project_id: input.projectId ?? null,
-        product_id: input.productId ?? null,
-        poi_id: input.poiId ?? null,
-        payload: (input.payload ?? null) as never,
-        session_id: isSessionIdShape(input.sessionId)
-          ? input.sessionId
-          : generateSessionId(),
+        event_type: clean.eventType,
+        project_id: clean.projectId ?? null,
+        product_id: clean.productId ?? null,
+        poi_id: "poiId" in clean ? (clean.poiId ?? null) : null,
+        // payload er nå et validert, typet objekt — ingen `as never`-cast lenger.
+        payload: clean.payload ?? null,
+        session_id: sessionId,
       });
 
     if (error) {

@@ -13,6 +13,7 @@ export const metadata = {
 // Server Actions
 async function createCustomer(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {
@@ -58,6 +59,7 @@ async function createCustomer(formData: FormData) {
 
 async function updateCustomer(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {
@@ -86,6 +88,7 @@ async function updateCustomer(formData: FormData) {
 
 async function deleteCustomer(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {

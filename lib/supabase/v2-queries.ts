@@ -14,6 +14,7 @@
  *   returnerer null → kalleren viser notFound i stedet for å kaste.
  */
 
+import "server-only";
 import { supabase } from "./client";
 import type { TablesV2 } from "./types";
 import type { DbCategory, DbPoi } from "./types";

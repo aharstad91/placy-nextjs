@@ -13,6 +13,7 @@ export const metadata = {
 // Server Actions
 async function createCategory(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {
@@ -44,6 +45,7 @@ async function createCategory(formData: FormData) {
 
 async function updateCategory(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {
@@ -74,6 +76,7 @@ async function updateCategory(formData: FormData) {
 
 async function deleteCategory(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {

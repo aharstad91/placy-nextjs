@@ -20,6 +20,7 @@ export const dynamic = "force-dynamic";
 // Server Actions
 async function createPOI(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {
@@ -60,6 +61,7 @@ async function createPOI(formData: FormData) {
 
 async function deletePOI(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {
@@ -79,6 +81,7 @@ async function deletePOI(formData: FormData) {
 
 async function updatePOI(formData: FormData) {
   "use server";
+  requireAdmin();
 
   const supabase = createServerClient();
   if (!supabase) {

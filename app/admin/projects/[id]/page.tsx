@@ -298,6 +298,7 @@ export default async function ProjectDetailPage({
 
   async function updateProject(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const id = getRequiredString(formData, "id");
     const shortId = getRequiredString(formData, "shortId");
@@ -329,6 +330,7 @@ export default async function ProjectDetailPage({
 
   async function addPoiToProject(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const projectId = getRequiredString(formData, "projectId");
     const shortId = getRequiredString(formData, "shortId");
@@ -369,6 +371,7 @@ export default async function ProjectDetailPage({
 
   async function batchAddPoisToProject(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const projectId = getRequiredString(formData, "projectId");
     const shortId = getRequiredString(formData, "shortId");
@@ -413,6 +416,7 @@ export default async function ProjectDetailPage({
 
   async function removePoiFromProject(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const projectId = getRequiredString(formData, "projectId");
     const shortId = getRequiredString(formData, "shortId");
@@ -455,6 +459,7 @@ export default async function ProjectDetailPage({
 
   async function addPoiToProduct(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const productId = getRequiredString(formData, "productId");
     const poiId = getRequiredString(formData, "poiId");
@@ -486,6 +491,7 @@ export default async function ProjectDetailPage({
 
   async function batchAddPoisToProduct(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const productId = getRequiredString(formData, "productId");
     const poiIdsJson = getRequiredString(formData, "poiIds");
@@ -516,6 +522,7 @@ export default async function ProjectDetailPage({
 
   async function batchRemovePoisFromProduct(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const productId = getRequiredString(formData, "productId");
     const poiIdsJson = getRequiredString(formData, "poiIds");
@@ -546,6 +553,7 @@ export default async function ProjectDetailPage({
 
   async function removePoiFromProduct(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const productId = getRequiredString(formData, "productId");
     const poiId = getRequiredString(formData, "poiId");
@@ -572,6 +580,7 @@ export default async function ProjectDetailPage({
 
   async function createProduct(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const projectId = getRequiredString(formData, "projectId");
     const shortId = getRequiredString(formData, "shortId");
@@ -612,6 +621,7 @@ export default async function ProjectDetailPage({
 
   async function deleteProduct(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const productId = getRequiredString(formData, "productId");
     const shortId = getRequiredString(formData, "shortId");
@@ -632,6 +642,7 @@ export default async function ProjectDetailPage({
 
   async function updateDefaultProduct(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const id = getRequiredString(formData, "id");
     const shortId = getRequiredString(formData, "shortId");
@@ -652,6 +663,7 @@ export default async function ProjectDetailPage({
 
   async function updateProjectTags(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const id = getRequiredString(formData, "id");
     const shortId = getRequiredString(formData, "shortId");
@@ -674,6 +686,7 @@ export default async function ProjectDetailPage({
 
   async function updateProjectHas3dAddon(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const id = getRequiredString(formData, "id");
     const shortId = getRequiredString(formData, "shortId");
@@ -694,6 +707,7 @@ export default async function ProjectDetailPage({
 
   async function setProjectReportTier(formData: FormData) {
     "use server";
+    requireAdmin();
 
     const productId = getRequiredString(formData, "productId");
     const shortId = getRequiredString(formData, "shortId");

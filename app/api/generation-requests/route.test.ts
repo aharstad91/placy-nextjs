@@ -33,6 +33,14 @@ vi.mock("@/lib/pipeline/create-report-project", () => ({
   DEFAULT_CUSTOMER: "intern",
 }));
 
+// Rate-limiter er in-memory og deler tilstand på tvers av tester i samme
+// modul-instans. Mock den bort slik at kontrakts-testene ikke avhenger av
+// rekkefølge eller akkumulert kall-telling.
+vi.mock("@/lib/utils/rate-limit", () => ({
+  createRateLimiter: () => ({ check: () => true }),
+  getClientIp: () => "test-ip",
+}));
+
 import { POST, GET } from "./route";
 
 /** Scriptbar Supabase-mock: hver await-et query-kjede resolver neste kø-element.

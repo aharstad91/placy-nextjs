@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchPlaceDetails, type PlaceDetails } from "@/lib/google-places/fetch-place-details";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 
 // Google Places API proxy with caching
+
+// Audit-fiks 2026-07-06: uautentisert proxy mot betalt Google Places API
+// trenger per-IP-grense. 60/min er romslig for legitim board-lasting
+// (initial-load fyrer typisk 5-20 kall), men stopper kvote-tapping ved
+// at angriper med distinkte place-IDer omgår in-memory-cachen.
+const limiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
 
 const PLACE_ID_PATTERN = /^[A-Za-z0-9_-]{1,300}$/;
 const MAX_CACHE_SIZE = 2000;
@@ -36,6 +43,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ placeId: string }> }
 ) {
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const { placeId } = await params;
 
   if (!placeId || !PLACE_ID_PATTERN.test(placeId)) {
