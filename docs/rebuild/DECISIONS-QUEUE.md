@@ -66,6 +66,14 @@ Ikke ratifisert — Andreas avgjør.
 
 ## OBS (funnet under r07.7 AC2-verifikasjon) — legacy `app/api/eiendom/tekst` runtime-LLM-rute
 
+> **✅ LØST 2026-07-06 — Andreas valgte (a) slett.** Empirisk grunnlag: siden
+> `/eiendom/tekst` var ulinket (`eiendomTekstUrl()` hadde null callers), modellen
+> (family/young/senior) er død, og Gemini+Fable build-time-kuratering superseder.
+> Slettet: API-ruten, TekstGeneratorForm, siden, urls-helperen — og
+> `@anthropic-ai/sdk`-avhengigheten (ruten var eneste konsument). Runtime-LLM-
+> unntaket i ESLint er dermed borte; `no-restricted-imports`-regelen står igjen
+> uten unntak.
+
 **Kategori:** scope-/produkt-valg (fjern vs. port en eksisterende feature-rute) — IKKE en r07.7-blocker.
 
 **Kontekst.** r07.7 (kuraterings-orkestratoren) er bygget og verifisert: curate-narrative.ts

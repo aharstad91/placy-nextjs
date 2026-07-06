@@ -15,7 +15,3 @@ export function eiendomUrl(
 export function eiendomGenererUrl() {
   return "/eiendom/generer";
 }
-
-export function eiendomTekstUrl() {
-  return "/eiendom/tekst";
-}
