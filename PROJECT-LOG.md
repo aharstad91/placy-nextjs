@@ -6,6 +6,29 @@
 
 ---
 
+## 2026-07-06 (kveld) — SIKKERHETSSVEIP + MOAT-NEDLÅSNING (orkestrert, xhigh)
+
+**Kontekst:** Etter cutoveren ba Andreas om en sikkerhets/best-practice-gjennomgang («det Fable er ekstra god på»). Fable orkestrerte, brukte opus/sonnet etter oppgave, og validerte funnene selv.
+
+**Sveip (3 parallelle ce-security-reviewers + egen live-verifisering):**
+- **Datalag (opus):** anon-SKRIV fullstendig stengt (0 grants/policies), PII-tabeller 401. MEN hele board-datasettet (5 386 POI-er + editorial + projects + collections) var anon-LESBART via PostgREST — bulk cross-tenant-enumererbart med den offentlige nøkkelen. Moaten var åpen for eksfiltrering.
+- **Admin + API (opus):** KRITISK — admin server-actions kalte ikke `requireAdmin()` i sin egen body (kun side-komponenten); hver `"use server"` er et selvstendig POST-endepunkt → uautentisert board-sletting mulig. Pluss: `/api/generation-requests` + `/api/places` uten rate limiting (API-spend/e-post-bombing/Google-kvote).
+- **Ingest + secrets (opus):** `logEvent` uten validering/demping → Moat-2-forgiftning. Ingen hardkodede secrets, ingen runtime-LLM (rent).
+
+**Fikser landet (commits 508b9d4, 9ab3047, 3d9fd51 — alle porter grønne, 1515 tester):**
+- **Admin authz:** `requireAdmin()` i alle 25 server-actions (5 sider).
+- **Moat-2 ingest:** Zod `.strict()` + 8 KiB-cap + to-lags throttle (session 120/min, project 2000/min); `as never`-cast fjernet.
+- **Rate limits:** `/api/generation-requests` 5/min, `/api/places` 60/min.
+- **MOAT-NEDLÅSNING (xhigh, prod):** board-lesestien (`v2-queries.ts` + `translations.ts`) flyttet anon→service-role; **anon-klienten fjernet helt** fra `lib/supabase/client.ts`. Migrasjon **076** (collections-PII, var aldri kjørt) + **077** (revoke anon+authenticated SELECT + drop policies på 11 board-tabeller inkl. projects) KJØRT mot prod.
+
+**Preflight-workflow (4 opus-agenter, adversarisk completeness-critic):** ga NO-GO først — fanget at `projects` manglet i revoke-lista (min prompt-feil) + at verifiserings-curl manglet `Accept-Profile: v2` (falsk PASS). Begge rettet før kjøring.
+
+**Verifisert live:** alle 12 board-tabeller 200→401 for anon, PII fortsatt 401, alle 6 boards rendrer 200 via service-role (Chrome: Wesselsløkka full render ~80 POI-er, 0 konsollfeil). **Nedlåsning uten nedetid.**
+
+**Åpne oppfølgingspunkter (todo #29-33):** places-ratelimit-test, server-action `allowedOrigins` (iframe-sensitivt), `v2.events` retention/volum-tak, ytelsespass (Lighthouse), utvidet logEvent-hostile-input-dekning.
+
+---
+
 ## 2026-07-06 — Fire Andreas-beslutninger landet + Next.js 14→16 / React 19
 
 **Kontekst:** Andreas våknet, godkjente push (90 commits → GitHub) og ratifiserte alle fire köede beslutninger via ett AskUserQuestion-panel (alle anbefalinger fulgt). Deretter «fortsett nr 2 og 3» → beslutningene implementert + hele framework-oppgraderingen.
