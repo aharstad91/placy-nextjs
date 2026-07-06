@@ -7,7 +7,9 @@
  *   1. teller events (baseline)
  *   2. logger ETT event via den EKTE logEvent-kjeden med komplett ny form:
  *      klient-stil sessionId (UUID v4) + projectId + kontekst-konvolutt
- *      (payload.context) + test-merking (payload.test=true + unik verify_run)
+ *      (payload.context). Test-merkingen ER den unike projectId-en — payload-
+ *      markører (test/verify_run) er umulige etter audit-herdingen: skjemaet
+ *      er .strict() og avviser ukjente nøkler (og det er poenget med det).
  *   3. leser raden tilbake via service-role og verifiserer HVERT felt
  *   4. sletter KUN sin egen rad (id-basert)
  *   5. verifiserer at events-count er netto uendret
@@ -29,7 +31,9 @@ import { createServerClient } from "../lib/supabase/client";
 
 const VERIFY_RUN = randomUUID();
 const SESSION_ID = randomUUID(); // klient-stil økt-nøkkel (engagement-scope-mønsteret)
-const PROJECT_ID = `verify-script-${VERIFY_RUN.slice(0, 8)}`;
+// Må matche PROJECT_ID_SHAPE (customer_slug-formen) — event-schema.ts avviser
+// ellers eventet før insert (oppdaget da 078-verifiseringen kjørte scriptet).
+const PROJECT_ID = `verify-script_${VERIFY_RUN.slice(0, 8)}`;
 
 const ENVELOPE: EngagementContextEnvelope = {
   mode: "report",
@@ -59,19 +63,20 @@ async function main(): Promise<void> {
   }
   console.log(`Baseline: ${before} rader i v2.events`);
 
-  // 2. Logg via den EKTE kjeden (fail-soft — verifiseres ved tilbakelesing)
+  // 2. Logg via den EKTE kjeden (fail-soft — verifiseres ved tilbakelesing).
+  //    Payloaden er skjema-gyldig (.strict() tåler kun context her).
   await logEvent({
     eventType: "board_viewed",
     projectId: PROJECT_ID,
     sessionId: SESSION_ID,
-    payload: { test: true, verify_run: VERIFY_RUN, context: ENVELOPE },
+    payload: { context: ENVELOPE },
   });
 
-  // 3. Les tilbake på unik merking
+  // 3. Les tilbake på unik merking (projectId er unik per kjøring)
   const { data: rows, error: readError } = await db
     .from("events")
     .select("id, event_type, project_id, session_id, payload, created_at")
-    .eq("payload->>verify_run", VERIFY_RUN);
+    .eq("project_id", PROJECT_ID);
 
   if (readError) {
     console.error("FEIL: tilbakelesing feilet:", readError.message);
@@ -91,8 +96,6 @@ async function main(): Promise<void> {
         project_id: string | null;
         session_id: string | null;
         payload: {
-          test?: boolean;
-          verify_run?: string;
           context?: EngagementContextEnvelope;
         } | null;
       }
@@ -107,7 +110,11 @@ async function main(): Promise<void> {
         ok: row.session_id === SESSION_ID,
         detail: `db=${row.session_id?.slice(0, 8)}… forventet=${SESSION_ID.slice(0, 8)}…`,
       },
-      { name: "payload.test=true (test-merking)", ok: row.payload?.test === true },
+      {
+        name: "payload holder KUN context (strict-skjemaet slapp ikke noe annet inn)",
+        ok: row.payload !== null && Object.keys(row.payload).join(",") === "context",
+        detail: `nøkler=${row.payload ? Object.keys(row.payload).join(",") : "null"}`,
+      },
       {
         name: "kontekst-konvolutt komplett",
         ok:
