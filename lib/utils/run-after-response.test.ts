@@ -38,4 +38,15 @@ describe("runAfterResponse", () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(errSpy).toHaveBeenCalled();
   });
+
+  it("delegerer til stabil after() fra next/server (Next 16) — fallback kun utenfor request-scope", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const src = readFileSync(
+      join(process.cwd(), "lib", "utils", "run-after-response.ts"),
+      "utf8"
+    );
+    expect(src).toContain('import { after } from "next/server"');
+    expect(src).toContain("after(run)");
+  });
 });

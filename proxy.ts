@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Middleware for routing and legacy redirects.
+ * Proxy (Next 16-navnet på middleware) for routing og legacy-redirects.
+ * Kjører på nodejs-runtime (proxy støtter ikke edge).
  *
  * Routes:
  * - /eiendom/... → Eiendom passthrough (primary)
@@ -32,7 +33,7 @@ const KNOWN_AREAS = ["trondheim"] as const;
 // Sub-paths under /for/ that are frozen (not redirected)
 const FROZEN_SUBPATHS = ["trips", "trip"] as const;
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const segments = pathname.split("/").filter(Boolean);
 

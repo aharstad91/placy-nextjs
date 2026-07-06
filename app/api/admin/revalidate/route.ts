@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Purge Supabase Data Cache so fresh data is fetched
-  revalidateTag(SUPABASE_CACHE_TAG);
+  // Next 16: to-args-form — 'max'-profil (stale-while-revalidate).
+  revalidateTag(SUPABASE_CACHE_TAG, "max");
 
   for (const path of paths as string[]) {
     revalidatePath(path, "layout");

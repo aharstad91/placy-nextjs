@@ -36,7 +36,9 @@ export async function GET(request: Request) {
     );
   }
 
-  revalidateTag(tag);
+  // Next 16: to-args-form — 'max'-profil (stale-while-revalidate). Umiddelbar
+  // expiry (updateTag) er Server-Action-only og utilgjengelig i route handlers.
+  revalidateTag(tag, "max");
   return NextResponse.json({ revalidated: true, tag, now: Date.now() });
 }
 
