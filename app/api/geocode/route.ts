@@ -1,43 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
+import { geocodeAddress } from "@/lib/pipeline/geocode";
 
-// Mapbox Geocoding API proxy
+// Mapbox Geocoding v6-proxy for adresse-autocomplete (bead aod, Beslutning #13-
+// oppfølging): runtime-banen deler nå v6-implementasjonen med pipelinen
+// (lib/pipeline/geocode.ts) — ingen provider-divergens.
 // Søk: /api/geocode?q=Storgata+1,+Oslo
-// Reverse: /api/geocode?lat=59.9139&lng=10.7522
+//
+// Responskontrakt mot konsumentene (ReportAddressInput/AddressAutocomplete) er
+// den minimale formen { features: [{ id, place_name, center }] } — v6-treff
+// mappes hit så klientene er uendret.
+//
+// Reverse-banen (?lat=&lng=) hadde null konsumenter og er fjernet.
+
+// Uautentisert proxy mot betalt Mapbox-API — samme per-IP-grense som
+// directions/travel-times (DECISIONS-QUEUE #2). Autocomplete er debounced
+// klientside; 60/min dekker legitim skriving med god margin.
+const limiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q");
-  const lat = searchParams.get("lat");
-  const lng = searchParams.get("lng");
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
-  const token = process.env.MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
-  if (!token) {
-    return NextResponse.json({ error: "Mapbox token not configured" }, { status: 500 });
+  const query = request.nextUrl.searchParams.get("q");
+  if (!query) {
+    return NextResponse.json(
+      { error: "Missing query parameter. Use ?q=address" },
+      { status: 400 }
+    );
   }
 
   try {
-    let url: string;
-
-    if (query) {
-      // Forward geocoding (address → coordinates)
-      url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=NO&limit=5&language=no`;
-    } else if (lat && lng) {
-      // Reverse geocoding (coordinates → address)
-      url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&limit=1&language=no`;
-    } else {
-      return NextResponse.json(
-        { error: "Missing query parameter. Use ?q=address or ?lat=...&lng=..." },
-        { status: 400 }
-      );
-    }
-
-    const res = await fetch(url);
-    const data = await res.json();
-
-    return NextResponse.json(data);
+    const results = await geocodeAddress(query);
+    return NextResponse.json({
+      features: results.map((r, i) => ({
+        id: `geocode-v6-${i}`,
+        place_name: r.placeName,
+        center: [r.lng, r.lat] as [number, number],
+      })),
+    });
   } catch (error) {
-    console.error("Geocoding error:", error);
+    console.error(
+      "Geocoding error:",
+      error instanceof Error ? error.message : error
+    );
     return NextResponse.json({ error: "Geocoding failed" }, { status: 500 });
   }
 }
