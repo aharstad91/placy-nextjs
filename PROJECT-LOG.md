@@ -6,6 +6,29 @@
 
 ---
 
+## 2026-07-06 (natt) — PARALLELL FAN-OUT + INTEGRASJON (ultracode-orkestrering)
+
+**Kontekst:** Etter moat-nedlåsningen ba Andreas om å utnytte ledig kapasitet med parallelle sesjoner. Fable gikk i orkestrator-modus: fyrte bakgrunns-agenter (opus/sonnet etter oppgave), delte ut worktree-baserte parallell-sesjoner, validerte alt selv, og integrerte til slutt. Todo-liste (#28–35) styrte fan-outen; hver oppgave eide distinkte filtrær (null kollisjon).
+
+**Oppfølgingsfiksene fra sikkerhetssveipet — landet (commits dd8f334, c698a58, db02127):**
+- **#29 places-ratelimit-test:** ny testfil, 7 tester (200/429, cache-treff teller ikke mot billed Google-kall).
+- **#33 logEvent hostile-input:** +23 tester (spoofed project_id, 8 KiB-grense inkl/ekskl, `.strict()` ukjente nøkler, poiId-på-feil-type, throttle-grenser). Ingen prod-bug funnet.
+- **#30 server-action-posture:** analyse viste at «sett allowedOrigins» ville VÆRT FEIL (ville svekket CSRF-vernet + brutt Vercel preview). Løst ved å DOKUMENTERE bevisst same-origin-default i next.config. Bonus: fikset død `/demo/wesselslokka`→`/rapport` redirect (404 etter cutover) → `/rapport-board` (verifisert 308 live).
+- **#34 perf F1 (størst ROI):** 700 kB skolekrets-GeoJSON lå i client-bundlen (via report-data.ts → «use client»-komponenter) på ALLE boards. Flyttet til server-side pre-compute (`getSchoolZone` i de 3 side-filene → `project.schoolZone`-prop). Verifisert: 0 forekomster i client-chunks, boards rendrer.
+
+**Ytelsesaudit (sonnet, 3 boards, headless Chrome):** F1 var eneste reelle vinner. **F2/F3 (#35) var et NON-FINDING** — opus-agenten verifiserte live at betinget 3D-load allerede finnes (`{has3dAddon && <BoardMap3D>}`); auditen antok feilaktig at Wesselsløkka er 2D (den er `has_3d_addon=true` — Andreas bekreftet: 3D tilsiktet). F4 (rå JPEG) også mest fantom — splash bruker allerede next/image. **Lærdom: en audit-agents funn må adversarisk verifiseres før man fikser — ~halvparten var fantomer.** Fable stoppet fan-out her i stedet for å jage mikrogevinster.
+
+**Tre parallelle worktree-sesjoner (Andreas kjørte, Fable integrerte):**
+- **B — events volum-tak:** migrasjon 078 (egen logg-entry under).
+- **C — board social/SEO (feat/board-social-seo):** dynamiske OG-bilder per board (`opengraph-image.tsx` × 4), `lib/seo/board-metadata` + `board-og-image`, `generateMetadata` på alle board-ruter, `app/robots.ts` (social-preview-bots får `/eiendom/`+`/event/`, Google fortsatt `Disallow: /` → boards uindeksert men rike delings-kort), `app/sitemap.ts`, admin-shell.
+- **D — pipeline-tester (test/pipeline-coverage):** +49 regresjonstester mot STILLE feilmoduser i `lib/pipeline/` (kategori-resolusjon, POI→tema-mapping, reisetid-enheter, discovery) — nettopp bug-klassen som tidligere lot «Barn & Oppvekst» forsvinne stille.
+
+**Integrasjon (merge → main `7eaf8b1`, alle porter grønne):** D + B + C merget i rekkefølge etter kollisjonsrisiko. Ingen merge-konflikter. Kritisk egen-verifisering: C og F1 rørte BEGGE de 3 `page.tsx`-filene → bekreftet at BÅDE schoolZone (F1) OG metadata (C) overlevde (ingen silent clobber), og at sikkerheten var uregredert (anon 401 på pois/collections/events_volume/translations etter merge). **1596 tester** (1515 → +81 gjennom økten), tsc 0, lint 0, build OK (4 OG-ruter registrert). Post-merge live: alle boards 200, OG-rute gir ekte 57 kB PNG, robots.txt som designet. Worktrees + merget branches ryddet.
+
+**Øktens totale leveranse:** sikkerhet (moat bulk-read stengt, PII lukket, admin-authz, ingest validert+throttlet+DB-backstop) + ytelse (F1) + SEO/social (delings-kort) + testdekning (+81). 12 commits, alt pushet, prototype uten nedetid. **Gjenstår kun mikro (F8/F9 preconnect, ~½-verdi).**
+
+---
+
 ## 2026-07-06 (sent) — v2.events VOLUM-TAK (migrasjon 078, prod-kjørt, ultracode)
 
 **Kontekst:** Oppfølgingspunkt #31 fra sikkerhetssveipet («v2.events retention/volum-tak»). Egen worktree (`../placy-ralph-events-retention`, feat/events-retention). Designavklaring mot moat-2-build-input: rå events ER moaten («aggreger opp, aldri disaggregér ned») → dette er et **volum-tak som sikkerhetsventil**, IKKE tidsbasert retention — den forblir bevisst deferret (aggregate-then-prune tas som egen beslutning ved behov).
