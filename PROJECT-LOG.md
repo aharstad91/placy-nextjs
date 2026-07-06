@@ -6,6 +6,32 @@
 
 ---
 
+## 2026-07-06 (natt, forts.) — SIKKERHETSAUDIT RUNDE 2 (uutforskede flater, adversarisk)
+
+**Kontekst:** Andreas ba om «videre teknisk og sikkerhetsaudit». Runde 1 dekket datalag/moat/admin-authz/ingest; runde 2 tok flatene vi IKKE hadde gått dypt på. Ultracode-workflow: 5 opus-findere (XSS, SSRF, admin-API, public-API, CSP+tokens) + adversarisk refuter per funn (default REFUTED ved tvil — direkte lærdom fra at halve ytelsesauditen var fantomer). 10 agenter, READ-ONLY.
+
+**Auditresultat — verify-steget nedgraderte ALLE fire «høy»-funn:**
+- **XSS: 100% ren.** Alle sinks refutert — badge-SVG tar Math.round()-koersert `number`, admin-`<style>` er statiske modulkonstanter, Gemini-DOMPurify er streng whitelist + build-time, curation-regex korrekt (non-global .test / global .replace). searchEntryPointHtml har ingen aktiv render-sink (latent — sanér ved wiring).
+- **SSRF: klassiske vektorer bevist LUKKET.** IP-literal-encoding (oktal/hex/desimal/IPv4-mapped) verifisert mot ipaddr.js 2.3.0; host-pivot umulig (hardkodede hosts, koordinater kun i path/body). Rest: image-proxy fulgte redirects blindt (lav), url-resolver DNS-rebinding-TOCTOU (lav, build-time-sti).
+- **Admin-API: auth intakt** — alle 6 ruter kaller requireAdminApi() først. Hull: ingen rate-limit (medium), fetch-photos manglet Zod + rå projectId i PostgREST-URL (lav).
+- **Public-API:** /api/collections POST uauth skriv + e-postutsending (medium); 5 proxy-ruter uten rate-limit + trails uten radius-cap + entur POST uten timeout (lav).
+- **CSP/tokens:** nanoid(8)-slugs adekvate (e-post lekker ikke til klient, ingen list-endpoint); admin manglet X-Frame-Options (lav); CSP deferred (ingen aktiv sink).
+
+**Fikset (commit dc48ccc, 3 parallelle sonnet-agenter, alle porter grønne, 1596 tester):**
+- /api/collections POST: rate-limit 5/min + poiIds-cap 100 (stoppet mail-bombing fra andreas@aharstad.no + DB-bloat).
+- Admin-ruter (provision/import/fetch-photos/trust-validate): rate-limit 10/min ETTER auth-gaten.
+- Public proxy-ruter (entur/mobility/hyre/bysykkel/trails): rate-limit 60/min; trails radius clampet til 20 km; entur POST fikk AbortSignal.timeout + Number.isFinite-koordinatsjekk + numTrips-cap.
+- image-proxy: timeout + rate-limit + redirect:manual + 10 MB-cap (host-allowlist bevart).
+- fetch-photos: Zod + encodeURIComponent(projectId) (PostgREST-filter-injeksjon via &).
+- next.config: X-Frame-Options:DENY + frame-ancestors 'none' på /admin (board-embed uberørt — verifisert live: admin har headeren, board har den ikke).
+- url-resolver: kommentar rettet (pre-resolve eliminerer ikke rebinding uten IP-pinning; logikk uendret).
+
+**Selv-verifisert:** admin-gaten fyrer FØR limiteren (auth først), collections-limiter øverst, image-proxy beholder allowlist. Live: admin X-Frame-Options:DENY, board uten (embed bevart), boards 200. INGEN prod-DB-endring — alt kode.
+
+**Bevisst utsatt (dokumentert, ikke bug):** CSP (defense-in-depth, wire ved Gemini-attribution-render), url-resolver IP-pinning (build-time, lav). Ingen kritiske/høye åpne funn igjen etter to runder.
+
+---
+
 ## 2026-07-06 (natt) — PARALLELL FAN-OUT + INTEGRASJON (ultracode-orkestrering)
 
 **Kontekst:** Etter moat-nedlåsningen ba Andreas om å utnytte ledig kapasitet med parallelle sesjoner. Fable gikk i orkestrator-modus: fyrte bakgrunns-agenter (opus/sonnet etter oppgave), delte ut worktree-baserte parallell-sesjoner, validerte alt selv, og integrerte til slutt. Todo-liste (#28–35) styrte fan-outen; hver oppgave eide distinkte filtrær (null kollisjon).
