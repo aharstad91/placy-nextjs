@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import { getProductAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
+import { buildBoardMetadata } from "@/lib/seo/board-metadata";
 import ReportPageParaform from "@/components/variants/report/paraform/ReportPageParaform";
 
 const getCachedReportProduct = (customer: string, projectSlug: string) =>
@@ -64,11 +65,10 @@ export async function generateMetadata({ params }: PageProps) {
     return { title: "Rapport ikke funnet" };
   }
 
-  return {
-    title: `${projectData.story.title} – Nabolagsrapport (Paraform-prototype) | Placy`,
-    description: projectData.story.introText,
-    alternates: {
-      canonical: `/eiendom/${customer}/${projectSlug}/rapport-paraform`,
-    },
-  };
+  return buildBoardMetadata({
+    project: projectData,
+    titleSuffix: "Nabolagsrapport (Paraform-prototype)",
+    shareSuffix: "Nabolagsrapport",
+    path: `/eiendom/${customer}/${projectSlug}/rapport-paraform`,
+  });
 }

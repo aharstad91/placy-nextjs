@@ -5,6 +5,7 @@ import { getBransjeprofil } from "@/lib/themes";
 import { getCollectionBySlug } from "@/lib/supabase/collections";
 import { eventToBoardData } from "@/lib/event-board/event-board-data";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
+import { buildBoardMetadata } from "@/lib/seo/board-metadata";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
 
 // Event-board er dynamisk på samme måte som event-Explorer-ruten: data hentes
@@ -132,8 +133,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Event not found" };
   }
 
-  return {
-    title: `${projectData.story.title} – Program (Board) | Placy`,
+  return buildBoardMetadata({
+    project: projectData,
+    titleSuffix: "Program (Board)",
+    shareSuffix: "Program",
+    path: `/event/${customer}/${projectSlug}/board`,
     description: `Utforsk programmet til ${projectData.name} på kartet`,
-  };
+  });
 }

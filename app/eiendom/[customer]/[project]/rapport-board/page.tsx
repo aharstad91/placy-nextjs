@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import { getProductAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
+import { buildBoardMetadata } from "@/lib/seo/board-metadata";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
 
@@ -97,11 +98,10 @@ export async function generateMetadata({ params }: PageProps) {
     return { title: "Rapport ikke funnet" };
   }
 
-  return {
-    title: `${projectData.story.title} – Nabolagsrapport (Board) | Placy`,
-    description: projectData.story.introText,
-    alternates: {
-      canonical: `/eiendom/${customer}/${projectSlug}/rapport-board`,
-    },
-  };
+  return buildBoardMetadata({
+    project: projectData,
+    titleSuffix: "Nabolagsrapport (Board)",
+    shareSuffix: "Nabolagsrapport",
+    path: `/eiendom/${customer}/${projectSlug}/rapport-board`,
+  });
 }
