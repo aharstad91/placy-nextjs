@@ -12,7 +12,19 @@
  */
 
 import { createServerClient } from "@/lib/supabase/client";
+import { upsertCategories } from "@/lib/supabase/mutations";
 import { slugify } from "@/lib/utils/slugify";
+
+/**
+ * Kategori-definisjonene denne modulen skriver POI-er med. MÅ seedes før
+ * POI-insert — v2 har ingen FK som fanger manglende definisjon, og en
+ * udefinert kategori resolver til «Ukjent» på boardet (temaet forsvinner).
+ */
+export const PUBLIC_POI_CATEGORIES = [
+  { id: "skole", name: "Skole", icon: "GraduationCap", color: "#f59e0b" },
+  { id: "barnehage", name: "Barnehage", icon: "Baby", color: "#f59e0b" },
+  { id: "idrett", name: "Idrettsanlegg", icon: "Trophy", color: "#f59e0b" },
+];
 
 // ── Haversine distance ─────────────────────────────────────────────────────
 
@@ -480,6 +492,15 @@ export async function importPublicPois(
 
   const { projectId, lat, lng, radiusMeters, kommunenummer } = options;
   const warnings: string[] = [];
+
+  // Seed kategori-definisjonene kildene skriver (cutover-funn 2026-07-06):
+  // Google-importen upserter sine kategorier, men denne modulen skrev POI-er
+  // med category_id skole/barnehage/idrett UTEN definisjonene → kategorien
+  // resolvet til «Ukjent» og hele Barn & Oppvekst-temaet forsvant fra boardet.
+  await runSource("Kategorier", warnings, async () => {
+    await upsertCategories(PUBLIC_POI_CATEGORIES, { schema: "v2" });
+    return PUBLIC_POI_CATEGORIES.length;
+  });
 
   // Seriell utførelse per kilde (maskin-hensyn), hver fail-soft (aldri abort).
   const nsr = await runSource("NSR", warnings, () =>

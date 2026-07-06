@@ -10,12 +10,17 @@ vi.mock("@/lib/utils/slugify", () => ({
   ),
 }));
 
+vi.mock("@/lib/supabase/mutations", () => ({
+  upsertCategories: vi.fn(async () => {}),
+}));
+
 // Mock global fetch
 const fetchMock = vi.fn();
 global.fetch = fetchMock;
 
 import { createServerClient } from "@/lib/supabase/client";
-import { importPublicPois } from "./import-public-pois";
+import { upsertCategories } from "@/lib/supabase/mutations";
+import { importPublicPois, PUBLIC_POI_CATEGORIES } from "./import-public-pois";
 
 const NSR_RESPONSES = {
   threeSkoler: [
@@ -217,5 +222,20 @@ describe("importPublicPois — Unit 2", () => {
     // Barnehagefakta og Overpass kjørte OK (counts er 0 pga tomme responser, men ingen feil)
     expect(result.warnings.some((w) => w.includes("Barnehagefakta: ingen"))).toBe(true);
     expect(result.warnings.some((w) => w.includes("Overpass: ingen"))).toBe(true);
+  });
+
+  it("seeder kategori-definisjonene (skole/barnehage/idrett) FØR kildene skriver POI-er (cutover-funn 2026-07-06)", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+    fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response);
+
+    await importPublicPois(BASE_OPTIONS);
+
+    expect(upsertCategories).toHaveBeenCalledWith(PUBLIC_POI_CATEGORIES, { schema: "v2" });
+    expect(PUBLIC_POI_CATEGORIES.map((c) => c.id).sort()).toEqual(["barnehage", "idrett", "skole"]);
+    // Seedes før første kilde-fetch — ellers kan en POI-insert vinne kappløpet
+    const seedOrder = vi.mocked(upsertCategories).mock.invocationCallOrder[0];
+    const firstFetchOrder = fetchMock.mock.invocationCallOrder[0];
+    expect(seedOrder).toBeLessThan(firstFetchOrder);
   });
 });

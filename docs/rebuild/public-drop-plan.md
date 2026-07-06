@@ -95,6 +95,18 @@ moaten (Moat 1) lever der**:
 Re-seed-migrasjoner skrives som egne filer (`NNN_reseed_moat_til_v2.sql`) og
 kjøres + verifiseres (rad-antall + stikkprøver) FØR drop-steget.
 
+> **STATUS 2026-07-06 — re-seed DELVIS UTFØRT (i forbindelse med referanse-
+> board-provisjonering):** `areas` 44/44 ✓ (7 m/ editorial), `place_knowledge`
+> 231/231 kopiert ✓ men kun **113 av 227** poi-nøklede rader remappet til
+> v2-POI-er (resten dangler til POI-ene deres provisjoneres inn — **remappen
+> MÅ re-kjøres etter hver provisjonering og fullføres/aksepteres før drop**,
+> for etter droppen finnes ikke mapping-kilden `public.pois` lenger).
+> `categories`: 133 definisjoner kopiert (inkl. skole/barnehage som pipelinen
+> skrev POI-er med uten definisjon — pipeline-buggen er fikset i
+> `import-public-pois.ts`). Kuratert `reportConfig` + POI-editorial (184 POI-er)
+> re-seedet for de tre referanse-boardene. `translations` (2720) IKKE kopiert
+> ennå — de er nøklet på POI-/tema-id og trenger samme remap-behandling.
+
 ## 4. Samtidig kode-trim (r01.6 AC2, eier-besluttet 2026-06-29 → hit)
 
 Ved droppen dør public-lesestien — samme PR trimmer:
