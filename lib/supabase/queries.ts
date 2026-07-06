@@ -42,7 +42,7 @@ import { MIN_TRUST_SCORE } from "../utils/poi-trust";
 // ============================================
 
 /** Filter out untrusted POIs. null = show (backward compatible), score < threshold = hide. */
-function filterTrustedPOIs(pois: POI[]): POI[] {
+export function filterTrustedPOIs(pois: POI[]): POI[] {
   return pois.filter((poi) => {
     if (poi.trustScore == null) return true;
     return poi.trustScore >= MIN_TRUST_SCORE;
@@ -53,7 +53,7 @@ function filterTrustedPOIs(pois: POI[]): POI[] {
 // Type Transformers
 // ============================================
 
-function transformCategory(dbCategory: DbCategory): Category {
+export function transformCategory(dbCategory: DbCategory): Category {
   return {
     id: dbCategory.id,
     name: dbCategory.name,
@@ -62,7 +62,7 @@ function transformCategory(dbCategory: DbCategory): Category {
   };
 }
 
-function transformPOI(
+export function transformPOI(
   dbPoi: DbPoi,
   category: Category | undefined
 ): POI {

@@ -20,6 +20,7 @@ import {
   getProjectTripOverride as getProjectTripOverrideFromSupabase,
   getTripsByPoiId as getTripsByPoiIdFromSupabase,
 } from "./supabase/queries";
+import { getProductFromSupabaseV2 } from "./supabase/v2-queries";
 
 export { getProjectShortId };
 import * as fs from "fs";
@@ -258,6 +259,10 @@ export async function getProductAsync(
   productType: ProductType
 ): Promise<Project | null> {
   if (isSupabaseConfigured()) {
+    // Cutover-fase A (2026-07-06): v2 FØRST — nye provisjoner lever i v2.
+    // Miss/feil → public-legacy-fallback (dør ved full cutover, r01.3).
+    const v2Project = await getProductFromSupabaseV2(customer, projectSlug, productType);
+    if (v2Project) return v2Project;
     return getProductFromSupabase(customer, projectSlug, productType);
   }
 
