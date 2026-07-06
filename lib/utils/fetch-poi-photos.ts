@@ -44,8 +44,9 @@ export async function fetchAndCachePOIPhotos(
   };
 
   // 1. Get all POIs for this project that need photos
+  // encodeURIComponent: PostgREST-filter-param-injeksjon via & ellers
   const poisRes = await fetch(
-    `${supabaseUrl}/rest/v1/project_pois?project_id=eq.${projectId}&select=poi_id,pois(id,name,google_place_id,featured_image)`,
+    `${supabaseUrl}/rest/v1/project_pois?project_id=eq.${encodeURIComponent(projectId)}&select=poi_id,pois(id,name,google_place_id,featured_image)`,
     { headers }
   );
 

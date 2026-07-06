@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 import {
   discoverGooglePlaces,
   discoverEnturStops,
@@ -97,6 +98,9 @@ const ImportRequestSchema = z.object({
 });
 
 type ImportRequest = z.infer<typeof ImportRequestSchema>;
+
+// Konservativ grense: operatør-rute, Google Places-spend per kall.
+const limiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
 
 interface ImportResponse {
   success: boolean;
@@ -329,6 +333,10 @@ export async function POST(request: NextRequest) {
   // 1. Admin check
   const gate = requireAdminApi();
   if (gate) return gate;
+
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
   // 2. Validate request body with Zod
   let body: ImportRequest;

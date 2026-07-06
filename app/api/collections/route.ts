@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { Resend } from "resend";
 import { createCollection } from "@/lib/supabase/mutations";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 
 interface CreateCollectionBody {
   projectId: string;
@@ -9,7 +10,20 @@ interface CreateCollectionBody {
   email?: string;
 }
 
+// Audit-fiks 2026-07-06: uautentisert rute som skriver DB + sender e-post fra
+// andreas@aharstad.no til bruker-oppgitt adresse. Stramt per-IP-tak: 5/min
+// stopper enkel misbruk uten å begrense legitim bruk (brukere lager sjelden
+// mer enn én samling per minutt).
+const limiter = createRateLimiter({ limit: 5, windowMs: 60_000 });
+
+// Maks antall POI-er per samling — cap mot unødvendig stor DB-skriving + e-post.
+const MAX_POI_IDS = 100;
+
 export async function POST(request: NextRequest) {
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     const body: CreateCollectionBody = await request.json();
 
@@ -24,6 +38,13 @@ export async function POST(request: NextRequest) {
     if (!body.poiIds || body.poiIds.length === 0) {
       return NextResponse.json(
         { message: "Minst én POI må være valgt" },
+        { status: 400 }
+      );
+    }
+
+    if (body.poiIds.length > MAX_POI_IDS) {
+      return NextResponse.json(
+        { message: `Maks ${MAX_POI_IDS} POI-er per samling` },
         { status: 400 }
       );
     }

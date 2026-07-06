@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/admin/require-admin";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 import { createServerClient } from "@/lib/supabase/client";
 import { slugify } from "@/lib/utils/slugify";
 import { runAfterResponse } from "@/lib/utils/run-after-response";
@@ -22,6 +23,9 @@ import { OptionalReportTierSchema } from "@/lib/validation/report-tier-schema";
  */
 
 export const maxDuration = 300;
+
+// Konservativ grense: operatør-rute, dyre oppstrøms-API-kall (Google/Mapbox) per request.
+const limiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
 
 /** Jobb-record-krav: generation_requests.email/consent er NOT NULL.
  *  Operatør-triggeren har ingen bestiller — bruk tydelig syntetisk verdi. */
@@ -55,6 +59,10 @@ function boardUrl(customer: string, slug: string): string {
 export async function POST(request: NextRequest) {
   const gate = requireAdminApi();
   if (gate) return gate;
+
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
   const supabase = createServerClient();
   if (!supabase) {

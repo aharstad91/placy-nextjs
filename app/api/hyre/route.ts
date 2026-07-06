@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 // Audit-fiks 2026-07-05: oppstrøms-API uten timeout holder rute-funksjonen
 // åpen ubestemt ved treg leverandør (connection-utsulting under last).
 const UPSTREAM_TIMEOUT_MS = 8000;
+
+// Audit-fiks 2026-07-06: per-IP rate-limit på offentlig Hyre-car-share-proxy.
+const limiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
 
 
 // Entur Mobility v2 API for Hyre car-sharing data
@@ -33,6 +37,10 @@ const STATION_QUERY = `
 const STATION_ID_PATTERN = /^[A-Za-z0-9:_-]+$/;
 
 export async function GET(request: NextRequest) {
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const stationId = request.nextUrl.searchParams.get("stationId");
 
   if (!stationId) {

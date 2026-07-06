@@ -6,7 +6,9 @@
  * (f.eks. "trondheim.kommune.no") i sheet-drawer.
  *
  * Sikkerhet:
- * - DNS pre-resolve (ALLE adresser) før fetch — hindrer rebinding
+ * - DNS pre-resolve (ALLE adresser) før fetch — reduserer rebinding-vinduet,
+ *   men eliminerer det ikke: IP pinnes ikke for selve fetch-kallet (TOCTOU-gap).
+ *   Full IP-pinning er deferred hardening (build-time-sti, lav risiko).
  * - Blokkerer private/reserved IP-rekker via ipaddr.js `range()`
  * - Manuell redirect-følging, max 3 hops
  * - Per-hop DNS + range-sjekk (hindrer redirect inn i intranett)

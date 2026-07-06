@@ -8,6 +8,15 @@ import {
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { NextRequest } from "next/server";
+
+// Rate-limiteren er in-memory og deler tilstand på tvers av tester i samme
+// modul-instans. Mock den bort slik at kontrakt-testene ikke avhenger av
+// rekkefølge eller akkumulert kall-telling (se generation-requests/route.test.ts).
+vi.mock("@/lib/utils/rate-limit", () => ({
+  createRateLimiter: () => ({ check: () => true }),
+  getClientIp: () => "test-ip",
+}));
+
 import { GET } from "./route";
 
 /**

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 import { createServerClient } from "@/lib/supabase/client";
 import {
   enrichTrustSignals,
@@ -22,6 +23,9 @@ import type { POI } from "@/lib/types";
 import { requireAdminApi } from "@/lib/admin/require-admin";
 
 const MAX_POIS_PER_REQUEST = 100;
+
+// Konservativ grense: operatør-rute, Google Places-spend per kall.
+const limiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
 
 const TrustValidateSchema = z.object({
   projectId: z.string().min(1),
@@ -57,6 +61,11 @@ export async function POST(request: NextRequest) {
   // 1. Admin + bearer token check
   const gate = requireAdminApi();
   if (gate) return gate;
+
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   if (!checkBearerAuth(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

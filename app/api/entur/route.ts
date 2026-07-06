@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 // Audit-fiks 2026-07-05: oppstrøms-API uten timeout holder rute-funksjonen
 // åpen ubestemt ved treg leverandør (connection-utsulting under last).
 const UPSTREAM_TIMEOUT_MS = 8000;
+
+// Audit-fiks 2026-07-06: per-IP rate-limit på alle offentlige Entur-ruter.
+const limiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
+
+// Maks antall reise-alternativer per POST-kall — stopper unødvendig stor
+// GraphQL-query mot Entur JourneyPlanner.
+const MAX_NUM_TRIPS = 10;
 
 
 // Entur JourneyPlanner API for sanntidsdata og reiseplanlegging
@@ -95,6 +103,10 @@ function formatCall(call: RawCall) {
 }
 
 export async function GET(request: NextRequest) {
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const stopPlaceId = searchParams.get("stopPlaceId");
   const numberOfDepartures = parseInt(searchParams.get("limit") || "5");
@@ -175,15 +187,28 @@ export async function GET(request: NextRequest) {
 
 // POST for reiseplanlegging
 export async function POST(request: NextRequest) {
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const body = await request.json();
   const { fromLat, fromLng, toLat, toLng, numTrips = 3 } = body;
 
-  if (!fromLat || !fromLng || !toLat || !toLng) {
+  // Number.isFinite avviser undefined/null/NaN/Infinity + sikrer at 0-koordinater
+  // (gyldig verdi) ikke feilaktig avvises av truthy-sjekk.
+  if (
+    !Number.isFinite(fromLat) ||
+    !Number.isFinite(fromLng) ||
+    !Number.isFinite(toLat) ||
+    !Number.isFinite(toLng)
+  ) {
     return NextResponse.json(
       { error: "from and to coordinates are required" },
       { status: 400 }
     );
   }
+
+  const clampedNumTrips = Math.min(Number.isFinite(numTrips) ? numTrips : 3, MAX_NUM_TRIPS);
 
   try {
     const response = await fetch(ENTUR_API_URL, {
@@ -208,7 +233,7 @@ export async function POST(request: NextRequest) {
               longitude: toLng,
             },
           },
-          numTripPatterns: numTrips,
+          numTripPatterns: clampedNumTrips,
         },
       }),
     });

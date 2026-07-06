@@ -43,8 +43,11 @@ const nextConfig = {
     ],
   },
   // Trygge security-headers (audit-sveip 2026-07-06). BEVISST ingen
-  // X-Frame-Options/frame-ancestors: boards embeddes i kunde-iframes
-  // (embed-modus er en produktflate). CSP deferred til cutover-herding.
+  // X-Frame-Options/frame-ancestors på global source: boards embeddes i
+  // kunde-iframes (embed-modus er en produktflate). CSP deferred til
+  // cutover-herding.
+  // /admin er aldri en embed-flate — DENY + frame-ancestors 'none' som
+  // defense-in-depth mot clickjacking på admin-handlinger.
   async headers() {
     return [
       {
@@ -52,6 +55,13 @@ const nextConfig = {
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      {
+        source: "/admin/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
         ],
       },
     ];

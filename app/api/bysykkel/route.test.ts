@@ -10,6 +10,15 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { NextRequest } from "next/server";
 
+// Rate-limiteren er in-memory og deler tilstand på tvers av tester i samme
+// modul-instans. Mock den bort slik at kontrakt-testene ikke avhenger av
+// rekkefølge eller akkumulert kall-telling (se generation-requests/route.test.ts).
+// Mocken re-appliseres automatisk etter vi.resetModules() siden vi.mock() er hoisted.
+vi.mock("@/lib/utils/rate-limit", () => ({
+  createRateLimiter: () => ({ check: () => true }),
+  getClientIp: () => "test-ip",
+}));
+
 /**
  * `route.ts` har en MODUL-NIVÅ station-info-cache (1t TTL). Den persisterer
  * mellom tester i samme fil og `Date.now()` rykker ikke en time frem under

@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchTrails } from "@/lib/generators/trail-fetcher";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 
 // Overpass API proxy — fetches hiking/cycling/walking trails as GeoJSON
 // Used by Report trail overlay and generate-story pipeline
 
+// Audit-fiks 2026-07-06: per-IP rate-limit på offentlig Overpass-proxy.
+const limiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
+
+// Maks radius mot Overpass — ubegrenset query kan hente store mengder OSM-data.
+const MAX_RADIUS_KM = 20;
+
 export async function GET(request: NextRequest) {
+  if (!limiter.check(getClientIp(request.headers))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   const searchParams = request.nextUrl.searchParams;
   const latStr = searchParams.get("lat");
   const lngStr = searchParams.get("lng");
@@ -29,14 +39,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const radiusKm = radiusKmStr ? parseFloat(radiusKmStr) : 3;
+  const radiusKmRaw = radiusKmStr ? parseFloat(radiusKmStr) : 3;
 
-  if (isNaN(radiusKm) || radiusKm <= 0) {
+  if (isNaN(radiusKmRaw) || radiusKmRaw <= 0) {
     return NextResponse.json(
       { error: "radiusKm must be a positive number" },
       { status: 400 }
     );
   }
+
+  // Clamp til maks 20 km — stopper unbounded Overpass-query.
+  const radiusKm = Math.min(radiusKmRaw, MAX_RADIUS_KM);
 
   // Parse types (comma-separated), default to all
   const validTypes = new Set(["bicycle", "hiking", "foot"]);
