@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Plus,
   Edit2,
@@ -9,6 +9,10 @@ import {
   Loader2,
   Tag,
   MapPin,
+  Search,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import type { TablesV2 } from "@/lib/supabase/types";
 
@@ -16,6 +20,9 @@ type DbCategory = TablesV2<"categories">;
 import { ConfirmDialog, IconPicker, ColorPicker, ICON_MAP } from "@/components/admin";
 
 type CategoryWithCount = DbCategory & { poiCount: number };
+
+type SortColumn = "name" | "poiCount";
+type SortDirection = "asc" | "desc";
 
 interface CategoriesAdminClientProps {
   categories: CategoryWithCount[];
@@ -40,6 +47,58 @@ export function CategoriesAdminClient({
   const [color, setColor] = useState("#3b82f6");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Search / sort / filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortColumn, setSortColumn] = useState<SortColumn>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [onlyInUse, setOnlyInUse] = useState(false);
+
+  const isFiltered = searchQuery.trim().length > 0 || onlyInUse;
+
+  const visibleCategories = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    const filtered = categories.filter((category) => {
+      if (query && !category.name.toLowerCase().includes(query)) {
+        return false;
+      }
+      if (onlyInUse && category.poiCount === 0) {
+        return false;
+      }
+      return true;
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      const comparison =
+        sortColumn === "name"
+          ? a.name.localeCompare(b.name, "nb")
+          : a.poiCount - b.poiCount;
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [categories, searchQuery, onlyInUse, sortColumn, sortDirection]);
+
+  const toggleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const renderSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="w-3.5 h-3.5 text-gray-300" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="w-3.5 h-3.5 text-gray-600" />
+    ) : (
+      <ArrowDown className="w-3.5 h-3.5 text-gray-600" />
+    );
+  };
 
   const openCreateModal = () => {
     setEditingCategory(null);
@@ -126,7 +185,9 @@ export function CategoriesAdminClient({
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Kategorier</h1>
             <p className="text-sm text-gray-500">
-              {categories.length} kategori{categories.length !== 1 && "er"}
+              {isFiltered
+                ? `${visibleCategories.length} av ${categories.length} kategori${categories.length !== 1 ? "er" : ""}`
+                : `${categories.length} kategori${categories.length !== 1 ? "er" : ""}`}
             </p>
           </div>
           <button
@@ -145,6 +206,29 @@ export function CategoriesAdminClient({
           </div>
         )}
 
+        {/* Toolbar: search + filter */}
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Søk etter kategorinavn..."
+              className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 transition-all"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-600 select-none cursor-pointer">
+            <input
+              type="checkbox"
+              checked={onlyInUse}
+              onChange={(e) => setOnlyInUse(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500/50"
+            />
+            Kun i bruk
+          </label>
+        </div>
+
         {/* Table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <table className="w-full">
@@ -154,13 +238,25 @@ export function CategoriesAdminClient({
                   Ikon
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Navn
+                  <button
+                    onClick={() => toggleSort("name")}
+                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                  >
+                    Navn
+                    {renderSortIcon("name")}
+                  </button>
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Farge
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  POI-er
+                  <button
+                    onClick={() => toggleSort("poiCount")}
+                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                  >
+                    POI-er
+                    {renderSortIcon("poiCount")}
+                  </button>
                 </th>
                 <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Handlinger
@@ -181,8 +277,15 @@ export function CategoriesAdminClient({
                     </button>
                   </td>
                 </tr>
+              ) : visibleCategories.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">Ingen kategorier matcher søket</p>
+                  </td>
+                </tr>
               ) : (
-                categories.map((category) => {
+                visibleCategories.map((category) => {
                   const IconComponent = ICON_MAP[category.icon] || MapPin;
                   return (
                     <tr

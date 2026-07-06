@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Plus,
   Trash2,
@@ -88,7 +87,6 @@ export function ProjectsAdminClient({
   createProject,
   deleteProject,
 }: ProjectsAdminClientProps) {
-  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     container: ProjectContainer;
@@ -296,19 +294,20 @@ export function ProjectsAdminClient({
               return (
                 <div
                   key={container.id}
-                  className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${
+                  className={`relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${
                     canNavigate
-                      ? "cursor-pointer hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                      ? "hover:bg-gray-50 hover:border-gray-300 transition-colors"
                       : ""
                   }`}
-                  onClick={
-                    canNavigate
-                      ? () =>
-                          router.push(`/admin/projects/${container.short_id}`)
-                      : undefined
-                  }
                 >
-                  <div className="flex items-center justify-between px-4 py-3">
+                  {canNavigate && (
+                    <Link
+                      href={`/admin/projects/${container.short_id}`}
+                      className="absolute inset-0 z-0"
+                      aria-label={`Åpne ${container.name}`}
+                    />
+                  )}
+                  <div className="relative z-10 flex items-center justify-between px-4 py-3 pointer-events-none">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
                         <Package className="w-4 h-4 text-blue-600" />
@@ -326,9 +325,9 @@ export function ProjectsAdminClient({
                       </div>
 
                       {/* Tags */}
-                      {container.tags && container.tags.length > 0 && (
-                        <div className="flex items-center gap-1 ml-2">
-                          {container.tags.map((tag) => (
+                      <div className="flex items-center gap-1 ml-2">
+                        {container.tags && container.tags.length > 0 ? (
+                          container.tags.map((tag) => (
                             <span
                               key={tag}
                               className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${
@@ -337,12 +336,16 @@ export function ProjectsAdminClient({
                             >
                               {tag}
                             </span>
-                          ))}
-                        </div>
-                      )}
+                          ))
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border text-gray-500 bg-gray-50 border-gray-200">
+                            Uten segment
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 pointer-events-auto">
                       {/* Product badges */}
                       <div className="flex items-center gap-1.5">
                         {container.products.map((product) => {
@@ -368,17 +371,13 @@ export function ProjectsAdminClient({
                         target="_blank"
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Åpne prosjekt"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <ExternalLink className="w-4 h-4" />
                       </Link>
 
                       {/* Delete container */}
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteTarget({ container });
-                        }}
+                        onClick={() => setDeleteTarget({ container })}
                         className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Slett prosjekt"
                       >

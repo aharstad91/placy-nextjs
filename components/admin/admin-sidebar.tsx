@@ -27,7 +27,7 @@ const NAV_ITEMS: NavLink[] = [
   { href: "/admin/pois", label: "POI-er", icon: MapPin },
   { href: "/admin/categories", label: "Kategorier", icon: Tag },
   { href: "/admin/generate", label: "Generator", icon: Sparkles },
-  { href: "/admin/requests", label: "Requests", icon: FileText },
+  { href: "/admin/requests", label: "Forespørsler", icon: FileText },
 ];
 
 interface AdminSidebarProps {

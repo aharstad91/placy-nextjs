@@ -152,7 +152,10 @@ export default async function AdminPOIsPage() {
       .schema("v2")
       .from("pois")
       .select("*")
+      // id som tiebreaker: created_at er ikke unik ved bulk-import, og uten
+      // stabil totalorden kan .range()-sider duplisere/droppe rader
       .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
     if (error) {
