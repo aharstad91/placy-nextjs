@@ -19,6 +19,12 @@
 
 **Status:** Beads-frontieren er nå HELT tom (aod + 2nj var de siste). Gjenværende åpne beads: kun r01.3/r01.6-AC2 (cutover-gated). 1607 tester grønt, alt pushet (origin/main = 877b9e9). DECISIONS-QUEUE er tom for åpne punkter.
 
+**Samme dag, fortsettelse («da får vi jobbe videre med dette da») — CUTOVER-SPORET STARTET:**
+- **Fase A — v2-lesesti:** Ny `lib/supabase/v2-queries.ts` (split-queries, travel_times→travelTime, trust-gate, featured, product_categories) wired **v2-FØRST** i `getProductAsync` med public-fallback (fallbacken dør ved r01.3). 8 tester; transformatorene eksportert fra queries.ts (delt, ikke duplisert). 1615 tester.
+- **Fase B — pilot-provisjon:** `intern/cutover-pilot` (Innherredsveien 63) kjørt gjennom alle 10 pipeline-steg — 206 POI-er, 19 kategorier, **reisetider 206/206** (steg 7s første ekte kjøring; walk 1–34 min, snitt 18.1), akseptansesjekk grønn. Board rendret LIVE fra v2 i nystartet Chrome (95 markører, 6 temaer, 0 console-feil); legacy-boards upåvirket. Hele kjeden pipeline→v2→lesesti→board er dermed bevist ende-til-ende.
+- **r01.3 drop-plan LEVERT** (`docs/rebuild/public-drop-plan.md` — plan, IKKE utførelse): FK-status avklart (35 FK-er, alle interne i public → plain DROP barn-før-forelder, ingen CASCADE). **Kritisk funn: public er ikke bare test-rot — Lokalkunnskap-moaten lever der** (231 place_knowledge-rader, 7 areas med kuratert report_editorial, 2720 translations, 40 kuraterte reportConfig) → obligatorisk re-seed-steg (§3) før drop. Gating uendret: demo-paritet på Wesselslokka/StasjonsKvartalet/Ranheim + Andreas' go + xhigh.
+- **Neste på cutover-stigen:** re-provisjonér de tre referanse-boardene inn i v2 + re-seed moat/kuratert config → Andreas' paritets-dom → kode-trim-PR → gated drop.
+
 ---
 
 ## 2026-07-05→06 — Fable-direktebygg: 17 beads, PRD 11+15 komplett, HELE r12-admin-epicen levert + sikkerhetssveip
