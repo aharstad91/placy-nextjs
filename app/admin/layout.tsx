@@ -1,26 +1,18 @@
-"use client";
+import type { Metadata } from "next";
+import { AdminShell } from "@/components/admin/admin-shell";
 
-import { useState } from "react";
-import { AdminSidebar } from "@/components/admin/admin-sidebar";
+// Admin skal aldri indekseres. Pre-launch dekker robots.txt-totalblokken alt;
+// denne meta-taggen er for post-launch — da skal /admin IKKE robots-blokkeres
+// (en blokkert crawler ser aldri noindex og kan URL-only-indeksere), men
+// crawles og noindexes. I prod redirecter requireAdmin uansett all admin-HTML.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Ingen ekstern Mapbox-CSS (PRD 12 Unit 1 AC1): admin-skallet drar ikke
-  // Mapbox-2D inn — 3D-motoren er Google gmp-map-3d, og radius-kartet i
-  // Generator erstattes i Unit 4.
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
-      {/* Main content - offset by primary sidebar width (256px = 16rem = pl-64) */}
-      <main className="lg:pl-64">{children}</main>
-    </div>
-  );
+  return <AdminShell>{children}</AdminShell>;
 }
