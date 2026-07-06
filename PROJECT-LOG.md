@@ -32,6 +32,13 @@
 - **ETTER-verifisert live fra v2:** kuraterte lead-tekster identiske (Wesselsløkka, inkl. gjenoppstått Barn & Oppvekst 30 steder), logo+megler+welcome-VO (Stasjonskvartalet), `marina-batliv-reels.mp3` m/ karaoke (byggetrinn-4). FØR/ETTER: `docs/rebuild/assets/parity-*.jpeg`. Eneste 404 (intro.mp4-probe) er pre-eksisterende konvensjonsprobe.
 - **VENTER PÅ ANDREAS:** paritets-dommen (§1.1 i drop-planen). POI-tellingene avviker der discovery-settet er ferskt (f.eks. Wesselsløkka Mat & Drikke 13→6, Transport 19→10) — innhold/editorial er identisk. 1616 tester, pushet (29c5c04).
 
+**Samme dag, oppfølging — PARITET GODKJENT + KLP-DEMOENE FLYTTET (agent-orkestrert):**
+- **Andreas godkjente paritet for alle tre** («grilstad står bra ut» + «Godkjent, alle tre») → cutover-gate §1.1 PASSERT. Keep-liste besluttet: KLP-demoene; resten dekkes av backup + on-demand.
+- **Pre-drop-forsikring:** ALT kuratert public-innhold git-backet (`docs/rebuild/backup-public-*.json`): 58 prosjekter/72 configs, 2 640 POI-editorial-rader og 2 720 translations — alle med place-id/nsr/osm/navn for re-matching etter drop.
+- **KLP-flyttingen kjørt som to parallelle sonnet-agenter** (Fable orkestrerte — Andreas' bestilling): ferjemannsveien-10 (2D, nærings-temaer «Kontoret ligger mellom parker…», 156 steder) + teknostallen (3D, 76 steder) provisjonert + re-seedet + live-verifisert fra v2 med 0 console-feil. Screenshots: `parity-ferjemannsveien10-v2.jpeg` / `parity-teknostallen-v2.jpeg`.
+- **v2-status:** 6 prosjekter (3 referanse + 2 KLP + pilot). Editorial-remap re-kjørt; place_knowledge 113 remappet / 114 dangler (venter på flere provisjoneringer ELLER aksepteres ved drop — backupen bærer mapping-nøklene).
+- **Neste:** translations-kopi m/ produkt-id-remap → kode-trim-PR (§4: public-lesesti + død Trip/Guide-kode ut, translations.ts → v2) → gated drop (Andreas' go + xhigh).
+
 ---
 
 ## 2026-07-05→06 — Fable-direktebygg: 17 beads, PRD 11+15 komplett, HELE r12-admin-epicen levert + sikkerhetssveip

@@ -13,6 +13,15 @@
 
 ## 1. Gating (r01.3 AC1)
 
+> **STATUS 2026-07-06:** Gate 1 (demo-paritet) **PASSERT** — Andreas godkjente
+> alle tre referanse-boardene («Godkjent, alle tre»; tellingsavvik fra ferskt
+> discovery-sett akseptert). Keep-liste besluttet: **KLP-demoene**
+> (ferjemannsveien-10 + teknostallen) — flyttet til v2 og live-verifisert
+> samme dag (agent-orkestrert). Øvrige boards dekkes av git-backupen
+> (`backup-public-*-2026-07-06.json`) og re-provisjoneres on-demand.
+> Gjenstår: gate 2 (Andreas' go for selve droppen) + gate 3 (xhigh) — og
+> §4-kode-trimmen må lande FØRST.
+
 Droppen kjøres FØRST når ALLE tre er sanne:
 
 1. **Demo-paritet validert** (PRD 1 Åpent spørsmål #8): de tre referanse-boardene
