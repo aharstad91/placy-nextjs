@@ -6,6 +6,28 @@
 
 ---
 
+## 2026-07-06 (natt, forts. 2) — ADMIN-UX-SVEIP + FK-MIGRASJON 079 (kritisk 404-fix, prod-kjørt)
+
+**Kontekst:** Andreas spurte «er det noe admin man nå kan se?» → visuell gjennomgang av alle 7 admin-sider i Chrome MCP → UX-vurdering → «ja fix, lag liste, bruk sonnet og opus også». Fable tok den kritiske buggen selv (prod-DB), fordelte 4 UX-oppgaver på parallelle agenter (3× sonnet + 1× opus, distinkte filtrær, null kollisjon).
+
+**Kritisk funn — prosjekt-detaljsiden 404-et for ALLE prosjekter:** v2-skjemaet hadde **null foreign keys** (kun PK-er — FK-ene ble aldri med i 070_baseline). PostgREST krever FK for nested selects, så to kodeveier var døde med PGRST200: `customers (id, name)`-joinen i `app/admin/projects/[id]/page.tsx` (→ notFound() uansett prosjekt; import-tab/discovery-circles/tier-setting utilgjengelige) og `pois(...)`-joinen i `lib/utils/fetch-poi-photos.ts` (stille død).
+
+**Migrasjon 079 (`079_add_core_fks_v2.sql`, KJØRT mot prod):** 6 FK-er på kjernegrafen — projects→customers (NO ACTION: kunde med prosjekter kan ikke slettes stille), project_pois→projects/pois + products→projects + product_pois→products/pois (CASCADE: jointabeller/eierskap). Orphan-sjekk både pre-flight og som DO-blokk i selve migrasjonen (0 funn på alle 5 relasjoner). `NOTIFY pgrst, 'reload schema'` til slutt (PostgREST cacher relasjonene). Verifisert: begge nested joins svarer via REST, detaljsiden rendrer alle taber i Chrome.
+
+**UX-leveranser (4 agenter, alle verifisert i Chrome etterpå):**
+- **POI-admin (sonnet):** default = alle 151 kategorier valgt (før: «Ingen valgt» → 0 av 5386 POI-er og blankt kart som så ødelagt ut). Nytt POI-navnesøk over adressesøket (live-testet: «kaffe» → 39 pins). URL-sync: fravær av `?categories=` = alle, `none` = eksplisitt tom.
+- **Kategori-admin (sonnet):** tekstsøk, sorterbare kolonner (Navn nb-locale / POI-er numerisk, asc/desc), «Kun i bruk»-toggle, «X av 151»-teller. Avdekket at kun **33 av 151 kategorier er i bruk**.
+- **Prosjektliste (sonnet):** rader er ekte `<Link>` (absolutt overlay, ingen nested `<a>`; cmd+klikk/a11y fungerer — før: div med router.push), «Uten segment»-fallback-badge (Ferjemannsveien 10 + Stasjonskvartalet), nav-label «Requests» → «Forespørsler».
+- **Dashboard (opus):** «Siste aktivitet»-seksjon — 5 siste generation_requests med status-badges (farger speiler requests-siden, tom-tilstand lenker til Generator) + 3 sist opprettede prosjekter lenket til `/admin/projects/{short_id}`. Fortsatt ren server component.
+
+**Bifangst fikset (Fable):** pre-eksisterende pagineringsbug i `app/admin/pois/page.tsx` — `.range()`-sidene sorterte kun på `created_at` (ikke unik ved bulk-import → ustabil totalorden → React duplicate-key på `osm-way-686919166`, rader kunne dupliseres/droppes). Fikset med `id`-tiebreaker. + id/name på søkefeltene (DevTools a11y-issue).
+
+**Verifisert:** tsc 0, lint 0 errors, 1596 tester grønne, alle 7 admin-sider screenshot-sjekket, konsoll ren. IKKE committet ennå ved logg-skriving.
+
+**Datafunn til oppfølging (data, ikke kode):** 118 kategorier med 0 POI-er inkl. 5 duplikate «Annet» + kommunenavn-som-kategorier (dedup/merge bør bli egen oppgave med server action — agent flagget scope korrekt); 5 POI-er uten kategori (usynlige i POI-admin); kundenavn = slug i v2.customers (redigerbart i admin).
+
+---
+
 ## 2026-07-06 (natt, forts.) — SIKKERHETSAUDIT RUNDE 2 (uutforskede flater, adversarisk)
 
 **Kontekst:** Andreas ba om «videre teknisk og sikkerhetsaudit». Runde 1 dekket datalag/moat/admin-authz/ingest; runde 2 tok flatene vi IKKE hadde gått dypt på. Ultracode-workflow: 5 opus-findere (XSS, SSRF, admin-API, public-API, CSP+tokens) + adversarisk refuter per funn (default REFUTED ved tvil — direkte lærdom fra at halve ytelsesauditen var fantomer). 10 agenter, READ-ONLY.
