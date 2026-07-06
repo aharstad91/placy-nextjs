@@ -1,8 +1,8 @@
 # Drop-plan: `public`-legacy decommission (r01.3)
 
-> **Status: PLAN — IKKE UTFØRT.** Dette dokumentet er r01.3-leveransen («Define,
-> do NOT execute»). Selve droppen er irreversibel, gates på kriteriene i §1, og
-> kjøres i egen sesjon med Andreas' eksplisitte go + `/effort xhigh`.
+> **Status: UTFØRT 2026-07-06.** Droppen er kjørt og verifisert — se §7
+> (kjøringslogg). `public`-skjemaet har 0 base-tabeller; v2 er eneste
+> datakilde. Dokumentet beholdes som runbook-historikk for r01.3.
 >
 > Skrevet 2026-07-06, etter cutover-fase A (v2-lesesti, v2-først m/
 > public-fallback) og fase B (pilot-provisjon ende-til-ende-verifisert:
@@ -213,5 +213,51 @@ verifiser → kjør `075_drop_public_legacy.sql` (pre-flight + DROP + §5).
    fra v2, gamle boards mørke.
 5. §4b-sjekklista: porter/slett gjenstående public-lesere (admin, (public)-SEO,
    kart, collections, trust-validate).
-6. Andreas' go + `/effort xhigh` → kjør `NNN_drop_public_legacy.sql` via psql.
-7. Post-drop-verifikasjon (§5) + runbook-notat + `bd close r01.3`.
+6. ~~Andreas' go + `/effort xhigh` → kjør droppen~~ **UTFØRT 2026-07-06** (§7).
+7. ~~Post-drop-verifikasjon (§5) + runbook-notat + `bd close r01.3`~~ **UTFØRT**.
+
+## 7. Kjøringslogg — drop-sesjonen 2026-07-06
+
+Andreas' «fortsett nå» etter go. Sekvens og resultater:
+
+**Pre-flight (read-only):** 8/9 sjekker som forventet. Avvik: 347 id-overlapp
+public.pois ↔ v2.pois (074-headeren antok 0). Undersøkt før kjøring: **alle
+347 er samme fysiske sted** (347/347 samme koordinat, 343/347 identisk navn,
+0 motstridende) — id-gjenbruk fra tidligere provisjonering, trygt fordi
+`ON CONFLICT (id) DO NOTHING` + map-oppslaget peker riktig.
+
+**074 (pool-migrering):** Første kjøring feilet på typemismatch — `v2.pois.id`
+er **TEXT, ikke uuid** (074 var skrevet på uuid-antakelse; transaksjonen
+rullet trygt tilbake). Fiks: `COALESCE(ex.id, c.canon_pub_id)` — public-id
+gjenbrukes alltid. Re-kjørt OK: `_canon` 5237 (5327 − 90 dupes ✓), INSERT
+4889 kanoniske rader (348 hoppet = fantes alt i v2 ✓), parent-remap 4,
+place_knowledge-remap 0 (id-gjenbruken løste alle 114 danglere ved insert —
+sluttsjekk 0 ✓), 2190 slug-æra-translations (366+2190=2556 ✓).
+v2.pois totalt: 5386.
+
+**074b (editorial-backfill, skrevet i sesjonen):** 73 public-rader m/
+editorial hadde v2-motpart UTEN editorial (fantes alt i v2 → hoppet over av
+074s insert). Additiv backfill (kun NULL-felter, tagget
+`editorial_backfill='074b'`): 50 v2-rader fylt. Resterende 23 verifisert som
+falske positiver (kanonisk søskenrad bærer editorial for samme sted via
+place_key). **0 editorial tapt** — 2618 m/ editorial i v2 (2640 − 22
+dedup-kollaps).
+
+**075 (DROP):** Alle 4 pre-flight-betingelser oppfylt (4889 > 4000 ✓,
+0 danglere ✓, 35 FK-er ✓, backupene finnes ✓). 24 tabeller droppet i én
+transaksjon, COMMIT OK.
+
+**§5-verifikasjon (alle passert):**
+1. `information_schema`: 0 base-tabeller i public; skjemaet selv består ✓
+2. REST mot droppet tabell: 404 PGRST205 («Could not find the table
+   'public.trips'»); v2-lesestien 200 ✓
+3. Alle 6 boards 200 på prod med `x-vercel-cache: MISS` (ferske rendringer
+   post-drop, ikke cache); byggetrinn-4 rendret komplett i nystartet Chrome
+   (temanav, 20 POI-er, 3D-kart, 0 konsollfeil); Rockheim-EN-oversettelsen
+   verifisert i v2 via REST ✓
+4. Gates: tsc 0, lint 0 errors (55 warnings), alle tester, build ✓
+
+**Reversibilitet som gjenstår i DB:** 074-radene kan angres via
+`poi_metadata->>'pool_migration'='074'`-taggen, 074b via
+`editorial_backfill='074b'`. Selve droppen er endelig; kaldlager =
+`backup-public-*-2026-07-06.json` + git-historikk.

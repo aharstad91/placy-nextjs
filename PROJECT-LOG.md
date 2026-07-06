@@ -58,6 +58,15 @@
 - **075_drop_public_legacy.sql skrevet** (pre-flight-sjekker + DROP barn-før-forelder + §5-verifikasjon innebygd). COMMANDS.md renset for død Story-Generator-workflow.
 - **Kjøre-rekkefølge som gjenstår (alt i én xhigh-sesjon):** 074 → verifiser → 075 → §5-verifikasjon → `bd close r01.3`.
 
+**Samme dag, «fortsett nå» — DROPPEN UTFØRT: public er BORTE, v2 er eneste skjema (r01.3 + PRD 1-epicen LUKKET):**
+- **Pre-flight-avvik fanget FØR kjøring:** 347 id-overlapp public.pois ↔ v2.pois (074-headeren antok 0). Undersøkt: alle 347 er samme fysiske sted (347/347 samme koordinat, 0 motstridende) — id-gjenbruk fra provisjonering, trygt. Header-fakta korrigert.
+- **074 kjørt (med fiks underveis):** Første kjøring feilet på typemismatch — **v2.pois.id er TEXT, ikke uuid** (074 var skrevet på uuid-antakelse; transaksjonen rullet trygt tilbake). Fiks: public-id gjenbrukes alltid (`COALESCE(ex.id, canon_pub_id)`). Re-kjørt OK: 4 889 kanoniske rader inn (348 hoppet = fantes alt ✓), parent-remap 4, **place_knowledge-danglerne løst til 0 av id-gjenbruken selv** (remappen ble overflødig), 2 190 slug-æra-translations (totalt 2 556 poi-rader). v2.pois: 497 → **5 386**.
+- **074b skrevet + kjørt i sesjonen (editorial-hull tettet før droppen):** 73 public-rader m/ editorial hadde v2-motpart UTEN editorial (fantes alt i v2 → hoppet over av insert). Additiv backfill (kun NULL-felter, tagget `editorial_backfill='074b'`): 50 rader fylt; resterende 23 bevist som dedup-falske-positiver (kanonisk søsken bærer editorial). **0 Lokalkunnskap tapt** — 2 618 editorial-rader i v2 (2 640 − 22 dedup-kollaps).
+- **075 kjørt:** alle 4 pre-flight-betingelser oppfylt → 24 tabeller droppet i én transaksjon. `public` har nå **0 base-tabeller** (skjemaet selv består — PostgREST krever det).
+- **§5-verifikasjon (alt passert):** information_schema 0 ✓; REST 404 PGRST205 på droppet tabell, v2-lesestien 200 ✓; alle 6 boards 200 på prod med `x-vercel-cache: MISS` (bevist ferske rendringer post-drop, ikke cache); byggetrinn-4 komplett i nystartet Chrome (temanav, 20 POI-er, 3D-kart, **0 konsollfeil**); Rockheim-EN verifisert i v2 via REST. Gates: tsc 0, lint 0 errors, **1 514 tester grønt**, build OK (49 sider).
+- **Beads:** r01.3 lukket m/ kjøringslogg-kommentar → **hele PRD 1-epicen (r01) lukket** (alle 7 units ferdige). Kjøringslogg: `docs/rebuild/public-drop-plan.md` §7.
+- **Reversibilitet:** 074/074b kan angres via metadata-taggene; droppen er endelig — kaldlager = `backup-public-*-2026-07-06.json` + git.
+
 ---
 
 ## 2026-07-05→06 — Fable-direktebygg: 17 beads, PRD 11+15 komplett, HELE r12-admin-epicen levert + sikkerhetssveip

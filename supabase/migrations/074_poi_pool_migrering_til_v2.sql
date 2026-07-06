@@ -6,7 +6,8 @@
 --   • 263 finnes alt i v2 via place/nsr/osm-id → hoppes over
 --   • Interne duplikater: 14 place_id-dupes + 76 navn+koordinat-dupes blant
 --     de 3 119 uten ekstern id → kanonisk rad velges (editorial foretrekkes)
---   • 0 uuid-kollisjoner public.pois.id ↔ v2.pois.id
+--   • 347 id-overlapp public.pois.id ↔ v2.pois.id — ALLE samme fysiske sted
+--     (347/347 samme koordinat, 0 motstridende; verifisert i kjøre-sesjonen)
 --   • Kolonne-paritet public.pois = v2.pois (verifisert, 53 kolonner)
 --
 -- REVERSIBILITET: alle innsatte rader tagges poi_metadata.pool_migration='074'
@@ -37,19 +38,17 @@ FROM (
 ORDER BY place_key, (editorial_hook IS NOT NULL) DESC, updated_at DESC NULLS LAST;
 
 -- ---------------------------------------------------------------------------
--- Steg 1: Komplett kart public-id → v2-uuid.
+-- Steg 1: Komplett kart public-id → v2-id.
 --   a) Sted finnes alt i v2 (place/nsr/osm) → eksisterende v2-id
---   b) Ellers: kanonisk rad får uuid (public-id gjenbrukes når uuid-castbar)
+--   b) Ellers: kanonisk rad gjenbruker public-id-en (begge id-kolonner er
+--      TEXT — målt 2026-07-06; alle 347 id-overlapp er samme fysiske sted,
+--      så gjenbruk er trygt og ON CONFLICT (id) DO NOTHING dekker dem)
 --   c) Duplikat-rader peker på sin kanoniske rads v2-id
 -- ---------------------------------------------------------------------------
 CREATE TEMP TABLE _pool_map AS
 WITH canon_v2 AS (
   SELECT c.place_key, c.canon_pub_id,
-    COALESCE(
-      ex.id,
-      CASE WHEN c.canon_pub_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-           THEN c.canon_pub_id::uuid ELSE gen_random_uuid() END
-    ) AS v2_id,
+    COALESCE(ex.id, c.canon_pub_id) AS v2_id,
     (ex.id IS NOT NULL) AS already_in_v2
   FROM _canon c
   JOIN public.pois p ON p.id = c.canon_pub_id
