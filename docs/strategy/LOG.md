@@ -14,6 +14,23 @@
 
 ---
 
+## 2026-07-06 — Sommer-rebuilden LEVERT: cutover fullført, moatene lever i prod, fallback-klausulen pensjonert
+
+**Beslutning/milepæl:** Rebuilden fra 2026-06-27-planen er **ferdig og er nå det eneste som kjører** — gamle demo-plattformen (public-skjemaet + demo-JSON-æraen) er slettet i sin helhet samme dag. Demo-paritet ble godkjent av Andreas (alle tre referanse-boards) og cutoveren gjennomført i 7 etapper på én dag. **Fallback-klausulen («tilbake til gamle demo hvis ikke demo-paritet ~tidlig august») er pensjonert — måneden før fristen.**
+
+**Strategisk betydning (hvorfor dette hører hjemme i business-loggen):**
+1. **Begge moatene er nå bygget inn «fra linje 1» — som besluttet 06-27, nå validert i prod.** Moat 1 (Lokalkunnskap): hele POI-poolen (5 386 steder, 2 618 med redaksjonelt innhold) lever som **Placy-eid, strøk-indeksert delt DB** — beslutningen «delt pois-DB, ikke per-prosjekt-JSON» er bokstavelig talt fullbyrdet i dag (per-prosjekt-JSON-ene ble slettet). 0 lokalkunnskap tapt i migreringen (avstemt rad for rad). Moat 2 (Innsikt): én sentral event-strøm med kontekst-konvolutt logger live per board.
+2. **Grunnpakke-modellens produksjonsmaskineri eksisterer nå.** Pipeline adresse→ferdig board i én kjøring = marginalkost per listing nær null — den tekniske forutsetningen for 300–800/listing kjede-SaaS-økonomien (06-27-modellen). «Ruller og går» er nå teknisk sant, ikke aspirasjon.
+3. **Salgs-konsekvens å være obs på:** de ~52 gamle demo-boardene er mørke — **gamle demo-lenker delt med prospekter er døde**. Live nå: 6 boards (Wesselsløkka, StasjonsKvartalet, Ranheim/byggetrinn-4, 2 KLP, pilot). Nye prospekt-demoer lages on-demand via pipelinen (minutter, ikke dager) — men sjekk hvilke lenker som er i omløp hos Aleksander/Markus/hotell-kontakter.
+
+**Begrunnelse:** Sporvalgene (utbygger-først, grunnpakke/kjede, premium-single) har hele tiden hvilt på en plattform-hypotese: at boards kan produseres autonomt med moat-data innebygd. Den hypotesen er nå validert i produksjon — flaskehalsen er bekreftet å være distribusjon, ikke produkt eller produksjonskost.
+
+**Detaljer:** Teknisk kjøringslogg i `PROJECT-LOG.md` (2026-07-06, 7 etapper) + `docs/rebuild/public-drop-plan.md` §7. Moat-design: `2026-06-27-data-moatene-lokalkunnskap-innsikt.md`.
+
+**Status:** Validert — rebuild-beslutningen (06-27) og moat-build-imperativene er levert. Åpent (uendret): hvilken kjede er første grunnpakke-target; distribusjonspartner-løpene (Aleksander/Markus) er nå demo-klare på forespørsel.
+
+---
+
 ## 2026-06-28 — Moat 2 (Innsikt) skjerpet: kontekst-konvolutt, viewport-heat maps, konsentrert-volum-validering, UX-som-instrument
 
 **Beslutning (fortsetter 06-27-moat-tråden):** Fire grep som hever Innsikt fra «tellinger» til forsvarbar, segmentert etterspørsel. (1) **Viewport-heat maps i en privat megler-analyse-visning** (intern, ikke offentlig): kart som samler hvor folk ser/panorerer/zoomer + klikk. Vekt etter intensjon — zoom-inn + dwell > rå panorering; rute-forespørsler høyest; delta-mot-strøk > absolutte klikk. To visninger på samme strøm: per-board-dashboard (klebrighet) vs. aggregert strøk-heat map (sellbar markedsintel). (2) **Kontekst-konvolutt på HVERT event = confounding-fiksen (viktigste grep):** rått klikk lyver (skole langs Ladestien → skole-klikk i naturkontekst = turstien, ikke skolen). Hvert event bærer modus+aktive kategorier, travel_mode, time_budget, viewport, hjem-anker. **Løftet: kontekst gjør engasjement om til segmentering** (klynge kjøpere per strøk → persona-attribuert, forsvarbar anekdote). + negativ-rom og sekvens som signal; **fang maksimalt granulert, rapportér kun over volum-terskel** (aggregér opp, aldri disaggregér ned). (3) **Konsentrert volum validerer raskere enn spredt:** 100 boards i 5 strøk = 5 validerte profiler; spredt = 100 anekdoter. **«Vinn én kjede» + «volum validerer moaten» = samme trekk** (EM1 ~60 % Trondheim → konsentrert samme-strøk-volum). Ranheim-først = datavaliderings-strategi, ikke bare pilot. (4) **UX er datainnsamlings-apparatet:** signal finnes bare hvis UX fremkaller det → travel-mode-toggle må gjøres synlig/fristende; kategori-rekkefølge er både nudge og topp-prioritets-signal (logg alltid *presentert* rekkefølge i konteksten, ellers er åpne-rekkefølge-signalet confounded).
