@@ -69,9 +69,10 @@ source .env.local && curl -s "${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/pois?select=ne
 | Fil | Beskrivelse |
 |-----|-------------|
 | `lib/types.ts` | Alle TypeScript-typer |
-| `lib/store.ts` | Zustand global state |
-| `lib/generators/` | Story-generering moduler |
-| `data/projects/klp-eiendom/ferjemannsveien-10.json` | Demo-data |
+| `lib/stores/` | Zustand-stores (kompass, audio-tour) |
+| `lib/supabase/v2-queries.ts` | Board-lesestien (v2-skjemaet — eneste Supabase-lesesti etter cutover 2026-07-06) |
+| `lib/pipeline/` | Provisjonerings-pipelinen (PRD 3) |
+| `data/projects/klp-eiendom/ferjemannsveien-10.json` | Demo-data (JSON-fallback) |
 | `data/templates/input.template.json` | Mal for nye prosjekter |
 
 ## API-er
@@ -81,14 +82,6 @@ source .env.local && curl -s "${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/pois?select=ne
 - **Entur:** `/api/entur` — sanntids kollektivtransport
 - **Bysykkel GBFS:** `/api/bysykkel` — ledige sykler
 - **Google Places:** `/api/places` — POI-detaljer og bilder
-
-## Story Generator
-
-```bash
-npm run generate:story data/projects/kunde/prosjekt.input.json -- --skip-travel-times
-```
-
-Se `COMMANDS.md` for full dokumentasjon.
 
 ## Editorial Hooks (Claude Code)
 

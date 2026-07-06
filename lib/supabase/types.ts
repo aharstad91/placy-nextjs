@@ -1709,23 +1709,7 @@ export type UpdateTables<T extends keyof Database["public"]["Tables"]> =
 export type DbCategory = Tables<"categories">;
 export type DbPoi = Tables<"pois">;
 export type DbCustomer = Tables<"customers">;
-export type DbProject = Tables<"projects">;
-export type DbProjectPoi = Tables<"project_pois">;
-export type DbThemeStory = Tables<"theme_stories">;
-export type DbStorySection = Tables<"story_sections">;
-export type DbSectionPoi = Tables<"section_pois">;
-export type DbThemeStorySection = Tables<"theme_story_sections">;
-export type DbThemeSectionPoi = Tables<"theme_section_pois">;
-export type DbCollection = Tables<"collections">;
-export type DbProjectCategory = Tables<"project_categories">;
-export type DbProduct = Tables<"products">;
-export type DbProductPoi = Tables<"product_pois">;
-export type DbProductCategory = Tables<"product_categories">;
-export type DbTrip = Tables<"trips">;
-export type DbTripStop = Tables<"trip_stops">;
-export type DbProjectTrip = Tables<"project_trips">;
 export type DbPlaceKnowledge = Tables<"place_knowledge">;
-export type DbGenerationRequest = Tables<"generation_requests">;
 
 // Product type enum
 export type ProductType = "explorer" | "report" | "guide";

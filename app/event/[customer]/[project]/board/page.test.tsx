@@ -26,7 +26,7 @@ vi.mock("@/lib/data-server", () => ({
 // Unit 5: ?c=<slug>-rehydrering. Mockes per test så vi kan verifisere at ruten
 // faktisk slår opp samlingen (eiendom-presedens) og trer poiIds inn i skallet.
 const getCollectionBySlugMock = vi.fn();
-vi.mock("@/lib/supabase/queries", () => ({
+vi.mock("@/lib/supabase/collections", () => ({
   getCollectionBySlug: (...args: unknown[]) => getCollectionBySlugMock(...args),
 }));
 
@@ -98,8 +98,6 @@ function makeKulturnattProject(): Project {
       id: "kulturnatt-2025",
       title: "Kulturnatt Trondheim 2025",
       introText: "En kveld med kultur",
-      sections: [],
-      themeStories: [],
     },
     pois: [
       makeEventPOI("p1", "kn-musikk"),

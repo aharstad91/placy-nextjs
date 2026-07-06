@@ -6,8 +6,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 vi.mock("@/lib/pipeline/find-area-for-point", () => ({
   findAreaForPoint: vi.fn(),
 }));
-vi.mock("@/lib/supabase/queries", () => ({
-  getProductFromSupabase: vi.fn(),
+vi.mock("@/lib/supabase/v2-queries", () => ({
+  getProductFromSupabaseV2: vi.fn(),
 }));
 vi.mock("@/components/variants/report/report-data", () => ({
   transformToReportData: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 import { findAreaForPoint } from "@/lib/pipeline/find-area-for-point";
-import { getProductFromSupabase } from "@/lib/supabase/queries";
+import { getProductFromSupabaseV2 } from "@/lib/supabase/v2-queries";
 import {
   transformToReportData,
   type ReportData,
@@ -27,7 +27,7 @@ import { inheritAreaEditorial } from "./inherit-area-editorial";
 import type { Project } from "@/lib/types";
 
 const findAreaForPointMock = vi.mocked(findAreaForPoint);
-const getProductFromSupabaseMock = vi.mocked(getProductFromSupabase);
+const getProductFromSupabaseMock = vi.mocked(getProductFromSupabaseV2);
 const transformToReportDataMock = vi.mocked(transformToReportData);
 const createServerClientMock = vi.mocked(createServerClient);
 
@@ -512,7 +512,7 @@ describe("inheritAreaEditorial", () => {
     expect(theme.leadText).toBe("Lead som skal overleve");
   });
 
-  it("(j) prosjekt ikke funnet (getProductFromSupabase → null) → skipped, ingen REST-kall", async () => {
+  it("(j) prosjekt ikke funnet (getProductFromSupabaseV2 → null) → skipped, ingen REST-kall", async () => {
     findAreaForPointMock.mockResolvedValue(
       curatedArea({
         "mat-drikke": { body: "Tekst.", highlightCandidates: ["c1"] },

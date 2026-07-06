@@ -26,11 +26,11 @@ describe("legacy-301-redirects (AC1 — SEO-bevaring)", () => {
     expect(redirectTarget(res)).toBe("/eiendom/klp-eiendom/ferjemannsveien-10");
   });
 
-  it("/for/kunde/prosjekt/report → 301 /eiendom/.../rapport", () => {
+  it("/for/kunde/prosjekt/report → 301 /eiendom/.../rapport-board", () => {
     const res = proxy(req("/for/klp-eiendom/ferjemannsveien-10/report"));
     expect(res.status).toBe(301);
     expect(redirectTarget(res)).toBe(
-      "/eiendom/klp-eiendom/ferjemannsveien-10/rapport"
+      "/eiendom/klp-eiendom/ferjemannsveien-10/rapport-board"
     );
   });
 
@@ -40,9 +40,24 @@ describe("legacy-301-redirects (AC1 — SEO-bevaring)", () => {
     expect(redirectTarget(res)).toBe("/eiendom/klp-eiendom/ferjemannsveien-10");
   });
 
-  it("/for/kunde/prosjekt/trips/x → passthrough (frossen)", () => {
+  it("/for/kunde/prosjekt/trips/x → 301 prosjektroten (frysingen døde ved cutover)", () => {
     const res = proxy(req("/for/klp-eiendom/ferjemannsveien-10/trips/x"));
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(301);
+    expect(redirectTarget(res)).toBe("/eiendom/klp-eiendom/ferjemannsveien-10");
+  });
+
+  it("/eiendom/kunde/prosjekt/rapport → 301 .../rapport-board (scroll-rapporten død)", () => {
+    const res = proxy(req("/eiendom/klp-eiendom/ferjemannsveien-10/rapport"));
+    expect(res.status).toBe(301);
+    expect(redirectTarget(res)).toBe(
+      "/eiendom/klp-eiendom/ferjemannsveien-10/rapport-board"
+    );
+  });
+
+  it("/klp-eiendom/slug-guide → 301 /eiendom/klp-eiendom/slug (guide-rutene døde)", () => {
+    const res = proxy(req("/klp-eiendom/ferjemannsveien-10-guide"));
+    expect(res.status).toBe(301);
+    expect(redirectTarget(res)).toBe("/eiendom/klp-eiendom/ferjemannsveien-10");
   });
 
   it("/generer → 301 /eiendom/generer (med query bevart)", () => {

@@ -6,11 +6,12 @@ import type { NextRequest } from "next/server";
  * Kjører på nodejs-runtime (proxy støtter ikke edge).
  *
  * Routes:
+ * - /eiendom/.../rapport → 301 → /eiendom/.../rapport-board (scroll-rapporten
+ *   døde ved cutover-trimmen 2026-07-06; boardet er produktflaten)
  * - /eiendom/... → Eiendom passthrough (primary)
- * - /for/.../trips/... → Frozen trips passthrough
  * - /for/.../explore → 301 → /eiendom/.../
- * - /for/.../report → 301 → /eiendom/.../rapport
- * - /for/... → 301 → /eiendom/...
+ * - /for/.../report → 301 → /eiendom/.../rapport-board
+ * - /for/... → 301 → /eiendom/... (trips-frysingen døde med rutene)
  * - /generer → 301 → /eiendom/generer
  * - /admin/... → Admin passthrough
  * - /scandic/... → Legacy redirect to /eiendom/scandic/...
@@ -30,9 +31,6 @@ const KNOWN_CUSTOMERS = [
 // Known area slugs for public pages
 const KNOWN_AREAS = ["trondheim"] as const;
 
-// Sub-paths under /for/ that are frozen (not redirected)
-const FROZEN_SUBPATHS = ["trips", "trip"] as const;
-
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const segments = pathname.split("/").filter(Boolean);
@@ -41,19 +39,21 @@ export function proxy(request: NextRequest) {
 
   const firstSegment = segments[0];
 
-  // /eiendom/... → Eiendom passthrough
-  if (firstSegment === "eiendom") return NextResponse.next();
-
-  // /for/... → Redirect to /eiendom/ (with exceptions for frozen features)
-  if (firstSegment === "for") {
-    // /for/customer/project/trips/... or /for/customer/project/trip/... → passthrough (frozen)
-    if (segments.length >= 4) {
-      const subPath = segments[3];
-      if (FROZEN_SUBPATHS.includes(subPath as typeof FROZEN_SUBPATHS[number])) {
-        return NextResponse.next();
-      }
+  // /eiendom/... → Eiendom passthrough — men gammel scroll-rapport-URL
+  // redirectes til boardet (ruten er slettet, cutover 2026-07-06)
+  if (firstSegment === "eiendom") {
+    if (segments.length === 4 && segments[3] === "rapport") {
+      return NextResponse.redirect(
+        new URL(`/eiendom/${segments[1]}/${segments[2]}/rapport-board${search}`, request.url),
+        301
+      );
     }
+    return NextResponse.next();
+  }
 
+  // /for/... → Redirect to /eiendom/ (trips/trip-frysingen døde med rutene —
+  // alt under /for/customer/project redirecter nå til prosjektroten)
+  if (firstSegment === "for") {
     // /for/customer/project/explore → /eiendom/customer/project
     if (segments.length >= 4 && segments[3] === "explore") {
       const customer = segments[1];
@@ -64,18 +64,18 @@ export function proxy(request: NextRequest) {
       );
     }
 
-    // /for/customer/project/report → /eiendom/customer/project/rapport
+    // /for/customer/project/report → /eiendom/customer/project/rapport-board
     if (segments.length >= 4 && segments[3] === "report") {
       const customer = segments[1];
       const project = segments[2];
       return NextResponse.redirect(
-        new URL(`/eiendom/${customer}/${project}/rapport${search}`, request.url),
+        new URL(`/eiendom/${customer}/${project}/rapport-board${search}`, request.url),
         301
       );
     }
 
-    // /for/customer/project/landing → /eiendom/customer/project
-    if (segments.length >= 4 && segments[3] === "landing") {
+    // /for/customer/project/<annet> (inkl. gamle trips/trip) → prosjektroten
+    if (segments.length >= 4) {
       const customer = segments[1];
       const project = segments[2];
       return NextResponse.redirect(
@@ -94,9 +94,8 @@ export function proxy(request: NextRequest) {
       );
     }
 
-    // /for/customer → passthrough (customer landing, if it exists)
-    // /for → passthrough
-    return NextResponse.next();
+    // /for/customer og /for → forsiden (app/for/** er slettet, cutover 2026-07-06)
+    return NextResponse.redirect(new URL(`/${search}`, request.url), 301);
   }
 
   // /generer → /eiendom/generer
@@ -128,29 +127,16 @@ export function proxy(request: NextRequest) {
     if (segments.length === 2) {
       const slugWithSuffix = segments[1];
 
+      // Suffiks-stripping: /customer/slug-explore og /customer/slug-guide →
+      // /eiendom/customer/slug (guide/trips-rutene døde ved cutover 2026-07-06)
       for (const suffix of PRODUCT_SUFFIXES) {
         if (slugWithSuffix.endsWith(`-${suffix}`)) {
           const baseSlug = slugWithSuffix.slice(0, -(suffix.length + 1));
-          if (suffix === "explore") {
-            return NextResponse.redirect(
-              new URL(`/eiendom/${firstSegment}/${baseSlug}${search}`, request.url),
-              301
-            );
-          }
-          // guide suffix → passthrough to trips (frozen)
           return NextResponse.redirect(
-            new URL(`/for/${firstSegment}/${baseSlug}/trip${search}`, request.url),
+            new URL(`/eiendom/${firstSegment}/${baseSlug}${search}`, request.url),
             301
           );
         }
-      }
-
-      // Redirect /customer/guides → /for/customer/trips (frozen)
-      if (slugWithSuffix === "guides") {
-        return NextResponse.redirect(
-          new URL(`/for/${firstSegment}/trips${search}`, request.url),
-          301
-        );
       }
     }
 

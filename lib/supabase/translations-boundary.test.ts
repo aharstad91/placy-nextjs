@@ -25,9 +25,9 @@ describe("translations.ts — server-boundary enforcement (r05.4)", () => {
     expect(SRC).not.toMatch(/@supabase\/supabase-js/);
   });
 
-  it("guards the untyped translations table behind eslint-disable + a PRD 1 TODO", () => {
-    expect(SRC).toMatch(/eslint-disable-next-line @typescript-eslint\/no-explicit-any/);
-    expect(SRC).toMatch(/TODO\(PRD 1\)/);
+  it("leser v2-skjemaet (cutover) — typet, uten any-cast", () => {
+    expect(SRC).toMatch(/\.schema\("v2"\)/);
+    expect(SRC).not.toMatch(/as any/);
   });
 
   it("returns an empty map on error / unconfigured client (fail-soft contract)", () => {

@@ -19,8 +19,9 @@
 > (ferjemannsveien-10 + teknostallen) — flyttet til v2 og live-verifisert
 > samme dag (agent-orkestrert). Øvrige boards dekkes av git-backupen
 > (`backup-public-*-2026-07-06.json`) og re-provisjoneres on-demand.
-> Gjenstår: gate 2 (Andreas' go for selve droppen) + gate 3 (xhigh) — og
-> §4-kode-trimmen må lande FØRST.
+> Gjenstår: gate 2 (Andreas' go for selve droppen) + gate 3 (xhigh).
+> **§4-kode-trimmen LANDET 2026-07-06** — public-lesestien for boardet er
+> død i kode; gjenstående public-avhengigheter er inventert i §4b.
 
 Droppen kjøres FØRST når ALLE tre er sanne:
 
@@ -113,31 +114,77 @@ kjøres + verifiseres (rad-antall + stikkprøver) FØR drop-steget.
 > `categories`: 133 definisjoner kopiert (inkl. skole/barnehage som pipelinen
 > skrev POI-er med uten definisjon — pipeline-buggen er fikset i
 > `import-public-pois.ts`). Kuratert `reportConfig` + POI-editorial (184 POI-er)
-> re-seedet for de tre referanse-boardene. `translations` (2720) IKKE kopiert
-> ennå — de er nøklet på POI-/tema-id og trenger samme remap-behandling.
+> re-seedet for de tre referanse-boardene.
+>
+> **`translations` KOPIERT 2026-07-06** via migrasjon
+> `072_reseed_translations_til_v2.sql` (re-kjørbar, ON CONFLICT DO NOTHING):
+> 404 rader — 366 poi (place_id/nsr/osm-remap), 30 rene tema-id-er, 8
+> produkt-komposit-remappet. 0 report-rader (alle 7 tilhører ikke-migrerte
+> prosjekter). Slug-æra-poi-id-er (2045 rader) og ikke-migrerte boards dekkes
+> av git-backupen. **072 må re-kjøres etter hver provisjonering av board med
+> EN-innhold, og senest FØR drop** (som place_knowledge-remappen).
+> Verifisert live: EN-editorial i stasjonskvartalet-boardets payload.
 
 ## 4. Samtidig kode-trim (r01.6 AC2, eier-besluttet 2026-06-29 → hit)
 
-Ved droppen dør public-lesestien — samme PR trimmer:
+> **STATUS: UTFØRT 2026-07-06** (Andreas' «ja, kjør videre»; alle gates
+> grønne, live-verifisert). Utført omfang — planens seks punkter pluss det
+> utførelses-grepen avdekket:
+>
+> 1. ✅ `getProductAsync` = v2-only; `getProjectAsync` = JSON-only;
+>    container/trips/products-funksjonene i data-server slettet (0 konsumenter).
+> 2. ✅ `queries.ts` SLETTET; transformerne flyttet til `v2-queries.ts`;
+>    `getCollectionBySlug` → `lib/supabase/collections.ts` (lever til drop).
+> 3. ✅ Trip/Guide/scroll-typene + gamification + branded-types + container-
+>    typene (ProjectContainer/ProductInstance/ProductSummary) trimmet;
+>    `Story` mistet `sections`/`themeStories`. TrailCollection BEHOLDT (levende
+>    trails-feature på boardet). `lib/store.ts` (gammel global Zustand) slettet
+>    — boardet bruker sine egne stores.
+> 4. ✅ `database.types.ts` slettet + døde Db-aliaser i `types.ts`.
+> 5. ✅ Slettet: `app/for/**`, `app/trips/**`, `app/api/poi-trips`,
+>    variants/{explorer,portrait,trip}, gammel scroll-rapport
+>    (`rapport/page.tsx` + ReportPage-treet), `components/story/**`,
+>    story-generator-scriptene (migrate-to-supabase, migrate-trips, seed-trips)
+>    + story-skrivefunksjonene i mutations.ts + ~100 transitivt foreldreløse
+>    komponenter (import-graf-sweep til konvergens). Eiendom-landingen skrevet
+>    om til v2-generation-pending-sjekk + redirect til `rapport-board`;
+>    event-landingen redirecter til `board`. Proxy: /for-frysing fjernet,
+>    `/rapport` → `/rapport-board` 301. Grounding-RENDERERNE (GroundingChips/
+>    SourcesAggregated) fulgte scroll-rapporten i døden — grounding-datapipen
+>    (build-time) består; board-side rendering er fremtidig arbeid.
+> 6. ✅ eslint-warn-unntaket fjernet (`no-img-element` = error overalt).
+>
+> `mapboxAdapter`-sentinelen i map-adapter.test.ts fyrte som designet →
+> hele MapAdapter-laget (map-adapter + use-interaction-controller) kuttet.
+> inherit-area-editorial (pipeline-steg 8) retargetet til
+> `getProductFromSupabaseV2` — leste tidligere public-boardet (skjult bug).
 
-1. `lib/supabase/v2-queries.ts`: fallback-kommentaren + `getProductAsync`-
-   fallbacken til `getProductFromSupabase` fjernes (v2 blir eneste sti).
-2. `lib/supabase/queries.ts`: alle public-funksjonene (containere, trips,
-   theme_stories, story_sections m.m.) — transformatorene som v2-stien deler
-   (`transformPOI`/`transformCategory`/`filterTrustedPOIs`) flyttes til
-   `v2-queries.ts`.
-3. `lib/types.ts`: døde Trip/Guide/scroll-symboler (StorySection, ThemeStory,
-   ThemeStorySection, Trip/TripStop/ProjectTrip, TripConfig/TripStopConfig,
-   TripCategory/TripDifficulty/TripSeason, TripStopId, createTripStopId,
-   activeThemeStory/themeStories/trails; vurder TrailCollection).
-4. `lib/supabase/database.types.ts`: **slettes** (0 importer, verifisert
-   2026-07-06).
-5. Konsument-flater som kun leser public (frosne trips-/story-ruter under
-   `/for/...`, `app/trips/`, explorer/portrait/trip-varianter med
-   img-warn-unntak i `eslint.config.mjs`) — enumereres med grep ved utførelse
-   og slettes sammen med sine ruter + proxy-passthroughs.
-6. `eslint.config.mjs`: warn-unntaket for legacy-mappene fjernes
-   (`no-img-element` blir error overalt).
+Opprinnelig plan (seks punkter) beholdt i git-historikken.
+
+## 4b. Gjenstående public-lesere (drop-sesjonens sjekkliste)
+
+Inventar 2026-07-06 (etter trimmen). Disse fungerer så lenge `public`
+finnes, og MÅ håndteres (porteres til v2 eller slettes) i drop-sesjonen:
+
+**Rene public-lesere:**
+- `app/admin/page.tsx` + `app/admin/public/page.tsx` — admin-dashboard/
+  public-POI-oversikt
+- `app/api/admin/trust-validate/*` + `lib/supabase/mutations.ts#
+  updatePOITrustScore` — trust-validering skriver `public.pois`
+- `app/kart/[slug]/page.tsx` — leser `public.generation_requests`
+- `lib/google-places/trust-enrichment.ts`
+- `lib/supabase/collections.ts` + `mutations.ts#createCollection` +
+  `app/api/collections` — «Min samling» (event-board); dør ved drop med
+  mindre collections porteres til v2 (event-sporet er parkert)
+- `lib/public-queries.ts` + hele `(public)`-SEO-flaten
+  (`app/(public)/**`: område-/steder-/guide-sider, visit-trondheim) —
+  Moat-1-utstillingsvinduet; v2 har areas/pois/place_knowledge, men
+  lesestien må porteres eller flaten fryses/slettes
+- `app/admin/*` for øvrig er MIKS v2/public per side — per-kall-review
+  ved drop (grep `.from("` uten `schema("v2")`)
+
+**Verifisering før drop:** re-kjør remapene (place_knowledge + 072
+translations), deretter §2-rekkefølgen og §5-verifikasjonen.
 
 ## 5. Post-drop-verifikasjon (r01.3 AC4)
 
@@ -156,7 +203,9 @@ Ved droppen dør public-lesestien — samme PR trimmer:
    overleve cutover) — `--update` ved re-kjøring.
 2. Re-seed moat-innhold (§3) + kuratert `reportConfig` per nivå-2-board.
 3. Demo-paritet: Andreas godkjenner visuelt (gate §1.1).
-4. Kode-trim-PR (§4) — gates grønne MENS public fortsatt finnes (fallbacken
-   fjernes her; boards må ALT rendre fra v2).
-5. Andreas' go + `/effort xhigh` → kjør `NNN_drop_public_legacy.sql` via psql.
-6. Post-drop-verifikasjon (§5) + runbook-notat + `bd close r01.3`.
+4. ~~Kode-trim-PR (§4)~~ **UTFØRT 2026-07-06** — gates grønne, boards rendrer
+   fra v2, gamle boards mørke.
+5. §4b-sjekklista: porter/slett gjenstående public-lesere (admin, (public)-SEO,
+   kart, collections, trust-validate).
+6. Andreas' go + `/effort xhigh` → kjør `NNN_drop_public_legacy.sql` via psql.
+7. Post-drop-verifikasjon (§5) + runbook-notat + `bd close r01.3`.

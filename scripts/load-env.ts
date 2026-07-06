@@ -7,7 +7,7 @@
  * resten» evaluerer client.ts UTEN env — og den modul-nivå anon-klienten
  * (`export const supabase`) blir null for hele prosessens levetid
  * (modul-cache). Alt som bygger på den (f.eks. `lib/supabase/queries.ts` →
- * `getProductFromSupabase`) returnerer da stille null — selv ved senere
+ * `getProductFromSupabaseV2`) returnerer da stille null — selv ved senere
  * dynamisk import, siden client.ts allerede er evaluert.
  *
  * ESM garanterer at imports evalueres i rekkefølge, så

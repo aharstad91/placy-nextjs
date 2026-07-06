@@ -47,8 +47,6 @@ function makeEventProject(pois: POI[], categories: Category[] = KN_CATEGORIES): 
       id: "kulturnatt-2025",
       title: "Kulturnatt Trondheim 2025",
       introText: "En kveld med kultur",
-      sections: [],
-      themeStories: [],
     },
     pois,
     categories,

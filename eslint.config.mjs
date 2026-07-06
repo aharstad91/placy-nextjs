@@ -72,23 +72,9 @@ const eslintConfig = [
       ],
     },
   },
-  // Legacy dead-track-flater (Explorer/portrait/trip + gammel scroll-rapport)
-  // beholder warn for <img> — de slettes ved cutover (r01.3), ikke porteres.
-  // ALL levende/ny kode har error (blokken over). Audit-bead 03t.
-  {
-    files: [
-      "components/variants/explorer/**/*",
-      "components/variants/portrait/**/*",
-      "components/variants/trip/**/*",
-      "components/variants/report/ReportDensityMap.tsx",
-    ],
-    rules: {
-      "@next/next/no-img-element": "warn",
-    },
-  },
   // Allow {} in Supabase generated type definitions
   {
-    files: ["lib/supabase/types.ts", "lib/supabase/database.types.ts"],
+    files: ["lib/supabase/types.ts"],
     rules: {
       "@typescript-eslint/no-empty-object-type": "off",
     },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   computeHasVoiceOver,
@@ -314,15 +314,12 @@ describe("Unit 06.7 — ingen @/-import fra UnifiedMapModal i board/motor-filene
     }
   });
 
-  it("DEFAULT_CAMERA_LOCK er flyttet ut av report-3d-config (motor-laget eier den)", () => {
-    const cfg = readFileSync(
-      join(process.cwd(), "components/variants/report/blocks/report-3d-config.ts"),
-      "utf8",
-    );
-    expect(cfg).not.toMatch(/export const DEFAULT_CAMERA_LOCK/);
-    // MAP3D_TAB_IDS/filterPoisByTab BLE IGJEN (ikke motor-konsepter).
-    expect(cfg).toMatch(/export const MAP3D_TAB_IDS/);
-    expect(cfg).toMatch(/export function filterPoisByTab/);
+  it("DEFAULT_CAMERA_LOCK eies av motor-laget (report-3d-config døde ved cutover 2026-07-06)", () => {
+    // Den gamle eieren (blocks/report-3d-config.ts) ble slettet som dead code
+    // ved cutover-trimmen — vakta er nå kun at motor-laget eier konstanten.
+    expect(
+      existsSync(join(process.cwd(), "components/variants/report/blocks/report-3d-config.ts")),
+    ).toBe(false);
     const motor = readFileSync(
       join(process.cwd(), "components/map/motor-camera.ts"),
       "utf8",

@@ -36,22 +36,20 @@ export async function getProjectTranslations(
   const allEntityIds = [...poiIds, ...themeIds, ...productThemeIds, reportProductId];
   if (allEntityIds.length === 0) return {};
 
-  // TODO(PRD 1): Remove this any-cast once PRD 1 regenerates DB types including the
-  // `translations` table (lib/supabase/types.ts). Until then the table is untyped.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // v2-skjemaet (cutover, migrasjon 072): entity_id-ene er v2-poi-/produkt-uuid-er.
+  const { data, error } = await supabase
+    .schema("v2")
     .from("translations")
     .select("entity_type, entity_id, field, value")
     .eq("locale", locale)
     .in("entity_id", allEntityIds);
 
   if (error || !data) {
-    // translations table might not exist yet (migration 010 not applied)
     return {};
   }
 
   const map: TranslationMap = {};
-  for (const row of data as Array<{ entity_type: string; entity_id: string; field: string; value: string }>) {
+  for (const row of data) {
     map[`${row.entity_type}:${row.entity_id}:${row.field}`] = row.value;
   }
   return map;

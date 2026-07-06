@@ -7,11 +7,9 @@
  *   1. `findAreaForPoint(lat, lng)` — ingen treff → `{ skipped: true }`,
  *      config urørt (R2: nivå 1-fallback)
  *   2. Board-settet beregnes via SAMME kodesti som rendering
- *      (`getProductFromSupabase` → `transformToReportData`) — aldri
- *      replikerte filtre som kan drifte. Den underliggende lese-stien
- *      (`getProductFromSupabase`) treffer `v2`-schemaet (AC1 / INDEX note #7);
- *      selve read-path-retargetingen eies av read-path-PRD-en og koordineres
- *      der (utenfor denne filas scope) — arve-steget KALLER bare stien
+ *      (`getProductFromSupabaseV2` → `transformToReportData`) — aldri
+ *      replikerte filtre som kan drifte. Lesestien treffer `v2`-schemaet
+ *      (AC1 / INDEX note #7) — retargetet ved cutover-trimmen 2026-07-06
  *   3. Per tema i `area.report_editorial`: gå gjennom `highlightCandidates`
  *      i kurator-prioritert rekkefølge, behold de første inntil
  *      MAX_HIGHLIGHTS som finnes i temaets filtrerte `allPOIs`. Hver droppet
@@ -23,16 +21,16 @@
  *      lås. Per-tema-PATCH i løkke er forbudt — midt-løkke-feil ville
  *      etterlate delvis editorial og bryte tier-konsistensen.
  *
- * Import-gotcha (MÅ bevares): `@/lib/supabase/queries` og
+ * Import-gotcha (MÅ bevares): `@/lib/supabase/v2-queries` og
  * `@/components/variants/report/report-data` trekkes inn via dynamisk
- * `await import()` INNE i steg-funksjonen — queries.ts leser den modul-nivå
- * anon-klienten fra client.ts (bygget ved import-tid), og report-data drar
- * en "use client"-kjede (ReportHeroInsight → next/image/Radix) som ikke
+ * `await import()` INNE i steg-funksjonen — v2-queries.ts leser den modul-
+ * nivå anon-klienten fra client.ts (bygget ved import-tid), og report-data
+ * drar en "use client"-kjede (ReportHeroInsight → next/image/Radix) som ikke
  * skal inn i den statiske grafen til alle konsumenter av denne modulen.
  * NB: dynamisk import alene er IKKE nok i scripts — kjørende script må
  * laste env FØR client.ts evalueres (`import "./load-env"` som FØRSTE
  * import, se scripts/load-env.ts), ellers er anon-klienten modul-cachet
- * null og `getProductFromSupabase` returnerer stille null.
+ * null og `getProductFromSupabaseV2` returnerer stille null.
  *
  * Fail-soft (warnings, ikke abort) — UNNTATT skrive-/optimistisk-lås-feil
  * og korrupt config, som kaster høylytt (aldri delvis/utrygg skriving).
@@ -172,14 +170,14 @@ export async function inheritAreaEditorial(options: {
   result.areaName = area.name_no;
 
   // 2. Board-settet via render-kodestien. Dynamisk import — se modulheader:
-  //    queries.ts leser modul-nivå anon-klient, report-data drar "use client"-
-  //    kjeden; ingen av dem skal inn i denne modulens statiske graf.
-  const { getProductFromSupabase } = await import("@/lib/supabase/queries");
+  //    v2-queries.ts leser modul-nivå anon-klient, report-data drar "use
+  //    client"-kjeden; ingen av dem skal inn i denne modulens statiske graf.
+  const { getProductFromSupabaseV2 } = await import("@/lib/supabase/v2-queries");
   const { transformToReportData } = await import(
     "@/components/variants/report/report-data"
   );
 
-  const project = await getProductFromSupabase(customerSlug, projectSlug, "report");
+  const project = await getProductFromSupabaseV2(customerSlug, projectSlug, "report");
   if (!project) {
     result.warnings.push(
       `⚠️  Prosjekt ${customerSlug}/${projectSlug} (report) ikke funnet — editorial-arv hoppet over`

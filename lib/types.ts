@@ -105,41 +105,6 @@ export interface POI {
   };
 }
 
-// === Story Seksjon ===
-
-export type SectionType = "text" | "image_gallery" | "poi_list" | "theme_story_cta" | "map";
-
-export interface StorySection {
-  id: string;
-  type: SectionType;
-  categoryLabel?: string;
-  title?: string;
-  bridgeText?: string;
-  content?: string;
-  images?: string[];
-  pois?: string[]; // POI IDs
-  themeStoryId?: string;
-}
-
-// === Theme Story ===
-
-export interface ThemeStory {
-  id: string;
-  slug: string;
-  title: string;
-  bridgeText?: string;
-  illustration?: string;
-  sections: ThemeStorySection[];
-}
-
-export interface ThemeStorySection {
-  id: string;
-  title: string;
-  description?: string;
-  images?: string[];
-  pois: string[]; // POI IDs
-}
-
 // === Story ===
 
 export interface Story {
@@ -147,8 +112,6 @@ export interface Story {
   title: string;
   introText?: string;
   heroImages?: string[];
-  sections: StorySection[];
-  themeStories: ThemeStory[];
 }
 
 // === Trail Overlay (Overpass/OSM route relations) ===
@@ -529,86 +492,11 @@ export interface ProjectTheme {
   logoUrl?: string;                // Logo in header
 }
 
-// === Project Container (NEW: Hierarchy) ===
+// === Project ===
 
 /**
- * Project container - groups related products for a single location/concept.
- * POIs are shared at this level, then selected per product.
- */
-export interface ProjectContainer {
-  id: string;
-  customerId: string;
-  name: string;
-  urlSlug: string;
-  centerCoordinates: Coordinates;
-  description?: string;
-  /** All POIs available to products under this project */
-  pois: POI[];
-  /** All categories used by POIs in this project */
-  categories: Category[];
-  /** Products under this project container */
-  products: ProductInstance[];
-  /** Bransje-tags (envalg) — determines bransjeprofil for themes/categories */
-  tags?: string[];
-  venueType?: "hotel" | "residential" | "commercial" | null;
-  discoveryCircles?: DiscoveryCircle[] | null;
-  /** Hero title for the welcome screen (e.g. "Velkommen over til Overvik") */
-  welcomeTitle?: string;
-  /** Short tagline shown on the welcome screen */
-  welcomeTagline?: string;
-  /** Hero image URL for the welcome screen */
-  welcomeImage?: string;
-  /** Default product to navigate to from the welcome screen */
-  defaultProduct: ProductType;
-  /** White-label theme configuration */
-  theme?: ProjectTheme;
-  /** URL til kundens hjemmeside — brukes i rapport-shell som tilbake-link og i footer */
-  homepageUrl?: string | null;
-  /** Whether this project has purchased the 3D map add-on (Google Photorealistic 3D Tiles) */
-  has3dAddon?: boolean;
-  /** Project context — drives illustration anchor selection and future style decisions */
-  venueContext?: 'suburban' | 'urban';
-  version: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Product instance - a specific product type (Explorer/Report/Trip) under a project.
- */
-export interface ProductInstance {
-  id: string;
-  projectId: string;
-  productType: ProductType;
-  config: Record<string, unknown>;
-  storyTitle?: string;
-  storyIntroText?: string;
-  storyHeroImages?: string[];
-  /** POI IDs this product uses (subset of project's POI pool) */
-  poiIds: string[];
-  /** POI IDs marked as featured for this product */
-  featuredPoiIds: string[];
-  /** Category IDs this product shows */
-  categoryIds: string[];
-  version: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Summary of a product for display (e.g., in landing page cards)
- */
-export interface ProductSummary {
-  type: ProductType;
-  poiCount: number;
-  hasStory: boolean;
-}
-
-// === Project (LEGACY - for backward compatibility) ===
-
-/**
- * @deprecated Use ProjectContainer and ProductInstance instead.
- * This type is kept for backward compatibility during migration.
+ * Render-formen boardet konsumerer — komponeres fra v2-skjemaet i
+ * lib/supabase/v2-queries.ts (eller leses fra demo-JSON i data/projects/).
  */
 export interface Project {
   id: string;
@@ -626,8 +514,6 @@ export interface Project {
   // Explorer-specific settings
   originMode?: OriginMode; // Default: "geolocation-with-fallback"
   venueType?: "hotel" | "residential" | "commercial" | null;
-  // Trip-specific settings
-  tripConfig?: TripConfig;
   /** Per-project white-label theme (CSS overrides) */
   theme?: ProjectTheme;
   /** URL til kundens hjemmeside — brukes i rapport-shell som tilbake-link og i footer */
@@ -712,173 +598,9 @@ export const createErrorAsyncState = <T>(error: string, currentData?: T | null):
   error,
 });
 
-// === Branded Types ===
-
-declare const __brand: unique symbol;
-type Brand<T, B> = T & { [__brand]: B };
-
-export type POIId = Brand<string, "POIId">;
-export type TripStopId = Brand<string, "TripStopId">;
-
-// Constructor functions for branded types
-export function createPOIId(value: string): POIId {
-  if (!value || typeof value !== "string") {
-    throw new Error(`Invalid POI ID: ${value}`);
-  }
-  return value as POIId;
-}
-
-export function createTripStopId(value: string): TripStopId {
-  if (!value || typeof value !== "string") {
-    throw new Error(`Invalid TripStop ID: ${value}`);
-  }
-  return value as TripStopId;
-}
-
 // Exhaustiveness checking utility
 export function assertNever(x: never): never {
   throw new Error(`Unexpected value: ${x}`);
-}
-
-// Non-empty array type
-export type NonEmptyArray<T> = [T, ...T[]];
-
-// === Trip Types ===
-
-// Trip categories for library grouping
-export const TRIP_CATEGORIES = [
-  "food", // Mat & drikke
-  "culture", // Kultur og historie
-  "nature", // Natur
-  "family", // Familieutflukt
-  "active", // Aktiv tur
-  "hidden-gems", // Skjulte perler
-  "sightseeing", // Sightseeing
-] as const;
-
-export type TripCategory = (typeof TRIP_CATEGORIES)[number];
-
-// Norwegian labels for categories
-export const TRIP_CATEGORY_LABELS: Record<TripCategory, string> = {
-  food: "Mat & drikke",
-  culture: "Kultur og historie",
-  nature: "Natur",
-  family: "Familieutflukt",
-  active: "Aktiv tur",
-  "hidden-gems": "Skjulte perler",
-  sightseeing: "Sightseeing",
-};
-
-export type TripDifficulty = "easy" | "moderate" | "challenging";
-
-export type TripSeason = "spring" | "summer" | "autumn" | "winter" | "all-year";
-
-export type TripMode = "guided" | "free";
-
-// Static configuration (JSON/database)
-export interface TripStopConfig {
-  id: TripStopId;
-  poiId: POIId;
-  nameOverride?: string;
-  descriptionOverride?: string;
-  imageUrlOverride?: string;
-  transitionText?: string; // "Herfra går du over brua..."
-}
-
-export interface TripConfig {
-  id: string;
-  title: string;
-  description?: string;
-  coverImageUrl?: string;
-  difficulty?: TripDifficulty;
-  stops: NonEmptyArray<TripStopConfig>;
-  precomputedDistanceMeters?: number;
-  precomputedDurationMinutes?: number;
-  reward?: RewardConfig;
-  defaultMode?: TripMode; // "guided" (follow route) or "free" (explore freely)
-  // Trip Library fields
-  category?: TripCategory; // For grouping in library
-  tags?: string[]; // Extra tags for filtering
-  featured?: boolean; // Show in "Featured" section
-  sortOrder?: number; // Manual sorting within category
-}
-
-// === Resolved Trip Types (from Supabase) ===
-// These types are returned by query functions with POIs already resolved.
-// TripConfig/TripStopConfig above are the JSON-based config types.
-
-export interface TripStop {
-  id: TripStopId;
-  poi: POI;
-  sortOrder: number;
-  nameOverride?: string;
-  descriptionOverride?: string;
-  imageUrlOverride?: string;
-  transitionText?: string;
-  localInsight?: string;
-}
-
-export interface Trip {
-  id: string;
-  title: string;
-  urlSlug: string;
-  description?: string;
-  coverImageUrl?: string;
-  category?: TripCategory;
-  difficulty?: TripDifficulty;
-  season: TripSeason;
-  tags: string[];
-  featured: boolean;
-  city: string;
-  region?: string;
-  country: string;
-  center: Coordinates;
-  distanceMeters?: number;
-  durationMinutes?: number;
-  stopCount: number;
-  stops: TripStop[];
-  defaultMode: TripMode;
-  defaultRewardTitle?: string;
-  defaultRewardDescription?: string;
-  published: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ProjectTripOverride {
-  id: string;
-  projectId: string;
-  tripId: string;
-  sortOrder: number;
-  enabled: boolean;
-  startPoi?: POI;
-  startName?: string;
-  startDescription?: string;
-  startTransitionText?: string;
-  rewardTitle?: string;
-  rewardDescription?: string;
-  rewardCode?: string;
-  rewardValidityDays?: number;
-  welcomeText?: string;
-}
-
-// A Trip as seen through a project's lens (with overrides applied)
-export interface ProjectTrip {
-  trip: Trip;
-  override: ProjectTripOverride;
-}
-
-// Runtime state
-export type TripStopStatus =
-  | { type: "available" }
-  | { type: "active" }
-  | { type: "completed"; completedAt: number }; // Unix timestamp
-
-// Type guard for status narrowing
-export function isCompletedStop(
-  status: TripStopStatus
-): status is { type: "completed"; completedAt: number } {
-  return status.type === "completed";
 }
 
 // === Camera Constraints (3D Map Performance) ===
@@ -905,48 +627,6 @@ export const DEFAULT_CAMERA_CONSTRAINTS: Required<Omit<CameraConstraints, 'bound
   maxRange: 3000,
   boundsBuffer: 0.2,
 };
-
-// === Trip Gamification Types ===
-
-// Branded type for Trip ID (konsistent med eksisterende TripStopId)
-export type TripId = Brand<string, "TripId">;
-
-export function createTripId(value: string): TripId {
-  if (!value || typeof value !== "string") {
-    throw new Error(`Invalid Trip ID: ${value}`);
-  }
-  return value as TripId;
-}
-
-// Validity days - eksplisitte tillatte verdier
-export type RewardValidityDays = 1 | 3 | 7 | 14 | 30;
-
-// Stop completion record - ekstrahert for testbarhet
-export interface StopCompletionRecord {
-  markedAt: number;           // Unix timestamp
-  verifiedByGPS: boolean;
-  accuracy?: number;          // GPS nøyaktighet i meter (for audit)
-  coordinates?: Coordinates;
-}
-
-// Trip completion state - bruker branded types og unix timestamps
-export interface TripCompletionState {
-  tripId: TripId;
-  startedAt: number;           // Unix timestamp
-  completedAt?: number;        // Unix timestamp
-  redeemedAt?: number;         // Unix timestamp
-  celebrationShownAt?: number; // Forhindrer dobbel konfetti
-  stops: Record<string, StopCompletionRecord>; // string for JSON compat
-}
-
-// Reward configuration
-export interface RewardConfig {
-  title: string;               // "15% rabatt i baren"
-  description: string;         // "Vis denne skjermen i resepsjonen"
-  hotelName: string;           // "Scandic Nidelven"
-  hotelLogoUrl?: string;
-  validityDays: RewardValidityDays;
-}
 
 // === Place Knowledge Types ===
 

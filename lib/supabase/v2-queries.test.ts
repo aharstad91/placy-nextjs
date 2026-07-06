@@ -137,7 +137,6 @@ describe("getProductFromSupabaseV2 — komposisjon", () => {
     expect(project!.has3dAddon).toBe(true);
     expect(project!.reportConfig).toEqual({ themes: [{ id: "t1" }] });
     expect(project!.story.title).toBe("Velkommen");
-    expect(project!.story.sections).toEqual([]);
 
     expect(project!.pois).toHaveLength(2);
     const a = project!.pois.find((p) => p.id === "a")!;
@@ -223,13 +222,11 @@ describe("getProductFromSupabaseV2 — miss/feil → null (legacy-fallback)", ()
 });
 
 describe("kilde-vakter — v2-først-wiring og split-queries", () => {
-  it("data-server kaller v2-stien FØR legacy-stien i getProductAsync", () => {
+  it("data-server bruker KUN v2-stien i getProductAsync (public-legacy døde ved cutover)", () => {
     const src = readFileSync(join(process.cwd(), "lib", "data-server.ts"), "utf8");
-    const v2Idx = src.indexOf("getProductFromSupabaseV2(customer, projectSlug, productType)");
-    const legacyIdx = src.indexOf("getProductFromSupabase(customer, projectSlug, productType)");
-    expect(v2Idx).toBeGreaterThan(-1);
-    expect(legacyIdx).toBeGreaterThan(-1);
-    expect(v2Idx).toBeLessThan(legacyIdx);
+    expect(src).toContain("getProductFromSupabaseV2(customer, projectSlug, productType)");
+    expect(src).not.toMatch(/from ["']\.\/supabase\/queries["']/);
+    expect(src).not.toMatch(/\bgetProductFromSupabase\b(?!V2)/);
   });
 
   it("v2-stien bruker ingen nested PostgREST-select (v2 mangler FK-metadata)", () => {

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProductAsync, getProjectAsync } from "@/lib/data-server";
 import { getBransjeprofil } from "@/lib/themes";
-import { getCollectionBySlug } from "@/lib/supabase/queries";
+import { getCollectionBySlug } from "@/lib/supabase/collections";
 import { eventToBoardData } from "@/lib/event-board/event-board-data";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
