@@ -75,6 +75,9 @@
 - **BEHOLDT (levende):** `data/areas/` (area-staging-pipelinen), `data/geo/` (skolekrets-polygoner), `data/research/` (list-research-targets skriver dit — kurerings-råstoff), event-board-koden (parkert spor, ikke legacy).
 - **Docs:** CLAUDE.md nøkkelfiler (data/projects/templates-radene ut), COMMANDS.md (validate:tier + editorial-hooks-eksemplene → v2), generate-rapport-skillens døde seed-wesselslokka-referanse, restore-product-configs header.
 - **Gates:** tsc 0, lint 0 errors (49 warnings), **1 508 tester grønt**, build OK.
+- **Deploy verifisert:** commit `9214267` pushet → Vercel-deploy grønn (GitHub-commit-status polled til success) → boards + forside 200 live med `x-vercel-cache: MISS` (ferske rendringer på ny deploy).
+
+**Dagens sluttstatus (cutover-dagen komplett):** Hele cutoveren er gjennomført på ÉN dag i 7 etapper: v2-lesesti → pilot → referanse-boards → paritet → kode-trim (−31k linjer) → §4b → drop (074/074b/075) → JSON-æra-opprydding. **v2 er eneste skjema (5 386 POI-er), pipelinen er eneste vei til nye boards, 0 Lokalkunnskap tapt, r01-epicen lukket (alle 7 units), beads-frontieren tom** (kun 2 deferred P3-foto-beads + epic-konteinere igjen). Repoet har null demo-æra-rester; gjenoppliving av gamle boards = re-provisjonering via pipelinen (kuratert innhold ligger i git-historikkens backup-JSON). Commits i dag (drop-sesjonen): `ecde761` (droppen) + `9214267` (oppryddingen), alt pushet.
 
 ---
 
