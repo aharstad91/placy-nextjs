@@ -4,6 +4,17 @@ const nextConfig = {
   experimental: {
     // Optimaliser pakker for raskere lasting
     optimizePackageImports: ["lucide-react"],
+    // Server-actions origin-policy (sikkerhets-audit 2026-07-06): BEVISST ingen
+    // `serverActions.allowedOrigins`. Next.js håndhever da den restriktive
+    // same-origin-sjekken (Origin === Host) på alle server-actions — dette er
+    // CSRF-vernet for admin-actionene (deleteProject m.fl.) OG for logEvent-
+    // ingesten. Boards embeddes i kunde-iframes, MEN iframen laster en Placy-URL,
+    // så server-actions fyrer fra Placy-origin (same-origin) også når de er
+    // embedded — de fungerer uten allowlist. Å legge kunde-domener i allowlisten
+    // ville SVEKKE vernet (en kompromittert kunde-side kunne drive actionene), og
+    // å pinne kun prod-domener ville brutt server-actions på Vercel preview-URLer
+    // (*.vercel.app). Default = mest sikker OG fungerer på tvers av prod/preview/
+    // embed. Ikke legg til allowedOrigins uten en konkret cross-origin-invoke-behov.
   },
   // Tillat bilder fra eksterne kilder
   images: {
@@ -50,7 +61,9 @@ const nextConfig = {
     return [
       {
         source: "/demo/wesselslokka",
-        destination: "/eiendom/broset-utvikling-as/wesselslokka/rapport",
+        // /rapport (gammel scroll-rapport) ble slettet i cutoveren 2026-07-06 →
+        // pekte på 404. Board-flaten er nå /rapport-board.
+        destination: "/eiendom/broset-utvikling-as/wesselslokka/rapport-board",
         permanent: true, // 301
       },
     ];
