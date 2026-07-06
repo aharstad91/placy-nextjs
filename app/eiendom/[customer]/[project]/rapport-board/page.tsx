@@ -4,6 +4,7 @@ import { getProductAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
+import { getSchoolZone } from "@/lib/utils/school-zones";
 
 const getCachedReportProduct = (customer: string, projectSlug: string) =>
   unstable_cache(
@@ -44,6 +45,15 @@ export default async function EiendomReportBoardPage({
     notFound();
   }
 
+  // Pre-compute skolekrets server-side so the 700kB GeoJSON never enters the
+  // client bundle. The result is stored in project.schoolZone and read by
+  // applyCategoryFilter() in report-data.ts (client-side, no GeoJSON import).
+  const schoolZone = getSchoolZone(
+    projectData.centerCoordinates.lat,
+    projectData.centerCoordinates.lng,
+  );
+  const projectDataWithZone = { ...projectData, schoolZone };
+
   const poiIds = projectData.pois.map((p) => p.id);
   const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
   const enTranslations = await getProjectTranslations("en", poiIds, themeIds, projectData.id);
@@ -79,7 +89,7 @@ export default async function EiendomReportBoardPage({
   return (
     <div style={themeStyle} className="min-h-screen bg-background text-foreground">
       <ReportReelsPage
-        project={projectData}
+        project={projectDataWithZone}
         enTranslations={enTranslations}
         embed={embed}
         fromEmbed={fromEmbed}

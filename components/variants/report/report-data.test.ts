@@ -73,6 +73,8 @@ describe("byTierThenScore", () => {
 describe("applyCategoryFilter", () => {
   // Brøset center coordinates
   const brosetCenter = { lat: 63.418, lng: 10.395 };
+  // Pre-computed schoolZone for Brøset (avoids importing GeoJSON in test)
+  const brosetZone = { barneskole: "SINGSAKER", ungdomsskole: "ROSENBORG" };
 
   it("caps bus POIs to maxCount of 5", () => {
     const pois = Array.from({ length: 10 }, (_, i) => makeBusPOI(`bus-${i}`));
@@ -120,7 +122,7 @@ describe("applyCategoryFilter", () => {
       makeSkolePOI("s3", "Lade skole"),
       makeSkolePOI("s4", "Rosenborg ungdomsskole"),
     ];
-    const filtered = applyCategoryFilter("skole", pois, brosetCenter);
+    const filtered = applyCategoryFilter("skole", pois, brosetCenter, brosetZone);
     const names = filtered.map((p) => p.name);
     expect(names).toContain("Singsaker skole");
     expect(names).toContain("Rosenborg ungdomsskole");
@@ -135,7 +137,7 @@ describe("applyCategoryFilter", () => {
       makeSkolePOI("ntnu", "NTNU Gløshaugen"),
       makeSkolePOI("vgs", "Trondheim Katedralskole VGS"),
     ];
-    const filtered = applyCategoryFilter("skole", pois, brosetCenter);
+    const filtered = applyCategoryFilter("skole", pois, brosetCenter, brosetZone);
     const names = filtered.map((p) => p.name);
     expect(names).toContain("Singsaker skole");
     expect(names).toContain("NTNU Gløshaugen");
@@ -143,14 +145,25 @@ describe("applyCategoryFilter", () => {
     expect(names).not.toContain("Ila skole");
   });
 
-  it("returns empty for skole when no schools match zone (e.g. Oslo coords)", () => {
-    const osloCenter = { lat: 59.91, lng: 10.75 };
+  it("passes all skole POIs through when schoolZone is undefined", () => {
+    // When no schoolZone is provided (e.g. non-Trondheim project), filter is a no-op
     const pois = [
       makeSkolePOI("s1", "Singsaker skole"),
       makeSkolePOI("s2", "Ila skole"),
     ];
-    const filtered = applyCategoryFilter("skole", pois, osloCenter);
-    // No school zone match for Oslo → none pass
+    const filtered = applyCategoryFilter("skole", pois, brosetCenter, undefined);
+    // No zone → school-zone filter skipped, all POIs pass through
+    expect(filtered.length).toBe(2);
+  });
+
+  it("returns empty for skole when zone has no matching school names", () => {
+    const osloZone = { barneskole: null, ungdomsskole: null };
+    const pois = [
+      makeSkolePOI("s1", "Singsaker skole"),
+      makeSkolePOI("s2", "Ila skole"),
+    ];
+    const filtered = applyCategoryFilter("skole", pois, brosetCenter, osloZone);
+    // Zone found but no barneskole/ungdomsskole → none match
     expect(filtered.length).toBe(0);
   });
 });

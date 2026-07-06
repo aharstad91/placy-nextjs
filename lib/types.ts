@@ -520,6 +520,13 @@ export interface Project {
   homepageUrl?: string | null;
   /** Whether the project has a 3D map add-on enabled */
   has3dAddon?: boolean;
+  /**
+   * Pre-computed skolekrets for this project's centerCoordinates.
+   * Populated server-side (pages/API routes) to avoid bundling the 700kB
+   * GeoJSON polygons into the client bundle. Client components read this
+   * instead of calling getSchoolZone() directly.
+   */
+  schoolZone?: { barneskole: string | null; ungdomsskole: string | null };
 }
 
 // === Global State ===

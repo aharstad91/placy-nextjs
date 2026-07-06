@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { getProductAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
 import ReportPageParaform from "@/components/variants/report/paraform/ReportPageParaform";
+import { getSchoolZone } from "@/lib/utils/school-zones";
 
 const getCachedReportProduct = (customer: string, projectSlug: string) =>
   unstable_cache(
@@ -34,6 +35,15 @@ export default async function EiendomReportParaformPage({ params, searchParams }
     notFound();
   }
 
+  // Pre-compute skolekrets server-side so the 700kB GeoJSON never enters the
+  // client bundle. The result is stored in project.schoolZone and read by
+  // applyCategoryFilter() in report-data.ts (client-side, no GeoJSON import).
+  const schoolZone = getSchoolZone(
+    projectData.centerCoordinates.lat,
+    projectData.centerCoordinates.lng,
+  );
+  const projectDataWithZone = { ...projectData, schoolZone };
+
   const poiIds = projectData.pois.map((p) => p.id);
   const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
   const enTranslations = await getProjectTranslations("en", poiIds, themeIds, projectData.id);
@@ -46,7 +56,7 @@ export default async function EiendomReportParaformPage({ params, searchParams }
     <div className="paraform min-h-screen flex flex-col" style={{ backgroundColor: "#fafaf7", color: "#1a1a1a" }}>
       <main className="flex-1">
         <ReportPageParaform
-          project={projectData}
+          project={projectDataWithZone}
           enTranslations={enTranslations}
           primaryThemeIds={rawThemes}
         />

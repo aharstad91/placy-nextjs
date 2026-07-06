@@ -18,7 +18,6 @@ import {
   type CategoryScore,
 } from "@/lib/utils/category-score";
 import { calculateReportScore, NULL_TIER_VALUE, byTierThenScore } from "@/lib/utils/poi-score";
-import { getSchoolZone } from "@/lib/utils/school-zones";
 import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/strings";
 import { generateBridgeText } from "@/lib/generators/bridge-text-generator";
 import { getHeroInsightPOIIds } from "./ReportHeroInsight";
@@ -305,12 +304,16 @@ function splitVisibleHidden(pois: POI[], visibleCount = INITIAL_VISIBLE_COUNT) {
 /**
  * Apply per-category filter rules to a set of POIs (already sorted by distance).
  * For "school-zone" filter: keep only schools in the project's skolekrets + higher ed.
+ *   `schoolZone` must be the pre-computed result from getSchoolZone() — computed
+ *   server-side and stored in project.schoolZone to avoid bundling GeoJSON into
+ *   the client JS bundle. If undefined, school-zone filter passes all POIs through.
  * For maxCount: keep only the N nearest.
  */
 export function applyCategoryFilter(
   categoryId: string,
   pois: POI[],
   center: Coordinates,
+  schoolZone?: { barneskole: string | null; ungdomsskole: string | null },
 ): POI[] {
   const rule = CATEGORY_FILTER_RULES[categoryId];
   if (!rule) return pois;
@@ -318,8 +321,8 @@ export function applyCategoryFilter(
   let filtered = pois;
 
   // School zone filter: keep matching zone schools + higher ed
-  if (rule.filter === "school-zone") {
-    const zone = getSchoolZone(center.lat, center.lng);
+  if (rule.filter === "school-zone" && schoolZone !== undefined) {
+    const zone = schoolZone;
     filtered = pois.filter((poi) => {
       const name = poi.name.toLowerCase();
       // Always keep higher education (VGS, NTNU, etc.)
@@ -356,7 +359,11 @@ function getInitialVisibleCount(categoryId: string): number {
  * Groups by category, applies each category's filter rules, then reassembles
  * in the original distance-sorted order.
  */
-function applyThemeCategoryFilters(sortedPOIs: POI[], center: Coordinates): POI[] {
+function applyThemeCategoryFilters(
+  sortedPOIs: POI[],
+  center: Coordinates,
+  schoolZone?: { barneskole: string | null; ungdomsskole: string | null },
+): POI[] {
   // Group by category while preserving order
   const byCat = new Map<string, POI[]>();
   for (const poi of sortedPOIs) {
@@ -369,7 +376,7 @@ function applyThemeCategoryFilters(sortedPOIs: POI[], center: Coordinates): POI[
   // Apply filter to each category group
   const allowedIds = new Set<string>();
   byCat.forEach((pois, catId) => {
-    const filtered = applyCategoryFilter(catId, pois, center);
+    const filtered = applyCategoryFilter(catId, pois, center, schoolZone);
     for (const poi of filtered) allowedIds.add(poi.id);
   });
 
@@ -386,6 +393,7 @@ function buildSubSections(
   projectId: string,
   center: Coordinates,
   categoryDescriptions?: Record<string, string>,
+  schoolZone?: { barneskole: string | null; ungdomsskole: string | null },
 ): ReportSubSection[] {
   // Group by category
   const byCat = new Map<string, POI[]>();
@@ -412,7 +420,7 @@ function buildSubSections(
   return allCats.map(([catId, catPOIs]) => {
     const sample = catPOIs[0].category;
     // Apply per-category filtering (school-zone, maxCount) before sorting/splitting
-    const filteredPOIs = applyCategoryFilter(catId, catPOIs, center);
+    const filteredPOIs = applyCategoryFilter(catId, catPOIs, center, schoolZone);
     // Sort by tier then formula score so highlights and visible list show best POIs
     const sortedCatPOIs = [...filteredPOIs].sort(byTierThenScore);
     const visibleCount = getInitialVisibleCount(catId);
@@ -538,7 +546,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
     // Apply per-category filtering (school-zone, maxCount) to each category group,
     // then reassemble the theme's POI list preserving distance order.
-    const categoryFiltered = applyThemeCategoryFilters(distanceSorted, center);
+    const categoryFiltered = applyThemeCategoryFilters(distanceSorted, center, project.schoolZone);
 
     // Filter child POIs when their parent is in the same theme, and attach children to parents
     const parentIdsInTheme = new Set(categoryFiltered.filter(p => !p.parentPoiId).map(p => p.id));
@@ -572,7 +580,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     );
 
     // Build sub-sections with per-category filtering
-    const subSections = buildSubSections(filtered, project.id, center, themeDef.categoryDescriptions);
+    const subSections = buildSubSections(filtered, project.id, center, themeDef.categoryDescriptions, project.schoolZone);
 
     themes.push({
       id: themeDef.id,
