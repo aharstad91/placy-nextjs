@@ -1,6 +1,4 @@
 import { describe, it, expect } from "vitest";
-import * as fs from "node:fs";
-import * as path from "node:path";
 import type { ReportConfig, ReportThemeConfig } from "@/lib/types";
 import {
   validateReportTier,
@@ -186,44 +184,5 @@ describe("summarizeTierFindings", () => {
     );
     expect(summarizeTierFindings(2, [])).toBe("nivå 2 OK");
     expect(summarizeTierFindings(undefined, [])).toBe("nivå 1 OK");
-  });
-});
-
-// ─── Kjørepunkt 2: sveip over lokale JSON-prosjekter ────────────────────────
-
-describe("lokale prosjekter (data/projects)", () => {
-  it("alle prosjekter med reportConfig består validatoren", () => {
-    const root = path.join(__dirname, "..", "..", "data", "projects");
-    const files = fs
-      .readdirSync(root, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .flatMap((d) =>
-        fs
-          .readdirSync(path.join(root, d.name))
-          .filter((f) => f.endsWith(".json") && !f.endsWith(".input.json"))
-          .map((f) => path.join(root, d.name, f)),
-      );
-    expect(files.length).toBeGreaterThan(0);
-
-    let checked = 0;
-    for (const file of files) {
-      const project = JSON.parse(fs.readFileSync(file, "utf-8")) as {
-        urlSlug?: string;
-        reportConfig?: ReportConfig;
-        pois?: { id: string }[];
-      };
-      if (!project.reportConfig) continue;
-      checked++;
-      const slug = project.urlSlug ?? path.basename(file, ".json");
-      const findings = validateReportTier({
-        slug,
-        reportConfig: project.reportConfig,
-        poiIds: project.pois?.map((p) => p.id),
-      });
-      expect
-        .soft(errors(findings), `${file}: ${summarizeTierFindings(project.reportConfig.reportTier, findings)}`)
-        .toEqual([]);
-    }
-    expect(checked).toBeGreaterThan(0);
   });
 });

@@ -496,7 +496,7 @@ export interface ProjectTheme {
 
 /**
  * Render-formen boardet konsumerer — komponeres fra v2-skjemaet i
- * lib/supabase/v2-queries.ts (eller leses fra demo-JSON i data/projects/).
+ * lib/supabase/v2-queries.ts (eneste datakilde etter cutover 2026-07-06).
  */
 export interface Project {
   id: string;

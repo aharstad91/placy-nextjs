@@ -3,24 +3,21 @@
  * validate:tier — nivå-vakthund for rapport-boardet.
  *
  * Validerer at deklarert `reportConfig.reportTier` (1/2) er fullt dekket av
- * faktisk innhold, over BEGGE datakilder:
- *   - lokal JSON: data/projects/*\/*.json (prototype-prosjekter)
- *   - Supabase:   products-rader med product_type=report (kunde-boards)
+ * faktisk innhold i Supabase (v2): products-rader med product_type=report.
+ * (Den lokale JSON-kilden døde med data/projects/ i legacy-oppryddingen
+ * 2026-07-06 — alt provisjoneres via pipelinen.)
  *
  * Kjernen er lib/validation/report-tier.ts (ren funksjon, fullt testet) —
  * dette scriptet er en tynn driver: I/O + tabell + exit-koder.
  *
  * Usage:
- *   npm run validate:tier                  # begge kilder
- *   npm run validate:tier -- --local-only  # offline (skipper Supabase)
+ *   npm run validate:tier
  *
  * Exit 1 ved errors (under-levert nivå), 0 ved kun warnings/grønt.
  * Utveier ved avvik: fullfør manglene, eller re-deklarer ned (oppdater
  * reportTier via read-modify-write — ingen waiver-liste).
  */
 
-import * as fs from "node:fs";
-import * as path from "node:path";
 import { config } from "dotenv";
 import type { ReportConfig } from "../lib/types";
 import {
@@ -31,10 +28,7 @@ import {
 
 config({ path: ".env.local" });
 
-const LOCAL_ONLY = process.argv.includes("--local-only");
-
 interface Row {
-  source: "lokal" | "supabase";
   slug: string;
   declared: string;
   findings: ReportTierFinding[];
@@ -44,7 +38,6 @@ interface Row {
 const rows: Row[] = [];
 
 function runProject(
-  source: Row["source"],
   slug: string,
   reportConfig: ReportConfig | undefined,
   poiIds: string[] | undefined,
@@ -56,7 +49,6 @@ function runProject(
   });
   const declared = reportConfig?.reportTier;
   rows.push({
-    source,
     slug,
     declared: declared === undefined ? "1 (default)" : String(declared),
     findings,
@@ -64,57 +56,14 @@ function runProject(
   });
 }
 
-// ─── Kilde 1: lokal JSON ────────────────────────────────────────────────────
-
-function runLocal(): void {
-  const root = path.join(process.cwd(), "data", "projects");
-  const files = fs
-    .readdirSync(root, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .flatMap((d) =>
-      fs
-        .readdirSync(path.join(root, d.name))
-        .filter((f) => f.endsWith(".json") && !f.endsWith(".input.json"))
-        .map((f) => path.join(root, d.name, f)),
-    );
-
-  for (const file of files) {
-    let project: {
-      urlSlug?: string;
-      productType?: string;
-      reportConfig?: ReportConfig;
-      pois?: { id: string }[];
-    };
-    try {
-      project = JSON.parse(fs.readFileSync(file, "utf-8"));
-    } catch (e) {
-      console.error(`⚠ Kunne ikke parse ${file}: ${(e as Error).message}`);
-      continue;
-    }
-    // Rapport-relevant = report-produkt ELLER prosjekt med reportConfig
-    // (explorer-prosjekter kan ha reportConfig, jf. wesselslokka).
-    if (project.productType !== "report" && !project.reportConfig) continue;
-    runProject(
-      "lokal",
-      project.urlSlug ?? path.basename(file, ".json"),
-      project.reportConfig,
-      project.pois?.map((p) => p.id),
-    );
-  }
-}
-
-// ─── Kilde 2: Supabase ──────────────────────────────────────────────────────
-
-async function runSupabase(): Promise<boolean> {
+async function runSupabase(): Promise<void> {
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.error(
-      "⚠ NEXT_PUBLIC_SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY mangler i .env.local — " +
-        "Supabase-kilden hoppes over (kjørte i praksis --local-only). " +
-        "Kunde-boardene er IKKE validert.",
+      "✗ NEXT_PUBLIC_SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY mangler i .env.local — ingen datakilde å validere.",
     );
-    return false;
+    process.exit(1);
   }
   const headers = {
     apikey: SUPABASE_KEY,
@@ -133,9 +82,9 @@ async function runSupabase(): Promise<boolean> {
   ]);
   if (!projectsRes.ok || !productsRes.ok) {
     console.error(
-      `⚠ Supabase-feil: projects ${projectsRes.status}, products ${productsRes.status} — kunde-boardene er IKKE validert.`,
+      `✗ Supabase-feil: projects ${projectsRes.status}, products ${productsRes.status} — boardene er IKKE validert.`,
     );
-    return false;
+    process.exit(1);
   }
 
   const projects = (await projectsRes.json()) as {
@@ -163,44 +112,33 @@ async function runSupabase(): Promise<boolean> {
       console.error(`⚠ ${slug}: config er korrupt json-string — hopper over.`);
       continue;
     }
-    // poiIds utelates: Supabase-driveren henter ikke POI-poolen, så
-    // highlight-resolusjonssjekken hoppes over her (dekkes lokalt + i render).
-    runProject(
-      "supabase",
-      slug,
-      cfg.reportConfig as ReportConfig | undefined,
-      undefined,
-    );
+    // poiIds utelates: driveren henter ikke POI-poolen, så highlight-
+    // resolusjonssjekken hoppes over her (dekkes i render).
+    runProject(slug, cfg.reportConfig as ReportConfig | undefined, undefined);
   }
-  return true;
 }
 
 // ─── Rapport ────────────────────────────────────────────────────────────────
 
-function printReport(supabaseCovered: boolean): void {
+function printReport(): void {
   const pad = (s: string, n: number) => s.padEnd(n);
   console.log("");
-  console.log(
-    pad("KILDE", 10) + pad("SLUG", 28) + pad("NIVÅ", 13) + "STATUS",
-  );
-  console.log("─".repeat(90));
+  console.log(pad("SLUG", 28) + pad("NIVÅ", 13) + "STATUS");
+  console.log("─".repeat(80));
   for (const row of rows) {
     const errs = row.findings.filter((f) => f.level === "error");
     const warns = row.findings.filter((f) => f.level === "warning");
     const status =
       errs.length > 0 ? `✗ ${row.summary}` : warns.length > 0 ? `✓ OK (${warns.length} warnings)` : "✓ OK";
-    console.log(pad(row.source, 10) + pad(row.slug, 28) + pad(row.declared, 13) + status);
+    console.log(pad(row.slug, 28) + pad(row.declared, 13) + status);
     for (const f of errs) console.log(`           · [${f.check}] ${f.detail}`);
     for (const f of warns) console.log(`           ⚠ [${f.check}] ${f.detail}`);
   }
-  console.log("─".repeat(90));
+  console.log("─".repeat(80));
 
   const failed = rows.filter((r) => r.findings.some((f) => f.level === "error"));
   console.log(
-    `${rows.length} prosjekter validert (${rows.filter((r) => r.source === "lokal").length} lokale, ` +
-      `${rows.filter((r) => r.source === "supabase").length} supabase)` +
-      (supabaseCovered ? "" : " — Supabase IKKE dekket") +
-      `. ${failed.length} under-levert.`,
+    `${rows.length} boards validert. ${failed.length} under-levert.`,
   );
   if (failed.length > 0) {
     console.log(
@@ -211,10 +149,8 @@ function printReport(supabaseCovered: boolean): void {
 }
 
 async function main(): Promise<void> {
-  runLocal();
-  const supabaseCovered = LOCAL_ONLY ? false : await runSupabase();
-  if (LOCAL_ONLY) console.error("ℹ --local-only: Supabase-kilden hoppes over.");
-  printReport(supabaseCovered);
+  await runSupabase();
+  printReport();
   const hasErrors = rows.some((r) =>
     r.findings.some((f) => f.level === "error"),
   );

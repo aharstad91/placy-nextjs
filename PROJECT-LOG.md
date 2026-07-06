@@ -67,6 +67,15 @@
 - **Beads:** r01.3 lukket m/ kjøringslogg-kommentar → **hele PRD 1-epicen (r01) lukket** (alle 7 units ferdige). Kjøringslogg: `docs/rebuild/public-drop-plan.md` §7.
 - **Reversibilitet:** 074/074b kan angres via metadata-taggene; droppen er endelig — kaldlager = `backup-public-*-2026-07-06.json` + git.
 
+**Samme dag, «alt er legacy» — JSON-æraen SLETTET (backups + demo-JSON + fallback-grenen i koden):**
+- **Andreas-beslutning:** backup-JSON-ene og de ~52 gamle boardene bevares IKKE for gjenoppliving — alt er legacy. Slettet fra arbeidstreet: `docs/rebuild/backup-public-*.json` (3 filer, 2,8 MB —ligger fortsatt i git-historikken hvis noe mot formodning trengs), `data/projects/` (5 siste demo-JSON: wesselslokka/byggetrinn-4 + inputs — skygget av v2 — og død scandic-guide), `data/templates/`, `data/test-trails-broset.json`, `data/wesselslokka-summary.ts`, 112 utrackede filer i `backups/` (public-æra curation-audits; **mekanismen består** — gemini-grounding skriver fortsatt rollback-backups dit, restore-product-config leser dem).
+- **JSON-fallback-grenen i koden død → fjernet:** `lib/data-server.ts` er nå v2-only (getProjectFromJSON/getProjectAsync/getBaseSlug slettet); fallback-grenene trimmet i rapport-board/rapport-reels/rapport-paraform/event-board (+ testene). **story- og visning-rutene SLETTET** (krevde explorer-produkt — finnes verken i v2 eller JSON lenger; kan aldri rendre) + `components/variants/{story,visning}` + orphanet `lib/story/` (compose-story-blocks/story-templates/types).
+- **Scripts:** `audio-tour-build-local.ts` + `reels-voiceover-build-local.ts` slettet (input-filene finnes ikke lenger; DB-byggerne er kanonisk vei) + `build:reels-vo-local` npm-entry; kontrakt-testen trimmet til DB-byggeren. `validate-report-tier.ts` = Supabase-only driver (--local-only død).
+- **Admin:** `/admin/projects` renset for JSON-scanning/merge (ren v2-listing; JSON-badge og source-gating ut av klienten).
+- **BEHOLDT (levende):** `data/areas/` (area-staging-pipelinen), `data/geo/` (skolekrets-polygoner), `data/research/` (list-research-targets skriver dit — kurerings-råstoff), event-board-koden (parkert spor, ikke legacy).
+- **Docs:** CLAUDE.md nøkkelfiler (data/projects/templates-radene ut), COMMANDS.md (validate:tier + editorial-hooks-eksemplene → v2), generate-rapport-skillens døde seed-wesselslokka-referanse, restore-product-configs header.
+- **Gates:** tsc 0, lint 0 errors (49 warnings), **1 508 tester grønt**, build OK.
+
 ---
 
 ## 2026-07-05→06 — Fable-direktebygg: 17 beads, PRD 11+15 komplett, HELE r12-admin-epicen levert + sikkerhetssveip

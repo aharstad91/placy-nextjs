@@ -25,7 +25,6 @@ interface ProductInfo {
   id: string;
   type: "explorer" | "report" | "guide";
   title: string | null;
-  filePath?: string;
 }
 
 // Container (project) with products
@@ -39,7 +38,6 @@ interface ProjectContainer {
   center_lng: number;
   tags?: string[];
   customerName: string;
-  source: "supabase" | "json";
   products: ProductInfo[];
 }
 
@@ -293,8 +291,7 @@ export function ProjectsAdminClient({
             </div>
           ) : (
             filteredContainers.map((container) => {
-              const canNavigate =
-                container.source === "supabase" && container.short_id;
+              const canNavigate = Boolean(container.short_id);
 
               return (
                 <div
@@ -363,11 +360,6 @@ export function ProjectsAdminClient({
                             </span>
                           );
                         })}
-                        {container.source === "json" && (
-                          <span className="text-xs bg-amber-100 px-2 py-1 rounded-md text-amber-700 font-medium">
-                            JSON
-                          </span>
-                        )}
                       </div>
 
                       {/* External link */}
@@ -382,18 +374,16 @@ export function ProjectsAdminClient({
                       </Link>
 
                       {/* Delete container */}
-                      {container.source === "supabase" && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteTarget({ container });
-                          }}
-                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Slett prosjekt"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteTarget({ container });
+                        }}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Slett prosjekt"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>

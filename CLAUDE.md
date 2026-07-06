@@ -71,9 +71,7 @@ source .env.local && curl -s "${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/pois?select=ne
 | `lib/types.ts` | Alle TypeScript-typer |
 | `lib/stores/` | Zustand-stores (kompass, audio-tour) |
 | `lib/supabase/v2-queries.ts` | Board-lesestien (v2-skjemaet — eneste Supabase-lesesti etter cutover 2026-07-06) |
-| `lib/pipeline/` | Provisjonerings-pipelinen (PRD 3) |
-| `data/projects/klp-eiendom/ferjemannsveien-10.json` | Demo-data (JSON-fallback) |
-| `data/templates/input.template.json` | Mal for nye prosjekter |
+| `lib/pipeline/` | Provisjonerings-pipelinen (PRD 3) — eneste vei til nye boards |
 
 ## API-er
 
@@ -86,10 +84,11 @@ source .env.local && curl -s "${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/pois?select=ne
 ## Editorial Hooks (Claude Code)
 
 ```
-Generer editorial hooks for POI-ene i data/projects/kunde/prosjekt.json
+Generer editorial hooks for POI-ene i prosjektet kunde/prosjekt
 ```
 
-Genererer `editorialHook` og `localInsight` per POI basert på nettsøk.
+Genererer `editorialHook` og `localInsight` per POI basert på nettsøk —
+leses fra og skrives til v2-skjemaet i Supabase.
 
 ## Arkitekturregler (ufravikelige)
 

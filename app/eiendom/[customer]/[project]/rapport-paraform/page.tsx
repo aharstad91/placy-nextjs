@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
-import { getProductAsync, getProjectAsync } from "@/lib/data-server";
+import { getProductAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
 import ReportPageParaform from "@/components/variants/report/paraform/ReportPageParaform";
 
@@ -28,14 +28,7 @@ export default async function EiendomReportParaformPage({ params, searchParams }
   const { customer, project: projectSlug } = await params;
   const resolvedSearchParams = await searchParams;
 
-  let projectData = await getCachedReportProduct(customer, projectSlug);
-
-  if (!projectData) {
-    const legacyProject = await getProjectAsync(customer, projectSlug);
-    if (legacyProject?.productType === "report") {
-      projectData = legacyProject;
-    }
-  }
+  const projectData = await getCachedReportProduct(customer, projectSlug);
 
   if (!projectData) {
     notFound();
@@ -65,10 +58,7 @@ export default async function EiendomReportParaformPage({ params, searchParams }
 export async function generateMetadata({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
 
-  let projectData = await getCachedReportProduct(customer, projectSlug);
-  if (!projectData) {
-    projectData = await getProjectAsync(customer, projectSlug);
-  }
+  const projectData = await getCachedReportProduct(customer, projectSlug);
 
   if (!projectData) {
     return { title: "Rapport ikke funnet" };

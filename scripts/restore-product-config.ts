@@ -1,12 +1,13 @@
 #!/usr/bin/env npx tsx
 /**
- * Restore a product's config from a backup file created by seed-wesselslokka-summary.ts.
+ * Restore a product's config from a backup file (skrevet av
+ * scripts/gemini-grounding.ts til backups/ før den PATCHer produktet).
  *
  * Usage:
  *   npx tsx scripts/restore-product-config.ts backups/products-{id}-{ts}.json
  *
- * The backup file was written by the seed script before it PATCHed the product.
- * This script reads backup.config and PATCHes it back, restoring the pre-seed state.
+ * This script reads backup.config and PATCHes it back, restoring the
+ * pre-patch state.
  */
 
 import * as fs from "fs";

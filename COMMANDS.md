@@ -26,13 +26,12 @@ npm run lint
 
 ### Valider nivå-deklarasjoner (rapport-board)
 ```bash
-npm run validate:tier                  # lokal JSON + Supabase
-npm run validate:tier -- --local-only  # offline, kun data/projects/
+npm run validate:tier   # alle report-boards i Supabase (v2)
 ```
-Sjekker at deklarert `reportConfig.reportTier` (1 = Basic, 2 = +Editorial,
-3 = Maks) er fullt dekket av faktisk innhold (editorial, spillbare VO-spor,
-camera-tours, 3D-addon, brand-assets). Exit 1 ved under-leveranse — kjør før
-kunde-sending. Ved avvik: fullfør manglene eller re-deklarer ned.
+Sjekker at deklarert `reportConfig.reportTier` (1 = default, 2 = kuratert)
+er fullt dekket av faktisk innhold (editorial m.m.). Exit 1 ved
+under-leveranse — kjør før kunde-sending. Ved avvik: fullfør manglene
+eller re-deklarer ned.
 
 ---
 
@@ -108,8 +107,9 @@ Søker på nettet etter informasjon om hvert sted og genererer:
 
 **Eksempel:**
 ```
-Generer editorial hooks for POI-ene i data/projects/klp-eiendom/test-generator.json
+Generer editorial hooks for POI-ene i prosjektet klp-eiendom/teknostallen
 ```
+(POI-ene leses fra og skrives til v2-skjemaet i Supabase.)
 
 ### Legg til nye POI-er manuelt
 ```

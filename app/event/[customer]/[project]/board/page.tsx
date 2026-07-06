@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProductAsync, getProjectAsync } from "@/lib/data-server";
+import { getProductAsync } from "@/lib/data-server";
 import { getBransjeprofil } from "@/lib/themes";
 import { getCollectionBySlug } from "@/lib/supabase/collections";
 import { eventToBoardData } from "@/lib/event-board/event-board-data";
@@ -50,14 +50,9 @@ export default async function EventBoardPage({ params, searchParams }: PageProps
   const { customer, project: projectSlug } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
 
-  // Prøv ny hierarki først, fall tilbake til legacy (speiler event-Explorer-ruten).
-  let projectData = await getProductAsync(customer, projectSlug, "explorer");
-  if (!projectData) {
-    const legacyProject = await getProjectAsync(customer, projectSlug);
-    if (legacyProject?.productType === "explorer") {
-      projectData = legacyProject;
-    }
-  }
+  // v2 er eneste datakilde (JSON-fallbacken døde ved legacy-oppryddingen
+  // 2026-07-06). Event-prosjekter provisjoneres inn i v2 når sporet gjenåpnes.
+  const projectData = await getProductAsync(customer, projectSlug, "explorer");
 
   if (!projectData) {
     notFound();
@@ -131,10 +126,7 @@ export default async function EventBoardPage({ params, searchParams }: PageProps
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { customer, project: projectSlug } = await params;
 
-  let projectData = await getProductAsync(customer, projectSlug, "explorer");
-  if (!projectData) {
-    projectData = await getProjectAsync(customer, projectSlug);
-  }
+  const projectData = await getProductAsync(customer, projectSlug, "explorer");
 
   if (!projectData) {
     return { title: "Event not found" };

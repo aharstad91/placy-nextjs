@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
-import { getProductAsync, getProjectAsync } from "@/lib/data-server";
+import { getProductAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
@@ -38,14 +38,7 @@ export default async function EiendomReportBoardPage({
   // (oppvarming + ett lyd-trykk) i stedet for å gjenta velkomst-splashen.
   const fromEmbed = fromParam === "embed";
 
-  let projectData = await getCachedReportProduct(customer, projectSlug);
-
-  if (!projectData) {
-    const legacyProject = await getProjectAsync(customer, projectSlug);
-    if (legacyProject?.productType === "report") {
-      projectData = legacyProject;
-    }
-  }
+  const projectData = await getCachedReportProduct(customer, projectSlug);
 
   if (!projectData) {
     notFound();
@@ -98,10 +91,7 @@ export default async function EiendomReportBoardPage({
 export async function generateMetadata({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
 
-  let projectData = await getCachedReportProduct(customer, projectSlug);
-  if (!projectData) {
-    projectData = await getProjectAsync(customer, projectSlug);
-  }
+  const projectData = await getCachedReportProduct(customer, projectSlug);
 
   if (!projectData) {
     return { title: "Rapport ikke funnet" };

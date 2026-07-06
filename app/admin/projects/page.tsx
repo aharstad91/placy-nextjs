@@ -3,9 +3,6 @@ import { Suspense } from "react";
 import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
 import { ProjectsAdminClient } from "./projects-admin-client";
-import type { DbCustomer } from "@/lib/supabase/types";
-import * as fs from "fs";
-import * as path from "path";
 import { nanoid } from "nanoid";
 import { requireAdmin } from "@/lib/admin/require-admin";
 
@@ -14,56 +11,6 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-
-// Scan JSON project files from data/projects/
-function getJSONProjects() {
-  const projectsDir = path.join(process.cwd(), "data", "projects");
-  const projects: Array<{
-    id: string;
-    name: string;
-    customer: string;
-    urlSlug: string;
-    productType: string;
-    centerLat: number;
-    centerLng: number;
-    filePath: string;
-  }> = [];
-
-  if (!fs.existsSync(projectsDir)) return projects;
-
-  const customers = fs.readdirSync(projectsDir, { withFileTypes: true });
-  for (const customerDir of customers) {
-    if (!customerDir.isDirectory()) continue;
-
-    const customerPath = path.join(projectsDir, customerDir.name);
-    const files = fs.readdirSync(customerPath);
-
-    for (const file of files) {
-      if (!file.endsWith(".json")) continue;
-
-      try {
-        const filePath = path.join(customerPath, file);
-        const content = fs.readFileSync(filePath, "utf-8");
-        const data = JSON.parse(content);
-
-        projects.push({
-          id: `json:${customerDir.name}/${file}`,
-          name: data.name || file.replace(".json", ""),
-          customer: customerDir.name,
-          urlSlug: data.urlSlug || file.replace(".json", ""),
-          productType: data.productType || "explorer",
-          centerLat: data.centerCoordinates?.lat || 0,
-          centerLng: data.centerCoordinates?.lng || 0,
-          filePath: `data/projects/${customerDir.name}/${file}`,
-        });
-      } catch {
-        // Skip invalid JSON files
-      }
-    }
-  }
-
-  return projects;
-}
 
 // Server Actions
 async function createProject(formData: FormData) {
@@ -148,21 +95,6 @@ async function deleteProject(formData: FormData) {
   const id = formData.get("id") as string;
   const deleteType = formData.get("type") as string || "container";
 
-  // Check if this is a JSON project (id starts with "json:")
-  if (id.startsWith("json:")) {
-    const relativePath = id.replace("json:", "");
-    const filePath = path.join(process.cwd(), "data", "projects", relativePath);
-
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      revalidatePath("/admin/projects");
-      return;
-    } else {
-      throw new Error("JSON-fil ikke funnet");
-    }
-  }
-
-  // Otherwise, delete from Supabase
   const supabase = createServerClient();
   if (!supabase) {
     throw new Error("Supabase not configured");
@@ -289,7 +221,6 @@ export default async function AdminProjectsPage() {
       center_lng: Number(container.center_lng),
       tags: container.tags || [],
       customerName: customerMap[container.customer_id!] || "Ukjent",
-      source: "supabase" as const,
       products: ((container.products as Array<{
         id: string;
         product_type: string;
@@ -301,57 +232,7 @@ export default async function AdminProjectsPage() {
       })),
     }));
 
-  // Get JSON projects and group by base slug
-  const jsonProjects = getJSONProjects();
-  const jsonGrouped = new Map<string, typeof jsonProjects>();
-
-  for (const project of jsonProjects) {
-    // Extract base slug (remove -explore, -guide suffix)
-    const baseSlug = project.urlSlug
-      .replace(/-explore$/, "")
-      .replace(/-guide$/, "");
-    const key = `${project.customer}/${baseSlug}`;
-
-    if (!jsonGrouped.has(key)) {
-      jsonGrouped.set(key, []);
-    }
-    jsonGrouped.get(key)!.push(project);
-  }
-
-  // Convert grouped JSON to container format
-  const jsonContainers = Array.from(jsonGrouped.entries()).map(([key, projects]) => {
-    const first = projects[0];
-    const baseSlug = first.urlSlug
-      .replace(/-explore$/, "")
-      .replace(/-guide$/, "");
-
-    return {
-      id: `json:${key}`,
-      name: first.name.replace(/ Explorer$/, "").replace(/ Guide$/, ""),
-      customer_id: first.customer,
-      url_slug: baseSlug,
-      center_lat: first.centerLat,
-      center_lng: first.centerLng,
-      customerName: first.customer,
-      source: "json" as const,
-      products: projects.map((p) => ({
-        id: p.id,
-        type: p.productType as "explorer" | "report" | "guide",
-        title: p.name,
-        filePath: p.filePath,
-      })),
-    };
-  });
-
-  // Merge and dedupe (Supabase takes priority)
-  const supabaseKeys = new Set(
-    supabaseContainers.map((p) => `${p.customer_id}/${p.url_slug}`)
-  );
-  const uniqueJsonContainers = jsonContainers.filter(
-    (p) => !supabaseKeys.has(`${p.customer_id}/${p.url_slug}`)
-  );
-
-  const allContainers = [...supabaseContainers, ...uniqueJsonContainers];
+  const allContainers = supabaseContainers;
 
   return (
     <Suspense

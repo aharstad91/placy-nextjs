@@ -17,10 +17,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 const getProductAsyncMock = vi.fn();
-const getProjectAsyncMock = vi.fn();
 vi.mock("@/lib/data-server", () => ({
   getProductAsync: (...args: unknown[]) => getProductAsyncMock(...args),
-  getProjectAsync: (...args: unknown[]) => getProjectAsyncMock(...args),
 }));
 
 // Unit 5: ?c=<slug>-rehydrering. Mockes per test så vi kan verifisere at ruten
@@ -124,7 +122,6 @@ describe("EventBoardPage (rute, D1)", () => {
   beforeEach(() => {
     notFoundMock.mockClear();
     getProductAsyncMock.mockReset();
-    getProjectAsyncMock.mockReset();
     getCollectionBySlugMock.mockReset();
   });
 
@@ -164,41 +161,12 @@ describe("EventBoardPage (rute, D1)", () => {
     expect(text).not.toMatch(/Kontaktinfo/i);
   });
 
-  it("faller tilbake til legacy explorer-prosjekt når getProductAsync er tom", async () => {
-    getProductAsyncMock.mockResolvedValue(null);
-    getProjectAsyncMock.mockResolvedValue(makeKulturnattProject());
-
-    const ui = await EventBoardPage({
-      params: makeParams("kulturnatt-trondheim", "kulturnatt-2025"),
-      searchParams: makeSearchParams(),
-    });
-    const { getByTestId } = render(ui);
-    expect(getByTestId("reels-stub").getAttribute("data-event-mode")).toBe("true");
-  });
-
   it("ukjent prosjekt → notFound()", async () => {
     getProductAsyncMock.mockResolvedValue(null);
-    getProjectAsyncMock.mockResolvedValue(null);
 
     await expect(
       EventBoardPage({
         params: makeParams("ukjent", "finnes-ikke"),
-        searchParams: makeSearchParams(),
-      }),
-    ).rejects.toThrow("NEXT_NOT_FOUND");
-    expect(notFoundMock).toHaveBeenCalled();
-  });
-
-  it("legacy-prosjekt med feil productType → notFound()", async () => {
-    getProductAsyncMock.mockResolvedValue(null);
-    getProjectAsyncMock.mockResolvedValue({
-      ...makeKulturnattProject(),
-      productType: "report",
-    });
-
-    await expect(
-      EventBoardPage({
-        params: makeParams("x", "y"),
         searchParams: makeSearchParams(),
       }),
     ).rejects.toThrow("NEXT_NOT_FOUND");

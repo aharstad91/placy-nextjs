@@ -336,7 +336,7 @@ Kjør `references/qa-checklist.md` på alle tekstene. Hvis noe feiler: korriger 
 - POST/upsert `translations` for engelsk bridgeText per theme.
 - Kall `/api/revalidate?tag=product:{id}&secret=...` for cache-refresh.
 
-**Ikke rør `themes[].grounding`** — den eies av `scripts/gemini-grounding.ts` og oppdateres separat. Bruk deep-merge-mønster fra `scripts/seed-wesselslokka-summary.ts` (match på theme `id`, preservér alle felt du ikke skriver).
+**Ikke rør `themes[].grounding`** — den eies av `scripts/gemini-grounding.ts` og oppdateres separat. Bruk deep-merge på theme `id` (match per theme, preservér alle felt du ikke skriver — samme mønster som gemini-groundings config-merge).
 
 ### Steg 10: Verifiseringsrapport
 ```
