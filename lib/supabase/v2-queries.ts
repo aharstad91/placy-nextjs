@@ -15,7 +15,7 @@
  */
 
 import "server-only";
-import { supabase } from "./client";
+import { createServerClient } from "./client";
 import type { TablesV2 } from "./types";
 import type { DbCategory, DbPoi } from "./types";
 import type { Project, ProductType, POI, Category, Story } from "../types";
@@ -123,8 +123,21 @@ export async function getProductFromSupabaseV2(
   projectSlug: string,
   productType: ProductType
 ): Promise<Project | null> {
-  if (!supabase) return null;
-  const db = supabase.schema("v2");
+  // Service-role-klienten (bypasser RLS) — board-lesestien er 100% server-side.
+  // anon-SELECT på v2 er trukket tilbake (migrasjon 077), så anon-nøkkelen kan
+  // ikke lenger lese board-data via PostgREST. createServerClient kaster hvis
+  // env mangler → vi bevarer «return null → notFound»-kontrakten (r01.6 AC4).
+  let client;
+  try {
+    client = createServerClient();
+  } catch (e) {
+    console.error(
+      "[v2-queries] createServerClient feilet:",
+      e instanceof Error ? e.message : e
+    );
+    return null;
+  }
+  const db = client.schema("v2");
 
   // 1. Prosjekt (miss her = prosjektet finnes ikke → kalleren viser notFound)
   const { data: project, error: projError } = await db

@@ -41,12 +41,16 @@ function chain(table: string) {
   return builder;
 }
 
+// Lesestien bruker nå service-role-klienten (createServerClient) etter at
+// anon-SELECT på v2 ble trukket tilbake (migrasjon 077). Mocken returnerer den
+// samme scriptbare schema-chainen.
+const mockClient = {
+  schema: vi.fn(() => ({ from: vi.fn((table: string) => chain(table)) })),
+};
+
 vi.mock("./client", () => ({
-  supabase: {
-    schema: vi.fn(() => ({ from: vi.fn((table: string) => chain(table)) })),
-  },
   isSupabaseConfigured: () => true,
-  createServerClient: vi.fn(),
+  createServerClient: vi.fn(() => mockClient),
 }));
 
 import { getProductFromSupabaseV2 } from "./v2-queries";

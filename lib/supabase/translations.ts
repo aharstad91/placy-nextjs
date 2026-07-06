@@ -9,7 +9,7 @@
  */
 
 import "server-only";
-import { supabase, isSupabaseConfigured } from "./client";
+import { createServerClient } from "./client";
 import type { Locale } from "@/lib/i18n/strings";
 
 export type { Locale };
@@ -27,7 +27,7 @@ export async function getProjectTranslations(
   themeIds: string[],
   reportProductId: string
 ): Promise<TranslationMap> {
-  if (!isSupabaseConfigured() || !supabase || locale === "no") {
+  if (locale === "no") {
     return {};
   }
 
@@ -36,8 +36,18 @@ export async function getProjectTranslations(
   const allEntityIds = [...poiIds, ...themeIds, ...productThemeIds, reportProductId];
   if (allEntityIds.length === 0) return {};
 
+  // Service-role-klient (server-side lesesti; anon-SELECT på v2.translations er
+  // trukket tilbake i migrasjon 077). Manglende env → tom oversettelse (mykt
+  // fallback, samme kontrakt som før: engelsk faller tilbake til norsk kilde).
+  let client;
+  try {
+    client = createServerClient();
+  } catch {
+    return {};
+  }
+
   // v2-skjemaet (cutover, migrasjon 072): entity_id-ene er v2-poi-/produkt-uuid-er.
-  const { data, error } = await supabase
+  const { data, error } = await client
     .schema("v2")
     .from("translations")
     .select("entity_type, entity_id, field, value")
