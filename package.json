@@ -13,13 +13,6 @@
     "validate:tier": "npx tsx scripts/validate-report-tier.ts",
     "build:reels-vo-local": "npx tsx scripts/reels-voiceover-build-local.ts",
     "generate:reels-posters": "node scripts/generate-reels-posters.mjs",
-    "import:taxi": "npx tsx scripts/import-taxi-stands.ts",
-    "import:hyre": "npx tsx scripts/import-hyre-stations.ts",
-    "import:kommune": "npx tsx scripts/import-kommune-pois.ts",
-    "import:atb": "npx tsx scripts/import-atb-stops.ts",
-    "import:bysykkel": "npx tsx scripts/import-bysykkel.ts",
-    "import:kml": "npx tsx scripts/import-kml.ts",
-    "import:riksantikvaren": "npx tsx scripts/import-riksantikvaren.ts",
     "prepare": "husky"
   },
   "dependencies": {

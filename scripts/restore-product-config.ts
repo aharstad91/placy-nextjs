@@ -58,6 +58,8 @@ async function main() {
         apikey: supabaseKey!,
         Authorization: `Bearer ${supabaseKey}`,
         "Content-Type": "application/json",
+        // v2-skjemaet (cutover 2026-07-06)
+        "Content-Profile": "v2",
         Prefer: "return=representation",
       },
       body: JSON.stringify({ config: backup.config }),

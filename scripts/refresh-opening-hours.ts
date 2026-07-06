@@ -35,6 +35,7 @@ async function main() {
     apikey: SERVICE_ROLE_KEY,
     Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
     "Content-Type": "application/json",
+    "Accept-Profile": "v2",
   };
 
   // Fetch all POIs with google_place_id (paginated)
@@ -101,7 +102,7 @@ async function main() {
             `${SUPABASE_URL}/rest/v1/pois?id=eq.${poi.id}`,
             {
               method: "PATCH",
-              headers: { ...headers, Prefer: "return=minimal" },
+              headers: { ...headers, Prefer: "return=minimal", "Content-Profile": "v2" },
               body: JSON.stringify({
                 opening_hours_json: openingHoursJson,
                 google_phone: phone,

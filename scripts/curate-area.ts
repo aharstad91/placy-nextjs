@@ -263,7 +263,7 @@ async function applyStaging(opts: { file: string; dryRun: boolean; yes: boolean 
       : `\n✓ areas.id='${result.areaId}' oppdatert (boundary + ${result.themesWritten} temaer i report_editorial)`
   );
   console.log(
-    `Verifiser (REST): ${SUPABASE_URL}/rest/v1/areas?id=eq.${staging.areaId}&select=id,boundary,report_editorial`
+    `Verifiser (REST, husk -H "Accept-Profile: v2"): ${SUPABASE_URL}/rest/v1/areas?id=eq.${staging.areaId}&select=id,boundary,report_editorial`
   );
 }
 

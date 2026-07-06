@@ -49,7 +49,7 @@ async function updatePoi(
     `${SUPABASE_URL}/rest/v1/pois?id=eq.${poiId}`,
     {
       method: "PATCH",
-      headers: { ...headers, Prefer: "return=minimal" },
+      headers: { ...headers, Prefer: "return=minimal", "Content-Profile": "v2" },
       body: JSON.stringify(data),
     }
   );
@@ -79,6 +79,7 @@ async function main() {
     apikey: SERVICE_ROLE_KEY,
     Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
     "Content-Type": "application/json",
+    "Accept-Profile": "v2",
   };
 
   // Fetch POIs with stale or missing photo_resolved_at that have a photo_reference

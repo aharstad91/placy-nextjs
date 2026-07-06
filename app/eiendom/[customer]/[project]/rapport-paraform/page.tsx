@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import { getProductAsync, getProjectAsync } from "@/lib/data-server";
 import { getProjectTranslations } from "@/lib/supabase/translations";
-import { getAreaSlugForProject } from "@/lib/public-queries";
 import ReportPageParaform from "@/components/variants/report/paraform/ReportPageParaform";
 
 const getCachedReportProduct = (customer: string, projectSlug: string) =>
@@ -46,8 +45,6 @@ export default async function EiendomReportParaformPage({ params, searchParams }
   const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
   const enTranslations = await getProjectTranslations("en", poiIds, themeIds, projectData.id);
 
-  const areaSlug = await getAreaSlugForProject(projectData.id);
-
   const rawThemes = typeof resolvedSearchParams.themes === "string"
     ? resolvedSearchParams.themes.split(",")
     : undefined;
@@ -58,7 +55,6 @@ export default async function EiendomReportParaformPage({ params, searchParams }
         <ReportPageParaform
           project={projectData}
           enTranslations={enTranslations}
-          areaSlug={areaSlug}
           primaryThemeIds={rawThemes}
         />
       </main>

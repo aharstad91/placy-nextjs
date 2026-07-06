@@ -129,6 +129,7 @@ async function fetchReportProduct(pid: string): Promise<ReportProduct> {
       headers: {
         apikey: SUPABASE_KEY!,
         Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
       },
     },
   );
@@ -149,6 +150,7 @@ async function fetchProject(pid: string): Promise<ProjectRow> {
       headers: {
         apikey: SUPABASE_KEY!,
         Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
       },
     },
   );
@@ -481,6 +483,7 @@ async function apply(): Promise<void> {
       Authorization: `Bearer ${SUPABASE_KEY}`,
       "Content-Type": "application/json",
       Prefer: "return=representation",
+      "Content-Profile": "v2",
     },
     body: JSON.stringify({ config: nextConfig }),
   });

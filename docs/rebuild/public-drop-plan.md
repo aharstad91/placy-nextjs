@@ -161,30 +161,36 @@ kjøres + verifiseres (rad-antall + stikkprøver) FØR drop-steget.
 
 Opprinnelig plan (seks punkter) beholdt i git-historikken.
 
-## 4b. Gjenstående public-lesere (drop-sesjonens sjekkliste)
+## 4b. Gjenstående public-lesere — STATUS 2026-07-06 (samme dag): ALLE HÅNDTERT
 
-Inventar 2026-07-06 (etter trimmen). Disse fungerer så lenge `public`
-finnes, og MÅ håndteres (porteres til v2 eller slettes) i drop-sesjonen:
+- ✅ `app/admin/page.tsx` — dashboard-tellere → v2; «Offentlige sider»-widget
+  + `/admin/public`-siden SLETTET (fulgte SEO-flaten)
+- ✅ `app/api/admin/trust-validate/*` → v2 + `updatePOITrustScore` hardt
+  v2-bundet (skrev public mens boardet leste v2 — skjult-bug-klasse)
+- ✅ `app/kart/[slug]` → `v2.generation_requests`
+- ✅ `lib/google-places/trust-enrichment.ts` — skjema-agnostisk (kalleren
+  binder klienten); begge kallere er v2
+- ✅ Collections → v2 (migrasjon 073: tabell + RLS + 6 rader; les/skriv portet)
+- ✅ `category_slugs` 58/58 → v2 (også 073)
+- ✅ **(public)-SEO-flaten SLETTET** (Andreas 2026-07-06: «gammelt rot» —
+  ingen SEO-mål, alt skal embeddes): `app/(public)/**`, `lib/public-queries`,
+  `public-client`, `curated-lists`, components/{guide,public,seo}. Ny minimal
+  forside (`app/page.tsx`, ingen DB). Proxy-passthroughs for /en +
+  /trondheim fjernet; sitemap var alt tom.
+- ✅ **Scripts-inventar:** 13 public-æra import-scripts (import:taxi/hyre/
+  kommune/atb/bysykkel/kml/riksantikvaren + 6 event-importere) SLETTET
+  (slug-id-skjema inkompatibelt med v2-uuid; pool-dataen bæres av 074;
+  fremtidige refreshere bygges som PRD 3-pipeline-kilder). Wesselslokka-
+  one-offs + reclassify-passene slettet. Den LEVENDE kurerings-/TTS-
+  verktøykjeden (curate-narrative, audio-manus-write, audio-tour-build,
+  gemini-grounding, apply-curation-staging, set/validate-report-tier,
+  seed-trails, refresh-/resolve-verktøyene, patch-product-config) PORTET
+  til v2 via Accept-/Content-Profile-headere — de skrev public mens
+  boardet leste v2 (samme skjulte-bug-klasse, toolchain-nivå).
 
-**Rene public-lesere:**
-- `app/admin/page.tsx` + `app/admin/public/page.tsx` — admin-dashboard/
-  public-POI-oversikt
-- `app/api/admin/trust-validate/*` + `lib/supabase/mutations.ts#
-  updatePOITrustScore` — trust-validering skriver `public.pois`
-- `app/kart/[slug]/page.tsx` — leser `public.generation_requests`
-- `lib/google-places/trust-enrichment.ts`
-- `lib/supabase/collections.ts` + `mutations.ts#createCollection` +
-  `app/api/collections` — «Min samling» (event-board); dør ved drop med
-  mindre collections porteres til v2 (event-sporet er parkert)
-- `lib/public-queries.ts` + hele `(public)`-SEO-flaten
-  (`app/(public)/**`: område-/steder-/guide-sider, visit-trondheim) —
-  Moat-1-utstillingsvinduet; v2 har areas/pois/place_knowledge, men
-  lesestien må porteres eller flaten fryses/slettes
-- `app/admin/*` for øvrig er MIKS v2/public per side — per-kall-review
-  ved drop (grep `.from("` uten `schema("v2")`)
-
-**Verifisering før drop:** re-kjør remapene (place_knowledge + 072
-translations), deretter §2-rekkefølgen og §5-verifikasjonen.
+**Klart for drop-sesjonen (xhigh):** kjør `074_poi_pool_migrering_til_v2.sql`
+(pool + place_knowledge-remap + slug-æra-translations i én transaksjon) →
+verifiser → kjør `075_drop_public_legacy.sql` (pre-flight + DROP + §5).
 
 ## 5. Post-drop-verifikasjon (r01.3 AC4)
 

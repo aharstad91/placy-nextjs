@@ -13,7 +13,6 @@ import ParaformThemeSection from "./ParaformThemeSection";
 interface Props {
   project: Project;
   enTranslations?: TranslationMap;
-  areaSlug?: string | null;
   primaryThemeIds?: string[];
 }
 

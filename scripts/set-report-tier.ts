@@ -57,7 +57,7 @@ async function main() {
     console.error("NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY mangler i .env.local");
     process.exit(1);
   }
-  const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
+  const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Accept-Profile": "v2" };
   const { tier, dryRun, projectIds } = parseArgs();
   let failures = 0;
 
@@ -106,6 +106,7 @@ async function main() {
         ...headers,
         "Content-Type": "application/json",
         Prefer: "return=representation",
+        "Content-Profile": "v2",
       },
       body: JSON.stringify({
         config: wasString ? JSON.stringify(nextConfig) : nextConfig,

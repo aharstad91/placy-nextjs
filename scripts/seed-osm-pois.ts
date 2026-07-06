@@ -200,6 +200,7 @@ async function rest(
     apikey: SUPABASE_KEY as string,
     Authorization: `Bearer ${SUPABASE_KEY}`,
     "Content-Type": "application/json",
+    "Accept-Profile": "v2",
     ...(init?.headers as Record<string, string>),
   };
   return fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers });
@@ -216,7 +217,7 @@ async function insertBatch(table: string, rows: object[]): Promise<void> {
     const chunk = rows.slice(i, i + 100);
     const res = await rest(table, {
       method: "POST",
-      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal", "Content-Profile": "v2" },
       body: JSON.stringify(chunk),
     });
     if (!res.ok) {
@@ -253,9 +254,9 @@ async function main() {
       return;
     }
     const inList = `(${ids.map((id: string) => `"${id}"`).join(",")})`;
-    await rest(`product_pois?poi_id=in.${inList}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
-    await rest(`project_pois?poi_id=in.${inList}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
-    await rest(`pois?id=in.${inList}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+    await rest(`product_pois?poi_id=in.${inList}`, { method: "DELETE", headers: { Prefer: "return=minimal", "Content-Profile": "v2" } });
+    await rest(`project_pois?poi_id=in.${inList}`, { method: "DELETE", headers: { Prefer: "return=minimal", "Content-Profile": "v2" } });
+    await rest(`pois?id=in.${inList}`, { method: "DELETE", headers: { Prefer: "return=minimal", "Content-Profile": "v2" } });
     console.log(`🧹 Removed ${ids.length} osm-* POIs from ${projectId}.`);
     return;
   }

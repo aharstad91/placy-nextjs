@@ -121,6 +121,7 @@ async function fetchReportProduct(pid: string): Promise<ReportProductRow> {
       headers: {
         apikey: SUPABASE_KEY!,
         Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
       },
     },
   );
@@ -139,6 +140,7 @@ async function fetchProjectPois(pid: string): Promise<PoiRow[]> {
       headers: {
         apikey: SUPABASE_KEY!,
         Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
       },
     },
   );
@@ -158,6 +160,7 @@ async function fetchProjectPois(pid: string): Promise<PoiRow[]> {
         headers: {
           apikey: SUPABASE_KEY!,
           Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Accept-Profile": "v2",
         },
       },
     );

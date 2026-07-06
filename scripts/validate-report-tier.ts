@@ -119,6 +119,7 @@ async function runSupabase(): Promise<boolean> {
   const headers = {
     apikey: SUPABASE_KEY,
     Authorization: `Bearer ${SUPABASE_KEY}`,
+    "Accept-Profile": "v2",
   };
 
   const [projectsRes, productsRes] = await Promise.all([

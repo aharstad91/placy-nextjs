@@ -11,7 +11,8 @@
 npm run dev
 ```
 Starter Next.js development server på `http://localhost:3000`.
-Appen redirecter automatisk til `/klp-eiendom/ferjemannsveien-10/`.
+Boards lever på `/eiendom/<kunde>/<prosjekt>/rapport-board`; nye prosjekter
+provisjoneres via PRD 3-pipelinen (`npm run create-report` / generer-flyten).
 
 ### Bygg for produksjon
 ```bash
@@ -32,38 +33,6 @@ Sjekker at deklarert `reportConfig.reportTier` (1 = Basic, 2 = +Editorial,
 3 = Maks) er fullt dekket av faktisk innhold (editorial, spillbare VO-spor,
 camera-tours, 3D-addon, brand-assets). Exit 1 ved under-leveranse — kjør før
 kunde-sending. Ved avvik: fullfør manglene eller re-deklarer ned.
-
----
-
-## Story Generator
-
-### Generer ny story fra input-fil
-```bash
-npm run generate:story <input-fil> [options]
-```
-
-**Argumenter:**
-- `<input-fil>` - Path til `.input.json` fil (påkrevd)
-
-**Options:**
-- `--skip-travel-times` - Hopp over reisetidsberegning (anbefalt, beregnes av frontend)
-- `--update` - Oppdater eksisterende data (merger med ny data)
-- `--help` - Vis hjelp
-
-**Eksempel:**
-```bash
-# Generer ny story
-npm run generate:story data/projects/klp-eiendom/nytt-prosjekt.input.json -- --skip-travel-times
-
-# Oppdater eksisterende story med nye POI-er
-npm run generate:story data/projects/klp-eiendom/eksisterende.input.json -- --skip-travel-times --update
-```
-
-**Input-fil format:**
-Se `data/templates/input.template.json` for mal.
-
-**Output:**
-Genererer `<prosjektnavn>.json` i samme mappe som input-filen.
 
 ---
 
@@ -156,45 +125,11 @@ Genererer engasjerende intro-tekster for hver theme story.
 
 ---
 
-## Filstruktur for nye prosjekter
-
-```
-data/projects/<kunde>/<prosjekt>.input.json   ← Input (du lager)
-data/projects/<kunde>/<prosjekt>.json          ← Output (generert)
-```
-
-### Opprett nytt prosjekt
-
-1. **Kopier input-template:**
-   ```bash
-   cp data/templates/input.template.json data/projects/ny-kunde/nytt-prosjekt.input.json
-   ```
-
-2. **Rediger input-filen** med prosjektinfo (navn, koordinater, radius)
-
-3. **Kjør generator:**
-   ```bash
-   npm run generate:story data/projects/ny-kunde/nytt-prosjekt.input.json -- --skip-travel-times
-   ```
-
-4. **Start dev server og test:**
-   ```bash
-   npm run dev
-   # Åpne: http://localhost:3000/ny-kunde/nytt-prosjekt/
-   ```
-
-5. **Generer editorial hooks (valgfritt):**
-   ```
-   I Claude Code: "Generer editorial hooks for POI-ene i data/projects/ny-kunde/nytt-prosjekt.json"
-   ```
-
----
-
 ## API-nøkler (påkrevd i .env.local)
 
 | Variabel | Beskrivelse | Brukes av |
 |----------|-------------|-----------|
-| `GOOGLE_PLACES_API_KEY` | Google Places API | Story generator |
+| `GOOGLE_PLACES_API_KEY` | Google Places API | Provisjonerings-pipelinen |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox GL JS | Kart, reisetider |
 
 ---

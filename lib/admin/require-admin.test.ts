@@ -71,7 +71,6 @@ describe("skall-invarianter (kildetekst-kontrakt)", () => {
     "app/admin/pois/page.tsx",
     "app/admin/projects/page.tsx",
     "app/admin/projects/[id]/page.tsx",
-    "app/admin/public/page.tsx",
     "app/admin/requests/page.tsx",
   ];
   const KEEPER_APIS = [

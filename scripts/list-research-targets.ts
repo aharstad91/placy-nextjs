@@ -94,6 +94,7 @@ async function supabaseGet<T>(path: string): Promise<T> {
       apikey: SERVICE_ROLE_KEY!,
       Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
       "Content-Type": "application/json",
+      "Accept-Profile": "v2",
     },
   });
 

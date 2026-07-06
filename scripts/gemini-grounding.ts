@@ -7,7 +7,7 @@
  *   npx tsx scripts/gemini-grounding.ts <project_id> --apply        # write
  *   npx tsx scripts/gemini-grounding.ts <project_id> --apply --force  # overwrite existing
  *
- * Flow (følger scripts/seed-wesselslokka-summary.ts mønster):
+ * Flow (følger gammelt seed-script-mønster (slettet ved cutover)):
  *   1. fetch project → report-product (med updated_at for optimistic lock)
  *   2. whitelist-guard på eksisterende reportConfig-nøkler
  *   3. backup full row til backups/
@@ -153,6 +153,7 @@ async function fetchReportProduct(pid: string): Promise<ReportProduct> {
       headers: {
         apikey: SUPABASE_KEY!,
         Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
       },
     },
   );
@@ -424,6 +425,7 @@ async function main() {
       Authorization: `Bearer ${SUPABASE_KEY}`,
       "Content-Type": "application/json",
       Prefer: "return=representation",
+      "Content-Profile": "v2",
     },
     body: JSON.stringify({ config: nextConfig }),
   });

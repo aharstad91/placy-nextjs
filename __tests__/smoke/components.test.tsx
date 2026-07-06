@@ -35,57 +35,6 @@ vi.mock("@/lib/i18n/locale-context", () => ({
   ),
 }));
 
-// ─── SEO JSON-LD Components ─────────────────────────────────
-
-describe("BreadcrumbJsonLd", () => {
-  it("renders valid JSON-LD script tag", async () => {
-    const { default: BreadcrumbJsonLd } = await import(
-      "@/components/seo/BreadcrumbJsonLd"
-    );
-    const { container } = render(
-      <BreadcrumbJsonLd
-        items={[
-          { name: "Trondheim", url: "https://placy.no/trondheim" },
-          { name: "Restauranter" },
-        ]}
-      />
-    );
-    const script = container.querySelector('script[type="application/ld+json"]');
-    expect(script).not.toBeNull();
-    const data = JSON.parse(script!.textContent!);
-    expect(data["@type"]).toBe("BreadcrumbList");
-    expect(data.itemListElement).toHaveLength(2);
-  });
-});
-
-describe("FAQJsonLd", () => {
-  it("renders FAQ schema with questions", async () => {
-    const { default: FAQJsonLd } = await import(
-      "@/components/seo/FAQJsonLd"
-    );
-    const { container } = render(
-      <FAQJsonLd
-        items={[
-          { question: "Hva er Placy?", answer: "En lokasjonsplattform." },
-        ]}
-      />
-    );
-    const script = container.querySelector('script[type="application/ld+json"]');
-    expect(script).not.toBeNull();
-    const data = JSON.parse(script!.textContent!);
-    expect(data["@type"]).toBe("FAQPage");
-    expect(data.mainEntity).toHaveLength(1);
-  });
-
-  it("returns null for empty items", async () => {
-    const { default: FAQJsonLd } = await import(
-      "@/components/seo/FAQJsonLd"
-    );
-    const { container } = render(<FAQJsonLd items={[]} />);
-    expect(container.innerHTML).toBe("");
-  });
-});
-
 // ─── UI Components ──────────────────────────────────────────
 
 describe("GoogleRating", () => {
@@ -126,28 +75,5 @@ describe("TierBadge", () => {
     const { TierBadge } = await import("@/components/ui/TierBadge");
     const { container } = render(<TierBadge poiTier={2} variant="card" />);
     expect(container.innerHTML).toBe("");
-  });
-});
-
-// ─── Navigation Components ──────────────────────────────────
-
-describe("Breadcrumb", () => {
-  it("renders breadcrumb items with links", async () => {
-    const { default: Breadcrumb } = await import(
-      "@/components/public/Breadcrumb"
-    );
-    render(
-      <Breadcrumb
-        items={[
-          { label: "Hjem", href: "/" },
-          { label: "Trondheim", href: "/trondheim" },
-          { label: "Restauranter" },
-        ]}
-      />
-    );
-    expect(screen.getByText("Hjem")).toBeDefined();
-    expect(screen.getByText("Trondheim")).toBeDefined();
-    expect(screen.getByText("Restauranter")).toBeDefined();
-    expect(screen.getByRole("navigation")).toBeDefined();
   });
 });

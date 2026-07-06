@@ -45,6 +45,7 @@ export async function patchProductConfigWithLock(
       Authorization: `Bearer ${input.supabaseKey}`,
       "Content-Type": "application/json",
       Prefer: "return=representation",
+      "Content-Profile": "v2",
     },
     body: JSON.stringify({ config: input.config }),
   });

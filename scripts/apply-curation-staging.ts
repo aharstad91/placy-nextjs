@@ -116,6 +116,7 @@ async function main() {
       headers: {
         apikey: SUPABASE_KEY!,
         Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
       },
     },
   );
@@ -178,6 +179,7 @@ async function main() {
       Authorization: `Bearer ${SUPABASE_KEY}`,
       "Content-Type": "application/json",
       Prefer: "return=representation",
+      "Content-Profile": "v2",
     },
     body: JSON.stringify({ config: nextConfig }),
   });

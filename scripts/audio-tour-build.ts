@@ -107,6 +107,7 @@ async function fetchReportProduct(pid: string): Promise<ReportProduct> {
       headers: {
         apikey: SUPABASE_KEY!,
         Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
       },
     },
   );
@@ -127,6 +128,7 @@ async function fetchProject(pid: string): Promise<ProjectRow> {
       headers: {
         apikey: SUPABASE_KEY!,
         Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
       },
     },
   );

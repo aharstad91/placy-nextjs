@@ -49,6 +49,15 @@
 - **Verifikasjon:** tsc 0, lint 0 errors, **1 541 tester grønt**, build OK. Live: alle 6 v2-boards 200, redirects verifisert (307/301-kjeder), gamle boards 404-er som forventet (fallbacken død), byggetrinn-4 i nystartet Chrome med 0 relevante console-feil (eneste 404 = pre-eksisterende manglende `intro.mp4`-asset).
 - **Drop-planen oppdatert:** §4 markert UTFØRT; ny **§4b: gjenstående public-lesere** (admin-flaten, (public)-SEO-sidene/lib-public-queries, kart, collections, trust-validate) = drop-sesjonens sjekkliste. Gjenstår før drop: §4b + remap-re-kjøring + Andreas' go + xhigh.
 
+
+**Samme dag, «fortsett» + to Andreas-beslutninger — §4b LUKKET, drop-SQL klar:**
+- **Mekaniske porter (commit cf4a557):** kart/[slug]-redirect → v2.generation_requests; admin-dashboard-tellere → v2; begge trust-validate-rutene → v2 + `updatePOITrustScore` hardt v2-bundet (admin-trust-flyten SKREV public mens boardet leste v2 — tredje funn i samme skjulte-bug-klasse). Migrasjon 073: `v2.collections` (tabell+RLS+6 rader) + category_slugs 58/58 — «Min samling» hel-portet.
+- **Andreas-beslutning 1 (AskUserQuestion): POI-poolen MIGRERES til v2.** 074-utkast skrevet (kjøres i xhigh): ~5 060 POI-er m/ dedup (263 alt i v2; 90 interne duplikater kanoniseres, editorial-rik rad vinner), reverserbar via poi_metadata-tag, fullfører place_knowledge-remappen (114 danglende) og slug-æra-oversettelsene i SAMME transaksjon.
+- **Andreas-beslutning 2: (public)-SEO-flaten er «gammelt rot» → SLETTET** (ingen SEO-mål — alt skal embeddes): app/(public)/** (13 sider), lib/public-queries, public-client, curated-lists, components/{guide,public,seo}, /admin/public + dashboard-widget. Ny minimal forside uten DB. Proxy: /en + /trondheim-passthroughs fjernet. Paraforms døde areaSlug-prop ryddet.
+- **Scripts-sveip (hele scripts/):** 19 public-æra scripts SLETTET (13 import:*-importere — slug-id-skjema uforenlig med v2-uuid, pool-dataen bæres av 074; wesselslokka-one-offs; reclassify-passene) + package.json-entries. **FUNN: den LEVENDE kurerings-/TTS-verktøykjeden (curate-narrative, audio-manus-write, audio-tour-build, gemini-grounding, apply/set/validate, refresh-verktøyene, patch-product-config) traff fortsatt public via header-løs REST** — en kurering kjørt i dag hadde skrevet i tomme lufta. Portet til v2 via Accept-/Content-Profile-headere (sonnet-agent, Fable verifiserte). restore-product-config nesten-feilslettet men reddet (den er gemini-groundings dokumenterte rollback-verktøy).
+- **075_drop_public_legacy.sql skrevet** (pre-flight-sjekker + DROP barn-før-forelder + §5-verifikasjon innebygd). COMMANDS.md renset for død Story-Generator-workflow.
+- **Kjøre-rekkefølge som gjenstår (alt i én xhigh-sesjon):** 074 → verifiser → 075 → §5-verifikasjon → `bd close r01.3`.
+
 ---
 
 ## 2026-07-05→06 — Fable-direktebygg: 17 beads, PRD 11+15 komplett, HELE r12-admin-epicen levert + sikkerhetssveip
