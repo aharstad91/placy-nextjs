@@ -6,6 +6,28 @@
 
 ---
 
+## 2026-07-06 (sent) — v2.events VOLUM-TAK (migrasjon 078, prod-kjørt, ultracode)
+
+**Kontekst:** Oppfølgingspunkt #31 fra sikkerhetssveipet («v2.events retention/volum-tak»). Egen worktree (`../placy-ralph-events-retention`, feat/events-retention). Designavklaring mot moat-2-build-input: rå events ER moaten («aggreger opp, aldri disaggregér ned») → dette er et **volum-tak som sikkerhetsventil**, IKKE tidsbasert retention — den forblir bevisst deferret (aggregate-then-prune tas som egen beslutning ved behov).
+
+**Trusselen:** logEvent-throttlen er in-memory PER serverless-instans og nullstilles ved deploy — effektiv grense N×2000/min på Vercel; DB-en hadde ingen egen grense. Og en GYLDIG payload kan nå ~8 KiB (64×128-tegns categories_presented) → bytes må telles, ikke bare rader.
+
+**Levert (commit 39f45df, migrasjon 078 KJØRT mot prod):**
+- `v2.events_volume` (teller per scope: `__total__` + `p:<project_id>`/`p:__none__`) + 4 triggere: insert-guard, delete-release, truncate-reset, append-only-vakt (UPDATE avvises — teller-integritet).
+- Tak: globalt 1M rader/512 MiB, per bucket 200k/128 MiB. **Moat-bevarende semantikk: tak FRYSER nye writes (RAISE), trimmer ALDRI historikk** — flood kan ikke fortrenge Moat 2. Global-taket er den reelle backstoppen (project_id har ingen FK → rotérbar).
+- Null app-endring: RAISE → PostgREST-error → logEvents fail-soft (testdekket); Vercel-logs er varslingsflaten (`[events-volum-tak]`).
+- To vernekommentarer i filen: ALDRI upsert mot events (BEFORE-trigger-inkrement består ved konflikt-skip → drift), og events_row_bytes' kolonneliste MÅ bumpes+re-seedes ved fremtidig ALTER TABLE.
+
+**Preflight (trimmet 3-agenters adversarisk workflow, mønster fra 076/077):** trippel GO, 0 blockers. Postgres-agenten kjørte filen empirisk mot prod-mirror (ON CONFLICT/RETURNING-semantikk, deadlock-kryss insert/delete, dry-run-residue = null). Innarbeidede funn: `-v ON_ERROR_STOP=1` på kjøringene (ellers exit 0 ved feil), e2e på service_role-stien som obligatorisk steg, prober for alle 4 tak-dimensjoner.
+
+**Verifisert live:** dry-run (COMMIT→ROLLBACK, exit 0) → ekte kjøring → seed-fasit EKSAKT alle 10 scopes (142 rader/58 685 bytes) → alle 4 tak-prober RAISEr → release dekrementerer eksakt → append-only håndheves → anon 401 på events_volume + events → `verify-log-event.ts` 8/8 grønne på produksjonsrollen. 1546 tester, lint 0, tsc ren.
+
+**Bifangst fikset:** `verify-log-event.ts` var stille brukket av kveldens audit-herding (projectId manglet `_` for PROJECT_ID_SHAPE; payload-markørene test/verify_run avvises nå av `.strict()`) — probe-merking flyttet til unik project_id. Scriptet er nå også ekte e2e-test av guard+release.
+
+**Åpne oppfølgingspunkter (uendret fra sveipet):** places-ratelimit-test, server-action `allowedOrigins`, ytelsespass (Lighthouse), utvidet logEvent-hostile-input-dekning. Tak-konstantene bumpes via migrasjon over `v2.events_volume_guard()` når volumet en dag krever det.
+
+---
+
 ## 2026-07-06 (kveld) — SIKKERHETSSVEIP + MOAT-NEDLÅSNING (orkestrert, xhigh)
 
 **Kontekst:** Etter cutoveren ba Andreas om en sikkerhets/best-practice-gjennomgang («det Fable er ekstra god på»). Fable orkestrerte, brukte opus/sonnet etter oppgave, og validerte funnene selv.
