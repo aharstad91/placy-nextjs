@@ -98,6 +98,10 @@ punktene under er de gjenværende valgene som krever eier-dom.
 
 ### 1. Wipe de 19 pre-fiks-eventene i v2.events (destruktiv prod-handling)
 
+> **✅ LØST 2026-07-06 — Andreas godkjente wipe.** Kontrollert kjøring: count-verifisert
+> 19 rader FØR (`payload IS NULL OR NOT payload ? 'context'`), DELETE returnerte
+> nøyaktig 19, total 100→81, 0 pre-fiks-rader igjen. De 81 ekte engasjement-radene urørt.
+
 **Kontekst.** Alle 19 rader i v2.events er test-/verifikasjonsartefakter fra r13.3,
 logget FØR audit-fiksen: uten kontekst-konvolutt, 14 av dem uten project_id, alle med
 unik session_id. De er ubrukelige som moat-data og forurenser fremtidig aggregering
@@ -107,6 +111,9 @@ wipe er renere). **Anbefaling:** slett alle rader eldre enn audit-fiks-deploy
 DELETE i prod er Andreas-gated per regel.
 
 ### 2. Rate-limit/vern på de åpne transport-proxyene (infra-valg)
+
+> **✅ LØST (autonomt, sesjon 2026-07-05) — anbefalingen ble fulgt:** per-IP-rate-limit
+> (`lib/utils/rate-limit.ts`) er wired på `directions` + `travel-times` (de som koster penger).
 
 **Kontekst.** De seks proxyene (entur/bysykkel/hyre/mobility/directions/travel-times) er
 uautentiserte og uten rate-limit — hvem som helst kan bruke Placys Mapbox-kvote (Directions/
@@ -118,6 +125,10 @@ rate-limit-mønsteret fra `app/api/eiendom/tekst/route.ts` på directions + trav
 
 ### 3. PRD 12 admin-auth før salg (sekvensering)
 
+> **✅ LØST (sesjon 2026-07-05→06) — hele r12-epicen bygd (7/7 + 9ao):** delt
+> `requireAdmin()`/`requireAdminApi()` på alle keeper-flater, noindex, død admin slettet,
+> admin på v2 ende-til-ende.
+
 **Kontekst.** PRD 12 er IKKE bygget (alle r12-beads åpne). Dagens admin-vern er kun
 `ADMIN_ENABLED`-env — ingen per-bruker-auth, ingen noindex på admin-sider. Bevisst
 MVP-valg i PRD-en, men «produksjonsmiljø vi selger på» endrer risikobildet.
@@ -125,6 +136,11 @@ MVP-valg i PRD-en, men «produksjonsmiljø vi selger på» endrer risikobildet.
 i frontieren (foran r15-epicen)?
 
 ### 4. Test-beviskraft-uplift + ESLint-håndheving (kvalitetsinvestering)
+
+> **✅ LØST (sesjon 2026-07-05→06):** (a) bead whp — PATCH-invariantene løftet til
+> eksekverings-tester (`lib/pipeline/patch-product-config.test.ts`, call-order bevist);
+> (b) bead 03t — ESLint `no-restricted-imports` for LLM-SDK-er i `app/` + `no-img-element`
+> globalt.
 
 **Kontekst.** Test-auditen fant at flere «AC-kontrakt-guards» er kildetekst-regex
 (curate-narrative/audio-tour-build/flythrough-wiring) — anti-sletting-tripwires, ikke
