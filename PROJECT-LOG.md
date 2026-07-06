@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-07-06 — Fire Andreas-beslutninger landet + Next.js 14→16 / React 19
+
+**Kontekst:** Andreas våknet, godkjente push (90 commits → GitHub) og ratifiserte alle fire köede beslutninger via ett AskUserQuestion-panel (alle anbefalinger fulgt). Deretter «fortsett nr 2 og 3» → beslutningene implementert + hele framework-oppgraderingen.
+
+**Levert:**
+- **Event-wipe (DECISIONS-QUEUE #1):** Kontrollert prod-DELETE av de 19 pre-fiks-eventene i v2.events (count-verifisert 19 før, total 100→81, 0 igjen). Audit-punkt #2/#3/#4 annotert som løst i køen (var alt levert).
+- **Bead aod:** Runtime-autocomplete portet Mapbox v5→v6 via DELT implementasjon (`geocodeAddress` fra pipelinen) — provider-divergensen lukket, responskontrakt uendret, død reverse-bane fjernet (null konsumenter), rate-limit 60/min per IP lagt på. 8 tester + live-verify.
+- **eiendom/tekst SLETTET:** Siste runtime-LLM-rute borte (ulinket side, død family/young/senior-modell, supersedet av Gemini+Fable build-time). `@anthropic-ai/sdk`-avhengigheten fjernet (ruten var eneste konsument) — ESLint-regelen står nå uten unntak.
+- **Bead 2nj:** Reisetid-precompute som provision-steg 7 (pipelinen er nå 10 ratifiserte steg). Migrasjon 071 (`v2.project_pois.travel_times` jsonb, prod-kjørt). Ny `lib/pipeline/travel-times.ts` (Matrix-motor: batching 24/req, fail-soft, walk-only siden UI kun leser .walk). **Enhets-KONTRAKT definert: MINUTTER** — 17 latente `/60`-sekund-lesninger fikset (travelTime var alltid undefined i prod, så buggen var latent). `lib/generators/travel-times.ts` slettet. Read-side v2-mapping dokumentert som cutover-kontrakt.
+- **Next.js 14→16 + React 19 (Andreas-godkjent breaking major):** Kodebasen viste seg forover-kompatibel — 0 tsc-feil, 0 filer trengte async-params-migrering (alt var alt på Promise-stil). Endringer: `middleware.ts`→`proxy.ts` (nodejs-runtime), `revalidateTag(tag, "max")` to-args-form, `runAfterResponse` delegerer nå til STABIL `after()` fra next/server (lukker det dokumenterte Next-14-avviket fra PRD 3 Unit 8; fallback beholdt for test-scope). Turbopack-build (6.5s compile, 49/49 sider). **Verifisert live i nystartet Chrome:** 3D-board rendrer (35 markører, karaoke), `gmp-map-3d` overlevde 2 fulle 2D↔3D-sykluser, 0 console-feil, proxy-301 intakt. `npm audit`: de 2 Next-14-blokkerte sårbarhetene lukket; 2 nye moderate i postcss **vendored inne i next** gjenstår (venter oppstrøms Next-patch; foreslått «fix» er nonsens-nedgradering).
+
+**Status:** Beads-frontieren er nå HELT tom (aod + 2nj var de siste). Gjenværende åpne beads: kun r01.3/r01.6-AC2 (cutover-gated). 1607 tester grønt, alt pushet (origin/main = 877b9e9). DECISIONS-QUEUE er tom for åpne punkter.
+
+---
+
 ## 2026-07-05→06 — Fable-direktebygg: 17 beads, PRD 11+15 komplett, HELE r12-admin-epicen levert + sikkerhetssveip
 
 **Kontekst:** Org-ens månedlige spend-limit drepte ralph-loopen (headless `claude -p` avvist: «You've hit your org's monthly spend limit») — Claude bygde videre DIREKTE i den interaktive sesjonen, samme bead-disiplin (bd ready → bygg mot AC → porter → close → commit).
