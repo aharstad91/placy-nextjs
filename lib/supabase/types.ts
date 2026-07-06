@@ -1106,6 +1106,33 @@ export type Database = {
         }
         Relationships: []
       }
+      collections: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          poi_ids: string[]
+          project_id: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          poi_ids?: string[]
+          project_id?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          poi_ids?: string[]
+          project_id?: string | null
+          slug?: string
+        }
+        Relationships: []
+      }
       category_slugs: {
         Row: {
           category_id: string

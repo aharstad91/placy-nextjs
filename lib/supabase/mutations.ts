@@ -253,8 +253,7 @@ const VALID_TRUST_FLAGS = new Set<string>(ALL_TRUST_FLAGS);
 export async function updatePOITrustScore(
   poiId: string,
   trustScore: number,
-  trustFlags: string[],
-  opts: { schema?: "public" | "v2" } = {}
+  trustFlags: string[]
 ): Promise<void> {
   // Validate score range
   if (trustScore < 0 || trustScore > 1) {
@@ -273,12 +272,8 @@ export async function updatePOITrustScore(
     throw new Error("Supabase ikke konfigurert");
   }
 
-  // v2-skrivesti (PRD 3): scoring-write går mot v2; legacy-kallere (admin trust-
-  // validate-route) bruker default "public" og er uberørt. v2/public paritet → cast.
-  const db =
-    opts.schema === "v2"
-      ? (supabase.schema("v2") as unknown as typeof supabase)
-      : supabase;
+  // v2-skjemaet — public-modusen døde ved cutover 2026-07-06 (alle kallere er v2).
+  const db = supabase.schema("v2") as unknown as typeof supabase;
 
   const { error } = await db
     .from("pois")
@@ -317,6 +312,7 @@ export async function createCollection(data: {
   }
 
   const { data: row, error } = await supabase
+    .schema("v2")
     .from("collections")
     .insert({
       slug: data.slug,

@@ -22,6 +22,7 @@ export default async function KartRedirect({ params }: PageProps) {
   if (!supabase) notFound();
 
   const { data } = await supabase
+    .schema("v2")
     .from("generation_requests")
     .select("address_slug, customer_id")
     .eq("address_slug", slug)

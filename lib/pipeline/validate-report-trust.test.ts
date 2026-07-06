@@ -224,13 +224,13 @@ describe("validateReportTrust — Unit 3", () => {
     expect(result.skippedPublic).toBe(0);
     expect(result.stillNull).toEqual([]);
 
-    // AC8: v2-skrivesti — reads via schema("v2") + scoring-write med schema:"v2"
+    // AC8: v2-skrivesti — reads via schema("v2"); updatePOITrustScore er nå
+    // hardt v2-bundet (public-modusen døde ved cutover 2026-07-06)
     expect(mock.schema).toHaveBeenCalledWith("v2");
     expect(updatePOITrustScoreMock).toHaveBeenCalledWith(
       expect.any(String),
       expect.any(Number),
-      expect.any(Array),
-      { schema: "v2" }
+      expect.any(Array)
     );
   });
 

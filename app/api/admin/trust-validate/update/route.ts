@@ -61,10 +61,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const supabase = createServerClient();
-  if (!supabase) {
+  const baseClient = createServerClient();
+  if (!baseClient) {
     return NextResponse.json({ error: "Supabase ikke konfigurert" }, { status: 500 });
   }
+  // v2-skjemaet (cutover 2026-07-06) — updatePOITrustScore er også v2-bundet.
+  const supabase = baseClient.schema("v2") as unknown as typeof baseClient;
 
   try {
     // 3. Read existing trust_flags for merging

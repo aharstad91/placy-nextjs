@@ -76,10 +76,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ugyldig JSON" }, { status: 400 });
   }
 
-  const supabase = createServerClient();
-  if (!supabase) {
+  const baseClient = createServerClient();
+  if (!baseClient) {
     return NextResponse.json({ error: "Supabase ikke konfigurert" }, { status: 500 });
   }
+  // v2-skjemaet (cutover 2026-07-06) — samme cast-mønster som
+  // lib/pipeline/validate-report-trust.ts, så enrichTrustSignals-param er uendret.
+  const supabase = baseClient.schema("v2") as unknown as typeof baseClient;
 
   const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!googleApiKey && !body.skipEnrichment) {

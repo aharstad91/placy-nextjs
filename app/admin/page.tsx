@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/client";
-import { createPublicClient } from "@/lib/supabase/public-client";
 import { CURATED_LISTS } from "@/lib/curated-lists";
 import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
 import {
@@ -83,13 +82,14 @@ export default async function AdminPage() {
     );
   }
 
-  // Fetch counts in parallel
+  // Fetch counts in parallel (v2-skjemaet — cutover 2026-07-06)
+  const db = supabase.schema("v2");
   const [customersResult, projectsResult, poisResult, categoriesResult] =
     await Promise.all([
-      supabase.from("customers").select("*", { count: "exact", head: true }),
-      supabase.from("projects").select("*", { count: "exact", head: true }),
-      supabase.from("pois").select("*", { count: "exact", head: true }),
-      supabase.from("categories").select("*", { count: "exact", head: true }),
+      db.from("customers").select("*", { count: "exact", head: true }),
+      db.from("projects").select("*", { count: "exact", head: true }),
+      db.from("pois").select("*", { count: "exact", head: true }),
+      db.from("categories").select("*", { count: "exact", head: true }),
     ]);
 
   const stats = {
@@ -99,22 +99,22 @@ export default async function AdminPage() {
     categories: categoriesResult.count ?? 0,
   };
 
-  // Public pages stats (uses untyped client for areas/category_slugs)
-  const publicClient = createPublicClient();
+  // Public-side-statistikk — teller nå v2-tilstanden (SEO-flatens lesesti
+  // porteres/avgjøres i drop-sesjonen; tellerne skal speile v2-verdenen)
   let publicStats = { areas: 0, categoryPages: 0, guides: 0, publicPOIs: 0, editorialPct: 0 };
 
-  if (publicClient) {
+  {
     const [areasRes, slugsRes] = await Promise.all([
-      publicClient.from("areas").select("id", { count: "exact", head: true }).eq("active", true),
-      publicClient.from("category_slugs").select("category_id", { count: "exact", head: true }).eq("locale", "no"),
+      db.from("areas").select("id", { count: "exact", head: true }).eq("active", true),
+      db.from("category_slugs").select("category_id", { count: "exact", head: true }).eq("locale", "no"),
     ]);
 
-    // Fetch public POIs with pagination for editorial stats
+    // Fetch POIs with pagination for editorial stats
     const PAGE_SIZE = 1000;
     const publicPois: { editorial_hook: string | null }[] = [];
     let page = 0;
     while (true) {
-      const { data, error } = await publicClient
+      const { data, error } = await db
         .from("pois")
         .select("editorial_hook")
         .not("area_id", "is", null)

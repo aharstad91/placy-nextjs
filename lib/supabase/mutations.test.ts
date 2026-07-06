@@ -23,7 +23,7 @@ function buildMockSupabase(opts: {
     data: { editorial_hook: null, local_insight: null, editorial_sources: null },
     error: null,
   };
-  const supabase = {
+  const supabase: Record<string, unknown> = {
     from: () => ({
       select: () => ({
         eq: () => ({ single: async () => selectResult }),
@@ -34,6 +34,8 @@ function buildMockSupabase(opts: {
       },
     }),
   };
+  // v2-bundet skrivesti: .schema("v2") returnerer samme dobbel
+  supabase.schema = () => supabase;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return { supabase: supabase as any, captured };
 }

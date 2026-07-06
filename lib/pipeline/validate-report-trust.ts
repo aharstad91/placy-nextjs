@@ -179,7 +179,7 @@ export async function validateReportTrust(options: {
       continue;
     }
     try {
-      await updatePOITrustScore(poi.id, trust.score, trust.flags, { schema: "v2" });
+      await updatePOITrustScore(poi.id, trust.score, trust.flags);
       result.scored++;
     } catch (e) {
       result.warnings.push(

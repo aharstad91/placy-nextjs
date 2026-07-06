@@ -1,23 +1,20 @@
 /**
  * Collections («Min samling») — brukerlagrede POI-utvalg fra event-boardet.
- *
- * OBS: leser `public.collections`, som står på DROP-lista i
- * docs/rebuild/public-drop-plan.md (§2). Event-sporet er parkert; skal
- * «Min samling» overleve public-droppen må tabellen + skrivestien
- * (lib/supabase/mutations.ts#saveCollection / app/api/collections) porteres
- * til v2 først — se drop-planens §4b-inventar.
+ * Lever i `v2.collections` (migrasjon 073, cutover 2026-07-06); skrivestien
+ * er `mutations.ts#createCollection` via `app/api/collections`.
  */
 
 import { supabase, isSupabaseConfigured } from "./client";
 
 export async function getCollectionBySlug(
   slug: string
-): Promise<{ id: string; slug: string; project_id: string; poi_ids: string[]; email: string | null; created_at: string } | null> {
+): Promise<{ id: string; slug: string; project_id: string | null; poi_ids: string[]; email: string | null; created_at: string } | null> {
   if (!isSupabaseConfigured() || !supabase) {
     return null;
   }
 
   const { data, error } = await supabase
+    .schema("v2")
     .from("collections")
     .select("id, slug, project_id, poi_ids, email, created_at")
     .eq("slug", slug)
