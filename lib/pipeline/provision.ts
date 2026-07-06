@@ -1,16 +1,19 @@
 /**
  * Rapport-board provisjon — REN, TTY-løs orkestrator-kjerne (PRD 3 / r03.1).
  *
- * Kjører de 9 ratifiserte stegene SERIELT i load-bearing rekkefølge:
+ * Kjører de 10 ratifiserte stegene SERIELT i load-bearing rekkefølge
+ * (9 opprinnelige + reisetid-precompute, Andreas-godkjent 2026-07-06/bead 2nj):
  *   1. Geocode (+ confidence-gate)   →  2. Opprett prosjekt
  *   3. Offentlige POI (NSR/bhg/idrett, skippes for næring)
  *   4. Google-discovery (+ Entur/Bysykkel)   →  5. Trust-scoring (to-fase)
  *   6. Hydrering (product_pois + featured + categories)
- *   7. Nabolags-editorial (arv)   →  8. Revalidering   →  9. Akseptansesjekk
+ *   7. Reisetider (Mapbox Matrix → project_pois.travel_times, fail-soft)
+ *   8. Nabolags-editorial (arv)   →  9. Revalidering   →  10. Akseptansesjekk
  *
  * Rekkefølgen er load-bearing: trust (5) MÅ kjøre etter discovery (3–4) og før
- * hydrering (6); editorial (7) etter at config-en finnes. Endres den, brytes
- * enten dedup, trust-filteret eller editorial-arven.
+ * hydrering (6); reisetider (7) etter at POI-poolen er komplett (3–4); editorial
+ * (8) etter at config-en finnes. Endres den, brytes enten dedup, trust-filteret
+ * eller editorial-arven.
  *
  * Kjernen er kallbar fra BÅDE CLI og server-action (self-serve, Unit 8) uten
  * TTY: interaktivitet (koordinat-bekreftelse, nivå-prompt) ligger i kalleren.
@@ -35,6 +38,7 @@ import {
 } from "@/lib/pipeline/enrich-report-pois";
 import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
+import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
 import { inheritAreaEditorial } from "@/lib/pipeline/inherit-area-editorial";
 import { getDiscoveryRadius, type ReportProfile } from "@/lib/pipeline/report-defaults";
 import {
@@ -228,10 +232,21 @@ export async function provisionReportBoard(
   log(`product_categories: ${hydrateResult.categoriesPopulated} kategorier`);
   for (const w of hydrateResult.warnings) warn(w);
 
-  // ── Steg 7: Nabolags-editorial ─────────────────────────────────────────
+  // ── Steg 7: Reisetider (precompute, bead 2nj) ──────────────────────────
+  // Fail-soft: kaster aldri — board degraderer til haversine-estimat.
+  section("Steg 7: Reisetider");
+  const travelResult = await computeProjectTravelTimes({
+    projectId: projectResult.projectId,
+    centerLat: lat,
+    centerLng: lng,
+  });
+  log(`Reisetider beregnet: ${travelResult.computed} av ${travelResult.total} POI-er (walk)`);
+  for (const w of travelResult.warnings) warn(w);
+
+  // ── Steg 8: Nabolags-editorial ─────────────────────────────────────────
   // Fail-soft (warnings) — UNNTATT skrive-/optimistisk-lås-feil som KASTER
   // (aldri delvis editorial i config; håndteres inni inheritAreaEditorial).
-  section("Steg 7: Nabolags-editorial");
+  section("Steg 8: Nabolags-editorial");
   const inheritResult = await inheritAreaEditorial({
     projectId: projectResult.projectId,
     customerSlug: projectResult.customerSlug,
@@ -258,12 +273,12 @@ export async function provisionReportBoard(
     }
   }
 
-  // ── Steg 8: Revalidering ───────────────────────────────────────────────
-  section("Steg 8: Revalidering");
+  // ── Steg 9: Revalidering ───────────────────────────────────────────────
+  section("Steg 9: Revalidering");
   await revalidateProject(projectResult.customerSlug, projectResult.slug, reporter);
 
-  // ── Steg 9: Akseptansesjekk ────────────────────────────────────────────
-  section("Steg 9: Akseptansesjekk");
+  // ── Steg 10: Akseptansesjekk ───────────────────────────────────────────
+  section("Steg 10: Akseptansesjekk");
   const acceptance = await runAcceptanceCheck({
     productId: projectResult.productId,
     customer: projectResult.customerSlug,

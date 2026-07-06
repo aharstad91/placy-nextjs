@@ -36,7 +36,7 @@ const ReportMapBottomCard = forwardRef<HTMLButtonElement, ReportMapBottomCardPro
   ) {
     const CategoryIcon = getIcon(poi.category.icon);
     const walkMinutes = poi.travelTime?.walk
-      ? Math.round(poi.travelTime.walk / 60)
+      ? Math.round(poi.travelTime.walk)
       : null;
 
     const bodyText = poi.editorialHook ?? poi.localInsight ?? poi.description;

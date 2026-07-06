@@ -1555,16 +1555,19 @@ export type Database = {
           poi_id: string
           project_id: string
           sort_order: number | null
+          travel_times: Json | null
         }
         Insert: {
           poi_id: string
           project_id: string
           sort_order?: number | null
+          travel_times?: Json | null
         }
         Update: {
           poi_id?: string
           project_id?: string
           sort_order?: number | null
+          travel_times?: Json | null
         }
         Relationships: []
       }

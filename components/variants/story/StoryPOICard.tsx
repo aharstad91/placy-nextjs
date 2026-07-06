@@ -24,7 +24,7 @@ export default memo(function StoryPOICard({
   const revealRef = useScrollReveal();
   const [imgError, setImgError] = useState(false);
   const walkMinutes = poi.travelTime?.walk
-    ? Math.round(poi.travelTime.walk / 60)
+    ? Math.round(poi.travelTime.walk)
     : null;
   const CategoryIcon = getIcon(poi.category.icon);
   const imageUrl = !imgError ? (poi.featuredImage ?? null) : null;

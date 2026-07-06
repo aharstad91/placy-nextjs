@@ -18,7 +18,7 @@ export interface POIPopoverProps {
 export default function POIPopover({ poi, label }: POIPopoverProps) {
   const Icon = getIcon(poi.category.icon);
   const walkMin = poi.travelTime?.walk
-    ? Math.round(poi.travelTime.walk / 60)
+    ? Math.round(poi.travelTime.walk)
     : null;
 
   const imageUrl = poi.featuredImage

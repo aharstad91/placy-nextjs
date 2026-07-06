@@ -153,7 +153,7 @@ export function composeStoryBlocks(
       const topPoi = allPois[0];
       if (topPoi) {
         const walkMin = topPoi.travelTime?.walk
-          ? Math.round(topPoi.travelTime.walk / 60)
+          ? Math.round(topPoi.travelTime.walk)
           : null;
         blocks.push({
           id: nextId(),

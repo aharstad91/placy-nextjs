@@ -92,7 +92,7 @@ export default async function VisningRoute({ params }: PageProps) {
           name: p.name,
           categoryColor: p.category.color,
           walkMinutes: p.travelTime?.walk
-            ? Math.round(p.travelTime.walk / 60)
+            ? Math.round(p.travelTime.walk)
             : null,
         })),
       }))}

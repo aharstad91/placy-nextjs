@@ -52,7 +52,7 @@ export default function ReportMapDrawer({ poi, onClose, areaSlug }: ReportMapDra
 
   const hasImage = imageUrl && !imageError;
   const walkMinutes = poi.travelTime?.walk
-    ? Math.round(poi.travelTime.walk / 60)
+    ? Math.round(poi.travelTime.walk)
     : null;
 
   const googleMapsDirectionsUrl = poi.googlePlaceId

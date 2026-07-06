@@ -63,7 +63,7 @@ export default function StoryMapModal({
     : null;
 
   const walkMin = activePOIData?.travelTime?.walk
-    ? Math.round(activePOIData.travelTime.walk / 60)
+    ? Math.round(activePOIData.travelTime.walk)
     : null;
 
   return (

@@ -257,7 +257,7 @@ export default function ReportThemeMap({
           const isHovered = hoveredPOI === poi.id && !isHighlighted;
           const Icon = getFilledIcon(poi.category.icon);
           const walkMinutes = poi.travelTime?.walk
-            ? Math.round(poi.travelTime.walk / 60)
+            ? Math.round(poi.travelTime.walk)
             : null;
 
           const tier = poi.poiTier ?? 2;

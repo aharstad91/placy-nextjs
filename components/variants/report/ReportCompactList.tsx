@@ -43,7 +43,7 @@ export default function ReportCompactList({
       <div className="bg-white rounded-xl border border-[#eae6e1] divide-y divide-[#f0ece7] overflow-hidden">
         {visiblePOIs.map((poi) => {
           const walkMinutes = poi.travelTime?.walk
-            ? Math.round(poi.travelTime.walk / 60)
+            ? Math.round(poi.travelTime.walk)
             : null;
 
           const explorerUrl = explorerBaseUrl

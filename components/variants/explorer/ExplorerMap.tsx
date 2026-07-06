@@ -353,7 +353,7 @@ export default function ExplorerMap({
                   categoryId={poi.category.id}
                   googleRating={poi.googleRating}
                   googleReviewCount={poi.googleReviewCount}
-                  travelTimeMinutes={poiTravelTime != null ? Math.round(poiTravelTime / 60) : null}
+                  travelTimeMinutes={poiTravelTime != null ? Math.round(poiTravelTime) : null}
                   travelMode={travelMode}
                 />
               )}

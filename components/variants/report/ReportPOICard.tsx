@@ -25,7 +25,7 @@ export default function ReportPOICard({ poi, isActive, onClick }: ReportPOICardP
 
   const imageUrl = resolveImageUrl(poi, imgError);
   const walkMinutes = poi.travelTime?.walk
-    ? Math.round(poi.travelTime.walk / 60)
+    ? Math.round(poi.travelTime.walk)
     : null;
   const CategoryIcon = getIcon(poi.category.icon);
 

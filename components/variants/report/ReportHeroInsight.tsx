@@ -55,7 +55,7 @@ function haversineM(a: Coordinates, b: Coordinates): number {
 
 /** Walk minutes — uses travelTime if available, else estimates from haversine x 1.3 road factor */
 function estimateWalkMin(poi: POI, center: Coordinates): number {
-  if (poi.travelTime?.walk != null) return Math.round(poi.travelTime.walk / 60);
+  if (poi.travelTime?.walk != null) return Math.round(poi.travelTime.walk);
   return Math.round((haversineM(center, poi.coordinates) * 1.3) / 83);
 }
 

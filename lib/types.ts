@@ -95,7 +95,9 @@ export interface POI {
   anchorSummary?: string;
   childPOIs?: POI[];
 
-  // Beregnet data (runtime)
+  // Reisetider fra prosjekt-origo. Enhets-KONTRAKT: MINUTTER (ceil) — samme
+  // enhet som haversine-fallbacken i report-data.ts og precompute-steget
+  // (v2.project_pois.travel_times, migrasjon 071). Aldri sekunder.
   travelTime?: {
     walk?: number;
     bike?: number;

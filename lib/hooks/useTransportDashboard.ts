@@ -142,7 +142,7 @@ async function fetchMobility(
 // --- Helpers for selecting POIs ---
 
 function estimateWalkMin(poi: POI, center: Coordinates): number {
-  if (poi.travelTime?.walk) return Math.round(poi.travelTime.walk / 60);
+  if (poi.travelTime?.walk) return Math.round(poi.travelTime.walk);
   const R = 6_371_000;
   const dLat = ((poi.coordinates.lat - center.lat) * Math.PI) / 180;
   const dLng = ((poi.coordinates.lng - center.lng) * Math.PI) / 180;

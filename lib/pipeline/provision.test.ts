@@ -16,6 +16,7 @@ vi.mock("@/lib/pipeline/enrich-report-pois", async (orig) => ({
 }));
 vi.mock("@/lib/pipeline/validate-report-trust", () => ({ validateReportTrust: vi.fn() }));
 vi.mock("@/lib/pipeline/hydrate-report", () => ({ hydrateReport: vi.fn() }));
+vi.mock("@/lib/pipeline/travel-times", () => ({ computeProjectTravelTimes: vi.fn() }));
 vi.mock("@/lib/pipeline/inherit-area-editorial", () => ({ inheritAreaEditorial: vi.fn() }));
 vi.mock("@/lib/pipeline/provision-acceptance", () => ({ runAcceptanceCheck: vi.fn() }));
 
@@ -25,6 +26,7 @@ import { importPublicPois } from "@/lib/pipeline/import-public-pois";
 import { enrichReportPois } from "@/lib/pipeline/enrich-report-pois";
 import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
+import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
 import { inheritAreaEditorial } from "@/lib/pipeline/inherit-area-editorial";
 import { runAcceptanceCheck } from "@/lib/pipeline/provision-acceptance";
 import { provisionReportBoard } from "./provision";
@@ -37,6 +39,7 @@ const m = {
   enrich: vi.mocked(enrichReportPois),
   trust: vi.mocked(validateReportTrust),
   hydrate: vi.mocked(hydrateReport),
+  travel: vi.mocked(computeProjectTravelTimes),
   editorial: vi.mocked(inheritAreaEditorial),
   acceptance: vi.mocked(runAcceptanceCheck),
 };
@@ -54,6 +57,7 @@ function setHappyDefaults(existed = false) {
   m.enrich.mockResolvedValue({ google: { total: 20, new: 20, updated: 0, byCategory: {} }, warnings: [] });
   m.trust.mockResolvedValue({ scored: 10, skipped: 0, skippedPublic: 5, stillNull: [], warnings: [] });
   m.hydrate.mockResolvedValue({ productPoisLinked: 20, featuredMarked: 6, categoriesPopulated: 8, warnings: [] });
+  m.travel.mockResolvedValue({ computed: 20, total: 20, warnings: [] });
   m.editorial.mockResolvedValue({
     skipped: true, areaName: "", themesInherited: [], highlights: { kept: 0, dropped: [] }, warnings: [],
   });
@@ -105,7 +109,7 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     expect(m.enrich).toHaveBeenCalled();
   });
 
-  it("AC1: stegene kjører i ratifisert rekkefølge (project→enrich→trust→hydrate→editorial→acceptance)", async () => {
+  it("AC1: stegene kjører i ratifisert rekkefølge (project→enrich→trust→hydrate→travel→editorial→acceptance)", async () => {
     const order: string[] = [];
     m.project.mockImplementation(async () => { order.push("project"); return {
       projectId: "intern_x", productId: "prod-1", customerSlug: "intern", slug: "x", existed: false, warnings: [],
@@ -114,11 +118,33 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     m.enrich.mockImplementation(async () => { order.push("enrich"); return { google: { total: 0, new: 0, updated: 0, byCategory: {} }, warnings: [] }; });
     m.trust.mockImplementation(async () => { order.push("trust"); return { scored: 0, skipped: 0, skippedPublic: 0, stillNull: [], warnings: [] }; });
     m.hydrate.mockImplementation(async () => { order.push("hydrate"); return { productPoisLinked: 0, featuredMarked: 0, categoriesPopulated: 0, warnings: [] }; });
+    m.travel.mockImplementation(async () => { order.push("travel"); return { computed: 0, total: 0, warnings: [] }; });
     m.editorial.mockImplementation(async () => { order.push("editorial"); return { skipped: true, areaName: "", themesInherited: [], highlights: { kept: 0, dropped: [] }, warnings: [] }; });
     m.acceptance.mockImplementation(async () => { order.push("acceptance"); return { ok: true, findings: [], urls: { local: "l", prod: "p" } }; });
 
     await provisionReportBoard({ ...BASE, confirmCoords: { lat: 1, lng: 2 } });
 
-    expect(order).toEqual(["project", "public", "enrich", "trust", "hydrate", "editorial", "acceptance"]);
+    expect(order).toEqual(["project", "public", "enrich", "trust", "hydrate", "travel", "editorial", "acceptance"]);
+  });
+
+  it("reisetid-steget er fail-soft: warnings videreformidles, provisjonen fullfører", async () => {
+    m.travel.mockResolvedValue({
+      computed: 0,
+      total: 20,
+      warnings: ["⚠️  Mapbox Matrix walk: HTTP 503 (batch hoppet over)"],
+    });
+    const warned: string[] = [];
+    const result = await provisionReportBoard(
+      { ...BASE, confirmCoords: { lat: 1, lng: 2 } },
+      { log() {}, warn: (msg) => warned.push(msg), section() {} }
+    );
+    expect(result.acceptance?.ok).toBe(true);
+    expect(warned.some((w) => w.includes("Mapbox Matrix"))).toBe(true);
+  });
+
+  it("existed && !allowUpdate → reisetid-steget kjøres heller ikke", async () => {
+    setHappyDefaults(true);
+    await provisionReportBoard({ ...BASE, confirmCoords: { lat: 1, lng: 2 } });
+    expect(m.travel).not.toHaveBeenCalled();
   });
 });
