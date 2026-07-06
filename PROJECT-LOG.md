@@ -25,6 +25,13 @@
 - **r01.3 drop-plan LEVERT** (`docs/rebuild/public-drop-plan.md` — plan, IKKE utførelse): FK-status avklart (35 FK-er, alle interne i public → plain DROP barn-før-forelder, ingen CASCADE). **Kritisk funn: public er ikke bare test-rot — Lokalkunnskap-moaten lever der** (231 place_knowledge-rader, 7 areas med kuratert report_editorial, 2720 translations, 40 kuraterte reportConfig) → obligatorisk re-seed-steg (§3) før drop. Gating uendret: demo-paritet på Wesselslokka/StasjonsKvartalet/Ranheim + Andreas' go + xhigh.
 - **Neste på cutover-stigen:** re-provisjonér de tre referanse-boardene inn i v2 + re-seed moat/kuratert config → Andreas' paritets-dom → kode-trim-PR → gated drop.
 
+**Samme dag, «kjør» — CUTOVER STEG 2 (referanse-boardene inn i v2):**
+- **Moat re-seedet:** areas 44/44 (7 m/ editorial), place_knowledge 231/231 (113 av 227 poi-nøklede remappet — resten venter på flere provisjoneringer; MÅ fullføres før drop siden public.pois er mapping-kilden), 133 kategori-definisjoner.
+- **Tre boards provisjonert + kuratert re-seed:** Wesselsløkka (103 POI-er), Stasjonskvartalet (260), byggetrinn-4 (36 + 10 håndkuraterte signatur-POI-er navne-matchet fra JSON — Sjøparken/Ladestien/Fullriggerøya m.fl. finnes ikke i Google). Config verbatim + reportTier 2; POI-editorial 184 stk matched på place-id/nsr/osm.
+- **PIPELINE-BUG FUNNET + FIKSET:** `import-public-pois` skrev skole/barnehage/idrett-POI-er uten kategori-definisjoner → kategorien resolvet «Ukjent» → **hele Barn & Oppvekst-temaet forsvant stille fra boardet** (pilot-boardet manglet det uten at noen så det). Modulen seeder nå `PUBLIC_POI_CATEGORIES` før kildene; test pinner rekkefølgen.
+- **ETTER-verifisert live fra v2:** kuraterte lead-tekster identiske (Wesselsløkka, inkl. gjenoppstått Barn & Oppvekst 30 steder), logo+megler+welcome-VO (Stasjonskvartalet), `marina-batliv-reels.mp3` m/ karaoke (byggetrinn-4). FØR/ETTER: `docs/rebuild/assets/parity-*.jpeg`. Eneste 404 (intro.mp4-probe) er pre-eksisterende konvensjonsprobe.
+- **VENTER PÅ ANDREAS:** paritets-dommen (§1.1 i drop-planen). POI-tellingene avviker der discovery-settet er ferskt (f.eks. Wesselsløkka Mat & Drikke 13→6, Transport 19→10) — innhold/editorial er identisk. 1616 tester, pushet (29c5c04).
+
 ---
 
 ## 2026-07-05→06 — Fable-direktebygg: 17 beads, PRD 11+15 komplett, HELE r12-admin-epicen levert + sikkerhetssveip
