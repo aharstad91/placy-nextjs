@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-07-07 (forts.) — TEKNISK-OPPSETT-SVEIP: observability + indekser + AVIF + docs-riktighet
+
+**Kontekst:** Oppfølging av ISR/region-økten — Andreas ba om flere optimaliseringer/best practices i teknisk oppsett. Gjennomgang fant fire hull; alle fikset (commit f5cec01, migrasjon 080 prod-kjørt).
+
+- **Observability fantes ikke** (ingen Analytics/Speed Insights/feilsporing — ISR-regresjonen hadde vært synlig umiddelbart med RUM-tall). `@vercel/analytics` + `@vercel/speed-insights` i root layout. **GJENSTÅR: Enable-toggles i Vercel-dashboardet (Analytics + Speed Insights-fanene) — pakkene sender ikke data før de er på.**
+- **Migrasjon 080 (KJØRT + verifisert):** sekundærindekser på FK-kolonnene fra 079 + `pois.category_id`. Jointabellenes composite-PK dekker bare project/product-siden — poi_id-siden var udekket, så CASCADE-sletting av POI-er scannet hele tabellen. Trivielt i dag (1 237 rader), forsikring for grunnpakke-skala; «FK-kolonner skal ha indeks» er nå vanen.
+- **AVIF aktivert** (`images.formats`) — verifisert live: samme bilde 127 kB avif vs 130 kB webp (akvareller vinner lite, Google-fotos mer).
+- **CLAUDE.md var utdatert på stack:** sa Next.js 14 (reelt: 16 + React 19), og API-tabellen manglet at `/api/travel-times` er REFERENCE-ONLY (precompute i pipelinen er eneste reisetids-kilde). Rettet — stale docs villeder agentene som bygger på dem.
+
+**Vurdert og bevisst IKKE gjort:** Pro-plan (ingenting krever det), CSP (fortsatt deferred med grunn), edge runtime (frarådes), OG-image-caching (kun scrapere treffer den, mikro). Fluid Compute-status må sjekkes i dashboardet (ikke CLI-lesbart).
+
+**Verifisert:** 1596 tester, tsc 0, build OK, deploy Ready, avif bekreftet med curl mot prod.
+
+---
+
 ## 2026-07-07 — SKILL-TAKSONOMI RYDDET + ORCHESTRATOR-SPINE PÅBEGYNT
 
 **Kontekst:** Andreas vil bygge Placy-ops UI-løst og skill-drevet (samme mønster som hans Figma→Umbraco-kobling): X skills, hver med én dedikert jobb. Første valg = «rydd taksonomien først» — fjern overlapp/død så hver jobb = én skill, FØR orchestrator bygges. Kartla dagens tilstand med 3 read-only-scouts + en 10-agents evidens-workflow (les hver skill/kommando + cross-ref reell bruk).
