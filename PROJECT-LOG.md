@@ -6,6 +6,32 @@
 
 ---
 
+## 2026-07-08 — MEGLER SELF-SERVE KJEDE-PILOT (6 units, /ce-work) + TO PRE-EKSISTERENDE BUGS FIKSET
+
+**Kontekst:** `/ce-work` på `docs/plans/2026-07-07-001-feat-megler-self-serve-pilot-plan.md` — verktøyet som gjør grunnpakke/kjede-sporet demonstrerbart: megler taster adresse på kontor-scopet side → automatisk nivå-1-board → delings-side (kopier lenke/iframe/QR) → embed på objektside. Bygd i egen worktree `../placy-ralph-megler`, branch `feat/megler-self-serve` (7 commits, IKKE pushet/merget).
+
+**De 6 unitene (alle live-verifisert mot prod-DB):**
+- **U1 — kontor-register:** migrasjon 081 `v2.broker_offices` (RLS default-deny, service-role-only, FK→customers). `/megler/[slug]` server-side slug-oppslag (ikke-gjettbar slug = tilgangsmodell), noindex, per-IP rate-limiter, brandet 404. `OfficeGenererForm` (scopet, ingen brokerage-felt) + delt `CoverageStop`.
+- **U2 — API geofence + scoping + etterspørselslogg:** migrasjon 082 `v2.coverage_demand` + `record_coverage_demand`-RPC (atomisk dedup+hits, NULLS NOT DISTINCT, PII-e-post KUN ved eksplisitt opt-in, EXECUTE revoked fra PUBLIC). Route: officeSlug-oppslag (ukjent/inaktiv→404, aldri getOrCreateCustomer), `findAreaForPoint`-geofence for ALLE innganger (fail-soft), dup scopet per customer_id. Live: Melhus→outside_coverage + coverage_demand-rad.
+- **U3 — delings-side:** `/megler/deling/[customer]/[project]` (url_slug kanonisk → address_slug fallback → 301). `SharePanel` (kopier lenke `?src=finn` / iframe `?embed=1&src=embed` / QR `?src=qr`, Kopiert!-feedback + synlig feil, FINN-veiledning). `result_url`/dup/e-post → delings-side. Live-smoke OK.
+- **U4 — embed = fullt board:** `?embed=1` rendrer fullt board (teaser slettet), `EmbedChrome`-overlegg (fullskjerm-knapp + aktiveringsgate m/ `touch-action:pan-y` scroll-yield) — CONTAINED, rører IKKE delt 3D-map-stack (lav blast-radius). `board_viewed`-embed-skip fjernet (R20). `fromEmbed`/`EmbedArrivalLoader`/splash-embed-sti slettet. Desktop-Chrome verifisert (screenshot: fullt board + fullskjerm-knapp, 0 konsollfeil).
+- **U5 — kanal-attribusjon:** `src` (finn|embed|qr) via parseSrc-guard i `EngagementContextEnvelope` (+ enum i `.strict()`-validatoren). Live-verifisert: `board_viewed` lander med `context.src=embed`.
+- **U6 — ekstern verifisering:** `scripts/embed-testside/index.html` servert kryss-origin (:8080 → board :3001). Verifisert: board rendrer i kryss-origin iframe (R14 framing OK), events ankommer FRA iframen med src=embed (R19/R20).
+
+**To pre-eksisterende bugs oppdaget + fikset (ikke fra denne feature-en):**
+1. **Moat-2 event-drop (R20-blokker, fikset):** 2026-07-06-audit-herdingen låste `projectId`-valideringen i `event-schema.ts` til `PROJECT_ID_SHAPE` (customer_slug), men engagement-emitteren sender boardets UUID `project.id` → ALLE rapport-board-events droppet stille siden 07-06 (DB bekreftet: 0 board_viewed 07-07 før fiks). Relaksert til `opaqueId` (bundet + kontrolltegn-avvist; injection-trygt via parameterisert insert — samme behandling som poi_id). Events lander nå. **DATA-GAP: Moat-2 board_viewed for rapport-boards mangler 2026-07-06→07-08.**
+2. **`verify-board-bundle.mjs` Next-16-inkompatibilitet (åpen, egen oppgave):** skriptet (skrevet for Next 14.2) leser `.next/app-build-manifest.json` som Next 16 ikke emitterer → ENOENT før chunk-assertionene. Chunk-referansen er rettet (report-embed-arrival→report-embed-chrome), Next-16-manifest-parsingen gjenstår. Kilde-nivå-vakten (vitest lazy-boundaries-test) er aktiv + grønn.
+
+**Adversariell code-review (Workflow, 6 dimensjoner × per-funn-verifisering):** security/migration/instrumentation-fix-dimensjonene RENE (0 funn). 5 bekreftede funn (0 refuted) — alle fikset: P2 dup-sjekk blokkerte retry av failed boards (→ ekskluder failed + stale-pending); P2 bundle-script-chunk (over); P2 src→konvolutt manglet regresjonstest (→ `buildEngagementEnvelope` trukket ut + testet); 2×P3 test-coverage-hull.
+
+**Verifisert:** 1657 tester grønne, tsc 0, lint 0, `npm run build` OK, migrasjoner 081/082 kjørt+verifisert mot prod.
+
+**Deferred til Andreas (ekte enhet/kjede, ratifisert):** mobil scroll-yield (R13) + iframe-min-høyde-tuning på ekte telefon; embed på ekte objektside + FINN-lenke + board nr. 2 uoppfordret (pilot-utfall). Manuell kontor-onboarding (SQL i `broker_offices`) — eksempel i migrasjon 081.
+
+**Åpne tråder:** push + PR gjenstår (ikke pushet); mobil-verifisering; `verify-board-bundle.mjs` Next-16-fiks; Moat-2 data-gap 07-06→07-08.
+
+---
+
 ## 2026-07-07 — /CURATE-AREA-KOMMANDO + WESSELSLØKKA BACK-FILLET + LEAD FRA EDITORIAL.BODY
 
 **Kontekst:** Andreas så at drill-in-panelet (kategori-klikk → lang tekst + «Verdt å merke seg»-punkter) manglet på Wesselsløkka. Diagnose → back-fill → to leveranser som lukker strøk-kurateringsgapet.
