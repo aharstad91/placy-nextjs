@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-07-07 — /CURATE-AREA-KOMMANDO + WESSELSLØKKA BACK-FILLET + LEAD FRA EDITORIAL.BODY
+
+**Kontekst:** Andreas så at drill-in-panelet (kategori-klikk → lang tekst + «Verdt å merke seg»-punkter) manglet på Wesselsløkka. Diagnose → back-fill → to leveranser som lukker strøk-kurateringsgapet.
+
+**Diagnose:** Drill-in-en (`CategoryDetailView`) er datadrevet — krever `editorial` (body/highlightPoiIds) per tema. Wesselsløkka hadde `editorial: NONE` på alle 7 temaer (kun kuratert `leadText`): boardet var provisjonert FØR Steg-8-fiksen (d104722), så editorial-arven hadde aldri kjørt. Eberg-strøket (som Wesselsløkka ligger i) VAR kuratert og klar til arv.
+
+**Back-fill (ingen kodeendring):** Kjørte Steg 8 direkte via `/api/admin/inherit-editorial` → arvet Eberg-editorial til 6/7 temaer (`opplevelser` udekket — Eberg-kurateringen har kun bolig-6), 7 highlights beholdt, 29 kandidater droppet (mest `utenfor-board` — Ebergs kandidater ligger utenfor Wesselsløkkas radius; `barn-oppvekst`/`transport` fikk 0 punkter men body bærer drill-in-en). Verifisert i DB + klient-payload. Prod-oppdatering via ISR (3600s) — manuell prod-bust finnes ikke (admin av i prod, `REVALIDATE_SECRET` ikke satt). **Samme back-fill gjenstår for Stasjonskvartalet + Ferjemannsveien 10** (begge trolig Sentrum-strøket).
+
+**Leveranse 1 — `/curate-area` (commit 410fbc4):** Én kommando kjeder hele strøk-kurateringen: boundary (`extract-skolekrets-boundary.py` for Trondheim-kretser / `fetch-area-boundary.ts` for kommuner) → `--list-pois`-kandidatmeny → curator-tekst (Andreas-reglene innbakt: presens, beboer-perspektiv, fakta, navngi, ~230–270 tegn) → staging-validering → `v2.areas` → **re-arv per board** (propagerer aldri selv!) → revalidering + akseptansesjekk. Modus B = redigering av eksisterende strøk (svaret på «hvordan endrer vi tekstene manuelt»). Verktøyene fantes — kun kjedingen manglet. Operatørflaten for rapport-sporet er nå komplett: `/provision-rapport` + `/curate-area`.
+
+**Leveranse 2 — leadText-forenkling (Andreas' design-kall, samme commit):** Nivå-2-kortets lead avledes nå av `editorial.body` første avsnitt (adaptCategory, board-data.ts) — ÉN kuratert kilde per strøk, ingen parallell leadText-kuratering per board. `leadText`/`intro` beholdes som nivå-1-fallback + dedup-anker for narrativ-body (uendret semantikk). Synlig konsekvens: Wesselsløkkas kort viser nå Eberg-brødtekst i stedet for de gamle per-board-leadene. 3 nye tester; 1603/1603 grønne, tsc 0, lint 0.
+
+**Funn (uavklart, egen sak):** Drill-in-panelet lever KUN i sidebar-empty-state (board uten reels-lyd). Boards MED VO (Grilstad — editorial på alle 7 temaer!) viser audio-spilleren i stedet → kuratert drill-in-innhold er unåbart der. Beslutning trengs: skal drill-in også være tilgjengelig på VO-boards?
+
+**Åpne tråder:** back-fill Stasjonskvartalet/Ferjemannsveien-10; `opplevelser`-tema kan ikke strøk-kurateres (staging-schema = bolig-6); drill-in×VO-gapet.
+
+---
+
 ## 2026-07-07 — NIVÅ-2-VERIFISERING: ORCHESTRATOR KJØRT + CUTOVER-REGRESJON FIKSET
 
 **Kontekst:** Andreas ba om full ende-til-ende-verifisering av nivå-2-kjeden (den authored orchestratoren, commit ed34942) på ekte adresse (Stjørdalsveien 15-11, 63.441/10.440). Verifiseringen avdekket to ting — begge verdifulle.
