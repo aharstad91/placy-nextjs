@@ -6,6 +6,28 @@
 
 ---
 
+## 2026-07-07 — P0: ÅPEN ADMIN I PROD LUKKET + EKTE ISR PÅ BOARDENE (region dub1)
+
+**Kontekst:** Andreas spurte om mer sikkerhetsarbeid (iframe?) og hvorfor boards tar 1–2s («vil betalt Vercel endre det?»). Undersøkelsen fant én P0 og tre ytelsesblockere — alle fikset og verifisert live samme økt.
+
+**🔴 P0 — admin-panelet lå ÅPENT på www.placy.no/admin:** `ADMIN_ENABLED=true` hadde ligget i Vercel prod+preview i 142 dager, og flagget er ENESTE admin-gate (ingen auth, PRD 12-deferral). Full CRUD (slett kunder/prosjekter/POI-er) + Generator (Google-API-kostnad) var tilgjengelig for hvem som helst; bekreftet live med curl (200 + slettknapper i HTML). **Lukket:** env-var fjernet fra ALLE Vercel-miljøer + redeploy. Verifisert: /admin → 307 til /, admin-API POST → 403, boards upåvirket. Admin er nå kun lokal (.env.local). **Re-aktivering i prod krever ekte auth først** — ikke re-add flagget. (Memory-notat skrevet.)
+
+**Iframe-posturen vurdert og bekreftet sunn** (fra audit runde 2): admin DENY + frame-ancestors 'none', boards embeddbare med vilje, server actions CSRF-vernet av same-origin også i embed. Fremtidig mulighet: per-kunde frame-ancestors-allowlist ved kundekrav.
+
+**⚡ Ytelse — målt mot prod før fix:** `x-vercel-cache: MISS` på ALLE board-requests (TTFB 0,5–1,8s varm, 5,9s cold start), funksjoner i **iad1 (Washington DC)** mot Supabase i Irland (`x-vercel-id: cdg1::iad1`). `revalidate = 3600` var virkningsløs — tre blockere:
+1. **searchParams-lesing** (embed/from på rapport-board, themes på paraform) tvang dynamisk rendering → flyttet til klient-gates bak Suspense (`board-embed-gate.tsx`, `paraform-theme-gate.tsx`)
+2. **getProjectTranslations utenfor unstable_cache** — Supabase-klientens no-store-fetch talte mot rutens staticness → wrappet i delt modul `lib/supabase/cached-board-reads.ts` (også getCachedReportProduct; de tre lokale kopiene slettet). Translations deler product-taggen → én revalidateTag buster begge.
+3. **Manglende generateStaticParams** — dynamiske segmenter uten den server-rendres per request selv med revalidate → tom liste lagt til (on-demand ISR).
+Pluss `vercel.json` med `regions: ["dub1"]` (Dublin = samme region som Supabase aws-eu-west-1) for gjenværende dynamiske ruter + revalideringer.
+
+**Målt etter (commit bd637c5, deployet):** rapport-board/reels/paraform er ● i build; prod viser **HIT med TTFB 0,16–0,3s** (fra 0,5–1,8s; MISS kun førstetreff per URL per time). Embed-modus verifisert visuelt i Chrome (?embed=1 → teaser, uten → splash). 1596 tester, tsc 0, lint 0.
+
+**Svar på Vercel-spørsmålet:** betalt plan ville IKKE fikset dette — cold starts og region er like på Pro; problemet var arkitektur (dynamisk render i USA per visning). Fixene var gratis.
+
+**Event-boardet er bevisst IKKE rørt** — force-dynamic der er tilsiktet (live program).
+
+---
+
 ## 2026-07-06 (natt, forts. 2) — ADMIN-UX-SVEIP + FK-MIGRASJON 079 (kritisk 404-fix, prod-kjørt)
 
 **Kontekst:** Andreas spurte «er det noe admin man nå kan se?» → visuell gjennomgang av alle 7 admin-sider i Chrome MCP → UX-vurdering → «ja fix, lag liste, bruk sonnet og opus også». Fable tok den kritiske buggen selv (prod-DB), fordelte 4 UX-oppgaver på parallelle agenter (3× sonnet + 1× opus, distinkte filtrær, null kollisjon).
