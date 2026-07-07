@@ -22,6 +22,8 @@
 
 **Åpne tråder:** back-fill Stasjonskvartalet/Ferjemannsveien-10; `opplevelser`-tema kan ikke strøk-kurateres (staging-schema = bolig-6); drill-in×VO-gapet.
 
+**Tillegg samme sesjon — MINIMUM-GARANTIEN (commit 6eac6d6, Andreas-ratifisert):** Gulvet for ALLE boards = temakort med ekte stedsspesifikk kategoritekst + drill-in («alle boards er minimum nivå 1 med [kort+tekst] og klikk inn for hele kategoriteksten er poenget»). Implementert i `adaptCategory`: kuratert strøk-editorial vinner; ellers syntetiseres detaljen deterministisk fra narrativ-body (render-generert `bridgeText` — navngir ekte POI-er, template-basert, ingen LLM — kalibrert mot Brøset-gullstandarden og hittil USYNLIG i reels-UI-et!) + tier-1-utvelgerne som «Verdt å merke seg»-punkter (cap 3, `generated: true`-markert). Kortets lead = detalj-body første avsnitt uansett kilde; leadText/intro kun fallback for kategori helt uten tekst. Kjent gap: nærings-temaer mangler generatorer (kun fremtidige nærings-nivå-1-boards berøres). 1605/1605 tester (5 nye/omskrevne), tsc 0, lint 0.
+
 ---
 
 ## 2026-07-07 — NIVÅ-2-VERIFISERING: ORCHESTRATOR KJØRT + CUTOVER-REGRESJON FIKSET
