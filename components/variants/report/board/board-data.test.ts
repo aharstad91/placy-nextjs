@@ -264,6 +264,41 @@ describe("adaptBoardData", () => {
         highlights: [{ id: "p1", name: "POI p1" }],
       });
     });
+
+    it("lead avledes av editorial.body (første avsnitt) — leadText skygges", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        leadText: "gammel kuratert lead",
+        editorial: {
+          body: "Første avsnitt fra strøket.\n\nAndre avsnitt med mer detalj.",
+          highlightPoiIds: [],
+        },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].lead).toBe("Første avsnitt fra strøket.");
+    });
+
+    it("editorial med kun highlights (tom body) → lead faller tilbake til leadText", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        leadText: "nivå-1 lead",
+        editorial: { body: "", highlightPoiIds: ["p1"] },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].lead).toBe("nivå-1 lead");
+    });
+
+    it("lead-avledning endrer ikke narrativ-body-dedupen (intro forblir dedupet)", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        intro: "intro-tekst",
+        bridgeText: "bridge-tekst",
+        upperNarrative: undefined,
+        leadText: undefined,
+        editorial: { body: "Strøk-brødtekst.", highlightPoiIds: [] },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      // lead kommer fra editorial, men dedup-ankeret er fortsatt intro (fallbackLead)
+      expect(data.categories[0].lead).toBe("Strøk-brødtekst.");
+      expect(data.categories[0].body).toBe("bridge-tekst");
+    });
   });
 
   describe("audio adapter", () => {

@@ -12,7 +12,7 @@ Målet er at operatøren bare sier «gi meg et board for adresse X, nivå 1 elle
 Nivå 2 = `editorial` (brødtekst + highlight-chips) på ALLE temaer. Den **genereres ikke per board** — den **arves fra det kuraterte strøket** (Steg 8, `inherit-area-editorial`). Konsekvensen:
 
 - Ligger adressen i et **kuratert strøk** (per 2026-07-07: Ranheim, Tyholt, Eberg, Malvik, Lade, Charlottenlund, Sentrum) → `--tier 2` arver editorial automatisk og består nivå-2-akseptansen. Ingen ekstra manuelle steg.
-- Ligger adressen i et **ukuratert strøk** → boardet leveres som nivå 1 (akseptansen flagger «mangler editorial»). **Kurér strøket først** (Lokalkunnskap-bygg: `curate-area.ts` + `curator`/`manus-curator`-skill + strøk-boundary), så re-kjør med `--tier 2 --update`.
+- Ligger adressen i et **ukuratert strøk** → boardet leveres som nivå 1 (akseptansen flagger «mangler editorial»). **Kurér strøket først med `/curate-area`**, så re-kjør med `--tier 2 --update`.
 
 **VO/manus, 3D og kamera er ortogonale render-flagg — IKKE del av nivå.** `manus-curator`, grounding og `placy-illustrations` er valgfrie berikelseslag (se nederst), ikke nivå-2-krav.
 
@@ -107,7 +107,7 @@ I tillegg (nivå 2):
 
 ## Steg 4: Lever
 
-Del URL-en med ansvarlig megler. For nivå-1-leveranser: løft til nivå 2 ved å kurere strøket og kjøre `--tier 2 --update`.
+Del URL-en med ansvarlig megler. For nivå-1-leveranser: løft til nivå 2 med `/curate-area` (kuratér strøket) og deretter `--tier 2 --update`.
 
 ## Berikelseslag (ortogonale — IKKE nivå-krav)
 
@@ -124,7 +124,7 @@ Legges til uavhengig av nivå, ett lag om gangen:
 | Geocode-relevance < 0.5 | Spesifiser mer presis adresse (gate + by + postnr) |
 | Manglende GOOGLE_PLACES_API_KEY | POI-er uten foto — fortsett, legg til nøkkel og re-kjør |
 | Overpass timeout / HTTP 406 | Idrettsanlegg mangler — fail-soft, Google gym dekker ofte temaet; re-kjør `--update` |
-| `✗ nivå 2 … mangler: editorial` | Strøket er ikke kuratert — kurér strøket, kjør `--tier 2 --update` |
+| `✗ nivå 2 … mangler: editorial` | Strøket er ikke kuratert — `/curate-area`, så `--tier 2 --update` |
 | Steg 8: «Editorial-arv via route feilet» | Dev-server nede eller `ADMIN_ENABLED` av — start `npm run dev` på `:3000`, kjør `--tier 2 --update` |
 | product_categories tom | Kritisk — sjekk at import-stegene kjørte uten feil |
 

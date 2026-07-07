@@ -152,7 +152,7 @@ export interface BoardData {
  * vise tom kategori) og normaliserer feltnavn.
  *
  * Body-felt-mapping (per doc-review beslutning):
- * - lead = theme.intro || theme.leadText (kort)
+ * - lead = editorial.body første avsnitt (nivå 2) || theme.leadText || theme.intro
  * - body = theme.upperNarrative || (theme.intro + bridgeText konkatenert)
  *
  * Hvis en kategori mangler all narrativ tekst (verken intro, leadText, eller upperNarrative),
@@ -239,8 +239,10 @@ export function pickPlayableAudio(
 function adaptCategory(theme: ReportTheme): BoardCategory {
   const id = theme.id as BoardCategoryId;
 
-  // Lead: kort hook hvis eksplisitt leadText, ellers første del av intro
-  const lead = theme.leadText?.trim() || theme.intro?.trim() || "";
+  // Nivå-1-lead: kort hook hvis eksplisitt leadText, ellers første del av intro.
+  // Er også dedup-anker for narrativ-body under (uendret semantikk) — den
+  // endelige `lead` avledes ETTER editorial-blokken (kan overstyres av nivå 2).
+  const fallbackLead = theme.leadText?.trim() || theme.intro?.trim() || "";
 
   // Body: alle narrative bidrag konkatenert, dedupert mot lead.
   // Rekkefølge: upperNarrative (rik) → intro (basis) → bridgeText (overgang).
@@ -250,7 +252,7 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     theme.bridgeText?.trim(),
   ].filter((s): s is string => Boolean(s));
   const seen = new Set<string>();
-  if (lead) seen.add(lead);
+  if (fallbackLead) seen.add(fallbackLead);
   const body = bodyParts
     .filter((part) => {
       if (seen.has(part)) return false;
@@ -289,6 +291,15 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
       highlights,
     };
   })();
+
+  // Nivå 2: kortets lead avledes av drill-in-brødteksten (første avsnitt) —
+  // ÉN kuratert kilde (strøket), ingen parallell leadText-kuratering per board.
+  // Kort-previewen clamper visuelt (line-clamp-2), så full avsnittslengde er ok.
+  // Uten editorial-body (nivå 1, eller kun highlights) gjelder fallbackLead.
+  const editorialFirstParagraph = editorial?.body
+    ? editorial.body.split(/\n{2,}/)[0].trim()
+    : "";
+  const lead = editorialFirstParagraph || fallbackLead;
 
   return {
     id,
