@@ -6,6 +6,29 @@
 
 ---
 
+## 2026-07-07 — SKILL-TAKSONOMI RYDDET + ORCHESTRATOR-SPINE PÅBEGYNT
+
+**Kontekst:** Andreas vil bygge Placy-ops UI-løst og skill-drevet (samme mønster som hans Figma→Umbraco-kobling): X skills, hver med én dedikert jobb. Første valg = «rydd taksonomien først» — fjern overlapp/død så hver jobb = én skill, FØR orchestrator bygges. Kartla dagens tilstand med 3 read-only-scouts + en 10-agents evidens-workflow (les hver skill/kommando + cross-ref reell bruk).
+
+**Funn — taksonomien var allerede ortogonal, begravd under et lag død legacy.** «Overlappen» Andreas sanset var utelukkende gammelt-vs-nytt (pre- vs. post-2026-07-06-cutover), ikke rot i det levende settet.
+
+**Pensjonert (commit 1171f18):**
+- `/generate-bolig`, `/generate-hotel`, `/generate-naering`, `/generate-adresse` — pre-cutover interaktive monolitter. Delt backbone `generate-story.ts` er slettet; docs targetet droppet public-skjema + Explorer-produkt; null programmatiske invokers. Kvalitetslogikken deres (`poi-quality`, `school-zones`, `poi-discovery`, `area-editorial`) er allerede re-homet i `lib/pipeline` — ingen kapabilitet tapt.
+- `generate-rapport`-skill — erstattet av `manus-curator` (lead/body-format forkastet 2026-05-21).
+- Gitignore-filene (adresse/bolig/naering) arkivert til scratchpad før sletting (ikke git-recoverable).
+
+**Levende sett — én jobb per skill:** `provision-rapport` (board), `curator` (stemme-autoritet), `manus-curator` (tekst/v3-manus), `placy-illustrations` (assets), `validate-poi-trust` (QA). Ingen merges nødvendig.
+
+**Git-hygiene fikset:** de LEVENDE kommandoene (`provision-rapport`, `validate-poi-trust`) var gitignored — kun lokale på Andreas' maskin. Negert `.claude/commands/` i `.gitignore` (som skills) → nå versjonskontrollert. Dangling refs i overlevende filer rettet (provision-rapport kuratert-tekst-sti → manus-curator; validate-poi-trust → /provision-rapport; manus-curator migrasjons-note).
+
+**Interface-innsikt (Andreas' egne ord):** «jeg trenger kun å si at jeg vil ha et Placy board for adresse X, og nivå 1 eller 2 — så er jeg fornøyd.» Dette ER orchestrator-spec'en.
+
+**Orchestrator-spine påbegynt:** utvidet `provision-rapport`-kommandoen (ikke ny kommando — unngår re-fragmentering) til tiered orchestrator. Nivå 1 = deterministisk board (uendret). Nivå 2 (`--tier 2`) auto-chainer nå Steg 3-kjeden: grounding (`gemini-grounding.ts --apply`) → manus per kategori (manus-curator, Opus) → valgfri hero (placy-illustrations) → POI-trust-QA. LLM-judgment-stegene ligger på kommando-laget (build-time, compliant), koden forblir deterministisk. Fikset også dangling `npm run gemini:grounding`-ref (finnes ikke; faktisk `npx tsx scripts/gemini-grounding.ts`).
+
+**Gjenstår:** ende-til-ende-verifisering av nivå-2-kjeden krever full provisjoneringskjøring (dev-server + GEMINI_API_KEY + manus-curator per tema på ekte adresse). Kommandoen er authored, ikke enda kjørt ende-til-ende.
+
+---
+
 ## 2026-07-07 — P0: ÅPEN ADMIN I PROD LUKKET + EKTE ISR PÅ BOARDENE (region dub1)
 
 **Kontekst:** Andreas spurte om mer sikkerhetsarbeid (iframe?) og hvorfor boards tar 1–2s («vil betalt Vercel endre det?»). Undersøkelsen fant én P0 og tre ytelsesblockere — alle fikset og verifisert live samme økt.
