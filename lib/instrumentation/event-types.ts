@@ -29,6 +29,26 @@ export function isEventType(value: unknown): value is EventType {
 }
 
 /**
+ * Kanal-markør (R19): hvordan brukeren nådde boardet — FINN-lenke, embed-iframe
+ * eller QR-scan. Fanges fra `?src=finn|embed|qr` og rir i kontekst-konvolutten
+ * så FINN- vs embed- vs QR-trafikk kan skilles i Moat-2-data (Innsikt) fra dag én.
+ */
+export const SRC_VALUES = ["finn", "embed", "qr"] as const;
+export type EngagementSrc = (typeof SRC_VALUES)[number];
+
+/**
+ * Parse-guard for `?src`: kun kjente kanal-markører slipper gjennom. Ukjente/
+ * manglende verdier → `undefined` (feltet utelates fra konvolutten — ingen
+ * `"unknown"`-støy i datasettet).
+ */
+export function parseSrc(value: unknown): EngagementSrc | undefined {
+  return typeof value === "string" &&
+    (SRC_VALUES as readonly string[]).includes(value)
+    ? (value as EngagementSrc)
+    : undefined;
+}
+
+/**
  * Kontekst-konvolutten (moat-2-build-input §2 Gap 1 — DET irreversible kravet):
  * rir i `payload.context` på HVERT event så tidlig volum aldri logges
  * confounded (et skole-klikk kan skilles fra «utforsker Ladestien»). Events
@@ -50,6 +70,12 @@ export interface EngagementContextEnvelope {
   categories_presented: string[];
   /** UI-locale ved emit (no/en). */
   locale: string;
+  /**
+   * Kanal-markør (R19): FINN-lenke / embed-iframe / QR-scan. Leses fra `?src`
+   * ved board-mount (parseSrc — kun kjente verdier), holdes stabil for økten.
+   * Utelates ved direkte-trafikk (ingen `?src`).
+   */
+  src?: EngagementSrc;
 }
 
 // Typede payloads per event-type. poi_clicket sin poi_id går i top-level

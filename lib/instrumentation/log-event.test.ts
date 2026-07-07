@@ -164,6 +164,37 @@ describe("logEvent — herding (validering + demping)", () => {
     expect(insertMock.mock.calls[0][0].payload).toEqual({ context });
   });
 
+  it("kontekst med kanal-markør src=embed (R19) → akseptert og lagret verbatim", async () => {
+    insertMock.mockResolvedValue({ error: null });
+    const context = {
+      mode: "report" as const,
+      has_3d_addon: true,
+      categories_presented: ["home"],
+      locale: "no",
+      src: "embed" as const,
+    };
+    await logEvent({ eventType: "board_viewed", payload: { context } });
+    expect(insertMock).toHaveBeenCalledOnce();
+    expect(insertMock.mock.calls[0][0].payload).toEqual({ context });
+  });
+
+  it("kontekst med ugyldig src → avvist av enum (.strict envelope), ingen INSERT", async () => {
+    insertMock.mockResolvedValue({ error: null });
+    await logEvent({
+      eventType: "board_viewed",
+      payload: {
+        context: {
+          mode: "report",
+          has_3d_addon: true,
+          categories_presented: ["home"],
+          locale: "no",
+          src: "tulleball",
+        },
+      } as never,
+    });
+    expect(insertMock).not.toHaveBeenCalled();
+  });
+
   it("volum-demping: replay av ÉN session-id kveles etter taket (fail-soft drop)", async () => {
     insertMock.mockResolvedValue({ error: null });
     const sessionId = "6f1e0d3a-2b4c-4e5f-89ab-0123456789ab";

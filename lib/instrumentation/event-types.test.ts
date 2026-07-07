@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   EVENT_TYPES,
   isEventType,
+  SRC_VALUES,
+  parseSrc,
   type EventType,
   type PayloadFor,
 } from "./event-types";
@@ -80,5 +82,30 @@ describe("payload-typer (kompiler-tids-kontrakt)", () => {
     expect(voiceoverPlayed.voiceover_segment).toBe("intro");
     expect(boardViewed.context?.mode).toBe("report");
     expect(poiClicked.context?.categories_presented).toEqual(["home", "natur"]);
+  });
+});
+
+describe("parseSrc — kanal-markør-guard (R19, Unit 5)", () => {
+  it("SRC_VALUES er nøyaktig finn|embed|qr", () => {
+    expect([...SRC_VALUES]).toEqual(["finn", "embed", "qr"]);
+  });
+
+  it("aksepterer hver kjente kanal-markør", () => {
+    for (const v of SRC_VALUES) {
+      expect(parseSrc(v)).toBe(v);
+    }
+  });
+
+  it("ukjent verdi → undefined (utelates, ingen 'unknown'-støy)", () => {
+    expect(parseSrc("tulleball")).toBeUndefined();
+    expect(parseSrc("FINN")).toBeUndefined(); // case-sensitiv
+    expect(parseSrc("")).toBeUndefined();
+  });
+
+  it("manglende/ikke-streng → undefined (direkte-trafikk)", () => {
+    expect(parseSrc(null)).toBeUndefined();
+    expect(parseSrc(undefined)).toBeUndefined();
+    expect(parseSrc(42)).toBeUndefined();
+    expect(parseSrc(["qr"])).toBeUndefined();
   });
 });

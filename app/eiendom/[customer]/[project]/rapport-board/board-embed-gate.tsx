@@ -3,8 +3,9 @@
 import { useSearchParams } from "next/navigation";
 import type { ComponentProps } from "react";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
+import { parseSrc } from "@/lib/instrumentation/event-types";
 
-type Props = Omit<ComponentProps<typeof ReportReelsPage>, "embed">;
+type Props = Omit<ComponentProps<typeof ReportReelsPage>, "embed" | "src">;
 
 /**
  * Leser `?embed` på KLIENTEN slik at server-siden slipper searchParams — å lese
@@ -20,5 +21,9 @@ export default function BoardEmbedGate(props: Props) {
   const embedParam = searchParams.get("embed");
   const embed = embedParam === "1" || embedParam === "" || embedParam === "true";
 
-  return <ReportReelsPage {...props} embed={embed} />;
+  // Kanal-markør (R19): finn|embed|qr fra distribusjons-artefaktene. Kun kjente
+  // verdier slipper gjennom (parseSrc) → rir i engagement-konvolutten (Unit 5).
+  const src = parseSrc(searchParams.get("src"));
+
+  return <ReportReelsPage {...props} embed={embed} src={src} />;
 }

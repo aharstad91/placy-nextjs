@@ -57,6 +57,10 @@ const contextEnvelope = z
       .array(z.string().min(1).max(MAX_CATEGORY_ID_LEN))
       .max(MAX_CATEGORIES_PRESENTED),
     locale: z.string().min(1).max(MAX_LOCALE_LEN),
+    // Kanal-markør (R19). Optional + enum: kun finn|embed|qr slipper gjennom;
+    // konvolutten er `.strict()` så feltet MÅ deklareres her (ellers avvises
+    // events som bærer src). Speiler parseSrc i event-types.ts.
+    src: z.enum(["finn", "embed", "qr"]).optional(),
   })
   .strict();
 

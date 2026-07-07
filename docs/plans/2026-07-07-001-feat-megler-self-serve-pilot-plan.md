@@ -230,7 +230,7 @@ Fra origin-dokumentet (ratifisert, gjentas ikke i detalj her): ingen megler-auth
 
 **Verification:** Board i iframe på en lokal ekstern testside (annet origin) fungerer på desktop-Chrome og faktisk mobil; scroll kapres ikke; fullskjerm-knapp åpner riktig; teaser-koden er borte fra bundelen.
 
-- [ ] **Unit 5: Kanal-attribusjon i engagement-konvolutten**
+- [x] **Unit 5: Kanal-attribusjon i engagement-konvolutten**
 
 **Goal:** `src`-markøren (`finn|embed|qr`) fanges fra query-param inn i `EngagementContextEnvelope` på alle events, slik at FINN- vs embed- vs QR-trafikk kan skilles i Moat-2-data fra dag én.
 

@@ -34,7 +34,10 @@ import {
   EngagementProvider,
   useEngagementEmitter,
 } from "@/lib/instrumentation/engagement-scope";
-import type { EngagementContextEnvelope } from "@/lib/instrumentation/event-types";
+import type {
+  EngagementContextEnvelope,
+  EngagementSrc,
+} from "@/lib/instrumentation/event-types";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsTransport } from "./ReelsTransport";
 import { ReelSwipeStack } from "./ReelSwipeStack";
@@ -144,6 +147,12 @@ interface Props {
    * EmbedChrome-overlegg (fullskjerm-knapp + aktiveringsgate for scroll-yield).
    */
   embed?: boolean;
+  /**
+   * Kanal-markør (R19, Unit 5): finn|embed|qr fra `?src`. Rir i engagement-
+   * konvolutten på hvert event så FINN/embed/QR-trafikk kan skilles (Moat-2).
+   * Utelates ved direkte-trafikk.
+   */
+  src?: EngagementSrc;
 }
 
 export default function ReportReelsPage(props: Props) {
@@ -160,6 +169,7 @@ function Inner({
   boardData: inputBoardData,
   collection,
   embed = false,
+  src,
 }: Props) {
   const { locale } = useLocale();
 
@@ -251,8 +261,11 @@ function Inner({
       has_3d_addon: has3dAddon,
       categories_presented: boardData.categories.map((c) => String(c.id)),
       locale,
+      // Kanal-markør (R19): kun med når `?src` var en kjent verdi (finn|embed|qr).
+      // Utelates ellers — ingen "unknown"-støy i Moat-2-datasettet.
+      ...(src ? { src } : {}),
     }),
-    [eventMode, has3dAddon, boardData.categories, locale],
+    [eventMode, has3dAddon, boardData.categories, locale, src],
   );
   const engagement = useEngagementEmitter({
     projectId: project.id,
