@@ -6,6 +6,25 @@
 
 ---
 
+## 2026-07-07 — NIVÅ-2-VERIFISERING: ORCHESTRATOR KJØRT + CUTOVER-REGRESJON FIKSET
+
+**Kontekst:** Andreas ba om full ende-til-ende-verifisering av nivå-2-kjeden (den authored orchestratoren, commit ed34942) på ekte adresse (Stjørdalsveien 15-11, 63.441/10.440). Verifiseringen avdekket to ting — begge verdifulle.
+
+**Funn 1 — orchestrator-designet var feil (fanget FØR skade):** Akseptansesjekken krever `editorial` (body/highlights) per tema for nivå 2 (`lib/validation/report-tier.ts`), og det ARVES fra et kuratert strøk (`inherit-area-editorial`, Steg 8) — IKKE fra grounding→manus-kjeden jeg hadde authored. manus/VO er ORTOGONALE render-flagg, ikke nivå-krav. Nivå 2 er strøk-amortisert (Lokalkunnskap), ikke per-board. Stjørdalsveien ligger utenfor alle 7 kuraterte strøk (Ranheim/Tyholt/Eberg/Malvik/Lade/Charlottenlund/Sentrum) → nivå-2 umulig uten å kurere strøket først.
+
+**Funn 2 — ekte cutover-regresjon:** Provisjonering på Lade-senter (kuratert strøk) krasjet Steg 8: `inherit-area-editorial` bygger det render-filtrerte board-settet via `v2-queries` (ble `server-only` under 2026-07-06-cutoveren) + `report-data` (`getHeroInsightPOIIds` fra `"use client"`-modul). Begge kaster i en ren tsx-CLI. Kun eksponert ved `--tier 2` + adresse i kuratert strøk — aldri kjørt via CLI før. **Nivå-2 editorial-arv var altså brutt via den levende create-report-veien.**
+
+**Fiks (commit d104722, null drift, beholder `server-only`-vernet):**
+- Admin-route `/api/admin/inherit-editorial` eksponerer `inheritAreaEditorial` i server-kontekst; `provision.ts` Steg 8 kaller den via localhost (fail-soft → nivå 1 hvis dev-server nede).
+- `getHeroInsightPOIIds` + Tier-1-utvelgere skilt ut fra `"use client"`-ReportHeroInsight til ren `hero-insight-pois.ts` (server-kallbar). Gjenbruker EKSAKT render-filtrering (`theme.allPOIs`) — ingen highlight-drift.
+- Konsekvens: nivå 2 krever lokal dev-server (:3000, `ADMIN_ENABLED`) ved provisjonering — konsistent med workflow-en (import/revalidate/trust hitter allerede localhost).
+
+**Verifisert ende-til-ende:** `provision --tier 2` på Lade → alle 6 temaer arvet, Steg 10 `✓ nivå 2 OK`, min-chips ≥2 på alle. 1600 tester, tsc 0, lint 0 errors, build OK.
+
+**provision-rapport-doc rettet** til korrekt modell (nivå 2 = auto-arvet strøk-editorial; berikelseslag ortogonale). To throwaway-boards (Stjørdalsveien + Lade-verifisering) slettet fra prod-DB (CASCADE via 079, delte POI-er intakt: 5396).
+
+---
+
 ## 2026-07-07 (forts.) — TEKNISK-OPPSETT-SVEIP: observability + indekser + AVIF + docs-riktighet
 
 **Kontekst:** Oppfølging av ISR/region-økten — Andreas ba om flere optimaliseringer/best practices i teknisk oppsett. Gjennomgang fant fire hull; alle fikset (commit f5cec01, migrasjon 080 prod-kjørt).
