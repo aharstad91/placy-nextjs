@@ -1,5 +1,6 @@
 import type {
   BrokerInfo,
+  Coordinates,
   POI,
   ProjectAssetFlags,
   ReportCTA,
@@ -8,6 +9,7 @@ import type {
   ReportThemeGroundingView,
 } from "@/lib/types";
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
+import { getHeroInsightPOIIds } from "../hero-insight-pois";
 import { getProjectBrokers } from "@/lib/themes/project-brand";
 import type {
   BoardAudioTimings,
@@ -43,14 +45,22 @@ export interface BoardPOI {
 }
 
 /**
- * Nivå-2 (Bedre) kuratert detalj-innhold for en kategori. Render-klart: highlight-
+ * Detalj-innhold for en kategoris drill-in-panel. Render-klart: highlight-
  * POIs er allerede resolvet til {id, navn} mot kategoriens POIs, så sidebaren
  * slipper å slå opp. Tilstedeværelse av dette objektet er gating-signalet for
- * drill-in detalj-panelet (se DesktopStorySidebar). adaptCategory utelater det
- * når theme.editorial mangler ELLER har verken body eller resolvede highlights.
+ * drill-in detalj-panelet (se DesktopStorySidebar).
+ *
+ * To kilder (minimum-garantien, produktkall 2026-07-07 — ALLE boards har
+ * kategoritekst + drill-in):
+ * - KURATERT (nivå 2): theme.editorial arvet fra strøket. Vinner alltid.
+ * - GENERERT (nivå 1-fallback): syntetisert fra narrativ-body (bl.a. den
+ *   deterministiske bridgeText-generatoren) + tier-1-POIer som highlights.
+ *   Markert med `generated: true`.
+ * adaptCategory utelater objektet kun når verken kuratert innhold eller
+ * narrativ-body finnes (da har kategorien ingen tekst å vise).
  */
 export interface BoardCategoryEditorial {
-  /** Kuratert brødtekst (dobbelt linjeskift = nytt avsnitt). */
+  /** Brødtekst (dobbelt linjeskift = nytt avsnitt). */
   body: string;
   /** Path til kuratert bilde, eller undefined (sidebaren faller tilbake til
    *  kategori-illustrasjonen). */
@@ -65,6 +75,8 @@ export interface BoardCategoryEditorial {
     bysykkelStationId?: string;
     hyreStationId?: string;
   }[];
+  /** true = syntetisert fallback (ikke strøk-kuratert). Utelates på kuratert. */
+  generated?: true;
 }
 
 export interface BoardCategory {
@@ -161,7 +173,7 @@ export interface BoardData {
 export function adaptBoardData(report: ReportData): BoardData {
   const categories: BoardCategory[] = report.themes
     .filter((t) => t.allPOIs.length > 0)
-    .map((t) => adaptCategory(t));
+    .map((t) => adaptCategory(t, report.centerCoordinates));
 
   // Bygg full POI-lookup på tvers av alle tema. Grounding kan referere POIs i andre kategorier
   // (f.eks. "Yogaskolen" nevnt i Trening-grounding men ranket høyere i annen kategori).
@@ -236,7 +248,36 @@ export function pickPlayableAudio(
   return track;
 }
 
-function adaptCategory(theme: ReportTheme): BoardCategory {
+/** Visningstak på genererte «Verdt å merke seg»-punkter (speiler arve-stegets
+ *  MAX_HIGHLIGHTS — kuratert og generert drill-in skal se like ut). */
+const GENERATED_HIGHLIGHTS_MAX = 3;
+
+/**
+ * Genererte highlights for fallback-drill-in: tier-1-utvelgerne (samme som
+ * hero-insight-kortet) — nærmeste skole, viktigste holdeplass osv. bridgeText
+ * navngir bevisst tier-2-POIer (komplement-designet fra Brøset-gullstandarden),
+ * så generert tekst og punkter overlapper ikke. Tema uten tier-1-extractor
+ * faller tilbake til score-rangerte topp-POIer.
+ */
+function pickGeneratedHighlights(
+  theme: ReportTheme,
+  center: Coordinates,
+): BoardCategoryEditorial["highlights"] {
+  const heroIds = getHeroInsightPOIIds(theme.id, theme.allPOIs, center);
+  const source =
+    heroIds.size > 0
+      ? theme.allPOIs.filter((p) => heroIds.has(p.id))
+      : theme.topRanked;
+  return source.slice(0, GENERATED_HIGHLIGHTS_MAX).map((p) => ({
+    id: p.id as BoardPOIId,
+    name: p.name,
+    enturStopplaceId: p.enturStopplaceId,
+    bysykkelStationId: p.bysykkelStationId,
+    hyreStationId: p.hyreStationId,
+  }));
+}
+
+function adaptCategory(theme: ReportTheme, center: Coordinates): BoardCategory {
   const id = theme.id as BoardCategoryId;
 
   // Nivå-1-lead: kort hook hvis eksplisitt leadText, ellers første del av intro.
@@ -292,14 +333,22 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     };
   })();
 
-  // Nivå 2: kortets lead avledes av drill-in-brødteksten (første avsnitt) —
-  // ÉN kuratert kilde (strøket), ingen parallell leadText-kuratering per board.
-  // Kort-previewen clamper visuelt (line-clamp-2), så full avsnittslengde er ok.
-  // Uten editorial-body (nivå 1, eller kun highlights) gjelder fallbackLead.
-  const editorialFirstParagraph = editorial?.body
-    ? editorial.body.split(/\n{2,}/)[0].trim()
-    : "";
-  const lead = editorialFirstParagraph || fallbackLead;
+  // Minimum-garantien (produktkall 2026-07-07): ALLE boards viser kategoritekst
+  // + drill-in. Kuratert strøk-editorial (nivå 2) vinner; ellers syntetiseres
+  // detaljen fra narrativ-body (render-generert bridgeText — navngir ekte POIer,
+  // deterministisk, ingen LLM) med tier-1-POIer som «Verdt å merke seg».
+  const detail: BoardCategoryEditorial | undefined =
+    editorial ??
+    (body
+      ? { body, highlights: pickGeneratedHighlights(theme, center), generated: true }
+      : undefined);
+
+  // Kortets lead avledes av drill-in-brødteksten (første avsnitt) — samme kilde
+  // som panelet, kuratert eller generert. Kort-previewen clamper visuelt
+  // (line-clamp-2), så full avsnittslengde er ok. Uten detalj-body (kuratert
+  // highlights-only, eller ingen tekst i det hele tatt) gjelder fallbackLead
+  // (leadText/intro — de statiske provisjonerings-defaultene).
+  const lead = detail?.body ? detail.body.split(/\n{2,}/)[0].trim() : fallbackLead;
 
   return {
     id,
@@ -308,7 +357,7 @@ function adaptCategory(theme: ReportTheme): BoardCategory {
     lead,
     body,
     grounding: theme.grounding,
-    editorial,
+    editorial: detail,
     illustration: theme.image,
     icon,
     color,

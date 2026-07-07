@@ -2,8 +2,8 @@
 
 Provisjonér ett rapport-board fra **prosjektnavn + adresse** til public URL — på valgt nivå.
 
-- **Nivå 1** (default): deterministisk board med statiske tema-tekster.
-- **Nivå 2**: nivå 1 **+ kuratert editorial per tema, arvet automatisk fra strøket** boardet ligger i (Lokalkunnskap-moaten). Ett kall — `--tier 2` — hvis strøket allerede er kuratert.
+- **Nivå 1** (default): deterministisk board — kategoritekster + drill-in **genereres fra boardets egne POI-er** (navngitte steder + gangtider, template-basert, ingen LLM; `bridge-text-generator` + tier-1-utvelgere). Minimum-garantien: alle boards har kategoritekst med klikk-inn.
+- **Nivå 2**: nivå 1 **+ kuratert editorial per tema, arvet automatisk fra strøket** boardet ligger i (Lokalkunnskap-moaten) — erstatter de genererte tekstene. Ett kall — `--tier 2` — hvis strøket allerede er kuratert.
 
 Målet er at operatøren bare sier «gi meg et board for adresse X, nivå 1 eller 2».
 
@@ -98,6 +98,7 @@ https://placy.app/eiendom/<kunde>/<slug>/rapport-board
 
 Sjekkliste (nivå 1):
 - [ ] Temakort vises (typisk 5–6 kort med POI-antall)
+- [ ] Temakort har stedsspesifikk tekst (generert — navngir ekte POI-er, ikke generisk standardtekst) + drill-in åpner ved klikk
 - [ ] Kartmarkører synlige på 3D-kartet
 - [ ] Ingen 404 på `/illustrations/themes/`-bilder + ingen konsollfeil
 

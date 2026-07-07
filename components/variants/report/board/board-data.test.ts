@@ -68,7 +68,9 @@ describe("adaptBoardData", () => {
     const cat = data.categories[0];
     expect(cat.id).toBe("hverdagsliv");
     expect(cat.label).toBe("Hverdagsliv");
-    expect(cat.lead).toBe("hverdagsliv intro-tekst");
+    // Minimum-garantien: lead avledes av detalj-body (her = upperNarrative),
+    // ikke intro/leadText — samme kilde som drill-in-panelet.
+    expect(cat.lead).toBe("hverdagsliv body som er lengre og forteller mer om hva som finnes i området.");
     expect(cat.body).toBe("hverdagsliv body som er lengre og forteller mer om hva som finnes i området.");
     expect(cat.icon).toBe("Sparkles");
     expect(cat.color).toBe("#3b82f6");
@@ -83,27 +85,30 @@ describe("adaptBoardData", () => {
     expect(data.categories[0].id).toBe("filled");
   });
 
-  it("faller tilbake til leadText hvis intro mangler", () => {
+  it("helt uten narrativ tekst → ingen detalj, lead = statisk leadText-fallback", () => {
     const theme = makeTheme("x", [makePOI("p1")], {
       intro: undefined,
+      upperNarrative: undefined,
       leadText: "lead fallback",
     });
     const data = adaptBoardData(makeReportData([theme]));
+    expect(data.categories[0].editorial).toBeUndefined();
     expect(data.categories[0].lead).toBe("lead fallback");
   });
 
-  it("body inkluderer bridgeText når upperNarrative mangler og intro er lead (dedup)", () => {
+  it("body inkluderer bridgeText når upperNarrative mangler (intro er dedup-anker); lead avledes av detaljen", () => {
     const theme = makeTheme("x", [makePOI("p1")], {
       intro: "intro-tekst",
       bridgeText: "bridge-tekst",
       upperNarrative: undefined,
     });
     const data = adaptBoardData(makeReportData([theme]));
-    expect(data.categories[0].lead).toBe("intro-tekst");
     expect(data.categories[0].body).toBe("bridge-tekst");
+    // Minimum-garantien: lead = detalj-body første avsnitt (generert), ikke intro
+    expect(data.categories[0].lead).toBe("bridge-tekst");
   });
 
-  it("body inkluderer intro+bridgeText når leadText finnes (intro er ikke lead)", () => {
+  it("body inkluderer intro+bridgeText når leadText finnes; lead = detaljens første avsnitt", () => {
     const theme = makeTheme("x", [makePOI("p1")], {
       intro: "intro-tekst",
       bridgeText: "bridge-tekst",
@@ -111,8 +116,8 @@ describe("adaptBoardData", () => {
       leadText: "kort tagline",
     });
     const data = adaptBoardData(makeReportData([theme]));
-    expect(data.categories[0].lead).toBe("kort tagline");
     expect(data.categories[0].body).toBe("intro-tekst\n\nbridge-tekst");
+    expect(data.categories[0].lead).toBe("intro-tekst");
   });
 
   it("POI body sammensatt av editorialHook + localInsight", () => {
@@ -240,17 +245,42 @@ describe("adaptBoardData", () => {
       expect(data.categories[0].editorial?.image).toBe("/illustrations/x-custom.jpg");
     });
 
-    it("kategori uten editorial → editorial undefined (nivå 1)", () => {
+    it("kategori uten kuratert editorial → GENERERT detalj fra narrativ-body (minimum-garantien)", () => {
       const data = adaptBoardData(makeReportData([makeTheme("x", [makePOI("p1")])]));
-      expect(data.categories[0].editorial).toBeUndefined();
+      const detail = data.categories[0].editorial;
+      expect(detail?.generated).toBe(true);
+      expect(detail?.body).toBe(
+        "x body som er lengre og forteller mer om hva som finnes i området.",
+      );
+      // Ukjent tema-id har ingen tier-1-extractor → topRanked-fallback
+      expect(detail?.highlights).toEqual([{ id: "p1", name: "POI p1" }]);
+      // Kortets lead = samme kilde som drill-in
+      expect(data.categories[0].lead).toBe(
+        "x body som er lengre og forteller mer om hva som finnes i området.",
+      );
     });
 
-    it("editorial med tom body og ingen resolvede highlights → undefined (gating)", () => {
+    it("kuratert editorial får ALDRI generated-flagget", () => {
+      const theme = makeTheme("x", [makePOI("p1")], {
+        editorial: { body: "Kuratert.", highlightPoiIds: ["p1"] },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].editorial?.generated).toBeUndefined();
+    });
+
+    it("ugyldig kuratert editorial (tom body, ingen resolvede highlights) → generert fallback", () => {
       const theme = makeTheme("x", [makePOI("p1")], {
         editorial: { body: "   ", highlightPoiIds: ["finnes-ikke"] },
       });
       const data = adaptBoardData(makeReportData([theme]));
-      expect(data.categories[0].editorial).toBeUndefined();
+      // Kuratert gates bort, men minimum-garantien syntetiserer fra narrativ-body
+      expect(data.categories[0].editorial?.generated).toBe(true);
+    });
+
+    it("genererte highlights capper på 3 (speiler arve-stegets MAX_HIGHLIGHTS)", () => {
+      const pois = ["p1", "p2", "p3", "p4", "p5"].map((id) => makePOI(id));
+      const data = adaptBoardData(makeReportData([makeTheme("x", pois)]));
+      expect(data.categories[0].editorial?.highlights).toHaveLength(3);
     });
 
     it("editorial med kun highlights (tom body) → beholdes", () => {

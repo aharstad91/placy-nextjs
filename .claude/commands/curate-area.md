@@ -10,7 +10,8 @@ Målet er at operatøren bare sier «kuratér strøket X» eller «endre teksten
 - **Endringer propagerer IKKE selv.** Etter skriving til `areas` MÅ re-arv kjøres per board (steg 6 under). Strøk-endring uten re-arv = usynlig endring.
 - **Form per tema:** `{ body, highlightCandidates: [4–6 POI-IDer], image? }`. Arven beholder de 3 første kandidatene som overlever boardets render-filtre (radius/kategori-cap/trust) — kurator-rekkefølgen ER prioriteringen, og 4–6 kandidater gir slack så fjerne boards i strøket også får punkter.
 - **Gyldige tema-IDer = bolig-6:** `hverdagsliv`, `barn-oppvekst`, `mat-drikke`, `natur-friluftsliv`, `transport`, `trening-aktivitet` (fra `REPORT_THEME_DEFAULTS`). `opplevelser` og nærings-temaer kan IKKE strøk-kurateres i dag — staging-valideringen avviser dem.
-- **`body` bærer kort-previewen også:** nivå-2-kortets lead avledes av `body`s første avsnitt (line-clamp-2 i UI). Skriv derfor `body` slik at første setning fungerer alene som preview.
+- **`body` bærer kort-previewen også:** kortets lead avledes av `body`s første avsnitt (line-clamp-2 i UI). Skriv derfor `body` slik at første setning fungerer alene som preview.
+- **Minimum-garantien:** ukuraterte boards har ALLEREDE generert kategoritekst + drill-in (deterministisk fra boardets POI-er). Kuratering ERSTATTER den genererte teksten med Lokalkunnskap — det er kvalitetsløftet, ikke tekst-vs-ingen-tekst.
 - **POI-IDer er heterogene strenger** (`google-ChIJ…`, `bus-…`, `entur-NSR-…`, UUID-er) — aldri UUID-valider.
 
 ## Tekst-reglene (ratifisert av Andreas — ufravikelige)

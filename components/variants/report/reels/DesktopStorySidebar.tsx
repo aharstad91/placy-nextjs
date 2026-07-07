@@ -74,9 +74,10 @@ export interface SidebarPreviewCategory {
   count: number;
   lead?: string;
   image?: string;
-  /** Nivå-2 (Bedre) kuratert detalj-innhold. Tilstedeværelse gjør temakortet til
-   *  en drill-in: klikk åpner et detalj-panel som tar over scroll-området i
-   *  stedet for kun å velge kategorien på kartet. Render-klart fra board-data. */
+  /** Detalj-innhold (kuratert nivå-2 ELLER generert minimum — se board-data).
+   *  Tilstedeværelse gjør temakortet til en drill-in: klikk åpner et detalj-
+   *  panel som tar over scroll-området i stedet for kun å velge kategorien på
+   *  kartet. Render-klart fra board-data. */
   editorial?: {
     body: string;
     image?: string;
@@ -150,10 +151,10 @@ export function SidebarContentPreview({
   const total = categories.reduce((sum, c) => sum + c.count, 0);
   const noneActive = !activeCategoryId;
 
-  // Nivå-2 gating: er den aktive kategorien en med kuratert editorial? I så fall
-  // tar detalj-panelet over scroll-området (megler-footeren under blir stående).
-  // Uten editorial (nivå 1) viser vi index-lista som før — det aktive kortet
-  // ringes bare som markering.
+  // Drill-in-gating: har den aktive kategorien detalj-innhold (kuratert nivå-2
+  // ELLER generert minimum)? I så fall tar detalj-panelet over scroll-området
+  // (megler-footeren under blir stående). Uten detalj (kategori helt uten tekst)
+  // viser vi index-lista som før — det aktive kortet ringes bare som markering.
   const activeCat = activeCategoryId
     ? categories.find((c) => c.id === activeCategoryId)
     : undefined;
@@ -236,10 +237,10 @@ export function SidebarContentPreview({
                     </p>
                   )}
                 </div>
-                {/* Nivå-2 affordans: chevron som markert MINI-KNAPP — innrammet
+                {/* Drill-in-affordans: chevron som markert MINI-KNAPP — innrammet
                     sirkel som fylles mørk + nudger på hover, så kortet leses som
-                    klikkbart og åpner et detalj-panel. På et nivå-2-board har ALLE
-                    kort kuratering (tier er per prosjekt), så denne er uniform. */}
+                    klikkbart og åpner et detalj-panel. Minimum-garantien gir alle
+                    kort med tekst en detalj (kuratert eller generert) — uniform. */}
                 {hasDetail && (
                   <span
                     aria-hidden
