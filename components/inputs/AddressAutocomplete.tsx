@@ -22,12 +22,15 @@ interface AddressAutocompleteProps {
   onSelect: (result: AddressResult) => void;
   placeholder?: string;
   className?: string;
+  /** Autofokus adressefeltet ved mount (rent verktøy-inngang, R2). */
+  autoFocus?: boolean;
 }
 
 export default function AddressAutocomplete({
   onSelect,
   placeholder = "Skriv inn adresse...",
   className,
+  autoFocus = false,
 }: AddressAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -155,6 +158,7 @@ export default function AddressAutocomplete({
         <input
           ref={inputRef}
           type="text"
+          autoFocus={autoFocus}
           value={query}
           onChange={(e) => handleQueryChange(e.target.value)}
           onKeyDown={handleKeyDown}

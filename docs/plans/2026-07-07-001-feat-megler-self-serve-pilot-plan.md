@@ -90,7 +90,7 @@ Fra origin-dokumentet (ratifisert, gjentas ikke i detalj her): ingen megler-auth
 
 ## Implementation Units
 
-- [ ] **Unit 1: Kontor-register + `/megler/<kontor-slug>`-inngangsside**
+- [x] **Unit 1: Kontor-register + `/megler/<kontor-slug>`-inngangsside**
 
 **Goal:** Kontor-scopet inngang som validerer slug mot register og rendrer det rene verktøyet (adressefelt + e-post, kontornavn som avsender — ingen kontor-fritekstfelt).
 

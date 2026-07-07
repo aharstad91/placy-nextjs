@@ -1082,6 +1082,30 @@ export type Database = {
         }
         Relationships: []
       }
+      broker_offices: {
+        Row: {
+          active: boolean
+          created_at: string
+          customer_id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          customer_id: string
+          name: string
+          slug: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          customer_id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string
