@@ -132,9 +132,10 @@ export default function RequestsAdminClient({ requests: initialRequests }: Props
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                    title="Delings-side (kopier-lenke / iframe / QR)"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Åpne
+                    Delings-side
                   </a>
                 ) : (
                   <span className="text-gray-400">—</span>

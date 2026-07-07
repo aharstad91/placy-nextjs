@@ -161,7 +161,7 @@ Fra origin-dokumentet (ratifisert, gjentas ikke i detalj her): ingen megler-auth
 
 **Verification:** curl-kjøringer mot dev: innenfor-adresse gir pending, Melhus-adresse gir `outside_coverage` + `coverage_demand`-rad synlig via service-role-query. Migrasjon 081+082 kjørt og verifisert mot prod-DB (CLAUDE.md-regelen: migrasjon er del av jobben).
 
-- [ ] **Unit 3: Delings-side per board + e-postoppdatering**
+- [x] **Unit 3: Delings-side per board + e-postoppdatering**
 
 **Goal:** Én stabil leveranse-flate per board: forhåndsvisning, kopier board-lenke (`?src=finn`), kopier iframe-snippet (`?embed=1&src=embed`), QR (`?src=qr`), FINN-veiledning, tilbake-lenke til kontor-siden. «Klart»-e-posten peker hit.
 

@@ -193,7 +193,9 @@ export default function GenererForm() {
           {!failed && (
             <div className="bg-gray-50 rounded-xl p-6 mb-6">
               <p className="text-sm text-gray-500 mb-2">
-                {done ? "Kartet er tilgjengelig på:" : "Kartet vil være tilgjengelig på:"}
+                {done
+                  ? "Del kartet fra delings-siden din:"
+                  : "Delings-siden din blir klar på:"}
               </p>
               <a
                 href={displayUrl}

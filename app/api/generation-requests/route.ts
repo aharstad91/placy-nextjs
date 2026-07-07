@@ -8,6 +8,7 @@ import { DEFAULT_CUSTOMER } from "@/lib/pipeline/create-report-project";
 import type { ReportProfile } from "@/lib/pipeline/report-defaults";
 import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 import { findAreaForPoint } from "@/lib/pipeline/find-area-for-point";
+import { shareUrl } from "@/lib/megler/urls";
 
 /**
  * Self-serve adresse→rapport-board (PRD 3 Unit 8).
@@ -65,10 +66,6 @@ const GenerationRequestSchema = z.object({
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{3,4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function boardUrl(customer: string, slug: string): string {
-  return `/eiendom/${customer}/${slug}/rapport-board`;
-}
 
 function normalizeAddress(address: string): string {
   return address.toLowerCase().replace(/\s+/g, " ").trim().normalize("NFC");
@@ -254,7 +251,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       id: row.id,
       slug: row.address_slug,
-      url: row.result_url ?? boardUrl(existingCustomer, row.address_slug),
+      // Dup-svar → delings-siden (R16): completed-rader har result_url = delings-
+      // side; pending → bygg fra address_slug (delings-siden kanoniserer selv).
+      url: row.result_url ?? shareUrl(existingCustomer, row.address_slug),
       status: row.status,
       message: "Denne adressen er allerede forespurt",
       existing: true,
@@ -303,7 +302,9 @@ export async function POST(request: NextRequest) {
   }
 
   const requestId: string = inserted.id;
-  const provisionalUrl = boardUrl(customerSlug, finalSlug);
+  // Provisorisk delings-side-URL (address_slug) — delings-siden viser vente-
+  // tilstand og kanoniserer til url_slug når boardet er ferdig.
+  const provisionalUrl = shareUrl(customerSlug, finalSlug);
 
   // Pipeline etter HTTP-svaret — in-process, ingen jobbkø (ratifisert grense).
   runAfterResponse(async () => {
@@ -321,8 +322,8 @@ export async function POST(request: NextRequest) {
       });
 
       // aborted (prosjektet fantes) er et OK-utfall for bestilleren: boardet
-      // finnes — pek result_url dit og marker completed.
-      const resultUrl = boardUrl(result.customerSlug, result.slug);
+      // finnes — pek result_url til delings-siden (R8) og marker completed.
+      const resultUrl = shareUrl(result.customerSlug, result.slug);
       await db
         .from("generation_requests")
         .update({
@@ -430,11 +431,12 @@ async function sendConfirmationEmail(
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
           <h1 style="font-size: 20px; color: #111; margin-bottom: 16px;">Nabolagskartet er klart!</h1>
           <p style="font-size: 15px; color: #555; line-height: 1.6;">
-            Nabolagskartet for <strong>${address}</strong> er generert og klart til bruk.
-            Del lenken med potensielle kjøpere.
+            Nabolagskartet for <strong>${address}</strong> er klart. På delings-siden
+            kan du kopiere lenke til FINN-annonsen, hente iframe-kode til nettsiden
+            og QR-kode til visning.
           </p>
           <a href="${projectUrl}" style="display: inline-block; margin-top: 24px; padding: 12px 24px; background: #111; color: #fff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500;">
-            Se nabolagskartet
+            Åpne delings-siden
           </a>
           <p style="font-size: 13px; color: #999; margin-top: 32px;">
             Denne e-posten ble sendt fra Placy fordi du bestilte et nabolagskart.

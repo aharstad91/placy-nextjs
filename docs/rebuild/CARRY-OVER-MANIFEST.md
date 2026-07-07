@@ -12,6 +12,18 @@ Det runtime-verifiserte produktet er **ÉN board-opplevelse** (`ReportReelsPage`
 
 ---
 
+# PILOT-URL-CONSTRAINT — megler self-serve (2026-07-07)
+
+Megler-pilotens delte URL-er er en **hard rebuild-constraint** (R11): de deles i FINN-annonser, på kontorets objektside (iframe) og i «klart»-e-poster, og MÅ overleve cutoveren med **301-redirect** — ikke bryt disse mønstrene uten et redirect-lag.
+
+- **Delings-side (megler-vendt):** `/megler/deling/<customer>/<project-slug>` — kilde `lib/megler/urls.ts` `shareUrl`. Resolves url_slug først, faller til `generation_requests.address_slug` (pending/eldre), 301 til kanonisk url_slug ved completed.
+- **Kontor-inngang:** `/megler/<kontor-slug>` — ikke-gjettbar slug fra `v2.broker_offices`-registeret; noindex; ukjent/inaktiv → 404.
+- **Board (kjøper-vendt, embed + lenke):** `/eiendom/<customer>/<slug>/rapport-board` med kanal-markør `?src=finn|embed|qr` og `?embed=1` (`boardPath`).
+
+Nye service-role-only-tabeller (migrasjon 081/082) som må bæres over: `v2.broker_offices` (kontor-register) og `v2.coverage_demand` (etterspørselslogg — **Innsikt-moatens** avviste-adresse-signal, `record_coverage_demand`-RPC med hits-teller).
+
+---
+
 # KEEPER-CORE — port logikken, bygg rent
 
 ## 3D-motor + board-render

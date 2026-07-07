@@ -195,7 +195,7 @@ describe("POST — duplikat + kollisjon", () => {
             address_slug: "testvegen-12",
             status: "completed",
             customer_id: "krogsveen",
-            result_url: "/eiendom/krogsveen/testvegen-12/rapport-board",
+            result_url: "/megler/deling/krogsveen/testvegen-12",
           },
         ],
       },
@@ -207,7 +207,7 @@ describe("POST — duplikat + kollisjon", () => {
     expect(body.existing).toBe(true);
     expect(body.id).toBe(REQUEST_ID);
     expect(body.status).toBe("completed");
-    expect(body.url).toBe("/eiendom/krogsveen/testvegen-12/rapport-board");
+    expect(body.url).toBe("/megler/deling/krogsveen/testvegen-12");
     // ingen insert skjedde
     expect(log.some((e) => opNames(e).includes("insert"))).toBe(false);
     expect(afterCallbacks.length).toBe(0);
@@ -250,7 +250,8 @@ describe("POST — status-maskin + én pipeline (async-grensen)", () => {
 
     expect(body.status).toBe("pending");
     expect(body.id).toBe(REQUEST_ID);
-    expect(body.url).toBe("/eiendom/intern/testvegen-12/rapport-board");
+    // Unit 3: URL-en er nå delings-siden (address_slug), ikke rå board-URL
+    expect(body.url).toBe("/megler/deling/intern/testvegen-12");
 
     // insert bar pending + profil i housing_type + intern-kunde (ingen brokerage)
     const insertEntry = log.find((e) => opNames(e).includes("insert"))!;
@@ -294,7 +295,8 @@ describe("POST — status-maskin + én pipeline (async-grensen)", () => {
     const [updated] = opArgs(updateEntry, "update") as [Record<string, unknown>];
     expect(updated.status).toBe("completed");
     expect(updated.project_id).toBe("intern_testvegen-12b");
-    expect(updated.result_url).toBe("/eiendom/intern/testvegen-12b/rapport-board");
+    // Unit 3: result_url peker på delings-siden (kanonisk url_slug), ikke boardet
+    expect(updated.result_url).toBe("/megler/deling/intern/testvegen-12b");
     expect(updated.completed_at).toBeTruthy();
     // oppdatering skjer på request-id
     expect(opArgs(updateEntry, "eq")).toEqual(["id", REQUEST_ID]);
@@ -327,9 +329,7 @@ describe("POST — status-maskin + én pipeline (async-grensen)", () => {
       postRequest({ ...VALID_BODY, brokerage: "Eiendomsmegler Krogsveen" })
     );
     const body = await res.json();
-    expect(body.url).toBe(
-      "/eiendom/eiendomsmegler-krogsveen/testvegen-12/rapport-board"
-    );
+    expect(body.url).toBe("/megler/deling/eiendomsmegler-krogsveen/testvegen-12");
 
     const upsertEntry = log.find((e) => e.table === "customers")!;
     const [upserted] = opArgs(upsertEntry, "upsert") as [Record<string, unknown>];
@@ -356,7 +356,7 @@ describe("POST — kontor-scoping (officeSlug)", () => {
     const body = await res.json();
 
     expect(body.status).toBe("pending");
-    expect(body.url).toBe("/eiendom/dnb-midtbyen/testvegen-12/rapport-board");
+    expect(body.url).toBe("/megler/deling/dnb-midtbyen/testvegen-12");
 
     const insertEntry = log.find((e) => opNames(e).includes("insert"))!;
     const [inserted] = opArgs(insertEntry, "insert") as [Record<string, unknown>];
@@ -387,7 +387,7 @@ describe("POST — kontor-scoping (officeSlug)", () => {
     expect(afterCallbacks.length).toBe(0);
   });
 
-  it("samme adresse samme kontor innen 7 dager → dup-svar (board-URL i denne uniten)", async () => {
+  it("samme adresse samme kontor innen 7 dager → dup-svar peker på delings-siden", async () => {
     const { client } = makeSupabaseMock([
       { data: { customer_id: "dnb-midtbyen", active: true } }, // office lookup
       {
@@ -397,7 +397,7 @@ describe("POST — kontor-scoping (officeSlug)", () => {
             address_slug: "testvegen-12",
             status: "completed",
             customer_id: "dnb-midtbyen",
-            result_url: "/eiendom/dnb-midtbyen/testvegen-12/rapport-board",
+            result_url: "/megler/deling/dnb-midtbyen/testvegen-12",
           },
         ],
       }, // dup treff
@@ -407,7 +407,30 @@ describe("POST — kontor-scoping (officeSlug)", () => {
     const res = await POST(postRequest(OFFICE_BODY));
     const body = await res.json();
     expect(body.existing).toBe(true);
-    expect(body.url).toBe("/eiendom/dnb-midtbyen/testvegen-12/rapport-board");
+    expect(body.url).toBe("/megler/deling/dnb-midtbyen/testvegen-12");
+  });
+
+  it("pending dup (result_url null) → delings-side bygd fra address_slug", async () => {
+    const { client } = makeSupabaseMock([
+      { data: { customer_id: "dnb-midtbyen", active: true } }, // office lookup
+      {
+        data: [
+          {
+            id: REQUEST_ID,
+            address_slug: "testvegen-12",
+            status: "pending",
+            customer_id: "dnb-midtbyen",
+            result_url: null,
+          },
+        ],
+      }, // dup treff (pending — result_url ikke satt ennå)
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest(OFFICE_BODY));
+    const body = await res.json();
+    expect(body.existing).toBe(true);
+    expect(body.url).toBe("/megler/deling/dnb-midtbyen/testvegen-12");
   });
 });
 
