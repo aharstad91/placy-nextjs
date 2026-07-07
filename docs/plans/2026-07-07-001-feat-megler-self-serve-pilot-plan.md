@@ -122,7 +122,7 @@ Fra origin-dokumentet (ratifisert, gjentas ikke i detalj her): ingen megler-auth
 
 **Verification:** Manuelt opprettet test-kontor i dev-DB gir fungerende side på `/megler/<slug>`; ukjent slug gir brandet 404. `npm run lint && npm test && npx tsc --noEmit` grønt.
 
-- [ ] **Unit 2: API-utvidelse — kontor-scoping, server-side geofence, per-kontor-dup, etterspørselslogg**
+- [x] **Unit 2: API-utvidelse — kontor-scoping, server-side geofence, per-kontor-dup, etterspørselslogg**
 
 **Goal:** `POST /api/generation-requests` håndhever geofencen for ALLE innganger (også åpne `/eiendom/generer`), scoper duplikater per kontor, knytter boards til kontorets kunde via registeret, og logger avvisninger som etterspørselssignal med valgfri e-postfangst.
 

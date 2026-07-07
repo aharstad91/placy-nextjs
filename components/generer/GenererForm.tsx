@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import AddressAutocomplete from "@/components/inputs/AddressAutocomplete";
 import type { AddressResult } from "@/components/inputs/AddressAutocomplete";
+import CoverageStop from "@/components/megler/CoverageStop";
 import { MapPin, CheckCircle, Loader2 } from "lucide-react";
 
 /**
@@ -33,6 +34,10 @@ export default function GenererForm() {
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
+  const [coverageMiss, setCoverageMiss] = useState<{
+    place: string;
+    coveredAreas: string[];
+  } | null>(null);
   const [liveStatus, setLiveStatus] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +80,18 @@ export default function GenererForm() {
     };
   }, [result]);
 
+  /** Delt request-body — brukes både ved innsending og notify-opt-in. */
+  const requestBody = (extra?: Record<string, unknown>) => ({
+    address: selectedAddress!.address,
+    email,
+    lat: selectedAddress!.lat,
+    lng: selectedAddress!.lng,
+    city: selectedAddress!.city,
+    consentGiven: true,
+    ...(brokerage.trim() ? { brokerage: brokerage.trim() } : {}),
+    ...extra,
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAddress || !email || !consent) return;
@@ -86,21 +103,21 @@ export default function GenererForm() {
       const res = await fetch("/api/generation-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          address: selectedAddress.address,
-          email,
-          lat: selectedAddress.lat,
-          lng: selectedAddress.lng,
-          city: selectedAddress.city,
-          consentGiven: true,
-          ...(brokerage.trim() ? { brokerage: brokerage.trim() } : {}),
-        }),
+        body: JSON.stringify(requestBody()),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error || "Noe gikk galt");
+        return;
+      }
+
+      if (data.status === "outside_coverage") {
+        setCoverageMiss({
+          place: data.place || selectedAddress.city || "dette området",
+          coveredAreas: Array.isArray(data.coveredAreas) ? data.coveredAreas : [],
+        });
         return;
       }
 
@@ -113,6 +130,28 @@ export default function GenererForm() {
       setSubmitting(false);
     }
   };
+
+  /** Notify-opt-in ved avvisning: re-post med den eksplisitte andre opt-in-en. */
+  const handleNotify = async () => {
+    const res = await fetch("/api/generation-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody({ notifyWhenCovered: true })),
+    });
+    if (!res.ok) throw new Error("notify failed");
+  };
+
+  // Geofence-stopp (R5/R17) — samme flate som kontor-siden
+  if (coverageMiss) {
+    return (
+      <CoverageStop
+        place={coverageMiss.place}
+        coveredAreas={coverageMiss.coveredAreas}
+        email={email}
+        onNotify={handleNotify}
+      />
+    );
+  }
 
   // Confirmation view med live status
   if (result) {

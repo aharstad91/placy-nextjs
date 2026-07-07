@@ -1184,6 +1184,45 @@ export type Database = {
         }
         Relationships: []
       }
+      coverage_demand: {
+        Row: {
+          address: string
+          address_normalized: string
+          email: string | null
+          first_seen_at: string
+          geocoded_lat: number | null
+          geocoded_lng: number | null
+          hits: number
+          id: string
+          last_seen_at: string
+          office_slug: string | null
+        }
+        Insert: {
+          address: string
+          address_normalized: string
+          email?: string | null
+          first_seen_at?: string
+          geocoded_lat?: number | null
+          geocoded_lng?: number | null
+          hits?: number
+          id?: string
+          last_seen_at?: string
+          office_slug?: string | null
+        }
+        Update: {
+          address?: string
+          address_normalized?: string
+          email?: string | null
+          first_seen_at?: string
+          geocoded_lat?: number | null
+          geocoded_lng?: number | null
+          hits?: number
+          id?: string
+          last_seen_at?: string
+          office_slug?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string | null
@@ -1735,7 +1774,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_coverage_demand: {
+        Args: {
+          p_address: string
+          p_address_normalized: string
+          p_lat: number | null
+          p_lng: number | null
+          p_office_slug: string | null
+          p_email: string | null
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

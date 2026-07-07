@@ -7,6 +7,7 @@ import { provisionReportBoard } from "@/lib/pipeline/provision";
 import { DEFAULT_CUSTOMER } from "@/lib/pipeline/create-report-project";
 import type { ReportProfile } from "@/lib/pipeline/report-defaults";
 import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
+import { findAreaForPoint } from "@/lib/pipeline/find-area-for-point";
 
 /**
  * Self-serve adresse→rapport-board (PRD 3 Unit 8).
@@ -49,6 +50,16 @@ const GenerationRequestSchema = z.object({
   consentGiven: z.literal(true),
   /** Valgfritt: uten meglerkontor havner boardet under reservert `intern`. */
   brokerage: z.string().min(2).max(200).trim().optional(),
+  /**
+   * Kontor-scopet inngang (Unit 1/2): slår opp broker_offices og knytter boardet
+   * til kontorets kunde. Ukjent/inaktiv → 404 (R15). Vinner over `brokerage`.
+   */
+  officeSlug: z.string().min(3).max(120).trim().optional(),
+  /**
+   * Den EKSPLISITTE andre opt-in-en ved avvisning (R17): lagre e-post i
+   * coverage_demand for dekningsvarsel. POST-samtykket gjaldt board-varsling.
+   */
+  notifyWhenCovered: z.boolean().optional(),
   profile: z.enum(["bolig", "naering"]).default("bolig"),
 });
 
@@ -63,9 +74,13 @@ function normalizeAddress(address: string): string {
   return address.toLowerCase().replace(/\s+/g, " ").trim().normalize("NFC");
 }
 
-type Db = ReturnType<
-  NonNullable<ReturnType<typeof createServerClient>>["schema"]
->;
+// v2-scopet klient. MÅ utledes via en KONKRET .schema("v2")-instansiering:
+// ReturnType<...["schema"]> uten arg resolver til snittet av public/v2-tabellene
+// og mister de v2-eneste tabellene (areas, broker_offices, coverage_demand).
+function v2Client() {
+  return createServerClient().schema("v2");
+}
+type Db = ReturnType<typeof v2Client>;
 
 async function getOrCreateCustomer(
   db: Db,
@@ -88,6 +103,43 @@ async function getOrCreateCustomer(
   return customerSlug;
 }
 
+/**
+ * Slår opp aktivt kontor i registeret (R15). Returnerer kundens id, eller null
+ * ved ukjent/inaktiv slug (→ 404). getOrCreateCustomer-upsert gjelder ALDRI
+ * denne inngangen. Fail-closed ved DB-feil (samme som page.tsx — ingen
+ * rotasjons-orakel), logget for ops.
+ */
+async function lookupOfficeCustomer(
+  db: Db,
+  officeSlug: string
+): Promise<string | null> {
+  const { data, error } = await db
+    .from("broker_offices")
+    .select("customer_id")
+    .eq("slug", officeSlug)
+    .eq("active", true)
+    .maybeSingle();
+  if (error) {
+    console.error(
+      `[megler] broker_offices-oppslag feilet for "${officeSlug}":`,
+      error.message
+    );
+    return null;
+  }
+  return data?.customer_id ?? null;
+}
+
+/** Navn på alle kuraterte strøk (boundary + report_editorial satt) — vises i
+ *  avvisningsmeldingen (R5). Kjøres kun på rejection-stien. */
+async function coveredAreaNames(db: Db): Promise<string[]> {
+  const { data } = await db
+    .from("areas")
+    .select("name_no")
+    .not("boundary", "is", null)
+    .not("report_editorial", "is", null);
+  return (data ?? []).map((a) => a.name_no).filter(Boolean);
+}
+
 export async function POST(request: NextRequest) {
   if (!postLimiter.check(getClientIp(request.headers))) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
@@ -96,11 +148,7 @@ export async function POST(request: NextRequest) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
-  const supabase = createServerClient();
-  if (!supabase) {
-    return NextResponse.json({ error: "Database not configured" }, { status: 500 });
-  }
-  const db = supabase.schema("v2");
+  const db = v2Client();
 
   let body: unknown;
   try {
@@ -117,13 +165,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { address, email, lat, lng, city, brokerage, profile } = parsed.data;
+  const { address, email, lat, lng, city, brokerage, officeSlug, profile } =
+    parsed.data;
+  const notifyWhenCovered = parsed.data.notifyWhenCovered === true;
   const normalized = normalizeAddress(address);
 
-  // Kunde: meglerkontor → egen customer; ellers reservert intern-kunde
-  // (intern_<slug> via createReportProject sin DEFAULT_CUSTOMER-fallback).
+  // Kunde-resolusjon:
+  //  - officeSlug → oppslag i broker_offices (ukjent/inaktiv → 404, R15; ALDRI
+  //    getOrCreateCustomer). Kontor-scopingen er autoritativ og vinner over brokerage.
+  //  - brokerage → egen customer (åpen sides dagens flyt)
+  //  - ellers → reservert intern-kunde (via createReportProject sin fallback).
   let customerSlug: string = DEFAULT_CUSTOMER;
-  if (brokerage) {
+  if (officeSlug) {
+    const officeCustomer = await lookupOfficeCustomer(db, officeSlug);
+    if (!officeCustomer) {
+      return NextResponse.json({ error: "Kontor ikke funnet" }, { status: 404 });
+    }
+    customerSlug = officeCustomer;
+  } else if (brokerage) {
     try {
       customerSlug = await getOrCreateCustomer(db, brokerage);
     } catch (err) {
@@ -134,12 +193,58 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 7-dagers duplikat-sjekk på normalisert adresse
+  // Geofence FØR provisjonering (R5) — håndheves for ALLE innganger, også den
+  // åpne /eiendom/generer-siden (kan ikke omgås via URL-bytte). Fail-soft: en
+  // Supabase-feil eller throw behandles som «utenfor dekning» (bedre enn å
+  // provisjonere et board uten redaksjonelt lag), men logges så falske
+  // avvisninger kan oppdages.
+  let insideCoverage = false;
+  try {
+    const { area, warnings } = await findAreaForPoint({ lat, lng });
+    warnings.forEach((w) => console.warn("[geofence]", w));
+    insideCoverage = area !== null;
+  } catch (err) {
+    console.warn(
+      "[geofence] findAreaForPoint kastet — behandler som utenfor dekning:",
+      err instanceof Error ? err.message : err
+    );
+    insideCoverage = false;
+  }
+
+  if (!insideCoverage) {
+    // Logg etterspørsel (R6) — atomisk dedup + hits-teller via RPC. E-post lagres
+    // KUN ved eksplisitt andre opt-in (R17); POST-samtykket gjaldt board-varsling.
+    const { error: demandErr } = await db.rpc("record_coverage_demand", {
+      p_address: address,
+      p_address_normalized: normalized,
+      p_lat: lat,
+      p_lng: lng,
+      p_office_slug: officeSlug ?? null,
+      p_email: notifyWhenCovered ? email : null,
+    });
+    if (demandErr) {
+      console.error("[coverage_demand] logging feilet:", demandErr.message);
+    }
+
+    const coveredAreas = await coveredAreaNames(db);
+    return NextResponse.json({
+      status: "outside_coverage",
+      place: city || address.split(",")[0],
+      coveredAreas,
+      message:
+        "Vi lager nabolagskart for områder vi kjenner redaksjonelt. Dette stedet er ikke kartlagt ennå.",
+      ...(notifyWhenCovered ? { notified: true } : {}),
+    });
+  }
+
+  // 7-dagers duplikat-sjekk, scopet per kunde (R16): samme adresse fra et annet
+  // kontor gir egen request (ikke gjenbruk av et annet kontors board).
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data: existing } = await db
     .from("generation_requests")
     .select("id, address_slug, status, customer_id, result_url")
     .eq("address_normalized", normalized)
+    .eq("customer_id", customerSlug)
     .gte("created_at", sevenDaysAgo)
     .limit(1);
 

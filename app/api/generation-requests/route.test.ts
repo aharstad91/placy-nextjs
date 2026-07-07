@@ -41,6 +41,21 @@ vi.mock("@/lib/utils/rate-limit", () => ({
   getClientIp: () => "test-ip",
 }));
 
+// Geofence (Unit 2): default = INNENFOR kuratert dekning (area != null) slik at
+// de eksisterende happy-path-testene fortsetter å provisjonere. Rejection-testene
+// setter geofenceHolder.area = null (eller throwErr for fail-soft-grenen).
+const geofenceHolder = vi.hoisted(() => ({
+  area: { id: "ranheim", name_no: "Ranheim" } as unknown,
+  warnings: [] as string[],
+  throwErr: null as unknown,
+}));
+vi.mock("@/lib/pipeline/find-area-for-point", () => ({
+  findAreaForPoint: vi.fn(async () => {
+    if (geofenceHolder.throwErr) throw geofenceHolder.throwErr;
+    return { area: geofenceHolder.area, warnings: geofenceHolder.warnings };
+  }),
+}));
+
 import { POST, GET } from "./route";
 
 /** Scriptbar Supabase-mock: hver await-et query-kjede resolver neste kø-element.
@@ -69,6 +84,7 @@ function makeSupabaseMock(queue: Array<{ data?: unknown; error?: unknown }>) {
       "upsert",
       "eq",
       "gte",
+      "not",
       "limit",
       "single",
       "maybeSingle",
@@ -85,9 +101,16 @@ function makeSupabaseMock(queue: Array<{ data?: unknown; error?: unknown }>) {
       );
     return builder;
   };
-  const schema = { from: (t: string) => makeBuilder(t) };
+  const rpcLog: Array<{ fn: string; args: unknown }> = [];
+  const schema = {
+    from: (t: string) => makeBuilder(t),
+    rpc: (fn: string, args: unknown) => {
+      rpcLog.push({ fn, args });
+      return Promise.resolve({ data: null, error: null });
+    },
+  };
   const client = { schema: () => schema };
-  return { client, log };
+  return { client, log, rpcLog };
 }
 
 function opNames(entry: LogEntry): string[] {
@@ -120,6 +143,10 @@ beforeEach(() => {
   vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role");
   afterCallbacks.length = 0;
   provisionMock.mockReset();
+  // Default: innenfor dekning (eksisterende happy-path-tester provisjonerer)
+  geofenceHolder.area = { id: "ranheim", name_no: "Ranheim" };
+  geofenceHolder.warnings = [];
+  geofenceHolder.throwErr = null;
 });
 
 afterEach(() => {
@@ -310,6 +337,153 @@ describe("POST — status-maskin + én pipeline (async-grensen)", () => {
       id: "eiendomsmegler-krogsveen",
       name: "Eiendomsmegler Krogsveen",
     });
+  });
+});
+
+describe("POST — kontor-scoping (officeSlug)", () => {
+  const OFFICE_BODY = { ...VALID_BODY, officeSlug: "dnb-midtbyen-x7k2f9" };
+
+  it("gyldig aktiv slug → pending under kontorets kunde, getOrCreateCustomer IKKE kalt", async () => {
+    const { client, log } = makeSupabaseMock([
+      { data: { customer_id: "dnb-midtbyen", active: true } }, // office lookup
+      { data: [] }, // dup
+      { data: [] }, // slug
+      { data: { id: REQUEST_ID } }, // insert
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest(OFFICE_BODY));
+    const body = await res.json();
+
+    expect(body.status).toBe("pending");
+    expect(body.url).toBe("/eiendom/dnb-midtbyen/testvegen-12/rapport-board");
+
+    const insertEntry = log.find((e) => opNames(e).includes("insert"))!;
+    const [inserted] = opArgs(insertEntry, "insert") as [Record<string, unknown>];
+    expect(inserted.customer_id).toBe("dnb-midtbyen");
+
+    // dup-sjekken er scopet på customer_id (per-kontor-dup, R16)
+    const dupEntry = log.find(
+      (e) => e.table === "generation_requests" && opNames(e).includes("gte")
+    )!;
+    const eqCalls = dupEntry.ops.filter(([n]) => n === "eq").map(([, a]) => a);
+    expect(eqCalls).toContainEqual(["address_normalized", "testvegen 12, 7030 trondheim"]);
+    expect(eqCalls).toContainEqual(["customer_id", "dnb-midtbyen"]);
+
+    // ALDRI getOrCreateCustomer for kontor-inngangen (R15)
+    expect(log.some((e) => e.table === "customers")).toBe(false);
+  });
+
+  it("ukjent/inaktiv slug → 404, ingen kunde-opprettelse, ingen insert/pipeline", async () => {
+    const { client, log } = makeSupabaseMock([
+      { data: null }, // office lookup: ukjent (eller inaktiv → filtrert bort)
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest({ ...OFFICE_BODY, officeSlug: "finnes-ikke-000000" }));
+    expect(res.status).toBe(404);
+    expect(log.some((e) => e.table === "customers")).toBe(false);
+    expect(log.some((e) => opNames(e).includes("insert"))).toBe(false);
+    expect(afterCallbacks.length).toBe(0);
+  });
+
+  it("samme adresse samme kontor innen 7 dager → dup-svar (board-URL i denne uniten)", async () => {
+    const { client } = makeSupabaseMock([
+      { data: { customer_id: "dnb-midtbyen", active: true } }, // office lookup
+      {
+        data: [
+          {
+            id: REQUEST_ID,
+            address_slug: "testvegen-12",
+            status: "completed",
+            customer_id: "dnb-midtbyen",
+            result_url: "/eiendom/dnb-midtbyen/testvegen-12/rapport-board",
+          },
+        ],
+      }, // dup treff
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest(OFFICE_BODY));
+    const body = await res.json();
+    expect(body.existing).toBe(true);
+    expect(body.url).toBe("/eiendom/dnb-midtbyen/testvegen-12/rapport-board");
+  });
+});
+
+describe("POST — geofence + etterspørselslogg (R5/R6/R17)", () => {
+  it("avvist adresse (åpen side) → outside_coverage + coverage_demand-rad, INGEN insert/pipeline", async () => {
+    geofenceHolder.area = null;
+    const { client, log, rpcLog } = makeSupabaseMock([
+      { data: [{ name_no: "Ranheim" }, { name_no: "Tyholt" }] }, // coveredAreas
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest(VALID_BODY));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.status).toBe("outside_coverage");
+    expect(body.coveredAreas).toEqual(["Ranheim", "Tyholt"]);
+
+    // coverage_demand logget via RPC, uten e-post (ingen opt-in), office_slug null
+    expect(rpcLog).toHaveLength(1);
+    expect(rpcLog[0].fn).toBe("record_coverage_demand");
+    const args = rpcLog[0].args as Record<string, unknown>;
+    expect(args.p_email).toBeNull();
+    expect(args.p_office_slug).toBeNull();
+    expect(args.p_address_normalized).toBe("testvegen 12, 7030 trondheim");
+
+    // ingen generation_requests-insert, ingen pipeline
+    expect(log.some((e) => opNames(e).includes("insert"))).toBe(false);
+    expect(afterCallbacks.length).toBe(0);
+  });
+
+  it("avvisning + notifyWhenCovered=true → e-post lagret i coverage_demand (den eksplisitte andre opt-in-en)", async () => {
+    geofenceHolder.area = null;
+    const { client, rpcLog } = makeSupabaseMock([
+      { data: [{ name_no: "Ranheim" }] }, // coveredAreas
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest({ ...VALID_BODY, notifyWhenCovered: true }));
+    const body = await res.json();
+
+    expect(body.status).toBe("outside_coverage");
+    expect(body.notified).toBe(true);
+    const args = rpcLog[0].args as Record<string, unknown>;
+    expect(args.p_email).toBe(VALID_BODY.email);
+  });
+
+  it("fail-soft: findAreaForPoint kaster → behandles som utenfor dekning (200), ikke 500", async () => {
+    geofenceHolder.throwErr = new Error("Supabase-glipp");
+    const { client, rpcLog } = makeSupabaseMock([
+      { data: [{ name_no: "Ranheim" }] }, // coveredAreas
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest(VALID_BODY));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBe("outside_coverage");
+    expect(rpcLog).toHaveLength(1);
+  });
+
+  it("kontor-innsending utenfor dekning → office_slug fanget i coverage_demand", async () => {
+    geofenceHolder.area = null;
+    const { client, rpcLog } = makeSupabaseMock([
+      { data: { customer_id: "dnb-midtbyen", active: true } }, // office lookup
+      { data: [{ name_no: "Ranheim" }] }, // coveredAreas
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(
+      postRequest({ ...VALID_BODY, officeSlug: "dnb-midtbyen-x7k2f9" })
+    );
+    const body = await res.json();
+    expect(body.status).toBe("outside_coverage");
+    const args = rpcLog[0].args as Record<string, unknown>;
+    expect(args.p_office_slug).toBe("dnb-midtbyen-x7k2f9");
   });
 });
 
