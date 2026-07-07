@@ -39,7 +39,7 @@ import {
 import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
-import { inheritAreaEditorial } from "@/lib/pipeline/inherit-area-editorial";
+import { inheritAreaEditorialViaRoute } from "@/lib/pipeline/inherit-area-editorial-via-route";
 import { getDiscoveryRadius, type ReportProfile } from "@/lib/pipeline/report-defaults";
 import {
   runAcceptanceCheck,
@@ -247,7 +247,7 @@ export async function provisionReportBoard(
   // Fail-soft (warnings) — UNNTATT skrive-/optimistisk-lås-feil som KASTER
   // (aldri delvis editorial i config; håndteres inni inheritAreaEditorial).
   section("Steg 8: Nabolags-editorial");
-  const inheritResult = await inheritAreaEditorial({
+  const inheritResult = await inheritAreaEditorialViaRoute({
     projectId: projectResult.projectId,
     customerSlug: projectResult.customerSlug,
     projectSlug: projectResult.slug,

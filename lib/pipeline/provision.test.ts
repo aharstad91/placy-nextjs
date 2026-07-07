@@ -17,7 +17,7 @@ vi.mock("@/lib/pipeline/enrich-report-pois", async (orig) => ({
 vi.mock("@/lib/pipeline/validate-report-trust", () => ({ validateReportTrust: vi.fn() }));
 vi.mock("@/lib/pipeline/hydrate-report", () => ({ hydrateReport: vi.fn() }));
 vi.mock("@/lib/pipeline/travel-times", () => ({ computeProjectTravelTimes: vi.fn() }));
-vi.mock("@/lib/pipeline/inherit-area-editorial", () => ({ inheritAreaEditorial: vi.fn() }));
+vi.mock("@/lib/pipeline/inherit-area-editorial-via-route", () => ({ inheritAreaEditorialViaRoute: vi.fn() }));
 vi.mock("@/lib/pipeline/provision-acceptance", () => ({ runAcceptanceCheck: vi.fn() }));
 
 import { geocodeAddress, getKommunenummer, meetsGeocodeConfidence } from "@/lib/pipeline/geocode";
@@ -28,7 +28,7 @@ import { enrichReportPois } from "@/lib/pipeline/enrich-report-pois";
 import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
-import { inheritAreaEditorial } from "@/lib/pipeline/inherit-area-editorial";
+import { inheritAreaEditorialViaRoute } from "@/lib/pipeline/inherit-area-editorial-via-route";
 import { runAcceptanceCheck } from "@/lib/pipeline/provision-acceptance";
 import { provisionReportBoard } from "./provision";
 
@@ -41,7 +41,7 @@ const m = {
   trust: vi.mocked(validateReportTrust),
   hydrate: vi.mocked(hydrateReport),
   travel: vi.mocked(computeProjectTravelTimes),
-  editorial: vi.mocked(inheritAreaEditorial),
+  editorial: vi.mocked(inheritAreaEditorialViaRoute),
   acceptance: vi.mocked(runAcceptanceCheck),
 };
 

@@ -20,7 +20,7 @@ import {
 import { calculateReportScore, NULL_TIER_VALUE, byTierThenScore } from "@/lib/utils/poi-score";
 import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/strings";
 import { generateBridgeText } from "@/lib/generators/bridge-text-generator";
-import { getHeroInsightPOIIds } from "./ReportHeroInsight";
+import { getHeroInsightPOIIds } from "./hero-insight-pois";
 import { getTopRankedPOIs } from "./top-ranked-pois";
 
 /**
