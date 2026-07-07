@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Testkontor · Objektside (embed-verifisering)</title>
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #1a1a1a;
+        background: #fff;
+        line-height: 1.6;
+      }
+      .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 120px; }
+      header { border-bottom: 1px solid #eee; padding-bottom: 16px; margin-bottom: 28px; }
+      h1 { font-size: 26px; margin: 0 0 4px; }
+      .muted { color: #888; font-size: 14px; }
+      .filler { color: #444; }
+      .filler p { margin: 0 0 16px; }
+      .note {
+        background: #fff8e6; border: 1px solid #f5e3b3; border-radius: 10px;
+        padding: 12px 16px; font-size: 13px; color: #6b5a1e; margin: 24px 0;
+      }
+      .embed-block { margin: 32px 0; }
+      .embed-label { font-size: 13px; color: #888; margin-bottom: 8px; }
+      /* Selve snippeten limes inn under (samme format som SharePanel genererer). */
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Testvegen 12 — 3-roms i Teknostallen</h1>
+        <p class="muted">Prisantydning 4 950 000 kr · Testkontor Eiendomsmegling</p>
+      </header>
+
+      <p class="note">
+        <strong>Embed-verifiseringsside (Unit 6).</strong> Simulerer en meglers
+        objektside der Placy-boardet er limt inn. iframe-snippeten under er
+        SharePanel-formatet (width 100%, min-høyde, <code>title</code>,
+        <code>loading="lazy"</code>) — men <code>src</code> peker på
+        <code>localhost:3001</code> (dev-serveren med Unit 4-koden) i stedet for
+        <code>placy.no</code>, så vi tester den faktiske Unit-4-embedden lokalt og
+        KRYSS-ORIGIN (denne siden serveres fra :8080). Produksjons-snippeten fra en
+        ekte delings-side peker på placy.no og verifiseres av megler på ekte
+        objektside + mobil.
+      </p>
+
+      <div class="filler">
+        <h2>Om boligen</h2>
+        <p>
+          Lys og gjennomgående 3-roms i et av Trondheims tetteste kunnskapsmiljøer.
+          Scroll ned for å bli kjent med nabolaget — kartet under skal IKKE kapre
+          scrollen din før du trykker for å utforske.
+        </p>
+        <p>
+          Stue med utgang til balkong, moderne kjøkken, to gode soverom. Felles
+          takterrasse. Kort vei til alt — se det interaktive nabolagskartet under.
+        </p>
+      </div>
+
+      <div class="embed-block">
+        <div class="embed-label">Nabolaget rundt boligen:</div>
+        <!-- === SharePanel-snippet (localhost-variant for lokal verifisering) === -->
+        <iframe
+          src="http://localhost:3001/eiendom/klp-eiendom/teknostallen/rapport-board?embed=1&src=embed"
+          width="100%"
+          height="600"
+          style="border: 0; border-radius: 12px"
+          title="Nabolagskart – Testvegen 12, 7030 Trondheim"
+          loading="lazy"
+        ></iframe>
+        <!-- === /snippet === -->
+      </div>
+
+      <div class="filler">
+        <h2>Beliggenhet</h2>
+        <p>
+          Etter kartet fortsetter objektsiden. Du skal kunne scrolle forbi kartet
+          uproblematisk (aktiveringsgaten yielder scroll til denne siden til du
+          bevisst trykker for å utforske).
+        </p>
+        <p>
+          Visning etter avtale. Ta kontakt med megler for mer informasjon om
+          objektet og fremvisning.
+        </p>
+        <p style="height: 400px"></p>
+        <p>Bunn av siden — scroll forbi iframen fungerte hvis du kom hit uten å låse deg i kartet.</p>
+      </div>
+    </div>
+  </body>
+</html>

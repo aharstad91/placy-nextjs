@@ -258,7 +258,22 @@ Fra origin-dokumentet (ratifisert, gjentas ikke i detalj her): ingen megler-auth
 
 **Verification:** Events i dev-DB viser korrekt `src` per inngangskanal; eksisterende events uten `src` er upåvirket.
 
-- [ ] **Unit 6: Ekstern embed-verifisering + akseptansegjennomgang**
+- [x] **Unit 6: Ekstern embed-verifisering + akseptansegjennomgang**
+
+**Akseptansegjennomgang (2026-07-08):**
+
+Verifisert av meg (desktop-Chrome, `scripts/embed-testside/index.html` servert kryss-origin på :8080, board fra dev :3001):
+- ✅ Board rendrer INNE i en kryss-origin iframe (R14 — framing tillatt kryss-origin, ingen X-Frame-blokk). Fullt board (ikke teaser) med POI-markører + prosjektpin + «Åpne i fullskjerm»-knapp (R12).
+- ✅ `board_viewed` med `context.src="embed"` + `mode="report"` ankommer fra boardet inni den eksterne iframen (R19/R20) — 2 ferske events i v2.events rett etter last. **Dette lukker suksesskriteriet «events verifisert å ankomme fra ekstern test-iframe».**
+- ✅ Selvbetjent flyt ende-til-ende uten Andreas-inngrep: kontor-side (`/megler/<slug>`) → board → delings-side (verifisert live i Unit 1/3-smoke: delings-side 200, kontor-404 brandet).
+- ✅ Avvist adresse (Melhus) → `outside_coverage` + `coverage_demand`-rad via ekte route+RPC (Unit 2-smoke), PII-grense intakt.
+- ✅ 0 board-konsollfeil (kun en ufarlig favicon-404 på selve test-HTML-en).
+
+Krever kjeden / ekte enhet — pilot-utfall (Andreas, ratifisert 2026-07-08 at mobil-verifisering skjer på ekte telefon):
+- ⏳ Mobil scroll-yield (R13): aktiveringsgaten (`touch-action: pan-y`) er på plass; definitiv «scroll forbi uproblematisk» + evt. 2D-fallback-beslutning verifiseres på ekte telefon.
+- ⏳ Anbefalt iframe-min-høyde: 600px ser bra ut på desktop (mobil-layout ved iframe-bredde <1024px); mobil-tuning på ekte enhet.
+- ⏳ Minst ett board embeddet på ekte objektside av kontorets nettansvarlige + lenket fra ekte FINN-annonse.
+- ⏳ Minst én megler genererer board nr. 2 uoppfordret (gjentaksbruk — pilot-utfall).
 
 **Goal:** Bevis at helheten holder kvalitetsstandarden utenfor vårt eget miljø: ekte ekstern testside med iframen, mobil + desktop, events verifisert ankommet, og full gjennomgang av suksesskriteriene som er byggbare uten kjeden.
 
