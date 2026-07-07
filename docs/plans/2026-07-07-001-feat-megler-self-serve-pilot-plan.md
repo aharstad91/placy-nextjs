@@ -80,9 +80,12 @@ Fra origin-dokumentet (ratifisert, gjentas ikke i detalj her): ingen megler-auth
 - Avvisningslogg-lagring: egen `coverage_demand`-tabell (unngår dup-kollisjon).
 - Faktisk pilot-dekning: 7 kuraterte strøk i prod — geofencen avviser ikke flertallet av Trondheim-adresser.
 
-### Deferred to Implementation
+### Resolved During Implementation (Unit 4)
 
-- Utfallet av gesture-spiken (Unit 4): kan gmp-map-3d yielde scroll i iframe? Hvis nei → 2D-kart i embed-modus (eksplisitt fallback-beslutning tas når spiken har svar).
+- **Gesture-spike (2026-07-08):** Andreas valgte 3D-embed nå + mobil-verifisering i Unit 6. Scroll-yield implementert som et CONTAINED, embed-gated `EmbedChrome`-overlegg i ReportReelsPage (fullskjerm-knapp + aktiveringsgate m/ `touch-action: pan-y`) — INGEN endring i den delte 3D-map-stacken (BoardMap→BoardMap3D→MapView3D urørt, lav blast-radius). Desktop-Chrome verifisert (embed=fullt board + EmbedChrome, 0 konsollfeil). Definitiv mobil-scroll-yield + 2D-fallback-beslutning er Unit 6 (ekte telefon). Teaser + `?from=embed`-gaten + `EmbedArrivalLoader` slettet; splash-`embed`-stien fjernet fra Desktop/MobileReportSplash.
+- **Pre-eksisterende instrumenterings-bug oppdaget + fikset (R20-blokker):** 2026-07-06-audit-herdingen låste `projectId`-valideringen i `lib/instrumentation/event-schema.ts` til `PROJECT_ID_SHAPE` (customer_slug), men emitteren sender boardets UUID `project.id` → ALLE rapport-board-events droppet stille siden 07-06 (bekreftet: 0 board_viewed 07-07 før fiks). Relaksert til `opaqueId` (bundet + kontrolltegn-avvist, injection-trygt via parameterisert insert; samme behandling som poi_id). Verifisert: board_viewed lander nå i v2.events (mode=report). `src` kommer i Unit 5.
+
+### Deferred to Implementation
 - Geofence-stoppens eksakte interaksjonsform (inline under adressefeltet vs egen tilstand) — designes i Unit 1 mot «rent verktøy»-tonen; inline-validering er arbeidshypotesen.
 - Anbefalt minimum iframe-høyde i snippeten — fastsettes empirisk under Unit 6-verifiseringen på mobil.
 - FINN-plassering av lenken (fagsystem-felt vs annonsetekst) — verifiseres med pilot-megler (origin R10).
@@ -195,7 +198,7 @@ Fra origin-dokumentet (ratifisert, gjentas ikke i detalj her): ingen megler-auth
 
 **Verification:** Full flyt i dev: generer board → e-post-payload (logget/mocket) peker på delings-siden → alle tre kopier-artefakter fungerer og bærer korrekt `src`.
 
-- [ ] **Unit 4: Embed-modus — fullt board med fullskjerm-knapp**
+- [x] **Unit 4: Embed-modus — fullt board med fullskjerm-knapp**
 
 **Goal:** `?embed=1` rendrer det fulle boardet i iframe (erstatter teaseren): scroll-yield via gesture-aktivering, tydelig «Åpne i fullskjerm»-knapp (ny fane til standalone board), teaser-koden slettes.
 

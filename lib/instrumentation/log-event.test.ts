@@ -109,9 +109,23 @@ describe("logEvent — herding (validering + demping)", () => {
     expect(insertMock).not.toHaveBeenCalled();
   });
 
-  it("ugyldig projectId-form → avvist, ingen INSERT", async () => {
+  it("board-UUID projectId (rapport-board emitter-form) beholdes i INSERT", async () => {
+    // Fiks 2026-07-07: emitteren sender boardets UUID (project.id), ikke
+    // customer_slug. Den gamle mønster-låsen droppet dette stille.
     insertMock.mockResolvedValue({ error: null });
-    await logEvent({ eventType: "board_viewed", projectId: "ikke-en-gyldig-id" });
+    await logEvent({
+      eventType: "board_viewed",
+      projectId: "5d1c030c-dec0-469f-a91a-f07d9e69803f",
+    });
+    expect(insertMock).toHaveBeenCalledOnce();
+    expect(insertMock.mock.calls[0][0].project_id).toBe(
+      "5d1c030c-dec0-469f-a91a-f07d9e69803f",
+    );
+  });
+
+  it("oversized projectId (>256 tegn) → avvist, ingen INSERT", async () => {
+    insertMock.mockResolvedValue({ error: null });
+    await logEvent({ eventType: "board_viewed", projectId: "x".repeat(300) });
     expect(insertMock).not.toHaveBeenCalled();
   });
 
@@ -166,9 +180,13 @@ describe("logEvent — herding (validering + demping)", () => {
 // Utvidede hostile-input-tester (testing_gap fra sikkerhets-review 2026-07-06)
 // ---------------------------------------------------------------------------
 
-describe("logEvent — hostile input: spoofet project_id", () => {
-  // Disse testene bruker egne session-IDer (unike per test) for å unngå
-  // throttle-forurensing fra de eksisterende per-økt-testene.
+describe("logEvent — projectId: bundet opaque id", () => {
+  // Etter fiks 2026-07-07: projectId er en BUNDET OPAQUE id (rapport-boards sender
+  // board-UUID, ikke customer_slug). Sikkerhets-invariantene er lengde-cap +
+  // kontrolltegn-avvisning + parameterisert insert (injection-trygt) — IKKE en
+  // customer_slug-mønster-lås (den låsen droppet feilaktig ALLE rapport-events
+  // siden 07-06). Samme behandling som poi_id (id-er fra flere kilder).
+  // Egne session-IDer per test for å unngå throttle-forurensing.
   const freshSession = () =>
     `aaaaaaaa-bbbb-4ccc-${["8", "9", "a", "b"][Math.floor(Math.random() * 4)]}ddd-${Math.random().toString(16).slice(2).padStart(12, "0")}`;
 
@@ -181,52 +199,45 @@ describe("logEvent — hostile input: spoofet project_id", () => {
     insertMock.mockResolvedValue({ error: null });
   });
 
-  it("project_id uten underscore → avvises stille, ingen INSERT", async () => {
-    await expect(
-      logEvent({ eventType: "board_viewed", projectId: "placy-demo-ranheim", sessionId: freshSession() })
-    ).resolves.toBeUndefined();
-    expect(insertMock).not.toHaveBeenCalled();
+  it("board-UUID (emitter-formen) → akseptert og lander i INSERT", async () => {
+    await logEvent({ eventType: "board_viewed", projectId: "5d1c030c-dec0-469f-a91a-f07d9e69803f", sessionId: freshSession() });
+    expect(insertMock).toHaveBeenCalledOnce();
+    expect(insertMock.mock.calls[0][0].project_id).toBe("5d1c030c-dec0-469f-a91a-f07d9e69803f");
   });
 
-  it("project_id med dobbelt underscore → avvises (mer enn ett _)", async () => {
-    await expect(
-      logEvent({ eventType: "board_viewed", projectId: "placy_demo_ranheim", sessionId: freshSession() })
-    ).resolves.toBeUndefined();
-    expect(insertMock).not.toHaveBeenCalled();
+  it("customer_slug-form → fortsatt akseptert", async () => {
+    await logEvent({ eventType: "board_viewed", projectId: "placy-demo_ranheim2", sessionId: freshSession() });
+    expect(insertMock).toHaveBeenCalledOnce();
+    expect(insertMock.mock.calls[0][0].project_id).toBe("placy-demo_ranheim2");
   });
 
-  it("project_id med store bokstaver → avvises (shape krever lowercase)", async () => {
-    await expect(
-      logEvent({ eventType: "board_viewed", projectId: "Placy_Ranheim", sessionId: freshSession() })
-    ).resolves.toBeUndefined();
-    expect(insertMock).not.toHaveBeenCalled();
+  it("SQL-injection-tegn → lagres VERBATIM (parameterisert insert = injection-trygt)", async () => {
+    const hostile = "placy'; DROP TABLE v2.events;--";
+    await logEvent({ eventType: "board_viewed", projectId: hostile, sessionId: freshSession() });
+    // supabase-js binder verdien som parameter → lagres som ren tekst, aldri kjørt.
+    expect(insertMock).toHaveBeenCalledOnce();
+    expect(insertMock.mock.calls[0][0].project_id).toBe(hostile);
   });
 
-  it("project_id med SQL-injection-tegn → avvises stille", async () => {
-    await expect(
-      logEvent({ eventType: "board_viewed", projectId: "placy'; DROP TABLE v2.events;--_ranheim", sessionId: freshSession() })
-    ).resolves.toBeUndefined();
-    expect(insertMock).not.toHaveBeenCalled();
-  });
-
-  it("project_id som tom streng → avvises stille", async () => {
+  it("tom streng → avvises stille, ingen INSERT", async () => {
     await expect(
       logEvent({ eventType: "board_viewed", projectId: "", sessionId: freshSession() })
     ).resolves.toBeUndefined();
     expect(insertMock).not.toHaveBeenCalled();
   });
 
-  it("project_id med linjeskift (header-injection-forsøk) → avvises stille", async () => {
+  it("linjeskift (kontrolltegn / header-injection-forsøk) → avvises stille", async () => {
     await expect(
       logEvent({ eventType: "board_viewed", projectId: "placy_ranheim\nX-Injected: evil", sessionId: freshSession() })
     ).resolves.toBeUndefined();
     expect(insertMock).not.toHaveBeenCalled();
   });
 
-  it("gyldig project_id passerer validering og ender i INSERT", async () => {
-    await logEvent({ eventType: "board_viewed", projectId: "placy-demo_ranheim2", sessionId: freshSession() });
-    expect(insertMock).toHaveBeenCalledOnce();
-    expect(insertMock.mock.calls[0][0].project_id).toBe("placy-demo_ranheim2");
+  it("oversized (>256 tegn) → avvises stille", async () => {
+    await expect(
+      logEvent({ eventType: "board_viewed", projectId: "a".repeat(300), sessionId: freshSession() })
+    ).resolves.toBeUndefined();
+    expect(insertMock).not.toHaveBeenCalled();
   });
 });
 

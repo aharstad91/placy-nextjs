@@ -107,11 +107,9 @@ const MobileReportSplash = dynamic(
     ).then((m) => m.MobileReportSplash),
   { ssr: false, loading: () => null },
 );
-const EmbedArrivalLoader = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "report-embed-arrival" */ "./EmbedArrivalLoader"
-    ).then((m) => m.EmbedArrivalLoader),
+// Embed-chrome (Unit 4): fullskjerm-knapp + aktiveringsgate, kun i embed-modus.
+const EmbedChrome = dynamic(
+  () => import(/* webpackChunkName: "report-embed-chrome" */ "./EmbedChrome"),
   { ssr: false, loading: () => null },
 );
 const ReelsAudioOrchestrator = dynamic(
@@ -141,19 +139,11 @@ interface Props {
   collection?: { slug: string; poiIds: string[] };
   /**
    * Embed-modus (`?embed=1`): siden vises inni en iframe på en ekstern nettside
-   * (megler-side, der Placy limes inn der kartet var). Da rendres KUN en lett
-   * splash-teaser med egen "selg inn"-copy (ingen logo) og en knapp som åpner
-   * full opplevelse i ny fane — ingen 3D-kart/reels/audio lastes i iframen.
+   * (megler-objektside, der Placy limes inn der kartet var). Unit 4: rendrer det
+   * FULLE boardet (ikke lenger en teaser) uten velkomst-splash, med et
+   * EmbedChrome-overlegg (fullskjerm-knapp + aktiveringsgate for scroll-yield).
    */
   embed?: boolean;
-  /**
-   * Ankommet fra embedet (`?from=embed`): brukeren klikket «Utforsk nabolaget» i
-   * teaseren og landet på full standalone-side. Da viser vi en "Klar"-gate —
-   * kartet varmes opp bak en loader, så ett bevisst lyd-trykk starter turen — i
-   * stedet for å gjenta velkomst-splashen (føltes som «start på nytt»). Lyd
-   * krever et brukertrykk i denne fanen (nettleser-policy), derfor knapp.
-   */
-  fromEmbed?: boolean;
 }
 
 export default function ReportReelsPage(props: Props) {
@@ -170,7 +160,6 @@ function Inner({
   boardData: inputBoardData,
   collection,
   embed = false,
-  fromEmbed = false,
 }: Props) {
   const { locale } = useLocale();
 
@@ -270,11 +259,13 @@ function Inner({
     envelope: engagementEnvelope,
   });
 
-  // Moat-2 board_viewed — én gang ved mount (ikke embed-teaser).
+  // Moat-2 board_viewed — én gang ved mount. Fyres OGSÅ i embed (R20): embedden
+  // er (etter Unit 4) et fullt board og pilotens mest trafikkerte flate — src-
+  // markøren (finn|embed|qr) skiller kanalene. Den gamle embed-skippen (teaser)
+  // er fjernet.
   useEffect(() => {
-    if (embed) return;
     engagement.emit("board_viewed");
-  }, [embed, engagement]);
+  }, [engagement]);
 
   // Resolve lagrede collection-IDer → BoardPOI for drawer-visningen. Slår opp i
   // alle kategoriers POIer (samlingen kan spenne kategorier).
@@ -308,8 +299,8 @@ function Inner({
             collection={eventMode ? collectionApi : null}
             onOpenCollection={() => setCollectionDrawerOpen(true)}
             embed={embed}
-            fromEmbed={fromEmbed}
           />
+          {embed && <EmbedChrome />}
         </ReelsAudioShell>
         {eventMode && (
           <BoardCollectionDrawer
@@ -543,7 +534,6 @@ function ResponsiveLayoutInner({
   collection,
   onOpenCollection,
   embed,
-  fromEmbed,
 }: {
   boardData: BoardData;
   has3dAddon: boolean;
@@ -556,10 +546,8 @@ function ResponsiveLayoutInner({
   collection: BoardCollectionApi | null;
   /** Unit 5: åpne samling-draweren. */
   onOpenCollection: () => void;
-  /** Embed-modus: render kun splash-teaser (se Props.embed). */
+  /** Embed-modus: fullt board uten velkomst-splash + EmbedChrome (se Props.embed). */
   embed: boolean;
-  /** Ankommet fra embed (`?from=embed`): "Klar"-gate i stedet for velkomst-splash. */
-  fromEmbed: boolean;
 }) {
   const home = boardData.home;
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -584,8 +572,11 @@ function ResponsiveLayoutInner({
   // flaten over kart-peeken (z-index) så det inn-glidende slidet ikke klippes av
   // peek-sheeten. Play/pause + swipe-navigasjon eier ReelSwipeStack selv.
   const [isDragging, setIsDragging] = useState(false);
-  const [splashVisible, setSplashVisible] = useState(true);
-  const [boardRevealed, setBoardRevealed] = useState(false);
+  // Embed (Unit 4): hopp over velkomst-splashen — boardet avdekkes direkte som
+  // preview, EmbedChrome-gaten håndterer engasjement/scroll-yield. Ikke-embed
+  // beholder splash → play → reveal (uendret).
+  const [splashVisible, setSplashVisible] = useState(!embed);
+  const [boardRevealed, setBoardRevealed] = useState(embed);
 
   // Establishing-shot-modus (?establishing=1): hopp over velkomst-splashen og
   // avdekk det persistente kartet med en gang, UTEN å starte audio — så strøk-
@@ -682,44 +673,6 @@ function ResponsiveLayoutInner({
   const subline =
     [home.district, home.city].filter(Boolean).join(", ") || undefined;
 
-  // Ankommet fra embed (`?from=embed`): sentrert "laster inn"-skjerm (logo + hero
-  // + tekst + fremdriftslinje → knapp). hasAudioGuide styrer "Henter stemmen…"-
-  // steget; notStarted styrer om loaderen varmer opp (første ankomst) eller hopper
-  // rett til 100% (re-åpning).
-  const hasAudioGuide = firstIdx !== -1;
-  const loaderHeadline = "Bli kjent med nærområdet";
-  const loaderIntro =
-    "Transport, hverdagsliv, mat, natur og opplevelser — alt i gangavstand.";
-
-  // Embed-modus: render KUN splash-teaseren (ingen kart/reels/audio i iframen).
-  // Egen "selg inn"-copy — på meglerens side har leseren allerede scrollet forbi
-  // seksjoner som ønsker velkommen, så "Velkommen til {navn}" føltes rart. Her
-  // selger vi i stedet inn at man kan utforske hele nabolaget. Knappen åpner full
-  // opplevelse i ny fane (håndteres i splash-komponenten). Logo skjules.
-  if (embed) {
-    const embedHeadline = `Bli kjent med nærområdet til ${home.name}`;
-    const embedIntro =
-      "Se hva som ligger rett utenfor døra — transport, hverdagsliv, mat og " +
-      "uteliv, natur og opplevelser, alt i gangavstand. Åpne den interaktive " +
-      "guiden og utforsk nabolaget på kartet.";
-    const embedLabel = "Utforsk nabolaget";
-    const Splash = isDesktop ? DesktopReportSplash : MobileReportSplash;
-    return (
-      <Splash
-        visible
-        embed
-        name={home.name}
-        subline={subline}
-        headline={embedHeadline}
-        heroImage={splashHero}
-        heroVideo={splashVideo}
-        intro={embedIntro}
-        primaryLabel={embedLabel}
-        onPlay={() => {}}
-      />
-    );
-  }
-
   if (isDesktop) {
     // Adaptiv desktop: full-høyde storytelling-sidebar ved siden av kartet i
     // flex-flow. Sidebar + kart får en entré-animasjon (glir/skalerer inn) ved
@@ -758,33 +711,17 @@ function ResponsiveLayoutInner({
               reveal. Splash-kryssfaden står for selve avdekkingen. */}
           <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} eventMode={eventMode} />
         </div>
-        {fromEmbed ? (
-          <EmbedArrivalLoader
-            visible={splashVisible}
-            projectName={home.name}
-            headline={loaderHeadline}
-            subline={subline}
-            intro={loaderIntro}
-            logoSrc={logoSrc}
-            heroImage={splashHero}
-            heroVideo={splashVideo}
-            hasAudio={hasAudioGuide}
-            warm={!notStarted}
-            onEnter={handlePlay}
-          />
-        ) : (
-          <DesktopReportSplash
-            visible={splashVisible}
-            name={home.name}
-            subline={subline}
-            logoSrc={logoSrc}
-            heroImage={splashHero}
-            heroVideo={splashVideo}
-            intro={splashIntro}
-            primaryLabel={primaryLabel}
-            onPlay={handlePlay}
-          />
-        )}
+        <DesktopReportSplash
+          visible={splashVisible}
+          name={home.name}
+          subline={subline}
+          logoSrc={logoSrc}
+          heroImage={splashHero}
+          heroVideo={splashVideo}
+          intro={splashIntro}
+          primaryLabel={primaryLabel}
+          onPlay={handlePlay}
+        />
       </div>
     );
   }
@@ -999,35 +936,19 @@ function ResponsiveLayoutInner({
       {/* Vedvarende transport — etter lyd-unlock (R18), kun med spillbar lyd (R17). */}
       {hasAudioMobile && state.audioUnlocked && <ReelsTransport />}
 
-      {/* Splash: «Klar»-gate ved ankomst fra embed (?from=embed), ellers vanlig
-          velkomst-splash. Begge over to-flate-modellen (merge: embed + transport). */}
-      {fromEmbed ? (
-        <EmbedArrivalLoader
-          visible={splashVisible}
-          projectName={home.name}
-          headline={loaderHeadline}
-          subline={subline}
-          intro={loaderIntro}
-          logoSrc={logoSrc}
-          heroImage={splashHero}
-          heroVideo={splashVideo}
-          hasAudio={hasAudioGuide}
-          warm={!notStarted}
-          onEnter={handlePlay}
-        />
-      ) : (
-        <MobileReportSplash
-          visible={splashVisible}
-          name={home.name}
-          subline={subline}
-          logoSrc={logoSrc}
-          heroImage={splashHero}
-          heroVideo={splashVideo}
-          intro={splashIntro}
-          primaryLabel={primaryLabel}
-          onPlay={handlePlay}
-        />
-      )}
+      {/* Velkomst-splash over to-flate-modellen (i embed: splashVisible=false →
+          skjult, EmbedChrome-gaten overtar). */}
+      <MobileReportSplash
+        visible={splashVisible}
+        name={home.name}
+        subline={subline}
+        logoSrc={logoSrc}
+        heroImage={splashHero}
+        heroVideo={splashVideo}
+        intro={splashIntro}
+        primaryLabel={primaryLabel}
+        onPlay={handlePlay}
+      />
     </div>
   );
 }
