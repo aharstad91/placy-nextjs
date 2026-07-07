@@ -49,3 +49,4 @@ backups/
 .tmp-screenshots/
 .spike-debug/
 ralph-logs/
+.vercel

@@ -1,23 +1,21 @@
 import { notFound } from "next/navigation";
-import { unstable_cache } from "next/cache";
-import { getProductAsync } from "@/lib/data-server";
-import { getProjectTranslations } from "@/lib/supabase/translations";
+import {
+  getCachedReportProduct,
+  getCachedProjectTranslations,
+} from "@/lib/supabase/cached-board-reads";
 import { buildBoardMetadata } from "@/lib/seo/board-metadata";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 
-const getCachedReportProduct = (customer: string, projectSlug: string) =>
-  unstable_cache(
-    () => getProductAsync(customer, projectSlug, "report"),
-    ["report-product", customer, projectSlug],
-    {
-      tags: [`product:${customer}_${projectSlug}`],
-      revalidate: 3600,
-    },
-  )();
-
 export const revalidate = 3600;
+
+// Uten generateStaticParams server-rendres dynamiske segmenter per request —
+// med den (tom liste) ISR-es hver board-URL on-demand og caches etter
+// førstetreff (dynamicParams er default true).
+export function generateStaticParams(): Array<{ customer: string; project: string }> {
+  return [];
+}
 
 interface PageProps {
   params: Promise<{
@@ -46,7 +44,14 @@ export default async function EiendomReportReelsPage({ params }: PageProps) {
 
   const poiIds = projectData.pois.map((p) => p.id);
   const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
-  const enTranslations = await getProjectTranslations("en", poiIds, themeIds, projectData.id);
+  const enTranslations = await getCachedProjectTranslations(
+    customer,
+    projectSlug,
+    "en",
+    poiIds,
+    themeIds,
+    projectData.id,
+  );
 
   const themeStyle: React.CSSProperties = {};
   const t = projectData.theme;

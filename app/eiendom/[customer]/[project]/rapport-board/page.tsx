@@ -1,44 +1,34 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { unstable_cache } from "next/cache";
-import { getProductAsync } from "@/lib/data-server";
-import { getProjectTranslations } from "@/lib/supabase/translations";
+import {
+  getCachedReportProduct,
+  getCachedProjectTranslations,
+} from "@/lib/supabase/cached-board-reads";
 import { buildBoardMetadata } from "@/lib/seo/board-metadata";
-import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
+import BoardEmbedGate from "./board-embed-gate";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 
-const getCachedReportProduct = (customer: string, projectSlug: string) =>
-  unstable_cache(
-    () => getProductAsync(customer, projectSlug, "report"),
-    ["report-product", customer, projectSlug],
-    {
-      tags: [`product:${customer}_${projectSlug}`],
-      revalidate: 3600,
-    },
-  )();
-
 export const revalidate = 3600;
+
+// Uten generateStaticParams server-rendres dynamiske segmenter per request —
+// med den (tom liste) ISR-es hver board-URL on-demand og caches etter
+// førstetreff (dynamicParams er default true).
+export function generateStaticParams(): Array<{ customer: string; project: string }> {
+  return [];
+}
 
 interface PageProps {
   params: Promise<{
     customer: string;
     project: string;
   }>;
-  searchParams: Promise<{ embed?: string; from?: string }>;
 }
 
-export default async function EiendomReportBoardPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function EiendomReportBoardPage({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
-  // `?embed=1` (eller bare `?embed`): siden limes inn i en iframe på en ekstern
-  // nettside → lett splash-teaser i stedet for full board-opplevelse.
-  const { embed: embedParam, from: fromParam } = await searchParams;
-  const embed = embedParam === "1" || embedParam === "" || embedParam === "true";
-  // `?from=embed`: brukeren klikket seg hit fra embed-teaseren → "Klar"-gate
-  // (oppvarming + ett lyd-trykk) i stedet for å gjenta velkomst-splashen.
-  const fromEmbed = fromParam === "embed";
+  // `?embed`/`?from` leses i BoardEmbedGate (klient) — å lese searchParams her
+  // ville tvunget ruten til dynamisk rendering og skrudd av ISR-en.
 
   const projectData = await getCachedReportProduct(customer, projectSlug);
 
@@ -57,7 +47,14 @@ export default async function EiendomReportBoardPage({
 
   const poiIds = projectData.pois.map((p) => p.id);
   const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
-  const enTranslations = await getProjectTranslations("en", poiIds, themeIds, projectData.id);
+  const enTranslations = await getCachedProjectTranslations(
+    customer,
+    projectSlug,
+    "en",
+    poiIds,
+    themeIds,
+    projectData.id,
+  );
 
   const themeStyle: React.CSSProperties = {};
   const t = projectData.theme;
@@ -89,12 +86,12 @@ export default async function EiendomReportBoardPage({
 
   return (
     <div style={themeStyle} className="min-h-screen bg-background text-foreground">
-      <ReportReelsPage
-        project={projectDataWithZone}
-        enTranslations={enTranslations}
-        embed={embed}
-        fromEmbed={fromEmbed}
-      />
+      <Suspense fallback={null}>
+        <BoardEmbedGate
+          project={projectDataWithZone}
+          enTranslations={enTranslations}
+        />
+      </Suspense>
     </div>
   );
 }
