@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import TransitionProvider from "@/components/transitions/TransitionProvider";
 import "./globals.css";
 import "@/components/variants/report/board/audio-tour/tour-mode.css";
@@ -31,6 +33,8 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <TransitionProvider>{children}</TransitionProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

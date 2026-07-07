@@ -18,6 +18,8 @@ const nextConfig = {
   },
   // Tillat bilder fra eksterne kilder
   images: {
+    // AVIF først (20-30 % mindre enn webp på foto/akvarell), webp-fallback
+    formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 604800, // 7 days — tighter feedback loop for lh3 URL freshness
     remotePatterns: [
       {

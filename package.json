@@ -22,6 +22,8 @@
     "@supabase/supabase-js": "^2.47.10",
     "@types/node": "^25.0.10",
     "@types/react": "^19.2.9",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "@vis.gl/react-google-maps": "^1.8.3",
     "autoprefixer": "^10.4.23",
     "canvas-confetti": "^1.9.4",

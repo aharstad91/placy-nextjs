@@ -39,7 +39,7 @@ Auto-prompten er *ja/nei*-spørsmål, ikke en åpen "vil du logge?". Bruker sier
 
 ## Teknisk stack
 
-- Next.js 14 (App Router), TypeScript, Tailwind CSS
+- Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS
 - Zustand (state), Mapbox GL JS (kart), Lucide React (ikoner)
 - Supabase (database, auth)
 
@@ -76,10 +76,10 @@ source .env.local && curl -s "${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/pois?select=ne
 ## API-er
 
 - **Mapbox Directions:** `/api/directions` — ruteberegning
-- **Mapbox Matrix:** `/api/travel-times` — reisetidsberegning
+- **Mapbox Matrix:** `/api/travel-times` — REFERENCE-ONLY (ingen live konsument; reisetider precomputes i pipelinen, PRD 3)
 - **Entur:** `/api/entur` — sanntids kollektivtransport
 - **Bysykkel GBFS:** `/api/bysykkel` — ledige sykler
-- **Google Places:** `/api/places` — POI-detaljer og bilder
+- **Google Places:** `/api/places/[placeId]` — POI-detaljer og bilder (cachet proxy)
 
 ## Editorial Hooks (Claude Code)
 
