@@ -1,6 +1,6 @@
 ---
 name: manus-curator
-description: Skriv manus per kategori for rapport-produktet i v3-format. 0 POI-navn (unntak: skolekrets), 5 setn, ~65-75 ord, 20-25 sek TTS. Bygger på Gemini-grounding som fact-feed og arver stemme fra curator-skill. Erstatter generate-rapport-skillen.
+description: Skriv manus per kategori for rapport-produktet i v3-format. 0 POI-navn (unntak: skolekrets), 5 setn, ~65-75 ord, 20-25 sek TTS. Bygger på Gemini-grounding som fact-feed og arver stemme fra curator-skill. Erstatter det forkastede lead/body-formatet.
 triggers:
   - manus-curator
   - skriv manus
@@ -139,14 +139,13 @@ Hva som er galt: "i smørøyet" (klisjé), "populære" (subjektivt), 4 stedsnavn
 - **English translation:** Drop for nå. Norsk-only manus.
 - **Skole-unntaket (Barn & Oppvekst):** Regelen finnes, men ikke testet. Første prøve-kjøring av denne skillen *bør* være Barn & Oppvekst nettopp for å validere unntaket.
 
-## Migrasjon fra generate-rapport
+## Migrasjon fra generate-rapport (fullført 2026-07-07)
 
-`.claude/skills/generate-rapport/SKILL.md` antar lead/body-format som er dødt. Når manus-curator er validert på alle 7 spor for Stasjonskvartalet, slett `generate-rapport/` (kodebase-hygiene-regelen: "når du bygger noe nytt som erstatter noe gammelt, slett det gamle umiddelbart").
-
-Det som overlever migrasjon:
+`generate-rapport`-skillen er pensjonert (lead/body-formatet ble forkastet 2026-05-21; denne skillen erstattet den). Det som overlevde:
 - `scripts/gemini-grounding.ts` (infrastruktur, ikke skill)
-- Senter-type-disambiguering, meter→tid, is_chain-gotchas fra `references/anti-patterns.md` → flytt til denne skillens references hvis relevante
-- Curator-skillen (`.claude/skills/curator/`) — urørt
+- Curator-skillen (`.claude/skills/curator/`) — urørt, fortsatt delt stemme-kilde
+
+Trenger du de gamle anti-pattern-notatene (senter-type-disambiguering, meter→tid, is_chain-gotchas), ligger de i git-historikk for `generate-rapport/references/anti-patterns.md`.
 
 ## Referanser
 
