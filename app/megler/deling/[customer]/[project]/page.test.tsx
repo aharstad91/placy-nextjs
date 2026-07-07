@@ -108,4 +108,36 @@ describe("DelingPage — oppslagsstrategi", () => {
     queue.push({ data: null }); // generation_requests
     await expect(run("dnb", "finnes-ikke")).rejects.toThrow("NEXT_NOT_FOUND");
   });
+
+  it("address_slug failed → feil-tilstand (ikke død preview, ikke redirect)", async () => {
+    queue.push({ data: null }); // projects url_slug: miss
+    queue.push({
+      data: { status: "failed", project_id: null, address: "Testvegen 12, 7030 Trondheim" },
+    }); // generation_requests fallback
+    render(await run("dnb", "testvegen-12"));
+    expect(screen.getByText("Genereringen feilet")).toBeInTheDocument();
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("completed request men prosjekt-raden mangler → 404 (ingen redirect til udefinert)", async () => {
+    queue.push({ data: null }); // projects url_slug: miss
+    queue.push({
+      data: { status: "completed", project_id: "dnb_borte", address: "x" },
+    }); // generation_requests
+    queue.push({ data: null }); // projects-by-id: mangler
+    await expect(run("dnb", "testvegen-12")).rejects.toThrow("NEXT_NOT_FOUND");
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("kanonisk board uten aktivt kontor → SharePanel med backHref=null", async () => {
+    queue.push({
+      data: { url_slug: "teknostallen", name: "Teknostallen" },
+    }); // projects hit
+    queue.push({ data: null }); // broker_offices: intet aktivt kontor for kunden
+    render(await run("klp-eiendom", "teknostallen"));
+    const props = JSON.parse(
+      screen.getByTestId("share-panel").getAttribute("data-props")!
+    );
+    expect(props.backHref).toBeNull();
+  });
 });

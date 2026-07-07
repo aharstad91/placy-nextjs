@@ -38,6 +38,7 @@ import type {
   EngagementContextEnvelope,
   EngagementSrc,
 } from "@/lib/instrumentation/event-types";
+import { buildEngagementEnvelope } from "@/lib/instrumentation/build-engagement-envelope";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsTransport } from "./ReelsTransport";
 import { ReelSwipeStack } from "./ReelSwipeStack";
@@ -83,12 +84,13 @@ import type { BoardData } from "../board/board-data";
 // ingen spekulativ lazy-grense.
 //
 //  1. reels/splash-<video>-pipeline + kuratert hero-asset-lasting:
-//     DesktopReportSplash / MobileReportSplash / EmbedArrivalLoader rendrer både
-//     splash-<video> (reels-video, `assets.splashVideo`) OG den kuraterte
-//     hero-asseten (`getProjectSplashImage`/`getProjectSplashVideo` → next/image
-//     + <video>). De to PRD-2-modulene er co-lokalisert i splash-cluster-en
-//     by-construction — begge fraværende fra entry-chunken etter splittingen.
-//  2. voiceover-orchestration: ReelsAudioOrchestrator (wrapper rundt
+//     DesktopReportSplash / MobileReportSplash rendrer både splash-<video>
+//     (reels-video, `assets.splashVideo`) OG den kuraterte hero-asseten
+//     (`getProjectSplashImage`/`getProjectSplashVideo` → next/image + <video>).
+//     Begge fraværende fra entry-chunken etter splittingen.
+//  2. embed-chrome: EmbedChrome (fullskjerm-knapp + aktiveringsgate), egen chunk
+//     `report-embed-chrome` — lastes kun i embed-modus.
+//  3. voiceover-orchestration: ReelsAudioOrchestrator (wrapper rundt
 //     use-reels-audio-orchestration), egen chunk.
 //
 // ssr:false er trygt + bevisst: splash-cluster-en rendres uansett kun bak
@@ -255,16 +257,17 @@ function Inner({
   // mount bærer project_id + økt-nøkkel + kontekst-konvolutt for ALLE fire
   // emit-sites — board_viewed her, poi_clicked/category_opened/
   // voiceover_played via EngagementProvider nedover i treet.
+  // Kanal-markør (R19) foldes inn i konvolutten via ren helper (testbar uten det
+  // tunge board-treet) — kun med når `?src` var en kjent verdi (finn|embed|qr).
   const engagementEnvelope = useMemo<EngagementContextEnvelope>(
-    () => ({
-      mode: eventMode ? "event" : "report",
-      has_3d_addon: has3dAddon,
-      categories_presented: boardData.categories.map((c) => String(c.id)),
-      locale,
-      // Kanal-markør (R19): kun med når `?src` var en kjent verdi (finn|embed|qr).
-      // Utelates ellers — ingen "unknown"-støy i Moat-2-datasettet.
-      ...(src ? { src } : {}),
-    }),
+    () =>
+      buildEngagementEnvelope({
+        eventMode,
+        has3dAddon,
+        categoriesPresented: boardData.categories.map((c) => String(c.id)),
+        locale,
+        src,
+      }),
     [eventMode, has3dAddon, boardData.categories, locale, src],
   );
   const engagement = useEngagementEmitter({

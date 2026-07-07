@@ -236,25 +236,39 @@ export async function POST(request: NextRequest) {
 
   // 7-dagers duplikat-sjekk, scopet per kunde (R16): samme adresse fra et annet
   // kontor gir egen request (ikke gjenbruk av et annet kontors board).
+  // `failed` ekskluderes (raden har INTET board → megleren skal kunne prøve på
+  // nytt; admin-retry-ruten er avslått i prod). En STALE `pending` (serverless-
+  // avbrutt orphan, eldre enn pipeline-vinduet) behandles også som ikke-treff så
+  // en aldri-fullført generering ikke låser adressen i 7 dager.
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data: existing } = await db
     .from("generation_requests")
-    .select("id, address_slug, status, customer_id, result_url")
+    .select("id, address_slug, status, customer_id, result_url, created_at")
     .eq("address_normalized", normalized)
     .eq("customer_id", customerSlug)
+    .neq("status", "failed")
     .gte("created_at", sevenDaysAgo)
+    .order("created_at", { ascending: false })
     .limit(1);
 
-  if (existing && existing.length > 0) {
-    const row = existing[0];
-    const existingCustomer = row.customer_id ?? customerSlug;
+  const dup = existing?.[0];
+  // maxDuration=300s; en pending eldre enn taket + margin er en orphan (aldri
+  // fullført), ikke en pågående generering. `.neq("failed")` speiles i guarden
+  // (defense-in-depth) så en failed rad aldri behandles som dup.
+  const STALE_PENDING_MS = (maxDuration + 120) * 1000;
+  const isStalePending =
+    dup?.status === "pending" &&
+    Date.now() - new Date(dup.created_at).getTime() > STALE_PENDING_MS;
+
+  if (dup && dup.status !== "failed" && !isStalePending) {
+    const existingCustomer = dup.customer_id ?? customerSlug;
     return NextResponse.json({
-      id: row.id,
-      slug: row.address_slug,
+      id: dup.id,
+      slug: dup.address_slug,
       // Dup-svar → delings-siden (R16): completed-rader har result_url = delings-
       // side; pending → bygg fra address_slug (delings-siden kanoniserer selv).
-      url: row.result_url ?? shareUrl(existingCustomer, row.address_slug),
-      status: row.status,
+      url: dup.result_url ?? shareUrl(existingCustomer, dup.address_slug),
+      status: dup.status,
       message: "Denne adressen er allerede forespurt",
       existing: true,
     });

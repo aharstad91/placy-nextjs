@@ -83,8 +83,10 @@ function makeSupabaseMock(queue: Array<{ data?: unknown; error?: unknown }>) {
       "update",
       "upsert",
       "eq",
+      "neq",
       "gte",
       "not",
+      "order",
       "limit",
       "single",
       "maybeSingle",
@@ -228,6 +230,84 @@ describe("POST — duplikat + kollisjon", () => {
     const insertEntry = log.find((e) => opNames(e).includes("insert"))!;
     const [inserted] = opArgs(insertEntry, "insert") as [Record<string, unknown>];
     expect(inserted.address_slug).toBe(body.slug);
+  });
+
+  it("failed-dup → tillat retry (ny request opprettes, ikke existing)", async () => {
+    // En feilet generering har INTET board → dup-sjekken skal ikke blokkere en
+    // ny request (query .neq('failed') + guard status!=='failed', defense-in-depth).
+    const { client, log } = makeSupabaseMock([
+      {
+        data: [
+          {
+            id: "gammel-failed",
+            address_slug: "testvegen-12",
+            status: "failed",
+            customer_id: "intern",
+            result_url: null,
+            created_at: new Date().toISOString(),
+          },
+        ],
+      }, // dup-query (mock filtrerer ikke .neq — guarden i route dropper failed)
+      { data: [] }, // slug-sjekk
+      { data: { id: REQUEST_ID } }, // insert
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest(VALID_BODY));
+    const body = await res.json();
+    expect(body.existing).toBeUndefined();
+    expect(body.status).toBe("pending");
+    expect(log.some((e) => opNames(e).includes("insert"))).toBe(true);
+  });
+
+  it("stale pending (orphan eldre enn pipeline-vinduet) → tillat ny request", async () => {
+    const staleTime = new Date(Date.now() - 20 * 60 * 1000).toISOString(); // 20 min
+    const { client, log } = makeSupabaseMock([
+      {
+        data: [
+          {
+            id: "orphan-pending",
+            address_slug: "testvegen-12",
+            status: "pending",
+            customer_id: "intern",
+            result_url: null,
+            created_at: staleTime,
+          },
+        ],
+      },
+      { data: [] }, // slug-sjekk
+      { data: { id: REQUEST_ID } }, // insert
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest(VALID_BODY));
+    const body = await res.json();
+    expect(body.existing).toBeUndefined();
+    expect(log.some((e) => opNames(e).includes("insert"))).toBe(true);
+  });
+
+  it("fersk pending (pågående generering) → dup-svar, ingen dobbel-provisjonering", async () => {
+    const { client, log } = makeSupabaseMock([
+      {
+        data: [
+          {
+            id: REQUEST_ID,
+            address_slug: "testvegen-12",
+            status: "pending",
+            customer_id: "intern",
+            result_url: null,
+            created_at: new Date().toISOString(), // fersk → ikke stale
+          },
+        ],
+      },
+    ]);
+    supabaseHolder.client = client;
+
+    const res = await POST(postRequest(VALID_BODY));
+    const body = await res.json();
+    expect(body.existing).toBe(true);
+    expect(body.url).toBe("/megler/deling/intern/testvegen-12");
+    expect(log.some((e) => opNames(e).includes("insert"))).toBe(false);
   });
 });
 

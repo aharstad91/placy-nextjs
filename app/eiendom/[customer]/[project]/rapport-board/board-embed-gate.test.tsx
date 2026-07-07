@@ -61,4 +61,22 @@ describe("BoardEmbedGate — ?embed / ?src → props", () => {
     render(<AnyGate />);
     expect(reelsProps.last?.src).toBeUndefined();
   });
+
+  it("bare ?embed (tom verdi) → embed=true (R12-kontrakt)", () => {
+    params.set("embed", "");
+    render(<AnyGate />);
+    expect(reelsProps.last?.embed).toBe(true);
+  });
+
+  it("?embed=true → embed=true", () => {
+    params.set("embed", "true");
+    render(<AnyGate />);
+    expect(reelsProps.last?.embed).toBe(true);
+  });
+
+  it("?embed=0 / fravær → embed=false", () => {
+    params.set("embed", "0");
+    render(<AnyGate />);
+    expect(reelsProps.last?.embed).toBe(false);
+  });
 });
