@@ -16,7 +16,6 @@
 
 import { z } from "zod";
 import { type EventType } from "./event-types";
-import { PROJECT_ID_SHAPE } from "@/lib/pipeline/project-id";
 
 // --- Caps (misbruks-tak, ikke funksjonelle grenser) -------------------------
 // Alle er romslige for legitim board-bruk, men stopper spam/forgiftning.
@@ -58,6 +57,10 @@ const contextEnvelope = z
       .array(z.string().min(1).max(MAX_CATEGORY_ID_LEN))
       .max(MAX_CATEGORIES_PRESENTED),
     locale: z.string().min(1).max(MAX_LOCALE_LEN),
+    // Kanal-markør (R19). Optional + enum: kun finn|embed|qr slipper gjennom;
+    // konvolutten er `.strict()` så feltet MÅ deklareres her (ellers avvises
+    // events som bærer src). Speiler parseSrc i event-types.ts.
+    src: z.enum(["finn", "embed", "qr"]).optional(),
   })
   .strict();
 
@@ -91,7 +94,14 @@ const payloadByType = {
 // sessionId valideres separat (form-guard i session-id.ts) og tas ikke inn her.
 // Variantene skrives eksplisitt (ikke .map) så z.infer beholder de typede
 // payloadene — en generisk .map() ville kollapset unionen til `unknown`.
-const projectId = z.string().regex(PROJECT_ID_SHAPE).optional();
+// project_id er en OPAQUE id: rapport-boards sender boardets UUID (`project.id`),
+// ikke den kanoniske `customer_slug`-formen. 2026-07-06-herdingen låste feilaktig
+// dette til PROJECT_ID_SHAPE (customer_slug) og droppet DERMED stille ALLE
+// rapport-board-events (board_viewed m.fl.) siden emitteren aldri sendte den
+// formen. Bundet + kontrolltegn-avvist som poi_id (auditens faktiske intensjon:
+// hindre oversized/injection via id-feltet), uten å mønster-låse en id som
+// legitimt kommer i flere former.
+const projectId = opaqueId.optional();
 const productId = z.string().regex(UUID_V4_RE).optional();
 
 export const logEventSchema = z.discriminatedUnion("eventType", [

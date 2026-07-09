@@ -15,7 +15,7 @@
 |-------------|------|----------------------------------|
 | reels/splash-`<video>`-pipeline **+** kuratert hero-asset-lasting¹ | `DesktopReportSplash` | `report-splash-desktop` |
 | ″ | `MobileReportSplash` | `report-splash-mobile` |
-| ″ (embed-grenen) | `EmbedArrivalLoader` | `report-embed-arrival` |
+| embed-chrome (fullskjerm-knapp + aktiveringsgate, kun embed-modus) | `EmbedChrome` | `report-embed-chrome` |
 | voiceover-orchestration | `ReelsAudioOrchestrator` → `use-reels-audio-orchestration` | `reels-audio-orchestration` |
 
 ¹ **Kode-realitet (reconciliation):** AC navngir tre moduler, men i denne kodebasen
@@ -37,7 +37,7 @@ i `.next/static/chunks/` (hash varierer per build):
 ```
 report-splash-desktop.<hash>.js        (~4.6 kB)
 report-splash-mobile.<hash>.js         (~4.3 kB)
-report-embed-arrival.<hash>.js         (~3.2 kB)
+report-embed-chrome.<hash>.js          (~1 kB)
 reels-audio-orchestration.<hash>.js    (~0.9 kB)
 ```
 
@@ -53,7 +53,7 @@ gjør to uavhengige assertions:
   overlever minifisering) finnes i modulens lazy-chunk, men i INGEN av entry-chunkene
   → modul-KODEN, ikke bare chunk-navnet, er ute av entry. Markører:
   `DesktopReportSplash` = `(min-width: 1024px) 50vw, 0px`; `MobileReportSplash` =
-  ` – nabolag`; `EmbedArrivalLoader` = `(min-width: 768px) 28rem, 90vw`.
+  ` – nabolag`; `EmbedChrome` = `Trykk for å utforske nabolaget`.
   (`reels-audio-orchestration` har ingen unik string-literal — struktural unikhet —
   så den dekkes kun av [A], som er rock-solid for webpack: `webpackChunkName` plasserer
   modulen i den navngitte chunken by-construction.)

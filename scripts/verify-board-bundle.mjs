@@ -7,12 +7,25 @@
  * Kjør ETTER `npm run build`:
  *   node scripts/verify-board-bundle.mjs
  *
+ * ⚠️ PRE-EKSISTERENDE NEXT-16-INKOMPATIBILITET (oppdaget 2026-07-08): skriptet ble
+ * skrevet for Next 14.2 og leser `.next/app-build-manifest.json`, som Next 16 IKKE
+ * lenger emitterer (App-Router-manifestene er omstrukturert). Skriptet kaster
+ * derfor ENOENT på manifestet FØR chunk-assertionene — uavhengig av chunk-navnene.
+ * Chunk-referansene her er holdt korrekte (report-embed-chrome, ikke det slettede
+ * report-embed-arrival), men manifest-parsingen må oppdateres til Next 16 som en
+ * EGEN oppgave før dette post-build-beviset kjører igjen. Den aktive kilde-nivå-
+ * vakten for de samme lazy-grensene er vitest-testen
+ * `components/variants/report/reels/__tests__/ReportReelsPage.lazy-boundaries.test.ts`
+ * (grønn i suiten).
+ *
  * Beviser at de tre PRD-2-verifiserte tunge nivå-2-/ortogonale modulene IKKE
  * ligger i entry-chunken for et nivå-1 rapport-board, men i SEPARATE lazy-chunker:
  *
  *   1. reels/splash-<video>-pipeline + kuratert hero-asset-lasting
- *      → report-splash-desktop / report-splash-mobile / report-embed-arrival
- *   2. voiceover-orchestration
+ *      → report-splash-desktop / report-splash-mobile
+ *   2. embed-chrome (fullskjerm-knapp + aktiveringsgate, kun embed-modus)
+ *      → report-embed-chrome
+ *   3. voiceover-orchestration
  *      → reels-audio-orchestration
  *
  * To uavhengige assertions:
@@ -34,7 +47,7 @@ const ROUTE = "/eiendom/[customer]/[project]/rapport-board/page";
 const NAMED_CHUNKS = [
   "report-splash-desktop",
   "report-splash-mobile",
-  "report-embed-arrival",
+  "report-embed-chrome",
   "reels-audio-orchestration",
 ];
 
@@ -56,9 +69,9 @@ const CONTENT_MARKERS = [
     marker: " – nabolag",
   },
   {
-    module: "EmbedArrivalLoader (splash-<video> + kuratert hero)",
-    chunk: "report-embed-arrival",
-    marker: "(min-width: 768px) 28rem, 90vw",
+    module: "EmbedChrome (fullskjerm-knapp + aktiveringsgate)",
+    chunk: "report-embed-chrome",
+    marker: "Trykk for å utforske nabolaget",
   },
 ];
 

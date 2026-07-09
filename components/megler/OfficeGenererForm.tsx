@@ -7,37 +7,48 @@ import CoverageStop from "@/components/megler/CoverageStop";
 import { MapPin, CheckCircle, Loader2 } from "lucide-react";
 
 /**
- * DEN ene self-serve-formen (PRD 3 Unit 8) — adaptiv: meglerkontor er
- * VALGFRITT (uten → boardet havner under reservert `intern`-kunde).
- * Boligtype-velgeren (family/young/senior) er død — pipelinen bruker
- * profil (bolig-default) og rapport-temamodellen.
- *
- * Async-kontrakt: POST svarer pending + id umiddelbart; formen poller
- * GET ?id= til completed/failed (pipelinen kjører in-process på serveren).
+ * Kontor-scopet self-serve-form (Unit 1, R1–R4). Speiler GenererForm sin
+ * fire-and-poll-kontrakt, men:
+ *  - kontoret er kjent (scopet via slug) → INGEN meglerkontor-fritekstfelt (R3);
+ *    kontornavnet vises som avsender.
+ *  - poster `officeSlug` — API-et (Unit 2) slår opp broker_offices og knytter
+ *    boardet til kontorets kunde. Zod stripper ukjente felt, så denne formen MÅ
+ *    verifiseres sammen med Unit 2 før en lenke deles (ellers havner boards under
+ *    `intern` uten geofence — se plan-sekvenseringsgaten).
+ *  - håndterer `outside_coverage`-statuset (R5) via delt CoverageStop.
  */
 
 interface SubmitResult {
-  id: string;
-  slug: string;
-  url: string;
+  id?: string;
+  slug?: string;
+  url?: string;
   status: string;
   existing?: boolean;
+}
+
+interface CoverageMiss {
+  place: string;
+  coveredAreas: string[];
 }
 
 const POLL_INTERVAL_MS = 5000;
 const POLL_TIMEOUT_MS = 6 * 60 * 1000; // litt over serverens maxDuration
 
-export default function GenererForm() {
+interface OfficeGenererFormProps {
+  officeSlug: string;
+  officeName: string;
+}
+
+export default function OfficeGenererForm({
+  officeSlug,
+  officeName,
+}: OfficeGenererFormProps) {
   const [selectedAddress, setSelectedAddress] = useState<AddressResult | null>(null);
   const [email, setEmail] = useState("");
-  const [brokerage, setBrokerage] = useState("");
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
-  const [coverageMiss, setCoverageMiss] = useState<{
-    place: string;
-    coveredAreas: string[];
-  } | null>(null);
+  const [coverageMiss, setCoverageMiss] = useState<CoverageMiss | null>(null);
   const [liveStatus, setLiveStatus] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +58,10 @@ export default function GenererForm() {
 
   // Poll status til completed/failed (eller timeout → e-post-fallback-tekst)
   useEffect(() => {
-    if (!result || result.status !== "pending") return;
+    if (!result || result.status !== "pending" || !result.id) return;
     pollStop.current = false;
     const startedAt = Date.now();
+    const requestId = result.id;
 
     const tick = async () => {
       if (pollStop.current) return;
@@ -58,7 +70,7 @@ export default function GenererForm() {
         return;
       }
       try {
-        const res = await fetch(`/api/generation-requests?id=${result.id}`);
+        const res = await fetch(`/api/generation-requests?id=${requestId}`);
         if (res.ok) {
           const data: { status: string; resultUrl: string | null } = await res.json();
           if (data.status === "completed" || data.status === "failed") {
@@ -82,13 +94,13 @@ export default function GenererForm() {
 
   /** Delt request-body — brukes både ved innsending og notify-opt-in. */
   const requestBody = (extra?: Record<string, unknown>) => ({
+    officeSlug,
     address: selectedAddress!.address,
     email,
     lat: selectedAddress!.lat,
     lng: selectedAddress!.lng,
     city: selectedAddress!.city,
     consentGiven: true,
-    ...(brokerage.trim() ? { brokerage: brokerage.trim() } : {}),
     ...extra,
   });
 
@@ -141,7 +153,7 @@ export default function GenererForm() {
     if (!res.ok) throw new Error("notify failed");
   };
 
-  // Geofence-stopp (R5/R17) — samme flate som kontor-siden
+  // Geofence-stopp (R5/R17)
   if (coverageMiss) {
     return (
       <CoverageStop
@@ -153,7 +165,7 @@ export default function GenererForm() {
     );
   }
 
-  // Confirmation view med live status
+  // Bekreftelse med live status
   if (result) {
     const done = liveStatus === "completed";
     const failed = liveStatus === "failed";
@@ -190,7 +202,7 @@ export default function GenererForm() {
                     ? "Denne adressen har allerede et kart under generering."
                     : "Nabolagskartet genereres — dette tar vanligvis noen minutter. Du kan vente her, eller lukke siden og få lenken på e-post."}
           </p>
-          {!failed && (
+          {!failed && displayUrl && (
             <div className="bg-gray-50 rounded-xl p-6 mb-6">
               <p className="text-sm text-gray-500 mb-2">
                 {done
@@ -224,13 +236,16 @@ export default function GenererForm() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Lag nabolagskart</h1>
           <p className="text-gray-600">
-            Skriv inn adressen til boligen du selger, og vi genererer et interaktivt
+            Skriv inn adressen til boligen du selger, så genererer vi et interaktivt
             nabolagskart du kan dele med kjøpere.
+          </p>
+          <p className="mt-3 text-sm text-gray-400">
+            For <span className="font-medium text-gray-600">{officeName}</span>
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Address */}
+          {/* Adresse */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Adresse
@@ -238,6 +253,7 @@ export default function GenererForm() {
             <AddressAutocomplete
               onSelect={setSelectedAddress}
               placeholder="Skriv inn boligens adresse..."
+              autoFocus
             />
             {selectedAddress && (
               <p className="mt-1.5 text-sm text-emerald-600 flex items-center gap-1">
@@ -247,23 +263,7 @@ export default function GenererForm() {
             )}
           </div>
 
-          {/* Brokerage (valgfritt) */}
-          <div>
-            <label htmlFor="brokerage" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Meglerkontor{" "}
-              <span className="font-normal text-gray-400">(valgfritt)</span>
-            </label>
-            <input
-              id="brokerage"
-              type="text"
-              value={brokerage}
-              onChange={(e) => setBrokerage(e.target.value)}
-              placeholder="F.eks. Eiendomsmegler Krogsveen"
-              className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-            />
-          </div>
-
-          {/* Email */}
+          {/* E-post */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
               E-postadresse
@@ -279,7 +279,7 @@ export default function GenererForm() {
             />
           </div>
 
-          {/* Consent */}
+          {/* Samtykke */}
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -293,7 +293,7 @@ export default function GenererForm() {
             </span>
           </label>
 
-          {/* Error */}
+          {/* Feil */}
           {error && (
             <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-3">{error}</p>
           )}
