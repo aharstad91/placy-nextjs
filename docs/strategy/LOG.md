@@ -14,6 +14,46 @@
 
 ---
 
+## 2026-07-09 (forts.) — Distribusjons-wedgen kartlagt: megler-systemet (Vitec Next), ikke portalen — og nærområde-plassen er allerede bundlet av FINN
+
+**Beslutning/innsikt:** Oppfølging av Local Logic-benchmarken (åpent spørsmål #1: hvem er den norske «MoxiWorks/Delta Media» Placy skal ri på?). Tre parallelle web-researchere kartla megler-system-laget. Fem funn som flytter GTM:
+
+1. **Skarpeste distribusjons-wedge = systemleverandøren, ikke kjeden.** Markedet er et **duopol**: **Vitec Next** (størst) + **Broker/Core by Visma** (kjøpte Webmegler 2018 + Meglerfront/Codegarden/Fenistra 2020). Én integrasjon mot **Vitec Next HUB-API** (50+ partnere, åpen OpenAPI, formell onboarding) treffer samtidig DNB Eiendom, Krogsveen, Nordvik, Aktiv, Notar, Rede, Sørmegleren, Heimdal — bekreftet via Vitecs egen kundeliste. = «vinn én kjede» × 8 i én avtale. Nytt strategisk alternativ over 06-27-«vinn én kjede».
+
+2. **Nærområde-plassen er IKKE hvitt lerret — FINN har den allerede, bundlet.** FINN Nabolagsprofil (bygget på Eiendomsprofil AS, Bergen) er inkludert i FINNs «Large»/«Medium»-annonsepakker *og* integrert i begge megler-systemene. Generisk avstand-til-POI, ikke-redaksjonell, ingen lokalkunnskap/3D/Innsikt. → Placy må selge det *dype* laget over en gratis commodity-profil (samme moat-under-scoren-argument som Local Logic). Prisdisiplinen (06-27) forsterkes: ikke pris som «nabolagsprofil» (nå et gratis commodity-ord).
+
+3. **Premiss korrigert: `partners.no` = &Partners / White Label Estate (WLE), IKKE EiendomsMegler 1.** Norkart-Solkart-bundlingen vi observerte ligger i WLE-økosystemet (Bolignytt PARTNERS). Justerer 06-27-notatet + aktor-map.
+
+4. **BD-inngang for forretningsutviklerne (Aleksander/Markus):** ① Vitec Next HUB-partner (bredest — fortrengning/premium-oppsalg mot FINN-profilen, ikke greenfield); ② sentralstyrt kjede direkte, **Nordvik først** (partner-eid, «like mye teknologiselskap», én beslutningstaker → raskest pilot); ③ FINN deprioriteres (enveis annonse-API, ingen tredjeparts-modul-åpning, eier egen roadmap + egen profil). Aleksander→nybygg via Kvass/Boligvelger (bygger alt mot Next HUB); Markus→system-wedgen ER volum-spillet.
+
+5. **Lavthengende frukt nå:** NEFs proptech-kart (svein@nef.no) → synlighet + NEF-konferanser som varm inngang mot Vitec/Visma partner-program (Placepoint-presedens: kart → Visma-partnerskap).
+
+**Begrunnelse:** Local Logics amerikanske suksess hviler på å ri CRM-/system-laget, ikke selge megler-for-megler. Den norske analogen er konkret og navngitt (Vitec Next HUB) — og gir forretningsutviklerne en distribusjons-hypotese som er × mange ganger bredere enn kjede-for-kjede. Samtidig avslører kartleggingen at commodity-laget (Lag A) allerede er tatt av FINN → bekrefter at Placys eneste holdbare posisjon er Lag B (Lokalkunnskap + Innsikt + immersjon), moat-fra-linje-1.
+
+**Detaljer:** `docs/strategy/2026-07-09-megler-system-distribusjons-wedge.md` (full kartlegging: duopol, kjede↔system-tabell, FINN Nabolagsprofil-inkumbent, bransjetall, 3 BD-inngangsveier, åpne hull). `aktor-map.md` oppdatert (nytt distribusjons-lag-avsnitt + partners.no-korreksjon).
+
+**Status:** Aktiv — kartlegging levert, retning anbefalt (Vitec Next HUB som primær distribusjons-hypotese, Nordvik-pilot som proof foran). Åpne hull: (1) Eiendomsprofil AS uavhengig eller FINN-intern? (2) hvilket system bruker EM1? (3) topp-3-kjede-konsentrasjon (Eiendom Norge-rapport, dels betalt); (4) navngitte IT-/produktdirektører per kjede (LinkedIn-jobb).
+
+---
+
+## 2026-07-09 — Local Logic (Realtor.com) = nærmeste levende analog til bolig-sporet: score-primitivet FORKASTET, kommersiell struktur = viktigste læring, commute-input bekreftet
+
+**Beslutning:** Andreas delte Realtor.com-listingens «Neighborhood & schools»-seksjon — **Local Logic** (scores) + **Yelp** (POI-lokasjoner/rating) + **GreatSchools** (skole-rating) + **Precisely** (skolekretser), embedded som **fast inventar på hver listing**. Dette er den nærmeste levende analogien til Placys nærområde-/grunnpakke-spor, allerede i produksjon på portal-skala. Tre avklaringer landet:
+
+1. **Score-primitivet (0–10 per kategori/linse) FORKASTET som produktretning — låst beslutning.** Andreas: subjektiv svada maskert som objektivitet. «Vi har spist på restaurant med 4.5 stjerner og det var helt elendig for våre krav»; «walk-score 9 spørs hvor langt individet er vant til å gå». En score kollapser individuelle preferanser til ett tall og selger det som fakta → null kredibilitet. **Placy skal ALDRI tagge nabolag med scores.** Snus til pitch-argument *mot* Local Logic: «vi gir deg ikke et tall du ikke kan stole på — vi viser hva som faktisk ER der, du bestemmer.» (Aligner med [[feedback_editorial_no_years_history]]-linjen «hva som ER der», og med nivå-modellens minimum-garanti = stedsspesifikk kategoritekst + drill-in, ikke tall.)
+
+2. **Kommersiell struktur = det viktigste vi tar med oss (Andreas' ord).** Deep-dive bestilt (egen datert doc `2026-07-09-locallogic-benchmark-eiendom.md`): hva de tar betalt, hvordan Realtor.com-avtalen er strukturert, hva scoren beregnes av, andre portal-/kjede-deals, GTM-playbook. Grunn: Local Logic er «vinn ÉN portal → fast inventar på hver listing» *utført i praksis* = levende referanse for grunnpakke/kjede-GTM-en (direkte parallell til Norkart/partners.no, jf. 2026-06-27). Bekrefter at distribusjonstesen (fast inventar på portal-skala) fungerer i markedet.
+
+3. **«Legg inn adresse → se reisetid dit» (Local Logics `Add a commute`) bekreftet retning.** Andreas: «det har vi tenkt på tidligere». Dobbel verdi: (a) validert UX-mønster, (b) det er ⭐⭐-signalet i Innsikt-doccen — rute-forespørsler «fra boligen til X» = rikeste enkelt-signal (jobb/skole/treningssenter/mormor). Reisetids-motoren finnes alt i pipelinen. Å gjøre commute-input synlig/fristende = build-imperativet «UX er datainnsamlings-apparatet» (2026-06-28).
+
+**Begrunnelse:** Local Logic validerer distribusjonsmodellen og gir en konkret kommersiell benchmark. Men de har **ingen Moat 2** — det er en *statisk scores-widget solgt til portalen*, uten engasjements-løkke/ARR-mekanisme, og scoren selv er commodity (Lag A: hvem som helst med Yelp-tetthet + transit-data regner den ut). Det skjerper Placys differensiering: **moaten ligger UNDER scoren** — kuratert Lokalkunnskap (punkter Yelp/Google ikke har) + Innsikt-løkka. At Andreas forkaster score-primitivet er derfor både produkt-korrekt og strategisk konsistent (score = «Solkart-aktig widget»-fellen fra 2026-06-27).
+
+**Detaljer:** `docs/strategy/2026-07-09-locallogic-benchmark-eiendom.md` (deep-dive levert — kommersiell struktur, GTM-barbell, score-metodikk + angreps-flate). `aktor-map.md` oppdatert (Local Logic som benchmark/konkurrent ved siden av Norkart + Walk Score).
+
+**Status:** Aktiv. Score-primitiv-forkastelsen er en **låst produktbeslutning** (skal ikke re-surface). Hovedlæring fra deep-dive: (a) volum-wedgen er megler-system-/plattform-laget (norsk analog: Vitec/Webmegler/partners.no), ikke portalen direkte; (b) durabel distribusjon kan kjøpes med *alignment-kapital* (NAR/SCV eier aksjer i Local Logic → Realtor.com-holdbarhet); (c) Europa/Norden ukontestert. Åpent: (1) kartlegg norske megler-system-leverandører som mulig wedge; (2) kan kjede/portal ta strategisk posisjon i Placy à la NAR/SCV (mot Aleksanders eierandel-struktur); (3) prioriter `Add a commute` inn i board-malen (fanger ⭐⭐ Innsikt-signalet).
+
+---
+
 ## 2026-07-06 — Sommer-rebuilden LEVERT: cutover fullført, moatene lever i prod, fallback-klausulen pensjonert
 
 **Beslutning/milepæl:** Rebuilden fra 2026-06-27-planen er **ferdig og er nå det eneste som kjører** — gamle demo-plattformen (public-skjemaet + demo-JSON-æraen) er slettet i sin helhet samme dag. Demo-paritet ble godkjent av Andreas (alle tre referanse-boards) og cutoveren gjennomført i 7 etapper på én dag. **Fallback-klausulen («tilbake til gamle demo hvis ikke demo-paritet ~tidlig august») er pensjonert — måneden før fristen.**

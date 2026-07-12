@@ -4,7 +4,7 @@
 > Oppdateres hver gang en relasjon endrer status (ny kontakt, nytt møte, ny rolle, parkert).
 > Roll-bytter og status-endringer noteres dato-stemplet i nøkkel-felter.
 
-**Sist oppdatert:** 2026-06-27
+**Sist oppdatert:** 2026-07-09
 
 ---
 
@@ -134,7 +134,7 @@ Spydspiss-segmentet per 2026-06-23 (`2026-06-23-aleksander-kommersialisering-utb
 
 | Org / Person | Rolle | Status / inngangsvinkel |
 |---|---|---|
-| **Nylander & Partners — Vidar Stene** | Megler på Ranheimslivegen 31 B (enebolig, 14,99M, full medieproduksjon: dronevideo + boligfilm + megler på kamera m/ VO). `partners.no/eiendom/159956`. | 2026-06-27: **Pilot-eksemplar for premium-single** — ligger på Ranheim (Andreas' lokalkunnskap-strøk). Ingen kontakt. Brukes som mal for august-test (be Christian/Frank Robert om tilsvarende kommende listing → bundle nærområde-board). |
+| **Nylander & Partners — Vidar Stene** | Megler på Ranheimslivegen 31 B (enebolig, 14,99M, full medieproduksjon: dronevideo + boligfilm + megler på kamera m/ VO). `partners.no/eiendom/159956`. **NB (korrigert 2026-07-09): `partners.no` = &Partners-kjeden under White Label Estate AS (WLE), hvit-etikett-allianse — IKKE EiendomsMegler 1. Norkart-Solkart-bundlingen ligger i WLE-økosystemet (Bolignytt PARTNERS).** | 2026-06-27: **Pilot-eksemplar for premium-single** — ligger på Ranheim (Andreas' lokalkunnskap-strøk). Ingen kontakt. Brukes som mal for august-test (be Christian/Frank Robert om tilsvarende kommende listing → bundle nærområde-board). |
 | **Huy Rebel Production** | Boligfilm-/drone-videograf (Trondheim) — filmet Ranheimslivegen-listingen. Dronefilm/dronefoto fra 5 000,– ink. mva, boligfilm «ta kontakt», «kombiner og få rabatt». huyrebel.com. | 2026-06-27: **Mulig footage-kilde + distribusjonskanal** — sitter i rommet med megler/selger. (a) gjenbruk film i Placy-board m/ tillatelse; (b) videograf upselger nærområde-board oppå filmen. Deres «dronefoto til nærmiljøet» = pene luftbilder, ikke interaktivt board → differensiering holder. Ingen kontakt. |
 | **EiendomsMegler 1 (Søndre/Søre)** | Landets største kjede, ~60% av Trondheim-markedet. | Andreas var «vinner» i Søndre 2017. Top-down-vei: Reinsberg + leder nybolig (historisk Tonje Borthen; «Monica» i Søre). Aleksander mener utbygger-direkte er mer målrettet enn top-down i kjeden. |
 | **Frank Robert** (Megler1 Ranheim) | Superselger / nærområde-spesialist. ~100 eiendommer hittil i år. 45-sek nærområde-video → 160k visninger. | Kandidat for custom megler-stemme (jf. 2026-06-02 stemme-kloning-spor). **2026-06-25: kandidat for første betalte bruktmegler-pilot (august).** Andreas snakket med ham om dette i 2017, kom aldri inn (sommer). Ingen aktiv kontakt. |
@@ -157,6 +157,21 @@ Spydspiss-segmentet per 2026-06-23 (`2026-06-23-aleksander-kommersialisering-utb
 | Org | Rolle | Status / inngangsvinkel |
 |---|---|---|
 | **Norkart** | Norsk geodata/proptech-aktør. Leverer **«3D Solforhold» (Solkart)** som er *plattform-bundlet på partners.no* (alle listings). Forbruker ~100 kr, per listing til megler ~0, kjede-lisens = B2B SaaS. ArcGIS Maps SDK + norske geodata. | 2026-06-27: **Benchmark/konkurrent** (samme kategori som Marketer/HomeKey) — commodity-geodata + kjede-plattformrelasjoner, kan utvide sol → nærområde. Også **markedsbevis for grunnpakke-modellen** (autonomt embeddet geodata-widget, kjede-distribuert) = nivå-1-analogen. Mulig plattform-partner. Moat mot dem = de to data-moatene (lokalkunnskap-IP + engasjement). Ingen kontakt. Detaljer: `2026-06-27-premium-single-bruktmarked-spor.md` seksjon 7. |
+| **Local Logic** (locallogic.co) | Location-intelligence-aktør (Montreal). Leverer **nærområde-scores (0–10)** embedded som fast inventar i Realtor.com-listingen — tre linser (Nearby/Lifestyle/Transportation) + `Add a commute`. Kombineres med Yelp (POI), GreatSchools (skole), Precisely (skolekrets). | 2026-07-09: **Nærmeste levende analog til bolig-sporet** — «vinn ÉN portal → fast inventar på hver listing», utført i praksis = referanse for grunnpakke/kjede-GTM (parallell til Norkart/partners.no). MEN: statisk scores-widget, **ingen Moat 2** (ingen engasjements-/ARR-løkke), scoren = commodity. Score-primitivet er **forkastet** som Placy-retning (subjektiv svada, jf. LOG 2026-07-09) → differensiator: kuratert Lokalkunnskap + Innsikt ligger under scoren. Deep-dive: `2026-07-09-locallogic-benchmark-eiendom.md`. Ingen kontakt. |
+| **Walk Score** (Redfin-eid) | Amerikansk nærområde-score-pioner (Walk/Transit/Bike Score, 0–100). Eid av Redfin. | 2026-07-09: Kategori-benchmark for «neighborhood score» — samme svada-kritikk som Local Logic (score forutsetter gjennomsnitts-individet). Logget som referanse i deep-dive-doccen. |
+
+---
+
+## Distribusjons-lag / megler-systemer (eiendom)
+
+> Kartlagt 2026-07-09 (`2026-07-09-megler-system-distribusjons-wedge.md`). Den norske analogen til Local Logics «rir CRM-/system-laget» (MoxiWorks/Delta Media). **Skarpeste distribusjons-wedge = systemleverandøren, ikke kjede-for-kjede.**
+
+| Org | Rolle | Status / inngangsvinkel |
+|---|---|---|
+| **Vitec Next** (Vitec Megler AS) | Størst megler-fagsystem i Norge. Eid av Vitec Software Group (Nasdaq Stockholm). Bekreftede kjede-kunder: DNB Eiendom, Krogsveen, Nordvik, Aktiv, Notar, Rede, Sørmegleren, Heimdal. Selv-hevdet «~70 %» (vendor-rapportert, ubekreftet). | 2026-07-09: **Primær distribusjons-hypotese.** Én integrasjon mot **Next HUB-API** (50+ partnere, åpen OpenAPI, formell partner-onboarding, hubdoc.vitecnext.no) = embeddet på tvers av 8+ kjeder. Presedens: Kvass/Boligvelger/Ambita bygger allerede dype moduler mot HUB. Handelen: fortrengning/premium-oppsalg mot FINN Nabolagsprofil som allerede ligger der. Ingen kontakt. |
+| **Broker / Core by Visma** (Broker AS, tidl. Visma Real Estate) | Nr. 2-systemet. Visma-rollup: kjøpte **Webmegler** (Websystemer AS) 2018 + Meglerfront/Create-Solutions/Codegarden/Fenistra 2020. API-flater «Broker» + «Core». | 2026-07-09: Sekundær system-inngang. Ingen navngitte kjedekunder funnet offentlig. Ingen kontakt. |
+| **FINN Nabolagsprofil** (bygget på **Eiendomsprofil AS**, Bergen) | **Inkumbenten på Placys plass.** Generisk avstand-til-POI-nabolagsprofil (skole/barnehage/kollektiv/demografi), bundlet i FINNs «Large»/«Medium»-pakker + integrert i begge megler-systemene. Partnere: Visma, GeoData, EnTur, Vitec, SSB. | 2026-07-09: **Konkurrent, slåbar på dybde** (ikke-redaksjonell, ingen lokalkunnskap/3D/Innsikt). Åpent: er Eiendomsprofil AS uavhengig (oppkjøps-/partner-kandidat?) eller FINN-intern? Placy = premium-lag over commodity-profilen. |
+| **NEF proptech-kart** (Norges Eiendomsmeglerforbund) | Bransje-kart, 140+ selskaper, årlig revidert, vist på NEFs proptech-konferanser. | 2026-07-09: **Lavthengende BD-frukt.** Kom på kartet → synlighet + konferanse som varm inngang mot Vitec/Visma partner-program (Placepoint-presedens: kart → Visma-partnerskap). Kontakt: **svein@nef.no**. |
 
 ---
 
