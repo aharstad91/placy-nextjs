@@ -30,7 +30,6 @@ Thumbs.db
 *.log
 
 # Local files
-ralphy/
 screenshots/
 tmp/
 .claude/*
@@ -49,7 +48,7 @@ backups/
 .audio-staging/
 .tmp-screenshots/
 .spike-debug/
-ralph-logs/
+build-logs/
 .vercel
 
 # Lokale skjermbilde-/testartefakter (skal ikke sjekkes inn)

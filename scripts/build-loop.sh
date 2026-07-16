@@ -1,39 +1,39 @@
 #!/usr/bin/env bash
 #
-# ralph-beads.sh — Autonom bead-drevet build-loop for Placy v2 rebuild (Steg-2-broa).
+# build-loop.sh — Autonom bead-drevet build-loop for Placy v2 rebuild (Steg-2-broa).
 #
 # Hver iterasjon kjører en FERSK headless `claude` som bygger NØYAKTIG ÉN bead:
 #   bd ready → bygg mot AC → gates (tsc/lint/test/build) → bd close → commit (ALDRI push).
 # Fersk kontekst per bead = ingen compaction-problem. Den ytre løkka gir «keep going».
 #
 # Kjør detached (overlever at du lukker terminalen):
-#   nohup ./scripts/ralph-beads.sh > ralph-logs/run.log 2>&1 &
-#   echo $! > ralph-logs/ralph.pid        # husk PID for å stoppe
+#   nohup ./scripts/build-loop.sh > build-logs/run.log 2>&1 &
+#   echo $! > build-logs/build-loop.pid        # husk PID for å stoppe
 #
-# Stopp:  kill "$(cat ralph-logs/ralph.pid)"   (eller: pkill -f ralph-beads.sh)
-# Følg:   tail -f ralph-logs/*-summary.log
+# Stopp:  kill "$(cat build-logs/build-loop.pid)"   (eller: pkill -f build-loop.sh)
+# Følg:   tail -f build-logs/*-summary.log
 #
 # Env-overstyringer:
-#   RALPH_MAX_ITERS  (default 30)  — hard tak på antall beads per kjøring
-#   RALPH_MODEL      (default tom = CLI-default)  — f.eks. "sonnet" for billigere mekanisk port
+#   BUILD_MAX_ITERS  (default 30)  — hard tak på antall beads per kjøring
+#   BUILD_MODEL      (default tom = CLI-default)  — f.eks. "sonnet" for billigere mekanisk port
 #
 # Merk: IKKE `set -u` — macOS-bash 3.2 feiler på tom-array-ekspansjon ("${arr[@]}")
 # under set -u. Vi bruker :- / +-guards eksplisitt der det trengs i stedet.
 set -o pipefail
 cd "$(dirname "$0")/.." || { echo "fant ikke repo-rot"; exit 1; }
 
-MAX_ITERS="${RALPH_MAX_ITERS:-30}"
+MAX_ITERS="${BUILD_MAX_ITERS:-30}"
 MODEL_ARG=()
-[ -n "${RALPH_MODEL:-}" ] && MODEL_ARG=(--model "$RALPH_MODEL")
+[ -n "${BUILD_MODEL:-}" ] && MODEL_ARG=(--model "$BUILD_MODEL")
 
-LOG_DIR="ralph-logs"
+LOG_DIR="build-logs"
 mkdir -p "$LOG_DIR"
 RUN_TS="$(date +%Y%m%d-%H%M%S)"
 SUMMARY="$LOG_DIR/${RUN_TS}-summary.log"
 
 log() { echo "[$(date +%H:%M:%S)] $*" | tee -a "$SUMMARY"; }
 
-PROMPT='AUTONOM RALPH-ITERASJON (Placy v2 rebuild). Du er i en headless loop — bygg NØYAKTIG ÉN bead og avslutt. Det finnes INGEN bruker å spørre; ikke be om bekreftelse.
+PROMPT='AUTONOM BUILD-ITERASJON (Placy v2 rebuild). Du er i en headless loop — bygg NØYAKTIG ÉN bead og avslutt. Det finnes INGEN bruker å spørre; ikke be om bekreftelse.
 
 KONTEKST: Les CLAUDE.md (prosjektregler) + memory-frontier (MEMORY.md → project_prd_audit_beads_ready.md) for status + mønstre. Build-loopen drives av beads (bd-CLI via Bash).
 
@@ -47,7 +47,7 @@ GJØR:
 
 VAKTER (ufravikelige): ALDRI `git push`. ALDRI masseslett/destruktivt. ALDRI kjør faktisk provisjon/migrasjon mot v2-PROD (xhigh) — slikt køes i DECISIONS-QUEUE. La arbeidstreet være RENT ved exit (alt enten committet eller revertet). Bygg KUN ÉN bead, så avslutt.'
 
-log "=== ralph-beads start (max $MAX_ITERS iter, model='${RALPH_MODEL:-default}') ==="
+log "=== build-loop start (max $MAX_ITERS iter, model='${BUILD_MODEL:-default}') ==="
 stuck=0
 for i in $(seq 1 "$MAX_ITERS"); do
   iter_log="$LOG_DIR/${RUN_TS}-iter-$(printf '%02d' "$i").log"
@@ -71,4 +71,4 @@ for i in $(seq 1 "$MAX_ITERS"); do
     log "  ✓ $head_after — $(git log -1 --format='%s' "$head_after" 2>/dev/null)"
   fi
 done
-log "=== ralph-beads ferdig ==="
+log "=== build-loop ferdig ==="

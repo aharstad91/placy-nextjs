@@ -4,10 +4,10 @@
 #
 # Usage:
 #   From the worktree directory:
-#     ../placy-ralph/scripts/setup-worktree.sh
+#     ../placy/scripts/setup-worktree.sh
 #
 #   Or with explicit main repo path:
-#     /path/to/placy-ralph/scripts/setup-worktree.sh
+#     /path/to/placy/scripts/setup-worktree.sh
 
 set -e
 

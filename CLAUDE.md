@@ -216,9 +216,9 @@ Flere Claude Code-sesjoner i samme mappe ødelegger hverandres arbeid. **Bruk al
 ### Opprette ny worktree
 
 ```bash
-git worktree add ../placy-ralph-<feature> -b feat/<feature-name>
-cd ../placy-ralph-<feature>
-../placy-ralph/scripts/setup-worktree.sh
+git worktree add ../placy-<feature> -b feat/<feature-name>
+cd ../placy-<feature>
+../placy/scripts/setup-worktree.sh
 ```
 
 Setup-scriptet gjør tre ting:
@@ -230,7 +230,7 @@ Setup-scriptet gjør tre ting:
 - **Én sesjon per working directory** — aldri to i samme mappe
 - **Sjekk** `git worktree list` før ny sesjon
 - **Port-konflikter**: Hovedrepo bruker `:3000`. Worktrees bruker `PORT=3001 npm run dev` etc.
-- **Rydde opp**: `git worktree remove ../placy-ralph-<feature>` når ferdig
+- **Rydde opp**: `git worktree remove ../placy-<feature>` når ferdig
 
 ## Kjør dev server
 

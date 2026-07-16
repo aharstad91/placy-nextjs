@@ -128,7 +128,7 @@
 ## Filstruktur
 
 ```
-placy-ralph/
+placy/
 ├── app/
 │   ├── [customer]/[project]/    # Dynamisk prosjektside
 │   ├── api/
@@ -167,9 +167,8 @@ npm run build        # Bygg for produksjon
 npm run lint         # Kjør linting
 ```
 
-## Kjør med Ralphy
+## Kjør med build-loopen
 
 ```bash
-ralphy --prd PRD.md              # Kjør alle oppgaver sekvensielt
-ralphy --prd PRD.md --max-iterations 7   # Kun Fase 1
+./scripts/build-loop.sh          # Autonom bead-drevet build-loop (se scriptets header)
 ```
