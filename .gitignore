@@ -51,3 +51,7 @@ backups/
 .spike-debug/
 ralph-logs/
 .vercel
+
+# Lokale skjermbilde-/testartefakter (skal ikke sjekkes inn)
+test-results/
+luffu-capture/
