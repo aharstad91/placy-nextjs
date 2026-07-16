@@ -6,6 +6,26 @@
 
 ---
 
+## 2026-07-16 — MILJØ-OPPRYDDING + RALPHY-NAVNET FJERNET + MAPPE OMDØPT TIL `placy`
+
+**Kontekst:** Andreas så at prosjektmappa var stor (1,3 GB synlig, ~2,3 GB reelt) og lurte på om det hang igjen rot fra produktutviklingen. Konklusjon: revampen i juni/juli ryddet koden, ikke filmiljøet — men det meste var normal størrelse (node_modules/​.git/​public). Tre opprydningsrunder samme sesjon.
+
+**Runde 1 — diskopprydding (commit f11f354):** Slettet lokalt: `.next` (844 MB byggcache), `.beads/dolt` + logger (94 MB — gjenskapes fra `issues.jsonl` i git), `.tmp-screenshots`/`.audio-staging`/`ralph-logs`/tsbuildinfo (~13 MB). Fjernet fra git + gitignorert: `test-results/` + `luffu-capture/` (25 MB, 28 innsjekkede sesjon-skjermbilder). Mappa: ~2,3 GB → 1,3 GB. Beholdt: `public/` (153 MB ekte produktinnhold — reels/illustrasjoner/lyd), `.git` (254 MB — historikk-krymping ikke verdt risikoen på prototype-stadiet).
+
+**Runde 2 — januar-rester (commit 8e10f9b):** Slettet `run_migration.js` (erstattet av psql-metoden i CLAUDE.md), `placy-data-export.md` (DB-snapshot fra 24. januar, pre-v2 — foreldet), `todos/` (7 filer, alle `complete`). Beholdt `.env.example`/`vitest.setup.ts`/`postcss.config.mjs` (stabil standardkonfig, ikke rot).
+
+**Runde 3 — ralphy-navnet fjernet (commit 601534f + filsystem):** Navnet hang igjen fra Next.js-oppstarten da ralphing var nytt.
+- `ralphy/`-verktøyet (17 MB, lokalt) + `.ralphy/config.yaml` slettet.
+- Build-loopen BEHOLDT men omdøpt: `scripts/ralph-beads.sh` → **`scripts/build-loop.sh`** (loggmappe `build-logs/`, env `BUILD_MAX_ITERS`/`BUILD_MODEL`). Samme funksjonalitet — beads-grafen lever og loopen kan gjenbrukes.
+- `CLAUDE.md`/`PRD.md`/`.gitignore`/`setup-worktree.sh` oppdatert; historiske filer (worklogs, audits, beads-historikk) bevisst urørt.
+- **Mappe omdøpt:** `Documents/placy-ralph` → **`Documents/placy`**; megler-worktreen → **`placy-megler`** (`git worktree repair` + `move`, `.env.local`-symlink re-pekt, `feat/megler-self-serve` urørt). Claude-memory kopiert til ny prosjektsti. Vercel-linken (`.vercel/repo.json`) bruker prosjekt-ID + relativ sti — upåvirket.
+
+**Bifunn:** Supabase-prosjektet er PAUSET (host NXDOMAIN — pausede prosjekter forsvinner fra DNS). Andreas reaktiverer.
+
+**Åpne tråder:** (1) `public/wesselslokka-illustrasjon{,-v2,-v3}.png` (4,7 MB, tracked) har 0 kode-referanser — må sjekkes mot DB-innhold når Supabase er reaktivert før evt. sletting. (2) Ingen commits pushet denne sesjonen (f11f354/8e10f9b/601534f lokale). (3) Alle åpne Claude Code-sesjoner må restartes fra ny sti.
+
+---
+
 ## 2026-07-07 — /CURATE-AREA-KOMMANDO + WESSELSLØKKA BACK-FILLET + LEAD FRA EDITORIAL.BODY
 
 **Kontekst:** Andreas så at drill-in-panelet (kategori-klikk → lang tekst + «Verdt å merke seg»-punkter) manglet på Wesselsløkka. Diagnose → back-fill → to leveranser som lukker strøk-kurateringsgapet.
