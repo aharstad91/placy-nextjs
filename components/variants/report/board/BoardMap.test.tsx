@@ -170,6 +170,8 @@ function setBoard(
     viewportRect: null,
     setViewportRect: vi.fn(),
     setViewportPoiIds: vi.fn(),
+    mapCamera: null,
+    setMapCamera: vi.fn(),
     ...ctxOverrides,
   };
   h.board.activeCategory = null;
@@ -470,6 +472,34 @@ describe("BoardMap — Unit 1: viewport-publisering (R9 2D, R12)", () => {
     render(<BoardMap />);
     expect(mapInstance().dragRotate.disable).not.toHaveBeenCalled();
     expect(mapInstance().touchZoomRotate.disableRotation).not.toHaveBeenCalled();
+  });
+
+  it("registrerer kamera-API-et kun på den publiserende flaten (kategoriside-push)", () => {
+    const register = boardCtx().setMapCamera as ReturnType<typeof vi.fn>;
+    const { unmount } = render(<BoardMap publishViewport />);
+    const api = register.mock.calls.at(-1)![0];
+    expect(typeof api.snapshot).toBe("function");
+    expect(typeof api.restore).toBe("function");
+    expect(typeof api.fitVisible).toBe("function");
+    unmount();
+    // Avregistreres ved unmount så en død motor aldri kan flytte kameraet.
+    expect(register).toHaveBeenLastCalledWith(null);
+  });
+
+  it("registrerer IKKE kamera-API-et på desktop/event", () => {
+    render(<BoardMap />);
+    expect(boardCtx().setMapCamera).not.toHaveBeenCalled();
+  });
+
+  it("kamera-API-et beholder identitet gjennom sheet-drag (ingen re-registrering)", () => {
+    // Ville identiteten skiftet med paddingen, ville hver hvileposisjon gitt ny
+    // provider-state og en ekstra render-runde midt i en gest.
+    const register = boardCtx().setMapCamera as ReturnType<typeof vi.fn>;
+    const { rerender } = render(<BoardMap publishViewport mapPaddingBottom={100} />);
+    const first = register.mock.calls.at(-1)![0];
+    rerender(<BoardMap publishViewport mapPaddingBottom={300} />);
+    expect(register.mock.calls.at(-1)![0]).toBe(first);
+    expect(register).toHaveBeenCalledTimes(1);
   });
 });
 

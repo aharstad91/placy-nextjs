@@ -60,3 +60,31 @@ export interface ViewportRect {
   east: number;
   north: number;
 }
+
+/** Fullt kamera-utsnitt — nok til å gjenopprette et utsnitt EKSAKT, ikke
+ *  «omtrent samme sted» (R18). */
+export interface CameraSnapshot {
+  lng: number;
+  lat: number;
+  zoom: number;
+  bearing: number;
+  pitch: number;
+}
+
+/**
+ * Kamera-handlingene den monterte kart-motoren tilbyr flatene over seg.
+ *
+ * Registreres av `BoardMap` på `BoardContext` fordi push/tilbake-navigasjonen
+ * (kategorisiden) må lagre og gjenopprette kameraet, men lever i et helt annet
+ * subtre enn kart-instansen. Den persistente `gmp-map-3d`-instansen kan aldri
+ * unmountes, så «eget kart per side» er utelukket som mekanisme — sidene deler
+ * ett kart og bytter kun kamera-ramme.
+ */
+export interface MapCameraApi {
+  /** Gjeldende utsnitt, eller null når kartet ikke er klart. */
+  snapshot: () => CameraSnapshot | null;
+  /** Gjenoppretter et lagret utsnitt eksakt og UMIDDELBART. */
+  restore: (snapshot: CameraSnapshot) => void;
+  /** Rammer inn de nå-synlige markørene sammen med boligen. */
+  fitVisible: () => void;
+}

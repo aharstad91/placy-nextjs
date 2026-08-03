@@ -29,7 +29,7 @@ import {
 } from "@/lib/event-board/use-board-collection";
 import { BoardCollectionDrawer } from "../board/event/BoardCollectionDrawer";
 import { EventMobileSheet } from "../board/event/EventMobileSheet";
-import { NeighbourhoodSheet } from "../board/neighbourhood/NeighbourhoodSheet";
+import { NeighbourhoodSurface } from "../board/neighbourhood/NeighbourhoodSurface";
 import { useKompassSelections } from "@/lib/kompass-store";
 import {
   EngagementProvider,
@@ -1000,10 +1000,11 @@ function ResponsiveLayoutInner({
       </div>
 
       {/* Nabolagsflaten (R1/R3): kart øverst, fritt dragbar liste nederst, på
-          boards uten spillbar VO. Søsken til kart-containeren over — kartet
-          forblir montert og uendret under sheeten (ingen WebGL-remount). */}
+          boards uten spillbar VO — med kategoriside-push over samme kart.
+          Søsken til kart-containeren over, så kartet forblir montert og uendret
+          gjennom hele navigasjonen (ingen WebGL-remount). */}
       {neighbourhoodSurface && (
-        <NeighbourhoodSheet onHeightChange={setSheetHeightPx} />
+        <NeighbourhoodSurface onSurfaceHeightChange={setSheetHeightPx} />
       )}
 
       {/* Historie-flate — kun når kart ikke er aktiv flate. Kategori-beats får

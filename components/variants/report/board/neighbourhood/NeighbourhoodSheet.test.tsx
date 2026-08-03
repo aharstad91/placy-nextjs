@@ -47,12 +47,9 @@ function setup(onHeightChange = vi.fn()) {
   return { ...utils, sheet, grab, onHeightChange };
 }
 
-/** Leser den imperativt satte translateY-en. */
-function offsetOf(el: HTMLElement): number {
-  const m = /translateY\((-?[\d.]+)px\)/.exec(el.style.transform);
-  return m ? Number(m[1]) : NaN;
-}
-const visibleHeightOf = (el: HTMLElement) => EXPECTED_HIGH - offsetOf(el);
+/** Sheetens layout-høyde ER dens synlige høyde (se komponent-doccen om hvorfor
+ *  vi animerer height og ikke transform). Den skrives imperativt. */
+const visibleHeightOf = (el: HTMLElement) => Number.parseFloat(el.style.height);
 
 function drag(grab: HTMLElement, fromY: number, toY: number, dtMs = 400) {
   act(() => {
@@ -71,8 +68,9 @@ describe("NeighbourhoodSheet — måling og rapportering (R5)", () => {
   it("måler tilgjengelig høyde selv i stedet for å anta en viewport", () => {
     // `EventMobileSheet` hardkoder 700 px og bommer på alt annet. Her er
     // høyden avledet av den faktiske containeren.
-    const { sheet } = setup();
-    expect(sheet.style.height).toBe(`${EXPECTED_HIGH}px`);
+    const { sheet, grab } = setup();
+    drag(grab, 600, 100); // opp til høy hvileposisjon
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_HIGH);
   });
 
   it("starter i lav hvileposisjon og rapporterer den høyden oppover", () => {
@@ -83,11 +81,16 @@ describe("NeighbourhoodSheet — måling og rapportering (R5)", () => {
   });
 
   it("holder kartet synlig — sheeten dekker aldri hele flaten (R3)", () => {
+    const { sheet, grab } = setup();
+    drag(grab, 600, 100);
+    expect(visibleHeightOf(sheet)).toBeLessThan(CONTAINER_H);
+  });
+
+  it("scroll-regionen er sheetens FAKTISKE høyde, ikke maks-høyden", () => {
+    // Med fast maks-høyde + translateY ville lista i lav hvileposisjon hatt en
+    // scrollport under skjermkanten — innholdet der ville vært helt unåbart.
     const { sheet } = setup();
-    act(() => {
-      fireEvent.click(sheet.querySelector("button")!);
-    });
-    expect(EXPECTED_HIGH).toBeLessThan(CONTAINER_H);
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_LOW);
   });
 });
 
@@ -103,7 +106,7 @@ describe("NeighbourhoodSheet — drag og snap", () => {
       fireEvent.pointerMove(grab, { pointerId: 1, isPrimary: true, clientY: 420 });
     });
 
-    // Transformen har fulgt fingeren …
+    // Høyden har fulgt fingeren …
     expect(visibleHeightOf(sheet)).toBe(EXPECTED_LOW + 80);
     // … men ingenting er rapportert oppover: kartet skal ikke re-scope, ikke
     // sette padding og ikke publisere utsnitt 60 ganger i sekundet.
@@ -198,11 +201,11 @@ describe("NeighbourhoodSheet — iOS-fellene", () => {
     expect(grab.className).toContain("touch-none");
   });
 
-  it("animerer kun transform (aldri height/top) ved snap", () => {
+  it("animerer kun høyden (aldri top/bottom/transform) ved snap", () => {
     const { sheet, grab } = setup();
     drag(grab, 600, 250);
-    expect(sheet.style.transition).toMatch(/^transform /);
-    expect(sheet.style.transition).not.toMatch(/height|top|bottom/);
+    expect(sheet.style.transition).toMatch(/^height /);
+    expect(sheet.style.transition).not.toMatch(/transform|top|bottom/);
   });
 
   it("animerer ikke den FØRSTE posisjoneringen (skal ikke gli ned ved ankomst)", () => {

@@ -139,6 +139,17 @@ describe("buildNeighbourhoodList — dekning og tidsspenn", () => {
     expect(list.categories[0].totalCount).toBe(17);
   });
 
+  it("eksponerer ALLE synlige POI-IDer, ikke bare de tre som står som rader", () => {
+    // Markørsettet på kartet er ikke det samme som radene på kortet.
+    const pois = Array.from({ length: 6 }, (_, i) => poi(`p${i}`, { walk: i + 1 }));
+    const list = buildNeighbourhoodList(
+      [cat("mat", [...pois, poi("borte", { ...FAR, walk: 2 })])],
+      RECT,
+    );
+    expect(list.categories[0].rows).toHaveLength(3);
+    expect(list.visiblePoiIds.sort()).toEqual(pois.map((p) => p.id).sort());
+  });
+
   it("teller ikke skjulte punkter i visibleCount på tvers av kategoriene", () => {
     const list = buildNeighbourhoodList(
       [

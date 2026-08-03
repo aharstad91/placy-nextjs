@@ -12,7 +12,11 @@ import {
   type ReactNode,
 } from "react";
 import type { BoardCategoryId, BoardPOIId, BoardData } from "./board-data";
-import type { VisibleIdsSource, ViewportRect } from "@/lib/board/board-types";
+import type {
+  MapCameraApi,
+  VisibleIdsSource,
+  ViewportRect,
+} from "@/lib/board/board-types";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
 import {
   useSubCategoryFilter,
@@ -180,6 +184,15 @@ interface BoardContextValue {
   /** Se `viewportRect`. Verdi-deduplisert, så identiske rektangler er no-op. */
   setViewportRect: (rect: ViewportRect | null) => void;
   /**
+   * Kamera-handlingene den monterte kart-motoren tilbyr. `null` når ingen motor
+   * har registrert seg (desktop, event, VO-flaten — de trenger dem ikke).
+   * Registreres av `BoardMap`; brukes av kategorisidens push/tilbake, som må
+   * lagre og gjenopprette utsnittet eksakt (R18).
+   */
+  mapCamera: MapCameraApi | null;
+  /** Se `mapCamera`. Kalles av kart-motoren ved mount/unmount. */
+  setMapCamera: (api: MapCameraApi | null) => void;
+  /**
    * Event-board "Min samling"-søm (Unit 5): POI-IDer brukeren har lagret i sin
    * samling (eller som er rehydrert fra en delt `?c=`-lenke). Når satt highlighter
    * `BoardMarker` disse med en egen "collection"-ring så de skiller seg ut på
@@ -214,6 +227,7 @@ export function BoardProvider({
   // som markør-filter. Alle tre lever i dette subtreet.
   const [viewportRect, setViewportRectState] = useState<ViewportRect | null>(null);
   const [viewportPoiIds, setViewportPoiIds] = useState<Set<string> | null>(null);
+  const [mapCamera, setMapCamera] = useState<MapCameraApi | null>(null);
 
   // Verdi-dedup: kartet republiserer ved hver gest-slipp, og et identisk
   // rektangel skal ikke re-rendre subtreet (sheeten re-rendrer i gest-frekvens
@@ -281,6 +295,8 @@ export function BoardProvider({
         setViewportPoiIds,
         viewportRect,
         setViewportRect,
+        mapCamera,
+        setMapCamera,
         collectionPoiIds,
       }}
     >

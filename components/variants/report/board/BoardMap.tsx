@@ -128,6 +128,7 @@ export function BoardMap({
     visiblePoiIds,
     visibleIdsSource,
     setViewportRect,
+    setMapCamera,
     collectionPoiIds,
   } = useBoard();
   const activeCategory = useActiveCategory();
@@ -436,6 +437,55 @@ export function BoardMap({
     if (!tourActive) return;
     fitToVisiblePois();
   }, [tourActive, activeCategory?.id, fitToVisiblePois]);
+
+  // ---- Kamera-API for flatene over kartet (kategoriside-push, R18) ----
+  // Objektet er STABILT (tom dep-array) og leser gjeldende fit-callback via en
+  // ref satt hver render — ellers ville hver padding-endring gitt et nytt API,
+  // ny provider-state og en re-render-runde per sheet-drag.
+  const fitRef = useRef(fitToVisiblePois);
+  fitRef.current = fitToVisiblePois;
+  const cameraApi = useMemo(
+    () => ({
+      snapshot: () => {
+        const map = mapRef.current?.getMap();
+        if (!map) return null;
+        const center = map.getCenter();
+        return {
+          lng: center.lng,
+          lat: center.lat,
+          zoom: map.getZoom(),
+          bearing: map.getBearing(),
+          pitch: map.getPitch(),
+        };
+      },
+      // `jumpTo`, ikke `easeTo`: gjenopprettingen må være SYNKRON. Tilbake fra
+      // kategorisiden remonterer nabolagslista, som umiddelbart publiserer et
+      // nytt utsnitt fra kameraets nåværende posisjon — leste den en
+      // halvferdig animasjon, ville lista blitt scopet til et utsnitt brukeren
+      // aldri så. «Nøyaktig samme utsnitt» (R18) betyr dessuten nøyaktig.
+      restore: (s: {
+        lng: number;
+        lat: number;
+        zoom: number;
+        bearing: number;
+        pitch: number;
+      }) => {
+        mapRef.current?.getMap().jumpTo({
+          center: [s.lng, s.lat],
+          zoom: s.zoom,
+          bearing: s.bearing,
+          pitch: s.pitch,
+        });
+      },
+      fitVisible: () => fitRef.current(),
+    }),
+    [],
+  );
+  useEffect(() => {
+    if (!publishViewport) return;
+    setMapCamera(cameraApi);
+    return () => setMapCamera(null);
+  }, [publishViewport, cameraApi, setMapCamera]);
 
   // Event-board filter-fit (Unit 4): events har ingen audio-tour (tourActive er
   // alltid false), så tour-fitten over fyrer aldri. I stedet fitter vi kameraet

@@ -17,22 +17,30 @@ import {
  * splash. Denne sheeten er innholdsflaten: kart øverst, fritt dragbar liste
  * nederst, kartet aldri helt skjult (R1/R3).
  *
- * ## Hvorfor transform og ikke height
+ * ## Hvorfor height og ikke transform — et bevisst avvik
  *
- * Sheeten har FAST høyde (den høyeste hvileposisjonen) og flyttes med
- * `translateY`. Å animere `height` ville reflowet innholdet på hver frame av
- * draget; med transform rører vi bare compositoren, og scroll-posisjonen i
- * lista overlever en dragsesjon uendret.
+ * Repo-konvensjonen (`apple-style-slide-up-modal-with-backdrop-blur-20260415`)
+ * er å animere KUN `transform`/`opacity`. Her går vi mot den, med vitende vilje.
  *
- * ## Hvorfor transformen styres imperativt
+ * Den transform-baserte varianten — fast høyde lik den høyeste hvileposisjonen,
+ * flyttet ned med `translateY` — ser identisk ut, men gir feil scroll-region:
+ * scroll-containeren er da alltid høy, mens bare toppen er på skjermen. I lav
+ * hvileposisjon blir innholdet under skjermkanten UNÅBART (containeren
+ * overflower ikke, så det finnes ingenting å scrolle), og brukeren må dra
+ * sheeten opp før lista i det hele tatt kan leses. Sheetens layout-høyde MÅ
+ * være lik dens synlige høyde.
  *
- * Under draget skrives `style.transform` DIREKTE på elementet — ingen React-
- * render per frame. Det er ikke en mikro-optimalisering: en dragbar sheet
- * re-rendrer i gest-frekvens, og en per-render-probe på kart-stien har krasjet
- * dette kartet før (`webgl-context-leak-per-render-probe-20260603`). Ved slipp
- * settes måltransformen imperativt FØR `setRest`, så React-committen skriver
- * nøyaktig samme verdi og det aldri finnes en frame med gammel posisjon.
- * Hviletilstanden skrives av samme layout-effekt — én kilde til sannhet.
+ * Kostnaden er en reflow per drag-frame, men bare av sheet-subtreet (høyst en
+ * håndfull kategorikort). Kart-stien røres ikke — som er det
+ * `webgl-context-leak-per-render-probe-20260603` faktisk advarer mot.
+ *
+ * ## Hvorfor høyden styres imperativt
+ *
+ * Under draget skrives `style.height` DIREKTE på elementet — ingen React-render
+ * per frame. Ved slipp settes målhøyden imperativt FØR `setRest`, så
+ * React-committen skriver nøyaktig samme verdi og det aldri finnes en frame med
+ * gammel posisjon. Hviletilstanden skrives av samme layout-effekt — én kilde
+ * til sannhet.
  *
  * ## Hvorfor lista ikke oppdateres under draget
  *
@@ -126,24 +134,21 @@ export function NeighbourhoodSheet({
     return () => ro.disconnect();
   }, []);
 
-  const applyTransform = useCallback(
-    (heightPx: number, animate: boolean) => {
-      const el = sheetRef.current;
-      if (!el) return;
-      el.style.transition = animate
-        ? `transform ${SNAP_DURATION_MS}ms ${SNAP_EASING}`
-        : "none";
-      el.style.transform = `translateY(${restHeights.high - heightPx}px)`;
-    },
-    [restHeights.high],
-  );
+  const applyHeight = useCallback((heightPx: number, animate: boolean) => {
+    const el = sheetRef.current;
+    if (!el) return;
+    el.style.transition = animate
+      ? `height ${SNAP_DURATION_MS}ms ${SNAP_EASING}`
+      : "none";
+    el.style.height = `${heightPx}px`;
+  }, []);
 
-  // Hviletilstanden. Hopper over mens et drag eier transformen.
+  // Hviletilstanden. Hopper over mens et drag eier høyden.
   useLayoutEffect(() => {
     if (restHeights.high <= 0 || dragRef.current) return;
-    applyTransform(restHeights[rest], positionedRef.current);
+    applyHeight(restHeights[rest], positionedRef.current);
     positionedRef.current = true;
-  }, [rest, restHeights, applyTransform]);
+  }, [rest, restHeights, applyHeight]);
 
   // Rapporteres i en LAYOUT-effekt: kartets padding og viewport-publiseringen
   // skal lande før paint, men et setState i forelderen under vår egen render
@@ -174,7 +179,7 @@ export function NeighbourhoodSheet({
       velocity: 0,
       moved: false,
     };
-    applyTransform(restHeights[rest], false);
+    applyHeight(restHeights[rest], false);
   };
 
   /** Oppdaterer dragsesjonen fra en peker-posisjon og returnerer den nye
@@ -198,7 +203,7 @@ export function NeighbourhoodSheet({
   const handlePointerMove = (e: ReactPointerEvent<HTMLElement>) => {
     const drag = dragRef.current;
     if (!drag || e.pointerId !== drag.pointerId) return;
-    applyTransform(trackPointer(drag, e.clientY, e.timeStamp), false);
+    applyHeight(trackPointer(drag, e.clientY, e.timeStamp), false);
   };
 
   const handlePointerUp = (e: ReactPointerEvent<HTMLElement>) => {
@@ -211,7 +216,7 @@ export function NeighbourhoodSheet({
       // Tapp på håndtaket: bytt hvileposisjon. Gir en ikke-gestuell vei mellom
       // de to tilstandene (samme affordans som `EventMobileSheet`s tapp-syklus).
       const next = rest === "low" ? "high" : "low";
-      applyTransform(restHeights[next], true);
+      applyHeight(restHeights[next], true);
       goTo(next);
       return;
     }
@@ -227,7 +232,7 @@ export function NeighbourhoodSheet({
           : "high";
     // Måltransformen settes FØR setRest, så React-committen skriver samme
     // verdi og snappet aldri hopper via den gamle posisjonen.
-    applyTransform(restHeights[next], true);
+    applyHeight(restHeights[next], true);
     goTo(next);
   };
 
@@ -240,12 +245,14 @@ export function NeighbourhoodSheet({
       data-testid="neighbourhood-frame"
       className="pointer-events-none absolute inset-0 z-30"
     >
+      {/* Høyden settes imperativt av layout-effekten (og av draget) — bevisst
+          ikke via style-propen, så React-commit og gest aldri kjemper om
+          samme felt. */}
       <div
         ref={sheetRef}
         data-testid="neighbourhood-sheet"
         data-rest={rest}
-        className="pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-3xl bg-[#f5f1ea] shadow-[0_-8px_32px_rgba(28,25,23,0.22)] will-change-transform"
-        style={{ height: restHeights.high || undefined }}
+        className="pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-3xl bg-[#f5f1ea] shadow-[0_-8px_32px_rgba(28,25,23,0.22)]"
       >
         {/* Gripeflaten eier vertikale gester. `touch-action: none` er PÅKREVD
             her (uten den kansellerer nettleseren pekeren og draget dør) — men

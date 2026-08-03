@@ -88,6 +88,12 @@ export interface NeighbourhoodList<P extends NeighbourhoodPOIInput> {
   /** Kategorier med minst ett synlig punkt, nærmeste først. Kategorier uten
    *  synlige punkter faller helt ut (R14). */
   categories: NeighbourhoodCategory<P>[];
+  /**
+   * ALLE synlige POI-IDer på tvers av kategoriene — ikke bare de som står som
+   * rader. Dette er markør-settet: kartet skal vise hvert punkt i utsnittet,
+   * mens kortene bare rekker over tre hver.
+   */
+  visiblePoiIds: string[];
   /** Synlige punkter totalt. 0 → tom tilstand (R25). */
   visibleCount: number;
   /** false når utsnittet manglet og lista viser ALT — degraderingsveien når
@@ -197,6 +203,7 @@ export function buildNeighbourhoodList<P extends NeighbourhoodPOIInput>(
 ): NeighbourhoodList<P> {
   const rowsPerCategory = options.rowsPerCategory ?? DEFAULT_ROWS_PER_CATEGORY;
   const out: NeighbourhoodCategory<P>[] = [];
+  const visiblePoiIds: string[] = [];
   let visibleCount = 0;
 
   for (const category of categories) {
@@ -218,6 +225,7 @@ export function buildNeighbourhoodList<P extends NeighbourhoodPOIInput>(
       timed.length > 0 ? timed[timed.length - 1].walkMinutes : undefined;
 
     visibleCount += visible.length;
+    for (const row of visible) visiblePoiIds.push(row.poi.id);
     out.push({
       id: category.id,
       label: category.label,
@@ -241,5 +249,5 @@ export function buildNeighbourhoodList<P extends NeighbourhoodPOIInput>(
     return a.label.localeCompare(b.label, "nb");
   });
 
-  return { categories: out, visibleCount, scoped: rect !== null };
+  return { categories: out, visiblePoiIds, visibleCount, scoped: rect !== null };
 }
