@@ -302,7 +302,7 @@ stateDiagram-v2
 
 ### Fase 1 — føletesten
 
-- [ ] **Unit 1: Bryt kamera-løkken og åpne viewport-avlesning**
+- [x] **Unit 1: Bryt kamera-løkken og åpne viewport-avlesning**
 
 **Goal:** Gjøre det trygt å mate viewport-avledede IDer inn i `visiblePoiIds`,
 og eksponere kartets utsnitt for konsumenter.

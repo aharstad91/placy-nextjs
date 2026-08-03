@@ -29,3 +29,34 @@ export interface BoardAudioTrack {
 
 export type BoardCategoryId = string & { readonly __brand: "BoardCategoryId" };
 export type BoardPOIId = string & { readonly __brand: "BoardPOIId" };
+
+/**
+ * HVORFOR `visiblePoiIds` er satt. Diskriminatoren finnes fordi de to kildene
+ * har motsatt kamera-kontrakt:
+ *
+ * - `"event-filter"` — settet er en BRUKERVALGT delmengde (tema/dag/tid på
+ *   event-board). Kameraet SKAL ramme det inn; det er hele poenget med filteret.
+ * - `"viewport-scope"` — settet er AVLEDET av kartutsnittet (mobil
+ *   nabolagsflate). Fitter kameraet på det, får vi en løkke: panorer → nytt
+ *   sett → refit → nytt utsnitt → nytt sett → … Kameraet skal ALDRI fitte på
+ *   denne kilden.
+ *
+ * Gaten håndheves av `shouldFitToFilter` i `board-camera-fit.ts`.
+ */
+export type VisibleIdsSource = "event-filter" | "viewport-scope";
+
+/**
+ * Det IKKE-OKKLUDERTE kart-rektangelet i geo-koordinater: kartets synlige flate
+ * minus området en bottom-sheet dekker.
+ *
+ * Rene primitiver, ikke et Mapbox-`LngLatBounds`-objekt, av to grunner:
+ * konsumenter kan bruke feltene direkte i dep-arrays uten objekt-identitets-
+ * løkker (`useeffect-object-dependency-infinite-loop-20260410`), og modellen er
+ * motor-uavhengig — 3D avleder samme form fra kamerasenter + radius.
+ */
+export interface ViewportRect {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+}

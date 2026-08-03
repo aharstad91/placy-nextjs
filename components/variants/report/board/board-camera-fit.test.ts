@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { computeFitBounds, shouldFitToProgram } from "./board-camera-fit";
+import {
+  computeFitBounds,
+  rectFromCorners,
+  shouldFitToFilter,
+  shouldFitToProgram,
+} from "./board-camera-fit";
 
 const HOME = { lng: 10.39, lat: 63.43 }; // Trondheim sentrum (event-board home)
 
@@ -73,5 +78,107 @@ describe("shouldFitToProgram (B2/B3 ro-fit)", () => {
 
   it("fitter IKKE mens en audio-tur eier kameraet", () => {
     expect(shouldFitToProgram({ ...base, tourActive: true })).toBe(false);
+  });
+});
+
+describe("shouldFitToFilter (kamera-løkke-gaten)", () => {
+  const base = {
+    visibleIdsKey: "a,b,c" as string | null,
+    tourActive: false,
+    visibleIdsSource: "event-filter" as
+      | "event-filter"
+      | "viewport-scope"
+      | null,
+  };
+
+  it("fitter på et brukervalgt event-filter (Kulturnatt-oppførselen)", () => {
+    expect(shouldFitToFilter(base)).toBe(true);
+  });
+
+  it("fitter ALDRI på et viewport-avledet sett — det er feedback-løkken", () => {
+    // Panorer → nytt sett → refit → nytt utsnitt → nytt sett → …
+    expect(
+      shouldFitToFilter({ ...base, visibleIdsSource: "viewport-scope" }),
+    ).toBe(false);
+  });
+
+  it("fitter ikke i ro-tilstand (ingen nøkkel) — ro-fitten eier kameraet", () => {
+    expect(shouldFitToFilter({ ...base, visibleIdsKey: null })).toBe(false);
+  });
+
+  it("fitter ikke mens en audio-tur eier kameraet", () => {
+    expect(shouldFitToFilter({ ...base, tourActive: true })).toBe(false);
+  });
+
+  it("viewport-kilden vinner over tour-gaten også (dobbelt låst)", () => {
+    expect(
+      shouldFitToFilter({
+        ...base,
+        tourActive: true,
+        visibleIdsSource: "viewport-scope",
+      }),
+    ).toBe(false);
+  });
+
+  it("et tomt filtrert sett («» som nøkkel) er fortsatt et aktivt filter", () => {
+    // Tom streng er IKKE null — brukeren har filtrert bort alt, og kameraet
+    // skal fortsatt reagere (fitToVisiblePois no-op-er selv på tomt sett).
+    expect(shouldFitToFilter({ ...base, visibleIdsKey: "" })).toBe(true);
+  });
+});
+
+describe("rectFromCorners (ikke-okkludert kartutsnitt)", () => {
+  it("bygger den akse-justerte konvolutten av fire hjørner", () => {
+    const rect = rectFromCorners([
+      { lng: 10.3, lat: 63.5 }, // topp-venstre
+      { lng: 10.4, lat: 63.5 }, // topp-høyre
+      { lng: 10.3, lat: 63.42 }, // bunn-venstre
+      { lng: 10.4, lat: 63.42 }, // bunn-høyre
+    ]);
+    expect(rect).toEqual({
+      west: 10.3,
+      south: 63.42,
+      east: 10.4,
+      north: 63.5,
+    });
+  });
+
+  it("fanger ytterpunktene når viewportet er rotert (bearing ≠ 0)", () => {
+    // Et rotert rektangel: ingen ENKELT diagonal-par gir ytterpunktene.
+    // To-hjørners-varianten ville her gitt vest=10.32/øst=10.38 — for smalt.
+    const rect = rectFromCorners([
+      { lng: 10.32, lat: 63.5 },
+      { lng: 10.4, lat: 63.47 },
+      { lng: 10.3, lat: 63.45 },
+      { lng: 10.38, lat: 63.42 },
+    ]);
+    expect(rect).toEqual({
+      west: 10.3,
+      south: 63.42,
+      east: 10.4,
+      north: 63.5,
+    });
+  });
+
+  it("returnerer null for et tomt hjørnesett", () => {
+    expect(rectFromCorners([])).toBeNull();
+  });
+
+  it("returnerer null når unproject gir ikke-endelige tall (kart ikke klart)", () => {
+    expect(
+      rectFromCorners([
+        { lng: 10.3, lat: 63.5 },
+        { lng: NaN, lat: 63.5 },
+      ]),
+    ).toBeNull();
+  });
+
+  it("degenerert til ett punkt gir et null-areal-rektangel, ikke null", () => {
+    expect(rectFromCorners([{ lng: 10.3, lat: 63.5 }])).toEqual({
+      west: 10.3,
+      south: 63.5,
+      east: 10.3,
+      north: 63.5,
+    });
   });
 });

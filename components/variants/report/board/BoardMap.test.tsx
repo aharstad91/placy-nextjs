@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, cleanup, act } from "@testing-library/react";
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -16,6 +16,14 @@ import { join } from "node:path";
  *  AC4: pointer-events-skjold ved !interactive.
  *  AC5/AC6: PendingCamera fra motor-camera (ikke UnifiedMapModal), useBoard/
  *           audio-tour-selectors, showMapbox-orkestrering (source-guard).
+ *
+ * Mobil nabolagsflate Unit 1 (2026-08-03) utvider suiten med kamera-løkke-gaten
+ * og viewport-publiseringen. Det krevde at Mapbox-mocken ble EKTE: den gamle
+ * bare-`forwardRef`-diven kalte aldri `onLoad` og eksponerte ingen `getMap()`,
+ * så `mapLoaded` forble false og BÅDE `fitToVisiblePois` og padding-effekten
+ * early-returnerte. En feedback-loop-test mot den mocken ville vært grønn fra
+ * dag én — uten å bevise noe. Mocken nedenfor flipper `mapLoaded` via `onLoad`
+ * og gir spies for fitBounds/setPadding/unproject/getCanvas/dragRotate.
  */
 
 const h = vi.hoisted(() => {
@@ -25,9 +33,43 @@ const h = vi.hoisted(() => {
   return {
     board: { value: null as unknown, activeCategory: null as unknown },
     tour: { phase: "idle" as string, currentTrack: null as unknown },
-    captured: { controls: [] as Record<string, unknown>[], board3d: [] as Record<string, unknown>[] },
+    captured: {
+      controls: [] as Record<string, unknown>[],
+      board3d: [] as Record<string, unknown>[],
+      mapProps: [] as Record<string, unknown>[],
+    },
+    // Settes i beforeEach — Mapbox-instansen mocken returnerer fra getMap().
+    mapbox: { instance: null as unknown },
   };
 });
+
+/** Piksel→geo for mocken: x vokser østover, y vokser sørover. Lineær, så
+ *  testene kan regne ut forventet rektangel eksakt. */
+const MOCK_VIEWPORT = { w: 390, h: 800 };
+const px2lng = (x: number) => 10.3 + x * 0.0001;
+const px2lat = (y: number) => 63.5 - y * 0.0001;
+
+function makeMapInstance() {
+  return {
+    fitBounds: vi.fn(),
+    setPadding: vi.fn(),
+    getBounds: vi.fn(),
+    unproject: vi.fn(([x, y]: [number, number]) => ({
+      lng: px2lng(x),
+      lat: px2lat(y),
+    })),
+    getCanvas: vi.fn(() => ({
+      clientWidth: MOCK_VIEWPORT.w,
+      clientHeight: MOCK_VIEWPORT.h,
+    })),
+    on: vi.fn(),
+    off: vi.fn(),
+    dragRotate: { disable: vi.fn(), enable: vi.fn() },
+    touchZoomRotate: { disableRotation: vi.fn(), enableRotation: vi.fn() },
+  };
+}
+type MockMapInstance = ReturnType<typeof makeMapInstance>;
+const mapInstance = () => h.mapbox.instance as MockMapInstance;
 
 vi.mock("./board-state", () => ({
   useBoard: () => h.board.value,
@@ -49,14 +91,27 @@ vi.mock("./BoardMapControls", () => ({
     return <div data-testid="board-controls" />;
   },
 }));
+vi.mock("@/lib/themes/map-styles", () => ({
+  MAP_STYLE_STANDARD: "mapbox://styles/test",
+  applyIllustratedTheme: vi.fn(),
+}));
 vi.mock("react-map-gl/mapbox", () => {
-  const MapMock = forwardRef<HTMLDivElement, { children?: React.ReactNode }>(
-    (props, ref) => (
-      <div ref={ref} data-testid="mapbox-map">
-        {props.children}
-      </div>
-    ),
-  );
+  // Ekte MapRef-form: `getMap()` gir spy-instansen, og `onLoad` fyrer ved mount
+  // så `mapLoaded` flippes (uten det early-returnerer alle kamera-effektene og
+  // testene måler ingenting).
+  const MapMock = forwardRef<unknown, Record<string, unknown>>((props, ref) => {
+    h.captured.mapProps.push(props);
+    useImperativeHandle(ref, () => ({ getMap: () => h.mapbox.instance }), []);
+    const onLoad = props.onLoad as ((e: unknown) => void) | undefined;
+    useEffect(() => {
+      onLoad?.({ type: "load" });
+      // Én gang per mount — onLoad-identiteten skal ikke re-fyre lasten.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    return (
+      <div data-testid="mapbox-map">{props.children as React.ReactNode}</div>
+    );
+  });
   MapMock.displayName = "MapMock";
   return { default: MapMock };
 });
@@ -98,7 +153,11 @@ function makeData(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function setBoard(dataOverrides: Record<string, unknown> = {}, stateOverrides: Record<string, unknown> = {}) {
+function setBoard(
+  dataOverrides: Record<string, unknown> = {},
+  stateOverrides: Record<string, unknown> = {},
+  ctxOverrides: Record<string, unknown> = {},
+) {
   const data = makeData(dataOverrides);
   h.board.value = {
     state: { phase: "default", activeCategoryId: null, activePOIId: null, ...stateOverrides },
@@ -106,7 +165,12 @@ function setBoard(dataOverrides: Record<string, unknown> = {}, stateOverrides: R
     dispatch: vi.fn(),
     subFilter: { hiddenIds: new Set<string>() },
     visiblePoiIds: undefined,
+    visibleIdsSource: null,
     collectionPoiIds: undefined,
+    viewportRect: null,
+    setViewportRect: vi.fn(),
+    setViewportPoiIds: vi.fn(),
+    ...ctxOverrides,
   };
   h.board.activeCategory = null;
 }
@@ -114,6 +178,8 @@ function setBoard(dataOverrides: Record<string, unknown> = {}, stateOverrides: R
 beforeEach(() => {
   h.captured.controls = [];
   h.captured.board3d = [];
+  h.captured.mapProps = [];
+  h.mapbox.instance = makeMapInstance();
   h.tour.phase = "idle";
   h.tour.currentTrack = null;
   window.history.replaceState({}, "", "/");
@@ -122,6 +188,17 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 const lastControls = () => h.captured.controls.at(-1);
+const lastMapProps = () => h.captured.mapProps.at(-1)!;
+const boardCtx = () => h.board.value as Record<string, unknown>;
+/** Simuler et Mapbox `moveend`. `originalEvent` satt = brukerinitiert gest. */
+function fireMoveEnd(originalEvent: object | undefined) {
+  const onMoveEnd = lastMapProps().onMoveEnd as
+    | ((e: { type: string; originalEvent?: object }) => void)
+    | undefined;
+  act(() => {
+    onMoveEnd?.({ type: "moveend", originalEvent });
+  });
+}
 
 describe("BoardMap — AC1 persistent 3D-mount", () => {
   it("monterer BoardMap3D når has3dAddon=true", () => {
@@ -222,6 +299,177 @@ describe("BoardMap — AC4 pointer-events-skjold ved !interactive", () => {
   it("ingen skjold når interactive=true", () => {
     const { container } = render(<BoardMap has3dAddon interactive />);
     expect(shieldOf(container)).toBeUndefined();
+  });
+});
+
+/** To POI-er i én kategori — nok til at et filtrert sett faktisk kan endre seg. */
+const twoPoiData = () => ({
+  categories: [
+    {
+      id: "mat",
+      label: "Mat",
+      lead: "",
+      body: "",
+      icon: "Utensils",
+      color: "#cc3300",
+      pois: [makePoi("p1"), makePoi("p2")],
+      topRankedPois: [],
+    },
+  ],
+});
+
+describe("BoardMap — Unit 1: kamera-løkke-gaten (viewport-scope vs. event-filter)", () => {
+  it("viewport-modus: nytt visiblePoiIds-sett flytter ALDRI kameraet", () => {
+    // Uten gaten: panorer → nytt sett → refit → nye bounds → nytt sett. Løkke.
+    setBoard(twoPoiData(), {}, {
+      visiblePoiIds: new Set(["p1"]),
+      visibleIdsSource: "viewport-scope",
+    });
+    const { rerender } = render(<BoardMap />);
+    mapInstance().fitBounds.mockClear();
+
+    setBoard(twoPoiData(), {}, {
+      visiblePoiIds: new Set(["p1", "p2"]),
+      visibleIdsSource: "viewport-scope",
+    });
+    rerender(<BoardMap />);
+
+    expect(mapInstance().fitBounds).not.toHaveBeenCalled();
+  });
+
+  it("event-modus: nytt filtrert sett rammer kameraet inn som før (Kulturnatt-regresjon)", () => {
+    setBoard(twoPoiData(), {}, {
+      visiblePoiIds: new Set(["p1"]),
+      visibleIdsSource: "event-filter",
+    });
+    const { rerender } = render(<BoardMap eventMode />);
+    mapInstance().fitBounds.mockClear();
+
+    setBoard(twoPoiData(), {}, {
+      visiblePoiIds: new Set(["p1", "p2"]),
+      visibleIdsSource: "event-filter",
+    });
+    rerender(<BoardMap eventMode />);
+
+    expect(mapInstance().fitBounds).toHaveBeenCalledTimes(1);
+  });
+
+  it("nytt Set med IDENTISK innhold re-fyrer ikke fitten (nøkkel, ikke identitet)", () => {
+    setBoard(twoPoiData(), {}, {
+      visiblePoiIds: new Set(["p1"]),
+      visibleIdsSource: "event-filter",
+    });
+    const { rerender } = render(<BoardMap eventMode />);
+    mapInstance().fitBounds.mockClear();
+
+    setBoard(twoPoiData(), {}, {
+      visiblePoiIds: new Set(["p1"]),
+      visibleIdsSource: "event-filter",
+    });
+    rerender(<BoardMap eventMode />);
+
+    expect(mapInstance().fitBounds).not.toHaveBeenCalled();
+  });
+
+  it("tomt viewport-sett: kameraet står stille (ingen 'zoom til ingenting')", () => {
+    setBoard(twoPoiData(), {}, {
+      visiblePoiIds: new Set<string>(),
+      visibleIdsSource: "viewport-scope",
+    });
+    render(<BoardMap />);
+    expect(mapInstance().fitBounds).not.toHaveBeenCalled();
+  });
+
+  it("tour aktiv + viewport-modus: tour-fitten eier kameraet, ingen dobbelt-fit", () => {
+    h.tour.phase = "playing";
+    setBoard(twoPoiData(), {}, {
+      visiblePoiIds: new Set(["p1"]),
+      visibleIdsSource: "viewport-scope",
+    });
+    render(<BoardMap />);
+    expect(mapInstance().fitBounds).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("BoardMap — Unit 1: viewport-publisering (R9 2D, R12)", () => {
+  const setRectSpy = () => boardCtx().setViewportRect as ReturnType<typeof vi.fn>;
+  const lastRect = () =>
+    setRectSpy().mock.calls.at(-1)![0] as {
+      west: number;
+      south: number;
+      east: number;
+      north: number;
+    };
+
+  it("publiserer én gang når kartet lastes, så lista ikke er tom ved ankomst", () => {
+    render(<BoardMap publishViewport />);
+    expect(setRectSpy()).toHaveBeenCalledTimes(1);
+  });
+
+  it("brukerinitiert pan publiserer det ikke-okkluderte rektangelet", () => {
+    render(<BoardMap publishViewport />);
+    setRectSpy().mockClear();
+
+    fireMoveEnd({ type: "touchend" });
+
+    expect(setRectSpy()).toHaveBeenCalledTimes(1);
+    const rect = lastRect();
+    expect(rect.west).toBeCloseTo(px2lng(0), 9);
+    expect(rect.east).toBeCloseTo(px2lng(MOCK_VIEWPORT.w), 9);
+    expect(rect.north).toBeCloseTo(px2lat(0), 9);
+    expect(rect.south).toBeCloseTo(px2lat(MOCK_VIEWPORT.h), 9);
+  });
+
+  it("sheet-høyden trekkes fra i PIKSLER (unproject), ikke ved bounds-aritmetikk", () => {
+    render(<BoardMap publishViewport mapPaddingBottom={200} />);
+    setRectSpy().mockClear();
+    mapInstance().unproject.mockClear();
+
+    fireMoveEnd({ type: "touchend" });
+
+    // getBounds() ignorerer paddingen — derfor unprojiseres piksel-hjørnene.
+    expect(mapInstance().getBounds).not.toHaveBeenCalled();
+    expect(mapInstance().unproject).toHaveBeenCalledWith([0, 0]);
+    expect(mapInstance().unproject).toHaveBeenCalledWith([MOCK_VIEWPORT.w, 600]);
+    expect(lastRect().south).toBeCloseTo(px2lat(600), 9);
+  });
+
+  it("programmatisk kamerabevegelse (ingen originalEvent) publiserer ikke (R12)", () => {
+    render(<BoardMap publishViewport />);
+    setRectSpy().mockClear();
+
+    fireMoveEnd(undefined);
+
+    expect(setRectSpy()).not.toHaveBeenCalled();
+  });
+
+  it("endret sheet-høyde re-publiserer — hvileposisjon er en scope-endring (R12)", () => {
+    const { rerender } = render(<BoardMap publishViewport mapPaddingBottom={100} />);
+    setRectSpy().mockClear();
+
+    rerender(<BoardMap publishViewport mapPaddingBottom={300} />);
+
+    expect(setRectSpy()).toHaveBeenCalledTimes(1);
+    expect(lastRect().south).toBeCloseTo(px2lat(MOCK_VIEWPORT.h - 300), 9);
+  });
+
+  it("publiserer ikke i det hele tatt når flaten ikke ber om det", () => {
+    render(<BoardMap />);
+    setRectSpy().mockClear();
+    fireMoveEnd({ type: "touchend" });
+    expect(setRectSpy()).not.toHaveBeenCalled();
+  });
+
+  it("låser bearing på publiserende flate — akse-justert rektangel uten toleranse", () => {
+    render(<BoardMap publishViewport />);
+    expect(mapInstance().dragRotate.disable).toHaveBeenCalled();
+    expect(mapInstance().touchZoomRotate.disableRotation).toHaveBeenCalled();
+  });
+
+  it("rører ikke rotasjonen på desktop/event (ikke-publiserende flate)", () => {
+    render(<BoardMap />);
+    expect(mapInstance().dragRotate.disable).not.toHaveBeenCalled();
+    expect(mapInstance().touchZoomRotate.disableRotation).not.toHaveBeenCalled();
   });
 });
 

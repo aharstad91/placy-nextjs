@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Map, { type MapRef } from "react-map-gl/mapbox";
+import Map, {
+  type MapRef,
+  type ViewStateChangeEvent,
+} from "react-map-gl/mapbox";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 import { mutedColor } from "@/lib/themes/muted-palette";
 import { BoardMapControls, type CameraMode } from "./BoardMapControls";
@@ -18,7 +21,12 @@ import { BoardMap3D } from "./BoardMap3D";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
-import { computeFitBounds, shouldFitToProgram } from "./board-camera-fit";
+import {
+  computeFitBounds,
+  rectFromCorners,
+  shouldFitToFilter,
+  shouldFitToProgram,
+} from "./board-camera-fit";
 import type { PendingCamera } from "@/components/map/motor-camera";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -89,6 +97,16 @@ interface Props {
    * på lite format). Sendes videre til BoardMap3D. Default false.
    */
   compactMarkers?: boolean;
+  /**
+   * Mobil nabolagsflate (R9/R12): publiser det ikke-okkluderte kartutsnittet til
+   * BoardContext, så nabolagslista kan følge det brukeren faktisk ser.
+   *
+   * Opt-in fordi det endrer to ting flaten under må tåle: kartet begynner å
+   * skrive til provider-state ved gest-slipp, og rotasjon låses (et rotert
+   * viewport har ingen ærlig akse-justert bounds). Desktop, event-board og
+   * VO-flaten sender den ikke og er derfor uendret. Default false.
+   */
+  publishViewport?: boolean;
 }
 
 export function BoardMap({
@@ -100,8 +118,18 @@ export function BoardMap({
   interactive = true,
   collapsedControls = false,
   compactMarkers = false,
+  publishViewport = false,
 }: Props) {
-  const { state, data, dispatch, subFilter, visiblePoiIds, collectionPoiIds } = useBoard();
+  const {
+    state,
+    data,
+    dispatch,
+    subFilter,
+    visiblePoiIds,
+    visibleIdsSource,
+    setViewportRect,
+    collectionPoiIds,
+  } = useBoard();
   const activeCategory = useActiveCategory();
   const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
@@ -267,8 +295,20 @@ export function BoardMap({
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
     if (!mapRef.current) return;
-    applyIllustratedTheme(mapRef.current.getMap());
-  }, []);
+    const map = mapRef.current.getMap();
+    applyIllustratedTheme(map);
+    // Nabolagsflaten leser utsnittet ved å unprojisere kartets piksel-hjørner.
+    // Med bearing ≠ 0 er den akse-justerte konvolutten av et rotert viewport
+    // vesentlig større enn det brukeren faktisk ser, og lista ville listet
+    // steder utenfor skjermen. To-finger-rotasjon er dessuten en vanlig
+    // uhellsgest på telefon under pinch-zoom. Vi låser derfor rotasjonen på
+    // denne flaten i stedet for å leve med toleransen. Kun her — desktop,
+    // event-board og VO-flaten beholder Mapbox' defaults.
+    if (publishViewport) {
+      map.dragRotate.disable();
+      map.touchZoomRotate.disableRotation();
+    }
+  }, [publishViewport]);
 
   // Sync map-padding-bottom med BoardMobileSheet snap-stage. Påvirker ikke
   // kamera (ingen flyTo/fitBounds-trigger) — kun tolkning av "senter" for
@@ -284,6 +324,72 @@ export function BoardMap({
       right: 0,
     });
   }, [mapLoaded, mapPaddingBottom, mapPaddingLeft]);
+
+  // ---- Viewport-publisering (mobil nabolagsflate, R9 2D + R12) ----
+  //
+  // Rektangelet regnes ut i PIKSLER og unprojiseres, ikke ved å trekke fra
+  // breddegrader på `getBounds()`. `getBounds()` ignorerer paddingen satt over,
+  // så «bounds minus sheet-høyden» har ingen meningsfull aritmetisk form —
+  // mens `unproject([x, y])` er en ærlig skjerm→geo-projeksjon av nøyaktig de
+  // pikslene sheeten IKKE dekker.
+  //
+  // Sheet-høyden er en PARAMETER, ikke en callback-dep: da beholder
+  // `publishViewportRect` stabil identitet gjennom hele sheet-draget. Samme
+  // felle som `fitToVisiblePois` allerede har (den har `mapPaddingBottom` i
+  // dep-arrayet, så identiteten skifter ved hver hvileposisjon).
+  const publishViewportRect = useCallback(
+    (occludedBottomPx: number) => {
+      if (!mapRef.current) return;
+      const map = mapRef.current.getMap();
+      const canvas = map.getCanvas();
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight - occludedBottomPx;
+      if (w <= 0 || h <= 0) {
+        // Sheeten dekker hele kartet, eller kartet har ingen målbar størrelse.
+        // Ingen ærlig avlesning → degrader til «ingen scoping» (vis alt).
+        // ALDRI til et tomt sett; en tom liste uten årsak leses som en bug.
+        setViewportRect(null);
+        return;
+      }
+      setViewportRect(
+        rectFromCorners([
+          map.unproject([0, 0]),
+          map.unproject([w, 0]),
+          map.unproject([0, h]),
+          map.unproject([w, h]),
+        ]),
+      );
+    },
+    [setViewportRect],
+  );
+
+  // Initial publisering ved kart-last, og re-publisering når sheeten bytter
+  // hvileposisjon (R12: hvileposisjon endrer det ikke-okkluderte området og
+  // teller derfor som en scope-endring). Kamera-bevegelser publiserer IKKE
+  // herfra — kun `handleMoveEnd` under, og kun for brukerinitierte gester.
+  useEffect(() => {
+    if (!publishViewport || !mapLoaded) return;
+    publishViewportRect(mapPaddingBottom);
+  }, [publishViewport, mapLoaded, mapPaddingBottom, publishViewportRect]);
+
+  // R12: KUN brukerinitierte gester re-scoper lista. `originalEvent` bærer
+  // skillet og er satt på både direkte- og inertia-stien, inkludert pinch.
+  // Guarden er formulert som «publiser når den FINNES», ikke «undertrykk når
+  // den mangler»: feltet er optional, og for handler-drevne bevegelser uten
+  // lagret DOM-event (tastatur-pan) mangler det. Feilmodusen til den strenge
+  // formen er en foreldet liste — langt tryggere enn en kamera-løkke.
+  const handleMoveEnd = useCallback(
+    (e: ViewStateChangeEvent) => {
+      if (!publishViewport) return;
+      // `ViewStateChangeEvent` er en union over alle kamera-hendelsene, og ikke
+      // alle grenene deklarerer `originalEvent` — derfor `in`-narrowing, ikke
+      // direkte feltoppslag.
+      const gesture = "originalEvent" in e ? e.originalEvent : undefined;
+      if (!gesture) return;
+      publishViewportRect(mapPaddingBottom);
+    },
+    [publishViewport, mapPaddingBottom, publishViewportRect],
+  );
 
   // Tour-mode bounding-box-fit: når audio-tour er aktiv, rekalkuler kamera
   // for hvert kategori-skifte slik at alle synlige markører (+ home) får
@@ -338,6 +444,11 @@ export function BoardMap({
   // når `visiblePoiIds` er definert (event-board); boligrapporter (undefined)
   // berøres ikke. Gated på !tourActive så vi aldri kjemper mot tour-fitten.
   //
+  // OG gated på KILDEN til settet (`shouldFitToFilter`): nabolagsflaten avleder
+  // `visiblePoiIds` fra kartutsnittet, og en fit på det settet ville flyttet
+  // kameraet → nytt utsnitt → nytt sett → ny fit. Uendelig løkke. Se
+  // `VisibleIdsSource` i lib/board/board-types.ts.
+  //
   // Nøkkelen er en stabil join av sorterte synlige IDer (ikke Set-identiteten),
   // så effekten kun re-fyrer ved FAKTISK innholdsendring — Mapbox-instansen
   // muteres (fitBounds), den unmountes aldri (ingen WebGL-lekk, ingen remount).
@@ -349,10 +460,10 @@ export function BoardMap({
     [visiblePoiIds],
   );
   useEffect(() => {
-    if (visibleIdsKey === null) return; // ro-tilstand / boligrapport — ro-fitten under eier kameraet
-    if (tourActive) return; // tour-fitten eier kameraet hvis aktiv
+    if (!shouldFitToFilter({ visibleIdsKey, tourActive, visibleIdsSource }))
+      return;
     fitToVisiblePois();
-  }, [visibleIdsKey, tourActive, fitToVisiblePois]);
+  }, [visibleIdsKey, tourActive, visibleIdsSource, fitToVisiblePois]);
 
   // Event-board ro-fit (B2/B3): events har ingen audio-tour, så tour-fitten over
   // fyrer aldri, og filter-fitten fyrer kun NÅR et filter er aktivt. Uten dette
@@ -469,6 +580,7 @@ export function BoardMap({
             mapStyle={MAP_STYLE_STANDARD}
             interactive={interactive}
             onLoad={handleMapLoad}
+            onMoveEnd={handleMoveEnd}
             onClick={() => {
               // Markører kaller stopPropagation i sin onClick, så denne
               // fyrer kun ved klikk på kart-bakgrunn. Lukk popup hvis åpen.

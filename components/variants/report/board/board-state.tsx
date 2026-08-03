@@ -2,13 +2,18 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useReducer,
+  useState,
   type Dispatch,
   type ReactNode,
 } from "react";
 import type { BoardCategoryId, BoardPOIId, BoardData } from "./board-data";
+import type { VisibleIdsSource, ViewportRect } from "@/lib/board/board-types";
+import { intersectVisible } from "@/lib/event-board/marker-visibility";
 import {
   useSubCategoryFilter,
   type SubCategoryFilterApi,
@@ -141,8 +146,39 @@ interface BoardContextValue {
    * Holdes som container-nivå state (ikke en reducer-action): filteret er
    * derivert fra Zustand-kompass-state + raw-POIene, ikke en del av board-ets
    * navigasjons-state. Reduseren forblir uendret.
+   *
+   * Fra og med den mobile nabolagsflaten har settet TO mulige kilder — se
+   * `visibleIdsSource`, som avgjør om kameraet får fitte på det.
    */
   visiblePoiIds?: Set<string>;
+  /**
+   * HVOR `visiblePoiIds` kommer fra. `null` når intet sett er aktivt.
+   * `"viewport-scope"` vinner alltid når nabolagsflaten scoper, også hvis et
+   * event-filter skulle være aktivt samtidig — kamera-fitten må aldri fyre på
+   * et sett som er avledet av kameraet selv (se `shouldFitToFilter`).
+   */
+  visibleIdsSource: VisibleIdsSource | null;
+  /**
+   * Nabolagsflaten (mobil, boards uten VO): POI-IDene som ligger i det
+   * ikke-okkluderte kartutsnittet. `null` = ingen viewport-scoping (desktop,
+   * event, VO-flate — og degraderings-tilstanden «kartet kunne ikke leses, vis
+   * alt»).
+   *
+   * Setteren finnes fordi kanalen går NEDENFRA OG OPP: sheeten som utleder
+   * settet lever inne i provideren, mens `visiblePoiIds`-propen settes av
+   * `ReportReelsPage` utenfor. Provider-lokal state er den eneste veien fra
+   * subtreet til markør-synligheten uten å tre state gjennom `ResponsiveLayout`.
+   */
+  setViewportPoiIds: (ids: Set<string> | null) => void;
+  /**
+   * Sist publiserte ikke-okkluderte kart-rektangel, eller `null` når kartet
+   * ikke publiserer (eller ennå ikke har lastet). Skrives av `BoardMap` ved
+   * brukerinitiert gest-slipp og ved endret sheet-høyde; leses av
+   * nabolagslista. `null` betyr «ingen scoping» → vis alt, ALDRI tom liste.
+   */
+  viewportRect: ViewportRect | null;
+  /** Se `viewportRect`. Verdi-deduplisert, så identiske rektangler er no-op. */
+  setViewportRect: (rect: ViewportRect | null) => void;
   /**
    * Event-board "Min samling"-søm (Unit 5): POI-IDer brukeren har lagret i sin
    * samling (eller som er rehydrert fra en delt `?c=`-lenke). Når satt highlighter
@@ -172,6 +208,52 @@ export function BoardProvider({
   const [state, dispatch] = useReducer(boardReducer, initialBoardState);
   const subFilter = useSubCategoryFilter(state.activeCategoryId);
 
+  // ---- Viewport-scoping (mobil nabolagsflate) ----
+  // Provider-lokal state fordi kanalen går nedenfra og opp: BoardMap publiserer
+  // rektangelet, sheeten utleder POI-settet, og BoardMap leser settet tilbake
+  // som markør-filter. Alle tre lever i dette subtreet.
+  const [viewportRect, setViewportRectState] = useState<ViewportRect | null>(null);
+  const [viewportPoiIds, setViewportPoiIds] = useState<Set<string> | null>(null);
+
+  // Verdi-dedup: kartet republiserer ved hver gest-slipp, og et identisk
+  // rektangel skal ikke re-rendre subtreet (sheeten re-rendrer i gest-frekvens
+  // — ingenting på kart-stien tåler unødig arbeid).
+  const setViewportRect = useCallback((rect: ViewportRect | null) => {
+    setViewportRectState((prev) => {
+      if (prev === rect) return prev;
+      if (
+        prev &&
+        rect &&
+        prev.west === rect.west &&
+        prev.south === rect.south &&
+        prev.east === rect.east &&
+        prev.north === rect.north
+      ) {
+        return prev;
+      }
+      return rect;
+    });
+  }, []);
+
+  // Komponering av de to kildene. Viewport-scopet vinner diskriminatoren når
+  // det er satt — selv om et event-filter også skulle være aktivt — fordi
+  // kamera-fitten aldri må fyre på et kamera-avledet sett. Settene selv
+  // komponerer som snitt (en markør må passere begge).
+  const { effectiveVisiblePoiIds, visibleIdsSource } = useMemo(() => {
+    if (!viewportPoiIds) {
+      return {
+        effectiveVisiblePoiIds: visiblePoiIds,
+        visibleIdsSource: (visiblePoiIds ? "event-filter" : null) as
+          | VisibleIdsSource
+          | null,
+      };
+    }
+    return {
+      effectiveVisiblePoiIds: intersectVisible(viewportPoiIds, visiblePoiIds),
+      visibleIdsSource: "viewport-scope" as VisibleIdsSource,
+    };
+  }, [viewportPoiIds, visiblePoiIds]);
+
   useEffect(() => {
     if (!state.activePOIId || !state.activeCategoryId) return;
     const cat = data.categories.find((c) => c.id === state.activeCategoryId);
@@ -189,7 +271,18 @@ export function BoardProvider({
 
   return (
     <BoardContext.Provider
-      value={{ state, dispatch, data, subFilter, visiblePoiIds, collectionPoiIds }}
+      value={{
+        state,
+        dispatch,
+        data,
+        subFilter,
+        visiblePoiIds: effectiveVisiblePoiIds,
+        visibleIdsSource,
+        setViewportPoiIds,
+        viewportRect,
+        setViewportRect,
+        collectionPoiIds,
+      }}
     >
       {children}
     </BoardContext.Provider>
