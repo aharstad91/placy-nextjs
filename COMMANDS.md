@@ -14,6 +14,30 @@ Starter Next.js development server på `http://localhost:3000`.
 Boards lever på `/eiendom/<kunde>/<prosjekt>/rapport-board`; nye prosjekter
 provisjoneres via PRD 3-pipelinen (`npm run create-report` / generer-flyten).
 
+### Test på ekte iPhone (mobil-utvikling)
+```bash
+npm run dev:mobile
+```
+Binder dev-serveren til `0.0.0.0` og skriver ut LAN-URL-en (f.eks.
+`http://192.168.68.60:3000`) som iPhone/iPad på samme nett kan åpne.
+`allowedDevOrigins` i `next.config.mjs` regnes ut fra maskinens private
+IPv4-adresser ved oppstart, så DHCP-bytte krever ingen redigering.
+
+Full inspector på telefonen (erstatter incognito-/cache-dansen):
+1. iPhone: **Innstillinger → Apper → Safari → Avansert → Web Inspector = på**
+2. Mac Safari: **Innstillinger → Avansert → Vis funksjoner for nettutviklere**
+3. Koble iPhone til Mac med kabel og godta «Stol på denne maskinen»
+4. Åpne LAN-URL-en i **Safari på iPhone** (ikke Chrome — Chrome iOS kan ikke
+   inspiseres, men bruker samme WebKit-motor, så Safari er identisk rendering)
+5. Mac Safari: **Utvikle → \<iPhone\> → \<siden\>** — DOM, konsoll, nettverk,
+   breakpoints og live CSS-editering mot ekte enhet
+6. I inspektoren: **Nettverk → Deaktiver hurtigbuffer** — da slipper du
+   incognito-vinduer
+
+Fast Refresh virker over LAN: lagre i editoren → telefonen oppdaterer seg.
+Trenger du å teste utenfor nettet (eller vise noen), kjør `ngrok http 3000`
+— `*.ngrok-free.app` og `*.ngrok.app` står allerede i `allowedDevOrigins`.
+
 ### Bygg for produksjon
 ```bash
 npm run build

@@ -1,5 +1,22 @@
+import { networkInterfaces } from "node:os";
+
+/**
+ * Maskinens private IPv4-adresser — brukes som `allowedDevOrigins` slik at
+ * `npm run dev:mobile` (binder til 0.0.0.0) kan serve /_next/*-ressurser til
+ * iPhone/iPad på samme nett. Next 16 blokkerer cross-origin dev-requests som
+ * ikke står i lista. Vi regner adressene ut ved oppstart så de følger DHCP
+ * uten manuell redigering. Feltet gjelder KUN dev — ignoreres i prod-bygg.
+ */
+function localDevOrigins() {
+  return Object.values(networkInterfaces())
+    .flatMap((nets) => nets ?? [])
+    .filter((net) => net.family === "IPv4" && !net.internal)
+    .map((net) => net.address);
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: [...localDevOrigins(), "*.ngrok-free.app", "*.ngrok.app"],
   // Aktiver eksperimentelle funksjoner for bedre ytelse
   experimental: {
     // Optimaliser pakker for raskere lasting
