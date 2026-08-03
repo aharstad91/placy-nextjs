@@ -6,7 +6,33 @@
 
 ---
 
-## 2026-08-03 — MILJØ-OPPRYDDING RUNDE 4 + BUNDLE-BEVISET REPARERT + PARKERT BRANCH-DRIFT DOKUMENTERT
+## 2026-08-03 (sesjon 2) — TTS-SPRÅKDRIFT KARTLAGT: SEED GIR BYTE-IDENTISK DETERMINISME (eksperiment, ikke implementert)
+
+**Kontekst:** Andreas spurte om det var kommet oppdateringer på voice-over-motoren vi bruker på bl.a. Grilstad Marina. Sjekken avdekket at `eleven_v3` nå er GA med norsk, og ble derfor utvidet til en autorisert spike. Da Andreas hørte dansk/svensk i klippene, gikk sesjonen videre til å jakte den underliggende drift-årsaken — som viste seg å være et grunnproblem vi har levd med, ikke en v3-regresjon.
+
+**Modell-status hos ElevenLabs:** `eleven_turbo_v2_5` har **ingen sunset-dato**, men dokumentasjonen anbefaler nå Flash «in all use cases» (funksjonelt ekvivalent, lavere latens). Eneste faktiske fjerning i 2026 var `monolingual_v1`/`multilingual_v1` (9. juli) — treffer oss ikke. `eleven_v3` er ute av alpha og lister norsk offisielt.
+
+**v3-spike (10 Grilstad-spor × 2 modeller, fullt produksjonsmanus):** Alle mai-sperrene borte teknisk — `/with-timestamps` gir full character-alignment på v3, **karaoke-remap 10/10 eksakt match**, prod-`voice_settings` aksepteres, 5000-tegnsgrensen irrelevant (lengste manus 344 tegn). Kvalitet (Gemini-vurdering, siden ElevenLabs Scribe ga 401 — API-nøkkelen mangler STT-scope): v3 snitt 7,6/10 naturlighet med flere 9-ere mot turbos 6,8 — **men 1 av 10 spor fikk kraftig dansk drift**, og ett maltrakterte «burgere/rekesmørbrød/shuffleboard».
+
+**Rot-årsaken funnet — stemmeverifisering er PER MODELL, ikke per språk:** Alle seks norske stemmer i kontoen (Erik, Emma, Mia, Sebastian, Øyvind, Olaf) har `verified_languages` for norsk **kun** på `turbo_v2_5`/`flash_v2_5`/`v2_5_flash`. **Ingen er verifisert for `v3`** — kjører du v3 på Erik, faller modellen tilbake på egen skandinavisk prior. Dette var sjekken som manglet i mai-valideringen, og den forklarer dansken uten gjetting. I tillegg: **v3 avviser `previous_text` med `400 unsupported_model`** — v3 kan altså ikke bruke det eneste virkemidlet som demper drift. **v3 er ute inntil ElevenLabs har norske v3-stemmer.**
+
+**Drift-matrise (6 betingelser × 3 kjøringer på verste spor):** `previous_text` med norsk primer **hjelper** (0/3 drift mot baselines 1/3; på flash: norskhet 5,3 → 7,7, naturlighet 4,3 → 7,0). `voice_settings.speed: 0.95` **skader** (2/3 drift, norskhet 8,0 → 5,7) — community-rådet om 0,9–1,0 mot aksentdrift gjelder ikke norsk. `flash_v2_5` rå var *verre* enn turbo rå, men best med primer. Ingen betingelse var pålitelig alene.
+
+**Gjennombruddet — `seed` gir byte-identisk determinisme:** Ikke bare «best effort» som dokumentert. Verifisert med sha256: samme seed × 3 ga identisk hash, og reproduksjon etter seed-sweep ga identisk hash på både turbo og flash. **Det gjør språkdrift om fra et lotteri ved hver regenerering til et engangsvalg per spor** — et sannsynlighetsproblem blir et kurateringsproblem, som vi allerede har verktøy for (jf. alias-ordlista).
+
+**Full validering (ikke stikkprøve):** Seed-gate over alle 10 Grilstad-spor med turbo + primer + Gemini som port (`drift=ingen && norskhet ≥8 && naturlighet ≥6`): **10 av 10 bestod, 19 genereringer totalt (snitt 1,9 forsøk/spor)** — 5 spor på første seed, 3 på andre, `barn-oppvekst` på tredje, `hverdagsliv` krevde fem. Seed-tabellen er dokumentert.
+
+**Måleinstrumentets svakhet (viktig forbehold):** Gemini-dommeren er støyende — **byte-identisk lyd fikk 10/10 i én evaluering og 9/10 i neste**. Porten er en grovsil som fanger drift, ikke en finkalibrert kvalitetsmåler. Kategorisk «norsk/ikke norsk» var for slapp og stemplet klipp som norske der Andreas hørte dansk; numerisk score + eksplisitt jakt på nabospråk-markører (dansk bløt d/stød/svelget r, svensk syngende melodi/sje-lyd) var nødvendig for i det hele tatt å måle noe.
+
+**Leveranse (commit 0b62a93, lokal — ikke pushet):** `docs/solutions/api-integration/elevenlabs-norsk-sprakdrift-seed-lasing-20260803.md` — full oppskrift, seed-tabell, primer-tekst, portterskler, hvilke spaker som skader, og `curl`-kommandoen for å sjekke stemmeverifisering per modell. Claude-memory om norsk TTS korrigert: den påsto at alias-ordlista var eneste ElevenLabs-spak og at stokastisiteten måtte leves med — begge feil.
+
+**Status: EKSPERIMENT-VALIDERT, IKKE IMPLEMENTERT.** Parkert etter Andreas' lytting («mulig det er litt endringer her» — merkbar men ikke avgjørende forbedring på hans ører). **Ingen prod-filer, ingen kode i `lib/audio-tour/`, ingen DB rørt.**
+
+**Åpne tråder:** (1) **Porten må kalibreres mot Andreas' ører før kode endres** — hører han drift i et sett som bestod, skal terskelen strammes (og dommeren kanskje byttes til en strengere modell) først. (2) Ved gjenopptakelse er pipeline-endringen liten og rent additiv: `previous_text` + lagret `seed` per spor i `generateAudio`, ingen modellmigrering, samme stemme og `voice_settings` — men krever `reportConfig.audioVersion`-bump + regenerering av alle boards. (3) **Enhver manus-endring invaliderer sporets seed** (teksten er del av sample-input) — ny tekst ⇒ nytt seed-søk for det sporet. (4) Eksperiment-scriptene lå i gitignorert `tmp/` og er **ikke bevart** — løsningsdokumentet er tilstrekkelig for å bygge dem opp igjen. (5) Bifunn: `barn-oppvekst` scoret lavt på *begge* modeller i første runde (3–4/10 naturlighet) — kan være manus-prosodi, egen sak. (6) Bifunn: turbo uttaler «Grilstad mall» feil i **dagens prod-lyd** — kandidat for `pronunciation-no.json`.
+
+---
+
+## 2026-08-03 (sesjon 1) — MILJØ-OPPRYDDING RUNDE 4 + BUNDLE-BEVISET REPARERT + PARKERT BRANCH-DRIFT DOKUMENTERT
 
 **Kontekst:** Andreas ville rydde miljøet «ordentlig godt» for å gjøre det klart som prod-miljø. Forrige sesjon (2026-07-16) tok tre runder med diskopprydding; denne runden lukket de trådene som krevde en levende database, og reparerte et verifiseringsscript som hadde vært stille brutt.
 
