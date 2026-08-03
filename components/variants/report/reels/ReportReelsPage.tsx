@@ -29,6 +29,7 @@ import {
 } from "@/lib/event-board/use-board-collection";
 import { BoardCollectionDrawer } from "../board/event/BoardCollectionDrawer";
 import { EventMobileSheet } from "../board/event/EventMobileSheet";
+import { NeighbourhoodSheet } from "../board/neighbourhood/NeighbourhoodSheet";
 import { useKompassSelections } from "@/lib/kompass-store";
 import {
   EngagementProvider,
@@ -586,6 +587,11 @@ function ResponsiveLayoutInner({
   const [isDragging, setIsDragging] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
   const [boardRevealed, setBoardRevealed] = useState(false);
+  // Nabolagsflaten (mobil, boards uten VO): sheetens MÅLTE høyde i gjeldende
+  // hvileposisjon. Driver kartets bottom-padding OG okklusjonen i det
+  // publiserte viewport-rektangelet, så lista aldri teller punkter som ligger
+  // bak sheeten. Måles av sheeten selv — ingen antatt viewport-høyde.
+  const [sheetHeightPx, setSheetHeightPx] = useState(0);
 
   // Establishing-shot-modus (?establishing=1): hopp over velkomst-splashen og
   // avdekk det persistente kartet med en gang, UTEN å starte audio — så strøk-
@@ -818,6 +824,13 @@ function ResponsiveLayoutInner({
   // utforsking — da er kartet primær-flaten og transporten rendres ikke.
   const hasAudioMobile = firstIdx !== -1;
   const mapIsSurface = state.mapOpen || !hasAudioMobile;
+  // Nabolagsflaten (R1): uten spillbar VO stoppet opplevelsen tidligere her —
+  // fullskjerm kart med pins og ingenting mer. Sheeten legger innholdsflaten
+  // OPPÅ det samme kartet. Betingelsen er additiv: `mapIsSurface` og hele
+  // VO-grenen er uendret, så boards MED lyd merker ingenting.
+  // `boardRevealed` gater ankomsten (R4) — uten 3D finnes ingen flythrough å
+  // vente på, så sheeten kommer inn i det splashen fader.
+  const neighbourhoodSurface = !hasAudioMobile && boardRevealed;
   // Kart-peek-sheet: på kategori-beats (historie-flate) LIGGER kartet klart som en
   // sheet i bunn — i to DISKRETE tilstander (ingen progress-drevet vekst):
   //  - minimert (default, under VO): kun en lav ~100px-stripe vises — nok til CTA,
@@ -910,6 +923,11 @@ function ResponsiveLayoutInner({
           // stedet for fulle ikon-pins → mindre fargestøy på lite format (3.2).
           // Fullskjerm-kart (mapOpen) → peekActive=false → fulle pins igjen.
           compactMarkers={peekActive}
+          // Nabolagsflaten: kartet holder markørene over sheet-kanten (R5) og
+          // publiserer det ikke-okkluderte utsnittet (R9). Begge er no-op på
+          // VO-boards, der sheeten aldri monteres.
+          mapPaddingBottom={neighbourhoodSurface ? sheetHeightPx : 0}
+          publishViewport={neighbourhoodSurface}
         />
 
         {/* Peek: hele sheeten er tappbar → ekspandér til fullskjerm. Et mørkt slør
@@ -980,6 +998,13 @@ function ResponsiveLayoutInner({
           </div>
         )}
       </div>
+
+      {/* Nabolagsflaten (R1/R3): kart øverst, fritt dragbar liste nederst, på
+          boards uten spillbar VO. Søsken til kart-containeren over — kartet
+          forblir montert og uendret under sheeten (ingen WebGL-remount). */}
+      {neighbourhoodSurface && (
+        <NeighbourhoodSheet onHeightChange={setSheetHeightPx} />
+      )}
 
       {/* Historie-flate — kun når kart ikke er aktiv flate. Kategori-beats får
           ReelSwipeStack (vertikal swipe-carousel mellom kategoriene + tapp=pause);
