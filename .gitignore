@@ -36,6 +36,9 @@ tmp/
 !.claude/skills/
 !.claude/commands/
 
+# Agent-kjøringsartefakter (ce-code-review-persona-output o.l. — lokal støy)
+.context/
+
 # Research output (generated, not committed)
 data/research/
 
