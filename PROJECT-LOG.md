@@ -6,6 +6,31 @@
 
 ---
 
+## 2026-08-03 — MILJØ-OPPRYDDING RUNDE 4 + BUNDLE-BEVISET REPARERT + PARKERT BRANCH-DRIFT DOKUMENTERT
+
+**Kontekst:** Andreas ville rydde miljøet «ordentlig godt» for å gjøre det klart som prod-miljø. Forrige sesjon (2026-07-16) tok tre runder med diskopprydding; denne runden lukket de trådene som krevde en levende database, og reparerte et verifiseringsscript som hadde vært stille brutt.
+
+**Tilstand verifisert før arbeid (ikke antatt):** Arbeidstre rent, `main` = `origin/main`. Lint 0 errors / 49 warnings, tsc rent, **1605/1605 tester**, `npm run build` grønt. **Supabase reaktivert** (200 — var pauset ved forrige sesjonsslutt), 6 prosjekter / 44 strøk i v2. **Prod live:** `placy.no → www.placy.no`, alle 6 rapport-boards 200, `/admin` redirecter korrekt til `/` (fortsatt avslått). Disk 1,3 GB (`node_modules` 824M, `.git` 254M, `public` 153M — alt normal vekt).
+
+**Åpne tråder fra 07-16 lukket:** (1) Supabase oppe igjen. (2) Illustrasjonsspørsmålet avgjort: `wesselslokka-illustrasjon-v2.png` **er i live bruk** — referert fra `products.config` i v2 (ikke fra kode, derfor null kode-treff), mens **v1 og v3 var reelt døde** (null treff i både kode og DB) og er slettet (3,2 MB).
+
+**Leveranse 1 — repo-rot ryddet (commit 0355c65):**
+- `WORKLOG.md` (179 KB legacy-logg, stopper 2026-04-29, erstattet av denne fila) → `docs/archive/WORKLOG-legacy-til-2026-04-29.md`. Aldri-slett-regelen respektert, rot-nivået ryddet.
+- `placy-website/` (5 HTML-filer, markedsføringsprototype fra februar, ikke del av Next-appen) → `~/klienter/placy/website/`, ut av repoet.
+- `.context/` gitignorert + fjernet fra index — 8 innsjekkede persona-JSON-er fra én `ce-code-review`-kjøring 10. juni. Speiler `.claude/*`-regelen.
+- **`AGENTS.md` oppfrisket.** Fila var beads-generert boilerplate fra 11. mars med tre reelle feil: den pekte på `README.md` + `docs/QUICKSTART.md` som ikke finnes, påla «PUSH TO REMOTE er MANDATORY / NEVER say ready to push» (motsier Andreas' arbeidsmåte om ikke å pushe uten forespørsel), og forbød «external issue trackers» (motsier Trello-boardet «Utvikling» i CLAUDE.md). Nå: CLAUDE.md er autoritativ, Trello = nye oppgaver, beads = rebuild-grafen (som `build-loop.sh` fortsatt ikke konsumerer). Shell-hygiene-reglene beholdt — de er genuint nyttige for harnesser som ikke leser CLAUDE.md.
+- Tom `backups/`-mappe fjernet.
+
+**Leveranse 2 — `verify-board-bundle.mjs` reparert (commit e47ecb5):** Scriptet har vært **brutt siden Next 16-oppgraderingen** — det leste `.next/app-build-manifest.json` (Turbopack emitterer den ikke) og identifiserte lazy-chunker på `webpackChunkName` (Turbopack ignorerer magic comments og hasher chunk-navn). Bundle-beviset kunne altså ikke kjøres i det hele tatt. Omskrevet til Turbopacks per-rute-manifester: entry = `.next/server/app/<rute>/page/build-manifest.json` → `rootMainFiles` + `polyfillFiles`; lazy = `react-loadable-manifest.json`. Identifikasjon på kode-markører i stedet for chunk-navn, som **utvidet dekningen fra 3 til 4 moduler** (`ReelsAudioOrchestrator` var tidligere bare navne-sjekket). Resultat mot dagens bygg: **PASS — alle 4 tunge moduler lazy og ute av initiell last.** Negativ-testet (manglende markør + markør i flere chunker → FAIL/exit 1). **Konsekvens:** `webpackChunkName`-kommentarene i `ReportReelsPage.tsx` er nå inerte i bygget; kilde-testen beholdes fordi `dynamic()`-grensene er den lastbærende invarianten.
+
+**Parkert branch-drift (Andreas' valg — bevisst ikke flettet):**
+- **`feat/megler-self-serve`** (worktree `../placy-megler`) er uflettet, men **migrasjon 081/082 ER kjørt mot prod-DB** — `v2.broker_offices` + `v2.coverage_demand` finnes i prod uten kode som bruker dem. Skjema ligger altså foran kode. Samme branch bærer den **eneste fiksen for Moat-2 event-drop-buggen** — prod har fortsatt den buggen.
+- **`feat/hotell-dashboard`** urørt siden juni, ingen worktree.
+
+**Åpne tråder:** (1) **`REVALIDATE_SECRET` mangler i Vercel** → `/api/revalidate` svarer 500; innholdsoppdateringer må vente på ISR-TTL (3600s), ingen manuell cache-bust finnes i prod. Dette er det gjenstående konkrete prod-hullet. (2) Vercel prod har kun 7 env-vars; `ADMIN_ENABLED` er bevisst utelatt, så admin-flaten er utilgjengelig i prod til ekte auth finnes. (3) Ingen drift-beredskap: ingen DB-backup-rutine, ingen feilovervåking, ingen post-deploy-verifisering — bevisst utenfor scope denne runden. (4) Vercel CLI lokalt er utdatert (54.12.1 → 58.4.4). (5) Ingenting pushet denne sesjonen.
+
+---
+
 ## 2026-07-16 — MILJØ-OPPRYDDING + RALPHY-NAVNET FJERNET + MAPPE OMDØPT TIL `placy`
 
 **Kontekst:** Andreas så at prosjektmappa var stor (1,3 GB synlig, ~2,3 GB reelt) og lurte på om det hang igjen rot fra produktutviklingen. Konklusjon: revampen i juni/juli ryddet koden, ikke filmiljøet — men det meste var normal størrelse (node_modules/​.git/​public). Tre opprydningsrunder samme sesjon.
