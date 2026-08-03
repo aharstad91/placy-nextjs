@@ -2,63 +2,73 @@
 // @ts-check
 /**
  * Bundle-bevis for board-skallets lazy-load-grenser (PRD 9 Unit 7 / PRD 2
- * Beslutning 14). Binær pass/fail mot NAVNGITTE identifikatorer.
+ * Beslutning 14). Binær pass/fail.
  *
  * Kjør ETTER `npm run build`:
  *   node scripts/verify-board-bundle.mjs
  *
- * Beviser at de tre PRD-2-verifiserte tunge nivå-2-/ortogonale modulene IKKE
- * ligger i entry-chunken for et nivå-1 rapport-board, men i SEPARATE lazy-chunker:
+ * Beviser at de fire tunge nivå-2-/ortogonale modulene IKKE ligger i den
+ * initielle lasten for et rapport-board, men i separate dynamic-import-chunker:
  *
- *   1. reels/splash-<video>-pipeline + kuratert hero-asset-lasting
- *      → report-splash-desktop / report-splash-mobile / report-embed-arrival
- *   2. voiceover-orchestration
- *      → reels-audio-orchestration
+ *   1. splash-<video>-pipeline + kuratert hero-asset-lasting
+ *      → DesktopReportSplash / MobileReportSplash / EmbedArrivalLoader
+ *   2. voiceover-orchestration → ReelsAudioOrchestrator
  *
- * To uavhengige assertions:
- *   A (autoritativ, alle 4 chunker): den navngitte chunk-fila finnes, og
- *     chunk-en er FRAVÆRENDE fra rutas entry-chunk-liste (app-build-manifest).
- *   B (innholds-kryssjekk, splash-trioen): en unik kode-markør finnes i modulens
- *     lazy-chunk, men i INGEN av rutas entry-chunker → modul-KODEN (ikke bare
- *     chunk-navnet) er ute av entry-chunken.
+ * NB (Next 16 / Turbopack): `webpackChunkName`-kommentarene i ReportReelsPage
+ * er INERTE i bygget — Turbopack hasher chunk-navn og emitterer ikke
+ * `.next/app-build-manifest.json`. Chunk-NAVN kan derfor ikke brukes som
+ * identifikator. Beviset går i stedet på kode-MARKØRER (string-literaler som
+ * overlever minifisering) mot Turbopacks per-rute-manifester:
+ *
+ *   entry  = build-manifest.json → rootMainFiles + polyfillFiles (initiell last)
+ *   lazy   = react-loadable-manifest.json → dynamic-import-chunkene
+ *
+ * To assertions per modul:
+ *   A: markøren finnes i NØYAKTIG ÉN lazy-chunk → modulen er faktisk code-splittet
+ *      (ikke bare fraværende/død).
+ *   B: markøren er FRAVÆRENDE fra alle entry-chunker → ingenting tungt på
+ *      initiell last.
  */
 
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const NEXT_DIR = join(process.cwd(), ".next");
-const CHUNKS_DIR = join(NEXT_DIR, "static", "chunks");
-const ROUTE = "/eiendom/[customer]/[project]/rapport-board/page";
-
-/** De fire navngitte lazy-chunkene (webpackChunkName i ReportReelsPage.tsx). */
-const NAMED_CHUNKS = [
-  "report-splash-desktop",
-  "report-splash-mobile",
-  "report-embed-arrival",
-  "reels-audio-orchestration",
-];
+const ROUTE = "/eiendom/[customer]/[project]/rapport-board";
+const ROUTE_MANIFEST_DIR = join(
+  NEXT_DIR,
+  "server",
+  "app",
+  "eiendom",
+  "[customer]",
+  "[project]",
+  "rapport-board",
+  "page",
+);
 
 /**
- * Unike kode-markører for innholds-kryssjekk (overlever minifisering — string-
- * literaler fra JSX). Orchestration-modulen har ingen unik string-literal
- * (struktural unikhet), så den dekkes kun av assertion A.
- * @type {{module: string, chunk: string, marker: string}[]}
+ * Unike kode-markører per modul. `all: true` krever at ALLE tokens finnes i
+ * samme chunk (brukes der ett token alene også kan stamme fra en annen modul —
+ * f.eks. `voiceover_played`, som også er en literal i event-schema).
+ * @type {{module: string, tokens: string[], all?: boolean}[]}
  */
-const CONTENT_MARKERS = [
+const MODULES = [
   {
     module: "DesktopReportSplash (splash-<video> + kuratert hero)",
-    chunk: "report-splash-desktop",
-    marker: "(min-width: 1024px) 50vw, 0px",
+    tokens: ["(min-width: 1024px) 50vw, 0px"],
   },
   {
     module: "MobileReportSplash (splash-<video> + kuratert hero)",
-    chunk: "report-splash-mobile",
-    marker: " – nabolag",
+    tokens: [" – nabolag"],
   },
   {
     module: "EmbedArrivalLoader (splash-<video> + kuratert hero)",
-    chunk: "report-embed-arrival",
-    marker: "(min-width: 768px) 28rem, 90vw",
+    tokens: ["(min-width: 768px) 28rem, 90vw"],
+  },
+  {
+    module: "ReelsAudioOrchestrator (voiceover-orchestration)",
+    tokens: ["voiceover_played", "visibilitychange"],
+    all: true,
   },
 ];
 
@@ -69,80 +79,109 @@ const fail = (/** @type {string} */ msg) => {
 };
 const ok = (/** @type {string} */ msg) => console.log(`  ✓ ${msg}`);
 
-if (!existsSync(NEXT_DIR) || !existsSync(CHUNKS_DIR)) {
+const buildManifestPath = join(ROUTE_MANIFEST_DIR, "build-manifest.json");
+const loadableManifestPath = join(
+  ROUTE_MANIFEST_DIR,
+  "react-loadable-manifest.json",
+);
+
+for (const p of [buildManifestPath, loadableManifestPath]) {
+  if (!existsSync(p)) {
+    console.error(
+      `FEIL: ${p.replace(process.cwd() + "/", "")} mangler.\n` +
+        `Kjør \`npm run build\` først (manifestene er per-rute i Next 16/Turbopack).`,
+    );
+    process.exit(2);
+  }
+}
+
+const buildManifest = JSON.parse(readFileSync(buildManifestPath, "utf8"));
+const loadableManifest = JSON.parse(readFileSync(loadableManifestPath, "utf8"));
+
+/** @type {string[]} */
+const entryFiles = [
+  ...(buildManifest.rootMainFiles ?? []),
+  ...(buildManifest.polyfillFiles ?? []),
+];
+/** @type {string[]} */
+const lazyFiles = [
+  ...new Set(
+    Object.values(loadableManifest).flatMap(
+      (/** @type {any} */ v) => v.files ?? [],
+    ),
+  ),
+].sort();
+
+if (entryFiles.length === 0) {
+  console.error("FEIL: rutas entry-chunk-liste (rootMainFiles) er tom.");
+  process.exit(2);
+}
+if (lazyFiles.length === 0) {
   console.error(
-    "FEIL: .next/static/chunks mangler. Kjør `npm run build` først.",
+    "FEIL: ingen dynamic-import-chunker for ruta — code-splittingen er borte.",
   );
   process.exit(2);
 }
 
-// Rutas entry-chunk-liste (initiell last) fra app-build-manifest.
-const appManifest = JSON.parse(
-  readFileSync(join(NEXT_DIR, "app-build-manifest.json"), "utf8"),
-);
-const entryFiles = appManifest.pages?.[ROUTE];
-if (!Array.isArray(entryFiles)) {
-  console.error(`FEIL: fant ikke ruta ${ROUTE} i app-build-manifest.json.`);
-  process.exit(2);
-}
-const entryBasenames = entryFiles.map((/** @type {string} */ f) =>
-  f.split("/").pop(),
-);
+/** Les en chunk-fil relativt til .next. Manglende fil → tom streng. */
+const readChunk = (/** @type {string} */ rel) => {
+  const p = join(NEXT_DIR, rel);
+  return existsSync(p) ? readFileSync(p, "utf8") : "";
+};
+const basename = (/** @type {string} */ rel) => rel.split("/").pop();
 
-// Alle emitterte chunk-filer.
-const allChunkFiles = readdirSync(CHUNKS_DIR).filter((f) => f.endsWith(".js"));
+/** Chunker som inneholder markøren (alle tokens hvis `all`, ellers minst ett). */
+const matching = (
+  /** @type {string[]} */ files,
+  /** @type {string[]} */ tokens,
+  /** @type {boolean | undefined} */ all,
+) =>
+  files.filter((f) => {
+    const src = readChunk(f);
+    return all
+      ? tokens.every((t) => src.includes(t))
+      : tokens.some((t) => src.includes(t));
+  });
 
-/** Finn den faktiske (hashede) fila for et navngitt chunk. */
-const findChunkFile = (/** @type {string} */ name) =>
-  allChunkFiles.find((f) => f.startsWith(`${name}.`));
+console.log(`\nRute: ${ROUTE}`);
+console.log(`  entry-chunker (initiell last): ${entryFiles.length}`);
+for (const f of entryFiles) console.log(`    ${basename(f)}`);
+console.log(`  dynamic-import-chunker: ${lazyFiles.length}`);
+for (const f of lazyFiles) console.log(`    ${basename(f)}`);
 
-console.log(`\nEntry-chunker for ${ROUTE}:`);
-for (const f of entryBasenames) console.log(`    ${f}`);
-
-console.log("\n[A] Navngitte lazy-chunker — eksisterer + fraværende fra entry:");
-const chunkPaths = {};
-for (const name of NAMED_CHUNKS) {
-  const file = findChunkFile(name);
-  if (!file) {
-    fail(`${name}: ingen emittert chunk-fil (forventet ${name}.<hash>.js)`);
+console.log("\n[A] Modul-kode ligger i nøyaktig én dynamic-import-chunk:");
+/** @type {Record<string, string>} */
+const lazyChunkOf = {};
+for (const { module, tokens, all } of MODULES) {
+  const hits = matching(lazyFiles, tokens, all);
+  if (hits.length === 0) {
+    fail(
+      `${module}: markør «${tokens.join(" + ")}» finnes i INGEN lazy-chunk ` +
+        `(modulen er ikke code-splittet — eller markøren er utdatert)`,
+    );
     continue;
   }
-  chunkPaths[name] = join(CHUNKS_DIR, file);
-  // Entry-chunk-lista skal ALDRI liste lazy-chunken (lastes on-demand).
-  const inEntry = entryBasenames.some((/** @type {string} */ b) =>
-    b.startsWith(`${name}.`),
-  );
-  if (inEntry) {
-    fail(`${name}: chunk ligger i rutas entry-liste (skal være lazy)`);
-  } else {
-    ok(`${name} → ${file} (separat lazy-chunk, ikke i entry)`);
-  }
-}
-
-console.log(
-  "\n[B] Innholds-kryssjekk — modul-kode i lazy-chunk, fraværende fra ALLE entry-chunker:",
-);
-const entryPaths = entryBasenames
-  .map((/** @type {string} */ b) => join(CHUNKS_DIR, b))
-  .filter((p) => existsSync(p));
-for (const { module, chunk, marker } of CONTENT_MARKERS) {
-  const lazyPath = chunkPaths[chunk];
-  const inLazy = lazyPath && readFileSync(lazyPath, "utf8").includes(marker);
-  if (!inLazy) {
-    fail(`${module}: markør «${marker}» IKKE i lazy-chunk ${chunk}`);
+  if (hits.length > 1) {
+    fail(
+      `${module}: markør funnet i ${hits.length} lazy-chunker ` +
+        `(${hits.map(basename).join(", ")}) — duplisert kode`,
+    );
     continue;
   }
-  const leaked = entryPaths.filter((p) =>
-    readFileSync(p, "utf8").includes(marker),
-  );
+  lazyChunkOf[module] = hits[0];
+  ok(`${module} → ${basename(hits[0])}`);
+}
+
+console.log("\n[B] Modul-kode er fraværende fra ALLE entry-chunker:");
+for (const { module, tokens, all } of MODULES) {
+  if (!(module in lazyChunkOf)) continue; // allerede feilet i [A]
+  const leaked = matching(entryFiles, tokens, all);
   if (leaked.length > 0) {
     fail(
-      `${module}: markør «${marker}» LEKKET til entry-chunk(er): ${leaked
-        .map((p) => p.split("/").pop())
-        .join(", ")}`,
+      `${module}: LEKKET til entry-chunk(er): ${leaked.map(basename).join(", ")}`,
     );
   } else {
-    ok(`${module}: markør i ${chunk}, fraværende fra alle entry-chunker`);
+    ok(`${module}: ikke i initiell last`);
   }
 }
 
@@ -151,5 +190,7 @@ if (failed) {
   console.error("BUNDLE-BEVIS: FAIL");
   process.exit(1);
 }
-console.log("BUNDLE-BEVIS: PASS — alle tre nivå-2-/ortogonale moduler er lazy.");
+console.log(
+  `BUNDLE-BEVIS: PASS — alle ${MODULES.length} tunge moduler er lazy og ute av initiell last.`,
+);
 process.exit(0);
