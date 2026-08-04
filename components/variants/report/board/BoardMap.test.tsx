@@ -169,6 +169,7 @@ function setBoard(
     collectionPoiIds: undefined,
     viewportRect: null,
     setViewportRect: vi.fn(),
+    viewportGestures: 0,
     setViewportPoiIds: vi.fn(),
     mapCamera: null,
     setMapCamera: vi.fn(),
@@ -453,6 +454,21 @@ describe("BoardMap — Unit 1: viewport-publisering (R9 2D, R12)", () => {
 
     expect(setRectSpy()).toHaveBeenCalledTimes(1);
     expect(lastRect().south).toBeCloseTo(px2lat(MOCK_VIEWPORT.h - 300), 9);
+  });
+
+  it("merker gest-publiseringen, men ikke last og sheet-høyde", () => {
+    // Hintet (R28) og en senere «tilbake til boligen»-affordans må kunne skille
+    // «brukeren tok i kartet» fra «layouten flyttet seg». Skillet kan ikke
+    // utledes av rektangelet: `setPadding` re-sentrerer kameraet, så en ny
+    // sheet-hvileposisjon flytter nordkanten like mye som sørkanten.
+    const { rerender } = render(<BoardMap publishViewport mapPaddingBottom={100} />);
+    expect(setRectSpy().mock.calls.at(-1)![1]).toEqual({ userGesture: false });
+
+    rerender(<BoardMap publishViewport mapPaddingBottom={300} />);
+    expect(setRectSpy().mock.calls.at(-1)![1]).toEqual({ userGesture: false });
+
+    fireMoveEnd({ type: "touchend" });
+    expect(setRectSpy().mock.calls.at(-1)![1]).toEqual({ userGesture: true });
   });
 
   it("publiserer ikke i det hele tatt når flaten ikke ber om det", () => {

@@ -104,7 +104,7 @@ function NeighbourhoodList({
   onOpenCategory: (categoryId: string) => void;
   onHeightChange: (heightPx: number) => void;
 }) {
-  const { viewportRect } = useBoard();
+  const { viewportGestures } = useBoard();
   const list = useNeighbourhoodList();
 
   // R28: ett ikke-blokkerende hint om at kartet styrer lista. Uten det finnes
@@ -112,23 +112,12 @@ function NeighbourhoodList({
   // sikte-kryss, og en boligkjøper som kommer kaldt fra en annonse har ikke
   // Citymapper-brukerens innlærte forventning. Ingen modal, ingenting å avvise.
   //
-  // Avvises ved første KART-gest. Vi ser på west/east/north, ikke south:
-  // sheeten okkluderer nedenfra, så en endring i BARE `south` betyr at
-  // brukeren dro sheeten — ikke at hen panorerte kartet, som er det hintet
-  // handler om.
-  const [hintDismissed, setHintDismissed] = useState(false);
-  const arrivalRef = useRef<string | null>(null);
-  const mapKey = viewportRect
-    ? `${viewportRect.west},${viewportRect.east},${viewportRect.north}`
-    : null;
-  if (mapKey !== null) {
-    if (arrivalRef.current === null) arrivalRef.current = mapKey;
-    else if (arrivalRef.current !== mapKey && !hintDismissed) {
-      // Render-fase-oppdatering på EGEN state — det dokumenterte React-mønsteret
-      // for «juster tilstand når input endres». Guarden gjør den idempotent.
-      setHintDismissed(true);
-    }
-  }
+  // Avvises ved første KART-gest, avlest fra tellerens kilde og ikke fra
+  // rektangelet: `map.setPadding()` re-sentrerer kameraet, så et sheet-drag
+  // flytter både `south` OG `north`. Den tidligere rektangel-diffen leste
+  // derfor sin egen ankomst-sekvens som en panorering og skjulte hintet før
+  // brukeren rakk å se det.
+  const hintDismissed = viewportGestures > 0;
 
   return (
     <NeighbourhoodSheet onHeightChange={onHeightChange}>

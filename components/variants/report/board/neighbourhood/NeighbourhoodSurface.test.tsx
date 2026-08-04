@@ -123,9 +123,14 @@ const spy = {
 function Probe({
   rect,
   camera,
+  gesture,
 }: {
   rect: ViewportRect | null;
   camera: MapCameraApi;
+  /** Speiler `BoardMap`s to publiseringsveier: `true` = gest-slipp fra
+   *  brukeren, `false` = layout-utløst re-publisering (kart-last, ny
+   *  sheet-hvileposisjon). */
+  gesture: boolean;
 }) {
   const ctx = useBoard();
   spy.visiblePoiIds = ctx.visiblePoiIds;
@@ -137,8 +142,8 @@ function Probe({
     return () => setMapCamera(null);
   }, [setMapCamera, camera]);
   useEffect(() => {
-    setViewportRect(rect);
-  }, [setViewportRect, rect]);
+    setViewportRect(rect, { userGesture: gesture });
+  }, [setViewportRect, rect, gesture]);
   return null;
 }
 
@@ -161,14 +166,14 @@ function setup(rect: ViewportRect | null = RECT) {
   const onHeight = vi.fn();
   const utils = render(
     <BoardProvider data={boardData()}>
-      <Probe rect={rect} camera={camera} />
+      <Probe rect={rect} camera={camera} gesture={false} />
       <NeighbourhoodSurface onSurfaceHeightChange={onHeight} />
     </BoardProvider>,
   );
-  const rerenderWith = (next: ViewportRect | null) =>
+  const rerenderWith = (next: ViewportRect | null, gesture = false) =>
     utils.rerender(
       <BoardProvider data={boardData()}>
-        <Probe rect={next} camera={camera} />
+        <Probe rect={next} camera={camera} gesture={gesture} />
         <NeighbourhoodSurface onSurfaceHeightChange={onHeight} />
       </BoardProvider>,
     );
@@ -229,17 +234,35 @@ describe("NeighbourhoodSurface — førstegangs-hintet (R28)", () => {
 
   it("forsvinner ved første kart-gest og kommer ikke tilbake", () => {
     const { queryByTestId, rerenderWith } = setup();
-    act(() => rerenderWith(PANNED));
+    act(() => rerenderWith(PANNED, true));
     expect(queryByTestId("neighbourhood-hint")).toBeNull();
     act(() => rerenderWith(RECT));
     expect(queryByTestId("neighbourhood-hint")).toBeNull();
   });
 
-  it("overlever et sheet-drag: bare `south` endrer seg da, ikke kartet", () => {
-    // Sheeten okkluderer nedenfra, så en ny hvileposisjon flytter KUN sørkanten.
+  it("overlever et sheet-drag selv om HELE rektangelet flytter seg", () => {
+    // Regresjon: sheeten okkluderer nedenfra, men `map.setPadding()`
+    // re-sentrerer kameraet i det paddede området — så en ny hvileposisjon
+    // flytter BÅDE sør- og nordkanten. Den opprinnelige implementasjonen leste
+    // west/east/north-diffen som «brukeren panorerte» og skjulte hintet under
+    // ankomsten, før noen hadde tatt i kartet. Kilden må følge med verdien.
     const { getByTestId, rerenderWith } = setup();
-    act(() => rerenderWith({ ...RECT, south: RECT.south + 0.003 }));
+    act(() =>
+      rerenderWith({
+        ...RECT,
+        south: RECT.south + 0.003,
+        north: RECT.north + 0.003,
+      }),
+    );
     expect(getByTestId("neighbourhood-hint")).toBeTruthy();
+  });
+
+  it("teller gesten selv når utsnittet endte nøyaktig der det startet", () => {
+    // En panorering fram og tilbake gir identisk rektangel. Verdi-dedupen
+    // stopper re-renderen, men brukeren HAR tatt i kartet.
+    const { queryByTestId, rerenderWith } = setup();
+    act(() => rerenderWith(RECT, true));
+    expect(queryByTestId("neighbourhood-hint")).toBeNull();
   });
 });
 

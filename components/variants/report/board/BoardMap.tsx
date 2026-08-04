@@ -339,7 +339,7 @@ export function BoardMap({
   // felle som `fitToVisiblePois` allerede har (den har `mapPaddingBottom` i
   // dep-arrayet, så identiteten skifter ved hver hvileposisjon).
   const publishViewportRect = useCallback(
-    (occludedBottomPx: number) => {
+    (occludedBottomPx: number, userGesture = false) => {
       if (!mapRef.current) return;
       const map = mapRef.current.getMap();
       const canvas = map.getCanvas();
@@ -349,7 +349,7 @@ export function BoardMap({
         // Sheeten dekker hele kartet, eller kartet har ingen målbar størrelse.
         // Ingen ærlig avlesning → degrader til «ingen scoping» (vis alt).
         // ALDRI til et tomt sett; en tom liste uten årsak leses som en bug.
-        setViewportRect(null);
+        setViewportRect(null, { userGesture });
         return;
       }
       setViewportRect(
@@ -359,6 +359,7 @@ export function BoardMap({
           map.unproject([0, h]),
           map.unproject([w, h]),
         ]),
+        { userGesture },
       );
     },
     [setViewportRect],
@@ -387,7 +388,7 @@ export function BoardMap({
       // direkte feltoppslag.
       const gesture = "originalEvent" in e ? e.originalEvent : undefined;
       if (!gesture) return;
-      publishViewportRect(mapPaddingBottom);
+      publishViewportRect(mapPaddingBottom, true);
     },
     [publishViewport, mapPaddingBottom, publishViewportRect],
   );

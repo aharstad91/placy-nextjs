@@ -181,8 +181,26 @@ interface BoardContextValue {
    * nabolagslista. `null` betyr «ingen scoping» → vis alt, ALDRI tom liste.
    */
   viewportRect: ViewportRect | null;
-  /** Se `viewportRect`. Verdi-deduplisert, så identiske rektangler er no-op. */
-  setViewportRect: (rect: ViewportRect | null) => void;
+  /**
+   * Se `viewportRect`. Verdi-deduplisert, så identiske rektangler er no-op.
+   * `meta.userGesture` skiller en panorering/zoom fra en re-publisering utløst
+   * av layout — se `viewportGestures`.
+   */
+  setViewportRect: (
+    rect: ViewportRect | null,
+    meta?: { userGesture?: boolean },
+  ) => void;
+  /**
+   * Antall brukerinitierte KART-gester siden montering. Teller opp ved hver
+   * gest-slipp, også når utsnittet endte der det startet.
+   *
+   * Finnes fordi rektangelet ikke kan svare på spørsmålet «har brukeren tatt i
+   * kartet?». `map.setPadding()` re-sentrerer kameraet i det paddede området,
+   * så når sheeten flyttes endres BÅDE `south` og `north` — en rektangel-diff
+   * leser altså et sheet-drag som en panorering. Kilden må derfor følge med
+   * verdien, ikke utledes av den.
+   */
+  viewportGestures: number;
   /**
    * Kamera-handlingene den monterte kart-motoren tilbyr. `null` når ingen motor
    * har registrert seg (desktop, event, VO-flaten — de trenger dem ikke).
@@ -228,11 +246,17 @@ export function BoardProvider({
   const [viewportRect, setViewportRectState] = useState<ViewportRect | null>(null);
   const [viewportPoiIds, setViewportPoiIds] = useState<Set<string> | null>(null);
   const [mapCamera, setMapCamera] = useState<MapCameraApi | null>(null);
+  const [viewportGestures, setViewportGestures] = useState(0);
 
   // Verdi-dedup: kartet republiserer ved hver gest-slipp, og et identisk
   // rektangel skal ikke re-rendre subtreet (sheeten re-rendrer i gest-frekvens
-  // — ingenting på kart-stien tåler unødig arbeid).
-  const setViewportRect = useCallback((rect: ViewportRect | null) => {
+  // — ingenting på kart-stien tåler unødig arbeid). Gest-telleren står UTENFOR
+  // dedupen: en panorering som endte der den startet er fortsatt en gest.
+  const setViewportRect = useCallback((
+    rect: ViewportRect | null,
+    meta?: { userGesture?: boolean },
+  ) => {
+    if (meta?.userGesture) setViewportGestures((n) => n + 1);
     setViewportRectState((prev) => {
       if (prev === rect) return prev;
       if (
@@ -295,6 +319,7 @@ export function BoardProvider({
         setViewportPoiIds,
         viewportRect,
         setViewportRect,
+        viewportGestures,
         mapCamera,
         setMapCamera,
         collectionPoiIds,
