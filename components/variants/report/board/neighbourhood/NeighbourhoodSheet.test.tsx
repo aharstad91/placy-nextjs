@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
+import { useState } from "react";
 import { render, cleanup, act, fireEvent, createEvent } from "@testing-library/react";
 import { NeighbourhoodSheet } from "./NeighbourhoodSheet";
 
@@ -142,12 +143,10 @@ describe("NeighbourhoodSheet — fri posisjonering", () => {
     // Kjernen i Citymapper-oppførselen, og hele grunnen til at
     // to-hvileposisjons-modellen ble kastet: brukeren bestemmer fordelingen
     // mellom kart og liste, ikke vi.
-    const { sheet, grab, onHeightChange } = setup();
-    onHeightChange.mockClear();
+    const { sheet, grab } = setup();
     drag(grab, 600, 472); // 128 px opp → 400, langt fra begge ytterpunkter
     expect(visibleHeightOf(sheet)).toBe(400);
     expect(sheet.dataset.rest).toBe("free");
-    expect(onHeightChange).toHaveBeenLastCalledWith(400);
   });
 
   it("går helt inn når slippet lander nær et ytterpunkt", () => {
@@ -192,11 +191,9 @@ describe("NeighbourhoodSheet — fri posisjonering", () => {
   });
 
   it("tapp på håndtaket hopper til motsatt ytterpunkt", () => {
-    const { sheet, grab, onHeightChange } = setup();
-    onHeightChange.mockClear();
+    const { sheet, grab } = setup();
     drag(grab, 400, 402); // under tapp-slop → tapp, ikke drag
     expect(visibleHeightOf(sheet)).toBe(EXPECTED_MAX);
-    expect(onHeightChange).toHaveBeenLastCalledWith(EXPECTED_MAX);
 
     drag(grab, 400, 402); // og tilbake igjen
     expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN);
@@ -211,6 +208,83 @@ describe("NeighbourhoodSheet — fri posisjonering", () => {
       fireEvent.pointerMove(grab, { pointerId: 2, isPrimary: false, clientY: 100 });
     });
     expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN);
+  });
+});
+
+describe("NeighbourhoodSheet — okklusjonen som rapporteres", () => {
+  it("rapporterer hvileminimumet, aldri høyden sheeten står i", () => {
+    const { sheet, grab, onHeightChange } = setup();
+    drag(grab, 600, 472); // fri posisjon på 400
+    expect(visibleHeightOf(sheet)).toBe(400);
+    // Kartet skal ha sett ÉN verdi gjennom hele livsløpet: hvileminimumet.
+    expect(new Set(onHeightChange.mock.calls.map(([h]) => h))).toEqual(
+      new Set([EXPECTED_MIN]),
+    );
+  });
+
+  it("rapporterer det samme selv når sheeten dras helt opp", () => {
+    const { sheet, grab, onHeightChange } = setup();
+    drag(grab, 600, 100);
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MAX);
+    expect(onHeightChange).toHaveBeenLastCalledWith(EXPECTED_MIN);
+  });
+});
+
+describe("NeighbourhoodSheet — løkken mellom liste og sheet-høyde", () => {
+  /** Innholdshøyden, styrt av testen. Header og wrapper deler den likt, så
+   *  `header.offsetHeight + content.offsetHeight` blir nøyaktig `contentH`. */
+  let contentH = 0;
+
+  beforeAll(() => {
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get() {
+        return contentH / 2;
+      },
+    });
+  });
+
+  afterAll(() => {
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get() {
+        return 0;
+      },
+    });
+  });
+
+  it("svinger ikke når lista krymper av sin egen okklusjon", () => {
+    // Reproduserer buggen fra opptaket 2026-08-04 i miniatyr: forelderen
+    // korter ned lista når rapportert okklusjon vokser — nøyaktig det kartets
+    // utsnitt gjorde da færre POI-er ble liggende utenfor sheeten. Rapporterte
+    // sheeten sin egen høyde, hadde de to retningene motsatt fortegn og
+    // systemet svingte i det uendelige (React: «Maximum update depth»).
+    contentH = 600;
+    const reported: number[] = [];
+
+    function Harness() {
+      const [, setOccluded] = useState(0);
+      return (
+        <NeighbourhoodSheet
+          onHeightChange={(h) => {
+            reported.push(h);
+            contentH = h > EXPECTED_MIN ? 200 : 600;
+            setOccluded(h);
+          }}
+        >
+          <div data-testid="content">innhold</div>
+        </NeighbourhoodSheet>
+      );
+    }
+
+    const utils = render(<Harness />);
+    const grab = utils.getByTestId("neighbourhood-grab");
+    const sheet = utils.getByTestId("neighbourhood-sheet");
+    drag(grab, 600, 200); // så langt opp gesten rekker
+
+    expect(new Set(reported)).toEqual(new Set([EXPECTED_MIN]));
+    // Taket er innholdet (600), ikke flate-andelen (688) — og det står stille.
+    expect(visibleHeightOf(sheet)).toBe(600);
   });
 });
 

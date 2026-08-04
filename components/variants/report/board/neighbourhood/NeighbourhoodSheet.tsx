@@ -59,11 +59,26 @@ import {
  * det kunne en liste med to kort dras opp til 86 % og etterlate et dødt beige
  * felt under siste rad. Man skal ikke kunne dra ut i tomrom.
  *
- * ## Hvorfor lista ikke oppdateres under draget
+ * ## Hvorfor kartet får HVILEMINIMUMET og ikke sheetens høyde
  *
- * Kun hvileposisjonen rapporteres oppover (`onHeightChange`). R12: lista
- * re-scopes ved gest-SLIPP, ikke kontinuerlig. Det gjør også at
- * viewport-publiseringen fyrer én gang per drag, ikke 60.
+ * Tallet som rapporteres oppover er alltid `bounds.min` — den laveste
+ * hvileposisjonen — uansett hvor sheeten faktisk står.
+ *
+ * Første versjon rapporterte den gjeldende høyden, og det ga en løkke som
+ * fikk sheeten til å pumpe opp og ned av seg selv:
+ *
+ *   sheet-høyde → kartets okklusjon → utsnitts-rektangel → antall synlige
+ *   POI-er → listas høyde → innholdstaket → sheet-høyde → …
+ *
+ * De to retningene har motsatt fortegn (høyere sheet gir færre POI-er gir
+ * lavere tak gir lavere sheet gir flere POI-er …), så systemet svinger i
+ * stedet for å konvergere. Innholdstaket lukket den siste lenken.
+ *
+ * `bounds.min` avhenger kun av containerhøyden, aldri av innholdet, og bryter
+ * derfor løkken ved kilden. Det er dessuten den ærlige avlesningen: lista
+ * svarer på «hva er i utsnittet», og utsnittet er det brukeren ser når
+ * sheeten hviler. Å dra den opp for å LESE lista skal ikke endre hva lista
+ * handler om — det er også slik Citymapper oppfører seg.
  */
 
 /** Ytterpunktene som andel av tilgjengelig høyde. Tallene er en FØLELSE, ikke
@@ -112,9 +127,9 @@ export function NeighbourhoodSheet({
   /** Header-tittel. Default unngår ordet «Nabolaget» med vilje: `teknostallen`
    *  har et TEMA som heter det, og to «Nabolaget» på samme skjerm leses feil. */
   title?: string;
-  /** Målt høyde (px) på gjeldende hvileposisjon. Kartet bruker den som
-   *  okklusjon i viewport-rektangelet. Kalles ved hvileposisjon- og
-   *  container-endring — aldri under draget. */
+  /** Høyden (px) kartet skal regne som skjult av sheeten. Alltid den laveste
+   *  hvileposisjonen, ikke den sheeten står i — se doccen over om løkken.
+   *  Endrer seg kun når flaten endrer størrelse. */
   onHeightChange: (heightPx: number) => void;
   children?: ReactNode;
 }) {
@@ -163,18 +178,31 @@ export function NeighbourhoodSheet({
   // scroll-containeren fordi `scrollHeight` aldri rapporterer mindre enn
   // `clientHeight` — en kort liste i en høy container ville målt seg selv som
   // «akkurat passe høy» og taket ville aldri sunket.
+  const measureContent = useCallback(() => {
+    const content = contentRef.current;
+    const header = headerRef.current;
+    if (!content || !header) return;
+    setContentHeight(content.offsetHeight + header.offsetHeight);
+  }, []);
+
+  // Måles på nytt ved HVER commit, ikke bare når observeren fyrer:
+  // ResizeObserver kaller tilbake etter paint, så en liste som krymper ville
+  // fått én malt frame med det gamle taket — nøyaktig det døde beige feltet
+  // under siste rad. Kostnaden er to `offsetHeight`-avlesninger per render, og
+  // sheeten rendrer ikke under draget (høyden skrives imperativt).
+  useLayoutEffect(measureContent);
+
+  // Observeren fanger det commit-målingen ikke ser: fonter som lastes,
+  // safe-area som endrer seg, bilder som får høyde etterpå.
   useLayoutEffect(() => {
     const content = contentRef.current;
     const header = headerRef.current;
     if (!content || !header) return;
-    const measure = () =>
-      setContentHeight(content.offsetHeight + header.offsetHeight);
-    measure();
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(measureContent);
     ro.observe(content);
     ro.observe(header);
     return () => ro.disconnect();
-  }, []);
+  }, [measureContent]);
 
   const applyHeight = useCallback((heightPx: number, durationMs: number) => {
     const el = sheetRef.current;
@@ -201,11 +229,14 @@ export function NeighbourhoodSheet({
 
   // Rapporteres i en LAYOUT-effekt: viewport-publiseringen skal lande før
   // paint, men et setState i forelderen under vår egen render ville vært et
-  // cross-component render-phase-update (React advarer, med rette). Kun
-  // hvileposisjonen rapporteres — aldri mellomverdier fra draget.
+  // cross-component render-phase-update (React advarer, med rette).
+  //
+  // Verdien er hvileminimumet, ikke `appliedHeight`. Det er løkkebruddet —
+  // `bounds.min` avhenger bare av containerhøyden, så ingenting sheeten gjør
+  // kan komme tilbake til den via lista. Se doccen øverst.
   useLayoutEffect(() => {
-    if (appliedHeight > 0) onHeightChange(appliedHeight);
-  }, [appliedHeight, onHeightChange]);
+    if (bounds.min > 0) onHeightChange(bounds.min);
+  }, [bounds.min, onHeightChange]);
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLElement>) => {
     if (!e.isPrimary || bounds.max <= 0) return;
