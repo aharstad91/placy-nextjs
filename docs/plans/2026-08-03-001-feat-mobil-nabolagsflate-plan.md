@@ -391,7 +391,7 @@ nåværende mock ville den vært grønn fra start.
 
 ---
 
-- [ ] **Unit 2: Nabolagsmodellen — ren logikk, ingen UI**
+- [x] **Unit 2: Nabolagsmodellen — ren logikk, ingen UI**
 
 **Goal:** Gitt bounds, sheet-høyde og board-data: produsere den grupperte,
 sorterte lista.
@@ -459,7 +459,7 @@ fullt avgjørbar uten en telefon.
 
 ---
 
-- [ ] **Unit 3a: Sheet-skallet — drag, måling og monteringspunkt**
+- [x] **Unit 3a: Sheet-skallet — drag, måling og monteringspunkt**
 
 **Goal:** En dragbar sheet over kartet, med målt høyde koblet til kartets
 padding og til scope-rektangelet. Innholdet er en plassholder.
@@ -525,7 +525,7 @@ gest-konflikten ved å unngå drag, og forskjellene er der problemene ligger.
 
 ---
 
-- [ ] **Unit 3b: Nabolagslista — kategorikort og innhold**
+- [x] **Unit 3b: Nabolagslista — kategorikort og innhold**
 
 **Goal:** Innholdet i sheeten: ett kort per kategori i utsnittet, med dekning,
 tidsspenn og inntil tre punkter.
@@ -573,7 +573,7 @@ tidsspenn og inntil tre punkter.
 
 ---
 
-- [ ] **Unit 4: Kategorisiden og veien tilbake**
+- [x] **Unit 4: Kategorisiden og veien tilbake**
 
 **Goal:** Fullskjerms innholdsflate over samme kartinstans, med nøyaktig
 gjenoppretting ved tilbake.
