@@ -86,8 +86,12 @@ function boardData(): BoardData {
       {
         id: "mat" as never,
         label: "Mat & drikke",
-        lead: "",
+        lead: "Kort lead om mat",
         body: "",
+        editorial: {
+          body: "Første avsnitt om nabolagets spisesteder.\n\nAndre avsnitt om kaffe.",
+          highlights: [],
+        },
         icon: "UtensilsCrossed",
         color: "#cc3300",
         pois: [
@@ -100,7 +104,7 @@ function boardData(): BoardData {
       {
         id: "natur" as never,
         label: "Natur & friluft",
-        lead: "",
+        lead: "Turterreng rett utenfor døra",
         body: "",
         icon: "TreePine",
         color: "#2f6f4f",
@@ -351,6 +355,59 @@ describe("NeighbourhoodSurface — kategorisiden (Unit 4)", () => {
     const { getByText, getByLabelText } = setup();
     openMat(getByText);
     expect(getByLabelText("Tilbake til nabolagslista")).toBeTruthy();
+  });
+});
+
+describe("NeighbourhoodSurface — kategorisiden er en beskrivelse, ikke en trefliste", () => {
+  it("viser kategoriens editorial-avsnitt over lista", () => {
+    // Uten prosa er siden bare navn og minutter — samme svar man får av et
+    // søk. Teksten er det som gjør den til en beskrivelse av STEDET.
+    const { getByText, getByTestId } = setup();
+    act(() => {
+      fireEvent.click(getByText("Mat & drikke"));
+    });
+    const prose = getByTestId("category-prose");
+    expect(prose.querySelectorAll("p")).toHaveLength(2);
+    expect(prose.textContent).toContain("Første avsnitt om nabolagets spisesteder.");
+    expect(prose.textContent).toContain("Andre avsnitt om kaffe.");
+    // Prosaen kommer FØR lista i dokumentrekkefølgen.
+    expect(
+      prose.compareDocumentPosition(getByTestId("category-poi-list")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("faller tilbake på kategoriens lead når editorial mangler", () => {
+    // Nivå-1-boards uten kuratert strøk skal ikke stå igjen uten tekst.
+    const { getByText, getByTestId } = setup();
+    act(() => {
+      fireEvent.click(getByText("Natur & friluft"));
+    });
+    expect(getByTestId("category-prose").textContent).toContain(
+      "Turterreng rett utenfor døra",
+    );
+  });
+
+  it("hopper over prosa-blokken helt når kategorien er tekstløs", () => {
+    // En tom ramme over lista ville lest som manglende innhold.
+    const data = boardData();
+    data.categories = data.categories.map((c) => ({
+      ...c,
+      lead: "",
+      body: "",
+      editorial: undefined,
+    }));
+    const { getByText, queryByTestId } = render(
+      <BoardProvider data={data}>
+        <Probe rect={RECT} camera={makeCamera()} gesture={false} />
+        <NeighbourhoodSurface onSurfaceHeightChange={vi.fn()} />
+      </BoardProvider>,
+    );
+    act(() => {
+      fireEvent.click(getByText("Mat & drikke"));
+    });
+    expect(queryByTestId("category-prose")).toBeNull();
+    expect(queryByTestId("category-poi-list")).toBeTruthy();
   });
 });
 

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
-import { render, cleanup, act, fireEvent } from "@testing-library/react";
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
+import { render, cleanup, act, fireEvent, createEvent } from "@testing-library/react";
 import { NeighbourhoodSheet } from "./NeighbourhoodSheet";
 
 /**
@@ -33,8 +33,8 @@ beforeAll(() => {
 
 afterEach(() => cleanup());
 
-const EXPECTED_HIGH = Math.round(CONTAINER_H * 0.86); // 688
-const EXPECTED_LOW = Math.round(CONTAINER_H * 0.34); // 272
+const EXPECTED_MAX = Math.round(CONTAINER_H * 0.86); // 688
+const EXPECTED_MIN = Math.round(CONTAINER_H * 0.34); // 272
 
 function setup(onHeightChange = vi.fn()) {
   const utils = render(
@@ -51,17 +51,42 @@ function setup(onHeightChange = vi.fn()) {
  *  vi animerer height og ikke transform). Den skrives imperativt. */
 const visibleHeightOf = (el: HTMLElement) => Number.parseFloat(el.style.height);
 
-function drag(grab: HTMLElement, fromY: number, toY: number, dtMs = 400) {
+/**
+ * Sender én peker-hendelse med EKSPLISITT `timeStamp`.
+ *
+ * jsdom stempler hendelser med millisekund-oppløsning, så tre `fireEvent`
+ * etter hverandre lander typisk i samme millisekund. Da er `dt` null, farten
+ * beholder sin forrige verdi, og resultatet av et slipp avhenger av om
+ * maskinen tilfeldigvis krysset et millisekundskille midt i gesten. Med
+ * styrte stempler er både «rolig slipp» og «kast» eksakt reproduserbare.
+ */
+function send(
+  grab: HTMLElement,
+  type: "pointerDown" | "pointerMove" | "pointerUp",
+  clientY: number,
+  t: number,
+) {
+  const event = createEvent[type](grab, { pointerId: 1, isPrimary: true, clientY });
+  Object.defineProperty(event, "timeStamp", { value: t });
   act(() => {
-    fireEvent.pointerDown(grab, { pointerId: 1, isPrimary: true, clientY: fromY });
+    fireEvent(grab, event);
   });
-  act(() => {
-    fireEvent.pointerMove(grab, { pointerId: 1, isPrimary: true, clientY: toY });
-  });
-  act(() => {
-    fireEvent.pointerUp(grab, { pointerId: 1, isPrimary: true, clientY: toY });
-  });
-  return dtMs;
+}
+
+/** Et drag som slippes UTEN fart: siste `pointermove` og `pointerup` deler Y,
+ *  så farten er nøyaktig 0 og sheeten hviler der fingeren slapp. */
+function drag(grab: HTMLElement, fromY: number, toY: number) {
+  send(grab, "pointerDown", fromY, 0);
+  send(grab, "pointerMove", toY, 16);
+  send(grab, "pointerUp", toY, 32);
+}
+
+/** Et kast: pekeren er fortsatt i bevegelse når den slippes, så farten blir
+ *  positiv oppover. */
+function flick(grab: HTMLElement, fromY: number, viaY: number, toY: number) {
+  send(grab, "pointerDown", fromY, 0);
+  send(grab, "pointerMove", viaY, 16);
+  send(grab, "pointerUp", toY, 32);
 }
 
 describe("NeighbourhoodSheet — måling og rapportering (R5)", () => {
@@ -69,15 +94,15 @@ describe("NeighbourhoodSheet — måling og rapportering (R5)", () => {
     // `EventMobileSheet` hardkoder 700 px og bommer på alt annet. Her er
     // høyden avledet av den faktiske containeren.
     const { sheet, grab } = setup();
-    drag(grab, 600, 100); // opp til høy hvileposisjon
-    expect(visibleHeightOf(sheet)).toBe(EXPECTED_HIGH);
+    drag(grab, 600, 100); // helt opp
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MAX);
   });
 
-  it("starter i lav hvileposisjon og rapporterer den høyden oppover", () => {
+  it("starter i laveste posisjon og rapporterer den høyden oppover", () => {
     const { sheet, onHeightChange } = setup();
     expect(sheet.dataset.rest).toBe("low");
-    expect(visibleHeightOf(sheet)).toBe(EXPECTED_LOW);
-    expect(onHeightChange).toHaveBeenCalledWith(EXPECTED_LOW);
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN);
+    expect(onHeightChange).toHaveBeenCalledWith(EXPECTED_MIN);
   });
 
   it("holder kartet synlig — sheeten dekker aldri hele flaten (R3)", () => {
@@ -87,14 +112,14 @@ describe("NeighbourhoodSheet — måling og rapportering (R5)", () => {
   });
 
   it("scroll-regionen er sheetens FAKTISKE høyde, ikke maks-høyden", () => {
-    // Med fast maks-høyde + translateY ville lista i lav hvileposisjon hatt en
+    // Med fast maks-høyde + translateY ville lista i laveste posisjon hatt en
     // scrollport under skjermkanten — innholdet der ville vært helt unåbart.
     const { sheet } = setup();
-    expect(visibleHeightOf(sheet)).toBe(EXPECTED_LOW);
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN);
   });
 });
 
-describe("NeighbourhoodSheet — drag og snap", () => {
+describe("NeighbourhoodSheet — fri posisjonering", () => {
   it("følger fingeren under draget UTEN å rapportere mellomverdier (R12)", () => {
     const { sheet, grab, onHeightChange } = setup();
     onHeightChange.mockClear();
@@ -107,32 +132,49 @@ describe("NeighbourhoodSheet — drag og snap", () => {
     });
 
     // Høyden har fulgt fingeren …
-    expect(visibleHeightOf(sheet)).toBe(EXPECTED_LOW + 80);
-    // … men ingenting er rapportert oppover: kartet skal ikke re-scope, ikke
-    // sette padding og ikke publisere utsnitt 60 ganger i sekundet.
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN + 80);
+    // … men ingenting er rapportert oppover: kartet skal ikke re-scope og ikke
+    // publisere utsnitt 60 ganger i sekundet.
     expect(onHeightChange).not.toHaveBeenCalled();
   });
 
-  it("snapper til høy hvileposisjon når draget lander nærmest den", () => {
+  it("hviler DER fingeren slapp — ikke i nærmeste ytterpunkt", () => {
+    // Kjernen i Citymapper-oppførselen, og hele grunnen til at
+    // to-hvileposisjons-modellen ble kastet: brukeren bestemmer fordelingen
+    // mellom kart og liste, ikke vi.
     const { sheet, grab, onHeightChange } = setup();
     onHeightChange.mockClear();
-    // Fra lav (272) og 350 px oppover → 622, nærmere 688 enn 272.
-    drag(grab, 600, 250);
-    expect(sheet.dataset.rest).toBe("high");
-    expect(visibleHeightOf(sheet)).toBe(EXPECTED_HIGH);
-    expect(onHeightChange).toHaveBeenLastCalledWith(EXPECTED_HIGH);
+    drag(grab, 600, 472); // 128 px opp → 400, langt fra begge ytterpunkter
+    expect(visibleHeightOf(sheet)).toBe(400);
+    expect(sheet.dataset.rest).toBe("free");
+    expect(onHeightChange).toHaveBeenLastCalledWith(400);
   });
 
-  it("snapper tilbake til lav når draget lander nærmest den", () => {
+  it("går helt inn når slippet lander nær et ytterpunkt", () => {
+    // Uten magnetisme blir «vis meg mest mulig kart» en presisjonsøvelse.
     const { sheet, grab } = setup();
-    act(() => {
-      fireEvent.click(sheet.querySelector("button")!);
-    });
-    drag(grab, 200, 560); // fra høy, 360 px nedover → 328, nærmest lav
+    drag(grab, 600, 200); // 400 px opp → 672, 16 px unna taket
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MAX);
+    expect(sheet.dataset.rest).toBe("high");
+  });
+
+  it("går helt ned når slippet lander nær bunnen", () => {
+    const { sheet, grab } = setup();
+    drag(grab, 600, 200); // opp til taket først
+    drag(grab, 200, 590); // 390 px ned → 298, 26 px over gulvet
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN);
     expect(sheet.dataset.rest).toBe("low");
   });
 
-  it("klamrer draget mellom hvileposisjonene — kartet skjules aldri helt", () => {
+  it("kastet bærer sheeten forbi punktet der fingeren slapp", () => {
+    const { sheet, grab } = setup();
+    // Slippes mens pekeren fortsatt går oppover: rå slipp-posisjon er
+    // 272 + (600 − 400) = 472, men farten skal kaste den videre.
+    flick(grab, 600, 500, 400);
+    expect(visibleHeightOf(sheet)).toBeGreaterThan(472);
+  });
+
+  it("klamrer draget mellom ytterpunktene — kartet skjules aldri helt", () => {
     const { sheet, grab } = setup();
     act(() => {
       fireEvent.pointerDown(grab, { pointerId: 1, isPrimary: true, clientY: 500 });
@@ -141,39 +183,23 @@ describe("NeighbourhoodSheet — drag og snap", () => {
       // Langt over toppen av skjermen.
       fireEvent.pointerMove(grab, { pointerId: 1, isPrimary: true, clientY: -900 });
     });
-    expect(visibleHeightOf(sheet)).toBe(EXPECTED_HIGH);
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MAX);
     act(() => {
       // Langt under bunnen.
       fireEvent.pointerMove(grab, { pointerId: 1, isPrimary: true, clientY: 2000 });
     });
-    expect(visibleHeightOf(sheet)).toBe(EXPECTED_LOW);
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN);
   });
 
-  it("tapp på håndtaket bytter hvileposisjon (ikke-gestuell vei mellom dem)", () => {
+  it("tapp på håndtaket hopper til motsatt ytterpunkt", () => {
     const { sheet, grab, onHeightChange } = setup();
     onHeightChange.mockClear();
     drag(grab, 400, 402); // under tapp-slop → tapp, ikke drag
-    expect(sheet.dataset.rest).toBe("high");
-    expect(onHeightChange).toHaveBeenLastCalledWith(EXPECTED_HIGH);
-  });
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MAX);
+    expect(onHeightChange).toHaveBeenLastCalledWith(EXPECTED_MAX);
 
-  it("varsler om hvileposisjon-endring, men ikke om drag-bevegelse", () => {
-    const onRestChange = vi.fn();
-    const { getByTestId } = render(
-      <NeighbourhoodSheet onHeightChange={vi.fn()} onRestChange={onRestChange} />,
-    );
-    const grab = getByTestId("neighbourhood-grab");
-    act(() => {
-      fireEvent.pointerDown(grab, { pointerId: 1, isPrimary: true, clientY: 500 });
-    });
-    act(() => {
-      fireEvent.pointerMove(grab, { pointerId: 1, isPrimary: true, clientY: 480 });
-    });
-    expect(onRestChange).not.toHaveBeenCalled();
-    act(() => {
-      fireEvent.pointerUp(grab, { pointerId: 1, isPrimary: true, clientY: 250 });
-    });
-    expect(onRestChange).toHaveBeenCalledWith("high");
+    drag(grab, 400, 402); // og tilbake igjen
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN);
   });
 
   it("ignorerer bevegelse fra en annen peker enn den som startet draget", () => {
@@ -184,7 +210,48 @@ describe("NeighbourhoodSheet — drag og snap", () => {
     act(() => {
       fireEvent.pointerMove(grab, { pointerId: 2, isPrimary: false, clientY: 100 });
     });
-    expect(visibleHeightOf(sheet)).toBe(EXPECTED_LOW);
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN);
+  });
+});
+
+describe("NeighbourhoodSheet — taket følger innholdet", () => {
+  const CONTENT_H = 150;
+
+  beforeAll(() => {
+    // jsdom gir alltid offsetHeight 0, som gjør innholdstaket inaktivt i de
+    // andre testene (og det er meningen — de tester grensene, ikke taket).
+    // Her slås det på: header + innhold måler 150 hver → tak på 300.
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get() {
+        return CONTENT_H;
+      },
+    });
+  });
+
+  afterAll(() => {
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get() {
+        return 0;
+      },
+    });
+  });
+
+  it("lar seg ikke dra ut i tomrom under siste rad", () => {
+    // Uten taket kunne en liste med to kort dras til 688 px og etterlate et
+    // dødt felt under innholdet — det leste som en layout-bug.
+    const { sheet, grab } = setup();
+    drag(grab, 600, 0); // så langt opp gesten rekker
+    expect(visibleHeightOf(sheet)).toBe(CONTENT_H * 2);
+  });
+
+  it("senker taket, aldri gulvet (R3 står)", () => {
+    // Kort innhold skal krympe det man kan dra OPP til — ikke minstehøyden.
+    // Ellers ville et smalt utsnitt gitt en sheet som er for lav til å lese.
+    const { sheet, grab } = setup();
+    drag(grab, 200, 900); // så langt ned gesten rekker
+    expect(visibleHeightOf(sheet)).toBe(EXPECTED_MIN);
   });
 });
 

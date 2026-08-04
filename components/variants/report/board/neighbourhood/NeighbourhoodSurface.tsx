@@ -34,6 +34,32 @@ export function NeighbourhoodSurface({
   const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
   const savedCameraRef = useRef<CameraSnapshot | null>(null);
 
+  // Lås dokument-scrollen så lenge flaten står.
+  //
+  // Board-containeren er `h-[100dvh] overflow-hidden`, men det binder bare
+  // CONTAINEREN — iOS Safari scroller fortsatt selve dokumentet når en gest
+  // renner over sheetens scroll-ende. Da glir hele boardet oppover, kartet
+  // forsvinner ut av toppen og under sheeten dukker det opp en stripe av
+  // body-bakgrunnen. Det leser som et overflow-hull i lista, men er siden som
+  // flytter seg. `overscroll-behavior: none` stopper kjedingen; `overflow:
+  // hidden` stopper resten.
+  useEffect(() => {
+    const { body, documentElement: html } = document;
+    const prev = {
+      bodyOverflow: body.style.overflow,
+      bodyOverscroll: body.style.overscrollBehavior,
+      htmlOverscroll: html.style.overscrollBehavior,
+    };
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    html.style.overscrollBehavior = "none";
+    return () => {
+      body.style.overflow = prev.bodyOverflow;
+      body.style.overscrollBehavior = prev.bodyOverscroll;
+      html.style.overscrollBehavior = prev.htmlOverscroll;
+    };
+  }, []);
+
   const openCategory =
     data.categories.find((c) => c.id === openCategoryId) ?? null;
 

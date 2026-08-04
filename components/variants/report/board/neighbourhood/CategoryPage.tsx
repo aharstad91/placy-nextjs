@@ -46,8 +46,7 @@ export function CategoryPage({
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   // Hele kategorien, gangtidssortert: samme modell som nabolagslista, men uten
-  // utsnitt (R16) og uten rad-tak. Kuratert rekkefølge og prosa kommer i
-  // Unit 7 — til prototypen er gangtidsstigen nok til å teste navigasjonen.
+  // utsnitt (R16) og uten rad-tak.
   const page = useMemo(
     () =>
       buildNeighbourhoodList([category], null, {
@@ -55,6 +54,19 @@ export function CategoryPage({
       }).categories[0],
     [category],
   );
+
+  // Prosaen som gjør siden til en STEDSBESKRIVELSE og ikke en trefliste.
+  // Samme kilde som desktop-sidebarens `CategoryDetailView`: kuratert
+  // strøk-editorial (nivå 2) hvis den finnes, ellers den deterministisk
+  // genererte minimums-teksten (nivå 1). Faller tilbake på kategoriens
+  // korte lead når ingen av delene finnes.
+  const paragraphs = useMemo(() => {
+    const source = category.editorial?.body?.trim() || category.lead?.trim() || "";
+    return source
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+  }, [category.editorial?.body, category.lead]);
 
   useLayoutEffect(() => {
     const el = frameRef.current;
@@ -121,27 +133,45 @@ export function CategoryPage({
           </span>
         </div>
 
-        <ul
-          data-testid="category-poi-list"
+        <div
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4"
           style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
         >
-          {page.rows.map((row) => (
-            <li
-              key={row.poi.id}
-              className="flex items-baseline gap-3 border-b border-black/5 py-2.5 last:border-b-0"
-            >
-              <span className="min-w-0 flex-1 truncate text-[14.5px] text-stone-800">
-                {row.poi.name}
-              </span>
-              {row.walkMinutes !== undefined && (
-                <span className="shrink-0 text-[13px] tabular-nums text-stone-500">
-                  {row.walkMinutes} min
+          {/* Prosaen scroller SAMMEN med lista, ikke over den. Panelet er 58 %
+              av en telefonskjerm: en fastlåst tekstblokk ville spist halve
+              lista, og teksten er kontekst man leser én gang — ikke et
+              kontrollelement man trenger tilgang til hele veien ned. */}
+          {paragraphs.length > 0 && (
+            <div data-testid="category-prose" className="space-y-2.5 pb-1 pt-1">
+              {paragraphs.map((p, i) => (
+                <p key={i} className="text-[14px] leading-relaxed text-stone-600">
+                  {p}
+                </p>
+              ))}
+            </div>
+          )}
+
+          <ul
+            data-testid="category-poi-list"
+            className={paragraphs.length > 0 ? "mt-3 border-t border-black/5 pt-1" : undefined}
+          >
+            {page.rows.map((row) => (
+              <li
+                key={row.poi.id}
+                className="flex items-baseline gap-3 border-b border-black/5 py-2.5 last:border-b-0"
+              >
+                <span className="min-w-0 flex-1 truncate text-[14.5px] text-stone-800">
+                  {row.poi.name}
                 </span>
-              )}
-            </li>
-          ))}
-        </ul>
+                {row.walkMinutes !== undefined && (
+                  <span className="shrink-0 text-[13px] tabular-nums text-stone-500">
+                    {row.walkMinutes} min
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

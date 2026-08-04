@@ -311,12 +311,22 @@ export function BoardMap({
     }
   }, [publishViewport]);
 
-  // Sync map-padding-bottom med BoardMobileSheet snap-stage. Påvirker ikke
-  // kamera (ingen flyTo/fitBounds-trigger) — kun tolkning av "senter" for
-  // fremtidige kamera-bevegelser. Mobil-sheet sender ned padding via
-  // BoardScaffold; desktop sender 0.
+  // Sync map-padding med sheet-høyden. `setPadding` er IKKE passiv: Mapbox
+  // implementerer den som `jumpTo({ padding })`, så kameraet re-sentreres i det
+  // padding-boksen endrer seg. Med en konstant padding (event-boardet) skjer det
+  // én gang ved montering og synes ikke.
+  //
+  // På nabolagsflaten er padding sheet-høyden, og da BLIR den synlig: et drag fra
+  // lav til høy hvileposisjon flyttet kartet ~halve høydeforskjellen, som et
+  // hopp midt i gesten. Sheeten er konseptuelt et LAG over kartet — kartet skal
+  // ligge stille når laget vokser. Derfor står flaten utenfor.
+  //
+  // Framingen taper ingenting på det: `fitToVisiblePois` sender allerede
+  // `mapPaddingBottom` eksplisitt i sitt eget padding-objekt. Med den
+  // persistente paddingen inne ble den TELT TO GANGER, som er kilden til
+  // «Map cannot fit within canvas with the given bounds, padding, and/or offset».
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current) return;
+    if (!mapLoaded || !mapRef.current || publishViewport) return;
     const map = mapRef.current.getMap();
     map.setPadding({
       top: 0,
@@ -324,7 +334,7 @@ export function BoardMap({
       left: mapPaddingLeft,
       right: 0,
     });
-  }, [mapLoaded, mapPaddingBottom, mapPaddingLeft]);
+  }, [mapLoaded, mapPaddingBottom, mapPaddingLeft, publishViewport]);
 
   // ---- Viewport-publisering (mobil nabolagsflate, R9 2D + R12) ----
   //

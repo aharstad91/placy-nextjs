@@ -456,11 +456,33 @@ describe("BoardMap — Unit 1: viewport-publisering (R9 2D, R12)", () => {
     expect(lastRect().south).toBeCloseTo(px2lat(MOCK_VIEWPORT.h - 300), 9);
   });
 
+  it("flytter ALDRI kameraet når sheeten endrer høyde", () => {
+    // `map.setPadding()` er `jumpTo({ padding })` i Mapbox — den re-sentrerer
+    // kameraet umiddelbart. Med sheet-høyden som padding ga et drag fra bunn
+    // til topp et synlig hopp i kartet midt i gesten. Sheeten er et LAG over
+    // kartet; kartet skal ligge stille når laget vokser.
+    const { rerender } = render(<BoardMap publishViewport mapPaddingBottom={100} />);
+    rerender(<BoardMap publishViewport mapPaddingBottom={600} />);
+
+    expect(mapInstance().setPadding).not.toHaveBeenCalled();
+  });
+
+  it("beholder persistent padding på flater uten viewport-publisering", () => {
+    // Event-boardet sender en KONSTANT padding, så re-sentreringen skjer én
+    // gang ved montering og er usynlig. Der er padding fortsatt riktig verktøy.
+    render(<BoardMap mapPaddingBottom={240} />);
+
+    expect(mapInstance().setPadding).toHaveBeenCalledWith(
+      expect.objectContaining({ bottom: 240 }),
+    );
+  });
+
   it("merker gest-publiseringen, men ikke last og sheet-høyde", () => {
     // Hintet (R28) og en senere «tilbake til boligen»-affordans må kunne skille
     // «brukeren tok i kartet» fra «layouten flyttet seg». Skillet kan ikke
-    // utledes av rektangelet: `setPadding` re-sentrerer kameraet, så en ny
-    // sheet-hvileposisjon flytter nordkanten like mye som sørkanten.
+    // utledes av rektangelet alene: en ny sheet-høyde endrer sørkanten uten at
+    // brukeren har rørt kartet, og et hint som forsvant av seg selv ville aldri
+    // blitt sett.
     const { rerender } = render(<BoardMap publishViewport mapPaddingBottom={100} />);
     expect(setRectSpy().mock.calls.at(-1)![1]).toEqual({ userGesture: false });
 
