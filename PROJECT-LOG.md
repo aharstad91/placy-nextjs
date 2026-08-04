@@ -6,6 +6,34 @@
 
 ---
 
+## 2026-08-04 (sesjon 1) — MOBIL NABOLAGSFLATE, FASE 1 LANDET: KART + LISTE PÅ BOARDS UTEN VO (Unit 1–4, branch ikke pushet)
+
+**Kontekst:** Direkte oppfølging av London-turen (03-08 sesjon 3), men på grensesnitt-sporet, ikke innholds-sporet: Citymapper «Nearby» ble analysert fra skjermopptak og kjørt gjennom `/ce-brainstorm` → `/ce-plan` → `/ce-work`. Bestillingen var **kun Fase 1 (Unit 1, 2, 3a, 3b, 4)** — Fase 2 (Unit 5–8) er ikke rørt.
+
+**Problemet som ble løst:** Rapport-boards uten spillbar voice-over fikk ingen innholdsflate på mobil — etter splash møtte brukeren et fullskjerm kart med pins, og det var alt. All kategori-struktur, tekst og gangtid var kun nåbar på desktop via `DesktopStorySidebar`. Årsak: `mapIsSurface = state.mapOpen || !hasAudioMobile` i `ReportReelsPage.tsx`. **Fire av seks provisjonerte boards** stod slik. R17 i `2026-06-16-mobil-rapport-board-ux-requirements.md` lovet en no-audio-fallback som aldri ble bygd.
+
+**Leveransen:** Todelt vertikal flate — kart øverst, dragbar sheet nederst — der **kartutsnittet ER filteret**. Lista viser kategorier sortert på nærmeste synlige punkt, med dekningsbrøk og tidsspenn («45 av 57 synlig · 1–16 min»), inntil tre punkter per kategori, og en kategoriside pushet over samme kart. Sheeten heter «I nærheten», ikke «Nabolaget» — sistnevnte er allerede et *temanavn* på `teknostallen` og `ferjemannsveien-10`.
+
+**Kamera-løkken måtte brytes først (Unit 1).** Et viewport-avledet POI-sett som kameraet fitter på gir: panorer → nytt sett → refit → nytt utsnitt → nytt sett → … `visiblePoiIds` fikk derfor en diskriminator `VisibleIdsSource`: `"event-filter"` (brukervalgt delmengde — kameraet *skal* ramme den inn) vs. `"viewport-scope"` (avledet av kameraet — kameraet skal **aldri** fitte på den). Gaten er `shouldFitToFilter` i `board-camera-fit.ts`. Testen ble verifisert rød mot gammel kode først — og testriggen måtte repareres før det, fordi den gamle `BoardMap`-mocken aldri kalte `onLoad`, så `mapLoaded` forble false og alle kamera-effekter returnerte tidlig. Uten den reparasjonen ville den avgjørende testen vært falsk grønn.
+
+**Tre tekniske valg verdt å huske:**
+
+1. **Utsnittet leses i PIKSLER via `map.unproject()`, ikke ved å trekke fra breddegrader på `getBounds()`.** `getBounds()` ignorerer `setPadding`, så «bounds minus sheet-høyden» har ingen meningsfull aritmetisk form. Alle fire hjørner unprojiseres, ikke to — ved bearing ≠ 0 er den akse-justerte konvolutten større enn det brukeren ser. **Rotasjonen er derfor låst på denne flaten** (`dragRotate.disable()` + `touchZoomRotate.disableRotation()`) — samme grep som dyreparken.no, men av motsatt grunn: de skjuler en flat tegning, vi holder rektangelet ærlig. Desktop, event-board og VO-flaten beholder Mapbox' defaults.
+2. **Sheeten animerer `height`, ikke `transform`** — bevisst avvik fra repoets transform-only-konvensjon, dokumentert i koden. Fast høyde + `translateY` gir en scroll-region høyere enn det synlige området, så innhold under skjermkanten blir uleselig i lav hvileposisjon (containeren overflower ikke, altså scroller ingenting). `touch-none` kun på gripeflaten, aldri på scroll-containeren (`unified-poi-carousel-report-20260420`).
+3. **`vaul` ble avinstallert** — build-or-adopt-spørsmålet ble avgjort eksplisitt, ikke latt ligge. Sheeten er egen.
+
+**Bugen som ble funnet i nettleseren, ikke i testene:** Førstegangs-hintet (R28) forsvant *før brukeren rakk å se det*. Det ble avvist av en rektangel-diff på `west/east/north`, under antagelsen om at sheeten kun flytter sørkanten. Men **`map.setPadding()` re-sentrerer kameraet i det paddede området**, så en ny sheet-høyde flytter hele utsnittet — ankomstsekvensen (kart-last → sheet måler seg → padding settes) leste seg selv som en panorering. Fikset ved å la kilden følge med verdien i stedet for å utledes av den: `setViewportRect` tar nå `{ userGesture }`, provideren teller gestene (`viewportGestures`), hintet leser telleren. **Telleren står utenfor verdi-dedupen** — en panorering som endte der den startet er fortsatt en gest. Tre nye tester, alle verifisert røde mot koden før fiksen.
+
+**Verifisert i Chrome (390×844, mobile+touch, `ferjemannsveien-10`):** hint til stede ved ankomst; sheet-drag 287→726 px re-scoper lista 45→25 av 57 og hintet overlever; tapp-veksling tilbake gir 45 av 57 igjen (symmetrisk); pan i kartet fjerner hintet, re-scoper lista og endrer kategorirekkefølgen (Trening falt sist på 12 min); kategorisiden viser 57 rader — hele kategorien, ikke utsnittet (R16); tilbake gir **byte-identisk liste** med før push, altså eksakt kamera-gjenoppretting (R18); **1 WebGL-kontekst** gjennom hele flyten; 0 console-errors (2 warnings, begge Mapbox-stil-internals).
+
+**Mekanisk:** `tsc` ren · lint 0 errors · **1707/1707 tester** · `npm run build` grønn.
+
+**Status: FASE 1 KOMPLETT PÅ BRANCH `feat/mobil-nabolagsflate` (7 commits) — IKKE PUSHET, IKKE MERGET.** Ingen DB-endring, ingen migrasjon, ingen provisjonering rørt. Flaten er opt-in: `publishViewport` defaulter til `false`, så desktop, event-board og VO-boards er uendret.
+
+**Åpne tråder:** (1) **Enhetsverifisering på ekte iPhone er Andreas'** — alt over er syntetiske pekerhendelser i emulert viewport; det som særlig må kjennes er drag med ekte finger og `100dvh` mot Safaris adressefelt. (2) **Fase 2 (Unit 5–8)** ikke startet: boliglås + ankomstramme + reframe (Unit 5), punkt-rad og POI-detalj (6), kuratert vs. generert prosa (7), 3D-paritet (8). Merk at «45 av 57 synlig» ved ankomst bekrefter planens antagelse — ankomstrammen dekker nesten alt, og R8s 10-minutters ramme ligger nettopp i Unit 5. (3) **Fem foreldede `docs/solutions/`-dokumenter** skal merkes som historiske mønstre — ligger som deferred i planen, ikke gjort.
+
+---
+
 ## 2026-08-03 (sesjon 3) — LONDON-INSPIRASJON: GUIDEBOK-SERIER, PARKSKILT OG DYREPARKEN-TEKNIKKEN KARTLAGT (ren research — ingen kode, ingenting besluttet)
 
 **Kontekst:** Andreas hadde vært i London og fotografert to hyller med lokalkunnskaps-guidebøker (Battersea Power Station) samt et wayfinding-skilt i The Regent's Park, og ba om research på bokseriene + tanker om hva Placy kunne digitalisert. Sesjonen utviklet seg til tre lag: innholdsformat (bøkene), grensesnittformat (skiltet), og teknisk implementasjon (dyreparken.no/kart). **Ingen produkt- eller scope-beslutning tatt — dette er en idébank.**
