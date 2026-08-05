@@ -6,6 +6,70 @@
 
 ---
 
+## 2026-08-05 (sesjon 1) — NABOLAGSLISTA FØLGER OGSÅ GOOGLE 3D + KAMERA-BRO MELLOM MOTORENE (branch ikke pushet)
+
+**Kontekst:** Andreas testet på iPhone og sendte skjermopptak: lista oppdaterte seg fint på Mapbox-kartet, men sto helt stille gjennom all panorering i 3D. To spørsmål fulgte med — kan vi gjenskape det i Google 3D, og ville det hjulpet å låse kartet ovenfra?
+
+**Diagnosen:** Lista var ikke frossen, den var **foreldet**. Hele viewport-publiseringen lå på Mapbox (`map.unproject()` av pikselhjørnene + `onMoveEnd`), og `showMapbox = !has3dAddon || view === "2d"` UNMOUNTER Mapbox når 3D er fremste motor. Rektangelet i provider-state ble stående på det siste 2D-kartet viste, og lista scopet mot et utsnitt som ikke lenger fantes noe sted på skjermen. Merk at boardet i opptaket var **Wesselsløkka**, ikke Ferjemannsveien — sistnevnte har ikke 3D-add-on i det hele tatt (prosjekt-pinnen i opptaket røper hvilket board det var).
+
+**`gmp-map-3d` hadde begge halvdelene vi manglet, de var bare ikke tatt i bruk:** `gmp-steadychange` (bærer `isSteady`) er Googles `moveend`, og `center`/`range`/`heading`/`fov` er lesbare properties. Bonusfunn: `fov` er faktisk eksponert (leser 35), mens `project-latlng-to-screen.ts` har hardkodet 35 som *estimat* siden den ble skrevet.
+
+**Det avgjørende valget — senter + range, ikke frustum.** `gmp-map-3d` har ingen `unproject`, så 2D-stien finnes ikke. Men den trengs ikke: Googles `center` **er** sikte­punktet — nøyaktig retikkelet flaten er bygget rundt — og halv dybde er `range · tan(fov/2)`. `ViewportRect`-doccen i `lib/board/board-types.ts` forutså dette allerede («3D avleder samme form fra kamerasenter + radius»).
+
+**Tilt er bevisst IKKE med i regnestykket**, og det svarer på Andreas' andre spørsmål. Med tilt er den synlige bakken en trapes mot horisonten: på 45° ser man fra ~330 m til ~1220 m foran seg, nær 90° i praksis uendelig. Et scope som vokste med tilt ville blitt en horisont-dump — «i nærheten» ville listet steder kilometer unna fordi de så vidt er noen piksler høye ved horisonten. Vi leser derfor utsnittet som om kameraet så rett ned fra samme avstand: scopet står **stille når brukeren tilter**, og er alltid en **delmengde** av det som faktisk er i bildet (feilen går mot å utelate det fjerneste, aldri mot å påstå at noe usett er synlig). **Å låse kartet top-down ble derfor frarådet og ikke gjort** — det ville gjort 3D til et satellittkart med skygger og fjernet grunnen til at Kart/3D-toggelen finnes. Trenger vi et sikkerhetsnett senere, cap tilt heller enn å låse den.
+
+**R12 (kun brukergester re-scoper) måtte få en ny diskriminator.** Google-eventene bærer ingen `originalEvent`. Brukergrepet merkes derfor der det skjer — pointerdown/wheel/touchstart på kart-elementet, med marker-tapp filtrert bort (innholds-interaksjon, ikke kamera-grep) — samme lytterform som drag-takeover allerede bruker i `BoardMap3D`. Drone-orbit, POI-innflyvning og kategori-fit fyrer ingen pointer-events og drar derfor ikke lista med seg. Flagget nullstilles ikke ved publisering (har brukeren først tatt rattet, eier hen kameraet) men når 3D slutter å være fremste motor.
+
+**Kamera-broen mellom motorene, tatt i samme slengen.** Toggelen byttet ikke bare motor, den **flyttet deg**: `handleModeChange("2d")` regnet `pendingCamera` fra en konstant og landet alltid på boligen med range 900, mens 2D→3D beholdt der 3D sist sto (instansen unmountes aldri). Nå leses posituren begge veier. 2D→3D må skrives **imperativt** — `defaultCenter`/`defaultRange` på `<Map3D>` gjelder kun ved mount — og kun i fri modus, ellers re-aimer drone-directoren umiddelbart uansett. Mapbox lander **flatt og nordvendt**: flaten slår av rotasjon med vilje, og en arvet pitch ville dratt utsnittets øvre kant mot horisonten.
+
+**Alt nedstrøms er urørt.** Utsnittet publiseres gjennom samme `setViewportRect`, så lista, markør-snittet og kategorisiden er uendret kode.
+
+**Verifisert i Chrome (390×844×3, mobile+touch, `wesselslokka`):** `gmp-steadychange` fyrer i begge retninger (`[false, true]`); **programmatisk kamera-flytting re-scopet IKKE lista** (identisk liste før/etter, hintet overlevde); gest + flytting ga 4 kategorier → **tom liste med riktig tomtekst** → 1 kategori → 4 kategorier i takt med utsnittet; Kart/3D-rundtur landet **110 m** fra utgangspunktet (mot ~2,5 km hjem før); 0 konsollfeil (1 kjent Mapbox-stiladvarsel). R12-gaten ble reversert med vilje for å bekrefte at testene fanger den — tre falt.
+
+**Mekanisk:** `tsc` ren · lint 0 errors · **1735 tester / 139 filer** (opp fra 1718) · `npm run build` grønn. Commit `b759415`.
+
+**Én test måtte justeres, ikke omgås:** `BoardMap.test.tsx` AC5 låste `import type { PendingCamera }` som *tekstform*. Kravet er proveniens (fra `motor-camera`, ikke `UnifiedMapModal`), og repoets idiom er inline-`type` når verdier hentes fra samme modul. Regexen ble utvidet til å godta begge former; assertionen om proveniens står.
+
+**Åpne tråder:** (1) **Kategorisiden rammer ikke inn kameraet i 3D** — `mapCamera`-API-et (`snapshot`/`restore`/`fitVisible`) er Mapbox-only, så kameraet står helt stille ved drill-in. Ikke ødelagt (markørene snevres inn, du er der du var ved retur), men innrammingen mangler. Uendret fra før — bare mer synlig nå som folk faktisk vil drille inn fra 3D. (2) **Rundtur-drift ~110 m** gjennom `range → zoom → range` + Googles terrengklamping; merkbart bare ved gjentatt toggling. (3) Fase 2 (Unit 5–8) fortsatt ikke startet — merk at **Unit 8 het «3D-paritet»** og nå er delvis innfridd på forskudd.
+
+---
+
+## 2026-08-04 (sesjon 2) — TILBAKEMELDINGSRUNDE PÅ NABOLAGSFLATA + LØKKEN VI SELV SKAPTE (branch ikke pushet)
+
+**Kontekst:** Andreas testet Fase 1 på ekte iPhone (den enhetsverifiseringen sesjon 1 flagget som hans) og kom tilbake med fire punkter. Fiksen på dem skapte en ny bug, som ble rapportert med et nytt skjermopptak i samme sesjon. To commits: `77e096f` og `57766ed`.
+
+**Runde 1 — de fire punktene (`77e096f`):**
+
+1. **Fri sheet-posisjonering.** Sheeten snappet til to hvileposisjoner; nå hviler den der fingeren slapp, med momentum-projeksjon og snap kun nær ytterpunktene.
+2. **Stille kart.** `map.setPadding()` er **ikke passiv** — Mapbox implementerer den som `jumpTo({ padding })`, så kameraet re-sentreres i det padding-boksen endrer seg. Med sheet-høyden som padding ble det synlig: et drag fra lav til høy hvileposisjon flyttet kartet ~halve høydeforskjellen, som et hopp midt i gesten. Sheeten er konseptuelt et **lag over** kartet, så kartet skal ligge stille når laget vokser — nabolagsflaten står nå utenfor den persistente paddingen. Framingen taper ingenting: `fitToVisiblePois` sender allerede `mapPaddingBottom` i sitt eget padding-objekt, og med den persistente paddingen inne ble den **telt to ganger** (kilden til «Map cannot fit within canvas with the given bounds, padding, and/or offset»).
+3. **Låst dokument-scroll.** Board-containeren er `h-[100dvh] overflow-hidden`, men det binder bare containeren — iOS Safari scroller fortsatt dokumentet når en gest renner over sheetens scroll-ende. Da glir hele boardet oppover og det dukker opp en stripe body-bakgrunn under sheeten, som leser som et overflow-hull i lista. `overscroll-behavior: none` på body+html stopper kjedingen.
+4. **Prosa på kategorisiden.** Samme kilde som desktop-sidebaren: kuratert strøk-editorial (nivå 2) hvis den finnes, ellers den deterministisk genererte minimums-teksten (nivå 1). Prosaen scroller **sammen med** lista, ikke over den — panelet er 58 % av en telefonskjerm, og en fastlåst tekstblokk ville spist halve lista.
+
+**Runde 2 — løkken (`57766ed`).** Innholdstaket som kom inn i runde 1 (sheeten skal ikke bli høyere enn innholdet) lukket den **siste manglende lenken** i en syklus:
+
+```
+sheet-høyde → kartets okklusjon → utsnitts-rektangel → antall synlige
+POI-er → listas høyde → innholdstaket → sheet-høyde → …
+```
+
+De to retningene har motsatt fortegn (høyere sheet → færre POI-er → lavere tak → lavere sheet → flere POI-er), så systemet **svingte** i stedet for å konvergere. På opptaket: `Mat & Drikke 5 av 57` → `3 av 57` → `5 av 57`, kategorier som forsvant og kom tilbake, og et dødt beige felt under siste rad.
+
+**Løsningen er ett tall:** det som rapporteres oppover er alltid `bounds.min` — den laveste hvileposisjonen — uansett hvor sheeten faktisk står. `bounds.min` avhenger kun av containerhøyden, aldri av innholdet, og bryter derfor løkken ved kilden. Det er dessuten den **ærlige** avlesningen: lista svarer på «hva er i utsnittet», og utsnittet er det brukeren ser når sheeten hviler. Å dra sheeten opp for å *lese* lista skal ikke endre hva lista handler om — slik oppfører Citymapper seg også.
+
+**Én frame-detalj til:** innholdet måles nå i en **dep-løs `useLayoutEffect` på hver commit**, ikke bare når ResizeObserveren fyrer. RO kaller tilbake *etter* paint, så en liste som krymper ville fått én malt frame med det gamle taket — nøyaktig det døde beige feltet. Observeren beholdes for det commit-målingen ikke ser (fonter som lastes, safe-area, bilder som får høyde etterpå).
+
+**To eksisterende tester låste den BUGGY kontrakten** (`toHaveBeenLastCalledWith(400)` og `…(EXPECTED_MAX)` — begge kodet «rapporter den dragde høyden»). De ble fjernet og erstattet med invariant-tester, og løkken ble reprodusert i miniatyr i en test-harness som fikk «Maximum update depth exceeded» mot gammel kode. Fiksen ble verifisert ved å reversere den med vilje: alle tre nye tester falt.
+
+**Verifisert i Chrome (390×844×3, `ferjemannsveien-10`):** fritt drag 287→547 px ga `listUnchanged: true` og én distinkt okklusjonsverdi over 900 ms; drag til topp 726 px uten dødt felt; zoomet til tomt utsnitt holdt gulvet på 287 px; **zoomet til kort liste stoppet på 392 px** i stedet for takets 726 — sheeten ender nøyaktig ved siste rad.
+
+**Mekanisk:** `tsc` ren · lint 0 errors · **1718 tester** · build grønn.
+
+**Driftslærdom (kostet tid):** `allowedDevOrigins` i Next 16 regnes **én gang ved oppstart** av dev-serveren. Byttet Mac-en nettverk underveis (ny IP i et annet subnett), havner den nye adressen utenfor lista og Next blokkerer `/_next/*` og `/__nextjs_font/*` — HMR og fonter dør stille mens side-HTML fortsatt svarer 200. **Bytter maskinen nettverk, må dev-serveren restartes** (`npm run dev:mobile`).
+
+**Åpne tråder:** **Feil editorial-data på `ferjemannsveien-10`** — engelsk Overvik/Ranheim-prosa på et Solsiden-board. Verifisert identisk på desktop, altså et provisjonerings-datahull, ikke en flate-bug. Ikke rørt.
+
+---
+
 ## 2026-08-04 (sesjon 1) — MOBIL NABOLAGSFLATE, FASE 1 LANDET: KART + LISTE PÅ BOARDS UTEN VO (Unit 1–4, branch ikke pushet)
 
 **Kontekst:** Direkte oppfølging av London-turen (03-08 sesjon 3), men på grensesnitt-sporet, ikke innholds-sporet: Citymapper «Nearby» ble analysert fra skjermopptak og kjørt gjennom `/ce-brainstorm` → `/ce-plan` → `/ce-work`. Bestillingen var **kun Fase 1 (Unit 1, 2, 3a, 3b, 4)** — Fase 2 (Unit 5–8) er ikke rørt.
