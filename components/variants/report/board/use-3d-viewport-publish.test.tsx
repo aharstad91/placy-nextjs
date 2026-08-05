@@ -1,20 +1,32 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { render, cleanup, act, fireEvent } from "@testing-library/react";
 import type { ViewportRect } from "@/lib/board/board-types";
 import type { BoardData } from "./board-data";
 import { BoardProvider, useBoard } from "./board-state";
-import { use3DViewportPublish } from "./use-3d-viewport-publish";
+import {
+  MIN_SETTLE_MS,
+  SETTLE_GAP_FACTOR,
+  use3DViewportPublish,
+} from "./use-3d-viewport-publish";
 
 /**
  * 3D-halvdelen av viewport-publiseringen, mot en EKTE BoardProvider.
  *
  * Det som testes er kontrakten mot `gmp-map-3d`, ikke matten (den ligger i
- * `board-camera-fit.test.ts`): at ro-signalet leses riktig vei, at KUN
+ * `board-camera-fit.test.ts`): at ro-signalet leses fra kamera-telemetrien og
+ * ikke fra scenens render-signal (ellers ligger lista ~1 s bak Mapbox), at KUN
  * brukergester re-scoper lista (R12 — ellers ville drone-orbiten dratt lista
  * med seg rundt), og at instansen tier når Mapbox er den fremste motoren.
  */
 
-afterEach(() => cleanup());
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const HOME = { lat: 63.43, lng: 10.4 };
 
@@ -54,12 +66,25 @@ function fakeMap3d({ ready = true } = {}): FakeMap3D {
   return el;
 }
 
-/** Ro-hendelsen fra Google. `isSteady: false` = «bevegelse startet». */
+/** Scenens render-signal. `isSteady: false` = «bevegelse startet». */
 function steady(el: HTMLElement, isSteady = true) {
   act(() => {
     const e = new Event("gmp-steadychange");
     (e as Event & { isSteady?: boolean }).isSteady = isSteady;
     el.dispatchEvent(e);
+  });
+}
+
+/** Kamera-telemetrien. Fyrer per frame mens kameraet beveger seg. */
+function cameraMoved(el: HTMLElement) {
+  act(() => {
+    el.dispatchEvent(new Event("gmp-camerapositionchange"));
+  });
+}
+
+function tick(ms: number) {
+  act(() => {
+    vi.advanceTimersByTime(ms);
   });
 }
 
@@ -142,8 +167,12 @@ describe("use3DViewportPublish", () => {
     const initial = spy.rect;
 
     // Kameraet har flyttet seg av seg selv — ingen bruker har tatt i kartet.
+    // Verken telemetrien eller render-signalet skal føre til ny scoping.
     el.center = { lat: 63.5, lng: 10.6 };
+    cameraMoved(el);
+    tick(MIN_SETTLE_MS * 10);
     steady(el);
+
     expect(spy.rect).toBe(initial);
     expect(spy.gestures).toBe(0);
   });
@@ -154,11 +183,96 @@ describe("use3DViewportPublish", () => {
 
     fireEvent.pointerDown(el);
     el.center = { lat: 63.5, lng: 10.6 };
-    steady(el);
+    cameraMoved(el);
+    tick(MIN_SETTLE_MS + 1);
 
     expect(spy.rect).not.toBe(initial);
     expect(spy.rect!.north).toBeGreaterThan(initial!.north);
     expect(spy.gestures).toBeGreaterThan(0);
+  });
+
+  it("venter IKKE på at scenen er ferdig rendret — det er hele forsinkelsen", () => {
+    const { el } = setup();
+    const initial = spy.rect;
+
+    fireEvent.pointerDown(el);
+    el.center = { lat: 63.5, lng: 10.6 };
+    cameraMoved(el);
+    tick(MIN_SETTLE_MS + 1);
+
+    // Ingen `steadychange` har fyrt ennå — den kommer 590–950 ms senere — og
+    // lista er likevel oppdatert.
+    expect(spy.rect).not.toBe(initial);
+  });
+
+  it("en strøm av kamera-hendelser gir ÉN publisering, ikke én per frame", () => {
+    const { el } = setup();
+
+    fireEvent.pointerDown(el);
+    // 20 frames med bevegelse, ~10 ms fra hverandre slik ekte telemetri kommer.
+    for (let i = 1; i <= 20; i++) {
+      el.center = { lat: 63.43 + i * 0.001, lng: 10.4 };
+      cameraMoved(el);
+      tick(10);
+    }
+    expect(spy.gestures).toBe(0); // ingenting publisert mens draget pågår
+    tick(MIN_SETTLE_MS + 1);
+    expect(spy.gestures).toBe(1);
+    expect(spy.rect!.north).toBeGreaterThan(63.44);
+  });
+
+  it("ro-vinduet vokser når telemetrien kommer tregere (svak enhet)", () => {
+    const { el } = setup();
+    const SLOW_GAP = 150;
+
+    fireEvent.pointerDown(el);
+    el.center = { lat: 63.5, lng: 10.6 };
+    cameraMoved(el);
+    // Første vindu er kort (ingen luker målt ennå) og fyrer underveis.
+    tick(SLOW_GAP);
+    const midDrag = spy.rect;
+    expect(midDrag).not.toBeNull();
+
+    // Andre hendelse: nå ER luka målt, og vinduet skal ha vokst med den.
+    el.center = { lat: 63.6, lng: 10.7 };
+    cameraMoved(el);
+    tick(MIN_SETTLE_MS + 1);
+    expect(spy.rect).toBe(midDrag); // ville publisert for tidlig med fast vindu
+    tick(SLOW_GAP * SETTLE_GAP_FACTOR);
+    expect(spy.rect).not.toBe(midDrag);
+  });
+
+  it("render-signalet teller ikke gesten på nytt når fast-stien alt har landet", () => {
+    const { el } = setup();
+
+    fireEvent.pointerDown(el);
+    el.center = { lat: 63.5, lng: 10.6 };
+    cameraMoved(el);
+    tick(MIN_SETTLE_MS + 1);
+    const afterFastPath = spy.rect;
+    expect(spy.gestures).toBe(1);
+
+    // Scenen blir ferdig rendret ~1 s senere. Rektangelet dedupes, men
+    // gest-telleren gjør IKKE det — derfor må backstopen holde seg unna.
+    tick(1000);
+    steady(el);
+    expect(spy.rect).toBe(afterFastPath);
+    expect(spy.gestures).toBe(1);
+  });
+
+  it("backstop: et grep uten kamera-telemetri publiseres likevel", () => {
+    const { el } = setup();
+    const initial = spy.rect;
+
+    // Ingen `gmp-camerapositionchange` i det hele tatt — modellerer at Google
+    // skulle slutte å levere telemetri for en gest-type.
+    fireEvent.pointerDown(el);
+    el.center = { lat: 63.5, lng: 10.6 };
+    tick(1000);
+    steady(el);
+
+    expect(spy.rect).not.toBe(initial);
+    expect(spy.gestures).toBe(1);
   });
 
   it("marker-tapp er innholds-interaksjon, ikke et kamera-grep", () => {
@@ -169,6 +283,8 @@ describe("use3DViewportPublish", () => {
     el.appendChild(marker);
     fireEvent.pointerDown(marker);
     el.center = { lat: 63.5, lng: 10.6 };
+    cameraMoved(el);
+    tick(MIN_SETTLE_MS * 10);
     steady(el);
 
     expect(spy.rect).toBe(initial);
@@ -179,8 +295,25 @@ describe("use3DViewportPublish", () => {
     expect(spy.rect).toBeNull();
 
     fireEvent.pointerDown(el);
+    cameraMoved(el);
+    tick(MIN_SETTLE_MS * 10);
     steady(el);
     expect(spy.rect).toBeNull();
+  });
+
+  it("en ventende publisering avlyses når 3D slutter å være fremste motor", () => {
+    const { el, rerender } = setup();
+    const initial = spy.rect;
+
+    fireEvent.pointerDown(el);
+    el.center = { lat: 63.5, lng: 10.6 };
+    cameraMoved(el);
+    // Brukeren bytter til Kart-fanen før vinduet har løpt ut.
+    rerender({ enabled: false });
+    tick(MIN_SETTLE_MS * 10);
+
+    // Mapbox eier kanalen nå — 3D skal ikke skrive over den i etterkant.
+    expect(spy.rect).toBe(initial);
   });
 
   it("ny sheet-hvileposisjon re-publiserer uten å telle som gest", () => {
