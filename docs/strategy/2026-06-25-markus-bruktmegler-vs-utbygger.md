@@ -188,7 +188,7 @@ Begge spor peker på **august**: Andreas på ~1 måneds ferie fra ~29. juni. KLP
 
 **Åpne spørsmål til Andreas:**
 - (a) Skal Markus aktivt inviteres inn som partner nr. 2 (Bergen-spor), eller holdes som «sporadisk input»-rådgiver inntil videre?
-- (b) Hvilken megler er første betalte pilot-target i august — Christian (avdelingsleder secondhand, solgte 3 hus for Andreas) eller Frank Robert (100 salg/år, snakket 2017)?
+- (b) Hvilken megler er første betalte pilot-target i august — Christian (avdelingsleder secondhand, solgte 3 hus for Andreas) eller Frank Robert (100 salg/år, snakket 2017)? → **BESVART 2026-08-04: begge, som kontor.** «Christian» = **Kristian Sundland**, avdelingsleder på **samme kontor** som Frank Robert (EM1 Grilstadporten). Salgsenheten er kontoret, ikke megleren. Se `2026-08-04-em1-grilstadporten-kontor-pilot.md`.
 - (c) Skal Claude skrive en 1-siders «hva får megleren / hva koster det»-spec for nivå 1 (parallell til utbygger-spec'en), så den ligger klar til august?
 
 ---
