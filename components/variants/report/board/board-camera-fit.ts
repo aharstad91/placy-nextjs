@@ -132,3 +132,114 @@ export function rectFromCorners(corners: LngLat[]): ViewportRect | null {
   }
   return { west, south, east, north };
 }
+
+/** Meter per breddegrad. Samme konstant som `project-latlng-to-screen`. */
+const METERS_PER_DEG_LAT = 111320;
+
+/** Kamera-posituren `rectFromCamera` trenger. Speiler feltene `Map3DElement`
+ *  eksponerer som properties (`center`, `range`, `heading`, `fov`). */
+export interface Camera3DPose {
+  lat: number;
+  lng: number;
+  /** Avstand kamera → sikte­punkt i meter (Googles `range`). */
+  rangeM: number;
+  /** Kompass-retning i grader, 0 = nord. */
+  headingDeg: number;
+  /** Vertikal field-of-view i grader (Googles `fov`, default 35). */
+  fovDeg: number;
+}
+
+/** Flatens piksel-mål + hvor mye av bunnen sheeten dekker. */
+export interface Viewport3DMetrics {
+  widthPx: number;
+  heightPx: number;
+  occludedBottomPx: number;
+}
+
+/**
+ * Det ikke-okkluderte utsnittet for Google Maps 3D, avledet av KAMERASENTER +
+ * RANGE — ikke av en skjerm→geo-projeksjon.
+ *
+ * `gmp-map-3d` eksponerer ingen `unproject`, så 2D-stien (unprojiser kartets
+ * pikselhjørner) finnes ikke her. Men den trengs heller ikke: Googles `center`
+ * ER sikte­punktet — nøyaktig det retikkelet nabolagsflaten er bygget rundt — og
+ * `range` er avstanden til det. Sammen med `fov` gir de bakke-utstrekningen
+ * direkte:
+ *
+ *   halv dybde = range · tan(fov / 2)     (eksakt når kameraet ser rett ned)
+ *   halv bredde = halv dybde · sideforhold
+ *
+ * ## Hvorfor TILT ikke er med i regnestykket
+ *
+ * Med tilt er den synlige bakken en trapes som strekker seg mot horisonten: på
+ * 45° ser man bakken fra ~330 m til ~1220 m foran seg, og nær 90° er den i
+ * praksis uendelig. Scopet vi lot vokse med tilt ville derfor blitt en
+ * horisont-dump — «i nærheten» ville listet steder kilometer unna fordi de så
+ * vidt er noen piksler høye ved horisonten.
+ *
+ * Vi leser i stedet utsnittet som om kameraet så rett ned fra samme avstand.
+ * Det gir et scope som er STABILT når brukeren tilter (det man sikter på endrer
+ * seg ikke av at man legger blikket ned), og som alltid er en DELMENGDE av det
+ * som faktisk er i bildet — feilen går mot å utelate det fjerneste, aldri mot å
+ * påstå at noe usett er synlig.
+ *
+ * Okkluderingen fra sheeten håndteres i skjerm-rommet før konverteringen: den
+ * synlige andelen `v` krymper båndet til `[H(1−2v), H]` langs blikk-retningen,
+ * altså både smalere OG forskjøvet bort fra brukeren — samme geometri som når
+ * 2D-stien måler høyden `canvas − sheet`.
+ *
+ * Returnerer null for degenerert input (ikke-endelige tall, ingen synlig flate).
+ * Konsumenten skal da falle tilbake til «vis alt», aldri til en tom liste.
+ */
+export function rectFromCamera(
+  camera: Camera3DPose,
+  viewport: Viewport3DMetrics,
+): ViewportRect | null {
+  const { lat, lng, rangeM, headingDeg, fovDeg } = camera;
+  const { widthPx, heightPx, occludedBottomPx } = viewport;
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    !Number.isFinite(rangeM) ||
+    !Number.isFinite(headingDeg) ||
+    !Number.isFinite(fovDeg)
+  ) {
+    return null;
+  }
+  if (rangeM <= 0 || fovDeg <= 0 || widthPx <= 0 || heightPx <= 0) return null;
+
+  // Synlig andel av flaten. ≤ 0 → sheeten dekker hele kartet: ingen ærlig
+  // avlesning finnes, så konsumenten skal vise alt.
+  const visibleFraction = (heightPx - occludedBottomPx) / heightPx;
+  if (visibleFraction <= 0) return null;
+
+  const halfDepthM = rangeM * Math.tan((fovDeg * Math.PI) / 360);
+  const halfWidthM = halfDepthM * (widthPx / heightPx);
+  // Skjermens topp ligger på +halfDepth langs blikket, bunnen på −halfDepth.
+  // Sheeten spiser nedenfra, så det synlige båndet ender på H(1−2v).
+  const nearM = halfDepthM * (1 - 2 * visibleFraction);
+  const farM = halfDepthM;
+
+  const h = (headingDeg * Math.PI) / 180;
+  const cosH = Math.cos(h);
+  const sinH = Math.sin(h);
+  const metersPerDegLng = METERS_PER_DEG_LAT * Math.cos((lat * Math.PI) / 180);
+  if (!Number.isFinite(metersPerDegLng) || metersPerDegLng === 0) return null;
+
+  // Alle fire hjørner, ikke to: med heading ≠ 0 er utsnittet rotert, og de to
+  // diagonalt motsatte hjørnene er ikke lenger ytterpunktene. `rectFromCorners`
+  // gir den akse-justerte konvolutten — eksakt ved heading 0, en kontrollert
+  // over-seleksjon ellers (samme kontrakt som 2D-stien).
+  const corners: LngLat[] = [];
+  for (const forward of [farM, nearM]) {
+    for (const right of [-halfWidthM, halfWidthM]) {
+      const east = right * cosH + forward * sinH;
+      const north = -right * sinH + forward * cosH;
+      corners.push({
+        lng: lng + east / metersPerDegLng,
+        lat: lat + north / METERS_PER_DEG_LAT,
+      });
+    }
+  }
+  return rectFromCorners(corners);
+}

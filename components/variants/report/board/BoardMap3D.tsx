@@ -12,6 +12,7 @@ import { type CameraMode } from "./BoardMapControls";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
+import { use3DViewportPublish } from "./use-3d-viewport-publish";
 import { deriveCategoryCameraConfig } from "./board-category-camera";
 import { readBoardUrlFlagsFromWindow } from "./board-url-flags";
 import { getEstablishingShot } from "./board-establishing-shots";
@@ -58,6 +59,24 @@ interface Props {
   /** Når true: kategori-POI-ene rendres som kompakte farge-prikker (mobil
    *  story-mode-peek, sekundær flate) i stedet for fulle ikon-pins. Default false. */
   compactMarkers?: boolean;
+  /**
+   * Mobil nabolagsflate (R9/R12): publiser det ikke-okkluderte kartutsnittet
+   * mens 3D er den FREMSTE motoren. Settes av `BoardMap` som
+   * `publishViewport && view === "3d"` — i 2D-visning eier Mapbox kanalen og
+   * denne instansen må tie, ellers ville to motorer skrevet samme state.
+   * Default false. Se `use-3d-viewport-publish`.
+   */
+  publishViewport?: boolean;
+  /** Høyden (px) sheeten dekker nederst. Brukes kun til viewport-publiseringen;
+   *  den cinematiske kamera-føringen rammer inn på egne premisser. Default 0. */
+  mapPaddingBottom?: number;
+  /**
+   * Gir `BoardMap` tilgang til den persistente 3D-instansen. Kalles med
+   * instansen ved klar og `null` ved unmount. Finnes fordi Kart/3D-toggelen må
+   * kunne LESE 3D-kameraet (og skrive det tilbake) for å bevare posisjonen
+   * gjennom et motor-bytte.
+   */
+  onMapReady?: (map3d: Map3DInstance | null) => void;
 }
 
 /**
@@ -92,6 +111,9 @@ export function BoardMap3D({
   cameraMode,
   onDragTakeover,
   compactMarkers = false,
+  publishViewport = false,
+  mapPaddingBottom = 0,
+  onMapReady,
 }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const engagement = useEngagement();
@@ -262,9 +284,21 @@ export function BoardMap3D({
     return DEFAULT_CAMERA_LOCK;
   }, [pendingCamera]);
 
-  const handleMapReady = useCallback((m: Map3DInstance | null) => {
-    setMap3dInstance(m);
-  }, []);
+  const handleMapReady = useCallback(
+    (m: Map3DInstance | null) => {
+      setMap3dInstance(m);
+      onMapReady?.(m);
+    },
+    [onMapReady],
+  );
+
+  // Viewport-publisering (mobil nabolagsflate, R9/R12). Gated på at 3D er den
+  // fremste motoren — se propen. Alt nedstrøms er delt med 2D-stien.
+  use3DViewportPublish({
+    map3d: map3dInstance,
+    enabled: publishViewport,
+    occludedBottomPx: mapPaddingBottom,
+  });
 
   // Stabil click-handler — sitter i Marker3DItems memo-props, så en fersk inline
   // arrow per render ville defeate memo for HVER markør. useCallback bevarer

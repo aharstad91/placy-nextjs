@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   computeFitBounds,
+  rectFromCamera,
   rectFromCorners,
   shouldFitToFilter,
   shouldFitToProgram,
@@ -180,5 +181,82 @@ describe("rectFromCorners (ikke-okkludert kartutsnitt)", () => {
       east: 10.3,
       north: 63.5,
     });
+  });
+});
+
+describe("rectFromCamera (Google Maps 3D)", () => {
+  // Ankeret er valgt så matten kan regnes i hodet: fov 90 gir tan(45°) = 1, så
+  // halv dybde = range. Kvadratisk flate gir samme halve bredde. På ekvator er
+  // en lengdegrad like lang som en breddegrad (111 320 m), så begge akser
+  // spenner range/111320 grader.
+  const EQUATOR = { lat: 0, lng: 0, rangeM: 1000, headingDeg: 0, fovDeg: 90 };
+  const SQUARE = { widthPx: 1000, heightPx: 1000, occludedBottomPx: 0 };
+  /** 1000 m uttrykt i grader. */
+  const D = 1000 / 111320;
+
+  it("ser rett ned uten okklusjon: symmetrisk rundt sikte­punktet", () => {
+    const rect = rectFromCamera(EQUATOR, SQUARE)!;
+    expect(rect.north).toBeCloseTo(D, 9);
+    expect(rect.south).toBeCloseTo(-D, 9);
+    expect(rect.east).toBeCloseTo(D, 9);
+    expect(rect.west).toBeCloseTo(-D, 9);
+  });
+
+  it("sheeten spiser NEDENFRA: halv flate → båndet slutter på sikte­punktet", () => {
+    // Synlig andel 0,5 → båndet går fra senter og bort fra brukeren. Sør-kanten
+    // faller nøyaktig på senterlinja; nord-kanten står stille.
+    const rect = rectFromCamera(EQUATOR, { ...SQUARE, occludedBottomPx: 500 })!;
+    expect(rect.south).toBeCloseTo(0, 9);
+    expect(rect.north).toBeCloseTo(D, 9);
+    // Bredden er upåvirket av en bunn-okklusjon.
+    expect(rect.east).toBeCloseTo(D, 9);
+    expect(rect.west).toBeCloseTo(-D, 9);
+  });
+
+  it("heading roterer båndet: ser man øst, vokser utsnittet østover", () => {
+    const rect = rectFromCamera(
+      { ...EQUATOR, headingDeg: 90 },
+      { ...SQUARE, occludedBottomPx: 500 },
+    )!;
+    // Blikket peker øst → det synlige båndet ligger øst for sikte­punktet.
+    expect(rect.west).toBeCloseTo(0, 9);
+    expect(rect.east).toBeCloseTo(D, 9);
+    // Bredden ligger nå på nord/sør-aksen.
+    expect(rect.north).toBeCloseTo(D, 9);
+    expect(rect.south).toBeCloseTo(-D, 9);
+  });
+
+  it("sideforholdet bestemmer bredden, ikke dybden", () => {
+    // Halvt så bred flate → halvparten så bredt utsnitt, samme dybde.
+    const rect = rectFromCamera(EQUATOR, { ...SQUARE, widthPx: 500 })!;
+    expect(rect.north).toBeCloseTo(D, 9);
+    expect(rect.east).toBeCloseTo(D / 2, 9);
+  });
+
+  it("skalerer lineært med range — å trekke seg ut utvider scopet", () => {
+    const near = rectFromCamera(EQUATOR, SQUARE)!;
+    const far = rectFromCamera({ ...EQUATOR, rangeM: 2000 }, SQUARE)!;
+    expect(far.north).toBeCloseTo(near.north * 2, 9);
+    expect(far.east).toBeCloseTo(near.east * 2, 9);
+  });
+
+  it("lengdegrader krymper mot polene: samme meter gir større lng-span", () => {
+    const trondheim = rectFromCamera({ ...EQUATOR, lat: 63.43 }, SQUARE)!;
+    // Samme utstrekning i meter, men en lengdegrad er kortere her oppe.
+    expect(trondheim.north - trondheim.south).toBeCloseTo(2 * D, 9);
+    expect(trondheim.east - trondheim.west).toBeGreaterThan(2 * D);
+  });
+
+  it("sheeten dekker hele kartet → null (vis alt, aldri tom liste)", () => {
+    expect(
+      rectFromCamera(EQUATOR, { ...SQUARE, occludedBottomPx: 1000 }),
+    ).toBeNull();
+  });
+
+  it("returnerer null når kameraet ikke er lesbart ennå", () => {
+    expect(rectFromCamera({ ...EQUATOR, rangeM: 0 }, SQUARE)).toBeNull();
+    expect(rectFromCamera({ ...EQUATOR, lat: NaN }, SQUARE)).toBeNull();
+    expect(rectFromCamera({ ...EQUATOR, fovDeg: NaN }, SQUARE)).toBeNull();
+    expect(rectFromCamera(EQUATOR, { ...SQUARE, heightPx: 0 })).toBeNull();
   });
 });

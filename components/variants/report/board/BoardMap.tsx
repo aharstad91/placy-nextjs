@@ -8,7 +8,7 @@ import Map, {
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 import { mutedColor } from "@/lib/themes/muted-palette";
 import { BoardMapControls, type CameraMode } from "./BoardMapControls";
-import { rangeToZoom } from "@/lib/utils/camera-map";
+import { rangeToZoom, zoomToRange } from "@/lib/utils/camera-map";
 import { useBoard, useActiveCategory } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
 import { useBoardZoomTier } from "./use-board-zoom-tier";
@@ -18,6 +18,8 @@ import { BoardPathMidpointMarker } from "./BoardPathMidpointMarker";
 import { BoardPOILabel } from "./BoardPOILabel";
 import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
 import { BoardMap3D } from "./BoardMap3D";
+import type { Map3DInstance } from "@/components/map/map-view-3d";
+import type { FlyCapableMap } from "./board-3d-camera-director";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
@@ -27,7 +29,10 @@ import {
   shouldFitToFilter,
   shouldFitToProgram,
 } from "./board-camera-fit";
-import type { PendingCamera } from "@/components/map/motor-camera";
+import {
+  DEFAULT_CAMERA_LOCK,
+  type PendingCamera,
+} from "@/components/map/motor-camera";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -559,27 +564,46 @@ export function BoardMap({
     [],
   );
 
+  // ---- Kamera-bro mellom motorene ----
+  // Toggelen byttet tidligere ikke bare motor, den FLYTTET deg: 3D→2D landet
+  // alltid på boligen med range 900 (posituren ble aldri lest), mens 2D→3D
+  // beholdt der 3D sist sto fordi instansen aldri unmountes. Asymmetrien var
+  // synlig — panorer i 3D, trykk «Kart», og du står hjemme igjen.
+  //
+  // 3D-instansen holdes i en ref her, ikke i state: den brukes kun imperativt i
+  // toggle-handleren, og en state-oppdatering ville re-rendret hele kart-treet
+  // idet 3D-motoren ble klar.
+  const map3dRef = useRef<Map3DInstance | null>(null);
+  const handle3DReady = useCallback((m: Map3DInstance | null) => {
+    map3dRef.current = m;
+  }, []);
+
   const handleModeChange = useCallback(
     (mode: "2d" | "3d") => {
       if (mode === view) return;
       if (mode === "2d") {
-        // 3D → 2D: mount Mapbox-overlayet. BoardMap3D eier 3D-kamera-instansen
-        // internt, så vi har ikke kameraet her — Mapbox lander på prosjekt-
-        // senter (kjent, grei posisjon). 3D-basen forblir montert under.
+        // 3D → 2D: mount Mapbox-overlayet der 3D-kameraet sto. 3D-basen forblir
+        // montert under. `range`/`tilt` oversettes til Mapbox-zoom med samme
+        // geometri toggelen den andre veien bruker (camera-map).
+        //
+        // Posituren tas med, men IKKE vinkelen: Mapbox lander flatt og nordvendt.
+        // Nabolagsflaten slår av rotasjon med vilje (et rotert utsnitt har ingen
+        // ærlig akse-justert bounds — se handleMapLoad), og en arvet pitch ville
+        // dratt utsnittets øvre kant mot horisonten. Kontinuiteten som betyr noe
+        // er HVOR du er, ikke hvilken vei du så.
         const { w, h } = getViewportDims();
-        const fallbackZoom = rangeToZoom(
-          900,
-          data.home.coordinates.lat,
-          0,
-          w,
-          h,
-        );
+        const map3d = map3dRef.current;
+        const center = map3d?.center;
+        const lat = center?.lat ?? data.home.coordinates.lat;
+        const lng = center?.lng ?? data.home.coordinates.lng;
+        const range = map3d?.range ?? 900;
+        const tilt = map3d?.tilt ?? 0;
         setMapLoaded(false);
         setPendingCamera({
-          lat: data.home.coordinates.lat,
-          lng: data.home.coordinates.lng,
-          zoom: fallbackZoom,
-          range: 900,
+          lat,
+          lng,
+          zoom: rangeToZoom(range, lat, tilt, w, h),
+          range,
           heading: 0,
           tilt: 0,
         });
@@ -587,10 +611,42 @@ export function BoardMap({
       } else {
         // 2D → 3D: unmount Mapbox-overlayet (map.remove() frigjør WebGL-
         // konteksten). 3D-basen ligger allerede under og avdekkes momentant.
+        //
+        // Posisjonen må skrives IMPERATIVT hit: `defaultCenter`/`defaultRange` på
+        // <Map3D> gjelder kun ved mount, og instansen mountes én gang og rives
+        // aldri. `durationMillis: 0` — byttet skal være et kutt, ikke en flytur
+        // brukeren ser fra feil sted.
+        //
+        // Kun i fri modus. I auto eier drone-directoren kameraet og re-aimer til
+        // prosjektet i neste effekt uansett; å skrive her ville gitt et hopp som
+        // umiddelbart ble overskrevet.
+        const map3d = map3dRef.current as FlyCapableMap | null;
+        const map = mapRef.current?.getMap();
+        if (map3d && map && cameraMode === "free") {
+          const c = map.getCenter();
+          const { w, h } = getViewportDims();
+          const current = map3dRef.current;
+          const tilt = current?.tilt ?? DEFAULT_CAMERA_LOCK.tilt;
+          map3d.flyCameraTo?.({
+            endCamera: {
+              center: { lat: c.lat, lng: c.lng, altitude: 0 },
+              range: zoomToRange(map.getZoom(), c.lat, tilt, w, h),
+              tilt,
+              heading: current?.heading ?? 0,
+            },
+            durationMillis: 0,
+          });
+        }
         setView("3d");
       }
     },
-    [view, getViewportDims, data.home.coordinates.lat, data.home.coordinates.lng],
+    [
+      view,
+      cameraMode,
+      getViewportDims,
+      data.home.coordinates.lat,
+      data.home.coordinates.lng,
+    ],
   );
 
   if (!TOKEN) {
@@ -614,6 +670,12 @@ export function BoardMap({
             cameraMode={cameraMode}
             onDragTakeover={handleDragTakeover}
             compactMarkers={compactMarkers}
+            // Kun den FREMSTE motoren publiserer utsnitt. I 2D-visning ligger
+            // 3D-basen fortsatt montert under Mapbox-overlayet, og uten denne
+            // gaten ville begge skrevet til samme state.
+            publishViewport={publishViewport && view === "3d"}
+            mapPaddingBottom={mapPaddingBottom}
+            onMapReady={handle3DReady}
           />
         </div>
       )}

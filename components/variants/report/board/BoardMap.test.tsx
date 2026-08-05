@@ -549,7 +549,11 @@ describe("BoardMap — AC5/AC6 source-guards (motor-camera-import + showMapbox-o
 
   it("AC5: PendingCamera importeres fra @/components/map/motor-camera, ingen UnifiedMapModal-ref", () => {
     expect(src).not.toContain("UnifiedMapModal");
-    expect(src).toMatch(/import\s+type\s+\{\s*PendingCamera\s*\}\s+from\s+"@\/components\/map\/motor-camera"/);
+    // Provenienskravet, ikke import-formen: `type` kan stå på setningen eller
+    // inline på spesifikatoren (sistnevnte når verdier hentes fra samme modul).
+    expect(src).toMatch(
+      /import\s+(?:type\s+)?\{[^}]*\btype\s+PendingCamera\b[^}]*\}\s+from\s+"@\/components\/map\/motor-camera"|import\s+type\s+\{[^}]*\bPendingCamera\b[^}]*\}\s+from\s+"@\/components\/map\/motor-camera"/,
+    );
   });
 
   it("AC6: useBoard fra board-state + audio-tour-store via selectors", () => {
