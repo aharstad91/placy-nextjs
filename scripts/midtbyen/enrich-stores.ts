@@ -7,9 +7,11 @@
  *
  * To ting legges til, og begge er synlige i flaten:
  *
- *  - **Åpningstider** via Google Places. Kart-popupen leser
- *    `openingHoursJson.weekday_text` og viser åpent/stengt, så dette er ikke
- *    data som forsvinner i en skuff.
+ *  - **Åpningstider** via Google Places, lagret som `openingHoursJson.weekday_text`.
+ *    MERK: ingen montert komponent viser dem i dag. `MapPopupCard` leser feltet,
+ *    men rendres ingen steder, og nabolagsflatens rader er ikke-interaktive før
+ *    Fase 2. Feltet fylles fordi det er riktig form og gratis å hente mens vi
+ *    likevel slår opp stedet — ikke fordi det er synlig nå.
  *  - **Gangtid fra Torvet** via Mapbox Matrix. Nabolagslista sorterer på
  *    nettopp dette feltet og faller tilbake til «uendelig» uten det — uten
  *    dette steget står lista alfabetisk og ser ut som en feil.
@@ -47,7 +49,9 @@ const DETAIL_FIELDS = ["rating", "userRatingCount", "regularOpeningHours"];
 
 export interface EnrichedStore extends RawStore {
   googlePlaceId?: string;
-  /** Ukedagsbeskrivelser slik `MapPopupCard` forventer dem. */
+  /** Ukedagsbeskrivelser på Google-form («Monday: 10:00 AM – 6:00 PM»).
+   *  `computeIsOpen` matcher på engelske dagnavn og AM/PM — norske ville
+   *  stille slått av åpent/stengt-avgjørelsen. */
   openingHours?: string[];
   googleRating?: number;
   googleReviewCount?: number;

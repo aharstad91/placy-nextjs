@@ -1,7 +1,7 @@
 ---
 title: "feat: Midtbyen-demo — 147 sentrumsbutikker på nivå-1 nabolagsflaten, forankret på Torvet"
 type: feat
-status: active
+status: complete
 date: 2026-08-06
 origin: docs/strategy/2026-08-06-midtbyen-side-gig-og-citymapper-innsikten.md
 ---
@@ -83,8 +83,10 @@ kategori.
   lese, uten at én eneste butikk faller ut
 - **R5** — All data er **statisk i repoet**. Ingen database, ingen runtime-fetch
   mot `midtbyen.no` eller Google, ingen cron
-- **R6** — Butikkens Midtbykort-status, nettside og åpningstider er synlig på
-  punktet der de finnes
+- **R6** — Butikkens Midtbykort-status, nettside og åpningstider ligger på
+  punktet der de finnes *(delvis levert: Midtbykort-statusen vises i
+  kart-popupen, åpningstidene lagres men rendres av ingen montert komponent —
+  se korreksjonen av D8)*
 - **R7** — Flaten er brukbar på mobil (390×844) uten horisontal scroll og uten
   konsollfeil
 
@@ -169,10 +171,19 @@ blitt filtrert bort uten feilmelding.
 board-komponentene legges det i `editorialHook`. Bevisst snarvei, oppført under
 Deferred.
 
-**D8 — Åpningstider vises faktisk.** `components/variants/report/MapPopupCard.tsx:69`
-leser `poi.openingHoursJson?.weekday_text` og rendrer åpent/stengt-status. Derfor
-er henting av åpningstider verdt kostnaden — det er ikke data som forsvinner i
-en skuff.
+**D8 — ~~Åpningstider vises faktisk.~~ FEIL, korrigert under implementering.**
+
+Planen påsto at `components/variants/report/MapPopupCard.tsx:69` rendrer
+åpningstidene. Komponenten *leser* riktignok feltet — men den **rendres ingen
+steder**. Den er død kode, og det ble ikke sjekket før planen ble skrevet.
+Konsekvensen: åpningstidene lagres på riktig form, men ingen montert komponent
+viser dem i dag. Mobilflatens rader er ikke-interaktive før Fase 2 av
+nabolagsflaten, og `BoardPOIMiniPopup` (desktop) viser navn, adresse og body —
+ikke åpningstider.
+
+Feltet fylles likevel: formen er riktig, oppslaget er gratis mens vi uansett
+slår opp stedet for koordinat og place-ID, og Fase 2s utvidbare rad vil trenge
+det. Men det skal **ikke** framstilles som en synlig egenskap ved demoen.
 
 ## Open Questions
 
@@ -237,7 +248,7 @@ KJØRETID (ren lesing, ingen API-kall)
 
 ## Implementation Units
 
-- [ ] **Unit 1: Hent og parse `midtbyen.no/shopping` → `stores.raw.json`**
+- [x] **Unit 1: Hent og parse `midtbyen.no/shopping` → `stores.raw.json`**
 
 **Goal:** 147 oppføringer med koordinater ligger som en fil i repoet, hentet én
 gang, uten browser og uten database.
@@ -290,7 +301,7 @@ fail-soft-loggingen. `scripts/load-env.ts` for env-lasting.
 
 ---
 
-- [ ] **Unit 2: Berik med åpningstider og gangtid fra Torvet → `stores.json`**
+- [x] **Unit 2: Berik med åpningstider og gangtid fra Torvet → `stores.json`**
 
 **Goal:** Hver butikk har det den trenger for å bli en POI som ser levende ut:
 gangminutter fra Torvet, og åpningstider der Google kjenner stedet.
@@ -345,7 +356,7 @@ throttling — men **ikke** dens legacy-endepunkt i querystring-form).
 
 ---
 
-- [ ] **Unit 3: Kategori-gruppering — 28 kildekategorier til besøkendes språk**
+- [x] **Unit 3: Kategori-gruppering — 28 kildekategorier til besøkendes språk**
 
 **Goal:** Et kategorisett en besøkende orker å lese, uten at én butikk faller ut.
 
@@ -389,7 +400,7 @@ tema-definisjoner (id/name/icon/color/categories).
 
 ---
 
-- [ ] **Unit 4: Adapter — `stores.json` → `Project` forankret på Torvet**
+- [x] **Unit 4: Adapter — `stores.json` → `Project` forankret på Torvet**
 
 **Goal:** Et `Project`-objekt som rapport-pipelinen kan konsumere uten å vite at
 det ikke kom fra Supabase.
@@ -446,7 +457,7 @@ adapterformen og for hvordan tomme kategorier håndteres.
 
 ---
 
-- [ ] **Unit 5: Ruta `/midtbyen`**
+- [x] **Unit 5: Ruta `/midtbyen`**
 
 **Goal:** Flaten står, ser ut som nivå-1-nabolagsflaten, og har ingen
 omvisning-pill.
@@ -457,6 +468,9 @@ omvisning-pill.
 
 **Files:**
 - Create: `app/midtbyen/page.tsx`
+- Create: `app/midtbyen/layout.tsx` *(oppdaget under implementering: Mapbox-CSS
+  lastes av en layout per rute-namespace — `app/event/layout.tsx`,
+  `app/eiendom/layout.tsx`. Uten den rendres kartet uten kontroller.)*
 - Test: `app/midtbyen/page.test.tsx`
 
 **Approach:**
@@ -535,6 +549,54 @@ gjenfortelling av Unit 4.
 - Ingen nye miljøvariabler: `GOOGLE_PLACES_API_KEY` og `NEXT_PUBLIC_MAPBOX_TOKEN`
   finnes allerede lokalt.
 - Ingen deploy-avhengighet — ruta er statisk og følger vanlig Vercel-bygg.
+
+## Verifisert 2026-08-06
+
+**Datadekning**
+
+| Mål | Resultat |
+|---|---|
+| Oppføringer parset | 147 / 147 |
+| Koordinat | **147 / 147** (138 fra kart-lenken, 9 fylt av Places-oppslaget) |
+| Gangtid fra Torvet | **147 / 147**, spenn 1–15 min |
+| Åpningstider hentet | 138 / 147 |
+| Kategorisert | 147 / 147 — 3 i «Annet», ingen tom gruppe |
+
+Fordeling: Klær & mote 59 · Helse & velvære 23 · Interiør & hjem 22 ·
+Sport & fritid 19 · Bøker, spill & hobby 18 · Annet 3 · Mat & drikke 3.
+
+**Mekanisk:** `npm test` 1 815 tester / 144 filer grønne (71 nye i
+`lib/gigs/midtbyen/` + 3 i `app/midtbyen/`), `npx tsc --noEmit` rent,
+`npm run lint` 0 errors, `npm run build` grønn — `/midtbyen` prerendres som
+**statisk** rute.
+
+**Mobil 390×844, Chrome, fersk last:** splash → «Utforsk nærområdet» → kart med
+148 markører (147 butikker + Torvet-ankeret) og dragbar sheet med sju
+kategorikort. Kategoriside åpner med prosa og full gangtidssortert liste;
+«Tilbake» gjenoppretter kameraet. Lista re-scopes ved kartbevegelse («4 av 18
+synlig»). **Ingen omvisning-pill**, ingen horisontal scroll, **0 konsollfeil**.
+
+### Funn som ikke ble endret
+
+Alle tre ligger i delte komponenter og gjelder **hvert** VO-løst board, ikke bare
+denne demoen. De er derfor rapportert, ikke lappet — å endre dem her ville
+endret Wesselsløkka og alle andre nivå-1-boards i samme slengen.
+
+1. **Splash-copyen lover en omvisning som ikke finnes.** «Vi tar deg med på en
+   guidet tur gjennom nærområdet …» er bolig-defaulten i
+   `components/variants/report/reels/MobileReportSplash.tsx:40`;
+   `deriveSplashIntro` (`reels-data.ts:438`) returnerer `undefined` for alt som
+   ikke er event/hotell/næring.
+2. **«gangtid hjemmefra»** i `NeighbourhoodSurface.tsx:155` leser rart når
+   ankeret er et torg og ikke en bolig.
+3. **Megler-plassholderen på desktop.** «Ansvarlig megler — Kontaktinfo legges
+   til per prosjekt» rendres fordi `noBrokers={eventMode}`
+   (`ReportReelsPage.tsx:747`) undertrykker kortet KUN i event-modus. Mobilflaten
+   er ren; det er bare desktop-sidebaren.
+
+I tillegg: **`components/variants/report/MapPopupCard.tsx` er død kode** — den
+importeres ingen steder. Den er kilden til D8-feilen over, og bør etter
+kodebase-hygiene-regelen slettes i egen commit.
 
 ## Sources & References
 
