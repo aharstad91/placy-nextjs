@@ -1,0 +1,2524 @@
+{
+  "source": "https://midtbyen.no/shopping/",
+  "fetchedAt": "2026-08-06T12:05:36.263Z",
+  "categories": [
+    {
+      "termId": 33,
+      "label": "Barn/ungdom"
+    },
+    {
+      "termId": 142,
+      "label": "Blomster"
+    },
+    {
+      "termId": 108,
+      "label": "Bøker"
+    },
+    {
+      "termId": 107,
+      "label": "Briller/Linser"
+    },
+    {
+      "termId": 22,
+      "label": "Dame"
+    },
+    {
+      "termId": 105,
+      "label": "Foto/Elektronikk"
+    },
+    {
+      "termId": 146,
+      "label": "Frisør"
+    },
+    {
+      "termId": 106,
+      "label": "Gullsmed/klokker"
+    },
+    {
+      "termId": 115,
+      "label": "Helsekost/Apotek"
+    },
+    {
+      "termId": 23,
+      "label": "Herre"
+    },
+    {
+      "termId": 34,
+      "label": "Hud, hår og velvære"
+    },
+    {
+      "termId": 114,
+      "label": "Husholdningsartikler"
+    },
+    {
+      "termId": 15,
+      "label": "Interiør"
+    },
+    {
+      "termId": 143,
+      "label": "Jernvare"
+    },
+    {
+      "termId": 14,
+      "label": "Klær"
+    },
+    {
+      "termId": 112,
+      "label": "Leker/Hobby"
+    },
+    {
+      "termId": 144,
+      "label": "Maling"
+    },
+    {
+      "termId": 16,
+      "label": "Møbler"
+    },
+    {
+      "termId": 24,
+      "label": "Reiseartikler"
+    },
+    {
+      "termId": 19,
+      "label": "Sko"
+    },
+    {
+      "termId": 113,
+      "label": "Snack/drikkevarer"
+    },
+    {
+      "termId": 109,
+      "label": "Spill/Underholdning"
+    },
+    {
+      "termId": 101,
+      "label": "Sport & Fritid"
+    },
+    {
+      "termId": 421,
+      "label": "Tannlege"
+    },
+    {
+      "termId": 21,
+      "label": "Tilbehør"
+    },
+    {
+      "termId": 104,
+      "label": "Undertøy/Badetøy"
+    },
+    {
+      "termId": 20,
+      "label": "Veske"
+    },
+    {
+      "termId": 103,
+      "label": "Vintage/Second-hand"
+    }
+  ],
+  "stores": [
+    {
+      "name": "7-Eleven Nordre",
+      "address": "Nordre gate 18, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/xdivNxZ5SPBkUi9d8",
+      "websiteUrl": "https://7-eleven.no/",
+      "termIds": [],
+      "acceptsCard": false,
+      "acceptsCardDigital": false,
+      "lat": 63.4327901,
+      "lng": 10.3970402,
+      "googleFeatureId": "0x466d319b8380fcad:0x7cb0fd08f778bbec"
+    },
+    {
+      "name": "Aagaard siden 1876",
+      "address": "Dronningens gate 9",
+      "mapsUrl": "https://goo.gl/maps/MYDvf4kZs4474AQcA",
+      "websiteUrl": "https://www.aagaard1876.no/",
+      "termIds": [
+        22,
+        23,
+        24,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.431795,
+      "lng": 10.3971201,
+      "googleFeatureId": "0x466d319ba29d251f:0xa47edf666c4d5c00"
+    },
+    {
+      "name": "Abby`s Tekstiler Søndre gt.",
+      "address": "Søndre gate 25, 7010 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/gxSWSfiLP8L2btqm8",
+      "websiteUrl": "https://www.abbystekstiler.no/",
+      "termIds": [
+        105,
+        112
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4341373,
+      "lng": 10.4008649,
+      "googleFeatureId": "0x466d319c17cb9ce5:0x76fa98d62be6b275"
+    },
+    {
+      "name": "Alvar & Maija",
+      "address": "Olav Tryggvasons gt 4",
+      "mapsUrl": "https://goo.gl/maps/UsdNPBSAfhGB8d9J8",
+      "websiteUrl": "https://alvarogmaija.no/",
+      "termIds": [
+        33,
+        22,
+        15,
+        14,
+        16
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4334894,
+      "lng": 10.4019785,
+      "googleFeatureId": "0x466d3199420f842b:0xfa5158aee380d7d"
+    },
+    {
+      "name": "Ark Brunhjørnet",
+      "address": "Kongens gate 10, 7484 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/jEQzeynwjYLyPKgQ8",
+      "websiteUrl": "https://www.ark.no/",
+      "termIds": [
+        108,
+        112,
+        109
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4306331,
+      "lng": 10.3973682,
+      "googleFeatureId": "0x466d319bb472f083:0x1b7cf0f2666178f1"
+    },
+    {
+      "name": "Ark Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/nwA5tdoMZYrYdwmR7",
+      "websiteUrl": "https://www.ark.no/",
+      "termIds": [
+        108,
+        112,
+        109
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4291502,
+      "lng": 10.39341,
+      "googleFeatureId": "0x466d319ae55a8491:0xa380f0137a109056"
+    },
+    {
+      "name": "Arti læll",
+      "address": "Nordre gate 11",
+      "mapsUrl": "https://maps.app.goo.gl/mCNhLkohRn4axc1K9",
+      "websiteUrl": "https://www.artilaell.no/",
+      "termIds": [
+        112
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4325543,
+      "lng": 10.3976957,
+      "googleFeatureId": "0x466d31007f25a525:0xa7a825be02553e2c"
+    },
+    {
+      "name": "Axel Bruun sport",
+      "address": "Prinsens Gate 30, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/CJ18zQHcufZuyB639",
+      "websiteUrl": "https://bruun.no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        19,
+        101,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.431544,
+      "lng": 10.391579,
+      "googleFeatureId": "0x466d319b30252c4d:0x674c170946197f47"
+    },
+    {
+      "name": "BAG Byhaven",
+      "address": "Olav Tryggvasons gate 28",
+      "mapsUrl": "https://goo.gl/maps/FtE2u6g7hTk3isiX9",
+      "websiteUrl": "https://bag.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        24,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333762,
+      "lng": 10.397043,
+      "googleFeatureId": "0x466d319c8046f067:0xe0282dd6a953206d"
+    },
+    {
+      "name": "BAG Trondheim Torg",
+      "address": "Kongens gate 11",
+      "mapsUrl": "https://goo.gl/maps/zoN9oxBott9P7G4f7",
+      "websiteUrl": "https://bag.no/",
+      "termIds": [
+        22,
+        23,
+        24,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303487,
+      "lng": 10.3932633,
+      "googleFeatureId": "0x466d31a0ab8ff823:0x94abb6e83ec883be"
+    },
+    {
+      "name": "Bergans brandstore",
+      "address": "Nordre gate 12, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/ytAadCsHgorG1VFm6",
+      "websiteUrl": "https://www.bergans.com/no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        101
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4321628,
+      "lng": 10.3970893,
+      "googleFeatureId": "0x466d3190ab4d6d57:0xd0b6f7b3356727fd"
+    },
+    {
+      "name": "Bertoni",
+      "address": "Thomas Angells gate 21",
+      "mapsUrl": "https://maps.app.goo.gl/nno4f6PN6MKDAoNFA",
+      "websiteUrl": "https://www.bertoni.no/",
+      "termIds": [
+        23,
+        14
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4326613,
+      "lng": 10.3951099,
+      "googleFeatureId": "0x466d319bcd0f7557:0x423e8e9833228428"
+    },
+    {
+      "name": "BIK BOK Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/PEiBvqdi4XDF92Ah7",
+      "websiteUrl": "https://bikbok.com/no/",
+      "termIds": [
+        33,
+        22,
+        14,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303938,
+      "lng": 10.3931768,
+      "googleFeatureId": "0x466d319ae221c333:0xc1bf970d4846b8aa"
+    },
+    {
+      "name": "Bjørklund Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/qfxvgECrige7TWe97",
+      "websiteUrl": "https://www.bjorklund.no/",
+      "termIds": [
+        33,
+        22,
+        106,
+        23
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4293021,
+      "lng": 10.3927484,
+      "googleFeatureId": "0x466d319aec9d42a7:0x5ce5b1b312b5ad11"
+    },
+    {
+      "name": "Blomster i Byhaven",
+      "address": "Olav Tryggvasons Gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/TvkDB4kM7Qzx4dxr7",
+      "websiteUrl": "https://www.byblomst.no/",
+      "termIds": [
+        142,
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.433384,
+      "lng": 10.3965882,
+      "googleFeatureId": "0x466d319b8006e819:0xb9ae81aeb5d23ae2"
+    },
+    {
+      "name": "Bogart",
+      "address": "Olav Tryggvasons gate 12, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/pMwC69yKQuDNo1AAA",
+      "websiteUrl": "https://www.bogartcosmo.no/",
+      "termIds": [
+        22,
+        23,
+        34,
+        15,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4334477,
+      "lng": 10.4005568,
+      "googleFeatureId": "0x466d319b829fad33:0xf6345ac2c43f56e5"
+    },
+    {
+      "name": "Boutique Bello",
+      "address": "Søndre gate 22, 7010 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/XLCtS6KGfeGLwoEw5",
+      "websiteUrl": "https://belloshop.no/",
+      "termIds": [
+        22,
+        14,
+        19,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4337663,
+      "lng": 10.3999121,
+      "googleFeatureId": "0x466d319c1206ea1f:0x7f21e58e068353fa"
+    },
+    {
+      "name": "Brando Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/rhPv2JG21KupJsSk7",
+      "websiteUrl": "https://brando.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303426,
+      "lng": 10.3933017,
+      "googleFeatureId": "0x0:0xda559cef03841b87"
+    },
+    {
+      "name": "Brattørkaia sykkel",
+      "address": "Brattørkaia 15",
+      "mapsUrl": "https://g.page/Brattorkaia?share",
+      "websiteUrl": "https://www.trondheimbikeadventures.com/",
+      "termIds": [
+        101
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "googleCid": "1185631196958879755"
+    },
+    {
+      "name": "C. I. Pedersen",
+      "address": "Olav Tryggvasons Gt. 35, 7011 Trondheim",
+      "mapsUrl": "https://g.page/cipederseninterior?share",
+      "websiteUrl": "https://www.designforevig.no/butikker/cipedersen/",
+      "termIds": [
+        33,
+        108,
+        15,
+        16
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "googleCid": "14993822697663287588"
+    },
+    {
+      "name": "Cabina hudklinikk",
+      "address": "Thomas Angells gate 5, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/uTCHdMHWYVVswajX7",
+      "websiteUrl": "https://www.cabina.no/",
+      "termIds": [
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4326073,
+      "lng": 10.3988963,
+      "googleFeatureId": "0x466d315abe43aa6f:0x2ad8a3818218e040"
+    },
+    {
+      "name": "Cabina hudklinikk Byhaven",
+      "address": "Olav Tryggvasons Gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/ZJcDBEwzqMAxsWVK6",
+      "websiteUrl": "https://www.cabina.no/",
+      "termIds": [
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333763,
+      "lng": 10.396427,
+      "googleFeatureId": "0x466d319ebb8bae07:0xd5ae223ccad077a1"
+    },
+    {
+      "name": "Camilla Phil",
+      "address": "Olav Tryggvasons gt. 6",
+      "mapsUrl": "https://maps.app.goo.gl/xEvsmLCw36DgacUk9",
+      "websiteUrl": "https://camillapihl.com/",
+      "termIds": [
+        22,
+        14,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4335007,
+      "lng": 10.4015155,
+      "googleFeatureId": "0x466d31fad30a614d:0xa1b7c0069f605e97"
+    },
+    {
+      "name": "Carlings Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/2ewaySP37dfULyHz7",
+      "websiteUrl": "https://carlings.com/no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        21,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4301525,
+      "lng": 10.3939341,
+      "googleFeatureId": "0x466d319ae581504b:0xc035eda4f617f1f8"
+    },
+    {
+      "name": "Carma",
+      "address": "Dronningens gate 3, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/bhpc5pLGfj7Qu4DAA",
+      "websiteUrl": "https://carma.no/",
+      "termIds": [
+        22,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4318338,
+      "lng": 10.3995031,
+      "googleFeatureId": "0x466d319b8fa2e95d:0xe16688527c20eb10"
+    },
+    {
+      "name": "Change Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/46HTWeFrGFNHmpFHA",
+      "websiteUrl": "https://shop.change.com/nb-NO",
+      "termIds": [
+        22,
+        14,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303851,
+      "lng": 10.3932911,
+      "googleFeatureId": "0x466d319ae2206541:0xa7fdd30b44d84bff"
+    },
+    {
+      "name": "Companys Trondheim Torg",
+      "address": "Tinghusplassen 3, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/rx1hZ1EisWXQdWzQ6",
+      "websiteUrl": "https://www.companys.no/",
+      "termIds": [
+        22,
+        34,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4295583,
+      "lng": 10.3932402,
+      "googleFeatureId": "0x466d319aee557765:0x21b5f411d4a78814"
+    },
+    {
+      "name": "Conzept",
+      "address": "Munkegata 31, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/BxmG7KFsStRtusav8",
+      "websiteUrl": "https://conzeptstore.no/",
+      "termIds": [
+        22,
+        14,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.432649,
+      "lng": 10.3945181,
+      "googleFeatureId": "0x466d319b6595b6fd:0xc4d17e757d881c51"
+    },
+    {
+      "name": "David Andersen",
+      "address": "Nordre gate 4, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/9xzPvci1Np4HfjHa6",
+      "websiteUrl": "https://david-andersen.no/",
+      "termIds": [
+        106
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4310056,
+      "lng": 10.3973903,
+      "googleFeatureId": "0x466d319bb0bc73ff:0x863dceefca0c7a9f"
+    },
+    {
+      "name": "Decades Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/Hfr1yHbr4DKR8vxo6",
+      "websiteUrl": "https://www.decades.no/",
+      "termIds": [
+        23,
+        14,
+        21,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4303851,
+      "lng": 10.3932911,
+      "googleFeatureId": "0x466d319ae2206541:0x12b20fc7e897a20d"
+    },
+    {
+      "name": "Dna Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/4w73iaxeBBebC4tV7",
+      "websiteUrl": "https://www.dna-shoes.com/no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        19
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4300464,
+      "lng": 10.3924091,
+      "googleFeatureId": "0x466d319ae2206521:0x72b71dbb7a35f3b6"
+    },
+    {
+      "name": "Dressmann Dronningens gt.",
+      "address": "Dronningens gate 14, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/dsiEXHkzG1c6Pv816",
+      "websiteUrl": "https://dressmann.com/no/",
+      "termIds": [
+        23,
+        14,
+        101,
+        21,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4320605,
+      "lng": 10.3978401,
+      "googleFeatureId": "0x466d319b96e9c261:0x830593c325907f0"
+    },
+    {
+      "name": "Dressmann Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/qjkPdE8KH4pyhhD86",
+      "websiteUrl": "https://dressmann.com/no/",
+      "termIds": [
+        23,
+        14,
+        101,
+        21,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303851,
+      "lng": 10.3932911,
+      "googleFeatureId": "0x466d319ae3d86f71:0xf66fa55fffb26cd6"
+    },
+    {
+      "name": "Elite foto",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/4dKpCYGjE5ZV5DE7A",
+      "websiteUrl": "https://www.elitefoto.no/",
+      "termIds": [
+        105
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303931,
+      "lng": 10.393289,
+      "googleFeatureId": "0x466d31974fffffff:0xde20907d9f60f342"
+    },
+    {
+      "name": "Elkjøp",
+      "address": "Nordre gate 8, 7010 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/gBFrWc6zYAVbiN3g7",
+      "websiteUrl": "https://www.elkjop.no/",
+      "termIds": [
+        105
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4314541,
+      "lng": 10.3973097,
+      "googleFeatureId": "0x466d31aa8a5e51a7:0x51af58095db2aeef"
+    },
+    {
+      "name": "Eplehuset Midtbyen",
+      "address": "Thomas Angells gate 15, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/5vHWpd2JtFkyfmgY9",
+      "websiteUrl": "https://eplehuset.no/",
+      "termIds": [
+        105
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4325247,
+      "lng": 10.395617,
+      "googleFeatureId": "0x466d319b76d79943:0xe3a768cc72a14d7a"
+    },
+    {
+      "name": "Falkanger sko Byhaven",
+      "address": "Olav Tryggvasons Gate 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/pFTLKs3T7xwELTC49",
+      "websiteUrl": "https://www.eurosko.com/no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        19
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333689,
+      "lng": 10.3959486,
+      "googleFeatureId": "0x466d319b8a25d0eb:0x89b515aed19e1a3"
+    },
+    {
+      "name": "Falkanger sko Den grønne brygge",
+      "address": "Fjordgata 42, 7010 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/p7f1c8gznPBpnAHr8",
+      "websiteUrl": "https://www.eurosko.com/no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        19
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4347537,
+      "lng": 10.3987424,
+      "googleFeatureId": "0x466d319c42a1d05b:0xd800f799af1c661e"
+    },
+    {
+      "name": "Falkanger sko Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/hsK5aNHR1wjutYF87",
+      "websiteUrl": "https://www.eurosko.com/no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        19
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4300464,
+      "lng": 10.3924091,
+      "googleFeatureId": "0x466d319ae2206521:0x72b71dbb7a35f3b6"
+    },
+    {
+      "name": "Fjällräven Trondheim",
+      "address": "Olav Tryggvasons gt. 27, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/t9fKGMxdrV5TgtDp9?coh=178573&entry=tt",
+      "websiteUrl": "https://www.fjellrevenshop.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        101,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4331241,
+      "lng": 10.3977609,
+      "googleFeatureId": "0x466d318494960721:0xb6438f740e336f12"
+    },
+    {
+      "name": "Fjordbuda",
+      "address": "Sjøgangen 6, 7010 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/Mrd3sMz1pXUdB6u67",
+      "websiteUrl": "https://www.facebook.com/fjordbuda",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        24,
+        19,
+        101
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4365952,
+      "lng": 10.399471,
+      "googleFeatureId": "0x466d319db1a89b95:0x4b6afc19f33ef8ec"
+    },
+    {
+      "name": "Floyd Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/s2RXpefczdhb4UKx7",
+      "websiteUrl": "https://www.floyd.no/",
+      "termIds": [
+        22,
+        14,
+        19,
+        101,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303426,
+      "lng": 10.3933017,
+      "googleFeatureId": "0x466d319ae2206541:0x1b627105c269796f"
+    },
+    {
+      "name": "Flying Tiger Copenhagen",
+      "address": "Munkegata 27, 7011 Trondheim",
+      "mapsUrl": "https://g.page/flying-tiger-munkegate?share",
+      "websiteUrl": "https://flyingtiger.com/",
+      "termIds": [
+        15,
+        112,
+        113,
+        109
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "googleCid": "9377958977337739871"
+    },
+    {
+      "name": "Flyt Byhaven",
+      "address": "Olav Tryggvasons gate 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/bDQK1qLneQT39TCDA",
+      "websiteUrl": "https://lillemartine.no/",
+      "termIds": [
+        33,
+        14,
+        19,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.433386,
+      "lng": 10.3966464,
+      "googleFeatureId": "0x466d313a713e8511:0x2ec5c948524c3f84"
+    },
+    {
+      "name": "Forex bank",
+      "address": "Munkegata 34, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/1u476sLAUfVq94h66",
+      "websiteUrl": "https://www.forex.no/",
+      "termIds": [
+        24
+      ],
+      "acceptsCard": false,
+      "acceptsCardDigital": false,
+      "lat": 63.4313286,
+      "lng": 10.3940323,
+      "googleFeatureId": "0x466d319b1075a2f1:0xd6b883c723511987"
+    },
+    {
+      "name": "Galleri Hanne",
+      "address": "Kongens gate 37, 7012 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/qg2L6JYz4Hz4SwHo7",
+      "websiteUrl": "http://gallerihanne.no/",
+      "termIds": [
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4304542,
+      "lng": 10.3894443,
+      "googleFeatureId": "0x466d31852c12daad:0x9cb55ca68693eaa2"
+    },
+    {
+      "name": "Galleri SG",
+      "address": "Kjøpmannsgata 37",
+      "mapsUrl": "https://goo.gl/maps/Yq4NYcAMyd1DBxop8",
+      "websiteUrl": "https://www.galleri-sg.no/",
+      "termIds": [
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4311032,
+      "lng": 10.4027322,
+      "googleFeatureId": "0x466d3199693a8945:0x8452505e0905e833"
+    },
+    {
+      "name": "Galleriet – Trondheim brukskunstforening",
+      "address": "Vår Frue Strete 5, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/35fsgnAX6S4yDFpYA",
+      "websiteUrl": "https://www.trondheimbrukskunstforening.no/",
+      "termIds": [
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.429702,
+      "lng": 10.3982568,
+      "googleFeatureId": "0x466d319a36d649b3:0x9ee11f3c9d8d67c"
+    },
+    {
+      "name": "Gant Byhaven",
+      "address": "Olav Tryggvasons gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/Q3k34XV5tAKwzxw38",
+      "websiteUrl": "https://no.gant.com/",
+      "termIds": [
+        22,
+        23,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4336772,
+      "lng": 10.3969927,
+      "googleFeatureId": "0x466d319c8046f067:0xe0282dd6a953206d"
+    },
+    {
+      "name": "Gina Tricot Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/FfBaW1jGo4gjYWSs5",
+      "websiteUrl": "https://www.ginatricot.com/no/start",
+      "termIds": [
+        33,
+        22,
+        14,
+        21,
+        104,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303426,
+      "lng": 10.3933017,
+      "googleFeatureId": "0x466d319ae3d86f71:0x2197b862669eeb6f"
+    },
+    {
+      "name": "Gnist",
+      "address": "Dronningens gate 40, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/8d5UW62vq4efNHTk8",
+      "websiteUrl": "https://gnist.no/",
+      "termIds": [
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4320946,
+      "lng": 10.3925219,
+      "googleFeatureId": "0x466d319b2612dced:0x8141a67cdcd9f362"
+    },
+    {
+      "name": "Gullfunn Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/SHyWeuvVJqa13kk49",
+      "websiteUrl": "https://www.gullfunn.no/",
+      "termIds": [
+        33,
+        22,
+        106,
+        23
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303426,
+      "lng": 10.3933017,
+      "googleFeatureId": "0x466d319ae2206521:0x107f4a991415c579"
+    },
+    {
+      "name": "Gullsmed Aas",
+      "address": "Nordre gate 9, 7011 Trondheim",
+      "mapsUrl": "https://g.page/Gullsmed-Aas?share",
+      "websiteUrl": "https://www.oleaas.no/",
+      "termIds": [
+        33,
+        22,
+        106,
+        23
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "googleCid": "9907939811930846698"
+    },
+    {
+      "name": "Gullsmed Dahlsveen",
+      "address": "Olav Tryggvasons Gate 24, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/b1Ak6zHepVtAuzSG6",
+      "websiteUrl": "https://mestergull.no/dahlsveen/",
+      "termIds": [
+        33,
+        22,
+        106,
+        23
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333986,
+      "lng": 10.397543,
+      "googleFeatureId": "0x466d319c78bfc5dd:0x4370fd258761e75f"
+    },
+    {
+      "name": "Gunnar Ree",
+      "address": "Søndre gate 21, 7010 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/j2fpPg79DCgtzoKy8",
+      "websiteUrl": "https://gunnarree.no/",
+      "termIds": [
+        23,
+        14,
+        19,
+        21,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4338247,
+      "lng": 10.4004341,
+      "googleFeatureId": "0x466d319c0e21306b:0x3b71e7d58b147677"
+    },
+    {
+      "name": "H&M Home",
+      "address": "Thomas Angells gate 20, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/YKwDAW15kf7CfNyc8",
+      "websiteUrl": "https://www2.hm.com/no_no/home.html",
+      "termIds": [
+        33,
+        142,
+        15,
+        112
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4327174,
+      "lng": 10.3963454,
+      "googleFeatureId": "0x466d31c5d3d9ca95:0x8433276889c49076"
+    },
+    {
+      "name": "H2 Byhaven",
+      "address": "Olav Tryggvasons Gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/5XYQkF1Ao7gCktuX9",
+      "websiteUrl": "https://h2.no/",
+      "termIds": [
+        146,
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333761,
+      "lng": 10.397041,
+      "googleFeatureId": "0x466d319b8006e819:0x8336fff39cd29bdf"
+    },
+    {
+      "name": "H2 dronningens gt",
+      "address": "Nordre gate 12, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/n16fhzVQWSN3nX4k6",
+      "websiteUrl": "https://h2.no/",
+      "termIds": [
+        146,
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.432047,
+      "lng": 10.3969963,
+      "googleFeatureId": "0x466d319b9a266689:0x806941086c5dbb95"
+    },
+    {
+      "name": "H2 Th. Angells gt.",
+      "address": "Thomas Angells gate 5, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/BmaNfaj6aW64ebRJ7",
+      "websiteUrl": "https://h2.no/",
+      "termIds": [
+        146,
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4326512,
+      "lng": 10.3988695,
+      "googleFeatureId": "0x466d3196c0813763:0x323909fd64a1c17e"
+    },
+    {
+      "name": "Holzweiler",
+      "address": "Søndre gate 14, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/VB8Xf3sVeSwh6bYA9",
+      "websiteUrl": "https://holzweileroslo.com/en",
+      "termIds": [
+        22,
+        23,
+        14,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4323417,
+      "lng": 10.3997752,
+      "googleFeatureId": "0x466d31cf1a17babb:0xb65a87caf7fb3e6a"
+    },
+    {
+      "name": "House of Norway",
+      "address": "Olav Tryggvasons gt. 24",
+      "mapsUrl": "https://goo.gl/maps/Ct7sSzCTwRMhB1b76",
+      "websiteUrl": "https://www.facebook.com/HouseofNorwayTrondheim/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        24,
+        19,
+        101
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4333928,
+      "lng": 10.3976621,
+      "googleFeatureId": "0x466d314230d96b8d:0x716a539d6432d73c"
+    },
+    {
+      "name": "Høyer Kongens gt.",
+      "address": "Kongens gate 14, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/JpLLHQcw2sXJutpX6",
+      "websiteUrl": "https://hoyertrondheim.no/",
+      "termIds": [
+        22,
+        23,
+        15,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4306209,
+      "lng": 10.3968219,
+      "googleFeatureId": "0x466d319bac528e95:0x8ba838804b8e3523"
+    },
+    {
+      "name": "Illums bolighus",
+      "address": "Kongens gate 8, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/LX9xzuogFM393yKr8",
+      "websiteUrl": "https://www.illumsbolighus.no/",
+      "termIds": [
+        22,
+        34,
+        15,
+        14,
+        16,
+        19,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4305886,
+      "lng": 10.398592,
+      "googleFeatureId": "0x466d317917b8adb7:0x72d6656f06f555dc"
+    },
+    {
+      "name": "Intersport Lefstad",
+      "address": "Munkegata 44, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/YDBWo9gzY2siq1rx9",
+      "websiteUrl": "https://www.intersport.no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        19,
+        101,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.431609,
+      "lng": 10.3939439,
+      "googleFeatureId": "0x466d319b1142020b:0x96b837069c21e35b"
+    },
+    {
+      "name": "Jack & Jones Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/EKBsCALi9APkY8Hw6",
+      "websiteUrl": "https://www.jackjones.com/no/no/home",
+      "termIds": [
+        33,
+        23,
+        14,
+        19,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303426,
+      "lng": 10.3933017,
+      "googleFeatureId": "0x466d319ae2206521:0xf5eb126defe9c610"
+    },
+    {
+      "name": "Jens Hoff garn & ide Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/yApFSS6gAWuQVHTP8",
+      "websiteUrl": "https://www.garnkos.no/",
+      "termIds": [
+        22,
+        112
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303851,
+      "lng": 10.3932911,
+      "googleFeatureId": "0x466d3146c3b23dcd:0x66534b499f583d32"
+    },
+    {
+      "name": "Jernia Eggen",
+      "address": "Prinsens Gate 51, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/grXPSTZHYTT1xFtp7",
+      "websiteUrl": "https://www.jernia.no/",
+      "termIds": [
+        15,
+        143,
+        144
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4321366,
+      "lng": 10.3920604,
+      "googleFeatureId": "0x466d319b37f30f77:0x557c81fb662fe0ed"
+    },
+    {
+      "name": "Johnnylove",
+      "address": "Olav Tryggvasons Gate 21, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/sX9btwoq7woc92Ee8",
+      "websiteUrl": "https://www.johnnylove.com/",
+      "termIds": [
+        22,
+        23,
+        14
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4331926,
+      "lng": 10.3985747,
+      "googleFeatureId": "0x466d319b8a25d0eb:0xbe7b921f6ae56cc5"
+    },
+    {
+      "name": "Junkyard Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/ugj1jY6Mw95GzEWz7",
+      "websiteUrl": "https://junkyard.com/no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        19,
+        21,
+        104,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.430345,
+      "lng": 10.3928648,
+      "googleFeatureId": "0x466d319ae2206521:0x9d824fe1dd2a94e7"
+    },
+    {
+      "name": "K-U-K Kjøpmannsgata ung kunst",
+      "address": "Kjøpmannsgata 38, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/8e9kVyZ49fXJVXmK7",
+      "websiteUrl": "https://www.k-u-k.no",
+      "termIds": [
+        108,
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4324133,
+      "lng": 10.4026167,
+      "googleFeatureId": "0x466d319b55b9681b:0x4ff993fb850dede1"
+    },
+    {
+      "name": "Keiserens nye trær",
+      "address": "Olav Tryggvasons gt. 6, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/aNEBBnrZBuvxHp62A",
+      "websiteUrl": "https://www.keiserensnye.no/",
+      "termIds": [
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4335007,
+      "lng": 10.4015155,
+      "googleFeatureId": "0x466d31a1ed43f3fd:0xaa650db136bb3451"
+    },
+    {
+      "name": "Kicks Byhaven",
+      "address": "Olav Tryggvasons Gt. 26, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/9vqzppKHgvxEzdvn9",
+      "websiteUrl": "https://www.kicks.no/",
+      "termIds": [
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4333846,
+      "lng": 10.3966466,
+      "googleFeatureId": "0x466d319b7e2fa097:0xc85fb34d32e417e7"
+    },
+    {
+      "name": "Kicks Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/xfBpncMdFazcfsQ6A",
+      "websiteUrl": "https://www.kicks.no/",
+      "termIds": [
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4303591,
+      "lng": 10.3929656,
+      "googleFeatureId": "0x466d319ae2206541:0x85db346df777dbc2"
+    },
+    {
+      "name": "Kid Interiør Byhaven",
+      "address": "Olav Tryggvasons Gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/PikeAbfhRtxE4hSm9",
+      "websiteUrl": "https://www.kid.no/",
+      "termIds": [
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4333765,
+      "lng": 10.3964292,
+      "googleFeatureId": "0x46420d9221c7aabb:0x44c56e9c3482cf15"
+    },
+    {
+      "name": "Kid Interiør Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/gjzxzKP4V4rnrAww9",
+      "websiteUrl": "https://www.kid.no/",
+      "termIds": [
+        15,
+        16
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4302834,
+      "lng": 10.3935617,
+      "googleFeatureId": "0x466d311a823c2535:0x4a0108170fb0ae5c"
+    },
+    {
+      "name": "Kitch`n Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/gkYJmC7KNFkzM9iaA",
+      "websiteUrl": "https://www.kitchn.no/",
+      "termIds": [
+        114,
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4294582,
+      "lng": 10.3932002,
+      "googleFeatureId": "0x466d319ae221bd89:0x55fd34ec8dd9b510"
+    },
+    {
+      "name": "Kjell & Company",
+      "address": "Olav Tryggvasons gt. 31, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/tPBWLbXwAETLeMRo7",
+      "websiteUrl": "https://www.kjell.com/no",
+      "termIds": [
+        105
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.433143,
+      "lng": 10.3962874,
+      "googleFeatureId": "0x466d316ec846ddbb:0x80562d56781e79f0"
+    },
+    {
+      "name": "Kleins Byhaven",
+      "address": "Olav Tryggvasons Gate 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/SuboYA6XAXJLsDzg8",
+      "websiteUrl": "https://www.kleins.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333777,
+      "lng": 10.3964267,
+      "googleFeatureId": "0x466d312e32267371:0xce10bdf7a4affb1f"
+    },
+    {
+      "name": "Kondomeriet",
+      "address": "Thomas Angells gate 12, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/2jakHLFk9j51YaiV9",
+      "websiteUrl": "https://www.kondomeriet.no/",
+      "termIds": [
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4328621,
+      "lng": 10.3989147,
+      "googleFeatureId": "0x466d319b8c62fcdb:0x343c028bd41a128c"
+    },
+    {
+      "name": "Kremmerhuset Byhaven",
+      "address": "Nordre gate 24, 7010 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/eiUtBFJnTiRPrFs68",
+      "websiteUrl": "https://kremmerhuset.no/",
+      "termIds": [
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4336527,
+      "lng": 10.3963773,
+      "googleFeatureId": "0x466d319b8006e819:0x460418feeed6325a"
+    },
+    {
+      "name": "Lanullva",
+      "address": "Søndre gate 19, 7010 Trondheim",
+      "mapsUrl": "https://g.page/lanullvatrondheim?share",
+      "websiteUrl": "https://www.lanullva.no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        101,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "googleCid": "12932435515075131771"
+    },
+    {
+      "name": "Lekia Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/3xRX2Tm4BMnhF9629",
+      "websiteUrl": "https://www.lekia.no/",
+      "termIds": [
+        33,
+        112
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303364,
+      "lng": 10.3935757,
+      "googleFeatureId": "0x466d31471d736f8f:0x7e806fd5a5fe024c"
+    },
+    {
+      "name": "Levi`s store Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/49XgN6q6pxRN5zbb7",
+      "websiteUrl": "https://www.levi.com/NO/en/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4303487,
+      "lng": 10.3932633,
+      "googleFeatureId": "0x466d31577ce5a6d3:0xe7dea49e614202e9"
+    },
+    {
+      "name": "Liir",
+      "address": "Søndre gate 14, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/AMnT34jSQkpxvRYi8",
+      "websiteUrl": "https://liir.no/",
+      "termIds": [
+        22,
+        23,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4323417,
+      "lng": 10.3997752,
+      "googleFeatureId": "0x466d319c74f76187:0xa2d28319a5630850"
+    },
+    {
+      "name": "Lille Martine",
+      "address": "Olav Tryggvasons gate 28, 7011 Trondheim",
+      "mapsUrl": "https://g.page/lillemartineno?share",
+      "websiteUrl": "https://lillemartine.no/",
+      "termIds": [
+        33,
+        14,
+        19,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "googleCid": "8155014965410192756"
+    },
+    {
+      "name": "Lindex",
+      "address": "Munkegata 52-54, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/MJ32TGrMn1EEEpdt5",
+      "websiteUrl": "https://www.lindex.com/no",
+      "termIds": [
+        33,
+        22,
+        23,
+        34,
+        14,
+        101,
+        21,
+        104,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4326432,
+      "lng": 10.3934314,
+      "googleFeatureId": "0x466d319b4268768d:0x55a5cc7d7d6bad31"
+    },
+    {
+      "name": "Livid Jeans",
+      "address": "Olav Tryggvasons Gate 19, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/LxP7QqKbaCou8bheA",
+      "websiteUrl": "https://www.lividjeans.com/",
+      "termIds": [
+        22,
+        23,
+        14,
+        19,
+        21,
+        20,
+        103
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.433216,
+      "lng": 10.398985,
+      "googleFeatureId": "0x466d31a1761879f3:0xed0906895ce600ff"
+    },
+    {
+      "name": "Løplabbet",
+      "address": "Nordre gate 11, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/8j6mV8JZFNia9hqv6",
+      "websiteUrl": "https://www.loplabbet.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        19,
+        101,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4325142,
+      "lng": 10.3976918,
+      "googleFeatureId": "0x466d319b2916e3c1:0xbfc648ac9283497a"
+    },
+    {
+      "name": "M.Sommer",
+      "address": "Olav Tryggvasons gate 16, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/QpYZvNPjxZ6ioEoZ9",
+      "websiteUrl": "http://www.msommer.no/",
+      "termIds": [
+        112
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.433507,
+      "lng": 10.399141,
+      "googleFeatureId": "0x466d319c74858bb5:0xa49165fecda1b661"
+    },
+    {
+      "name": "Maanesten",
+      "address": "Nordre gate 12, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/HrSegdQxrBW895hZ8",
+      "websiteUrl": "https://maanesten.com/",
+      "termIds": [
+        106,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4321628,
+      "lng": 10.3970893,
+      "googleFeatureId": "0x466d31f036067cbb:0x638eee70fa9f9c9e"
+    },
+    {
+      "name": "Maija",
+      "address": "Olav Tryggvasons gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/qMzoXgAhQRU61vv36",
+      "websiteUrl": "https://byhaven.no/butikker/maija/",
+      "termIds": [
+        22,
+        14
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4336772,
+      "lng": 10.3969927,
+      "googleFeatureId": "0x466d319c8046f067:0xe0282dd6a953206d"
+    },
+    {
+      "name": "Match Byhaven",
+      "address": "Olav Tryggvasons gate 28",
+      "mapsUrl": "https://goo.gl/maps/9dKhkm5v1zJE8DfR7",
+      "websiteUrl": "https://www.matchfashion.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4333863,
+      "lng": 10.3966538,
+      "googleFeatureId": "0x466d318ce3398fb7:0x2259c34797e1190c"
+    },
+    {
+      "name": "Match Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/Ri8cCDN54czA2Bxw7",
+      "websiteUrl": "https://www.matchfashion.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4303629,
+      "lng": 10.3937162,
+      "googleFeatureId": "0x466d319aeb692d67:0x493367e12bbb"
+    },
+    {
+      "name": "Mester Grønn",
+      "address": "Kongens gate 8, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/B3R5sRnfJL7BG7TY8",
+      "websiteUrl": "https://www.mestergronn.no/mg/",
+      "termIds": [
+        142,
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4305921,
+      "lng": 10.3985097,
+      "googleFeatureId": "0x466d319bc933885d:0xb8114fad757c5ea2"
+    },
+    {
+      "name": "Modern art gallery",
+      "address": "Olav Tryggvasons Gate 33, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/YLdR2E3sLMWj5vn48",
+      "websiteUrl": "https://www.modernartgallery.no/",
+      "termIds": [
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.433126,
+      "lng": 10.3958486,
+      "googleFeatureId": "0x466d319b7edcbd67:0x4fef4d4c73ba3976"
+    },
+    {
+      "name": "Naturkompaniet",
+      "address": "Olav Tryggvasons gt. 27, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/Wj3KQgPLtXhR9ng19?coh=178573&entry=tt",
+      "websiteUrl": "https://www.naturkompaniet.no/no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        19,
+        101,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4331241,
+      "lng": 10.3977609,
+      "googleFeatureId": "0x466d318494960721:0xb6438f740e336f12"
+    },
+    {
+      "name": "Nikita Hair Nordre",
+      "address": "Dronningens gate 9, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/paPCdkG8qoPS4mME8",
+      "websiteUrl": "https://nikita.no/",
+      "termIds": [
+        146,
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4318438,
+      "lng": 10.3971164,
+      "googleFeatureId": "0x466d319cc7bd6a67:0x5b9ae4c323d1f660"
+    },
+    {
+      "name": "Nor-Contact Sport",
+      "address": "Sommerveita 3, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/XvvVwYkX3HeGcJWm8",
+      "websiteUrl": "https://www.ncsport.no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        19,
+        101
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4308855,
+      "lng": 10.396031,
+      "googleFeatureId": "0x466d319baedfb885:0xd92eb45f2bbb95e5"
+    },
+    {
+      "name": "Norli",
+      "address": "Dronningens gate 14, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/cdV7GajLdWv4Msfq8",
+      "websiteUrl": "https://www.norli.no/",
+      "termIds": [
+        108,
+        112,
+        109
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4322154,
+      "lng": 10.3977378,
+      "googleFeatureId": "0x466d318374000d3d:0x5208654abff61d4a"
+    },
+    {
+      "name": "Normal Byhaven",
+      "address": "Olav Tryggvasons gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/bK5hKdcLDbgTHcQb6",
+      "websiteUrl": "https://www.normal.no/",
+      "termIds": [
+        34,
+        114,
+        113
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333762,
+      "lng": 10.397043,
+      "googleFeatureId": "0x466d319c8046f067:0xe0282dd6a953206d"
+    },
+    {
+      "name": "Normal Nordre gt.",
+      "address": "Nordre gate 6, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/VCSD6WphX1bmYnUg7",
+      "websiteUrl": "https://www.normal.no/",
+      "termIds": [
+        34,
+        114,
+        112,
+        113
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4312447,
+      "lng": 10.397162,
+      "googleFeatureId": "0x466d316829d25e6d:0x32dc501a4f765f71"
+    },
+    {
+      "name": "Normal Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/1gBrMz9s5Nzhw5oVA",
+      "websiteUrl": "https://www.normal.no/butikker/trondheim-trondheim-torg/",
+      "termIds": [
+        34,
+        114,
+        112,
+        113
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4302834,
+      "lng": 10.3935617,
+      "googleFeatureId": "0x466d319c86b75cc7:0xd9c1123e308ea78a"
+    },
+    {
+      "name": "Norrøna concept store",
+      "address": "Thomas Angells gate 20, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/XZfgYt3sZvvMGfW18",
+      "websiteUrl": "https://www.norrona.com/nb-NO/",
+      "termIds": [
+        22,
+        23,
+        14,
+        101,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4327119,
+      "lng": 10.3959356,
+      "googleFeatureId": "0x466d319b829fad33:0x110d7dcb961a9802"
+    },
+    {
+      "name": "Object Byhaven",
+      "address": "Olav Tryggvasons gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/kfTxaXo8BHGSbMrHA",
+      "websiteUrl": "https://www.objectci.com/no-no/home",
+      "termIds": [
+        22,
+        14
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4336772,
+      "lng": 10.3969927,
+      "googleFeatureId": "0x466d319c8046f067:0xe0282dd6a953206d"
+    },
+    {
+      "name": "Olivenlunden 1830 Byhaven",
+      "address": "Olav Tryggvasons Gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/Bc4Z8C7zGzaKj3io9",
+      "websiteUrl": "https://www.olivenlunden1830.no/",
+      "termIds": [
+        113
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4336488,
+      "lng": 10.3963759,
+      "googleFeatureId": "0x466d319c8079b71f:0xc5c6d8e0e182394e"
+    },
+    {
+      "name": "Olivenlunden 1830 Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/v63mRiWA2RTeuz8i9",
+      "websiteUrl": "https://www.olivenlunden1830.no/",
+      "termIds": [
+        113
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4301525,
+      "lng": 10.3939341,
+      "googleFeatureId": "0x0:0xc035eda4f617f1f8"
+    },
+    {
+      "name": "Oris Dental Leuthenhaven",
+      "address": "Kongens gate 49, 7012 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/nmbwN5EDcDsE4iSy6",
+      "websiteUrl": "https://orisdental.no/klinikker/leutenhaven/?utm_source=google-my-business&utm_medium=organic&utm_campaign=meny#behandlinger",
+      "termIds": [
+        34,
+        421
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4302682,
+      "lng": 10.3877204,
+      "googleFeatureId": "0x466d31853cb5e58f:0x2f0209ab4a3f68c6"
+    },
+    {
+      "name": "Oris Dental Lykkegården",
+      "address": "Munkegata 48, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/nQz4CFhxTmkuDihY8",
+      "websiteUrl": "https://orisdental.no/klinikker/trondheim-torg/",
+      "termIds": [
+        34,
+        421
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4323847,
+      "lng": 10.3934213,
+      "googleFeatureId": "0x466d319b14d5395b:0x7c18a1f28e96df75"
+    },
+    {
+      "name": "Oris Dental Munkegata",
+      "address": "Munkegata 9, 7013 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/ahMEXvEiAL8izaMN8",
+      "websiteUrl": "https://orisdental.no/klinikker/munkegata/",
+      "termIds": [
+        34,
+        421
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4290634,
+      "lng": 10.3962199,
+      "googleFeatureId": "0x466d319a42e8a231:0x7d49f6fe217c83ad"
+    },
+    {
+      "name": "Oris Dental Sanden",
+      "address": "Kongens gate 60, 7012 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/wsaY6tQuwBiU4zMS8",
+      "websiteUrl": "https://orisdental.no/klinikker/sanden/",
+      "termIds": [
+        34,
+        421
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4305027,
+      "lng": 10.3866306,
+      "googleFeatureId": "0x466d31851a266bef:0x73ad285f279b4393"
+    },
+    {
+      "name": "Outland",
+      "address": "Jomfrugata 4, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/ivJZ7h12cH5SFupi9",
+      "websiteUrl": "https://www.outland.no/",
+      "termIds": [
+        108,
+        112,
+        109
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4323147,
+      "lng": 10.3956437,
+      "googleFeatureId": "0x466d319b5cce4e2f:0x75c9bf55c9017ca8"
+    },
+    {
+      "name": "Panduro Hobby",
+      "address": "Fjordgata 50, 7010 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/DhAQj6neZtLbbCV47",
+      "websiteUrl": "https://panduro.com/nb-no",
+      "termIds": [
+        112
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4348128,
+      "lng": 10.3978595,
+      "googleFeatureId": "0x466d319c60b54285:0x553d34b0367587b6"
+    },
+    {
+      "name": "Pink by utseende.no",
+      "address": "Thomas Angells gate 22, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/iDyqLqD3J9tw1jef9",
+      "websiteUrl": "https://utseende.no/",
+      "termIds": [
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4327807,
+      "lng": 10.395597,
+      "googleFeatureId": "0x466d318b836013f5:0xba0c4a1cf973e5aa"
+    },
+    {
+      "name": "POMO",
+      "address": "Dronningens gate 10, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/NhdDvbAtAxgjqqYD9",
+      "websiteUrl": "https://pomo.no/",
+      "termIds": [
+        108,
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4320698,
+      "lng": 10.3991158,
+      "googleFeatureId": "0x466d310037d403dd:0x77fe3948ae04530a"
+    },
+    {
+      "name": "Reimers Byhaven",
+      "address": "Olav Tryggvasons Gate 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/3aGw7MhwC7cNFZB1A",
+      "websiteUrl": "https://www.reimers.com/",
+      "termIds": [
+        22,
+        23,
+        14,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333777,
+      "lng": 10.3964265,
+      "googleFeatureId": "0x466d319b7e2fa097:0xc9da77c4e229f07e"
+    },
+    {
+      "name": "Reimers Th. Angells gt.",
+      "address": "Thomas Angells gate 18, 7011 Trondheim",
+      "mapsUrl": "https://g.page/reimerscom?share",
+      "websiteUrl": "https://www.reimers.com/",
+      "termIds": [
+        22,
+        23,
+        14,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "googleCid": "16347320071585604221"
+    },
+    {
+      "name": "Retro Mathesongården",
+      "address": "Nordre gate 18-20, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/fBqGG6Ces5ebmzff6",
+      "websiteUrl": "https://retro.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4339908,
+      "lng": 10.3985708,
+      "googleFeatureId": "0x466d319c6e253509:0x95584e9c616080d1"
+    },
+    {
+      "name": "Retro, Nordre Gate",
+      "address": "Nordre gate 18-20",
+      "mapsUrl": "https://goo.gl/maps/df2qBEJeFAWr5oFP7",
+      "websiteUrl": "https://retro.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        19,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4328927,
+      "lng": 10.3970385,
+      "googleFeatureId": "0x466d319b8380fcad:0xc8059533b1fe0438"
+    },
+    {
+      "name": "Samsøe Samsøe",
+      "address": "Thomas Angells gate 24, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/eS5BFCUKpuq5Y3cdA",
+      "websiteUrl": "https://www.samsoe.com/en-NO",
+      "termIds": [
+        22,
+        23,
+        14
+      ],
+      "acceptsCard": false,
+      "acceptsCardDigital": true,
+      "lat": 63.432738,
+      "lng": 10.395317,
+      "googleFeatureId": "0x466d319b7a83f71d:0x4b5bdfbc97ec5d55"
+    },
+    {
+      "name": "Sengemakeriet",
+      "address": "Fjordgata 70, 7010 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/L56EbhSF2uXYw4rCA",
+      "websiteUrl": "https://www.soveromsbutikken.no/",
+      "termIds": [
+        33,
+        15,
+        16
+      ],
+      "acceptsCard": false,
+      "acceptsCardDigital": true,
+      "lat": 63.4344761,
+      "lng": 10.3946743,
+      "googleFeatureId": "0x466d319c97a14935:0xc9cf804981e5d493"
+    },
+    {
+      "name": "Shine",
+      "address": "Nordre gate 10",
+      "mapsUrl": "https://g.page/shineshopno?share",
+      "websiteUrl": "https://shineshop.no/",
+      "termIds": [
+        22,
+        34,
+        14,
+        19,
+        21,
+        104,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "googleCid": "4375348069553225264"
+    },
+    {
+      "name": "Sirkulus",
+      "address": "Kjøpmannsgata 33, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/afYbiHUgk9cmGw3G7",
+      "websiteUrl": "https://www.sirkulus.no/",
+      "termIds": [
+        33,
+        22,
+        105,
+        23,
+        15,
+        14,
+        16,
+        24,
+        19,
+        101,
+        21,
+        20,
+        103
+      ],
+      "acceptsCard": false,
+      "acceptsCardDigital": false,
+      "lat": 63.4308529,
+      "lng": 10.4025389,
+      "googleFeatureId": "0x466d31996fadbdd9:0xc15cbc1002653222"
+    },
+    {
+      "name": "Sjøsprøyt",
+      "address": "Fjordgata 36, 7010 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/nWENwfkHCCx5Bxu69",
+      "websiteUrl": "https://sjosproyt.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        101
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4349592,
+      "lng": 10.3994559,
+      "googleFeatureId": "0x466d31b2b355b12d:0x6fa4dde1dfdee079"
+    },
+    {
+      "name": "Skandinavisk høyfjellsutstyr",
+      "address": "Søndre gate 16, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/EmVppfk3zKLDDefM9",
+      "websiteUrl": "https://www.shutrondheim.no/",
+      "termIds": [
+        22,
+        23,
+        14,
+        101
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4327834,
+      "lng": 10.3998975,
+      "googleFeatureId": "0x466d319eac41ce4f:0x2ddc47ca607690fc"
+    },
+    {
+      "name": "Skills",
+      "address": "Nordre gate 12, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/hvfCrCPVFhHpnCEd8",
+      "websiteUrl": "https://www.sneaker.no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        14,
+        19,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4322422,
+      "lng": 10.3970961,
+      "googleFeatureId": "0x466d319b9a266689:0x16e22010de236943"
+    },
+    {
+      "name": "Skoringen",
+      "address": "Olav Tryggvasons Gate 17, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/bsgtaxaVwbG9qPpL9",
+      "websiteUrl": "https://www.skoringen.no/",
+      "termIds": [
+        33,
+        22,
+        23,
+        19
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4332142,
+      "lng": 10.3992847,
+      "googleFeatureId": "0x466d319c755ebd3d:0x4abd56aff20ba1ae"
+    },
+    {
+      "name": "Solsiden spa avd. Munkegt.",
+      "address": "Munkegata 56, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/wiDr3vEVyRfvyUkH8",
+      "websiteUrl": "https://solsidenspa.no/",
+      "termIds": [
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4327727,
+      "lng": 10.3933722,
+      "googleFeatureId": "0x466d319b43220619:0xcacce996198e6926"
+    },
+    {
+      "name": "Specsavers",
+      "address": "Prinsens gt. 39, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/BCbPDeibwWBDBWKz6",
+      "websiteUrl": "https://www.specsavers.no/",
+      "termIds": [
+        33,
+        107,
+        22,
+        23
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4311208,
+      "lng": 10.3924512,
+      "googleFeatureId": "0x466d31e88ab89671:0x3160b6c3cf60c1c6"
+    },
+    {
+      "name": "Sprell",
+      "address": "Nordre gate 16, 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/sCGAd6499FdRPFkx7",
+      "websiteUrl": "https://www.sprell.no/",
+      "termIds": [
+        33,
+        112
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4325787,
+      "lng": 10.3968209,
+      "googleFeatureId": "0x466d319b9b51af67:0xb5c19207f2faef7e"
+    },
+    {
+      "name": "Stas hår og bryn",
+      "address": "Olav Tryggvasons Gt. 33, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/8hvNNCTb2MbCioNw7",
+      "websiteUrl": "https://stasharogbryn.no/",
+      "termIds": [
+        146,
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.433125,
+      "lng": 10.3958202,
+      "googleFeatureId": "0x466d319b7edcbd67:0xc5ba7f0118735ec9"
+    },
+    {
+      "name": "Sunkost Trondheim Torg",
+      "address": "Kongens gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/5Az5JHeQmZvbMakv6",
+      "websiteUrl": "https://sunkost.no/",
+      "termIds": [
+        115
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303487,
+      "lng": 10.3932633,
+      "googleFeatureId": "0x466d319ae3d86f71:0xe029fe115ea1302b"
+    },
+    {
+      "name": "Synsam Byhaven",
+      "address": "Olav Tryggvasons Gate 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/3qjHTTWJkChBg37C9",
+      "websiteUrl": "https://www.synsam.no/",
+      "termIds": [
+        33,
+        107,
+        22,
+        23
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4335499,
+      "lng": 10.3965383,
+      "googleFeatureId": "0x466d319b7ffebba7:0x6d75ed44bae46c86"
+    },
+    {
+      "name": "Tannklinikken Dent",
+      "address": "Gjelvangveita 9",
+      "mapsUrl": "https://maps.app.goo.gl/tHLEsuXPZdppJz5C8",
+      "websiteUrl": "https://dent.as/",
+      "termIds": [
+        34,
+        421
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.434319,
+      "lng": 10.399217,
+      "googleFeatureId": "0x466d319c6bf6773d:0x7523ca5ed422a2fc"
+    },
+    {
+      "name": "Te og kaffehuset",
+      "address": "Dronningens gate , 7011 Trondheim",
+      "mapsUrl": "https://maps.app.goo.gl/n1VVFRpydLWKjthQA",
+      "websiteUrl": "https://teogkaffehuset.no/",
+      "termIds": [
+        15,
+        113
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4320605,
+      "lng": 10.3949171,
+      "googleFeatureId": "0x466d319b73388137:0xce3567b6a72a0054"
+    },
+    {
+      "name": "Traktøren Byhaven",
+      "address": "Olav Tryggvasons Gt. 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/KyMCpEx9fhJkbNJn6",
+      "websiteUrl": "https://traktoren.no/",
+      "termIds": [
+        15
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333764,
+      "lng": 10.3964269,
+      "googleFeatureId": "0x466d319b8006e819:0xef727530465951f9"
+    },
+    {
+      "name": "Transit",
+      "address": "Fjordgata 56, 7010 Trondheim",
+      "mapsUrl": "https://g.page/transittrondheim?share",
+      "websiteUrl": "https://transit-shop.no/",
+      "termIds": [
+        15,
+        16,
+        103
+      ],
+      "acceptsCard": false,
+      "acceptsCardDigital": false,
+      "googleCid": "15807750847465084710"
+    },
+    {
+      "name": "Trondheim parkering",
+      "address": "Leüthenhaven, Erling Skakkes gate 40, 7012 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/GPu89H8F2cLRGLQ97",
+      "websiteUrl": "https://www.trondheim.kommune.no/parkering",
+      "termIds": [],
+      "acceptsCard": false,
+      "acceptsCardDigital": false,
+      "lat": 63.429896,
+      "lng": 10.390139,
+      "googleFeatureId": "0x466d31853520a32d:0xa872a7c171c12387"
+    },
+    {
+      "name": "Trondheim trafikkskole",
+      "address": "Erling Skakkes gate 3, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/1ZWX7zDaDBqFonmD6",
+      "websiteUrl": "http://trondheimtrafikkskole.no/",
+      "termIds": [],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4285726,
+      "lng": 10.3988269,
+      "googleFeatureId": "0x466d319a18fe93f9:0xd68bf2eb08682816"
+    },
+    {
+      "name": "Urmaker Næss Byhaven",
+      "address": "Byhaven, Olav Tryggvasons Gate 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/9dHauQibtCZsQJGw6",
+      "websiteUrl": "https://urmakernaess.no/",
+      "termIds": [
+        22,
+        106,
+        23
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4333762,
+      "lng": 10.397043,
+      "googleFeatureId": "0x466d319b7ffebba7:0x35dc8ff6c97ef29c"
+    },
+    {
+      "name": "Valør Trondheim",
+      "address": "Olav Tryggvasons Gate 13, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/dyqDNmv2uutf28wt8",
+      "termIds": [
+        22,
+        15,
+        14,
+        24,
+        21,
+        20
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4332242,
+      "lng": 10.4003847,
+      "googleFeatureId": "0x466d319c07e7752b:0x3ffce547b3b10769"
+    },
+    {
+      "name": "Vero Moda Nordre gt.",
+      "address": "Nordre gate 12, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/G9w46XApPNV18Gsb9",
+      "websiteUrl": "https://www.veromoda.com/no/no/home",
+      "termIds": [
+        33,
+        22,
+        14,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4320696,
+      "lng": 10.397247,
+      "googleFeatureId": "0x466d319b9a266689:0x2b7d5b455f73a781"
+    },
+    {
+      "name": "Vero Moda Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/XoSdW6yNQ7BVrSgn7",
+      "websiteUrl": "https://www.veromoda.com/no/no/home",
+      "termIds": [
+        33,
+        22,
+        14,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303851,
+      "lng": 10.3932911,
+      "googleFeatureId": "0x466d319b71bf0ca3:0x55d80ddae0d7641b"
+    },
+    {
+      "name": "Vila Trondheim Torg",
+      "address": "Kongens gate 11, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/6DUogSmXXbgAHfRB8",
+      "websiteUrl": "https://www.vila.com/no/no/home",
+      "termIds": [
+        22,
+        14,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4303426,
+      "lng": 10.3933017,
+      "googleFeatureId": "0x466d3113eb329157:0x51263ff83439ebd9"
+    },
+    {
+      "name": "Vita Th. Angells gt.",
+      "address": "Thomas Angells gate 26, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/ajg7CCftPirAWWYN6",
+      "websiteUrl": "https://www.vita.no/butikker/th.-angellsgt",
+      "termIds": [
+        115,
+        34
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4326398,
+      "lng": 10.3949541,
+      "googleFeatureId": "0x466d319b7018650b:0xa4facdcab2e44fe4"
+    },
+    {
+      "name": "Vitusapotek Løven Byhaven",
+      "address": "Byhaven, Olav Tryggvasons Gate 28, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/msDeys2Cyb3Heyes8",
+      "websiteUrl": "https://www.vitusapotek.no/",
+      "termIds": [
+        115
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.4333737,
+      "lng": 10.3959382,
+      "googleFeatureId": "0x466d319c81c14b85:0x8e4972baf5328d0c"
+    },
+    {
+      "name": "Volt Trondheim Torg",
+      "address": "Prinsens Gate 9, 7013 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/oT8aHeEe83ci87JT7",
+      "websiteUrl": "https://voltfashion.com/no/",
+      "termIds": [
+        23,
+        14,
+        19,
+        21,
+        104
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": true,
+      "lat": 63.4304095,
+      "lng": 10.3929964,
+      "googleFeatureId": "0x466d319ae21d4ba1:0xa3facf7ce168832a"
+    },
+    {
+      "name": "Zavanna",
+      "address": "Olav Tryggvasons Gate 29, 7011 Trondheim",
+      "mapsUrl": "https://goo.gl/maps/rQFCE37s7Jpo7iz66",
+      "websiteUrl": "https://zavanna.no/",
+      "termIds": [
+        22,
+        14,
+        21
+      ],
+      "acceptsCard": true,
+      "acceptsCardDigital": false,
+      "lat": 63.433161,
+      "lng": 10.3970288,
+      "googleFeatureId": "0x466d31f78bd8bf91:0x67feff6b10c931f5"
+    }
+  ]
+}
