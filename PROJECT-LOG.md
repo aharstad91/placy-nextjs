@@ -6,6 +6,41 @@
 
 ---
 
+## 2026-08-06 — MIDTBYEN-DEMO: 147 SENTRUMSBUTIKKER PÅ NABOLAGSFLATEN (branch `feat/midtbyen-demo`, ikke pushet)
+
+**Kontekst:** Første leveranse i side-gig-sporet (se `docs/strategy/LOG.md` 2026-08-06). Andreas skalerte scopet ned fra den salgbare leveransen til en ren **demo å vise fram**: ingen database, ingen sync, ingen SEO. Plan: `docs/plans/2026-08-06-003-feat-midtbyen-demo-nabolagsflate-plan.md`. Den første planen (`-001-`) er `superseded` og beskriver fortsatt den salgbare varianten.
+
+**Branch-valget er ikke kosmetisk:** `feat/midtbyen-demo` er branchet fra `feat/mobil-nabolagsflate`, ikke fra main. **Main har ikke nabolagsflaten** — den lever bare på den branchen — og hele demoen hviler på den.
+
+**Funnet som snudde designet (D1).** Den supersederte planen pekte på event-ruta som gjenbruksmønster: bygg `BoardData` med en adapter og send den inn som prop. Det holder ikke. `ReportReelsPage` setter `eventMode = inputBoardData !== undefined`, og på mobil gjelder `if (eventMode && eventFilter) return <EventMobileSheet …>` — `eventFilter` er en hook-retur og alltid truthy. Sender vi `boardData`, får vi event-sheeten, ikke nabolagsflaten. Demoen konstruerer derfor et `Project` og går den **ordinære rapport-stien**. `app/midtbyen/page.test.tsx` asserterer på *fraværet* av proppen, fordi en senere «gjenbruk event-mønsteret»-endring ville byttet flate uten at noe feilet.
+
+**Fraværet av lyd er selve leveransen (D4).** Ingen audio ⇒ `hasAudioMobile` false ⇒ omvisning-pilla forsvinner OG `neighbourhoodSurface` slås på. Begge kravene leveres av samme fravær; ingen flagg-kode.
+
+**Datainnhentingen, tre ting verdt å huske:**
+
+1. **Browser-UA gjør 25 av 147 uløselige.** `maps.app.goo.gl` svarer en browser med en interstitial som aldri redirecter, mens en ærlig ikke-browser får ren 302 rett til stedssiden. `goo.gl/maps` og `maps.app` gir da koordinat + feature-ID; `g.page/…?share` lander på en søkeside med bare CID. 138/147 fra lenkene, resten fylt av Places-oppslaget → **147/147**.
+2. **Norske bokstaver dekomponeres ikke.** `ø` er en egen Unicode-bokstav, ikke o + diakritikk, så NFD lar den stå og tegnsettingsfjerningen gjorde «Brattørkaia» til «bratt rkaia». Æ/ø/å translittereres nå eksplisitt. Samme testrunde avslørte at containment uten lengdekrav ga «BAG» full score mot «Bagarstuga».
+3. **Åpningstider MÅ være engelske.** `computeIsOpen` matcher på «Monday» og AM/PM; norske ville stille slått av åpent/stengt-avgjørelsen.
+
+**Kategoriseringen: én gruppe per butikk, avgjort av termen — ikke gruppen.** `POI.category` er ett felt, og 44 av 147 bærer termer som peker flere veier. En sportsbutikk fører også dameklær; «Sport & Fritid» sier hva butikken *er*, «Dame» bare hva den fører. Vektene ble justert mot **alle 147 navn**, ikke en stikkprøve — første utkast la veskebutikken Aagaard under Sport, klesbutikken Bogart under Interiør og interiørbutikken C. I. Pedersen under Bøker. Restfeilen er kildens egen: Dressmann er tagget «Sport & Fritid» og kan ikke skilles fra Intersport i disse dataene.
+
+**Dekning:** 147/147 parset, koordinat, gangtid (1–15 min fra Torvet) og kategori. 138/147 åpningstider. 3 i «Annet», ingen tom gruppe. Fordeling: Klær & mote 59 · Helse & velvære 23 · Interiør & hjem 22 · Sport & fritid 19 · Bøker, spill & hobby 18 · Annet 3 · Mat & drikke 3.
+
+**Mekanisk:** `tsc` ren · lint 0 errors · **1815 tester / 144 filer** (opp fra 1815-74 = 74 nye) · `npm run build` grønn, `/midtbyen` **prerendres statisk**. Butikkdataene havner i RSC-payloaden, ikke i klient-chunkene (verifisert). Commits `5ba801f`, `cd40473`, `032b4e2`, `4ac01bf`, `73f7430`.
+
+**Verifisert mobil 390×844 i Chrome, fersk last:** splash → kart med 148 markører (147 + Torvet-ankeret) → sju kategorikort → kategoriside med prosa og gangtidssortert liste → tilbake gjenoppretter kameraet. Viewport-rescoping virker («4 av 18 synlig»). Ingen omvisning-pill, ingen horisontal scroll, **0 konsollfeil**.
+
+**Feil i min egen plan, korrigert:** D8 påsto at åpningstidene vises i kart-popupen. `MapPopupCard` *leser* `openingHoursJson.weekday_text`, men **rendres ingen steder** — den er død kode, og det ble ikke sjekket før planen ble skrevet. Åpningstidene lagres på riktig form, men ingen montert komponent viser dem i dag.
+
+**Åpne tråder — alle i DELTE komponenter, gjelder hvert VO-løst board (også Wesselsløkka), derfor rapportert og ikke lappet:**
+
+1. **Splashen lover en omvisning som ikke finnes.** «Vi tar deg med på en guidet tur …» er bolig-defaulten i `MobileReportSplash.tsx:40`; `deriveSplashIntro` (`reels-data.ts:438`) gir `undefined` for alt som ikke er event/hotell/næring.
+2. **«gangtid hjemmefra»** (`NeighbourhoodSurface.tsx:155`) leser rart når ankeret er et torg.
+3. **Megler-plassholderen på desktop.** `noBrokers={eventMode}` (`ReportReelsPage.tsx:747`) undertrykker «Ansvarlig megler» KUN i event-modus. Mobilflaten er ren; åpnes demoen på laptop står det et megler-kort på en butikkatalog. Den ville jeg fikset før et MM-møte — men det endrer oppførsel for alle rapport-boards, så det er et produktvalg.
+4. **`components/variants/report/MapPopupCard.tsx` er død kode** og bør slettes i egen commit (kodebase-hygiene).
+
+---
+
 ## 2026-08-05 (sesjon 1) — NABOLAGSLISTA FØLGER OGSÅ GOOGLE 3D + KAMERA-BRO MELLOM MOTORENE (branch ikke pushet)
 
 **Kontekst:** Andreas testet på iPhone og sendte skjermopptak: lista oppdaterte seg fint på Mapbox-kartet, men sto helt stille gjennom all panorering i 3D. To spørsmål fulgte med — kan vi gjenskape det i Google 3D, og ville det hjulpet å låse kartet ovenfra?
