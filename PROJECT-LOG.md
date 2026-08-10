@@ -26,7 +26,7 @@
 
 **Dekning:** 147/147 parset, koordinat, gangtid (1–15 min fra Torvet) og kategori. 138/147 åpningstider. 3 i «Annet», ingen tom gruppe. Fordeling: Klær & mote 59 · Helse & velvære 23 · Interiør & hjem 22 · Sport & fritid 19 · Bøker, spill & hobby 18 · Annet 3 · Mat & drikke 3.
 
-**Mekanisk:** `tsc` ren · lint 0 errors · **1815 tester / 144 filer** (opp fra 1815-74 = 74 nye) · `npm run build` grønn, `/midtbyen` **prerendres statisk**. Butikkdataene havner i RSC-payloaden, ikke i klient-chunkene (verifisert). Commits `5ba801f`, `cd40473`, `032b4e2`, `4ac01bf`, `73f7430`.
+**Mekanisk:** `tsc` ren · lint 0 errors · **1815 tester / 144 filer** ved demoens landing (74 nye: 71 i `lib/gigs/midtbyen/`, 3 i `app/midtbyen/`), **1817 etter de to fiksene under** · `npm run build` grønn, `/midtbyen` **prerendres statisk**. Butikkdataene havner i RSC-payloaden, ikke i klient-chunkene (verifisert). Commits `5ba801f`, `cd40473`, `032b4e2`, `4ac01bf`, `73f7430`.
 
 **Verifisert mobil 390×844 i Chrome, fersk last:** splash → kart med 148 markører (147 + Torvet-ankeret) → sju kategorikort → kategoriside med prosa og gangtidssortert liste → tilbake gjenoppretter kameraet. Viewport-rescoping virker («4 av 18 synlig»). Ingen omvisning-pill, ingen horisontal scroll, **0 konsollfeil**.
 
