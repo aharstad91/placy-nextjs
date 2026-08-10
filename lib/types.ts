@@ -424,6 +424,18 @@ export interface ReportConfig {
   motiver?: string[];
   summary?: ReportSummary;
   brokers?: BrokerInfo[];
+  /**
+   * Skjul megler-plassholderen i bunn av desktop-sidebaren.
+   *
+   * Plassholderen («Ansvarlig megler — Kontaktinfo legges til per prosjekt»)
+   * finnes for eiendommer som ennå ikke har fått kontaktinfo, og skal stå der.
+   * Men et board som ALDRI får en megler — en butikkatalog, et strøkskart —
+   * viser da et tomt megler-kort på noe som ikke er en eiendom.
+   *
+   * Default av: eksisterende boards er uendret. Settes eksplisitt av prosjekter
+   * uten megler-begrep.
+   */
+  hideBrokerCard?: boolean;
   cta?: ReportCTA;
   mapStyle?: string;
   trails?: TrailCollection;

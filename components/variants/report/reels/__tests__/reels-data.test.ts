@@ -445,28 +445,50 @@ describe("posterForVideo (reels-video-UX, .mp4 → .jpg)", () => {
 
 describe("deriveSplashIntro", () => {
   it("event-modus gir egen, eiendoms-fri copy uavhengig av venueType", () => {
-    const intro = deriveSplashIntro({ eventMode: true, venueType: "hotel" });
+    const intro = deriveSplashIntro({
+      eventMode: true,
+      venueType: "hotel",
+      hasAudioGuide: false,
+    });
     expect(intro).toContain("Utforsk programmet på kartet");
     expect(intro).not.toContain("hotellet");
   });
 
   it("forgrener boligrapport-copy på venueType", () => {
-    expect(deriveSplashIntro({ eventMode: false, venueType: "commercial" })).toContain(
-      "kontordøren",
-    );
-    expect(deriveSplashIntro({ eventMode: false, venueType: "hotel" })).toContain(
-      "hotellet",
-    );
+    expect(
+      deriveSplashIntro({
+        eventMode: false,
+        venueType: "commercial",
+        hasAudioGuide: true,
+      }),
+    ).toContain("kontordøren");
+    expect(
+      deriveSplashIntro({ eventMode: false, venueType: "hotel", hasAudioGuide: true }),
+    ).toContain("hotellet");
   });
 
   it("residential / ukjent / null → undefined (ingen intro-paragraf)", () => {
-    expect(
-      deriveSplashIntro({ eventMode: false, venueType: "residential" }),
-    ).toBeUndefined();
-    expect(deriveSplashIntro({ eventMode: false, venueType: null })).toBeUndefined();
-    expect(
-      deriveSplashIntro({ eventMode: false, venueType: undefined }),
-    ).toBeUndefined();
+    for (const venueType of ["residential", null, undefined] as const) {
+      expect(
+        deriveSplashIntro({ eventMode: false, venueType, hasAudioGuide: true }),
+      ).toBeUndefined();
+    }
+  });
+
+  it("uten lyd loves ingen omvisning — uansett venueType", () => {
+    // Splashens default-copy sier «Vi tar deg med på en guidet tur», og
+    // venue-variantene sier «trykk play». På et board uten spillbart spor
+    // finnes ingen av delene, og teksten er rett og slett usann.
+    for (const venueType of ["residential", "hotel", "commercial", null] as const) {
+      const intro = deriveSplashIntro({
+        eventMode: false,
+        venueType,
+        hasAudioGuide: false,
+      });
+      expect(intro, String(venueType)).toBeDefined();
+      expect(intro, String(venueType)).not.toMatch(/guidet tur|[Tt]rykk play/);
+      expect(intro, String(venueType)).toContain("kartet");
+    }
   });
 });
 

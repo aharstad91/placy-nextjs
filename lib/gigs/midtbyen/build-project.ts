@@ -237,6 +237,10 @@ export function buildMidtbyenProjectWithReport(): MidtbyenProjectResult {
       heroIntro:
         "Butikkene i Midtbyen, plassert på kartet og sortert etter hvor lang " +
         "tid du bruker dit fra Torvet.",
+      // En butikkatalog har ingen ansvarlig megler, og får ingen. Uten dette
+      // står megler-plassholderen i desktop-sidebaren på et kart over andres
+      // butikker.
+      hideBrokerCard: true,
       themes,
     },
     // Ingen lyd noe sted: ingen audio på temaene, ingen welcomeAudio, heroAudio

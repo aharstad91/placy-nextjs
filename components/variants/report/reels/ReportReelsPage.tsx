@@ -305,6 +305,9 @@ function Inner({
             boardData={boardData}
             has3dAddon={has3dAddon}
             eventMode={eventMode}
+            hideBrokerCard={
+              effectiveProject.reportConfig?.hideBrokerCard === true
+            }
             eventFilter={eventMode ? eventFilter : null}
             collection={eventMode ? collectionApi : null}
             onOpenCollection={() => setCollectionDrawerOpen(true)}
@@ -540,6 +543,7 @@ function ResponsiveLayoutInner({
   boardData,
   has3dAddon,
   eventMode,
+  hideBrokerCard,
   eventFilter,
   collection,
   onOpenCollection,
@@ -550,6 +554,9 @@ function ResponsiveLayoutInner({
   has3dAddon: boolean;
   /** D3: event-modus undertrykker megler/eiendoms-chrome (footer + splash-copy). */
   eventMode: boolean;
+  /** Boards uten megler-begrep (butikkatalog, strøkskart) skjuler
+   *  megler-plassholderen i desktop-sidebaren. Se `ReportConfig.hideBrokerCard`. */
+  hideBrokerCard: boolean;
   /** Unit 4: event-board filter-resultat (liste/seksjoner/dag-state). Null for
    *  boligrapporter. Drives av kompass-store; brukes av EventFilterPanel. */
   eventFilter: EventBoardFilterResult | null;
@@ -658,9 +665,14 @@ function ResponsiveLayoutInner({
   // D3: event-modus har egen, megler/eiendoms-fri splash-copy (ingen "nærområdet
   // til hotellet"/"utenfor kontordøren"). Boligrapport-copyen er uendret.
   // Derivasjonen bor i reels-data (ren + testbar).
+  //
+  // `hasAudioGuide` er med fordi all tur-copyen ("guidet tur", "trykk play")
+  // er usann på et board uten spillbar lyd. `firstIdx` er allerede regnet ut
+  // over; `hasAudioGuide`-variabelen under er samme uttrykk, deklarert senere.
   const splashIntro = deriveSplashIntro({
     eventMode,
     venueType: boardData.venueType,
+    hasAudioGuide: firstIdx !== -1,
   });
 
   // Lett-vekts kategori-oversikt for sidebarens empty state (prosjekt uten
@@ -744,7 +756,7 @@ function ResponsiveLayoutInner({
             logoSrc={logoSrc}
             onLogoClick={handleReopenSplash}
             previewCategories={previewCategories}
-            noBrokers={eventMode}
+            noBrokers={eventMode || hideBrokerCard}
             eventFilter={eventFilter}
             categories={boardData.categories}
             collection={collection}

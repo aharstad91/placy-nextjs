@@ -102,6 +102,12 @@ describe("buildMidtbyenProject", () => {
     }
   });
 
+  it("skjuler megler-plassholderen", () => {
+    // Uten dette står «Ansvarlig megler — Kontaktinfo legges til per prosjekt»
+    // i desktop-sidebaren på et kart over andres butikker.
+    expect(project.reportConfig?.hideBrokerCard).toBe(true);
+  });
+
   it("er deterministisk", () => {
     expect(buildMidtbyenProject().pois.map((p) => p.id)).toEqual(
       project.pois.map((p) => p.id),

@@ -438,9 +438,20 @@ export function deriveSplashPrimaryLabel(opts: {
 export function deriveSplashIntro(opts: {
   eventMode: boolean;
   venueType: BoardData["venueType"];
+  /**
+   * Finnes det et spillbart lydspor på boardet? Uten ett er ALL tur-copy usann:
+   * splashens default lover «en guidet tur», og venue-variantene sier «trykk
+   * play» — men det finnes verken tur eller play-knapp. Feltet er påkrevd
+   * nettopp for at en ny kallssted ikke skal kunne glemme det.
+   */
+  hasAudioGuide: boolean;
 }): string | undefined {
   if (opts.eventMode)
     return "Utforsk programmet på kartet — se hva som skjer, hvor og når. Trykk play, og finn opplevelsene i nærheten.";
+  // Uten lyd: beskriv det brukeren faktisk får — et kart å utforske. Gjelder
+  // alle venue-typer, derfor før forgreningen under.
+  if (!opts.hasAudioGuide)
+    return "Utforsk nærområdet på kartet — se hva som ligger i gangavstand, og hvor lang tid du bruker dit.";
   if (opts.venueType === "commercial")
     return "Vi tar deg med på en guidet tur i nærområdet — restauranter, transport, trenings- og servicetilbud rett utenfor kontordøren. Trykk play, og se hva som ligger i gangavstand.";
   if (opts.venueType === "hotel")
