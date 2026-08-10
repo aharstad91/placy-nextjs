@@ -32,12 +32,12 @@
 
 **Feil i min egen plan, korrigert:** D8 påsto at åpningstidene vises i kart-popupen. `MapPopupCard` *leser* `openingHoursJson.weekday_text`, men **rendres ingen steder** — den er død kode, og det ble ikke sjekket før planen ble skrevet. Åpningstidene lagres på riktig form, men ingen montert komponent viser dem i dag.
 
-**Åpne tråder — alle i DELTE komponenter, gjelder hvert VO-løst board (også Wesselsløkka), derfor rapportert og ikke lappet:**
+**Fire funn i DELT kode, gjeldende for hvert VO-løst board — to fikset på Andreas' beskjed (`07da6df`), to står igjen:**
 
-1. **Splashen lover en omvisning som ikke finnes.** «Vi tar deg med på en guidet tur …» er bolig-defaulten i `MobileReportSplash.tsx:40`; `deriveSplashIntro` (`reels-data.ts:438`) gir `undefined` for alt som ikke er event/hotell/næring.
-2. **«gangtid hjemmefra»** (`NeighbourhoodSurface.tsx:155`) leser rart når ankeret er et torg.
-3. **Megler-plassholderen på desktop.** `noBrokers={eventMode}` (`ReportReelsPage.tsx:747`) undertrykker «Ansvarlig megler» KUN i event-modus. Mobilflaten er ren; åpnes demoen på laptop står det et megler-kort på en butikkatalog. Den ville jeg fikset før et MM-møte — men det endrer oppførsel for alle rapport-boards, så det er et produktvalg.
-4. **`components/variants/report/MapPopupCard.tsx` er død kode** og bør slettes i egen commit (kodebase-hygiene).
+1. ~~Splashen lover en omvisning som ikke finnes.~~ **FIKSET.** «Vi tar deg med på en guidet tur» var bolig-defaulten, og hotell/nærings-variantene sa «trykk play» — på boards uten spillbart spor finnes ingen av delene. `deriveSplashIntro` tar nå `hasAudioGuide`, **påkrevd** så et nytt kallssted ikke kan glemme det, og beskriver kartet i stedet. Fikset også Wesselsløkka, som løy på samme måte.
+2. ~~Megler-plassholderen på desktop.~~ **FIKSET.** `noBrokers` var gatet på `eventMode` alene. Nytt `ReportConfig.hideBrokerCard`, **default av** — eiendomsboards uten kontaktinfo beholder plassholderen. Verifisert begge veier: `/midtbyen` har ingen megler; Wesselsløkka har mistet tur-copyen og BEHOLDT meglerkortet.
+3. **«gangtid hjemmefra»** (`NeighbourhoodSurface.tsx:155`) leser fortsatt rart når ankeret er et torg. Ikke rørt.
+4. **`components/variants/report/MapPopupCard.tsx` er død kode** og bør slettes i egen commit (kodebase-hygiene). Ikke rørt.
 
 ---
 
