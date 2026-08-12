@@ -75,7 +75,23 @@ Re-resolver CDN-URLer eldre enn N dager (default 14). Nuller ut utgåtte `photo_
 
 ### Refresh åpningstider
 ```bash
-npx tsx scripts/refresh-opening-hours.ts [--days 30]
+### Utforsk-modalens innhold (per-POI grounding)
+
+```bash
+npx tsx scripts/ground-poi-content.ts <project_id>                     # dry-run FØRST
+npx tsx scripts/ground-poi-content.ts <project_id> --apply             # skriv
+npx tsx scripts/ground-poi-content.ts <project_id> --limit 5           # billig kalibrering
+npx tsx scripts/ground-poi-content.ts <project_id> --min-sources 3     # juster porten
+```
+
+Dry-run skriver dekningsgrad, histogram og terskel-sensitivitet, pluss rådata til
+`backups/` — så terskler kan re-evalueres offline uten å bruke Gemini-kvote på
+nytt. Kjør ALLTID dry-run først: lav dekning er et pilot-funn som skal
+omdirigere innsatsen, ikke oppdages i en kundedemo.
+
+```bash
+npx tsx scripts/refresh-opening-hours.ts --project <project_id>          # dry-run
+npx tsx scripts/refresh-opening-hours.ts --project <project_id> --apply  # skriv
 ```
 Oppdaterer `opening_hours_json` fra Google Places API for POI-er med utdaterte data.
 
@@ -84,6 +100,11 @@ Oppdaterer `opening_hours_json` fra Google Places API for POI-er med utdaterte d
 |--------|----------|-------------------|
 | `refresh-photo-urls.ts` | Annenhver uke | ~500 Photo calls (~$1.50) |
 | `refresh-opening-hours.ts` | Månedlig | ~500 Details calls (~$8.50) |
+| `ground-poi-content.ts` | Ved nytt board / når innhold drifter | 1 Gemini grounding-kall per POI (78 POI-er ≈ innenfor gratiskvoten 1 500/dag) |
+
+**OBS før demo/visning:** kjør `refresh-photo-urls.ts`. lh3-CDN-URL-ene utløper
+etter ~14 dager, og Utforsk-modalens bildekarusell skjuler seg selv ved
+last-feil — den ser da bare tom ut, uten feilmelding.
 
 ---
 
