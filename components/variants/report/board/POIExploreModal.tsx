@@ -218,19 +218,31 @@ function AttributionBlock({ generated }: { generated: NonNullable<PoiGrounding["
 
       {generated.sources.length > 0 && (
         <ul className="mt-2 space-y-1">
-          {generated.sources.map((s) => (
-            <li key={s.redirectUrl}>
-              <a
-                href={s.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-baseline gap-1.5 text-[12px] text-stone-500 hover:text-stone-800 hover:underline"
-              >
-                <span className="truncate">{s.title}</span>
-                <span className="flex-none text-stone-400">{s.domain}</span>
-              </a>
-            </li>
-          ))}
+          {generated.sources.map((s) => {
+            // Gemini setter ofte `title` til bare domenet, og da rendrer
+            // tittel + domene samme tekst to ganger («dgo.no  dgo.no» —
+            // observert i nettleser 2026-08-12). Vis domenet kun når det
+            // tilfører noe utover tittelen.
+            const domainAddsInfo =
+              Boolean(s.domain) &&
+              !s.title.toLowerCase().includes(s.domain.toLowerCase()) &&
+              !s.domain.toLowerCase().includes(s.title.toLowerCase());
+            return (
+              <li key={s.redirectUrl}>
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-baseline gap-1.5 text-[12px] text-stone-500 hover:text-stone-800 hover:underline"
+                >
+                  <span className="truncate">{s.title}</span>
+                  {domainAddsInfo && (
+                    <span className="flex-none text-stone-400">{s.domain}</span>
+                  )}
+                </a>
+              </li>
+            );
+          })}
         </ul>
       )}
 

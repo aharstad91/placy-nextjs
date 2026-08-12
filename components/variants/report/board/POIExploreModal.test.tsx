@@ -269,6 +269,32 @@ describe("POIExploreModal — Google-attribusjon (ToS)", () => {
     expect(screen.getByText("nilsaas.no")).toBeTruthy();
   });
 
+  it("dubler ikke tittel og domene nar Gemini setter title = domenet", () => {
+    render(
+      <POIExploreModal
+        open
+        onClose={() => {}}
+        poi={boardPoi({
+          grounding: {
+            poiGroundingVersion: 1,
+            generated: generated({
+              sources: [
+                {
+                  // Gemini gjor dette ofte — observert i nettleser 2026-08-12
+                  title: "dgo.no",
+                  url: "https://dgo.no/muustroparken",
+                  redirectUrl: "https://vertexaisearch.cloud.google.com/grounding-api-redirect/ddd",
+                  domain: "dgo.no",
+                },
+              ],
+            }),
+          },
+        })}
+      />
+    );
+    expect(screen.getAllByText("dgo.no")).toHaveLength(1);
+  });
+
   it("searchEntryPointHtml havner VERBATIM i DOM (inkl. sanert style-blokk)", () => {
     const { baseElement } = render(
       <POIExploreModal
