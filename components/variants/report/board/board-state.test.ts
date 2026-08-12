@@ -31,6 +31,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: null,
         introPlaying: false,
+        exploreOpen: false,
       });
     });
 
@@ -40,6 +41,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
         introPlaying: false,
+        exploreOpen: false,
       };
       const next = boardReducer(start, { type: "SELECT_CATEGORY", id: CAT_B });
       expect(next).toEqual({
@@ -47,6 +49,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_B,
         activePOIId: null,
         introPlaying: false,
+        exploreOpen: false,
       });
     });
 
@@ -97,6 +100,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: null,
         introPlaying: false,
+        exploreOpen: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next).toEqual({
@@ -104,6 +108,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
         introPlaying: false,
+        exploreOpen: false,
       });
     });
 
@@ -113,6 +118,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
         introPlaying: false,
+        exploreOpen: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next).toEqual({
@@ -120,6 +126,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: POI_2,
         introPlaying: false,
+        exploreOpen: false,
       });
     });
 
@@ -134,6 +141,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
         introPlaying: false,
+        exploreOpen: false,
       });
     });
 
@@ -153,6 +161,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
         introPlaying: false,
+        exploreOpen: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_ACTIVE" });
       expect(next).toEqual({
@@ -160,6 +169,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: null,
         introPlaying: false,
+        exploreOpen: false,
       });
     });
 
@@ -179,6 +189,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
         introPlaying: false,
+        exploreOpen: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next).toEqual({
@@ -186,6 +197,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: null,
         introPlaying: false,
+        exploreOpen: false,
       });
     });
 
@@ -195,6 +207,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_B,
         activePOIId: null,
         introPlaying: false,
+        exploreOpen: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next.phase).toBe("default");
@@ -210,6 +223,7 @@ describe("boardReducer", () => {
         activeCategoryId: CAT_A,
         activePOIId: POI_1,
         introPlaying: true,
+        exploreOpen: false,
       };
       const next = boardReducer(start, { type: "RESET_TO_DEFAULT" });
       expect(next).toEqual(initialBoardState);
@@ -227,5 +241,44 @@ describe("boardReducer", () => {
       const next = boardReducer(start, { type: "END_INTRO" });
       expect(next.introPlaying).toBe(false);
     });
+  });
+});
+
+describe("OPEN_EXPLORE / CLOSE_EXPLORE (Utforsk-modalen)", () => {
+  const withPoi: BoardState = {
+    ...initialBoardState,
+    phase: "poi",
+    activeCategoryId: "cat" as BoardState["activeCategoryId"],
+    activePOIId: "poi-1" as BoardState["activePOIId"],
+  };
+
+  it("OPEN_EXPLORE setter exploreOpen uten å røre fase eller POI", () => {
+    const next = boardReducer(withPoi, { type: "OPEN_EXPLORE" });
+    expect(next).toEqual({ ...withPoi, exploreOpen: true });
+  });
+
+  it("OPEN_EXPLORE uten aktiv POI er no-op — ingen modal uten innhold", () => {
+    const next = boardReducer(initialBoardState, { type: "OPEN_EXPLORE" });
+    expect(next).toBe(initialBoardState);
+  });
+
+  it("CLOSE_EXPLORE nullstiller flagget og beholder POI-fasen (desktop: popupen står bak)", () => {
+    const open: BoardState = { ...withPoi, exploreOpen: true };
+    const next = boardReducer(open, { type: "CLOSE_EXPLORE" });
+    expect(next.exploreOpen).toBe(false);
+    expect(next.phase).toBe("poi");
+    expect(next.activePOIId).toBe("poi-1");
+  });
+
+  // Modalen skal ALDRI overleve inn i en annen POI-kontekst enn den ble åpnet i.
+  it.each([
+    ["BACK_TO_DEFAULT", { type: "BACK_TO_DEFAULT" as const }],
+    ["BACK_TO_ACTIVE", { type: "BACK_TO_ACTIVE" as const }],
+    ["RESET_TO_DEFAULT", { type: "RESET_TO_DEFAULT" as const }],
+    ["OPEN_POI (annen POI)", { type: "OPEN_POI" as const, id: "poi-2" as BoardState["activePOIId"] & string }],
+    ["SELECT_CATEGORY", { type: "SELECT_CATEGORY" as const, id: "cat2" as BoardState["activeCategoryId"] & string }],
+  ])("%s nullstiller exploreOpen", (_label, action) => {
+    const open: BoardState = { ...withPoi, exploreOpen: true };
+    expect(boardReducer(open, action).exploreOpen).toBe(false);
   });
 });

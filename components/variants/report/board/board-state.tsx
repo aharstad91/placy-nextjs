@@ -36,6 +36,22 @@ export interface BoardState {
    * flyturen lander (END_INTRO) eller brukeren navigerer (kategori/POI/reset).
    */
   introPlaying: boolean;
+  /**
+   * Utforsk-modalen står åpen for `activePOIId`.
+   *
+   * Ligger i board-state og ikke som lokal state i popupen fordi triggeren
+   * (CTA-en i kart-popupen) og renderen (board-skallet, som eier den ENE
+   * modal-instansen) ligger i ulike subtrær. Ved 3D-addon er begge
+   * kart-komponentene montert samtidig, så en modal rendret fra kartet ville
+   * blitt montert to ganger.
+   *
+   * ALL navigasjon nullstiller flagget: modalen skal aldri overleve inn i en
+   * annen POI-kontekst enn den ble åpnet i.
+   *
+   * Mobil bruker den IKKE — der er modalen POI-flaten, så åpen-tilstand avledes
+   * av `phase === "poi"` (se ResponsiveLayoutInner).
+   */
+  exploreOpen: boolean;
 }
 
 /**
@@ -60,13 +76,16 @@ export type BoardAction =
   | { type: "BACK_TO_DEFAULT" }
   | { type: "RESET_TO_DEFAULT" }
   | { type: "START_INTRO" }
-  | { type: "END_INTRO" };
+  | { type: "END_INTRO" }
+  | { type: "OPEN_EXPLORE" }
+  | { type: "CLOSE_EXPLORE" };
 
 export const initialBoardState: BoardState = {
   phase: "default",
   activeCategoryId: null,
   activePOIId: null,
   introPlaying: false,
+  exploreOpen: false,
 };
 
 export function boardReducer(state: BoardState, action: BoardAction): BoardState {
@@ -87,6 +106,7 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         activePOIId: null,
         // Navigasjon avbryter en pågående basic-intro (brukeren tok over).
         introPlaying: false,
+        exploreOpen: false,
       };
     }
 
@@ -98,6 +118,7 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         activeCategoryId: categoryId,
         activePOIId: action.id,
         introPlaying: false,
+        exploreOpen: false,
       };
     }
 
@@ -109,6 +130,7 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         ...state,
         phase: "active",
         activePOIId: null,
+        exploreOpen: false,
       };
 
     case "BACK_TO_DEFAULT":
@@ -119,10 +141,20 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         ...state,
         phase: "default",
         activePOIId: null,
+        exploreOpen: false,
       };
 
     case "RESET_TO_DEFAULT":
       return initialBoardState;
+
+    case "OPEN_EXPLORE":
+      // Ingen aktiv POI = ingenting å utforske. Ignorér framfor å åpne en
+      // modal uten innhold.
+      if (!state.activePOIId) return state;
+      return { ...state, exploreOpen: true };
+
+    case "CLOSE_EXPLORE":
+      return { ...state, exploreOpen: false };
 
     case "START_INTRO":
       return { ...state, introPlaying: true };

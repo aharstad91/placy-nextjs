@@ -192,3 +192,58 @@ describe("BoardPOI3DMiniPopup — source-invarianter (AC3/AC4)", () => {
     expect(importers[0]).toContain("BoardPOI3DMiniPopup.tsx");
   });
 });
+
+/**
+ * Utforsk-CTA-en må oppføre seg IDENTISK på 3D-flaten som på 2D-flaten.
+ * Historisk har de to kart-popupene driftet fra hverandre (poi_clicked emittes
+ * f.eks. bare fra 3D) — denne testen låser paritet for CTA-en.
+ */
+describe("BoardPOI3DMiniPopup — Utforsk-CTA (paritet med 2D)", () => {
+  const PASSING_GROUNDING = {
+    poiGroundingVersion: 1 as const,
+    generated: {
+      provider: "gemini-search-grounding" as const,
+      narrative: "n".repeat(400),
+      sources: [],
+      searchEntryPointHtml: "<div>chip</div>",
+      searchQueries: [],
+      model: "gemini-2.5-flash",
+      fetchedAt: "2026-08-12T10:00:00.000Z",
+      qualityGate: { passed: true, sourceCount: 3, charCount: 400 },
+    },
+  };
+
+  beforeEach(() => {
+    h.project.mockReturnValue({ x: 100, y: 200 });
+  });
+
+  it("POI med innhold → knapp som dispatcher OPEN_EXPLORE", () => {
+    h.poi = makePoi({
+      raw: {
+        id: "p1",
+        name: "Testkafé",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        category: { id: "cafe", name: "Kafé", icon: "Coffee", color: "#aa3300" },
+        grounding: PASSING_GROUNDING,
+      },
+    });
+    const { container } = render(<BoardPOI3DMiniPopup map3d={fakeMap} />);
+    const button = Array.from(container.querySelectorAll("button")).find((b) =>
+      b.textContent?.includes("Utforsk"),
+    );
+    expect(button).toBeTruthy();
+    button!.click();
+    expect(h.dispatch).toHaveBeenCalledWith({ type: "OPEN_EXPLORE" });
+  });
+
+  it("POI uten innhold → ekstern lenke med udm=50 bevart", () => {
+    h.poi = makePoi();
+    const { container } = render(<BoardPOI3DMiniPopup map3d={fakeMap} />);
+    const link = Array.from(container.querySelectorAll("a")).find((a) =>
+      a.textContent?.includes("Utforsk"),
+    );
+    expect(link).toBeTruthy();
+    expect(link!.getAttribute("href")).toContain("udm=50");
+    expect(link!.getAttribute("rel")).toContain("noopener");
+  });
+});

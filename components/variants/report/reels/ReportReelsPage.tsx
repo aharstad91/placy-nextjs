@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { transformToReportData } from "../report-data";
 import { adaptBoardData } from "../board/board-data";
 import { BoardProvider, useBoard } from "../board/board-state";
+import { POIExploreModalHost } from "../board/POIExploreModalHost";
 import { BoardMap } from "../board/BoardMap";
 import {
   useEventBoardFilter,
@@ -297,6 +298,10 @@ function Inner({
         collectionPoiIds={collectionPoiIds}
       >
         <BoardReelsSync />
+        {/* ÉN modal-instans for hele boardet. Ligger her og ikke i
+            kart-komponentene fordi begge er montert samtidig ved 3D-addon —
+            se POIExploreModalHost for hele begrunnelsen. */}
+        <POIExploreModalHost />
         <ReelsAudioShell>
           {/* Voiceover-orchestration: lazy søsken (egen chunk), kjører hooken
               uten å forsinke layout-treet. Erstatter den gamle wrapper-formen. */}
