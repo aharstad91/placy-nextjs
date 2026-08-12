@@ -18,7 +18,15 @@ import "server-only";
 import { createServerClient } from "./client";
 import type { TablesV2 } from "./types";
 import type { DbCategory, DbPoi } from "./types";
-import type { Project, ProductType, POI, Category, Story } from "../types";
+import type {
+  Project,
+  ProductType,
+  POI,
+  Category,
+  Story,
+  PoiGrounding,
+} from "../types";
+import { PoiGroundingViewSchema } from "../types";
 import { MIN_TRUST_SCORE } from "../utils/poi-trust";
 
 type V2Project = TablesV2<"projects">;
@@ -45,6 +53,48 @@ export function transformCategory(dbCategory: DbCategory): Category {
   };
 }
 
+/**
+ * Parse v2.pois.grounding (migrasjon 084) ved lese-boundaryen.
+ *
+ * To-stegs bevisst: feiler full parse, prøver vi på nytt UTEN `generated`. Et
+ * ødelagt eller ufullstendig generated-lag — typisk manglende
+ * searchEntryPointHtml, som Google ToS gjør ikke-visbart — skal ikke ta
+ * det Placy-eide curated-laget med seg i fallet.
+ *
+ * Feil logges ALLTID med POI-ID. Silent skip er hvordan `.uuid()`-fellen fikk
+ * ligge og droppe 6 av 7 grounding-objekter i april uten at noen så det
+ * (docs/solutions/ui-bugs/poi-ids-heterogeneous-not-uuid-20260428.md).
+ */
+export function parsePoiGroundingOrLog(
+  raw: unknown,
+  poiId: string
+): PoiGrounding | undefined {
+  if (raw == null) return undefined;
+
+  const full = PoiGroundingViewSchema.safeParse(raw);
+  if (full.success) return full.data;
+
+  const firstIssue = full.error.issues[0];
+  const detail = {
+    poiId,
+    issue: firstIssue?.message ?? "unknown",
+    path: firstIssue?.path.join(".") ?? "",
+  };
+
+  if (typeof raw === "object") {
+    const rest: Record<string, unknown> = { ...(raw as Record<string, unknown>) };
+    delete rest.generated;
+    const withoutGenerated = PoiGroundingViewSchema.safeParse(rest);
+    if (withoutGenerated.success) {
+      console.error("[poi-grounding] generated-laget forkastet", detail);
+      return withoutGenerated.data;
+    }
+  }
+
+  console.error("[poi-grounding] Zod-parse feilet — grounding utelatt", detail);
+  return undefined;
+}
+
 export function transformPOI(
   dbPoi: DbPoi,
   category: Category | undefined
@@ -65,6 +115,10 @@ export function transformPOI(
     },
     description: dbPoi.description ?? undefined,
     featuredImage: dbPoi.featured_image ?? undefined,
+    // POI.galleryImages har eksistert i lib/types.ts uten mapping her — ingen
+    // konsument leste feltet, så hullet var usynlig. Utforsk-modalens
+    // bildekarusell er første leser.
+    galleryImages: ((dbPoi as Record<string, unknown>).gallery_images as string[] | null) ?? undefined,
     googlePlaceId: dbPoi.google_place_id ?? undefined,
     googleRating: dbPoi.google_rating ?? undefined,
     googleReviewCount: dbPoi.google_review_count ?? undefined,
@@ -101,6 +155,10 @@ export function transformPOI(
     eventTags: ((dbPoi as Record<string, unknown>).event_tags as string[] | null) ?? undefined,
     parentPoiId: ((dbPoi as Record<string, unknown>).parent_poi_id as string | null) ?? undefined,
     anchorSummary: ((dbPoi as Record<string, unknown>).anchor_summary as string | null) ?? undefined,
+    grounding: parsePoiGroundingOrLog(
+      (dbPoi as Record<string, unknown>).grounding,
+      dbPoi.id
+    ),
   };
 }
 

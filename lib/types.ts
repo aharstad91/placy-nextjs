@@ -66,6 +66,11 @@ export interface POI {
   // Cached opening hours (from periodic refresh)
   openingHoursJson?: { weekday_text?: string[] };
 
+  // Build-time Google-grounded stedsinnhold for Utforsk-modalen (migrasjon 084).
+  // Parses ved lesing (parsePoiGroundingOrLog i v2-queries.ts) — feltet er
+  // allerede validert når det er satt.
+  grounding?: PoiGrounding;
+
   // POI Tier System
   poiTier?: 1 | 2 | 3;
   tierReason?: string;
@@ -253,6 +258,104 @@ export type ReportThemeGroundingViewV1 = z.infer<
 export type ReportThemeGroundingViewV2 = z.infer<
   typeof ReportThemeGroundingV2Schema
 >;
+
+// === Per-POI grounding (Utforsk-modalen) ===
+
+/**
+ * Build-time-generert Google-grounded innhold for ETT sted. Lagret i
+ * v2.pois.grounding (migrasjon 084).
+ *
+ * IKKE samme lag som ReportThemeGrounding over: tema-grounding beskriver et
+ * strøk og lever i products.config, dette beskriver et sted og lever på POI-et.
+ * Egen versjonsakse (`poiGroundingVersion`), egne skjemaer — gjenbruk ALDRI
+ * ReportThemeGroundingViewSchema her.
+ *
+ * To lag, bevisst skilt:
+ *   generated — provider-swappbart. Rå leverandør-output. Googles egen
+ *               generativeSummary dekker ikke Norge (verifisert 2026-08-12);
+ *               den dagen den gjør det, kommer den inn som en ny variant i
+ *               PoiGroundingGeneratedSchema-unionen + en gren i
+ *               attribusjonsblokken, uten at curated røres.
+ *   curated   — Placy-eid. Megler-/redaksjonelt lag som overlever provider-swap.
+ *
+ * Google ToS: `searchEntryPointHtml` er PÅKREVD på grounding-provideren og må
+ * rendres verbatim (DOMPurify-sanert før lagring). Mangler den, kan generated
+ * ikke vises i det hele tatt — parse-helperen dropper det laget alene og lar
+ * curated stå. Lagring av teksten er tillatt i inntil 2 år (Gemini API
+ * Additional Terms); `fetchedAt` er alderskilden.
+ */
+const PoiGroundingSourceSchema = z.object({
+  title: z.string(),
+  /** Resolved final URL (SSRF-guardet i url-resolver). */
+  url: z.string().url(),
+  /** Original Gemini redirect-URL — beholdt for re-resolve. */
+  redirectUrl: z.string().url(),
+  domain: z.string(),
+});
+
+/**
+ * Kvalitetsportens utfall, lagret sammen med innholdet — også for strykerne.
+ * Uten lagrede strykere ville `passed === true`-gaten i CTA-laget vært
+ * meningsløs (feltet ville alltid vært true når det fantes), og hver kjøring
+ * ville re-generert de samme strykerne med ny Gemini-kost.
+ */
+const PoiQualityGateSchema = z.object({
+  passed: z.boolean(),
+  sourceCount: z.number().int().nonnegative(),
+  charCount: z.number().int().nonnegative(),
+  /** Lesbar begrunnelse når passed = false. */
+  reason: z.string().optional(),
+});
+
+/** Gemini + Google Search-grounding — dagens eneste provider. */
+export const PoiGroundingGeneratedGeminiSchema = z.object({
+  provider: z.literal("gemini-search-grounding"),
+  narrative: z.string().min(1),
+  sources: z.array(PoiGroundingSourceSchema).default([]),
+  /** ToS-påkrevd. Sanert build-time, rendres verbatim. */
+  searchEntryPointHtml: z.string().min(1),
+  searchQueries: z.array(z.string()).default([]),
+  model: z.string().min(1),
+  /** ISO-8601. Alderskilde for re-generering og 2-års ToS-vinduet. */
+  fetchedAt: z.string().min(1),
+  qualityGate: PoiQualityGateSchema,
+});
+
+/**
+ * Union med ÉN variant i dag. Provider-swappen er da en additiv variant her
+ * pluss en gren i attribusjonsblokken, ikke en omskriving. Ukjent provider
+ * feiler bevisst — vi kan ikke rendre attribusjon vi ikke kjenner formen på,
+ * og attribusjon er ToS-krav.
+ */
+export const PoiGroundingGeneratedSchema = z.discriminatedUnion("provider", [
+  PoiGroundingGeneratedGeminiSchema,
+]);
+
+export const PoiGroundingCuratedSchema = z.object({
+  narrative: z.string().min(1),
+  curatedAt: z.string().min(1),
+});
+
+export const PoiGroundingV1Schema = z.object({
+  poiGroundingVersion: z.literal(1),
+  generated: PoiGroundingGeneratedSchema.optional(),
+  curated: PoiGroundingCuratedSchema.optional(),
+});
+
+/**
+ * Discriminated union på poiGroundingVersion. Én variant i dag; en versjon-bump
+ * tvinger regenerering ved at ukjente versjoner avvises ved parse.
+ */
+export const PoiGroundingViewSchema = z.discriminatedUnion(
+  "poiGroundingVersion",
+  [PoiGroundingV1Schema],
+);
+
+export type PoiGrounding = z.infer<typeof PoiGroundingViewSchema>;
+export type PoiGroundingGenerated = z.infer<typeof PoiGroundingGeneratedSchema>;
+export type PoiGroundingCurated = z.infer<typeof PoiGroundingCuratedSchema>;
+export type PoiGroundingSource = z.infer<typeof PoiGroundingSourceSchema>;
+export type PoiQualityGate = z.infer<typeof PoiQualityGateSchema>;
 
 /**
  * Build-time-generert audio-tour-data per kategori. Manus skrives av
