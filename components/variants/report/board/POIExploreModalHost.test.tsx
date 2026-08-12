@@ -18,6 +18,7 @@ const h = vi.hoisted(() => ({
   dispatch: vi.fn(),
   poi: null as unknown,
   popupMode: "mini" as "mini" | "sheet",
+  emit: vi.fn(),
 }));
 
 vi.mock("./board-state", () => ({
@@ -35,6 +36,9 @@ vi.mock("next/image", () => ({
 }));
 vi.mock("@/lib/utils/map-icons-filled", () => ({
   getFilledIcon: () => () => null,
+}));
+vi.mock("@/lib/instrumentation/engagement-scope", () => ({
+  useEngagement: () => ({ emit: h.emit }),
 }));
 
 import { POIExploreModalHost } from "./POIExploreModalHost";
@@ -203,5 +207,50 @@ describe("kilde-vakter — én modal-instans", () => {
       "utf8",
     );
     expect(src).toContain("udm=50");
+  });
+});
+
+describe("Moat 2-emit", () => {
+  it("emitter poi_explore_opened EN gang med poiId, kategori og has_grounding", () => {
+    h.state = { ...BASE_STATE, exploreOpen: true };
+    const { rerender } = render(<POIExploreModalHost />);
+    rerender(<POIExploreModalHost />);
+
+    expect(h.emit).toHaveBeenCalledTimes(1);
+    expect(h.emit).toHaveBeenCalledWith("poi_explore_opened", {
+      poiId: "p1",
+      payload: { category_id: "park", has_grounding: true },
+    });
+  });
+
+  it("has_grounding=false nar modalen apnes pa bare Google-fakta", () => {
+    h.poi = poiWith({ googleRating: 4.4 });
+    h.state = { ...BASE_STATE, exploreOpen: true };
+    render(<POIExploreModalHost />);
+    expect(h.emit).toHaveBeenCalledWith("poi_explore_opened", {
+      poiId: "p1",
+      payload: { category_id: "park", has_grounding: false },
+    });
+  });
+
+  it("emitter ikke nar modalen ikke apnes", () => {
+    render(<POIExploreModalHost />);
+    expect(h.emit).not.toHaveBeenCalled();
+  });
+
+  // ToS: interaksjoner med spesifikke Grounded Results / Search Suggestions skal
+  // ALDRI spores. Kildelenkene og chips-blokken far ingen onClick-handler.
+  it("kildelenkene har ingen klikk-handler (ToS-forbudt sporing)", () => {
+    h.state = { ...BASE_STATE, exploreOpen: true };
+    const { baseElement } = render(<POIExploreModalHost />);
+    const sourceLink = Array.from(baseElement.querySelectorAll("a")).find((a) =>
+      a.getAttribute("href")?.includes("inderoy.kommune.no"),
+    );
+    expect(sourceLink).toBeTruthy();
+    sourceLink!.click();
+    expect(h.emit).not.toHaveBeenCalledWith(
+      "poi_outbound_clicked",
+      expect.anything(),
+    );
   });
 });

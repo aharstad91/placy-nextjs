@@ -12,6 +12,13 @@ export const EVENT_TYPES = [
   "category_opened",
   "voiceover_played",
   "poi_clicked",
+  // Utforsk-modalen (migrasjon 085). «Utforsk»-klikket er det sterkeste
+  // interessesignalet per POI, og var uinstrumentert — brukeren forsvant til
+  // Google og signalet gikk tapt. De to typene skiller utfallene:
+  //   poi_explore_opened   — modalen ble åpnet inne i Placy
+  //   poi_outbound_clicked — fallback-lenken ble klikket (POI uten innhold)
+  "poi_explore_opened",
+  "poi_outbound_clicked",
 ] as const;
 
 // Avledet fra tuppelen (ikke en duplikat-union — én sannhetskilde).
@@ -65,6 +72,25 @@ export interface EventPayloads {
     context?: EngagementContextEnvelope;
   };
   poi_clicked: { category_id?: string; context?: EngagementContextEnvelope };
+  /**
+   * Utforsk-modalen åpnet. `has_grounding` skiller de to grunnene modalen kan
+   * åpnes av (grounded narrativ vs. bare Google-fakta) — uten det ville
+   * aggregeringen ikke kunne si om innholdet drev interessen eller bare fantes.
+   *
+   * ToS-GRENSE: vi logger AT modalen ble åpnet. Vi logger ALDRI klikk på
+   * enkelte kildelenker eller Search Suggestions — tracking av interaksjoner med
+   * spesifikke Grounded Results er forbudt per Gemini API Additional Terms.
+   */
+  poi_explore_opened: {
+    category_id?: string;
+    has_grounding: boolean;
+    context?: EngagementContextEnvelope;
+  };
+  /** Fallback-lenken til Google klikket (POI-et hadde ikke nok innhold). */
+  poi_outbound_clicked: {
+    category_id?: string;
+    context?: EngagementContextEnvelope;
+  };
 }
 
 // Hjelpetype: payload-formen for en gitt event-type (undefined der ingen payload).

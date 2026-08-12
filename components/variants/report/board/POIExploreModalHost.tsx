@@ -1,7 +1,9 @@
 "use client";
 
+import { useCallback } from "react";
 import { useBoard, useActivePOI } from "./board-state";
 import { useBoardPopupMode } from "./use-popup-mode";
+import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import {
   POIExploreModal,
   hasExploreContent,
@@ -24,14 +26,32 @@ import type { BoardPOI } from "./board-data";
  * Rendres derfor som søsken av `BoardReelsSync` i `ReportReelsPage`, under både
  * BoardProvider og EngagementProvider.
  */
-export function POIExploreModalHost({
-  onOpened,
-}: {
-  onOpened?: (poi: BoardPOI) => void;
-}) {
+export function POIExploreModalHost() {
   const { state, dispatch } = useBoard();
   const poi = useActivePOI();
   const popupMode = useBoardPopupMode();
+  const engagement = useEngagement();
+
+  /**
+   * Moat 2-signalet. Emittes herfra og ikke fra popupene fordi hosten er den
+   * ENE instansen — emit fra kart-komponentene ville blitt dobbelttelt ved
+   * 3D-addon, der begge er montert samtidig.
+   *
+   * ToS-grense: vi logger AT modalen ble åpnet. ALDRI klikk på enkelte
+   * kildelenker eller Search Suggestions.
+   */
+  const handleOpened = useCallback(
+    (opened: BoardPOI) => {
+      engagement.emit("poi_explore_opened", {
+        poiId: opened.id,
+        payload: {
+          category_id: opened.categoryId,
+          has_grounding: hasGroundedNarrative(opened.raw.grounding),
+        },
+      });
+    },
+    [engagement]
+  );
 
   // Mobil har i dag INGEN POI-detaljflate (BoardMobileSheet finnes ikke — kun
   // omtalt i kommentarer), så modalen ER mobilens POI-flate: POI-tap åpner den
@@ -70,7 +90,7 @@ export function POIExploreModalHost({
       open={open}
       onClose={handleClose}
       fallbackUrl={fallbackUrl}
-      onOpened={onOpened}
+      onOpened={handleOpened}
     />
   );
 }

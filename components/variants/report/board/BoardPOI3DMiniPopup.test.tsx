@@ -17,6 +17,10 @@ const h = vi.hoisted(() => ({
   dispatch: vi.fn(),
   project: vi.fn(),
   realtime: { loading: false, error: null, lastUpdated: null },
+  emit: vi.fn(),
+}));
+vi.mock("@/lib/instrumentation/engagement-scope", () => ({
+  useEngagement: () => ({ emit: h.emit }),
 }));
 
 vi.mock("./board-state", () => ({
@@ -245,5 +249,21 @@ describe("BoardPOI3DMiniPopup — Utforsk-CTA (paritet med 2D)", () => {
     expect(link).toBeTruthy();
     expect(link!.getAttribute("href")).toContain("udm=50");
     expect(link!.getAttribute("rel")).toContain("noopener");
+  });
+});
+
+describe("BoardPOI3DMiniPopup — Moat 2-paritet med 2D", () => {
+  it("ekstern lenke emitter poi_outbound_clicked ogsa fra 3D-flaten", () => {
+    h.project.mockReturnValue({ x: 100, y: 200 });
+    h.poi = makePoi({ categoryId: "cafe" });
+    const { container } = render(<BoardPOI3DMiniPopup map3d={fakeMap} />);
+    const link = Array.from(container.querySelectorAll("a")).find((a) =>
+      a.textContent?.includes("Utforsk"),
+    )!;
+    link.click();
+    expect(h.emit).toHaveBeenCalledWith("poi_outbound_clicked", {
+      poiId: "p1",
+      payload: { category_id: "cafe" },
+    });
   });
 });

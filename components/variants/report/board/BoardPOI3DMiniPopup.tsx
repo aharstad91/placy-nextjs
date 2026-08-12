@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { Sparkles, X, ExternalLink } from "lucide-react";
 import { useBoard, useActivePOI } from "./board-state";
 import { hasExploreContent } from "./POIExploreModal";
+import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle } from "./marker-style";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
@@ -40,6 +41,7 @@ interface Props {
 export function BoardPOI3DMiniPopup({ map3d }: Props) {
   const { dispatch } = useBoard();
   const poi = useActivePOI();
+  const engagement = useEngagement();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | undefined>(undefined);
   const isTransportPOI = !!(
@@ -173,6 +175,14 @@ export function BoardPOI3DMiniPopup({ map3d }: Props) {
               target="_blank"
               rel="noopener noreferrer"
               className={ctaClass}
+              // target="_blank" unloader ikke denne siden, sa server-actionen
+              // bak emit() fullfores normalt. Ingen beacon nodvendig.
+              onClick={() =>
+                engagement.emit("poi_outbound_clicked", {
+                  poiId: poi.id,
+                  payload: { category_id: poi.categoryId },
+                })
+              }
             >
               <ExternalLink aria-hidden className="h-3.5 w-3.5" />
               Utforsk

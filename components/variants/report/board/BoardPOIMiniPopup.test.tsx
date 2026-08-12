@@ -15,6 +15,10 @@ const h = vi.hoisted(() => ({
   poi: null as unknown,
   dispatch: vi.fn(),
   realtime: { loading: false, error: null, lastUpdated: null },
+  emit: vi.fn(),
+}));
+vi.mock("@/lib/instrumentation/engagement-scope", () => ({
+  useEngagement: () => ({ emit: h.emit }),
 }));
 
 // react-map-gl/mapbox Popup portaler normalt til kartet — mock til en enkel
@@ -61,6 +65,7 @@ function makePoi(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   h.dispatch.mockReset();
+  h.emit.mockReset();
   h.poi = null;
 });
 afterEach(() => cleanup());
@@ -175,5 +180,32 @@ describe("BoardPOIMiniPopup — Utforsk-CTA", () => {
     });
     const { getByText } = render(<BoardPOIMiniPopup />);
     expect(getByText("Utforsk").closest("a")).toBeTruthy();
+  });
+});
+
+describe("BoardPOIMiniPopup — Moat 2 pa utgaende klikk", () => {
+  it("ekstern lenke emitter poi_outbound_clicked med poiId og kategori", () => {
+    h.poi = makePoi({ categoryId: "cafe" });
+    const { getByText } = render(<BoardPOIMiniPopup />);
+    getByText("Utforsk").closest("a")!.click();
+    expect(h.emit).toHaveBeenCalledWith("poi_outbound_clicked", {
+      poiId: "p1",
+      payload: { category_id: "cafe" },
+    });
+  });
+
+  it("modal-CTA emitter IKKE utgaende klikk (hosten emitter apningen)", () => {
+    h.poi = makePoi({
+      raw: {
+        id: "p1",
+        name: "Testkafe",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        category: { id: "cafe", name: "Kafe", icon: "Coffee", color: "#aa3300" },
+        googleRating: 4.1,
+      },
+    });
+    const { getByText } = render(<BoardPOIMiniPopup />);
+    getByText("Utforsk").closest("button")!.click();
+    expect(h.emit).not.toHaveBeenCalled();
   });
 });

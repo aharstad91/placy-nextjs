@@ -83,6 +83,16 @@ const payloadByType = {
   poi_clicked: z
     .object({ category_id: categoryId.optional(), context: optionalContext })
     .strict(),
+  poi_explore_opened: z
+    .object({
+      category_id: categoryId.optional(),
+      has_grounding: z.boolean(),
+      context: optionalContext,
+    })
+    .strict(),
+  poi_outbound_clicked: z
+    .object({ category_id: categoryId.optional(), context: optionalContext })
+    .strict(),
 } as const;
 
 // Diskriminert union over event_type: hver variant binder riktig payload-skjema.
@@ -126,6 +136,28 @@ export const logEventSchema = z.discriminatedUnion("eventType", [
       productId,
       poiId: opaqueId.optional(),
       payload: payloadByType.poi_clicked.optional(),
+    })
+    .strict(),
+  // Utforsk-typene bærer poi_id på top-level, som poi_clicked — attribusjonen
+  // per sted ER signalet. Payload er PÅKREVD her (ikke `.optional()`) fordi
+  // has_grounding må med: et event uten den kan ikke skille «innholdet drev
+  // interessen» fra «modalen fantes», og kan ikke repareres i ettertid.
+  z
+    .object({
+      eventType: z.literal("poi_explore_opened"),
+      projectId,
+      productId,
+      poiId: opaqueId.optional(),
+      payload: payloadByType.poi_explore_opened,
+    })
+    .strict(),
+  z
+    .object({
+      eventType: z.literal("poi_outbound_clicked"),
+      projectId,
+      productId,
+      poiId: opaqueId.optional(),
+      payload: payloadByType.poi_outbound_clicked.optional(),
     })
     .strict(),
 ]);

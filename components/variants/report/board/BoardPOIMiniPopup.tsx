@@ -4,6 +4,7 @@ import { Popup } from "react-map-gl/mapbox";
 import { Sparkles, X, ExternalLink } from "lucide-react";
 import { useBoard, useActivePOI } from "./board-state";
 import { hasExploreContent } from "./POIExploreModal";
+import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle } from "./marker-style";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
@@ -27,6 +28,7 @@ import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
 export function BoardPOIMiniPopup() {
   const { dispatch } = useBoard();
   const poi = useActivePOI();
+  const engagement = useEngagement();
   const isTransportPOI = !!(
     poi?.raw.enturStopplaceId ||
     poi?.raw.bysykkelStationId ||
@@ -123,6 +125,14 @@ export function BoardPOIMiniPopup() {
               target="_blank"
               rel="noopener noreferrer"
               className={ctaClass}
+              // target="_blank" unloader ikke denne siden, sa server-actionen
+              // bak emit() fullfores normalt. Ingen beacon nodvendig.
+              onClick={() =>
+                engagement.emit("poi_outbound_clicked", {
+                  poiId: poi.id,
+                  payload: { category_id: poi.categoryId },
+                })
+              }
             >
               <ExternalLink aria-hidden className="h-3.5 w-3.5" />
               Utforsk
