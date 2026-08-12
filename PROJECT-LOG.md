@@ -6,6 +6,56 @@
 
 ---
 
+## 2026-08-12 — UTFORSK-MODALEN: GOOGLE-GROUNDET STEDSINNHOLD INN I PLACY (branch `feat/utforsk-modal`, ikke pushet)
+
+**Kontekst:** «Utforsk»-knappen i board-POI-popupene sendte brukeren ut av Placy til Google AI Mode (`?udm=50`). Den er nå erstattet av en modal inne i Placy med Google-grounded stedsinnhold, generert build-time per POI. Plan: `docs/plans/2026-08-12-001-feat-utforsk-modal-grounded-poi-plan.md`, requirements: `docs/brainstorms/2026-08-12-utforsk-modal-grounded-poi-innhold-requirements.md`. Alle sju units landet. Pilot-flate: Sundsøya.
+
+**Arkitektur-premisset er Andreas' eget:** vi bygger samme funksjon Google selv ruller ut, bare i et lite marked — så designet skal gjøre det mulig å deprecate vår generering og plugge inn Googles når Norge dekkes. Verifisert 2026-08-12 at Places API `generativeSummary`/`reviewSummary` IKKE dekker Norge (0 av 12 norske probe-POI-er; US-kontroll returnerte full pakke). Derfor er `generated` en discriminated union på `provider` med én variant i dag, og `curated` (Placy-eid) et separat lag som overlever provider-swap.
+
+**Branch-valget:** `feat/utforsk-modal` er branchet fra `feat/scout-straumen`-HEAD, ikke main. `main..HEAD` er derfor 35 commits — 9 egne pluss 26 fra scout-straumen (Midtbyen m.m.). PR-base er ikke avgjort.
+
+**Prompten ble kalibrert mot reelle POI-er, ikke gjettet. Fire funn:**
+
+1. **INGEN_DATA-sentinel er nødvendig.** Uten den svarer modellen med avslags-narrativ i førsteperson — «Jeg finner ingen informasjon om X. Søkene indikerer …» — adressert til oss, ikke til boligkjøperen. Kort avslag fanges av lengdeterskelen; langt gjør det ikke. Sentinel gjør «ingen data» deterministisk. `looksLikeRefusal()` er backstop.
+2. **Årstall måtte forbys MED eksempel.** «IKKE byggeår» alene gav likevel «Muusbrua fra 1816»; med omskrivings-eksempelet forsvant dateringen.
+3. **Kjede-/konseptomtale måtte forbys eksplisitt**, ellers gjengis markedsføringskopi som lokalkunnskap («konseptet fokuserer på lave priser»).
+4. **Kilder må dedupes på resolvet URL.** Gemini siterer samme side flere ganger (`visitinnherred.com` tre ganger på ett POI) — uten dedup blåses `sourceCount` opp og porten blir meningsløs.
+
+**Min egen faktafeil, verdt å huske: Muustrøparken ligger i Straumen på Inderøy, ikke i Trondheim.** Jeg matet inn feil adresse i første probe, og Gemini nektet å dikte. Kontrollkjøring med feil geografisk anker gir INGEN_DATA. Derfor avledes søke-ankeret fra POI-ADRESSENE (hyppigste siste komma-segment = «Inderøy», 43 av 45 adresserte), ikke fra prosjektnavnet «Sundsøya» — som er utbyggingstomta, ikke stedet.
+
+**Kvalitetsporten: kildeantall er spaken, ikke lengde.** På 78 POI-er gav ≥1 kilde 86 % dekning, ≥2 gav 81 %, ≥3 gav 69 %, ≥4 gav 45 % — mens å senke lengdekravet fra 280 til 200 tegn hentet inn ÉN POI. Valgt ≥2 kilder. **Gemini er stokastisk per request:** dry-run gav 63 beståtte, `--apply` gav 59. 76 % er det ærlige tallet for det som ligger i DB. Dry-run skriver terskel-sensitivitet + rådata til `backups/`, så terskler kan re-evalueres offline uten ny Gemini-kost.
+
+**Dobbel-mount-fella som ville dobbelttelt Moat 2.** Ved 3D-addon er BoardMap3D permanent montert SAMTIDIG som Mapbox-overlayet (`BoardMap.tsx:665` vs. `showMapbox` linje 237/685). Hadde begge kart-filene rendret modalen, ville to portal-modaler stått oppå hverandre på `z-[100]` — og siden modalen emitter Moat 2-signalet, ville selve målingen blitt dobbelttelt. Dagens dobbel-render av mini-popupen er skjult fordi 3D-popupen ligger UNDER overlayet på `z-[5]`; en portal-modal har ingen slik okklusjon. Modalen eies derfor av `POIExploreModalHost`, rendret ÉN gang i `ReportReelsPage`. En kilde-vakt-test asserter at kun én fil rendrer hosten og at kart-filene aldri gjør det. Sundsøya har ikke `has_3d_addon`, så fella ville ikke truffet pilot-flaten umiddelbart — men den ville truffet.
+
+**Sikkerhetsbrudd lukket — og to flere funnet.** `scripts/refresh-opening-hours.ts:78` kalte legacy-endepunktet med API-nøkkelen i QUERYSTRINGEN, i strid med CLAUDE.md. Migrert til `fetchPlaceDetails` (Places New, `X-Goog-Api-Key`), med regresjonstest som asserter mot faktisk request-URL. Samme sveip avdekket at det gamle scriptet skrev UMIDDELBART mot ALLE 5 386 POI-er med place_id, uten dry-run og uten scope — et kostnadshull. **Fortsatt åpent:** `scripts/animate-scene-veo.ts:220` og `scripts/generate-image-imagen.ts:85` sender fortsatt `?key=` mot Gemini/Imagen.
+
+**Kostnadsfunn utover planen: FieldMask avgjør SKU, og hele kallet faktureres på det HØYESTE nivået noe felt i masken tilhører.** `regularOpeningHours` er Enterprise, `photos` er Essentials ($0 via `photo-api.ts`). Ett samlet kall hadde gjort bildehentingen dyr uten grunn — derfor to snevre masker.
+
+**Google ToS, verifisert (gjelder også dagens tema-grounding):** lagring av grounded TEKST er tillatt i inntil 2 år; tracking av interaksjoner med spesifikke Grounded Results eller Search Suggestions er FORBUDT. Vi logger at modalen ble åpnet og at fallback-lenken ble klikket — aldri hvilken kildelenke. Skjemaene er `.strict()` så `clicked_source_url` ikke engang kan uttrykkes.
+
+**Payload-risikoen planen flagget er avklart uten mitigering:** hele boardsiden er 124 KB gzip med grounding på 64 POI-er, under 150 KB-terskelen. `searchEntryPointHtml` beholdes inline.
+
+**A11y-hull lukket i DELT kode:** `components/ui/Modal.tsx` hadde `role="dialog"` og ESC, men ingen autofokus, fokus-felle eller fokus-retur — tastaturbrukere ble stående i innholdet BAK modalen, som `aria-modal` sier ikke finnes. `BoardCollectionDrawer` arver fiksen.
+
+**Bug i delt grounding-kode:** Gemini bruker en-dash som punktmarkør, som `splitLongParagraphs` ikke kjente igjen som markdown-liste. Listen ble setningssplittet og flere punkter havnet på samme linje. Rammet tema-grounding like mye.
+
+**Migrasjoner kjørt og verifisert mot prod:** 084 (`v2.pois.grounding`), 085 (`events_event_type_check` fra fire til seks typer, via DROP+ADD siden constrainten er inline i `070_baseline.sql:347`). Alle fire triggere fra 078 verifisert intakte etterpå; ukjent event_type avvises fortsatt.
+
+**Dekning i DB:** 66 POI-er med grounding (59 består porten), 41 med åpningstider+telefon, 34 med tre bilder. Google-kost: 78 grounding-kall innenfor gratiskvoten + 182 Places-kall under 2 USD. Modal-åpning gjør 0 fakturerbare Google-kall.
+
+**Verifisert i nettleser, ikke bare i test.** Desktop: modalen matcher AI Mode-referansen i innholdsdybde. Mobil: nøyaktig ÉN modal, 85 % skjermhøyde, lukking frigir scroll og gir kartet tilbake. 0 konsollfeil (to pre-eksisterende Mapbox-terreng-advarsler). Ingen kall til `places.googleapis.com`/`maps.googleapis.com` — bildene går via `/_next/image` som henter fra lh3-CDN server-side, som ikke er et fakturerbart Places-kall.
+
+**Mekanisk:** `tsc` ren · `npm run lint` 0 errors · **2013 tester / 152 filer** · `npm run build` grønn. Commits `1c2e343`, `a89edb2`, `a3cc990`, `798c427`, `c88b487`, `8fdd610`, `db4c5ca`, `7f138b6`, `753a7f5`.
+
+**Åpne spørsmål:**
+
+- **Mobil-inngangen er trang, og det er verifisert i nettleser.** POI-radene i `neighbourhood/CategoryPage.tsx` er rene `<li>` uten knapp, rolle eller onclick, så eneste vei til modalen på mobil er en kartmarkør — under en sheet som dekker ~55 % av skjermen. Liten endring, stor mobil-effekt.
+- **To innholdshull på Sundsøya:** Rema 1000 gir ingen data etter at kjede-/konseptomtale ble forbudt (det eneste som var å finne VAR markedsføringskopi), og «Den Gyldne Omvei» faller gjennom — sannsynligvis fordi stedsskala-prompten kolliderer med at det er en rute, ikke et sted med adresse.
+- **PR-base ikke avgjort** (se branch-valget over). Ingenting pushet.
+- **Re-probe Places AI-felt for Norge kvartalsvis** — når `generativeSummary` dekker Norge kan `generated.provider` bytte uten UI-endring.
+
+---
+
 ## 2026-08-06 — MIDTBYEN-DEMO: 147 SENTRUMSBUTIKKER PÅ NABOLAGSFLATEN (branch `feat/midtbyen-demo`, ikke pushet)
 
 **Kontekst:** Første leveranse i side-gig-sporet (se `docs/strategy/LOG.md` 2026-08-06). Andreas skalerte scopet ned fra den salgbare leveransen til en ren **demo å vise fram**: ingen database, ingen sync, ingen SEO. Plan: `docs/plans/2026-08-06-003-feat-midtbyen-demo-nabolagsflate-plan.md`. Den første planen (`-001-`) er `superseded` og beskriver fortsatt den salgbare varianten.
