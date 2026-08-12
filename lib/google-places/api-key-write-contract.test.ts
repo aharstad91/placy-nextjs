@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 
 /**
  * PRD 4 Unit 7 AC5 — to EKSPLISITTE, verifiserbare assertions som lint IKKE
@@ -15,27 +15,93 @@ const DIR = dirname(fileURLToPath(import.meta.url));
 // Audit-lærdom 2026-07-05: testen skannet KUN sin egen mappe mens et reelt
 // `&key=${apiKey}`-brudd lå i lib/pipeline/poi-discovery.ts — grønn test ga
 // falsk trygghet. Skann derfor ALLE mapper som gjør Google-API-kall.
-const SCANNED_DIRS = [DIR, join(DIR, "..", "pipeline")];
+//
+// SAMME LÆRDOM IGJEN, 2026-08-12: `scripts/` var heller ikke skannet, og der lå
+// `refresh-opening-hours.ts` med nøkkelen i querystringen mot legacy
+// Place-Details-endepunktet. Denne testen var grønn hele tiden. `scripts/` er nå
+// med, rekursivt.
+const REPO_ROOT = join(DIR, "..", "..");
+const SCANNED_DIRS = [DIR, join(DIR, "..", "pipeline"), join(REPO_ROOT, "scripts")];
 
-/** Alle kilde-.ts i de skannede mappene (ekskl. test-filer). */
+/**
+ * KJENT GJELD, bevisst tillatt — men låst til nøyaktig disse filene.
+ *
+ * Alle tre legger en GEMINI/Imagen/Veo-nøkkel i querystringen, altså samme
+ * CLAUDE.md-brudd, men mot et annet API enn Places. De ble funnet da `scripts/`
+ * ble tatt inn i skannet 2026-08-12 (PRD Unit 4), og migrering av
+ * generativelanguage-stien er egen jobb — den deler ingen klient med
+ * Places-stien og hører ikke i en Places-fakta-backfill.
+ *
+ * Poenget med en eksplisitt liste framfor å utelate mappa: enhver NY fil, og
+ * enhver Places-fil, feiler umiddelbart. Gjelden er synlig i stedet for usett.
+ * Fjern oppføringene når generativelanguage-kallene migreres til
+ * `x-goog-api-key`-header.
+ */
+const KNOWN_QUERYSTRING_KEY_DEBT = new Set([
+  "scripts/animate-scene-veo.ts",
+  "scripts/generate-image-imagen.ts",
+  "scripts/poc-gemini-grounding.mjs",
+]);
+
+/** Alle kilde-.ts/.mjs i de skannede mappene, rekursivt (ekskl. test-filer). */
 function sourceFiles(): string[] {
-  return SCANNED_DIRS.flatMap((dir) =>
-    readdirSync(dir)
-      .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
-      .map((f) => join(dir, f)),
-  );
+  const out: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) {
+        walk(full);
+      } else if (
+        (full.endsWith(".ts") || full.endsWith(".mjs")) &&
+        !full.endsWith(".test.ts") &&
+        !full.endsWith(".test.mjs")
+      ) {
+        out.push(full);
+      }
+    }
+  };
+  for (const dir of SCANNED_DIRS) walk(dir);
+  return out;
 }
 
-describe("AC5 (a): GOOGLE_PLACES_API_KEY ALDRI i URL-querystring (lib/google-places/** + lib/pipeline/**)", () => {
+describe("AC5 (a): API-nøkkel ALDRI i URL-querystring (lib/google-places/** + lib/pipeline/** + scripts/**)", () => {
   it("ingen kildefil interpolerer nøkkelen inn i en ?key=/&key=-querystring", () => {
     for (const file of sourceFiles()) {
+      const rel = relative(REPO_ROOT, file).split("\\").join("/");
+      if (KNOWN_QUERYSTRING_KEY_DEBT.has(rel)) continue;
+
       const src = readFileSync(file, "utf8");
       // Den farlige legacy-formen var `...&key=${apiKey}` mot maps.googleapis.com.
       // Treffer querystring-key med interpolasjon eller streng-konkat — ikke
       // backtick-omsluttede kommentarer (`key=`), som ikke har ? eller & foran.
-      expect(src, `${file} har key i querystring`).not.toMatch(/[?&]key=\$\{/);
-      expect(src, `${file} har key i querystring`).not.toMatch(/[?&]key=["'+]/);
+      expect(src, `${rel} har key i querystring`).not.toMatch(/[?&]key=\$\{/);
+      expect(src, `${rel} har key i querystring`).not.toMatch(/[?&]key=["'+]/);
     }
+  });
+
+  it("gjeld-listen er ikke råtnet — hver oppføring finnes og har fortsatt bruddet", () => {
+    // En allowlist som peker på filer som ikke finnes lenger, eller som er
+    // ryddet, skjuler at vernet er svakere enn det ser ut. Da skal oppføringen
+    // fjernes, og denne testen sier fra.
+    const scanned = new Set(
+      sourceFiles().map((f) => relative(REPO_ROOT, f).split("\\").join("/")),
+    );
+    for (const rel of KNOWN_QUERYSTRING_KEY_DEBT) {
+      expect(scanned.has(rel), `${rel} er ikke lenger skannet — fjern fra gjeld-listen`).toBe(true);
+      const src = readFileSync(join(REPO_ROOT, rel), "utf8");
+      expect(
+        /[?&]key=\$\{/.test(src) || /[?&]key=["'+]/.test(src),
+        `${rel} er ryddet — fjern fra gjeld-listen`,
+      ).toBe(true);
+    }
+  });
+
+  it("refresh-opening-hours.ts går via Places-New-klienten, ikke legacy-endepunktet", () => {
+    // Det konkrete bruddet denne uniten lukket. Legacy-verten skal ikke lenger
+    // finnes som kall — kun som forklaring i doc-kommentaren.
+    const src = readFileSync(join(REPO_ROOT, "scripts/refresh-opening-hours.ts"), "utf8");
+    expect(src).not.toMatch(/fetch\([^)]*maps\.googleapis\.com/);
+    expect(src).toContain("places-backfill-lib");
   });
 
   it("Google-API-kallende filer bruker X-Goog-Api-Key header-auth", () => {
