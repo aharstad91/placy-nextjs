@@ -57,8 +57,8 @@ Verifisert grunnlag (kjørt live 2026-08-13, ikke antatt):
 
 - **R1.** Hvert av de 105 geografiske postnumrene i Trondheim, Stjørdal, Melhus og Malvik
   finnes som en rad med polygon i basen, hentet fra Kartverket. I tillegg tas Oppdal (7) og
-  Inderøy (2) med — ikke fordi de er markedet, men fordi to av våre ni ferdig kuraterte
-  områder ligger der (Oppdal og Straumen), og de må kunne telles. **114 totalt.**
+  Inderøy (2) med — ikke fordi de er markedet, men fordi to av områdene med håndtegnet
+  polygon ligger der (Straumen og Oppdal), og de må kunne telles. **114 totalt.**
 - **R2.** Importen er idempotent — kan kjøres på nytt når Kartverket oppdaterer, uten
   duplikater og uten å endre rader som er uendret i kilden.
 - **R3.** `areas`-rader som mangler `boundary` får det avledet som en MultiPolygon av
@@ -71,9 +71,13 @@ Verifisert grunnlag (kjørt live 2026-08-13, ikke antatt):
 - **R7.** `lib/pipeline/find-area-for-point.ts` endres ikke. Den skal treffe flere områder
   fordi dataene er bedre, ikke fordi koden er endret.
 - **R8.** Områder som har polygon men tom `postal_codes` får forslag til hvilke postnumre
-  som overlapper, slik at de ikke faller ut av regnskapet. Straumen og Oppdal er begge
-  ferdig kuraterte og har i dag tom liste — uten dette ville to av våre ni beste områder
-  vært usynlige i rapporten.
+  som overlapper, slik at de ikke faller ut av regnskapet. Straumen og Oppdal har begge
+  håndtegnet polygon og tom liste — og Straumen er det mest komplette området vi har, så
+  uten dette ville rapporten oversett nettopp det beste eksempelet.
+
+  *Korrigert under implementering:* denne planen sa først «ni ferdig kuraterte områder».
+  Regnskapet viser at det er **åtte**. Oppdal har alle seks tema-nøkler, men hver `body` er
+  tom — tellingen bak «ni» telte nøkler, ikke innhold.
 
 ## Scope Boundaries
 

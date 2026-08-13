@@ -136,6 +136,35 @@ senterpunkt mot postnummerets polygon (fanger et lite område som ligger helt
 inne i et stort postnummer). Metoden er tilnærmet — et smalt overlappsbånd uten
 ringpunkter innenfor kan overses. Bekreft forslagene.
 
+### Dekningsrapport
+```bash
+npx tsx scripts/coverage-report.ts                # sammendrag
+npx tsx scripts/coverage-report.ts --full         # hvert postnummer
+npx tsx scripts/coverage-report.ts --kommune 5001
+```
+
+Read-only. Klassifiserer hvert postnummer i fire trinn:
+
+| Status | Betyr |
+|--------|-------|
+| `ukjent` | Ingen `areas`-rad lister postnummeret |
+| `geometri` | Område med polygon, men ikke alle seks temaer har tekst |
+| `kuratert` | Alle seks bolig-temaer har redaksjonell tekst |
+| `dekket` | `kuratert` **og** alle høydepunkt-POIer har brukbar tekst |
+
+«Brukbar tekst» = `grounding.curated` (Placy-eid) eller `grounding.generated`
+(leverandør-tekst som passerte kvalitetsporten før skriving).
+
+Terskelen for høydepunkter er **1 per tema, ikke 4**. Transport har ett
+høydepunkt i Straumen fordi Entur svarer på holdeplasser i sanntid — en terskel
+på 4 ville gjort dekning uoppnåelig av en grunn som ikke er et hull. Kravet
+ligger i stedet på at *alle* høydepunktene kurator har valgt, har tekst.
+
+Rapporterer begge retninger av hull: postnumre uten område, **og** områder uten
+postnummer. Det siste er hvordan Straumen og Oppdal ble oppdaget. Kjøringen
+avbryter hvis statusene ikke summerer til antall postnumre — et tall der noe har
+falt mellom kategoriene er ubrukelig som dekningsgrad.
+
 ---
 
 ## Nabolags-kuratering (curate-area)

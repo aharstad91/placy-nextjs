@@ -4,10 +4,10 @@
  * Motsatt retning av `derive-area-boundary.ts`: der leses postnumre og lages
  * geometri, her leses geometri og foreslås postnumre.
  *
- * HVORFOR DET TRENGS: Straumen og Oppdal er ferdig kuraterte områder med polygon
- * og alle seks temaer, men tom `postal_codes`. Dekningsregnskapet slår opp
- * postnummer → område, så uten tilknytning ville to av våre ni beste områder vært
- * usynlige i regnskapet.
+ * HVORFOR DET TRENGS: Straumen og Oppdal har håndtegnet polygon men tom
+ * `postal_codes`. Dekningsregnskapet slår opp postnummer → område, så uten
+ * tilknytning var de usynlige i regnskapet — inkludert Straumen, som er det mest
+ * komplette området vi har (alle seks temaer, 29 av 30 høydepunkter med tekst).
  *
  * FORESLÅR, SKRIVER IKKE. Grunnen er ikke risiko — ingenting er shippet — men at
  * postnummer-tilknytning er en påstand om hvor et strøk *er*, og det er kurators

@@ -44,10 +44,11 @@ export interface Kommune {
  * Kommunene importen dekker.
  *
  * De fire første er markedet (105 postnumre). Oppdal og Inderøy er med fordi to
- * av våre ni ferdig kuraterte områder ligger der — Oppdal-området og
- * Straumen-området. Uten dem ville de to falt ut av dekningsregnskapet, og de er
- * blant de beste vi har. Ikke fjern dem fordi de ser ut som støy i en
- * Trondheim-liste.
+ * av områdene med håndtegnet polygon ligger der: Straumen (ferdig kuratert, alle
+ * seks temaer) og Oppdal (polygon og tema-skjelett, men tomme tekster). Uten
+ * kommunene deres kan ingen av dem knyttes til et postnummer, og da faller de ut
+ * av dekningsregnskapet — inkludert Straumen, som er det mest komplette området
+ * vi har. Ikke fjern dem fordi de ser ut som støy i en Trondheim-liste.
  */
 export const KOMMUNER: readonly Kommune[] = [
   { nummer: "5001", navn: "Trondheim", forventetAntall: 77, marked: true },
