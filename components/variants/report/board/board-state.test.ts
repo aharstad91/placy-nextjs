@@ -124,6 +124,8 @@ describe("boardReducer", () => {
     });
 
     it("with explicit categoryId from default → poi with that category", () => {
+      // Kallesteder som bevisst ETABLERER kategori-kontekst (event-panelet,
+      // «Verdt å merke seg»-chips) sender fortsatt categoryId.
       const next = boardReducer(initialBoardState, {
         type: "OPEN_POI",
         id: POI_1,
@@ -137,12 +139,51 @@ describe("boardReducer", () => {
       });
     });
 
-    it("from default with no categoryId → no-op", () => {
+    // 2026-08-13: markørklikk skal ÅPNE punktet uten å kapre kategorien.
+    // Tidligere no-op'et reduceren her (og markørklikk i overblikk gjorde
+    // ingenting hvis BoardMap ikke sendte kategori), og satte kategorien ellers
+    // — som filtrerte kartet og drillet desktop-sidebaren inn på ett klikk.
+    it("uten categoryId fra overblikk → åpner POI-en, kategorien forblir null", () => {
       const next = boardReducer(initialBoardState, {
         type: "OPEN_POI",
         id: POI_1,
       });
-      expect(next).toBe(initialBoardState);
+      expect(next).toEqual({
+        phase: "poi",
+        activeCategoryId: null,
+        activePOIId: POI_1,
+        introPlaying: false,
+      });
+    });
+
+    it("uten categoryId med aktiv kategori → kategorien beholdes uendret", () => {
+      const start: BoardState = {
+        phase: "active",
+        activeCategoryId: CAT_B,
+        activePOIId: null,
+        introPlaying: false,
+      };
+      const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
+      expect(next.activeCategoryId).toBe(CAT_B);
+      expect(next.phase).toBe("poi");
+      expect(next.activePOIId).toBe(POI_1);
+    });
+
+    it("nullstiller ALDRI kategorien — nivå-2-panelet ville lukket seg under brukeren", () => {
+      const start: BoardState = {
+        phase: "poi",
+        activeCategoryId: CAT_A,
+        activePOIId: POI_1,
+        introPlaying: false,
+      };
+      const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
+      expect(next.activeCategoryId).toBe(CAT_A);
+    });
+
+    it("avbryter en pågående intro (brukeren tok over)", () => {
+      const start: BoardState = { ...initialBoardState, introPlaying: true };
+      const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
+      expect(next.introPlaying).toBe(false);
     });
   });
 

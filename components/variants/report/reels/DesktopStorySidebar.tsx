@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Mail,
   Map as MapIcon,
-  MapPin,
   Pause,
   Phone,
   Play,
@@ -34,8 +33,12 @@ import type {
   BoardHome,
 } from "../board/board-data";
 import { useBoard } from "../board/board-state";
-import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
-import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
+import { useViewportCategoryList } from "../board/neighbourhood/use-viewport-category-list";
+import { categorySubline } from "@/lib/board/neighbourhood-list";
+import {
+  HighlightsDisclosure,
+  type SidebarHighlight,
+} from "./HighlightsDisclosure";
 import { EventFilterPanel } from "../board/event/EventFilterPanel";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
 import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
@@ -81,13 +84,8 @@ export interface SidebarPreviewCategory {
   editorial?: {
     body: string;
     image?: string;
-    highlights: {
-      id: string;
-      name: string;
-      enturStopplaceId?: string;
-      bysykkelStationId?: string;
-      hyreStationId?: string;
-    }[];
+    /** Render-klare highlights (identitet avledet i board-data). */
+    highlights: SidebarHighlight[];
   };
 }
 
@@ -128,6 +126,7 @@ interface Props {
  */
 export function SidebarContentPreview({
   categories,
+  boardCategories,
   activeCategoryId,
   onSelect,
   onShowAll,
@@ -135,6 +134,9 @@ export function SidebarContentPreview({
   noBrokers = false,
 }: {
   categories: SidebarPreviewCategory[];
+  /** Fulle board-kategorier (POI-er + gangtider) — kilden til kategori-panelets
+   *  viewport-scopede liste. Utelates den, viser panelet bare prosa + highlights. */
+  boardCategories?: BoardCategory[];
   activeCategoryId?: string | null;
   /** Klikk på et temakort → velg kategorien på board-et (cut-overlay + drone-
    *  flyvning + markør-filtrering). Aktiv kategori re-klikket → tilbake til overblikk. */
@@ -165,6 +167,7 @@ export function SidebarContentPreview({
       {detail ? (
         <CategoryDetailView
           category={activeCat!}
+          boardCategory={boardCategories?.find((c) => c.id === activeCat!.id)}
           detail={detail}
           onBack={onShowAll}
           onOpenPoi={onOpenPoi}
@@ -287,144 +290,196 @@ export function SidebarContentPreview({
 }
 
 /**
- * Nivå-2 drill-in: kuratert detalj-panel for én kategori. Tar over scroll-området
- * i empty-state-sidebaren mens megler-footeren under blir stående. Tilbake-pilen
- * sender tilbake til index-lista (reset board → alle markører). Highlight-chips er
- * klikkbare → POI åpnes på kartet (kameraet flyr dit).
+ * Nivå-2 drill-in: detalj-panel for én kategori. Tar over scroll-området i
+ * empty-state-sidebaren mens megler-footeren under blir stående. Tilbake-pilen
+ * sender tilbake til index-lista (reset board → alle markører).
+ *
+ * ## Utsnitts-scopet liste (2026-08-13)
+ *
+ * Under prosaen står kategoriens steder som faktisk ligger i kartutsnittet, med
+ * gangtid fra boligen — samme modell mobilsheeten bruker. Mobilens kategoriside
+ * gjør bevisst det motsatte (R16: hele kategorien), fordi den ER flaten og
+ * «se alle 17» der ville blitt en løgn. På desktop står lista VED SIDEN AV
+ * kartet og leses samtidig med det, så «det du ser» er det ærlige svaret — og
+ * dekningsbrøken («9 av 17 synlig») pluss ramm-inn-handlingen sier eksplisitt at
+ * noe ligger utenfor.
+ *
+ * «Verdt å merke seg» følger IKKE utsnittet: det er meglerens redaksjonelle
+ * utvalg for strøket, ikke et svar på hva kameraet peker på.
  */
 function CategoryDetailView({
   category,
+  boardCategory,
   detail,
   onBack,
   onOpenPoi,
 }: {
   category: SidebarPreviewCategory;
+  /** Full board-kategori (POI-er + gangtider) — kilden til viewport-lista.
+   *  Undefined når sidebaren brukes uten board-kategoriene; panelet faller da
+   *  tilbake til bare prosa + highlights. */
+  boardCategory?: BoardCategory;
   detail: NonNullable<SidebarPreviewCategory["editorial"]>;
   onBack?: () => void;
   onOpenPoi?: (poiId: string, categoryId: string) => void;
 }) {
+  const { mapCamera } = useBoard();
+  const list = useViewportCategoryList(boardCategory ?? null);
   // Dobbelt linjeskift = nytt avsnitt; enkelt nivå er nok for kuratert tekst.
   const paragraphs = detail.body
     .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
   const heroImage = detail.image ?? category.image;
+  const hasList = !!boardCategory;
+  const subline = hasList
+    ? categorySubline(list)
+    : `${category.count} steder i nærheten`;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {/* Tilbake-rad (standard nav-mønster) → index med alle kategorier. */}
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-3 -ml-1 inline-flex w-fit items-center gap-1.5 rounded-full px-1.5 py-1 text-[13px] font-semibold text-stone-600 transition hover:bg-black/5 hover:text-stone-900"
-      >
-        <ArrowLeft size={16} />
-        Alle kategorier
-      </button>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* Tilbake-rad (standard nav-mønster) → index med alle kategorier. */}
+        <button
+          type="button"
+          onClick={onBack}
+          className="mb-3 -ml-1 inline-flex w-fit items-center gap-1.5 rounded-full px-1.5 py-1 text-[13px] font-semibold text-stone-600 transition hover:bg-black/5 hover:text-stone-900"
+        >
+          <ArrowLeft size={16} />
+          Alle kategorier
+        </button>
 
-      {heroImage && (
-        <div className="relative mb-4 h-44 w-full shrink-0 overflow-hidden rounded-2xl bg-stone-200">
-          <Image
-            src={heroImage}
-            alt=""
-            fill
-            sizes="390px"
-            className="object-cover object-center"
-          />
-        </div>
-      )}
+        {heroImage && (
+          <div className="relative mb-4 h-44 w-full shrink-0 overflow-hidden rounded-2xl bg-stone-200">
+            <Image
+              src={heroImage}
+              alt=""
+              fill
+              sizes="390px"
+              className="object-cover object-center"
+            />
+          </div>
+        )}
 
-      <h3 className="text-lg font-bold leading-tight text-stone-900">{category.label}</h3>
-      <p className="mt-0.5 text-[12px] font-medium text-stone-400">
-        {category.count} steder i nærheten
-      </p>
+        <h3 className="text-lg font-bold leading-tight text-stone-900">
+          {category.label}
+        </h3>
+        <p
+          data-testid="category-subline"
+          className="mt-0.5 text-[12px] font-medium tabular-nums text-stone-400"
+        >
+          {subline}
+        </p>
 
-      {paragraphs.length > 0 && (
-        <div className="mt-3 space-y-3">
-          {paragraphs.map((p, i) => (
-            <p key={i} className="text-[14px] leading-relaxed text-stone-600">
-              {p}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {detail.highlights.length > 0 && (
-        <div className="mt-5">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
-            Verdt å merke seg
-          </p>
-          <div className="flex flex-col gap-2">
-            {detail.highlights.map((h) => (
-              <POIHighlightRow
-                key={h.id}
-                highlight={h}
-                color={category.color}
-                onOpen={() => onOpenPoi?.(h.id, category.id)}
-              />
+        {paragraphs.length > 0 && (
+          <div className="mt-3 space-y-3">
+            {paragraphs.map((p, i) => (
+              <p key={i} className="text-[14px] leading-relaxed text-stone-600">
+                {p}
+              </p>
             ))}
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+        )}
 
-type HighlightItem = NonNullable<
-  SidebarPreviewCategory["editorial"]
->["highlights"][number];
-
-/**
- * En «Verdt å merke seg»-rad. Klikkbar header (åpner POI på kartet) + — for
- * transport-POI-er (buss/bysykkel/tog/bildeling) — en live sanntidstabell under,
- * samme data og komponent som kart-popupene bruker. For næringseiendom er
- * jobbreisen et kjøpsargument, så avgangstider rett i sidebaren er høy verdi.
- *
- * Ikke-transport-highlights rendrer kun header (sanntidsseksjonen returnerer
- * null), så raden ser ut som før utenfor transport-kategorien.
- */
-function POIHighlightRow({
-  highlight,
-  color,
-  onOpen,
-}: {
-  highlight: HighlightItem;
-  color: string;
-  onOpen: () => void;
-}) {
-  const isTransport = !!(
-    highlight.enturStopplaceId ||
-    highlight.bysykkelStationId ||
-    highlight.hyreStationId
-  );
-  // Hooket er null-trygt: ikke-transport-rader poller ikke.
-  const realtimeData = useRealtimeData(isTransport ? highlight : null);
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-black/5 bg-white/60 transition-colors duration-150 hover:border-stone-400 hover:bg-white">
-      <button
-        type="button"
-        onClick={onOpen}
-        className="group flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-left"
-      >
-        <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
-          style={{ backgroundColor: color }}
-        >
-          <MapPin size={14} />
-        </span>
-        <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-stone-800">
-          {highlight.name}
-        </span>
-        <ChevronRight
-          size={16}
-          className="shrink-0 text-stone-300 transition-colors duration-150 group-hover:text-stone-600"
-          aria-hidden
+        <HighlightsDisclosure
+          highlights={detail.highlights}
+          onOpenPoi={(poiId) => onOpenPoi?.(poiId, category.id)}
         />
-      </button>
-      {isTransport && (
-        <div className="px-3 pb-2.5">
-          <POIRealtimeSection realtimeData={realtimeData} />
+
+        {hasList && (
+          <section data-testid="viewport-list" className="mt-5">
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+              I utsnittet
+            </p>
+
+            {list.rows.length === 0 && !list.activeRow ? (
+              <p
+                data-testid="viewport-list-empty"
+                className="py-2 text-[13px] leading-snug text-stone-500"
+              >
+                Ingen av kategoriens steder er i utsnittet. Zoom ut, eller ramm
+                inn kategorien igjen.
+              </p>
+            ) : (
+              <ul>
+                {list.rows.map((row) => (
+                  <li key={row.poi.id}>
+                    <button
+                      type="button"
+                      data-testid="viewport-row"
+                      onClick={() => onOpenPoi?.(row.poi.id, category.id)}
+                      className="flex w-full items-baseline gap-3 border-b border-black/5 py-2 text-left last:border-b-0 hover:text-stone-900"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[13.5px] text-stone-700">
+                        {row.poi.name}
+                      </span>
+                      {/* Uten precomputet gangtid vises ingen tall — aldri et
+                          estimat, aldri en tom «– min». */}
+                      {row.walkMinutes !== undefined && (
+                        <span className="shrink-0 text-[12.5px] tabular-nums text-stone-500">
+                          {row.walkMinutes} min
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {list.hiddenCount > 0 && (
+              // Er kamera-API-et ikke registrert (flate uten viewport-
+              // publisering), står tallet der som informasjon uten en død knapp.
+              <div
+                data-testid="outside-viewport"
+                className="mt-2 flex w-full items-center justify-between gap-2 rounded-xl border border-black/5 bg-white/60 px-3 py-2"
+              >
+                <span className="text-[12.5px] tabular-nums text-stone-600">
+                  {list.hiddenCount}{" "}
+                  {list.hiddenCount === 1 ? "sted ligger" : "steder ligger"}{" "}
+                  utenfor utsnittet
+                </span>
+                {mapCamera && (
+                  <button
+                    type="button"
+                    data-testid="reframe-category"
+                    onClick={() => mapCamera.fitVisible()}
+                    className="shrink-0 rounded-lg px-2 py-0.5 text-[12.5px] font-semibold text-stone-900 transition-colors duration-150 hover:bg-black/5"
+                  >
+                    Ramm inn
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+
+      {/* Den åpne POI-en står PINNET utenfor scroll-området.
+          Explorer shippet den samme viewport-scopede lista i februar og fikk en
+          high-severity bug: raden brukeren leste flyttet seg eller forsvant i det
+          punktet gled ut av utsnittet
+          (`active-poi-card-pinned-sidebar-20260208`). Læringen krever at raden
+          ligger utenfor scroll-containeren; den ligger her nederst — som en
+          «åpent nå»-linje ved kartet — i stedet for øverst, så prosaen ikke
+          skyves ned hver gang brukeren klikker en pin. */}
+      {list.activeRow && (
+        <div
+          data-testid="pinned-active-row"
+          className="shrink-0 border-t border-black/5 bg-white/50 px-6 py-2.5"
+        >
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+            Åpent nå
+          </p>
+          <div className="flex items-baseline gap-3">
+            <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-stone-900">
+              {list.activeRow.poi.name}
+            </span>
+            {list.activeRow.walkMinutes !== undefined && (
+              <span className="shrink-0 text-[12.5px] tabular-nums text-stone-500">
+                {list.activeRow.walkMinutes} min
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -585,6 +640,7 @@ export function DesktopStorySidebar({
       ) : !hasPlayableContent ? (
         <SidebarContentPreview
           categories={previewCategories}
+          boardCategories={categories}
           activeCategoryId={boardState.activeCategoryId}
           noBrokers={noBrokers}
           onSelect={handleSelectPreviewCategory}

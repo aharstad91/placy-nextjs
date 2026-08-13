@@ -6,7 +6,7 @@ import Map, {
   type ViewStateChangeEvent,
 } from "react-map-gl/mapbox";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
-import { mutedColor } from "@/lib/themes/muted-palette";
+import { poiVisualIdentity } from "./marker-style";
 import { BoardMapControls, type CameraMode } from "./BoardMapControls";
 import { rangeToZoom, zoomToRange } from "@/lib/utils/camera-map";
 import { useBoard, useActiveCategory } from "./board-state";
@@ -23,6 +23,12 @@ import type { FlyCapableMap } from "./board-3d-camera-director";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
+import {
+  computeLabelPlacements,
+  type LabelCandidate,
+  type LabelObstacle,
+  type LabelSide,
+} from "@/lib/board/label-collision";
 import {
   computeFitBounds,
   rectFromCorners,
@@ -103,15 +109,31 @@ interface Props {
    */
   compactMarkers?: boolean;
   /**
-   * Mobil nabolagsflate (R9/R12): publiser det ikke-okkluderte kartutsnittet til
-   * BoardContext, så nabolagslista kan følge det brukeren faktisk ser.
+   * Publiser det ikke-okkluderte kartutsnittet til BoardContext, så en liste
+   * kan følge det brukeren faktisk ser (R9/R12). Registrerer også `mapCamera`-
+   * API-et (snapshot/restore/fitVisible) på contexten.
    *
-   * Opt-in fordi det endrer to ting flaten under må tåle: kartet begynner å
-   * skrive til provider-state ved gest-slipp, og rotasjon låses (et rotert
-   * viewport har ingen ærlig akse-justert bounds). Desktop, event-board og
-   * VO-flaten sender den ikke og er derfor uendret. Default false.
+   * Opt-in fordi kartet da begynner å skrive til provider-state ved gest-slipp.
+   * Brukes av BÅDE mobilsheeten og desktop-sidebaren (2026-08-13). Default false.
    */
   publishViewport?: boolean;
+  /**
+   * En bottom-sheet okkluderer kartet nedenfra og eier sin egen plassering.
+   *
+   * Bar tidligere på `publishViewport`, men de to er ulike ting: dette flagget
+   * styrer to MOBIL-spesifikke kompromisser som desktop ikke skal arve —
+   *  1. rotasjon låses (to-finger-rotasjon er en vanlig uhellsgest under pinch,
+   *     og et rotert viewport har ingen ærlig akse-justert bounds), og
+   *  2. `map.setPadding` hoppes over, fordi Mapbox implementerer den som
+   *     `jumpTo({padding})`: med sheet-høyden som padding flyttet kartet seg
+   *     synlig midt i et sheet-drag. Sheeten er konseptuelt et LAG over kartet
+   *     — kartet skal ligge stille når laget vokser. Innrammingen taper
+   *     ingenting, fordi `fitToVisiblePois` sender `mapPaddingBottom`
+   *     eksplisitt i sitt eget padding-objekt.
+   * Default false → desktop beholder Mapbox' default-rotasjon og sin
+   * venstre-padding.
+   */
+  sheetSurface?: boolean;
 }
 
 export function BoardMap({
@@ -124,6 +146,7 @@ export function BoardMap({
   collapsedControls = false,
   compactMarkers = false,
   publishViewport = false,
+  sheetSurface = false,
 }: Props) {
   const {
     state,
@@ -236,12 +259,14 @@ export function BoardMap({
   // Mapbox vises som base (ikke-addon-prosjekt) eller som overlay i 2D-view.
   const showMapbox = !has3dAddon || view === "2d";
 
-  // Markører som vises avhenger av phase:
-  // - default + Hjem-state (ingen kategori aktiv): vis ALLE POIs på tvers av
-  //   kategorier ufiltrert, hver med sin egen kategori-farge/ikon. Gir bruker
-  //   overblikk over hele nabolaget før kategori-narrativet starter.
-  // - default + aktiv kategori (scroll-drevet): kun den kategoriens pins.
-  // - active|poi: kun aktiv kategoris POI-er, med sub-kategori-filter.
+  // Markører som vises avhenger av om en KATEGORI er aktiv — ikke av fasen:
+  // - ingen aktiv kategori: vis ALLE POIs på tvers av kategorier ufiltrert, hver
+  //   med sin egen kategori-farge/ikon. Gir bruker overblikk over hele
+  //   nabolaget. Dette gjelder også når et punkt er åpnet (phase "poi") fra
+  //   overblikk: markørklikk kaprer ikke lenger kategorien (2026-08-13), så
+  //   fasen er ikke lenger en gyldig proxy for «kategori finnes».
+  // - aktiv kategori: kun den kategoriens pins, med sub-kategori-filter i
+  //   nested faser.
   //
   // For å unngå hard 0↔1 overgang ved kategori-skifte rendres ALLE POI-er
   // alltid med stabil DOM-identitet, og synlighet styres via `isVisible`-flag
@@ -253,11 +278,11 @@ export function BoardMap({
   // restaurant (rød) innen Mat-tema.
   const markerStates = useMemo(() => {
     const baseVisible = new Set<string>();
-    if (state.phase === "default" && !activeCategory) {
+    if (!activeCategory) {
       for (const cat of data.categories) {
         for (const p of cat.pois) baseVisible.add(p.id);
       }
-    } else if (activeCategory) {
+    } else {
       const useFilter =
         state.phase !== "default" && subFilter.hiddenIds.size > 0;
       for (const p of activeCategory.pois) {
@@ -274,8 +299,9 @@ export function BoardMap({
     return data.categories.flatMap((cat) =>
       cat.pois.map((p) => ({
         poi: p,
-        color: mutedColor(p.raw.category.color) ?? cat.color,
-        icon: p.raw.category.icon || cat.icon,
+        // Delt derivasjon (marker-style): samme ikon/farge som listeradene for
+        // dette stedet bruker. Endres den her, endres den overalt.
+        ...poiVisualIdentity(p.raw, cat),
         isVisible: visibleIds.has(p.id),
         // Unit 5: event-board "Min samling"-highlight. Lagrede POIer får en egen
         // ring (BoardMarker.inCollection). Uberørt for boligrapporter (undefined).
@@ -298,40 +324,110 @@ export function BoardMap({
     [markerStates],
   );
 
+  // Label-plassering med kollisjonskulling (2026-08-12): på icon+label-tier
+  // projiseres synlige markører til skjerm-px; hver label prøver høyre så
+  // venstre side, og skjules først når begge kolliderer — lavest Google-rating
+  // taper, aktiv POI kulles aldri. Viewport-kanten teller som hindring, så
+  // pins nær høyre skjermkant flipper i stedet for å rendre avkuttet.
+  // Pinnen står alltid; kun teksten fjernes, og den kommer tilbake når zoom
+  // gir plass. Recompute på moveend (dekker zoom) og når markørsettet/aktiv
+  // POI endres — ikke per frame.
+  // `Map` er skygget av react-map-gl-komponenten — bruk globalThis.Map.
+  const [labelPlacements, setLabelPlacements] = useState<
+    ReadonlyMap<string, LabelSide>
+  >(() => new globalThis.Map());
+  const recomputeLabelPlacements = useCallback(() => {
+    const map = mapRef.current?.getMap?.();
+    if (!map || zoomTier !== "icon+label") {
+      setLabelPlacements((prev) =>
+        prev.size === 0 ? prev : new globalThis.Map(),
+      );
+      return;
+    }
+    const candidates: LabelCandidate[] = [];
+    const obstacles: LabelObstacle[] = [];
+    for (const { poi } of visiblePOIs) {
+      const pt = map.project([poi.coordinates.lng, poi.coordinates.lat]);
+      candidates.push({
+        id: poi.id,
+        x: pt.x,
+        y: pt.y,
+        name: poi.name,
+        priority:
+          state.activePOIId === poi.id
+            ? Number.POSITIVE_INFINITY
+            : (poi.raw.googleRating ?? 0),
+      });
+      // Markør-sirklene tegnes alltid — tekst under en nabo-pin er like
+      // uleselig som tekst under tekst. Egen sirkel blokkerer aldri egen
+      // label (labelen starter utenfor sirkelkanten).
+      obstacles.push({ x: pt.x, y: pt.y, halfSize: 16 });
+    }
+    const home = map.project([
+      data.home.coordinates.lng,
+      data.home.coordinates.lat,
+    ]);
+    obstacles.push({ x: home.x, y: home.y, halfSize: 28 });
+    const next = computeLabelPlacements(candidates, obstacles, {
+      width: map.getContainer().clientWidth,
+    });
+    setLabelPlacements((prev) =>
+      prev.size === next.size &&
+      [...next].every(([id, side]) => prev.get(id) === side)
+        ? prev
+        : next,
+    );
+  }, [zoomTier, visiblePOIs, state.activePOIId, data.home.coordinates]);
+
+  useEffect(() => {
+    if (!mapLoaded) return;
+    recomputeLabelPlacements();
+    const map = mapRef.current?.getMap?.();
+    if (!map) return;
+    map.on("moveend", recomputeLabelPlacements);
+    return () => {
+      map.off("moveend", recomputeLabelPlacements);
+    };
+  }, [mapLoaded, recomputeLabelPlacements]);
+
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
     applyIllustratedTheme(map);
-    // Nabolagsflaten leser utsnittet ved å unprojisere kartets piksel-hjørner.
-    // Med bearing ≠ 0 er den akse-justerte konvolutten av et rotert viewport
-    // vesentlig større enn det brukeren faktisk ser, og lista ville listet
-    // steder utenfor skjermen. To-finger-rotasjon er dessuten en vanlig
-    // uhellsgest på telefon under pinch-zoom. Vi låser derfor rotasjonen på
-    // denne flaten i stedet for å leve med toleransen. Kun her — desktop,
-    // event-board og VO-flaten beholder Mapbox' defaults.
-    if (publishViewport) {
+    // Utsnittet leses ved å unprojisere kartets piksel-hjørner. Med bearing ≠ 0
+    // er den akse-justerte konvolutten av et rotert viewport vesentlig større
+    // enn det brukeren faktisk ser, og lista ville listet steder utenfor
+    // skjermen. To-finger-rotasjon er dessuten en vanlig uhellsgest på telefon
+    // under pinch-zoom. Vi låser derfor rotasjonen på SHEET-flaten i stedet for
+    // å leve med toleransen. Gjelder kun der: desktop (som leser samme utsnitt,
+    // men med mus og uten pinch), event-board og VO-flaten beholder Mapbox'
+    // defaults.
+    if (sheetSurface) {
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
     }
-  }, [publishViewport]);
+  }, [sheetSurface]);
 
   // Sync map-padding med sheet-høyden. `setPadding` er IKKE passiv: Mapbox
   // implementerer den som `jumpTo({ padding })`, så kameraet re-sentreres i det
   // padding-boksen endrer seg. Med en konstant padding (event-boardet) skjer det
   // én gang ved montering og synes ikke.
   //
-  // På nabolagsflaten er padding sheet-høyden, og da BLIR den synlig: et drag fra
+  // På sheet-flaten er padding sheet-høyden, og da BLIR den synlig: et drag fra
   // lav til høy hvileposisjon flyttet kartet ~halve høydeforskjellen, som et
   // hopp midt i gesten. Sheeten er konseptuelt et LAG over kartet — kartet skal
-  // ligge stille når laget vokser. Derfor står flaten utenfor.
+  // ligge stille når laget vokser. Derfor står den flaten utenfor.
   //
   // Framingen taper ingenting på det: `fitToVisiblePois` sender allerede
   // `mapPaddingBottom` eksplisitt i sitt eget padding-objekt. Med den
   // persistente paddingen inne ble den TELT TO GANGER, som er kilden til
   // «Map cannot fit within canvas with the given bounds, padding, and/or offset».
+  //
+  // Desktop publiserer også utsnitt, men uten sheet: der SKAL paddingen stå
+  // (`mapPaddingLeft` holder innrammingen klar av sidebaren).
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || publishViewport) return;
+    if (!mapLoaded || !mapRef.current || sheetSurface) return;
     const map = mapRef.current.getMap();
     map.setPadding({
       top: 0,
@@ -339,7 +435,7 @@ export function BoardMap({
       left: mapPaddingLeft,
       right: 0,
     });
-  }, [mapLoaded, mapPaddingBottom, mapPaddingLeft, publishViewport]);
+  }, [mapLoaded, mapPaddingBottom, mapPaddingLeft, sheetSurface]);
 
   // ---- Viewport-publisering (mobil nabolagsflate, R9 2D + R12) ----
   //
@@ -460,6 +556,12 @@ export function BoardMap({
   // ny provider-state og en re-render-runde per sheet-drag.
   const fitRef = useRef(fitToVisiblePois);
   fitRef.current = fitToVisiblePois;
+  // Samme ref-triks for publiseringen og sheet-høyden, så kamera-API-et kan
+  // re-publisere utsnittet uten å bli et nytt objekt per padding-endring.
+  const publishRectRef = useRef(publishViewportRect);
+  publishRectRef.current = publishViewportRect;
+  const paddingBottomRef = useRef(mapPaddingBottom);
+  paddingBottomRef.current = mapPaddingBottom;
   const cameraApi = useMemo(
     () => ({
       snapshot: () => {
@@ -493,7 +595,24 @@ export function BoardMap({
           pitch: s.pitch,
         });
       },
-      fitVisible: () => fitRef.current(),
+      fitVisible: () => {
+        fitRef.current();
+        // Re-publiser utsnittet ÉN gang når rammingen har landet.
+        //
+        // R12 undertrykker publisering for programmatiske kamerabevegelser, for
+        // å hindre løkken kamera → utsnitt → liste → kamera. `fitVisible` er
+        // unntaket som må gjennom: den kalles bare fra eksplisitte
+        // brukerhandlinger (kategoriside-push på mobil, «Ramm inn»-knappen i
+        // desktop-panelet). Uten dette flyttet kartet seg mens lista fortsatte å
+        // vise det gamle utsnittet — brukeren trykket «Ramm inn» og ingenting
+        // skjedde i teksten. Ingen løkke: publiseringen er én-skudds, og
+        // ingenting i liste-stien kaller kameraet tilbake av seg selv.
+        const map = mapRef.current?.getMap();
+        if (!map) return;
+        map.once("moveend", () => {
+          publishRectRef.current(paddingBottomRef.current, true);
+        });
+      },
     }),
     [],
   );
@@ -701,6 +820,11 @@ export function BoardMap({
             }}
             style={{ width: "100%", height: "100%" }}
             mapStyle={MAP_STYLE_STANDARD}
+            // Zoom-tak (2026-08-12): labels kommer på zoom 16 (LABEL_BREAKPOINT).
+            // 18 gir to hakk inspeksjon — nok til å skille tette sentrums-
+            // klynger (labels trenger separasjonen mer enn pinnene), deretter
+            // er mer zoom bare tomme bygningsflater.
+            maxZoom={18}
             interactive={interactive}
             onLoad={handleMapLoad}
             onMoveEnd={handleMoveEnd}
@@ -720,7 +844,15 @@ export function BoardMap({
               const isActive = state.activePOIId === poi.id;
               // R10c: når mini-popup viser POI-navn, undertrykk inline-label
               // for aktiv markør så vi ikke får dobbel-navn-rendering.
-              const suppressLabel = popupMode === "mini" && isActive;
+              // Kollisjonskulling: en label uten plassering på label-tieren
+              // kolliderte på begge sider og skjules (aktiv POI kulles
+              // aldri — Infinity-prioritet gir den alltid en plass).
+              const placement = labelPlacements.get(poi.id);
+              const suppressLabel =
+                (popupMode === "mini" && isActive) ||
+                (!isActive &&
+                  zoomTier === "icon+label" &&
+                  placement === undefined);
               return (
                 <BoardMarker
                   key={poi.id}
@@ -732,13 +864,11 @@ export function BoardMap({
                   inCollection={inCollection}
                   zoomTier={zoomTier}
                   suppressLabel={suppressLabel}
-                  onClick={() =>
-                    dispatch({
-                      type: "OPEN_POI",
-                      id: poi.id,
-                      categoryId: poi.categoryId,
-                    })
-                  }
+                  labelSide={placement ?? "right"}
+                  // Ingen `categoryId`: et klikk på kartet er en i-kontekst-
+                  // handling («hva er dette stedet?») og skal ikke også bytte
+                  // kategori, filtrere markørsettet og drille sidebaren inn.
+                  onClick={() => dispatch({ type: "OPEN_POI", id: poi.id })}
                 />
               );
             })}

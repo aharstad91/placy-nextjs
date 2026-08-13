@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, fireEvent } from "@testing-library/react";
+import { render as rtlRender, fireEvent } from "@testing-library/react";
+import type { BoardData } from "../../board/board-data";
+import { BoardProvider } from "../../board/board-state";
 import {
   SidebarContentPreview,
   type SidebarPreviewCategory,
@@ -30,6 +32,23 @@ const categories: SidebarPreviewCategory[] = [
     lead: "Linje 12 dekker ruten fra Dragvoll via Strindheim.",
   },
 ];
+
+// Panelet leser board-contexten (kartutsnitt + kamera for «ramm inn») fra
+// 2026-08-13, og lever alltid under BoardProvider i produksjon. Testene wrapper
+// derfor renderen i en minimal ekte provider i stedet for å mocke contexten.
+const BOARD_DATA = {
+  projectSlug: "test",
+  home: { name: "Hjem", coordinates: { lat: 63.43, lng: 10.4 }, address: "Gata 1" },
+  categories: [],
+  poisById: new Map(),
+  audioTourEnabled: false,
+} as unknown as BoardData;
+
+function BoardWrapper({ children }: { children: React.ReactNode }) {
+  return <BoardProvider data={BOARD_DATA}>{children}</BoardProvider>;
+}
+
+const render = (ui: React.ReactElement) => rtlRender(ui, { wrapper: BoardWrapper });
 
 describe("SidebarContentPreview (empty state)", () => {
   it("viser nøytral megler-placeholder i bunn", () => {
@@ -91,8 +110,8 @@ const editorialCategories: SidebarPreviewCategory[] = [
     editorial: {
       body: "Oppvekstmiljøet er trygt og grønt.\n\nFlere skoler i gangavstand.",
       highlights: [
-        { id: "poi-skole", name: "Ranheim skole" },
-        { id: "poi-bhg", name: "Presthus barnehage" },
+        { id: "poi-skole", name: "Ranheim skole", icon: "GraduationCap", color: "#f8ae17" },
+        { id: "poi-bhg", name: "Presthus barnehage", icon: "Baby", color: "#f8ae17" },
       ],
     },
   },
@@ -220,7 +239,9 @@ describe("SidebarContentPreview — event-modus (noBrokers, D3)", () => {
         count: 12,
         editorial: {
           body: "Konsertprogram gjennom hele kvelden.",
-          highlights: [{ id: "ev-1", name: "Domkirken" }],
+          highlights: [
+            { id: "ev-1", name: "Domkirken", icon: "MapPin", color: "#f05da7" },
+          ],
         },
       },
     ];

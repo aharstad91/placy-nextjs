@@ -308,7 +308,10 @@ export function BoardMap3D({
       for (const cat of data.categories) {
         const found = cat.pois.find((p) => p.id === poiId);
         if (found) {
-          dispatch({ type: "OPEN_POI", id: found.id, categoryId: cat.id });
+          // Ingen `categoryId` i actionen: markørklikk skal ikke kapre
+          // kategorien (2026-08-13). Kategori-oppslaget beholdes fordi
+          // analytics-signalet fortsatt bærer `category_id`.
+          dispatch({ type: "OPEN_POI", id: found.id });
           engagement.emit("poi_clicked", {
             poiId: found.id,
             payload: { category_id: cat.id },

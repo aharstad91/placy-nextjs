@@ -2,6 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
+import { categorySubline as formatSubline } from "@/lib/board/neighbourhood-list";
 import type { NeighbourhoodCategory } from "@/lib/board/neighbourhood-list";
 import type { BoardPOI } from "../board-data";
 
@@ -19,21 +20,10 @@ import type { BoardPOI } from "../board-data";
  * Fase 1; utvidbar rad kommer i Unit 6.
  */
 
-/** «9 av 17 synlig · 4–21 min» — tett, prosafri, alltid sann. */
-export function categorySubline(category: NeighbourhoodCategory<BoardPOI>): string {
-  const coverage =
-    category.visibleCount === category.totalCount
-      ? `${category.totalCount} ${category.totalCount === 1 ? "sted" : "steder"}`
-      : `${category.visibleCount} av ${category.totalCount} synlig`;
-  if (category.minWalk === undefined || category.maxWalk === undefined) {
-    return coverage;
-  }
-  const span =
-    category.minWalk === category.maxWalk
-      ? `${category.minWalk} min`
-      : `${category.minWalk}–${category.maxWalk} min`;
-  return `${coverage} · ${span}`;
-}
+// `categorySubline` bor i den rene modellen (lib/board/neighbourhood-list) siden
+// desktop-panelets viewport-liste bruker samme formatering. Re-eksporteres her
+// så eksisterende importstier står.
+export { categorySubline } from "@/lib/board/neighbourhood-list";
 
 export function NeighbourhoodCategoryCard({
   category,
@@ -44,7 +34,7 @@ export function NeighbourhoodCategoryCard({
   onOpen: (categoryId: string) => void;
 }) {
   const Icon = getIcon(category.icon);
-  const subline = categorySubline(category);
+  const subline = formatSubline(category);
 
   return (
     <section

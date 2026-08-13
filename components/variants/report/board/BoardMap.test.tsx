@@ -37,6 +37,10 @@ const h = vi.hoisted(() => {
       controls: [] as Record<string, unknown>[],
       board3d: [] as Record<string, unknown>[],
       mapProps: [] as Record<string, unknown>[],
+      // Markør-props per render. Synlighet MÅ leses her og ikke som antall
+      // DOM-noder: markørene beholder DOM-identitet og fader via `isVisible`,
+      // så en node-telling er uendret selv når filtreringen virker.
+      markers: [] as Record<string, unknown>[],
     },
     // Settes i beforeEach — Mapbox-instansen mocken returnerer fra getMap().
     mapbox: { instance: null as unknown },
@@ -115,7 +119,12 @@ vi.mock("react-map-gl/mapbox", () => {
   MapMock.displayName = "MapMock";
   return { default: MapMock };
 });
-vi.mock("./BoardMarker", () => ({ BoardMarker: () => <div data-testid="marker" /> }));
+vi.mock("./BoardMarker", () => ({
+  BoardMarker: (props: Record<string, unknown>) => {
+    h.captured.markers.push(props);
+    return <div data-testid="marker" />;
+  },
+}));
 vi.mock("./HomeMarker", () => ({ HomeMarker: () => null }));
 vi.mock("./BoardPathLayer", () => ({ BoardPathLayer: () => null }));
 vi.mock("./BoardPathMidpointMarker", () => ({ BoardPathMidpointMarker: () => null }));
@@ -182,6 +191,7 @@ beforeEach(() => {
   h.captured.controls = [];
   h.captured.board3d = [];
   h.captured.mapProps = [];
+  h.captured.markers = [];
   h.mapbox.instance = makeMapInstance();
   h.tour.phase = "idle";
   h.tour.currentTrack = null;
@@ -191,6 +201,15 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 const lastControls = () => h.captured.controls.at(-1);
+/** Synlighet per POI-id, lest av markør-propsene (siste render vinner). */
+function visibilityByPoi(): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  for (const props of h.captured.markers) {
+    const poi = props.poi as { id: string };
+    out[poi.id] = props.isVisible as boolean;
+  }
+  return out;
+}
 const lastMapProps = () => h.captured.mapProps.at(-1)!;
 const boardCtx = () => h.board.value as Record<string, unknown>;
 /** Simuler et Mapbox `moveend`. `originalEvent` satt = brukerinitiert gest. */
@@ -461,10 +480,23 @@ describe("BoardMap — Unit 1: viewport-publisering (R9 2D, R12)", () => {
     // kameraet umiddelbart. Med sheet-høyden som padding ga et drag fra bunn
     // til topp et synlig hopp i kartet midt i gesten. Sheeten er et LAG over
     // kartet; kartet skal ligge stille når laget vokser.
-    const { rerender } = render(<BoardMap publishViewport mapPaddingBottom={100} />);
-    rerender(<BoardMap publishViewport mapPaddingBottom={600} />);
+    const { rerender } = render(
+      <BoardMap publishViewport sheetSurface mapPaddingBottom={100} />,
+    );
+    rerender(<BoardMap publishViewport sheetSurface mapPaddingBottom={600} />);
 
     expect(mapInstance().setPadding).not.toHaveBeenCalled();
+  });
+
+  it("beholder paddingen på desktop selv om utsnittet publiseres", () => {
+    // 2026-08-13: desktop-sidebaren leser samme utsnitt som mobilsheeten, men
+    // ingen sheet okkluderer kartet nedenfra. `mapPaddingLeft` må da fortsatt
+    // settes, ellers rammes kategorien inn UNDER sidekolonnen.
+    render(<BoardMap publishViewport mapPaddingLeft={16} />);
+
+    expect(mapInstance().setPadding).toHaveBeenCalledWith(
+      expect.objectContaining({ left: 16 }),
+    );
   });
 
   it("beholder persistent padding på flater uten viewport-publisering", () => {
@@ -500,14 +532,23 @@ describe("BoardMap — Unit 1: viewport-publisering (R9 2D, R12)", () => {
     expect(setRectSpy()).not.toHaveBeenCalled();
   });
 
-  it("låser bearing på publiserende flate — akse-justert rektangel uten toleranse", () => {
-    render(<BoardMap publishViewport />);
+  it("låser bearing på SHEET-flaten — akse-justert rektangel uten toleranse", () => {
+    render(<BoardMap publishViewport sheetSurface />);
     expect(mapInstance().dragRotate.disable).toHaveBeenCalled();
     expect(mapInstance().touchZoomRotate.disableRotation).toHaveBeenCalled();
   });
 
-  it("rører ikke rotasjonen på desktop/event (ikke-publiserende flate)", () => {
+  it("rører ikke rotasjonen på event-flaten (verken publisering eller sheet)", () => {
     render(<BoardMap />);
+    expect(mapInstance().dragRotate.disable).not.toHaveBeenCalled();
+    expect(mapInstance().touchZoomRotate.disableRotation).not.toHaveBeenCalled();
+  });
+
+  it("rører ikke rotasjonen på desktop, som publiserer UTEN sheet", () => {
+    // Rotasjonslåsen er et mobil-kompromiss (to-finger-rotasjon er en uhellsgest
+    // under pinch). Den fulgte tidligere med publiseringen; desktop skal beholde
+    // Mapbox' defaults selv om utsnittet publiseres.
+    render(<BoardMap publishViewport />);
     expect(mapInstance().dragRotate.disable).not.toHaveBeenCalled();
     expect(mapInstance().touchZoomRotate.disableRotation).not.toHaveBeenCalled();
   });
@@ -567,5 +608,81 @@ describe("BoardMap — AC5/AC6 source-guards (motor-camera-import + showMapbox-o
 
   it("AC7: ingen reportTier-referanse i skallet", () => {
     expect(src).not.toContain("reportTier");
+  });
+});
+
+describe("markørsynlighet — markørklikk kaprer ikke kategorien (2026-08-13)", () => {
+  /**
+   * Synligheten leses av `BoardMarker`-propsene, ALDRI som antall DOM-noder:
+   * markørene beholder DOM-identitet på tvers av filter-skifter og fader via
+   * `isVisible`, så en node-telling ser uendret ut selv når filtreringen virker
+   * (dokumentert felle i `placy-basic-tier-drill-in-20260608`).
+   */
+  const twoCategories = {
+    categories: [
+      {
+        id: "mat",
+        label: "Mat",
+        lead: "",
+        body: "",
+        icon: "Utensils",
+        color: "#cc3300",
+        pois: [makePoi("p-mat")],
+        topRankedPois: [],
+      },
+      {
+        id: "natur",
+        label: "Natur",
+        lead: "",
+        body: "",
+        icon: "Trees",
+        color: "#22c55e",
+        pois: [makePoi("p-natur", "park")],
+        topRankedPois: [],
+      },
+    ],
+  };
+
+  it("åpen POI uten aktiv kategori → ALLE markører er fortsatt synlige", () => {
+    setBoard(twoCategories, { phase: "poi", activePOIId: "p-mat" });
+    render(<BoardMap has3dAddon={false} />);
+    expect(visibilityByPoi()).toEqual({ "p-mat": true, "p-natur": true });
+  });
+
+  it("overblikk (ingen kategori, ingen POI) → alle synlige", () => {
+    setBoard(twoCategories);
+    render(<BoardMap has3dAddon={false} />);
+    expect(visibilityByPoi()).toEqual({ "p-mat": true, "p-natur": true });
+  });
+
+  it("aktiv kategori → kun kategoriens markører synlige (uendret oppførsel)", () => {
+    setBoard(twoCategories, { phase: "active", activeCategoryId: "mat" });
+    h.board.activeCategory = twoCategories.categories[0];
+    render(<BoardMap has3dAddon={false} />);
+    expect(visibilityByPoi()).toEqual({ "p-mat": true, "p-natur": false });
+  });
+
+  it("aktiv kategori + åpen POI → fortsatt kun kategoriens markører", () => {
+    setBoard(twoCategories, {
+      phase: "poi",
+      activeCategoryId: "mat",
+      activePOIId: "p-mat",
+    });
+    h.board.activeCategory = twoCategories.categories[0];
+    render(<BoardMap has3dAddon={false} />);
+    expect(visibilityByPoi()).toEqual({ "p-mat": true, "p-natur": false });
+  });
+
+  it("markør-onClick dispatcher OPEN_POI UTEN categoryId", () => {
+    setBoard(twoCategories);
+    render(<BoardMap has3dAddon={false} />);
+    const dispatch = boardCtx().dispatch as ReturnType<typeof vi.fn>;
+    const marker = h.captured.markers.find(
+      (p) => (p.poi as { id: string }).id === "p-natur",
+    )!;
+    act(() => {
+      (marker.onClick as () => void)();
+    });
+    expect(dispatch).toHaveBeenCalledWith({ type: "OPEN_POI", id: "p-natur" });
   });
 });

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Source, Layer } from "react-map-gl/mapbox";
 import { useRouteData } from "@/lib/map/use-route-data";
-import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
+import { useBoard, useActivePOI, useActivePOICategory } from "./board-state";
 
 /**
  * Tegner walking-path fra Home til aktiv POI når phase === "poi".
@@ -18,8 +18,11 @@ import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
  */
 export function BoardPathLayer() {
   const { state, data } = useBoard();
-  const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
+  // Fargen tas fra POI-ens EGEN kategori, ikke fra `activeCategoryId`: et
+  // markørklikk setter ikke lenger kategorien (2026-08-13), og den gamle
+  // `useActiveCategory()`-gaten under gjorde da at ruta aldri ble tegnet.
+  const poiCategory = useActivePOICategory();
 
   // useRouteData forventer en POI (lib/types) — bruk BoardPOI.raw
   const poiForRoute = state.phase === "poi" && activePOI ? activePOI.raw : null;
@@ -60,11 +63,14 @@ export function BoardPathLayer() {
     };
   }, [routeData]);
 
-  if (state.phase !== "poi" || !activeCategory || geojson.features.length === 0) {
+  if (state.phase !== "poi" || !activePOI || geojson.features.length === 0) {
     return null;
   }
 
-  const color = activeCategory.color;
+  // Kategorien finnes alltid for en POI som ligger på boardet; fallbacken er en
+  // ren defensiv verdi så en manglende kategori gir en synlig linje i stedet for
+  // en usynlig `undefined`-farge.
+  const color = poiCategory?.color ?? "#57534e";
 
   return (
     <Source id="board-path-source" type="geojson" data={geojson}>

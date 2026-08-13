@@ -774,7 +774,17 @@ function ResponsiveLayoutInner({
               over handlePlay). Opacity holdes 100 så WebGL faktisk rendrer/streamer
               under det opake splash-laget; entréen er kun en subtil scale-settle ved
               reveal. Splash-kryssfaden står for selve avdekkingen. */}
-          <BoardMap has3dAddon={has3dAddon} mapPaddingLeft={16} eventMode={eventMode} />
+          {/* `publishViewport`: desktop-sidebarens kategori-panel lister
+              kategoriens steder i det brukeren faktisk ser (2026-08-13), og
+              trenger derfor utsnittet + `mapCamera` (ramm-inn-handlingen) på
+              contexten. UTEN `sheetSurface`: ingen sidekolonne okkluderer
+              kartet nedenfra, så padding og rotasjon står som før. */}
+          <BoardMap
+            has3dAddon={has3dAddon}
+            mapPaddingLeft={16}
+            eventMode={eventMode}
+            publishViewport
+          />
         </div>
         {fromEmbed ? (
           <EmbedArrivalLoader
@@ -940,6 +950,10 @@ function ResponsiveLayoutInner({
           // VO-boards, der sheeten aldri monteres.
           mapPaddingBottom={neighbourhoodSurface ? sheetHeightPx : 0}
           publishViewport={neighbourhoodSurface}
+          // Mobil: sheeten okkluderer kartet nedenfra og eier plasseringen →
+          // rotasjonslås + ingen setPadding. Desktop publiserer samme utsnitt
+          // uten disse kompromissene.
+          sheetSurface={neighbourhoodSurface}
         />
 
         {/* Peek: hele sheeten er tappbar → ekspandér til fullskjerm. Et mørkt slør

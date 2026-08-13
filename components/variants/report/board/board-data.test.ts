@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { adaptBoardData, isPlayableAudio, pickPlayableAudio } from "./board-data";
+import {
+  adaptBoardData,
+  findBoardCategoryOf,
+  findBoardPOI,
+  isPlayableAudio,
+  pickPlayableAudio,
+} from "./board-data";
+import { poiVisualIdentity } from "./marker-style";
 import type { BoardPOI } from "./board-data";
 import type { ReportData, ReportTheme } from "../report-data";
 import type { POI, ReportThemeAudio } from "@/lib/types";
@@ -15,6 +22,11 @@ function makePOI(id: string, overrides: Partial<POI> = {}): POI {
     ...overrides,
   };
 }
+
+/** Identiteten `makePOI`s sub-kategori (restaurant / #ef4444) gir: ikon fra
+ *  sub-kategorien, farge dempet til 450-nivå. Highlight-radene bærer den så de
+ *  ser identiske ut med kartmarkøren for samme sted. */
+const IDENTITY = { icon: "Utensils", color: "#f35a5a" } as const;
 
 function makeTheme(id: string, pois: POI[], overrides: Partial<ReportTheme> = {}): ReportTheme {
   return {
@@ -221,8 +233,8 @@ describe("adaptBoardData", () => {
         body: "Kuratert brødtekst om området.",
         image: undefined,
         highlights: [
-          { id: "p2", name: "POI p2" },
-          { id: "p1", name: "POI p1" },
+          { id: "p2", name: "POI p2", ...IDENTITY },
+          { id: "p1", name: "POI p1", ...IDENTITY },
         ],
       });
     });
@@ -233,7 +245,7 @@ describe("adaptBoardData", () => {
       });
       const data = adaptBoardData(makeReportData([theme]));
       expect(data.categories[0].editorial?.highlights).toEqual([
-        { id: "p1", name: "POI p1" },
+        { id: "p1", name: "POI p1", ...IDENTITY },
       ]);
     });
 
@@ -253,7 +265,7 @@ describe("adaptBoardData", () => {
         "x body som er lengre og forteller mer om hva som finnes i området.",
       );
       // Ukjent tema-id har ingen tier-1-extractor → topRanked-fallback
-      expect(detail?.highlights).toEqual([{ id: "p1", name: "POI p1" }]);
+      expect(detail?.highlights).toEqual([{ id: "p1", name: "POI p1", ...IDENTITY }]);
       // Kortets lead = samme kilde som drill-in
       expect(data.categories[0].lead).toBe(
         "x body som er lengre og forteller mer om hva som finnes i området.",
@@ -291,7 +303,7 @@ describe("adaptBoardData", () => {
       expect(data.categories[0].editorial).toEqual({
         body: "",
         image: undefined,
-        highlights: [{ id: "p1", name: "POI p1" }],
+        highlights: [{ id: "p1", name: "POI p1", ...IDENTITY }],
       });
     });
 
@@ -506,5 +518,115 @@ describe("audioTourEnabled (dødt flagg — passthrough, ikke gating)", () => {
       audioTourEnabled: 1 as unknown as boolean,
     });
     expect(dataTruthy.audioTourEnabled).toBe(false);
+  });
+});
+
+describe("findBoardPOI + findBoardCategoryOf (kategori-uavhengig POI-oppslag)", () => {
+  // 2026-08-13: POI-detaljene (popup, rutelinje, label, 3D-kamerafly) slo
+  // tidligere opp aktiv POI INNE i den aktive kategorien. Et markørklikk skal
+  // kunne åpne et punkt uten å velge kategori, så oppslaget må stå på egne bein.
+  const data = adaptBoardData(
+    makeReportData([
+      makeTheme("mat", [makePOI("p-mat-1"), makePOI("p-mat-2")]),
+      makeTheme("natur", [makePOI("p-natur-1")]),
+    ]),
+  );
+
+  it("finner POI i første kategori", () => {
+    expect(findBoardPOI(data.categories, "p-mat-1")?.id).toBe("p-mat-1");
+  });
+
+  it("finner POI i en SENERE kategori (ikke bare den første)", () => {
+    const found = findBoardPOI(data.categories, "p-natur-1");
+    expect(found?.id).toBe("p-natur-1");
+    expect(found?.categoryId).toBe("natur");
+  });
+
+  it("returnerer null for ukjent id uten å kaste", () => {
+    expect(findBoardPOI(data.categories, "finnes-ikke")).toBeNull();
+  });
+
+  it("returnerer null for null/undefined/tom id", () => {
+    expect(findBoardPOI(data.categories, null)).toBeNull();
+    expect(findBoardPOI(data.categories, undefined)).toBeNull();
+    expect(findBoardPOI(data.categories, "")).toBeNull();
+  });
+
+  it("returnerer samme OBJEKT-referanse som ligger i data (React.memo-stabilitet)", () => {
+    const a = findBoardPOI(data.categories, "p-mat-2");
+    const b = findBoardPOI(data.categories, "p-mat-2");
+    expect(a).toBe(b);
+    expect(a).toBe(data.categories.find((c) => c.id === "mat")!.pois[1]);
+  });
+
+  it("velger deterministisk første forekomst når samme POI ligger i to kategorier", () => {
+    const shared = makePOI("delt");
+    const both = adaptBoardData(
+      makeReportData([
+        makeTheme("forst", [shared]),
+        makeTheme("deretter", [shared]),
+      ]),
+    );
+    expect(findBoardPOI(both.categories, "delt")?.categoryId).toBe("forst");
+  });
+
+  it("finner kategorien en POI hører til", () => {
+    const poi = findBoardPOI(data.categories, "p-natur-1");
+    expect(findBoardCategoryOf(data.categories, poi)?.id).toBe("natur");
+  });
+
+  it("gir null kategori for null POI", () => {
+    expect(findBoardCategoryOf(data.categories, null)).toBeNull();
+  });
+});
+
+describe("highlight-identitet matcher kartmarkøren (2026-08-13)", () => {
+  // Buggen: sidebar-radene viste nål i temafargen mens pinnen viste
+  // sub-kategoriens ikon i dempet farge. Denne testen binder de to sammen —
+  // begge må lese samme derivasjon.
+  it("highlight-raden får samme ikon/farge som markøren for samme POI", () => {
+    const kafe = makePOI("p-kafe", {
+      category: { id: "cafe", name: "Kafé", icon: "Coffee", color: "#f97316" },
+    });
+    const theme = makeTheme("mat", [kafe], {
+      editorial: { body: "Kuratert tekst.", highlightPoiIds: ["p-kafe"] },
+    });
+    const data = adaptBoardData(makeReportData([theme]));
+    const category = data.categories[0];
+    const highlight = category.editorial!.highlights[0];
+
+    // Markørens derivasjon (samme kall BoardMap.markerStates gjør).
+    const markerIdentity = poiVisualIdentity(category.pois[0].raw, {
+      icon: category.icon,
+      color: category.color,
+    });
+
+    expect({ icon: highlight.icon, color: highlight.color }).toEqual(markerIdentity);
+    // Og konkret: kafé-ikon i dempet oransje — ikke tema-ikon i tema-farge.
+    expect(highlight.icon).toBe("Coffee");
+    expect(highlight.color).toBe("#fa8229");
+  });
+
+  it("genererte highlights (nivå 1) får identitet på samme måte", () => {
+    const apotek = makePOI("p-apotek", {
+      category: { id: "pharmacy", name: "Apotek", icon: "Pill", color: "#06b6d4" },
+    });
+    const data = adaptBoardData(makeReportData([makeTheme("hverdag", [apotek])]));
+    const highlight = data.categories[0].editorial!.highlights[0];
+    expect(data.categories[0].editorial!.generated).toBe(true);
+    expect(highlight.icon).toBe("Pill");
+    expect(highlight.color).toBe("#14c4e1");
+  });
+
+  it("POI uten sub-kategori-farge arver temaets farge i raden", () => {
+    const bar = makePOI("p-ukjent", {
+      category: { id: "x", name: "X", icon: "Star", color: "" },
+    });
+    const theme = makeTheme("mat", [bar], {
+      color: "#ec4899",
+      editorial: { body: "Tekst.", highlightPoiIds: ["p-ukjent"] },
+    });
+    const data = adaptBoardData(makeReportData([theme]));
+    expect(data.categories[0].editorial!.highlights[0].color).toBe("#ec4899");
   });
 });

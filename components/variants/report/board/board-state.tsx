@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import type { BoardCategoryId, BoardPOIId, BoardData } from "./board-data";
+import { findBoardCategoryOf, findBoardPOI } from "./board-data";
 import type {
   MapCameraApi,
   VisibleIdsSource,
@@ -90,16 +91,19 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
       };
     }
 
-    case "OPEN_POI": {
-      const categoryId = action.categoryId ?? state.activeCategoryId;
-      if (!categoryId) return state;
+    // Åpner et punkt. Actionen EIER IKKE kategorien (2026-08-13): et markørklikk
+    // skal bare vise stedet, ikke filtrere kartet og bytte sidebar-innhold på én
+    // gest. `categoryId` beholdes som valgfritt felt for kallesteder som bevisst
+    // etablerer kategori-kontekst (event-panelets liste, «Verdt å merke seg»),
+    // men kategorien nullstilles ALDRI — nivå-2-panelet en highlight-chip ble
+    // klikket fra ville da lukket seg under brukeren.
+    case "OPEN_POI":
       return {
         phase: "poi",
-        activeCategoryId: categoryId,
+        activeCategoryId: action.categoryId ?? state.activeCategoryId,
         activePOIId: action.id,
         introPlaying: false,
       };
-    }
 
     case "BACK_TO_ACTIVE":
       if (!state.activeCategoryId) {
@@ -292,20 +296,18 @@ export function BoardProvider({
     };
   }, [viewportPoiIds, visiblePoiIds]);
 
+  // Skjuler brukeren sub-kategorien den åpne POI-en tilhører, lukkes POI-en.
+  // Gaten står på `hiddenIds`, ikke på `activeCategoryId`: et markørklikk kan nå
+  // åpne et punkt uten å velge kategori (2026-08-13), og sub-filteret er tomt så
+  // lenge ingen kategori er aktiv — da er dette en no-op av seg selv.
   useEffect(() => {
-    if (!state.activePOIId || !state.activeCategoryId) return;
-    const cat = data.categories.find((c) => c.id === state.activeCategoryId);
-    const poi = cat?.pois.find((p) => p.id === state.activePOIId);
+    if (!state.activePOIId || subFilter.hiddenIds.size === 0) return;
+    const poi = findBoardPOI(data.categories, state.activePOIId);
     if (!poi) return;
     if (subFilter.hiddenIds.has(poi.raw.category.id)) {
       dispatch({ type: "BACK_TO_ACTIVE" });
     }
-  }, [
-    subFilter.hiddenIds,
-    state.activePOIId,
-    state.activeCategoryId,
-    data.categories,
-  ]);
+  }, [subFilter.hiddenIds, state.activePOIId, data.categories]);
 
   return (
     <BoardContext.Provider
@@ -349,12 +351,24 @@ export function useActiveCategory() {
  * fra Explorer-storens `useActivePOI` (lib/store.ts:46) — board-laget driver POI-
  * seleksjon via denne Context-reduceren, ikke Explorer-Zustand-storen. Importer
  * fra board-state, ikke @/lib/store, i board-komponenter.
+ *
+ * Oppslaget går på tvers av alle kategorier, IKKE inne i den aktive. Et
+ * markørklikk skal kunne åpne et punkt uten å velge kategorien det ligger i
+ * (2026-08-13), og den gamle derivasjonen via `useActiveCategory()` returnerte
+ * da null — hvorpå popup, rutelinje, label og 3D-kamerafly forsvant stille.
  */
 export function useActivePOI() {
-  const cat = useActiveCategory();
-  const { state } = useBoard();
-  if (!cat || !state.activePOIId) return null;
-  return cat.pois.find((p) => p.id === state.activePOIId) ?? null;
+  const { state, data } = useBoard();
+  return findBoardPOI(data.categories, state.activePOIId);
+}
+
+/** Kategorien den aktive POI-en hører til — uavhengig av `activeCategoryId`.
+ *  Gir presentasjonen (rutelinjens farge) kategori-identitet uten å kreve at
+ *  kategorien er valgt. */
+export function useActivePOICategory() {
+  const { data } = useBoard();
+  const poi = useActivePOI();
+  return findBoardCategoryOf(data.categories, poi);
 }
 
 export function useFilteredActiveCategory() {

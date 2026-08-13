@@ -5,6 +5,7 @@ import React from "react";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import type { BoardPOI } from "./board-data";
 import { hexLightTint, markerCircleStyle } from "./marker-style";
+import type { LabelSide } from "@/lib/board/label-collision";
 import type { BoardZoomTier } from "./use-board-zoom-tier";
 
 interface Props {
@@ -37,6 +38,12 @@ interface Props {
    * allerede navnet, så vi unngår dobbel-rendering (R10c i planen).
    */
   suppressLabel: boolean;
+  /**
+   * Anker-side fra label-plasseringen (`computeLabelPlacements`): høyre er
+   * default; venstre brukes når høyre side kolliderer med nabo-label/-pin
+   * eller viewport-kanten. Venstre-labels høyrejusteres mot pinnen.
+   */
+  labelSide: LabelSide;
   onClick: () => void;
 }
 
@@ -49,6 +56,7 @@ function BoardMarkerImpl({
   inCollection = false,
   zoomTier,
   suppressLabel,
+  labelSide,
   onClick,
 }: Props) {
   const Icon = getFilledIcon(poi.raw.category.icon || icon);
@@ -179,28 +187,40 @@ function BoardMarkerImpl({
           <Icon className={isActive ? "w-5 h-5" : "w-4 h-4"} weight="fill" />
         </div>
 
-        {/* Label — absolute til høyre for container. `pointer-events: none` +
-            `aria-hidden="true"` så ikon-sirkelen er eneste klikk-target og
-            skjermlesere ikke leser navnet dobbelt. Truncates ved 120 px med
-            ellipsis. */}
+        {/* Label — absolute inntil container, side styrt av labelSide
+            (kollisjons-flipping). `pointer-events: none` + `aria-hidden`
+            så ikon-sirkelen er eneste klikk-target og skjermlesere ikke
+            leser navnet dobbelt. Bryter på ordgrense til maks 2 linjer
+            (kompakt rektangel gir mindre horisontalt fotavtrykk → færre
+            label-kollisjoner enn én lang linje); ellipsis først etter
+            linje 2. Venstre-labels høyrejusteres så teksten ligger an mot
+            pinnen. */}
         <span
           aria-hidden="true"
           style={{
             position: "absolute",
-            left: "100%",
+            ...(labelSide === "right"
+              ? { left: "100%", marginLeft: 8, textAlign: "left" as const }
+              : { right: "100%", marginRight: 8, textAlign: "right" as const }),
             top: "50%",
             transform: "translateY(-50%)",
-            marginLeft: 8,
             fontSize: 10,
             fontWeight: 600,
+            lineHeight: 1.2,
             color: "#1c1917",
             textShadow:
               "0 0 3px rgba(255, 255, 255, 0.9), 0 0 6px rgba(255, 255, 255, 0.6)",
             WebkitFontSmoothing: "antialiased",
-            whiteSpace: "nowrap",
-            maxWidth: 120,
+            // Absolutt posisjonert i 32 px-containeren → shrink-to-fit ville
+            // kollapset bredden til lengste enkeltord (ett ord per linje).
+            // max-content + maxWidth gir full linjebredde opp til taket.
+            width: "max-content",
+            maxWidth: 132,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
             overflow: "hidden",
-            textOverflow: "ellipsis",
+            overflowWrap: "break-word",
             pointerEvents: "none",
             opacity: showLabel ? 1 : 0,
             transition: "opacity 200ms ease-out",
@@ -223,5 +243,6 @@ export const BoardMarker = React.memo(
     prev.isVisible === next.isVisible &&
     prev.inCollection === next.inCollection &&
     prev.zoomTier === next.zoomTier &&
-    prev.suppressLabel === next.suppressLabel,
+    prev.suppressLabel === next.suppressLabel &&
+    prev.labelSide === next.labelSide,
 );

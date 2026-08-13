@@ -104,6 +104,38 @@ export interface NeighbourhoodList<P extends NeighbourhoodPOIInput> {
 /** R11: inntil tre punkter per kategorikort. */
 export const DEFAULT_ROWS_PER_CATEGORY = 3;
 
+/**
+ * «9 av 17 synlig · 4–21 min» — tett, prosafri, og alltid sann.
+ *
+ * Dekningsbrøken er svaret på hvorfor en utsnitts-scopet liste ikke er en løgn:
+ * den sier eksplisitt hvor mange av kategoriens steder som ligger utenfor det
+ * brukeren ser. Er alle synlige, skrives det som et rent antall i stedet for
+ * «17 av 17».
+ *
+ * Tar imot den strukturelle minimumsformen, ikke hele kategori-objektet, så
+ * både mobilsheetens kort og desktop-panelets viewport-liste kan bruke samme
+ * formatering (2026-08-13).
+ */
+export function categorySubline(category: {
+  visibleCount: number;
+  totalCount: number;
+  minWalk?: number;
+  maxWalk?: number;
+}): string {
+  const coverage =
+    category.visibleCount === category.totalCount
+      ? `${category.totalCount} ${category.totalCount === 1 ? "sted" : "steder"}`
+      : `${category.visibleCount} av ${category.totalCount} synlig`;
+  if (category.minWalk === undefined || category.maxWalk === undefined) {
+    return coverage;
+  }
+  const span =
+    category.minWalk === category.maxWalk
+      ? `${category.minWalk} min`
+      : `${category.minWalk}–${category.maxWalk} min`;
+  return `${coverage} · ${span}`;
+}
+
 /** Precomputet gangtid, eller `undefined` når verdien mangler eller ikke er et
  *  brukbart tall (NaN/Infinity fra en korrupt rad skal aldri lekke ut i et
  *  tidsspenn eller en sortering). */

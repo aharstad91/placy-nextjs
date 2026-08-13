@@ -193,6 +193,30 @@ describe("selectMarkerPOIs", () => {
     ).toEqual(["p1", "p2"]);
   });
 
+  // 2026-08-13: markørklikk setter phase "poi" UTEN å sette kategori. 3D-grenen
+  // må da falle til overblikks-settet — aldri til tomt kart, som er feilmodusen
+  // 2D-grenen hadde før betingelsen ble flyttet fra fase til kategori.
+  it("phase 'poi' uten aktiv kategori → overblikks-settet, ikke tomt kart", () => {
+    const result = selectMarkerPOIs({
+      ...base,
+      statePhase: "poi",
+      activeCategory: null,
+    });
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.map((p) => p.id)).toEqual(base.overviewPOIs.map((p) => p.id));
+  });
+
+  it("phase 'poi' uten kategori ignorerer sub-filteret (det tilhører en kategori)", () => {
+    expect(
+      selectMarkerPOIs({
+        ...base,
+        statePhase: "poi",
+        activeCategory: null,
+        hiddenIds: new Set(["k2"]),
+      }).map((p) => p.id),
+    ).toEqual(base.overviewPOIs.map((p) => p.id));
+  });
+
   it("welcome-beat (ingen kategori) → [] (reveal-kaskaden eier markørene)", () => {
     expect(selectMarkerPOIs({ ...base, isWelcomeBeat: true })).toEqual([]);
   });

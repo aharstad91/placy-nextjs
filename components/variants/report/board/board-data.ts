@@ -11,6 +11,8 @@ import type {
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
 import { getHeroInsightPOIIds } from "../hero-insight-pois";
 import { getProjectBrokers } from "@/lib/themes/project-brand";
+import { computeSpreadCoordinates } from "@/lib/board/spread-co-located";
+import { poiVisualIdentity } from "./marker-style";
 import type {
   BoardAudioTimings,
   BoardAudioTrack,
@@ -71,6 +73,11 @@ export interface BoardCategoryEditorial {
   highlights: {
     id: BoardPOIId;
     name: string;
+    /** Ikon-navn + farge fra POI-ens EGEN sub-kategori (tema som fallback) —
+     *  avledet med `poiVisualIdentity`, samme derivasjon kartmarkøren bruker, så
+     *  raden og pinnen for samme sted er visuelt identiske. */
+    icon: string;
+    color: string;
     enturStopplaceId?: string;
     bysykkelStationId?: string;
     hyreStationId?: string;
@@ -160,6 +167,48 @@ export interface BoardData {
 }
 
 /**
+ * Finner en POI på tvers av ALLE kategorier.
+ *
+ * Board-laget slo tidligere opp aktiv POI inne i den aktive kategorien, som
+ * gjorde POI-detaljene (popup, rutelinje, label, 3D-kamerafly) avhengige av at
+ * en kategori var valgt. Et markørklikk skal kunne åpne et punkt uten å endre
+ * kategori-tilstanden, og da må oppslaget stå på egne bein.
+ *
+ * `poisById` finnes, men gir rå `POI` under en lowercased nøkkel — POI-flatene
+ * trenger `BoardPOI` (bærer `categoryId`, visnings-koordinaten fra pin-
+ * spredningen, og sammensatt `body`). Derfor søk over kategoriene.
+ *
+ * Returnerer første forekomst: samme sted kan ligge i flere kategorier, og
+ * rekkefølgen er kategori-rekkefølgen — deterministisk mellom renders. Objektet
+ * er hentet fra `data`, ikke konstruert, så referansen er stabil og
+ * `React.memo`-sammenligninger nedstrøms holder.
+ */
+export function findBoardPOI(
+  categories: readonly BoardCategory[],
+  poiId: string | null | undefined,
+): BoardPOI | null {
+  if (!poiId) return null;
+  for (const category of categories) {
+    const poi = category.pois.find((p) => p.id === poiId);
+    if (poi) return poi;
+  }
+  return null;
+}
+
+/**
+ * Kategorien en POI hører til i board-modellen. Brukes der presentasjonen
+ * trenger kategori-identiteten (rutelinjens farge) uten å kreve at kategorien
+ * er AKTIV.
+ */
+export function findBoardCategoryOf(
+  categories: readonly BoardCategory[],
+  poi: BoardPOI | null,
+): BoardCategory | null {
+  if (!poi) return null;
+  return categories.find((c) => c.id === poi.categoryId) ?? null;
+}
+
+/**
  * Mapper ReportData → BoardData. Filtrerer bort tema uten POI-er (board kan ikke
  * vise tom kategori) og normaliserer feltnavn.
  *
@@ -174,6 +223,23 @@ export function adaptBoardData(report: ReportData): BoardData {
   const categories: BoardCategory[] = report.themes
     .filter((t) => t.allPOIs.length > 0)
     .map((t) => adaptCategory(t, report.centerCoordinates));
+
+  // Pin-spredning for samlokaliserte POI-er (AKSET-caset: ungdomsskole + vgs
+  // på identisk koordinat — markørene stables 100 % og bare én synes). Kun
+  // BoardPOI.coordinates (visning) justeres; raw beholder kildekoordinatet.
+  // Gjøres HER så markører, labels, popups og nabolagslista deler samme punkt.
+  const allBoardPois = categories.flatMap((c) => c.pois);
+  const spread = computeSpreadCoordinates(
+    Array.from(new Map(allBoardPois.map((p) => [p.id, p])).values()),
+  );
+  if (spread.size > 0) {
+    for (const cat of categories) {
+      for (const poi of cat.pois) {
+        const displaced = spread.get(poi.id);
+        if (displaced) poi.coordinates = displaced;
+      }
+    }
+  }
 
   // Bygg full POI-lookup på tvers av alle tema. Grounding kan referere POIs i andre kategorier
   // (f.eks. "Yogaskolen" nevnt i Trening-grounding men ranket høyere i annen kategori).
@@ -262,6 +328,8 @@ const GENERATED_HIGHLIGHTS_MAX = 3;
 function pickGeneratedHighlights(
   theme: ReportTheme,
   center: Coordinates,
+  /** Temaets ikon/farge — fallback når POI-en mangler sub-kategori-verdier. */
+  fallback: { icon: string; color: string },
 ): BoardCategoryEditorial["highlights"] {
   const heroIds = getHeroInsightPOIIds(theme.id, theme.allPOIs, center);
   const source =
@@ -271,6 +339,7 @@ function pickGeneratedHighlights(
   return source.slice(0, GENERATED_HIGHLIGHTS_MAX).map((p) => ({
     id: p.id as BoardPOIId,
     name: p.name,
+    ...poiVisualIdentity(p, fallback),
     enturStopplaceId: p.enturStopplaceId,
     bysykkelStationId: p.bysykkelStationId,
     hyreStationId: p.hyreStationId,
@@ -321,6 +390,9 @@ function adaptCategory(theme: ReportTheme, center: Coordinates): BoardCategory {
       .map((p) => ({
         id: p.id as BoardPOIId,
         name: p.name,
+        // Visuell identitet avledes HER, med samme derivasjon kartmarkøren
+        // bruker, så raden og pinnen for samme sted ser like ut (2026-08-13).
+        ...poiVisualIdentity(p, { icon, color }),
         enturStopplaceId: p.enturStopplaceId,
         bysykkelStationId: p.bysykkelStationId,
         hyreStationId: p.hyreStationId,
@@ -340,7 +412,11 @@ function adaptCategory(theme: ReportTheme, center: Coordinates): BoardCategory {
   const detail: BoardCategoryEditorial | undefined =
     editorial ??
     (body
-      ? { body, highlights: pickGeneratedHighlights(theme, center), generated: true }
+      ? {
+          body,
+          highlights: pickGeneratedHighlights(theme, center, { icon, color }),
+          generated: true,
+        }
       : undefined);
 
   // Kortets lead avledes av drill-in-brødteksten (første avsnitt) — samme kilde
