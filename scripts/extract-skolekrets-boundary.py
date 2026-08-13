@@ -12,7 +12,12 @@ er den naturlige markedsenheten.
 Usage:
   python3 scripts/extract-skolekrets-boundary.py --krets LADE --out data/areas/lade.staging.json
   python3 scripts/extract-skolekrets-boundary.py --krets CHARLOTTENLUND --out data/areas/charlottenlund.staging.json
-  python3 scripts/extract-skolekrets-boundary.py --list   # vis alle kretsnavn
+  python3 scripts/extract-skolekrets-boundary.py --list       # vis alle kretsnavn
+  python3 scripts/extract-skolekrets-boundary.py --dump-all   # skriv alle kretser i WGS84
+
+`--dump-all` skriver data/geo/trondheim/kretser-wgs84.json: samtlige kretser
+konvertert én gang, slik at resten av pipelinen (scripts/apply-krets-boundaries.ts)
+slipper å avhenge av pyproj. Kjør på nytt bare hvis kommunen leverer nye kretsdata.
 
 Oppførsel (speiler fetch-area-boundary.ts):
   - Finnes ikke --out: opprett SKJELETT (areaId + boundary + 6 tomme
@@ -33,6 +38,7 @@ from pathlib import Path
 from pyproj import Transformer
 
 DATASET = Path("data/geo/trondheim/barneskolekrets.json")
+DUMP_TARGET = Path("data/geo/trondheim/kretser-wgs84.json")
 # GENERERT fra lib/themes/theme-ids.ts — ikke rediger manuelt
 THEME_IDS = [
     "hverdagsliv",
@@ -83,6 +89,11 @@ def main():
     )
     ap.add_argument("--out", help="Staging-fil (data/areas/<id>.staging.json)")
     ap.add_argument("--list", action="store_true", help="List alle kretsnavn")
+    ap.add_argument(
+        "--dump-all",
+        action="store_true",
+        help=f"Skriv alle kretser i WGS84 til {DUMP_TARGET}",
+    )
     args = ap.parse_args()
 
     if not DATASET.exists():
@@ -93,6 +104,30 @@ def main():
     if args.list:
         for f in features:
             print(f["properties"].get("barneskolenavn"))
+        return
+
+    if args.dump_all:
+        dump = {
+            "_source": (
+                "Trondheim kommune, barneskolekretser (NLOD). Generert av "
+                "scripts/extract-skolekrets-boundary.py --dump-all fra "
+                f"{DATASET} — ikke rediger manuelt."
+            ),
+            "kretser": [
+                {
+                    "navn": f["properties"].get("barneskolenavn"),
+                    "kretsnr": f["properties"].get("barnekretsnr"),
+                    "boundary": convert_geometry(f["geometry"]),
+                }
+                for f in features
+            ],
+        }
+        navn = [k["navn"] for k in dump["kretser"]]
+        if len(set(navn)) != len(navn):
+            # Duplikatnavn ville gjort oppslag flertydig hos konsumenten.
+            sys.exit(f"Duplikate kretsnavn i {DATASET} — kan ikke slås opp entydig")
+        DUMP_TARGET.write_text(json.dumps(dump, ensure_ascii=False) + "\n")
+        print(f"✓ Skrev {len(navn)} kretser til {DUMP_TARGET}")
         return
 
     if not args.krets or not args.out:

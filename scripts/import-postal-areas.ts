@@ -12,6 +12,8 @@
  *   npx tsx scripts/import-postal-areas.ts --apply                # skriv
  *   npx tsx scripts/import-postal-areas.ts --kommune 5001         # én kommune
  *   npx tsx scripts/import-postal-areas.ts --derive-boundaries    # avled areas.boundary
+ *   npx tsx scripts/import-postal-areas.ts --suggest-postal-codes # forslag, read-only
+ *   npx tsx scripts/import-postal-areas.ts --suggest-postal-codes --fra-form [--apply]
  *
  * Ren logikk (WFS-spørring, GML-parsing, endringssjekk) ligger i
  * `lib/pipeline/postal-area-import.ts` og har testene. Denne fila er nettverk,
@@ -244,10 +246,35 @@ async function deriveBoundaries(apply: boolean): Promise<void> {
  * lib/pipeline/suggest-area-postal-codes.ts). Forslagene kopieres inn i
  * curate-area-staging av en kurator.
  */
-async function suggestPostalCodesStep(): Promise<void> {
+/**
+ * Skriver KUN `postal_codes`. Samme smale PATCH som `writeBoundary` — `areas`
+ * har ingen `updated_at`, så feltbredden er den eneste beskyttelsen mot å klobbe
+ * `report_editorial` med en utdatert lesning.
+ */
+async function writePostalCodes(id: string, postnumre: string[]): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/areas?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      apikey: SUPABASE_KEY!,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Content-Profile": "v2",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify({ postal_codes: postnumre }),
+  });
+  if (!res.ok) throw new Error(`PATCH ${id} feilet: ${res.status} ${await res.text()}`);
+  const rows = (await res.json()) as unknown[];
+  if (rows.length === 0) throw new Error(`PATCH ${id} traff 0 rader — raden finnes ikke lenger?`);
+}
+
+async function suggestPostalCodesStep(opts: {
+  fraForm: boolean;
+  apply: boolean;
+}): Promise<void> {
   const [areasRaw, postalRaw] = await Promise.all([
     fetch(
-      `${SUPABASE_URL}/rest/v1/areas?select=id,name_no,boundary,postal_codes,center_lat,center_lng&order=id`,
+      `${SUPABASE_URL}/rest/v1/areas?select=id,name_no,boundary,boundary_source,postal_codes&order=id`,
       {
         headers: {
           apikey: SUPABASE_KEY!,
@@ -267,31 +294,58 @@ async function suggestPostalCodesStep(): Promise<void> {
 
   const result = suggestPostalCodes(
     areasRaw as AreaForSuggestion[],
-    postalRaw as PostalAreaWithMeta[]
+    postalRaw as PostalAreaWithMeta[],
+    // `--fra-form` snur retningen: da leses postnumre ut av en autoritativ form
+    // for de områdene som allerede har en gjettet liste fra migrasjon 050.
+    opts.fraForm ? { inkluderEksisterende: true, kunAutoritativForm: true } : {}
   );
 
-  console.log("\nForslag til postal_codes (read-only — ingenting skrives)\n");
+  const tittel = opts.fraForm
+    ? `postal_codes utledet av områdets form — ${opts.apply ? "SKRIVER" : "dry-run"}`
+    : "Forslag til postal_codes (read-only — ingenting skrives)";
+  console.log(`\n${tittel}\n`);
   console.log(
     `  ${(areasRaw as unknown[]).length} områder lest, ` +
       `${(postalRaw as unknown[]).length} postnummer-polygoner\n`
   );
 
   if (result.suggestions.length === 0) {
-    console.log("  Ingen områder mangler postnummer med en form å avlede fra.\n");
+    console.log("  Ingen områder å foreslå postnumre for.\n");
   }
 
+  const endret: Array<{ id: string; postnumre: string[] }> = [];
+
   for (const s of result.suggestions) {
-    console.log(`  ${s.id} (${s.name}):`);
+    const foreslatt = s.kandidater.map((k) => k.postnummer);
+    const likt =
+      s.naavaerende.length === foreslatt.length &&
+      [...s.naavaerende].sort().join(",") === [...foreslatt].sort().join(",");
+
+    const merke = s.naavaerende.length === 0 ? "NY" : likt ? "=" : "ENDRET";
+    console.log(`  ${merke.padEnd(7)} ${s.id} (${s.name}) [${s.boundary_source ?? "ingen form"}]`);
+
+    const pst = (n: number) => `${Math.round(n * 100)}%`;
     for (const k of s.kandidater) {
-      const signal = [
-        k.senterTreff ? "senter innenfor" : null,
-        k.treffpunkter > 0 ? `${k.treffpunkter} ringpunkt` : null,
-      ]
-        .filter(Boolean)
-        .join(", ");
-      console.log(`    ${k.postnummer}  ${k.poststed.padEnd(14)} ${k.kommunenavn.padEnd(12)} (${signal})`);
+      const nytt = s.naavaerende.includes(k.postnummer) ? " " : "+";
+      console.log(
+        `      ${nytt} ${k.postnummer}  ${k.poststed.padEnd(14)} ` +
+          `${pst(k.andelAvOmrade).padStart(4)} av strøket, ` +
+          `${pst(k.andelAvPostnummer).padStart(4)} av postnummeret`
+      );
     }
-    console.log(`    → foreslått: ["${s.kandidater.map((k) => k.postnummer).join('", "')}"]`);
+    for (const mistet of s.naavaerende.filter((p) => !foreslatt.includes(p))) {
+      const svak = s.svakeTreff.find((k) => k.postnummer === mistet);
+      const hvorfor = svak
+        ? `bare ${pst(svak.andelAvOmrade)} av strøket, under terskelen`
+        : "formen overlapper det ikke i det hele tatt";
+      console.log(`      - ${mistet}  (sto i lista, men ${hvorfor})`);
+    }
+    if (s.svakeTreff.length > 0) {
+      console.log(
+        `        svake treff, ikke foreslått: ${s.svakeTreff.map((k) => k.postnummer).join(", ")}`
+      );
+    }
+    if (!likt) endret.push({ id: s.id, postnumre: foreslatt });
   }
 
   if (result.utenTreff.length > 0) {
@@ -303,14 +357,35 @@ async function suggestPostalCodesStep(): Promise<void> {
 
   const harPostnummer = result.hoppetOver.filter((h) => h.reason === "har-postnummer").length;
   const manglerForm = result.hoppetOver.filter((h) => h.reason === "mangler-boundary");
+  const gjettetForm = result.hoppetOver.filter((h) => h.reason === "gjettet-form");
   console.log(
     `\n  Hoppet over: ${harPostnummer} har alt postnummer, ${manglerForm.length} mangler form` +
       (manglerForm.length ? ` (${manglerForm.map((h) => h.id).join(", ")})` : "")
   );
-  console.log(
-    "\n  Metoden er tilnærmet: ringpunkt- og senterpunkt-test, ikke eksakt\n" +
-      "  polygon-skjæring. Bekreft før du legger dem i postal_codes.\n"
-  );
+  if (gjettetForm.length > 0) {
+    // Formen er selv avledet av postnumrene, så å lese dem tilbake ut av den
+    // ville bare bekreftet gjetningen.
+    console.log(
+      `  ${gjettetForm.length} har bare gjettet form (venter på ekte polygon): ` +
+        gjettetForm.map((h) => h.id).join(", ")
+    );
+  }
+
+  if (!opts.fraForm) {
+    console.log(
+      "\n  Metoden er tilnærmet: to-veis punkttest, ikke eksakt polygon-skjæring.\n" +
+        "  Bekreft før du legger dem i postal_codes.\n"
+    );
+    return;
+  }
+
+  if (!opts.apply) {
+    console.log(`\n  Dry-run. ${endret.length} områder ville fått ny postnummerliste.\n`);
+    return;
+  }
+
+  for (const e of endret) await writePostalCodes(e.id, e.postnumre);
+  console.log(`\n  ✓ Skrev postal_codes på ${endret.length} områder.\n`);
 }
 
 async function main(): Promise<void> {
@@ -334,7 +409,7 @@ async function main(): Promise<void> {
   }
 
   if (args.includes("--suggest-postal-codes")) {
-    await suggestPostalCodesStep();
+    await suggestPostalCodesStep({ fraForm: args.includes("--fra-form"), apply });
     return;
   }
 

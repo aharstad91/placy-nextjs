@@ -34,6 +34,34 @@
 
 **Åpne punkter:** `coverage_demand` skal logge postnummer (koden ligger på ukoblet `feat/megler-self-serve`); dekningskart som visuell salgs-asset; sortering av arbeidskøen på faktisk etterspørsel; de 6 kollisjonsområdene trenger tegnet grense før kuratering. Ingenting pushet, ingen PR.
 
+### 2026-08-13 (fortsettelse) — SKOLEKRETSENE ERSTATTER GJETNINGEN: POSTNUMMER BLIR OUTPUT, IKKE INPUT
+
+**Utløseren var et spørsmål, ikke en bug.** Andreas ba om en ny øvelse på Grilstad, Ranheim og Vikåsen, og spurte deretter etter «et bydelskart over Trondheim vi fant en gang». Det finnes, og lå allerede i repoet: `data/geo/trondheim/barneskolekrets.json` — 43 skolekretspolygoner fra kommunens GeoServer (NLOD), pluss `ungskolekrets.json` med 18 ungdomskretser og verktøyet `scripts/extract-skolekrets-boundary.py`. Det er kilden bak alle de håndtegnede polygonene (Ranheim, Lade, Charlottenlund, Sentrum, Tyholt).
+
+**Premisset for gårsdagens avledning var råttent.** `--derive-boundaries` bygde form fra `postal_codes` — men de postnumrene ble håndskrevet i migrasjon 050, sammen med senterkoordinater som er runde tall. Beviset: **Vikåsen sto med senter 63.4300/10.4800, som ligger utenfor hele VIKÅSEN-kretsen, og med postnummer 7040, som ikke overlapper området i det hele tatt.** Riktig postnummer er 7054 (72 % av strøket). md5 per rad viste hvor ille det sto til: `mollenberg`, `rosenborg` og `solsiden` hadde **identisk polygon** (alle 7014), likeså `broset`/`moholt` (7050) og `lerkendal-strok`/`singsaker` (7030). Tre «strøk» med samme form.
+
+**Retningen er snudd.** Ekte geometri inn → postnummer ut → regnskap. Postnummer beholdes, men som *måleenhet*, ikke som kilde til form: det er den eneste enheten som også dekker Malvik, Melhus og Stjørdal, der det ikke finnes kretsdata i det hele tatt, og det er grupperingsnøkkelen `coverage_demand` trenger for å gjøre forespørsler tellbare.
+
+**Leveranse:** migrasjon 089 (`boundary_source` utvidet med `krets`; rangering `curated` > `krets` > `derived`), `lib/pipeline/krets-boundaries.ts` + `scripts/apply-krets-boundaries.ts`, `--dump-all` på python-scriptet (skriver `data/geo/trondheim/kretser-wgs84.json`, committet så skrivestien slipper pyproj), og `--fra-form [--apply]` på forslagsmodusen. **8 områder fikk ekte kretsgeometri, 17 fikk postnummerliste utledet av formen.** Regnskapet gikk fra 17 til **31 kuraterte postnumre i markedet**, og Straumen — det mest komplette området vi har — ble endelig synlig (den hadde ingen `postal_codes` i det hele tatt).
+
+**Fem funn:**
+
+1. **Grilstadvegen 1A treffer to kuraterte polygoner.** `ranheim` og `charlottenlund` overlapper hverandre med 39 vitnepunkter, og `findAreaForPoint` tar `matches[0]` — hvilket strøk boligen havner i avgjøres altså av raderekkefølge. Verifisert live mot Kartverkets adresse-API. Adressen er dessuten **7060 Charlottenlund**, ikke 7053 Ranheim som antatt. Dette er den egentlige blokkeringen for EM1 Grilstadporten, og den er eldre enn dagens arbeid.
+
+2. **Ranheims håndkorrigerte polygon har vokst inn i begge naboene.** PROJECT-LOG:820 dokumenterte at kretsen var smalere enn markeds-Ranheim og at polygon v2 ble krets + adressekorreksjoner. Konsekvensen ble aldri målt før nå: overlapp mot `charlottenlund` (39 punkter) og mot `vikasen` (5).
+
+3. **Grilstad er ikke en skolekrets.** Det avgjør spørsmålet om Grilstad skal være eget område: kommunen deler det mellom RANHEIM og CHARLOTTENLUND.
+
+4. **Ringpunkt-testing er ubrukelig til overlappsdeteksjon.** Første kjøring meldte 24 «ekte» overlapp; 22 av dem var naboer som deler grense, der et punkt nøyaktig på linja testes som innenfor hos begge. Løsningen er `interiorWitnesses` i `lib/utils/geo.ts`: trekk testpunktet 0,5 % inn mot egen form først, og kast det hvis inntrekket bommer på en konkav form. 24 → 2.
+
+5. **Uten terskel foreslo geometrien 13 postnumre for Ila**, flere med ett eneste punkt innenfor. Postnummergrenser er postruter og kretsgrenser er skoleopptak — de er tegnet for hver sin hensikt og krysser hverandre overalt. Terskel 15 % på én av to andeler; svake treff rapporteres i stedet for å kastes.
+
+**Regelen som kom ut av det:** en krets et kuratert område allerede eier kan ikke skrives til et annet. Det blokkerer `singsaker`, siden `sentrum` er kuratert som SINGSAKER + BISPEHAUGEN. Om Singsaker skal være eget strøk er en kurator-beslutning, ikke en geometrisk.
+
+**Status:** 46 områder — 9 `curated`, 8 `krets`, 17 `derived`, 12 uten form. 20 Trondheim-strøk har ingen krets med samme navn og står igjen som gjettet form. 29 av de 43 kretsene har ingen områderad i det hele tatt; det er resten av Trondheim, gratis. 1728 tester (139 filer), tsc rent, lint 0 errors. Ingenting pushet.
+
+**Åpent, i rekkefølge:** avgjør `ranheim`/`charlottenlund`/`vikasen`-grensene (Grilstad-flokene); avgjør `singsaker` vs `sentrum`; kartlegg de 20 umappede strøkene mot kretser én for én; vurder om `sentrum` er riktig definert i det hele tatt (den mister 7010 og 7012, altså Midtbyen-kjernen, når postnumrene utledes av formen).
+
 ---
 
 ## 2026-08-03 (sesjon 2) — TTS-SPRÅKDRIFT KARTLAGT: SEED GIR BYTE-IDENTISK DETERMINISME (eksperiment, ikke implementert)

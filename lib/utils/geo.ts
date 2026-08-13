@@ -140,6 +140,50 @@ export function pointInGeometry(
   return false;
 }
 
+/** Hvor langt inn mot egen midtpunkt et ringpunkt trekkes i `interiorWitnesses`. */
+const INTERIOR_INSET = 0.005;
+
+/**
+ * Testpunkter som ligger STRENGT inne i geometrien.
+ *
+ * Brukes til å avgjøre om to flater faktisk overlapper. Å teste ringpunktene
+ * direkte duger ikke: naboflater deler grense, og et punkt nøyaktig på grensen
+ * kan testes som «innenfor» hos begge — det er ikke overlapp, det er at de
+ * ligger inntil hverandre.
+ *
+ * Hvert ytterringpunkt trekkes derfor 0,5 % av veien mot ringens eget midtpunkt
+ * før det brukes. For konkave flater kan inntrekket bomme og havne utenfor, så
+ * punktet kastes hvis det ikke lenger ligger innenfor sin egen geometri.
+ */
+export function interiorWitnesses(geometry: GeoJsonPolygonGeometry): number[][] {
+  const flater =
+    geometry.type === "MultiPolygon"
+      ? (geometry.coordinates as number[][][][])
+      : [geometry.coordinates as number[][][]];
+
+  const points: number[][] = [];
+  for (const flate of flater) {
+    const ytre = flate[0];
+    if (!ytre || ytre.length === 0) continue;
+
+    let sumX = 0;
+    let sumY = 0;
+    for (const [x, y] of ytre) {
+      sumX += x;
+      sumY += y;
+    }
+    const midX = sumX / ytre.length;
+    const midY = sumY / ytre.length;
+
+    for (const [x, y] of ytre) {
+      const testX = x + (midX - x) * INTERIOR_INSET;
+      const testY = y + (midY - y) * INTERIOR_INSET;
+      if (pointInGeometry(testX, testY, geometry)) points.push([testX, testY]);
+    }
+  }
+  return points;
+}
+
 /**
  * Generate polygon coordinates approximating a circle on a map.
  * Used for Mapbox Source/Layer visualization of discovery radius.

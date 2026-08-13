@@ -16,20 +16,33 @@
  *
  * METODEN ER TILNÆRMET. To tester i hver sin retning, fordi begge har en blindsone:
  *
- *   1. Postnummerets ringpunkter mot områdets polygon — fanger delvis overlapp,
- *      men ser ikke et lite område som ligger helt inne i et stort postnummer
- *      (da er ingen av postnummerets hjørner innenfor det lille området).
- *   2. Områdets senterpunkt mot postnummerets polygon — fanger nettopp det
- *      tilfellet.
+ *   1. Postnummerets punkter mot områdets polygon — fanger delvis overlapp, men
+ *      ser ikke et lite område som ligger helt inne i et stort postnummer (da er
+ *      ingen av postnummerets hjørner innenfor det lille området).
+ *   2. Områdets punkter mot postnummerets polygon — fanger nettopp det tilfellet.
+ *
+ * Begge retninger bruker `interiorWitnesses`, ikke ringpunktene rå. Postnummer-
+ * og krets-polygoner kommer fra hver sin kilde (Kartverket og Trondheim
+ * kommune), så en delt grense faller aldri helt sammen — rå ringpunkter ville
+ * gitt noen falske treff for hvert eneste naboområde.
+ *
+ * SENTERPUNKTET BRUKES IKKE. `center_lat`/`center_lng` ble håndskrevet i
+ * migrasjon 050 og bommer beviselig: Vikåsen står med 63.4300/10.4800, som
+ * ligger utenfor hele VIKÅSEN-kretsen. To-veis-testen over dekker uansett
+ * tilfellet senteret var ment å fange.
  *
  * Det som fortsatt kan overses er et postnummer som overlapper området i et smalt
- * bånd uten at noe ringpunkt havner innenfor og uten at senteret treffer. For en
- * håndfull områder er kurator-bekreftelse billigere enn en eksakt
- * polygon-skjæring, som ville krevd et clipping-bibliotek vi ellers ikke trenger
- * (samme avveining som «ingen ekte union» i derive-area-boundary.ts).
+ * bånd uten at noe punkt fra noen av sidene havner innenfor. For en håndfull
+ * områder er kurator-bekreftelse billigere enn en eksakt polygon-skjæring, som
+ * ville krevd et clipping-bibliotek vi ellers ikke trenger (samme avveining som
+ * «ingen ekte union» i derive-area-boundary.ts).
  */
 
-import { pointInGeometry, type GeoJsonPolygonGeometry } from "@/lib/utils/geo";
+import {
+  interiorWitnesses,
+  pointInGeometry,
+  type GeoJsonPolygonGeometry,
+} from "@/lib/utils/geo";
 
 export interface PostalAreaWithMeta {
   postnummer: string;
@@ -42,29 +55,44 @@ export interface AreaForSuggestion {
   id: string;
   name_no: string;
   boundary: GeoJsonPolygonGeometry | null;
+  boundary_source: string | null;
   postal_codes: string[] | null;
-  center_lat: number | null;
-  center_lng: number | null;
 }
 
 export interface PostalCandidate {
   postnummer: string;
   poststed: string;
   kommunenavn: string;
-  /** Hvor mange av postnummerets ringpunkter som ligger inne i området. */
-  treffpunkter: number;
-  /** Om områdets senterpunkt ligger inne i postnummeret. */
-  senterTreff: boolean;
+  /** Punkter fra postnummeret som ligger inne i området. */
+  postnummerIOmrade: number;
+  /** Punkter fra området som ligger inne i postnummeret. */
+  omradeIPostnummer: number;
+  /** Andel av postnummeret som ligger i området, 0–1. «Er dette postnummeret dekket?» */
+  andelAvPostnummer: number;
+  /** Andel av området som ligger i postnummeret, 0–1. «Hvor ligger dette strøket?» */
+  andelAvOmrade: number;
 }
 
 export interface Suggestion {
   id: string;
   name: string;
-  /** Sortert med mest sannsynlige først. */
+  boundary_source: string | null;
+  /** Postnumrene raden har i dag — slik at forslaget kan leses som en diff. */
+  naavaerende: string[];
+  /** Sortert med sterkeste signal først. Over terskelen. */
   kandidater: PostalCandidate[];
+  /**
+   * Under terskelen — så vidt inntil, eller en flik i hjørnet.
+   *
+   * Rapporteres i stedet for å kastes: postnummer- og kretsgrenser er tegnet
+   * for hver sin hensikt (postrute mot skoleopptak) og faller aldri sammen, så
+   * et strøk klipper alltid borti naboene sine. Et svakt treff er som regel
+   * støy, men det er kurator som skal se det og avgjøre.
+   */
+  svakeTreff: PostalCandidate[];
 }
 
-export type SkipReason = "har-postnummer" | "mangler-boundary";
+export type SkipReason = "har-postnummer" | "mangler-boundary" | "gjettet-form";
 
 export interface SuggestionResult {
   suggestions: Suggestion[];
@@ -73,29 +101,63 @@ export interface SuggestionResult {
   hoppetOver: Array<{ id: string; name: string; reason: SkipReason }>;
 }
 
-/** Alle ringpunkter i en MultiPolygon, på tvers av flater og ringer. */
-function everyVertex(geometry: PostalAreaWithMeta["boundary"]): number[][] {
-  const points: number[][] = [];
-  for (const flate of geometry.coordinates) {
-    for (const ring of flate) {
-      points.push(...ring);
-    }
-  }
-  return points;
+export interface SuggestOptions {
+  /**
+   * Ta med områder som allerede har `postal_codes`.
+   *
+   * Trengs når formen er byttet til noe autoritativt: postnumrene fra migrasjon
+   * 050 er da eldre og svakere enn geometrien de skulle beskrive, og skal leses
+   * som en diff mot det geometrien sier.
+   */
+  inkluderEksisterende?: boolean;
+  /**
+   * Krev at formen er autoritativ (`curated` eller `krets`).
+   *
+   * En `derived`-form er selv avledet av postnumrene, så å utlede postnumre fra
+   * den er en sirkel: den ville bare bekreftet gjetningen den kom fra.
+   */
+  kunAutoritativForm?: boolean;
+  /** Overstyr terskelen. Se `TERSKEL`. */
+  terskel?: number;
 }
+
+const AUTORITATIV = new Set(["curated", "krets"]);
+
+/**
+ * Hvor stor andel som må ligge innenfor før et treff regnes som ekte.
+ *
+ * 15 % på én av de to retningene. Uten terskel ble Ila foreslått med 13
+ * postnumre, flere av dem med ett eneste punkt innenfor — postnummergrenser og
+ * skolekretsgrenser er tegnet for hver sin hensikt og krysser hverandre overalt.
+ * Terskelen skiller «strøket ligger her» fra «strøket klipper hjørnet».
+ */
+export const TERSKEL = 0.15;
 
 export function suggestPostalCodes(
   areas: AreaForSuggestion[],
-  postalAreas: PostalAreaWithMeta[]
+  postalAreas: PostalAreaWithMeta[],
+  options: SuggestOptions = {}
 ): SuggestionResult {
+  const {
+    inkluderEksisterende = false,
+    kunAutoritativForm = false,
+    terskel = TERSKEL,
+  } = options;
+
   const suggestions: Suggestion[] = [];
   const utenTreff: Array<{ id: string; name: string }> = [];
   const hoppetOver: Array<{ id: string; name: string; reason: SkipReason }> = [];
 
+  // Beregnes én gang per postnummer, ikke per område — 114 polygoner × 46 områder.
+  const postalWitnesses = new Map(
+    postalAreas.map((p) => [p.postnummer, interiorWitnesses(p.boundary)])
+  );
+
   for (const area of areas) {
     const name = area.name_no;
+    const naavaerende = area.postal_codes ?? [];
 
-    if ((area.postal_codes ?? []).length > 0) {
+    if (!inkluderEksisterende && naavaerende.length > 0) {
       hoppetOver.push({ id: area.id, name, reason: "har-postnummer" });
       continue;
     }
@@ -103,30 +165,41 @@ export function suggestPostalCodes(
       hoppetOver.push({ id: area.id, name, reason: "mangler-boundary" });
       continue;
     }
+    if (kunAutoritativForm && !AUTORITATIV.has(area.boundary_source ?? "")) {
+      hoppetOver.push({ id: area.id, name, reason: "gjettet-form" });
+      continue;
+    }
     const areaBoundary = area.boundary;
+    const areaWitnesses = interiorWitnesses(areaBoundary);
 
-    const harSenter = area.center_lat !== null && area.center_lng !== null;
     const kandidater: PostalCandidate[] = [];
 
     for (const postal of postalAreas) {
-      // Retning 1: postnummerets hjørner inne i området.
-      let treffpunkter = 0;
-      for (const [lng, lat] of everyVertex(postal.boundary)) {
-        if (pointInGeometry(lng, lat, areaBoundary)) treffpunkter++;
+      // Retning 1: postnummeret inn i området.
+      let postnummerIOmrade = 0;
+      for (const [lng, lat] of postalWitnesses.get(postal.postnummer) ?? []) {
+        if (pointInGeometry(lng, lat, areaBoundary)) postnummerIOmrade++;
       }
 
-      // Retning 2: områdets senter inne i postnummeret.
-      const senterTreff =
-        harSenter && pointInGeometry(area.center_lng!, area.center_lat!, postal.boundary);
+      // Retning 2: området inn i postnummeret. Fanger et lite område som ligger
+      // helt inne i ett stort postnummer, der retning 1 ikke gir noe utslag.
+      let omradeIPostnummer = 0;
+      for (const [lng, lat] of areaWitnesses) {
+        if (pointInGeometry(lng, lat, postal.boundary)) omradeIPostnummer++;
+      }
 
-      if (treffpunkter === 0 && !senterTreff) continue;
+      if (postnummerIOmrade === 0 && omradeIPostnummer === 0) continue;
 
+      const postalPunkter = postalWitnesses.get(postal.postnummer)?.length ?? 0;
       kandidater.push({
         postnummer: postal.postnummer,
         poststed: postal.poststed,
         kommunenavn: postal.kommunenavn,
-        treffpunkter,
-        senterTreff,
+        postnummerIOmrade,
+        omradeIPostnummer,
+        andelAvPostnummer: postalPunkter === 0 ? 0 : postnummerIOmrade / postalPunkter,
+        andelAvOmrade:
+          areaWitnesses.length === 0 ? 0 : omradeIPostnummer / areaWitnesses.length,
       });
     }
 
@@ -135,16 +208,33 @@ export function suggestPostalCodes(
       continue;
     }
 
-    // Et sentertreff er et sterkere signal enn ett tilfeldig ringpunkt: det sier
-    // at områdets midtpunkt faktisk ligger i postnummeret.
-    kandidater.sort(
-      (a, b) =>
-        Number(b.senterTreff) - Number(a.senterTreff) ||
-        b.treffpunkter - a.treffpunkter ||
-        a.postnummer.localeCompare(b.postnummer)
-    );
+    // Sorter på hvor mye av OMRÅDET som ligger i postnummeret: det svarer på
+    // «hvor hører dette strøket hjemme», ikke «hvor stort er postnummeret».
+    const sorter = (a: PostalCandidate, b: PostalCandidate) =>
+      b.andelAvOmrade - a.andelAvOmrade ||
+      b.andelAvPostnummer - a.andelAvPostnummer ||
+      a.postnummer.localeCompare(b.postnummer);
 
-    suggestions.push({ id: area.id, name, kandidater });
+    const over = kandidater
+      .filter((k) => k.andelAvOmrade >= terskel || k.andelAvPostnummer >= terskel)
+      .sort(sorter);
+    const under = kandidater
+      .filter((k) => k.andelAvOmrade < terskel && k.andelAvPostnummer < terskel)
+      .sort(sorter);
+
+    if (over.length === 0) {
+      utenTreff.push({ id: area.id, name });
+      continue;
+    }
+
+    suggestions.push({
+      id: area.id,
+      name,
+      boundary_source: area.boundary_source,
+      naavaerende,
+      kandidater: over,
+      svakeTreff: under,
+    });
   }
 
   return { suggestions, utenTreff, hoppetOver };
