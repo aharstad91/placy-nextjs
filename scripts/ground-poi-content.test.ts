@@ -349,4 +349,21 @@ describe("kilde-vakter for CLI-en", () => {
   it("secret maskeres før logging i revalidate", () => {
     expect(src).toContain('url.replace(/([?&]secret=)[^&]*/, "$1***")');
   });
+
+  /**
+   * Feilrate-aborten skal fyre på kvote/nett/nøkkel-problemer, ikke på at steder
+   * ikke har noe innhold. Første versjon telte alle feil likt, og nektet dermed å
+   * lagre 6 sanne no-data-funn på Sundsøya. Ruralt er no-data normaltilfellet, så
+   * en abort som teller det ville gjort scriptet ubrukelig nettopp der behovet
+   * for Lokalkunnskap er størst.
+   */
+  it("feilrate-aborten teller KUN tekniske feil, ikke no-data", () => {
+    expect(src).toContain('failed.filter((o) => o.failureOutcome === "error")');
+    expect(src).toMatch(/technical\.length \/ attempted > FAILURE_RATE_ABORT/);
+  });
+
+  it("tomme forsøk skrives til DB (ellers brennes kvote på nytt hver kjøring)", () => {
+    expect(src).toContain("mergeFailedAttempt(existing, {");
+    expect(src).toContain("const toWrite = outcomes.filter((o) => o.grounding)");
+  });
 });

@@ -41,7 +41,11 @@ import {
   DEFAULT_POI_QUALITY_THRESHOLDS,
   type PoiQualityThresholds,
 } from "../lib/gemini/poi-grounding";
-import { PoiGroundingViewSchema, type PoiGrounding } from "../lib/types";
+import {
+  PoiGroundingViewSchema,
+  type PoiGrounding,
+  type PoiGroundingAttempt,
+} from "../lib/types";
 import { isValidProjectIdShape } from "../lib/pipeline/project-id";
 import {
   decidePoi,
@@ -209,6 +213,8 @@ interface Outcome {
   detail?: string;
   grounding?: PoiGrounding;
   sample?: GateSample;
+  /** Satt når status = "feilet". Skiller teknisk feil fra «stedet har ingenting». */
+  failureOutcome?: PoiGroundingAttempt["outcome"];
 }
 
 // ─── Revalidate ─────────────────────────────────────────────────────────────
@@ -321,6 +327,7 @@ async function main() {
             ...base,
             status: "feilet",
             detail: res.reason,
+            failureOutcome: res.outcome,
             // Lagre utfallet. Uten dette blir kolonnen stående null, og neste
             // kjøring kan ikke se forskjell på «aldri forsøkt» og «forsøkt,
             // ingenting der» — den brenner kvote på de samme tomme stedene om
@@ -359,6 +366,7 @@ async function main() {
       name: toGenerate[i].row.name ?? "(uten navn)",
       status: "feilet",
       detail: `uventet: ${(r.reason as Error)?.message ?? String(r.reason)}`,
+      failureOutcome: "error",
     });
   });
 
@@ -446,12 +454,18 @@ async function main() {
   console.log(`Rådata:    ${samplesPath}`);
 
   // ── Feilrate-abort ────────────────────────────────────────────────────────
+  // Teller KUN tekniske feil. «Ingen data» er et legitimt utfall om stedet, ikke
+  // et tegn på at kjøringen er ødelagt — ruralt er det normaltilfellet, og på
+  // Sundsøya slo aborten inn på 6/11 no-data og nektet å lagre sanne funn.
+  // Aborten finnes for kvote/nett/nøkkel-problemer, der ALT feiler.
   const attempted = toGenerate.length;
-  if (attempted > 0 && failed.length / attempted > FAILURE_RATE_ABORT) {
+  const technical = failed.filter((o) => o.failureOutcome === "error");
+  if (attempted > 0 && technical.length / attempted > FAILURE_RATE_ABORT) {
     console.error();
     console.error(
-      `ABORT: ${failed.length}/${attempted} feilet (over ${FAILURE_RATE_ABORT * 100}%). Ingen write.`,
+      `ABORT: ${technical.length}/${attempted} tekniske feil (over ${FAILURE_RATE_ABORT * 100}%). Ingen write.`,
     );
+    for (const o of technical.slice(0, 5)) console.error(`  ✗ ${o.name}: ${o.detail}`);
     process.exit(2);
   }
 
