@@ -14,6 +14,91 @@
 
 ---
 
+## 2026-08-12 — Fastout kartlagt: bildeselskap i «Nyttige lenker»-slotten, ~1 295 kr/bolig — nabo, ikke konkurrent
+
+**Beslutning/innsikt:** Andreas fant en FINN-annonse (finnkode 446069340) der «Nyttige lenker» → **«Områdevideo»** peker på `apps.fastout.com/DynamicDroneView.aspx?panoguid=…`. Verifisert i browser. Andreas' vurdering, som står: **ikke en direkte konkurrent** — men de sitter i vår slot og på vår budsjettlinje, så de skal være kartlagt.
+
+1. **Det er ikke en video.** Det er et **statisk 360°-dronepanorama** (Marzipano-viewer, ett stillbilde du kan dra rundt i / zoome / fullskjerme). Posisjon `63.424785, 10.408563` (Singsaker/Kristiansten, Trondheim). Seks **håndsatte** hotspots: objektet (grønn pin, «Til salgs! Velkommen på visning.»), Trondheim Sentrum 1 km, Solsiden 2 km, Tyholttårnet, Kristiansten festning, NTNU Gløshaugen. Ingen kategorier, ingen reisetid, ingen oppdatering, ingen måling.
+2. **Pris: 1 295 kr eks. mva per stk, self-serve.** `/consumer/PaymentDroneView.aspx` — Stripe/Visa/MC, levert som lenke på e-post, ingen angrerett. Merk to forbehold: `culture=sv-SE` → tallet er trolig **SEK, ikke NOK** (samme størrelsesorden uansett), og dette er **ad-hoc-sporet** — kjedeprisen deres er nesten sikkert lavere. Tallet er derfor et **tak** i kategorien, ikke markedsprisen.
+3. **`panobankguid` ≠ `panoguid` → de selger ut av en panorama-bank.** Forhåndsfløyne panoramaer gjenbrukes på flere boliger i samme område. Andreas bekrefter dekningen er bred («de har flydd over mitt eget hus»). Det er **samme amortisering som Placys per-strøk-kurering** (én kostnad, mange listings) — modellen er kommersielt validert, av noen andre, i vår slot.
+4. **Svensk selskap med kjedeavtaler.** `fastout.com` → `fastout.se`, ingen `.no`-domene. Kundelista: Fastighetsbyrån, Skandinavisk Fastighetsförmedling, Bjurfors, HusmanHagberg, Mäklarringen. Det er «vinn ÉN kjede»-tesen utført i Sverige — og en advarsel om at en aktør med etablerte kjedeavtaler kan utvide nordover uten å bygge noe nytt.
+5. **De er i en annen jobb: bilde, ikke data.** De svarer «hvordan ser det ut herfra», vi svarer «hva finnes her, hvor langt unna, hva betyr det for deg som skal bo her». Det de har er **bildedekning**, ikke kunnskap — pinnene er landemerker en person har plassert for hånd.
+6. **Placys 3D-kart er allerede et supersett av produktet deres** (Andreas' poeng): Google-fotorealistisk 3D + flythrough lar deg fly **hvor som helst**, ikke se fra ett fast dronepunkt, og pinnene er datadrevne, ikke håndsatte. Vi har altså formatet deres som en birolle i et produkt som gjør mer.
+7. **Priskonsekvens (intern, aldri pitch):** kontoravgift 15–25k/3 mnd mot et kontor med ~200 salg/år ≈ 50 boliger i perioden → **300–500 kr/bolig, altså under ett Fastout-panorama**. Brukes kun som svar hvis noen sier «vi har jo Fastout» — per-bolig-regning foran megler er fortsatt feil ramme (jf. 08-04).
+8. **Selvbetjent kjøp av områdeinnhold er validert.** Megler legger inn kort og kjøper uten innkjøpsprosess. Det støtter `feat/megler-self-serve` (adresse → board → delingslenke), som ligger ubrukt i worktree.
+
+**Forbehold som skal med:** **det rurale asymmetri-argumentet (§5f) treffer ikke Fastout.** FINNs Nærområdet-kart blir tomt på Inderøy — et dronefoto blir det ikke. Mot Fastout må argumentet være *data vs. bilde*, aldri *dekning*.
+
+**Begrunnelse:** «Nyttige lenker»-slotten ble kartlagt 08-11 som teknisk ledig på bruktmarkedet. Fastout viser at den ikke er kommersielt tom: noen selger allerede «området rundt boligen» inn i den, til en observerbar pris. Det endrer ikke sporvalget, men det gir oss et prisanker i kategorien og en salgssituasjon å være forberedt på.
+
+**Detaljer:** `2026-08-04-objektside-veggen-hem-og-nabolagsprofil-benchmark.md` §3c. Aktør-rad lagt i `aktor-map.md` (proptech-benchmark).
+
+**Status:** Aktiv som kartlegging — **ingen handling, ingen kontakt.** Samarbeid ikke aktuelt nå (Andreas), men de sitter på norsk flyfoto-dekning + svenske kjedeavtaler, så partner-vinkelen holdes åpen i bakhodet.
+
+---
+
+## 2026-08-12 — Navnealternativ til «Placy» utforsket (gresk-rot-øvelsen): «Chora» er frontrunner, chora.no er ledig — PARKERT
+
+**Beslutning/innsikt:** Andreas ville kjøre Anthropic-øvelsen (gresk rot som beskriver kjernen: *anthropos* → Anthropic) på Placy-navnet. Ingen beslutning om bytte — utforskning parkert her.
+
+1. **«Placy» er allerede gresk uten at det var meningen:** «place» stammer fra *plateia (hodós)* — «den brede gaten»/torget. Øvelsen er altså ikke «finn et gresk navn», men «finn et som bærer mer mening».
+2. **Kjerne-roten er sted, ikke kart/bolig.** Kandidatene som ble stående: **Chora** (χώρα — Platons «rommet der ting blir til»; *chorografi* = antikkens sjanger for detaljert beskrivelse av ett område, i motsetning til geografi — bokstavelig talt Placys sjanger), **Entopia** (*entopios* = «den lokale, av stedet»; moderne gresk *ntopios* = lokalkjent person; Doxiadis brukte Entopia om «det gode stedet som faktisk kan bygges» vs. utopia), **Nostos** (hjemkomsten — emosjonelt sterk for bolig, men peker bakover). Vurdert og lagt bort: Geitonia (= nabolag, men tung å uttale), Periego (Pausanias' *Periegesis*, verdens første reiseguide), Proxenos (vertskapsmannen som kjente byen for fremmede — konseptuelt finest, men kolliderer med «proxy»).
+3. **Domenesjekk kjørt (Norid/whois 2026-08-12):** `chora.no` **LEDIG**, `entopia.no` **LEDIG**; `chora.com` opptatt siden 1998 men sovende/parkert (Cloudflare, svarer feilkode — trolig kjøpbar, ellers .io/get-mønster); `khora.no` og `nostos.no` tatt.
+4. **Gjenstår før et evt. bytte er trygt:** varemerkesøk Patentstyret + EUIPO i relevante klasser (kjent nabo-kollisjon: Khora VR-studio i København), foretaksnavn i Brønnøysund, og uttale-test i pitch-setning («KO-ra»).
+
+**Begrunnelse:** Navnebytte er ikke gratis — «Placy» er alt brukt i pitch-løpene mot HEM/EM1 og i self-serve-flatene (placy.no i kort-kode-ideen 08-11). Utforskningen er verdt å ha klar hvis rebranding blir aktuelt (f.eks. ved kjede-avtale eller investor-runde), men skal ikke drive arbeid nå.
+
+**Status:** PARKERT — ingen beslutning, ingen registrering gjort. Hvis gjenopptatt: sikre chora.no + entopia.no billig først (~150 kr/år), varemerkesøk før noe annet.
+
+---
+
+## 2026-08-11 — FINN-annonsen har en klikkbar lenke-slot likevel: «Nyttige lenker» fra meglersystem-feeden
+
+**Beslutning/innsikt:** Andreas fant en DNB-annonse med megler-skrevne, klikkbare lenker i FINN-appens «Nyttige lenker»-boks — «TRYKK FOR VIDEO» og «TRYKK FOR HJEMMESIDE» → `villahumlehaugen.no` (Villa Humlehaugen, Humlehaugvegen 37, Ranheim). Verifisert på den aktive salgsannonsen i **homes-vertikalen** (finnkode 468757276, prisantydning 42,9 M), synlig på både app og desktop.
+
+1. **Mekanismen er en strukturert lenkekanal fra meglersystem-feeden — ikke et hack, og ikke fritekst.** Fritekst-veggen fra 08-04 står (FINN-hjelpesenteret bekrefter at lenker i annonsetekst ikke er klikkbare), men rangeringstabellen i 08-04 §3 manglet denne flaten. Video-lenken går til en **rå `.mov`-fil på eget domene** → vilkårlig URL, fri lenketekst, ingen host-whitelist. Og vertikalen er «Bolig til salgs» — **samme annonseskjema som hele bruktvolumet** (boligen er nybygg, men skjemaet diskriminerer ikke på boligens alder).
+2. **Det reparerer Moat 2-hullet på FINN-flaten.** Prisen bokført 08-04 for karusell-veien var «et bilde gir null måling». En klikkbar lenke med `?src=finn` gir måling igjen — trykkbar i appen der boligkjøperen faktisk skroller, null dev hos noen. Self-serve-SharePanel har allerede `?src=finn`-lenken klar til å limes inn.
+3. **Slotten står tom i praksis:** 6 av 6 vanlige bruktannonser sjekket (3 DNB, 2 EM1, 1 EIE) har bare standard-/kjedelenker → **ledig plass på hele bruktmarkedet.**
+4. **Leverandør-spørsmålet (Andreas' oppfølging) er halvt besvart:** **Vitec Next bevist** — DNB-annonsen er Vitec (`bud.vitecnext.no/MSDNB/…`), lenkene er lagt inn per oppdrag med fri tekst; HEM/Nordvik/Aktiv kjører samme system. **Webtop/Visma (EM1, EIE) ubevist utenfra** — feeden deres pusher flere lenker til samme FINN-boks (Eiendommens hjemmeside / Bestill salgsoppgave / Visningspåmelding / Energiattest-PDF), så røret finnes, men alle observerte er kjedekonfigurerte standardtyper med identisk `cid=partner;;finn;;em1mn_…`-sporing — selv Frank Robert Baes eget Grilstad Marina-oppdrag har ingen fri lenke. Enten eksponerer ikke Webtop feltet for megler, eller EM1-konfigen gjør det ikke. **Avgjøres med ett skjermbilde fra Webtop** — god mikro-ask til Kristian/Frank Robert som samtidig tester viljen deres.
+5. **Mulig gate hos FINN, uverifisert:** video i boligannonse krever «utvidet prospekt»-pakken (hjelpesenteret) → lenkefeltene kan være pakke-gatet snarere enn system-gatet.
+6. **Risiko som skal med i enhver bruk:** FINNs annonseregler forbyr lenker til «FINNs konkurrenter» og markedsføring av andre tjenester — og FINN opererer selv Nabolagsprofil. En Placy-stedsside om boligens nabolag ligger i samme kategori som prosjektsiden DNB lenker til og bør stå seg, men flaten er leid: **kanalen er en oppgradering av FINN-flaten (bilde + klikkbar lenke), ikke fundamentet.** Visningsbekreftelse-, karusell- og QR-sporet består urørt.
+
+**Begrunnelse:** 08-04-analysen kartla EM1s objektside og FINNs tekstfelt, men ikke annonsens strukturerte lenke-array — funnet myker opp «objektside-veggen»-konklusjonen for FINN-delen og gjenåpner målbar distribusjon på flaten med høyest trafikk. App/desktop-forskjellen Andreas så er rendering, ikke støtte: appen samler alle lenker i én boks, desktop sprer dem.
+
+**Detaljer:** `2026-08-04-objektside-veggen-hem-og-nabolagsprofil-benchmark.md` §3b (verifikasjonsdata, leverandør-status, tabell-raden).
+
+**Status:** Aktiv — Vitec-halvdelen validert, Webtop-halvdelen åpen (ett skjermbilde fra EM1-systemet avgjør). Åpent også: utvidet prospekt-gaten, og om FINN vil lese en nabolagslenke som konkurrent-lenke.
+
+**Tillegg samme dag — 187-annonse-sveip (7 Sonnet-agenter) besvarte leverandør-spørsmålet så langt det kan besvares utenfra (§3b i 08-04-doccen har full tabell):**
+
+1. **Webtop KAN fri lenke — men bare observert på prosjekt-annonser.** Beviset er en skrivefeil: EIE Sandvikas Villa Granheim-annonse har «Prosjektets hjemme**isde**» *(sic — menneske-tastet i fagsystemet)* + egendefinert **«Boligvelger»** → gjelstenbolig.no, i selve «Nyttige lenker». BOA (`boa.webtopsolutions.com`) → nebbaveien.no viser at det er plattform-funksjonalitet, ikke EIE-konfig. EM1 mn+nn har standardfeltet «Se prosjektets hjemmeside» → eksterne utbygger-domener på 4–6 prosjektannonser (bl.a. **Elvely/Bo Brøset → bobroset.no** — nok et Brøset-prosjekt i EM1s «Trondheim Øst»-geografi).
+2. **På brukt er Webtop 0 av ~119** (EM1+EIE+PrivatMegleren samlet) — feltet ser prosjekt-gatet ut i Webtop-UI-et. Forvent «nei» på brukt i EM1-møtet; prosjektside-feltet er EM1-åpningen. Men faste felt kan peke eksternt også på brukt (én PM-annonse: «Se komplett salgsoppgave» → fredensborgbolig.no/vestbyen).
+3. **Vitec-brukt-beviset står alene hos DNB.** Nordvik (MSNOP) og Krogsveen (MSKR) er bekreftet Vitec Next, men 28/30 hadde kun standardsettet; unntaket er Nordvik-brukt med «Social Video» → portal.diakrit.com (produktfelt, men ekstern URL på homes i praksis). Så: funksjonen finnes i Vitec, praksis/konfig varierer per kjede — HEM-svaret hentes i Vitec-UI-et (Einar).
+4. **Fagsystem-biffangst:** Webtop er multi-tenant på subdomener (`em1.`, `em1nn.`, `eie.`, `pm.`, `boa.`, `partners.`) — **PrivatMegleren kjører Webtop, ikke Vitec** (antagelse falsifisert). EM1s 12 regionselskap deler ikke infrastruktur (mn/nn=Webtop, Sør-Rogaland=meglervisning, spor av Vitec-bud/Visma OneBroker) — «EM1 kjører Webtop» er en Midt-Norge-sannhet, ikke kjede-sannhet.
+5. **Inkumbent-detalj:** EIE lister «Nabolagsprofil» → profil.nabolag.no som egen oppføring i Nyttige lenker — FINNs produkt sitter allerede i slotten. Placy-asken er «én oppføring til i samme liste».
+6. **Konklusjon for distribusjonskartet:** prosjekt/nybygg-annonser = kanalen er åpen hos **begge** leverandører i dag (treffer utbygger-sporet og HEM-nybygg). Brukt = bevist kun DNB/Vitec; HEM sannsynlig men ubekreftet; EM1-brukt sannsynligvis stengt utenfra.
+
+**Tillegg 2 samme dag — kort-kode-idé landet (Andreas): «Placy-kode» à la finnkoden.** 2–3 auto-genererte karusellbilder per eiendom (bildegeneratoren fra 08-04 §3, allerede byggekrav) får en kort, tastbar kode påtrykt: `placy.no/A424G` → riktig board.
+
+1. **Koden løser bildets grunnproblem:** karusellbildet er trykk-dødt — en 4–5-tegns kode i URL-stien gjør det *tastbart* (ett steg; IKKE `find.placy.no` + søkefelt = to steg og forutsetter en vane ingen har; finnkoden virker fordi folk alt står i FINNs søkefelt). Kode-regler: case-insensitiv, dropp forvekslbare tegn (0/O, 1/l/I).
+2. **Måling-ved-eksklusjon:** alle klikkbare flater har alt `?src=` — direkte-treff på `/KODE` uten src kan bare komme fra tastede flater (karusell, papir, salgsoppgave-tekst) → den umålbare flaten blir målbar uten egen mekanikk, og «et bilde gir null måling» (08-04 §3) er i praksis reparert. Gjør også Webtop-brukt-stengselet (pkt. 2 over) mindre kritisk: koden virker der lenkefeltet er stengt.
+3. **Distribusjonen ER markedsføringen:** hvert bilde på hver annonse bærer `placy.no` — samme loop som bygde FINN-koden. Men i meglermøter selges *mekanismen* («kort adresse kjøperen kan taste fra bildet»), ikke navnet «Placy-kode».
+4. **Byggekost nær null:** kode-tabell (kode → board, 301) i provisjonerings-flyten + koden inn i SharePanel og påtrykt bildegenerator-slides/caption. Tillegg til bildegeneratoren, ikke eget prosjekt. Designkravet fra §3 (stor type, quality(70), test på 390 px) gjelder koden mest av alt — det er den som skal tastes fra hukommelsen.
+
+**Status tillegg 2:** Retning landet, ikke bygd — henger på bildegeneratoren (åpen beslutning 5 i 08-04-doccen).
+
+**Tillegg 3 samme dag — Sundsøya (Inderøy): første konkrete full-pakke-case + det rurale asymmetri-argumentet (08-04-doccen §5f har full tekst):**
+
+1. **Sundsøya (finnkode 468884345, planned-vertikal, salgsstart høst 2026) er HEM avd. Rosten** — Erik Ringseth Oxaal + Andreas Myran Steen; utbygger Sundsøya Eiendom AS, prosjektside `nyesundsoya.no` (WordPress). Annonsen bruker allerede «Nyttige lenker» → «Se prosjektets hjemmeside» → asken er «én lenke til». *Metodefunn:* FINN rendrer meglerkortet klientside — tekst-fetch av annonsen finner det ikke (Claude konkluderte først feil «ikke HEM»); meglerkort verifiseres i browser/skjermbilde.
+2. **Full pakke definert:** embed på prosjektsiden + «Nyttige lenker»-lenke + karusellbilder + kort-kode = **én pris per prosjekt per salgsperiode**, fire flater, alle målt (`?src=embed`/`?src=finn`/kode-eksklusjon). Sveipen viste fri lenke på prosjekt-vertikalen hos begge leverandører → **full pakke er kjede-agnostisk på nybygg** — den ene flaten der hele pakken alltid er mulig.
+3. **25–40k/salgsperiode for lite prosjekt er realistisk** — under sammenlignbare linjer i nybygg-markedspakken (film 6–12k, Marketer 50–200k) og 2–5 % av markedsbudsjettet. Friksjonen er behovsopplevelse («trenger vi dette for 30 boliger?» → svar: interessent-agn i forhåndssalg-fasen) og salgskanal (via megler, ikke kaldt mot utbygger) — ikke tallet. Internt: håndkuratert nivå 2 utenfor dekning = nær break-even; unntaksprising, betalingen er distribusjonsbevis + HEM-relasjon.
+4. **Rural-asymmetri-argumentet (Aleksander har vært på det samme):** informasjonsasymmetrien er størst der dataene er tynnest; ukjent leses som risiko → ruralt prosjekt konkurrerer på pris uten nabolagsfortelling. FINNs eget «Nærområdet»-kart beviser det på skjerm: 2–3 pins på Sundsøya → området **ser tomt ut**; uniformt databaseprodukt skader rurale annonser, og Nabolagsprofil blir dårligere jo mer ruralt. **Ruralt er der inkumbenten er svakest og behovet størst** — posisjoneringsakse, ikke bare salgsargument. Sorterer inn i to-SKU-modellen (by = tetthet → nivå 1 → grunnpakke; ruralt = asymmetri → håndkuratert nivå 2 → prosjekt-SKU); Trondheim-only-beslutningen står (gjaldt automatisert pipeline). Motvekt: per-strøk-amortiseringen forsvinner ruralt — stykkgods, ikke skalering.
+5. **Pitch-mekanikk:** side-ved-side-demo — FINNs Nærområdet-kart vs. Placy-board på samme adresse, skillet data/lokalkunnskap synlig på tre sekunder. Tilflytting-vinkelen gir megleren et argument *de* bruker mot utbygger. **Avd. Rosten = tredje dør inn i HEM** (i tillegg til Einar og Løbakk); §5c-advarslene gjelder konkret (to-SKU-skillet først, aldri per-enhet høyt).
+
+**Status tillegg 3:** Case identifisert, ingen kontakt tatt. Full pakke henger på bildegeneratoren + kort-koden; embed på WordPress-utbyggerside er friksjonsfri (samme mønster som wesselslokka.no).
+
+---
+
 ## 2026-08-06 — Side-gig-sporet åpnet: gjenbruks-enheten er stacken, ikke produktformen. Midtbyen først, Open House som referansestige
 
 **Beslutning/innsikt:** Startet med en turisme-tanke fra London (Citymapper) og endte med et arbeidsprinsipp + ett konkret prospekt. Ingen kontakt tatt, ingen pris besluttet.

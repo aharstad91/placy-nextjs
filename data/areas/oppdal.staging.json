@@ -1,0 +1,147 @@
+{
+  "_instructions": "Oppdal sentrum — andre rurale strøk (recall-test nr. 2 etter Straumen, Andreas har lokalkunnskap = fasit-kilde). Boundary er førstepass geofence (3 km radius rundt sentrumskrysset/stasjonen), generert — kan raffineres mot tettstedsgrense senere. report_editorial er TOMME templates — kurateres ETTER Andreas fasit-pass.",
+  "areaId": "oppdal",
+  "meta": {
+    "name_no": "Oppdal",
+    "name_en": "Oppdal",
+    "slug_no": "oppdal",
+    "slug_en": "oppdal",
+    "level": "strok",
+    "center_lat": 62.5942,
+    "center_lng": 9.69,
+    "zoom_level": 13
+  },
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          9.69,
+          62.621149
+        ],
+        [
+          9.705154,
+          62.620231
+        ],
+        [
+          9.719274,
+          62.617539
+        ],
+        [
+          9.7314,
+          62.613256
+        ],
+        [
+          9.740705,
+          62.607675
+        ],
+        [
+          9.746554,
+          62.601175
+        ],
+        [
+          9.748549,
+          62.5942
+        ],
+        [
+          9.746554,
+          62.587225
+        ],
+        [
+          9.740705,
+          62.580725
+        ],
+        [
+          9.7314,
+          62.575144
+        ],
+        [
+          9.719274,
+          62.570861
+        ],
+        [
+          9.705154,
+          62.568169
+        ],
+        [
+          9.69,
+          62.567251
+        ],
+        [
+          9.674846,
+          62.568169
+        ],
+        [
+          9.660726,
+          62.570861
+        ],
+        [
+          9.6486,
+          62.575144
+        ],
+        [
+          9.639295,
+          62.580725
+        ],
+        [
+          9.633446,
+          62.587225
+        ],
+        [
+          9.631451,
+          62.5942
+        ],
+        [
+          9.633446,
+          62.601175
+        ],
+        [
+          9.639295,
+          62.607675
+        ],
+        [
+          9.6486,
+          62.613256
+        ],
+        [
+          9.660726,
+          62.617539
+        ],
+        [
+          9.674846,
+          62.620231
+        ],
+        [
+          9.69,
+          62.621149
+        ]
+      ]
+    ]
+  },
+  "report_editorial": {
+    "hverdagsliv": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "barn-oppvekst": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "mat-drikke": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "natur-friluftsliv": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "transport": {
+      "body": "",
+      "highlightCandidates": []
+    },
+    "trening-aktivitet": {
+      "body": "",
+      "highlightCandidates": []
+    }
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "_instructions": "Straumen (Inderøy) — første rurale strøk. Boundary er førstepass geofence (3 km radius rundt Straumen sentrum/Sundsøya), håndtegnet/generert — kan raffineres mot tettstedsgrense senere. Kuratér report_editorial, kjør curate-area --file data/areas/straumen.staging.json.",
+  "areaId": "straumen",
+  "meta": {
+    "name_no": "Straumen",
+    "name_en": "Straumen",
+    "slug_no": "straumen",
+    "slug_en": "straumen",
+    "level": "strok",
+    "center_lat": 63.87,
+    "center_lng": 11.297,
+    "zoom_level": 13
+  },
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          11.297,
+          63.896949
+        ],
+        [
+          11.312838,
+          63.896031
+        ],
+        [
+          11.327596,
+          63.893339
+        ],
+        [
+          11.340269,
+          63.889056
+        ],
+        [
+          11.349993,
+          63.883475
+        ],
+        [
+          11.356107,
+          63.876975
+        ],
+        [
+          11.358192,
+          63.87
+        ],
+        [
+          11.356107,
+          63.863025
+        ],
+        [
+          11.349993,
+          63.856525
+        ],
+        [
+          11.340269,
+          63.850944
+        ],
+        [
+          11.327596,
+          63.846661
+        ],
+        [
+          11.312838,
+          63.843969
+        ],
+        [
+          11.297,
+          63.843051
+        ],
+        [
+          11.281162,
+          63.843969
+        ],
+        [
+          11.266404,
+          63.846661
+        ],
+        [
+          11.253731,
+          63.850944
+        ],
+        [
+          11.244007,
+          63.856525
+        ],
+        [
+          11.237893,
+          63.863025
+        ],
+        [
+          11.235808,
+          63.87
+        ],
+        [
+          11.237893,
+          63.876975
+        ],
+        [
+          11.244007,
+          63.883475
+        ],
+        [
+          11.253731,
+          63.889056
+        ],
+        [
+          11.266404,
+          63.893339
+        ],
+        [
+          11.281162,
+          63.896031
+        ],
+        [
+          11.297,
+          63.896949
+        ]
+      ]
+    ]
+  },
+  "report_editorial": {
+    "hverdagsliv": {
+      "body": "Straumen samler hverdagen på gangavstand: Extra i Sundfærvegen har åpent til 23 på hverdager, og på Nessjordet ligger Rema 1000, Boots apotek, Vinmonopolet og Nille vegg i vegg. Sentrum har i tillegg Primstaven bokhandel, Husby Optikk og Inderøy legesenter.",
+      "highlightCandidates": [
+        "google-ChIJKYZvmxhibUYRBGDaOF7IuJc",
+        "osm-node-2748254515",
+        "google-ChIJ6TytNj1ibUYRNHxZA65SwzY",
+        "osm-node-5690557010",
+        "osm-node-498353874",
+        "osm-node-2367295315"
+      ]
+    },
+    "barn-oppvekst": {
+      "body": "Hele skoleløpet ligger i tettstedet: Sakshaug skole, Inderøy ungdomsskole og Inderøy videregående, med Sakshaug og Kribelin barnehager i tillegg. Inderøy idrettspark og hallene ved skolene og kulturhuset samler idretten, og Muustrøparken har egen lekeplass.",
+      "highlightCandidates": [
+        "osm-node-498353099",
+        "nsr-975269264",
+        "nsr-974560798",
+        "bhf-sakshaug-barnehage",
+        "bhf-kribelin-barnehage-as",
+        "osm-way-1265870210"
+      ]
+    },
+    "mat-drikke": {
+      "body": "Rødbrygga serverer lokalmat på bryggekanten nederst i Nergata, Marens Bakeri og Uthuset pub ligger i sentrum. Straumen er selve midtpunktet på Den Gyldne Omvei — Øyna, Gulburet og Inderøy Gårdsbryggeri er nærmeste stopp på matveien fv. 761.",
+      "highlightCandidates": [
+        "google-ChIJ9XqJvwtjbUYRQSuEHI6CzK0",
+        "google-ChIJyd0kTT1ibUYRVZKy30miRjY",
+        "google-ChIJNXEAwXJjbUYRxzd0AUfiTu0",
+        "google-ChIJyd0kTT1ibUYRGSLNF3xQOrk",
+        "google-ChIJ63HOUyNibUYRYKZ49ZLfakQ"
+      ]
+    },
+    "natur-friluftsliv": {
+      "body": "Sundsand er Inderøys største badeplass, langgrunn med kiosk, grillplasser, lekeplass og tre sandvolleyballbaner. Kyststien går fra sentrum rundt hele Sundsneset, Muustrøparken viser elleve Nils Aas-skulpturer langs Granaelva, og Sandvågen småbåthavn ligger ved Nessjordet.",
+      "highlightCandidates": [
+        "osm-relation-5158172",
+        "google-ChIJe2pnuSJibUYRqz4D6mc_JdM",
+        "osm-node-12296520661",
+        "google-ChIJHfBF5iFjbUYRcOVR_L7Q7bg",
+        "osm-way-793547816",
+        "osm-way-1206486493"
+      ]
+    },
+    "transport": {
+      "body": "E6 og Røra stasjon ligger sju kilometer unna via fv. 755, og Trønderbanen går hver time mot Trondheim og Steinkjer. AtB-bussen bruker rundt 25 minutter til Steinkjer, med tyngst frekvens i skoletiden, og Straumbrua binder sentrum til Sundsneset.",
+      "highlightCandidates": [
+        "entur-NSR-StopPlace-60562"
+      ]
+    },
+    "trening-aktivitet": {
+      "body": "Fresk treningssenter ligger ved legesenteret nord i sentrum, Inderøy idrettspark og hallene ved Sakshaug skole og kulturhuset dekker lagidretten. Sundsand har tre sandvolleyballbaner, og kyststien rundt Sundsneset er opparbeidet som tur- og joggerunde.",
+      "highlightCandidates": [
+        "google-ChIJn2IkqiJibUYRHT_Mnr1_XHU",
+        "osm-way-1265870210",
+        "osm-node-11703385631",
+        "osm-node-11703385627",
+        "osm-relation-5158172",
+        "osm-way-1265870186"
+      ]
+    }
+  }
+}

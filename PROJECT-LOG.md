@@ -6,6 +6,103 @@
 
 ---
 
+## 2026-08-13 — MARKØRKLIKK KAPRER IKKE LENGER KATEGORIEN + DESKTOP-SIDEBAR FIKK VIEWPORT-LISTE (branch `feat/scout-straumen`, ikke committet)
+
+**Kontekst:** Andreas' gjennomgang av desktop-boardet ga tre bestillinger: (1) et markørklikk skal bare åpne stedet — ikke også filtrere kartet og drille sidebaren inn i en kategori man må finne veien tilbake fra, (2) desktop-sidebaren skal få mobilsheetens viewport-dynamikk, med «Verdt å merke seg» som egen kollapsbar seksjon, og (3) ikon/farge i sidebar-radene matcher ikke pinnene. Kjørt som `/ce-plan` → `/ce-work`, 8 enheter, plan i `docs/plans/2026-08-13-001-feat-markorklikk-og-desktop-nabolagsliste-plan.md`.
+
+**Beslutning som oppheves:** origin-dokumentet for mobilflaten (`2026-08-03-mobil-nabolagsflate-requirements.md`) **R20** identifiserte kategori-låsingen som feil, men løste den kun for mobil og skrev eksplisitt at «desktop og VO-flatene beholder dagens oppførsel uendret». Det unntaket er nå fjernet: fiksen ligger i reduceren og gjelder alle flater. **R16 er samtidig bevisst avveket på desktop** — mobilens kategoriside viser fortsatt hele kategorien (der ER lista flaten, og «se alle 17» ville blitt en løgn), mens desktop scoper på utsnittet fordi lista står ved siden av kartet og leses samtidig med det. Ærligheten ivaretas av dekningsbrøken + en «Ramm inn»-handling.
+
+**Fellen som gjorde dette til mer enn en enkel endring:** `useActivePOI()` var derivert av `useActiveCategory()`. Sluttet `OPEN_POI` å sette kategorien, ville hooken returnert null og popup, rutelinje, navnelabel og 3D-kamerafly forsvunnet STILLE — ingen feilmelding, bare ingenting. Unit 1 gjorde derfor oppslaget kategori-uavhengig (`findBoardPOI` over alle kategorier, `findBoardCategoryOf` for rutefargen) FØR reduceren ble rørt. `BoardPathLayer` brukte i tillegg `activeCategory` som render-gate og fargekilde; begge tar nå kategorien fra POI-en selv.
+
+**Det som ble bygd (8 enheter):**
+1. **Kategori-uavhengig POI-oppslag** — `findBoardPOI`/`findBoardCategoryOf` i board-data; `useActivePOI` + ny `useActivePOICategory`; sub-filter-effekten gates på `hiddenIds` i stedet for på kategori.
+2. **`OPEN_POI` eier ikke kategorien** — no-op-grenen fjernet, `activeCategoryId` verken settes eller nullstilles (nullstilling ville lukket nivå-2-panelet en highlight-chip ble klikket fra). `categoryId` beholdt som valgfritt felt for event-panelet og chips-stien; 2D+3D markørklikk slutter å sende det. `markerStates` betinges nå av `activeCategory` alene — fasen var ikke lenger en gyldig proxy, og gammel kode ga TOMT markørsett i `phase "poi"` uten kategori.
+3. **Delt visuell identitet** — `poiVisualIdentity` i `marker-style.ts` (sub-kategori vinner, tema er fallback, dempet farge), brukt av både `markerStates` og highlights. Identiteten avledes i board-data så radene er render-klare; `POIHighlightRow` sluttet å hardkode `MapPin` + temafarge.
+4. **`publishViewport` splittet** — flagget bar tre ting samtidig (publiser rektangel / lås rotasjon / hopp over `setPadding`). De to siste er mobilsheet-kompromisser og ligger nå bak `sheetSurface`. Desktop publiserer utsnitt og beholder `mapPaddingLeft` + Mapbox' default-rotasjon.
+5. **`use-viewport-category-list`** — LESE-hook over `buildNeighbourhoodList`: primitiver i dep-arrayet, og den skriver ALDRI `setViewportPoiIds` (det ville gitt løkken utsnitt → liste → markørsett → `fitVisible` → nytt utsnitt).
+6. **`HighlightsDisclosure`** — kollapset ved 2+, ikon-klynge som teaser, toggle med `aria-expanded`, CSS-drevet expand/collapse, ingen auto-scroll; ved presis 1 highlight ingen accordion.
+7. **Kategori-panelet** — highlights øverst, viewport-liste med `categorySubline`-dekning («6 av 11 synlig · 7–24 min»), «N steder ligger utenfor utsnittet»-rad, tom tilstand, og den åpne POI-en PINNET utenfor scroll-containeren. `categorySubline` flyttet til `lib/board/neighbourhood-list.ts` (tre konsumenter deler den nå).
+8. **Browser-verifisering** — 11 kriterier, desktop 1440×900 + mobil 390×844×3.
+
+**Læringer som styrte designet (hentet fra `docs/solutions/`):** Explorer shippet den SAMME viewport-scopede sidebar-lista i februar og fikk en high-severity bug — raden brukeren leste forsvant ved panorering (`active-poi-card-pinned-sidebar-20260208`). Derfor både data-halvdelen (aktiv POI beholdes i settet) og UI-halvdelen (pinnet utenfor scroll-containeren). Verifiseringsregelen fra `placy-basic-tier-drill-in-20260608` var også avgjørende: **markørsynlighet måles på opacity/`isVisible`, aldri som antall DOM-noder** — markørene beholder DOM-identitet og fader.
+
+**Funn under verifisering (fikset):** «Ramm inn» flyttet kameraet uten at lista fulgte etter. Årsak: R12 undertrykker publisering for programmatiske kamerabevegelser. `fitVisible` re-publiserer nå utsnittet én gang på `moveend` — den kalles bare fra eksplisitte brukerhandlinger, så det er ikke en løkke-åpning. I samme runde: «Ramm inn»-knappen rendres bare når kamera-API-et faktisk er registrert (ingen død knapp).
+
+**Verifisert i browser (11/11):** markørklikk → popup + sidebaren står stille + alle 68 markører synlige · kategoriklikk filtrerer som før (12 synlige / 55 dempet) · highlights kollapset ved 3, toggler begge veier · **radenes SVG-path og farge er IDENTISK med pinnenes** for alle tre highlights · panorering endret lista 6 → 1 rad mens markørsettet sto helt uendret (13/55 før og etter) · «Ramm inn» hentet tilbake «11 steder · 7–25 min» og var stabil etter 4 s · pinnet rad overlevde at POI-en ble panorert ut · mobilsheet uendret med riktige dekningsbrøker · markørtap på mobil endret ikke antall dempede markører (33 før og etter) = ingen kategori-lås · rutebadge «19 min» rendres UTEN aktiv kategori (beviset på Unit 1) · 0 konsollfeil på begge flater.
+**Ikke verifisert i browser:** at sheet-drag ikke flytter kartet — den syntetiske gesten flyttet ikke sheeten, så målingen er ugyldig. Dekket av enhetstest for begge grener av `sheetSurface`.
+
+**Mekanisk:** tsc ren · lint 0 errors · **1899 tester grønne** (fra 1838; nye: `findBoardPOI` ×8, `poiVisualIdentity` ×8, identitets-paritet ×3, markørsynlighet ×5, `use-viewport-category-list` ×10, `HighlightsDisclosure` ×10, kategori-panel ×9, publishViewport-splitt ×2) · `npm run build` OK · **ingenting committet.**
+
+**Åpent/deferred:** utvalget og sorteringen bak «Verdt å merke seg» (Andreas: «funksjon bak dette må vi komme tilbake til») · highlights-seksjon på mobilens `CategoryPage` · **`poi_clicked` mangler i 2D-kartet** (3D emitter det; 2D er hovedflaten på ikke-3D-prosjekter, så Moat 2 mangler POI-signalet der — ekte hull, egen oppgave) · Utforsk-modalen (`2026-08-12-001`, ubygd) møter denne endringen i `OPEN_POI` og blir enklere av den.
+
+---
+
+## 2026-08-13 — LABEL ANKER-FLIPPING: HØYRE → VENSTRE → KULL (branch `feat/scout-straumen`, ikke committet)
+
+**Kontekst:** Andreas testet Oppdal-boardet på ekte iPhone (LAN-IP) og delte skjermopptak. Kullingen fra 08-12 fungerte live (pinch fyrer moveend-recompute, null tekst-grøt), men opptaket avslørte ett mønster bak alle rest-svakhetene: **labels kunne bare gå til høyre.** Tre symptomer, samme rot: (1) nakne pins i tette klynger selv på dyp zoom — ledig plass til venstre, men høyre-sporet krysser nabo-pin → kullet; (2) «Klipperiet-tilfellet» — isolert-utseende pin navnløs fordi høyre-sporet treffer en sirkel lenger borte; (3) tekst klippet av høyre skjermkant («Vitusapotek Oppd…»).
+
+**Fiksen — anker-flipping (klassisk kartografi):** `computeCulledLabels` → `computeLabelPlacements` i `lib/board/label-collision.ts`: returnerer `id → "right" | "left"` i stedet for et kulle-sett. Hver kandidat prøver høyre først; kolliderer den med nabo-label/markør-sirkel/viewport-kant, prøves venstre; kull først når begge sider er blokkert. Pins nær høyre skjermkant får venstre-preferanse (viewport-bredde er nå input — `map.getContainer().clientWidth`). Aktiv POI (Infinity) får alltid plass, på foretrukket side om ingen er ledig. `BoardMarker` fikk `labelSide`-prop: venstre-labels ankres `right: 100%` med høyrejustert tekst mot pinnen (som Google Maps). 13 kontraktstester (flip-i-stedet-for-kull, kjede a-høyre/b-venstre/c-kull, viewport-kant begge veier, determinisme, 2-linjers bokser, venstre-boks speiler høyre).
+
+**Gotcha:** `new Map()` i BoardMap traff react-map-gl-komponenten `Map` som skygger den globale — TS2554/TS7009. Løst med `globalThis.Map`.
+
+**Verifisert (Chrome-emulering begge flater):** Mobil 390×844 touch — kanten-stakken fra opptaket (Circle K Oppdal, SpareBank 1 SMN, Circle K Ladestasjon, Oppdal Synsenter) som sto navnløs ved høyre kant har nå venstre-labels pent stablet, 0 kryss, 0 kant-klipping. Desktop 1440×900 — kant-pins (Skulvegen bussholdeplass, idrettshallen, kunstgressbanen) flipper til venstre, midtflaten beholder høyre. Merk måle-endring: labels for markører UTENFOR viewporten kulles nå av kant-sjekken (usynlige uansett) — rå «synlig/skjult»-tellinger er ikke sammenlignbare med 08-12-tallene.
+
+**Mekanisk:** tsc ren · lint 0 errors · 1 838 tester grønne · **ingenting committet.** Kjent kosmetisk rest: hjem-markørens navnechip («Oppdal Sentrum») er egen komponent utenfor plasseringssystemet og kan fortsatt klippes i skjermkanten. Under selve pinch-gesten henger labels igjen til moveend (samme som Google Maps — jages ikke).
+
+---
+
+## 2026-08-12 — SCOUT OPPDAL (RECALL-TEST NR. 2) + LABEL-KOLLISJONSKULLING LANDET (branch `feat/scout-straumen`, ikke committet)
+
+**Kontekst:** Andreas ville teste om recall-fiksene fra Straumen generaliserer, og valgte Oppdal sentrum (egen lokalkunnskap = fasit-kilde; Selbu droppet). Nivå 3/regionsenter-laget fra Verdal-diskusjonen ble samtidig eksplisitt AVVENTET til fraværet er en bevist utfordring (notert i fasit-regel 8). Sesjonen ga også fire label-runder som endte i at det deferrede label-kollisjonsproblemet fra Straumen ble LØST.
+
+**Scout-løypa Oppdal (samme som Straumen dag 1, minus kuratering — venter på Andreas' fasit-pass):** `areas.id='oppdal'` med 3 km-boundary rundt sentrumskrysset (62.5942, 9.6900), tomme editorial-templates med vilje → nivå-1-provisjonering (94 Google-POI-er — tyngdekraften er STERK i turistbygda, mot Straumens 25) → OSM-sveip +36 → pin-audit (144 nærhets-par vurdert, 7 ekte dubletter slettet: Tesla-lader, 2 banker [Oppdalsbanken = Opdals Sparebank], Samvirkelaget, Norli, bibliotek, ungdomsskole-dublett) → browser-verifisert 115 steder / 6 temaer / 0 konsollfeil. Pool 128; 5 orphans (museum ×2, hotel ×2, library) + 8 trust-gatet = 115. Dossier med gap-hypoteser FØR fasit i `data/areas/oppdal.dossier.md`: **Oppdal Skisenter mangler helt** (skianlegg er ikke kategori — klasse B), golfbanen mangler, Natur & Friluftsliv = 3 steder. Regionsenter-observasjon: Oppdal er SELV regionsenteret — omlandet er fjellet, ikke en regionby.
+
+**Strukturelt funn (delt data, fikset):** `v2.translations` hadde 18 rader `entity_type='theme'` på BAR tema-id (`theme:hverdagsliv:bridge_text`) fra rapport-æraen — Overvik/Ranheim/Tiller/Asker-prosa uten prosjekt-dimensjon. `applyTranslations` faller tilbake til bar nøkkel og `LocaleProvider` auto-detekterer browser-språk → **alle en-locale-browsere så «fifteen-minute walk from Overvik» på alle ukuraterte boards.** Overvik-prosjektet finnes ikke i DB lenger. Fikset: 18 rader slettet (angre-dump `data/areas/oppdal-funn-slettede-theme-translations.backup.json`), prosjekt-skopede rader urørt, verifisert i en-Chrome (0 «Overvik», generert norsk bridgeText rendrer). Prinsipp: **globale nøkler kan aldri bære stedsbundet prosa.**
+
+**Label-rundene (4 iterasjoner drevet av Andreas' skjermbilder, alle i delt board-kode):**
+1. **To-linjers labels** (`BoardMarker`): ordbryting, maks 2 linjer, ellipsis etter linje 2 — kompakt rektangel i stedet for 200 px enlinjer.
+2. **Shrink-to-fit-buggen:** labelen er absolutt posisjonert i 32 px-containeren → tilgjengelig bredde kollapset til lengste enkeltord («NMS / Gjenbr…» uansett maxWidth). Fiks: `width: max-content` + `maxWidth: 132`.
+3. **maxZoom 17 → 18** (`BoardMap`): klyngene trengte hakket mer enn Straumen-antakelsen; z18 separerer Domus-kvartalet komplett.
+4. **Label-kollisjonskulling** (deferred fra Straumen, nå bygd): `lib/board/label-collision.ts` — deterministisk greedy over skjerm-px (est. bbokser som speiler BoardMarker-CSS), prioritet = Google-rating, aktiv POI kulles aldri, leksikografisk tiebreak; **markør-sirkler + hjemme-markør er obstacles** (tekst under nabo-pin er like uleselig som tekst under tekst — det var restgrøten etter label-label-v1). Wiring i BoardMap: recompute på moveend, levert via eksisterende `suppressLabel` — BoardMarker urørt av kullingen. 8 kontraktstester. Resultat mellom-zoom: 100/116 labels synlige, **0 kryss i viewport**; kullede kommer tilbake ved zoom (108/116 dypere).
+
+**Gotcha:** `seed-osm-pois.ts --radius 3000` (mellomrom) parses IKKE — kun `--radius=3000`; første kjøring gikk stille på 2000 m.
+
+**Mekanisk:** tsc ren · lint 0 errors · 549 tester grønne (board + lib/board; nye: label-collision ×8) · 0 konsollfeil · **ingenting committet.** Kjent rest: «Sabrura/Coop Oppdal SA»-klassen håndteres nå av kulling (én vises, én venter på zoom); kuratornavn for foretaksregister-navn («ALOHA MANA Hawaiisk Terapeutisk Massasje») tas i kurateringspasset. **Mobil-verifisert samme kveld:** samme motor-kode på begge flater (BoardMarker/BoardMap), pinch fyrer samme moveend-recompute som hjul-zoom — bekreftet i 390×844-emulering OG av Andreas på ekte iPhone over LAN-IP. Mobilflaten skiller seg kun i skallet (bottom-sheet «I nærheten» mot desktop-sidekolonne). Kant-klippingen som iPhone-opptaket avdekket er fikset dagen etter — se 2026-08-13-entryen.
+
+---
+
+## 2026-08-11 → 2026-08-12 — SCOUT STRAUMEN: FØRSTE RURALE STRØK + RECALL-FIKSENE SOM FULGTE (branch `feat/scout-straumen`, ikke committet)
+
+**Kontekst:** Sundsøya-caset (FINN 468884345, HEM avd. Rosten — se strategi-loggen 2026-08-11) trengte et board, og Straumen ble samtidig testbed for hele scout-løypa: kan Moat 1 bygges ruralt, der Google-tyngdekraften er svak og FINN Nabolagsprofil viser 3 pins? Svar: ja — og løypa avslørte fire strukturelle svakheter i seed-/render-kjeden som nå er fikset. Straumen er **8. kuraterte strøk, første utenfor Trondheim/Malvik**.
+
+**Dag 1 (08-11) — løypa:** boundary (3 km-sirkel) + areas-rad → nivå-1-board → Overpass-sveip (TAG_MAP-utvidelse: shelter/marina/campground/picnic/viewpoint, +18 netto POI-er) → visuelt terreng-pass (Mapbox Static, multimodal lesing) → tema-research med kilde+dato per fakta (`data/areas/straumen.dossier.md`) → kuratering + re-arv → nivå 2 + demo-asset (`docs/demo/straumen-sundsoya/side-ved-side.png`: FINN 3 pins mot Placy-boardet, samme adresse). Scout-funn verdt å huske: Sundsand er `leisure=park` i OSM (ikke `natural=beach`), Google ga bare 25 POI-er (mot hundrevis i by), AKSET samlokaliserer vgs+ungdomsskole+bibliotek+kulturhus i ett bygg, Fresk ikke FRISK, Extra ikke Prix.
+
+**Vannpin-runden (Andreas' skjermbilde-QA):** to grønne pins ute i bukta = Vikaleiret (Google) + Vikaleiret fuglefredningsområde (OSM-polygon-centroid), 60 m fra hverandre — begge kildene plasserer et tidevannsleire «riktig» i sjøen, og dedupen ser ikke ulike navn over 12 m. Ærlig svar på «hvorfor fanget ikke den visuelle sjekken dette?»: **sjekken fantes ikke** — terreng-passet leste terreng, ikke boardets egne pins. Pin-audit er nå et løype-steg: programmatisk (navne-slektskap < 400 m + flagging av OSM-areal-centroider) + visuelt (statisk kart med boardets faktiske pins, lest multimodalt).
+
+**Dag 2 (08-12) — fasit-øvelsen:** Andreas samlet 38 punkter manuelt fra Google Maps (`data/areas/straumen.fasit.md`) → recall-måling: **7 av 38 i poolen = 18 %**. Bommene klassifisert i fire klasser med hver sin fiks: A = kategori finnes men ble aldri søkt etter (14), B = kategori mangler i skjemaet (6), C = utenfor boundary/omland (5), D = research-hale (6). Av øvelsen falt også punkt-vs-innhold-testene (destinasjon/hvor/eierskap), komponent-absorpsjon (kiosken er fakta på Sundsand, ikke egen pin), entity resolution-skissen (klynge → klassifiser → kanoniser: riktig type > datarikdom > reviews), og to-rings-boundary for rurale strøk (tettsted + omland 5–15 min kjøring).
+
+**Recall-fiksene (samme dag): 18 % → 96 % av pin-forventede innen boundary (25/26; eneste miss: Ystgård gartneri, mangler trolig Google-oppføring). Boardet: 29 → 66 steder.**
+
+1. `BOLIG_GOOGLE_CATEGORIES` 14 → 31 — lista manglet doctor/dentist/hotel/bank/post_office/liquor_store (kategorier tema-defaultene alt renderte!) + hele den rurale halen (church/veterinary/gas_station/lading/campground/marina/community_center/spesialbutikker).
+2. Nytt `searchText`-pass (`discoverGooglePlacesByText`) for norske søkeord uten pålitelig Google-type — trafikkskole, ungdomsklubb, legesenter. Samme kvalitetskjede og distansefilter som nearby.
+3. Buss-avstandstak 10 → 15 min — urban antakelse; ruralt ligger HOVEDknutepunktet (Venna vegdele, 10+ linjer, ~900 m) utenfor 800 m mens en perifer nærholdeplass overlevde.
+4. Migrasjon **083** (kirke, veterinar, fuel, trafikkskole, fritidsklubb, butikk — nummerert 083 for å unngå kollisjon med umerget 081/082 på megler-branchen) + OSM-TAG_MAP + tema-mapping i defaults OG Sundsøya-configen (optimistisk lås-PATCH). hotel er bevisst orphan på bolig-tema (datalag — «svigermor-spørsmålet», pin-plass uavklart).
+
+**Skolekrets-bugen (Andreas fant den på kartet):** Sakshaug skole + Inderøy ungdomsskole manglet TROSS treff i poolen. `CATEGORY_FILTER_RULES.skole = school-zone` antok Trondheim: utenfor kretspolygonene returnerer `getSchoolZone` `{null, null}`, som filteret tolket som «krets uten match» og kastet alt unntatt høyere utdanning (en gammel test hadde pinnet bug-oppførselen som fasit). Fikset: begge nulls = utenfor dekning = ingen filtrering. **Stedsnøytralitet er nå prinsipp:** alle regler må ha definert oppførsel for «ingen data her» — Straumen avslørte tre urbane antakelser på én dag (buss-tak, skolekrets, dedup-radier). Gjenstående kandidater: bysykkel er hardkodet Trondheim-GBFS (harmløs, returnerer 0), discovery-radius er by-kalibrert (har default).
+
+**Pin-spredning + zoom-tak (Andreas' tredje funn):** samlokaliserte POI-er (AKSET 0 m, Uthuset pub+Landhandleri 0 m, Marens+E@ 0,3 m) stables 100 % og garbler labels. Ny `lib/board/spread-co-located.ts`: transitiv gruppering < 12 m, deterministisk sirkel-spredning r=12 m, anvendt i `adaptBoardData` så markører/labels/popups/liste deler samme visningspunkt — `raw`/DB røres aldri (reisetider/ruter bruker ekte koordinater). DOM-verifisert: 0 av 68 markører deler posisjon. I tillegg `maxZoom={17}` på boardkartet (labels kommer på 16 — ett hakk til, så stopp). Kjent rest: label-tekster for par 15–40 m fra hverandre kan fortsatt krysse på enkelte zoomnivåer (eget label-kollisjonsproblem, tas ved behov).
+
+**To strukturelle funn til:**
+
+1. **Sletting ≠ suppresjon.** Re-seed GJENOPPRETTET 6 manuelt slettede dubletter (inkl. vannpinnene) — sletting fjerner raden dedupen trengte for å blokkere re-import. Slettet på nytt + 3 nye (Euronics = Elon rebrandet; 2 lader-dubletter). Neste: tombstone-/suppresjonsflagg i stedet for DELETE, så kuratorbeslutninger overlever re-seed.
+2. **Touch-trikset for cache er dødt i Next 16-dev** (unstable_cache overlever recompile). Løst permanent: `REVALIDATE_SECRET` satt i `.env.local` + dev-server restartet → `/api/revalidate?tag=…` virker nå lokalt.
+
+**Mekanisk:** `tsc` ren · lint 0 errors · **1825 tester grønne** (nye: spread-co-located ×6, school-zone-kontrakt ×2 omskrevet, pipeline-kontrakter oppdatert 14→31 m.m.) · migrasjon 083 kjørt og verifisert mot prod-DB · board verifisert i browser (66 steder, alle 6 temaer rendrer — transport var usynlig før config-patchen). **Ingenting committet.**
+
+**Åpent/deferred:** tombstone-mekanisme · to-rings-boundary (omland: Prestlia, Mosteriet, Sundnes) · D-research (spillklubb, Viking Wraps, JF Stranda, Talgøra, Kjerringa me' Straumen-rollen, bobilcamp-verifisering) · Fysioterapeut Runar Støa feilkategorisert som doctor (Google-typing) · label-kollisjon 15–40 m · /scout-area som generalisert skill med portene (dekningsport mot fasit, pin-audit, prominens-tier) · Ystgård-missen.
+
+---
+
 ## 2026-08-06 — MIDTBYEN-DEMO: 147 SENTRUMSBUTIKKER PÅ NABOLAGSFLATEN (branch `feat/midtbyen-demo`, ikke pushet)
 
 **Kontekst:** Første leveranse i side-gig-sporet (se `docs/strategy/LOG.md` 2026-08-06). Andreas skalerte scopet ned fra den salgbare leveransen til en ren **demo å vise fram**: ingen database, ingen sync, ingen SEO. Plan: `docs/plans/2026-08-06-003-feat-midtbyen-demo-nabolagsflate-plan.md`. Den første planen (`-001-`) er `superseded` og beskriver fortsatt den salgbare varianten.
