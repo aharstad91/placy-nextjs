@@ -320,8 +320,16 @@ export function applyCategoryFilter(
 
   let filtered = pois;
 
-  // School zone filter: keep matching zone schools + higher ed
-  if (rule.filter === "school-zone" && schoolZone !== undefined) {
+  // School zone filter: keep matching zone schools + higher ed.
+  // Begge nulls = punktet ligger UTENFOR kretsdekningen (kun Trondheim har
+  // polygoner) — da er det ingen krets å matche mot, og alle skoler skal vises.
+  // Uten denne guarden kastet filteret barne- og ungdomsskolen på alle boards
+  // utenfor Trondheim (Straumen-funn 2026-08-12).
+  if (
+    rule.filter === "school-zone" &&
+    schoolZone !== undefined &&
+    (schoolZone.barneskole !== null || schoolZone.ungdomsskole !== null)
+  ) {
     const zone = schoolZone;
     filtered = pois.filter((poi) => {
       const name = poi.name.toLowerCase();

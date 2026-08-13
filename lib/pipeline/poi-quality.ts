@@ -68,7 +68,11 @@ export const MAX_WALK_MINUTES_BY_CATEGORY: Record<string, number> = {
   pharmacy: 20,
   haircare: 20,
   lekeplass: 15,
-  bus: 10,
+  // bus 10→15 (recall-fiks 2026-08-12): 10 min (800 m) er en urban antakelse.
+  // Ruralt ligger HOVEDknutepunktet gjerne 800–1200 m unna (Venna vegdele,
+  // Straumen: ~900 m, 10+ linjer) og ble kuttet mens en perifer nærholdeplass
+  // overlevde. 15 min dekker rural-knutepunkt uten å flomme by-boards.
+  bus: 15,
 
   // Ukentlige behov — middels avstand
   bar: 20,
@@ -92,6 +96,19 @@ export const MAX_WALK_MINUTES_BY_CATEGORY: Record<string, number> = {
   dentist: 30,
   train: 35,
   badeplass: 30,
+
+  // Recall-fiks 2026-08-12 (Straumen-fasitøvelsen): nye kategorier.
+  // Bil-destinasjoner høyt — ruralt kjører man til hotellet og campingen.
+  kirke: 30,
+  veterinar: 30,
+  fuel: 30,
+  trafikkskole: 30,
+  fritidsklubb: 25,
+  butikk: 30,
+  marina: 30,
+  charging_station: 30,
+  hotel: 45,
+  campground: 45,
 };
 
 /**
@@ -112,6 +129,13 @@ export const QUALITY_EXEMPT_CATEGORIES = new Set([
   "idrett",
   "lekeplass",
   "badeplass",
+  // Recall-fiks 2026-08-12: offentlig/infrastruktur uten Google-anmeldelser —
+  // en kirke eller ladestasjon med 0 reviews er fortsatt reell.
+  "kirke",
+  "marina",
+  "campground",
+  "charging_station",
+  "fritidsklubb",
 ]);
 
 /**

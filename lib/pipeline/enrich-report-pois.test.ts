@@ -55,12 +55,12 @@ describe("enrichReportPois — Unit 7 (foto-fase DEFERRED → Unit 4)", () => {
     expect(result).not.toHaveProperty("photos");
   });
 
-  it("AC1: default kategoriliste er BOLIG_GOOGLE_CATEGORIES (14)", async () => {
+  it("AC1: default kategoriliste er BOLIG_GOOGLE_CATEGORIES (31 — recall-fiks 2026-08-12)", async () => {
     importMock.mockResolvedValue({ total: 15, new: 15, updated: 0, byCategory: {} });
 
     await enrichReportPois(BASE_OPTIONS);
 
-    expect(BOLIG_GOOGLE_CATEGORIES).toHaveLength(14);
+    expect(BOLIG_GOOGLE_CATEGORIES).toHaveLength(31);
     expect(importMock.mock.calls[0][0].categories).toEqual(BOLIG_GOOGLE_CATEGORIES);
   });
 
@@ -73,10 +73,11 @@ describe("enrichReportPois — Unit 7 (foto-fase DEFERRED → Unit 4)", () => {
     expect(NAERING_GOOGLE_CATEGORIES).toContain("hotel");
     expect(NAERING_GOOGLE_CATEGORIES).not.toContain("shopping_mall");
     expect(NAERING_GOOGLE_CATEGORIES).not.toContain("spa");
-    // bolig har motsatt: shopping_mall + spa inn, hotel ut
+    // bolig har shopping_mall + spa — og fra recall-fiksen 2026-08-12 OGSÅ hotel
+    // (svigermor-spørsmålet: overnatting hører til bolig-hverdagen, datalaget)
     expect(BOLIG_GOOGLE_CATEGORIES).toContain("shopping_mall");
     expect(BOLIG_GOOGLE_CATEGORIES).toContain("spa");
-    expect(BOLIG_GOOGLE_CATEGORIES).not.toContain("hotel");
+    expect(BOLIG_GOOGLE_CATEGORIES).toContain("hotel");
     expect(importMock.mock.calls[0][0].categories).toEqual(NAERING_GOOGLE_CATEGORIES);
   });
 

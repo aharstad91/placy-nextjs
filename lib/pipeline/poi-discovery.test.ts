@@ -71,16 +71,18 @@ describe("discoverGooglePlaces — kategori-resolusjon", () => {
     // Fallbacken kaster ikke og varsler ikke. report-defaults.test.ts vokter at
     // bestilte kategorier finnes i GOOGLE_CATEGORY_MAP; denne pinner selve
     // fallback-formen så en endring i den er synlig.
+    // florist ble kjent kategori i recall-fiksen 2026-08-12 — aquarium er
+    // fortsatt umappet og pinner fallback-formen.
     fetchMock.mockResolvedValueOnce(
-      placesResponse([googlePlace({ id: "p1", name: "Blomsterbua", types: ["florist"] })])
+      placesResponse([googlePlace({ id: "p1", name: "Akvariet", types: ["aquarium"] })])
     );
 
-    const result = await discoverGooglePlaces(baseConfig(["florist"]), "key");
+    const result = await discoverGooglePlaces(baseConfig(["aquarium"]), "key");
 
     expect(result).toHaveLength(1);
     expect(result[0].category).toEqual({
-      id: "florist",
-      name: "florist",
+      id: "aquarium",
+      name: "aquarium",
       icon: "MapPin",
       color: "#6b7280",
     });
@@ -306,11 +308,12 @@ describe("discoverEnturStops — transportmodus-mapping", () => {
     expect(result).toEqual([]);
   });
 
-  it("bussholdeplass utenfor gangavstands-grensen (10 min × 80 m) droppes selv innenfor radius", async () => {
+  it("bussholdeplass utenfor gangavstands-grensen (15 min × 80 m) droppes selv innenfor radius", async () => {
     fetchMock.mockResolvedValueOnce(
       enturResponse([
-        // ~1.1 km — innenfor radius 2000, men over buss-grensen på 800 m
-        { id: "NSR:StopPlace:5", name: "Fjern holdeplass", latitude: 63.44, longitude: 10.4, transportMode: ["bus"] },
+        // ~1.7 km — innenfor radius 2000, men over buss-grensen på 1200 m
+        // (grensen 10→15 min i recall-fiksen 2026-08-12: rural-knutepunkt ~900 m)
+        { id: "NSR:StopPlace:5", name: "Fjern holdeplass", latitude: 63.445, longitude: 10.4, transportMode: ["bus"] },
         { id: "NSR:StopPlace:6", name: "Nær holdeplass", ...NEAR_STOP, transportMode: ["bus"] },
       ])
     );

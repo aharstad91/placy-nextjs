@@ -75,7 +75,10 @@ describe("tema↔kategori-kontrakt (driftvern)", () => {
     const orphans = [...new Set(boligProducibleCategoryIds())]
       .filter((id) => !union.has(id))
       .sort();
-    expect(orphans).toEqual(["cinema", "library", "museum"]);
+    // hotel kom inn i BOLIG_GOOGLE_CATEGORIES i recall-fiksen 2026-08-12 som
+    // BEVISST datalag-kategori uten bolig-tema («svigermor-spørsmålet» — POI-en
+    // skal finnes i poolen/søk, men har ikke pin-plass på bolig-boardet ennå).
+    expect(orphans).toEqual(["cinema", "hotel", "library", "museum"]);
   });
 
   it("næring: ALLE produserbare kategorier har tema-hjem (0 orphans)", () => {

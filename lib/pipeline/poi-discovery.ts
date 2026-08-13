@@ -69,6 +69,20 @@ const GOOGLE_CATEGORY_MAP: Record<string, Category> = {
   liquor_store: { id: "liquor_store", name: "Vinmonopol", icon: "Wine", color: "#7c3aed" },
   spa: { id: "spa", name: "Spa", icon: "Sparkles", color: "#c084fc" },
   hotel: { id: "hotel", name: "Hotell", icon: "Building2", color: "#0891b2" },
+  // Recall-fiks 2026-08-12 (Straumen-fasitøvelsen): typene under manglet helt,
+  // så tannlege/hotell/kirke/camping m.fl. ble aldri SØKT etter. Kategori-radene
+  // upsertes automatisk i import-pois (steg 6) — hold verdiene i synk med 083.
+  church: { id: "kirke", name: "Kirke", icon: "Church", color: "#8b5cf6" },
+  veterinary_care: { id: "veterinar", name: "Veterinær", icon: "PawPrint", color: "#f59e0b" },
+  gas_station: { id: "fuel", name: "Drivstoff", icon: "Fuel", color: "#64748b" },
+  electric_vehicle_charging_station: { id: "charging_station", name: "Ladestasjon", icon: "Zap", color: "#eab308" },
+  campground: { id: "campground", name: "Camping", icon: "Tent", color: "#84cc16" },
+  marina: { id: "marina", name: "Småbåthavn", icon: "Anchor", color: "#0ea5e9" },
+  community_center: { id: "fritidsklubb", name: "Fritidsklubb", icon: "Users", color: "#f472b6" },
+  book_store: { id: "butikk", name: "Butikk", icon: "Store", color: "#a855f7" },
+  florist: { id: "butikk", name: "Butikk", icon: "Store", color: "#a855f7" },
+  electronics_store: { id: "butikk", name: "Butikk", icon: "Store", color: "#a855f7" },
+  home_goods_store: { id: "butikk", name: "Butikk", icon: "Store", color: "#a855f7" },
 };
 
 const TRANSPORT_CATEGORIES: Record<string, Category> = {
@@ -106,6 +120,17 @@ const VALID_TYPES_FOR_CATEGORY: Record<string, Set<string>> = {
   liquor_store: new Set(["liquor_store"]),
   spa: new Set(["spa"]),
   hotel: new Set(["lodging", "hotel"]),
+  church: new Set(["church", "place_of_worship"]),
+  veterinary_care: new Set(["veterinary_care"]),
+  gas_station: new Set(["gas_station"]),
+  electric_vehicle_charging_station: new Set(["electric_vehicle_charging_station"]),
+  campground: new Set(["campground", "rv_park"]),
+  marina: new Set(["marina"]),
+  community_center: new Set(["community_center"]),
+  book_store: new Set(["book_store"]),
+  florist: new Set(["florist"]),
+  electronics_store: new Set(["electronics_store"]),
+  home_goods_store: new Set(["home_goods_store", "store"]),
 };
 
 // Places API (New) searchNearby-resultat (audit-fiks 2026-07-05: portet fra
@@ -306,6 +331,140 @@ export async function discoverGooglePlaces(
   if (totalEvaluated > 0) {
     const stats = calculateQualityStats(totalEvaluated, rejections);
     logQualityFilterStats(stats);
+  }
+
+  return allPOIs;
+}
+
+// === Google Places Text Search (recall-fiks 2026-08-12) ===
+
+/**
+ * Tekstsøk-kandidat: norsk søkeord + Placy-kategorien resultatene skal få.
+ * Brukes for hverdagssteder uten (pålitelig) Google-type — f.eks. trafikkskole
+ * og ungdomsklubb. Typefiltrert searchNearby bommet på hele denne halen i
+ * Straumen-fasitøvelsen (recall 18 %).
+ */
+export interface TextSearchQuery {
+  query: string;
+  category: Category;
+}
+
+/**
+ * searchText-pass over en liste norske kategorisøk. Samme kvalitetskjede og
+ * distansefilter som searchNearby (locationBias er en preferanse, ikke en
+ * begrensning — post-filter på faktisk avstand er obligatorisk). Ingen
+ * VALID_TYPES-sjekk: tekstresultater er heterogent typet, og kvalitetskjeden
+ * + distansetak bærer junk-vernet.
+ */
+export async function discoverGooglePlacesByText(
+  config: { center: Coordinates; radius: number },
+  queries: TextSearchQuery[],
+  apiKey: string
+): Promise<DiscoveredPOI[]> {
+  const allPOIs: DiscoveredPOI[] = [];
+  const rejections: QualityRejection[] = [];
+  let totalEvaluated = 0;
+
+  for (const { query, category } of queries) {
+    console.log(`  → Tekstsøk: «${query}»...`);
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), NEARBY_TIMEOUT_MS);
+      let response: Response;
+      try {
+        response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": apiKey,
+            "X-Goog-FieldMask": NEARBY_FIELD_MASK,
+          },
+          body: JSON.stringify({
+            textQuery: query,
+            languageCode: "no",
+            maxResultCount: 10,
+            locationBias: {
+              circle: {
+                center: {
+                  latitude: config.center.lat,
+                  longitude: config.center.lng,
+                },
+                radius: config.radius,
+              },
+            },
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      if (!response.ok) {
+        console.error(`    ✗ Feil ved tekstsøk «${query}»: ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const places: GooglePlaceResult[] = data.places || [];
+      let addedCount = 0;
+
+      for (const place of places) {
+        const placeName = place.displayName?.text;
+        if (!placeName || !place.location) continue;
+
+        const distance = calculateDistance(
+          config.center.lat,
+          config.center.lng,
+          place.location.latitude,
+          place.location.longitude
+        );
+        if (distance > config.radius) continue;
+
+        totalEvaluated++;
+        const qualityResult = evaluateGooglePlaceQuality(
+          {
+            name: placeName,
+            business_status: place.businessStatus,
+            rating: place.rating,
+            user_ratings_total: place.userRatingCount,
+          },
+          category.id,
+          distance,
+          rejections
+        );
+        if (!qualityResult.pass) continue;
+
+        const id = generatePoiId("google", placeName, place.id);
+        if (allPOIs.some((p) => p.id === id)) continue;
+
+        allPOIs.push({
+          id,
+          name: placeName,
+          coordinates: {
+            lat: place.location.latitude,
+            lng: place.location.longitude,
+          },
+          address: place.shortFormattedAddress,
+          category,
+          googlePlaceId: place.id,
+          googleRating: place.rating,
+          googleReviewCount: place.userRatingCount,
+          source: "google",
+        });
+        addedCount++;
+      }
+
+      console.log(`    ✓ Fant ${addedCount} for «${query}»`);
+    } catch (error) {
+      console.error(`    ✗ Feil ved tekstsøk «${query}»:`, error);
+    }
+
+    await sleep(200);
+  }
+
+  if (totalEvaluated > 0) {
+    logQualityFilterStats(calculateQualityStats(totalEvaluated, rejections));
   }
 
   return allPOIs;

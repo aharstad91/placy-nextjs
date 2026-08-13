@@ -11,7 +11,12 @@
 
 import { importPOIsToProject } from "@/lib/pipeline/import-pois";
 
-/** Google Places-kategorier for boligprofilen */
+/** Google Places-kategorier for boligprofilen.
+ *  Recall-fiks 2026-08-12 (Straumen-fasitøvelsen, 18 % recall): lista manglet
+ *  doctor/dentist/hotel/bank/post_office/liquor_store — kategorier tema-
+ *  defaultene alt renderte, men som aldri ble SØKT etter — pluss hele den
+ *  rurale halen (kirke, veterinær, drivstoff, lading, camping, småbåthavn,
+ *  spesialbutikker). Fasit: data/areas/straumen.fasit.md */
 export const BOLIG_GOOGLE_CATEGORIES = [
   "restaurant",
   "cafe",
@@ -27,6 +32,42 @@ export const BOLIG_GOOGLE_CATEGORIES = [
   "movie_theater",
   "hair_care",
   "spa",
+  "doctor",
+  "dentist",
+  "hotel",
+  "bank",
+  "post_office",
+  "liquor_store",
+  "church",
+  "veterinary_care",
+  "gas_station",
+  "electric_vehicle_charging_station",
+  "campground",
+  "marina",
+  "community_center",
+  "book_store",
+  "florist",
+  "electronics_store",
+  "home_goods_store",
+];
+
+/** Norske tekstsøk for hverdagssteder uten pålitelig Google-type.
+ *  Kjøres som searchText-pass i tillegg til typefiltrert searchNearby. */
+export const BOLIG_TEXT_QUERIES = [
+  {
+    query: "trafikkskole",
+    category: { id: "trafikkskole", name: "Trafikkskole", icon: "Car", color: "#3b82f6" },
+  },
+  {
+    query: "ungdomsklubb",
+    category: { id: "fritidsklubb", name: "Fritidsklubb", icon: "Users", color: "#f472b6" },
+  },
+  {
+    // Norske legesentre er upålitelig typet hos Google (Straumen: doctor-søket
+    // fant fysioterapeuten, ikke legesenteret) — tekstsøk bærer kategorien.
+    query: "legesenter",
+    category: { id: "doctor", name: "Legesenter", icon: "Stethoscope", color: "#3b82f6" },
+  },
 ];
 
 /** Google Places-kategorier for næringsprofilen: hotel inn (gjeste-/kunde-
@@ -86,6 +127,7 @@ export async function enrichReportPois(options: {
       circles: [{ lat, lng, radiusMeters }],
       categories,
       projectId,
+      textQueries: BOLIG_TEXT_QUERIES,
       includeEntur: true,
       includeBysykkel: true,
       minRating: 0,

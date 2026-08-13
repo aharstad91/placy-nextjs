@@ -11,9 +11,11 @@
 
 import {
   discoverGooglePlaces,
+  discoverGooglePlacesByText,
   discoverEnturStops,
   discoverBysykkelStations,
   DiscoveredPOI,
+  TextSearchQuery,
 } from "./poi-discovery";
 import {
   upsertPOIsWithEditorialPreservation,
@@ -308,6 +310,8 @@ export async function importPOIsToProject(options: {
   circles: Array<{ lat: number; lng: number; radiusMeters: number }>;
   categories: string[];
   projectId: string;
+  /** Norske searchText-søk i tillegg til typefiltrert nearby (recall-fiks 2026-08-12) */
+  textQueries?: TextSearchQuery[];
   includeEntur?: boolean;
   includeBysykkel?: boolean;
   minRating?: number;
@@ -317,6 +321,7 @@ export async function importPOIsToProject(options: {
     circles,
     categories,
     projectId,
+    textQueries = [],
     includeEntur = true,
     includeBysykkel = true,
     minRating,
@@ -353,7 +358,7 @@ export async function importPOIsToProject(options: {
       const center = { lat: circle.lat, lng: circle.lng };
       const radius = circle.radiusMeters;
 
-      const [googlePois, enturPois, bysykkelPois] = await Promise.all([
+      const [googlePois, textPois, enturPois, bysykkelPois] = await Promise.all([
         categories.length > 0 && googleApiKey
           ? discoverGooglePlaces(
               {
@@ -366,6 +371,9 @@ export async function importPOIsToProject(options: {
               googleApiKey
             )
           : Promise.resolve([]),
+        textQueries.length > 0 && googleApiKey
+          ? discoverGooglePlacesByText({ center, radius }, textQueries, googleApiKey)
+          : Promise.resolve([]),
         includeEntur
           ? discoverEnturStops({ center, radius })
           : Promise.resolve([]),
@@ -374,8 +382,9 @@ export async function importPOIsToProject(options: {
           : Promise.resolve([]),
       ]);
 
-      // 4. Deduplicate across circles by external ID
-      for (const poi of googlePois) {
+      // 4. Deduplicate across circles by external ID (tekstsøk-resultater deler
+      // Google place-id-rommet med nearby — samme dedup-pool)
+      for (const poi of [...googlePois, ...textPois]) {
         if (poi.googlePlaceId && !seenGoogleIds.has(poi.googlePlaceId)) {
           seenGoogleIds.add(poi.googlePlaceId);
           allGooglePois.push(poi);

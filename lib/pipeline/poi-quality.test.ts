@@ -58,9 +58,14 @@ describe("isWithinCategoryDistance", () => {
     expect(isWithinCategoryDistance(2000, "shopping")).toBe(true);
   });
 
-  it("avviser busstopp 12 min unna", () => {
-    // 12 min * 80 = 960m, maks er 10 min
-    expect(isWithinCategoryDistance(960, "bus")).toBe(false);
+  it("godtar busstopp 12 min unna (rural-knutepunkt, grense 15 min fra 2026-08-12)", () => {
+    // 12 min * 80 = 960m — Venna vegdele-caset: hovedknutepunktet ~900 m unna
+    expect(isWithinCategoryDistance(960, "bus")).toBe(true);
+  });
+
+  it("avviser busstopp 16 min unna", () => {
+    // 16 min * 80 = 1280m, maks er 15 min
+    expect(isWithinCategoryDistance(1280, "bus")).toBe(false);
   });
 
   it("godtar busstopp 8 min unna", () => {

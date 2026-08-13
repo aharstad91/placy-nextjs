@@ -51,12 +51,19 @@ const TAG_MAP: Record<string, Record<string, string>> = {
     kindergarten: "barnehage", school: "skole",
     // opplevelser
     library: "library", cinema: "cinema", theatre: "theatre",
+    // natur-friluftsliv (rural: gapahuk/vindskjul)
+    shelter: "outdoor",
+    // hverdagsliv/transport (recall-fiks 2026-08-12, Straumen-fasitøvelsen)
+    place_of_worship: "kirke", veterinary: "veterinar", fuel: "fuel",
+    driving_school: "trafikkskole", community_centre: "fritidsklubb",
+    charging_station: "charging_station",
   },
   shop: {
     bakery: "bakery", pastry: "bakery",       // mat-drikke
     supermarket: "supermarket", convenience: "convenience", // hverdagsliv
     hairdresser: "haircare", mall: "shopping", department_store: "shopping",
     alcohol: "liquor_store",
+    books: "butikk", florist: "butikk", electronics: "butikk", // spesialbutikk-halen
   },
   leisure: {
     park: "park", nature_reserve: "outdoor", garden: "outdoor",        // natur-friluftsliv
@@ -65,9 +72,16 @@ const TAG_MAP: Record<string, Record<string, string>> = {
     fitness_centre: "gym", fitness_station: "fitness_park",            // trening-aktivitet
     swimming_pool: "swimming", swimming_area: "swimming", spa: "spa",  // trening-aktivitet
     bowling_alley: "bowling",                                          // opplevelser
+    marina: "marina", slipway: "marina",                               // natur-friluftsliv (kyst/rural)
+    dog_park: "hundepark", fishing: "outdoor",                         // natur-friluftsliv
   },
-  tourism: { museum: "museum", gallery: "museum" },                    // opplevelser
+  tourism: {
+    museum: "museum", gallery: "museum",                               // opplevelser
+    picnic_site: "outdoor", viewpoint: "outdoor",                      // natur-friluftsliv (rural)
+    camp_site: "campground", caravan_site: "campground",               // natur-friluftsliv
+  },
   natural: { beach: "badeplass" },                                     // natur-friluftsliv
+  place: { square: "park" },                                           // torg/plasser (Herman Löchens plass-caset)
 };
 
 // category_id -> theme (for grouped reporting only)
@@ -76,9 +90,12 @@ const CATEGORY_THEME: Record<string, string> = {
   shopping: "hverdagsliv", supermarket: "hverdagsliv", convenience: "hverdagsliv",
   pharmacy: "hverdagsliv", bank: "hverdagsliv", post: "hverdagsliv", doctor: "hverdagsliv",
   dentist: "hverdagsliv", hospital: "hverdagsliv", haircare: "hverdagsliv", liquor_store: "hverdagsliv",
+  kirke: "hverdagsliv", veterinar: "hverdagsliv", trafikkskole: "hverdagsliv", butikk: "hverdagsliv",
+  fuel: "transport", charging_station: "transport", fritidsklubb: "barn-oppvekst",
   skole: "barn-oppvekst", barnehage: "barn-oppvekst", lekeplass: "barn-oppvekst", idrett: "barn-oppvekst",
   museum: "opplevelser", library: "opplevelser", cinema: "opplevelser", theatre: "opplevelser", bowling: "opplevelser",
   park: "natur-friluftsliv", outdoor: "natur-friluftsliv", badeplass: "natur-friluftsliv",
+  marina: "natur-friluftsliv", campground: "natur-friluftsliv", hundepark: "natur-friluftsliv",
   gym: "trening-aktivitet", swimming: "trening-aktivitet", spa: "trening-aktivitet", fitness_park: "trening-aktivitet",
 };
 
@@ -360,7 +377,7 @@ async function main() {
   })));
   await insertBatch("project_pois", fresh.map((c) => ({ project_id: projectId, poi_id: c.id })));
   for (const product of products) {
-    await insertBatch("product_pois", fresh.map((c) => ({ product_id: product.id, poi_id: c.id })));
+    await insertBatch("product_pois", fresh.map((c) => ({ product_id: product.id, poi_id: c.id, featured: false })));
   }
 
   console.log(`✅ Seeded ${fresh.length} OSM POIs into ${projectId} (pois + project_pois + product_pois×${products.length}).`);

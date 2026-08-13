@@ -156,14 +156,28 @@ describe("applyCategoryFilter", () => {
     expect(filtered.length).toBe(2);
   });
 
-  it("returns empty for skole when zone has no matching school names", () => {
-    const osloZone = { barneskole: null, ungdomsskole: null };
+  it("passes all skole POIs through when zone has BOTH nulls (utenfor kretsdekning)", () => {
+    // Begge nulls = punktet ligger utenfor Trondheims kretspolygoner (f.eks.
+    // Straumen/Inderøy). Før 2026-08-12 kastet filteret da alle ikke-høyere
+    // skoler — barne- og ungdomsskolen forsvant fra alle boards utenfor
+    // Trondheim. Nå: ingen dekning → ingen filtrering.
+    const utenforDekning = { barneskole: null, ungdomsskole: null };
+    const pois = [
+      makeSkolePOI("s1", "Sakshaug skole"),
+      makeSkolePOI("s2", "Inderøy ungdomsskole"),
+    ];
+    const filtered = applyCategoryFilter("skole", pois, brosetCenter, utenforDekning);
+    expect(filtered.length).toBe(2);
+  });
+
+  it("filters normalt når kun én av kretsene er kjent (delvis dekning)", () => {
+    // Én non-null = reell kretsdata — filteret skal fortsatt kjøre.
+    const delvisZone = { barneskole: "Singsaker", ungdomsskole: null };
     const pois = [
       makeSkolePOI("s1", "Singsaker skole"),
       makeSkolePOI("s2", "Ila skole"),
     ];
-    const filtered = applyCategoryFilter("skole", pois, brosetCenter, osloZone);
-    // Zone found but no barneskole/ungdomsskole → none match
-    expect(filtered.length).toBe(0);
+    const filtered = applyCategoryFilter("skole", pois, brosetCenter, delvisZone);
+    expect(filtered.map((p) => p.name)).toEqual(["Singsaker skole"]);
   });
 });
