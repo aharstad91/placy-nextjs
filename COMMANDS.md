@@ -63,6 +63,36 @@ Oppdaterer `opening_hours_json` fra Google Places API for POI-er med utdaterte d
 
 ---
 
+## Dekningsregnskap (postnummer → område → kunnskap)
+
+### Importer postnummerområder fra Kartverket
+```bash
+npx tsx scripts/import-postal-areas.ts                 # dry-run FØRST
+npx tsx scripts/import-postal-areas.ts --apply          # skriv
+npx tsx scripts/import-postal-areas.ts --kommune 5001   # én kommune
+```
+
+Henter polygonene for hvert geografiske postnummer fra Kartverkets WFS
+(`wfs.geonorge.no`, gratis, ingen API-nøkkel) og skriver dem til
+`v2.postal_areas`. Dekker 114 postnumre: 105 i markedet (Trondheim 77,
+Stjørdal 16, Melhus 8, Malvik 4) pluss Oppdal 7 og Inderøy 2 — de to siste
+fordi vi allerede har kuraterte områder der som må kunne telles.
+
+Antallet per kommune sammenlignes mot Brings postnummerregister og avvik
+rapporteres. Kjøringen aborterer hvis en kommune gir 0 features: vi vet at alle
+seks har postnumre, så 0 betyr endret API-kontrakt, ikke tomt datasett.
+
+Idempotent — andre kjøring skal rapportere `0 nye, 0 endret`. Er det ikke
+tilfelle, sammenligner endringssjekken to ulike formater av samme verdi
+(det skjedde med `source_updated_at`, se migrasjon 087).
+
+**Koordinatrekkefølge:** Kartverkets GML er EPSG:4258 med lat før lon, GeoJSON
+vil ha `[lng, lat]`. Parseren snur parene og forkaster koordinater utenfor
+Norges bbox — en ombyttet form kaster ellers ingen feil, den bare slutter å
+treffe noe.
+
+---
+
 ## Nabolags-kuratering (curate-area)
 
 ### Last opp staging til `areas` (polygon + report_editorial)
