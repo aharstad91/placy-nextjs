@@ -6,6 +6,36 @@
 
 ---
 
+## 2026-08-13 — DEKNINGSREGNSKAP PÅ POSTNUMMER: 114 KARTVERKET-POLYGONER, 9 → 34 OMRÅDER MED FORM
+
+**Kontekst:** Strategi-sesjonen 2026-08-13 avgrenset Moat 1 (leverandør-tekst er stillas, kuratert tekst er varelager) men lot ett spørsmål stå åpent: hvordan vet vi hvor vi står? Andreas formulerte modellen fra et menneskelig perspektiv — «jeg kan se hele området som dekket av innsikt, ett område om gangen» — med Fastouts forhåndsfløyne dronepanorama som analogi: gjør jobben på området *før* noen spør. Sesjonen gikk fra spørsmål («finnes det databaser som har mappet Norge?») via verifisering til bygd og kjørt pipeline.
+
+**Datagrunnlaget finnes gratis, verifisert live:** Kartverkets «Postnummerområder» (Geonorge-uuid `462a5297…`) leverer polygon per postnummer via WFS uten API-nøkkel. Filter på kommune virker (`fes:Filter` på `kommune`). Kartverkets adresse-API gir postnummer direkte fra en adresse, også gratis — så megler-oppslaget er et nøkkeloppslag, ikke geometri-regning. **To uavhengige kilder stemmer eksakt:** WFS gir 77 postnumre for Trondheim, Brings postnummerregister gir 77 geografiske (type G/B). Omfang: 105 i markedet (Trondheim 77, Stjørdal 16, Melhus 8, Malvik 4) pluss Oppdal 7 og Inderøy 2 fordi to områder med håndtegnet polygon ligger der. **114 importert, 0 forkastede features.**
+
+**Modellen var allerede bygd — regnskapet manglet.** `lib/pipeline/find-area-for-point.ts` gjør nøyaktig det Andreas beskrev: adresse → punkt → polygon → arv av alt innhold på området. Og `areas`-tabellen ER regnskapet, halvfylt: kolonnene `postal_codes`, `boundary` og `report_editorial` fantes, men `postal_codes` ble skrevet av `curate-area.ts` og **lest av ingen**. Flaskehalsen var aldri teksten, det var polygonet: 37 av 46 områder manglet form, og det er nøyaktig grunnen til at 16 av Grilstadportens 35 boliger ble avvist.
+
+**Leveranse (5 units, `feat/dekningsregnskap` i worktree `../placy-dekning`, 5 commits, ikke pushet):** ny tabell `v2.postal_areas` (086) + `source_updated_at` som `date` (087) + `areas.boundary_source` (088); `scripts/import-postal-areas.ts` med tre moduser (import, `--derive-boundaries`, `--suggest-postal-codes`); `scripts/coverage-report.ts`. Ren logikk i fire `lib/pipeline/`-moduler med **93 nye tester** (1698 totalt, tsc rent, build passerer).
+
+**Resultat:** 9 → 34 områder har form. **Markedet står på 0 dekket, 17 kuratert, 28 geometri, 60 ukjent av 105 postnumre** — det er arbeidskøen, og første gang tallet finnes. Geofencen er uendret (R7): Ranheim gir fortsatt `ranheim` med 6 temaer, og de 25 nye filtreres bort fordi de mangler redaksjonelt innhold. R4 verifisert med md5 per rad: de 9 håndtegnede polygonene er byte-identiske før og etter.
+
+**Fire funn som bare implementeringen kunne avdekke:**
+
+1. **Seks postnumre deles av to eller tre strøk.** Møllenberg, Rosenborg og Solsiden er alle 7014; Brøset og Moholt begge 7050. Avledet fra postnummer får de *identisk* geometri, og `findAreaForPoint` bruker `matches[0]` med en advarsel — altså vilkårlig. Ufarlig i dag siden ingen av dem har `report_editorial` (geofencen krever begge), men en felle så snart to kureres. Derfor `boundary_source` (088): avledet form er synlig som avledet, og kjøringen skriver ut hver kollisjon.
+
+2. **«Ni ferdig kuraterte områder» er ÅTTE.** Oppdal har alle seks tema-nøkler, men hver `body` er tom. Tellingen bak «ni» (min egen, tidligere i sesjonen) telte nøkler, ikke innhold. Rettet i plan og tre kodekommentarer.
+
+3. **Terskelen for «dekket» ble 1 høydepunkt per tema, ikke 4.** Transport har ett høydepunkt i Straumen fordi Entur svarer på holdeplasser i sanntid — en terskel på 4 ville gjort dekning uoppnåelig av en grunn som ikke er et hull. Kravet ligger i stedet på at *alle* høydepunktene kurator har valgt, har tekst.
+
+4. **Regnskapet peker rett på den strukturelle grensa for Moat 1 uten å bli fortalt hvor.** Straumen står på 29 av 30 høydepunkter. Det manglende er Nilsparken, med `lastAttempt: no-data` — ett av de tre stedene på Straumen som ikke har publisert informasjon noe sted (jf. strategi-dokumentet samme dag). Det er nøyaktig punktet som må skrives av en megler eller ikke i det hele tatt.
+
+**To feil jeg innførte og rettet i samme sesjon, dokumentert i migrasjonene:** `source_updated_at` var `timestamptz` mens Kartverkets `oppdateringsdato` er en dato, så Postgres returnerte `2015-10-01T00:00:00+00:00` mot kildens `2015-10-01` — 16 rader ble meldt «endret» ved hver kjøring og idempotens-signalet var ubrukelig (087 retter det; 086 ble ikke skrevet om, siden en anvendt migrasjonsfil som er uenig med databasen er kilden til «virker lokalt, brekker i prod»). Og `areas_boundary_source_requires_boundary` ble først lagt til før backfillen, så de 9 radene brøt den i samme transaksjon.
+
+**Latent feil funnet og lukket:** PostgREST kutter stille på 1000 rader. `coverage-report.ts` setter nå grensen selv og kaster hvis den nås — et regnskap som underrapporterer uten å si det er verre enn ingen rapport.
+
+**Åpne punkter:** `coverage_demand` skal logge postnummer (koden ligger på ukoblet `feat/megler-self-serve`); dekningskart som visuell salgs-asset; sortering av arbeidskøen på faktisk etterspørsel; de 6 kollisjonsområdene trenger tegnet grense før kuratering. Ingenting pushet, ingen PR.
+
+---
+
 ## 2026-08-03 (sesjon 2) — TTS-SPRÅKDRIFT KARTLAGT: SEED GIR BYTE-IDENTISK DETERMINISME (eksperiment, ikke implementert)
 
 **Kontekst:** Andreas spurte om det var kommet oppdateringer på voice-over-motoren vi bruker på bl.a. Grilstad Marina. Sjekken avdekket at `eleven_v3` nå er GA med norsk, og ble derfor utvidet til en autorisert spike. Da Andreas hørte dansk/svensk i klippene, gikk sesjonen videre til å jakte den underliggende drift-årsaken — som viste seg å være et grunnproblem vi har levd med, ikke en v3-regresjon.

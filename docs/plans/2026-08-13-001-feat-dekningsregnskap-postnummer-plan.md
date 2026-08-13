@@ -10,8 +10,9 @@ date: 2026-08-13
 ## Overview
 
 Placy kan i dag ikke svare på spørsmålet «hvilke steder dekker vi?». Det finnes 46 rader
-i `v2.areas`, men bare 9 har både polygon og redaksjonelt innhold — og ingenting i systemet
-teller det, viser det, eller bruker det til å prioritere hva som kurateres neste.
+i `v2.areas`, men bare 9 har polygon og bare 8 av dem har faktisk redaksjonell tekst — og
+ingenting i systemet teller det, viser det, eller bruker det til å prioritere hva som
+kurateres neste.
 
 Denne planen gjør dekning til et regnskap. Kartverkets postnummerområde-polygoner importeres
 til en ny referansetabell, de 37 områdene som mangler polygon får det avledet fra postnumrene
@@ -50,7 +51,7 @@ Verifisert grunnlag (kjørt live 2026-08-13, ikke antatt):
 | Brings register, øvrige | Stjørdal 16, Melhus 8, Malvik 4 → **105** i de fire kommunene |
 | Brings register, to kuraterte områder utenfor | Oppdal (5021) 7, Inderøy (5053) 2 → **114 totalt** med disse |
 | Kartverket adresse-API | `Martin Barstads veg 23C` → `7056 RANHEIM` + koordinater, gratis, uten nøkkel |
-| `v2.areas` i prod | 46 rader, 9 med `boundary` + 6 temaer, 37 uten polygon |
+| `v2.areas` i prod | 46 rader, 9 med `boundary`, 37 uten polygon. Av de 9 har 8 faktisk tema-tekst — Oppdal har tema-nøklene men tomme `body`-felt (oppdaget under implementering) |
 | `v2.postal_areas` i prod | Finnes ikke (404) |
 
 ## Requirements Trace
@@ -236,7 +237,7 @@ graph LR
   U5 --> U4
 ```
 
-- [ ] **Unit 1: Migrasjon 086 — `v2.postal_areas`**
+- [x] **Unit 1: Migrasjon 086 — `v2.postal_areas`**
 
 **Goal:** Referansetabellen for Kartverkets postnummer-polygoner finnes i prod.
 
@@ -275,7 +276,7 @@ graph LR
 
 ---
 
-- [ ] **Unit 2: WFS-import med GML-parsing**
+- [x] **Unit 2: WFS-import med GML-parsing**
 
 **Goal:** De 114 postnumrene ligger i `postal_areas` med riktig orienterte polygoner, og
 kjøringen kan gjentas.
@@ -348,7 +349,7 @@ billigste måten å bevise at snuingen skjer.
 
 ---
 
-- [ ] **Unit 3: Avled `areas.boundary` fra `postal_codes`**
+- [x] **Unit 3: Avled `areas.boundary` fra `postal_codes`**
 
 **Goal:** De 37 områdene uten polygon får et, uten at de 9 håndtegnede røres.
 
@@ -410,7 +411,7 @@ skade på kuratert arbeid.
 
 ---
 
-- [ ] **Unit 4: Dekningsrapport**
+- [x] **Unit 4: Dekningsrapport**
 
 **Goal:** Ett kall svarer på «hvilke steder dekker vi, og hva mangler».
 
@@ -466,7 +467,7 @@ skade på kuratert arbeid.
 
 ---
 
-- [ ] **Unit 5: Foreslå manglende `postal_codes` fra polygon-overlapp**
+- [x] **Unit 5: Foreslå manglende `postal_codes` fra polygon-overlapp**
 
 **Goal:** Områder med polygon men tom postnummerliste faller ikke ut av regnskapet.
 
