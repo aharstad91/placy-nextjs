@@ -19,6 +19,14 @@ export interface CallGeminiOptions {
   apiKey: string;
   timeoutMs?: number;
   signal?: AbortSignal;
+  /**
+   * Ferdigbygd prompt som erstatter den tema-skala `buildPrompt()` helt. Satt av
+   * per-POI-grounding (lib/gemini/poi-grounding.ts), som trenger stedsskala i
+   * stedet for strøksskala. Når den er satt, brukes `userQuery` kun i
+   * feilmeldinger. Finnes for at det skal være ÉN API-klient, ÉN
+   * nøkkelhåndtering og ÉN sanerings-/timeout-kjede — ikke to.
+   */
+  prompt?: string;
 }
 
 export interface RawGeminiSource {
@@ -61,12 +69,28 @@ function buildPrompt(userQuery: string): string {
 }
 
 /**
+ * Normaliser punktmarkører til markdown `- `.
+ *
+ * Gemini bruker ofte en-dash («–»), em-dash eller «•» som punktmarkør selv når
+ * prompten eksplisitt ber om `- `. Uten normalisering faller listen gjennom
+ * markdown-sjekken i splitLongParagraphs, blir setningssplittet i stedet, og
+ * flere punkter havner på samme linje. Målt på reell output 2026-08-12
+ * (Muustrøparken: fem punkter kollapset til to linjer).
+ *
+ * Treffer kun linjestart etterfulgt av whitespace, så tankestrek brukt midt i
+ * en setning røres ikke.
+ */
+function normalizeBulletMarkers(text: string): string {
+  return text.replace(/^[ \t]*[–—•·]\s+/gm, "- ");
+}
+
+/**
  * Fallback: splitt avsnitt som er >3 setninger. Gemini ignorerer ofte eksplisitt
  * "MAKS 3 setninger"-instruksjon og returnerer én lang blokk. Denne garanterer
  * lesbart resultat uavhengig av modellens output.
  */
 export function splitLongParagraphs(narrative: string): string {
-  const paragraphs = narrative.split(/\n\n+/);
+  const paragraphs = normalizeBulletMarkers(narrative).split(/\n\n+/);
   const result: string[] = [];
 
   for (const para of paragraphs) {
@@ -141,7 +165,7 @@ export async function callGemini(
   userQuery: string,
   options: CallGeminiOptions,
 ): Promise<CallGeminiResult> {
-  const { apiKey, timeoutMs = 30_000, signal } = options;
+  const { apiKey, timeoutMs = 30_000, signal, prompt } = options;
   if (!apiKey) throw new Error("Gemini API key missing");
 
   const controller = new AbortController();
@@ -155,7 +179,7 @@ export async function callGemini(
   }
 
   const body = {
-    contents: [{ parts: [{ text: buildPrompt(userQuery) }] }],
+    contents: [{ parts: [{ text: prompt ?? buildPrompt(userQuery) }] }],
     tools: [{ google_search: {} }],
   };
 

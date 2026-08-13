@@ -18,6 +18,8 @@
  *   er uendret (samme tall/«OPERATIONAL»-enum som legacy → trust-scoring intakt).
  */
 
+import { PlacesApiError } from "./errors";
+
 export interface PlaceDetails {
   rating?: number;
   reviewCount?: number;
@@ -51,6 +53,17 @@ export const TRUST_ENRICHMENT_FIELDS = [
   "userRatingCount",
 ];
 
+/**
+ * Minimalt feltsett for åpningstider + telefon (`refresh-opening-hours.ts`).
+ *
+ * KOSTNAD: FieldMask avgjør SKU, og hele kallet faktureres på det HØYESTE
+ * nivået noe felt i masken tilhører. `regularOpeningHours` er Enterprise-nivå,
+ * mens `photos` er Essentials ($0 via `photo-api.ts`). Å slå de to sammen i ett
+ * kall ville derfor gjort bilde-oppslaget dyrt uten grunn. Derfor er masken her
+ * snever, og bilder hentes i en egen $0-sti.
+ */
+export const OPENING_HOURS_FIELDS = ["regularOpeningHours", "nationalPhoneNumber"];
+
 /** Timeout mot Google Places API — henger aldri evig (mønster: checkWebsite). */
 const PLACE_DETAILS_TIMEOUT_MS = 10_000;
 
@@ -81,22 +94,41 @@ interface PlacesNewResult {
   priceLevel?: string;
 }
 
+export interface FetchPlaceDetailsOptions {
+  /**
+   * BCP-47-språk for tekstfelt som `regularOpeningHours.weekdayDescriptions`.
+   *
+   * Utelates den, velger Google språk selv (Accept-Language/IP) — altså
+   * ikke-deterministisk output. Kallere som LAGRER tekstfelt må sette den
+   * eksplisitt; se `refresh-opening-hours.ts` for hvorfor `"en"` er valgt der.
+   */
+  languageCode?: string;
+}
+
 /**
  * Fetch place details from Google Places API (New).
  *
  * @param placeId - Google Place ID
  * @param apiKey - Google Places API key (sendes som X-Goog-Api-Key-header)
  * @param fields - Places-New FieldMask-stier (defaults to DEFAULT_FIELDS)
+ * @param options - `languageCode` for deterministisk språk på tekstfelt
  * @returns PlaceDetails, eller null når stedet ikke finnes (HTTP 404 — legacy
- *   `status !== "OK"`-ekvivalenten). Kaster ved andre ≠ok-statuser (403/429/500)
- *   så kallere ikke feiltolker API-feil som «tomt» (samme vern som photo-api.ts).
+ *   `status !== "OK"`-ekvivalenten). Kaster `PlacesApiError` ved andre
+ *   ≠ok-statuser (403/429/500) så kallere ikke feiltolker API-feil som «tomt»
+ *   (samme vern som photo-api.ts) — og slik at kvotefeil kan skilles fra
+ *   transiente feil på `.status`.
  */
 export async function fetchPlaceDetails(
   placeId: string,
   apiKey: string,
-  fields: string[] = DEFAULT_FIELDS
+  fields: string[] = DEFAULT_FIELDS,
+  options: FetchPlaceDetailsOptions = {}
 ): Promise<PlaceDetails | null> {
-  const url = `https://places.googleapis.com/v1/places/${placeId}`;
+  // API-nøkkelen går ALDRI i querystringen (CLAUDE.md) — kun languageCode.
+  const query = options.languageCode
+    ? `?languageCode=${encodeURIComponent(options.languageCode)}`
+    : "";
+  const url = `https://places.googleapis.com/v1/places/${placeId}${query}`;
 
   // Timeout kaster (AbortError) — samme feilhåndtering som annen fetch-feil
   const controller = new AbortController();
@@ -121,7 +153,7 @@ export async function fetchPlaceDetails(
   }
   // Andre ≠ok = API-problem → kast, så kallere ikke tolker det som «tomt».
   if (!response.ok) {
-    throw new Error(`Google Places API error: ${response.status}`);
+    throw new PlacesApiError(response.status);
   }
 
   const place = (await response.json()) as PlacesNewResult;

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, ExternalLink } from "lucide-react";
 import { useBoard, useActivePOI } from "./board-state";
+import { hasExploreContent } from "./POIExploreModal";
+import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle } from "./marker-style";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
@@ -39,6 +41,7 @@ interface Props {
 export function BoardPOI3DMiniPopup({ map3d }: Props) {
   const { dispatch } = useBoard();
   const poi = useActivePOI();
+  const engagement = useEngagement();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | undefined>(undefined);
   const isTransportPOI = !!(
@@ -94,6 +97,11 @@ export function BoardPOI3DMiniPopup({ map3d }: Props) {
   const Icon = getFilledIcon(poi.raw.category.icon);
   const color = poi.raw.category.color;
   const circle = markerCircleStyle(color);
+  // Samme kontrakt som 2D-popupen: innhold → modal i Placy, ellers ekstern
+  // lenke merket med ekstern-lenke-ikon. Begge kart-flatene MÅ oppføre seg likt.
+  const canExplore = hasExploreContent(poi);
+  const ctaClass =
+    "inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100";
   const exploreQuery = poi.address
     ? `${poi.name} ${poi.address}`
     : poi.name;
@@ -152,15 +160,34 @@ export function BoardPOI3DMiniPopup({ map3d }: Props) {
         )}
 
         <div className="mt-2.5 px-3 pb-3">
-          <a
-            href={exploreUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Utforsk
-          </a>
+          {canExplore ? (
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "OPEN_EXPLORE" })}
+              className={ctaClass}
+            >
+              <Sparkles aria-hidden className="h-3.5 w-3.5" />
+              Utforsk
+            </button>
+          ) : (
+            <a
+              href={exploreUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={ctaClass}
+              // target="_blank" unloader ikke denne siden, sa server-actionen
+              // bak emit() fullfores normalt. Ingen beacon nodvendig.
+              onClick={() =>
+                engagement.emit("poi_outbound_clicked", {
+                  poiId: poi.id,
+                  payload: { category_id: poi.categoryId },
+                })
+              }
+            >
+              <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+              Utforsk
+            </a>
+          )}
         </div>
       </div>
     </div>

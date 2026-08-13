@@ -15,6 +15,10 @@ const h = vi.hoisted(() => ({
   poi: null as unknown,
   dispatch: vi.fn(),
   realtime: { loading: false, error: null, lastUpdated: null },
+  emit: vi.fn(),
+}));
+vi.mock("@/lib/instrumentation/engagement-scope", () => ({
+  useEngagement: () => ({ emit: h.emit }),
 }));
 
 // react-map-gl/mapbox Popup portaler normalt til kartet — mock til en enkel
@@ -61,6 +65,7 @@ function makePoi(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   h.dispatch.mockReset();
+  h.emit.mockReset();
   h.poi = null;
 });
 afterEach(() => cleanup());
@@ -92,5 +97,115 @@ describe("BoardPOIMiniPopup — no-photo-fallback (AC5)", () => {
     h.poi = null;
     const { queryByTestId } = render(<BoardPOIMiniPopup />);
     expect(queryByTestId("popup")).toBeNull();
+  });
+});
+
+/**
+ * Utforsk-CTA-en: modal i Placy når POI-et har innhold, ekstern lenke ellers.
+ * Det visuelle skillet (sparkles vs. ekstern-lenke-ikon) er et bevisst signal om
+ * at klikket forlater siden — beslutning 2026-08-12.
+ */
+describe("BoardPOIMiniPopup — Utforsk-CTA", () => {
+  const PASSING_GROUNDING = {
+    poiGroundingVersion: 1 as const,
+    generated: {
+      provider: "gemini-search-grounding" as const,
+      narrative: "n".repeat(400),
+      sources: [],
+      searchEntryPointHtml: "<div>chip</div>",
+      searchQueries: [],
+      model: "gemini-2.5-flash",
+      fetchedAt: "2026-08-12T10:00:00.000Z",
+      qualityGate: { passed: true, sourceCount: 3, charCount: 400 },
+    },
+  };
+
+  it("POI med bestått grounding → knapp som dispatcher OPEN_EXPLORE, ingen navigasjon", () => {
+    h.poi = makePoi({
+      raw: {
+        id: "p1",
+        name: "Testkafé",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        category: { id: "cafe", name: "Kafé", icon: "Coffee", color: "#aa3300" },
+        grounding: PASSING_GROUNDING,
+      },
+    });
+    const { getByText } = render(<BoardPOIMiniPopup />);
+    const cta = getByText("Utforsk").closest("button");
+    expect(cta).toBeTruthy();
+    expect(getByText("Utforsk").closest("a")).toBeNull();
+    cta!.click();
+    expect(h.dispatch).toHaveBeenCalledWith({ type: "OPEN_EXPLORE" });
+  });
+
+  it("POI med kun Google-fakta (ingen grounding) → også modal", () => {
+    h.poi = makePoi({
+      raw: {
+        id: "p1",
+        name: "Testkafé",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        category: { id: "cafe", name: "Kafé", icon: "Coffee", color: "#aa3300" },
+        googleRating: 4.4,
+      },
+    });
+    const { getByText } = render(<BoardPOIMiniPopup />);
+    expect(getByText("Utforsk").closest("button")).toBeTruthy();
+  });
+
+  it("POI uten innhold → ekstern lenke med target=_blank og noopener bevart", () => {
+    h.poi = makePoi();
+    const { getByText } = render(<BoardPOIMiniPopup />);
+    const link = getByText("Utforsk").closest("a")!;
+    expect(link).toBeTruthy();
+    expect(link.getAttribute("href")).toContain("udm=50");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toContain("noopener");
+  });
+
+  it("strykende grounding behandles som ingen innhold → ekstern lenke", () => {
+    h.poi = makePoi({
+      raw: {
+        id: "p1",
+        name: "Testkafé",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        category: { id: "cafe", name: "Kafé", icon: "Coffee", color: "#aa3300" },
+        grounding: {
+          ...PASSING_GROUNDING,
+          generated: {
+            ...PASSING_GROUNDING.generated,
+            qualityGate: { passed: false, sourceCount: 1, charCount: 90, reason: "for få kilder" },
+          },
+        },
+      },
+    });
+    const { getByText } = render(<BoardPOIMiniPopup />);
+    expect(getByText("Utforsk").closest("a")).toBeTruthy();
+  });
+});
+
+describe("BoardPOIMiniPopup — Moat 2 pa utgaende klikk", () => {
+  it("ekstern lenke emitter poi_outbound_clicked med poiId og kategori", () => {
+    h.poi = makePoi({ categoryId: "cafe" });
+    const { getByText } = render(<BoardPOIMiniPopup />);
+    getByText("Utforsk").closest("a")!.click();
+    expect(h.emit).toHaveBeenCalledWith("poi_outbound_clicked", {
+      poiId: "p1",
+      payload: { category_id: "cafe" },
+    });
+  });
+
+  it("modal-CTA emitter IKKE utgaende klikk (hosten emitter apningen)", () => {
+    h.poi = makePoi({
+      raw: {
+        id: "p1",
+        name: "Testkafe",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        category: { id: "cafe", name: "Kafe", icon: "Coffee", color: "#aa3300" },
+        googleRating: 4.1,
+      },
+    });
+    const { getByText } = render(<BoardPOIMiniPopup />);
+    getByText("Utforsk").closest("button")!.click();
+    expect(h.emit).not.toHaveBeenCalled();
   });
 });

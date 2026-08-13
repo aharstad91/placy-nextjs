@@ -1,7 +1,7 @@
 ---
 title: "feat: Utforsk-modal med Google-grounded POI-innhold (Sundsøya-pilot)"
 type: feat
-status: active
+status: complete
 date: 2026-08-12
 origin: docs/brainstorms/2026-08-12-utforsk-modal-grounded-poi-innhold-requirements.md
 ---
@@ -117,6 +117,39 @@ Verifisert 2026-08-12: Googles egne AI-sammendrag i Places API (`generativeSumma
 - Hvilket Moat 2-oppsett? → Ny event-type via to-stegs-kontrakten; `useEngagement().emit()` er emit-veien
 - Gemini-vilkår for lagring? → 2-års tekstvindu bekreftet; tracking per Grounded Result forbudt
 
+### Resolved During Implementation (2026-08-12)
+
+- **Kvalitetsport-terskler:** ≥2 kilder / 280–1400 tegn. Kalibrert på 78 POI-er.
+  Kildeantall er spaken, ikke lengde: ≥1 gav 86 % dekning, ≥2 gav 81 %, ≥3 gav
+  69 %, ≥4 gav 45 %, mens 280→200 tegn bare hentet inn én POI. Gemini er
+  stokastisk — dekningen varierte ~5 % mellom to kjøringer av samme sett
+  (dry-run 63 beståtte, apply 59).
+- **Per-POI-prompt:** stedsskala med beboer-perspektiv. Fire funn måtte inn:
+  INGEN_DATA-sentinel (mot avslags-narrativ i førsteperson), årstall-forbud MED
+  omskrivings-eksempel, eksplisitt forbud mot kjede-/konseptomtale, og
+  kilde-dedup på resolvet URL.
+- **Egen board-state-action:** JA — `exploreOpen` + `OPEN_EXPLORE`/`CLOSE_EXPLORE`.
+  Trigger (popup i kartet) og renderer (board-skallet) ligger i ulike subtrær, så
+  lokal state i popup-laget var ikke mulig. All navigasjon nullstiller flagget.
+- **`has_3d_addon` på Sundsøya:** ikke satt — dobbel-mount-fellen ville ikke
+  truffet pilot-flaten umiddelbart. Modalen ligger i skallet uansett, og en
+  kilde-vakt-test asserter at kart-filene aldri rendrer den.
+- **Søke-anker:** avledes fra POI-adressene (hyppigste siste komma-segment), ikke
+  prosjektnavnet. «Sundsøya» er tomta; ankeret må være «Inderøy» (43 av 45
+  adresserte POI-er). Kontrollkjøring med feil anker gav INGEN_DATA.
+- **Payload-vekst:** hele boardsiden er 124 KB gzip med grounding på 64 POI-er —
+  under planens 150 KB-terskel, så `searchEntryPointHtml` beholdes inline. Ingen
+  on-demand-henting nødvendig.
+
+### Fortsatt utsatt
+
+- **POI-radene i `neighbourhood/CategoryPage.tsx`:** VERIFISERT i nettleser at de
+  er rene `<li>` uten knapp, rolle eller onclick. Eneste mobil-inngang til
+  modalen er derfor kartmarkøren, og nabolags-sheeten dekker ~55 % av skjermen
+  der markørene ligger. Modalen fungerer (verifisert: én modal, 85 % høyde,
+  riktig innhold, lukking frigir scroll), men veien inn er trang. Egen liten
+  oppgave med stor mobil-effekt.
+
 ### Deferred to Implementation
 
 - Konkrete kvalitetsport-terskler: kalibreres empirisk på Sundsøya-settet i Unit 3 — kan ikke settes før vi ser fordelingen av kilde-antall og innholdslengde på 78 POI-er
@@ -184,7 +217,7 @@ flowchart TD
 
 ## Implementation Units
 
-- [ ] **Unit 1: Lagringsskjema — migrasjon 084, typer og Zod-validering**
+- [x] **Unit 1: Lagringsskjema — migrasjon 084, typer og Zod-validering**
 
 **Goal:** `v2.pois` får en `grounding jsonb`-kolonne, og TS-siden kan lese den typesikkert med støyende validering.
 
@@ -228,7 +261,7 @@ flowchart TD
 
 ---
 
-- [ ] **Unit 2: Per-POI grounding-modul**
+- [x] **Unit 2: Per-POI grounding-modul**
 
 **Goal:** En gjenbrukbar funksjon som tar et POI (navn, adresse, kategori) og returnerer validert, sanert grounded innhold klart til lagring.
 
@@ -269,7 +302,7 @@ flowchart TD
 
 ---
 
-- [ ] **Unit 3: Generering-script for Sundsøya + portkalibrering**
+- [x] **Unit 3: Generering-script for Sundsøya + portkalibrering**
 
 **Goal:** Alle 78 POI-er på Sundsøya-boardet får generert grounding lagret i DB, og kvalitetsportens terskler er kalibrert empirisk med rapportert dekningsgrad.
 
@@ -315,7 +348,7 @@ flowchart TD
 
 ---
 
-- [ ] **Unit 4: Places-fakta backfill for Sundsøya**
+- [x] **Unit 4: Places-fakta backfill for Sundsøya**
 
 **Goal:** De 45 POI-ene med `google_place_id` får åpningstider og bilder lagret i DB, slik at modalen kan vise Google-fakta uten API-kall per visning.
 
@@ -362,7 +395,7 @@ flowchart TD
 
 ---
 
-- [ ] **Unit 5: POIExploreModal**
+- [x] **Unit 5: POIExploreModal**
 
 **Goal:** En modal som viser grounded innhold, Google-fakta og attribusjon for én POI, med korrekt ToS-etterlevelse og pen degradering.
 
@@ -413,7 +446,7 @@ flowchart TD
 
 ---
 
-- [ ] **Unit 6: CTA-bytte på desktop + ny mobil-inngang**
+- [x] **Unit 6: CTA-bytte på desktop + ny mobil-inngang**
 
 **Goal:** Utforsk-CTA-en åpner modalen der innhold finnes og lenker ut (visuelt merket) der det ikke gjør, på begge desktop-popupene — og POI-tap på mobil åpner modalen direkte.
 
@@ -462,7 +495,7 @@ flowchart TD
 
 ---
 
-- [ ] **Unit 7: Moat 2-instrumentering**
+- [x] **Unit 7: Moat 2-instrumentering**
 
 **Goal:** Modal-åpning og utgående fallback-klikk logges per POI med kontekst-konvolutt, innenfor ToS-grensene.
 

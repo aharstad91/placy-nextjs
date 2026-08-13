@@ -53,7 +53,12 @@ vi.mock("./client", () => ({
   createServerClient: vi.fn(() => mockClient),
 }));
 
-import { getProductFromSupabaseV2 } from "./v2-queries";
+import {
+  getProductFromSupabaseV2,
+  transformPOI,
+  parsePoiGroundingOrLog,
+} from "./v2-queries";
+import type { DbPoi } from "./types";
 
 const PROJECT_ROW = {
   id: "proj-1",
@@ -236,5 +241,174 @@ describe("kilde-vakter — v2-først-wiring og split-queries", () => {
   it("v2-stien bruker ingen nested PostgREST-select (v2 mangler FK-metadata)", () => {
     const src = readFileSync(join(process.cwd(), "lib", "supabase", "v2-queries.ts"), "utf8");
     expect(src).not.toMatch(/select\(\s*`[^`]*\(/); // ingen `tabell(...)`-joins
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Per-POI grounding (migrasjon 084) + gallery_images-mappingen
+// ---------------------------------------------------------------------------
+
+const GENERATED_GROUNDING = {
+  provider: "gemini-search-grounding",
+  narrative: "Parken ligger langs elva og har amfi, skulpturer og et kvernhus.",
+  sources: [
+    {
+      title: "Kilde",
+      url: "https://trondheim.kommune.no/muustroparken",
+      redirectUrl: "https://vertexaisearch.cloud.google.com/grounding-api-redirect/x",
+      domain: "trondheim.kommune.no",
+    },
+  ],
+  searchEntryPointHtml: '<div class="chip">søk</div>',
+  searchQueries: ["Muustrøparken"],
+  model: "gemini-2.5-flash",
+  fetchedAt: "2026-08-12T10:00:00.000Z",
+  qualityGate: { passed: true, sourceCount: 1, charCount: 63 },
+};
+
+const CURATED_GROUNDING = {
+  narrative: "Nabolagets grønne pustehull.",
+  curatedAt: "2026-08-12T12:00:00.000Z",
+};
+
+function dbPoi(overrides: Record<string, unknown> = {}) {
+  return poiRow("p1", overrides) as unknown as DbPoi;
+}
+
+describe("parsePoiGroundingOrLog", () => {
+  it("null/undefined → undefined uten feil-log", () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(parsePoiGroundingOrLog(null, "p1")).toBeUndefined();
+    expect(parsePoiGroundingOrLog(undefined, "p1")).toBeUndefined();
+    expect(errSpy).not.toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+
+  it("gyldig grounding parses gjennom", () => {
+    const parsed = parsePoiGroundingOrLog(
+      { poiGroundingVersion: 1, generated: GENERATED_GROUNDING },
+      "p1"
+    );
+    expect(parsed?.generated?.narrative).toContain("kvernhus");
+  });
+
+  it("ødelagt generated forkastes ALENE — curated overlever, og feilen logges med POI-ID", () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const brokenGenerated: Record<string, unknown> = { ...GENERATED_GROUNDING };
+    delete brokenGenerated.searchEntryPointHtml;
+
+    const parsed = parsePoiGroundingOrLog(
+      {
+        poiGroundingVersion: 1,
+        generated: brokenGenerated,
+        curated: CURATED_GROUNDING,
+      },
+      "google-ChIJe2pnuSJibUYRqz4D6mc_JdM"
+    );
+
+    expect(parsed).toBeDefined();
+    expect(parsed!.generated).toBeUndefined();
+    expect(parsed!.curated?.narrative).toBe("Nabolagets grønne pustehull.");
+    expect(errSpy).toHaveBeenCalledWith(
+      "[poi-grounding] generated-laget forkastet",
+      expect.objectContaining({ poiId: "google-ChIJe2pnuSJibUYRqz4D6mc_JdM" })
+    );
+    errSpy.mockRestore();
+  });
+
+  it("ukjent poiGroundingVersion → utelates helt, feil logges (versjon-bump-kontrakten)", () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const parsed = parsePoiGroundingOrLog(
+      { poiGroundingVersion: 2, generated: GENERATED_GROUNDING },
+      "entur-NSR-StopPlace-271"
+    );
+    expect(parsed).toBeUndefined();
+    expect(errSpy).toHaveBeenCalledWith(
+      "[poi-grounding] Zod-parse feilet — grounding utelatt",
+      expect.objectContaining({ poiId: "entur-NSR-StopPlace-271" })
+    );
+    errSpy.mockRestore();
+  });
+
+  it("søppel-verdi (streng i stedet for objekt) → undefined, ingen kast", () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(parsePoiGroundingOrLog("ikke et objekt", "p1")).toBeUndefined();
+    expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+});
+
+describe("transformPOI — nye kolonner", () => {
+  it("mapper grounding fra DB-raden", () => {
+    const poi = transformPOI(
+      dbPoi({ grounding: { poiGroundingVersion: 1, generated: GENERATED_GROUNDING } }),
+      undefined
+    );
+    expect(poi.grounding?.generated?.qualityGate.passed).toBe(true);
+  });
+
+  it("mapper gallery_images → galleryImages (hullet Utforsk-modalen avdekket)", () => {
+    const poi = transformPOI(
+      dbPoi({ gallery_images: ["https://lh3.googleusercontent.com/a", "https://lh3.googleusercontent.com/b"] }),
+      undefined
+    );
+    expect(poi.galleryImages).toEqual([
+      "https://lh3.googleusercontent.com/a",
+      "https://lh3.googleusercontent.com/b",
+    ]);
+  });
+
+  it("POI uten grounding og uten bilder gir undefined på begge (fravær ≠ tom)", () => {
+    const poi = transformPOI(dbPoi(), undefined);
+    expect(poi.grounding).toBeUndefined();
+    expect(poi.galleryImages).toBeUndefined();
+  });
+
+  it("heterogene POI-IDer passerer uendret gjennom (regresjonsvern mot .uuid()-fellen)", () => {
+    for (const id of [
+      "google-ChIJe2pnuSJibUYRqz4D6mc_JdM",
+      "entur-NSR-StopPlace-271",
+      "3f8c1a90-1111-4222-8333-444455556666",
+    ]) {
+      const poi = transformPOI(
+        poiRow(id, {
+          grounding: { poiGroundingVersion: 1, generated: GENERATED_GROUNDING },
+        }) as unknown as DbPoi,
+        undefined
+      );
+      expect(poi.id).toBe(id);
+      expect(poi.grounding?.generated).toBeDefined();
+    }
+  });
+});
+
+describe("grounding gjennom hele lesestien", () => {
+  it("getProductFromSupabaseV2 returnerer POI-er med validert grounding og bilder", async () => {
+    enqueue("projects", { data: PROJECT_ROW, error: null });
+    enqueue("products", { data: PRODUCT_ROW, error: null });
+    enqueue("project_pois", { data: [{ poi_id: "a", travel_times: null }], error: null });
+    enqueue("product_pois", { data: [{ poi_id: "a", featured: false, sort_order: 1 }], error: null });
+    enqueue("pois", {
+      data: [
+        poiRow("a", {
+          grounding: {
+            poiGroundingVersion: 1,
+            generated: GENERATED_GROUNDING,
+            curated: CURATED_GROUNDING,
+          },
+          gallery_images: ["https://lh3.googleusercontent.com/a"],
+        }),
+      ],
+      error: null,
+    });
+    enqueue("categories", { data: [CAT_ROW], error: null });
+    enqueue("product_categories", { data: [], error: null });
+
+    const project = await getProductFromSupabaseV2("intern", "pilot", "report");
+    const poi = project!.pois[0];
+
+    expect(poi.grounding?.generated?.searchEntryPointHtml).toBe('<div class="chip">søk</div>');
+    expect(poi.grounding?.curated?.narrative).toBe("Nabolagets grønne pustehull.");
+    expect(poi.galleryImages).toHaveLength(1);
   });
 });

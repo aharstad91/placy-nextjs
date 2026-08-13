@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { fetchPlaceDetails, TRUST_ENRICHMENT_FIELDS } from "./fetch-place-details";
+import {
+  fetchPlaceDetails,
+  OPENING_HOURS_FIELDS,
+  TRUST_ENRICHMENT_FIELDS,
+} from "./fetch-place-details";
+import { PlacesApiError, isQuotaError } from "./errors";
 
 function mockFetch(status: number, body: unknown) {
   return vi.fn(async () => ({
@@ -81,5 +86,52 @@ describe("fetchPlaceDetails (Places API New)", () => {
         /Google Places API error/,
       );
     }
+  });
+
+  it("kaster PlacesApiError med maskinlesbar status — 403/429 er kvote, 500 er transient", async () => {
+    // Backfill-scriptene MÅ kunne skille de to: kvotefeil aborterer hele
+    // kjøringen før noe skrives, transiente feil hoppes over per POI.
+    for (const [status, quota] of [
+      [403, true],
+      [429, true],
+      [500, false],
+    ] as const) {
+      vi.stubGlobal("fetch", mockFetch(status, {}));
+      const err = await fetchPlaceDetails("ChIJ", "k").catch((e) => e);
+      expect(err).toBeInstanceOf(PlacesApiError);
+      expect((err as PlacesApiError).status).toBe(status);
+      expect(isQuotaError(err)).toBe(quota);
+    }
+  });
+
+  it("languageCode legges i querystringen — og nøkkelen gjør det ALDRI", async () => {
+    const fetchSpy = mockFetch(200, { regularOpeningHours: { weekdayDescriptions: [] } });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await fetchPlaceDetails("ChIJxyz", "hemmelig-nøkkel", OPENING_HOURS_FIELDS, {
+      languageCode: "en",
+    });
+
+    const [url, init] = (fetchSpy as unknown as { mock: { calls: [string, RequestInit & { headers: Record<string, string> }][] } }).mock.calls[0];
+    expect(url).toBe("https://places.googleapis.com/v1/places/ChIJxyz?languageCode=en");
+    // Regresjonsvern for CLAUDE.md-regelen: nøkkelen skal ikke finnes noe sted i URL-en.
+    expect(url).not.toContain("hemmelig-nøkkel");
+    expect(url).not.toContain("key=");
+    expect(init.headers["X-Goog-Api-Key"]).toBe("hemmelig-nøkkel");
+  });
+
+  it("uten languageCode er URL-en uendret (ingen tom querystring)", async () => {
+    const fetchSpy = mockFetch(200, {});
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await fetchPlaceDetails("ChIJxyz", "k");
+
+    const [url] = (fetchSpy as unknown as { mock: { calls: [string][] } }).mock.calls[0];
+    expect(url).toBe("https://places.googleapis.com/v1/places/ChIJxyz");
+  });
+
+  it("OPENING_HOURS_FIELDS er snever — bilder holdes utenfor Enterprise-SKU-en", async () => {
+    expect(OPENING_HOURS_FIELDS).toEqual(["regularOpeningHours", "nationalPhoneNumber"]);
+    expect(OPENING_HOURS_FIELDS).not.toContain("photos");
   });
 });

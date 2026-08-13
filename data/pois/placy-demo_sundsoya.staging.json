@@ -1,0 +1,98 @@
+{
+  "projectId": "placy-demo_sundsoya",
+  "generatedAt": "2026-08-13T14:44:51.769Z",
+  "tekstregler": [
+    "Presens — hva som ER der. Aldri årstall, byggehistorikk eller «har lange tradisjoner».",
+    "Beboer-perspektiv: målgruppen er boligkjøperen som blir beboer, ikke en turist.",
+    "Fakta, ikke poesi. Ingen «lukten av», «smaken av».",
+    "IKKE åpningstider, telefon eller priser — de hentes fra Places API og vises alt i modalen.",
+    "Navngi, aldri generaliser: «Apotek 1 Nardo» slår «flere apotek».",
+    "Funksjon ER lov: hva stedet gjør for deg som bor der. Det er hele poenget med denne lista.",
+    "Lengde 80–600 tegn. La narrative stå tom for å hoppe over et POI."
+  ],
+  "pois": [
+    {
+      "id": "osm-node-9904497423",
+      "name": "Straumtorget",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 400 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Muustrøparken er et sentralt grøntområde langs Granaelva i Straumen. Parken brukes til rekreasjon, uteopphold og kulturelle arrangementer.\n\n- Elleve skulpturer av billedhogger Nils Aas er plassert rundt i parken.\n- Et sceneområde med amfi er tilrettelagt for arrangementer.\n- Kulturminnene Muusbrua og Ringsstu er en del av parkområdet.\n- Parken har en god variasjon av planter, trær og grøntområder.",
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJG7EhOgBjbUYRHnCM9vleVpM",
+      "name": "Sundsøya Ungdomsklubb",
+      "categoryId": "fritidsklubb",
+      "categoryName": "Fritidsklubb",
+      "address": "Sundsøya 2, Inderøy",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": false,
+        "rating": 5,
+        "reviewCount": 1
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-1206486493",
+      "name": "Nilsparken",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-9904497216",
+      "name": "Vaggplassen",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-2367233718",
+      "name": "ZikZaks",
+      "categoryId": "haircare",
+      "categoryName": "Frisør",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "entur-NSR-StopPlace-46251",
+      "name": "Venna vegdele bussholdeplass",
+      "categoryId": "bus",
+      "categoryName": "Buss",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "realtimeAnswersIt": true,
+      "narrative": ""
+    }
+  ]
+}

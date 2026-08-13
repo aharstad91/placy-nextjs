@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/** Fokuserbare elementer inne i dialogen, i DOM-rekkefølge. */
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 interface ModalProps {
   open: boolean;
@@ -24,6 +28,8 @@ export default function Modal({
   className,
   closeOnBackdrop = true,
 }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape" && closeOnBackdrop) onClose();
@@ -41,6 +47,53 @@ export default function Modal({
     };
   }, [open, handleEscape]);
 
+  /**
+   * Fokus-håndtering. Dialogen hadde `role="dialog"` og ESC, men ingen
+   * autofokus, ingen fokus-felle og ingen fokus-retur — så tastaturbrukere ble
+   * stående i innholdet BAK modalen, som `aria-modal` sier ikke finnes.
+   *
+   * Ligger her og ikke i den enkelte modalen, slik at alle konsumenter
+   * (POIExploreModal, BoardCollectionDrawer) arver oppførselen.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    // Fokuser panelet selv, ikke første knapp: da leser skjermlesere
+    // dialogens innhold fra toppen i stedet for å starte midt i.
+    panelRef.current?.focus();
+
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+        (el) => el.offsetParent !== null
+      );
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || active === panel)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", trap);
+    return () => {
+      document.removeEventListener("keydown", trap);
+      // Fokus tilbake dit brukeren kom fra — ellers hopper fokus til
+      // dokumentstart når modalen lukkes.
+      previouslyFocused?.focus?.();
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return createPortal(
@@ -54,9 +107,12 @@ export default function Modal({
       {/* Modal centering container */}
       <div className="fixed inset-0 z-[101] flex items-end md:items-center md:justify-center p-4 md:p-6 pointer-events-none">
         <div
+          ref={panelRef}
           role="dialog"
           aria-modal="true"
+          tabIndex={-1}
           className={cn(
+            "outline-none",
             "w-full md:w-auto md:min-w-[400px] md:max-w-[480px] bg-white flex flex-col pointer-events-auto",
             "max-h-[85vh] md:max-h-[50vh]",
             "rounded-2xl",
@@ -75,6 +131,8 @@ export default function Modal({
               )}</div>
               <button
                 onClick={onClose}
+                type="button"
+                aria-label="Lukk"
                 className="p-1.5 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0 ml-2"
               >
                 <X className="w-4 h-4 text-gray-500" />

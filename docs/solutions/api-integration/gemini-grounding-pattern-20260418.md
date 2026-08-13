@@ -56,6 +56,57 @@ Per-kategori-feil → ikke sett `grounding: null`. Behold optional `grounding?:`
 **8. Zod-parse ved render-boundary**
 `ReportThemeGroundingViewSchema` med `groundingVersion: z.literal(1)` parses i `report-data.ts`. Silent skip + `console.error` ved invalid shape. Version-bump (fra 1 til 2) tvinger regenerering av alle prosjekter.
 
+## Tillegg 2026-08-12 — per-POI-grounding og verifiserte ToS-grenser
+
+**To ToS-fakta som gjelder OGSÅ dagens tema-grounding** (verifisert mot
+[Gemini API Additional Terms](https://ai.google.dev/gemini-api/terms)):
+
+1. Caching/syndikering av Grounded Results er forbudt som hovedregel, MEN
+   lagring av **teksten** er tillatt i inntil **2 år** for visnings- og
+   optimaliseringsformål. `fetchedAt` er alderskilden — det er den øvre grensen,
+   praktisk maks-alder settes lavere.
+2. **Tracking av interaksjoner med spesifikke Grounded Results eller Search
+   Suggestions er forbudt.** Vi kan logge at innholdet ble vist/åpnet, men aldri
+   hvilken kildelenke eller hvilket søkeforslag som ble klikket. Skjemaene for
+   `poi_explore_opened`/`poi_outbound_clicked` er `.strict()` nettopp for at et
+   felt som `clicked_source_url` ikke skal kunne uttrykkes.
+
+**Per-POI-varianten er et EGET skjema med egen versjonsakse.** `v2.pois.grounding`
+(migrasjon 084) bruker `PoiGroundingViewSchema` med `poiGroundingVersion`, ikke
+`ReportThemeGroundingViewSchema`. Tema-grounding beskriver et strøk og lever i
+`products.config`; per-POI beskriver et sted og lever på POI-et. Ikke bland dem.
+
+Shapen har to bevisst skilte lag: `generated` (provider-swappbart, discriminated
+union på `provider` med én variant i dag) og `curated` (Placy-eid, overlever
+provider-swap). Googles egen `generativeSummary` dekker ikke Norge (verifisert
+0/12 norske probe-POI-er, US-kontroll full pakke) — når den gjør det, kommer den
+inn som en additiv variant i unionen.
+
+**Fire empiriske funn fra per-POI-kalibrering** (78 POI-er, Sundsøya):
+
+- **INGEN_DATA-sentinel er nødvendig.** Uten den svarer modellen med et
+  avslags-narrativ i førsteperson («Jeg finner ingen informasjon om X. Søkene
+  indikerer …») adressert til oss, ikke til leseren. Kort avslag fanges av
+  lengdeterskel; langt avslag gjør det ikke.
+- **Årstall må forbys med eksempel.** «IKKE byggeår» alene ga likevel «Muusbrua
+  fra 1816»; med et omskrivings-eksempel forsvant dateringen.
+- **Kjede-/konseptomtale må forbys eksplisitt**, ellers gjengis
+  markedsføringskopi som lokalkunnskap.
+- **Kilder må dedupes på resolvet URL.** Gemini siterer samme side flere ganger
+  (målt: `visitinnherred.com` tre ganger på ett POI) — uten dedup blåses
+  `sourceCount` opp og kvalitetsporten blir meningsløs.
+
+**Bug i delt kode fikset samtidig:** Gemini bruker en-dash som punktmarkør, som
+`splitLongParagraphs` ikke kjente igjen som markdown-liste. Listen ble
+setningssplittet og flere punkter havnet på samme linje. Rammet tema-grounding
+like mye.
+
+**Kvalitetsport-kalibrering:** kildeantall er spaken, ikke lengde. På Sundsøya
+ga ≥1 kilde 86 % dekning, ≥2 gav 81 %, ≥3 gav 69 %, ≥4 gav 45 % — mens å senke
+lengdekravet fra 280 til 200 tegn bare hentet inn én POI. Valgt: ≥2 kilder.
+Merk at Gemini er stokastisk per request: dekningen varierte ~5 % mellom to
+kjøringer av samme sett.
+
 ## Refaktor-triggers
 
 **Når dette mønsteret bør endres:**

@@ -3,16 +3,26 @@
  *
  * Uses Places API (New) — $0/unlimited for photo operations.
  * Targets POIs where photo_resolved_at is older than the threshold
- * (default 14 days) and re-resolves their photo_reference to a fresh
- * lh3.googleusercontent.com URL.
+ * (default 14 days) and re-resolves their stored photos to fresh
+ * lh3.googleusercontent.com URLs.
  *
- * Handles both formats:
- * - New: "places/{placeId}/photos/{ref}" → resolve directly via New API
- * - Legacy: opaque string → re-fetch via google_place_id, migrate to new format
+ * Dekker TO kolonne-sett per POI (begge stemples med `photo_resolved_at`):
+ *   1. `photo_reference` → `featured_image` (hero-bildet)
+ *      - Nytt format: "places/{placeId}/photos/{ref}" → resolves direkte
+ *      - Legacy: opak streng → hentes på nytt via google_place_id og migreres
+ *   2. `gallery_images[]` → hele galleriet, hentet på nytt via google_place_id
+ *
+ * HVORFOR GALLERIET MÅTTE MED (2026-08-12): `backfill-gallery-images.ts` skriver
+ * `gallery_images` og stempler `photo_resolved_at`, men dette scriptet så
+ * tidligere KUN på `photo_reference`. Galleri-URL-ene råtnet derfor uten at noe
+ * kunne fornye dem, og stempelet var pynt. Galleriet har ingen egen
+ * referanse-kolonne (kun én `photo_reference`-tekstkolonne finnes), så navnene
+ * hentes på nytt via `fetchPhotoNames` — som er $0 på Essentials-nivået.
  *
  * Usage: npx tsx scripts/refresh-photo-urls.ts [--days 14]
  *
- * Safe to re-run. Only touches POIs with existing photo_reference.
+ * Safe to re-run. Touches only POIs that already have photo_reference or
+ * gallery_images.
  */
 
 import { config } from "dotenv";
@@ -31,12 +41,15 @@ const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 300;
 
+const GALLERY_SIZE = 3;
+
 interface POIRow {
   id: string;
   name: string;
   google_place_id: string | null;
-  photo_reference: string;
+  photo_reference: string | null;
   featured_image: string | null;
+  gallery_images: string[] | null;
   photo_resolved_at: string | null;
 }
 
@@ -82,8 +95,13 @@ async function main() {
     "Accept-Profile": "v2",
   };
 
-  // Fetch POIs with stale or missing photo_resolved_at that have a photo_reference
-  const query = `${SUPABASE_URL}/rest/v1/pois?select=id,name,google_place_id,photo_reference,featured_image,photo_resolved_at&photo_reference=not.is.null&or=(photo_resolved_at.is.null,photo_resolved_at.lt.${cutoffISO})&order=name`;
+  // POI-er med utløpt/manglende photo_resolved_at som har ENTEN photo_reference
+  // ELLER gallery_images. Nestet and/or fordi to `or=`-parametre ville kollidert
+  // på samme nøkkel.
+  const query =
+    `${SUPABASE_URL}/rest/v1/pois?select=id,name,google_place_id,photo_reference,featured_image,gallery_images,photo_resolved_at` +
+    `&and=(or(photo_resolved_at.is.null,photo_resolved_at.lt.${cutoffISO}),or(photo_reference.not.is.null,gallery_images.not.is.null))` +
+    `&order=name`;
 
   const res = await fetch(query, { headers });
   if (!res.ok) {
@@ -101,6 +119,7 @@ async function main() {
 
   let refreshed = 0;
   let migrated = 0;
+  let galleries = 0;
   let expired = 0;
   let errors = 0;
 
@@ -109,62 +128,96 @@ async function main() {
 
     await Promise.all(
       batch.map(async (poi) => {
+        // Én PATCH per POI. Hero og galleri kan begge trenge fornying, og to
+        // separate PATCH-er ville gitt to `photo_resolved_at`-stempler og en
+        // halvskrevet rad hvis den andre feilet.
+        const patch: Record<string, unknown> = {};
+        const notes: string[] = [];
+
         try {
-          // New format: resolve directly
-          if (isNewPhotoFormat(poi.photo_reference)) {
-            const cdnUrl = await resolvePhotoUri(poi.photo_reference, GOOGLE_API_KEY, 800);
-            if (cdnUrl) {
-              await updatePoi(poi.id, headers, {
-                featured_image: cdnUrl,
-                photo_resolved_at: new Date().toISOString(),
-              });
-              refreshed++;
-              console.log(`  OK   ${poi.name}`);
+          // ── Hero-bildet: photo_reference → featured_image ──
+          if (poi.photo_reference) {
+            if (isNewPhotoFormat(poi.photo_reference)) {
+              const cdnUrl = await resolvePhotoUri(poi.photo_reference, GOOGLE_API_KEY, 800);
+              if (cdnUrl) {
+                patch.featured_image = cdnUrl;
+                refreshed++;
+                notes.push("hero");
+              } else {
+                // 404 fra Google = bildet finnes genuint ikke lenger. (Transiente
+                // feil kaster nå i resolvePhotoUri og havner i catch-en under,
+                // så vi sletter ikke data på en rate limit.)
+                patch.photo_reference = null;
+                patch.featured_image = null;
+                expired++;
+                notes.push("hero utløpt");
+              }
+            } else if (!poi.google_place_id) {
+              errors++;
+              console.log(`  ERR  ${poi.name} — legacy format, no google_place_id to migrate`);
             } else {
-              // Photo name no longer valid — null out
-              await updatePoi(poi.id, headers, {
-                photo_reference: null,
-                photo_resolved_at: null,
-                featured_image: null,
-              });
-              expired++;
-              console.log(`  EXP  ${poi.name} — photo no longer available`);
+              // Legacy format — hent på nytt via google_place_id og migrer
+              const photoNames = await fetchPhotoNames(poi.google_place_id, GOOGLE_API_KEY);
+              if (photoNames.length === 0) {
+                patch.photo_reference = null;
+                patch.featured_image = null;
+                expired++;
+                notes.push("hero utløpt");
+              } else {
+                const cdnUrl = await resolvePhotoUri(photoNames[0], GOOGLE_API_KEY, 800);
+                if (cdnUrl) {
+                  patch.photo_reference = photoNames[0];
+                  patch.featured_image = cdnUrl;
+                  migrated++;
+                  notes.push("hero migrert");
+                } else {
+                  errors++;
+                  notes.push("hero resolve feilet");
+                }
+              }
             }
+          }
+
+          // ── Galleriet: gallery_images[] ──
+          // Galleriet har ingen egen referanse-kolonne, så navnene hentes på nytt
+          // via google_place_id ($0 på Essentials-nivået).
+          if (poi.gallery_images && poi.gallery_images.length > 0) {
+            if (!poi.google_place_id) {
+              errors++;
+              notes.push("galleri: ingen google_place_id");
+            } else {
+              const names = await fetchPhotoNames(poi.google_place_id, GOOGLE_API_KEY);
+              const urls: string[] = [];
+              for (let j = 0; j < Math.min(GALLERY_SIZE, names.length); j++) {
+                const url = await resolvePhotoUri(names[j], GOOGLE_API_KEY, j === 0 ? 800 : 400);
+                if (url) urls.push(url);
+              }
+              if (urls.length > 0) {
+                patch.gallery_images = urls;
+                galleries++;
+                notes.push(`galleri ${urls.length} bilder`);
+              } else {
+                // Ingen bilder igjen hos Google → tom kolonne er riktig svar.
+                patch.gallery_images = null;
+                expired++;
+                notes.push("galleri utløpt");
+              }
+            }
+          }
+
+          if (Object.keys(patch).length === 0) {
+            if (notes.length > 0) console.log(`  ERR  ${poi.name} — ${notes.join(", ")}`);
             return;
           }
 
-          // Legacy format — re-fetch via google_place_id to migrate
-          if (!poi.google_place_id) {
-            errors++;
-            console.log(`  ERR  ${poi.name} — legacy format, no google_place_id to migrate`);
-            return;
-          }
+          // Stempelet settes bare når noe faktisk ble fornyet. Ble ALT nullet ut,
+          // er det ingenting å holde ferskt — da nulles stempelet også, slik at
+          // POI-en ikke plukkes opp igjen hver kjøring.
+          const allNulled = Object.values(patch).every((v) => v === null);
+          patch.photo_resolved_at = allNulled ? null : new Date().toISOString();
 
-          const photoNames = await fetchPhotoNames(poi.google_place_id, GOOGLE_API_KEY);
-          if (photoNames.length === 0) {
-            await updatePoi(poi.id, headers, {
-              photo_reference: null,
-              photo_resolved_at: null,
-              featured_image: null,
-            });
-            expired++;
-            console.log(`  EXP  ${poi.name} — no photos from New API, nulled out`);
-            return;
-          }
-
-          const cdnUrl = await resolvePhotoUri(photoNames[0], GOOGLE_API_KEY, 800);
-          if (cdnUrl) {
-            await updatePoi(poi.id, headers, {
-              photo_reference: photoNames[0],
-              featured_image: cdnUrl,
-              photo_resolved_at: new Date().toISOString(),
-            });
-            migrated++;
-            console.log(`  OK   ${poi.name} (migrated to new format)`);
-          } else {
-            errors++;
-            console.log(`  ERR  ${poi.name} — resolve failed`);
-          }
+          await updatePoi(poi.id, headers, patch);
+          console.log(`  OK   ${poi.name} — ${notes.join(", ")}`);
         } catch (err) {
           errors++;
           console.log(`  ERR  ${poi.name} — ${err instanceof Error ? err.message : String(err)}`);
@@ -183,6 +236,7 @@ async function main() {
   console.log("\n=== Summary ===");
   console.log(`Refreshed: ${refreshed}`);
   console.log(`Migrated:  ${migrated}`);
+  console.log(`Galleries: ${galleries}`);
   console.log(`Expired:   ${expired}`);
   console.log(`Errors:    ${errors}`);
   console.log(`Total:     ${pois.length}`);

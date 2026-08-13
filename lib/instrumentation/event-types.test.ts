@@ -7,15 +7,24 @@ import {
 } from "./event-types";
 
 describe("EVENT_TYPES", () => {
-  it("er nøyaktig startsettet fra DB-CHECK-en (PRD 1 Unit 2 AC3)", () => {
-    // Speiler events_event_type_check i 070_baseline.sql. Endres dette settet
-    // MÅ DB-CHECK-en utvides i samme slengen (to-stegs-grensen).
+  it("speiler DB-CHECK-en events_event_type_check nøyaktig", () => {
+    // Startsettet er 070_baseline.sql:347; utvidet av 085_event_types_utforsk.sql.
+    // Endres dette settet MÅ DB-CHECK-en utvides i samme slengen
+    // (to-stegs-grensen). Denne testen ER snubletråden.
     expect([...EVENT_TYPES]).toEqual([
       "board_viewed",
       "category_opened",
       "voiceover_played",
       "poi_clicked",
+      "poi_explore_opened",
+      "poi_outbound_clicked",
     ]);
+  });
+
+  it("Utforsk-typene er kjent av isEventType (parse-guarden ved utrygge grenser)", () => {
+    expect(isEventType("poi_explore_opened")).toBe(true);
+    expect(isEventType("poi_outbound_clicked")).toBe(true);
+    expect(isEventType("poi_explore_closed")).toBe(false);
   });
 
   it("har ingen duplikater", () => {

@@ -8,6 +8,8 @@
  * @see https://developers.google.com/maps/documentation/places/web-service/place-photos
  */
 
+import { PlacesApiError } from "./errors";
+
 interface PhotoResource {
   name: string; // e.g. "places/ChIJ.../photos/AUc..."
   widthPx: number;
@@ -58,7 +60,7 @@ export async function fetchPhotoNames(
 
   // Other errors = API problem, throw to prevent data deletion
   if (!res.ok) {
-    throw new Error(`Places API error: ${res.status}`);
+    throw new PlacesApiError(res.status, `Places API error: ${res.status}`);
   }
 
   const data: PlaceDetailsResponse = await res.json();
@@ -70,6 +72,17 @@ export async function fetchPhotoNames(
  *
  * Uses skipHttpRedirect=true to get photoUri as JSON instead of 302.
  * Cost: $0 (Essentials IDs Only tier).
+ *
+ * Returnerer null KUN ved 404 (bildet finnes ikke lenger). Kaster
+ * `PlacesApiError` ved andre ≠ok-statuser — samme kontrakt som
+ * `fetchPhotoNames` over.
+ *
+ * HVORFOR DET MÅTTE ENDRES (2026-08-12): funksjonen returnerte tidligere null
+ * på ALLE ≠ok-statuser, inkludert 429. Kallerne (`refresh-photo-urls.ts`,
+ * `resolve-photo-urls.ts`) tolker null som «bildet er borte» og NULLER UT
+ * `photo_reference`/`featured_image`/`photo_resolved_at`. En forbigående rate
+ * limit slettet altså bilde-data permanent. Det er nøyaktig den feilen
+ * `fetchPhotoNames` sin egen doc-kommentar advarer mot, men vernet manglet her.
  */
 export async function resolvePhotoUri(
   photoName: string,
@@ -81,7 +94,13 @@ export async function resolvePhotoUri(
     headers: { "X-Goog-Api-Key": apiKey },
   });
 
-  if (!res.ok) return null;
+  // 404 = bildet finnes genuint ikke lenger → null (kaller kan nulle ut).
+  if (res.status === 404) return null;
+
+  // Andre feil = API-problem → kast, så data ikke slettes på transient feil.
+  if (!res.ok) {
+    throw new PlacesApiError(res.status, `Places API error: ${res.status}`);
+  }
 
   const data: MediaResponse = await res.json();
   return data.photoUri ?? null;

@@ -75,7 +75,56 @@ Re-resolver CDN-URLer eldre enn N dager (default 14). Nuller ut utgåtte `photo_
 
 ### Refresh åpningstider
 ```bash
-npx tsx scripts/refresh-opening-hours.ts [--days 30]
+### Utforsk-modalens innhold (per-POI grounding)
+
+```bash
+npx tsx scripts/ground-poi-content.ts <project_id>                     # dry-run FØRST
+npx tsx scripts/ground-poi-content.ts <project_id> --apply             # skriv
+npx tsx scripts/ground-poi-content.ts <project_id> --limit 5           # billig kalibrering
+npx tsx scripts/ground-poi-content.ts <project_id> --min-sources 3     # juster porten
+```
+
+Dry-run skriver dekningsgrad, histogram og terskel-sensitivitet, pluss rådata til
+`backups/` — så terskler kan re-evalueres offline uten å bruke Gemini-kvote på
+nytt. Kjør ALLTID dry-run først: lav dekning er et pilot-funn som skal
+omdirigere innsatsen, ikke oppdages i en kundedemo.
+
+POI-er som ikke gir innhold får `grounding.lastAttempt` med utfallet lagret
+(`no-data` / `refusal` / `error`). Uten det ville hver kjøring brent kvote på de
+samme tomme stedene, og «aldri forsøkt» og «forsøkt, ingenting der» ville vært
+samme tilstand i basen. `error` er transient og re-forsøkes straks; de to andre
+holdes tilbake i 30 dager.
+
+### Kuratér POI-tekst (Lokalkunnskap / Moat 1)
+
+Steget etter grounding: det Google ikke fant, skriver vi selv.
+
+```bash
+npx tsx scripts/curate-pois.ts --list <project_id>                # lag arbeidsliste
+npx tsx scripts/curate-pois.ts --file <staging.json>              # dry-run
+npx tsx scripts/curate-pois.ts --file <staging.json> --yes        # skriv
+```
+
+`--list` skriver `data/pois/<project_id>.staging.json` med hvert POI som mangler
+brukbar tekst, hvorfor, og faktaene vi alt eier som råstoff. Rekkefølgen er
+kurateringsrekkefølgen: `strøk-porten` først (der finnes et forkastet narrativ å
+skrive fra), så `no-data` (ekte Lokalkunnskap-arbeid), til sist `ingen-forsøk`
+(kjør grounding-scriptet på dem først) og `error` (teknisk, ikke kurator-arbeid).
+Kollektiv-holdeplasser markeres med `~` og legges sist — sanntid fra Entur er
+svaret der — men droppes aldri stille fra lista.
+
+Fyll `narrative` per POI og la resten stå tomme. `--list` kan kjøres på nytt uten
+å miste tekst som alt er skrevet.
+
+**Curated slår generated i modalen og vises uten Google-attribusjon** — teksten er
+vår, ikke lånt. Den har verken kildekrav, 2-års lagringsgrense eller utløpsdato,
+og `grounding.generated` bevares under den slik at en provider-swap fortsatt er
+mulig. Et POI med kuratert tekst hoppes over av grounding-scriptet (`--force`
+overstyrer).
+
+```bash
+npx tsx scripts/refresh-opening-hours.ts --project <project_id>          # dry-run
+npx tsx scripts/refresh-opening-hours.ts --project <project_id> --apply  # skriv
 ```
 Oppdaterer `opening_hours_json` fra Google Places API for POI-er med utdaterte data.
 
@@ -84,6 +133,12 @@ Oppdaterer `opening_hours_json` fra Google Places API for POI-er med utdaterte d
 |--------|----------|-------------------|
 | `refresh-photo-urls.ts` | Annenhver uke | ~500 Photo calls (~$1.50) |
 | `refresh-opening-hours.ts` | Månedlig | ~500 Details calls (~$8.50) |
+| `ground-poi-content.ts` | Ved nytt board / når innhold drifter | 1 Gemini grounding-kall per POI (78 POI-er ≈ innenfor gratiskvoten 1 500/dag) |
+| `curate-pois.ts --list` | Etter hver grounding-kjøring | 0 (kun DB-lesing) |
+
+**OBS før demo/visning:** kjør `refresh-photo-urls.ts`. lh3-CDN-URL-ene utløper
+etter ~14 dager, og Utforsk-modalens bildekarusell skjuler seg selv ved
+last-feil — den ser da bare tom ut, uten feilmelding.
 
 ---
 

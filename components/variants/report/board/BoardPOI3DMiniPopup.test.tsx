@@ -17,6 +17,10 @@ const h = vi.hoisted(() => ({
   dispatch: vi.fn(),
   project: vi.fn(),
   realtime: { loading: false, error: null, lastUpdated: null },
+  emit: vi.fn(),
+}));
+vi.mock("@/lib/instrumentation/engagement-scope", () => ({
+  useEngagement: () => ({ emit: h.emit }),
 }));
 
 vi.mock("./board-state", () => ({
@@ -190,5 +194,76 @@ describe("BoardPOI3DMiniPopup — source-invarianter (AC3/AC4)", () => {
     for (const r of roots) walk(join(process.cwd(), r));
     expect(importers).toHaveLength(1);
     expect(importers[0]).toContain("BoardPOI3DMiniPopup.tsx");
+  });
+});
+
+/**
+ * Utforsk-CTA-en må oppføre seg IDENTISK på 3D-flaten som på 2D-flaten.
+ * Historisk har de to kart-popupene driftet fra hverandre (poi_clicked emittes
+ * f.eks. bare fra 3D) — denne testen låser paritet for CTA-en.
+ */
+describe("BoardPOI3DMiniPopup — Utforsk-CTA (paritet med 2D)", () => {
+  const PASSING_GROUNDING = {
+    poiGroundingVersion: 1 as const,
+    generated: {
+      provider: "gemini-search-grounding" as const,
+      narrative: "n".repeat(400),
+      sources: [],
+      searchEntryPointHtml: "<div>chip</div>",
+      searchQueries: [],
+      model: "gemini-2.5-flash",
+      fetchedAt: "2026-08-12T10:00:00.000Z",
+      qualityGate: { passed: true, sourceCount: 3, charCount: 400 },
+    },
+  };
+
+  beforeEach(() => {
+    h.project.mockReturnValue({ x: 100, y: 200 });
+  });
+
+  it("POI med innhold → knapp som dispatcher OPEN_EXPLORE", () => {
+    h.poi = makePoi({
+      raw: {
+        id: "p1",
+        name: "Testkafé",
+        coordinates: { lat: 63.4, lng: 10.4 },
+        category: { id: "cafe", name: "Kafé", icon: "Coffee", color: "#aa3300" },
+        grounding: PASSING_GROUNDING,
+      },
+    });
+    const { container } = render(<BoardPOI3DMiniPopup map3d={fakeMap} />);
+    const button = Array.from(container.querySelectorAll("button")).find((b) =>
+      b.textContent?.includes("Utforsk"),
+    );
+    expect(button).toBeTruthy();
+    button!.click();
+    expect(h.dispatch).toHaveBeenCalledWith({ type: "OPEN_EXPLORE" });
+  });
+
+  it("POI uten innhold → ekstern lenke med udm=50 bevart", () => {
+    h.poi = makePoi();
+    const { container } = render(<BoardPOI3DMiniPopup map3d={fakeMap} />);
+    const link = Array.from(container.querySelectorAll("a")).find((a) =>
+      a.textContent?.includes("Utforsk"),
+    );
+    expect(link).toBeTruthy();
+    expect(link!.getAttribute("href")).toContain("udm=50");
+    expect(link!.getAttribute("rel")).toContain("noopener");
+  });
+});
+
+describe("BoardPOI3DMiniPopup — Moat 2-paritet med 2D", () => {
+  it("ekstern lenke emitter poi_outbound_clicked ogsa fra 3D-flaten", () => {
+    h.project.mockReturnValue({ x: 100, y: 200 });
+    h.poi = makePoi({ categoryId: "cafe" });
+    const { container } = render(<BoardPOI3DMiniPopup map3d={fakeMap} />);
+    const link = Array.from(container.querySelectorAll("a")).find((a) =>
+      a.textContent?.includes("Utforsk"),
+    )!;
+    link.click();
+    expect(h.emit).toHaveBeenCalledWith("poi_outbound_clicked", {
+      poiId: "p1",
+      payload: { category_id: "cafe" },
+    });
   });
 });
