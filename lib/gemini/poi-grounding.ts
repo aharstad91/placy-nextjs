@@ -18,6 +18,7 @@ import { callGemini, GEMINI_MODEL } from "./grounding";
 import { resolveUrlsParallel } from "./url-resolver";
 import {
   PoiGroundingGeneratedSchema,
+  type PoiGroundingAttempt,
   type PoiGroundingGenerated,
   type PoiGroundingSource,
   type PoiQualityGate,
@@ -71,7 +72,7 @@ export interface PoiGroundingInput {
 
 export type PoiGroundingResult =
   | { ok: true; generated: PoiGroundingGenerated }
-  | { ok: false; reason: string };
+  | { ok: false; outcome: PoiGroundingAttempt["outcome"]; reason: string };
 
 export interface PoiQualityThresholds {
   minSourceCount: number;
@@ -207,7 +208,11 @@ export async function groundPoi(
   const { apiKey, timeoutMs, signal, thresholds, now = () => new Date() } = options;
 
   if (!poi.name?.trim()) {
-    return { ok: false, reason: "POI mangler navn — kan ikke bygge prompt" };
+    return {
+      ok: false,
+      outcome: "error",
+      reason: "POI mangler navn — kan ikke bygge prompt",
+    };
   }
 
   let raw;
@@ -221,6 +226,7 @@ export async function groundPoi(
   } catch (err) {
     return {
       ok: false,
+      outcome: "error",
       reason: err instanceof Error ? err.message : "ukjent Gemini-feil",
     };
   }
@@ -229,11 +235,16 @@ export async function groundPoi(
   // URL-resolving så vi ikke bruker nettverk på kilder vi forkaster.
   const narrativeHead = raw.narrative.trim();
   if (narrativeHead.startsWith(NO_DATA_SENTINEL) || narrativeHead === NO_DATA_SENTINEL) {
-    return { ok: false, reason: "Gemini fant ingen konkrete opplysninger om stedet" };
+    return {
+      ok: false,
+      outcome: "no-data",
+      reason: "Gemini fant ingen konkrete opplysninger om stedet",
+    };
   }
   if (looksLikeRefusal(narrativeHead)) {
     return {
       ok: false,
+      outcome: "refusal",
       reason: "Gemini svarte om søket i stedet for om stedet (avslags-narrativ)",
     };
   }
@@ -299,6 +310,7 @@ export async function groundPoi(
     const issue = parsed.error.issues[0];
     return {
       ok: false,
+      outcome: "error",
       reason: `generated-objektet validerte ikke: ${issue?.path.join(".") ?? ""} ${issue?.message ?? "ukjent"}`.trim(),
     };
   }

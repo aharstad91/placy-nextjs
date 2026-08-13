@@ -336,10 +336,38 @@ export const PoiGroundingCuratedSchema = z.object({
   curatedAt: z.string().min(1),
 });
 
+/**
+ * Utfallet av et grounding-forsøk som IKKE ga innhold.
+ *
+ * `generated` kan ikke bære dette: skjemaet krever `narrative.min(1)` og
+ * `searchEntryPointHtml.min(1)`, og et tomt forsøk har ingen av dem. Uten et
+ * eget felt blir kolonnen stående `null`, og da er «aldri forsøkt» og «forsøkt,
+ * ingenting der» samme tilstand. Målt på Sundsøya 2026-08-12: 12 av 78 POI-er
+ * havnet der, og hver kjøring re-forsøkte alle 12 til full Gemini-kost.
+ *
+ * `outcome` skiller det som er verdt å prøve igjen fra det som er verdt å
+ * skrive selv:
+ *   no-data  — ingenting publisert om stedet. Kandidat for Lokalkunnskap (Moat 1).
+ *   refusal  — modellen svarte om søket sitt i stedet for om stedet. Prompt-problem.
+ *   error    — timeout, kvote, nettverk. Transient; prøv igjen.
+ */
+export const PoiGroundingAttemptSchema = z.object({
+  /** ISO-8601. Alderskilde for re-forsøk-vinduet. */
+  at: z.string().min(1),
+  outcome: z.enum(["no-data", "refusal", "error"]),
+  reason: z.string().min(1),
+});
+
 export const PoiGroundingV1Schema = z.object({
   poiGroundingVersion: z.literal(1),
   generated: PoiGroundingGeneratedSchema.optional(),
   curated: PoiGroundingCuratedSchema.optional(),
+  /**
+   * Siste forsøk som ikke ga innhold. Alle tre lagene er uavhengige: et POI kan
+   * ha `lastAttempt` (Gemini fant ingenting) OG `curated` (vi skrev det selv) —
+   * det er faktisk normaltilstanden for et servicested.
+   */
+  lastAttempt: PoiGroundingAttemptSchema.optional(),
 });
 
 /**
@@ -354,6 +382,7 @@ export const PoiGroundingViewSchema = z.discriminatedUnion(
 export type PoiGrounding = z.infer<typeof PoiGroundingViewSchema>;
 export type PoiGroundingGenerated = z.infer<typeof PoiGroundingGeneratedSchema>;
 export type PoiGroundingCurated = z.infer<typeof PoiGroundingCuratedSchema>;
+export type PoiGroundingAttempt = z.infer<typeof PoiGroundingAttemptSchema>;
 export type PoiGroundingSource = z.infer<typeof PoiGroundingSourceSchema>;
 export type PoiQualityGate = z.infer<typeof PoiQualityGateSchema>;
 

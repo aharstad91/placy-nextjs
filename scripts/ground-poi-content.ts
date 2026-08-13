@@ -45,6 +45,7 @@ import { PoiGroundingViewSchema, type PoiGrounding } from "../lib/types";
 import { isValidProjectIdShape } from "../lib/pipeline/project-id";
 import {
   decidePoi,
+  mergeFailedAttempt,
   mergeGrounding,
   deriveAreaHint,
   thresholdSensitivity,
@@ -316,7 +317,20 @@ async function main() {
         );
         const base = { poiId: row.id, name: row.name ?? "(uten navn)" };
         if (!res.ok) {
-          return { ...base, status: "feilet", detail: res.reason };
+          return {
+            ...base,
+            status: "feilet",
+            detail: res.reason,
+            // Lagre utfallet. Uten dette blir kolonnen stående null, og neste
+            // kjøring kan ikke se forskjell på «aldri forsøkt» og «forsøkt,
+            // ingenting der» — den brenner kvote på de samme tomme stedene om
+            // og om igjen (målt: 12 av 78 på Sundsøya).
+            grounding: mergeFailedAttempt(existing, {
+              at: new Date().toISOString(),
+              outcome: res.outcome,
+              reason: res.reason,
+            }),
+          };
         }
         return {
           ...base,
@@ -460,7 +474,12 @@ async function main() {
   let written = 0;
   const writeFailures: string[] = [];
 
-  for (const o of generated) {
+  // Både innhold og tomme forsøk skrives. Feilrate-aborten over har alt stoppet
+  // kjøringen hvis feilene er systemiske (kvote/nett), så det som havner her er
+  // reelle utfall per sted — ikke en dårlig dag.
+  const toWrite = outcomes.filter((o) => o.grounding);
+
+  for (const o of toWrite) {
     const row = toGenerate.find((t) => t.row.id === o.poiId)!.row;
     const patchUrl = new URL(`${SUPABASE_URL}/rest/v1/pois`);
     patchUrl.searchParams.set("id", `eq.${row.id}`);
@@ -491,7 +510,9 @@ async function main() {
     written++;
   }
 
-  console.log(`  Skrevet: ${written}/${generated.length}`);
+  console.log(
+    `  Skrevet: ${written}/${toWrite.length} (${generated.length} med innhold, ${toWrite.length - generated.length} tomme forsøk)`,
+  );
   if (writeFailures.length > 0) {
     console.error(`  Feilet:  ${writeFailures.length}`);
     for (const f of writeFailures) console.error(`    ✗ ${f}`);

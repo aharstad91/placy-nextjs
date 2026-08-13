@@ -1,0 +1,278 @@
+{
+  "projectId": "placy-demo_sundsoya",
+  "generatedAt": "2026-08-13T14:16:18.321Z",
+  "tekstregler": [
+    "Presens — hva som ER der. Aldri årstall, byggehistorikk eller «har lange tradisjoner».",
+    "Beboer-perspektiv: målgruppen er boligkjøperen som blir beboer, ikke en turist.",
+    "Fakta, ikke poesi. Ingen «lukten av», «smaken av».",
+    "IKKE åpningstider, telefon eller priser — de hentes fra Places API og vises alt i modalen.",
+    "Navngi, aldri generaliser: «Apotek 1 Nardo» slår «flere apotek».",
+    "Funksjon ER lov: hva stedet gjør for deg som bor der. Det er hele poenget med denne lista.",
+    "Lengde 80–600 tegn. La narrative stå tom for å hoppe over et POI."
+  ],
+  "pois": [
+    {
+      "id": "google-ChIJL2d4HCJjbUYRRS6H5pRbtM4",
+      "name": "Gallo Nero",
+      "categoryId": "butikk",
+      "categoryName": "Butikk",
+      "address": "Vennesborgvegen 17, Inderøy",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 242 tegn — for få kilder (1 < 2); for kort innhold (242 < 280 tegn)",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "rating": 5,
+        "reviewCount": 3
+      },
+      "rejectedNarrative": "Gallo Nero er en liten butikk som tilbyr håndplukkede vintage- og bruktvarer. Stedet brukes for å finne unike gjenstander og kvalitetsvarer med historie.\n\n- Salg av vintagevarer\n- Tilbyr brukte kvalitetsvarer\n- Fokus på håndplukkede produkter",
+      "narrative": "Liten butikk med håndplukkede vintage- og bruktvarer i Vennesborgvegen. Utvalget er enkeltgjenstander og brukte kvalitetsvarer, ikke et fast nyvaresortiment."
+    },
+    {
+      "id": "google-ChIJHfBF5iFjbUYRcOVR_L7Q7bg",
+      "name": "Vikaleiret Ornitologiske Observasjonspost",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "address": "Vikavegen 45, Inderøy",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 394 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "website": "https://no.wikipedia.org/wiki/Kortnebbg%C3%A5s"
+      },
+      "rejectedNarrative": "Vikaleiret Ornitologiske Observasjonspost er et fuglefredningsområde ved Trondheimsfjorden i Inderøy. Stedet brukes for å observere fuglelivet, spesielt trekkfugler, i et viktig våtmarksområde.\n\n- Området består av en mudderfjære som strekker seg om lag 1,7 km.\n- Det er et viktig leveområde for fugler, spesielt vadere, under vårtrekket.\n- Stedet er en del av Trondheimsfjorden våtmarkssystem.",
+      "narrative": "Fuglefredningsområde ved Trondheimsfjorden med observasjonspost mot mudderfjæra. Området er leveområde for vadere og trekkfugl, og hører til våtmarkssystemet i Trondheimsfjorden."
+    },
+    {
+      "id": "google-ChIJ27fmUyNibUYRms0pJrbvUK8",
+      "name": "Strømnes Charging Station",
+      "categoryId": "charging_station",
+      "categoryName": "Ladestasjon",
+      "address": "Sundsnesvegen 8, Inderøy",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 335 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Strømnes Charging Station er en ladestasjon for elbiler som ligger ved Strømnes - oldefars gjestehus. Stedet brukes primært til lading av elektriske kjøretøy for beboere og besøkende i området.\n\n- En ladestasjon med ett uttak for elbiler.\n- Ladeeffekt på maksimalt 3.6 kW.\n- Selve Strømnes - oldefars gjestehus ligger på samme adresse.",
+      "narrative": "Ladepunkt for elbil ved Strømnes gjestehus, med ett uttak på inntil 3,6 kW. Effekten passer lading over natten hjemmefra, ikke hurtiglading underveis."
+    },
+    {
+      "id": "osm-way-1265870210",
+      "name": "Inderøy idrettspark",
+      "categoryId": "idrett",
+      "categoryName": "Idrettsanlegg",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 228 tegn — for få kilder (1 < 2); for kort innhold (228 < 280 tegn)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Inderøy idrettspark er et lokalt idrettsanlegg som ligger sentralt i Inderøy. Det er et samlingspunkt for idrettsaktiviteter og trening for beboere i nærområdet.\n\n- Kunstgressbane med løpebane rundt\n- Tennisbane\n- Basketballbane",
+      "narrative": "Idrettsanlegg sentralt i Inderøy, brukt til trening og kamper av lokale lag. Anlegget har kunstgressbane med løpebane rundt, tennisbane og basketballbane."
+    },
+    {
+      "id": "osm-node-9904497584",
+      "name": "Nilsplassen",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 365 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Nilsplassen er en park som ligger ved utløpet av Granaelva i Straumen. Stedet fungerer som et grøntområde for rekreasjon og opplevelse av kunst i naturen.\n\n- Skulpturen «Flyndre», som er modellert av Nils Aas.\n- En liten bronseand plassert på en stor stein.\n- Skulpturen «Stavhopperen», utført i titan og stål.\n- Skulpturen «Ekorn» som sitter blant kongler og trær.",
+      "narrative": "Park ved utløpet av Granaelva i Straumen, med skulpturer av Nils Aas plassert langs stiene. «Flyndre», «Stavhopperen» og «Ekorn» står ute året rundt, sammen med en liten bronseand på en stein."
+    },
+    {
+      "id": "osm-node-2367295315",
+      "name": "Sparebank 1 SMN Sakshaug",
+      "categoryId": "bank",
+      "categoryName": "Bank",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 552 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Sparebank 1 SMN Sakshaug er et lokalt banksenter i Inderøy. Stedet brukes til å få utført banktjenester, samt for finansiell rådgivning og relaterte profesjonelle tjenester.\n\n- Rådgivere for privatkunder, bedrifter og landbruk er tilgjengelige for møter.\n- Kontoret huser også eiendomsmeglere fra EiendomsMegler 1 Midt-Norge.\n- Det finnes tilgang til regnskapsførere fra SpareBank 1 Regnskapshuset SMN.\n- Stedet tilbyr tjenester innen bank for privatpersoner, lag, foreninger og bedrifter.\n- Det er mulig å avtale og gjennomføre kundemøter på kontoret.",
+      "narrative": "Lokalt banksenter med rådgivere for privatkunder, bedrifter og landbruk. Kontoret huser også eiendomsmeglere fra EiendomsMegler 1 Midt-Norge, så bank og megler ligger på samme adresse."
+    },
+    {
+      "id": "osm-node-9904497423",
+      "name": "Straumtorget",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 400 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Muustrøparken er et sentralt grøntområde langs Granaelva i Straumen. Parken brukes til rekreasjon, uteopphold og kulturelle arrangementer.\n\n- Elleve skulpturer av billedhogger Nils Aas er plassert rundt i parken.\n- Et sceneområde med amfi er tilrettelagt for arrangementer.\n- Kulturminnene Muusbrua og Ringsstu er en del av parkområdet.\n- Parken har en god variasjon av planter, trær og grøntområder.",
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJK4nf0tljbUYR7Hw6rdFry1s",
+      "name": "Den Gyldne Omvei",
+      "categoryId": "museum",
+      "categoryName": "Museum",
+      "address": "Vennalivegen 2, Inderøy",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "website": "https://dgo.no/",
+        "rating": 4.4,
+        "reviewCount": 22
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJn3NFkRhibUYRLsKVkkLSjLw",
+      "name": "Studio F",
+      "categoryId": "haircare",
+      "categoryName": "Frisør",
+      "address": "Vennavegen 10, Inderøy",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "website": "https://www.studiof.com.co/",
+        "rating": 4.8,
+        "reviewCount": 17
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJyd0kTT1ibUYRGSLNF3xQOrk",
+      "name": "E@ Internettkafé",
+      "categoryId": "cafe",
+      "categoryName": "Kafé",
+      "address": "Meieribakken 4, Inderøy",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "rating": 4.6,
+        "reviewCount": 110
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJG7EhOgBjbUYRHnCM9vleVpM",
+      "name": "Sundsøya Ungdomsklubb",
+      "categoryId": "fritidsklubb",
+      "categoryName": "Fritidsklubb",
+      "address": "Sundsøya 2, Inderøy",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": false,
+        "rating": 5,
+        "reviewCount": 1
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-9904497187",
+      "name": "Limsteinplassen",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-1206486493",
+      "name": "Nilsparken",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-2748254515",
+      "name": "Rema 1000 Inderøy",
+      "categoryId": "supermarket",
+      "categoryName": "Dagligvare",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-9904497216",
+      "name": "Vaggplassen",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-2367233718",
+      "name": "ZikZaks",
+      "categoryId": "haircare",
+      "categoryName": "Frisør",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "entur-NSR-StopPlace-46233",
+      "name": "Straumen bussholdeplass",
+      "categoryId": "bus",
+      "categoryName": "Buss",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "realtimeAnswersIt": true,
+      "narrative": ""
+    },
+    {
+      "id": "entur-NSR-StopPlace-46251",
+      "name": "Venna vegdele bussholdeplass",
+      "categoryId": "bus",
+      "categoryName": "Buss",
+      "why": "ingen-forsøk",
+      "detail": "grounding-scriptet har ikke kjørt på dette POI-et",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "realtimeAnswersIt": true,
+      "narrative": ""
+    }
+  ]
+}

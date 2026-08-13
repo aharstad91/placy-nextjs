@@ -10,7 +10,7 @@ import {
   evaluatePoiQualityGate,
   type PoiQualityThresholds,
 } from "../lib/gemini/poi-grounding";
-import type { PoiGrounding } from "../lib/types";
+import type { PoiGrounding, PoiGroundingAttempt } from "../lib/types";
 
 /**
  * Hvor lenge et strykende forsøk regnes som ferskt. Innenfor vinduet hopper vi
@@ -22,7 +22,9 @@ export const FAILED_ATTEMPT_STALE_DAYS = 30;
 
 export type SkipReason =
   | "har-bestått-grounding"
+  | "har-kuratert-tekst"
   | "ferskt-strykende-forsøk"
+  | "ferskt-tomt-forsøk"
   | "mangler-navn";
 
 export type PoiDecision =
@@ -44,29 +46,60 @@ export function decidePoi(
   }
   if (opts.force) return { action: "generate" };
 
-  const generated = poi.grounding?.generated;
-  if (!generated) return { action: "generate" };
-
-  if (generated.qualityGate.passed) {
-    return {
-      action: "skip",
-      reason: "har-bestått-grounding",
-      detail: `generert ${generated.fetchedAt}`,
-    };
-  }
-
   const staleDays = opts.staleDays ?? FAILED_ATTEMPT_STALE_DAYS;
-  const fetchedAt = Date.parse(generated.fetchedAt);
-  if (Number.isNaN(fetchedAt)) return { action: "generate" };
+  const ageDaysSince = (iso: string): number | undefined => {
+    const ms = Date.parse(iso);
+    if (Number.isNaN(ms)) return undefined;
+    return (opts.now.getTime() - ms) / 86_400_000;
+  };
 
-  const ageDays = (opts.now.getTime() - fetchedAt) / 86_400_000;
-  if (ageDays < staleDays) {
+  // Kuratert tekst er Placy-eid og vinner i modalen — leverandør-teksten under
+  // den blir aldri sett. Å generere den på nytt koster kvote for null synlig
+  // effekt. `--force` går forbi (fanget over), så kalibrering er fortsatt mulig.
+  const curated = poi.grounding?.curated;
+  if (curated) {
     return {
       action: "skip",
-      reason: "ferskt-strykende-forsøk",
-      detail: `strøk for ${Math.round(ageDays)} dager siden: ${generated.qualityGate.reason ?? "ukjent grunn"}`,
+      reason: "har-kuratert-tekst",
+      detail: `kuratert ${curated.curatedAt}`,
     };
   }
+
+  const generated = poi.grounding?.generated;
+  if (generated) {
+    if (generated.qualityGate.passed) {
+      return {
+        action: "skip",
+        reason: "har-bestått-grounding",
+        detail: `generert ${generated.fetchedAt}`,
+      };
+    }
+    const ageDays = ageDaysSince(generated.fetchedAt);
+    if (ageDays !== undefined && ageDays < staleDays) {
+      return {
+        action: "skip",
+        reason: "ferskt-strykende-forsøk",
+        detail: `strøk for ${Math.round(ageDays)} dager siden: ${generated.qualityGate.reason ?? "ukjent grunn"}`,
+      };
+    }
+    return { action: "generate" };
+  }
+
+  // Tomt forsøk. `error` er transient (timeout/kvote/nett) og skal prøves igjen
+  // straks — bare `no-data` og `refusal` holdes tilbake i vinduet. Uten dette
+  // skillet ville en kvote-timeout låst POI-en ute i 30 dager.
+  const attempt = poi.grounding?.lastAttempt;
+  if (attempt && attempt.outcome !== "error") {
+    const ageDays = ageDaysSince(attempt.at);
+    if (ageDays !== undefined && ageDays < staleDays) {
+      return {
+        action: "skip",
+        reason: "ferskt-tomt-forsøk",
+        detail: `${attempt.outcome} for ${Math.round(ageDays)} dager siden: ${attempt.reason}`,
+      };
+    }
+  }
+
   return { action: "generate" };
 }
 
@@ -83,6 +116,28 @@ export function mergeGrounding(
     poiGroundingVersion: 1,
     ...(nextGenerated ? { generated: nextGenerated } : {}),
     ...(existing?.curated ? { curated: existing.curated } : {}),
+    // Et vellykket forsøk gjør det forrige tomme forsøket utdatert. Lot vi det
+    // ligge, ville arbeidslista fortsatt bedt om håndskrevet tekst for et POI
+    // som nettopp fikk innhold.
+  };
+}
+
+/**
+ * Bygg grounding-objektet for et forsøk som ikke ga innhold.
+ *
+ * Bevarer både `generated` og `curated`: et tomt re-forsøk skal ikke slette
+ * innhold vi allerede har. Det er hele grunnen til at dette ikke er en enkel
+ * overskriving av kolonnen.
+ */
+export function mergeFailedAttempt(
+  existing: PoiGrounding | undefined,
+  attempt: PoiGroundingAttempt,
+): PoiGrounding {
+  return {
+    poiGroundingVersion: 1,
+    ...(existing?.generated ? { generated: existing.generated } : {}),
+    ...(existing?.curated ? { curated: existing.curated } : {}),
+    lastAttempt: attempt,
   };
 }
 
