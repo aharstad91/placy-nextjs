@@ -117,6 +117,25 @@ bruker første treff — vilkårlig. Kjøringen rapporterer hver kollisjon. Det 
 ufarlig så lenge områdene mangler `report_editorial`, men de trenger en tegnet
 grense **før** de kureres.
 
+### Foreslå manglende `postal_codes`
+```bash
+npx tsx scripts/import-postal-areas.ts --suggest-postal-codes   # read-only
+```
+
+Motsatt retning: leser områdets polygon og foreslår hvilke postnumre som
+overlapper. Løser at et kuratert område med tom `postal_codes` ellers ville vært
+usynlig i dekningsregnskapet (Straumen og Oppdal var i den situasjonen).
+
+**Skriver ingenting.** Postnummer-tilknytning er en påstand om hvor et strøk
+*er* — kurators beslutning, ikke en geometrisk bieffekt. Forslagene kopieres inn
+i `curate-area`-staging.
+
+Overlappet testes i to retninger fordi begge har en blindsone: postnummerets
+ringpunkter mot områdets polygon (fanger delvis overlapp), og områdets
+senterpunkt mot postnummerets polygon (fanger et lite område som ligger helt
+inne i et stort postnummer). Metoden er tilnærmet — et smalt overlappsbånd uten
+ringpunkter innenfor kan overses. Bekreft forslagene.
+
 ---
 
 ## Nabolags-kuratering (curate-area)

@@ -40,6 +40,11 @@ import {
   type Derivation,
   type PostalAreaGeometry,
 } from "../lib/pipeline/derive-area-boundary";
+import {
+  suggestPostalCodes,
+  type AreaForSuggestion,
+  type PostalAreaWithMeta,
+} from "../lib/pipeline/suggest-area-postal-codes";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -231,6 +236,83 @@ async function deriveBoundaries(apply: boolean): Promise<void> {
   console.log(`\nSkrev boundary på ${plan.derive.length} områder.\n`);
 }
 
+// ── Steg 3: foreslå manglende postal_codes fra overlapp ───────────────────
+
+/**
+ * Read-only. Skriver bevisst ingenting: postnummer-tilknytning er en påstand om
+ * hvor et strøk er, og metoden er tilnærmet (se
+ * lib/pipeline/suggest-area-postal-codes.ts). Forslagene kopieres inn i
+ * curate-area-staging av en kurator.
+ */
+async function suggestPostalCodesStep(): Promise<void> {
+  const [areasRaw, postalRaw] = await Promise.all([
+    fetch(
+      `${SUPABASE_URL}/rest/v1/areas?select=id,name_no,boundary,postal_codes,center_lat,center_lng&order=id`,
+      {
+        headers: {
+          apikey: SUPABASE_KEY!,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Accept-Profile": "v2",
+        },
+      }
+    ).then((r) => r.json()),
+    fetch(`${SUPABASE_URL}/rest/v1/postal_areas?select=postnummer,poststed,kommunenavn,boundary`, {
+      headers: {
+        apikey: SUPABASE_KEY!,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
+      },
+    }).then((r) => r.json()),
+  ]);
+
+  const result = suggestPostalCodes(
+    areasRaw as AreaForSuggestion[],
+    postalRaw as PostalAreaWithMeta[]
+  );
+
+  console.log("\nForslag til postal_codes (read-only — ingenting skrives)\n");
+  console.log(
+    `  ${(areasRaw as unknown[]).length} områder lest, ` +
+      `${(postalRaw as unknown[]).length} postnummer-polygoner\n`
+  );
+
+  if (result.suggestions.length === 0) {
+    console.log("  Ingen områder mangler postnummer med en form å avlede fra.\n");
+  }
+
+  for (const s of result.suggestions) {
+    console.log(`  ${s.id} (${s.name}):`);
+    for (const k of s.kandidater) {
+      const signal = [
+        k.senterTreff ? "senter innenfor" : null,
+        k.treffpunkter > 0 ? `${k.treffpunkter} ringpunkt` : null,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      console.log(`    ${k.postnummer}  ${k.poststed.padEnd(14)} ${k.kommunenavn.padEnd(12)} (${signal})`);
+    }
+    console.log(`    → foreslått: ["${s.kandidater.map((k) => k.postnummer).join('", "')}"]`);
+  }
+
+  if (result.utenTreff.length > 0) {
+    console.log(`\n  Vurdert uten treff (${result.utenTreff.length}):`);
+    for (const u of result.utenTreff) {
+      console.log(`    ${u.id} — ingen importert postnummer overlapper. Mangler kommunen i KOMMUNER?`);
+    }
+  }
+
+  const harPostnummer = result.hoppetOver.filter((h) => h.reason === "har-postnummer").length;
+  const manglerForm = result.hoppetOver.filter((h) => h.reason === "mangler-boundary");
+  console.log(
+    `\n  Hoppet over: ${harPostnummer} har alt postnummer, ${manglerForm.length} mangler form` +
+      (manglerForm.length ? ` (${manglerForm.map((h) => h.id).join(", ")})` : "")
+  );
+  console.log(
+    "\n  Metoden er tilnærmet: ringpunkt- og senterpunkt-test, ikke eksakt\n" +
+      "  polygon-skjæring. Bekreft før du legger dem i postal_codes.\n"
+  );
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const apply = args.includes("--apply");
@@ -248,6 +330,11 @@ async function main(): Promise<void> {
 
   if (args.includes("--derive-boundaries")) {
     await deriveBoundaries(apply);
+    return;
+  }
+
+  if (args.includes("--suggest-postal-codes")) {
+    await suggestPostalCodesStep();
     return;
   }
 
