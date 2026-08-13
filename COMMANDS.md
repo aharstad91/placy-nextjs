@@ -91,6 +91,32 @@ vil ha `[lng, lat]`. Parseren snur parene og forkaster koordinater utenfor
 Norges bbox — en ombyttet form kaster ellers ingen feil, den bare slutter å
 treffe noe.
 
+### Avled `areas.boundary` fra postnumre
+```bash
+npx tsx scripts/import-postal-areas.ts --derive-boundaries          # dry-run
+npx tsx scripts/import-postal-areas.ts --derive-boundaries --apply  # skriv
+```
+
+Gir områder uten polygon en form: MultiPolygon av flatene til områdets
+`postal_codes`. Ingen ekte union — flatene legges ved siden av hverandre, og
+`pointInGeometry` itererer over alle, så treff-oppførselen er identisk uten at
+vi trenger et polygon-clipping-bibliotek.
+
+**Rører aldri et område som allerede har `boundary`.** Flere av de kuraterte har
+en presis grense som er finere enn postnummerformen, og en avledning som
+«forbedret» dem ville degradert kuratert arbeid. Kolonnen `boundary_source`
+(migrasjon 088) skiller `curated` fra `derived`.
+
+Skriver kun `boundary` og `boundary_source` — `areas` mangler `updated_at`, så
+det finnes ingen optimistisk lås, og et smalt PATCH-felt er eneste beskyttelse
+mot å klobbe `report_editorial` med en utdatert lesning.
+
+**Kollisjoner:** flere strøk deler postnummer (Møllenberg, Rosenborg og
+Solsiden er alle 7014). Avledet får de identisk form, og `findAreaForPoint`
+bruker første treff — vilkårlig. Kjøringen rapporterer hver kollisjon. Det er
+ufarlig så lenge områdene mangler `report_editorial`, men de trenger en tegnet
+grense **før** de kureres.
+
 ---
 
 ## Nabolags-kuratering (curate-area)

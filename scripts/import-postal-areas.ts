@@ -8,9 +8,10 @@
  * kvote og ingen dømmekraft, så det er ingen grunn til å hente den «ved behov».
  *
  * Bruk:
- *   npx tsx scripts/import-postal-areas.ts                    # dry-run
- *   npx tsx scripts/import-postal-areas.ts --apply            # skriv
- *   npx tsx scripts/import-postal-areas.ts --kommune 5001     # én kommune
+ *   npx tsx scripts/import-postal-areas.ts                        # dry-run
+ *   npx tsx scripts/import-postal-areas.ts --apply                # skriv
+ *   npx tsx scripts/import-postal-areas.ts --kommune 5001         # én kommune
+ *   npx tsx scripts/import-postal-areas.ts --derive-boundaries    # avled areas.boundary
  *
  * Ren logikk (WFS-spørring, GML-parsing, endringssjekk) ligger i
  * `lib/pipeline/postal-area-import.ts` og har testene. Denne fila er nettverk,
@@ -33,6 +34,12 @@ import {
   type PostalAreaRow,
   type RejectedFeature,
 } from "../lib/pipeline/postal-area-import";
+import {
+  planBoundaryDerivation,
+  type AreaForDerivation,
+  type Derivation,
+  type PostalAreaGeometry,
+} from "../lib/pipeline/derive-area-boundary";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -97,6 +104,133 @@ async function upsert(rows: PostalAreaRow[]): Promise<void> {
   if (!res.ok) throw new Error(`Upsert feilet: ${res.status} ${await res.text()}`);
 }
 
+// ── Steg 2: avled areas.boundary fra postal_codes ─────────────────────────
+
+async function readAreas(): Promise<AreaForDerivation[]> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/areas?select=id,name_no,boundary,boundary_source,postal_codes&order=id`,
+    {
+      headers: {
+        apikey: SUPABASE_KEY!,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Accept-Profile": "v2",
+      },
+    }
+  );
+  if (!res.ok) throw new Error(`GET areas feilet: ${res.status} ${await res.text()}`);
+  return (await res.json()) as AreaForDerivation[];
+}
+
+async function readPostalGeometries(): Promise<Map<string, PostalAreaGeometry>> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/postal_areas?select=postnummer,boundary`, {
+    headers: {
+      apikey: SUPABASE_KEY!,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Accept-Profile": "v2",
+    },
+  });
+  if (!res.ok) throw new Error(`GET postal_areas feilet: ${res.status} ${await res.text()}`);
+  const rows = (await res.json()) as Array<{ postnummer: string; boundary: PostalAreaGeometry }>;
+  return new Map(rows.map((r) => [r.postnummer, r.boundary]));
+}
+
+/**
+ * Skriver KUN `boundary` og `boundary_source` — ikke en spread av hele raden.
+ * `areas` har ingen `updated_at`, så det finnes ingen optimistisk lås her (samme
+ * dokumenterte valg som `lib/pipeline/apply-area-staging.ts`); da er et smalt
+ * PATCH-felt den eneste beskyttelsen mot å klobbe `report_editorial` med en
+ * utdatert lesning.
+ */
+async function writeBoundary(derivation: Derivation): Promise<void> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/areas?id=eq.${encodeURIComponent(derivation.id)}`,
+    {
+      method: "PATCH",
+      headers: {
+        apikey: SUPABASE_KEY!,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        "Content-Profile": "v2",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        boundary: derivation.boundary,
+        boundary_source: derivation.boundary_source,
+      }),
+    }
+  );
+  if (!res.ok) throw new Error(`PATCH ${derivation.id} feilet: ${res.status} ${await res.text()}`);
+
+  // 0 rader er en feil, ikke en no-op: id-en kom fra vår egen lesning et øyeblikk
+  // siden, så 0 betyr at raden er borte eller at filteret er feil.
+  const rows = (await res.json()) as unknown[];
+  if (rows.length === 0) {
+    throw new Error(`PATCH ${derivation.id} traff 0 rader — raden finnes ikke lenger?`);
+  }
+}
+
+async function deriveBoundaries(apply: boolean): Promise<void> {
+  const [areas, postalGeometries] = await Promise.all([readAreas(), readPostalGeometries()]);
+  const plan = planBoundaryDerivation(areas, postalGeometries);
+
+  console.log(`\nAvled areas.boundary — ${apply ? "SKRIVER" : "dry-run"}\n`);
+  console.log(`  ${areas.length} områder lest, ${postalGeometries.size} postnummer-polygoner\n`);
+
+  for (const d of plan.derive) {
+    console.log(`  AVLEDER  ${d.id.padEnd(18)} ${d.postnumre.join(",")}`);
+  }
+
+  const grunner = ["har-boundary", "mangler-postnummer", "ingen-postnummer-funnet"] as const;
+  console.log("");
+  for (const grunn of grunner) {
+    const truffet = plan.skipped.filter((s) => s.reason === grunn);
+    if (truffet.length === 0) continue;
+    console.log(`  hoppet over (${grunn}): ${truffet.length}`);
+    if (grunn !== "har-boundary") {
+      console.log(`    ${truffet.map((s) => s.id).join(", ")}`);
+    }
+  }
+
+  if (plan.ukjentePostnumre.length > 0) {
+    // Ikke stille utelatelse: kurator har listet et postnummer vi ikke har
+    // geometri for, og det er enten en skrivefeil eller en kommune som mangler i
+    // importens KOMMUNER-liste.
+    const perOmrade = new Map<string, string[]>();
+    for (const u of plan.ukjentePostnumre) {
+      const list = perOmrade.get(u.id) ?? [];
+      list.push(u.postnummer);
+      perOmrade.set(u.id, list);
+    }
+    console.log(`\n  Postnumre uten geometri i basen (${plan.ukjentePostnumre.length}):`);
+    for (const [id, postnumre] of perOmrade) {
+      console.log(`    ${id.padEnd(18)} ${postnumre.join(", ")}`);
+    }
+    console.log(
+      "    → enten en skrivefeil i postal_codes, eller en kommune som mangler i KOMMUNER."
+    );
+  }
+
+  if (plan.kollisjoner.length > 0) {
+    console.log(`\n  KOLLISJONER — områder som får identisk form (${plan.kollisjoner.length}):`);
+    for (const k of plan.kollisjoner) {
+      console.log(`    ${k.postnummer}  ${k.areaIds.join(" = ")}`);
+    }
+    console.log(
+      "    Disse deler postnummer, så avledet geometri blir like. findAreaForPoint\n" +
+        "    advarer og bruker første treff — vilkårlig. Ufarlig så lenge de mangler\n" +
+        "    report_editorial, men de trenger en tegnet grense FØR de kureres."
+    );
+  }
+
+  if (!apply) {
+    console.log(`\nDry-run — ${plan.derive.length} ville fått form. Kjør med --apply.\n`);
+    return;
+  }
+
+  for (const d of plan.derive) await writeBoundary(d);
+  console.log(`\nSkrev boundary på ${plan.derive.length} områder.\n`);
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const apply = args.includes("--apply");
@@ -110,6 +244,11 @@ async function main(): Promise<void> {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.error("Mangler NEXT_PUBLIC_SUPABASE_URL eller SUPABASE_SERVICE_ROLE_KEY i .env.local");
     process.exit(1);
+  }
+
+  if (args.includes("--derive-boundaries")) {
+    await deriveBoundaries(apply);
+    return;
   }
 
   const kommuner = onlyKommune
