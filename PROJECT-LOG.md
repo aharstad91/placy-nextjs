@@ -47,6 +47,34 @@
 - **Ranheim ↔ Charlottenlund-overlappet står urørt** (39 vitnepunkter) — fortsatt den egentlige EM1-Grilstadporten-blokkeringen.
 - To døde kuraterte highlight-IDer på Tyholt og Sentrum (se funn 4).
 
+### 2026-08-14 (fortsettelse) — SKOLEKRETSEN BESTEMMER SKOLENE, IKKE AVSTANDEN
+
+**Utløseren var et skjermbilde.** Andreas så på kartet rundt Vikåsen/Markaplassen og spurte hvorfor Markaplassen ungdomsskole — «skolen man sogner til» — ikke var med. Første svar var mekanisk riktig og utilstrekkelig: den ligger 2 943 m fra Grilstad Marina, utenfor discovery-radiusen på 2 500 m. Graving avdekket at det bare var symptomet.
+
+**Den egentlige feilen: `importNSR` valgte NÆRMESTE skole per type, ikke kretsskolen.** På Grilstad Marina ga det «Stiftelsen steinerskolen på Rotvoll» (1 150 m) som barneskolen, mens Ranheim skole — den faktiske kretsskolen — bare lå på boardet fordi noen hadde lagt den inn for hånd som `curated-reseed`. Kretsskolen er et faktum om ADRESSEN, ikke om avstanden.
+
+**To rotårsaker til at INGEN board hadde en NSR-ungdomsskole i det hele tatt:**
+
+1. **NSR koder alle Trondheims 80 grunnskoler som nace 85.201**, og kommunen har ikke én eneste 85.21x-enhet. `resolveSchoolType` mappet 85.201 → barneskole, så typen «ungdomsskole» kunne aldri oppstå i Trondheim. Skoleslaget utledes nå av navnet, med ny type `grunnskole` (1–10) som er gyldig for BEGGE kretstyper — Markaplassen skole er nettopp en 1–10-skole og ER ungdomsskolen for kretsen sin.
+2. **Kretsen heter BLUSSUVOLD, skolen heter «Blussuvoll skole».** Én tegns forskjell. Løst med en stram nær-match (maks én redigering, minst 6 tegn, og kun når treffet er entydig).
+
+**Sidegevinst fra samme sveip:** «Møller bilskolen AS avd Trøndelag» sto som ungdomsskolen på Wesselsløkka. Kjøre-, musikk- og kompetanseskoler lukes nå ut på navn, siden NSR gir dem grunnskole-koder.
+
+**Feil jeg innførte og rettet i samme sesjon (to stykker):**
+
+1. **Kretsvalget la dubletter på kartet.** NSR-raden ble hentet inn ved siden av OSM-radens kopi av samme skole — de deler ingen ekstern nøkkel, så `upsertAndLink` ser dem ikke. Importen rydder nå i egen pool; bare LENKEN fjernes, aldri POI-raden, og rader kuratering peker på fredes.
+2. **Første dublett-nøkkel fjernet feil skole.** Den gjenbrukte kretsnøkkelen, som med vilje stripper «barneskole»/«ungdomsskole» — så «Charlottenlund barneskole» ble fjernet som dublett av «Charlottenlund ungdomsskole». Det er to ulike skoler på samme tomt. Dublettnøkkelen BEHOLDER skoleslaget; kretsnøkkelen gjør det ikke. Lenken ble gjenopprettet med et nytt OSM-sveip.
+
+**Et tredje funn i testkjøringen:** `nearestOfType` lot en nærliggende 1–10-skole kapre ungdomsskole-plassen fra en ekte ungdomsskole litt lenger unna. Eksplisitt type går nå foran avstand, samme prinsipp som i kretsmatchen.
+
+**Verifisert mot alle 8 boards:** hvert Trondheims-board får nå kretsskolen sin (StasjonsKvartalet → Rosenborg, Wesselsløkka → Eberg + Blussuvoll, Teknostallen → Singsaker + Rosenborg, Ferjemannsveien → Bispehaugen + Rosenborg), Vikåsen-adressen får Markaplassen, og Straumen/Oppdal — uten kretsdata — faller tilbake til nærmeste som før (stedsnøytralitet). Ranheim-boardet endte på **182 POI-er, 9 skoler, 0 skole-dubletter, nivå 2 OK**.
+
+**Kuraterings-innsikten Andreas' spørsmål egentlig avdekket:** `areas.ranheim` spenner over TO ungdomsskolekretser. Rutemåling i polygonet gir 50 % Markaplassen og 42 % Charlottenlund. En strøk-tekst kan derfor ikke navngi «ungdomsskolen» uten å ta feil for halve strøket — og det er nettopp derfor per-adresse-kretsoppslaget må være riktig. Dagens kuraterte tekst nevner bare Ranheim skole (barneskolen, riktig for hele RANHEIM-kretsen) og ingen ungdomsskole.
+
+**Mekanisk:** `tsc` rent · lint 0 errors · **2 353 tester grønne** (46 nye i `zoned-school-selection`) · commit `ddd2520`.
+
+**Kjent rest:** «Ila skole» har `null` koordinater i NSR og kan derfor aldri bli kandidat — StasjonsKvartalet faller tilbake til Bispehaugen med advarsel. Tre eksisterende tester pinnet den gamle «nærmeste per type»-oppførselen og ble skrevet om; det er andre gang på to uker en test har pinnet en bug som fasit (jf. skolekrets-bugen fra Straumen).
+
 ---
 
 ## 2026-08-13 — DEKNINGSREGNSKAP PÅ POSTNUMMER: 114 KARTVERKET-POLYGONER, 9 → 34 OMRÅDER MED FORM
