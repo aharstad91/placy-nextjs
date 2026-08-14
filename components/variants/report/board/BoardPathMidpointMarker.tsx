@@ -76,7 +76,13 @@ export function BoardPathMidpointMarker() {
     <Marker
       longitude={midpoint.lng}
       latitude={midpoint.lat}
-      anchor="center"
+      // Chipen forankres OVER midtpunktet, ikke på det. Med `anchor="center"`
+      // lå den rett oppå linja den beskriver, og på korte ruter er chipen bredere
+      // enn hele ruta — da så et modusbytte ut som om ingenting skjedde, selv om
+      // geometrien var byttet. Målt 2026-08-14: 3 min i bil ≈ 110 px, chipen er
+      // 104 px. Nå ligger linja synlig under den.
+      anchor="bottom"
+      offset={[0, -8]}
       // R12: chipen ligger ALLTID over POI-popupen, ikke bare når panelet er
       // åpent.
       //

@@ -15,8 +15,23 @@ import type { TravelMode } from "@/lib/types";
  */
 
 vi.mock("react-map-gl/mapbox", () => ({
-  Marker: ({ children, style }: { children: ReactNode; style?: Record<string, unknown> }) => (
-    <div data-testid="marker" data-z={String(style?.zIndex)}>
+  Marker: ({
+    children,
+    style,
+    anchor,
+    offset,
+  }: {
+    children: ReactNode;
+    style?: Record<string, unknown>;
+    anchor?: string;
+    offset?: [number, number];
+  }) => (
+    <div
+      data-testid="marker"
+      data-z={String(style?.zIndex)}
+      data-anchor={anchor}
+      data-offset={offset ? offset.join(",") : undefined}
+    >
       {children}
     </div>
   ),
@@ -158,6 +173,16 @@ describe("BoardPathMidpointMarker — utvidelse (R5)", () => {
 
     act(() => getByRole("button", { name: "Bytt reisemåte" }).click());
     expect(Number(getByTestId("marker").getAttribute("data-z"))).toBeGreaterThan(20);
+  });
+
+  // Målt 2026-08-14: en 3-minutters biltur er ~110 px ved vanlig board-zoom, og
+  // chipen er 104 px bred. Med `anchor="center"` lå den rett oppå linja den
+  // beskriver, og et modusbytte SÅ ut som om ingenting skjedde — selv om
+  // geometrien var byttet.
+  it("chipen forankres OVER midtpunktet, så den ikke dekker linja den beskriver", () => {
+    const { getByTestId } = setup();
+    expect(getByTestId("marker").getAttribute("data-anchor")).toBe("bottom");
+    expect(getByTestId("marker").getAttribute("data-offset")).toBe("0,-8");
   });
 
   it("R12: panelet ligger absolutt plassert, så chipen flytter seg ikke når det åpnes", () => {
