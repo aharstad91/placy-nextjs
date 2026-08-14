@@ -57,3 +57,6 @@ build-logs/
 # Lokale skjermbilde-/testartefakter (skal ikke sjekkes inn)
 test-results/
 luffu-capture/
+
+# API-forbruksregnskap (lib/api-budget.ts) — lokalt, ikke delt
+.api-usage/

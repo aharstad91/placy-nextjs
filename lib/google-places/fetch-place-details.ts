@@ -19,6 +19,7 @@
  */
 
 import { PlacesApiError } from "./errors";
+import { belastApiKall } from "@/lib/api-budget";
 
 export interface PlaceDetails {
   rating?: number;
@@ -63,6 +64,24 @@ export const TRUST_ENRICHMENT_FIELDS = [
  * snever, og bilder hentes i en egen $0-sti.
  */
 export const OPENING_HOURS_FIELDS = ["regularOpeningHours", "nationalPhoneNumber"];
+
+/**
+ * Felt som løfter kallet til Enterprise-SKU.
+ *
+ * Listen er bevisst konservativ: står et felt her som egentlig er billigere,
+ * belaster vi et strengere tak enn nødvendig. Motsatt vei ville vi undervurdert
+ * kostnaden, og det er den feilen som koster penger.
+ */
+const ENTERPRISE_FIELDS = new Set([
+  "regularOpeningHours",
+  "currentOpeningHours",
+  "nationalPhoneNumber",
+  "internationalPhoneNumber",
+  "priceLevel",
+  "rating",
+  "userRatingCount",
+  "reviews",
+]);
 
 /** Timeout mot Google Places API — henger aldri evig (mønster: checkWebsite). */
 const PLACE_DETAILS_TIMEOUT_MS = 10_000;
@@ -129,6 +148,15 @@ export async function fetchPlaceDetails(
     ? `?languageCode=${encodeURIComponent(options.languageCode)}`
     : "";
   const url = `https://places.googleapis.com/v1/places/${placeId}${query}`;
+
+  // Feltmasken avgjør SKU: hele kallet faktureres på det HØYESTE nivået noe
+  // felt tilhører (funn 2026-08-12), så åpningstider er Enterprise mens en ren
+  // photos-maske er Essentials.
+  belastApiKall(
+    fields.some((f) => ENTERPRISE_FIELDS.has(f))
+      ? "places-details-enterprise"
+      : "places-details-essentials",
+  );
 
   // Timeout kaster (AbortError) — samme feilhåndtering som annen fetch-feil
   const controller = new AbortController();

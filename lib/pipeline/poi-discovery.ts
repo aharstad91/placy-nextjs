@@ -13,6 +13,7 @@ import {
   logQualityFilterStats,
   type QualityRejection,
 } from "./poi-quality";
+import { belastApiKall } from "@/lib/api-budget";
 
 // === Types ===
 
@@ -191,6 +192,7 @@ export async function discoverGooglePlaces(
       const timeout = setTimeout(() => controller.abort(), NEARBY_TIMEOUT_MS);
       let response: Response;
       try {
+        belastApiKall("places-nearby");
         response = await fetch(
           "https://places.googleapis.com/v1/places:searchNearby",
           {
@@ -373,6 +375,7 @@ export async function discoverGooglePlacesByText(
       const timeout = setTimeout(() => controller.abort(), NEARBY_TIMEOUT_MS);
       let response: Response;
       try {
+        belastApiKall("places-text");
         response = await fetch("https://places.googleapis.com/v1/places:searchText", {
           method: "POST",
           headers: {

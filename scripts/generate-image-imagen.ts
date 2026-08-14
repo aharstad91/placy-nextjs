@@ -22,6 +22,7 @@
 import { config } from "dotenv";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { belastApiKall } from "@/lib/api-budget";
 
 config({ path: path.resolve(process.cwd(), ".env.local") });
 
@@ -82,6 +83,7 @@ async function main() {
   console.log(`  output:  ${output}`);
   console.log(`  prompt:  ${prompt}\n`);
 
+  belastApiKall("gemini-image");
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${API_KEY}`;
   const body = {
     instances: [{ prompt }],
