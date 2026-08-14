@@ -251,27 +251,53 @@ export function planSchoolDeduplication(
   return unlink;
 }
 
+/**
+ * Finn NSR-skoler som pipelinen har linket tidligere, men ikke lenger velger.
+ *
+ * Nødvendig fordi valget nå er kretsdrevet: en gammel kjøring linket
+ * «Møller bilskolen AS» som ungdomsskolen på Wesselsløkka, og et mellomsteg i
+ * denne endringen linket Charlottenlund-skolene 2,4 km unna. Ingen av dem er
+ * dubletter, så dublett-ryddingen ser dem ikke.
+ *
+ * Bare rader pipelinen selv eier (`source === "nsr"`) ryddes — OSM-sveipet og
+ * håndkuratering skal ikke røres, og rader kuratering peker på fredes.
+ */
+export function planStaleSchoolUnlink(
+  selectedIds: ReadonlySet<string>,
+  pooled: Array<PooledSchool & { source: string | null }>,
+  protectedIds: ReadonlySet<string>,
+): PooledSchool[] {
+  return pooled.filter(
+    (p) => p.source === "nsr" && !selectedIds.has(p.id) && !protectedIds.has(p.id),
+  );
+}
+
 /** Nærmeste kandidat av en type innenfor radius. Deterministisk ved likhet. */
 export function nearestOfType(
   candidates: SchoolCandidate[],
   type: SchoolType,
   radiusMeters: number,
+  exclude: ReadonlySet<string> = new Set(),
 ): SchoolCandidate | null {
   const eligible = (c: SchoolCandidate) =>
     c.type === type ||
     (c.type === "grunnskole" && (type === "barneskole" || type === "ungdomsskole"));
-  // Eksplisitt type før 1–10-skole, deretter avstand. Uten type-prioriteten
-  // kaprer en nærliggende 1–10-skole ungdomsskole-plassen fra den ekte
-  // ungdomsskolen litt lenger unna.
+  // AVSTAND dominerer her — det er hele poenget med «nærmeste». Et forsøk på å
+  // la eksplisitt type gå foran ga Wesselsløkka de to Charlottenlund-skolene
+  // 2,4 km unna framfor Eberg skole 665 m unna, fordi Eberg er en 1–10-skole.
+  // `exclude` lar kalleren hoppe over rader som alt er valgt, så én skole ikke
+  // fyller to plasser når et alternativ finnes.
   return (
     [...candidates]
-      .filter((c) => eligible(c) && c.distanceMeters <= radiusMeters)
-      .sort((a, b) => {
-        const rank = (c: SchoolCandidate) => (c.type === type ? 0 : 1);
-        if (rank(a) !== rank(b)) return rank(a) - rank(b);
-        if (a.distanceMeters !== b.distanceMeters) return a.distanceMeters - b.distanceMeters;
-        return a.name.localeCompare(b.name);
-      })[0] ?? null
+      .filter(
+        (c) =>
+          eligible(c) && c.distanceMeters <= radiusMeters && !exclude.has(c.id),
+      )
+      .sort((a, b) =>
+        a.distanceMeters !== b.distanceMeters
+          ? a.distanceMeters - b.distanceMeters
+          : a.name.localeCompare(b.name),
+      )[0] ?? null
   );
 }
 
@@ -310,20 +336,26 @@ export function selectSchools(
     const kretsSchool = matchKretsToSchool(kretsName, candidates, type);
 
     if (kretsSchool) {
+      // Kretsskolen er svaret på «hvor går ungene», og den står ALENE for sitt
+      // trinn. Å legge nærmeste ved siden av trakk inn skoler 2,4 km unna som
+      // ingen i strøket sogner til.
       add(kretsSchool, type, "krets");
-    } else if (kretsName) {
+      continue;
+    }
+
+    if (kretsName) {
       warnings.push(
         `Kretsen «${kretsName}» (${type}) har ingen NSR-skole med samme navn — faller tilbake til nærmeste.`,
       );
     }
-
-    const nearest = nearestOfType(candidates, type, radiusMeters);
-    if (nearest && nearest.id !== kretsSchool?.id) {
-      add(nearest, type, "naermeste");
-    }
+    add(nearestOfType(candidates, type, radiusMeters, chosen), type, "naermeste");
   }
 
-  add(nearestOfType(candidates, "videregaende", radiusMeters), "videregaende", "naermeste");
+  add(
+    nearestOfType(candidates, "videregaende", radiusMeters, chosen),
+    "videregaende",
+    "naermeste",
+  );
 
   return { picks, warnings };
 }

@@ -17,6 +17,7 @@ import { slugify } from "@/lib/utils/slugify";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 import {
   planSchoolDeduplication,
+  planStaleSchoolUnlink,
   resolveSchoolTypeFromNsr,
   selectSchools,
   type SchoolType,
@@ -262,7 +263,7 @@ async function unlinkDuplicateSchools(
 ): Promise<void> {
   const { data: links } = await supabase
     .from("project_pois")
-    .select("poi_id, pois!inner(id, name, lat, lng, category_id)")
+    .select("poi_id, pois!inner(id, name, lat, lng, category_id, source)")
     .eq("project_id", projectId);
 
   const pooled = (links ?? [])
@@ -271,7 +272,7 @@ async function unlinkDuplicateSchools(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((p: any) => p?.category_id === "skole")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .map((p: any) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng }));
+    .map((p: any) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng, source: p.source }));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: areas } = await (supabase as any).from("areas").select("report_editorial");
@@ -286,11 +287,15 @@ async function unlinkDuplicateSchools(
     }
   }
 
-  const unlink = planSchoolDeduplication(
-    selected.map((s) => ({ id: s.id, name: s.name, lat: s.lat, lng: s.lng })),
-    pooled,
-    protectedIds
-  );
+  const selectedIds = new Set(selected.map((s) => s.id));
+  const unlink = [
+    ...planSchoolDeduplication(
+      selected.map((s) => ({ id: s.id, name: s.name, lat: s.lat, lng: s.lng })),
+      pooled,
+      protectedIds
+    ),
+    ...planStaleSchoolUnlink(selectedIds, pooled, protectedIds),
+  ].filter((u, i, arr) => arr.findIndex((x) => x.id === u.id) === i);
   if (unlink.length === 0) return;
 
   const ids = unlink.map((u) => u.id);
@@ -567,6 +572,38 @@ async function runSource(
     );
     return 0;
   }
+}
+
+/**
+ * Kjør KUN skole-importen for et eksisterende prosjekt.
+ *
+ * Finnes fordi skolekrets-fiksen (2026-08-14) må rulles ut på boards som alt
+ * er provisjonert, uten å dra med seg resten av pipelinen: full re-kjøring
+ * koster Google-kall, re-stokker natur-lenkene (`linkNaturPois` beholder bare
+ * de 20 nærmeste) og endrer mer enn skolene på et board som ellers er ferdig.
+ */
+export async function refreshZonedSchools(
+  options: ImportPublicPoisOptions
+): Promise<{ linked: number; warnings: string[] }> {
+  const baseClient = createServerClient();
+  if (!baseClient) throw new Error("Supabase ikke konfigurert");
+  const supabase = baseClient.schema("v2") as unknown as typeof baseClient;
+
+  const { projectId, lat, lng, radiusMeters, kommunenummer } = options;
+  const warnings: string[] = [];
+
+  await upsertCategories(PUBLIC_POI_CATEGORIES, { schema: "v2" });
+  const linked = await importNSR(
+    supabase,
+    projectId,
+    lat,
+    lng,
+    radiusMeters,
+    kommunenummer,
+    warnings
+  );
+
+  return { linked, warnings };
 }
 
 export async function importPublicPois(

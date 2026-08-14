@@ -4,6 +4,7 @@ import {
   matchKretsToSchool,
   isOneEditApart,
   planSchoolDeduplication,
+  planStaleSchoolUnlink,
   normalizeFullSchoolName,
   nearestOfType,
   resolveSchoolTypeFromNsr,
@@ -218,15 +219,16 @@ describe("selectSchools", () => {
     expect(krets).toEqual(["Ranheim skole", "Charlottenlund ungdomsskole"]);
   });
 
-  it("beholder nærmeste i tillegg når den er en annen skole", () => {
-    // Ellers ville fiksen FJERNET innhold boards viser i dag.
+  it("tar IKKE med nærmeste ved siden av kretsskolen", () => {
+    // Første utkast gjorde det for ikke å fjerne innhold. Resultatet var skoler
+    // 2,4 km unna som ingen i strøket sogner til; OSM-sveipet dekker tettheten.
     const { picks } = selectSchools(
       { barneskole: "RANHEIM", ungdomsskole: "CHARLOTTENLUND" },
       grilstad,
       2500,
     );
     const navn = picks.map((p) => p.candidate.name);
-    expect(navn).toContain("Stiftelsen steinerskolen på Rotvoll");
+    expect(navn).not.toContain("Stiftelsen steinerskolen på Rotvoll");
   });
 
   it("henter kretsskolen selv om den ligger utenfor radius — Vikåsen-caset", () => {
@@ -368,10 +370,10 @@ describe("planSchoolDeduplication — skoleslag skiller", () => {
   });
 });
 
-describe("nearestOfType — type før avstand", () => {
-  it("lar ekte ungdomsskole slå nærmere 1–10-skole", () => {
-    // Uten type-prioriteten kaprer 1–10-skolen ungdomsskole-plassen, og boardet
-    // viser aldri den faktiske ungdomsskolen.
+describe("nearestOfType — avstand dominerer", () => {
+  it("velger nærmeste 1–10-skole framfor fjernere eksplisitt ungdomsskole", () => {
+    // Type-prioritet her ga Wesselsløkka Charlottenlund-skolene 2,4 km unna
+    // framfor Eberg skole 665 m unna.
     const valgt = nearestOfType(
       [
         school("Alfaskolen", "grunnskole", 300),
@@ -380,11 +382,58 @@ describe("nearestOfType — type før avstand", () => {
       "ungdomsskole",
       2500,
     );
-    expect(valgt?.name).toBe("Gamma ungdomsskole");
+    expect(valgt?.name).toBe("Alfaskolen");
   });
 
-  it("bruker 1–10-skolen når ingen ekte ungdomsskole finnes", () => {
-    const valgt = nearestOfType([school("Alfaskolen", "grunnskole", 300)], "ungdomsskole", 2500);
-    expect(valgt?.name).toBe("Alfaskolen");
+  it("hopper over rader som alt er valgt, så én skole ikke fyller to plasser", () => {
+    const valgt = nearestOfType(
+      [
+        school("Alfaskolen", "grunnskole", 300),
+        school("Gamma ungdomsskole", "ungdomsskole", 900),
+      ],
+      "ungdomsskole",
+      2500,
+      new Set(["Alfaskolen"]),
+    );
+    expect(valgt?.name).toBe("Gamma ungdomsskole");
+  });
+});
+
+describe("planStaleSchoolUnlink", () => {
+  const pooled = [
+    { id: "nsr-bil", name: "Møller bilskolen AS", lat: 63.42, lng: 10.45, source: "nsr" },
+    { id: "osm-1", name: "Hansbakken skole", lat: 63.42, lng: 10.45, source: "osm" },
+    { id: "nsr-eberg", name: "Eberg skole", lat: 63.42, lng: 10.45, source: "nsr" },
+  ];
+
+  it("rydder NSR-rader pipelinen ikke lenger velger", () => {
+    const stale = planStaleSchoolUnlink(new Set(["nsr-eberg"]), pooled, new Set());
+    expect(stale.map((s) => s.id)).toEqual(["nsr-bil"]);
+  });
+
+  it("rører ikke OSM-rader — de eies av sveipet, ikke av pipelinen", () => {
+    const stale = planStaleSchoolUnlink(new Set(), pooled, new Set());
+    expect(stale.map((s) => s.id)).not.toContain("osm-1");
+  });
+
+  it("freder rader kuratering peker på", () => {
+    const stale = planStaleSchoolUnlink(new Set(), pooled, new Set(["nsr-bil"]));
+    expect(stale.map((s) => s.id)).toEqual(["nsr-eberg"]);
+  });
+});
+
+describe("selectSchools — kretsen står alene for sitt trinn", () => {
+  it("legger ikke nærmeste ved siden av kretsskolen", () => {
+    const { picks } = selectSchools(
+      { barneskole: "EBERG", ungdomsskole: "BLUSSUVOLD" },
+      [
+        school("Eberg skole", "grunnskole", 665),
+        school("Blussuvoll skole", "grunnskole", 1030),
+        school("Charlottenlund barneskole", "barneskole", 2400),
+        school("Charlottenlund ungdomsskole", "ungdomsskole", 2400),
+      ],
+      2500,
+    );
+    expect(picks.map((p) => p.candidate.name)).toEqual(["Eberg skole", "Blussuvoll skole"]);
   });
 });
