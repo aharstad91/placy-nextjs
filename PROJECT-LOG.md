@@ -47,6 +47,34 @@
 - **Ranheim ↔ Charlottenlund-overlappet står urørt** (39 vitnepunkter) — fortsatt den egentlige EM1-Grilstadporten-blokkeringen.
 - To døde kuraterte highlight-IDer på Tyholt og Sentrum (se funn 4).
 
+### 2026-08-14 (fortsettelse 2) — ENGELSK VAR ALDRI EN FUNKSJON, OG POI-TEKSTEN VAR FORANKRET I DØDE PROSJEKTER
+
+**Utløseren var et skjermbilde igjen.** Andreas så «Grilstadstranda is a popular bathing spot along the Trondheim Fjord» i en POI-popup på Ranheim-boardet — med knappen «Utforsk» på norsk rett under. Databasen hadde norsk tekst hele tiden.
+
+**Symptomet:** `LocaleProvider` byttet locale til engelsk av seg selv når `navigator.language` starter med «en». Engelsk er bare halvveis implementert — knappelabels er hardkodet norske — så flaten ble en blanding.
+
+**Funnet under symptomet er verre:** `applyTranslations` hentet fra 2 576 oversettelsesrader, ALLE `locale='en'`, alle laget februar–april 2026. Ingen siden. En engelsk bruker fikk altså innhold fra før cutover, før grounding og før alle POI-ene vi la til samme dag. **71 av radene refererte til Overvik**, et prosjekt som ikke finnes lenger. Slettet med rollback-dump.
+
+**Mekanismen, ikke dataene, var problemet — og det er andre gang.** 2026-08-12 ble 18 tema-rader på bar nøkkel slettet fordi de ga «fifteen-minute walk from Overvik» på alle ukuraterte boards. Da ryddet vi dataene og lot auto-deteksjonen stå. Nå er den fjernet: norsk er default, et lagret valg respekteres. 7 tester, hvorav én asserter at overstyringen av `navigator.language` faktisk virker — ellers ville regresjonsvakten bestått uansett.
+
+**Konsekvens verdt å ha klart for seg:** et sveip på hele repoet viser at **ingenting setter locale** — ingen språkvelger, ingen URL-parameter, og auto-deteksjonen kalte `setLocaleState`, ikke `setLocale`, så den skrev aldri til localStorage. Auto-deteksjonen var den eneste veien inn i engelsk. Engelsk er dermed uoppnåelig nå, og de 2 505 gjenværende radene er sovende data. **Engelsk var aldri en funksjon vi bygde — det var en bieffekt av nettleserspråket.** Skal en kunde ha engelsk, må det bygges som et faktisk valg, med ferskt innhold.
+
+**Andreas' egen observasjon åpnet det virkelige problemet: «vi har nok en del utfordringer med legacy poi details».** Den norske kildeteksten på samme POI sa «Sjønær bading i sommerhalvåret. **Kort vei fra Overvik.**» Oversettelsen var ikke feilen — den var en tro kopi av en norsk tekst som allerede var gal.
+
+**Den strukturelle feilen:** `pois` er ÉN rad delt av alle boards. En tekst som navngir et prosjekt er sann på ett board og feil på alle andre som viser samme POI. Samme prinsipp som ble slått fast 08-12 om tema-nøklene: globale nøkler kan aldri bære stedsbundet prosa. **105 POI-er var rammet, 63 av dem lenket til et board** (martin-barstads-veg 28, StasjonsKvartalet 27, Ferjemannsveien 22, Grilstad 21).
+
+**Rekkefølgen var poenget.** Å bare slette ville tømt live demo-boards, så grounding gikk først: fire boards (Stasjonskvartalet, Ferjemannsveien, Teknostallen, Oppdal). Dekning etterpå — **Stasjonskvartalet 97 %, Ferjemannsveien 96 %, Teknostallen 95 %, Oppdal 88 %**. Antall POI-er med erstatning steg fra 20 til 44, og **bare 3 sto igjen som ville mistet ALL tekst** (mitt tidligere estimat på 91 var feil — det overså at bare det ene feltet er forankret).
+
+**De tre var skoler der faktaene var gode og bare forankringen gal** («Ungdomsskolen for Overvik — 8.–10. trinn»). Den ene som faktisk ligger på et board ble skrevet om i stedet for slettet: «Ungdomsskole med 8.–10. trinn.» De to andre er ulenkede dubletter. **104 POI-er ryddet, 0 treff igjen, rollback-dump i `backups/`.**
+
+**Måle-gotcha verdt å huske:** `DEKNING`-linjen i grounding-scriptet teller bare kjøringens EGNE treff. Ferjemannsveien meldte «28/284 = 10 %» og så ut som en brekkasje — men scriptet gjorde bare 33 kall, fordi 251 POI-er alt var grunnet gjennom Stasjonskvartalet-kjøringen. Sentrumsboards deler POI-pool. Scriptets egen post-write-linje ga det rette tallet (261). Samme effekt ga tre boards som aldri ble kjørt direkte gratis dekning: cutover-pilot 68 %, martin-barstads 46 %, Wesselsløkka 25 %.
+
+**Nytt verktøy:** `lib/pipeline/legacy-poi-text.ts` + `scripts/audit-legacy-poi-text.ts` (audit read-only som default, `--clear` skilt fra `--apply`, `--kun-med-erstatning` for den trygge halvparten). Testen avdekket en feil i mitt eget mønster: `\b` etter et navn som slutter på «)» kan aldri matche, siden begge tegn er ikke-ord-tegn. Ordgrensene settes nå betinget.
+
+**Mekanisk:** `tsc` rent · lint 0 errors · **2 380 tester grønne** · commits `61b56e9`, `0b3bfe8`.
+
+**Åpent:** tre boards har fortsatt hull i grounding (Wesselsløkka 79, cutover-pilot 67, martin-barstads 53 POI-er uten tekst ≈ 200 Gemini-kall). Detektoren matcher fulle prosjektnavn, så tekst som skriver «Ferjemannsveien» uten «10» fanges ikke — og bar gatenavn kan ikke matches uten falske positiver. De 2 505 sovende oversettelsesradene er ikke slettet.
+
 ### 2026-08-14 (fortsettelse) — SKOLEKRETSEN BESTEMMER SKOLENE, IKKE AVSTANDEN
 
 **Utløseren var et skjermbilde.** Andreas så på kartet rundt Vikåsen/Markaplassen og spurte hvorfor Markaplassen ungdomsskole — «skolen man sogner til» — ikke var med. Første svar var mekanisk riktig og utilstrekkelig: den ligger 2 943 m fra Grilstad Marina, utenfor discovery-radiusen på 2 500 m. Graving avdekket at det bare var symptomet.
