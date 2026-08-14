@@ -240,7 +240,12 @@ export async function provisionReportBoard(
     centerLat: lat,
     centerLng: lng,
   });
-  log(`Reisetider beregnet: ${travelResult.computed} av ${travelResult.total} POI-er (walk)`);
+  log(`Reisetider beregnet: ${travelResult.computed} av ${travelResult.total} POI-er`);
+  // Dekning per profil, ikke bare totalen: en profil som feilet helt ville
+  // ellers vært usynlig her og bare ligget som en warning lenger ned.
+  log(
+    `Dekning: gå ${travelResult.coverage.walk} · sykkel ${travelResult.coverage.bike} · bil ${travelResult.coverage.car} (av ${travelResult.total})`
+  );
   for (const w of travelResult.warnings) warn(w);
 
   // ── Steg 8: Nabolags-editorial ─────────────────────────────────────────

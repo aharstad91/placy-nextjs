@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
+  batchDestinations,
   calculateTravelTimes,
   computeProjectTravelTimes,
 } from "./travel-times";
@@ -9,8 +10,9 @@ import { createServerClient } from "@/lib/supabase/client";
  * Eksekverings-tester for reisetid-precompute (bead 2nj):
  *   - Matrix-motoren: batching over 24 destinasjoner, sekunder→MINUTTER (ceil),
  *     fail-soft per batch (HTTP-feil stopper ikke resten).
+ *   - Bolke-invarianten: ingen bolk med én destinasjon (Matrix svarer 422).
  *   - Provision-steget: leser project_pois→pois (split-queries), skriver
- *     travel_times per rad, kaster ALDRI (haversine-fallback på board).
+ *     travel_times per rad for alle tre profiler, kaster ALDRI.
  */
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -35,9 +37,140 @@ function matrixOk(durations: (number | null)[]) {
   };
 }
 
+/** Matrix-stub som svarer med like durasjoner for uansett hvor mange destinasjoner bolken har. */
+function matrixEcho(seconds = 120) {
+  return vi.fn(async (url: string) => {
+    const n = destinationCountOf(url);
+    return matrixOk(Array.from({ length: n }, () => seconds));
+  });
+}
+
+/** Antall destinasjoner i en Matrix-URL — bolke-størrelsen slik Mapbox faktisk ser den. */
+function destinationCountOf(url: string): number {
+  const raw = url.match(/destinations=([\d;]+)/)?.[1];
+  return raw ? raw.split(";").length : 0;
+}
+
+function batchSizesFrom(fetchMock: { mock: { calls: unknown[][] } }): number[] {
+  return fetchMock.mock.calls.map((call) => destinationCountOf(call[0] as string));
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.clearAllMocks();
+});
+
+describe("batchDestinations — bolke-invarianten", () => {
+  // Mapbox Matrix avviser en forespørsel med ett enkelt matrise-element
+  // ("minimum number of matrix elements is 2", HTTP 422). En siste bolk med én
+  // destinasjon mistet derfor stille sin reisetid — på hvert POI-antall ≡ 1 (mod 24).
+  it("gir aldri en bolk med under 2 eller over 24 destinasjoner, og mister ingen destinasjon", () => {
+    for (let n = 2; n <= 200; n++) {
+      const batches = batchDestinations(destinations(n));
+      const sizes = batches.map((b) => b.length);
+
+      expect(sizes.every((s) => s >= 2 && s <= 24), `n=${n} ga bolker ${sizes.join("+")}`).toBe(
+        true
+      );
+      // Ingen destinasjon forsvinner og ingen dubleres i omfordelingen
+      expect(batches.flat().map((d) => d.id)).toEqual(destinations(n).map((d) => d.id));
+    }
+  });
+
+  it("omfordeler 24+1 til 23+2 i stedet for å slå sammen til 25 (over Matrix' koordinatgrense)", () => {
+    expect(batchDestinations(destinations(25)).map((b) => b.length)).toEqual([23, 2]);
+    expect(batchDestinations(destinations(49)).map((b) => b.length)).toEqual([24, 23, 2]);
+  });
+
+  it("2 destinasjoner → én bolk, ingen omfordeling", () => {
+    expect(batchDestinations(destinations(2)).map((b) => b.length)).toEqual([2]);
+  });
+
+  it("1 destinasjon → ingen bolker (Matrix kan ikke svare; kalleren samler warning)", () => {
+    expect(batchDestinations(destinations(1))).toEqual([]);
+    expect(batchDestinations([])).toEqual([]);
+  });
+});
+
+describe("calculateTravelTimes — bolking mot Matrix", () => {
+  it("25 destinasjoner → ingen 1-bolk, og alle 25 får reisetid (regresjon: HTTP 422)", async () => {
+    const fetchMock = matrixEcho(300);
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const warnings: string[] = [];
+    const result = await calculateTravelTimes(ORIGIN, destinations(25), TOKEN, ["walk"], warnings);
+
+    expect(batchSizesFrom(fetchMock)).toEqual([23, 2]);
+    expect(result.filter((r) => r.walk === 5)).toHaveLength(25);
+    expect(warnings).toEqual([]);
+  });
+
+  it("97 destinasjoner (faktisk board-størrelse) → 97 av 97 får reisetid", async () => {
+    const fetchMock = matrixEcho(600);
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const result = await calculateTravelTimes(ORIGIN, destinations(97), TOKEN, ["walk"]);
+
+    expect(batchSizesFrom(fetchMock).every((s) => s >= 2)).toBe(true);
+    expect(result.filter((r) => r.walk === 10)).toHaveLength(97);
+  });
+
+  it("1 destinasjon totalt → warning, ingen Matrix-kall, ingen kast", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const warnings: string[] = [];
+    const result = await calculateTravelTimes(ORIGIN, destinations(1), TOKEN, ["walk"], warnings);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result).toEqual([{ poiId: "poi-0", walk: undefined, bike: undefined, car: undefined }]);
+    expect(warnings.some((w) => w.includes("minimum"))).toBe(true);
+  });
+});
+
+describe("calculateTravelTimes — tre profiler", () => {
+  it("48 destinasjoner × 3 profiler → alle får walk, bike og car", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const n = destinationCountOf(url);
+      // walking treigest, driving raskest — så en profil-forveksling er synlig
+      const seconds = url.includes("/walking/") ? 1800 : url.includes("/cycling/") ? 600 : 300;
+      return matrixOk(Array.from({ length: n }, () => seconds));
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const result = await calculateTravelTimes(ORIGIN, destinations(48), TOKEN, [
+      "walk",
+      "bike",
+      "car",
+    ]);
+
+    expect(result).toHaveLength(48);
+    expect(result.every((r) => r.walk === 30 && r.bike === 10 && r.car === 5)).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(6); // 2 bolker × 3 profiler
+  });
+
+  it("422 på sykkel men 200 på gå → walk beholdes, bike er undefined, ingen kast", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes("/cycling/")) {
+        return { ok: false, status: 422, json: async () => ({}) };
+      }
+      return matrixOk(Array.from({ length: destinationCountOf(url) }, () => 900));
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const warnings: string[] = [];
+    const result = await calculateTravelTimes(
+      ORIGIN,
+      destinations(10),
+      TOKEN,
+      ["walk", "bike", "car"],
+      warnings
+    );
+
+    expect(result.every((r) => r.walk === 15 && r.car === 15)).toBe(true);
+    expect(result.every((r) => r.bike === undefined)).toBe(true);
+    expect(warnings.some((w) => w.includes("bike") && w.includes("HTTP 422"))).toBe(true);
+  });
 });
 
 describe("calculateTravelTimes — Matrix-motoren", () => {
@@ -94,20 +227,24 @@ describe("calculateTravelTimes — Matrix-motoren", () => {
     // En lat/lng-swap her ville gitt reisetider fra et punkt i Indiahavet —
     // tallene ser fortsatt ut som minutter, så feilen er 100 % stille på boardet.
     const fetchMock = vi.fn<(url: string) => Promise<ReturnType<typeof matrixOk>>>(
-      async () => matrixOk([120])
+      async () => matrixOk([120, 180])
     );
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
 
+    // To destinasjoner, ikke én: Matrix' minimum er 2 matrise-elementer.
     await calculateTravelTimes(
       { lat: 63.43, lng: 10.4 },
-      [{ id: "poi-x", coordinates: { lat: 63.44, lng: 10.41 } }],
+      [
+        { id: "poi-x", coordinates: { lat: 63.44, lng: 10.41 } },
+        { id: "poi-y", coordinates: { lat: 63.45, lng: 10.42 } },
+      ],
       TOKEN,
       ["walk"]
     );
 
     const url = fetchMock.mock.calls[0][0];
-    // origo først (lng,lat), deretter destinasjonen (lng,lat)
-    expect(url).toContain("/10.4,63.43;10.41,63.44?");
+    // origo først (lng,lat), deretter destinasjonene (lng,lat)
+    expect(url).toContain("/10.4,63.43;10.41,63.44;10.42,63.45?");
     expect(url).toContain("/mapbox/walking/");
   });
 
@@ -163,7 +300,7 @@ describe("computeProjectTravelTimes — provision-steget", () => {
     return { updates };
   }
 
-  it("skriver travel_times per project_pois-rad (walk, minutter)", async () => {
+  it("skriver alle tre profiler per project_pois-rad (minutter, hver i sin nøkkel)", async () => {
     vi.stubEnv("NEXT_PUBLIC_MAPBOX_TOKEN", TOKEN);
     const { updates } = stubClient({
       projectPois: [{ poi_id: "a" }, { poi_id: "b" }],
@@ -172,9 +309,16 @@ describe("computeProjectTravelTimes — provision-steget", () => {
         { id: "b", lat: 63.432, lng: 10.4 },
       ],
     });
+    // Ulik durasjon per profil — en profil skrevet til feil nøkkel er da synlig.
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => matrixOk([300, 660])) as unknown as typeof fetch
+      vi.fn(async (url: string) =>
+        url.includes("/walking/")
+          ? matrixOk([300, 660])
+          : url.includes("/cycling/")
+            ? matrixOk([120, 240])
+            : matrixOk([60, 120])
+      ) as unknown as typeof fetch
     );
 
     const result = await computeProjectTravelTimes({
@@ -185,10 +329,60 @@ describe("computeProjectTravelTimes — provision-steget", () => {
 
     expect(result.computed).toBe(2);
     expect(result.total).toBe(2);
+    expect(result.coverage).toEqual({ walk: 2, bike: 2, car: 2 });
     expect(updates).toEqual([
-      { travel_times: { walk: 5 }, project_id: "proj-1", poi_id: "a" },
-      { travel_times: { walk: 11 }, project_id: "proj-1", poi_id: "b" },
+      { travel_times: { walk: 5, bike: 2, car: 1 }, project_id: "proj-1", poi_id: "a" },
+      { travel_times: { walk: 11, bike: 4, car: 2 }, project_id: "proj-1", poi_id: "b" },
     ]);
+  });
+
+  it("delvis profil-feil → POI-et beholder profilene som lyktes, dekningen viser hullet", async () => {
+    vi.stubEnv("NEXT_PUBLIC_MAPBOX_TOKEN", TOKEN);
+    const { updates } = stubClient({
+      projectPois: [{ poi_id: "a" }, { poi_id: "b" }],
+      pois: [
+        { id: "a", lat: 63.431, lng: 10.4 },
+        { id: "b", lat: 63.432, lng: 10.4 },
+      ],
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("/cycling/")
+          ? { ok: false, status: 500, json: async () => ({}) }
+          : matrixOk([300, 660])
+      ) as unknown as typeof fetch
+    );
+
+    const result = await computeProjectTravelTimes({ projectId: "p", centerLat: 1, centerLng: 2 });
+
+    expect(result.computed).toBe(2);
+    expect(result.coverage).toEqual({ walk: 2, bike: 0, car: 2 });
+    expect(updates.map((u) => u.travel_times)).toEqual([
+      { walk: 5, car: 5 },
+      { walk: 11, car: 11 },
+    ]);
+  });
+
+  it("POI uten koordinater filtreres bort før bolking (påvirker ikke invarianten)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_MAPBOX_TOKEN", TOKEN);
+    const { updates } = stubClient({
+      projectPois: [{ poi_id: "a" }, { poi_id: "b" }, { poi_id: "c" }],
+      pois: [
+        { id: "a", lat: 63.431, lng: 10.4 },
+        { id: "b", lat: null as unknown as number, lng: 10.4 },
+        { id: "c", lat: 63.433, lng: 10.4 },
+      ],
+    });
+    const fetchMock = matrixEcho(300);
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const result = await computeProjectTravelTimes({ projectId: "p", centerLat: 1, centerLng: 2 });
+
+    // 2 gyldige destinasjoner → én bolk på 2, ikke 3 med et hull
+    expect(batchSizesFrom(fetchMock)).toEqual([2, 2, 2]); // én bolk per profil
+    expect(updates.map((u) => u.poi_id)).toEqual(["a", "c"]);
+    expect(result.total).toBe(3); // totalen er pool-størrelsen, ikke antall rutbare
   });
 
   it("tomt POI-pool → {computed:0, total:0} uten Mapbox-kall", async () => {
@@ -198,7 +392,12 @@ describe("computeProjectTravelTimes — provision-steget", () => {
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
 
     const result = await computeProjectTravelTimes({ projectId: "p", centerLat: 1, centerLng: 2 });
-    expect(result).toEqual({ computed: 0, total: 0, warnings: [] });
+    expect(result).toEqual({
+      computed: 0,
+      total: 0,
+      coverage: { walk: 0, bike: 0, car: 0 },
+      warnings: [],
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

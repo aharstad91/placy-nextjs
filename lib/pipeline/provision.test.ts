@@ -58,7 +58,12 @@ function setHappyDefaults(existed = false) {
   m.enrich.mockResolvedValue({ google: { total: 20, new: 20, updated: 0, byCategory: {} }, warnings: [] });
   m.trust.mockResolvedValue({ scored: 10, skipped: 0, skippedPublic: 5, stillNull: [], warnings: [] });
   m.hydrate.mockResolvedValue({ productPoisLinked: 20, featuredMarked: 6, categoriesPopulated: 8, warnings: [] });
-  m.travel.mockResolvedValue({ computed: 20, total: 20, warnings: [] });
+  m.travel.mockResolvedValue({
+    computed: 20,
+    total: 20,
+    coverage: { walk: 20, bike: 20, car: 20 },
+    warnings: [],
+  });
   m.editorial.mockResolvedValue({
     skipped: true, areaName: "", themesInherited: [], highlights: { kept: 0, dropped: [] }, warnings: [],
   });
@@ -119,7 +124,7 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     m.enrich.mockImplementation(async () => { order.push("enrich"); return { google: { total: 0, new: 0, updated: 0, byCategory: {} }, warnings: [] }; });
     m.trust.mockImplementation(async () => { order.push("trust"); return { scored: 0, skipped: 0, skippedPublic: 0, stillNull: [], warnings: [] }; });
     m.hydrate.mockImplementation(async () => { order.push("hydrate"); return { productPoisLinked: 0, featuredMarked: 0, categoriesPopulated: 0, warnings: [] }; });
-    m.travel.mockImplementation(async () => { order.push("travel"); return { computed: 0, total: 0, warnings: [] }; });
+    m.travel.mockImplementation(async () => { order.push("travel"); return { computed: 0, total: 0, coverage: { walk: 0, bike: 0, car: 0 }, warnings: [] }; });
     m.editorial.mockImplementation(async () => { order.push("editorial"); return { skipped: true, areaName: "", themesInherited: [], highlights: { kept: 0, dropped: [] }, warnings: [] }; });
     m.acceptance.mockImplementation(async () => { order.push("acceptance"); return { ok: true, findings: [], urls: { local: "l", prod: "p" } }; });
 
@@ -132,6 +137,7 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     m.travel.mockResolvedValue({
       computed: 0,
       total: 20,
+      coverage: { walk: 0, bike: 0, car: 0 },
       warnings: ["⚠️  Mapbox Matrix walk: HTTP 503 (batch hoppet over)"],
     });
     const warned: string[] = [];
