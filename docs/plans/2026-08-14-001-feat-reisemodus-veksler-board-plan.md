@@ -57,7 +57,7 @@ Alle R-numre refererer til origin-dokumentet.
   kvalitetsfilteret i `lib/pipeline/poi-quality.ts`. Disse avgjør *hvilke* punkter som er på
   boardet — endres de per modus, endres boardets innhold, som er utenfor scope.
 - **Generert og kuratert prosa forblir gang-rammet.** `lib/generators/bridge-text-generator.ts`
-  røres ikke. Kun de tre statiske påstandene i R13 endres.
+  røres ikke. Kun de statiske påstandene i R13 endres (syv tekster i fem filer — se Unit 7).
 - **Paraform-varianten (`/rapport-paraform`) får ingen modusveksler.** `POIPopover.tsx` er live
   der, men på en annen produktflate uten kontroll — den forblir gang-basert.
 - **Ingen ny global state-store.** Modusen hører i board-reduceren.
@@ -73,6 +73,12 @@ Alle R-numre refererer til origin-dokumentet.
 - **Sletting av `components/variants/report/ReportPOICard.tsx`** — verifisert 2026-08-14: filen
   importeres av ingen. Den leser `travelTime?.walk` og ville ellers stått som en gang-hardkodet
   flate. Dead-code-fjerning hører i en egen opprydding, ikke i denne planen.
+- **Sletting av `components/variants/report/MapPopupCard.tsx`** — planen antok at denne var live
+  via `POIExploreModal`. **Feil, verifisert under implementering 2026-08-14:** ingen komponent
+  importerer den (bare kommentar-referanser fra `POIExploreModal`, `places-backfill-lib` og
+  `scripts/midtbyen/enrich-stores.ts`, hvorav den siste sier det rett ut: «ingen montert komponent
+  viser dem i dag»). Den er altså i samme kategori som `ReportPOICard`, og behandles likt: ikke
+  gjort modus-bevisst, siden det ville vært arbeid på en flate ingen rendrer.
 - **Orfan CSS for `gmp-popover`** i `app/globals.css:74-89` — stylet et Google 3D-popover som
   ble slettet med `components/map/poi-marker-3d.tsx` i cutover. Samme opprydding.
 
@@ -408,7 +414,7 @@ tre ganger per board)
 
 ---
 
-- [ ] **Unit 3: Modus-tilstand i board-state, og delt rute-data**
+- [x] **Unit 3: Modus-tilstand i board-state, og delt rute-data**
 
 **Goal:** Boardet har én aktiv modus som overlever navigasjon, og rutedata hentes én gang per
 (punkt, modus) i stedet for to til tre ganger.
@@ -477,7 +483,7 @@ modusen» er lett å bryte ved en senere refaktorering, og testen er billigere e
 
 ---
 
-- [ ] **Unit 4: Modus-bevisst nabolagsliste**
+- [x] **Unit 4: Modus-bevisst nabolagsliste**
 
 **Goal:** Alle minutt-tall, tidsspenn og sorteringer i nabolagslista leser aktiv modus.
 
@@ -544,7 +550,7 @@ modusen» er lett å bryte ved en senere refaktorering, og testen er billigere e
 
 ---
 
-- [ ] **Unit 5: Chip på ruta og vedvarende kart-kontroll (2D)**
+- [x] **Unit 5: Chip på ruta og vedvarende kart-kontroll (2D)**
 
 **Goal:** Leseren kan bytte modus fra chipen på ruta og fra kart-kontrollen, og de viser samme
 tilstand.
@@ -620,7 +626,7 @@ tilstand.
 
 ---
 
-- [ ] **Unit 6: Chip i 3D-motoren**
+- [x] **Unit 6: Chip i 3D-motoren**
 
 **Goal:** Samme chip-oppførsel når Google 3D er den aktive kartflaten.
 
@@ -672,7 +678,13 @@ tilstand.
 
 ---
 
-- [ ] **Unit 7: Resterende minutt-flater og modus-nøytral copy**
+- [x] **Unit 7: Resterende minutt-flater og modus-nøytral copy**
+
+> **Korrigert under implementering:** planen navnga TRE statiske «gangavstand»-tekster. Det var
+> SYV, i fem filer — de tre variantene i `reels-data.ts` (bolig/næring/hotell), to i
+> `ReportReelsPage.tsx` (loader + embed), og `DEFAULT_INTRO` i begge splash-komponentene. Alle er
+> rettet, og en kilde-skannende vakt (`reels-copy-mode-neutral.test.ts`) fanger en åttende hvis
+> noen legger den til. `MapPopupCard` viste seg å være død kode — se Deferred to Separate Tasks.
 
 **Goal:** Ingen live board-flate viser gangtid mens boardet står i en annen modus, og de
 statiske «alt i gangavstand»-påstandene er borte.

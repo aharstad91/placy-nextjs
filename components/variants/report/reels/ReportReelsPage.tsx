@@ -711,8 +711,11 @@ function ResponsiveLayoutInner({
   // rett til 100% (re-åpning).
   const hasAudioGuide = firstIdx !== -1;
   const loaderHeadline = "Bli kjent med nærområdet";
+  // Modus-nøytral: boardet oppgir nå tider i gå, sykkel ELLER bil, og spennet er
+  // 6–35 minutter til fots på et suburbant board. «Alt i gangavstand» var en
+  // påstand teksten ikke kunne innfri (R13).
   const loaderIntro =
-    "Transport, hverdagsliv, mat, natur og opplevelser — alt i gangavstand.";
+    "Transport, hverdagsliv, mat, natur og opplevelser — alt i nærområdet.";
 
   // Embed-modus: render KUN splash-teaseren (ingen kart/reels/audio i iframen).
   // Egen "selg inn"-copy — på meglerens side har leseren allerede scrollet forbi
@@ -723,8 +726,8 @@ function ResponsiveLayoutInner({
     const embedHeadline = `Bli kjent med nærområdet til ${home.name}`;
     const embedIntro =
       "Se hva som ligger rett utenfor døra — transport, hverdagsliv, mat og " +
-      "uteliv, natur og opplevelser, alt i gangavstand. Åpne den interaktive " +
-      "guiden og utforsk nabolaget på kartet.";
+      "uteliv, natur og opplevelser. Åpne den interaktive guiden og utforsk " +
+      "nabolaget på kartet.";
     const embedLabel = "Utforsk nabolaget";
     const Splash = isDesktop ? DesktopReportSplash : MobileReportSplash;
     return (

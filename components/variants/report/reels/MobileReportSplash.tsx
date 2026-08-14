@@ -37,9 +37,10 @@ interface Props {
   embed?: boolean;
 }
 
+// Modus-nøytral copy (R13) — se DesktopReportSplash.
 const DEFAULT_INTRO =
   "Vi tar deg med på en guidet tur gjennom nærområdet — bli kjent med hva som " +
-  "ligger i gangavstand.";
+  "ligger rundt deg.";
 
 /**
  * Mobil velkomst-splash for rapport-board (<1024px). Portrait, full-bleed

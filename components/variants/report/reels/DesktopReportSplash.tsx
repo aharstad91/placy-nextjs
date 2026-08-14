@@ -39,10 +39,12 @@ interface Props {
   embed?: boolean;
 }
 
+// Modus-nøytral copy (R13): boardet oppgir tider i gå, sykkel eller bil, så en
+// statisk «i gangavstand»-påstand kan teksten ikke innfri.
 const DEFAULT_INTRO =
   "Vi tar deg med på en guidet tur gjennom nærområdet — transport, hverdagsliv, " +
   "mat og uteliv, natur og opplevelser rett utenfor døra. Trykk play, så viser " +
-  "vi deg hva som ligger i gangavstand.";
+  "vi deg hva som ligger der.";
 
 /**
  * Velkomst-splash for rapport-board (desktop, >=1024px). Ligger som et lag

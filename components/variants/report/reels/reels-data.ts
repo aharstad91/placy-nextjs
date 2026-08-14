@@ -451,11 +451,11 @@ export function deriveSplashIntro(opts: {
   // Uten lyd: beskriv det brukeren faktisk får — et kart å utforske. Gjelder
   // alle venue-typer, derfor før forgreningen under.
   if (!opts.hasAudioGuide)
-    return "Utforsk nærområdet på kartet — se hva som ligger i gangavstand, og hvor lang tid du bruker dit.";
+    return "Utforsk nærområdet på kartet — se hva som ligger rundt, og hvor lang tid du bruker dit.";
   if (opts.venueType === "commercial")
-    return "Vi tar deg med på en guidet tur i nærområdet — restauranter, transport, trenings- og servicetilbud rett utenfor kontordøren. Trykk play, og se hva som ligger i gangavstand.";
+    return "Vi tar deg med på en guidet tur i nærområdet — restauranter, transport, trenings- og servicetilbud rett utenfor kontordøren. Trykk play, og se hva som ligger rundt.";
   if (opts.venueType === "hotel")
-    return "Utforsk nærområdet til hotellet — restauranter, severdigheter, transport og opplevelser rett utenfor lobbyen. Trykk play, og se hva som ligger i gangavstand.";
+    return "Utforsk nærområdet til hotellet — restauranter, severdigheter, transport og opplevelser rett utenfor lobbyen. Trykk play, og se hva som ligger rundt.";
   return undefined;
 }
 
