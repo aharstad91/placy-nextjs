@@ -3,6 +3,8 @@
 import { Hand, Orbit, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import type { TravelMode } from "@/lib/types";
+import { TravelModeSelector } from "./TravelModeSelector";
 
 export type CameraMode = "auto" | "free";
 
@@ -29,6 +31,20 @@ interface Props {
    *  litt løftet posisjon så pillen klarer kart-sheetens bunnkant og Google-
    *  attribusjonen. Default false (desktop). */
   compact?: boolean;
+  /**
+   * Vis Kart/3D-segmentet. Gaten flyttet INN i komponenten 2026-08-14: pillen
+   * var tidligere montert bare når prosjektet hadde 3D-tillegget, så en kontroll
+   * som gjelder alle boards (reisemåte) ville vært usynlig på nøyaktig de
+   * boardsene som trenger den mest. Default true.
+   */
+  showViewToggle?: boolean;
+  /**
+   * Reisemodusene boardet har data for, i visningsrekkefølge. Tom eller
+   * ett-element → ingen veksler rendres (R6).
+   */
+  travelModes?: readonly TravelMode[];
+  travelMode?: TravelMode;
+  onTravelModeChange?: (mode: TravelMode) => void;
   /** Progressiv avsløring (mobil to-flate, R11): kollaps kontrollene til ett ⚙
    *  FAB som åpner en popover med Auto/Fri + Kart/3D. Holder kart-flaten ren —
    *  kontrollene er der når du vil ha dem, ikke alltid utbrettet. Default false
@@ -85,9 +101,14 @@ export function BoardMapControls({
   controlsReady = true,
   compact = false,
   collapsed = false,
+  showViewToggle = true,
+  travelModes = [],
+  travelMode = "walk",
+  onTravelModeChange,
 }: Props) {
   // Auto/Fri vises kun i 3D OG når det finnes en orbit å vise (voice-over-tier).
   const showCamera = view === "3d" && showCameraMode;
+  const showTravelModes = travelModes.length > 1 && Boolean(onTravelModeChange);
   const isFree = cameraMode === "free";
   const seg = compact ? SEG_COMPACT : SEG_DEFAULT;
   // Touch-vennlig høyde på mobil (44px) vs. kompakt desktop (32px).
@@ -98,6 +119,23 @@ export function BoardMapControls({
   // pillen og FAB-popoveren så de aldri driver fra hverandre.
   const controlsBody = (
     <>
+      {/* Reisemåte først: den gjelder hele boardet, mens Auto/Fri og Kart/3D er
+          kamera- og motor-valg. Delt komponent med chipens panel (R5). */}
+      {showTravelModes && (
+        <>
+          <TravelModeSelector
+            variant="segment"
+            modes={travelModes}
+            active={travelMode}
+            onChange={onTravelModeChange!}
+            compact={compact}
+          />
+          {(showCamera || showViewToggle) && (
+            <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />
+          )}
+        </>
+      )}
+
       {showCamera && (
         <>
           <div role="group" aria-label="Kameramodus" className="relative flex items-center">
@@ -143,11 +181,14 @@ export function BoardMapControls({
           </div>
 
           {/* Divider mellom kameramodus og motor-bytte. */}
-          <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />
+          {showViewToggle && (
+            <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />
+          )}
         </>
       )}
 
       {/* Kart/3D — split-knapp (to knapper, aktiv fylt mørk). */}
+      {showViewToggle && (
       <div role="group" aria-label="Kartvisning" className="flex items-center gap-0.5">
         {VIEW_OPTIONS.map((opt) => {
           const active = view === opt.value;
@@ -171,8 +212,13 @@ export function BoardMapControls({
           );
         })}
       </div>
+      )}
     </>
   );
+
+  // Ingen segmenter = ingen pille. En tom, halvtransparent kapsel midt på kartet
+  // er verre enn ingen kontroll.
+  if (!showTravelModes && !showCamera && !showViewToggle) return null;
 
   // Recovery-hint (delt) — sentrert over kontrollene etter drag-takeover.
   const freeHint = showCamera ? (

@@ -19,6 +19,7 @@ import type {
   ViewportRect,
 } from "@/lib/board/board-types";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
+import { availableTravelModes } from "@/lib/board/neighbourhood-list";
 import type { TravelMode } from "@/lib/types";
 import {
   useSubCategoryFilter,
@@ -408,6 +409,18 @@ export function useBoard() {
     throw new Error("useBoard må brukes inne i en BoardProvider");
   }
   return ctx;
+}
+
+/**
+ * Modusene boardet har data for, i visningsrekkefølge (R6).
+ *
+ * Avledes av boardets egne POI-er, ikke av en konfigurasjon: et board uten
+ * sykkeltider skal ikke tilby sykkel. Både chipen på ruta og kart-kontrollen
+ * leser denne, så de kan ikke vise ulike sett.
+ */
+export function useAvailableTravelModes(): TravelMode[] {
+  const { data } = useBoard();
+  return useMemo(() => availableTravelModes(data.categories), [data.categories]);
 }
 
 export function useActiveCategory() {

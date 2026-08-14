@@ -31,7 +31,11 @@ const h = vi.hoisted(() => {
   // vi.hoisted kjører før modul-imports, så env-en er på plass i tide.
   process.env.NEXT_PUBLIC_MAPBOX_TOKEN = "pk.test";
   return {
-    board: { value: null as unknown, activeCategory: null as unknown },
+    board: {
+      value: null as unknown,
+      activeCategory: null as unknown,
+      availableTravelModes: ["walk", "bike", "car"] as string[],
+    },
     tour: { phase: "idle" as string, currentTrack: null as unknown },
     captured: {
       controls: [] as Record<string, unknown>[],
@@ -78,6 +82,7 @@ const mapInstance = () => h.mapbox.instance as MockMapInstance;
 vi.mock("./board-state", () => ({
   useBoard: () => h.board.value,
   useActiveCategory: () => h.board.activeCategory,
+  useAvailableTravelModes: () => h.board.availableTravelModes,
 }));
 vi.mock("@/lib/stores/audio-tour-store", () => ({
   useAudioTourPhase: () => h.tour.phase,
@@ -288,14 +293,32 @@ describe("BoardMap — AC3 BoardMapControls betinget + showCameraMode datadrevet
     expect(getByTestId("board-controls")).toBeTruthy();
   });
 
-  it("skjuler kontrollene når !has3dAddon", () => {
-    const { queryByTestId } = render(<BoardMap has3dAddon={false} interactive />);
-    expect(queryByTestId("board-controls")).toBeNull();
+  // ENDRET 2026-08-14: gaten var `has3dAddon && interactive`, så pillen fantes
+  // bare på boards med 3D-tillegg. Reisemåte-velgeren gjelder ALLE boards, og
+  // ville derfor vært usynlig på nøyaktig de boardsene som trenger den mest
+  // (suburbane adresser uten 3D). Kart/3D-segmentet er nå betinget INNE i
+  // komponenten via `showViewToggle`.
+  it("mounter kontrollene også uten 3D-tillegg — men uten Kart/3D-segmentet", () => {
+    const { getByTestId } = render(<BoardMap has3dAddon={false} interactive />);
+    expect(getByTestId("board-controls")).toBeTruthy();
+    expect(lastControls()!.showViewToggle).toBe(false);
+  });
+
+  it("showViewToggle=true når 3D-tillegget finnes", () => {
+    render(<BoardMap has3dAddon interactive />);
+    expect(lastControls()!.showViewToggle).toBe(true);
   });
 
   it("skjuler kontrollene når !interactive", () => {
     const { queryByTestId } = render(<BoardMap has3dAddon interactive={false} />);
     expect(queryByTestId("board-controls")).toBeNull();
+  });
+
+  it("mater reisemodusene og aktiv modus ned til kontrollene", () => {
+    setBoard({}, { travelMode: "bike" });
+    render(<BoardMap has3dAddon={false} interactive />);
+    expect(lastControls()!.travelModes).toEqual(["walk", "bike", "car"]);
+    expect(lastControls()!.travelMode).toBe("bike");
   });
 
   it("showCameraMode=true når en kategori har audio (datadrevet, ikke tier)", () => {

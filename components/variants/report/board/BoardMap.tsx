@@ -9,7 +9,7 @@ import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styl
 import { poiVisualIdentity } from "./marker-style";
 import { BoardMapControls, type CameraMode } from "./BoardMapControls";
 import { rangeToZoom, zoomToRange } from "@/lib/utils/camera-map";
-import { useBoard, useActiveCategory } from "./board-state";
+import { useBoard, useActiveCategory, useAvailableTravelModes } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
 import { useBoardZoomTier } from "./use-board-zoom-tier";
 import { HomeMarker } from "./HomeMarker";
@@ -20,6 +20,7 @@ import { BoardPOILabel } from "./BoardPOILabel";
 import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
 import { BoardMap3D } from "./BoardMap3D";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
+import type { TravelMode } from "@/lib/types";
 import type { FlyCapableMap } from "./board-3d-camera-director";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
@@ -161,6 +162,7 @@ export function BoardMap({
     collectionPoiIds,
   } = useBoard();
   const activeCategory = useActiveCategory();
+  const availableModes = useAvailableTravelModes();
   const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -698,6 +700,13 @@ export function BoardMap({
     map3dRef.current = m;
   }, []);
 
+  // Modusen bor i reduceren, ikke i kart-skallet: nabolagslista og
+  // instrumenteringen leser samme felt (R2).
+  const handleTravelModeChange = useCallback(
+    (mode: TravelMode) => dispatch({ type: "SET_TRAVEL_MODE", mode }),
+    [dispatch],
+  );
+
   const handleModeChange = useCallback(
     (mode: "2d" | "3d") => {
       if (mode === view) return;
@@ -899,14 +908,21 @@ export function BoardMap({
           />
         )}
 
-        {/* Felles kontroll-cluster (Auto/Fri + Kart/3D) sentrert nederst-midt —
-            kun når 3D-add-on er kjøpt OG kartet er den aktive (interaktive) flaten.
-            Bunn-midten er fri for Google-crediten (låst nederst-venstre) og
-            Mapbox-attribusjonen (nederst-høyre). */}
-        {has3dAddon && interactive && (
+        {/* Felles kontroll-cluster (Reisemåte + Auto/Fri + Kart/3D) sentrert
+            nederst-midt. Bunn-midten er fri for Google-crediten (låst
+            nederst-venstre) og Mapbox-attribusjonen (nederst-høyre).
+            Gaten var `has3dAddon && interactive` fram til 2026-08-14. Reisemåte
+            gjelder ALLE boards, så pillen monteres nå så snart kartet er den
+            aktive flaten; Kart/3D-segmentet beholder sin 3D-betingelse INNE i
+            komponenten, og pillen returnerer null hvis ingen segmenter er igjen. */}
+        {interactive && (
           <BoardMapControls
             view={view}
             onViewChange={handleModeChange}
+            showViewToggle={has3dAddon}
+            travelModes={availableModes}
+            travelMode={state.travelMode}
+            onTravelModeChange={handleTravelModeChange}
             cameraMode={cameraMode}
             onCameraModeChange={handleCameraModeChange}
             showCameraMode={hasVoiceOver}

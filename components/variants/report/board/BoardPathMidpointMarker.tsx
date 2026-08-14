@@ -1,38 +1,89 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Marker } from "react-map-gl/mapbox";
+import { cn } from "@/lib/utils";
 import { useBoardRoute } from "./board-route";
-import { useBoard } from "./board-state";
+import { useActivePOI, useAvailableTravelModes, useBoard } from "./board-state";
 import { pathMidpoint } from "./path-midpoint";
+import { TRAVEL_MODE_ICONS, TravelModeSelector } from "./TravelModeSelector";
 
 /**
- * 2D path-midpoint tids-chip. Plassert som react-map-gl `<Marker>` på midten
- * av walking-ruten — slik at chip-en sitter på selve path-en, ikke i sentrum
- * av viewporten (som var BoardTravelChip's plassering) og ikke på POI-markøren
- * (som er det som dekkes hvis chip-en plasseres ved endepunktet).
+ * Tids-chipen på rutens midtpunkt — og den ene av to innganger til
+ * reisemodus-valget (R5).
  *
- * Mapbox `<Marker>` projiserer lat/lng → screen automatisk, så chip-en følger
- * med kartet ved pan/zoom uten ekstra kode. `pointer-events-none` så vi ikke
- * blokkerer marker-klikk på POI-er som ligger nær path-midten.
+ * Plasseringen er et bevisst valg fra 2026-04-30: midt på ruta, ikke i sentrum
+ * av viewporten og ikke på POI-markøren (som ville blitt dekket). Mapbox
+ * `<Marker>` projiserer lat/lng → skjerm automatisk, så chipen følger kartet ved
+ * pan og zoom uten ekstra kode.
  *
- * Render-gating:
- * - phase === "poi" (kun når en POI er aktiv)
- * - routeData er klar (ikke fetching/error)
- * - pathMidpoint returnerer ikke-null (path har ≥3 koordinater)
+ * Kollapset viser den aktiv modus og tiden. Klikk utvider til alle tre tidene
+ * for punktet — hentet fra PRECOMPUTED data, ikke fra Directions, så panelet har
+ * ingen lastetilstand.
+ *
+ * Treffområdet ligger på selve chipen, ikke på markør-wrapperen: wrapperen er
+ * `pointer-events-none` slik at et klikk på en POI-markør nær rutens midtpunkt
+ * fortsatt treffer markøren, ikke chipen.
  *
  * Rutedata kommer fra `BoardRouteProvider` — samme svar som rutelinja og
- * 3D-ruten leser. Chipen fyrer altså ingen egen Directions-forespørsel.
+ * 3D-ruten leser. Chipen fyrer ingen egen Directions-forespørsel.
  */
+
+/** Panelets omtrentlige høyde i piksler — brukes bare til å velge foldretning. */
+const PANEL_HEIGHT_ESTIMATE = 180;
+
 export function BoardPathMidpointMarker() {
-  const { state } = useBoard();
+  const { state, dispatch } = useBoard();
   const { data: routeData } = useBoardRoute();
+  const activePOI = useActivePOI();
+  const modes = useAvailableTravelModes();
+
+  const [open, setOpen] = useState(false);
+  const [foldUp, setFoldUp] = useState(true);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // Panelet skal aldri overleve inn i en annen POI-kontekst enn det ble åpnet i
+  // — samme prinsipp som `exploreOpen`, som nullstilles ved all navigasjon.
+  useEffect(() => {
+    setOpen(false);
+  }, [state.activePOIId, state.phase]);
+
+  // Klikk utenfor lukker uten å endre modus.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [open]);
+
+  const toggle = useCallback(() => {
+    // Retningen avgjøres ved åpning, ikke som en fast regel: rutens midtpunkt kan
+    // ligge hvor som helst i viewporten, og et panel som alltid foldet oppover
+    // ville gått utenfor kartflaten når chipen står nær toppen.
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    if (rect) setFoldUp(rect.top > PANEL_HEIGHT_ESTIMATE);
+    setOpen((wasOpen) => !wasOpen);
+  }, []);
 
   if (state.phase !== "poi" || !routeData) return null;
   const midpoint = pathMidpoint(routeData.coordinates);
   if (!midpoint) return null;
 
-  const minutes = Math.max(1, Math.round(routeData.travelMinutes));
+  const travelTime = activePOI?.raw.travelTime;
+  const activeMinutes = travelTime?.[state.travelMode];
+  // Fallback til rutens egen varighet: chipen har alltid vist Directions-tallet,
+  // og precomputet verdi kan mangle på et punkt som ble lagt til utenom
+  // provisjonerings-løpet.
+  const minutes =
+    typeof activeMinutes === "number" && Number.isFinite(activeMinutes)
+      ? activeMinutes
+      : Math.max(1, Math.round(routeData.travelMinutes));
+
+  const ActiveIcon = TRAVEL_MODE_ICONS[state.travelMode];
+  const expandable = modes.length > 1;
 
   return (
     <Marker
@@ -41,9 +92,53 @@ export function BoardPathMidpointMarker() {
       anchor="center"
       style={{ pointerEvents: "none", zIndex: 4 }}
     >
-      <div className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white/95 px-3 py-1.5 text-sm font-semibold text-stone-900 shadow-md backdrop-blur">
-        <Clock className="h-4 w-4 text-stone-600" />
-        <span>{minutes} min</span>
+      <div ref={wrapperRef} className="relative flex flex-col items-center">
+        {/* Panelet ligger absolutt over/under chipen så chipen selv ikke flytter
+            seg når det åpnes — den sitter på en geografisk posisjon. */}
+        {open && (
+          <div
+            className={cn(
+              "pointer-events-auto absolute left-1/2 w-48 -translate-x-1/2 rounded-xl border border-stone-200 bg-white/97 p-1.5 shadow-xl ring-1 ring-black/5 backdrop-blur",
+              foldUp ? "bottom-full mb-2" : "top-full mt-2",
+            )}
+          >
+            <TravelModeSelector
+              variant="panel"
+              modes={modes}
+              active={state.travelMode}
+              minutesByMode={travelTime}
+              onChange={(mode) => {
+                dispatch({ type: "SET_TRAVEL_MODE", mode });
+                setOpen(false);
+              }}
+            />
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={expandable ? toggle : undefined}
+          aria-expanded={expandable ? open : undefined}
+          aria-label={expandable ? "Bytt reisemåte" : undefined}
+          disabled={!expandable}
+          className={cn(
+            "flex items-center gap-1.5 rounded-full border border-stone-200 bg-white/95 px-3 py-1.5 text-sm font-semibold text-stone-900 shadow-md backdrop-blur",
+            // Bare den utvidbare varianten tar imot klikk. Uten veksler er chipen
+            // ren informasjon, og skal ikke stjele markør-klikk.
+            expandable ? "pointer-events-auto cursor-pointer" : "cursor-default",
+          )}
+        >
+          <ActiveIcon className="h-4 w-4 text-stone-600" />
+          <span>{minutes} min</span>
+          {expandable && (
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 text-stone-400 transition-transform duration-200",
+                open && "rotate-180",
+              )}
+            />
+          )}
+        </button>
       </div>
     </Marker>
   );
