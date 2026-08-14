@@ -702,6 +702,62 @@ describe("markørsynlighet — markørklikk kaprer ikke kategorien (2026-08-13)"
     expect(visibilityByPoi()).toEqual({ "p-mat": true, "p-natur": false });
   });
 
+  // REGRESJON 2026-08-14: chipen forsvant når man klikket den. Kart-klikket
+  // leste chip-klikket som et bakgrunnsklikk og dispatchet BACK_TO_DEFAULT →
+  // punktet lukket seg → chipen unmountet under fingeren.
+  //
+  // Chipen kan IKKE bruke markørenes stopPropagation-vei: den har interaktivt
+  // innhold (modus-panelet), og et stoppet event ville aldri nådd Reacts
+  // delegerte handlere. Den merkes med `data-travel-chip` og filtreres i
+  // kart-klikket i stedet.
+  describe("kart-klikk lukker punktet — men ikke fra tids-chipen", () => {
+    const clickMapWith = (target: HTMLElement) => {
+      const onClick = h.captured.mapProps.at(-1)!.onClick as (e: {
+        originalEvent: { target: HTMLElement };
+      }) => void;
+      act(() => onClick({ originalEvent: { target } }));
+    };
+
+    it("klikk på kart-bakgrunn lukker et åpent punkt", () => {
+      setBoard(twoCategories, { activePOIId: "p-natur" });
+      render(<BoardMap has3dAddon={false} />);
+      const dispatch = boardCtx().dispatch as ReturnType<typeof vi.fn>;
+
+      clickMapWith(document.createElement("canvas"));
+
+      expect(dispatch).toHaveBeenCalledWith({ type: "BACK_TO_DEFAULT" });
+    });
+
+    it("klikk INNE i tids-chipen lukker IKKE punktet", () => {
+      setBoard(twoCategories, { activePOIId: "p-natur" });
+      render(<BoardMap has3dAddon={false} />);
+      const dispatch = boardCtx().dispatch as ReturnType<typeof vi.fn>;
+
+      const chip = document.createElement("div");
+      chip.setAttribute("data-travel-chip", "");
+      const knapp = document.createElement("button");
+      chip.appendChild(knapp);
+      document.body.appendChild(chip);
+
+      // Klikk på en knapp DYPT inne i chipen, ikke på wrapperen selv — det er
+      // det ekte tilfellet (modus-rad eller selve chip-knappen).
+      clickMapWith(knapp);
+
+      expect(dispatch).not.toHaveBeenCalledWith({ type: "BACK_TO_DEFAULT" });
+      document.body.removeChild(chip);
+    });
+
+    it("uten åpent punkt er kart-klikk en no-op", () => {
+      setBoard(twoCategories);
+      render(<BoardMap has3dAddon={false} />);
+      const dispatch = boardCtx().dispatch as ReturnType<typeof vi.fn>;
+
+      clickMapWith(document.createElement("canvas"));
+
+      expect(dispatch).not.toHaveBeenCalledWith({ type: "BACK_TO_DEFAULT" });
+    });
+  });
+
   it("markør-onClick dispatcher OPEN_POI UTEN categoryId", () => {
     setBoard(twoCategories);
     render(<BoardMap has3dAddon={false} />);

@@ -844,9 +844,18 @@ export function BoardMap({
               interactive={interactive}
               onLoad={handleMapLoad}
               onMoveEnd={handleMoveEnd}
-              onClick={() => {
+              onClick={(e) => {
                 // Markører kaller stopPropagation i sin onClick, så denne
                 // fyrer kun ved klikk på kart-bakgrunn. Lukk popup hvis åpen.
+                //
+                // Tids-chipen kan IKKE bruke den samme stopPropagation-veien:
+                // den har interaktivt innhold (modus-panelet), og et stoppet
+                // event ville aldri nådd Reacts delegerte handlere — panelets
+                // knapper ville vært døde. Den merker seg derfor med
+                // `data-travel-chip`, og filtreres ut her. Samme mønster som
+                // `closest("gmp-marker-3d-interactive")`-gaten i BoardMap3D.
+                const target = e.originalEvent.target as HTMLElement | null;
+                if (target?.closest("[data-travel-chip]")) return;
                 if (state.activePOIId) dispatch({ type: "BACK_TO_DEFAULT" });
               }}
             >

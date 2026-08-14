@@ -85,7 +85,18 @@ export function BoardPathMidpointMarker() {
       // uansett. Målt i browser 2026-08-14 — 6 var ikke nok, 30 er.
       style={{ pointerEvents: "none", zIndex: open ? 30 : 4 }}
     >
-      <div ref={wrapperRef} className="relative flex flex-col items-center">
+      <div
+        ref={wrapperRef}
+        // Merkelappen `<Map onClick>` filtrerer på: et klikk her er IKKE et
+        // bakgrunnsklikk. Uten den leste kartet chip-klikket som «klikk på
+        // bakgrunn», dispatchet BACK_TO_DEFAULT, og chipen forsvant under
+        // fingeren. Speiler `closest("gmp-marker-3d-interactive")`-gaten i
+        // BoardMap3D. Vi kan IKKE bruke markørens egen `stopPropagation` slik
+        // BoardMarker gjør — den ville stoppet eventet før Reacts delegerte
+        // handlere, så ingen knapp inne i panelet ville virket.
+        data-travel-chip=""
+        className="relative flex flex-col items-center"
+      >
         {/* Panelet ligger absolutt over/under chipen så chipen selv ikke flytter
             seg når det åpnes — den sitter på en geografisk posisjon. */}
         {open && (
