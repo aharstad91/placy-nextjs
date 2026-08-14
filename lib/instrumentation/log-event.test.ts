@@ -137,17 +137,39 @@ describe("logEvent — herding (validering + demping)", () => {
     expect(insertMock).not.toHaveBeenCalled();
   });
 
-  it("gyldig kontekst-konvolutt beholdes verbatim i payload", async () => {
+  it("gyldig kontekst-konvolutt beholdes i payload", async () => {
     insertMock.mockResolvedValue({ error: null });
     const context = {
       mode: "report" as const,
       has_3d_addon: true,
       categories_presented: ["home", "mat-drikke"],
       locale: "no",
+      travel_mode: "bike" as const,
     };
     await logEvent({ eventType: "board_viewed", payload: { context } });
     expect(insertMock).toHaveBeenCalledOnce();
     expect(insertMock.mock.calls[0][0].payload).toEqual({ context });
+  });
+
+  it("konvolutt uten travel_mode defaultes til gå i stedet for å droppes", async () => {
+    // En klient på forrige bundle sender den gamle formen. Fail-soft-kontrakten
+    // gjør at et avvist event er STILLE, så defaulting er tryggere enn å kreve
+    // feltet på grensen.
+    insertMock.mockResolvedValue({ error: null });
+    await logEvent({
+      eventType: "board_viewed",
+      payload: {
+        context: {
+          mode: "report",
+          has_3d_addon: true,
+          categories_presented: ["home"],
+          locale: "no",
+        },
+      } as never,
+    });
+
+    expect(insertMock).toHaveBeenCalledOnce();
+    expect(insertMock.mock.calls[0][0].payload.context.travel_mode).toBe("walk");
   });
 
   it("volum-demping: replay av ÉN session-id kveles etter taket (fail-soft drop)", async () => {

@@ -40,6 +40,7 @@ const ENVELOPE: EngagementContextEnvelope = {
   has_3d_addon: true,
   categories_presented: ["natur", "transport"],
   locale: "no",
+      travel_mode: "walk",
 };
 
 interface Check {

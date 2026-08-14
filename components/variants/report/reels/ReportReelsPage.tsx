@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MutableRefObject,
 } from "react";
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
@@ -37,6 +38,7 @@ import {
   useEngagementEmitter,
 } from "@/lib/instrumentation/engagement-scope";
 import type { EngagementContextEnvelope } from "@/lib/instrumentation/event-types";
+import type { TravelMode } from "@/lib/types";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsTransport } from "./ReelsTransport";
 import { ReelSwipeStack } from "./ReelSwipeStack";
@@ -264,12 +266,23 @@ function Inner({
       has_3d_addon: has3dAddon,
       categories_presented: boardData.categories.map((c) => String(c.id)),
       locale,
+      // Startverdien. Den faktiske verdien leses fra travelModeRef ved emit —
+      // se under.
+      travel_mode: "walk",
     }),
     [eventMode, has3dAddon, boardData.categories, locale],
   );
+  // Aktiv reisemodus må leses ved EMIT-tidspunktet, ikke fryses i konvolutten:
+  // et poi_clicked i bil-modus er et annet signal enn samme klikk i gå-modus.
+  // Refen finnes fordi EngagementProvider omslutter BoardProvider — emitteren
+  // bygges altså utenfor board-tilstanden. TravelModeEnvelopeSync (inne i
+  // BoardProvider) skriver den, på samme måte som BoardReelsSync speiler
+  // reels-kortet inn i board-state.
+  const travelModeRef = useRef<TravelMode>("walk");
   const engagement = useEngagementEmitter({
     projectId: project.id,
     envelope: engagementEnvelope,
+    travelModeRef,
   });
 
   // Moat-2 board_viewed — én gang ved mount (ikke embed-teaser).
@@ -298,6 +311,7 @@ function Inner({
         collectionPoiIds={collectionPoiIds}
       >
         <BoardReelsSync />
+        <TravelModeEnvelopeSync targetRef={travelModeRef} />
         {/* ÉN modal-instans for hele boardet. Ligger her og ikke i
             kart-komponentene fordi begge er montert samtidig ved 3D-addon —
             se POIExploreModalHost for hele begrunnelsen. */}
@@ -333,6 +347,25 @@ function Inner({
     </ReelsProvider>
     </EngagementProvider>
   );
+}
+
+/**
+ * Speiler aktiv reisemodus ut til engagement-konvolutten.
+ *
+ * Lever inne i `BoardProvider` fordi modusen bor der, og skriver til en ref
+ * `ReportReelsPage` eier — `EngagementProvider` omslutter `BoardProvider`, så
+ * emitteren kan ikke lese board-tilstanden selv. Rendrer ingenting.
+ */
+function TravelModeEnvelopeSync({
+  targetRef,
+}: {
+  targetRef: MutableRefObject<TravelMode>;
+}) {
+  const travelMode = useBoard().state.travelMode;
+  useEffect(() => {
+    targetRef.current = travelMode;
+  }, [travelMode, targetRef]);
+  return null;
 }
 
 /**

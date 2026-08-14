@@ -102,3 +102,46 @@ describe("poi_outbound_clicked", () => {
     expect(result.success).toBe(false);
   });
 });
+
+/**
+ * `travel_mode` i konvolutten (R14).
+ *
+ * Denne vakten finnes fordi `contextEnvelope` er `.strict()` OG `logEvent` er
+ * fail-soft: hadde feltet manglet i skjemaet mens typen krevde det, ville ALLE
+ * events blitt avvist uten en eneste feilmelding. Et nytt konvolutt-felt må
+ * utvides på begge steder i samme commit.
+ */
+describe("kontekst-konvoluttens travel_mode", () => {
+  const withContext = (context: Record<string, unknown>) =>
+    logEventSchema.safeParse({
+      eventType: "board_viewed",
+      payload: { context },
+    });
+
+  it.each(["walk", "bike", "car"])("godtar %s", (travel_mode) => {
+    expect(withContext({ ...CONTEXT, travel_mode }).success).toBe(true);
+  });
+
+  it("mangler feltet → godtas og defaultes til gå (klient på forrige bundle)", () => {
+    const parsed = withContext(CONTEXT);
+    expect(parsed.success).toBe(true);
+    expect(
+      (parsed.data?.payload as { context: { travel_mode: string } }).context
+        .travel_mode,
+    ).toBe("walk");
+  });
+
+  it("ukjent modus avvises (ingen vilkårlig streng inn i basen)", () => {
+    expect(withContext({ ...CONTEXT, travel_mode: "helikopter" }).success).toBe(
+      false,
+    );
+    expect(withContext({ ...CONTEXT, travel_mode: 3 }).success).toBe(false);
+  });
+
+  it("full konvolutt med modus bevarer de andre feltene", () => {
+    const parsed = withContext({ ...CONTEXT, travel_mode: "car" });
+    expect(
+      (parsed.data?.payload as { context: Record<string, unknown> }).context,
+    ).toEqual({ ...CONTEXT, travel_mode: "car" });
+  });
+});

@@ -50,6 +50,10 @@ const opaqueId = z
 
 // Kontekst-konvolutten (EngagementContextEnvelope). `.strict()` avviser ukjente
 // nøkler. `categories_presented` kappes i både antall og per-element-lengde.
+//
+// MERK for fremtidige utvidelser: fordi `.strict()` avviser ukjente nøkler OG
+// `logEvent` er fail-soft, stanser et nytt konvolutt-felt som mangler her ALL
+// event-logging stille. Skjemaet må utvides i samme commit som typen.
 const contextEnvelope = z
   .object({
     mode: z.enum(["report", "event"]),
@@ -58,6 +62,12 @@ const contextEnvelope = z
       .array(z.string().min(1).max(MAX_CATEGORY_ID_LEN))
       .max(MAX_CATEGORIES_PRESENTED),
     locale: z.string().min(1).max(MAX_LOCALE_LEN),
+    // Obligatorisk i TS-typen, men `.default("walk")` her: en klient som ennå
+    // kjører forrige bundle sender konvolutten uten feltet, og de eventene skal
+    // ikke droppes gjennom et deploy. Default framfor `.optional()` fordi en
+    // manglende nøkkel i basen ikke kan skilles fra «gå» ved aggregering — da er
+    // det bedre å skrive verdien enn å utelate den.
+    travel_mode: z.enum(["walk", "bike", "car"]).default("walk"),
   })
   .strict();
 

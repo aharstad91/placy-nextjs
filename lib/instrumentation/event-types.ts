@@ -7,6 +7,8 @@
 // «utvidbart via senere migrasjon») OG (2) en bump av EVENT_TYPES her. Hold dem
 // synkrone — koden må ALDRI sende en event_type DB-CHECK-en avviser.
 
+import type { TravelMode } from "@/lib/types";
+
 export const EVENT_TYPES = [
   "board_viewed",
   "category_opened",
@@ -46,7 +48,9 @@ export function isEventType(value: unknown): value is EventType {
  * (`category_id` osv.) ligger ved siden av konvolutten i payload. `area_id`
  * bæres IKKE her — strøk avledes stabilt server-side ved aggregering via
  * `project_id` → prosjektkoordinat → `find-area-for-point` (PRD 8).
- * Utvidelse (f.eks. travel_mode, viewport) er additivt — payload er jsonb.
+ * Utvidelse er additivt — payload er jsonb. `travel_mode` ble lagt til slik
+ * 2026-08-14: ingen migrasjon, ingen `EVENT_TYPES`-bump (to-stegs-
+ * utvidelsesgrensen gjelder bare event-type-settet, som ikke røres).
  */
 export interface EngagementContextEnvelope {
   /** Board-flate: boligrapport eller event-board (D3-modusen). */
@@ -57,6 +61,17 @@ export interface EngagementContextEnvelope {
   categories_presented: string[];
   /** UI-locale ved emit (no/en). */
   locale: string;
+  /**
+   * Leserens aktive reisemåte VED EMIT-TIDSPUNKTET — ikke ved sidelasting.
+   * Det er hele poenget: et `poi_clicked` i bil-modus er et annet signal enn
+   * samme klikk i gå-modus, og uten feltet er de to ikke til å skille i
+   * aggregeringen.
+   *
+   * Obligatorisk, ikke optional. En manglende verdi ville vært umulig å skille
+   * fra «gå» ved aggregering, og da er optional bare støy. Boards uten
+   * sykkel-/bildata sender `"walk"`.
+   */
+  travel_mode: TravelMode;
 }
 
 // Typede payloads per event-type. poi_clicket sin poi_id går i top-level

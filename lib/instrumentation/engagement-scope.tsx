@@ -21,6 +21,7 @@ import {
 } from "react";
 import { logEvent } from "./log-event";
 import type { EngagementContextEnvelope, EventType } from "./event-types";
+import type { TravelMode } from "@/lib/types";
 
 export interface EngagementEmitter {
   /**
@@ -60,8 +61,19 @@ export function useEngagementEmitter(scope: {
   projectId: string;
   productId?: string;
   envelope: EngagementContextEnvelope;
+  /**
+   * Aktiv reisemodus, LEST VED EMIT — ikke frosset i konvolutten.
+   *
+   * Refen finnes fordi `EngagementProvider` omslutter `BoardProvider`:
+   * emitteren bygges utenfor board-tilstanden og kan ikke lese `travelMode`
+   * direkte. En komponent inne i `BoardProvider` skriver refen (se
+   * `TravelModeEnvelopeSync`), og emit-tidspunktet leser den.
+   *
+   * Utelatt → konvoluttens egen `travel_mode` brukes.
+   */
+  travelModeRef?: { readonly current: TravelMode };
 }): EngagementEmitter {
-  const { projectId, productId, envelope } = scope;
+  const { projectId, productId, envelope, travelModeRef } = scope;
   // Økt-nøkkelen ligger i en ref så den overlever at emitteren gjenskapes
   // (f.eks. locale-bytte endrer konvolutten) — én økt = ett besøk, ikke én
   // memo-generasjon. `null` = generering forsøkt og utilgjengelig (ikke retry).
@@ -79,11 +91,17 @@ export function useEngagementEmitter(scope: {
           productId,
           sessionId,
           poiId: extras?.poiId,
-          payload: { ...(extras?.payload ?? {}), context: envelope },
+          payload: {
+            ...(extras?.payload ?? {}),
+            context: travelModeRef
+              ? { ...envelope, travel_mode: travelModeRef.current }
+              : envelope,
+          },
         }).catch(() => {});
       },
     };
-  }, [projectId, productId, envelope, sessionId]);
+    // travelModeRef-identiteten er stabil; VERDIEN leses inne i emit.
+  }, [projectId, productId, envelope, sessionId, travelModeRef]);
 }
 
 const EngagementContext = createContext<EngagementEmitter | null>(null);

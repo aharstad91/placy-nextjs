@@ -17,12 +17,14 @@ import {
   useEngagementEmitter,
 } from "./engagement-scope";
 import type { EngagementContextEnvelope } from "./event-types";
+import type { TravelMode } from "@/lib/types";
 
 const ENVELOPE: EngagementContextEnvelope = {
   mode: "report",
   has_3d_addon: true,
   categories_presented: ["home", "hverdagsliv", "mat-drikke"],
   locale: "no",
+  travel_mode: "walk",
 };
 
 beforeEach(() => {
@@ -129,5 +131,71 @@ describe("useEngagement (provider-konsum)", () => {
     const { result } = renderHook(() => useEngagement());
     expect(() => result.current.emit("board_viewed")).not.toThrow();
     expect(logEventMock).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * R14: reisemodus i konvolutten, LEST VED EMIT.
+ *
+ * Verdien kan ikke fryses ved mount — et `poi_clicked` i bil-modus er et annet
+ * signal enn samme klikk i gå-modus, og det er nettopp forskjellen Moat 2 skal
+ * kunne lese. Refen finnes fordi `EngagementProvider` omslutter
+ * `BoardProvider`, så emitteren bygges utenfor board-tilstanden.
+ */
+describe("useEngagementEmitter — reisemodus i konvolutten (R14)", () => {
+  it("uten ref brukes konvoluttens egen verdi", () => {
+    const { result } = renderHook(() =>
+      useEngagementEmitter({ projectId: "p1", envelope: ENVELOPE }),
+    );
+    result.current.emit("board_viewed");
+
+    expect(logEventMock.mock.calls[0][0].payload.context).toMatchObject({
+      travel_mode: "walk",
+    });
+  });
+
+  it("med ref leses modusen ved EMIT, ikke ved mount", () => {
+    const travelModeRef = { current: "walk" as TravelMode };
+    const { result } = renderHook(() =>
+      useEngagementEmitter({ projectId: "p1", envelope: ENVELOPE, travelModeRef }),
+    );
+
+    // Modusen endres ETTER at emitteren er bygget — uten ref-lesing ville
+    // eventet båret "walk".
+    travelModeRef.current = "car";
+    result.current.emit("poi_clicked", { poiId: "poi-1" });
+
+    expect(logEventMock.mock.calls[0][0].payload.context).toMatchObject({
+      travel_mode: "car",
+    });
+  });
+
+  it("to emits med ulik modus mellom seg bærer hver sin verdi", () => {
+    const travelModeRef = { current: "walk" as TravelMode };
+    const { result } = renderHook(() =>
+      useEngagementEmitter({ projectId: "p1", envelope: ENVELOPE, travelModeRef }),
+    );
+
+    result.current.emit("board_viewed");
+    travelModeRef.current = "bike";
+    result.current.emit("poi_clicked", { poiId: "poi-1" });
+
+    const modes = logEventMock.mock.calls.map(
+      ([arg]) => arg.payload.context.travel_mode,
+    );
+    expect(modes).toEqual(["walk", "bike"]);
+  });
+
+  it("resten av konvolutten er urørt av modus-overstyringen", () => {
+    const travelModeRef = { current: "car" as TravelMode };
+    const { result } = renderHook(() =>
+      useEngagementEmitter({ projectId: "p1", envelope: ENVELOPE, travelModeRef }),
+    );
+    result.current.emit("board_viewed");
+
+    expect(logEventMock.mock.calls[0][0].payload.context).toEqual({
+      ...ENVELOPE,
+      travel_mode: "car",
+    });
   });
 });

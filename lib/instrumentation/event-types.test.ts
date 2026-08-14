@@ -70,6 +70,7 @@ describe("payload-typer (kompiler-tids-kontrakt)", () => {
       has_3d_addon: true,
       categories_presented: ["home", "natur"],
       locale: "no",
+      travel_mode: "walk" as const,
     };
     const categoryOpened: PayloadFor<"category_opened"> = {
       category_id: "cafe",
