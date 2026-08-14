@@ -90,7 +90,13 @@ export function BoardPathMidpointMarker() {
       longitude={midpoint.lng}
       latitude={midpoint.lat}
       anchor="center"
-      style={{ pointerEvents: "none", zIndex: 4 }}
+      // R12: kollapset ligger chipen på z-4, under de andre kart-overleggene.
+      // Er panelet åpent, er det panelet leseren holder på med, så det må over
+      // POI-popupen. Tallet må være over 20: `.mapboxgl-popup` ligger på z-20 i
+      // en SØSKEN-container av markørene (`.mapboxgl-map` > popup vs.
+      // `.mapboxgl-canvas-container` > marker), så en z-6 på markøren taper
+      // uansett. Målt i browser 2026-08-14 — 6 var ikke nok, 30 er.
+      style={{ pointerEvents: "none", zIndex: open ? 30 : 4 }}
     >
       <div ref={wrapperRef} className="relative flex flex-col items-center">
         {/* Panelet ligger absolutt over/under chipen så chipen selv ikke flytter

@@ -15,7 +15,11 @@ import type { TravelMode } from "@/lib/types";
  */
 
 vi.mock("react-map-gl/mapbox", () => ({
-  Marker: ({ children }: { children: ReactNode }) => <div data-testid="marker">{children}</div>,
+  Marker: ({ children, style }: { children: ReactNode; style?: Record<string, unknown> }) => (
+    <div data-testid="marker" data-z={String(style?.zIndex)}>
+      {children}
+    </div>
+  ),
 }));
 vi.mock("./board-state", () => ({
   useBoard: vi.fn(),
@@ -142,6 +146,17 @@ describe("BoardPathMidpointMarker — utvidelse (R5)", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  // Målt i browser 2026-08-14: `.mapboxgl-popup` ligger på z-20 i en SØSKEN-
+  // container av markørene, så tallet må være over 20 — z-6 var ikke nok, og
+  // popupen dekket panelets øverste rad.
+  it("R12: åpent panel legger seg over POI-popupen (z-20), lukket chip ligger under", () => {
+    const { getByRole, getByTestId } = setup();
+    expect(getByTestId("marker").getAttribute("data-z")).toBe("4");
+
+    act(() => getByRole("button", { name: "Bytt reisemåte" }).click());
+    expect(Number(getByTestId("marker").getAttribute("data-z"))).toBeGreaterThan(20);
+  });
+
   it("R12: panelet ligger absolutt plassert, så chipen flytter seg ikke når det åpnes", () => {
     const { getByRole, container } = setup();
     act(() => getByRole("button", { name: "Bytt reisemåte" }).click());
@@ -152,6 +167,40 @@ describe("BoardPathMidpointMarker — utvidelse (R5)", () => {
     expect(
       panel!.className.includes("bottom-full") || panel!.className.includes("top-full"),
     ).toBe(true);
+  });
+
+  // R12: rutens midtpunkt kan ligge hvor som helst i viewporten, så retningen
+  // kan ikke være en fast regel. Verifisert i browser for opp-retningen
+  // 2026-08-14; her låses BEGGE grenene deterministisk.
+  describe("R12: foldretning etter plass", () => {
+    /** Stubber chip-wrapperens posisjon — det er den `toggle` måler. */
+    function withWrapperTop(top: number, run: () => void) {
+      const original = Element.prototype.getBoundingClientRect;
+      Element.prototype.getBoundingClientRect = function () {
+        return { ...new DOMRect(0, top, 100, 34).toJSON(), top } as DOMRect;
+      };
+      try {
+        run();
+      } finally {
+        Element.prototype.getBoundingClientRect = original;
+      }
+    }
+
+    it("chip lavt i viewporten → panelet folder OPPOVER", () => {
+      const { getByRole, container } = setup();
+      withWrapperTop(600, () => {
+        act(() => getByRole("button", { name: "Bytt reisemåte" }).click());
+      });
+      expect(container.querySelector(".absolute")!.className).toContain("bottom-full");
+    });
+
+    it("chip nær øvre kant → panelet folder NEDOVER (ellers går det utenfor kartflaten)", () => {
+      const { getByRole, container } = setup();
+      withWrapperTop(40, () => {
+        act(() => getByRole("button", { name: "Bytt reisemåte" }).click());
+      });
+      expect(container.querySelector(".absolute")!.className).toContain("top-full");
+    });
   });
 });
 
