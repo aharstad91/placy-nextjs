@@ -4,10 +4,9 @@ import { ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Marker } from "react-map-gl/mapbox";
 import { cn } from "@/lib/utils";
-import { useBoardRoute } from "./board-route";
-import { useActivePOI, useAvailableTravelModes, useBoard } from "./board-state";
-import { pathMidpoint } from "./path-midpoint";
+import { useBoard } from "./board-state";
 import { TRAVEL_MODE_ICONS, TravelModeSelector } from "./TravelModeSelector";
+import { useTravelChip } from "./use-travel-chip";
 
 /**
  * Tids-chipen på rutens midtpunkt — og den ene av to innganger til
@@ -35,9 +34,10 @@ const PANEL_HEIGHT_ESTIMATE = 180;
 
 export function BoardPathMidpointMarker() {
   const { state, dispatch } = useBoard();
-  const { data: routeData } = useBoardRoute();
-  const activePOI = useActivePOI();
-  const modes = useAvailableTravelModes();
+  // Innholdet er delt med 3D-chipen (use-travel-chip) — motorene skal skille
+  // seg i posisjonering, ikke i tall.
+  const { midpoint, minutes, travelMode, travelTime, modes, expandable, visible } =
+    useTravelChip();
 
   const [open, setOpen] = useState(false);
   const [foldUp, setFoldUp] = useState(true);
@@ -68,22 +68,9 @@ export function BoardPathMidpointMarker() {
     setOpen((wasOpen) => !wasOpen);
   }, []);
 
-  if (state.phase !== "poi" || !routeData) return null;
-  const midpoint = pathMidpoint(routeData.coordinates);
-  if (!midpoint) return null;
+  if (!visible || !midpoint) return null;
 
-  const travelTime = activePOI?.raw.travelTime;
-  const activeMinutes = travelTime?.[state.travelMode];
-  // Fallback til rutens egen varighet: chipen har alltid vist Directions-tallet,
-  // og precomputet verdi kan mangle på et punkt som ble lagt til utenom
-  // provisjonerings-løpet.
-  const minutes =
-    typeof activeMinutes === "number" && Number.isFinite(activeMinutes)
-      ? activeMinutes
-      : Math.max(1, Math.round(routeData.travelMinutes));
-
-  const ActiveIcon = TRAVEL_MODE_ICONS[state.travelMode];
-  const expandable = modes.length > 1;
+  const ActiveIcon = TRAVEL_MODE_ICONS[travelMode];
 
   return (
     <Marker
@@ -111,7 +98,7 @@ export function BoardPathMidpointMarker() {
             <TravelModeSelector
               variant="panel"
               modes={modes}
-              active={state.travelMode}
+              active={travelMode}
               minutesByMode={travelTime}
               onChange={(mode) => {
                 dispatch({ type: "SET_TRAVEL_MODE", mode });

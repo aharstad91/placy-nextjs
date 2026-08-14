@@ -12,7 +12,7 @@ import { RouteLayer3D } from "./route-layer-3d";
  * ikke produksjonskode:
  *  AC1: ÉN langlevet Polyline3DElement per map3d; path MUTERES, ikke remount.
  *  AC2: StrictMode-cancelled-flagg + cleanup-effekter + importLibrary(maps3d).
- *  AC3: gangtid-badge via Marker3DInteractiveElement + inline buildBadgeSVG.
+ *  AC3: laget tegner BARE linja — tidsmerket flyttet til BoardTravelChip3D.
  *  AC4: ingen statisk tung Google-Maps-import (lazy-grense holdt).
  */
 
@@ -239,21 +239,17 @@ describe("RouteLayer3D — AC2 StrictMode-race + cleanup + importLibrary", () =>
     expect(map3d.appended).toHaveLength(0);
   });
 
-  it("full unmount fjerner BÅDE polyline OG badge fra DOM (de to unmount-cleanupene)", async () => {
+  it("full unmount fjerner polylinen fra DOM", async () => {
     const map3d = makeMap3d();
     const { unmount } = mount(map3d, A);
     await flush();
     const pl = polylineInstances[0];
-    const badge = markerInstances[0];
     expect(pl.parentNode).toBe(map3d);
-    expect(badge.parentNode).toBe(map3d);
 
     unmount();
 
     expect(pl.removeCalls).toBeGreaterThanOrEqual(1);
     expect(pl.parentNode).toBeNull();
-    expect(badge.removeCalls).toBeGreaterThanOrEqual(1);
-    expect(badge.parentNode).toBeNull();
   });
 
   it("ref nullstilles ved unmount → ny mount konstruerer en NY polyline", async () => {
@@ -271,59 +267,46 @@ describe("RouteLayer3D — AC2 StrictMode-race + cleanup + importLibrary", () =>
   });
 });
 
-describe("RouteLayer3D — AC3 gangtid-badge via Marker3DInteractiveElement", () => {
-  it("plasserer badge på path-midtpunkt (alt 12) m/ inline SVG og avrundede minutter", async () => {
+// FLYTTET 2026-08-14: tidsmerket var en inline-SVG i et
+// Marker3DInteractiveElement, og den markørtypens template MÅ inneholde <img>
+// eller <svg> — et utvidbart modus-panel kunne ikke bo der. Merket er nå
+// BoardTravelChip3D, et HTML-overlay. Dette laget tegner bare linja.
+describe("RouteLayer3D — tegner BARE linja (ingen tidsmerke)", () => {
+  it("oppretter ingen 3D-markør, uansett rutelengde", async () => {
     const map3d = makeMap3d();
     mount(map3d, route(A.coordinates as { lat: number; lng: number }[], 7.6));
     await flush();
 
-    expect(markerInstances).toHaveLength(1);
-    const m = markerInstances[0];
-    // pathMidpoint([A,B,C]) → midt-elementet (index 1).
-    expect(m.position).toMatchObject({ lat: 2, lng: 2, altitude: 12 });
-    expect(m.altitudeMode).toBe("rel");
-    expect(m.parentNode).toBe(map3d);
-    // Template = inline SVG-badge fra buildBadgeSVG; 7.6 → "8 min".
-    expect(m.template).not.toBeNull();
-    const html = m.template!.innerHTML;
-    expect(html.toLowerCase()).toContain("svg");
-    expect(html).toContain("8 min");
-  });
-
-  it("path <3 koordinater → pathMidpoint null → INGEN badge (polyline rendres likevel)", async () => {
-    const map3d = makeMap3d();
-    mount(
-      map3d,
-      route(
-        [
-          { lat: 1, lng: 1 },
-          { lat: 2, lng: 2 },
-        ],
-        4,
-      ),
-    );
-    await flush();
-    expect(markerInstances).toHaveLength(0);
-    // polylinen krever ikke ≥3 punkter — den skal fortsatt rendres.
     expect(polylineInstances).toHaveLength(1);
+    expect(markerInstances).toHaveLength(0);
   });
 
-  it("rebygger badge ved routeData-bytte (posisjon read-only): gammel fjernes, ny m/ nye minutter", async () => {
+  it("bytte av routeData gir fortsatt ingen markør — og ÉN langlevet polyline", async () => {
     const map3d = makeMap3d();
     const { rerender } = mount(map3d, A);
     await flush();
-    expect(markerInstances).toHaveLength(1);
-    const old = markerInstances[0];
-    expect(old.template!.innerHTML).toContain("5 min");
 
     rerender(
       <RouteLayer3D map3d={map3d as unknown as Map3DInstance} routeData={B} />,
     );
     await flush();
 
-    expect(old.removeCalls).toBeGreaterThanOrEqual(1);
-    expect(markerInstances).toHaveLength(2);
-    expect(markerInstances[1].template!.innerHTML).toContain("9 min");
+    expect(markerInstances).toHaveLength(0);
+    // Path muteres, instansen gjenbrukes (GPU-buffer-leak-vernet).
+    expect(polylineInstances).toHaveLength(1);
+  });
+
+  it("kilde-vakt: ingen SVG-byggefunksjon er igjen i laget", () => {
+    const src = readFileSync(
+      join(process.cwd(), "components/map/route-layer-3d.tsx"),
+      "utf8",
+    );
+    expect(src).not.toContain("buildBadgeSVG");
+    expect(src).not.toContain("pathMidpoint");
+    // Docstringen forklarer HVORFOR merket flyttet og nevner markørtypen — det
+    // er prosa som skal stå. Vakten gjelder konstruksjonen.
+    expect(src).not.toMatch(/new\s+lib\.Marker3DInteractiveElement/);
+    expect(src).not.toContain("badgeRef");
   });
 });
 

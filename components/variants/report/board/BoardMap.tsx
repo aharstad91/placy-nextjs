@@ -806,6 +806,9 @@ export function BoardMap({
               // 3D-basen fortsatt montert under Mapbox-overlayet, og uten denne
               // gaten ville begge skrevet til samme state.
               publishViewport={publishViewport && view === "3d"}
+              // Overlegg som finnes i BEGGE motorer (tids-chipen) må vite hvem
+              // som er synlig — 3D-basen forblir montert under Mapbox-overlayet.
+              isFront={view === "3d"}
               mapPaddingBottom={mapPaddingBottom}
               onMapReady={handle3DReady}
             />

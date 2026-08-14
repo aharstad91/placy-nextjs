@@ -171,7 +171,12 @@ describe("BoardPOI3DMiniPopup — source-invarianter (AC3/AC4)", () => {
     expect(popupSrc).toContain("useRealtimeData");
   });
 
-  it("AC3: ÉN live konsument av projectLatLngToScreen i motoren (scan)", () => {
+  // Var «ÉN konsument» fram til 2026-08-14. Tids-chipen i 3D
+  // (BoardTravelChip3D) er den andre, og den er tilsiktet: den erstattet et
+  // SVG-merke inne i en Marker3DInteractiveElement, som ikke kunne bære et
+  // utvidbart panel. Vakten står fortsatt — den skal fange en TREDJE konsument,
+  // for hver ekstra rAF-løkke mot Google 3D koster frames.
+  it("AC3: kun de to tilsiktede konsumentene av projectLatLngToScreen (scan)", () => {
     const roots = ["components", "lib", "app"];
     const importers: string[] = [];
     const walk = (dir: string) => {
@@ -192,8 +197,8 @@ describe("BoardPOI3DMiniPopup — source-invarianter (AC3/AC4)", () => {
       }
     };
     for (const r of roots) walk(join(process.cwd(), r));
-    expect(importers).toHaveLength(1);
-    expect(importers[0]).toContain("BoardPOI3DMiniPopup.tsx");
+    const names = importers.map((f) => f.split("/").pop()).sort();
+    expect(names).toEqual(["BoardPOI3DMiniPopup.tsx", "BoardTravelChip3D.tsx"]);
   });
 });
 

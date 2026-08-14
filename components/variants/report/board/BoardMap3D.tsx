@@ -8,6 +8,7 @@ import { DEFAULT_CAMERA_LOCK, type PendingCamera } from "@/components/map/motor-
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
+import { BoardTravelChip3D } from "./BoardTravelChip3D";
 import { type CameraMode } from "./BoardMapControls";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
@@ -67,6 +68,12 @@ interface Props {
    * Default false. Se `use-3d-viewport-publish`.
    */
   publishViewport?: boolean;
+  /**
+   * 3D er den FREMSTE motoren. 3D-basen forblir montert under Mapbox-overlayet i
+   * 2D-visning, så overlegg som finnes i begge motorer (tids-chipen) må vite
+   * hvem som er synlig — ellers står to chips oppå hverandre. Default false.
+   */
+  isFront?: boolean;
   /** Høyden (px) sheeten dekker nederst. Brukes kun til viewport-publiseringen;
    *  den cinematiske kamera-føringen rammer inn på egne premisser. Default 0. */
   mapPaddingBottom?: number;
@@ -112,6 +119,7 @@ export function BoardMap3D({
   onDragTakeover,
   compactMarkers = false,
   publishViewport = false,
+  isFront = false,
   mapPaddingBottom = 0,
   onMapReady,
 }: Props) {
@@ -476,6 +484,11 @@ export function BoardMap3D({
         }}
       />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />
+      {/* Tids-chipen. Lå tidligere som en inline-SVG inne i RouteLayer3D, men
+          `Marker3DInteractiveElement` kan ikke bære et utvidbart panel — se
+          BoardTravelChip3D. Rendres bare når 3D er den fremste motoren, ellers
+          ville begge motorenes chip stått samtidig. */}
+      {isFront && <BoardTravelChip3D map3d={map3dInstance} />}
       <CameraCutOverlay
         visible={cutVisible}
         // Kategorier bruker sin egen label; Nabolaget/Oppsummert har ingen
