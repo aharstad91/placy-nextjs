@@ -279,8 +279,16 @@ function Inner({
   // BoardProvider) skriver den, på samme måte som BoardReelsSync speiler
   // reels-kortet inn i board-state.
   const travelModeRef = useRef<TravelMode>("walk");
+  // `project.id` er PRODUKT-UUID-en (v2-queries.ts:330 mapper `product.id` inn i
+  // render-formens `id`), ikke prosjekt-id-en. `logEventSchema` krever
+  // container-formen `{customer}_{slug}` på `projectId` og en UUID på
+  // `productId`, så den gamle kallformen fikk HVERT event avvist av
+  // valideringen — stille, siden logEvent er fail-soft. Nyeste rad i v2.events
+  // var 2026-08-10 (fra midtbyen, som sender riktig form) da dette ble oppdaget.
+  const engagementProjectId = `${project.customer}_${project.urlSlug}`;
   const engagement = useEngagementEmitter({
-    projectId: project.id,
+    projectId: engagementProjectId,
+    productId: project.id,
     envelope: engagementEnvelope,
     travelModeRef,
   });

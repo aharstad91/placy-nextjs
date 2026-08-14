@@ -724,7 +724,18 @@ statiske «alt i gangavstand»-påstandene er borte.
 
 ---
 
-- [ ] **Unit 8: Instrumentering av modusbytte**
+- [x] **Unit 8: Instrumentering av modusbytte**
+
+> **Funn planen ikke navnga:** `contextEnvelope` i `lib/instrumentation/event-schema.ts` er
+> `.strict()`, og `logEvent` er fail-soft. Et nytt konvolutt-felt som ikke også legges til der
+> stanser ALL event-logging stille. Skjemaet er utvidet i samme commit.
+>
+> **Pre-eksisterende bug oppdaget under verifisering (egen commit):** `ReportReelsPage` sendte
+> `project.id` som `projectId`, men det feltet er PRODUKT-UUID-en (`v2-queries.ts:330`), ikke
+> container-formen `{customer}_{slug}` som `logEventSchema` krever. HVERT event på rapport-boardene
+> ble derfor avvist av valideringen — stille. Nyeste rad i `v2.events` var 2026-08-10 (fra
+> midtbyen, som sender riktig form). Fikset, og verifisert: events lander nå med riktig
+> `project_id` OG `travel_mode`, inkludert en rad med `"car"` som beviser emit-tidspunkt-lesingen.
 
 **Goal:** Moat 2 kan lese hvilke reisemåter lesere faktisk bytter til.
 
