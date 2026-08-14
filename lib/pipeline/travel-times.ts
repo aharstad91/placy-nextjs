@@ -22,6 +22,7 @@
  */
 
 import { createServerClient } from "@/lib/supabase/client";
+import { fetchTravelTimeRows, hasProfile } from "@/lib/pipeline/travel-coverage";
 import type { Coordinates, TravelMode } from "@/lib/types";
 
 // ── Matrix-motor ────────────────────────────────────────────────────────────
@@ -88,6 +89,42 @@ interface MapboxMatrixResponse {
   durations?: number[][];
 }
 
+// Matrix' rate-limit er 60 requests per minutt. En backfill over hele porteføljen
+// fyrer flere hundre, og uten retry ble hver 429 en stille tapt bolk.
+const RATE_LIMIT_RETRIES = 4;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetch med retry på 429. Respekterer `Retry-After` når Mapbox sender den, og
+ * faller ellers tilbake på eksponentiell backoff. Returnerer null når alle
+ * forsøk er brukt opp — da samler kalleren en warning.
+ */
+async function fetchMatrixWithRetry(
+  url: string,
+  profile: TravelMode,
+  warnings: string[]
+): Promise<Response | null> {
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (response.status !== 429) return response;
+
+    if (attempt >= RATE_LIMIT_RETRIES) {
+      warnings.push(
+        `⚠️  Mapbox Matrix ${profile}: rate-limit (HTTP 429) etter ${RATE_LIMIT_RETRIES + 1} forsøk (batch hoppet over)`
+      );
+      return null;
+    }
+
+    const retryAfter = Number(response.headers?.get("retry-after"));
+    const waitMs =
+      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 1000 * 2 ** attempt;
+    await sleep(waitMs);
+  }
+}
+
 async function calculateForProfile(
   origin: Coordinates,
   destinations: Destination[],
@@ -115,7 +152,8 @@ async function calculateForProfile(
       const destinationIndices = batch.map((_, i) => i + 1).join(";");
       const url = `https://api.mapbox.com/directions-matrix/v1/mapbox/${mapboxProfile}/${coordinates}?access_token=${mapboxToken}&sources=0&destinations=${destinationIndices}&annotations=duration`;
 
-      const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const response = await fetchMatrixWithRetry(url, profile, warnings);
+      if (!response) continue; // rate-limit oppgitt — warning alt samlet
       if (!response.ok) {
         warnings.push(`⚠️  Mapbox Matrix ${profile}: HTTP ${response.status} (batch hoppet over)`);
         continue;
@@ -140,9 +178,9 @@ async function calculateForProfile(
       );
     }
 
-    // Liten pause mellom batcher — unngår Matrix-API-ets rate-limit
+    // Liten pause mellom batcher — demper mot Matrix' rate-limit (retry tar resten)
     if (batches.length > 1) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await sleep(250);
     }
   }
 
@@ -180,6 +218,12 @@ const PROVISION_PROFILES: TravelMode[] = ["walk", "bike", "car"];
 export interface ComputeTravelTimesResult {
   /** POI-er som fikk minst én reisetid skrevet. */
   computed: number;
+  /**
+   * POI-er som alt hadde identiske verdier og derfor ikke ble skrevet. En andre
+   * kjøring rett etter en første skal ha `computed: 0` og alt her — det er
+   * idempotensen målt, ikke antatt.
+   */
+  unchanged: number;
   /** Prosjektets totale POI-antall (full-dekning-rapportering). */
   total: number;
   /**
@@ -192,6 +236,44 @@ export interface ComputeTravelTimesResult {
 
 function emptyCoverage(): Record<TravelMode, number> {
   return { walk: 0, bike: 0, car: 0 };
+}
+
+/**
+ * Slår friske reisetider sammen med det som alt står i basen.
+ *
+ * `update({ travel_times })` erstatter HELE jsonb-objektet. Uten sammenslåing
+ * sletter en profil som feilet (rate-limit, timeout) den verdien som allerede
+ * var riktig — observert 2026-08-14: en backfill der sykkel ble rate-limitet
+ * mens bil lyktes, tømte gangtiden på 31 POI-er.
+ *
+ * Friske verdier vinner over gamle; profiler som ikke ble beregnet beholdes.
+ * Ubrukelige verdier (streng, NaN, null) tas ikke med videre.
+ */
+function mergeTravelTimes(
+  existing: Record<string, unknown> | null,
+  fresh: TravelTimeResult
+): Record<string, number> {
+  const merged: Record<string, number> = {};
+  for (const profile of PROVISION_PROFILES) {
+    if (hasProfile(existing, profile)) merged[profile] = existing![profile] as number;
+  }
+  for (const profile of PROVISION_PROFILES) {
+    const value = fresh[profile];
+    if (value !== undefined) merged[profile] = value;
+  }
+  return merged;
+}
+
+/** Sant når raden alt er identisk — da er skrivingen bortkastet. */
+function isUnchanged(
+  existing: Record<string, unknown> | null,
+  merged: Record<string, number>
+): boolean {
+  if (!existing) return false;
+  const existingKeys = Object.keys(existing);
+  const mergedKeys = Object.keys(merged);
+  if (existingKeys.length !== mergedKeys.length) return false;
+  return mergedKeys.every((key) => existing[key] === merged[key]);
 }
 
 /**
@@ -213,23 +295,18 @@ export async function computeProjectTravelTimes(options: {
     process.env.MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   if (!token) {
     warnings.push("⚠️  MAPBOX_TOKEN mangler — reisetider hoppet over (haversine-fallback på board)");
-    return { computed: 0, total: 0, coverage: emptyCoverage(), warnings };
+    return { computed: 0, unchanged: 0, total: 0, coverage: emptyCoverage(), warnings };
   }
 
   try {
     const db = createServerClient().schema("v2");
 
     // v2 har ingen FK-metadata → nested select feiler; split-queries-mønsteret.
-    const { data: projectPois, error: ppError } = await db
-      .from("project_pois")
-      .select("poi_id")
-      .eq("project_id", projectId);
-    if (ppError) {
-      warnings.push(`⚠️  Henting av project_pois feilet: ${ppError.message} — reisetider hoppet over`);
-      return { computed: 0, total: 0, coverage: emptyCoverage(), warnings };
-    }
-    if (!projectPois || projectPois.length === 0) {
-      return { computed: 0, total: 0, coverage: emptyCoverage(), warnings };
+    // Sidet oppslag: et usidet select avkortes stille ved 1 000 rader, og et
+    // board som passerer den grensen ville mistet reisetid for resten uten spor.
+    const projectPois = await fetchTravelTimeRows([projectId]);
+    if (projectPois.length === 0) {
+      return { computed: 0, unchanged: 0, total: 0, coverage: emptyCoverage(), warnings };
     }
 
     const poiIds = projectPois.map((p) => p.poi_id);
@@ -239,7 +316,7 @@ export async function computeProjectTravelTimes(options: {
       .in("id", poiIds);
     if (poisError) {
       warnings.push(`⚠️  Henting av poi-koordinater feilet: ${poisError.message} — reisetider hoppet over`);
-      return { computed: 0, total: poiIds.length, coverage: emptyCoverage(), warnings };
+      return { computed: 0, unchanged: 0, total: poiIds.length, coverage: emptyCoverage(), warnings };
     }
 
     const destinations: Destination[] = (pois ?? [])
@@ -254,38 +331,44 @@ export async function computeProjectTravelTimes(options: {
       warnings
     );
 
-    let computed = 0;
-    const coverage = emptyCoverage();
-    for (const t of times) {
-      if (t.walk === undefined && t.bike === undefined && t.car === undefined) {
-        continue;
-      }
-      const travel_times: Record<string, number> = {};
-      if (t.walk !== undefined) travel_times.walk = t.walk;
-      if (t.bike !== undefined) travel_times.bike = t.bike;
-      if (t.car !== undefined) travel_times.car = t.car;
+    const existingById = new Map(projectPois.map((p) => [p.poi_id, p.travel_times]));
 
-      const { error: updateError } = await db
-        .from("project_pois")
-        .update({ travel_times })
-        .eq("project_id", projectId)
-        .eq("poi_id", t.poiId);
-      if (updateError) {
-        warnings.push(`⚠️  Skriving av reisetid for ${t.poiId} feilet: ${updateError.message}`);
-        continue;
+    let computed = 0;
+    let unchanged = 0;
+    const coverage = emptyCoverage();
+
+    for (const t of times) {
+      const existing = existingById.get(t.poiId) ?? null;
+      const travel_times = mergeTravelTimes(existing, t);
+      if (Object.keys(travel_times).length === 0) continue;
+
+      if (isUnchanged(existing, travel_times)) {
+        unchanged++;
+      } else {
+        const { error: updateError } = await db
+          .from("project_pois")
+          .update({ travel_times })
+          .eq("project_id", projectId)
+          .eq("poi_id", t.poiId);
+        if (updateError) {
+          warnings.push(`⚠️  Skriving av reisetid for ${t.poiId} feilet: ${updateError.message}`);
+          continue;
+        }
+        computed++;
       }
-      // Telles etter skriving, ikke etter beregning — dekningen skal speile basen.
+
+      // Dekningen telles først når raden er bekreftet i basen — enten fordi den
+      // ble skrevet, eller fordi den alt var identisk.
       for (const profile of PROVISION_PROFILES) {
-        if (t[profile] !== undefined) coverage[profile]++;
+        if (travel_times[profile] !== undefined) coverage[profile]++;
       }
-      computed++;
     }
 
-    return { computed, total: poiIds.length, coverage, warnings };
+    return { computed, unchanged, total: poiIds.length, coverage, warnings };
   } catch (error) {
     warnings.push(
       `⚠️  Reisetid-steget feilet: ${error instanceof Error ? error.message : String(error)} — boardet bruker haversine-fallback`
     );
-    return { computed: 0, total: 0, coverage: emptyCoverage(), warnings };
+    return { computed: 0, unchanged: 0, total: 0, coverage: emptyCoverage(), warnings };
   }
 }

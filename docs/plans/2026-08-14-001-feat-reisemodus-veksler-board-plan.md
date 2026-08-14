@@ -190,10 +190,17 @@ Alle R-numre refererer til origin-dokumentet.
 
 ### Deferred to Implementation
 
-- **Årsaken til gangtids-hullene på Grilstad Marina (58 %), Sundsøya (53 %) og Oppdal (77 %).**
-  Antatt at POI-er er lagt til etter at Steg 7 kjørte. Diagnosen avgjør om backfill alene er
-  nok, eller om Steg 7 også må kjøre etter POI-import ved `--update`. Unit 2 starter med
-  å avgjøre dette mot faktiske data.
+- ~~**Årsaken til gangtids-hullene på Grilstad Marina (58 %), Sundsøya (53 %) og Oppdal (77 %).**~~
+  **AVGJORT 2026-08-14 mot faktiske data.** Tallene over var feil — de kom fra et usidet
+  PostgREST-oppslag. Autoritativ telling (`Prefer: count=exact`): Grilstad Marina hadde **ingen**
+  hull (182/182), Sundsøya manglet 37 av 78, Oppdal 30 av 128, og Martin Barstads veg 1 av 97.
+  To årsaker, ikke én:
+  1. **POI-er lagt til utenfor provisjonerings-løpet.** Sundsøyas manglende punkter er
+     opprettet 12. august mens tidene er fra 11. august; Oppdals 30 er alle `osm`. Steg 7
+     kjører allerede etter hydrering i pipelinen, så steget trenger **ikke** flyttes —
+     backfill alene er riktig fiks, og scriptet blir stående reparasjonsverktøy.
+  2. **Bolke-bugen.** Martin Barstads veg har 97 POI-er, og 97 ≡ 1 (mod 24). Nøyaktig ett
+     punkt manglet. Fikset i Unit 1.
 - **Om kategori-rekkefølgen (nærmeste kategori først) skal re-sorteres per modus, eller bare
   radene innenfor hver kategori.** Origin-dokumentet lot dette stå åpent. Anbefaling: la begge
   følge modus, siden en kategori-rekkefølge sortert på gangtid mens radene viser biltid leser
@@ -278,7 +285,7 @@ flowchart LR
     U3 --> U8["Unit 8<br/>instrumentering"]
 ```
 
-- [ ] **Unit 1: Precompute alle tre profiler, og fiks bolke-bugen**
+- [x] **Unit 1: Precompute alle tre profiler, og fiks bolke-bugen**
 
 **Goal:** Provisjonering skriver gang-, sykkel- og biltid for hvert POI, og bolke-inndelingen
 mister aldri et punkt.
@@ -338,7 +345,16 @@ formulere som en påstand enn å lese seg til i eksisterende kode.
 
 ---
 
-- [ ] **Unit 2: Backfill av eksisterende boards**
+- [x] **Unit 2: Backfill av eksisterende boards**
+
+> **Kjørt 2026-08-14.** 1514 av 1514 POI-er på alle ni boards har gå, sykkel og bil. 0 hull.
+> Idempotensen er verifisert mot produksjon (andre kjøring: 0 skrevet, alt uendret).
+>
+> **Funn under kjøring — datatap som måtte fikses først:** `update({ travel_times })` erstatter
+> hele jsonb-objektet, så en profil som feilet slettet en verdi som alt var riktig. Første
+> apply-kjøring ble rate-limitet av Mapbox (429) og tømte gangtiden på 31 POI-er på Sundsøya.
+> `mergeTravelTimes` slår nå sammen mot det som står i basen, og 429 retries med `Retry-After`
+> i stedet for å hoppe over bolken. Begge har egne regresjonstester.
 
 **Goal:** Alle ni eksisterende boards har gang-, sykkel- og biltid på alle POI-er de kan ha det
 for — inkludert de 147 punktene som mangler gangtid i dag.

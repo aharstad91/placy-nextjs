@@ -37,9 +37,11 @@ export interface NeighbourhoodPOIInput {
     /** Sub-kategorien (f.eks. `bike`, `bus`, `restaurant`) — diversifiserings-
      *  nøkkelen. Samme felt `subFilter` bruker i `BoardMap`. */
     category: { id: string };
-    /** Precomputet reisetid i MINUTTER. `walk` mangler på punkter uten
-     *  ruteberegning (R26 — dekningen er 100 % på alle fire mål-boards i dag,
-     *  så grenen fyrer ikke på produksjonsdata). */
+    /** Precomputet reisetid i MINUTTER. `walk` kan mangle på punkter uten
+     *  ruteberegning (R26). Dekningen er full på alle ni boards per 2026-08-14
+     *  (backfill: `scripts/backfill-travel-times.ts`), men grenen er ikke død:
+     *  POI-er lagt til utenfor provisjonerings-løpet får ingen reisetid før
+     *  backfillen kjøres igjen, og det har skjedd to ganger. */
     travelTime?: { walk?: number };
   };
 }
