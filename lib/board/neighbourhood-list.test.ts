@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
+  availableTravelModes,
   buildNeighbourhoodList,
+  categorySubline,
   type NeighbourhoodCategoryInput,
   type NeighbourhoodPOIInput,
 } from "./neighbourhood-list";
@@ -31,17 +33,28 @@ function poi(
     lat?: number;
     lng?: number;
     walk?: number;
+    bike?: number;
+    car?: number;
+    /** Rå travel_times, for korrupte verdier som typen ikke tillater. */
+    rawTravelTime?: Record<string, unknown>;
     sub?: string;
     name?: string;
   } = {},
 ): NeighbourhoodPOIInput {
+  const travelTime = opts.rawTravelTime ?? {
+    ...(opts.walk === undefined ? {} : { walk: opts.walk }),
+    ...(opts.bike === undefined ? {} : { bike: opts.bike }),
+    ...(opts.car === undefined ? {} : { car: opts.car }),
+  };
   return {
     id,
     name: opts.name ?? id,
     coordinates: { lat: opts.lat ?? 63.43, lng: opts.lng ?? 10.4 },
     raw: {
       category: { id: opts.sub ?? "restaurant" },
-      ...(opts.walk === undefined ? {} : { travelTime: { walk: opts.walk } }),
+      ...(Object.keys(travelTime).length === 0
+        ? {}
+        : { travelTime: travelTime as NeighbourhoodPOIInput["raw"]["travelTime"] }),
     },
   };
 }
@@ -122,14 +135,14 @@ describe("buildNeighbourhoodList — dekning og tidsspenn", () => {
     const c = list.categories[0];
     expect(c.visibleCount).toBe(9);
     expect(c.totalCount).toBe(17);
-    expect(c.minWalk).toBe(4);
-    expect(c.maxWalk).toBe(12);
+    expect(c.minMinutes).toBe(4);
+    expect(c.maxMinutes).toBe(12);
   });
 
   it("ett synlig punkt gir sammenfallende min/max (renderer viser ett tall)", () => {
     const list = buildNeighbourhoodList([cat("mat", [poi("m1", { walk: 6 })])], RECT);
-    expect(list.categories[0].minWalk).toBe(6);
-    expect(list.categories[0].maxWalk).toBe(6);
+    expect(list.categories[0].minMinutes).toBe(6);
+    expect(list.categories[0].maxMinutes).toBe(6);
   });
 
   it("alle punkter synlige gir «17 av 17» (sant, men Unit 5 gjør det sjeldent)", () => {
@@ -305,7 +318,7 @@ describe("buildNeighbourhoodList — manglende gangtid (R26)", () => {
     );
     const rows = list.categories[0].rows;
     expect(idsOf(rows)).toEqual(["nær", "fjern", "ukjent"]);
-    expect(rows[2].walkMinutes).toBeUndefined();
+    expect(rows[2].minutes).toBeUndefined();
   });
 
   it("holder NaN ute av tidsspennet når ett punkt mangler gangtid", () => {
@@ -314,9 +327,9 @@ describe("buildNeighbourhoodList — manglende gangtid (R26)", () => {
       RECT,
     );
     const c = list.categories[0];
-    expect(c.minWalk).toBe(3);
-    expect(c.maxWalk).toBe(3);
-    expect(Number.isNaN(c.minWalk)).toBe(false);
+    expect(c.minMinutes).toBe(3);
+    expect(c.maxMinutes).toBe(3);
+    expect(Number.isNaN(c.minMinutes)).toBe(false);
   });
 
   it("rendrer kortet uten tidsspenn når ALLE punktene mangler gangtid", () => {
@@ -326,8 +339,8 @@ describe("buildNeighbourhoodList — manglende gangtid (R26)", () => {
     );
     const c = list.categories[0];
     expect(c.visibleCount).toBe(2);
-    expect(c.minWalk).toBeUndefined();
-    expect(c.maxWalk).toBeUndefined();
+    expect(c.minMinutes).toBeUndefined();
+    expect(c.maxMinutes).toBeUndefined();
   });
 
   it("sorterer kategori uten gangtider sist blant kategoriene", () => {
@@ -350,8 +363,8 @@ describe("buildNeighbourhoodList — manglende gangtid (R26)", () => {
     );
     const rows = list.categories[0].rows;
     expect(idsOf(rows)).toEqual(["ok", "rar"]);
-    expect(rows[1].walkMinutes).toBeUndefined();
-    expect(list.categories[0].maxWalk).toBe(8);
+    expect(rows[1].minutes).toBeUndefined();
+    expect(list.categories[0].maxMinutes).toBe(8);
   });
 });
 
@@ -385,5 +398,195 @@ describe("buildNeighbourhoodList — determinisme", () => {
     const input = [cat("mat", pois)];
     buildNeighbourhoodList(input, RECT);
     expect(input[0].pois.map((p) => p.id)).toEqual(["b", "a"]);
+  });
+});
+
+// ── Reisemodus (R2, R4, R6) ───────────────────────────────────────────────
+
+describe("buildNeighbourhoodList — reisemodus", () => {
+  it("default er gange når ingen modus sendes med", () => {
+    const list = buildNeighbourhoodList([cat("mat", [poi("a", { walk: 12, car: 3 })])], null);
+    expect(list.categories[0].rows[0].minutes).toBe(12);
+  });
+
+  it("samme kategori i gå og sykkel gir ulike tall og ulikt tidsspenn", () => {
+    const categories = [
+      cat("mat", [
+        poi("a", { walk: 6, bike: 3 }),
+        poi("b", { walk: 22, bike: 8 }),
+      ]),
+    ];
+
+    const gaa = buildNeighbourhoodList(categories, null, { travelMode: "walk" }).categories[0];
+    const sykkel = buildNeighbourhoodList(categories, null, { travelMode: "bike" }).categories[0];
+
+    expect(gaa.rows.map((r) => r.minutes)).toEqual([6, 22]);
+    expect([gaa.minMinutes, gaa.maxMinutes]).toEqual([6, 22]);
+    expect(sykkel.rows.map((r) => r.minutes)).toEqual([3, 8]);
+    expect([sykkel.minMinutes, sykkel.maxMinutes]).toEqual([3, 8]);
+  });
+
+  // R4: målt på intern_martin-barstads-veg-23c — Hansbakkfjæra er 28. nærmeste
+  // til fots og nesten først i bil. Rekkefølgen MÅ følge modusen, ellers er
+  // stigen usann.
+  it("et punkt som er langt unna til fots og nært i bil rykker oppover (R4)", () => {
+    const categories = [
+      cat("utsikt", [
+        poi("hansbakkfjaera", { walk: 28, car: 8, name: "Hansbakkfjæra" }),
+        poi("naerbutikk", { walk: 6, car: 12, name: "Nærbutikken" }),
+      ]),
+    ];
+
+    expect(
+      idsOf(buildNeighbourhoodList(categories, null, { travelMode: "walk" }).categories[0].rows),
+    ).toEqual(["naerbutikk", "hansbakkfjaera"]);
+    expect(
+      idsOf(buildNeighbourhoodList(categories, null, { travelMode: "car" }).categories[0].rows),
+    ).toEqual(["hansbakkfjaera", "naerbutikk"]);
+  });
+
+  it("kategori-rekkefølgen følger også modusen (samme premiss som radene)", () => {
+    const categories = [
+      cat("langt-til-fots", [poi("x", { walk: 30, car: 4 })]),
+      cat("naert-til-fots", [poi("y", { walk: 8, car: 14 })]),
+    ];
+
+    expect(
+      buildNeighbourhoodList(categories, null, { travelMode: "walk" }).categories.map((c) => c.id),
+    ).toEqual(["naert-til-fots", "langt-til-fots"]);
+    expect(
+      buildNeighbourhoodList(categories, null, { travelMode: "car" }).categories.map((c) => c.id),
+    ).toEqual(["langt-til-fots", "naert-til-fots"]);
+  });
+
+  it("punkter uten verdi for valgt modus sorteres sist og rendres uten tall", () => {
+    const categories = [
+      cat("mat", [
+        poi("uten", { walk: 2, name: "Uten sykkeltid" }),
+        poi("med", { walk: 25, bike: 9, name: "Med sykkeltid" }),
+      ]),
+    ];
+
+    const rows = buildNeighbourhoodList(categories, null, { travelMode: "bike" }).categories[0].rows;
+
+    expect(idsOf(rows)).toEqual(["med", "uten"]);
+    expect(rows[1].minutes).toBeUndefined();
+  });
+
+  it("kategori der ALLE punkter mangler valgt modus faller ikke ut — bare tidsspennet mangler", () => {
+    const built = buildNeighbourhoodList([cat("mat", [poi("a", { walk: 5 })])], null, {
+      travelMode: "car",
+    });
+
+    expect(built.categories).toHaveLength(1);
+    expect(built.categories[0].minMinutes).toBeUndefined();
+    expect(built.categories[0].maxMinutes).toBeUndefined();
+    expect(built.categories[0].rows[0].minutes).toBeUndefined();
+  });
+
+  it("korrupt verdi for valgt modus siles bort (lekker ikke inn i spenn eller sortering)", () => {
+    const categories = [
+      cat("mat", [
+        poi("nan", { rawTravelTime: { walk: 5, bike: NaN } }),
+        poi("streng", { rawTravelTime: { walk: 5, bike: "ni" } }),
+        poi("uendelig", { rawTravelTime: { walk: 5, bike: Infinity } }),
+        poi("gyldig", { rawTravelTime: { walk: 5, bike: 7 } }),
+      ]),
+    ];
+
+    const built = buildNeighbourhoodList(categories, null, {
+      travelMode: "bike",
+      rowsPerCategory: Number.POSITIVE_INFINITY,
+    }).categories[0];
+
+    expect([built.minMinutes, built.maxMinutes]).toEqual([7, 7]);
+    expect(built.rows.filter((r) => r.minutes !== undefined).map((r) => r.poi.id)).toEqual([
+      "gyldig",
+    ]);
+  });
+
+  it("uten utsnitt (kartet kunne ikke leses) påvirker modusen fortsatt tallene", () => {
+    const categories = [cat("mat", [poi("a", { lat: FAR.lat, lng: FAR.lng, walk: 40, car: 9 })])];
+
+    const built = buildNeighbourhoodList(categories, null, { travelMode: "car" });
+
+    expect(built.scoped).toBe(false);
+    expect(built.categories[0].rows[0].minutes).toBe(9);
+  });
+
+  it("modusen endrer ALDRI hvilke punkter som er med — bare tallene og rekkefølgen", () => {
+    const categories = [
+      cat("mat", [poi("a", { walk: 5 }), poi("b", { walk: 9, car: 2 }), poi("c", { car: 3 })]),
+    ];
+
+    for (const travelMode of ["walk", "bike", "car"] as const) {
+      const built = buildNeighbourhoodList(categories, RECT, {
+        travelMode,
+        rowsPerCategory: Number.POSITIVE_INFINITY,
+      });
+      expect(built.visibleCount).toBe(3);
+      expect(built.visiblePoiIds.sort()).toEqual(["a", "b", "c"]);
+    }
+  });
+});
+
+describe("availableTravelModes (R6)", () => {
+  it("rapporterer bare modus som har data på boardet", () => {
+    expect(
+      availableTravelModes([cat("mat", [poi("a", { walk: 5 }), poi("b", { walk: 9, car: 3 })])]),
+    ).toEqual(["walk", "car"]);
+  });
+
+  it("full dekning → alle tre, i kanonisk rekkefølge (tregeste først)", () => {
+    expect(availableTravelModes([cat("mat", [poi("a", { walk: 5, bike: 3, car: 2 })])])).toEqual([
+      "walk",
+      "bike",
+      "car",
+    ]);
+  });
+
+  it("bare gangtid → bare gange (UI-et rendrer da ingen veksler)", () => {
+    expect(availableTravelModes([cat("mat", [poi("a", { walk: 5 })])])).toEqual(["walk"]);
+  });
+
+  it("ÉN POI med verdi er nok — modusen er tilgjengelig selv med delvis dekning", () => {
+    expect(
+      availableTravelModes([cat("mat", [poi("a", { walk: 5 }), poi("b", { walk: 9, bike: 4 })])]),
+    ).toEqual(["walk", "bike"]);
+  });
+
+  it("korrupte verdier gir ikke tilgjengelighet", () => {
+    expect(
+      availableTravelModes([cat("mat", [poi("a", { rawTravelTime: { walk: 5, car: "tre" } })])]),
+    ).toEqual(["walk"]);
+  });
+
+  it("ingen data i det hele tatt → ingen modus", () => {
+    expect(availableTravelModes([cat("mat", [poi("a")])])).toEqual([]);
+    expect(availableTravelModes([])).toEqual([]);
+  });
+});
+
+describe("categorySubline — modus-nøytral form", () => {
+  it("identisk min og maks skrives som ett tall", () => {
+    expect(categorySubline({ visibleCount: 2, totalCount: 2, minMinutes: 4, maxMinutes: 4 })).toBe(
+      "2 steder · 4 min",
+    );
+  });
+
+  it("spenn skrives med tankestrek", () => {
+    expect(categorySubline({ visibleCount: 9, totalCount: 17, minMinutes: 4, maxMinutes: 21 })).toBe(
+      "9 av 17 synlig · 4–21 min",
+    );
+  });
+
+  it("uten tidsspenn skrives bare dekningen — ingen modus-ord noe sted", () => {
+    const text = categorySubline({ visibleCount: 3, totalCount: 8 });
+    expect(text).toBe("3 av 8 synlig");
+    // Chipen og kontrollen sier hvilken modus som er valgt; sublinja skal ikke
+    // gjenta det, ellers må hver tekst-flate oppdateres ved modusbytte.
+    for (const word of ["gange", "gangavstand", "sykkel", "bil"]) {
+      expect(text).not.toContain(word);
+    }
   });
 });

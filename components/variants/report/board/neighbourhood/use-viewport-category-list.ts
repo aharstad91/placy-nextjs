@@ -27,8 +27,8 @@ import { useBoard } from "../board-state";
  * den utenfor scroll-containeren.
  */
 export interface ViewportCategoryList {
-  /** Kategoriens punkter i utsnittet, gangtidssortert. Den aktive POI-en er
-   *  filtrert ut — den rendres pinnet, over scroll-området. */
+  /** Kategoriens punkter i utsnittet, sortert på reisetid i aktiv modus. Den
+   *  aktive POI-en er filtrert ut — den rendres pinnet, over scroll-området. */
   rows: NeighbourhoodRow<BoardPOI>[];
   /** Den åpne POI-en, uansett om den er i utsnittet. `null` når ingen er åpen,
    *  eller når den åpne POI-en tilhører en annen kategori. */
@@ -40,9 +40,9 @@ export interface ViewportCategoryList {
   totalCount: number;
   /** Hvor mange som ligger UTENFOR utsnittet — grunnlaget for «ramm inn»-raden. */
   hiddenCount: number;
-  /** Laveste/høyeste gangtid blant de synlige som har gangtid. */
-  minWalk?: number;
-  maxWalk?: number;
+  /** Laveste/høyeste reisetid i aktiv modus blant de synlige som har en. */
+  minMinutes?: number;
+  maxMinutes?: number;
   /** false når utsnittet manglet og lista viser ALT (degraderingsvei — aldri en
    *  tom liste av den grunn). */
   scoped: boolean;
@@ -53,6 +53,7 @@ export function useViewportCategoryList(
 ): ViewportCategoryList {
   const { state, viewportRect } = useBoard();
   const activePOIId = state.activePOIId;
+  const travelMode = state.travelMode;
 
   // Primitiver i dep-arrayet, aldri rektangel-OBJEKTET: et nytt objekt med
   // samme verdier ville re-kjørt memoen ved hver render
@@ -86,6 +87,7 @@ export function useViewportCategoryList(
     // høyde, ikke et kort med tak (R11 gjelder mobilsheetens kortformat).
     const built = buildNeighbourhoodList([category], rect, {
       rowsPerCategory: Number.POSITIVE_INFINITY,
+      travelMode,
     }).categories[0];
 
     const visibleRows = built?.rows ?? [];
@@ -98,14 +100,19 @@ export function useViewportCategoryList(
       !activeInViewport && activePOIId
         ? category.pois.find((p) => p.id === activePOIId)
         : undefined;
+    // Samme siling som lesemodellens `minutesOf`: en korrupt verdi skal ikke
+    // lekke inn i den pinnede raden bare fordi den hentes utenom utsnittet.
+    const activeOutsideMinutes = activeOutside?.raw.travelTime?.[travelMode];
     const activeRow: NeighbourhoodRow<BoardPOI> | null =
       activeInViewport ??
       (activeOutside
         ? {
             poi: activeOutside,
-            walkMinutes: Number.isFinite(activeOutside.raw.travelTime?.walk)
-              ? activeOutside.raw.travelTime?.walk
-              : undefined,
+            minutes:
+              typeof activeOutsideMinutes === "number" &&
+              Number.isFinite(activeOutsideMinutes)
+                ? activeOutsideMinutes
+                : undefined,
           }
         : null);
 
@@ -119,9 +126,9 @@ export function useViewportCategoryList(
       visibleCount,
       totalCount,
       hiddenCount: Math.max(0, totalCount - visibleCount),
-      minWalk: built?.minWalk,
-      maxWalk: built?.maxWalk,
+      minMinutes: built?.minMinutes,
+      maxMinutes: built?.maxMinutes,
       scoped: rect !== null,
     };
-  }, [category, west, south, east, north, activePOIId]);
+  }, [category, west, south, east, north, activePOIId, travelMode]);
 }

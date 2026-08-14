@@ -171,7 +171,7 @@ describe("gjennom board-adapteren", () => {
     // Hele poenget med ankeret: uscopet liste, nærmeste først.
     const list = buildNeighbourhoodList(board.categories, null);
     for (const category of list.categories) {
-      const walks = category.rows.map((r) => r.walkMinutes ?? Infinity);
+      const walks = category.rows.map((r) => r.minutes ?? Infinity);
       expect([...walks].sort((a, b) => a - b), category.id).toEqual(walks);
     }
   });
@@ -179,6 +179,6 @@ describe("gjennom board-adapteren", () => {
   it("gir alle 147 punktene en synlig gangtid i lista", () => {
     const list = buildNeighbourhoodList(board.categories, null);
     const rows = list.categories.flatMap((c) => c.rows);
-    expect(rows.every((r) => typeof r.walkMinutes === "number")).toBe(true);
+    expect(rows.every((r) => typeof r.minutes === "number")).toBe(true);
   });
 });

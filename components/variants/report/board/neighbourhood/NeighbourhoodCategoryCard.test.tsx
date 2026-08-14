@@ -43,12 +43,12 @@ function category(
     color: "#2f6f4f",
     visibleCount: 9,
     totalCount: 17,
-    minWalk: 4,
-    maxWalk: 21,
+    minMinutes: 4,
+    maxMinutes: 21,
     rows: [
-      { poi: poi("p1", "Coop Mega"), walkMinutes: 4 },
-      { poi: poi("p2", "Vinmonopolet"), walkMinutes: 6 },
-      { poi: poi("p3", "Kiwi Tyholt"), walkMinutes: 5 },
+      { poi: poi("p1", "Coop Mega"), minutes: 4 },
+      { poi: poi("p2", "Vinmonopolet"), minutes: 6 },
+      { poi: poi("p3", "Kiwi Tyholt"), minutes: 5 },
     ],
     hasMore: true,
     ...overrides,
@@ -69,7 +69,7 @@ describe("categorySubline", () => {
   it("viser ett tall når spennet er sammenfallende", () => {
     expect(
       categorySubline(
-        category({ visibleCount: 1, totalCount: 1, minWalk: 6, maxWalk: 6 }),
+        category({ visibleCount: 1, totalCount: 1, minMinutes: 6, maxMinutes: 6 }),
       ),
     ).toBe("1 sted · 6 min");
   });
@@ -77,7 +77,7 @@ describe("categorySubline", () => {
   it("utelater tidsspennet helt når ingen punkter har gangtid (R26)", () => {
     expect(
       categorySubline(
-        category({ minWalk: undefined, maxWalk: undefined }),
+        category({ minMinutes: undefined, maxMinutes: undefined }),
       ),
     ).toBe("9 av 17 synlig");
   });
@@ -99,7 +99,7 @@ describe("NeighbourhoodCategoryCard", () => {
       <NeighbourhoodCategoryCard
         category={category({
           rows: [
-            { poi: poi("p1", "Coop Mega"), walkMinutes: 4 },
+            { poi: poi("p1", "Coop Mega"), minutes: 4 },
             { poi: poi("p9", "Ukjent sted") },
           ],
         })}
@@ -143,7 +143,7 @@ describe("NeighbourhoodCategoryCard", () => {
     const { container } = render(
       <NeighbourhoodCategoryCard
         category={category({
-          rows: [{ poi: poi("p1", "Coop Mega"), walkMinutes: 4 }],
+          rows: [{ poi: poi("p1", "Coop Mega"), minutes: 4 }],
           hasMore: false,
         })}
         onOpen={vi.fn()}

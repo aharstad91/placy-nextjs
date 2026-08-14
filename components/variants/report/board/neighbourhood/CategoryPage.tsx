@@ -163,9 +163,9 @@ export function CategoryPage({
                 <span className="min-w-0 flex-1 truncate text-[14.5px] text-stone-800">
                   {row.poi.name}
                 </span>
-                {row.walkMinutes !== undefined && (
+                {row.minutes !== undefined && (
                   <span className="shrink-0 text-[13px] tabular-nums text-stone-500">
-                    {row.walkMinutes} min
+                    {row.minutes} min
                   </span>
                 )}
               </li>

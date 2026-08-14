@@ -19,7 +19,8 @@ import type { BoardPOI } from "../board-data";
  * gaten ville hvert steg utløst neste.
  */
 export function useNeighbourhoodList(): NeighbourhoodList<BoardPOI> {
-  const { data, viewportRect, setViewportPoiIds } = useBoard();
+  const { state, data, viewportRect, setViewportPoiIds } = useBoard();
+  const travelMode = state.travelMode;
 
   // Primitiver i dep-arrayet, aldri rektangel-OBJEKTET: et nytt objekt med
   // samme verdier ville re-kjørt memoen, gitt et nytt sett, skrevet ny
@@ -38,8 +39,9 @@ export function useNeighbourhoodList(): NeighbourhoodList<BoardPOI> {
       north !== undefined
         ? { west, south, east, north }
         : null;
-    return buildNeighbourhoodList(data.categories, rect);
-  }, [data.categories, west, south, east, north]);
+    return buildNeighbourhoodList(data.categories, rect, { travelMode });
+    // travelMode er en primitiv — trygg i dep-arrayet, i motsetning til rektangelet.
+  }, [data.categories, west, south, east, north, travelMode]);
 
   useEffect(() => {
     // Uscopet liste → ingen markør-begrensning (vis alt), aldri et tomt sett.

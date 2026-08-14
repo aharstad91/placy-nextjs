@@ -413,11 +413,11 @@ function CategoryDetailView({
                       <span className="min-w-0 flex-1 truncate text-[13.5px] text-stone-700">
                         {row.poi.name}
                       </span>
-                      {/* Uten precomputet gangtid vises ingen tall — aldri et
+                      {/* Uten precomputet reisetid i valgt modus vises ingen tall — aldri et
                           estimat, aldri en tom «– min». */}
-                      {row.walkMinutes !== undefined && (
+                      {row.minutes !== undefined && (
                         <span className="shrink-0 text-[12.5px] tabular-nums text-stone-500">
-                          {row.walkMinutes} min
+                          {row.minutes} min
                         </span>
                       )}
                     </button>
@@ -474,9 +474,9 @@ function CategoryDetailView({
             <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-stone-900">
               {list.activeRow.poi.name}
             </span>
-            {list.activeRow.walkMinutes !== undefined && (
+            {list.activeRow.minutes !== undefined && (
               <span className="shrink-0 text-[12.5px] tabular-nums text-stone-500">
-                {list.activeRow.walkMinutes} min
+                {list.activeRow.minutes} min
               </span>
             )}
           </div>

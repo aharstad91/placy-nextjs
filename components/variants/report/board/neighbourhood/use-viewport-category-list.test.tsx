@@ -6,6 +6,7 @@ import type { BoardCategory, BoardData, BoardPOI } from "../board-data";
 import { BoardProvider, useBoard } from "../board-state";
 import { useViewportCategoryList } from "./use-viewport-category-list";
 import type { ViewportCategoryList } from "./use-viewport-category-list";
+import type { TravelMode } from "@/lib/types";
 
 /**
  * Desktop-sidebarens LESE-hook over nabolagsmodellen (2026-08-13).
@@ -28,7 +29,14 @@ const FAR = { lat: 63.505, lng: 10.51 };
 
 function poi(
   id: string,
-  opts: { lat?: number; lng?: number; walk?: number; sub?: string } = {},
+  opts: {
+    lat?: number;
+    lng?: number;
+    walk?: number;
+    bike?: number;
+    car?: number;
+    sub?: string;
+  } = {},
 ): BoardPOI {
   const coordinates = { lat: opts.lat ?? 63.43, lng: opts.lng ?? 10.4 };
   return {
@@ -46,7 +54,11 @@ function poi(
         icon: "UtensilsCrossed",
         color: "#c33",
       },
-      travelTime: opts.walk === undefined ? undefined : { walk: opts.walk },
+      travelTime: {
+        ...(opts.walk === undefined ? {} : { walk: opts.walk }),
+        ...(opts.bike === undefined ? {} : { bike: opts.bike }),
+        ...(opts.car === undefined ? {} : { car: opts.car }),
+      },
     } as BoardPOI["raw"],
   };
 }
@@ -59,9 +71,11 @@ const MAT: BoardCategory = {
   icon: "UtensilsCrossed",
   color: "#cc3300",
   pois: [
-    poi("naer", { walk: 3 }),
-    poi("mellom", { walk: 7 }),
-    poi("langt", { ...FAR, walk: 25 }),
+    // Bil-tidene inverterer rekkefølgen med vilje: «naer» er nærmest til fots,
+    // «mellom» er nærmest i bil. Da beviser en rekkefølge-påstand noe.
+    poi("naer", { walk: 3, car: 6 }),
+    poi("mellom", { walk: 7, car: 2 }),
+    poi("langt", { ...FAR, walk: 25, car: 5 }),
   ],
   topRankedPois: [],
 } as unknown as BoardCategory;
@@ -88,10 +102,12 @@ function Probe({
   rect,
   category,
   openPoiId,
+  travelMode,
 }: {
   rect: ViewportRect | null;
   category: BoardCategory | null;
   openPoiId?: string;
+  travelMode?: TravelMode;
 }) {
   const ctx = useBoard();
   const { setViewportRect, dispatch } = ctx;
@@ -106,18 +122,30 @@ function Probe({
     if (openPoiId) dispatch({ type: "OPEN_POI", id: openPoiId as never });
   }, [dispatch, openPoiId]);
 
+  useEffect(() => {
+    if (travelMode) dispatch({ type: "SET_TRAVEL_MODE", mode: travelMode });
+  }, [dispatch, travelMode]);
+
   return null;
 }
 
 function setup(
   rect: ViewportRect | null,
-  { category = MAT, openPoiId }: { category?: BoardCategory | null; openPoiId?: string } = {},
+  {
+    category = MAT,
+    openPoiId,
+    travelMode,
+  }: {
+    category?: BoardCategory | null;
+    openPoiId?: string;
+    travelMode?: TravelMode;
+  } = {},
 ) {
   spy.list = null;
   spy.visibleIdsSource = null;
   return render(
     <BoardProvider data={boardData()}>
-      <Probe rect={rect} category={category} openPoiId={openPoiId} />
+      <Probe rect={rect} category={category} openPoiId={openPoiId} travelMode={travelMode} />
     </BoardProvider>,
   );
 }
@@ -136,8 +164,8 @@ describe("useViewportCategoryList", () => {
 
   it("gir tidsspennet for de synlige (grunnlag for «2 av 3 synlig · 3–7 min»)", () => {
     setup(RECT);
-    expect(list().minWalk).toBe(3);
-    expect(list().maxWalk).toBe(7);
+    expect(list().minMinutes).toBe(3);
+    expect(list().maxMinutes).toBe(7);
   });
 
   it("degraderer til «vis alt» — ikke tom liste — når utsnittet mangler", () => {
@@ -162,7 +190,7 @@ describe("useViewportCategoryList", () => {
     } as unknown as BoardCategory;
     setup(RECT, { category: utenTid });
     expect(list().rows.map((r) => r.poi.id)).toEqual(["med", "uten"]);
-    expect(list().rows[1].walkMinutes).toBeUndefined();
+    expect(list().rows[1].minutes).toBeUndefined();
   });
 
   it("holder den åpne POI-en pinnet og ute av den scrollede lista", () => {
@@ -175,7 +203,7 @@ describe("useViewportCategoryList", () => {
     // Explorer-buggen fra februar: raden brukeren leste forsvant ved panorering.
     setup(RECT, { openPoiId: "langt" });
     expect(list().activeRow?.poi.id).toBe("langt");
-    expect(list().activeRow?.walkMinutes).toBe(25);
+    expect(list().activeRow?.minutes).toBe(25);
     // Den står ikke også i den scrollede lista.
     expect(list().rows.map((r) => r.poi.id)).toEqual(["naer", "mellom"]);
   });
@@ -198,5 +226,38 @@ describe("useViewportCategoryList", () => {
     // gater kamera-fitten. Desktop-hooken skal la kanalen stå helt urørt.
     setup(RECT, { openPoiId: "naer" });
     expect(spy.visibleIdsSource).toBeNull();
+  });
+});
+
+describe("useViewportCategoryList — reisemodus", () => {
+  it("leser aktiv modus fra board-state (tall og rekkefølge)", () => {
+    setup(RECT, { travelMode: "car" });
+    expect(list().rows.map((r) => r.poi.id)).toEqual(["mellom", "naer"]);
+    expect(list().rows.map((r) => r.minutes)).toEqual([2, 6]);
+    expect([list().minMinutes, list().maxMinutes]).toEqual([2, 6]);
+  });
+
+  it("den pinnede raden utenfor utsnittet leser samme modus som resten", () => {
+    // Bug-en fiksen fantes for: raden brukeren leser skal ikke forsvinne når
+    // punktet glir ut av utsnittet. Den skal heller ikke vise gangtid mens
+    // resten av lista viser biltid.
+    setup(RECT, { openPoiId: "langt", travelMode: "car" });
+    expect(list().activeRow?.poi.id).toBe("langt");
+    expect(list().activeRow?.minutes).toBe(5);
+  });
+
+  it("modus uten data → den pinnede raden vises uten tall, ikke med et fremmed", () => {
+    setup(RECT, { openPoiId: "langt", travelMode: "bike" });
+    expect(list().activeRow?.poi.id).toBe("langt");
+    expect(list().activeRow?.minutes).toBeUndefined();
+  });
+
+  it("modusbytte endrer ikke hvilke punkter som er synlige", () => {
+    for (const travelMode of ["walk", "bike", "car"] as const) {
+      setup(RECT, { travelMode });
+      expect(list().visibleCount).toBe(2);
+      expect(list().hiddenCount).toBe(1);
+      cleanup();
+    }
   });
 });

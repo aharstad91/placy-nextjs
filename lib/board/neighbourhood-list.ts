@@ -1,4 +1,5 @@
 import type { ViewportRect } from "./board-types";
+import type { TravelMode } from "@/lib/types";
 
 /**
  * Nabolagsmodellen (mobil nabolagsflate, Unit 2).
@@ -10,11 +11,14 @@ import type { ViewportRect } from "./board-types";
  *
  * ## Hva modellen IKKE gjør
  *
- * Den regner ikke ut avstander. Gangtidene er precomputet
- * (`v2.project_pois.travel_times` → `POI.travelTime.walk`, i MINUTTER) og måles
- * alltid fra BOLIGEN, aldri fra kartsenteret (R6). Kartutsnittet bestemmer
- * hvilke punkter som står i lista — aldri hva de måles fra. Derfor tar
+ * Den regner ikke ut avstander. Reisetidene er precomputet for alle tre modus
+ * (`v2.project_pois.travel_times` → `POI.travelTime.{walk,bike,car}`, i MINUTTER)
+ * og måles alltid fra BOLIGEN, aldri fra kartsenteret (R6). Kartutsnittet
+ * bestemmer hvilke punkter som står i lista — aldri hva de måles fra. Derfor tar
  * funksjonen heller ikke inn home-koordinater: den trenger dem ikke.
+ *
+ * Modusen (`options.travelMode`) velger HVILKEN precomputet verdi som leses. Den
+ * endrer aldri hvilke punkter som er på boardet — bare tallene og rekkefølgen.
  *
  * ## Nevneren i dekningsbrøken
  *
@@ -37,12 +41,12 @@ export interface NeighbourhoodPOIInput {
     /** Sub-kategorien (f.eks. `bike`, `bus`, `restaurant`) — diversifiserings-
      *  nøkkelen. Samme felt `subFilter` bruker i `BoardMap`. */
     category: { id: string };
-    /** Precomputet reisetid i MINUTTER. `walk` kan mangle på punkter uten
-     *  ruteberegning (R26). Dekningen er full på alle ni boards per 2026-08-14
-     *  (backfill: `scripts/backfill-travel-times.ts`), men grenen er ikke død:
-     *  POI-er lagt til utenfor provisjonerings-løpet får ingen reisetid før
-     *  backfillen kjøres igjen, og det har skjedd to ganger. */
-    travelTime?: { walk?: number };
+    /** Precomputet reisetid per modus, i MINUTTER. En modus kan mangle på
+     *  punkter uten ruteberegning (R26). Dekningen er full på alle ni boards per
+     *  2026-08-14 (backfill: `scripts/backfill-travel-times.ts`), men grenen er
+     *  ikke død: POI-er lagt til utenfor provisjonerings-løpet får ingen reisetid
+     *  før backfillen kjøres igjen, og det har skjedd to ganger. */
+    travelTime?: Partial<Record<TravelMode, number>>;
   };
 }
 
@@ -59,9 +63,11 @@ export interface NeighbourhoodCategoryInput<
 
 export interface NeighbourhoodRow<P extends NeighbourhoodPOIInput> {
   poi: P;
-  /** Gangtid i minutter fra boligen, eller `undefined` når den mangler (R26 —
-   *  raden rendres da uten minutt-tall). */
-  walkMinutes?: number;
+  /** Reisetid i minutter fra boligen i AKTIV modus, eller `undefined` når den
+   *  mangler (R26 — raden rendres da uten minutt-tall). Navnet er bevisst
+   *  modus-nøytralt: et felt som het `walkMinutes` men bar biltid ville vært en
+   *  felle for neste leser. */
+  minutes?: number;
 }
 
 export interface NeighbourhoodCategory<P extends NeighbourhoodPOIInput> {
@@ -73,13 +79,13 @@ export interface NeighbourhoodCategory<P extends NeighbourhoodPOIInput> {
   visibleCount: number;
   /** Kategoriens totale antall punkter på boardet — nevneren i «9 av 17». */
   totalCount: number;
-  /** Laveste gangtid blant de synlige som HAR gangtid. `undefined` når ingen
-   *  av dem har det (kortet rendres da uten tidsspenn). */
-  minWalk?: number;
-  /** Høyeste gangtid blant de synlige som har gangtid. */
-  maxWalk?: number;
+  /** Laveste reisetid i aktiv modus blant de synlige som HAR en. `undefined` når
+   *  ingen av dem har det (kortet rendres da uten tidsspenn). */
+  minMinutes?: number;
+  /** Høyeste reisetid i aktiv modus blant de synlige som har en. */
+  maxMinutes?: number;
   /** Inntil `rowsPerCategory` punkter: sub-kategori-diversifisert utvalg,
-   *  presentert som gangtidsstige. */
+   *  presentert som tidsstige. */
   rows: NeighbourhoodRow<P>[];
   /** true når kategorien har flere synlige punkter enn radene viser — kortet
    *  avsluttes da med en rad som fører til kategorisiden (R11). */
@@ -121,29 +127,53 @@ export const DEFAULT_ROWS_PER_CATEGORY = 3;
 export function categorySubline(category: {
   visibleCount: number;
   totalCount: number;
-  minWalk?: number;
-  maxWalk?: number;
+  minMinutes?: number;
+  maxMinutes?: number;
 }): string {
   const coverage =
     category.visibleCount === category.totalCount
       ? `${category.totalCount} ${category.totalCount === 1 ? "sted" : "steder"}`
       : `${category.visibleCount} av ${category.totalCount} synlig`;
-  if (category.minWalk === undefined || category.maxWalk === undefined) {
+  if (category.minMinutes === undefined || category.maxMinutes === undefined) {
     return coverage;
   }
   const span =
-    category.minWalk === category.maxWalk
-      ? `${category.minWalk} min`
-      : `${category.minWalk}–${category.maxWalk} min`;
+    category.minMinutes === category.maxMinutes
+      ? `${category.minMinutes} min`
+      : `${category.minMinutes}–${category.maxMinutes} min`;
   return `${coverage} · ${span}`;
 }
 
-/** Precomputet gangtid, eller `undefined` når verdien mangler eller ikke er et
- *  brukbart tall (NaN/Infinity fra en korrupt rad skal aldri lekke ut i et
- *  tidsspenn eller en sortering). */
-function walkMinutesOf(poi: NeighbourhoodPOIInput): number | undefined {
-  const walk = poi.raw.travelTime?.walk;
-  return typeof walk === "number" && Number.isFinite(walk) ? walk : undefined;
+/** Precomputet reisetid for valgt modus, eller `undefined` når verdien mangler
+ *  eller ikke er et brukbart tall (NaN/Infinity fra en korrupt rad skal aldri
+ *  lekke ut i et tidsspenn eller en sortering). */
+function minutesOf(
+  poi: NeighbourhoodPOIInput,
+  mode: TravelMode,
+): number | undefined {
+  const value = poi.raw.travelTime?.[mode];
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+/**
+ * Hvilke reisemodus boardet har data for (R6).
+ *
+ * En modus er tilgjengelig hvis minst ett punkt har en brukbar verdi for den.
+ * Avledningen hører i lesemodellen, ikke i UI-et: både chipen på ruta og
+ * kart-kontrollen må lese samme svar, ellers kan de vise ulike sett med modus.
+ *
+ * Rekkefølgen er kanonisk (gå, sykkel, bil) — den er også visningsrekkefølgen,
+ * fra tregeste til raskeste, slik at tallene i panelet leser som en stige.
+ */
+export function availableTravelModes(
+  categories: readonly NeighbourhoodCategoryInput<NeighbourhoodPOIInput>[],
+): TravelMode[] {
+  const modes: TravelMode[] = ["walk", "bike", "car"];
+  return modes.filter((mode) =>
+    categories.some((category) =>
+      category.pois.some((poi) => minutesOf(poi, mode) !== undefined),
+    ),
+  );
 }
 
 /**
@@ -162,14 +192,14 @@ function isWithin(rect: ViewportRect, poi: NeighbourhoodPOIInput): boolean {
   );
 }
 
-/** Gangtid stigende, punkter uten gangtid sist, deretter navn som tie-break så
+/** Reisetid stigende, punkter uten tid sist, deretter navn som tie-break så
  *  rekkefølgen er stabil mellom renders. */
 function compareRows<P extends NeighbourhoodPOIInput>(
   a: NeighbourhoodRow<P>,
   b: NeighbourhoodRow<P>,
 ): number {
-  const aw = a.walkMinutes ?? Infinity;
-  const bw = b.walkMinutes ?? Infinity;
+  const aw = a.minutes ?? Infinity;
+  const bw = b.minutes ?? Infinity;
   if (aw !== bw) return aw - bw;
   const byName = a.poi.name.localeCompare(b.poi.name, "nb");
   if (byName !== 0) return byName;
@@ -179,19 +209,19 @@ function compareRows<P extends NeighbourhoodPOIInput>(
 /**
  * Velger HVILKE punkter kortet viser — ikke rekkefølgen.
  *
- * Rå gangtidssortering ga «tre bysykkelstasjoner på rad» under Transport
+ * Rå tidssortering ga «tre bysykkelstasjoner på rad» under Transport
  * (`docs/solutions/logic-errors/report-poi-sorting-clustered-first-load-20260304.md`).
  * Den opprinnelige `diversifiedSelection()` ble slettet i cutoveren 2026-07-06;
  * mønsteret reimplementeres her.
  *
  * Terskelen (åpen i planen): round-robin over sub-kategori-bøttene, altså
  * **høyst ett punkt per sub-kategori per runde**. Bøttene ligger i
- * første-forekomst-rekkefølge, som med gangtidssortert input betyr «nærmeste
+ * første-forekomst-rekkefølge, som med tidssortert input betyr «nærmeste
  * sub-kategori først» — så runde 0 plukker det nærmeste punktet i hver
  * sub-kategori før runde 1 henter det nest nærmeste i den første.
  *
- * Utvalget re-sorteres på gangtid til slutt: variasjon avgjør hvem som er med,
- * gangtid avgjør rekkefølgen. Kortet leses som en stige uansett.
+ * Utvalget re-sorteres på tid til slutt: variasjon avgjør hvem som er med, tid
+ * avgjør rekkefølgen. Kortet leses som en stige uansett.
  */
 function diversifyBySubCategory<P extends NeighbourhoodPOIInput>(
   sorted: NeighbourhoodRow<P>[],
@@ -233,9 +263,19 @@ export function buildNeighbourhoodList<P extends NeighbourhoodPOIInput>(
    *  Kallstedet (`use-neighbourhood-list`) holder primitivene i sin dep-array
    *  og bygger rektangelet inne i memoen. */
   rect: ViewportRect | null,
-  options: { rowsPerCategory?: number } = {},
+  options: {
+    rowsPerCategory?: number;
+    /**
+     * Aktiv reisemodus. Styrer BÅDE tallene og rekkefølgen: `minMinutes` er
+     * mode-avledet, og kategori-sorteringen leser den — så et bytte til bil
+     * reordner kategoriene på samme premiss som radene. En kategori-rekkefølge
+     * sortert på gangtid mens radene viser biltid ville lest som en feil.
+     */
+    travelMode?: TravelMode;
+  } = {},
 ): NeighbourhoodList<P> {
   const rowsPerCategory = options.rowsPerCategory ?? DEFAULT_ROWS_PER_CATEGORY;
+  const travelMode = options.travelMode ?? "walk";
   const out: NeighbourhoodCategory<P>[] = [];
   const visiblePoiIds: string[] = [];
   let visibleCount = 0;
@@ -244,19 +284,19 @@ export function buildNeighbourhoodList<P extends NeighbourhoodPOIInput>(
     const visible: NeighbourhoodRow<P>[] = [];
     for (const poi of category.pois) {
       if (rect && !isWithin(rect, poi)) continue;
-      visible.push({ poi, walkMinutes: walkMinutesOf(poi) });
+      visible.push({ poi, minutes: minutesOf(poi, travelMode) });
     }
     if (visible.length === 0) continue; // R14
 
     visible.sort(compareRows);
 
-    // Tidsspennet leses av de sorterte radene som HAR gangtid: første og siste
+    // Tidsspennet leses av de sorterte radene som HAR en tid: første og siste
     // slike. De uten ligger sist, så et enkelt filter holder — og NaN kan ikke
-    // lekke inn, siden walkMinutesOf allerede har silt dem ut.
-    const timed = visible.filter((r) => r.walkMinutes !== undefined);
-    const minWalk = timed.length > 0 ? timed[0].walkMinutes : undefined;
-    const maxWalk =
-      timed.length > 0 ? timed[timed.length - 1].walkMinutes : undefined;
+    // lekke inn, siden minutesOf allerede har silt dem ut.
+    const timed = visible.filter((r) => r.minutes !== undefined);
+    const minMinutes = timed.length > 0 ? timed[0].minutes : undefined;
+    const maxMinutes =
+      timed.length > 0 ? timed[timed.length - 1].minutes : undefined;
 
     visibleCount += visible.length;
     for (const row of visible) visiblePoiIds.push(row.poi.id);
@@ -267,18 +307,19 @@ export function buildNeighbourhoodList<P extends NeighbourhoodPOIInput>(
       color: category.color,
       visibleCount: visible.length,
       totalCount: category.pois.length,
-      minWalk,
-      maxWalk,
+      minMinutes,
+      maxMinutes,
       rows: diversifyBySubCategory(visible, rowsPerCategory),
       hasMore: visible.length > rowsPerCategory,
     });
   }
 
-  // R10: nærmeste kategori først. Kategorier uten gangtider i det hele tatt
-  // havner sist (Infinity), med etiketten som tie-break for stabil rekkefølge.
+  // R10: nærmeste kategori først, i AKTIV modus. Kategorier uten tider i det
+  // hele tatt havner sist (Infinity), med etiketten som tie-break for stabil
+  // rekkefølge.
   out.sort((a, b) => {
-    const aw = a.minWalk ?? Infinity;
-    const bw = b.minWalk ?? Infinity;
+    const aw = a.minMinutes ?? Infinity;
+    const bw = b.minMinutes ?? Infinity;
     if (aw !== bw) return aw - bw;
     return a.label.localeCompare(b.label, "nb");
   });

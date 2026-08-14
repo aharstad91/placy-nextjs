@@ -74,11 +74,11 @@ export function NeighbourhoodCategoryCard({
             <span className="min-w-0 flex-1 truncate text-[14px] text-stone-700">
               {row.poi.name}
             </span>
-            {/* R26: uten precomputet gangtid vises ingen tall — aldri et
+            {/* R26: uten precomputet reisetid i valgt modus vises ingen tall — aldri et
                 estimat, aldri en tom «– min». */}
-            {row.walkMinutes !== undefined && (
+            {row.minutes !== undefined && (
               <span className="shrink-0 text-[13px] tabular-nums text-stone-500">
-                {row.walkMinutes} min
+                {row.minutes} min
               </span>
             )}
           </li>
