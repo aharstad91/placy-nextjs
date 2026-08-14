@@ -33,20 +33,27 @@ export function BoardPathLayer() {
   const [opacity, setOpacity] = useState(0);
 
   useEffect(() => {
-    // Ved POI-bytte, modusbytte eller phase-bytte fra poi → annet: fade ut først.
-    // Modusen hører med fordi ruta får en NY form, ikke bare et nytt tall — en
-    // sykkelrute som poppet inn uten fade ville lest som en glitch.
+    // Ved POI-bytte eller phase-bytte fra poi → annet: fade ut først, fordi den
+    // gamle linja peker til et ANNET sted og ville vært direkte feil et øyeblikk.
+    //
+    // Modusbytte er IKKE en fade-ut-trigger. Da går ruta til samme punkt, bare
+    // en annen vei — den gamle linja er fortsatt sann til den nye ankommer.
+    // Faded vi ut her, sto kartet tomt gjennom hele hentingen, og hvis fade-inn
+    // ikke fyrte, sto linja usynlig helt til leseren klikket punktet på nytt.
     setOpacity(0);
-  }, [state.activePOIId, state.phase, state.travelMode]);
+  }, [state.activePOIId, state.phase]);
 
   useEffect(() => {
-    // Når ny route-data ankommer for aktiv POI, fade inn.
+    // Når route-data er klar for aktiv POI, fade inn. `travelMode` hører i
+    // dep-arrayen selv om den ikke leses her: den garanterer at opasiteten
+    // re-asserteres etter et modusbytte, også om rute-svaret skulle komme
+    // tilbake med identisk referanse.
     if (routeData && state.phase === "poi") {
       // En liten delay sikrer at fade-out er synlig før fade-in starter.
       const t = setTimeout(() => setOpacity(1), 50);
       return () => clearTimeout(t);
     }
-  }, [routeData, state.phase]);
+  }, [routeData, state.phase, state.travelMode]);
 
   const geojson = useMemo<GeoJSON.FeatureCollection>(() => {
     if (!routeData || routeData.coordinates.length < 2) {

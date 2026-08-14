@@ -77,13 +77,20 @@ export function BoardPathMidpointMarker() {
       longitude={midpoint.lng}
       latitude={midpoint.lat}
       anchor="center"
-      // R12: kollapset ligger chipen på z-4, under de andre kart-overleggene.
-      // Er panelet åpent, er det panelet leseren holder på med, så det må over
-      // POI-popupen. Tallet må være over 20: `.mapboxgl-popup` ligger på z-20 i
-      // en SØSKEN-container av markørene (`.mapboxgl-map` > popup vs.
-      // `.mapboxgl-canvas-container` > marker), så en z-6 på markøren taper
-      // uansett. Målt i browser 2026-08-14 — 6 var ikke nok, 30 er.
-      style={{ pointerEvents: "none", zIndex: open ? 30 : 4 }}
+      // R12: chipen ligger ALLTID over POI-popupen, ikke bare når panelet er
+      // åpent.
+      //
+      // Første forsøk lot den kollapsede chipen ligge på z-4 med begrunnelsen at
+      // popupen er det leseren nettopp åpnet. Målt i browser 2026-08-14: når
+      // rutens midtpunkt havner under popup-kortet — som skjer på korte ruter —
+      // fanget popupen klikket, og chipen var da bokstavelig talt umulig å
+      // trykke på. En kontroll som ikke kan klikkes er verre enn et kort som
+      // delvis dekkes, og popupen kan lukkes mens chipen ikke kan flyttes.
+      //
+      // Tallet må være over 20: `.mapboxgl-popup` ligger på z-20 i en SØSKEN-
+      // container av markørene (`.mapboxgl-map` > popup vs.
+      // `.mapboxgl-canvas-container` > marker), så lavere verdier taper uansett.
+      style={{ pointerEvents: "none", zIndex: 30 }}
     >
       <div
         ref={wrapperRef}

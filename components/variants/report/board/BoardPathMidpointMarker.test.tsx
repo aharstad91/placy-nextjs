@@ -147,11 +147,14 @@ describe("BoardPathMidpointMarker — utvidelse (R5)", () => {
   });
 
   // Målt i browser 2026-08-14: `.mapboxgl-popup` ligger på z-20 i en SØSKEN-
-  // container av markørene, så tallet må være over 20 — z-6 var ikke nok, og
-  // popupen dekket panelets øverste rad.
-  it("R12: åpent panel legger seg over POI-popupen (z-20), lukket chip ligger under", () => {
+  // container av markørene, så alt under 20 taper.
+  //
+  // REGRESJON: chipen lå først på z-4 kollapset, med begrunnelsen at popupen er
+  // det leseren nettopp åpnet. På korte ruter havner rutens midtpunkt UNDER
+  // popup-kortet, og da fanget popupen klikket — chipen var umulig å trykke på.
+  it("R12: chipen ligger over POI-popupen (z-20) BÅDE kollapset og åpen", () => {
     const { getByRole, getByTestId } = setup();
-    expect(getByTestId("marker").getAttribute("data-z")).toBe("4");
+    expect(Number(getByTestId("marker").getAttribute("data-z"))).toBeGreaterThan(20);
 
     act(() => getByRole("button", { name: "Bytt reisemåte" }).click());
     expect(Number(getByTestId("marker").getAttribute("data-z"))).toBeGreaterThan(20);
