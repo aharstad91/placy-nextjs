@@ -14,6 +14,13 @@
 import { createServerClient } from "@/lib/supabase/client";
 import { upsertCategories } from "@/lib/supabase/mutations";
 import { slugify } from "@/lib/utils/slugify";
+import { getSchoolZone } from "@/lib/utils/school-zones";
+import {
+  planSchoolDeduplication,
+  resolveSchoolTypeFromNsr,
+  selectSchools,
+  type SchoolType,
+} from "@/lib/pipeline/zoned-school-selection";
 
 /**
  * Kategori-definisjonene denne modulen skriver POI-er med. MÅ seedes før
@@ -124,15 +131,8 @@ async function upsertAndLink(
 
 // ── Skole-type-utledning ───────────────────────────────────────────────────
 
-type SchoolType = "barneskole" | "ungdomsskole" | "videregaende";
-
-function resolveSchoolType(naceKode: string): SchoolType | null {
-  if (naceKode === "85.201") return "barneskole";
-  if (naceKode === "85.310" || naceKode === "85.320") return "videregaende";
-  // 85.311/85.312/85.320 og 85.210 ungdomsskole
-  if (naceKode.startsWith("85.21")) return "ungdomsskole";
-  return null;
-}
+// Skoleslag utledes i lib/pipeline/zoned-school-selection.ts — nace-koden alene
+// holdt ikke (Trondheim koder alle grunnskoler som 85.201).
 
 // ── NSR ───────────────────────────────────────────────────────────────────
 
@@ -163,24 +163,27 @@ async function importNSR(
 
   for (const school of raw as Record<string, unknown>[]) {
     const naceKode = (school.NaceKode1 as string | undefined) ?? "";
-    const schoolType = resolveSchoolType(naceKode);
+    const schoolName = (school.Navn as string | undefined) ?? "Ukjent skole";
+    const schoolType = resolveSchoolTypeFromNsr(naceKode, schoolName);
     if (!schoolType) continue;
 
     const schoolLat = school.Breddegrad as number | null;
     const schoolLng = school.Lengdegrad as number | null;
     if (!schoolLat || !schoolLng) continue;
 
+    // MERK: ingen radius-filtrering her. Kretsskolen er et faktum om adressen,
+    // ikke om avstanden — en bolig i Vikåsen sogner til Markaplassen (2,9 km)
+    // uansett hvor mange skoler som ligger nærmere. Radiusen brukes bare i
+    // nærmeste-fallbacken inne i `selectSchools`.
     const dist = haversineMeters(lat, lng, schoolLat, schoolLng);
-    if (dist > radiusMeters) continue;
 
     const orgNr = school.OrgNr as string | number;
     const nsrId = `nsr-${orgNr}`;
-    const name = (school.Navn as string | undefined) ?? "Ukjent skole";
 
     candidates.push({
       poi: {
         id: nsrId,
-        name,
+        name: schoolName,
         lat: schoolLat,
         lng: schoolLng,
         category_id: "skole",
@@ -192,31 +195,119 @@ async function importNSR(
     });
   }
 
-  // Deterministisk nærmeste-per-type: ved likt avstand → alfabetisk
-  const byType: Record<SchoolType, typeof candidates> = {
-    barneskole: [],
-    ungdomsskole: [],
-    videregaende: [],
-  };
-  for (const c of candidates) byType[c.type].push(c);
-  for (const type of Object.keys(byType) as SchoolType[]) {
-    byType[type].sort((a, b) =>
-      a.dist !== b.dist ? a.dist - b.dist : a.poi.name.localeCompare(b.poi.name)
-    );
-  }
+  // Kretsskolen først, nærmeste som tillegg/fallback. Utenfor Trondheim gir
+  // `getSchoolZone` {null, null} og oppførselen blir den gamle (Straumen-
+  // prinsippet: «ingen data her» må ha definert oppførsel).
+  const zone = getSchoolZone(lat, lng);
+  const byId = new Map(candidates.map((c) => [c.poi.id, c.poi]));
+  const { picks, warnings: selectionWarnings } = selectSchools(
+    { barneskole: zone.barneskole, ungdomsskole: zone.ungdomsskole },
+    candidates.map((c) => ({
+      id: c.poi.id,
+      name: c.poi.name,
+      type: c.type,
+      distanceMeters: c.dist,
+    })),
+    radiusMeters,
+  );
+  warnings.push(...selectionWarnings.map((w) => `NSR: ${w}`));
 
-  const selected: PoiInsert[] = [
-    ...(byType.barneskole[0] ? [byType.barneskole[0].poi] : []),
-    ...(byType.ungdomsskole[0] ? [byType.ungdomsskole[0].poi] : []),
-    ...(byType.videregaende[0] ? [byType.videregaende[0].poi] : []),
-  ];
+  const selected: PoiInsert[] = picks
+    .map((p) => byId.get(p.candidate.id))
+    .filter((p): p is PoiInsert => p !== undefined);
+
+  for (const pick of picks) {
+    if (pick.reason === "krets") {
+      warnings.push(
+        `ℹ️  Kretsskole (${pick.type}): ${pick.candidate.name} — ${Math.round(pick.candidate.distanceMeters)} m`,
+      );
+    }
+  }
 
   if (selected.length === 0) {
     warnings.push(`NSR: ingen skoler funnet innenfor ${radiusMeters} m av kommunenr ${kommunenummer}`);
     return 0;
   }
 
-  return upsertAndLink(supabase, projectId, selected, "nsr_id");
+  const linked = await upsertAndLink(supabase, projectId, selected, "nsr_id");
+
+  // Samme skole fra en annen kilde må ut av poolen, ellers legger kretsvalget
+  // «Charlottenlund ungdomsskole» og «Ranheim skole» dobbelt på kartet: OSM-
+  // sveipet og gammel håndkuratering har egne rader uten felles ekstern nøkkel.
+  //
+  // Fail-soft: ryddingen er etterarbeid, ikke selve importen. Faller den, skal
+  // skolene som nettopp ble linket bli stående — ikke rulles tilbake av en
+  // feilende opprydding.
+  try {
+    await unlinkDuplicateSchools(supabase, projectId, selected, warnings);
+  } catch (err) {
+    warnings.push(`Dublett-rydding av skoler hoppet over — ${err}`);
+  }
+
+  return linked;
+}
+
+/**
+ * Fjern pool-lenker til skoler som er duplikat av dem vi nettopp valgte.
+ *
+ * Bare LENKEN fjernes — POI-raden blir stående, så ingenting går tapt og et
+ * annet board som bruker raden er upåvirket. Rader som strøk-kuratering peker
+ * på fredes.
+ */
+async function unlinkDuplicateSchools(
+  supabase: NonNullable<ReturnType<typeof createServerClient>>,
+  projectId: string,
+  selected: PoiInsert[],
+  warnings: string[]
+): Promise<void> {
+  const { data: links } = await supabase
+    .from("project_pois")
+    .select("poi_id, pois!inner(id, name, lat, lng, category_id)")
+    .eq("project_id", projectId);
+
+  const pooled = (links ?? [])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((r: any) => r.pois)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .filter((p: any) => p?.category_id === "skole")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((p: any) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng }));
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: areas } = await (supabase as any).from("areas").select("report_editorial");
+  const protectedIds = new Set<string>();
+  for (const area of areas ?? []) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const theme of Object.values((area as any).report_editorial ?? {})) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const id of ((theme as any)?.highlightCandidates ?? []) as string[]) {
+        protectedIds.add(id);
+      }
+    }
+  }
+
+  const unlink = planSchoolDeduplication(
+    selected.map((s) => ({ id: s.id, name: s.name, lat: s.lat, lng: s.lng })),
+    pooled,
+    protectedIds
+  );
+  if (unlink.length === 0) return;
+
+  const ids = unlink.map((u) => u.id);
+  await supabase.from("project_pois").delete().eq("project_id", projectId).in("poi_id", ids);
+
+  const { data: products } = await supabase.from("products").select("id").eq("project_id", projectId);
+  for (const product of products ?? []) {
+    await supabase
+      .from("product_pois")
+      .delete()
+      .eq("product_id", (product as { id: string }).id)
+      .in("poi_id", ids);
+  }
+
+  for (const u of unlink) {
+    warnings.push(`ℹ️  Dublett-skole fjernet fra poolen: ${u.name} (${u.id})`);
+  }
 }
 
 // ── Barnehagefakta ────────────────────────────────────────────────────────
