@@ -15,6 +15,7 @@ import { useBoardZoomTier } from "./use-board-zoom-tier";
 import { HomeMarker } from "./HomeMarker";
 import { BoardPathLayer } from "./BoardPathLayer";
 import { BoardPathMidpointMarker } from "./BoardPathMidpointMarker";
+import { BoardRouteProvider } from "./board-route";
 import { BoardPOILabel } from "./BoardPOILabel";
 import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
 import { BoardMap3D } from "./BoardMap3D";
@@ -777,141 +778,145 @@ export function BoardMap({
   }
 
   return (
-    <div ref={mapBodyRef} className="absolute inset-0">
-      {/* Google 3D base-motor — persistent når add-on finnes. Mountes én gang
-          og rives ALDRI ned (kan ikke frigjøre Google-WebGL-konteksten
-          manuelt). Mapbox-overlayet legger seg oppå når brukeren velger 2D. */}
-      {has3dAddon && (
-        <div className="absolute inset-0">
-          <BoardMap3D
-            pendingCamera={null}
-            mapPaddingLeft={mapPaddingLeft}
-            cameraMode={cameraMode}
-            onDragTakeover={handleDragTakeover}
-            compactMarkers={compactMarkers}
-            // Kun den FREMSTE motoren publiserer utsnitt. I 2D-visning ligger
-            // 3D-basen fortsatt montert under Mapbox-overlayet, og uten denne
-            // gaten ville begge skrevet til samme state.
-            publishViewport={publishViewport && view === "3d"}
-            mapPaddingBottom={mapPaddingBottom}
-            onMapReady={handle3DReady}
-          />
-        </div>
-      )}
-
-      {/* Mapbox 2D — base for ikke-addon-prosjekter, ellers et overlay i
-          2D-view. Unmountes ved retur til 3D; map.remove() frigjør konteksten. */}
-      {showMapbox && (
-        <div className={`absolute inset-0 ${has3dAddon ? "z-[5]" : ""}`}>
-          {!mapLoaded && (
-            <div className="absolute inset-0 z-20 bg-[#f0ece6] animate-pulse" />
-          )}
-          <Map
-            ref={mapRef}
-            mapboxAccessToken={TOKEN}
-            initialViewState={{
-              longitude:
-                pendingCamera?.lng ?? data.home.coordinates.lng,
-              latitude:
-                pendingCamera?.lat ?? data.home.coordinates.lat,
-              zoom: pendingCamera?.zoom ?? 13.5,
-              bearing: pendingCamera?.heading ?? 0,
-              pitch: pendingCamera?.tilt ?? 0,
-            }}
-            style={{ width: "100%", height: "100%" }}
-            mapStyle={MAP_STYLE_STANDARD}
-            // Zoom-tak (2026-08-12): labels kommer på zoom 16 (LABEL_BREAKPOINT).
-            // 18 gir to hakk inspeksjon — nok til å skille tette sentrums-
-            // klynger (labels trenger separasjonen mer enn pinnene), deretter
-            // er mer zoom bare tomme bygningsflater.
-            maxZoom={18}
-            interactive={interactive}
-            onLoad={handleMapLoad}
-            onMoveEnd={handleMoveEnd}
-            onClick={() => {
-              // Markører kaller stopPropagation i sin onClick, så denne
-              // fyrer kun ved klikk på kart-bakgrunn. Lukk popup hvis åpen.
-              if (state.activePOIId) dispatch({ type: "BACK_TO_DEFAULT" });
-            }}
-          >
-            <HomeMarker
-              coordinates={data.home.coordinates}
-              name={data.home.name}
-              onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
+    // Én rutekilde for begge kart-motorene: 3D-ruten, 2D-rutelinja og tids-chipen
+    // leser samme svar i aktiv reisemodus i stedet for å fyre tre Directions-kall.
+    <BoardRouteProvider>
+      <div ref={mapBodyRef} className="absolute inset-0">
+        {/* Google 3D base-motor — persistent når add-on finnes. Mountes én gang
+            og rives ALDRI ned (kan ikke frigjøre Google-WebGL-konteksten
+            manuelt). Mapbox-overlayet legger seg oppå når brukeren velger 2D. */}
+        {has3dAddon && (
+          <div className="absolute inset-0">
+            <BoardMap3D
+              pendingCamera={null}
+              mapPaddingLeft={mapPaddingLeft}
+              cameraMode={cameraMode}
+              onDragTakeover={handleDragTakeover}
+              compactMarkers={compactMarkers}
+              // Kun den FREMSTE motoren publiserer utsnitt. I 2D-visning ligger
+              // 3D-basen fortsatt montert under Mapbox-overlayet, og uten denne
+              // gaten ville begge skrevet til samme state.
+              publishViewport={publishViewport && view === "3d"}
+              mapPaddingBottom={mapPaddingBottom}
+              onMapReady={handle3DReady}
             />
+          </div>
+        )}
 
-            {markerStates.map(({ poi, color, icon, isVisible, inCollection }) => {
-              const isActive = state.activePOIId === poi.id;
-              // R10c: når mini-popup viser POI-navn, undertrykk inline-label
-              // for aktiv markør så vi ikke får dobbel-navn-rendering.
-              // Kollisjonskulling: en label uten plassering på label-tieren
-              // kolliderte på begge sider og skjules (aktiv POI kulles
-              // aldri — Infinity-prioritet gir den alltid en plass).
-              const placement = labelPlacements.get(poi.id);
-              const suppressLabel =
-                (popupMode === "mini" && isActive) ||
-                (!isActive &&
-                  zoomTier === "icon+label" &&
-                  placement === undefined);
-              return (
-                <BoardMarker
-                  key={poi.id}
-                  poi={poi}
-                  color={color}
-                  icon={icon}
-                  isActive={isActive}
-                  isVisible={isVisible}
-                  inCollection={inCollection}
-                  zoomTier={zoomTier}
-                  suppressLabel={suppressLabel}
-                  labelSide={placement ?? "right"}
-                  // Ingen `categoryId`: et klikk på kartet er en i-kontekst-
-                  // handling («hva er dette stedet?») og skal ikke også bytte
-                  // kategori, filtrere markørsettet og drille sidebaren inn.
-                  onClick={() => dispatch({ type: "OPEN_POI", id: poi.id })}
-                />
-              );
-            })}
+        {/* Mapbox 2D — base for ikke-addon-prosjekter, ellers et overlay i
+            2D-view. Unmountes ved retur til 3D; map.remove() frigjør konteksten. */}
+        {showMapbox && (
+          <div className={`absolute inset-0 ${has3dAddon ? "z-[5]" : ""}`}>
+            {!mapLoaded && (
+              <div className="absolute inset-0 z-20 bg-[#f0ece6] animate-pulse" />
+            )}
+            <Map
+              ref={mapRef}
+              mapboxAccessToken={TOKEN}
+              initialViewState={{
+                longitude:
+                  pendingCamera?.lng ?? data.home.coordinates.lng,
+                latitude:
+                  pendingCamera?.lat ?? data.home.coordinates.lat,
+                zoom: pendingCamera?.zoom ?? 13.5,
+                bearing: pendingCamera?.heading ?? 0,
+                pitch: pendingCamera?.tilt ?? 0,
+              }}
+              style={{ width: "100%", height: "100%" }}
+              mapStyle={MAP_STYLE_STANDARD}
+              // Zoom-tak (2026-08-12): labels kommer på zoom 16 (LABEL_BREAKPOINT).
+              // 18 gir to hakk inspeksjon — nok til å skille tette sentrums-
+              // klynger (labels trenger separasjonen mer enn pinnene), deretter
+              // er mer zoom bare tomme bygningsflater.
+              maxZoom={18}
+              interactive={interactive}
+              onLoad={handleMapLoad}
+              onMoveEnd={handleMoveEnd}
+              onClick={() => {
+                // Markører kaller stopPropagation i sin onClick, så denne
+                // fyrer kun ved klikk på kart-bakgrunn. Lukk popup hvis åpen.
+                if (state.activePOIId) dispatch({ type: "BACK_TO_DEFAULT" });
+              }}
+            >
+              <HomeMarker
+                coordinates={data.home.coordinates}
+                name={data.home.name}
+                onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
+              />
 
-            <BoardPathLayer />
-            <BoardPathMidpointMarker />
-            <BoardPOILabel />
-            {popupMode === "mini" && state.activePOIId && <BoardPOIMiniPopup />}
-          </Map>
-        </div>
-      )}
+              {markerStates.map(({ poi, color, icon, isVisible, inCollection }) => {
+                const isActive = state.activePOIId === poi.id;
+                // R10c: når mini-popup viser POI-navn, undertrykk inline-label
+                // for aktiv markør så vi ikke får dobbel-navn-rendering.
+                // Kollisjonskulling: en label uten plassering på label-tieren
+                // kolliderte på begge sider og skjules (aktiv POI kulles
+                // aldri — Infinity-prioritet gir den alltid en plass).
+                const placement = labelPlacements.get(poi.id);
+                const suppressLabel =
+                  (popupMode === "mini" && isActive) ||
+                  (!isActive &&
+                    zoomTier === "icon+label" &&
+                    placement === undefined);
+                return (
+                  <BoardMarker
+                    key={poi.id}
+                    poi={poi}
+                    color={color}
+                    icon={icon}
+                    isActive={isActive}
+                    isVisible={isVisible}
+                    inCollection={inCollection}
+                    zoomTier={zoomTier}
+                    suppressLabel={suppressLabel}
+                    labelSide={placement ?? "right"}
+                    // Ingen `categoryId`: et klikk på kartet er en i-kontekst-
+                    // handling («hva er dette stedet?») og skal ikke også bytte
+                    // kategori, filtrere markørsettet og drille sidebaren inn.
+                    onClick={() => dispatch({ type: "OPEN_POI", id: poi.id })}
+                  />
+                );
+              })}
 
-      {/* Ikke-interaktiv tilstand (historie-flate / teaser-glimt): gjennomsiktig
-          pointer-events-skjold over begge kart-motorene. Google 3D har ingen
-          GestureHandling.NONE, så dette skjoldet er den eneste måten å hindre
-          pan/zoom/drag (og onDragTakeover) på den persistente 3D-instansen.
-          z-10 ligger over 3D-base (z-0) og Mapbox-overlay (z-5); kontroll-
-          clusteret (under) skjules uansett når !interactive. */}
-      {!interactive && (
-        <div
-          aria-hidden
-          className="absolute inset-0 z-10"
-          style={{ touchAction: "none" }}
-        />
-      )}
+              <BoardPathLayer />
+              <BoardPathMidpointMarker />
+              <BoardPOILabel />
+              {popupMode === "mini" && state.activePOIId && <BoardPOIMiniPopup />}
+            </Map>
+          </div>
+        )}
 
-      {/* Felles kontroll-cluster (Auto/Fri + Kart/3D) sentrert nederst-midt —
-          kun når 3D-add-on er kjøpt OG kartet er den aktive (interaktive) flaten.
-          Bunn-midten er fri for Google-crediten (låst nederst-venstre) og
-          Mapbox-attribusjonen (nederst-høyre). */}
-      {has3dAddon && interactive && (
-        <BoardMapControls
-          view={view}
-          onViewChange={handleModeChange}
-          cameraMode={cameraMode}
-          onCameraModeChange={handleCameraModeChange}
-          showCameraMode={hasVoiceOver}
-          showFreeHint={showFreeHint}
-          controlsReady={!isWelcomeBeat}
-          compact={compactControls}
-          collapsed={collapsedControls}
-        />
-      )}
-    </div>
+        {/* Ikke-interaktiv tilstand (historie-flate / teaser-glimt): gjennomsiktig
+            pointer-events-skjold over begge kart-motorene. Google 3D har ingen
+            GestureHandling.NONE, så dette skjoldet er den eneste måten å hindre
+            pan/zoom/drag (og onDragTakeover) på den persistente 3D-instansen.
+            z-10 ligger over 3D-base (z-0) og Mapbox-overlay (z-5); kontroll-
+            clusteret (under) skjules uansett når !interactive. */}
+        {!interactive && (
+          <div
+            aria-hidden
+            className="absolute inset-0 z-10"
+            style={{ touchAction: "none" }}
+          />
+        )}
+
+        {/* Felles kontroll-cluster (Auto/Fri + Kart/3D) sentrert nederst-midt —
+            kun når 3D-add-on er kjøpt OG kartet er den aktive (interaktive) flaten.
+            Bunn-midten er fri for Google-crediten (låst nederst-venstre) og
+            Mapbox-attribusjonen (nederst-høyre). */}
+        {has3dAddon && interactive && (
+          <BoardMapControls
+            view={view}
+            onViewChange={handleModeChange}
+            cameraMode={cameraMode}
+            onCameraModeChange={handleCameraModeChange}
+            showCameraMode={hasVoiceOver}
+            showFreeHint={showFreeHint}
+            controlsReady={!isWelcomeBeat}
+            compact={compactControls}
+            collapsed={collapsedControls}
+          />
+        )}
+      </div>
+    </BoardRouteProvider>
   );
 }

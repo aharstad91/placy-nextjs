@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapView3D, type Map3DInstance } from "@/components/map/map-view-3d";
-import { useRouteData } from "@/lib/map/use-route-data";
+import { useBoardRoute } from "./board-route";
 import { DEFAULT_CAMERA_LOCK, type PendingCamera } from "@/components/map/motor-camera";
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { useBoardPopupMode } from "./use-popup-mode";
@@ -121,9 +121,9 @@ export function BoardMap3D({
   const activePOI = useActivePOI();
   const popupMode = useBoardPopupMode();
 
-  // Walking-rute for RouteLayer3D — samme hook som BoardPathLayer (2D).
-  const poiForRoute = state.phase === "poi" && activePOI ? activePOI.raw : null;
-  const { data: routeData } = useRouteData(poiForRoute, data.home.coordinates);
+  // Rute for RouteLayer3D — samme delte kilde som rutelinja og chipen i 2D,
+  // i aktiv reisemodus (BoardRouteProvider).
+  const { data: routeData } = useBoardRoute();
 
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);

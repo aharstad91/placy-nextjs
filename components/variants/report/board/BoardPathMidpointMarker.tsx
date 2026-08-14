@@ -2,8 +2,8 @@
 
 import { Clock } from "lucide-react";
 import { Marker } from "react-map-gl/mapbox";
-import { useRouteData } from "@/lib/map/use-route-data";
-import { useBoard, useActivePOI } from "./board-state";
+import { useBoardRoute } from "./board-route";
+import { useBoard } from "./board-state";
 import { pathMidpoint } from "./path-midpoint";
 
 /**
@@ -21,18 +21,12 @@ import { pathMidpoint } from "./path-midpoint";
  * - routeData er klar (ikke fetching/error)
  * - pathMidpoint returnerer ikke-null (path har ≥3 koordinater)
  *
- * NB: Hooket re-fetches her i tillegg til BoardPathLayer. Dokumentert som
- * akseptabel duplikat-fetch for prototype-stadium — `useRouteData` er
- * memoisert per `(activePOI, projectCenter)` så React 18 dedupliserer
- * setStates. Hvis duplikat blir et problem senere kan dette løftes til delt
- * context.
+ * Rutedata kommer fra `BoardRouteProvider` — samme svar som rutelinja og
+ * 3D-ruten leser. Chipen fyrer altså ingen egen Directions-forespørsel.
  */
 export function BoardPathMidpointMarker() {
-  const { state, data } = useBoard();
-  const activePOI = useActivePOI();
-
-  const poiForRoute = state.phase === "poi" && activePOI ? activePOI.raw : null;
-  const { data: routeData } = useRouteData(poiForRoute, data.home.coordinates);
+  const { state } = useBoard();
+  const { data: routeData } = useBoardRoute();
 
   if (state.phase !== "poi" || !routeData) return null;
   const midpoint = pathMidpoint(routeData.coordinates);

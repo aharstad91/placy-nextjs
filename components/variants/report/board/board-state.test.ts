@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   boardReducer,
   initialBoardState,
+  type BoardAction,
   type BoardState,
 } from "./board-state";
 import type { BoardCategoryId, BoardPOIId } from "./board-data";
@@ -32,6 +33,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       });
     });
 
@@ -42,6 +44,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       };
       const next = boardReducer(start, { type: "SELECT_CATEGORY", id: CAT_B });
       expect(next).toEqual({
@@ -50,6 +53,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       });
     });
 
@@ -101,6 +105,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next).toEqual({
@@ -109,6 +114,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       });
     });
 
@@ -119,6 +125,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next).toEqual({
@@ -127,6 +134,7 @@ describe("boardReducer", () => {
         activePOIId: POI_2,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       });
     });
 
@@ -144,6 +152,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       });
     });
 
@@ -162,6 +171,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       });
     });
 
@@ -172,6 +182,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next.activeCategoryId).toBe(CAT_B);
@@ -186,6 +197,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next.activeCategoryId).toBe(CAT_A);
@@ -206,6 +218,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       };
       const next = boardReducer(start, { type: "BACK_TO_ACTIVE" });
       expect(next).toEqual({
@@ -214,6 +227,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       });
     });
 
@@ -234,6 +248,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next).toEqual({
@@ -242,6 +257,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       });
     });
 
@@ -252,6 +268,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: "walk",
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next.phase).toBe("default");
@@ -268,6 +285,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: true,
         exploreOpen: false,
+        travelMode: "walk",
       };
       const next = boardReducer(start, { type: "RESET_TO_DEFAULT" });
       expect(next).toEqual(initialBoardState);
@@ -324,5 +342,102 @@ describe("OPEN_EXPLORE / CLOSE_EXPLORE (Utforsk-modalen)", () => {
   ])("%s nullstiller exploreOpen", (_label, action) => {
     const open: BoardState = { ...withPoi, exploreOpen: true };
     expect(boardReducer(open, action).exploreOpen).toBe(false);
+  });
+});
+
+// ── Reisemodus (R1, R3) ───────────────────────────────────────────────────
+//
+// ÉN regel bærer hele funksjonen: `travelMode` er leserens perspektiv på hele
+// boardet, ikke en del av navigasjonen. Ingen navigasjons-action får røre den.
+//
+// Regelen er lett å bryte ved en senere refaktorering — to grener returnerer en
+// fersk standardtilstand i stedet for å spre den forrige (RESET_TO_DEFAULT, og
+// BACK_TO_ACTIVE uten aktiv kategori), og en tredje som gjorde det samme ville
+// nullstilt modusen stille. Derfor er hver action listet eksplisitt her framfor
+// et representativt utvalg.
+describe("boardReducer — reisemodus", () => {
+  const inPoi: BoardState = {
+    ...initialBoardState,
+    phase: "poi",
+    activeCategoryId: CAT_A,
+    activePOIId: POI_1,
+    travelMode: "car",
+  };
+
+  const ALL_NAVIGATION_ACTIONS: BoardAction[] = [
+    { type: "SELECT_CATEGORY", id: CAT_B },
+    { type: "SELECT_CATEGORY", id: CAT_B, source: "rail" },
+    { type: "OPEN_POI", id: POI_2 },
+    { type: "OPEN_POI", id: POI_2, categoryId: CAT_B },
+    { type: "BACK_TO_ACTIVE" },
+    { type: "BACK_TO_DEFAULT" },
+    { type: "RESET_TO_DEFAULT" },
+    { type: "START_INTRO" },
+    { type: "END_INTRO" },
+    { type: "OPEN_EXPLORE" },
+    { type: "CLOSE_EXPLORE" },
+  ];
+
+  it("initialtilstanden er gå — sykkel og bil er noe leseren aktivt slår på", () => {
+    expect(initialBoardState.travelMode).toBe("walk");
+  });
+
+  it("SET_TRAVEL_MODE setter modusen og rører ingen andre felt", () => {
+    const before: BoardState = { ...inPoi, introPlaying: true, exploreOpen: true };
+    const after = boardReducer(before, { type: "SET_TRAVEL_MODE", mode: "bike" });
+
+    expect(after.travelMode).toBe("bike");
+    // Alt annet identisk: et modusbytte lukker ikke punktet eller modalen.
+    expect({ ...after, travelMode: before.travelMode }).toEqual(before);
+  });
+
+  it("SET_TRAVEL_MODE til samme modus er en no-op (samme referanse)", () => {
+    expect(boardReducer(inPoi, { type: "SET_TRAVEL_MODE", mode: "car" })).toBe(inPoi);
+  });
+
+  it.each(["walk", "bike", "car"] as const)("modus %s kan settes", (mode) => {
+    expect(boardReducer(initialBoardState, { type: "SET_TRAVEL_MODE", mode }).travelMode).toBe(
+      mode,
+    );
+  });
+
+  it.each(ALL_NAVIGATION_ACTIONS)("bevarer modusen gjennom %j", (action) => {
+    expect(boardReducer(inPoi, action).travelMode).toBe("car");
+  });
+
+  // Grenen returnerte `initialBoardState` direkte — den ville nullstilt modusen.
+  it("BACK_TO_ACTIVE uten aktiv kategori bevarer modusen", () => {
+    const orphanPoi: BoardState = {
+      ...initialBoardState,
+      phase: "poi",
+      activePOIId: POI_1,
+      activeCategoryId: null,
+      travelMode: "bike",
+    };
+    const after = boardReducer(orphanPoi, { type: "BACK_TO_ACTIVE" });
+
+    expect(after).toEqual({ ...initialBoardState, travelMode: "bike" });
+  });
+
+  it("RESET_TO_DEFAULT nullstiller navigasjonen men bevarer modusen", () => {
+    const messy: BoardState = { ...inPoi, introPlaying: true, exploreOpen: true };
+    expect(boardReducer(messy, { type: "RESET_TO_DEFAULT" })).toEqual({
+      ...initialBoardState,
+      travelMode: "car",
+    });
+  });
+
+  it("modus satt, deretter full navigasjons-runde → modusen står", () => {
+    let state = boardReducer(initialBoardState, { type: "SET_TRAVEL_MODE", mode: "bike" });
+    for (const action of [
+      { type: "SELECT_CATEGORY", id: CAT_A },
+      { type: "OPEN_POI", id: POI_1 },
+      { type: "BACK_TO_ACTIVE" },
+      { type: "BACK_TO_DEFAULT" },
+      { type: "RESET_TO_DEFAULT" },
+    ] as BoardAction[]) {
+      state = boardReducer(state, action);
+    }
+    expect(state.travelMode).toBe("bike");
   });
 });

@@ -2,39 +2,42 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Source, Layer } from "react-map-gl/mapbox";
-import { useRouteData } from "@/lib/map/use-route-data";
+import { useBoardRoute } from "./board-route";
 import { useBoard, useActivePOI, useActivePOICategory } from "./board-state";
 
 /**
- * Tegner walking-path fra Home til aktiv POI når phase === "poi".
+ * Tegner ruta fra Home til aktiv POI når phase === "poi", i aktiv reisemodus.
  *
- * Bruker `useRouteData` fra lib/map (debounce + AbortController + Zod-validert
- * /api/directions-respons). Returshape er `{ coordinates: {lat,lng}[], travelMinutes }`
- * — vi reshape til `[lng, lat][]` på layer-boundary.
+ * Leser `BoardRouteProvider` (board-route.tsx) — den delte rutekilden begge
+ * kart-motorene og tids-chipen bruker. Formen er
+ * `{ coordinates: {lat,lng}[], travelMinutes }`; vi reshaper til `[lng, lat][]`
+ * på layer-boundary.
  *
  * Path-fade ved POI-bytte: `line-opacity-transition: { duration: 300 }` på paint-laget
  * gir gratis fade-in/fade-out fra Mapbox når GeoJSON-data byttes ut. Vi styrer opacity
  * via en "visible"-state som settes til false ved POI-bytte og true når ny data ankommer.
  */
 export function BoardPathLayer() {
-  const { state, data } = useBoard();
+  const { state } = useBoard();
   const activePOI = useActivePOI();
   // Fargen tas fra POI-ens EGEN kategori, ikke fra `activeCategoryId`: et
   // markørklikk setter ikke lenger kategorien (2026-08-13), og den gamle
   // `useActiveCategory()`-gaten under gjorde da at ruta aldri ble tegnet.
   const poiCategory = useActivePOICategory();
 
-  // useRouteData forventer en POI (lib/types) — bruk BoardPOI.raw
-  const poiForRoute = state.phase === "poi" && activePOI ? activePOI.raw : null;
-  const { data: routeData } = useRouteData(poiForRoute, data.home.coordinates);
+  // Delt rutekilde (BoardRouteProvider) — samme svar som chipen og 3D-ruten
+  // leser, i aktiv reisemodus.
+  const { data: routeData } = useBoardRoute();
 
   // Fade-styring: når activePOIId endrer, dimm gammel path før ny data ankommer.
   const [opacity, setOpacity] = useState(0);
 
   useEffect(() => {
-    // Ved POI-bytte (eller phase-bytte fra poi → annet): fade ut først.
+    // Ved POI-bytte, modusbytte eller phase-bytte fra poi → annet: fade ut først.
+    // Modusen hører med fordi ruta får en NY form, ikke bare et nytt tall — en
+    // sykkelrute som poppet inn uten fade ville lest som en glitch.
     setOpacity(0);
-  }, [state.activePOIId, state.phase]);
+  }, [state.activePOIId, state.phase, state.travelMode]);
 
   useEffect(() => {
     // Når ny route-data ankommer for aktiv POI, fade inn.

@@ -1,21 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import type { POI } from "@/lib/types";
+import type { POI, TravelMode } from "@/lib/types";
 
 /**
- * Walking-rute-data-hook for board-kontekst (PRD 11 data-lag; PRD 6 eier polyline-render).
- * Live konsumenter: BoardMap3D (3D-rute), BoardPathLayer (2D-overlay),
- * BoardPathMidpointMarker (midpoint-marker). Kalles med `activePOI` + `projectCenter`
- * (= home-koordinaten fra board-data, PRD 5).
+ * Rute-data-hook for board-kontekst (PRD 11 data-lag; PRD 6 eier polyline-render).
+ * Kalles med `activePOI`, `projectCenter` (= home-koordinaten fra board-data,
+ * PRD 5) og aktiv reisemodus.
  *
- * - AbortController: avbryter forrige fetch ved rask POI-switch (forventet)
+ * ÉN konsument: `BoardRouteProvider` (components/variants/report/board/board-route.tsx).
+ * Rutelinja, tids-chipen i 2D og 3D-ruten leser alle derfra. Tidligere kalte de
+ * tre hooket hver for seg — akseptert prototype-gjeld, men med modusveksleren
+ * ville hvert modusbytte fyrt tre Directions-kall i stedet for ett.
+ *
+ * - AbortController: avbryter forrige fetch ved rask POI- eller modus-switch
  * - Zod-validering: maks 500 coords, finite numbers (DoS-guard)
- * - 200ms debounce: forhindrer API-spam ved rask klikking
+ * - 200ms debounce: forhindrer API-spam ved rask klikking i modus-panelet
  * - Silent på feil: caller beslutter UI, ingen toast
  *
- * Cache-strategi V1: single-slot (useState nullstilles ved ny activePOI).
+ * Cache-strategi V1: single-slot (useState nullstilles ved ny POI eller modus).
  */
 
 const DirectionsResponseSchema = z.object({
@@ -41,6 +45,8 @@ const DEBOUNCE_MS = 200;
 export function useRouteData(
   activePOI: POI | null,
   projectCenter: { lat: number; lng: number },
+  /** Aktiv reisemodus. `/api/directions` mapper kortnavnet selv. */
+  travelMode: TravelMode = "walk",
 ): { data: RouteData | null; error: Error | null } {
   const [data, setData] = useState<RouteData | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -60,7 +66,7 @@ export function useRouteData(
 
     const debounceTimer = setTimeout(() => {
       fetch(
-        `/api/directions?origin=${origin}&destination=${destination}&profile=walking`,
+        `/api/directions?origin=${origin}&destination=${destination}&profile=${travelMode}`,
         { signal: controller.signal },
       )
         .then((res) => {
@@ -107,7 +113,12 @@ export function useRouteData(
     activePOI,
     projectCenter.lat,
     projectCenter.lng,
+    // Modusbytte er en ny nøkkel på samme måte som POI-bytte: forrige kall
+    // avbrytes, debouncen demper rask klikking i det utvidede modus-panelet.
+    travelMode,
   ]);
 
-  return { data, error };
+  // Memoisert fordi returverdien er context-verdien i BoardRouteProvider — et
+  // nytt objekt per render ville re-rendret alle tre kart-lagene i gest-frekvens.
+  return useMemo(() => ({ data, error }), [data, error]);
 }

@@ -128,6 +128,12 @@ vi.mock("./BoardMarker", () => ({
 vi.mock("./HomeMarker", () => ({ HomeMarker: () => null }));
 vi.mock("./BoardPathLayer", () => ({ BoardPathLayer: () => null }));
 vi.mock("./BoardPathMidpointMarker", () => ({ BoardPathMidpointMarker: () => null }));
+// Rutekilden er gjennomsiktig her: den fyrer et Directions-kall og hører til
+// board-route-testene, ikke til BoardMaps kamera- og markør-oppførsel.
+vi.mock("./board-route", () => ({
+  BoardRouteProvider: ({ children }: { children: React.ReactNode }) => children,
+  useBoardRoute: () => ({ data: null, error: null }),
+}));
 vi.mock("./BoardPOILabel", () => ({ BoardPOILabel: () => null }));
 vi.mock("./BoardPOIMiniPopup", () => ({ BoardPOIMiniPopup: () => null }));
 vi.mock("./use-board-zoom-tier", () => ({ useBoardZoomTier: () => "icon" }));

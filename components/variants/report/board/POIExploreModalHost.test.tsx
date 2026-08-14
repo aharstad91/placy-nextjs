@@ -88,6 +88,7 @@ const BASE_STATE: BoardState = {
   activePOIId: "p1" as BoardState["activePOIId"],
   introPlaying: false,
   exploreOpen: false,
+  travelMode: "walk",
 };
 
 beforeEach(() => {

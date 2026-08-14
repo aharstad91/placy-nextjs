@@ -19,6 +19,7 @@ import type {
   ViewportRect,
 } from "@/lib/board/board-types";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
+import type { TravelMode } from "@/lib/types";
 import {
   useSubCategoryFilter,
   type SubCategoryFilterApi,
@@ -53,6 +54,20 @@ export interface BoardState {
    * av `phase === "poi"` (se ResponsiveLayoutInner).
    */
   exploreOpen: boolean;
+  /**
+   * Leserens aktive reisemåte for HELE boardet: alle minutt-tall, sorteringer og
+   * rutelinja leser dette feltet.
+   *
+   * `"walk"` ved hver sidelasting. Gå er default fordi den er den ærligste
+   * rammen for et nabolag — bil-modus komprimerer alt til noen få minutter og
+   * gjør stigen informasjonsløs. Sykkel og bil er noe leseren aktivt slår på for
+   * å se et fjernere sted i et annet lys.
+   *
+   * MOTSATT AV `exploreOpen`: dette feltet nullstilles av INGEN navigasjons-
+   * action. Modusen er et perspektiv leseren har valgt, ikke en tilstand som
+   * hører til ett punkt eller én kategori. Se `resetNavigation`.
+   */
+  travelMode: TravelMode;
 }
 
 /**
@@ -79,7 +94,8 @@ export type BoardAction =
   | { type: "START_INTRO" }
   | { type: "END_INTRO" }
   | { type: "OPEN_EXPLORE" }
-  | { type: "CLOSE_EXPLORE" };
+  | { type: "CLOSE_EXPLORE" }
+  | { type: "SET_TRAVEL_MODE"; mode: TravelMode };
 
 export const initialBoardState: BoardState = {
   phase: "default",
@@ -87,7 +103,20 @@ export const initialBoardState: BoardState = {
   activePOIId: null,
   introPlaying: false,
   exploreOpen: false,
+  travelMode: "walk",
 };
+
+/**
+ * Standardtilstand som BEVARER reisemodus.
+ *
+ * To grener returnerte tidligere `initialBoardState` direkte — `RESET_TO_DEFAULT`
+ * og `BACK_TO_ACTIVE` uten aktiv kategori. Begge ville nullstilt modusen under
+ * leseren, midt i en sesjon der hun bevisst hadde slått på sykkel. Går man via
+ * denne, er regelen «navigasjon rører ikke modus» uttrykt på ett sted.
+ */
+function resetNavigation(state: BoardState): BoardState {
+  return { ...initialBoardState, travelMode: state.travelMode };
+}
 
 export function boardReducer(state: BoardState, action: BoardAction): BoardState {
   switch (action.type) {
@@ -108,6 +137,8 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         // Navigasjon avbryter en pågående basic-intro (brukeren tok over).
         introPlaying: false,
         exploreOpen: false,
+        // Bæres videre, aldri nullstilt — se BoardState.travelMode.
+        travelMode: state.travelMode,
       };
     }
 
@@ -124,11 +155,12 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         activePOIId: action.id,
         introPlaying: false,
         exploreOpen: false,
+        travelMode: state.travelMode,
       };
 
     case "BACK_TO_ACTIVE":
       if (!state.activeCategoryId) {
-        return initialBoardState;
+        return resetNavigation(state);
       }
       return {
         ...state,
@@ -149,7 +181,7 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
       };
 
     case "RESET_TO_DEFAULT":
-      return initialBoardState;
+      return resetNavigation(state);
 
     case "OPEN_EXPLORE":
       // Ingen aktiv POI = ingenting å utforske. Ignorér framfor å åpne en
@@ -165,6 +197,12 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
 
     case "END_INTRO":
       return { ...state, introPlaying: false };
+
+    case "SET_TRAVEL_MODE":
+      // Rører BARE modusen. Et modusbytte skal ikke lukke et åpent punkt eller
+      // en åpen modal — leseren ser samme sted i et nytt lys.
+      if (action.mode === state.travelMode) return state;
+      return { ...state, travelMode: action.mode };
 
     default:
       return state;

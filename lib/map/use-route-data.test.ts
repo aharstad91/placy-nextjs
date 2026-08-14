@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -219,5 +219,135 @@ describe("use-route-data source-vakt — ingen UnifiedMapModal-referanse (AC4)",
 
   it("docstring nevner board-kontekst", () => {
     expect(src).toContain("board");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Reisemodus (R10) — ruta følger aktiv modus
+// ---------------------------------------------------------------------------
+
+describe("useRouteData — reisemodus", () => {
+  function urlOf(fetchFn: { mock: { calls: unknown[][] } }, i = 0): string {
+    return fetchFn.mock.calls[i][0] as string;
+  }
+
+  it("default er gange når ingen modus sendes med", async () => {
+    vi.useFakeTimers();
+    const fetchFn = vi.fn(async () => ({ ok: true, json: async () => validDirectionsResponse() }));
+    vi.stubGlobal("fetch", fetchFn as unknown as typeof fetch);
+
+    renderHook(() => useRouteData(makePOI(), PROJECT_CENTER));
+    await act(async () => { vi.advanceTimersByTime(201); });
+
+    expect(urlOf(fetchFn)).toContain("profile=walk");
+    vi.useRealTimers();
+  });
+
+  it.each(["walk", "bike", "car"] as const)("modus %s sendes til /api/directions", async (mode) => {
+    vi.useFakeTimers();
+    const fetchFn = vi.fn(async () => ({ ok: true, json: async () => validDirectionsResponse() }));
+    vi.stubGlobal("fetch", fetchFn as unknown as typeof fetch);
+
+    renderHook(() => useRouteData(makePOI(), PROJECT_CENTER, mode));
+    await act(async () => { vi.advanceTimersByTime(201); });
+
+    expect(urlOf(fetchFn)).toContain(`profile=${mode}`);
+    vi.useRealTimers();
+  });
+
+  it("modusbytte er en ny nøkkel: nytt kall for samme POI", async () => {
+    vi.useFakeTimers();
+    const fetchFn = vi.fn(async () => ({ ok: true, json: async () => validDirectionsResponse() }));
+    vi.stubGlobal("fetch", fetchFn as unknown as typeof fetch);
+
+    const poi = makePOI();
+    const { rerender } = renderHook(
+      ({ mode }: { mode: "walk" | "bike" | "car" }) => useRouteData(poi, PROJECT_CENTER, mode),
+      { initialProps: { mode: "walk" } as { mode: "walk" | "bike" | "car" } },
+    );
+    await act(async () => { vi.advanceTimersByTime(201); });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+
+    rerender({ mode: "bike" });
+    await act(async () => { vi.advanceTimersByTime(201); });
+
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(urlOf(fetchFn, 1)).toContain("profile=bike");
+    vi.useRealTimers();
+  });
+
+  it("rask veksling gå → sykkel → bil innenfor debouncen gir ETT kall, for bil", async () => {
+    vi.useFakeTimers();
+    const fetchFn = vi.fn(async () => ({ ok: true, json: async () => validDirectionsResponse() }));
+    vi.stubGlobal("fetch", fetchFn as unknown as typeof fetch);
+
+    const poi = makePOI();
+    const { rerender } = renderHook(
+      ({ mode }: { mode: "walk" | "bike" | "car" }) => useRouteData(poi, PROJECT_CENTER, mode),
+      { initialProps: { mode: "walk" } as { mode: "walk" | "bike" | "car" } },
+    );
+    // Ingen advance mellom byttene: hver rerender rydder forrige timer.
+    rerender({ mode: "bike" });
+    rerender({ mode: "car" });
+    await act(async () => { vi.advanceTimersByTime(201); });
+
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(urlOf(fetchFn)).toContain("profile=car");
+    vi.useRealTimers();
+  });
+
+  it("modusbytte mens et kall er underveis avbryter det forrige, uten error-state", async () => {
+    const abortSpy = vi.fn();
+    const fetchFn = vi.fn(
+      (_url: string, init?: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            abortSpy();
+            const err = new Error("aborted");
+            err.name = "AbortError";
+            reject(err);
+          });
+        }),
+    );
+    vi.stubGlobal("fetch", fetchFn as unknown as typeof fetch);
+
+    const poi = makePOI();
+    const { result, rerender } = renderHook(
+      ({ mode }: { mode: "walk" | "bike" | "car" }) => useRouteData(poi, PROJECT_CENTER, mode),
+      { initialProps: { mode: "walk" } as { mode: "walk" | "bike" | "car" } },
+    );
+    await waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(1));
+
+    rerender({ mode: "car" });
+    await waitFor(() => expect(abortSpy).toHaveBeenCalled());
+
+    // AbortError er forventet og svelges — ingen feiltilstand i UI-et.
+    expect(result.current.error).toBeNull();
+  });
+
+  it("rate-limit (429) på én modus gir error-state, ikke krasj", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fetchFn = vi.fn(async () => ({ ok: false, status: 429, json: async () => ({}) }));
+    vi.stubGlobal("fetch", fetchFn as unknown as typeof fetch);
+
+    const { result } = renderHook(() => useRouteData(makePOI(), PROJECT_CENTER, "bike"));
+
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+    expect(result.current.data).toBeNull();
+    expect(result.current.error?.message).toContain("429");
+    warn.mockRestore();
+  });
+
+  it("returverdien er referanse-stabil mellom rerendere (context-verdi)", async () => {
+    const fetchFn = vi.fn(async () => ({ ok: true, json: async () => validDirectionsResponse() }));
+    vi.stubGlobal("fetch", fetchFn as unknown as typeof fetch);
+
+    const poi = makePOI();
+    const { result, rerender } = renderHook(() => useRouteData(poi, PROJECT_CENTER, "walk"));
+    await waitFor(() => expect(result.current.data).not.toBeNull());
+
+    const before = result.current;
+    rerender();
+    expect(result.current).toBe(before);
   });
 });
