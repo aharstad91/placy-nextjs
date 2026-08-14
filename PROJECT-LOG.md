@@ -75,6 +75,21 @@
 
 **Kjent rest:** «Ila skole» har `null` koordinater i NSR og kan derfor aldri bli kandidat — StasjonsKvartalet faller tilbake til Bispehaugen med advarsel. Tre eksisterende tester pinnet den gamle «nærmeste per type»-oppførselen og ble skrevet om; det er andre gang på to uker en test har pinnet en bug som fasit (jf. skolekrets-bugen fra Straumen).
 
+**Utrulling på alle boards (samme dag, commit `dcb6329`).** Fiksen måtte ut på boards som alt er provisjonert. Full re-provisjonering ville kostet Google-kall og re-stokket natur-lenkene (`linkNaturPois` beholder bare de 20 nærmeste), så skole-importen fikk et eget inngangspunkt: `refreshZonedSchools` + `scripts/refresh-zoned-schools.ts`, dry-run som default. **Nærings-boards hoppes over** — profilen importerer ikke offentlige POI-er i det hele tatt.
+
+**Utrullingen avdekket to feil i min egen forrige commit, begge rettet:**
+
+1. **Type-prioriteten i `nearestOfType` var feil spak.** Den ga Wesselsløkka de to Charlottenlund-skolene 2,4 km unna framfor Eberg skole 665 m unna — fordi Eberg er en 1–10-skole mens Charlottenlund har «barneskole» i navnet. Avstand dominerer nå igjen i nærmeste-fallbacken; et `exclude`-sett hindrer at én skole fyller to plasser.
+2. **«Nærmeste i tillegg til kretsskolen» var feil regel.** Den var ment å bevare innhold, men trakk inn skoler ingen i strøket sogner til. Kretsskolen står nå ALENE for sitt trinn; nærmeste brukes bare når kretsen ikke gir treff. OSM-sveipet dekker tettheten.
+
+**Nytt steg — `planStaleSchoolUnlink`:** «Møller bilskolen AS» sto igjen som ungdomsskolen på Wesselsløkka fra en gammel kjøring. Den er ingen dublett, så dublett-ryddingen så den ikke. Pipelinen rydder nå NSR-rader den ikke lenger velger — bare rader den selv eier (`source='nsr'`); OSM-sveipet og kuratering røres ikke.
+
+**Resultat over 7 boards:** hvert Trondheims-board har kretsskolen sin, og skoletallet falt der det var oppblåst (StasjonsKvartalet 5 → 3, Wesselsløkka 6 → 4, Grilstad 9 → 8).
+
+**Gjenværende dobbeltoppføringer er fredet med vilje, ikke oversett:** Sakshaug skole ligger dobbelt på Sundsøya (Straumen-kurateringen peker på OSM-raden, NSR-raden er ny) og Charlottenlund barneskole på to Ranheim-boards. Vernet av kuraterte rader slår dublett-ryddingen — bindingen til kurator er viktigere enn en pin for mye. Å rette dem er en kurator-beslutning: pek kurateringen på NSR-raden, så forsvinner dubletten av seg selv.
+
+**Egen bug verdt å huske:** `args.indexOf("--project")` gir −1 når flagget mangler, og `args[-1 + 1]` er `args[0]` — altså «--apply». Første utrullingskjøring filtrerte dermed bort samtlige boards og meldte «0 boards» uten å feile.
+
 ---
 
 ## 2026-08-13 — DEKNINGSREGNSKAP PÅ POSTNUMMER: 114 KARTVERKET-POLYGONER, 9 → 34 OMRÅDER MED FORM
