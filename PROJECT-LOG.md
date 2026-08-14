@@ -6,6 +6,49 @@
 
 ---
 
+## 2026-08-14 — SCOUT-LØYPA PÅ RANHEIM: 46 → 187 STEDER, OG CUTOVER-DUBLETTENE SOM RE-SEED AVDEKKET (branch `feat/scout-ranheim`, 2 commits, ikke pushet)
+
+**Kontekst:** Andreas spurte om lokalkunnskap-harnessen fra Sundsøya/Straumen kunne kjøres på Ranheim for å forbedre det som lå der. Svaret var ja, og premisset var verdt å måle først: **Ranheim-boardet var det svakeste vi hadde**, ikke det sterkeste. `grilstad-marina_byggetrinn-4` — det eneste prosjektet inne i `areas.ranheim`-polygonet, og det Andreas kaller «Ranheim» i strategiloggen — sto på 46 POI-er, 19 kategorier, 0 OSM-punkter, 0 grounding, 0 åpningstider, 0 bildegallerier. Det var provisjonert før recall-fiksene fra Straumen (14 → 31 Google-kategorier, searchText-passet, 15-min busstaket).
+
+**Det skarpeste funnet før noe ble kjørt:** av strøkets 31 kuraterte `highlightCandidates` fantes bare **10 i boardets pool**. `barn-oppvekst` og `natur-friluftsliv` hadde null — to temaer med brødtekst og ingen chips på det ene live Ranheim-boardet. Alle 31 fantes som POI-rader i basen; de var bare aldri importert til dette prosjektet.
+
+**Løypa (samme som Straumen dag 1):** før-snapshot til `backups/` → re-provisjonering `--update --tier 2` → OSM-sveip → pin-audit → Places-backfill → per-POI-grounding → `curate-pois --list` → dossier.
+
+**Resultat:** 46 → 199 POI-er (187 etter dublett-ryddingen), 19 → 30 kategorier, 155 med grounded tekst, 56 med åpningstider, 61 med bildegalleri. Høydepunkter i poolen 10/31 → 21/31; i dekningsregnskapet **0 → 19 av 31 med brukbar tekst** — nest best etter Straumen (29/30). Nivå-2-akseptansen passerte (`nivå 2 OK`, alle 6 temaer arvet, min-chips grønn).
+
+**Hovedfunnet er strukturelt og eldre enn kjøringen: cutover-migrasjonen (074) etterlot to ID-generasjoner for samme sted.** Nye rader (`entur-NSR-StopPlace-*`, `bhf-*`, alle datert 2026-07-06) ble skrevet oppå legacy-rader (`bus-*` fra 01-25, UUID-er fra 03/04) med samme autoritative nøkkel. Re-provisjoneringen linket den ene mens den andre alt var lenket → to pins for samme holdeplass eller barnehage. **Census: 121 rader delte autoritativ nøkkel, 355 delte navn+posisjon innen 150 m.** Bare 16 par var synlige for en bruker, og alle lå på Ranheim-boardet — fordi det er det eneste som er re-provisjonert etter cutover. Wesselsløkka og StasjonsKvartalet ville avdekket sine egne ved neste kjøring.
+
+**Andreas valgte full sammenslåing i `v2.pois`** (framfor per-board-avlenking). Levert som `lib/pipeline/merge-duplicate-pois.ts` (ren logikk, 23 tester) + `scripts/merge-duplicate-pois.ts` (dry-run default). **Kjørt mot prod: 5723 → 5604 rader, 330 lenker repeket, 24 slettet, 0 foreldreløse lenker etterpå.** Synlige dubletter på boardet 16 → 5. Andre kjøring finner 0 — idempotent.
+
+**Fem funn fra sammenslåingen:**
+
+1. **Sikkerhetsporten er ikke kosmetikk.** Entur bruker ÉN StopPlace for begge kjøreretninger: «Bakkegata bussholdeplass (fra sentrum)» og «(til sentrum)» deler nøkkel uten å være samme punkt. Uten navne-/avstands-/kategoriporten ville kjøringen slettet en ekte holdeplass. To grupper holdes utenfor på det grunnlaget (den andre er Rønningsbakken, 116 m mellom radene).
+2. **Kanonisk-valget må starte med kurator-bindingen, ikke datarikdom.** Vinner-regelen er `kuratert highlightCandidate > datarikdom > eldste rad`. Med datarikdom først ville de rikere cutover-radene vunnet og strøkets kuratering mistet bindingen sin — chipsen ville forsvunnet fra boardet uten at noe feilet.
+3. **Referanseflaten er ni, ikke to.** Bare `project_pois` og `product_pois` har FK (CASCADE). `collections.poi_ids`, `events.poi_id` (Moat 2), `place_knowledge.poi_id` (**Lokalkunnskap-moaten**), `pois.parent_poi_id`, `translations.entity_id`, `areas.report_editorial` og `products.config` har ingen. Scriptet aborterer hvis en taper-rad er referert fra en flate det ikke repeker; målingen ga 0, men porten står.
+4. **Etterverifiseringen må skille arvet rot fra skade.** Første kjøring exitet 1 på to kuraterte highlight-IDer som pekte på ikke-eksisterende rader — men de var døde fra før (verifisert mot rollback-dumpen: ingen av dem ble rørt). Uten skillet ville hver framtidig kjøring feilet på noe den ikke forårsaket. **De to reelle hullene: `tyholt/trening-aktivitet` → `google-ChIJLdEFSJsxbUYRdPmmq7yFuIc` og `sentrum/barn-oppvekst` → `a6aaee48-2b4f-47e0-b395-7f4aa4485e09`.** Ikke rørt — det er kuratert innhold.
+5. **`linkNaturPois` er en re-shuffle, ikke et tillegg.** Den sletter alle natur-lenker og re-linker de 20 nærmeste. «Leangen gård parkeringsplass» (en parkeringsplass kategorisert som `park`) forsvant derfor fra poolen ved re-kjøringen. Ufarlig her, men verdt å vite: natur-utvalget er ikke stabilt over kjøringer.
+
+**Nytt løype-verktøy: pin-i-vann-sjekk.** Straumen-loggen slo fast at den visuelle sjekken «fantes ikke» — terreng-passet leste terreng, ikke boardets egne pins. Mapbox Tilequery mot `water`-laget svarer programmatisk: **8 av 199 pins ligger i vann.** Tre er korrekte (molo, marina) eller falske positive (svømmehallens OSM-polygon treffer bassengflaten). Fem er reelle: Hansbakkfjæra, Tømmerstranda, Grilstadfjæra badeplass, Ladestien, og **Væreholmen badeplass — `source=manual`, koordinat 63.43400/10.54300, hånd-tastede runde tall som havner i sjøen.**
+
+**Grounding-kalibreringen bommet, og det er lærdommen:** 25 første POI-er ga 96 % gjennom porten (≥2 kilder / ≥280 tegn), hele boardet ga **78 %** (155/199). Utvalget var skjevt — de første 25 var barnehager med rike kilder, mens hele boardet også har lekeplasser, ladepunkter og kjeder (Rema, Burger King, Peppes, Power, Kiwi) som kjede-/konseptforbudet med vilje stopper. **En kalibrering på de N første radene er ikke en stikkprøve.** Arbeidsliste for det Google ikke fant: `data/pois/grilstad-marina_byggetrinn-4.staging.json`.
+
+**Verifisert i browser på prod (ikke bare i test):** boardet 200, Utforsk-modalen åpner med grounded innhold for Ladestien og gir **nøyaktig én dialog**. Det er første live-test av dobbel-mount-fella fra 08-12 på et board med `has_3d_addon` — Sundsøya hadde den ikke, så fella var identifisert men aldri prøvd. Den slår ikke til.
+
+**Tallgåte lukket underveis:** `refresh-opening-hours` meldte «Skrevet: 61/61», men bare 56 rader hadde åpningstider etterpå. Ikke datatap — `buildOpeningHoursPatch` skriver `google_phone` alene når Google mangler tider, og teller raden som skrevet. 56 + 5 = 61.
+
+**Mekanisk:** `tsc` rent · `npm run lint` 0 errors (51 pre-eksisterende warnings) · **2307 tester grønne / 164 filer** · prod-board 200 med 0 relevante konsollfeil · alle 8 boards verifisert uten foreldreløse lenker. Google-kost: 66 + 221 Places-kall, 249 Gemini-kall (innenfor gratiskvoten).
+
+**Åpent:**
+
+- **Fasit-passet gjenstår** — krever Andreas' lokalkunnskap, samme øvelse som `straumen.fasit.md`. Dossier med gap-hypoteser skrevet FØR fasiten: `data/areas/ranheim.dossier.md`.
+- **VO-manuset er utdatert mot dataene.** Karaoke-sporet sier «Fire bussholdeplasser ligger i nabolaget» mens boardet nå viser flere. Manus er et øyeblikksbilde som ikke følger med på re-seed — gjelder alle boards med VO.
+- **Strøket trenger et board nærmere sitt eget senter.** Ni av de ti høydepunktene som fortsatt ikke når fram, filtreres korrekt bort av per-kategori-gangavstand fra Grilstad Marina (1,2–2,2 km unna). De tre demo-adressene fra juni-PoC-en finnes ikke lenger som prosjekter.
+- **Fem dublett-par igjen på boardet** som ikke deler ekstern nøkkel: `curated-reseed`-rader mot Google/OSM-rader for samme sted (Grilstad FUS barnehage, Trondheim Båtforening, Rotvollfjæra) pluss tre «Recharge Charging Station» som trolig er tre ulike ladere med samme navn. Krever kurator-beslutning, ikke en regel.
+- **Ranheim ↔ Charlottenlund-overlappet står urørt** (39 vitnepunkter) — fortsatt den egentlige EM1-Grilstadporten-blokkeringen.
+- To døde kuraterte highlight-IDer på Tyholt og Sentrum (se funn 4).
+
+---
+
 ## 2026-08-13 — DEKNINGSREGNSKAP PÅ POSTNUMMER: 114 KARTVERKET-POLYGONER, 9 → 34 OMRÅDER MED FORM
 
 **Kontekst:** Strategi-sesjonen 2026-08-13 avgrenset Moat 1 (leverandør-tekst er stillas, kuratert tekst er varelager) men lot ett spørsmål stå åpent: hvordan vet vi hvor vi står? Andreas formulerte modellen fra et menneskelig perspektiv — «jeg kan se hele området som dekket av innsikt, ett område om gangen» — med Fastouts forhåndsfløyne dronepanorama som analogi: gjør jobben på området *før* noen spør. Sesjonen gikk fra spørsmål («finnes det databaser som har mappet Norge?») via verifisering til bygd og kjørt pipeline.
