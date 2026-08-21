@@ -11,6 +11,7 @@ import {
   type GroundingMetadata,
 } from "./types";
 import { sanitizeSearchEntryPointHtml } from "./sanitize";
+import { belastApiKall } from "@/lib/api-budget";
 
 export const GEMINI_MODEL = "gemini-2.5-flash" as const;
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
@@ -182,6 +183,8 @@ export async function callGemini(
     contents: [{ parts: [{ text: prompt ?? buildPrompt(userQuery) }] }],
     tools: [{ google_search: {} }],
   };
+
+  belastApiKall("gemini-grounding");
 
   let res: Response;
   try {

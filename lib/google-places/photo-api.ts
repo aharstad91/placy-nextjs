@@ -9,6 +9,7 @@
  */
 
 import { PlacesApiError } from "./errors";
+import { belastApiKall } from "@/lib/api-budget";
 
 interface PhotoResource {
   name: string; // e.g. "places/ChIJ.../photos/AUc..."
@@ -47,6 +48,7 @@ export async function fetchPhotoNames(
 ): Promise<string[]> {
   if (!PLACE_ID_PATTERN.test(placeId)) return [];
 
+  belastApiKall("places-details-essentials");
   const url = `https://places.googleapis.com/v1/places/${placeId}`;
   const res = await fetch(url, {
     headers: {
@@ -89,6 +91,7 @@ export async function resolvePhotoUri(
   apiKey: string,
   maxWidthPx = 800,
 ): Promise<string | null> {
+  belastApiKall("places-photo");
   const url = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=${maxWidthPx}&skipHttpRedirect=true`;
   const res = await fetch(url, {
     headers: { "X-Goog-Api-Key": apiKey },

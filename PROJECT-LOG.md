@@ -42,6 +42,119 @@
 **Åpent punkt, produktvalg:** på mobil (`collapsed`-varianten) havner modusvelgeren bak ⚙-FAB-en, nøyaktig der planen sa den ikke skulle. Chipen på ruta virker der, så modusen er nåbar når et punkt er åpent, men den vedvarende kontrollen er skjult. Planens kandidat er nabolags-sheetens header, som er der minutt-tallene bor på mobil. Ikke bygd — venter på Andreas.
 
 **Deferred (i planens Scope Boundaries):** modus-bevisst POI-radius (bil-modus utvider settet for rurale boards), kollektiv som fjerde modus, sletting av `ReportPOICard` + `MapPopupCard`, orfan `gmp-popover`-CSS i `app/globals.css:74-89`. Byggetids-utvalgslogikk (`poi-score`, `category-score`, tema-kvalifisering) forblir gang-basert med vilje — endres den per modus, endres boardets innhold. Ingenting pushet, ingen PR.
+---
+
+## 2026-08-14 — SCOUT-LØYPA PÅ RANHEIM: 46 → 187 STEDER, OG CUTOVER-DUBLETTENE SOM RE-SEED AVDEKKET (branch `feat/scout-ranheim`, 2 commits, ikke pushet)
+
+**Kontekst:** Andreas spurte om lokalkunnskap-harnessen fra Sundsøya/Straumen kunne kjøres på Ranheim for å forbedre det som lå der. Svaret var ja, og premisset var verdt å måle først: **Ranheim-boardet var det svakeste vi hadde**, ikke det sterkeste. `grilstad-marina_byggetrinn-4` — det eneste prosjektet inne i `areas.ranheim`-polygonet, og det Andreas kaller «Ranheim» i strategiloggen — sto på 46 POI-er, 19 kategorier, 0 OSM-punkter, 0 grounding, 0 åpningstider, 0 bildegallerier. Det var provisjonert før recall-fiksene fra Straumen (14 → 31 Google-kategorier, searchText-passet, 15-min busstaket).
+
+**Det skarpeste funnet før noe ble kjørt:** av strøkets 31 kuraterte `highlightCandidates` fantes bare **10 i boardets pool**. `barn-oppvekst` og `natur-friluftsliv` hadde null — to temaer med brødtekst og ingen chips på det ene live Ranheim-boardet. Alle 31 fantes som POI-rader i basen; de var bare aldri importert til dette prosjektet.
+
+**Løypa (samme som Straumen dag 1):** før-snapshot til `backups/` → re-provisjonering `--update --tier 2` → OSM-sveip → pin-audit → Places-backfill → per-POI-grounding → `curate-pois --list` → dossier.
+
+**Resultat:** 46 → 199 POI-er (187 etter dublett-ryddingen), 19 → 30 kategorier, 155 med grounded tekst, 56 med åpningstider, 61 med bildegalleri. Høydepunkter i poolen 10/31 → 21/31; i dekningsregnskapet **0 → 19 av 31 med brukbar tekst** — nest best etter Straumen (29/30). Nivå-2-akseptansen passerte (`nivå 2 OK`, alle 6 temaer arvet, min-chips grønn).
+
+**Hovedfunnet er strukturelt og eldre enn kjøringen: cutover-migrasjonen (074) etterlot to ID-generasjoner for samme sted.** Nye rader (`entur-NSR-StopPlace-*`, `bhf-*`, alle datert 2026-07-06) ble skrevet oppå legacy-rader (`bus-*` fra 01-25, UUID-er fra 03/04) med samme autoritative nøkkel. Re-provisjoneringen linket den ene mens den andre alt var lenket → to pins for samme holdeplass eller barnehage. **Census: 121 rader delte autoritativ nøkkel, 355 delte navn+posisjon innen 150 m.** Bare 16 par var synlige for en bruker, og alle lå på Ranheim-boardet — fordi det er det eneste som er re-provisjonert etter cutover. Wesselsløkka og StasjonsKvartalet ville avdekket sine egne ved neste kjøring.
+
+**Andreas valgte full sammenslåing i `v2.pois`** (framfor per-board-avlenking). Levert som `lib/pipeline/merge-duplicate-pois.ts` (ren logikk, 23 tester) + `scripts/merge-duplicate-pois.ts` (dry-run default). **Kjørt mot prod: 5723 → 5604 rader, 330 lenker repeket, 24 slettet, 0 foreldreløse lenker etterpå.** Synlige dubletter på boardet 16 → 5. Andre kjøring finner 0 — idempotent.
+
+**Fem funn fra sammenslåingen:**
+
+1. **Sikkerhetsporten er ikke kosmetikk.** Entur bruker ÉN StopPlace for begge kjøreretninger: «Bakkegata bussholdeplass (fra sentrum)» og «(til sentrum)» deler nøkkel uten å være samme punkt. Uten navne-/avstands-/kategoriporten ville kjøringen slettet en ekte holdeplass. To grupper holdes utenfor på det grunnlaget (den andre er Rønningsbakken, 116 m mellom radene).
+2. **Kanonisk-valget må starte med kurator-bindingen, ikke datarikdom.** Vinner-regelen er `kuratert highlightCandidate > datarikdom > eldste rad`. Med datarikdom først ville de rikere cutover-radene vunnet og strøkets kuratering mistet bindingen sin — chipsen ville forsvunnet fra boardet uten at noe feilet.
+3. **Referanseflaten er ni, ikke to.** Bare `project_pois` og `product_pois` har FK (CASCADE). `collections.poi_ids`, `events.poi_id` (Moat 2), `place_knowledge.poi_id` (**Lokalkunnskap-moaten**), `pois.parent_poi_id`, `translations.entity_id`, `areas.report_editorial` og `products.config` har ingen. Scriptet aborterer hvis en taper-rad er referert fra en flate det ikke repeker; målingen ga 0, men porten står.
+4. **Etterverifiseringen må skille arvet rot fra skade.** Første kjøring exitet 1 på to kuraterte highlight-IDer som pekte på ikke-eksisterende rader — men de var døde fra før (verifisert mot rollback-dumpen: ingen av dem ble rørt). Uten skillet ville hver framtidig kjøring feilet på noe den ikke forårsaket. **De to reelle hullene: `tyholt/trening-aktivitet` → `google-ChIJLdEFSJsxbUYRdPmmq7yFuIc` og `sentrum/barn-oppvekst` → `a6aaee48-2b4f-47e0-b395-7f4aa4485e09`.** Ikke rørt — det er kuratert innhold.
+5. **`linkNaturPois` er en re-shuffle, ikke et tillegg.** Den sletter alle natur-lenker og re-linker de 20 nærmeste. «Leangen gård parkeringsplass» (en parkeringsplass kategorisert som `park`) forsvant derfor fra poolen ved re-kjøringen. Ufarlig her, men verdt å vite: natur-utvalget er ikke stabilt over kjøringer.
+
+**Nytt løype-verktøy: pin-i-vann-sjekk.** Straumen-loggen slo fast at den visuelle sjekken «fantes ikke» — terreng-passet leste terreng, ikke boardets egne pins. Mapbox Tilequery mot `water`-laget svarer programmatisk: **8 av 199 pins ligger i vann.** Tre er korrekte (molo, marina) eller falske positive (svømmehallens OSM-polygon treffer bassengflaten). Fem er reelle: Hansbakkfjæra, Tømmerstranda, Grilstadfjæra badeplass, Ladestien, og **Væreholmen badeplass — `source=manual`, koordinat 63.43400/10.54300, hånd-tastede runde tall som havner i sjøen.**
+
+**Grounding-kalibreringen bommet, og det er lærdommen:** 25 første POI-er ga 96 % gjennom porten (≥2 kilder / ≥280 tegn), hele boardet ga **78 %** (155/199). Utvalget var skjevt — de første 25 var barnehager med rike kilder, mens hele boardet også har lekeplasser, ladepunkter og kjeder (Rema, Burger King, Peppes, Power, Kiwi) som kjede-/konseptforbudet med vilje stopper. **En kalibrering på de N første radene er ikke en stikkprøve.** Arbeidsliste for det Google ikke fant: `data/pois/grilstad-marina_byggetrinn-4.staging.json`.
+
+**Verifisert i browser på prod (ikke bare i test):** boardet 200, Utforsk-modalen åpner med grounded innhold for Ladestien og gir **nøyaktig én dialog**. Det er første live-test av dobbel-mount-fella fra 08-12 på et board med `has_3d_addon` — Sundsøya hadde den ikke, så fella var identifisert men aldri prøvd. Den slår ikke til.
+
+**Tallgåte lukket underveis:** `refresh-opening-hours` meldte «Skrevet: 61/61», men bare 56 rader hadde åpningstider etterpå. Ikke datatap — `buildOpeningHoursPatch` skriver `google_phone` alene når Google mangler tider, og teller raden som skrevet. 56 + 5 = 61.
+
+**Mekanisk:** `tsc` rent · `npm run lint` 0 errors (51 pre-eksisterende warnings) · **2307 tester grønne / 164 filer** · prod-board 200 med 0 relevante konsollfeil · alle 8 boards verifisert uten foreldreløse lenker. Google-kost: 66 + 221 Places-kall, 249 Gemini-kall (innenfor gratiskvoten).
+
+**Åpent:**
+
+- **Fasit-passet gjenstår** — krever Andreas' lokalkunnskap, samme øvelse som `straumen.fasit.md`. Dossier med gap-hypoteser skrevet FØR fasiten: `data/areas/ranheim.dossier.md`.
+- **VO-manuset er utdatert mot dataene.** Karaoke-sporet sier «Fire bussholdeplasser ligger i nabolaget» mens boardet nå viser flere. Manus er et øyeblikksbilde som ikke følger med på re-seed — gjelder alle boards med VO.
+- **Strøket trenger et board nærmere sitt eget senter.** Ni av de ti høydepunktene som fortsatt ikke når fram, filtreres korrekt bort av per-kategori-gangavstand fra Grilstad Marina (1,2–2,2 km unna). De tre demo-adressene fra juni-PoC-en finnes ikke lenger som prosjekter.
+- **Fem dublett-par igjen på boardet** som ikke deler ekstern nøkkel: `curated-reseed`-rader mot Google/OSM-rader for samme sted (Grilstad FUS barnehage, Trondheim Båtforening, Rotvollfjæra) pluss tre «Recharge Charging Station» som trolig er tre ulike ladere med samme navn. Krever kurator-beslutning, ikke en regel.
+- **Ranheim ↔ Charlottenlund-overlappet står urørt** (39 vitnepunkter) — fortsatt den egentlige EM1-Grilstadporten-blokkeringen.
+- To døde kuraterte highlight-IDer på Tyholt og Sentrum (se funn 4).
+
+### 2026-08-14 (fortsettelse 2) — ENGELSK VAR ALDRI EN FUNKSJON, OG POI-TEKSTEN VAR FORANKRET I DØDE PROSJEKTER
+
+**Utløseren var et skjermbilde igjen.** Andreas så «Grilstadstranda is a popular bathing spot along the Trondheim Fjord» i en POI-popup på Ranheim-boardet — med knappen «Utforsk» på norsk rett under. Databasen hadde norsk tekst hele tiden.
+
+**Symptomet:** `LocaleProvider` byttet locale til engelsk av seg selv når `navigator.language` starter med «en». Engelsk er bare halvveis implementert — knappelabels er hardkodet norske — så flaten ble en blanding.
+
+**Funnet under symptomet er verre:** `applyTranslations` hentet fra 2 576 oversettelsesrader, ALLE `locale='en'`, alle laget februar–april 2026. Ingen siden. En engelsk bruker fikk altså innhold fra før cutover, før grounding og før alle POI-ene vi la til samme dag. **71 av radene refererte til Overvik**, et prosjekt som ikke finnes lenger. Slettet med rollback-dump.
+
+**Mekanismen, ikke dataene, var problemet — og det er andre gang.** 2026-08-12 ble 18 tema-rader på bar nøkkel slettet fordi de ga «fifteen-minute walk from Overvik» på alle ukuraterte boards. Da ryddet vi dataene og lot auto-deteksjonen stå. Nå er den fjernet: norsk er default, et lagret valg respekteres. 7 tester, hvorav én asserter at overstyringen av `navigator.language` faktisk virker — ellers ville regresjonsvakten bestått uansett.
+
+**Konsekvens verdt å ha klart for seg:** et sveip på hele repoet viser at **ingenting setter locale** — ingen språkvelger, ingen URL-parameter, og auto-deteksjonen kalte `setLocaleState`, ikke `setLocale`, så den skrev aldri til localStorage. Auto-deteksjonen var den eneste veien inn i engelsk. Engelsk er dermed uoppnåelig nå, og de 2 505 gjenværende radene er sovende data. **Engelsk var aldri en funksjon vi bygde — det var en bieffekt av nettleserspråket.** Skal en kunde ha engelsk, må det bygges som et faktisk valg, med ferskt innhold.
+
+**Andreas' egen observasjon åpnet det virkelige problemet: «vi har nok en del utfordringer med legacy poi details».** Den norske kildeteksten på samme POI sa «Sjønær bading i sommerhalvåret. **Kort vei fra Overvik.**» Oversettelsen var ikke feilen — den var en tro kopi av en norsk tekst som allerede var gal.
+
+**Den strukturelle feilen:** `pois` er ÉN rad delt av alle boards. En tekst som navngir et prosjekt er sann på ett board og feil på alle andre som viser samme POI. Samme prinsipp som ble slått fast 08-12 om tema-nøklene: globale nøkler kan aldri bære stedsbundet prosa. **105 POI-er var rammet, 63 av dem lenket til et board** (martin-barstads-veg 28, StasjonsKvartalet 27, Ferjemannsveien 22, Grilstad 21).
+
+**Rekkefølgen var poenget.** Å bare slette ville tømt live demo-boards, så grounding gikk først: fire boards (Stasjonskvartalet, Ferjemannsveien, Teknostallen, Oppdal). Dekning etterpå — **Stasjonskvartalet 97 %, Ferjemannsveien 96 %, Teknostallen 95 %, Oppdal 88 %**. Antall POI-er med erstatning steg fra 20 til 44, og **bare 3 sto igjen som ville mistet ALL tekst** (mitt tidligere estimat på 91 var feil — det overså at bare det ene feltet er forankret).
+
+**De tre var skoler der faktaene var gode og bare forankringen gal** («Ungdomsskolen for Overvik — 8.–10. trinn»). Den ene som faktisk ligger på et board ble skrevet om i stedet for slettet: «Ungdomsskole med 8.–10. trinn.» De to andre er ulenkede dubletter. **104 POI-er ryddet, 0 treff igjen, rollback-dump i `backups/`.**
+
+**Måle-gotcha verdt å huske:** `DEKNING`-linjen i grounding-scriptet teller bare kjøringens EGNE treff. Ferjemannsveien meldte «28/284 = 10 %» og så ut som en brekkasje — men scriptet gjorde bare 33 kall, fordi 251 POI-er alt var grunnet gjennom Stasjonskvartalet-kjøringen. Sentrumsboards deler POI-pool. Scriptets egen post-write-linje ga det rette tallet (261). Samme effekt ga tre boards som aldri ble kjørt direkte gratis dekning: cutover-pilot 68 %, martin-barstads 46 %, Wesselsløkka 25 %.
+
+**Nytt verktøy:** `lib/pipeline/legacy-poi-text.ts` + `scripts/audit-legacy-poi-text.ts` (audit read-only som default, `--clear` skilt fra `--apply`, `--kun-med-erstatning` for den trygge halvparten). Testen avdekket en feil i mitt eget mønster: `\b` etter et navn som slutter på «)» kan aldri matche, siden begge tegn er ikke-ord-tegn. Ordgrensene settes nå betinget.
+
+**Mekanisk:** `tsc` rent · lint 0 errors · **2 380 tester grønne** · commits `61b56e9`, `0b3bfe8`.
+
+**Åpent:** tre boards har fortsatt hull i grounding (Wesselsløkka 79, cutover-pilot 67, martin-barstads 53 POI-er uten tekst ≈ 200 Gemini-kall). Detektoren matcher fulle prosjektnavn, så tekst som skriver «Ferjemannsveien» uten «10» fanges ikke — og bar gatenavn kan ikke matches uten falske positiver. De 2 505 sovende oversettelsesradene er ikke slettet.
+
+### 2026-08-14 (fortsettelse) — SKOLEKRETSEN BESTEMMER SKOLENE, IKKE AVSTANDEN
+
+**Utløseren var et skjermbilde.** Andreas så på kartet rundt Vikåsen/Markaplassen og spurte hvorfor Markaplassen ungdomsskole — «skolen man sogner til» — ikke var med. Første svar var mekanisk riktig og utilstrekkelig: den ligger 2 943 m fra Grilstad Marina, utenfor discovery-radiusen på 2 500 m. Graving avdekket at det bare var symptomet.
+
+**Den egentlige feilen: `importNSR` valgte NÆRMESTE skole per type, ikke kretsskolen.** På Grilstad Marina ga det «Stiftelsen steinerskolen på Rotvoll» (1 150 m) som barneskolen, mens Ranheim skole — den faktiske kretsskolen — bare lå på boardet fordi noen hadde lagt den inn for hånd som `curated-reseed`. Kretsskolen er et faktum om ADRESSEN, ikke om avstanden.
+
+**To rotårsaker til at INGEN board hadde en NSR-ungdomsskole i det hele tatt:**
+
+1. **NSR koder alle Trondheims 80 grunnskoler som nace 85.201**, og kommunen har ikke én eneste 85.21x-enhet. `resolveSchoolType` mappet 85.201 → barneskole, så typen «ungdomsskole» kunne aldri oppstå i Trondheim. Skoleslaget utledes nå av navnet, med ny type `grunnskole` (1–10) som er gyldig for BEGGE kretstyper — Markaplassen skole er nettopp en 1–10-skole og ER ungdomsskolen for kretsen sin.
+2. **Kretsen heter BLUSSUVOLD, skolen heter «Blussuvoll skole».** Én tegns forskjell. Løst med en stram nær-match (maks én redigering, minst 6 tegn, og kun når treffet er entydig).
+
+**Sidegevinst fra samme sveip:** «Møller bilskolen AS avd Trøndelag» sto som ungdomsskolen på Wesselsløkka. Kjøre-, musikk- og kompetanseskoler lukes nå ut på navn, siden NSR gir dem grunnskole-koder.
+
+**Feil jeg innførte og rettet i samme sesjon (to stykker):**
+
+1. **Kretsvalget la dubletter på kartet.** NSR-raden ble hentet inn ved siden av OSM-radens kopi av samme skole — de deler ingen ekstern nøkkel, så `upsertAndLink` ser dem ikke. Importen rydder nå i egen pool; bare LENKEN fjernes, aldri POI-raden, og rader kuratering peker på fredes.
+2. **Første dublett-nøkkel fjernet feil skole.** Den gjenbrukte kretsnøkkelen, som med vilje stripper «barneskole»/«ungdomsskole» — så «Charlottenlund barneskole» ble fjernet som dublett av «Charlottenlund ungdomsskole». Det er to ulike skoler på samme tomt. Dublettnøkkelen BEHOLDER skoleslaget; kretsnøkkelen gjør det ikke. Lenken ble gjenopprettet med et nytt OSM-sveip.
+
+**Et tredje funn i testkjøringen:** `nearestOfType` lot en nærliggende 1–10-skole kapre ungdomsskole-plassen fra en ekte ungdomsskole litt lenger unna. Eksplisitt type går nå foran avstand, samme prinsipp som i kretsmatchen.
+
+**Verifisert mot alle 8 boards:** hvert Trondheims-board får nå kretsskolen sin (StasjonsKvartalet → Rosenborg, Wesselsløkka → Eberg + Blussuvoll, Teknostallen → Singsaker + Rosenborg, Ferjemannsveien → Bispehaugen + Rosenborg), Vikåsen-adressen får Markaplassen, og Straumen/Oppdal — uten kretsdata — faller tilbake til nærmeste som før (stedsnøytralitet). Ranheim-boardet endte på **182 POI-er, 9 skoler, 0 skole-dubletter, nivå 2 OK**.
+
+**Kuraterings-innsikten Andreas' spørsmål egentlig avdekket:** `areas.ranheim` spenner over TO ungdomsskolekretser. Rutemåling i polygonet gir 50 % Markaplassen og 42 % Charlottenlund. En strøk-tekst kan derfor ikke navngi «ungdomsskolen» uten å ta feil for halve strøket — og det er nettopp derfor per-adresse-kretsoppslaget må være riktig. Dagens kuraterte tekst nevner bare Ranheim skole (barneskolen, riktig for hele RANHEIM-kretsen) og ingen ungdomsskole.
+
+**Mekanisk:** `tsc` rent · lint 0 errors · **2 353 tester grønne** (46 nye i `zoned-school-selection`) · commit `ddd2520`.
+
+**Kjent rest:** «Ila skole» har `null` koordinater i NSR og kan derfor aldri bli kandidat — StasjonsKvartalet faller tilbake til Bispehaugen med advarsel. Tre eksisterende tester pinnet den gamle «nærmeste per type»-oppførselen og ble skrevet om; det er andre gang på to uker en test har pinnet en bug som fasit (jf. skolekrets-bugen fra Straumen).
+
+**Utrulling på alle boards (samme dag, commit `dcb6329`).** Fiksen måtte ut på boards som alt er provisjonert. Full re-provisjonering ville kostet Google-kall og re-stokket natur-lenkene (`linkNaturPois` beholder bare de 20 nærmeste), så skole-importen fikk et eget inngangspunkt: `refreshZonedSchools` + `scripts/refresh-zoned-schools.ts`, dry-run som default. **Nærings-boards hoppes over** — profilen importerer ikke offentlige POI-er i det hele tatt.
+
+**Utrullingen avdekket to feil i min egen forrige commit, begge rettet:**
+
+1. **Type-prioriteten i `nearestOfType` var feil spak.** Den ga Wesselsløkka de to Charlottenlund-skolene 2,4 km unna framfor Eberg skole 665 m unna — fordi Eberg er en 1–10-skole mens Charlottenlund har «barneskole» i navnet. Avstand dominerer nå igjen i nærmeste-fallbacken; et `exclude`-sett hindrer at én skole fyller to plasser.
+2. **«Nærmeste i tillegg til kretsskolen» var feil regel.** Den var ment å bevare innhold, men trakk inn skoler ingen i strøket sogner til. Kretsskolen står nå ALENE for sitt trinn; nærmeste brukes bare når kretsen ikke gir treff. OSM-sveipet dekker tettheten.
+
+**Nytt steg — `planStaleSchoolUnlink`:** «Møller bilskolen AS» sto igjen som ungdomsskolen på Wesselsløkka fra en gammel kjøring. Den er ingen dublett, så dublett-ryddingen så den ikke. Pipelinen rydder nå NSR-rader den ikke lenger velger — bare rader den selv eier (`source='nsr'`); OSM-sveipet og kuratering røres ikke.
+
+**Resultat over 7 boards:** hvert Trondheims-board har kretsskolen sin, og skoletallet falt der det var oppblåst (StasjonsKvartalet 5 → 3, Wesselsløkka 6 → 4, Grilstad 9 → 8).
+
+**Gjenværende dobbeltoppføringer er fredet med vilje, ikke oversett:** Sakshaug skole ligger dobbelt på Sundsøya (Straumen-kurateringen peker på OSM-raden, NSR-raden er ny) og Charlottenlund barneskole på to Ranheim-boards. Vernet av kuraterte rader slår dublett-ryddingen — bindingen til kurator er viktigere enn en pin for mye. Å rette dem er en kurator-beslutning: pek kurateringen på NSR-raden, så forsvinner dubletten av seg selv.
+
+**Egen bug verdt å huske:** `args.indexOf("--project")` gir −1 når flagget mangler, og `args[-1 + 1]` er `args[0]` — altså «--apply». Første utrullingskjøring filtrerte dermed bort samtlige boards og meldte «0 boards» uten å feile.
 
 ---
 

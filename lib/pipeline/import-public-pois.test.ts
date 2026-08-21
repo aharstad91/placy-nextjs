@@ -67,6 +67,9 @@ function buildMockSupabase() {
           upsert: vi.fn().mockResolvedValue(linkResult),
         };
       }
+      if (table === "areas") {
+        return { select: vi.fn().mockResolvedValue({ data: [], error: null }) };
+      }
       return {};
     }),
   };
@@ -88,7 +91,7 @@ describe("importPublicPois — Unit 2", () => {
     kommunenummer: "5028",
   };
 
-  it("NSR: 5 skoler i respons → velger eksakt 1 per type (3 linkes)", async () => {
+  it("NSR: 5 skoler i respons → kretsløs adresse faller tilbake til nærmeste per type", async () => {
     const mockSupabase = buildMockSupabase();
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
 

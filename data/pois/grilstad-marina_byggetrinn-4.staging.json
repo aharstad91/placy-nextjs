@@ -1,0 +1,645 @@
+{
+  "projectId": "grilstad-marina_byggetrinn-4",
+  "generatedAt": "2026-08-14T07:24:36.934Z",
+  "tekstregler": [
+    "Presens — hva som ER der. Aldri årstall, byggehistorikk eller «har lange tradisjoner».",
+    "Beboer-perspektiv: målgruppen er boligkjøperen som blir beboer, ikke en turist.",
+    "Fakta, ikke poesi. Ingen «lukten av», «smaken av».",
+    "IKKE åpningstider, telefon eller priser — de hentes fra Places API og vises alt i modalen.",
+    "Navngi, aldri generaliser: «Apotek 1 Nardo» slår «flere apotek».",
+    "Funksjon ER lov: hva stedet gjør for deg som bor der. Det er hele poenget med denne lista.",
+    "Lengde 80–600 tegn. La narrative stå tom for å hoppe over et POI."
+  ],
+  "pois": [
+    {
+      "id": "google-ChIJ4yHnKF4wbUYRvC3nrWwBIcs",
+      "name": "Ranheim Dental",
+      "categoryId": "dentist",
+      "categoryName": "Tannlege",
+      "address": "Grilstadvegen 1, Trondheim",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 674 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "website": "http://www.trondheimtannlege.no/",
+        "rating": 5,
+        "reviewCount": 572
+      },
+      "rejectedNarrative": "Ranheim Dental, også kjent som Trondheim Tannlegesenter, avd. Ranheim, er en moderne tannklinikk lokalisert i Grilstadvegen 1 på Ranheim. Stedet tilbyr omfattende tannhelsetjenester og er et sentralt tilbud for beboere i nærområdet.\n\n*   Klinikken har ni behandlingsrom bemannet med tannleger, tannpleiere og spesialister som periospesialist/oralkirurg.\n*   Lokalene er universelt utformet for pasienter.\n*   Det finnes topp moderne og avansert tannmedisinsk utstyr, inkludert OPG og digital skanner.\n*   Gratis parkering er tilgjengelig både foran og rundt bygningen.\n*   Stedet ligger ved et busstopp (Skovgård holdeplass), som gjør det enkelt å nå med kollektivtransport.",
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJXctPUYowbUYRr9WGctzKmVM",
+      "name": "Impulse Grilstad",
+      "categoryId": "gym",
+      "categoryName": "Treningssenter",
+      "address": "Skonnertvegen 8, Ranheim",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 583 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "rating": 3.9,
+        "reviewCount": 72
+      },
+      "rejectedNarrative": "Impulse Grilstad er et treningssenter som tilbyr et bredt spekter av muligheter for fysisk aktivitet. Stedet brukes av beboere i nærområdet for styrketrening, kondisjonstrening og gruppetimer.\n\n*   Sone for kondisjonstrening med ulike apparater.\n*   Eget område for trening med frivekter, inkludert en styrkeløftplattform.\n*   Magasinapparater og en funksjonell sone med digitale gruppetimer på storskjerm.\n*   Garderober med dusjfasiliteter og et sosialområde hvor man kan få gratis kaffe og te.\n*   Gratis parkering er tilgjengelig i parkeringskjelleren under bygget for besøkende.",
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJA5JxPH0wbUYRrkahHZqp7HI",
+      "name": "Ranheim Frisør",
+      "categoryId": "haircare",
+      "categoryName": "Frisør",
+      "address": "Ranheimsvegen 165, Ranheim",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 516 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "rating": 4.6,
+        "reviewCount": 32
+      },
+      "rejectedNarrative": "Ranheim Frisør er en frisørsalong sentralt plassert i Ranheimsvegen 165. Stedet brukes for profesjonell hårpleie og styling for beboere i nærområdet.\n\n- Salongen tilbyr behandlinger som klassisk klipp, moderne fargeteknikker, kort damefrisyre, langt hår med bølger og herreklipp.\n- Det er en atmosfære i salongen som er skapt for at kunder skal kunne senke skuldrene og nyte behandlingen.\n- Kunder kan få personlig rådgivning om hårpleie og styling.\n- Salongen ligger sentralt til i Ranheimsvegen 165, ved Romantica.",
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJr7X-f2c6bUYRbg7TDHQi-h8",
+      "name": "Vibeke Glad Hud og Fotterapi",
+      "categoryId": "spa",
+      "categoryName": "Spa",
+      "address": "Ranheimsvegen 175, Trondheim",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 424 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "rating": 5,
+        "reviewCount": 1
+      },
+      "rejectedNarrative": "Vibeke Glad Hud og Fotterapi er et velrenommert senter som tilbyr et bredt spekter av tjenester for å ivareta både hud og føtter. Stedet er et tilbud for beboere i nærområdet som ønsker profesjonell pleie og avslappende behandlinger for velvære.\n\n- Skreddersydde hudbehandlinger tilpasset ulike hudtyper\n- Fotsalong med profesjonell fotpleie for sunne og velpleide føtter\n- Avslappende spa-opplevelser for nytelse og velvære",
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-3230730625",
+      "name": "Café Benoni",
+      "categoryId": "cafe",
+      "categoryName": "Kafé",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 263 tegn — for få kilder (1 < 2); for kort innhold (263 < 280 tegn)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Café Benoni er en kafé og restaurant som ligger i Ranheim. Stedet brukes som et samlingspunkt for lokalbefolkningen og et sted for servering av mat og drikke.\n\n- Uteservering.\n- Utvalg av kaker og bakervarer.\n- Tilbyr et variert utvalg av lunsj- og middagsretter.",
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-22797458",
+      "name": "Charlottenlund kunstgressbane",
+      "categoryId": "idrett",
+      "categoryName": "Idrettsanlegg",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 425 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Charlottenlund kunstgressbane er et idrettsanlegg som ligger i Ranheim bydel, og er en del av et større idrettsanlegg. Stedet brukes primært til fotball og trening på kunstgress gjennom store deler av året.\n\n- En moderne kunstgressbane utstyrt for fotballaktivitet.\n- Tilknyttet Charlottenlundhallen, som huser innendørs idrettsfasiliteter.\n- Anlegget inkluderer garderober for utøvere.\n- Det finnes møterom som kan benyttes.",
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-6013240394",
+      "name": "Charlottenlund post i butikk",
+      "categoryId": "post",
+      "categoryName": "Post",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 438 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Charlottenlund post i butikk ligger inne i KIWI 123 Charlottenlund. Her kan beboere utføre posttjenester samtidig som de handler dagligvarer til husholdningen.\n\n- En fullverdig dagligvarebutikk med et bredt utvalg av matvarer og husholdningsartikler.\n- Betjent skranke for innlevering og henting av pakker og brev.\n- En utendørs pakkeboks fra Posten for selvbetjent sending og mottak av pakker.\n- Mulighet for kontanttjenester i butikken.",
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-546188730",
+      "name": "IKEA Leangen Bistro",
+      "categoryId": "restaurant",
+      "categoryName": "Restaurant",
+      "why": "strøk-porten",
+      "detail": "2 kilder, 267 tegn — for kort innhold (267 < 280 tegn)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "IKEA Leangen Bistro er et spisested som ligger i tilknytning til IKEA-varehuset på Ranheim. Det brukes ofte for et raskt måltid eller en forfriskning under eller etter handleturen.\n\n- Servering av pølser\n- Tilbud om pizza\n- Utvalg av softis\n- Forskjellige drikkevarer",
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-3105374050",
+      "name": "Impulse",
+      "categoryId": "gym",
+      "categoryName": "Treningssenter",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 519 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Impulse i Ranheim er et treningssenter ved Grilstad Marina som tilbyr fasiliteter for ulike former for fysisk aktivitet. Stedet brukes for å trene styrke, kondisjon og funksjonell trening, tilpasset både nybegynnere og erfarne utøvere.\n\n- Egne soner for kondisjonstrening, frivekter og styrkeløft.\n- Moderne magasinapparater for styrketrening.\n- Tilbud om personlig trening og digitale gruppetimer på storskjerm i den funksjonelle sonen.\n- Garderober med dusj, samt et sosialområde hvor det serveres gratis kaffe og te.",
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-1361947469",
+      "name": "Leangen Gård",
+      "categoryId": "park",
+      "categoryName": "Park",
+      "why": "strøk-porten",
+      "detail": "1 kilde, 432 tegn — for få kilder (1 < 2)",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "rejectedNarrative": "Leangen gård park er et inngjerdet grøntområde som omfatter en engelsk landskapshage ved Leangenbukta i Trondheim. Parken brukes som et skjermet og frodig område for uteopphold i tilknytning til gårdsbygningene.\n\n- Parken rommer en autentisk engelsk landskapshage.\n- Det finnes en svanedam med tilhørende paviljong.\n- Stiene er rullevennlige, og benker er plassert ut om sommeren for hvile.\n- Det er parkeringsmuligheter ved parken.",
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJj4EJVDIwbUYRGQfnBklj3zk",
+      "name": "Dentist Arne-Henrik Finnanger",
+      "categoryId": "dentist",
+      "categoryName": "Tannlege",
+      "address": "Jakobslivegen 1, Jakobsli",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "website": "http://www.tannlege-finnanger.no/",
+        "rating": 5,
+        "reviewCount": 1
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJ6dLfFP4wbUYRBkLMpH2ZEVc",
+      "name": "Europris Lade",
+      "categoryId": "butikk",
+      "categoryName": "Butikk",
+      "address": "Haakon VIIs gt. 12, 1st floor, Trondheim",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "website": "https://www.europris.no/butikker/",
+        "rating": 3.8,
+        "reviewCount": 76
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJQ8-LQnYxbUYR0-NJ2jRYn6w",
+      "name": "Malermester Talseth & Husby AS",
+      "categoryId": "butikk",
+      "categoryName": "Butikk",
+      "address": "Sverre Svendsens veg 38, Ranheim",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "website": "http://talsethoghusby.no/",
+        "rating": 5,
+        "reviewCount": 5
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJG4nnsVAwbUYRjpgs-KQFIwI",
+      "name": "Mer Charging Station",
+      "categoryId": "charging_station",
+      "categoryName": "Ladestasjon",
+      "address": "Landbruksvegen 3, Trondheim",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "website": "https://no.mer.eco/?utm_source=maps",
+        "rating": 2.7,
+        "reviewCount": 6
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJ1whmlD0xbUYRTxe0NR29dW4",
+      "name": "Recharge Charging Station",
+      "categoryId": "charging_station",
+      "categoryName": "Ladestasjon",
+      "address": "Julianus Holms Veg 7041, Trondheim",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": true,
+        "hasPhone": true,
+        "website": "http://www.fortum.no/",
+        "rating": 3.8,
+        "reviewCount": 4
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJAbH6jGcwbUYReCAHtuNK_Hc",
+      "name": "Charlottenlund Church",
+      "categoryId": "kirke",
+      "categoryName": "Kirke",
+      "address": "Jakobslivegen 51, Jakobsli",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": true,
+        "website": "https://kirken.no/nb-NO/fellesrad/trondheim-kirkelige-fellesrad/menigheter/ranheim-og-charlottenlund-menigheter/om-oss2/",
+        "rating": 3.6,
+        "reviewCount": 22
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJs5v13GMwbUYRp9JYF_mtepw",
+      "name": "Flisservice AS",
+      "categoryId": "butikk",
+      "categoryName": "Butikk",
+      "address": "Eventyrvegen 52, Ranheim",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": true,
+        "website": "https://www.flisservice.no/",
+        "rating": 5,
+        "reviewCount": 1
+      },
+      "narrative": ""
+    },
+    {
+      "id": "google-ChIJy-Z2R346bUYRbTr784cF_Cc",
+      "name": "Pinnsvin Crossing",
+      "categoryId": "butikk",
+      "categoryName": "Butikk",
+      "address": "Ranheimsvegen 230A, Trondheim",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false,
+        "website": "https://m.facebook.com/PinnsvinCrossingBruktogAntikk",
+        "rating": 4.7,
+        "reviewCount": 3
+      },
+      "narrative": ""
+    },
+    {
+      "id": "lekeplass-bukken-bruses-veg-lek",
+      "name": "Bukken bruses veg lek",
+      "categoryId": "lekeplass",
+      "categoryName": "Lekeplass",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-219101887",
+      "name": "Burger King",
+      "categoryId": "restaurant",
+      "categoryName": "Restaurant",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-3225752839",
+      "name": "Cafe Mocca",
+      "categoryId": "cafe",
+      "categoryName": "Kafé",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-32389280",
+      "name": "Det økologiske hus",
+      "categoryId": "supermarket",
+      "categoryName": "Dagligvare",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-819257369",
+      "name": "Fagerheimbukta",
+      "categoryId": "badeplass",
+      "categoryName": "Badeplass",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "lekeplass-grillstadfj-ra-lek",
+      "name": "Grillstadfjæra lek",
+      "categoryId": "lekeplass",
+      "categoryName": "Lekeplass",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "lekeplass-hulderveien-lek",
+      "name": "Hulderveien lek",
+      "categoryId": "lekeplass",
+      "categoryName": "Lekeplass",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-199416300",
+      "name": "Hårstudio Jakobsli",
+      "categoryId": "haircare",
+      "categoryName": "Frisør",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-11703385626",
+      "name": "Leangenhallen",
+      "categoryId": "idrett",
+      "categoryName": "Idrettsanlegg",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "lekeplass-lindevegen-lek",
+      "name": "Lindevegen lek",
+      "categoryId": "lekeplass",
+      "categoryName": "Lekeplass",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-2958698028",
+      "name": "Peppes Pizza",
+      "categoryId": "restaurant",
+      "categoryName": "Restaurant",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-3097492387",
+      "name": "Power",
+      "categoryId": "butikk",
+      "categoryName": "Butikk",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-897967468",
+      "name": "Ranheim barnehage",
+      "categoryId": "barnehage",
+      "categoryName": "Barnehage",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-164365011",
+      "name": "Ranheim bydelskafe",
+      "categoryId": "cafe",
+      "categoryName": "Kafé",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-211168452",
+      "name": "Rema 1000 Ranheim",
+      "categoryId": "supermarket",
+      "categoryName": "Dagligvare",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-8358498729",
+      "name": "Rema 1000 Ranheimsfjæra",
+      "categoryId": "supermarket",
+      "categoryName": "Dagligvare",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-543393782",
+      "name": "SiT Kafe Rotvoll",
+      "categoryId": "restaurant",
+      "categoryName": "Restaurant",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-543393716",
+      "name": "SiT Tapir Rotvoll",
+      "categoryId": "butikk",
+      "categoryName": "Butikk",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "d243c1ea-ac35-4978-a07d-5ce1f3d73d3b",
+      "name": "Sjøparken",
+      "categoryId": "outdoor",
+      "categoryName": "Utendørs aktivitet",
+      "address": "Strindfjordvegen, 7053 Ranheim",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "lekeplass-sj-vegen-lek",
+      "name": "Sjøvegen lek",
+      "categoryId": "lekeplass",
+      "categoryName": "Lekeplass",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-way-29089343",
+      "name": "Svømmehall",
+      "categoryId": "swimming",
+      "categoryName": "Svømmehall",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-7174954500",
+      "name": "Trondheim Padel",
+      "categoryId": "gym",
+      "categoryName": "Treningssenter",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-3230730634",
+      "name": "Urban Hair",
+      "categoryId": "haircare",
+      "categoryName": "Frisør",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "osm-node-6028555859",
+      "name": "Kiwi Charlottenlund",
+      "categoryId": "supermarket",
+      "categoryName": "Dagligvare",
+      "why": "error",
+      "detail": "This operation was aborted",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "narrative": ""
+    },
+    {
+      "id": "bus-skonnertvegen",
+      "name": "Skonnertvegen bussholdeplass",
+      "categoryId": "bus",
+      "categoryName": "Buss",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "realtimeAnswersIt": true,
+      "narrative": ""
+    },
+    {
+      "id": "entur-NSR-StopPlace-60260",
+      "name": "Strindfjordvegen bussholdeplass",
+      "categoryId": "bus",
+      "categoryName": "Buss",
+      "why": "no-data",
+      "detail": "Gemini fant ingen konkrete opplysninger om stedet",
+      "facts": {
+        "hasOpeningHours": false,
+        "hasPhone": false
+      },
+      "realtimeAnswersIt": true,
+      "narrative": ""
+    }
+  ]
+}

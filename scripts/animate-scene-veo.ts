@@ -26,6 +26,7 @@ import { config } from "dotenv";
 import { execFileSync } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { belastApiKall } from "@/lib/api-budget";
 
 config({ path: path.resolve(process.cwd(), ".env.local") });
 
@@ -149,6 +150,9 @@ async function startOperation(opts: {
   aspect: string;
   resolution: string;
 }): Promise<VeoOperation> {
+  // Veo koster i en helt annen størrelsesorden enn resten — standardtaket er 0,
+  // så dette kallet krever et bevisst PLACY_CAP_GEMINI_VIDEO for å gå gjennom.
+  belastApiKall("gemini-video");
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:predictLongRunning`;
   const body = {
     instances: [{

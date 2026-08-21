@@ -133,12 +133,66 @@ Oppdaterer `opening_hours_json` fra Google Places API for POI-er med utdaterte d
 |--------|----------|-------------------|
 | `refresh-photo-urls.ts` | Annenhver uke | ~500 Photo calls (~$1.50) |
 | `refresh-opening-hours.ts` | Månedlig | ~500 Details calls (~$8.50) |
-| `ground-poi-content.ts` | Ved nytt board / når innhold drifter | 1 Gemini grounding-kall per POI (78 POI-er ≈ innenfor gratiskvoten 1 500/dag) |
+| `ground-poi-content.ts` | Ved nytt board / når innhold drifter | 1 Gemini grounding-kall per POI. **Dry-run koster like mye som `--apply`** — bruk `--limit N` ved kalibrering. Døgntak: se «Kostnadstak på API-kall» |
 | `curate-pois.ts --list` | Etter hver grounding-kjøring | 0 (kun DB-lesing) |
 
 **OBS før demo/visning:** kjør `refresh-photo-urls.ts`. lh3-CDN-URL-ene utløper
 etter ~14 dager, og Utforsk-modalens bildekarusell skjuler seg selv ved
 last-feil — den ser da bare tom ut, uten feilmelding.
+
+---
+
+## Kostnadstak på API-kall
+
+### Se dagens forbruk
+```bash
+npx tsx scripts/api-usage.ts              # i dag
+npx tsx scripts/api-usage.ts 2026-08-14   # bestemt dato
+```
+
+Read-only. Viser brukt/tak og estimert USD per SKU.
+
+### Hvordan taket virker
+
+`lib/api-budget.ts` belaster budsjettet **rett før** hvert utgående kall og
+kaster `ApiBudgetExceededError` når døgntaket er nådd. Det ligger foran
+kallstedene, ikke i scriptene — et tak per script glipper neste gang noen
+skriver et nytt. Dekket i dag: Places nearby/text-discovery, Place Details,
+foto-API, Gemini-grounding, Veo og Imagen.
+
+| SKU | Døgntak | USD/1 000 | Merknad |
+|-----|---------|-----------|---------|
+| `gemini-grounding` | 1 200 | 35 | Under gratiskvoten på 1 500/dag |
+| `gemini-video` | **0** | 400 | Veo må slås på bevisst per kjøring |
+| `gemini-image` | 50 | 30 | Imagen |
+| `places-nearby` | 400 | 32 | Discovery ved provisjonering |
+| `places-text` | 200 | 32 | Norske søkeord-passet |
+| `places-details-enterprise` | 600 | 17 | Åpningstider, telefon, rating |
+| `places-details-essentials` | 1 000 | 0 | Ren `photos`-feltmaske |
+| `places-photo` | 1 000 | 3 | Bilde-URL-resolving |
+
+Hev ett tak for én kjøring:
+
+```bash
+PLACY_CAP_GEMINI_GROUNDING=2000 npx tsx scripts/ground-poi-content.ts <id> --apply
+```
+
+En ugyldig verdi faller tilbake til default framfor å bli tolket som
+«ubegrenset» — en skrivefeil skal ikke slå av taket.
+
+**Regnskapet er per DØGN, ikke per kjøring** (et kjørings-tak stopper ikke ti
+kjøringer etter hverandre), lagres i `.api-usage/<dato>.jsonl` (gitignorert) og
+skrives append-only fordi flere scripts kan kjøre samtidig.
+
+**Feltmasken avgjør SKU:** hele kallet faktureres på det HØYESTE nivået noe felt
+i masken tilhører. Derfor er åpningstider og bilder to separate kall — slått
+sammen ville bilde-oppslaget blitt Enterprise-priset uten grunn.
+
+**Grounding-«dry-run» er IKKE gratis.** Den gjør nøyaktig samme Gemini-kall som
+`--apply`, den bare lar være å skrive. Bruk `--limit N` når du kalibrerer.
+
+**Taket dekker bare vår egen kode.** Et budsjettvarsel i Google Cloud fanger
+også kjøringer utenfor repoet, og bør settes i tillegg.
 
 ---
 
