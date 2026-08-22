@@ -27,6 +27,8 @@
  * ingen åpningstider).
  */
 
+import { resolveThemeId } from "@/lib/themes";
+
 /** Hvor svaret på et spørsmål kommer fra. Styrer hva vi ber Gemini om. */
 export type FaktaKilde =
   /** Offentlig register. Autoritativt, gratis, oppdateres løpende. Aldri søk etter dette. */
@@ -64,6 +66,13 @@ export interface SpecQuestion {
    * bare svarte på noen av spørsmålene: krets sto som kjernespørsmål i
    * tekstmalen, men KAN ikke besvares der. Vi har bevis for at teksten deles —
    * 51 tekster skrevet for Grilstad dukket uendret opp på Martin Barstads veg.
+   *
+   * RENDER-FLATEN kom 2026-08-22: board-lag-spørsmålene vises som FAQ i
+   * kategoriens drill-in, ett spørsmål per rad, med `spørsmål` gjengitt ORDRETT
+   * som overskrift. Derfor er de formulert fra boligkjøperens side («Hvilken
+   * skolekrets sogner boligen til?»), ikke fra stedets, og de bærer ingen
+   * begrunnelse inni seg — den hører hjemme i kommentarene her. En test holder
+   * dem korte nok til å stå som overskrift.
    */
   lag?: "tekst" | "board";
 }
@@ -158,14 +167,27 @@ export const SKOLE_SPEC: CategorySpec = {
       kjerne: true,
       felt: "Elevtall",
     },
+    // Vårt sterkeste kort, og det eneste spørsmålet i hele malverket som en
+    // megler får på hver eneste visning. Det hører hjemme på boardet og ikke i
+    // teksten, siden svaret er ulikt fra bolig til bolig — se `lag`.
     {
       id: "krets",
-      spørsmål:
-        "Sogner denne adressen hit? Vårt sterkeste kort — men det hører hjemme på boardet, ikke i teksten, siden svaret er ulikt fra bolig til bolig.",
+      spørsmål: "Hvilken skolekrets sogner boligen til?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
       felt: "data/geo/trondheim/barneskolekrets.json",
+    },
+    // Videregående har INGEN kretstilhørighet: inntaket er fylkeskommunalt og
+    // karakterbasert. Spørsmålet må derfor stilles om nærhet og reisetid, aldri
+    // om sogning — ellers lover boardet en plass ingen kan love.
+    {
+      id: "vgs-naerhet",
+      spørsmål: "Hvor er nærmeste videregående, og hvor lang tid tar bussen?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "NSR ErVideregaaendeSkole + Entur journey-planner",
     },
     {
       id: "sfo",
@@ -301,6 +323,18 @@ export const BARNEHAGE_SPEC: CategorySpec = {
       kjerne: false,
       felt: "AnsatteFra",
     },
+    // Board-laget: den ene barnehagen kan teksten fortelle om, men «hvor mange
+    // har vi å velge mellom herfra» kan bare regnes ut fra adressen. Det er
+    // også spørsmålet en forelder uten plass faktisk stiller — én barnehage i
+    // gangavstand er en helt annen situasjon enn fem.
+    {
+      id: "barnehage-dekning",
+      spørsmål: "Hvor mange barnehager ligger i gangavstand?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "project_pois.travel_times.walk",
+    },
   ],
   naarTom:
     "Så godt som aldri, av samme grunn som for skole: registeret har antall barn, alder og eierform på hver aktive barnehage.",
@@ -386,6 +420,17 @@ export const DAGLIGVARE_SPEC: CategorySpec = {
         "Har butikken et reelt særpreg — ferskvaredisk, lokalmat, økologisk profil, Too Good To Go?",
       kilde: "søk",
       kjerne: false,
+    },
+    // Board-laget. `aldri`-lista under forbyr gangavstand i TEKSTEN nettopp
+    // fordi den er adresseavhengig — her er den adressen, og da er tallet det
+    // eneste som betyr noe. Én butikk med minutter slår fem butikknavn.
+    {
+      id: "hverdagshandel",
+      spørsmål: "Hvor gjør jeg hverdagshandelen?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "project_pois.travel_times.walk",
     },
   ],
   naarTom:
@@ -480,6 +525,17 @@ export const RESTAURANT_SPEC: CategorySpec = {
       kilde: "søk",
       kjerne: false,
     },
+    // Board-laget. Beboerspørsmålet er ikke «hvilken restaurant er best», men
+    // om man i det hele tatt slipper å dra til byen for å spise ute. Svaret er
+    // derfor en BREDDE — hvor mange og hvor spredt — ikke en anbefaling.
+    {
+      id: "spisesteder",
+      spørsmål: "Kan jeg spise ute uten å dra til byen?",
+      kilde: "eget",
+      kjerne: false,
+      lag: "board",
+      felt: "project_pois.travel_times.walk",
+    },
   ],
   naarTom:
     "Sjelden, men det finnes ett tilfelle: internasjonale kjeder der navnet bærer hele kjøkkenet. «Burger King» trenger ikke teksten «hurtigmatrestaurant med hamburgere». Har kjeden noe ved SEG dette stedet — drive-thru, uteservering, lekerom — skriv det; ellers er tomt riktig.",
@@ -507,11 +563,119 @@ export const RESTAURANT_SPEC: CategorySpec = {
   },
 };
 
+/**
+ * TRANSPORT
+ *
+ * DEN FØRSTE MALEN SOM ER SKREVET FOR BOARDET, IKKE FOR TEKSTEN. De fire over
+ * kom av at POI-tekstene var tynne. Denne kom av det motsatte: for et
+ * stoppested er den delte teksten nesten alltid feil sted å svare, og nesten
+ * alt en beboer lurer på er adresseavhengig. «Hvor er nærmeste holdeplass» og
+ * «hvor lang tid tar det til byen» har ett svar per bolig — de kan ikke stå på
+ * POI-raden, som deles av alle boards i nærheten.
+ *
+ * FERSKVAREN ER GRUNNEN. Linjenumre, destinasjoner og frekvenser endres ved
+ * hver ruteomlegging hos AtB. Vår egen leverandørtekst for Grilstadkleiva
+ * bussholdeplass ramser opp «Ranheim, Strindheim, sentrum, Tiller, Heimdal og
+ * Kattem» — seks destinasjoner som alle kan flyttes til en annen linje til
+ * neste sommer, skrevet inn i en tekst ingen kommer til å friske opp.
+ * `editorial-hooks-no-perishable-info-20260208` sier det samme prinsipielt:
+ * ferskvare hentes ved kjøring, den skrives ikke ned. Derfor ligger linjene i
+ * det deterministiske board-laget, hentet fra Entur, med hentetidspunkt.
+ *
+ * IGJEN TIL TEKSTEN blir da det som ikke flytter seg: hvor stoppet fysisk
+ * ligger, om man kan bytte til tog eller sykkel der, og hva som finnes på
+ * plattformen. Ofte er svaret ingenting, og da skal teksten være tom —
+ * `realtimeAnswersIt` i kurerings-lista sier allerede at sanntidsraden i
+ * modalen svarer for disse stedene.
+ *
+ * 810 POI-er (bus 751, train 28, tram 31) gjør dette til den STØRSTE gruppen i
+ * basen. Nettopp derfor er tom tekst det viktigste svaret malen kan gi.
+ */
+export const TRANSPORT_SPEC: CategorySpec = {
+  kategorier: ["bus", "train", "tram"],
+  navn: "Transport",
+  antall: 810,
+  lead: "Hva stoppet er utover et skilt: hvor det ligger, og hva du kan bytte til der. Linjene og tidene regner boardet ut per adresse — de skal ikke stå i teksten.",
+  spørsmål: [
+    {
+      id: "bytte",
+      spørsmål:
+        "Kan man bytte til noe annet her — tog, trikk, bysykkel, innfartsparkering?",
+      kilde: "søk",
+      kjerne: true,
+    },
+    {
+      id: "plassering",
+      spørsmål:
+        "Hvor ligger stoppet fysisk — langs hvilken vei, ved hvilket bygg, på hvilken side?",
+      kilde: "søk",
+      kjerne: false,
+    },
+    {
+      id: "fasiliteter",
+      spørsmål:
+        "Finnes leskur, sanntidsskjerm, sykkelparkering eller heis til plattformen?",
+      kilde: "søk",
+      kjerne: false,
+    },
+    // ── Board-laget ────────────────────────────────────────────────────────
+    {
+      id: "naermeste-holdeplass",
+      spørsmål: "Hvor er nærmeste holdeplass?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "Entur nearest (stopPlace)",
+    },
+    {
+      id: "linjer",
+      spørsmål: "Hvilke linjer går herfra, og hvor går de?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "Entur estimatedCalls per quay",
+    },
+    {
+      id: "til-sentrum",
+      spørsmål: "Hvor lang tid tar det til sentrum?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "Entur trip",
+    },
+  ],
+  naarTom:
+    "Ofte, og oftere enn for noen annen kategori. Har stoppet verken bytte-mulighet, en plassering verdt å nevne eller fasiliteter, er tom tekst det ærlige svaret: sanntidsraden i modalen viser avgangene, og FAQ-en på boardet svarer på linjer og reisetid. En setning om at det er et stoppested for buss er ren gjentakelse av navnet og kategorien.",
+  aldri: [
+    "Aldri linjenumre, destinasjoner eller frekvenser i teksten. De endres ved hver ruteomlegging, og teksten deles av alle boards — Grilstadkleiva sto med seks destinasjoner ingen kommer til å friske opp. Boardet henter dem fra Entur ved kjøring.",
+    "Aldri reisetid til sentrum eller andre steder. Det er ett svar per adresse, ikke ett per holdeplass.",
+    "Aldri «viktig knutepunkt for offentlig transport i nærområdet». Det beskriver hvert eneste stoppested som finnes, og sto ordrett i leverandørteksten vår.",
+    "Aldri beskriv nabolaget rundt stoppet. Leverandørteksten for Anders Søyseths veg brukte tre av fire kulepunkter på boligblokker, parkering og en idrettspark — alt sammen egne POI-er med egne tekster.",
+    "Aldri avgangstider eller «hyppige avganger». Sanntidsraden i modalen viser de faktiske avgangene.",
+  ],
+  eksempel: {
+    god: {
+      sted: "Grilstadkleiva bussholdeplass",
+      svarer: ["plassering", "bytte"],
+      tekst:
+        "Ligger langs Ranheimsvegen. Ranheim stasjon og Leangen stasjon er i gangavstand og gir bytte til tog.",
+    },
+    dårlig: {
+      sted: "Grilstadkleiva bussholdeplass, leverandørteksten vi ennå ikke har erstattet",
+      tekst:
+        "Grilstadkleiva bussholdeplass er et viktig knutepunkt for offentlig transport i Ranheim-området. Den betjenes av mange busslinjer som gir direkte forbindelse til blant annet Ranheim, Strindheim, sentrum, Tiller, Heimdal og Kattem.",
+      hvorfor:
+        "Samme holdeplass som over. Første setning gjentar navn og kategori og legger til en vurdering («viktig knutepunkt») som gjelder alle 751 bussholdeplassene i basen. Andre setning er ferskvare: seks destinasjoner fordelt på linjer AtB kan legge om til sommeren, skrevet inn i en tekst som deles av alle boards i nærheten og aldri friskes opp. Det ene stabile faktumet — at Ranheim og Leangen stasjon ligger i gangavstand — sto i kildene og kom ikke med.",
+    },
+  },
+};
+
 export const CATEGORY_SPECS: CategorySpec[] = [
   SKOLE_SPEC,
   BARNEHAGE_SPEC,
   DAGLIGVARE_SPEC,
   RESTAURANT_SPEC,
+  TRANSPORT_SPEC,
 ];
 
 /**
@@ -617,4 +781,58 @@ export function registerQuestions(spec: CategorySpec): SpecQuestion[] {
  */
 export function searchQuestions(spec: CategorySpec): SpecQuestion[] {
   return spec.spørsmål.filter((q) => q.kilde === "søk");
+}
+
+// ─── Broen tema → mal ───────────────────────────────────────────────────────
+
+/**
+ * Ett board-lag-spørsmål med konteksten FAQ-en trenger for å vise og spore det.
+ *
+ * `themeId` er den KANONISKE tema-id-en, ikke den kalleren sendte inn: config
+ * kan bære gamle alias («barnefamilier» for «barn-oppvekst»), og kuraterte
+ * overstyringer lagres per kanonisk tema. Uten normaliseringen her ville de to
+ * skrivemåtene fått hver sin overstyrings-nøkkel.
+ */
+export interface FaqQuestion {
+  themeId: string;
+  /** `category_id`-en malen ble slått opp på — temaets FØRSTE treff. */
+  categoryId: string;
+  spec: CategorySpec;
+  question: SpecQuestion;
+}
+
+/**
+ * Board-lag-spørsmålene et TEMA skal svare på i drill-in-FAQ-en.
+ *
+ * Drill-in er per tema («Barn & Oppvekst»), mens malene er per `category_id`
+ * («skole», «barnehage»). Dette er broen: gå gjennom temaets kategoriliste i
+ * den rekkefølgen temaet selv oppgir — den er allerede produktets
+ * prioritering, se `REPORT_THEME_DEFAULTS` der `skole` står før `barnehage` —
+ * og hent board-spørsmålene fra hver mal som finnes.
+ *
+ * Hver mal bidrar ÉN gang selv om temaet lister flere av kategoriene dens:
+ * transport-temaet har både `bus`, `train` og `tram`, og uten dedupen ville
+ * «Hvor er nærmeste holdeplass?» stått tre ganger.
+ *
+ * Tema uten mal-dekning gir tom liste, ikke feil. Det er den normale
+ * tilstanden for natur og trening i dag, og FAQ-seksjonen utelates da helt.
+ */
+export function faqQuestionsForTheme(
+  themeId: string,
+  categoryIds: readonly string[],
+): FaqQuestion[] {
+  const canonicalThemeId = resolveThemeId(themeId);
+  const seenSpecs = new Set<CategorySpec>();
+  const out: FaqQuestion[] = [];
+
+  for (const categoryId of categoryIds) {
+    const spec = specForCategory(categoryId);
+    if (!spec || seenSpecs.has(spec)) continue;
+    seenSpecs.add(spec);
+    for (const question of boardQuestions(spec)) {
+      out.push({ themeId: canonicalThemeId, categoryId, spec, question });
+    }
+  }
+
+  return out;
 }
