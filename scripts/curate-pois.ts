@@ -188,7 +188,10 @@ async function runList(projectId: string): Promise<void> {
   );
 
   const candidates: CurationCandidate[] = [];
-  const done = { curated: 0, grounded: 0, unnamed: 0 };
+  // `grounded` er borte som DEKNING etter policy-endringen 2026-08-15 —
+  // leverandørtekst teller ikke lenger som dekket. Den telles nå i «Hvorfor»
+  // under `har-leverandørtekst`, altså som arbeid, ikke som ferdig.
+  const done = { curated: 0, unnamed: 0 };
   let invalidShape = 0;
 
   for (const row of rows) {
@@ -202,7 +205,6 @@ async function runList(projectId: string): Promise<void> {
     const c = classifyMissing({ name: row.name, grounding });
     if (!c.needsText) {
       if (c.reason === "har-kuratert-tekst") done.curated++;
-      else if (c.reason === "har-bestått-grounding") done.grounded++;
       else done.unnamed++;
       continue;
     }
@@ -217,9 +219,8 @@ async function runList(projectId: string): Promise<void> {
   console.log();
   console.log("─── Dekning ───────────────────────────────────────────────────");
   console.log(`  Kuratert av oss (Moat 1):  ${done.curated}`);
-  console.log(`  Leverandør-tekst består:   ${done.grounded}`);
   console.log(`  Uten navn (hoppes over):   ${done.unnamed}`);
-  console.log(`  MANGLER TEKST:             ${sorted.length}`);
+  console.log(`  MANGLER VÅR TEKST:         ${sorted.length}`);
   if (invalidShape > 0) console.log(`  (${invalidShape} med ugyldig grounding-shape)`);
 
   const byWhy = new Map<MissingReason, number>();
@@ -227,7 +228,7 @@ async function runList(projectId: string): Promise<void> {
   if (byWhy.size > 0) {
     console.log();
     console.log("─── Hvorfor ───────────────────────────────────────────────────");
-    for (const [why, n] of byWhy) console.log(`  ${why.padEnd(14)} ${n}`);
+    for (const [why, n] of byWhy) console.log(`  ${why.padEnd(20)} ${n}`);
   }
 
   const realtime = sorted.filter((c) => c.realtimeAnswersIt);
