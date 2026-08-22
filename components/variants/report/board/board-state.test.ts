@@ -32,6 +32,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       });
     });
 
@@ -42,6 +43,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "SELECT_CATEGORY", id: CAT_B });
       expect(next).toEqual({
@@ -50,6 +52,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       });
     });
 
@@ -101,6 +104,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next).toEqual({
@@ -109,6 +113,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       });
     });
 
@@ -119,6 +124,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next).toEqual({
@@ -127,6 +133,7 @@ describe("boardReducer", () => {
         activePOIId: POI_2,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       });
     });
 
@@ -144,6 +151,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       });
     });
 
@@ -162,6 +170,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       });
     });
 
@@ -172,6 +181,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next.activeCategoryId).toBe(CAT_B);
@@ -186,6 +196,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next.activeCategoryId).toBe(CAT_A);
@@ -206,6 +217,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_ACTIVE" });
       expect(next).toEqual({
@@ -214,6 +226,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       });
     });
 
@@ -234,6 +247,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next).toEqual({
@@ -242,6 +256,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       });
     });
 
@@ -252,6 +267,7 @@ describe("boardReducer", () => {
         activePOIId: null,
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next.phase).toBe("default");
@@ -268,6 +284,7 @@ describe("boardReducer", () => {
         activePOIId: POI_1,
         introPlaying: true,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "RESET_TO_DEFAULT" });
       expect(next).toEqual(initialBoardState);

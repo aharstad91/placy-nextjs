@@ -53,6 +53,19 @@ export interface BoardState {
    * av `phase === "poi"` (se ResponsiveLayoutInner).
    */
   exploreOpen: boolean;
+  /**
+   * Den aktive POI-en ble åpnet fra en TEKST-referanse, ikke fra kartet.
+   *
+   * Finnes fordi mobilens utforsk-modal gater på `phase === "poi"` alene: et
+   * klikk på et stedsnavn i et FAQ-svar ville derfor slått opp en 85vh-modal
+   * over kartet i samme øyeblikk kameraet begynte å fly dit. Da ser brukeren
+   * aldri flyturen, som er hele poenget med å gjøre navnet klikkbart.
+   *
+   * Første trykk flytter altså kartet; modalen åpnes først ved et påfølgende
+   * trykk på selve punktet (som dispatcher uten `source`). Flagget nullstilles
+   * av all annen navigasjon.
+   */
+  exploreSuppressed: boolean;
 }
 
 /**
@@ -70,9 +83,18 @@ export interface BoardState {
  */
 export type SelectCategorySource = "scroll" | "rail" | "index" | "audio";
 
+/**
+ * Hvor et POI-åpne kom fra, når det har betydning for presentasjonen.
+ *
+ * `"faq"` = et stedsnavn i et FAQ-svar. Kartet skal fly, men mobilens
+ * utforsk-modal skal IKKE ta over skjermen — se `exploreSuppressed`. Utelatt
+ * kilde er det normale: markørtrykk, highlight-chip, listerad.
+ */
+export type OpenPOISource = "faq";
+
 export type BoardAction =
   | { type: "SELECT_CATEGORY"; id: BoardCategoryId; source?: SelectCategorySource }
-  | { type: "OPEN_POI"; id: BoardPOIId; categoryId?: BoardCategoryId }
+  | { type: "OPEN_POI"; id: BoardPOIId; categoryId?: BoardCategoryId; source?: OpenPOISource }
   | { type: "BACK_TO_ACTIVE" }
   | { type: "BACK_TO_DEFAULT" }
   | { type: "RESET_TO_DEFAULT" }
@@ -87,6 +109,7 @@ export const initialBoardState: BoardState = {
   activePOIId: null,
   introPlaying: false,
   exploreOpen: false,
+  exploreSuppressed: false,
 };
 
 export function boardReducer(state: BoardState, action: BoardAction): BoardState {
@@ -108,6 +131,7 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         // Navigasjon avbryter en pågående basic-intro (brukeren tok over).
         introPlaying: false,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
     }
 
@@ -124,6 +148,9 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         activePOIId: action.id,
         introPlaying: false,
         exploreOpen: false,
+        // Kun tekst-referanser undertrykker modalen. Et nytt trykk på selve
+        // punktet kommer uten kilde og åpner den.
+        exploreSuppressed: action.source === "faq",
       };
 
     case "BACK_TO_ACTIVE":
@@ -135,6 +162,7 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         phase: "active",
         activePOIId: null,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
 
     case "BACK_TO_DEFAULT":
@@ -146,6 +174,7 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         phase: "default",
         activePOIId: null,
         exploreOpen: false,
+        exploreSuppressed: false,
       };
 
     case "RESET_TO_DEFAULT":
@@ -155,10 +184,11 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
       // Ingen aktiv POI = ingenting å utforske. Ignorér framfor å åpne en
       // modal uten innhold.
       if (!state.activePOIId) return state;
-      return { ...state, exploreOpen: true };
+      // Eksplisitt CTA slår undertrykkingen: brukeren ba om modalen.
+      return { ...state, exploreOpen: true, exploreSuppressed: false };
 
     case "CLOSE_EXPLORE":
-      return { ...state, exploreOpen: false };
+      return { ...state, exploreOpen: false, exploreSuppressed: false };
 
     case "START_INTRO":
       return { ...state, introPlaying: true };

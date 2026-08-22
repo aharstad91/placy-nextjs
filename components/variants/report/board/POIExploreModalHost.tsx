@@ -63,8 +63,11 @@ export function POIExploreModalHost() {
   // på boards uten grounded innhold, der mobilen dermed ble DÅRLIGERE enn i dag.
   const hasContent = poi ? hasExploreContent(poi) : false;
 
+  // `exploreSuppressed`: POI-et ble åpnet fra et stedsnavn i et FAQ-svar. Da
+  // skal kartet fly og panelet vike, ikke en 85vh-modal ta over skjermen i
+  // samme øyeblikk. Modalen åpnes ved påfølgende trykk på selve punktet.
   const open = isMobileSurface
-    ? state.phase === "poi" && hasContent
+    ? state.phase === "poi" && hasContent && !state.exploreSuppressed
     : state.exploreOpen && hasContent;
 
   const handleClose = () => {

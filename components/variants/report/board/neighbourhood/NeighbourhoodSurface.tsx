@@ -7,6 +7,7 @@ import { useBoard } from "../board-state";
 import { NeighbourhoodSheet } from "./NeighbourhoodSheet";
 import { NeighbourhoodCategoryCard } from "./NeighbourhoodCategoryCard";
 import { CategoryPage } from "./CategoryPage";
+import { FAQSection } from "../FAQSection";
 import { useNeighbourhoodList } from "./use-neighbourhood-list";
 
 /**
@@ -130,7 +131,7 @@ function NeighbourhoodList({
   onOpenCategory: (categoryId: string) => void;
   onHeightChange: (heightPx: number) => void;
 }) {
-  const { viewportGestures } = useBoard();
+  const { viewportGestures, data } = useBoard();
   const list = useNeighbourhoodList();
 
   // R28: ett ikke-blokkerende hint om at kartet styrer lista. Uten det finnes
@@ -173,6 +174,19 @@ function NeighbourhoodList({
           />
         ))
       )}
+
+      {/* Boardets egen FAQ, etter kategorikortene: bevisst slank, og svarene
+          lenker INN i kategoriene framfor å gjenta innholdet deres. Lista over
+          er utsnitts-scopet; denne er det ikke — den beskriver strøket, ikke
+          det kameraet peker på. */}
+      <FAQSection
+        entries={data.globalFaq ?? []}
+        poisById={data.poisById}
+        categoryIds={data.categories.map((c) => c.id)}
+        onSelectCategory={onOpenCategory}
+        title="Om nabolaget"
+        className="mt-3"
+      />
     </NeighbourhoodSheet>
   );
 }
