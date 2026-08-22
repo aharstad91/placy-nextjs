@@ -38,14 +38,23 @@ export interface BoardFactsResult {
 export async function computeBoardFacts(options: {
   lat: number;
   lng: number;
-  /** Brukes til å slå opp sentrumsstoppet. Uten by utelates reisen til byen. */
+  /**
+   * Kommunen adressen ligger i, fra Kartverket. FØRSTEVALG for å slå opp
+   * sentrumsstoppet: geokoderens `city` er STEDSNAVNET, og for en forstad er
+   * det forstaden. Strindfjordvegen 10 geokoder til «Ranheim», og «hvordan
+   * kommer jeg meg til byen?» ville da blitt besvart med reisen til Ranheim
+   * stasjon — teknisk et svar, og feil spørsmål.
+   */
+  kommunenavn?: string;
+  /** Fallback når kommuneoppslaget feilet. Uten begge utelates reisen til byen. */
   city?: string;
   /** Uten kommunenummer utelates skolefaktaene (kretspolygonene er per kommune). */
   kommunenummer?: string;
   /** Injiserbar for tester. */
   now?: Date;
 }): Promise<BoardFactsResult> {
-  const { lat, lng, city, kommunenummer, now } = options;
+  const { lat, lng, kommunenummer, now } = options;
+  const city = options.kommunenavn ?? options.city;
   const warnings: string[] = [];
 
   // 1. Skolene først: de videregående blir reisemål i transitt-oppslaget.

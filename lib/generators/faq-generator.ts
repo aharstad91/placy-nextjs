@@ -29,6 +29,7 @@
  */
 
 import { faqQuestionsForTheme } from "@/lib/editorial/category-specs";
+import { normalizeFullSchoolName } from "@/lib/pipeline/zoned-school-selection";
 import type { Coordinates, POI, ReportBoardFacts, ReportFaqAnswer } from "@/lib/types";
 
 /** Hvor svaret kom fra. Intern sporbarhet — rendres aldri. */
@@ -73,6 +74,50 @@ export interface FaqGeneratorInput {
 /** `[Ranheim skole](poi:nsr-975278980)` når stedet er på boardet, ellers navnet. */
 function poiLink(name: string, poi: POI | undefined): string {
   return poi ? `[${name}](poi:${poi.id})` : name;
+}
+
+/**
+ * POI-navn i løpende tekst. Registeret og Google skriver den juridiske formen
+ * («Grilstad Fus barnehage AS»), og holdeplass-POIene bærer et suffiks
+ * kategorien allerede sier. Ingen av delene hører hjemme i en setning.
+ */
+function cleanPoiName(name: string): string {
+  return name
+    .replace(/\s+(AS|ASA|SA)$/i, "")
+    .replace(/\s+bussholdeplass$/i, "")
+    .replace(/\s+holdeplass$/i, "")
+    .trim();
+}
+
+/** Kortform: rydd navnet OG lenk det, i ett. */
+function namedPoi(poi: POI): string {
+  return poiLink(cleanPoiName(poi.name), poi);
+}
+
+/**
+ * Finn skolens POI på boardet.
+ *
+ * TO VEIER, OG BEGGE TRENGS: `import-public-pois` gir NSR-skoler id-en
+ * `nsr-<orgnr>`, men poolen inneholder også eldre rader for de samme skolene
+ * fra andre kilder — på Ranheim vant en legacy-UUID dedupen, og id-oppslaget
+ * alene ga null lenke på nettopp kretssvaret. Navnematchen bruker
+ * `normalizeFullSchoolName`, som BEHOLDER skoleslags-ordet: «Charlottenlund
+ * barneskole» og «Charlottenlund ungdomsskole» ligger på samme tomt og må
+ * ikke smelte sammen.
+ */
+function findSchoolPoi(
+  pois: readonly POI[],
+  school: { navn: string; orgnr: string },
+): POI | undefined {
+  const byId = pois.find((p) => p.id === `nsr-${school.orgnr}`);
+  if (byId) return byId;
+  const wanted = normalizeFullSchoolName(school.navn);
+  if (!wanted) return undefined;
+  const matches = pois.filter(
+    (p) => p.category.id === "skole" && normalizeFullSchoolName(p.name) === wanted,
+  );
+  // Aldri gjett mellom to skoler med samme normaliserte navn.
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /** Precomputet gangtid. Undefined = ikke målt, og da nevnes ingen tid. */
@@ -127,6 +172,17 @@ export function cleanSchoolName(navn: string): string {
     .trim();
 }
 
+/**
+ * Avslutt en setning som ender på et navn vi ikke eier.
+ *
+ * Destinasjonsskiltene hos AtB er forkortet med punktum («Romolslia via
+ * Strindh.-Ladeham.»), og et påsatt setningspunktum ga «Ladeham..». Norsk
+ * typografi lar forkortelsespunktumet gjøre begge jobbene.
+ */
+function endSentence(text: string): string {
+  return /[.!?]$/.test(text) ? text : `${text}.`;
+}
+
 /** Avstand i meter, avrundet så tallet ikke later som det er målt med båndmål. */
 function roundedMeters(m: number): string {
   const rounded = m < 200 ? Math.round(m / 10) * 10 : Math.round(m / 50) * 50;
@@ -169,9 +225,7 @@ function krets(input: FaqGeneratorInput): string | undefined {
   ): string | undefined => {
     const fact = schools?.[kind];
     if (fact) {
-      // POI-id-en for en NSR-skole er `nsr-<orgnr>` (import-public-pois), så
-      // koblingen er eksakt og trenger ingen navnematching.
-      const poi = allPois.find((p) => p.id === `nsr-${fact.orgnr}`);
+      const poi = findSchoolPoi(allPois, fact);
       const detaljer = [
         trinnPhrase(fact.trinnFra, fact.trinnTil),
         fact.elevtall !== null ? `${fact.elevtall} elever` : null,
@@ -205,10 +259,7 @@ function vgsNaerhet(input: FaqGeneratorInput): string | undefined {
   if (medTid.length === 0) return undefined;
 
   const link = (v: (typeof medTid)[number]) =>
-    poiLink(
-      cleanSchoolName(v.navn),
-      input.allPois.find((p) => p.id === `nsr-${v.orgnr}`),
-    );
+    poiLink(cleanSchoolName(v.navn), findSchoolPoi(input.allPois, v));
 
   const først = medTid[0];
   const tid = først.patterns[0];
@@ -217,16 +268,19 @@ function vgsNaerhet(input: FaqGeneratorInput): string | undefined {
     `${link(først)} er raskest å komme til: ${tid.minutes} minutter${linjer}.`,
   ];
 
-  // Er den raskeste privat, er den nærmeste OFFENTLIGE en annen opplysning —
-  // og for de fleste den som avgjør.
-  const nesteOffentlige = først.offentlig
-    ? medTid.find((v) => v !== først)
-    : medTid.find((v) => v.offentlig);
-  if (nesteOffentlige) {
-    const merkelapp = først.offentlig ? "" : " offentlige";
-    parts.push(
-      `${link(nesteOffentlige)} er nærmeste${merkelapp}, ${nesteOffentlige.patterns[0].minutes} minutter.`,
-    );
+  // Er den raskeste PRIVAT, er den nærmeste offentlige en annen opplysning — og
+  // for de fleste den som avgjør. Er den allerede offentlig, er nummer to bare
+  // et alternativ, og «nærmeste» ville vært feil ord om en som er lenger unna.
+  if (først.offentlig) {
+    const neste = medTid[1];
+    if (neste) parts.push(`${link(neste)} tar ${neste.patterns[0].minutes} minutter.`);
+  } else {
+    const offentlig = medTid.find((v) => v.offentlig);
+    if (offentlig) {
+      parts.push(
+        `${link(offentlig)} er nærmeste offentlige, ${offentlig.patterns[0].minutes} minutter.`,
+      );
+    }
   }
 
   return parts.join(" ");
@@ -250,7 +304,7 @@ function barnehageDekning(input: FaqGeneratorInput): string | undefined {
     ogJoin(
       pois.slice(0, MAX_NAMED).map((p) => {
         const w = walkMinutes(p);
-        return `${poiLink(p.name, p)}${w !== undefined ? ` på ${w} minutter` : ""}`;
+        return `${namedPoi(p)}${w !== undefined ? ` på ${w} minutter` : ""}`;
       }),
     );
 
@@ -279,7 +333,7 @@ function hverdagshandel(input: FaqGeneratorInput): string | undefined {
 
   const beskriv = (p: POI) => {
     const w = walkMinutes(p);
-    return { lenke: poiLink(p.name, p), tid: w !== undefined ? `${w} minutter` : undefined };
+    return { lenke: namedPoi(p), tid: w !== undefined ? `${w} minutter` : undefined };
   };
 
   const først = beskriv(butikker[0]);
@@ -313,7 +367,7 @@ function spisesteder(input: FaqGeneratorInput): string | undefined {
     const w = walkMinutes(p);
     return w !== undefined && w <= DINING_RADIUS_MIN;
   });
-  const navn = (pois: POI[]) => ogJoin(pois.slice(0, MAX_NAMED).map((p) => poiLink(p.name, p)));
+  const navn = (pois: POI[]) => ogJoin(pois.slice(0, MAX_NAMED).map(namedPoi));
 
   if (iNaerheten.length >= 2) {
     return `Ja — ${iNaerheten.length} spisesteder ligger innenfor ${DINING_RADIUS_MIN} minutters gange, blant dem ${navn(iNaerheten)}.`;
@@ -321,8 +375,8 @@ function spisesteder(input: FaqGeneratorInput): string | undefined {
   const naermeste = steder[0];
   const w = walkMinutes(naermeste);
   return w !== undefined
-    ? `Nærmeste spisested er ${poiLink(naermeste.name, naermeste)}, ${w} minutter til fots.`
-    : `Nærmeste spisested er ${poiLink(naermeste.name, naermeste)}.`;
+    ? `Nærmeste spisested er ${namedPoi(naermeste)}, ${w} minutter til fots.`
+    : `Nærmeste spisested er ${namedPoi(naermeste)}.`;
 }
 
 /** Holdeplass-POI-et for et NSR-stoppested, når det er på boardet. */
@@ -370,7 +424,7 @@ function linjer(input: FaqGeneratorInput): string | undefined {
       return d.destinations[0] ? `${linje} mot ${d.destinations[0]}` : linje;
     });
   const parts = [
-    `Fra ${poiLink(først.name, stopPoi(input, først.stopPlaceId))} går ${ogJoin(retninger)}.`,
+    endSentence(`Fra ${poiLink(først.name, stopPoi(input, først.stopPlaceId))} går ${ogJoin(retninger)}`),
   ];
 
   // Linjer de andre holdeplassene har i tillegg — ikke en gjentakelse av de
@@ -386,7 +440,7 @@ function linjer(input: FaqGeneratorInput): string | undefined {
     const [navn, nye] = [...ekstra.entries()][0];
     const stop = medRetninger.find((s) => s.name === navn)!;
     parts.push(
-      `${poiLink(navn, stopPoi(input, stop.stopPlaceId))} gir i tillegg linje ${ogJoin(nye)}.`,
+      endSentence(`${poiLink(navn, stopPoi(input, stop.stopPlaceId))} gir i tillegg linje ${ogJoin(nye)}`),
     );
   }
 

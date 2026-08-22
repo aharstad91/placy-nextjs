@@ -40,14 +40,23 @@ export async function runBoardFactsStep(options: {
   productId: string;
   lat: number;
   lng: number;
+  /** Kommunen fra Kartverket — førstevalg for sentrumsoppslaget, se board-facts. */
+  kommunenavn?: string;
   city?: string;
   kommunenummer?: string;
   /** Injiserbar for tester. */
   now?: Date;
 }): Promise<BoardFactsStepResult> {
-  const { productId, lat, lng, city, kommunenummer, now } = options;
+  const { productId, lat, lng, kommunenavn, city, kommunenummer, now } = options;
 
-  const { facts, warnings } = await computeBoardFacts({ lat, lng, city, kommunenummer, now });
+  const { facts, warnings } = await computeBoardFacts({
+    lat,
+    lng,
+    kommunenavn,
+    city,
+    kommunenummer,
+    now,
+  });
   if (!facts) return { skipped: true, warnings };
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

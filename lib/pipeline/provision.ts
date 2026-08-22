@@ -257,6 +257,7 @@ export async function provisionReportBoard(
     productId: projectResult.productId,
     lat,
     lng,
+    kommunenavn: komInfo?.kommunenavn,
     city,
     kommunenummer,
   });

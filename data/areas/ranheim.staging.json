@@ -158,7 +158,7 @@
         {
           "id": "tog",
           "spørsmål": "Går det tog fra Ranheim?",
-          "svar": "Ja. [Ranheim stasjon](poi:34f39789-cf95-4df2-934f-e9b161b29a5a) har lokaltog mot Trondheim S, og østover mot Værnes uten bytte. Ranheim er en av få bydeler i Trondheim med egen stasjon."
+          "svar": "Ja. [Ranheim stasjon](poi:entur-NSR-StopPlace-33) har lokaltog mot Trondheim S, og østover mot Værnes uten bytte. Ranheim er en av få bydeler i Trondheim med egen stasjon."
         }
       ]
     },

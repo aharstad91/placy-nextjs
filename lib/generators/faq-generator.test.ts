@@ -149,6 +149,29 @@ describe("skolekrets", () => {
     expect(svar).toContain("8.–10. trinn");
   });
 
+  it("finner skolen på NAVN når poolen har en eldre rad enn nsr-<orgnr>", () => {
+    // Ranheim-funnet 2026-08-22: boardets Ranheim skole er en legacy-UUID fra
+    // en annen kilde som vant dedupen. Id-oppslaget alene ga null lenke på
+    // nettopp kretssvaret — det viktigste svaret i hele FAQ-en.
+    const legacy = poi({
+      id: "7a3f2a06-4fa0-401a-aef5-f686ddf62988",
+      name: "Ranheim skole",
+      categoryId: "skole",
+    });
+    const svar = answerFor(generateCategoryFaq(input({ pois: [legacy] })), "krets");
+    expect(svar).toContain("[Ranheim skole](poi:7a3f2a06-4fa0-401a-aef5-f686ddf62988)");
+  });
+
+  it("smelter ALDRI sammen barne- og ungdomsskolen på samme tomt", () => {
+    // «Charlottenlund barneskole» og «Charlottenlund ungdomsskole» ligger på
+    // samme adresse. Navnenøkkelen beholder skoleslags-ordet nettopp derfor.
+    const barne = poi({ id: "c-barne", name: "Charlottenlund barneskole", categoryId: "skole" });
+    const ungdom = poi({ id: "c-ungdom", name: "Charlottenlund ungdomsskole", categoryId: "skole" });
+    const svar = answerFor(generateCategoryFaq(input({ pois: [barne, ungdom] })), "krets");
+    expect(svar).toContain("(poi:c-ungdom)");
+    expect(svar).not.toContain("(poi:c-barne)");
+  });
+
   it("skriver navnet uten lenke når skolen ikke er på boardet", () => {
     // «Degrader, aldri sensurer»: kretsskolen er et faktum om adressen selv om
     // POI-et ikke overlevde board-filtrene.
@@ -210,6 +233,26 @@ describe("videregående", () => {
     expect(svar.toLowerCase()).not.toMatch(/sogner|krets/);
   });
 
+  it("kaller ikke nummer to «nærmeste» når den raskeste allerede er offentlig", () => {
+    // Nardo-funnet 2026-08-22: den raskeste var offentlig, og «Bybroen
+    // videregående er nærmeste, 18 minutter» påsto at en skole lenger unna var
+    // den nærmeste. Nummer to er et alternativ, ikke en nærhets-påstand.
+    const facts: ReportBoardFacts = {
+      ...FACTS,
+      schools: {
+        ...FACTS.schools!,
+        videregaaende: [
+          { ...FACTS.schools!.videregaaende[1] },
+          { ...FACTS.schools!.videregaaende[0], offentlig: true, patterns: [{ minutes: 18, lines: ["1"], transfers: 0, walkMeters: 100 }] },
+        ],
+      },
+    };
+    const svar = answerFor(generateCategoryFaq(input({ boardFacts: facts })), "vgs-naerhet");
+    expect(svar).toContain("Cissi Klein videregående er raskest å komme til: 12 minutter");
+    expect(svar).toContain("Lukas videregående tar 18 minutter.");
+    expect(svar).not.toContain("nærmeste");
+  });
+
   it("utelates når ingen videregående har en funnet bussreise", () => {
     const facts: ReportBoardFacts = {
       ...FACTS,
@@ -266,6 +309,14 @@ describe("barnehage-dekning", () => {
     const svar = answerFor(generateCategoryFaq(input({ pois })), "barnehage-dekning");
     expect(svar).not.toMatch(/minutter/);
     expect(svar).toContain("2 barnehager ligger i nabolaget");
+  });
+
+  it("rydder bort selskapsformen i løpende tekst", () => {
+    // Registeret skriver «Grilstad Fus barnehage AS». Ingen sier det høyt.
+    const pois = [bhg("b1", "Grilstad Fus barnehage AS", 4), bhg("b2", "Sjøskogbekken FUS", 7)];
+    const svar = answerFor(generateCategoryFaq(input({ pois })), "barnehage-dekning");
+    expect(svar).toContain("[Grilstad Fus barnehage](poi:b1)");
+    expect(svar).not.toContain("AS]");
   });
 
   it("utelates når temaet ikke har barnehager", () => {
@@ -353,6 +404,32 @@ describe("transport", () => {
     );
     expect(svar).toContain("linje 20 mot Grillstad og linje 20 mot Romolslia");
     expect(svar).toContain("gir i tillegg linje 1");
+  });
+
+  it("dobler ikke punktumet når destinasjonsskiltet er forkortet", () => {
+    // AtB skilter «Romolslia via Strindh.-Ladeham.» — et påsatt setningspunktum
+    // ga «Ladeham..». Forkortelsespunktumet gjør begge jobbene.
+    const facts: ReportBoardFacts = {
+      ...FACTS,
+      stops: [
+        {
+          ...FACTS.stops[0],
+          directions: [
+            {
+              quayId: "q1",
+              destinations: ["Romolslia via Strindh.-Ladeham."],
+              lines: ["20"],
+            },
+          ],
+        },
+      ],
+    };
+    const svar = answerFor(
+      generateCategoryFaq(input({ ...TRANSPORT, boardFacts: facts })),
+      "linjer",
+    );
+    expect(svar).not.toContain("..");
+    expect(svar.endsWith("Ladeham.")).toBe(true);
   });
 
   it("gjentar ikke linjer fra en holdeplass til den neste", () => {

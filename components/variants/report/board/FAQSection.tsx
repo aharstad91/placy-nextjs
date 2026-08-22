@@ -170,9 +170,12 @@ function AnswerText({
             data-testid={node.kind === "poi" ? "faq-poi-link" : "faq-category-link"}
             data-target={node.kind === "poi" ? node.poiId : node.categoryId}
             onClick={onClick}
-            // Negativ margin motvirker paddingen så treffflaten vokser uten at
-            // linjehøyden i avsnittet endrer seg.
-            className="-my-1 cursor-pointer rounded px-0.5 py-1 font-medium text-stone-900 underline decoration-stone-300 underline-offset-2 transition-colors duration-150 hover:decoration-stone-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+            // Treffflaten vokser VERTIKALT (fingerhøyden er det knappe målet),
+            // og den negative margin-en holder linjehøyden i avsnittet urørt.
+            // Horisontal padding er bevisst utelatt: den dyttet kommaet etter
+            // lenken vekk fra ordet, så «Ranheim skole, med» ble til
+            // «Ranheim skole , med».
+            className="-my-1 cursor-pointer rounded py-1 font-medium text-stone-900 underline decoration-stone-300 underline-offset-2 transition-colors duration-150 hover:decoration-stone-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
           >
             {node.text}
           </button>
