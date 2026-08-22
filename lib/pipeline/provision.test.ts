@@ -17,6 +17,7 @@ vi.mock("@/lib/pipeline/enrich-report-pois", async (orig) => ({
 vi.mock("@/lib/pipeline/validate-report-trust", () => ({ validateReportTrust: vi.fn() }));
 vi.mock("@/lib/pipeline/hydrate-report", () => ({ hydrateReport: vi.fn() }));
 vi.mock("@/lib/pipeline/travel-times", () => ({ computeProjectTravelTimes: vi.fn() }));
+vi.mock("@/lib/pipeline/board-facts-step", () => ({ runBoardFactsStep: vi.fn() }));
 vi.mock("@/lib/pipeline/inherit-area-editorial-via-route", () => ({ inheritAreaEditorialViaRoute: vi.fn() }));
 vi.mock("@/lib/pipeline/provision-acceptance", () => ({ runAcceptanceCheck: vi.fn() }));
 
@@ -28,6 +29,7 @@ import { enrichReportPois } from "@/lib/pipeline/enrich-report-pois";
 import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
+import { runBoardFactsStep } from "@/lib/pipeline/board-facts-step";
 import { inheritAreaEditorialViaRoute } from "@/lib/pipeline/inherit-area-editorial-via-route";
 import { runAcceptanceCheck } from "@/lib/pipeline/provision-acceptance";
 import { provisionReportBoard } from "./provision";
@@ -41,6 +43,7 @@ const m = {
   trust: vi.mocked(validateReportTrust),
   hydrate: vi.mocked(hydrateReport),
   travel: vi.mocked(computeProjectTravelTimes),
+  boardFacts: vi.mocked(runBoardFactsStep),
   editorial: vi.mocked(inheritAreaEditorialViaRoute),
   acceptance: vi.mocked(runAcceptanceCheck),
 };
@@ -59,8 +62,10 @@ function setHappyDefaults(existed = false) {
   m.trust.mockResolvedValue({ scored: 10, skipped: 0, skippedPublic: 5, stillNull: [], warnings: [] });
   m.hydrate.mockResolvedValue({ productPoisLinked: 20, featuredMarked: 6, categoriesPopulated: 8, warnings: [] });
   m.travel.mockResolvedValue({ computed: 20, total: 20, warnings: [] });
+  m.boardFacts.mockResolvedValue({ skipped: true, warnings: [] });
   m.editorial.mockResolvedValue({
-    skipped: true, areaName: "", themesInherited: [], highlights: { kept: 0, dropped: [] }, warnings: [],
+    skipped: true, areaName: "", themesInherited: [], themesWithFaq: [], globalFaqAnswers: 0,
+    highlights: { kept: 0, dropped: [] }, warnings: [],
   });
   m.acceptance.mockResolvedValue({ ok: true, findings: [], urls: { local: "l", prod: "p" } });
 }
@@ -120,12 +125,16 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     m.trust.mockImplementation(async () => { order.push("trust"); return { scored: 0, skipped: 0, skippedPublic: 0, stillNull: [], warnings: [] }; });
     m.hydrate.mockImplementation(async () => { order.push("hydrate"); return { productPoisLinked: 0, featuredMarked: 0, categoriesPopulated: 0, warnings: [] }; });
     m.travel.mockImplementation(async () => { order.push("travel"); return { computed: 0, total: 0, warnings: [] }; });
-    m.editorial.mockImplementation(async () => { order.push("editorial"); return { skipped: true, areaName: "", themesInherited: [], highlights: { kept: 0, dropped: [] }, warnings: [] }; });
+    m.boardFacts.mockImplementation(async () => { order.push("board-facts"); return { skipped: true, warnings: [] }; });
+    m.editorial.mockImplementation(async () => { order.push("editorial"); return { skipped: true, areaName: "", themesInherited: [], themesWithFaq: [], globalFaqAnswers: 0, highlights: { kept: 0, dropped: [] }, warnings: [] }; });
     m.acceptance.mockImplementation(async () => { order.push("acceptance"); return { ok: true, findings: [], urls: { local: "l", prod: "p" } }; });
 
     await provisionReportBoard({ ...BASE, confirmCoords: { lat: 1, lng: 2 } });
 
-    expect(order).toEqual(["project", "public", "enrich", "trust", "hydrate", "travel", "editorial", "acceptance"]);
+    // Board-fakta står MELLOM reisetider og editorial: begge de to siste gjør
+    // read-modify-write mot samme config-rad, og rekkefølgen er derfor én å
+    // resonnere om i stedet for to.
+    expect(order).toEqual(["project", "public", "enrich", "trust", "hydrate", "travel", "board-facts", "editorial", "acceptance"]);
   });
 
   it("reisetid-steget er fail-soft: warnings videreformidles, provisjonen fullfører", async () => {

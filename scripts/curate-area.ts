@@ -45,7 +45,7 @@ import "./load-env";
 import * as fs from "node:fs";
 import * as readline from "readline";
 
-import { parseAreaStaging } from "@/lib/pipeline/area-staging";
+import { GLOBAL_EDITORIAL_KEY, parseAreaStaging } from "@/lib/pipeline/area-staging";
 import {
   fetchAreaRow,
   writeAreaStaging,
@@ -200,22 +200,42 @@ async function applyStaging(opts: { file: string; dryRun: boolean; yes: boolean 
   console.log("report_editorial:");
   const emptyThemes: string[] = [];
   for (const theme of REPORT_THEME_DEFAULTS) {
-    const incoming = staging.report_editorial[theme.id];
-    if (!incoming) {
+    const entry = staging.report_editorial[theme.id];
+    if (!entry) {
       if (theme.id in existingEditorial) {
         console.log(`  · ${theme.id}: BEHOLDES (ikke i staging)`);
       }
       continue;
     }
+    // Verdiene er en union: tema-entry eller den reserverte `global`-entryen.
+    // Løkka går over tema-IDer, så `body` finnes alltid — men det vet ikke
+    // typen, og en cast ville skjult en ekte feilplassert global-entry.
+    if (!("body" in entry)) {
+      console.log(`  · ${theme.id}: HOPPES OVER — entryen mangler body/highlightCandidates`);
+      continue;
+    }
+    const incoming = entry;
     const status = theme.id in existingEditorial ? "OPPDATERES" : "NY";
     const bodyDesc = incoming.body.trim() ? `${incoming.body.length} tegn` : "tom";
     console.log(
       `  · ${theme.id}: ${status} — body: ${bodyDesc}, ${incoming.highlightCandidates.length} highlight-kandidater` +
-        (incoming.image ? ", image" : "")
+        (incoming.image ? ", image" : "") +
+        (incoming.faq?.length ? `, ${incoming.faq.length} kuraterte FAQ-svar` : "")
     );
     if (!incoming.body.trim() && incoming.highlightCandidates.length === 0) {
       emptyThemes.push(theme.id);
     }
+  }
+
+  // Den reserverte global-nøkkelen er ikke et tema og faller utenfor løkka
+  // over, men er innhold kurator må se i tørrkjøringen.
+  const globalEntry = staging.report_editorial[GLOBAL_EDITORIAL_KEY];
+  const globalFaq = globalEntry && "faq" in globalEntry ? globalEntry.faq : undefined;
+  if (globalFaq) {
+    const status = GLOBAL_EDITORIAL_KEY in existingEditorial ? "OPPDATERES" : "NY";
+    console.log(
+      `  · ${GLOBAL_EDITORIAL_KEY} (global nabolags-FAQ): ${status} — ${globalFaq.length} svar`
+    );
   }
   // Eksisterende nøkler utenfor dagens tema-defaults beholdes også av mergen
   for (const key of Object.keys(existingEditorial)) {

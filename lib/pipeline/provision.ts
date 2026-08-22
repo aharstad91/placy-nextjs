@@ -1,19 +1,22 @@
 /**
  * Rapport-board provisjon — REN, TTY-løs orkestrator-kjerne (PRD 3 / r03.1).
  *
- * Kjører de 10 ratifiserte stegene SERIELT i load-bearing rekkefølge
- * (9 opprinnelige + reisetid-precompute, Andreas-godkjent 2026-07-06/bead 2nj):
+ * Kjører de ratifiserte stegene SERIELT i load-bearing rekkefølge
+ * (9 opprinnelige + reisetid-precompute, Andreas-godkjent 2026-07-06/bead 2nj,
+ * + board-fakta 2026-08-22):
  *   1. Geocode (+ confidence-gate)   →  2. Opprett prosjekt
  *   3. Offentlige POI (NSR/bhg/idrett, skippes for næring)
  *   4. Google-discovery (+ Entur/Bysykkel)   →  5. Trust-scoring (to-fase)
  *   6. Hydrering (product_pois + featured + categories)
  *   7. Reisetider (Mapbox Matrix → project_pois.travel_times, fail-soft)
+ *   7b. Board-fakta (skolekrets fra NSR + transitt fra Entur, fail-soft)
  *   8. Nabolags-editorial (arv)   →  9. Revalidering   →  10. Akseptansesjekk
  *
  * Rekkefølgen er load-bearing: trust (5) MÅ kjøre etter discovery (3–4) og før
- * hydrering (6); reisetider (7) etter at POI-poolen er komplett (3–4); editorial
- * (8) etter at config-en finnes. Endres den, brytes enten dedup, trust-filteret
- * eller editorial-arven.
+ * hydrering (6); reisetider (7) etter at POI-poolen er komplett (3–4); board-
+ * fakta (7b) og editorial (8) etter at config-en finnes, og 7b før 8 fordi
+ * begge gjør read-modify-write mot samme config-rad. Endres den, brytes enten
+ * dedup, trust-filteret eller editorial-arven.
  *
  * Kjernen er kallbar fra BÅDE CLI og server-action (self-serve, Unit 8) uten
  * TTY: interaktivitet (koordinat-bekreftelse, nivå-prompt) ligger i kalleren.
@@ -39,6 +42,7 @@ import {
 import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
+import { runBoardFactsStep } from "@/lib/pipeline/board-facts-step";
 import { inheritAreaEditorialViaRoute } from "@/lib/pipeline/inherit-area-editorial-via-route";
 import { getDiscoveryRadius, type ReportProfile } from "@/lib/pipeline/report-defaults";
 import {
@@ -243,6 +247,33 @@ export async function provisionReportBoard(
   log(`Reisetider beregnet: ${travelResult.computed} av ${travelResult.total} POI-er (walk)`);
   for (const w of travelResult.warnings) warn(w);
 
+  // ── Steg 7b: Board-fakta (skolekrets + transitt) ───────────────────────
+  // Kilden FAQ-svarene monteres fra ved render. Fail-soft: kaster aldri —
+  // uten fakta utelates de FAQ-spørsmålene som mangler svar, resten består.
+  // Står FØR editorial-arven fordi begge gjør read-modify-write mot samme
+  // config-rad, og rekkefølgen da er én å resonnere om i stedet for to.
+  section("Steg 7b: Board-fakta");
+  const factsResult = await runBoardFactsStep({
+    productId: projectResult.productId,
+    lat,
+    lng,
+    city,
+    kommunenummer,
+  });
+  for (const w of factsResult.warnings) warn(w);
+  if (factsResult.facts && !factsResult.skipped) {
+    const f = factsResult.facts;
+    log(
+      `Holdeplasser: ${f.stops.length} · sentrum: ${
+        f.cityCentre ? `${f.cityCentre.patterns[0]?.minutes ?? "?"} min` : "ikke funnet"
+      } · videregående: ${f.schools?.videregaaende.length ?? 0}`,
+    );
+    const krets = [f.schools?.barneskole?.navn, f.schools?.ungdomsskole?.navn].filter(Boolean);
+    log(krets.length > 0 ? `Kretsskoler: ${krets.join(", ")}` : "Kretsskoler: ingen (utenfor dekning)");
+  } else {
+    log("Ingen board-fakta skrevet — FAQ-en står på kuratert innhold alene");
+  }
+
   // ── Steg 8: Nabolags-editorial ─────────────────────────────────────────
   // Fail-soft (warnings) — UNNTATT skrive-/optimistisk-lås-feil som KASTER
   // (aldri delvis editorial i config; håndteres inni inheritAreaEditorial).
@@ -264,6 +295,12 @@ export async function provisionReportBoard(
         ? `Temaer arvet: ${inheritResult.themesInherited.join(", ")} (${inheritResult.themesInherited.length})`
         : "Temaer arvet: ingen (se advarsler over)"
     );
+    if (inheritResult.themesWithFaq.length > 0) {
+      log(`Kuratert FAQ arvet for: ${inheritResult.themesWithFaq.join(", ")}`);
+    }
+    if (inheritResult.globalFaqAnswers > 0) {
+      log(`Global nabolags-FAQ: ${inheritResult.globalFaqAnswers} kuraterte svar`);
+    }
     log(`Highlights beholdt: ${inheritResult.highlights.kept}`);
     if (inheritResult.highlights.dropped.length > 0) {
       log(`Highlights droppet: ${inheritResult.highlights.dropped.length}`);
