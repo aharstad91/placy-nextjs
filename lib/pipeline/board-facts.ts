@@ -97,6 +97,7 @@ export async function computeBoardFacts(options: {
   const videregaaende: BoardVideregaende[] = schools.facts.videregaaende
     .map((vgs) => ({
       navn: vgs.navn,
+      orgnr: vgs.orgnr,
       offentlig: vgs.offentlig,
       distanceM: vgs.distanceM,
       patterns: tripByKey.get(vgsKey(vgs.orgnr))?.patterns ?? [],

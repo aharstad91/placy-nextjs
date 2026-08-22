@@ -1,5 +1,6 @@
 import type {
   Project,
+  ReportFaqAnswer,
   ReportThemeAudio,
   ReportThemeEditorial,
   ReportThemeGrounding,
@@ -30,6 +31,9 @@ export interface ReportThemeDefinition extends ThemeDefinition {
   reelsAudio?: ReportThemeAudio;
   /** Nivå-2 kuratert detalj-innhold (fra products.config). Gater drill-in-panelet. */
   editorial?: ReportThemeEditorial;
+  /** Strøkets kuraterte FAQ-svar for temaet (fra products.config). Overstyrer
+   *  det deterministiske svaret per spørsmåls-id. */
+  faq?: ReportFaqAnswer[];
 }
 
 /**

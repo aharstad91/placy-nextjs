@@ -5,6 +5,7 @@ import {
   findBoardPOI,
   isPlayableAudio,
   pickPlayableAudio,
+  shrinkToIntro,
 } from "./board-data";
 import { poiVisualIdentity } from "./marker-style";
 import type { BoardPOI } from "./board-data";
@@ -628,5 +629,94 @@ describe("highlight-identitet matcher kartmarkøren (2026-08-13)", () => {
     });
     const data = adaptBoardData(makeReportData([theme]));
     expect(data.categories[0].editorial!.highlights[0].color).toBe("#ec4899");
+  });
+});
+
+// ── FAQ og degradasjonsregelen ─────────────────────────────────────────────
+
+describe("FAQ i drill-in-detaljen", () => {
+  const faqEntry = (id: string) => ({
+    id,
+    question: `Spørsmål ${id}?`,
+    answer: `Svar ${id}.`,
+    source: "deterministic" as const,
+  });
+
+  it("legger FAQ-en på detaljen så desktop og mobil deler samme kilde", () => {
+    const theme = makeTheme("transport", [makePOI("p1")], {
+      faq: [faqEntry("naermeste-holdeplass")],
+    });
+    const board = adaptBoardData(makeReportData([theme]));
+    expect(board.categories[0].editorial?.faq).toHaveLength(1);
+  });
+
+  it("gir et panel til en kategori som BARE har FAQ", () => {
+    // Uten narrativ body ville kategorien tidligere ikke fått drill-in i det
+    // hele tatt. FAQ-svarene er innhold nok — de er hele poenget med flaten.
+    const theme = makeTheme("transport", [makePOI("p1")], {
+      intro: undefined,
+      upperNarrative: undefined,
+      bridgeText: undefined,
+      faq: [faqEntry("linjer")],
+    });
+    const board = adaptBoardData(makeReportData([theme]));
+    expect(board.categories[0].editorial?.faq).toHaveLength(1);
+    expect(board.categories[0].editorial?.body).toBe("");
+  });
+
+  it("krymper teksten til en kort intro når FAQ-en bærer substansen (≥3 svar)", () => {
+    const theme = makeTheme("barn-oppvekst", [makePOI("p1")], {
+      intro: undefined,
+      upperNarrative:
+        "Første setning setter scenen. Andre setning utdyper. Tredje setning er overflødig.\n\nEt helt eget avsnitt til.",
+      faq: [faqEntry("krets"), faqEntry("vgs-naerhet"), faqEntry("barnehage-dekning")],
+    });
+    const board = adaptBoardData(makeReportData([theme]));
+    expect(board.categories[0].editorial?.intro).toBe(
+      "Første setning setter scenen. Andre setning utdyper.",
+    );
+    // Full tekst beholdes i data — det er RENDERINGEN som krymper
+    expect(board.categories[0].editorial?.body).toContain("Et helt eget avsnitt");
+  });
+
+  it("lar teksten stå urørt under terskelen — regresjonsvern for tynne adresser", () => {
+    const theme = makeTheme("barn-oppvekst", [makePOI("p1")], {
+      faq: [faqEntry("krets"), faqEntry("vgs-naerhet")],
+    });
+    const board = adaptBoardData(makeReportData([theme]));
+    expect(board.categories[0].editorial?.intro).toBeUndefined();
+  });
+
+  it("lar boards helt uten FAQ være bit for bit som før", () => {
+    const board = adaptBoardData(makeReportData([makeTheme("mat-drikke", [makePOI("p1")])]));
+    expect(board.categories[0].editorial?.faq).toBeUndefined();
+    expect(board.categories[0].editorial?.intro).toBeUndefined();
+    expect(board.globalFaq).toEqual([]);
+  });
+
+  it("fører den globale FAQ-en videre til boardet", () => {
+    const report = { ...makeReportData([makeTheme("transport", [makePOI("p1")])]), globalFaq: [faqEntry("til-byen")] };
+    expect(adaptBoardData(report).globalFaq).toHaveLength(1);
+  });
+});
+
+describe("shrinkToIntro", () => {
+  it("kutter etter to setninger", () => {
+    expect(shrinkToIntro("En. To. Tre.")).toBe("En. To.");
+  });
+
+  it("kutter ALDRI midt i «1.–7. trinn» eller «ca.»", () => {
+    // Splitten krever stor bokstav etter mellomrommet — uten det ville
+    // ordenstall og forkortelser blitt lest som setningsslutt.
+    const body = "Kommunal barneskole for 1.–7. trinn med 486 elever, ca. 500 meter unna.";
+    expect(shrinkToIntro(body)).toBe(body);
+  });
+
+  it("tar bare første avsnitt", () => {
+    expect(shrinkToIntro("Avsnitt én.\n\nAvsnitt to.")).toBe("Avsnitt én.");
+  });
+
+  it("tåler tom streng", () => {
+    expect(shrinkToIntro("")).toBe("");
   });
 });

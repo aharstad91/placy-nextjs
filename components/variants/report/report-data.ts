@@ -3,6 +3,7 @@ import type {
   POI,
   Coordinates,
   TrailCollection,
+  ReportBoardFacts,
   ReportSummary,
   BrokerInfo,
   ReportCTA,
@@ -10,7 +11,12 @@ import type {
   ReportThemeEditorial,
   ProjectAssetFlags,
 } from "@/lib/types";
-import { ReportThemeGroundingViewSchema } from "@/lib/types";
+import { ReportBoardFactsSchema, ReportThemeGroundingViewSchema } from "@/lib/types";
+import {
+  generateCategoryFaq,
+  generateGlobalFaq,
+  type FaqEntry,
+} from "@/lib/generators/faq-generator";
 import { getReportThemes } from "./report-themes";
 import {
   calculateCategoryScore,
@@ -38,6 +44,22 @@ function parseGroundingOrLog(
   console.error("[grounding] Zod-parse failed — skipping", {
     projectId: `${project.customer}/${project.urlSlug}`,
     themeId,
+    issue: result.error.issues[0]?.message ?? "unknown",
+  });
+  return undefined;
+}
+
+/**
+ * Zod-parse board-faktaene ved render-boundary. Silent skip + server-log ved
+ * ugyldig form — samme kontrakt som grounding: et board med rar JSONB skal
+ * rendre normalt uten FAQ-svarene, aldri kaste.
+ */
+function parseBoardFactsOrLog(raw: unknown, project: Project): ReportBoardFacts | undefined {
+  if (!raw) return undefined;
+  const result = ReportBoardFactsSchema.safeParse(raw);
+  if (result.success) return result.data;
+  console.error("[boardFacts] Zod-parse failed — skipping", {
+    projectId: `${project.customer}/${project.urlSlug}`,
     issue: result.error.issues[0]?.message ?? "unknown",
   });
   return undefined;
@@ -103,6 +125,9 @@ export interface ReportTheme {
   /** Nivå-2 kuratert detalj-innhold (fra reportConfig.themes[].editorial).
    *  Tilstedeværelse gater drill-in-panelet i rapport-board. */
   editorial?: ReportThemeEditorial;
+  /** Render-klare FAQ-svar for kategorien: deterministisk kjerne flettet med
+   *  strøkets kuraterte overstyringer. Tom/utelatt = ingen FAQ-seksjon. */
+  faq?: FaqEntry[];
   stats: ReportThemeStats;
   /** All POIs sorted by tier then score. First INITIAL_VISIBLE_COUNT shown, rest behind "Hent flere". */
   pois: POI[];
@@ -197,6 +222,9 @@ export interface ReportData {
    * kan droppe POIs som curated tekst refererer til.
    */
   allProjectPOIs: POI[];
+  /** Boardets globale nabolags-FAQ (vist når ingen kategori er valgt). Tom
+   *  eller utelatt = ingen seksjon. Event-board har den aldri. */
+  globalFaq?: FaqEntry[];
   label?: string;
   heroIntro?: string;
   heroImage?: string;
@@ -525,6 +553,11 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
   const center = project.centerCoordinates;
 
+  // Deterministiske fakta om adressen (skolekrets, holdeplasser, reisetider),
+  // hentet build-time i provisjoneringens steg 7b. FAQ-svarene MONTERES her fra
+  // dem — teksten lagres aldri, så malene kan itereres uten re-provisjonering.
+  const boardFacts = parseBoardFactsOrLog(project.reportConfig?.boardFacts, project);
+
   for (const themeDef of themeDefinitions) {
     const cats = new Set(themeDef.categories);
     const themePOIs = allPOIs.filter((p) => cats.has(p.category.id));
@@ -606,6 +639,18 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       readMoreQuery: themeDef.readMoreQuery,
       grounding: parseGroundingOrLog(themeDef.grounding, project, themeDef.id),
       editorial: themeDef.editorial,
+      faq: generateCategoryFaq({
+        themeId: themeDef.id,
+        categoryIds: themeDef.categories,
+        pois: filtered,
+        // Hele POI-settet, ikke bare temaets: en holdeplass eller skole som
+        // nevnes i et svar kan ligge i en annen kategori enn den man leser.
+        allPois: allPOIs,
+        center,
+        boardFacts,
+        schoolZone: project.schoolZone,
+        curated: themeDef.faq,
+      }),
       stats: {
         totalPOIs: filtered.length,
         ratedPOIs: themeStats.ratedCount,
@@ -653,6 +698,13 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     heroMetrics,
     themes,
     allProjectPOIs: project.pois,
+    // Bygges ETTER tema-løkka: kategorilenkene i svarene skal bare peke på
+    // temaer som faktisk nådde boardet.
+    globalFaq: generateGlobalFaq({
+      boardFacts,
+      curated: rc?.globalFaq,
+      themes: themes.map((t) => ({ id: t.id, label: t.name })),
+    }),
     label: rc?.label,
     heroIntro,
     heroImage: rc?.heroImage,

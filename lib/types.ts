@@ -308,6 +308,9 @@ const BoardKretsSchoolSchema = z.object({
   /** Kretsnavnet fra kommunens polygon, i VERSALER slik kilden skriver det. */
   krets: z.string().min(1),
   navn: z.string().min(1),
+  /** Organisasjonsnummeret i NSR. POI-id-en for skolen er `nsr-<orgnr>`, så
+   *  dette er nøkkelen som gjør kretssvaret klikkbart. */
+  orgnr: z.string().min(1),
   trinnFra: z.number().int().nullable(),
   trinnTil: z.number().int().nullable(),
   elevtall: z.number().int().nullable(),
@@ -316,6 +319,9 @@ const BoardKretsSchoolSchema = z.object({
 
 const BoardVideregaendeSchema = z.object({
   navn: z.string().min(1),
+  /** Organisasjonsnummeret i NSR. POI-id-en for skolen er `nsr-<orgnr>`, så
+   *  dette er nøkkelen som gjør svaret klikkbart når skolen er på boardet. */
+  orgnr: z.string().min(1),
   offentlig: z.boolean(),
   distanceM: z.number().int().min(0),
   /** Tom når Entur ikke fant en reise — skolen står da uten bussetid. */
