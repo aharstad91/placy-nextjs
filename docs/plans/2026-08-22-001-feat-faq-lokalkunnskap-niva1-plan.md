@@ -1,7 +1,7 @@
 ---
 title: "feat: FAQ-seksjon per kategori i nivå 1-boardet (Lokalkunnskap i tekst)"
 type: feat
-status: active
+status: completed
 date: 2026-08-22
 origin: docs/brainstorms/2026-08-22-faq-lokalkunnskap-niva1-requirements.md
 ---
@@ -110,7 +110,7 @@ Fra origin (R-nummer = origin-dokumentets):
 
 ### Fase 1 — Datagrunnlag
 
-- [ ] **Unit 1: Transport-spec + FAQ-utvalg i spørsmålsbanken**
+- [x] **Unit 1: Transport-spec + FAQ-utvalg i spørsmålsbanken**
 
 **Goal:** Spørsmålsbanken dekker transport og eksponerer hvilke spørsmål som hører i board-FAQ-en, med tema-mapping.
 
@@ -137,7 +137,7 @@ Fra origin (R-nummer = origin-dokumentets):
 
 **Verification:** `verify-category-ids` og eksisterende spec-tester grønne; nye spørsmål har `lag: "board"` og kilde satt.
 
-- [ ] **Unit 2: Build-time transitt-fakta fra Entur**
+- [x] **Unit 2: Build-time transitt-fakta fra Entur**
 
 **Goal:** Deterministiske transitt-fakta per board: nærmeste holdeplasser med linjer gruppert per quay/retning, og buss-reisetider fra adressen til sentrum og til vgs.-listen for kommunen.
 
@@ -166,7 +166,7 @@ Fra origin (R-nummer = origin-dokumentets):
 
 **Verification:** modulen kan kjøres isolert mot Strindfjordveien 10-koordinater og gir holdeplass+linjer+vgs-tider som stemmer med manuelt Entur-oppslag.
 
-- [ ] **Unit 3: Pipeline-steg + lagring av fakta og kuratert FAQ-arv**
+- [x] **Unit 3: Pipeline-steg + lagring av fakta og kuratert FAQ-arv**
 
 **Goal:** Provisjoneringen beriker boardet med transitt-fakta, og kuraterte FAQ-svar per strøk arves inn i board-config.
 
@@ -200,7 +200,7 @@ Fra origin (R-nummer = origin-dokumentets):
 
 ### Fase 2 — Montering og render
 
-- [ ] **Unit 4: Deterministisk FAQ-generator + to-lags montering**
+- [x] **Unit 4: Deterministisk FAQ-generator + to-lags montering**
 
 **Goal:** Render-tids generering av FAQ-svar fra lagrede fakta, flettet med kuraterte overstyringer, levert render-klart gjennom adapterkjeden — inkl. lead-krymping med degradasjonsregel og global FAQ.
 
@@ -233,7 +233,7 @@ Fra origin (R-nummer = origin-dokumentets):
 
 **Verification:** generatoren produserer sporbare svar (hvert svar kan pekes til register/beregning/kuratert kilde) for ranheim-fixture.
 
-- [ ] **Unit 5: Desktop-UI — FAQ i CategoryDetailView + global FAQ i sidebar**
+- [x] **Unit 5: Desktop-UI — FAQ i CategoryDetailView + global FAQ i sidebar**
 
 **Goal:** FAQ-accordion i desktop-drill-in med klikkbare POI-referanser som flyr kartet, og slank global FAQ på sidebar-forsiden.
 
@@ -267,7 +267,7 @@ Fra origin (R-nummer = origin-dokumentets):
 
 **Verification:** i kjørende board (uten reels-lyd) viser drill-in FAQ under prosaen; POI-klikk flyr kartet.
 
-- [ ] **Unit 6: Mobil-UI — FAQ i CategoryPage + panel-vik ved POI-klikk**
+- [x] **Unit 6: Mobil-UI — FAQ i CategoryPage + panel-vik ved POI-klikk**
 
 **Goal:** Samme FAQ-innhold i mobil-drill-in, med panel som viker (peek) ved POI-referanse-klikk så kartflyet er synlig; global FAQ på nabolagsflaten.
 
@@ -296,7 +296,7 @@ Fra origin (R-nummer = origin-dokumentets):
 
 ### Fase 3 — Innhold og demo
 
-- [ ] **Unit 7: Kuratert FAQ for ranheim (ny forfatting)**
+- [x] **Unit 7: Kuratert FAQ for ranheim (ny forfatting)**
 
 **Goal:** Kuraterte FAQ-svar for ranheim-strøket — meglerens stemme — lagret i `areas.report_editorial` per tema/spørsmåls-id.
 
@@ -318,7 +318,7 @@ Fra origin (R-nummer = origin-dokumentets):
 
 **Verification:** minst barn-oppvekst og transport har kuraterte overstyringer/tillegg for ranheim; svarene passerer curator-reglene (stikkprøve mot `aldri`-listene i spec-ene).
 
-- [ ] **Unit 8: Demo-provisjonering og aksept mot suksesskriteriene**
+- [x] **Unit 8: Demo-provisjonering og aksept mot suksesskriteriene**
 
 **Goal:** Worktree-demo på Strindfjordveien 10 som beviser samtlige suksesskriterier fra origin.
 
