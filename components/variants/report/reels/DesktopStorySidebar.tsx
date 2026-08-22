@@ -39,6 +39,8 @@ import {
   HighlightsDisclosure,
   type SidebarHighlight,
 } from "./HighlightsDisclosure";
+import { FAQSection } from "../board/FAQSection";
+import type { FaqEntry } from "@/lib/generators/faq-generator";
 import { EventFilterPanel } from "../board/event/EventFilterPanel";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
 import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
@@ -83,6 +85,10 @@ export interface SidebarPreviewCategory {
    *  kartet. Render-klart fra board-data. */
   editorial?: {
     body: string;
+    /** Kort intro som ERSTATTER body når FAQ-en bærer substansen (board-data). */
+    intro?: string;
+    /** Spørsmål og svar for adressen. Tom/utelatt → ingen FAQ-seksjon. */
+    faq?: FaqEntry[];
     image?: string;
     /** Render-klare highlights (identitet avledet i board-data). */
     highlights: SidebarHighlight[];
@@ -255,6 +261,12 @@ export function SidebarContentPreview({
               </button>
             );
           })}
+
+          {/* Den globale nabolags-FAQ-en, bevisst SLANK og plassert etter
+              kategoriene: den skal binde flatene sammen, ikke konkurrere med
+              kategori-FAQ-ene. Svarene lenker inn i kategoriene framfor å
+              gjenta innholdet deres. */}
+          <GlobalFaq onSelectCategory={onSelect} />
         </div>
       )}
 
@@ -286,6 +298,27 @@ export function SidebarContentPreview({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Boardets egen FAQ — de spørsmålene som ikke hører til én kategori.
+ *
+ * Egen komponent fordi den trenger board-contexten (POI-oppslag +
+ * kategori-IDer) og `SidebarContentPreview` ellers ikke gjør det. Rendrer
+ * ingenting når boardet mangler både kuratert karakteristikk og transittfakta.
+ */
+function GlobalFaq({ onSelectCategory }: { onSelectCategory?: (id: string) => void }) {
+  const { data } = useBoard();
+  return (
+    <FAQSection
+      entries={data.globalFaq ?? []}
+      poisById={data.poisById}
+      categoryIds={data.categories.map((c) => c.id)}
+      onSelectCategory={onSelectCategory}
+      title="Om nabolaget"
+      className="mt-2"
+    />
   );
 }
 
@@ -323,10 +356,13 @@ function CategoryDetailView({
   onBack?: () => void;
   onOpenPoi?: (poiId: string, categoryId: string) => void;
 }) {
-  const { mapCamera } = useBoard();
+  const { mapCamera, data } = useBoard();
   const list = useViewportCategoryList(boardCategory ?? null);
   // Dobbelt linjeskift = nytt avsnitt; enkelt nivå er nok for kuratert tekst.
-  const paragraphs = detail.body
+  // `intro` vinner når den finnes: da har FAQ-en under minst tre svar og
+  // bærer substansen, og prosaen skal bare sette scenen (degradasjonsregelen
+  // ligger i board-data — her rendres bare utfallet).
+  const paragraphs = (detail.intro || detail.body)
     .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
@@ -380,6 +416,15 @@ function CategoryDetailView({
             ))}
           </div>
         )}
+
+        {/* Mellom prosaen og «Verdt å merke seg»: svarene hører til teksten,
+            ikke til stedslista. */}
+        <FAQSection
+          entries={detail.faq ?? []}
+          poisById={data.poisById}
+          categoryIds={data.categories.map((c) => c.id)}
+          onOpenPoi={(poiId) => onOpenPoi?.(poiId, category.id)}
+        />
 
         <HighlightsDisclosure
           highlights={detail.highlights}
