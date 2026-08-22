@@ -115,7 +115,8 @@ describe("parseAreaStaging — gyldig staging", () => {
     const result = parseAreaStaging(raw);
     expect(result).toEqual(expect.objectContaining({ success: true }));
     if (!result.success) throw new Error("unreachable");
-    // Malen har alle 6 bolig-temaer
+    // Malen har alle 6 bolig-temaer, pluss den reserverte global-nøkkelen
+    // (boardets egen nabolags-FAQ, som ikke hører til noe tema).
     expect(Object.keys(result.data.report_editorial).sort()).toEqual(
       [
         "barn-oppvekst",
@@ -124,6 +125,7 @@ describe("parseAreaStaging — gyldig staging", () => {
         "natur-friluftsliv",
         "transport",
         "trening-aktivitet",
+        GLOBAL_EDITORIAL_KEY,
       ].sort()
     );
   });
