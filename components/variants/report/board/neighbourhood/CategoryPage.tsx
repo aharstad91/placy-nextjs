@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { ChevronLeft } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronUp } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { buildNeighbourhoodList } from "@/lib/board/neighbourhood-list";
-import type { BoardCategory } from "../board-data";
+import type { BoardCategory, BoardCategoryId, BoardPOIId } from "../board-data";
 import { useBoard } from "../board-state";
+import { FAQSection } from "../FAQSection";
 import { categorySubline } from "./NeighbourhoodCategoryCard";
 
 /**
@@ -24,11 +25,26 @@ import { categorySubline } from "./NeighbourhoodCategoryCard";
  * svarer på «hva finnes i denne kategorien» — et annet spørsmål, med et annet
  * svar. Å filtrere den på utsnittet ville gjort «se alle 17» til en løgn.
  * Modellen gjenbrukes uendret, bare uten rektangel og uten rad-tak.
+ *
+ * ## Hvorfor panelet kan vike (2026-08-22)
+ *
+ * FAQ-svarene har klikkbare stedsnavn som flyr kartet dit. På en telefon dekker
+ * panelet 58 % av skjermen, så uten at det viker ville flyturen skjedd bak
+ * innholdet — og da er det ingen grunn til å gjøre navnet klikkbart. Panelet
+ * kollapser derfor til en peek-stripe, og ett trykk på stripa henter det opp
+ * igjen med scroll-posisjonen i behold.
  */
 
 /** Andel av flaten innholdspanelet dekker. Resten er kart — kategorien skal
  *  kunne SEES, ikke bare leses. */
 const PANEL_FRACTION = 0.58;
+
+/**
+ * Andel når panelet viker for kartet. Nok til at overskriftsraden og
+ * gjenåpnings-affordansen står synlig, så brukeren ser HVA hun kan komme
+ * tilbake til — en helt skjult flate hadde vært en modal, ikke en peek.
+ */
+const PEEK_FRACTION = 0.2;
 
 export function CategoryPage({
   category,
@@ -41,9 +57,11 @@ export function CategoryPage({
    *  kategorien ikke legger punkter bak panelet. */
   onHeightChange: (heightPx: number) => void;
 }) {
-  const { mapCamera } = useBoard();
+  const { mapCamera, data, dispatch } = useBoard();
   const frameRef = useRef<HTMLDivElement | null>(null);
-  const panelRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const savedScrollRef = useRef(0);
+  const [peeked, setPeeked] = useState(false);
 
   // Hele kategorien, gangtidssortert: samme modell som nabolagslista, men uten
   // utsnitt (R16) og uten rad-tak.
@@ -58,26 +76,66 @@ export function CategoryPage({
   // Prosaen som gjør siden til en STEDSBESKRIVELSE og ikke en trefliste.
   // Samme kilde som desktop-sidebarens `CategoryDetailView`: kuratert
   // strøk-editorial (nivå 2) hvis den finnes, ellers den deterministisk
-  // genererte minimums-teksten (nivå 1). Faller tilbake på kategoriens
-  // korte lead når ingen av delene finnes.
+  // genererte minimums-teksten (nivå 1). `intro` vinner når FAQ-en under bærer
+  // substansen (degradasjonsregelen, avgjort i board-data). Faller tilbake på
+  // kategoriens korte lead når ingen av delene finnes.
   const paragraphs = useMemo(() => {
-    const source = category.editorial?.body?.trim() || category.lead?.trim() || "";
+    const source =
+      category.editorial?.intro?.trim() ||
+      category.editorial?.body?.trim() ||
+      category.lead?.trim() ||
+      "";
     return source
       .split(/\n{2,}/)
       .map((p) => p.trim())
       .filter(Boolean);
-  }, [category.editorial?.body, category.lead]);
+  }, [category.editorial?.intro, category.editorial?.body, category.lead]);
+
+  const fraction = peeked ? PEEK_FRACTION : PANEL_FRACTION;
 
   useLayoutEffect(() => {
     const el = frameRef.current;
     if (!el) return;
-    const measure = () =>
-      onHeightChange(Math.round(el.clientHeight * PANEL_FRACTION));
+    const measure = () => onHeightChange(Math.round(el.clientHeight * fraction));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [onHeightChange]);
+  }, [onHeightChange, fraction]);
+
+  // Scroll-posisjonen overlever et vik. Panelet krymper til en femtedel, og
+  // nettleseren klipper da scrollTop mot den nye høyden — uten å legge den
+  // tilbake ville brukeren kommet opp igjen et helt annet sted i lista enn der
+  // hun trykket.
+  useLayoutEffect(() => {
+    if (peeked || !scrollRef.current) return;
+    scrollRef.current.scrollTop = savedScrollRef.current;
+  }, [peeked]);
+
+  const peek = useCallback(() => {
+    savedScrollRef.current = scrollRef.current?.scrollTop ?? 0;
+    setPeeked(true);
+  }, []);
+
+  /**
+   * Klikk på et stedsnavn i et FAQ-svar: panelet viker, kartet flyr.
+   *
+   * `source: "faq"` undertrykker mobilens utforsk-modal for DETTE trykket —
+   * den ville ellers dekket flyturen brukeren nettopp ba om. Modalen åpnes ved
+   * påfølgende trykk på selve punktet.
+   */
+  const handleFaqPoi = useCallback(
+    (poiId: string) => {
+      peek();
+      dispatch({
+        type: "OPEN_POI",
+        id: poiId as BoardPOIId,
+        categoryId: category.id as BoardCategoryId,
+        source: "faq",
+      });
+    },
+    [dispatch, peek, category.id],
+  );
 
   // Ramm inn kategorien når siden er montert. Kjøres som passiv effekt, ikke i
   // klikk-handleren: markørsettet snevres først inn av `activeCategoryId` og
@@ -90,6 +148,27 @@ export function CategoryPage({
 
   if (!page) return null;
   const Icon = getIcon(category.icon);
+  const faq = category.editorial?.faq ?? [];
+
+  const header = (
+    <>
+      <span
+        aria-hidden
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+        style={{ backgroundColor: `${category.color}1f`, color: category.color }}
+      >
+        <Icon size={19} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <h2 className="truncate text-left text-[17px] font-semibold tracking-tight text-stone-900">
+          {category.label}
+        </h2>
+        <p className="truncate text-left text-[12.5px] tabular-nums text-stone-500">
+          {peeked ? "Trykk for å se lista igjen" : categorySubline(page)}
+        </p>
+      </span>
+    </>
+  );
 
   return (
     <div ref={frameRef} className="pointer-events-none absolute inset-0 z-40">
@@ -106,34 +185,30 @@ export function CategoryPage({
       </button>
 
       <div
-        ref={panelRef}
         data-testid="category-panel"
         data-category={category.id}
-        className="pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-3xl bg-[#f5f1ea] shadow-[0_-8px_32px_rgba(28,25,23,0.22)]"
-        style={{ height: `${PANEL_FRACTION * 100}%` }}
+        data-peeked={peeked}
+        className="pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-3xl bg-[#f5f1ea] shadow-[0_-8px_32px_rgba(28,25,23,0.22)] transition-[height] duration-300 ease-out"
+        style={{ height: `${fraction * 100}%` }}
       >
-        <div className="flex shrink-0 items-center gap-3 px-4 pb-2 pt-4">
-          <span
-            aria-hidden
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-            style={{
-              backgroundColor: `${category.color}1f`,
-              color: category.color,
-            }}
+        {peeked ? (
+          // Hele stripa er trykkflaten. Gjenåpning skal være ett trykk, og et
+          // lite ikon i hjørnet ville vært et dårligere mål enn raden selv.
+          <button
+            type="button"
+            data-testid="panel-peek-restore"
+            onClick={() => setPeeked(false)}
+            className="flex shrink-0 cursor-pointer items-center gap-3 px-4 pb-2 pt-4 text-left active:bg-black/[0.03]"
           >
-            <Icon size={19} />
-          </span>
-          <span className="min-w-0">
-            <h2 className="truncate text-[17px] font-semibold tracking-tight text-stone-900">
-              {category.label}
-            </h2>
-            <p className="truncate text-[12.5px] tabular-nums text-stone-500">
-              {categorySubline(page)}
-            </p>
-          </span>
-        </div>
+            {header}
+            <ChevronUp size={20} aria-hidden className="shrink-0 text-stone-400" />
+          </button>
+        ) : (
+          <div className="flex shrink-0 items-center gap-3 px-4 pb-2 pt-4">{header}</div>
+        )}
 
         <div
+          ref={scrollRef}
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4"
           style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
         >
@@ -151,9 +226,24 @@ export function CategoryPage({
             </div>
           )}
 
+          {/* Samme rekkefølge som desktop: prosa → FAQ → liste. Innholdet er
+              identisk (delt komponent, delt datakilde); bare affordansen rundt
+              POI-klikket divergerer, fordi flatene gjør det. */}
+          <FAQSection
+            entries={faq}
+            poisById={data.poisById}
+            categoryIds={data.categories.map((c) => c.id)}
+            onOpenPoi={handleFaqPoi}
+            className="mt-3"
+          />
+
           <ul
             data-testid="category-poi-list"
-            className={paragraphs.length > 0 ? "mt-3 border-t border-black/5 pt-1" : undefined}
+            className={
+              paragraphs.length > 0 || faq.length > 0
+                ? "mt-3 border-t border-black/5 pt-1"
+                : undefined
+            }
           >
             {page.rows.map((row) => (
               <li

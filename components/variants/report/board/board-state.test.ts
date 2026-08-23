@@ -34,6 +34,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       });
     });
 
@@ -45,6 +46,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "SELECT_CATEGORY", id: CAT_B });
       expect(next).toEqual({
@@ -54,6 +56,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       });
     });
 
@@ -106,6 +109,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next).toEqual({
@@ -115,6 +119,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       });
     });
 
@@ -126,6 +131,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next).toEqual({
@@ -135,6 +141,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       });
     });
 
@@ -153,6 +160,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       });
     });
 
@@ -172,6 +180,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       });
     });
 
@@ -183,6 +192,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next.activeCategoryId).toBe(CAT_B);
@@ -198,6 +208,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next.activeCategoryId).toBe(CAT_A);
@@ -219,6 +230,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_ACTIVE" });
       expect(next).toEqual({
@@ -228,6 +240,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       });
     });
 
@@ -249,6 +262,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next).toEqual({
@@ -258,6 +272,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       });
     });
 
@@ -269,6 +284,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next.phase).toBe("default");
@@ -286,6 +302,7 @@ describe("boardReducer", () => {
         introPlaying: true,
         exploreOpen: false,
         travelMode: "walk",
+        exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "RESET_TO_DEFAULT" });
       expect(next).toEqual(initialBoardState);

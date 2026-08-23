@@ -13,6 +13,14 @@
  *   (google-ChIJ…, bus-…, entur-NSR-…) og valideres KUN som ikke-tomme
  *   strenger — ALDRI UUID-regex (dokumentert gotcha:
  *   docs/solutions/ui-bugs/poi-ids-heterogeneous-not-uuid-20260428.md)
+ *   Den reserverte nøkkelen `global` er UNNTATT temasjekken — se
+ *   GLOBAL_EDITORIAL_KEY under.
+ *
+ * `.strict()` ER LOAD-BEARING, og prisen er at et nytt felt må legges til HER
+ * FØR det skrives til en areas-rad: arve-steget validerer hver tema-entry med
+ * dette skjemaet, og et ukjent felt gjør at HELE entryen (body, highlights,
+ * alt) hoppes over med en warning. Et nytt felt utrullet i feil rekkefølge er
+ * altså en stille regresjon på kuratert innhold som allerede står.
  */
 
 import { z } from "zod";
@@ -79,6 +87,41 @@ export const BoundarySchema = z.discriminatedUnion("type", [
 
 // ── report_editorial ──────────────────────────────────────────────────────
 
+/**
+ * Reservert nøkkel i `report_editorial` for svar som hører til BOARDET og ikke
+ * til ett tema — «hva kjennetegner området?». De rendres i den globale
+ * nabolags-FAQ-en, som vises når ingen kategori er valgt.
+ *
+ * Nøkkelen er reservert framfor å ligge i en egen kolonne fordi den er samme
+ * slags innhold fra samme kurator i samme arbeidsflyt; en egen kolonne ville
+ * gitt et andre sted å huske på ved hver endring.
+ */
+export const GLOBAL_EDITORIAL_KEY = "global";
+
+/**
+ * Ett kuratert FAQ-svar.
+ *
+ * `id` er board-lag-spørsmålets id fra `lib/editorial/category-specs.ts`
+ * (`krets`, `linjer`, `hverdagshandel` …). Treffer den, OVERSTYRER svaret det
+ * deterministiske på samme spørsmål. Er den kurators egen, må `spørsmål` være
+ * med — ellers har FAQ-en et svar uten spørsmål.
+ *
+ * FERSKVARE HØRER IKKE HJEMME HER. Linjenumre, frekvenser, reisetider og priser
+ * hentes ved kjøring; et kuratert svar friskes aldri opp
+ * (`editorial-hooks-no-perishable-info-20260208`). Regelen er redaksjonell og
+ * kan ikke håndheves av et skjema — den står i kurator-instruksene.
+ */
+export const FaqAnswerStagingSchema = z
+  .object({
+    id: z.string().min(1, "FAQ-svar må ha en spørsmåls-id"),
+    spørsmål: z
+      .string()
+      .min(1, "spørsmål må være ikke-tom streng eller utelates (arves fra malverket)")
+      .optional(),
+    svar: z.string().min(1, "FAQ-svar kan ikke være tomt — utelat spørsmålet i stedet"),
+  })
+  .strict();
+
 /** Eksportert: arve-steget (inherit-area-editorial) validerer hver
  *  tema-entry i `areas.report_editorial` med samme skjema som staging. */
 export const ThemeEditorialStagingSchema = z
@@ -94,18 +137,52 @@ export const ThemeEditorialStagingSchema = z
         )
     ),
     image: z.string().min(1, "image må være ikke-tom streng eller utelates").optional(),
+    /** Strøkets kuraterte FAQ-svar for temaet. Se FaqAnswerStagingSchema. */
+    faq: z.array(FaqAnswerStagingSchema).optional(),
+  })
+  .strict();
+
+/** Entryen under den reserverte `global`-nøkkelen: bare FAQ, ingen body eller
+ *  highlights — den beskriver ikke et tema og har ingen drill-in å fylle. */
+export const GlobalEditorialStagingSchema = z
+  .object({
+    faq: z.array(FaqAnswerStagingSchema).min(1, "global-entryen må ha minst ett FAQ-svar"),
   })
   .strict();
 
 const ReportEditorialSchema = z
-  .record(z.string(), ThemeEditorialStagingSchema)
+  .record(
+    z.string(),
+    z.union([ThemeEditorialStagingSchema, GlobalEditorialStagingSchema]),
+  )
   .superRefine((rec, ctx) => {
-    for (const key of Object.keys(rec)) {
-      if (!VALID_THEME_IDS.includes(key)) {
+    for (const [key, value] of Object.entries(rec)) {
+      const isGlobal = key === GLOBAL_EDITORIAL_KEY;
+      // Unionen alene ville godtatt en tema-entry uten body under en tema-id
+      // (den ville passert som global-form) og en global-entry med body.
+      // Nøkkelen bestemmer formen, ikke omvendt.
+      const harBody = typeof value === "object" && value !== null && "body" in value;
+      if (isGlobal && harBody) {
         ctx.addIssue({
           code: "custom",
           path: [key],
-          message: `Ukjent tema-id "${key}" — gyldige tema-IDer: ${VALID_THEME_IDS.join(", ")}`,
+          message: `Reservert nøkkel "${GLOBAL_EDITORIAL_KEY}" bærer kun { faq } — ikke body/highlightCandidates`,
+        });
+        continue;
+      }
+      if (!isGlobal && !harBody) {
+        ctx.addIssue({
+          code: "custom",
+          path: [key],
+          message: `Tema-entry "${key}" mangler body/highlightCandidates`,
+        });
+        continue;
+      }
+      if (!isGlobal && !VALID_THEME_IDS.includes(key)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [key],
+          message: `Ukjent tema-id "${key}" — gyldige tema-IDer: ${VALID_THEME_IDS.join(", ")}, eller den reserverte "${GLOBAL_EDITORIAL_KEY}"`,
         });
       }
     }
@@ -159,6 +236,8 @@ export type AreaMeta = z.infer<typeof AreaMetaSchema>;
 export type AreaStaging = z.infer<typeof AreaStagingSchema>;
 export type AreaStagingBoundary = z.infer<typeof BoundarySchema>;
 export type ThemeEditorialStaging = z.infer<typeof ThemeEditorialStagingSchema>;
+export type GlobalEditorialStaging = z.infer<typeof GlobalEditorialStagingSchema>;
+export type FaqAnswerStaging = z.infer<typeof FaqAnswerStagingSchema>;
 
 export type AreaStagingParseResult =
   | { success: true; data: AreaStaging }

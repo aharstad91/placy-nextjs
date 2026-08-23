@@ -259,6 +259,124 @@ export type ReportThemeGroundingViewV2 = z.infer<
   typeof ReportThemeGroundingV2Schema
 >;
 
+// === Board-fakta (FAQ-ens deterministiske kjerne) ===
+
+/**
+ * Fakta om ADRESSEN som boardet ikke kan regne ut selv, hentet build-time og
+ * lagret i `products.config.reportConfig.boardFacts`.
+ *
+ * HVORFOR FAKTA OG IKKE FERDIG TEKST: FAQ-svarene monteres ved render fra disse
+ * faktaene (`lib/generators/faq-generator.ts`), samme modell som `bridgeText`.
+ * Da kan formuleringene itereres uten å re-provisjonere seks boards, og
+ * «boardet regner det ut selv»-prinsippet fra `category-specs.ts` holder.
+ *
+ * HVORFOR PÅ ROTEN AV reportConfig OG IKKE PER TEMA: de handler om boligen, ikke
+ * om et tema. Den globale nabolags-FAQ-en (ingen kategori valgt) leser de samme
+ * transittfaktaene som transport-kategorien gjør.
+ *
+ * FERSKVARE: linjer og reisetider endres ved hver ruteomlegging hos operatøren.
+ * `fetchedAt` og `departureAt` står her nettopp for at alderen skal kunne
+ * vurderes — re-kjøring av steget velger et nytt avreisetidspunkt og kan derfor
+ * gi legitimt andre svar. Ingen auto-TTL; oppfriskning er et pipeline-valg.
+ */
+const BoardTripPatternSchema = z.object({
+  /** Reisetid i minutter, rundet opp — samme konvensjon som travel-times. */
+  minutes: z.number().int().positive(),
+  /** Linjekoder i rekkefølge. Tom liste = hele reisen til fots. */
+  lines: z.array(z.string().min(1)).default([]),
+  transfers: z.number().int().min(0),
+  walkMeters: z.number().int().min(0),
+});
+
+const BoardTransitDirectionSchema = z.object({
+  /** NSR-quay — én side av vegen. Retning er quay, aldri stoppested. */
+  quayId: z.string().min(1),
+  destinations: z.array(z.string().min(1)).default([]),
+  lines: z.array(z.string().min(1)).default([]),
+});
+
+const BoardTransitStopSchema = z.object({
+  /** Rå NSR-id med kolon — matcher `POI.enturStopplaceId`, ikke POI-id-en. */
+  stopPlaceId: z.string().min(1),
+  name: z.string().min(1),
+  distanceM: z.number().int().min(0),
+  modes: z.array(z.string().min(1)).default([]),
+  directions: z.array(BoardTransitDirectionSchema).default([]),
+});
+
+const BoardKretsSchoolSchema = z.object({
+  /** Kretsnavnet fra kommunens polygon, i VERSALER slik kilden skriver det. */
+  krets: z.string().min(1),
+  navn: z.string().min(1),
+  /** Organisasjonsnummeret i NSR. POI-id-en for skolen er `nsr-<orgnr>`, så
+   *  dette er nøkkelen som gjør kretssvaret klikkbart. */
+  orgnr: z.string().min(1),
+  trinnFra: z.number().int().nullable(),
+  trinnTil: z.number().int().nullable(),
+  elevtall: z.number().int().nullable(),
+  offentlig: z.boolean(),
+});
+
+const BoardVideregaendeSchema = z.object({
+  navn: z.string().min(1),
+  /** Organisasjonsnummeret i NSR. POI-id-en for skolen er `nsr-<orgnr>`, så
+   *  dette er nøkkelen som gjør svaret klikkbart når skolen er på boardet. */
+  orgnr: z.string().min(1),
+  offentlig: z.boolean(),
+  distanceM: z.number().int().min(0),
+  /** Tom når Entur ikke fant en reise — skolen står da uten bussetid. */
+  patterns: z.array(BoardTripPatternSchema).default([]),
+});
+
+export const ReportBoardFactsSchema = z.object({
+  /** Bumpes for å tvinge regenerering (samme spak som groundingVersion). */
+  factsVersion: z.literal(1),
+  fetchedAt: z.string().min(1),
+  /** Avreisetidspunktet oppslagene gjelder for: neste hverdag kl. 08:00 norsk tid. */
+  departureAt: z.string().min(1),
+  stops: z.array(BoardTransitStopSchema).default([]),
+  /** Reisen til byen. Utelatt når sentrumsstoppet ikke lot seg slå opp. */
+  cityCentre: z
+    .object({ name: z.string().min(1), patterns: z.array(BoardTripPatternSchema) })
+    .optional(),
+  schools: z
+    .object({
+      barneskole: BoardKretsSchoolSchema.optional(),
+      ungdomsskole: BoardKretsSchoolSchema.optional(),
+      /** Sortert på reisetid, raskeste først. Videregående har ingen krets. */
+      videregaaende: z.array(BoardVideregaendeSchema).default([]),
+    })
+    .optional(),
+});
+
+export type ReportBoardFacts = z.infer<typeof ReportBoardFactsSchema>;
+export type BoardTripPattern = z.infer<typeof BoardTripPatternSchema>;
+export type BoardTransitStop = z.infer<typeof BoardTransitStopSchema>;
+export type BoardKretsSchool = z.infer<typeof BoardKretsSchoolSchema>;
+export type BoardVideregaende = z.infer<typeof BoardVideregaendeSchema>;
+
+// === Kuratert FAQ (strøkets svar, arvet inn i board-config) ===
+
+/**
+ * Ett kuratert FAQ-svar — meglerens stemme på et spørsmål boardet ellers svarer
+ * deterministisk på.
+ *
+ * `id` er board-lag-spørsmålets id fra `lib/editorial/category-specs.ts`
+ * (`krets`, `linjer`, …). Finnes id-en der, OVERSTYRER det kuraterte svaret det
+ * deterministiske — sluttbrukeren ser ingen søm. Er id-en kurators egen, legges
+ * svaret til som et ekstra spørsmål, og da må `spørsmål` være med.
+ *
+ * FERSKVARE-REGELEN GJELDER HER: linjer, frekvenser, tider og priser hører
+ * ALDRI i et kuratert svar. De hentes ved kjøring; et kuratert svar friskes
+ * aldri opp (`editorial-hooks-no-perishable-info-20260208`).
+ */
+export interface ReportFaqAnswer {
+  id: string;
+  /** Påkrevd for kurators egne spørsmål, utelatt når id-en finnes i malverket. */
+  spørsmål?: string;
+  svar: string;
+}
+
 // === Per-POI grounding (Utforsk-modalen) ===
 
 /**
@@ -481,6 +599,10 @@ export interface ReportThemeConfig {
   categoryDescriptions?: Record<string, string>;
   /** Nivå-2 kuratert detalj-innhold. Omit → kategorien er nivå-1 (intet panel). */
   editorial?: ReportThemeEditorial;
+  /** Strøkets kuraterte FAQ-svar for temaet, arvet fra `areas.report_editorial`.
+   *  Overstyrer det deterministiske svaret per spørsmåls-id. Omit → kun
+   *  deterministisk FAQ (som er minimum-garantien, ikke en mangel). */
+  faq?: ReportFaqAnswer[];
   /** Google AI Mode-søk (udm=50) for "Les mer"-knapp. Short, generic query — Google handler fersk detalj. */
   readMoreQuery?: string;
   /** Build-time-generert Gemini-grounding. Omit ved feil — ikke null. */
@@ -552,6 +674,13 @@ export interface ReportConfig {
   /** Path (absolute or /public) til illustrasjon som vises i hero + summary. Optional. */
   heroImage?: string;
   themes?: ReportThemeConfig[];
+  /** Deterministiske fakta om adressen (transitt + skolekrets), hentet
+   *  build-time. Kilden FAQ-svarene monteres fra ved render. */
+  boardFacts?: ReportBoardFacts;
+  /** Strøkets kuraterte svar på boardets globale nabolags-FAQ — de som ikke
+   *  hører til én kategori («hva kjennetegner området?»). Arvet fra den
+   *  reserverte `global`-nøkkelen i `areas.report_editorial`. */
+  globalFaq?: ReportFaqAnswer[];
   /** Tre nabolags-motiver fra /generate-rapport. Vises i intro-kort ved samlekart. */
   motiver?: string[];
   summary?: ReportSummary;

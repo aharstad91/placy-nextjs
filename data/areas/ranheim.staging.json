@@ -1,5 +1,5 @@
 {
-  "_instructions": "Ranheim kuratert 2026-06-10 (Andreas godkjent; ULF-AN fjernet — Charlottenlundhallen). Boundary v2 = krets + markeds-korreksjoner.",
+  "_instructions": "Ranheim kuratert 2026-06-10 (Andreas godkjent; ULF-AN fjernet — Charlottenlundhallen). Boundary v2 = krets + markeds-korreksjoner. FAQ lagt til 2026-08-22: kuraterte TILLEGG (ikke overstyringer) — et kuratert svar deles av hver bolig i strøket, så adresseavhengige svar (krets, minutter, holdeplass) må bli stående deterministiske.",
   "areaId": "ranheim",
   "boundary": {
     "type": "Polygon",
@@ -108,6 +108,13 @@
         "fb36fad3-2735-43fa-afd8-04b58629a51b",
         "lekeplass-grillstadfj-ra-lek",
         "lekeplass-hulderveien-lek"
+      ],
+      "faq": [
+        {
+          "id": "oppvekst-fritid",
+          "spørsmål": "Hva finnes for barna utenom skole og barnehage?",
+          "svar": "Ranheim idrettspark ligger midt i bydelen med baner og haller, og Ranheim IL har et bredt breddetilbud ved siden av eliteseriefotballen. Lekeplassene ligger spredt gjennom boligfeltene, aldri langt fra en inngangsdør."
+        }
       ]
     },
     "mat-drikke": {
@@ -129,6 +136,13 @@
         "park-ranheim-stasjonspark",
         "badeplass-hansbakkfj-ra",
         "E5F5BBBB-646B-421F-93A4-5508B03182DB"
+      ],
+      "faq": [
+        {
+          "id": "turstier",
+          "spørsmål": "Hvor går turstiene?",
+          "svar": "Turstien langs sjøen binder sammen strandlinjen fra Grilstadstranda via Tømmerstranda til Hansbakkfjæra. Sørover ligger Estenstadmarka med turterreng og skiløyper rett fra boligfeltene."
+        }
       ]
     },
     "transport": {
@@ -139,6 +153,13 @@
         "bus-ranheim-idrettsplass",
         "bus-grilstadkleiva",
         "bus-olderdalen"
+      ],
+      "faq": [
+        {
+          "id": "tog",
+          "spørsmål": "Går det tog fra Ranheim?",
+          "svar": "Ja. [Ranheim stasjon](poi:entur-NSR-StopPlace-33) har lokaltog mot Trondheim S, og østover mot Værnes uten bytte. Ranheim er en av få bydeler i Trondheim med egen stasjon."
+        }
       ]
     },
     "trening-aktivitet": {
@@ -148,6 +169,15 @@
         "google-ChIJXVJPUYowbUYRtv1_KOdpTFc",
         "google-ChIJXctPUYowbUYRr9WGctzKmVM",
         "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM"
+      ]
+    },
+    "global": {
+      "faq": [
+        {
+          "id": "karakteristikk",
+          "spørsmål": "Hva kjennetegner området?",
+          "svar": "Ranheim ligger mellom fjorden og Estenstadmarka, med sammenhengende strandlinje på den ene siden og marka på den andre. Bydelen er bygget ut med barnehager, lekeplasser og skolevei som premiss, og idrettsparken midt i bydelen er samlingspunktet."
+        }
       ]
     }
   }

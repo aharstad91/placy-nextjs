@@ -9,6 +9,7 @@ import type {
   ReportThemeGroundingView,
 } from "@/lib/types";
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
+import type { FaqEntry } from "@/lib/generators/faq-generator";
 import { getHeroInsightPOIIds } from "../hero-insight-pois";
 import { getProjectBrokers } from "@/lib/themes/project-brand";
 import { computeSpreadCoordinates } from "@/lib/board/spread-co-located";
@@ -64,6 +65,22 @@ export interface BoardPOI {
 export interface BoardCategoryEditorial {
   /** Brødtekst (dobbelt linjeskift = nytt avsnitt). */
   body: string;
+  /**
+   * Kort intro som ERSTATTER `body` i drill-in når FAQ-en bærer substansen.
+   * Undefined → vis `body` som før.
+   *
+   * Degradasjonsregelen (Andreas 2026-08-22): teksten krympes BARE når FAQ-en
+   * har minst `FAQ_LEAD_SHRINK_MIN` svar. På en adresse med tynn datadekning
+   * ville «kort intro + ett FAQ-punkt» vært tynnere enn dagens minimum —
+   * akkurat der rural-asymmetrien trenger boardet mest.
+   */
+  intro?: string;
+  /**
+   * Spørsmål og svar for kategorien, slik en megler ville svart på visning for
+   * akkurat denne adressen. Deterministisk kjerne + strøkets kuraterte
+   * overstyringer, allerede flettet. Tom/utelatt → ingen FAQ-seksjon.
+   */
+  faq?: FaqEntry[];
   /** Path til kuratert bilde, eller undefined (sidebaren faller tilbake til
    *  kategori-illustrasjonen). */
   image?: string;
@@ -158,6 +175,10 @@ export interface BoardData {
   cta?: ReportCTA;
   /** Lookup-map fra POI-id (lowercase) til full POI. Brukes av grounding-rendering for å resolve [text](poi:uuid)-lenker — kan referere POIs på tvers av kategorier. */
   poisById: Map<string, POI>;
+  /** Boardets globale nabolags-FAQ — vist når ingen kategori er valgt. Tom
+   *  eller utelatt = ingen seksjon (aldri en tom overskrift). Event-board har
+   *  den aldri. */
+  globalFaq?: FaqEntry[];
   /** Eksplisitt opt-in for audio-tour-CTA. Default false. */
   audioTourEnabled: boolean;
   /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
@@ -274,6 +295,7 @@ export function adaptBoardData(report: ReportData): BoardData {
     summary: report.summary,
     cta: report.cta,
     poisById,
+    globalFaq: report.globalFaq ?? [],
     audioTourEnabled: report.audioTourEnabled === true,
     assets: report.assets,
     venueType: report.venueType ?? null,
@@ -317,6 +339,40 @@ export function pickPlayableAudio(
 /** Visningstak på genererte «Verdt å merke seg»-punkter (speiler arve-stegets
  *  MAX_HIGHLIGHTS — kuratert og generert drill-in skal se like ut). */
 const GENERATED_HIGHLIGHTS_MAX = 3;
+
+/**
+ * Så mange FAQ-svar en kategori må ha før brødteksten krympes til en kort
+ * intro.
+ *
+ * Terskelen finnes for å beskytte de TYNNE adressene, ikke de rike: med to
+ * svar ville «kort intro + FAQ» gitt mindre enn dagens kategoritekst, og det
+ * er nettopp på et ukuratert strøk med tynn datadekning at boardet må holde
+ * minimum-garantien. Under terskelen er oppførselen bit for bit som før.
+ */
+export const FAQ_LEAD_SHRINK_MIN = 3;
+
+/**
+ * Setningsslutt i norsk prosa: punktum/utropstegn/spørsmålstegn etterfulgt av
+ * mellomrom OG stor bokstav.
+ *
+ * Kravet om stor bokstav er det som gjør splitten trygg: «1.–7. trinn med 486
+ * elever» og «ca. 5 minutter» har punktum midt i setningen, men følges av små
+ * bokstaver. Uten det ville introen blitt kuttet etter «1.».
+ */
+const SENTENCE_BOUNDARY = /(?<=[.!?])\s+(?=[A-ZÆØÅ])/;
+
+/** Så mange setninger en krympet intro beholder. */
+const INTRO_SENTENCES = 2;
+
+/**
+ * Første avsnitt, kortet til de par første setningene. Brukes når FAQ-en
+ * bærer substansen — teksten skal sette scenen, ikke gjenta svarene under.
+ */
+export function shrinkToIntro(body: string): string {
+  const firstParagraph = body.split(/\n{2,}/)[0]?.trim() ?? "";
+  const sentences = firstParagraph.split(SENTENCE_BOUNDARY);
+  return sentences.slice(0, INTRO_SENTENCES).join(" ").trim();
+}
 
 /**
  * Genererte highlights for fallback-drill-in: tier-1-utvelgerne (samme som
@@ -409,7 +465,7 @@ function adaptCategory(theme: ReportTheme, center: Coordinates): BoardCategory {
   // + drill-in. Kuratert strøk-editorial (nivå 2) vinner; ellers syntetiseres
   // detaljen fra narrativ-body (render-generert bridgeText — navngir ekte POIer,
   // deterministisk, ingen LLM) med tier-1-POIer som «Verdt å merke seg».
-  const detail: BoardCategoryEditorial | undefined =
+  const baseDetail: BoardCategoryEditorial | undefined =
     editorial ??
     (body
       ? {
@@ -418,6 +474,24 @@ function adaptCategory(theme: ReportTheme, center: Coordinates): BoardCategory {
           generated: true,
         }
       : undefined);
+
+  // FAQ-en er kategoriens board-lag-svar: adressens egne fakta, som ikke kan
+  // stå i den delte POI-teksten. Den henges på detaljen fordi den bor i samme
+  // panel — men den kan finnes UTEN kuratert innhold, og en kategori som bare
+  // har FAQ skal fortsatt få et panel.
+  const faq = theme.faq ?? [];
+  const detail: BoardCategoryEditorial | undefined = baseDetail
+    ? {
+        ...baseDetail,
+        ...(faq.length > 0 ? { faq } : {}),
+        // Degradasjonsregelen: krymp bare når FAQ-en faktisk bærer noe.
+        ...(faq.length >= FAQ_LEAD_SHRINK_MIN && baseDetail.body
+          ? { intro: shrinkToIntro(baseDetail.body) }
+          : {}),
+      }
+    : faq.length > 0
+      ? { body: "", highlights: [], faq, generated: true }
+      : undefined;
 
   // Kortets lead avledes av drill-in-brødteksten (første avsnitt) — samme kilde
   // som panelet, kuratert eller generert. Kort-previewen clamper visuelt

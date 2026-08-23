@@ -37,10 +37,14 @@
  */
 
 import { findAreaForPoint } from "@/lib/pipeline/find-area-for-point";
-import { ThemeEditorialStagingSchema } from "@/lib/pipeline/area-staging";
+import {
+  GLOBAL_EDITORIAL_KEY,
+  GlobalEditorialStagingSchema,
+  ThemeEditorialStagingSchema,
+} from "@/lib/pipeline/area-staging";
 import { createServerClient } from "@/lib/supabase/client";
 import { MIN_TRUST_SCORE } from "@/lib/utils/poi-trust";
-import type { ReportThemeEditorial } from "@/lib/types";
+import type { ReportFaqAnswer, ReportThemeEditorial } from "@/lib/types";
 
 /** Visningstaket — kurateringen har 4–6 kandidater per tema som slack. */
 const MAX_HIGHLIGHTS = 3;
@@ -74,6 +78,10 @@ export interface InheritAreaEditorialResult {
   areaName?: string;
   /** Tema-IDer som fikk editorial skrevet i denne kjøringen */
   themesInherited: string[];
+  /** Tema-IDer som fikk kuraterte FAQ-svar. Delmengde av themesInherited. */
+  themesWithFaq: string[];
+  /** Antall kuraterte svar arvet til den globale nabolags-FAQ-en. */
+  globalFaqAnswers: number;
   /** R9-loggen: beholdte highlights + droppede kandidater med årsak */
   highlights: { kept: number; dropped: DroppedHighlight[] };
   warnings: string[];
@@ -157,6 +165,8 @@ export async function inheritAreaEditorial(options: {
 
   const result: InheritAreaEditorialResult = {
     themesInherited: [],
+    themesWithFaq: [],
+    globalFaqAnswers: 0,
     highlights: { kept: 0, dropped: [] },
     warnings: [],
   };
@@ -270,9 +280,29 @@ export async function inheritAreaEditorial(options: {
 
   // 4. Beregn patches for ALLE temaer FØRST (alt-eller-ingenting).
   const patches = new Map<string, ReportThemeEditorial>();
+  const faqPatches = new Map<string, ReportFaqAnswer[]>();
   const pendingDrops: Array<{ themeId: string; id: string }> = [];
+  let globalFaq: ReportFaqAnswer[] | undefined;
 
   for (const [themeId, rawEntry] of Object.entries(area.report_editorial)) {
+    // Den reserverte nøkkelen er ikke et tema: den bærer boardets globale
+    // nabolags-FAQ og har verken body, highlights eller en config-tema-rad å
+    // skrives til. Den må derfor ut av tema-løkka FØR tema-valideringen, som
+    // ellers ville avvist den som «ukjent tema».
+    if (themeId === GLOBAL_EDITORIAL_KEY) {
+      const parsedGlobal = GlobalEditorialStagingSchema.safeParse(rawEntry);
+      if (!parsedGlobal.success) {
+        result.warnings.push(
+          `⚠️  Område ${area.id}, "${GLOBAL_EDITORIAL_KEY}": ugyldig form (${parsedGlobal.error.issues
+            .map((i) => i.message)
+            .join("; ")}) — global FAQ hoppet over`,
+        );
+        continue;
+      }
+      globalFaq = parsedGlobal.data.faq;
+      continue;
+    }
+
     const parsed = ThemeEditorialStagingSchema.safeParse(rawEntry);
     if (!parsed.success) {
       result.warnings.push(
@@ -289,6 +319,15 @@ export async function inheritAreaEditorial(options: {
       continue;
     }
     const entry = parsed.data;
+
+    // FAQ arves UAVHENGIG av nivå-2-gaten under. Gaten finnes fordi
+    // `editorial` styrer om drill-in-panelet vises i det hele tatt; FAQ-en er
+    // en seksjon INNE i et panel minimum-garantien uansett gir alle temaer med
+    // tekst. Et kuratert kretssvar skal ikke forsvinne fordi strøket ikke har
+    // fått en brødtekst for temaet ennå.
+    if (entry.faq && entry.faq.length > 0) {
+      faqPatches.set(themeId, entry.faq);
+    }
 
     // Kurator-rekkefølge: behold de første inntil MAX_HIGHLIGHTS som
     // overlever det FILTRERTE board-settet (temaets allPOIs). Tema som ikke
@@ -347,24 +386,34 @@ export async function inheritAreaEditorial(options: {
     }
   }
 
-  if (patches.size === 0) {
+  if (patches.size === 0 && faqPatches.size === 0 && !globalFaq) {
     result.warnings.push(
       `⚠️  Ingen temaer å arve fra område "${area.name_no}" — config urørt`
     );
     return result;
   }
 
-  // 6. ÉN atomisk skriving: spread-merge KUN `editorial`-nøkkelen inn i de
-  //    aktuelle tema-objektene — alt annet på temaet (grounding, leadText,
-  //    audio, …) og alt annet i config overlever urørt. Optimistisk lås på
-  //    updated_at; 0 rader → høylytt feil (aldri stille retry).
+  // 6. ÉN atomisk skriving: spread-merge KUN `editorial`- og `faq`-nøklene inn
+  //    i de aktuelle tema-objektene — alt annet på temaet (grounding,
+  //    leadText, audio, …) og alt annet i config overlever urørt. Optimistisk
+  //    lås på updated_at; 0 rader → høylytt feil (aldri stille retry).
   const nextThemes = configThemes.map((theme) => {
     const editorial = patches.get(theme.id);
-    return editorial ? { ...theme, editorial } : theme;
+    const faq = faqPatches.get(theme.id);
+    if (!editorial && !faq) return theme;
+    return {
+      ...theme,
+      ...(editorial ? { editorial } : {}),
+      ...(faq ? { faq } : {}),
+    };
   });
   const nextConfig = {
     ...existingConfig,
-    reportConfig: { ...rc, themes: nextThemes },
+    reportConfig: {
+      ...rc,
+      themes: nextThemes,
+      ...(globalFaq ? { globalFaq } : {}),
+    },
   };
 
   const patchUrl = new URL(`${supabaseUrl}/rest/v1/products`);
@@ -411,5 +460,7 @@ export async function inheritAreaEditorial(options: {
   }
 
   result.themesInherited = Array.from(patches.keys());
+  result.themesWithFaq = Array.from(faqPatches.keys());
+  result.globalFaqAnswers = globalFaq?.length ?? 0;
   return result;
 }

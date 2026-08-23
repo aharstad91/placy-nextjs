@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { parseAreaStaging, ThemeEditorialStagingSchema } from "./area-staging";
+import {
+  GLOBAL_EDITORIAL_KEY,
+  parseAreaStaging,
+  ThemeEditorialStagingSchema,
+  type ThemeEditorialStaging,
+} from "./area-staging";
 import { REPORT_THEME_DEFAULTS } from "./report-defaults";
 
 // ── Test-fixtures ─────────────────────────────────────────────────────────
@@ -55,6 +60,21 @@ function expectFailure(raw: unknown): string[] {
   return result.errors;
 }
 
+/**
+ * Tema-entryen for et tema-id, smalnet fra unionen med den reserverte
+ * `global`-entryen. Nøkkelen bestemmer formen — se superRefine i skjemaet.
+ */
+function themeEntry(raw: unknown, themeId: string): ThemeEditorialStaging {
+  const result = parseAreaStaging(raw);
+  expect(result.success).toBe(true);
+  if (!result.success) throw new Error("unreachable");
+  const entry = result.data.report_editorial[themeId];
+  if (!entry || !("body" in entry)) {
+    throw new Error(`Fant ingen tema-entry for "${themeId}"`);
+  }
+  return entry;
+}
+
 // ── Happy path ────────────────────────────────────────────────────────────
 
 describe("parseAreaStaging — gyldig staging", () => {
@@ -65,7 +85,7 @@ describe("parseAreaStaging — gyldig staging", () => {
     expect(result.data.areaId).toBe("ranheim");
     expect(result.data.boundary.type).toBe("Polygon");
     // google-ChIJ…/bus-…/entur-NSR-…-former passerer, rekkefølgen er bevart
-    expect(result.data.report_editorial["mat-drikke"].highlightCandidates).toEqual([
+    expect(themeEntry(validStaging(), "mat-drikke").highlightCandidates).toEqual([
       "google-ChIJabc123",
       "bus-x",
       "entur-NSR-StopPlace-41742",
@@ -73,11 +93,8 @@ describe("parseAreaStaging — gyldig staging", () => {
   });
 
   it("aksepterer tom body og tomme kandidatlister (mal-tilstand)", () => {
-    const result = parseAreaStaging(validStaging());
-    expect(result.success).toBe(true);
-    if (!result.success) throw new Error("unreachable");
-    expect(result.data.report_editorial["transport"].body).toBe("");
-    expect(result.data.report_editorial["transport"].highlightCandidates).toEqual([]);
+    expect(themeEntry(validStaging(), "transport").body).toBe("");
+    expect(themeEntry(validStaging(), "transport").highlightCandidates).toEqual([]);
   });
 
   it("aksepterer MultiPolygon med lukkede ringer", () => {
@@ -98,7 +115,8 @@ describe("parseAreaStaging — gyldig staging", () => {
     const result = parseAreaStaging(raw);
     expect(result).toEqual(expect.objectContaining({ success: true }));
     if (!result.success) throw new Error("unreachable");
-    // Malen har alle 6 bolig-temaer
+    // Malen har alle 6 bolig-temaer, pluss den reserverte global-nøkkelen
+    // (boardets egen nabolags-FAQ, som ikke hører til noe tema).
     expect(Object.keys(result.data.report_editorial).sort()).toEqual(
       [
         "barn-oppvekst",
@@ -107,6 +125,7 @@ describe("parseAreaStaging — gyldig staging", () => {
         "natur-friluftsliv",
         "transport",
         "trening-aktivitet",
+        GLOBAL_EDITORIAL_KEY,
       ].sort()
     );
   });
@@ -313,5 +332,141 @@ describe("VALID_THEME_IDS-avledning + ThemeEditorialStagingSchema-kontrakt", () 
         image: "scene.jpg",
       }).success,
     ).toBe(true);
+  });
+});
+
+// ── FAQ-feltet og den reserverte global-nøkkelen ───────────────────────────
+
+describe("kuratert FAQ i staging", () => {
+  function withFaq(over: Record<string, unknown>) {
+    const s = validStaging();
+    s.report_editorial = { ...s.report_editorial, ...over } as typeof s.report_editorial;
+    return s;
+  }
+
+  it("aksepterer faq på en tema-entry uten å røre body eller highlights", () => {
+    const entry = themeEntry(
+      withFaq({
+        "barn-oppvekst": {
+          body: "Kuratert tekst om oppvekst.",
+          highlightCandidates: ["nsr-975278980"],
+          faq: [{ id: "krets", svar: "Boligen sogner til Ranheim skole." }],
+        },
+      }),
+      "barn-oppvekst",
+    );
+    expect(entry.faq).toEqual([{ id: "krets", svar: "Boligen sogner til Ranheim skole." }]);
+    expect(entry.body).toBe("Kuratert tekst om oppvekst.");
+    expect(entry.highlightCandidates).toEqual(["nsr-975278980"]);
+  });
+
+  it("krever spørsmålstekst når kurator finner på en egen id — ellers er svaret uten spørsmål", () => {
+    // Skjemaet kan ikke vite hvilke id-er malverket har, så det tillater begge
+    // former. Generatoren utelater svar som verken har eget spørsmål eller
+    // treffer malverket; testen her sikrer at feltet i det minste FINNES.
+    const entry = themeEntry(
+      withFaq({
+        "barn-oppvekst": {
+          body: "Tekst.",
+          highlightCandidates: [],
+          faq: [{ id: "skolevei", spørsmål: "Hvordan er skoleveien?", svar: "Uten kryssing." }],
+        },
+      }),
+      "barn-oppvekst",
+    );
+    expect(entry.faq?.[0].spørsmål).toBe("Hvordan er skoleveien?");
+  });
+
+  it("avviser tomt svar — utelat spørsmålet i stedet for å stå med en tom rad", () => {
+    const errors = expectFailure(
+      withFaq({
+        "barn-oppvekst": { body: "T.", highlightCandidates: [], faq: [{ id: "krets", svar: "" }] },
+      }),
+    );
+    expect(errors.join(" ")).toMatch(/kan ikke være tomt/);
+  });
+
+  it("avviser ukjent felt inne i et FAQ-svar (strict, som resten av malverket)", () => {
+    const errors = expectFailure(
+      withFaq({
+        "barn-oppvekst": {
+          body: "T.",
+          highlightCandidates: [],
+          faq: [{ id: "krets", svar: "Svar.", kilde: "megler" }],
+        },
+      }),
+    );
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it("aksepterer den reserverte global-nøkkelen med bare faq", () => {
+    const result = parseAreaStaging(
+      withFaq({
+        [GLOBAL_EDITORIAL_KEY]: {
+          faq: [{ id: "karakteristikk", spørsmål: "Hva kjennetegner området?", svar: "Sjøkant." }],
+        },
+      }),
+    );
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error("unreachable");
+    const entry = result.data.report_editorial[GLOBAL_EDITORIAL_KEY];
+    expect(entry && "faq" in entry && entry.faq).toHaveLength(1);
+  });
+
+  it("avviser global-nøkkelen med body — den beskriver ikke et tema", () => {
+    const errors = expectFailure(
+      withFaq({
+        [GLOBAL_EDITORIAL_KEY]: {
+          body: "Feilplassert brødtekst",
+          highlightCandidates: [],
+          faq: [{ id: "k", svar: "S." }],
+        },
+      }),
+    );
+    expect(errors.join(" ")).toMatch(/bærer kun \{ faq \}/);
+  });
+
+  it("avviser global-nøkkelen uten faq — da bærer den ingenting", () => {
+    expectFailure(withFaq({ [GLOBAL_EDITORIAL_KEY]: { faq: [] } }));
+  });
+
+  it("avviser en tema-entry som bare har faq — body/highlights er fortsatt kontrakten", () => {
+    const errors = expectFailure(
+      withFaq({ "barn-oppvekst": { faq: [{ id: "krets", svar: "Svar." }] } }),
+    );
+    expect(errors.join(" ")).toMatch(/mangler body/);
+  });
+
+  it("holder fortsatt ukjente tema-IDer ute, og nevner unntaket i feilmeldingen", () => {
+    const errors = expectFailure(withFaq({ "finnes-ikke": { body: "T.", highlightCandidates: [] } }));
+    expect(errors.join(" ")).toMatch(/Ukjent tema-id "finnes-ikke"/);
+    expect(errors.join(" ")).toMatch(new RegExp(GLOBAL_EDITORIAL_KEY));
+  });
+});
+
+describe("ThemeEditorialStagingSchema — regresjonsvern for strict", () => {
+  it("dropper IKKE en entry som bærer det nye faq-feltet", () => {
+    // Dette er hele grunnen til at skjemaendringen måtte lande FØR første
+    // skriving: arve-steget bruker samme skjema per entry, og et ukjent felt
+    // gjør at HELE entryen (body, highlights, alt) hoppes over med en warning.
+    const parsed = ThemeEditorialStagingSchema.safeParse({
+      body: "Brødtekst som skal overleve",
+      highlightCandidates: ["poi-1"],
+      faq: [{ id: "krets", svar: "Svar." }],
+    });
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) throw new Error("unreachable");
+    expect(parsed.data.body).toBe("Brødtekst som skal overleve");
+    expect(parsed.data.highlightCandidates).toEqual(["poi-1"]);
+  });
+
+  it("er fortsatt strict for felt vi ikke har innført", () => {
+    expect(
+      ThemeEditorialStagingSchema.safeParse({
+        body: "T.",
+        highlightCandidates: [],
+        faqs: [{ id: "krets", svar: "Svar." }],
+      }).success,
+    ).toBe(false);
   });
 });

@@ -29,6 +29,8 @@ export async function inheritAreaEditorialViaRoute(opts: {
   const skip = (warning: string): InheritAreaEditorialResult => ({
     skipped: true,
     themesInherited: [],
+    themesWithFaq: [],
+    globalFaqAnswers: 0,
     highlights: { kept: 0, dropped: [] },
     warnings: [warning],
   });

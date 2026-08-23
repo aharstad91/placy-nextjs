@@ -87,9 +87,20 @@ describe("classifyMissing", () => {
     expect(c.needsText).toBe(false);
   });
 
-  it("bestått leverandør-tekst → ferdig", () => {
-    const c = classifyMissing({ name: "Muustrøparken", grounding: generated(true, 4) });
-    expect(c).toEqual({ needsText: false, reason: "har-bestått-grounding" });
+  // Policy-endring 2026-08-15: bestått leverandør-tekst er IKKE dekning. Denne
+  // testen pinnet den gamle regelen som fasit og er snudd med vilje — det er
+  // eier-beslutningen «vi skal eie innholdet», ikke en regresjon.
+  it("bestått leverandør-tekst → trenger LIKEVEL vår tekst (lånt er ikke Moat 1)", () => {
+    const c = classifyMissing({
+      name: "Muustrøparken",
+      grounding: generated(true, 4, "Park langs Nidelva."),
+    });
+    expect(c.needsText).toBe(true);
+    if (!c.needsText) return;
+    expect(c.why).toBe("har-leverandørtekst");
+    expect(c.detail).toContain("4 kilder,");
+    expect(c.detail).toContain("lånt");
+    expect(c.providerDraft).toBe("Park langs Nidelva.");
   });
 
   it("strøket leverandør-tekst → trenger tekst, med narrativet som råstoff", () => {
@@ -98,7 +109,43 @@ describe("classifyMissing", () => {
     if (!c.needsText) return;
     expect(c.why).toBe("strøk-porten");
     expect(c.detail).toContain("1 kilde,");
-    expect(c.rejectedNarrative).toBe("Vintage-butikk.");
+    expect(c.providerDraft).toBe("Vintage-butikk.");
+  });
+
+  it("kildene følger med som råstoff, uten redirect-URLen", () => {
+    const g = generated(true, 2, "Utkast.");
+    g.generated!.sources = [
+      {
+        title: "Ranheim skole",
+        url: "https://trondheim.kommune.no/ranheim-skole/",
+        redirectUrl: "https://vertexaisearch.cloud.google.com/grounding-api-redirect/abc",
+        domain: "trondheim.kommune.no",
+      },
+    ];
+    const c = classifyMissing({ name: "Ranheim skole", grounding: g });
+    if (!c.needsText) throw new Error("skulle trengt tekst");
+    expect(c.sources).toEqual([
+      {
+        title: "Ranheim skole",
+        url: "https://trondheim.kommune.no/ranheim-skole/",
+        domain: "trondheim.kommune.no",
+      },
+    ]);
+  });
+
+  it("tom kildeliste gir ikke et tomt sources-felt i staging-fila", () => {
+    const c = classifyMissing({ name: "X", grounding: generated(true, 0, "Utkast.") });
+    if (!c.needsText) throw new Error("skulle trengt tekst");
+    expect(c.sources).toBeUndefined();
+  });
+
+  it("kuratert tekst slår bestått leverandør-tekst — ferdig er ferdig", () => {
+    const g = generated(true, 4, "Leverandørens utkast.");
+    const c = classifyMissing({
+      name: "Muustrøparken",
+      grounding: { ...g, curated: { narrative: "Vår egen tekst om parken.", curatedAt: "2026-08-15T00:00:00.000Z" } },
+    });
+    expect(c).toEqual({ needsText: false, reason: "har-kuratert-tekst" });
   });
 
   it("flertallsform på kilder når det er mer enn én", () => {

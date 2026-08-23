@@ -6,6 +6,58 @@
 
 ---
 
+## 2026-08-23 — MINIMUM FEM FAQ PER TEMA: KATALOGEN BLE GAP-RAPPORTEN (branch `feat/faq-lokalkunnskap`, commit baf99eb)
+
+**Kontekst:** Andreas så FAQ-en fra 08-22 i kjørende board og landet retningen: dette er veien å gå — standardiserte spørsmål per tema, algoritmen forbedres over tid, og laget bygger samtidig rommet for chat-løsninger senere. Beslutningen som fulgte: **minst fem deklarerte spørsmål per tema**, håndhevet av test. Deklarert er ikke lovet — svar uten faktum utelates per adresse som før — og det er poenget: differansen deklarert-mot-vist er gap-rapporten som styrer kuratering (Moat 1) og nye datakilder per strøk.
+
+**Det arkitektoniske grepet er at spørsmåls-id-en er kontrakten.** Kuratert svar, deterministisk bygger og en fremtidig chat nøkler alle på samme id. Tre konsekvenser: (a) en ny datakilde løfter alle boards samtidig, (b) kuratorinnsats går presist dit registrene ikke rekker — `turstier`, `marka` og `idrettslag` er kuratert-eneste med vilje (outdoor-kategorien er for bred til tursti-påstander; strøksbegreper som marka kjenner ingen registre), og (c) chatten blir en ruter over de samme byggerne, aldri RAG over tekst — den arver «mangler faktumet, utelates svaret» og kan ikke dikte om én konkret bolig.
+
+**Nye spørsmål bor i `THEME_BOARD_QUESTIONS`** (category-specs.ts) til kategoriene deres får egen mal — alle står i `PLANLAGTE_KATEGORIER`, og id-en består når spørsmålet flytter inn i malen. `tog` gikk rett i transport-malen fordi `train` er en av kategoriene dens. 19 nye byggere i faq-generator.ts følger to regler verdt å huske: **positive påstander alene** (poolen er recall-begrenset — «finnes ikke innenfor 10 minutter» kan den ikke bære; lading scoper med «på kartet») og gangtid kun der den er precomputet.
+
+**Åpningstidene vi cacher ble ny svarkilde** (`lib/generators/opening-hours.ts`): «kan jeg trene før jobb» (Impulse åpner 05, stenger ved midnatt), «er noe åpent på søndag», kafé med tider. Parseren er konservativ — lunsjstengt og sprikende hverdager gir null framfor en sammenslått løgn. **Live-funn som bare akseptkjøring gir:** Google deler AM/PM-markøren («Sunday: 1:00 – 10:00 PM» betyr 13–22), og uten arve-regelen ble Pizzabakeren Ranheims søndagstid «01–22». Funnet i browseren, fikset med test.
+
+**Resultat på Strindfjordvegen 10 (verifisert i browser, alle seks drill-ins):** 26 svar mot 8 før. Hverdagsliv 5 (inkl. terskelsvaret «klarer jeg hverdagsærendene til fots» — 5 ærend-typer innen 10 min), Barn 5, Natur 5, Transport 5, Mat 3 og Trening 3 — de to siste er reelt data-begrenset (bakeri/bar/svømmehall finnes ikke i poolen), og det er nå synlig som gap i stedet for stille. Ranheim-strøket fikk `marka` + `idrettslag` avledet ordrett fra ratifiserte tema-tekster (årstall droppet per regelen), og turstier-svaret ble splittet til én-spørsmål-én-svar. Arven re-kjørt via `/api/admin/inherit-editorial`, cache bustet via `/api/admin/revalidate`.
+
+**Mekanisk:** `tsc` rent · lint 0 errors · **2674 tester grønne / 179 filer** (+32) · 0 relevante konsollfeil.
+
+**Åpent:** (a) `faq_opened`-instrumentering mangler fortsatt — uten den vet vi ikke hvilke spørsmål som faktisk åpnes, og den bør gå FØR mer kuratorinnsats; (b) «Impulse Treningssenter» / «Impulse Grilstad» (2 og 3 min) er trolig samme senter — kandidat til dublett-lista fra 08-14; (c) neste kilder i prioritert rekkefølge fra 08-23-sparringen: Entur trip som generell reisetids-akse (nye destinasjoner er config, ikke kode), BASIL for barnehagefakta, Places-attributtene (outdoorSeating/takeout — Atmosphere-SKU), kommunens planregister («blir det bygget noe rett ved» — ingen konkurrent svarer); (d) mat/trening under 5 på Ranheim til poolen eller kuratorlisten fyller dem.
+
+---
+
+## 2026-08-22 — FAQ PER KATEGORI: BOARDET SVARER NÅ PÅ VISNINGS-SPØRSMÅLENE (branch `feat/faq-lokalkunnskap`, 8 commits, ikke pushet)
+
+**Kontekst:** Nivå 2-boardets verdi er at megleren forteller. Nivå 1 hadde kart og en kort kategoritekst, og kunne ikke svare på det en boligkjøper faktisk spør om på visning: hvilken skolekrets sogner boligen til, hvor er nærmeste holdeplass, hvor mange barnehager ligger i gangavstand. Spørsmålene har ligget i `lib/editorial/category-specs.ts` siden 08-16 — merket `lag: "board"`, altså adresseavhengige — men de hadde **ingen render-flate**. FAQ-seksjonen er den flaten. Kjørt som `/ce-brainstorm` → `/ce-plan` (Fable) → `/ce-work` (Opus) mot [planen](docs/plans/2026-08-22-001-feat-faq-lokalkunnskap-niva1-plan.md).
+
+**Dataene fantes ikke, og det var den egentlige jobben.** Reisetidene vi precomputer er gange og bare gange (Mapbox Matrix har ingen kollektivprofil), Entur-importen lagrer holdeplassen uten linjer, og trinn/elevtall står i NSR og ikke på POI-raden. Nytt **steg 7b** i provisjoneringen henter dem build-time: nærmeste holdeplasser med linjer gruppert per quay, bussetid til sentrum og til kommunens videregående, og kretsskolene med trinn og elevtall. Faktaene lagres i `reportConfig.boardFacts`; **teksten monteres ved render** (`lib/generators/faq-generator.ts`), samme modell som `bridgeText` — så formuleringene kan itereres uten å provisjonere seks boards på nytt.
+
+**Oppslagene gjøres for neste hverdag kl. 08:00 NORSK tid.** Bygg kjører i UTC, og `setHours(8)` ville gitt rushtidssvar fra klokka ti. `lib/pipeline/oslo-time.ts` leser offsetet ut av `Intl` for den konkrete datoen, så sommertid håndteres uten en tabell noen må vedlikeholde.
+
+**Én svarform PER kategori, aldri én felles.** Sist en felles setningsmal oppsto av seg selv, åpnet 41 av 158 POI-tekster likt og måtte språkvaskes i egen runde. Skole svarer med sogning, barnehage med antall, dagligvare med nærmeste, restaurant med et ja, transport med retning og meter. En test holder åpningene fra hverandre.
+
+**Det kuraterte laget kan bare si det som er sant for HELE strøket** — og det snudde Unit 7. Et kuratert svar ligger på `areas.report_editorial` og deles av hver bolig i strøket, akkurat som en POI-tekst. En kuratert overstyring av «hvilken krets» eller «hvor mange minutter» ville vært nøyaktig samme feil som å skrive gangavstand inn i en delt POI-tekst. Ranheim fikk derfor **tillegg, ikke overstyringer**: togtilbudet fra Ranheim stasjon, idrettsparken, turstien langs fjæra, og en karakteristikk av bydelen under den reserverte `global`-nøkkelen. Mekanismen for overstyring per spørsmåls-id står — den er bare feil verktøy for adresseavhengige svar.
+
+**Fem funn som bare akseptkjøringen kunne gi:**
+
+1. **Sentrumsoppslaget brukte geokoderens `city`, som for en forstad ER forstaden.** Strindfjordvegen 10 geokoder til «Ranheim», så «hvordan kommer jeg meg til byen?» ville blitt besvart med reisen til Ranheim stasjon. Kommunenavnet fra Kartverket er førstevalget nå.
+2. **Skolekoblingen bommet på det viktigste svaret i hele FAQ-en.** Boardets Ranheim skole er en legacy-UUID fra en annen kilde som vant dedupen, ikke `nsr-<orgnr>`. Navnematch er lagt til som fallback, med `normalizeFullSchoolName` — den beholder skoleslags-ordet, så barne- og ungdomsskolen på samme tomt ikke smelter sammen.
+3. **«Bybroen videregående er nærmeste, 18 minutter»** påsto at en skole lenger unna var den nærmeste. Nummer to er et alternativ, ikke en nærhets-påstand.
+4. **AtB skilter «Romolslia via Strindh.-Ladeham.»**, og et påsatt setningspunktum ga «Ladeham..».
+5. **Braindumpens egen lakmustest var delvis feil, og dataene vant.** «Charlottenlund vgs. nærmest» stemmer i luftlinje (1,9 km), men bussen dit tar **25 minutter** mens Cissi Klein 2,2 km unna tar 12. Videregående rangeres derfor på reisetid, ikke luftlinje — og svaret sier aldri «sogner», fordi vgs-inntak er fylkeskommunalt og karakterbasert.
+
+**Mobilen har den ene affordansen som divergerer.** Panelet dekker 58 % av telefonskjermen, så uten at det viker ville kartflyten skjedd bak innholdet. Panelet kollapser til en peek-stripe (20 %) med scroll-posisjonen i behold, og `OPEN_POI` bærer nå en kilde: utforsk-modalen — som ER mobilens POI-flate og gater på `phase === "poi"` alene — undertrykkes for tekst-utløste åpninger. Modalen kommer ved påfølgende trykk på selve punktet.
+
+**Degradasjonsregelen beskytter de tynne adressene, ikke de rike.** Kategoriteksten krympes til en kort intro bare når FAQ-en har minst tre svar. Verifisert i kjørende board: Barn & Oppvekst (4 svar) viser 279 tegn av en 441-tegns body, Hverdagsliv (1 svar) viser alle 409.
+
+**Den deterministiske kjernen er kjørt alene mot en ukuratert adresse** (Nardovegen 12, ingen strøkstreff): «Boligen sogner til Nardo skole, med 1.–7. trinn og 283 elever. Ungdomstrinnet hører til Sunnland skole, med 8.–10. trinn og 393 elever» + holdeplass 90 m + linjer per retning + 20 min til Trondheim S. Minimum-garantien holder uten kuratering.
+
+**Verifisert i browser (localhost:3002, ikke bare i test):** demo-boardet `placy-demo/strindfjordvegen-10` på desktop og mobil-viewport — global FAQ med kategorilenke, skolekrets-svaret med begge skolene klikkbare, kartfly med rutelinje til Ranheim skole, transport-svarene mot manuelt Entur-oppslag, og peek-tilstanden på mobil.
+
+**Mekanisk:** `tsc` rent · `npm run lint` 0 errors (51 pre-eksisterende warnings) · **2642 tester grønne / 178 filer** · `npm run build` grønn · provisjoneringens akseptansesjekk 5/5.
+
+**Åpent:** (a) grenen er ikke merget, og fram til den er det et vindu der main-branch-kode som provisjonerer i ranheim-strøket vil droppe temaets editorial stille — det strenge skjemaet kjenner ikke `faq`-feltet ennå; (b) pipeline-integrasjon for alle boards + refresh-policy for transittfakta er fortsatt deferred; (c) POI-teksten for Ranheim skole sier «nærskolen i Overviks barneskolekrets» — en adressepåstand i en delt tekst, altså nøyaktig mønsteret `lag: "board"` finnes for å hindre; (d) `trening-aktivitet`-bodyen har «stiftet i 1901», som bryter regelen om ingen årstall.
+
+---
+
 ## 2026-08-14 — REISEMODUS-VEKSLER PÅ BOARDET: GÅ / SYKKEL / BIL (branch `feat/reisemodus-veksler` i worktree `../placy-reisemodus`, 14 commits, ikke pushet)
 
 **Kontekst:** Andreas provisjonerte først et nivå-1-board på sin egen adresse (`intern_martin-barstads-veg-23c`, 97 POI-er, 82 på flaten) og ba deretter om å gjenskape Airbnbs reisemodus-veksler — kollapset chip med aktiv modus og tid, klikk utvider til liste. Placy HAR hatt walk/bike/car; UI-et døde med Explorer i cutoveren. Origin: `docs/brainstorms/2026-08-14-reisemodus-veksler-board-requirements.md`, plan: `docs/plans/2026-08-14-001-feat-reisemodus-veksler-board-plan.md` (8 units, 14 R-krav).
@@ -42,6 +94,7 @@
 **Åpent punkt, produktvalg:** på mobil (`collapsed`-varianten) havner modusvelgeren bak ⚙-FAB-en, nøyaktig der planen sa den ikke skulle. Chipen på ruta virker der, så modusen er nåbar når et punkt er åpent, men den vedvarende kontrollen er skjult. Planens kandidat er nabolags-sheetens header, som er der minutt-tallene bor på mobil. Ikke bygd — venter på Andreas.
 
 **Deferred (i planens Scope Boundaries):** modus-bevisst POI-radius (bil-modus utvider settet for rurale boards), kollektiv som fjerde modus, sletting av `ReportPOICard` + `MapPopupCard`, orfan `gmp-popover`-CSS i `app/globals.css:74-89`. Byggetids-utvalgslogikk (`poi-score`, `category-score`, tema-kvalifisering) forblir gang-basert med vilje — endres den per modus, endres boardets innhold. Ingenting pushet, ingen PR.
+
 ---
 
 ## 2026-08-14 — SCOUT-LØYPA PÅ RANHEIM: 46 → 187 STEDER, OG CUTOVER-DUBLETTENE SOM RE-SEED AVDEKKET (branch `feat/scout-ranheim`, 2 commits, ikke pushet)

@@ -646,4 +646,150 @@ describe("inheritAreaEditorial", () => {
     expect(schemaMock).toHaveBeenCalledWith("v2");
     expect(fromMock).toHaveBeenCalledWith("pois");
   });
+  // ── Kuratert FAQ + den reserverte global-nøkkelen ────────────────────────
+
+  it("(p) tema-entry MED faq arves fullt ut — body og highlights overlever det nye feltet", async () => {
+    // Regresjonsvernet: skjemaet er `.strict()`, så et ukjent felt ville fått
+    // HELE entryen hoppet over med en warning. Testen låser at faq-feltet er
+    // kjent, ikke bare at det arves.
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": {
+          body: "Kuratert brødtekst.",
+          highlightCandidates: ["c1"],
+          faq: [{ id: "spisesteder", svar: "Ni spisesteder innen ti minutters gange." }],
+        },
+      })
+    );
+    transformToReportDataMock.mockReturnValue(board([{ id: "mat-drikke", poiIds: ["c1"] }]));
+    const { patchCalls } = stubFetch();
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    expect(result.warnings.filter((w) => w.includes("ugyldig editorial-form"))).toEqual([]);
+    expect(result.themesInherited).toEqual(["mat-drikke"]);
+    expect(result.themesWithFaq).toEqual(["mat-drikke"]);
+
+    const theme = writtenConfig(patchCalls).reportConfig.themes.find(
+      (t) => t.id === "mat-drikke"
+    )!;
+    expect(theme.editorial).toEqual({ body: "Kuratert brødtekst.", highlightPoiIds: ["c1"] });
+    expect(theme.faq).toEqual([
+      { id: "spisesteder", svar: "Ni spisesteder innen ti minutters gange." },
+    ]);
+    // Alt annet på temaet står urørt
+    expect(theme.leadText).toBe("Lead som skal overleve");
+    expect(theme.grounding).toBeDefined();
+  });
+
+  it("(q) faq arves selv når temaet ikke har body eller overlevende highlights", async () => {
+    // Nivå-2-gaten styrer om drill-in-PANELET finnes. FAQ-en er en seksjon
+    // inne i et panel minimum-garantien uansett gir; et kuratert kretssvar
+    // skal ikke forsvinne fordi strøket mangler brødtekst for temaet.
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": {
+          body: "",
+          highlightCandidates: [],
+          faq: [{ id: "spisesteder", svar: "Kuratert svar." }],
+        },
+      })
+    );
+    transformToReportDataMock.mockReturnValue(board([{ id: "mat-drikke", poiIds: [] }]));
+    const { patchCalls } = stubFetch();
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    expect(result.themesInherited).toEqual([]);
+    expect(result.themesWithFaq).toEqual(["mat-drikke"]);
+    const theme = writtenConfig(patchCalls).reportConfig.themes.find(
+      (t) => t.id === "mat-drikke"
+    )!;
+    expect(theme.editorial).toBeUndefined();
+    expect(theme.faq).toEqual([{ id: "spisesteder", svar: "Kuratert svar." }]);
+  });
+
+  it("(r) den reserverte global-nøkkelen blir reportConfig.globalFaq, ikke et tema", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": { body: "Tekst.", highlightCandidates: ["c1"] },
+        global: {
+          faq: [
+            {
+              id: "karakteristikk",
+              spørsmål: "Hva kjennetegner området?",
+              svar: "Sjøkanten og Ladestien.",
+            },
+          ],
+        },
+      })
+    );
+    transformToReportDataMock.mockReturnValue(board([{ id: "mat-drikke", poiIds: ["c1"] }]));
+    const { patchCalls } = stubFetch();
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    // Nøkkelen må IKKE behandles som et tema — hverken arvet eller advart om
+    expect(result.themesInherited).toEqual(["mat-drikke"]);
+    expect(result.globalFaqAnswers).toBe(1);
+    expect(result.warnings.filter((w) => w.includes("global"))).toEqual([]);
+
+    const rc = writtenConfig(patchCalls).reportConfig as Record<string, unknown>;
+    expect(rc.globalFaq).toEqual([
+      {
+        id: "karakteristikk",
+        spørsmål: "Hva kjennetegner området?",
+        svar: "Sjøkanten og Ladestien.",
+      },
+    ]);
+    expect(rc.themes).toHaveLength(2);
+  });
+
+  it("(s) ugyldig global-entry hopper over den globale FAQ-en, men lar temaene arve", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({
+        "mat-drikke": { body: "Tekst.", highlightCandidates: ["c1"] },
+        global: { body: "Feilplassert", highlightCandidates: [] },
+      })
+    );
+    transformToReportDataMock.mockReturnValue(board([{ id: "mat-drikke", poiIds: ["c1"] }]));
+    const { patchCalls } = stubFetch();
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    expect(result.globalFaqAnswers).toBe(0);
+    expect(result.themesInherited).toEqual(["mat-drikke"]);
+    expect(result.warnings.some((w) => w.includes("global"))).toBe(true);
+    expect(writtenConfig(patchCalls).reportConfig.globalFaq).toBeUndefined();
+  });
+
+  it("(t) strøk med KUN global FAQ skriver likevel — config er ikke urørt", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({ global: { faq: [{ id: "karakteristikk", spørsmål: "Hva?", svar: "Svar." }] } })
+    );
+    transformToReportDataMock.mockReturnValue(board([]));
+    const { patchCalls } = stubFetch();
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    expect(result.skipped).toBeUndefined();
+    expect(result.globalFaqAnswers).toBe(1);
+    expect(writtenConfig(patchCalls).reportConfig.globalFaq).toHaveLength(1);
+  });
+
+  it("(u) strøk uten faq lar globalFaq og tema-faq være helt utelatt", async () => {
+    findAreaForPointMock.mockResolvedValue(
+      curatedArea({ "mat-drikke": { body: "Tekst.", highlightCandidates: ["c1"] } })
+    );
+    transformToReportDataMock.mockReturnValue(board([{ id: "mat-drikke", poiIds: ["c1"] }]));
+    const { patchCalls } = stubFetch();
+
+    const result = await inheritAreaEditorial(ARGS);
+
+    expect(result.themesWithFaq).toEqual([]);
+    expect(result.globalFaqAnswers).toBe(0);
+    const rc = writtenConfig(patchCalls).reportConfig;
+    expect("globalFaq" in rc).toBe(false);
+    expect("faq" in rc.themes[0]).toBe(false);
+  });
 });

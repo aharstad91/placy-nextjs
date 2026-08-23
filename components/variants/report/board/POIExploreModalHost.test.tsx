@@ -89,6 +89,7 @@ const BASE_STATE: BoardState = {
   introPlaying: false,
   exploreOpen: false,
   travelMode: "walk",
+  exploreSuppressed: false,
 };
 
 beforeEach(() => {
@@ -165,6 +166,21 @@ describe("mobil (sheet)", () => {
     h.state = { ...BASE_STATE, phase: "default", activePOIId: null };
     render(<POIExploreModalHost />);
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("POI åpnet fra et FAQ-svar gir INGEN modal — kartflyten skal være synlig", () => {
+    // En 85vh-modal i samme øyeblikk kameraet begynner å fly dit ville skjult
+    // hele grunnen til at stedsnavnet er klikkbart.
+    h.state = { ...BASE_STATE, exploreSuppressed: true };
+    render(<POIExploreModalHost />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("påfølgende trykk på selve punktet åpner modalen", () => {
+    // Markørtrykket dispatcher uten kilde, og reduseren nullstiller flagget.
+    h.state = { ...BASE_STATE, exploreSuppressed: false };
+    render(<POIExploreModalHost />);
+    expect(screen.getByRole("dialog")).toBeTruthy();
   });
 });
 

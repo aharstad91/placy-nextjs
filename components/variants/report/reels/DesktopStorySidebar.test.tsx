@@ -3,6 +3,10 @@ import { render as rtlRender, fireEvent } from "@testing-library/react";
 import { useEffect } from "react";
 import type { ViewportRect } from "@/lib/board/board-types";
 import type { BoardCategory, BoardData } from "../board/board-data";
+import { adaptBoardData } from "../board/board-data";
+import type { ReportData, ReportTheme } from "../report-data";
+import type { FaqEntry } from "@/lib/generators/faq-generator";
+import type { POI } from "@/lib/types";
 import { BoardProvider, useBoard } from "../board/board-state";
 import { SidebarContentPreview, type SidebarPreviewCategory } from "./DesktopStorySidebar";
 import type { RealtimeData } from "@/lib/hooks/useRealtimeData";
@@ -321,5 +325,153 @@ describe("kategori-panelet: viewport-scopet liste + ærlig dekning (2026-08-13)"
     const { queryByTestId, getByTestId } = renderPanel({ boardCategories: [] });
     expect(queryByTestId("viewport-list")).toBeNull();
     expect(getByTestId("category-subline").textContent).toBe("4 steder i nærheten");
+  });
+});
+
+// ── FAQ-en i drill-in og på forsiden ───────────────────────────────────────
+
+describe("FAQ i sidebaren", () => {
+  /**
+   * Bygger boardet gjennom den EKTE adapterkjeden (ReportData →
+   * `adaptBoardData`) i stedet for en håndbygd map. Det er hele poenget med
+   * testen: `poisById` nøkles på lowercased id mens POI-en bærer sin egen
+   * skrivemåte, og en håndbygd fixture der de to er like ville aldri fanget
+   * lowercase-fella.
+   */
+  function boardWithFaq(faq: FaqEntry[], globalFaq: FaqEntry[] = []) {
+    const stopPoi: POI = {
+      id: "entur-NSR-StopPlace-60260",
+      name: "Strindfjordvegen bussholdeplass",
+      coordinates: { lat: 63.4351, lng: 10.5053 },
+      category: { id: "bus", name: "Buss", icon: "Bus", color: "#4d93f8" },
+      enturStopplaceId: "NSR:StopPlace:60260",
+    };
+    const theme = {
+      id: "transport",
+      name: "Transport & Mobilitet",
+      icon: "Bus",
+      color: "#4d93f8",
+      upperNarrative: "Kollektivdekningen er god.",
+      faq,
+      pois: [stopPoi],
+      allPOIs: [stopPoi],
+      topRanked: [stopPoi],
+      hiddenPOIs: [],
+      richnessScore: 10,
+      score: { total: 50, breakdown: { count: 50, rating: 50, proximity: 50, variety: 50 } },
+      quote: "",
+      stats: {
+        totalPOIs: 1, ratedPOIs: 0, avgRating: null, totalReviews: 0,
+        editorialCount: 0, uniqueCategories: 1,
+      },
+    } as unknown as ReportTheme;
+
+    return adaptBoardData({
+      projectName: "Test",
+      address: "Strindfjordvegen 10",
+      centerCoordinates: { lat: 63.4351, lng: 10.5053 },
+      heroMetrics: {} as never,
+      themes: [theme],
+      allProjectPOIs: [stopPoi],
+      globalFaq,
+    } as unknown as ReportData);
+  }
+
+  function previewFrom(data: BoardData) {
+    return data.categories.map((c) => ({
+      id: c.id,
+      label: c.label,
+      color: c.color,
+      count: c.pois.length,
+      lead: c.lead,
+      editorial: c.editorial,
+    }));
+  }
+
+  const faqEntry = (over: Partial<FaqEntry> & { id: string }): FaqEntry => ({
+    question: `Spørsmål ${over.id}?`,
+    answer: `Svar ${over.id}.`,
+    source: "deterministic",
+    ...over,
+  });
+
+  it("viser FAQ-en i drill-in, og en mixed-case POI-referanse blir klikkbar", () => {
+    const data = boardWithFaq([
+      faqEntry({
+        id: "naermeste-holdeplass",
+        answer: "[Strindfjordvegen](poi:entur-NSR-StopPlace-60260) ligger 30 meter fra boligen.",
+      }),
+    ]);
+    const onOpenPoi = vi.fn();
+
+    const { getByTestId } = rtlRender(
+      <BoardProvider data={data}>
+        <SidebarContentPreview
+          categories={previewFrom(data)}
+          boardCategories={data.categories}
+          activeCategoryId="transport"
+          onOpenPoi={onOpenPoi}
+        />
+      </BoardProvider>,
+    );
+
+    fireEvent.click(getByTestId("faq-question"));
+    fireEvent.click(getByTestId("faq-poi-link"));
+    expect(onOpenPoi).toHaveBeenCalledWith("entur-NSR-StopPlace-60260", "transport");
+  });
+
+  it("har ingen FAQ-overskrift i drill-in når kategorien mangler svar", () => {
+    const data = boardWithFaq([]);
+    const { queryByTestId } = rtlRender(
+      <BoardProvider data={data}>
+        <SidebarContentPreview
+          categories={previewFrom(data)}
+          boardCategories={data.categories}
+          activeCategoryId="transport"
+        />
+      </BoardProvider>,
+    );
+    expect(queryByTestId("faq-section")).toBeNull();
+  });
+
+  it("viser den globale FAQ-en på forsiden, og kategorilenken velger kategorien", () => {
+    const data = boardWithFaq([], [
+      faqEntry({
+        id: "til-byen",
+        question: "Hvordan kommer jeg meg til byen?",
+        answer: "21 minutter. Se [Transport & Mobilitet](category:transport) for holdeplassene.",
+      }),
+    ]);
+    const onSelect = vi.fn();
+
+    const { getByTestId } = rtlRender(
+      <BoardProvider data={data}>
+        <SidebarContentPreview categories={previewFrom(data)} onSelect={onSelect} />
+      </BoardProvider>,
+    );
+
+    fireEvent.click(getByTestId("faq-question"));
+    fireEvent.click(getByTestId("faq-category-link"));
+    expect(onSelect).toHaveBeenCalledWith("transport");
+  });
+
+  it("viser ingen global FAQ-seksjon når boardet verken har karakteristikk eller transittfakta", () => {
+    const data = boardWithFaq([]);
+    const { queryByTestId } = rtlRender(
+      <BoardProvider data={data}>
+        <SidebarContentPreview categories={previewFrom(data)} />
+      </BoardProvider>,
+    );
+    expect(queryByTestId("faq-section")).toBeNull();
+  });
+
+  it("krymper prosaen til introen når FAQ-en bærer substansen", () => {
+    const data = boardWithFaq([
+      faqEntry({ id: "naermeste-holdeplass" }),
+      faqEntry({ id: "linjer" }),
+      faqEntry({ id: "til-sentrum" }),
+    ]);
+    // board-data har satt `intro` fordi FAQ-en har tre svar
+    expect(data.categories[0].editorial?.intro).toBe("Kollektivdekningen er god.");
   });
 });
