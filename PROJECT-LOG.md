@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-08-23 — MINIMUM FEM FAQ PER TEMA: KATALOGEN BLE GAP-RAPPORTEN (branch `feat/faq-lokalkunnskap`, commit baf99eb)
+
+**Kontekst:** Andreas så FAQ-en fra 08-22 i kjørende board og landet retningen: dette er veien å gå — standardiserte spørsmål per tema, algoritmen forbedres over tid, og laget bygger samtidig rommet for chat-løsninger senere. Beslutningen som fulgte: **minst fem deklarerte spørsmål per tema**, håndhevet av test. Deklarert er ikke lovet — svar uten faktum utelates per adresse som før — og det er poenget: differansen deklarert-mot-vist er gap-rapporten som styrer kuratering (Moat 1) og nye datakilder per strøk.
+
+**Det arkitektoniske grepet er at spørsmåls-id-en er kontrakten.** Kuratert svar, deterministisk bygger og en fremtidig chat nøkler alle på samme id. Tre konsekvenser: (a) en ny datakilde løfter alle boards samtidig, (b) kuratorinnsats går presist dit registrene ikke rekker — `turstier`, `marka` og `idrettslag` er kuratert-eneste med vilje (outdoor-kategorien er for bred til tursti-påstander; strøksbegreper som marka kjenner ingen registre), og (c) chatten blir en ruter over de samme byggerne, aldri RAG over tekst — den arver «mangler faktumet, utelates svaret» og kan ikke dikte om én konkret bolig.
+
+**Nye spørsmål bor i `THEME_BOARD_QUESTIONS`** (category-specs.ts) til kategoriene deres får egen mal — alle står i `PLANLAGTE_KATEGORIER`, og id-en består når spørsmålet flytter inn i malen. `tog` gikk rett i transport-malen fordi `train` er en av kategoriene dens. 19 nye byggere i faq-generator.ts følger to regler verdt å huske: **positive påstander alene** (poolen er recall-begrenset — «finnes ikke innenfor 10 minutter» kan den ikke bære; lading scoper med «på kartet») og gangtid kun der den er precomputet.
+
+**Åpningstidene vi cacher ble ny svarkilde** (`lib/generators/opening-hours.ts`): «kan jeg trene før jobb» (Impulse åpner 05, stenger ved midnatt), «er noe åpent på søndag», kafé med tider. Parseren er konservativ — lunsjstengt og sprikende hverdager gir null framfor en sammenslått løgn. **Live-funn som bare akseptkjøring gir:** Google deler AM/PM-markøren («Sunday: 1:00 – 10:00 PM» betyr 13–22), og uten arve-regelen ble Pizzabakeren Ranheims søndagstid «01–22». Funnet i browseren, fikset med test.
+
+**Resultat på Strindfjordvegen 10 (verifisert i browser, alle seks drill-ins):** 26 svar mot 8 før. Hverdagsliv 5 (inkl. terskelsvaret «klarer jeg hverdagsærendene til fots» — 5 ærend-typer innen 10 min), Barn 5, Natur 5, Transport 5, Mat 3 og Trening 3 — de to siste er reelt data-begrenset (bakeri/bar/svømmehall finnes ikke i poolen), og det er nå synlig som gap i stedet for stille. Ranheim-strøket fikk `marka` + `idrettslag` avledet ordrett fra ratifiserte tema-tekster (årstall droppet per regelen), og turstier-svaret ble splittet til én-spørsmål-én-svar. Arven re-kjørt via `/api/admin/inherit-editorial`, cache bustet via `/api/admin/revalidate`.
+
+**Mekanisk:** `tsc` rent · lint 0 errors · **2674 tester grønne / 179 filer** (+32) · 0 relevante konsollfeil.
+
+**Åpent:** (a) `faq_opened`-instrumentering mangler fortsatt — uten den vet vi ikke hvilke spørsmål som faktisk åpnes, og den bør gå FØR mer kuratorinnsats; (b) «Impulse Treningssenter» / «Impulse Grilstad» (2 og 3 min) er trolig samme senter — kandidat til dublett-lista fra 08-14; (c) neste kilder i prioritert rekkefølge fra 08-23-sparringen: Entur trip som generell reisetids-akse (nye destinasjoner er config, ikke kode), BASIL for barnehagefakta, Places-attributtene (outdoorSeating/takeout — Atmosphere-SKU), kommunens planregister («blir det bygget noe rett ved» — ingen konkurrent svarer); (d) mat/trening under 5 på Ranheim til poolen eller kuratorlisten fyller dem.
+
+---
+
 ## 2026-08-22 — FAQ PER KATEGORI: BOARDET SVARER NÅ PÅ VISNINGS-SPØRSMÅLENE (branch `feat/faq-lokalkunnskap`, 8 commits, ikke pushet)
 
 **Kontekst:** Nivå 2-boardets verdi er at megleren forteller. Nivå 1 hadde kart og en kort kategoritekst, og kunne ikke svare på det en boligkjøper faktisk spør om på visning: hvilken skolekrets sogner boligen til, hvor er nærmeste holdeplass, hvor mange barnehager ligger i gangavstand. Spørsmålene har ligget i `lib/editorial/category-specs.ts` siden 08-16 — merket `lag: "board"`, altså adresseavhengige — men de hadde **ingen render-flate**. FAQ-seksjonen er den flaten. Kjørt som `/ce-brainstorm` → `/ce-plan` (Fable) → `/ce-work` (Opus) mot [planen](docs/plans/2026-08-22-001-feat-faq-lokalkunnskap-niva1-plan.md).
