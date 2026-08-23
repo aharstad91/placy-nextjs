@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render as rtlRender, fireEvent } from "@testing-library/react";
+import { render as rtlRender, fireEvent, within } from "@testing-library/react";
 import type { BoardData } from "../../board/board-data";
 import { BoardProvider } from "../../board/board-state";
 import {
@@ -149,6 +149,35 @@ describe("SidebarContentPreview — nivå-2 drill-in", () => {
     );
     expect(getByText("Oppvekstmiljøet er trygt og grønt.")).toBeTruthy();
     expect(getByText("Flere skoler i gangavstand.")).toBeTruthy();
+  });
+
+  it("nav-headeren viser tema-railen med aktivt tema markert, i temarekkefølge", () => {
+    const { getByTestId } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+      />,
+    );
+    const chips = within(getByTestId("category-chip-rail")).getAllByRole("button");
+    expect(chips.map((c) => c.textContent)).toEqual(["Barn & Oppvekst", "Mat & Drikke"]);
+    expect(chips[0].getAttribute("aria-current")).toBe("true");
+    expect(chips[1].getAttribute("aria-current")).toBe("false");
+  });
+
+  it("chip-klikk på annet tema kaller onSelect — aktiv chip er no-op (ingen toggle-reset)", () => {
+    const onSelect = vi.fn();
+    const { getByTestId } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+        onSelect={onSelect}
+      />,
+    );
+    const rail = getByTestId("category-chip-rail");
+    fireEvent.click(within(rail).getByText("Mat & Drikke"));
+    expect(onSelect).toHaveBeenCalledWith("mat");
+    fireEvent.click(within(rail).getByText("Barn & Oppvekst"));
+    expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
   it("tilbake-pil kaller onShowAll", () => {

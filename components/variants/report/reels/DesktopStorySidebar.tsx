@@ -173,9 +173,11 @@ export function SidebarContentPreview({
       {detail ? (
         <CategoryDetailView
           category={activeCat!}
+          allCategories={categories}
           boardCategory={boardCategories?.find((c) => c.id === activeCat!.id)}
           detail={detail}
           onBack={onShowAll}
+          onSelectCategory={onSelect}
           onOpenPoi={onOpenPoi}
         />
       ) : (
@@ -342,22 +344,38 @@ function GlobalFaq({ onSelectCategory }: { onSelectCategory?: (id: string) => vo
  */
 function CategoryDetailView({
   category,
+  allCategories,
   boardCategory,
   detail,
   onBack,
+  onSelectCategory,
   onOpenPoi,
 }: {
   category: SidebarPreviewCategory;
+  /** Hele temalista — nav-headerens sideveis rail (aktivt tema markert). */
+  allCategories: SidebarPreviewCategory[];
   /** Full board-kategori (POI-er + gangtider) — kilden til viewport-lista.
    *  Undefined når sidebaren brukes uten board-kategoriene; panelet faller da
    *  tilbake til bare prosa + highlights. */
   boardCategory?: BoardCategory;
   detail: NonNullable<SidebarPreviewCategory["editorial"]>;
   onBack?: () => void;
+  /** Chip-klikk i railen → bytt drill-in direkte (samme handler som temakortene). */
+  onSelectCategory?: (id: string) => void;
   onOpenPoi?: (poiId: string, categoryId: string) => void;
 }) {
   const { mapCamera, data } = useBoard();
   const list = useViewportCategoryList(boardCategory ?? null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const activeChipRef = useRef<HTMLButtonElement | null>(null);
+
+  // Tema-bytte via railen gjenbruker samme scroll-container — uten reset
+  // starter neste tema midt i forrige temas scrollposisjon. Optional-kall på
+  // scrollIntoView: jsdom implementerer den ikke.
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    activeChipRef.current?.scrollIntoView?.({ inline: "center", block: "nearest" });
+  }, [category.id]);
   // Dobbelt linjeskift = nytt avsnitt; enkelt nivå er nok for kuratert tekst.
   // `intro` vinner når den finnes: da har FAQ-en under minst tre svar og
   // bærer substansen, og prosaen skal bare sette scenen (degradasjonsregelen
@@ -374,17 +392,60 @@ function CategoryDetailView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {/* Tilbake-rad (standard nav-mønster) → index med alle kategorier. */}
+      {/* Nav-header — PINNET utenfor scroll-containeren. Tilbake-raden lå før
+          inne i scrollen og forsvant av skjermen akkurat idet FAQ-en gjorde
+          panelet langt nok til at man trengte den (funnet 2026-08-23). Samme
+          regel som «Åpent nå»-raden nederst: utganger ligger utenfor scroll. */}
+      <div className="shrink-0 border-b border-black/5 px-6 pb-2.5 pt-1">
         <button
           type="button"
           onClick={onBack}
-          className="mb-3 -ml-1 inline-flex w-fit items-center gap-1.5 rounded-full px-1.5 py-1 text-[13px] font-semibold text-stone-600 transition hover:bg-black/5 hover:text-stone-900"
+          className="-ml-1 inline-flex w-fit items-center gap-1.5 rounded-full px-1.5 py-1 text-[13px] font-semibold text-stone-600 transition hover:bg-black/5 hover:text-stone-900"
         >
           <ArrowLeft size={16} />
           Alle kategorier
         </button>
+        {/* Sideveis nav: den som står i ett tema vil oftest til NESTE tema,
+            ikke «tilbake». Aktiv chip er bevisst no-op — temakortenes
+            toggle-semantikk (re-klikk → reset) ville resatt boardet under
+            brukeren her. */}
+        {allCategories.length > 1 && (
+          <div
+            data-testid="category-chip-rail"
+            className="-mx-6 mt-2 flex gap-1.5 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {allCategories.map((c) => {
+              const isActive = c.id === category.id;
+              return (
+                <button
+                  key={c.id}
+                  ref={isActive ? activeChipRef : undefined}
+                  type="button"
+                  aria-current={isActive}
+                  onClick={isActive ? undefined : () => onSelectCategory?.(c.id)}
+                  className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-semibold transition ${
+                    isActive
+                      ? "border-stone-900 bg-stone-900 text-white"
+                      : "border-black/10 bg-white/60 text-stone-600 hover:border-stone-500 hover:text-stone-900"
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: c.color }}
+                  />
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto px-6 pb-3 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {heroImage && (
           <div className="relative mb-4 h-44 w-full shrink-0 overflow-hidden rounded-2xl bg-stone-200">
             <Image
