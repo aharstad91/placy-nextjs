@@ -18,6 +18,7 @@ import { deriveCategoryCameraConfig } from "./board-category-camera";
 import { readBoardUrlFlagsFromWindow } from "./board-url-flags";
 import { getEstablishingShot } from "./board-establishing-shots";
 import { useBoardMarkerSet } from "./use-board-marker-set";
+import { useMarker3DDeclutter } from "./use-3d-marker-declutter";
 import {
   useBoardFlythrough,
   deriveIntroActive,
@@ -423,6 +424,23 @@ export function BoardMap3D({
     setBloomStarted,
   });
 
+  // ── Markør-utglisning + labels ────────────────────────────────────────────
+  // 3D-halvdelen av 2D-kartets zoom-baserte markør-logikk: hvilke pins som
+  // beholder ikonet når de krasjer i hverandre, og hvilke som får navnet sitt
+  // tegnet ved siden av seg. Regnes når kameraet faller til ro — se hooken.
+  // Av under compact-markører (alt er allerede prikker) og når markørsettet er
+  // tomt (capture/intro eier kartet da).
+  const declutter = useMarker3DDeclutter({
+    map3d: map3dInstance,
+    pois: markerPOIs,
+    home: data.home.coordinates,
+    homeName: data.home.name,
+    activePOIId: state.activePOIId,
+    // Mini-popupen viser navnet — da skal ikke pinnen vise det også.
+    suppressActiveLabel: popupMode === "mini",
+    enabled: !compactMarkers && markerPOIs.length > 0,
+  });
+
   // cameraMode styres nå av BoardMap (felles BoardMapControls). Vi speiler den i
   // en ref så drag-lytteren kan lese gjeldende modus uten å re-subscribe.
   const cameraModeRef = useRef(cameraMode);
@@ -469,6 +487,8 @@ export function BoardMap3D({
         freeMode
         pois={markerPOIs}
         compactMarkers={compactMarkers}
+        markerLabels={declutter.labels}
+        demotedMarkerIds={declutter.demotedIds}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}

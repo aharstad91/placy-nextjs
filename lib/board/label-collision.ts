@@ -11,9 +11,16 @@
  *   2. Kolliderer begge sider, skjul labelen med lavest prioritet — den
  *      kommer tilbake når brukeren zoomer inn og det blir plass.
  *
- * Ren funksjon over skjerm-koordinater — projeksjonen (lngLat → px) skjer i
- * BoardMap, som kaller denne på moveend. Deterministisk: samme kandidater gir
- * samme resultat uavhengig av input-rekkefølge.
+ * Ren funksjon over skjerm-koordinater — projeksjonen (lngLat → px) skjer hos
+ * konsumenten. Deterministisk: samme kandidater gir samme resultat uavhengig
+ * av input-rekkefølge.
+ *
+ * DELT AV BEGGE KART-MOTORENE (2026-08-23). 2D projiserer med Mapbox' egen
+ * `map.project` på `moveend`; 3D projiserer med `projectLatLngToScreen` når
+ * Google-kameraet har falt til ro. Bare to ting skiller flatene, og begge er
+ * parametre her: markør-bredden ({@link LabelMetrics.offsetX} — 32 px i 2D,
+ * 40 px i 3D) og at 3D har en bred prosjekt-chip som hindring
+ * ({@link LabelObstacle.halfWidth}). Selve plasserings-regelen er ÉN.
  *
  * Geometrien speiler BoardMarker-CSS-en: label ligger inntil markør-
  * containeren (kant + 8 px margin), vertikalt sentrert, fontSize 10/600,
@@ -40,11 +47,20 @@ export interface LabelCandidate {
  * halv bredde/høyde). Egen markør kolliderer aldri med egen label (labelen
  * starter 8 px utenfor sirkelkanten på begge sider), så alle markører kan
  * sendes inn.
+ *
+ * `halfWidth`/`halfHeight` overstyrer `halfSize` per akse. Kvadratiske
+ * hindringer (markør-sirkler) setter kun `halfSize`; brede, lave hindringer —
+ * prosjekt-chipen i 3D er ~300 × 105 px — trenger begge aksene separat, ellers
+ * ville et kvadrat på 150 px halv-høyde blokkert halve skjermen vertikalt.
  */
 export interface LabelObstacle {
   x: number;
   y: number;
   halfSize: number;
+  /** Overstyrer `halfSize` horisontalt. */
+  halfWidth?: number;
+  /** Overstyrer `halfSize` vertikalt. */
+  halfHeight?: number;
 }
 
 /**
@@ -59,13 +75,31 @@ export interface LabelViewport {
 /** Speiler BoardMarker: maxWidth på label-spanen. */
 export const LABEL_MAX_W = 132;
 /** Estimert snittbredde per tegn ved fontSize 10 / weight 600. */
-const CHAR_W = 5.9;
+export const LABEL_CHAR_W = 5.9;
 /** Speiler BoardMarker: lineHeight 1.2 × fontSize 10. */
-const LINE_H = 12;
-/** Container-halvbredde (32 px inaktiv markør) + margin 8. */
-const LABEL_OFFSET_X = 16 + 8;
+export const LABEL_LINE_H = 12;
+/** Speiler BoardMarker: fontSize på label-teksten. */
+export const LABEL_FONT_SIZE = 10;
+/** Maks antall linjer før teksten kuttes med ellipsis. */
+export const LABEL_MAX_LINES = 2;
+/** Luft mellom markør-kanten og labelens nærmeste tekstkant. */
+export const LABEL_GAP_X = 8;
+/** Default container-halvbredde (32 px inaktiv 2D-markør) + {@link LABEL_GAP_X}.
+ *  3D-pinnen er 40 px og sender inn sin egen `offsetX` via {@link LabelMetrics}. */
+export const LABEL_OFFSET_X = 16 + LABEL_GAP_X;
 /** Liten slack så labels som så vidt tangerer ikke regnes som kollisjon. */
 const SLACK = 2;
+
+/**
+ * Geometri-avvik mellom kart-motorene. 2D-markøren er 32 px bred, 3D-pinnen er
+ * 40 px — labelen må starte lenger ut i 3D, ellers legger den seg oppå sin egen
+ * pin. Alt annet (font, linjehøyde, maksbredde) er felles, så begge flatene
+ * regner på nøyaktig samme label-boks.
+ */
+export interface LabelMetrics {
+  /** Avstand fra markørsenter til labelens nærmeste kant. Default {@link LABEL_OFFSET_X}. */
+  offsetX?: number;
+}
 
 interface Box {
   left: number;
@@ -74,16 +108,83 @@ interface Box {
   bottom: number;
 }
 
-/** Estimert label-bbox i skjerm-px for en kandidat. Eksportert for test. */
-export function estimateLabelBox(c: LabelCandidate, side: LabelSide): Box {
-  const textW = c.name.length * CHAR_W;
+/**
+ * Estimert label-bbox i skjerm-px for en kandidat. Eksportert for test.
+ *
+ * Bredden er et bevisst OVERESTIMAT: den regner hele navnet på én linje opp til
+ * taket, mens {@link wrapLabelLines} bryter på ordgrense og gir i praksis en
+ * litt smalere blokk. Feilen går altså mot å reservere for mye plass — aldri
+ * mot å påstå at det er ledig der teksten faktisk ligger.
+ */
+export function estimateLabelBox(
+  c: LabelCandidate,
+  side: LabelSide,
+  offsetX: number = LABEL_OFFSET_X,
+): Box {
+  const textW = c.name.length * LABEL_CHAR_W;
   const width = Math.min(textW, LABEL_MAX_W);
-  const lines = textW > LABEL_MAX_W ? 2 : 1;
-  const height = lines * LINE_H;
-  const left =
-    side === "right" ? c.x + LABEL_OFFSET_X : c.x - LABEL_OFFSET_X - width;
+  const lines = textW > LABEL_MAX_W ? LABEL_MAX_LINES : 1;
+  const height = lines * LABEL_LINE_H;
+  const left = side === "right" ? c.x + offsetX : c.x - offsetX - width;
   const top = c.y - height / 2;
   return { left, top, right: left + width, bottom: top + height };
+}
+
+/**
+ * Bryter et POI-navn til maks {@link LABEL_MAX_LINES} linjer innenfor
+ * `maxWidth` px, med ellipsis når teksten ikke får plass.
+ *
+ * 2D lar CSS gjøre dette (`-webkit-line-clamp`), men Google Maps 3D
+ * rasteriserer SVG — og SVG `<text>` bryter ikke av seg selv. Denne gir derfor
+ * 3D-pinnen de samme linjene CSS ville produsert, målt med samme
+ * {@link LABEL_CHAR_W} som kollisjonsboksen bruker.
+ *
+ * Ord som alene er lengre enn en linje deles hardt; ellers ville de blokkert
+ * brytingen og stukket ut av label-boksen.
+ */
+export function wrapLabelLines(
+  name: string,
+  maxWidth: number = LABEL_MAX_W,
+  charW: number = LABEL_CHAR_W,
+  maxLines: number = LABEL_MAX_LINES,
+): string[] {
+  const trimmed = name.trim();
+  if (!trimmed) return [];
+  const maxChars = Math.max(1, Math.floor(maxWidth / charW));
+  if (trimmed.length <= maxChars) return [trimmed];
+
+  const words: string[] = [];
+  for (const word of trimmed.split(/\s+/)) {
+    let rest = word;
+    while (rest.length > maxChars) {
+      words.push(rest.slice(0, maxChars));
+      rest = rest.slice(maxChars);
+    }
+    if (rest) words.push(rest);
+  }
+
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length <= maxChars) {
+      current = next;
+      continue;
+    }
+    lines.push(current);
+    if (lines.length === maxLines) {
+      // Ingen linjer igjen, men det står ord igjen — marker avkuttingen.
+      const last = lines[lines.length - 1];
+      const room = Math.max(1, maxChars - 1);
+      return [
+        ...lines.slice(0, -1),
+        `${last.length <= room ? last : last.slice(0, room)}…`,
+      ];
+    }
+    current = word;
+  }
+  if (current) lines.push(current);
+  return lines;
 }
 
 function intersects(a: Box, b: Box): boolean {
@@ -96,11 +197,13 @@ function intersects(a: Box, b: Box): boolean {
 }
 
 function obstacleBox(o: LabelObstacle): Box {
+  const hw = o.halfWidth ?? o.halfSize;
+  const hh = o.halfHeight ?? o.halfSize;
   return {
-    left: o.x - o.halfSize,
-    top: o.y - o.halfSize,
-    right: o.x + o.halfSize,
-    bottom: o.y + o.halfSize,
+    left: o.x - hw,
+    top: o.y - hh,
+    right: o.x + hw,
+    bottom: o.y + hh,
   };
 }
 
@@ -127,7 +230,9 @@ export function computeLabelPlacements(
   candidates: readonly LabelCandidate[],
   obstacles: readonly LabelObstacle[] = [],
   viewport?: LabelViewport,
+  metrics: LabelMetrics = {},
 ): Map<string, LabelSide> {
+  const offsetX = metrics.offsetX ?? LABEL_OFFSET_X;
   const sorted = [...candidates].sort(
     (a, b) => b.priority - a.priority || (a.id < b.id ? -1 : 1),
   );
@@ -136,14 +241,15 @@ export function computeLabelPlacements(
   const placements = new Map<string, LabelSide>();
 
   for (const c of sorted) {
-    const rightBox = estimateLabelBox(c, "right");
+    const rightBox = estimateLabelBox(c, "right", offsetX);
     const sideOrder: LabelSide[] = fitsViewport(rightBox, viewport)
       ? ["right", "left"]
       : ["left", "right"];
 
     let placed = false;
     for (const side of sideOrder) {
-      const box = side === "right" ? rightBox : estimateLabelBox(c, "left");
+      const box =
+        side === "right" ? rightBox : estimateLabelBox(c, "left", offsetX);
       if (!fitsViewport(box, viewport)) continue;
       if (
         blocked.some((b) => intersects(b, box)) ||
@@ -162,7 +268,9 @@ export function computeLabelPlacements(
     if (!placed && c.priority === Number.POSITIVE_INFINITY) {
       const side = sideOrder[0];
       placements.set(c.id, side);
-      accepted.push(side === "right" ? rightBox : estimateLabelBox(c, "left"));
+      accepted.push(
+        side === "right" ? rightBox : estimateLabelBox(c, "left", offsetX),
+      );
     }
   }
   return placements;

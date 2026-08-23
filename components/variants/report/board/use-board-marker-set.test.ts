@@ -25,7 +25,12 @@ function poi(id: string, catId = "cat", lat = 0, lng = 0): POI {
   } as unknown as POI;
 }
 function bp(p: POI) {
-  return { id: p.id, raw: p } as unknown as BoardCategory["pois"][number];
+  // `coordinates` = visnings-punktet (se toDisplayPOI i board-data).
+  return {
+    id: p.id,
+    raw: p,
+    coordinates: p.coordinates,
+  } as unknown as BoardCategory["pois"][number];
 }
 function cat(
   over: Omit<Partial<BoardCategory>, "pois" | "topRankedPois"> & {

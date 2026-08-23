@@ -49,12 +49,31 @@ const CHIP_H = THUMB + INSET * 2; // 94
 const ARROW_H = 11;
 const DOT_W = 12; // aksent-prikk + luft foran undertittel
 
-export function ProjectSitePin({
-  name,
-  subtitle = "Nybygg 2028",
-  imageSrc,
+/** Ytre mål på chip-en (px) ved `scale = 1`, før skalering. */
+export interface ProjectSitePinSize {
+  width: number;
+  height: number;
+}
+
+/**
+ * Chip-ens ytre mål uten å rendre den.
+ *
+ * Kollisjonskullingen i 3D trenger prosjekt-chipen som HINDRING — den er
+ * ~300 × 105 px, alltid synlig og bærer sin egen tekst, så en POI-label eller
+ * -pin bak den er tapt uansett. Målene utledes av navnelengden, så de kan ikke
+ * hardkodes hos konsumenten; de må komme herfra, ellers driver hindringen fra
+ * det som faktisk tegnes neste gang noen justerer paddingen.
+ */
+export function projectSitePinSize(
+  name: string,
+  subtitle: string | undefined = "Nybygg 2028",
   scale = 1,
-}: ProjectSitePinProps) {
+): ProjectSitePinSize {
+  const { totalW, totalH } = chipLayout(name, subtitle);
+  return { width: totalW * scale, height: totalH * scale };
+}
+
+function chipLayout(name: string, subtitle?: string) {
   // Estimert tekstbredde (system-ui): navn 17px bold ≈ 9.8px/tegn,
   // undertittel 13px ≈ 7.4px/tegn (+ aksent-prikk).
   const nameW = name.length * 9.8;
@@ -62,8 +81,20 @@ export function ProjectSitePin({
   const textW = Math.max(nameW, subW, 120);
 
   const chipW = INSET + THUMB + GAP + textW + RIGHT_PAD;
-  const totalW = chipW + PAD * 2;
-  const totalH = PAD + CHIP_H + ARROW_H + PAD;
+  return {
+    chipW,
+    totalW: chipW + PAD * 2,
+    totalH: PAD + CHIP_H + ARROW_H + PAD,
+  };
+}
+
+export function ProjectSitePin({
+  name,
+  subtitle = "Nybygg 2028",
+  imageSrc,
+  scale = 1,
+}: ProjectSitePinProps) {
+  const { chipW, totalW, totalH } = chipLayout(name, subtitle);
 
   const chipX = PAD;
   const chipY = PAD;

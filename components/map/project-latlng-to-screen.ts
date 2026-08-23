@@ -14,7 +14,8 @@
  * Konvensjon: heading=0 → ser nord; tilt=0 → top-down, tilt=90 → horisontal.
  */
 
-const FOV_Y_RAD = (35 * Math.PI) / 180; // estimat — Google 3D eksponerer ikke FOV
+/** Googles dokumenterte default for `fov` når den ikke er satt eksplisitt. */
+const DEFAULT_FOV_DEG = 35;
 const METERS_PER_DEG_LAT = 111320;
 
 /** Minimal kamera-flate vi leser fra Map3DElement-instansen. */
@@ -24,6 +25,10 @@ interface Map3DCameraLike {
   heading?: number;
   tilt?: number;
   range?: number;
+  /** Vertikal field-of-view i grader. Er en ekte property på elementet — den
+   *  ble tidligere antatt å ikke finnes og hardkodet til 35, som ga en
+   *  systematisk skala-feil i projeksjonen hvis fov noen gang settes. */
+  fov?: number;
 }
 
 export function projectLatLngToScreen(
@@ -64,7 +69,8 @@ export function projectLatLngToScreen(
     if (zCam <= 1) return null; // bak kameraet
 
     // 4. Perspektiv-projeksjon (koord relativt til kart-elementets hjørne)
-    const focal = rect.height / (2 * Math.tan(FOV_Y_RAD / 2));
+    const fovRad = ((m.fov ?? DEFAULT_FOV_DEG) * Math.PI) / 180;
+    const focal = rect.height / (2 * Math.tan(fovRad / 2));
     const screenX = rect.width / 2 + (focal * xCam) / zCam;
     const screenY = rect.height / 2 - (focal * yCam) / zCam;
     return { x: screenX, y: screenY };

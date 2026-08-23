@@ -1,5 +1,6 @@
 import { getDistanceMeters } from "@/lib/map-utils";
 import type { POI } from "@/lib/types";
+import { toDisplayPOI } from "./board-data";
 import type { BoardCategory } from "./board-data";
 
 /**
@@ -28,7 +29,9 @@ export function selectBlobPOIs(
 
   for (const category of categories) {
     for (const boardPoi of category.pois) {
-      const poi = boardPoi.raw;
+      // Visnings-koordinat, ikke kildepunkt: samlokaliserte steder er viftet
+      // ut fra hverandre, og prikkene må lande der pinnene lander.
+      const poi = toDisplayPOI(boardPoi);
       if (seen.has(poi.id)) continue;
       seen.add(poi.id);
       // POI-er som vises som vanlige legend-pins ekskluderes så vi ikke får en
@@ -91,7 +94,9 @@ export function selectFlyoverBlobs(
 
   for (const category of categories) {
     for (const boardPoi of category.pois) {
-      const poi = boardPoi.raw;
+      // Visnings-koordinat, ikke kildepunkt: samlokaliserte steder er viftet
+      // ut fra hverandre, og prikkene må lande der pinnene lander.
+      const poi = toDisplayPOI(boardPoi);
       if (seen.has(poi.id)) continue;
       seen.add(poi.id);
       if (excludeIds?.has(poi.id)) continue;

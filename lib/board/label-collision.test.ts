@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   computeLabelPlacements,
   estimateLabelBox,
+  wrapLabelLines,
+  LABEL_CHAR_W,
   LABEL_MAX_W,
+  LABEL_OFFSET_X,
   type LabelCandidate,
 } from "./label-collision";
 
@@ -159,5 +162,103 @@ describe("computeLabelPlacements", () => {
     expect(l.right).toBe(100 - (r.left - 100));
     expect(l.right - l.left).toBe(r.right - r.left);
     expect(l.top).toBe(r.top);
+  });
+});
+
+/**
+ * 3D-halvdelen: samme regel, to parametre. Markøren er 40 px der (ikke 32), og
+ * prosjekt-chipen er en bred, lav hindring — ikke en markør-sirkel.
+ */
+describe("motor-forskjellene (3D)", () => {
+  it("offsetX skyver labelen ut fra en bredere markør", () => {
+    const c = cand("x", 100, 50);
+    const nær = estimateLabelBox(c, "right");
+    const fjern = estimateLabelBox(c, "right", 28);
+    expect(nær.left).toBe(100 + LABEL_OFFSET_X);
+    expect(fjern.left).toBe(128);
+    // Bare startpunktet flytter seg — bredden er den samme teksten.
+    expect(fjern.right - fjern.left).toBe(nær.right - nær.left);
+  });
+
+  it("computeLabelPlacements respekterer offsetX-metrikken", () => {
+    // Hindringen ligger like BAK der 2D-labelen slutter (høyre kant 194.8).
+    // 3D-labelen starter 4 px lenger ute og rekker dermed borti den, så den må
+    // flippe til venstre mens 2D blir stående.
+    const obstacles = [{ x: 200, y: 50, halfSize: 6 }];
+    const to2D = computeLabelPlacements([cand("x", 100, 50)], obstacles);
+    const to3D = computeLabelPlacements([cand("x", 100, 50)], obstacles, undefined, {
+      offsetX: 28,
+    });
+    expect(to2D.get("x")).toBe("right");
+    expect(to3D.get("x")).toBe("left");
+  });
+
+  it("halfWidth/halfHeight gir en bred, lav hindring (prosjekt-chipen)", () => {
+    // Chip 320 × 104 sentrert i (300, 50). En kvadratisk hindring med samme
+    // halv-bredde ville også blokkert 160 px opp og ned — den 200 px under
+    // skulle vært fri.
+    const chip = { x: 300, y: 50, halfSize: 0, halfWidth: 160, halfHeight: 52 };
+    const bak = computeLabelPlacements([cand("bak", 100, 50)], [chip]);
+    const under = computeLabelPlacements([cand("under", 200, 250)], [chip]);
+    expect(bak.get("bak")).toBe("left");
+    expect(under.get("under")).toBe("right");
+  });
+
+  it("halfSize brukes fortsatt når aksene ikke er overstyrt (2D uendret)", () => {
+    const kvadrat = { x: 140, y: 50, halfSize: 20 };
+    const res = computeLabelPlacements([cand("x", 100, 50)], [kvadrat]);
+    expect(res.get("x")).toBe("left");
+  });
+});
+
+describe("wrapLabelLines", () => {
+  const maxChars = Math.floor(LABEL_MAX_W / LABEL_CHAR_W); // 22
+
+  it("kort navn blir én linje, uendret", () => {
+    expect(wrapLabelLines("Extra Grilstad")).toEqual(["Extra Grilstad"]);
+  });
+
+  it("bryter på ordgrense, ikke midt i ordet", () => {
+    const lines = wrapLabelLines("Pakkeautomat Ranheim Post i Butikk");
+    expect(lines.length).toBe(2);
+    for (const l of lines) expect(l.length).toBeLessThanOrEqual(maxChars);
+    // Ingen ord er kuttet i to (alle ord finnes helt igjen i en linje).
+    expect(lines[0]).toBe("Pakkeautomat Ranheim");
+  });
+
+  it("kutter med ellipsis når teksten ikke får plass på to linjer", () => {
+    const lines = wrapLabelLines(
+      "Grillstadfjæra barnehage avdeling Sjøparken vest",
+    );
+    expect(lines.length).toBe(2);
+    expect(lines[1].endsWith("…")).toBe(true);
+    for (const l of lines) expect(l.length).toBeLessThanOrEqual(maxChars);
+  });
+
+  it("ord som alene er lengre enn en linje deles hardt", () => {
+    const lines = wrapLabelLines("A".repeat(60));
+    expect(lines.length).toBe(2);
+    expect(lines[0].length).toBe(maxChars);
+    // Uten hard deling ville ett ord blitt én linje som stakk ut av boksen.
+    for (const l of lines) expect(l.length).toBeLessThanOrEqual(maxChars);
+  });
+
+  it("tomt/whitespace-navn gir ingen linjer (ingen tom label tegnes)", () => {
+    expect(wrapLabelLines("")).toEqual([]);
+    expect(wrapLabelLines("   ")).toEqual([]);
+  });
+
+  it("linjene er aldri bredere enn kollisjonsboksen estimerer", () => {
+    for (const name of [
+      "Vitusapotek Ranheim",
+      "H2 Grilstad Marina",
+      "Lavendel blomster & interiør",
+      "Strindfjordvegen bussholdeplass",
+    ]) {
+      const lines = wrapLabelLines(name);
+      const drawn = Math.max(...lines.map((l) => l.length)) * LABEL_CHAR_W;
+      const estimated = estimateLabelBox(cand("x", 0, 0, 0, name), "right");
+      expect(drawn).toBeLessThanOrEqual(estimated.right - estimated.left + 0.001);
+    }
   });
 });

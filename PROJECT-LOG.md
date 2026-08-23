@@ -6,6 +6,41 @@
 
 ---
 
+## 2026-08-23 — LABELS OG PIN-UTGLISNING I 3D-KARTET (branch `feat/3d-label-declutter`, 3 commits, ikke pushet)
+
+**Kontekst:** Andreas viste to skjermbilder side ved side — 3D-boardet på Strindfjordvegen 10 med sju pins stablet oppå hverandre og null navn, og 2D-kartet av samme sted der alt er lesbart — og ba om at 2D-logikken («både plasserer pins og label basert på logikk med zoom nivå») ble kjørt i 3D. Kjørt som `/ce-work` fra bar prompt, ingen plandokument.
+
+**Premisset som rammer hele leveransen:** 2D-logikken finnes allerede og er testet (`lib/board/label-collision`, Oppdal-runden 2026-08-12). Problemet er at INGEN av de tre inngangene den bygger på finnes på `gmp-map-3d`: det har ingen `map.project`, ingen `moveend` og ingen zoom. Alternativet til å skaffe dem var å gi 3D sine egne terskler — som ville drevet fra 2D ved første justering av den ene. Leveransen er derfor de tre manglende halvdelene, og deretter gjenbruk av nøyaktig samme rene funksjoner.
+
+- **Projeksjonen:** `projectLatLngToScreen` (delt med POI-mini-popupen). Den leser nå ekte `fov` fra elementet i stedet for hardkodet 35.
+- **Zoomen:** `lib/board/camera-zoom` oversetter `range` + `fov` + skjermhøyde til det Mapbox-zoomnivået som gir samme bakke-oppløsning (`2·range·tan(fov/2)/høyde` mot `156543·cos(lat)/2^z`). `computeZoomTier` og tersklene 13/16 bor fortsatt ÉTT sted. Målt: orbit-range 650 og default 900 er label-nivå, 3 km er ikon, 15 km er prikk.
+- **Ro-signalet:** trailing debounce (400 ms) på `gmp-camerapositionchange`, med `gmp-steadychange` som ankomst.
+
+**Det 3D trenger og 2D ikke gjør — pin-utglisning (`lib/board/pin-declutter`):** markørene er 40 px og skjerm-forankret, så en klynge blir en fargeklump lenge før teksten blir problemet. 2D slipper unna fordi markøren er 32 px OG fordi `computeSpreadCoordinates` alt har viftet ut de samlokaliserte punktene. Taperen i en klynge demoteres til prikk — fortsatt synlig, fortsatt klikkbar, forfremmes tilbake når det blir plass. Aktiv POI demoteres aldri. Terskel 34 px senter-til-senter (justerbar).
+
+**To parametre skiller motorene i den delte modulen, ikke to kopier av regelen:** `offsetX` (16+8 i 2D, 20+8 i 3D) og `halfWidth`/`halfHeight` på hindringer — prosjekt-chipen er ~300 × 105 px, og et kvadrat med samme halvbredde ville blokkert 150 px opp og ned. `wrapLabelLines` gir SVG-en de linjene CSS gir 2D (SVG `<text>` bryter ikke selv).
+
+**Labelen bor i markørens EGEN SVG, ikke i et HTML-overlay.** Samme avveining som alt er dokumentert for prosjekt-pinnens skala: et overlay klarer ikke synke med Googles GPU-render og gir posisjons-jitter. Rammen vokser SYMMETRISK når labelen kommer på (`2 × (halv disc + luft + tekst)`, høyden står stille) så disc-en blir liggende på punktet sitt uansett hvilken side teksten havner på. Hvit kontur bak teksten, tegnet som to `<text>`-noder framfor `paint-order` — faller den attributten bort i rasteriseringen, legger konturen seg OVER glyfene og teksten blir hvit i hvitt.
+
+**Regnes på kamera-ro, aldri per frame.** Label-teksten er en del av teksturen, så hver ny plassering er en re-rasterisering — per frame ville vært nøyaktig churnen som sprengte WebGL-kontekstene i juni. Under bevegelse FRYSES plasseringen; labelen sitter i sin egen pin og følger den, så det verste som skjer er at to navn overlapper et øyeblikk midt i et drag. Datasett-timeren (250 ms) er egen fra kamera-timeren nettopp fordi en kontinuerlig drone-orbit aldri faller til ro og ellers ville sultet et nytt markørsett for alltid.
+
+**To feil bare browser-verifisering kunne avdekke — begge på Strindfjordvegen 10, begge usynlige for testene:**
+
+1. **Prikk og pin var to komponenter som byttet på å være mountet.** Typebyttet (`Marker3DItem` ⇄ `CompactMarker3DItem`) unmountet selve `gmp-marker-3d-interactive`-elementet, og Google fortsatte å tegne den fjernede markørens tekstur i scenen. DOM-en sa 2 pins + 6 prikker; skjermen viste 8 fulle pins, uendret gjennom flere kamera-bevegelser. Nå er det ÉN komponent som bytter BARNET sitt — elementet består, Google rasteriserer det nye innholdet, ingenting blir stående igjen. `CompactMarker3DItem` er slettet, og altitude-flippen 16/18 med den (en posisjonsendring på et element som skal stå stille).
+2. **Google forankrer marker-innhold i BUNN-MIDTEN.** Det projiserte punktet ligger altså en halv markørhøyde under den tegnede skiva — verifisert ved å måle to identifiserbare pins mot projeksjonen (x traff innen 1,6 px, y bommet konsekvent med ~20). Uten korreksjonen slapp en bussholdeplass rett bak prosjekt-chipen unna blokkeringen med 1 px.
+
+**Sidefunn, fikset i samme runde: 3D-kartet leste RÅ POI-koordinater.** `useBoardMarkerSet` returnerte `p.raw`, mens spredningen av samlokaliserte steder skrives til `BoardPOI.coordinates`. Fem steder i Grilstad-senteret lå derfor på identisk punkt i 3D mens 2D viste dem som en vifte — og verre: POI-mini-popupen projiserer `BoardPOI.coordinates`, så popupen pekte et annet sted enn markøren den kom fra. `toDisplayPOI` i `board-data` er broa; reveal-blobbene går gjennom den også.
+
+**Paritet lukket til slutt:** aktiv POI viste navnet både i mini-popupen og som inline-label. 2D har `suppressLabel` for nøyaktig det; 3D har nå `suppressActiveLabel`, og plassen holdes reservert i kollisjonen så labelen ikke må kjempe om den på nytt når popupen lukkes.
+
+**Verifisert i Chrome mot `placy-demo/strindfjordvegen-10`:** labels med side-flipping (H2 Grilstad Marina venstre, resten høyre), kjøpesenter-klynga glisnet ut til 2 pins + 5 prikker, aktiv POI promotert fra prikk til pin uten dobbelt navn, prikk-tier på 15 km leser hele nabolaget som en ren konstellasjon, 0 konsollfeil, 2D uendret. **2 622 tester, tsc rent, lint 0 errors, build passerer.**
+
+**Kalibrerings-punkt til Andreas:** boardets hvileposisjon etter intro-flyturen er range 1600 ≈ zoom 15,93 — så vidt UNDER label-terskelen på 16, altså ingen navn før man zoomer litt inn. Det er ekte 2D-paritet (samme terskel, samme svar), men 3D-hvilen er den viktigste visningen produktet har. Én konstant å flytte hvis den skal gi labels med en gang.
+
+**Ikke berørt:** `RevealLayer3D`-kaskaden (velkommen/oppsummering) har fortsatt ingen utglisning — den er koreografi, ikke lesing. Pre-eksisterende, urelatert: `BoardPOI3DMiniPopup` blir stående et øyeblikk når man veksler 3D → 2D med en POI åpen, så to popup-kort vises samtidig. Samme familie som `isFront`-gaten tids-chipen fikk 08-14. Ingenting pushet, ingen PR.
+
+---
+
 ## 2026-08-23 — MINIMUM FEM FAQ PER TEMA: KATALOGEN BLE GAP-RAPPORTEN (branch `feat/faq-lokalkunnskap`, commit baf99eb)
 
 **Kontekst:** Andreas så FAQ-en fra 08-22 i kjørende board og landet retningen: dette er veien å gå — standardiserte spørsmål per tema, algoritmen forbedres over tid, og laget bygger samtidig rommet for chat-løsninger senere. Beslutningen som fulgte: **minst fem deklarerte spørsmål per tema**, håndhevet av test. Deklarert er ikke lovet — svar uten faktum utelates per adresse som før — og det er poenget: differansen deklarert-mot-vist er gap-rapporten som styrer kuratering (Moat 1) og nye datakilder per strøk.

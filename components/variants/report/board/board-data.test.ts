@@ -6,6 +6,7 @@ import {
   isPlayableAudio,
   pickPlayableAudio,
   shrinkToIntro,
+  toDisplayPOI,
 } from "./board-data";
 import { poiVisualIdentity } from "./marker-style";
 import type { BoardPOI } from "./board-data";
@@ -718,5 +719,58 @@ describe("shrinkToIntro", () => {
 
   it("tåler tom streng", () => {
     expect(shrinkToIntro("")).toBe("");
+  });
+});
+
+/**
+ * Broa mellom BoardPOI (visnings-koordinat, samlokaliserte steder viftet ut)
+ * og rå POI (kildepunkt). 3D-kartet tar imot POI[] og leste tidligere
+ * kildepunktet direkte — derfor stablet kjøpesenter-POI-er seg 100 % i 3D mens
+ * 2D viste dem som en vifte.
+ */
+describe("toDisplayPOI", () => {
+  const raw = {
+    id: "p1",
+    name: "Nille",
+    coordinates: { lat: 63.44, lng: 10.4 },
+  } as unknown as POI;
+
+  it("uforskjøvet POI returneres UENDRET (samme objekt-identitet)", () => {
+    const bp = { id: "p1", raw, coordinates: raw.coordinates } as BoardPOI;
+    expect(toDisplayPOI(bp)).toBe(raw);
+  });
+
+  it("identitet bevares også når koordinat-objektet er en kopi med samme verdier", () => {
+    const bp = {
+      id: "p1",
+      raw,
+      coordinates: { lat: 63.44, lng: 10.4 },
+    } as BoardPOI;
+    expect(toDisplayPOI(bp)).toBe(raw);
+  });
+
+  it("forskjøvet POI får visnings-koordinatet, resten av feltene i behold", () => {
+    const displaced = { lat: 63.4401, lng: 10.4002 };
+    const out = toDisplayPOI({ id: "p1", raw, coordinates: displaced } as BoardPOI);
+    expect(out).not.toBe(raw);
+    expect(out.coordinates).toEqual(displaced);
+    expect(out.id).toBe("p1");
+    expect(out.name).toBe("Nille");
+    // Kilden røres aldri — reisetider og ruter bruker det ekte punktet.
+    expect(raw.coordinates).toEqual({ lat: 63.44, lng: 10.4 });
+  });
+});
+
+describe("adaptBoardData — samlokaliserte steder når 3D-markørene", () => {
+  it("markør-koordinatene fra toDisplayPOI er spredt, raw er urørt", () => {
+    const shared = { lat: 63.44, lng: 10.4 };
+    const theme = makeTheme("skole", [
+      makePOI("a", { name: "Skole", coordinates: { ...shared } }),
+      makePOI("b", { name: "Bibliotek", coordinates: { ...shared } }),
+    ]);
+    const data = adaptBoardData(makeReportData([theme]));
+    const [a, b] = data.categories[0].pois.map(toDisplayPOI);
+    expect(a.coordinates).not.toEqual(b.coordinates);
+    expect(data.categories[0].pois[0].raw.coordinates).toEqual(shared);
   });
 });
