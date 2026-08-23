@@ -643,6 +643,17 @@ export const TRANSPORT_SPEC: CategorySpec = {
       lag: "board",
       felt: "Entur trip",
     },
+    // Toget er et adressespørsmål («herfra»), ikke et stoppestedsspørsmål —
+    // og malen eier det fordi `train` er en av kategoriene dens. Ranheim har
+    // et kuratert svar på samme id; det vinner der, dette dekker alle andre.
+    {
+      id: "tog",
+      spørsmål: "Går det tog herfra?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool train + precomputet gangtid",
+    },
   ],
   naarTom:
     "Ofte, og oftere enn for noen annen kategori. Har stoppet verken bytte-mulighet, en plassering verdt å nevne eller fasiliteter, er tom tekst det ærlige svaret: sanntidsraden i modalen viser avgangene, og FAQ-en på boardet svarer på linjer og reisetid. En setning om at det er et stoppested for buss er ren gjentakelse av navnet og kategorien.",
@@ -796,10 +807,233 @@ export function searchQuestions(spec: CategorySpec): SpecQuestion[] {
 export interface FaqQuestion {
   themeId: string;
   /** `category_id`-en malen ble slått opp på — temaets FØRSTE treff. */
-  categoryId: string;
-  spec: CategorySpec;
+  categoryId?: string;
+  /** Utelatt for tema-spørsmål: kategoriene deres har ikke fått egen mal ennå. */
+  spec?: CategorySpec;
   question: SpecQuestion;
 }
+
+/**
+ * Tema-spørsmålene: board-lag-spørsmål hvis kategorier ennå ikke har egen mal.
+ *
+ * TO HJEM, ÉN REGEL. Et board-spørsmål bor i kategorimalen når malen finnes
+ * (krets bor hos skole, tog hos transport). Kategoriene under står alle i
+ * `PLANLAGTE_KATEGORIER` — malene deres er ikke skrevet — men FAQ-en kan ikke
+ * vente på dem: svarene ligger allerede i data vi eier (POI-poolen med
+ * precomputet gangtid, og de cachede åpningstidene). Når en mal skrives,
+ * FLYTTES spørsmålene dens hit fra og inn i malen; id-en er kontrakten og
+ * består.
+ *
+ * Minimum-ambisjonen (2026-08-23) er MINST FEM deklarerte spørsmål per tema —
+ * en test håndhever det. Deklarert er ikke lovet: et spørsmål uten faktum på
+ * en adresse utelates der, som alltid. Katalogen er samtidig gap-rapporten:
+ * differansen mellom deklarert og vist er kuratorens og datakildenes
+ * arbeidsliste per strøk.
+ *
+ * `kilde: "søk"` markerer de kuratert-eneste spørsmålene: ingen deterministisk
+ * builder finnes (registrene kan ikke svare), så de vises kun der strøket har
+ * et kuratert svar på id-en. De står her likevel — katalogen skal vise hele
+ * bestillingen, ikke bare det maskinen klarer.
+ */
+export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
+  hverdagsliv: [
+    {
+      id: "apotek",
+      spørsmål: "Hvor er nærmeste apotek?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool pharmacy + precomputet gangtid",
+    },
+    // Tannlege, ikke lege: `doctor`-kategorien blander fastlege, hudlege,
+    // urolog og fysioterapi, og «legekontor i nærheten» basert på en
+    // urologklinikk er en feil påstand. `dentist` er entydig.
+    {
+      id: "tannlege",
+      spørsmål: "Finnes det tannlege i nærheten?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool dentist + precomputet gangtid",
+    },
+    {
+      id: "kjopesenter",
+      spørsmål: "Hvor er nærmeste kjøpesenter?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool shopping + precomputet gangtid",
+    },
+    // Terskelspørsmålet — det sammensatte svaret ingen enkeltkategori kan gi.
+    {
+      id: "uten-bil",
+      spørsmål: "Klarer jeg hverdagsærendene til fots?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "Ærendkategorier med gangtid ≤ 10 min",
+    },
+  ],
+  "barn-oppvekst": [
+    {
+      id: "lekeplass",
+      spørsmål: "Hvor er nærmeste lekeplass?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool lekeplass + precomputet gangtid",
+    },
+    // Ranheim har et kuratert svar på denne id-en (idrettsparken m.m.) — det
+    // vinner der; det deterministiske laget svarer med fritidsklubben ellers.
+    {
+      id: "oppvekst-fritid",
+      spørsmål: "Hva finnes for barna utenom skole og barnehage?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool fritidsklubb + precomputet gangtid",
+    },
+  ],
+  "mat-drikke": [
+    {
+      id: "kafe",
+      spørsmål: "Finnes det kafé i nabolaget?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool cafe + gangtid + cachede åpningstider",
+    },
+    {
+      id: "bakeri",
+      spørsmål: "Finnes det bakeri?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool bakery + precomputet gangtid",
+    },
+    {
+      id: "uteliv",
+      spørsmål: "Er det en pub eller bar i nærheten?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool bar + precomputet gangtid",
+    },
+    {
+      id: "sondagsapent",
+      spørsmål: "Er noe åpent på søndag?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "Cachede åpningstider, søndagslinja",
+    },
+  ],
+  "natur-friluftsliv": [
+    {
+      id: "gronntomrade",
+      spørsmål: "Hvor er nærmeste park eller grøntområde?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool park/outdoor + precomputet gangtid",
+    },
+    {
+      id: "bading",
+      spørsmål: "Kan jeg bade i nærheten?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool badeplass + precomputet gangtid",
+    },
+    // Kuratert-eneste inntil videre: `outdoor`-kategorien er for bred til en
+    // tursti-påstand (nærmeste outdoor-POI på Ranheim er Sjøparken — en park),
+    // og et galt «her går turstien» er verre enn ingen rad. Neste kilde er
+    // Overpass-geometrien (`reportConfig.trails`), som har navngitte ruter.
+    {
+      id: "turstier",
+      spørsmål: "Hvor går turstiene?",
+      kilde: "søk",
+      kjerne: false,
+      lag: "board",
+    },
+    {
+      id: "batliv",
+      spørsmål: "Er det båtplass eller marina i nærheten?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool marina + precomputet gangtid",
+    },
+    // Kuratert-eneste: «marka» er et strøksbegrep registrene ikke kjenner.
+    {
+      id: "marka",
+      spørsmål: "Kommer jeg meg i marka?",
+      kilde: "søk",
+      kjerne: false,
+      lag: "board",
+    },
+  ],
+  transport: [
+    {
+      id: "lading",
+      spørsmål: "Hvor lader jeg elbilen?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool charging_station + precomputet gangtid",
+    },
+    {
+      id: "bysykkel",
+      spørsmål: "Finnes det bysykkel her?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool bike + precomputet gangtid",
+    },
+  ],
+  "trening-aktivitet": [
+    {
+      id: "treningssenter",
+      spørsmål: "Hvor er nærmeste treningssenter?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool gym + precomputet gangtid",
+    },
+    {
+      id: "trene-tidlig-sent",
+      spørsmål: "Kan jeg trene før jobb eller sent på kvelden?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "Cachede åpningstider, hverdagskonsensus",
+    },
+    {
+      id: "svommehall",
+      spørsmål: "Finnes det svømmehall i nærheten?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool swimming + precomputet gangtid",
+    },
+    {
+      id: "treningspark",
+      spørsmål: "Er det utendørs treningspark?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool fitness_park + precomputet gangtid",
+    },
+    // Kuratert-eneste: idrettsmiljøet er strøkets historie, ikke et registerfelt.
+    {
+      id: "idrettslag",
+      spørsmål: "Hva er idrettsmiljøet her?",
+      kilde: "søk",
+      kjerne: false,
+      lag: "board",
+    },
+  ],
+};
 
 /**
  * Board-lag-spørsmålene et TEMA skal svare på i drill-in-FAQ-en.
@@ -814,8 +1048,10 @@ export interface FaqQuestion {
  * transport-temaet har både `bus`, `train` og `tram`, og uten dedupen ville
  * «Hvor er nærmeste holdeplass?» stått tre ganger.
  *
- * Tema uten mal-dekning gir tom liste, ikke feil. Det er den normale
- * tilstanden for natur og trening i dag, og FAQ-seksjonen utelates da helt.
+ * Etter mal-spørsmålene kommer temaets egne (`THEME_BOARD_QUESTIONS`) —
+ * spørsmål hvis kategorier ikke har fått mal ennå. Mal-spørsmålene står
+ * først fordi de er de eldste og mest etterspurte (krets, holdeplass), og
+ * en id deklarert begge steder løses til malens: malen er kontrakten.
  */
 export function faqQuestionsForTheme(
   themeId: string,
@@ -832,6 +1068,12 @@ export function faqQuestionsForTheme(
     for (const question of boardQuestions(spec)) {
       out.push({ themeId: canonicalThemeId, categoryId, spec, question });
     }
+  }
+
+  const seenIds = new Set(out.map((q) => q.question.id));
+  for (const question of THEME_BOARD_QUESTIONS[canonicalThemeId] ?? []) {
+    if (seenIds.has(question.id)) continue;
+    out.push({ themeId: canonicalThemeId, question });
   }
 
   return out;

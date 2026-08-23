@@ -537,6 +537,283 @@ describe("kuratert lag", () => {
   });
 });
 
+// ── Tema-spørsmålene (minimum fem per tema, 2026-08-23) ─────────────────────
+
+/** Man–fre + helg, Googles engelske format med U+202F/U+2009 — som i cachen. */
+function tider(hverdag: string, lordag = "Saturday: Closed", sondag = "Sunday: Closed") {
+  return {
+    weekday_text: [
+      `Monday: ${hverdag}`,
+      `Tuesday: ${hverdag}`,
+      `Wednesday: ${hverdag}`,
+      `Thursday: ${hverdag}`,
+      `Friday: ${hverdag}`,
+      lordag,
+      sondag,
+    ],
+  };
+}
+
+describe("tema-spørsmålene", () => {
+  it("uten-bil navngir ærend-typene som er dekket, aldri de som mangler", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "hverdagsliv",
+        categoryIds: ["supermarket", "pharmacy", "post", "haircare", "shopping"],
+        pois: [
+          poi({ id: "s1", name: "Extra Grilstad", categoryId: "supermarket", travelTime: { walk: 3 } }),
+          poi({ id: "a1", name: "Vitusapotek", categoryId: "pharmacy", travelTime: { walk: 3 } }),
+          poi({ id: "p1", name: "Post i Butikk", categoryId: "post", travelTime: { walk: 3 } }),
+          poi({ id: "f1", name: "Ranheim Frisør", categoryId: "haircare", travelTime: { walk: 8 } }),
+          poi({ id: "k1", name: "Grilstad mall", categoryId: "shopping", travelTime: { walk: 3 } }),
+        ],
+      }),
+    );
+    const svar = answerFor(entries, "uten-bil");
+    expect(svar).toBe(
+      "Hverdagsærendene er i gangavstand: dagligvare, apotek, post, frisør og kjøpesenter ligger alle innenfor 10 minutter til fots.",
+    );
+  });
+
+  it("uten-bil med bare to dekket sier «deler av», og påstår ingenting om resten", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "hverdagsliv",
+        categoryIds: ["supermarket", "pharmacy"],
+        pois: [
+          poi({ id: "s1", name: "Extra", categoryId: "supermarket", travelTime: { walk: 3 } }),
+          poi({ id: "a1", name: "Apotek 1", categoryId: "pharmacy", travelTime: { walk: 9 } }),
+          // Frisøren finnes, men utenfor radiusen — skal ikke telle.
+          poi({ id: "f1", name: "Klipp", categoryId: "haircare", travelTime: { walk: 25 } }),
+        ],
+      }),
+    );
+    const svar = answerFor(entries, "uten-bil");
+    expect(svar).toContain("Deler av hverdagen");
+    expect(svar).toContain("dagligvare og apotek");
+    expect(svar).not.toMatch(/krever|mangler|ikke/);
+  });
+
+  it("uten-bil utelates når bare én ærend-type er dekket", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "hverdagsliv",
+        categoryIds: ["supermarket"],
+        pois: [poi({ id: "s1", name: "Extra", categoryId: "supermarket", travelTime: { walk: 3 } })],
+      }),
+    );
+    expect(entries.find((e) => e.id === "uten-bil")).toBeUndefined();
+  });
+
+  it("lekeplass leder med nærmeste og teller resten innenfor radiusen", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "barn-oppvekst",
+        categoryIds: ["lekeplass"],
+        pois: [
+          poi({ id: "l1", name: "Grillstadfjæra lek", categoryId: "lekeplass", travelTime: { walk: 3 } }),
+          poi({ id: "l2", name: "Turområdet lek", categoryId: "lekeplass", travelTime: { walk: 4 } }),
+          poi({ id: "l3", name: "Bukken bruses veg lek", categoryId: "lekeplass", travelTime: { walk: 9 } }),
+          poi({ id: "l4", name: "Hulderveien lek", categoryId: "lekeplass", travelTime: { walk: 15 } }),
+        ],
+      }),
+    );
+    const svar = answerFor(entries, "lekeplass");
+    expect(svar).toContain("[Grillstadfjæra lek](poi:l1) er nærmeste lekeplass, 3 minutter unna");
+    expect(svar).toContain("2 til ligger innenfor 10 minutters gange");
+  });
+
+  it("kafé bærer åpningstidene når hverdagene er entydige", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "mat-drikke",
+        categoryIds: ["cafe"],
+        pois: [
+          poi({
+            id: "c1",
+            name: "Flipper Kafe",
+            categoryId: "cafe",
+            travelTime: { walk: 5 },
+            openingHoursJson: tider("11:00 AM – 11:00 PM"),
+          }),
+        ],
+      }),
+    );
+    expect(answerFor(entries, "kafe")).toBe(
+      "[Flipper Kafe](poi:c1) ligger 5 minutter til fots, med åpent 11–23 på hverdager.",
+    );
+  });
+
+  it("søndagsåpent lister bare stedene tidene VET er åpne", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "mat-drikke",
+        categoryIds: ["restaurant", "cafe"],
+        pois: [
+          poi({
+            id: "c1",
+            name: "Flipper Kafe",
+            categoryId: "cafe",
+            travelTime: { walk: 5 },
+            openingHoursJson: tider("11:00 AM – 11:00 PM", "Saturday: Closed", "Sunday: 11:00 AM – 5:00 PM"),
+          }),
+          // Har tider, men søndagsstengt — skal ikke listes.
+          poi({
+            id: "r1",
+            name: "Pizzabakeren",
+            categoryId: "restaurant",
+            travelTime: { walk: 3 },
+            openingHoursJson: tider("2:00 PM – 10:00 PM"),
+          }),
+          // Uten cachede tider — påstås ingenting om.
+          poi({ id: "r2", name: "Pizzapizza", categoryId: "restaurant", travelTime: { walk: 16 } }),
+        ],
+      }),
+    );
+    const svar = answerFor(entries, "sondagsapent");
+    expect(svar).toBe("På søndager holder [Flipper Kafe](poi:c1) (11–17) åpent.");
+  });
+
+  it("søndagsåpent utelates når ingen cachede tider viser søndag åpent", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "mat-drikke",
+        categoryIds: ["restaurant"],
+        pois: [poi({ id: "r1", name: "Pizzabakeren", categoryId: "restaurant", travelTime: { walk: 3 } })],
+      }),
+    );
+    expect(entries.find((e) => e.id === "sondagsapent")).toBeUndefined();
+  });
+
+  it("trene tidlig/sent svarer med ytterpunktene fra flere sentre", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "trening-aktivitet",
+        categoryIds: ["gym"],
+        pois: [
+          poi({
+            id: "g1",
+            name: "Impulse Treningssenter",
+            categoryId: "gym",
+            travelTime: { walk: 2 },
+            openingHoursJson: tider("5:00 AM – 11:00 PM"),
+          }),
+          poi({
+            id: "g2",
+            name: "3T-Ranheim",
+            categoryId: "gym",
+            travelTime: { walk: 19 },
+            openingHoursJson: tider("5:00 AM – 12:00 AM"),
+          }),
+        ],
+      }),
+    );
+    const svar = answerFor(entries, "trene-tidlig-sent");
+    expect(svar).toBe(
+      "Både tidlig og sent: [Impulse Treningssenter](poi:g1) åpner 05 på hverdager, og [3T-Ranheim](poi:g2) stenger først ved midnatt.",
+    );
+  });
+
+  it("trene tidlig/sent med ett senter som dekker begge, i ett", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "trening-aktivitet",
+        categoryIds: ["gym"],
+        pois: [
+          poi({
+            id: "g1",
+            name: "Impulse Grilstad",
+            categoryId: "gym",
+            travelTime: { walk: 3 },
+            openingHoursJson: tider("5:00 AM – 12:00 AM"),
+          }),
+        ],
+      }),
+    );
+    expect(answerFor(entries, "trene-tidlig-sent")).toBe(
+      "Både tidlig og sent: [Impulse Grilstad](poi:g1) holder åpent 05–24 på hverdager.",
+    );
+  });
+
+  it("lading scoper påstanden til kartet når nærmeste er utenfor gangavstand", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "transport",
+        categoryIds: ["charging_station"],
+        pois: [
+          poi({ id: "ch1", name: "Recharge Charging Station", categoryId: "charging_station", travelTime: { walk: 27 } }),
+        ],
+      }),
+    );
+    const svar = answerFor(entries, "lading");
+    expect(svar).toContain("på kartet");
+    expect(svar).toContain("27 minutter");
+    // Aldri en negativ påstand poolen ikke kan bære.
+    expect(svar).not.toMatch(/ingen|finnes ikke/i);
+  });
+
+  it("tog svarer med stasjonene, nærmeste først", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "transport",
+        categoryIds: ["train"],
+        pois: [
+          poi({ id: "t1", name: "Ranheim stasjon", categoryId: "train", travelTime: { walk: 24 } }),
+          poi({ id: "t2", name: "Rotvoll stasjon", categoryId: "train", travelTime: { walk: 20 } }),
+        ],
+      }),
+    );
+    expect(answerFor(entries, "tog")).toBe(
+      "[Rotvoll stasjon](poi:t2) ligger 20 minutter til fots, og [Ranheim stasjon](poi:t1) 24 minutter.",
+    );
+  });
+
+  it("ett minutt skrives ut — aldri «1 minutter»", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "natur-friluftsliv",
+        categoryIds: ["park"],
+        pois: [poi({ id: "p1", name: "Sjøparken", categoryId: "park", travelTime: { walk: 1 } })],
+      }),
+    );
+    expect(answerFor(entries, "gronntomrade")).toBe(
+      "[Sjøparken](poi:p1) er nærmeste grøntområde, ett minutt til fots.",
+    );
+  });
+
+  it("kuratert-eneste spørsmål (turstier, marka, idrettslag) vises ALDRI uten kuratert svar", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "natur-friluftsliv",
+        categoryIds: ["park", "outdoor", "badeplass"],
+        pois: [
+          poi({ id: "o1", name: "Ladestien", categoryId: "outdoor", travelTime: { walk: 15 } }),
+        ],
+      }),
+    );
+    expect(entries.find((e) => e.id === "turstier")).toBeUndefined();
+    expect(entries.find((e) => e.id === "marka")).toBeUndefined();
+  });
+
+  it("kuratert svar på en tema-spørsmåls-id slotter inn på katalogens plass", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "natur-friluftsliv",
+        categoryIds: ["park", "outdoor"],
+        pois: [poi({ id: "p1", name: "Sjøparken", categoryId: "park", travelTime: { walk: 1 } })],
+        curated: [{ id: "turstier", svar: "Turstien langs fjæra binder sammen hele strandlinjen." }],
+      }),
+    );
+    const ids = entries.map((e) => e.id);
+    // Katalogrekkefølgen: gronntomrade før turstier — kuratert bytter ikke plass.
+    expect(ids.indexOf("gronntomrade")).toBeLessThan(ids.indexOf("turstier"));
+    const tursti = entries.find((e) => e.id === "turstier")!;
+    expect(tursti.source).toBe("curated");
+    // Katalogens spørsmålstekst brukes når kurator ikke har egen.
+    expect(tursti.question).toBe("Hvor går turstiene?");
+  });
+});
+
 // ── Setningsmal-vernet ──────────────────────────────────────────────────────
 
 describe("svarformene", () => {
@@ -580,6 +857,57 @@ describe("svarformene", () => {
       answerFor(
         generateCategoryFaq(input({ themeId: "transport", categoryIds: ["bus"] })),
         "naermeste-holdeplass",
+      ),
+      answerFor(
+        generateCategoryFaq(
+          input({
+            themeId: "hverdagsliv",
+            categoryIds: ["supermarket", "pharmacy", "post", "haircare"],
+            pois: [
+              poi({ id: "s1", name: "Extra", categoryId: "supermarket", travelTime: { walk: 3 } }),
+              poi({ id: "a1", name: "Vitusapotek", categoryId: "pharmacy", travelTime: { walk: 3 } }),
+              poi({ id: "p1", name: "Posten", categoryId: "post", travelTime: { walk: 3 } }),
+              poi({ id: "f1", name: "Frisøren", categoryId: "haircare", travelTime: { walk: 8 } }),
+            ],
+          }),
+        ),
+        "uten-bil",
+      ),
+      answerFor(
+        generateCategoryFaq(
+          input({
+            themeId: "mat-drikke",
+            categoryIds: ["cafe"],
+            pois: [
+              poi({
+                id: "c1",
+                name: "Kafeen",
+                categoryId: "cafe",
+                travelTime: { walk: 5 },
+                openingHoursJson: tider("11:00 AM – 11:00 PM", "Saturday: Closed", "Sunday: 11:00 AM – 5:00 PM"),
+              }),
+            ],
+          }),
+        ),
+        "sondagsapent",
+      ),
+      answerFor(
+        generateCategoryFaq(
+          input({
+            themeId: "trening-aktivitet",
+            categoryIds: ["gym"],
+            pois: [
+              poi({
+                id: "g1",
+                name: "Impulse",
+                categoryId: "gym",
+                travelTime: { walk: 3 },
+                openingHoursJson: tider("5:00 AM – 12:00 AM"),
+              }),
+            ],
+          }),
+        ),
+        "trene-tidlig-sent",
       ),
     ];
 

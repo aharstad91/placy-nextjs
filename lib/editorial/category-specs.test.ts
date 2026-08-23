@@ -12,6 +12,7 @@ import {
   SKOLE_SPEC,
   specForCategory,
   textQuestions,
+  THEME_BOARD_QUESTIONS,
   TRANSPORT_SPEC,
 } from "./category-specs";
 
@@ -164,12 +165,30 @@ describe("board-laget", () => {
     }
   });
 
-  it("board-spørsmåls-id-er er unike PÅ TVERS av alle maler", () => {
+  it("board-spørsmåls-id-er er unike PÅ TVERS av alle maler OG tema-registeret", () => {
     // FAQ-en slår sammen flere maler i ett tema (skole + barnehage under Barn
     // & Oppvekst) og kuraterte overstyringer nøkles på bare id-en. Kolliderer
     // to maler, overstyrer kurator feil svar — stille.
-    const ids = alleBoard.map(({ q }) => q.id);
+    const ids = [
+      ...alleBoard.map(({ q }) => q.id),
+      ...Object.values(THEME_BOARD_QUESTIONS).flatMap((qs) => qs.map((q) => q.id)),
+    ];
     expect(new Set(ids).size, `duplikat: ${ids.join(", ")}`).toBe(ids.length);
+  });
+
+  it("tema-spørsmålene følger de samme reglene som malenes", () => {
+    for (const [themeId, questions] of Object.entries(THEME_BOARD_QUESTIONS)) {
+      for (const q of questions) {
+        expect(q.lag, `${themeId}/${q.id}`).toBe("board");
+        expect(q.spørsmål.endsWith("?"), `${themeId}/${q.id} er ikke et spørsmål`).toBe(true);
+        expect(q.spørsmål.length, `${themeId}/${q.id} er for lang som overskrift`).toBeLessThan(90);
+        // Deterministiske spørsmål må oppgi kilden; kuratert-eneste (kilde
+        // «søk») har ingen — de vises kun der strøket har et kuratert svar.
+        if (q.kilde === "eget") {
+          expect(q.felt, `${themeId}/${q.id} mangler felt`).toBeTruthy();
+        }
+      }
+    }
   });
 
   it("board-spørsmål er formulert som et spørsmål og kort nok til en overskrift", () => {
@@ -211,43 +230,85 @@ describe("faqQuestionsForTheme", () => {
   const TRANSPORT = ["bus", "train", "tram", "bike", "parking", "carshare", "taxi"];
   const OPPLEVELSER = ["museum", "cinema", "library", "theatre"];
 
-  it("gir transport-malens board-spørsmål i mal-rekkefølge", () => {
+  it("gir malens board-spørsmål først, temaets egne etterpå", () => {
     expect(faqQuestionsForTheme("transport", TRANSPORT).map((f) => f.question.id)).toEqual([
       "naermeste-holdeplass",
       "linjer",
       "til-sentrum",
+      "tog",
+      "lading",
+      "bysykkel",
     ]);
   });
 
   it("fletter flere maler i ett tema uten duplikater", () => {
     const ids = faqQuestionsForTheme("barn-oppvekst", BARN).map((f) => f.question.id);
-    expect(ids).toEqual(["krets", "vgs-naerhet", "barnehage-dekning"]);
+    expect(ids).toEqual([
+      "krets",
+      "vgs-naerhet",
+      "barnehage-dekning",
+      "lekeplass",
+      "oppvekst-fritid",
+    ]);
   });
 
   it("lar hver mal bidra ÉN gang selv om temaet lister flere av kategoriene", () => {
     // bus, train og tram deler TRANSPORT_SPEC. Uten dedup ville «Hvor er
-    // nærmeste holdeplass?» stått tre ganger i FAQ-en.
+    // nærmeste holdeplass?» stått tre ganger i FAQ-en. Tema-spørsmålene har
+    // ingen mal og dermed ingen categoryId.
     const treff = faqQuestionsForTheme("transport", TRANSPORT);
-    expect(treff.every((f) => f.categoryId === "bus")).toBe(true);
+    expect(treff.filter((f) => f.spec).every((f) => f.categoryId === "bus")).toBe(true);
+    expect(treff.filter((f) => !f.spec).every((f) => f.categoryId === undefined)).toBe(true);
   });
 
-  it("tema uten mal-dekning gir tom liste, ikke feil", () => {
+  it("tema utenfor katalogen gir tom liste, ikke feil", () => {
     expect(faqQuestionsForTheme("opplevelser", OPPLEVELSER)).toEqual([]);
-    expect(faqQuestionsForTheme("natur-friluftsliv", ["park", "outdoor"])).toEqual([]);
+  });
+
+  it("tema uten mal-dekning får likevel sine tema-spørsmål", () => {
+    // Natur har ingen kategorimal, men FAQ-en kan ikke vente på at malene
+    // skrives — svarene ligger allerede i POI-poolen.
+    const ids = faqQuestionsForTheme("natur-friluftsliv", ["park", "outdoor"]).map(
+      (f) => f.question.id,
+    );
+    expect(ids).toEqual(["gronntomrade", "bading", "turstier", "batliv", "marka"]);
   });
 
   it("normaliserer alias-tema-id til den kanoniske", () => {
     // Gammel config kan bære «barnefamilier». Kuraterte overstyringer nøkles
-    // på kanonisk id, så begge skrivemåtene må lande samme sted.
+    // på kanonisk id, så begge skrivemåtene må lande samme sted — også for
+    // tema-spørsmålene, som slås opp på den kanoniske id-en.
     const alias = faqQuestionsForTheme("barnefamilier", BARN);
-    expect(alias.map((f) => f.themeId)).toEqual(["barn-oppvekst", "barn-oppvekst", "barn-oppvekst"]);
+    expect(alias.every((f) => f.themeId === "barn-oppvekst")).toBe(true);
     expect(alias.map((f) => f.question.id)).toEqual(
       faqQuestionsForTheme("barn-oppvekst", BARN).map((f) => f.question.id),
     );
   });
 
-  it("tom kategoriliste gir tom liste", () => {
-    expect(faqQuestionsForTheme("transport", [])).toEqual([]);
+  it("tom kategoriliste gir bare tema-spørsmålene — mal-spørsmålene følger kategoriene", () => {
+    expect(faqQuestionsForTheme("transport", []).map((f) => f.question.id)).toEqual([
+      "lading",
+      "bysykkel",
+    ]);
+  });
+
+  it("minst fem deklarerte spørsmål per rapport-tema", () => {
+    // Ambisjonen fra 2026-08-23: katalogen skal bære minst fem spørsmål per
+    // tema. Deklarert er ikke lovet — svar uten faktum utelates per adresse —
+    // men katalogen er bestillingen, og differansen mot det viste er
+    // gap-rapporten per strøk. Kategorilistene er REPORT_THEME_DEFAULTS.
+    const THEME_CATEGORIES: Record<string, string[]> = {
+      hverdagsliv: ["shopping", "supermarket", "pharmacy", "convenience", "doctor", "dentist", "haircare", "bank", "post", "kirke", "butikk"],
+      "barn-oppvekst": ["skole", "barnehage", "lekeplass", "idrett", "fritidsklubb"],
+      "mat-drikke": ["restaurant", "cafe", "bar", "bakery"],
+      "natur-friluftsliv": ["park", "outdoor", "badeplass", "marina", "campground", "hundepark"],
+      transport: ["bus", "train", "tram", "bike", "parking", "carshare", "taxi", "charging_station", "fuel"],
+      "trening-aktivitet": ["gym", "swimming", "spa", "fitness_park"],
+    };
+    for (const [themeId, cats] of Object.entries(THEME_CATEGORIES)) {
+      const n = faqQuestionsForTheme(themeId, cats).length;
+      expect(n, `${themeId} har bare ${n} deklarerte spørsmål`).toBeGreaterThanOrEqual(5);
+    }
   });
 
   it("bærer malen med, så et svar kan spores tilbake til hvor spørsmålet står", () => {
