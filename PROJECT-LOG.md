@@ -6,7 +6,7 @@
 
 ---
 
-## 2026-08-23 — LABELS OG PIN-UTGLISNING I 3D-KARTET (branch `feat/3d-label-declutter`, 1 commit, ikke pushet)
+## 2026-08-23 — LABELS OG PIN-UTGLISNING I 3D-KARTET (branch `feat/3d-label-declutter`, 3 commits, ikke pushet)
 
 **Kontekst:** Andreas viste to skjermbilder side ved side — 3D-boardet på Strindfjordvegen 10 med sju pins stablet oppå hverandre og null navn, og 2D-kartet av samme sted der alt er lesbart — og ba om at 2D-logikken («både plasserer pins og label basert på logikk med zoom nivå») ble kjørt i 3D. Kjørt som `/ce-work` fra bar prompt, ingen plandokument.
 
