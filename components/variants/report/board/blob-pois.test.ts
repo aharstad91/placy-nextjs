@@ -12,7 +12,11 @@ function poi(id: string, lat: number, lng: number): POI {
   } as unknown as POI;
 }
 function cat(pois: POI[]): BoardCategory {
-  return { pois: pois.map((raw) => ({ raw })) } as unknown as BoardCategory;
+  // `coordinates` er VISNINGS-punktet (spredning av samlokaliserte steder);
+  // selektorene leser det via toDisplayPOI, så fabrikken må bære det.
+  return {
+    pois: pois.map((raw) => ({ raw, coordinates: raw.coordinates })),
+  } as unknown as BoardCategory;
 }
 
 // Flylinje langs ekvator-ish: start (0,0) → slutt (0, 0.02) ≈ ren øst-vest.

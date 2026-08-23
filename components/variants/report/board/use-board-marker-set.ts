@@ -8,6 +8,7 @@ import {
   ORBIT_RANGE,
 } from "./board-3d-camera-director";
 import { selectBlobPOIs, selectFlyoverBlobs } from "./blob-pois";
+import { toDisplayPOI } from "./board-data";
 import type { BoardCategory, BoardData } from "./board-data";
 import type { BoardPhase } from "./board-state";
 import type { EstablishingPathConfig } from "./board-establishing-flythrough";
@@ -71,8 +72,8 @@ export function selectOverviewPOIs(
   hasVoiceOver: boolean,
 ): POI[] {
   return hasVoiceOver
-    ? categories.flatMap((c) => c.topRankedPois.slice(0, 3).map((p) => p.raw))
-    : categories.flatMap((c) => c.pois.map((p) => p.raw));
+    ? categories.flatMap((c) => c.topRankedPois.slice(0, 3).map(toDisplayPOI))
+    : categories.flatMap((c) => c.pois.map(toDisplayPOI));
 }
 
 /**
@@ -87,7 +88,7 @@ export function selectAllPOIs(categories: BoardCategory[]): POI[] {
     for (const p of c.pois) {
       if (seen.has(p.raw.id)) continue;
       seen.add(p.raw.id);
-      result.push(p.raw);
+      result.push(toDisplayPOI(p));
     }
   }
   return result;
@@ -100,7 +101,7 @@ export function selectAllPOIs(categories: BoardCategory[]): POI[] {
  */
 export function selectLegendPOIs(categories: BoardCategory[]): POI[] {
   return categories.flatMap((c) =>
-    c.pois.slice(0, LEGEND_PER_CATEGORY).map((p) => p.raw),
+    c.pois.slice(0, LEGEND_PER_CATEGORY).map(toDisplayPOI),
   );
 }
 
@@ -150,7 +151,7 @@ export function selectMarkerPOIs(input: MarkerSelectionInput): POI[] {
     const result: POI[] = [];
     for (const p of activeCategory.pois) {
       if (useFilter && hiddenIds.has(p.raw.category.id)) continue;
-      result.push(p.raw);
+      result.push(toDisplayPOI(p));
     }
     return result;
   }

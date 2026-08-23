@@ -446,6 +446,35 @@ function adaptCategory(theme: ReportTheme, center: Coordinates): BoardCategory {
   };
 }
 
+/**
+ * `BoardPOI` → `POI` med VISNINGS-koordinatet.
+ *
+ * `adaptBoardData` vifter samlokaliserte steder ut fra hverandre
+ * (`computeSpreadCoordinates`) og skriver resultatet til `BoardPOI.coordinates`,
+ * mens `raw.coordinates` beholder kildepunktet for reisetider, ruter og dossier.
+ * 2D-kartet tegner `BoardPOI.coordinates` og får spredningen gratis.
+ *
+ * 3D-kartet tar imot rå `POI[]`, og leste derfor kildepunktet: fem steder i
+ * samme kjøpesenter havnet på nøyaktig samme koordinat og stablet seg 100 %,
+ * mens 2D viste dem som en vifte. Verre: POI-mini-popupen projiserer
+ * `BoardPOI.coordinates`, så popupen pekte et annet sted enn markøren den kom
+ * fra. Denne adapteren er broa — 3D-selektorene sender POI-ene gjennom den, og
+ * begge motorene tegner samme punkt.
+ *
+ * Returnerer `raw` UENDRET når punktet ikke er forskjøvet, så markør-memoiseringen
+ * ikke ser en ny objekt-identitet for hver POI som ikke er berørt.
+ */
+export function toDisplayPOI(poi: BoardPOI): POI {
+  const raw = poi.raw;
+  if (
+    raw.coordinates.lat === poi.coordinates.lat &&
+    raw.coordinates.lng === poi.coordinates.lng
+  ) {
+    return raw;
+  }
+  return { ...raw, coordinates: poi.coordinates };
+}
+
 function adaptPOI(poi: POI, categoryId: BoardCategoryId): BoardPOI {
   const hook = poi.editorialHook?.trim();
   const insight = poi.localInsight?.trim();

@@ -174,9 +174,12 @@ describe("BoardPOI3DMiniPopup — source-invarianter (AC3/AC4)", () => {
   // Var «ÉN konsument» fram til 2026-08-14. Tids-chipen i 3D
   // (BoardTravelChip3D) er den andre, og den er tilsiktet: den erstattet et
   // SVG-merke inne i en Marker3DInteractiveElement, som ikke kunne bære et
-  // utvidbart panel. Vakten står fortsatt — den skal fange en TREDJE konsument,
-  // for hver ekstra rAF-løkke mot Google 3D koster frames.
-  it("AC3: kun de to tilsiktede konsumentene av projectLatLngToScreen (scan)", () => {
+  // utvidbart panel. Markør-utglisningen (use-3d-marker-declutter, 2026-08-23)
+  // er den tredje, og den er unntaket vakten IKKE er skrevet mot: den kjører
+  // ingen rAF-løkke, men projiserer én gang når kameraet faller til ro.
+  // Vakten står fortsatt — den skal fange en FJERDE konsument, for hver ekstra
+  // per-frame-projeksjon mot Google 3D koster frames.
+  it("AC3: kun de tre tilsiktede konsumentene av projectLatLngToScreen (scan)", () => {
     const roots = ["components", "lib", "app"];
     const importers: string[] = [];
     const walk = (dir: string) => {
@@ -198,7 +201,11 @@ describe("BoardPOI3DMiniPopup — source-invarianter (AC3/AC4)", () => {
     };
     for (const r of roots) walk(join(process.cwd(), r));
     const names = importers.map((f) => f.split("/").pop()).sort();
-    expect(names).toEqual(["BoardPOI3DMiniPopup.tsx", "BoardTravelChip3D.tsx"]);
+    expect(names).toEqual([
+      "BoardPOI3DMiniPopup.tsx",
+      "BoardTravelChip3D.tsx",
+      "use-3d-marker-declutter.ts",
+    ]);
   });
 });
 

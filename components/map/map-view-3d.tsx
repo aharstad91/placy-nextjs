@@ -11,10 +11,12 @@ import {
   GestureHandling,
 } from "@vis.gl/react-google-maps";
 import type { POI } from "@/lib/types";
+import type { LabelSide } from "@/lib/board/label-collision";
 import { Marker3DPin } from "./Marker3DPin";
 import { BlobMarker3D } from "./BlobMarker3D";
 import { RevealLayer3D, type RevealItem } from "./RevealLayer3D";
 import { ProjectSitePin } from "./ProjectSitePin";
+import { scaleForRange, PIN_MAX_SCALE } from "./project-pin-scale";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { hexLightTint } from "@/lib/utils/marker-color";
 import { useWebGLCheck } from "./use-webgl-check";
@@ -107,6 +109,23 @@ export interface MapView3DProps {
    * andre kontekster (overview, modal-versjoner).
    */
   freeMode?: boolean;
+  /**
+   * Label-plassering per POI-id, avgjort av kollisjonskullingen hos konsumenten
+   * (`use-3d-marker-declutter`). Er en id fraværende, tegnes pinnen uten navn —
+   * enten fordi kamera-avstanden er over label-tieren, eller fordi begge sider
+   * av markøren var opptatt. Pinnen står uansett; kun teksten forsvinner.
+   *
+   * Ikke en `Map`: oppslaget skjer i render-løkken og videresendes som
+   * PRIMITIVER til den memoiserte `Marker3DItem`, ellers ville et ferskt objekt
+   * per render defeatet memo for hver eneste markør.
+   */
+  markerLabels?: Record<string, { text: string; side: LabelSide }>;
+  /**
+   * POI-ider som skal tegnes som kompakt prikk i stedet for full ikon-pin, fordi
+   * en viktigere pin allerede eier plassen på skjermen. Klikkflaten beholdes —
+   * dette er utglisning, ikke skjuling. Se `lib/board/pin-declutter`.
+   */
+  demotedMarkerIds?: ReadonlySet<string>;
 }
 
 /**
@@ -154,12 +173,23 @@ const Marker3DItem = memo(function Marker3DItem({
   poi,
   opacity,
   onPOIClick,
+  label,
+  labelSide,
+  compact,
 }: {
   poi: POI;
   opacity: number;
   onPOIClick?: (id: string) => void;
+  /** POI-navn tegnet inn i pin-SVG-en. Undefined → ingen label (se `markerLabels`). */
+  label?: string;
+  labelSide?: LabelSide;
+  /**
+   * Tegn som ren farge-prikk i stedet for full ikon-pin. To kilder: mobil
+   * story-mode-peek (`compactMarkers` for ALLE) og utglisningen
+   * (`demotedMarkerIds` for de enkelte som taper plassen).
+   */
+  compact?: boolean;
 }) {
-  const Icon = getFilledIcon(poi.category.icon);
   return (
     <Marker3D
       position={{
@@ -178,67 +208,38 @@ const Marker3DItem = memo(function Marker3DItem({
       // rekkefølgen alene — zIndex er den eksplisitte spaken.
       zIndex={1}
     >
-      <Marker3DPin
-        color={poi.category.color}
-        backgroundColor={hexLightTint(poi.category.color)}
-        Icon={Icon}
-        size={40}
-        opacity={opacity}
-      />
-    </Marker3D>
-  );
-});
-
-/**
- * Kompakt markør — ren farge-prikk (`BlobMarker3D`) uten ikon/badge. Brukes når
- * `compactMarkers` er på (mobil story-mode-peek): mange POI-er på lite format
- * tegnes som lette prikker i stedet for fulle pins → mindre WebGL-raster, lavere
- * kognitiv last, mindre visuell støy. Memoizert som den fulle varianten.
- */
-const CompactMarker3DItem = memo(function CompactMarker3DItem({
-  poi,
-  opacity,
-  onPOIClick,
-}: {
-  poi: POI;
-  opacity: number;
-  onPOIClick?: (id: string) => void;
-}) {
-  return (
-    <Marker3D
-      position={{
-        lat: poi.coordinates.lat,
-        lng: poi.coordinates.lng,
-        altitude: 16,
-      }}
-      altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
-      onClick={() => onPOIClick?.(poi.id)}
-      title={poi.name}
-      zIndex={1}
-    >
-      <BlobMarker3D color={poi.category.color} opacity={opacity} />
+      {/* Prikk og pin er SAMME <Marker3D>, ikke to komponenter som bytter på å
+          være mountet (2026-08-23). En typebytte ville unmountet og remountet
+          selve `gmp-marker-3d-interactive`-elementet ved hver utglisning, og
+          målt på Strindfjordvegen etterlot det spøkelser: Google fortsatte å
+          tegne den fjernede markørens tekstur i scenen, så en klynge som skulle
+          blitt to pins + seks prikker rendret som åtte fulle pins. Å bytte
+          BARNET beholder elementet — Google rasteriserer det nye innholdet, og
+          ingenting blir stående igjen. Samme grunn til at høyden er 18 i begge
+          tilfeller: en altitude-flipp er en posisjonsendring på et element som
+          skal stå stille. */}
+      {compact ? (
+        <BlobMarker3D color={poi.category.color} opacity={opacity} />
+      ) : (
+        <Marker3DPin
+          color={poi.category.color}
+          backgroundColor={hexLightTint(poi.category.color)}
+          Icon={getFilledIcon(poi.category.icon)}
+          size={40}
+          opacity={opacity}
+          label={label}
+          labelSide={labelSide}
+        />
+      )}
     </Marker3D>
   );
 });
 
 // ── Prosjektmarkør: range-avhengig skala ──────────────────────────────────
-// Google 3D-markører er skjerm-forankret (konstant px uansett zoom), så uten
-// dette dominerer chip-en både tett innpå (dekker nabo-POI-er) og uttrukket
-// (blokkerer oversikten). Vi holder en moderat størrelse fra default-range og
-// innover, og krymper jevnt mot oversikt. Alle fire tall + steget er ment å
-// finjusteres på følelse.
-const PIN_NEAR_RANGE = 700; // ≤ dette (zoomet inn) → PIN_MAX_SCALE (flatt)
-const PIN_FAR_RANGE = 3000; // ≥ dette (zoomet ut) → PIN_MIN_SCALE (flatt)
-const PIN_MAX_SCALE = 0.85;
-const PIN_MIN_SCALE = 0.5;
+// Selve rampen bor i `project-pin-scale` — kollisjonskullingen trenger den
+// også, for å vite hvor stor chip-en er som hindring.
 /** ms kameraet må stå i ro før prosjekt-pinnen justerer størrelse. */
 const PIN_SETTLE_MS = 220;
-
-function scaleForRange(range: number): number {
-  const span = PIN_FAR_RANGE - PIN_NEAR_RANGE;
-  const t = Math.min(1, Math.max(0, (range - PIN_NEAR_RANGE) / span));
-  return PIN_MAX_SCALE + t * (PIN_MIN_SCALE - PIN_MAX_SCALE);
-}
 
 /**
  * Range-avhengig skala for prosjektmarkøren (Marker3D) — DEBOUNCED.
@@ -303,6 +304,8 @@ function Map3DInner({
   revealWindowMs,
   freeMode = false,
   compactMarkers = false,
+  markerLabels,
+  demotedMarkerIds,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -384,23 +387,23 @@ function Map3DInner({
           </Marker3D>
         )}
 
-        {pois.map((poi) =>
-          compactMarkers ? (
-            <CompactMarker3DItem
-              key={poi.id}
-              poi={poi}
-              opacity={opacities?.[poi.id] ?? 1}
-              onPOIClick={onPOIClick}
-            />
-          ) : (
+        {pois.map((poi) => {
+          // Oppslagene gjøres HER og sendes videre som primitiver — se
+          // `markerLabels`-doc: et objekt per markør ville defeatet memo.
+          const placement = markerLabels?.[poi.id];
+          const compact = compactMarkers || (demotedMarkerIds?.has(poi.id) ?? false);
+          return (
             <Marker3DItem
               key={poi.id}
               poi={poi}
               opacity={opacities?.[poi.id] ?? 1}
               onPOIClick={onPOIClick}
+              label={compact ? undefined : placement?.text}
+              labelSide={placement?.side}
+              compact={compact}
             />
-          ),
-        )}
+          );
+        })}
 
         {/* Reveal-lag (velkommen + oppsummering) — eget marker-sett (blobs +
             legend-pins), adskilt fra pinnene over. Vises kun når showReveal. */}
