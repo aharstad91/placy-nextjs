@@ -46,4 +46,57 @@ describe("BoardMapControls — Auto/Fri-gating (voice-over-tier)", () => {
     );
     expect(queryByLabelText(/Automatisk kamera/)).toBeNull();
   });
+
+  it("skjuler Auto/Fri i Satelitt (R4 — auto-orbit er av, nord opp er posituren)", () => {
+    const { queryByLabelText } = render(
+      <BoardMapControls {...baseProps} view="sat" showCameraMode />,
+    );
+    expect(queryByLabelText(/Automatisk kamera/)).toBeNull();
+    expect(queryByLabelText(/Fri kamerakontroll/)).toBeNull();
+  });
+});
+
+describe("BoardMapControls — kart-veksleren (Kart | Satelitt | 3D)", () => {
+  it("rendrer tre segmenter med riktige labels/aria i rekkefølgen Kart, Satelitt, 3D", () => {
+    const { getByLabelText, getAllByRole } = render(
+      <BoardMapControls {...baseProps} showCameraMode={false} />,
+    );
+    expect(getByLabelText("2D-kart").textContent).toBe("Kart");
+    expect(getByLabelText("Satellitt ovenfra").textContent).toBe("Satelitt");
+    expect(getByLabelText("3D-kart").textContent).toBe("3D");
+    const labels = getAllByRole("button").map((b) => b.textContent);
+    expect(labels.slice(-3)).toEqual(["Kart", "Satelitt", "3D"]);
+  });
+
+  it("klikk på Satelitt kaller onViewChange('sat')", () => {
+    const onViewChange = vi.fn();
+    const { getByLabelText } = render(
+      <BoardMapControls
+        {...baseProps}
+        onViewChange={onViewChange}
+        showCameraMode={false}
+      />,
+    );
+    getByLabelText("Satellitt ovenfra").click();
+    expect(onViewChange).toHaveBeenCalledWith("sat");
+  });
+
+  it("markerer aktivt segment med aria-pressed når view er 'sat'", () => {
+    const { getByLabelText } = render(
+      <BoardMapControls {...baseProps} view="sat" showCameraMode={false} />,
+    );
+    expect(getByLabelText("Satellitt ovenfra").getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    expect(getByLabelText("3D-kart").getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("showViewToggle=false → ingen veksler-segmenter (boards uten 3D-tillegg)", () => {
+    const { queryByLabelText } = render(
+      <BoardMapControls {...baseProps} showCameraMode={false} showViewToggle={false} />,
+    );
+    expect(queryByLabelText("2D-kart")).toBeNull();
+    expect(queryByLabelText("Satellitt ovenfra")).toBeNull();
+    expect(queryByLabelText("3D-kart")).toBeNull();
+  });
 });

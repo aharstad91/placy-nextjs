@@ -260,6 +260,56 @@ describe("BoardMap — AC1 persistent 3D-mount", () => {
   });
 });
 
+describe("BoardMap — Satelitt-view (sat) i skallet", () => {
+  it("veksling til 'sat' holder Mapbox-overlayet nede (Google-motoren er front)", () => {
+    const { getByTestId, queryByTestId } = render(<BoardMap has3dAddon />);
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)("sat");
+    });
+    expect(lastControls()!.view).toBe("sat");
+    expect(getByTestId("board-3d")).toBeTruthy();
+    expect(queryByTestId("mapbox-map")).toBeNull();
+  });
+
+  it("sat → 2d monterer Mapbox-overlayet; 3D-basen består (persistent)", () => {
+    const { getByTestId } = render(<BoardMap has3dAddon />);
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)("sat");
+    });
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)("2d");
+    });
+    expect(lastControls()!.view).toBe("2d");
+    expect(getByTestId("board-3d")).toBeTruthy();
+    expect(getByTestId("mapbox-map")).toBeTruthy();
+  });
+
+  it("klikk på aktivt segment er no-op (R9) — view-referansen står", () => {
+    render(<BoardMap has3dAddon />);
+    const before = lastControls()!.view;
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)(before as string);
+    });
+    expect(lastControls()!.view).toBe(before);
+  });
+
+  it("publishViewport/isFront på 3D-basen gjelder i BÅDE sat og 3d (view !== '2d')", () => {
+    render(<BoardMap has3dAddon publishViewport />);
+    expect(h.captured.board3d.at(-1)!.isFront).toBe(true);
+    expect(h.captured.board3d.at(-1)!.publishViewport).toBe(true);
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)("sat");
+    });
+    expect(h.captured.board3d.at(-1)!.isFront).toBe(true);
+    expect(h.captured.board3d.at(-1)!.publishViewport).toBe(true);
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)("2d");
+    });
+    expect(h.captured.board3d.at(-1)!.isFront).toBe(false);
+    expect(h.captured.board3d.at(-1)!.publishViewport).toBe(false);
+  });
+});
+
 describe("BoardMap — AC2 view/cameraMode eid av skallet + datadrevet hasVoiceOver", () => {
   it("default cameraMode=auto når voice-over finnes og ?fly ikke satt", () => {
     setBoard({ categories: [{ id: "mat", label: "Mat", lead: "", body: "", icon: "Utensils", color: "#cc3300", pois: [makePoi("p1")], topRankedPois: [], audio: track }] });
