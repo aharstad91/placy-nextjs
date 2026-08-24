@@ -310,6 +310,45 @@ describe("BoardMap — Satelitt-view (sat) i skallet", () => {
   });
 });
 
+describe("BoardMap — drift-flip fra Satelitt (R8c/R8d)", () => {
+  it("onOverheadBreak flipper view til 3d OG setter fri kameramodus (speiler Auto→Fri)", () => {
+    setBoard({ welcome: track }); // VO-board: default auto
+    render(<BoardMap has3dAddon />);
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)("sat");
+    });
+    expect(lastControls()!.cameraMode).toBe("auto"); // sat-inngang rører ikke modusen
+
+    act(() => {
+      (h.captured.board3d.at(-1)!.onOverheadBreak as () => void)();
+    });
+    expect(lastControls()!.view).toBe("3d");
+    expect(lastControls()!.cameraMode).toBe("free");
+    expect(lastControls()!.showFreeHint).toBe(true);
+  });
+
+  it("segment-klikk sat→3d bevarer cameraMode (auto gjenopptas — R8d)", () => {
+    setBoard({ welcome: track });
+    render(<BoardMap has3dAddon />);
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)("sat");
+    });
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)("3d");
+    });
+    expect(lastControls()!.cameraMode).toBe("auto");
+  });
+
+  it("overhead-propen på 3D-basen følger view", () => {
+    render(<BoardMap has3dAddon />);
+    expect(h.captured.board3d.at(-1)!.overhead).toBe(false);
+    act(() => {
+      (lastControls()!.onViewChange as (m: string) => void)("sat");
+    });
+    expect(h.captured.board3d.at(-1)!.overhead).toBe(true);
+  });
+});
+
 describe("BoardMap — AC2 view/cameraMode eid av skallet + datadrevet hasVoiceOver", () => {
   it("default cameraMode=auto når voice-over finnes og ?fly ikke satt", () => {
     setBoard({ categories: [{ id: "mat", label: "Mat", lead: "", body: "", icon: "Utensils", color: "#cc3300", pois: [makePoi("p1")], topRankedPois: [], audio: track }] });

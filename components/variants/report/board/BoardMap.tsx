@@ -230,6 +230,15 @@ export function BoardMap({
     freeHintTimerRef.current = setTimeout(() => setShowFreeHint(false), 3500);
   }, []);
 
+  // Brukeren brøt ovenfra-posituren i Satelitt (to-finger-tilt/ctrl-drag over
+  // terskelen, R8c): flipp segmentet til «3D» — pillen skal aldri lyve om hva
+  // som er på skjermen — og speil Auto→Fri-takeoveren (fri + hint). Pan flipper
+  // aldri (drift-vakten i BoardMap3D fyrer kun på faktisk tilt-/heading-brudd).
+  const handleOverheadBreak = useCallback(() => {
+    setView("3d");
+    handleDragTakeover();
+  }, [handleDragTakeover]);
+
   useEffect(() => {
     return () => {
       if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
@@ -827,6 +836,7 @@ export function BoardMap({
               // som er synlig — 3D-basen forblir montert under Mapbox-overlayet.
               isFront={view !== "2d"}
               overhead={view === "sat"}
+              onOverheadBreak={handleOverheadBreak}
               mapPaddingBottom={mapPaddingBottom}
               onMapReady={handle3DReady}
             />
