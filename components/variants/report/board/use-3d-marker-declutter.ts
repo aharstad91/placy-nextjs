@@ -126,9 +126,22 @@ export interface Marker3DDeclutter {
   labels: Record<string, LabelPlacement>;
   /** poi.id-er som tegnes som prikk fordi en viktigere pin eier plassen. */
   demotedIds: ReadonlySet<string>;
+  /**
+   * poi.id → CSS `z-index`. Nødvendig fordi Google IKKE depth-sorterer
+   * DOM-markører: alle får `z-index: auto`, og rekkefølgen endres ikke når
+   * kameraet snus, så to overlappende pins ville valgt vinner etter
+   * mount-rekkefølge. Rangeringen er skjerm-y — i et tiltet 3D-bilde ligger det
+   * nære lavere i bildet, så større y skal male oppå. Samme regel Google selv
+   * bruker som tie-break i kollisjonssystemet sitt.
+   */
+  zIndexes: Record<string, number>;
 }
 
-const EMPTY: Marker3DDeclutter = { labels: {}, demotedIds: new Set() };
+const EMPTY: Marker3DDeclutter = {
+  labels: {},
+  demotedIds: new Set(),
+  zIndexes: {},
+};
 
 export interface UseMarker3DDeclutterParams {
   /** Map3DElement-instansen (castes internt), eller null før den er klar. */
@@ -165,6 +178,39 @@ export interface UseMarker3DDeclutterParams {
   enabled: boolean;
 }
 
+/** Laveste z-index vi deler ut. Over 0 så et manglende oppslag (som blir
+ *  `z-index: auto`) alltid havner UNDER en markør vi har rangert. */
+const Z_BASE = 1;
+/** Den aktive POI-en eier plassen sin og skal aldri dekkes av en nabo. */
+const Z_ACTIVE = 100000;
+
+/**
+ * Dybdesortering fra skjerm-y.
+ *
+ * Google depth-sorterer ikke DOM-markører — verifisert i browser: to markører
+ * på ulik avstand fikk begge `z-index: auto`, og DOM-rekkefølgen sto stille da
+ * heading ble snudd 180°. Uten dette avgjøres overlapp av mount-rekkefølge, og
+ * den nærmeste pinnen kan havne bak en fjern.
+ *
+ * I et tiltet 3D-bilde ligger det nære LAVERE i bildet, så større y skal male
+ * oppå. Det er samme regel Google selv oppgir som tie-break i kollisjons-
+ * systemet sitt. Vi rangerer i stedet for å bruke y direkte, så verdiene holder
+ * seg små og `sameResult`-dedupen ikke trigges av subpiksel-drift.
+ */
+function depthOrder(
+  projected: readonly { poi: POI; y: number }[],
+  activeId: string | null,
+): Record<string, number> {
+  const sorted = [...projected].sort(
+    (a, b) => a.y - b.y || (a.poi.id < b.poi.id ? -1 : 1),
+  );
+  const out: Record<string, number> = {};
+  sorted.forEach(({ poi }, i) => {
+    out[poi.id] = poi.id === activeId ? Z_ACTIVE : Z_BASE + i;
+  });
+  return out;
+}
+
 function sameResult(a: Marker3DDeclutter, b: Marker3DDeclutter): boolean {
   if (a.demotedIds.size !== b.demotedIds.size) return false;
   for (const id of a.demotedIds) if (!b.demotedIds.has(id)) return false;
@@ -176,6 +222,9 @@ function sameResult(a: Marker3DDeclutter, b: Marker3DDeclutter): boolean {
     const y = b.labels[id];
     if (!y || x.text !== y.text || x.side !== y.side) return false;
   }
+  const aZ = Object.keys(a.zIndexes);
+  if (aZ.length !== Object.keys(b.zIndexes).length) return false;
+  for (const id of aZ) if (a.zIndexes[id] !== b.zIndexes[id]) return false;
   return true;
 }
 
@@ -245,17 +294,8 @@ export function useMarker3DDeclutter({
     if (zoom === null) return;
     const tier = computeZoomTier(zoom);
 
-    // Prikk-tier: kameraet er så langt ute at ikonene uansett ikke er lesbare.
-    // Alt demoteres, ingen labels — samme svar som 2D gir under zoom 13.
-    if (tier === "dot") {
-      const next: Marker3DDeclutter = {
-        labels: {},
-        demotedIds: new Set(items.map((p) => p.id)),
-      };
-      setResult((prev) => (sameResult(prev, next) ? prev : next));
-      return;
-    }
-
+    // Projeksjonen gjøres FØR tier-sjekken, fordi dybdesorteringen trengs i
+    // begge grener: også et kart av bare prikker må vite hvem som ligger foran.
     const projected: { poi: POI; x: number; y: number }[] = [];
     for (const poi of items) {
       const pt = projectLatLngToScreen(
@@ -276,6 +316,20 @@ export function useMarker3DDeclutter({
       // y løftes til skive-senter (se anchorToDiscCenterY). Full pin her;
       // demoterte prikker justeres når utglisningen er kjent.
       projected.push({ poi, x: pt.x, y: anchorToDiscCenterY(pt.y, PIN_HALF) });
+    }
+
+    const zIndexes = depthOrder(projected, activeId);
+
+    // Prikk-tier: kameraet er så langt ute at ikonene uansett ikke er lesbare.
+    // Alt demoteres, ingen labels — samme svar som 2D gir under zoom 13.
+    if (tier === "dot") {
+      const next: Marker3DDeclutter = {
+        labels: {},
+        demotedIds: new Set(items.map((p) => p.id)),
+        zIndexes,
+      };
+      setResult((prev) => (sameResult(prev, next) ? prev : next));
+      return;
     }
 
     // Prosjektmarkøren som hindring. Boksen er ASYMMETRISK om disc-en fordi
@@ -361,7 +415,7 @@ export function useMarker3DDeclutter({
       }
     }
 
-    const next: Marker3DDeclutter = { labels, demotedIds };
+    const next: Marker3DDeclutter = { labels, demotedIds, zIndexes };
     setResult((prev) => (sameResult(prev, next) ? prev : next));
   }, [map3d]);
 

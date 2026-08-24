@@ -516,9 +516,14 @@ teksten skarp.
 **Files:**
 - Create: `components/map/PoiMarkerContent.tsx`
 - Modify: `components/map/map-view-3d.tsx`
-- Modify: `components/map/BlobMarker3D.tsx`
-- Delete: `components/map/Marker3DPin.tsx`
-- Test: `components/map/marker-primitives.test.tsx`
+- Modify: `components/variants/report/board/BoardMap3D.tsx`
+- Test: `components/map/poi-marker-content.test.tsx`
+
+**Korrigert under implementering:** `Marker3DPin.tsx` skal **ikke** slettes.
+`RevealLayer3D` bruker den fortsatt for legend-pinsene, og reveal-laget er bevisst
+utenfor scope (se Scope Boundaries). Verifisert at reveal ikke sender `label`, så
+bare label-halvdelen av filen blir død — den ryddes i Unit 8, som planlagt.
+`BlobMarker3D` beholdes av samme grunn: reveal-kaskaden tegner blobs med den.
 
 **Approach:**
 - **Boksen må holdes 40×40.** Disc-en er en `position: relative` 40×40 boks, og labelen ligger

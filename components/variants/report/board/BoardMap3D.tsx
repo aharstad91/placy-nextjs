@@ -563,6 +563,7 @@ export function BoardMap3D({
         compactMarkers={compactMarkers}
         markerLabels={declutter.labels}
         demotedMarkerIds={declutter.demotedIds}
+        markerZIndexes={declutter.zIndexes}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}

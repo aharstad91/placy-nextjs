@@ -12,8 +12,8 @@ import {
 } from "@vis.gl/react-google-maps";
 import type { POI } from "@/lib/types";
 import type { LabelSide } from "@/lib/board/label-collision";
-import { Marker3DPin } from "./Marker3DPin";
-import { BlobMarker3D } from "./BlobMarker3D";
+import { DomMarker3D } from "./DomMarker3D";
+import { PoiMarkerContent } from "./PoiMarkerContent";
 import { RevealLayer3D, type RevealItem } from "./RevealLayer3D";
 import { ProjectSitePin } from "./ProjectSitePin";
 import { scaleForRange, PIN_MAX_SCALE } from "./project-pin-scale";
@@ -124,6 +124,16 @@ export interface MapView3DProps {
    * dette er utglisning, ikke skjuling. Se `lib/board/pin-declutter`.
    */
   demotedMarkerIds?: ReadonlySet<string>;
+  /**
+   * poi.id → CSS `z-index`, rangert etter kamera-avstand av
+   * `use-3d-marker-declutter`.
+   *
+   * Nødvendig fordi Google IKKE depth-sorterer DOM-markører: alle får
+   * `z-index: auto`, og rekkefølgen endres ikke når kameraet snus — så overlapp
+   * ville avgjorts av mount-rekkefølge i stedet for av hva som står nærmest.
+   * Samme Record-form som `markerLabels`, og av samme grunn (memo).
+   */
+  markerZIndexes?: Record<string, number>;
 }
 
 /**
@@ -169,14 +179,18 @@ function MapReadyBridge({
  */
 const Marker3DItem = memo(function Marker3DItem({
   poi,
+  map3d,
   onPOIClick,
   label,
   labelSide,
   compact,
+  zIndex,
 }: {
   poi: POI;
+  /** Kartinstansen markøren appendes til. */
+  map3d: Map3DInstance | null;
   onPOIClick?: (id: string) => void;
-  /** POI-navn tegnet inn i pin-SVG-en. Undefined → ingen label (se `markerLabels`). */
+  /** POI-navn som ekte DOM-tekst. Undefined → ingen label (se `markerLabels`). */
   label?: string;
   labelSide?: LabelSide;
   /**
@@ -185,48 +199,44 @@ const Marker3DItem = memo(function Marker3DItem({
    * (`demotedMarkerIds` for de enkelte som taper plassen).
    */
   compact?: boolean;
+  /**
+   * Tegne-rekkefølge fra kamera-avstand. Google depth-sorterer IKKE
+   * DOM-markører — alle får `z-index: auto`, og rekkefølgen endres ikke når
+   * kameraet snus, så overlapp ville avgjorts av mount-rekkefølge.
+   */
+  zIndex?: number;
 }) {
   return (
-    <Marker3D
-      position={{
-        lat: poi.coordinates.lat,
-        lng: poi.coordinates.lng,
-        // Hev over taknivå (ikke 0) så bakke-markører ikke okkluderes av 3D-
-        // byggene og blinker inn/ut når kameraet beveger seg.
-        // (Hjem-markøren ligger på 30 av samme grunn.)
-        altitude: 18,
-      }}
-      altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
+    <DomMarker3D
+      map3d={map3d}
+      lat={poi.coordinates.lat}
+      lng={poi.coordinates.lng}
+      // Hev over taknivå (ikke 0) så markørene ikke ligger nede i bakkemeshet.
+      // Merk at okklusjons-begrunnelsen falt bort med DOM-markørene: de har
+      // ingen dybdetest og skjules aldri av bygg. Tallet står fordi det fortsatt
+      // bestemmer HVOR markøren projiseres. (Prosjektpinnen ligger på 30.)
+      altitude={18}
       onClick={() => onPOIClick?.(poi.id)}
       title={poi.name}
-      // Lav zIndex så POI-markører ALDRI tegnes oppå prosjektmarkøren
-      // (som har zIndex 1_000_000). I 3D bestemmer ikke altitude tegne-
-      // rekkefølgen alene — zIndex er den eksplisitte spaken.
-      zIndex={1}
+      zIndex={zIndex}
     >
-      {/* Prikk og pin er SAMME <Marker3D>, ikke to komponenter som bytter på å
-          være mountet (2026-08-23). En typebytte ville unmountet og remountet
-          selve `gmp-marker-3d-interactive`-elementet ved hver utglisning, og
-          målt på Strindfjordvegen etterlot det spøkelser: Google fortsatte å
-          tegne den fjernede markørens tekstur i scenen, så en klynge som skulle
-          blitt to pins + seks prikker rendret som åtte fulle pins. Å bytte
-          BARNET beholder elementet — Google rasteriserer det nye innholdet, og
-          ingenting blir stående igjen. Samme grunn til at høyden er 18 i begge
-          tilfeller: en altitude-flipp er en posisjonsendring på et element som
-          skal stå stille. */}
-      {compact ? (
-        <BlobMarker3D color={poi.category.color} />
-      ) : (
-        <Marker3DPin
-          color={poi.category.color}
-          backgroundColor={hexLightTint(poi.category.color)}
-          Icon={getFilledIcon(poi.category.icon)}
-          size={40}
-          label={label}
-          labelSide={labelSide}
-        />
-      )}
-    </Marker3D>
+      {/* Prikk og pin er SAMME markør-element, ikke to komponenter som bytter på
+          å være mountet (2026-08-23). Et typebytte ville unmountet og remountet
+          selve verts-elementet ved hver utglisning, og målt på Strindfjordvegen
+          etterlot det spøkelser: Google fortsatte å tegne den fjernede markørens
+          tekstur, så en klynge som skulle blitt to pins + seks prikker rendret
+          som åtte fulle pins. Å bytte INNHOLDET beholder elementet. Samme grunn
+          til at høyden er 18 i begge tilfeller: en altitude-flipp er en
+          posisjonsendring på et element som skal stå stille. */}
+      <PoiMarkerContent
+        color={poi.category.color}
+        backgroundColor={hexLightTint(poi.category.color)}
+        Icon={getFilledIcon(poi.category.icon)}
+        label={label}
+        labelSide={labelSide}
+        compact={compact}
+      />
+    </DomMarker3D>
   );
 });
 
@@ -300,6 +310,7 @@ function Map3DInner({
   compactMarkers = false,
   markerLabels,
   demotedMarkerIds,
+  markerZIndexes,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -390,10 +401,12 @@ function Map3DInner({
             <Marker3DItem
               key={poi.id}
               poi={poi}
+              map3d={mapInstance}
               onPOIClick={onPOIClick}
               label={compact ? undefined : placement?.text}
               labelSide={placement?.side}
               compact={compact}
+              zIndex={markerZIndexes?.[poi.id]}
             />
           );
         })}
