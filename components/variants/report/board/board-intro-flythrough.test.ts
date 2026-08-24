@@ -166,4 +166,62 @@ describe("buildBasicIntroPath", () => {
     expect(p.ovalEccentricity).toBe(0);
     expect(p.durationMs).toBe(BASIC_INTRO_FLY_MS);
   });
+
+  // Satelitt-default (R6): banen beholder sweep/varighet/reveal, men LANDER
+  // rett ovenfra med nord opp — directorens overhead-hvile matcher landingen
+  // eksakt, så handoff-en etter END_INTRO er bevegelsesfri.
+  describe("overheadLanding (Satelitt-default, R6)", () => {
+    it("siste pose er tilt 0 / heading 0 / range = hvile-rangen", () => {
+      const path = {
+        ...DEFAULT_INTRO_PATH,
+        ...buildBasicIntroPath(1600, { overheadLanding: true }),
+      };
+      const landing = introPoseAt(1, target, path);
+      expect(landing.tilt).toBe(0);
+      expect(landing.heading).toBeCloseTo(0, 6);
+      expect(landing.range).toBeCloseTo(1600, 6);
+    });
+
+    it("sweep/varighet/reveal-koreografien er urørt (kun landingsposituren avviker)", () => {
+      const p = buildBasicIntroPath(1600, { overheadLanding: true });
+      expect(p.sweepDeg).toBe(WELCOME_CALM_SWEEP_DEG);
+      expect(p.durationMs).toBe(BASIC_INTRO_FLY_MS);
+      expect(p.ovalEccentricity).toBe(0);
+      expect(p.rangeStart).toBe(buildBasicIntroPath(1600).rangeStart);
+    });
+
+    it("headingEnd 0 realiseres som startHeading = −sweep (heading = start + sweep·s)", () => {
+      const p = buildBasicIntroPath(1600, { overheadLanding: true });
+      expect(p.startHeading).toBe(-WELCOME_CALM_SWEEP_DEG);
+    });
+
+    it("uten flagget er landingen skrå som før (3D-view valgt før intro-klikk)", () => {
+      const p = buildBasicIntroPath(1600);
+      expect(p.tiltEnd).toBe(DEFAULT_INTRO_PATH.tiltEnd);
+      expect(p.startHeading).toBeUndefined();
+    });
+  });
+});
+
+describe("runIntroFlythrough — staticPoseAt (redusert bevegelse i Satelitt)", () => {
+  it("staticOnly + staticPoseAt 1 holder LANDINGSposen (ovenfra), aldri den skrå starten", () => {
+    const map = fakeMap();
+    const phases: IntroFlythroughPhase[] = [];
+    const path = {
+      ...DEFAULT_INTRO_PATH,
+      ...buildBasicIntroPath(1600, { overheadLanding: true }),
+    };
+    const cancel = runIntroFlythrough(map, {
+      target,
+      path,
+      staticOnly: true,
+      staticPoseAt: 1,
+      onPhase: (p) => phases.push(p),
+    });
+    expect(map.tilt).toBe(0);
+    expect(map.heading).toBeCloseTo(0, 6);
+    expect(map.range).toBeCloseTo(1600, 6);
+    expect(phases).toEqual(["settling", "done"]);
+    cancel();
+  });
 });

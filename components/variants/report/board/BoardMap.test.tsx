@@ -340,12 +340,34 @@ describe("BoardMap — drift-flip fra Satelitt (R8c/R8d)", () => {
   });
 
   it("overhead-propen på 3D-basen følger view", () => {
+    setBoard({ welcome: track }); // VO-board: default 3d
     render(<BoardMap has3dAddon />);
     expect(h.captured.board3d.at(-1)!.overhead).toBe(false);
     act(() => {
       (lastControls()!.onViewChange as (m: string) => void)("sat");
     });
     expect(h.captured.board3d.at(-1)!.overhead).toBe(true);
+  });
+});
+
+describe("BoardMap — default-visning (R6/R7)", () => {
+  it("3D-tillegg UTEN voice-over → åpner i Satelitt", () => {
+    setBoard(); // ingen audio/welcome/outro/home.audio
+    render(<BoardMap has3dAddon />);
+    expect(lastControls()!.view).toBe("sat");
+    expect(h.captured.board3d.at(-1)!.overhead).toBe(true);
+  });
+
+  it("3D-tillegg MED voice-over → åpner i 3D (cinematikken vinner, R7)", () => {
+    setBoard({ welcome: track });
+    render(<BoardMap has3dAddon />);
+    expect(lastControls()!.view).toBe("3d");
+  });
+
+  it("uten 3D-tillegg → ren 2D som før (R1)", () => {
+    setBoard();
+    render(<BoardMap has3dAddon={false} />);
+    expect(lastControls()!.view).toBe("2d");
   });
 });
 

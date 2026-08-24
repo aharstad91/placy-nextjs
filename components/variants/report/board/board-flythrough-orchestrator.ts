@@ -205,10 +205,14 @@ export function useBoardFlythrough({
     // prefers-reduced-motion → statisk vidt nærområde (runIntroFlythrough fyrer
     // «done» umiddelbart → END_INTRO → director-ens reduced-motion-orbit).
     if (basicIntroActive && !isWelcomeBeat && !flyMode) {
+      // Satelitt-default (R6): samme bane/reveal, men landingen er ovenfra med
+      // nord opp — og redusert bevegelse holder LANDINGSposen (staticPoseAt 1),
+      // ikke den skrå etablerings-posituren (pillen sier «Satelitt»).
       return runIntroFlythrough(map, {
         target: { lat: homeLat, lng: homeLng },
-        path: buildBasicIntroPath(orbitRange),
+        path: buildBasicIntroPath(orbitRange, { overheadLanding: overhead }),
         staticOnly: reducedMotion,
+        staticPoseAt: overhead ? 1 : 0,
         onPhase: (phase) => {
           (window as unknown as { __placyIntroFly?: string }).__placyIntroFly = phase;
           // Driv markør-koreografien: settling/running/done styrer når reveal-
@@ -249,6 +253,9 @@ export function useBoardFlythrough({
     flyMode,
     basicIntroActive,
     orbitRange,
+    // Satelitt-default: flippes view mid-intro restarter flyturen i den andre
+    // variantens landing — segmentet og landingsposituren skal aldri sprike.
+    overhead,
     dispatch,
     map3dInstance,
     homeLat,

@@ -172,21 +172,12 @@ export function BoardMap({
   // retry plukker opp ekte verdi ved mapLoaded=true (også ved 3D→2D-toggle).
   const zoomTier = useBoardZoomTier(mapRef, mapLoaded);
 
-  // ---- Persistent-3D + 2D-overlay ----
-  // view = hvilken motor som ligger FREMST — og for Google-motoren hvilken
-  // kamerapositur (sat = rett ovenfra, 3d = skrå). 3D-basen forblir montert
-  // uansett når add-on finnes. Default 3D når add-on finnes, ellers ren 2D.
-  const [view, setView] = useState<BoardView>(has3dAddon ? "3d" : "2d");
-  const [pendingCamera, setPendingCamera] = useState<PendingCamera | null>(
-    null,
-  );
-  const mapBodyRef = useRef<HTMLDivElement | null>(null);
-
   // ---- Voice-over-tier ----
   // Speiler signalet i BoardMap3D: med voice-over finnes en kuratert tur å
   // guide gjennom (auto-orbit + Auto/Fri-toggel gir mening). UTEN voice-over
   // (basic-tier) er "Auto" en tom modus — `autoOrbit` er av, så kameraet bare
-  // står stille. Da skjules Auto/Fri-segmentet (pillen krymper til Kart/3D).
+  // står stille. Da skjules Auto/Fri-segmentet (pillen krymper til motor-byttet).
+  // Deklarert FØR view-state-en: default-visningen avledes av den.
   const hasVoiceOver = useMemo(
     () =>
       data.categories.some((c) => !!c.audio || !!c.reelsAudio) ||
@@ -195,6 +186,23 @@ export function BoardMap({
       !!data.outro,
     [data.categories, data.welcome, data.home.audio, data.outro],
   );
+
+  // ---- Persistent-3D + 2D-overlay ----
+  // view = hvilken motor som ligger FREMST — og for Google-motoren hvilken
+  // kamerapositur (sat = rett ovenfra, 3d = skrå). 3D-basen forblir montert
+  // uansett når add-on finnes.
+  //
+  // Default-regel (R6/R7): boards med 3D-tillegg og voice-over åpner i 3D
+  // (cinematikken er produktet); med tillegg uten voice-over åpner de i
+  // Satelitt (rett ovenfra er den letteste orienteringen); uten tillegg ren 2D.
+  // Valget er in-memory per sesjon (R10) — reload gir regelen på nytt.
+  const [view, setView] = useState<BoardView>(() =>
+    has3dAddon ? (hasVoiceOver ? "3d" : "sat") : "2d",
+  );
+  const [pendingCamera, setPendingCamera] = useState<PendingCamera | null>(
+    null,
+  );
+  const mapBodyRef = useRef<HTMLDivElement | null>(null);
 
   // ---- Kameramodus (auto/fri) + recovery-hint ----
   // Løftet hit (fra BoardMap3D) så Auto/Fri + Kart/3D kan bo i ÉN felles

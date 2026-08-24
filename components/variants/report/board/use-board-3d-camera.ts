@@ -194,6 +194,9 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
         // ORBIT_TILT. Hoppes over etter drift-flippen (Unit 4): da brøt brukeren
         // posituren manuelt og gesten eier kameraet.
         if (overheadLeft) {
+          // Mid-intro-flip (basic-introen kjører): flyturen eier kameraet og
+          // restartes i skrå-varianten av orkestratoren — ikke fly oppå rAF-en.
+          if (introActive) return;
           if (skipSkraaReentryRef?.current) {
             skipSkraaReentryRef.current = false;
             return;
