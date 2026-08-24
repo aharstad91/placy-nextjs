@@ -12,15 +12,19 @@ vi.mock("@/components/map/project-latlng-to-screen", () => ({
   }),
 }));
 
-import { useMarker3DDeclutter } from "./use-3d-marker-declutter";
+import {
+  useMarker3DDeclutter,
+  CAMERA_SETTLE_MS,
+} from "./use-3d-marker-declutter";
 
 /** Trondheim — samme breddegrad boardene står på. */
 const LAT = 63.44;
 const WIDTH = 1200;
 const HEIGHT = 900;
 
-/** Ro-vinduet i hooken. Testene venter alltid litt lenger enn dette. */
-const SETTLE = 500;
+/** Ro-vinduet i hooken, med litt margin. Leses fra kilden så testene ikke blir
+ *  usanne påstander i det tallet justeres. */
+const SETTLE = CAMERA_SETTLE_MS + 50;
 
 interface FakeMap extends HTMLElement {
   center: { lat: number; lng: number } | null;
@@ -272,27 +276,29 @@ describe("useMarker3DDeclutter — når den skal tie", () => {
 describe("useMarker3DDeclutter — ro-signalet", () => {
   it("regner ikke før kameraet har falt til ro", () => {
     const { result } = setup(makeMap(900), [poi("a", 100, 100, 4)]);
-    settle(100);
+    settle(CAMERA_SETTLE_MS - 20);
     expect(result.current.labels).toEqual({});
-    settle(400);
+    settle(40);
     expect(Object.keys(result.current.labels)).toEqual(["a"]);
   });
 
-  it("plasseringen FRYSES mens kameraet er i bevegelse (ingen raster-churn)", () => {
+  it("plasseringen FRYSES mens kameraet er i bevegelse", () => {
     const map = makeMap(900);
     const { result } = setup(map, [poi("a", 100, 100, 4)]);
     settle();
     expect(Object.keys(result.current.labels)).toEqual(["a"]);
 
     // Brukeren zoomer helt ut — langt forbi prikk-terskelen. Så lenge gesten
-    // pågår skal svaret stå stille: hver omregning er en re-rasterisering av
-    // markør-teksturene, og labelen følger uansett sin egen pin gjennom
-    // bevegelsen.
+    // pågår skal svaret stå stille. Labelen følger uansett sin egen pin gjennom
+    // bevegelsen, så en omregning midt i draget ville bare fått navn til å hoppe
+    // mellom sider under fingeren.
     map.range = 15000;
+    // Steget må ligge UNDER ro-vinduet, ellers tester vi ro og ikke bevegelse.
+    const duringGesture = Math.max(1, Math.floor(CAMERA_SETTLE_MS / 2));
     for (let i = 0; i < 10; i++) {
       act(() => {
         map.dispatchEvent(new Event("gmp-camerapositionchange"));
-        vi.advanceTimersByTime(100);
+        vi.advanceTimersByTime(duringGesture);
       });
       expect(Object.keys(result.current.labels)).toEqual(["a"]);
       expect(result.current.demotedIds.size).toBe(0);

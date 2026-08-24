@@ -89,18 +89,37 @@ const PROJECT_ALTITUDE_M = 30;
 const DEFAULT_FOV_DEG = 35;
 
 /**
- * Ro-vindu etter siste kamera-hendelse. Vesentlig romsligere enn de ~50 ms
- * nabolagslista bruker (`use-3d-viewport-publish`): der er forsinkelsen det
- * brukeren FØLER, her er hver kjøring en re-rasterisering av markør-teksturer.
- * Vi vil heller vente litt for lenge enn å regne om midt i en gest.
+ * Ro-vindu etter siste kamera-hendelse.
+ *
+ * Var 400 ms, og det var den forsinkelsen brukeren FØLTE: målt 426 ms fra siste
+ * `gmp-camerapositionchange` til labelene endret seg, mot Mapbox som oppdaterer
+ * i samme frame som bevegelsen slutter.
+ *
+ * Begrunnelsen for de 400 ms var at hver label-endring var en re-rasterisering
+ * av en markør-tekstur. Den kostnaden finnes ikke lenger — labelen er en
+ * tekstnode. Og selve regnestykket er billig: målt 0,29 ms for de to greedy
+ * passeringene ved 465 markører, altså 1,7 % av et 16,7 ms frame-budsjett.
+ *
+ * Doc-en som ble sitert som belegg for de 400 ms (`webgl-context-leak-per-
+ * render-probe-20260603`) sier dessuten det motsatte av det den ble brukt til:
+ * alle de 180 lekkede WebGL-kontekstene kom fra `isWebGLAvailable()` som kjørte
+ * per render, og INGEN fra markør-rasterisering.
+ *
+ * Ikke satt til 0: React-passet over ~470 memoiserte markører er ikke målt, og
+ * det er det eneste her som kan spise frames. 100 ms er under det brukeren
+ * merker, og lar fortsatt et drag være ett grep i stedet for tjue.
+ *
+ * Eksportert fordi testene måler mot den — en hardkodet 400-er i testen ble en
+ * usann påstand i det dette tallet ble justert.
  */
-const CAMERA_SETTLE_MS = 400;
+export const CAMERA_SETTLE_MS = 100;
 /**
- * Egen, kortere timer for datasett-endringer (kategori-bytte, ny aktiv POI).
+ * Egen timer for datasett-endringer (kategori-bytte, ny aktiv POI).
  * Nullstilles IKKE av kamera-hendelser — ellers ville en kontinuerlig orbit
  * sultet den ut, og et nytt markørsett hadde stått uten plassering for alltid.
+ * Den begrunnelsen består; bare tallet følger kamera-vinduet ned.
  */
-const DATA_SETTLE_MS = 250;
+const DATA_SETTLE_MS = 100;
 /**
  * Hvor langt utenfor kart-elementet en markør får ligge og fortsatt regnes med.
  * Marginen finnes fordi en label kan stikke inn i bildet fra en pin som så vidt
