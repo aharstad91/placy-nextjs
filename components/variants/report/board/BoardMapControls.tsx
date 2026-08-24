@@ -1,7 +1,7 @@
 "use client";
 
 import { Hand, Orbit, SlidersHorizontal, X } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { TravelMode } from "@/lib/types";
 import { TravelModeSelector } from "./TravelModeSelector";
@@ -196,14 +196,21 @@ export function BoardMapControls({
         </>
       )}
 
-      {/* Kart/3D — split-knapp (to knapper, aktiv fylt mørk). */}
+      {/* Kart | Satelitt · 3D — split-knapp. Den tynne streken foran Satelitt
+          skiller de to KILDENE fra hverandre: Kart er Mapbox-vektorkartet, mens
+          Satelitt og 3D er samme Google-motor i to vinkler. Uten streken leses
+          de tre som tre likestilte kart, og brukeren skjønner ikke hvorfor
+          Satelitt→3D glir mens Kart→Satelitt klipper. */}
       {showViewToggle && (
       <div role="group" aria-label="Kartvisning" className="flex items-center gap-0.5">
         {VIEW_OPTIONS.map((opt) => {
           const active = view === opt.value;
           return (
+            <Fragment key={opt.value}>
+            {opt.value === "sat" && (
+              <span aria-hidden className="mx-1 h-5 w-px bg-stone-300/70" />
+            )}
             <button
-              key={opt.value}
               type="button"
               onClick={() => onViewChange(opt.value)}
               aria-pressed={active}
@@ -218,6 +225,7 @@ export function BoardMapControls({
             >
               {opt.label}
             </button>
+            </Fragment>
           );
         })}
       </div>

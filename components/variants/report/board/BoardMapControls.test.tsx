@@ -68,6 +68,26 @@ describe("BoardMapControls — kart-veksleren (Kart | Satelitt | 3D)", () => {
     expect(labels.slice(-3)).toEqual(["Kart", "Satelitt", "3D"]);
   });
 
+  it("skiller Kart fra Satelitt/3D med en vertikal strek (to kilder, tre visninger)", () => {
+    const { getByRole } = render(
+      <BoardMapControls {...baseProps} showCameraMode={false} />,
+    );
+    const group = getByRole("group", { name: "Kartvisning" });
+    const kids = Array.from(group.children);
+    // Strek mellom Kart og Satelitt — ingen strek mellom Satelitt og 3D, de
+    // deler motor.
+    expect(kids.map((el) => el.tagName.toLowerCase())).toEqual([
+      "button",
+      "span",
+      "button",
+      "button",
+    ]);
+    expect(kids[1].getAttribute("aria-hidden")).toBe("true");
+    expect(kids[1].className).toContain("w-px");
+    expect(kids[0].textContent).toBe("Kart");
+    expect(kids[2].textContent).toBe("Satelitt");
+  });
+
   it("klikk på Satelitt kaller onViewChange('sat')", () => {
     const onViewChange = vi.fn();
     const { getByLabelText } = render(
