@@ -1,5 +1,12 @@
 # Kamera-flythrough Verifikasjons-runbook
 
+> **MERK (2026-08-24):** POI-markørene og prosjektmarkøren er DOM-markører
+> (`gmp-marker-interactive` / `gmp-marker`), ikke rasteriserte
+> (`gmp-marker-3d-interactive`). Reveal-laget bruker fortsatt de rasteriserte.
+> Tellinger MÅ derfor matche begge generasjoner — en selektor på det gamle
+> tagnavnet alene gir 0 uansett, og en «✓ 0 markører»-verifisering blir da sann
+> uten å måle noe.
+
 Runbook for r10.8 live-verifikasjon av kamera-flythrough + film-modus i nystartet Chrome.
 Samme mønster som `3d-motor-verifikasjon-runbook.md` (r06.8).
 
@@ -74,7 +81,8 @@ URL: `http://<server>/eiendom/bane-nor-eiendom/stasjonskvartalet/rapport-board?f
 
 ```js
 // Ingen kategori-pins
-document.querySelectorAll('gmp-marker-3d-interactive').length  // → 0
+document.querySelectorAll('gmp-marker-3d-interactive, gmp-marker-3d, gmp-marker-interactive, gmp-marker').length  // → 0
+// Begge markør-generasjoner: DOM-markørene bærer nye tagnavn (se merknad under)
 
 // ProjectSite-kort fortsatt synlig (verifiser via screenshot)
 // Ingen DOM removeChild-krasj i konsollen
@@ -148,7 +156,7 @@ npm run build     # → bygger uten feil
 | AC1 welcome oval-spiral | ✓ | `__placyIntroFly="running"` etter klikk, screenshot viser 3D aerial |
 | AC1 no WebGL overflow | ✓ | Ingen "Too many active WebGL contexts" i konsollen |
 | AC1 outro summary-fly | ✓ | activeIndex=9, cameraMode="free", `flyCameraTo` betingelser oppfylt |
-| AC2 ?film=1 pin-fri | ✓ | markerCount=0, pinCount=0, projectSite synlig i screenshot |
+| AC2 ?film=1 pin-fri | ✓ | markerCount=0, pinCount=0, projectSite synlig i screenshot. **Re-verifiser med selektor for begge generasjoner** — se merknad |
 | AC3 ?fly=1 oval-spiral | ✓ | `__placyIntroFly="running"` |
 | AC3 ?establishing=1 no-op | ✓ | Ingen feil ved ukjent slug |
 | AC4 capture-pipeline | ✓ | JPG-frames + concat.txt produsert etter script-fix |

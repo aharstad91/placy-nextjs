@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   computeLabelPlacements,
   estimateLabelBox,
-  wrapLabelLines,
   LABEL_CHAR_W,
   LABEL_MAX_W,
   LABEL_OFFSET_X,
@@ -211,54 +210,49 @@ describe("motor-forskjellene (3D)", () => {
   });
 });
 
-describe("wrapLabelLines", () => {
-  const maxChars = Math.floor(LABEL_MAX_W / LABEL_CHAR_W); // 22
+describe("LABEL_CHAR_W som overestimat", () => {
+  // Dette er invarianten kollisjonsgeometrien hviler på, og den ENESTE
+  // koblingen mellom px-anslaget og teksten som faktisk tegnes. Den erstatter
+  // wrapLabelLines-testene: linjebrytingen gjøres nå av CSS i begge motorer, så
+  // det finnes ingen egen brytefunksjon å teste — men anslaget må fortsatt være
+  // et overestimat, ellers påstår kollisjonen at det er ledig der tekst ligger.
+  //
+  // Tallet er kalibrert i browser mot canvas `measureText` med den faktiske
+  // font-stacken (600 10px system-ui, -apple-system, Helvetica Neue): over 14
+  // reelle POI-navn fra Strindfjordvegen-boardet var verste faktiske tegnbredde
+  // 5,84 px, mot anslagets 5,9. Måles den på nytt og havner over 5,9, er det
+  // dette tallet som skal opp — ikke testen som skal ned.
+  const MAALT_VERSTE_TEGNBREDDE = 5.84;
 
-  it("kort navn blir én linje, uendret", () => {
-    expect(wrapLabelLines("Extra Grilstad")).toEqual(["Extra Grilstad"]);
+  it("anslaget ligger over den målte verste tegnbredden", () => {
+    expect(LABEL_CHAR_W).toBeGreaterThanOrEqual(MAALT_VERSTE_TEGNBREDDE);
   });
 
-  it("bryter på ordgrense, ikke midt i ordet", () => {
-    const lines = wrapLabelLines("Pakkeautomat Ranheim Post i Butikk");
-    expect(lines.length).toBe(2);
-    for (const l of lines) expect(l.length).toBeLessThanOrEqual(maxChars);
-    // Ingen ord er kuttet i to (alle ord finnes helt igjen i en linje).
-    expect(lines[0]).toBe("Pakkeautomat Ranheim");
-  });
-
-  it("kutter med ellipsis når teksten ikke får plass på to linjer", () => {
-    const lines = wrapLabelLines(
-      "Grillstadfjæra barnehage avdeling Sjøparken vest",
-    );
-    expect(lines.length).toBe(2);
-    expect(lines[1].endsWith("…")).toBe(true);
-    for (const l of lines) expect(l.length).toBeLessThanOrEqual(maxChars);
-  });
-
-  it("ord som alene er lengre enn en linje deles hardt", () => {
-    const lines = wrapLabelLines("A".repeat(60));
-    expect(lines.length).toBe(2);
-    expect(lines[0].length).toBe(maxChars);
-    // Uten hard deling ville ett ord blitt én linje som stakk ut av boksen.
-    for (const l of lines) expect(l.length).toBeLessThanOrEqual(maxChars);
-  });
-
-  it("tomt/whitespace-navn gir ingen linjer (ingen tom label tegnes)", () => {
-    expect(wrapLabelLines("")).toEqual([]);
-    expect(wrapLabelLines("   ")).toEqual([]);
-  });
-
-  it("linjene er aldri bredere enn kollisjonsboksen estimerer", () => {
+  it("estimert boks er minst så bred som den målte teksten, for reelle navn", () => {
     for (const name of [
       "Vitusapotek Ranheim",
       "H2 Grilstad Marina",
       "Lavendel blomster & interiør",
       "Strindfjordvegen bussholdeplass",
+      "Grillstadfjæra barnehage",
+      "Extra Grilstad",
     ]) {
-      const lines = wrapLabelLines(name);
-      const drawn = Math.max(...lines.map((l) => l.length)) * LABEL_CHAR_W;
-      const estimated = estimateLabelBox(cand("x", 0, 0, 0, name), "right");
-      expect(drawn).toBeLessThanOrEqual(estimated.right - estimated.left + 0.001);
+      const maalt = name.length * MAALT_VERSTE_TEGNBREDDE;
+      const box = estimateLabelBox(cand("x", 0, 0, 0, name), "right");
+      const estimert = box.right - box.left;
+      // Klampen ved LABEL_MAX_W er tilsiktet: da brytes teksten til to linjer,
+      // og høyden i boksen dekker det bredden ikke gjør.
+      expect(estimert).toBeGreaterThanOrEqual(Math.min(maalt, LABEL_MAX_W) - 0.001);
     }
+  });
+
+  it("boksen blir to linjer høy først når teksten går forbi maksbredden", () => {
+    const kort = estimateLabelBox(cand("x", 0, 0, 0, "Nille"), "right");
+    const langt = estimateLabelBox(
+      cand("x", 0, 0, 0, "Strindfjordvegen bussholdeplass"),
+      "right",
+    );
+    expect(langt.bottom - langt.top).toBeGreaterThan(kort.bottom - kort.top);
+    expect(langt.right - langt.left).toBe(LABEL_MAX_W);
   });
 });

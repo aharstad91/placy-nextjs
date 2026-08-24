@@ -680,9 +680,20 @@ målte inn i doc-blokken. Neste person skal ikke måtte gjenoppdage det.
 
 ---
 
-- [ ] **Unit 7: Ikke la markørene churne usynlig i 2D og Satelitt**
+- [x] **Unit 7: Ikke la markørene churne usynlig i 2D og Satelitt** — **IKKE NØDVENDIG, premisset
+  falsifisert ved måling**
 
-**Goal:** ~470 DOM-noder får ikke transform-skriv mens de er skjult under 2D-overlayet.
+Målt i browser: **0** style-skriv på de 465 DOM-markørene gjennom hele 2D-visningen, inkludert åtte
+pan-gester på Mapbox-overlayet. Google skriver `transform` bare når 3D-kameraet faktisk beveger seg,
+og i 2D-visning står det stille — Mapbox ligger oppå og eier gestene. Det finnes altså ingen churn å
+gate bort.
+
+En gate ville i tillegg kostet et unmount og remount av 465 markører ved hver veksling, og er nøyaktig
+den formen for betinget montering doc-en om spøkelses-markører advarer mot. Enheten er droppet på
+grunnlag av målingen, ikke utsatt.
+
+**Opprinnelig mål (for historikken):** ~470 DOM-noder får ikke transform-skriv mens de er skjult under
+2D-overlayet.
 
 **Requirements:** R3
 

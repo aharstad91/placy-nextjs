@@ -1,5 +1,12 @@
 # 3D-motor — verifikasjons-runbook (PRD 6 Unit 8 / r06.8)
 
+> **MERK (2026-08-24):** POI-markørene og prosjektmarkøren er DOM-markører
+> (`gmp-marker-interactive` / `gmp-marker`), ikke rasteriserte
+> (`gmp-marker-3d-interactive`). Reveal-laget bruker fortsatt de rasteriserte.
+> Tellinger MÅ derfor matche begge generasjoner — en selektor på det gamle
+> tagnavnet alene gir 0 uansett, og en «✓ 0 markører»-verifisering blir da sann
+> uten å måle noe.
+
 > **✅ UTFØRT 2026-06-30.** Kjørt mot fersk produksjonsbygg (`npm run build` → `npm run start`
 > på `:3009`) i nystartet Chrome (eget user-data-dir, remote-debugging). Board:
 > `bane-nor-eiendom/stasjonskvartalet` (`has_3d_addon=true`, voice-over-tier). Alle AC grønne.
@@ -120,7 +127,7 @@ Naviger til `…/rapport-board?film=1`:
 
 ```js
 const m = document.querySelector('gmp-map-3d');
-({ categoryPins: document.querySelectorAll('gmp-marker-3d-interactive').length,   // 0
+({ categoryPins: document.querySelectorAll('gmp-marker-3d-interactive, gmp-marker-3d, gmp-marker-interactive, gmp-marker').length,   // 0 — begge generasjoner
    projectSitePin: [...m.children].some(c => c.getAttribute('title')==='Stasjonskvartalet'), // true
    count: document.querySelectorAll('gmp-map-3d').length });                       // 1
 // Console: rent (ingen removeChild-crash).
@@ -145,7 +152,7 @@ når siste markør er ferdig — ingen kontinuerlig churn.
 | AC | Resultat |
 |----|----------|
 | **1 — ≥10 sykluser, ingen WebGL-context-feil / unmount** | ✅ 11 toggle-sykluser (1 enkelt + 10 fulle med (a)+(b)+(c)). `gmp-map-3d`-node-identitet bevart hver syklus (`TRACKED`-stempel overlevde), count alltid 1. INGEN «Too many active WebGL contexts». Mapbox-overlay mountet i 2D, fjernet i 3D. |
-| **2 — `?film=1` rent kart** | ✅ 0 `gmp-marker-3d-interactive` (kategori-pins droppet på render-nivå), eneste markør = `projectSite`-pinnen «Stasjonskvartalet». Console helt ren (ingen removeChild). |
+| **2 — `?film=1` rent kart** | ✅ 0 markører (tell BEGGE generasjoner — DOM-markørene bærer `gmp-marker-interactive`) (kategori-pins droppet på render-nivå), eneste markør = `projectSite`-pinnen «Stasjonskvartalet». Console helt ren (ingen removeChild). |
 | **3 — reveal-kaskade** | ✅ Markører tegnes inn progressivt (1→9→20→33→46→58 barn), count holder 1, ingen crash. Full opacity + scale-bounce bekreftet i kode + unit-test. |
 | **4 — mekaniske porter** | ✅ `tsc` 0, `lint` 0 errors (166 warnings), `vitest` alle grønne, `build` exit 0. react-map-gl IKKE i motor-closure (63 filer, 0 treff). `MapboxFallback` borte. |
 
