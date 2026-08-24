@@ -26,6 +26,7 @@ import {
   type IntroFlyPhase,
 } from "./board-flythrough-orchestrator";
 import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
+import { isMarker3DTarget } from "@/components/map/marker-3d-selectors";
 import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
 import type { CategoryCameraConfig } from "@/lib/types";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
@@ -357,8 +358,7 @@ export function BoardMap3D({
     if (!map3dInstance) return;
     const el = map3dInstance as unknown as HTMLElement;
     const onMapClick = (e: Event) => {
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest("gmp-marker-3d-interactive")) return;
+      if (isMarker3DTarget(e.target)) return;
       if (state.activePOIId) dispatch({ type: "BACK_TO_DEFAULT" });
     };
     el.addEventListener("gmp-click", onMapClick);
@@ -500,8 +500,7 @@ export function BoardMap3D({
     };
 
     const onGrab = (e: Event) => {
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest("gmp-marker-3d-interactive")) return;
+      if (isMarker3DTarget(e.target)) return;
       // Under intro-flythrough eier innflyvningen kameraet — ikke kapre det.
       if (introActiveRef.current) return;
       // Satelitt: pan er en fullverdig gest som IKKE skal klobbe cameraMode
