@@ -165,13 +165,29 @@ describe("SidebarContentPreview — nivå-2 drill-in", () => {
 
     fireEvent.click(trigger);
     const items = within(getByTestId("category-dropdown-menu")).getAllByRole("menuitem");
-    // textContent = label + POI-antall (29/8).
+    // textContent = label + POI-antall (29/8; Vis alle = totalsummen 37).
     expect(items.map((i) => i.textContent)).toEqual([
+      "Vis alle37",
       "Barn & Oppvekst29",
       "Mat & Drikke8",
     ]);
-    expect(items[0].getAttribute("aria-current")).toBe("true");
-    expect(items[1].getAttribute("aria-current")).toBe("false");
+    expect(items[1].getAttribute("aria-current")).toBe("true");
+    expect(items[2].getAttribute("aria-current")).toBe("false");
+  });
+
+  it("«Vis alle» i dropdownen kaller onShowAll (reset til overblikk) og lukker menyen", () => {
+    const onShowAll = vi.fn();
+    const { getByTestId, queryByTestId } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+        onShowAll={onShowAll}
+      />,
+    );
+    fireEvent.click(getByTestId("category-dropdown-trigger"));
+    fireEvent.click(within(getByTestId("category-dropdown-menu")).getByText("Vis alle"));
+    expect(onShowAll).toHaveBeenCalled();
+    expect(queryByTestId("category-dropdown-menu")).toBeNull();
   });
 
   it("dropdown-valg av annet tema kaller onSelect og lukker — aktivt tema er no-op (ingen toggle-reset)", () => {

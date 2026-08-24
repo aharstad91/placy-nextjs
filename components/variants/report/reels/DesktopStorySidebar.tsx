@@ -413,7 +413,7 @@ function CategoryDetailView({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-black/10 bg-white/70 px-3 text-[13px] font-semibold text-stone-700 transition hover:border-stone-400 hover:text-stone-900"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 text-[13px] font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:text-stone-900"
         >
           <ArrowLeft size={15} />
           Tilbake
@@ -423,6 +423,7 @@ function CategoryDetailView({
             categories={allCategories}
             activeId={category.id}
             onSelect={onSelectCategory}
+            onShowAll={onBack}
           />
         )}
       </div>
@@ -593,13 +594,17 @@ function CategoryThemeDropdown({
   categories,
   activeId,
   onSelect,
+  onShowAll,
 }: {
   categories: SidebarPreviewCategory[];
   activeId: string;
   onSelect?: (id: string) => void;
+  /** «Vis alle» øverst i menyen — reset til overblikket (alle markører). */
+  onShowAll?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const active = categories.find((c) => c.id === activeId);
+  const total = categories.reduce((sum, c) => sum + c.count, 0);
 
   useEffect(() => {
     if (!open) return;
@@ -619,7 +624,7 @@ function CategoryThemeDropdown({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Velg tema"
-        className="flex h-9 w-full min-w-0 items-center gap-2 rounded-xl border border-black/10 bg-white/70 pl-3 pr-2.5 text-left text-[13px] font-semibold text-stone-800 transition hover:border-stone-400"
+        className="flex h-9 w-full min-w-0 items-center gap-2 rounded-xl border border-black/10 bg-white pl-3 pr-2.5 text-left text-[13px] font-semibold text-stone-800 shadow-sm transition hover:border-stone-400"
       >
         {active && (
           <span
@@ -653,6 +658,23 @@ function CategoryThemeDropdown({
           data-testid="category-dropdown-menu"
           className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl"
         >
+          {/* Reset-rad — utenfor tema-scrollen så den alltid er synlig. Speiler
+              «Hele nabolaget»-kortet i oversikten (samme ikon + totalsum). */}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              onShowAll?.();
+              setOpen(false);
+            }}
+            className="flex w-full items-center gap-2.5 border-b border-black/5 px-3.5 py-2.5 text-left text-[13px] font-medium text-stone-600 transition hover:bg-black/5"
+          >
+            <MapIcon size={14} className="shrink-0 text-stone-400" />
+            <span className="min-w-0 flex-1 truncate">Vis alle</span>
+            <span className="shrink-0 text-[11px] tabular-nums text-stone-400">
+              {total}
+            </span>
+          </button>
           <div className="max-h-[45vh] overflow-y-auto py-1">
             {categories.map((c) => {
               const isActive = c.id === activeId;
