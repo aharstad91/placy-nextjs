@@ -463,3 +463,20 @@ Reisetider beregnes av frontend ved runtime.
 ---
 
 *Sist oppdatert: 2026-06-10*
+
+## Mobil-URL til dev-server
+
+```bash
+scripts/mobile-url.sh                                    # sjekk alle dev-servere
+scripts/mobile-url.sh 3003                               # sjekk én port
+scripts/mobile-url.sh 3003 --restart                     # restart hvis HMR-WS er død
+scripts/mobile-url.sh 3003 --path /eiendom/placy-demo/strindfjordvegen-10/rapport-board
+```
+
+Skriver ut LAN-URL-en og verifiserer HMR-websocket-handshaken fra maskinens
+IP — som er den ENESTE sjekken som betyr noe. At siden svarer 200 over IP-en
+beviser ingenting: Turbopacks dev-runtime booter appen først når websocketen
+er koblet, og den avvises hvis nåværende IP ikke står i `allowedDevOrigins`
+(lista regnes ut ved OPPSTART, så en dev-server som har stått over natta har
+gårsdagens adresse). Symptomet er en blank side med HTML og alle JS-chunks
+på 200 — ser ut som nettverksproblem, er en avvist websocket.
