@@ -151,36 +151,50 @@ describe("SidebarContentPreview — nivå-2 drill-in", () => {
     expect(getByText("Flere skoler i gangavstand.")).toBeTruthy();
   });
 
-  it("nav-headeren viser tema-railen med aktivt tema markert, i temarekkefølge", () => {
-    const { getByTestId } = render(
+  it("nav-headeren viser Tilbake-knapp + temavelger; dropdownen lister temaene i rekkefølge med aktivt markert", () => {
+    const { getByText, getByTestId } = render(
       <SidebarContentPreview
         categories={editorialCategories}
         activeCategoryId="barn"
       />,
     );
-    const chips = within(getByTestId("category-chip-rail")).getAllByRole("button");
-    expect(chips.map((c) => c.textContent)).toEqual(["Barn & Oppvekst", "Mat & Drikke"]);
-    expect(chips[0].getAttribute("aria-current")).toBe("true");
-    expect(chips[1].getAttribute("aria-current")).toBe("false");
+    expect(getByText("Tilbake")).toBeTruthy();
+    const trigger = getByTestId("category-dropdown-trigger");
+    expect(trigger.textContent).toContain("Barn & Oppvekst");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+
+    fireEvent.click(trigger);
+    const items = within(getByTestId("category-dropdown-menu")).getAllByRole("menuitem");
+    // textContent = label + POI-antall (29/8).
+    expect(items.map((i) => i.textContent)).toEqual([
+      "Barn & Oppvekst29",
+      "Mat & Drikke8",
+    ]);
+    expect(items[0].getAttribute("aria-current")).toBe("true");
+    expect(items[1].getAttribute("aria-current")).toBe("false");
   });
 
-  it("chip-klikk på annet tema kaller onSelect — aktiv chip er no-op (ingen toggle-reset)", () => {
+  it("dropdown-valg av annet tema kaller onSelect og lukker — aktivt tema er no-op (ingen toggle-reset)", () => {
     const onSelect = vi.fn();
-    const { getByTestId } = render(
+    const { getByTestId, queryByTestId } = render(
       <SidebarContentPreview
         categories={editorialCategories}
         activeCategoryId="barn"
         onSelect={onSelect}
       />,
     );
-    const rail = getByTestId("category-chip-rail");
-    fireEvent.click(within(rail).getByText("Mat & Drikke"));
+    fireEvent.click(getByTestId("category-dropdown-trigger"));
+    fireEvent.click(within(getByTestId("category-dropdown-menu")).getByText("Mat & Drikke"));
     expect(onSelect).toHaveBeenCalledWith("mat");
-    fireEvent.click(within(rail).getByText("Barn & Oppvekst"));
+    expect(queryByTestId("category-dropdown-menu")).toBeNull();
+
+    fireEvent.click(getByTestId("category-dropdown-trigger"));
+    fireEvent.click(within(getByTestId("category-dropdown-menu")).getByText("Barn & Oppvekst"));
     expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(queryByTestId("category-dropdown-menu")).toBeNull();
   });
 
-  it("tilbake-pil kaller onShowAll", () => {
+  it("Tilbake-knappen kaller onShowAll", () => {
     const onShowAll = vi.fn();
     const { getByText } = render(
       <SidebarContentPreview
@@ -189,7 +203,7 @@ describe("SidebarContentPreview — nivå-2 drill-in", () => {
         onShowAll={onShowAll}
       />,
     );
-    fireEvent.click(getByText("Alle kategorier"));
+    fireEvent.click(getByText("Tilbake"));
     expect(onShowAll).toHaveBeenCalled();
   });
 
