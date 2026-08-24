@@ -6,6 +6,40 @@
 
 ---
 
+## 2026-08-24 — SATELITT SOM KAMERATILSTAND, IKKE SOM KARTMOTOR (kart-veksleren får et tredje segment, branch `feat/satelitt-modus`)
+
+**Kontekst:** Andreas ville ha rett-ovenfra-visningen folk kjenner fra Google Maps og FINN-kartet inn i boardets kart-veksler, uten å gi opp 3D — «satelitt» ovenfra, «3D» med dagens skew, og en myk overgang mellom de to. Hele leveransen ble kjørt gjennom `/ce-brainstorm` → `/ce-plan` (to runder multi-persona-review) → `/ce-work`. Requirements: `docs/brainstorms/2026-08-24-satelitt-modus-kart-veksler-requirements.md`, plan: `docs/plans/2026-08-24-002-feat-satelitt-modus-kart-veksler-plan.md`.
+
+**Nøkkelinnsikten som gjorde featuren billig: satellittbildet finnes allerede.** Google-photorealistic-motoren sett med tilt 0 ER satellittbildet, og motoren har `flyCameraTo` mellom vilkårlige posiurer. «Satelitt» er derfor en KAMERAPOSITUR i eksisterende motor — ingen ny tile-kilde, ingen Mapbox-satellitt-stil, ingen ny motor, og hele pin/label/popup-laget gjenbrukes gratis. Kart↔(Satelitt/3D) er fortsatt motorbytte; Satelitt↔3D er én kontinuerlig kamerabevegelse i samme instans.
+
+**Falsifiseringssjekken ble kjørt FØRST, som planen krevde.** Antakelsen «photorealistic ovenfra bærer satelitt-merkelappen» ble testet i browser før noe av Unit 2–5 ble bygget: dagens 3D-kart satt manuelt til tilt 0 i konsollen på range 1600 og 800, side om side mot Google Maps satellitt på samme utsnitt. Tiles er skarpe på begge nivåer, ingen synlige mesh-artefakter i Grilstad-bebyggelsen, pins/labels/popups leses fint. Sjekken PASSERTE — ingen eskalering til produkteier, ingen omdøping til «Ovenfra», Mapbox-satellitt forblir lukket.
+
+**Arkitekturvalget som review-rundene tvang frem: overgangen eies av DIRECTOREN, ikke av `handleModeChange`.** Første plan-utkast la `flyCameraTo` i view-handleren. Det ville blitt drept av director-effektens `stopCameraAnimation` i det overhead-dep-en endret seg — to konkurrerende skrivere — og hookens token-kansellering er en PRIVAT ref som bare guarder hookens egne utsatte callbacks, altså ikke tilgjengelig utenfra. `decideCameraIntent` fikk derfor en `overhead`-input, og view/overhead er director-INPUT. R9s «avbryt og omdiriger» følger da gratis: et nytt intent gir et nytt `flyCameraTo` som erstatter det pågående.
+
+**Tre klamp-beslutninger som ikke var åpenbare:**
+
+1. **Kategori-klikk i Satelitt kan ikke være en klampet cinematic.** Auto-utledede kategorikameraer skiller seg KUN i heading ±12° (`DERIVE_DRIFT_DEG`), så en cinematic med tilt/heading klampet til 0 ville kollapset A og B til samme positur — et dødt stillbilde bak en cut-fade i opptil 16 sekunder (`DEFAULT_CINEMATIC_MS`). Løsningen er en egen intent-`kind`: `overheadCategory`, en poi-lignende pan+zoom uten `cut`-felt.
+2. **Idle i Satelitt kan ikke være en fri-hold-no-op.** Uten en pose finnes ingen skriver for tre stier: 2D→sat mens kameramodus er «auto», slutten av en welcome-beat, og gjenoppretting etter en VO-beat. Derfor `overheadRest` med full hvilepose (hjem + spredning-skalert `orbitRange`, tilt/heading 0). Eksekutøren skiller kantene: 3D→sat beholder brukerens senter/range og legger bare kameraet ned; hvile med tilt≈0 holder HELT stille (pan flytter aldri kameraet tilbake til hjemmet); skrå positur i sat uten view-bytte betyr «beat slapp kameraet» → fly til hvileposituren.
+3. **Cut-overlayen må aldri fyre på ovenfra↔skrå.** Både cinematic- og orbit-cut-en har nå prevIntent-unntak for `overheadRest`/`overheadCategory`. En cream-fade midt i det som skal leses som én kamerabevegelse ville lest som et kapittel-skifte.
+
+**To stale påstander i mine egne plan-utkast ble falsifisert av koden og rettet før implementering:** ctrlKey-orbit-hijacken jeg trodde måtte skrus av i Satelitt er ALLEREDE fjernet (`map-view-3d.tsx` — boardet kjører alltid freeMode, drag er native pan), og `headingEnd` finnes ikke som felt i intro-banen (heading = `startHeading + sweepDeg·s`, så «lander nord opp» realiseres som `startHeading = −sweepDeg`).
+
+**Unit 4 ble derfor drift-OBSERVASJON, ikke gesture-endring.** Drag panorerer alt riktig; det som kan lyve er pillen. `overhead-drift.ts` poller faktisk tilt/heading mot GRAB-øyeblikkets positur (terskel 5°, heading med 0/360-wraparound) og flipper segmentet til «3D» i det posituren faktisk brytes — aldri på grab, og aldri med snap-back mot WebGL-pipelinen. Samtidig undertrykkes dagens grab-takeover (auto→fri) og free-hinten i Satelitt: uten det ville én pan klobbet `cameraMode` på VO-boards, og retur til 3D gjenopprettet feil modus.
+
+**Default-regelen (R6/R7):** `has3dAddon ? (hasVoiceOver ? "3d" : "sat") : "2d"`. Boards med 3D-tillegg og voice-over åpner uendret i 3D — den autorerte cinematikken ER produktet der. Basic-boards åpner ovenfra, og «Utforsk nabolaget»-introen beholder sweep, varighet og reveal-koreografi men LANDER tilt 0 / nord opp (`buildBasicIntroPath({ overheadLanding: true })`). Redusert bevegelse holder LANDINGSposen via ny `staticPoseAt`-opsjon — den gamle `staticOnly` holdt banens START, som ville gitt et skrått stillbilde under en pille som sier «Satelitt». `hasVoiceOver`-memoen måtte flyttes over view-`useState` (TDZ), som planen forutså.
+
+**Verifisert i frisk Chrome mot worktree-serveren (:3004):** Strindfjordvegen 10 (basic) åpner i Satelitt, intro lander tilt 0 / heading 0 / range 1600, segmentet sier «Satelitt» hele veien. Sat→3D-flyvningen samplet over tid: jevn tilt-rampe 6,7° → 50° på ~400 ms, senter beholdt (ingen hjem-teleport), `cutVisible` fyrer aldri. Kategori-klikk i Satelitt → tilt 0 / range 834; POI-klikk (Flipper Kafe) → tilt 0 / range 292 — pan+zoom uten tilt, som R5 krever. Kart-mellomsteg og retur lander i Satelitt (R10). Drift-flip: pointerdown alene holder «Satelitt», manuell tilt til 12° flipper til «3D» uten at kameraet snappes tilbake. StasjonsKvartalet (VO) åpner uendret i 3D/Auto, Auto/Fri-segmentet skjules i Satelitt og auto gjenopptas ved segment-retur. 0 konsollfeil (én kjent Mapbox-featureset-warning). Tre segmenter får plass i ⚙-popoveren uten horisontal overflow.
+
+**Status:** fem commits på `feat/satelitt-modus` (worktree `../placy-satelitt`), UNMERGED og ikke pushet. 3 009 tester grønne, `tsc` rent, lint 0 errors.
+
+**Åpne punkter:**
+- **Flyvningsvarighet og POI-range er ikke finjustert visuelt.** `SAT_TRANSITION_MS = 500` og gjenbruk av `POI_RANGE = 300` er startverdier; ovenfra trenger i prinsippet mindre avstand for samme kontekst.
+- **Drift-terskelen (5°) er ikke kjent på ekte touch-hardware.** Verifisert med syntetisk tilt i konsollen, ikke med to fingre på telefon. Spørsmålet om flippen trenger et hint («Du ser nå i 3D») står også åpent.
+- **Mobil-verifisering på ekte 320 px gjenstår** — Chrome-vinduet ville ikke under 500 px bredde. Popover-innholdet måler 188 px, så det er god margin, men det er utregnet, ikke sett.
+- **Instrumentering av modus-veksling** (fra/til-event, for å etterprøve Satelitt-default-hypotesen) er bevisst deferred til Moat 2-sporet.
+
+---
+
 ## 2026-08-24 — HVA AV OPENSTREETMAP SOM FÅR VISES TIL EN BOLIGKJØPER (OSM-porten + tverr-kilde-dedup, commits d005073 og 94dc451 på main)
 
 **Kontekst:** Andreas åpnet et rent OSM-kart over Grilstad og så to ting samtidig: OSM er tett av mikro-objekter Google mangler — lekeplasser, benker, bordbenker, badeplasser, grillplasser, badeplasser i fjæra — og den samme tettheten inneholder objekter det er *direkte misvisende* å vise. Hans egen formulering: parkeringsplassene rundt boligene er private, og «hvis AI drar inn denne dataen, blir det feil å vise». Sesjonen ble spesifikasjonen av hvor den grensen går, og de to mekanismene som håndhever den.
