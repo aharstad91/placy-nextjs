@@ -98,12 +98,26 @@ describe("tema↔kategori-kontrakt (driftvern)", () => {
     expect(GOOGLE_CATEGORY_MAP.hair_care.id).toBe("haircare");
   });
 
-  it("offentlige POI-kategorier (skole/barnehage/idrett) ligger i Barn & Oppvekst-temaet (original-bugen)", () => {
+  it("skole/barnehage/idrett ligger i Barn & Oppvekst-temaet (original-bugen)", () => {
     const barnOppvekst = REPORT_THEME_DEFAULTS.find((t) => t.id === "barn-oppvekst");
     expect(barnOppvekst).toBeDefined();
-    for (const cat of PUBLIC_POI_CATEGORIES) {
-      expect(barnOppvekst!.categories).toContain(cat.id);
+    for (const id of ["skole", "barnehage", "idrett"]) {
+      expect(barnOppvekst!.categories).toContain(id);
     }
+  });
+
+  it("ALLE kategorier den offentlige pipelinen kan skrive rendres i et tema", () => {
+    // Generaliseringen av testen over: fra 2026-08-24 arver
+    // PUBLIC_POI_CATEGORIES Overpass-hvitelisten fra osm-gate, og de nye
+    // kategoriene hører hjemme i andre temaer enn Barn & Oppvekst (badeplass/
+    // marina/park/outdoor → Natur & Friluftsliv, swimming → Trening). Kravet
+    // er derfor «et tema», ikke «dette temaet» — en kategori uten tema havner
+    // i poolen uten å vises noe sted.
+    const union = themeCategoryUnion(REPORT_THEME_DEFAULTS);
+    const orphans = PUBLIC_POI_CATEGORIES.map((c) => c.id)
+      .filter((id) => !union.has(id))
+      .sort();
+    expect(orphans).toEqual([]);
   });
 
   it("statisk: NATUR_LINK_CATEGORIES-speilet matcher literalen i import-public-pois.ts", () => {
