@@ -1,6 +1,7 @@
 /**
  * Hydrerer rapport-produktet etter at alle POI-er er importert:
- * 1. Linker project_pois → product_pois
+ * 1. Linker project_pois → product_pois, med tverr-kilde-dedup av
+ *    sammenfallende pins (samme sted fra flere kilder)
  * 2. Scorer og markerer featured (topp 3 per kategori, maks 1500 m)
  * 3. Sletter + re-inserts product_categories med display_order
  *
@@ -9,6 +10,10 @@
 
 import { createServerClient } from "@/lib/supabase/client";
 import { REPORT_THEME_DEFAULTS } from "@/lib/pipeline/report-defaults";
+import {
+  dedupeColocatedPins,
+  summarizeDedupe,
+} from "@/lib/pipeline/dedupe-colocated-pins";
 
 // ── Haversine ─────────────────────────────────────────────────────────────
 
@@ -93,9 +98,56 @@ export async function hydrateReport(options: {
     return { productPoisLinked: 0, featuredMarked: 0, categoriesPopulated: 0, warnings };
   }
 
-  const poiIds = projectPois.map((p) => p.poi_id);
+  const poolPoiIds = projectPois.map((p) => p.poi_id);
 
-  // 2. Slett eksisterende product_pois og re-insert fra project_pois (ren re-hydrering)
+  // 2. POI-data hentes FØR lenkingen: dedupen under trenger navn, koordinat og
+  //    innholdsfelt, og featured-scoringen skal bare se de pinnene som faktisk
+  //    blir vist.
+  const { data: poolPois, error: poolError } = await db
+    .from("pois")
+    .select(
+      "id, name, category_id, lat, lng, source, editorial_hook, local_insight, google_place_id, google_rating, google_review_count"
+    )
+    .in("id", poolPoiIds);
+
+  if (poolError) throw new Error(`Henting av poi-data feilet: ${poolError.message}`);
+
+  // 3. Tverr-kilde-dedup. Samme fysiske sted kommer inn fra flere kilder (OSM +
+  //    Barnehagefakta for samme barnehage, intern seed + OSM for samme badeplass,
+  //    OSM-node + OSM-way for samme idrettsanlegg), og `spread-co-located` sprer
+  //    sammenfallende markører i stedet for å stable dem — så duplikatene vises
+  //    side om side som om det var to steder. Poolen (`project_pois`) beholder
+  //    alle radene med reisetidene sine; det er bare pinnen som skjules.
+  const dedupable = (poolPois ?? []).filter(
+    (p) => p.lat != null && p.lng != null && p.category_id && p.name
+  );
+  const dedupe = dedupeColocatedPins(
+    dedupable.map((p) => ({
+      id: p.id,
+      name: p.name as string,
+      lat: p.lat as number,
+      lng: p.lng as number,
+      categoryId: p.category_id as string,
+      source: p.source ?? null,
+      editorialHook: p.editorial_hook,
+      localInsight: p.local_insight,
+      googlePlaceId: p.google_place_id,
+    }))
+  );
+  warnings.push(summarizeDedupe(dedupe));
+  for (const drop of dedupe.dropped) {
+    warnings.push(
+      `   skjult pin: ${drop.name} (${drop.categoryId}, ${drop.meters} m fra beholdt ${drop.keptId}) — ${drop.id}`
+    );
+  }
+
+  // Rader som ikke KUNNE dedupes (mangler koordinat, kategori eller navn) skal
+  // ikke falle ut som bieffekt — de var lenket før dedupen fantes.
+  const droppedIds = new Set(dedupe.dropped.map((d) => d.id));
+  const poiIds = poolPoiIds.filter((id) => !droppedIds.has(id));
+  const poisData = (poolPois ?? []).filter((p) => !droppedIds.has(p.id));
+
+  // 4. Slett eksisterende product_pois og re-insert fra project_pois (ren re-hydrering)
   await db.from("product_pois").delete().eq("product_id", productId);
 
   // featured settes SIST (batch nedenfor) — ved re-link er alle false. v2.product_pois
@@ -110,15 +162,7 @@ export async function hydrateReport(options: {
     .insert(productPoiRows);
   if (linkError) throw new Error(`product_pois linking feilet: ${linkError.message}`);
 
-  // 3. Hent POI-data for scoring
-  const { data: poisData, error: poisError } = await db
-    .from("pois")
-    .select("id, category_id, lat, lng, google_rating, google_review_count")
-    .in("id", poiIds);
-
-  if (poisError) throw new Error(`Henting av poi-data feilet: ${poisError.message}`);
-
-  // 4. Featured-scoring: topp 3 per kategori innenfor 1500 m — SETTES SIST
+  // 5. Featured-scoring: topp 3 per kategori innenfor 1500 m — SETTES SIST
   const categoryMap: Record<string, string[]> = {};
   for (const theme of REPORT_THEME_DEFAULTS) {
     for (const cat of theme.categories) {
@@ -133,7 +177,7 @@ export async function hydrateReport(options: {
     distM: number;
   }> = [];
 
-  for (const poi of poisData ?? []) {
+  for (const poi of poisData) {
     if (!poi.lat || !poi.lng || !poi.category_id) continue;
     const distM = haversineMeters(centerLat, centerLng, poi.lat, poi.lng);
     if (distM > FEATURED_MAX_DISTANCE_M) continue;
@@ -182,9 +226,9 @@ export async function hydrateReport(options: {
     }
   }
 
-  // 5. product_categories — slett eksisterende, re-insert med display_order
+  // 6. product_categories — slett eksisterende, re-insert med display_order
   const uniqueCategoryIds = Array.from(
-    new Set((poisData ?? []).map((p) => p.category_id).filter(Boolean))
+    new Set(poisData.map((p) => p.category_id).filter(Boolean))
   ) as string[];
 
   // Display_order basert på tema-rekkefølge i REPORT_THEME_DEFAULTS

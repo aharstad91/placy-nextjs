@@ -1,7 +1,7 @@
 # OSM som kandidat-kilde inn i /curate-area — ikke som pin-kilde i provisjoneringen
 
 **Dato:** 2026-08-24
-**Status:** Fase 1 (K1, K2, K4) implementert 2026-08-24. K3 og Fase 2–3 gjenstår.
+**Status:** Fase 1 komplett (K1, K2, K3, K4) 2026-08-24. Fase 2–3 gjenstår.
 **Utløser:** Andreas så at OSM-kartet over Grilstad/Ranheim er tett av objekter Google mangler (lekeplasser, bordbenker, badeplasser, grillplasser) — men også tett av objekter som er *feil å vise*: private borettslags-parkeringer og gårdsrom-lekeplasser markert som om de var nabolagets. Bekymringen er ikke datamengde, det er misforståelses-risiko hos meglerens boligkjøper.
 
 ---
@@ -183,7 +183,7 @@ opprydding.
 
 **K2** — `import-public-pois.ts` ruter all Overpass-import gjennom `osm-gate`. Overpass-spørringen utvides til hvitelistens tagger. Ingen rad skrives uten at gaten godkjente den, og avvisninger telles i `ImportPublicPoisResult.warnings`.
 
-**K3** — Tverr-kilde-dedup ved lenking: før en POI lenkes til et prosjekt, forkast lenken hvis prosjektet allerede har en lenket POI med samme normaliserte navn innenfor 200 m. Beholdt rad velges etter kilde-prioritet (Google > NSR/Barnehagefakta/Entur > OSM > interne seeds), fordi den prioriteten avgjør hvem som har åpningstider og bilder. Se «Funnet under spesifiseringen» under — dette er ikke et OSM-spesifikt problem.
+**K3** — Tverr-kilde-dedup av sammenfallende pins: samme kategori + samme normaliserte navn innenfor 200 m regnes som samme sted, og bare én pin vises. Se «Slik K3 faktisk landet» under — plasseringen og rangeringsregelen ble begge andre enn spesifisert her, og begge endringene ble funnet ved å måle mot prod.
 
 **K4** — Kategori-mappingen fra Port 4 er en frosset tabell i `osm-gate.ts` med test som feiler hvis noen legger til en tag uten å begrunne den i kommentar.
 
@@ -240,6 +240,40 @@ Seks av ni er kryss-kilde-kollisjoner (Google mot intern seed, NSR mot OSM), og 
 
 **Derfor er K3 formulert som tverr-kilde-dedup ved lenking, ikke som en OSM-spesifikk `osm_id`-backfill.** Det er også et mildere inngrep: det fjerner 14 *lenker*, ikke POI-rader, og en fjernet lenke er reversibel ved re-provisjonering. De 236 overtallige radene i basen kan ligge — de er usynlige, og oppryddingen der er et eget mutasjonsløp.
 
+## Slik K3 faktisk landet (implementert 2026-08-24)
+
+`lib/pipeline/dedupe-colocated-pins.ts` + 19 tester. To avvik fra spesifikasjonen over, begge funnet ved å kjøre den mot prod før innkobling:
+
+### 1. Dedupen hører i hydreringen, ikke i lenkingen
+
+Spec'en sa «ved lenking til `project_pois`». Det er feil sted, av en grunn som først ble tydelig da jeg målte: **boardet rendrer `product_pois`, ikke `project_pois`.** `project_pois` er poolen, og den bærer de precomputede reisetidene (migrasjon 071). Å droppe en rad fra poolen ville kastet reisetiden og gjort valget varig.
+
+Dedupen ligger derfor i `hydrate-report.ts`, som er steget som deriverer `product_pois` fra poolen (delete + re-insert). Det gir tre ting: poolen forblir komplett, valget er en ren visnings-beslutning som re-hydrering gjenoppretter, og fordi hydreringen er ett felles chokepoint nedstrøms for BÅDE Google-importen og de offentlige kildene, trengs ikke to separate fikser i to lenkestier.
+
+### 2. Innhold slår kilde — kilde-prioritet alene skjulte kuratert Lokalkunnskap
+
+Spec'en sa «kilde-prioritet: Google > registre > OSM > interne seeds». Implementert slik ville den droppet **`badeplass-grilstadstranda`** — som har `editorial_hook`, `poi_tier`, `is_local_gem`, `area_id` og `grounding` — til fordel for **`osm-relation-20106862`**, som har ingenting utover `osm_id`. Interne seeds er nemlig sist i kilde-rangeringen, og OSM er over dem.
+
+Rangeringen er derfor: **beskyttet ID → redaksjonelt innhold → Google-metadata → kilde → OSM-geometritype → ID.** Redaksjonell tekst rangeres over Google-metadata fordi den er Placy-eid og håndskrevet per sted, mens rating/åpningstider/bilder kan hentes på nytt av pipelinen når som helst — og fordi `highlightCandidates` i strøkets editorial peker på KONKRETE POI-IDer: skjules den kuraterte raden, forsvinner høydepunktet fra boardet.
+
+`protectedIds` er lagt inn som en eksplisitt seam for kallere som vet om slike eksterne pekere. Hydreringen bruker den ikke i dag.
+
+### Resultatet på prod
+
+15 pins skjult på 3 boards, 0 gjenstående duplikater etter re-hydrering:
+
+| Board | Skjult |
+|-------|--------|
+| `grilstad-marina_byggetrinn-4` | 8 — 3 barnehager (OSM mot Barnehagefakta), Grilstadstranda (OSM mot kuratert seed), EXTRA Arena (OSM-node mot OSM-way med editorial), Trondheim Båtforening (Google mot rad med editorial), 2 ladestasjoner |
+| `placy-demo_strindfjordvegen-10` | 4 — Extra Arena, 3 ladestasjoner |
+| `megler-harstad_strindfjordvegen-10-…` | 3 — 3 ladestasjoner |
+
+Merk at «Recharge Charging Station» finnes i flere klynger: de tre innenfor 200 m ble én pin, men de to som ligger 450 m+ unna er egne steder og beholdes. Terskelen skiller dem uten navnelogikk.
+
+Verifisert i browser på begge Ranheim-boards: én `Extra Arena`-pin, én ladestasjon per anlegg. Før-snapshots i `backups/*-product_pois-før-dedup.json`.
+
+---
+
 ## Scope-grenser
 
 ### Inkludert
@@ -264,7 +298,7 @@ Porten, strøk-sveipen, aggregat-fakta, `/curate-area`-wiringen, revisjonsrappor
 - [ ] `npx tsx scripts/osm-area-scan.ts --file data/areas/ranheim.staging.json` skriver en fil med (a) Bane A-kandidater med osm-id, (b) aggregat-fakta per tema, (c) avvisnings-regnskap der summen av avviste + godkjente er lik antall elementer Overpass returnerte.
 - [ ] Aggregat-tallene for Ranheim er manuelt verifisert mot kartet for minst tre av fire utregnere (strandlinje, park-areal, sti-km).
 - [ ] `/curate-area.md` har steg 2b og regelen om at OSM aldri blir `highlightCandidate` uten Bane A-passering.
-- [ ] Etter K3: de 9 kjente duplikat-tilfellene gir én pin hver, og beholdt rad er den med høyest kilde-prioritet (verifisert i browser på `placy-demo_strindfjordvegen-10`).
+- [x] Etter K3: 15 sammenfallende pins skjult på 3 boards, 0 gjenstående duplikater, og beholdt rad er den med redaksjonelt innhold der det finnes (verifisert i browser på begge Ranheim-boards).
 - [ ] K7-rapporten dekker alle 787 OSM-rader og rapporterer fullstendighet: «787 av 787 vurdert, X ville passert, Y avvist fordelt på Z grunner».
 - [x] `npm run lint` (0 errors), `npx vitest run` (2 956 tester, 190 filer), `npx tsc --noEmit` grønt.
 
