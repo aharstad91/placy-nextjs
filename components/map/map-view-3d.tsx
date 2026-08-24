@@ -77,8 +77,6 @@ export interface MapView3DProps {
     /** Kvadratisk thumbnail (data-URI) for markøren. Undefined → bygnings-glyph. */
     imageSrc?: string;
   };
-  /** Per-POI opacity — poi.id → opacity (0–1). Default 1 for alle. */
-  opacities?: Record<string, number>;
   /**
    * Når true: `pois` rendres som kompakte farge-prikker (`BlobMarker3D`) i
    * stedet for fulle ikon-pins. Brukes i mobil story-mode-peek (sekundær flate)
@@ -171,14 +169,12 @@ function MapReadyBridge({
  */
 const Marker3DItem = memo(function Marker3DItem({
   poi,
-  opacity,
   onPOIClick,
   label,
   labelSide,
   compact,
 }: {
   poi: POI;
-  opacity: number;
   onPOIClick?: (id: string) => void;
   /** POI-navn tegnet inn i pin-SVG-en. Undefined → ingen label (se `markerLabels`). */
   label?: string;
@@ -219,14 +215,13 @@ const Marker3DItem = memo(function Marker3DItem({
           tilfeller: en altitude-flipp er en posisjonsendring på et element som
           skal stå stille. */}
       {compact ? (
-        <BlobMarker3D color={poi.category.color} opacity={opacity} />
+        <BlobMarker3D color={poi.category.color} />
       ) : (
         <Marker3DPin
           color={poi.category.color}
           backgroundColor={hexLightTint(poi.category.color)}
           Icon={getFilledIcon(poi.category.icon)}
           size={40}
-          opacity={opacity}
           label={label}
           labelSide={labelSide}
         />
@@ -297,7 +292,6 @@ function Map3DInner({
   activated = true,
   mapId,
   projectSite,
-  opacities,
   revealItems,
   showReveal = false,
   animateReveal = true,
@@ -396,7 +390,6 @@ function Map3DInner({
             <Marker3DItem
               key={poi.id}
               poi={poi}
-              opacity={opacities?.[poi.id] ?? 1}
               onPOIClick={onPOIClick}
               label={compact ? undefined : placement?.text}
               labelSide={placement?.side}

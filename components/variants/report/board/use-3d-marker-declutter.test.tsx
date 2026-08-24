@@ -62,7 +62,10 @@ interface Props {
 function setup(
   map: FakeMap | null,
   pois: POI[],
-  overrides: Partial<Omit<Props, "pois">> = {},
+  overrides: Partial<Omit<Props, "pois">> & {
+    homeName?: string;
+    homeSubtitle?: string;
+  } = {},
 ) {
   return renderHook(
     (props: Props) =>
@@ -70,7 +73,8 @@ function setup(
         map3d: map,
         pois: props.pois,
         home: HOME,
-        homeName: "Testprosjektet",
+        homeName: overrides.homeName ?? "Testprosjektet",
+        homeSubtitle: overrides.homeSubtitle,
         activePOIId: props.activePOIId,
         enabled: props.enabled,
         suppressActiveLabel: props.suppressActiveLabel,
@@ -167,17 +171,62 @@ describe("useMarker3DDeclutter — klynger", () => {
   });
 });
 
-describe("useMarker3DDeclutter — prosjekt-chipen som hindring", () => {
-  it("POI bak chipen blir prikk; POI godt under den er uberørt", () => {
-    // Chipen er forankret i bunn-midten på hjemmet (900, 800) og strekker seg
-    // oppover — altså rundt y ≈ 700–800, x ≈ 790–1010.
+describe("useMarker3DDeclutter — prosjektmarkøren som hindring", () => {
+  // Markøren er forankret i bunn-midten på hjemmet (x 900, y 800) og strekker
+  // seg OPPOVER. Etter disc-redesignet (2026-08-24) er disc-en 52 px og teksten
+  // står bare til HØYRE, så hindringen er asymmetrisk: for «Testprosjektet»
+  // dekker den ca. x 874–1035 og y 749–800 ved range 900.
+  //
+  // POI-kandidatens y løftes til disc-senter (y − 20) før kollisjonen, så en POI
+  // deklarert på y = 790 kolliderer som y = 770.
+  it("POI bak markøren blir prikk; POI godt under den er uberørt", () => {
     const { result } = setup(makeMap(900), [
-      poi("bak", 900, 750, 4),
-      poi("langt-under", 900, 100, 4),
+      poi("bak", 955, 790, 4),
+      poi("langt-under", 955, 100, 4),
     ]);
     settle();
     expect(result.current.demotedIds.has("bak")).toBe(true);
     expect(result.current.demotedIds.has("langt-under")).toBe(false);
+  });
+
+  it("POI til VENSTRE for disc-en er uberørt — der står det ingen tekst", () => {
+    // Regresjonstest: hindringen var tidligere den symmetriske SVG-rammen
+    // sentrert på disc-en, så teksten ble speilet inn i tomrommet til venstre og
+    // demoterte alt der. x = 820 ligger utenfor disc-ens venstre kant (874).
+    const { result } = setup(makeMap(900), [poi("venstre", 820, 790, 4)]);
+    settle();
+    expect(result.current.demotedIds.has("venstre")).toBe(false);
+  });
+
+  it("hindringen blir bredere når prosjektnavnet er langt", () => {
+    // Samme POI, to navnelengder. Med et langt navn strekker teksten seg forbi
+    // x = 1100 og fanger POI-en; med et kort navn gjør den det ikke.
+    const at = () => [poi("hoyre", 1100, 790, 4)];
+    const kort = setup(makeMap(900), at(), { homeName: "Nav" });
+    settle();
+    expect(kort.result.current.demotedIds.has("hoyre")).toBe(false);
+
+    const langt = setup(makeMap(900), at(), {
+      homeName: "Strindfjordvegen 10 Ranheim",
+    });
+    settle();
+    expect(langt.result.current.demotedIds.has("hoyre")).toBe(true);
+  });
+
+  it("uten undertittel reserveres ikke plass til en", () => {
+    // `homeSubtitle: ""` er «ingen undertittel». Med et KORT navn er det
+    // undertittelen som ellers setter bredden, så hindringen krymper uten den.
+    const at = () => [poi("hoyre", 960, 790, 4)];
+    const med = setup(makeMap(900), at(), { homeName: "Nav" });
+    settle();
+    expect(med.result.current.demotedIds.has("hoyre")).toBe(true);
+
+    const uten = setup(makeMap(900), at(), {
+      homeName: "Nav",
+      homeSubtitle: "",
+    });
+    settle();
+    expect(uten.result.current.demotedIds.has("hoyre")).toBe(false);
   });
 });
 

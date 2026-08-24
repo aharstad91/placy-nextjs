@@ -17,7 +17,7 @@ import {
 import { equivalentZoomForCamera } from "@/lib/board/camera-zoom";
 import { projectLatLngToScreen } from "@/components/map/project-latlng-to-screen";
 import { scaleForRange } from "@/components/map/project-pin-scale";
-import { projectSitePinSize } from "@/components/map/ProjectSitePin";
+import { projectSitePinBlocker } from "@/components/map/ProjectSitePin";
 import { BLOB_BASE_SIZE } from "@/components/map/BlobMarker3D";
 import { computeZoomTier } from "./use-board-zoom-tier";
 
@@ -76,14 +76,14 @@ const LABEL_OFFSET_3D = PIN_HALF + LABEL_GAP_X;
 const POI_ALTITUDE_M = 18;
 /**
  * Google forankrer marker-innhold i BUNN-MIDTEN av SVG-rammen (verifisert mot
- * prosjekt-chipens pil og målt på Strindfjordvegen: den projiserte y-en lander
+ * prosjektmarkøren og målt på Strindfjordvegen: den projiserte y-en lander
  * konsekvent en halv markørhøyde UNDER den tegnede skiva). Det projiserte
  * punktet er altså ikke skivas senter — og det er skiva labels legger seg ved
  * siden av, og skiva som kolliderer. Vi løfter derfor y til visuelt senter før
  * geometrien regnes.
  */
 const anchorToDiscCenterY = (y: number, halfHeight: number) => y - halfHeight;
-/** Høyden prosjekt-chipen ligger på (`projectSite`-markøren i `map-view-3d`). */
+/** Høyden prosjektmarkøren ligger på (`projectSite`-markøren i `map-view-3d`). */
 const PROJECT_ALTITUDE_M = 30;
 /** Googles dokumenterte default for `fov`. */
 const DEFAULT_FOV_DEG = 35;
@@ -135,10 +135,17 @@ export interface UseMarker3DDeclutterParams {
   map3d: unknown | null;
   /** Markørene som faktisk er mountet (`useBoardMarkerSet.markerPOIs`). */
   pois: readonly POI[];
-  /** Prosjekt-tomten — chipen der er den største hindringen på skjermen. */
+  /** Prosjekt-tomten — markøren der er alltid synlig og blokkerer det den dekker. */
   home: { lat: number; lng: number };
-  /** Prosjektnavnet chipen viser. Bredden avhenger av det. */
+  /** Prosjektnavnet markøren viser. Bredden avhenger av det. */
   homeName: string;
+  /**
+   * Undertittelen markøren viser. Utelates den, brukes samme default som
+   * komponenten (`PROJECT_PIN_DEFAULT_SUBTITLE`) — hindringen må reservere plass
+   * til NØYAKTIG den teksten som tegnes, ellers demoterer vi POI-er mot en boks
+   * som ikke finnes.
+   */
+  homeSubtitle?: string;
   /** Åpen POI. Kulles aldri, demoteres aldri — brukerens fokuspunkt. */
   activePOIId: string | null;
   /**
@@ -177,6 +184,7 @@ export function useMarker3DDeclutter({
   pois,
   home,
   homeName,
+  homeSubtitle,
   activePOIId,
   enabled,
   suppressActiveLabel = false,
@@ -190,6 +198,7 @@ export function useMarker3DDeclutter({
     pois,
     home,
     homeName,
+    homeSubtitle,
     activePOIId,
     enabled,
     suppressActiveLabel,
@@ -198,6 +207,7 @@ export function useMarker3DDeclutter({
     pois,
     home,
     homeName,
+    homeSubtitle,
     activePOIId,
     enabled,
     suppressActiveLabel,
@@ -209,6 +219,7 @@ export function useMarker3DDeclutter({
       pois: items,
       home: site,
       homeName: siteName,
+      homeSubtitle: siteSubtitle,
       activePOIId: activeId,
       enabled: on,
       suppressActiveLabel: hideActiveLabel,
@@ -267,8 +278,9 @@ export function useMarker3DDeclutter({
       projected.push({ poi, x: pt.x, y: anchorToDiscCenterY(pt.y, PIN_HALF) });
     }
 
-    // Prosjekt-chipen som hindring. Den er forankret i bunn-midten (pila peker
-    // ned mot tomta), så boksen strekker seg OPPOVER fra det projiserte punktet.
+    // Prosjektmarkøren som hindring. Boksen er ASYMMETRISK om disc-en fordi
+    // teksten bare står til høyre — `projectSitePinBlocker` eier den geometrien
+    // og forklarer hvorfor.
     const blockers: PinBlocker[] = [];
     const homePt = projectLatLngToScreen(
       map,
@@ -277,16 +289,16 @@ export function useMarker3DDeclutter({
       PROJECT_ALTITUDE_M,
     );
     if (homePt) {
-      const { width, height } = projectSitePinSize(
+      const box = projectSitePinBlocker(
         siteName,
-        undefined,
+        siteSubtitle,
         scaleForRange(range),
       );
       blockers.push({
-        x: homePt.x,
-        y: homePt.y - height / 2,
-        halfWidth: width / 2,
-        halfHeight: height / 2,
+        x: homePt.x + box.dx,
+        y: homePt.y + box.dy,
+        halfWidth: box.halfWidth,
+        halfHeight: box.halfHeight,
       });
     }
 
