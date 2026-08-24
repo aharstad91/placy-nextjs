@@ -85,6 +85,13 @@ interface Props {
    * gjennom et motor-bytte.
    */
   onMapReady?: (map3d: Map3DInstance | null) => void;
+  /**
+   * Satelitt-modus (BoardMap: view === "sat"). Directoren produserer da kun
+   * ovenfra-poser (tilt/heading 0) og eier kameraet også i fri kameramodus;
+   * outro-uttrekket klampes; grab-takeoveren (auto→fri) undertrykkes — pan i
+   * Satelitt skal ikke klobbe cameraMode (R8c/R8d). Default false.
+   */
+  overhead?: boolean;
 }
 
 /**
@@ -123,6 +130,7 @@ export function BoardMap3D({
   isFront = false,
   mapPaddingBottom = 0,
   onMapReady,
+  overhead = false,
 }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const engagement = useEngagement();
@@ -378,6 +386,11 @@ export function BoardMap3D({
   // state-maskin med token-kansellering (use-board-3d-camera). Kategori-skifte
   // uten waypoints rører IKKE kameraet (orbiten går uavbrutt videre). Markørene
   // er statiske (full opacity) — ingen opacity-reveal (WebGL-kontekst-churn).
+  // Drift-flippen (gesten som bryter ovenfra-posituren og flipper segmentet til
+  // 3D) setter denne FØR view-byttet: sat→3d-overgangen i directoren skal da
+  // ikke fly kameraet til skrå — brukerens gest eier alt posituren.
+  const skipSkraaReentryRef = useRef(false);
+
   const { cutVisible } = useBoard3DCamera({
     map3dInstance,
     cameraMode,
@@ -389,6 +402,9 @@ export function BoardMap3D({
     audioDurationMs,
     audioPaused,
     reducedMotion,
+    overhead,
+    outroActive: isOutroBeat,
+    skipSkraaReentryRef,
     orbitRange,
     // Basic-tier (uten voice-over): ingen idle-orbit. Etter intro-flythrough-en
     // HOLDER kameraet der flyturen landet i stedet for å re-aime til orbit-
@@ -413,6 +429,7 @@ export function BoardMap3D({
     establishingShot,
     isOutroBeat,
     cameraMode,
+    overhead,
     orbitRange,
     reducedMotion,
     audioDurationMs,

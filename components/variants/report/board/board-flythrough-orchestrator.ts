@@ -133,6 +133,10 @@ export interface UseBoardFlythroughParams {
   establishingShot: EstablishingPathConfig | undefined;
   isOutroBeat: boolean;
   cameraMode: CameraMode;
+  /** Satelitt-modus (view === "sat"): outro-uttrekket klampes til ovenfra
+   *  (tilt 0) — den ENE kamera-skriveren utenfor directoren som ellers ville
+   *  tiltet kameraet mens pillen sier «Satelitt» (R8a/R8b). */
+  overhead?: boolean;
   orbitRange: number;
   reducedMotion: boolean;
   audioDurationMs: number | undefined;
@@ -155,6 +159,7 @@ export function useBoardFlythrough({
   establishingShot,
   isOutroBeat,
   cameraMode,
+  overhead = false,
   orbitRange,
   reducedMotion,
   audioDurationMs,
@@ -297,10 +302,13 @@ export function useBoardFlythrough({
       endCamera: {
         center: { lat: homeLat, lng: homeLng, altitude: 0 },
         range: SUMMARY_RANGE,
-        tilt: SUMMARY_TILT,
+        // Satelitt: uttrekket klampes til ovenfra — kameraet trekkes fortsatt ut
+        // til oversikts-rangen, men uten å tilte (pillen sier «Satelitt» og skal
+        // aldri lyve). Etter beaten holder directorens overhead-hvile posituren.
+        tilt: overhead ? 0 : SUMMARY_TILT,
         heading: 0,
       },
       durationMillis: SUMMARY_FLY_MS,
     });
-  }, [isOutroBeat, cameraMode, map3dInstance, homeLat, homeLng]);
+  }, [isOutroBeat, cameraMode, overhead, map3dInstance, homeLat, homeLng]);
 }

@@ -11,6 +11,7 @@ import {
   ORBIT_RANGE,
   POI_RANGE,
   SUMMARY_RANGE,
+  SAT_TRANSITION_MS,
   CUT_FADE_MS,
   DEFAULT_CINEMATIC_MS,
   DERIVE_DRIFT_DEG,
@@ -419,6 +420,158 @@ describe("decideCameraIntent — autoOrbit:false (basic-tier hold)", () => {
       activePOI: { lat: 63.42, lng: 10.41 },
     });
     expect(intent.kind).toBe("poi");
+  });
+});
+
+// Satelitt (overhead, R8a): vedvarende director-eid ovenfra-tilstand — alle
+// poser klampes til tilt 0 / heading 0, og directoren eier kameraet også i fri
+// kameramodus (basic-boards står i «free», men POI-/kategoriklikk skal fly, R5).
+describe("decideCameraIntent — overhead (Satelitt)", () => {
+  const overheadInput = (overrides: Partial<CameraDecisionInputs> = {}) =>
+    baseInput({ overhead: true, ...overrides });
+
+  it("åpen POI → poi-intent klampet til tilt 0 / heading 0 (pan+zoom, aldri skrå)", () => {
+    const intent = decideCameraIntent(
+      overheadInput({ activePOI: { lat: 63.42, lng: 10.41 } }),
+    );
+    expect(intent).toEqual({
+      kind: "poi",
+      pose: {
+        center: { lat: 63.42, lng: 10.41, altitude: 0 },
+        range: POI_RANGE,
+        tilt: 0,
+        heading: 0,
+      },
+    });
+  });
+
+  it("eier kameraet også i fri kameramodus (basic-boards: R5 er ny flyvningsatferd)", () => {
+    const intent = decideCameraIntent(
+      overheadInput({ cameraMode: "free", activePOI: { lat: 63.42, lng: 10.41 } }),
+    );
+    expect(intent.kind).toBe("poi");
+  });
+
+  it("kategori med config → overheadCategory pan+zoom-intent, ALDRI cinematic, ingen cut", () => {
+    const intent = decideCameraIntent(
+      overheadInput({ activeCategoryId: "mat-drikke", categoryConfig: config() }),
+    );
+    // Klampet cinematic ville kollapset til et dødt stillbilde bak cut-fade
+    // (auto-utledede A/B skiller seg kun i heading ±12°) — derfor egen kind.
+    expect(intent).toEqual({
+      kind: "overheadCategory",
+      categoryId: "mat-drikke",
+      pose: {
+        center: { lat: 63.43, lng: 10.39, altitude: 0 },
+        range: 500,
+        tilt: 0,
+        heading: 0,
+      },
+    });
+    expect("cut" in intent).toBe(false);
+  });
+
+  it("idle → overhead-hvile-INTENT med pose (aldri orbit, aldri fri-hold-no-op)", () => {
+    // Fri-hold er ikke nok: uten pose har 2D→sat-i-auto, welcome-beat-slutt og
+    // beat-gjenoppretting ingen skriver som etablerer tilt 0.
+    const intent = decideCameraIntent(overheadInput({ orbitRange: 1600 }));
+    expect(intent).toEqual({
+      kind: "overheadRest",
+      rest: {
+        center: { lat: home.lat, lng: home.lng, altitude: 0 },
+        range: 1600,
+        tilt: 0,
+        heading: 0,
+      },
+    });
+  });
+
+  it("idle uten orbitRange → hvilepose med ORBIT_RANGE-fallback", () => {
+    const intent = decideCameraIntent(overheadInput());
+    expect(intent.kind).toBe("overheadRest");
+    if (intent.kind === "overheadRest") expect(intent.rest.range).toBe(ORBIT_RANGE);
+  });
+
+  it("idle i overhead orbiterer ALDRI — selv med autoOrbit=true (R4)", () => {
+    const intent = decideCameraIntent(overheadInput({ autoOrbit: true }));
+    expect(intent.kind).toBe("overheadRest");
+  });
+
+  it("introActive vinner over overhead (basic-introen eier kameraet)", () => {
+    expect(decideCameraIntent(overheadInput({ introActive: true }))).toEqual({
+      kind: "free",
+    });
+  });
+
+  it("outroActive → free (orkestratorens klampede summary-uttrekk eier kameraet, R8b)", () => {
+    expect(decideCameraIntent(overheadInput({ outroActive: true }))).toEqual({
+      kind: "free",
+    });
+  });
+});
+
+// R2: ovenfra↔skrå er ÉN myk kamerabevegelse — cut-overlayen skal ALDRI fyre på
+// den overgangen. Unntakene lever i prevIntent-håndteringen.
+describe("decideCameraIntent — cut fyrer aldri på ovenfra↔skrå (R2)", () => {
+  it("sat→3d på idle auto-board: prev overheadRest → orbit UTEN cut", () => {
+    const prev: CameraIntent = {
+      kind: "overheadRest",
+      rest: { center: { lat: home.lat, lng: home.lng, altitude: 0 }, range: 650, tilt: 0, heading: 0 },
+    };
+    const intent = decideCameraIntent(baseInput({ prevIntent: prev }));
+    expect(intent.kind).toBe("orbit");
+    if (intent.kind === "orbit") expect(intent.cut).toBe(false);
+  });
+
+  it("sat→3d med samme kategori aktiv: prev overheadCategory → cinematic UTEN cut", () => {
+    const prev: CameraIntent = {
+      kind: "overheadCategory",
+      categoryId: "mat-drikke",
+      pose: { center: { lat: 63.43, lng: 10.39, altitude: 0 }, range: 500, tilt: 0, heading: 0 },
+    };
+    const intent = decideCameraIntent(
+      baseInput({
+        prevIntent: prev,
+        activeCategoryId: "mat-drikke",
+        categoryConfig: config(),
+      }),
+    );
+    expect(intent.kind).toBe("cinematic");
+    if (intent.kind === "cinematic") expect(intent.cut).toBe(false);
+  });
+
+  it("kategori-SKIFTE fra en annen kategoris overhead-intent cutter fortsatt", () => {
+    const prev: CameraIntent = {
+      kind: "overheadCategory",
+      categoryId: "transport",
+      pose: { center: { lat: 63.43, lng: 10.39, altitude: 0 }, range: 500, tilt: 0, heading: 0 },
+    };
+    const intent = decideCameraIntent(
+      baseInput({
+        prevIntent: prev,
+        activeCategoryId: "mat-drikke",
+        categoryConfig: config(),
+      }),
+    );
+    expect(intent.kind).toBe("cinematic");
+    if (intent.kind === "cinematic") expect(intent.cut).toBe(true);
+  });
+
+  it("prev overheadCategory → orbit (kategori lukket i sat, så 3D) UTEN cut", () => {
+    const prev: CameraIntent = {
+      kind: "overheadCategory",
+      categoryId: "transport",
+      pose: { center: { lat: 63.43, lng: 10.39, altitude: 0 }, range: 500, tilt: 0, heading: 0 },
+    };
+    const intent = decideCameraIntent(baseInput({ prevIntent: prev }));
+    expect(intent.kind).toBe("orbit");
+    if (intent.kind === "orbit") expect(intent.cut).toBe(false);
+  });
+});
+
+describe("kamera-konstanter — Satelitt (bevisst utvidelse av pinning-suiten)", () => {
+  it("SAT_TRANSITION_MS = 500 (ovenfra↔skrå: ett flyCameraTo, aldri rAF)", () => {
+    expect(SAT_TRANSITION_MS).toBe(500);
   });
 });
 

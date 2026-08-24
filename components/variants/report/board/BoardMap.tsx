@@ -826,6 +826,7 @@ export function BoardMap({
               // Overlegg som finnes i BEGGE motorer (tids-chipen) må vite hvem
               // som er synlig — 3D-basen forblir montert under Mapbox-overlayet.
               isFront={view !== "2d"}
+              overhead={view === "sat"}
               mapPaddingBottom={mapPaddingBottom}
               onMapReady={handle3DReady}
             />

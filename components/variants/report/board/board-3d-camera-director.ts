@@ -39,6 +39,10 @@ export const REAIM_FLY_MS = 1600;
 export const POI_RANGE = 300;
 export const POI_TILT = 60;
 export const POI_FLY_MS = 900;
+/** Varighet (ms) for Satelitt↔3D-flyvningen (ovenfra ↔ skrå) og for å legge
+ *  kameraet ned ved inngang til Satelitt. Diskret UI-overgang → ett flyCameraTo,
+ *  aldri rAF-koreografi (lærings-regel fra kamera-iterasjonen). Tunes visuelt. */
+export const SAT_TRANSITION_MS = 500;
 /** Oppsummerings-positur ("Oppsummert"-beaten): kameraet trekkes litt ut til et
  *  rolig oversiktsbilde av hele nabolaget, og kontrollen gis til brukeren (fri).
  *  Range bevisst videre enn orbit (650) men ikke fugleperspektiv. Drevet
@@ -201,6 +205,27 @@ export type CameraIntent =
   | { kind: "free" }
   | { kind: "poi"; pose: Hero3DCamera }
   | {
+      /** Satelitt-hvile (overhead, R8a): tilstanden som EIER kameraet når intet
+       *  punkt/ingen kategori er åpen i Satelitt. Bærer en full hvilepose
+       *  (hjem + orbitRange, tilt/heading 0) fordi tre stier trenger en skriver
+       *  som etablerer ovenfra: 2D→sat i auto, welcome-beat-slutt og beat-
+       *  gjenoppretting. Eksekutøren beholder brukerens senter/range når
+       *  kameraet alt er i motoren (3D→sat) og holder helt stille når posituren
+       *  alt er ovenfra (pan flytter ALDRI kameraet tilbake). */
+      kind: "overheadRest";
+      rest: Hero3DCamera;
+    }
+  | {
+      /** Kategori-klikk i Satelitt (R5): poi-lignende pan+zoom-intent — ALDRI
+       *  cinematic, ALDRI cut. Auto-utledede kategorikameraer skiller seg kun i
+       *  heading ±12°, så en klampet cinematic ville kollapse til et dødt
+       *  stillbilde bak en cut-fade i opptil 16 s. categoryId lar eksekutøren
+       *  skille re-render fra kategori-skifte (ingen re-fly av samme pose). */
+      kind: "overheadCategory";
+      categoryId: string;
+      pose: Hero3DCamera;
+    }
+  | {
       kind: "orbit";
       hero: Hero3DCamera;
       /** Sann når vi går INN i orbit fra en annen kamera-kontekst (velkommen-
@@ -257,6 +282,14 @@ export interface CameraDecisionInputs {
    *  stående der flyturen landet — ikke re-aimes til orbit-vinkelen (mister tråden).
    *  Udefinert/true → orbit som før (voice-over-prosjekter). */
   autoOrbit?: boolean;
+  /** Satelitt-modus (view === "sat"): directoren produserer KUN ovenfra-poser
+   *  (tilt/heading 0) og eier kameraet OGSÅ i fri kameramodus — basic-boards
+   *  står i «free», men POI-/kategoriklikk i Satelitt skal fly (R5/R8a). */
+  overhead?: boolean;
+  /** Outro-beaten spiller: orkestratorens (klampede) summary-uttrekk eier
+   *  kameraet, så overhead-directoren må yield-e — ellers kjemper to skrivere.
+   *  Irrelevant utenfor overhead (der dekker cameraMode «free» det samme). */
+  outroActive?: boolean;
 }
 
 /**
@@ -278,6 +311,50 @@ export function decideCameraIntent(input: CameraDecisionInputs): CameraIntent {
   // drevne innflyvningen i BoardMap3D eier kameraet. Director-en må ikke røre
   // det (ellers kjemper orbit/cinematic mot flyturen). Free = ren no-op.
   if (input.introActive) return { kind: "free" };
+
+  // ── Satelitt (overhead, R8a) ──────────────────────────────────────────────
+  // Vedvarende director-eid kameratilstand: ALLE poser klampes til tilt 0 /
+  // heading 0 (nord opp — også under og etter flyvning, R3/R5). Merk at grenen
+  // ligger FØR free-sjekken: i Satelitt eier directoren kameraet også på
+  // basic-boards (cameraMode «free») — R5 er ny flyvningsatferd, ikke bevaring.
+  if (input.overhead) {
+    // Outro-beaten: BoardMap setter fri + orkestratoren flyr det klampede
+    // summary-uttrekket. Directoren må ikke kjempe mot den (R8b).
+    if (input.outroActive) return { kind: "free" };
+    if (activePOI) {
+      return {
+        kind: "poi",
+        pose: {
+          center: { lat: activePOI.lat, lng: activePOI.lng, altitude: 0 },
+          range: POI_RANGE,
+          tilt: 0,
+          heading: 0,
+        },
+      };
+    }
+    if (activeCategoryId && categoryConfig) {
+      const a = categoryConfig.a;
+      return {
+        kind: "overheadCategory",
+        categoryId: activeCategoryId,
+        pose: {
+          center: { lat: a.lat, lng: a.lng, altitude: 0 },
+          range: a.range,
+          tilt: 0,
+          heading: 0,
+        },
+      };
+    }
+    return {
+      kind: "overheadRest",
+      rest: {
+        center: { lat: home.lat, lng: home.lng, altitude: 0 },
+        range: input.orbitRange ?? ORBIT_RANGE,
+        tilt: 0,
+        heading: 0,
+      },
+    };
+  }
 
   if (cameraMode === "free") return { kind: "free" };
 
@@ -302,8 +379,14 @@ export function decideCameraIntent(input: CameraDecisionInputs): CameraIntent {
       : categoryConfig.moveDurationMs ?? input.audioDurationMs ?? DEFAULT_CINEMATIC_MS;
     // cut når vi IKKE allerede var cinematic på samme kategori (kategori-skifte,
     // idle→første, free→resume) — ikke ved en ren re-render av samme beat.
+    // Retur fra samme kategoris OVERHEAD-intent (Satelitt→3D) er også unntatt:
+    // cut-overlayen skal ALDRI fyre på en ovenfra↔skrå-overgang (R2) — det er
+    // én myk kamerabevegelse i samme motor, ikke et kapittel-skifte.
     const prev = input.prevIntent;
-    const cut = !(prev?.kind === "cinematic" && prev.categoryId === activeCategoryId);
+    const cut = !(
+      (prev?.kind === "cinematic" && prev.categoryId === activeCategoryId) ||
+      (prev?.kind === "overheadCategory" && prev.categoryId === activeCategoryId)
+    );
     return {
       kind: "cinematic",
       categoryId: activeCategoryId,
@@ -326,9 +409,16 @@ export function decideCameraIntent(input: CameraDecisionInputs): CameraIntent {
   //    waypoints) overtar — ELLER bruker re-engasjerer auto etter manuell pan.
   //  • cinematic → orbit: kategori-skifte fra en waypoint-kategori til en uten.
   // Orbit→orbit holder vi uavbrutt (ingen cut), og prev=null (kald første-mount)
-  // + retur fra en åpnet POI fly-er mykt inn uten cream-flash.
+  // + retur fra en åpnet POI fly-er mykt inn uten cream-flash. Retur fra
+  // Satelitt (overheadRest/overheadCategory) er også cut-fri: ovenfra↔skrå er
+  // én myk flyvning (R2), aldri et kutt.
   const prev = input.prevIntent;
-  const cut = prev != null && prev.kind !== "orbit" && prev.kind !== "poi";
+  const cut =
+    prev != null &&
+    prev.kind !== "orbit" &&
+    prev.kind !== "poi" &&
+    prev.kind !== "overheadRest" &&
+    prev.kind !== "overheadCategory";
   return {
     kind: "orbit",
     cut,
