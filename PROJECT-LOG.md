@@ -38,6 +38,16 @@
 - **Mobil-verifisering på ekte 320 px gjenstår** — Chrome-vinduet ville ikke under 500 px bredde. Popover-innholdet måler 188 px, så det er god margin, men det er utregnet, ikke sett.
 - **Instrumentering av modus-veksling** (fra/til-event, for å etterprøve Satelitt-default-hypotesen) er bevisst deferred til Moat 2-sporet.
 
+**Etterspill samme dag — merge, og streken som forklarer hvorfor tre segmenter bare er to kilder.**
+
+Branchen ble merget til `main` med `--no-ff` (merge-commit `64c21eb`, 15 filer, +1157/−51). `tsc` rent. Full suite ga 3 027 av 3 028: den ene røde er `use-3d-marker-declutter.test.tsx`, og den er IKKE fra denne merge-en — den passerer på begge merge-foreldrene (17/17 på branch-tippen og 17/17 på `c3d36a2`, main før merge), og `git diff` mellom dem har ingen declutter-endringer i det hele tatt. Årsaken er ukommittert arbeid fra en parallell sesjon i samme arbeidsmappe (`ProjectSitePin.tsx`, `project-pin-scale.ts`, `use-3d-marker-declutter.ts` — se ProjectSitePin-entryen over). Testen feiler mot deres pågående arbeid, ikke mot Satelitt.
+
+Deretter kom en UX-observasjon fra Andreas som pillen faktisk hadde et hull i: «satelitt og 3d, det er jo samme kartet, bare to ulike visningsmoduser. 'kart' er sitt eget.» Tre likestilte segmenter kommuniserte tre likestilte kart — og da blir det uforklarlig hvorfor Satelitt→3D *glir* mens Kart→Satelitt *klipper*. Skillet er nå gjort synlig: en vertikal strek mellom Kart og Satelitt, ingen strek mellom Satelitt og 3D. Grupperingen i pillen speiler dermed arkitekturen: én Mapbox-kilde, én Google-kilde i to vinkler.
+
+Første forsøk var for svakt og feilplassert, og grunnen er verdt å skrive ned fordi den gjelder alle segmenterte kontroller vi bygger: **hver knapp har 14 px sidepadding, og den aktive knappen fyller sin egen padding med en mørk pille.** Den geometriske midten av gapet er derfor ikke den optiske midten — en strek plassert midt mellom knappe-boksene ser høyrestilt ut når Satelitt (default) er aktiv, og venstrestilt når Kart er. Løsningen er `SEPARATOR_MARGIN` i `BoardMapControls.tsx`: marginene flyttes bort fra den fylte siden (1/15 px i Satelitt, 15/1 i Kart, 8/8 i 3D der ingen nabo er fylt), med konstant sum 16 px så pillen ikke endrer bredde ved visningsbytte, og `transition-[margin] duration-200` så flyttingen går i takt med fargeskiftet. Fargen gikk fra `stone-300/70` til full `stone-400` — sterkere enn de interne dividerne (reisemåte, Auto/Fri), som er riktig hierarki: kilde-skillet betyr mer enn gruppe-skillene.
+
+To nye tester i `BoardMapControls.test.tsx` låser dette: DOM-rekkefølgen i «Kartvisning»-gruppa (`button, span, button, button` — streken kan ikke havne mellom Satelitt og 3D ved uhell), og at forskyvningen snur riktig vei per visning med sum 16. Verifisert i Chrome på StasjonsKvartalet i begge tilstandene. Commits `cf6ee13` (streken) og `a713b1c` (styrke + posisjon) på `main`.
+
 ---
 
 ## 2026-08-24 — HVA AV OPENSTREETMAP SOM FÅR VISES TIL EN BOLIGKJØPER (OSM-porten + tverr-kilde-dedup, commits d005073 og 94dc451 på main)
