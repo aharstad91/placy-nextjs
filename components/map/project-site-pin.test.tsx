@@ -30,35 +30,55 @@ describe("ProjectSitePin — rendring", () => {
     expect(container.textContent).not.toContain(PROJECT_PIN_DEFAULT_SUBTITLE);
   });
 
-  it("tegner bygnings-glyph uten thumbnail, og bildet med", () => {
+  it("tegner bygnings-glyph uten thumbnail, og bildet som CSS-bakgrunn med", () => {
+    // Bildet legges som background-image, ikke som <img> — ingen ekstra node, og
+    // ingen next/image-regel å bryte.
     const uten = render(<ProjectSitePin name="Test" />);
-    expect(uten.container.querySelector("image")).toBeNull();
+    expect(uten.container.querySelector("svg")).toBeTruthy(); // glyph
     cleanup();
 
     const med = render(
       <ProjectSitePin name="Test" imageSrc="data:image/png;base64,AAA" />,
     );
-    expect(med.container.querySelector("image")).toBeTruthy();
+    expect(med.container.querySelector("img")).toBeNull();
+    expect(med.container.innerHTML).toContain("data:image/png;base64,AAA");
+    expect(med.container.querySelector("svg")).toBeNull(); // glyphen erstattes
   });
 
-  it("SVG-rammen er symmetrisk, så disc-en står på punktet uansett navnelengde", () => {
-    // Rammen vokser like mye på begge sider når teksten blir lengre. Det er
-    // NETTOPP derfor hindringsboksen må regnes separat (se blocker-testene):
-    // rammen beskriver ikke hvor det faktisk står noe.
-    const discCx = (name: string) => {
+  it("navnet er EKTE tekst med hvit kontur, ikke en rasterisert SVG-node", () => {
+    const { container } = render(<ProjectSitePin name="Strindfjordvegen 10" />);
+    expect(container.querySelector("text")).toBeNull();
+    const el = [...container.querySelectorAll("span")].find(
+      (s) => s.textContent === "Strindfjordvegen 10",
+    ) as HTMLElement | undefined;
+    expect(el).toBeTruthy();
+    expect(el!.style.textShadow).toContain("#ffffff");
+  });
+
+  it("boksen er KVADRATISK uansett navnelengde — det er dette som holder disc-en på punktet", () => {
+    // `anchorLeft: -50%` er prosent av elementets egen boks. Vokser boksen med
+    // teksten, vandrer disc-en bort fra punktet sitt. Den gamle SVG-en løste det
+    // med en symmetrisk ramme, altså ved å betale for tomrom på motsatt side —
+    // og det tomrommet er nettopp det `projectSitePinBlocker` ikke skal regne som
+    // hindring. Feiler denne, har noen lagt teksten tilbake i flyten.
+    const boxOf = (name: string) => {
       const { container } = render(<ProjectSitePin name={name} />);
-      const svg = container.querySelector("svg")!;
-      const circle = container.querySelector("circle")!;
-      const halfBox = Number(svg.getAttribute("width")) / 2;
-      const cx = Number(circle.getAttribute("cx"));
+      const el = container.querySelector("[data-project-pin]") as HTMLElement;
+      const box = { w: el.style.width, h: el.style.height };
       cleanup();
-      return { cx, halfBox };
+      return box;
     };
-    const kort = discCx("Kort");
-    const langt = discCx("Et mye lengre prosjektnavn");
-    expect(kort.cx).toBeCloseTo(kort.halfBox, 5);
-    expect(langt.cx).toBeCloseTo(langt.halfBox, 5);
-    expect(langt.halfBox).toBeGreaterThan(kort.halfBox);
+    const kort = boxOf("Kort");
+    const langt = boxOf("Et mye lengre prosjektnavn enn det");
+    expect(kort).toEqual(langt);
+    expect(kort.w).toBe(kort.h);
+    expect(kort.w).toBe(`${DISC}px`);
+  });
+
+  it("skalerer boksen og teksten sammen", () => {
+    const { container } = render(<ProjectSitePin name="Test" scale={0.5} />);
+    const el = container.querySelector("[data-project-pin]") as HTMLElement;
+    expect(el.style.width).toBe(`${DISC * 0.5}px`);
   });
 });
 

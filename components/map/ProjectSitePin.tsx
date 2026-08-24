@@ -15,17 +15,32 @@
  * oppmerksomhet uten å ta over. Har prosjektet en thumbnail, klippes den
  * sirkulært inn i disc-en i stedet for glyph-en.
  *
- * Google Maps 3D rasteriserer SVG-en (inkl. <image> data-URI) via browser-
- * rendereren før det blir en 3D-tekstur, så <rect>, <text>, <image> og filtre
- * fungerer her. Thumbnailen MÅ være en data-URI (ikke ekstern URL) for å være
- * lastet idet rasteriseringen skjer.
+ * ## Ekte DOM, ikke rasterisert SVG (2026-08-24)
+ *
+ * Markøren var en SVG som Google rasteriserte til en 3D-tekstur. Teksten ble
+ * derfor uskarp på telefon — se `DomMarker3D` for målingene. Nå er den HTML og
+ * CSS, og nettleseren tegner teksten på skjermens egen oppløsning.
+ *
+ * Prosjektnavnet er den ENESTE teksten som overlever i film-capture (film- og
+ * fly-modus dropper POI-pinsene), så lesbarheten mot satellittfoto er ikke en
+ * detalj. Den kommer fra en fire-veis hvit text-shadow der SVG-en tegnet hver
+ * tekst to ganger.
+ *
+ * Byttet var IKKE valgfritt sammen med POI-pinnene: en DOM-markør maler over
+ * hele WebGL-canvaset uansett `zIndex`, så en rasterisert prosjektpinne ville
+ * havnet UNDER POI-ene. Verre: `pin-declutter` demoterer POI-er til prikk
+ * nettopp fordi de ligger bak prosjektpinnen, og prikkene fjernes ikke — de
+ * ville lagt seg på pinnens ansikt.
  *
  * ## Rammens form
  *
- * Markøren er forankret i bunn-midten. Derfor er rammen SYMMETRISK i bredden
- * (label-plassen speiles på begge sider av disc-en, samme grep som
- * `Marker3DPin`) og nøyaktig så høy som disc-en — da står disc-en på punktet
- * uansett hvor mye tekst som ligger ved siden av.
+ * Markøren er forankret i bunn-midten, og `anchorLeft: -50%` er prosent av
+ * ELEMENTETS EGEN boks. Boksen holdes derfor KVADRATISK (disc-en alene) og
+ * teksten ligger `position: absolute` utenfor flyten — ellers vandrer disc-en
+ * bort fra punktet sitt når navnet blir langt. Den gamle SVG-en løste samme
+ * problem med en symmetrisk ramme, altså ved å betale for tomrom på motsatt
+ * side; det er nettopp det tomrommet `projectSitePinBlocker` finnes for å ikke
+ * regne som hindring.
  */
 
 interface ProjectSitePinProps {
@@ -38,9 +53,10 @@ interface ProjectSitePinProps {
   /**
    * Skala på hele markøren (1 = intrinsisk størrelse). Google 3D-markører er
    * skjerm-forankret (konstant px uansett zoom), så MapView3D mater inn en
-   * range-avhengig skala her. Påvirker kun `width`/`height` — `viewBox` er
-   * uendret, så alt innhold skalerer uniformt og teksten holder seg skarp ved
-   * re-rasterisering.
+   * range-avhengig skala her. Alt innhold skalerer uniformt.
+   *
+   * MERK at teksten nå er ekte DOM: den skaleres ved å regne px-størrelsen, ikke
+   * ved å strekke en tekstur, så den er skarp på alle skalaer.
    */
   scale?: number;
 }
@@ -141,177 +157,147 @@ export function ProjectSitePin({
   imageSrc,
   scale = 1,
 }: ProjectSitePinProps) {
-  const { halfBox, totalW, totalH } = pinLayout(name, subtitle);
-
-  const cx = halfBox;
-  const cy = DISC / 2;
-  const r = DISC / 2 - RING_W / 2 - GLOW_W / 2;
-  const textX = cx + DISC / 2 + GAP_X;
-
-  // Unik id-suffiks så flere instanser ikke kolliderer på url(#…)
-  const uid = name.toLowerCase().replace(/[^a-z0-9]/g, "") || "site";
-  const clipId = `psp-clip-${uid}`;
-  const shadowId = `psp-shadow-${uid}`;
-
-  // To tekstlinjer sentrert vertikalt på disc-en når begge finnes.
-  const nameY = subtitle ? cy - 7 : cy;
-  const subY = cy + 8;
+  const disc = DISC * scale;
+  const ring = RING_W * scale;
+  const glow = GLOW_W * scale;
 
   return (
-    <svg
-      width={totalW * scale}
-      height={totalH * scale}
-      viewBox={`0 0 ${totalW} ${totalH}`}
-      xmlns="http://www.w3.org/2000/svg"
+    <div
+      data-project-pin=""
+      style={{
+        position: "relative",
+        // Boksen er kvadratisk og teksten ligger utenfor flyten — samme grep som
+        // PoiMarkerContent, og av samme grunn: `anchorLeft: -50%` er prosent av
+        // ELEMENTETS EGEN boks, så en tekst i flyten flytter disc-en bort fra
+        // punktet sitt. Den gamle SVG-en løste det med en symmetrisk ramme.
+        width: disc,
+        height: disc,
+      }}
     >
-      <defs>
-        <clipPath id={clipId}>
-          <circle cx={cx} cy={cy} r={r} />
-        </clipPath>
-        <filter id={shadowId} x="-40%" y="-40%" width="180%" height="180%">
-          <feDropShadow
-            dx="0"
-            dy="1.5"
-            stdDeviation="2"
-            floodColor="#0f1d44"
-            floodOpacity="0.35"
-          />
-        </filter>
-      </defs>
-
       {/* Myk aksent-glød utenfor ringen — signalet om at dette er prosjektet,
           uten å legge en flate oppå kartet. */}
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r + RING_W / 2 + GLOW_W / 2}
-        fill="none"
-        stroke={ACCENT}
-        strokeOpacity={0.22}
-        strokeWidth={GLOW_W}
+      <span
+        style={{
+          position: "absolute",
+          inset: -glow,
+          borderRadius: "50%",
+          border: `${glow}px solid ${ACCENT}`,
+          opacity: 0.22,
+          boxSizing: "border-box",
+        }}
       />
-
-      {/* Disc: thumbnail eller tintet flate med bygnings-glyph */}
-      {imageSrc ? (
-        <>
-          <circle
-            cx={cx}
-            cy={cy}
-            r={r}
-            fill={ACCENT_TINT}
-            filter={`url(#${shadowId})`}
-          />
-          <image
-            href={imageSrc}
-            xlinkHref={imageSrc}
-            x={cx - r}
-            y={cy - r}
-            width={r * 2}
-            height={r * 2}
-            preserveAspectRatio="xMidYMid slice"
-            clipPath={`url(#${clipId})`}
-          />
-        </>
-      ) : (
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
-          fill={ACCENT_TINT}
-          filter={`url(#${shadowId})`}
-        />
-      )}
-
-      {/* Aksent-ring oppå (tegnes etter bildet så kanten blir ren) */}
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill="none"
-        stroke={ACCENT}
-        strokeWidth={RING_W}
-      />
-
-      {/* Building2 (Lucide) — 18×18-glyph, sentrert i disc-en. Kun uten bilde. */}
-      {!imageSrc && (
-        <g transform={`translate(${cx - 13.5} ${cy - 13.5}) scale(1.5)`}>
-          <rect x="3" y="3" width="12" height="15" rx="1" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          <rect x="7" y="10" width="4" height="8" rx="0.5" fill={ACCENT} />
-          <path d="M3 3L9 0l6 3" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          <line x1="6" y1="7" x2="6" y2="7.01" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="12" y1="7" x2="12" y2="7.01" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" />
-        </g>
-      )}
-
-      {/* Prosjektnavn. Tegnes TO ganger: hvit kontur, så fyll oppå — samme
-          grunn som i Marker3DPin (`paint-order` overlever ikke alltid
-          rasteriseringen, og underlaget er satellittfoto). */}
-      <text
-        x={textX}
-        y={nameY}
-        fill="none"
-        stroke={HALO}
-        strokeWidth={HALO_W}
-        strokeLinejoin="round"
-        strokeOpacity={0.95}
-        fontSize={NAME_SIZE}
-        fontFamily={FONT}
-        fontWeight="700"
-        dominantBaseline="middle"
+      {/* Disc: thumbnail eller tintet flate med bygnings-glyph. Bildet legges som
+          CSS background-image, ikke som <img> — ingen ekstra node, og ingen
+          next/image-regel å bryte. Data-URI, så den er lastet ved paint. */}
+      <span
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "50%",
+          background: imageSrc ? `${ACCENT_TINT} center/cover url(${imageSrc})` : ACCENT_TINT,
+          border: `${ring}px solid ${ACCENT}`,
+          boxShadow: `0 ${1.5 * scale}px ${2 * scale}px rgba(15,29,68,0.35)`,
+          boxSizing: "border-box",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
-        {name}
-      </text>
-      <text
-        x={textX}
-        y={nameY}
-        fill={TITLE}
-        fontSize={NAME_SIZE}
-        fontFamily={FONT}
-        fontWeight="700"
-        dominantBaseline="middle"
-      >
-        {name}
-      </text>
+        {!imageSrc && <BuildingGlyph size={27 * scale} />}
+      </span>
 
-      {/* Undertittel med aksent-prikk */}
-      {subtitle && (
-        <>
-          <circle
-            cx={textX + 3}
-            cy={subY}
-            r={4.5}
-            fill={HALO}
-            fillOpacity={0.95}
-          />
-          <circle cx={textX + 3} cy={subY} r={3} fill={ACCENT} />
-          <text
-            x={textX + DOT_W}
-            y={subY}
-            fill="none"
-            stroke={HALO}
-            strokeWidth={HALO_W}
-            strokeLinejoin="round"
-            strokeOpacity={0.95}
-            fontSize={SUB_SIZE}
-            fontFamily={FONT}
-            fontWeight="600"
-            dominantBaseline="middle"
+      {/* Navn + undertittel. Haloen er fire-veis text-shadow der SVG-en tegnet
+          to noder. Prosjektnavnet er den ENESTE teksten som overlever i
+          film-capture, og lesbarheten mot satellittfoto kommer fra konturen. */}
+      <span
+        style={{
+          position: "absolute",
+          left: disc + GAP_X * scale,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 1 * scale,
+          maxWidth: MAX_TEXT_W * scale,
+          pointerEvents: "none",
+        }}
+      >
+        <span
+          style={{
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            fontFamily: FONT,
+            fontSize: NAME_SIZE * scale,
+            fontWeight: 700,
+            lineHeight: 1.15,
+            color: TITLE,
+            textShadow: haloShadow(HALO_W * scale),
+          }}
+        >
+          {name}
+        </span>
+        {subtitle && (
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4 * scale,
+              whiteSpace: "nowrap",
+              fontFamily: FONT,
+              fontSize: SUB_SIZE * scale,
+              fontWeight: 600,
+              lineHeight: 1.15,
+              color: ACCENT,
+              textShadow: haloShadow(HALO_W * scale),
+            }}
           >
+            <span
+              style={{
+                width: 6 * scale,
+                height: 6 * scale,
+                borderRadius: "50%",
+                background: ACCENT,
+                flex: "0 0 auto",
+                boxShadow: `0 0 0 ${1.5 * scale}px rgba(255,255,255,0.95)`,
+              }}
+            />
             {subtitle}
-          </text>
-          <text
-            x={textX + DOT_W}
-            y={subY}
-            fill={ACCENT}
-            fontSize={SUB_SIZE}
-            fontFamily={FONT}
-            fontWeight="600"
-            dominantBaseline="middle"
-          >
-            {subtitle}
-          </text>
-        </>
-      )}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+/** Fire-veis hvit kontur. SVG-stien tegnet teksten to ganger for samme effekt. */
+function haloShadow(w: number): string {
+  const r = Math.max(1, w / 2);
+  return [
+    `0 0 ${r}px ${HALO}`,
+    `${r}px ${r}px ${r}px ${HALO}`,
+    `-${r}px ${r}px ${r}px ${HALO}`,
+    `${r}px -${r}px ${r}px ${HALO}`,
+    `-${r}px -${r}px ${r}px ${HALO}`,
+  ].join(",");
+}
+
+/** Building2 (Lucide) i aksentfargen. Beholdt som SVG — det er TEKSTEN som
+ *  trengte DOM, ikke ikonet. */
+function BuildingGlyph({ size }: { size: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 18 18"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <rect x="3" y="3" width="12" height="15" rx="1" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="7" y="10" width="4" height="8" rx="0.5" fill={ACCENT} />
+      <path d="M3 3L9 0l6 3" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="6" y1="7" x2="6" y2="7.01" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" />
+      <line x1="12" y1="7" x2="12" y2="7.01" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }

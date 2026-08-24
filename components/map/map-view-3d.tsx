@@ -4,9 +4,7 @@ import { useCallback, useEffect, useRef, useState, memo } from "react";
 import {
   APIProvider,
   Map3D,
-  Marker3D,
   MapMode,
-  AltitudeMode,
   useMap3D,
   GestureHandling,
 } from "@vis.gl/react-google-maps";
@@ -247,18 +245,25 @@ const Marker3DItem = memo(function Marker3DItem({
 const PIN_SETTLE_MS = 220;
 
 /**
- * Range-avhengig skala for prosjektmarkøren (Marker3D) — DEBOUNCED.
+ * Prosjektpinnens lag. Godt over dybdesorteringens verdier
+ * (`use-3d-marker-declutter` deler ut rangeringer fra 1, og den aktive POI-en
+ * får 100 000), så prosjektet aldri dekkes av en POI.
+ */
+const Z_PROJECT_PIN = 1_000_000;
+
+/**
+ * Range-avhengig skala for prosjektmarkøren — DEBOUNCED.
  *
- * Marker3D rasteriserer SVG-en til en 3D-tekstur, så hver størrelse er en ny
- * raster. Endrer vi størrelsen UNDER bevegelse (drag/zoom/fly) får vi enten
- * synlige re-raster-hopp (linjene runder ulikt pr. trinn) eller — om vi flytter
- * pinnen til et HTML-overlay for jevn CSS-skala — posisjons-jitter fordi
- * overlayet ikke kan synke 100 % med Googles GPU-render hver frame.
+ * Debouncen fantes opprinnelig fordi hver størrelse var en ny rasterisering, og
+ * en endring under bevegelse ga synlige re-raster-hopp. Med DOM-markøren er
+ * skalaen ren CSS, så den grunnen er borte — men debouncen BEHOLDES, av en annen
+ * grunn som fortsatt gjelder: en pinne som krymper og vokser kontinuerlig mens
+ * man drar i kartet er urolig å se på. Å fryse skalaen under bevegelse og justere
+ * rent én gang ved ro er en visuell beslutning, ikke en ytelses-beslutning.
  *
- * Løsning: FRYS skalaen mens kameraet beveger seg (range endrer seg) → ingen
- * re-raster, ingen hopp, ingen jitter. Når kameraet har stått i ro i
- * PIN_SETTLE_MS justeres størrelsen rent ÉN gang (begge tekstlinjer sammen, så
- * ingen pr-linje-hopping). Marker3D = alltid eksakt forankret (Google-native).
+ * Merk at posisjonen ALDRI var problemet her: Google skriver `transform` på
+ * markøren selv, så den er eksakt forankret uansett — i motsetning til
+ * HTML-overlayene (mini-popup, tids-chip) som regner sin egen posisjon per frame.
  */
 function useProjectPinScale(map: Map3DInstance | null): number {
   const [scale, setScale] = useState(PIN_MAX_SCALE);
@@ -371,17 +376,21 @@ function Map3DInner({
 
         {/* Prosjektmarkør — alltid synlig, ikke del av tab-filter */}
         {projectSite && (
-          <Marker3D
-            position={{
-              lat: projectSite.lat,
-              lng: projectSite.lng,
-              altitude: 30,
-            }}
-            altitudeMode={AltitudeMode.RELATIVE_TO_GROUND}
+          <DomMarker3D
+            map3d={mapInstance}
+            lat={projectSite.lat}
+            lng={projectSite.lng}
+            altitude={30}
             title={projectSite.name}
-            // Alltid øverst — ingen POI-markør skal okkludere prosjekt-
-            // pinnen (POI-markører har zIndex 1).
-            zIndex={1_000_000}
+            // Over POI-ene. Tidligere var dette Googles zIndex 1_000_000 mot
+            // POI-enes 1, men den spaken gjelder bare markør-mot-markør INNE i
+            // scenen. Nå ligger alle markørene i samme DOM-stablingskontekst, så
+            // CSS z-index er spaken — og den er dessuten finere: `Z_PROJECT_PIN`
+            // ligger trygt over dybdesorteringens rangeringer.
+            zIndex={Z_PROJECT_PIN}
+            // Bevisst IKKE interaktiv: et tapp på prosjektpinnen har alltid lest
+            // som kart-bakgrunn og lukket POI-popupen. Å gi den onClick her ville
+            // endret den atferden stille.
           >
             <ProjectSitePin
               name={projectSite.name}
@@ -389,7 +398,7 @@ function Map3DInner({
               imageSrc={projectSite.imageSrc}
               scale={projectPinScale}
             />
-          </Marker3D>
+          </DomMarker3D>
         )}
 
         {pois.map((poi) => {
