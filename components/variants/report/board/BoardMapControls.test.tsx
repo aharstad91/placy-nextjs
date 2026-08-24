@@ -88,6 +88,31 @@ describe("BoardMapControls — kart-veksleren (Kart | Satelitt | 3D)", () => {
     expect(kids[2].textContent).toBe("Satelitt");
   });
 
+  it("kompenserer strekens margin for den fylte siden, med konstant bredde", () => {
+    const sep = (view: "2d" | "sat" | "3d") => {
+      const { container, unmount } = render(
+        <BoardMapControls {...baseProps} view={view} showCameraMode={false} />,
+      );
+      const group = container.querySelector('[aria-label="Kartvisning"]')!;
+      const el = group.children[1] as HTMLElement;
+      const margins = [
+        parseInt(el.style.marginLeft),
+        parseInt(el.style.marginRight),
+      ];
+      unmount();
+      return margins;
+    };
+    // Aktiv knapp fyller sin egen padding, så streken skyves bort fra den for å
+    // se sentrert ut mellom labelene. Summen er alltid 16 → pillen holder bredden.
+    expect(sep("sat")[0]).toBeLessThan(sep("sat")[1]);
+    expect(sep("2d")[0]).toBeGreaterThan(sep("2d")[1]);
+    expect(sep("3d")[0]).toBe(sep("3d")[1]);
+    for (const v of ["2d", "sat", "3d"] as const) {
+      const [l, r] = sep(v);
+      expect(l + r).toBe(16);
+    }
+  });
+
   it("klikk på Satelitt kaller onViewChange('sat')", () => {
     const onViewChange = vi.fn();
     const { getByLabelText } = render(

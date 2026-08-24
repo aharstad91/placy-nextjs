@@ -84,6 +84,25 @@ const VIEW_OPTIONS: { value: BoardView; label: string; aria: string }[] = [
 ];
 
 /**
+ * Marginene rundt kilde-streken (Kart | Satelitt), per aktiv visning.
+ *
+ * Knappene har 14px sidepadding. Når en av dem er aktiv fylles den paddingen av
+ * den mørke pillen, så det ØYET leser som luft er ikke det samme som den
+ * geometriske åpningen: en strek plassert midt i gapet ser høyrestilt ut når
+ * Satelitt er aktiv, og venstrestilt når Kart er. Marginene kompenserer for den
+ * fylte siden, og summen er alltid 16px så pillen ikke endrer bredde når du
+ * bytter visning.
+ */
+const SEPARATOR_MARGIN: Record<BoardView, { marginLeft: number; marginRight: number }> = {
+  // Kart fylt til venstre → streken skyves mot Satelitt.
+  "2d": { marginLeft: 15, marginRight: 1 },
+  // Satelitt fylt til høyre → streken skyves mot Kart.
+  sat: { marginLeft: 1, marginRight: 15 },
+  // 3D aktiv → ingen av naboene er fylt, streken står midt i gapet.
+  "3d": { marginLeft: 8, marginRight: 8 },
+};
+
+/**
  * Samlet kontroll-cluster for board-kartet — ÉN pille, sentrert NEDERST I
  * MIDTEN. Auto/Fri (kameramodus, glidende tommel, kun i 3D) + en divider +
  * Kart/3D (motor-bytte, split-knapp) lever i samme beholder. Bygget som én
@@ -208,7 +227,11 @@ export function BoardMapControls({
           return (
             <Fragment key={opt.value}>
             {opt.value === "sat" && (
-              <span aria-hidden className="mx-1 h-5 w-px bg-stone-300/70" />
+              <span
+                aria-hidden
+                style={SEPARATOR_MARGIN[view]}
+                className="h-5 w-px rounded-full bg-stone-400 transition-[margin] duration-200"
+              />
             )}
             <button
               type="button"
