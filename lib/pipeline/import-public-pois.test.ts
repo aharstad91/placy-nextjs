@@ -20,7 +20,12 @@ global.fetch = fetchMock;
 
 import { createServerClient } from "@/lib/supabase/client";
 import { upsertCategories } from "@/lib/supabase/mutations";
-import { importPublicPois, PUBLIC_POI_CATEGORIES } from "./import-public-pois";
+import {
+  importPublicPois,
+  PUBLIC_POI_CATEGORIES,
+  barnehagefaktaRadiusDegrees,
+  overpassBboxDeltas,
+} from "./import-public-pois";
 
 const NSR_RESPONSES = {
   threeSkoler: [
@@ -140,14 +145,108 @@ describe("importPublicPois — Unit 2", () => {
     expect(result.warnings.some((w) => w.includes("barnehagefakta"))).toBe(false);
   });
 
-  it("Overpass: way uten navn hoppes over", async () => {
+  it("Barnehagefakta: API-radius er grader korrigert for cos(lat) — ikke hardkodet 0.025", () => {
+    // Grilstad-regresjon 2026-08-24: 0.025 grader er ~1,25 km i lengderetningen
+    // på 63° nord, så Ranheimsfjæra barnehage (1 449 m, 0,026° øst) ble klippet
+    // bort av API-et før haversine-filteret. Radiusen må dekke hele sirkelen.
+    const degrees = barnehagefaktaRadiusDegrees(63.435107, 2500);
+
+    // Må dekke den faktiske lengdegrad-avstanden til de tapte barnehagene
+    expect(degrees).toBeGreaterThan(0.034); // Humlehaugen Doremi, 1 853 m
+    // …men ikke sluke hele regionen
+    expect(degrees).toBeLessThan(0.1);
+  });
+
+  it("Barnehagefakta: radius-grader skalerer med breddegrad og prosjektradius", () => {
+    // Lenger nord = trangere lengdegrader = større grad-radius for samme meter
+    expect(barnehagefaktaRadiusDegrees(70, 2500)).toBeGreaterThan(
+      barnehagefaktaRadiusDegrees(58, 2500)
+    );
+    // Dobbel radius i meter = dobbel radius i grader
+    expect(barnehagefaktaRadiusDegrees(63.4, 5000)).toBeCloseTo(
+      barnehagefaktaRadiusDegrees(63.4, 2500) * 2,
+      6
+    );
+    // Tak: absurd radius ber aldri om mer enn 1 grad
+    expect(barnehagefaktaRadiusDegrees(63.4, 10_000_000)).toBe(1);
+  });
+
+  it("Barnehagefakta: kaller API-et med den beregnede radiusen", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response) // nsr
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response) // barnehagefakta
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ elements: [] }), status: 200 } as Response);
+
+    await importPublicPois(BASE_OPTIONS);
+
+    const bhCall = fetchMock.mock.calls.find((c) =>
+      String(c[0]).includes("barnehagefakta.no")
+    );
+    expect(bhCall).toBeDefined();
+    const expected = barnehagefaktaRadiusDegrees(
+      BASE_OPTIONS.lat,
+      BASE_OPTIONS.radiusMeters
+    ).toFixed(4);
+    expect(String(bhCall![0])).toContain(`/${expected}`);
+    expect(String(bhCall![0])).not.toContain("/0.025");
+  });
+
+  it("Overpass: bbox-delta er større i lengde- enn i breddretningen", () => {
+    // Grilstad-regresjon 2026-08-24: én felles delta på 0.025 ga ~2,8 km nord/sør
+    // men bare ~1,25 km øst/vest på 63° nord, så anlegg rett øst forsvant.
+    const { latDelta, lngDelta } = overpassBboxDeltas(63.435107, 2500);
+    expect(lngDelta).toBeGreaterThan(latDelta);
+    // Må dekke 2 500 m i begge retninger (0,0225° bredde / 0,0501° lengde)
+    expect(latDelta).toBeGreaterThan(2500 / 111_320);
+    expect(lngDelta).toBeGreaterThan(0.05);
+  });
+
+  it("Overpass: sender User-Agent — uten den svarer API-et 406", async () => {
+    // Grilstad-funn 2026-08-24: Node-fetch sin default User-Agent blir avvist
+    // med 406 Not Acceptable, så denne kilden leverte 0 idrettsanlegg på ALLE
+    // boards fram til nå. Curl med reell User-Agent ga 200 på samme query.
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response) // nsr
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response) // barnehagefakta
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ elements: [] }), status: 200 } as Response);
+
+    await importPublicPois(BASE_OPTIONS);
+
+    const ovCall = fetchMock.mock.calls.find((c) =>
+      String(c[0]).includes("overpass")
+    );
+    expect(ovCall).toBeDefined();
+    const headers = (ovCall![1] as RequestInit).headers as Record<string, string>;
+    expect(headers["User-Agent"]).toMatch(/Placy/);
+  });
+
+  it("Overpass: way uten navn hoppes over — og tag utenfor hvitelisten likeså", async () => {
+    // Navnekravet lever nå i osm-gate sammen med hvitelisten (2026-08-24).
+    // Denne testen holder begge portene: navnløs hvitelistet tag faller ut, og
+    // navngitt IKKE-hvitelistet tag (her en lekeplass) faller også ut.
     const mockSupabase = buildMockSupabase();
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
 
     const overpassResponse = {
       elements: [
-        { type: "way", id: 1, center: { lat: 63.411, lon: 10.771 }, tags: {} }, // uten navn
-        { type: "node", id: 2, lat: 63.412, lon: 10.772, tags: { name: "Vikhammer idrettsplass" } },
+        // hvitelistet, men uten navn
+        { type: "way", id: 1, center: { lat: 63.411, lon: 10.771 }, tags: { leisure: "sports_centre" } },
+        // navngitt, men lekeplass er permanent utestengt
+        { type: "node", id: 3, lat: 63.4115, lon: 10.7715, tags: { leisure: "playground", name: "Gårdsrommet" } },
+        // hvitelistet OG navngitt → den eneste som skal inn
+        {
+          type: "node",
+          id: 2,
+          lat: 63.412,
+          lon: 10.772,
+          tags: { leisure: "sports_centre", name: "Vikhammer idrettsplass" },
+        },
       ],
     };
 
@@ -298,7 +397,24 @@ describe("importPublicPois — Unit 2", () => {
     await importPublicPois(BASE_OPTIONS);
 
     expect(upsertCategories).toHaveBeenCalledWith(PUBLIC_POI_CATEGORIES, { schema: "v2" });
-    expect(PUBLIC_POI_CATEGORIES.map((c) => c.id).sort()).toEqual(["barnehage", "idrett", "skole"]);
+    // Overpass-kategoriene arves fra hvitelisten i osm-gate (2026-08-24), så
+    // listen vokser når porten får en ny regel — men skole/barnehage/idrett
+    // MÅ fortsatt være der: det var dem cutover-funnet handlet om.
+    const ids = PUBLIC_POI_CATEGORIES.map((c) => c.id);
+    expect(ids).toContain("skole");
+    expect(ids).toContain("barnehage");
+    expect(ids).toContain("idrett");
+    expect(ids.sort()).toEqual([
+      "badeplass",
+      "barnehage",
+      "idrett",
+      "marina",
+      "outdoor",
+      "park",
+      "skole",
+      "swimming",
+    ]);
+    expect(new Set(ids).size, "duplikate kategori-definisjoner").toBe(ids.length);
     // Seedes før første kilde-fetch — ellers kan en POI-insert vinne kappløpet
     const seedOrder = vi.mocked(upsertCategories).mock.invocationCallOrder[0];
     const firstFetchOrder = fetchMock.mock.invocationCallOrder[0];

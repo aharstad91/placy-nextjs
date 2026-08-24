@@ -4,14 +4,34 @@ import { networkInterfaces } from "node:os";
  * Maskinens private IPv4-adresser — brukes som `allowedDevOrigins` slik at
  * `npm run dev:mobile` (binder til 0.0.0.0) kan serve /_next/*-ressurser til
  * iPhone/iPad på samme nett. Next 16 blokkerer cross-origin dev-requests som
- * ikke står i lista. Vi regner adressene ut ved oppstart så de følger DHCP
- * uten manuell redigering. Feltet gjelder KUN dev — ignoreres i prod-bygg.
+ * ikke står i lista. Feltet gjelder KUN dev — ignoreres i prod-bygg.
+ *
+ * Adressene regnes ut ved OPPSTART, og det holdt ikke: en dev-server som har
+ * stått over natta har lista fra i går, så etter en DHCP-fornyelse avvises
+ * mobilen med en stille WebSocket-feil (`/_next/webpack-hmr` svarer ikke i
+ * det hele tatt, mens HTML-en fortsatt serves — så siden ser levende ut mens
+ * hot reload er dødt). Funnet 2026-08-24 på :3003. Derfor legger vi til de
+ * private IPv4-områdene som mønstre i tillegg til de målte adressene: da
+ * overlever lista at maskinen bytter adresse under en kjørende dev-server.
  */
 function localDevOrigins() {
-  return Object.values(networkInterfaces())
+  const measured = Object.values(networkInterfaces())
     .flatMap((nets) => nets ?? [])
     .filter((net) => net.family === "IPv4" && !net.internal)
     .map((net) => net.address);
+
+  // RFC 1918 + link-local. Kun dev, og kun maskiner på samme nett kan nå
+  // porten uansett — mønstrene utvider ikke angrepsflaten i praksis.
+  // `*` matcher ETT helt segment hos Next (samme matcher som remotePatterns),
+  // så «172.2*.*.*» ville ikke truffet noe — 172.16–172.31 må enumereres.
+  const privateRanges = [
+    "10.*.*.*",
+    "192.168.*.*",
+    "169.254.*.*",
+    ...Array.from({ length: 16 }, (_, i) => `172.${16 + i}.*.*`),
+  ];
+
+  return [...new Set([...measured, ...privateRanges])];
 }
 
 /** @type {import('next').NextConfig} */

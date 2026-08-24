@@ -6,6 +6,41 @@
 
 ---
 
+## 2026-08-24 — HVORFOR ET NYTT PUNKT IKKE DUKKER OPP PÅ ET BOARD (tre kildebugs fikset, propageringen utsatt)
+
+**Kontekst:** Andreas populerer Grilstad-demoen (`placy-demo/strindfjordvegen-10`) med lokalkunnskap — ikke for å fylle boardet, men for å lære hva systemet IKKE fanger og hvorfor. Inngangen var konkret: en kommunal barnehage som ligger på Trondheim kommunes sider manglet helt. Sesjonen ble to ting — tre reelle bugs i kildeimporten, og en arkitektur-erkjennelse som er større enn dem.
+
+**Tre bugs, alle i `lib/pipeline/import-public-pois.ts`, alle samme familie: kilden ble spurt om et for lite område, eller ikke svart på i det hele tatt.**
+
+1. **Barnehagefakta ble kalt med hardkodet radius `0.025` uansett prosjektradius.** API-parameteren er GRADER og brukes likt på begge akser (bounding box). På 63° nord er 0,025° lengdegrad bare ~1,25 km, så alt lenger øst/vest ble klippet av API-et FØR vårt eget haversine-filter fikk se det — filteret på linje 348 var dødt for alt utenfor ~2,1 km. Grilstad gikk fra 11 til 19 barnehager. Den Andreas savnet er **Ranheimsfjæra barnehage** (kommunal, orgnr 922767440, 1 449 m) — den lå 0,026° øst, altså så vidt utenfor boksen. Også tapt: Læringsverkstedet Humlehaugen Doremi (1 853 m, 0,034° øst). Fikset: `barnehagefaktaRadiusDegrees(lat, radiusMeters)` regner grader langs den trangeste aksen (lengdegrad = breddegrad / cos(lat)) med 20 % margin, tak på 1,0°.
+2. **Overpass (idrettsanlegg) hadde samme boks** — én felles `delta = 0.025` ga ~2,8 km nord/sør men bare ~1,25 km øst/vest. Fikset med `overpassBboxDeltas(lat, radiusMeters)`: én delta per akse.
+3. **Overpass manglet `User-Agent` og svarte 406 Not Acceptable på Node-fetch sin default.** Kilden har derfor ALDRI levert et eneste idrettsanlegg på noe board. Isolert ved å poste identisk query tre ganger: simple → 406, full → 406, full + `User-Agent: Placy/1.0` → 200. «Trening & Aktivitet» på Grilstad hadde 4 steder, alle fra Google; nå kommer Ranheimshallen, Extra Arena, Charlottenlundhallen, Leangenhallen, Leangen curlinghall, svømmehallen og 11 flere. De to andre Overpass-kallstedene i kodebasen (`lib/generators/trail-fetcher.ts`, `scripts/seed-osm-pois.ts`) satte headeren fra dag én — bare pipelinen manglet den.
+
+**Kjeden fra kilde til board er tre steg, og alle tre kjøres bare når vi provisjonerer manuelt.** Dette er hovedfunnet, og det kom fram fordi Andreas så at boardet fortsatt sa «118 steder» etter at databasen var oppdatert:
+
+- kilde-importen skriver til `v2.project_pois` — prosjektets POI-**pool**
+- `hydrateReport` kopierer pool → `v2.product_pois` — det boardet **faktisk leser** (`v2-queries.ts` steg 4)
+- `revalidateTag("product:{customer}_{slug}")` buster ISR-cachen (`revalidate = 3600` + `unstable_cache`)
+
+`importPublicPois` rører aldri `product_pois` (den eneste referansen der er unlinking av dublett-skoler). Så en ny POI kan ligge i poolen i evigheter uten å være på boardet. Målt på Grilstad: 154 i pool, 127 i produkt. Etter hydrering + cache-bust: 152 synlige (154 minus 2 under `MIN_TRUST_SCORE = 0.5`), opp fra 118.
+
+**Re-kjøring er trygg, og det er verifisert, ikke antatt:** kildene upserter på register-ID (`nsr_id`/`barnehagefakta_id`/`osm_id` med partial unique indexes), `featured` regnes deterministisk av samme regel (topp 3 per kategori innenfor 1 500 m), `sort_order` er null på alle 127 rader så det finnes ingen manuell rekkefølge å miste, reisetid-beregningen skriver bare ved faktisk endring (`isUnchanged`), og kuratert innhold (`highlightPoiIds`) ligger i `products.config` som hydreringen ikke rører. Kjørt: 154 linket, 51 featured, 30 kategorier, 0 warnings.
+
+**Det egentlige kravet Andreas formulerte — og som er STØRRE enn en cron-jobb:** alle punkter som ligger i Placys database må hentes ut av boardene automatisk. Legger vi til ETT punkt, og det ligger i et område der tre boards henter data, skal det dukke opp på alle tre av seg selv. Det er ikke det samme som å spørre eksterne kilder på nytt på klokke — det er en påstand om at et boards POI-utvalg bør **resolves geografisk ved lesing**, ikke ligge som et materialisert snapshot per produkt. I dag er `product_pois` et frossent utvalg som må re-hydreres per board; kravet peker mot at dekning (radius/område) er det som avgjør, slik at ett nytt punkt automatisk er inne på hvert board som dekker det.
+
+**Utsatt bevisst, ikke glemt.** Et `scripts/refresh-board.ts` var påbegynt (spør kildene på nytt → pool → publiser → bust cache, med diff-utskrift) og ble stoppet av Andreas: kostnadsbildet må tenkes gjennom først. Det som må avklares før noe bygges:
+
+- **Kadens og kostnad per kilde.** Barnehagefakta/NSR/Overpass er gratis; Google Places koster per kjøring per board. Daglig kjøring er feil kadens for kilder der en barnehage åpner et par ganger i året. Mapbox Matrix koster også per nytt punkt.
+- **Snapshot vs. lesetids-oppslag.** Skal `product_pois` bort som utvalgsmekanisme, eller beholdes som cache over et geografisk oppslag? Dette avgjør om «automatisk» betyr «en jobb som re-hydrerer alle dekkende boards ved innsetting» eller «boardet spør på nytt ved render».
+- **Fjerning er farligere enn tillegg.** Hydreringen sletter og re-inserter, så et punkt som forsvinner fra OSM forsvinner tause fra boardet — og en kuratert `highlightPoiId` kan da peke i tomme luften. En diff-rapport er minimum.
+- **Kuratert tekst blir utdatert i stillhet.** Et nytt punkt havner i pool og kart, men nivå-2-strøkets tekst nevner det ikke. Trenger et «nye steder siden kuratering»-signal som gir kuratoren en kø.
+
+**Verifisert:** 4 nye regresjonstester i `import-public-pois.test.ts` (grad-radius dekker de to tapte barnehagene, skalering med breddegrad + tak, faktisk kall-URL uten `0.025`, Overpass-bbox asymmetri, `User-Agent` sendes). **2 894 tester grønne, `tsc` rent, lint 0 errors.** Boardet re-verifisert i to runder mot `:3003` — første request serverer stale (`revalidateTag(tag, "max")` er stale-while-revalidate i route handlers), andre har de nye stedene.
+
+**Uberørt, med vilje:** `orgnr` som dedup-nøkkel for barnehager (API-feltet heter `orgnr`, ikke `id`, så `barnehagefakta_id` faller alltid tilbake til navne-slug — et navnebytte gir duplikat i stedet for oppdatering; å bytte nøkkel krever remap av eksisterende rader, ellers dupliseres alle 19). OSM-nærduplikater på Grilstad («Extra Arena»/«EXTRA Arena», «Charlottenlund kunstgrasbane»/«kunstgressbane»). De 11 andre rapport-boardene har samme hull som Grilstad hadde — ingen av dem re-provisjonert. Ingenting committet eller pushet; fiksen ligger i hovedrepoet mens dev-serveren på `:3003` kjører fra worktreet `../placy-drillin-nav`.
+
+---
+
 ## 2026-08-23 — LABELS OG PIN-UTGLISNING I 3D-KARTET (branch `feat/3d-label-declutter`, 3 commits, ikke pushet)
 
 **Kontekst:** Andreas viste to skjermbilder side ved side — 3D-boardet på Strindfjordvegen 10 med sju pins stablet oppå hverandre og null navn, og 2D-kartet av samme sted der alt er lesbart — og ba om at 2D-logikken («både plasserer pins og label basert på logikk med zoom nivå») ble kjørt i 3D. Kjørt som `/ce-work` fra bar prompt, ingen plandokument.
