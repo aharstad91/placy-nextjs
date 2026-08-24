@@ -1,7 +1,7 @@
 ---
 title: "refactor: DOM-markører i 3D-kartet — skarpe og raskere POI-labels"
 type: refactor
-status: active
+status: complete
 date: 2026-08-24
 ---
 
@@ -328,7 +328,7 @@ To ting skifter mekanisme:
 
 ## Implementation Units
 
-- [ ] **Unit 1: Grønn grunnlinje og prosjektpinnens hindringsgeometri**
+- [x] **Unit 1: Grønn grunnlinje og prosjektpinnens hindringsgeometri**
 
 **Goal:** Arbeidstreet er grønt, og de to feilene i prosjektpinnens hindring er rettet før migrasjonen
 arver dem.
@@ -381,7 +381,7 @@ arver dem.
 
 ---
 
-- [ ] **Unit 2: Delt markør-selektor + typedeklarasjoner for HTML-markøren**
+- [x] **Unit 2: Delt markør-selektor + typedeklarasjoner for HTML-markøren**
 
 **Goal:** Tag-navn-gaten dekker begge markør-generasjoner, og de nye Google-typene er deklarert — alt
 før noen markør faktisk bytter element.
@@ -436,7 +436,7 @@ enheten, og en grønn test her er det som gjør Unit 4 og 5 trygge.
 
 ---
 
-- [ ] **Unit 3: `DomMarker3D` — egen React-wrapper for HTML-markøren**
+- [x] **Unit 3: `DomMarker3D` — egen React-wrapper for HTML-markøren**
 
 **Goal:** Én liten, testbar komponent som monterer `<gmp-marker>` / `<gmp-marker-interactive>` og
 binder Googles properties, uten ny npm-avhengighet.
@@ -504,7 +504,7 @@ Skriv én delt test-helper som gjør `customElements.define(...)` bak en
 
 ---
 
-- [ ] **Unit 4: POI-pinnen og labelen som DOM**
+- [x] **Unit 4: POI-pinnen og labelen som DOM**
 
 **Goal:** POI-markørene tegnes som HTML med CSS, og labelen er ekte tekst. Dette er enheten som gjør
 teksten skarp.
@@ -578,7 +578,7 @@ og lukker den ikke igjen.
 
 ---
 
-- [ ] **Unit 5: Prosjektmarkøren som DOM + lagdeling via CSS**
+- [x] **Unit 5: Prosjektmarkøren som DOM + lagdeling via CSS**
 
 **Goal:** Prosjektmarkøren tegnes som DOM, og ligger over POI-ene igjen.
 
@@ -626,7 +626,7 @@ og lukker den ikke igjen.
 
 ---
 
-- [ ] **Unit 6: Dybdesortering og kortere ro-vindu**
+- [x] **Unit 6: Dybdesortering og kortere ro-vindu**
 
 **Goal:** Overlapp avgjøres av kamera-avstand, og labels kommer raskere.
 
@@ -727,7 +727,7 @@ kart-instansen er den samme gjennom vekslingen.
 
 ---
 
-- [ ] **Unit 8: Rydd dødt raster-maskineri, mål terreng-avviket, og verifiser på ekte telefon**
+- [x] **Unit 8: Rydd dødt raster-maskineri, mål terreng-avviket, og verifiser på ekte telefon**
 
 **Goal:** Ingen etterlatt kode som bare fantes for rasterisering, terreng-avviket er tallfestet, og
 gevinsten er bevist der problemet faktisk er — på telefonen.
