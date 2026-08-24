@@ -345,7 +345,10 @@ describe("Outro summary-fly — orkestrerings-invarianter (Unit 10.3)", () => {
   it("AC1: flyCameraTo bruker SUMMARY_RANGE/SUMMARY_TILT (PRD 6-konstanter) + durationMillis = SUMMARY_FLY_MS", () => {
     expect(orchSrc).toMatch(/flyCameraTo\?\.\(/);
     expect(orchSrc).toMatch(/range:\s*SUMMARY_RANGE/);
-    expect(orchSrc).toMatch(/tilt:\s*SUMMARY_TILT/);
+    // Satelitt (R8a/R8b): uttrekket klampes til ovenfra når view er «sat» —
+    // ellers ville outroens ENE skriver utenfor directoren tiltet kameraet
+    // mens pillen sier «Satelitt». Utenfor Satelitt: SUMMARY_TILT som før.
+    expect(orchSrc).toMatch(/tilt:\s*overhead\s*\?\s*0\s*:\s*SUMMARY_TILT/);
     expect(orchSrc).toMatch(/durationMillis:\s*SUMMARY_FLY_MS/);
     // SUMMARY_* importeres fra director-en (PRD 6 eier konstantene, ikke PRD 10).
     expect(orchSrc).toMatch(
@@ -357,7 +360,7 @@ describe("Outro summary-fly — orkestrerings-invarianter (Unit 10.3)", () => {
     // Dep-arrayet inneholder isOutroBeat + cameraMode, men IKKE audio/narrativ-synk-
     // deps (audioDurationMs, reducedMotion) som ville re-fyre uttrekket.
     expect(orchSrc).toMatch(
-      /\[isOutroBeat,\s*cameraMode,\s*map3dInstance,\s*homeLat,\s*homeLng\]/,
+      /\[isOutroBeat,\s*cameraMode,\s*overhead,\s*map3dInstance,\s*homeLat,\s*homeLng\]/,
     );
   });
 

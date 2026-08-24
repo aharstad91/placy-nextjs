@@ -7,7 +7,7 @@ import Map, {
 } from "react-map-gl/mapbox";
 import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
 import { poiVisualIdentity } from "./marker-style";
-import { BoardMapControls, type CameraMode } from "./BoardMapControls";
+import { BoardMapControls, type BoardView, type CameraMode } from "./BoardMapControls";
 import { rangeToZoom, zoomToRange } from "@/lib/utils/camera-map";
 import { useBoard, useActiveCategory, useAvailableTravelModes } from "./board-state";
 import { BoardMarker } from "./BoardMarker";
@@ -172,20 +172,12 @@ export function BoardMap({
   // retry plukker opp ekte verdi ved mapLoaded=true (også ved 3D→2D-toggle).
   const zoomTier = useBoardZoomTier(mapRef, mapLoaded);
 
-  // ---- Persistent-3D + 2D-overlay ----
-  // view = hvilken motor som ligger FREMST. 3D-basen forblir montert uansett
-  // når add-on finnes. Default 3D når add-on finnes, ellers ren 2D.
-  const [view, setView] = useState<"2d" | "3d">(has3dAddon ? "3d" : "2d");
-  const [pendingCamera, setPendingCamera] = useState<PendingCamera | null>(
-    null,
-  );
-  const mapBodyRef = useRef<HTMLDivElement | null>(null);
-
   // ---- Voice-over-tier ----
   // Speiler signalet i BoardMap3D: med voice-over finnes en kuratert tur å
   // guide gjennom (auto-orbit + Auto/Fri-toggel gir mening). UTEN voice-over
   // (basic-tier) er "Auto" en tom modus — `autoOrbit` er av, så kameraet bare
-  // står stille. Da skjules Auto/Fri-segmentet (pillen krymper til Kart/3D).
+  // står stille. Da skjules Auto/Fri-segmentet (pillen krymper til motor-byttet).
+  // Deklarert FØR view-state-en: default-visningen avledes av den.
   const hasVoiceOver = useMemo(
     () =>
       data.categories.some((c) => !!c.audio || !!c.reelsAudio) ||
@@ -194,6 +186,23 @@ export function BoardMap({
       !!data.outro,
     [data.categories, data.welcome, data.home.audio, data.outro],
   );
+
+  // ---- Persistent-3D + 2D-overlay ----
+  // view = hvilken motor som ligger FREMST — og for Google-motoren hvilken
+  // kamerapositur (sat = rett ovenfra, 3d = skrå). 3D-basen forblir montert
+  // uansett når add-on finnes.
+  //
+  // Default-regel (R6/R7): boards med 3D-tillegg og voice-over åpner i 3D
+  // (cinematikken er produktet); med tillegg uten voice-over åpner de i
+  // Satelitt (rett ovenfra er den letteste orienteringen); uten tillegg ren 2D.
+  // Valget er in-memory per sesjon (R10) — reload gir regelen på nytt.
+  const [view, setView] = useState<BoardView>(() =>
+    has3dAddon ? (hasVoiceOver ? "3d" : "sat") : "2d",
+  );
+  const [pendingCamera, setPendingCamera] = useState<PendingCamera | null>(
+    null,
+  );
+  const mapBodyRef = useRef<HTMLDivElement | null>(null);
 
   // ---- Kameramodus (auto/fri) + recovery-hint ----
   // Løftet hit (fra BoardMap3D) så Auto/Fri + Kart/3D kan bo i ÉN felles
@@ -228,6 +237,15 @@ export function BoardMap({
     if (freeHintTimerRef.current) clearTimeout(freeHintTimerRef.current);
     freeHintTimerRef.current = setTimeout(() => setShowFreeHint(false), 3500);
   }, []);
+
+  // Brukeren brøt ovenfra-posituren i Satelitt (to-finger-tilt/ctrl-drag over
+  // terskelen, R8c): flipp segmentet til «3D» — pillen skal aldri lyve om hva
+  // som er på skjermen — og speil Auto→Fri-takeoveren (fri + hint). Pan flipper
+  // aldri (drift-vakten i BoardMap3D fyrer kun på faktisk tilt-/heading-brudd).
+  const handleOverheadBreak = useCallback(() => {
+    setView("3d");
+    handleDragTakeover();
+  }, [handleDragTakeover]);
 
   useEffect(() => {
     return () => {
@@ -708,7 +726,9 @@ export function BoardMap({
   );
 
   const handleModeChange = useCallback(
-    (mode: "2d" | "3d") => {
+    (mode: BoardView) => {
+      // Klikk på det aktive segmentet er no-op (R9); setView under er ellers
+      // optimistisk — segmentet flipper umiddelbart, flyvningen følger.
       if (mode === view) return;
       if (mode === "2d") {
         // 3D → 2D: mount Mapbox-overlayet der 3D-kameraet sto. 3D-basen forblir
@@ -737,36 +757,49 @@ export function BoardMap({
           tilt: 0,
         });
         setView("2d");
-      } else {
-        // 2D → 3D: unmount Mapbox-overlayet (map.remove() frigjør WebGL-
-        // konteksten). 3D-basen ligger allerede under og avdekkes momentant.
+      } else if (view === "2d") {
+        // 2D → Satelitt/3D: unmount Mapbox-overlayet (map.remove() frigjør
+        // WebGL-konteksten). 3D-basen ligger allerede under og avdekkes momentant.
         //
         // Posisjonen må skrives IMPERATIVT hit: `defaultCenter`/`defaultRange` på
         // <Map3D> gjelder kun ved mount, og instansen mountes én gang og rives
         // aldri. `durationMillis: 0` — byttet skal være et kutt, ikke en flytur
         // brukeren ser fra feil sted.
         //
-        // Kun i fri modus. I auto eier drone-directoren kameraet og re-aimer til
-        // prosjektet i neste effekt uansett; å skrive her ville gitt et hopp som
-        // umiddelbart ble overskrevet.
+        // Mål 3D: kun i fri modus. I auto eier drone-directoren kameraet og
+        // re-aimer til prosjektet i neste effekt uansett; å skrive her ville
+        // gitt et hopp som umiddelbart ble overskrevet.
+        //
+        // Mål Satelitt: skrives UANSETT kameramodus (tilt 0, nord opp, eksakt
+        // zoom↔range ved tilt 0) — directorens overhead-hvile bevarer gjeldende
+        // senter/range, så broen er det som etablerer 2D-posisjonen i motoren.
         const map3d = map3dRef.current as FlyCapableMap | null;
         const map = mapRef.current?.getMap();
-        if (map3d && map && cameraMode === "free") {
+        if (map3d && map && (mode === "sat" || cameraMode === "free")) {
           const c = map.getCenter();
           const { w, h } = getViewportDims();
           const current = map3dRef.current;
-          const tilt = current?.tilt ?? DEFAULT_CAMERA_LOCK.tilt;
+          const tilt =
+            mode === "sat" ? 0 : current?.tilt ?? DEFAULT_CAMERA_LOCK.tilt;
           map3d.flyCameraTo?.({
             endCamera: {
               center: { lat: c.lat, lng: c.lng, altitude: 0 },
               range: zoomToRange(map.getZoom(), c.lat, tilt, w, h),
               tilt,
-              heading: current?.heading ?? 0,
+              heading: mode === "sat" ? 0 : current?.heading ?? 0,
             },
             durationMillis: 0,
           });
         }
-        setView("3d");
+        setView(mode);
+      } else {
+        // Satelitt ↔ 3D: SAMME motor — ingen mount/unmount, intet motorbytte.
+        // Selve kameraflyvningen (ovenfra ↔ skrå) eies av director-strømmen
+        // (overhead-input i use-board-3d-camera): en flyvning startet her ville
+        // blitt drept av director-effektens stopCameraAnimation når overhead-
+        // dep-en endres. Nytt segment-klikk mid-flight omdirigerer via samme
+        // mekanisme (nytt intent → nytt flyCameraTo erstatter det pågående, R9).
+        setView(mode);
       }
     },
     [
@@ -804,11 +837,14 @@ export function BoardMap({
               compactMarkers={compactMarkers}
               // Kun den FREMSTE motoren publiserer utsnitt. I 2D-visning ligger
               // 3D-basen fortsatt montert under Mapbox-overlayet, og uten denne
-              // gaten ville begge skrevet til samme state.
-              publishViewport={publishViewport && view === "3d"}
+              // gaten ville begge skrevet til samme state. Google-motoren er
+              // front i BÅDE Satelitt og 3D (samme instans, ulik positur).
+              publishViewport={publishViewport && view !== "2d"}
               // Overlegg som finnes i BEGGE motorer (tids-chipen) må vite hvem
               // som er synlig — 3D-basen forblir montert under Mapbox-overlayet.
-              isFront={view === "3d"}
+              isFront={view !== "2d"}
+              overhead={view === "sat"}
+              onOverheadBreak={handleOverheadBreak}
               mapPaddingBottom={mapPaddingBottom}
               onMapReady={handle3DReady}
             />

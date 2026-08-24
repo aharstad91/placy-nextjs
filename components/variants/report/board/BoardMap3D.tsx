@@ -18,6 +18,7 @@ import { deriveCategoryCameraConfig } from "./board-category-camera";
 import { readBoardUrlFlagsFromWindow } from "./board-url-flags";
 import { getEstablishingShot } from "./board-establishing-shots";
 import { useBoardMarkerSet } from "./use-board-marker-set";
+import { watchOverheadDrift } from "./overhead-drift";
 import { useMarker3DDeclutter } from "./use-3d-marker-declutter";
 import {
   useBoardFlythrough,
@@ -85,6 +86,20 @@ interface Props {
    * gjennom et motor-bytte.
    */
   onMapReady?: (map3d: Map3DInstance | null) => void;
+  /**
+   * Satelitt-modus (BoardMap: view === "sat"). Directoren produserer da kun
+   * ovenfra-poser (tilt/heading 0) og eier kameraet også i fri kameramodus;
+   * outro-uttrekket klampes; grab-takeoveren (auto→fri) undertrykkes — pan i
+   * Satelitt skal ikke klobbe cameraMode (R8c/R8d). Default false.
+   */
+  overhead?: boolean;
+  /**
+   * Kalles når brukeren BRYTER ovenfra-posituren i Satelitt (to-finger-tilt /
+   * ctrl-drag over terskelen, R8c): BoardMap flipper segmentet til «3D» + setter
+   * fri kameramodus (speiler Auto→Fri-drag-takeoveren). Pan flipper aldri —
+   * drift-vakten fyrer i det posituren faktisk brytes, ikke på grab.
+   */
+  onOverheadBreak?: () => void;
 }
 
 /**
@@ -123,6 +138,8 @@ export function BoardMap3D({
   isFront = false,
   mapPaddingBottom = 0,
   onMapReady,
+  overhead = false,
+  onOverheadBreak,
 }: Props) {
   const { state, data, dispatch, subFilter } = useBoard();
   const engagement = useEngagement();
@@ -378,6 +395,11 @@ export function BoardMap3D({
   // state-maskin med token-kansellering (use-board-3d-camera). Kategori-skifte
   // uten waypoints rører IKKE kameraet (orbiten går uavbrutt videre). Markørene
   // er statiske (full opacity) — ingen opacity-reveal (WebGL-kontekst-churn).
+  // Drift-flippen (gesten som bryter ovenfra-posituren og flipper segmentet til
+  // 3D) setter denne FØR view-byttet: sat→3d-overgangen i directoren skal da
+  // ikke fly kameraet til skrå — brukerens gest eier alt posituren.
+  const skipSkraaReentryRef = useRef(false);
+
   const { cutVisible } = useBoard3DCamera({
     map3dInstance,
     cameraMode,
@@ -389,6 +411,9 @@ export function BoardMap3D({
     audioDurationMs,
     audioPaused,
     reducedMotion,
+    overhead,
+    outroActive: isOutroBeat,
+    skipSkraaReentryRef,
     orbitRange,
     // Basic-tier (uten voice-over): ingen idle-orbit. Etter intro-flythrough-en
     // HOLDER kameraet der flyturen landet i stedet for å re-aime til orbit-
@@ -413,6 +438,7 @@ export function BoardMap3D({
     establishingShot,
     isOutroBeat,
     cameraMode,
+    overhead,
     orbitRange,
     reducedMotion,
     audioDurationMs,
@@ -445,6 +471,9 @@ export function BoardMap3D({
   // en ref så drag-lytteren kan lese gjeldende modus uten å re-subscribe.
   const cameraModeRef = useRef(cameraMode);
   cameraModeRef.current = cameraMode;
+  // Samme ref-speiling for Satelitt-modus (drag-lytteren skiller sat fra 3d).
+  const overheadRef = useRef(overhead);
+  overheadRef.current = overhead;
   // Intro-flythrough-en eier kameraet → drag skal ikke kapre det midt i
   // innflyvningen (ellers kjemper bruker-drag mot den frame-drevne flyturen).
   const introActiveRef = useRef(introActive);
@@ -454,27 +483,73 @@ export function BoardMap3D({
   // freeMode hijacker ikke MapView3D pekeren, så vi lytter direkte. Marker-tap er
   // content-interaksjon (åpner POI), ikke kamera-grep — derfor filtreres de ut.
   // Programmatiske fly/orbit trigger ikke disse — kun ekte bruker-input.
+  const onOverheadBreakRef = useRef(onOverheadBreak);
+  onOverheadBreakRef.current = onOverheadBreak;
+
   useEffect(() => {
     if (!map3dInstance) return;
     const el = map3dInstance as unknown as HTMLElement;
+
+    // Drift-vakt-tilstand for Satelitt (R8c): startes på pointer-grab, stoppes
+    // ved brudd eller kort etter pointerup (liten grace for gest-inertia).
+    let stopDriftWatch: (() => void) | null = null;
+    let releaseTimer: ReturnType<typeof setTimeout> | null = null;
+    const endDriftWatch = () => {
+      stopDriftWatch?.();
+      stopDriftWatch = null;
+    };
+
     const onGrab = (e: Event) => {
       const target = e.target as HTMLElement | null;
       if (target && target.closest("gmp-marker-3d-interactive")) return;
       // Under intro-flythrough eier innflyvningen kameraet — ikke kapre det.
       if (introActiveRef.current) return;
+      // Satelitt: pan er en fullverdig gest som IKKE skal klobbe cameraMode
+      // (grab-takeoveren undertrykkes — ellers ville én pan satt fri-modus på
+      // VO-boards, og retur til 3D gjenopprettet feil modus, R8d). I stedet
+      // observeres faktisk tilt-/heading-drift: brytes ovenfra-posituren over
+      // terskelen, flipper segmentet til «3D» i det bruddet skjer (R8c).
+      if (overheadRef.current) {
+        if (e.type !== "pointerdown" && e.type !== "touchstart") return; // wheel = zoom, tilter aldri
+        endDriftWatch();
+        if (releaseTimer) clearTimeout(releaseTimer);
+        stopDriftWatch = watchOverheadDrift(
+          map3dInstance as { tilt?: number; heading?: number },
+          () => {
+            stopDriftWatch = null;
+            // Gesten eier posituren: sat→3d-overgangen i directoren skal ikke
+            // fly kameraet til skrå oppå brukerens pågående bevegelse.
+            skipSkraaReentryRef.current = true;
+            onOverheadBreakRef.current?.();
+          },
+        );
+        return;
+      }
       // Kun implisitt takeover (auto → fri) varsler BoardMap, som setter fri-modus
       // + viser recovery-hinten.
       if (cameraModeRef.current === "auto") {
         onDragTakeover();
       }
     };
+    const onRelease = () => {
+      if (!stopDriftWatch) return;
+      // Grace: Google easer gesten ferdig etter slipp — la vakten se inertia-halen.
+      if (releaseTimer) clearTimeout(releaseTimer);
+      releaseTimer = setTimeout(endDriftWatch, 600);
+    };
     el.addEventListener("pointerdown", onGrab);
     el.addEventListener("wheel", onGrab, { passive: true });
     el.addEventListener("touchstart", onGrab, { passive: true });
+    window.addEventListener("pointerup", onRelease);
+    window.addEventListener("pointercancel", onRelease);
     return () => {
       el.removeEventListener("pointerdown", onGrab);
       el.removeEventListener("wheel", onGrab);
       el.removeEventListener("touchstart", onGrab);
+      window.removeEventListener("pointerup", onRelease);
+      window.removeEventListener("pointercancel", onRelease);
+      if (releaseTimer) clearTimeout(releaseTimer);
+      endDriftWatch();
     };
   }, [map3dInstance, onDragTakeover]);
 

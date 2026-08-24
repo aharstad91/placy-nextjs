@@ -133,6 +133,10 @@ export interface UseBoardFlythroughParams {
   establishingShot: EstablishingPathConfig | undefined;
   isOutroBeat: boolean;
   cameraMode: CameraMode;
+  /** Satelitt-modus (view === "sat"): outro-uttrekket klampes til ovenfra
+   *  (tilt 0) — den ENE kamera-skriveren utenfor directoren som ellers ville
+   *  tiltet kameraet mens pillen sier «Satelitt» (R8a/R8b). */
+  overhead?: boolean;
   orbitRange: number;
   reducedMotion: boolean;
   audioDurationMs: number | undefined;
@@ -155,6 +159,7 @@ export function useBoardFlythrough({
   establishingShot,
   isOutroBeat,
   cameraMode,
+  overhead = false,
   orbitRange,
   reducedMotion,
   audioDurationMs,
@@ -200,10 +205,14 @@ export function useBoardFlythrough({
     // prefers-reduced-motion → statisk vidt nærområde (runIntroFlythrough fyrer
     // «done» umiddelbart → END_INTRO → director-ens reduced-motion-orbit).
     if (basicIntroActive && !isWelcomeBeat && !flyMode) {
+      // Satelitt-default (R6): samme bane/reveal, men landingen er ovenfra med
+      // nord opp — og redusert bevegelse holder LANDINGSposen (staticPoseAt 1),
+      // ikke den skrå etablerings-posituren (pillen sier «Satelitt»).
       return runIntroFlythrough(map, {
         target: { lat: homeLat, lng: homeLng },
-        path: buildBasicIntroPath(orbitRange),
+        path: buildBasicIntroPath(orbitRange, { overheadLanding: overhead }),
         staticOnly: reducedMotion,
+        staticPoseAt: overhead ? 1 : 0,
         onPhase: (phase) => {
           (window as unknown as { __placyIntroFly?: string }).__placyIntroFly = phase;
           // Driv markør-koreografien: settling/running/done styrer når reveal-
@@ -244,6 +253,9 @@ export function useBoardFlythrough({
     flyMode,
     basicIntroActive,
     orbitRange,
+    // Satelitt-default: flippes view mid-intro restarter flyturen i den andre
+    // variantens landing — segmentet og landingsposituren skal aldri sprike.
+    overhead,
     dispatch,
     map3dInstance,
     homeLat,
@@ -297,10 +309,13 @@ export function useBoardFlythrough({
       endCamera: {
         center: { lat: homeLat, lng: homeLng, altitude: 0 },
         range: SUMMARY_RANGE,
-        tilt: SUMMARY_TILT,
+        // Satelitt: uttrekket klampes til ovenfra — kameraet trekkes fortsatt ut
+        // til oversikts-rangen, men uten å tilte (pillen sier «Satelitt» og skal
+        // aldri lyve). Etter beaten holder directorens overhead-hvile posituren.
+        tilt: overhead ? 0 : SUMMARY_TILT,
         heading: 0,
       },
       durationMillis: SUMMARY_FLY_MS,
     });
-  }, [isOutroBeat, cameraMode, map3dInstance, homeLat, homeLng]);
+  }, [isOutroBeat, cameraMode, overhead, map3dInstance, homeLat, homeLng]);
 }

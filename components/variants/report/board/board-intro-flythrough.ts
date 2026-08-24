@@ -99,13 +99,24 @@ export const BASIC_INTRO_FLY_MS = 9000;
  * vidt for en etablering av nærområdet. Rolig push-in (lav sweep, ingen oval)
  * så blob-prikkene avsløres jevnt uten å svinge rundt skjermen — samme ro som
  * den live velkommen-beaten, men uten audio-synk.
+ *
+ * `overheadLanding` (Satelitt-default, R6): samme sweep/varighet/reveal, men
+ * banen LANDER rett ovenfra med nord opp — tiltEnd 0, og siden heading er
+ * startHeading + sweep·s realiseres «headingEnd 0» som startHeading = −sweep.
+ * Tilt-profilen blir da et dykk 57→0 (mellompositurene mer ovenfra enn i dag);
+ * directorens overhead-hvile matcher landingen eksakt (ingen handoff-hopp).
  */
-export function buildBasicIntroPath(restRange: number): Partial<IntroPathConfig> {
+export function buildBasicIntroPath(
+  restRange: number,
+  opts?: { overheadLanding?: boolean },
+): Partial<IntroPathConfig> {
+  const overhead = opts?.overheadLanding ?? false;
   return {
     rangeStart: Math.min(3000, Math.round(restRange * 1.8)),
     rangeEnd: restRange,
     tiltStart: DEFAULT_INTRO_PATH.tiltStart,
-    tiltEnd: DEFAULT_INTRO_PATH.tiltEnd,
+    tiltEnd: overhead ? 0 : DEFAULT_INTRO_PATH.tiltEnd,
+    ...(overhead ? { startHeading: -WELCOME_CALM_SWEEP_DEG } : {}),
     sweepDeg: WELCOME_CALM_SWEEP_DEG,
     ovalEccentricity: 0,
     durationMs: BASIC_INTRO_FLY_MS,
@@ -120,9 +131,14 @@ export interface IntroFlythroughOptions {
   path?: Partial<IntroPathConfig>;
   /** Fase-callback (settling → running → done). Brukes bl.a. for capture-synk. */
   onPhase?: (phase: IntroFlythroughPhase) => void;
-  /** prefers-reduced-motion: hopp til den vide etablerings-posituren (s=0) og
-   *  HOLD — vis nærområdet uten flytur. Ingen rAF, ingen bevegelse. */
+  /** prefers-reduced-motion: hopp til én statisk positur og HOLD — vis
+   *  nærområdet uten flytur. Ingen rAF, ingen bevegelse. */
   staticOnly?: boolean;
+  /** Bane-parameteren (s ∈ [0,1]) den statiske posituren tas fra. Default 0
+   *  (den vide etablerings-posituren). Satelitt-default-boards (R6) bruker 1:
+   *  den statiske posituren skal være LANDINGEN (ovenfra, nord opp) — ellers
+   *  ville pillen sagt «Satelitt» over et skrått stillbilde. */
+  staticPoseAt?: number;
   /** Lest hver frame. Når den returnerer true fryses flyturen (f.eks. velkommen-
    *  VO pauset) og gjenopptas der den slapp — ingen restart fra start. */
   isPaused?: () => boolean;
@@ -188,17 +204,19 @@ export function runIntroFlythrough(
     map.heading = p.heading;
   };
 
-  apply(0); // hopp til vid etablerings-positur før tile-settle
-  onPhase?.("settling");
-
-  // Redusert bevegelse: hold den vide etablerings-posituren (allerede satt via
-  // apply(0)) og ferdig — vis nærområdet statisk, ingen flytur.
+  // Redusert bevegelse: hopp rett til den statiske posituren (default den vide
+  // etablerings-posituren; Satelitt-varianten bruker landingsposen) og ferdig.
   if (staticOnly) {
+    apply(opts.staticPoseAt ?? 0);
+    onPhase?.("settling");
     onPhase?.("done");
     return () => {
       cancelled = true;
     };
   }
+
+  apply(0); // hopp til vid etablerings-positur før tile-settle
+  onPhase?.("settling");
 
   const settleTimer = setTimeout(() => {
     if (cancelled) return;

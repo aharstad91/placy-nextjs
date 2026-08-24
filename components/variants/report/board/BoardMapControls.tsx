@@ -8,10 +8,16 @@ import { TravelModeSelector } from "./TravelModeSelector";
 
 export type CameraMode = "auto" | "free";
 
+/** Kart-veksleren har tre visninger: Mapbox-vektor (2d), Google-motoren rett
+ *  ovenfra (sat — tilt 0, nord opp), og Google-motoren i skrå vinkel (3d).
+ *  sat og 3d deler motor — byttet mellom dem er en kameraflyvning, ikke et
+ *  motorbytte (se BoardMap.handleModeChange + kamera-directoren). */
+export type BoardView = "2d" | "sat" | "3d";
+
 interface Props {
-  /** Aktiv map-motor: 2D (Mapbox) eller 3D (Google). */
-  view: "2d" | "3d";
-  onViewChange: (view: "2d" | "3d") => void;
+  /** Aktiv visning: 2D (Mapbox), Satelitt (Google ovenfra) eller 3D (Google skrå). */
+  view: BoardView;
+  onViewChange: (view: BoardView) => void;
   /** Kameramodus (auto/fri) — kun relevant i 3D. */
   cameraMode: CameraMode;
   onCameraModeChange: (mode: CameraMode) => void;
@@ -71,8 +77,9 @@ const CAMERA_SEGMENTS: { mode: CameraMode; label: string; aria: string }[] = [
   },
 ];
 
-const VIEW_OPTIONS: { value: "2d" | "3d"; label: string; aria: string }[] = [
+const VIEW_OPTIONS: { value: BoardView; label: string; aria: string }[] = [
   { value: "2d", label: "Kart", aria: "2D-kart" },
+  { value: "sat", label: "Satelitt", aria: "Satellitt ovenfra" },
   { value: "3d", label: "3D", aria: "3D-kart" },
 ];
 
@@ -107,6 +114,8 @@ export function BoardMapControls({
   onTravelModeChange,
 }: Props) {
   // Auto/Fri vises kun i 3D OG når det finnes en orbit å vise (voice-over-tier).
+  // I Satelitt er segmentet også skjult (R4): auto-orbit er av — et roterende
+  // rett-ovenfra-kart er desorienterende, og «nord opp» er selve posituren.
   const showCamera = view === "3d" && showCameraMode;
   const showTravelModes = travelModes.length > 1 && Boolean(onTravelModeChange);
   const isFree = cameraMode === "free";
