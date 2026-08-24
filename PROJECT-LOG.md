@@ -6,6 +6,48 @@
 
 ---
 
+## 2026-08-24 — HVA AV OPENSTREETMAP SOM FÅR VISES TIL EN BOLIGKJØPER (OSM-porten + tverr-kilde-dedup, commits d005073 og 94dc451 på main)
+
+**Kontekst:** Andreas åpnet et rent OSM-kart over Grilstad og så to ting samtidig: OSM er tett av mikro-objekter Google mangler — lekeplasser, benker, bordbenker, badeplasser, grillplasser, badeplasser i fjæra — og den samme tettheten inneholder objekter det er *direkte misvisende* å vise. Hans egen formulering: parkeringsplassene rundt boligene er private, og «hvis AI drar inn denne dataen, blir det feil å vise». Sesjonen ble spesifikasjonen av hvor den grensen går, og de to mekanismene som håndhever den.
+
+**Målingen som satte premisset.** Overpass-sveip innenfor 1 km av Strindfjordvegen 10: **298 objekter, 258 av dem navnløse.** 18 lekeplasser (0 navngitte, 12 helt utagget, 5 med `access=yes`), 69 parkeringsplasser der **47 ikke har `access`-tag i det hele tatt** — borettslagets private plasser er altså ikke programmatisk skillbare fra offentlige. Motsatt vei: bare 1 restaurant, 1 fast food, 3 dagligvare. Grunnen er strukturell — Google indekserer *virksomheter* (noe med eier, åpningstid, omtaler), OSM indekserer *fysiske objekter* uansett om noen eier dem.
+
+**Premisset måtte korrigeres først: OSM var allerede inne.** 787 av 5 642 rader i `v2.pois` har `source = "osm"`, fordelt på 36 kategorier (restaurant 122, haircare 68, cafe 64, park 47, lekeplass 9). Den løpende pipelinen spurte bare om fire idrett-tagger; resten er seed-scriptets arv. Og navnekravet (`if (!name) continue;`) er det som har holdt parkeringsfrykten unna — det forkaster 258 av 298.
+
+**Men navnekravet er ikke nok, og det er dokumentert med prod-data.** Av de ni `lekeplass`-radene i basen var fem feil: `Ila barnehage`, `Iladalen barnehage`, `Lekerom/stellerom` (et stellerom), `Leo's lekeland` (betalt innendørs lekeland, `fee=yes indoor=yes`) og `Mummyhuset`. `Iladalen barnehage` har til og med `access=yes` — den ville passert både navnekravet OG en adgangssjekk. Bare utestengelse av hele `leisure=playground` stopper den.
+
+**Regelen som ble ratifisert er en KONSEKVENS-vurdering, ikke en datakvalitets-vurdering.** Spørsmålet er ikke «hvor sikker er dataen?» men «hva koster det om vi tar feil?» Feil navn på en idrettshall koster ~0 — bygget er utvilsomt der. En privat lekeplass vist som nabolagets koster tillit hos meglerens kjøper, som er hele produktet. Nedsiden er asymmetrisk, så **tvilstilfeller faller UT, ikke inn.** En benk vi går glipp av koster ingenting.
+
+**Mekanisme 1 — `lib/pipeline/osm-gate.ts` (commit d005073).** Fire porter: hviteliste → regel-spesifikt krav → koordinat+navn → `access` ekskluderer ikke publikum. Kategorien utledes ALLTID fra taggen, aldri fra navnet — det var navne-utledning som gjorde `Leo's lekeland` til en lekeplass. Overpass-spørringen bygges FRA hvitelisten, så spørring og filter ikke kan drifte. Resultat på produksjons-bboxen (781 objekter): **14 godkjent.** Alle 12 anleggene den gamle spørringen hentet er med — ingen regresjon — pluss `Grilstadstranda` og `Grilstad Marina`. 61 tester kjører mot et reelt sveip lagret som fixture, ikke konstruerte eksempler.
+
+To ting falt ut av hvitelisten ved å faktisk kjøre den: **bibliotek/teater/kino**, fordi temaet deres («opplevelser») ligger i `GLOBAL_DISABLED_REPORT_THEMES` siden 2026-04-28 og radene ville havnet i poolen uten å rendre noe sted — en drift-test krever nå at hver kategori porten kan lage ligger i et AKTIVT tema. Og **`amenity=community_centre`**, fordi det ene treffet var «Rotvoll kunstnerkollektiv SA», som ville landet under Barn & Oppvekst.
+
+**Latent duplikat-bombe funnet underveis.** De to skrivestiene bygde POI-ID-er ulikt: seed-scriptet `osm-node-123` med `osm_id = node/123`, pipelinen `osm-node123` med `osm_id = osm-node123`. Alle 662 `osm-*`-radene i basen har seed-formen, fordi pipelinens Overpass-kilde aldri fikk skrevet en rad (406-bugen i entryen under). Idet den begynte å virke ville dedup-oppslaget bommet og lagt inn én duplikat per objekt. Begge stiene bruker nå `osmPoiId()`/`osmSourceId()`.
+
+**Mekanisme 2 — `lib/pipeline/dedupe-colocated-pins.ts` (commit 94dc451).** `spread-co-located` sprer sammenfallende markører på en liten sirkel i stedet for å stable dem, så duplikater skjuler seg ikke — de vises som to steder. 15 slike pins på 3 boards, alle tverr-kilde: OSM-node mot OSM-way for samme idrettsanlegg (`EXTRA Arena` / `Extra Arena`, 52 m), OSM mot Barnehagefakta for samme barnehage (8–15 m), intern seed mot OSM-flate for samme badeplass, og fire distinkte Google-place-IDer med identisk navn «Recharge Charging Station» innenfor 200 m.
+
+To designvalg ble annerledes enn planen sa, begge funnet ved å måle mot prod før innkobling:
+
+1. **Dedupen hører i hydreringen, ikke i lenkingen.** Boardet rendrer `product_pois`; `project_pois` er poolen som bærer de precomputede reisetidene. Å droppe en rad fra poolen ville kastet reisetiden og gjort valget varig. I hydreringen er det en ren visnings-beslutning som re-hydrering gjenoppretter — og hydreringen er ett felles chokepoint nedstrøms for BÅDE Google-importen og de offentlige kildene, så det trengs ikke to fikser i to lenkestier. (Samme arkitektur-erkjennelse som entryen under, funnet fra motsatt kant.)
+2. **Innhold må slå kilde.** Ren kilde-prioritet (Google > registre > OSM > interne seeds) ville droppet `badeplass-grilstadstranda` — med `editorial_hook`, `poi_tier`, `is_local_gem` og `grounding` — til fordel for `osm-relation-20106862`, som har ingenting utover `osm_id`, fordi interne seeds ligger UNDER OSM i den rangeringen. Rangeringen er nå: beskyttet ID → redaksjonelt innhold → Google-metadata → kilde → OSM-geometritype → ID. Redaksjonell tekst først fordi den er Placy-eid og håndskrevet, mens rating og åpningstider kan hentes på nytt — og fordi `highlightCandidates` peker på konkrete POI-IDer: skjules den kuraterte raden, forsvinner høydepunktet fra boardet.
+
+Terskelen er streng med vilje — samme kategori, samme normaliserte navn, under 200 m, ingen fuzzy matching. «Charlottenlund kunstgressbane» og «kunstgrasbane» ER to baner 430 m fra hverandre, og Recharge-punktene 450 m unna er egne anlegg som beholdes.
+
+**Anvendt på prod:** 187→179, 154→150, 128→125 pins, 0 gjenstående duplikater. Verifisert i browser på begge Ranheim-boards.
+
+**Der OSM IKKE skal bli pins, men bevis.** Planen (`docs/plans/2026-08-24-001-feat-osm-kandidatkilde-curate-area-plan.md`) definerer to baner: bare hvitelistede tagger blir POI-er, alt annet går til strøkets dossier som kurator-input og rendres aldri. Bane B skal bære aggregat-fakta som ikke KAN misforstås — strandlinje-meter, park-areal, km merket sti, avstand til badeplass — fordi geometri ikke har eier. Kildehierarkiet i én setning: **OSM bidrar med geometri og terreng, Google med virksomheter, Entur med kollektiv, Barnehagefakta/NSR med institusjoner. Ingen kilde får bidra der en annen er autoritativ.**
+
+**Åpne punkter:**
+- **`linkNaturPois` omgår porten.** Den lenker eksisterende `lekeplass`/`park`/`badeplass`/`outdoor`-rader fra hele poolen, opp til 20, uten å spørre. De ni tvilsomme lekeplassene er ulenket i dag, så hullet er latent. Lukkes med kategori-revisjonen — fjerner man `lekeplass` fra linkeren nå, forsvinner også de fire legitime fra boards som viser dem.
+- **De 787 gamle OSM-radene er urørt.** Porten styrer bare NYE importer. Revisjonsrapporten (hvilke ville passert, hvilke ikke, gruppert per grunn) er Fase 3; selve oppryddingen er et eget mutasjonsløp.
+- **Fase 2 gjenstår:** `scripts/osm-area-scan.ts` (strøk-sveip fra boundary-polygonet) + aggregat-utregnerne.
+- **Autoritativ kilde for lekeplass/friområde:** SSBs «Parker og turområder» ligger som WFS på Geonorge og er offentlige ved konstruksjon. Riktig kilde for `barn-oppvekst`, men en ny kilde-integrasjon, ikke en OSM-regel.
+- **ODbL:** OSM krever attribusjon, og share-alike gjelder derivert database. Mapbox-grunnkartet attribuerer alt OSM nederst i kartet, så kravet er sannsynligvis dekket for pin-laget også — men må verifiseres mot ODbL §4.3 før første betalte kunde.
+
+**Parallell-sesjon-note:** entryen under ble skrevet av en annen sesjon i samme mappe samtidig. Dens commit `504e3ce` sveipet med seg K2-endringene mine i `import-public-pois.ts` uten å ta med `osm-gate.ts`, så branchen kompilerte ikke et lite øyeblikk. Ryddet ved å committe resten på samme branch og merge inn (`5753c85`). Lærdommen er den CLAUDE.md alt sier: én sesjon per working directory.
+
+---
+
 ## 2026-08-24 — HVORFOR ET NYTT PUNKT IKKE DUKKER OPP PÅ ET BOARD (tre kildebugs fikset, propageringen utsatt)
 
 **Kontekst:** Andreas populerer Grilstad-demoen (`placy-demo/strindfjordvegen-10`) med lokalkunnskap — ikke for å fylle boardet, men for å lære hva systemet IKKE fanger og hvorfor. Inngangen var konkret: en kommunal barnehage som ligger på Trondheim kommunes sider manglet helt. Sesjonen ble to ting — tre reelle bugs i kildeimporten, og en arkitektur-erkjennelse som er større enn dem.
