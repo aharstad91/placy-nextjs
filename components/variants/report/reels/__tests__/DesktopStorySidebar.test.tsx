@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render as rtlRender, fireEvent } from "@testing-library/react";
+import { render as rtlRender, fireEvent, within } from "@testing-library/react";
 import type { BoardData } from "../../board/board-data";
 import { BoardProvider } from "../../board/board-state";
 import {
@@ -151,7 +151,66 @@ describe("SidebarContentPreview — nivå-2 drill-in", () => {
     expect(getByText("Flere skoler i gangavstand.")).toBeTruthy();
   });
 
-  it("tilbake-pil kaller onShowAll", () => {
+  it("nav-headeren viser Tilbake-knapp + temavelger; dropdownen lister temaene i rekkefølge med aktivt markert", () => {
+    const { getByText, getByTestId } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+      />,
+    );
+    expect(getByText("Tilbake")).toBeTruthy();
+    const trigger = getByTestId("category-dropdown-trigger");
+    expect(trigger.textContent).toContain("Barn & Oppvekst");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+
+    fireEvent.click(trigger);
+    const items = within(getByTestId("category-dropdown-menu")).getAllByRole("menuitem");
+    // textContent = label + POI-antall (29/8; Vis alle = totalsummen 37).
+    expect(items.map((i) => i.textContent)).toEqual([
+      "Vis alle37",
+      "Barn & Oppvekst29",
+      "Mat & Drikke8",
+    ]);
+    expect(items[1].getAttribute("aria-current")).toBe("true");
+    expect(items[2].getAttribute("aria-current")).toBe("false");
+  });
+
+  it("«Vis alle» i dropdownen kaller onShowAll (reset til overblikk) og lukker menyen", () => {
+    const onShowAll = vi.fn();
+    const { getByTestId, queryByTestId } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+        onShowAll={onShowAll}
+      />,
+    );
+    fireEvent.click(getByTestId("category-dropdown-trigger"));
+    fireEvent.click(within(getByTestId("category-dropdown-menu")).getByText("Vis alle"));
+    expect(onShowAll).toHaveBeenCalled();
+    expect(queryByTestId("category-dropdown-menu")).toBeNull();
+  });
+
+  it("dropdown-valg av annet tema kaller onSelect og lukker — aktivt tema er no-op (ingen toggle-reset)", () => {
+    const onSelect = vi.fn();
+    const { getByTestId, queryByTestId } = render(
+      <SidebarContentPreview
+        categories={editorialCategories}
+        activeCategoryId="barn"
+        onSelect={onSelect}
+      />,
+    );
+    fireEvent.click(getByTestId("category-dropdown-trigger"));
+    fireEvent.click(within(getByTestId("category-dropdown-menu")).getByText("Mat & Drikke"));
+    expect(onSelect).toHaveBeenCalledWith("mat");
+    expect(queryByTestId("category-dropdown-menu")).toBeNull();
+
+    fireEvent.click(getByTestId("category-dropdown-trigger"));
+    fireEvent.click(within(getByTestId("category-dropdown-menu")).getByText("Barn & Oppvekst"));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(queryByTestId("category-dropdown-menu")).toBeNull();
+  });
+
+  it("Tilbake-knappen kaller onShowAll", () => {
     const onShowAll = vi.fn();
     const { getByText } = render(
       <SidebarContentPreview
@@ -160,7 +219,7 @@ describe("SidebarContentPreview — nivå-2 drill-in", () => {
         onShowAll={onShowAll}
       />,
     );
-    fireEvent.click(getByText("Alle kategorier"));
+    fireEvent.click(getByText("Tilbake"));
     expect(onShowAll).toHaveBeenCalled();
   });
 

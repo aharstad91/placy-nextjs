@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
+  ChevronDown,
   ChevronRight,
   Mail,
   Map as MapIcon,
@@ -161,8 +162,9 @@ export function SidebarContentPreview({
 
   // Drill-in-gating: har den aktive kategorien detalj-innhold (kuratert nivå-2
   // ELLER generert minimum)? I så fall tar detalj-panelet over scroll-området
-  // (megler-footeren under blir stående). Uten detalj (kategori helt uten tekst)
-  // viser vi index-lista som før — det aktive kortet ringes bare som markering.
+  // (med megler-kortet sist i sitt eget scroll-innhold). Uten detalj (kategori
+  // helt uten tekst) viser vi index-lista som før — det aktive kortet ringes
+  // bare som markering.
   const activeCat = activeCategoryId
     ? categories.find((c) => c.id === activeCategoryId)
     : undefined;
@@ -173,10 +175,13 @@ export function SidebarContentPreview({
       {detail ? (
         <CategoryDetailView
           category={activeCat!}
+          allCategories={categories}
           boardCategory={boardCategories?.find((c) => c.id === activeCat!.id)}
           detail={detail}
           onBack={onShowAll}
+          onSelectCategory={onSelect}
           onOpenPoi={onOpenPoi}
+          showBroker={!noBrokers}
         />
       ) : (
         /* Scroll-område: "Hele nabolaget" (reset/overblikk) + kategori-kortene. */
@@ -267,36 +272,44 @@ export function SidebarContentPreview({
               kategori-FAQ-ene. Svarene lenker inn i kategoriene framfor å
               gjenta innholdet deres. */}
           <GlobalFaq onSelectCategory={onSelect} />
+
+          {!noBrokers && <MeglerFooterCard />}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Author/megler — sticky i bunn av sidebaren (scroller ikke med kategori-
-          lista). Nøytral placeholder, fylles per prosjekt. Speiler megler-kortets
-          struktur (avatar + navn + Ring/E-post) i lys variant. D3: undertrykt i
-          event-modus (events har ingen megler/eiendom). */}
-      {!noBrokers && (
-        <div className="shrink-0 border-t border-black/5 px-6 pb-6 pt-3">
-          <div className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white/60 p-3">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-200 text-stone-400">
-              <User size={20} />
+/**
+ * Author/megler — SIST i scroll-innholdet, ikke pinnet: som sticky footer stjal
+ * den vertikal plass fra innholdet hele tiden den var synlig (Andreas,
+ * 2026-08-24). Nøytral placeholder, fylles per prosjekt. Speiler megler-kortets
+ * struktur (avatar + navn + Ring/E-post) i lys variant. D3: undertrykt i
+ * event-modus (events har ingen megler/eiendom) — gaten (`noBrokers`) ligger
+ * hos kallstedene.
+ */
+function MeglerFooterCard() {
+  return (
+    <div className="-mx-6 mt-4 shrink-0 border-t border-black/5 px-6 pb-3 pt-4">
+      <div className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white/60 p-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-200 text-stone-400">
+          <User size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-stone-900">Ansvarlig megler</p>
+          <p className="text-[12px] text-stone-400">Kontaktinfo legges til per prosjekt</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200/70 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
+              <Phone className="h-3.5 w-3.5" />
+              Ring
             </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-stone-900">Ansvarlig megler</p>
-              <p className="text-[12px] text-stone-400">Kontaktinfo legges til per prosjekt</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200/70 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
-                  <Phone className="h-3.5 w-3.5" />
-                  Ring
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
-                  <Mail className="h-3.5 w-3.5" />
-                  E-post
-                </span>
-              </div>
-            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-[12px] font-semibold text-stone-400">
+              <Mail className="h-3.5 w-3.5" />
+              E-post
+            </span>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -324,8 +337,8 @@ function GlobalFaq({ onSelectCategory }: { onSelectCategory?: (id: string) => vo
 
 /**
  * Nivå-2 drill-in: detalj-panel for én kategori. Tar over scroll-området i
- * empty-state-sidebaren mens megler-footeren under blir stående. Tilbake-pilen
- * sender tilbake til index-lista (reset board → alle markører).
+ * empty-state-sidebaren. Tilbake-knappen sender tilbake til index-lista (reset
+ * board → alle markører); temavelger-dropdownen bytter tema direkte.
  *
  * ## Utsnitts-scopet liste (2026-08-13)
  *
@@ -342,22 +355,38 @@ function GlobalFaq({ onSelectCategory }: { onSelectCategory?: (id: string) => vo
  */
 function CategoryDetailView({
   category,
+  allCategories,
   boardCategory,
   detail,
   onBack,
+  onSelectCategory,
   onOpenPoi,
+  showBroker = false,
 }: {
   category: SidebarPreviewCategory;
+  /** Hele temalista — nav-headerens temavelger-dropdown (aktivt tema markert). */
+  allCategories: SidebarPreviewCategory[];
   /** Full board-kategori (POI-er + gangtider) — kilden til viewport-lista.
    *  Undefined når sidebaren brukes uten board-kategoriene; panelet faller da
    *  tilbake til bare prosa + highlights. */
   boardCategory?: BoardCategory;
   detail: NonNullable<SidebarPreviewCategory["editorial"]>;
   onBack?: () => void;
+  /** Tema-valg i dropdownen → bytt drill-in direkte (samme handler som temakortene). */
+  onSelectCategory?: (id: string) => void;
   onOpenPoi?: (poiId: string, categoryId: string) => void;
+  /** Megler-placeholder sist i scroll-innholdet (false i event-modus, D3). */
+  showBroker?: boolean;
 }) {
   const { mapCamera, data } = useBoard();
   const list = useViewportCategoryList(boardCategory ?? null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Tema-bytte via dropdownen gjenbruker samme scroll-container — uten reset
+  // starter neste tema midt i forrige temas scrollposisjon.
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [category.id]);
   // Dobbelt linjeskift = nytt avsnitt; enkelt nivå er nok for kuratert tekst.
   // `intro` vinner når den finnes: da har FAQ-en under minst tre svar og
   // bærer substansen, og prosaen skal bare sette scenen (degradasjonsregelen
@@ -374,17 +403,35 @@ function CategoryDetailView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {/* Tilbake-rad (standard nav-mønster) → index med alle kategorier. */}
+      {/* Nav-header — PINNET utenfor scroll-containeren. Tilbake-raden lå før
+          inne i scrollen og forsvant av skjermen akkurat idet FAQ-en gjorde
+          panelet langt nok til at man trengte den (funnet 2026-08-23). Samme
+          regel som «Åpent nå»-raden nederst: utganger ligger utenfor scroll.
+          Én rad, lik høyde: Tilbake-knapp + temavelger-dropdown (erstattet
+          chip-railen med horisontal overflow-scroll, 2026-08-24). */}
+      <div className="flex shrink-0 items-center gap-2 border-b border-black/5 px-6 pb-2.5 pt-1">
         <button
           type="button"
           onClick={onBack}
-          className="mb-3 -ml-1 inline-flex w-fit items-center gap-1.5 rounded-full px-1.5 py-1 text-[13px] font-semibold text-stone-600 transition hover:bg-black/5 hover:text-stone-900"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 text-[13px] font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:text-stone-900"
         >
-          <ArrowLeft size={16} />
-          Alle kategorier
+          <ArrowLeft size={15} />
+          Tilbake
         </button>
+        {allCategories.length > 1 && (
+          <CategoryThemeDropdown
+            categories={allCategories}
+            activeId={category.id}
+            onSelect={onSelectCategory}
+            onShowAll={onBack}
+          />
+        )}
+      </div>
 
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto px-6 pb-3 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {heroImage && (
           <div className="relative mb-4 h-44 w-full shrink-0 overflow-hidden rounded-2xl bg-stone-200">
             <Image
@@ -497,6 +544,8 @@ function CategoryDetailView({
             )}
           </section>
         )}
+
+        {showBroker && <MeglerFooterCard />}
       </div>
 
       {/* Den åpne POI-en står PINNET utenfor scroll-området.
@@ -524,6 +573,139 @@ function CategoryDetailView({
                 {list.activeRow.minutes} min
               </span>
             )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Temavelger i drill-in-headeren — samme dropdown-mønster som mobil-
+ * transportens kapittelvelger (`NowPlayingCard`), i lys variant: trigger som
+ * ser ut som en select (ramme + ⌄ som roterer 180° når åpen), popover NED
+ * under knappen, backdrop-knapp for klikk-utenfor (ikke document-listener, så
+ * lukke-klikket ikke faller gjennom til kartet), Escape lukker.
+ *
+ * Valg av aktivt tema lukker bare velgeren: temakortenes toggle-semantikk
+ * (re-klikk → reset til overblikk) ville resatt boardet under brukeren her.
+ */
+function CategoryThemeDropdown({
+  categories,
+  activeId,
+  onSelect,
+  onShowAll,
+}: {
+  categories: SidebarPreviewCategory[];
+  activeId: string;
+  onSelect?: (id: string) => void;
+  /** «Vis alle» øverst i menyen — reset til overblikket (alle markører). */
+  onShowAll?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const active = categories.find((c) => c.id === activeId);
+  const total = categories.reduce((sum, c) => sum + c.count, 0);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  return (
+    <div className="relative min-w-0 flex-1">
+      <button
+        type="button"
+        data-testid="category-dropdown-trigger"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Velg tema"
+        className="flex h-9 w-full min-w-0 items-center gap-2 rounded-xl border border-black/10 bg-white pl-3 pr-2.5 text-left text-[13px] font-semibold text-stone-800 shadow-sm transition hover:border-stone-400"
+      >
+        {active && (
+          <span
+            aria-hidden
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: active.color }}
+          />
+        )}
+        <span className="min-w-0 flex-1 truncate">{active?.label}</span>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-stone-400 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <button
+          type="button"
+          aria-label="Lukk temavelger"
+          tabIndex={-1}
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-40 cursor-default"
+        />
+      )}
+
+      {open && (
+        <div
+          role="menu"
+          data-testid="category-dropdown-menu"
+          className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl"
+        >
+          {/* Reset-rad — utenfor tema-scrollen så den alltid er synlig. Speiler
+              «Hele nabolaget»-kortet i oversikten (samme ikon + totalsum). */}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              onShowAll?.();
+              setOpen(false);
+            }}
+            className="flex w-full items-center gap-2.5 border-b border-black/5 px-3.5 py-2.5 text-left text-[13px] font-medium text-stone-600 transition hover:bg-black/5"
+          >
+            <MapIcon size={14} className="shrink-0 text-stone-400" />
+            <span className="min-w-0 flex-1 truncate">Vis alle</span>
+            <span className="shrink-0 text-[11px] tabular-nums text-stone-400">
+              {total}
+            </span>
+          </button>
+          <div className="max-h-[45vh] overflow-y-auto py-1">
+            {categories.map((c) => {
+              const isActive = c.id === activeId;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="menuitem"
+                  aria-current={isActive}
+                  onClick={() => {
+                    if (!isActive) onSelect?.(c.id);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] transition hover:bg-black/5 ${
+                    isActive
+                      ? "bg-stone-100 font-semibold text-stone-900"
+                      : "font-medium text-stone-600"
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: c.color }}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{c.label}</span>
+                  <span className="shrink-0 text-[11px] tabular-nums text-stone-400">
+                    {c.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
