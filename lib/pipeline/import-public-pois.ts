@@ -1,6 +1,7 @@
 /**
  * Offentlige POI-kildar for basic-tier rapport-pipeline:
- * NSR (skoler), Barnehagefakta (barnehager), Overpass (idrettsanlegg).
+ * NSR (skoler), Barnehagefakta (barnehager), Overpass (idrett, svømming,
+ * park, badeplass, marina, utsiktspunkt — hvitelisten i osm-gate.ts).
  *
  * Deterministisk og seriell. Fail-soft per kilde — logg + fortsett (aldri abort).
  * Dedup via nsr_id/barnehagefakta_id/osm_id (DB-partial unique indexes).
@@ -15,6 +16,17 @@ import { createServerClient } from "@/lib/supabase/client";
 import { upsertCategories } from "@/lib/supabase/mutations";
 import { slugify } from "@/lib/utils/slugify";
 import { getSchoolZone } from "@/lib/utils/school-zones";
+import {
+  OSM_GATE_CATEGORIES,
+  buildOverpassQuery,
+  emptyLedger,
+  evaluateOsmElement,
+  osmPoiId,
+  osmSourceId,
+  recordVerdict,
+  summarizeLedger,
+  type OverpassElement,
+} from "@/lib/pipeline/osm-gate";
 import {
   planSchoolDeduplication,
   planStaleSchoolUnlink,
@@ -31,7 +43,10 @@ import {
 export const PUBLIC_POI_CATEGORIES = [
   { id: "skole", name: "Skole", icon: "GraduationCap", color: "#f59e0b" },
   { id: "barnehage", name: "Barnehage", icon: "Baby", color: "#f59e0b" },
-  { id: "idrett", name: "Idrettsanlegg", icon: "Trophy", color: "#f59e0b" },
+  // Overpass-kildens kategorier arves fra hvitelisten i osm-gate, slik at en
+  // ny regel der ikke kan glemme å seede kategorien sin. Verdiene er kopiert
+  // fra `v2.categories` i prod, så upserten er en no-op på eksisterende baser.
+  ...OSM_GATE_CATEGORIES,
 ];
 
 // ── Haversine distance ─────────────────────────────────────────────────────
@@ -317,6 +332,39 @@ async function unlinkDuplicateSchools(
 
 // ── Barnehagefakta ────────────────────────────────────────────────────────
 
+/** Overpass krever en reell User-Agent — se kommentaren i importOverpass. */
+const OVERPASS_USER_AGENT = "Placy/1.0 (kontakt@placy.no)";
+
+/** Meter per breddegrad (WGS84, tilnærmet — godt nok for en radius-margin). */
+const METERS_PER_DEGREE_LAT = 111_320;
+
+/**
+ * Barnehagefakta-API-ets radius-parameter er GRADER, og den brukes likt på
+ * begge akser (bounding box) — ikke meter, og ikke avstandskorrigert. På 63°
+ * nord er 0,025° lengdegrad bare ~1,25 km, så den tidligere hardkodede `0.025`
+ * klippet bort barnehager som lå 1,3–2,5 km øst/vest for senteret FØR
+ * haversine-filteret under fikk se dem.
+ *
+ * Grilstad-funn 2026-08-24: Ranheimsfjæra barnehage (kommunal, 1 449 m) og
+ * Læringsverkstedet Humlehaugen Doremi (1 853 m) manglet på boardet selv om
+ * begge lå godt innenfor prosjektets 2 500 m — de lå 0,026° og 0,034° unna i
+ * lengderetningen, altså utenfor 0,025-boksen.
+ *
+ * Vi konverterer derfor radiusMeters til grader langs den TRANGESTE aksen
+ * (lengdegrad = breddegrad delt på cos(lat)) og legger på 20 % margin.
+ * Haversine-filteret under gjør den presise avgrensningen; denne verdien skal
+ * bare være romslig nok til at API-et ikke klipper for oss.
+ */
+export function barnehagefaktaRadiusDegrees(
+  lat: number,
+  radiusMeters: number
+): number {
+  const cosLat = Math.max(Math.cos((lat * Math.PI) / 180), 0.05);
+  const degrees = (radiusMeters / METERS_PER_DEGREE_LAT / cosLat) * 1.2;
+  // Tak på 1,0° (~100 km) — vern mot at en absurd radiusMeters ber om hele landet.
+  return Math.min(degrees, 1);
+}
+
 async function importBarnehagefakta(
   supabase: NonNullable<ReturnType<typeof createServerClient>>,
   projectId: string,
@@ -328,7 +376,10 @@ async function importBarnehagefakta(
   let raw: unknown[];
   try {
     const res = await fetch(
-      `https://www.barnehagefakta.no/api/Location/radius/${lat}/${lng}/0.025`,
+      `https://www.barnehagefakta.no/api/Location/radius/${lat}/${lng}/${barnehagefaktaRadiusDegrees(
+        lat,
+        radiusMeters
+      ).toFixed(4)}`,
       { signal: AbortSignal.timeout(30000) }
     );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -372,6 +423,21 @@ async function importBarnehagefakta(
 
 // ── Overpass ──────────────────────────────────────────────────────────────
 
+/**
+ * Bounding-box-deltas i grader for en radius i meter, én per akse (breddegrad
+ * og lengdegrad skalerer ulikt — se kommentaren i importOverpass). 20 % margin
+ * fordi en bbox er en firkant rundt en sirkel; haversine-filteret rydder etterpå.
+ */
+export function overpassBboxDeltas(
+  lat: number,
+  radiusMeters: number
+): { latDelta: number; lngDelta: number } {
+  const latDelta = (radiusMeters / METERS_PER_DEGREE_LAT) * 1.2;
+  const cosLat = Math.max(Math.cos((lat * Math.PI) / 180), 0.05);
+  return { latDelta, lngDelta: latDelta / cosLat };
+}
+
+
 async function importOverpass(
   supabase: NonNullable<ReturnType<typeof createServerClient>>,
   projectId: string,
@@ -380,18 +446,24 @@ async function importOverpass(
   radiusMeters: number,
   warnings: string[]
 ): Promise<number> {
-  const delta = 0.025;
-  const south = lat - delta;
-  const north = lat + delta;
-  const west = lng - delta;
-  const east = lng + delta;
+  // Overpass' bbox er i grader, og en enkelt `delta` på begge akser blir
+  // asymmetrisk: på 63° nord er 0,025° i lengderetningen bare ~1,25 km mens
+  // det er ~2,8 km i breddretningen. Den tidligere hardkodede 0.025 klippet
+  // derfor bort idrettsanlegg 1,3–2,5 km øst/vest for senteret (samme
+  // Grilstad-funn 2026-08-24 som traff Barnehagefakta over). Vi regner én
+  // delta per akse ut fra prosjektradiusen; haversine-filteret under gjør den
+  // presise avgrensningen.
+  const { latDelta, lngDelta } = overpassBboxDeltas(lat, radiusMeters);
+  const south = lat - latDelta;
+  const north = lat + latDelta;
+  const west = lng - lngDelta;
+  const east = lng + lngDelta;
 
-  const query = `[out:json][timeout:25];(
-  way["leisure"="sports_centre"](${south},${west},${north},${east});
-  node["leisure"="sports_centre"](${south},${west},${north},${east});
-  way["leisure"="pitch"]["sport"~"soccer|football|handball|tennis|basketball"](${south},${west},${north},${east});
-  way["leisure"="swimming_pool"](${south},${west},${north},${east});
-);out center;`;
+  // Spørringen bygges FRA hvitelisten i osm-gate, ikke hardkodet her — ellers
+  // kan spørringen og porten som filtrerer svaret drifte fra hverandre. Se
+  // osm-gate.ts for hvorfor hver tag er med, og hvorfor parkering, lekeplass
+  // og benker aldri får bli POI-er uansett hvor godt de er navngitt.
+  const query = buildOverpassQuery({ south, west, north, east });
 
   let raw: unknown;
   let attempt = 0;
@@ -404,6 +476,13 @@ async function importOverpass(
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           "Accept": "application/json",
+          // Overpass svarer 406 Not Acceptable på Node-fetch sin default
+          // User-Agent — uten denne headeren har denne kilden ALDRI levert
+          // idrettsanlegg (Grilstad-funn 2026-08-24: «Trening & Aktivitet»
+          // hadde 4 steder, alle fra Google). Samme verdi som de to andre
+          // Overpass-kallstedene (lib/generators/trail-fetcher.ts,
+          // scripts/seed-osm-pois.ts) — de satte den fra dag én.
+          "User-Agent": OVERPASS_USER_AGENT,
         },
         signal: AbortSignal.timeout(35000),
       });
@@ -430,42 +509,46 @@ async function importOverpass(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const elements = ((raw as any)?.elements ?? []) as Record<string, unknown>[];
+  const elements = ((raw as any)?.elements ?? []) as OverpassElement[];
   const pois: PoiInsert[] = [];
+  const ledger = emptyLedger();
+  let outsideRadius = 0;
 
   for (const el of elements) {
-    const name = (el.tags as Record<string, string> | undefined)?.name;
-    if (!name) continue;
+    const verdict = evaluateOsmElement(el);
+    recordVerdict(ledger, verdict);
+    if (!verdict.accept) continue;
 
-    let elLat: number;
-    let elLng: number;
-
-    if (el.type === "way" && el.center) {
-      const center = el.center as { lat: number; lon: number };
-      elLat = center.lat;
-      elLng = center.lon;
-    } else {
-      elLat = el.lat as number;
-      elLng = el.lon as number;
+    // Bboxen er en firkant rundt sirkelen; haversine gjør den presise
+    // avgrensningen. Telles for seg — å ligge utenfor prosjektets radius er
+    // ikke en dom over objektet, og skal ikke blandes inn i portens regnskap.
+    if (haversineMeters(lat, lng, verdict.lat, verdict.lng) > radiusMeters) {
+      outsideRadius++;
+      continue;
     }
 
-    if (!elLat || !elLng) continue;
-    if (haversineMeters(lat, lng, elLat, elLng) > radiusMeters) continue;
-
-    const osmId = `osm-${el.type as string}${el.id as number}`;
     pois.push({
-      id: osmId,
-      name,
-      lat: elLat,
-      lng: elLng,
-      category_id: "idrett",
+      id: osmPoiId(el),
+      name: verdict.name,
+      lat: verdict.lat,
+      lng: verdict.lng,
+      category_id: verdict.categoryId,
       source: "osm",
-      osm_id: osmId,
+      osm_id: osmSourceId(el),
     });
   }
 
+  // Avvisnings-regnskapet er advisory, men det skal ALDRI være stille: faller
+  // 171 parkeringer ut, står det i loggen at 171 parkeringer falt ut, gruppert
+  // per grunn. Stille trunkering leses som «vi dekket alt» når vi ikke gjorde det.
+  warnings.push(
+    outsideRadius > 0
+      ? `${summarizeLedger(ledger)}; ${outsideRadius} godkjent men utenfor radius`
+      : summarizeLedger(ledger)
+  );
+
   if (pois.length === 0) {
-    warnings.push("Overpass: ingen idrettsanlegg funnet innenfor radius");
+    warnings.push("Overpass: ingen steder passerte porten innenfor radius");
     return 0;
   }
 
