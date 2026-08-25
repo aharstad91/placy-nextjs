@@ -886,6 +886,11 @@ window.Baseline = (() => {
       outer.querySelector("[data-sheet]").style.minHeight = `${max}px`;
       outer.scrollTop = want;
       S.sheetScroll = outer.scrollTop; // nettleseren kan ha klippet ønsket
+      // Handlen er festet øverst i scrolleren. Alt annet som vil stå fast mens
+      // innholdet passerer, må feste seg UNDER den — ellers legger de seg oppå
+      // hverandre. Høyden er alt målt her, så vi publiserer den.
+      const grabH = outer.querySelector(".grab")?.offsetHeight ?? 0;
+      document.documentElement.style.setProperty("--grab-h", `${grabH}px`);
       markPinned(outer);
     }
     const page = document.querySelector("[data-catpage]");

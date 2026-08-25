@@ -204,7 +204,10 @@ En iterasjon som vil gi sheeten sin egen hvilestilling setter
 leser høyden sheeten står i nå — bruk den, ikke `offsetHeight`, når kameraet
 skal padde for flaten. Ligger noe fast i rammens underkant (04 har et dekk der),
 sett `state().sheetFloorInset`: sammenslått skal handlen stå **over** det, ikke
-bak det.
+bak det. Og skal noe annet stå fast mens innholdet passerer — 04 har et kryss
+øverst i kortet — må det feste seg **under** handlen: `position: sticky; top:
+var(--grab-h)`. Handlen er selv festet i `top: 0` i samme scroller, så to
+`top: 0` legger seg oppå hverandre. Variabelen publiseres av `sizeMobileSurface`.
 
 Står flaten i hvilestillingen og hvilestillingen flytter seg, følger den med —
 04 måler sitt eget vindu etter første render. Det styres av flagget

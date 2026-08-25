@@ -66,7 +66,90 @@ Målt i Chrome på 390×844: hvilestilling 287 px, sammenslått 47, taket 726, `
 
 **Chrome DevTools MCP kan ikke sende ekte touch-gester.** Dens `drag` sender mus-pointer-events selv med touch-emulering på (probe: `touchstart: 0`, `pointerdown: 1`, `pointermove: 3`). Fordi vi nå eier gesten, trener mus-drag *den samme koden* — men følelsen må kjennes på enhet. To ganger ga testene falske feil fordi testskriptet holdt på en node renderen hadde byttet ut (`visible: -420`, senere `afterTap: 0`). Regelen er å spørre DOM-en på nytt inne i hvert måle-punkt, aldri holde en referanse over en render.
 
-**Commits på `feat/sheet-gesture`:** `579048a` (én scroller), `3c8cf8f` (magneten tilbake + utsatte renders), `de7e8d3` (sammenslått som tredje stopp). Ingenting pushet. **Merge-risiko:** `_shared/baseline.js` er delt, og den andre sesjonen har jobbet i samme fil i hovedrepoet og opprettet `05-dra-mellom-stopp` der. Konflikt er sannsynlig ved merge.
+**Commits på `feat/sheet-gesture`:** `579048a` (én scroller), `3c8cf8f` (magneten tilbake + utsatte renders), `de7e8d3` (sammenslått som tredje stopp). Ingenting pushet. **Merge (senere samme dag):** risikoen i `_shared/baseline.js` materialiserte seg ikke — den andre sesjonen rørte aldri fila (`05-dra-mellom-stopp` ble bygget og forkastet). Konflikten satt i `04`s `index.html`, der kvelds-oppføringen under hadde skrevet om sheet-innmaten oppå det gamle API-et; løst ved å ta kvelds-UI-en som utgangspunkt og oversette gest-endringene inn i den.
+
+---
+
+## 2026-08-25 (kveld) — TRANSPORTEN I FORTELLINGEN: FRA SVART KONTROLLPANEL TIL FLYTENDE KATEGORI-NAVBAR
+
+**Kontekst:** `04-fortelling-i-boardet` var landet og committet (`311a4ae`, merget i `015dd39`). Andreas kjente på den på telefonen og pekte på dekket: *«vi må jobbe mer med sheeten … jeg tror vi må ha minst mulig elementer som er mye av det samme for å spare plass.»* Hele denne økten handler om ÉN ting — hvordan du ser hvor du er i omvisningen og bytter stopp. Ingenting i selve stoppet (spørsmålet, fanene, stedene, FAQ-en) er rørt.
+
+### To retninger ble prøvd og forkastet — begge på ekte, ikke på papir
+
+**Forkastet 1: én-linjes dekk.** Første forsøk komprimerte det to-linjers svarte dekket til én rad: «Forrige» til venstre, prikker + «1 av 6» sentrert, neste kategori høyrestilt. Det sparte 26 px og fjernet «Avslutt». Andreas: *«hmm ikke happy med hvordan det ble.»* Diagnosen i ettertid: det var fortsatt et **kontrollpanel** — to knapper som forklarer at det finnes noe før og etter, i stedet for noe som viser det.
+
+**Forkastet 2: horisontal swipe-karusell (`05-dra-mellom-stopp`).** Alle seks stoppene ble rendret side om side på et spor med drag, aksel-låsing, motstand i endene, kast-terskel på fart, «nudge»-animasjon som lærte gesten, og per-stopp scroll-posisjon i tilstanden fordi `#app` bygges på nytt ved hver `moveend`. Den fungerte. Andreas stoppet den mid-bygg: *«jeg får umiddelbart validert at det er det jeg ikke ønsker, det blir for avansert.»* Mappa er slettet og galleri-oppføringen fjernet; `04` ble rullet helt tilbake til `311a4ae` før vi begynte på nytt.
+
+**Læringen er verdt mer enn de to forsøkene:** en prototype som beviser at mekanikken *virker* har ikke bevist at den *hører hjemme*. Det tok under et minutt å avvise noe som tok en time å bygge — og det er riktig regnestykke, ikke et bomtur.
+
+### Retningen som landet: kategorinavnene ER transporten
+
+Andreas formulerte den selv: *«hva om vi bare har en navigasjon med de ulike kategorinavnene, som en horisontal liste. og jo lengre vi kommer i prosessen, jo mer flytter de seg horisontalt.»* Deretter to referanser — Google Maps' chips (ikon + label), og iOS 26 / Vipps' tab bar (ikon over label, sammenhengende flate, blob på aktiv).
+
+Resultatet: **en flytende kategori-navbar i dekkets underkant.** Ett element som gjør alt fire elementer gjorde før.
+
+Følgende forsvant, og hvorfor:
+
+- **Prikkene + «1 av 6»** — sa det samme to ganger, den ene i form, den andre i tall.
+- **«Forrige»-knappen** — fantes bare fordi ingenting annet gikk bakover. Nå er hver kategori i raden en trykkflate.
+- **«Barn & Oppvekst →» i dekket** — samme navn som alt står i raden.
+- **«Avslutt»** — flyttet til et kryss øverst til høyre i sheeten. Andreas: *«krysset der hører mer hjemme til høyre i toppen av sheet.»* Utgangen hører til flaten du forlater, ikke til transporten.
+- **«Utforsk nabolaget selv»** — fjernet på Andreas' beskjed. Konsekvensen står åpen (se under).
+
+### De tekniske grepene som gjør det mulig
+
+**Dekket ligger UTENFOR `#app`, og det er nettopp derfor raden kan scrolle fritt.** `#app` bygges på nytt ved hver render, og kartet rendrer på hver `moveend` — en scroll-posisjon i raden ville blitt nullstilt hver gang kameraet la seg til ro. `paintDeck` bygger derfor ikke raden på nytt når den allerede finnes; den bytter bare `aria-current` og `data-state` på knappene. Posisjonen din står.
+
+**`positionHop()` setter `scrollLeft` etter layout**, ikke en transform: det aktive stoppet legges 44 px fra venstre kant, klemt mellom 0 og radens egen slutt, slik at en flik av det forrige er synlig. `scroll-behavior: smooth` gjør forflytningen til én bevegelse. Fri scroll i tillegg til auto-rulling — en kategori langt til høyre skal kunne nås uten å gå gjennom alle stoppene foran den. Scrollbaren er skjult (`scrollbar-width: none` + `::-webkit-scrollbar`); raden er 6 navn, ikke et dokument.
+
+**Krysset ligger i en sticky beholder med `height: 0`.** Den står øverst i `.sheet-scroll`, blir stående mens innholdet scroller under, og skyver ikke spørsmålet nedover. `.sty-q` fikk `padding-right: 34px` så den lange overskriften ikke løper inn i den. Det kunne ikke ligge i `.grab`: den er en `<button>` med baselinens drag-håndtering, og knapper kan ikke ligge inni knapper.
+
+### Tre design-korreksjoner fra Andreas, alle i samme retning: lesbarhet slår signal
+
+1. **Dempede ikoner ble forkastet.** Første versjon ga usette kategorier `opacity: .34` for å vise progresjon. Andreas: *«de må være lesbare.»* Ikonene står nå i full farge uansett tilstand; progresjonen ligger kun i tekstfargen (aktiv `stone-900`, besøkt `stone-600`, usett `stone-500`). Prisen er reell: forskjellen besøkt/usett registreres knapt. Raden sier i praksis «her står du» + «her er alle seks» — og det er et bevisst bytte, ikke en forglemmelse.
+2. **Blobben ble nøytral, ikke kategorifarget.** Fargen bor allerede i ikonet rett over; to flater i samme farge oppå hverandre gjorde bare den ene vanskeligere å lese. Aktiv = hvit brikke med hårfin ring på den grå baren.
+3. **Ikonene ble mindre og flyttet OVER labelen.** Det er det som gjør de seks til én navbar i stedet for seks løse chips.
+
+### Sløret: to lag, ikke ett
+
+Andreas: *«jeg tror vi må ha et filter under selve sticky footer nav som gjør at crispy details under ikke forstyrrer.»* Skarp brødtekst sto i springene rundt baren — over den og i stripen ned mot skjermkanten — og konkurrerte med kategorinavn på 11 px.
+
+Løsningen er et slør-lag bak **hele festet**, ikke bare bak baren: `.sty-deck::before` strekker seg 26 px opp over baren og ned til kanten, med `backdrop-filter: blur(14px)` og en `mask-image` som toner uskarpheten inn ovenfra, så det ikke oppstår en synlig kant der den begynner. Barens egen blur ble senket 20 → 12 px; to fulle blur-lag oppå hverandre ble grøtete.
+
+Dekket har `pointer-events: none` og baren `auto`, så et trykk ikke kan forsvinne i en usynlig flate rundt den. Verifisert med `elementFromPoint` midt i en brikke: gir brikken, ikke dekket.
+
+### Verifisert
+
+Chrome på 500×873 og 424×760 gjennom alle seks stopp, begge boards, alle tre faner: null console-feil (`error` + `warn`). Trykkflater treffer. LAN-URL `http://192.168.68.74:4400/04-fortelling-i-boardet/?entry=fortelling` svarer 200 — telefon-verifisering på ekte enhet gjenstår hos Andreas.
+
+Andreas' dom etter siste runde: *«dette begynner å bli skikkelig bra og gjennomført.»*
+
+### Etterspill samme kveld: reisemåte fant plassen sin i andre forsøk
+
+Andreas foreslo et tre-prikkers meny-rom i barens høyre ende. Innvendingen som stoppet det: en «...»-meny er et sted man legger valg man ikke klarte å bestemme seg for, og her fantes det knapt noen — «avslutt» ligger i krysset, «utforsk selv» er samme handling, deling hører til boardet.
+
+Men spørsmålet avdekket et reelt hull. Lista sier **«3 min» uten å si 3 min MED HVA.** Reisemåte finnes i baselinen (`S.travelMode` → `poi.raw.travelTime[mode]`, kart-pillen `.map-controls`), men kontrollen lå på kartet mens tallene leses i sheeten. Andreas: *«har vi den nede i høyre, er det en funksjon som jeg tror vil bli langt mer brukt enn om det er noe en må skifte i kartet.»*
+
+**Forsøk 1: fast rom i høyre ende av navbaren.** Bygget og kjørt: baren ble delt i et rullende spor og et fastlåst rom, med panelet foldet oppover. Andreas: *«akkurat sånn som jeg så for meg, men samtidig føltes det ikke naturlig at den lå der heller.»*
+
+Diagnosen: **hvert element i en tab-bar er et sted å gå til.** Reisemåte-brikken hadde samme form — ikon over navn, samme blob — men gjorde noe helt annet: den flytter deg ikke, den endrer betydningen av tall lenger opp. Formen lovet et syvende stopp. iOS-tab-barer blander aldri en destinasjon og en innstilling.
+
+**Det som landet: enheten over minutt-kolonnen.** Det riktige i argumentet var nærheten til tallene, ikke plasseringen i navbaren. Kontrollen står nå høyrestilt i Steder-fanens overskriftsrad, ved siden av «Verdt å merke seg»: `Gange ⌄`, innrettet 22 px fra kanten — radens chevron-kolonne (15) + gap (9) − knappens egen padding (6) — slik at den lander nøyaktig over «3 min». Da leser den som en **enhet**, ikke som en destinasjon, og den forsvinner av seg selv i Om området og Spørsmål der det ikke finnes tider å forklare.
+
+Panelet er panel-varianten fra produksjonens `TravelModeSelector`, portert: alle tre modusene med tiden sin for det åpne stedet (Extra Grilstad: 3 / 2 / 1 min), så du ser hva du bytter TIL før du bytter. Tallene er precomputet, så panelet har ingen lastetilstand. Uten et åpent sted vises bare navnene — «–» tre ganger ville lest som «ingen rute finnes», ikke som «du har ikke valgt et sted ennå». Trykk utenfor lukker uten å bytte, panelet lukkes ved stoppbytte, og modusbytte rører aldri navigasjonen: du står i samme stopp med de samme radene åpne og ser tallene endre seg.
+
+Kart-pillen ble stående. To innganger til samme tilstand er med vilje — produksjonen har det samme (kart-kontrollen og chipen på ruta deler `TravelModeSelector`). Den ene styrer kartet, den andre merker lista.
+
+**Gotcha verdt å huske:** `board.poisById` holder den **rå** POI-en (tidene på `travelTime` direkte), mens kategorilista holder den **adapterte** (tidene på `raw.travelTime`, som `minutesOf` leser). Leser man feil av dem, blir hver eneste tid «–» i panelet selv om raden rett over viser 3 min. Kostet en runde å finne.
+
+**Status:** committet på `main` sammen med denne oppføringen. Ikke pushet. Parallell sesjon (`placy-12`, worktree `../placy-sheet-gest`, branch `feat/sheet-gesture`) var blokkert av det skitne treet og merger sheet-gest-arbeidet sitt oppå dette. Merke-punkt for den mergen: `paintDeck` er uendret i signatur og kropp — reisemåte havnet aldri i dekket.
+
+### Åpent
+
+- **Siste stopp sier ikke fra at det er siste stopp.** Du står bare på «Trening & Aktivitet» uten avslutning, siden «Utforsk nabolaget selv» er fjernet. Krysset er nå eneste vei ut av omvisningen.
+- **`backdrop-filter` er ikke verifisert på iOS Safari.** Safari klipper blur mot maske på sin egen måte; blir sløret svakere eller borte på telefon, trengs en kraftigere hvit tone under laget.
+- **Besøkt vs. usett er nesten usynlig.** Et lite eget merke (hake eller prikk ved ikonet) er foreslått, men ikke bestilt.
+- **Grepet er ikke portert til produksjon.** Dette lever kun i prototypen; `04` er fortsatt en iterasjon uten dom.
 
 ---
 

@@ -71,6 +71,13 @@ state().sheetFloorInset = deckHeight;
 const collapsed = Math.min((grabH || COLLAPSED_FALLBACK_PX) + inset, rest);
 ```
 
+**Handlen er festet i toppen av scrolleren, så alt annet som skal stå fast fester seg under den.**
+Fordi hele flaten nå er én scroller, konkurrerer et `position: sticky; top: 0` inne i innholdet med
+handlens eget — og vinner det på `z-index`, slik at det legger seg oppå tittelen. Derfor publiserer
+`sizeMobileSurface` handlens målte høyde som `--grab-h`, og innhold som vil ligge fast bruker
+`top: var(--grab-h)`. Det gjelder 04s lukkekryss; en iterasjon med sticky seksjonsoverskrifter i lista
+treffer det samme.
+
 **Magneten trekker bare når bevegelsen faktisk ville stanset nær et stopp**, og landingen regnes ut —
 den gjettes ikke (se feil 1). Fri mellomposisjon beholdes; det er oppførselen fra 4. august.
 
