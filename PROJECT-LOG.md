@@ -6,6 +6,75 @@
 
 ---
 
+## 2026-08-25 — PROTOTYPE-MILJØ FOR NIVÅ-1-FLATEN: BASELINEN SOM FELLES KILDE, IKKE SOM MAL Å KOPIERE
+
+**Kontekst:** Andreas dumpet en tankestrøm (`~/Desktop/placy-dumpå.json`) med to ting i: utfordringen «hvem bygger vi egentlig for», og ønsket om et vanilla HTML/CSS/JS-miljø for rask iterering. Etter første leveranse styrte han presist: *«det er svært viktig at vi har fokus på det vi har utviklet i dag, at vi begynner å iterere på det vi faktisk har i nivå 1»* — og deretter *«du kan droppe nivå 2»*.
+
+**Nivå-definisjonen ble korrigert av Andreas, og korreksjonen er viktig:** *«for stasjonskvartalet er det jeg anser som nivå 2. jeg snakker om de som ikke har lyd på seg»*. Nivå 1 = **board uten avspillbar lyd**. Det er også forgreiningen produksjonen faktisk gjør: `isPlayableAudio(a) = Boolean(a?.url && a?.manus?.trim())` → `hasPlayableContent` på desktop (`DesktopStorySidebar.tsx:779`) og `hasAudioMobile` på mobil (`ReportReelsPage.tsx:896-904`). Kuratert vs. ukuratert `theme.editorial` er en **uavhengig akse** — et nivå-1-board kan godt ha kuratert strøkstekst. Samme UI, ulik datarikdom.
+
+### Miljøet: ingen build, og mobil-verifisering som faktisk virker
+
+`npm run proto` starter `scripts/proto-serve.mjs` på `:4400`: `fs.watch` + SSE gir live-reload i alle åpne faner, og serveren binder `0.0.0.0` slik at telefonen åpner LAN-URL-en direkte. Det siste er ikke kosmetikk — det omgår Next-HMR-websocketen som er den vanlige grunnen til at mobil-verifisering gir blank side når `allowedDevOrigins` står med gårsdagens IP. Repoets `public/` serveres som fallback (med path-traversal-vakt), så de ekte kategori-illustrasjonene vises.
+
+`npm run proto:data -- <kunde> <slug>` eksporterer ekte board-snapshots til `_data/`. Både `_data/` og det genererte `_shared/env.js` er gitignored; env-fila inneholder **kun** `NEXT_PUBLIC_MAPBOX_TOKEN` og aldri en hemmelighet.
+
+**Snapshotet bærer BÅDE `board` og `project`, og det er en bevisst dobbelthet.** Den deterministiske minimum-garantien — generert kategoritekst, highlights, FAQ — oppstår **nedstrøms** av `products.config`, i `transformToReportData(project)` → `adaptBoardData(reportData)`. Leser en prototype rå config, ser et ukuratert nivå-1-board tomt ut selv om boardet i produksjon faktisk viser tekst. Gjenskaper du dagens flate, skal du lese `board`.
+
+### Baselinen er portert, ikke gjenoppfunnet — og avvikene står merket
+
+`00-niva1-baseline` er hentet klasse-for-klasse fra `DesktopStorySidebar.tsx`, `NeighbourhoodSheet.tsx`, `NeighbourhoodCategoryCard.tsx`, `CategoryPage.tsx`, `FAQSection.tsx` og `HighlightsDisclosure.tsx`. Konstantene er produksjonens egne: `REST_LOW_FRACTION 0.34`, `REST_HIGH_FRACTION 0.86`, `REST_LOW_MIN_PX 236`, `SNAP_THRESHOLD_PX 44`, `TAP_SLOP_PX 6`, `SNAP_DURATION_MS 380`, `SETTLE_MIN_MS 130`, `MOMENTUM_PROJECTION_MS 190`, `PANEL_FRACTION 0.58`, `PEEK_FRACTION 0.2`, `ROWS_PER_CATEGORY 3`. CSS-kommentarene navngir Tailwind-klassen hver regel kommer fra, og avvik fra produksjon står merket `AVVIK`.
+
+**Desktop og mobil er bevisst ULIKE flater, og det er ikke drift.** Desktop-kortet har illustrasjon + kuratert lead-prosa; mobil-kortet har ikon-tint + dekningstall + tre POI-rader. Desktops indeks viser alle kategorier, mobilens er **utsnitts-scopet** — å dra kartet ER filteret. Drill-in er samme kolonne (kun det i utsnittet) på desktop, eget panel (hele kategorien) på mobil. POI-trykk gir mini-popup på desktop; på mobil ER modalen POI-flaten.
+
+**`minutesOf(poi)` leser kun precomputed `poi.raw.travelTime[mode]` og returnerer `undefined` ellers.** Mangler tiden, skrives raden ikke. Vi gjetter aldri et minutt inn i en flate som skal selges som målt.
+
+### Iterasjoner overstyrer, de kopierer ikke
+
+Første iterasjon ble bygget ved `cp -r` av baselinen. Det er 849 linjer per kopi, og en fideliteitsfiks ville dermed råtnet i hver sin fil. Baselinen fikk i stedet et smalt, dokumentert sømsted: et internt `R`-register og
+
+```js
+Baseline.override({ mobileCard, desktopCard, sheetTop, sidebarTop, onClick })
+```
+
+som **må** kalles før `Baseline.start`. `Baseline.util` eksponerer byggeklossene baselinen selv bruker (`esc`, `icon`, `minutesOf`, `categorySubline`, `buildList`, `linkedText`, `byMinutesThenName`, `openPoi`, `selectCategory`, `fitCategory`, `rerender`, `state`), og `baseMobileCard`/`baseDesktopCard` lar en override delegere tilbake. Trenger en idé mer enn dette, er `cp -r` fortsatt riktig — men da er det en ny flate, ikke en iterasjon.
+
+`boardSwitch()` bygger nå href fra `location.search` og setter bare `board`, så det å bytte mellom Kuratert og Ukuratert ikke nullstiller varianten du sammenligner.
+
+### Tre iterasjoner, og de to funnene som kom ut av å bygge dem
+
+- **`01-fortelling-scroll`** — kan boardet leses som én fortelling der kartet bare følger med, null interaksjon utover scroll? (Leser rå `project`, fordi den bygger sin EGEN fortelling av `bridgeText`/`leadText` — den gjenskaper ikke dagens flate.)
+- **`02-en-stemme-to-formater`** — desktop selger stedet, mobil viser avstander. Skal mobil-kortet ha stemmen, tallene eller begge? Veksler `Tall` (= baselinen) / `Stemme` (desktops prosa, ingen POI-rader) / `Begge` (prosa + ETT målt bevis + «Se alle N»).
+- **`03-svar-forst`** — hierarkiet `svar → bevis → dybde`. Sheeten åpner med nærmeste **målte** sted per kategori sortert på tid, og kategori-indeksen ligger kollapset bak «Utforsk alle kategorier · 464 steder». Svaret er *ikke* utsnitts-scopet: det handler om boligen, ikke om hvor brukeren tilfeldigvis har dratt kartet. Reisemodus-bytte svarer på nytt.
+
+**Funn 1: den GENERERTE lead-prosaen bærer som overskrift.** På det ukuraterte Ferjemannsveien-boardet leser `stemme`-varianten som ekte prosa («MENY og Extra Rosenborg i gangavstand, apotek på Solsiden og frisør rett rundt hjørnet»). Å gi mobilen desktops stemme henger altså ikke på at kurateringen finnes. Kostnaden er oversikt: kortet vokser fra ~78 til 129–149 px, så den hvilende sheeten viser knapt halvannen kategori der den før viste tre. `Begge` er den eneste varianten som holder begge deler, ved å bytte tre POI-rader mot én.
+
+**Funn 2: hele svaret får plass i den hvilende sheeten.** Seks navngitte steder med målte minutter, sortert på tid. Og det holder seg på riktig side av score-primitiv-streken: **hvert tall har et navn ved siden av seg**. Et nabolag skal aldri tagges med en score — det var LocalLogic-fella, og et gjennomsnitt uten sted er samme svada.
+
+### Tilbake-knappen: injisert, ikke limt inn
+
+Andreas: *«dette miljøet, vi må ha en tilbakeknapp til index på prototpyene»*. `Proto.mountBackLink()` i `_shared/proto.js` injiserer chippen med egen stil, så den kommer gratis på hver ny prototype som laster fila — også `01`, som ikke bruker baselinen i det hele tatt. `Proto.fatal` monterer den på nytt, siden feilkortet tømmer `body`; ellers ville en manglende datafil vært en blindvei. Chippen **måler** sin egen bredde inn i `--proto-back-w` i stedet for å hardkode et tall, fordi Figtree lastes etter første maling og et fast tall ville flyttet naboverktøyet feil i det fonten kom. På desktop legger den seg i kartet via `--sidebar-w`, ikke oppå sidekolonnens overskrift.
+
+### Tre layout-bugs funnet under verifisering
+
+1. **Trunkerte kategorilabeler i `03`s svarrader.** En 92 px kolonne klippet «Transport & M…» og «Barn & Oppvek…» — altså nettopp det raden skulle gjøre: si hvilket spørsmål som er besvart. Raden stabler nå behovet over stedsnavnet.
+2. **Klippet `.a-note`-linje på desktop i `03`.** Målt `scrollHeight 362` mot `clientHeight 348`. Årsak: desktop-sidekolonnens `.scroll` er en flex-kolonne, så svarkortet ble krympet. Fikset med `flex: none`.
+3. **Prosa-kortet i `02` lekket en fjerde linje.** `-webkit-line-clamp: 3` klippet riktig, men `overflow: hidden` klipper ved **padding-boksen** — så en fjerde linje lyste gjennom bunn-paddingen og la seg oppå «Nærmest»-raden. Luften måtte være margin, ikke padding. (Samme runde: variant-lenkene hadde understrek, fordi bare `.proto-switch a` nullstiller `text-decoration`.)
+
+I tillegg fikk baselinen en vakt: når `03`s indeks er kollapset returnerer alle `mobileCard`-kall tom streng, og baselinens «Ingen steder i dette utsnittet» ville fyrt. Løst med `body[data-index="closed"] .m-empty { display: none }` — lista er skjult med vilje, ikke tom — i stedet for enda en override-hook.
+
+### Verifisert
+
+Chrome på 1440×900 og 390×844 for alle fire flater pluss galleriet: null console-feil, chippen finnes på alle fire og ikke på galleriet, ingen overlapp (chip slutter 548 px, variant-veksler starter 554 px), LAN-URL svarer 200 på alle rutene. `npm run lint` 0 errors, `tsc --noEmit` rent, 3 132 tester i 198 filer grønne.
+
+**Commit:** `b13999f` på branch `feat/prototype-miljo`, 15 filer / 2 982 linjer. Ikke pushet.
+
+### Åpent
+
+- **Iterasjon 04 «Nivå-1-følelsen»** — føles det ukuraterte Ferjemannsveien-boardet kuratert eller malt? Kommersielt det tyngste spørsmålet, men Kuratert/Ukuratert-veksleren finnes nå i hver prototype, så det kan hende det er besvart uten egen mappe.
+- **Dommen mangler.** Andreas har fått URL-ene og skal kjenne på `02` først, siden den avgjør `03`s kortformat. Når en retning velges, skrives den her.
+
+---
+
 ## 2026-08-24 — LABELEN LÅ I EN TEKSTUR: HELE 3D-MARKØR-STACKEN OVER TIL DOM
 
 **Kontekst:** Andreas testet boardet på telefonen og reagerte på to ting: labelene på kart-punktene var «veldig uklar/blurry … såpass at jeg reagerer på at det ser dårlig ut», og labelene kom tregt — «det tar 0.4 sek å få opp labels etter at en føler at en er ferdig med å bevege kartet», mot Mapbox som er «meget rask og snappy i forhold».
