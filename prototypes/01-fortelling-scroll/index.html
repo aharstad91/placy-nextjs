@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>01 · Fortelling-scroll</title>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.css" />
+  <link rel="stylesheet" href="/_shared/tokens.css" />
+  <style>
+    /* ============================================================
+       SPØRSMÅLET PROTOTYPEN TESTER:
+       Kan hele boardet leses som én fortelling der kartet bare
+       følger med — null interaksjon utover scroll?
+       Mobil: kart bak, kort scroller over. Desktop: samme fortelling
+       i venstre kolonne, kartet står fast til høyre. Samme DOM.
+       ============================================================ */
+
+    #map { position: fixed; inset: 0; }
+
+    .story {
+      position: relative;
+      z-index: 1;
+      pointer-events: none; /* kartet kan dras mellom kortene */
+      padding: 0 var(--pad);
+    }
+    .story > * { pointer-events: auto; }
+
+    .step {
+      max-width: 480px;
+      margin: 0 auto 60vh;
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px var(--pad);
+    }
+    .step.hero { margin-top: 52vh; }
+    .step.hero .kicker {
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--ink-faint); margin-bottom: 6px;
+    }
+    .step.hero h1 { font-size: 30px; }
+    .step.hero p { margin-top: 12px; color: var(--ink-soft); }
+    .scroll-hint { margin-top: 16px; font-size: 13px; color: var(--ink-faint); }
+
+    .step h2 { font-size: 22px; display: flex; align-items: center; gap: 10px; }
+    .step h2 .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+    .step .bridge { margin-top: 10px; font-weight: 600; }
+    .step .body { margin-top: 8px; color: var(--ink-soft); font-size: 15px; }
+
+    .chips { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      display: inline-flex; align-items: baseline; gap: 6px;
+      border: 1px solid var(--line); border-radius: 999px;
+      padding: 6px 12px; font-size: 13px; background: var(--bg);
+    }
+    .chip .t { color: var(--ink-faint); font-size: 12px; }
+    .chip.active { border-color: var(--accent); background: var(--accent-soft); }
+
+    .step.outro { margin-bottom: 30vh; }
+    .step.outro ul { margin: 10px 0 0 18px; color: var(--ink-soft); font-size: 15px; }
+    .step.outro li + li { margin-top: 6px; }
+
+    /* Markør-labels */
+    .poi-marker { display: grid; justify-items: center; cursor: pointer; }
+    .poi-marker .pin {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2.5px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+    }
+    .poi-marker .lbl {
+      margin-top: 3px; font-size: 11px; font-weight: 600; color: var(--ink);
+      text-shadow: 0 0 3px #fff, 0 0 6px #fff, 0 0 10px #fff;
+      max-width: 120px; text-align: center; line-height: 1.15;
+    }
+    .home-marker .pin {
+      width: 18px; height: 18px; background: var(--ink);
+      border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+    }
+    .home-marker .lbl { font-size: 12px; }
+
+    /* Desktop: fortellingen i venstre kolonne, kartet fast til høyre */
+    @media (min-width: 900px) {
+      #map { left: 480px; }
+      .story { width: 480px; padding: 0 28px; }
+      .step { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="story" id="story"></div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.js"></script>
+  <script src="/_shared/env.js"></script>
+  <script src="/_shared/proto.js"></script>
+  <script>
+    const BOARD = "megler-harstad__strindfjordvegen-10-7053-ranheim-norge";
+    const MAX_MARKERS = 10;
+
+    async function main() {
+      // Snapshotet bærer både `board` (avledet) og `project` (rå config).
+      // Denne prototypen leser rå config fordi den bygger sin EGEN fortelling
+      // av bridgeText/leadText — den gjenskaper ikke dagens flate.
+      const project = (await Proto.loadBoard(BOARD)).project;
+      const themes = project.reportConfig?.themes ?? [];
+      const rc = project.reportConfig ?? {};
+
+      // --- Bygg fortellingen ---
+      const story = document.getElementById("story");
+      const frag = [];
+
+      frag.push(`
+        <section class="step hero" data-step="hero">
+          <p class="kicker">${[rc.district, rc.city].filter(Boolean).join(", ") || "Nabolaget"}</p>
+          <h1>${project.name}</h1>
+          <p>${rc.heroIntro ?? project.story?.introText ?? ""}</p>
+          <p class="scroll-hint">Scroll for å bli kjent med nabolaget ↓</p>
+        </section>`);
+
+      for (const theme of themes) {
+        const color = Proto.themeColor(project, theme);
+        const pois = pickPois(project, theme);
+        frag.push(`
+          <section class="step" data-step="${theme.id}">
+            <h2><span class="dot" style="background:${color}"></span>${theme.name}</h2>
+            ${theme.bridgeText ? `<p class="bridge">${theme.bridgeText}</p>` : ""}
+            ${bodyFor(theme) ? `<p class="body">${bodyFor(theme)}</p>` : ""}
+            <div class="chips">
+              ${pois.slice(0, 5).map((p) => `
+                <button class="chip" data-poi="${p.id}" data-theme="${theme.id}">
+                  ${p.name}${Proto.walkLabel(p) ? `<span class="t">${Proto.walkLabel(p)}</span>` : ""}
+                </button>`).join("")}
+            </div>
+          </section>`);
+      }
+
+      const insights = rc.summary?.insights ?? [];
+      frag.push(`
+        <section class="step outro" data-step="outro">
+          <h2>${rc.summary?.headline ?? `Det er ${project.name}`}</h2>
+          ${insights.length ? `<ul>${insights.map((i) => `<li>${i}</li>`).join("")}</ul>` : ""}
+        </section>`);
+
+      story.innerHTML = frag.join("");
+
+      // --- Kart ---
+      mapboxgl.accessToken = Proto.mapboxToken();
+      const map = new mapboxgl.Map({
+        container: "map",
+        style: rc.mapStyle ?? "mapbox://styles/mapbox/light-v11",
+        center: [project.centerCoordinates.lng, project.centerCoordinates.lat],
+        zoom: 14.2,
+        attributionControl: false,
+      });
+
+      new mapboxgl.Marker({ element: markerEl(project.name, "", true) })
+        .setLngLat([project.centerCoordinates.lng, project.centerCoordinates.lat])
+        .addTo(map);
+
+      // --- Steg-aktivering: markører byttes og kameraet følger fortellingen ---
+      let activeMarkers = [];
+      const themeById = new Map(themes.map((t) => [t.id, t]));
+
+      function activate(stepId) {
+        for (const m of activeMarkers) m.remove();
+        activeMarkers = [];
+
+        const theme = themeById.get(stepId);
+        const bounds = new mapboxgl.LngLatBounds();
+        bounds.extend([project.centerCoordinates.lng, project.centerCoordinates.lat]);
+
+        if (theme) {
+          const color = Proto.themeColor(project, theme);
+          for (const poi of pickPois(project, theme)) {
+            const el = markerEl(poi.name, color, false);
+            el.addEventListener("click", () =>
+              map.flyTo({ center: [poi.coordinates.lng, poi.coordinates.lat], zoom: 16 })
+            );
+            activeMarkers.push(
+              new mapboxgl.Marker({ element: el })
+                .setLngLat([poi.coordinates.lng, poi.coordinates.lat])
+                .addTo(map)
+            );
+            bounds.extend([poi.coordinates.lng, poi.coordinates.lat]);
+          }
+          map.fitBounds(bounds, { padding: 90, maxZoom: 15.5, duration: 1400 });
+        } else {
+          map.flyTo({
+            center: [project.centerCoordinates.lng, project.centerCoordinates.lat],
+            zoom: stepId === "outro" ? 13 : 14.2,
+            duration: 1400,
+          });
+        }
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) activate(e.target.dataset.step);
+          }
+        },
+        { rootMargin: "-45% 0px -45% 0px" }
+      );
+      document.querySelectorAll(".step").forEach((s) => observer.observe(s));
+
+      // Chip-klikk: valgfri dybde — fly til punktet uten å forlate fortellingen
+      story.addEventListener("click", (ev) => {
+        const chip = ev.target.closest(".chip");
+        if (!chip) return;
+        const poi = project.pois.find((p) => p.id === chip.dataset.poi);
+        if (!poi) return;
+        document.querySelectorAll(".chip.active").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        map.flyTo({ center: [poi.coordinates.lng, poi.coordinates.lat], zoom: 16, duration: 900 });
+      });
+    }
+
+    /** Featured først, ellers nærmest til fots — maks MAX_MARKERS. */
+    function pickPois(project, theme) {
+      const all = Proto.poisForTheme(project, theme);
+      const featured = all.filter((p) => p.featured);
+      const pool = featured.length >= 3 ? featured : all;
+      return pool
+        .slice()
+        .sort((a, b) => (a.travelTime?.walk ?? 99) - (b.travelTime?.walk ?? 99))
+        .slice(0, MAX_MARKERS);
+    }
+
+    function bodyFor(theme) {
+      return theme.leadText || theme.editorial?.body?.split("\n\n")[0] || theme.intro || "";
+    }
+
+    function markerEl(label, color, isHome) {
+      const el = document.createElement("div");
+      el.className = isHome ? "poi-marker home-marker" : "poi-marker";
+      el.innerHTML = `<div class="pin" style="${color ? `background:${color}` : ""}"></div>
+        <div class="lbl">${label}</div>`;
+      return el;
+    }
+
+    main();
+  </script>
+</body>
+</html>

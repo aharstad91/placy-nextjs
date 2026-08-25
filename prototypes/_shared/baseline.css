@@ -1,0 +1,508 @@
+/* ============================================================
+   Nivå-1-baseline — stilark portert fra produksjonskoden.
+   Verdiene er hentet direkte fra Tailwind-klassene i
+   DesktopStorySidebar.tsx / FAQSection.tsx / HighlightsDisclosure.tsx,
+   ikke gjenoppfunnet. Kommentarene sier hvilken klasse hver regel er.
+   ============================================================ */
+
+:root {
+  /* stone-skalaen (Tailwind) — board-UI-en bruker den direkte, ikke
+     CSS-variablene i globals.css (de er for per-prosjekt theme-override). */
+  --stone-100: #f5f5f4;
+  --stone-200: #e7e5e4;
+  --stone-300: #d6d3d1;
+  --stone-400: #a8a29e;
+  --stone-500: #78716c;
+  --stone-600: #57534e;
+  --stone-700: #44403c;
+  --stone-800: #292524;
+  --stone-900: #1c1917;
+
+  /* De tre faste hex-verdiene board-UI-en hardkoder */
+  --sidebar-bg: #f2e9dc;   /* varm krem — aside i DesktopStorySidebar:831 */
+  --ring-bg: #f5f1ea;      /* ring bak highlight-ikonene */
+
+  --sidebar-w: 438px;      /* w-[438px] */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  /* font-figtree, tailwind.config.ts:73 */
+  font-family: Figtree, ui-sans-serif, system-ui, sans-serif;
+  color: var(--stone-900);
+  background: var(--stone-100);      /* bg-stone-100 på ytre container */
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; border: none; background: none; }
+ul { list-style: none; }
+
+/* ---------- Ytre skall: to kolonner, full høyde ---------- */
+/* relative flex h-[100dvh] w-full overflow-hidden bg-stone-100 */
+.shell { position: relative; display: flex; height: 100dvh; width: 100%; overflow: hidden; }
+
+/* ---------- Sidebar (desktop) ---------- */
+/* aside: z-20 flex h-full w-[438px] shrink-0 flex-col border-r border-black/5 bg-[#f2e9dc] shadow-xl */
+.sidebar {
+  position: relative; z-index: 20;
+  display: flex; flex-direction: column;
+  height: 100%; width: var(--sidebar-w); flex: none;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  background: var(--sidebar-bg);
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
+}
+
+/* Header: shrink-0 px-6 pb-3 pt-6 */
+.sidebar-header { flex: none; padding: 24px 24px 12px; }
+.sidebar-header h2 { font-size: 20px; line-height: 1.25; font-weight: 700; color: var(--stone-900); }
+.sidebar-header .subline { margin-top: 2px; font-size: 14px; color: var(--stone-500); }
+
+/* Scroll-området: flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-3 pt-1, skjult scrollbar */
+.scroll {
+  display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 12px;
+  overflow-y: auto; padding: 4px 24px 12px;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ---------- Kategorikort ---------- */
+/* group flex w-full items-center gap-3 rounded-2xl border bg-white/60 p-2.5 text-left
+   transition-all duration-150 hover:bg-white */
+.cat-card {
+  display: flex; width: 100%; align-items: center; gap: 12px;
+  border-radius: 16px; border: 1px solid rgba(0,0,0,.05);
+  background: rgba(255,255,255,.6); padding: 10px; text-align: left;
+  transition: all 150ms;
+}
+.cat-card:hover { background: #fff; border-color: var(--stone-500); box-shadow: 0 0 0 1px var(--stone-500); }
+/* aktiv: border-stone-900 ring-1 ring-stone-900 */
+.cat-card[aria-current="true"] { border-color: var(--stone-900); box-shadow: 0 0 0 1px var(--stone-900); }
+
+/* h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-200 */
+.cat-thumb {
+  position: relative; height: 56px; width: 56px; flex: none;
+  overflow: hidden; border-radius: 12px; background: var(--stone-200);
+}
+.cat-thumb img { height: 100%; width: 100%; object-fit: cover; display: block; }
+/* "Hele nabolaget": h-14 w-14 rounded-xl bg-stone-900 text-white, sentrert ikon */
+.cat-thumb.dark {
+  background: var(--stone-900); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.cat-body { min-width: 0; flex: 1; }
+.cat-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+/* truncate text-sm font-semibold text-stone-900 */
+.cat-label {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 14px; font-weight: 600; color: var(--stone-900);
+}
+/* shrink-0 text-[11px] font-medium text-stone-400 */
+.cat-count { flex: none; font-size: 11px; font-weight: 500; color: var(--stone-400); }
+/* mt-0.5 line-clamp-2 text-[12px] leading-snug text-stone-500 */
+.cat-lead {
+  margin-top: 2px; font-size: 12px; line-height: 1.375; color: var(--stone-500);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Drill-in-affordans: h-8 w-8 rounded-full bg-stone-100 text-stone-500 ring-1 ring-black/5,
+   fylles mørk on hover */
+.cat-chevron {
+  display: flex; height: 32px; width: 32px; flex: none;
+  align-items: center; justify-content: center; align-self: center;
+  border-radius: 999px; background: var(--stone-100); color: var(--stone-500);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.05); transition: background-color 150ms, color 150ms;
+}
+.cat-card:hover .cat-chevron { background: var(--stone-900); color: #fff; box-shadow: 0 0 0 1px var(--stone-900); }
+
+/* ---------- Seksjonsoverskrift (FAQ / Verdt å merke seg / I utsnittet) ---------- */
+/* text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400 */
+.eyebrow {
+  margin-bottom: 8px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.18em; color: var(--stone-400);
+}
+.section { margin-top: 20px; }   /* mt-5 */
+
+/* ---------- FAQ (disclosure) ---------- */
+.faq-list { display: flex; flex-direction: column; gap: 6px; }
+/* overflow-hidden rounded-xl border border-black/5 bg-white/60 hover:border-stone-400 */
+.faq-item {
+  overflow: hidden; border-radius: 12px; border: 1px solid rgba(0,0,0,.05);
+  background: rgba(255,255,255,.6); transition: border-color 150ms;
+}
+.faq-item:hover { border-color: var(--stone-400); }
+/* flex w-full items-start gap-2.5 px-3 py-2.5 text-left */
+.faq-q { display: flex; width: 100%; align-items: flex-start; gap: 10px; padding: 10px 12px; text-align: left; }
+/* text-[13.5px] font-medium leading-snug text-stone-800 */
+.faq-q span.t { min-width: 0; flex: 1; font-size: 13.5px; font-weight: 500; line-height: 1.375; color: var(--stone-800); }
+.chev { flex: none; transition: transform 300ms; color: var(--stone-400); }
+[aria-expanded="true"] .chev { transform: rotate(180deg); }
+/* Begge tilstander i DOM, vekslet med CSS. Ingen auto-scroll. */
+.faq-a { overflow: hidden; max-height: 0; opacity: 0; transition: all 300ms ease-out; }
+.faq-a[data-expanded="true"] { max-height: 1200px; opacity: 1; }
+/* px-3 pb-3 text-[13.5px] leading-relaxed text-stone-600 */
+.faq-a p { padding: 0 12px 12px; font-size: 13.5px; line-height: 1.625; color: var(--stone-600); }
+
+/* Inline POI-lenke i svaret: <button>, ikke <a> — den navigerer ikke, den
+   flytter kartet. Treffflaten vokser vertikalt; negativ margin holder
+   linjehøyden urørt. */
+.poi-link {
+  display: inline; font: inherit; color: var(--stone-900); font-weight: 600;
+  text-decoration: underline; text-decoration-color: var(--stone-300);
+  text-underline-offset: 2px; padding: 6px 0; margin: -6px 0;
+}
+.poi-link:hover { text-decoration-color: var(--stone-900); }
+
+/* ---------- Verdt å merke seg ---------- */
+/* flex w-full items-center gap-3 rounded-xl border border-black/5 bg-white/60 px-3 py-2.5 */
+.hl-toggle {
+  display: flex; width: 100%; align-items: center; gap: 12px;
+  border-radius: 12px; border: 1px solid rgba(0,0,0,.05);
+  background: rgba(255,255,255,.6); padding: 10px 12px; text-align: left;
+  transition: background-color 150ms, border-color 150ms;
+}
+.hl-toggle:hover { background: #fff; border-color: var(--stone-400); }
+/* flex shrink-0 items-center -space-x-2 — ikonene overlapper svakt */
+.hl-icons { display: flex; flex: none; align-items: center; }
+.hl-icons > span { margin-left: -8px; border-radius: 8px; box-shadow: 0 0 0 2px var(--ring-bg); }
+.hl-icons > span:first-child { margin-left: 0; }
+.hl-icon {
+  display: flex; height: 24px; width: 24px; align-items: center; justify-content: center;
+  border-radius: 8px; color: #fff;
+}
+.hl-toggle .t { display: block; font-size: 13px; font-weight: 600; color: var(--stone-800); }
+.hl-toggle .s { display: block; font-size: 11.5px; color: var(--stone-500); }
+.hl-panel {
+  display: flex; flex-direction: column; gap: 8px;
+  overflow: hidden; max-height: 0; opacity: 0; transition: all 300ms ease-out;
+}
+.hl-panel[data-expanded="true"] { margin-top: 8px; max-height: 2000px; opacity: 1; }
+.hl-row {
+  display: flex; width: 100%; align-items: center; gap: 10px;
+  border-radius: 12px; border: 1px solid rgba(0,0,0,.05);
+  background: rgba(255,255,255,.6); padding: 8px 12px; text-align: left;
+}
+.hl-row:hover { background: #fff; border-color: var(--stone-400); }
+.hl-row .n { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 13px; font-weight: 500; color: var(--stone-800); }
+.hl-row .m { flex: none; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--stone-500); }
+
+/* ---------- Drill-in-panel ---------- */
+.detail { display: flex; min-height: 0; flex: 1; flex-direction: column; }
+/* Nav-header PINNET utenfor scroll: flex shrink-0 items-center gap-2 border-b border-black/5 px-6 pb-2.5 pt-1 */
+.detail-nav {
+  display: flex; flex: none; align-items: center; gap: 8px;
+  border-bottom: 1px solid rgba(0,0,0,.05); padding: 4px 24px 10px;
+}
+/* h-9 rounded-xl border border-black/10 bg-white px-3 text-[13px] font-semibold text-stone-700 shadow-sm */
+.btn-back {
+  display: inline-flex; height: 36px; flex: none; align-items: center; gap: 6px;
+  border-radius: 12px; border: 1px solid rgba(0,0,0,.1); background: #fff;
+  padding: 0 12px; font-size: 13px; font-weight: 600; color: var(--stone-700);
+  box-shadow: 0 1px 2px rgba(0,0,0,.05); transition: border-color 150ms, color 150ms;
+}
+.btn-back:hover { border-color: var(--stone-400); color: var(--stone-900); }
+
+/* Temavelger — trigger ser ut som en select, popover NED */
+.theme-select { position: relative; min-width: 0; flex: 1; }
+.theme-trigger {
+  display: flex; height: 36px; width: 100%; align-items: center; gap: 8px;
+  border-radius: 12px; border: 1px solid rgba(0,0,0,.1); background: #fff;
+  padding: 0 10px; font-size: 13px; font-weight: 600; color: var(--stone-700);
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.theme-trigger .dot { height: 8px; width: 8px; flex: none; border-radius: 999px; }
+.theme-trigger .lbl { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; text-align: left; }
+.theme-menu {
+  position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
+  max-height: 320px; overflow-y: auto; border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.08); background: #fff; padding: 4px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.16);
+}
+.theme-menu button {
+  display: flex; width: 100%; align-items: center; gap: 8px;
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; text-align: left;
+  color: var(--stone-700);
+}
+.theme-menu button:hover { background: var(--stone-100); }
+.theme-menu button[aria-current="true"] { font-weight: 700; color: var(--stone-900); }
+.theme-backdrop { position: fixed; inset: 0; z-index: 30; }
+
+.detail-scroll {
+  min-height: 0; flex: 1; overflow-y: auto; padding: 12px 24px;
+  scrollbar-width: none;
+}
+.detail-scroll::-webkit-scrollbar { display: none; }
+/* h-44 w-full rounded-2xl bg-stone-200 */
+.detail-hero {
+  position: relative; margin-bottom: 16px; height: 176px; width: 100%; flex: none;
+  overflow: hidden; border-radius: 16px; background: var(--stone-200);
+}
+.detail-hero img { height: 100%; width: 100%; object-fit: cover; object-position: center; display: block; }
+/* text-lg font-bold leading-tight text-stone-900 */
+.detail-scroll h3 { font-size: 18px; font-weight: 700; line-height: 1.25; color: var(--stone-900); }
+/* mt-0.5 text-[12px] font-medium tabular-nums text-stone-400 */
+.detail-subline { margin-top: 2px; font-size: 12px; font-weight: 500;
+  font-variant-numeric: tabular-nums; color: var(--stone-400); }
+/* mt-3 space-y-3 → text-[14px] leading-relaxed text-stone-600 */
+.detail-prose { margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+.detail-prose p { font-size: 14px; line-height: 1.625; color: var(--stone-600); }
+
+/* «I utsnittet»-lista */
+.vp-row {
+  display: flex; width: 100%; align-items: baseline; gap: 12px;
+  border-bottom: 1px solid rgba(0,0,0,.05); padding: 8px 0; text-align: left;
+}
+.vp-row:hover .n { color: var(--stone-900); }
+li:last-child .vp-row { border-bottom: none; }
+.vp-row .n { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-size: 13.5px; color: var(--stone-700); }
+.vp-row .m { flex: none; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--stone-500); }
+.vp-row[aria-current="true"] .n { font-weight: 700; color: var(--stone-900); }
+/* mt-2 rounded-xl border border-black/5 bg-white/60 px-3 py-2 */
+.vp-outside {
+  margin-top: 8px; display: flex; width: 100%; align-items: center;
+  justify-content: space-between; gap: 8px; border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.05); background: rgba(255,255,255,.6); padding: 8px 12px;
+}
+.vp-outside span { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--stone-600); }
+.vp-outside button { border-radius: 8px; padding: 2px 8px; font-size: 12.5px;
+  font-weight: 600; color: var(--stone-900); transition: background-color 150ms; }
+.vp-outside button:hover { background: rgba(0,0,0,.05); }
+
+/* «Åpent nå» — PINNET utenfor scroll (lærdom: raden brukeren leser skal
+   ikke flytte seg eller forsvinne når punktet glir ut av utsnittet). */
+.pinned-active {
+  flex: none; border-top: 1px solid rgba(0,0,0,.05);
+  background: rgba(255,255,255,.5); padding: 10px 24px;
+}
+.pinned-active .eyebrow { margin-bottom: 0; font-size: 10.5px; }
+.pinned-active .row { display: flex; align-items: baseline; gap: 12px; }
+.pinned-active .n { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-size: 13.5px; font-weight: 500; color: var(--stone-900); }
+.pinned-active .m { flex: none; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--stone-500); }
+
+/* ---------- Megler-kort (placeholder, sist i scroll — ikke sticky) ---------- */
+.megler { margin: 16px -24px 0; flex: none; border-top: 1px solid rgba(0,0,0,.05); padding: 16px 24px 12px; }
+.megler-card {
+  display: flex; align-items: center; gap: 12px; border-radius: 16px;
+  border: 1px solid rgba(0,0,0,.05); background: rgba(255,255,255,.6); padding: 12px;
+}
+.megler-avatar {
+  display: flex; height: 48px; width: 48px; flex: none; align-items: center;
+  justify-content: center; border-radius: 999px; background: var(--stone-200); color: var(--stone-400);
+}
+.megler-card .n { font-size: 14px; font-weight: 600; color: var(--stone-900); }
+.megler-card .s { font-size: 12px; color: var(--stone-400); }
+.megler-actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+.megler-actions span {
+  display: inline-flex; align-items: center; gap: 6px; border-radius: 999px;
+  padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--stone-400);
+}
+.megler-actions .fill { background: rgba(231,229,228,.7); }
+.megler-actions .outline { border: 1px solid var(--stone-300); }
+
+/* ---------- Kart ---------- */
+.map-col { position: relative; height: 100%; flex: 1; }
+#map { position: absolute; inset: 0; }
+
+/* Reisemodus-pille: samlet, sentrert nederst-midt PÅ KARTET */
+.map-controls {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 10; display: flex; align-items: center; gap: 2px;
+  border-radius: 999px; background: rgba(255,255,255,.94); padding: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.16); backdrop-filter: blur(8px);
+}
+.map-controls button {
+  display: flex; height: 34px; align-items: center; gap: 6px;
+  border-radius: 999px; padding: 0 12px; font-size: 12.5px; font-weight: 600;
+  color: var(--stone-500); transition: background-color 150ms, color 150ms;
+}
+.map-controls button[aria-current="true"] { background: var(--stone-900); color: #fff; }
+.map-divider { width: 1px; height: 20px; background: var(--stone-200); margin: 0 4px; }
+
+/* ---------- Markører ---------- */
+.marker { display: grid; justify-items: center; cursor: pointer; }
+.marker .pin {
+  height: 14px; width: 14px; border-radius: 50%;
+  border: 2.5px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35);
+}
+.marker .lbl {
+  margin-top: 3px; max-width: 116px; text-align: center;
+  font-size: 11px; font-weight: 600; line-height: 1.15; color: var(--stone-900);
+  text-shadow: 0 0 3px #fff, 0 0 6px #fff, 0 0 10px #fff;
+}
+.marker.dim { opacity: .35; }
+/* dot-nivået: bare en liten prikk, ingen ikon/label */
+.marker.tiny .pin { height: 8px; width: 8px; border-width: 0; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.marker.active .pin { height: 20px; width: 20px; border-width: 3px; }
+.marker.home .pin { height: 18px; width: 18px; background: var(--stone-900); border-width: 3px; }
+.marker.home .lbl { font-size: 12px; }
+
+/* ---------- Board-veksler (prototype-verktøy, IKKE i produksjon) ---------- */
+.proto-switch {
+  position: absolute; top: 12px; right: 12px; z-index: 30;
+  display: flex; gap: 2px; border-radius: 999px;
+  background: rgba(255,255,255,.94); padding: 4px; box-shadow: 0 2px 10px rgba(0,0,0,.14);
+}
+.proto-switch a {
+  border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 600;
+  color: var(--stone-500); text-decoration: none;
+}
+.proto-switch a[aria-current="true"] { background: var(--stone-900); color: #fff; }
+.proto-switch .tier { padding: 5px 9px; font-size: 11px; color: var(--stone-400); }
+
+/* ============================================================
+   MOBIL — bottom-sheet over fullskjermkart.
+   ============================================================ */
+/* Mobil er en EGEN flate, ikke desktop i smalt vindu. Sheeten er
+   høyde-drevet med fri drag mellom to grenser (0.34–0.86 av rammen,
+   gulv 236px) — magnetisk bare i ytterpunktene, ingen faste snap-stopp.
+   Kilde: NeighbourhoodSheet.tsx. */
+.frame {
+  position: absolute; inset: 0; z-index: 30; pointer-events: none;
+}
+/* pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col overflow-hidden
+   rounded-t-3xl bg-[#f5f1ea] shadow-[0_-8px_32px_rgba(28,25,23,0.22)] */
+.sheet {
+  pointer-events: auto;
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-top-left-radius: 24px; border-top-right-radius: 24px;
+  background: var(--ring-bg);
+  box-shadow: 0 -8px 32px rgba(28, 25, 23, 0.22);
+}
+/* Grab-handle — eneste dra-flaten. touch-action:none MÅ ligge her og
+   aldri på scroll-containeren under. Tap uten bevegelse hopper til det
+   ytterpunktet du IKKE er nærmest (klikk-alternativet til drag). */
+.grab {
+  flex: none; width: 100%; padding: 10px 20px 6px;
+  touch-action: none; cursor: grab; text-align: left;
+}
+.grab .bar {
+  margin: 0 auto 8px; display: block; height: 4px; width: 36px;
+  border-radius: 999px; background: rgba(168, 162, 158, .7);
+}
+.grab .title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--stone-900); }
+
+.sheet-scroll {
+  min-height: 0; flex: 1; overflow-y: auto;
+  padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+}
+/* One-time-hinten: bg-stone-900/[0.045] rounded-xl px-3 py-2 text-[12.5px] text-stone-600 */
+.hint {
+  margin-bottom: 8px; border-radius: 12px; background: rgba(28, 25, 23, .045);
+  padding: 8px 12px; font-size: 12.5px; color: var(--stone-600);
+}
+
+/* Mobil-kategorikort: mb-2 overflow-hidden rounded-2xl bg-white/80 ring-1 ring-black/5 */
+.m-card {
+  margin-bottom: 8px; overflow: hidden; border-radius: 16px;
+  background: rgba(255,255,255,.8); box-shadow: 0 0 0 1px rgba(0,0,0,.05);
+}
+.m-head { display: flex; width: 100%; align-items: center; gap: 12px; padding: 10px 12px; text-align: left; }
+.m-head:active { background: rgba(0,0,0,.04); }
+/* h-8 w-8 rounded-full, bakgrunn = kategori-farge med 12% alpha */
+.m-icon { display: flex; height: 32px; width: 32px; flex: none; align-items: center; justify-content: center; border-radius: 999px; }
+.m-label { min-width: 0; flex: 1; }
+.m-label .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--stone-900); }
+.m-label .s { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--stone-500); }
+/* POI-rader: flex items-baseline gap-3 border-t border-black/5 py-1.5 first:border-t-0 */
+.m-rows { padding: 0 12px; }
+.m-rows li button {
+  display: flex; width: 100%; align-items: baseline; gap: 12px;
+  border-top: 1px solid rgba(0,0,0,.05); padding: 6px 0; text-align: left;
+}
+.m-rows li:first-child button { border-top: none; }
+.m-rows .n { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-size: 14px; color: var(--stone-700); }
+.m-rows .m { flex: none; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--stone-500); }
+/* «Se alle N»: border-t border-black/5 px-3 py-2 text-[13px] font-medium text-stone-600 */
+.m-more {
+  display: flex; width: 100%; align-items: center; justify-content: space-between;
+  border-top: 1px solid rgba(0,0,0,.05); padding: 8px 12px;
+  font-size: 13px; font-weight: 500; color: var(--stone-600); text-align: left;
+}
+.m-empty { padding: 8px 0 16px; font-size: 14px; color: var(--stone-500); }
+
+/* Kategoriside (mobil drill-in) — 58 % av rammen, to diskrete tilstander,
+   IKKE dra-bar. Peek (20 %) trigges bare av stedsnavn-trykk i et FAQ-svar. */
+.catpage {
+  pointer-events: auto;
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-top-left-radius: 24px; border-top-right-radius: 24px;
+  background: var(--ring-bg);
+  box-shadow: 0 -8px 32px rgba(28, 25, 23, 0.22);
+  transition: height 300ms ease-out;
+}
+.catpage-head { flex: none; display: flex; align-items: center; gap: 12px; padding: 14px 16px 10px; text-align: left; width: 100%; }
+.catpage-scroll { min-height: 0; flex: 1; overflow-y: auto; padding: 0 16px calc(16px + env(safe-area-inset-bottom)); }
+.catpage-scroll .poi-list li button {
+  display: flex; width: 100%; align-items: baseline; gap: 12px;
+  border-bottom: 1px solid rgba(0,0,0,.05); padding: 10px 0; text-align: left;
+}
+.catpage-scroll .poi-list li:last-child button { border-bottom: none; }
+.catpage-scroll .poi-list .n { min-width: 0; flex: 1; font-size: 14.5px; color: var(--stone-800); }
+.catpage-scroll .poi-list .m { flex: none; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--stone-500); }
+/* Tilbake-knappen flyter over KARTET, ikke over panelet — alltid synlig. */
+.back-float {
+  pointer-events: auto; position: absolute; left: 16px;
+  top: max(16px, env(safe-area-inset-top)); z-index: 40;
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 999px; background: rgba(255,255,255,.95); padding: 8px 14px;
+  font-size: 13px; font-weight: 600; color: var(--stone-900);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
+  backdrop-filter: blur(4px);
+}
+
+/* POI-modal — på mobil ER modalen POI-flaten (ingen mini-popup). */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.4);
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: backdrop-in .2s ease-out;
+}
+@keyframes backdrop-in { from { opacity: 0 } to { opacity: 1 } }
+.modal-panel {
+  width: 100%; max-height: 85vh; overflow-y: auto;
+  border-radius: 16px; background: #fff;
+  animation: slide-up .3s cubic-bezier(.2, 0, 0, 1);
+}
+@keyframes slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
+.modal-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; }
+.modal-head .ic { display: flex; height: 36px; width: 36px; flex: none; align-items: center;
+  justify-content: center; border-radius: 999px; }
+.modal-head .n { font-size: 15px; font-weight: 600; color: var(--stone-900); }
+.modal-head .a { font-size: 12px; color: var(--stone-500); }
+.modal-body { padding: 0 20px 20px; font-size: 14px; line-height: 1.625; color: var(--stone-600); }
+@media (min-width: 1024px) {
+  .modal-backdrop { align-items: center; }
+  .modal-panel { max-width: 520px; max-height: 50vh; animation: none; }
+}
+
+/* Hvilken flate som vises: rent breakpoint-styrt, som i produksjon. */
+.desktop-only { display: none; }
+.mobile-only { display: none; }
+@media (min-width: 1024px) { .desktop-only { display: flex; } }
+@media (max-width: 1023px) {
+  .mobile-only { display: block; }
+  .map-col { position: absolute; inset: 0; flex: none; height: 100%; }
+  /* Reisemodus flyttes til venstre-under prototype-veksleren, ellers kolliderer de. */
+  .map-controls { bottom: auto; top: 52px; left: 10px; transform: none; }
+  .map-controls button { padding: 0 10px; font-size: 12px; }
+  .proto-switch { top: 10px; right: 10px; }
+}
+
+/* Feilkort */
+.proto-error {
+  max-width: 480px; margin: 15vh auto; padding: 20px; background: #fff;
+  border: 1px solid var(--stone-200); border-radius: 14px; font-size: 15px;
+}
+.proto-error code {
+  display: block; margin-top: 8px; padding: 8px 12px; background: var(--stone-100);
+  border-radius: 8px; font-size: 13px;
+}

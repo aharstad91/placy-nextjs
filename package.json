@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "create-report": "npx tsx scripts/provision-rapport.ts",
+    "proto": "node scripts/proto-serve.mjs",
+    "proto:data": "NODE_OPTIONS=--conditions=react-server npx tsx scripts/export-proto-snapshot.ts",
     "validate:tier": "npx tsx scripts/validate-report-tier.ts",
     "generate:reels-posters": "node scripts/generate-reels-posters.mjs",
     "prepare": "husky"

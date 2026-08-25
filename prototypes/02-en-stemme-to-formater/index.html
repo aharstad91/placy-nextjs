@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>02 · Én stemme, to formater</title>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/_shared/baseline.css" />
+  <style>
+    /* ============================================================
+       SPØRSMÅLET PROTOTYPEN TESTER:
+       Desktop-kortet selger stedet (illustrasjon + kuratert prosa).
+       Mobil-kortet viser avstander (dekningstall + tre POI-rader).
+       Mobilen er der brukeren faktisk er. Skal mobil-kortet ha
+       stemmen, tallene, eller begge?
+
+       Kun `mobileCard` er overstyrt. Alt annet — sheet-dragen,
+       drill-in, FAQ, kartet — arves fra baselinen.
+       ============================================================ */
+
+    /* Prosa på mobil-kortet. 3 linjer er taket: over det konkurrerer
+       kortet med drill-in-siden i stedet for å lokke dit. */
+    /* Luften under prosaen må være MARGIN, ikke padding: `overflow: hidden`
+       klipper ved padding-boksen, så en fjerde linje ville lyst gjennom
+       bunn-paddingen og lagt seg oppå bevis-raden. */
+    .m-lead {
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+      overflow: hidden;
+      padding: 0 12px; margin: -2px 0 10px;
+      font-size: 13.5px; line-height: 1.45; color: var(--stone-600);
+    }
+    /* Tallene når prosaen har tatt overskrift-plassen. */
+    .m-meta {
+      display: flex; align-items: center; gap: 6px;
+      border-top: 1px solid rgba(0,0,0,.05); padding: 7px 12px;
+      font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--stone-500);
+    }
+    .m-meta .arrow { margin-left: auto; display: flex; }
+    /* Ett bevis, ikke tre: nærmeste sted med målt tid. */
+    .m-proof {
+      display: flex; align-items: baseline; gap: 8px;
+      width: 100%; border-top: 1px solid rgba(0,0,0,.05); padding: 7px 12px;
+      text-align: left; font-size: 13px;
+    }
+    .m-proof .k { flex: none; color: var(--stone-400); }
+    .m-proof .n { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; color: var(--stone-700); font-weight: 500; }
+    .m-proof .m { flex: none; font-variant-numeric: tabular-nums; color: var(--stone-500); }
+
+    /* Variant-velger. Finnes ikke i produksjon (AVVIK) — den er hele
+       poenget med prototypen: kjenn forskjellen med én tomme. */
+    /* `--proto-back-w` måles av Proto.mountBackLink — veksleren legger seg ved
+       siden av tilbake-chippen, ikke oppå den. */
+    .voice-switch {
+      position: fixed; z-index: 40; top: 10px;
+      left: calc(var(--proto-back-w, 96px) + 16px);
+      display: flex; gap: 2px; padding: 3px; border-radius: 999px;
+      background: rgba(255,255,255,.92); box-shadow: 0 1px 6px rgba(0,0,0,.14);
+      font-size: 11px; font-weight: 600; letter-spacing: .02em;
+    }
+    .voice-switch a { padding: 5px 9px; border-radius: 999px; color: var(--stone-500);
+      text-decoration: none; }
+    .voice-switch a[aria-current="true"] { background: var(--stone-900); color: #fff; }
+    @media (min-width: 1024px) {
+      .voice-switch { left: calc(var(--sidebar-w) + var(--proto-back-w, 96px) + 16px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <nav class="voice-switch" id="voice"></nav>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.js"></script>
+  <script src="https://unpkg.com/lucide@0.563.0/dist/umd/lucide.min.js"></script>
+  <script src="/_shared/env.js"></script>
+  <script src="/_shared/proto.js"></script>
+  <script src="/_shared/baseline.js"></script>
+  <script>
+    const BOARDS = {
+      ranheim: "megler-harstad__strindfjordvegen-10-7053-ranheim-norge",
+      ferjemannsveien: "klp-eiendom__ferjemannsveien-10",
+    };
+    const params = new URLSearchParams(location.search);
+    const board = params.get("board") || "ranheim";
+
+    // tall   = dagens mobil-kort (baselinen) — datastemmen
+    // stemme = desktops kuraterte prosa, ingen POI-rader
+    // begge  = prosa først, ETT målt bevis, dybden bak et trykk
+    const VOICES = [
+      { id: "tall", label: "Tall" },
+      { id: "stemme", label: "Stemme" },
+      { id: "begge", label: "Begge" },
+    ];
+    const voice = VOICES.some((v) => v.id === params.get("voice")) ? params.get("voice") : "tall";
+
+    document.getElementById("voice").innerHTML = VOICES.map((v) => {
+      const q = new URLSearchParams(location.search);
+      q.set("voice", v.id);
+      return `<a href="?${q}" aria-current="${v.id === voice}">${v.label}</a>`;
+    }).join("");
+
+    const { esc, icon, minutesOf, categorySubline, byMinutesThenName } = Baseline.util;
+
+    /** Nærmeste sted med MÅLT tid. Uten tid finnes ikke beviset — vi gjetter ikke. */
+    function nearestMeasured(cat) {
+      const withTime = cat.pois.filter((p) => minutesOf(p) !== undefined);
+      return withTime.sort(byMinutesThenName)[0] ?? null;
+    }
+
+    if (voice !== "tall") {
+      Baseline.override({
+        mobileCard(c, list) {
+          const head = `<button class="m-head" data-cat="${esc(c.id)}">
+            <span class="m-icon" style="background:${esc(c.color)}1f;color:${esc(c.color)}">${icon(c.icon, 17)}</span>
+            <span class="m-label"><span class="n">${esc(c.label)}</span></span>
+            ${icon("chevron-right", 18)}
+          </button>`;
+
+          // Prosaen er den SAMME strengen desktop viser (`lead`) — spørsmålet
+          // er ikke om vi kan skrive noe nytt, men om desktops stemme bærer
+          // på en telefon. Mangler den, faller kortet tilbake til tallene.
+          const lead = c.lead
+            ? `<p class="m-lead">${esc(c.lead)}</p>`
+            : `<p class="m-lead">${esc(categorySubline(list))}</p>`;
+
+          if (voice === "stemme") {
+            return `<section class="m-card" data-cat-card="${esc(c.id)}">
+              ${head}${lead}
+              <button class="m-meta" data-cat="${esc(c.id)}">
+                ${esc(categorySubline(list))}
+                <span class="arrow">${icon("chevron-right", 15)}</span>
+              </button>
+            </section>`;
+          }
+
+          const near = nearestMeasured(c);
+          const proof = near
+            ? `<button class="m-proof" data-poi="${esc(near.id)}">
+                 <span class="k">Nærmest</span>
+                 <span class="n">${esc(near.name)}</span>
+                 <span class="m">${minutesOf(near)} min</span>
+               </button>`
+            : "";
+          return `<section class="m-card" data-cat-card="${esc(c.id)}">
+            ${head}${lead}${proof}
+            <button class="m-more" data-cat="${esc(c.id)}">
+              Se alle ${list.totalCount}${icon("chevron-right", 16)}
+            </button>
+          </section>`;
+        },
+      });
+    }
+
+    Baseline.start(BOARDS[board] ?? BOARDS.ranheim, { boards: BOARDS, active: board });
+  </script>
+</body>
+</html>
