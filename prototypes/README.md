@@ -59,9 +59,10 @@ nivå-1-board tomt ut selv om boardet faktisk viser tekst.
 `04` har to grep som er verdt å ta med videre uansett hva dommen blir: sheeten
 har **én hvilestilling gjennom hele omvisningen** (innholdet scroller, vinduet
 står av seg selv — en flate som vokser av hvert trykk er en følge brukeren ikke
-ba om, mens en du drar er en du styrer), og **ingenting lukker seg selv** (åpner
-du to steder, står begge åpne til du lukker dem). Transporten ligger i et fast
-dekk utenfor sheeten, så den ikke flytter seg med innholdet.
+ba om, mens en du drar eller slår sammen er en du styrer), og **ingenting lukker
+seg selv** (åpner du to steder, står begge åpne til du lukker dem). Transporten
+ligger i et fast dekk utenfor sheeten, så den ikke flytter seg med innholdet —
+og sammenslått legger handlen seg over dekket, ikke bak det.
 
 Alle har en **← Prototyper**-chip øverst til venstre tilbake til galleriet.
 Den injiseres av `Proto.mountBackLink()` i `_shared/proto.js` og kommer gratis
@@ -139,9 +140,11 @@ høyre finnes ikke i produksjon.
 **Scroll-posisjon overlever en render.** `render()` bygger `#app` på nytt, og
 uten hjelp hopper de rullbare flatene til topps hver gang noe rendrer — og
 kartet rendrer på hver `moveend`, altså midt i lesingen. Baselinen tar vare på
-`scrollTop` i `.sheet-outer`, `.catpage-scroll` og sidekolonnens `.scroll` over
-renderen. For sheeten er det ikke bare lesestedet: scroll-posisjonen ER høyden.
-Det er en portingskostnad React ikke har, ikke en oppførsel fra produksjonen.
+`scrollTop` i `.catpage-scroll` og sidekolonnens `.scroll` over renderen. For
+sheeten er posisjonen ikke bare lesestedet — den ER høyden — så den huskes i
+`state().sheetScroll` og settes av `sizeMobileSurface` sammen med høydene den
+hører til. Det er en portingskostnad React ikke har, ikke en oppførsel fra
+produksjonen.
 
 ## Mobil-sheeten: ett tall, én eier
 
@@ -149,9 +152,11 @@ Sheeten er **én scroller med en gjennomsiktig spacer over kroppen**:
 
 ```
 .sheet-outer   scroller, høy som taket (0.86 av rammen), pointer-events: none
-  .sheet-spacer  gjennomsiktig, høy som veien opp til taket
+  .sheet-spacer  gjennomsiktig, høy som veien fra sammenslått til taket
   .sheet         kroppen — bakgrunn, radius, skygge, pointer-events: auto
-    .grab          position: sticky, top: 0 — sheetens overkant
+                 min-høyde = taket, uansett hvor lite innhold
+    .grab          position: sticky, top: 0 — sheetens overkant, og ALT som er
+                   synlig når flaten er slått sammen (derfor står tittelen i den)
     .sheet-body    innholdet (IKKE en scroller)
 ```
 
@@ -160,6 +165,17 @@ sheetens høyde, over den er det innholdet som går under headeren. Derfor finne
 det ingen overlevering mellom «dra sheeten» og «scroll i lista» — veien opp og
 veien tilbake er samme bevegelse, og ingenting kan ryke midt i en gest. Taket er
 scrollerens egen overkant, så kroppen kan ikke komme over det uansett innhold.
+
+**Tre stopp** på det samme tallet: sammenslått (`0` — bare handlen, kartet får
+nesten hele skjermen), hvilestillingen, og taket. Mellomstillinger beholdes;
+magneten (`SNAP_THRESHOLD_PX`) trekker bare når bevegelsen faktisk ville stanset
+nær et stopp. Hvor den stanser regnes ut, ikke gjettes: farten faller
+eksponentielt, så veien som er igjen er `v / -ln(SHEET_DECAY)` ≈ 500 · v.
+
+Kroppens min-høyde er **taket**, ikke innholdet. Det er reiseveiens garanti: et
+board med ett kort (04) har ingenting å scrolle, og uten det gulvet blir taket
+uoppnåelig. Det stenger samtidig høyde-tyveriet — et kart i bevegelse krymper
+lista, og med innholdet som gulv forsvinner scroll-området under flaten.
 
 **Vi driver scrollen selv** (`wireSheetSurface` + `wireSheetWindow`), med
 `touch-action: none` på scrolleren. Ikke av smak: har iOS først bestemt at
@@ -186,7 +202,15 @@ Tre ting som ser ut som detaljer og ikke er det:
 En iterasjon som vil gi sheeten sin egen hvilestilling setter
 `state().sheetRestH` og kaller `Baseline.util.sizeSheet()`. `sheetVisibleH()`
 leser høyden sheeten står i nå — bruk den, ikke `offsetHeight`, når kameraet
-skal padde for flaten.
+skal padde for flaten. Ligger noe fast i rammens underkant (04 har et dekk der),
+sett `state().sheetFloorInset`: sammenslått skal handlen stå **over** det, ikke
+bak det.
+
+Står flaten i hvilestillingen og hvilestillingen flytter seg, følger den med —
+04 måler sitt eget vindu etter første render. Det styres av flagget
+`state().sheetAtRest`, ikke av en pikselsammenligning: scroll-hendelser kommer
+asynkront, så `sheetScroll` kan ligge på forrige verdi i det en render treffer,
+og da flyttet flaten seg av seg selv.
 
 `.catpage` (drill-in-panelet) har fortsatt fast høyde og nativ scroll. Den er
 ikke en del av gesten.

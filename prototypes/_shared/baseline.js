@@ -28,6 +28,9 @@ window.Baseline = (() => {
   const REST_LOW_FRACTION = 0.34;
   const REST_HIGH_FRACTION = 0.86;
   const REST_LOW_MIN_PX = 236;
+  // Sammenslått står bare handlen igjen, med tittelen i. Høyden måles på den
+  // faktiske handlen; tallet her er bare et gulv hvis målingen ikke er mulig.
+  const COLLAPSED_FALLBACK_PX = 60;
   const PANEL_FRACTION = 0.58;
   const PEEK_FRACTION = 0.2;
   const ROWS_PER_CATEGORY = 3;
@@ -326,19 +329,20 @@ window.Baseline = (() => {
 
     /* Sheeten er ikke en flate vi drar med JS — den ER en scroller, og over
        kroppen ligger en gjennomsiktig spacer. Da er «dra sheeten opp» og
-       «scroll i innholdet» ÉN native bevegelse: fingeren spiser spaceren
+       «scroll i innholdet» ÉN bevegelse på ÉTT tall: fingeren spiser spaceren
        først, kroppen stopper når den har nådd taket (scrollerens egen
        overkant), og samme bevegelse fortsetter inn i innholdet under en
        fastlimt header. Veien tilbake er den speilvendt — ingen overlevering
        mellom to mekanismer, altså ingenting som kan ryke midt i en gest.
 
-       Scrolleren er `pointer-events: none` og kroppen `auto`: over spaceren
-       treffer fingeren kartet, så panorering er urørt. Nettleseren scroller
-       nærmeste rullbare FORFAR av det fingeren treffer, og pointer-events
-       endrer bare hva som treffes — derfor scroller kroppen scrolleren.
+       Spaceren begynner nede ved sammenslått, ikke ved hvilestillingen: helt
+       ned står bare handlen igjen, og kartet har nesten hele skjermen. Det er
+       den veien brukeren går for å SE i stedet for å lese.
 
-       Det gir også trykk-låsen gratis. Under en native scroll undertrykker
-       nettleseren selv klikket, så et drag over lista åpner ikke en rad. */
+       Scrolleren er `pointer-events: none` og kroppen `auto`: over spaceren
+       treffer fingeren kartet, så panorering er urørt. Pointer-events endrer
+       bare hva som treffes, ikke hvor events bobler — derfor hører lytterne
+       våre kroppen likevel. */
     return `<div class="sheet-outer" data-sheet-outer>
       <div class="sheet-spacer" aria-hidden="true"></div>
       <div class="sheet" data-sheet>
@@ -604,10 +608,10 @@ window.Baseline = (() => {
    *  rendrer, så det skjer midt i lesingen. Det er en portingskostnad, ikke en
    *  oppførsel fra produksjonen.
    *
-   *  For mobil-sheeten er dette ikke bare lesestedet: scroll-posisjonen ER
-   *  sheetens høyde (se `mobileSheet`). Mistes den, faller sheeten ned i
-   *  hvilestillingen hver gang kartet rendrer. */
-  const SCROLLERS = ["[data-sheet-outer]", ".catpage-scroll", ".sidebar .scroll"];
+   *  Mobil-sheeten står IKKE i denne lista. Der er scroll-posisjonen også
+   *  sheetens høyde (se `mobileSheet`), så den huskes i `S.sheetScroll` og
+   *  settes av `sizeMobileSurface` — sammen med høydene den hører til. */
+  const SCROLLERS = [".catpage-scroll", ".sidebar .scroll"];
   const readScroll = () =>
     SCROLLERS.map((sel) => document.querySelector(sel)?.scrollTop ?? 0);
   function restoreScroll(tops) {
@@ -630,7 +634,8 @@ window.Baseline = (() => {
     }
     const app = document.getElementById("app");
     const tops = readScroll();
-    if (document.querySelector("[data-sheet-outer]")) S.sheetScroll = tops[0];
+    const liveSheet = document.querySelector("[data-sheet-outer]");
+    if (liveSheet) S.sheetScroll = liveSheet.scrollTop;
     const isDesktop = matchMedia(DESKTOP).matches;
     const inCategory = !!S.activeCategoryId;
 
@@ -800,7 +805,7 @@ window.Baseline = (() => {
   }
 
   // ---------- mobil-sheet: én scroller fra hvilestilling til tak ----------
-  function surfaceBounds() {
+  function surfaceBounds(outer) {
     const frameH = document.querySelector(".frame")?.clientHeight ?? innerHeight;
     const ceiling = Math.round(frameH * REST_HIGH_FRACTION);
     const rest = clamp(
@@ -808,13 +813,26 @@ window.Baseline = (() => {
       REST_LOW_MIN_PX,
       ceiling
     );
-    return { rest: S.sheetRestH ?? rest, max: ceiling, frameH };
+    // Sammenslått skal handlen stå SYNLIG. Ligger noe fast i rammens
+    // underkant (04 har et dekk der), er de nederste pikslene ikke synlige, og
+    // handlen må løftes over dem — ellers slår flaten seg sammen bak noe annet.
+    const grab = outer?.querySelector(".grab")?.offsetHeight;
+    const inset = Math.max(0, S.sheetFloorInset ?? 0);
+    const collapsed = Math.min((grab || COLLAPSED_FALLBACK_PX) + inset, rest);
+    return {
+      collapsed,
+      rest: clamp(S.sheetRestH ?? rest, collapsed, ceiling),
+      max: ceiling,
+      frameH,
+    };
   }
 
-  /** Avstanden sheeten kan reise før den står i taket — altså spacerens høyde,
-   *  og samtidig scroll-posisjonen der kroppen har nådd toppen. Leses av
-   *  scroll-lytteren, så den skal ikke måle DOM på nytt per event. */
+  /** Tre stopp på det ene tallet: sammenslått (0), hvilestillingen, taket.
+   *  `sheetTravel` er avstanden fra sammenslått til tak — altså spacerens
+   *  høyde, og samtidig posisjonen der kroppen har nådd toppen. Begge leses av
+   *  scroll-lytteren, så de skal ikke måle DOM på nytt per event. */
   let sheetTravel = 0;
+  let sheetRestStop = -1; // -1: ingen posisjon kan være LIK den ennå
 
   /* Hårstrek under headeren først når innholdet FAKTISK ligger under den.
      Før taket er den ingen «sticky header» — den er sheetens overkant. */
@@ -827,29 +845,47 @@ window.Baseline = (() => {
   }
 
   /** Geometrien, satt én gang per render. Scrolleren er høy som taket, spaceren
-   *  dekker veien ned til hvilestillingen, og kroppen er minst så høy at den
-   *  fyller den høyden sheeten SKAL stå i.
+   *  dekker veien fra sammenslått opp til taket, og kroppen er MINST så høy som
+   *  taket — uansett hvor lite innhold den har.
    *
-   *  Gulvet er ikke bare hvilestillingen: det er hvilestillingen pluss det
-   *  brukeren har dratt. Ellers stjeler et kart i bevegelse høyden hen valgte —
-   *  lista er utsnitts-scopet, så zoomer du inn til ett kort, krymper innholdet,
-   *  scroll-området forsvinner, og nettleseren klipper scroll-posisjonen til
-   *  null. Sheeten faller ned av seg selv, og zoomer du ut igjen kommer den
-   *  ikke tilbake. (Den samme feilen fantes i høyde-modellen: `sizeMobileSurface`
-   *  klemte høyden mot innholdet ved hver render.)
+   *  Det gulvet er hele reiseveiens garanti. Er kroppen bare så høy som
+   *  innholdet, kan flaten ikke dras høyere enn innholdet rekker: et board med
+   *  ett kort (04 er alltid det) har ikke noe å scrolle, og taket blir
+   *  uoppnåelig. Og et kart i bevegelse stjeler høyden brukeren valgte — lista
+   *  er utsnitts-scopet, så zoomer du inn til ett kort, krymper innholdet,
+   *  scroll-området forsvinner, og nettleseren klipper posisjonen til null.
+   *  Med taket som gulv er scroll-området alltid minst hele reiseveien, og
+   *  ingen av de to kan skje. Har kroppen MER innhold enn taket, fortsetter
+   *  scrollen inn i lista — det er den samme bevegelsen, bare lenger.
    *
-   *  Over gulvet er kroppen akkurat så høy som innholdet trenger, og taket er
-   *  scrollerens egen overkant — kroppen kan aldri komme over det, uansett hvor
-   *  mye innhold den har. */
+   *  Kroppen kan aldri komme OVER taket: det er scrollerens egen overkant.
+   *
+   *  Plasseringen settes HER, ikke av `restoreScroll`: en ny node begynner på
+   *  null, og null er nå sammenslått — flaten ville falt sammen ved hver
+   *  render.
+   *
+   *  Står flaten I hvilestillingen og hvilestillingen FLYTTER seg, følger den
+   *  med. Det er 04 som trenger det: omvisningen måler sitt eget vindu etter
+   *  første render, og uten dette ble flaten stående i baselinens hvilestilling
+   *  mens resten av omvisningen regnet med sin egen. Har brukeren flyttet
+   *  flaten, står den — en ny måling skal ikke overta styringen.
+   *
+   *  «Står i hvilestillingen» er et FLAGG (`sheetAtRest`), ikke en
+   *  sammenligning av piksler: scroll-hendelser kommer asynkront, så
+   *  `S.sheetScroll` kan ligge på forrige verdi i det en render treffer. Da
+   *  gjettet en pikselsammenligning feil, og flaten flyttet seg av seg selv. */
   function sizeMobileSurface() {
-    const { rest, max, frameH } = surfaceBounds();
     const outer = document.querySelector("[data-sheet-outer]");
+    const { collapsed, rest, max, frameH } = surfaceBounds(outer);
     if (outer) {
-      sheetTravel = max - rest;
-      const dragged = clamp(S.sheetScroll ?? 0, 0, sheetTravel);
+      sheetTravel = max - collapsed;
+      sheetRestStop = rest - collapsed;
+      const want = S.sheetAtRest ? sheetRestStop : S.sheetScroll ?? sheetRestStop;
       outer.style.height = `${max}px`;
       outer.querySelector(".sheet-spacer").style.height = `${sheetTravel}px`;
-      outer.querySelector("[data-sheet]").style.minHeight = `${rest + dragged}px`;
+      outer.querySelector("[data-sheet]").style.minHeight = `${max}px`;
+      outer.scrollTop = want;
+      S.sheetScroll = outer.scrollTop; // nettleseren kan ha klippet ønsket
       markPinned(outer);
     }
     const page = document.querySelector("[data-catpage]");
@@ -880,14 +916,14 @@ window.Baseline = (() => {
   const SHEET_DECAY = 0.998;
   const SHEET_V_STOP = 0.02; // px/ms — under dette er bevegelsen over
   const SHEET_V_WINDOW_MS = 70; // fartens minne, ikke bare siste to punkter
-  const SNAP_THRESHOLD_PX = 44; // magneten rundt hvert ytterpunkt
-  const MOMENTUM_PROJECTION_MS = 190; // hvor bevegelsen ville stanset
+  const SNAP_THRESHOLD_PX = 44; // magneten rundt hvert stopp
   const TAP_SLOP_TOUCH_PX = 10;
   const TAP_SLOP_MOUSE_PX = 4;
 
   /* «Ingen gesture skal være eneste vei til noe» (prototypes/README.md): handlen
-     kan trykkes, ikke bare dras. Et trykk går til det ytterpunktet du IKKE står
-     nærmest. Et DRAG som ender i et trykk spises av click-låsen under. */
+     kan trykkes, ikke bare dras. Et trykk går ett stopp OPP, og fra taket
+     tilbake til sammenslått — så alle tre stillingene har en trykk-vei, og tre
+     trykk er en runde. Et DRAG som ender i et trykk spises av click-låsen. */
   /* En utsatt render slippes løs først når sheeten står HELT stille. Slipp av
      fingeren er for tidlig: utrullingen fortsetter etterpå, og en render midt i
      den bytter ut noden farten bor i. `sheetBusy` dekker derfor hele
@@ -918,24 +954,54 @@ window.Baseline = (() => {
 
   /** Hva som skjer når fingeren slippes.
    *
-   *  Er sheeten på vei til å stanse nær et av ytterpunktene, går den HELT dit.
+   *  Er sheeten på vei til å stanse nær et av de tre stoppene, går den HELT dit.
    *  Det er magneten fra produksjonens drag (`SNAP_THRESHOLD_PX`): en flate som
    *  hviler tolv piksler under taket ser ut som en feil, ikke som et valg. Fri
    *  mellomposisjon beholdes — det er også produksjonens oppførsel.
    *
    *  Magneten gjelder bare mens vi er i reiseveien. Er innholdet begynt å gå
    *  under headeren, er det lista du ruller i, og der skal ingenting trekke. */
+  function nearestStop(top) {
+    if (top > sheetTravel) return null; // i lista: ingenting skal trekke
+    return (
+      [0, sheetRestStop, sheetTravel].find(
+        (s) => Math.abs(top - s) < SNAP_THRESHOLD_PX
+      ) ?? null
+    );
+  }
+
+  /** Der utrullingen FAKTISK stanser, ikke et gjett på et fast antall
+   *  millisekunder: farten faller eksponentielt, så veien som er igjen er
+   *  `v / -ln(decay)` — omtrent 500 · v. Gjettet vi kortere (190 ms var tallet
+   *  fra produksjonens drag, som ikke hadde noen utrulling å regne med), rullet
+   *  flaten forbi magneten og stanset noen og førti piksler over et stopp. */
+  const glideLanding = (top, v) => top + v / -Math.log(SHEET_DECAY);
+
+  /** Den myke reisen til et stopp — og det ene stedet som husker OM stoppet er
+   *  hvilestillingen. Bare da skal en ny måling av hvilestillingen (04 måler
+   *  sin etter første render) ta flaten med seg. */
+  function sheetGoTo(outer, top) {
+    S.sheetAtRest = top === sheetRestStop;
+    S.sheetBusy = true; // også den myke reisen skal utsette renders
+    outer.scrollTo({ top, behavior: "smooth" });
+    flushWhenSheetSettles();
+  }
+
   function sheetSettle(outer, v) {
-    const landing = outer.scrollTop + v * MOMENTUM_PROJECTION_MS;
-    if (outer.scrollTop <= sheetTravel) {
-      for (const stop of [0, sheetTravel]) {
-        if (Math.abs(landing - stop) < SNAP_THRESHOLD_PX) {
-          outer.scrollTo({ top: stop, behavior: "smooth" });
-          return flushWhenSheetSettles();
-        }
-      }
-    }
+    const stop = nearestStop(glideLanding(outer.scrollTop, v));
+    if (stop !== null && outer.scrollTop <= sheetTravel) return sheetGoTo(outer, stop);
     sheetGlideOn(outer, v);
+  }
+
+  /** Nettet under magneten: stanset utrullingen likevel nær et stopp — fordi
+   *  den ble klippet ved 0, eller fordi den kom NED fra lista der magneten ikke
+   *  gjelder — går flaten det siste stykket selv. */
+  function sheetLand(outer) {
+    const stop = nearestStop(outer.scrollTop);
+    if (stop === null) return flushWhenSheetSettles(); // fri stilling, eller i lista
+    if (stop !== outer.scrollTop) return sheetGoTo(outer, stop);
+    S.sheetAtRest = stop === sheetRestStop;
+    return flushWhenSheetSettles();
   }
 
   /** Utrullingen: iOS' egen bremsefaktor, på vårt ene tall. */
@@ -949,7 +1015,7 @@ window.Baseline = (() => {
       const stopped = next === outer.scrollTop;
       outer.scrollTop = next;
       v *= Math.pow(SHEET_DECAY, dt);
-      if (stopped || Math.abs(v) < SHEET_V_STOP) return flushWhenSheetSettles();
+      if (stopped || Math.abs(v) < SHEET_V_STOP) return sheetLand(outer);
       sheetGlide = requestAnimationFrame(step);
     };
     if (Math.abs(v0) < SHEET_V_STOP) return flushWhenSheetSettles();
@@ -989,6 +1055,7 @@ window.Baseline = (() => {
         // treg for å beskytte et drag som ikke skjedde.
         sheetEatClick = true;
         S.sheetBusy = true;
+        S.sheetAtRest = false; // fra nå er det brukeren som bestemmer høyden
       }
       d.outer.scrollTop = clamp(d.top + (d.startY - ev.clientY), 0, maxScrollOf(d.outer));
     });
@@ -1041,10 +1108,10 @@ window.Baseline = (() => {
     );
 
     outer.querySelector("[data-grab]").addEventListener("click", () => {
-      const up = outer.scrollTop < sheetTravel / 2;
-      S.sheetBusy = true; // også den myke reisen skal utsette renders
-      outer.scrollTo({ top: up ? sheetTravel : 0, behavior: "smooth" });
-      flushWhenSheetSettles();
+      // Neste stopp over der vi står. Er vi over taket, leser vi i lista: da
+      // spoler trykket lista til topps først, og neste trykk slår sammen.
+      const up = [0, sheetRestStop, sheetTravel].find((s) => s > outer.scrollTop + 1);
+      sheetGoTo(outer, up ?? (outer.scrollTop > sheetTravel + 1 ? sheetTravel : 0));
     });
 
     outer.addEventListener("pointerdown", (ev) => {
@@ -1105,9 +1172,16 @@ window.Baseline = (() => {
       // Sheetens hvilestilling i piksler. null = baselinens brøk av rammen; en
       // iterasjon kan sette den (04 gir hele omvisningen ett fast vindu).
       sheetRestH: null,
-      // Hvor langt sheeten står dratt opp, i scroll-piksler. Holdes utenfor
-      // DOM-en fordi geometrien må settes før noden har en scroll å lese.
-      sheetScroll: 0,
+      // Piksler i rammens underkant som er dekket av noe annet, og som den
+      // sammenslåtte sheeten derfor må stå over (04: dekket med «Videre»).
+      sheetFloorInset: 0,
+      // Hvor langt sheeten står dratt opp, i scroll-piksler: 0 er sammenslått.
+      // Holdes utenfor DOM-en fordi geometrien må settes før noden har en
+      // scroll å lese.
+      sheetScroll: null,
+      // Står flaten i hvilestillingen? Da følger den med når hvilestillingen
+      // flytter seg. Se `sizeMobileSurface` for hvorfor det er et flagg.
+      sheetAtRest: true,
       // Sheeten er i bevegelse: finger nede, utrulling, eller myk reise. Så
       // lenge den er sann utsetter `render()` seg selv.
       sheetBusy: false,

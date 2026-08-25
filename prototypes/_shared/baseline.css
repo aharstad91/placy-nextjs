@@ -369,7 +369,8 @@ li:last-child .vp-row { border-bottom: none; }
 }
 /* Sheeten er ÉN scroller med en gjennomsiktig spacer over kroppen — se
    `mobileSheet` i baseline.js for hvorfor. Høydene settes fra JS
-   (`sizeMobileSurface`), for de er brøker av rammen.
+   (`sizeMobileSurface`), for de er brøker av rammen: spaceren dekker veien fra
+   sammenslått (bare handlen) opp til taket.
 
    `pointer-events: none` her er ikke pynt: scrolleren dekker hele takområdet,
    og uten den ville et trykk over sheeten truffet scrolleren i stedet for
@@ -410,9 +411,10 @@ li:last-child .vp-row { border-bottom: none; }
   -webkit-touch-callout: none;
 }
 /* Handlen ER sheetens overkant, fastlimt i scrolleren: den står stille mens
-   innholdet går under den. INGEN touch-action:none her — det er nettopp den
-   native scrollen vi vil ha. Radius fordi den er det øverste barnet, og
-   sheeten ikke lenger klipper (overflow:hidden ville brutt sticky). */
+   innholdet går under den. Sammenslått er den ALT som er synlig — derfor står
+   tittelen i den, og derfor måler `surfaceBounds` høyden på nettopp denne
+   flaten. Radius fordi den er det øverste barnet, og sheeten ikke lenger
+   klipper (overflow:hidden ville brutt sticky). */
 .grab {
   position: sticky; top: 0; z-index: 2;
   flex: none; width: 100%; padding: 10px 20px 6px;

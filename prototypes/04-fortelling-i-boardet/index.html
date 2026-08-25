@@ -666,6 +666,9 @@
       if (on && window.lucide?.createIcons) lucide.createIcons();
       const h = on ? deck.offsetHeight : 0;
       document.documentElement.style.setProperty("--sty-deck-h", `${h}px`);
+      // Dekket ligger OVER sheeten. Slår brukeren flaten sammen for å se
+      // kartet, må handlen legge seg over dekket og ikke bak det.
+      state().sheetFloorInset = h;
       return h;
     }
 
@@ -685,7 +688,7 @@
     /** Rammen legges rundt boligen + scenens tre steder, ikke rundt alle 182.
      *  Da er de navngitte punktene lesbare, mens kategoriens øvrige punkter
      *  ligger rundt som dempet tekstur: dekningen synes, uten å ta ordet. */
-    function fitScene(sheetHeight) {
+    function fitScene() {
       const s = state();
       const b = new mapboxgl.LngLatBounds();
       // I steds-fanen strammes rammen til stedene alene. Kartet bekrefter fane-
@@ -695,9 +698,9 @@
       for (const p of places(scene())) b.extend([p.coordinates.lng, p.coordinates.lat]);
 
       // Sheeten dekker underkanten — uten padding for den legger fortellingen
-      // seg oppå stedene den snakker om. `settle` sender inn hvilestillingen;
-      // ellers leses den synlige høyden, for brukeren kan ha dratt sheeten opp.
-      const sheetH = sheetHeight ?? Baseline.util.sheetVisibleH() ?? innerHeight * 0.45;
+      // seg oppå stedene den snakker om. Høyden LESES, for brukeren kan ha
+      // dratt sheeten hvor som helst mellom sammenslått og taket.
+      const sheetH = Baseline.util.sheetVisibleH() || innerHeight * 0.45;
       const bottom = Math.min(Math.round(sheetH) + 24, Math.round(innerHeight * 0.62));
 
       s.map.fitBounds(b, {
@@ -758,8 +761,11 @@
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
           paintDeck();
-          const h = sizeStory();
-          if (fit) fitScene(h);
+          sizeStory();
+          // Ikke hvilestillingen, men den høyden sheeten faktisk STÅR i: har
+          // brukeren slått den sammen for å se kartet, skal kameraet bruke
+          // plassen hen ga det.
+          if (fit) fitScene();
         })
       );
     }
@@ -794,7 +800,7 @@
       s.activePoiId = null;
       s.modalPoiId = null;
       s.sheetRestH = null; // fortellingen hviler et annet sted enn kortlista
-      s.sheetScroll = 0; // omvisningen begynner i sin egen hvilestilling
+      s.sheetAtRest = true; // omvisningen begynner i sin egen hvilestilling
       tourH = null; // måles på nytt for denne omvisningen, så én gang
       rerender();
       redrawMarkers();
@@ -833,7 +839,7 @@
       const s = state();
       s.modalPoiId = null;
       s.sheetRestH = null; // tilbake til baselinens hvilestilling
-      s.sheetScroll = 0;
+      s.sheetAtRest = true;
       paintDeck();
       showAll(); // nullstiller kategori + POI, tegner markører, rendrer
       // Kameraet ut igjen: hele nabolaget, som når boardet åpnes. Nå er
