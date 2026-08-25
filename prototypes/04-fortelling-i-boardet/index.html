@@ -59,9 +59,6 @@
        kort som ligger på en beige flate. Dekket arver samme hvite — men bare på
        mobil: desktop-dekket hører til sidekolonnen og skal ha dens farge. */
     body[data-story="on"] .sheet { background: #fff; }
-    @media (max-width: 1023px) {
-      body[data-story="on"] .sty-deck { background: #fff; }
-    }
     /* Spørsmålet ER overskriften — og det er nå det FØRSTE i sheeten. Telleren,
        «1 av 6» og «Avslutt» sto over det og gjorde spørsmålet til andrelinje i
        sitt eget stopp; de hører til transporten og har flyttet ned i dekket.
@@ -69,7 +66,7 @@
        arkivarens ord, ikke hennes. */
        kategorilabel («Barn & oppvekst») er arkivarens ord, ikke hennes. */
     .sty-q {
-      padding: 14px 0 0; font-size: 19px; font-weight: 700;
+      padding: 14px 34px 0 0; font-size: 19px; font-weight: 700;
       line-height: 1.2; letter-spacing: -.02em; color: var(--stone-900);
     }
     .sty-lead { font-size: 14px; line-height: 1.55; color: var(--stone-600); }
@@ -185,79 +182,200 @@
 
        Høyden publiseres som `--sty-deck-h` slik at sheeten kan padde for
        dekket i stedet for å legge siste rad under det. */
+    /* Dekket er ikke lenger en flate, bare et feste: baren flyter over
+       innholdet, og det som scroller under den blir liggende der — uskarpt,
+       men synlig. En heldekkende hvit stripe kuttet sheeten i to og lot som
+       om innholdet sluttet der. */
     .sty-deck {
       position: fixed; z-index: 35; left: 0; right: 0; bottom: 0;
-      background: var(--ring-bg);
-      border-top: 1px solid rgba(0,0,0,.06);
-      box-shadow: 0 -4px 14px rgba(28,25,23,.06);
       padding-bottom: env(safe-area-inset-bottom);
+      pointer-events: none;
+    }
+    .sty-deck > * { position: relative; z-index: 1; pointer-events: auto; }
+    /* Slør bak hele festet, ikke bare bak baren. Uten det sto skarp brødtekst
+       i springene rundt baren — over den, og i stripen ned mot skjermkanten —
+       og konkurrerte med kategorinavnene på 11 px. Masken toner sløret inn
+       ovenfra, så det ikke oppstår en synlig kant der uskarpheten begynner. */
+    .sty-deck::before {
+      content: ""; position: absolute; z-index: 0; left: 0; right: 0; top: -26px; bottom: 0;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,.55) 60%);
+      mask-image: linear-gradient(to bottom, transparent, #000 30px);
+      -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30px);
+      pointer-events: none;
     }
     .sty-deck[hidden] { display: none; }
     /* Desktop: dekket hører til sidekolonnen, ikke kartet. */
     @media (min-width: 1024px) {
-      .sty-deck {
-        right: auto; width: var(--sidebar-w);
-        background: var(--sidebar-bg);
-        border-right: 1px solid rgba(0,0,0,.05);
-      }
+      .sty-deck { right: auto; width: var(--sidebar-w); }
     }
     body[data-story="on"] .sheet-scroll,
     body[data-story="on"] .scroll { padding-bottom: var(--sty-deck-h, 96px); }
 
-    .sty-nav { padding: 10px; }
+    /* ---------- Transporten: kategorinavnene som en tab-rad i dekket ----------
+       Seks anonyme streker fortalte HVOR MANGE, ikke HVA. Med navnene i
+       radenopper begge deler samtidig: du ser hvor du er, hva du har vært
+       gjennom, og — viktigst — hva som kommer, uten at noe annet må si det.
 
-    /* Hele transporten i ÉN svart flate: hvor du er, veien ut, og veien videre.
-       De tre hørte sammen hele tiden — spredt utover to kanter av skjermen
-       leste de som tre urelaterte ting. Ikke én <button>, men én flate med tre
-       trykkflater: knapper kan ikke ligge inni knapper. */
-    .sty-deckcard {
-      display: flex; flex-direction: column; gap: 6px;
-      border-radius: 16px; background: var(--stone-900); color: #fff;
-      padding: 9px 12px 10px;
-    }
-    /* Øverste linje: stopp-telleren som pille-rad (den du står på er bred og
-       bærer kategorifargen), tallet, og utgangen helt til høyre. Dempet hvitt,
-       fordi dette er hvor-er-jeg og ikke det du skal trykke. */
-    .sty-meta { display: flex; align-items: center; gap: 10px; }
-    .sty-dots { display: flex; align-items: center; gap: 4px; }
-    .sty-dots span {
-      height: 4px; width: 4px; border-radius: 999px; background: rgba(255,255,255,.26);
-      transition: width 260ms ease, background-color 260ms ease;
-    }
-    .sty-dots span.past { background: rgba(255,255,255,.5); }
-    .sty-dots span.on { width: 16px; }
-    .sty-n {
-      font-size: 11px; font-weight: 600; letter-spacing: .04em;
-      font-variant-numeric: tabular-nums; color: rgba(255,255,255,.45);
-    }
-    .sty-exit {
-      margin-left: auto; margin-right: -4px; padding: 2px 4px;
-      font-size: 12px; font-weight: 600; color: rgba(255,255,255,.5);
-    }
-    .sty-exit:hover { color: #fff; }
+       Raden forskyver seg i takt med fortellingen: det aktive stoppet legger
+       seg mot venstre kant med en flik av det forrige synlig bak seg, og det
+       som kommer ligger til høyre. Det er progresjonen, uttrykt som bevegelse
+       i stedet for som et tall.
 
-    /* Nederste linje: veien videre, navngitt med kategorien. «Videre» sto foran
-       navnet og sa det knappen viser i form — en pil og en plassering. Vekk med
-       den, så får navnet hele bredden. */
-    /* `min-height` er tilbake-pilens høyde: uten den er dekket 5 px lavere på
-       første stopp, der pilen ikke finnes, og hele dekket rykker når du går
-       videre. Raden holder plassen enten pilen er der eller ikke. */
-    .sty-go { display: flex; min-height: 30px; align-items: center; gap: 8px; }
-    .sty-prev {
-      display: flex; height: 30px; width: 30px; flex: none;
-      align-items: center; justify-content: center; margin-left: -4px;
-      border-radius: 999px; background: rgba(255,255,255,.12); color: #fff;
+       Raden ligger i det faste dekket, ikke i sheeten: transporten skal stå
+       stille mens innholdet scroller — og den skal være der tommelen er.
+
+       Den scroller fritt i tillegg til å følge fortellingen: en kategori langt
+       til høyre skal kunne nås uten å gå gjennom alle stoppene foran den.
+       Scrollbaren skjules — raden er 6 navn, ikke et dokument.
+
+       At dekket ligger UTENFOR `#app` er det som gjør fri scroll mulig:
+       `#app` bygges på nytt ved hver render (kartet rendrer på hver `moveend`),
+       og en scroll-posisjon overlever ikke det. Dekket rendres bare av
+       `paintDeck`, og der oppdateres radens tilstand i stedet for å bygges på
+       nytt — nettopp for at posisjonen din skal stå. */
+    .sty-hop { position: relative; display: flex; align-items: stretch; padding: 6px 14px 8px; }
+    /* Sporet ER navbaren: én sammenhengende avrundet flate med faste ender,
+       og innholdet ruller inni den. Rullet baren selv, ville endene forsvunnet
+       ut av syne og flaten sluttet å lese som én ting. */
+    .sty-hoptrack {
+      position: relative; min-width: 0; flex: 1;
+      border-radius: 22px;
+      background: rgba(252,251,250,.72);
+      backdrop-filter: blur(12px) saturate(1.7);
+      -webkit-backdrop-filter: blur(12px) saturate(1.7);
+      box-shadow: inset 0 0 0 1px rgba(28,25,23,.07), 0 6px 22px rgba(28,25,23,.13);
+      overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+      scroll-behavior: smooth; overscroll-behavior-x: contain;
     }
-    .sty-prev:hover { background: rgba(255,255,255,.22); }
-    .sty-next {
-      display: flex; min-width: 0; flex: 1; align-items: center; gap: 10px;
-      color: #fff; padding: 3px 0; text-align: left;
+    .sty-hoptrack::-webkit-scrollbar { display: none; }
+    /* Toninger i barens egne kanter: en brikke klippet midt i et ord leser som
+       en feil i stedet for som «det ligger mer den veien». De ligger på dekket,
+       ikke i sporet — et element som ruller med, toner ingenting. */
+    .sty-hop::before, .sty-hop::after {
+      content: ""; position: absolute; z-index: 1; top: 6px; bottom: 8px; width: 20px;
+      pointer-events: none;
     }
-    .sty-next .n {
-      min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      font-size: 15.5px; font-weight: 600; letter-spacing: -.01em;
+    .sty-hop::before {
+      left: 14px; border-radius: 22px 0 0 22px;
+      background: linear-gradient(to right, rgba(252,251,250,.92), rgba(252,251,250,0));
     }
-    .sty-next > svg { flex: none; opacity: .75; }
+    .sty-hop::after {
+      right: 14px; border-radius: 0 22px 22px 0;
+      background: linear-gradient(to left, rgba(252,251,250,.92), rgba(252,251,250,0));
+    }
+    .sty-hoprail { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 2px; padding: 4px; }
+    /* Ikonet står OVER navnet, sentrert: det er det som gjør de seks til én
+       navbar og ikke seks løse brikker. Ikonet er lite — det skal kjennes
+       igjen, ikke leses. */
+    .sty-hoprail button {
+      display: flex; flex: none; flex-direction: column; align-items: center; gap: 3px;
+      border-radius: 18px; padding: 6px 11px 7px;
+      font-size: 11px; font-weight: 600; letter-spacing: -.01em;
+      color: var(--stone-500); white-space: nowrap;
+      transition: background-color 240ms ease, color 240ms ease;
+    }
+    .sty-hoprail .ic {
+      display: flex; height: 20px; width: 20px; flex: none;
+      align-items: center; justify-content: center;
+      border-radius: 999px; background: var(--c, var(--stone-500)); color: #fff;
+    }
+    /* Ikonene står i full farge uansett tilstand. Å dempe dem gjorde
+       progresjonen lesbar og kategoriene uleselige — og raden er først og
+       fremst et sted du skal finne fram i.
+
+       Progresjonen ligger derfor bare i teksten: der er forskjellen nok til å
+       merkes og for liten til å skjule noe.
+
+       Blobben er nøytral, ikke kategorifarget: fargen bor allerede i ikonet
+       rett over, og to flater i samme farge oppå hverandre gjorde bare den ene
+       vanskeligere å lese. Hvit på den grå baren, med en hårfin ring — det er
+       nok til å si «her står du». */
+    .sty-hoprail button[data-state="past"] { color: var(--stone-600); }
+    .sty-hoprail button[aria-current="true"] {
+      background: #fff; color: var(--stone-900);
+      box-shadow: inset 0 0 0 1px rgba(28,25,23,.07), 0 1px 3px rgba(28,25,23,.1);
+    }
+
+    /* ---------- Reisemåte: enheten over minutt-kolonnen ----------
+       Lå velgeren i navbaren, hadde den samme form som de seks stoppene —
+       ikon over navn, samme blob — men gjorde noe helt annet: den flytter deg
+       ikke, den endrer betydningen av tall lenger opp. En tab-bar der én av
+       brikkene er en innstilling lover et syvende stopp.
+
+       Her står den i stedet der tallene står, høyrestilt rett over
+       «N min»-kolonnen. Da leser den som en ENHET — «disse tidene er i
+       gange» — og ikke som en destinasjon. Den forsvinner av seg selv i Om
+       området og Spørsmål, der det ikke finnes tider å forklare, og kart-pillen
+       kan bli stående: de to er ikke lenger to versjoner av samme knapp. */
+    .sty-ebrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .sty-ebrow .eyebrow { min-width: 0; }
+    .sty-mode { position: relative; flex: none; }
+    .sty-mode > button {
+      display: flex; align-items: center; gap: 3px;
+      /* 22 px = radens chevron-kolonne (15) + gap (9) + radens padding (4)
+         minus knappens egen padding (6). Da lander «Gange» nøyaktig over
+         «3 min» og ikke over chevronen — det er den loddrette linja som gjør
+         at den leser som en kolonneoverskrift og ikke som en løs knapp. */
+      margin-right: 22px; border-radius: 8px; padding: 3px 6px;
+      font-size: 11.5px; font-weight: 600; letter-spacing: .02em;
+      color: var(--stone-500); white-space: nowrap;
+      transition: background-color 150ms ease, color 150ms ease;
+    }
+    .sty-mode > button:hover { background: rgba(28,25,23,.05); color: var(--stone-900); }
+    .sty-mode > button[aria-expanded="true"] { background: rgba(28,25,23,.06); color: var(--stone-900); }
+    .sty-mode > button .ic { display: flex; flex: none; }
+    .sty-mode .chev { display: flex; color: var(--stone-400); transition: transform 200ms ease; }
+    .sty-mode > button[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+    /* Panelet folder NEDOVER: overskriften står øverst i fanen, og over den er
+       det bare faneraden. `BoardPathMidpointMarker` måler retningen ved åpning
+       fordi chipen der kan ligge hvor som helst i viewporten — her kan den ikke.
+
+       Formen er panel-varianten fra `TravelModeSelector`: alle modusene med
+       tiden sin, så du ser hva du bytter TIL før du bytter. Tallene er
+       precomputet (`POI.travelTime`), så panelet har ingen lastetilstand. */
+    .sty-modepop {
+      position: absolute; top: 100%; right: 0; z-index: 6;
+      margin-top: 6px; width: 194px; padding: 6px;
+      border-radius: 14px; border: 1px solid var(--stone-200);
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 14px 34px rgba(28,25,23,.2);
+    }
+    .sty-modepop[hidden] { display: none; }
+    .sty-modepop button {
+      display: flex; width: 100%; align-items: center; gap: 10px;
+      border-radius: 9px; padding: 8px 10px;
+      font-size: 13.5px; font-weight: 400; letter-spacing: 0;
+      color: var(--stone-600); text-align: left;
+    }
+    .sty-modepop button[aria-pressed="true"] {
+      background: var(--stone-100); color: var(--stone-900); font-weight: 600;
+    }
+    .sty-modepop .ic { display: flex; flex: none; color: inherit; }
+    .sty-modepop .nm { min-width: 0; flex: 1; }
+    .sty-modepop .mn { flex: none; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .sty-modepop .foot {
+      margin-top: 4px; border-top: 1px solid rgba(28,25,23,.06); padding: 7px 10px 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 11.5px; font-weight: 400; letter-spacing: 0; color: var(--stone-400);
+    }
+    /* Utgangen hører til flaten du forlater, ikke til transporten: den ligger
+       øverst til høyre i sheeten, der en lukkeknapp alltid har ligget.
+       Beholderen er null piksler høy og sticky — krysset blir stående mens
+       innholdet scroller under det, uten å skyve spørsmålet nedover. */
+    .sty-close {
+      position: sticky; top: 0; z-index: 3;
+      display: flex; height: 0; justify-content: flex-end;
+    }
+    .sty-x {
+      position: relative; top: 5px;
+      display: flex; height: 26px; width: 26px; flex: none;
+      align-items: center; justify-content: center;
+      border-radius: 999px; background: rgba(28,25,23,.05); color: var(--stone-500);
+    }
+    .sty-x:hover { background: rgba(28,25,23,.1); color: var(--stone-900); }
 
     /* ---------- Play-kortet (inngangen «Tett») ---------- */
     /* Tettheten møter deg først — den er beviset. Fortellingen er veien inn
@@ -551,7 +669,10 @@
      *  løse rader. */
     function placesTab(cat, ps) {
       const more = morePlaces(cat);
-      return `<p class="eyebrow sty-eb">${paneTitle(cat)}</p>
+      return `<div class="sty-ebrow sty-eb">
+          <p class="eyebrow">${paneTitle(cat)}</p>
+          ${modeCell()}
+        </div>
         <ul class="sty-list">${ps.map((p) => placeRow(p, cat)).join("")}</ul>
         ${
           more.length
@@ -603,6 +724,9 @@
         `<button role="tab" aria-selected="${pane === id}" data-pane="${id}">${label}</button>`;
 
       return `<section class="sty" data-story-card>
+        <div class="sty-close">
+          <button class="sty-x" data-story-exit aria-label="Avslutt omvisningen">${icon("x", 15)}</button>
+        </div>
         <h3 class="sty-q">${esc(cat.question || cat.label)}</h3>
 
         <div class="sty-tabs" role="tablist">
@@ -626,50 +750,109 @@
       </section>`;
     }
 
-    /** Dekket: hele transporten, samlet i én svart flate — hvor du er (telleren
-     *  og «1 av 6»), veien ut («Avslutt») og veien videre (neste kategori). Alt
-     *  her gjelder stoppet som helhet, aldri én fane, og det er derfor det kan
-     *  stå stille mens innholdet over scroller.
+    /** Dekket har én ting igjen: veien videre. Telleren og utgangen ligger i
+     *  stripen øverst i sheeten, og «forrige» er å trykke et segment du alt
+     *  har vært på — den knappen fantes bare fordi ingenting annet gikk
+     *  bakover.
      *
      *  Neste stopp navngis med KATEGORIEN, ikke spørsmålet: spørsmålene står som
      *  overskrift inne i stoppet, og to setninger som lovet det samme på to
      *  måter var mer å lese, ikke mer å forstå. */
+    /* ---------- reisemåte ----------
+     *  Modusene defineres her fordi baselinens egen `MODES` bor inne i IIFE-en.
+     *  Rekkefølgen, etikettene og ikonene må matche kart-pillen — er de ulike,
+     *  leser de to inngangene som to funksjoner. Samme grunn til at produksjonen
+     *  deler `TravelModeSelector` mellom chipen og kart-kontrollen. */
+    const MODES = [
+      { id: "walk", label: "Gange", icon: "footprints" },
+      { id: "bike", label: "Sykkel", icon: "bike" },
+      { id: "car", label: "Bil", icon: "car" },
+    ];
+    /** Bare modusene boardet faktisk har tall for — samme regel som baselinen.
+     *  Ett valg er ikke et valg: da rendres rommet ikke i det hele tatt, og
+     *  baren ser ut som før reisemåte fantes. */
+    function modes() {
+      const b = state().board;
+      return MODES.filter((m) =>
+        b.categories.some((c) => c.pois.some((p) => p.raw?.travelTime?.[m.id] != null))
+      );
+    }
+    /** Stedet panelets tider hører til. Et stopp har tre steder, ikke ett, så
+     *  det finnes ikke ett A→B før du har åpnet et av dem.
+     *
+     *  Slås opp i stoppets egen liste, IKKE i `board.poisById`: de to holder
+     *  ulike former av samme sted. Lista har den adapterte POI-en (tidene
+     *  ligger under `raw.travelTime`, som `minutesOf` leser), mens `poisById`
+     *  holder den rå (tidene ligger på `travelTime` direkte). Leser man feil
+     *  av dem, blir hver eneste tid «–» selv om raden rett over viser 3 min. */
+    function openPoi() {
+      const s = state();
+      if (!s.activePoiId) return null;
+      return scene()?.pois.find((p) => p.id === s.activePoiId) ?? null;
+    }
+    let modeOpen = false;
+
+    /** Enheten over minutt-kolonnen: aktiv modus kollapset, alle tre utvidet.
+     *  To innganger til samme tilstand er med vilje — produksjonen har det
+     *  samme (kart-kontrollen og chipen på ruta deler `TravelModeSelector`).
+     *  Den ene styrer kartet, den andre merker lista. */
+    function modeCell() {
+      const all = modes();
+      if (all.length < 2) return "";
+      const active = all.find((m) => m.id === state().travelMode) ?? all[0];
+      // Tidene i panelet hører til det åpne stedet. Uten et åpent sted vises
+      // bare navnene: «–» tre ganger ville lest som «ingen rute finnes», ikke
+      // som «du har ikke valgt et sted ennå».
+      const poi = openPoi();
+      const rows = all
+        .map((m) => {
+          const v = poi?.raw?.travelTime?.[m.id];
+          const min = typeof v === "number" && Number.isFinite(v) ? `${v} min` : "–";
+          return `<button data-mode="${m.id}" aria-pressed="${m.id === active.id}">
+            <span class="ic">${icon(m.icon, 15)}</span>
+            <span class="nm">${esc(m.label)}</span>
+            ${poi ? `<span class="mn">${min}</span>` : ""}
+          </button>`;
+        })
+        .join("");
+      return `<div class="sty-mode" data-mode-menu>
+        <button data-mode-toggle aria-expanded="${modeOpen}" aria-label="Reisemåte">
+          <span class="ic">${icon(active.icon, 13)}</span>
+          <span>${esc(active.label)}</span>
+          <span class="chev">${icon("chevron-down", 13)}</span>
+        </button>
+        <div class="sty-modepop" ${modeOpen ? "" : "hidden"}>
+          ${rows}
+          <p class="foot">${poi ? `Til ${esc(poi.name)}` : "Gjelder alle tider i lista"}</p>
+        </div>
+      </div>`;
+    }
+
+    /** Bytter panelet mellom åpen og lukket UTEN å rendre hele flaten: en
+     *  render ville rullet Steder-fanen tilbake dit baselinen mener den skal
+     *  stå, og det er en bevegelse du ikke ba om når du bare åpnet en meny. */
+    function paintMode() {
+      const cells = document.querySelectorAll("[data-mode-menu]");
+      if (!cells.length) return;
+      // Alle forekomstene, ikke den første: `storyCard` mates til både sheeten
+      // og sidekolonnen, og ved desktop-bredde finnes kontrollen to steder.
+      for (const cell of cells) cell.outerHTML = modeCell();
+      if (window.lucide?.createIcons) lucide.createIcons();
+    }
+
     function storyDeck() {
       const all = scenes();
-      const cat = all[step];
-      const next = all[step + 1];
 
-      return `<div class="sty-nav">
-        <div class="sty-deckcard">
-          <div class="sty-meta">
-            <span class="sty-dots">${all
-              .map((_, n) => {
-                const cls = n === step ? "on" : n < step ? "past" : "";
-                const bg = n === step ? `background:${esc(cat.color)}` : "";
-                return `<span class="${cls}" style="${bg}"></span>`;
-              })
-              .join("")}</span>
-            <span class="sty-n">${step + 1} av ${all.length}</span>
-            <button class="sty-exit" data-story-exit>Avslutt</button>
-          </div>
-          <div class="sty-go">
-            ${
-              step > 0
-                ? `<button class="sty-prev" data-story-step="-1" aria-label="Forrige stopp">${icon("chevron-left", 17)}</button>`
-                : ""
-            }
-            ${
-              next
-                ? `<button class="sty-next" data-story-step="1">
-                     <span class="n">${esc(next.label)}</span>
-                     ${icon("arrow-right", 18)}
-                   </button>`
-                : `<button class="sty-next" data-story-exit>
-                     <span class="n">Utforsk nabolaget selv</span>
-                     ${icon("arrow-right", 18)}
-                   </button>`
-            }
-          </div>
+      return `<div class="sty-hop">
+        <div class="sty-hoptrack" data-story-hoptrack>
+          <div class="sty-hoprail" data-story-hop>${all
+            .map(
+              (c, n) =>
+                `<button data-story-goto="${n}" data-state="${n < step ? "past" : ""}"
+                   aria-current="${n === step}" style="--c:${esc(c.color)}"
+                   ><span class="ic">${icon(c.icon, 12)}</span><span>${esc(c.label)}</span></button>`
+            )
+            .join("")}</div>
         </div>
       </div>`;
     }
@@ -679,9 +862,20 @@
     function paintDeck() {
       const deck = document.getElementById("deck");
       if (!deck) return 0;
-      deck.hidden = !on;
-      deck.innerHTML = on ? storyDeck() : "";
-      if (on && window.lucide?.createIcons) lucide.createIcons();
+      const rail = deck.querySelector("[data-story-hop]");
+      if (on && rail) {
+        // Bygges IKKE på nytt: da ville din egen scroll-posisjon i raden blitt
+        // nullstilt hver gang kartet la seg til ro. Bare tilstanden byttes.
+        for (const b of rail.children) {
+          const n = Number(b.dataset.storyGoto);
+          b.setAttribute("aria-current", String(n === step));
+          b.dataset.state = n < step ? "past" : "";
+        }
+      } else {
+        deck.hidden = !on;
+        deck.innerHTML = on ? storyDeck() : "";
+        if (on && window.lucide?.createIcons) lucide.createIcons();
+      }
       const h = on ? deck.offsetHeight : 0;
       document.documentElement.style.setProperty("--sty-deck-h", `${h}px`);
       return h;
@@ -775,6 +969,18 @@
      *  høyden sheeten faktisk fikk. Rekkefølgen er poenget: rammer vi inn
      *  først, padder vi for en høyde sheeten ikke har ennå, og stedene
      *  fortellingen snakker om havner bak den. */
+    /** Legger det aktive stoppet mot venstre kant, men ikke helt inntil: 40 px
+     *  igjen til det forrige navnet, så raden viser at den har en bakside.
+     *  Klemt mellom 0 og radens egen slutt — ellers ville siste stopp dratt
+     *  tomrom inn i sporet. */
+    function positionHop() {
+      const track = document.querySelector("[data-story-hoptrack]");
+      const btn = track?.querySelector('[aria-current="true"]');
+      if (!track || !btn) return;
+      const max = Math.max(0, track.scrollWidth - track.clientWidth);
+      track.scrollLeft = Math.min(Math.max(0, btn.offsetLeft - 44), max);
+    }
+
     function settle({ fit = false } = {}) {
       // To frames, ikke én: i frame 1 er det nyrendrede kortet ennå ikke ferdig
       // lagt ut, og førstegangs-målingen kom 4 px for lav. Frame 2 leser en
@@ -782,6 +988,7 @@
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
           const h = sizeStory(paintDeck());
+          positionHop();
           if (fit) fitScene(h);
         })
       );
@@ -925,8 +1132,30 @@
     function route(t) {
       if (t.closest("[data-story-play]")) return begin(), true;
       if (t.closest("[data-story-exit]")) return end(), true;
-      const nav = t.closest("[data-story-step]");
-      if (nav) return goto(step + Number(nav.dataset.storyStep)), true;
+      // Reisemåte-rommet. `[data-mode]` er scopet til panelet: baselinen har
+      // sin egen lytter på samme attributt for kart-pillen, og en uscopet
+      // treff her ville stjålet det trykket utenfor omvisningen.
+      if (t.closest("[data-mode-toggle]")) {
+        modeOpen = !modeOpen;
+        paintMode();
+        return true;
+      }
+      const pick = t.closest("[data-mode-menu] [data-mode]");
+      if (pick) {
+        // Modusbytte rører ALDRI navigasjonen — bare tallene. Du står i samme
+        // stopp, med de samme stedene åpne, og ser tidene endre seg.
+        state().travelMode = pick.dataset.mode;
+        modeOpen = false;
+        rerender();
+        settle();
+        return true;
+      }
+      const jump = t.closest("[data-story-goto]");
+      if (jump) {
+        // Panelet skal aldri overleve inn i et annet stopp enn det ble åpnet i.
+        modeOpen = false;
+        return goto(Number(jump.dataset.storyGoto)), true;
+      }
       const tab = t.closest("[data-pane]");
       if (tab) return showPane(tab.dataset.pane), true;
       const row = t.closest("[data-story-poi]");
@@ -937,6 +1166,19 @@
     }
 
     document.getElementById("deck").onclick = (ev) => route(ev.target);
+
+    // Trykk utenfor lukker panelet uten å bytte modus — samme regel som chipen
+    // på ruta i produksjon. Capture, så det skjer før flaten under rekker å
+    // reagere på trykket.
+    document.addEventListener(
+      "pointerdown",
+      (ev) => {
+        if (!modeOpen || ev.target.closest?.("[data-mode-menu]")) return;
+        modeOpen = false;
+        paintMode();
+      },
+      true
+    );
 
     // ---------- overstyringer ----------
     Baseline.override({
