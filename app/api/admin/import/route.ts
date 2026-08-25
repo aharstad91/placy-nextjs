@@ -90,7 +90,6 @@ const ImportRequestSchema = z.object({
     .min(1, "Velg minst én kategori")
     .max(20),
   minRating: z.number().min(0).max(5).optional(),
-  maxResultsPerCategory: z.number().min(1).max(50).optional(),
   includeEntur: z.boolean().default(true),
   includeBysykkel: z.boolean().default(true),
   projectId: z.string().min(1).optional(),
@@ -422,7 +421,6 @@ export async function POST(request: NextRequest) {
                 radius,
                 googleCategories: [...body.categories],
                 minRating: body.minRating,
-                maxResultsPerCategory: body.maxResultsPerCategory,
               },
               googleApiKey
             )

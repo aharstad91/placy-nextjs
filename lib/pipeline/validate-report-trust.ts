@@ -15,6 +15,7 @@
  */
 
 import { createServerClient } from "@/lib/supabase/client";
+import { chunkIds } from "@/lib/supabase/chunk-ids";
 import {
   enrichTrustSignals,
   mapPoiRowToPOIForTrust,
@@ -35,6 +36,14 @@ export interface ValidateReportTrustResult {
   /** Navn på Google-POIer som forble uten score — må QA-klareres (Unit 7) */
   stillNull: string[];
   warnings: string[];
+}
+
+/** Én batch POI-rader. Se {@link chunkIds}. */
+function readPoiRows(
+  supabase: NonNullable<ReturnType<typeof createServerClient>>,
+  ids: string[]
+) {
+  return supabase.from("pois").select("*").in("id", ids);
 }
 
 export async function validateReportTrust(options: {
@@ -80,16 +89,18 @@ export async function validateReportTrust(options: {
 
   const poiIds = projectPois.map((p) => p.poi_id);
 
-  const { data: rows, error: poisError } = await supabase
-    .from("pois")
-    .select("*")
-    .in("id", poiIds);
-
-  if (poisError || !rows) {
-    result.warnings.push(
-      `⚠️  Henting av POI-data feilet: ${poisError?.message ?? "ukjent"} — trust-scoring hoppet over`
-    );
-    return result;
+  // Batchet: en `.in()` med hele poolen sprenger URL-grensa når boardet blir
+  // stort nok, og feilen kommer som et bart «fetch failed». Se chunk-ids.ts.
+  const rows: NonNullable<Awaited<ReturnType<typeof readPoiRows>>["data"]> = [];
+  for (const chunk of chunkIds(poiIds)) {
+    const { data, error } = await readPoiRows(supabase, chunk);
+    if (error || !data) {
+      result.warnings.push(
+        `⚠️  Henting av POI-data feilet: ${error?.message ?? "ukjent"} — trust-scoring hoppet over`
+      );
+      return result;
+    }
+    rows.push(...data);
   }
 
   // 2. Avgrens til Google-POIer; skip manual_override og allerede scorede
@@ -149,12 +160,18 @@ export async function validateReportTrust(options: {
 
   // 4. Re-les radene så scoringen ser de enrichede signalene
   const scoreIds = toScore.map((c) => c.id);
-  const { data: enrichedRows, error: rereadError } = await supabase
-    .from("pois")
-    .select("*")
-    .in("id", scoreIds);
+  const enrichedRows: NonNullable<Awaited<ReturnType<typeof readPoiRows>>["data"]> = [];
+  let rereadError: { message: string } | null = null;
+  for (const chunk of chunkIds(scoreIds)) {
+    const { data, error } = await readPoiRows(supabase, chunk);
+    if (error) {
+      rereadError = error;
+      break;
+    }
+    enrichedRows.push(...(data ?? []));
+  }
 
-  if (rereadError || !enrichedRows || enrichedRows.length === 0) {
+  if (rereadError || enrichedRows.length === 0) {
     result.warnings.push(
       `⚠️  Re-lesing etter enrichment feilet: ${rereadError?.message ?? "ingen rader"} — ${toScore.length} POI-er ikke scoret`
     );

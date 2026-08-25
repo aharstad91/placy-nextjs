@@ -23,6 +23,11 @@ export const BOLIG_GOOGLE_CATEGORIES = [
   "bar",
   "bakery",
   "supermarket",
+  // Recall-fiks 2026-08-24 (Ranheim KIWI-funnet): `supermarket` fant hverken
+  // Rema eller Kiwi — de bærer bare `grocery_store` hos Google. Begge typene
+  // søkes nå; de mapper til samme Placy-kategori (`supermarket`), så dedupen
+  // på place-id gjør at et sted som bærer begge kun importeres én gang.
+  "grocery_store",
   "pharmacy",
   "gym",
   "park",
@@ -49,6 +54,44 @@ export const BOLIG_GOOGLE_CATEGORIES = [
   "florist",
   "electronics_store",
   "home_goods_store",
+  // Recall-fiks 2026-08-24 (butikk-familien): de fire typene over var HELE
+  // `butikk`-kilden. Klær, sko, sport, smykker, leker, kosmetikk, dyr, sykkel,
+  // jernvare, gaver og møbler ble aldri søkt etter — 55 målte treff i
+  // produksjons-bboxen som ingen annen type i lista fanget.
+  "clothing_store",
+  "shoe_store",
+  "sporting_goods_store",
+  "jewelry_store",
+  "toy_store",
+  "cosmetics_store",
+  "pet_store",
+  "bicycle_store",
+  "hardware_store",
+  "gift_shop",
+  "furniture_store",
+  // Kategorier tema-defaultene renderte uten at noen kilde fylte dem.
+  "convenience_store",
+  "beach",
+  "beauty_salon",
+  // Recall-fiks 2026-08-24 (Ranheim pumptrack): `gym` var den ENESTE
+  // sport-typen som ble søkt etter, så idrettsanlegg, skøytebaner, pumptracks,
+  // svømmehaller, lekeplasser og turområder falt ut av Google-stien helt.
+  // Rekkefølgen er ikke tilfeldig: dedupliseringen i discoverGooglePlaces lar
+  // FØRSTE treff eie kategorien, så de spesifikke typene må ligge foran
+  // paraplyen `sports_activity_location` — ellers ble «3T-Ranheim» et
+  // idrettsanlegg i stedet for et treningssenter.
+  "sports_complex",
+  "athletic_field",
+  "stadium",
+  "ice_skating_rink",
+  "cycling_park",
+  "skateboard_park",
+  "golf_course",
+  "swimming_pool",
+  "playground",
+  "hiking_area",
+  "dog_park",
+  "sports_activity_location",
 ];
 
 /** Norske tekstsøk for hverdagssteder uten pålitelig Google-type.
@@ -78,6 +121,7 @@ export const NAERING_GOOGLE_CATEGORIES = [
   "bar",
   "bakery",
   "supermarket",
+  "grocery_store",
   "pharmacy",
   "gym",
   "park",
@@ -86,6 +130,12 @@ export const NAERING_GOOGLE_CATEGORIES = [
   "movie_theater",
   "hair_care",
   "hotel",
+  // Bare de to som HAR et tema i næringsprofilen (`swimming` i Trening &
+  // Aktivitet, `outdoor` i Nabolaget). `idrett`/`lekeplass`/`hundepark` er
+  // ikke med i noe næringstema, og ville blitt importert til ingenting —
+  // samme tomme-kategori-bug som marina hadde før 2026-08-12.
+  "swimming_pool",
+  "hiking_area",
 ];
 
 export interface EnrichReportPoisResult {
@@ -131,7 +181,6 @@ export async function enrichReportPois(options: {
       includeEntur: true,
       includeBysykkel: true,
       minRating: 0,
-      maxResultsPerCategory: 20,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

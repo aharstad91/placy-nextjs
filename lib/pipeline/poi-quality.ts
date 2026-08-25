@@ -53,63 +53,29 @@ export interface NearbyGroupInput {
 
 // === Constants ===
 
-export const WALK_METERS_PER_MINUTE = 80;
-
 /**
- * Maks gangavstand i minutter per kategori.
- * Differensiert: daglige behov kort, bil-destinasjoner høy.
+ * Maks luftlinje-avstand (meter) fra prosjektsenteret for at en Google-POI skal
+ * importeres. ÉN verdi for alle kategorier.
+ *
+ * ## Hvorfor ett tall og ikke et tak per kategori (2026-08-24)
+ *
+ * Tidligere lå det et differensiert gangtids-tak her (dagligvare 15 min,
+ * sykehus 45 min osv. × 80 m/min). Det så fornuftig ut og var i praksis en
+ * skjult recall-feil: nærmeste Rema til Strindfjordvegen 10 ligger 1 295 m
+ * unna og ble kuttet av dagligvare-taket på 1 200 m — 95 meter fra å være med.
+ * Rosenborg Bakeri falt på samme måte (1 284 m mot 1 200 m). Et tak som kutter
+ * NÆRMESTE dagligvare gjør ikke jobben taket var ment å gjøre.
+ *
+ * Taket skal ALLTID ligge over discovery-sirkelen, aldri på den. Bolig-radiusen
+ * er nå 3 000 m (`BOLIG_DISCOVERY_RADIUS_M`), så taket er hevet til 4 000 m for
+ * å bevare invarianten: SIRKELEN er grensen, ikke et andre, usynlig tak inne i
+ * den. Lå taket på samme tall som radiusen, ville et sted rett på sirkelkanten
+ * kunne falle på avrunding — og vi ville ikke sett at det skjedde.
+ *
+ * Relevans-sorteringen hører hjemme i tiering og i board-rendringen, der den er
+ * synlig — ikke i importen, der den er umulig å se at slo til.
  */
-export const MAX_WALK_MINUTES_BY_CATEGORY: Record<string, number> = {
-  // Daglige behov — kort avstand
-  restaurant: 15,
-  cafe: 15,
-  bakery: 15,
-  supermarket: 15,
-  pharmacy: 20,
-  haircare: 20,
-  lekeplass: 15,
-  // bus 10→15 (recall-fiks 2026-08-12): 10 min (800 m) er en urban antakelse.
-  // Ruralt ligger HOVEDknutepunktet gjerne 800–1200 m unna (Venna vegdele,
-  // Straumen: ~900 m, 10+ linjer) og ble kuttet mens en perifer nærholdeplass
-  // overlevde. 15 min dekker rural-knutepunkt uten å flomme by-boards.
-  bus: 15,
-
-  // Ukentlige behov — middels avstand
-  bar: 20,
-  gym: 20,
-  bank: 25,
-  post: 25,
-  library: 25,
-  spa: 25,
-  park: 20,
-  tram: 20,
-  skole: 20,
-  barnehage: 20,
-  idrett: 25,
-
-  // Bil-destinasjoner — høy avstand (folk kjører dit)
-  shopping: 30,
-  cinema: 30,
-  museum: 30,
-  hospital: 45,
-  doctor: 30,
-  dentist: 30,
-  train: 35,
-  badeplass: 30,
-
-  // Recall-fiks 2026-08-12 (Straumen-fasitøvelsen): nye kategorier.
-  // Bil-destinasjoner høyt — ruralt kjører man til hotellet og campingen.
-  kirke: 30,
-  veterinar: 30,
-  fuel: 30,
-  trafikkskole: 30,
-  fritidsklubb: 25,
-  butikk: 30,
-  marina: 30,
-  charging_station: 30,
-  hotel: 45,
-  campground: 45,
-};
+export const MAX_POI_DISTANCE_METERS = 4000;
 
 /**
  * Kategorier unntatt fra kvalitetssignal-sjekk.
@@ -136,6 +102,12 @@ export const QUALITY_EXEMPT_CATEGORIES = new Set([
   "campground",
   "charging_station",
   "fritidsklubb",
+  // Recall-fiks 2026-08-24: et turområde, en hundepark eller en pumptrack har
+  // sjelden Google-anmeldelser, og er der like fullt. `idrett`/`lekeplass`/
+  // `badeplass` sto alt her — dette er resten av samme familie.
+  "swimming",
+  "outdoor",
+  "hundepark",
 ]);
 
 /**
@@ -176,6 +148,10 @@ export const CATEGORY_NAME_BLOCKLIST: Record<string, string[]> = {
   shopping: ["parkering", "parking", "p-hus"],
   cafe: ["cleaning", "renhold", "bygg", "teknikk", "transport"],
   gym: ["kiropraktor", "fysioterapi", "lege", "tannlege", "optiker"],
+  // «Rotvoll Park - Parkering» kom ut som idrettsanlegg: Google typer den som
+  // athletic_field og gir den INGEN parking-type, så type-filteret kan ikke se
+  // det. Navnet er det eneste signalet som finnes (2026-08-24).
+  idrett: ["parkering", "parking", "p-hus", "garasje"],
 };
 
 // === Grovfiltre ===
@@ -191,15 +167,10 @@ export function isBusinessClosed(place: {
 }
 
 /**
- * Sjekk om en POI er innenfor relevant gangavstand for sin kategori.
+ * Sjekk om en POI er innenfor {@link MAX_POI_DISTANCE_METERS} fra senteret.
  */
-export function isWithinCategoryDistance(
-  distanceMeters: number,
-  categoryId: string
-): boolean {
-  const maxMinutes = MAX_WALK_MINUTES_BY_CATEGORY[categoryId] ?? 25;
-  const walkMinutes = distanceMeters / WALK_METERS_PER_MINUTE;
-  return walkMinutes <= maxMinutes;
+export function isWithinMaxDistance(distanceMeters: number): boolean {
+  return distanceMeters <= MAX_POI_DISTANCE_METERS;
 }
 
 /**
@@ -261,14 +232,12 @@ export function evaluateGooglePlaceQuality(
     return { pass: false, rejection };
   }
 
-  // 2. Avstandstak per kategori
-  if (!isWithinCategoryDistance(distanceMeters, categoryId)) {
-    const walkMin = Math.round(distanceMeters / WALK_METERS_PER_MINUTE);
-    const maxMin = MAX_WALK_MINUTES_BY_CATEGORY[categoryId] ?? 25;
+  // 2. Avstandstak (felles for alle kategorier)
+  if (!isWithinMaxDistance(distanceMeters)) {
     const rejection: QualityRejection = {
       name: place.name,
       categoryId,
-      reason: `${walkMin} min gange > maks ${maxMin} min for ${categoryId}`,
+      reason: `${Math.round(distanceMeters)} m > maks ${MAX_POI_DISTANCE_METERS} m`,
       filter: "distance",
     };
     rejections?.push(rejection);

@@ -22,6 +22,7 @@
  */
 
 import { createServerClient } from "@/lib/supabase/client";
+import { chunkIds } from "@/lib/supabase/chunk-ids";
 import { fetchTravelTimeRows, hasProfile } from "@/lib/pipeline/travel-coverage";
 import type { Coordinates, TravelMode } from "@/lib/types";
 
@@ -310,13 +311,19 @@ export async function computeProjectTravelTimes(options: {
     }
 
     const poiIds = projectPois.map((p) => p.poi_id);
-    const { data: pois, error: poisError } = await db
-      .from("pois")
-      .select("id, lat, lng")
-      .in("id", poiIds);
-    if (poisError) {
-      warnings.push(`⚠️  Henting av poi-koordinater feilet: ${poisError.message} — reisetider hoppet over`);
-      return { computed: 0, unchanged: 0, total: poiIds.length, coverage: emptyCoverage(), warnings };
+    // Batchet av samme grunn som i hydrate-report: hele poolen i én `.in()`
+    // sprenger URL-grensa på store boards. Se chunk-ids.ts.
+    const pois: Array<{ id: string; lat: number; lng: number }> = [];
+    for (const chunk of chunkIds(poiIds)) {
+      const { data, error: poisError } = await db
+        .from("pois")
+        .select("id, lat, lng")
+        .in("id", chunk);
+      if (poisError) {
+        warnings.push(`⚠️  Henting av poi-koordinater feilet: ${poisError.message} — reisetider hoppet over`);
+        return { computed: 0, unchanged: 0, total: poiIds.length, coverage: emptyCoverage(), warnings };
+      }
+      pois.push(...(data ?? []));
     }
 
     const destinations: Destination[] = (pois ?? [])

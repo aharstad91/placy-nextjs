@@ -47,7 +47,6 @@ export interface OverpassElement {
  */
 export type OsmGateReason =
   | "ikke-i-hviteliste"
-  | "pitch-uten-godkjent-sport"
   | "mangler-koordinat"
   | "mangler-navn"
   | "adgang-ekskluderer-publikum";
@@ -69,21 +68,6 @@ const ACCESS_EXCLUDING_PUBLIC = new Set([
   "permit",
   "no",
   "residents",
-]);
-
-/**
- * `sport`-verdier som gjør en `leisure=pitch` til et anlegg verdt å vise.
- * Samme liste som den opprinnelige hardkodede Overpass-spørringen brukte —
- * bevart for å ikke regressere det som virker. OSM tillater flere verdier
- * skilt med semikolon (`soccer;ice_skating`, `athletics;multi`), så vi tester
- * medlemskap per verdi, ikke på hele strengen.
- */
-const ACCEPTED_PITCH_SPORTS = new Set([
-  "soccer",
-  "football",
-  "handball",
-  "tennis",
-  "basketball",
 ]);
 
 interface OsmGateRule {
@@ -111,6 +95,25 @@ interface OsmGateRule {
  * deaktivert i `GLOBAL_DISABLED_REPORT_THEMES` siden 2026-04-28, så de ville
  * blitt importert til ingenting.
  */
+/**
+ * SPORT-KRAVET PÅ `leisure=pitch` ER FJERNET (2026-08-24, samme dag som porten).
+ *
+ * Regelen krevde at `sport` var én av fem verdier — soccer, football, handball,
+ * tennis, basketball — kopiert fra den gamle hardkodede Overpass-spørringen «for
+ * å ikke regressere det som virker». De fem verdiene var aldri vurdert, og de
+ * kostet ekte steder:
+ *
+ *   - I produksjons-bboxen rundt Grilstad Marina: 35 `leisure=pitch`, 7 med
+ *     navn. Sport-kravet slapp gjennom 5 og avviste «Ranheim Pumptrack»
+ *     (sport=cycling) og «Charlottenlund skatepark» (sport=skateboard).
+ *   - I et bredere Ranheim-sveip falt også «Leangen idrettspark» ut — den har
+ *     ingen `sport`-tagg i det hele tatt.
+ *
+ * Navnekravet (Port 2b) gjør jobben alene: de 28 navnløse banene i samme bbox
+ * er allerede ute. En navngitt bane er et anlegg noen har regnet som et sted,
+ * og konsekvens-regelen gjelder — tar vi feil om typen bane, står det et litt
+ * upresist navn på noe som utvilsomt ligger der. Kostnad ≈ 0.
+ */
 export const OSM_GATE_RULES: readonly OsmGateRule[] = Object.freeze([
   {
     key: "leisure",
@@ -134,7 +137,7 @@ export const OSM_GATE_RULES: readonly OsmGateRule[] = Object.freeze([
     key: "leisure",
     value: "pitch",
     categoryId: "idrett",
-    why: "Bane for lagidrett. Krever godkjent `sport` — se ACCEPTED_PITCH_SPORTS.",
+    why: "Navngitt bane eller anlegg. Navnekravet ER trygghetsvurderingen — sport-taggen var en andre port som bare traff ekte anlegg (se notatet over regelen).",
   },
   {
     key: "leisure",
@@ -262,15 +265,6 @@ function resolveCoordinates(
   return { lat, lng };
 }
 
-function hasAcceptedPitchSport(tags: Record<string, string>): boolean {
-  const sport = tags.sport;
-  if (!sport) return false;
-  return sport
-    .split(";")
-    .map((s) => s.trim().toLowerCase())
-    .some((s) => ACCEPTED_PITCH_SPORTS.has(s));
-}
-
 /**
  * De fire portene, i den rekkefølgen som gir det mest brukbare
  * avvisnings-regnskapet: hvitelisten først, slik at en navnløs parkering
@@ -286,15 +280,6 @@ export function evaluateOsmElement(el: OverpassElement): OsmGateVerdict {
     return { accept: false, reason: "ikke-i-hviteliste", detail: describeTags(tags) };
   }
   const ruleId = `${rule.key}=${rule.value}`;
-
-  // Regel-spesifikt krav (bare `pitch` har et i dag).
-  if (ruleId === "leisure=pitch" && !hasAcceptedPitchSport(tags)) {
-    return {
-      accept: false,
-      reason: "pitch-uten-godkjent-sport",
-      detail: tags.sport ? `sport=${tags.sport}` : "sport mangler",
-    };
-  }
 
   // Port 2a — koordinat. Et objekt uten punkt kan ikke plasseres på et kart.
   const coords = resolveCoordinates(el);
@@ -358,10 +343,9 @@ function describeTags(tags: Record<string, string>): string {
 
 /**
  * Overpass-spørringen bygges FRA hvitelisten, slik at spørring og port ikke
- * kan drifte fra hverandre. `leisure=pitch` hentes uten sport-filter og
- * filtreres i porten i stedet — det koster noen ekstra elementer over nettet,
- * men gir avvisnings-regnskapet tallet «hvor mange baner manglet brukbar
- * sport», som ellers ville vært usynlig.
+ * kan drifte fra hverandre. Ingen tagg-filtre utover hvitelisten legges her —
+ * all sortering skjer i porten, slik at avvisnings-regnskapet ser hvert objekt
+ * som ble hentet.
  */
 export function buildOverpassQuery(bbox: {
   south: number;

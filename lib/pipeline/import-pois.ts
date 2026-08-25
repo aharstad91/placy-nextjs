@@ -315,7 +315,6 @@ export async function importPOIsToProject(options: {
   includeEntur?: boolean;
   includeBysykkel?: boolean;
   minRating?: number;
-  maxResultsPerCategory?: number;
 }): Promise<ImportPOIsResult> {
   const {
     circles,
@@ -325,7 +324,6 @@ export async function importPOIsToProject(options: {
     includeEntur = true,
     includeBysykkel = true,
     minRating,
-    maxResultsPerCategory,
   } = options;
 
   const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
@@ -366,7 +364,6 @@ export async function importPOIsToProject(options: {
                 radius,
                 googleCategories: [...categories],
                 minRating,
-                maxResultsPerCategory,
               },
               googleApiKey
             )

@@ -1,0 +1,184 @@
+{
+  "kilde": "Trondheim parkering (Trondheim kommune)",
+  "kildeUrl": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer-eksternt/parkering/system/kart/Taxiholdeplasser.kmz",
+  "sideUrl": "https://www.trondheim.kommune.no/parkering/innhold/parkere/taxi/",
+  "hentet": "2026-08-24",
+  "holdeplasser": [
+    {
+      "navn": "Bispegata - Nidarosdomen",
+      "lat": 63.4276953,
+      "lng": 10.396752
+    },
+    {
+      "navn": "Brattørkaia",
+      "lat": 63.4388954,
+      "lng": 10.4009291
+    },
+    {
+      "navn": "Breidablikkveien",
+      "lat": 63.417276,
+      "lng": 10.35489
+    },
+    {
+      "navn": "Busstrase - Ytre Ringveg",
+      "lat": 63.3703544,
+      "lng": 10.3819732
+    },
+    {
+      "navn": "City Lade/Håkon Magnussons gate",
+      "lat": 63.4439862,
+      "lng": 10.4460492
+    },
+    {
+      "navn": "Dronningens gate",
+      "lat": 63.4318828,
+      "lng": 10.3969283
+    },
+    {
+      "navn": "Festningsgata",
+      "lat": 63.4292698,
+      "lng": 10.4149202
+    },
+    {
+      "navn": "Fossegrenda",
+      "lat": 63.3875252,
+      "lng": 10.4088351
+    },
+    {
+      "navn": "Harald Hardrådes gate",
+      "lat": 63.419569,
+      "lng": 10.389857
+    },
+    {
+      "navn": "Havnegata",
+      "lat": 63.4406139,
+      "lng": 10.4024848
+    },
+    {
+      "navn": "Heimdal",
+      "lat": 63.351331,
+      "lng": 10.35727
+    },
+    {
+      "navn": "Ilevollen",
+      "lat": 63.4292302,
+      "lng": 10.3669323
+    },
+    {
+      "navn": "Ingvald Ystgaards veg",
+      "lat": 63.4215437,
+      "lng": 10.4716935
+    },
+    {
+      "navn": "Jakobslivegen",
+      "lat": 63.4216882,
+      "lng": 10.4948121
+    },
+    {
+      "navn": "Lademoen Kirke",
+      "lat": 63.437013,
+      "lng": 10.430897
+    },
+    {
+      "navn": "Leüthenhaven",
+      "lat": 63.4298477,
+      "lng": 10.3888025
+    },
+    {
+      "navn": "Midtre Flatås veg",
+      "lat": 63.3735314,
+      "lng": 10.3460493
+    },
+    {
+      "navn": "Moholt Alle",
+      "lat": 63.411226,
+      "lng": 10.434267,
+      "plasser": 2
+    },
+    {
+      "navn": "Munkegata",
+      "lat": 63.4309859,
+      "lng": 10.3946978
+    },
+    {
+      "navn": "Nardosenteret/Othilienborgvegen",
+      "lat": 63.4037044,
+      "lng": 10.4284712
+    },
+    {
+      "navn": "Nedre Møllenberg gate",
+      "lat": 63.432282,
+      "lng": 10.413138
+    },
+    {
+      "navn": "Prinsesse Kristinas gate",
+      "lat": 63.420485,
+      "lng": 10.386885
+    },
+    {
+      "navn": "Rotvoll",
+      "lat": 63.438338,
+      "lng": 10.479212
+    },
+    {
+      "navn": "Saupstadringen",
+      "lat": 63.366331,
+      "lng": 10.347446
+    },
+    {
+      "navn": "Selsbakkvegen",
+      "lat": 63.3970368,
+      "lng": 10.3598532
+    },
+    {
+      "navn": "Skonnertvegen",
+      "lat": 63.4341858,
+      "lng": 10.5042562
+    },
+    {
+      "navn": "Solsiden",
+      "lat": 63.434641,
+      "lng": 10.41368
+    },
+    {
+      "navn": "Sorgenfriveien",
+      "lat": 63.406543,
+      "lng": 10.4002651
+    },
+    {
+      "navn": "Studentersamfundet",
+      "lat": 63.4221761,
+      "lng": 10.3956212
+    },
+    {
+      "navn": "Sverre Svendsens veg",
+      "lat": 63.421489,
+      "lng": 10.5263127
+    },
+    {
+      "navn": "Søndre gate",
+      "lat": 63.432638,
+      "lng": 10.400193
+    },
+    {
+      "navn": "Thoning Owesens gate",
+      "lat": 63.4378954,
+      "lng": 10.4500311
+    },
+    {
+      "navn": "Trondheim Sentralstasjon",
+      "lat": 63.4359903,
+      "lng": 10.3995309
+    },
+    {
+      "navn": "Trondheim Spektrum AS",
+      "lat": 63.4267629,
+      "lng": 10.3774409
+    },
+    {
+      "navn": "Øvre Sjetnhaugan",
+      "lat": 63.3693231,
+      "lng": 10.3944827
+    }
+  ]
+}

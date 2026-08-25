@@ -16,6 +16,7 @@
 
 import "server-only";
 import { createServerClient } from "./client";
+import { chunkIds } from "./chunk-ids";
 import type { TablesV2 } from "./types";
 import type { DbCategory, DbPoi } from "./types";
 import type {
@@ -255,26 +256,34 @@ export async function getProductFromSupabaseV2(
   let pois: POI[] = [];
   let categoryById = new Map<string, Category>();
   if (orderedPoiIds.length > 0) {
-    const { data: poiRows, error: poisError } = await db
-      .from("pois")
-      .select("*")
-      .in("id", orderedPoiIds);
-    if (poisError) {
-      console.error("[v2-queries] pois-oppslag feilet:", poisError.message);
-      return null;
+    // Batchet: hele board-poolen i én `.in()` sprenger PostgREST-URL-en når
+    // boardet blir stort nok, og feilen kommer som et bart «fetch failed» uten
+    // HTTP-status. Se chunk-ids.ts. Dette er LESESTIEN — den må tåle at et
+    // board vokser uten at siden plutselig slutter å rendre.
+    const poiRows: DbPoi[] = [];
+    for (const chunk of chunkIds(orderedPoiIds)) {
+      const { data, error: poisError } = await db.from("pois").select("*").in("id", chunk);
+      if (poisError) {
+        console.error("[v2-queries] pois-oppslag feilet:", poisError.message);
+        return null;
+      }
+      poiRows.push(...((data ?? []) as DbPoi[]));
     }
 
     const categoryIds = Array.from(
       new Set((poiRows ?? []).map((p) => p.category_id).filter((id): id is string => !!id))
     );
     if (categoryIds.length > 0) {
-      const { data: catRows, error: catError } = await db
-        .from("categories")
-        .select("*")
-        .in("id", categoryIds);
-      if (catError) {
-        console.error("[v2-queries] categories-oppslag feilet:", catError.message);
-        return null;
+      // Kategori-id-er er få og korte, men batches likevel: én regel for alle
+      // `.in()`-lister som vokser med innholdet.
+      const catRows: DbCategory[] = [];
+      for (const chunk of chunkIds(categoryIds)) {
+        const { data, error: catError } = await db.from("categories").select("*").in("id", chunk);
+        if (catError) {
+          console.error("[v2-queries] categories-oppslag feilet:", catError.message);
+          return null;
+        }
+        catRows.push(...((data ?? []) as DbCategory[]));
       }
       categoryById = new Map(
         (catRows ?? []).map((c) => [c.id, transformCategory(c as DbCategory)])

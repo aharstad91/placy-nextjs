@@ -32,7 +32,7 @@ import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
 import { runBoardFactsStep } from "@/lib/pipeline/board-facts-step";
 import { inheritAreaEditorialViaRoute } from "@/lib/pipeline/inherit-area-editorial-via-route";
 import { runAcceptanceCheck } from "@/lib/pipeline/provision-acceptance";
-import { provisionReportBoard } from "./provision";
+import { provisionReportBoard, revalidateProject } from "./provision";
 
 const m = {
   geocode: vi.mocked(geocodeAddress),
@@ -57,7 +57,7 @@ function setHappyDefaults(existed = false) {
     projectId: "intern_x", productId: "prod-1", customerSlug: "intern", slug: "x",
     existed, warnings: [],
   });
-  m.publicPois.mockResolvedValue({ counts: { nsr: 1, barnehagefakta: 1, overpass: 1 }, warnings: [] });
+  m.publicPois.mockResolvedValue({ counts: { nsr: 1, barnehagefakta: 1, overpass: 1, taxi: 1 }, warnings: [] });
   m.enrich.mockResolvedValue({ google: { total: 20, new: 20, updated: 0, byCategory: {} }, warnings: [] });
   m.trust.mockResolvedValue({ scored: 10, skipped: 0, skippedPublic: 5, stillNull: [], warnings: [] });
   m.hydrate.mockResolvedValue({ productPoisLinked: 20, featuredMarked: 6, categoriesPopulated: 8, warnings: [] });
@@ -126,7 +126,7 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     m.project.mockImplementation(async () => { order.push("project"); return {
       projectId: "intern_x", productId: "prod-1", customerSlug: "intern", slug: "x", existed: false, warnings: [],
     }; });
-    m.publicPois.mockImplementation(async () => { order.push("public"); return { counts: { nsr: 0, barnehagefakta: 0, overpass: 0 }, warnings: [] }; });
+    m.publicPois.mockImplementation(async () => { order.push("public"); return { counts: { nsr: 0, barnehagefakta: 0, overpass: 0, taxi: 0 }, warnings: [] }; });
     m.enrich.mockImplementation(async () => { order.push("enrich"); return { google: { total: 0, new: 0, updated: 0, byCategory: {} }, warnings: [] }; });
     m.trust.mockImplementation(async () => { order.push("trust"); return { scored: 0, skipped: 0, skippedPublic: 0, stillNull: [], warnings: [] }; });
     m.hydrate.mockImplementation(async () => { order.push("hydrate"); return { productPoisLinked: 0, featuredMarked: 0, categoriesPopulated: 0, warnings: [] }; });
@@ -202,5 +202,102 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     setHappyDefaults();
     await provisionReportBoard({ ...BASE, profile: "naering", confirmCoords: { lat: 1, lng: 2 } });
     expect(m.enrich.mock.calls[0][0].categories).toEqual(NAERING_GOOGLE_CATEGORIES);
+  });
+});
+
+// === Steg 9: revalidering (luken lukket 2026-08-24) ========================
+
+describe("revalidateProject", () => {
+  const OLD_ENV = { ...process.env };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    process.env = { ...OLD_ENV };
+    delete process.env.PLACY_REVALIDATE_URLS;
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    delete process.env.PORT;
+  });
+
+  function mockFetch(byBase: Record<string, number>) {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      void init;
+      const base = String(url).replace("/api/admin/revalidate", "");
+      const status = byBase[base];
+      if (status === undefined) throw new Error("ECONNREFUSED");
+      return { ok: status >= 200 && status < 300, status } as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  it("treffer den lokale dev-serveren når prod svarer 403 (admin avslått i prod)", async () => {
+    // Selve luken: cache-bustet gikk BARE til prod, der ADMIN_ENABLED er av,
+    // mens dev-serveren som faktisk serverte boardet aldri fikk beskjed.
+    mockFetch({ "https://www.placy.no": 403, "http://localhost:3000": 200 });
+
+    const result = await revalidateProject("placy-demo", "strindfjordvegen-10");
+
+    expect(result.revalidated).toEqual(["http://localhost:3000"]);
+  });
+
+  it("revaliderer ALLE flater som svarer, ikke bare den første", async () => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://preview.placy.no";
+    mockFetch({
+      "https://preview.placy.no": 200,
+      "https://www.placy.no": 200,
+      "http://localhost:3000": 200,
+    });
+
+    const result = await revalidateProject("placy-demo", "strindfjordvegen-10");
+
+    expect(result.revalidated).toHaveLength(3);
+  });
+
+  it("sender riktig tag og path", async () => {
+    const fetchMock = mockFetch({ "http://localhost:3000": 200 });
+
+    await revalidateProject("placy-demo", "strindfjordvegen-10");
+
+    const lastCall = fetchMock.mock.calls.at(-1)!;
+    const body = JSON.parse(lastCall[1]!.body as string);
+    expect(body).toEqual({
+      tag: "product:placy-demo_strindfjordvegen-10",
+      path: "/eiendom/placy-demo/strindfjordvegen-10/rapport-board",
+    });
+  });
+
+  it("PORT respekteres for den lokale flaten (worktree på 3001)", async () => {
+    process.env.PORT = "3001";
+    const fetchMock = mockFetch({ "http://localhost:3001": 200 });
+
+    const result = await revalidateProject("placy-demo", "x");
+
+    expect(result.revalidated).toEqual(["http://localhost:3001"]);
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes(":3000"))).toBe(false);
+  });
+
+  it("ingen flate tar imot + boardet finnes fra før → varsler at cachen fortsatt serveres", async () => {
+    mockFetch({});
+    const warned: string[] = [];
+
+    await revalidateProject("placy-demo", "x", { log() {}, warn: (m) => warned.push(m), section() {} }, { existed: true });
+
+    expect(warned).toHaveLength(1);
+    expect(warned[0]).toMatch(/hard refresh/i);
+  });
+
+  it("ingen flate tar imot + NYTT board → informerer i stedet for å advare", async () => {
+    mockFetch({});
+    const warned: string[] = [];
+
+    await revalidateProject("placy-demo", "x", { log() {}, warn: (m) => warned.push(m), section() {} }, { existed: false });
+
+    expect(warned[0]).toMatch(/rendrer ferskt/i);
+  });
+
+  it("kaster aldri — en flate som feiler hardt stopper ikke provisjonen", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("boom"); }));
+
+    await expect(revalidateProject("placy-demo", "x")).resolves.toEqual({ revalidated: [] });
   });
 });

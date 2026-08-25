@@ -1,16 +1,17 @@
 import { describe, it, expect } from "vitest";
 import {
   isBusinessClosed,
-  isWithinCategoryDistance,
+  isWithinMaxDistance,
   hasMinimumQualitySignals,
   isNameCategoryMismatch,
   evaluateGooglePlaceQuality,
   findNearbyGroups,
   calculateQualityStats,
-  WALK_METERS_PER_MINUTE,
+  MAX_POI_DISTANCE_METERS,
   type QualityRejection,
   type NearbyGroupInput,
 } from "./poi-quality";
+import { BOLIG_DISCOVERY_RADIUS_M } from "./report-defaults";
 
 // === isBusinessClosed ===
 
@@ -36,54 +37,33 @@ describe("isBusinessClosed", () => {
   });
 });
 
-// === isWithinCategoryDistance ===
+// === isWithinMaxDistance ===
 
-describe("isWithinCategoryDistance", () => {
-  it("avviser restaurant 22 min unna (Crispy Fried Chicken case)", () => {
-    // 22 min * 80 m/min = 1760m
-    expect(isWithinCategoryDistance(1760, "restaurant")).toBe(false);
+describe("isWithinMaxDistance", () => {
+  it("godtar POI innenfor taket", () => {
+    expect(isWithinMaxDistance(MAX_POI_DISTANCE_METERS - 1)).toBe(true);
   });
 
-  it("godtar restaurant 10 min unna", () => {
-    expect(isWithinCategoryDistance(800, "restaurant")).toBe(true);
+  it("godtar POI nøyaktig på taket", () => {
+    expect(isWithinMaxDistance(MAX_POI_DISTANCE_METERS)).toBe(true);
   });
 
-  it("godtar sykehus 30 min unna", () => {
-    // 30 min * 80 = 2400m, maks er 45 min
-    expect(isWithinCategoryDistance(2400, "hospital")).toBe(true);
+  it("avviser POI utenfor taket", () => {
+    expect(isWithinMaxDistance(MAX_POI_DISTANCE_METERS + 1)).toBe(false);
   });
 
-  it("godtar kjøpesenter 25 min unna (bil-destinasjon)", () => {
-    // 25 min * 80 = 2000m, maks er 30 min
-    expect(isWithinCategoryDistance(2000, "shopping")).toBe(true);
+  it("godtar nærmeste dagligvare 1 295 m unna (Rema-caset 2026-08-24)", () => {
+    // Det gamle kategori-taket (dagligvare 15 min × 80 m/min = 1 200 m) kuttet
+    // nærmeste Rema til Strindfjordvegen 10 med 95 meters margin.
+    expect(isWithinMaxDistance(1295)).toBe(true);
   });
 
-  it("godtar busstopp 12 min unna (rural-knutepunkt, grense 15 min fra 2026-08-12)", () => {
-    // 12 min * 80 = 960m — Venna vegdele-caset: hovedknutepunktet ~900 m unna
-    expect(isWithinCategoryDistance(960, "bus")).toBe(true);
+  it("godtar bakeri 1 284 m unna (Rosenborg Bakeri, samme kutt)", () => {
+    expect(isWithinMaxDistance(1284)).toBe(true);
   });
 
-  it("avviser busstopp 16 min unna", () => {
-    // 16 min * 80 = 1280m, maks er 15 min
-    expect(isWithinCategoryDistance(1280, "bus")).toBe(false);
-  });
-
-  it("godtar busstopp 8 min unna", () => {
-    expect(isWithinCategoryDistance(640, "bus")).toBe(true);
-  });
-
-  it("bruker default 25 min for ukjent kategori", () => {
-    // 23 min * 80 = 1840m, default maks er 25 min
-    expect(isWithinCategoryDistance(1840, "unknown_category")).toBe(true);
-  });
-
-  it("avviser ukjent kategori over default 25 min", () => {
-    // 27 min * 80 = 2160m
-    expect(isWithinCategoryDistance(2160, "unknown_category")).toBe(false);
-  });
-
-  it("bruker WALK_METERS_PER_MINUTE = 80", () => {
-    expect(WALK_METERS_PER_MINUTE).toBe(80);
+  it("taket er større enn bolig-discovery-sirkelen — sirkelen er grensen", () => {
+    expect(MAX_POI_DISTANCE_METERS).toBeGreaterThan(BOLIG_DISCOVERY_RADIUS_M);
   });
 });
 
@@ -242,12 +222,12 @@ describe("evaluateGooglePlaceQuality", () => {
     expect(rejections).toHaveLength(1);
   });
 
-  it("avviser for langt (Crispy Fried Chicken case)", () => {
+  it("avviser for langt (over taket)", () => {
     const rejections: QualityRejection[] = [];
     const result = evaluateGooglePlaceQuality(
       makePlace(),
       "restaurant",
-      1760, // 22 min
+      MAX_POI_DISTANCE_METERS + 200,
       rejections
     );
     expect(result.pass).toBe(false);

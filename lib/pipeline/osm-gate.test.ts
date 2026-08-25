@@ -218,21 +218,23 @@ describe("osm-gate: portene", () => {
     if (!verdict.accept) expect(verdict.reason).toBe("mangler-koordinat");
   });
 
-  it("pitch krever godkjent sport — også når verdien er semikolon-liste", () => {
-    const cases: Array<[string | undefined, boolean]> = [
-      ["soccer", true],
-      ["soccer;ice_skating", true],
-      ["tennis", true],
-      ["athletics;multi", false],
-      ["boules", false],
-      [undefined, false],
-    ];
-    for (const [sport, expected] of cases) {
+  it("navngitt pitch godkjennes uansett sport — også uten sport-tagg", () => {
+    // Sport-kravet ble fjernet 2026-08-24: fem hardkodede verdier (soccer,
+    // football, handball, tennis, basketball) avviste «Ranheim Pumptrack»
+    // (cycling), «Charlottenlund skatepark» (skateboard) og «Leangen
+    // idrettspark» (ingen sport-tagg). Navnekravet gjør jobben alene.
+    for (const sport of ["soccer", "soccer;ice_skating", "cycling", "skateboard", "athletics;multi", "boules", undefined]) {
       const tags: Record<string, string> = { leisure: "pitch", name: "Banen" };
       if (sport) tags.sport = sport;
       const verdict = evaluateOsmElement({ ...base, tags });
-      expect(verdict.accept, `sport=${sport ?? "(mangler)"}`).toBe(expected);
+      expect(verdict.accept, `sport=${sport ?? "(mangler)"}`).toBe(true);
     }
+  });
+
+  it("navnløs pitch avvises fortsatt — navnet ER porten", () => {
+    const verdict = evaluateOsmElement({ ...base, tags: { leisure: "pitch", sport: "soccer" } });
+    expect(verdict.accept).toBe(false);
+    if (!verdict.accept) expect(verdict.reason).toBe("mangler-navn");
   });
 });
 
@@ -243,9 +245,19 @@ describe("osm-gate: mot det reelle Ranheim-sveipet (781 objekter)", () => {
     expect(ledger.accepted + ledger.rejected).toBe(ledger.total);
   });
 
-  it("godkjenner 14 av 781", () => {
+  it("godkjenner 16 av 781", () => {
+    // 14 før sport-kravet på pitch ble fjernet (2026-08-24). De to nye er
+    // «Ranheim Pumptrack» (sport=cycling) og «Charlottenlund skatepark»
+    // (sport=skateboard) — begge navngitte, begge ekte anlegg.
     const { accepted } = runFixture();
-    expect(accepted).toHaveLength(14);
+    expect(accepted).toHaveLength(16);
+  });
+
+  it("de to nye er nettopp pumptracken og skateparken", () => {
+    const { accepted } = runFixture();
+    const names = accepted.map((a) => a.name);
+    expect(names).toContain("Ranheim Pumptrack");
+    expect(names).toContain("Charlottenlund skatepark");
   });
 
   it("ingen regresjon: alle 12 anleggene den gamle spørringen importerte er med", () => {
@@ -305,7 +317,7 @@ describe("osm-gate: mot det reelle Ranheim-sveipet (781 objekter)", () => {
     expect(ledger.byDetail["ikke-i-hviteliste:amenity=parking"]).toBe(171);
     expect(ledger.byDetail["ikke-i-hviteliste:leisure=playground"]).toBe(57);
     expect(ledger.byDetail["ikke-i-hviteliste:natural=tree"]).toBe(184);
-    expect(summarizeLedger(ledger)).toContain("14 av 781 godkjent");
+    expect(summarizeLedger(ledger)).toContain("16 av 781 godkjent");
   });
 });
 

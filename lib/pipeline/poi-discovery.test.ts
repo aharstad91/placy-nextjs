@@ -4,6 +4,7 @@ import {
   discoverEnturStops,
   discoverBysykkelStations,
   generatePoiId,
+  subdivideCircle,
   GOOGLE_CATEGORY_MAP,
 } from "./poi-discovery";
 
@@ -166,7 +167,7 @@ describe("discoverGooglePlaces — filterkjeden (stille dropp/slipp)", () => {
     expect(result.map((p) => p.name)).toEqual(["Komplett Kafé"]);
   });
 
-  it("maxResultsPerCategory capper antallet per kategori", async () => {
+  it("INGEN per-kategori-cap — alt som passerer filtrene leveres (cap fjernet 2026-08-24)", async () => {
     fetchMock.mockResolvedValueOnce(
       placesResponse([
         googlePlace({ id: "a", name: "Kafé A", types: ["cafe"] }),
@@ -175,12 +176,115 @@ describe("discoverGooglePlaces — filterkjeden (stille dropp/slipp)", () => {
       ])
     );
 
-    const result = await discoverGooglePlaces(
-      baseConfig(["cafe"], { maxResultsPerCategory: 2 }),
-      "key"
+    const result = await discoverGooglePlaces(baseConfig(["cafe"]), "key");
+
+    expect(result).toHaveLength(3);
+  });
+});
+
+describe("subdivideCircle — dekning av modersirkelen", () => {
+  it("gir fire delsirkler, ett hakk dypere", () => {
+    const subs = subdivideCircle({ lat: 63.43, lng: 10.4, radius: 3000, depth: 0 });
+    expect(subs).toHaveLength(4);
+    expect(subs.every((c) => c.depth === 1)).toBe(true);
+  });
+
+  it("dekker HELE modersirkelen — verste punkt på kanten treffes", () => {
+    // Kravet: for hvert punkt på modersirkelens kant finnes en delsirkel som
+    // inneholder det. Verste tilfelle er kanten midt mellom to nabosentre.
+    const root = { lat: 63.43, lng: 10.4, radius: 3000, depth: 0 };
+    const subs = subdivideCircle(root);
+    const mLat = 110_540;
+    const mLng = 111_320 * Math.cos((root.lat * Math.PI) / 180);
+
+    for (let deg = 0; deg < 360; deg += 1) {
+      const rad = (deg * Math.PI) / 180;
+      const edge = {
+        lat: root.lat + (root.radius * Math.sin(rad)) / mLat,
+        lng: root.lng + (root.radius * Math.cos(rad)) / mLng,
+      };
+      const covered = subs.some((c) => {
+        const dx = (edge.lng - c.lng) * mLng;
+        const dy = (edge.lat - c.lat) * mLat;
+        return Math.hypot(dx, dy) <= c.radius;
+      });
+      expect(covered, `kantpunkt ved ${deg}° er udekket`).toBe(true);
+    }
+  });
+});
+
+describe("discoverGooglePlaces — metnings-drevet oppdeling", () => {
+  /** 20 treff = API-taket → «det finnes mer her». */
+  function saturatedResponse(prefix: string) {
+    return placesResponse(
+      Array.from({ length: 20 }, (_, i) =>
+        googlePlace({ id: `${prefix}-${i}`, name: `Kafé ${prefix}${i}`, types: ["cafe"] })
+      )
+    );
+  }
+
+  it("ikke mettet (under 20 treff) → ETT kall, ingen oppdeling", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([googlePlace({ id: "a", name: "Kafé A", types: ["cafe"] })])
     );
 
-    expect(result).toHaveLength(2);
+    await discoverGooglePlaces(baseConfig(["cafe"]), "key");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("mettet rot → deles i fire; delsirklene er ikke mettet → 5 kall totalt", async () => {
+    fetchMock.mockResolvedValueOnce(saturatedResponse("rot"));
+    for (const q of ["q1", "q2", "q3", "q4"]) {
+      fetchMock.mockResolvedValueOnce(
+        placesResponse([googlePlace({ id: q, name: `Kafé ${q}`, types: ["cafe"] })])
+      );
+    }
+
+    const result = await discoverGooglePlaces(baseConfig(["cafe"]), "key");
+
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+    // 20 fra rota + 4 unike fra delsirklene
+    expect(result).toHaveLength(24);
+  });
+
+  it("mettet hele veien ned → stopper på dybde 2 (1 + 4 + 16 = 21 kall)", async () => {
+    let n = 0;
+    fetchMock.mockImplementation(async () => saturatedResponse(`s${n++}`));
+
+    await discoverGooglePlaces(baseConfig(["cafe"]), "key");
+
+    expect(fetchMock).toHaveBeenCalledTimes(21);
+  });
+
+  it("dedupliserer på place-id på tvers av delsirkler (overlappet er ufarlig)", async () => {
+    // Rota og alle fire delsirkler returnerer SAMME 20 steder.
+    fetchMock.mockImplementation(async () => saturatedResponse("same"));
+
+    const result = await discoverGooglePlaces(baseConfig(["cafe"]), "key");
+
+    expect(result).toHaveLength(20);
+  });
+
+  it("treff i delsirkel MEN utenfor modersirkelen kastes (grensen flyttes ikke)", async () => {
+    // Delsirklene rekker 1,26 × radius ut. Et sted 2 500 m unna ligger utenfor
+    // config.radius = 2000 og skal falle på avstandsfilteret.
+    fetchMock.mockResolvedValueOnce(saturatedResponse("rot"));
+    fetchMock.mockResolvedValue(
+      placesResponse([
+        googlePlace({
+          id: "far",
+          name: "Kafé Langt Unna",
+          types: ["cafe"],
+          // ~2 500 m nord for CENTER
+          location: { latitude: 63.4526, longitude: 10.4 },
+        }),
+      ])
+    );
+
+    const result = await discoverGooglePlaces(baseConfig(["cafe"]), "key");
+
+    expect(result.map((p) => p.name)).not.toContain("Kafé Langt Unna");
   });
 });
 
@@ -308,17 +412,18 @@ describe("discoverEnturStops — transportmodus-mapping", () => {
     expect(result).toEqual([]);
   });
 
-  it("bussholdeplass utenfor gangavstands-grensen (15 min × 80 m) droppes selv innenfor radius", async () => {
+  it("bussholdeplass utenfor avstandstaket droppes selv innenfor radius", async () => {
     fetchMock.mockResolvedValueOnce(
       enturResponse([
-        // ~1.7 km — innenfor radius 2000, men over buss-grensen på 1200 m
-        // (grensen 10→15 min i recall-fiksen 2026-08-12: rural-knutepunkt ~900 m)
-        { id: "NSR:StopPlace:5", name: "Fjern holdeplass", latitude: 63.445, longitude: 10.4, transportMode: ["bus"] },
+        // ~4,5 km nord — innenfor radius 5000, men over det felles taket
+        // (MAX_POI_DISTANCE_METERS = 4 000 m, hevet fra 3 000 da bolig-radiusen
+        // ble 3 000: taket skal alltid ligge OVER sirkelen, aldri på den).
+        { id: "NSR:StopPlace:5", name: "Fjern holdeplass", latitude: 63.4705, longitude: 10.4, transportMode: ["bus"] },
         { id: "NSR:StopPlace:6", name: "Nær holdeplass", ...NEAR_STOP, transportMode: ["bus"] },
       ])
     );
 
-    const result = await discoverEnturStops({ center: CENTER, radius: 2000 });
+    const result = await discoverEnturStops({ center: CENTER, radius: 5000 });
 
     expect(result.map((p) => p.enturStopplaceId)).toEqual(["NSR:StopPlace:6"]);
   });

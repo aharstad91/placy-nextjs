@@ -8,6 +8,7 @@ import {
   NAERING_THEME_DEFAULTS,
   getThemeDefaults,
   getDiscoveryRadius,
+  BOLIG_DISCOVERY_RADIUS_M,
 } from "./report-defaults";
 import { GOOGLE_CATEGORY_MAP, TRANSPORT_CATEGORIES } from "./poi-discovery";
 import { PUBLIC_POI_CATEGORIES } from "./import-public-pois";
@@ -155,15 +156,21 @@ describe("getThemeDefaults", () => {
 });
 
 describe("getDiscoveryRadius", () => {
-  it("kjent by er case-insensitiv (Trondheim → 2000 bolig / 1500 næring)", () => {
-    expect(getDiscoveryRadius("Trondheim")).toBe(2000);
-    expect(getDiscoveryRadius("TRONDHEIM")).toBe(2000);
-    expect(getDiscoveryRadius("Trondheim", "naering")).toBe(1500);
+  it("bolig er BY-UAVHENGIG — å kjenne byen skal ikke krympe nabolaget", () => {
+    expect(getDiscoveryRadius("Trondheim")).toBe(BOLIG_DISCOVERY_RADIUS_M);
+    expect(getDiscoveryRadius("TRONDHEIM")).toBe(BOLIG_DISCOVERY_RADIUS_M);
+    expect(getDiscoveryRadius("Oslo")).toBe(BOLIG_DISCOVERY_RADIUS_M);
+    expect(getDiscoveryRadius("Snåsa")).toBe(BOLIG_DISCOVERY_RADIUS_M);
+    expect(getDiscoveryRadius(undefined)).toBe(BOLIG_DISCOVERY_RADIUS_M);
   });
 
-  it("ukjent by og undefined → profil-default (2500 bolig / 1500 næring)", () => {
-    expect(getDiscoveryRadius("Snåsa")).toBe(2500);
-    expect(getDiscoveryRadius(undefined)).toBe(2500);
+  it("bolig-radiusen er 3000 m", () => {
+    expect(BOLIG_DISCOVERY_RADIUS_M).toBe(3000);
+  });
+
+  it("næring beholder per-by-tabellen (eget premiss, ikke berørt)", () => {
+    expect(getDiscoveryRadius("Trondheim", "naering")).toBe(1500);
+    expect(getDiscoveryRadius("Oslo", "naering")).toBe(1200);
     expect(getDiscoveryRadius("Snåsa", "naering")).toBe(1500);
     expect(getDiscoveryRadius(undefined, "naering")).toBe(1500);
   });

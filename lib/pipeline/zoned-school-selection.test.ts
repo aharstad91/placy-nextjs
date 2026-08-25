@@ -9,6 +9,7 @@ import {
   nearestOfType,
   resolveSchoolTypeFromNsr,
   selectSchools,
+  isSameSchool,
   type SchoolCandidate,
 } from "@/lib/pipeline/zoned-school-selection";
 
@@ -219,16 +220,37 @@ describe("selectSchools", () => {
     expect(krets).toEqual(["Ranheim skole", "Charlottenlund ungdomsskole"]);
   });
 
-  it("tar IKKE med nærmeste ved siden av kretsskolen", () => {
-    // Første utkast gjorde det for ikke å fjerne innhold. Resultatet var skoler
-    // 2,4 km unna som ingen i strøket sogner til; OSM-sveipet dekker tettheten.
+  it("tar med alle skoler innenfor radius — kretsskolen først, resten som nabolagsfakta", () => {
+    // ENDRET 2026-08-24: kretsvalget stod alene, og rev «Stiftelsen
+    // steinerskolen på Rotvoll» av boardet selv om den ligger 1 150 m unna og
+    // finnes i poolen fra to kilder. En privatskole i strøket er et
+    // nabolagsfaktum uansett hvem som sogner dit.
     const { picks } = selectSchools(
       { barneskole: "RANHEIM", ungdomsskole: "CHARLOTTENLUND" },
       grilstad,
       2500,
     );
-    const navn = picks.map((p) => p.candidate.name);
-    expect(navn).not.toContain("Stiftelsen steinerskolen på Rotvoll");
+    const byName = new Map(picks.map((p) => [p.candidate.name, p.reason]));
+    expect(byName.get("Ranheim skole")).toBe("krets");
+    expect(byName.get("Charlottenlund ungdomsskole")).toBe("krets");
+    expect(byName.get("Stiftelsen steinerskolen på Rotvoll")).toBe("i-omraadet");
+    // Markaplassen ligger 2 943 m unna og er ikke krets her — den skal UT.
+    expect(byName.has("Markaplassen skole")).toBe(false);
+  });
+
+  it("luker ut fengselsundervisning og voksenopplæring", () => {
+    // NSR koder dem som ordinære videregående enheter. Før 2026-08-24 var de
+    // usynlige fordi bare nærmeste vgs ble valgt; nå må de filtreres eksplisitt.
+    const { picks } = selectSchools(
+      { barneskole: null, ungdomsskole: null },
+      [
+        school("Charlottenlund videregående skole avd Trondheim Fengsel", "videregaende", 800),
+        school("Trondheim voksenopplæringssenter", "videregaende", 900),
+        school("Lukas videregående skole AS", "videregaende", 1256),
+      ],
+      2500,
+    );
+    expect(picks.map((p) => p.candidate.name)).toEqual(["Lukas videregående skole AS"]);
   });
 
   it("henter kretsskolen selv om den ligger utenfor radius — Vikåsen-caset", () => {
@@ -267,7 +289,21 @@ describe("selectSchools", () => {
     const { picks } = selectSchools({ barneskole: null, ungdomsskole: null }, grilstad, 2500);
     const vgs = picks.find((p) => p.type === "videregaende");
     expect(vgs?.candidate.name).toBe("Lukas videregående skole AS");
-    expect(vgs?.reason).toBe("naermeste");
+    // Ligger innenfor radiusen, så den kommer inn som nabolagsfakta. Reason
+    // «naermeste» er reservert for fallbacken når ingen lå innenfor.
+    expect(vgs?.reason).toBe("i-omraadet");
+  });
+
+  it("tar ikke inn videregående utenfor radius — den hører i skolefaktaene, ikke som pin", () => {
+    const { picks } = selectSchools(
+      { barneskole: null, ungdomsskole: null },
+      [school("Lukas videregående skole AS", "videregaende", 4000)],
+      2500,
+    );
+    // Videregående har ingen krets, så det finnes ingen grunn til å bryte
+    // radiusen for den. `fetchSchoolFacts` lister byens vgs med reisetid i
+    // FAQ-en uansett — der hører et tilbud 4 km unna hjemme.
+    expect(picks).toEqual([]);
   });
 
   it("dupliserer ikke når kretsskolen ogsa er nærmeste", () => {
@@ -422,8 +458,49 @@ describe("planStaleSchoolUnlink", () => {
   });
 });
 
-describe("selectSchools — kretsen står alene for sitt trinn", () => {
-  it("legger ikke nærmeste ved siden av kretsskolen", () => {
+describe("isSameSchool — NSR-dubletter", () => {
+  it("morenhet og avdeling på samme koordinat er samme skole", () => {
+    expect(
+      isSameSchool(
+        school("Stiftelsen steinerskolen på Rotvoll", "grunnskole", 1066),
+        school("Stiftelsen steinerskolen Rotvoll", "grunnskole", 1066),
+      ),
+    ).toBe(true);
+  });
+
+  it("barneskolen og ungdomsskolen på samme tomt er IKKE samme skole", () => {
+    expect(
+      isSameSchool(
+        school("Charlottenlund barneskole", "barneskole", 1343),
+        school("Charlottenlund ungdomsskole", "ungdomsskole", 1343),
+      ),
+    ).toBe(false);
+  });
+
+  it("samme navn på to ulike tomter er to skoler", () => {
+    expect(
+      isSameSchool(
+        school("Lukas videregående skole", "videregaende", 1167),
+        school("Lukas videregående skole AS", "videregaende", 4000),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("selectSchools — kretsskolen er merket, ikke alene", () => {
+  it("tar bare med én av to NSR-rader for samme skole", () => {
+    const { picks } = selectSchools(
+      { barneskole: null, ungdomsskole: null },
+      [
+        school("Stiftelsen steinerskolen på Rotvoll", "grunnskole", 1066),
+        school("Stiftelsen steinerskolen Rotvoll", "grunnskole", 1066),
+      ],
+      2500,
+    );
+    expect(picks).toHaveLength(1);
+  });
+
+  it("kretsskolene får reason «krets», de øvrige i radius «i-omraadet»", () => {
     const { picks } = selectSchools(
       { barneskole: "EBERG", ungdomsskole: "BLUSSUVOLD" },
       [
@@ -434,6 +511,30 @@ describe("selectSchools — kretsen står alene for sitt trinn", () => {
       ],
       2500,
     );
-    expect(picks.map((p) => p.candidate.name)).toEqual(["Eberg skole", "Blussuvoll skole"]);
+    expect(picks.map((p) => [p.candidate.name, p.reason])).toEqual([
+      ["Eberg skole", "krets"],
+      ["Blussuvoll skole", "krets"],
+      ["Charlottenlund barneskole", "i-omraadet"],
+      ["Charlottenlund ungdomsskole", "i-omraadet"],
+    ]);
+  });
+
+  it("sorterer nabolags-skolene nærmest først", () => {
+    const { picks } = selectSchools(
+      { barneskole: null, ungdomsskole: null },
+      [
+        school("Fjern skole", "grunnskole", 2100),
+        school("Nær skole", "grunnskole", 400),
+        school("Midt skole", "grunnskole", 1200),
+      ],
+      2500,
+    );
+    // Første pick er nærmeste-fallbacken for barnetrinnet (ingen krets), så
+    // resten følger på avstand.
+    expect(picks.map((p) => p.candidate.name)).toEqual([
+      "Nær skole",
+      "Midt skole",
+      "Fjern skole",
+    ]);
   });
 });

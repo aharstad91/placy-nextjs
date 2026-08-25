@@ -153,18 +153,35 @@ export function getThemeDefaults(profile: ReportProfile = "bolig"): ReportThemeD
 }
 
 /**
- * Per-by discovery radius for Google Places og offentlige POI-kildar.
- * Bolig: fallback suburban (2500 m). Næring: kortere — ansatte går/sykler til
- * lunsj, ikke kjører til dagligvare (Trondheim 1500 m).
+ * Discovery-radius for boligprofilen: ETT tall, ingen per-by-tabell.
+ *
+ * ## Hvorfor tabellen ble fjernet (2026-08-24)
+ *
+ * Her lå det per-by-verdier — Oslo 1 500 m, Bergen 1 800, Trondheim 2 000 —
+ * med 2 500 m som fallback når byen var ukjent. Det gjorde at Å KJENNE byen
+ * krympet boardet: en Trondheims-adresse fikk 500 meter mindre nabolag enn en
+ * adresse pipelinen ikke klarte å plassere. Ingen av de 12 eksisterende
+ * boardene hadde truffet tabellen ennå (alle kjørte fallback 2 500 m), så
+ * fella var fortsatt uavfyrt — men den var reell.
+ *
+ * Premisset bak per-by-verdiene var at tett by trenger kortere radius fordi
+ * det ligger mer innenfor den. Det er et RELEVANS-argument, og relevans hører
+ * i sorteringen og i board-rendringen der den er synlig — ikke i importen, der
+ * konsekvensen er at stedet ikke finnes. Folk bruker området rundt hjemmet sitt
+ * enten det ligger 400 meter eller 3 kilometer unna.
+ *
+ * 3 000 m er valgt fordi det dekker det folk faktisk regner som nabolaget sitt
+ * til fots og på sykkel, og fordi kysten/dalsidene i norske byer strekker seg
+ * lineært — et 2 000-meters kutt fjerner systematisk sjøkanten og marka, som
+ * er nettopp det som selger boligen.
  */
-export const REPORT_DISCOVERY_RADIUS: Record<string, number> = {
-  oslo: 1500,
-  bergen: 1800,
-  trondheim: 2000,
-  stavanger: 2000,
-  default: 2500,
-};
+export const BOLIG_DISCOVERY_RADIUS_M = 3000;
 
+/**
+ * Næringsprofilen beholder per-by-tabellen: der er premisset et annet (ansatte
+ * går til lunsj i arbeidstiden, de flytter ikke inn), og profilen er ikke
+ * berørt av funnet over. Endres den, skal det være på egne premisser.
+ */
 export const NAERING_DISCOVERY_RADIUS: Record<string, number> = {
   oslo: 1200,
   bergen: 1200,
@@ -177,9 +194,10 @@ export function getDiscoveryRadius(
   city: string | undefined,
   profile: ReportProfile = "bolig",
 ): number {
-  const table =
-    profile === "naering" ? NAERING_DISCOVERY_RADIUS : REPORT_DISCOVERY_RADIUS;
-  if (!city) return table.default;
-  const key = city.toLowerCase();
-  return table[key] ?? table.default;
+  if (profile !== "naering") return BOLIG_DISCOVERY_RADIUS_M;
+  if (!city) return NAERING_DISCOVERY_RADIUS.default;
+  return (
+    NAERING_DISCOVERY_RADIUS[city.toLowerCase()] ??
+    NAERING_DISCOVERY_RADIUS.default
+  );
 }
