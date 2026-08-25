@@ -6,6 +6,70 @@
 
 ---
 
+## 2026-08-25 — SHEETEN BLE ÉN SCROLLER MED TRE STOPP: DRA, SCROLL OG SLÅ SAMMEN ER SAMME BEVEGELSE (branch `feat/sheet-gesture`, worktree `../placy-sheet-gest`)
+
+**Kontekst:** Andreas sendte en skjermopptak fra Citymapper og beskrev effekten han ville gjenskape: *«her ser du hvordan sheet er drabar ved drag/touch. når det er igjen 10% (ca) av høyden, stopper den selve draget av sheet-kroppen, og det blir da en sticky header med inline scroll i selve sheeten. slik går det også på vei tilbake.»* Han la til at radene i lista er trykkbare igjen så snart draget slutter — *«det er som om at appen detekterer at jeg har vært borti touch med finger, og låser av punktene i lista mens jeg drar»* — og spurte om dette i det hele tatt er mulig på web eller om det er native-only. Etter første leveranse kom den avgjørende korreksjonen: *«jeg ser at jeg ikke får dratt den ned noe mer enn ca 50% av høyden av viewheight. Det er jo som på citymapper, at brukeren drar ned sheet for å få mer plass til å bruke kartet.»*
+
+Arbeidet ligger i egen worktree (`../placy-sheet-gest`, port `:4401`) nettopp fordi `_shared/baseline.js` er delt: en annen sesjon itererer på småting i samme fil i hovedrepoet.
+
+### Grepet: slutte å ha to mekanismer
+
+Den gamle sheeten var to ting som måtte gi bevegelsen videre til hverandre — JS som dro sheet-høyden, og nativ scroll i innholdet. Overleveringen er det som ryker. Nå er sheeten **én scroller med en gjennomsiktig spacer over kroppen**:
+
+```
+.sheet-outer   scroller, høy som taket (0.86 av rammen), pointer-events: none
+  .sheet-spacer  gjennomsiktig, høy som veien fra sammenslått til taket
+  .sheet         kroppen — min-høyde = TAKET, pointer-events: auto
+    .grab          sticky top:0 — sheetens overkant, og ALT som er synlig sammenslått
+    .sheet-body    innholdet (ikke en scroller)
+```
+
+Fingeren flytter **ett tall**: `scrollTop`. Under spacerens høyde er tallet sheetens høyde; over den er det innholdet som går under en fastlimt header. Det finnes ingen overlevering, altså ingenting som kan ryke midt i en gest — veien opp og veien tilbake er samme bevegelse. Taket er scrollerens egen overkant, så kroppen kan ikke komme over det uansett hvor mye innhold den har.
+
+**Tre stopp** på det samme tallet etter Andreas' korreksjon: sammenslått (`0`), hvilestillingen, taket. Sammenslått er handlens egen **målte** høyde, ikke et rundt tall — da står tittelen igjen, og flaten sier hva den er selv når den er borte. På 390×844 er det 47 px mot hvilestillingens 287 og takets 726.
+
+### Vi eier gesten, og det er ikke et valg av smak
+
+`touch-action: none` på scroll-containeren, og pointer-events driver `scrollTop` selv. Grunnen er dokumentert i Apples egen Safari Web Content Guide: **har iOS først klassifisert strøket som en scroll, får JS ingen flere `pointermove` før fingeren slippes.** Da kan ikke lista gi bevegelsen tilbake til sheet-kroppen i samme strøk — nettopp veien tilbake Andreas viste i opptaket. `vaul#153` er den samme feilen, iOS-only, fortsatt åpen.
+
+To detaljer som ser ut som pynt og ikke er det:
+
+- **`touch-action` låses ved gest-start** (Pointer Events 3 §8.2) og kan ikke byttes underveis. Og oppslaget går fra elementet fingeren treffer opp til nærmeste scroll-container **inklusiv den**, og stopper der — så `none` må stå på scrolleren selv, ikke bare på en forelder.
+- **`pointer-events: none` på scrolleren er bærende.** Scrolleren dekker hele takområdet; uten den treffer et trykk over sheeten scrolleren i stedet for kartet. Events bobler uansett `pointer-events`, så lytterne våre hører kroppen likevel. Verifisert med `elementFromPoint`: over spaceren → kartets canvas, over kroppen → raden.
+
+**Trykk-låsen Andreas beskrev er vår egen.** Har vi hindret nettleserens scroll, kommer `click` likevel når fingeren løftes — og fordi touch har implisitt pointer capture havner det på raden fingeren lå **på**, ikke der den slapp. Én lytter i **capture-fasen** på scrolleren spiser det; capture er poenget, siden `wire()` legger all trykk-håndtering på `#app`, som er *forelder* til sheeten. I tillegg `-webkit-user-select: none` (uten den spiser Safaris tekstmarkering trykket når fingeren lander presis på teksten i en rad, `vaul#652`) og `-webkit-touch-callout: none` (ellers popper «Kopier / Slå opp» midt i draget). Ingen `setPointerCapture` — WebKits re-capture er rapportert ødelagt (WebKit 199803).
+
+**Renders utsetter seg selv mens flaten er i bevegelse.** `render()` bygger `#app` på nytt, og en bevegelse som er i gang bor i den gamle noden. Sperren ligger i `render()` selv, ikke bare i `moveend`, fordi iterasjonene kaller `util.rerender()` og fordi `resize` rendrer — å snu telefonen midt i et drag er en ekte hendelse.
+
+### Fire feil, alle funnet ved å måle
+
+1. **Magneten gjettet landingen med 190 ms.** Tallet var produksjonens eget, fra et drag som ikke hadde noen utrulling å regne med. Vår utrulling har eksponentiell demping (`SHEET_DECAY = 0.998`, iOS' egen faktor per ms) og varer nærmere 500 ms, så flaten rullet forbi magneten og stanset 47 px over et stopp — en høyde som ser ut som en feil, ikke som et valg. Riktig projeksjon er analytisk: `v / -ln(decay)` ≈ 500 · v. Et nett i enden av utrullingen (`sheetLand`) tar tilfellene der glidet ble klippet ved 0 eller kom ned fra lista, der magneten med vilje ikke gjelder.
+2. **Kroppens gulv var «vinduet du står i nå», som er selvbegrensende.** 04 har ett kort og ingenting å scrolle, så taket var uoppnåelig der — flaten kunne ikke dras høyere enn innholdet rakk. Gulvet er nå **taket**. Det stenger samtidig et høyde-tyveri som fantes før dette arbeidet: mobil-lista er utsnitts-scopet, så zoomer du kartet inn til ett kort krymper innholdet, scroll-området forsvinner, nettleseren klipper posisjonen til null og sheeten faller ned av seg selv — og zoomer du ut igjen kommer den ikke tilbake. Målt: 12 kort → 0 kort med sheeten i taket, `maxScroll` faller til 679 (= hele reiseveien) og posisjonen står.
+3. **«Står flaten i hvilestillingen» ble avgjort ved å sammenligne piksler.** Scroll-hendelser kommer asynkront, så `S.sheetScroll` kan ligge på forrige tall i det en render treffer — og flaten flyttet seg av seg selv til 254 px mens fanen sto i bakgrunnen. Nå er det et eksplisitt flagg (`sheetAtRest`) som settes der bevegelsen faktisk ender, og som draget nullstiller i det slop-terskelen krysses.
+4. **`sheetBusy` ble satt ved nedtrykk.** Det utsatte renderen 140 ms for *hvert vanlig trykk* — hele flaten gjort treg for å beskytte et drag som ikke skjedde. Nå settes den først når slop-terskelen krysses. Samme sted: et rent trykk skal ikke flytte flaten, for sto sheeten 20 px under taket ville magneten ellers dratt den opp — en følge du ikke ba om, av en handling som handlet om noe annet.
+
+### 04 trengte ett sømsted
+
+Fortellings-prototypen har transporten i et fast dekk i rammens underkant, og dekket ligger **over** sheeten (`position: fixed; z-index: 35`). Sammenslått ville handlen havnet bak det. Løsningen er `state().sheetFloorInset`: piksler i underkanten som er dekket av noe annet, og som den sammenslåtte flaten må stå over. 04 setter den fra `paintDeck()`, som alt måler dekket. Målt: dekk 94, handle 28, sammenslått 122 — handlen står på 722 med dekket fra 750, og omvisningens vindu er fortsatt 424.
+
+Samtidig falt et hack ut av 04: `--sty-card-min`-media-blokka er borte, og omvisningens faste vindu er nå en **hvilestilling** brukeren kan overstyre ved å dra. `fitScene()` leser den høyden sheeten faktisk står i (`Baseline.util.sheetVisibleH()`) i stedet for å få hvilestillingen sendt inn — slår du sammen flaten for å se kartet, bruker kameraet plassen du ga det.
+
+### Handlen kan fortsatt trykkes
+
+«Ingen gesture skal være eneste vei til noe» gjelder med tre stopp også: ett trykk går **ett stopp opp**, og fra taket tilbake til sammenslått. Står du i lista, spoler første trykk lista til topps (iOS' egen tittelbar-oppførsel), og neste slår sammen. Alle tre stillingene har en trykk-vei, og tre trykk er en runde.
+
+### Verifisering, og hva bare telefonen kan avgjøre
+
+Målt i Chrome på 390×844: hvilestilling 287 px, sammenslått 47, taket 726, `maxScroll` 1234. Ett strøk fra hvilestillingen til bunnen av lista, og ett strøk hele veien ned til sammenslått. Kart-treff over flaten i alle tre stillingene. Drag over en rad åpner verken modal eller drill-in; rent trykk åpner modalen og flytter ikke flaten. Render midt i drag: noden lever, `renderPending` settes, draget fortsetter. Drill-in 490 px og tilbake til 287. Desktop 1440×900 urørt (sidekolonne 438, 6 kort, ingen sheet). 02 og 03 uendret. Konsollen ren. `npx tsc --noEmit` 0 feil, `npm run lint` 0 feil (51 preeksisterende warnings), `npm test` 3132 tester i 198 filer.
+
+**To ting kan bare enheten avgjøre:** bremsefølelsen etter slipp (vi bruker iOS' faktor, men den er ikke kalibrert mot enhet), og om `pointer-events: none` på scrolleren oppfører seg på iOS som i Chrome — researchen fant én iOS-rapport Chrome ikke viser.
+
+**Chrome DevTools MCP kan ikke sende ekte touch-gester.** Dens `drag` sender mus-pointer-events selv med touch-emulering på (probe: `touchstart: 0`, `pointerdown: 1`, `pointermove: 3`). Fordi vi nå eier gesten, trener mus-drag *den samme koden* — men følelsen må kjennes på enhet. To ganger ga testene falske feil fordi testskriptet holdt på en node renderen hadde byttet ut (`visible: -420`, senere `afterTap: 0`). Regelen er å spørre DOM-en på nytt inne i hvert måle-punkt, aldri holde en referanse over en render.
+
+**Commits på `feat/sheet-gesture`:** `579048a` (én scroller), `3c8cf8f` (magneten tilbake + utsatte renders), `de7e8d3` (sammenslått som tredje stopp). Ingenting pushet. **Merge-risiko:** `_shared/baseline.js` er delt, og den andre sesjonen har jobbet i samme fil i hovedrepoet og opprettet `05-dra-mellom-stopp` der. Konflikt er sannsynlig ved merge.
+
+---
+
 ## 2026-08-25 — PROTOTYPE-MILJØ FOR NIVÅ-1-FLATEN: BASELINEN SOM FELLES KILDE, IKKE SOM MAL Å KOPIERE
 
 **Kontekst:** Andreas dumpet en tankestrøm (`~/Desktop/placy-dumpå.json`) med to ting i: utfordringen «hvem bygger vi egentlig for», og ønsket om et vanilla HTML/CSS/JS-miljø for rask iterering. Etter første leveranse styrte han presist: *«det er svært viktig at vi har fokus på det vi har utviklet i dag, at vi begynner å iterere på det vi faktisk har i nivå 1»* — og deretter *«du kan droppe nivå 2»*.
