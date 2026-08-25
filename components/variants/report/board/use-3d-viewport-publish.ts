@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { rectFromCamera } from "./board-camera-fit";
+import { isMarker3DTarget } from "@/components/map/marker-3d-selectors";
 import { useBoard } from "./board-state";
 
 /**
@@ -175,8 +176,7 @@ export function use3DViewportPublish({
     if (!enabled || !map3d) return;
     const el = map3d as HTMLElement;
     const onGrab = (e: Event) => {
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest("gmp-marker-3d-interactive")) return;
+      if (isMarker3DTarget(e.target)) return;
       userDrivenRef.current = true;
       gestureUnpublishedRef.current = true;
       // Glem NÅR forrige hendelse kom, men behold HVOR TETT de kom: pausen

@@ -6,6 +6,266 @@
 
 ---
 
+## 2026-08-24 — LABELEN LÅ I EN TEKSTUR: HELE 3D-MARKØR-STACKEN OVER TIL DOM
+
+**Kontekst:** Andreas testet boardet på telefonen og reagerte på to ting: labelene på kart-punktene var «veldig uklar/blurry … såpass at jeg reagerer på at det ser dårlig ut», og labelene kom tregt — «det tar 0.4 sek å få opp labels etter at en føler at en er ferdig med å bevege kartet», mot Mapbox som er «meget rask og snappy i forhold».
+
+Begge hadde samme rot: POI-navnet var tegnet som `<text>` INNE i markørens SVG, og Google Maps 3D rasteriserer marker-innhold til en 3D-tekstur.
+
+### Diagnosen: rasteroppløsningen følger deklarert SVG-størrelse, ikke skjermen
+
+Målt i Chrome mot `placy-demo/strindfjordvegen-10`, mobil-emulering 393×852 @ DPR 3:
+
+- `sizePreserved = true` på alle label-bærende markører ga **0 endrede piksler** i en skjermbilde-diff. Googles avstands- og tilt-skalering var altså ikke årsaken.
+- Samme SVG med `width`/`height` ganget med 3 og **uendret** `viewBox` ble tegnet 3× større **og skarp**.
+
+Det andre punktet er beviset: teksturens oppløsning følger SVG-ens deklarerte px-størrelse, ikke skjermens pikselforhold. På DPR 3 blir 10 px tekst en 1×-bitmap blåst 3× opp. Det finnes derfor **ingen innstilling** som gjør teksten skarp så lenge den ligger i teksturen — å blåse opp SVG-en gjør pinnen større, ikke teksten skarpere.
+
+Tregheten var vår egen: målt 426 ms fra siste `gmp-camerapositionchange` til markørene endret seg, som er `CAMERA_SETTLE_MS = 400`. Doc-blokken begrunnet de 400 ms med at hver label-endring er en re-rasterisering, og siterte `webgl-context-leak-per-render-probe-20260603`. **Den doc-en sier det motsatte av det den ble brukt til:** alle de 180 lekkede WebGL-kontekstene kom fra `isWebGLAvailable()` som kjørte per render, og ingen fra markør-rasterisering. Debouncen sto på en slutning kilden ikke bærer.
+
+### Løsningen: `MarkerElement` — og hvorfor det ikke er «tilbake til HTML-overlay»
+
+`Marker3DPin`s egen doc-blokk avviste HTML-overlays med at de gir posisjons-jitter fordi de ikke klarer å synke med Googles GPU-render. Det er riktig for overlays som regner sin EGEN posisjon per frame — som `BoardTravelChip3D` og `BoardPOI3DMiniPopup` gjør.
+
+`MarkerElement` (`<gmp-marker>`) er noe annet: ekte DOM som **Google selv posisjonerer**. Verifisert inline style: `transform: translate(-50%, -100%) translate(400.198px, 420.431px); will-change: transform`. GA i vanlig kanal — ingen `v=alpha` — og `@types/google.maps` 3.64.0 hadde den alt.
+
+### Fem funn som formet løsningen, alle målt i browser
+
+1. **Prosjektpinnen MÅTTE over i samme runde.** En DOM-markør maler over hele WebGL-canvaset uansett `zIndex` — en probe på prosjektpinnens koordinat dekket «Strindfjordvegen 10»-skiva. Verre: `pin-declutter` demoterer POI-er til 14 px prikk NETTOPP fordi de ligger bak prosjektpinnen, og prikkene fjernes ikke. Resultatet av utglisningen ville blitt fargeflekker oppå prosjektnavnet.
+2. **Ankeret endres ikke, men boksen må holdes kvadratisk.** `anchorLeft: -50%` er prosent av elementets EGEN boks. Disc + label i flex-flyt gjorde boksen 132 px bred og skjøv disc-en 46 px bort fra punktet. Med en 40×40 boks og absolutt plassert label er ankeret uendret bunn-midt — så `anchorToDiscCenterY` og mini-popupens −28 px sto riktige uten å røres. Tre markører med bokser på 40, 132 og 40 px fikk identisk `translate`, som beviser at px-translaten er geo-ankeret.
+3. **Vi må dybdesortere selv.** Google depth-sorterer ikke DOM-markører: alle får `z-index: auto`, og rekkefølgen sto stille da heading ble snudd 180°. Uten dette ville overlapp avgjorts av mount-rekkefølge. Declutter rangerer nå på skjerm-y.
+4. **Tag-navn-gaten var den farligste fellen.** Tre kjørende steder matchet `closest("gmp-marker-3d-interactive")`. Fellen: `gmp-marker` er IKKE et prefiks-treff på `gmp-marker-interactive`. Hadde én glippet, ville hvert POI-trykk blitt lest som kamera-grep — popupen lukket seg i samme trykk som åpnet den. Gaten ligger nå i én `isMarker3DTarget` som filtrerer på `data-placy-marker`, med en fil-scan-vakt som feiler hvis noen skriver literalen på nytt.
+5. **Capture var ikke en blocker, men satte en skranke.** `capture-3d-flythrough.mjs` bruker CDP `Page.startScreencast` (hele sidens compositor, ikke canvas-readback), så DOM blir med. MEN `FLY_CLEAN` skjuler alle SØSKEN av kartelementet oppover ancestor-kjeden — markørene MÅ derfor være BARN av `gmp-map-3d`. Det etablerte overlay-mønsteret ville vært usynlig i hver fangede film. Verifisert ved å kjøre capture (1 640 frames) og inspisere tre frames: prosjektpinnen er med, fastspikret til bakken, ingen spøkelser.
+
+### To bugs funnet på veien, uavhengige av byttet
+
+**Hindringen dekket tomrom.** Kollisjonskullingen brukte prosjektpinnens symmetriske SVG-ramme som hindring. Rammen er symmetrisk med hensikt (så disc-en står på punktet), men innholdet er det ikke — teksten står bare til høyre. For «Strindfjordvegen 10» ga det en ~362 px bred boks der ~181 px stakk ut til VENSTRE for disc-en, nesten halve mobilbredden, og hver POI i det båndet ble demotert til prikk uten at det sto noe der. Fikset med `projectSitePinBlocker`, som returnerer den faktiske synlige boksen. **Synlig effekt: flere labels vises nå enn før**, fordi fantom-hindringen blokkerte reelle labels.
+
+**Undertittel-defaulten var duplisert** på to steder (`= "Nybygg 2028"`), og kallet sendte hardkodet `undefined`. De matchet i dag, men kunne drifte. Ligger nå i `PROJECT_PIN_DEFAULT_SUBTITLE` som begge leser.
+
+### Resultatet
+
+| | Før | Etter |
+|---|---|---|
+| Label-tekst | rasterisert 1×-bitmap, blåst 3× opp | ekte DOM-tekst på skjermens oppløsning |
+| Tid til label etter kamerastopp | 426 ms | 135/139/142 ms (tre kjøringer) |
+| Rasteriserte markører på boardet | 465 | 0 |
+
+Skarpheten er verifisert med før/etter-bilder av samme label, samme kamera, samme DPR 3.
+
+### Én enhet ble DROPPET på grunnlag av måling
+
+Planen hadde en enhet for å unngå at ~470 DOM-noder churner usynlig under 2D-overlayet. Målt: **0 style-skriv** gjennom hele 2D-visningen, inkludert åtte pan-gester på Mapbox. Google skriver transform bare når 3D-kameraet beveger seg, og i 2D står det stille. Gaten ville kostet unmount/remount av 465 markører per veksling — og er nøyaktig den betingede monteringen spøkelses-markør-doc-en advarer mot. Droppet, ikke utsatt.
+
+### Bevisst utenfor scope
+
+Reveal-laget (`RevealLayer3D`) er fortsatt rasterisert. Det bærer ingen tekst, så uskarphets-problemet finnes ikke der — og det er en FILM-leveranse: `?fly=1` impliserer ikke `filmMode`, så kaskaden er med i fanget video, og timingen er synket mot flyturens varighet. `Marker3DPin` lever videre for det, men uten label-halvdelen.
+
+### Åpne punkter
+
+- **DOM-markører okkluderes ALDRI av bygg.** Verifisert med tvillingprober 80 m under bakken: den rasteriserte var usynlig, DOM-markøren fullt synlig. Det er nærmere en forbedring enn en regresjon — `altitude` 18/30 finnes nettopp for å tilnærme det — men prosjektpinnen kan nå bli synlig gjennom bygget flythrough-en orbiterer rundt. Bør vurderes på et tett bebygd board.
+- **Terreng-avviket i declutter er ikke fikset.** `projectLatLngToScreen` antar flat bakke mens markørene mountes `RELATIVE_TO_GROUND`. Målt 7,8 px forskjell ved fjorden på Strindfjordvegen (~1,04 px per meter relieff), altså 30–80 px på et kupert board. Feilen finnes i dag og byttet arver den. Satt som eget spor for ikke å endre to variabler samtidig — Googles egne transformer er terreng-korrekte, så fiksen er å lese dem.
+- **Ikke verifisert på ekte iPhone ennå**, bare i mobil-emulering. Skarphet er per definisjon usynlig i jsdom og på DPR 1.
+
+---
+
+## 2026-08-24 — SEKS SKJULTE TAK: HANSBAKKFJÆRA SOM KOM PÅ PLASS 31 AV 54
+
+**Kontekst:** Andreas hadde vært ute på Grilstad/Ranheim og tatt seks bilder, og spurte om de hadde koordinater i seg. Det hadde de — iPhone 15, full GPS, høyde, kompassretning og målt nøyaktighet (3–28 m), alle tatt 13:21–13:26 langs 400 meter av Hansbakkfjæra. Ved oppslag mot basen viste det seg at Hansbakkfjæra ALT lå der som seks POI-rader, alle med `featured_image = null`. Bildene var altså de manglende bildene til steder vi allerede kjente.
+
+Så kom det egentlige spørsmålet, med et skjermbilde av boardet: «ser du en grunn til at Hansbakkfjæra ikke dukker opp her?»
+
+### Diagnosen: et tak på 20, og en kuttlinje på 1 143 meter
+
+Boardet på skjermbildet var `placy-demo/strindfjordvegen-10` (gjenkjent på Ranheimsfjæra-badeplass-pinnen, som bare finnes der). Hansbakkfjæra var ikke skjult av rendringen — den var **ikke koblet til boardet i det hele tatt**, hverken i `project_pois` eller `product_pois`.
+
+Årsaken lå i `linkNaturPois` i `import-public-pois.ts`: `MAX_NATUR = 20`. Funksjonen sorterte alle uteområder (lekeplass/badeplass/park/outdoor) innenfor discovery-radiusen på avstand og beholdt de 20 nærmeste. Det er 54 slike innenfor radiusen fra Strindfjordvegen 10. Hansbakkfjæra-radene havnet på plass 28, 31, 32, 34, 37 og 40 (1 696–2 060 m). Kuttlinja — plass 20 — gikk ved 1 143 m, og den fjerneste ikke-Google-uteområde-pinnen på boardet var nettopp Lindevegen lek på 1 143 m. Kuttet stemte på meteren.
+
+Grunnen til at uteområder LENGER unna likevel vistes (Grytbakkstranda 2 480 m, Devlebukta 2 157 m) er at de har Google-place-id og kom inn via Google-discovery, som ikke hadde dette taket. Hansbakkfjæra finnes bare som OSM- og kommune-seedede rader, uten Google-rad — så taket var den eneste porten den møtte, og den tapte.
+
+**Den strukturelle innsikten:** avstandssortering med et tak er systematisk feil for denne kategorien. Lekeplasser ligger tett innover i boligfeltene, mens kysten og marka strekker seg lineært utover. Taket kutter derfor alltid sjøkanten først — det mest solgbare ved et sted som Ranheim.
+
+### Andreas' regel: sirkelen er grensen
+
+Andreas: *«det er langt bedre å vise alle punkter innenfor et større radius enn å skjule dem, folk bruker jo området rundt huset sitt selv om det er 2-10km unna»* — og *«det er jo heller bare noen regler som ikke nødvendigvis fungerer i praksis»*.
+
+Det er samme prinsipp som ble skrevet ned tidligere samme dag da kategori-taket i `poi-quality.ts` ble erstattet med ett felles tall: relevans hører i sorteringen og i rendringen, der den er synlig — ikke i importen, der konsekvensen er at stedet ikke finnes. Et sveip etter flere tak av samme slag fant fem til.
+
+### De seks takene som er fjernet
+
+**1. `MAX_NATUR = 20`** (`import-public-pois.ts`) — borte. Alle uteområder innenfor radiusen lenkes.
+
+**2. Per-by discovery-radius** (`report-defaults.ts`) — Oslo 1 500 m, Bergen 1 800, Trondheim 2 000, med 2 500 som fallback når byen var UKJENT. Å kjenne byen krympet altså boardet: en Trondheims-adresse fikk 500 meter mindre nabolag enn en adresse pipelinen ikke klarte å plassere. Ingen av de 12 boardene hadde truffet tabellen ennå (alle kjørte fallback), så fella var uavfyrt — men reell. Erstattet med `BOLIG_DISCOVERY_RADIUS_M = 3000`, by-uavhengig. Næringsprofilen beholder sin tabell: der er premisset et annet (ansatte går til lunsj, de flytter ikke inn), og profilen var ikke berørt av funnet.
+
+`MAX_POI_DISTANCE_METERS` hevet 3 000 → 4 000 samtidig, for å bevare invarianten at taket ligger OVER sirkelen og aldri på den. Lå de på samme tall, kunne et sted på sirkelkanten falle på avrunding uten at vi så det.
+
+**3. `CATEGORY_FILTER_RULES.maxCount`** (`report-data.ts`) — harde tak som KASTET POI-er: buss/trikk/sykkel 5, idrett 3. Kommentaren over feltet sa det selv: «Rest are discarded, not hidden». Martin Barstads veg viste tre idrettsanlegg mens basen kjente over femti innenfor radiusen. `initialVisibleCount` beholdt — den korter ned første skjerm uten å bestemme at resten ikke finnes. Skolekrets-filteret står også igjen: det er et faktisk saksforhold, ikke et estimat på leselyst.
+
+**4. `THEME_MIN_POIS = 2 → 1`** — et tema med bare ett sted forsvant HELT, hele seksjonen. På et lite sted er det ene tilbudet nettopp det som er verdt å vite om.
+
+**5. Gangtids-porten på «Opplevelser»** — hele temaet ble slettet hvis nærmeste sted lå over 15 minutters gange unna. Premisset («da er det ikke et reelt nabolagstilbud») holder ikke: folk kjører til kino og svømmehall. Regelen slo bare til på de stedene som hadde minst å vise, og gjorde dem tommere.
+
+**6. Google-discovery-taket** — se under, det er det største og det eneste som ikke lot seg fikse ved å slette en linje.
+
+### `searchNearby` kan ikke pagineres — verifisert, ikke antatt
+
+Places API (New) `searchNearby` returnerer maks 20 treff per kall. Testet direkte mot API-et: `maxResultCount: 40` gir HTTP 400 («must be between 1 and 20 inclusively»), og svaret bærer ingen `nextPageToken`. Ett kall per kategori ER altså et tak, ikke en preferanse. Målt effekt: Midtbyen-boardene hadde ~200 POI-er hver mens basen kjente ~1 400 innenfor radiusen. På toppen lå et `if (addedCount >= maxPerCategory) break` med maxPerCategory = 20 — samme tall som API-taket, så det var usynlig at det fantes.
+
+Løsningen er **metnings-drevet oppdeling**: kommer et kall tilbake med fulle 20 treff, vet vi at det finnes mer, og sirkelen deles i fire delsirkler som til sammen dekker den (sentre i diagonalene i avstand R/2, radius 0,76·R — verste kantpunkt ligger 0,737·R fra nærmeste delsenter, så dekningen har margin, og en test går rundt hele kanten grad for grad og verifiserer det). Delsirklene stikker ut til 1,26·R, men aksept-løkka måler avstand mot det OPPRINNELIGE senteret og kaster alt utenfor — oppdelingen øker recall innenfor sirkelen uten å flytte grensen. Overlappet er ufarlig; treffene dedupliseres på place-id.
+
+Dybdegrense 2 (opptil 1 + 4 + 16 = 21 kall). Kostnaden legger seg der det faktisk finnes data: en kategori som ikke er mettet koster fortsatt ett kall. Målt på Strindfjordvegen 10: **166 kall over 58 kategorier** — altså 108 ekstra kall, ikke 58 × 21.
+
+`searchText` HAR derimot paginering (`pageSize` + `pageToken`, verifisert i samme test-runde). Der sto vi på `maxResultCount: 10` og hentet aldri side to, så et tekstsøk kunne aldri gi mer enn 10 steder. Nå pagineres det opptil 3 sider = 60 per søkeord.
+
+**Ingen stille tak.** Både oppdelingen og pagineringen logger når de gir opp mens det fortsatt finnes mer — et tak som ikke er synlig i loggen er samme feil som taket vi fjernet.
+
+### Målt resultat på de tre Ranheim-boardene
+
+| Board | pins før | pins etter |
+|---|---|---|
+| `placy-demo/strindfjordvegen-10` | 329 | **495** |
+| `intern/martin-barstads-veg-23c` | 99 | **294** |
+| `megler-harstad/strindfjordvegen-10-7053-ranheim-norge` | 128 | **486** |
+
+Uteområder på demo-boardet: 30 → 75. Og 136 av pinnene ligger mellom 2,5 og 3 km — et bånd som var strukturelt umulig før, siden radiusen stoppet på 2 000 m.
+
+Hansbakkfjæra ligger nå på alle tre, med tre pins: badeplassen (1 835 m), lekeplassen (1 883 m) og turområdet (2 060 m), pluss Hansbakken skole. De to gjenstående OSM-radene skjules av `dedupeColocatedPins` som samme fysiske sted, som er riktig. Verifisert i browser: `Hansbakkfjæra` forekommer 29 ganger i rendret board-HTML (var 0), 0 konsollfeil.
+
+At self-serve-boardet (`megler-harstad`) hadde 128 pins mot demo-boardets 329 på SAMME adresse var altså ikke en egen svakhet i self-serve-stien — det var samme regler som traff to ganger.
+
+### Feilkilde jeg først mistolket
+
+Første re-provisjonering mistet trust-scoring og reisetider med `TypeError: fetch failed`. Jeg leste det som nettverksflaks. Det var det ikke — det var PostgREST-URL-grensa ved 533 POI-er, samme rot som er dokumentert i entryen under (taxiholdeplassene). En annen sesjon skrev `chunk-ids.ts`-fiksen inn i `travel-times.ts` og `validate-report-trust.ts` kl. 22:51–22:52, altså MELLOM mine to kjøringer: første kjøring feilet deterministisk, andre kjøring (306 og 508 POI-er) fullførte begge steg. Reisetidene på demo-boardet ble tettet med `backfill-travel-times --apply` — nå 533/533 gå og sykkel, 532/533 bil (én POI er ikke bilrutbar).
+
+**Lærdom:** «fetch failed» uten HTTP-status er URL-lengde, ikke nettverk. Det var alt kjent; jeg gjentok feilslutningen fordi symptomet ser flakete ut. Min egen kjøring var beviset på at grensa er en funksjon av hvor stort boardet har blitt — og boardene ble nettopp 3–4 ganger større.
+
+### Det som fortsatt står
+
+- **Taket er senket, ikke borte.** Ni kategorier hadde fortsatt mettede delsirkler på dybde 2, konsentrert mot City Lade 2,5–3 km unna (møbler, klær, interiør) pluss Googles paraply-type `sports_activity_location`. Marginalnytten ser lav ut — «Fant 25 restaurant» kom fra 13 kall, så kvalitetsfiltrene kaster det meste av det vi allerede henter. Dybde 3 femdobler kallene for de ni.
+- **Lesefilteret på tillit** skjuler 17 av 495 pins på demo-boardet (`MIN_TRUST_SCORE = 0.5`, null = vis). Ikke rørt: det er en kvalitetsvurdering, ikke en avstandsregel.
+- **`FEATURED_MAX_DISTANCE_M = 1500` + topp-3 per kategori** i `hydrate-report.ts` styrer hvilke pins som er FEATURED, ikke hvilke som finnes. Ikke rørt.
+- **Bildene fra fjæra er ikke koblet på ennå.** `POI.featuredImage`/`galleryImages` finnes alt og pin-popupene (`MapPopupCard`, `POIPopover`) rendrer bildet, men alle bilder i basen er Google-place-URL-er og det finnes ingen Supabase Storage i bruk. 412 uteområder mangler bilde, og Google har sjelden bilder av en fjære — egne bilder er eneste kilde. Åpent: hvor egne bilder skal ligge (`public/`-mappa er enklest for seks stykker), og at fem duplikat-rader heter «Hansbakkfjæra» innenfor 500 m, så bilde på én lar fire nabopins stå tomme.
+
+**Kostnad:** 414 Google-nearby-kall for de tre kjøringene ≈ 13 USD (av dagens ~31). Døgntaket ble hevet via `PLACY_CAP_PLACES_NEARBY` for kjøringene, ikke lagret noe sted — det står på 400 igjen.
+
+**Filer:** `lib/pipeline/report-defaults.ts` (+test), `lib/pipeline/poi-quality.ts` (+test), `lib/pipeline/import-public-pois.ts`, `lib/pipeline/poi-discovery.ts` (+test — `subdivideCircle` og metnings-oppdeling), `lib/pipeline/import-pois.ts`, `lib/pipeline/enrich-report-pois.ts`, `app/api/admin/import/route.ts`, `components/variants/report/report-data.ts` (+test). Lint 0 feil, tsc rent i egne filer, 3 071 av 3 072 tester passerer (den ene feilende er `use-3d-marker-declutter`, en annen sesjons pågående arbeid). Ukommittert på `main`.
+
+---
+
+## 2026-08-24 — TAXIHOLDEPLASSENE INN, OG URL-GRENSA SOM VILLE STOPPET BOARDET AV SEG SELV
+
+**Kontekst:** Andreas sendte https://www.trondheim.kommune.no/parkering/innhold/parkere/taxi/ med «det er noen punkter som jeg mener bør være med her. kan du få inn alle taxi holdeplassene her?». Enkel bestilling, som avdekket både nok en tom kategori og en latent feil i lesestien.
+
+### Kilden lot seg ikke lese fra siden
+
+Siden lister ingen holdeplasser i tekst — den laster `/parkering/kart/?maps=Taxiholdeplasser` i en iframe, som igjen peker på `Taxiholdeplasser.kmz`. En KMZ er en zippet KML. Et rent HTTP-fetch av siden gir altså ingenting; det er derfor `scripts/fetch-taxi-holdeplasser.sh` bruker `curl` + `unzip` + en KML-parser i Python og ikke et Node-script (Node har ingen innebygd zip-leser, og vi drar ikke inn en avhengighet for en fil som endrer seg et par ganger i året).
+
+**35 holdeplasser** ligger nå i `data/geo/trondheim/taxiholdeplasser.json`, navnesortert (deterministisk diff), med kildeurl og hentedato i filen. Datasettet er BAKT INN med vilje: importen gjør null nettverkskall, så kommunens CDN kan ikke velte en provisjonering.
+
+### `taxi` var nok en tom kategori
+
+Samme mønster som `marina` (2026-08-12), `hundepark` og `convenience` (tidligere i dag): kategorien sto i tema-defaultene (`REPORT_THEME_DEFAULTS` → transport) OG i transport-dashbordet, uten at noen kilde produserte den. Google har ingen brukbar taxi-type i Norge, Entur dekker kollektiv, og OSM-porten slipper ikke inn holdeplasser. Den har altså vært deklarert og tom siden den ble skrevet.
+
+Ny kilde i `importPublicPois` (`Taxi`, fail-soft som de andre), kategori-definisjonen seedes med resten, og ikonet `CarTaxiFront` er lagt i BEGGE ikonkartene — `map-icons.ts` (Lucide) og `map-icons-filled.ts` (Phosphor `Taxi`) — ellers hadde pinnen falt tilbake til `MapPin` uten at noe feilet.
+
+**Trondheim-only med vilje.** Datasettet er kommunens eget og har ingen nasjonal motpart. Utenfor Trondheim gir kilden 0 treff og en advarsel, ikke en feil — «ingen data her» må ha definert oppførsel (Straumen-prinsippet).
+
+**Målt resultat:** 6 holdeplasser på Strindfjordvegen 10. Skonnertvegen 116 m, Rotvoll 1 348 m, Jakobslivegen 1 581 m, Sverre Svendsens veg 1 839 m, Ingvald Ystgaards veg 2 253 m, Thoning Owesens gate 2 767 m. Verifisert i browser: «Skonnertvegen — 2 min» rendrer i Transport-drill-in med reisetid, 0 konsollfeil.
+
+### Den egentlige blokkeren: PostgREST-URL-en sprakk ved 533 POI-er
+
+Første re-provisjonering døde i Steg 6 med `TypeError: fetch failed` — ingen HTTP-status, ingen PostgREST-melding. Det så ut som nettverksflaks. Det var det ikke: `.in()` legger id-lista i URL-en, poolen hadde vokst til 533 POI-er ≈ 16,6k tegn rå id-tekst, og URL-en passerte forespørselslinje-grensa hos Supabase/Cloudflare (~16 kB). Feilen er altså en funksjon av hvor stort boardet har blitt — den kommer når som helst, på hvilket som helst board som vokser forbi grensa.
+
+Verre: den traff også **lesestien**. `v2-queries.ts` sender hele board-poolen i én `.in()`. Boardet ville sluttet å rendre av seg selv når det ble stort nok, uten at noen hadde rørt koden.
+
+Ny felles grense i `lib/supabase/chunk-ids.ts` (`MAX_IDS_PER_QUERY = 200`, ≈ 7 kB URL i verste fall). Regelen er formulert som en korrekthetsgrense, ikke en optimalisering: **enhver `.in()` som får en liste som vokser med antall POI-er på et board, må gjennom `chunkIds`.** Batchet i `hydrate-report.ts` (pool-les + featured-markering), `validate-report-trust.ts` (begge lesningene — trust-scoringen hadde alt begynt å hoppe over stille), `travel-times.ts`, `supabase/mutations.ts` (POI-import) og `supabase/v2-queries.ts` (lesestien, POI-er + kategorier).
+
+Etter fiksen: hydrering fullfører, 495 product_pois, akseptansesjekk grønn.
+
+**Filer:** `data/geo/trondheim/taxiholdeplasser.json` (ny), `scripts/fetch-taxi-holdeplasser.sh` (ny), `lib/pipeline/taxi-stands.ts` (+test, ny), `lib/supabase/chunk-ids.ts` (+test, ny), `lib/pipeline/import-public-pois.ts` (+test), `lib/pipeline/hydrate-report.ts`, `lib/pipeline/validate-report-trust.ts`, `lib/pipeline/travel-times.ts`, `lib/supabase/mutations.ts`, `lib/supabase/v2-queries.ts`, `lib/utils/map-icons.ts`, `lib/utils/map-icons-filled.ts`, `lib/pipeline/provision.ts` (loggtelling). Lint 0 feil, tsc rent, 3 075 tester passerer. Ukommittert på `main`.
+
+### Åpne punkter
+
+- **Én test feiler, og den er ikke fra dette arbeidet:** `use-3d-marker-declutter` → «POI bak chipen blir prikk; POI godt under den er uberørt». Filen tilhører den parallelle sesjonen som jobber i samme mappe.
+- **Ingen automatisk vakt på URL-grensa.** `chunkIds` finnes nå, men ingenting hindrer at en ny `.in()` skrives uten den. Kandidat til ESLint-regel eller en test som sveiper etter `.in(` i lib/.
+- **Datasettet er statisk og må hentes manuelt.** `scripts/fetch-taxi-holdeplasser.sh` kjøres for hånd; ingen varsling når kommunen flytter en holdeplass. Akseptabelt for 35 punkter, men verdt å notere.
+- **Reisetidene ble delvis hoppet over i denne kjøringen** (Mapbox Matrix car svarte 429 på to bolker). Taxi-POI-ene fikk sine tider, men kjøringen var ikke full dekning.
+
+---
+
+## 2026-08-24 — REMA OG KIWI VAR USYNLIGE FOR PIPELINEN (Google-typegaten, butikk-familien, avstandstaket og revaliderings-luken)
+
+**Kontekst:** Andreas så på 3D-kartet for Strindfjordvegen 10 (Ranheim) og spurte hvorfor tre steder han kjenner ikke var der: Rema 1000 Ranheimsfjæra, Rosenborg Bakeri og «Krafthallen». Ett spørsmål som avdekket fire uavhengige feil, hvorav den ene hadde truffet ALLE boards siden pipelinen ble skrevet.
+
+**Krafthallen var et blindspor — og verdt å notere:** hallen ligger på boardet, som «Ranheim aktivitetshall» (samme koordinat, 63.42836/10.52739). «Krafthallen» er navnet Google viser fordi kart-labelen der kommer fra parkeringsoppføringen «Krafthallen Ranheim | Parkly». Lærdom: når et sted «mangler», sjekk om det ligger der under sitt offisielle navn før du leter i pipelinen.
+
+### Feil 1 — `supermarket` finner hverken Rema eller Kiwi (traff alle boards)
+
+Pipelinen søker Google Places med `includedTypes: ["supermarket"]`. I Places API (New) er `supermarket` og `grocery_store` SKILTE typer, og de norske kjedene fordeler seg ikke likt. Målt med searchNearby i produksjons-bboxen (2 500 m fra Strindfjordvegen 10):
+
+- `supermarket` → 5 treff: Europris, 2 × Extra, 2 × Coop
+- `grocery_store` → 15 treff: de samme, pluss 2 × KIWI, 4 × REMA og Bunnpris
+
+Extra og Coop bærer BEGGE typene. Rema og Kiwi bærer bare `grocery_store`. Norges to største dagligvarekjeder har altså aldri vært kandidater i noen provisjonering. KIWI Ranheim ligger 623 m fra prosjektet — godt innenfor alle tak — og manglet likevel.
+
+To gates måtte åpnes, ikke én: søketypen (`grocery_store` søkes nå ved siden av `supermarket`) OG type-filteret, der `supermarket` godtok `supermarket` eller `grocery_or_supermarket` — sistnevnte er en død legacy-type som ingen treff i den nye API-en bærer. Uten den andre fiksen ville søket funnet KIWI og filteret kastet den igjen.
+
+### Feil 2 — avstandstaket kuttet nærmeste dagligvare med 95 meter
+
+`MAX_WALK_MINUTES_BY_CATEGORY` ga hver kategori et gangtids-tak (dagligvare/bakeri 15 min × 80 m/min = 1 200 m, sykehus 45 min osv.), målt i luftlinje fra prosjektsenteret. Rema 1000 Ranheimsfjæra ligger 1 295 m unna (16,2 min) og Rosenborg Bakeri 1 284 m (16,0 min) — begge kuttet. Et tak som kutter NÆRMESTE dagligvare gjør ikke jobben taket var ment å gjøre.
+
+Erstattet av ett tall for alle kategorier: `MAX_POI_DISTANCE_METERS = 3000`. Det er større enn discovery-sirklene vi bruker (2 500 m), så konsekvensen er bevisst — SIRKELEN er grensen, ikke et andre, usynlig tak inni den. Relevans-sortering hører hjemme i tiering og board-rendring, der den er synlig, ikke i importen der den er umulig å se at slo til. `WALK_METERS_PER_MINUTE` og hele minutt-tabellen er slettet.
+
+### Feil 3 — `butikk` hadde fire kilder og manglet resten av handelen
+
+Etter Andreas' «kjør sveipet» ble alle 44 søketyper målt mot en uavhengig fasit: 280 navngitte OSM-POI-er (shop/amenity/leisure/tourism) i samme 2 500 m-sirkel. Det største hullet var ikke dagligvare, men `butikk`, som bare hadde `book_store`, `florist`, `electronics_store` og `home_goods_store`. Klær, sko, sport, smykker, leker, kosmetikk, dyr, sykkel, jernvare, gaver og møbler ble aldri søkt etter — 55 målte treff i bboxen som ingen annen type i lista fanget. Alle elleve typene er nå med, og tre kategorier som tema-defaultene renderte uten at NOEN kilde fylte dem fikk endelig en: `convenience` (`convenience_store`), `badeplass` fra Google (`beach`) og `haircare` (`beauty_salon` var alt i de gyldige typene, men var aldri en søketype).
+
+Bevisst UTELATT selv om typene ga treff: bilverksted, bilforhandler, grossist, minilager, budtjeneste. De er ikke nabolagsinnhold.
+
+### Feil 4 — re-provisjonering revaliderte aldri boardet sitt
+
+Andreas: «jeg ser ingen endring». Databasen var oppdatert, men nettleseren viste 127 steder mot 264 i basen. `revalidateProject` pekte på `NEXT_PUBLIC_APP_URL ?? https://www.placy.no` og INGENTING annet, så ved lokal provisjonering gikk cache-bustet til prod — der `ADMIN_ENABLED` er avslått siden 2026-07-07 og svarer 403 — mens dev-serveren som faktisk serverte boardet aldri fikk beskjed. Fallback-meldingen gjorde feilen stille: «nytt prosjekt rendrer ferskt ved første request» er sant for nye boards og direkte misvisende for en re-kjøring.
+
+Funksjonen prøver nå ALLE flatene et board kan ligge cachet på — `PLACY_REVALIDATE_URLS` (escape hatch), `NEXT_PUBLIC_APP_URL`, prod, og lokal dev-server på `PORT` (worktrees på 3001 treffer sin egen server). Alle forsøkes; prod-treffet skal ikke hindre localhost-treffet. Når ingen tar imot OG boardet fantes fra før, varsler den om at den cachede versjonen serveres videre.
+
+**Målt resultat på Strindfjordvegen 10** (re-provisjonert, verifisert i browser uten hard refresh): 127 → 264 steder. Dagligvare 1 → 13 (KIWI Ranheim 623 m, REMA 1000 Ranheimsfjæra 1 291 m). Bakeri: Rosenborg Bakeri 1 281 m inne. Butikk 2 → 68. Badeplass inkluderer nå Ranheimsfjæra og Grillstadfjæra.
+
+**Filer:** `lib/pipeline/poi-quality.ts` (+test), `lib/pipeline/poi-discovery.ts` (+test), `lib/pipeline/enrich-report-pois.ts` (+test), `lib/pipeline/provision.ts` (+7 tester). 660+ pipeline-tester passerer. Ukommittert på `main`.
+
+### Åpne punkter
+
+- **Google returnerer maks 20 treff per type uten paginering.** restaurant, gym, doctor, home_goods_store, athletic_field og sports_activity_location traff taket i denne bboxen — tette områder er fortsatt underrapportert, og vi vet ikke hvor mye. Fiksen er å dele discovery-sirkelen i flere mindre sirkler, ikke å be om flere treff.
+- **66 av de 68 butikkene ligger på Lade/Sirkus 2+ km unna** og dominerer nå Hverdagsliv-temaet (136 steder). Det er riktig data — den lokale handelen ligger faktisk der — men det er et tiering-problem, ikke et import-problem. Løses i rendringen.
+- **Prod-boards kan fortsatt ikke cache-bustes.** `/api/admin/revalidate` svarer 403 i prod fordi admin er avslått. Krever ekte auth på endepunktet, ikke en pipeline-endring.
+- **Metodenotat:** tre av fire feil var usynlige i kode-lesing og åpenbare i måling. Mønsteret fra pumptrack-fiksen samme dag gjentar seg: verifiser søketyper mot hva API-et FAKTISK returnerer i produksjons-bboxen, aldri mot hva typenavnet lover.
+
+---
+
+## 2026-08-24 — PROSJEKTMARKØREN SLUTTET Å VÆRE ET KORT (ProjectSitePin ble en disc i POI-språket, ukommittert på main)
+
+**Kontekst:** Andreas så på 3D-kartet for Strindfjordvegen 10 og reagerte på prosjektmarkøren: «vi må få denne til å være langt mindre fremtredende … droppe selve den lyse bakgrunnen og heller bare skille den ut mer med selve ikonet, som om det er litt mer oppmerksomhet på den fremfor de andre poi-sirklene.» Ren visuell iterasjon, ingen plan-fase.
+
+**Hva markøren var:** et lyst «listing-kort» på ~300 × 105 px (`components/map/ProjectSitePin.tsx`) — hvit avrundet chip med 80 px thumbnail til venstre, prosjektnavn i 17 px bold, undertittel i aksentfarge, myk skygge og en pil ned mot tomta. Den var bygget for å lese som en boligannonse oppå kartet.
+
+**Diagnosen bak Andreas' reaksjon:** kortet dekket selve tomta det pekte på. Satellittbildet av byggeplassen — som er halve poenget med 3D-visningen — forsvant bak en hvit flate, og prosjektet leste som reklame lagt oppå kartet i stedet for som ett sted blant stedene i nabolaget. Det var også det eneste elementet på kartet som ikke fulgte markør-språket ellers.
+
+**Grepet: samme visuelle språk som POI-ene, bare et hakk mer.** Markøren er nå en disc bygget etter samme oppskrift som `Marker3DPin` (lys tint-flate + kategorifarget ring + ikon, navn ved siden av). Forskjellene som gir den forrang uten å ta over: disc-en er 52 px mot POI-enes 40, ringen er 3 px mot deres 2, det ligger en myk terrakotta-glød (22 % opasitet) utenfor ringen, og navnet er 13 px bold mot POI-labelens 10 px semibold. Undertittelen («Nybygg 2028») beholdes med aksent-prikk foran. Har prosjektet en thumbnail, klippes den nå SIRKULÆRT inn i disc-en i stedet for å ligge som firkant i et kort — bildet er fortsatt med, det er flaten rundt det som er borte.
+
+**Rammens form er ikke kosmetikk.** Google forankrer marker-innhold i BUNN-MIDTEN av SVG-rammen. Derfor er rammen symmetrisk i bredden (label-plassen speiles på begge sider av disc-en, samme grep som `Marker3DPin` bruker) og nøyaktig så høy som disc-en. Da står disc-en på punktet uansett hvor langt prosjektnavnet er. En asymmetrisk ramme ville forskjøvet markøren fra tomta idet navnet ble lengre. Teksten tegnes to ganger — hvit kontur, så fyll oppå — fordi `paint-order="stroke"` ikke overlever rasteriseringen pålitelig og underlaget er satellittfoto, ikke et lyst karttema.
+
+**To følgeendringer var påkrevd, ikke valgfrie:**
+
+1. **`components/map/project-pin-scale.ts`: skala-spennet gikk fra 0.85–0.5 til 1–0.85.** De gamle tallene fantes for å hindre at det store kortet dominerte når man zoomet ut. Med en disc på 52 px ville 0.5 gitt 26 px — MINDRE enn POI-enes 40 px — og hele poenget («litt mer oppmerksomhet enn de andre») ville snudd på hodet ved oversiktszoom. Nå ligger den mellom 52 og 44 px, alltid over POI-ene.
+2. **`components/variants/report/board/use-3d-marker-declutter.ts`: bare kommentarer.** Kollisjonskullingen bruker prosjektmarkøren som hindring og henter målene fra `projectSitePinSize()` — nettopp derfor trengte regnestykket ingen endring: boksen strekker seg fortsatt oppover fra det projiserte punktet siden markøren er bunn-forankret. Det som måtte oppdateres var språket («chipen», «pila peker ned mot tomta») som nå beskrev noe som ikke finnes.
+
+**Verifisert i Chrome mot dev-serveren:** Strindfjordvegen 10-boardet (placy-demo) rendrer markøren korrekt sammen med de 127 POI-ene — disc, glød, navn og «Nybygg 2028» leses rent mot satellittbildet, tomta er synlig, ingen labels kolliderer med den. `npx tsc --noEmit` rent. Andreas bekreftet: «ja, akkurat slik, bra».
+
+**Status:** tre filer endret på `main`, IKKE committet.
+
+**Åpent punkt:** thumbnail-stien (sirkulært klippet bilde i disc-en) er implementert, men Strindfjordvegen-boardet har ingen thumbnail satt — den er kun verifisert som glyph-fallback. StasjonsKvartalet har thumbnail (`lib/themes/stasjonskvartalet-pin-thumb.ts`) og bør ses over før den varianten regnes som ferdig.
+
+---
+
 ## 2026-08-24 — SATELITT SOM KAMERATILSTAND, IKKE SOM KARTMOTOR (kart-veksleren får et tredje segment, branch `feat/satelitt-modus`)
 
 **Kontekst:** Andreas ville ha rett-ovenfra-visningen folk kjenner fra Google Maps og FINN-kartet inn i boardets kart-veksler, uten å gi opp 3D — «satelitt» ovenfra, «3D» med dagens skew, og en myk overgang mellom de to. Hele leveransen ble kjørt gjennom `/ce-brainstorm` → `/ce-plan` (to runder multi-persona-review) → `/ce-work`. Requirements: `docs/brainstorms/2026-08-24-satelitt-modus-kart-veksler-requirements.md`, plan: `docs/plans/2026-08-24-002-feat-satelitt-modus-kart-veksler-plan.md`.

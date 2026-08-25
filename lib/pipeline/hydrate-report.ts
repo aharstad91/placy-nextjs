@@ -9,6 +9,7 @@
  */
 
 import { createServerClient } from "@/lib/supabase/client";
+import { chunkIds } from "@/lib/supabase/chunk-ids";
 import { REPORT_THEME_DEFAULTS } from "@/lib/pipeline/report-defaults";
 import {
   dedupeColocatedPins,
@@ -67,6 +68,19 @@ export interface HydrateReportResult {
   warnings: string[];
 }
 
+/** Én batch av POI-radene hydreringen trenger. Se {@link MAX_IDS_PER_QUERY}. */
+function fetchPoolChunk(
+  db: ReturnType<NonNullable<ReturnType<typeof createServerClient>>["schema"]>,
+  ids: string[]
+) {
+  return db
+    .from("pois")
+    .select(
+      "id, name, category_id, lat, lng, source, editorial_hook, local_insight, google_place_id, google_rating, google_review_count"
+    )
+    .in("id", ids);
+}
+
 // ── Hoved-funksjon ────────────────────────────────────────────────────────
 
 export async function hydrateReport(options: {
@@ -103,14 +117,14 @@ export async function hydrateReport(options: {
   // 2. POI-data hentes FØR lenkingen: dedupen under trenger navn, koordinat og
   //    innholdsfelt, og featured-scoringen skal bare se de pinnene som faktisk
   //    blir vist.
-  const { data: poolPois, error: poolError } = await db
-    .from("pois")
-    .select(
-      "id, name, category_id, lat, lng, source, editorial_hook, local_insight, google_place_id, google_rating, google_review_count"
-    )
-    .in("id", poolPoiIds);
-
-  if (poolError) throw new Error(`Henting av poi-data feilet: ${poolError.message}`);
+  const poolPois: NonNullable<
+    Awaited<ReturnType<typeof fetchPoolChunk>>["data"]
+  > = [];
+  for (const chunk of chunkIds(poolPoiIds)) {
+    const { data, error } = await fetchPoolChunk(db, chunk);
+    if (error) throw new Error(`Henting av poi-data feilet: ${error.message}`);
+    poolPois.push(...(data ?? []));
+  }
 
   // 3. Tverr-kilde-dedup. Samme fysiske sted kommer inn fra flere kilder (OSM +
   //    Barnehagefakta for samme barnehage, intern seed + OSM for samme badeplass,
@@ -214,15 +228,17 @@ export async function hydrateReport(options: {
   // Marker featured — ÉN batch-oppdatering (AC4), ikke per-POI-løkke
   let featuredMarked = 0;
   if (featuredIds.length > 0) {
-    const { error: featError } = await db
-      .from("product_pois")
-      .update({ featured: true })
-      .eq("product_id", productId)
-      .in("poi_id", featuredIds);
-    if (featError) {
-      warnings.push(`⚠️  Kunne ikke markere featured: ${featError.message}`);
-    } else {
-      featuredMarked = featuredIds.length;
+    for (const chunk of chunkIds(featuredIds)) {
+      const { error: featError } = await db
+        .from("product_pois")
+        .update({ featured: true })
+        .eq("product_id", productId)
+        .in("poi_id", chunk);
+      if (featError) {
+        warnings.push(`⚠️  Kunne ikke markere featured: ${featError.message}`);
+        break;
+      }
+      featuredMarked += chunk.length;
     }
   }
 

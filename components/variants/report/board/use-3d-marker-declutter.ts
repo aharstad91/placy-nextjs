@@ -17,7 +17,7 @@ import {
 import { equivalentZoomForCamera } from "@/lib/board/camera-zoom";
 import { projectLatLngToScreen } from "@/components/map/project-latlng-to-screen";
 import { scaleForRange } from "@/components/map/project-pin-scale";
-import { projectSitePinSize } from "@/components/map/ProjectSitePin";
+import { projectSitePinBlocker } from "@/components/map/ProjectSitePin";
 import { BLOB_BASE_SIZE } from "@/components/map/BlobMarker3D";
 import { computeZoomTier } from "./use-board-zoom-tier";
 
@@ -76,31 +76,50 @@ const LABEL_OFFSET_3D = PIN_HALF + LABEL_GAP_X;
 const POI_ALTITUDE_M = 18;
 /**
  * Google forankrer marker-innhold i BUNN-MIDTEN av SVG-rammen (verifisert mot
- * prosjekt-chipens pil og målt på Strindfjordvegen: den projiserte y-en lander
+ * prosjektmarkøren og målt på Strindfjordvegen: den projiserte y-en lander
  * konsekvent en halv markørhøyde UNDER den tegnede skiva). Det projiserte
  * punktet er altså ikke skivas senter — og det er skiva labels legger seg ved
  * siden av, og skiva som kolliderer. Vi løfter derfor y til visuelt senter før
  * geometrien regnes.
  */
 const anchorToDiscCenterY = (y: number, halfHeight: number) => y - halfHeight;
-/** Høyden prosjekt-chipen ligger på (`projectSite`-markøren i `map-view-3d`). */
+/** Høyden prosjektmarkøren ligger på (`projectSite`-markøren i `map-view-3d`). */
 const PROJECT_ALTITUDE_M = 30;
 /** Googles dokumenterte default for `fov`. */
 const DEFAULT_FOV_DEG = 35;
 
 /**
- * Ro-vindu etter siste kamera-hendelse. Vesentlig romsligere enn de ~50 ms
- * nabolagslista bruker (`use-3d-viewport-publish`): der er forsinkelsen det
- * brukeren FØLER, her er hver kjøring en re-rasterisering av markør-teksturer.
- * Vi vil heller vente litt for lenge enn å regne om midt i en gest.
+ * Ro-vindu etter siste kamera-hendelse.
+ *
+ * Var 400 ms, og det var den forsinkelsen brukeren FØLTE: målt 426 ms fra siste
+ * `gmp-camerapositionchange` til labelene endret seg, mot Mapbox som oppdaterer
+ * i samme frame som bevegelsen slutter.
+ *
+ * Begrunnelsen for de 400 ms var at hver label-endring var en re-rasterisering
+ * av en markør-tekstur. Den kostnaden finnes ikke lenger — labelen er en
+ * tekstnode. Og selve regnestykket er billig: målt 0,29 ms for de to greedy
+ * passeringene ved 465 markører, altså 1,7 % av et 16,7 ms frame-budsjett.
+ *
+ * Doc-en som ble sitert som belegg for de 400 ms (`webgl-context-leak-per-
+ * render-probe-20260603`) sier dessuten det motsatte av det den ble brukt til:
+ * alle de 180 lekkede WebGL-kontekstene kom fra `isWebGLAvailable()` som kjørte
+ * per render, og INGEN fra markør-rasterisering.
+ *
+ * Ikke satt til 0: React-passet over ~470 memoiserte markører er ikke målt, og
+ * det er det eneste her som kan spise frames. 100 ms er under det brukeren
+ * merker, og lar fortsatt et drag være ett grep i stedet for tjue.
+ *
+ * Eksportert fordi testene måler mot den — en hardkodet 400-er i testen ble en
+ * usann påstand i det dette tallet ble justert.
  */
-const CAMERA_SETTLE_MS = 400;
+export const CAMERA_SETTLE_MS = 100;
 /**
- * Egen, kortere timer for datasett-endringer (kategori-bytte, ny aktiv POI).
+ * Egen timer for datasett-endringer (kategori-bytte, ny aktiv POI).
  * Nullstilles IKKE av kamera-hendelser — ellers ville en kontinuerlig orbit
  * sultet den ut, og et nytt markørsett hadde stått uten plassering for alltid.
+ * Den begrunnelsen består; bare tallet følger kamera-vinduet ned.
  */
-const DATA_SETTLE_MS = 250;
+const DATA_SETTLE_MS = 100;
 /**
  * Hvor langt utenfor kart-elementet en markør får ligge og fortsatt regnes med.
  * Marginen finnes fordi en label kan stikke inn i bildet fra en pin som så vidt
@@ -126,19 +145,39 @@ export interface Marker3DDeclutter {
   labels: Record<string, LabelPlacement>;
   /** poi.id-er som tegnes som prikk fordi en viktigere pin eier plassen. */
   demotedIds: ReadonlySet<string>;
+  /**
+   * poi.id → CSS `z-index`. Nødvendig fordi Google IKKE depth-sorterer
+   * DOM-markører: alle får `z-index: auto`, og rekkefølgen endres ikke når
+   * kameraet snus, så to overlappende pins ville valgt vinner etter
+   * mount-rekkefølge. Rangeringen er skjerm-y — i et tiltet 3D-bilde ligger det
+   * nære lavere i bildet, så større y skal male oppå. Samme regel Google selv
+   * bruker som tie-break i kollisjonssystemet sitt.
+   */
+  zIndexes: Record<string, number>;
 }
 
-const EMPTY: Marker3DDeclutter = { labels: {}, demotedIds: new Set() };
+const EMPTY: Marker3DDeclutter = {
+  labels: {},
+  demotedIds: new Set(),
+  zIndexes: {},
+};
 
 export interface UseMarker3DDeclutterParams {
   /** Map3DElement-instansen (castes internt), eller null før den er klar. */
   map3d: unknown | null;
   /** Markørene som faktisk er mountet (`useBoardMarkerSet.markerPOIs`). */
   pois: readonly POI[];
-  /** Prosjekt-tomten — chipen der er den største hindringen på skjermen. */
+  /** Prosjekt-tomten — markøren der er alltid synlig og blokkerer det den dekker. */
   home: { lat: number; lng: number };
-  /** Prosjektnavnet chipen viser. Bredden avhenger av det. */
+  /** Prosjektnavnet markøren viser. Bredden avhenger av det. */
   homeName: string;
+  /**
+   * Undertittelen markøren viser. Utelates den, brukes samme default som
+   * komponenten (`PROJECT_PIN_DEFAULT_SUBTITLE`) — hindringen må reservere plass
+   * til NØYAKTIG den teksten som tegnes, ellers demoterer vi POI-er mot en boks
+   * som ikke finnes.
+   */
+  homeSubtitle?: string;
   /** Åpen POI. Kulles aldri, demoteres aldri — brukerens fokuspunkt. */
   activePOIId: string | null;
   /**
@@ -158,6 +197,39 @@ export interface UseMarker3DDeclutterParams {
   enabled: boolean;
 }
 
+/** Laveste z-index vi deler ut. Over 0 så et manglende oppslag (som blir
+ *  `z-index: auto`) alltid havner UNDER en markør vi har rangert. */
+const Z_BASE = 1;
+/** Den aktive POI-en eier plassen sin og skal aldri dekkes av en nabo. */
+const Z_ACTIVE = 100000;
+
+/**
+ * Dybdesortering fra skjerm-y.
+ *
+ * Google depth-sorterer ikke DOM-markører — verifisert i browser: to markører
+ * på ulik avstand fikk begge `z-index: auto`, og DOM-rekkefølgen sto stille da
+ * heading ble snudd 180°. Uten dette avgjøres overlapp av mount-rekkefølge, og
+ * den nærmeste pinnen kan havne bak en fjern.
+ *
+ * I et tiltet 3D-bilde ligger det nære LAVERE i bildet, så større y skal male
+ * oppå. Det er samme regel Google selv oppgir som tie-break i kollisjons-
+ * systemet sitt. Vi rangerer i stedet for å bruke y direkte, så verdiene holder
+ * seg små og `sameResult`-dedupen ikke trigges av subpiksel-drift.
+ */
+function depthOrder(
+  projected: readonly { poi: POI; y: number }[],
+  activeId: string | null,
+): Record<string, number> {
+  const sorted = [...projected].sort(
+    (a, b) => a.y - b.y || (a.poi.id < b.poi.id ? -1 : 1),
+  );
+  const out: Record<string, number> = {};
+  sorted.forEach(({ poi }, i) => {
+    out[poi.id] = poi.id === activeId ? Z_ACTIVE : Z_BASE + i;
+  });
+  return out;
+}
+
 function sameResult(a: Marker3DDeclutter, b: Marker3DDeclutter): boolean {
   if (a.demotedIds.size !== b.demotedIds.size) return false;
   for (const id of a.demotedIds) if (!b.demotedIds.has(id)) return false;
@@ -169,6 +241,9 @@ function sameResult(a: Marker3DDeclutter, b: Marker3DDeclutter): boolean {
     const y = b.labels[id];
     if (!y || x.text !== y.text || x.side !== y.side) return false;
   }
+  const aZ = Object.keys(a.zIndexes);
+  if (aZ.length !== Object.keys(b.zIndexes).length) return false;
+  for (const id of aZ) if (a.zIndexes[id] !== b.zIndexes[id]) return false;
   return true;
 }
 
@@ -177,6 +252,7 @@ export function useMarker3DDeclutter({
   pois,
   home,
   homeName,
+  homeSubtitle,
   activePOIId,
   enabled,
   suppressActiveLabel = false,
@@ -190,6 +266,7 @@ export function useMarker3DDeclutter({
     pois,
     home,
     homeName,
+    homeSubtitle,
     activePOIId,
     enabled,
     suppressActiveLabel,
@@ -198,6 +275,7 @@ export function useMarker3DDeclutter({
     pois,
     home,
     homeName,
+    homeSubtitle,
     activePOIId,
     enabled,
     suppressActiveLabel,
@@ -209,6 +287,7 @@ export function useMarker3DDeclutter({
       pois: items,
       home: site,
       homeName: siteName,
+      homeSubtitle: siteSubtitle,
       activePOIId: activeId,
       enabled: on,
       suppressActiveLabel: hideActiveLabel,
@@ -234,17 +313,8 @@ export function useMarker3DDeclutter({
     if (zoom === null) return;
     const tier = computeZoomTier(zoom);
 
-    // Prikk-tier: kameraet er så langt ute at ikonene uansett ikke er lesbare.
-    // Alt demoteres, ingen labels — samme svar som 2D gir under zoom 13.
-    if (tier === "dot") {
-      const next: Marker3DDeclutter = {
-        labels: {},
-        demotedIds: new Set(items.map((p) => p.id)),
-      };
-      setResult((prev) => (sameResult(prev, next) ? prev : next));
-      return;
-    }
-
+    // Projeksjonen gjøres FØR tier-sjekken, fordi dybdesorteringen trengs i
+    // begge grener: også et kart av bare prikker må vite hvem som ligger foran.
     const projected: { poi: POI; x: number; y: number }[] = [];
     for (const poi of items) {
       const pt = projectLatLngToScreen(
@@ -267,8 +337,23 @@ export function useMarker3DDeclutter({
       projected.push({ poi, x: pt.x, y: anchorToDiscCenterY(pt.y, PIN_HALF) });
     }
 
-    // Prosjekt-chipen som hindring. Den er forankret i bunn-midten (pila peker
-    // ned mot tomta), så boksen strekker seg OPPOVER fra det projiserte punktet.
+    const zIndexes = depthOrder(projected, activeId);
+
+    // Prikk-tier: kameraet er så langt ute at ikonene uansett ikke er lesbare.
+    // Alt demoteres, ingen labels — samme svar som 2D gir under zoom 13.
+    if (tier === "dot") {
+      const next: Marker3DDeclutter = {
+        labels: {},
+        demotedIds: new Set(items.map((p) => p.id)),
+        zIndexes,
+      };
+      setResult((prev) => (sameResult(prev, next) ? prev : next));
+      return;
+    }
+
+    // Prosjektmarkøren som hindring. Boksen er ASYMMETRISK om disc-en fordi
+    // teksten bare står til høyre — `projectSitePinBlocker` eier den geometrien
+    // og forklarer hvorfor.
     const blockers: PinBlocker[] = [];
     const homePt = projectLatLngToScreen(
       map,
@@ -277,16 +362,16 @@ export function useMarker3DDeclutter({
       PROJECT_ALTITUDE_M,
     );
     if (homePt) {
-      const { width, height } = projectSitePinSize(
+      const box = projectSitePinBlocker(
         siteName,
-        undefined,
+        siteSubtitle,
         scaleForRange(range),
       );
       blockers.push({
-        x: homePt.x,
-        y: homePt.y - height / 2,
-        halfWidth: width / 2,
-        halfHeight: height / 2,
+        x: homePt.x + box.dx,
+        y: homePt.y + box.dy,
+        halfWidth: box.halfWidth,
+        halfHeight: box.halfHeight,
       });
     }
 
@@ -349,7 +434,7 @@ export function useMarker3DDeclutter({
       }
     }
 
-    const next: Marker3DDeclutter = { labels, demotedIds };
+    const next: Marker3DDeclutter = { labels, demotedIds, zIndexes };
     setResult((prev) => (sameResult(prev, next) ? prev : next));
   }, [map3d]);
 

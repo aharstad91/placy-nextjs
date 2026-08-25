@@ -259,7 +259,16 @@ export const TRANSPORT_CATEGORIES = new Set([
   "charging_station",
 ]);
 
-const THEME_MIN_POIS = 2;
+/**
+ * Hvor mange POI-er et tema må ha for å vises. 1 — altså: har vi ett sted, viser
+ * vi det.
+ *
+ * Sto på 2 til 2026-08-24. Konsekvensen var at ett enslig svømmebasseng eller
+ * én kirke ikke bare manglet selskap, den forsvant HELT: hele temaseksjonen ble
+ * hoppet over, og boardet så ut som om stedet ikke fantes. På et lite sted er
+ * det ene tilbudet nettopp det som er verdt å vite om.
+ */
+const THEME_MIN_POIS = 1;
 
 /** When any category within a theme has >= this many POIs, all categories become sub-sections */
 export const SUB_SECTION_THRESHOLD = 15;
@@ -270,8 +279,6 @@ export const INITIAL_VISIBLE_COUNT = 6;
 // ---------- Per-category filtering rules ----------
 
 interface CategoryFilterRule {
-  /** Max total POIs to include (before split). Rest are discarded, not hidden. */
-  maxCount?: number;
   /** How many to show initially (rest go behind "Hent flere"). Overrides INITIAL_VISIBLE_COUNT. */
   initialVisibleCount?: number;
   /** Special filter: "school-zone" uses skolekrets lookup to keep only zone-matching schools. */
@@ -279,16 +286,29 @@ interface CategoryFilterRule {
 }
 
 /**
- * Per-category rules for how many POIs to show in the report.
- * Categories not listed here use the global INITIAL_VISIBLE_COUNT with no max cap.
+ * Per-kategori-regler for rapporten. `initialVisibleCount` styrer hvor mange
+ * kort som vises FØR «Hent flere» — resten er ett klikk unna, ikke borte.
+ *
+ * ## Hvorfor `maxCount` er fjernet (2026-08-24)
+ *
+ * Her lå det harde tak som KASTET POI-er: buss/trikk/sykkel 5, idrett 3.
+ * Kommentaren over feltet sa det selv — «Rest are discarded, not hidden».
+ * Et board på Ranheim hadde dermed tre idrettsanlegg i rapporten mens basen
+ * kjente over femti innenfor radiusen, og forskjellen var usynlig for alle:
+ * ingen logg, ingen «+47 flere», ingenting.
+ *
+ * `initialVisibleCount` løser det samme problemet på riktig sted: den korter
+ * ned FØRSTE skjerm, uten å bestemme at resten ikke finnes. Skolekrets-filteret
+ * står igjen fordi det er et faktisk saksforhold — barnet ditt har én krets —
+ * og ikke et estimat på hvor mye du orker å lese.
  */
 const CATEGORY_FILTER_RULES: Record<string, CategoryFilterRule> = {
-  bus:      { maxCount: 5, initialVisibleCount: 5 },
-  tram:     { maxCount: 5, initialVisibleCount: 5 },
-  bike:     { maxCount: 5, initialVisibleCount: 5 },
+  bus:      { initialVisibleCount: 5 },
+  tram:     { initialVisibleCount: 5 },
+  bike:     { initialVisibleCount: 5 },
   skole:    { filter: "school-zone" },
   barnehage: { initialVisibleCount: 6 },
-  idrett:   { maxCount: 3, initialVisibleCount: 3 },
+  idrett:   { initialVisibleCount: 3 },
   lekeplass: { initialVisibleCount: 5 },
 };
 
@@ -377,16 +397,11 @@ export function applyCategoryFilter(
     });
   }
 
-  // Max count cap: keep only the N nearest (already sorted by distance)
-  if (rule.maxCount != null) {
-    filtered = filtered.slice(0, rule.maxCount);
-  }
-
   return filtered;
 }
 
 /** Get the initialVisibleCount for a category, falling back to the global default */
-function getInitialVisibleCount(categoryId: string): number {
+export function getInitialVisibleCount(categoryId: string): number {
   return CATEGORY_FILTER_RULES[categoryId]?.initialVisibleCount ?? INITIAL_VISIBLE_COUNT;
 }
 
@@ -564,15 +579,12 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
     if (themePOIs.length < THEME_MIN_POIS) continue;
 
-    // Opplevelser krever minst én POI innen 15 min — ellers er det ikke et reelt nabolagstilbud
-    if (themeDef.id === "opplevelser") {
-      const walkMinutes = (p: POI) =>
-        p.travelTime?.walk ?? (haversineMeters(center, p.coordinates) * 1.3) / 83;
-      const nearest = themePOIs.reduce((best, p) =>
-        walkMinutes(p) < walkMinutes(best) ? p : best
-      , themePOIs[0]);
-      if (walkMinutes(nearest) > 15) continue;
-    }
+    // INGEN GANGTIDS-PORT. Her lå en regel som slettet hele «Opplevelser»-temaet
+    // hvis nærmeste sted lå mer enn 15 minutters gange unna. Premisset — «da er
+    // det ikke et reelt nabolagstilbud» — holder ikke: folk kjører til kino,
+    // svømmehall og museum, og en kino 4 km unna er fortsatt din kino. Regelen
+    // slo bare til på de stedene som hadde MINST å vise, og gjorde dem tommere.
+    // Avstanden står på hvert kort; leseren kan vurdere den selv.
 
     // Sort by distance to project center (closest first)
     const distanceSorted = [...themePOIs].sort((a, b) => {

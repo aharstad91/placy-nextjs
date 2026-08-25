@@ -111,10 +111,15 @@ interface Box {
 /**
  * Estimert label-bbox i skjerm-px for en kandidat. Eksportert for test.
  *
- * Bredden er et bevisst OVERESTIMAT: den regner hele navnet på én linje opp til
- * taket, mens {@link wrapLabelLines} bryter på ordgrense og gir i praksis en
- * litt smalere blokk. Feilen går altså mot å reservere for mye plass — aldri
- * mot å påstå at det er ledig der teksten faktisk ligger.
+ * Bredden er et bevisst OVERESTIMAT, og det er invarianten hele kollisjonen
+ * hviler på: feilen skal gå mot å reservere for mye plass, aldri mot å påstå at
+ * det er ledig der teksten faktisk ligger.
+ *
+ * Anslaget er `navnelengde × LABEL_CHAR_W` på én linje opp til taket, mens begge
+ * motorene bryter på ordgrense med CSS (`-webkit-line-clamp`) og i praksis får en
+ * litt smalere blokk. Verifisert mot canvas `measureText` med den faktiske
+ * font-stacken (600 10px system-ui): verste faktiske tegnbredde over 14 reelle
+ * POI-navn var 5,84 px mot anslagets 5,9 — se testen.
  */
 export function estimateLabelBox(
   c: LabelCandidate,
@@ -128,63 +133,6 @@ export function estimateLabelBox(
   const left = side === "right" ? c.x + offsetX : c.x - offsetX - width;
   const top = c.y - height / 2;
   return { left, top, right: left + width, bottom: top + height };
-}
-
-/**
- * Bryter et POI-navn til maks {@link LABEL_MAX_LINES} linjer innenfor
- * `maxWidth` px, med ellipsis når teksten ikke får plass.
- *
- * 2D lar CSS gjøre dette (`-webkit-line-clamp`), men Google Maps 3D
- * rasteriserer SVG — og SVG `<text>` bryter ikke av seg selv. Denne gir derfor
- * 3D-pinnen de samme linjene CSS ville produsert, målt med samme
- * {@link LABEL_CHAR_W} som kollisjonsboksen bruker.
- *
- * Ord som alene er lengre enn en linje deles hardt; ellers ville de blokkert
- * brytingen og stukket ut av label-boksen.
- */
-export function wrapLabelLines(
-  name: string,
-  maxWidth: number = LABEL_MAX_W,
-  charW: number = LABEL_CHAR_W,
-  maxLines: number = LABEL_MAX_LINES,
-): string[] {
-  const trimmed = name.trim();
-  if (!trimmed) return [];
-  const maxChars = Math.max(1, Math.floor(maxWidth / charW));
-  if (trimmed.length <= maxChars) return [trimmed];
-
-  const words: string[] = [];
-  for (const word of trimmed.split(/\s+/)) {
-    let rest = word;
-    while (rest.length > maxChars) {
-      words.push(rest.slice(0, maxChars));
-      rest = rest.slice(maxChars);
-    }
-    if (rest) words.push(rest);
-  }
-
-  const lines: string[] = [];
-  let current = "";
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-    if (next.length <= maxChars) {
-      current = next;
-      continue;
-    }
-    lines.push(current);
-    if (lines.length === maxLines) {
-      // Ingen linjer igjen, men det står ord igjen — marker avkuttingen.
-      const last = lines[lines.length - 1];
-      const room = Math.max(1, maxChars - 1);
-      return [
-        ...lines.slice(0, -1),
-        `${last.length <= room ? last : last.slice(0, room)}…`,
-      ];
-    }
-    current = word;
-  }
-  if (current) lines.push(current);
-  return lines;
 }
 
 function intersects(a: Box, b: Box): boolean {

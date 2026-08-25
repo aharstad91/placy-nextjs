@@ -31,6 +31,35 @@
 /** Steder nærmere enn dette, med samme navn og kategori, regnes som samme sted. */
 export const COLOCATED_THRESHOLD_M = 200;
 
+/**
+ * Terskel for DELVIS navnelikhet (andre pass, 2026-08-24). Strengere enn
+ * COLOCATED_THRESHOLD_M med vilje — se `NAME_SUBSET_THRESHOLD_M`-begrunnelsen
+ * over `mergeNameSubsetPins`.
+ */
+export const NAME_SUBSET_THRESHOLD_M = 75;
+
+/**
+ * Kategorier der delvis navnelikhet IKKE betyr samme sted.
+ *
+ * Kollektiv- og bysykkeldata kommer fra Entur og GBFS, som er autoritative på
+ * at to holdeplasser med nesten samme navn ER to holdeplasser: «Trondheim
+ * Bysykkel: Skansen» og «… Skansen bru» er to stativ 200 m fra hverandre, og
+ * «Søndre gate bussholdeplass» og «Søndre gate Regionbuss bussholdeplass» er
+ * lokal- og regionbussens egne stopp 33 m fra hverandre. Å slå dem sammen
+ * fjerner et stopp som faktisk finnes.
+ */
+const NAME_SUBSET_EXEMPT_CATEGORIES = new Set([
+  "bus",
+  "train",
+  "tram",
+  "bike",
+  "ferry",
+  "taxi",
+  "carshare",
+  "scooter",
+  "parking",
+]);
+
 export interface DedupeCandidate {
   id: string;
   name: string;
@@ -165,13 +194,130 @@ function pickWinner(
 }
 
 /**
+ * ANDRE PASS: samme sted under to navn der ett navn inneholder det andre.
+ *
+ * Første pass krever EKSAKT samme normaliserte navn, og det er riktig som
+ * hovedregel — fuzzy matching ville slått sammen «Charlottenlund
+ * kunstgressbane» og «Charlottenlund kunstgrasbane», som er to baner 430 m fra
+ * hverandre. Men den slipper gjennom mønsteret der to kilder skriver samme sted
+ * med ulik mengde ord. Målt på alle 12 boards i prod (2026-08-24):
+ *
+ *   «Extra Arena» (OSM) mot «Ranheim Extra Arena» (Google), 62 m
+ *   «Grip Leangen» (OSM) mot «Grip Klatring Leangen» (Google), 5 m
+ *   «Grilstad FUS barnehage» mot «Grilstad Fus barnehage AS», 6 m
+ *   «Fjæraskogen barnehage» mot «Stiftelsen Fjæraskogen barnehage», 10 m
+ *   «Ranheim post i butikk» mot «Pakkeautomat Ranheim Post i Butikk», 17 m
+ *   «Leangen Gård» mot «Leangen gård park», 33 m
+ *   «3T-Moholt» mot «3T-Moholt CrossFit», 57 m
+ *
+ * TRE krav må holde samtidig, og hvert av dem ble lagt til fordi målingen viste
+ * en feilsammenslåing uten det:
+ *
+ * 1. Ordene i det korteste navnet må være en ekte delmengde av det lengste.
+ *    Ikke delvis overlapp — «Planetringen … Avdeling Basunvegen» og
+ *    «Planetringen … Avdeling Planetringen» er to avdelinger av samme barnehage
+ *    og skal begge stå. (Delmengde-regelen alene tok dem: den ene avdelingens
+ *    navn er en delmengde av den andres. Derfor kravene under.)
+ * 2. Det korteste navnet må ha minst to ord. Ett ord er for tynt: «Lekeplass»
+ *    er en delmengde av «Kanalen lekeplass» uten å være samme sted.
+ * 3. Avstanden må være under 75 m, ikke 200 m som i første pass. Ved 200 m falt
+ *    to ekte bysykkelstativ og to ekte barnehageavdelinger sammen; ved 75 m
+ *    står de. Grensen ligger mellom «Extra Arena»-paret (62 m) og
+ *    «Ranheim Kunstgress» / «Ranheim Kunstgress 9'er» (86 m) — sistnevnte er to
+ *    baner på samme anlegg, og de skal begge stå.
+ *
+ * Kollektivkategoriene er unntatt helt (se NAME_SUBSET_EXEMPT_CATEGORIES).
+ */
+export function mergeNameSubsetPins(
+  candidates: DedupeCandidate[],
+  options: { thresholdMeters?: number; protectedIds?: Iterable<string> } = {}
+): DedupeResult {
+  const threshold = options.thresholdMeters ?? NAME_SUBSET_THRESHOLD_M;
+  const protectedIds = new Set(options.protectedIds ?? []);
+  const words = new Map<string, Set<string>>();
+  for (const c of candidates) {
+    words.set(c.id, new Set(normalizeName(c.name).split(" ").filter(Boolean)));
+  }
+
+  const isSubsetPair = (a: DedupeCandidate, b: DedupeCandidate): boolean => {
+    if (a.categoryId !== b.categoryId) return false;
+    if (NAME_SUBSET_EXEMPT_CATEGORIES.has(a.categoryId)) return false;
+    const wa = words.get(a.id)!;
+    const wb = words.get(b.id)!;
+    if (wa.size === 0 || wb.size === 0 || wa.size === wb.size) return false;
+    const [small, large] = wa.size < wb.size ? [wa, wb] : [wb, wa];
+    if (small.size < 2) return false;
+    for (const w of small) {
+      if (!large.has(w)) return false;
+    }
+    return haversineMeters(a, b) <= threshold;
+  };
+
+  // Union-find over parene, så en kjede av tre navn havner i én klynge.
+  const parent = new Map<string, string>(candidates.map((c) => [c.id, c.id]));
+  const find = (id: string): string => {
+    let root = id;
+    while (parent.get(root) !== root) root = parent.get(root)!;
+    let walk = id;
+    while (parent.get(walk) !== root) {
+      const next = parent.get(walk)!;
+      parent.set(walk, root);
+      walk = next;
+    }
+    return root;
+  };
+  for (let i = 0; i < candidates.length; i++) {
+    for (let j = i + 1; j < candidates.length; j++) {
+      if (isSubsetPair(candidates[i], candidates[j])) {
+        parent.set(find(candidates[i].id), find(candidates[j].id));
+      }
+    }
+  }
+
+  const clusters = new Map<string, DedupeCandidate[]>();
+  for (const c of candidates) {
+    const root = find(c.id);
+    const bucket = clusters.get(root);
+    if (bucket) bucket.push(c);
+    else clusters.set(root, [c]);
+  }
+
+  const kept: DedupeCandidate[] = [];
+  const dropped: DedupeDrop[] = [];
+  for (const cluster of clusters.values()) {
+    if (cluster.length === 1) {
+      kept.push(cluster[0]);
+      continue;
+    }
+    const winner = pickWinner(cluster, protectedIds);
+    kept.push(winner);
+    for (const loser of cluster) {
+      if (loser.id === winner.id) continue;
+      dropped.push({
+        id: loser.id,
+        keptId: winner.id,
+        name: loser.name,
+        categoryId: loser.categoryId,
+        meters: Math.round(haversineMeters(winner, loser)),
+      });
+    }
+  }
+  return { kept, dropped };
+}
+
+/**
  * Grupperer på (kategori, normalisert navn), klynger transitivt på avstand, og
  * beholder én vinner per klynge. Returnerer BÅDE de beholdte og de droppede —
  * kalleren skal logge de droppede. Stille dedup leses som "det var bare én der".
  */
 export function dedupeColocatedPins(
   candidates: DedupeCandidate[],
-  options: { thresholdMeters?: number; protectedIds?: Iterable<string> } = {}
+  options: {
+    thresholdMeters?: number;
+    /** Egen terskel for andre pass (delvis navnelikhet). */
+    nameSubsetThresholdMeters?: number;
+    protectedIds?: Iterable<string>;
+  } = {}
 ): DedupeResult {
   const threshold = options.thresholdMeters ?? COLOCATED_THRESHOLD_M;
   const protectedIds = new Set(options.protectedIds ?? []);
@@ -229,7 +375,14 @@ export function dedupeColocatedPins(
     }
   }
 
-  return { kept, dropped };
+  // Andre pass: delvis navnelikhet. Kjører PÅ resultatet av det første, slik
+  // at eksakte dubletter alt er borte og delmengde-regelen ser én rad per navn.
+  const subset = mergeNameSubsetPins(kept, {
+    protectedIds,
+    thresholdMeters: options.nameSubsetThresholdMeters,
+  });
+
+  return { kept: subset.kept, dropped: [...dropped, ...subset.dropped] };
 }
 
 /** Én linje for `warnings` — aldri stille. */

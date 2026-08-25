@@ -4,6 +4,7 @@ import {
   COLOCATED_THRESHOLD_M,
   contentRank,
   dedupeColocatedPins,
+  mergeNameSubsetPins,
   normalizeName,
   sourceRank,
   summarizeDedupe,
@@ -249,5 +250,113 @@ describe("dedupeColocatedPins: grensene", () => {
     expect(summary).toContain("2");
     expect(summary).toContain("idrett");
     expect(summary).toContain("barnehage");
+  });
+});
+
+/**
+ * Andre pass (2026-08-24): delvis navnelikhet. Alle casene under er MÅLT på de
+ * 12 boardene i prod — både de som skal slås sammen og de som ikke skal.
+ */
+describe("mergeNameSubsetPins — samme sted under to navn", () => {
+  const at = (
+    id: string,
+    name: string,
+    categoryId: string,
+    metersEast: number,
+    extra: Partial<DedupeCandidate> = {},
+  ): DedupeCandidate => ({
+    id,
+    name,
+    categoryId,
+    lat: 63.435107,
+    // ~1 grad lengde ≈ 49 700 m på 63,4°N — nok presisjon for terskeltesting.
+    lng: 10.505335 + metersEast / 49700,
+    source: null,
+    ...extra,
+  });
+
+  it("«Extra Arena» (OSM) og «Ranheim Extra Arena» (Google) 62 m er samme hall", () => {
+    const { kept, dropped } = mergeNameSubsetPins([
+      at("osm-way-1", "Extra Arena", "idrett", 0, { source: "osm" }),
+      at("google-1", "Ranheim Extra Arena", "idrett", 62, { source: "google" }),
+    ]);
+    expect(kept).toHaveLength(1);
+    // Google vinner på kilde-rang, så det lengste og mest presise navnet står.
+    expect(kept[0].name).toBe("Ranheim Extra Arena");
+    expect(dropped[0].name).toBe("Extra Arena");
+  });
+
+  it("selskapsform og «Stiftelsen» er ikke et eget sted", () => {
+    const { kept } = mergeNameSubsetPins([
+      at("bhf-1", "Fjæraskogen barnehage", "barnehage", 0, { source: "barnehagefakta" }),
+      at("osm-2", "Stiftelsen Fjæraskogen barnehage", "barnehage", 10, { source: "osm" }),
+    ]);
+    expect(kept).toHaveLength(1);
+    expect(kept[0].id).toBe("bhf-1");
+  });
+
+  it("to bysykkelstativ med nesten samme navn er to stativ", () => {
+    const { kept } = mergeNameSubsetPins([
+      at("bike-1", "Trondheim Bysykkel: Skansen", "bike", 0),
+      at("bike-2", "Trondheim Bysykkel: Skansen bru", "bike", 40),
+    ]);
+    expect(kept).toHaveLength(2);
+  });
+
+  it("to avdelinger av samme barnehage står begge", () => {
+    // Delmengde-regelen alene tok disse: den ene avdelingens ordsett ER en
+    // delmengde av den andres. Avstanden (180 m) er det som skiller dem.
+    const { kept } = mergeNameSubsetPins([
+      at("a", "Planetringen-Vikhammeråsen barnehager Avdeling Basunvegen", "barnehage", 0),
+      at("b", "Planetringen-Vikhammeråsen barnehager Avdeling Planetringen", "barnehage", 180),
+    ]);
+    expect(kept).toHaveLength(2);
+  });
+
+  it("ettords-navn er for tynt grunnlag", () => {
+    const { kept } = mergeNameSubsetPins([
+      at("a", "Lekeplass", "lekeplass", 0),
+      at("b", "Kanalen lekeplass", "lekeplass", 20),
+    ]);
+    expect(kept).toHaveLength(2);
+  });
+
+  it("to baner på samme anlegg 86 m fra hverandre står begge", () => {
+    const { kept } = mergeNameSubsetPins([
+      at("a", "Ranheim Kunstgress", "idrett", 0),
+      at("b", "Ranheim Kunstgress 9'er", "idrett", 86),
+    ]);
+    expect(kept).toHaveLength(2);
+  });
+
+  it("delvis overlapp uten delmengde er to steder", () => {
+    const { kept } = mergeNameSubsetPins([
+      at("a", "Charlottenlund kunstgressbane", "idrett", 0),
+      at("b", "Charlottenlund kunstgrasbane", "idrett", 30),
+    ]);
+    expect(kept).toHaveLength(2);
+  });
+
+  it("redaksjonelt innhold vinner over kortere navn og bedre kilde", () => {
+    const { kept } = mergeNameSubsetPins([
+      at("osm-way-9", "Leangen gård park", "park", 0, {
+        source: "osm",
+        editorialHook: "Gården er byens eldste …",
+      }),
+      at("google-9", "Leangen Gård", "park", 33, { source: "google" }),
+    ]);
+    expect(kept).toHaveLength(1);
+    expect(kept[0].id).toBe("osm-way-9");
+  });
+
+  it("dedupeColocatedPins kjører begge passene", () => {
+    const { kept, dropped } = dedupeColocatedPins([
+      at("osm-way-1", "Extra Arena", "idrett", 0, { source: "osm" }),
+      at("osm-node-1", "Extra Arena", "idrett", 30, { source: "osm" }),
+      at("google-1", "Ranheim Extra Arena", "idrett", 62, { source: "google" }),
+    ]);
+    expect(kept).toHaveLength(1);
+    expect(kept[0].name).toBe("Ranheim Extra Arena");
+    expect(dropped).toHaveLength(2);
   });
 });

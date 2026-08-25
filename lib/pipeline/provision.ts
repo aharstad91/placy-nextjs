@@ -184,7 +184,7 @@ export async function provisionReportBoard(
       kommunenummer,
     });
     log(
-      `NSR skoler: ${pubResult.counts.nsr} · Barnehagefakta: ${pubResult.counts.barnehagefakta} · Overpass idrett: ${pubResult.counts.overpass}`
+      `NSR skoler: ${pubResult.counts.nsr} · Barnehagefakta: ${pubResult.counts.barnehagefakta} · Overpass idrett: ${pubResult.counts.overpass} · Taxiholdeplasser: ${pubResult.counts.taxi}`
     );
     for (const w of pubResult.warnings) warn(w);
   } else {
@@ -318,7 +318,9 @@ export async function provisionReportBoard(
 
   // ── Steg 9: Revalidering ───────────────────────────────────────────────
   section("Steg 9: Revalidering");
-  await revalidateProject(projectResult.customerSlug, projectResult.slug, reporter);
+  await revalidateProject(projectResult.customerSlug, projectResult.slug, reporter, {
+    existed: projectResult.existed,
+  });
 
   // ── Steg 10: Akseptansesjekk ───────────────────────────────────────────
   section("Steg 10: Akseptansesjekk");
@@ -339,36 +341,80 @@ export async function provisionReportBoard(
 }
 
 /**
- * Revalider board-cachen via admin-API (best-effort; nytt prosjekt rendrer
- * ferskt ved første request uansett). Fail-soft.
+ * Flatene et board kan ligge cachet på, i den rekkefølgen de forsøkes.
+ *
+ * ## Hvorfor en LISTE og ikke én URL (2026-08-24)
+ *
+ * Funksjonen pekte på `NEXT_PUBLIC_APP_URL ?? https://www.placy.no` og ingenting
+ * annet. Ved lokal provisjonering betydde det at cache-bustet gikk til PROD,
+ * der `ADMIN_ENABLED` er avslått (403 siden 2026-07-07) — mens dev-serveren som
+ * faktisk serverte det oppdaterte boardet aldri fikk beskjed. Resultatet var en
+ * re-provisjonering som meldte «✓ fullført» mens localhost fortsatte å servere
+ * gamle POI-er til noen tilfeldigvis gjorde hard refresh (målt: 127 steder i
+ * nettleseren mot 264 i databasen).
+ *
+ * Rekkefølgen er bevisst: eksplisitt override først, så app-URL-en fra env, så
+ * prod, så den lokale dev-serveren. ALLE forsøkes — et board kan være cachet på
+ * flere flater samtidig, og prod-treffet skal ikke hindre localhost-treffet.
+ */
+function revalidateTargets(): string[] {
+  const explicit = (process.env.PLACY_REVALIDATE_URLS ?? "")
+    .split(",")
+    .map((u) => u.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  const localPort = process.env.PORT ?? "3000";
+  const candidates = [
+    ...explicit,
+    ...(appUrl ? [appUrl] : []),
+    "https://www.placy.no",
+    `http://localhost:${localPort}`,
+  ];
+  return [...new Set(candidates)];
+}
+
+/**
+ * Revalider board-cachen via admin-API på hver kjente flate. Fail-soft: kaster
+ * aldri, men SIER FRA når ingen flate tok imot — for et eksisterende board
+ * rendrer ikke noe «ferskt ved første request», det fortsetter å servere den
+ * cachede versjonen til noen tvinger den ut.
  */
 export async function revalidateProject(
   customer: string,
   slug: string,
-  reporter: ProvisionReporter = NOOP_REPORTER
-): Promise<void> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) return;
-
+  reporter: ProvisionReporter = NOOP_REPORTER,
+  options: { existed?: boolean } = {}
+): Promise<{ revalidated: string[] }> {
   const tag = `product:${customer}_${slug}`;
   const path = `/eiendom/${customer}/${slug}/rapport-board`;
-  const prodUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.placy.no";
-  try {
-    const res = await fetch(`${prodUrl}/api/admin/revalidate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tag, path }),
-      signal: AbortSignal.timeout(10000),
-    });
-    if (res.ok) {
-      reporter.log(`✓ Revalidert: ${tag} + ${path}`);
-      return;
+  const revalidated: string[] = [];
+
+  for (const base of revalidateTargets()) {
+    try {
+      const res = await fetch(`${base}/api/admin/revalidate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tag, path }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (res.ok) {
+        revalidated.push(base);
+        reporter.log(`✓ Revalidert på ${base}: ${tag} + ${path}`);
+      } else {
+        reporter.log(`· ${base}: ${res.status} (hoppet over)`);
+      }
+    } catch {
+      reporter.log(`· ${base}: ikke tilgjengelig (hoppet over)`);
     }
-  } catch {
-    // Faller gjennom til advarsel
   }
-  reporter.warn(
-    `ℹ️  Revalidering ikke tilgjengelig — nytt prosjekt rendrer ferskt ved første request (tag: ${tag})`
-  );
+
+  if (revalidated.length === 0) {
+    reporter.warn(
+      options.existed
+        ? `⚠️  Ingen flate tok imot revalidering (tag: ${tag}). Boardet FINNES fra før, så den cachede versjonen serveres videre — hard refresh (Cmd+Shift+R) eller restart dev-serveren for å se endringene.`
+        : `ℹ️  Ingen flate tok imot revalidering — nytt prosjekt rendrer ferskt ved første request (tag: ${tag})`
+    );
+  }
+
+  return { revalidated };
 }

@@ -12,15 +12,19 @@ vi.mock("@/components/map/project-latlng-to-screen", () => ({
   }),
 }));
 
-import { useMarker3DDeclutter } from "./use-3d-marker-declutter";
+import {
+  useMarker3DDeclutter,
+  CAMERA_SETTLE_MS,
+} from "./use-3d-marker-declutter";
 
 /** Trondheim — samme breddegrad boardene står på. */
 const LAT = 63.44;
 const WIDTH = 1200;
 const HEIGHT = 900;
 
-/** Ro-vinduet i hooken. Testene venter alltid litt lenger enn dette. */
-const SETTLE = 500;
+/** Ro-vinduet i hooken, med litt margin. Leses fra kilden så testene ikke blir
+ *  usanne påstander i det tallet justeres. */
+const SETTLE = CAMERA_SETTLE_MS + 50;
 
 interface FakeMap extends HTMLElement {
   center: { lat: number; lng: number } | null;
@@ -62,7 +66,10 @@ interface Props {
 function setup(
   map: FakeMap | null,
   pois: POI[],
-  overrides: Partial<Omit<Props, "pois">> = {},
+  overrides: Partial<Omit<Props, "pois">> & {
+    homeName?: string;
+    homeSubtitle?: string;
+  } = {},
 ) {
   return renderHook(
     (props: Props) =>
@@ -70,7 +77,8 @@ function setup(
         map3d: map,
         pois: props.pois,
         home: HOME,
-        homeName: "Testprosjektet",
+        homeName: overrides.homeName ?? "Testprosjektet",
+        homeSubtitle: overrides.homeSubtitle,
         activePOIId: props.activePOIId,
         enabled: props.enabled,
         suppressActiveLabel: props.suppressActiveLabel,
@@ -167,17 +175,62 @@ describe("useMarker3DDeclutter — klynger", () => {
   });
 });
 
-describe("useMarker3DDeclutter — prosjekt-chipen som hindring", () => {
-  it("POI bak chipen blir prikk; POI godt under den er uberørt", () => {
-    // Chipen er forankret i bunn-midten på hjemmet (900, 800) og strekker seg
-    // oppover — altså rundt y ≈ 700–800, x ≈ 790–1010.
+describe("useMarker3DDeclutter — prosjektmarkøren som hindring", () => {
+  // Markøren er forankret i bunn-midten på hjemmet (x 900, y 800) og strekker
+  // seg OPPOVER. Etter disc-redesignet (2026-08-24) er disc-en 52 px og teksten
+  // står bare til HØYRE, så hindringen er asymmetrisk: for «Testprosjektet»
+  // dekker den ca. x 874–1035 og y 749–800 ved range 900.
+  //
+  // POI-kandidatens y løftes til disc-senter (y − 20) før kollisjonen, så en POI
+  // deklarert på y = 790 kolliderer som y = 770.
+  it("POI bak markøren blir prikk; POI godt under den er uberørt", () => {
     const { result } = setup(makeMap(900), [
-      poi("bak", 900, 750, 4),
-      poi("langt-under", 900, 100, 4),
+      poi("bak", 955, 790, 4),
+      poi("langt-under", 955, 100, 4),
     ]);
     settle();
     expect(result.current.demotedIds.has("bak")).toBe(true);
     expect(result.current.demotedIds.has("langt-under")).toBe(false);
+  });
+
+  it("POI til VENSTRE for disc-en er uberørt — der står det ingen tekst", () => {
+    // Regresjonstest: hindringen var tidligere den symmetriske SVG-rammen
+    // sentrert på disc-en, så teksten ble speilet inn i tomrommet til venstre og
+    // demoterte alt der. x = 820 ligger utenfor disc-ens venstre kant (874).
+    const { result } = setup(makeMap(900), [poi("venstre", 820, 790, 4)]);
+    settle();
+    expect(result.current.demotedIds.has("venstre")).toBe(false);
+  });
+
+  it("hindringen blir bredere når prosjektnavnet er langt", () => {
+    // Samme POI, to navnelengder. Med et langt navn strekker teksten seg forbi
+    // x = 1100 og fanger POI-en; med et kort navn gjør den det ikke.
+    const at = () => [poi("hoyre", 1100, 790, 4)];
+    const kort = setup(makeMap(900), at(), { homeName: "Nav" });
+    settle();
+    expect(kort.result.current.demotedIds.has("hoyre")).toBe(false);
+
+    const langt = setup(makeMap(900), at(), {
+      homeName: "Strindfjordvegen 10 Ranheim",
+    });
+    settle();
+    expect(langt.result.current.demotedIds.has("hoyre")).toBe(true);
+  });
+
+  it("uten undertittel reserveres ikke plass til en", () => {
+    // `homeSubtitle: ""` er «ingen undertittel». Med et KORT navn er det
+    // undertittelen som ellers setter bredden, så hindringen krymper uten den.
+    const at = () => [poi("hoyre", 960, 790, 4)];
+    const med = setup(makeMap(900), at(), { homeName: "Nav" });
+    settle();
+    expect(med.result.current.demotedIds.has("hoyre")).toBe(true);
+
+    const uten = setup(makeMap(900), at(), {
+      homeName: "Nav",
+      homeSubtitle: "",
+    });
+    settle();
+    expect(uten.result.current.demotedIds.has("hoyre")).toBe(false);
   });
 });
 
@@ -223,27 +276,29 @@ describe("useMarker3DDeclutter — når den skal tie", () => {
 describe("useMarker3DDeclutter — ro-signalet", () => {
   it("regner ikke før kameraet har falt til ro", () => {
     const { result } = setup(makeMap(900), [poi("a", 100, 100, 4)]);
-    settle(100);
+    settle(CAMERA_SETTLE_MS - 20);
     expect(result.current.labels).toEqual({});
-    settle(400);
+    settle(40);
     expect(Object.keys(result.current.labels)).toEqual(["a"]);
   });
 
-  it("plasseringen FRYSES mens kameraet er i bevegelse (ingen raster-churn)", () => {
+  it("plasseringen FRYSES mens kameraet er i bevegelse", () => {
     const map = makeMap(900);
     const { result } = setup(map, [poi("a", 100, 100, 4)]);
     settle();
     expect(Object.keys(result.current.labels)).toEqual(["a"]);
 
     // Brukeren zoomer helt ut — langt forbi prikk-terskelen. Så lenge gesten
-    // pågår skal svaret stå stille: hver omregning er en re-rasterisering av
-    // markør-teksturene, og labelen følger uansett sin egen pin gjennom
-    // bevegelsen.
+    // pågår skal svaret stå stille. Labelen følger uansett sin egen pin gjennom
+    // bevegelsen, så en omregning midt i draget ville bare fått navn til å hoppe
+    // mellom sider under fingeren.
     map.range = 15000;
+    // Steget må ligge UNDER ro-vinduet, ellers tester vi ro og ikke bevegelse.
+    const duringGesture = Math.max(1, Math.floor(CAMERA_SETTLE_MS / 2));
     for (let i = 0; i < 10; i++) {
       act(() => {
         map.dispatchEvent(new Event("gmp-camerapositionchange"));
-        vi.advanceTimersByTime(100);
+        vi.advanceTimersByTime(duringGesture);
       });
       expect(Object.keys(result.current.labels)).toEqual(["a"]);
       expect(result.current.demotedIds.size).toBe(0);

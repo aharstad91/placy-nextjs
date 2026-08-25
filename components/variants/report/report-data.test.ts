@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { byTierThenScore, applyCategoryFilter } from "./report-data";
+import {
+  byTierThenScore,
+  applyCategoryFilter,
+  getInitialVisibleCount,
+} from "./report-data";
 import type { POI } from "@/lib/types";
 
 /** Minimal POI factory for testing sort behavior */
@@ -76,16 +80,15 @@ describe("applyCategoryFilter", () => {
   // Pre-computed schoolZone for Brøset (avoids importing GeoJSON in test)
   const brosetZone = { barneskole: "SINGSAKER", ungdomsskole: "ROSENBORG" };
 
-  it("caps bus POIs to maxCount of 5", () => {
+  it("kaster IKKE holdeplasser — alle 10 slipper gjennom (maxCount fjernet 2026-08-24)", () => {
     const pois = Array.from({ length: 10 }, (_, i) => makeBusPOI(`bus-${i}`));
     const filtered = applyCategoryFilter("bus", pois, brosetCenter);
-    expect(filtered.length).toBe(5);
-    // Keeps first 5 (nearest, since already sorted by distance)
+    expect(filtered.length).toBe(10);
     expect(filtered[0].id).toBe("bus-0");
-    expect(filtered[4].id).toBe("bus-4");
+    expect(filtered[9].id).toBe("bus-9");
   });
 
-  it("caps idrett POIs to maxCount of 3", () => {
+  it("kaster IKKE idrettsanlegg — alle 8 slipper gjennom", () => {
     const pois = Array.from({ length: 8 }, (_, i) =>
       makePOI({
         id: `idrett-${i}`,
@@ -94,7 +97,14 @@ describe("applyCategoryFilter", () => {
       })
     );
     const filtered = applyCategoryFilter("idrett", pois, brosetCenter);
-    expect(filtered.length).toBe(3);
+    expect(filtered.length).toBe(8);
+  });
+
+  it("initialVisibleCount styrer FØRSTE skjerm, ikke hva som finnes", () => {
+    // Regelen for idrett er nå bare en visnings-terskel: 3 kort synlig, resten
+    // bak «Hent flere». Filteret skal likevel levere alt.
+    expect(getInitialVisibleCount("idrett")).toBe(3);
+    expect(getInitialVisibleCount("bus")).toBe(5);
   });
 
   it("does not cap categories without rules (e.g. restaurant)", () => {

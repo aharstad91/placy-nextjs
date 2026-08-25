@@ -55,21 +55,21 @@ describe("enrichReportPois — Unit 7 (foto-fase DEFERRED → Unit 4)", () => {
     expect(result).not.toHaveProperty("photos");
   });
 
-  it("AC1: default kategoriliste er BOLIG_GOOGLE_CATEGORIES (31 — recall-fiks 2026-08-12)", async () => {
+  it("AC1: default kategoriliste er BOLIG_GOOGLE_CATEGORIES (58 — butikk/dagligvare-recall 2026-08-24)", async () => {
     importMock.mockResolvedValue({ total: 15, new: 15, updated: 0, byCategory: {} });
 
     await enrichReportPois(BASE_OPTIONS);
 
-    expect(BOLIG_GOOGLE_CATEGORIES).toHaveLength(31);
+    expect(BOLIG_GOOGLE_CATEGORIES).toHaveLength(58);
     expect(importMock.mock.calls[0][0].categories).toEqual(BOLIG_GOOGLE_CATEGORIES);
   });
 
-  it("AC1: næringsprofil-divergens — NAERING (13): hotel inn, shopping_mall + spa ut", async () => {
+  it("AC1: næringsprofil-divergens — NAERING (16): hotel inn, shopping_mall + spa ut", async () => {
     importMock.mockResolvedValue({ total: 15, new: 15, updated: 0, byCategory: {} });
 
     await enrichReportPois({ ...BASE_OPTIONS, categories: NAERING_GOOGLE_CATEGORIES });
 
-    expect(NAERING_GOOGLE_CATEGORIES).toHaveLength(13);
+    expect(NAERING_GOOGLE_CATEGORIES).toHaveLength(16);
     expect(NAERING_GOOGLE_CATEGORIES).toContain("hotel");
     expect(NAERING_GOOGLE_CATEGORIES).not.toContain("shopping_mall");
     expect(NAERING_GOOGLE_CATEGORIES).not.toContain("spa");

@@ -6,6 +6,7 @@
  */
 
 import { createServerClient } from "./client";
+import { chunkIds } from "./chunk-ids";
 import { ALL_TRUST_FLAGS } from "@/lib/utils/poi-trust";
 
 // ============================================
@@ -154,14 +155,23 @@ export async function upsertPOIsWithEditorialPreservation(
 
   // Fetch existing POIs to preserve their editorial content
   const poiIds = pois.map(p => p.id);
-  const { data: existingPois, error: fetchError } = await db
-    .from("pois")
-    .select("id, editorial_hook, local_insight, story_priority, editorial_sources, featured_image, description, trust_score, trust_flags, trust_score_updated_at, google_website, google_business_status, google_price_level, poi_tier, tier_reason, is_chain, is_local_gem, poi_metadata, tier_evaluated_at")
-    .in("id", poiIds);
+  // Batchet — se chunk-ids.ts. En import av 500 POI-er ga en URL over grensa
+  // og et bart «fetch failed» her.
+  const readExisting = (ids: string[]) =>
+    db
+      .from("pois")
+      .select("id, editorial_hook, local_insight, story_priority, editorial_sources, featured_image, description, trust_score, trust_flags, trust_score_updated_at, google_website, google_business_status, google_price_level, poi_tier, tier_reason, is_chain, is_local_gem, poi_metadata, tier_evaluated_at")
+      .in("id", ids);
 
-  if (fetchError) {
-    result.errors.push(`Kunne ikke hente eksisterende POI-er: ${fetchError.message}`);
-    return result;
+  const existingPois: NonNullable<Awaited<ReturnType<typeof readExisting>>["data"]> = [];
+  for (const chunk of chunkIds(poiIds)) {
+    const { data, error: fetchError } = await readExisting(chunk);
+
+    if (fetchError) {
+      result.errors.push(`Kunne ikke hente eksisterende POI-er: ${fetchError.message}`);
+      return result;
+    }
+    existingPois.push(...(data ?? []));
   }
 
   // Create lookup map for existing editorial + trust content

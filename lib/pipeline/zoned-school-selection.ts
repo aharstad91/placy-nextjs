@@ -43,7 +43,16 @@ export interface SchoolZoneNames {
   ungdomsskole: string | null;
 }
 
-export type SelectionReason = "krets" | "naermeste";
+/**
+ * Hvorfor en skole ble valgt.
+ *
+ * `krets` — kretsskolen for adressen, uansett avstand. Det er svaret på «hvor
+ *   går ungene», og det ene valget som er et faktum om BOLIGEN.
+ * `i-omraadet` — skolen ligger innenfor discovery-radiusen. Et nabolagsfaktum,
+ *   ikke et krets-svar.
+ * `naermeste` — beholdt for fallbacken når kretsdata mangler helt.
+ */
+export type SelectionReason = "krets" | "naermeste" | "i-omraadet";
 
 export interface SchoolPick {
   candidate: SchoolCandidate;
@@ -302,19 +311,66 @@ export function nearestOfType(
 }
 
 /**
+ * Er de to kandidatene samme skole under to NSR-navn?
+ *
+ * NSR har både morenheten og avdelingen som egne enheter med egne orgnr:
+ * «Stiftelsen steinerskolen på Rotvoll» og «Stiftelsen steinerskolen Rotvoll»
+ * ligger på samme koordinat, og «Lukas videregående skole AS» finnes to ganger.
+ * Så lenge bare tre skoler ble valgt var dublettene usynlige; når alle skoler
+ * innenfor radiusen tas med, blir de to pins på samme punkt.
+ *
+ * To signaler må være oppfylt samtidig, ellers slår regelen inn på ekte skoler:
+ * ordene i det korteste navnet må være en delmengde av det lengste, OG
+ * avstanden fra boligen må være praktisk talt den samme (samme tomt).
+ * «Charlottenlund barneskole» og «Charlottenlund ungdomsskole» ligger på samme
+ * tomt, men ingen av navnene er en delmengde av det andre — de består.
+ */
+export function isSameSchool(
+  a: SchoolCandidate,
+  b: SchoolCandidate,
+  maxDistanceDeltaMeters = 50,
+): boolean {
+  if (Math.abs(a.distanceMeters - b.distanceMeters) > maxDistanceDeltaMeters) return false;
+  const wordsA = new Set(normalizeFullSchoolName(a.name).split(" ").filter(Boolean));
+  const wordsB = new Set(normalizeFullSchoolName(b.name).split(" ").filter(Boolean));
+  if (wordsA.size === 0 || wordsB.size === 0) return false;
+  const [small, large] = wordsA.size <= wordsB.size ? [wordsA, wordsB] : [wordsB, wordsA];
+  for (const w of small) {
+    if (!large.has(w)) return false;
+  }
+  return true;
+}
+
+/**
+ * Avdelinger som ikke er et skoletilbud for en 16-åring i nabolaget.
+ * Fengselsundervisning og voksenopplæring ligger i NSR som ordinære
+ * videregående enheter — «Charlottenlund videregående skole avd Trondheim
+ * Fengsel» ville ellers blitt en pin på kartet nå som alle skoler innenfor
+ * radiusen tas med. Samme regel som `school-facts.ts` bruker på FAQ-siden.
+ */
+const IKKE_ORDINAERT_TILBUD = /\b(fengsel|kretsfengsel|voksenoppl)/i;
+
+/**
  * Velg skolene som skal importeres.
  *
- * - `barneskole` og `ungdomsskole`: kretsskolen, UANSETT avstand. Finnes ingen
- *   krets (utenfor Trondheim) eller ingen navnematch, faller vi tilbake til
- *   nærmeste innenfor radius — samme oppførsel som før.
- * - `videregaende`: nærmeste innenfor radius. Det finnes ingen kretsdata for
- *   videregående; inntak er fylkeskommunalt og karakterbasert.
- * - Er nærmeste en ANNEN skole enn kretsskolen, tas begge med. Kretsskolen er
- *   svaret på «hvor går ungene», den nærmeste er fortsatt et nabolagsfaktum,
- *   og å fjerne den ville tatt bort innhold boards viser i dag.
+ * ENDRET 2026-08-24 (Andreas' Steinerskole-funn): valget var kretsskolen for
+ * hvert trinn pluss nærmeste videregående — maksimalt TRE skoler per board.
+ * Det ga en asymmetri ingen kunne forklare: 19 barnehager fra Barnehagefakta
+ * (alt innenfor radius) mot 3 skoler fra NSR, en like god kilde. «Steinerskolen
+ * på Rotvoll» lå i poolen fra både NSR og OSM og ble aktivt revet av boardet av
+ * `planStaleSchoolUnlink`, fordi den ikke var kretsskole. En privatskole 1,1 km
+ * unna er et nabolagsfaktum enten ungene dine sogner dit eller ikke.
+ *
+ * Nå: kretsskolene FØRST (de er svaret på «hvor går ungene», og gjelder uansett
+ * avstand), og deretter ALLE skoler innenfor discovery-radiusen — samme regel
+ * som barnehagene. Hvilken som er kretsskolen står fortsatt i board-faktaene
+ * («Boligen sogner til …», `lib/generators/faq-generator.ts`), så flere pins
+ * gjør ikke krets-svaret utydeligere.
  *
  * Stedsnøytralitet (Straumen-prinsippet): «ingen kretsdata her» må ha definert
- * oppførsel, ikke tom liste.
+ * oppførsel, ikke tom liste. Utenfor Trondheim faller vi tilbake til nærmeste
+ * per trinn, slik at et board aldri står uten skole selv om alle ligger utenfor
+ * radiusen.
  */
 export function selectSchools(
   zone: SchoolZoneNames,
@@ -325,24 +381,28 @@ export function selectSchools(
   const warnings: string[] = [];
   const chosen = new Set<string>();
 
-  const add = (candidate: SchoolCandidate | null, type: SchoolType, reason: SelectionReason) => {
+  const add = (
+    candidate: SchoolCandidate | null,
+    type: SchoolType,
+    reason: SelectionReason,
+  ) => {
     if (!candidate || chosen.has(candidate.id)) return;
+    if (IKKE_ORDINAERT_TILBUD.test(candidate.name)) return;
+    // NSR-dubletter (morenhet + avdeling på samme koordinat) skal ikke bli to
+    // pins på samme punkt.
+    if (picks.some((p) => isSameSchool(p.candidate, candidate))) return;
     chosen.add(candidate.id);
     picks.push({ candidate, type, reason });
   };
 
+  // 1. Kretsskolen per trinn — uansett avstand.
   for (const type of ["barneskole", "ungdomsskole"] as const) {
     const kretsName = zone[type];
     const kretsSchool = matchKretsToSchool(kretsName, candidates, type);
-
     if (kretsSchool) {
-      // Kretsskolen er svaret på «hvor går ungene», og den står ALENE for sitt
-      // trinn. Å legge nærmeste ved siden av trakk inn skoler 2,4 km unna som
-      // ingen i strøket sogner til.
       add(kretsSchool, type, "krets");
       continue;
     }
-
     if (kretsName) {
       warnings.push(
         `Kretsen «${kretsName}» (${type}) har ingen NSR-skole med samme navn — faller tilbake til nærmeste.`,
@@ -351,6 +411,21 @@ export function selectSchools(
     add(nearestOfType(candidates, type, radiusMeters, chosen), type, "naermeste");
   }
 
+  // 2. Alle øvrige skoler innenfor radiusen. Nærmest først, så et board med
+  //    mange skoler leser i den rekkefølgen en beboer bryr seg om.
+  const iOmraadet = candidates
+    .filter((c) => c.distanceMeters <= radiusMeters)
+    .sort((a, b) =>
+      a.distanceMeters !== b.distanceMeters
+        ? a.distanceMeters - b.distanceMeters
+        : a.name.localeCompare(b.name),
+    );
+  for (const candidate of iOmraadet) {
+    add(candidate, candidate.type, "i-omraadet");
+  }
+
+  // 3. Videregående: ingen krets finnes (fylkeskommunalt, karakterbasert
+  //    inntak), så nærmeste er svaret hvis ingen lå innenfor radiusen.
   add(
     nearestOfType(candidates, "videregaende", radiusMeters, chosen),
     "videregaende",

@@ -413,11 +413,43 @@ describe("importPublicPois — Unit 2", () => {
       "park",
       "skole",
       "swimming",
+      "taxi",
     ]);
     expect(new Set(ids).size, "duplikate kategori-definisjoner").toBe(ids.length);
     // Seedes før første kilde-fetch — ellers kan en POI-insert vinne kappløpet
     const seedOrder = vi.mocked(upsertCategories).mock.invocationCallOrder[0];
     const firstFetchOrder = fetchMock.mock.invocationCallOrder[0];
     expect(seedOrder).toBeLessThan(firstFetchOrder);
+  });
+
+  it("Taxi: holdeplasser innenfor radius linkes — uten et eneste nettverkskall", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+    // Alle eksterne kilder svarer tomt: det som telles her skal komme fra det
+    // innbakte datasettet, ikke fra fetch.
+    fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response);
+
+    const result = await importPublicPois({
+      ...BASE_OPTIONS,
+      // Strindfjordvegen 10, Ranheim — Skonnertvegen holdeplass ligger ~150 m unna.
+      lat: 63.435107,
+      lng: 10.505335,
+      kommunenummer: "5001",
+    });
+
+    expect(result.counts.taxi).toBeGreaterThan(0);
+    expect(result.warnings.join(" ")).toContain("Skonnertvegen");
+  });
+
+  it("Taxi: utenfor Trondheim → 0 og en advarsel, ikke en feil", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+    fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve([]), status: 200 } as Response);
+
+    // Straumen (Inderøy) — datasettet er Trondheim kommunes eget.
+    const result = await importPublicPois({ ...BASE_OPTIONS, lat: 63.87, lng: 11.0, kommunenummer: "5053" });
+
+    expect(result.counts.taxi).toBe(0);
+    expect(result.warnings.some((w) => w.startsWith("Taxi:"))).toBe(true);
   });
 });

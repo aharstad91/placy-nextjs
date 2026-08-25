@@ -1,5 +1,5 @@
 import {
-  Award, Baby, Bike, Blocks, BookOpen, Building2, Bus, Car, CarFront,
+  Award, Baby, Bike, Blocks, BookOpen, Building2, Bus, Car, CarFront, CarTaxiFront,
   Coffee, Croissant, Dog, Dumbbell, Film, GraduationCap, Home, Hospital,
   Landmark, Mail, MapPin, ParkingCircle, Pill, Plane, Scissors,
   ShoppingBag, ShoppingCart, Sparkles, Star, Stethoscope,
@@ -9,7 +9,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {
-  Award, Baby, Bike, Blocks, BookOpen, Building2, Bus, Car, CarFront,
+  Award, Baby, Bike, Blocks, BookOpen, Building2, Bus, Car, CarFront, CarTaxiFront,
   Coffee, Croissant, Dog, Dumbbell, Film, GraduationCap, Home, Hospital,
   Landmark, Mail, MapPin, ParkingCircle, Pill, Plane, Scissors,
   ShoppingBag, ShoppingCart, Sparkles, Star, Stethoscope,

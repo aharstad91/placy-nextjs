@@ -1,7 +1,8 @@
 /**
  * Offentlige POI-kildar for basic-tier rapport-pipeline:
  * NSR (skoler), Barnehagefakta (barnehager), Overpass (idrett, svømming,
- * park, badeplass, marina, utsiktspunkt — hvitelisten i osm-gate.ts).
+ * park, badeplass, marina, utsiktspunkt — hvitelisten i osm-gate.ts),
+ * Trondheim parkering (taxiholdeplasser, statisk datasett).
  *
  * Deterministisk og seriell. Fail-soft per kilde — logg + fortsett (aldri abort).
  * Dedup via nsr_id/barnehagefakta_id/osm_id (DB-partial unique indexes).
@@ -28,6 +29,12 @@ import {
   type OverpassElement,
 } from "@/lib/pipeline/osm-gate";
 import {
+  TAXI_CATEGORY,
+  taxiStandId,
+  taxiStandsWithin,
+  TAXI_STANDS_FETCHED_AT,
+} from "@/lib/pipeline/taxi-stands";
+import {
   planSchoolDeduplication,
   planStaleSchoolUnlink,
   resolveSchoolTypeFromNsr,
@@ -47,6 +54,7 @@ export const PUBLIC_POI_CATEGORIES = [
   // ny regel der ikke kan glemme å seede kategorien sin. Verdiene er kopiert
   // fra `v2.categories` i prod, så upserten er en no-op på eksisterende baser.
   ...OSM_GATE_CATEGORIES,
+  TAXI_CATEGORY,
 ];
 
 // ── Haversine distance ─────────────────────────────────────────────────────
@@ -72,7 +80,7 @@ function haversineMeters(
 
 export interface ImportPublicPoisResult {
   /** Antall POI-er linket til prosjektet per kilde */
-  counts: { nsr: number; barnehagefakta: number; overpass: number };
+  counts: { nsr: number; barnehagefakta: number; overpass: number; taxi: number };
   /** Advisory-meldinger (ikke feil) */
   warnings: string[];
 }
@@ -555,6 +563,53 @@ async function importOverpass(
   return upsertAndLink(supabase, projectId, pois, "osm_id");
 }
 
+// ── Taxiholdeplasser (Trondheim parkering) ────────────────────────────────
+
+/**
+ * Link taxiholdeplassene innenfor radiusen.
+ *
+ * Ingen nettverkskall — datasettet ligger i repoet (se `taxi-stands.ts` for
+ * hvorfor, og `scripts/fetch-taxi-holdeplasser.sh` for hvordan det oppdateres).
+ *
+ * Ingen dedup-nøkkel mot andre kilder: hverken Google, Entur eller OSM-porten
+ * produserer taxiholdeplasser i dag, så det finnes ingen rad å kollidere med.
+ * Skulle en slik kilde komme, er `taxi-tk-<slug>`-id-en stabil og lett å mappe.
+ */
+async function importTaxiStands(
+  supabase: NonNullable<ReturnType<typeof createServerClient>>,
+  projectId: string,
+  lat: number,
+  lng: number,
+  radiusMeters: number,
+  warnings: string[]
+): Promise<number> {
+  const nearby = taxiStandsWithin(lat, lng, radiusMeters, haversineMeters);
+
+  if (nearby.length === 0) {
+    // Utenfor Trondheim er dette normaltilstanden, ikke en feil — datasettet
+    // er kommunens eget og dekker bare Trondheim.
+    warnings.push(
+      `Taxi: ingen holdeplasser innenfor ${radiusMeters} m (datasettet dekker bare Trondheim, hentet ${TAXI_STANDS_FETCHED_AT})`
+    );
+    return 0;
+  }
+
+  const pois: PoiInsert[] = nearby.map((stand) => ({
+    id: taxiStandId(stand),
+    name: stand.navn,
+    lat: stand.lat,
+    lng: stand.lng,
+    category_id: TAXI_CATEGORY.id,
+    source: "trondheim-parkering",
+  }));
+
+  const linked = await upsertAndLink(supabase, projectId, pois);
+  warnings.push(
+    `ℹ️  Taxi: ${linked} holdeplasser — nærmeste ${nearby[0].navn} (${Math.round(nearby[0].distanceMeters)} m)`
+  );
+  return linked;
+}
+
 // ── Eksisterende natur-POI-linker ─────────────────────────────────────────
 
 async function linkNaturPois(
@@ -565,7 +620,7 @@ async function linkNaturPois(
   radiusMeters: number,
   warnings: string[]
 ): Promise<number> {
-  // Fjern gamle natur-lenker før re-linking (sikrer at cap på MAX_NATUR gjelder)
+  // Fjern gamle natur-lenker før re-linking (ren re-link, ingen etterlatte rader)
   const { data: oldNaturLinks } = await supabase
     .from("project_pois")
     .select("poi_id, pois!inner(category_id)")
@@ -595,16 +650,26 @@ async function linkNaturPois(
     return 0;
   }
 
-  const MAX_NATUR = 20;
-
+  // INGEN CAP. Her sto `MAX_NATUR = 20`: de 20 nærmeste uteområdene ble lenket,
+  // resten falt stille ut.
+  //
+  // Funnet som avskaffet den (2026-08-24): Hansbakkfjæra — badeplassen med
+  // grillbenker og svaberg øst på Ranheim — ligger 1 835 m fra Strindfjordvegen
+  // 10 og havnet på plass 31 av 54 natur-POI-er innenfor radiusen. Kuttlinja
+  // (plass 20) gikk ved 1 143 m. Boardet viste altså ikke stranda folk faktisk
+  // bruker, mens lekeplasser i borettslag 800 m unna spiste budsjettet.
+  //
+  // Avstandssortering med et tak er strukturelt feil for denne kategorien:
+  // lekeplasser ligger tett innover i boligfeltene, mens kysten og marka
+  // strekker seg lineært utover. Taket kutter derfor systematisk sjøkanten —
+  // det mest solgbare ved et sted som Ranheim. Sirkelen er grensen.
   const inRadius = (naturPois ?? [])
     .filter((p: { lat: number; lng: number }) =>
       haversineMeters(lat, lng, p.lat, p.lng) <= radiusMeters
     )
     .sort((a: { lat: number; lng: number }, b: { lat: number; lng: number }) =>
       haversineMeters(lat, lng, a.lat, a.lng) - haversineMeters(lat, lng, b.lat, b.lng)
-    )
-    .slice(0, MAX_NATUR);
+    );
 
   if (inRadius.length === 0) return 0;
 
@@ -724,6 +789,10 @@ export async function importPublicPois(
     importOverpass(supabase, projectId, lat, lng, radiusMeters, warnings)
   );
 
+  const taxi = await runSource("Taxi", warnings, () =>
+    importTaxiStands(supabase, projectId, lat, lng, radiusMeters, warnings)
+  );
+
   // Link eksisterende natur-POI-er fra DB (ingen external API)
   const naturLinked = await runSource("Natur", warnings, () =>
     linkNaturPois(supabase, projectId, lat, lng, radiusMeters, warnings)
@@ -732,5 +801,5 @@ export async function importPublicPois(
     warnings.push(`ℹ️  Natur: linket ${naturLinked} eksisterende POI-er fra DB`);
   }
 
-  return { counts: { nsr, barnehagefakta, overpass }, warnings };
+  return { counts: { nsr, barnehagefakta, overpass, taxi }, warnings };
 }

@@ -275,13 +275,37 @@ describe("use3DViewportPublish", () => {
     expect(spy.gestures).toBe(1);
   });
 
-  it("marker-tapp er innholds-interaksjon, ikke et kamera-grep", () => {
+  // Begge markør-generasjoner: rasterisert `gmp-marker-3d-interactive` og
+  // HTML-markøren `gmp-marker-interactive`. Gaten er usynlig når den svikter —
+  // et markør-tapp ville re-scopet nabolagslista under fingeren — så den må
+  // bevises for tagnavnet vi bytter TIL, ikke bare det vi bytter fra.
+  for (const tag of ["gmp-marker-3d-interactive", "gmp-marker-interactive"]) {
+    it(`marker-tapp er innholds-interaksjon, ikke et kamera-grep (${tag})`, () => {
+      const { el } = setup();
+      const initial = spy.rect;
+
+      const marker = document.createElement(tag);
+      el.appendChild(marker);
+      fireEvent.pointerDown(marker);
+      el.center = { lat: 63.5, lng: 10.6 };
+      cameraMoved(el);
+      tick(MIN_SETTLE_MS * 10);
+      steady(el);
+
+      expect(spy.rect).toBe(initial);
+    });
+  }
+
+  it("tapp på et BARN av markøren teller heller ikke som grep", () => {
+    // Klikket lander på labelen eller disc-en, ikke på verts-elementet.
     const { el } = setup();
     const initial = spy.rect;
 
-    const marker = document.createElement("gmp-marker-3d-interactive");
+    const marker = document.createElement("gmp-marker-interactive");
+    const inner = document.createElement("span");
+    marker.appendChild(inner);
     el.appendChild(marker);
-    fireEvent.pointerDown(marker);
+    fireEvent.pointerDown(inner);
     el.center = { lat: 63.5, lng: 10.6 };
     cameraMoved(el);
     tick(MIN_SETTLE_MS * 10);
