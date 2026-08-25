@@ -367,31 +367,69 @@ li:last-child .vp-row { border-bottom: none; }
 .frame {
   position: absolute; inset: 0; z-index: 30; pointer-events: none;
 }
-/* pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col overflow-hidden
-   rounded-t-3xl bg-[#f5f1ea] shadow-[0_-8px_32px_rgba(28,25,23,0.22)] */
+/* Sheeten er ÉN scroller med en gjennomsiktig spacer over kroppen — se
+   `mobileSheet` i baseline.js for hvorfor. Høydene settes fra JS
+   (`sizeMobileSurface`), for de er brøker av rammen.
+
+   `pointer-events: none` her er ikke pynt: scrolleren dekker hele takområdet,
+   og uten den ville et trykk over sheeten truffet scrolleren i stedet for
+   kartet. Nettleseren scroller nærmeste rullbare FORFAR av det fingeren
+   treffer, så kroppen scroller den likevel. */
+.sheet-outer {
+  pointer-events: none;
+  position: absolute; left: 0; right: 0; bottom: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  /* Vi eier bevegelsen selv (`wireSheetSurface`), og `none` MÅ stå på
+     scroll-containeren: nettleseren går fra elementet fingeren treffer opp til
+     nærmeste scroll-container INKLUSIV den, og stopper der. Står den bare på
+     `.sheet` over, scroller iOS videre som før.
+     Grunnen til at vi ikke lar iOS scrolle: har den først klassifisert
+     strøket som en scroll, får JS ingenting mer før fingeren slippes. Da kan
+     ikke lista gi bevegelsen tilbake til sheet-kroppen i samme strøk — og det
+     er nettopp den veien tilbake som skal føles sammenhengende.
+     Hjulet på desktop går ikke via touch-action, så det scroller nativt. */
+  touch-action: none;
+  scrollbar-width: none;
+}
+.sheet-outer::-webkit-scrollbar { display: none; }
+.sheet-spacer { pointer-events: none; }
+
+/* pointer-events-auto flex flex-col rounded-t-3xl bg-[#f5f1ea]
+   shadow-[0_-8px_32px_rgba(28,25,23,0.22)] */
 .sheet {
   pointer-events: auto;
-  position: absolute; left: 0; right: 0; bottom: 0;
-  display: flex; flex-direction: column; overflow: hidden;
+  display: flex; flex-direction: column;
   border-top-left-radius: 24px; border-top-right-radius: 24px;
   background: var(--ring-bg);
   box-shadow: 0 -8px 32px rgba(28, 25, 23, 0.22);
+  /* Uten dette spiser Safaris tekstmarkering trykket når fingeren lander
+     presis på TEKSTEN i en rad — paddingen ved siden av virker, teksten ikke.
+     Ikke bak `@media (hover:hover)`: den matcher aldri på iOS. `touch-callout`
+     tar «Kopier / Slå opp»-menyen som ellers popper opp midt i draget. */
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
 }
-/* Grab-handle — eneste dra-flaten. touch-action:none MÅ ligge her og
-   aldri på scroll-containeren under. Tap uten bevegelse hopper til det
-   ytterpunktet du IKKE er nærmest (klikk-alternativet til drag). */
+/* Handlen ER sheetens overkant, fastlimt i scrolleren: den står stille mens
+   innholdet går under den. INGEN touch-action:none her — det er nettopp den
+   native scrollen vi vil ha. Radius fordi den er det øverste barnet, og
+   sheeten ikke lenger klipper (overflow:hidden ville brutt sticky). */
 .grab {
+  position: sticky; top: 0; z-index: 2;
   flex: none; width: 100%; padding: 10px 20px 6px;
-  touch-action: none; cursor: grab; text-align: left;
+  background: var(--ring-bg);
+  border-top-left-radius: 24px; border-top-right-radius: 24px;
+  cursor: grab; text-align: left;
 }
+/* Hårstreken kommer først når innholdet FAKTISK ligger under headeren. */
+.sheet[data-pinned="true"] .grab { box-shadow: 0 1px 0 rgba(0, 0, 0, .07); }
 .grab .bar {
   margin: 0 auto 8px; display: block; height: 4px; width: 36px;
   border-radius: 999px; background: rgba(168, 162, 158, .7);
 }
 .grab .title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--stone-900); }
 
-.sheet-scroll {
-  min-height: 0; flex: 1; overflow-y: auto;
+/* Innholdet under handlen. Ikke en scroller — scrolleren er `.sheet-outer`. */
+.sheet-body {
   padding: 0 16px calc(16px + env(safe-area-inset-bottom));
 }
 /* One-time-hinten: bg-stone-900/[0.045] rounded-xl px-3 py-2 text-[12.5px] text-stone-600 */

@@ -100,18 +100,6 @@
     .sty-pane { padding-top: 12px; }
     .sty-pane[data-active="false"] { display: none; }
 
-    /* Flaten fyller vinduet sheeten gir den. Baselinen klipper sheeten til
-       innholdet ved hver render (`sizeMobileSurface`), og den måler FØR den
-       setter høyden — altså på en sheet uten høyde, der innholdet bestemmer
-       alt. Et stopp med lite tekst krympet dermed vinduet med 22 px, og da
-       flyttet flaten seg mellom stoppene. Gulvet i piksler (satt av
-       `sizeStory`) gjør den målingen lik vinduet uansett hvor kort stoppet er.
-       En prosent ville ikke holdt: 100 % av en høyde som ikke er satt ennå er
-       ingenting. Bare mobil — desktop-sidekolonnen scroller som før. */
-    @media (max-width: 1023px) {
-      body[data-story="on"] .sty { min-height: var(--sty-card-min, 0px); }
-    }
-
     /* Snarveiene ut av prosaen: to like kort side om side, ett per fane som
        ikke er ord. Ett kort på full bredde leste som «det finnes ÉN ting mer
        her»; to halve sier at svaret har tre former og at du velger. Brikkene
@@ -201,7 +189,7 @@
         border-right: 1px solid rgba(0,0,0,.05);
       }
     }
-    body[data-story="on"] .sheet-scroll,
+    body[data-story="on"] .sheet-body,
     body[data-story="on"] .scroll { padding-bottom: var(--sty-deck-h, 96px); }
 
     .sty-nav { padding: 10px; }
@@ -279,8 +267,8 @@
     /* ---------- Hva fortellingen overtar mens den kjører ---------- */
     /* Fortellingen eier flaten: indeksen, FAQ-en og megler-kortet ligger bak
        «Avslutt», ikke under fortellingen. Ellers er den bare en ny header. */
-    body[data-story="on"] .sheet-scroll > .section,
-    body[data-story="on"] .sheet-scroll > .hint,
+    body[data-story="on"] .sheet-body > .section,
+    body[data-story="on"] .sheet-body > .hint,
     body[data-story="on"] .m-empty,
     body[data-story="on"] .scroll > .cat-card,
     body[data-story="on"] .scroll > .section,
@@ -303,12 +291,6 @@
       box-shadow: 0 2px 7px rgba(0,0,0,.32);
     }
 
-    /* INGEN høyde-animasjon på sheeten her, med vilje. Vinduet settes én gang
-       (se `sizeStory`) og står; det er ingenting å animere. Verre: baselinen
-       klipper sheeten til `scrollHeight` ved hver render, og for en flex-sheet
-       ER scrollHeight den høyden den står i akkurat nå. Lander en render midt i
-       en animasjon — og kartet rendrer på hver `moveend` — fryses høyden på et
-       tilfeldig mellomsteg. Da mistet vi 22 px på veien gjennom stoppene. */
 
     /* ---------- Prototype-vekslere (AVVIK: finnes ikke i produksjon) ---------- */
     /* To grupper: inngang (Tett/Fortelling) og utvalg (Megler/Nærmest).
@@ -713,10 +695,9 @@
       for (const p of places(scene())) b.extend([p.coordinates.lng, p.coordinates.lat]);
 
       // Sheeten dekker underkanten — uten padding for den legger fortellingen
-      // seg oppå stedene den snakker om. Høyden sendes inn av `settle`: å måle
-      // den her ville lest en verdi midt i høyde-animasjonen.
-      const sheetH =
-        sheetHeight ?? document.querySelector("[data-sheet]")?.offsetHeight ?? innerHeight * 0.45;
+      // seg oppå stedene den snakker om. `settle` sender inn hvilestillingen;
+      // ellers leses den synlige høyden, for brukeren kan ha dratt sheeten opp.
+      const sheetH = sheetHeight ?? Baseline.util.sheetVisibleH() ?? innerHeight * 0.45;
       const bottom = Math.min(Math.round(sheetH) + 24, Math.round(innerHeight * 0.62));
 
       s.map.fitBounds(b, {
@@ -740,34 +721,29 @@
      *  guiden faktisk serverer først. Da fyller den vanlige visningen sheeten
      *  uten scroll, mens steds- og svar-fanen får noe å scrolle i. Grensene er
      *  baselinens: REST_HIGH_FRACTION-taket og REST_LOW_MIN_PX-gulvet.
-     *  Brukeren kan fortsatt dra sheeten dit hen vil — det er baselinens drag,
-     *  urørt. */
+     *
+     *  Målt høyde blir sheetens HVILESTILLING, ikke en låst høyde. Vinduet står
+     *  fortsatt av seg selv — et trykk som åpner en setning flytter det ikke —
+     *  men brukeren kan dra sheeten opp til taket når hen selv vil. Det er
+     *  forskjellen som betyr noe: en følge du ikke ba om, mot en du styrer. */
     let tourH = null;
-    function sizeStory(deckH = 0) {
+    function sizeStory() {
       if (!on || matchMedia(DESKTOP).matches) return undefined;
       const sheet = document.querySelector("[data-sheet]");
       const card = sheet?.querySelector("[data-story-card]");
       if (!sheet || !card) return undefined;
       const frameH = document.querySelector(".frame")?.clientHeight ?? innerHeight;
-      const grab = sheet.querySelector(".grab")?.offsetHeight ?? 44;
-      // Måles som scrolleren SELV rapporterer, ikke som kort + påslag: kortets
-      // margin og scrollerens padding for dekket ligger alt inne i det tallet.
-      // Regnet vi det ut selv, bommet vi med marginens 4 px — og de 4 pikslene
-      // ble klippet bort igjen av baselinen, så vinduet endret seg ved fanebytte.
+      // Kroppen selv, ikke kort + påslag: kortets margin og innholdets padding
+      // for dekket ligger alt inne i det tallet. Kroppen vokser ikke med
+      // sheetens gulv (den er ikke `flex: 1`), så gulvet fra forrige stopp
+      // forurenser ikke målingen — men dekket må være malt først.
       if (tourH === null) {
-        const scroller = sheet.querySelector(".sheet-scroll");
-        tourH = grab + (scroller?.scrollHeight ?? card.offsetHeight + deckH);
+        const grab = sheet.querySelector(".grab")?.offsetHeight ?? 44;
+        tourH = grab + (sheet.querySelector(".sheet-body")?.offsetHeight ?? card.offsetHeight);
       }
       const h = Math.max(Math.min(tourH, Math.round(frameH * 0.86)), 236);
-      // Gulvet flaten skal ha for at baselinens klipping treffer vinduet og
-      // ikke innholdet — se CSS-en for `--sty-card-min`. 10 px er flatens egen
-      // `margin-bottom`, resten er scrollerens padding for dekket.
-      document.documentElement.style.setProperty(
-        "--sty-card-min",
-        `${Math.max(0, h - grab - deckH - 10)}px`
-      );
-      state().sheetH = h;
-      sheet.style.height = `${h}px`;
+      state().sheetRestH = h;
+      Baseline.util.sizeSheet();
       return h;
     }
 
@@ -781,7 +757,8 @@
       // ferdig layout, og 16 ms er usynlig mot høyde-animasjonens 420.
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
-          const h = sizeStory(paintDeck());
+          paintDeck();
+          const h = sizeStory();
           if (fit) fitScene(h);
         })
       );
@@ -816,7 +793,8 @@
       s.activeCategoryId = null;
       s.activePoiId = null;
       s.modalPoiId = null;
-      s.sheetH = null; // fortellingen har annen høyde enn kortlista
+      s.sheetRestH = null; // fortellingen hviler et annet sted enn kortlista
+      s.sheetScroll = 0; // omvisningen begynner i sin egen hvilestilling
       tourH = null; // måles på nytt for denne omvisningen, så én gang
       rerender();
       redrawMarkers();
@@ -854,7 +832,8 @@
       document.body.dataset.story = "off";
       const s = state();
       s.modalPoiId = null;
-      s.sheetH = null;
+      s.sheetRestH = null; // tilbake til baselinens hvilestilling
+      s.sheetScroll = 0;
       paintDeck();
       showAll(); // nullstiller kategori + POI, tegner markører, rendrer
       // Kameraet ut igjen: hele nabolaget, som når boardet åpnes. Nå er

@@ -28,11 +28,6 @@ window.Baseline = (() => {
   const REST_LOW_FRACTION = 0.34;
   const REST_HIGH_FRACTION = 0.86;
   const REST_LOW_MIN_PX = 236;
-  const SNAP_THRESHOLD_PX = 44;
-  const TAP_SLOP_PX = 6;
-  const SNAP_DURATION_MS = 380;
-  const SETTLE_MIN_MS = 130;
-  const MOMENTUM_PROJECTION_MS = 190;
   const PANEL_FRACTION = 0.58;
   const PEEK_FRACTION = 0.2;
   const ROWS_PER_CATEGORY = 3;
@@ -329,14 +324,32 @@ window.Baseline = (() => {
       ? cards
       : `<p class="m-empty">Ingen steder i dette utsnittet. Zoom ut, eller dra kartet tilbake mot boligen.</p>`;
 
-    return `<div class="sheet" data-sheet>
-      <button class="grab" data-grab>
-        <span class="bar"></span>
-        <span class="title">${esc(R.sheetTitle())}</span>
-      </button>
-      <div class="sheet-scroll">
-        ${R.sheetTop()}${hint}${body}
-        ${faqSection(S.board.globalFaq, "Om nabolaget")}
+    /* Sheeten er ikke en flate vi drar med JS — den ER en scroller, og over
+       kroppen ligger en gjennomsiktig spacer. Da er «dra sheeten opp» og
+       «scroll i innholdet» ÉN native bevegelse: fingeren spiser spaceren
+       først, kroppen stopper når den har nådd taket (scrollerens egen
+       overkant), og samme bevegelse fortsetter inn i innholdet under en
+       fastlimt header. Veien tilbake er den speilvendt — ingen overlevering
+       mellom to mekanismer, altså ingenting som kan ryke midt i en gest.
+
+       Scrolleren er `pointer-events: none` og kroppen `auto`: over spaceren
+       treffer fingeren kartet, så panorering er urørt. Nettleseren scroller
+       nærmeste rullbare FORFAR av det fingeren treffer, og pointer-events
+       endrer bare hva som treffes — derfor scroller kroppen scrolleren.
+
+       Det gir også trykk-låsen gratis. Under en native scroll undertrykker
+       nettleseren selv klikket, så et drag over lista åpner ikke en rad. */
+    return `<div class="sheet-outer" data-sheet-outer>
+      <div class="sheet-spacer" aria-hidden="true"></div>
+      <div class="sheet" data-sheet>
+        <button class="grab" data-grab>
+          <span class="bar"></span>
+          <span class="title">${esc(R.sheetTitle())}</span>
+        </button>
+        <div class="sheet-body">
+          ${R.sheetTop()}${hint}${body}
+          ${faqSection(S.board.globalFaq, "Om nabolaget")}
+        </div>
       </div>
     </div>`;
   }
@@ -476,7 +489,13 @@ window.Baseline = (() => {
         S.userGesture = false;
       }
       drawMarkers(); // zoom kan ha krysset et markør-nivå
-      render();
+      // Et kamera som lander mens fingeren står i sheeten skal IKKE rendre:
+      // renderen bygger scrolleren på nytt, og en scroll som er i gang dør med
+      // den gamle noden. Fingeren opplever at flaten stopper av seg selv.
+      // Iterasjoner flyr kartet programmatisk (04 gjør det 420 ms etter et
+      // trykk), så dette er en vanlig tilstand, ikke et kantsett.
+      if (S.sheetTouching) S.renderPending = true;
+      else render();
     });
     S.map.on("dragstart", () => (S.userGesture = true));
     S.map.on("zoomstart", () => (S.userGesture = true));
@@ -589,8 +608,12 @@ window.Baseline = (() => {
    *  Produksjonen er React og beholder nodene; her bygges `#app` på nytt, og
    *  uten dette hopper flaten til topps hver gang noe rendrer — å dra kartet
    *  rendrer, så det skjer midt i lesingen. Det er en portingskostnad, ikke en
-   *  oppførsel fra produksjonen. */
-  const SCROLLERS = [".sheet-scroll", ".catpage-scroll", ".sidebar .scroll"];
+   *  oppførsel fra produksjonen.
+   *
+   *  For mobil-sheeten er dette ikke bare lesestedet: scroll-posisjonen ER
+   *  sheetens høyde (se `mobileSheet`). Mistes den, faller sheeten ned i
+   *  hvilestillingen hver gang kartet rendrer. */
+  const SCROLLERS = ["[data-sheet-outer]", ".catpage-scroll", ".sidebar .scroll"];
   const readScroll = () =>
     SCROLLERS.map((sel) => document.querySelector(sel)?.scrollTop ?? 0);
   function restoreScroll(tops) {
@@ -603,6 +626,7 @@ window.Baseline = (() => {
   function render() {
     const app = document.getElementById("app");
     const tops = readScroll();
+    if (document.querySelector("[data-sheet-outer]")) S.sheetScroll = tops[0];
     const isDesktop = matchMedia(DESKTOP).matches;
     const inCategory = !!S.activeCategoryId;
 
@@ -725,8 +749,8 @@ window.Baseline = (() => {
       }
     };
 
-    const grab = app.querySelector("[data-grab]");
-    if (grab) wireSheetDrag(grab);
+    const outer = app.querySelector("[data-sheet-outer]");
+    if (outer) wireSheetSurface(outer);
   }
 
   function openThemeMenu(trigger) {
@@ -771,22 +795,58 @@ window.Baseline = (() => {
     wrap.appendChild(menu);
   }
 
-  // ---------- mobil-sheet: fri drag mellom to grenser ----------
+  // ---------- mobil-sheet: én scroller fra hvilestilling til tak ----------
   function surfaceBounds() {
     const frameH = document.querySelector(".frame")?.clientHeight ?? innerHeight;
     const ceiling = Math.round(frameH * REST_HIGH_FRACTION);
-    const min = clamp(Math.round(frameH * REST_LOW_FRACTION), REST_LOW_MIN_PX, ceiling);
-    return { min, max: ceiling, frameH };
+    const rest = clamp(
+      Math.round(frameH * REST_LOW_FRACTION),
+      REST_LOW_MIN_PX,
+      ceiling
+    );
+    return { rest: S.sheetRestH ?? rest, max: ceiling, frameH };
   }
 
+  /** Avstanden sheeten kan reise før den står i taket — altså spacerens høyde,
+   *  og samtidig scroll-posisjonen der kroppen har nådd toppen. Leses av
+   *  scroll-lytteren, så den skal ikke måle DOM på nytt per event. */
+  let sheetTravel = 0;
+
+  /* Hårstrek under headeren først når innholdet FAKTISK ligger under den.
+     Før taket er den ingen «sticky header» — den er sheetens overkant. */
+  function markPinned(outer) {
+    const sheet = outer.querySelector("[data-sheet]");
+    if (!sheet) return;
+    // +1 fordi nøyaktig i taket ligger det ennå ingenting under headeren.
+    const pinned = String(outer.scrollTop > sheetTravel + 1);
+    if (sheet.dataset.pinned !== pinned) sheet.dataset.pinned = pinned;
+  }
+
+  /** Geometrien, satt én gang per render. Scrolleren er høy som taket, spaceren
+   *  dekker veien ned til hvilestillingen, og kroppen er minst så høy at den
+   *  fyller den høyden sheeten SKAL stå i.
+   *
+   *  Gulvet er ikke bare hvilestillingen: det er hvilestillingen pluss det
+   *  brukeren har dratt. Ellers stjeler et kart i bevegelse høyden hen valgte —
+   *  lista er utsnitts-scopet, så zoomer du inn til ett kort, krymper innholdet,
+   *  scroll-området forsvinner, og nettleseren klipper scroll-posisjonen til
+   *  null. Sheeten faller ned av seg selv, og zoomer du ut igjen kommer den
+   *  ikke tilbake. (Den samme feilen fantes i høyde-modellen: `sizeMobileSurface`
+   *  klemte høyden mot innholdet ved hver render.)
+   *
+   *  Over gulvet er kroppen akkurat så høy som innholdet trenger, og taket er
+   *  scrollerens egen overkant — kroppen kan aldri komme over det, uansett hvor
+   *  mye innhold den har. */
   function sizeMobileSurface() {
-    const { min, max, frameH } = surfaceBounds();
-    const sheet = document.querySelector("[data-sheet]");
-    if (sheet) {
-      const content = sheet.scrollHeight;
-      const cap = content > 0 ? clamp(content, min, max) : max;
-      S.sheetH = clamp(S.sheetH ?? min, min, cap);
-      sheet.style.height = `${S.sheetH}px`;
+    const { rest, max, frameH } = surfaceBounds();
+    const outer = document.querySelector("[data-sheet-outer]");
+    if (outer) {
+      sheetTravel = max - rest;
+      const dragged = clamp(S.sheetScroll ?? 0, 0, sheetTravel);
+      outer.style.height = `${max}px`;
+      outer.querySelector(".sheet-spacer").style.height = `${sheetTravel}px`;
+      outer.querySelector("[data-sheet]").style.minHeight = `${rest + dragged}px`;
+      markPinned(outer);
     }
     const page = document.querySelector("[data-catpage]");
     if (page) {
@@ -794,56 +854,156 @@ window.Baseline = (() => {
     }
   }
 
-  function wireSheetDrag(grab) {
-    const sheet = grab.closest("[data-sheet]");
-    let startY = 0, startH = 0, lastY = 0, lastT = 0, velocity = 0, moved = 0, dragging = false;
+  /** Sheetens synlige høyde nå. Kameraet padder for den, så den må leses, ikke
+   *  huskes: brukeren kan ha dratt sheeten hvor som helst siden sist. */
+  function sheetVisibleH() {
+    const outer = document.querySelector("[data-sheet-outer]");
+    if (!outer) return 0;
+    return outer.clientHeight - Math.max(0, sheetTravel - outer.scrollTop);
+  }
 
-    grab.addEventListener("pointerdown", (ev) => {
-      dragging = true;
-      moved = 0;
-      startY = lastY = ev.clientY;
-      startH = sheet.getBoundingClientRect().height;
-      lastT = performance.now();
-      velocity = 0;
-      sheet.style.transition = "none";
-      grab.setPointerCapture(ev.pointerId);
-    });
+  /* ---------- gesten: én eier for hele strøket ----------
+     Fingeren flytter ÉTT tall: scroll-posisjonen. Under spacerens høyde er det
+     sheetens høyde, over den er det innholdet som går under headeren. Derfor
+     finnes det ingen overlevering mellom to mekanismer, og altså ingenting som
+     kan ryke midt i en gest: veien opp og veien tilbake er samme bevegelse.
 
-    grab.addEventListener("pointermove", (ev) => {
-      if (!dragging) return;
-      const { min, max } = surfaceBounds();
-      moved = Math.max(moved, Math.abs(ev.clientY - startY));
-      const now = performance.now();
-      const dt = now - lastT;
-      if (dt > 0) velocity = (lastY - ev.clientY) / dt; // px/ms, opp = positiv
-      lastY = ev.clientY;
-      lastT = now;
-      // Høyden settes imperativt under drag — ingen re-render per frame.
-      sheet.style.height = `${clamp(startH + (startY - ev.clientY), min, max)}px`;
-    });
+     Vi driver den selv i stedet for å la nettleseren scrolle, fordi iOS slutter
+     å sende pointermove i det den har bestemt at strøket er en scroll. Da kan
+     ikke lista gi bevegelsen tilbake til kroppen uten at fingeren løftes.
+     Prisen er at farten etter slipp er vår: `SHEET_DECAY` er iOS' egen
+     bremsefaktor per millisekund. */
+  const SHEET_DECAY = 0.998;
+  const SHEET_V_STOP = 0.02; // px/ms — under dette er bevegelsen over
+  const TAP_SLOP_TOUCH_PX = 10;
+  const TAP_SLOP_MOUSE_PX = 4;
 
-    const end = () => {
-      if (!dragging) return;
-      dragging = false;
-      const { min, max } = surfaceBounds();
-      let h = sheet.getBoundingClientRect().height;
+  /* «Ingen gesture skal være eneste vei til noe» (prototypes/README.md): handlen
+     kan trykkes, ikke bare dras. Et trykk går til det ytterpunktet du IKKE står
+     nærmest. Et DRAG som ender i et trykk spises av click-låsen under. */
+  /* En utsatt render slippes løs først når sheeten står HELT stille. touchend
+     er for tidlig: den native utrullingen fortsetter etter at fingeren er
+     borte, og en render midt i den bytter ut noden farten bor i. Vi venter
+     derfor på både løftet finger og en scroll som har lagt seg. */
+  const SHEET_IDLE_MS = 140;
+  let sheetIdle = 0;
+  function flushWhenSheetSettles() {
+    clearTimeout(sheetIdle);
+    sheetIdle = setTimeout(() => {
+      if (S.sheetTouching || !S.renderPending) return;
+      S.renderPending = false;
+      render();
+    }, SHEET_IDLE_MS);
+  }
 
-      // Tap uten bevegelse: hopp til det ytterpunktet du IKKE er nærmest.
-      if (moved < TAP_SLOP_PX) {
-        h = Math.abs(h - min) < Math.abs(h - max) ? max : min;
-      } else {
-        h = clamp(h + velocity * MOMENTUM_PROJECTION_MS, min, max);
-        if (Math.abs(h - min) < SNAP_THRESHOLD_PX) h = min;
-        else if (Math.abs(h - max) < SNAP_THRESHOLD_PX) h = max;
-      }
+  /* Gest-tilstanden ligger på modulnivå, ikke per node: `wireSheetSurface`
+     kjøres på nytt for hver render, og window-lytterne under skal finnes ÉN
+     gang. Under en gest rendrer vi ikke (se `moveend`), så noden i `drag`
+     lever så lenge gesten gjør. */
+  let sheetDrag = null;
+  let sheetGlide = 0; // rAF-håndtaket for utrullingen etter slipp
+  let sheetEatClick = false; // draget skal ikke ende som et trykk på en rad
+  const maxScrollOf = (el) => Math.max(0, el.scrollHeight - el.clientHeight);
 
-      const dur = clamp(Math.abs(h - sheet.getBoundingClientRect().height) * 1.4, SETTLE_MIN_MS, SNAP_DURATION_MS);
-      sheet.style.transition = `height ${Math.round(dur)}ms cubic-bezier(.32,.72,0,1)`;
-      sheet.style.height = `${Math.round(h)}px`;
-      S.sheetH = Math.round(h);
+  /** Utrullingen etter slipp: iOS' egen bremsefaktor, på vårt ene tall. */
+  function sheetGlideOn(outer, v0) {
+    let v = v0;
+    let last = performance.now();
+    const step = (now) => {
+      const dt = Math.min(now - last, 32); // et bortfall skal ikke gi et hopp
+      last = now;
+      const next = clamp(outer.scrollTop + v * dt, 0, maxScrollOf(outer));
+      const stopped = next === outer.scrollTop;
+      outer.scrollTop = next;
+      v *= Math.pow(SHEET_DECAY, dt);
+      if (stopped || Math.abs(v) < SHEET_V_STOP) return flushWhenSheetSettles();
+      sheetGlide = requestAnimationFrame(step);
     };
-    grab.addEventListener("pointerup", end);
-    grab.addEventListener("pointercancel", end);
+    if (Math.abs(v0) < SHEET_V_STOP) return flushWhenSheetSettles();
+    sheetGlide = requestAnimationFrame(step);
+  }
+
+  /* Move og up ligger på window, ikke på sheeten: en mus som forlater flaten
+     midt i draget skal fortsatt bli hørt. Touch har pointer capture implisitt,
+     men musa har det ikke — og vi flytter aldri capture selv, for WebKits
+     re-capture er rapportert ødelagt. */
+  function wireSheetWindow() {
+    addEventListener("pointermove", (ev) => {
+      const d = sheetDrag;
+      if (!d) return;
+      const now = performance.now();
+      const dt = now - d.t;
+      // Fingeren opp = innholdet opp = scroll-posisjonen øker.
+      if (dt > 0) d.v = (d.y - ev.clientY) / dt;
+      d.y = ev.clientY;
+      d.t = now;
+      if (Math.abs(ev.clientY - d.startY) > d.slop) sheetEatClick = true;
+      d.outer.scrollTop = clamp(d.top + (d.startY - ev.clientY), 0, maxScrollOf(d.outer));
+    });
+
+    const release = () => {
+      const d = sheetDrag;
+      if (!d) return;
+      sheetDrag = null;
+      S.sheetTouching = false;
+      // Clicket kan utebli helt (endres DOM-en under bevegelsen sender iOS
+      // ingen videre events), så låsen må også kunne løpe ut av seg selv.
+      if (sheetEatClick) setTimeout(() => (sheetEatClick = false), 350);
+      sheetGlideOn(d.outer, d.v);
+    };
+    addEventListener("pointerup", release);
+    addEventListener("pointercancel", release);
+  }
+
+  function wireSheetSurface(outer) {
+    outer.addEventListener(
+      "scroll",
+      () => {
+        // Posisjonen huskes med vilje utenfor DOM-en: `sizeMobileSurface`
+        // trenger den FØR den nye noden har fått noen scroll å lese.
+        S.sheetScroll = outer.scrollTop;
+        markPinned(outer);
+        flushWhenSheetSettles();
+      },
+      { passive: true }
+    );
+
+    /* Klikk-låsen. Nettleseren undertrykker den ikke for oss: har vi hindret
+       dens egen scroll, kommer clicket likevel når fingeren løftes — og fordi
+       touch har implisitt pointer capture havner det på raden fingeren lå PÅ,
+       ikke der den slapp. Capture-fasen er poenget: `wire()` legger all
+       trykk-håndtering på `#app` som er FORELDER til sheeten, så én lytter her
+       spiser clicket før det når verken raden eller `#app`. */
+    outer.addEventListener(
+      "click",
+      (ev) => {
+        if (!sheetEatClick) return;
+        sheetEatClick = false;
+        ev.stopPropagation();
+        ev.preventDefault();
+      },
+      true
+    );
+
+    outer.querySelector("[data-grab]").addEventListener("click", () => {
+      const up = outer.scrollTop < sheetTravel / 2;
+      outer.scrollTo({ top: up ? sheetTravel : 0, behavior: "smooth" });
+    });
+
+    outer.addEventListener("pointerdown", (ev) => {
+      if (ev.pointerType === "mouse" && ev.button !== 0) return;
+      cancelAnimationFrame(sheetGlide); // en ny finger stopper utrullingen
+      sheetDrag = {
+        outer,
+        y: ev.clientY,
+        startY: ev.clientY,
+        top: outer.scrollTop,
+        t: performance.now(),
+        v: 0,
+        slop: ev.pointerType === "touch" ? TAP_SLOP_TOUCH_PX : TAP_SLOP_MOUSE_PX,
+      };
+      S.sheetTouching = true;
+    });
   }
 
   // ---------- utvidelsespunkter ----------
@@ -886,7 +1046,14 @@ window.Baseline = (() => {
       markers: [],
       map: null,
       mapEl: null,
-      sheetH: null,
+      // Sheetens hvilestilling i piksler. null = baselinens brøk av rammen; en
+      // iterasjon kan sette den (04 gir hele omvisningen ett fast vindu).
+      sheetRestH: null,
+      // Hvor langt sheeten står dratt opp, i scroll-piksler. Holdes utenfor
+      // DOM-en fordi geometrien må settes før noden har en scroll å lese.
+      sheetScroll: 0,
+      sheetTouching: false,
+      renderPending: false,
     };
 
     if (snap.meta.tier !== 1) {
@@ -898,11 +1065,9 @@ window.Baseline = (() => {
 
     render();
     initMap();
+    wireSheetWindow(); // én gang, ikke per render
     addEventListener("resize", () => render());
-    matchMedia(DESKTOP).addEventListener("change", () => {
-      S.sheetH = null;
-      render();
-    });
+    matchMedia(DESKTOP).addEventListener("change", () => render());
   }
 
   return {
@@ -927,6 +1092,11 @@ window.Baseline = (() => {
       fitCategory,
       rerender: () => render(),
       redrawMarkers: () => drawMarkers(),
+      /** Sett `state().sheetRestH` og kall denne — geometrien settes uten en
+       *  full render, så en iterasjon kan gi sheeten sin egen hvilestilling. */
+      sizeSheet: () => sizeMobileSurface(),
+      /** Sheetens synlige høyde nå, lest fra scroll-posisjonen. */
+      sheetVisibleH,
       state: () => S,
     },
   };

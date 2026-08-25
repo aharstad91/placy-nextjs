@@ -57,11 +57,11 @@ nivå-1-board tomt ut selv om boardet faktisk viser tekst.
 | `04-fortelling-i-boardet` | Presentasjon vs. utforsking | Kan meglerens utvalg presenteres som en guidet rekkefølge inne i sheeten — uten lyd, uten bilder, og uten at ett kartpunkt må trykkes? |
 
 `04` har to grep som er verdt å ta med videre uansett hva dommen blir: sheeten
-har **én fast høyde gjennom hele omvisningen** (innholdet scroller, vinduet står
-— en flate som vokser av hvert trykk er en følge brukeren ikke ba om), og
-**ingenting lukker seg selv** (åpner du to steder, står begge åpne til du lukker
-dem). Transporten ligger i et fast dekk utenfor sheeten, så den ikke flytter seg
-med innholdet.
+har **én hvilestilling gjennom hele omvisningen** (innholdet scroller, vinduet
+står av seg selv — en flate som vokser av hvert trykk er en følge brukeren ikke
+ba om, mens en du drar er en du styrer), og **ingenting lukker seg selv** (åpner
+du to steder, står begge åpne til du lukker dem). Transporten ligger i et fast
+dekk utenfor sheeten, så den ikke flytter seg med innholdet.
 
 Alle har en **← Prototyper**-chip øverst til venstre tilbake til galleriet.
 Den injiseres av `Proto.mountBackLink()` i `_shared/proto.js` og kommer gratis
@@ -127,7 +127,7 @@ hver regel kommer fra.
 
 | | Desktop | Mobil |
 |---|---------|-------|
-| Skall | 438 px sidekolonne, `#f2e9dc` | Fri-drag sheet 0.34–0.86 av rammen (gulv 236 px), `#f5f1ea` |
+| Skall | 438 px sidekolonne, `#f2e9dc` | Sheet fra 0.34 til 0.86 av rammen (gulv 236 px), `#f5f1ea` |
 | Kategorikort | Illustrasjon + kuratert lead-prosa | Ikon-tint + dekningstall + 3 POI-rader + «Se alle N» |
 | Indeks-lista | Alle kategorier | **Utsnitts-scopet** — å dra kartet ER filteret |
 | Drill-in | Samme kolonne, **kun det som er i utsnittet** | Eget panel (58 % av rammen), **hele kategorien** |
@@ -139,9 +139,57 @@ høyre finnes ikke i produksjon.
 **Scroll-posisjon overlever en render.** `render()` bygger `#app` på nytt, og
 uten hjelp hopper de rullbare flatene til topps hver gang noe rendrer — og
 kartet rendrer på hver `moveend`, altså midt i lesingen. Baselinen tar vare på
-`scrollTop` i `.sheet-scroll`, `.catpage-scroll` og sidekolonnens `.scroll` over
-renderen. Det er en portingskostnad React ikke har, ikke en oppførsel fra
-produksjonen.
+`scrollTop` i `.sheet-outer`, `.catpage-scroll` og sidekolonnens `.scroll` over
+renderen. For sheeten er det ikke bare lesestedet: scroll-posisjonen ER høyden.
+Det er en portingskostnad React ikke har, ikke en oppførsel fra produksjonen.
+
+## Mobil-sheeten: ett tall, én eier
+
+Sheeten er **én scroller med en gjennomsiktig spacer over kroppen**:
+
+```
+.sheet-outer   scroller, høy som taket (0.86 av rammen), pointer-events: none
+  .sheet-spacer  gjennomsiktig, høy som veien opp til taket
+  .sheet         kroppen — bakgrunn, radius, skygge, pointer-events: auto
+    .grab          position: sticky, top: 0 — sheetens overkant
+    .sheet-body    innholdet (IKKE en scroller)
+```
+
+Fingeren flytter **ett tall**: `scrollTop`. Under spacerens høyde er det
+sheetens høyde, over den er det innholdet som går under headeren. Derfor finnes
+det ingen overlevering mellom «dra sheeten» og «scroll i lista» — veien opp og
+veien tilbake er samme bevegelse, og ingenting kan ryke midt i en gest. Taket er
+scrollerens egen overkant, så kroppen kan ikke komme over det uansett innhold.
+
+**Vi driver scrollen selv** (`wireSheetSurface` + `wireSheetWindow`), med
+`touch-action: none` på scrolleren. Ikke av smak: har iOS først bestemt at
+strøket er en scroll, slutter den å sende `pointermove` til fingeren slippes.
+Da kan ikke lista gi bevegelsen tilbake til kroppen i samme strøk — og det er
+nettopp veien tilbake som skal føles sammenhengende. Farten etter slipp er
+derfor vår: `SHEET_DECAY = 0.998` er iOS' egen bremsefaktor per millisekund.
+Hjulet på desktop går ikke via `touch-action` og scroller nativt som før.
+
+Tre ting som ser ut som detaljer og ikke er det:
+
+- **`pointer-events: none` på scrolleren.** Den dekker hele takområdet; uten
+  dette treffer et trykk over sheeten scrolleren i stedet for kartet. Kroppen
+  er `auto`, så gesten når oss likevel (events bobler uansett `pointer-events`).
+- **Klikk-låsen er vår.** Har vi hindret nettleserens egen scroll, kommer
+  clicket likevel når fingeren løftes — og fordi touch har implisitt pointer
+  capture havner det på raden fingeren lå **på**, ikke der den slapp. Én
+  capture-lytter på scrolleren spiser det, og den ligger med vilje i
+  capture-fasen: `wire()` legger all trykk-håndtering på `#app`, som er
+  *forelder* til sheeten.
+- **`-webkit-user-select: none` på kroppen.** Uten den spiser Safaris
+  tekstmarkering trykket når fingeren lander presis på teksten i en rad.
+
+En iterasjon som vil gi sheeten sin egen hvilestilling setter
+`state().sheetRestH` og kaller `Baseline.util.sizeSheet()`. `sheetVisibleH()`
+leser høyden sheeten står i nå — bruk den, ikke `offsetHeight`, når kameraet
+skal padde for flaten.
+
+`.catpage` (drill-in-panelet) har fortsatt fast høyde og nativ scroll. Den er
+ikke en del av gesten.
 
 ## Lage en ny iterasjon
 
