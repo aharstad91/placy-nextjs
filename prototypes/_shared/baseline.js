@@ -489,13 +489,7 @@ window.Baseline = (() => {
         S.userGesture = false;
       }
       drawMarkers(); // zoom kan ha krysset et markør-nivå
-      // Et kamera som lander mens fingeren står i sheeten skal IKKE rendre:
-      // renderen bygger scrolleren på nytt, og en scroll som er i gang dør med
-      // den gamle noden. Fingeren opplever at flaten stopper av seg selv.
-      // Iterasjoner flyr kartet programmatisk (04 gjør det 420 ms etter et
-      // trykk), så dette er en vanlig tilstand, ikke et kantsett.
-      if (S.sheetTouching) S.renderPending = true;
-      else render();
+      render(); // utsetter seg selv hvis sheeten er i bevegelse
     });
     S.map.on("dragstart", () => (S.userGesture = true));
     S.map.on("zoomstart", () => (S.userGesture = true));
@@ -624,6 +618,16 @@ window.Baseline = (() => {
   }
 
   function render() {
+    /* Er sheeten i bevegelse, venter renderen. Den bygger scrolleren på nytt,
+       og en bevegelse som er i gang bor i den gamle noden — fingeren opplever at
+       flaten stopper av seg selv. Sperren ligger HER og ikke bare i `moveend`,
+       fordi iterasjonene kaller `util.rerender()` selv (04 gjør det etter et
+       stopp-bytte), og fordi `resize` rendrer — å snu telefonen midt i et drag
+       er en ekte hendelse. */
+    if (S?.sheetBusy) {
+      S.renderPending = true;
+      return;
+    }
     const app = document.getElementById("app");
     const tops = readScroll();
     if (document.querySelector("[data-sheet-outer]")) S.sheetScroll = tops[0];
@@ -875,22 +879,29 @@ window.Baseline = (() => {
      bremsefaktor per millisekund. */
   const SHEET_DECAY = 0.998;
   const SHEET_V_STOP = 0.02; // px/ms — under dette er bevegelsen over
+  const SHEET_V_WINDOW_MS = 70; // fartens minne, ikke bare siste to punkter
+  const SNAP_THRESHOLD_PX = 44; // magneten rundt hvert ytterpunkt
+  const MOMENTUM_PROJECTION_MS = 190; // hvor bevegelsen ville stanset
   const TAP_SLOP_TOUCH_PX = 10;
   const TAP_SLOP_MOUSE_PX = 4;
 
   /* «Ingen gesture skal være eneste vei til noe» (prototypes/README.md): handlen
      kan trykkes, ikke bare dras. Et trykk går til det ytterpunktet du IKKE står
      nærmest. Et DRAG som ender i et trykk spises av click-låsen under. */
-  /* En utsatt render slippes løs først når sheeten står HELT stille. touchend
-     er for tidlig: den native utrullingen fortsetter etter at fingeren er
-     borte, og en render midt i den bytter ut noden farten bor i. Vi venter
-     derfor på både løftet finger og en scroll som har lagt seg. */
+  /* En utsatt render slippes løs først når sheeten står HELT stille. Slipp av
+     fingeren er for tidlig: utrullingen fortsetter etterpå, og en render midt i
+     den bytter ut noden farten bor i. `sheetBusy` dekker derfor hele
+     bevegelsen — finger nede, utrulling, og den myke reisen et trykk på handlen
+     setter i gang. Tidsavbruddet er den ENESTE som nullstiller den, så en
+     bevegelse som dør stille låser ikke renderen for godt. */
   const SHEET_IDLE_MS = 140;
   let sheetIdle = 0;
   function flushWhenSheetSettles() {
     clearTimeout(sheetIdle);
     sheetIdle = setTimeout(() => {
-      if (S.sheetTouching || !S.renderPending) return;
+      if (sheetDrag) return; // fingeren er nede igjen
+      S.sheetBusy = false;
+      if (!S.renderPending) return;
       S.renderPending = false;
       render();
     }, SHEET_IDLE_MS);
@@ -905,7 +916,29 @@ window.Baseline = (() => {
   let sheetEatClick = false; // draget skal ikke ende som et trykk på en rad
   const maxScrollOf = (el) => Math.max(0, el.scrollHeight - el.clientHeight);
 
-  /** Utrullingen etter slipp: iOS' egen bremsefaktor, på vårt ene tall. */
+  /** Hva som skjer når fingeren slippes.
+   *
+   *  Er sheeten på vei til å stanse nær et av ytterpunktene, går den HELT dit.
+   *  Det er magneten fra produksjonens drag (`SNAP_THRESHOLD_PX`): en flate som
+   *  hviler tolv piksler under taket ser ut som en feil, ikke som et valg. Fri
+   *  mellomposisjon beholdes — det er også produksjonens oppførsel.
+   *
+   *  Magneten gjelder bare mens vi er i reiseveien. Er innholdet begynt å gå
+   *  under headeren, er det lista du ruller i, og der skal ingenting trekke. */
+  function sheetSettle(outer, v) {
+    const landing = outer.scrollTop + v * MOMENTUM_PROJECTION_MS;
+    if (outer.scrollTop <= sheetTravel) {
+      for (const stop of [0, sheetTravel]) {
+        if (Math.abs(landing - stop) < SNAP_THRESHOLD_PX) {
+          outer.scrollTo({ top: stop, behavior: "smooth" });
+          return flushWhenSheetSettles();
+        }
+      }
+    }
+    sheetGlideOn(outer, v);
+  }
+
+  /** Utrullingen: iOS' egen bremsefaktor, på vårt ene tall. */
   function sheetGlideOn(outer, v0) {
     let v = v0;
     let last = performance.now();
@@ -931,13 +964,32 @@ window.Baseline = (() => {
     addEventListener("pointermove", (ev) => {
       const d = sheetDrag;
       if (!d) return;
+      // Rakk en render å bytte noden før bevegelsen begynte, drar vi videre på
+      // den nye. Posisjonen er den samme — `restoreScroll` satte den tilbake.
+      if (!d.outer.isConnected) {
+        const live = document.querySelector("[data-sheet-outer]");
+        if (!live) return;
+        d.outer = live;
+      }
       const now = performance.now();
       const dt = now - d.t;
-      // Fingeren opp = innholdet opp = scroll-posisjonen øker.
-      if (dt > 0) d.v = (d.y - ev.clientY) / dt;
+      // Fingeren opp = innholdet opp = scroll-posisjonen øker. Farten er et
+      // glidende snitt, ikke de to siste punktene: stopper fingeren rett før
+      // slipp skal det ikke rulle videre, og treffer to målinger tilfeldig likt
+      // skal ikke kastet forsvinne.
+      if (dt > 0) {
+        const w = Math.min(1, dt / SHEET_V_WINDOW_MS);
+        d.v = d.v * (1 - w) + ((d.y - ev.clientY) / dt) * w;
+      }
       d.y = ev.clientY;
       d.t = now;
-      if (Math.abs(ev.clientY - d.startY) > d.slop) sheetEatClick = true;
+      if (Math.abs(ev.clientY - d.startY) > d.slop) {
+        // Først NÅ er sheeten i bevegelse. Satte vi flagget ved nedtrykk, ville
+        // hvert vanlig trykk utsatt renderen i 140 ms — altså gjort hele flaten
+        // treg for å beskytte et drag som ikke skjedde.
+        sheetEatClick = true;
+        S.sheetBusy = true;
+      }
       d.outer.scrollTop = clamp(d.top + (d.startY - ev.clientY), 0, maxScrollOf(d.outer));
     });
 
@@ -945,11 +997,14 @@ window.Baseline = (() => {
       const d = sheetDrag;
       if (!d) return;
       sheetDrag = null;
-      S.sheetTouching = false;
+      // Et rent trykk skal ikke flytte flaten. Sto sheeten 20 px under taket og
+      // du trykket på et sted, ville magneten ellers dratt den opp — en følge du
+      // ikke ba om, av en handling som handlet om noe annet.
+      if (!sheetEatClick) return;
       // Clicket kan utebli helt (endres DOM-en under bevegelsen sender iOS
       // ingen videre events), så låsen må også kunne løpe ut av seg selv.
-      if (sheetEatClick) setTimeout(() => (sheetEatClick = false), 350);
-      sheetGlideOn(d.outer, d.v);
+      setTimeout(() => (sheetEatClick = false), 350);
+      sheetSettle(d.outer, d.v);
     };
     addEventListener("pointerup", release);
     addEventListener("pointercancel", release);
@@ -987,7 +1042,9 @@ window.Baseline = (() => {
 
     outer.querySelector("[data-grab]").addEventListener("click", () => {
       const up = outer.scrollTop < sheetTravel / 2;
+      S.sheetBusy = true; // også den myke reisen skal utsette renders
       outer.scrollTo({ top: up ? sheetTravel : 0, behavior: "smooth" });
+      flushWhenSheetSettles();
     });
 
     outer.addEventListener("pointerdown", (ev) => {
@@ -1002,7 +1059,6 @@ window.Baseline = (() => {
         v: 0,
         slop: ev.pointerType === "touch" ? TAP_SLOP_TOUCH_PX : TAP_SLOP_MOUSE_PX,
       };
-      S.sheetTouching = true;
     });
   }
 
@@ -1052,7 +1108,9 @@ window.Baseline = (() => {
       // Hvor langt sheeten står dratt opp, i scroll-piksler. Holdes utenfor
       // DOM-en fordi geometrien må settes før noden har en scroll å lese.
       sheetScroll: 0,
-      sheetTouching: false,
+      // Sheeten er i bevegelse: finger nede, utrulling, eller myk reise. Så
+      // lenge den er sann utsetter `render()` seg selv.
+      sheetBusy: false,
       renderPending: false,
     };
 
