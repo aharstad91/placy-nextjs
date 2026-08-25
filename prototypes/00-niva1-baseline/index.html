@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>00 · Nivå 1 — baseline</title>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/_shared/baseline.css" />
+</head>
+<body>
+  <!-- ============================================================
+       BASELINE — ikke en idé, men en gjenskaping.
+       Dette er dagens nivå-1-board (board UTEN avspillbar lyd) slik
+       det faktisk rendres i produksjon, portert til vanilla for at
+       iterasjon skal koste minutter i stedet for timer.
+
+       Trofast mot: DesktopStorySidebar.tsx (SidebarContentPreview +
+       CategoryDetailView), FAQSection.tsx, HighlightsDisclosure.tsx.
+       Alle mål, farger og tekster er hentet fra de filene.
+
+       Alt som avviker fra produksjon er merket AVVIK i koden.
+       ============================================================ -->
+  <div id="app"></div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.js"></script>
+  <script src="https://unpkg.com/lucide@0.563.0/dist/umd/lucide.min.js"></script>
+  <script src="/_shared/env.js"></script>
+  <script src="/_shared/proto.js"></script>
+  <script src="/_shared/baseline.js"></script>
+  <script>
+    // Bytt board her. Begge er nivå 1 (ingen lyd), men i hver sin ende av
+    // datarikdommen — den forskjellen er selve poenget med baselinen:
+    //   ranheim         = kuratert strøk (Moat 1) — 6 kategorier, kuratert prosa
+    //   ferjemannsveien = ukuratert — samme UI, deterministisk generert tekst
+    const BOARDS = {
+      ranheim: "megler-harstad__strindfjordvegen-10-7053-ranheim-norge",
+      ferjemannsveien: "klp-eiendom__ferjemannsveien-10",
+    };
+    const board = new URLSearchParams(location.search).get("board") || "ranheim";
+    Baseline.start(BOARDS[board] ?? BOARDS.ranheim, { boards: BOARDS, active: board });
+  </script>
+</body>
+</html>

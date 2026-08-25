@@ -60,3 +60,7 @@ luffu-capture/
 
 # API-forbruksregnskap (lib/api-budget.ts) — lokalt, ikke delt
 .api-usage/
+
+# Prototype-miljøet (prototypes/) — genererte artefakter
+prototypes/_data/
+prototypes/_shared/env.js

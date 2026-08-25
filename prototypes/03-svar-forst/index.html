@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>03 · Svar først</title>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/_shared/baseline.css" />
+  <style>
+    /* ============================================================
+       SPØRSMÅLET PROTOTYPEN TESTER:
+       Brukeren har alt valgt stedet — hun kom fra en FINN-annonse og
+       har et SPØRSMÅL, ikke et valg. I dag møter hun en kategori-
+       indeks: et arkiv hun må lete i. Hva om boardet svarer først,
+       og indeksen ligger bak ett trykk?
+
+       Hierarkiet som testes: svar → bevis → dybde.
+         svar  = nærmeste MÅLTE sted per kategori, sortert på tid
+         bevis = trykk raden, kameraet flyr dit, stedet får ord
+         dybde = kategori-indeksen, kollapset til den blir bedt om
+
+       Regelen prototypen holder seg til: ingen tall uten et navn ved
+       siden av. Et nabolag skal aldri tagges med en score — det var
+       LocalLogic-fella, og et gjennomsnitt uten sted er samme svada.
+       ============================================================ */
+
+    /* `flex: none` fordi desktop-sidekolonnens `.scroll` er en flex-kolonne —
+       uten den krympes svarkortet og siste linje blir klippet. */
+    .answer {
+      flex: none;
+      margin-bottom: 10px; border-radius: 16px; overflow: hidden;
+      background: rgba(255,255,255,.86); box-shadow: 0 0 0 1px rgba(0,0,0,.05);
+    }
+    .answer .eyebrow { padding: 12px 14px 8px; margin: 0; }
+    /* Behovet står over stedet, ikke i en kolonne ved siden av: en trunkert
+       kategorilabel («Transport & M…») ødelegger nettopp det raden skal gjøre
+       — si hvilket spørsmål som er besvart. */
+    .a-row {
+      display: flex; width: 100%; align-items: center; gap: 10px;
+      border-top: 1px solid rgba(0,0,0,.05); padding: 8px 14px; text-align: left;
+    }
+    .a-row:first-of-type { border-top: none; }
+    .a-row:active { background: rgba(0,0,0,.04); }
+    .a-row .dot { flex: none; height: 8px; width: 8px; border-radius: 999px; }
+    .a-row .t { min-width: 0; flex: 1; }
+    .a-row .k { display: block; font-size: 11.5px; letter-spacing: .02em;
+      color: var(--stone-500); }
+    .a-row .n {
+      display: block; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; font-size: 14.5px; font-weight: 600;
+      letter-spacing: -.01em; color: var(--stone-900);
+    }
+    .a-row .m { flex: none; font-size: 13.5px; font-weight: 500;
+      font-variant-numeric: tabular-nums; color: var(--stone-600); }
+    .a-note { padding: 9px 14px 12px; border-top: 1px solid rgba(0,0,0,.05);
+      font-size: 12px; color: var(--stone-400); }
+
+    /* Dybden: én knapp, ikke et arkiv. */
+    .idx-toggle {
+      display: flex; flex: none; width: 100%; align-items: center; gap: 8px;
+      margin-bottom: 10px; padding: 11px 14px; border-radius: 14px;
+      background: rgba(255,255,255,.6); box-shadow: 0 0 0 1px rgba(0,0,0,.05);
+      font-size: 13.5px; font-weight: 600; color: var(--stone-700); text-align: left;
+    }
+    .idx-toggle .c { margin-left: auto; font-weight: 500; color: var(--stone-500);
+      font-variant-numeric: tabular-nums; }
+    .idx-toggle i { transition: transform .2s ease; }
+    .idx-toggle[aria-expanded="true"] i { transform: rotate(180deg); }
+    /* Kollapset indeks: baselinens «ingen steder i utsnittet»-melding hører
+       ikke hjemme her — lista er skjult med vilje, ikke tom. */
+    body[data-index="closed"] .m-empty { display: none; }
+  </style>
+</head>
+<body data-index="closed">
+  <div id="app"></div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.js"></script>
+  <script src="https://unpkg.com/lucide@0.563.0/dist/umd/lucide.min.js"></script>
+  <script src="/_shared/env.js"></script>
+  <script src="/_shared/proto.js"></script>
+  <script src="/_shared/baseline.js"></script>
+  <script>
+    const BOARDS = {
+      ranheim: "megler-harstad__strindfjordvegen-10-7053-ranheim-norge",
+      ferjemannsveien: "klp-eiendom__ferjemannsveien-10",
+    };
+    const params = new URLSearchParams(location.search);
+    const board = params.get("board") || "ranheim";
+
+    const { esc, icon, minutesOf, byMinutesThenName, state } = Baseline.util;
+    const MODE_WORD = { walk: "til fots", bike: "på sykkel", car: "med bil" };
+
+    let indexOpen = false;
+
+    /** Nærmeste sted per kategori, MÅLT. Ingen tid = ingen rad; vi gjetter ikke. */
+    function answers() {
+      return state()
+        .board.categories.map((c) => {
+          // Ikke scopet til kartutsnittet: svaret handler om boligen, ikke om
+          // hvor brukeren tilfeldigvis har dratt kartet.
+          const near = c.pois.filter((p) => minutesOf(p) !== undefined).sort(byMinutesThenName)[0];
+          return near ? { cat: c, poi: near, min: minutesOf(near) } : null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.min - b.min);
+    }
+
+    function answerCard() {
+      const rows = answers();
+      if (rows.length === 0) return "";
+      const mode = MODE_WORD[state().travelMode] ?? "til fots";
+      return `<div class="answer">
+        <p class="eyebrow">Nærmest hjemmefra, ${esc(mode)}</p>
+        ${rows
+          .map(
+            (r) => `<button class="a-row" data-poi="${esc(r.poi.id)}">
+              <span class="dot" style="background:${esc(r.cat.color)}"></span>
+              <span class="t">
+                <span class="k">${esc(r.cat.label)}</span>
+                <span class="n">${esc(r.poi.name)}</span>
+              </span>
+              <span class="m">${r.min} min</span>
+            </button>`
+          )
+          .join("")}
+        <p class="a-note">Målte tider fra boligen. Trykk en rad for å se stedet.</p>
+      </div>`;
+    }
+
+    function indexToggle() {
+      const total = state().board.categories.reduce((n, c) => n + c.pois.length, 0);
+      return `<button class="idx-toggle" data-index-toggle aria-expanded="${indexOpen}">
+        ${icon("layers", 16)}
+        <span>${indexOpen ? "Skjul alle kategorier" : "Utforsk alle kategorier"}</span>
+        <span class="c">${total} steder</span>
+        ${icon("chevron-down", 16)}
+      </button>`;
+    }
+
+    Baseline.override({
+      sheetTop: () => answerCard() + indexToggle(),
+      sidebarTop: () => answerCard() + indexToggle(),
+      // Indeksen finnes fortsatt — den er bare ikke det første du møter.
+      mobileCard: (c, list) => (indexOpen ? Baseline.baseMobileCard(c, list) : ""),
+      desktopCard: (c) => (indexOpen ? Baseline.baseDesktopCard(c) : ""),
+      onClick: (target) => {
+        if (!target.closest("[data-index-toggle]")) return false;
+        indexOpen = !indexOpen;
+        document.body.dataset.index = indexOpen ? "open" : "closed";
+        Baseline.util.rerender();
+        return true;
+      },
+    });
+
+    Baseline.start(BOARDS[board] ?? BOARDS.ranheim, { boards: BOARDS, active: board });
+  </script>
+</body>
+</html>

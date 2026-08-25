@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Placy — prototyper</title>
+  <link rel="stylesheet" href="/_shared/tokens.css" />
+  <style>
+    main { max-width: 640px; margin: 0 auto; padding: 48px var(--pad) 80px; }
+    header p { color: var(--ink-soft); margin-top: 8px; font-size: 15px; }
+    .list { margin-top: 32px; display: grid; gap: 12px; }
+    .card {
+      display: block; background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 18px var(--pad); color: var(--ink);
+      transition: border-color 0.15s ease;
+    }
+    .card:hover { border-color: var(--accent); }
+    .card h2 { font-size: 19px; }
+    .card .q { color: var(--ink-soft); font-size: 14px; margin-top: 6px; }
+    .card .meta { color: var(--ink-faint); font-size: 12px; margin-top: 10px;
+      text-transform: uppercase; letter-spacing: 0.06em; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Placy — prototyper</h1>
+      <p>Hver prototype stiller ett spørsmål og skal kunne kjennes på telefon
+        og desktop på under et minutt. Legg til nye i lista under.</p>
+    </header>
+    <div class="list" id="list"></div>
+  </main>
+  <script>
+    // Én linje per prototype. `question` = det ene spørsmålet den skal besvare.
+    // 00 er baselinen — dagens nivå-1-board. Alt annet måles mot den.
+    const PROTOTYPES = [
+      {
+        dir: "00-niva1-baseline",
+        title: "Nivå 1 — baseline",
+        question: "Dagens nivå-1-board, gjenskapt. Ikke en idé — utgangspunktet alle iterasjoner måles mot.",
+        data: "Ranheim (kuratert) / Ferjemannsveien (ukuratert)",
+      },
+      {
+        dir: "01-fortelling-scroll",
+        title: "Fortelling-scroll",
+        question: "Kan boardet leses som én fortelling der kartet bare følger med — null interaksjon utover scroll?",
+        data: "Ranheim",
+      },
+      {
+        dir: "02-en-stemme-to-formater",
+        title: "Én stemme, to formater",
+        question: "Desktop selger stedet, mobil viser avstander. Skal mobil-kortet ha stemmen, tallene, eller begge?",
+        data: "Ranheim / Ferjemannsveien · veksler Tall / Stemme / Begge",
+      },
+      {
+        dir: "03-svar-forst",
+        title: "Svar først",
+        question: "Hun har alt valgt stedet og har et spørsmål. Hva om boardet svarer først og indeksen ligger bak ett trykk?",
+        data: "Ranheim / Ferjemannsveien",
+      },
+      {
+        dir: "04-fortelling-i-boardet",
+        title: "Fortelling i boardet",
+        question: "Kan meglerens utvalg presenteres som en guidet rekkefølge inne i sheeten — uten lyd, uten bilder, og uten at ett kartpunkt må trykkes?",
+        data: "Ranheim / Ferjemannsveien · veksler Tett / Fortelling og Megler / Nærmest",
+      },
+    ];
+
+    document.getElementById("list").innerHTML = PROTOTYPES.map(
+      (p) => `
+      <a class="card" href="/${p.dir}/">
+        <h2>${p.dir.slice(0, 2)} · ${p.title}</h2>
+        <p class="q">${p.question}</p>
+        <p class="meta">Data: ${p.data}</p>
+      </a>`
+    ).join("");
+  </script>
+</body>
+</html>
