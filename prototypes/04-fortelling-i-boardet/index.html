@@ -59,15 +59,65 @@
        kort som ligger på en beige flate. Dekket arver samme hvite — men bare på
        mobil: desktop-dekket hører til sidekolonnen og skal ha dens farge. */
     body[data-story="on"] .sheet { background: #fff; }
+    /* Handlen mister sin egen farge i omvisningen. Den beige stripen over det
+       hvite kortet leste som en list på toppen av flaten, ikke som kanten av
+       den. Hvit — IKKE gjennomsiktig: handlen er sticky, og innholdet går
+       under den, så en gjennomsiktig strek ville vist teksten sladre forbi. */
+    body[data-story="on"] .grab { background: #fff; }
+    /* Streken var affordansen den gang sheeten hadde én bevegelse å avsløre.
+       Nå er flaten fri: et drag stopper der utrullingen dør, og handlen har i
+       tillegg tre utgangspunkter på trykk. Streken beskriver dermed noe du
+       allerede har sett flaten gjøre. `visibility` og ikke `display`: plassen
+       blir stående, så draget beholder treffflaten sin. */
+    body[data-story="on"] .grab .bar { visibility: hidden; }
+    /* De 6 px under handlen var luft rundt en strek som ikke lenger vises.
+       Spørsmålet og krysset rykker opp like mye, og alt under dem følger med —
+       det er sheetens overkant som strammes, ikke én rad som flyttes.
+       `--grab-h` måles av `sizeMobileSurface`, så krysset som fester seg rett
+       under handlen finner den nye høyden selv. */
+    body[data-story="on"] .grab { padding-bottom: 0; }
     /* Spørsmålet ER overskriften — og det er nå det FØRSTE i sheeten. Telleren,
        «1 av 6» og «Avslutt» sto over det og gjorde spørsmålet til andrelinje i
        sitt eget stopp; de hører til transporten og har flyttet ned i dekket.
        Det er kjøperens spørsmål — vår kategorilabel («Barn & oppvekst») er
        arkivarens ord, ikke hennes. */
-       kategorilabel («Barn & oppvekst») er arkivarens ord, ikke hennes. */
+    /* Overskriften sto en stund UTEN denne regelen: en avstumpet kopi av
+       kommentar-linja over lå igjen etter at kommentaren var lukket, og
+       CSS-parseren spiste regelen mens den lette etter noe den kjente igjen.
+       Spørsmålet rendret da som en helt vanlig h3 — 18,72 px,
+       `line-height: normal`, null padding — og det lignet nok til at ingen så
+       det. Symptomet var at krysset ikke lot seg innrette: det målte mot en
+       overskrift som ikke hadde målene den skulle ha.
+
+       Skriv ALDRI en avsluttende kommentar-sekvens inni en CSS-kommentar, ikke
+       engang i backticks — den lukker kommentaren der og da, og neste regel
+       forsvinner på nøyaktig samme måte. */
+    /* Spørsmålet ER den fastlimte headeren. Da omvisningskortet var lite,
+       kunne sheeten aldri nå taket, og den fastlimte tilstanden var ikke
+       nåbar. Med alle stedsradene ekspandert går innholdet forbi taket — og
+       da scrollet spørsmålet bort bak kartet mens krysset ble stående festet
+       rett under en TOM handle (`sheetTitle()` er "" i omvisningen), oppå
+       innholdet som passerte. Rapportert av Andreas 2026-08-25.
+
+       Sticky slår først inn når raden ville forlatt flaten, så hvilestillingen
+       er uendret. Bakgrunnen går i full bredde — uten `margin: 0 -16px` ville
+       fanene skint gjennom i de 16 px sheet-padding på hver side når de gikk
+       under. De 10 px som lå som `margin-top` på faneraden er flyttet hit som
+       `padding-bottom`: samme luft, men nå dekket av den hvite stripen i
+       stedet for gjennomsiktig.
+
+       Desktop settes tilbake til vanlig flyt: der finnes ingen handle å feste
+       seg under, og sidekolonnen har 24 px padding, ikke 16. */
     .sty-q {
-      padding: 14px 34px 0 0; font-size: 19px; font-weight: 700;
+      position: sticky; top: var(--grab-h, 22px); z-index: 2;
+      margin: 0 -16px; padding: 4px 56px 10px 16px;
+      background: #fff;
+      font-size: 19px; font-weight: 700;
       line-height: 1.2; letter-spacing: -.02em; color: var(--stone-900);
+    }
+    @media (min-width: 1024px) {
+      .sty-q { position: static; margin: 0; padding: 4px 40px 0 0; }
+      .sty-tabs { margin-top: 10px; }
     }
     .sty-lead { font-size: 14px; line-height: 1.55; color: var(--stone-600); }
     .sty-eb { margin: 0 0 6px; }
@@ -77,12 +127,12 @@
        den bevegelsen som viser at trykket på et av snarveis-kortene i
        «Om området» faktisk gjorde noe. */
     .sty-tabs {
-      display: flex; gap: 2px; margin: 10px 0 0; padding: 3px;
+      display: flex; gap: 2px; margin: 0; padding: 3px;
       border-radius: 999px; background: rgba(0,0,0,.045);
     }
     .sty-tabs button {
       min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      border-radius: 999px; padding: 6px 6px;
+      border-radius: 999px; padding: 9px 6px;
       font-size: 12px; font-weight: 600; color: var(--stone-500);
       transition: background-color 180ms ease, color 180ms ease;
     }
@@ -360,9 +410,15 @@
       position: sticky; top: var(--grab-h, 44px); z-index: 3;
       display: flex; height: 0; justify-content: flex-end;
     }
+    /* `top: 0` er ikke tilfeldig: `.sty-close` er en høyde-0-beholder på
+       `.sty`s overkant, altså nøyaktig der overskriftens boks begynner.
+       Overskriftens tekstmidte ligger da 4 px (padding) + 11,4 px (halve
+       linjeboksen på 19 px × 1,2) = 15,4 px ned — som er halve knappen.
+       Midtlinjene møtes, og gjør du noe med skriftstørrelsen over, må dette
+       tallet regnes om. */
     .sty-x {
-      position: relative; top: 5px;
-      display: flex; height: 26px; width: 26px; flex: none;
+      position: relative; top: 0;
+      display: flex; height: 30px; width: 30px; flex: none;
       align-items: center; justify-content: center;
       border-radius: 999px; background: rgba(28,25,23,.05); color: var(--stone-500);
     }
@@ -413,31 +469,73 @@
     }
 
 
-    /* ---------- Prototype-vekslere (AVVIK: finnes ikke i produksjon) ---------- */
-    /* To grupper: inngang (Tett/Fortelling) og utvalg (Megler/Nærmest).
-       `--proto-back-w` måles av Proto.mountBackLink — verktøyene legger seg ved
-       siden av tilbake-chippen, ikke oppå den. */
+    /* ---------- Prototype-verktøyene, samlet bak ÉN knapp ----------
+       (AVVIK: ingenting av dette finnes i produksjon.)
+
+       Fire grupper lå utbrettet over kartet: galleri-lenka, board-veksleren
+       (NIVÅ 1 · Kuratert/Ukuratert), inngangen (Tett/Fortelling) og utvalget
+       (Megler/Nærmest). Tre av dem er stillas, ikke produkt — og så lenge de
+       ligger der produktets egne kontroller skal ligge, kan man ikke se på
+       flaten og bedømme den. Man ser på verktøykassa.
+
+       De ligger nå bak én knapp i hjørnet. Igjen på kartet står bare
+       reisemåte-pillen, som det ekte boardet faktisk har.
+
+       Baselinens `.proto-switch` og `Proto.mountBackLink`s `.proto-back`
+       skjules — de er ikke slettet, for de eies av fellesfilene og gjelder
+       alle prototypene. Denne iterasjonen overstyrer dem bare for seg selv.
+       Veien ut av prototypen ligger nederst i panelet, så regelen om at man
+       alltid skal komme seg tilbake til galleriet holder. */
+    /* `body`-prefikset er nødvendig, ikke pynt: `Proto.mountBackLink` sprøyter
+       sitt eget <style> inn i dokumentet ved kjøring, altså ETTER denne fila.
+       Med lik spesifisitet ville den vunnet på kilderekkefølge. */
+    body .proto-back, body .proto-switch { display: none; }
+
     .proto-tools {
-      position: fixed; z-index: 40; top: 10px;
-      left: calc(var(--proto-back-w, 96px) + 16px);
-      display: flex; gap: 6px;
+      position: fixed; z-index: 60; top: 10px; left: 10px;
       font-size: 11px; font-weight: 600; letter-spacing: .02em;
     }
+    @media (min-width: 1024px) {
+      .proto-tools { left: calc(var(--sidebar-w) + 10px); }
+    }
+    .proto-fab {
+      display: flex; height: 32px; width: 32px;
+      align-items: center; justify-content: center;
+      border-radius: 999px; background: rgba(255,255,255,.92);
+      box-shadow: 0 1px 6px rgba(0,0,0,.14); color: var(--stone-500);
+      transition: color 150ms ease;
+    }
+    .proto-fab:hover, .proto-fab[aria-expanded="true"] { color: var(--stone-900); }
+    .proto-panel {
+      position: absolute; top: 100%; left: 0;
+      margin-top: 6px; width: 212px; padding: 10px;
+      border-radius: 14px; border: 1px solid var(--stone-200);
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 14px 34px rgba(28,25,23,.2);
+    }
+    .proto-panel[hidden] { display: none; }
+    .proto-panel .lbl {
+      margin: 10px 2px 5px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .14em; color: var(--stone-400);
+    }
+    .proto-panel .lbl:first-child { margin-top: 0; }
     .proto-tools .grp {
       display: flex; gap: 2px; padding: 3px; border-radius: 999px;
-      background: rgba(255,255,255,.92); box-shadow: 0 1px 6px rgba(0,0,0,.14);
+      background: rgba(0,0,0,.045);
     }
-    .proto-tools a { padding: 5px 9px; border-radius: 999px; color: var(--stone-500); text-decoration: none; }
-    .proto-tools a[aria-current="true"] { background: var(--stone-900); color: #fff; }
-    @media (min-width: 1024px) {
-      .proto-tools { left: calc(var(--sidebar-w) + var(--proto-back-w, 96px) + 16px); }
+    .proto-tools .grp a {
+      min-width: 0; flex: 1; padding: 5px 8px; border-radius: 999px;
+      text-align: center; color: var(--stone-500); text-decoration: none;
     }
-    /* Mobil: verktøyene stables i venstre kant. Ved siden av tilbake-chippen
-       ville de kollidert med board-veksleren til høyre på 390 px. */
-    @media (max-width: 1023px) {
-      .proto-tools { top: 52px; left: 10px; }
-      .map-controls { top: 92px; }
+    .proto-tools .grp a[aria-current="true"] { background: var(--stone-900); color: #fff; }
+    .proto-panel .out {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 12px; border-top: 1px solid rgba(28,25,23,.07); padding: 9px 2px 0;
+      color: var(--stone-500); text-decoration: none;
     }
+    .proto-panel .out:hover { color: var(--stone-900); }
+    .proto-panel .out svg { height: 13px; width: 13px; }
   </style>
 </head>
 <body data-story="off">
@@ -445,7 +543,7 @@
   <!-- Dekket ligger utenfor #app fordi #app bygges på nytt ved hver render,
        og transporten ikke skal blafre. Egen klikk-lytter, se `route`. -->
   <div class="sty-deck" id="deck" hidden></div>
-  <nav class="proto-tools" id="tools"></nav>
+  <nav class="proto-tools" id="tools" aria-label="Prototype-verktøy"></nav>
 
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.js"></script>
   <script src="https://unpkg.com/lucide@0.563.0/dist/umd/lucide.min.js"></script>
@@ -488,6 +586,9 @@
     ];
     const pick = PICKS.some((p) => p.id === params.get("pick")) ? params.get("pick") : "megler";
 
+    /* Hver veksler er en LENKE med hele spørrestrengen intakt, ikke en knapp
+       som muterer tilstand: å bytte variant skal kunne deles, gjenåpnes og
+       stå i historikken — og de andre valgene skal ikke nullstilles på veien. */
     const group = (items, key, active) =>
       `<span class="grp">${items
         .map((it) => {
@@ -497,8 +598,42 @@
         })
         .join("")}</span>`;
 
-    document.getElementById("tools").innerHTML =
-      group(ENTRIES, "entry", entry) + group(PICKS, "pick", pick);
+    /* Verktøyene er samlet bak én knapp. Panelet bygges én gang — det leser
+       bare URL-en, og et variantbytte er en full sidelast, så det finnes ingen
+       tilstand her som kan bli foreldet. */
+    const BOARD_LABELS = { ranheim: "Kuratert", ferjemannsveien: "Ukuratert" };
+    const boardItems = Object.keys(BOARDS).map((id) => ({ id, label: BOARD_LABELS[id] ?? id }));
+    const tools = document.getElementById("tools");
+
+    function paintTools(open) {
+      tools.innerHTML = `
+        <button class="proto-fab" data-tools aria-expanded="${open}"
+          aria-label="Prototype-verktøy"><i data-lucide="sliders-horizontal"
+          style="width:15px;height:15px"></i></button>
+        <div class="proto-panel" ${open ? "" : "hidden"}>
+          <p class="lbl">Board</p>${group(boardItems, "board", board)}
+          <p class="lbl">Inngang</p>${group(ENTRIES, "entry", entry)}
+          <p class="lbl">Utvalg</p>${group(PICKS, "pick", pick)}
+          <a class="out" href="/"><i data-lucide="arrow-left"
+            style="width:13px;height:13px"></i>Alle prototyper</a>
+        </div>`;
+      if (window.lucide?.createIcons) lucide.createIcons();
+    }
+    paintTools(false);
+
+    tools.onclick = (ev) => {
+      const btn = ev.target.closest("[data-tools]");
+      if (btn) paintTools(btn.getAttribute("aria-expanded") !== "true");
+    };
+    // Trykk utenfor lukker. Samme regel som reisemåte-panelet i sheeten.
+    document.addEventListener(
+      "pointerdown",
+      (ev) => {
+        if (!ev.target.closest?.(".proto-tools") && tools.querySelector(".proto-panel:not([hidden])"))
+          paintTools(false);
+      },
+      true
+    );
 
     const { esc, icon, minutesOf, byMinutesThenName, state, rerender, redrawMarkers, showAll } =
       Baseline.util;
