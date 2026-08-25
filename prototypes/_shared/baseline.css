@@ -335,7 +335,9 @@ li:last-child .vp-row { border-bottom: none; }
   font-size: 11px; font-weight: 600; line-height: 1.15; color: var(--stone-900);
   text-shadow: 0 0 3px #fff, 0 0 6px #fff, 0 0 10px #fff;
 }
-.marker.dim { opacity: .35; }
+/* Mapbox GL skriver `opacity` INLINE på markør-roten hver frame, så dempingen
+   må ligge på barna — en regel på `.marker` taper mot inline-stilen. */
+.marker.dim .pin, .marker.dim .lbl { opacity: .35; }
 /* dot-nivået: bare en liten prikk, ingen ikon/label */
 .marker.tiny .pin { height: 8px; width: 8px; border-width: 0; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
 .marker.active .pin { height: 20px; width: 20px; border-width: 3px; }

@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>04 · Fortelling i boardet</title>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/_shared/baseline.css" />
+  <style>
+    /* ============================================================
+       SPØRSMÅLET PROTOTYPEN TESTER:
+       Kartet med 464 punkter sier «her er det mye» — det er dekningen
+       megleren betaler for. Men den som ikke selv zoomer og trykker,
+       får ingenting ut av den. Kan meglerens utvalg presenteres som en
+       guidet rekkefølge INNE i boardet — uten lyd, uten bilder, og
+       uten at ett eneste kartpunkt må trykkes?
+
+       Fortellingen bor i sheeten vi alt har (01s feil var kart i full
+       høyde under en scrollende body — scrollen og kartet slåss).
+       Ett stopp = én kategori, og innholdet finnes allerede:
+         spørsmålet   = cat.question   («Er det bra for barna?»)
+         prosaen      = cat.lead
+         stedene      = editorial.highlights — «Verdt å merke seg», 3 stk
+       Ingen ny kurering. Fortellingen er en ny REKKEFØLGE på det vi har.
+
+       Stoppet har tre faner fordi svaret har tre former og ikke får plass
+       samtidig: ord, steder, spørsmål og svar. Spørsmålet står OVER fanene —
+       stoppet ER spørsmålet, fanene er de tre måtene det besvares.
+       Sheeten har fast høyde: fanene scroller inni, flaten står stille.
+
+       To inngangar, vekslet øverst til venstre:
+         Tett       = dagens board først, fortellingen bak en play-knapp
+         Fortelling = fortellingen møter deg, boardet ligger bak «Avslutt»
+
+       Og en utvalgs-veksler ved siden av, fordi omvisningen ikke koster noe å
+       produsere — den kjører på data hvert board alt har. Skillet mellom en
+       åpen løsning og en ferdig kuratert kan derfor ikke være OM du får
+       omvisningen, bare HVEM som plukket de tre stedene:
+         Megler  = «Verdt å merke seg», et menneskes utvalg (Moat 1)
+         Nærmest = de tre nærmeste målte, det maskinen klarer alene
+       Samme board, samme UI. Er forskjellen stor nok å ta penger for?
+
+       Og det ene grepet som gjør modusen enklere, ikke bare pyntere:
+       pinnene er illustrasjon. Trykkflaten er stedene i sheeten.
+       ============================================================ */
+
+    /* ---------- Fortellingsflaten ---------- */
+    /* Ikke et kort. Baselinens `.m-card` er ett av mange kort i en liste — her
+       er stoppet det ENESTE innholdet i sheeten, og da er rammen rundt bare en
+       strek som gjentar sheetens egen kant. Uten den blir flaten hvit og rolig,
+       og de 14 pikslene kortet holdt av på hver side blir pusterom i stedet.
+       `flex: none` fordi desktop-sidekolonnens `.scroll` er en flex-kolonne —
+       uten den krympes flaten og siste linje klippes. */
+    .sty { flex: none; margin-bottom: 10px; }
+    /* Presentasjonsmodus har hvit sheet: fortellingen er forgrunnen, ikke et
+       kort som ligger på en beige flate. Dekket arver samme hvite — men bare på
+       mobil: desktop-dekket hører til sidekolonnen og skal ha dens farge. */
+    body[data-story="on"] .sheet { background: #fff; }
+    @media (max-width: 1023px) {
+      body[data-story="on"] .sty-deck { background: #fff; }
+    }
+    /* Spørsmålet ER overskriften — og det er nå det FØRSTE i sheeten. Telleren,
+       «1 av 6» og «Avslutt» sto over det og gjorde spørsmålet til andrelinje i
+       sitt eget stopp; de hører til transporten og har flyttet ned i dekket.
+       Det er kjøperens spørsmål — vår kategorilabel («Barn & oppvekst») er
+       arkivarens ord, ikke hennes. */
+       kategorilabel («Barn & oppvekst») er arkivarens ord, ikke hennes. */
+    .sty-q {
+      padding: 14px 0 0; font-size: 19px; font-weight: 700;
+      line-height: 1.2; letter-spacing: -.02em; color: var(--stone-900);
+    }
+    .sty-lead { font-size: 14px; line-height: 1.55; color: var(--stone-600); }
+    .sty-eb { margin: 0 0 6px; }
+
+    /* Segmentert kontroll: tre svar på samme spørsmål — i ord, i steder, i
+       spørsmål og svar. Den valgte brikken løftes med hvitt og skygge; det er
+       den bevegelsen som viser at trykket på et av snarveis-kortene i
+       «Om området» faktisk gjorde noe. */
+    .sty-tabs {
+      display: flex; gap: 2px; margin: 10px 0 0; padding: 3px;
+      border-radius: 999px; background: rgba(0,0,0,.045);
+    }
+    .sty-tabs button {
+      min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      border-radius: 999px; padding: 6px 6px;
+      font-size: 12px; font-weight: 600; color: var(--stone-500);
+      transition: background-color 180ms ease, color 180ms ease;
+    }
+    .sty-tabs button[aria-selected="true"] {
+      background: #fff; color: var(--stone-900); box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    }
+    /* Fanene bytter enkelt: den inaktive tas ut av layouten. Sheeten har fast
+       høyde gjennom hele omvisningen (se `sizeStory`), så en fane som er høyere
+       enn en annen gir bare mer å scrolle — ikke en flate som flytter seg.
+       Grid-stablingen som holdt fanene like høye er borte med den: den fantes
+       bare for å hindre at sheeten hoppet, og nå hopper den ikke uansett. */
+    .sty-pane { padding-top: 12px; }
+    .sty-pane[data-active="false"] { display: none; }
+
+    /* Flaten fyller vinduet sheeten gir den. Baselinen klipper sheeten til
+       innholdet ved hver render (`sizeMobileSurface`), og den måler FØR den
+       setter høyden — altså på en sheet uten høyde, der innholdet bestemmer
+       alt. Et stopp med lite tekst krympet dermed vinduet med 22 px, og da
+       flyttet flaten seg mellom stoppene. Gulvet i piksler (satt av
+       `sizeStory`) gjør den målingen lik vinduet uansett hvor kort stoppet er.
+       En prosent ville ikke holdt: 100 % av en høyde som ikke er satt ennå er
+       ingenting. Bare mobil — desktop-sidekolonnen scroller som før. */
+    @media (max-width: 1023px) {
+      body[data-story="on"] .sty { min-height: var(--sty-card-min, 0px); }
+    }
+
+    /* Snarveiene ut av prosaen: to like kort side om side, ett per fane som
+       ikke er ord. Ett kort på full bredde leste som «det finnes ÉN ting mer
+       her»; to halve sier at svaret har tre former og at du velger. Brikkene
+       er `hl-icons` fra produksjonen. */
+    .sty-dual {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      padding: 12px 0 4px;
+    }
+    .sty-dual.one { grid-template-columns: 1fr; } /* kategorien har ingen svar */
+    /* Disse ER kort, på hvit flate: en svak grå bunn i stedet for hvitt-på-hvitt. */
+    .sty-mini {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+      border-radius: 14px; background: rgba(0,0,0,.035);
+      padding: 10px; text-align: left; transition: background-color 150ms;
+    }
+    .sty-mini:hover { background: rgba(0,0,0,.06); }
+    .sty-mini .t {
+      display: block; font-size: 12.5px; font-weight: 600; line-height: 1.3;
+      color: var(--stone-800);
+    }
+    .sty-mini .b { display: flex; width: 100%; align-items: center; gap: 6px; }
+    .sty-mini .s { min-width: 0; flex: 1; font-size: 11.5px; color: var(--stone-500); }
+    .sty-mini .b > svg { flex: none; color: var(--stone-400); }
+    /* Ringen mellom de overlappende brikkene må matche flaten de ligger på. */
+    .sty-mini .hl-icons > span { box-shadow: 0 0 0 2px #fff; }
+
+    .sty-list { padding: 0 0 8px; }
+    .sty-row {
+      display: flex; width: 100%; align-items: center; gap: 9px;
+      border-radius: 12px; padding: 9px 4px; text-align: left;
+    }
+    .sty-row:hover { background: rgba(0,0,0,.03); }
+    .sty-row[aria-current="true"] { background: rgba(0,0,0,.04); }
+    /* Chevron-plassen holdes av også når stedet mangler tekst, ellers står
+       «17 min» lenger til høyre enn «4 min» rett over. */
+    .sty-row .chev-gap { width: 15px; flex: none; }
+    .sty-row .dot { height: 8px; width: 8px; flex: none; border-radius: 999px; }
+    .sty-row .n {
+      min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 14.5px; font-weight: 600; letter-spacing: -.01em; color: var(--stone-900);
+    }
+    .sty-row .m { flex: none; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--stone-500); }
+    /* Stedets tekst åpner seg der raden står. Ingen modal, ingen ny flate —
+       det er hele poenget med modusen. Begge tilstander i DOM, ingen auto-scroll.
+       Samme kurve og varighet som sheeten (se `body[data-story="on"] .sheet`):
+       teksten og flaten den ligger i skal være ÉN bevegelse, ikke to. 300 ms
+       ease-out var raskere enn sheeten og leste som et rykk. */
+    .sty-narr { overflow: hidden; max-height: 0; opacity: 0;
+      transition: max-height 420ms cubic-bezier(.32,.72,0,1), opacity 300ms ease-out; }
+    .sty-narr[data-expanded="true"] { max-height: 600px; opacity: 1; }
+    .sty-narr p { padding: 0 4px 10px 21px; font-size: 13px; line-height: 1.6; color: var(--stone-600); }
+
+    /* Andre gruppe i steds-fanen: kategoriens nærmeste utover de utvalgte.
+       Uten dem er fanen tre rader og føles som en rest av prosaen; med dem er
+       den en liste. */
+    .sty-more { margin: 10px 0 6px; }
+
+    /* Fane 3: kategoriens spørsmål og svar. `faq-item`-idiomet er produksjonens,
+       men svaret åpnes gjennom vår egen ruting (`tapFaq`) — baselinens toggle
+       ville stått igjen med tilstanden vår ute av sync. Samme kurve som
+       stedsteksten, og grå bunn fordi flaten under er hvit. */
+    .sty-faq { padding: 0 0 8px; }
+    .sty-faq .faq-item { border-color: transparent; background: rgba(0,0,0,.035); }
+    .sty-faq .faq-item:hover { border-color: transparent; background: rgba(0,0,0,.06); }
+    .sty-faq .faq-a { transition: max-height 420ms cubic-bezier(.32,.72,0,1), opacity 300ms ease-out; }
+
+    /* ---------- Dekket: transporten, festet UTENFOR sheeten ---------- */
+    /* Lå «Videre» nederst i sheeten, ville den flyttet seg hver gang innholdet
+       over den endret seg. Nå ligger den i et fast dekk i rammens underkant:
+       innholdet scroller, knappen som alltid gjelder står stille.
+
+       Høyden publiseres som `--sty-deck-h` slik at sheeten kan padde for
+       dekket i stedet for å legge siste rad under det. */
+    .sty-deck {
+      position: fixed; z-index: 35; left: 0; right: 0; bottom: 0;
+      background: var(--ring-bg);
+      border-top: 1px solid rgba(0,0,0,.06);
+      box-shadow: 0 -4px 14px rgba(28,25,23,.06);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .sty-deck[hidden] { display: none; }
+    /* Desktop: dekket hører til sidekolonnen, ikke kartet. */
+    @media (min-width: 1024px) {
+      .sty-deck {
+        right: auto; width: var(--sidebar-w);
+        background: var(--sidebar-bg);
+        border-right: 1px solid rgba(0,0,0,.05);
+      }
+    }
+    body[data-story="on"] .sheet-scroll,
+    body[data-story="on"] .scroll { padding-bottom: var(--sty-deck-h, 96px); }
+
+    .sty-nav { padding: 10px; }
+
+    /* Hele transporten i ÉN svart flate: hvor du er, veien ut, og veien videre.
+       De tre hørte sammen hele tiden — spredt utover to kanter av skjermen
+       leste de som tre urelaterte ting. Ikke én <button>, men én flate med tre
+       trykkflater: knapper kan ikke ligge inni knapper. */
+    .sty-deckcard {
+      display: flex; flex-direction: column; gap: 6px;
+      border-radius: 16px; background: var(--stone-900); color: #fff;
+      padding: 9px 12px 10px;
+    }
+    /* Øverste linje: stopp-telleren som pille-rad (den du står på er bred og
+       bærer kategorifargen), tallet, og utgangen helt til høyre. Dempet hvitt,
+       fordi dette er hvor-er-jeg og ikke det du skal trykke. */
+    .sty-meta { display: flex; align-items: center; gap: 10px; }
+    .sty-dots { display: flex; align-items: center; gap: 4px; }
+    .sty-dots span {
+      height: 4px; width: 4px; border-radius: 999px; background: rgba(255,255,255,.26);
+      transition: width 260ms ease, background-color 260ms ease;
+    }
+    .sty-dots span.past { background: rgba(255,255,255,.5); }
+    .sty-dots span.on { width: 16px; }
+    .sty-n {
+      font-size: 11px; font-weight: 600; letter-spacing: .04em;
+      font-variant-numeric: tabular-nums; color: rgba(255,255,255,.45);
+    }
+    .sty-exit {
+      margin-left: auto; margin-right: -4px; padding: 2px 4px;
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,.5);
+    }
+    .sty-exit:hover { color: #fff; }
+
+    /* Nederste linje: veien videre, navngitt med kategorien. «Videre» sto foran
+       navnet og sa det knappen viser i form — en pil og en plassering. Vekk med
+       den, så får navnet hele bredden. */
+    /* `min-height` er tilbake-pilens høyde: uten den er dekket 5 px lavere på
+       første stopp, der pilen ikke finnes, og hele dekket rykker når du går
+       videre. Raden holder plassen enten pilen er der eller ikke. */
+    .sty-go { display: flex; min-height: 30px; align-items: center; gap: 8px; }
+    .sty-prev {
+      display: flex; height: 30px; width: 30px; flex: none;
+      align-items: center; justify-content: center; margin-left: -4px;
+      border-radius: 999px; background: rgba(255,255,255,.12); color: #fff;
+    }
+    .sty-prev:hover { background: rgba(255,255,255,.22); }
+    .sty-next {
+      display: flex; min-width: 0; flex: 1; align-items: center; gap: 10px;
+      color: #fff; padding: 3px 0; text-align: left;
+    }
+    .sty-next .n {
+      min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 15.5px; font-weight: 600; letter-spacing: -.01em;
+    }
+    .sty-next > svg { flex: none; opacity: .75; }
+
+    /* ---------- Play-kortet (inngangen «Tett») ---------- */
+    /* Tettheten møter deg først — den er beviset. Fortellingen er veien inn
+       for den som ikke selv begynner å zoome og trykke. */
+    .play {
+      display: flex; width: 100%; flex: none; align-items: center; gap: 12px;
+      margin-bottom: 10px; border-radius: 16px; padding: 11px 12px; text-align: left;
+      background: var(--stone-900); color: #fff;
+    }
+    .play-ic {
+      display: flex; height: 34px; width: 34px; flex: none; align-items: center;
+      justify-content: center; border-radius: 999px; background: rgba(255,255,255,.14);
+    }
+    .play-t { min-width: 0; flex: 1; }
+    .play-t .n { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: -.01em; }
+    .play-t .s { display: block; font-size: 12px; color: rgba(255,255,255,.6); }
+    .play > svg { flex: none; opacity: .5; }
+
+    /* ---------- Hva fortellingen overtar mens den kjører ---------- */
+    /* Fortellingen eier flaten: indeksen, FAQ-en og megler-kortet ligger bak
+       «Avslutt», ikke under fortellingen. Ellers er den bare en ny header. */
+    body[data-story="on"] .sheet-scroll > .section,
+    body[data-story="on"] .sheet-scroll > .hint,
+    body[data-story="on"] .m-empty,
+    body[data-story="on"] .scroll > .cat-card,
+    body[data-story="on"] .scroll > .section,
+    body[data-story="on"] .scroll > .megler { display: none; }
+
+    /* Pinnene er illustrasjon, ikke knapper. I denne modusen er stedene i
+       fortellingen trykkflaten — ett interaksjonsmønster, ikke to. */
+    /* `!important` fordi Mapbox GL skriver `pointer-events: auto` inline på
+       markør-roten, og klikk-lytteren sitter nettopp der. */
+    body[data-story="on"] .marker { pointer-events: none !important; }
+
+    /* Tre nivåer, ikke to: de tre navngitte stedene BÆRER scenen, kategorien
+       rundt viser at dekningen finnes, og resten av nabolaget ligger igjen som
+       tekstur. Med bare dempet/ikke-dempet ble 182 punkter like viktige som de
+       tre fortellingen faktisk snakker om. */
+    body[data-story="on"] .marker.dim .pin { opacity: .26; }
+    body[data-story="on"] .marker.scene .pin { opacity: .6; }
+    body[data-story="on"] .marker.named .pin {
+      height: 19px; width: 19px; border-width: 3px;
+      box-shadow: 0 2px 7px rgba(0,0,0,.32);
+    }
+
+    /* INGEN høyde-animasjon på sheeten her, med vilje. Vinduet settes én gang
+       (se `sizeStory`) og står; det er ingenting å animere. Verre: baselinen
+       klipper sheeten til `scrollHeight` ved hver render, og for en flex-sheet
+       ER scrollHeight den høyden den står i akkurat nå. Lander en render midt i
+       en animasjon — og kartet rendrer på hver `moveend` — fryses høyden på et
+       tilfeldig mellomsteg. Da mistet vi 22 px på veien gjennom stoppene. */
+
+    /* ---------- Prototype-vekslere (AVVIK: finnes ikke i produksjon) ---------- */
+    /* To grupper: inngang (Tett/Fortelling) og utvalg (Megler/Nærmest).
+       `--proto-back-w` måles av Proto.mountBackLink — verktøyene legger seg ved
+       siden av tilbake-chippen, ikke oppå den. */
+    .proto-tools {
+      position: fixed; z-index: 40; top: 10px;
+      left: calc(var(--proto-back-w, 96px) + 16px);
+      display: flex; gap: 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: .02em;
+    }
+    .proto-tools .grp {
+      display: flex; gap: 2px; padding: 3px; border-radius: 999px;
+      background: rgba(255,255,255,.92); box-shadow: 0 1px 6px rgba(0,0,0,.14);
+    }
+    .proto-tools a { padding: 5px 9px; border-radius: 999px; color: var(--stone-500); text-decoration: none; }
+    .proto-tools a[aria-current="true"] { background: var(--stone-900); color: #fff; }
+    @media (min-width: 1024px) {
+      .proto-tools { left: calc(var(--sidebar-w) + var(--proto-back-w, 96px) + 16px); }
+    }
+    /* Mobil: verktøyene stables i venstre kant. Ved siden av tilbake-chippen
+       ville de kollidert med board-veksleren til høyre på 390 px. */
+    @media (max-width: 1023px) {
+      .proto-tools { top: 52px; left: 10px; }
+      .map-controls { top: 92px; }
+    }
+  </style>
+</head>
+<body data-story="off">
+  <div id="app"></div>
+  <!-- Dekket ligger utenfor #app fordi #app bygges på nytt ved hver render,
+       og transporten ikke skal blafre. Egen klikk-lytter, se `route`. -->
+  <div class="sty-deck" id="deck" hidden></div>
+  <nav class="proto-tools" id="tools"></nav>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.js"></script>
+  <script src="https://unpkg.com/lucide@0.563.0/dist/umd/lucide.min.js"></script>
+  <script src="/_shared/env.js"></script>
+  <script src="/_shared/proto.js"></script>
+  <script src="/_shared/baseline.js"></script>
+  <script>
+    const BOARDS = {
+      ranheim: "megler-harstad__strindfjordvegen-10-7053-ranheim-norge",
+      ferjemannsveien: "klp-eiendom__ferjemannsveien-10",
+    };
+    const DESKTOP = "(min-width: 1024px)";
+    const PLACES_PER_SCENE = 3;   // fortellingens steder: de kameraet rammer inn
+    const ROWS_PER_SCENE = 6;     // hele steds-fanen, utvalget + de neste nærmeste
+    const SENTENCES_PER_BEAT = 2;
+    /* Trykk på et sted gjør to ting: teksten åpner seg og kartet flyr dit. Skjer
+       de samtidig, konkurrerer de om samme blikk. Teksten er det fingeren tok
+       på, så den går først — kartet følger etter når bevegelsen i sheeten er
+       ferdig. Ett blikk om gangen, ikke to. */
+    const CAMERA_DELAY_MS = 420;
+    const CAMERA_DURATION_MS = 1200;
+
+    const params = new URLSearchParams(location.search);
+    const board = params.get("board") || "ranheim";
+
+    // tett       = dagens board først, fortellingen bak en play-knapp
+    // fortelling = fortellingen møter deg, boardet ligger bak «Avslutt»
+    const ENTRIES = [
+      { id: "tett", label: "Tett" },
+      { id: "fortelling", label: "Fortelling" },
+    ];
+    const entry = ENTRIES.some((e) => e.id === params.get("entry")) ? params.get("entry") : "tett";
+
+    // megler = «Verdt å merke seg», altså menneskets utvalg (Moat 1)
+    // auto   = de tre nærmeste MÅLTE, altså det maskinen klarer alene
+    // Samme board, samme UI — det eneste som endres er hvem som plukket.
+    const PICKS = [
+      { id: "megler", label: "Megler" },
+      { id: "auto", label: "Nærmest" },
+    ];
+    const pick = PICKS.some((p) => p.id === params.get("pick")) ? params.get("pick") : "megler";
+
+    const group = (items, key, active) =>
+      `<span class="grp">${items
+        .map((it) => {
+          const q = new URLSearchParams(location.search);
+          q.set(key, it.id);
+          return `<a href="?${q}" aria-current="${it.id === active}">${it.label}</a>`;
+        })
+        .join("")}</span>`;
+
+    document.getElementById("tools").innerHTML =
+      group(ENTRIES, "entry", entry) + group(PICKS, "pick", pick);
+
+    const { esc, icon, minutesOf, byMinutesThenName, state, rerender, redrawMarkers, showAll } =
+      Baseline.util;
+
+    let on = entry === "fortelling";
+    let step = 0;         // scene-indeks
+    let pane = "tekst";   // "tekst" | "steder" | "faq" — stoppets tre faner
+    /* Åpne felt lukkes ALDRI av seg selv. Et sted du har åpnet lukkes bare ved
+       at du trykker det igjen — leste du to steder, skal begge kunne stå åpne.
+       Auto-lukking var i tillegg halve hoppingen i sheeten: hvert trykk lukket
+       ett felt og åpnet et annet, så flaten både krympet og vokste i samme
+       bevegelse. Derfor mengder, ikke én id. */
+    let openIds = new Set();   // stedene som står utvidet i steds-fanen
+    let openFaqs = new Set();  // spørsmålene som står utvidet i svar-fanen
+    const clearOpen = () => { openIds = new Set(); openFaqs = new Set(); };
+    document.body.dataset.story = on ? "on" : "off";
+
+    const scenes = () => state().board.categories;
+    const scene = () => scenes()[step];
+
+    /** Scenens steder: meglerens utvalg. Mangler det, de nærmeste MÅLTE.
+     *  Sortert på tid uansett kilde — kurator eier HVILKE tre steder som er
+     *  verdt å merke seg, fortellingen eier rekkefølgen de nevnes i. Uten det
+     *  leser beatet «17 min, 23 min, 4 min», og ingen guide snakker sånn. */
+    function places(cat) {
+      const pool = curatedScene(cat)
+        ? cat.editorial.highlights
+            .map((h) => cat.pois.find((p) => p.id.toLowerCase() === String(h.id).toLowerCase()))
+            .filter(Boolean)
+        : cat.pois.filter((p) => minutesOf(p) !== undefined);
+      return pool.slice().sort(byMinutesThenName).slice(0, PLACES_PER_SCENE);
+    }
+
+    /** Radene under utvalget: kategoriens neste nærmeste, de utvalgte trukket
+     *  fra. Fanen heter «steder å merke seg», og med bare tre rader leste den
+     *  som en rest av prosaen. Med seks er den en liste — og lista peker rett
+     *  videre til «Se alle N» i dekket. Kameraet rammer fortsatt bare de tre:
+     *  fortellingen snakker om dem, resten er der du kan gå videre selv. */
+    function morePlaces(cat) {
+      const taken = new Set(places(cat).map((p) => p.id));
+      return cat.pois
+        .filter((p) => !taken.has(p.id) && minutesOf(p) !== undefined)
+        .sort(byMinutesThenName)
+        .slice(0, Math.max(0, ROWS_PER_SCENE - PLACES_PER_SCENE));
+    }
+
+    /** Kategoriens spørsmål og svar. Finnes de ikke (ukuraterte kategorier har
+     *  ingen), forsvinner både fanen og snarveis-kortet — ingen tom flate. */
+    const faqsOf = (cat) => cat.editorial?.faq ?? [];
+
+    /** Er scenens utvalg et menneskes? «Nærmest»-veksleren slår det av så
+     *  forskjellen kan kjennes på samme board — det er hele skillet mellom en
+     *  åpen løsning og en ferdig kuratert. */
+    const curatedScene = (cat) =>
+      pick === "megler" && (cat.editorial?.highlights ?? []).length > 0;
+
+    /** Fortellingens takt: to setninger, ikke hele strøksteksten. Seks linjer
+     *  prosa ganger seks stopp er en nettside igjen, ikke en omvisning — og
+     *  det er stedene med målt tid som er beatet, prosaen bare rammer dem inn.
+     *  Kuttet skjer på setningsslutt, aldri midt i et ord: ingen ellipse.
+     *  Den fulle teksten finnes fortsatt i drill-in etter «Avslutt».
+     *  (Forkortelser med punktum ville kuttet tidlig — ingen i disse dataene.) */
+    function beat(text) {
+      const full = String(text ?? "").trim();
+      const sentences = full.match(/[^.!?]+[.!?]+(\s|$)/g);
+      if (!sentences || sentences.length <= SENTENCES_PER_BEAT) return full;
+      return sentences.slice(0, SENTENCES_PER_BEAT).join("").trim();
+    }
+
+    /** Stedets egne ord. Ingen tekst = ingen chevron; raden lover ikke noe tom. */
+    const narrativeOf = (p) =>
+      p.raw?.grounding?.curated?.narrative ??
+      p.raw?.grounding?.generated?.narrative ??
+      p.raw?.editorialHook ??
+      "";
+
+    /** Ikon og farge til stedets brikke. Kuratoren har gitt hvert utvalgt sted
+     *  sitt eget ikon; er stedet plukket av maskinen, arver det kategoriens. */
+    function chipOf(p, cat) {
+      const h = (cat.editorial?.highlights ?? []).find(
+        (x) => String(x.id).toLowerCase() === p.id.toLowerCase()
+      );
+      return { icon: h?.icon ?? cat.icon, color: h?.color ?? cat.color };
+    }
+
+    // Navngitte punkter cachet per scene: `marker` kalles én gang per POI per
+    // opptegning (464 på Ranheim), og et oppslag der skal ikke koste et søk.
+    let spotFor = -1;
+    let spot = new Set();
+    function spotIds() {
+      if (spotFor !== step) {
+        spot = new Set(places(scene()).map((p) => p.id));
+        spotFor = step;
+      }
+      return spot;
+    }
+
+    // ---------- render ----------
+    function placeRow(p, cat) {
+      const m = minutesOf(p);
+      const narr = narrativeOf(p);
+      const open = openIds.has(p.id);
+      // `aria-current` merker stedet som vises på kartet, `aria-expanded` bare
+      // de radene som faktisk HAR noe å utvide. Chevron-plassen holdes åpen
+      // uansett — ellers rykker høyrekanten på et sted uten tekst.
+      return `<li>
+        <button class="sty-row" data-story-poi="${esc(p.id)}" aria-current="${open}"
+          ${narr ? `aria-expanded="${open}"` : ""}>
+          <span class="dot" style="background:${esc(cat.color)}"></span>
+          <span class="n">${esc(p.name)}</span>
+          ${m !== undefined ? `<span class="m">${m} min</span>` : ""}
+          ${narr ? `<span class="chev">${icon("chevron-down", 15)}</span>` : `<span class="chev-gap"></span>`}
+        </button>
+        ${narr ? `<div class="sty-narr" data-expanded="${open}"><p>${esc(narr)}</p></div>` : ""}
+      </li>`;
+    }
+
+    const paneTitle = (cat) => (curatedScene(cat) ? "Verdt å merke seg" : "Nærmest hjemmefra");
+
+    /** Fane 1: svaret i ord, med de to andre fanene som kort under. Kortene er
+     *  halve hver fordi de er likeverdige innganger: stedene og spørsmålene er
+     *  to former av samme svar, ikke ett svar og en fotnote. */
+    function proseTab(cat, ps) {
+      const faqs = faqsOf(cat);
+      return `${cat.lead ? `<p class="sty-lead">${esc(beat(cat.lead))}</p>` : ""}
+        <div class="sty-dual${faqs.length ? "" : " one"}">
+          <button class="sty-mini" data-pane="steder">
+            <span class="hl-icons">${ps
+              .map((p) => {
+                const c = chipOf(p, cat);
+                return `<span><span class="hl-icon" style="background:${esc(c.color)}">${icon(c.icon, 14)}</span></span>`;
+              })
+              .join("")}</span>
+            <span class="t">${ps.length} ${ps.length === 1 ? "sted" : "steder"} å merke seg</span>
+            <span class="b"><span class="s">Se hvilke</span>${icon("arrow-right", 14)}</span>
+          </button>
+          ${
+            faqs.length
+              ? `<button class="sty-mini" data-pane="faq">
+                   <span class="hl-icons"><span><span class="hl-icon"
+                     style="background:${esc(cat.color)}">${icon("message-circle-question", 14)}</span></span></span>
+                   <span class="t">Spørsmål og svar</span>
+                   <span class="b"><span class="s">${faqs.length} svar</span>${icon("arrow-right", 14)}</span>
+                 </button>`
+              : ""
+          }
+        </div>`;
+    }
+
+    /** Fane 2: samme svar, som steder. Første eyebrow sier hvem som plukket de
+     *  tre — det er skillet mellom en åpen og en ferdig kuratert versjon. Under
+     *  dem står kategoriens neste nærmeste, så fanen er en liste og ikke tre
+     *  løse rader. */
+    function placesTab(cat, ps) {
+      const more = morePlaces(cat);
+      return `<p class="eyebrow sty-eb">${paneTitle(cat)}</p>
+        <ul class="sty-list">${ps.map((p) => placeRow(p, cat)).join("")}</ul>
+        ${
+          more.length
+            ? `<p class="eyebrow sty-more">Flere i nærheten</p>
+               <ul class="sty-list">${more.map((p) => placeRow(p, cat)).join("")}</ul>`
+            : ""
+        }`;
+    }
+
+    /** Stedsnavn i et FAQ-svar står som `[Extra Grilstad](poi:google-…)`.
+     *  Produksjonens `linkedText` gjør dem til knapper som åpner POI-modalen,
+     *  og modusen har ingen modal — så her beholdes navnet og referansen faller
+     *  bort. Uten dette leser svaret som rå markup. */
+    const plainText = (answer) =>
+      String(answer ?? "").replace(/\[([^\]]+)\]\((?:poi|category):[^)]+\)/g, "$1");
+
+    /** Fane 3: kategoriens spørsmål og svar. */
+    function faqTab(cat) {
+      const faqs = faqsOf(cat);
+      if (!faqs.length) return "";
+      return `<div class="sty-faq">
+        <div class="faq-list">${faqs
+          .map((e) => {
+            const open = openFaqs.has(e.id);
+            return `<div class="faq-item">
+              <button class="faq-q" aria-expanded="${open}" data-story-faq="${esc(e.id)}">
+                <span class="t">${esc(e.question)}</span>
+                <span class="chev">${icon("chevron-down", 16)}</span>
+              </button>
+              <div class="faq-a" data-expanded="${open}"><p>${esc(plainText(e.answer))}</p></div>
+            </div>`;
+          })
+          .join("")}</div>
+      </div>`;
+    }
+
+    /* Spørsmålet står OVER fanene, ikke inni en av dem: stoppet ER spørsmålet,
+       og fanene er tre svar på det — ord, steder, spørsmål. Det er grunnen til at
+       faner slår et rom med tilbake-pil her; med spørsmålet inne i fane 1 ville
+       fane 2 føltes som å navigere bort fra stoppet. Fordi ingen tilbake-pil
+       trengs, kan «forrige stopp» ligge i dekket og gjelde begge faner. */
+    function storyCard() {
+      const all = scenes();
+      const cat = all[step];
+      const ps = places(cat);
+      const faqs = faqsOf(cat);
+      const rows = ps.length + morePlaces(cat).length;
+      const tab = (id, label) =>
+        `<button role="tab" aria-selected="${pane === id}" data-pane="${id}">${label}</button>`;
+
+      return `<section class="sty" data-story-card>
+        <h3 class="sty-q">${esc(cat.question || cat.label)}</h3>
+
+        <div class="sty-tabs" role="tablist">
+          ${tab("tekst", "Om området")}${tab("steder", `Steder (${rows})`)}${
+            faqs.length ? tab("faq", `Spørsmål (${faqs.length})`) : ""
+          }
+        </div>
+
+        <div class="sty-tab">
+          <div class="sty-pane" role="tabpanel" data-active="${pane === "tekst"}"
+            ${pane === "tekst" ? "" : 'aria-hidden="true"'}>${proseTab(cat, ps)}</div>
+          <div class="sty-pane" role="tabpanel" data-active="${pane === "steder"}"
+            ${pane === "steder" ? "" : 'aria-hidden="true"'}>${placesTab(cat, ps)}</div>
+          ${
+            faqs.length
+              ? `<div class="sty-pane" role="tabpanel" data-active="${pane === "faq"}"
+                   ${pane === "faq" ? "" : 'aria-hidden="true"'}>${faqTab(cat)}</div>`
+              : ""
+          }
+        </div>
+      </section>`;
+    }
+
+    /** Dekket: hele transporten, samlet i én svart flate — hvor du er (telleren
+     *  og «1 av 6»), veien ut («Avslutt») og veien videre (neste kategori). Alt
+     *  her gjelder stoppet som helhet, aldri én fane, og det er derfor det kan
+     *  stå stille mens innholdet over scroller.
+     *
+     *  Neste stopp navngis med KATEGORIEN, ikke spørsmålet: spørsmålene står som
+     *  overskrift inne i stoppet, og to setninger som lovet det samme på to
+     *  måter var mer å lese, ikke mer å forstå. */
+    function storyDeck() {
+      const all = scenes();
+      const cat = all[step];
+      const next = all[step + 1];
+
+      return `<div class="sty-nav">
+        <div class="sty-deckcard">
+          <div class="sty-meta">
+            <span class="sty-dots">${all
+              .map((_, n) => {
+                const cls = n === step ? "on" : n < step ? "past" : "";
+                const bg = n === step ? `background:${esc(cat.color)}` : "";
+                return `<span class="${cls}" style="${bg}"></span>`;
+              })
+              .join("")}</span>
+            <span class="sty-n">${step + 1} av ${all.length}</span>
+            <button class="sty-exit" data-story-exit>Avslutt</button>
+          </div>
+          <div class="sty-go">
+            ${
+              step > 0
+                ? `<button class="sty-prev" data-story-step="-1" aria-label="Forrige stopp">${icon("chevron-left", 17)}</button>`
+                : ""
+            }
+            ${
+              next
+                ? `<button class="sty-next" data-story-step="1">
+                     <span class="n">${esc(next.label)}</span>
+                     ${icon("arrow-right", 18)}
+                   </button>`
+                : `<button class="sty-next" data-story-exit>
+                     <span class="n">Utforsk nabolaget selv</span>
+                     ${icon("arrow-right", 18)}
+                   </button>`
+            }
+          </div>
+        </div>
+      </div>`;
+    }
+
+    /** Tegner dekket og publiserer høyden det faktisk fikk. Rekkefølgen mot
+     *  `sizeStory` er poenget: sheeten padder for dekket, så måles den. */
+    function paintDeck() {
+      const deck = document.getElementById("deck");
+      if (!deck) return 0;
+      deck.hidden = !on;
+      deck.innerHTML = on ? storyDeck() : "";
+      if (on && window.lucide?.createIcons) lucide.createIcons();
+      const h = on ? deck.offsetHeight : 0;
+      document.documentElement.style.setProperty("--sty-deck-h", `${h}px`);
+      return h;
+    }
+
+    function playCard() {
+      const n = scenes().length;
+      return `<button class="play" data-story-play>
+        <span class="play-ic">${icon("play", 18)}</span>
+        <span class="play-t">
+          <span class="n">La nabolaget presentere seg</span>
+          <span class="s">${n} stopp · ${pick === "megler" ? "meglerens utvalg" : "nærmeste steder"}</span>
+        </span>
+        ${icon("chevron-right", 18)}
+      </button>`;
+    }
+
+    // ---------- kamera ----------
+    /** Rammen legges rundt boligen + scenens tre steder, ikke rundt alle 182.
+     *  Da er de navngitte punktene lesbare, mens kategoriens øvrige punkter
+     *  ligger rundt som dempet tekstur: dekningen synes, uten å ta ordet. */
+    function fitScene(sheetHeight) {
+      const s = state();
+      const b = new mapboxgl.LngLatBounds();
+      // I steds-fanen strammes rammen til stedene alene. Kartet bekrefter fane-
+      // skiftet samtidig som brikken flytter seg. I ord-fanene (prosa og svar)
+      // står boligen med: teksten handler om området sett fra døra.
+      if (pane !== "steder") b.extend([s.board.home.coordinates.lng, s.board.home.coordinates.lat]);
+      for (const p of places(scene())) b.extend([p.coordinates.lng, p.coordinates.lat]);
+
+      // Sheeten dekker underkanten — uten padding for den legger fortellingen
+      // seg oppå stedene den snakker om. Høyden sendes inn av `settle`: å måle
+      // den her ville lest en verdi midt i høyde-animasjonen.
+      const sheetH =
+        sheetHeight ?? document.querySelector("[data-sheet]")?.offsetHeight ?? innerHeight * 0.45;
+      const bottom = Math.min(Math.round(sheetH) + 24, Math.round(innerHeight * 0.62));
+
+      s.map.fitBounds(b, {
+        padding: matchMedia(DESKTOP).matches
+          ? { top: 80, right: 80, bottom: 80, left: 80 }
+          : { top: 90, right: 48, bottom, left: 48 },
+        maxZoom: 15.4,
+        duration: 1100,
+      });
+    }
+
+    /** Sheeten har ÉN høyde gjennom hele omvisningen.
+     *
+     *  Den vokste før: åpnet du et sted, la sheeten seg etter teksten. Det ser
+     *  omtenksomt ut og er det motsatte — flaten du leser i, kartutsnittet over
+     *  den og avstanden ned til dekket endret seg av et trykk som bare skulle
+     *  åpne en setning. Følgen var større enn handlingen, og den kunne du ikke
+     *  styre. Nå er sheeten et vindu: innholdet scroller inni, vinduet står.
+     *
+     *  Høyden måles én gang, på første stopp med ord-fanen åpen — altså det
+     *  guiden faktisk serverer først. Da fyller den vanlige visningen sheeten
+     *  uten scroll, mens steds- og svar-fanen får noe å scrolle i. Grensene er
+     *  baselinens: REST_HIGH_FRACTION-taket og REST_LOW_MIN_PX-gulvet.
+     *  Brukeren kan fortsatt dra sheeten dit hen vil — det er baselinens drag,
+     *  urørt. */
+    let tourH = null;
+    function sizeStory(deckH = 0) {
+      if (!on || matchMedia(DESKTOP).matches) return undefined;
+      const sheet = document.querySelector("[data-sheet]");
+      const card = sheet?.querySelector("[data-story-card]");
+      if (!sheet || !card) return undefined;
+      const frameH = document.querySelector(".frame")?.clientHeight ?? innerHeight;
+      const grab = sheet.querySelector(".grab")?.offsetHeight ?? 44;
+      // Måles som scrolleren SELV rapporterer, ikke som kort + påslag: kortets
+      // margin og scrollerens padding for dekket ligger alt inne i det tallet.
+      // Regnet vi det ut selv, bommet vi med marginens 4 px — og de 4 pikslene
+      // ble klippet bort igjen av baselinen, så vinduet endret seg ved fanebytte.
+      if (tourH === null) {
+        const scroller = sheet.querySelector(".sheet-scroll");
+        tourH = grab + (scroller?.scrollHeight ?? card.offsetHeight + deckH);
+      }
+      const h = Math.max(Math.min(tourH, Math.round(frameH * 0.86)), 236);
+      // Gulvet flaten skal ha for at baselinens klipping treffer vinduet og
+      // ikke innholdet — se CSS-en for `--sty-card-min`. 10 px er flatens egen
+      // `margin-bottom`, resten er scrollerens padding for dekket.
+      document.documentElement.style.setProperty(
+        "--sty-card-min",
+        `${Math.max(0, h - grab - deckH - 10)}px`
+      );
+      state().sheetH = h;
+      sheet.style.height = `${h}px`;
+      return h;
+    }
+
+    /** Måler og setter sheeten etter layout, og rammer så inn kameraet med den
+     *  høyden sheeten faktisk fikk. Rekkefølgen er poenget: rammer vi inn
+     *  først, padder vi for en høyde sheeten ikke har ennå, og stedene
+     *  fortellingen snakker om havner bak den. */
+    function settle({ fit = false } = {}) {
+      // To frames, ikke én: i frame 1 er det nyrendrede kortet ennå ikke ferdig
+      // lagt ut, og førstegangs-målingen kom 4 px for lav. Frame 2 leser en
+      // ferdig layout, og 16 ms er usynlig mot høyde-animasjonens 420.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const h = sizeStory(paintDeck());
+          if (fit) fitScene(h);
+        })
+      );
+    }
+
+    // ---------- handlinger ----------
+    /* Kamerabevegelsen som venter på teksten. Trykker du et nytt sted før den
+       har fyrt, skal den forrige aldri komme etterpå — da flyr kartet til et
+       sted du alt har forlatt. */
+    let pendingFly = 0;
+    function flyAfterText(poi) {
+      clearTimeout(pendingFly);
+      if (!poi) return;
+      const s = state();
+      pendingFly = setTimeout(() => {
+        s.map.flyTo({
+          center: [poi.coordinates.lng, poi.coordinates.lat],
+          zoom: Math.max(s.map.getZoom(), 15.6),
+          duration: CAMERA_DURATION_MS,
+        });
+      }, CAMERA_DELAY_MS);
+    }
+
+    function begin() {
+      on = true;
+      step = 0;
+      pane = "tekst";
+      clearOpen();
+      spotFor = -1;
+      document.body.dataset.story = "on";
+      const s = state();
+      s.activeCategoryId = null;
+      s.activePoiId = null;
+      s.modalPoiId = null;
+      s.sheetH = null; // fortellingen har annen høyde enn kortlista
+      tourH = null; // måles på nytt for denne omvisningen, så én gang
+      rerender();
+      redrawMarkers();
+      settle({ fit: true });
+    }
+
+    function goto(n) {
+      step = Math.max(0, Math.min(scenes().length - 1, n));
+      pane = "tekst"; // nytt stopp begynner alltid med spørsmålet
+      clearOpen(); // ny scene, nytt utvalg — ikke en lukking brukeren merker
+      clearTimeout(pendingFly);
+      state().activePoiId = null;
+      rerender();
+      redrawMarkers();
+      settle({ fit: true });
+    }
+
+    /** Bytt fane innenfor stoppet. Kameraet følger etter, så skiftet kjennes. */
+    function showPane(next) {
+      if (next === pane) return; // trykk på aktiv fane skal ikke flytte kartet
+      pane = next;
+      // Åpne felt blir stående: bytter du fane og tilbake, står stedet du leste
+      // fortsatt åpent. Det er brukeren som lukker, ikke navigasjonen.
+      clearTimeout(pendingFly); // fanebyttet overtar kameraet
+      rerender();
+      redrawMarkers();
+      settle({ fit: true });
+    }
+
+    function end() {
+      on = false;
+      pane = "tekst";
+      clearOpen();
+      clearTimeout(pendingFly);
+      document.body.dataset.story = "off";
+      const s = state();
+      s.modalPoiId = null;
+      s.sheetH = null;
+      paintDeck();
+      showAll(); // nullstiller kategori + POI, tegner markører, rendrer
+      // Kameraet ut igjen: hele nabolaget, som når boardet åpnes. Nå er
+      // tettheten det du utforsker, ikke det første du må tolke.
+      s.map.flyTo({
+        center: [s.board.home.coordinates.lng, s.board.home.coordinates.lat],
+        zoom: 14.4,
+        duration: 900,
+      });
+    }
+
+    /** Åpner eller lukker ett felt, i DOM-en vi alt har.
+     *
+     *  Ingen render: `rerender()` bygger `#app` på nytt, og da mister sheeten
+     *  scroll-posisjonen sin. DET var hoppet — verst ved lukking, fordi du
+     *  gjerne har scrollet et stykke ned før du lukker igjen.
+     *
+     *  Høyden settes til feltets EGEN høyde, ikke CSS-taket (600/1200 px).
+     *  Lukker du fra taket, står feltet stille mens taket faller ned til
+     *  innholdet, og bevegelsen begynner for sent. */
+    function setDisclosure(el, open) {
+      if (!el) return;
+      el.style.maxHeight = `${el.scrollHeight}px`; // der feltet faktisk står nå
+      el.dataset.expanded = String(open);
+      if (open) return;
+      void el.offsetHeight; // tving fram utgangspunktet før vi ber om null
+      el.style.maxHeight = "0px";
+    }
+
+    /** Trykk på et sted: teksten åpner seg i raden, og kartet flyr dit ETTERPÅ.
+     *  Aldri en modal — det er den kompleksiteten modusen fjerner. Andre trykk
+     *  lukker DET stedet; andre åpne steder står som de står. */
+    function tapPlace(btn) {
+      const id = btn.dataset.storyPoi;
+      const opening = !openIds.has(id);
+      if (opening) openIds.add(id);
+      else openIds.delete(id);
+      btn.setAttribute("aria-current", String(opening));
+      if (btn.hasAttribute("aria-expanded")) btn.setAttribute("aria-expanded", String(opening));
+      setDisclosure(btn.parentElement.querySelector(".sty-narr"), opening);
+      // Kartet følger bare det du åpner. Lukker du et felt, blir kameraet
+      // stående — å fly tilbake på en lukking er en bevegelse du ikke ba om.
+      const s = state();
+      if (opening) {
+        s.activePoiId = id;
+        flyAfterText(s.board.poisById[String(id).toLowerCase()]);
+      } else if (s.activePoiId === id) {
+        s.activePoiId = null;
+        clearTimeout(pendingFly);
+      }
+      redrawMarkers(); // labelen på kartet, ikke sheeten
+    }
+
+    /** Trykk på et spørsmål. Svaret er tekst om området, ikke ett sted, så
+     *  kartet rører seg ikke — bare feltet i lista åpner seg. */
+    function tapFaq(btn) {
+      const id = btn.dataset.storyFaq;
+      const opening = !openFaqs.has(id);
+      if (opening) openFaqs.add(id);
+      else openFaqs.delete(id);
+      btn.setAttribute("aria-expanded", String(opening));
+      setDisclosure(btn.parentElement.querySelector(".faq-a"), opening);
+    }
+
+    // ---------- klikk ----------
+    /** Én ruting for begge flatene: baselinens `onClick` dekker sheeten og
+     *  sidekolonnen, dekkets egen lytter dekker det som ligger utenfor #app. */
+    function route(t) {
+      if (t.closest("[data-story-play]")) return begin(), true;
+      if (t.closest("[data-story-exit]")) return end(), true;
+      const nav = t.closest("[data-story-step]");
+      if (nav) return goto(step + Number(nav.dataset.storyStep)), true;
+      const tab = t.closest("[data-pane]");
+      if (tab) return showPane(tab.dataset.pane), true;
+      const row = t.closest("[data-story-poi]");
+      if (row) return tapPlace(row), true;
+      const q = t.closest("[data-story-faq]");
+      if (q) return tapFaq(q), true;
+      return false;
+    }
+
+    document.getElementById("deck").onclick = (ev) => route(ev.target);
+
+    // ---------- overstyringer ----------
+    Baseline.override({
+      sheetTop: () => (on ? storyCard() : playCard()),
+      sidebarTop: () => (on ? storyCard() : playCard()),
+      // Indeksen finnes fortsatt — den ligger bak «Avslutt».
+      mobileCard: (c, list) => (on ? "" : Baseline.baseMobileCard(c, list)),
+      desktopCard: (c) => (on ? "" : Baseline.baseDesktopCard(c)),
+      // Ingen tittel i presentasjonsmodus: «Bli kjent med nabolaget» sa ingenting
+      // stoppet ikke alt sier bedre, og tok en linje over spørsmålet.
+      sheetTitle: () => (on ? "" : "I nærheten"),
+
+      /** Scenens kategori står frem, resten dempes, og BARE de navngitte
+       *  stedene får navn på kartet. Uten dette ville 182 labels tent
+       *  samtidig så snart zoom-nivået krysset label-terskelen. */
+      marker(poi, cat) {
+        if (!on) return null;
+        const named = spotIds().has(poi.id);
+        const inScene = cat.id === scene().id;
+        return {
+          dim: !named && !inScene,
+          // Navn bare på det du faktisk har trykket. De tre stedene ligger tre
+          // minutter fra hverandre — tre labels samtidig ble uleselig grøt, og
+          // navnene står allerede i fortellingen.
+          label: poi.id === state().activePoiId,
+          className: named ? "named" : inScene ? "scene" : "",
+        };
+      },
+
+      onClick: (t) => route(t),
+    });
+
+    Baseline.start(BOARDS[board] ?? BOARDS.ranheim, { boards: BOARDS, active: board }).then(() => {
+      const map = state().map;
+      // Første scene kan ikke rammes inn før kartet har lastet stilen.
+      const opened = () => {
+        if (on) redrawMarkers();
+        settle({ fit: on });
+      };
+      if (map.loaded()) opened();
+      else map.once("load", opened);
+      // Sheeten måles på nytt når rammen endrer seg — baselinen rendrer på
+      // resize, men den kjenner ikke fortellingens høyde.
+      addEventListener("resize", () => settle());
+    });
+  </script>
+</body>
+</html>

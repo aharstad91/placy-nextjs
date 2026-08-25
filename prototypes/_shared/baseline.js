@@ -332,7 +332,7 @@ window.Baseline = (() => {
     return `<div class="sheet" data-sheet>
       <button class="grab" data-grab>
         <span class="bar"></span>
-        <span class="title">I nærheten</span>
+        <span class="title">${esc(R.sheetTitle())}</span>
       </button>
       <div class="sheet-scroll">
         ${R.sheetTop()}${hint}${body}
@@ -499,9 +499,17 @@ window.Baseline = (() => {
       const dim = S.activeCategoryId && S.activeCategoryId !== cat.id;
       for (const poi of cat.pois) {
         const active = poi.id === S.activePoiId;
-        const showLabel = active || (!dim && tier === "label");
+        // Iterasjonen kan overstyre per markør ({ dim, label, hidden }); et felt
+        // som mangler betyr «behold baselinens valg». Nødvendig fordi labels
+        // settes i JS — en iterasjon kan ikke navngi utvalgte punkter fra CSS.
+        const o = R.marker(poi, cat) ?? {};
+        if (o.hidden) continue;
+        const dimmed = o.dim ?? dim;
+        const showLabel = o.label ?? (active || (!dimmed && tier === "label"));
         const el = document.createElement("div");
-        el.className = `marker${dim ? " dim" : ""}${active ? " active" : ""}${tier === "dot" && !active ? " tiny" : ""}`;
+        el.className =
+          `marker${dimmed ? " dim" : ""}${active ? " active" : ""}` +
+          `${tier === "dot" && !active ? " tiny" : ""}${o.className ? ` ${o.className}` : ""}`;
         el.innerHTML =
           `<div class="pin" style="background:${esc(cat.color)}"></div>` +
           (showLabel ? `<div class="lbl">${esc(poi.name)}</div>` : "");
@@ -577,8 +585,24 @@ window.Baseline = (() => {
   }
 
   // ---------- render ----------
+  /** Scroll-posisjonen i de rullbare flatene, tatt vare på over en render.
+   *  Produksjonen er React og beholder nodene; her bygges `#app` på nytt, og
+   *  uten dette hopper flaten til topps hver gang noe rendrer — å dra kartet
+   *  rendrer, så det skjer midt i lesingen. Det er en portingskostnad, ikke en
+   *  oppførsel fra produksjonen. */
+  const SCROLLERS = [".sheet-scroll", ".catpage-scroll", ".sidebar .scroll"];
+  const readScroll = () =>
+    SCROLLERS.map((sel) => document.querySelector(sel)?.scrollTop ?? 0);
+  function restoreScroll(tops) {
+    SCROLLERS.forEach((sel, i) => {
+      const el = document.querySelector(sel);
+      if (el && tops[i]) el.scrollTop = tops[i];
+    });
+  }
+
   function render() {
     const app = document.getElementById("app");
+    const tops = readScroll();
     const isDesktop = matchMedia(DESKTOP).matches;
     const inCategory = !!S.activeCategoryId;
 
@@ -608,6 +632,7 @@ window.Baseline = (() => {
     if (window.lucide?.createIcons) lucide.createIcons();
     wire();
     if (!isDesktop) sizeMobileSurface();
+    restoreScroll(tops); // etter sizeMobileSurface: høyden må stå før scrollen
     if (S.map) S.map.resize();
   }
 
@@ -830,13 +855,18 @@ window.Baseline = (() => {
 
      `sidebarTop`/`sheetTop` er tomme i baselinen — de finnes for at en
      iterasjon kan legge noe FØR kategori-lista uten å røre resten.
-     `onClick` returnerer true hvis iterasjonen håndterte trykket. */
+     `onClick` returnerer true hvis iterasjonen håndterte trykket.
+     `marker` overstyrer én markørs { dim, label, hidden, className }; null =
+     baselinen. `className` finnes fordi to nivåer (dempet/ikke) ikke alltid er
+     nok — en iterasjon kan trenge et tredje, og resten skal da stiles i CSS. */
   const R = {
     desktopCard,
     mobileCard,
     sidebarTop: () => "",
     sheetTop: () => "",
     onClick: () => false,
+    marker: () => null,
+    sheetTitle: () => "I nærheten",
   };
 
   // ---------- oppstart ----------
@@ -896,6 +926,7 @@ window.Baseline = (() => {
       showAll,
       fitCategory,
       rerender: () => render(),
+      redrawMarkers: () => drawMarkers(),
       state: () => S,
     },
   };

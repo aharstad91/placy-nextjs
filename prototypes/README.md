@@ -54,6 +54,14 @@ nivå-1-board tomt ut selv om boardet faktisk viser tekst.
 | `01-fortelling-scroll` | Kandidat-retning | Kan boardet leses som én fortelling der kartet bare følger med? |
 | `02-en-stemme-to-formater` | Mobil-kortets innhold | Desktop selger stedet, mobil viser avstander. Skal mobil-kortet ha stemmen, tallene, eller begge? |
 | `03-svar-forst` | Hierarki | Hun har alt valgt stedet. Hva om boardet svarer først og indeksen ligger bak ett trykk? |
+| `04-fortelling-i-boardet` | Presentasjon vs. utforsking | Kan meglerens utvalg presenteres som en guidet rekkefølge inne i sheeten — uten lyd, uten bilder, og uten at ett kartpunkt må trykkes? |
+
+`04` har to grep som er verdt å ta med videre uansett hva dommen blir: sheeten
+har **én fast høyde gjennom hele omvisningen** (innholdet scroller, vinduet står
+— en flate som vokser av hvert trykk er en følge brukeren ikke ba om), og
+**ingenting lukker seg selv** (åpner du to steder, står begge åpne til du lukker
+dem). Transporten ligger i et fast dekk utenfor sheeten, så den ikke flytter seg
+med innholdet.
 
 Alle har en **← Prototyper**-chip øverst til venstre tilbake til galleriet.
 Den injiseres av `Proto.mountBackLink()` i `_shared/proto.js` og kommer gratis
@@ -64,7 +72,10 @@ målte bredde) til å legge deg ved siden av, slik `02` gjør.
 Alle har også en veksler øverst til høyre mellom **Kuratert** (Ranheim) og
 **Ukuratert** (Ferjemannsveien) — samme UI, to nivåer av datarikdom. `02` har i
 tillegg en variant-veksler øverst til venstre: **Tall** (= baselinen) /
-**Stemme** / **Begge**.
+**Stemme** / **Begge**, og `04` har **Tett** / **Fortelling** pluss **Megler** /
+**Nærmest** — den siste bytter bare ut hvem som plukket de tre stedene i hvert
+stopp, så forskjellen mellom en åpen og en ferdig kuratert versjon kan kjennes
+på samme board.
 
 ## Iterasjoner overstyrer, de kopierer ikke
 
@@ -79,15 +90,27 @@ Baseline.override({
   sheetTop() { ... },              // før kategori-lista på mobil
   sidebarTop() { ... },            // før kategori-lista på desktop
   onClick(target, ev) { ... },     // true = iterasjonen håndterte trykket
+  marker(poi, cat) { ... },        // { dim, label, hidden, className }, null = baselinen
+  sheetTitle() { ... },            // teksten i mobil-sheetens grab-handle
 });
 Baseline.start(BOARD, opts);       // ALLTID etter override
 ```
 
+`marker` finnes fordi labels settes i JS: en iterasjon kan ikke navngi utvalgte
+punkter fra CSS. Trenger du et tredje nivå mellom «dempet» og «ikke dempet»,
+returner en `className` og styl den selv — det er slik `04` skiller de tre
+navngitte stedene fra kategorien rundt og fra resten av nabolaget.
+
 `Baseline.util` gir byggeklossene baselinen selv bruker — `esc`, `icon`,
 `minutesOf`, `categorySubline`, `buildList`, `linkedText`, `byMinutesThenName`,
-`openPoi`, `selectCategory`, `fitCategory`, `rerender()`, `state()`.
-`Baseline.baseMobileCard` / `baseDesktopCard` lar en override delegere tilbake
-til baselinen (slik `03` gjør når indeksen åpnes).
+`openPoi`, `selectCategory`, `showAll`, `fitCategory`, `rerender()`,
+`redrawMarkers()`, `state()`. `Baseline.baseMobileCard` / `baseDesktopCard` lar
+en override delegere tilbake til baselinen (slik `03` gjør når indeksen åpnes).
+
+**Markør-gotcha:** Mapbox GL skriver `opacity` og `pointer-events` **inline** på
+markør-roten hver frame. En regel på `.marker` taper mot den — demping må ligge
+på barna (`.marker.dim .pin`), og skal pinnene gjøres inerte, kreves
+`pointer-events: none !important` fordi klikk-lytteren sitter på roten.
 
 Trenger iterasjonen å rive opp mer enn dette, er `cp -r 00-niva1-baseline`
 fortsatt riktig — men da er det en ny flate, ikke en iterasjon.
@@ -112,6 +135,13 @@ hver regel kommer fra.
 
 Avvik fra produksjon er merket `AVVIK` i koden. Prototype-veksleren øverst til
 høyre finnes ikke i produksjon.
+
+**Scroll-posisjon overlever en render.** `render()` bygger `#app` på nytt, og
+uten hjelp hopper de rullbare flatene til topps hver gang noe rendrer — og
+kartet rendrer på hver `moveend`, altså midt i lesingen. Baselinen tar vare på
+`scrollTop` i `.sheet-scroll`, `.catpage-scroll` og sidekolonnens `.scroll` over
+renderen. Det er en portingskostnad React ikke har, ikke en oppførsel fra
+produksjonen.
 
 ## Lage en ny iterasjon
 
