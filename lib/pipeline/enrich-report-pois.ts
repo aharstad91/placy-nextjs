@@ -155,6 +155,8 @@ export interface EnrichReportPoisResult {
     candidatesFound: number;
     imported: AnchorImportReport[];
     beyondCircle: number;
+    /** Fjerne kandidater som ikke besto realitets-gaten (≥4 virksomheter). */
+    rejected: Array<{ name: string; distanceMeters: number; memberCount: number }>;
   };
   warnings: string[];
 }
@@ -223,6 +225,7 @@ export async function enrichReportPois(options: {
       candidatesFound: anchorResult.candidatesFound,
       imported: anchorResult.imported,
       beyondCircle: anchorResult.beyondCircle,
+      rejected: anchorResult.rejected,
     };
   }
 

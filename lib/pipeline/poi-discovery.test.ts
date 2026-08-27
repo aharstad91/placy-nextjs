@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   discoverGooglePlaces,
   discoverAnchorCandidates,
+  probeAnchorMembers,
   discoverEnturStops,
   discoverBysykkelStations,
   generatePoiId,
@@ -384,6 +385,108 @@ describe("discoverAnchorCandidates — anker-søk utenfor sirkelen", () => {
   it("tomt svar gir tom liste, ikke kast", async () => {
     fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) });
     await expect(discoverAnchorCandidates({ center: SUNDSOYA }, "key")).resolves.toEqual([]);
+  });
+});
+
+describe("probeAnchorMembers — teller uten å importere", () => {
+  const THON = "ChIJjxqC94N8bUYR3lzOf1Jw3e4";
+  const ANCHOR = {
+    googlePlaceId: THON,
+    coordinates: { lat: 63.791835, lng: 11.486321 },
+  };
+
+  function tenant(name: string, types: string[], containerId: string | null = THON) {
+    return {
+      id: `place-${name}`,
+      displayName: { text: name },
+      location: { latitude: 63.791835, longitude: 11.486321 },
+      types,
+      businessStatus: "OPERATIONAL",
+      ...(containerId ? { containingPlaces: [{ id: containerId }] } : {}),
+    };
+  }
+
+  it("søker UTEN typefilter — spørsmålet er «hva ligger i bygget»", async () => {
+    fetchMock.mockResolvedValueOnce(placesResponse([]));
+    await probeAnchorMembers(ANCHOR, "key");
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.includedTypes).toBeUndefined();
+    expect(body.rankPreference).toBe("DISTANCE");
+    expect(body.locationRestriction.circle.radius).toBe(120);
+  });
+
+  it("teller bare det som peker PÅ ankeret, og ikke ankeret selv", async () => {
+    // Målt mot Thon Senter Verdal 2026-08-27: 20 steder innen 120 m, 19 med
+    // containingPlaces mot senteret — det tjuende var senteret selv.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        { ...tenant("Thon Senter Verdal", ["shopping_mall"], null), id: THON },
+        tenant("REMA 1000 VERDAL", ["grocery_store", "food_store"]),
+        tenant("Vitusapotek Innherred", ["pharmacy", "health"]),
+        tenant("INTERSPORT", ["sportswear_store", "sporting_goods_store"]),
+        tenant("Nille", ["home_goods_store", "store"]),
+        tenant("Nabobygget AS", ["store"], "ChIJannen"),
+      ])
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    expect(probe.memberCount).toBe(4);
+    expect(probe.saturated).toBe(false);
+  });
+
+  it("bygger kategorinavn av medlemmenes typer — første kjente type eier", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        tenant("REMA 1000", ["grocery_store"]),
+        tenant("Vitusapotek", ["pharmacy"]),
+        tenant("INTERSPORT", ["sportswear_store", "sporting_goods_store"]),
+        tenant("Moxie Skjønnhet AS", ["point_of_interest", "establishment"]),
+      ])
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    // Alle fire teller som medlemmer ...
+    expect(probe.memberCount).toBe(4);
+    // ... men bare de tre med en kategori vi kjenner bidrar til teksten.
+    // «sportswear_store» er ukjent, «sporting_goods_store» er butikk.
+    expect(probe.categoryNames).toEqual(["Dagligvare", "Apotek", "Butikk"]);
+  });
+
+  it("fullt svar merkes som «minst» — Googles tak er 20", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse(
+        Array.from({ length: 20 }, (_, i) => tenant(`Butikk ${i}`, ["clothing_store"]))
+      )
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    expect(probe.memberCount).toBe(20);
+    expect(probe.saturated).toBe(true);
+  });
+
+  it("permanent stengte leietakere teller ikke", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        { ...tenant("Nedlagt Butikk", ["clothing_store"]), businessStatus: "CLOSED_PERMANENTLY" },
+        tenant("REMA 1000", ["grocery_store"]),
+      ])
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    expect(probe.memberCount).toBe(1);
+  });
+
+  it("bygg uten containment gir null — gaten er presis, ikke geometrisk", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        tenant("Butikk over gata", ["clothing_store"], null),
+        tenant("Annen butikk", ["clothing_store"], null),
+      ])
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    expect(probe).toEqual({ memberCount: 0, categoryNames: [], saturated: false });
   });
 });
 

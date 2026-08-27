@@ -14,19 +14,36 @@
  * et board på bygda får sine tre — som er hele poenget, siden det er nettopp
  * der inkumbenten (FINNs Nærområdet-kart) er svakest.
  *
+ * ## Realitets-gaten når poolen ikke kan svare
+ *
  * Passet importerer BARE ankeret, ikke medlemmene. Et anker utenfor sirkelen
- * har derfor null medlemmer i poolen og blir ikke forfremmet av
- * `resolve-anchors-step` (som krever fire). Det lever som et vanlig
- * kjøpesenter-sted til noe gir det innhold — se plan-dokumentet.
+ * har derfor null medlemmer i poolen, og `resolve-anchors-step` — som krever
+ * fire — ville aldri forfremmet det. Uten mottiltak ville Thon Senter Verdal
+ * landet som et vanlig butikk-sted, og et mistypet «senter» sluppet inn like
+ * lett.
+ *
+ * Mottiltaket er å skille «har medlemmer» fra «lagrer medlemmer»: kravet i
+ * regelen er at fire virksomheter FINNES i bygget, ikke at de ligger i basen.
+ * `probeAnchorMembers` teller dem med ett kall mot Google og bygger
+ * `anchor_summary` av kategoriene deres, uten at én butikk importeres. Et
+ * fjernt anker som ikke består firetallet blir ikke importert i det hele tatt.
+ *
+ * `anchor_summary IS NOT NULL` er dermed ankerflagget, uansett hvilken av de
+ * to veiene stedet kom inn: poolen (`resolve-anchors-step`) eller proben.
  */
 
 import {
   discoverAnchorCandidates,
+  probeAnchorMembers,
   ANCHOR_GOOGLE_TYPE,
   ANCHOR_SEARCH_RADIUS_M,
   type AnchorHit,
+  type AnchorMemberProbe,
 } from "@/lib/pipeline/poi-discovery";
 import { persistDiscoveredPOIs } from "@/lib/pipeline/import-pois";
+import { buildAnchorSummary } from "@/lib/pipeline/resolve-anchors-step";
+import { DEFAULT_MIN_MEMBERS } from "@/lib/board/anchor-membership";
+import { createServerClient } from "@/lib/supabase/client";
 
 export { ANCHOR_GOOGLE_TYPE, ANCHOR_SEARCH_RADIUS_M };
 
@@ -47,6 +64,12 @@ export interface AnchorImportReport {
   distanceMeters: number;
   /** Ligger utenfor prosjektsirkelen — altså et sted standardpasset ikke fant. */
   beyondCircle: boolean;
+  /** Målt medlemstall. Bare satt for ankre utenfor sirkelen (proben). */
+  memberCount?: number;
+  /** «minst N» — kallet traff Googles tak på 20. */
+  memberCountIsFloor?: boolean;
+  /** Teksten som ble skrevet til `anchor_summary`. */
+  summary?: string;
 }
 
 export interface DiscoverAnchorsStepResult {
@@ -55,6 +78,8 @@ export interface DiscoverAnchorsStepResult {
   imported: AnchorImportReport[];
   /** Hvor mange av de importerte som lå utenfor prosjektsirkelen. */
   beyondCircle: number;
+  /** Fjerne kandidater som ikke besto realitets-gaten — ikke importert. */
+  rejected: Array<{ name: string; distanceMeters: number; memberCount: number }>;
   warnings: string[];
 }
 
@@ -118,6 +143,8 @@ export async function discoverAnchorsForProject(options: {
   radiusMeters: number;
   searchRadiusMeters?: number;
   minCount?: number;
+  /** Terskelen for realitets-gaten. Delt med `resolveAnchors` (Unit 1). */
+  minMembers?: number;
 }): Promise<DiscoverAnchorsStepResult> {
   const {
     projectId,
@@ -126,12 +153,14 @@ export async function discoverAnchorsForProject(options: {
     radiusMeters,
     searchRadiusMeters = ANCHOR_SEARCH_RADIUS_M,
     minCount = ANCHOR_MIN_COUNT,
+    minMembers = DEFAULT_MIN_MEMBERS,
   } = options;
 
   const empty: DiscoverAnchorsStepResult = {
     candidatesFound: 0,
     imported: [],
     beyondCircle: 0,
+    rejected: [],
     warnings: [],
   };
 
@@ -156,47 +185,199 @@ export async function discoverAnchorsForProject(options: {
 
   if (hits.length === 0) {
     return {
-      candidatesFound: 0,
-      imported: [],
-      beyondCircle: 0,
+      ...empty,
       warnings: [
         `⚠️  Ingen kjøpesenter funnet innen ${Math.round(searchRadiusMeters / 1000)} km — boardet får ingen ankre`,
       ],
     };
   }
 
-  const selected = selectAnchorImports(hits, radiusMeters, minCount);
-  const imported: AnchorImportReport[] = selected.map((h) => ({
-    id: h.poi.id,
-    name: h.poi.name,
-    distanceMeters: Math.round(h.distanceMeters),
-    beyondCircle: h.distanceMeters > radiusMeters,
-  }));
-  const beyondCircle = imported.filter((a) => a.beyondCircle).length;
-
   const warnings: string[] = [];
+  const selected = selectAnchorImports(hits, radiusMeters, minCount);
+  const inside = selected.filter((h) => h.distanceMeters <= radiusMeters);
+  const beyond = selected.filter((h) => h.distanceMeters > radiusMeters);
+
+  // Ankre INNENFOR sirkelen probes ikke: medlemmene deres importeres av
+  // standardpasset, så poolen svarer på firetallet gratis i Steg 5b.
+  const accepted: Array<{ hit: AnchorHit; probe: AnchorMemberProbe }> = [];
+  const rejected: DiscoverAnchorsStepResult["rejected"] = [];
+
+  for (const hit of beyond) {
+    const googlePlaceId = hit.poi.googlePlaceId;
+    if (!googlePlaceId) {
+      // Proben slår opp containment på Googles egen id. Uten den kan vi ikke
+      // telle, og et utellet sted importeres ikke — men tapet skal ikke være
+      // stille.
+      warnings.push(
+        `⚠️  ${hit.poi.name} hoppet over: mangler Google place-id, kan ikke telles`
+      );
+      continue;
+    }
+
+    let probe: AnchorMemberProbe;
+    try {
+      probe = await probeAnchorMembers(
+        { googlePlaceId, coordinates: hit.poi.coordinates },
+        apiKey
+      );
+    } catch (err) {
+      // Uverifisert er ikke det samme som godkjent. Et sted 12 km unna som vi
+      // ikke fikk telt, importeres ikke — men tapet skal være synlig.
+      const msg = err instanceof Error ? err.message : String(err);
+      warnings.push(`⚠️  Kunne ikke telle medlemmer i ${hit.poi.name}: ${msg}`);
+      continue;
+    }
+
+    if (probe.memberCount < minMembers) {
+      rejected.push({
+        name: hit.poi.name,
+        distanceMeters: Math.round(hit.distanceMeters),
+        memberCount: probe.memberCount,
+      });
+      continue;
+    }
+    accepted.push({ hit, probe });
+  }
+
+  const toPersist = [...inside, ...accepted.map((a) => a.hit)];
+  if (toPersist.length === 0) {
+    return {
+      ...empty,
+      candidatesFound: hits.length,
+      rejected,
+      warnings: [
+        ...warnings,
+        `⚠️  Ingen av de ${beyond.length} nærmeste kjøpesentrene besto realitets-gaten (≥${minMembers} virksomheter)`,
+      ],
+    };
+  }
+
   try {
     await persistDiscoveredPOIs(
-      selected.map((h) => h.poi),
+      toPersist.map((h) => h.poi),
       projectId,
       { label: "discoverAnchorsForProject" }
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
+      ...empty,
       candidatesFound: hits.length,
-      imported: [],
-      beyondCircle: 0,
-      warnings: [`⚠️  Anker-import feilet: ${msg}`],
+      rejected,
+      warnings: [...warnings, `⚠️  Anker-import feilet: ${msg}`],
     };
   }
 
+  const summaries = await writeProbedAnchorSummaries(accepted, warnings);
+
+  const imported: AnchorImportReport[] = toPersist.map((h) => {
+    const probe = accepted.find((a) => a.hit.poi.id === h.poi.id)?.probe;
+    return {
+      id: h.poi.id,
+      name: h.poi.name,
+      distanceMeters: Math.round(h.distanceMeters),
+      beyondCircle: h.distanceMeters > radiusMeters,
+      ...(probe
+        ? {
+            memberCount: probe.memberCount,
+            memberCountIsFloor: probe.saturated,
+            summary: summaries.get(h.poi.id) ?? "",
+          }
+        : {}),
+    };
+  });
+
+  const beyondCircle = imported.filter((a) => a.beyondCircle).length;
   if (beyondCircle > 0) {
-    const nearest = imported.find((a) => a.beyondCircle);
+    const first = imported.find((a) => a.beyondCircle)!;
     warnings.push(
-      `ℹ️  ${beyondCircle} anker hentet utenfor prosjektsirkelen (nærmeste: ${nearest?.name} ${((nearest?.distanceMeters ?? 0) / 1000).toFixed(1)} km) — medlemmene deres importeres ikke`
+      `ℹ️  ${beyondCircle} anker hentet utenfor prosjektsirkelen (nærmeste: ${first.name} ${(first.distanceMeters / 1000).toFixed(1)} km, ${first.memberCountIsFloor ? "minst " : ""}${first.memberCount} virksomheter) — medlemmene deres importeres ikke`
+    );
+  }
+  for (const r of rejected) {
+    warnings.push(
+      `ℹ️  ${r.name} (${(r.distanceMeters / 1000).toFixed(1)} km) hoppet over: bare ${r.memberCount} virksomheter i bygget`
     );
   }
 
-  return { candidatesFound: hits.length, imported, beyondCircle, warnings };
+  return { candidatesFound: hits.length, imported, beyondCircle, rejected, warnings };
+}
+
+/**
+ * Skriver `anchor_summary` på de probede ankrene, og tagger radene så hele
+ * passet kan angres:
+ *
+ *   UPDATE v2.pois SET anchor_summary = NULL,
+ *          poi_metadata = poi_metadata - 'anchor_probe'
+ *   WHERE poi_metadata->>'anchor_probe' IS NOT NULL;
+ *
+ * Fail-soft: en skrivefeil her betyr et anker uten register, ikke et board
+ * uten anker.
+ */
+async function writeProbedAnchorSummaries(
+  accepted: Array<{ hit: AnchorHit; probe: AnchorMemberProbe }>,
+  warnings: string[]
+): Promise<Map<string, string>> {
+  const written = new Map<string, string>();
+  if (accepted.length === 0) return written;
+
+  let db: ReturnType<ReturnType<typeof createServerClient>["schema"]>;
+  try {
+    // `createServerClient` KASTER uten service-role-config (fail-fast, PRD 1
+    // Besl. 10). Her er kontrakten fail-soft, så kastet fanges.
+    db = createServerClient().schema("v2");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    warnings.push(`⚠️  Anker-tekst ikke skrevet (Supabase utilgjengelig): ${msg}`);
+    return written;
+  }
+
+  const ids = accepted.map((a) => a.hit.poi.id);
+  const { data: rows, error: readError } = await db
+    .from("pois")
+    .select("id, poi_metadata")
+    .in("id", ids);
+
+  if (readError) {
+    warnings.push(`⚠️  Kunne ikke lese anker-metadata: ${readError.message}`);
+    return written;
+  }
+
+  const metadataById = new Map(
+    (rows ?? []).map((r) => [
+      r.id as string,
+      (r.poi_metadata ?? {}) as Record<string, unknown>,
+    ])
+  );
+  const today = new Date().toISOString().slice(0, 10);
+
+  for (const { hit, probe } of accepted) {
+    const summary = buildAnchorSummary(probe.categoryNames);
+    const { error } = await db
+      .from("pois")
+      .update({
+        anchor_summary: summary || null,
+        poi_metadata: {
+          ...(metadataById.get(hit.poi.id) ?? {}),
+          anchor_probe: {
+            date: today,
+            member_count: probe.memberCount,
+            saturated: probe.saturated,
+          },
+        },
+        // Et anker er aldri medlem av noe.
+        parent_poi_id: null,
+      })
+      .eq("id", hit.poi.id);
+
+    if (error) {
+      warnings.push(
+        `⚠️  Kunne ikke skrive anker-tekst for ${hit.poi.name}: ${error.message}`
+      );
+      continue;
+    }
+    written.set(hit.poi.id, summary);
+  }
+
+  return written;
 }

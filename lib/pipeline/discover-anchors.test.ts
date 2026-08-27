@@ -3,6 +3,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 vi.mock("@/lib/pipeline/poi-discovery", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/pipeline/poi-discovery")>()),
   discoverAnchorCandidates: vi.fn(),
+  probeAnchorMembers: vi.fn(),
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  createServerClient: vi.fn(),
 }));
 
 vi.mock("@/lib/pipeline/import-pois", () => ({
@@ -16,10 +21,12 @@ vi.mock("@/lib/pipeline/import-pois", () => ({
 
 import {
   discoverAnchorCandidates,
+  probeAnchorMembers,
   type AnchorHit,
   type DiscoveredPOI,
 } from "@/lib/pipeline/poi-discovery";
 import { persistDiscoveredPOIs } from "@/lib/pipeline/import-pois";
+import { createServerClient } from "@/lib/supabase/client";
 import {
   selectAnchorImports,
   discoverAnchorsForProject,
@@ -40,6 +47,7 @@ function hits(pairs: Array<[string, number] | [string, number, boolean]>): Ancho
   return pairs.map(([name, km, rated]) => ({
     poi: {
       id: `google-${name.toLowerCase().replace(/\s+/g, "-")}`,
+      googlePlaceId: `ChIJ-${name.toLowerCase().replace(/\s+/g, "-")}`,
       name,
       coordinates: { lat: 63.4, lng: 10.4 },
       category: { id: "shopping", name: "Kjøpesenter", icon: "ShoppingBag", color: "#8b5cf6" },
@@ -185,11 +193,51 @@ const BASE = {
   radiusMeters: PROJECT_RADIUS_M,
 };
 
+/** Nok medlemmer til å bestå realitets-gaten. */
+const REAL_MALL = {
+  memberCount: 19,
+  categoryNames: ["Dagligvare", "Apotek", "Butikk", "Butikk", "Hotell"],
+  saturated: false,
+};
+
+function buildSupabase() {
+  const updates: Array<{ patch: Record<string, unknown>; id: unknown }> = [];
+  const thenable = (value: unknown) => ({
+    then: (resolve: (v: unknown) => unknown) => Promise.resolve(value).then(resolve),
+  });
+  const db = {
+    from: () => ({
+      select: () => ({
+        in: () =>
+          thenable({
+            data: [{ id: "google-thon-senter-verdal", poi_metadata: { kilde: "beholdes" } }],
+            error: null,
+          }),
+      }),
+      update: (patch: Record<string, unknown>) => ({
+        eq: (_col: string, id: unknown) => {
+          updates.push({ patch, id });
+          return thenable({ error: null });
+        },
+      }),
+    }),
+  };
+  return { client: { schema: () => db }, updates };
+}
+
 describe("discoverAnchorsForProject", () => {
+  let updates: Array<{ patch: Record<string, unknown>; id: unknown }>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("GOOGLE_PLACES_API_KEY", "test-key");
     vi.mocked(discoverAnchorCandidates).mockResolvedValue(SUNDSOYA);
+    vi.mocked(probeAnchorMembers).mockResolvedValue(REAL_MALL);
+    const supabase = buildSupabase();
+    updates = supabase.updates;
+    vi.mocked(createServerClient).mockReturnValue(
+      supabase.client as unknown as ReturnType<typeof createServerClient>
+    );
   });
 
   afterEach(() => {
@@ -219,19 +267,106 @@ describe("discoverAnchorsForProject", () => {
       name: "Thon Senter Verdal",
       distanceMeters: 12140,
       beyondCircle: true,
+      memberCount: 19,
     });
     expect(
       result.warnings.some((w) => w.includes("utenfor prosjektsirkelen")),
     ).toBe(true);
   });
 
-  it("ingenting utenfor sirkelen → ingen warning, ingen støy i loggen", async () => {
+  it("ingenting utenfor sirkelen → ingen prober, ingen warning", async () => {
     vi.mocked(discoverAnchorCandidates).mockResolvedValue(OPPDAL);
 
     const result = await discoverAnchorsForProject(BASE);
 
     expect(result.beyondCircle).toBe(0);
     expect(result.warnings).toEqual([]);
+    // Ankre INNENFOR sirkelen har medlemmene sine i poolen; Steg 5b svarer på
+    // firetallet gratis. Å probe dem ville vært betalt for samme svar.
+    expect(probeAnchorMembers).not.toHaveBeenCalled();
+    expect(updates).toHaveLength(0);
+  });
+
+  it("skriver anchor_summary og angre-tagg på de probede ankrene", async () => {
+    await discoverAnchorsForProject(BASE);
+
+    expect(updates).toHaveLength(3);
+    const first = updates[0];
+    expect(first.id).toBe("google-thon-senter-verdal");
+    expect(first.patch.anchor_summary).toBe("Butikk, apotek, dagligvare og hotell");
+    // Et anker er aldri medlem av noe.
+    expect(first.patch.parent_poi_id).toBeNull();
+    const metadata = first.patch.poi_metadata as Record<string, unknown>;
+    expect(metadata.kilde).toBe("beholdes");
+    expect(metadata.anchor_probe).toMatchObject({ member_count: 19, saturated: false });
+  });
+
+  it("teksten sier «minst» når Googles tak på 20 ble truffet", async () => {
+    vi.mocked(probeAnchorMembers).mockResolvedValue({ ...REAL_MALL, saturated: true });
+
+    const result = await discoverAnchorsForProject(BASE);
+
+    expect(result.imported[0].memberCountIsFloor).toBe(true);
+    expect(result.warnings.some((w) => w.includes("minst 19 virksomheter"))).toBe(true);
+  });
+
+  it("under fire virksomheter → ikke importert, og det SIES hvorfor", async () => {
+    // Realitets-gaten er den samme som Unit 1 bruker i poolen — den er bare
+    // målt hos Google i stedet, siden medlemmene aldri importeres.
+    vi.mocked(probeAnchorMembers)
+      .mockResolvedValueOnce(REAL_MALL)
+      .mockResolvedValueOnce({ memberCount: 2, categoryNames: ["Butikk"], saturated: false })
+      .mockResolvedValueOnce(REAL_MALL);
+
+    const result = await discoverAnchorsForProject(BASE);
+
+    expect(result.imported.map((a) => a.name)).toEqual([
+      "Thon Senter Verdal",
+      "Alti Magneten Mall",
+    ]);
+    expect(result.rejected).toEqual([
+      { name: "Alti Verdal", distanceMeters: 12380, memberCount: 2 },
+    ]);
+    expect(result.warnings.some((w) => w.includes("bare 2 virksomheter"))).toBe(true);
+  });
+
+  it("probe-feil er ikke det samme som godkjent — stedet droppes med warning", async () => {
+    vi.mocked(probeAnchorMembers).mockRejectedValue(new Error("timeout"));
+
+    const result = await discoverAnchorsForProject(BASE);
+
+    expect(result.imported).toEqual([]);
+    expect(persistDiscoveredPOIs).not.toHaveBeenCalled();
+    expect(result.warnings.some((w) => w.includes("Kunne ikke telle medlemmer"))).toBe(true);
+  });
+
+  it("ingen fjerne kandidater består → warning som sier at boardet står uten", async () => {
+    vi.mocked(probeAnchorMembers).mockResolvedValue({
+      memberCount: 1,
+      categoryNames: [],
+      saturated: false,
+    });
+
+    const result = await discoverAnchorsForProject(BASE);
+
+    expect(result.rejected).toHaveLength(3);
+    expect(result.warnings.some((w) => w.includes("realitets-gaten"))).toBe(true);
+    expect(persistDiscoveredPOIs).not.toHaveBeenCalled();
+  });
+
+  it("ankre innenfor sirkelen importeres selv om de fjerne stryker", async () => {
+    vi.mocked(discoverAnchorCandidates).mockResolvedValue(VIKHAMMER);
+    vi.mocked(probeAnchorMembers).mockResolvedValue({
+      memberCount: 0,
+      categoryNames: [],
+      saturated: false,
+    });
+
+    const result = await discoverAnchorsForProject(BASE);
+
+    expect(result.imported.map((a) => a.name)).toEqual(["Vikhammer senteret"]);
+    expect(result.beyondCircle).toBe(0);
+    expect(result.rejected).toHaveLength(2);
   });
 
   it("uten API-nøkkel: hopper over med warning, kaster ikke", async () => {
@@ -272,16 +407,34 @@ describe("discoverAnchorsForProject", () => {
 
     expect(result.imported).toEqual([]);
     expect(result.beyondCircle).toBe(0);
-    expect(result.warnings[0]).toContain("DB nede");
+    expect(result.warnings.some((w) => w.includes("DB nede"))).toBe(true);
   });
 
-  it("søkeradius og minstetall kan overstyres av kalleren", async () => {
-    await discoverAnchorsForProject({ ...BASE, searchRadiusMeters: 5000, minCount: 1 });
+  it("manglende Supabase gir anker uten register, ikke board uten anker", async () => {
+    vi.mocked(createServerClient).mockImplementation(() => {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY mangler");
+    });
+
+    const result = await discoverAnchorsForProject(BASE);
+
+    expect(result.imported).toHaveLength(3);
+    expect(result.warnings.some((w) => w.includes("Supabase utilgjengelig"))).toBe(true);
+  });
+
+  it("søkeradius, minstetall og medlemsterskel kan overstyres", async () => {
+    await discoverAnchorsForProject({
+      ...BASE,
+      searchRadiusMeters: 5000,
+      minCount: 1,
+      minMembers: 25,
+    });
 
     expect(vi.mocked(discoverAnchorCandidates).mock.calls[0][0]).toEqual({
       center: { lat: BASE.lat, lng: BASE.lng },
       radius: 5000,
     });
-    expect(vi.mocked(persistDiscoveredPOIs).mock.calls[0][0]).toHaveLength(1);
+    // minCount 1 → én kandidat probes; minMembers 25 → 19 er ikke nok.
+    expect(probeAnchorMembers).toHaveBeenCalledTimes(1);
+    expect(persistDiscoveredPOIs).not.toHaveBeenCalled();
   });
 });

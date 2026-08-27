@@ -213,8 +213,12 @@ export async function provisionReportBoard(
       `Anker-søk: ${imported.length} av ${candidatesFound} kjøpesenter tatt med (${beyondCircle} utenfor sirkelen)`
     );
     for (const a of imported) {
+      const members =
+        a.memberCount === undefined
+          ? ""
+          : `, ${a.memberCountIsFloor ? "minst " : ""}${a.memberCount} virksomheter`;
       log(
-        `   · ${a.name} — ${(a.distanceMeters / 1000).toFixed(1)} km${a.beyondCircle ? " (utenfor sirkelen)" : ""}`
+        `   · ${a.name} — ${(a.distanceMeters / 1000).toFixed(1)} km${a.beyondCircle ? " (utenfor sirkelen" + members + ")" : ""}`
       );
     }
   }

@@ -658,6 +658,7 @@ WHERE poi_metadata->>'anchor_resolution' IS NOT NULL;
 |---|---|
 | Avstandsrangert `shopping_mall`-søk (`rankPreference: DISTANCE`, 20 km) | `lib/pipeline/poi-discovery.ts` — `discoverAnchorCandidates` |
 | Utvalgsregelen, ren og testbar | `lib/pipeline/discover-anchors.ts` — `selectAnchorImports` |
+| Medlems-probe uten import (realitets-gaten for fjerne ankre) | `lib/pipeline/poi-discovery.ts` — `probeAnchorMembers` |
 | Steget, fail-soft | `lib/pipeline/discover-anchors.ts` — `discoverAnchorsForProject` |
 | Lagringshalvdelen av importen, løsrevet fra sirkel-søket | `lib/pipeline/import-pois.ts` — `persistDiscoveredPOIs` |
 | Innkobling + logging | `lib/pipeline/enrich-report-pois.ts` (steg 2), `lib/pipeline/provision.ts` |
@@ -716,14 +717,43 @@ og utvider ikke sirkelen. Strindfjordvegen 10 blir stående med fire ankre, og d
 Lades leietakere ligger like utenfor og finnes heller ikke i poolen, så ingen medlemmer blir
 foreldreløse.
 
-**Åpent, krever eier-beslutning før Unit 8:** et anker utenfor sirkelen får ingen medlemmer
-importert (beslutning 6), og Unit 1 forfremmer bare kandidater med ≥4 medlemmer (beslutning 2).
-Thon Senter Verdal lander derfor i poolen som et vanlig `shopping`-sted, ikke med `isAnchor` og
-register — mens akseptansen over sier «som ankre». De tre utsagnene kan ikke alle stemme. Valget
-står mellom å importere medlemmene til ankre utenfor sirkelen (bryter beslutning 6) og å la et
-utpekt anker være anker uten medlemmer (bryter beslutning 2). Ikke avgjort her.
+**Realitets-gaten for fjerne ankre: tell medlemmene, ikke importer dem** (avgjort med Andreas
+2026-08-27). Et anker utenfor sirkelen får ingen medlemmer importert (beslutning 6), og Unit 1
+forfremmer bare kandidater med ≥4 medlemmer (beslutning 2) — så Thon Senter Verdal ville landet som
+et vanlig `shopping`-sted mens akseptansen sier «som ankre». Løsningen er at kravet i beslutning 2
+er at fire virksomheter FINNES i bygget, ikke at de ligger i basen. Begge beslutningene står.
 
-**Kostnad:** ett ekstra `searchNearby`-kall per provisjonering.
+`probeAnchorMembers` er ett type-løst `searchNearby` på 120 m rundt ankeret, der treffene filtreres
+på `containingPlaces`. Målt mot Thon Senter Verdal: 20 steder innen 120 m, 19 av dem peker på
+senteret — Rema 1000, Vitusapotek, Intersport, Nille, Telenor, Helseloftet. Ett kall gir både beviset
+og råstoffet til `anchor_summary`, uten at én butikk havner i basen. Et fjernt senter som ikke består
+firetallet importeres ikke i det hele tatt, og loggen sier hvem og hvorfor.
+
+Målt på alle fem fjerne ankre passet faktisk ville importert (lese-only, 2026-08-27):
+
+| Anker | Avstand | Virksomheter | `anchor_summary` |
+|---|---|---|---|
+| Thon Senter Verdal | 12,1 km | minst 19 | «Butikk, apotek, dagligvare og hotell» |
+| Alti Verdal | 12,4 km | minst 5 | «Butikk og dagligvare» |
+| Alti Magneten Mall | 14,8 km | minst 19 | «Butikk og kafé» |
+| Grilstad mall | 6,3 km | minst 19 | «Butikk, apotek, frisør, post, restaurant og mer» |
+| Sveberg Handelspark | 6,4 km | minst 17 | «Butikk, dagligvare, apotek, drivstoff, frisør og mer» |
+
+Alle fem består. «Minst» er Googles tak på 20 treff per kall — nok både for firetallet og for
+«og mer»-halen. Tynne tekster («Butikk og kafé» for 19 leietakere) skyldes at mange leietakere bærer
+typer `GOOGLE_CATEGORY_MAP` ikke kjenner; den blir bedre når kartet vokser, uten at noe her endres.
+
+**`anchor_summary IS NOT NULL` er ankerflagget** — uansett hvilken av de to veiene stedet kom inn:
+poolen (`resolve-anchors-step`, Unit 2) eller proben (dette steget). Unit 4 skal lese den, ikke
+telle barn. Angre-taggen for proben er `poi_metadata.anchor_probe`:
+
+```sql
+UPDATE v2.pois SET anchor_summary = NULL, poi_metadata = poi_metadata - 'anchor_probe'
+WHERE poi_metadata->>'anchor_probe' IS NOT NULL;
+```
+
+**Kostnad:** ett `searchNearby` per provisjonering, pluss ett per fjernt anker (maks tre, og bare på
+boards som mangler sentre i nærheten). Urbane boards betaler ett kall totalt.
 
 **Ikke kjørt mot prod.** Steget er koblet inn i provisjoneringen, men ingen board er re-provisjonert
 — samme merge-port som Unit 2 (se der).

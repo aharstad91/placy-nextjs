@@ -417,7 +417,7 @@ export function subdivideCircle(circle: SearchCircle): SearchCircle[] {
  * mekanismen for full dekning, og de to strategiene løser ulike problemer.
  */
 async function searchNearbyOnce(
-  category: string,
+  category: string | null,
   circle: SearchCircle,
   apiKey: string,
   rankPreference?: "DISTANCE"
@@ -439,7 +439,9 @@ async function searchNearbyOnce(
           "X-Goog-FieldMask": NEARBY_FIELD_MASK,
         },
         body: JSON.stringify({
-          includedTypes: [category],
+          // `null` = ingen typefilter. Brukes av medlems-proben, som spør
+          // «hva ligger i dette bygget» og ikke «hvor er nærmeste bakeri».
+          ...(category ? { includedTypes: [category] } : {}),
           maxResultCount: NEARBY_PAGE_MAX,
           ...(rankPreference ? { rankPreference } : {}),
           locationRestriction: {
@@ -457,7 +459,9 @@ async function searchNearbyOnce(
   }
 
   if (!response.ok) {
-    console.error(`    ✗ Feil ved søk etter ${category}: ${response.status}`);
+    console.error(
+      `    ✗ Feil ved søk etter ${category ?? "alle typer"}: ${response.status}`
+    );
     return { places: [], saturated: false };
   }
 
@@ -795,6 +799,79 @@ export async function discoverAnchorCandidates(
   // utvalgsregelen leser en PREFIKS av lista. Sorter selv.
   hits.sort((a, b) => a.distanceMeters - b.distanceMeters || a.poi.id.localeCompare(b.poi.id));
   return hits;
+}
+
+/**
+ * Radiusen medlems-proben spør innenfor. 120 m dekker et stort kjøpesenter med
+ * margin (Sirkus' fjerneste medlem ligger ~150 m fra senterkoordinaten, men
+ * proben leser `containingPlaces` og ikke avstand, så radiusen er bare hvor
+ * Google får lov til å lete).
+ */
+export const ANCHOR_MEMBER_PROBE_RADIUS_M = 120;
+
+export interface AnchorMemberProbe {
+  /** Virksomheter Google sier ligger INNE i ankeret. */
+  memberCount: number;
+  /** Placy-kategorinavn, ett per medlem som har en kategori vi kjenner. */
+  categoryNames: string[];
+  /** Kallet kom tilbake fullt — senteret har MINST så mange, ikke nøyaktig. */
+  saturated: boolean;
+}
+
+/**
+ * Teller virksomhetene i et anker UTEN å importere dem.
+ *
+ * Realitets-gaten («minst fire virksomheter oppløses inn i det») krever at de
+ * fire FINNES — ikke at vi lagrer dem. For et anker innenfor prosjektsirkelen
+ * svarer poolen på det spørsmålet gratis, og `resolve-anchors-step` gjør det.
+ * For et anker 12 km unna importeres ingen medlemmer, så poolen kan ikke svare
+ * — og uten et svar ville et mistypet «senter» sluppet inn like lett som Thon
+ * Senter Verdal.
+ *
+ * Proben er ett type-løst `searchNearby` rundt ankeret der treffene filtreres
+ * på `containingPlaces`. Målt 2026-08-27 mot Thon Senter Verdal: 20 steder
+ * innen 120 m, 19 av dem peker på senteret — med Rema 1000, Vitusapotek,
+ * Intersport, Nille og Telenor blant dem. Ett kall gir altså både beviset og
+ * råstoffet til `anchor_summary`, uten at én butikk havner i basen.
+ *
+ * Taket på 20 gjelder: et stort senter rapporteres som «minst 20»
+ * (`saturated`), ikke eksakt. Det er nok både for firetallet og for
+ * «og mer»-halen i teksten.
+ */
+export async function probeAnchorMembers(
+  anchor: { googlePlaceId: string; coordinates: Coordinates },
+  apiKey: string,
+  radiusMeters: number = ANCHOR_MEMBER_PROBE_RADIUS_M
+): Promise<AnchorMemberProbe> {
+  const { places, saturated } = await searchNearbyOnce(
+    null,
+    { ...anchor.coordinates, radius: radiusMeters, depth: 0 },
+    apiKey,
+    "DISTANCE"
+  );
+
+  const categoryNames: string[] = [];
+  let memberCount = 0;
+
+  for (const place of places) {
+    if (!place.id || place.id === anchor.googlePlaceId) continue;
+    const isInside = place.containingPlaces?.some(
+      (c) => c.id === anchor.googlePlaceId
+    );
+    if (!isInside) continue;
+    if (isBusinessClosed({ business_status: place.businessStatus })) continue;
+
+    memberCount++;
+
+    // Første type vi kjenner eier kategorien — samme konvensjon som
+    // dedupliseringen i discoverGooglePlaces.
+    const mapped = place.types
+      ?.map((t) => GOOGLE_CATEGORY_MAP[t])
+      .find((c): c is Category => Boolean(c));
+    if (mapped) categoryNames.push(mapped.name);
+  }
+
+  return { memberCount, categoryNames, saturated };
 }
 
 // === Google Places Text Search (recall-fiks 2026-08-12) ===
