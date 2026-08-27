@@ -40,6 +40,13 @@ export interface DiscoveredPOI {
   nsrId?: string;
   barnehagefaktaId?: string;
   osmId?: string;
+  /**
+   * Byggene Google sier stedet ligger INNE i (`containingPlaces`), på Placy-
+   * id-form (`google-<placeId>`). Autoritativ gate 1 i anker-oppløsningen —
+   * se `lib/board/anchor-membership.ts`. Fraværende for de fleste små sentre,
+   * derfor er adresse- og nærhets-gatene der.
+   */
+  containedInIds?: string[];
   // Editorial fields (added later via Claude or manual editing)
   editorialHook?: string;
   localInsight?: string;
@@ -307,6 +314,7 @@ interface GooglePlaceResult {
   businessStatus?: string;
   shortFormattedAddress?: string;
   types?: string[];
+  containingPlaces?: Array<{ id?: string; name?: string }>;
 }
 
 // Feltmaske = eksakt det discovery-filteret/POI-byggingen konsumerer.
@@ -319,6 +327,12 @@ const NEARBY_FIELD_MASK = [
   "places.userRatingCount",
   "places.businessStatus",
   "places.shortFormattedAddress",
+  // Anker-oppløsning (2026-08-27): hvilket bygg stedet ligger inne i. Målt mot
+  // searchNearby med nøyaktig denne masken — 20 av 20 `clothing_store` innen
+  // 300 m av Sirkus Shopping bar feltet, alle med senterets egen place-id.
+  // Ligger i Pro-SKU-en (samme nivå som displayName/businessStatus), og masken
+  // ber alt om rating/userRatingCount (Enterprise) — tillegget hever ikke prisen.
+  "places.containingPlaces",
 ].join(",");
 
 const NEARBY_TIMEOUT_MS = 10_000;
@@ -614,6 +628,7 @@ export async function discoverGooglePlaces(
           googleRating: place.rating,
           googleReviewCount: place.userRatingCount,
           source: "google",
+          containedInIds: mapContainingPlaces(place.containingPlaces),
         });
 
         addedCount++;
@@ -810,6 +825,7 @@ export async function discoverGooglePlacesByText(
           googleRating: place.rating,
           googleReviewCount: place.userRatingCount,
           source: "google",
+          containedInIds: mapContainingPlaces(place.containingPlaces),
         });
         addedCount++;
       }
@@ -1099,6 +1115,27 @@ export async function discoverPOIs(
  * - bysykkel-123 (using station_id)
  * - google-cafe-lansen (fallback using name)
  */
+/**
+ * Googles `containingPlaces` → Placy-id-er.
+ *
+ * Google returnerer `{ id, name }` der `name` er ressursnavnet
+ * («places/ChIJ…»), ikke visningsnavnet. Vi bruker `id` og kjører den gjennom
+ * samme id-bygger som stedene selv, slik at containment-pekeren er direkte
+ * sammenlignbar med `v2.pois.id` uten oppslag. Returnerer `undefined` (ikke
+ * tom liste) når feltet mangler — fravær betyr «Google sa ingenting», og skal
+ * ikke lagres som «ligger ikke i noe bygg».
+ */
+function mapContainingPlaces(
+  containing: Array<{ id?: string; name?: string }> | undefined
+): string[] | undefined {
+  if (!containing || containing.length === 0) return undefined;
+  const ids = containing
+    .map((c) => c.id)
+    .filter((id): id is string => Boolean(id))
+    .map((id) => generatePoiId("google", "", id));
+  return ids.length > 0 ? ids : undefined;
+}
+
 function generatePoiId(
   source: "google" | "entur" | "bysykkel" | "manual",
   name: string,

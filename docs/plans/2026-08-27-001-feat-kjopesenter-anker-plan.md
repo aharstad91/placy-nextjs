@@ -554,7 +554,7 @@ API-et utelater er de samme naboene over gata. To uavhengige metoder er enige om
 Merk at målingen ga 60 medlemmer for Sirkus mot 59 fra ren adresse-telling; differansen er
 INTERSPORT, altså en ekte gevinst fra nærhets-gaten.
 
-### Unit 2 — Pipeline-steg: skriv `parent_poi_id` og `anchor_summary`
+### Unit 2 — Pipeline-steg: skriv `parent_poi_id` og `anchor_summary` ✅ FERDIG
 
 Nytt steg i `lib/pipeline/provision.ts`, plassert **etter** discovery (4) og trust (5), **før**
 hydrering (6) — hydreringen skal se det ferdige hierarkiet.
@@ -575,6 +575,78 @@ angre-tagg i `poi_metadata` (`anchor_resolution: '<dato>'`) etter mønsteret fra
 Fail-soft som discovery/trust: samler warnings, aborterer ikke provisjoneringen.
 
 Backfill-migrasjon for eksisterende boards kjøres som del av Unit 8.
+
+**Resultat (2026-08-27, branch `feat/kjopesenter-anker`).**
+
+| Leveranse | Fil |
+|---|---|
+| Migrasjon (KJØRT mot prod) | `supabase/migrations/090_anker_containment_v2.sql` |
+| Containment fra Google | `lib/pipeline/poi-discovery.ts` (feltmaske + `containedInIds`) |
+| Persistering | `lib/supabase/mutations.ts`, `lib/pipeline/import-pois.ts`, `app/api/admin/import/route.ts` |
+| Pipeline-steget | `lib/pipeline/resolve-anchors-step.ts` + test (17 tester) |
+| Innkobling | `lib/pipeline/provision.ts` — Steg 5b, mellom trust og hydrering |
+
+Full pakke 3 175 tester grønne, `tsc` rent, lint 0 errors. Migrasjon 090 kjørt og verifisert:
+`contained_in_ids` finnes, FK + CHECK + delvis indeks på `parent_poi_id` er på plass (070_baseline
+gjenskapte kolonnen bar da `public` ble droppet i 075), 0 foreldreløse pekere å rydde.
+
+**`containingPlaces` er verifisert i produksjons-feltmasken, ikke bare i teorien.** Kjørt mot
+`places:searchNearby` med nøyaktig den masken pipelinen sender: 20 av 20 `clothing_store` innen
+300 m av Sirkus bar feltet, alle med senterets egen place-id. Feltet ligger i **Pro**-SKU-en (samme
+nivå som `displayName`/`businessStatus`), og masken ber alt om `rating`/`userRatingCount`
+(Enterprise) — tillegget hever ikke prisnivået.
+
+**Egen kolonne, ikke `poi_metadata`.** Planen åpnet for begge. `poi_metadata` viste seg å være et
+BEVART felt i upsert-stien (`upsertPOIsWithEditorialPreservation` skriver alltid
+`existing?.poi_metadata`, aldri importdataens), så containment der ville krevd at hele
+metadata-bevaringen ble bygd om fra overskriv til flett — for alle kallere. Presedensen for cachet
+Google-data per POI er egne kolonner (`opening_hours_json`, `grounding`, `gallery_images`).
+
+**Målt mot den ekte poolen (533 POI-er, Strindfjordvegen 10):**
+
+| Anker | Medlemmer | `anchor_summary` |
+|---|---|---|
+| Sirkus Shopping | 60 | «Butikk, frisør, restaurant, kafé, legesenter og mer» |
+| Lade Arena | 13 | «Butikk, ladestasjon, dagligvare og restaurant» |
+| Hangaren Lade | 9 | «Butikk, bakeri, legesenter og treningssenter» |
+| Grilstad mall | 9 | «Butikk, treningssenter, apotek, dagligvare, frisør og mer» |
+
+91 medlemmer absorbert, 533 → 442 topp-nivå (−17 %).
+
+**FIRE ankre, ikke fem — og det er et funn, ikke et avvik.** Unit 1 målte fem fordi den fikk hele
+den regionale mall-lista som kandidater. Steget kan bare forankre sentre som faktisk ligger i
+prosjektets pool, og **City Lade (Haakon VIIs gt. 9) er ikke der** — Google kjenner det som
+`shopping_mall` midt mellom Lade Arena (gt. 12) og Hangaren (gt. 27), men discoveryen importerte det
+aldri. Det er nøyaktig hullet Unit 3 lukker, nå med et målt eksempel inne i prosjektsirkelen og ikke
+bare det rurale Sundsøya-tilfellet.
+
+**Transport er ikke innhold.** Holdeplasser og bysykkelstativ utelates som medlemskandidater —
+bussholdeplassen i inngangen ligger godt innenfor nærhets-gaten, men den er veifinning og skal
+beholde sin egen pinne. 25 transport-POI-er på Strindfjordvegen holdes utenfor.
+
+**Kryss-prosjekt-vern.** `parent_poi_id` ligger på den DELTE poolen, ikke per prosjekt. En
+eksisterende lenke nulles derfor KUN når ankeret den peker på faktisk ble vurdert i denne kjøringen
+— ellers ville et prosjekt hvis radius ikke rekker Sirkus rive ned lenkene et annet prosjekt satte.
+
+**Angre:**
+
+```sql
+UPDATE v2.pois SET parent_poi_id = NULL
+WHERE parent_poi_id IN (
+  SELECT id FROM v2.pois WHERE poi_metadata->>'anchor_resolution' IS NOT NULL
+);
+UPDATE v2.pois SET anchor_summary = NULL,
+       poi_metadata = poi_metadata - 'anchor_resolution'
+WHERE poi_metadata->>'anchor_resolution' IS NOT NULL;
+```
+
+> **MERGE-PORT: Unit 2 må ikke merges til `main` før Unit 5 er ferdig.**
+> `components/variants/report/report-data.ts:605` skjuler allerede et barn fra et tema når
+> forelderen ligger i samme tema, og hekter det på som `childPOIs` — men **ingenting rendrer
+> `childPOIs`** (eneste treff i kodebasen er typen i `lib/types.ts:101` og linja som setter den).
+> Skriver vi `parent_poi_id` før registeret finnes, forsvinner 60 butikker fra handels-temaet uten
+> å dukke opp noe sted. Derfor er steget ikke kjørt mot noe prod-board ennå; første kjøring er
+> Unit 8, etter at board-laget (Unit 5) og registeret (Unit 6) står.
 
 ### Unit 3 — Anker-søk utenfor prosjektsirkelen
 

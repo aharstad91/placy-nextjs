@@ -182,6 +182,52 @@ describe("discoverGooglePlaces — filterkjeden (stille dropp/slipp)", () => {
   });
 });
 
+describe("discoverGooglePlaces — containment (anker-oppløsning)", () => {
+  it("ber om places.containingPlaces i feltmasken", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([googlePlace({ id: "p1", name: "H&M", types: ["clothing_store"] })])
+    );
+    await discoverGooglePlaces(baseConfig(["clothing_store"]), "key");
+
+    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
+    expect(headers["X-Goog-FieldMask"]).toContain("places.containingPlaces");
+  });
+
+  it("oversetter Googles container-id-er til Placy-id-er", async () => {
+    // Google svarer { id, name } der name er ressursnavnet «places/ChIJ…».
+    // Vi bruker id-en og bygger den samme `google-`-id-en stedene selv får,
+    // slik at pekeren kan sammenlignes med v2.pois.id uten oppslag.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        {
+          ...googlePlace({ id: "p1", name: "H&M", types: ["clothing_store"] }),
+          containingPlaces: [
+            { id: "ChIJVZdRQJoxbUYRTcToJ4smjeM", name: "places/ChIJVZdRQJoxbUYRTcToJ4smjeM" },
+          ],
+        },
+      ])
+    );
+
+    const result = await discoverGooglePlaces(baseConfig(["clothing_store"]), "key");
+    expect(result[0].containedInIds).toEqual(["google-ChIJVZdRQJoxbUYRTcToJ4smjeM"]);
+  });
+
+  it("lar feltet være udefinert når Google ikke sier noe", async () => {
+    // «Google sa ingenting» og «ligger ikke i noe bygg» er ikke samme påstand.
+    // Et tomt array ville blitt lagret som det siste.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        { ...googlePlace({ id: "p1", name: "H&M", types: ["clothing_store"] }), containingPlaces: [] },
+        googlePlace({ id: "p2", name: "Cubus", types: ["clothing_store"] }),
+      ])
+    );
+
+    const result = await discoverGooglePlaces(baseConfig(["clothing_store"]), "key");
+    expect(result).toHaveLength(2);
+    for (const poi of result) expect(poi.containedInIds).toBeUndefined();
+  });
+});
+
 describe("subdivideCircle — dekning av modersirkelen", () => {
   it("gir fire delsirkler, ett hakk dypere", () => {
     const subs = subdivideCircle({ lat: 63.43, lng: 10.4, radius: 3000, depth: 0 });

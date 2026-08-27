@@ -38,6 +38,12 @@ export interface POIImportData {
   google_business_status: string | null;
   google_price_level: number | null;
   source?: string | null;
+  /**
+   * Googles `containingPlaces` på Placy-id-form. Speiler Google: `null` når
+   * feltet mangler i svaret, ikke «behold det som lå der». Gate 1 i
+   * anker-oppløsningen (lib/board/anchor-membership.ts).
+   */
+  contained_in_ids?: string[] | null;
   nsr_id?: string | null;
   barnehagefakta_id?: string | null;
   osm_id?: string | null;

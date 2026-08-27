@@ -161,6 +161,9 @@ export type Database = {
           entur_stopplace_id: string | null;
           bysykkel_station_id: string | null;
           hyre_station_id: string | null;
+          contained_in_ids: string[] | null;
+          parent_poi_id: string | null;
+          anchor_summary: string | null;
           trust_score: number | null;
           trust_flags: string[];
           trust_score_updated_at: string | null;
@@ -202,6 +205,9 @@ export type Database = {
           entur_stopplace_id?: string | null;
           bysykkel_station_id?: string | null;
           hyre_station_id?: string | null;
+          contained_in_ids?: string[] | null;
+          parent_poi_id?: string | null;
+          anchor_summary?: string | null;
           trust_score?: number | null;
           trust_flags?: string[];
           trust_score_updated_at?: string | null;
@@ -243,6 +249,9 @@ export type Database = {
           entur_stopplace_id?: string | null;
           bysykkel_station_id?: string | null;
           hyre_station_id?: string | null;
+          contained_in_ids?: string[] | null;
+          parent_poi_id?: string | null;
+          anchor_summary?: string | null;
           trust_score?: number | null;
           trust_flags?: string[];
           trust_score_updated_at?: string | null;
@@ -1370,6 +1379,7 @@ export type Database = {
           opening_hours_json: Json | null
           opening_hours_updated_at: string | null
           osm_id: string | null
+          contained_in_ids: string[] | null
           parent_poi_id: string | null
           photo_reference: string | null
           photo_resolved_at: string | null
@@ -1425,6 +1435,7 @@ export type Database = {
           opening_hours_json?: Json | null
           opening_hours_updated_at?: string | null
           osm_id?: string | null
+          contained_in_ids?: string[] | null
           parent_poi_id?: string | null
           photo_reference?: string | null
           photo_resolved_at?: string | null
@@ -1480,6 +1491,7 @@ export type Database = {
           opening_hours_json?: Json | null
           opening_hours_updated_at?: string | null
           osm_id?: string | null
+          contained_in_ids?: string[] | null
           parent_poi_id?: string | null
           photo_reference?: string | null
           photo_resolved_at?: string | null
