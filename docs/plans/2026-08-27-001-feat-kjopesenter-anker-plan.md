@@ -263,10 +263,14 @@ mekanisme for å konstruere navnløse samlepunkt.
 **Vikhammer er en recall-bug, ikke et definisjonshull.** `Stasjonsvegen 1, Vikhammer` samler fem
 virksomheter (Extra, Apotek 1, Post i Butikk, Pizzabakeren, Vikhamar Hårsenter). Google kjenner
 «Vikhammer senteret» med `primaryType: shopping_mall`, og `searchNearby` returnerer det på første
-forsøk **473 m fra prosjektsenteret** — godt innenfor 3 000 m. Grunnen til at det mangler er at
-boardet er gammelt: `konsulent-harstad_utsikten-6-…` har 44 POI-er totalt (mot 533 på
-Strindfjordvegen 10) og null i `shopping`. Det ble provisjonert før recall-fiksene 2026-08-24 og
-aldri kjørt på nytt.
+forsøk **473 m fra prosjektsenteret** — godt innenfor 3 000 m. Boardet
+`konsulent-harstad_utsikten-6-…` har 44 POI-er totalt (mot 533 på Strindfjordvegen 10) og null i
+`shopping`.
+
+> **KORRIGERT i Unit 3 (2026-08-27):** årsaken er ikke at boardet er gammelt. Vikhammer senteret har
+> **verken rating eller anmeldelser** hos Google og faller på `hasMinimumQualitySignals`
+> (`poi-quality.ts:180`), som `shopping` ikke er unntatt fra. En re-provisjonering med dagens kode
+> ville bommet på nytt. Samme gjelder Moholtsenteret og Decades. Se Unit 3 for mottiltaket.
 
 **Ankerets adresse matcher ikke nødvendigvis medlemmenes.** Google plasserer Vikhammer senteret på
 «Utsikten 13, Vikhammer», mens de fem medlemmene står på «Stasjonsvegen 1». Ulike gatenavn, men
@@ -648,23 +652,81 @@ WHERE poi_metadata->>'anchor_resolution' IS NOT NULL;
 > å dukke opp noe sted. Derfor er steget ikke kjørt mot noe prod-board ennå; første kjøring er
 > Unit 8, etter at board-laget (Unit 5) og registeret (Unit 6) står.
 
-### Unit 3 — Anker-søk utenfor prosjektsirkelen
+### Unit 3 — Anker-søk utenfor prosjektsirkelen ✅ FERDIG
 
-Eget discovery-pass i `lib/pipeline/enrich-report-pois.ts`: søk `shopping_mall` mot et vesentlig
-større område enn `BOLIG_DISCOVERY_RADIUS_M`, ranger treffene på avstand fra prosjektsenteret, og ta
-med de tre nærmeste i tillegg til alle innenfor sirkelen.
+| Leveranse | Fil |
+|---|---|
+| Avstandsrangert `shopping_mall`-søk (`rankPreference: DISTANCE`, 20 km) | `lib/pipeline/poi-discovery.ts` — `discoverAnchorCandidates` |
+| Utvalgsregelen, ren og testbar | `lib/pipeline/discover-anchors.ts` — `selectAnchorImports` |
+| Steget, fail-soft | `lib/pipeline/discover-anchors.ts` — `discoverAnchorsForProject` |
+| Lagringshalvdelen av importen, løsrevet fra sirkel-søket | `lib/pipeline/import-pois.ts` — `persistDiscoveredPOIs` |
+| Innkobling + logging | `lib/pipeline/enrich-report-pois.ts` (steg 2), `lib/pipeline/provision.ts` |
 
-`app/api/admin/import/route.ts:69` (`max(3000)`) røres ikke — anker-passet går utenom
-sirkel-abstraksjonen, ikke gjennom en større sirkel. Det er bevisst: sirkelen er kontrakten for
-vanlige POI-er, og å heve taket der ville dratt inn alt annet også.
+`app/api/admin/import/route.ts:69` (`max(3000)`) er urørt, som planlagt.
 
-Akseptanse: Sundsøya-boardet får Thon Senter Verdal (12,1 km), Alti Verdal (12,4 km) og Alti
-Magneten på Levanger (14,8 km) som ankre — i dag har det null. Strindfjordvegen 10, Wesselsløkka,
-Oppdal og Vikhammer endrer seg ikke; deres nærmeste sentre ligger alle innenfor 3 000 m.
+**Hvorfor det ikke kunne være «samme søk med større radius».** To gater, ikke én, ville drept de
+rurale ankrene uansett hvor stor sirkelen ble: `discoverGooglePlaces` kaster alt utenfor
+`config.radius`, OG kvalitetskjeden har sitt eget avstandstak `MAX_POI_DISTANCE_METERS = 4000`
+(`poi-quality.ts:78`) som gjelder alle kategorier. Thon Senter Verdal på 12,1 km faller på det taket
+selv når sirkelen slipper den gjennom. Det andre taket var ikke kjent da planen ble skrevet.
 
-Merk at Vikhammer IKKE er begrunnelsen for dette steget. Vikhammer senteret ligger 473 m fra
-prosjektsenteret og faller inn under det vanlige søket — det mangler bare fordi boardet er gammelt.
-Det fikses av Unit 8, ikke her.
+**Rangering på avstand, ikke popularitet.** `searchNearby` støtter `rankPreference: "DISTANCE"` —
+verifisert mot API-et 2026-08-27. Ett kall gir de 20 nærmeste, som trivielt inneholder de tre
+nærmeste. Alternativet (metnings-oppdeling over 20 km) ville kostet opptil 21 kall for det samme
+svaret. Standardpasset rangerer fortsatt på popularitet; testen pinner at det ikke lekker.
+
+**Målt utvalg, alle sju provisjonerte boards (2026-08-27, lese-only tørrkjøring):**
+
+| Board | Kandidater | Valgt | Utenfor sirkelen |
+|---|---|---|---|
+| Strindfjordvegen 10 | 19 | 5 | 0 |
+| Grilstad Marina bt. 4 | 19 | 5 | 0 |
+| Stasjonskvartalet | 19 | 11 | 0 |
+| Wesselsløkka | 19 | 17 | 0 |
+| Oppdal Sentrum | 3 | 3 | 0 |
+| **Utsikten 6 (Vikhammer)** | 19 | 3 | **2** — Grilstad mall 6,3 km, Sveberg Handelspark 6,4 km |
+| **Sundsøya (Inderøy)** | 5 | 3 | **3** — Thon Senter Verdal 12,1, Alti Verdal 12,4, Alti Magneten 14,8 |
+
+Sundsøya-akseptansen er innfridd nøyaktig som beskrevet. To avvik fra planteksten, begge målt:
+
+**1. Vikhammer endrer seg likevel — og funnet er større enn steget.** Planen sa at Vikhammer ikke
+ville endre seg. Det stemmer ikke: senteret er det ENESTE innenfor sirkelen, så regelen fyller opp
+til tre og henter Grilstad mall og Sveberg Handelspark. Men det virkelige funnet ligger under:
+**Vikhammer senteret har verken rating eller anmeldelser hos Google, og faller derfor på
+`hasMinimumQualitySignals`.** Det er grunnen til at det ikke finnes i basen — ikke at boardet er
+gammelt, slik «Verifiserte fakta» sier. En re-provisjonering i dag ville bommet på nytt. Samme
+gjelder Moholtsenteret (Wesselsløkka, 1,4 km) og Decades (Stasjonskvartalet, 0,8 km).
+
+Uten mottiltak er passet AKTIVT skadelig på nettopp de boardene det er bygget for: senteret ryker på
+rating, og «de tre nærmeste» fyller de tomme plassene med Grilstad (6,3), Sveberg (6,4) og Hangaren
+Lade (8,3 km). Boardet mister nærsenteret sitt og får tre feil i stedet.
+
+**Mottiltaket: rating-gaten gjelder bare utenfor sirkelen.** Innenfor har vi en bedre kilde enn
+anmeldelser — poolen selv: oppløses fire virksomheter inn i bygget, er det et senter uansett hva
+Google mener (Unit 1s realitets-gate). Utenfor sirkelen importeres ingen medlemmer, så den
+kontrollen finnes ikke, og da er Googles egen kjennskap det vi har. `AnchorHit.hasQualitySignals`
+rapporterer i stedet for å dømme; `selectAnchorImports` bruker den. Navn-blokklista står uendret —
+den er det «Parkering ikea leangen» faller på, i alle sju boards.
+
+**2. City Lade er 3 010 meter unna, ikke et recall-hull.** Unit 2 rapporterte at City Lade «aldri
+ble importert av discoveryen» og pekte på Unit 3. Målingen viser noe annet: senteret ligger ti meter
+utenfor 3 000-meterssirkelen, og de tre nærmeste ankrene (Grilstad 0,17, Hangaren 2,11, Lade Arena
+2,20) ligger alle innenfor. Regelen henter det derfor ikke inn — tilsiktet, den garanterer DEKNING
+og utvider ikke sirkelen. Strindfjordvegen 10 blir stående med fire ankre, og det er riktig: City
+Lades leietakere ligger like utenfor og finnes heller ikke i poolen, så ingen medlemmer blir
+foreldreløse.
+
+**Åpent, krever eier-beslutning før Unit 8:** et anker utenfor sirkelen får ingen medlemmer
+importert (beslutning 6), og Unit 1 forfremmer bare kandidater med ≥4 medlemmer (beslutning 2).
+Thon Senter Verdal lander derfor i poolen som et vanlig `shopping`-sted, ikke med `isAnchor` og
+register — mens akseptansen over sier «som ankre». De tre utsagnene kan ikke alle stemme. Valget
+står mellom å importere medlemmene til ankre utenfor sirkelen (bryter beslutning 6) og å la et
+utpekt anker være anker uten medlemmer (bryter beslutning 2). Ikke avgjort her.
+
+**Kostnad:** ett ekstra `searchNearby`-kall per provisjonering.
+
+**Ikke kjørt mot prod.** Steget er koblet inn i provisjoneringen, men ingen board er re-provisjonert
+— samme merge-port som Unit 2 (se der).
 
 ### Unit 4 — Anker-reglene i `report-data.ts`
 
@@ -719,8 +781,10 @@ Berører `use-board-marker-set.ts:141` (`selectMarkerPOIs`) og markørens labelt
 
 - **Recall-sjekk først.** Anker-oppløsningen kan ikke finne et senter som ikke er importert.
   `konsulent-harstad_utsikten-6-…` har 44 POI-er og null i `shopping` selv om Vikhammer senteret
-  ligger 473 m unna og returneres av `searchNearby` på første forsøk. Kjør en `shopping_mall`-probe
-  per board FØR oppløsningen, og re-provisjonér de boardene som mangler treff. Rapporter hvilke.
+  ligger 473 m unna. Årsaken er funnet i Unit 3 (senteret har ingen Google-anmeldelser) og
+  anker-passet retter den, men bare ved re-provisjonering: **en backfill mot eksisterende data
+  finner fortsatt ingenting**, siden radene aldri ble skrevet. Kjør derfor anker-passet per board
+  FØR oppløsningen, og rapporter hvilke boards som fikk nye sentre.
 - Backfill-migrasjon som kjører anker-oppløsningen mot hele `v2.pois` (5 883 rader), med
   angre-tagg.
 - Re-provisjonering eller målrettet re-hydrering av de berørte boardene, med cache-bust på riktig

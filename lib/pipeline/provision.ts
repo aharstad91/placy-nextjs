@@ -6,7 +6,8 @@
  * + board-fakta 2026-08-22):
  *   1. Geocode (+ confidence-gate)   →  2. Opprett prosjekt
  *   3. Offentlige POI (NSR/bhg/idrett, skippes for næring)
- *   4. Google-discovery (+ Entur/Bysykkel)   →  5. Trust-scoring (to-fase)
+ *   4. Google-discovery (+ Entur/Bysykkel; inkl. anker-søk utenfor sirkelen)
+ *                                            →  5. Trust-scoring (to-fase)
  *   5b. Anker-oppløsning (kjøpesenter → parent_poi_id, fail-soft)
  *   6. Hydrering (product_pois + featured + categories)
  *   7. Reisetider (Mapbox Matrix → project_pois.travel_times, fail-soft)
@@ -206,6 +207,17 @@ export async function provisionReportBoard(
   log(
     `Google Places: ${enrichResult.google.total} POI-er (${enrichResult.google.new} nye, ${enrichResult.google.updated} oppdaterte)`
   );
+  if (enrichResult.anchors) {
+    const { candidatesFound, imported, beyondCircle } = enrichResult.anchors;
+    log(
+      `Anker-søk: ${imported.length} av ${candidatesFound} kjøpesenter tatt med (${beyondCircle} utenfor sirkelen)`
+    );
+    for (const a of imported) {
+      log(
+        `   · ${a.name} — ${(a.distanceMeters / 1000).toFixed(1)} km${a.beyondCircle ? " (utenfor sirkelen)" : ""}`
+      );
+    }
+  }
   for (const w of enrichResult.warnings) warn(w);
 
   // ── Steg 5: Trust-validering (to-fase) ─────────────────────────────────

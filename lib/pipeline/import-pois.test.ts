@@ -30,7 +30,7 @@ import {
   upsertPOIsWithEditorialPreservation,
 } from "@/lib/supabase/mutations";
 import { createServerClient } from "@/lib/supabase/client";
-import { importPOIsToProject } from "./import-pois";
+import { importPOIsToProject, persistDiscoveredPOIs } from "./import-pois";
 
 /**
  * Atferdstester for import-pipelinen (tidligere kun statisk kildekontrakt).
@@ -68,10 +68,17 @@ function enturPoi(id: string): DiscoveredPOI {
 }
 
 /** Thenable chain-mock: alle filter-metoder returnerer seg selv, await gir {data, error}. */
-function chainResult(data: unknown, error: unknown = null) {
+function chainResult(
+  data: unknown,
+  error: unknown = null,
+  filters?: Array<[string, string, unknown]>
+) {
   const chain: Record<string, unknown> = {};
   for (const m of ["gte", "lte", "eq", "in", "select"]) {
-    chain[m] = () => chain;
+    chain[m] = (col?: string, val?: unknown) => {
+      if (filters && col !== undefined) filters.push([m, col, val]);
+      return chain;
+    };
   }
   chain.then = (resolve: (v: unknown) => unknown) =>
     Promise.resolve({ data, error }).then(resolve);
@@ -93,6 +100,7 @@ function buildSupabase(opts: {
   const captured = {
     projectPoisInserts: [] as unknown[],
     productPoisUpserts: [] as Array<{ rows: unknown; options: unknown }>,
+    poiFilters: [] as Array<[string, string, unknown]>,
   };
 
   const mock = {
@@ -100,7 +108,12 @@ function buildSupabase(opts: {
     from: vi.fn((table: string) => {
       if (table === "pois") {
         return {
-          select: () => chainResult(opts.existing ?? [], opts.existingError ?? null),
+          select: () =>
+            chainResult(
+              opts.existing ?? [],
+              opts.existingError ?? null,
+              captured.poiFilters
+            ),
         };
       }
       if (table === "project_pois") {
@@ -287,5 +300,87 @@ describe("importPOIsToProject", () => {
       expect.stringContaining("Upsert errors"),
       expect.anything()
     );
+  });
+});
+
+/**
+ * `persistDiscoveredPOIs` er halvdel to av importen, skilt ut 2026-08-27 fordi
+ * anker-passet trenger den uten sirkel-søket foran. Testene her dekker det
+ * eneste som er NYTT i den stien: dedup-boksen må utledes av POI-ene selv når
+ * kalleren ikke har en sirkel å gi.
+ */
+describe("persistDiscoveredPOIs (uten sirkel-søk foran)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("utleder dedup-boksen fra POI-ene og utvider den med margin", async () => {
+    const { mock, captured } = buildSupabase();
+    vi.mocked(createServerClient).mockReturnValue(
+      mock as unknown as ReturnType<typeof createServerClient>
+    );
+
+    await persistDiscoveredPOIs(
+      [
+        googlePoi("nord", { coordinates: { lat: 63.5, lng: 10.4 } }),
+        googlePoi("sor", { coordinates: { lat: 63.4, lng: 10.3 } }),
+      ],
+      "placy-demo_test"
+    );
+
+    const bounds = Object.fromEntries(
+      captured.poiFilters
+        .filter(([m]) => m === "gte" || m === "lte")
+        .map(([m, col, val]) => [`${m}_${col}`, val as number])
+    );
+    // Boksen dekker begge POI-ene ...
+    expect(bounds.gte_lat).toBeLessThan(63.4);
+    expect(bounds.lte_lat).toBeGreaterThan(63.5);
+    // ... med en margin på ~200 m (≈0,0018°), fordi dedupen matcher på
+    // google_place_id og en rad kan ha flyttet seg noen titalls meter.
+    expect(63.4 - bounds.gte_lat).toBeCloseTo(200 / 111320, 5);
+  });
+
+  it("tom liste rører verken basen eller mutations", async () => {
+    const { mock } = buildSupabase();
+    vi.mocked(createServerClient).mockReturnValue(
+      mock as unknown as ReturnType<typeof createServerClient>
+    );
+
+    const stats = await persistDiscoveredPOIs([], "placy-demo_test");
+
+    expect(stats.total).toBe(0);
+    expect(createServerClient).not.toHaveBeenCalled();
+    expect(upsertCategories).not.toHaveBeenCalled();
+    expect(upsertPOIsWithEditorialPreservation).not.toHaveBeenCalled();
+  });
+
+  it("kalleren kan gi dedup-grunnlaget selv (sirkel-stien) — da slås ingenting opp", async () => {
+    const { mock } = buildSupabase();
+    vi.mocked(createServerClient).mockReturnValue(
+      mock as unknown as ReturnType<typeof createServerClient>
+    );
+
+    const stats = await persistDiscoveredPOIs([googlePoi("g1")], "placy-demo_test", {
+      existing: [
+        {
+          id: "legacy-uuid-1",
+          google_place_id: "g1",
+          entur_stopplace_id: null,
+          bysykkel_station_id: null,
+        },
+      ],
+    });
+
+    expect(stats.updated).toBe(1);
+    const payload = vi.mocked(upsertPOIsWithEditorialPreservation).mock
+      .calls[0][0] as Array<{ id: string }>;
+    expect(payload.map((p) => p.id)).toEqual(["legacy-uuid-1"]);
   });
 });

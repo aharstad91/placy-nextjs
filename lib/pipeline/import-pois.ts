@@ -42,6 +42,9 @@ interface ExistingPOI {
   bysykkel_station_id: string | null;
 }
 
+/** Dedup-margin rundt en POI-avledet boks. Se `boundingBoxAround`. */
+const DEDUP_BBOX_PADDING_M = 200;
+
 export interface ImportPOIsResult {
   total: number;
   new: number;
@@ -69,6 +72,32 @@ function calculateBoundingBox(
     maxLat: center.lat + latDelta,
     minLng: center.lng - lngDelta,
     maxLng: center.lng + lngDelta,
+  };
+}
+
+/**
+ * Boks som dekker alle oppgitte POI-er, utvidet med `padMeters`.
+ *
+ * Padden er dedup-margin, ikke pynt: matchingen skjer på `google_place_id`, og
+ * en rad vi allerede har kan ligge noen titalls meter unna dagens Google-
+ * koordinat. Uten margin ville et sted som har flyttet seg falle utenfor
+ * oppslaget og bli re-insertet som duplikat.
+ */
+function boundingBoxAround(
+  pois: Array<{ coordinates: { lat: number; lng: number } }>,
+  padMeters: number
+): BoundingBox {
+  const lats = pois.map((p) => p.coordinates.lat);
+  const lngs = pois.map((p) => p.coordinates.lng);
+  const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const latPad = padMeters / 111320;
+  const lngPad = padMeters / (111320 * Math.cos((midLat * Math.PI) / 180));
+
+  return {
+    minLat: Math.min(...lats) - latPad,
+    maxLat: Math.max(...lats) + latPad,
+    minLng: Math.min(...lngs) - lngPad,
+    maxLng: Math.max(...lngs) + lngPad,
   };
 }
 
@@ -408,24 +437,59 @@ export async function importPOIsToProject(options: {
     })
   );
 
-  // 5. Combine and categorize for upsert
+  // 5-8: dedup, kategori-seeding, upsert og prosjekt-lenking
   const allDiscovered = [...allGooglePois, ...allEnturPois, ...allBysykkelPois];
+  return persistDiscoveredPOIs(allDiscovered, projectId, {
+    existing: existingPois,
+    label: "importPOIsToProject",
+  });
+}
+
+/**
+ * Steg 5-8 av importen, løsrevet fra sirkel-søket: dedup mot basen, seed
+ * kategoriene, upsert POI-ene og lenk dem til prosjektet og produktene.
+ *
+ * Skilt ut 2026-08-27 fordi anker-passet (`discover-anchors.ts`) trenger
+ * NØYAKTIG denne halvdelen uten den første: ankre utenfor prosjektsirkelen
+ * finnes ikke gjennom en sirkel, men de skal lagres på akkurat samme måte —
+ * samme dedup på Google place-id, samme kategori-seeding før upsert (FK), og
+ * samme `ignoreDuplicates`-vern rundt kuratert `featured`.
+ *
+ * `existing` er dedup-grunnlaget. Uten det slås det opp fra en boks rundt de
+ * oppdagede POI-ene selv, utvidet med 200 m så en POI som har flyttet litt
+ * hos Google fortsatt matcher raden vi allerede har.
+ */
+export async function persistDiscoveredPOIs(
+  discovered: DiscoveredPOI[],
+  projectId: string,
+  options: { existing?: ExistingPOI[]; label?: string } = {}
+): Promise<ImportPOIsResult> {
+  const label = options.label ?? "persistDiscoveredPOIs";
+
+  const existingPois =
+    options.existing ??
+    (discovered.length > 0
+      ? await fetchExistingPOIsInBoundingBox(
+          boundingBoxAround(discovered, DEDUP_BBOX_PADDING_M)
+        )
+      : []);
+
   const { toInsert, toUpdate, stats } = categorizeForUpsert(
-    allDiscovered,
+    discovered,
     existingPois
   );
 
   console.log(
-    `[importPOIsToProject] Discovered ${stats.total} POIs: ${stats.new} new, ${stats.updated} to update`
+    `[${label}] Discovered ${stats.total} POIs: ${stats.new} new, ${stats.updated} to update`
   );
 
-  // 6. Ensure categories exist (foreign key constraint)
-  const uniqueCategories = getUniqueCategoriesFromPOIs(allDiscovered);
+  // Kategoriene MÅ finnes før POI-upserten (FK) — samme bug-klasse som
+  // Barn & Oppvekst-funnet 2026-07-06.
+  const uniqueCategories = getUniqueCategoriesFromPOIs(discovered);
   if (uniqueCategories.length > 0) {
     await upsertCategories(uniqueCategories, { schema: "v2" });
   }
 
-  // 7. Convert to import format and batch upsert
   const poisToUpsert: POIImportData[] = [
     ...toInsert.map((poi) => convertToPOIImportData(poi)),
     ...toUpdate.map((poi) => convertToPOIImportData(poi, poi.existingId)),
@@ -436,14 +500,10 @@ export async function importPOIsToProject(options: {
       schema: "v2",
     });
     if (result.errors.length > 0) {
-      console.error(
-        `[importPOIsToProject] Upsert errors:`,
-        result.errors
-      );
+      console.error(`[${label}] Upsert errors:`, result.errors);
     }
   }
 
-  // 8. Link to project
   if (poisToUpsert.length > 0) {
     const poiIds = poisToUpsert.map((p) => p.id);
     await addPOIsToProject(projectId, poiIds);
