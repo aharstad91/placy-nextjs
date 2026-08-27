@@ -3,6 +3,8 @@ import {
   byTierThenScore,
   applyCategoryFilter,
   getInitialVisibleCount,
+  isAnchorPOI,
+  transformToReportData,
 } from "./report-data";
 import type { POI } from "@/lib/types";
 
@@ -189,5 +191,168 @@ describe("applyCategoryFilter", () => {
     ];
     const filtered = applyCategoryFilter("skole", pois, brosetCenter, delvisZone);
     expect(filtered.map((p) => p.name)).toEqual(["Singsaker skole"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Anker (kjøpesenter) — Unit 4
+// ---------------------------------------------------------------------------
+
+const CENTER = { lat: 63.435107, lng: 10.505335 };
+
+function cat(id: string, name = id) {
+  return { id, name, icon: "MapPin", color: "#6b7280" };
+}
+
+/** Sirkus Shopping slik pipelinen etterlater det: anchorSummary satt, ingen forelder. */
+function makeAnchor(overrides: Partial<POI> = {}): POI {
+  return makePOI({
+    id: "sirkus",
+    name: "Sirkus Shopping",
+    category: cat("shopping", "Kjøpesenter"),
+    anchorSummary: "Butikk, frisør, restaurant, kafé, legesenter og mer",
+    coordinates: CENTER,
+    ...overrides,
+  });
+}
+
+function makeChild(id: string, categoryId: string, parent = "sirkus"): POI {
+  return makePOI({
+    id,
+    name: id,
+    category: cat(categoryId),
+    parentPoiId: parent,
+    coordinates: CENTER,
+  });
+}
+
+function makeProject(pois: POI[], categories: string[]) {
+  return {
+    id: "placy-demo_test",
+    customer: "placy-demo",
+    urlSlug: "test",
+    name: "Testprosjekt",
+    centerCoordinates: CENTER,
+    pois,
+    reportConfig: {
+      themes: [{ id: "hverdagsliv", name: "Hverdagsliv", icon: "ShoppingCart", categories, color: "#36d16f" }],
+    },
+  } as unknown as Parameters<typeof transformToReportData>[0];
+}
+
+const themeOf = (pois: POI[], categories: string[]) =>
+  transformToReportData(makeProject(pois, categories)).themes[0];
+
+describe("isAnchorPOI", () => {
+  it("anchorSummary er flagget — ikke antall barn", () => {
+    expect(isAnchorPOI({ anchorSummary: "Butikk og kafé" })).toBe(true);
+    expect(isAnchorPOI({ anchorSummary: undefined })).toBe(false);
+    // Tom streng er ikke et register. Pipelinen skriver null, ikke "".
+    expect(isAnchorPOI({ anchorSummary: "" })).toBe(false);
+  });
+});
+
+describe("transformToReportData — ankeret absorberer barna (R5)", () => {
+  it("seksti butikker i ett senter blir ÉN oppføring i temaet", () => {
+    const children = Array.from({ length: 60 }, (_, i) => makeChild(`butikk-${i}`, "butikk"));
+    const theme = themeOf([makeAnchor(), ...children], ["shopping", "butikk"]);
+
+    expect(theme.allPOIs.map((p) => p.id)).toEqual(["sirkus"]);
+    expect(theme.stats.totalPOIs).toBe(1);
+    expect(theme.allPOIs[0].childPOIs).toHaveLength(60);
+  });
+
+  it("hero-metrikkene teller ankeret én gang, ikke 61", () => {
+    const children = Array.from({ length: 60 }, (_, i) => makeChild(`butikk-${i}`, "butikk"));
+    const data = transformToReportData(makeProject([makeAnchor(), ...children], ["shopping", "butikk"]));
+
+    expect(data.heroMetrics.totalPOIs).toBe(1);
+  });
+
+  it("et sted UTEN anker-tekst absorberer ingenting — barna vises som i dag", () => {
+    // Skrivefeil i pipelinen (begge anker-stegene er fail-soft) skal gi dagens
+    // board, ikke seksti butikker skjult bak en forelder ingenting rendrer.
+    const pois = [
+      makeAnchor({ anchorSummary: undefined }),
+      makeChild("butikk-1", "butikk"),
+      makeChild("butikk-2", "butikk"),
+    ];
+    const theme = themeOf(pois, ["shopping", "butikk"]);
+
+    expect(theme.allPOIs.map((p) => p.id).sort()).toEqual(["butikk-1", "butikk-2", "sirkus"]);
+    expect(theme.allPOIs.every((p) => p.childPOIs === undefined)).toBe(true);
+  });
+});
+
+describe("transformToReportData — ankeret oppfyller kategorier på vegne av barna (R4)", () => {
+  it("treningssenteret inne i Sirkus løfter Sirkus inn i temaet", () => {
+    // Uten dette står treningssenteret alene på Sirkus' koordinat, uten å si
+    // hvor det ligger. `shopping` er ikke en trening-kategori.
+    const pois = [makeAnchor(), makeChild("3T Sirkus", "gym")];
+    const theme = themeOf(pois, ["gym", "swimming"]);
+
+    expect(theme.allPOIs.map((p) => p.id)).toEqual(["sirkus"]);
+    expect(theme.allPOIs[0].childPOIs?.map((c) => c.id)).toEqual(["3T Sirkus"]);
+  });
+
+  it("registeret er TEMA-avgrenset — Mat & Drikke lister ikke de seksti butikkene", () => {
+    const pois = [
+      makeAnchor(),
+      makeChild("Peppes", "restaurant"),
+      makeChild("Espresso House", "cafe"),
+      ...Array.from({ length: 20 }, (_, i) => makeChild(`butikk-${i}`, "butikk")),
+    ];
+    const theme = themeOf(pois, ["restaurant", "cafe", "bar", "bakery"]);
+
+    expect(theme.allPOIs.map((p) => p.id)).toEqual(["sirkus"]);
+    expect(theme.allPOIs[0].childPOIs?.map((c) => c.id).sort()).toEqual([
+      "Espresso House",
+      "Peppes",
+    ]);
+  });
+
+  it("løfter bare EKTE ankre — et barn under et vanlig sted står fortsatt alene", () => {
+    const pois = [
+      makeAnchor({ anchorSummary: undefined }),
+      makeChild("3T Sirkus", "gym"),
+    ];
+    const theme = themeOf(pois, ["gym"]);
+
+    expect(theme.allPOIs.map((p) => p.id)).toEqual(["3T Sirkus"]);
+  });
+
+  it("løfter ankeret bare én gang selv om flere barn matcher", () => {
+    const pois = [
+      makeAnchor(),
+      makeChild("3T Sirkus", "gym"),
+      makeChild("Sirkus Spa", "swimming"),
+    ];
+    const theme = themeOf(pois, ["gym", "swimming"]);
+
+    expect(theme.allPOIs.map((p) => p.id)).toEqual(["sirkus"]);
+    expect(theme.allPOIs[0].childPOIs).toHaveLength(2);
+  });
+});
+
+describe("transformToReportData — ankeret overlever avstand (R2)", () => {
+  it("Thon Senter Verdal 12 km unna står i temaet, uten ett eneste barn i basen", () => {
+    // Ankre utenfor prosjektsirkelen får aldri medlemmene sine importert
+    // (Unit 3), så anker-status kan ikke avhenge av barn. Og det finnes ingen
+    // avstands- eller antallsport igjen å overleve: `maxCount` ble slettet
+    // 2026-08-24, og `isWithinTimeBudget` har null kallere.
+    const fjernt = makeAnchor({
+      id: "thon-verdal",
+      name: "Thon Senter Verdal",
+      anchorSummary: "Butikk, apotek, dagligvare og hotell",
+      coordinates: { lat: 63.791835, lng: 11.486321 },
+    });
+    const theme = themeOf([fjernt, makePOI({ id: "kiwi", category: cat("supermarket") })], [
+      "shopping",
+      "supermarket",
+    ]);
+
+    expect(theme.allPOIs.map((p) => p.id)).toContain("thon-verdal");
+    // Nærmeste først: Kiwi i sentrum foran senteret 12 km unna.
+    expect(theme.allPOIs).toHaveLength(2);
   });
 });

@@ -758,20 +758,56 @@ boards som mangler sentre i nærheten). Urbane boards betaler ett kall totalt.
 **Ikke kjørt mot prod.** Steget er koblet inn i provisjoneringen, men ingen board er re-provisjonert
 — samme merge-port som Unit 2 (se der).
 
-### Unit 4 — Anker-reglene i `report-data.ts`
+### Unit 4 — Anker-reglene i `report-data.ts` ✅ FERDIG
 
-Fire endringer i `transformToReportData`:
+| Leveranse | Sted |
+|---|---|
+| Ankerpredikat, delt med board-laget | `report-data.ts` — `isAnchorPOI` |
+| R4: løft ankeret inn i temaet barnet hører til | `report-data.ts` — `withRepresentingAnchors` |
+| R5 + register: ankeret absorberer barna og bærer dem videre | `transformToReportData`, tema-løkka |
 
-1. **Overlever avstand (R2).** `applyThemeCategoryFilters` og eventuelle `maxCount`/avstands-porter
-   hopper over POI-er der `isAnchor`. Enkeltsteder filtreres som før.
-2. **Oppfyller kategorier (R4).** Når et barn matcher en temakategori men forelderen ikke gjør det,
-   løftes forelderen inn i temaet som representant, med barnet navngitt. I dag faller barnet enten
-   ut eller vises alene — begge er feil.
-3. **Teller som én (R5).** `themeStats`, `richnessScore` og `stats.totalPOIs` regnes på ankeret, ikke
-   på ankeret pluss barna. `topLevelPOIs` (:540) gjør dette for hero-metrikkene allerede; mønsteret
-   utvides til tema-nivå.
-4. **Registeret bygges.** Deterministisk kategori-oppsummering festes på forelderen ved siden av
-   `childPOIs`, så board-laget slipper å regne det på nytt.
+**Ankerflagget er `anchorSummary`, ikke antall barn.** Teksten skrives kun av de to stedene som har
+bevist at bygget samler minst fire virksomheter — `resolve-anchors-step` (teller i poolen) og
+`discover-anchors` (teller hos Google uten å importere). Å telle barn her ville gjort Thon Senter
+Verdal usynlig på Sundsøya: det ankeret har null barn i basen og er like fullt et kjøpesenter.
+Feiler tekst-skrivingen — begge stegene er fail-soft — oppfører stedet seg som i dag, barna vises
+hver for seg. Ingenting forsvinner.
+
+**Absorpsjonen flyttet fra «enhver forelder i temaet» til «ankeret i temaet».** Linja på :605
+absorberte tidligere barn under et hvilket som helst toppnivå-sted som lå i temaet. Nå er det
+ankeret som absorberer, slik at en pipeline-skrivefeil gir dagens board i stedet for seksti butikker
+skjult bak en forelder ingenting rendrer.
+
+**Registeret er TEMA-avgrenset.** `childPOIs` på et Sirkus-kort i «Mat & Drikke» lister de åtte
+spisestedene i senteret, ikke de femti butikkene. Det er et annet spørsmål enn registeret i
+POI-flaten (Unit 5/6), som skal være komplett — temaet svarer på «hva gir dette senteret meg HER».
+
+**R2 krevde ingen kode, og det er et funn.** Planen forutsatte at ankeret måtte unntas fra
+`maxCount`- og avstands-porter. De finnes ikke lenger: `maxCount` ble slettet 2026-08-24 (kommentaren
+i `CATEGORY_FILTER_RULES` forklarer hvorfor), gangtids-porten er borte, og `isWithinTimeBudget`
+(`lib/utils.ts:23`) har **null kallere**. Eneste gjenværende filter er skolekrets, som et
+kjøpesenter aldri treffer. Å legge inn et unntak fra et filter som ikke finnes ville vært dead code.
+`splitVisibleHidden` skjuler fortsatt bak «Hent flere», men kaster ingenting.
+
+**Målt effekt på det ekte 533-POI-settet fra Strindfjordvegen 10** (lese-only, temaene som et
+faktisk provisjonert board har dem):
+
+| Tema | Før | Etter | Register |
+|---|---|---|---|
+| **Hverdagsliv** | **194** | **122** | Sirkus (50), Lade Arena (9), Hangaren (7), Grilstad mall (6) |
+| Mat & Drikke | 41 | 34 | Sirkus (8), Lade Arena (1), Hangaren (1), Grilstad (1) |
+| Transport & Mobilitet | 56 | 54 | Lade Arena (3), Sirkus (1) |
+| Trening & Aktivitet | 24 | 23 | Grilstad (2), Hangaren (1), Sirkus (1) |
+| Barn & Oppvekst | 161 | 161 | — |
+| Natur & Friluftsliv | 52 | 52 | — |
+
+Hero-tallet går 533 → 435. «Hverdagsliv drukner» fra Problem Frame — 136 steder der 66 av 68
+butikker lå på Lade/Sirkus — er dermed målt løst: temaet går fra 194 til 122, og de fire sentrene
+står som fire kort med hvert sitt register i stedet for 72 løse rader.
+
+Merk at Mat & Drikke, Transport og Trening ikke faller like mye som de absorberer: der løftes
+ankeret INN som representant (R4), så nettoen er absorberte minus løftede. Det er hele poenget —
+treningssenteret inne i Sirkus står ikke lenger alene på senterets koordinat uten å si hvor det er.
 
 ### Unit 5 — Board-laget: anker gjennom til markøren
 
