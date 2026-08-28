@@ -76,9 +76,32 @@ export function selectOverviewPOIs(
   categories: BoardCategory[],
   hasVoiceOver: boolean,
 ): POI[] {
-  return hasVoiceOver
-    ? categories.flatMap((c) => c.topRankedPois.slice(0, 3).map(toDisplayPOI))
-    : categories.flatMap((c) => c.pois.map(toDisplayPOI));
+  return dedupeById(
+    hasVoiceOver
+      ? categories.flatMap((c) => c.topRankedPois.slice(0, 3).map(toDisplayPOI))
+      : categories.flatMap((c) => c.pois.map(toDisplayPOI)),
+  );
+}
+
+/**
+ * Første forekomst vinner — samme rekkefølge, ingen dubletter.
+ *
+ * Et sted kan ligge i flere temaer. Etter at ankeret løftes inn i HVERT tema et
+ * medlem hører hjemme i (R4, `withRepresentingAnchors` i report-data), er det
+ * regelen og ikke unntaket: Sirkus Shopping står i Hverdagsliv, Mat & Drikke og
+ * Trening & Aktivitet samtidig. Uten dedup mountes senteret én gang per tema med
+ * samme React-nøkkel — målt i prod-boardet 2026-08-28: fire ankre, hver rendret
+ * to–tre ganger, «Encountered two children with the same key» i konsollen.
+ */
+function dedupeById(pois: POI[]): POI[] {
+  const seen = new Set<string>();
+  const result: POI[] = [];
+  for (const poi of pois) {
+    if (seen.has(poi.id)) continue;
+    seen.add(poi.id);
+    result.push(poi);
+  }
+  return result;
 }
 
 /**
@@ -87,16 +110,7 @@ export function selectOverviewPOIs(
  * beaten (isHomeBeat) så kartet viser ALT vi har, ikke bare ankersettet.
  */
 export function selectAllPOIs(categories: BoardCategory[]): POI[] {
-  const seen = new Set<string>();
-  const result: POI[] = [];
-  for (const c of categories) {
-    for (const p of c.pois) {
-      if (seen.has(p.raw.id)) continue;
-      seen.add(p.raw.id);
-      result.push(toDisplayPOI(p));
-    }
-  }
-  return result;
+  return dedupeById(categories.flatMap((c) => c.pois.map(toDisplayPOI)));
 }
 
 /**
@@ -105,8 +119,8 @@ export function selectAllPOIs(categories: BoardCategory[]): POI[] {
  * så blob-prikkene får et lesbart holdepunkt. Ligger i blob-klyngen nær hjemmet.
  */
 export function selectLegendPOIs(categories: BoardCategory[]): POI[] {
-  return categories.flatMap((c) =>
-    c.pois.slice(0, LEGEND_PER_CATEGORY).map(toDisplayPOI),
+  return dedupeById(
+    categories.flatMap((c) => c.pois.slice(0, LEGEND_PER_CATEGORY).map(toDisplayPOI)),
   );
 }
 

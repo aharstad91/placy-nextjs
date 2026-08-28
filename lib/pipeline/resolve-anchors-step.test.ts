@@ -415,6 +415,79 @@ describe("resolveProjectAnchors — den delte poolen", () => {
     expect(result.membersUnlinked).toBe(1);
   });
 
+  it("river IKKE lenkene til et senter dette boardet avviser, men som er anker et annet sted", async () => {
+    // Olavskvartalet-tilfellet, målt i backfillen 2026-08-28: senteret oppløses
+    // til fire medlemmer fra Ferjemannsveien og to fra Teknostallen 2 km unna,
+    // fordi ≥4 måles mot DETTE boardets POI-utvalg. Rev vi på avvisning, ville
+    // rekkefølgen på prosjektene avgjort hvor stort ankeret ble.
+    const rows = boardRows([
+      {
+        id: "google-NABOSENTER",
+        name: "Nabosenteret",
+        address: "Nabovegen 1, Trondheim",
+        lat: 63.47,
+        lng: 10.52,
+        category_id: "shopping",
+        anchor_summary: "Butikk, apotek og frisør",
+      },
+      {
+        id: "google-NABOBUTIKK",
+        name: "Butikk i Nabosenteret",
+        address: "Nabovegen 1, Trondheim",
+        lat: 63.4701,
+        lng: 10.5201,
+        category_id: "butikk",
+        parent_poi_id: "google-NABOSENTER",
+      },
+    ]);
+
+    const mock = buildMockSupabase({ rows, categories: CATEGORIES });
+    useMock(mock);
+    const result = await resolveProjectAnchors({ projectId: "p1" });
+
+    // Ett medlem er under terskelen — senteret avvises på dette boardet.
+    expect(result.anchors.map((a) => a.id)).not.toContain("google-NABOSENTER");
+    expect(mock.rows.find((r) => r.id === "google-NABOBUTIKK")!.parent_poi_id).toBe(
+      "google-NABOSENTER"
+    );
+    expect(mock.rows.find((r) => r.id === "google-NABOSENTER")!.anchor_summary).toBe(
+      "Butikk, apotek og frisør"
+    );
+  });
+
+  it("river lenken når bygget ikke er anker noe sted", async () => {
+    // Valentinlyst-tilfellet: 057/058 satte lenkene for hånd, migrasjon 074
+    // mistet `anchor_summary`, og oppløsningen finner ikke fire medlemmer.
+    // Lenken peker da på et senter som ikke finnes som destinasjon.
+    const rows = boardRows([
+      {
+        id: "google-DØDT-SENTER",
+        name: "Dødt senter",
+        address: "Tomvegen 1, Trondheim",
+        lat: 63.47,
+        lng: 10.52,
+        category_id: "shopping",
+        anchor_summary: null,
+      },
+      {
+        id: "google-FORELDRELØS",
+        name: "Butikk uten anker",
+        address: "Tomvegen 1, Trondheim",
+        lat: 63.4701,
+        lng: 10.5201,
+        category_id: "butikk",
+        parent_poi_id: "google-DØDT-SENTER",
+      },
+    ]);
+
+    const mock = buildMockSupabase({ rows, categories: CATEGORIES });
+    useMock(mock);
+    const result = await resolveProjectAnchors({ projectId: "p1" });
+
+    expect(mock.rows.find((r) => r.id === "google-FORELDRELØS")!.parent_poi_id).toBeNull();
+    expect(result.membersUnlinked).toBe(1);
+  });
+
   it("lar Googles containment nå lenger enn adresse og nærhet", async () => {
     const sirkus = fixture.malls.find((m) => m.id === SIRKUS)!;
     // 200 m nord for Sirkus: for langt for nærhets-gaten (60 m), og adressen

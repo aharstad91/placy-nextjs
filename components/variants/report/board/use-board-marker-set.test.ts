@@ -112,6 +112,26 @@ describe("selectOverviewPOIs", () => {
       "d",
     ]);
   });
+  it("ankeret mountes én gang selv når det står i flere temaer (R4-løftet)", () => {
+    // Sirkus Shopping løftes inn i HVERT tema et medlem hører hjemme i, så
+    // senteret ligger i Hverdagsliv, Mat & Drikke og Trening samtidig. Uten
+    // dedup får kartet tre markører med samme React-nøkkel.
+    const sirkus = poi("sirkus");
+    const cats = [
+      cat({ pois: [poi("kiwi"), sirkus], topRanked: [sirkus, poi("kiwi")] }),
+      cat({ pois: [sirkus, poi("kafe")], topRanked: [sirkus] }),
+      cat({ pois: [sirkus], topRanked: [sirkus] }),
+    ];
+    expect(selectOverviewPOIs(cats, false).map((p) => p.id)).toEqual([
+      "kiwi",
+      "sirkus",
+      "kafe",
+    ]);
+    expect(selectOverviewPOIs(cats, true).map((p) => p.id)).toEqual([
+      "sirkus",
+      "kiwi",
+    ]);
+  });
 });
 
 describe("selectAllPOIs", () => {
@@ -131,6 +151,12 @@ describe("selectLegendPOIs", () => {
       cat({ pois: [poi("a"), poi("b"), poi("c"), poi("d"), poi("e")] }),
     ];
     expect(selectLegendPOIs(cats).map((p) => p.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("gir ikke ankeret en legend-pin per tema det er løftet inn i", () => {
+    const sirkus = poi("sirkus");
+    const cats = [cat({ pois: [sirkus, poi("a")] }), cat({ pois: [sirkus, poi("b")] })];
+    expect(selectLegendPOIs(cats).map((p) => p.id)).toEqual(["sirkus", "a", "b"]);
   });
 });
 

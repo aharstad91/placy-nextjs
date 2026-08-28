@@ -1001,7 +1001,65 @@ data før Unit 8. Underveis ble det bekreftet at labels bare tegnes på nærmest
 (`tier === "icon+label"`, range ~295 m ga label, ~816 m ga ingen) — det er eksisterende oppførsel,
 ikke en regresjon fra denne enheten.
 
-### Unit 8 — Sirkus og Lade i prod, verifisert
+### Unit 8 — Sirkus og Lade i prod, verifisert ✅ FERDIG
+
+**Skrevet til prod 2026-08-28.** `scripts/anchor-backfill.ts` (tørrkjøring som default, `--commit`
+for skriv) kjørte anker-passet + oppløsningen over alle 12 boards, ikke 7 som planen antok.
+
+| Måling | Tall |
+|---|---|
+| Boards gjennomgått | 12 |
+| Sentre hentet av Google | 81 |
+| Ankre opprettet | 16 (12 med medlemmer i poolen + 4 fjerne med probe-summary) |
+| Medlemmer lenket | 149 |
+| Avvist på ≥4-terskelen | 7 |
+| Ankre på 4–5 medlemmer (terskel-margin) | 5 — Coop Midt-Norge SA 4, Solsiden Senter 4, Olavskvartalet 4, Byhaven 4, Vikhammer senteret 5 |
+| Boards uten anker | sundsoya, teknostallen, wesselslokka |
+
+Strindfjordvegen 10: 533 POI-er på boardet, **91 absorbert inn i fire ankre** (Sirkus Shopping 60,
+Lade Arena 13, Hangaren Lade 9, Grilstad mall 9) → 442 topp-nivå. Sirkus-tallet er nøyaktig det
+Unit 1-fixturen ga, målt uavhengig.
+
+**Tre funn utover planen, alle fikset før commit:**
+
+1. **Tørrkjøringen overrapporterte medlemmer (283 mot 149).** Poolen er DELT: et sted som allerede
+   er lenket av et tidligere prosjekt telles ikke på nytt. Tørrkjøringen så hvert board isolert og
+   dobbelttalte overlappet. 149 er antall distinkte rader, verifisert mot `count=exact`.
+
+2. **Oppløsningen var rekkefølge-avhengig og degraderte ankre.** Nedrivingen av utdaterte lenker
+   gjaldt alle ankre som var *vurdert* i kjøringen. ≥4-kravet måles mot DETTE boardets POI-utvalg,
+   så et board 2 km unna ser færre av senterets butikker og avviser det — og rev da ned et nærmere
+   boards riktige oppløsning. Målt: Sirkus falt fra 60 til 58 (Wesselsløkka), Olavskvartalet fra 4
+   til 2 (Teknostallen). Nedrivingen har nå to grunner og bare de to: ankeret ble **akseptert her**
+   men POI-en er ikke medlem lenger, eller bygget er **ikke anker noen steder**. To regresjonstester
+   låser begge.
+
+3. **Hvert anker ble mountet én gang per tema.** `withRepresentingAnchors` (Unit 4) løfter ankeret
+   inn i hvert tema et medlem hører hjemme i, og `selectOverviewPOIs`/`selectLegendPOIs` flatMap-et
+   over kategoriene uten dedup. Resultatet var «Encountered two children with the same key» × 144 i
+   konsollen, og Grilstad mall tegnet tre ganger. Dedup lagt inn i alle tre selektorene.
+
+**De håndsatte Valentinlyst-lenkene (057/058) er ryddet.** Migrasjon 074 mistet `anchor_summary` på
+senteret, så åtte POI-er pekte på et anker som ikke fantes. Oppløsningen ryddet de fire som ligger
+på Wesselsløkka; de fire siste lå på INGEN board og ble ryddet manuelt. Begge migrasjonene er merket
+SUPERSEDED — kjøres de på nytt, gjenskaper de feilen.
+
+**Verifisert i browser** (branchens egen dev-server, ikke `:3000` som kjører `main`): registeret
+åpner på både 3D og 2D, desktop og mobil. Desktop krever «Utforsk» i mini-popupen; på mobil ER
+modalen POI-flaten og registeret står der direkte. Ankeret bærer `+`-merket i 3D. Konsollen er ren.
+
+**Målt begrensning, ikke fikset:** «MySun Sirkus» ligger 137 m fra Sirkus-ankeret og blir stående
+som egen markør. Google gir den adressen «Falkenborgvegen» UTEN husnummer, så adresse-gaten faller,
+og 137 m er utenfor nærhets-gaten. Registeret er 60 av 61. Å utvide nærhets-gaten ville dratt inn
+Falkenborgvegen 35c-halen som Unit 1-testene eksplisitt vokter.
+
+**Funn utenfor scope:** «Glassdrive Lade Arena» (bilglassverksted) har `category_id = pharmacy` i
+basen og svarer derfor på «Hvor er nærmeste apotek?». Feilen er i kategori-mappingen, ikke i
+ankeret, og lå der før denne endringen.
+
+<details>
+<summary>Opprinnelig plan for Unit 8</summary>
+
 
 - **Recall-sjekk først.** Anker-oppløsningen kan ikke finne et senter som ikke er importert.
   `konsulent-harstad_utsikten-6-…` har 44 POI-er og null i `shopping` selv om Vikhammer senteret
@@ -1019,6 +1077,8 @@ ikke en regresjon fra denne enheten.
   falt på ≥4-terskelen, og hvor mange ankre som landet på 4–5 medlemmer (terskel-marginen).
   Utgangspunkt: 46 adresse-klynger med ≥4 medlemmer finnes i poolen i dag, 20 av dem med et
   `shopping_mall` innen 150 m.
+
+</details>
 
 ## System-Wide Impact
 

@@ -17,10 +17,11 @@
  * ## Idempotens og kryss-prosjekt-vern
  *
  * `parent_poi_id` ligger på den DELTE poolen (`v2.pois`), ikke per prosjekt —
- * containment er en egenskap ved stedet, ikke ved boardet. Derfor nulles en
- * eksisterende lenke KUN når ankeret den peker på faktisk ble vurdert i denne
- * kjøringen. Et prosjekt hvis radius ikke rekker Sirkus skal ikke rive ned
- * Sirkus-lenkene et annet prosjekt satte.
+ * containment er en egenskap ved stedet, ikke ved boardet. En eksisterende
+ * lenke nulles derfor bare når ankeret ble akseptert i denne kjøringen, eller
+ * når bygget ikke er anker noen steder. Et prosjekt som avviser Sirkus fordi
+ * bare to av butikkene ligger i utvalget dets, skal ikke rive ned de 58
+ * lenkene et nærmere prosjekt satte.
  *
  * ## Transport er ikke innhold
  *
@@ -93,13 +94,14 @@ interface PoiRow {
   category_id: string | null;
   contained_in_ids: string[] | null;
   parent_poi_id: string | null;
+  anchor_summary: string | null;
   entur_stopplace_id: string | null;
   bysykkel_station_id: string | null;
   poi_metadata: Record<string, unknown> | null;
 }
 
 const POI_COLUMNS =
-  "id, name, address, lat, lng, category_id, contained_in_ids, parent_poi_id, entur_stopplace_id, bysykkel_station_id, poi_metadata";
+  "id, name, address, lat, lng, category_id, contained_in_ids, parent_poi_id, anchor_summary, entur_stopplace_id, bysykkel_station_id, poi_metadata";
 
 /**
  * «Dagligvare, apotek, frisør, vinmonopol, bakeri og mer» — samme form som
@@ -330,17 +332,32 @@ export async function resolveProjectAnchors(options: {
   }
 
   // ── 5. Riv lenker som ikke lenger holder ────────────────────────────────
-  // KUN mot ankre vi faktisk vurderte. En POI som peker på et senter utenfor
-  // dette prosjektets radius har vi ikke grunnlag for å dømme.
+  // «Vurdert i denne kjøringen» er IKKE godt nok grunnlag for å rive. ≥4-kravet
+  // måles mot DETTE prosjektets POI-utvalg, og et board langt unna har færre av
+  // senterets butikker i utvalget sitt: Olavskvartalet oppløses til 4 medlemmer
+  // fra Ferjemannsveien og 2 fra Teknostallen 2 km unna. Rev vi på avvisning,
+  // ville det sist kjørte boardet degradert ankeret for alle de andre —
+  // rekkefølgen på prosjektene ville avgjort resultatet.
+  //
+  // Derfor to grunner, og bare de to:
+  //   1. ankeret ble AKSEPTERT her, men POI-en er ikke medlem lenger
+  //      (stedet flyttet ut, eller adressen ble rettet)
+  //   2. bygget er ikke anker NOEN steder — verken her eller fra en tidligere
+  //      kjøring — så lenken peker på et senter som ikke finnes som destinasjon
   //
   // Bare POI-er som ikke fikk NOE anker i denne kjøringen. Et medlem som byttet
   // anker er allerede skrevet i steg 4, og skal ikke rives ned igjen her.
-  const evaluatedAnchorIds = new Set(candidates.map((c) => c.id));
+  const acceptedAnchorIds = new Set(resolution.anchors.map((a) => a.anchorId));
+  const deadAnchorIds = new Set(
+    candidates
+      .filter((c) => !acceptedAnchorIds.has(c.id) && !rowById.get(c.id)?.anchor_summary)
+      .map((c) => c.id),
+  );
   const stale = rows
     .filter(
       (r) =>
         r.parent_poi_id !== null &&
-        evaluatedAnchorIds.has(r.parent_poi_id) &&
+        (acceptedAnchorIds.has(r.parent_poi_id) || deadAnchorIds.has(r.parent_poi_id)) &&
         !resolution.parentByPoiId.has(r.id),
     )
     .map((r) => r.id);
