@@ -7,7 +7,10 @@ import type { BoardPOI } from "./board-data";
 import { hexLightTint, markerCircleStyle } from "./marker-style";
 import type { LabelSide } from "@/lib/board/label-collision";
 import type { BoardZoomTier } from "./use-board-zoom-tier";
-import type { StoryEmphasis } from "./story/story-model";
+import {
+  STORY_EMPHASIS_OPACITY,
+  type StoryEmphasis,
+} from "./story/story-model";
 
 interface Props {
   poi: BoardPOI;
@@ -105,8 +108,11 @@ function BoardMarkerImpl({
   // begrunnelsen at trykkflaten var radene i flaten. En dempet pinne du kan se
   // men ikke ta på leser som et kart som har sluttet å virke, så et trykk går nå
   // gjennom uansett nivå; det er flaten som følger etter (se `useMapPinClick`).
-  const emphasisOpacity =
-    emphasis === "texture" ? 0.26 : emphasis === "scene" ? 0.6 : 1;
+  //
+  // Tallene per nivå bor i `STORY_EMPHASIS_OPACITY` (story-model) sammen med
+  // reglene for hvem som får hvilket nivå — og med gulvet på 50 % låst av en
+  // test, slik at det ikke kan gli ned igjen (2026-08-28).
+  const emphasisOpacity = emphasis ? STORY_EMPHASIS_OPACITY[emphasis] : 1;
 
   return (
     <Marker
@@ -135,8 +141,13 @@ function BoardMarkerImpl({
           height: containerSize,
           opacity: isVisible ? emphasisOpacity : 0,
           transform: isVisible ? "scale(1)" : "scale(0.5)",
+          // Vektskiftet skal SEES, ikke bare være der: ved et stoppbytte endrer
+          // flere hundre markører nivå samtidig, og en rask fade leser som at
+          // kartet blinket. 500 ms gjør den til en rolig bevegelse øyet får med
+          // seg. Størrelsen holder 200 ms — den svarer på fingeren din
+          // (`isActive`), og skal kjennes umiddelbar.
           transition:
-            "opacity 300ms ease-out, transform 300ms ease-out, width 200ms ease-out, height 200ms ease-out",
+            "opacity 500ms ease-out, transform 500ms ease-out, width 200ms ease-out, height 200ms ease-out",
           overflow: "visible",
         }}
       >

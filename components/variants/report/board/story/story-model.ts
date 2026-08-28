@@ -217,3 +217,21 @@ export function storyEmphasis(
   if (namedIds.has(poiId)) return "named";
   return categoryId === stopCategoryId ? "scene" : "texture";
 }
+
+/**
+ * Hvor gjennomsiktig markøren er på hvert nivå.
+ *
+ * Gulvet er 50 %, og det er en nedre grense, ikke en smakssak: laveste nivå lå
+ * på 26 %, og et punkt på en fjerdedel leser som avskrudd. Alle tre nivåene tar
+ * imot trykk (se `BoardMarker`), så en leser som tror de dempede er slått av,
+ * lar en fjerdedel av kartet stå urørt. Andreas, 2026-08-28: «folk må ikke
+ * missforstå det som at de er "deaktivert"».
+ *
+ * Mellomnivået løftes med gulvet. Ligger det på 0,6 mens gulvet er 0,5, er tre
+ * nivåer i praksis to.
+ */
+export const STORY_EMPHASIS_OPACITY: Record<StoryEmphasis, number> = {
+  named: 1,
+  scene: 0.75,
+  texture: 0.5,
+};

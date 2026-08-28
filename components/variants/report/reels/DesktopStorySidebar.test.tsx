@@ -287,14 +287,15 @@ describe("områdestoppet", () => {
     ).not.toBeNull();
   });
 
-  it("rører IKKE kameraet ved ankomst — splashen og intro-flyturen eier det", () => {
+  it("rører IKKE kameraet — verken ved ankomst eller ved et brikketrykk", () => {
     const utils = setup();
     expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
     expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
-    // Men velger man området SELV, flyr det ut til hele nabolaget.
+    // Et stoppbytte bytter pinner, ikke utsnitt (2026-08-28).
     fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
     fireEvent.click(within(rail(utils)).getByText("Beliggenhet"));
-    expect(utils.camera.flyToPoint).toHaveBeenCalledTimes(1);
+    expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
+    expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
   });
 
   it("har ingen faner: det er kartet som er stedslista her", () => {

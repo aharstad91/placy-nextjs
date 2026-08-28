@@ -7,6 +7,7 @@ import {
   areaProse,
   areaSubline,
   storyBeat,
+  STORY_EMPHASIS_OPACITY,
   storyEmphasis,
   storyIsCurated,
   storyMinutes,
@@ -267,5 +268,15 @@ describe("storyEmphasis — tre nivåer, ikke to", () => {
   });
   it("et navngitt sted beholder vekten sin også utenfor stoppets kategori", () => {
     expect(storyEmphasis("a", "natur", "mat", named)).toBe("named");
+  });
+
+  /* Gulvet er en grense, ikke en verdi vi tuner: under 50 % begynner et punkt å
+     lese som avskrudd, og alle tre nivåene tar imot trykk. */
+  it("holder de dempede over 50 % — de er dempet, ikke deaktivert", () => {
+    expect(STORY_EMPHASIS_OPACITY.texture).toBeGreaterThanOrEqual(0.5);
+    expect(STORY_EMPHASIS_OPACITY.scene).toBeGreaterThan(
+      STORY_EMPHASIS_OPACITY.texture,
+    );
+    expect(STORY_EMPHASIS_OPACITY.named).toBe(1);
   });
 });

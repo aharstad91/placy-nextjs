@@ -207,48 +207,20 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
   useEffect(() => cancelPending, [cancelPending]);
 
   /**
-   * Rammen legges rundt boligen + stoppets tre steder, ikke rundt hele
-   * kategorien: da er de navngitte punktene lesbare, mens de øvrige ligger
-   * rundt som dempet tekstur.
+   * Stoppbytte flytter IKKE kameraet (2026-08-28).
    *
-   * Fyrer én gang per stopp, og én gang når du kommer TILBAKE fra stedsfanen.
-   * Stedsfanen rammer nemlig ikke inn noe: lista der ER kartutsnittet, så et
-   * kamera som strammer seg inn idet fanen åpnes bestemmer sitt eget innhold —
-   * rammen om de tre ville etterlatt en liste på tre steder, og sett ut som om
-   * kategorien ikke hadde mer.
+   * Rammen lå tidligere rundt boligen + stoppets tre steder, og ble lagt på nytt
+   * for hvert stopp. Det gjorde ett trykk i temaraden til to hendelser på én
+   * gang: markørene skiftet vekt OG kartet dro seg til et nytt utsnitt. Andreas:
+   * «det skal ikke skje noe med reposisjonering med kartet, kun bytting av poi
+   * pins.»
+   *
+   * Kartet er dermed brukerens eget utsnitt gjennom hele omvisningen. De to
+   * bevegelsene som er igjen svarer begge på et trykk på ET STED: en rad
+   * panorerer rolig dit uten å endre zoom (`showPlace` → `flyToPoint({ holdFrame:
+   * true })`), og «Avslutt» på mobil legger hele nabolaget tilbake i rammen.
+   * Ingenting annet herfra skriver kameraet.
    */
-  const frameKeyRef = useRef<string | null>(null);
-  const frameKey = on
-    ? `${step}:${pane === "places" ? "list" : "story"}`
-    : null;
-  const homeCoords = data.home.coordinates;
-  useEffect(() => {
-    if (frameKey === null) {
-      frameKeyRef.current = null;
-      return;
-    }
-    if (frameKeyRef.current === frameKey) return;
-    // Første nøkkel etter at omvisningen slo seg på er ANKOMSTEN, ikke et valg
-    // brukeren gjorde. Det skillet trengs bare av områdestoppet under.
-    const arriving = frameKeyRef.current === null;
-    frameKeyRef.current = frameKey;
-    if (pane === "places") return;
-    if (step === AREA_STEP) {
-      // Området ER overblikket, så rammen er den samme som «Avslutt» ga:
-      // boligen med hele nabolaget rundt. Men ikke ved ankomst — der eier
-      // splash-en og intro-flyturen kameraet, og en flytur herfra ville krysset
-      // den bevegelsen i det panelet gled inn.
-      if (!arriving) {
-        cameraRef.current?.flyToPoint(homeCoords, {
-          minZoom: EXIT_ZOOM,
-          durationMs: 900,
-        });
-      }
-      return;
-    }
-    if (picks.length === 0) return;
-    cameraRef.current?.fitCoordinates(picks.map((p) => p.coordinates));
-  }, [frameKey, homeCoords, pane, picks, step]);
 
   /* Merket følger det ÅPNE punktet. Lukkes punktet — trykk i kart-bakgrunnen, et
      annet sted åpnet, et nytt stopp — skal ikke aksenten bli stående på en rad

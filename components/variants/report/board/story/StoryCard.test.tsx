@@ -281,12 +281,11 @@ describe("stoppet", () => {
     ]);
   });
 
-  it("rammer kameraet rundt boligen + de tre, ikke rundt hele kategorien", () => {
+  it("rører ikke kameraet: utsnittet er brukerens, ikke stoppets", () => {
     const { begin, camera } = setup();
     begin();
-    expect(camera.fitCoordinates).toHaveBeenCalledTimes(1);
-    const coords = camera.fitCoordinates.mock.calls[0][0] as { lat: number }[];
-    expect(coords).toHaveLength(2); // de to plukkede; boligen legges til av kartet
+    expect(camera.fitCoordinates).not.toHaveBeenCalled();
+    expect(camera.flyToPoint).not.toHaveBeenCalled();
   });
 });
 
@@ -542,11 +541,14 @@ describe("transporten", () => {
     );
   });
 
-  it("rammer inn det nye stoppet", () => {
+  it("bytter bare markørenes vekt — kartet blir stående (2026-08-28)", () => {
     const { begin, getByText, camera } = setup();
     begin();
     act(() => fireEvent.click(getByText("Natur & friluft")));
-    expect(camera.fitCoordinates).toHaveBeenCalledTimes(2);
+    expect(camera.fitCoordinates).not.toHaveBeenCalled();
+    expect(camera.flyToPoint).not.toHaveBeenCalled();
+    // Vekten er det som skifter: det nye stoppets steder bærer scenen.
+    expect(spy.story.emphasis).toBe("texture"); // «naer» ligger i forrige stopp
   });
 });
 
@@ -601,13 +603,13 @@ describe("områdestoppet", () => {
     ).toContain("Hva kjennetegner området?");
   });
 
-  it("flyr kameraet ut til hele nabolaget når det VELGES, ikke ved ankomst", () => {
+  it("lar kameraet stå, også når det VELGES: brikkene er ikke kamerabevegelser", () => {
     const utils = setup();
     utils.begin();
-    // Ankomsten på et temastopp rammer de tre; ingen flytur ut.
     expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
     act(() => fireEvent.click(railTabs()[0]));
-    expect(utils.camera.flyToPoint).toHaveBeenCalledTimes(1);
+    expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
+    expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
   });
 
   it("lar kartet være et overblikk: ingen vekting av markørene", () => {
