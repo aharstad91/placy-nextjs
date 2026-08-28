@@ -472,7 +472,10 @@ export function useActiveCategory() {
  */
 export function useActivePOI() {
   const { state, data } = useBoard();
-  return findBoardPOI(data.categories, state.activePOIId);
+  // Valgt kategori vinner når POI-en ligger i flere: et anker bærer registeret
+  // sitt kategori-avgrenset, og du skal se senteret slik det ser ut i den
+  // konteksten du står i.
+  return findBoardPOI(data.categories, state.activePOIId, state.activeCategoryId);
 }
 
 /** Kategorien den aktive POI-en hører til — uavhengig av `activeCategoryId`.

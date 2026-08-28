@@ -12,6 +12,7 @@ import { poiVisualIdentity } from "./marker-style";
 import type { BoardPOI } from "./board-data";
 import type { ReportData, ReportTheme } from "../report-data";
 import type { POI, ReportThemeAudio } from "@/lib/types";
+import type { BoardCategoryId } from "@/lib/board/board-types";
 
 function makePOI(id: string, overrides: Partial<POI> = {}): POI {
   return {
@@ -570,6 +571,29 @@ describe("findBoardPOI + findBoardCategoryOf (kategori-uavhengig POI-oppslag)", 
       ]),
     );
     expect(findBoardPOI(both.categories, "delt")?.categoryId).toBe("forst");
+  });
+
+  it("preferCategoryId velger kopien fra kategorien brukeren står i", () => {
+    // Anker-tilfellet: samme senter ligger i flere tema, og kopiene er ULIKE
+    // (registeret er kategori-avgrenset). Uten preferansen fikk POI-flaten
+    // alltid den første kategorien, uansett hva som var valgt.
+    const shared = makePOI("delt");
+    const both = adaptBoardData(
+      makeReportData([makeTheme("forst", [shared]), makeTheme("deretter", [shared])]),
+    );
+    expect(findBoardPOI(both.categories, "delt", "deretter" as BoardCategoryId)?.categoryId).toBe("deretter");
+    expect(findBoardPOI(both.categories, "delt", "forst" as BoardCategoryId)?.categoryId).toBe("forst");
+  });
+
+  it("faller tilbake til bredt søk når POI-en ikke ligger i den foretrukne kategorien", () => {
+    // Et markørklikk skal fortsatt kunne åpne et punkt i et annet tema enn det
+    // valgte — preferansen er en preferanse, ikke et filter.
+    const found = findBoardPOI(data.categories, "p-natur-1", "mat" as BoardCategoryId);
+    expect(found?.categoryId).toBe("natur");
+  });
+
+  it("ukjent foretrukket kategori-id endrer ingenting", () => {
+    expect(findBoardPOI(data.categories, "p-mat-1", "finnes-ikke" as BoardCategoryId)?.id).toBe("p-mat-1");
   });
 
   it("finner kategorien en POI hører til", () => {

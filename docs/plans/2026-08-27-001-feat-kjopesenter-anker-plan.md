@@ -856,7 +856,7 @@ Anker-markørens egne visuelle uttrykk kan ikke ses på et ekte board ennå — 
 egen anker-modus. Merk konsekvensen: `+`-merket finnes bare i 3D. 3D er default-motoren, så det er
 det de fleste ser — men de to flatene divergerer visuelt til noen bestemmer noe annet.
 
-### Unit 6 — Innholdsregisteret i POI-flaten
+### Unit 6 — Innholdsregisteret i POI-flaten ✅ FERDIG
 
 `POIExploreModal` får en anker-variant: reisetid øverst (uendret), `editorial_hook` (finnes alt på
 Sirkus), deretter registeret gruppert på Placy-kategorier med medlemsnavn — Apples Browse
@@ -867,6 +867,70 @@ til de medlemmene; det er samme drill-in-affordans som `DesktopStorySidebar.tsx:
 
 Mobil bruker samme modal (den ER mobilens POI-flate, `POIExploreModalHost.tsx:69`); desktop får
 registeret i mini-popupen bak «Utforsk».
+
+**Resultat (2026-08-28, samme branch).**
+
+| Leveranse | Fil |
+|---|---|
+| Registeret, gruppering + disclosure | `components/variants/report/board/AnchorRegister.tsx` (ny) |
+| Anker-variant + gating + krok-fallback | `components/variants/report/board/POIExploreModal.tsx` |
+| Kontekst-riktig POI-oppslag | `board-data.ts` (`findBoardPOI`), `board-state.tsx` (`useActivePOI`) |
+
+Rekkefølgen i modalen: bilder → tekst om senteret → **registeret** → Google-fakta → attribusjon.
+Registeret står FØR faktaene fordi det svarer på «hva er dette stedet», ikke på en detalj om det.
+
+**Kategori-radene er disclosures, ikke navigasjon.** Husets expand/collapse-oppskrift
+(`trip-desktop-accordion-sidebar-20260209`): begge tilstander i DOM, `max-height`-animasjon, ingen
+auto-scroll. Rekkefølgen på gruppene er den SAMME som `buildAnchorSummary` i pipelinen bruker
+(antall synkende, så navn stigende, nb-NO) — sammendragslinja og registeret skal ikke fortelle to
+ulike historier om samme senter.
+
+**Medlemsnavnene er IKKE trykkbare, og det er et krav, ikke en forenkling.** Et medlem har ingen
+markør — det er hele poenget med ankeret. En trykkbar rad ville sendt boardet inn i POI-fasen for et
+punkt uten pinne: kameraet flyr, labelen mangler, ruta tegnes til noe brukeren ikke ser. Testen
+`«medlemsnavnene er IKKE trykkbare»` pinner det.
+
+**Under åtte medlemmer står alt åpent.** Vikhammer senteret har fem medlemmer i fem kategorier — fem
+lukkede rader med ett navn i hver er verre enn å bare vise dem. Samme resonnement som
+`HighlightsDisclosure`s «ett punkt: ingen toggle».
+
+Tre funn som krevde kode utover det planen beskrev:
+
+**1. Ankeret var uåpnelig på nettopp de sentrene det er bygget for.** `hasExploreContent` gater både
+«Utforsk»-knappen og hele mobil-inngangen på grounding ELLER Google-fakta. Vikhammer senteret har
+ingen av delene (samme rating-hull som Unit 3 fant), så registeret kunne ikke nås — og medlemmene er
+absorbert, altså borte fra grensesnittet. `hasAnchorRegister` er lagt i gaten. Blast-radiusen er
+null for vanlige POI-er: predikatet er `isAnchor === true`.
+
+**2. Den redaksjonelle kroken fantes ikke på mobil.** Modalen rendret bare grounding-narrativet og
+sa ellers «vi har ikke noe redaksjonelt innhold om dette stedet ennå» — også når `editorialHook`
+fantes. På desktop står kroken i mini-popupen, men mobilen har ingen popup: modalen ER POI-flaten
+der. Kroken er nå fallback når grounding mangler. **Verifisert i nettleser:** Pizzabakeren Ranheim
+viser «Pizza til henting eller levering, i Grilstadporten i Skonnertvegen 8.» der det før sto at vi
+ikke visste noe. Kroken er bevisst IKKE lagt i gaten — det ville åpnet en 85vh-modal på hvert eneste
+mobil-POI-tap, som er nøyaktig det `POIExploreModalHost` advarer mot.
+
+**3. POI-oppslaget hentet feil kopi av ankeret.** `findBoardPOI` returnerte første forekomst i
+kategori-rekkefølgen. Registeret er kategori-avgrenset (Unit 4), så Sirkus i «Hverdagsliv» har femti
+butikker og Sirkus i «Mat & Drikke» har åtte spisesteder — og du fikk alltid den første, uansett hva
+som var valgt. `preferCategoryId` velger kopien fra kategorien brukeren står i; det brede søket står
+igjen som fallback, så et markørklikk fortsatt kan åpne et punkt i et annet tema. Dette er
+forutsetningen Unit 7 bygger «registeret åpner på den valgte kategorien» på.
+
+**Fjerne ankre viser sammendraget alene.** Thon Senter Verdal (12 km) importerer ingen medlemmer —
+medlemstallet kom fra Google-proben i Unit 3. Da er `anchor_summary` hele registeret, og vi later
+ikke som vi kjenner butikkene der.
+
+**Verifisert.** 3 269 tester / 202 filer grønne (+26), `tsc` rent, lint 0 errors. Nettleser
+(Chrome 151, Strindfjordvegen 10): 465 markører, 3D-motoren oppe, **null console-feil**, modalen
+åpner og lukker på to ulike kategorier. Registeret kan ikke ses på ekte data før Unit 8 skriver
+`anchor_summary` til prod, så layouten ble målt med 50 medlemmer i 8 grupper injisert i den åpne
+modalen: dialogen stopper på 859 px = nøyaktig 85vh, innholdet scroller (1 982 px mot 788 px synlig),
+header og footer blir stående, ingen horisontal overflow. `max-h-[2000px]`-taket har god margin —
+verste enkeltgruppe er ~380 px.
+
+**Merk:** `node_modules` var slettet i BÅDE hovedrepo og worktree da denne enheten startet (rydding
+etter diskstoppen 2026-08-27). Reinstallert i worktreet; hovedrepoet står fortsatt uten.
 
 ### Unit 7 — Filter-oppførsel
 

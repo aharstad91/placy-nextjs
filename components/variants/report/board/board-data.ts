@@ -217,16 +217,29 @@ export interface BoardData {
  * trenger `BoardPOI` (bærer `categoryId`, visnings-koordinaten fra pin-
  * spredningen, og sammensatt `body`). Derfor søk over kategoriene.
  *
- * Returnerer første forekomst: samme sted kan ligge i flere kategorier, og
- * rekkefølgen er kategori-rekkefølgen — deterministisk mellom renders. Objektet
- * er hentet fra `data`, ikke konstruert, så referansen er stabil og
+ * Samme sted kan ligge i FLERE kategorier, og da er ikke kopiene like: et
+ * kjøpesenter-anker bærer registeret sitt kategori-avgrenset, så Sirkus i
+ * «Hverdagsliv» har femti butikker og Sirkus i «Mat & Drikke» har åtte
+ * spisesteder. `preferCategoryId` velger kopien fra den kategorien brukeren
+ * faktisk står i; uten den fikk man alltid den første i kategori-rekkefølgen,
+ * uansett hva som var valgt. Finnes ikke POI-en der, søkes resten som før — et
+ * markørklikk skal fortsatt kunne åpne et punkt uten å endre kategori.
+ *
+ * Objektet er hentet fra `data`, ikke konstruert, så referansen er stabil og
  * `React.memo`-sammenligninger nedstrøms holder.
  */
 export function findBoardPOI(
   categories: readonly BoardCategory[],
   poiId: string | null | undefined,
+  preferCategoryId?: BoardCategoryId | null,
 ): BoardPOI | null {
   if (!poiId) return null;
+  if (preferCategoryId) {
+    const preferred = categories
+      .find((c) => c.id === preferCategoryId)
+      ?.pois.find((p) => p.id === poiId);
+    if (preferred) return preferred;
+  }
   for (const category of categories) {
     const poi = category.pois.find((p) => p.id === poiId);
     if (poi) return poi;

@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import {
   POIExploreModal,
+  hasAnchorRegister,
   hasExploreContent,
+  hasGoogleFacts,
   hasGroundedNarrative,
 } from "./POIExploreModal";
 import type { BoardPOI } from "./board-data";
@@ -80,6 +82,53 @@ function boardPoi(raw: Partial<POI> = {}): BoardPOI {
   } as BoardPOI;
 }
 
+/**
+ * Kjøpesenter-anker med et lite register. `anchorSummary` er ankerflagget
+ * (lib/board/anchor-poi.ts), så `isAnchor` følger av den.
+ */
+function anchorPoi(raw: Partial<POI> = {}): BoardPOI {
+  const children: POI[] = [
+    {
+      id: "m-rema",
+      name: "Rema 1000",
+      coordinates: { lat: 63.43, lng: 10.45 },
+      category: { id: "dagligvare", name: "Dagligvare", icon: "ShoppingCart", color: "#16a34a" },
+    },
+    {
+      id: "m-extra",
+      name: "Extra",
+      coordinates: { lat: 63.43, lng: 10.45 },
+      category: { id: "dagligvare", name: "Dagligvare", icon: "ShoppingCart", color: "#16a34a" },
+    },
+    {
+      id: "m-apotek",
+      name: "Apotek 1",
+      coordinates: { lat: 63.43, lng: 10.45 },
+      category: { id: "apotek", name: "Apotek", icon: "Pill", color: "#0ea5e9" },
+    },
+  ];
+  const poi = {
+    id: "google-vikhammer",
+    name: "Vikhammer senteret",
+    coordinates: { lat: 63.43, lng: 10.62 },
+    address: "Utsikten 13, Vikhammer",
+    category: { id: "shopping", name: "Kjøpesenter", icon: "Store", color: "#f59e0b" },
+    anchorSummary: "Dagligvare, apotek og frisør",
+    childPOIs: children,
+    ...raw,
+  } as POI;
+  return {
+    id: poi.id,
+    name: poi.name,
+    coordinates: poi.coordinates,
+    address: poi.address,
+    categoryId: "hverdagsliv",
+    isAnchor: true,
+    childPOIs: poi.childPOIs,
+    raw: poi,
+  } as BoardPOI;
+}
+
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => cleanup());
 
@@ -114,6 +163,58 @@ describe("gating-hjelpere", () => {
 
   it("kun Google-fakta (ingen grounding) er nok innhold til en modal", () => {
     expect(hasExploreContent(boardPoi({ googleRating: 4.5, googleReviewCount: 12 }))).toBe(true);
+  });
+
+  it("et anker uten grounding og uten Google-fakta åpner likevel — registeret ER innholdet", () => {
+    // Vikhammer senteret har verken rating eller anmeldelser hos Google (målt i
+    // Unit 3). Uten denne grenen var registeret uåpnelig på nettopp de
+    // nærsentrene ankeret er bygget for, og de absorberte butikkene var borte.
+    const senteret = anchorPoi();
+    expect(hasGoogleFacts(senteret)).toBe(false);
+    expect(hasGroundedNarrative(senteret.raw.grounding)).toBe(false);
+    expect(hasAnchorRegister(senteret)).toBe(true);
+    expect(hasExploreContent(senteret)).toBe(true);
+  });
+
+  it("en vanlig POI er ikke et anker", () => {
+    expect(hasAnchorRegister(boardPoi())).toBe(false);
+  });
+});
+
+describe("POIExploreModal — anker-registeret", () => {
+  it("rendrer registeret gruppert på kategori", () => {
+    render(<POIExploreModal open onClose={() => {}} poi={anchorPoi()} />);
+    expect(screen.getByTestId("anchor-register")).toBeTruthy();
+    expect(
+      screen.getAllByTestId("register-group").map((r) => r.textContent),
+    ).toEqual(["Dagligvare2", "Apotek1"]);
+  });
+
+  it("sier ALDRI «vi har ikke noe innhold» over et register", () => {
+    render(<POIExploreModal open onClose={() => {}} poi={anchorPoi()} />);
+    expect(screen.queryByText(/ikke noe redaksjonelt innhold/)).toBeNull();
+  });
+
+  it("viser den redaksjonelle kroken når grounding mangler — mobilen har ingen popup å lese den i", () => {
+    const withHook = anchorPoi();
+    withHook.body = "Trondheims største kjøpesenter, ti minutter unna.";
+    render(<POIExploreModal open onClose={() => {}} poi={withHook} />);
+    expect(screen.getByText("Trondheims største kjøpesenter, ti minutter unna.")).toBeTruthy();
+  });
+
+  it("grounded narrativ vinner over kroken", () => {
+    const both = anchorPoi({ grounding: { poiGroundingVersion: 1, generated: generated() } });
+    both.body = "Kroken som ikke skal vises.";
+    render(<POIExploreModal open onClose={() => {}} poi={both} />);
+    expect(screen.getByText(/skulpturpark i Straumen sentrum/)).toBeTruthy();
+    expect(screen.queryByText("Kroken som ikke skal vises.")).toBeNull();
+  });
+
+  it("en vanlig POI får ingen register-seksjon", () => {
+    render(
+      <POIExploreModal open onClose={() => {}} poi={boardPoi({ googleRating: 4.2 })} />,
+    );
+    expect(screen.queryByTestId("anchor-register")).toBeNull();
   });
 });
 
