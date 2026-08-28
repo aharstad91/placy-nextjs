@@ -52,6 +52,8 @@ import "./load-env";
 import { createServerClient } from "@/lib/supabase/client";
 import { discoverAnchorsForProject } from "@/lib/pipeline/discover-anchors";
 import { resolveProjectAnchors } from "@/lib/pipeline/resolve-anchors-step";
+import { enrichContainment } from "@/lib/pipeline/enrich-containment";
+import { ANCHOR_FAMILIES } from "@/lib/board/anchor-families";
 
 interface ProjectRow {
   id: string;
@@ -74,6 +76,7 @@ function parseArgs() {
     projects: all("--project"),
     commit: has("--commit"),
     skipDiscovery: has("--skip-discovery"),
+    skipContainment: has("--skip-containment"),
   };
 }
 
@@ -85,6 +88,9 @@ interface BoardOutcome {
   discoveredBeyond: number;
   discoveredRejected: number;
   anchors: Array<{ name: string; family: string; memberCount: number; summary: string }>;
+  /** Containment-høstingen: kall brukt og rader som fikk peker. */
+  containmentCalls: number;
+  containmentRows: number;
   membersLinked: number;
   membersUnlinked: number;
   rejected: Array<{ name: string; memberCount: number }>;
@@ -92,7 +98,7 @@ interface BoardOutcome {
 }
 
 async function main() {
-  const { projects: wanted, commit, skipDiscovery } = parseArgs();
+  const { projects: wanted, commit, skipDiscovery, skipContainment } = parseArgs();
   const mode = commit ? "SKRIVER TIL PROD" : "tørrkjøring (ingen writes)";
 
   console.log(`\n━━━ Anker-backfill — ${mode} ━━━\n`);
@@ -143,6 +149,8 @@ async function main() {
       discoveredBeyond: 0,
       discoveredRejected: 0,
       anchors: [],
+      containmentCalls: 0,
+      containmentRows: 0,
       membersLinked: 0,
       membersUnlinked: 0,
       rejected: [],
@@ -175,7 +183,37 @@ async function main() {
       }
     }
 
-    const res = await resolveProjectAnchors({ projectId: project.id, dryRun: !commit });
+    // Containment FØR oppløsningen. Gate 1 i anker-definisjonen er Googles
+    // `containingPlaces`, og den er tom for nesten hele poolen (4 av 1 908
+    // Google-rader målt 2026-08-28). Uten dette steget er det navne-gaten
+    // alene som avgjør hva som er et idrettsanlegg — og den bommer på
+    // Charlottenlund, der stedet heter «Charlottenlundhallen».
+    let containmentOverlay: ReadonlyMap<string, string[]> | undefined;
+    if (!skipContainment) {
+      const anlegg = ANCHOR_FAMILIES.find((f) => f.id === "anlegg")!;
+      const enrich = await enrichContainment({
+        projectId: project.id,
+        categoryIds: [...anlegg.candidateCategoryIds],
+        apiKey: process.env.GOOGLE_PLACES_API_KEY ?? "",
+        dryRun: !commit,
+      });
+      containmentOverlay = enrich.pointers;
+      outcome.containmentCalls = enrich.calls;
+      outcome.containmentRows = enrich.rowsUpdated;
+      outcome.warnings.push(...enrich.warnings);
+      if (enrich.clusters > 0) {
+        console.log(
+          `  Containment: ${enrich.clusters} klynger · ${enrich.calls} kall · ${enrich.rowsUpdated} rader fikk peker` +
+            (enrich.unknownContainers > 0 ? ` · ${enrich.unknownContainers} pekere til steder vi ikke har` : ""),
+        );
+      }
+    }
+
+    const res = await resolveProjectAnchors({
+      projectId: project.id,
+      dryRun: !commit,
+      containmentOverlay,
+    });
     outcome.anchors = res.anchors.map((a) => ({
       name: a.name,
       family: a.family,

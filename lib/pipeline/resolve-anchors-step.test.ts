@@ -242,6 +242,21 @@ describe("buildAnchorNameSummary — sammendraget for idrettsanlegg", () => {
     expect(summary).toBe("Ranheimshallen og Extra Arena");
   });
 
+  it("holder ankerets eget navn ute av sitt eget register", () => {
+    // Poolen har fire rader for Charlottenlundhallen — én Google og tre OSM.
+    // Google-raden blir ankeret, de tre andre blir medlemmer. Riktig i dataene,
+    // men «Charlottenlundhallen: … og Charlottenlundhallen» leses som en feil.
+    const summary = buildAnchorNameSummary(
+      [
+        { name: "Charlottenlundhallen", reviewCount: 0 },
+        { name: "Charlottenlund Kunstgress 11-bane", reviewCount: 57 },
+        { name: "Svømmehall", reviewCount: 0 },
+      ],
+      "Charlottenlundhallen",
+    );
+    expect(summary).toBe("Charlottenlund Kunstgress 11-bane og Svømmehall");
+  });
+
   it("tåler tom liste", () => {
     expect(buildAnchorNameSummary([])).toBe("");
   });

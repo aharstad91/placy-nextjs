@@ -173,10 +173,18 @@ export function buildAnchorSummary(
  */
 export function buildAnchorNameSummary(
   members: Array<{ name: string; reviewCount: number }>,
+  anchorName?: string,
 ): string {
+  // Ankerets EGET navn hører ikke hjemme i sitt eget register. Det står der
+  // fordi poolen har flere rader for samme sted — «Charlottenlundhallen» finnes
+  // som én Google-rad og tre OSM-rader, Google-raden blir ankeret og de tre
+  // andre blir medlemmer. Riktig håndtert i dataene, men «Charlottenlundhallen:
+  // … og Charlottenlundhallen» leses som en feil.
+  const ownName = anchorName?.toLocaleLowerCase("nb-NO");
   const byName = new Map<string, { name: string; reviewCount: number }>();
   for (const member of members) {
     const key = member.name.toLocaleLowerCase("nb-NO");
+    if (ownName && key === ownName) continue;
     const seen = byName.get(key);
     if (!seen || member.reviewCount > seen.reviewCount) byName.set(key, member);
   }
@@ -233,6 +241,14 @@ function isCuratedRow(row: PoiRow): boolean {
 
 export async function resolveProjectAnchors(options: {
   projectId: string;
+  /**
+   * Containment `enrich-containment` nettopp fant, POI-id → container-id-er.
+   *
+   * Legges OVER radenes egne `contained_in_ids`. I en ekte kjøring har
+   * høstingen allerede skrevet det samme til basen og overlegget er en no-op;
+   * i en tørrkjøring er det forskjellen på en sann og en usann plan.
+   */
+  containmentOverlay?: ReadonlyMap<string, string[]>;
   /**
    * Tørrkjøring: poolen leses og oppløsningen regnes ut som vanlig, men ingen
    * rad skrives. Tallene i rapporten er dermed nøyaktig det en ekte kjøring
@@ -317,13 +333,39 @@ export async function resolveProjectAnchors(options: {
     if (Number.isFinite(lat) && Number.isFinite(lng)) geo.set(row.id, { lat, lng });
   }
 
+  // Hvor mange andre steder i poolen peker på HVER rad som sin container?
+  // Dette er containment-gaten i `anchor-families.ts` — den som gjør
+  // «Charlottenlundhallen» til et anlegg selv om navnet sier «hall».
+  //
+  // Telles på STEDER, ikke rader: peker tre kopier av samme OSM-objekt på det
+  // samme bygget, er det fortsatt bare ett sted som mener det.
+  const containmentOf = (row: PoiRow): string[] =>
+    options.containmentOverlay?.get(row.id) ?? row.contained_in_ids ?? [];
+
+  const pointerNamesById = new Map<string, Set<string>>();
+  for (const row of rows) {
+    for (const containerId of containmentOf(row)) {
+      if (containerId === row.id) continue;
+      const seen = pointerNamesById.get(containerId);
+      const key = row.name.toLocaleLowerCase("nb-NO");
+      if (seen) seen.add(key);
+      else pointerNamesById.set(containerId, new Set([key]));
+    }
+  }
+
   const candidateIdsByFamily = new Map<string, Set<string>>();
   const allCandidateIds = new Set<string>();
   for (const family of ANCHOR_FAMILIES) {
     const ids = new Set<string>();
     for (const row of rows) {
       if (!geo.has(row.id)) continue;
-      if (isFamilyCandidate(family, { name: row.name, categoryId: row.category_id })) {
+      if (
+        isFamilyCandidate(family, {
+          name: row.name,
+          categoryId: row.category_id,
+          containmentPointers: pointerNamesById.get(row.id)?.size ?? 0,
+        })
+      ) {
         ids.add(row.id);
         allCandidateIds.add(row.id);
       }
@@ -363,7 +405,7 @@ export async function resolveProjectAnchors(options: {
           ...point,
           curated: isCuratedRow(row),
           reviewCount: googleReviewCount(row),
-          containedInIds: row.contained_in_ids ?? undefined,
+          containedInIds: containmentOf(row),
         });
         continue;
       }
@@ -377,7 +419,7 @@ export async function resolveProjectAnchors(options: {
         address: row.address,
         ...point,
         categoryId: row.category_id,
-        containedInIds: row.contained_in_ids ?? undefined,
+        containedInIds: containmentOf(row),
       });
     }
 
@@ -464,6 +506,7 @@ export async function resolveProjectAnchors(options: {
               .map((id) => rowById.get(id))
               .filter((r): r is PoiRow => Boolean(r))
               .map((r) => ({ name: r.name, reviewCount: googleReviewCount(r) })),
+            anchor.name,
           )
         : buildAnchorSummary(
             anchor.memberIds

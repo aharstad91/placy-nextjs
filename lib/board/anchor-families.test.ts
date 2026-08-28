@@ -183,3 +183,59 @@ describe("anchorRegisterHeading — registeret snakker familiens språk", () => 
     expect(anchorRegisterHeading("cafe")).toBe("I senteret");
   });
 });
+
+describe("containment-gaten — Charlottenlund-saken", () => {
+  // Charlottenlund er samme sak som Ranheim sett fra kartet: sju pinner for ett
+  // sted. Men det finnes ingen «Charlottenlund idrettsanlegg» — Google mener
+  // stedet ER hallen, og peker ULF-AN bokseklubb og Chappa fritidsklubb inn i
+  // den. Navne-gaten kaster «-hallen» med vilje, så containment må bære denne.
+  it("to pekere gjør hallen til et anlegg selv om navnet sier «hall»", () => {
+    expect(
+      isFamilyCandidate(ANLEGG, {
+        name: "Charlottenlundhallen",
+        categoryId: "idrett",
+        containmentPointers: 2,
+      }),
+    ).toBe(true);
+  });
+
+  it("ÉN peker er ikke nok — det er ett sted som gjør krav, ikke enighet", () => {
+    // Målt: «Nidaros Petanque klubbhus» → Lade idrettspark, «Bergens
+    // Tennisklubb» → Bergen Racketsenter. Én peker hver.
+    expect(
+      isFamilyCandidate(ANLEGG, {
+        name: "Bergen racketsenter",
+        categoryId: "idrett",
+        containmentPointers: 1,
+      }),
+    ).toBe(false);
+  });
+
+  it("kategorien er fortsatt et krav — en skole med pekere blir ikke et anlegg", () => {
+    // «Blussuvoll school» har to pekere i poolen. Den er en skole, og skal bli
+    // stående som skole.
+    expect(
+      isFamilyCandidate(ANLEGG, {
+        name: "Blussuvoll skole",
+        categoryId: "skole",
+        containmentPointers: 5,
+      }),
+    ).toBe(false);
+  });
+
+  it("Ranheim har null containment og reddes av navnet alene", () => {
+    // Målt: ingen containment i det hele tatt rundt Ranheim idrettspark. Begge
+    // gatene trengs — de dekker hver sin halvdel av virkeligheten.
+    expect(
+      isFamilyCandidate(ANLEGG, {
+        name: "Ranheim Idrettspark",
+        categoryId: "idrett",
+        containmentPointers: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it("kjøpesenteret har ingen containment-gate — typen er gaten", () => {
+    expect(KJOPESENTER.containmentGate).toBeNull();
+  });
+});

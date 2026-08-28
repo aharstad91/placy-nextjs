@@ -416,7 +416,7 @@ export function subdivideCircle(circle: SearchCircle): SearchCircle[] {
  * Standardpasset lar den stå tom (POPULARITY) — der er metnings-oppdelingen
  * mekanismen for full dekning, og de to strategiene løser ulike problemer.
  */
-async function searchNearbyOnce(
+export async function searchNearbyOnce(
   category: string | null,
   circle: SearchCircle,
   apiKey: string,
@@ -1335,7 +1335,7 @@ export async function discoverPOIs(
  * tom liste) når feltet mangler — fravær betyr «Google sa ingenting», og skal
  * ikke lagres som «ligger ikke i noe bygg».
  */
-function mapContainingPlaces(
+export function mapContainingPlaces(
   containing: Array<{ id?: string; name?: string }> | undefined
 ): string[] | undefined {
   if (!containing || containing.length === 0) return undefined;

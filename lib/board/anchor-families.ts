@@ -128,6 +128,27 @@ export interface AnchorFamily {
    */
   nameGate: ((name: string) => boolean) | null;
   /**
+   * ALTERNATIV til navne-gaten: så mange andre steder må peke på dette stedet
+   * som sin container (`containingPlaces`) før det regnes som et anlegg,
+   * uansett hva det heter. `null` = gaten er av.
+   *
+   * Den finnes fordi navne-gaten alene har et målt hull. Charlottenlund er
+   * samme sak som Ranheim sett fra kartet — sju pinner for ett sted — men det
+   * finnes ingen «Charlottenlund idrettsanlegg». Google mener likevel at stedet
+   * er hallen: ULF-AN bokseklubb og Chappa fritidsklubb ligger begge INNE i
+   * «Charlottenlundhallen», og et tekstsøk på «Charlottenlund idrettsanlegg»
+   * gir hallen som øverste treff. Navne-gaten kaster hallen fordi «-hallen» er
+   * enheten inne i anlegget — sant på Ranheim, usant her, der det ikke finnes
+   * noen park over hallen.
+   *
+   * TO pekere, ikke én. Målt over alle 18 idrettsklyngene i poolen: én peker er
+   * et enkeltsted som gjør krav («Nidaros Petanque klubbhus» → Lade
+   * idrettspark, «Bergens Tennisklubb» → Bergen Racketsenter), mens to eller
+   * flere betyr at uavhengige steder er enige. Realitets-gaten på fire
+   * medlemmer står uansett igjen etterpå.
+   */
+  containmentGate: { minPointers: number } | null;
+  /**
    * Reglene som sendes videre til `resolveAnchors` — radier, minstekrav og
    * hvilke kategorier et medlem kan ha. Ligger samlet i ett objekt fordi det ER
    * `AnchorOptions`: familien er en navngitt forhåndsutfylling av den, ikke et
@@ -160,6 +181,8 @@ const KJOPESENTER: AnchorFamily = {
   label: "Kjøpesenter",
   candidateCategoryIds: new Set(["shopping"]),
   nameGate: null,
+  // Av: `shopping_mall`-typen ER gaten, og alle sentre bærer den.
+  containmentGate: null,
   summaryFrom: "categories",
   registerHeading: "I senteret",
   // Uendret fra 2026-08-27 — kalibrert mot Sirkus (150 m) og Vikhammer (5–25 m).
@@ -173,6 +196,7 @@ const ANLEGG: AnchorFamily = {
   label: "Idrettsanlegg",
   candidateCategoryIds: new Set(["idrett"]),
   nameGate: hasSiteNoun,
+  containmentGate: { minPointers: 2 },
   summaryFrom: "names",
   registerHeading: "På anlegget",
   options: {
@@ -244,13 +268,26 @@ export const ALL_ANCHOR_CATEGORY_IDS: ReadonlySet<string> = new Set(
   ANCHOR_FAMILIES.flatMap((f) => [...f.candidateCategoryIds]),
 );
 
-/** Er denne POI-en kandidat i denne familien? */
+/**
+ * Er denne POI-en kandidat i denne familien?
+ *
+ * Kategorien er alltid et KRAV. Navnet og containment er ALTERNATIVER — det
+ * holder å bestå én av dem. Rekkefølgen mellom dem spiller ingen rolle for
+ * svaret, men den forklarer hvorfor begge trengs: Ranheim har anleggs-navnet og
+ * null containment, Charlottenlund har containment og ikke navnet.
+ *
+ * `containmentPointers` er antall andre steder i poolen som oppgir denne POI-en
+ * i `contained_in_ids`. Kalleren teller dem; her brukes bare tallet.
+ */
 export function isFamilyCandidate(
   family: AnchorFamily,
-  poi: { name: string; categoryId: string | null },
+  poi: { name: string; categoryId: string | null; containmentPointers?: number },
 ): boolean {
   if (!poi.categoryId || !family.candidateCategoryIds.has(poi.categoryId)) return false;
-  return family.nameGate === null || family.nameGate(poi.name);
+  if (family.nameGate === null) return true;
+  if (family.nameGate(poi.name)) return true;
+  const gate = family.containmentGate;
+  return gate !== null && (poi.containmentPointers ?? 0) >= gate.minPointers;
 }
 
 /**
