@@ -98,6 +98,20 @@ export interface PoiMarkerContentProps {
   /** Valgfritt tall-badge øverst til høyre. */
   number?: number;
   /**
+   * Kjøpesenter-modus: `+`-merke øverst til høyre i stedet for et tall.
+   *
+   * Merket er KVALITATIVT med vilje. Et tall («60») er FINN-mønsteret vi
+   * forkastet: det forutsetter at de seksti er likeverdige objekter, og for en
+   * boligkjøper betyr tallet ingenting — «har senteret det jeg trenger» er
+   * spørsmålet, ikke «hvor mange leietakere har det». `+` sier «det er mer her
+   * inne» uten å påstå noe om hvor mye.
+   *
+   * Ingen ny elementtype: samme kvadratiske {@link PIN_SIZE}-boks, samme
+   * kategori-ikon, samme anker. Det er hele grunnen til at det er en modus og
+   * ikke en egen markør — se spøkelses-teksturen i `map-view-3d`.
+   */
+  anchor?: boolean;
+  /**
    * POI-navnet. Utelates når kollisjonskullingen ikke fant plass, eller når
    * kamera-avstanden er under label-tieren — pinnen står, teksten forsvinner.
    */
@@ -119,6 +133,7 @@ export function PoiMarkerContent({
   backgroundColor,
   Icon,
   number,
+  anchor = false,
   label,
   labelSide = "right",
   compact = false,
@@ -133,6 +148,10 @@ export function PoiMarkerContent({
   // ville hvert trinn vært et hopp. Transformen eier Google, så vi animerer bare
   // boksen og typografien.
   const grow = "width 180ms ease-out, height 180ms ease-out";
+
+  // Et eksplisitt tall vinner over `+`. Nummererte markører er turrekkefølge
+  // (Guide), og den rekkefølgen er en påstand vi ikke skal overskrive.
+  const badge = number !== undefined ? number : anchor ? "+" : undefined;
 
   return (
     <div
@@ -184,8 +203,9 @@ export function PoiMarkerContent({
           >
             <Icon width={iconSize} height={iconSize} weight="fill" color={color} />
           </span>
-          {number !== undefined && (
+          {badge !== undefined && (
             <span
+              data-poi-badge={anchor && number === undefined ? "anchor" : ""}
               style={{
                 position: "absolute",
                 top: -2,
@@ -202,7 +222,7 @@ export function PoiMarkerContent({
                 boxSizing: "border-box",
               }}
             >
-              {number}
+              {badge}
             </span>
           )}
         </>

@@ -7,6 +7,7 @@ import Modal from "@/components/ui/Modal";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle } from "./marker-style";
+import { AnchorRegister } from "./AnchorRegister";
 import { computeIsOpen } from "@/lib/hooks/useOpeningHours";
 import type { BoardPOI } from "./board-data";
 import type { PoiGrounding } from "@/lib/types";
@@ -30,7 +31,25 @@ import type { PoiGrounding } from "@/lib/types";
 
 /** Sant når POI-en har noe å vise. Gating-signalet for CTA-en og mobil-inngangen. */
 export function hasExploreContent(poi: BoardPOI): boolean {
-  return hasGroundedNarrative(poi.raw.grounding) || hasGoogleFacts(poi);
+  return (
+    hasAnchorRegister(poi) || hasGroundedNarrative(poi.raw.grounding) || hasGoogleFacts(poi)
+  );
+}
+
+/**
+ * Ankeret har alltid et register å vise — enten medlemslista eller
+ * `anchor_summary` alene.
+ *
+ * Må stå i gaten, ikke bare i innholdet: Vikhammer senteret har verken rating
+ * eller anmeldelser hos Google (målt i Unit 3), så `hasGoogleFacts` er falsk og
+ * uten dette ville registeret vært uåpnelig på nettopp de nærsentrene ankeret
+ * er bygget for. Virksomhetene inni er absorbert og finnes ikke andre steder i
+ * grensesnittet — er modalen stengt, er de borte.
+ */
+export function hasAnchorRegister(poi: BoardPOI): boolean {
+  // `isAnchor` avledes av `anchorSummary` (lib/board/anchor-poi.ts), så flagget
+  // impliserer at det finnes minst en sammendragslinje.
+  return poi.isAnchor === true;
 }
 
 export function hasGroundedNarrative(grounding: PoiGrounding | undefined): boolean {
@@ -359,11 +378,24 @@ export function POIExploreModal({
 
         {showNarrative && narrative ? (
           <NarrativeBody text={narrative} />
-        ) : (
+        ) : poi.body ? (
+          /* Redaksjonell krok + lokal innsikt. Mini-popupen viser den på
+             desktop, men mobilen har ingen popup — modalen ER POI-flaten der,
+             så uten denne grenen sto det «vi har ikke noe innhold» på steder
+             som har det. */
+          <NarrativeBody text={poi.body} />
+        ) : hasAnchorRegister(poi) ? null : (
+          /* Ankeret sier aldri dette: registeret UNDER er innholdet om
+             senteret, og «vi vet ingenting om stedet» rett over en liste over
+             det som ligger der ville motsagt seg selv. */
           <p className="text-[14px] leading-relaxed text-stone-500">
             Vi har ikke noe redaksjonelt innhold om dette stedet ennå.
           </p>
         )}
+
+        {/* Registeret står rett under teksten om senteret, før Google-faktaene:
+            det er svaret på «hva er dette stedet», ikke en detalj om det. */}
+        <AnchorRegister poi={poi} />
 
         <FactsSection poi={poi} />
 

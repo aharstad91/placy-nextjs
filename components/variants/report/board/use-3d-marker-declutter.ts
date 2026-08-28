@@ -9,6 +9,7 @@ import {
   type LabelObstacle,
   type LabelSide,
 } from "@/lib/board/label-collision";
+import { isAnchorPOI } from "@/lib/board/anchor-poi";
 import {
   computePinDemotions,
   type PinBlocker,
@@ -423,8 +424,15 @@ export function useMarker3DDeclutter({
       });
     }
 
+    // `Infinity` = demoteres aldri, og blokkerer som vanlig. To slags steder
+    // eier plassen sin: den brukeren har åpnet, og kjøpesenteret. Det siste
+    // fordi ankeret ER de seksti butikkene inni — demoteres det til prikk,
+    // forsvinner hele klyngen som ett navnløst punkt, og «Sirkus Shopping»
+    // står ikke lenger noe sted på kartet.
     const priorityOf = (poi: POI) =>
-      poi.id === activeId ? Number.POSITIVE_INFINITY : (poi.googleRating ?? 0);
+      poi.id === activeId || isAnchorPOI(poi)
+        ? Number.POSITIVE_INFINITY
+        : (poi.googleRating ?? 0);
 
     const pinCandidates: PinCandidate[] = projected.map(({ poi, x, y }) => ({
       id: poi.id,

@@ -15,6 +15,7 @@ vi.mock("@/lib/pipeline/enrich-report-pois", async (orig) => ({
   enrichReportPois: vi.fn(),
 }));
 vi.mock("@/lib/pipeline/validate-report-trust", () => ({ validateReportTrust: vi.fn() }));
+vi.mock("@/lib/pipeline/resolve-anchors-step", () => ({ resolveProjectAnchors: vi.fn() }));
 vi.mock("@/lib/pipeline/hydrate-report", () => ({ hydrateReport: vi.fn() }));
 vi.mock("@/lib/pipeline/travel-times", () => ({ computeProjectTravelTimes: vi.fn() }));
 vi.mock("@/lib/pipeline/board-facts-step", () => ({ runBoardFactsStep: vi.fn() }));
@@ -27,6 +28,7 @@ import { createReportProject } from "@/lib/pipeline/create-report-project";
 import { importPublicPois } from "@/lib/pipeline/import-public-pois";
 import { enrichReportPois } from "@/lib/pipeline/enrich-report-pois";
 import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
+import { resolveProjectAnchors } from "@/lib/pipeline/resolve-anchors-step";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
 import { runBoardFactsStep } from "@/lib/pipeline/board-facts-step";
@@ -41,6 +43,7 @@ const m = {
   publicPois: vi.mocked(importPublicPois),
   enrich: vi.mocked(enrichReportPois),
   trust: vi.mocked(validateReportTrust),
+  anchors: vi.mocked(resolveProjectAnchors),
   hydrate: vi.mocked(hydrateReport),
   travel: vi.mocked(computeProjectTravelTimes),
   boardFacts: vi.mocked(runBoardFactsStep),
@@ -60,6 +63,10 @@ function setHappyDefaults(existed = false) {
   m.publicPois.mockResolvedValue({ counts: { nsr: 1, barnehagefakta: 1, overpass: 1, taxi: 1 }, warnings: [] });
   m.enrich.mockResolvedValue({ google: { total: 20, new: 20, updated: 0, byCategory: {} }, warnings: [] });
   m.trust.mockResolvedValue({ scored: 10, skipped: 0, skippedPublic: 5, stillNull: [], warnings: [] });
+  m.anchors.mockResolvedValue({
+    anchors: [], membersLinked: 0, membersUnlinked: 0, rejected: [],
+    transportExcluded: 0, warnings: [],
+  });
   m.hydrate.mockResolvedValue({ productPoisLinked: 20, featuredMarked: 6, categoriesPopulated: 8, warnings: [] });
   m.travel.mockResolvedValue({
     computed: 20,
@@ -121,7 +128,7 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     expect(m.enrich).toHaveBeenCalled();
   });
 
-  it("AC1: stegene kjører i ratifisert rekkefølge (project→enrich→trust→hydrate→travel→editorial→acceptance)", async () => {
+  it("AC1: stegene kjører i ratifisert rekkefølge (project→enrich→trust→anker→hydrate→travel→editorial→acceptance)", async () => {
     const order: string[] = [];
     m.project.mockImplementation(async () => { order.push("project"); return {
       projectId: "intern_x", productId: "prod-1", customerSlug: "intern", slug: "x", existed: false, warnings: [],
@@ -129,6 +136,7 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     m.publicPois.mockImplementation(async () => { order.push("public"); return { counts: { nsr: 0, barnehagefakta: 0, overpass: 0, taxi: 0 }, warnings: [] }; });
     m.enrich.mockImplementation(async () => { order.push("enrich"); return { google: { total: 0, new: 0, updated: 0, byCategory: {} }, warnings: [] }; });
     m.trust.mockImplementation(async () => { order.push("trust"); return { scored: 0, skipped: 0, skippedPublic: 0, stillNull: [], warnings: [] }; });
+    m.anchors.mockImplementation(async () => { order.push("anker"); return { anchors: [], membersLinked: 0, membersUnlinked: 0, rejected: [], transportExcluded: 0, warnings: [] }; });
     m.hydrate.mockImplementation(async () => { order.push("hydrate"); return { productPoisLinked: 0, featuredMarked: 0, categoriesPopulated: 0, warnings: [] }; });
     m.travel.mockImplementation(async () => { order.push("travel"); return { computed: 0, unchanged: 0, total: 0, coverage: { walk: 0, bike: 0, car: 0 }, warnings: [] }; });
     m.boardFacts.mockImplementation(async () => { order.push("board-facts"); return { skipped: true, warnings: [] }; });
@@ -140,7 +148,9 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     // Board-fakta står MELLOM reisetider og editorial: begge de to siste gjør
     // read-modify-write mot samme config-rad, og rekkefølgen er derfor én å
     // resonnere om i stedet for to.
-    expect(order).toEqual(["project", "public", "enrich", "trust", "hydrate", "travel", "board-facts", "editorial", "acceptance"]);
+    // Anker-oppløsningen står mellom trust og hydrering: hele poolen må finnes
+    // (3–4), og hydreringen skal se ett kjøpesenter, ikke 60 løse butikker.
+    expect(order).toEqual(["project", "public", "enrich", "trust", "anker", "hydrate", "travel", "board-facts", "editorial", "acceptance"]);
   });
 
   it("reisetid-steget er fail-soft: warnings videreformidles, provisjonen fullfører", async () => {

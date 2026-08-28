@@ -29,6 +29,7 @@ import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/string
 import { generateBridgeText } from "@/lib/generators/bridge-text-generator";
 import { getHeroInsightPOIIds } from "./hero-insight-pois";
 import { getTopRankedPOIs } from "./top-ranked-pois";
+import { isAnchorPOI } from "@/lib/board/anchor-poi";
 
 /**
  * Zod-parse grounding fra products.config ved render-boundary. Silent skip +
@@ -322,6 +323,35 @@ const CATEGORY_FILTER_RULES: Record<string, CategoryFilterRule> = {
  */
 const HIGHER_ED_KEYWORDS = ["vgs", "videregående", "ntnu", "høgskole", "høyskole", "universitet"];
 
+// ---------- Anker (kjøpesenter) ----------
+
+/**
+ * Løfter ankeret inn i temaet når et av barna hører hjemme der, men ankeret
+ * selv ikke gjør det (R4 — kategori-oppfyllelse).
+ *
+ * Uten dette står treningssenteret inne i Sirkus alene i «Trening & Aktivitet»,
+ * med Sirkus' koordinat og uten å si hvor det ligger. Med det står Sirkus der
+ * som representant, og barnet er navngitt i registeret på kortet.
+ */
+function withRepresentingAnchors(
+  directMatches: POI[],
+  poiById: Map<string, POI>,
+): POI[] {
+  const present = new Set(directMatches.map((p) => p.id));
+  const lifted: POI[] = [];
+
+  for (const poi of directMatches) {
+    const parentId = poi.parentPoiId;
+    if (!parentId || present.has(parentId)) continue;
+    const parent = poiById.get(parentId);
+    if (!parent || !isAnchorPOI(parent)) continue;
+    present.add(parentId);
+    lifted.push(parent);
+  }
+
+  return lifted.length > 0 ? [...directMatches, ...lifted] : directMatches;
+}
+
 // --- Shared helpers (used by both buildSubSections and transformToReportData) ---
 
 // byTierThenScore is now imported from @/lib/utils/poi-score (shared with Story Mode)
@@ -540,6 +570,8 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     }
   }
 
+  const poiById = new Map(allPOIs.map((p) => [p.id, p]));
+
   // Exclude child POIs from hero metrics
   const topLevelPOIs = allPOIs.filter((p) => !p.parentPoiId);
 
@@ -579,7 +611,10 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
   for (const themeDef of themeDefinitions) {
     const cats = new Set(themeDef.categories);
-    const themePOIs = allPOIs.filter((p) => cats.has(p.category.id));
+    const themePOIs = withRepresentingAnchors(
+      allPOIs.filter((p) => cats.has(p.category.id)),
+      poiById,
+    );
 
     if (themePOIs.length < THEME_MIN_POIS) continue;
 
@@ -605,12 +640,30 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     // then reassemble the theme's POI list preserving distance order.
     const categoryFiltered = applyThemeCategoryFilters(distanceSorted, center, project.schoolZone);
 
-    // Filter child POIs when their parent is in the same theme, and attach children to parents
-    const parentIdsInTheme = new Set(categoryFiltered.filter(p => !p.parentPoiId).map(p => p.id));
-    const filtered = categoryFiltered.filter(p => !p.parentPoiId || !parentIdsInTheme.has(p.parentPoiId)).map(p => {
-      const children = childByParent.get(p.id);
-      return children ? { ...p, childPOIs: children } : p;
-    });
+    // Ankeret absorberer barna sine, og bærer dem videre som register (R5 + R4).
+    //
+    // `childPOIs` er TEMA-AVGRENSET her: registeret på et Sirkus-kort i
+    // «Mat & Drikke» lister restaurantene og kafeene inne i senteret, ikke alle
+    // de seksti butikkene. Board-laget bygger sitt eget, komplette register for
+    // POI-flaten — det er to ulike spørsmål, og temaet svarer på «hva gir dette
+    // senteret meg HER».
+    //
+    // Fram til 2026-08-27 absorberte denne linja barn under ENHVER forelder som
+    // lå i temaet. Nå er det ankeret som absorberer, slik at et sted med barn men
+    // uten anker-status (skrivefeil i pipelinen) faller tilbake til dagens board
+    // i stedet for å skjule barna bak en forelder ingenting rendrer.
+    const anchorIdsInTheme = new Set(
+      categoryFiltered.filter(isAnchorPOI).map((p) => p.id),
+    );
+    const filtered = categoryFiltered
+      .filter((p) => !(p.parentPoiId && anchorIdsInTheme.has(p.parentPoiId)))
+      .map((p) => {
+        if (!anchorIdsInTheme.has(p.id)) return p;
+        const children = (childByParent.get(p.id) ?? []).filter((c) =>
+          cats.has(c.category.id),
+        );
+        return children.length > 0 ? { ...p, childPOIs: children } : p;
+      });
 
     // Sort by tier then score and split into visible/hidden
     const sorted = [...filtered].sort(byTierThenScore);

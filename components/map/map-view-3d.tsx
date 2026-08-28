@@ -12,6 +12,7 @@ import type { POI } from "@/lib/types";
 import type { LabelSide } from "@/lib/board/label-collision";
 import { DomMarker3D } from "./DomMarker3D";
 import { PoiMarkerContent } from "./PoiMarkerContent";
+import { isAnchorPOI } from "@/lib/board/anchor-poi";
 import { RevealLayer3D, type RevealItem } from "./RevealLayer3D";
 import { ProjectSitePin } from "./ProjectSitePin";
 import { scaleForRange, PIN_MAX_SCALE } from "./project-pin-scale";
@@ -240,6 +241,7 @@ const Marker3DItem = memo(function Marker3DItem({
         color={poi.category.color}
         backgroundColor={hexLightTint(poi.category.color)}
         Icon={getFilledIcon(poi.category.icon)}
+        anchor={isAnchorPOI(poi)}
         label={label}
         labelSide={labelSide}
         compact={compact}

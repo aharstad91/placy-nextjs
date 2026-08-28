@@ -248,6 +248,9 @@ function convertToPOIImportData(
     google_website: null,
     google_business_status: null,
     google_price_level: null,
+    // Speiler Google. Fravær lagres som null, ikke som tom liste — «Google sa
+    // ingenting» og «ligger ikke i noe bygg» er ikke samme påstand.
+    contained_in_ids: poi.containedInIds ?? null,
   };
 }
 

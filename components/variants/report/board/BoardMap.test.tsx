@@ -813,6 +813,67 @@ describe("markørsynlighet — markørklikk kaprer ikke kategorien (2026-08-13)"
     expect(visibilityByPoi()).toEqual({ "p-mat": true, "p-natur": false });
   });
 
+  // Anker (R4): medlemmene er absorbert og har INGEN egen markør. Faller
+  // ankeret på sub-filteret, forsvinner de helt — ikke som en skjult pin, men
+  // som et tomt kart der butikkene lå. 2D må derfor følge samme regel som 3D.
+  // (LABELEN navngir ikke stedet her: `BoardMarker` er memoisert på `poi.id`,
+  // og 2D-markørlaget ligger utenfor planens scope.)
+  describe("ankeret overlever sub-filteret det representerer", () => {
+    const withAnchor = {
+      categories: [
+        {
+          id: "mat",
+          label: "Mat",
+          lead: "",
+          body: "",
+          icon: "Utensils",
+          color: "#cc3300",
+          pois: [
+            makePoi("p-kafe", "cafe"),
+            {
+              ...makePoi("p-sirkus", "shopping"),
+              raw: {
+                name: "Sirkus Shopping",
+                category: { id: "shopping", color: "#f59e0b", icon: "Store" },
+                anchorSummary: "Kafé og restaurant",
+                childPOIs: [
+                  {
+                    id: "m-egon",
+                    name: "Egon",
+                    category: { id: "cafe", color: "#cc3300", icon: "Utensils" },
+                  },
+                ],
+              },
+            },
+          ],
+          topRankedPois: [],
+        },
+      ],
+    };
+
+    it("ankeret blir stående når «shopping» skjules men medlemmets kategori er synlig", () => {
+      setBoard(
+        withAnchor,
+        { phase: "active", activeCategoryId: "mat" },
+        { subFilter: { hiddenIds: new Set(["shopping"]) } },
+      );
+      h.board.activeCategory = withAnchor.categories[0];
+      render(<BoardMap has3dAddon={false} />);
+      expect(visibilityByPoi()).toEqual({ "p-kafe": true, "p-sirkus": true });
+    });
+
+    it("ankeret faller når medlemmets kategori også er skjult", () => {
+      setBoard(
+        withAnchor,
+        { phase: "active", activeCategoryId: "mat" },
+        { subFilter: { hiddenIds: new Set(["shopping", "cafe"]) } },
+      );
+      h.board.activeCategory = withAnchor.categories[0];
+      render(<BoardMap has3dAddon={false} />);
+      expect(visibilityByPoi()).toEqual({ "p-kafe": false, "p-sirkus": false });
+    });
+  });
+
   // REGRESJON 2026-08-14: chipen forsvant når man klikket den. Kart-klikket
   // leste chip-klikket som et bakgrunnsklikk og dispatchet BACK_TO_DEFAULT →
   // punktet lukket seg → chipen unmountet under fingeren.

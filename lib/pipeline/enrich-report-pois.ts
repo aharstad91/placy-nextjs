@@ -10,6 +10,11 @@
  */
 
 import { importPOIsToProject } from "@/lib/pipeline/import-pois";
+import {
+  discoverAnchorsForProject,
+  ANCHOR_GOOGLE_TYPE,
+  type AnchorImportReport,
+} from "@/lib/pipeline/discover-anchors";
 
 /** Google Places-kategorier for boligprofilen.
  *  Recall-fiks 2026-08-12 (Straumen-fasitøvelsen, 18 % recall): lista manglet
@@ -145,6 +150,14 @@ export interface EnrichReportPoisResult {
     updated: number;
     byCategory: Record<string, number>;
   };
+  /** Anker-passet. Utelatt når profilen ikke søker etter kjøpesenter. */
+  anchors?: {
+    candidatesFound: number;
+    imported: AnchorImportReport[];
+    beyondCircle: number;
+    /** Fjerne kandidater som ikke besto realitets-gaten (≥4 virksomheter). */
+    rejected: Array<{ name: string; distanceMeters: number; memberCount: number }>;
+  };
   warnings: string[];
 }
 
@@ -193,11 +206,35 @@ export async function enrichReportPois(options: {
     );
   }
 
-  // Steg 2 (FOTO) DEFERRED → PRD 4 Unit 4. Når foto-tasken lander, wires
+  // Steg 2: anker-pass utenfor prosjektsirkelen.
+  //
+  // Gates på at profilen i det hele tatt søker etter kjøpesenter:
+  // næringsprofilen tok `shopping_mall` UT bevisst (bolig-tyngde), og skal
+  // ikke få ankre inn bakveien. Passet er fail-soft — det kan aldri felle en
+  // provisjonering, bare rapportere at det ikke fant noe.
+  let anchors: EnrichReportPoisResult["anchors"];
+  if (categories.includes(ANCHOR_GOOGLE_TYPE)) {
+    const anchorResult = await discoverAnchorsForProject({
+      projectId,
+      lat,
+      lng,
+      radiusMeters,
+    });
+    warnings.push(...anchorResult.warnings);
+    anchors = {
+      candidatesFound: anchorResult.candidatesFound,
+      imported: anchorResult.imported,
+      beyondCircle: anchorResult.beyondCircle,
+      rejected: anchorResult.rejected,
+    };
+  }
+
+  // Steg 3 (FOTO) DEFERRED → PRD 4 Unit 4. Når foto-tasken lander, wires
   // fetchAndCachePOIPhotos inn her og `photos` legges tilbake i resultatet.
 
   return {
     google: googleResult,
+    ...(anchors ? { anchors } : {}),
     warnings,
   };
 }

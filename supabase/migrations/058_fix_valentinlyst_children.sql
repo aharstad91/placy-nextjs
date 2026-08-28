@@ -1,3 +1,6 @@
+-- SUPERSEDED 2026-08-28 av anker-oppløsningen (lib/pipeline/resolve-anchors-step.ts).
+-- Ikke kjør på nytt — se 057 for begrunnelsen.
+--
 -- Migration 058: Fix Valentinlyst Senter child POIs
 --
 -- Based on valentinlyst.no/butikker/ and distance verification:

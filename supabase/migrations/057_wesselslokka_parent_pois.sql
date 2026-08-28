@@ -1,3 +1,8 @@
+-- SUPERSEDED 2026-08-28 av anker-oppløsningen (lib/pipeline/resolve-anchors-step.ts).
+-- Ikke kjør på nytt: håndsatte lenker overlever ikke pool-migrasjoner, og et
+-- anker uten `anchor_summary` er ikke et anker. Valentinlyst Senter samler bare
+-- to medlemmer i dagens pool og faller derfor på >=4-terskelen.
+--
 -- Migration 057: Set parent-child relationships for Valentinlyst Senter (Wesselsløkka)
 --
 -- Parent: Valentinlyst Senter (google-ChIJnW_zJ20xbUYRqaLffSVJpgY)

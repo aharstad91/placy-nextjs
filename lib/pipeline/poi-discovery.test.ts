@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   discoverGooglePlaces,
+  discoverAnchorCandidates,
+  probeAnchorMembers,
   discoverEnturStops,
   discoverBysykkelStations,
   generatePoiId,
   subdivideCircle,
+  ANCHOR_SEARCH_RADIUS_M,
   GOOGLE_CATEGORY_MAP,
 } from "./poi-discovery";
 
@@ -179,6 +182,311 @@ describe("discoverGooglePlaces — filterkjeden (stille dropp/slipp)", () => {
     const result = await discoverGooglePlaces(baseConfig(["cafe"]), "key");
 
     expect(result).toHaveLength(3);
+  });
+});
+
+describe("discoverGooglePlaces — containment (anker-oppløsning)", () => {
+  it("ber om places.containingPlaces i feltmasken", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([googlePlace({ id: "p1", name: "H&M", types: ["clothing_store"] })])
+    );
+    await discoverGooglePlaces(baseConfig(["clothing_store"]), "key");
+
+    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
+    expect(headers["X-Goog-FieldMask"]).toContain("places.containingPlaces");
+  });
+
+  it("oversetter Googles container-id-er til Placy-id-er", async () => {
+    // Google svarer { id, name } der name er ressursnavnet «places/ChIJ…».
+    // Vi bruker id-en og bygger den samme `google-`-id-en stedene selv får,
+    // slik at pekeren kan sammenlignes med v2.pois.id uten oppslag.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        {
+          ...googlePlace({ id: "p1", name: "H&M", types: ["clothing_store"] }),
+          containingPlaces: [
+            { id: "ChIJVZdRQJoxbUYRTcToJ4smjeM", name: "places/ChIJVZdRQJoxbUYRTcToJ4smjeM" },
+          ],
+        },
+      ])
+    );
+
+    const result = await discoverGooglePlaces(baseConfig(["clothing_store"]), "key");
+    expect(result[0].containedInIds).toEqual(["google-ChIJVZdRQJoxbUYRTcToJ4smjeM"]);
+  });
+
+  it("lar feltet være udefinert når Google ikke sier noe", async () => {
+    // «Google sa ingenting» og «ligger ikke i noe bygg» er ikke samme påstand.
+    // Et tomt array ville blitt lagret som det siste.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        { ...googlePlace({ id: "p1", name: "H&M", types: ["clothing_store"] }), containingPlaces: [] },
+        googlePlace({ id: "p2", name: "Cubus", types: ["clothing_store"] }),
+      ])
+    );
+
+    const result = await discoverGooglePlaces(baseConfig(["clothing_store"]), "key");
+    expect(result).toHaveLength(2);
+    for (const poi of result) expect(poi.containedInIds).toBeUndefined();
+  });
+});
+
+/**
+ * Ekte koordinater, hentet fra Places API 2026-08-27. Sundsøya på Inderøy er
+ * det eneste målte boardet der nærmeste kjøpesenter ligger utenfor både
+ * prosjektsirkelen (3 km) og kvalitetskjedens eget avstandstak (4 km).
+ */
+const SUNDSOYA = { lat: 63.865218, lng: 11.303152 };
+const VERDAL_MALLS = [
+  { id: "ChIJjxqC94N8bUYR3lzOf1Jw3e4", name: "Thon Senter Verdal", lat: 63.791835, lng: 11.486321 },
+  { id: "ChIJW9CeMmN7bUYRFSJm3kR7INU", name: "Alti Verdal", lat: 63.782054, lng: 11.470842 },
+  { id: "ChIJqcq4QqVlbUYRtWC7hu6FDU4", name: "Alti Magneten Mall", lat: 63.732664, lng: 11.281753 },
+];
+
+function mallPlace(m: { id: string; name: string; lat: number; lng: number }, over: Record<string, unknown> = {}) {
+  return {
+    ...googlePlace({
+      id: m.id,
+      name: m.name,
+      location: { latitude: m.lat, longitude: m.lng },
+      types: ["shopping_mall"],
+    }),
+    ...over,
+  };
+}
+
+describe("discoverAnchorCandidates — anker-søk utenfor sirkelen", () => {
+  it("ber Google rangere på AVSTAND, ikke popularitet", async () => {
+    // Uten dette er «de tre nærmeste» uleselig: et popularitets-rangert
+    // utvalg av 20 kan hoppe over nabosenteret til fordel for storsenteret.
+    fetchMock.mockResolvedValueOnce(placesResponse([mallPlace(VERDAL_MALLS[0])]));
+
+    await discoverAnchorCandidates({ center: SUNDSOYA }, "key");
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.rankPreference).toBe("DISTANCE");
+    expect(body.includedTypes).toEqual(["shopping_mall"]);
+    expect(body.locationRestriction.circle.radius).toBe(ANCHOR_SEARCH_RADIUS_M);
+  });
+
+  it("standardpasset rangerer FORTSATT på popularitet (ingen lekkasje)", async () => {
+    fetchMock.mockResolvedValueOnce(placesResponse([]));
+    await discoverGooglePlaces(baseConfig(["cafe"]), "key");
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.rankPreference).toBeUndefined();
+  });
+
+  it("slipper gjennom sentre langt utenfor MAX_POI_DISTANCE_METERS (4 km)", async () => {
+    // Dette er hele grunnen til at passet ikke kan være discoverGooglePlaces
+    // med større radius: kvalitetskjedens avstandstak gjelder alle kategorier
+    // og ville drept alle tre uansett hvor stor sirkelen var.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse(VERDAL_MALLS.map((m) => mallPlace(m)))
+    );
+
+    const hits = await discoverAnchorCandidates({ center: SUNDSOYA }, "key");
+
+    expect(hits.map((h) => h.poi.name)).toEqual([
+      "Thon Senter Verdal",
+      "Alti Verdal",
+      "Alti Magneten Mall",
+    ]);
+    for (const h of hits) expect(h.distanceMeters).toBeGreaterThan(4000);
+    expect(Math.round(hits[0].distanceMeters / 100) / 10).toBeCloseTo(12.1, 1);
+    expect(Math.round(hits[2].distanceMeters / 100) / 10).toBeCloseTo(14.8, 1);
+  });
+
+  it("sorterer stigende på avstand uansett Googles egen rekkefølge", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([...VERDAL_MALLS].reverse().map((m) => mallPlace(m)))
+    );
+
+    const hits = await discoverAnchorCandidates({ center: SUNDSOYA }, "key");
+    const distances = hits.map((h) => h.distanceMeters);
+    expect(distances).toEqual([...distances].sort((a, b) => a - b));
+  });
+
+  it("beholder resten av kvalitetskjeden — stengt senter blir ikke anker", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        mallPlace(VERDAL_MALLS[0], { businessStatus: "CLOSED_PERMANENTLY" }),
+        mallPlace(VERDAL_MALLS[1]),
+      ])
+    );
+
+    const hits = await discoverAnchorCandidates({ center: SUNDSOYA }, "key");
+    expect(hits.map((h) => h.poi.name)).toEqual(["Alti Verdal"]);
+  });
+
+  it("senter UTEN rating droppes ikke — det merkes, og utvalget avgjør", async () => {
+    // Vikhammer senteret har verken rating eller anmeldelser hos Google (målt
+    // 2026-08-27). Det er grunnen til at det ikke finnes i basen i dag: rating-
+    // gaten i standardpasset tar det. For et lite nærsenter er stillhet på
+    // Google normalen, så anker-passet rapporterer i stedet for å dømme.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        {
+          ...mallPlace(VERDAL_MALLS[0], { businessStatus: "OPERATIONAL" }),
+          displayName: { text: "Vikhammer senteret" },
+          rating: undefined,
+          userRatingCount: undefined,
+        },
+        mallPlace(VERDAL_MALLS[1]),
+      ])
+    );
+
+    const hits = await discoverAnchorCandidates({ center: SUNDSOYA }, "key");
+    expect(hits).toHaveLength(2);
+    expect(hits.find((h) => h.poi.name === "Vikhammer senteret")!.hasQualitySignals).toBe(
+      false
+    );
+    expect(hits.find((h) => h.poi.name === "Alti Verdal")!.hasQualitySignals).toBe(true);
+  });
+
+  it("navn-blokklista står — «Parkering ikea leangen» blir aldri anker-kandidat", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        { ...mallPlace(VERDAL_MALLS[0]), displayName: { text: "Parkering ikea leangen" } },
+        mallPlace(VERDAL_MALLS[1]),
+      ])
+    );
+
+    const hits = await discoverAnchorCandidates({ center: SUNDSOYA }, "key");
+    expect(hits.map((h) => h.poi.name)).toEqual(["Alti Verdal"]);
+  });
+
+  it("kaster ut treff uten shopping_mall-typen", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        { ...mallPlace(VERDAL_MALLS[0]), types: ["parking"] },
+        mallPlace(VERDAL_MALLS[1]),
+      ])
+    );
+
+    const hits = await discoverAnchorCandidates({ center: SUNDSOYA }, "key");
+    expect(hits.map((h) => h.poi.name)).toEqual(["Alti Verdal"]);
+  });
+
+  it("bærer containment videre — et anker kan selv ligge i et større bygg", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        mallPlace(VERDAL_MALLS[0], {
+          containingPlaces: [{ id: "ChIJcontainer", name: "places/ChIJcontainer" }],
+        }),
+      ])
+    );
+
+    const hits = await discoverAnchorCandidates({ center: SUNDSOYA }, "key");
+    expect(hits[0].poi.containedInIds).toEqual(["google-ChIJcontainer"]);
+    expect(hits[0].poi.category.id).toBe("shopping");
+  });
+
+  it("tomt svar gir tom liste, ikke kast", async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) });
+    await expect(discoverAnchorCandidates({ center: SUNDSOYA }, "key")).resolves.toEqual([]);
+  });
+});
+
+describe("probeAnchorMembers — teller uten å importere", () => {
+  const THON = "ChIJjxqC94N8bUYR3lzOf1Jw3e4";
+  const ANCHOR = {
+    googlePlaceId: THON,
+    coordinates: { lat: 63.791835, lng: 11.486321 },
+  };
+
+  function tenant(name: string, types: string[], containerId: string | null = THON) {
+    return {
+      id: `place-${name}`,
+      displayName: { text: name },
+      location: { latitude: 63.791835, longitude: 11.486321 },
+      types,
+      businessStatus: "OPERATIONAL",
+      ...(containerId ? { containingPlaces: [{ id: containerId }] } : {}),
+    };
+  }
+
+  it("søker UTEN typefilter — spørsmålet er «hva ligger i bygget»", async () => {
+    fetchMock.mockResolvedValueOnce(placesResponse([]));
+    await probeAnchorMembers(ANCHOR, "key");
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.includedTypes).toBeUndefined();
+    expect(body.rankPreference).toBe("DISTANCE");
+    expect(body.locationRestriction.circle.radius).toBe(120);
+  });
+
+  it("teller bare det som peker PÅ ankeret, og ikke ankeret selv", async () => {
+    // Målt mot Thon Senter Verdal 2026-08-27: 20 steder innen 120 m, 19 med
+    // containingPlaces mot senteret — det tjuende var senteret selv.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        { ...tenant("Thon Senter Verdal", ["shopping_mall"], null), id: THON },
+        tenant("REMA 1000 VERDAL", ["grocery_store", "food_store"]),
+        tenant("Vitusapotek Innherred", ["pharmacy", "health"]),
+        tenant("INTERSPORT", ["sportswear_store", "sporting_goods_store"]),
+        tenant("Nille", ["home_goods_store", "store"]),
+        tenant("Nabobygget AS", ["store"], "ChIJannen"),
+      ])
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    expect(probe.memberCount).toBe(4);
+    expect(probe.saturated).toBe(false);
+  });
+
+  it("bygger kategorinavn av medlemmenes typer — første kjente type eier", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        tenant("REMA 1000", ["grocery_store"]),
+        tenant("Vitusapotek", ["pharmacy"]),
+        tenant("INTERSPORT", ["sportswear_store", "sporting_goods_store"]),
+        tenant("Moxie Skjønnhet AS", ["point_of_interest", "establishment"]),
+      ])
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    // Alle fire teller som medlemmer ...
+    expect(probe.memberCount).toBe(4);
+    // ... men bare de tre med en kategori vi kjenner bidrar til teksten.
+    // «sportswear_store» er ukjent, «sporting_goods_store» er butikk.
+    expect(probe.categoryNames).toEqual(["Dagligvare", "Apotek", "Butikk"]);
+  });
+
+  it("fullt svar merkes som «minst» — Googles tak er 20", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse(
+        Array.from({ length: 20 }, (_, i) => tenant(`Butikk ${i}`, ["clothing_store"]))
+      )
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    expect(probe.memberCount).toBe(20);
+    expect(probe.saturated).toBe(true);
+  });
+
+  it("permanent stengte leietakere teller ikke", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        { ...tenant("Nedlagt Butikk", ["clothing_store"]), businessStatus: "CLOSED_PERMANENTLY" },
+        tenant("REMA 1000", ["grocery_store"]),
+      ])
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    expect(probe.memberCount).toBe(1);
+  });
+
+  it("bygg uten containment gir null — gaten er presis, ikke geometrisk", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        tenant("Butikk over gata", ["clothing_store"], null),
+        tenant("Annen butikk", ["clothing_store"], null),
+      ])
+    );
+
+    const probe = await probeAnchorMembers(ANCHOR, "key");
+    expect(probe).toEqual({ memberCount: 0, categoryNames: [], saturated: false });
   });
 });
 

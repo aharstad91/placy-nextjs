@@ -9,6 +9,9 @@ import { slugify } from "../utils/slugify";
 import {
   evaluateGooglePlaceQuality,
   isWithinMaxDistance,
+  isBusinessClosed,
+  hasMinimumQualitySignals,
+  isNameCategoryMismatch,
   calculateQualityStats,
   logQualityFilterStats,
   type QualityRejection,
@@ -40,6 +43,13 @@ export interface DiscoveredPOI {
   nsrId?: string;
   barnehagefaktaId?: string;
   osmId?: string;
+  /**
+   * Byggene Google sier stedet ligger INNE i (`containingPlaces`), på Placy-
+   * id-form (`google-<placeId>`). Autoritativ gate 1 i anker-oppløsningen —
+   * se `lib/board/anchor-membership.ts`. Fraværende for de fleste små sentre,
+   * derfor er adresse- og nærhets-gatene der.
+   */
+  containedInIds?: string[];
   // Editorial fields (added later via Claude or manual editing)
   editorialHook?: string;
   localInsight?: string;
@@ -307,6 +317,7 @@ interface GooglePlaceResult {
   businessStatus?: string;
   shortFormattedAddress?: string;
   types?: string[];
+  containingPlaces?: Array<{ id?: string; name?: string }>;
 }
 
 // Feltmaske = eksakt det discovery-filteret/POI-byggingen konsumerer.
@@ -319,6 +330,12 @@ const NEARBY_FIELD_MASK = [
   "places.userRatingCount",
   "places.businessStatus",
   "places.shortFormattedAddress",
+  // Anker-oppløsning (2026-08-27): hvilket bygg stedet ligger inne i. Målt mot
+  // searchNearby med nøyaktig denne masken — 20 av 20 `clothing_store` innen
+  // 300 m av Sirkus Shopping bar feltet, alle med senterets egen place-id.
+  // Ligger i Pro-SKU-en (samme nivå som displayName/businessStatus), og masken
+  // ber alt om rating/userRatingCount (Enterprise) — tillegget hever ikke prisen.
+  "places.containingPlaces",
 ].join(",");
 
 const NEARBY_TIMEOUT_MS = 10_000;
@@ -390,11 +407,20 @@ export function subdivideCircle(circle: SearchCircle): SearchCircle[] {
   });
 }
 
-/** Ett searchNearby-kall. Returnerer rådataen og om kallet traff taket. */
+/**
+ * Ett searchNearby-kall. Returnerer rådataen og om kallet traff taket.
+ *
+ * `rankPreference: "DISTANCE"` gjør at Google returnerer de 20 NÆRMESTE i
+ * stedet for de 20 mest populære. Anker-passet er avhengig av det: «de tre
+ * nærmeste kjøpesentrene» kan ikke leses ut av et popularitets-rangert utvalg.
+ * Standardpasset lar den stå tom (POPULARITY) — der er metnings-oppdelingen
+ * mekanismen for full dekning, og de to strategiene løser ulike problemer.
+ */
 async function searchNearbyOnce(
-  category: string,
+  category: string | null,
   circle: SearchCircle,
-  apiKey: string
+  apiKey: string,
+  rankPreference?: "DISTANCE"
 ): Promise<{ places: GooglePlaceResult[]; saturated: boolean }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), NEARBY_TIMEOUT_MS);
@@ -413,8 +439,11 @@ async function searchNearbyOnce(
           "X-Goog-FieldMask": NEARBY_FIELD_MASK,
         },
         body: JSON.stringify({
-          includedTypes: [category],
+          // `null` = ingen typefilter. Brukes av medlems-proben, som spør
+          // «hva ligger i dette bygget» og ikke «hvor er nærmeste bakeri».
+          ...(category ? { includedTypes: [category] } : {}),
           maxResultCount: NEARBY_PAGE_MAX,
+          ...(rankPreference ? { rankPreference } : {}),
           locationRestriction: {
             circle: {
               center: { latitude: circle.lat, longitude: circle.lng },
@@ -430,7 +459,9 @@ async function searchNearbyOnce(
   }
 
   if (!response.ok) {
-    console.error(`    ✗ Feil ved søk etter ${category}: ${response.status}`);
+    console.error(
+      `    ✗ Feil ved søk etter ${category ?? "alle typer"}: ${response.status}`
+    );
     return { places: [], saturated: false };
   }
 
@@ -614,6 +645,7 @@ export async function discoverGooglePlaces(
           googleRating: place.rating,
           googleReviewCount: place.userRatingCount,
           source: "google",
+          containedInIds: mapContainingPlaces(place.containingPlaces),
         });
 
         addedCount++;
@@ -647,6 +679,199 @@ export async function discoverGooglePlaces(
   }
 
   return allPOIs;
+}
+
+// === Anker-søk utenfor prosjektsirkelen (2026-08-27) ===
+
+/** Google-typen som utpeker et kjøpesenter. Navne-gaten i anker-definisjonen. */
+export const ANCHOR_GOOGLE_TYPE = "shopping_mall";
+
+/**
+ * Rekkevidden for anker-søket. 20 km, altså nesten sju ganger prosjektsirkelen.
+ *
+ * Tallet er ikke en påstand om hva som er «nærområde» — det er hvor langt vi må
+ * se for at ranger­ingen skal ha noe å rangere. Målt 2026-08-27: Sundsøya på
+ * Inderøy har null kjøpesenter innen 12 km, og de tre nærmeste ligger på 12,1
+ * (Thon Senter Verdal), 12,4 (Alti Verdal) og 14,8 km (Alti Magneten,
+ * Levanger). 20 km fanger alle tre med margin; Googles eget tak er 50 km.
+ */
+export const ANCHOR_SEARCH_RADIUS_M = 20_000;
+
+/** Et anker-kandidat-treff med avstanden fra prosjektsenteret. */
+export interface AnchorHit {
+  poi: DiscoveredPOI;
+  distanceMeters: number;
+  /**
+   * Om Google har rating eller anmeldelser på stedet. Passet DROPPER ikke
+   * kandidater uten — det rapporterer det, og lar utvalgsregelen avgjøre.
+   *
+   * Målt 2026-08-27: Vikhammer senteret har verken rating eller anmeldelser,
+   * og faller derfor på `hasMinimumQualitySignals` i standardpasset. Det er
+   * grunnen til at senteret ikke finnes i basen i dag — ikke at boardet er
+   * gammelt. Samme gjelder Moholtsenteret. For et lite nærsenter er stillhet
+   * på Google normalen, ikke et faresignal.
+   */
+  hasQualitySignals: boolean;
+}
+
+/**
+ * Ett avstandsrangert `shopping_mall`-søk rundt prosjektsenteret.
+ *
+ * Dette er BEVISST ikke `discoverGooglePlaces` med større radius. To gater der
+ * ville ha drept de rurale ankrene uansett hvor stor sirkelen ble:
+ *
+ *   1. `distance > config.radius` kaster alt utenfor sirkelen.
+ *   2. Kvalitetskjeden har sitt EGET tak, `MAX_POI_DISTANCE_METERS = 4000`, som
+ *      gjelder alle kategorier. Thon Senter Verdal (12,1 km) faller på det
+ *      taket selv om sirkelen slipper den gjennom.
+ *
+ * Anker-passet hopper over begge. Det beholder stengt-virksomhet-gaten og
+ * navn/kategori-blokklista (som er det «Parkering ikea leangen» faller på),
+ * men rating-gaten flyttes UT av dropp-beslutningen og rapporteres som
+ * `hasQualitySignals` — se feltet for hvorfor.
+ *
+ * Resultatet er sortert stigende på avstand. Google-taket på 20 treff gjelder
+ * fortsatt: dette er de 20 NÆRMESTE, ikke alle. Full dekning innenfor sirkelen
+ * er standardpassets jobb — anker-passet svarer bare på «hva er nærmest».
+ */
+export async function discoverAnchorCandidates(
+  config: { center: Coordinates; radius?: number },
+  apiKey: string
+): Promise<AnchorHit[]> {
+  const radius = config.radius ?? ANCHOR_SEARCH_RADIUS_M;
+  const categoryDef = GOOGLE_CATEGORY_MAP[ANCHOR_GOOGLE_TYPE];
+  const validTypes = VALID_TYPES_FOR_CATEGORY[ANCHOR_GOOGLE_TYPE];
+
+  const { places } = await searchNearbyOnce(
+    ANCHOR_GOOGLE_TYPE,
+    { ...config.center, radius, depth: 0 },
+    apiKey,
+    "DISTANCE"
+  );
+
+  const hits: AnchorHit[] = [];
+  const seen = new Set<string>();
+
+  for (const place of places) {
+    const placeName = place.displayName?.text;
+    if (!placeName || !place.location) continue;
+
+    if (validTypes && place.types && !place.types.some((t) => validTypes.has(t))) {
+      continue;
+    }
+    if (isBusinessClosed({ business_status: place.businessStatus })) continue;
+    if (isNameCategoryMismatch(placeName, categoryDef.id)) continue;
+
+    const id = generatePoiId("google", placeName, place.id);
+    if (seen.has(id)) continue;
+    seen.add(id);
+
+    hits.push({
+      poi: {
+        id,
+        name: placeName,
+        coordinates: {
+          lat: place.location.latitude,
+          lng: place.location.longitude,
+        },
+        address: place.shortFormattedAddress,
+        category: categoryDef,
+        googlePlaceId: place.id,
+        googleRating: place.rating,
+        googleReviewCount: place.userRatingCount,
+        source: "google",
+        containedInIds: mapContainingPlaces(place.containingPlaces),
+      },
+      distanceMeters: calculateDistance(
+        config.center.lat,
+        config.center.lng,
+        place.location.latitude,
+        place.location.longitude
+      ),
+      hasQualitySignals: hasMinimumQualitySignals(
+        { rating: place.rating, user_ratings_total: place.userRatingCount },
+        categoryDef.id
+      ),
+    });
+  }
+
+  // Google rangerer allerede på avstand, men rekkefølgen er deres og
+  // utvalgsregelen leser en PREFIKS av lista. Sorter selv.
+  hits.sort((a, b) => a.distanceMeters - b.distanceMeters || a.poi.id.localeCompare(b.poi.id));
+  return hits;
+}
+
+/**
+ * Radiusen medlems-proben spør innenfor. 120 m dekker et stort kjøpesenter med
+ * margin (Sirkus' fjerneste medlem ligger ~150 m fra senterkoordinaten, men
+ * proben leser `containingPlaces` og ikke avstand, så radiusen er bare hvor
+ * Google får lov til å lete).
+ */
+export const ANCHOR_MEMBER_PROBE_RADIUS_M = 120;
+
+export interface AnchorMemberProbe {
+  /** Virksomheter Google sier ligger INNE i ankeret. */
+  memberCount: number;
+  /** Placy-kategorinavn, ett per medlem som har en kategori vi kjenner. */
+  categoryNames: string[];
+  /** Kallet kom tilbake fullt — senteret har MINST så mange, ikke nøyaktig. */
+  saturated: boolean;
+}
+
+/**
+ * Teller virksomhetene i et anker UTEN å importere dem.
+ *
+ * Realitets-gaten («minst fire virksomheter oppløses inn i det») krever at de
+ * fire FINNES — ikke at vi lagrer dem. For et anker innenfor prosjektsirkelen
+ * svarer poolen på det spørsmålet gratis, og `resolve-anchors-step` gjør det.
+ * For et anker 12 km unna importeres ingen medlemmer, så poolen kan ikke svare
+ * — og uten et svar ville et mistypet «senter» sluppet inn like lett som Thon
+ * Senter Verdal.
+ *
+ * Proben er ett type-løst `searchNearby` rundt ankeret der treffene filtreres
+ * på `containingPlaces`. Målt 2026-08-27 mot Thon Senter Verdal: 20 steder
+ * innen 120 m, 19 av dem peker på senteret — med Rema 1000, Vitusapotek,
+ * Intersport, Nille og Telenor blant dem. Ett kall gir altså både beviset og
+ * råstoffet til `anchor_summary`, uten at én butikk havner i basen.
+ *
+ * Taket på 20 gjelder: et stort senter rapporteres som «minst 20»
+ * (`saturated`), ikke eksakt. Det er nok både for firetallet og for
+ * «og mer»-halen i teksten.
+ */
+export async function probeAnchorMembers(
+  anchor: { googlePlaceId: string; coordinates: Coordinates },
+  apiKey: string,
+  radiusMeters: number = ANCHOR_MEMBER_PROBE_RADIUS_M
+): Promise<AnchorMemberProbe> {
+  const { places, saturated } = await searchNearbyOnce(
+    null,
+    { ...anchor.coordinates, radius: radiusMeters, depth: 0 },
+    apiKey,
+    "DISTANCE"
+  );
+
+  const categoryNames: string[] = [];
+  let memberCount = 0;
+
+  for (const place of places) {
+    if (!place.id || place.id === anchor.googlePlaceId) continue;
+    const isInside = place.containingPlaces?.some(
+      (c) => c.id === anchor.googlePlaceId
+    );
+    if (!isInside) continue;
+    if (isBusinessClosed({ business_status: place.businessStatus })) continue;
+
+    memberCount++;
+
+    // Første type vi kjenner eier kategorien — samme konvensjon som
+    // dedupliseringen i discoverGooglePlaces.
+    const mapped = place.types
+      ?.map((t) => GOOGLE_CATEGORY_MAP[t])
+      .find((c): c is Category => Boolean(c));
+    if (mapped) categoryNames.push(mapped.name);
+  }
+
+  return { memberCount, categoryNames, saturated };
 }
 
 // === Google Places Text Search (recall-fiks 2026-08-12) ===
@@ -810,6 +1035,7 @@ export async function discoverGooglePlacesByText(
           googleRating: place.rating,
           googleReviewCount: place.userRatingCount,
           source: "google",
+          containedInIds: mapContainingPlaces(place.containingPlaces),
         });
         addedCount++;
       }
@@ -1099,6 +1325,27 @@ export async function discoverPOIs(
  * - bysykkel-123 (using station_id)
  * - google-cafe-lansen (fallback using name)
  */
+/**
+ * Googles `containingPlaces` → Placy-id-er.
+ *
+ * Google returnerer `{ id, name }` der `name` er ressursnavnet
+ * («places/ChIJ…»), ikke visningsnavnet. Vi bruker `id` og kjører den gjennom
+ * samme id-bygger som stedene selv, slik at containment-pekeren er direkte
+ * sammenlignbar med `v2.pois.id` uten oppslag. Returnerer `undefined` (ikke
+ * tom liste) når feltet mangler — fravær betyr «Google sa ingenting», og skal
+ * ikke lagres som «ligger ikke i noe bygg».
+ */
+function mapContainingPlaces(
+  containing: Array<{ id?: string; name?: string }> | undefined
+): string[] | undefined {
+  if (!containing || containing.length === 0) return undefined;
+  const ids = containing
+    .map((c) => c.id)
+    .filter((id): id is string => Boolean(id))
+    .map((id) => generatePoiId("google", "", id));
+  return ids.length > 0 ? ids : undefined;
+}
+
 function generatePoiId(
   source: "google" | "entur" | "bysykkel" | "manual",
   name: string,

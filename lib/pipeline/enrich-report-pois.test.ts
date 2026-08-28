@@ -4,7 +4,13 @@ vi.mock("@/lib/pipeline/import-pois", () => ({
   importPOIsToProject: vi.fn(),
 }));
 
+vi.mock("@/lib/pipeline/discover-anchors", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/pipeline/discover-anchors")>()),
+  discoverAnchorsForProject: vi.fn(),
+}));
+
 import { importPOIsToProject } from "@/lib/pipeline/import-pois";
+import { discoverAnchorsForProject } from "@/lib/pipeline/discover-anchors";
 import {
   enrichReportPois,
   BOLIG_GOOGLE_CATEGORIES,
@@ -27,11 +33,20 @@ function setEnv(overrides: Record<string, string | undefined> = {}) {
 }
 
 const importMock = importPOIsToProject as ReturnType<typeof vi.fn>;
+const anchorMock = discoverAnchorsForProject as ReturnType<typeof vi.fn>;
+
+const NO_ANCHORS = {
+  candidatesFound: 0,
+  imported: [],
+  beyondCircle: 0,
+  warnings: [],
+};
 
 describe("enrichReportPois — Unit 7 (foto-fase DEFERRED → Unit 4)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setEnv();
+    anchorMock.mockResolvedValue(NO_ANCHORS);
   });
 
   const BASE_OPTIONS = {
@@ -113,5 +128,76 @@ describe("enrichReportPois — Unit 7 (foto-fase DEFERRED → Unit 4)", () => {
       /NEXT_PUBLIC_SUPABASE_URL/,
     );
     expect(importMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("enrichReportPois — anker-pass utenfor prosjektsirkelen", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setEnv();
+    importMock.mockResolvedValue({ total: 25, new: 25, updated: 0, byCategory: {} });
+    anchorMock.mockResolvedValue(NO_ANCHORS);
+  });
+
+  const BASE_OPTIONS = {
+    projectId: "placy-demo_sundsoya",
+    lat: 63.865218,
+    lng: 11.303152,
+    radiusMeters: 3000,
+  };
+
+  it("kjører anker-passet med prosjektets eget senter og radius", async () => {
+    await enrichReportPois(BASE_OPTIONS);
+
+    expect(anchorMock).toHaveBeenCalledTimes(1);
+    expect(anchorMock.mock.calls[0][0]).toEqual({
+      projectId: "placy-demo_sundsoya",
+      lat: 63.865218,
+      lng: 11.303152,
+      radiusMeters: 3000,
+    });
+  });
+
+  it("næringsprofilen får IKKE ankre — shopping_mall er tatt ut av den bevisst", async () => {
+    await enrichReportPois({ ...BASE_OPTIONS, categories: NAERING_GOOGLE_CATEGORIES });
+
+    expect(anchorMock).not.toHaveBeenCalled();
+    const result = await enrichReportPois({
+      ...BASE_OPTIONS,
+      categories: NAERING_GOOGLE_CATEGORIES,
+    });
+    expect(result.anchors).toBeUndefined();
+  });
+
+  it("rapporterer de hentede ankrene videre til kalleren", async () => {
+    anchorMock.mockResolvedValue({
+      candidatesFound: 5,
+      imported: [
+        { id: "google-a", name: "Thon Senter Verdal", distanceMeters: 12140, beyondCircle: true },
+        { id: "google-b", name: "Alti Verdal", distanceMeters: 12380, beyondCircle: true },
+      ],
+      beyondCircle: 2,
+      warnings: [],
+    });
+
+    const result = await enrichReportPois(BASE_OPTIONS);
+
+    expect(result.anchors?.candidatesFound).toBe(5);
+    expect(result.anchors?.beyondCircle).toBe(2);
+    expect(result.anchors?.imported.map((a) => a.name)).toEqual([
+      "Thon Senter Verdal",
+      "Alti Verdal",
+    ]);
+  });
+
+  it("anker-warnings havner i samme kanal som resten — de forsvinner ikke", async () => {
+    anchorMock.mockResolvedValue({
+      ...NO_ANCHORS,
+      warnings: ["⚠️  Ingen kjøpesenter funnet innen 20 km — boardet får ingen ankre"],
+    });
+
+    const result = await enrichReportPois(BASE_OPTIONS);
+
+    expect(result.warnings.some((w) => w.includes("Ingen kjøpesenter"))).toBe(true);
   });
 });

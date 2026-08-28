@@ -121,6 +121,26 @@ describe("selectOverviewPOIs", () => {
       "d",
     ]);
   });
+  it("ankeret mountes én gang selv når det står i flere temaer (R4-løftet)", () => {
+    // Sirkus Shopping løftes inn i HVERT tema et medlem hører hjemme i, så
+    // senteret ligger i Hverdagsliv, Mat & Drikke og Trening samtidig. Uten
+    // dedup får kartet tre markører med samme React-nøkkel.
+    const sirkus = poi("sirkus");
+    const cats = [
+      cat({ pois: [poi("kiwi"), sirkus], topRanked: [sirkus, poi("kiwi")] }),
+      cat({ pois: [sirkus, poi("kafe")], topRanked: [sirkus] }),
+      cat({ pois: [sirkus], topRanked: [sirkus] }),
+    ];
+    expect(selectOverviewPOIs(cats, false).map((p) => p.id)).toEqual([
+      "kiwi",
+      "sirkus",
+      "kafe",
+    ]);
+    expect(selectOverviewPOIs(cats, true).map((p) => p.id)).toEqual([
+      "sirkus",
+      "kiwi",
+    ]);
+  });
 });
 
 describe("selectAllPOIs", () => {
@@ -140,6 +160,12 @@ describe("selectLegendPOIs", () => {
       cat({ pois: [poi("a"), poi("b"), poi("c"), poi("d"), poi("e")] }),
     ];
     expect(selectLegendPOIs(cats).map((p) => p.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("gir ikke ankeret en legend-pin per tema det er løftet inn i", () => {
+    const sirkus = poi("sirkus");
+    const cats = [cat({ pois: [sirkus, poi("a")] }), cat({ pois: [sirkus, poi("b")] })];
+    expect(selectLegendPOIs(cats).map((p) => p.id)).toEqual(["sirkus", "a", "b"]);
   });
 });
 
@@ -251,6 +277,98 @@ describe("selectMarkerPOIs", () => {
       }).map((p) => p.id),
     ).toEqual(["p1"]);
   });
+  // ── Anker (R4): representerer medlemmene sine ───────────────────────────
+  //
+  // Medlemmene er absorbert i `report-data` og har INGEN egen markør. Faller
+  // ankeret på filteret, forsvinner de derfor helt — det er ikke en skjult pin,
+  // det er et tomt kart der seks butikker lå.
+  const member = (id: string, name: string, catId: string): POI =>
+    ({ ...poi(id, catId), name }) as POI;
+
+  const anchorPoi = (name: string, children: POI[]): POI =>
+    ({
+      ...poi("sirkus", "shopping"),
+      name,
+      anchorSummary: "Dagligvare og apotek",
+      childPOIs: children,
+    }) as POI;
+
+  it("ankeret overlever et sub-filter det selv ikke matcher, når et medlem gjør det", () => {
+    const sirkus = anchorPoi("Sirkus Shopping", [
+      member("m1", "Rema 1000", "dagligvare"),
+      member("m2", "Apotek 1", "apotek"),
+    ]);
+    const ids = selectMarkerPOIs({
+      ...base,
+      activeCategory: cat({ pois: [poi("p1", "dagligvare"), sirkus] }),
+      statePhase: "active",
+      hiddenIds: new Set(["shopping"]),
+    }).map((p) => p.id);
+    expect(ids).toEqual(["p1", "sirkus"]);
+  });
+
+  it("ankeret faller når ALLE medlemmene er filtrert bort", () => {
+    const sirkus = anchorPoi("Sirkus Shopping", [member("m1", "Rema 1000", "dagligvare")]);
+    const ids = selectMarkerPOIs({
+      ...base,
+      activeCategory: cat({ pois: [poi("p1", "apotek"), sirkus] }),
+      statePhase: "active",
+      hiddenIds: new Set(["shopping", "dagligvare"]),
+    }).map((p) => p.id);
+    expect(ids).toEqual(["p1"]);
+  });
+
+  it("en vanlig POI med skjult kategori faller fortsatt — ankerregelen gjelder bare ankre", () => {
+    const notAnchor = { ...poi("bygget", "kontor"), childPOIs: [member("m1", "X", "apotek")] } as POI;
+    const ids = selectMarkerPOIs({
+      ...base,
+      activeCategory: cat({ pois: [notAnchor] }),
+      statePhase: "active",
+      hiddenIds: new Set(["kontor"]),
+    }).map((p) => p.id);
+    expect(ids).toEqual([]);
+  });
+
+  it("representerer ankeret ett sted i temaet, navngir labelen det", () => {
+    const sirkus = anchorPoi("Sirkus Shopping", [member("m1", "SATS Sirkus", "trening")]);
+    const result = selectMarkerPOIs({
+      ...base,
+      activeCategory: cat({ pois: [sirkus] }),
+      statePhase: "default",
+    });
+    expect(result[0].name).toBe("SATS Sirkus — i Sirkus Shopping");
+    expect(result[0].id).toBe("sirkus");
+  });
+
+  it("flere medlemmer → senterets eget navn står", () => {
+    const sirkus = anchorPoi("Sirkus Shopping", [
+      member("m1", "Rema 1000", "dagligvare"),
+      member("m2", "Apotek 1", "apotek"),
+    ]);
+    const result = selectMarkerPOIs({
+      ...base,
+      activeCategory: cat({ pois: [sirkus] }),
+      statePhase: "default",
+    });
+    expect(result[0].name).toBe("Sirkus Shopping");
+  });
+
+  it("navnet er urørt når sub-filteret ikke er i bruk (default-fase)", () => {
+    // `useFilter` krever ikke-default fase; da skal hiddenIds heller ikke
+    // påvirke labelen, ellers ville navnet endret seg uten at markørsettet gjorde det.
+    const sirkus = anchorPoi("Sirkus Shopping", [
+      member("m1", "Rema 1000", "dagligvare"),
+      member("m2", "Apotek 1", "apotek"),
+    ]);
+    const result = selectMarkerPOIs({
+      ...base,
+      activeCategory: cat({ pois: [sirkus] }),
+      statePhase: "default",
+      hiddenIds: new Set(["dagligvare"]),
+    });
+    expect(result[0].name).toBe("Sirkus Shopping");
+  });
+
   it("aktiv kategori med tomt hiddenIds → ingen filtrering selv i active-fase", () => {
     expect(
       selectMarkerPOIs({

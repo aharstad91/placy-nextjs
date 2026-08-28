@@ -6,14 +6,17 @@
  * + board-fakta 2026-08-22):
  *   1. Geocode (+ confidence-gate)   →  2. Opprett prosjekt
  *   3. Offentlige POI (NSR/bhg/idrett, skippes for næring)
- *   4. Google-discovery (+ Entur/Bysykkel)   →  5. Trust-scoring (to-fase)
+ *   4. Google-discovery (+ Entur/Bysykkel; inkl. anker-søk utenfor sirkelen)
+ *                                            →  5. Trust-scoring (to-fase)
+ *   5b. Anker-oppløsning (kjøpesenter → parent_poi_id, fail-soft)
  *   6. Hydrering (product_pois + featured + categories)
  *   7. Reisetider (Mapbox Matrix → project_pois.travel_times, fail-soft)
  *   7b. Board-fakta (skolekrets fra NSR + transitt fra Entur, fail-soft)
  *   8. Nabolags-editorial (arv)   →  9. Revalidering   →  10. Akseptansesjekk
  *
  * Rekkefølgen er load-bearing: trust (5) MÅ kjøre etter discovery (3–4) og før
- * hydrering (6); reisetider (7) etter at POI-poolen er komplett (3–4); board-
+ * hydrering (6); anker-oppløsning (5b) etter at hele poolen finnes (3–4) og før
+ * hydrering (6), som ellers ville sett 60 løse butikker der det ligger ett senter; reisetider (7) etter at POI-poolen er komplett (3–4); board-
  * fakta (7b) og editorial (8) etter at config-en finnes, og 7b før 8 fordi
  * begge gjør read-modify-write mot samme config-rad. Endres den, brytes enten
  * dedup, trust-filteret eller editorial-arven.
@@ -40,6 +43,7 @@ import {
   NAERING_GOOGLE_CATEGORIES,
 } from "@/lib/pipeline/enrich-report-pois";
 import { validateReportTrust } from "@/lib/pipeline/validate-report-trust";
+import { resolveProjectAnchors } from "@/lib/pipeline/resolve-anchors-step";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
 import { runBoardFactsStep } from "@/lib/pipeline/board-facts-step";
@@ -203,6 +207,21 @@ export async function provisionReportBoard(
   log(
     `Google Places: ${enrichResult.google.total} POI-er (${enrichResult.google.new} nye, ${enrichResult.google.updated} oppdaterte)`
   );
+  if (enrichResult.anchors) {
+    const { candidatesFound, imported, beyondCircle } = enrichResult.anchors;
+    log(
+      `Anker-søk: ${imported.length} av ${candidatesFound} kjøpesenter tatt med (${beyondCircle} utenfor sirkelen)`
+    );
+    for (const a of imported) {
+      const members =
+        a.memberCount === undefined
+          ? ""
+          : `, ${a.memberCountIsFloor ? "minst " : ""}${a.memberCount} virksomheter`;
+      log(
+        `   · ${a.name} — ${(a.distanceMeters / 1000).toFixed(1)} km${a.beyondCircle ? " (utenfor sirkelen" + members + ")" : ""}`
+      );
+    }
+  }
   for (const w of enrichResult.warnings) warn(w);
 
   // ── Steg 5: Trust-validering (to-fase) ─────────────────────────────────
@@ -221,6 +240,37 @@ export async function provisionReportBoard(
     warn(
       "   Listen MÅ QA-klareres (hver POI manuelt verifisert levende) før boardet telles som evaluert."
     );
+  }
+
+  // ── Steg 5b: Anker-oppløsning (kjøpesenter) ────────────────────────────
+  // Etter trust (5) og FØR hydrering (6): hydreringen skal se det ferdige
+  // hierarkiet, ikke 60 løse butikker der det ligger ett kjøpesenter.
+  // Fail-soft: kaster aldri — et board uten anker er dagens board.
+  section("Steg 5b: Anker-oppløsning");
+  const anchorResult = await resolveProjectAnchors({
+    projectId: projectResult.projectId,
+  });
+  for (const w of anchorResult.warnings) warn(w);
+  if (anchorResult.anchors.length === 0) {
+    log("Ingen kjøpesenter-anker i radiusen");
+  } else {
+    log(
+      `Ankre: ${anchorResult.anchors.length} · medlemmer lenket: ${anchorResult.membersLinked}` +
+        (anchorResult.membersUnlinked > 0
+          ? ` · lenker ryddet: ${anchorResult.membersUnlinked}`
+          : "")
+    );
+    for (const a of anchorResult.anchors) {
+      log(
+        `   · ${a.name}: ${a.memberCount} steder (containment ${a.via.containment} / adresse ${a.via.address} / nærhet ${a.via.proximity})`
+      );
+    }
+  }
+  // Kandidater som bar `shopping` uten å samle nok medlemmer. Ikke en feil —
+  // det er realitets-gaten som gjør jobben sin — men den skal være synlig,
+  // fordi et ekte senter som faller ut her ser nøyaktig likedan ut.
+  for (const r of anchorResult.rejected) {
+    log(`   · avvist: ${r.name} (${r.memberCount} medlemmer, under terskelen)`);
   }
 
   // ── Steg 6: Hydrering ──────────────────────────────────────────────────

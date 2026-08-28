@@ -1,0 +1,4809 @@
+{
+ "description": "Ekte prod-data 2026-08-27. board = Strindfjordvegen 10 (533 POI-er), vikhammer = bbox rundt Utsikten 6, malls = alle shopping-POI-er i regionen + Vikhammer senteret fra Google (mangler i basen, se Unit 8 recall-sjekk).",
+ "board": [
+  {
+   "id": "bhf-ovre-jakobsli-barnehage",
+   "name": "Øvre Jakobsli barnehage",
+   "address": null,
+   "lat": 63.41397,
+   "lng": 10.49034,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "bhf-leistad-barnehage",
+   "name": "Leistad barnehage",
+   "address": null,
+   "lat": 63.41912,
+   "lng": 10.48243,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "e4971c01-79a7-4308-8a51-2ea91f387685",
+   "name": "Ladesletta barnehage",
+   "address": null,
+   "lat": 63.44239,
+   "lng": 10.46583,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "bhf-presthus-gard-barnehage",
+   "name": "Presthus Gård barnehage",
+   "address": null,
+   "lat": 63.42386,
+   "lng": 10.51513,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "368d24fe-4840-48cc-8c1d-9e55fd5a42ce",
+   "name": "Arena Trondheim",
+   "address": null,
+   "lat": 63.4394492,
+   "lng": 10.4570307,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "3976ddd1-98d0-4b0b-a213-f4bf32c1a01e",
+   "name": "EXTRA Arena",
+   "address": null,
+   "lat": 63.4282828,
+   "lng": 10.525104,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "2de307e9-a9fc-4cab-867f-c673c3ddbf73",
+   "name": "Leangen curlinghall",
+   "address": null,
+   "lat": 63.4276449,
+   "lng": 10.4637641,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "bhf-stiftelsen-steinerbarnehagen-rotnissen",
+   "name": "Stiftelsen Steinerbarnehagen Rotnissen",
+   "address": null,
+   "lat": 63.44111,
+   "lng": 10.48643,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "6fc18b76-2a57-4fab-ace6-982b81a07186",
+   "name": "Leangen bydelshallen",
+   "address": null,
+   "lat": 63.4270538,
+   "lng": 10.4633934,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "dd08e980-d1d4-4eca-bc75-14f2a3d83d53",
+   "name": "Leangenhallen",
+   "address": null,
+   "lat": 63.4278152,
+   "lng": 10.4647458,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "c6a486cb-6c3b-49de-8923-7cb302a33b34",
+   "name": "Strindheim kunstgrasbane",
+   "address": null,
+   "lat": 63.4287239,
+   "lng": 10.4651512,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "bb66c446-b68a-4958-bc24-14418a96b38f",
+   "name": "Extra Arena",
+   "address": null,
+   "lat": 63.428356,
+   "lng": 10.5240648,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "258278ac-cb89-45bc-ab99-b5b6ae08ee5a",
+   "name": "Ranheim idrettsanlegg",
+   "address": null,
+   "lat": 63.4279173,
+   "lng": 10.5265199,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "fd3b0896-c992-4eac-aa6b-2fb543fd4a0a",
+   "name": "Ranheimshallen",
+   "address": null,
+   "lat": 63.42876,
+   "lng": 10.522812,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "d1a64f63-6612-4a06-9bd2-c057b0671638",
+   "name": "Charlottenlundhallen",
+   "address": null,
+   "lat": 63.4253518,
+   "lng": 10.4887826,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "470913fd-9080-4b96-ad4a-a9baef418755",
+   "name": "Ranheim aktivitetshall",
+   "address": null,
+   "lat": 63.4283616,
+   "lng": 10.5273929,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "732146df-82c9-4a51-b26d-0da32912ad44",
+   "name": "Charlottenlund barnehage",
+   "address": null,
+   "lat": 63.42217,
+   "lng": 10.49066,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "d243c1ea-ac35-4978-a07d-5ce1f3d73d3b",
+   "name": "Sjøparken",
+   "address": "Strindfjordvegen, 7053 Ranheim",
+   "lat": 63.435,
+   "lng": 10.5045,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "entur-NSR-StopPlace-60261",
+   "name": "Skonnertvegen bussholdeplass",
+   "address": null,
+   "lat": 63.433588,
+   "lng": 10.508181,
+   "categoryId": "bus"
+  },
+  {
+   "id": "3151455b-06b2-4cdd-b063-27f580c50669",
+   "name": "Ladestien",
+   "address": "Ladestien, Trondheim",
+   "lat": 63.4394,
+   "lng": 10.4955,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJ7bG042gxbUYR2zhIxbKcydM",
+   "name": "Sprell Sirkus Shopping",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4365556,
+   "lng": 10.4549066,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "3610010e-3a4a-4593-996f-03263a754c8a",
+   "name": "Fullriggerskogen (kommer)",
+   "address": "Fullriggerøya, 7053 Ranheim",
+   "lat": 63.4377,
+   "lng": 10.5095,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "1227a0c9-8c88-47bf-88de-076340cab870",
+   "name": "Cissi Klein videregående skole",
+   "address": null,
+   "lat": 63.43646,
+   "lng": 10.4606,
+   "categoryId": "skole"
+  },
+  {
+   "id": "bb0b0438-d1d8-42f4-b852-d889901d20e9",
+   "name": "Brundalen skole",
+   "address": null,
+   "lat": 63.41788,
+   "lng": 10.47903,
+   "categoryId": "skole"
+  },
+  {
+   "id": "google-ChIJ42WXGwIxbUYRWOE2HfAMxSU",
+   "name": "BILTEMA Lade",
+   "address": "Haakon VIIs gt. 8-10, Trondheim",
+   "lat": 63.44152589999999,
+   "lng": 10.4584964,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "953a05f8-3235-4316-ac26-45122e4ce20c",
+   "name": "Turområdet – lekeplass & sandvolley",
+   "address": "Grilstad Marina, 7053 Ranheim",
+   "lat": 63.4372,
+   "lng": 10.5082,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJ6dLfFP4wbUYRlNqAa2XhIH8",
+   "name": "Elektroimportøren Lade",
+   "address": "Haakon VIIs gt. 8-10, Trondheim",
+   "lat": 63.4419477,
+   "lng": 10.4581948,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ_YqYv_0xbUYREt78AiLiwSg",
+   "name": "Junkyard",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4360335,
+   "lng": 10.455712799999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ_bGcGQAxbUYRsa1iFwenunQ",
+   "name": "Park",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4361514,
+   "lng": 10.4557021,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ1yHNiGFuQUYRxevSlMRUm78",
+   "name": "Input interior",
+   "address": "Ingvald Ystgaards veg 1, Trondheim",
+   "lat": 63.421845000000005,
+   "lng": 10.470806,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ__-_3H0wbUYRFbSqE9IW79k",
+   "name": "Ranheim Kunstgress",
+   "address": "Ranheim",
+   "lat": 63.427844400000005,
+   "lng": 10.5264294,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJ59ABGd4xbUYRChtQ5ZpFE-0",
+   "name": "Leangen Bydelshall",
+   "address": "Trondheim",
+   "lat": 63.427022599999994,
+   "lng": 10.463475200000001,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "c37aa6d2-0a09-40e1-9f5d-2edfb791463c",
+   "name": "Leangen kulturbarnehage SA",
+   "address": null,
+   "lat": 63.42896,
+   "lng": 10.46117,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "google-ChIJ_9hhaFEwbUYRkwYH7PSVUD8",
+   "name": "Trondheim Ice Rink",
+   "address": "Leangen idrettsanlegg, Tungavegen 28, Trondheim",
+   "lat": 63.426830800000005,
+   "lng": 10.465077400000002,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJ15-aOFwwbUYReJSHb9EWYhg",
+   "name": "Charlottenlund Kunstgress 11-bane",
+   "address": "Tunvegen 21, Jakobsli",
+   "lat": 63.4252428,
+   "lng": 10.487176,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJ1w8k_rcxbUYRxlzHzVCuTFs",
+   "name": "Knut Glomsaas vei lekeplass",
+   "address": "Trondheim",
+   "lat": 63.4485631,
+   "lng": 10.461615499999999,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "07ff9c22-2286-4723-bc4e-6b10c7f0ec99",
+   "name": "Markaplassen skole",
+   "address": null,
+   "lat": 63.41343,
+   "lng": 10.5292,
+   "categoryId": "skole"
+  },
+  {
+   "id": "google-ChIJ2cpHLwA7bUYR96TfGONUABU",
+   "name": "Bryggeriet",
+   "address": "Heimtrøa, Trondheim",
+   "lat": 63.4176852,
+   "lng": 10.5412672,
+   "categoryId": "bar"
+  },
+  {
+   "id": "google-ChIJ3ZKa4zXbE0YRkm_F-R89TZ8",
+   "name": "Fasadeprodukter AS avd. Trondheim",
+   "address": "Ingvald Ystgaards veg 1, Trondheim",
+   "lat": 63.42178859999999,
+   "lng": 10.4706189,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ37A9KgAxbUYRFGeb6tZtAq8",
+   "name": "Pizzapizza",
+   "address": "Jakobslivegen 1, Jakobsli",
+   "lat": 63.4284253,
+   "lng": 10.4954936,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJ6S3kNhMwbUYRcI1MIO-p1zU",
+   "name": "Hår Frisør AS",
+   "address": "Thoning Owesens gate 28, Trondheim",
+   "lat": 63.43615509999999,
+   "lng": 10.4561322,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "8f3967c8-1286-4bf8-9eea-6a8abab0b80a",
+   "name": "Vikåsen barnehage",
+   "address": null,
+   "lat": 63.4129,
+   "lng": 10.53466,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "google-ChIJ6atcfgAxbUYRkR-jYXDXOwo",
+   "name": "Brøset Hundepark",
+   "address": "Brøsetvegen 95, Trondheim",
+   "lat": 63.4228351,
+   "lng": 10.4539797,
+   "categoryId": "park"
+  },
+  {
+   "id": "bus-anders-s-yseths-veg",
+   "name": "Anders Søyseths veg bussholdeplass",
+   "address": null,
+   "lat": 63.432548,
+   "lng": 10.510515,
+   "categoryId": "bus"
+  },
+  {
+   "id": "entur-NSR-StopPlace-33",
+   "name": "Ranheim stasjon",
+   "address": null,
+   "lat": 63.427978,
+   "lng": 10.534298,
+   "categoryId": "train"
+  },
+  {
+   "id": "google-ChIJ5YFllesxbUYRCWbvbM_ZI4k",
+   "name": "Helseklinikken",
+   "address": "Peder Falcks veg 3, 8, Trondheim",
+   "lat": 63.4372904,
+   "lng": 10.456270199999999,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "4638327f-c554-4b6e-a176-b9ca7a8d9a9e",
+   "name": "Trondheim Toppidrettsgymnas Sti",
+   "address": null,
+   "lat": 63.44256,
+   "lng": 10.45906,
+   "categoryId": "skole"
+  },
+  {
+   "id": "fb36fad3-2735-43fa-afd8-04b58629a51b",
+   "name": "Hansbakken skole",
+   "address": null,
+   "lat": 63.4292,
+   "lng": 10.54327,
+   "categoryId": "skole"
+  },
+  {
+   "id": "07ecbb0e-dd93-4777-9864-f9c48759a598",
+   "name": "Trondheim idrettsungdomsskole AS",
+   "address": null,
+   "lat": 63.44256,
+   "lng": 10.45906,
+   "categoryId": "skole"
+  },
+  {
+   "id": "beeadcb8-14f2-4801-97e8-68f26cbbef7b",
+   "name": "Grip Leangen",
+   "address": null,
+   "lat": 63.4326574,
+   "lng": 10.4662988,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "bhf-brundalsgrenda-barnehage",
+   "name": "Brundalsgrenda barnehage",
+   "address": null,
+   "lat": 63.416,
+   "lng": 10.47946,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "bus-churchills-veg",
+   "name": "Churchills veg bussholdeplass",
+   "address": null,
+   "lat": 63.429338,
+   "lng": 10.48742,
+   "categoryId": "bus"
+  },
+  {
+   "id": "badeplass-devlebukta",
+   "name": "Devlebukta",
+   "address": null,
+   "lat": 63.44496502,
+   "lng": 10.46854951125,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "bus-grilstadkleiva",
+   "name": "Grilstadkleiva bussholdeplass",
+   "address": null,
+   "lat": 63.433687,
+   "lng": 10.500223,
+   "categoryId": "bus"
+  },
+  {
+   "id": "badeplass-grilstadstranda",
+   "name": "Grilstadstranda",
+   "address": null,
+   "lat": 63.43615536217392,
+   "lng": 10.513102194347827,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "bhf-jakobsli-familiebarnehage-sissel-grothe",
+   "name": "Jakobsli familiebarnehage Sissel Grøthe",
+   "address": null,
+   "lat": 63.41506,
+   "lng": 10.48982,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "bus-jakobslivegen-nedre",
+   "name": "Jakobslivegen nedre bussholdeplass",
+   "address": null,
+   "lat": 63.428459,
+   "lng": 10.494339,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-leangen",
+   "name": "Leangen bussholdeplass",
+   "address": null,
+   "lat": 63.43167,
+   "lng": 10.47662,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-nedre-charlottenlund",
+   "name": "Nedre Charlottenlund bussholdeplass",
+   "address": null,
+   "lat": 63.433017,
+   "lng": 10.493118,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-ranheim",
+   "name": "Ranheim bussholdeplass",
+   "address": null,
+   "lat": 63.42507,
+   "lng": 10.533732,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-ranheim-idrettsplass",
+   "name": "Ranheim idrettsplass bussholdeplass",
+   "address": null,
+   "lat": 63.427812,
+   "lng": 10.523133,
+   "categoryId": "bus"
+  },
+  {
+   "id": "badeplass-ringvebukta",
+   "name": "Ringvebukta",
+   "address": null,
+   "lat": 63.45313609157895,
+   "lng": 10.46310287263158,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "bus-rotvoll",
+   "name": "Rotvoll bussholdeplass",
+   "address": null,
+   "lat": 63.434946,
+   "lng": 10.483832,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-rotvoll-stasjon",
+   "name": "Rotvoll stasjon",
+   "address": null,
+   "lat": 63.436682,
+   "lng": 10.479991,
+   "categoryId": "train"
+  },
+  {
+   "id": "badeplass-rotvollfj-ra",
+   "name": "Rotvollfjæra",
+   "address": null,
+   "lat": 63.44002563324323,
+   "lng": 10.487824398378377,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "bus-skovgard",
+   "name": "Skovgård bussholdeplass",
+   "address": null,
+   "lat": 63.429233,
+   "lng": 10.494601,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-tunvegen",
+   "name": "Tunvegen bussholdeplass",
+   "address": null,
+   "lat": 63.424143,
+   "lng": 10.484322,
+   "categoryId": "bus"
+  },
+  {
+   "id": "google-ChIJ382Ew_wwbUYRWDIDp4q77cA",
+   "name": "Devlebukta",
+   "address": "Unnamed Road,7041, Trondheim",
+   "lat": 63.44485929999999,
+   "lng": 10.46784,
+   "categoryId": "park"
+  },
+  {
+   "id": "google-ChIJ41LSGgIxbUYR__2L19iSkI0",
+   "name": "Glassdrive Lade Arena",
+   "address": "Haakon VIIs gt. 8, Trondheim",
+   "lat": 63.4418054,
+   "lng": 10.459983699999999,
+   "categoryId": "pharmacy"
+  },
+  {
+   "id": "google-ChIJ4c8APgAxbUYRY7DYrQACiMc",
+   "name": "MySun Sirkus",
+   "address": "Falkenborgvegen, Trondheim",
+   "lat": 63.436209100000006,
+   "lng": 10.4591079,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJ47dkMxYxbUYRTtcmqRwR6cw",
+   "name": "Fagerheimsbukta",
+   "address": "Lade",
+   "lat": 63.448913899999994,
+   "lng": 10.466152899999999,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJ2wByKgA7bUYRS1v8w2RZ-D0",
+   "name": "Grytbakkstranda Beach",
+   "address": "Grytbakkstranda 13, Ranheim",
+   "lat": 63.429544,
+   "lng": 10.5540261,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "3ae42972-d857-4e89-aa4c-07ca90f1a022",
+   "name": "Trondheim International Playground",
+   "address": null,
+   "lat": 63.43443,
+   "lng": 10.4465,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "f63069fa-6524-48e6-ba0c-82a052466cab",
+   "name": "Dronning Mauds Minne barnehage",
+   "address": null,
+   "lat": 63.43894,
+   "lng": 10.44788,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "bysykkel-1884",
+   "name": "Trondheim Bysykkel: Lade Idrettsanlegg øst",
+   "address": "Haakon VIIs gate 60",
+   "lat": 63.44392020314541,
+   "lng": 10.450038946779586,
+   "categoryId": "bike"
+  },
+  {
+   "id": "bysykkel-1883",
+   "name": "Trondheim Bysykkel: Baldershage",
+   "address": "Baldershage 5",
+   "lat": 63.43032895814139,
+   "lng": 10.453960590206151,
+   "categoryId": "bike"
+  },
+  {
+   "id": "2aa32541-6473-4e11-a3d9-4b075779cee7",
+   "name": "Grillstadfjæra barnehage",
+   "address": null,
+   "lat": 63.43583,
+   "lng": 10.50298,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "0347363d-479f-4f96-8999-51a4279aa594",
+   "name": "Grilstad Fus barnehage AS",
+   "address": null,
+   "lat": 63.43045,
+   "lng": 10.50501,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "d6ab206e-3340-42eb-b67d-a7f1f7a2b2a2",
+   "name": "Sjøskogbekken Fus barnehage AS",
+   "address": null,
+   "lat": 63.42694,
+   "lng": 10.52284,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "e8657911-0488-408b-a747-681fe211cd04",
+   "name": "Jakobsgrenda barnehage SA",
+   "address": null,
+   "lat": 63.41693,
+   "lng": 10.49637,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "2aac339f-0545-440d-b871-0af80fc57386",
+   "name": "Stokkbekken barnehage AS",
+   "address": null,
+   "lat": 63.41912,
+   "lng": 10.49316,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "google-ChIJ6WKP1iwxbUYRWeJ9Lc5wgcU",
+   "name": "Carlings",
+   "address": "Sirkus Shopping, Falkenborgvegen 5, Trondheim",
+   "lat": 63.4362111,
+   "lng": 10.455310599999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ6dLfFP4wbUYRBkLMpH2ZEVc",
+   "name": "Europris Lade",
+   "address": "Haakon VIIs gt. 12, 1st floor, Trondheim",
+   "lat": 63.4407612,
+   "lng": 10.4621014,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJ2wDh0f8wbUYRlfCrsUTpnnQ",
+   "name": "Impulse Treningssenter",
+   "address": "Haakon VIIs gt. 27, Trondheim",
+   "lat": 63.438781899999995,
+   "lng": 10.4632759,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJ2boLCbgxbUYRYlTi0PJ5oI8",
+   "name": "Din Hudlege Alesya Knutsen",
+   "address": "Vikelvfaret 2, Ranheim",
+   "lat": 63.42118130000001,
+   "lng": 10.5348212,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "badeplass-t-mmerstranda",
+   "name": "Tømmerstranda",
+   "address": null,
+   "lat": 63.43082746421054,
+   "lng": 10.534590703157896,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "google-ChIJ51KcX1cwbUYR456ZQEkz04c",
+   "name": "Recharge Charging Station",
+   "address": "Parking lot, Landbruksvegen 2, Trondheim",
+   "lat": 63.4275202,
+   "lng": 10.4732536,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJ5alLl_8wbUYRd3LlfRZL9tU",
+   "name": "Apcoa Charging Station",
+   "address": "Falkenborgvegen 35, Trondheim",
+   "lat": 63.4354865,
+   "lng": 10.4606522,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "6657eda5-23d3-4f6f-936f-70cd2ef53399",
+   "name": "Ranheimsfjæra barnehage",
+   "address": null,
+   "lat": 63.429,
+   "lng": 10.53108,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "A77C1475-902B-4C90-A3B8-853EDEA1B2AB",
+   "name": "Væreholmen badeplass",
+   "address": null,
+   "lat": 63.434,
+   "lng": 10.543,
+   "categoryId": "park"
+  },
+  {
+   "id": "badeplass-hansbakkfj-ra",
+   "name": "Hansbakkfjæra",
+   "address": null,
+   "lat": 63.430947417096775,
+   "lng": 10.541044956774194,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "E5F5BBBB-646B-421F-93A4-5508B03182DB",
+   "name": "Ladestien",
+   "address": null,
+   "lat": 63.44,
+   "lng": 10.48,
+   "categoryId": "park"
+  },
+  {
+   "id": "google-ChIJ0VnIWfAxbUYRJ4oOxcjKHWk",
+   "name": "Unaas Cycling Trondheim",
+   "address": "Falkenborgvegen 36A, Trondheim",
+   "lat": 63.435163499999994,
+   "lng": 10.4627032,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ-dt8__4xbUYRIor89tTpzhs",
+   "name": "INTERSPORT",
+   "address": "Falkenborgvegen 31, Trondheim",
+   "lat": 63.43595,
+   "lng": 10.45626,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ6dLfFP4wbUYRT0jlt3fGXvY",
+   "name": "Jula Lade",
+   "address": "Haakon VIIs gt. 27b, Trondheim",
+   "lat": 63.4379504,
+   "lng": 10.4627515,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "7a3f2a06-4fa0-401a-aef5-f686ddf62988",
+   "name": "Ranheim skole",
+   "address": null,
+   "lat": 63.42996,
+   "lng": 10.52283,
+   "categoryId": "skole"
+  },
+  {
+   "id": "7aabc275-0317-4c7f-b561-f864cc69b89f",
+   "name": "Læringsverkstedet Humlehaugen Doremi barnehage",
+   "address": null,
+   "lat": 63.42813,
+   "lng": 10.53916,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "0123ef5e-618d-4c46-a232-b966083c313f",
+   "name": "Nydammen familiebarnehage AS",
+   "address": null,
+   "lat": 63.41343,
+   "lng": 10.53667,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "cff0f68d-1ee1-4d72-bbd3-d63c5ce5b1ff",
+   "name": "Lekeplassen familiebarnehage AS",
+   "address": null,
+   "lat": 63.41399,
+   "lng": 10.53824,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "64ba9605-bd83-4ae0-b7d0-a37f5308da2d",
+   "name": "Markaplassen barnehage",
+   "address": null,
+   "lat": 63.41462,
+   "lng": 10.53101,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "google-ChIJ2f9t5BMxbUYRsTSEgqpgwiI",
+   "name": "JACK & JONES",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.435763400000006,
+   "lng": 10.457147299999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "bus-presthus",
+   "name": "Presthus bussholdeplass",
+   "address": null,
+   "lat": 63.423731,
+   "lng": 10.51913,
+   "categoryId": "bus"
+  },
+  {
+   "id": "google-ChIJ-95IAF0xbUYR22UShOo3mMs",
+   "name": "SpaPool Trondheim",
+   "address": "Haakon VII's gate 23A, Trondheim",
+   "lat": 63.440715399999995,
+   "lng": 10.4581848,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ4bjel1owbUYRaZ1XAvNnNu8",
+   "name": "EMES Charge Charging Station",
+   "address": "Magnus Lagabøters veg 4C, Trondheim",
+   "lat": 63.423229000000006,
+   "lng": 10.473704,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "2ca80341-b2cc-428e-96af-8916292a3e27",
+   "name": "Charlottenlund ungdomsskole",
+   "address": null,
+   "lat": 63.42664,
+   "lng": 10.48948,
+   "categoryId": "skole"
+  },
+  {
+   "id": "99514b8f-ddcc-49a7-aeef-00dd17933f48",
+   "name": "Vikåsen skole",
+   "address": null,
+   "lat": 63.4129,
+   "lng": 10.53466,
+   "categoryId": "skole"
+  },
+  {
+   "id": "google-ChIJ3ZsIv30wbUYRj5B5YYD8l6Y",
+   "name": "Ranheim Extra Arena",
+   "address": "Ranheimsvegen 172, Ranheim",
+   "lat": 63.42796429999999,
+   "lng": 10.5249458,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "fb548226-d979-4d54-aed2-7b67a7588635",
+   "name": "Charlottenlund videregående skole",
+   "address": null,
+   "lat": 63.42022,
+   "lng": 10.48645,
+   "categoryId": "skole"
+  },
+  {
+   "id": "google-ChIJ3XUgOU4wbUYRFV_D_ZEme-I",
+   "name": "Skeidar",
+   "address": "Tungasletta 10, Trondheim",
+   "lat": 63.420925700000005,
+   "lng": 10.4637259,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ1-nTGgIxbUYRcIyjlZsFI0M",
+   "name": "Møbelringen Lade",
+   "address": "Haakon VIIs gt. 11B, Trondheim",
+   "lat": 63.4428558,
+   "lng": 10.451663,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ_UqftTkxbUYRgoNOWZnUYLs",
+   "name": "Lade Cricket Ground",
+   "address": "Trondheim",
+   "lat": 63.44462670000001,
+   "lng": 10.4495737,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJ0QNgJAAxbUYRdBDxk5lhR8c",
+   "name": "Lade Padelbaner",
+   "address": "Lade",
+   "lat": 63.445985199999996,
+   "lng": 10.4517277,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJ41LSGgIxbUYRR4PzAzdk0y0",
+   "name": "Kid Lade",
+   "address": "Haakon VIIs gt. 12, Trondheim",
+   "lat": 63.439994199999994,
+   "lng": 10.4623597,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "d68664e4-2f08-4a75-8c6d-6ba01ebdb669",
+   "name": "Charlottenlund barneskole",
+   "address": null,
+   "lat": 63.42622,
+   "lng": 10.48704,
+   "categoryId": "skole"
+  },
+  {
+   "id": "google-ChIJ6XG6jEgxbUYRQ0jmEMhtEl4",
+   "name": "Lekeplassen",
+   "address": "Peder Falcks veg 32, Trondheim",
+   "lat": 63.4387421,
+   "lng": 10.455807499999999,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJ_2izb_8wbUYROBh_m9UG7O4",
+   "name": "Louiselyst Gård",
+   "address": "Leangenvegen 3, Trondheim",
+   "lat": 63.435489200000006,
+   "lng": 10.4634834,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "1a24071d-5f34-4c06-a660-a359f474bb77",
+   "name": "Montessoribarnehagene Trondheim AS",
+   "address": null,
+   "lat": 63.43896,
+   "lng": 10.48351,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "google-ChIJ41LSGgIxbUYReF3SYEPU27M",
+   "name": "Elkjøp Lade",
+   "address": "Haakon VII's gate 10A, Trondheim",
+   "lat": 63.4411881,
+   "lng": 10.4605362,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "ffb79e76-360c-4d47-acde-17e1a3c9836a",
+   "name": "Stiftelsen Fjæraskogen barnehage",
+   "address": null,
+   "lat": 63.43793,
+   "lng": 10.48145,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "google-ChIJ-fYJ-zsxbUYRHP8PSNdhCE8",
+   "name": "Digg Pizza - Sirkus",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.436776599999995,
+   "lng": 10.4550134,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJ37AsH2g7bUYRzyKI8hvJ_vw",
+   "name": "Ranheim Dyreklinikk - Trondheim",
+   "address": "Vikelvfaret 4, Ranheim",
+   "lat": 63.421398399999994,
+   "lng": 10.5360485,
+   "categoryId": "veterinar"
+  },
+  {
+   "id": "google-ChIJ56WGqYswbUYRdRgetL7Pb7k",
+   "name": "Grillstadfjæra",
+   "address": "Ranheim",
+   "lat": 63.4347501,
+   "lng": 10.5045291,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "google-ChIJ5xCXdH0wbUYRMFah1F42f5Y",
+   "name": "Ranheimshallen",
+   "address": "Ernst Larsens veg 1, Ranheim",
+   "lat": 63.428671900000005,
+   "lng": 10.522257699999999,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJ1_vsKYAxbUYRt_fUlt1rVCU",
+   "name": "Jakobsli skøytebane",
+   "address": "Trondheim",
+   "lat": 63.415529600000006,
+   "lng": 10.491570999999999,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJ1V3FClcxbUYRyt3jdg8Q89Q",
+   "name": "Plommetunet lekeplass",
+   "address": "Trondheim",
+   "lat": 63.41358009999999,
+   "lng": 10.469643399999999,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJ1-nTGgIxbUYR_L6AbKF6Qcw",
+   "name": "Burger King",
+   "address": "Haakon VIIs gt. 8-10, Trondheim",
+   "lat": 63.440503,
+   "lng": 10.460396,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJ_-SkUQcxbUYRPpGpFJjliTk",
+   "name": "Rosenborgklinikken Fysioterapi, avd. Lade",
+   "address": "Haakon VIIs gt. 2b, Trondheim",
+   "lat": 63.444798500000005,
+   "lng": 10.4515275,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJ_bGcGQAxbUYRV8c0jX3elYo",
+   "name": "Coop Mega Sirkus Shopping",
+   "address": "Sirkus Shopping, Falkenborgvegen 9, Trondheim",
+   "lat": 63.4357293,
+   "lng": 10.457212199999999,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJ1whmlD0xbUYRTxe0NR29dW4",
+   "name": "Recharge Charging Station",
+   "address": "Julianus Holms Veg 7041, Trondheim",
+   "lat": 63.4401318,
+   "lng": 10.4614503,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJ36ZT1_0wbUYRMQoHGKAB8rw",
+   "name": "Recharge Charging Station",
+   "address": "Haakon VIIs gt. 12, Trondheim",
+   "lat": 63.4407778,
+   "lng": 10.462944000000002,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJ73ssFgAxbUYRe9kf01GKgIg",
+   "name": "Dressmann",
+   "address": "Falkenborgvegen 5, Trondheim",
+   "lat": 63.436121299999996,
+   "lng": 10.455376399999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "bus-strindfjordvegen",
+   "name": "Strindfjordvegen bussholdeplass",
+   "address": null,
+   "lat": 63.435254,
+   "lng": 10.505792,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-askeladdvegen",
+   "name": "Askeladdvegen bussholdeplass",
+   "address": null,
+   "lat": 63.425995,
+   "lng": 10.507896,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-konglevegen",
+   "name": "Konglevegen bussholdeplass",
+   "address": null,
+   "lat": 63.422936,
+   "lng": 10.490404,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-charlottenlund-kirke",
+   "name": "Charlottenlund kirke bussholdeplass",
+   "address": null,
+   "lat": 63.421238,
+   "lng": 10.495079,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bus-travbanevegen",
+   "name": "Travbanevegen bussholdeplass",
+   "address": null,
+   "lat": 63.433201,
+   "lng": 10.470683,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bysykkel-4",
+   "name": "Trondheim Bysykkel: Dalen hageby",
+   "address": "Håkon Magnussons gate 1A",
+   "lat": 63.43757529885024,
+   "lng": 10.44872760772705,
+   "categoryId": "bike"
+  },
+  {
+   "id": "bysykkel-97",
+   "name": "Trondheim Bysykkel: Håkon VIIs gate 8-10",
+   "address": "Håkon VIIs gate 10",
+   "lat": 63.440766667542505,
+   "lng": 10.45927620210125,
+   "categoryId": "bike"
+  },
+  {
+   "id": "bysykkel-56",
+   "name": "Trondheim Bysykkel: Falkenborg",
+   "address": "Falkenborgveien / Blomstadvegen",
+   "lat": 63.4362775074396,
+   "lng": 10.45697271823883,
+   "categoryId": "bike"
+  },
+  {
+   "id": "google-ChIJ5_QMbwMxbUYRguErcRCAAtQ",
+   "name": "Koteng arena",
+   "address": "Haakon VIIs gt. 2B, Trondheim",
+   "lat": 63.44511369999999,
+   "lng": 10.4519352,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "fade87e7-f4bd-42bb-8145-5c83f9009f47",
+   "name": "Angelltrøa barnehage",
+   "address": null,
+   "lat": 63.41642,
+   "lng": 10.46195,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "87d38c97-d8ea-4a40-bd66-14ed240aecd3",
+   "name": "Aurora Baldershage barnehage AS",
+   "address": null,
+   "lat": 63.43245,
+   "lng": 10.45219,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "bhf-brundalen-apen-barnehage",
+   "name": "Brundalen åpen barnehage",
+   "address": null,
+   "lat": 63.41814,
+   "lng": 10.48497,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "904ec564-1319-4998-8e50-8a1d8764a9eb",
+   "name": "Trondheim Montessori",
+   "address": null,
+   "lat": 63.43896,
+   "lng": 10.48351,
+   "categoryId": "skole"
+  },
+  {
+   "id": "83ad7fd1-98b3-4b1a-936d-bdec9c3827ab",
+   "name": "Strindheim skole",
+   "address": null,
+   "lat": 63.43384,
+   "lng": 10.45556,
+   "categoryId": "skole"
+  },
+  {
+   "id": "google-ChIJ30XammAwbUYRgjTlj561cDw",
+   "name": "YX Skovgård",
+   "address": "Jakobslivegen 2, Jakobsli",
+   "lat": 63.42814430000001,
+   "lng": 10.496914499999999,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJ3UeeRKcxbUYRiW4pdqjXjfU",
+   "name": "Flipper Kafe",
+   "address": "Strindfjordvegen 40, Ranheim",
+   "lat": 63.438411699999996,
+   "lng": 10.507351000000002,
+   "categoryId": "cafe"
+  },
+  {
+   "id": "google-ChIJ00zWIgAxbUYRYL2odOOOMiI",
+   "name": "Grilstadfjæra badeplass",
+   "address": "Strindfjordvegen 23, Ranheim",
+   "lat": 63.4368038,
+   "lng": 10.5130181,
+   "categoryId": "park"
+  },
+  {
+   "id": "google-ChIJ1xp4FIkxbUYREY5RSpdzW_I",
+   "name": "Eventyrklinikken AS",
+   "address": "Eventyrvegen 45, Ranheim",
+   "lat": 63.4285934,
+   "lng": 10.5001696,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJ4yHnKF4wbUYRvC3nrWwBIcs",
+   "name": "Ranheim Dental",
+   "address": "Grilstadvegen 1, Trondheim",
+   "lat": 63.42924419999999,
+   "lng": 10.495493,
+   "categoryId": "dentist"
+  },
+  {
+   "id": "google-ChIJI_zYUasxbUYR1ogE7K58mS4",
+   "name": "Esso",
+   "address": "Kong Øysteins veg 4, Trondheim",
+   "lat": 63.4300066,
+   "lng": 10.4528153,
+   "categoryId": "fuel"
+  },
+  {
+   "id": "google-ChIJhxfg9GQxbUYR2DbV9qnvIwc",
+   "name": "Tesla Supercharger",
+   "address": "Haakon VIIs gt. 8, Trondheim",
+   "lat": 63.4418055,
+   "lng": 10.4572088,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYR6EWOX_0NeYs",
+   "name": "Cubus",
+   "address": "Falkenborgvegen 5, Trondheim",
+   "lat": 63.436103599999996,
+   "lng": 10.455826499999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ97wnnJoxbUYR5F7r0_dSmqk",
+   "name": "Poleshop.no",
+   "address": "Leangenvegen 7, Trondheim",
+   "lat": 63.43591799999999,
+   "lng": 10.463485400000001,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJBZCiPAAxbUYRsUk_AEGC3dY",
+   "name": "Glitter",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.436201000000004,
+   "lng": 10.4557839,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJhcBefAAxbUYR2a2zX0s9qBs",
+   "name": "EkoMarket Trondheim - Eastern European Grocery",
+   "address": "Peder Falcks veg 7, Trondheim",
+   "lat": 63.437363299999994,
+   "lng": 10.4566874,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJMyWS11AxbUYRwpblvAsRDnw",
+   "name": "Bohus Lade",
+   "address": "Lade Arena, Haakon VIIs gt. 8, Trondheim",
+   "lat": 63.441966,
+   "lng": 10.458022999999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJf-zq4GcwbUYRqC3EKejde3I",
+   "name": "REMA 1000 CHARLOTTENLUND",
+   "address": "Jakobslivegen 59A, Jakobsli",
+   "lat": 63.4204708,
+   "lng": 10.494609599999999,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJm_MRVVUwbUYRikGTON_ufDI",
+   "name": "E.ON Drive Charging Station",
+   "address": "Trondheim",
+   "lat": 63.43481689999999,
+   "lng": 10.4563674,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJL2KtbwQxbUYRo9C4t9-Z354",
+   "name": "Levi's Store, Trondheim​",
+   "address": "Falkenborgvegen 5, Trondheim",
+   "lat": 63.4356484,
+   "lng": 10.4566579,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYR-rzhyYjOHJI",
+   "name": "Bjørklund Sirkus",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.435898099999996,
+   "lng": 10.456350299999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJAQAAoX0wbUYRAc64d5ZRQTo",
+   "name": "Ranheim Friidrettshall",
+   "address": "Ranheim",
+   "lat": 63.42832130000001,
+   "lng": 10.523000099999999,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJAQBArlYwbUYRkLd842wBn94",
+   "name": "Sports Field",
+   "address": "Trondheim",
+   "lat": 63.428781099999995,
+   "lng": 10.4652051,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJHRSTC9QxbUYRFOlu8swAPPU",
+   "name": "Chamonix",
+   "address": "Jakobsli",
+   "lat": 63.423645300000004,
+   "lng": 10.5088134,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJH7iRsnIxbUYRf8CdlNrwrAE",
+   "name": "Dogman and friends",
+   "address": "Falkenborgvegen 5, Trondheim",
+   "lat": 63.43599999999999,
+   "lng": 10.455,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJadeinhUxbUYR1Tahhh_4Bdw",
+   "name": "islek",
+   "address": "Tungavegen 3, Trondheim",
+   "lat": 63.427786899999994,
+   "lng": 10.4660551,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJh7kJpfMxbUYRaFxbajzWbdI",
+   "name": "Jakobsli idrettsplass",
+   "address": "Trondheim",
+   "lat": 63.4154572,
+   "lng": 10.492187099999999,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJHbzUMFEwbUYRttR-qr_OOUY",
+   "name": "Trondheim Curlingklubb",
+   "address": "Tungavegen 35a, Trondheim",
+   "lat": 63.4275653,
+   "lng": 10.4633378,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJiTaw2L4xbUYRTcYxsRhwgao",
+   "name": "Brundalen fotballbane",
+   "address": "Brundalen",
+   "lat": 63.42132059999999,
+   "lng": 10.4864898,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJb0F0rp0xbUYR4OmIMRON-HE",
+   "name": "Lekeplass",
+   "address": "Dalen Hageby 29, Trondheim",
+   "lat": 63.4383624,
+   "lng": 10.453125799999999,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJh7NalqsxbUYRRdkAgYi78c8",
+   "name": "Smedstubukta",
+   "address": "Jan Voigts vei 5, Trondheim",
+   "lat": 63.4502029,
+   "lng": 10.4664396,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJc86qU4owbUYR_uhWRYTL8R0",
+   "name": "Pizzabakeren Ranheim",
+   "address": "Skonnertvegen 8, Trondheim",
+   "lat": 63.4340511,
+   "lng": 10.503183499999999,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJ8bySSaoxbUYRqrWrE7cqdo8",
+   "name": "Coop Prix Persaunet",
+   "address": "Tessems veg 2, Trondheim",
+   "lat": 63.433107699999994,
+   "lng": 10.4469403,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJAwesyAMxbUYRmE3i6v6702w",
+   "name": "JKE Design Trondheim",
+   "address": "Haakon VIIs gt. 15, Trondheim",
+   "lat": 63.4422965,
+   "lng": 10.4529333,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJA-UCdaUxbUYR8q4im15y4TM",
+   "name": "Trygg/Lade hallen",
+   "address": "Haakon VIIs gt. 2a, Lade",
+   "lat": 63.443965199999994,
+   "lng": 10.4524767,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJjTLY-GIxbUYRg0w0boPpdv4",
+   "name": "Frost",
+   "address": "Haakon VIIs gt. 9, Trondheim",
+   "lat": 63.443196799999996,
+   "lng": 10.4477922,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJE8aCFKsxbUYRTmgtbO0trH8",
+   "name": "REMA 1000 Bromstad",
+   "address": "Kong Øysteins veg 7, Trondheim",
+   "lat": 63.430695,
+   "lng": 10.450619999999999,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJg5CWMQAxbUYRL32vaOxOq_M",
+   "name": "Dromedar Kaffebar Sirkus",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4355505,
+   "lng": 10.456391000000002,
+   "categoryId": "cafe"
+  },
+  {
+   "id": "google-ChIJi7hv7WcwbUYRXKhCKlVE0ek",
+   "name": "La Bella Pizzeria AS",
+   "address": "Jakobslivegen 53, Jakobsli",
+   "lat": 63.42156959999999,
+   "lng": 10.494671499999999,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJMay81AYxbUYRLhWkjssYdqs",
+   "name": "Sit Trening DMMH",
+   "address": "Thrond Nergaards veg 7, Trondheim",
+   "lat": 63.43903459999999,
+   "lng": 10.4494635,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJF2jg5JsxbUYRLQG6J3YaJcE",
+   "name": "Feelgood",
+   "address": "Falkenborgvegen 38, Trondheim",
+   "lat": 63.4343196,
+   "lng": 10.4643141,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJJwBGaw4xbUYR6rZG77PA19k",
+   "name": "REMA 1000 Ranheimsfjæra",
+   "address": "Ranheimsfjaera 49, Ranheim",
+   "lat": 63.4287887,
+   "lng": 10.527120199999999,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYROa4mmz9mCjs",
+   "name": "TrondheimsGynekologene",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4362012,
+   "lng": 10.4556179,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJAQthOsgvbUYRsM9jhkg2gn4",
+   "name": "Hjerteglød skjønnhet og velvære",
+   "address": "Ranheimsvegen 165, Ranheim",
+   "lat": 63.4282008,
+   "lng": 10.5194795,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJMb0BWrs9bUYR4IKL6EjDeu8",
+   "name": "HiFi Life",
+   "address": "Haakon Vii's gate 23c, Trondheim",
+   "lat": 63.4394505,
+   "lng": 10.4570935,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJMdgKGQAxbUYRDv3MbQcUC3k",
+   "name": "Recharge Charging Station",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.436194,
+   "lng": 10.455777999999999,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJ8fipHDUxbUYRaSydpNhn7iI",
+   "name": "Vinmonopolet",
+   "address": "Falkenborgvegen 5, Trondheim",
+   "lat": 63.436088500000004,
+   "lng": 10.455385699999999,
+   "categoryId": "liquor_store"
+  },
+  {
+   "id": "google-ChIJlWGaBAIxbUYRFiSzu6YxjFw",
+   "name": "JYSK Lade, Trondheim",
+   "address": "Haakon VIIs gt. 8-10, Trondheim",
+   "lat": 63.442076199999995,
+   "lng": 10.4581819,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRC2MCjXErBZQ",
+   "name": "Floriss Sirkus",
+   "address": "Nye lokaler, Falkenborgvegen 5, i 1 etg, Trondheim",
+   "lat": 63.436088500000004,
+   "lng": 10.4553858,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJLwEAwPcwbUYRDCUuE-HjYW4",
+   "name": "Skoringen, Sirkus Shopping",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4362717,
+   "lng": 10.4560303,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJJy1r3P8wbUYRxbsO1wqLHyo",
+   "name": "Hår Frisør AS",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.435729200000004,
+   "lng": 10.4572117,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJExGbthwxbUYRYY6srQ-FrY8",
+   "name": "Ringve Music Museum",
+   "address": "Lade alle 60, Trondheim",
+   "lat": 63.4473266,
+   "lng": 10.4546463,
+   "categoryId": "museum"
+  },
+  {
+   "id": "google-ChIJF1mGmp4xbUYRTkm3SOGwDyw",
+   "name": "Your Travel Vaccine AS - Trondheim",
+   "address": "Peder Falcks veg 2, Trondheim",
+   "lat": 63.4371934,
+   "lng": 10.4554888,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJadfBocAxbUYRfeuufpAKBYc",
+   "name": "Fyr på Lade",
+   "address": "Haakon VII's gt 12, Trondheim",
+   "lat": 63.440333499999994,
+   "lng": 10.4628638,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJK420SFYwbUYRQyXNCVlt4EA",
+   "name": "Chopsticks Sirkus Shopping",
+   "address": "Travbanevegen 1, Trondheim",
+   "lat": 63.436238599999996,
+   "lng": 10.4561087,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJA6fmGAAxbUYR12VzXZqTiXU",
+   "name": "Krem Kaffe og Juice",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.436299700000006,
+   "lng": 10.455933499999999,
+   "categoryId": "cafe"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRzi8I936Zndw",
+   "name": "Rosenborg bakeri AS",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4361514,
+   "lng": 10.4557021,
+   "categoryId": "bakery"
+  },
+  {
+   "id": "google-ChIJH14kywMxbUYRRcr8ikLculg",
+   "name": "XXL Trondheim, Lade",
+   "address": "Haakon VIIs gt. 27b, Trondheim",
+   "lat": 63.437838400000004,
+   "lng": 10.463262499999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRMFdo8Qnku_A",
+   "name": "Eurosko Falkanger",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4361514,
+   "lng": 10.4557021,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJfwoey1wwbUYRmt7oGdyGY_A",
+   "name": "Brundalen tannklinikk",
+   "address": "Yrkesskolevegen 14, Jakobsli",
+   "lat": 63.4210105,
+   "lng": 10.4848508,
+   "categoryId": "dentist"
+  },
+  {
+   "id": "google-ChIJ9XKmbCYxbUYRnhlvHvia2ws",
+   "name": "Speed Treningssenter Lade",
+   "address": "Julianus Holms Veg 34, Trondheim",
+   "lat": 63.442447599999994,
+   "lng": 10.4590873,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJhaZNXAAxbUYRKnzq5LcXhTU",
+   "name": "Leangen gård parkeringsplass",
+   "address": "Leangenvegen, Trondheim",
+   "lat": 63.434986200000004,
+   "lng": 10.4644731,
+   "categoryId": "park"
+  },
+  {
+   "id": "google-ChIJ9-ig9_0wbUYRxPu-ctfcMQE",
+   "name": "Sport Outlet Trondheim Lade",
+   "address": "Haakon VIIs gt. 8-10, Trondheim",
+   "lat": 63.441587,
+   "lng": 10.459669,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJG96a9wkxbUYR5XAgim2lEuM",
+   "name": "Ty tannklinikk",
+   "address": "Peder Falcks veg 3, Trondheim",
+   "lat": 63.4368584,
+   "lng": 10.456104999999999,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJf_D4vPgwbUYRMPE2INUlT2I",
+   "name": "Jehovah's Witnesses",
+   "address": "Leangen alle 2, Trondheim",
+   "lat": 63.435704599999994,
+   "lng": 10.4697969,
+   "categoryId": "kirke"
+  },
+  {
+   "id": "google-ChIJ9YfOuH0wbUYRnpyiF-UWio4",
+   "name": "Kulturtribunen på Ranheim",
+   "address": "Ranheimsvegen 172, Ranheim",
+   "lat": 63.42796429999999,
+   "lng": 10.5249457,
+   "categoryId": "library"
+  },
+  {
+   "id": "google-ChIJcxwkQX8wbUYRKa3dMyzx75Q",
+   "name": "Recharge Charging Station",
+   "address": "Ranheimsvegen 201F, Ranheim",
+   "lat": 63.424017600000006,
+   "lng": 10.5339122,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJKRM8PJwxbUYRqBxLv4diofY",
+   "name": "Trondheim Båtforening",
+   "address": "Trondheim Båtforening, Strindfjordvegen 40, Ranheim",
+   "lat": 63.438530400000005,
+   "lng": 10.507497299999999,
+   "categoryId": "marina"
+  },
+  {
+   "id": "google-ChIJH7Zu-k8wbUYRMqiPVPp-eV4",
+   "name": "EMES Charging Station",
+   "address": "Nermarka 2, Trondheim",
+   "lat": 63.421287,
+   "lng": 10.470381,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJMaA2AV8wbUYRJ4auPvxUO9Q",
+   "name": "Kjølsøyvågen båtforening",
+   "address": "Hørløcks veg 70D, Jakobsli",
+   "lat": 63.42975939999999,
+   "lng": 10.490771599999999,
+   "categoryId": "marina"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRPk7O4iClTRI",
+   "name": "ARK Sirkus Shopping Trondheim",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4362708,
+   "lng": 10.4558129,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJj0VzAgIxbUYRTnwUtpzAvmw",
+   "name": "Löplabbet Lade",
+   "address": "Haakon VIIs gt. 23A, Trondheim",
+   "lat": 63.4407946,
+   "lng": 10.4581263,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJbTaNm7QxbUYR2Ea6H5n7tjo",
+   "name": "Rotvollfjæra",
+   "address": "Arkitekt Ebbells veg, Trondheim",
+   "lat": 63.43899,
+   "lng": 10.487190799999999,
+   "categoryId": "park"
+  },
+  {
+   "id": "google-ChIJL-u9808wbUYRcEOAhDIiOZw",
+   "name": "Mal Proff Trondheim",
+   "address": "Ingvald Ystgaards veg 7, Trondheim",
+   "lat": 63.420866000000004,
+   "lng": 10.468189599999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRgWhPzSs-8B8",
+   "name": "Princess (avd. Sirkus Shopping)",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4362012,
+   "lng": 10.4556179,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJCwRkdAA7bUYRvm9EBj8UKvo",
+   "name": "Ølbua",
+   "address": "Heimtrøa 16, Ranheim",
+   "lat": 63.4176429,
+   "lng": 10.5407174,
+   "categoryId": "bar"
+  },
+  {
+   "id": "google-ChIJM62fgpsxbUYRYU6-y-zxfx8",
+   "name": "Gina Tricot",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4362012,
+   "lng": 10.455618,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJnSGm4P8wbUYRlN5QcQLDhqY",
+   "name": "Volt",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4357744,
+   "lng": 10.4570647,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJeWbchu0VbUYRvR2MgAX4i1s",
+   "name": "Klinikk Veronika AS",
+   "address": "Sverre Svendsens veg 38, Trondheim",
+   "lat": 63.4188971,
+   "lng": 10.5227632,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJbRp9xqIxbUYRLvUkeKNmBnw",
+   "name": "VERO MODA",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.435763400000006,
+   "lng": 10.457147299999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRsDZb7rAQQHE",
+   "name": "CHANGE Lingerie",
+   "address": "Sirkus Shopping, Falkenborgvegen 9, Trondheim",
+   "lat": 63.436147399999996,
+   "lng": 10.4555616,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRh02JsTNqLMY",
+   "name": "FLOYD Sirkus",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4361514,
+   "lng": 10.4557021,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJkzDLEAAxbUYR66_ZgV8mof0",
+   "name": "Fagerheimsbukta",
+   "address": "Smedstuveien 38, Trondheim",
+   "lat": 63.448131,
+   "lng": 10.4672707,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJc-a3ff8wbUYRCS7bcGxg4WU",
+   "name": "Grip Klatring Leangen",
+   "address": "Travbanevegen 7, Trondheim",
+   "lat": 63.43262279999999,
+   "lng": 10.4663548,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJByopR4cwbUYR9K6nn3SLF9Q",
+   "name": "Ranheimsfjæra",
+   "address": "Ranheim",
+   "lat": 63.4310064,
+   "lng": 10.527320099999999,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "google-ChIJHbzUMFEwbUYRtcKkq-oGhM4",
+   "name": "Leangen Idrettsanlegg",
+   "address": "Tungavegen 3, Trondheim",
+   "lat": 63.4273685,
+   "lng": 10.466399,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJb9lVMlwwbUYRiJKk_Uu726c",
+   "name": "Charlottenlundhallen",
+   "address": "Tunvegen 19, Trondheim",
+   "lat": 63.425508900000004,
+   "lng": 10.4892675,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJNe4i_4owbUYRaRRfP1vXeEA",
+   "name": "Extra Grilstad",
+   "address": "Skonnertvegen 8, Ranheim",
+   "lat": 63.433996400000005,
+   "lng": 10.5038036,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJG7tyNpsxbUYRikYwrFwtX5Y",
+   "name": "Fargerike Østerlie",
+   "address": "Haakon VIIs gt. 19, Trondheim",
+   "lat": 63.441421399999996,
+   "lng": 10.4551008,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJn0ohhgExbUYRA-20HBkmU4M",
+   "name": "Flisekompaniet Studio Bergersen Trondheim",
+   "address": "Haakon VIIs gt. 21, Trondheim",
+   "lat": 63.4412976,
+   "lng": 10.456406999999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRG6pRnhcOUWc",
+   "name": "Vita Sirkus Shopping",
+   "address": "SIRKUS SHOPPING, Falkenborgvegen 1, Trondheim",
+   "lat": 63.436555999999996,
+   "lng": 10.454907000000002,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJhQO4qZIubUYRARkj71Y4Tgc",
+   "name": "Falk Nordic AS",
+   "address": "Ingvald Ystgaards veg 15, Trondheim",
+   "lat": 63.420193,
+   "lng": 10.4674274,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJ8QQ3630wbUYRUMm48wRgbVc",
+   "name": "3T-Ranheim",
+   "address": "Ranheim Arena, Ranheimsvegen 174, Ranheim",
+   "lat": 63.4280825,
+   "lng": 10.5251726,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJj4ToZQQxbUYRWBObt99G7W4",
+   "name": "Kitch'n City Lade",
+   "address": "Haakon VIIs gt. 9, Trondheim",
+   "lat": 63.44339309999999,
+   "lng": 10.448155999999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJf12AlasxbUYR0VWFKC1FfCo",
+   "name": "Fotballbane",
+   "address": "Trondheim",
+   "lat": 63.431161800000005,
+   "lng": 10.446770299999999,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJBdjlUUExbUYR_10WRa0VEyQ",
+   "name": "Nidaros Petanque klubbhus",
+   "address": "Trondheim",
+   "lat": 63.4460015,
+   "lng": 10.4507777,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJI9APi2B7bUYReFO6GKaYUp0",
+   "name": "Din Tur AS",
+   "address": "Ingvald Ystgaards veg 13 A, Trondheim",
+   "lat": 63.420599,
+   "lng": 10.4661197,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJJVKJmo4xbUYR0WDA4UKOdcI",
+   "name": "Rotvoll Diskgolfpark",
+   "address": "Arkitekt Ebbells veg 22, Ranheim",
+   "lat": 63.4385206,
+   "lng": 10.482533799999999,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJe9mh22wxbUYRUSRRB2p25Dw",
+   "name": "Grilstad molo",
+   "address": "Unnamed Road,7053, Trondheim",
+   "lat": 63.4403426,
+   "lng": 10.506511099999999,
+   "categoryId": "marina"
+  },
+  {
+   "id": "google-ChIJj75ljRExbUYRNdX-rsSzg88",
+   "name": "Designa Kjøkken Trondheim",
+   "address": "Haakon VIIs gt. 27, Trondheim",
+   "lat": 63.438164500000006,
+   "lng": 10.4629248,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJbaq9QncwbUYR2zFe_4wfmlA",
+   "name": "Lekeplass/akebakke",
+   "address": "Trondheim",
+   "lat": 63.4170596,
+   "lng": 10.5253576,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJmzeqs1kxbUYRoQOiab-CHJk",
+   "name": "Jakobsgrenda lekeplass",
+   "address": "Trondheim",
+   "lat": 63.417417500000006,
+   "lng": 10.4969866,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJK8F6LwAxbUYRa0tCf3wYJCg",
+   "name": "Kanalen lekeplass",
+   "address": "Grillstadfjæra 62, Ranheim",
+   "lat": 63.43580480000001,
+   "lng": 10.5067133,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJg3qo85sxbUYREQusvZQ9N3s",
+   "name": "Crispy Fried Chicken Trondheim Øst",
+   "address": "Jakobslivegen 2, Jakobsli",
+   "lat": 63.428151799999995,
+   "lng": 10.496956299999999,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJGxwPBnYxbUYR1vjn5WZqtd0",
+   "name": "Start på sti i Hasselbakkveien",
+   "address": "Hasselbakkvegen, Ranheim",
+   "lat": 63.437255099999994,
+   "lng": 10.49326,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJFfzIBgAxbUYRGohXgsu-GuQ",
+   "name": "Skjæret badeplass og brygge",
+   "address": "Trondheim",
+   "lat": 63.438777300000005,
+   "lng": 10.4955014,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJAQAQ9f4wbUYRlQES0UjKQEI",
+   "name": "Hangaren Lade",
+   "address": "Haakon VIIs gt. 27, Lade",
+   "lat": 63.43791039999999,
+   "lng": 10.4632765,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJjxV5vE4wbUYRIBuR48SBnMI",
+   "name": "TrenHer",
+   "address": "Ingvald Ystgaards veg 23, Trondheim",
+   "lat": 63.4176859,
+   "lng": 10.461227,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJLYRuvpgxbUYRx2iyoo5Klug",
+   "name": "Flying Tiger Copenhagen",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.435763400000006,
+   "lng": 10.457147299999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRnQt3MTOtz3I",
+   "name": "Urology Clinic Trondheim",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.435763400000006,
+   "lng": 10.457147299999999,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYR84JBA8HMra4",
+   "name": "Oris Dental Sirkus Shopping",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4357294,
+   "lng": 10.4572114,
+   "categoryId": "dentist"
+  },
+  {
+   "id": "google-ChIJAbH6jGcwbUYReCAHtuNK_Hc",
+   "name": "Charlottenlund Church",
+   "address": "Jakobslivegen 51, Jakobsli",
+   "lat": 63.4218612,
+   "lng": 10.4938565,
+   "categoryId": "kirke"
+  },
+  {
+   "id": "google-ChIJI61xEwAxbUYRjzOuZmopNsU",
+   "name": "Falkenborg",
+   "address": "Thoning Owesens gate 28, Trondheim",
+   "lat": 63.436963299999995,
+   "lng": 10.458420799999999,
+   "categoryId": "fuel"
+  },
+  {
+   "id": "google-ChIJhdB9Yf8wbUYRyff2GqBPdq0",
+   "name": "Leangen fysioterapi ANS",
+   "address": "Falkenborgvegen 38, Trondheim",
+   "lat": 63.4348088,
+   "lng": 10.4642711,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRPJAhqj2wce8",
+   "name": "Nevrolog Duraj AS",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4361514,
+   "lng": 10.4557021,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJJy1r3P8wbUYRpaUPzuvyzk4",
+   "name": "Abes Trafikkskole AS",
+   "address": "Falkenborgvegen 35c, Trondheim",
+   "lat": 63.435019499999996,
+   "lng": 10.4594379,
+   "categoryId": "trafikkskole"
+  },
+  {
+   "id": "google-ChIJBy39g9UxbUYRbwMxkTzrVHs",
+   "name": "TANNLEGE ANE AMDAL AS",
+   "address": "Tessems veg 2, Trondheim",
+   "lat": 63.433126599999994,
+   "lng": 10.4474239,
+   "categoryId": "dentist"
+  },
+  {
+   "id": "google-ChIJAZJxPH0wbUYRIhPNoAT-Jyw",
+   "name": "Pakkeautomat Ranheim Post i Butikk",
+   "address": "Skonnertvegen 8, Ranheim",
+   "lat": 63.434082499999995,
+   "lng": 10.5034823,
+   "categoryId": "post"
+  },
+  {
+   "id": "google-ChIJ9QPS8GIxbUYRE7dTm9Fp84s",
+   "name": "Leangen Post i Butikk",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4360128,
+   "lng": 10.4549556,
+   "categoryId": "post"
+  },
+  {
+   "id": "google-ChIJn4H0D4AwbUYRX0F7-gQVdGY",
+   "name": "Ranheim Church",
+   "address": "Ingrid Kiærs veg 1, Ranheim",
+   "lat": 63.429578199999995,
+   "lng": 10.537659,
+   "categoryId": "kirke"
+  },
+  {
+   "id": "google-ChIJHz_sFQAxbUYRd40wV09bXZw",
+   "name": "ULF-AN bokseklubb",
+   "address": "Tunvegen 7058, Jakobsli",
+   "lat": 63.4257254,
+   "lng": 10.4888613,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJ88CvYBUxbUYRh9pIBikoXec",
+   "name": "Ranheim kirke",
+   "address": "Ranheimsvegen 196, Ranheim",
+   "lat": 63.4298122,
+   "lng": 10.5356863,
+   "categoryId": "kirke"
+  },
+  {
+   "id": "google-ChIJG1NF1V8wbUYRKzotOge01uw",
+   "name": "Evidensia Trøndelag Dyreklinikk",
+   "address": "Jakobslivegen 1, Jakobsli",
+   "lat": 63.428571,
+   "lng": 10.495546000000001,
+   "categoryId": "veterinar"
+  },
+  {
+   "id": "google-ChIJkzDW804wbUYREWhbisKYepU",
+   "name": "Møller Bil Charging Station",
+   "address": "Ingvald Ystgaards veg 19-21, Trondheim",
+   "lat": 63.418687799999994,
+   "lng": 10.461783299999999,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJiSp95v0wbUYR62uXVyglLD4",
+   "name": "Tropehagen, Tam Lade",
+   "address": "Haakon VII`s gate 12, Trondheim",
+   "lat": 63.439994199999994,
+   "lng": 10.4623597,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJAwesyAMxbUYRl6v7ioiwDzc",
+   "name": "XL-BYGG Lade",
+   "address": "Haakon VIIs gt. 15, Trondheim",
+   "lat": 63.442368300000005,
+   "lng": 10.4528958,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJDY76WFEwbUYRdAThVzPiM4c",
+   "name": "Leangen Curlinghall",
+   "address": "Tungavegen 3, Trondheim",
+   "lat": 63.4275617,
+   "lng": 10.463364,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJk_GkthAxbUYRN2wthDiBU0I",
+   "name": "Leangen Ungdomshall",
+   "address": "Gildheimsvegen 34, Trondheim",
+   "lat": 63.427392999999995,
+   "lng": 10.464389299999999,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJewyusDIxbUYR5lkljhB8DUU",
+   "name": "MBI trafikkskole AS",
+   "address": "Peder Falcks veg 2, Trondheim",
+   "lat": 63.4371934,
+   "lng": 10.4554888,
+   "categoryId": "trafikkskole"
+  },
+  {
+   "id": "google-ChIJKe6pblwwbUYREHElvCjWf4o",
+   "name": "Charlottenlund Kunstgress 7-bane",
+   "address": "Trondheim",
+   "lat": 63.4247956,
+   "lng": 10.4856526,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJf-4ZDHUxbUYRh_k3okz1Hdw",
+   "name": "Ruta 7`er",
+   "address": "Gildheimsvegen 32, Trondheim",
+   "lat": 63.428863099999994,
+   "lng": 10.463637000000002,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJH4TxoAgxbUYRwdmKG0ETDas",
+   "name": "Brundalen basketballbane",
+   "address": "Yrkesskolevegen 16, Jakobsli",
+   "lat": 63.42087999999999,
+   "lng": 10.4869528,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJl00qZnoxbUYRFGOvoJ_WvYo",
+   "name": "Granåskollen",
+   "address": "Brundalen",
+   "lat": 63.416998899999996,
+   "lng": 10.4723568,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJKwXs8ooxbUYRUnRNSAkInLY",
+   "name": "Wright Trafikkskole Trondheim Øst",
+   "address": "Ranheimsvegen 7 A, Trondheim",
+   "lat": 63.43275179999999,
+   "lng": 10.4703324,
+   "categoryId": "trafikkskole"
+  },
+  {
+   "id": "google-ChIJjbob110wbUYRhSVbI0tWIRo",
+   "name": "Chappa fritidsklubb",
+   "address": "Tunvegen 19, Jakobsli",
+   "lat": 63.4258138,
+   "lng": 10.4888908,
+   "categoryId": "fritidsklubb"
+  },
+  {
+   "id": "google-ChIJfYjncAQxbUYR8Ykck3NiAa8",
+   "name": "Thai Thai",
+   "address": "Håkon VII´s gata 9, Trondheim",
+   "lat": 63.44341490000001,
+   "lng": 10.448789699999999,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRjZS7vSayU6Y",
+   "name": "Krem Mat & Kaffehus",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.436147399999996,
+   "lng": 10.4555616,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJi48YsXoxbUYR3ztC9w3uSqo",
+   "name": "Kafe Smedstua",
+   "address": "Karisvingen 11, Trondheim",
+   "lat": 63.449394399999996,
+   "lng": 10.4657257,
+   "categoryId": "cafe"
+  },
+  {
+   "id": "google-ChIJkQk6bcoxbUYR8JyFafEl9JY",
+   "name": "T-gym",
+   "address": "Haakon VIIs gt. 17A, Trondheim",
+   "lat": 63.4409316,
+   "lng": 10.4527083,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJI5ZQDgIxbUYR71OI2aNmU-0",
+   "name": "Rusta",
+   "address": "Haakon VIIs gt. 27, Trondheim",
+   "lat": 63.43798100000001,
+   "lng": 10.463426,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJcUVNbT8xbUYRTVAu5OzWWBU",
+   "name": "Oakland Møbler Trondheim",
+   "address": "Haakon VIIs gt. 8-10, Trondheim",
+   "lat": 63.4416782,
+   "lng": 10.4590186,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRVLyGDIbnmzE",
+   "name": "Leangen legesenter",
+   "address": "Haakon VIIs gt. 27, Trondheim",
+   "lat": 63.438745,
+   "lng": 10.4633862,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJjSTLWLoxbUYRLtW-DofoYHg",
+   "name": "Il Fornaio",
+   "address": "Bromstadvegen, Trondheim",
+   "lat": 63.4304451,
+   "lng": 10.4525569,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJlyuNNKsxbUYRB8igIw61uDA",
+   "name": "Plantasjen",
+   "address": "Kong Øysteins veg 1, Trondheim",
+   "lat": 63.431666699999994,
+   "lng": 10.451666699999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJKZzLGl4wbUYRZzcKHHNKSOo",
+   "name": "Bunnpris Charlottenlund",
+   "address": "Jakobsliv 7, Trondheim",
+   "lat": 63.4270893,
+   "lng": 10.494099799999999,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJGe_PpX8wbUYRZIqtZ99Y0M0",
+   "name": "Restaurant Romantica as",
+   "address": "Ranheimsvegen 165, Ranheim",
+   "lat": 63.4282611,
+   "lng": 10.519549,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJNSi2eQAxbUYRVP8noe0HUzc",
+   "name": "Baan",
+   "address": "Lade alle 84, Trondheim",
+   "lat": 63.441173600000006,
+   "lng": 10.4660087,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJi7hv7WcwbUYR9ya9nK8gS88",
+   "name": "Extra Charlottenlund",
+   "address": "Jakobslivegen 53, Jakobsli",
+   "lat": 63.4215533,
+   "lng": 10.4942005,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJIxSO7s0xbUYRQTZSjmjBkjk",
+   "name": "3T-Lade",
+   "address": "Haakon VIIs gt. 11, Trondheim",
+   "lat": 63.44332319999999,
+   "lng": 10.4505412,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJAbH6jGcwbUYRydTpQGg-4ro",
+   "name": "Jakobsli Hårstudio avd. Charlottenlund",
+   "address": "Jakobslivegen 53, Jakobsli",
+   "lat": 63.421535,
+   "lng": 10.4946628,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJmUvXtE4wbUYRb38Cd6H_fA0",
+   "name": "Nervik Dame- og herrefrisør",
+   "address": "Granåsvegen 33, Trondheim",
+   "lat": 63.416842700000004,
+   "lng": 10.460989099999999,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJA5JxPH0wbUYRrkahHZqp7HI",
+   "name": "Ranheim Frisør",
+   "address": "Ranheimsvegen 165, Ranheim",
+   "lat": 63.428335499999996,
+   "lng": 10.5192556,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJj4EJVDIwbUYRGQfnBklj3zk",
+   "name": "Dentist Arne-Henrik Finnanger",
+   "address": "Jakobslivegen 1, Jakobsli",
+   "lat": 63.428471800000004,
+   "lng": 10.4955301,
+   "categoryId": "dentist"
+  },
+  {
+   "id": "google-ChIJG4nnsVAwbUYRjpgs-KQFIwI",
+   "name": "Mer Charging Station",
+   "address": "Landbruksvegen 3, Trondheim",
+   "lat": 63.427188,
+   "lng": 10.472680600000002,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJbwS7R6sxbUYRzioaD-5dRYw",
+   "name": "Uno-X Charging Station",
+   "address": "King Øysteins road 7, Trondheim",
+   "lat": 63.430612,
+   "lng": 10.452644300000001,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJ9zZcIMUxbUYRN5CGxNdVJAg",
+   "name": "møbelbutikk",
+   "address": "Tungasletta 10, Trondheim",
+   "lat": 63.420920599999995,
+   "lng": 10.463716,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJJ_BtvE4wbUYR1TR-mtq5gq8",
+   "name": "Optimera Proffsenter Omkjøringsveien",
+   "address": "Ingvald Ystgaards veg 23, Trondheim",
+   "lat": 63.417873,
+   "lng": 10.460803,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJI1zeEwAxbUYRUo_zT_EtwJs",
+   "name": "H&M",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.436076,
+   "lng": 10.454671399999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRDanknEsHjaI",
+   "name": "BIK BOK",
+   "address": "Sirkus Shopping, Falkenborgvegen 5, Trondheim",
+   "lat": 63.4359478,
+   "lng": 10.4575604,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJK729PAAxbUYRIf8d5HD9R44",
+   "name": "Kleins Sirkus",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4365556,
+   "lng": 10.4549066,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJr9hXcU4wbUYRKS1Oh2mG44Q",
+   "name": "Circle K Tunga",
+   "address": "Tungasletta 16, Trondheim",
+   "lat": 63.420875699999996,
+   "lng": 10.4606167,
+   "categoryId": "fuel"
+  },
+  {
+   "id": "google-ChIJr7nEubgxbUYRDJFtKEpPfOM",
+   "name": "Gullfunn Sirkus",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.435763400000006,
+   "lng": 10.457147299999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJWYysP8sxbUYRMhgpHEcMTso",
+   "name": "BrikkeButikken Trondheim",
+   "address": "Haakon VIIs gt. 8, Trondheim",
+   "lat": 63.4418856,
+   "lng": 10.4585016,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJYXZzjvMxbUYRiqBBqswp65A",
+   "name": "Rituals",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4367043,
+   "lng": 10.4550407,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJqeBnd_4wbUYRGEQ0ONhrJUM",
+   "name": "Dog as Hobby Drive In",
+   "address": "Haakon VIIs gt. 12, Trondheim",
+   "lat": 63.4399593,
+   "lng": 10.4631376,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJy7CcNF8xbUYRtUaFO2XL-Tg",
+   "name": "Arti læll",
+   "address": "Haakon VIIs gt. 12, Trondheim",
+   "lat": 63.4406317,
+   "lng": 10.462162099999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJZQJwGQIxbUYRGQ_VvF37Dcc",
+   "name": "Trondheim Golfsenter AS",
+   "address": "Haakon VIIs gt. 23 C, Trondheim",
+   "lat": 63.439395899999994,
+   "lng": 10.4572668,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJr9hXcU4wbUYR9WTKesFN9pA",
+   "name": "Burger King",
+   "address": "Tungasletta 14, Trondheim",
+   "lat": 63.421085000000005,
+   "lng": 10.460708,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJqwSIW7sxbUYRGlvOxq_6rYc",
+   "name": "EvaGellein",
+   "address": "Fredrik B. Wallems veg 17, Ranheim",
+   "lat": 63.43279219999999,
+   "lng": 10.490857799999999,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJvcj0HgAxbUYR0qyBgPvVxnU",
+   "name": "Lekeplass",
+   "address": "Rotvoll alle 7053, Trondheim",
+   "lat": 63.4381434,
+   "lng": 10.4873987,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJUS3PKPAxbUYRBtMXHjRDc2g",
+   "name": "Trondheim Performance Center",
+   "address": "Travbanevegen 4a, Trondheim",
+   "lat": 63.4319043,
+   "lng": 10.4693536,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJzecRTlQxbUYRfVhcZo38UcE",
+   "name": "The Norwegian Combat Academy",
+   "address": "Tungavegen 38, Trondheim",
+   "lat": 63.4249887,
+   "lng": 10.466268099999999,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJY1vzrwMxbUYRGZkDTv9vUGA",
+   "name": "Lade Tennisarena",
+   "address": "Haakon VIIs gt. 2, Trondheim",
+   "lat": 63.444793700000005,
+   "lng": 10.4536991,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJqYDNEX0wbUYR7rtQiK1WHKk",
+   "name": "Ranheim Kunstgress 9'er",
+   "address": "Ranheimsvegen 174, Trondheim",
+   "lat": 63.427707399999996,
+   "lng": 10.5281328,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJqeBnd_4wbUYR4SUbbftcyoo",
+   "name": "French pleasures AS",
+   "address": "Haakon VIIs gt. 27, Trondheim",
+   "lat": 63.438824399999994,
+   "lng": 10.4632548,
+   "categoryId": "bakery"
+  },
+  {
+   "id": "google-ChIJv0qum3gwbUYRrg9ZKCNGM-g",
+   "name": "REMA 1000 RANHEIM",
+   "address": "Vikelvfaret 2, Ranheim",
+   "lat": 63.421169000000006,
+   "lng": 10.534474999999999,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJwcqRE6sxbUYRjAopyfAZMyo",
+   "name": "Apotek 1 Strindheim",
+   "address": "Kong Øysteins veg 5, Trondheim",
+   "lat": 63.4311181,
+   "lng": 10.451248399999999,
+   "categoryId": "pharmacy"
+  },
+  {
+   "id": "google-ChIJV82_lH0wbUYRsh9ew46i92k",
+   "name": "Ranheim tannklinikk",
+   "address": "Ranheimsvegen 172, Ranheim",
+   "lat": 63.42796429999999,
+   "lng": 10.5249457,
+   "categoryId": "dentist"
+  },
+  {
+   "id": "google-ChIJVVUFzBwxbUYRmvU78sq9Vx8",
+   "name": "Café Victoria",
+   "address": "Lade alle 60, Lade",
+   "lat": 63.4473266,
+   "lng": 10.4546463,
+   "categoryId": "cafe"
+  },
+  {
+   "id": "google-ChIJw0hiEasxbUYREdBvn3rW9XI",
+   "name": "Prego Ristorante",
+   "address": "Kong Øysteins veg 3, Trondheim",
+   "lat": 63.431209499999994,
+   "lng": 10.4512298,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJyZmo708wbUYRe8RHzYPwLns",
+   "name": "MT Byggteknikk",
+   "address": "Ingvald Ystgaards veg 3B, Trondheim",
+   "lat": 63.4211372,
+   "lng": 10.4695584,
+   "categoryId": "park"
+  },
+  {
+   "id": "google-ChIJWZZhbasxbUYRwf_SGrWLTFg",
+   "name": "Ranheim Pumptrack",
+   "address": "Sigmunn Jakobsens veg 1, Ranheim",
+   "lat": 63.4311083,
+   "lng": 10.516955399999999,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJW-fo9EYxbUYRCmsGt1wqn5M",
+   "name": "View point",
+   "address": "Øvre Granåslia 8, Trondheim",
+   "lat": 63.41630729999999,
+   "lng": 10.4712173,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "lekeplass-bautavegen-lek",
+   "name": "Bautavegen lek",
+   "address": null,
+   "lat": 63.420613958000004,
+   "lng": 10.528353394,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "lekeplass-bromstadekra-lek",
+   "name": "Bromstadekra lek",
+   "address": null,
+   "lat": 63.425762955555555,
+   "lng": 10.449010092222222,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJt6hpxVMxbUYRDEs-lLem5g8",
+   "name": "Grilstad mall",
+   "address": "Skonnertvegen 10, Ranheim",
+   "lat": 63.4340568,
+   "lng": 10.502859299999999,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJt3vHpxkxbUYR8uh80Py2VHI",
+   "name": "NTNU Ringve botaniske hage Parkering",
+   "address": "Ringve museum, Trondheim",
+   "lat": 63.4473266,
+   "lng": 10.4546463,
+   "categoryId": "museum"
+  },
+  {
+   "id": "google-ChIJu6ckGQAxbUYR5E5osQ4WpWw",
+   "name": "H2 Klinikken Medical",
+   "address": "Thoning Owesens gate 28, Trondheim",
+   "lat": 63.4362258,
+   "lng": 10.455982599999999,
+   "categoryId": "pharmacy"
+  },
+  {
+   "id": "google-ChIJQeFB8f0wbUYRWeA4m1XnpaY",
+   "name": "Recharge Charging Station",
+   "address": "Haakon VIIs gt. 8, Trondheim",
+   "lat": 63.441669999999995,
+   "lng": 10.460122,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJSb-wDoAwbUYRM52pdx3E76k",
+   "name": "Ranheim Menighetssenter Charging Station",
+   "address": "Ingrid Kiærs veg 1, Ranheim",
+   "lat": 63.429402399999994,
+   "lng": 10.537509799999999,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJp_HlXFAwbUYRL5oIQ8i5134",
+   "name": "Trondheim kommune, Miljøenheten Charging Station",
+   "address": "Tungavegen 32, Trondheim",
+   "lat": 63.4247412,
+   "lng": 10.470752599999999,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJP6Rqd5oxbUYRvD9Iqd4Z9rI",
+   "name": "Ladeklinikken",
+   "address": "Julianus Holms Veg 34, 6. etg, inngang på baksiden, Trondheim",
+   "lat": 63.442406,
+   "lng": 10.458839300000001,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJt_hhK9gvbUYRvpV76p2ri_w",
+   "name": "Garderobemekka Trondheim",
+   "address": "Haakon VIIs gt. 23, Trondheim",
+   "lat": 63.4406476,
+   "lng": 10.458047900000002,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJuQJkGQAxbUYRKj_SXYFCPhI",
+   "name": "Select Beauty",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.435763400000006,
+   "lng": 10.457147299999999,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJSyHzGQAxbUYRHRdG3FrB8Xo",
+   "name": "Gulating Ølutsalg Sirkus",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.436147399999996,
+   "lng": 10.4555616,
+   "categoryId": "liquor_store"
+  },
+  {
+   "id": "google-ChIJo5VQDgIxbUYR6A0e4vSrEBU",
+   "name": "REMA 1000 LADE ARENA",
+   "address": "Haakon VIIs gt. 8-10, Trondheim",
+   "lat": 63.441738,
+   "lng": 10.458264,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJuco4ugQxbUYRZLJ8RAtFF5A",
+   "name": "Obs BYGG Leangen",
+   "address": "Tungavegen 26, Trondheim",
+   "lat": 63.42619,
+   "lng": 10.471269999999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJRTCl-IowbUYR99g_hPt35zI",
+   "name": "Nille",
+   "address": "Skonnertvegen 8-10, Ranheim",
+   "lat": 63.4340268,
+   "lng": 10.5031757,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJv0qum3gwbUYRW11U9FY-umU",
+   "name": "Bernhard Moe AS",
+   "address": "Vikelvfaret 2, Ranheim",
+   "lat": 63.4210638,
+   "lng": 10.5350121,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJobc4GAAxbUYRVevn7ZC8a-E",
+   "name": "Tilbords Sirkus",
+   "address": "Falkenborgvegen 5, Trondheim",
+   "lat": 63.436088500000004,
+   "lng": 10.4553858,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJTd-l4P8wbUYRfp1y1hLVyMI",
+   "name": "Vitusapotek Sirkus Shopping",
+   "address": "Sirkus Shopping, Falkenborgvegen 9, Trondheim",
+   "lat": 63.4361514,
+   "lng": 10.4557021,
+   "categoryId": "pharmacy"
+  },
+  {
+   "id": "google-ChIJrbDKwJIxbUYRUFU0r6GBLmQ",
+   "name": "Falkenborgvegen 3",
+   "address": "Falkenborgvegen 3, Trondheim",
+   "lat": 63.4365924,
+   "lng": 10.4552906,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJS9MOOQAxbUYRWVlGA7xY0zM",
+   "name": "Hotspring Spa/Hot Tubs",
+   "address": "Haakon VIIs gt. 15, Trondheim",
+   "lat": 63.442594199999995,
+   "lng": 10.452604899999999,
+   "categoryId": "spa"
+  },
+  {
+   "id": "google-ChIJU0r-QgQxbUYRy6gy-4vPUas",
+   "name": "Lampehuset Lade Arena",
+   "address": "Haakon VII's gate 8-10, Trondheim",
+   "lat": 63.4422922,
+   "lng": 10.458546499999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJy-Z2R346bUYRbTr784cF_Cc",
+   "name": "Pinnsvin Crossing",
+   "address": "Ranheimsvegen 230A, Trondheim",
+   "lat": 63.429797,
+   "lng": 10.5464393,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJNY1t8psxbUYRmDuKDDEoqws",
+   "name": "DromedarBakeriet",
+   "address": "Peder Falcks veg 6, Trondheim",
+   "lat": 63.43725579999999,
+   "lng": 10.4555499,
+   "categoryId": "bakery"
+  },
+  {
+   "id": "google-ChIJrSNSbnkwbUYRS6a-0KZx9mI",
+   "name": "Coop Prix Olderdalen",
+   "address": "Sverre Svendsens veg 8, Ranheim",
+   "lat": 63.4216035,
+   "lng": 10.5265768,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM",
+   "name": "3T-Leangen",
+   "address": "Leangenvegen 10, Trondheim",
+   "lat": 63.435792500000005,
+   "lng": 10.4649422,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJXYNlJl8wbUYRDM3ibhwIlHY",
+   "name": "Figura Profil AS",
+   "address": "Hørløcks veg 66, Jakobsli",
+   "lat": 63.4300189,
+   "lng": 10.487592399999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJu7sWeQAxbUYRz2P_dpVWnYY",
+   "name": "Kaliber Gym Lade",
+   "address": "Haakon VIIs gt. 23A, Trondheim",
+   "lat": 63.440744,
+   "lng": 10.457961700000002,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJVZdRQJoxbUYRTcToJ4smjeM",
+   "name": "Sirkus Shopping",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4356484,
+   "lng": 10.4566579,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJRTCl-IowbUYR0835CLZ0TrE",
+   "name": "H2 Grilstad Marina",
+   "address": "Skonnertvegen 8, Ranheim",
+   "lat": 63.43409379999999,
+   "lng": 10.5030845,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJUSNqxm0xbUYRvnuIGHryFo4",
+   "name": "Cutters Sirkus Shopping",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4360998,
+   "lng": 10.455212399999999,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJxe389P4wbUYRqC-1RG5gGH8",
+   "name": "Spabutikken Polarbad",
+   "address": "Falkenborgvegen 38, Trondheim",
+   "lat": 63.434374899999995,
+   "lng": 10.4643485,
+   "categoryId": "spa"
+  },
+  {
+   "id": "google-ChIJpdma708wbUYR7Rv3pc-RJFk",
+   "name": "PodPoint Charging Station",
+   "address": "Ingvald Ystgaards veg 3B, Trondheim",
+   "lat": 63.4210981,
+   "lng": 10.4700422,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJp8Bb908wbUYRhXc8sAEu5SU",
+   "name": "Onninen Mega Express Trondheim",
+   "address": "Ingvald Ystgaards veg 3B, Trondheim",
+   "lat": 63.42107589999999,
+   "lng": 10.469935999999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJYR20W1cwbUYRqrZeEv1AA8Q",
+   "name": "IKEA Leangen",
+   "address": "Landbruksvegen 2, Trondheim",
+   "lat": 63.428827899999995,
+   "lng": 10.4727607,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJy-UJcf4wbUYRr3frpi4LpKc",
+   "name": "thansen Lade",
+   "address": "Haakon VIIs gt. 12, Trondheim",
+   "lat": 63.4403024,
+   "lng": 10.4626533,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJQfF_6_0wbUYRKZ3aTTVu6vI",
+   "name": "Recharge Charging Station",
+   "address": "Haakon VIIs gt. 12, Trondheim",
+   "lat": 63.440172600000004,
+   "lng": 10.4614088,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJXyYaNpw6bUYRo2lAFuozLUo",
+   "name": "Vikåsen Post i Butikk",
+   "address": "Bunnpris, Vikåsen 8, Ranheim",
+   "lat": 63.412454,
+   "lng": 10.53755,
+   "categoryId": "post"
+  },
+  {
+   "id": "google-ChIJPY2s9UMxbUYRTbDlR1EVVuQ",
+   "name": "Dromedar Kaffebar Overvik",
+   "address": "Presthusvegen 45, Ranheim",
+   "lat": 63.4206298,
+   "lng": 10.5155029,
+   "categoryId": "cafe"
+  },
+  {
+   "id": "google-ChIJyeQaG3owbUYRy-H0k7Qzo80",
+   "name": "Jakobsli Hårstudio avd. Ranheim",
+   "address": "Sverre Svendsens veg 38, Ranheim",
+   "lat": 63.4188766,
+   "lng": 10.522782099999999,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJO2pBQUMwbUYRSxwiesXgECI",
+   "name": "Charlottenlund medical Center",
+   "address": "Chr. Bloms veg 2A, Trondheim",
+   "lat": 63.419252699999994,
+   "lng": 10.4836023,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJR7qbA1EwbUYRvdO6NttIzfE",
+   "name": "EVBox Charging Station",
+   "address": "Tungavegen 28, Trondheim",
+   "lat": 63.4256967,
+   "lng": 10.4674015,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJv-5bgaoxbUYRW51l4fRlvqQ",
+   "name": "Akvaristikk.no",
+   "address": "Tropehagen Lade Arena (Tam, Haakon VII`s gate 12, Trondheim",
+   "lat": 63.440032599999995,
+   "lng": 10.4617803,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJnTHToi8xbUYRzb82Il75wso",
+   "name": "Dyrebutikk.no",
+   "address": "Haakon VII`s gate 12, Trondheim",
+   "lat": 63.439994199999994,
+   "lng": 10.4623597,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJxXY_NN8xbUYRE_Qv8oDJZlw",
+   "name": "Elma Toolcenter",
+   "address": "Bromstadvegen 57, Trondheim",
+   "lat": 63.42495819999999,
+   "lng": 10.464461499999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJzfTu-AMxbUYRec5ROWQJ2uo",
+   "name": "Megaflis Trondheim",
+   "address": "Haakon VIIs gt. 13, Trondheim",
+   "lat": 63.4422282,
+   "lng": 10.4497836,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJYQtMLSYxbUYRmWAKQsSX47U",
+   "name": "JYSK Tunga, Trondheim",
+   "address": "Tungasletta 10, Trondheim",
+   "lat": 63.4208785,
+   "lng": 10.463506899999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJtdil4P8wbUYRJ_ewtdgpBXs",
+   "name": "Jernia Sirkus Shopping",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4366853,
+   "lng": 10.4548323,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJu5ef_VEwbUYRKEon76WH9RY",
+   "name": "Modena",
+   "address": "Tungasletta 7, Trondheim",
+   "lat": 63.4225528,
+   "lng": 10.462095699999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJq6qqqk8wbUYRZQ8C4w_a470",
+   "name": "Beckers Proffsenter Trondheim",
+   "address": "Tungasletta 8, Trondheim",
+   "lat": 63.421980999999995,
+   "lng": 10.464486299999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJv7DVfhB83EURfxJkOnWApqU",
+   "name": "HTH Kjøkkenstudio Trondheim",
+   "address": "Haakon VIIs gt. 11B, Trondheim",
+   "lat": 63.4425385,
+   "lng": 10.4520194,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJtdil4P8wbUYRNh_My_uzPFA",
+   "name": "Søstrene Grene (avd. Sirkus Shopping)",
+   "address": "Sirkus Shopping, Falkenborgvegen 1, Trondheim",
+   "lat": 63.4365564,
+   "lng": 10.454901,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJSygBPgAxbUYRXE5ZmorgcEY",
+   "name": "Kitch'n Sirkus Shopping",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.43647430000001,
+   "lng": 10.454806099999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJVfADz98xbUYRzXHX0S6mEvI",
+   "name": "Ringevebukta lekeplass",
+   "address": "Fagerheim alle 97B, Trondheim",
+   "lat": 63.4524952,
+   "lng": 10.461235799999999,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJOwIMn6sxbUYRfptJNh9KsPg",
+   "name": "Baldershage lekeplass",
+   "address": "Trondheim",
+   "lat": 63.4320111,
+   "lng": 10.4506479,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJx6T8egAxbUYRmTS61cQfPo8",
+   "name": "Sprenberget",
+   "address": "Brundalen",
+   "lat": 63.415535899999995,
+   "lng": 10.4729426,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "google-ChIJT1rhobcxbUYRzEt66Zq1CMg",
+   "name": "Lade idrettspark",
+   "address": "Haakon VIIs gt., Trondheim",
+   "lat": 63.444370400000004,
+   "lng": 10.4535687,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJOdMSrS4xbUYR7w_3soNjTuk",
+   "name": "Heimdal Trafikkskole avd. Lade",
+   "address": "Haakon VIIs gt. 19, Trondheim",
+   "lat": 63.441491600000006,
+   "lng": 10.455239599999999,
+   "categoryId": "trafikkskole"
+  },
+  {
+   "id": "google-ChIJQa9Id_8wbUYRdyr0FzsXm14",
+   "name": "Møller Bil Leangen - Škoda",
+   "address": "Tungasletta 6, Trondheim",
+   "lat": 63.42220669999999,
+   "lng": 10.463546899999999,
+   "categoryId": "trafikkskole"
+  },
+  {
+   "id": "google-ChIJOXlNxf8wbUYRyNDckje-zOA",
+   "name": "Falkenborg helsestasjon",
+   "address": "Peder Falcks veg 31, Trondheim",
+   "lat": 63.4369691,
+   "lng": 10.4584748,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJZYkitEQwbUYRDHr5CcwoRdo",
+   "name": "Leistad etterbehandling",
+   "address": "General Wibes veg 1, Brundalen",
+   "lat": 63.420897200000006,
+   "lng": 10.4793155,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJp42zCd0xbUYR5umk3mtN-f4",
+   "name": "Tunhøgda lekeplass",
+   "address": "Vestre Tunhøgda 14, Jakobsli",
+   "lat": 63.423321400000006,
+   "lng": 10.4874406,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJO_LRTkgxbUYRQq-YfZ1PIAU",
+   "name": "Treklossen Lekested",
+   "address": "Peder Falcks veg 9, Trondheim",
+   "lat": 63.4376682,
+   "lng": 10.456926099999999,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "google-ChIJqYDNEX0wbUYRAWOchGXJ5H4",
+   "name": "Ranheim Idrettspark",
+   "address": "Ranheimsvegen 166, Trondheim",
+   "lat": 63.4279771,
+   "lng": 10.5252197,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJpdufqVYxbUYRI13MEb7STDA",
+   "name": "Akademiet Kickboxing og Bokseklubb Trondheim",
+   "address": "Haakon VIIs gt. 13, Trondheim",
+   "lat": 63.44202659999999,
+   "lng": 10.4508915,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJpblFfAExbUYR3AEyy9D1SMU",
+   "name": "Baz Berg Activity and Zumbasenter AS",
+   "address": "Haakon VIIs gt. 17A, Trondheim",
+   "lat": 63.440932,
+   "lng": 10.452708,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJr7X-f2c6bUYRbg7TDHQi-h8",
+   "name": "Vibeke Glad Hud og Fotterapi",
+   "address": "Ranheimsvegen 175, Trondheim",
+   "lat": 63.427301799999995,
+   "lng": 10.522119199999999,
+   "categoryId": "spa"
+  },
+  {
+   "id": "google-ChIJU0r-QgQxbUYROTY22CtvG-k",
+   "name": "Lade legesenter",
+   "address": "Haakon VIIs gt. 9, Trondheim",
+   "lat": 63.443626599999995,
+   "lng": 10.4492715,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJwzg3SggxbUYRQsQ5885DtIk",
+   "name": "Abelgården Tannklinikk AS",
+   "address": "Falkenborgvegen 35 C, 2 etasje, Trondheim",
+   "lat": 63.4349651,
+   "lng": 10.4593493,
+   "categoryId": "dentist"
+  },
+  {
+   "id": "google-ChIJPwAtSKoxbUYRTj6vR2Bd3CI",
+   "name": "Tannlege Nils B Skaar AS",
+   "address": "Tessems veg 2, Trondheim",
+   "lat": 63.43333609999999,
+   "lng": 10.447543,
+   "categoryId": "dentist"
+  },
+  {
+   "id": "google-ChIJwzg3SggxbUYRn-SmipcTxyQ",
+   "name": "Tore Bjørndal Ulstein Tannlege",
+   "address": "Falkenborgvegen 35C, Trondheim",
+   "lat": 63.4349698,
+   "lng": 10.4592846,
+   "categoryId": "dentist"
+  },
+  {
+   "id": "google-ChIJWUie6v8wbUYRHhZw_-HH3JQ",
+   "name": "Gildheim Legesenter",
+   "address": "Falkenborgvegen 35, Trondheim",
+   "lat": 63.434940299999994,
+   "lng": 10.4596433,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJpwY7_zkxbUYRB1f4RlAHceE",
+   "name": "Frumento",
+   "address": "Kong Øysteins veg 3, Trondheim",
+   "lat": 63.4312189,
+   "lng": 10.4510313,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJV88yPAIxbUYRqzLMaHRB300",
+   "name": "Tesla Trondheim Service",
+   "address": "Grilstadvegen 2a, Trondheim",
+   "lat": 63.441944400000004,
+   "lng": 10.4566667,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJpU3ZGQIxbUYRya_PJC0x0Qw",
+   "name": "Recharge Charging Station",
+   "address": "Haakon VIIs gt. 8, Trondheim",
+   "lat": 63.44158,
+   "lng": 10.45703,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJw6W68AAxbUYR7AQc3ygOcN4",
+   "name": "Charge365 Charging Station",
+   "address": "Thoning Owesens gate 23, Trondheim",
+   "lat": 63.437515100000006,
+   "lng": 10.4512662,
+   "categoryId": "charging_station"
+  },
+  {
+   "id": "google-ChIJocWWcMcxbUYRGaljUORa1c0",
+   "name": "Drømmekjøkkenet Lade",
+   "address": "Haakon VIIs gt. 19, Trondheim",
+   "lat": 63.4416702,
+   "lng": 10.455504999999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJYyWSQRcxbUYRUJsD2rLu5E8",
+   "name": "Leangen Bolig Arena",
+   "address": "Trondheim",
+   "lat": 63.428662900000006,
+   "lng": 10.465121300000002,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJo057c74xbUYR7N08t6YAaRg",
+   "name": "Jakobsli sandvolleyballbane",
+   "address": "Trondheim",
+   "lat": 63.41579420000001,
+   "lng": 10.4930448,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJpcuOmboxbUYR6xri3ZhfDnk",
+   "name": "Brundalen sandvolleyballbane",
+   "address": "Yrkesskolevegen 14, Jakobsli",
+   "lat": 63.42089949999999,
+   "lng": 10.4861384,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "google-ChIJR0IZcoI6bUYRTGxRpoTc3pY",
+   "name": "KlartDuKan Trafikkskole AS Trondheim",
+   "address": "Vikelvfaret 4F, Ranheim",
+   "lat": 63.421332099999994,
+   "lng": 10.5379805,
+   "categoryId": "trafikkskole"
+  },
+  {
+   "id": "google-ChIJT1jYCoUxbUYReQfAS2mSwik",
+   "name": "Rova Trafikkskole AS",
+   "address": "Haakon VIIs gt. 23H, Trondheim",
+   "lat": 63.4394849,
+   "lng": 10.458026199999999,
+   "categoryId": "trafikkskole"
+  },
+  {
+   "id": "google-ChIJPZkgwP8wbUYRoROl9Yhp00s",
+   "name": "Peppes Pizza - Leangen",
+   "address": "Falkenborgvegen 35C, Trondheim",
+   "lat": 63.4348946,
+   "lng": 10.4595165,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJRR076-MxbUYRwmx7ffmyk-U",
+   "name": "Jordbærpikene Leangen",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.4354906,
+   "lng": 10.4568225,
+   "categoryId": "cafe"
+  },
+  {
+   "id": "google-ChIJPWu0404wbUYRmIKE53VOJTc",
+   "name": "Kiwi Strinda",
+   "address": "Ingvald Ystgaards veg 38, Trondheim",
+   "lat": 63.418412100000005,
+   "lng": 10.464272699999999,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJrfyG8F8wbUYRvTpn9Dm2Nf0",
+   "name": "KIWI Ranheim",
+   "address": "Ranheimsvegen 95, Ranheim",
+   "lat": 63.4312939,
+   "lng": 10.496169499999999,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJX-PfBYwxbUYR98zxwotD-yQ",
+   "name": "House of Femme City Lade",
+   "address": "Haakon VIIs gt. 9, Trondheim",
+   "lat": 63.4431529,
+   "lng": 10.447830399999999,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJY7wfHoUxbUYRn7HITjSSnks",
+   "name": "Nidaros Cageball AS",
+   "address": "Haakon VIIs gt. 6, Trondheim",
+   "lat": 63.4427683,
+   "lng": 10.4561841,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJqeBnd_4wbUYRR06hK76o-c0",
+   "name": "Lade Arena",
+   "address": "Haakon VIIs gt. 12, Trondheim",
+   "lat": 63.4400004,
+   "lng": 10.4624029,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJyz_YGAAxbUYRaTTfPSQuePg",
+   "name": "Nikita Hair",
+   "address": "Falkenborgvegen 5, 9, Trondheim",
+   "lat": 63.436088500000004,
+   "lng": 10.4553858,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJVVWlsfIxbUYRMXJFM6LU4fY",
+   "name": "BADEDESIGN",
+   "address": "Tungavegen 38, Trondheim",
+   "lat": 63.42493400000001,
+   "lng": 10.4663504,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJU0r-QgQxbUYRTTj_3MYINgk",
+   "name": "New Yorker",
+   "address": "Haakon VII's gate 9, Trondheim",
+   "lat": 63.44375459999999,
+   "lng": 10.4485469,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJtdil4P8wbUYRP-LJfl59KbI",
+   "name": "Lindex (avd. Sirkus Shopping)",
+   "address": "Falkenborgvegen 5, Trondheim",
+   "lat": 63.43627000000001,
+   "lng": 10.455995999999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJqVYcGQAxbUYR34iop12Aigg",
+   "name": "Kappahl",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.43620550000001,
+   "lng": 10.455840799999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJyeQaG3owbUYRbpj1dBTguXY",
+   "name": "Ranheim legesenter",
+   "address": "Vikelvfaret 4, Ranheim",
+   "lat": 63.4212144,
+   "lng": 10.5362098,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJo3fFfyoxbUYRxv1zPYrEjkI",
+   "name": "KIWI Humlehaugen",
+   "address": "Ranheimsvegen 201 F, Ranheim",
+   "lat": 63.424471700000005,
+   "lng": 10.534639,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJYSYaNpw6bUYRh5GT6OrGrRI",
+   "name": "Bunnpris Vikåsen",
+   "address": "Vikåsen 8, Ranheim",
+   "lat": 63.4124698,
+   "lng": 10.537372999999999,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJtdil4P8wbUYRgFt33ORFNrE",
+   "name": "Sabrura Sticks & Sushi Sirkus",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4361952,
+   "lng": 10.455784699999999,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJR_8fGNwxbUYRlksBDIfRT-Q",
+   "name": "Chopsticks Horizont",
+   "address": "Ranheimsvegen 175, Trondheim",
+   "lat": 63.42735940000001,
+   "lng": 10.522095,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJsaSF7xIxbUYRqmz-Ex9HFuk",
+   "name": "Sabrura Sticks & Sushi Takeaway Skovgård",
+   "address": "Jakobslivegen 1B, Jakobsli",
+   "lat": 63.4284538,
+   "lng": 10.495476499999999,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJU0r-QgQxbUYR227hQ_E__jw",
+   "name": "Big Bite City Lade",
+   "address": "Haakon VII gt 9, Trondheim",
+   "lat": 63.4441764,
+   "lng": 10.4489264,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJtfTs9rwxbUYRgrBg3t02uB4",
+   "name": "PizzaPizza Foodtruck Lade",
+   "address": "Haakon VIIs gt. 15, Trondheim",
+   "lat": 63.44216110000001,
+   "lng": 10.4527611,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJTd-l4P8wbUYRr4WBvSfFKTU",
+   "name": "Big Bite Sirkus",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.435763400000006,
+   "lng": 10.457147299999999,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJzbmnIHsxbUYRGNdWn1Lcn0o",
+   "name": "IKEA Restaurant - Leangen",
+   "address": "Landbruksvegen 2, Trondheim",
+   "lat": 63.4290135,
+   "lng": 10.4740117,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJsZDEHsAxbUYRW2W4iQwcdWU",
+   "name": "Rosenborg Bakeri",
+   "address": "Ranheimsfjaera 47, Ranheim",
+   "lat": 63.429034099999996,
+   "lng": 10.5272308,
+   "categoryId": "bakery"
+  },
+  {
+   "id": "google-ChIJU0r-QgQxbUYR3ROKc4Zjwa8",
+   "name": "Goman Bakeriet AS Trondheim",
+   "address": "Haakon VIIs gt. 9, Trondheim",
+   "lat": 63.4423868,
+   "lng": 10.4477929,
+   "categoryId": "bakery"
+  },
+  {
+   "id": "google-ChIJYV1qgrIxbUYR3-4TD_xn3wI",
+   "name": "Smultringmannen, Donut House Lade",
+   "address": "Haakon VIIs gt. 8-10, Trondheim",
+   "lat": 63.4416782,
+   "lng": 10.4590186,
+   "categoryId": "bakery"
+  },
+  {
+   "id": "google-ChIJRTCl-IowbUYRFcNuL7_vqUQ",
+   "name": "Vitusapotek Ranheim",
+   "address": "Skonnertvegen 8, Ranheim",
+   "lat": 63.43416249999999,
+   "lng": 10.502888700000002,
+   "categoryId": "pharmacy"
+  },
+  {
+   "id": "google-ChIJXctPUYowbUYRr9WGctzKmVM",
+   "name": "Impulse Grilstad",
+   "address": "Skonnertvegen 8, Ranheim",
+   "lat": 63.4340511,
+   "lng": 10.503183499999999,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJXVJPUYowbUYRtv1_KOdpTFc",
+   "name": "Impulse Treningssenter",
+   "address": "Skonnertvegen 8, Ranheim",
+   "lat": 63.433907999999995,
+   "lng": 10.504600000000002,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJQZ62xX8wbUYRuqw1TGUCbIw",
+   "name": "The Ranheim Community Museum",
+   "address": "Ranheimsveien 201, Ranheim",
+   "lat": 63.42811839999999,
+   "lng": 10.5348221,
+   "categoryId": "museum"
+  },
+  {
+   "id": "google-ChIJV82_lH0wbUYRKfodIclrdCY",
+   "name": "Trondheim folkebibliotek Ranheim",
+   "address": "Ranheimsvegen 172, Ranheim",
+   "lat": 63.42780630000001,
+   "lng": 10.525022199999999,
+   "categoryId": "library"
+  },
+  {
+   "id": "google-ChIJXZd_nP8wbUYR-BKWSBLHUkg",
+   "name": "Leangen Hårsenter AS",
+   "address": "Falkenborgvegen 35C, Trondheim",
+   "lat": 63.435008999999994,
+   "lng": 10.4597871,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJPwAtSKoxbUYRS7yqDOevjPI",
+   "name": "Persaunet Hårsenter",
+   "address": "Tessems veg 2, Trondheim",
+   "lat": 63.433292400000006,
+   "lng": 10.4473732,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJtdil4P8wbUYRwTJwfcaylII",
+   "name": "Thai Klinikk",
+   "address": "Falkenborgvegen 9, Trondheim",
+   "lat": 63.436147399999996,
+   "lng": 10.4555616,
+   "categoryId": "spa"
+  },
+  {
+   "id": "google-ChIJyeQaG3owbUYRqAXHGRzz5h8",
+   "name": "Charlottenlund fotklinikk M Sandberg",
+   "address": "Sverre Svendsens veg 38, Ranheim",
+   "lat": 63.4188971,
+   "lng": 10.5227632,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJxe_mV4owbUYRgVB8-y8m4p0",
+   "name": "Lavendel blomster & interiør",
+   "address": "Skonnertvegen 8, Ranheim",
+   "lat": 63.43416249999999,
+   "lng": 10.502888700000002,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJqeBnd_4wbUYRi6DhHuv-7Vw",
+   "name": "POWER Lade",
+   "address": "Håkon VII's gate 27, Trondheim",
+   "lat": 63.4380728,
+   "lng": 10.462899,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJuUBzcjAxbUYRRp6Tz5ioCG4",
+   "name": "Clas Ohlson",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4365556,
+   "lng": 10.454906699999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJVeRBeu0VbUYRWQApOSJ6hY0",
+   "name": "Stjørdal Foto",
+   "address": "Haakon VIIs gt. 12, Trondheim",
+   "lat": 63.439994199999994,
+   "lng": 10.4623597,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJRcoAbmgubUYRCyd5pki106k",
+   "name": "Flügger farve",
+   "address": "Tungasletta 10, Trondheim",
+   "lat": 63.42095289999999,
+   "lng": 10.4637465,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJs5v13GMwbUYRp9JYF_mtepw",
+   "name": "Flisservice AS",
+   "address": "Eventyrvegen 52, Ranheim",
+   "lat": 63.4269051,
+   "lng": 10.507019099999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJQ8-LQnYxbUYR0-NJ2jRYn6w",
+   "name": "Malermester Talseth & Husby AS",
+   "address": "Sverre Svendsens veg 38, Ranheim",
+   "lat": 63.4188766,
+   "lng": 10.522782099999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJO48HK0YwbUYRAfXUYyrOtSs",
+   "name": "Kvik Lade - Trondheim",
+   "address": "Haakon VIIs gt. 27, Trondheim",
+   "lat": 63.438837899999996,
+   "lng": 10.4636841,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJpZ00qiEubUYRfZLG6ZgCjsU",
+   "name": "MTflis AS",
+   "address": "Bromstadvegen 57, Trondheim",
+   "lat": 63.424711699999996,
+   "lng": 10.4642796,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJsYY02QsTQUYRdx2pcuT1Pkc",
+   "name": "Golfers Scandinavia",
+   "address": "Haakon VIIs gt. 23 C, Trondheim",
+   "lat": 63.4394505,
+   "lng": 10.4570935,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJzfTu-AMxbUYRSXu_2XdPnvo",
+   "name": "Sport Brand AS",
+   "address": "Haakon VIIs gt. 13, Trondheim",
+   "lat": 63.4433471,
+   "lng": 10.449369899999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJRU7OhwExbUYRb9Eq64G5MuM",
+   "name": "Fredrik & Louisa Sirkus Shopping",
+   "address": "Falkenborgvegen 4-6, Trondheim",
+   "lat": 63.436125399999995,
+   "lng": 10.455997499999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "nsr-989213377",
+   "name": "Lukas videregående skole AS",
+   "address": null,
+   "lat": 63.43896,
+   "lng": 10.48351,
+   "categoryId": "skole"
+  },
+  {
+   "id": "osm-node11703385628",
+   "name": "Charlottenlund vgs. idrettshall",
+   "address": null,
+   "lat": 63.4203274,
+   "lng": 10.4869804,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way22797458",
+   "name": "Charlottenlund kunstgressbane",
+   "address": null,
+   "lat": 63.4213322,
+   "lng": 10.4864874,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way23651572",
+   "name": "Charlottenlund kunstgrasbane",
+   "address": null,
+   "lat": 63.4252405,
+   "lng": 10.487167,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way29089343",
+   "name": "Svømmehall",
+   "address": null,
+   "lat": 63.4261523,
+   "lng": 10.488202,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way200068696",
+   "name": "Jakobsli idrettsplass",
+   "address": null,
+   "lat": 63.4155018,
+   "lng": 10.4922236,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-282889780",
+   "name": "Hansbakkfjæra",
+   "address": null,
+   "lat": 63.4309964,
+   "lng": 10.5445919,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "osm-way-816682691",
+   "name": "Hansbakkfjæra",
+   "address": null,
+   "lat": 63.4313538,
+   "lng": 10.5383969,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "nsr-982185831",
+   "name": "Stiftelsen steinerskolen på Rotvoll",
+   "address": null,
+   "lat": 63.43889,
+   "lng": 10.48563,
+   "categoryId": "skole"
+  },
+  {
+   "id": "osm-node-2207456459",
+   "name": "Grip Leangen",
+   "address": null,
+   "lat": 63.4326574,
+   "lng": 10.4662988,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-node-3120283729",
+   "name": "Grilstad Marina",
+   "address": null,
+   "lat": 63.4377543,
+   "lng": 10.5067065,
+   "categoryId": "marina"
+  },
+  {
+   "id": "osm-node-5567649140",
+   "name": "EXTRA Arena",
+   "address": null,
+   "lat": 63.4282828,
+   "lng": 10.525104,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-278637044",
+   "name": "Vikåsenhallen",
+   "address": null,
+   "lat": 63.4134133,
+   "lng": 10.5317771,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-816682692",
+   "name": "Hansbakkfjæra",
+   "address": null,
+   "lat": 63.43111,
+   "lng": 10.5413953,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "osm-relation-20106862",
+   "name": "Grilstadstranda",
+   "address": null,
+   "lat": 63.4362493,
+   "lng": 10.5129124,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "osm-node-11703368526",
+   "name": "Leangen idrettspark",
+   "address": null,
+   "lat": 63.4275177,
+   "lng": 10.46547,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-node-11703385628",
+   "name": "Charlottenlund vgs. idrettshall",
+   "address": null,
+   "lat": 63.4203274,
+   "lng": 10.4869804,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-23651572",
+   "name": "Charlottenlund kunstgrasbane",
+   "address": null,
+   "lat": 63.4252405,
+   "lng": 10.487167,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-93075584",
+   "name": "Charlottenlundhallen",
+   "address": null,
+   "lat": 63.4253518,
+   "lng": 10.4887826,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-node-5224509467",
+   "name": "Basis gym",
+   "address": null,
+   "lat": 63.440098,
+   "lng": 10.454122,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-node-11703368527",
+   "name": "Leangen curlinghall",
+   "address": null,
+   "lat": 63.4276449,
+   "lng": 10.4637641,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-node-11703385624",
+   "name": "Leangen bydelshallen",
+   "address": null,
+   "lat": 63.4270538,
+   "lng": 10.4633934,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-5107254",
+   "name": "Lade idrettspark",
+   "address": null,
+   "lat": 63.444981,
+   "lng": 10.449706,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-17698547",
+   "name": "Strindheim kunstgrasbane",
+   "address": null,
+   "lat": 63.4287239,
+   "lng": 10.4651512,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-42282115",
+   "name": "Parken",
+   "address": null,
+   "lat": 63.4468092,
+   "lng": 10.4534851,
+   "categoryId": "park"
+  },
+  {
+   "id": "osm-way-88212794",
+   "name": "Ringvebukta",
+   "address": null,
+   "lat": 63.4527773,
+   "lng": 10.462693,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "osm-way-97078993",
+   "name": "Lade tennishall",
+   "address": null,
+   "lat": 63.4448704,
+   "lng": 10.4536462,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-1258951664",
+   "name": "Trygg/Lade-hallen",
+   "address": null,
+   "lat": 63.4441953,
+   "lng": 10.4518765,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-1265870090",
+   "name": "Lade 2",
+   "address": null,
+   "lat": 63.444516,
+   "lng": 10.4499749,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-1293567124",
+   "name": "Lade idrettsanlegg",
+   "address": null,
+   "lat": 63.4454307,
+   "lng": 10.4510007,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-1307304748",
+   "name": "Lade tennisbaner",
+   "address": null,
+   "lat": 63.4455854,
+   "lng": 10.4527275,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-1327813417",
+   "name": "Lade cricketpitch",
+   "address": null,
+   "lat": 63.4447133,
+   "lng": 10.4493746,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "taxi-tk-rotvoll",
+   "name": "Rotvoll",
+   "address": null,
+   "lat": 63.438338,
+   "lng": 10.479212,
+   "categoryId": "taxi"
+  },
+  {
+   "id": "taxi-tk-jakobslivegen",
+   "name": "Jakobslivegen",
+   "address": null,
+   "lat": 63.4216882,
+   "lng": 10.4948121,
+   "categoryId": "taxi"
+  },
+  {
+   "id": "taxi-tk-sverre-svendsens-veg",
+   "name": "Sverre Svendsens veg",
+   "address": null,
+   "lat": 63.421489,
+   "lng": 10.5263127,
+   "categoryId": "taxi"
+  },
+  {
+   "id": "taxi-tk-ingvald-ystgaards-veg",
+   "name": "Ingvald Ystgaards veg",
+   "address": null,
+   "lat": 63.4215437,
+   "lng": 10.4716935,
+   "categoryId": "taxi"
+  },
+  {
+   "id": "taxi-tk-thoning-owesens-gate",
+   "name": "Thoning Owesens gate",
+   "address": null,
+   "lat": 63.4378954,
+   "lng": 10.4500311,
+   "categoryId": "taxi"
+  },
+  {
+   "id": "osm-node-2937383042",
+   "name": "Arena Trondheim",
+   "address": null,
+   "lat": 63.4394492,
+   "lng": 10.4570307,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-84078489",
+   "name": "Ranheimshallen",
+   "address": null,
+   "lat": 63.42876,
+   "lng": 10.522812,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-97078994",
+   "name": "Autronica-hallen",
+   "address": null,
+   "lat": 63.444508,
+   "lng": 10.4558339,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "park-dalenkrysset-park",
+   "name": "Dalenkrysset park",
+   "address": null,
+   "lat": 63.43764321666666,
+   "lng": 10.449505333333331,
+   "categoryId": "park"
+  },
+  {
+   "id": "lekeplass-dalheimslyngen-lek",
+   "name": "Dalheimslyngen lek",
+   "address": null,
+   "lat": 63.411747544,
+   "lng": 10.484926892,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "park-devle-gard",
+   "name": "Devle gård",
+   "address": null,
+   "lat": 63.445562674477635,
+   "lng": 10.459319770298505,
+   "categoryId": "park"
+  },
+  {
+   "id": "lekeplass-fjordgl-ttvegen-lek",
+   "name": "Fjordgløttvegen lek",
+   "address": null,
+   "lat": 63.41956874333333,
+   "lng": 10.550796992222223,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "lekeplass-fagerheim-alle-lek",
+   "name": "Fagerheim alle lek",
+   "address": null,
+   "lat": 63.44855404571429,
+   "lng": 10.461595382857142,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "lekeplass-falkenborgparken-lek",
+   "name": "Falkenborgparken lek",
+   "address": null,
+   "lat": 63.43853775666667,
+   "lng": 10.455847435,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "park-falkenborgparken",
+   "name": "Falkenborgparken",
+   "address": null,
+   "lat": 63.438728960000006,
+   "lng": 10.455735984000002,
+   "categoryId": "park"
+  },
+  {
+   "id": "lekeplass-grillstadfj-ra-lek",
+   "name": "Grillstadfjæra lek",
+   "address": null,
+   "lat": 63.436300419999995,
+   "lng": 10.5046589925,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "park-grillstadfj-ra",
+   "name": "Grillstadfjæra",
+   "address": null,
+   "lat": 63.435689555357165,
+   "lng": 10.502817602366068,
+   "categoryId": "park"
+  },
+  {
+   "id": "lekeplass-hansbakkfj-ra-lek",
+   "name": "Hansbakkfjæra lek",
+   "address": null,
+   "lat": 63.43004054,
+   "lng": 10.541471668333335,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "osm-way-200068696",
+   "name": "Jakobsli idrettsplass",
+   "address": null,
+   "lat": 63.4155018,
+   "lng": 10.4922236,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "lekeplass-j-rgen-b-lysholms-veg-lek",
+   "name": "Jørgen B. Lysholms veg lek",
+   "address": null,
+   "lat": 63.444454885000006,
+   "lng": 10.464017167500002,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "lekeplass-lauritz-jensens-gate-lek",
+   "name": "Lauritz Jensens gate lek",
+   "address": null,
+   "lat": 63.435438908,
+   "lng": 10.445786647999999,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "park-leangen-gard-park",
+   "name": "Leangen gård park",
+   "address": null,
+   "lat": 63.4391350005,
+   "lng": 10.469776779250001,
+   "categoryId": "park"
+  },
+  {
+   "id": "lekeplass-overviksvegen-lek",
+   "name": "Overviksvegen lek",
+   "address": null,
+   "lat": 63.41864760875,
+   "lng": 10.51812711,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "park-ranheim-stasjonspark",
+   "name": "Ranheim stasjonspark",
+   "address": null,
+   "lat": 63.42838733789473,
+   "lng": 10.53466899263158,
+   "categoryId": "park"
+  },
+  {
+   "id": "park-ringve-botaniske-hage",
+   "name": "Ringve Botaniske hage",
+   "address": null,
+   "lat": 63.447845389052645,
+   "lng": 10.453271007157896,
+   "categoryId": "park"
+  },
+  {
+   "id": "lekeplass-ringvebukta-lek",
+   "name": "Ringvebukta lek",
+   "address": null,
+   "lat": 63.45246424411765,
+   "lng": 10.46137536235294,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "park-ringvebukta-park",
+   "name": "Ringvebukta park",
+   "address": null,
+   "lat": 63.45259305111111,
+   "lng": 10.461173298888887,
+   "categoryId": "park"
+  },
+  {
+   "id": "lekeplass-r-sslyngvegen-lek",
+   "name": "Røsslyngvegen lek",
+   "address": null,
+   "lat": 63.42113879714285,
+   "lng": 10.497984118571427,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "lekeplass-severin-saksviks-veg-lek",
+   "name": "Severin Saksviks veg lek",
+   "address": null,
+   "lat": 63.417195314999994,
+   "lng": 10.525261925,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "lekeplass-sj-vegen-lek",
+   "name": "Sjøvegen lek",
+   "address": null,
+   "lat": 63.43781989428572,
+   "lng": 10.490452242857144,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "lekeplass-solveig-abrahamsens-veg-lek",
+   "name": "Solveig Abrahamsens veg lek",
+   "address": null,
+   "lat": 63.41943976750001,
+   "lng": 10.54922791,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "lekeplass-strinda-hageby-lek",
+   "name": "Strinda Hageby lek",
+   "address": null,
+   "lat": 63.417551964,
+   "lng": 10.462478366,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "park-strinda-hageby-park",
+   "name": "Strinda Hageby park",
+   "address": null,
+   "lat": 63.417199141555564,
+   "lng": 10.462675302666668,
+   "categoryId": "park"
+  },
+  {
+   "id": "osm-way-59125598",
+   "name": "Vikåsen kunstgressbane",
+   "address": null,
+   "lat": 63.4127959,
+   "lng": 10.5321336,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "lekeplass-vikasen-lek",
+   "name": "Vikåsen lek",
+   "address": null,
+   "lat": 63.41313989384615,
+   "lng": 10.532426659230769,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "osm-way-1095589260",
+   "name": "Ranheim aktivitetshall",
+   "address": null,
+   "lat": 63.4283616,
+   "lng": 10.5273929,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-1299955426",
+   "name": "Ranheim Pumptrack",
+   "address": null,
+   "lat": 63.4310401,
+   "lng": 10.5180225,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-1361947469",
+   "name": "Leangen Gård",
+   "address": null,
+   "lat": 63.4388773,
+   "lng": 10.4694484,
+   "categoryId": "park"
+  },
+  {
+   "id": "lekeplass-hulderveien-lek",
+   "name": "Hulderveien lek",
+   "address": null,
+   "lat": 63.428460108,
+   "lng": 10.513203612,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "osm-node-11703385626",
+   "name": "Leangenhallen",
+   "address": null,
+   "lat": 63.4278152,
+   "lng": 10.4647458,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "lekeplass-bukken-bruses-veg-lek",
+   "name": "Bukken bruses veg lek",
+   "address": null,
+   "lat": 63.43008466499999,
+   "lng": 10.504563766875,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "lekeplass-lindevegen-lek",
+   "name": "Lindevegen lek",
+   "address": null,
+   "lat": 63.42487224000001,
+   "lng": 10.503249735555555,
+   "categoryId": "lekeplass"
+  },
+  {
+   "id": "osm-way-29089343",
+   "name": "Svømmehall",
+   "address": null,
+   "lat": 63.4261523,
+   "lng": 10.488202,
+   "categoryId": "swimming"
+  },
+  {
+   "id": "osm-way-819257369",
+   "name": "Fagerheimbukta",
+   "address": null,
+   "lat": 63.4483023,
+   "lng": 10.4664333,
+   "categoryId": "badeplass"
+  },
+  {
+   "id": "osm-node-1965311437",
+   "name": "Hansbakkfjæra",
+   "address": null,
+   "lat": 63.4313454,
+   "lng": 10.5458963,
+   "categoryId": "outdoor"
+  },
+  {
+   "id": "osm-way-22797458",
+   "name": "Charlottenlund kunstgressbane",
+   "address": null,
+   "lat": 63.4213322,
+   "lng": 10.4864874,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-84078488",
+   "name": "Ranheim idrettsanlegg",
+   "address": null,
+   "lat": 63.4279173,
+   "lng": 10.5265199,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-974345629",
+   "name": "Charlottenlund skatepark",
+   "address": null,
+   "lat": 63.4262029,
+   "lng": 10.4877101,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "taxi-tk-skonnertvegen",
+   "name": "Skonnertvegen",
+   "address": null,
+   "lat": 63.4341858,
+   "lng": 10.5042562,
+   "categoryId": "taxi"
+  },
+  {
+   "id": "osm-way-84078486",
+   "name": "Extra Arena",
+   "address": null,
+   "lat": 63.428356,
+   "lng": 10.5240648,
+   "categoryId": "idrett"
+  },
+  {
+   "id": "osm-way-437181237",
+   "name": "Koteng Arena",
+   "address": null,
+   "lat": 63.4451104,
+   "lng": 10.4519294,
+   "categoryId": "idrett"
+  }
+ ],
+ "vikhammer": [
+  {
+   "id": "nsr-974558378",
+   "name": "Malvik videregående skole",
+   "address": null,
+   "lat": 63.43669,
+   "lng": 10.6287,
+   "categoryId": "skole"
+  },
+  {
+   "id": "nsr-975320200",
+   "name": "Vikhammer ungdomsskole",
+   "address": null,
+   "lat": 63.43786,
+   "lng": 10.63167,
+   "categoryId": "skole"
+  },
+  {
+   "id": "google-ChIJI8RNcwA7bUYR0VhOUYH9RRg",
+   "name": "Froskedamen",
+   "address": "Trompetvegen 16, Vikhammer",
+   "lat": 63.4365201,
+   "lng": 10.6446583,
+   "categoryId": "park"
+  },
+  {
+   "id": "entur-NSR-StopPlace-42420",
+   "name": "Hansensvingen bussholdeplass",
+   "address": null,
+   "lat": 63.435666,
+   "lng": 10.61479,
+   "categoryId": "bus"
+  },
+  {
+   "id": "bhf-planetringen-vikhammerasen-barnehager-avdeling-planetringen",
+   "name": "Planetringen-Vikhammeråsen barnehager Avdeling Planetringen",
+   "address": null,
+   "lat": 63.43287,
+   "lng": 10.6378,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "bhf-planetringen-vikhammerasen-barnehager-avdeling-basunvegen",
+   "name": "Planetringen-Vikhammeråsen barnehager Avdeling Basunvegen",
+   "address": null,
+   "lat": 63.43446,
+   "lng": 10.6371,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "bhf-vikhammer-barnehage",
+   "name": "Vikhammer barnehage",
+   "address": null,
+   "lat": 63.44104,
+   "lng": 10.63649,
+   "categoryId": "barnehage"
+  },
+  {
+   "id": "entur-NSR-StopPlace-42205",
+   "name": "Vikhammeråsen bussholdeplass",
+   "address": null,
+   "lat": 63.433179,
+   "lng": 10.630538,
+   "categoryId": "bus"
+  },
+  {
+   "id": "entur-NSR-StopPlace-42196",
+   "name": "Vikhammer bussholdeplass",
+   "address": null,
+   "lat": 63.437236,
+   "lng": 10.626821,
+   "categoryId": "bus"
+  },
+  {
+   "id": "entur-NSR-StopPlace-42202",
+   "name": "Vikhammerløkka bussholdeplass",
+   "address": null,
+   "lat": 63.439087,
+   "lng": 10.634551,
+   "categoryId": "bus"
+  },
+  {
+   "id": "entur-NSR-StopPlace-416",
+   "name": "Vikhammer stasjon",
+   "address": null,
+   "lat": 63.438752,
+   "lng": 10.623685,
+   "categoryId": "train"
+  },
+  {
+   "id": "entur-NSR-StopPlace-42199",
+   "name": "Vikhammer skole bussholdeplass",
+   "address": null,
+   "lat": 63.438372,
+   "lng": 10.633736,
+   "categoryId": "bus"
+  },
+  {
+   "id": "google-ChIJIUy0FrQ7bUYR3D0XiugHCa0",
+   "name": "Uno-X Vikhammer",
+   "address": "Vikhammerløkka 1, Vikhammer",
+   "lat": 63.440268399999994,
+   "lng": 10.6386202,
+   "categoryId": "fuel"
+  },
+  {
+   "id": "google-ChIJ8XYMtzwxbUYROMsqUcmls_c",
+   "name": "Trønder Oil AS Leistad",
+   "address": "Leistadvegen 13, Vikhammer",
+   "lat": 63.4255245,
+   "lng": 10.630129199999999,
+   "categoryId": "fuel"
+  },
+  {
+   "id": "google-ChIJTxDs0Ew6bUYRW2zMjxeVRiY",
+   "name": "Malvik trafikkskole AS",
+   "address": "Kongshaugvegen 2, Vikhammer",
+   "lat": 63.4376022,
+   "lng": 10.6276277,
+   "categoryId": "trafikkskole"
+  },
+  {
+   "id": "entur-NSR-StopPlace-41589",
+   "name": "Planetringen bussholdeplass",
+   "address": null,
+   "lat": 63.432517,
+   "lng": 10.637944,
+   "categoryId": "bus"
+  },
+  {
+   "id": "entur-NSR-StopPlace-42798",
+   "name": "Vikhammerdalen bussholdeplass",
+   "address": null,
+   "lat": 63.429718,
+   "lng": 10.628586,
+   "categoryId": "bus"
+  },
+  {
+   "id": "entur-NSR-StopPlace-42208",
+   "name": "Vikhammeråsen snuplass bussholdeplass",
+   "address": null,
+   "lat": 63.431833,
+   "lng": 10.643105,
+   "categoryId": "bus"
+  },
+  {
+   "id": "entur-NSR-StopPlace-42213",
+   "name": "Vikhov bussholdeplass",
+   "address": null,
+   "lat": 63.440331,
+   "lng": 10.641603,
+   "categoryId": "bus"
+  },
+  {
+   "id": "google-ChIJF8uT5Uw6bUYRQoOrKHhdtYA",
+   "name": "Pizzabakeren Vikhammer",
+   "address": "Stasjonsvegen 1, Vikhammer",
+   "lat": 63.437793899999996,
+   "lng": 10.6253759,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJsecnuMQxbUYRrLSxSewM1CU",
+   "name": "Sigrid staveli’s lille bibliotek",
+   "address": "Fagottvegen 14, Vikhammer",
+   "lat": 63.4364213,
+   "lng": 10.637718099999999,
+   "categoryId": "butikk"
+  },
+  {
+   "id": "google-ChIJT8cGjLM7bUYRbJS9ilIkBSI",
+   "name": "Ytre Malvik Samfunnshus",
+   "address": "Malvikvegen 301, Vikhammer",
+   "lat": 63.43872210000001,
+   "lng": 10.6350603,
+   "categoryId": "fritidsklubb"
+  },
+  {
+   "id": "google-ChIJ6we_VZ87bUYR2VWWOIjmUZQ",
+   "name": "Vikhammer helsetun",
+   "address": "Stasjonsvegen 14, Vikhammer",
+   "lat": 63.43789409999999,
+   "lng": 10.623949,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "google-ChIJF-8d-Uw6bUYRGi8LplGo9pM",
+   "name": "Vikhammer Legekontor",
+   "address": "Stasjonsvegen 14, Vikhammer",
+   "lat": 63.4378836,
+   "lng": 10.6238782,
+   "categoryId": "doctor"
+  },
+  {
+   "id": "nsr-875299662",
+   "name": "Vikhammeråsen grendaskole",
+   "address": null,
+   "lat": 63.43446,
+   "lng": 10.6371,
+   "categoryId": "skole"
+  },
+  {
+   "id": "google-ChIJPcuT5Uw6bUYRQcsEmLFJ4QI",
+   "name": "Vikhammer Post i Butikk",
+   "address": "Stasjonsvegen 1, Vikhammer",
+   "lat": 63.4379292,
+   "lng": 10.6254001,
+   "categoryId": "post"
+  },
+  {
+   "id": "google-ChIJybqt40w6bUYRu13ZoONxf8Q",
+   "name": "Extra Vikhammer",
+   "address": "Stasjonsvegen 1, Vikhammer",
+   "lat": 63.4379618,
+   "lng": 10.6253944,
+   "categoryId": "supermarket"
+  },
+  {
+   "id": "google-ChIJEa2640w6bUYRaZsgMZwCnn8",
+   "name": "Apotek 1 Malvik",
+   "address": "Stasjonsvegen 1, Vikhammer",
+   "lat": 63.43786799999999,
+   "lng": 10.625456999999999,
+   "categoryId": "pharmacy"
+  },
+  {
+   "id": "google-ChIJM8lSje07bUYRnm1QEjubVUU",
+   "name": "Hjort og Sport Cageball",
+   "address": "Vikhammer",
+   "lat": 63.4246863,
+   "lng": 10.6133691,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJVxHYDR47bUYR7G4-IkTnEig",
+   "name": "Staverløkk Stjernestøv & Bugs",
+   "address": "Basunvegen 18, Vikhammer",
+   "lat": 63.4354824,
+   "lng": 10.640396599999999,
+   "categoryId": "museum"
+  },
+  {
+   "id": "google-ChIJV2guHPk7bUYRFk5WVuVzaIE",
+   "name": "Malvik bibliotek avdeling Vikhammer",
+   "address": "Vikhammerdalen 2, Vikhammer",
+   "lat": 63.436709799999996,
+   "lng": 10.6286726,
+   "categoryId": "library"
+  },
+  {
+   "id": "google-ChIJe7H3DUU6bUYRrBosvgDTjI4",
+   "name": "Fitnesspoint Malvik treningssenter",
+   "address": "Vikhovlia 1300, Vikhammer",
+   "lat": 63.439614199999994,
+   "lng": 10.640779000000002,
+   "categoryId": "gym"
+  },
+  {
+   "id": "google-ChIJZ4UM4Uw6bUYRRbnC5JeQQAU",
+   "name": "Vikhamar Hårsenter AS",
+   "address": "Stasjonsvegen 1, Vikhammer",
+   "lat": 63.4380119,
+   "lng": 10.625515499999999,
+   "categoryId": "haircare"
+  },
+  {
+   "id": "google-ChIJOZFGHz07bUYRS6VBLtiesG0",
+   "name": "Vikhammer Pizza & Grill",
+   "address": "Vikhammerløkka 1, Vikhammer",
+   "lat": 63.44029199999999,
+   "lng": 10.638591199999999,
+   "categoryId": "restaurant"
+  },
+  {
+   "id": "google-ChIJTxDs0Ew6bUYR-ZdlyObZYko",
+   "name": "Tannlege Karianne Kvam",
+   "address": "Kongshaugvegen 2, Vikhammer",
+   "lat": 63.4376022,
+   "lng": 10.6276277,
+   "categoryId": "dentist"
+  }
+ ],
+ "malls": [
+  {
+   "id": "google-ChIJCcqGTR8ybUYRVofoEfkYZzY",
+   "name": "Byåsen Mall",
+   "address": "Fjellseterveien 1, Trondheim",
+   "lat": 63.417812,
+   "lng": 10.3533387,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJS1CB5ZoxbUYR-PEX9qTtNcA",
+   "name": "Trondheim Torg",
+   "address": "Kongens gate 9, Trondheim",
+   "lat": 63.430152500000005,
+   "lng": 10.3939341,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJd_k0Rx8ybUYRR-2WjnvqH3U",
+   "name": "Sverresborg center",
+   "address": "Gamle Oslovei 1, Trondheim",
+   "lat": 63.4173987,
+   "lng": 10.3539462,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJVwcVQc4xbUYRnfZUDF9GQC0",
+   "name": "Nardo Centeret",
+   "address": "Hans Baucks veg 1, Trondheim",
+   "lat": 63.403055599999995,
+   "lng": 10.4277778,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJ48kOBSA-bUYRSZPTF2oScOQ",
+   "name": "Sjøsiden Hus & Hjem",
+   "address": "Wessels veg 82, Stjørdal",
+   "lat": 63.47350470000001,
+   "lng": 10.9038625,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJA9KagbwvbUYR2DuY1tseJys",
+   "name": "Revi-senteret",
+   "address": "Ivar Lykkes veg 10, Tiller",
+   "lat": 63.3556194,
+   "lng": 10.3756196,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJAQBQZe0VbUYRmt_1Eg8uvRk",
+   "name": "Torgkvartalet",
+   "address": "Stokmovegen 2, Stjørdal",
+   "lat": 63.4690645,
+   "lng": 10.9244935,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJc6bIPVMxbUYR4_1BgQ3e7ig",
+   "name": "Teknostallen",
+   "address": "Professor Brochs gate 6, 16, Trondheim",
+   "lat": 63.41561480000001,
+   "lng": 10.3959897,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJj6uwWwQVbUYRzK1fCt0eha8",
+   "name": "AMFI Stjørdal",
+   "address": "Sandgata, Stjørdal",
+   "lat": 63.4700258,
+   "lng": 10.9263637,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJLz3d20wxbUYRgQd6CzJKToE",
+   "name": "Parkering ikea leangen",
+   "address": "Landbruksvegen 2, Trondheim",
+   "lat": 63.4284613,
+   "lng": 10.4740276,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJRcoAbmgubUYRVNkJOC34WNM",
+   "name": "TillerTorget",
+   "address": "Ivar Lykkes veg, Tiller",
+   "lat": 63.35797939999999,
+   "lng": 10.3740015,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJSde4LgAvbUYRxoyVEUCsIRc",
+   "name": "TillerTorget Sør",
+   "address": "Ivar Lykkes veg 5, Tiller",
+   "lat": 63.3566295,
+   "lng": 10.3734991,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJSWJIgGcubUYRyAF9HH5WhsI",
+   "name": "City Syd",
+   "address": "Østre Rosten 28-30, Tiller",
+   "lat": 63.36196179999999,
+   "lng": 10.3775868,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJvcncPGgubUYR3W1jgTtWPYw",
+   "name": "StorM",
+   "address": "Ivar Lykkes veg 2, 2nd Etasje, Tiller",
+   "lat": 63.35913439999999,
+   "lng": 10.3774139,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJX_sGl108bUYRNzMVbDa5Hls",
+   "name": "Sveberg Handelspark",
+   "address": "Svebergvegen 3, Hommelvik",
+   "lat": 63.42055560000001,
+   "lng": 10.7552778,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "osm-node-6091080602",
+   "name": "Portalen",
+   "address": null,
+   "lat": 63.4364946,
+   "lng": 10.4157834,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "osm-way-35967444",
+   "name": "Byhaven kjøpesenter",
+   "address": null,
+   "lat": 63.433628,
+   "lng": 10.3964365,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "osm-way-51783619",
+   "name": "Solsiden",
+   "address": null,
+   "lat": 63.434828,
+   "lng": 10.412078,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "osm-way-89340602",
+   "name": "Mercursenteret",
+   "address": null,
+   "lat": 63.4307545,
+   "lng": 10.398555,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJt6hpxVMxbUYRDEs-lLem5g8",
+   "name": "Grilstad mall",
+   "address": "Skonnertvegen 10, Ranheim",
+   "lat": 63.4340568,
+   "lng": 10.502859299999999,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJV3UPzZsxbUYRFkCasevQnFo",
+   "name": "Mercurgarden",
+   "address": "Kongens gate 8, Trondheim",
+   "lat": 63.43084030000001,
+   "lng": 10.3979261,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJyVBZnZ8xbUYRhB-s_crA_YQ",
+   "name": "Solsiden Senter",
+   "address": "Beddingen 10, Trondheim",
+   "lat": 63.434820300000005,
+   "lng": 10.4117302,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJt8f3LKQxbUYRDtDL6UWLq4Y",
+   "name": "City Lade",
+   "address": "Haakon VIIs gt. 9, Trondheim",
+   "lat": 63.443541100000004,
+   "lng": 10.4478207,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJZ_BGgJwxbUYRbSBTqdYtKOA",
+   "name": "Byhaven",
+   "address": "Olav Tryggvasons gt. 28, Trondheim",
+   "lat": 63.433677200000005,
+   "lng": 10.3969927,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJnW_zJ20xbUYRqaLffSVJpgY",
+   "name": "Valentinlyst Senter",
+   "address": "Anders Estenstads veg 2, Trondheim",
+   "lat": 63.424436699999994,
+   "lng": 10.4417794,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJrbDKwJIxbUYRUFU0r6GBLmQ",
+   "name": "Falkenborgvegen 3",
+   "address": "Falkenborgvegen 3, Trondheim",
+   "lat": 63.4365924,
+   "lng": 10.4552906,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJ8XR3uZ4xbUYRfbriBEHXWK0",
+   "name": "Olavskvartalet",
+   "address": "Brattørgata, Trondheim",
+   "lat": 63.4336561,
+   "lng": 10.4035545,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJVZdRQJoxbUYRTcToJ4smjeM",
+   "name": "Sirkus Shopping",
+   "address": "Falkenborgvegen 1, Trondheim",
+   "lat": 63.4356484,
+   "lng": 10.4566579,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJDebCV8oxbUYRvdmlGZGbNw0",
+   "name": "Moholt Storsenter",
+   "address": "Brøsetvegen 177, Moholt",
+   "lat": 63.41007489999999,
+   "lng": 10.4398407,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJAQAQ9f4wbUYRlQES0UjKQEI",
+   "name": "Hangaren Lade",
+   "address": "Haakon VIIs gt. 27, Lade",
+   "lat": 63.43791039999999,
+   "lng": 10.4632765,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJqeBnd_4wbUYRR06hK76o-c0",
+   "name": "Lade Arena",
+   "address": "Haakon VIIs gt. 12, Trondheim",
+   "lat": 63.4400004,
+   "lng": 10.4624029,
+   "categoryId": "shopping"
+  },
+  {
+   "id": "google-ChIJ_VIKHAMMER_SENTERET",
+   "name": "Vikhammer senteret",
+   "address": "Utsikten 13, Vikhammer",
+   "lat": 63.438021,
+   "lng": 10.625409,
+   "categoryId": "shopping"
+  }
+ ]
+}
