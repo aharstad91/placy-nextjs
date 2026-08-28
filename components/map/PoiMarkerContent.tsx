@@ -78,16 +78,23 @@ export const DOT_SIZE = 14;
 /** Ikon-ratio 0,50 — 32 px disc → 16 px ikon, samme som 2D-markørene og lista. */
 const ICON_RATIO = 0.5;
 
-/** Nær-svart, samme som 2D-labelen. */
-const LABEL_FILL = "#1c1917";
 /**
- * Åtte-veis hard kontur pluss en mørk sky bak — se `labelHaloShadow`.
+ * HVIT tekst med mørk kant — snudd om 2026-08-28, og bare på denne motoren.
  *
- * Skyen er med HER og ikke i 2D-labelen fordi underlaget er forskjellig: dette
- * er satellittfoto, der en hvit kant forsvinner mot en hvit husvegg og teksten
- * ligger flatt på bildet. Det lyse karttemaet trenger den ikke.
+ * 2D-labelen er nær-svart med hvit kant, fordi det lyse karttemaet er nesten
+ * hvitt overalt. Satellittfoto er det motsatte: mest mellomtone og mørkt —
+ * grønt, asfalt, tak, vann — med lyse flekker innimellom (betong, hvite vegger,
+ * sol på grus). Mørk tekst må da bæres av kanten sin, og kanten er det som
+ * forsvinner i de lyse flekkene. Hvit tekst med mørk kant bærer seg selv på
+ * begge, og er derfor det ETHVERT satellittkart bruker.
+ *
+ * Målt side om side på selve kartflaten (oppskalert prøve, tre varianter over
+ * grønt, mørkt tak og betong i samme bilde): hvit tekst med mørk kant leste
+ * tydeligst over alle tre. Uten kanten — bare mørk sky — mistet bokstavene
+ * definisjon, så konturen må være der.
  */
-const LABEL_TEXT_SHADOW = labelHaloShadow(1, "#ffffff", 0.85);
+const LABEL_FILL = "#ffffff";
+const LABEL_TEXT_SHADOW = labelHaloShadow(1, "#1c1917", 0.9);
 
 export interface PoiMarkerContentProps {
   /** Kategorifarge — ring rundt disc-en og ikon-fyll. */

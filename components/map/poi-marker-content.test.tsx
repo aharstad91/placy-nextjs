@@ -115,9 +115,14 @@ describe("PoiMarkerContent — label", () => {
     expect(el.style.webkitLineClamp).toBe(String(LABEL_MAX_LINES));
   });
 
-  it("labelen har hvit kontur — underlaget er satellittfoto, ikke lyst kart", () => {
+  /* Snudd 2026-08-28: satellittfoto er mest mellomtone og mørkt, med lyse
+     flekker innimellom. Hvit tekst med mørk kant bærer seg selv på begge; mørk
+     tekst må bæres av kanten, og kanten forsvinner i de lyse flekkene. */
+  it("labelen er HVIT med mørk kontur — underlaget er satellittfoto", () => {
     const { container } = render(<PoiMarkerContent {...base} label="Nille" />);
-    expect(label(container)!.style.textShadow).toContain("#ffffff");
+    const el = label(container)!;
+    expect(el.style.color).toBe("rgb(255, 255, 255)");
+    expect(el.style.textShadow).toContain("#1c1917");
   });
 
   it("labelen stjeler ikke kart-gester", () => {
