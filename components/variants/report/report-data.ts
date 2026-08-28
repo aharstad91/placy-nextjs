@@ -28,6 +28,7 @@ import { getThemeQuestion, t, interpolate, type Locale } from "@/lib/i18n/string
 import { generateBridgeText } from "@/lib/generators/bridge-text-generator";
 import { getHeroInsightPOIIds } from "./hero-insight-pois";
 import { getTopRankedPOIs } from "./top-ranked-pois";
+import { isAnchorPOI } from "@/lib/board/anchor-poi";
 
 /**
  * Zod-parse grounding fra products.config ved render-boundary. Silent skip +
@@ -319,23 +320,6 @@ const CATEGORY_FILTER_RULES: Record<string, CategoryFilterRule> = {
 const HIGHER_ED_KEYWORDS = ["vgs", "videregående", "ntnu", "høgskole", "høyskole", "universitet"];
 
 // ---------- Anker (kjøpesenter) ----------
-
-/**
- * Er dette stedet et anker — et kjøpesenter som representerer virksomhetene inni?
- *
- * Flagget er `anchorSummary`, ikke antall barn. Det er bevisst: teksten skrives
- * KUN av de to stedene i pipelinen som har bevist at bygget samler minst fire
- * virksomheter — `resolve-anchors-step` (som teller dem i poolen) og
- * `discover-anchors` (som teller dem hos Google uten å importere dem). Å telle
- * barn her i stedet ville gjort Thon Senter Verdal usynlig på Sundsøya-boardet,
- * for det ankeret har null barn i basen og er like fullt et kjøpesenter.
- *
- * Feiler tekst-skrivingen (begge stedene er fail-soft), oppfører stedet seg som
- * i dag: barna vises hver for seg. Ingenting forsvinner.
- */
-export function isAnchorPOI(poi: Pick<POI, "anchorSummary">): boolean {
-  return Boolean(poi.anchorSummary);
-}
 
 /**
  * Løfter ankeret inn i temaet når et av barna hører hjemme der, men ankeret

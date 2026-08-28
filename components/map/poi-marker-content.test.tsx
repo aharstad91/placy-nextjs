@@ -34,6 +34,7 @@ describe("PoiMarkerContent — boksen holder 40×40", () => {
     ["label til venstre", { ...base, label: "Sjøparken", labelSide: "left" }],
     ["som prikk", { ...base, compact: true }],
     ["med badge", { ...base, number: 3, label: "Extra Grilstad" }],
+    ["som anker", { ...base, anchor: true, label: "Sirkus Shopping" }],
   ];
 
   for (const [navn, props] of cases) {
@@ -161,5 +162,41 @@ describe("PoiMarkerContent — disc, ikon og prikk", () => {
     cleanup();
     const med = render(<PoiMarkerContent {...base} number={3} />);
     expect(med.container.textContent).toContain("3");
+  });
+});
+
+describe("PoiMarkerContent — anker-modus", () => {
+  const badge = (c: HTMLElement) =>
+    c.querySelector("[data-poi-badge]") as HTMLElement | null;
+
+  it("kjøpesenteret får et «+», ikke et tall", () => {
+    // Tallet er FINN-mønsteret vi forkastet: det forutsetter likeverdige
+    // objekter, og for en boligkjøper betyr «60» ingenting. `+` sier at det er
+    // mer her inne uten å påstå hvor mye.
+    const { container } = render(<PoiMarkerContent {...base} anchor />);
+    expect(badge(container)?.textContent).toBe("+");
+    expect(badge(container)?.getAttribute("data-poi-badge")).toBe("anchor");
+  });
+
+  it("et eksplisitt tall vinner over «+» — turrekkefølge overskrives ikke", () => {
+    const { container } = render(<PoiMarkerContent {...base} anchor number={3} />);
+    expect(badge(container)?.textContent).toBe("3");
+  });
+
+  it("uten anker og uten tall er det ingen badge", () => {
+    const { container } = render(<PoiMarkerContent {...base} />);
+    expect(badge(container)).toBeNull();
+  });
+
+  it("ankeret beholder kategori-ikonet — ingen ny elementtype", () => {
+    const { container } = render(<PoiMarkerContent {...base} anchor />);
+    expect(container.querySelector("[data-testid=picon]")).not.toBeNull();
+  });
+
+  it("prikk-modus har ingen badge — en demotert markør bærer ingen påstand", () => {
+    // I praksis demoteres et anker aldri (Infinity-prioritet), men global
+    // compact (story-mode-peek på mobil) gjør ALT til prikker.
+    const { container } = render(<PoiMarkerContent {...base} anchor compact />);
+    expect(badge(container)).toBeNull();
   });
 });

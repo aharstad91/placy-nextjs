@@ -57,6 +57,23 @@ describe("computePinDemotions", () => {
     expect(res.has("nabo")).toBe(true);
   });
 
+  it("FLERE Infinity-kandidater overlever alle — og rekkefølgen er stabil", () => {
+    // Fram til kjøpesenter-ankeret fantes var det høyst ÉN Infinity om gangen
+    // (aktiv POI), så denne grenen var aldri kjørt. Nå får hvert anker den, og
+    // to ankre 305 m fra hverandre på Lade projiseres tett i lav zoom.
+    // Sorteringen regner `Infinity - Infinity` = NaN; det er falsy, så
+    // id-tiebreaken tar over og resultatet er determinstisk.
+    const res = computePinDemotions([
+      pin("sirkus", 100, 100, Number.POSITIVE_INFINITY),
+      pin("lade-arena", 108, 100, Number.POSITIVE_INFINITY),
+      pin("nabo", 116, 100, 5),
+    ]);
+    expect(res.has("sirkus")).toBe(false);
+    expect(res.has("lade-arena")).toBe(false);
+    // Naboen taper mot begge — et anker blokkerer som en vanlig pin.
+    expect(res.has("nabo")).toBe(true);
+  });
+
   it("en demotert prikk blokkerer ikke videre — klynger sprer seg ikke utover", () => {
     // b demoteres av a. c ligger 30 px fra b, men 60 px fra a: hadde b (som
     // prikk) fortsatt blokkert, ville c urettmessig blitt demotert også.

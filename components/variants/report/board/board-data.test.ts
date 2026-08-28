@@ -774,3 +774,71 @@ describe("adaptBoardData — samlokaliserte steder når 3D-markørene", () => {
     expect(data.categories[0].pois[0].raw.coordinates).toEqual(shared);
   });
 });
+
+describe("anker gjennom til markøren (Unit 5)", () => {
+  const CENTER = { lat: 63.4356, lng: 10.4567 };
+
+  const child = (id: string, categoryId: string): POI =>
+    makePOI(id, {
+      parentPoiId: "sirkus",
+      coordinates: CENTER,
+      category: { id: categoryId, name: categoryId, icon: "Storefront", color: "#8b5cf6" },
+    });
+
+  const anchor = (children: POI[]): POI =>
+    makePOI("sirkus", {
+      name: "Sirkus Shopping",
+      coordinates: CENTER,
+      category: { id: "shopping", name: "Kjøpesenter", icon: "ShoppingBag", color: "#8b5cf6" },
+      anchorSummary: "Butikk, frisør, restaurant, kafé, legesenter og mer",
+      childPOIs: children,
+    });
+
+  it("adaptPOI bærer isAnchor og registeret videre til BoardPOI", () => {
+    const kids = [child("h-m", "butikk"), child("cubus", "butikk")];
+    const data = adaptBoardData(makeReportData([makeTheme("hverdagsliv", [anchor(kids)])]));
+
+    const poi = data.categories[0].pois[0];
+    expect(poi.isAnchor).toBe(true);
+    expect(poi.childPOIs?.map((c) => c.id)).toEqual(["h-m", "cubus"]);
+  });
+
+  it("et vanlig sted får hverken flagg eller register — feltene er fraværende, ikke false", () => {
+    const data = adaptBoardData(makeReportData([makeTheme("mat-drikke", [makePOI("peppes")])]));
+
+    const poi = data.categories[0].pois[0];
+    expect(poi.isAnchor).toBeUndefined();
+    expect(poi.childPOIs).toBeUndefined();
+  });
+
+  it("et sted med barn men UTEN anker-tekst bærer ikke register — fail-soft-stien", () => {
+    // Begge anker-stegene i pipelinen er fail-soft. Slår tekst-skrivingen feil,
+    // skal boardet oppføre seg som i dag, ikke halvveis.
+    const utenTekst = makePOI("sirkus", {
+      anchorSummary: undefined,
+      childPOIs: [child("h-m", "butikk")],
+    });
+    const data = adaptBoardData(makeReportData([makeTheme("hverdagsliv", [utenTekst])]));
+
+    expect(data.categories[0].pois[0].isAnchor).toBeUndefined();
+    expect(data.categories[0].pois[0].childPOIs).toBeUndefined();
+  });
+
+  it("toDisplayPOI beholder anchorSummary — 3D-stien ser ankeret", () => {
+    // 3D-markørene leser POI-en gjennom denne broa. Mister den feltet, faller
+    // ankeret tilbake til en vanlig pin og kan demoteres til prikk.
+    const kids = [child("h-m", "butikk")];
+    const data = adaptBoardData(makeReportData([makeTheme("hverdagsliv", [anchor(kids)])]));
+    const boardPoi = data.categories[0].pois[0];
+
+    // Uforskjøvet: samme objekt-identitet, feltet er der.
+    expect(toDisplayPOI(boardPoi).anchorSummary).toBeTruthy();
+    // Forskjøvet: spredningen lager et nytt objekt — feltet MÅ følge med.
+    const displaced: BoardPOI = {
+      ...boardPoi,
+      coordinates: { lat: CENTER.lat + 0.0001, lng: CENTER.lng },
+    };
+    expect(toDisplayPOI(displaced).anchorSummary).toBeTruthy();
+    expect(toDisplayPOI(displaced)).not.toBe(displaced.raw);
+  });
+});

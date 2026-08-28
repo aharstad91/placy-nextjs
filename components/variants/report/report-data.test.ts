@@ -3,9 +3,9 @@ import {
   byTierThenScore,
   applyCategoryFilter,
   getInitialVisibleCount,
-  isAnchorPOI,
   transformToReportData,
 } from "./report-data";
+import { isAnchorPOI } from "@/lib/board/anchor-poi";
 import type { POI } from "@/lib/types";
 
 /** Minimal POI factory for testing sort behavior */

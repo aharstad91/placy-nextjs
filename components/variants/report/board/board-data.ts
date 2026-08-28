@@ -13,6 +13,7 @@ import type { FaqEntry } from "@/lib/generators/faq-generator";
 import { getHeroInsightPOIIds } from "../hero-insight-pois";
 import { getProjectBrokers } from "@/lib/themes/project-brand";
 import { computeSpreadCoordinates } from "@/lib/board/spread-co-located";
+import { isAnchorPOI } from "@/lib/board/anchor-poi";
 import { poiVisualIdentity } from "./marker-style";
 import type {
   BoardAudioTimings,
@@ -43,6 +44,23 @@ export interface BoardPOI {
   eventTimeStart?: string;
   /** Event-sluttid (HH:MM, eks. "23:00") — display-only. Undefined for boligrapporter. */
   eventTimeEnd?: string;
+  /**
+   * Kjøpesenter som representerer virksomhetene inni seg. Ligger implisitt i
+   * `raw.anchorSummary`, men er eksplisitt her fordi tre lesere trenger det på
+   * hver render: markør-innholdet (`+`-merket), utglisningen (aldri demotert)
+   * og POI-flaten (registeret).
+   */
+  isAnchor?: boolean;
+  /**
+   * Virksomhetene i ankeret — registeret.
+   *
+   * KATEGORI-AVGRENSET, ikke komplett: `report-data` fester barna som hører til
+   * temaet POI-en ble hentet fra. Åpner du Sirkus mens «Mat & Drikke» er valgt,
+   * lister registeret de åtte spisestedene i senteret; i «Hverdagsliv» lister
+   * det de femti butikkene. Det er tilsiktet — du spør om senteret i den
+   * konteksten du står i, og navbaren er den konteksten.
+   */
+  childPOIs?: POI[];
   /** Original POI bevart for fall-through-tilgang (Google rating, photos, opening hours, etc.). */
   raw: POI;
 }
@@ -249,6 +267,12 @@ export function adaptBoardData(report: ReportData): BoardData {
   // på identisk koordinat — markørene stables 100 % og bare én synes). Kun
   // BoardPOI.coordinates (visning) justeres; raw beholder kildekoordinatet.
   // Gjøres HER så markører, labels, popups og nabolagslista deler samme punkt.
+  //
+  // Medlemmene i et kjøpesenter er ALLEREDE borte når vi kommer hit: `report-
+  // data` absorberer dem inn i ankeret, og løfter ankeret inn i temaet når det
+  // er barnet som matcher. Spredningen ser derfor aldri de tjueåtte
+  // byte-identiske koordinatene på Falkenborgvegen 1 — den vifter fortsatt ut
+  // ekte naboer (skolene på AKSET), som er det den er til for.
   const allBoardPois = categories.flatMap((c) => c.pois);
   const spread = computeSpreadCoordinates(
     Array.from(new Map(allBoardPois.map((p) => [p.id, p])).values()),
@@ -554,6 +578,8 @@ function adaptPOI(poi: POI, categoryId: BoardCategoryId): BoardPOI {
   const insight = poi.localInsight?.trim();
   const body = [hook, insight].filter(Boolean).join("\n\n") || undefined;
 
+  const anchor = isAnchorPOI(poi);
+
   return {
     id: poi.id as BoardPOIId,
     name: poi.name,
@@ -561,6 +587,8 @@ function adaptPOI(poi: POI, categoryId: BoardCategoryId): BoardPOI {
     address: poi.address,
     body,
     categoryId,
+    ...(anchor ? { isAnchor: true } : {}),
+    ...(anchor && poi.childPOIs?.length ? { childPOIs: poi.childPOIs } : {}),
     raw: poi,
   };
 }
