@@ -147,6 +147,12 @@ export interface AnchorFamily {
    * «Ranheimshallen, Extra Arena, Ranheim Friidrettshall og mer».
    */
   summaryFrom: "categories" | "names";
+  /**
+   * Overskriften over registeret i POI-kortet. «I senteret» er riktig for et
+   * kjøpesenter og feil for et idrettsanlegg — et anlegg er et OMRÅDE, ikke et
+   * bygg man går inn i.
+   */
+  registerHeading: string;
 }
 
 const KJOPESENTER: AnchorFamily = {
@@ -155,6 +161,7 @@ const KJOPESENTER: AnchorFamily = {
   candidateCategoryIds: new Set(["shopping"]),
   nameGate: null,
   summaryFrom: "categories",
+  registerHeading: "I senteret",
   // Uendret fra 2026-08-27 — kalibrert mot Sirkus (150 m) og Vikhammer (5–25 m).
   // Tomt objekt = `AnchorOptions`-standardene, og ingen kategori-skranke:
   // kjøpesenteret er blandet bruk per definisjon og skal sluke alt.
@@ -167,6 +174,7 @@ const ANLEGG: AnchorFamily = {
   candidateCategoryIds: new Set(["idrett"]),
   nameGate: hasSiteNoun,
   summaryFrom: "names",
+  registerHeading: "På anlegget",
   options: {
     minMembers: 4,
     /**
@@ -243,4 +251,17 @@ export function isFamilyCandidate(
 ): boolean {
   if (!poi.categoryId || !family.candidateCategoryIds.has(poi.categoryId)) return false;
   return family.nameGate === null || family.nameGate(poi.name);
+}
+
+/**
+ * Overskriften registeret skal ha for en gitt anker-POI.
+ *
+ * Slås opp på ankerets KATEGORI, ikke på `poi_metadata.anchor_family`. De to gir
+ * samme svar (hver familie eier sine kandidat-kategorier), og kategorien er
+ * allerede i board-laget — familien ville måttet plumbes gjennom hele veien fra
+ * databasen for å si det samme.
+ */
+export function anchorRegisterHeading(categoryId: string): string {
+  const family = ANCHOR_FAMILIES.find((f) => f.candidateCategoryIds.has(categoryId));
+  return family?.registerHeading ?? "I senteret";
 }

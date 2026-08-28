@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   ANCHOR_FAMILIES,
   ALL_ANCHOR_CATEGORY_IDS,
+  anchorRegisterHeading,
   hasSiteNoun,
   isFamilyCandidate,
 } from "./anchor-families";
@@ -164,5 +165,21 @@ describe("anleggs-familien — to anlegg forblir to", () => {
       expect(seen.has(id)).toBe(false);
       seen.add(id);
     }
+  });
+});
+
+describe("anchorRegisterHeading — registeret snakker familiens språk", () => {
+  it("«I senteret» for kjøpesenteret", () => {
+    expect(anchorRegisterHeading("shopping")).toBe("I senteret");
+  });
+
+  it("«På anlegget» for idrettsanlegget — et anlegg er et område, ikke et bygg", () => {
+    expect(anchorRegisterHeading("idrett")).toBe("På anlegget");
+  });
+
+  it("faller tilbake til kjøpesenter-formen for en ukjent kategori", () => {
+    // Registeret skal aldri rendre uten overskrift, heller ikke om en tredje
+    // familie legges til uten å oppdatere denne funksjonen.
+    expect(anchorRegisterHeading("cafe")).toBe("I senteret");
   });
 });

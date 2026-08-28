@@ -6,9 +6,14 @@ import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle, poiVisualIdentity } from "./marker-style";
 import type { BoardPOI } from "./board-data";
 import type { POI } from "@/lib/types";
+import { anchorRegisterHeading } from "@/lib/board/anchor-families";
 
 /**
- * Innholdsregisteret til et kjøpesenter-anker — Apples Browse Directory-modell.
+ * Innholdsregisteret til et anker — Apples Browse Directory-modell.
+ *
+ * Overskriften følger familien (`anchorRegisterHeading`): «I senteret» for et
+ * kjøpesenter, «På anlegget» for et idrettsanlegg. Et anlegg er et område man
+ * er PÅ, ikke et bygg man går INN i, og feil preposisjon leses som en feil.
  *
  * Ankeret er ÉN destinasjon, ikke førti markører. Det betyr at virksomhetene
  * inni det ikke finnes noe annet sted i grensesnittet: absorpsjonen i
@@ -177,7 +182,7 @@ export function AnchorRegister({ poi }: { poi: BoardPOI }) {
   return (
     <section data-testid="anchor-register" className="mt-5 border-t border-stone-100 pt-4">
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
-        I senteret
+        {anchorRegisterHeading(poi.raw.category.id)}
       </p>
 
       {groups.length === 0 ? (
