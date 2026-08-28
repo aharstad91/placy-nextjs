@@ -809,19 +809,52 @@ Merk at Mat & Drikke, Transport og Trening ikke faller like mye som de absorbere
 ankeret INN som representant (R4), så nettoen er absorberte minus løftede. Det er hele poenget —
 treningssenteret inne i Sirkus står ikke lenger alene på senterets koordinat uten å si hvor det er.
 
-### Unit 5 — Board-laget: anker gjennom til markøren
+### Unit 5 — Board-laget: anker gjennom til markøren ✅ FERDIG
 
-- `board-data.ts:552` `adaptPOI`: bær `isAnchor` og `childPOIs` videre til `BoardPOI` (i dag
-  tilgjengelig via `raw`, men implisitt — gjør det eksplisitt).
-- `board-data.ts:253`: filtrer medlems-ID-er bort **før** `computeSpreadCoordinates`.
-- `use-3d-marker-declutter.ts:401-402`: `priorityOf` gir `Number.POSITIVE_INFINITY` også for ankre.
-- `PoiMarkerContent.tsx`: tredje innholdsmodus — senter-ikon + navn + kvalitativt «+»-merke, i
-  uendret kvadratisk 40×40-boks.
-- 2D (`BoardMarker.tsx`) arver gratis at datasettet er mindre; ingen egen anker-modus der.
+| Leveranse | Sted |
+|---|---|
+| Ankerpredikatet, flyttet ut av rapport-laget | `lib/board/anchor-poi.ts` — `isAnchorPOI` |
+| `isAnchor` + `childPOIs` eksplisitt på `BoardPOI` | `board-data.ts` — `adaptPOI` |
+| Aldri demotert til prikk | `use-3d-marker-declutter.ts` — `priorityOf` |
+| Tredje markør-modus: `+`-merket | `PoiMarkerContent.tsx`, `map-view-3d.tsx` |
 
-Verifisering: markørklikk, kameramodus-flipping, viewport-publisering, capture/film og
-2D/3D-veksling uendret. Ankeret må bære `data-placy-marker` (`marker-3d-selectors.ts:31`), ellers
-lukker et anker-trykk popupen og flipper kameramodus.
+**Predikatet flyttet til `lib/board/`.** Tre lag spør om det samme — temaene (`report-data`),
+markørene (`map-view-3d`) og utglisningen (`use-3d-marker-declutter`) — og ingen av dem skal
+importere fra rapport-laget for å få svaret.
+
+**`Infinity`-grenen var aldri kjørt med mer enn én kandidat.** Bare aktiv POI hadde den, så
+`computePinDemotions` hadde aldri sortert to uendelige mot hverandre. Nå får hvert anker den, og på
+Lade ligger tre av dem 305–520 m fra hverandre. Sorteringen regner `Infinity - Infinity` = `NaN`,
+som er falsy, så id-tiebreaken tar over og resultatet er deterministisk — låst med test, ikke antatt.
+
+**`+`-merket er kvalitativt med vilje.** «60» er FINN-mønsteret vi forkastet: det forutsetter
+likeverdige objekter, og for en boligkjøper er spørsmålet «har senteret det jeg trenger», ikke «hvor
+mange leietakere har det». Et eksplisitt tall vinner fortsatt over `+`, så Guide-turrekkefølgen er
+urørt.
+
+**Pin-spredningen trengte ingen medlems-filtrering.** Planen ba om å filtre medlems-ID-er bort før
+`computeSpreadCoordinates` (:253). Unit 4 gjør det allerede oppstrøms — `report-data` absorberer
+medlemmene inn i ankeret — så spredningen ser aldri de tjueåtte byte-identiske koordinatene på
+Falkenborgvegen 1. Et filter her ville vært dead code.
+
+**Verifisert i browser** (Chrome 151, ren profil, Strindfjordvegen 10 på dev):
+
+- 465 markører, 17 labels, `gmp-map-3d` oppe, **null console-feil**
+- markør-boksen er 42×42 (40 + kant) og `data-placy-marker` sitter på verten — ankeret arver den
+  gratis, siden det går gjennom samme `Marker3DItem` → `DomMarker3D` som alle andre
+- markørklikk åpner popupen som før
+- badge-sloten (`top: -2 / right: -2`) har **aldri vært rendret i produksjon** — `number` sendes
+  ingen steder fra, så `+` blir dens første bruker. Injisert med identisk markup i browser: den
+  stikker 2 px ut opp og til høyre, og **markør-boksen forblir 42×42**. Det siste er invarianten alt
+  ankeret hviler på (`anchorLeft: -50%` er prosent av elementets EGEN boks); vokste boksen, ville
+  hver markør vandret bort fra punktet sitt.
+
+Anker-markørens egne visuelle uttrykk kan ikke ses på et ekte board ennå — ingen prod-board har
+`anchor_summary`. Det skjer i Unit 8.
+
+**2D er urørt**, som planlagt: `BoardMarker.tsx` arver gratis at datasettet er mindre, og har ingen
+egen anker-modus. Merk konsekvensen: `+`-merket finnes bare i 3D. 3D er default-motoren, så det er
+det de fleste ser — men de to flatene divergerer visuelt til noen bestemmer noe annet.
 
 ### Unit 6 — Innholdsregisteret i POI-flaten
 
