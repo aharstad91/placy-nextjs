@@ -76,7 +76,7 @@ function fetchPoolChunk(
   return db
     .from("pois")
     .select(
-      "id, name, category_id, lat, lng, source, editorial_hook, local_insight, google_place_id, google_rating, google_review_count"
+      "id, name, category_id, lat, lng, source, editorial_hook, local_insight, google_place_id, google_rating, google_review_count, anchor_summary"
     )
     .in("id", ids);
 }
@@ -135,6 +135,25 @@ export async function hydrateReport(options: {
   const dedupable = (poolPois ?? []).filter(
     (p) => p.lat != null && p.lng != null && p.category_id && p.name
   );
+  // Ankre er FREDET i dedupen.
+  //
+  // Et anker taper normalt mot en duplikat-rad med redaksjonell tekst
+  // (`contentRank`), og det var riktig så lenge en pin bare representerte seg
+  // selv. Nå bærer ankeret et helt register: skjules det, mister ikke boardet
+  // én pin — det mister hele innholdslista, og medlemmene dukker opp igjen som
+  // løse pinner fordi forelderen deres ikke lenger finnes i produktet.
+  //
+  // Målt 2026-08-28: «Charlottenlundhallen» finnes som én Google-rad (ankeret)
+  // og tre OSM-kopier. En av OSM-kopiene bærer redaksjonell tekst, vant dedupen,
+  // og boardet viste alle de sju idretts-pinnene på Charlottenlund som før —
+  // med et anker i basen som ingenting rendret.
+  //
+  // Samme seam som `highlightCandidates` bruker: en ekstern peker til en bestemt
+  // rad slår innholds-rangeringen.
+  const anchorIds = (poolPois ?? [])
+    .filter((p) => (p as { anchor_summary?: string | null }).anchor_summary)
+    .map((p) => p.id);
+
   const dedupe = dedupeColocatedPins(
     dedupable.map((p) => ({
       id: p.id,
@@ -146,7 +165,8 @@ export async function hydrateReport(options: {
       editorialHook: p.editorial_hook,
       localInsight: p.local_insight,
       googlePlaceId: p.google_place_id,
-    }))
+    })),
+    { protectedIds: anchorIds }
   );
   warnings.push(summarizeDedupe(dedupe));
   for (const drop of dedupe.dropped) {
