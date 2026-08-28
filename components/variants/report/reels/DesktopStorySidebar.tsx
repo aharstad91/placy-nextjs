@@ -24,6 +24,7 @@ import { SIDEBAR_SECTION_TITLE } from "../board/sidebar-style";
 import { StoryCard } from "../board/story/StoryCard";
 import { StoryRail } from "../board/story/StoryRail";
 import { AREA_STEP, useStoryTour } from "../board/story/story-tour";
+import { StoryPoiPanel } from "../board/story/StoryPoiPanel";
 import { EventFilterPanel } from "../board/event/EventFilterPanel";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
 import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
@@ -143,16 +144,23 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   // kolonnens vanlige topp-padding festet hodet seg like langt ned — og i den
   // stripen så man innholdet gli forbi over det.
   return (
-    <div
-      data-testid="story-sidebar"
-      className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-10 pt-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-    >
-      <StoryCard
-        variant="column"
-        head={<StoryRail variant="flow" />}
-        footer={!noBrokers ? <MeglerFooterCard /> : undefined}
-      />
-    </div>
+    <>
+      <div
+        data-testid="story-sidebar"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-10 pt-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <StoryCard
+          variant="column"
+          head={<StoryRail variant="flow" />}
+          footer={!noBrokers ? <MeglerFooterCard /> : undefined}
+        />
+      </div>
+      {/* Stedets egen side, som et lag OVER omvisningen. Ligger her og ikke
+          inne i scroll-boksen: den skal dekke hele kolonnen (også logoen) og
+          ikke rulle med innholdet bak seg. `<aside>` under er `relative`, så
+          `inset-0` treffer panelets egen boks. */}
+      <StoryPoiPanel />
+    </>
   );
 }
 

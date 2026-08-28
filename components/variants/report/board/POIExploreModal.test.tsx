@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import { POIExploreModal } from "./POIExploreModal";
 import {
-  POIExploreModal,
   hasAnchorRegister,
   hasExploreContent,
   hasGoogleFacts,
   hasGroundedNarrative,
-} from "./POIExploreModal";
+} from "./PoiDetail";
 import type { BoardPOI } from "./board-data";
 import type { POI, PoiGrounding } from "@/lib/types";
 

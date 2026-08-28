@@ -172,16 +172,11 @@ export function storyBeat(
   return sentences.slice(0, maxSentences).join("").trim();
 }
 
-/** Stedets egne ord. Ingen tekst = ingen chevron; raden lover ikke noe tom. */
-export function storyNarrative(poi: BoardPOI): string {
-  const g = poi.raw.grounding;
-  return (
-    g?.curated?.narrative ??
-    g?.generated?.narrative ??
-    poi.raw.editorialHook ??
-    ""
-  );
-}
+/* Stedets tekst bor i `poiNarrativeText` (components/.../PoiDetail.tsx) og
+   IKKE her (2026-08-28). Den lokale varianten leste bare `editorialHook`, mens
+   modalen leste `body` (krok + lokal innsikt) — samme sted fortalte derfor to
+   ulike historier alt etter hvilken flate du sto i, og avsnitt to fantes bare i
+   modalen. Én kilde, tre flater. */
 
 /** Ikon og farge til stedets brikke. Kuratoren har gitt hvert utvalgt sted sin
  *  egen identitet (`poiVisualIdentity` i board-data); er stedet plukket av

@@ -7,6 +7,8 @@ import { markerCircleStyle, poiVisualIdentity } from "./marker-style";
 import type { BoardPOI } from "./board-data";
 import type { POI } from "@/lib/types";
 import { anchorRegisterHeading } from "@/lib/board/anchor-families";
+import { SIDEBAR_SECTION_TITLE } from "./sidebar-style";
+import { cn } from "@/lib/utils";
 
 /**
  * Innholdsregisteret til et anker — Apples Browse Directory-modell.
@@ -181,7 +183,11 @@ export function AnchorRegister({ poi }: { poi: BoardPOI }) {
 
   return (
     <section data-testid="anchor-register" className="mt-5 border-t border-stone-100 pt-4">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+      {/* Samme overskriftsform som resten av sidekolonnen (`SIDEBAR_SECTION_TITLE`).
+          Kapitéler-varianten sto igjen fra da registeret bare fantes i modalen;
+          i kolonnen leste den som et fremmedelement ved siden av «Verdt å merke
+          seg» og «Spørsmål og svar». */}
+      <p className={cn("mb-2", SIDEBAR_SECTION_TITLE)}>
         {anchorRegisterHeading(poi.raw.category.id)}
       </p>
 
