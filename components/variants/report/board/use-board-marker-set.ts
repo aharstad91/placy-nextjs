@@ -135,10 +135,20 @@ export interface MarkerSelectionInput {
    * Eget signal og ikke `activeCategory`, fordi omvisningen bevisst ikke setter
    * `activeCategoryId`: på Mapbox-motoren skal hele nabolaget ligge igjen som
    * dempet tekstur bak stoppet (`storyEmphasis`), og et kategori-valg ville tatt
-   * teksturen bort. 3D-motoren har ingen slik spak — markørene er en
-   * MONTERINGS-beslutning her, ikke en opacity-beslutning (se doccen om
-   * WebGL-churn) — så der blir det samme regelen uttrykt som et filter: stoppet
-   * eier kartet, og bare kategoriens punkter står.
+   * teksturen bort.
+   *
+   * 3D-motoren har ingen opacity-spak (markørene er en MONTERINGS-beslutning
+   * her — se doccen om WebGL-churn), og sto derfor lenge med bare kategoriens
+   * punkter. Det leste feil: trykker du på en pinne i et annet tema, bytter
+   * stoppet dit, og ALLE de andre temaenes punkter forsvant i samme sekund
+   * (Andreas, 2026-08-28: «punktene forsvinner fra alle de andre
+   * kategoriene»). Kartet mistet nabolaget sitt i det du utforsket det.
+   *
+   * Teksturen er derfor med i 3D også, uttrykt i det språket motoren HAR:
+   * stoppets kategori pluss oversikts-settet — det samme settet områdestoppet
+   * viser — og de øvrige tegnes som prikker (`textureIds` i
+   * `use-3d-marker-declutter`). Ingen pinne forsvinner når du bytter stopp; det
+   * er vekten som flytter seg, som på Mapbox.
    */
   storyStop: { category: BoardCategory; activePoiId: string | null } | null;
   statePhase: BoardPhase;
@@ -153,9 +163,11 @@ export interface MarkerSelectionInput {
 }
 
 /**
- * Markørsettet som faktisk mountes. Når en kategori spiller: kun den kategoriens
- * POI-er (sub-filtrert). Ellers: det kuraterte ankersettet. Capture/establishing
- * gir et helt rent kart (`[]`) — reveal-kaskaden eier markørene da.
+ * Markørsettet som faktisk mountes. Under omvisningen: stoppets kategori +
+ * oversikts-settet (se `storyStop`). Når en kategori spiller: kun den
+ * kategoriens POI-er (sub-filtrert). Ellers: det kuraterte ankersettet.
+ * Capture/establishing gir et helt rent kart (`[]`) — reveal-kaskaden eier
+ * markørene da.
  */
 export function selectMarkerPOIs(input: MarkerSelectionInput): POI[] {
   const {
@@ -180,10 +192,17 @@ export function selectMarkerPOIs(input: MarkerSelectionInput): POI[] {
   // Omvisningen eier kartet mens den kjører — også over et kategori-valg, som
   // den selv nullstiller når den starter.
   if (storyStop) {
-    const result = storyStop.category.pois.map(toDisplayPOI);
-    // Et stedsnavn i et FAQ-svar kan peke på et punkt i en ANNEN kategori.
-    // Kameraet flyr dit uansett, så punktet må finnes — ellers flyr vi til et
-    // tomt sted.
+    // Stoppets egen kategori FØRST (den eier scenen), så nabolaget rundt som
+    // kontekst. Dedupen beholder første forekomst, så et sted som ligger i
+    // begge settene blir stoppets.
+    const result = dedupeById([
+      ...storyStop.category.pois.map(toDisplayPOI),
+      ...overviewPOIs,
+    ]);
+    // Et stedsnavn i et FAQ-svar kan peke på et punkt i en ANNEN kategori, og
+    // et trykk i kartet kan åpne et punkt som ikke er i noe av settene over.
+    // Kameraet og popupen peker dit uansett, så punktet må finnes — ellers
+    // peker de på et tomt sted.
     const openId = storyStop.activePoiId;
     if (openId && !result.some((p) => p.id === openId)) {
       const extra = allPOIs.find((p) => p.id === openId);

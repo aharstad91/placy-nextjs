@@ -62,6 +62,7 @@ interface Props {
   activePOIId: string | null;
   enabled: boolean;
   suppressActiveLabel: boolean;
+  textureIds?: ReadonlySet<string> | undefined;
 }
 
 function setup(
@@ -81,6 +82,7 @@ function setup(
         homeName: overrides.homeName ?? "Testprosjektet",
         homeSubtitle: overrides.homeSubtitle,
         activePOIId: props.activePOIId,
+        textureIds: props.textureIds,
         enabled: props.enabled,
         suppressActiveLabel: props.suppressActiveLabel,
       }),
@@ -90,6 +92,7 @@ function setup(
         activePOIId: overrides.activePOIId ?? null,
         enabled: overrides.enabled ?? true,
         suppressActiveLabel: overrides.suppressActiveLabel ?? false,
+        textureIds: overrides.textureIds,
       },
     },
   );
@@ -302,6 +305,7 @@ describe("useMarker3DDeclutter — når den skal tie", () => {
         activePOIId: null,
         enabled: false,
         suppressActiveLabel: false,
+        textureIds: undefined,
       });
     });
     expect(result.current.labels).toEqual({});
@@ -372,6 +376,7 @@ describe("useMarker3DDeclutter — ro-signalet", () => {
         activePOIId: null,
         enabled: true,
         suppressActiveLabel: false,
+        textureIds: undefined,
       });
     });
     for (let i = 0; i < 5; i++) {
@@ -407,5 +412,75 @@ describe("useMarker3DDeclutter — ro-signalet", () => {
       vi.advanceTimersByTime(SETTLE);
     });
     expect(result.current).toBe(first);
+  });
+});
+
+describe("useMarker3DDeclutter — omvisningens tekstur", () => {
+  /**
+   * 3D-motoren har ingen opacity-spak, så nabolaget rundt et stopp uttrykkes som
+   * prikker. Uten dette sto de mountede kontekst-punktene som fulle pins med
+   * navn, og stoppets egne steder forsvant i mengden — eller, før teksturen i
+   * det hele tatt ble mountet: hvert annet tema forsvant fra kartet i det du
+   * trykket på en pinne (2026-08-28).
+   */
+  it("tegner tekstur-punkter som prikk, uansett hvor god plass det er", () => {
+    const { result } = setup(
+      makeMap(900),
+      [poi("scene", 100, 100, 4), poi("tekstur", 600, 600, 5)],
+      { textureIds: new Set(["tekstur"]) },
+    );
+    settle();
+    expect([...result.current.demotedIds]).toEqual(["tekstur"]);
+    // Prikken bærer ikke navn; stoppets eget sted gjør det.
+    expect(result.current.labels["tekstur"]).toBeUndefined();
+    expect(result.current.labels["scene"]?.text).toBe("scene");
+  });
+
+  it("lar aldri en tekstur-prikk ta pin-plassen fra stoppets sted", () => {
+    // Samme punkt på skjermen: teksturen har HØYERE rating, og ville vunnet
+    // plassen i den grådige kullingen om den fikk delta.
+    const { result } = setup(
+      makeMap(900),
+      [poi("scene", 300, 300, 3), poi("tekstur", 305, 305, 5)],
+      { textureIds: new Set(["tekstur"]) },
+    );
+    settle();
+    expect(result.current.demotedIds.has("scene")).toBe(false);
+    expect(result.current.demotedIds.has("tekstur")).toBe(true);
+  });
+
+  it("regner på nytt når teksturen endrer seg, selv om markørsettet er likt", () => {
+    // Stoppbytte flytter kameraet ikke lenger, og på et board uten voice-over er
+    // markørsettet det SAMME i hvert stopp. Da er teksturen den eneste endringen
+    // — fanger ikke datasett-timeren den, står forrige stopps pins igjen.
+    const pois = [poi("a", 100, 100, 4), poi("b", 600, 600, 5)];
+    const { result, rerender } = setup(makeMap(900), pois, {
+      textureIds: new Set(["b"]),
+    });
+    settle();
+    expect([...result.current.demotedIds]).toEqual(["b"]);
+    act(() => {
+      rerender({
+        pois,
+        activePOIId: null,
+        enabled: true,
+        suppressActiveLabel: false,
+        textureIds: new Set(["a"]),
+      });
+    });
+    settle();
+    expect([...result.current.demotedIds]).toEqual(["a"]);
+    expect(result.current.labels["b"]?.text).toBe("b");
+  });
+
+  it("holder det ÅPNE punktet som full pin, også når det er tekstur", () => {
+    // Du trykket på det, popupen står over det — da er det ikke kontekst lenger.
+    const { result } = setup(
+      makeMap(900),
+      [poi("scene", 100, 100, 4), poi("tekstur", 600, 600, 5)],
+      { textureIds: new Set(["tekstur"]), activePOIId: "tekstur" },
+    );
+    settle();
+    expect(result.current.demotedIds.has("tekstur")).toBe(false);
   });
 });

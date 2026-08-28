@@ -609,6 +609,22 @@ export function BoardMap3D({
     setBloomStarted,
   });
 
+  // Omvisningens tekstur: nabolaget rundt stoppet, tegnet som prikker.
+  //
+  // Markørsettet under et stopp er stoppets kategori PLUSS oversikts-settet (se
+  // `selectMarkerPOIs`), slik at ingen pinne forsvinner når du bytter stopp. De
+  // som ikke er stoppets egne er kontekst, og skal se ut som det. Mapbox-motoren
+  // uttrykker det med opacity; her er språket prikk-mot-pin, som er den samme
+  // spaken utglisningen allerede bruker (ingen remount, ingen WebGL-churn).
+  const storyTextureIds = useMemo(() => {
+    const stopPois = story?.on ? story.stop?.pois : undefined;
+    if (!stopPois) return undefined;
+    const scene = new Set(stopPois.map((p) => String(p.id)));
+    const texture = new Set<string>();
+    for (const poi of markerPOIs) if (!scene.has(poi.id)) texture.add(poi.id);
+    return texture;
+  }, [markerPOIs, story?.on, story?.stop]);
+
   // ── Markør-utglisning + labels ────────────────────────────────────────────
   // 3D-halvdelen av 2D-kartets zoom-baserte markør-logikk: hvilke pins som
   // beholder ikonet når de krasjer i hverandre, og hvilke som får navnet sitt
@@ -621,6 +637,7 @@ export function BoardMap3D({
     home: data.home.coordinates,
     homeName: data.home.name,
     activePOIId: state.activePOIId,
+    textureIds: storyTextureIds,
     // Mini-popupen viser navnet — da skal ikke pinnen vise det også.
     suppressActiveLabel: popupMode === "mini",
     enabled: !compactMarkers && markerPOIs.length > 0,

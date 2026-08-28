@@ -194,14 +194,27 @@ describe("selectMarkerPOIs", () => {
     allPOIs: all,
   };
 
-  it("omvisningen mounter BARE stoppets kategori — dekningen filtreres, ikke dempes", () => {
+  /* Stoppet eier scenen, men nabolaget blir stående (2026-08-28). Uten
+     oversikts-settet forsvant hvert annet tema fra kartet i det stoppet byttet
+     — og et stoppbytte er nettopp det et pinnetrykk gjør. */
+  it("omvisningen mounter stoppets kategori PLUSS oversikts-settet", () => {
     const stop = cat({ pois: [poi("s1"), poi("s2")] });
     expect(
       selectMarkerPOIs({
         ...base,
         storyStop: { category: stop, activePoiId: null },
       }).map((p) => p.id),
-    ).toEqual(["s1", "s2"]);
+    ).toEqual(["s1", "s2", "ov1", "ov2"]);
+  });
+
+  it("gir stoppets plass til et sted som ligger i BEGGE settene", () => {
+    const stop = cat({ pois: [poi("ov2"), poi("s1")] });
+    expect(
+      selectMarkerPOIs({
+        ...base,
+        storyStop: { category: stop, activePoiId: null },
+      }).map((p) => p.id),
+    ).toEqual(["ov2", "s1", "ov1"]);
   });
 
   it("omvisningen vinner over et kategori-valg", () => {
@@ -212,27 +225,27 @@ describe("selectMarkerPOIs", () => {
         activeCategory: activeCat,
         storyStop: { category: stop, activePoiId: null },
       }).map((p) => p.id),
-    ).toEqual(["s1"]);
+    ).toEqual(["s1", "ov1", "ov2"]);
   });
 
-  it("tar med et åpnet punkt fra en ANNEN kategori, så kameraet ikke flyr til et tomt sted", () => {
+  it("tar med et åpnet punkt som ikke er i noe av settene", () => {
     const stop = cat({ pois: [poi("s1")] });
     expect(
       selectMarkerPOIs({
         ...base,
         storyStop: { category: stop, activePoiId: "a2" },
       }).map((p) => p.id),
-    ).toEqual(["s1", "a2"]);
+    ).toEqual(["s1", "ov1", "ov2", "a2"]);
   });
 
-  it("dupliserer ikke det åpne punktet når det ligger i stoppets egen kategori", () => {
+  it("dupliserer ikke det åpne punktet når det allerede står på kartet", () => {
     const stop = cat({ pois: [poi("s1"), poi("s2")] });
     expect(
       selectMarkerPOIs({
         ...base,
         storyStop: { category: stop, activePoiId: "s2" },
       }).map((p) => p.id),
-    ).toEqual(["s1", "s2"]);
+    ).toEqual(["s1", "s2", "ov1", "ov2"]);
   });
 
   it("capture (?film=1) vinner fortsatt over omvisningen — rent kart", () => {

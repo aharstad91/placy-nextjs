@@ -222,6 +222,16 @@ export interface UseMarker3DDeclutterParams {
    */
   overhangRightPx?: number;
   /**
+   * Punkter som er mountet som KONTEKST, ikke som scene — omvisningens tekstur.
+   *
+   * De tegnes alltid som prikk og bærer aldri navn, uansett hvor god plass det
+   * er. Det er 3D-motorens uttrykk for det Mapbox gjør med opacity: nabolaget
+   * ligger igjen rundt stoppet, uten å ta ordet. De konkurrerer heller ikke om
+   * pin-plassen — en tekstur-prikk skal aldri kunne demotere et av stoppets
+   * egne steder til prikk.
+   */
+  textureIds?: ReadonlySet<string>;
+  /**
    * Av når markørene uansett ikke er fulle ikon-pins: `compactMarkers` tegner
    * alt som prikker, og capture/intro-modusene mounter ingen markører i det
    * hele tatt. Da skal hooken tie helt.
@@ -287,6 +297,7 @@ export function useMarker3DDeclutter({
   homeName,
   homeSubtitle,
   activePOIId,
+  textureIds,
   enabled,
   suppressActiveLabel = false,
   visibleLeftPx = 0,
@@ -303,6 +314,7 @@ export function useMarker3DDeclutter({
     homeName,
     homeSubtitle,
     activePOIId,
+    textureIds,
     enabled,
     suppressActiveLabel,
     visibleLeftPx,
@@ -314,6 +326,7 @@ export function useMarker3DDeclutter({
     homeName,
     homeSubtitle,
     activePOIId,
+    textureIds,
     enabled,
     suppressActiveLabel,
     visibleLeftPx,
@@ -328,6 +341,7 @@ export function useMarker3DDeclutter({
       homeName: siteName,
       homeSubtitle: siteSubtitle,
       activePOIId: activeId,
+      textureIds: texture,
       enabled: on,
       suppressActiveLabel: hideActiveLabel,
       visibleLeftPx: windowLeft,
@@ -434,13 +448,20 @@ export function useMarker3DDeclutter({
         ? Number.POSITIVE_INFINITY
         : (poi.googleRating ?? 0);
 
-    const pinCandidates: PinCandidate[] = projected.map(({ poi, x, y }) => ({
-      id: poi.id,
-      x,
-      y,
-      priority: priorityOf(poi),
-    }));
+    // Teksturen holdes UTENFOR konkurransen og legges rett i demoteringen: den
+    // skal verken kunne vinne en pin-plass eller ta en fra stoppets egne steder.
+    const isTexture = (poi: POI) =>
+      texture !== undefined && texture.has(poi.id) && poi.id !== activeId;
+    const pinCandidates: PinCandidate[] = projected
+      .filter(({ poi }) => !isTexture(poi))
+      .map(({ poi, x, y }) => ({
+        id: poi.id,
+        x,
+        y,
+        priority: priorityOf(poi),
+      }));
     const demotedIds = computePinDemotions(pinCandidates, blockers);
+    for (const { poi } of projected) if (isTexture(poi)) demotedIds.add(poi.id);
 
     const labels: Record<string, LabelPlacement> = {};
     if (tier === "icon+label") {
@@ -526,12 +547,36 @@ export function useMarker3DDeclutter({
   // memoiseres på oppstrøms-deps og kan være en ny array med samme innhold.
   const poisKey = useMemo(() => pois.map((p) => p.id).join(","), [pois]);
 
+  /**
+   * Samme slags nøkkel for teksturen, og den er nødvendig av sin egen grunn:
+   * teksturen kan endre seg UTEN at markørsettet gjør det.
+   *
+   * Et stoppbytte flytter grensen mellom scene og kontekst, men på et board
+   * uten voice-over er oversikts-settet hele nabolaget — da er `poisKey`
+   * identisk i hvert stopp, og datasett-timeren ville ikke fyrt. Kamera-timeren
+   * redder oss heller ikke lenger: stoppbytte flytter ikke kameraet (se
+   * `story-tour`). Uten denne nøkkelen sto plasseringene fra forrige stopp
+   * igjen — målt på Strindfjordvegen: kaféer og badeplasser som fulle pins med
+   * navn under et barnehage-stopp.
+   */
+  const textureKey = useMemo(
+    () => (textureIds ? [...textureIds].sort().join(",") : ""),
+    [textureIds],
+  );
+
   // Datasett-timeren. Egen fra kamera-timeren, se doc-blokken.
   useEffect(() => {
     if (!map3d || !enabled) return;
     const timer = setTimeout(() => recomputeRef.current(), DATA_SETTLE_MS);
     return () => clearTimeout(timer);
-  }, [map3d, enabled, poisKey, activePOIId, suppressActiveLabel]);
+  }, [
+    map3d,
+    enabled,
+    poisKey,
+    textureKey,
+    activePOIId,
+    suppressActiveLabel,
+  ]);
 
   // Slås hooken av (compact-markører, capture, intro) skal ingen plassering bli
   // stående og gjelde for et markørsett den ikke lenger beskriver.
