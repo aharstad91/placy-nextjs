@@ -238,3 +238,123 @@ describe("hydrateReport — Unit 4", () => {
     expect(result.warnings.some((w) => w.includes("Ingen POI-er"))).toBe(true);
   });
 });
+
+describe("hydrateReport — ankeret er fredet i dedupen", () => {
+  /**
+   * Samme sted under to rader: Google-raden er ankeret, OSM-kopien bærer
+   * redaksjonell tekst. `contentRank` gir normalt seieren til den redaksjonelle
+   * raden — og da forsvinner hele registeret fra boardet, mens medlemmene
+   * dukker opp igjen som løse pinner fordi forelderen deres ikke er lenket.
+   *
+   * Målt i prod 2026-08-28 på «Charlottenlundhallen».
+   */
+  const ANKER = {
+    id: "google-charlottenlundhallen",
+    name: "Charlottenlundhallen",
+    category_id: "idrett",
+    lat: 63.42535,
+    lng: 10.48878,
+    google_rating: 4.0,
+    google_review_count: 192,
+    google_place_id: "ChIJb9lVMlwwbUYRiJKk_Uu726c",
+    source: null,
+    editorial_hook: null,
+    local_insight: null,
+    anchor_summary: "Charlottenlund Kunstgress 11-bane og Svømmehall",
+  };
+  const KOPI_MED_TEKST = {
+    id: "osm-way-93075584",
+    name: "Charlottenlundhallen",
+    category_id: "idrett",
+    lat: 63.42536,
+    lng: 10.48879,
+    google_rating: null,
+    google_review_count: null,
+    google_place_id: null,
+    source: "osm",
+    editorial_hook: "Bydelens storstue for håndball.",
+    local_insight: null,
+    anchor_summary: null,
+  };
+
+  function mockWithCapture(poiList: unknown[]) {
+    const inserted: Array<{ poi_id: string }> = [];
+    const mock = {
+      schema: vi.fn(),
+      from: vi.fn((table: string) => {
+        if (table === "project_pois") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({
+                data: poiList.map((p) => ({ poi_id: (p as { id: string }).id })),
+                error: null,
+              }),
+            }),
+          };
+        }
+        if (table === "product_pois") {
+          return {
+            delete: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+            insert: vi.fn((rows: Array<{ poi_id: string }>) => {
+              inserted.push(...rows);
+              return Promise.resolve({ error: null });
+            }),
+            update: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({ in: vi.fn().mockResolvedValue({ error: null }) }),
+            }),
+          };
+        }
+        if (table === "pois") {
+          return {
+            select: vi.fn().mockReturnValue({
+              in: vi.fn().mockResolvedValue({ data: poiList, error: null }),
+            }),
+          };
+        }
+        if (table === "product_categories") {
+          return {
+            delete: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        return {};
+      }),
+    };
+    mock.schema.mockReturnValue(mock);
+    return { mock, inserted };
+  }
+
+  it("beholder ankeret og skjuler kopien — ikke omvendt", async () => {
+    const { mock, inserted } = mockWithCapture([ANKER, KOPI_MED_TEKST]);
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mock);
+
+    await hydrateReport({
+      projectId: "p1",
+      productId: "prod1",
+      centerLat: ANKER.lat,
+      centerLng: ANKER.lng,
+    });
+
+    const ids = inserted.map((r) => r.poi_id);
+    expect(ids).toContain(ANKER.id);
+    expect(ids).not.toContain(KOPI_MED_TEKST.id);
+  });
+
+  it("uten anker vinner den redaksjonelle raden som før", async () => {
+    // Kontrollen: fredningen skal IKKE endre dedupen for vanlige duplikater.
+    const utenAnker = { ...ANKER, anchor_summary: null };
+    const { mock, inserted } = mockWithCapture([utenAnker, KOPI_MED_TEKST]);
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mock);
+
+    await hydrateReport({
+      projectId: "p1",
+      productId: "prod1",
+      centerLat: ANKER.lat,
+      centerLng: ANKER.lng,
+    });
+
+    const ids = inserted.map((r) => r.poi_id);
+    expect(ids).toContain(KOPI_MED_TEKST.id);
+    expect(ids).not.toContain(utenAnker.id);
+  });
+});

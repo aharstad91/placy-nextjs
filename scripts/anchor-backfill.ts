@@ -53,6 +53,7 @@ import { createServerClient } from "@/lib/supabase/client";
 import { discoverAnchorsForProject } from "@/lib/pipeline/discover-anchors";
 import { resolveProjectAnchors } from "@/lib/pipeline/resolve-anchors-step";
 import { enrichContainment } from "@/lib/pipeline/enrich-containment";
+import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import { ANCHOR_FAMILIES } from "@/lib/board/anchor-families";
 
 interface ProjectRow {
@@ -77,6 +78,7 @@ function parseArgs() {
     commit: has("--commit"),
     skipDiscovery: has("--skip-discovery"),
     skipContainment: has("--skip-containment"),
+    skipHydrate: has("--skip-hydrate"),
   };
 }
 
@@ -91,6 +93,8 @@ interface BoardOutcome {
   /** Containment-høstingen: kall brukt og rader som fikk peker. */
   containmentCalls: number;
   containmentRows: number;
+  /** product_pois lenket på nytt, slik at ankeret faktisk står på boardet. */
+  rehydrated: number;
   membersLinked: number;
   membersUnlinked: number;
   rejected: Array<{ name: string; memberCount: number }>;
@@ -98,7 +102,8 @@ interface BoardOutcome {
 }
 
 async function main() {
-  const { projects: wanted, commit, skipDiscovery, skipContainment } = parseArgs();
+  const { projects: wanted, commit, skipDiscovery, skipContainment, skipHydrate } =
+    parseArgs();
   const mode = commit ? "SKRIVER TIL PROD" : "tørrkjøring (ingen writes)";
 
   console.log(`\n━━━ Anker-backfill — ${mode} ━━━\n`);
@@ -151,6 +156,7 @@ async function main() {
       anchors: [],
       containmentCalls: 0,
       containmentRows: 0,
+      rehydrated: 0,
       membersLinked: 0,
       membersUnlinked: 0,
       rejected: [],
@@ -224,6 +230,64 @@ async function main() {
     outcome.membersUnlinked = res.membersUnlinked;
     outcome.rejected = res.rejected;
     outcome.warnings.push(...res.warnings);
+
+    // Re-hydrering ETTER oppløsningen, og bare når det faktisk ble et anker.
+    //
+    // Oppløsningen skriver til POOLEN (`v2.pois`), mens boardet rendrer
+    // PRODUKTET (`v2.product_pois`). Et anker som ikke er lenket inn i
+    // produktet er usynlig, og medlemmene står igjen som løse pinner fordi
+    // forelderen deres ikke finnes der.
+    //
+    // Målt 2026-08-28: «Charlottenlundhallen» ble anker i basen, men dedupen i
+    // en TIDLIGERE hydrering hadde valgt en OSM-kopi som pinne. Boardet viste
+    // alle sju idretts-pinnene som før. Uten dette steget virker backfillen
+    // bare når ankeret tilfeldigvis allerede sto på boardet.
+    if (!skipHydrate && res.anchors.length > 0) {
+      const { data: products } = await db
+        .from("products")
+        .select("id, product_type")
+        .eq("project_id", project.id);
+
+      // Bare produktene som faktisk MANGLER et anker. Hydreringen sletter og
+      // re-insetter hele `product_pois` og regner `featured` på nytt — den skal
+      // ikke kjøre på et board der alt allerede står riktig.
+      const anchorIds = res.anchors.map((a) => a.id);
+      const needy: string[] = [];
+      for (const product of products ?? []) {
+        const { data: linked } = await db
+          .from("product_pois")
+          .select("poi_id")
+          .eq("product_id", product.id as string)
+          .in("poi_id", anchorIds);
+        const have = new Set((linked ?? []).map((r) => r.poi_id as string));
+        if (anchorIds.some((id) => !have.has(id))) needy.push(product.id as string);
+      }
+
+      for (const productId of needy) {
+        if (commit) {
+          try {
+            const hy = await hydrateReport({
+              projectId: project.id,
+              productId,
+              centerLat: project.center_lat,
+              centerLng: project.center_lng,
+            });
+            outcome.rehydrated += hy.productPoisLinked;
+          } catch (err) {
+            outcome.warnings.push(
+              `⚠️  Re-hydrering feilet for produkt ${productId}: ${err instanceof Error ? err.message : String(err)}`,
+            );
+          }
+        }
+      }
+      if (needy.length > 0) {
+        console.log(
+          commit
+            ? `  Hydrering: ${needy.length} produkt(er) re-hydrert · ${outcome.rehydrated} product_pois lenket`
+            : `  Hydrering: ${needy.length} produkt(er) mangler ankeret og ville blitt re-hydrert`,
+        );
+      }
+    }
 
     if (res.anchors.length === 0) {
       console.log("  Oppløsning: ingen anker i radiusen");
