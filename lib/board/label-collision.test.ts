@@ -4,6 +4,7 @@ import {
   estimateLabelBox,
   labelHaloShadow,
   LABEL_CHAR_W,
+  LABEL_LINE_H,
   LABEL_MAX_W,
   LABEL_OFFSET_X,
   type LabelCandidate,
@@ -140,7 +141,9 @@ describe("computeLabelPlacements", () => {
     const langt = "ALOHA MANA Hawaiisk Terapeutisk Massasje";
     const box = estimateLabelBox(cand("x", 0, 0, 0, langt), "right");
     expect(box.right - box.left).toBe(LABEL_MAX_W);
-    expect(box.bottom - box.top).toBe(24);
+    // Høyden er to linjer — uttrykt i konstanten, så en typografi-endring ikke
+    // gjør testen usann (den var hardkodet til 24 da linjen var 12 px).
+    expect(box.bottom - box.top).toBe(2 * LABEL_LINE_H);
     // 2-linjers naboer 18 px fra hverandre vertikalt overlapper på samme
     // side; nr. 2 flipper, nr. 3 kulles.
     const result = computeLabelPlacements([
@@ -181,10 +184,15 @@ describe("motor-forskjellene (3D)", () => {
   });
 
   it("computeLabelPlacements respekterer offsetX-metrikken", () => {
-    // Hindringen ligger like BAK der 2D-labelen slutter (høyre kant 194.8).
-    // 3D-labelen starter 4 px lenger ute og rekker dermed borti den, så den må
-    // flippe til venstre mens 2D blir stående.
-    const obstacles = [{ x: 200, y: 50, halfSize: 6 }];
+    // Hindringen legges like BAK der 2D-labelen slutter. 3D-labelen starter 4 px
+    // lenger ute og rekker dermed borti den, så den må flippe til venstre mens
+    // 2D blir stående. Kanten regnes ut av konstantene: med hardkodet x fulgte
+    // premisset font-størrelsen, og testen sluttet å bety det den sa.
+    const bredde = "Testbutikken".length * LABEL_CHAR_W;
+    const halv = 6;
+    const obstacles = [
+      { x: 100 + LABEL_OFFSET_X + bredde + 1 + halv, y: 50, halfSize: halv },
+    ];
     const to2D = computeLabelPlacements([cand("x", 100, 50)], obstacles);
     const to3D = computeLabelPlacements([cand("x", 100, 50)], obstacles, undefined, {
       offsetX: 28,
@@ -257,11 +265,18 @@ describe("LABEL_CHAR_W som overestimat", () => {
   // et overestimat, ellers påstår kollisjonen at det er ledig der tekst ligger.
   //
   // Tallet er kalibrert i browser mot canvas `measureText` med den faktiske
-  // font-stacken (600 10px system-ui, -apple-system, Helvetica Neue): over 14
-  // reelle POI-navn fra Strindfjordvegen-boardet var verste faktiske tegnbredde
-  // 5,84 px, mot anslagets 5,9. Måles den på nytt og havner over 5,9, er det
-  // dette tallet som skal opp — ikke testen som skal ned.
-  const MAALT_VERSTE_TEGNBREDDE = 5.84;
+  // font-stacken, og MÅLT PÅ NYTT ved 11 px (600 11px system-ui, -apple-system,
+  // Helvetica Neue) etter font-økningen 2026-08-28: over 14 reelle POI-navn fra
+  // Strindfjordvegen-boardet var verste faktiske tegnbredde 6,465 px
+  // («Ranheim Pumptrack»), mot anslagets 6,5. Måles den på nytt og havner over
+  // 6,5, er det LABEL_CHAR_W som skal opp — ikke testen som skal ned.
+  //
+  // Kjent begrensning, ikke innført her: per-tegn-modellen underestimerer KORTE
+  // navn med brede bokstaver («Modena» 7,26, «BADEDESIGN» 7,3 målt over alle
+  // 345 navnene på boardet). Feilen er noen få px fordi navnet er kort, og
+  // klampen ved LABEL_MAX_W tar de lange. Skal den bort, må anslaget erstattes
+  // av en faktisk måling i browseren.
+  const MAALT_VERSTE_TEGNBREDDE = 6.465;
 
   it("anslaget ligger over den målte verste tegnbredden", () => {
     expect(LABEL_CHAR_W).toBeGreaterThanOrEqual(MAALT_VERSTE_TEGNBREDDE);

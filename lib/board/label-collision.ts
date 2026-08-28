@@ -73,14 +73,28 @@ export interface LabelViewport {
   width: number;
 }
 
+/**
+ * Label-typografien, delt av BEGGE motorene (2D `BoardMarker`, 3D
+ * `PoiMarkerContent`) og av kollisjonsgeometrien her.
+ *
+ * Font-størrelsen gikk fra 10 til 11 px 2026-08-28 (Andreas: «font-size må opp
+ * med 1px på label på pois»). De tre andre tallene MÅ følge med, ellers påstår
+ * kollisjonen at det er ledig plass der tekst faktisk ligger:
+ *
+ *  - `LABEL_LINE_H` er linjehøyden, 1,2 × font-størrelsen.
+ *  - `LABEL_CHAR_W` er anslått snittbredde per tegn — se testen som holder den
+ *    over den MÅLTE verste tegnbredden.
+ *  - `LABEL_MAX_W` er taket på labelbredden, og skaleres med fonten så et navn
+ *    rommer like mange tegn som før. Uten det ville en 1-px økning kuttet
+ *    lengre navn med ellipsis, uten at noen ba om det.
+ */
+export const LABEL_FONT_SIZE = 11;
+/** 1,2 × {@link LABEL_FONT_SIZE}. */
+export const LABEL_LINE_H = 13.2;
+/** Estimert snittbredde per tegn ved {@link LABEL_FONT_SIZE} / weight 600. */
+export const LABEL_CHAR_W = 6.5;
 /** Speiler BoardMarker: maxWidth på label-spanen. */
-export const LABEL_MAX_W = 132;
-/** Estimert snittbredde per tegn ved fontSize 10 / weight 600. */
-export const LABEL_CHAR_W = 5.9;
-/** Speiler BoardMarker: lineHeight 1.2 × fontSize 10. */
-export const LABEL_LINE_H = 12;
-/** Speiler BoardMarker: fontSize på label-teksten. */
-export const LABEL_FONT_SIZE = 10;
+export const LABEL_MAX_W = 145;
 /** Maks antall linjer før teksten kuttes med ellipsis. */
 export const LABEL_MAX_LINES = 2;
 /** Luft mellom markør-kanten og labelens nærmeste tekstkant. */

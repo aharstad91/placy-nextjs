@@ -7,6 +7,8 @@ import type { BoardPOI } from "./board-data";
 import { hexLightTint, markerCircleStyle } from "./marker-style";
 import {
   labelHaloShadow,
+  LABEL_FONT_SIZE,
+  LABEL_MAX_W,
   type LabelSide,
 } from "@/lib/board/label-collision";
 import type { BoardZoomTier } from "./use-board-zoom-tier";
@@ -262,7 +264,7 @@ function BoardMarkerImpl({
               : { right: "100%", marginRight: 8, textAlign: "right" as const }),
             top: "50%",
             transform: "translateY(-50%)",
-            fontSize: 10,
+            fontSize: LABEL_FONT_SIZE,
             fontWeight: 600,
             lineHeight: 1.2,
             color: "#1c1917",
@@ -270,11 +272,13 @@ function BoardMarkerImpl({
             // bokstav og fikk skarp tekst til å se uskarp ut (2026-08-28).
             textShadow: labelHaloShadow(),
             WebkitFontSmoothing: "antialiased",
-            // Absolutt posisjonert i 32 px-containeren → shrink-to-fit ville
+            // Absolutt posisjonert i containeren → shrink-to-fit ville
             // kollapset bredden til lengste enkeltord (ett ord per linje).
             // max-content + maxWidth gir full linjebredde opp til taket.
+            // Tallene er label-collisions egne, så det som TEGNES og det som
+            // RESERVERES ikke kan drifte fra hverandre.
             width: "max-content",
-            maxWidth: 132,
+            maxWidth: LABEL_MAX_W,
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
