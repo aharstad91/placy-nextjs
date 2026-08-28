@@ -18,7 +18,8 @@ import { equivalentZoomForCamera } from "@/lib/board/camera-zoom";
 import { projectLatLngToScreen } from "@/components/map/project-latlng-to-screen";
 import { scaleForRange } from "@/components/map/project-pin-scale";
 import { projectSitePinBlocker } from "@/components/map/ProjectSitePin";
-import { BLOB_BASE_SIZE } from "@/components/map/BlobMarker3D";
+import { DOT_SIZE, PIN_SIZE } from "@/components/map/PoiMarkerContent";
+import { poiPinScaleForZoom } from "@/components/map/poi-pin-scale";
 import { computeZoomTier } from "./use-board-zoom-tier";
 
 /**
@@ -40,8 +41,9 @@ import { computeZoomTier } from "./use-board-zoom-tier";
  *  - **Ro-signalet:** trailing debounce på `gmp-camerapositionchange`.
  *
  * Utover det gjør 3D én ting 2D ikke trenger: **pin-utglisning**. Se
- * `lib/board/pin-declutter` — markørene er 40 px og skjerm-forankret, så en
- * tett klynge blir en fargeklump lenge før teksten blir problemet.
+ * `lib/board/pin-declutter` — markørene er {@link PIN_SIZE} px og
+ * skjerm-forankret, så en tett klynge blir en fargeklump lenge før teksten blir
+ * problemet.
  *
  * ## Hvorfor ro og ikke hver frame
  *
@@ -64,12 +66,15 @@ import { computeZoomTier } from "./use-board-zoom-tier";
  * fortsatt få en plassering selv om kamera-timeren aldri fyrer.
  */
 
-/** Markør-diameter i 3D (`Marker3DItem` sender size 40 til `Marker3DPin`). */
-const PIN_SIZE = 40;
+/** Halv markør-diameter. Tallet er IMPORTERT, ikke speilet: geometrien her må
+ *  være den samme disc-en som `PoiMarkerContent` faktisk tegner, ellers
+ *  kolliderer vi mot en størrelse som ikke finnes på skjermen. */
 const PIN_HALF = PIN_SIZE / 2;
-/** Halv bredde på en demotert prikk (`BlobMarker3D`). */
-const DOT_HALF = BLOB_BASE_SIZE / 2;
-/** Markørsenter → labelens nærmeste kant. 2D bruker 16 + 8 (32 px markør). */
+/** Halv bredde på en demotert prikk — `PoiMarkerContent`s compact-gren, ikke
+ *  reveal-lagets `BlobMarker3D` (samme tall, ulik markør). */
+const DOT_HALF = DOT_SIZE / 2;
+/** Markørsenter → labelens nærmeste kant, ved skala 1. Ganges med markør-skalaen
+ *  i `recompute`. 2D bruker samme 16 + 8, men uten skala. */
 const LABEL_OFFSET_3D = PIN_HALF + LABEL_GAP_X;
 /** Høyden POI-markørene ligger på (`Marker3DItem`). Må matche, ellers
  *  projiserer vi et annet punkt enn det Google tegner markøren på. */
@@ -121,9 +126,13 @@ export const CAMERA_SETTLE_MS = 100;
  */
 const DATA_SETTLE_MS = 100;
 /**
- * Hvor langt utenfor kart-elementet en markør får ligge og fortsatt regnes med.
- * Marginen finnes fordi en label kan stikke inn i bildet fra en pin som så vidt
- * er utenfor; alt lenger ute kan verken sees eller kollidere.
+ * Hvor langt utenfor det SYNLIGE vinduet en markør får ligge og fortsatt regnes
+ * med. Marginen finnes fordi en label kan stikke inn i bildet fra en pin som så
+ * vidt er utenfor; alt lenger ute kan verken sees eller kollidere.
+ *
+ * Vinduet er ikke alltid hele elementet: på desktop dekker panelet venstre del,
+ * og elementet stikker ut til høyre for vindukanten (se `visibleLeftPx` /
+ * `overhangRightPx`).
  */
 const OFFSCREEN_MARGIN_PX = 200;
 
@@ -154,12 +163,23 @@ export interface Marker3DDeclutter {
    * bruker som tie-break i kollisjonssystemet sitt.
    */
   zIndexes: Record<string, number>;
+  /**
+   * Markør-størrelsen kameraet ber om, 1 = {@link PIN_SIZE}. Hører hjemme her og
+   * ikke i en egen hook: den leses av SAMME kamera-avlesning som tierne og
+   * kollisjonen, og den må være det samme tallet — regnet ett annet sted, ville
+   * markørene kunnet tegnes større enn plassen som ble reservert for dem.
+   *
+   * Konsumenter: `MapView3D.markerScale` (tegner) og mini-popupens løft (som må
+   * klare disc-toppen).
+   */
+  pinScale: number;
 }
 
 const EMPTY: Marker3DDeclutter = {
   labels: {},
   demotedIds: new Set(),
   zIndexes: {},
+  pinScale: 1,
 };
 
 export interface UseMarker3DDeclutterParams {
@@ -189,6 +209,17 @@ export interface UseMarker3DDeclutterParams {
    * popupen lukkes, og skal ikke måtte kjempe om plassen på nytt da.
    */
   suppressActiveLabel?: boolean;
+  /**
+   * Venstre kant av det SYNLIGE vinduet i elementets piksler. Desktop-panelet
+   * ligger oppå kartet, så alt til venstre for denne er tegnet men usett.
+   * Default 0 (mobil: elementet ER vinduet).
+   */
+  visibleLeftPx?: number;
+  /**
+   * Bredden elementet stikker ut til høyre for vinduet (se BoardMap3D-propen med
+   * samme navn). Default 0.
+   */
+  overhangRightPx?: number;
   /**
    * Av når markørene uansett ikke er fulle ikon-pins: `compactMarkers` tegner
    * alt som prikker, og capture/intro-modusene mounter ingen markører i det
@@ -231,6 +262,7 @@ function depthOrder(
 }
 
 function sameResult(a: Marker3DDeclutter, b: Marker3DDeclutter): boolean {
+  if (a.pinScale !== b.pinScale) return false;
   if (a.demotedIds.size !== b.demotedIds.size) return false;
   for (const id of a.demotedIds) if (!b.demotedIds.has(id)) return false;
   const aKeys = Object.keys(a.labels);
@@ -256,6 +288,8 @@ export function useMarker3DDeclutter({
   activePOIId,
   enabled,
   suppressActiveLabel = false,
+  visibleLeftPx = 0,
+  overhangRightPx = 0,
 }: UseMarker3DDeclutterParams): Marker3DDeclutter {
   const [result, setResult] = useState<Marker3DDeclutter>(EMPTY);
 
@@ -270,6 +304,8 @@ export function useMarker3DDeclutter({
     activePOIId,
     enabled,
     suppressActiveLabel,
+    visibleLeftPx,
+    overhangRightPx,
   });
   inputRef.current = {
     pois,
@@ -279,6 +315,8 @@ export function useMarker3DDeclutter({
     activePOIId,
     enabled,
     suppressActiveLabel,
+    visibleLeftPx,
+    overhangRightPx,
   };
 
   const recompute = useCallback(() => {
@@ -291,6 +329,8 @@ export function useMarker3DDeclutter({
       activePOIId: activeId,
       enabled: on,
       suppressActiveLabel: hideActiveLabel,
+      visibleLeftPx: windowLeft,
+      overhangRightPx: windowOverhangRight,
     } = inputRef.current;
     if (!map || !on) return;
 
@@ -312,6 +352,11 @@ export function useMarker3DDeclutter({
     });
     if (zoom === null) return;
     const tier = computeZoomTier(zoom);
+    // Markør-skalaen: samme kamera-avlesning som tieren, så det som TEGNES og
+    // det som RESERVERES aldri kan komme i utakt.
+    const pinScale = poiPinScaleForZoom(zoom);
+    const pinHalf = PIN_HALF * pinScale;
+    const dotHalf = DOT_HALF * pinScale;
 
     // Projeksjonen gjøres FØR tier-sjekken, fordi dybdesorteringen trengs i
     // begge grener: også et kart av bare prikker må vite hvem som ligger foran.
@@ -325,8 +370,8 @@ export function useMarker3DDeclutter({
       );
       if (!pt) continue; // bak kameraet — Google tegner den ikke
       if (
-        pt.x < -OFFSCREEN_MARGIN_PX ||
-        pt.x > rect.width + OFFSCREEN_MARGIN_PX ||
+        pt.x < windowLeft - OFFSCREEN_MARGIN_PX ||
+        pt.x > rect.width - windowOverhangRight + OFFSCREEN_MARGIN_PX ||
         pt.y < -OFFSCREEN_MARGIN_PX ||
         pt.y > rect.height + OFFSCREEN_MARGIN_PX
       ) {
@@ -334,7 +379,7 @@ export function useMarker3DDeclutter({
       }
       // y løftes til skive-senter (se anchorToDiscCenterY). Full pin her;
       // demoterte prikker justeres når utglisningen er kjent.
-      projected.push({ poi, x: pt.x, y: anchorToDiscCenterY(pt.y, PIN_HALF) });
+      projected.push({ poi, x: pt.x, y: anchorToDiscCenterY(pt.y, pinHalf) });
     }
 
     const zIndexes = depthOrder(projected, activeId);
@@ -346,6 +391,9 @@ export function useMarker3DDeclutter({
         labels: {},
         demotedIds: new Set(items.map((p) => p.id)),
         zIndexes,
+        // Prikk-tieren ligger langt under vekst-rampen — men vi leser den av
+        // funksjonen likevel, i stedet for å hardkode 1 her.
+        pinScale,
       };
       setResult((prev) => (sameResult(prev, next) ? prev : next));
       return;
@@ -397,8 +445,8 @@ export function useMarker3DDeclutter({
         // og prikkas senter ligger høyere enn pinnens (samme anker, lavere SVG).
         obstacles.push({
           x,
-          y: isDemoted ? y + PIN_HALF - DOT_HALF : y,
-          halfSize: isDemoted ? DOT_HALF : PIN_HALF,
+          y: isDemoted ? y + pinHalf - dotHalf : y,
+          halfSize: isDemoted ? dotHalf : pinHalf,
         });
         // En prikk bærer ikke navn: navnet ville pekt på noe som ikke lenger
         // ser ut som et sted.
@@ -424,7 +472,7 @@ export function useMarker3DDeclutter({
         candidates,
         obstacles,
         { width: rect.width },
-        { offsetX: LABEL_OFFSET_3D },
+        { offsetX: LABEL_OFFSET_3D * pinScale, scale: pinScale },
       );
       for (const { poi } of projected) {
         const side = placements.get(poi.id);
@@ -434,7 +482,7 @@ export function useMarker3DDeclutter({
       }
     }
 
-    const next: Marker3DDeclutter = { labels, demotedIds, zIndexes };
+    const next: Marker3DDeclutter = { labels, demotedIds, zIndexes, pinScale };
     setResult((prev) => (sameResult(prev, next) ? prev : next));
   }, [map3d]);
 

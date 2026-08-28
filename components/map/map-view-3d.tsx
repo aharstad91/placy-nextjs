@@ -132,6 +132,13 @@ export interface MapView3DProps {
    * Samme Record-form som `markerLabels`, og av samme grunn (memo).
    */
   markerZIndexes?: Record<string, number>;
+  /**
+   * Markør-størrelse, 1 = `PIN_SIZE`. Kommer fra kollisjonskullingen
+   * (`useMarker3DDeclutter().pinScale`) og ikke fra en egen kamera-lytter her:
+   * kullingen har allerede kamera-avlesningen, og den som RESERVERER plass må
+   * være den som bestemmer hvor stort det tegnes.
+   */
+  markerScale?: number;
 }
 
 /**
@@ -182,6 +189,7 @@ const Marker3DItem = memo(function Marker3DItem({
   label,
   labelSide,
   compact,
+  scale,
   zIndex,
 }: {
   poi: POI;
@@ -197,6 +205,8 @@ const Marker3DItem = memo(function Marker3DItem({
    * (`demotedMarkerIds` for de enkelte som taper plassen).
    */
   compact?: boolean;
+  /** Zoom-avhengig størrelse (se `markerScale` på MapView3D). */
+  scale?: number;
   /**
    * Tegne-rekkefølge fra kamera-avstand. Google depth-sorterer IKKE
    * DOM-markører — alle får `z-index: auto`, og rekkefølgen endres ikke når
@@ -233,6 +243,7 @@ const Marker3DItem = memo(function Marker3DItem({
         label={label}
         labelSide={labelSide}
         compact={compact}
+        scale={scale}
       />
     </DomMarker3D>
   );
@@ -316,6 +327,7 @@ function Map3DInner({
   markerLabels,
   demotedMarkerIds,
   markerZIndexes,
+  markerScale,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -416,6 +428,7 @@ function Map3DInner({
               labelSide={placement?.side}
               compact={compact}
               zIndex={markerZIndexes?.[poi.id]}
+              scale={markerScale}
             />
           );
         })}

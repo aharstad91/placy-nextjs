@@ -60,7 +60,11 @@ export function TravelModeSelector({
 
   if (variant === "segment") {
     return (
-      <div role="group" aria-label="Reisemåte" className="flex items-center gap-0.5">
+      <div
+        role="group"
+        aria-label="Reisemåte"
+        className="flex items-center gap-0.5"
+      >
         {modes.map((mode) => {
           const Icon = TRAVEL_MODE_ICONS[mode];
           const isActive = mode === active;
@@ -106,7 +110,10 @@ export function TravelModeSelector({
             )}
           >
             <Icon
-              className={cn("h-4 w-4 shrink-0", isActive ? "text-stone-900" : "text-stone-500")}
+              className={cn(
+                "h-4 w-4 shrink-0",
+                isActive ? "text-stone-900" : "text-stone-500",
+              )}
             />
             <span
               className={cn(
@@ -116,15 +123,21 @@ export function TravelModeSelector({
             >
               {travelModeLabels[mode]}
             </span>
-            {/* Mangler ruten for denne modusen, sier vi det — aldri «undefined min». */}
-            <span
-              className={cn(
-                "shrink-0 text-[13px] tabular-nums",
-                isActive ? "font-semibold text-stone-900" : "text-stone-500",
-              )}
-            >
-              {minutes === undefined ? "–" : `${minutes} min`}
-            </span>
+            {/* Mangler ruten for denne modusen, sier vi det — aldri «undefined min».
+                Er `minutesByMode` helt utelatt, er det ikke ruten som mangler:
+                da finnes det ikke noe punkt å måle til ennå (omvisningens
+                enhet over minutt-kolonnen åpnes før et sted er valgt), og «–»
+                tre ganger ville lest som «ingen rute finnes». */}
+            {minutesByMode !== undefined && (
+              <span
+                className={cn(
+                  "shrink-0 text-[13px] tabular-nums",
+                  isActive ? "font-semibold text-stone-900" : "text-stone-500",
+                )}
+              >
+                {minutes === undefined ? "–" : `${minutes} min`}
+              </span>
+            )}
           </button>
         );
       })}

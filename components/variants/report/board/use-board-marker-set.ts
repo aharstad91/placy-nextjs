@@ -110,6 +110,18 @@ export interface MarkerSelectionInput {
   flyMode: boolean;
   establishingMode: boolean;
   activeCategory: BoardCategory | null;
+  /**
+   * Omvisningen kjører, og dette er stoppets kategori (`board/story`).
+   *
+   * Eget signal og ikke `activeCategory`, fordi omvisningen bevisst ikke setter
+   * `activeCategoryId`: på Mapbox-motoren skal hele nabolaget ligge igjen som
+   * dempet tekstur bak stoppet (`storyEmphasis`), og et kategori-valg ville tatt
+   * teksturen bort. 3D-motoren har ingen slik spak — markørene er en
+   * MONTERINGS-beslutning her, ikke en opacity-beslutning (se doccen om
+   * WebGL-churn) — så der blir det samme regelen uttrykt som et filter: stoppet
+   * eier kartet, og bare kategoriens punkter står.
+   */
+  storyStop: { category: BoardCategory; activePoiId: string | null } | null;
   statePhase: BoardPhase;
   hiddenIds: Set<string>;
   isWelcomeBeat: boolean;
@@ -132,6 +144,7 @@ export function selectMarkerPOIs(input: MarkerSelectionInput): POI[] {
     flyMode,
     establishingMode,
     activeCategory,
+    storyStop,
     statePhase,
     hiddenIds,
     isWelcomeBeat,
@@ -145,6 +158,20 @@ export function selectMarkerPOIs(input: MarkerSelectionInput): POI[] {
   // Capture (?film=1 / ?fly=1) + establishing-shot: helt rent kart, ingen
   // statiske pins (reveal-kaskaden eier markørene under establishing).
   if (filmMode || flyMode || establishingMode) return [];
+  // Omvisningen eier kartet mens den kjører — også over et kategori-valg, som
+  // den selv nullstiller når den starter.
+  if (storyStop) {
+    const result = storyStop.category.pois.map(toDisplayPOI);
+    // Et stedsnavn i et FAQ-svar kan peke på et punkt i en ANNEN kategori.
+    // Kameraet flyr dit uansett, så punktet må finnes — ellers flyr vi til et
+    // tomt sted.
+    const openId = storyStop.activePoiId;
+    if (openId && !result.some((p) => p.id === openId)) {
+      const extra = allPOIs.find((p) => p.id === openId);
+      if (extra) result.push(extra);
+    }
+    return result;
+  }
   // Kategori-valg vinner alltid (også hvis et reveal-vindu fortsatt teller ned).
   if (activeCategory) {
     const useFilter = statePhase !== "default" && hiddenIds.size > 0;
@@ -190,8 +217,14 @@ export interface RevealSelectionInput {
  * (nærmest først) så pins og prikker animeres inn på lik linje i én kaskade.
  */
 export function selectRevealItems(input: RevealSelectionInput): RevealItem[] {
-  const { establishingMode, establishingShot, home, categories, legendPOIs, legendIds } =
-    input;
+  const {
+    establishingMode,
+    establishingShot,
+    home,
+    categories,
+    legendPOIs,
+    legendIds,
+  } = input;
   // Establishing-dronetur (rett linje): sirkelpunktene nær flylinja, sortert i
   // FLY-OVER-orden (`at` = posisjon langs linja). RevealLayer3D positional-modus
   // tegner dem inn i takt med at kameraet passerer dem. Ingen legend-pins her —
@@ -228,6 +261,8 @@ export interface UseBoardMarkerSetParams {
   statePhase: BoardPhase;
   hiddenIds: Set<string>;
   activeCategory: BoardCategory | null;
+  /** Se `MarkerSelectionInput.storyStop`. */
+  storyStop: { category: BoardCategory; activePoiId: string | null } | null;
   filmMode: boolean;
   flyMode: boolean;
   establishingMode: boolean;
@@ -258,6 +293,7 @@ export function useBoardMarkerSet({
   statePhase,
   hiddenIds,
   activeCategory,
+  storyStop,
   filmMode,
   flyMode,
   establishingMode,
@@ -316,6 +352,7 @@ export function useBoardMarkerSet({
         flyMode,
         establishingMode,
         activeCategory,
+        storyStop,
         statePhase,
         hiddenIds,
         isWelcomeBeat,
@@ -335,6 +372,7 @@ export function useBoardMarkerSet({
       basicIntroActive,
       hasVoiceOver,
       activeCategory,
+      storyStop,
       statePhase,
       hiddenIds,
       overviewPOIs,

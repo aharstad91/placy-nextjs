@@ -921,7 +921,6 @@ window.Baseline = (() => {
   const SHEET_DECAY = 0.998;
   const SHEET_V_STOP = 0.02; // px/ms — under dette er bevegelsen over
   const SHEET_V_WINDOW_MS = 70; // fartens minne, ikke bare siste to punkter
-  const SNAP_THRESHOLD_PX = 44; // magneten rundt hvert stopp
   const TAP_SLOP_TOUCH_PX = 10;
   const TAP_SLOP_MOUSE_PX = 4;
 
@@ -957,56 +956,26 @@ window.Baseline = (() => {
   let sheetEatClick = false; // draget skal ikke ende som et trykk på en rad
   const maxScrollOf = (el) => Math.max(0, el.scrollHeight - el.clientHeight);
 
-  /** Hva som skjer når fingeren slippes.
-   *
-   *  Er sheeten på vei til å stanse nær et av de tre stoppene, går den HELT dit.
-   *  Det er magneten fra produksjonens drag (`SNAP_THRESHOLD_PX`): en flate som
-   *  hviler tolv piksler under taket ser ut som en feil, ikke som et valg. Fri
-   *  mellomposisjon beholdes — det er også produksjonens oppførsel.
-   *
-   *  Magneten gjelder bare mens vi er i reiseveien. Er innholdet begynt å gå
-   *  under headeren, er det lista du ruller i, og der skal ingenting trekke. */
-  function nearestStop(top) {
-    if (top > sheetTravel) return null; // i lista: ingenting skal trekke
-    return (
-      [0, sheetRestStop, sheetTravel].find(
-        (s) => Math.abs(top - s) < SNAP_THRESHOLD_PX
-      ) ?? null
-    );
-  }
+  /* Her sto det en magnet: stanset utrullingen innenfor 44 px av et av de tre
+     stoppene, gikk flaten HELT dit — produksjonens egen `SNAP_THRESHOLD_PX`.
+     Den er tatt ut med vilje. På telefonen leses den ikke som at flaten rydder
+     opp etter seg, men som at den overprøver deg: du slipper, og så flytter den
+     seg en gang til, til en høyde du ikke pekte på. Etter slipp er farten din
+     det eneste som gjelder — der utrullingen stanser, står flaten.
 
-  /** Der utrullingen FAKTISK stanser, ikke et gjett på et fast antall
-   *  millisekunder: farten faller eksponentielt, så veien som er igjen er
-   *  `v / -ln(decay)` — omtrent 500 · v. Gjettet vi kortere (190 ms var tallet
-   *  fra produksjonens drag, som ikke hadde noen utrulling å regne med), rullet
-   *  flaten forbi magneten og stanset noen og førti piksler over et stopp. */
-  const glideLanding = (top, v) => top + v / -Math.log(SHEET_DECAY);
+     Stoppene er dermed utgangspunkter, ikke stillinger flaten faller inn i:
+     alt mellom dem er en gyldig høyde. De tre lever videre som TRYKK-mål på
+     handlen, der de er et valg du tar og ikke en korreksjon du får. */
 
   /** Den myke reisen til et stopp — og det ene stedet som husker OM stoppet er
    *  hvilestillingen. Bare da skal en ny måling av hvilestillingen (04 måler
-   *  sin etter første render) ta flaten med seg. */
+   *  sin etter første render) ta flaten med seg. Ingen gest ender her: dette er
+   *  trykkets vei. */
   function sheetGoTo(outer, top) {
     S.sheetAtRest = top === sheetRestStop;
     S.sheetBusy = true; // også den myke reisen skal utsette renders
     outer.scrollTo({ top, behavior: "smooth" });
     flushWhenSheetSettles();
-  }
-
-  function sheetSettle(outer, v) {
-    const stop = nearestStop(glideLanding(outer.scrollTop, v));
-    if (stop !== null && outer.scrollTop <= sheetTravel) return sheetGoTo(outer, stop);
-    sheetGlideOn(outer, v);
-  }
-
-  /** Nettet under magneten: stanset utrullingen likevel nær et stopp — fordi
-   *  den ble klippet ved 0, eller fordi den kom NED fra lista der magneten ikke
-   *  gjelder — går flaten det siste stykket selv. */
-  function sheetLand(outer) {
-    const stop = nearestStop(outer.scrollTop);
-    if (stop === null) return flushWhenSheetSettles(); // fri stilling, eller i lista
-    if (stop !== outer.scrollTop) return sheetGoTo(outer, stop);
-    S.sheetAtRest = stop === sheetRestStop;
-    return flushWhenSheetSettles();
   }
 
   /** Utrullingen: iOS' egen bremsefaktor, på vårt ene tall. */
@@ -1020,7 +989,7 @@ window.Baseline = (() => {
       const stopped = next === outer.scrollTop;
       outer.scrollTop = next;
       v *= Math.pow(SHEET_DECAY, dt);
-      if (stopped || Math.abs(v) < SHEET_V_STOP) return sheetLand(outer);
+      if (stopped || Math.abs(v) < SHEET_V_STOP) return flushWhenSheetSettles();
       sheetGlide = requestAnimationFrame(step);
     };
     if (Math.abs(v0) < SHEET_V_STOP) return flushWhenSheetSettles();
@@ -1054,7 +1023,16 @@ window.Baseline = (() => {
       }
       d.y = ev.clientY;
       d.t = now;
-      if (Math.abs(ev.clientY - d.startY) > d.slop) {
+      if (!d.moved) {
+        // Under slop-terskelen er dette fortsatt et trykk, og et trykk skal
+        // ikke flytte flaten en eneste piksel: uten magneten som før dro den
+        // tilbake, ville hvert trykk på en rad latt sheeten bli stående noen
+        // piksler feil — og de pikslene ville lagt seg oppå hverandre.
+        if (Math.abs(ev.clientY - d.startY) <= d.slop) return;
+        d.moved = true;
+        // Draget begynner HER, ikke der fingeren landet — ellers hopper flaten
+        // de pikslene terskelen spiste, i det den løsner.
+        d.anchorY = ev.clientY;
         // Først NÅ er sheeten i bevegelse. Satte vi flagget ved nedtrykk, ville
         // hvert vanlig trykk utsatt renderen i 140 ms — altså gjort hele flaten
         // treg for å beskytte et drag som ikke skjedde.
@@ -1062,21 +1040,19 @@ window.Baseline = (() => {
         S.sheetBusy = true;
         S.sheetAtRest = false; // fra nå er det brukeren som bestemmer høyden
       }
-      d.outer.scrollTop = clamp(d.top + (d.startY - ev.clientY), 0, maxScrollOf(d.outer));
+      d.outer.scrollTop = clamp(d.top + (d.anchorY - ev.clientY), 0, maxScrollOf(d.outer));
     });
 
     const release = () => {
       const d = sheetDrag;
       if (!d) return;
       sheetDrag = null;
-      // Et rent trykk skal ikke flytte flaten. Sto sheeten 20 px under taket og
-      // du trykket på et sted, ville magneten ellers dratt den opp — en følge du
-      // ikke ba om, av en handling som handlet om noe annet.
-      if (!sheetEatClick) return;
+      if (!d.moved) return; // et trykk, ikke et drag: ingen utrulling å slippe
       // Clicket kan utebli helt (endres DOM-en under bevegelsen sender iOS
       // ingen videre events), så låsen må også kunne løpe ut av seg selv.
       setTimeout(() => (sheetEatClick = false), 350);
-      sheetSettle(d.outer, d.v);
+      // Farten fortsetter, og der den dør, står flaten. Ingenting korrigerer.
+      sheetGlideOn(d.outer, d.v);
     };
     addEventListener("pointerup", release);
     addEventListener("pointercancel", release);
@@ -1126,6 +1102,8 @@ window.Baseline = (() => {
         outer,
         y: ev.clientY,
         startY: ev.clientY,
+        anchorY: ev.clientY, // settes på nytt der slop-terskelen krysses
+        moved: false,
         top: outer.scrollTop,
         t: performance.now(),
         v: 0,

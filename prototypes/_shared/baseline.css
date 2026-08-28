@@ -360,10 +360,12 @@ li:last-child .vp-row { border-bottom: none; }
 /* ============================================================
    MOBIL — bottom-sheet over fullskjermkart.
    ============================================================ */
-/* Mobil er en EGEN flate, ikke desktop i smalt vindu. Sheeten er
-   høyde-drevet med fri drag mellom to grenser (0.34–0.86 av rammen,
-   gulv 236px) — magnetisk bare i ytterpunktene, ingen faste snap-stopp.
-   Kilde: NeighbourhoodSheet.tsx. */
+/* Mobil er en EGEN flate, ikke desktop i smalt vindu. Grensene er
+   produksjonens (0.34–0.86 av rammen, gulv 236px). Kilde:
+   NeighbourhoodSheet.tsx.
+   AVVIK: produksjonen er høyde-drevet med magnet i ytterpunktene. Her er
+   flaten scroll-drevet (se under) og HELT fri etter slipp — ingen magnet,
+   ingen snap. Stoppene nås med trykk på handlen. */
 .frame {
   position: absolute; inset: 0; z-index: 30; pointer-events: none;
 }

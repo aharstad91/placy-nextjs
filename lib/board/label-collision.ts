@@ -17,10 +17,11 @@
  *
  * DELT AV BEGGE KART-MOTORENE (2026-08-23). 2D projiserer med Mapbox' egen
  * `map.project` på `moveend`; 3D projiserer med `projectLatLngToScreen` når
- * Google-kameraet har falt til ro. Bare to ting skiller flatene, og begge er
- * parametre her: markør-bredden ({@link LabelMetrics.offsetX} — 32 px i 2D,
- * 40 px i 3D) og at 3D har en bred prosjekt-chip som hindring
- * ({@link LabelObstacle.halfWidth}). Selve plasserings-regelen er ÉN.
+ * Google-kameraet har falt til ro. Bare tre ting skiller flatene, og alle er
+ * parametre her: markør-bredden ({@link LabelMetrics.offsetX}), at 3D-markøren
+ * VOKSER på nær zoom ({@link LabelMetrics.scale}), og at 3D har en bred
+ * prosjekt-chip som hindring ({@link LabelObstacle.halfWidth}). Selve
+ * plasserings-regelen er ÉN.
  *
  * Geometrien speiler BoardMarker-CSS-en: label ligger inntil markør-
  * containeren (kant + 8 px margin), vertikalt sentrert, fontSize 10/600,
@@ -85,20 +86,30 @@ export const LABEL_MAX_LINES = 2;
 /** Luft mellom markør-kanten og labelens nærmeste tekstkant. */
 export const LABEL_GAP_X = 8;
 /** Default container-halvbredde (32 px inaktiv 2D-markør) + {@link LABEL_GAP_X}.
- *  3D-pinnen er 40 px og sender inn sin egen `offsetX` via {@link LabelMetrics}. */
+ *  3D-pinnen er like bred, men VOKSER på nær zoom, og sender derfor inn sin egen
+ *  `offsetX` via {@link LabelMetrics}. */
 export const LABEL_OFFSET_X = 16 + LABEL_GAP_X;
 /** Liten slack så labels som så vidt tangerer ikke regnes som kollisjon. */
 const SLACK = 2;
 
 /**
- * Geometri-avvik mellom kart-motorene. 2D-markøren er 32 px bred, 3D-pinnen er
- * 40 px — labelen må starte lenger ut i 3D, ellers legger den seg oppå sin egen
- * pin. Alt annet (font, linjehøyde, maksbredde) er felles, så begge flatene
- * regner på nøyaktig samme label-boks.
+ * Geometri-avvik mellom kart-motorene. Begge markørene er 32 px ved basis, men
+ * 3D-pinnen vokser mot nær zoom — labelen må da starte lenger ut og settes
+ * større, ellers legger den seg oppå sin egen pin og kollisjonen regner på en
+ * mindre tekst enn den som tegnes. Tallene (font, linjehøyde, maksbredde) er
+ * felles; disse to parametrene er det som skiller flatene.
  */
 export interface LabelMetrics {
   /** Avstand fra markørsenter til labelens nærmeste kant. Default {@link LABEL_OFFSET_X}. */
   offsetX?: number;
+  /**
+   * Typografi-skala, 1 = tallene over. 3D-pinnen vokser på nær zoom
+   * (`poiPinScaleForZoom`), og teksten vokser med den — uten dette ville
+   * kollisjonen reservert en 10 px-boks til et 14 px navn og labels som
+   * overlapper hadde blitt sluppet gjennom. 2D sender den ikke (fast 32 px
+   * markør, fast 10 px navn).
+   */
+  scale?: number;
 }
 
 interface Box {
@@ -125,11 +136,13 @@ export function estimateLabelBox(
   c: LabelCandidate,
   side: LabelSide,
   offsetX: number = LABEL_OFFSET_X,
+  scale = 1,
 ): Box {
-  const textW = c.name.length * LABEL_CHAR_W;
-  const width = Math.min(textW, LABEL_MAX_W);
-  const lines = textW > LABEL_MAX_W ? LABEL_MAX_LINES : 1;
-  const height = lines * LABEL_LINE_H;
+  const textW = c.name.length * LABEL_CHAR_W * scale;
+  const maxW = LABEL_MAX_W * scale;
+  const width = Math.min(textW, maxW);
+  const lines = textW > maxW ? LABEL_MAX_LINES : 1;
+  const height = lines * LABEL_LINE_H * scale;
   const left = side === "right" ? c.x + offsetX : c.x - offsetX - width;
   const top = c.y - height / 2;
   return { left, top, right: left + width, bottom: top + height };
@@ -181,6 +194,7 @@ export function computeLabelPlacements(
   metrics: LabelMetrics = {},
 ): Map<string, LabelSide> {
   const offsetX = metrics.offsetX ?? LABEL_OFFSET_X;
+  const scale = metrics.scale ?? 1;
   const sorted = [...candidates].sort(
     (a, b) => b.priority - a.priority || (a.id < b.id ? -1 : 1),
   );
@@ -189,7 +203,7 @@ export function computeLabelPlacements(
   const placements = new Map<string, LabelSide>();
 
   for (const c of sorted) {
-    const rightBox = estimateLabelBox(c, "right", offsetX);
+    const rightBox = estimateLabelBox(c, "right", offsetX, scale);
     const sideOrder: LabelSide[] = fitsViewport(rightBox, viewport)
       ? ["right", "left"]
       : ["left", "right"];
@@ -197,7 +211,9 @@ export function computeLabelPlacements(
     let placed = false;
     for (const side of sideOrder) {
       const box =
-        side === "right" ? rightBox : estimateLabelBox(c, "left", offsetX);
+        side === "right"
+          ? rightBox
+          : estimateLabelBox(c, "left", offsetX, scale);
       if (!fitsViewport(box, viewport)) continue;
       if (
         blocked.some((b) => intersects(b, box)) ||
@@ -217,7 +233,9 @@ export function computeLabelPlacements(
       const side = sideOrder[0];
       placements.set(c.id, side);
       accepted.push(
-        side === "right" ? rightBox : estimateLabelBox(c, "left", offsetX),
+        side === "right"
+          ? rightBox
+          : estimateLabelBox(c, "left", offsetX, scale),
       );
     }
   }

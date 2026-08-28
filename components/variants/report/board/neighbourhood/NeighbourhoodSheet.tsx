@@ -107,7 +107,8 @@ const SNAP_THRESHOLD_PX = 44;
 /** Bevegelse under dette regnes som et tapp, ikke et drag. */
 const TAP_SLOP_PX = 6;
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.min(Math.max(v, lo), hi);
 
 interface DragSession {
   pointerId: number;
@@ -122,6 +123,8 @@ interface DragSession {
 export function NeighbourhoodSheet({
   title = "I nærheten",
   onHeightChange,
+  contentRestKey = null,
+  tone = "cream",
   children,
 }: {
   /** Header-tittel. Default unngår ordet «Nabolaget» med vilje: `teknostallen`
@@ -131,6 +134,30 @@ export function NeighbourhoodSheet({
    *  hvileposisjonen, ikke den sheeten står i — se doccen over om løkken.
    *  Endrer seg kun når flaten endrer størrelse. */
   onHeightChange: (heightPx: number) => void;
+  /**
+   * Når satt hviler sheeten i INNHOLDETS egen høyde i stedet for i
+   * hvileminimumet — målt ÉN gang og frosset så lenge nøkkelen står.
+   *
+   * Finnes for omvisningen (`board/story`), der flaten ikke er en liste du blar
+   * i men et vindu du leser i: der skal den vanlige visningen fylle sheeten
+   * uten scroll, mens steds- og svar-fanen får noe å scrolle i. Måles med den
+   * fanen omvisningen faktisk serverer først, og fryses — ellers ville en fane
+   * som er høyere enn en annen flyttet flaten under leseren, som er en følge
+   * hen ikke ba om.
+   *
+   * Målt høyde blir sheetens HVILESTILLING, ikke en låst høyde: den kan
+   * fortsatt dras. Forskjellen er hele poenget — en følge du ikke ba om, mot en
+   * du styrer. Bytt nøkkel (eller sett `null`) for å måle på nytt.
+   */
+  contentRestKey?: string | null;
+  /**
+   * Flatens farge. `cream` er nabolagslista: kortene er hvite og ligger PÅ
+   * flaten. `white` er omvisningen, der stoppet er det eneste innholdet — der
+   * er fortellingen forgrunnen, ikke et kort som ligger på en beige bunn, og
+   * det festede spørsmålets hvite maske må ha samme farge som flaten under
+   * seg (ellers leser masken som en stripe i stedet for som kanten av flaten).
+   */
+  tone?: "cream" | "white";
   children?: ReactNode;
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null);
@@ -145,8 +172,14 @@ export function NeighbourhoodSheet({
   const [containerHeight, setContainerHeight] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
   /** Hvileposisjonen i piksler. `null` = ikke posisjonert ennå; første måling
-   *  legger den på `low`. */
+   *  legger den på `low` (eller på den frosne innholdshøyden, se
+   *  `contentRestKey`). */
   const [restHeight, setRestHeight] = useState<number | null>(null);
+  /** Den frosne innholdshøyden og nøkkelen den ble målt under. */
+  const [contentRest, setContentRest] = useState<{
+    key: string;
+    px: number;
+  } | null>(null);
 
   const bounds = useMemo(() => {
     if (containerHeight <= 0) return { min: 0, max: 0 };
@@ -156,9 +189,19 @@ export function NeighbourhoodSheet({
     );
     // Taket følger innholdet: er lista kortere enn flaten tillater, stopper
     // draget der innholdet slutter i stedet for å åpne et tomt felt.
-    const max = contentHeight > 0 ? clamp(contentHeight, min, ceiling) : ceiling;
+    //
+    // UNNTAK: en flate med frosset hvilestilling (`contentRestKey` — se propen)
+    // er et VINDU, ikke en liste. Der bytter innholdet høyde uten at brukeren
+    // ba om det: omvisningens tre faner er ulikt høye, og med innholdstaket
+    // krympet hele flaten i det du byttet fane — nøyaktig den følgen frosset
+    // hvilestilling finnes for å hindre. Taket er da flate-andelen alene, og
+    // et kortere innhold etterlater luft i stedet for å flytte vinduet.
+    const max =
+      contentRestKey === null && contentHeight > 0
+        ? clamp(contentHeight, min, ceiling)
+        : ceiling;
     return { min, max };
-  }, [containerHeight, contentHeight]);
+  }, [containerHeight, contentHeight, contentRestKey]);
 
   // Måler den tilgjengelige flaten, ikke viewporten. `EventMobileSheet`
   // hardkoder 700 px og bommer på alt annet enn den ene telefonen den ble
@@ -215,10 +258,32 @@ export function NeighbourhoodSheet({
   /** Høyden som faktisk gjelder. Utledet, ikke lagret: når flaten eller
    *  innholdet krymper må hvileposisjonen følge med inn i de nye grensene, og
    *  en state-synk i en effekt ville gitt en frame med gammel høyde. */
+  const preferredRest =
+    contentRest !== null && contentRest.key === contentRestKey
+      ? contentRest.px
+      : bounds.min;
   const appliedHeight =
     restHeight === null
-      ? bounds.min
+      ? clamp(preferredRest, bounds.min, bounds.max)
       : clamp(restHeight, bounds.min, bounds.max);
+
+  // Fryser innholdshøyden ved første måling under en ny nøkkel, og slipper den
+  // igjen når nøkkelen forsvinner. `setRestHeight(null)` i samme slengen:
+  // flaten skal FLYTTE seg til den nye hvilestillingen, ikke stå igjen i den
+  // forrige (som er en høyde omvisningen ikke ba om).
+  useLayoutEffect(() => {
+    if (contentRestKey === null) {
+      if (contentRest !== null) {
+        setContentRest(null);
+        setRestHeight(null);
+      }
+      return;
+    }
+    if (contentRest?.key === contentRestKey) return;
+    if (contentHeight <= 0) return;
+    setContentRest({ key: contentRestKey, px: contentHeight });
+    setRestHeight(null);
+  }, [contentRestKey, contentRest, contentHeight]);
 
   // Hviletilstanden. Hopper over mens et drag eier høyden.
   useLayoutEffect(() => {
@@ -344,7 +409,9 @@ export function NeighbourhoodSheet({
         ref={sheetRef}
         data-testid="neighbourhood-sheet"
         data-rest={atMin ? "low" : atMax ? "high" : "free"}
-        className="pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-3xl bg-[#f5f1ea] shadow-[0_-8px_32px_rgba(28,25,23,0.22)]"
+        className={`pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-3xl shadow-[0_-8px_32px_rgba(28,25,23,0.22)] ${
+          tone === "white" ? "bg-white" : "bg-[#f5f1ea]"
+        }`}
       >
         {/* Gripeflaten eier vertikale gester. `touch-action: none` er PÅKREVD
             her (uten den kansellerer nettleseren pekeren og draget dør) — men

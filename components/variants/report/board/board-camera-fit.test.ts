@@ -213,6 +213,57 @@ describe("rectFromCamera (Google Maps 3D)", () => {
     expect(rect.west).toBeCloseTo(-D, 9);
   });
 
+  it("sidekolonnen spiser FRA VENSTRE: halv flate → båndet begynner på sikte­punktet", () => {
+    // Desktop-panelet ligger oppå kartet, så venstre halvdel er skjult. Med
+    // heading 0 er «venstre» vest: vest-kanten faller på senterlinja, og dybden
+    // står stille.
+    const rect = rectFromCamera(EQUATOR, { ...SQUARE, occludedLeftPx: 500 })!;
+    expect(rect.west).toBeCloseTo(0, 9);
+    expect(rect.east).toBeCloseTo(D, 9);
+    expect(rect.north).toBeCloseTo(D, 9);
+    expect(rect.south).toBeCloseTo(-D, 9);
+  });
+
+  it("overhenget til høyre er usett og skal ikke være med i scopet", () => {
+    // Google-elementet strekkes forbi vindukanten for å få sikte­punktet i midten
+    // av det synlige kartet. Den stripen er rendret, men ingen ser den.
+    const rect = rectFromCamera(EQUATOR, { ...SQUARE, overhangRightPx: 500 })!;
+    expect(rect.east).toBeCloseTo(0, 9);
+    expect(rect.west).toBeCloseTo(-D, 9);
+  });
+
+  it("panelet og overhenget klipper hver sin side av båndet", () => {
+    // Sammen er de den faktiske sannheten på desktop: elementet er bredere enn
+    // vinduet OG delvis dekket. Fjerdedelen på hver side gir halve bredden.
+    const rect = rectFromCamera(EQUATOR, {
+      ...SQUARE,
+      occludedLeftPx: 250,
+      overhangRightPx: 250,
+    })!;
+    expect(rect.west).toBeCloseTo(-D / 2, 9);
+    expect(rect.east).toBeCloseTo(D / 2, 9);
+  });
+
+  it("de to okklusjonene virker på hver sin akse samtidig", () => {
+    const rect = rectFromCamera(EQUATOR, {
+      ...SQUARE,
+      occludedLeftPx: 500,
+      occludedBottomPx: 500,
+    })!;
+    expect(rect.west).toBeCloseTo(0, 9);
+    expect(rect.south).toBeCloseTo(0, 9);
+    expect(rect.east).toBeCloseTo(D, 9);
+    expect(rect.north).toBeCloseTo(D, 9);
+  });
+
+  it("en sidekolonne som dekker mer enn halve flaten gir et smalt scope, ikke et speilvendt", () => {
+    // Klemmingen på 0,5: uten den ville venstre kant passert høyre og
+    // rektangelet snudd — en «utsnitt» som ligger på feil side av kameraet.
+    const rect = rectFromCamera(EQUATOR, { ...SQUARE, occludedLeftPx: 900 })!;
+    expect(rect.west).toBeCloseTo(0, 9);
+    expect(rect.east).toBeCloseTo(D, 9);
+  });
+
   it("heading roterer båndet: ser man øst, vokser utsnittet østover", () => {
     const rect = rectFromCamera(
       { ...EQUATOR, headingDeg: 90 },

@@ -91,12 +91,18 @@ async function fetchHyre(stationId: string, signal: AbortSignal) {
   return await response.json() as HyreStatus;
 }
 
+/**
+ * Hviletilstanden som DELES av alle kall uten transport-kobling.
+ *
+ * Konstant og ikke et nytt objekt per kall: `setData` med en fersk literal
+ * bommer på Reacts eager-bailout (`Object.is`) og koster en ekstra commit per
+ * konsument. Omvisningens stedsrader driver hooket null-trygt for hver rad, og
+ * på en liste med 172 rader var det 172 unødvendige re-renders (2026-08-27).
+ */
+const IDLE: RealtimeData = { loading: false, error: null, lastUpdated: null };
+
 export function useRealtimeData(poi: RealtimePOI | null): RealtimeData {
-  const [data, setData] = useState<RealtimeData>({
-    loading: false,
-    error: null,
-    lastUpdated: null,
-  });
+  const [data, setData] = useState<RealtimeData>(IDLE);
 
   const enturId = poi?.enturStopplaceId;
   const bysykkelId = poi?.bysykkelStationId;
@@ -111,7 +117,7 @@ export function useRealtimeData(poi: RealtimePOI | null): RealtimeData {
   // No Supabase calls are made here.
   useEffect(() => {
     if (!poiId || (!enturId && !bysykkelId && !hyreId)) {
-      setData({ loading: false, error: null, lastUpdated: null });
+      setData(IDLE);
       return;
     }
 

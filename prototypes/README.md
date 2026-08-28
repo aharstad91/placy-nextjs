@@ -167,10 +167,18 @@ veien tilbake er samme bevegelse, og ingenting kan ryke midt i en gest. Taket er
 scrollerens egen overkant, så kroppen kan ikke komme over det uansett innhold.
 
 **Tre stopp** på det samme tallet: sammenslått (`0` — bare handlen, kartet får
-nesten hele skjermen), hvilestillingen, og taket. Mellomstillinger beholdes;
-magneten (`SNAP_THRESHOLD_PX`) trekker bare når bevegelsen faktisk ville stanset
-nær et stopp. Hvor den stanser regnes ut, ikke gjettes: farten faller
-eksponentielt, så veien som er igjen er `v / -ln(SHEET_DECAY)` ≈ 500 · v.
+nesten hele skjermen), hvilestillingen, og taket. De er **utgangspunkter, ikke
+stillinger flaten faller inn i**: etter slipp gjelder bare farten din, og der
+utrullingen dør, står flaten. Alt mellom stoppene er en gyldig høyde.
+
+Her lå det en magnet — produksjonens egen `SNAP_THRESHOLD_PX = 44` — som tok
+flaten helt til nærmeste stopp hvis utrullingen ville stanset i nærheten av det.
+Den er tatt ut etter test på enhet: på telefonen leses den ikke som at flaten
+rydder opp etter seg, men som at den overprøver deg — du slipper, og så flytter
+den seg en gang til, til en høyde du ikke pekte på. De tre stoppene nås i stedet
+med **trykk på handlen**, der de er et valg du tar og ikke en korreksjon du får.
+Under slop-terskelen flytter et trykk ikke flaten en piksel; over den følger
+flaten fingeren 1:1 fra der terskelen ble krysset.
 
 Kroppens min-høyde er **taket**, ikke innholdet. Det er reiseveiens garanti: et
 board med ett kort (04) har ingenting å scrolle, og uten det gulvet blir taket

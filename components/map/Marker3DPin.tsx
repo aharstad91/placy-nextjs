@@ -2,6 +2,7 @@
 
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { useId } from "react";
+import { PIN_SIZE } from "./PoiMarkerContent";
 
 /**
  * SVG-markør for reveal-laget (`RevealLayer3D`) — ikon-disc uten navn.
@@ -39,7 +40,7 @@ export interface Marker3DPinProps {
   backgroundColor?: string;
   /** Valgfritt tall-badge øverst til høyre */
   number?: number;
-  /** Total størrelse i px — default 40 */
+  /** Total størrelse i px — default {@link PIN_SIZE} (samme disc som POI-markørene). */
   size?: number;
   /** Opacity for hele pin-SVG-en — 0–1, default 1. Rasteriseres av Google Maps 3D. */
   opacity?: number;
@@ -53,7 +54,7 @@ export function Marker3DPin({
   Icon,
   backgroundColor = "#fafaf9",
   number,
-  size = 40,
+  size = PIN_SIZE,
   opacity,
   scale = 1,
 }: Marker3DPinProps) {

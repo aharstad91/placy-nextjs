@@ -7,6 +7,7 @@ import type { MapCameraApi, ViewportRect } from "@/lib/board/board-types";
 import type { BoardData, BoardPOI } from "../board-data";
 import { BoardProvider, useBoard } from "../board-state";
 import { NeighbourhoodSurface } from "./NeighbourhoodSurface";
+import { StoryTourProvider } from "../story/story-tour";
 
 /**
  * Unit 3b + 4 — navigasjonsstakken, mot en EKTE BoardProvider.
@@ -82,6 +83,7 @@ function boardData(): BoardData {
       coordinates: { lat: 63.43, lng: 10.4 },
       address: "Ferjemannsveien 10",
     },
+    areaIntro: "Lademoen er tett bebygd.\n\nLadestien går langs sjøen.",
     categories: [
       {
         id: "mat" as never,
@@ -170,15 +172,19 @@ function setup(rect: ViewportRect | null = RECT) {
   const onHeight = vi.fn();
   const utils = render(
     <BoardProvider data={boardData()}>
-      <Probe rect={rect} camera={camera} gesture={false} />
-      <NeighbourhoodSurface onSurfaceHeightChange={onHeight} />
+      <StoryTourProvider>
+        <Probe rect={rect} camera={camera} gesture={false} />
+        <NeighbourhoodSurface onSurfaceHeightChange={onHeight} />
+      </StoryTourProvider>
     </BoardProvider>,
   );
   const rerenderWith = (next: ViewportRect | null, gesture = false) =>
     utils.rerender(
       <BoardProvider data={boardData()}>
-        <Probe rect={next} camera={camera} gesture={gesture} />
-        <NeighbourhoodSurface onSurfaceHeightChange={onHeight} />
+        <StoryTourProvider>
+          <Probe rect={next} camera={camera} gesture={gesture} />
+          <NeighbourhoodSurface onSurfaceHeightChange={onHeight} />
+        </StoryTourProvider>
       </BoardProvider>,
     );
   return { ...utils, camera, onHeight, rerenderWith };
@@ -227,6 +233,18 @@ describe("NeighbourhoodSurface — nabolagslista", () => {
     });
     expect(queryAllByTestId("neighbourhood-card")).toHaveLength(0);
     expect(getByTestId("neighbourhood-empty")).toBeTruthy();
+  });
+});
+
+describe("NeighbourhoodSurface — strøkets intro", () => {
+  it("står som avsnitt over «Om nabolaget» — samme tekst som omvisningens første stopp", () => {
+    // Teksten lå som FAQ-rad her før den ble løftet til intro på områdestoppet
+    // (2026-08-27). Uten dette mistet indeksen strøkets egen stemme.
+    const utils = setup();
+    const intro = utils.getByTestId("neighbourhood-area-intro");
+    expect(intro.children).toHaveLength(2);
+    expect(intro.textContent).toContain("Lademoen er tett bebygd.");
+    expect(intro.textContent).toContain("Ladestien går langs sjøen.");
   });
 });
 
@@ -347,7 +365,9 @@ describe("NeighbourhoodSurface — kategorisiden (Unit 4)", () => {
     act(() => {
       fireEvent.click(getByText("Natur & friluft"));
     });
-    expect(getByTestId("category-poi-list").querySelectorAll("li")).toHaveLength(1);
+    expect(
+      getByTestId("category-poi-list").querySelectorAll("li"),
+    ).toHaveLength(1);
     expect(camera.fitVisible).toHaveBeenCalled();
   });
 
@@ -368,7 +388,9 @@ describe("NeighbourhoodSurface — kategorisiden er en beskrivelse, ikke en tref
     });
     const prose = getByTestId("category-prose");
     expect(prose.querySelectorAll("p")).toHaveLength(2);
-    expect(prose.textContent).toContain("Første avsnitt om nabolagets spisesteder.");
+    expect(prose.textContent).toContain(
+      "Første avsnitt om nabolagets spisesteder.",
+    );
     expect(prose.textContent).toContain("Andre avsnitt om kaffe.");
     // Prosaen kommer FØR lista i dokumentrekkefølgen.
     expect(
@@ -399,8 +421,10 @@ describe("NeighbourhoodSurface — kategorisiden er en beskrivelse, ikke en tref
     }));
     const { getByText, queryByTestId } = render(
       <BoardProvider data={data}>
-        <Probe rect={RECT} camera={makeCamera()} gesture={false} />
-        <NeighbourhoodSurface onSurfaceHeightChange={vi.fn()} />
+        <StoryTourProvider>
+          <Probe rect={RECT} camera={makeCamera()} gesture={false} />
+          <NeighbourhoodSurface onSurfaceHeightChange={vi.fn()} />
+        </StoryTourProvider>
       </BoardProvider>,
     );
     act(() => {

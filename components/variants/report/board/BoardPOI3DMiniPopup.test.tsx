@@ -41,6 +41,7 @@ vi.mock("@/lib/utils/map-icons-filled", () => ({
 }));
 
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
+import { PIN_SIZE } from "@/components/map/PoiMarkerContent";
 
 const fakeMap = {} as unknown as Map3DInstance;
 
@@ -118,6 +119,41 @@ describe("BoardPOI3DMiniPopup — per-frame translate3d direkte til DOM (AC2)", 
     tick(); // driv den planlagte rAF-callbacken → ny projeksjon
     expect(h.project).toHaveBeenCalledTimes(2);
     expect(wrapper.style.transform).toContain("translate3d(50px, 32px, 0)");
+  });
+
+  it("løftet følger markør-størrelsen, ikke et fast tall", () => {
+    // Disc-en vokser mot nær zoom (`poiPinScaleForZoom`). Sto løftet fast på 28,
+    // ville popupen lagt seg over den øverste tredjedelen av den største pinnen.
+    // 4 px overlapp er bevisst — den skal ligge AN mot disc-toppen.
+    h.poi = makePoi();
+    h.project.mockReturnValue({ x: 100, y: 200 });
+    const { container } = render(
+      <BoardPOI3DMiniPopup map3d={fakeMap} pinScale={1.45} />,
+    );
+    const wrapper = container.firstChild as HTMLElement;
+    const lift = Math.round(PIN_SIZE * 1.45) - 4;
+    expect(wrapper.style.transform).toContain(
+      `translate3d(100px, ${200 - lift}px, 0)`,
+    );
+  });
+
+  it("ny skala midt i en åpen popup slår gjennom på neste frame", () => {
+    // Skalaen leses via ref: rAF-løkken re-registreres bare på POI/kart-bytte,
+    // så uten ref-en hadde popupen stått med skalaen fra da den åpnet.
+    h.poi = makePoi();
+    h.project.mockReturnValue({ x: 0, y: 100 });
+    const { container, rerender } = render(
+      <BoardPOI3DMiniPopup map3d={fakeMap} pinScale={1} />,
+    );
+    const wrapper = container.firstChild as HTMLElement;
+    expect(wrapper.style.transform).toContain(
+      `translate3d(0px, ${100 - (PIN_SIZE - 4)}px, 0)`,
+    );
+    rerender(<BoardPOI3DMiniPopup map3d={fakeMap} pinScale={1.45} />);
+    tick();
+    expect(wrapper.style.transform).toContain(
+      `translate3d(0px, ${100 - (Math.round(PIN_SIZE * 1.45) - 4)}px, 0)`,
+    );
   });
 
   it("projeksjon null (bak kamera) → opacity 0, ingen transform-skriv", () => {

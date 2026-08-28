@@ -699,6 +699,15 @@ describe("FAQ i drill-in-detaljen", () => {
     const report = { ...makeReportData([makeTheme("transport", [makePOI("p1")])]), globalFaq: [faqEntry("til-byen")] };
     expect(adaptBoardData(report).globalFaq).toHaveLength(1);
   });
+
+  it("fører områdets intro videre — den er prosaen på boardets første stopp", () => {
+    const base = makeReportData([makeTheme("transport", [makePOI("p1")])]);
+    expect(adaptBoardData(base).areaIntro).toBeUndefined();
+    const medIntro = { ...base, areaIntro: "Ranheim ligger mellom fjorden og marka." };
+    expect(adaptBoardData(medIntro).areaIntro).toBe(
+      "Ranheim ligger mellom fjorden og marka.",
+    );
+  });
 });
 
 describe("shrinkToIntro", () => {

@@ -5,11 +5,23 @@ import Map, {
   type MapRef,
   type ViewStateChangeEvent,
 } from "react-map-gl/mapbox";
-import { MAP_STYLE_STANDARD, applyIllustratedTheme } from "@/lib/themes/map-styles";
+import {
+  MAP_STYLE_STANDARD,
+  applyIllustratedTheme,
+} from "@/lib/themes/map-styles";
 import { poiVisualIdentity } from "./marker-style";
-import { BoardMapControls, type BoardView, type CameraMode } from "./BoardMapControls";
+import {
+  BoardMapControls,
+  type BoardView,
+  type CameraMode,
+} from "./BoardMapControls";
 import { rangeToZoom, zoomToRange } from "@/lib/utils/camera-map";
-import { useBoard, useActiveCategory, useAvailableTravelModes } from "./board-state";
+import {
+  useBoard,
+  useActiveCategory,
+  useAvailableTravelModes,
+} from "./board-state";
+import { useStoryTourOptional } from "./story/story-tour";
 import { BoardMarker } from "./BoardMarker";
 import { useBoardZoomTier } from "./use-board-zoom-tier";
 import { HomeMarker } from "./HomeMarker";
@@ -23,7 +35,10 @@ import type { Map3DInstance } from "@/components/map/map-view-3d";
 import type { TravelMode } from "@/lib/types";
 import type { FlyCapableMap } from "./board-3d-camera-director";
 import { useBoardPopupMode } from "./use-popup-mode";
-import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
+import {
+  useAudioTourPhase,
+  useCurrentTrack,
+} from "@/lib/stores/audio-tour-store";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
 import {
   computeLabelPlacements,
@@ -297,6 +312,12 @@ export function BoardMap({
   // Felles fargevalg på tvers av phaser: sub-kategori-fargen med tema-fargen
   // som fallback. Sub-kat differensierer f.eks. bar (lilla), bakeri (gul) og
   // restaurant (rød) innen Mat-tema.
+  // Omvisningen (`board/story`) når den kjører. Optional-varianten fordi
+  // BoardMap også monteres utenfor board-treet (event-flaten) — der er den null
+  // og markørene oppfører seg som før.
+  const story = useStoryTourOptional();
+  const storyEmphasisOf = story?.on ? story.emphasisOf : null;
+
   const markerStates = useMemo(() => {
     const baseVisible = new Set<string>();
     if (!activeCategory) {
@@ -324,6 +345,8 @@ export function BoardMap({
         // dette stedet bruker. Endres den her, endres den overalt.
         ...poiVisualIdentity(p.raw, cat),
         isVisible: visibleIds.has(p.id),
+        // null utenfor omvisningen — markøren rendres da uendret.
+        emphasis: storyEmphasisOf?.(String(p.id), String(cat.id)) ?? null,
         // Unit 5: event-board "Min samling"-highlight. Lagrede POIer får en egen
         // ring (BoardMarker.inCollection). Uberørt for boligrapporter (undefined).
         inCollection: collectionPoiIds?.has(p.id) ?? false,
@@ -336,6 +359,7 @@ export function BoardMap({
     data.categories,
     visiblePoiIds,
     collectionPoiIds,
+    storyEmphasisOf,
   ]);
 
   // Synlige POI-er for kamera-fit (tour-bounds). Inkluderer ikke fade-out-
@@ -458,6 +482,12 @@ export function BoardMap({
     });
   }, [mapLoaded, mapPaddingBottom, mapPaddingLeft, sheetSurface]);
 
+  // Venstre okklusjon bak en ref: den leses av BÅDE utsnitts-publiseringen og
+  // det stabile kamera-API-et, og ingen av dem skal få ny identitet når panelets
+  // bredde endrer seg.
+  const paddingLeftRef = useRef(mapPaddingLeft);
+  paddingLeftRef.current = mapPaddingLeft;
+
   // ---- Viewport-publisering (mobil nabolagsflate, R9 2D + R12) ----
   //
   // Rektangelet regnes ut i PIKSLER og unprojiseres, ikke ved å trekke fra
@@ -475,9 +505,14 @@ export function BoardMap({
       if (!mapRef.current) return;
       const map = mapRef.current.getMap();
       const canvas = map.getCanvas();
+      // Panelet på desktop svømmer OPPÅ kartet (2026-08-27): lerretet går hele
+      // veien til venstre kant, men den venstre stripen er skjult bak kolonnen.
+      // Rektangelet begynner derfor der panelet slutter — ellers ville lista
+      // lovet «stedene i utsnittet» og tatt med dem som ligger under panelet.
+      const x0 = Math.min(paddingLeftRef.current, canvas.clientWidth);
       const w = canvas.clientWidth;
       const h = canvas.clientHeight - occludedBottomPx;
-      if (w <= 0 || h <= 0) {
+      if (w - x0 <= 0 || h <= 0) {
         // Sheeten dekker hele kartet, eller kartet har ingen målbar størrelse.
         // Ingen ærlig avlesning → degrader til «ingen scoping» (vis alt).
         // ALDRI til et tomt sett; en tom liste uten årsak leses som en bug.
@@ -486,9 +521,9 @@ export function BoardMap({
       }
       setViewportRect(
         rectFromCorners([
-          map.unproject([0, 0]),
+          map.unproject([x0, 0]),
           map.unproject([w, 0]),
-          map.unproject([0, h]),
+          map.unproject([x0, h]),
           map.unproject([w, h]),
         ]),
         { userGesture },
@@ -583,6 +618,10 @@ export function BoardMap({
   publishRectRef.current = publishViewportRect;
   const paddingBottomRef = useRef(mapPaddingBottom);
   paddingBottomRef.current = mapPaddingBottom;
+  // Boligen bak samme ref-triks: `fitCoordinates` er en del av det STABILE
+  // kamera-API-et, så den kan ikke lukke over verdier som endrer seg per render.
+  const homeRef = useRef({ lng: homeLng, lat: homeLat });
+  homeRef.current = { lng: homeLng, lat: homeLat };
   const cameraApi = useMemo(
     () => ({
       snapshot: () => {
@@ -614,6 +653,70 @@ export function BoardMap({
           zoom: s.zoom,
           bearing: s.bearing,
           pitch: s.pitch,
+        });
+      },
+      // Omvisningens ramme: stoppets tre navngitte steder + boligen. Padding og
+      // maxZoom leses fra de samme refene som `fitToVisiblePois`, så flaten som
+      // okkluderer kartet (sheeten nedenfra, sidekolonnen fra venstre) er
+      // regnet inn her også — ellers legger fortellingen seg oppå stedene den
+      // snakker om.
+      fitCoordinates: (
+        coords: readonly { lng: number; lat: number }[],
+        opts?: { maxZoom?: number; durationMs?: number },
+      ) => {
+        const map = mapRef.current?.getMap();
+        if (!map) return;
+        const bounds = computeFitBounds([...coords], {
+          lng: homeRef.current.lng,
+          lat: homeRef.current.lat,
+        });
+        if (!bounds) return;
+        map.fitBounds([bounds.sw, bounds.ne], {
+          padding: {
+            top: 80,
+            bottom: 80 + paddingBottomRef.current,
+            left: 80 + paddingLeftRef.current,
+            right: 80,
+          },
+          duration: opts?.durationMs ?? 1100,
+          maxZoom: opts?.maxZoom ?? 15.4,
+        });
+      },
+      // `Math.max` mot gjeldende zoom: et sted tre minutter unna skal ikke
+      // dra kameraet utover bare fordi gulvet er lavere enn der du står.
+      //
+      // `holdFrame` snur regelen: ingen zoom-endring, og ingen bevegelse i det
+      // hele tatt hvis punktet alt står i den synlige delen av kartet. Den
+      // synlige delen er canvaset minus flatene som ligger oppå det —
+      // sidekolonnen fra venstre, sheeten nedenfra — pluss en margin, så et
+      // punkt som ligger et par piksler innenfor kanten regnes som skjult og
+      // hentes inn.
+      flyToPoint: (
+        coord: { lng: number; lat: number },
+        opts?: { minZoom?: number; durationMs?: number; holdFrame?: boolean },
+      ) => {
+        const map = mapRef.current?.getMap();
+        if (!map) return;
+        if (opts?.holdFrame) {
+          const canvas = map.getCanvas();
+          const p = map.project([coord.lng, coord.lat]);
+          const margin = 56;
+          const visible =
+            p.x >= paddingLeftRef.current + margin &&
+            p.x <= canvas.clientWidth - margin &&
+            p.y >= margin &&
+            p.y <= canvas.clientHeight - paddingBottomRef.current - margin;
+          if (visible) return;
+          map.easeTo({
+            center: [coord.lng, coord.lat],
+            duration: opts.durationMs ?? 900,
+          });
+          return;
+        }
+        map.flyTo({
+          center: [coord.lng, coord.lat],
+          zoom: Math.max(map.getZoom(), opts?.minZoom ?? 15.6),
+          duration: opts?.durationMs ?? 1200,
         });
       },
       fitVisible: () => {
@@ -659,10 +762,7 @@ export function BoardMap({
   // så effekten kun re-fyrer ved FAKTISK innholdsendring — Mapbox-instansen
   // muteres (fitBounds), den unmountes aldri (ingen WebGL-lekk, ingen remount).
   const visibleIdsKey = useMemo(
-    () =>
-      visiblePoiIds
-        ? Array.from(visiblePoiIds).sort().join(",")
-        : null,
+    () => (visiblePoiIds ? Array.from(visiblePoiIds).sort().join(",") : null),
     [visiblePoiIds],
   );
   useEffect(() => {
@@ -683,7 +783,9 @@ export function BoardMap({
   // Dermed: initial fit ved last OG re-fit ved nullstilling, uten WebGL-churn.
   // Gated på `eventMode` så boligrapporter beholder default-senteret som før.
   useEffect(() => {
-    if (!shouldFitToProgram({ eventMode, mapLoaded, tourActive, visibleIdsKey }))
+    if (
+      !shouldFitToProgram({ eventMode, mapLoaded, tourActive, visibleIdsKey })
+    )
       return;
     fitToVisiblePois();
   }, [eventMode, mapLoaded, tourActive, visibleIdsKey, fitToVisiblePois]);
@@ -695,14 +797,11 @@ export function BoardMap({
   // helt i venstre kant, men det er en akseptabel kompromiss for ro-følelsen.
 
   // ---- Toggle-handler: lese kamera, sette pendingCamera, schedulere swap ----
-  const getViewportDims = useCallback(
-    (): { w: number; h: number } => {
-      const el = mapBodyRef.current;
-      if (el) return { w: el.clientWidth, h: el.clientHeight };
-      return { w: 800, h: 600 };
-    },
-    [],
-  );
+  const getViewportDims = useCallback((): { w: number; h: number } => {
+    const el = mapBodyRef.current;
+    if (el) return { w: el.clientWidth, h: el.clientHeight };
+    return { w: 800, h: 600 };
+  }, []);
 
   // ---- Kamera-bro mellom motorene ----
   // Toggelen byttet tidligere ikke bare motor, den FLYTTET deg: 3D→2D landet
@@ -780,13 +879,13 @@ export function BoardMap({
           const { w, h } = getViewportDims();
           const current = map3dRef.current;
           const tilt =
-            mode === "sat" ? 0 : current?.tilt ?? DEFAULT_CAMERA_LOCK.tilt;
+            mode === "sat" ? 0 : (current?.tilt ?? DEFAULT_CAMERA_LOCK.tilt);
           map3d.flyCameraTo?.({
             endCamera: {
               center: { lat: c.lat, lng: c.lng, altitude: 0 },
               range: zoomToRange(map.getZoom(), c.lat, tilt, w, h),
               tilt,
-              heading: mode === "sat" ? 0 : current?.heading ?? 0,
+              heading: mode === "sat" ? 0 : (current?.heading ?? 0),
             },
             durationMillis: 0,
           });
@@ -828,10 +927,31 @@ export function BoardMap({
             og rives ALDRI ned (kan ikke frigjøre Google-WebGL-konteksten
             manuelt). Mapbox-overlayet legger seg oppå når brukeren velger 2D. */}
         {has3dAddon && (
-          <div className="absolute inset-0">
+          /* Google-motoren har ingen padding-API: sikte­punktet lander ALLTID i
+             ELEMENTETS midte. Med et panel som dekker venstre tredjedel av
+             flaten er elementets midte ikke lenger midten av det brukeren ser,
+             og boligen havnet et par hundre piksler til venstre for midten.
+             Elementet strekkes derfor like langt UT til høyre som panelet dekker
+             til venstre — da faller de to midtene sammen igjen.
+
+             Geometri og ikke kamera-matte, med vilje: en geografisk forskyvning
+             av sikte­punktet ville holdt for én stillestående innflyvning, men
+             drone-orbiten svinger heading kontinuerlig rundt punktet, og en fast
+             forskyvning ville da sendt boligen i en sirkel over skjermen. Dette
+             holder for hver kamerabevegelse, orbit inkludert.
+
+             Overhenget er utenfor vinduet og klippes av board-rammens
+             `overflow-hidden`. `overhangRightPx` sier det videre til alt som
+             regner i elementets piksler (utsnittet, label-utglisningen), slik at
+             de ikke tar med det som ligger utenfor. */
+          <div
+            className="absolute inset-y-0 left-0"
+            style={{ width: `calc(100% + ${mapPaddingLeft}px)` }}
+          >
             <BoardMap3D
               pendingCamera={null}
               mapPaddingLeft={mapPaddingLeft}
+              overhangRightPx={mapPaddingLeft}
               cameraMode={cameraMode}
               onDragTakeover={handleDragTakeover}
               compactMarkers={compactMarkers}
@@ -862,10 +982,8 @@ export function BoardMap({
               ref={mapRef}
               mapboxAccessToken={TOKEN}
               initialViewState={{
-                longitude:
-                  pendingCamera?.lng ?? data.home.coordinates.lng,
-                latitude:
-                  pendingCamera?.lat ?? data.home.coordinates.lat,
+                longitude: pendingCamera?.lng ?? data.home.coordinates.lng,
+                latitude: pendingCamera?.lat ?? data.home.coordinates.lat,
                 zoom: pendingCamera?.zoom ?? 13.5,
                 bearing: pendingCamera?.heading ?? 0,
                 pitch: pendingCamera?.tilt ?? 0,
@@ -901,43 +1019,52 @@ export function BoardMap({
                 onClick={() => dispatch({ type: "RESET_TO_DEFAULT" })}
               />
 
-              {markerStates.map(({ poi, color, icon, isVisible, inCollection }) => {
-                const isActive = state.activePOIId === poi.id;
-                // R10c: når mini-popup viser POI-navn, undertrykk inline-label
-                // for aktiv markør så vi ikke får dobbel-navn-rendering.
-                // Kollisjonskulling: en label uten plassering på label-tieren
-                // kolliderte på begge sider og skjules (aktiv POI kulles
-                // aldri — Infinity-prioritet gir den alltid en plass).
-                const placement = labelPlacements.get(poi.id);
-                const suppressLabel =
-                  (popupMode === "mini" && isActive) ||
-                  (!isActive &&
-                    zoomTier === "icon+label" &&
-                    placement === undefined);
-                return (
-                  <BoardMarker
-                    key={poi.id}
-                    poi={poi}
-                    color={color}
-                    icon={icon}
-                    isActive={isActive}
-                    isVisible={isVisible}
-                    inCollection={inCollection}
-                    zoomTier={zoomTier}
-                    suppressLabel={suppressLabel}
-                    labelSide={placement ?? "right"}
-                    // Ingen `categoryId`: et klikk på kartet er en i-kontekst-
-                    // handling («hva er dette stedet?») og skal ikke også bytte
-                    // kategori, filtrere markørsettet og drille sidebaren inn.
-                    onClick={() => dispatch({ type: "OPEN_POI", id: poi.id })}
-                  />
-                );
-              })}
+              {markerStates.map(
+                ({ poi, color, icon, isVisible, inCollection, emphasis }) => {
+                  const isActive = state.activePOIId === poi.id;
+                  // R10c: når mini-popup viser POI-navn, undertrykk inline-label
+                  // for aktiv markør så vi ikke får dobbel-navn-rendering.
+                  // Kollisjonskulling: en label uten plassering på label-tieren
+                  // kolliderte på begge sider og skjules (aktiv POI kulles
+                  // aldri — Infinity-prioritet gir den alltid en plass).
+                  const placement = labelPlacements.get(poi.id);
+                  const suppressLabel =
+                    (popupMode === "mini" && isActive) ||
+                    // Omvisningen navngir bare det du faktisk har åpnet. De tre
+                    // stedene ligger minutter fra hverandre — tre labels samtidig
+                    // ble uleselig grøt, og navnene står allerede i flaten.
+                    (emphasis !== null && !isActive) ||
+                    (!isActive &&
+                      zoomTier === "icon+label" &&
+                      placement === undefined);
+                  return (
+                    <BoardMarker
+                      key={poi.id}
+                      poi={poi}
+                      color={color}
+                      icon={icon}
+                      isActive={isActive}
+                      isVisible={isVisible}
+                      inCollection={inCollection}
+                      zoomTier={zoomTier}
+                      suppressLabel={suppressLabel}
+                      labelSide={placement ?? "right"}
+                      emphasis={emphasis}
+                      // Ingen `categoryId`: et klikk på kartet er en i-kontekst-
+                      // handling («hva er dette stedet?») og skal ikke også bytte
+                      // kategori, filtrere markørsettet og drille sidebaren inn.
+                      onClick={() => dispatch({ type: "OPEN_POI", id: poi.id })}
+                    />
+                  );
+                },
+              )}
 
               <BoardPathLayer />
               <BoardPathMidpointMarker />
               <BoardPOILabel />
-              {popupMode === "mini" && state.activePOIId && <BoardPOIMiniPopup />}
+              {popupMode === "mini" && state.activePOIId && (
+                <BoardPOIMiniPopup />
+              )}
             </Map>
           </div>
         )}
@@ -978,6 +1105,7 @@ export function BoardMap({
             controlsReady={!isWelcomeBeat}
             compact={compactControls}
             collapsed={collapsedControls}
+            insetLeftPx={mapPaddingLeft}
           />
         )}
       </div>

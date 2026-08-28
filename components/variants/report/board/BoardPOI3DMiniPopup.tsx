@@ -9,6 +9,7 @@ import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle } from "./marker-style";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
 import { projectLatLngToScreen } from "@/components/map/project-latlng-to-screen";
+import { PIN_SIZE } from "@/components/map/PoiMarkerContent";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
 // merknad: hide-during-motion ble tidligere brukt for å skjule popup under
@@ -17,6 +18,13 @@ import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
 
 interface Props {
   map3d: Map3DInstance | null;
+  /**
+   * Markør-skalaen kartet tegner med (`useMarker3DDeclutter().pinScale`).
+   * Popupen løftes over disc-toppen, og disc-en VOKSER mot nær zoom — uten dette
+   * ville popupen lagt seg over den øverste tredjedelen av markøren der pinnen er
+   * størst. Default 1.
+   */
+  pinScale?: number;
 }
 
 /**
@@ -38,12 +46,20 @@ interface Props {
 // `@/components/map/project-latlng-to-screen`. POI-markørene ligger på
 // altitude 18 (matcher Marker3D i map-view-3d.tsx).
 
-export function BoardPOI3DMiniPopup({ map3d }: Props) {
+/** Hvor mange px popupens bunn får overlappe disc-toppen. 4 px reproduserer
+ *  nøyaktig det −28 som sto her da pinnen var fast: 32 − 4. */
+const DISC_OVERLAP_PX = 4;
+
+export function BoardPOI3DMiniPopup({ map3d, pinScale = 1 }: Props) {
   const { dispatch } = useBoard();
   const poi = useActivePOI();
   const engagement = useEngagement();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | undefined>(undefined);
+  // Skalaen leses av rAF-løkken, som bare re-registreres på POI/kart-bytte. Via
+  // ref, ellers hadde løkken stått med skalaen fra da popupen åpnet.
+  const pinScaleRef = useRef(pinScale);
+  pinScaleRef.current = pinScale;
   const isTransportPOI = !!(
     poi?.raw.enturStopplaceId ||
     poi?.raw.bysykkelStationId ||
@@ -73,10 +89,14 @@ export function BoardPOI3DMiniPopup({ map3d }: Props) {
           18,
         );
         if (p) {
-          // −28: matcher Mapbox 2D-popupens offset slik at bunn-kanten lander
-          // like over markørens visuelle topp. translate(-50%, -100%) sentrerer
-          // horisontalt og forankrer bunn-kant til pos.
-          el.style.transform = `translate3d(${p.x}px, ${p.y - 28}px, 0) translate(-50%, -100%)`;
+          // Løftet er markørens EGEN høyde minus en liten overlapp, så bunn-kanten
+          // lander like over disc-toppen uansett hvor stor pinnen er tegnet.
+          // translate(-50%, -100%) sentrerer horisontalt og forankrer bunn-kant.
+          // Rundes som markøren selv gjør det (`PoiMarkerContent`), ellers
+          // ligger løftet en halv piksel fra disc-en som faktisk er tegnet.
+          const lift =
+            Math.round(PIN_SIZE * pinScaleRef.current) - DISC_OVERLAP_PX;
+          el.style.transform = `translate3d(${p.x}px, ${p.y - lift}px, 0) translate(-50%, -100%)`;
           el.style.opacity = "1";
         } else {
           // Bak kameraet eller utenfor projeksjonsdomene — skjul.

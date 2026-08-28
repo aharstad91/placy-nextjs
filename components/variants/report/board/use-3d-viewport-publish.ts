@@ -104,6 +104,8 @@ export function use3DViewportPublish({
   map3d,
   enabled,
   occludedBottomPx,
+  occludedLeftPx = 0,
+  overhangRightPx = 0,
 }: {
   /** Map3DElement-instansen (castes internt), eller null før den er klar. */
   map3d: unknown | null;
@@ -112,6 +114,10 @@ export function use3DViewportPublish({
   enabled: boolean;
   /** Høyden (px) sheeten dekker nederst. */
   occludedBottomPx: number;
+  /** Bredden (px) desktop-panelet dekker fra venstre. Default 0 (mobil). */
+  occludedLeftPx?: number;
+  /** Bredden (px) elementet stikker ut til høyre for vinduet. Default 0. */
+  overhangRightPx?: number;
 }) {
   const { setViewportRect } = useBoard();
 
@@ -139,13 +145,15 @@ export function use3DViewportPublish({
             widthPx: box.width,
             heightPx: box.height,
             occludedBottomPx,
+            occludedLeftPx,
+            overhangRightPx,
           },
         ),
         { userGesture },
       );
       return true;
     },
-    [map3d, occludedBottomPx, setViewportRect],
+    [map3d, occludedBottomPx, occludedLeftPx, overhangRightPx, setViewportRect],
   );
 
   // Lytterne leser publiseringen via ref, ellers ville de re-registrert seg ved
@@ -268,7 +276,7 @@ export function use3DViewportPublish({
   useEffect(() => {
     if (!enabled || !map3d) return;
     commit(false);
-  }, [enabled, map3d, occludedBottomPx, commit]);
+  }, [enabled, map3d, occludedBottomPx, occludedLeftPx, overhangRightPx, commit]);
 
   // Nullstill sporingen når 3D slutter å være fremste motor (eller instansen
   // byttes). Uten dette ville en retur til 3D arvet «brukeren eier kameraet»

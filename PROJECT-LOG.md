@@ -6,6 +6,343 @@
 
 ---
 
+## 2026-08-28 (morgen) — MARKØREN BLE 32 PX, OG FIKK LOV Å VOKSE IGJEN PÅ GATEZOOM
+
+**Kontekst:** To korte meldinger fra Andreas, med skjermbilde av satellittflaten på Ranheim-demoen: *«kan du gjøre ikonene i kartet litt mindre? de er ganske store nå.»* — og etter at endringen sto: *«ja ble bedre. men når vi kommer lengre inn på zoom, så bør pin faktisk bli litt større igjen, for font-size blir for lite.»*
+
+### 1. 40 → 32, og tallet bor nå ett sted
+
+`PIN_SIZE` i `PoiMarkerContent` gikk fra 40 til 32. Begrunnelsen er flaten, ikke smaken: underlaget er satellittfoto, ikke et lyst karttema, så samme disc bærer mer visuell vekt her enn i 2D. 32 er dessuten NØYAKTIG den inaktive 2D-markøren (`BoardMarker`s `containerSize`), så samme sted har samme basis-størrelse i begge motorer — og med ratio 0,50 blir ikonet 16 px, som er `w-4 h-4` i 2D-stien.
+
+Tallet «40» sto i TRE filer med kommentaren «speiles av / matcher»: `PoiMarkerContent`, `use-3d-marker-declutter` og `RevealLayer3D` (pluss `Marker3DPin`s default). Speilingene er borte — de tre importerer nå `PIN_SIZE`. Samme opprydding avdekket at kullingen målte den demoterte prikken mot `BLOB_BASE_SIZE` (reveal-lagets blob), ikke mot `DOT_SIZE` (prikken `PoiMarkerContent` faktisk tegner). Samme tall, ulik markør — nå leses den som tegnes.
+
+### 2. Rampen: skjerm-forankret er riktig på oversikt og feil på gata
+
+Google 3D-markører er skjerm-forankret — konstant px uansett kamera-avstand. Det er riktig når man ser strøket, og feil når man ser gaten: da står det få pins i bildet, og hver av dem er den ENESTE teksten på en flate uten stedsnavn. 10 px navn er for lite der.
+
+`poi-pin-scale.ts` er rampen: ren funksjon, `poiPinScaleForZoom(zoom)`.
+
+- **Ekvivalent zoom, ikke rå `range`.** Prosjektmarkøren skalerer på `range` (`scaleForRange`), og det holder for ÉN markør som bare skal krympe et hakk. Her ville det vært feil: samme `range` gir helt ulik bakke-oppløsning på en 402 px mobil og en 1736 px desktop-flate, så pinsene hadde vokst ved ulike faktiske zoomnivåer. `equivalentZoomForCamera` er alt broa mellom motorene, og terskelen leses da i samme skala som `computeZoomTier`s 13/16.
+- **Starter på 17, ett hakk OVER label-terskelen.** Hele oversikts- og strøkszoomen skal ha samme markør som 2D; vokser den fra 16, har vi to ulike basis-størrelser på samme sted i de to motorene.
+- **Flater ut på 19 (1,45).** Målt på Ranheim: 32 px/10 px på oversikt (avstand 1600 m), 35/11 ved 650 m, 42/13 ved 300 m, 46/14,5 ved 180 m. Rundt zoom 18 er den ~1,25 — altså de 40 px pinnen hadde før denne økta.
+- **Trinn på 5 % ved kamera-ro, ikke et kontinuum per frame.** Samme begrunnelse som label-plasseringen: en markør som krymper og vokser kontinuerlig mens man drar er urolig å se på. Trinnene får en 180 ms overgang på boks og typografi, så hvert hakk glir i stedet for å hoppe.
+
+Skalaen leses av `useMarker3DDeclutter` — samme kamera-avlesning som tieren — og returneres som `pinScale`. Den bor der og ikke i en egen kamera-lytter fordi den som RESERVERER plass må være den som bestemmer hvor stort det tegnes; regnet på to steder kunne markørene blitt tegnet større enn plassen som var satt av til dem.
+
+### 3. Tre ting måtte følge med, ellers ville de løyet
+
+- **Kollisjonskullingen.** `LabelMetrics` fikk `scale`: `estimateLabelBox` ganger tegnbredde, maksbredde og linjehøyde, og `use-3d-marker-declutter` skalerer pin- og prikk-halvbreddene og label-offseten. Uten dette reserverte kollisjonen en 10 px-boks til et 14,5 px navn og slapp gjennom labels som overlapper. Testen som beviser at skalaen NÅR geometrien: samme to pins, identiske skjermposisjoner (identitets-projeksjon), og labelen flipper fra høyre til venstre bare fordi naboens disc er tegnet større.
+- **Mini-popupens løft.** Sto på en fast `−28`, som var «disc-toppen» da pinnen var 40 px høy. Nå er løftet `Math.round(PIN_SIZE × pinScale) − 4` — 4 px overlapp reproduserer nøyaktig de 28 ved skala 1, og følger disc-en oppover. Skalaen leses via ref, ellers hadde rAF-løkken stått med verdien fra da popupen åpnet.
+- **Prikkene.** Demoterte steder skalerer også. Ellers vokste pinsene bort fra teksturen de skal ligge i.
+
+**Verifisering:** `tsc` 0 feil, lint 0 errors / 51 warnings (uendret), 199 testfiler / 3 215 tester grønne (25 nye: rampen, skalert markør, skalert kollisjon, `pinScale` fra kamera, popup-løftet). Målt i nystartet Chrome på Ranheim-demoen ved 1736 px OG mobil 402 px/DPR 3, med ekte kamera etter intro-flyturen: disc/navn 32/10 → 35/11 → 42/13 → 46/14,5 gjennom rampen, dekningen (labels på synlige pins) uendret i toppen av rampen, 0 konsollfeil fra appen.
+
+**`npm run build` grønn** — men først etter en omvei som er verdt å huske. Disken gikk full midt i økta (Bash, Edit og dev-serveren døde alle på `ENOSPC`), så build-en ble utsatt til plassen var ryddet. Da dev-serveren skulle opp igjen, bootet den **Next 14.2.15** i stedet for 16.2.10: `node_modules` var halvskrevet etter ENOSPC-en, og den gamle Next-en trodde TypeScript manglet og kjørte sin egen auto-install — som skrev i `package.json` og `package-lock.json`, flyttet `typescript`/`@types/node`/`@types/react` til `devDependencies` OG hoppet typescript fra 5.9.3 til 6.0.3 og `@types/node` fra 25 til 26. Begge filene ble rullet tilbake fra git og treet lagt tilbake på låsefila med `npm ci`.
+
+**Lærdom:** «Next.js 14.2.15» i dev-loggen på et Next-16-prosjekt betyr ikke at noen har nedgradert — det betyr at `node_modules` er halvskrevet. Riktig svar er `npm ci`, ikke `npm install`; sistnevnte ville låst inn den utilsiktede major-oppgraderingen av TypeScript.
+
+**Åpne tråder:** (0) Google-motorens kameraramme står fortsatt som blokkeren fra de to forrige entryene. (1) **2D vokser ikke.** Bytter man til «Kart» på gatezoom, faller markøren tilbake til 32 px og 10 px navn — altså nøyaktig klagen, i den andre motoren. Mapbox har ekte zoom, så fiksen er billigere der enn her (`poiPinScaleForZoom(map.getZoom())` inn i `BoardMarker`s `containerSize` + `LABEL_OFFSET_X`), men den er ikke gjort. (2) Hjemme-pinnen står fast på 52 px, så på maks zoom er den bare 15 % større enn en POI (46). Den vinner fortsatt på terrakotta-glød, navn og undertittel, men marginen «litt større» er tynnere enn da POI-en var 40 px.
+
+---
+
+## 2026-08-27 (natt) — OMRÅDESTOPPET BLE EN STARTSIDE: FAST ORD I RADEN, STRØKETS INTRO SOM PROSA, OG FEM SVAR I STEDET FOR TO
+
+**Kontekst:** Andreas' tre umiddelbare behov etter at kolonnen sto (skjermbilde av områdestoppet): brikken i raden skal ha *«noe generisk «Beliggenhet», «Nærområdet». Noe som er standard lengde, og som beskriver mer en «startside». Det står jo uansett det samme like under i tittel»*; området skal ha *«en slags intro tekst … som de andre kategoriene har også, så vi blir konsekvente der»*; og *«vi bør ha minimunm 5 FAQ spørsmål»*. Underveis, om temastoppet: *««steder i nærheten»-kortet … må være like under «verdt å merke seg»-elementet. Og der tror jeg også at vi kan lage en langt mer horisontal versjon som reklamerer for å åpne den taben.»*
+
+### 1. Brikken sier hva inngangen ER, ikke hvor du er
+
+`AREA_RAIL_LABEL = "Beliggenhet"` — et fast ord, ikke `areaLabel(home)`. «Ranheim» sto i brikken og som overskrift to centimeter under; de fem temaene ved siden av heter ikke stedet sitt heller, så stedsnavnet gjorde brikken til et sjette tema. Ordet er salgsoppgavens eget og har samme lengde på enhver adresse. `areaLabel` lever videre — den eier overskriften og splash-sublinen.
+
+### 2. Introen fantes allerede: den lå som FAQ-rad
+
+Åpen tråd (2) fra kveldsøkta sa at en kuratert strøks-intro krevde et nytt felt i det skjema-låste `global`-editorialet. Det viste seg å være feil premiss: strøkets svar på **«Hva kjennetegner området?»** ER introen — den lå bare i trekkspillet som rad én. Den er nå løftet ut:
+
+- `GLOBAL_INTRO_ID = "karakteristikk"` i faq-generatoren. `generateGlobalFaq` starter med id-en i `brukt`-settet, så den blir aldri en rad; `areaIntroFromCurated()` returnerer teksten.
+- Den følger `ReportData.areaIntro` → `BoardData.areaIntro` → `areaProse()` → avsnitt på områdestoppet, samme form som temaenes prosa.
+- **Ingen skjemaendring, ingen ny kurering, ingen ny arbeidsflyt.** Ranheim hadde svaret fra før, og fikk introen gratis. Uten kuratert svar dikter vi ikke opp et avsnitt om strøket — da står den navigerende setningen (`AREA_LEAD`) alene.
+- Mobil-indeksens «Om nabolaget» mistet strøkets stemme da raden forsvant derfra. Introen står nå som avsnitt over den FAQ-en også — samme kilde, begge flatene.
+
+### 3. Områdets FAQ har fått en egen katalog
+
+`AREA_BOARD_QUESTIONS` i `category-specs.ts`, ved siden av `THEME_BOARD_QUESTIONS`, og `generateGlobalFaq` fletter mot den med samme regler som `generateCategoryFaq` (kuratert vinner og beholder plassen, kurators egne id-er sist). Seks deklarerte, fem med deterministisk bygger — Ranheim viser fem der den før viste to.
+
+**Regelen som holder de to katalogene fra hverandre:** et spørsmål hører hjemme på området bare hvis INGEN enkeltkategori kan svare. Skolekretsen og holdeplassene sto i et utkast og ble kastet: de finnes som `krets` og `naermeste-holdeplass` i malene, og ville stått som nesten samme spørsmål to ganger på samme board. Det som står igjen er tverrgående, og hver har sin egen SVARFORM (samme regel som tema-byggerne):
+
+| Spørsmål | Form | Kilde |
+|---|---|---|
+| Hvordan kommer jeg meg til byen? | reisetid + lenke INN i temaet | `boardFacts.cityCentre` (fantes fra før) |
+| Hva ligger nærmest boligen? | navn med minutter, på tvers av temaer | hele POI-settet + målt gangtid |
+| Hvor mye ligger i gangavstand? | to terskler (10/5 min) | målte gangtider |
+| Hva er det mest av i nabolaget? | rangering med kategorilenker | temaenes POI-antall |
+| Er noe åpent sent på kvelden? | klokkeslett | cachede åpningstider, hverdagskonsensus |
+| Er det rolig i området? | — | kuratert-eneste (`kilde: "søk"`) — katalogen viser hele bestillingen |
+
+Tre formuleringsfeil ble funnet ved å lese det ekte svaret i nettleseren, ikke i en test: «Grillstadfjæra (ett minutt), Sjøparken (ett minutt) og Strindfjordvegen (ett minutt)» leste som en feil (tallet sies nå ÉN gang når de er like), «har åpent til 24» leste som en skrivefeil (midnatt får ordet, ikke tallet), og «under ti minutter» talte steder som lå PÅ streken (grensene er inklusive, så det heter «innenfor»).
+
+### 4. Dekningen flyttet opp, og ble én linje
+
+`MiniCard` fikk en `row`-variant: ett kort på full bredde er nå en 44 px linje — ikon, navn, tall, pil — i stedet for et høyt kort. Og blokken ligger RETT UNDER utvalget, foran svarene: på desktop står FAQ-en inline, så et kort etter den lå en halv skjerm fra det det handler om. Mobil beholder paret med to stablede kort (svarene ligger bak en fane der), og rekkefølgen er uendret der.
+
+**Verifisering:** `tsc` 0 feil, lint 0 errors / 51 warnings (uendret), 198 testfiler / 3 191 tester grønne, `npm run build` grønn. Fem nye områdesvar lest i Chrome 1512 px på Ranheim-demoen, intro-avsnittet på plass, «Steder i nærheten — 189 i alt» som én linje mellom utvalget og svarene, 0 konsollfeil, ingen horisontal scroll. Mobil 402 px (emulert, DPR 3): tre faner, dekk, kryss og to-korts-paret uendret. Seks mutasjonstester kjørt på de nye reglene (intro-guard, rekkefølge, `row`-variant, midnatt, intro-som-rad, tersklene) — alle fanget.
+
+**Åpne tråder:** (0) Google-motorens kameraramme står fortsatt som blokkeren fra forrige entry. (1) `data/areas/*.staging.json` for Ranheim kan nå få et kuratert `rolig`-svar — det er den ene deklarerte raden strøket ikke svarer på, og den er kurators jobb, ikke maskinens. (2) `reportConfig.district` er fortsatt `null` på 11 av 12 produkter; introen og fem av svarene er adresse-uavhengige og virker uansett, men overskriften faller til «Trondheim»/«Nabolaget» uten den. (3) «Hvor mye ligger i gangavstand?» svarer «32 av 464» på Ranheim — verifisert korrekt (533 project_pois har alle målt gangtid; bare 34 er ≤10 min), men tallet inviterer spørsmålet «hvorfor så få?», og svaret er at boardet dekker en bbox, ikke en gangsone.
+
+---
+
+## 2026-08-27 (kveld) — INDEKSEN ER SLETTET: OMVISNINGEN ER DESKTOP-KOLONNEN, OG OMRÅDET BLE FØRSTE STOPP
+
+**Kontekst:** Braindump fra Andreas (`~/Desktop/placy-dump.json`, transkribert diktat) med to skjermbilder: den nye omvisnings-kolonnen, og den gamle beige indeksen merket *«gamle deprecated verson som kan fjernes og erstattes av den nye»*. Kjernen i diktatet: *«Jeg begynner nå å lure på om vi faktisk skal bare deprecate hele den … Jeg vil si at den nye sidebaren egentlig er en videre versjon to null iterasjon fra den beige.»* Pluss, i chatten: *«Ansvarlig megler kort, kan ligge i bunn på den nye også, ikke sticky.»*
+
+### 1. To flater som gjorde samme jobb
+
+Desktop hadde en indeks (temakort med illustrasjon + lead, «Hele nabolaget», boardets FAQ, og et drill-in-panel per tema med prosa, «Verdt å merke seg», utsnitts-scopet stedsliste, temavelger-dropdown og «Ramm inn») OG en omvisning som lå oppå den, nådd via et play-kort, med en tilbake-pil som førte hit. Samme innhold, to rekkefølger, to steder å vedlikeholde — og et valg leseren ikke hadde grunnlag for å ta.
+
+Indeksen er borte. `SidebarContentPreview` heter nå `StoryColumn` og er 20 linjer: den slår omvisningen på når den monteres, og rendrer stoppet. Slettet i samme grep: `CategoryDetailView`, `CategoryThemeDropdown`, `GlobalFaq`, `SidebarPreviewCategory`, `previewCategories`-memoen i `ReportReelsPage`, og `HighlightsDisclosure.tsx` + testen. Netto −1 100 linjer i `DesktopStorySidebar.tsx`.
+
+Tilbake-pilen fulgte med, av samme grunn Andreas ga: *«nå fjernes den, den må det, det det går til.»* Det finnes ikke noe å gå tilbake TIL. **Mobil er urørt** — der ligger indeksen fortsatt bak «Avslutt», fordi flaten er en sheet over kartet og nabolagslista ER hovedflaten der.
+
+### 2. Området som rekkefølgens første brikke
+
+Det ene indeksen kunne, som omvisningen ikke kunne, var å snakke om STEDET selv i stedet for om et tema i det. Diktatet ba om nettopp den plassen: *«området i seg selv må også få en kategori i den her nye category navigasjonen og at den kan ligge først, med et ikon av en pinne, og at det er navnet på området som kommer der.»*
+
+Modellen: `AREA_STEP = -1`. `stops` er fortsatt kategoriene; området er −1, og `stop` er `null` der. **Det er hele trikset** — alt som allerede håndterte «ingen stopp» (markørvekten i `BoardMap`, `storyStop` i `BoardMap3D`, `picks`) oppfører seg riktig uten en linje endring, og vi slapp å tvinge et syntetisk tema med tomme lister gjennom systemet. En slik attrapp ville dempet hele nabolaget til tekstur og gitt 3D-kameraet ingenting å ramme inn.
+
+Innholdet på stoppet: strøkets navn som overskrift (`areaLabel` = `district` → `city` → «Nabolaget»), dekningen i tall (`areaSubline`, «464 steder · 6 temaer»), én generert setning, og boardets `globalFaq` — det indeksen kalte «Om nabolaget». Kameraet flyr ut til hele nabolaget når området VELGES, men ikke ved ankomst: der eier splash-en og intro-flyturen kameraet, og en flytur derfra ville krysset den bevegelsen. Skillet er `arriving`-flagget i frame-effekten.
+
+**Datafunnet:** `reportConfig.district` var `null` på ALLE 12 produkter i basen. Feltet har eksistert lenge (subline i splash), men er aldri blitt fylt ut, så fallbacken ville vist «Nabolaget» overalt. Satt til `Ranheim`/`Trondheim` på demo-produktet (`placy-demo_strindfjordvegen-10`, optimistisk lås på `updated_at`, backup i scratchpad). Gevinst utover raden: splashen viser nå «Ranheim, Trondheim» under tittelen. **Skal fylles ut ved provisjonering** — det er nå et synlig felt, ikke bare en subline.
+
+### 3. To faner på desktop, tre på mobil
+
+*«På desktop versjonen så skal spørsmål og svar flyttes inn i tabben om området … det er egentlig for å begynne å fylle ut den boksen. Og så tror jeg også det er lurt å ikke skjule for mye.»*
+
+Kolonnen er 438 px bred og full skjermhøyde, og sto med luft under de to snarveis-kortene. Å gjemme det sterkeste innholdselementet bak et fanetrykk i en boks som ikke er full er å skjule for skjulingens skyld. Så: `StoryCard` fikk `variant: "sheet" | "column"`. På `column` faller FAQ-fanen bort, svarene rendres under «Verdt å merke seg», og «Steder i nærheten»-kortet står alene på full bredde. Mobil beholder tre faner — der er flaten kortere, og en fane er billigere enn å gjøre siden lengre.
+
+Megler-kortet kommer inn samme vei som transporten (`footer`-prop), og ligger derfor INNE i seksjonen. Lå det som en søsken etter den, ville det festede hodet sluppet taket i det man rullet ned i kortet. Kortet viser ekte megler når prosjektet har en, ellers plassholderen; `BrokerContactRow` er trukket ut og delt med player-løpets pinnede footer.
+
+### 4. To ting som ikke sto i bestillingen, men som fulgte av den
+
+| Funn | Grep |
+|---|---|
+| `HighlightsDisclosure` var eneste konsument av **live avgangstider i sidebaren** (PRD 11 Unit 7). Å bare slette den ville fjernet Entur/bysykkel/Hyre-sanntid fra desktop uten at noen ba om det. | Portert inn i `PlaceRow`: sanntid vises i utfoldingen for transport-steder — men BARE for utvalget (`mark === "chip"`, maks tre) og bare mens raden står åpen. En stedsliste på 172 rader ville ellers startet ett 60-sekunders poll per transport-rad. |
+| Med omvisningen alltid på ville **kartpinnene i 3D/Satelitt blitt permanent uklikkbare** — `handlePOIClick` returnerer tidlig mens omvisningen kjører, fordi trykkflaten da er radene i flaten. På områdestoppet finnes ingen slik rad. | Gaten ble `storyStopActive = on && !onArea`, brukt både for pinne-klikket og for regissørens `storyActive`. Områdestoppet gir tilbake indeksens utforskbarhet: mini-popup, rutelinje, reisetids-chip. Verifisert i Chrome i begge retninger. |
+
+**Bevisst tapt:** drill-in-panelets pinnede «Åpent nå»-rad (læringen `active-poi-card-pinned-sidebar-20260208`) og «Ramm inn»-knappen. Omvisningens stedsfane gjør et annet, dokumentert valg: ren avstandsrekkefølge, og «N steder utenfor utsnittet — zoom ut for å se dem» i stedet for en knapp. Kategori-illustrasjonene vises heller ikke lenger på desktop; raden har fargede ikoner i stedet.
+
+### 5. Adversarial review — og det den fant som ikke sto i bestillingen
+
+Kjørte en trimmet review-workflow (4 lenser × skeptiker per funn, 27 agenter) over dagens filer. 23 funn, 12 bekreftet etter refutasjon. Fikset i denne runden:
+
+| Funn | Fiks |
+|---|---|
+| **Kameraet er en no-op på Google-motoren.** `mapCamera` — kanalen omvisningen rammer inn gjennom — registreres BARE av `BoardMap`, og bare når Mapbox faktisk er montert. På et 3D-board uten voice-over starter flaten i «Satelitt», og da er `mapCamera` null. Målt i Chrome: `center` og `range` på `gmp-map-3d` sto **byte-identisk** gjennom tre stopp-bytter, mens «Kart» flyttet markørene 470 px. Den slettede indeksen var den eneste 3D-kameraveien (`SELECT_CATEGORY` → per-kategori drone-flyvning). | **IKKE fikset — forsøkt og rullet tilbake.** Å sende stoppet inn som kameraets kategori virket (stoppene flyttet Satelitt-kameraet), men rammen kommer fra `deriveCategoryCamera` = centroid + `dist·1,6+200`, ikke en bbox-fit. Målt på Transport & Mobilitet landet den på en skogholt der INGEN av stoppets tre steder var i bildet. Bevegelse til en ramme som motsier panelet er verre enn å stå stille. Riktig fiks er en invers av `rectFromCamera` (bbox → positur) + en 3D-registrering av kamera-API-et — se åpne tråder. |
+| `goto` beholdt `introPlaying`: et rail-trykk 2 s inn i den 9-sekunders basic-intro-flyturen lot flyturen skrive kameraet videre mens panelet sto på et annet stopp. Indeksens `SELECT_CATEGORY` nullstilte flagget; raden er nå eneste navigasjon. | `goto` dispatcher `END_INTRO` før `BACK_TO_DEFAULT`. |
+| Desktop kuttet prosaen til to setninger uten en drill-in å lese resten i. | `storyProse(category, full)`: mobil beholder beatet (kategorisiden bak «Avslutt» har hele teksten), desktop rendrer `intro \|\| body` med alle avsnitt — samme regel den slettede drill-in-en brukte. **Merk:** på Ranheim-demoen er de to identiske (`intro` settes når FAQ-en har ≥3 svar, og er de samme to setningene), så endringen er en no-op der. Den betyr noe på adresser med tynn FAQ — nettopp der rural-asymmetrien trenger teksten. |
+| `isFaqOpen`/`toggleFaq`/`openFaqIds` i provideren hadde null konsumenter (`FAQSection` eier sin egen åpne-tilstand). | Slettet. |
+| `useRealtimeData` skrev en fersk objekt-literal på null-grenen → bommet på Reacts eager-bailout og kostet én ekstra commit per rad. | Delt `IDLE`-konstant. |
+| Tre testhull: `!arriving`-guarden hadde INGEN dekning (mutasjonstestet: `if (true)` → 223/223 grønne), «FAQ-kortet er borte»-assertionen kunne aldri feile (MiniCard splitter tittel/undertittel i to spans), og faq→about-tvangen på desktop var udekket. | Kamera-probe i desktop-testen + tre nye tester, alle mutasjonsverifisert (hver feiler når regelen fjernes). |
+
+Avvist etter refutasjon (11), bl.a.: «board uten kategorier gir blank kolonne» (ikke nåbar — event-data kommer aldri hit), «områdestoppet slipper POI-modalen inn på mobil» (det ER kontrakten — pinnene skal være klikkbare der), «mobil får ny sanntids-polling» (korrekt og avgrenset til utvalget), og «Ramm inn er borte» (designet bort, ikke glemt).
+
+**Verifisering:** `tsc` 0 feil, lint 0 errors (51 pre-eksisterende warnings), 198 testfiler / 3 168 tester grønne, `npm run build` grønn (kun de kjente `/admin`-prerender-notisene). Chrome 1512 px: ankomst på «Ranheim» med FAQ og megler-kort sist i scrollen, temastopp med to faner + FAQ inline + fullbredde-kort, festet hode gjennom hele scrollen, 3D-pinneklikk åpner popup på områdestoppet og gjør ingenting på temastoppet, Mapbox-motoren fortsatt full bredde med 465 markører, 0 konsollfeil, ingen horisontal scroll. Mobil 402 px: indeksen, play-kortet og hintet står som før.
+
+**Åpne tråder:** (0) **Stoppets ramme på Google-motoren** — den er blokkeren nå: uten den flytter ikke kartet seg mellom stopp på default-motoren, og «la nabolaget presentere seg» mister halve virkemiddelet. Trenger (a) en invers av `rectFromCamera` (bbox + viewport-metrikk → `Hero3DCamera`, tilt-bevisst) og (b) at `BoardMap3D` registrerer `mapCamera` når Mapbox ikke er montert. Geometrien fra 2026-08-27-runden ligger klar i `board-camera-fit.ts`. (0b) Den åpne stedsraden i stedsfanen forsvinner når kartet panoreres bort — `active-poi-card-pinned-sidebar-20260208` sin UI-halvdel gjelder fortsatt, og omvisningens fane gjør bevisst et annet valg; verdt en runde. (1) `reportConfig.district` bør settes for alle prosjekter — og helst avledes automatisk i provisjoneringen (skolekrets/postnummer-området finnes allerede i pipelinen, `find-area-for-point`). (2) Områdestoppets prosa er én generert setning; strøkets `global`-editorial bærer i dag KUN `{ faq }` (skjema-låst), så en kuratert strøks-intro krever et nytt felt. (3) Boardets `globalFaq` står nå både på områdestoppet og i mobil-indeksen bak «Avslutt» — greit så lenge mobil beholder indeksen, men det er duplisering å rydde når mobil en gang følger etter.
+
+---
+
+## 2026-08-27 — PANELET SLUTTET Å VÆRE EN VEGG: APPLE MAPS-MODELLEN PÅ DESKTOP, OG TO KAMERA-LØGNER RETTET
+
+**Kontekst:** Andreas, med skjermbilde av desktop-boardet ved siden av macOS Apple Maps: *«Kan vi få luft på venstre, top og bunn i sidebar? så tror jeg at vi kan få de kategoriene som en salgs header i topp, som en waterfall effekt. Så vil også kartet ha behov for å komme bakom, slik som apple maps.»* Og etter første runde, da boligen lå til venstre for midten: *«ja viktig at det føles riktig og sentrert.»*
+
+Før det, samme dag: *«ved klikk på punkter i venstre sidebar, så får vi en voldsom zoom og sentrering når vi er i satelitt modus. men ved 3d er det slik som det skal være.»* Alle tre er samme tema — hva kameraet gjør når noe annet enn kameraet er i fokus — og logges derfor sammen.
+
+### 1. Rad-trykket som rykket i Satelitt, men ikke i 3D
+
+Feilen lå ikke i Mapbox. **«Satelitt» ER Google-motoren** lagt ned til rett-ovenfra (samme `gmp-map-3d`-instans som «3D», `mode: SATELLITE` + `overhead`-klemming) — verifisert i Chrome: 0 `<canvas>`, 0 `.mapboxgl-map`, 1 `gmp-map-3d`.
+
+I `decideCameraIntent` ligger `overhead`-grenen FØR sjekken på `cameraMode === "free"`. I Satelitt eier regissøren derfor kameraet også på basic-boards, og et åpent punkt ble en `poi`-intent på 300 m range. I 3D er samme board `free` → `{kind:"free"}` → ingen bevegelse. Derav asymmetrien.
+
+Fikset med ett felt: `storyActive` nuller ut det åpne punktet FØR grenene, så begge stiene faller tilbake på hvile/orbit. Satelitt-hvilen (`overheadRest`) er en no-op når kameraet alt står rett ovenfra, så rammen står helt stille — mens 3D→sat-flatingen beholdes. Kategori-intenten trenger ingen tilsvarende gard: omvisningen setter aldri `activeCategoryId` (den vil ha hele nabolaget liggende som tekstur).
+
+Samme rykk fantes i «Kart»-visningen, av en annen grunn: `flyToPoint` hadde et zoom-GULV på 15.6 og sentrerte alltid. Der fikk API-et `holdFrame` — flyturen blir en **avsløring** i stedet for en ramming: zoomen beholdes, og kameraet flytter seg bare hvis punktet ligger utenfor den ikke-okkluderte delen av lerretet.
+
+Målt: Satelitt, to rad-trykk → range 1585 → 1585 m, senter uendret, markører bytter fortsatt per stopp (189 → 120). Utenfor omvisningen flyr et pin-klikk fortsatt inn (1585 → 290 m). Kart: et sted 37 min unna gir rent pan — identisk spennvidde 6656 px før og etter.
+
+### 2. Panelet flyter, kartet ligger bak
+
+Desktop-grenen i `ReportReelsPage` var to flex-søsken: kolonne, så kart. Kartet begynte der kolonnen sluttet, og kolonnen var derfor en **vegg**. Nå ligger kartet `absolute inset-0` i full bredde, og kolonnen svømmer over det med radius 26, ring, skygge og frostet flate (`bg-white/[0.93] backdrop-blur-xl` i omvisningen, krem ellers).
+
+Luften er 14 px på venstre, topp og høyre — og **52 px i bunn**. Det siste er ikke smak: Googles attribusjon er låst i kartelementets nederste venstre hjørne og kan ikke flyttes (vilkårene). Med panelet like langt ned som til sidene havnet «Google Maps» bak det. Stripen under panelet er der for at attribusjonen skal være synlig — samme sted Mapbox-logoen ligger i «Kart»-visningen. Geometrien er tre eksporterte konstanter i `DesktopStorySidebar` (`SIDEBAR_WIDTH_PX` 438, `SIDEBAR_GUTTER_PX` 14, `SIDEBAR_GUTTER_BOTTOM_PX` 52, `SIDEBAR_OCCLUSION_PX` 466), fordi kartet må kjenne dem.
+
+**Fossefallet:** kategoriraden er flyttet INN i stoppets festede hode via en ny `head`-prop på `StoryCard` — sammen med krysset, spørsmålet og faneraden. Ett feste, ikke to som må måle seg mot hverandre, og ingen målt offset å holde synk med. Flaten er frostet med en tone som fortsetter noen piksler nedenfor (`top-full`, `from-white/95`), så teksten løser seg opp i headeren i stedet for å bli kuttet av en kant. `pr-9` på raden holder den klar av krysset, som ligger i en null-piksler-høy beholder.
+
+Dette omgjør en beslutning fra 08-26 (raden i FLYTEN på desktop, ruller bort). Begrunnelsen den gang — underkanten er lengst unna blikket — står; det nye er at TOPPEN er der en kolonne begynner, og at en frostet header gjør raden til navigasjon i stedet for en rad man ruller forbi.
+
+### 3. Sentreringen: geometri, ikke kamera-matte
+
+Første runde flyttet boligen ~230 px til venstre for midten av det synlige kartet. Årsak: **Google-motoren har ingen padding-API** — sikte­punktet lander alltid i ELEMENTETS midte, og elementets midte er ikke lenger midten av det brukeren ser.
+
+Valgt løsning: elementet strekkes like langt UT til høyre for vindukanten som panelet dekker til venstre (`width: calc(100% + mapPaddingLeft)`). Da faller de to midtene sammen for **hver** kamerabevegelse.
+
+Den forkastede: forskyv sikte­punktet geografisk i regissøren. Den holder for én stillestående innflyvning, men drone-orbiten svinger heading kontinuerlig rundt punktet — en fast forskyvning ville sendt boligen i en sirkel over skjermen, og Google eier framene i `flyCameraAround`.
+
+Målt (vindu 1508): elementets midte 987, midten av det synlige kartet 980. De 7 pikslene er avstanden mellom «panelets kant» (452) og «panelet pluss luften» (466); usynlig, og én konstant er verdt mer enn to. Et pin-klikk flyr punktet inn i samme midte. Overhenget klippes av board-rammens `overflow-hidden` (`document.scrollWidth` = vindusbredden, ingen horisontal scroll).
+
+### 4. Tre ting som fulgte av at elementet ikke lenger ER flaten
+
+| Sted | Før | Nå |
+|------|-----|-----|
+| `publishViewportRect` (Mapbox) | unprojiserte fra `x = 0` | fra `x = paddingLeft` |
+| `rectFromCamera` (Google) | bare `occludedBottomPx` | + `occludedLeftPx` (panelet) og `overhangRightPx` (den usette stripen), klemt på 0,5 hver |
+| `useMarker3DDeclutter` | kullet mot elementets kanter | kuller mot det SYNLIGE vinduet |
+| `BoardMapControls` | `inset-0` → sentrert i lerretet | `left = insetLeftPx` → sentrert i det synlige |
+
+Uten de to første ville «Steder (7)» lovet stedene i utsnittet og tatt med dem ingen kan se; uten den tredje kunne et navn bak panelet vunnet plassen fra et navn midt i bildet; uten den fjerde krøp kontroll-pillen inn under panelet på smale vinduer.
+
+**Bieffekt, verdt å vite:** 3D-overleggene (`BoardPOI3DMiniPopup`, `BoardTravelChip3D`) projiserer i ELEMENTETS koordinater (`projectLatLngToScreen` legger ikke til `rect.left`) men posisjonerer seg `fixed left-0 top-0`. På den gamle desktop-layouten lå elementet 438 px inn, altså var de forskjøvet like mye. Nå ligger elementet i vinduets venstre kant og de treffer markøren presist — verifisert med mini-popupen over «Impulse Treningssenter» (pin 987, popup-senter 987).
+
+### Verifisering
+
+Chrome mot `:3000`, `placy-demo/strindfjordvegen-10/rapport-board` (nivå 1, 3D-addon), 1440–1508 px bredde:
+
+- Satelitt: panelet flyter, kartet synlig i luften rundt og gjennom flaten, «Google Maps» fritt under panelet, boligen midt i det synlige kartet, kontroll-pillen sentrert i samme område.
+- Kart (Mapbox): 465 markører, lerret `x = 0` i full bredde, boligen i visuell midte (padding 466 virker), Mapbox-logo og attribusjon synlige.
+- Omvisning: raden festet øverst med spørsmål og faner, innholdet renner frostet under den (verifisert med FAQ-fanen utbrettet og `scrollTop = 200`), rad-trykk flytter ikke kameraet.
+- Ikke-omvisning: krem panel, indeks + global FAQ + megler-footer, uendret innhold.
+
+Gates: `tsc` 0, `eslint` 0 errors (51 gamle warnings), **3 188 tester** (9 nye: 5 på rektangel-geometrien, 1 på koblingen rad-i-hodet, 3 fra kamera-fiksen), `npm run build` grønn. Konsollen ren (bare Mapbox' vanlige `place-labels`-advarsel).
+
+### Åpne tråder
+
+1. **Kamera-intent per stopp i 3D** står fortsatt igjen fra 08-26 — og er nå lettere: `storyActive` gir en ren plass å legge stoppets ramme inn som en intent, og elementets midte er endelig det brukeren ser.
+2. **Mobil er urørt.** `mapPaddingLeft = 0` gjør elementbredden identisk med før, `head` sendes ikke inn, og fossefall-tonen er `lg:`-gated.
+3. `whitespace-pre-line` på kulepunkt-narrativer og `/proto-port`-kommandoen står som før.
+
+**Git:** ingenting committet, ingenting pushet — vi står på `main`. Porten fra 08-26 ligger i samme arbeidstre.
+
+---
+
+## 2026-08-26 — OMVISNINGEN ER PORTERT TIL PRODUKSJON: PROTOTYPE-DOMMEN SOM KODE, UTEN CE-LØPET
+
+**Kontekst:** Andreas etter en dag med desktop-iterasjon på `04-fortelling-i-boardet`: *«hvordan sørger vi for at vi får dette fra proto til faktisk placy board? det tok 4ever å gjøre det via compound engineering i dag. vil ha litt raskere flyt på å få slik funksjonalitet inn i ekte placy.»* Deretter, da svaret var en beskrivelse av en `/proto-port`-kommando: *«kan du ikke bare porter over da?»*
+
+### Hvorfor CE tok evigheter, og hvorfor porten ikke gjorde det
+
+`/full` er bygget for **ukjent scope**: brainstorm → plan → tech audit → persona-review finnes for å finne ut hva som skal bygges og om det holder. I en prototype-port er alle tre fasene alt gjennomført — bare et annet sted. Andreas hadde kjent oppførselen på telefonen, avvist magneten, valgt hvordan Steder-fanen deles i to, og målt luften i piksler. Beslutningen er ratifisert av **enhet**, ikke av et plandokument.
+
+Det som gjensto var mekanisk oversetting — og den delen har prototypen selv kartet til: `baseline.css` er portert *fra* `NeighbourhoodSheet.tsx` / `DesktopStorySidebar.tsx` / `FAQSection.tsx`, med filnavnene i seksjonsoverskriftene og `AVVIK`-merknader der den bevisst avviker. Porten ble derfor kjørt seriellt, én agent, uten personas: kvalitetsporten er at flaten oppfører seg som prototypen — ikke at seks reviewere er enige. **~1 time, mot en dag.**
+
+Retningen videre er den samme kommandoen som ble beskrevet før Andreas ba om porten direkte: les `git diff` på `prototypes/`, slå hver endring opp i opphav-kommentaren, skriv porten, kjør tsc/lint/test, verifiser i Chrome på 390×844 **og** 1440×900 mot tallene som alt er målt i prototypen.
+
+### Hva som ble portert
+
+Ny mappe `components/variants/report/board/story/`:
+
+| Fil | Hva |
+|-----|-----|
+| `story-model.ts` | Ren modell: `storyPicks` (kuratorens highlights, ellers de tre nærmeste MÅLTE), `storyBeat` (to setninger, kuttet på setningsslutt), `storyNarrative`, `storyPickIdentity`, `storyEmphasis` (tre nivåer) |
+| `story-tour.tsx` | `StoryTourProvider` + `useStoryTour`/`useStoryTourOptional`. Tilstand, kamerabevegelser, broen til board-reduceren |
+| `StoryCard.tsx` | Stoppet: fastlimt hode (kryss + spørsmål + faner) + de tre fanene |
+| `StoryRail.tsx` | Transporten, to varianter: `deck` (fast, mobil) og `flow` (i flyten, desktop) + `StoryDeck` |
+| `StoryPlayCard.tsx` | Inngangen, over indeksen på begge flater |
+| `StoryTravelCell.tsx` | Reisemåte som enhet over minutt-kolonnen (`mr-[22px]`), panelet er produksjonens egen `TravelModeSelector variant="panel"` |
+
+Endret utenfor mappa: `MapCameraApi` fikk `fitCoordinates` + `flyToPoint` (`lib/board/board-types.ts`, implementert i `BoardMap.tsx`), `BoardMarker` fikk `emphasis` (navngitt/scene/tekstur + inerte pinner), `board-state` fikk `OpenPOISource: "story"`, `NeighbourhoodSheet` fikk `contentRestKey` + `tone`, `NeighbourhoodSurface` og `SidebarContentPreview` fikk hver sin omvisnings-gren, `FAQSection` fikk valgfri eyebrow, `TravelModeSelector` slutter å vise «–» når intet punkt er valgt, og `ReportReelsPage` monterer provideren.
+
+### Fire ting produksjonen løste bedre — og fire den løste dårligere
+
+Bedre, altså **portingskostnader som forsvant**: sheetens gripeflate er et eget flex-barn i produksjonen (ikke sticky i én scroller), så `--grab-h`-forskyvningen av krysset falt bort; `useViewportCategoryList` fantes alt og er nøyaktig `buildList(cat, {scoped:true})`; `FAQSection` bærer alt klikkbare stedsnavn, så prototypens `plainText`-stripping var unødvendig; og `fitCoordinates` arver kartets egen padding for sheet og sidekolonne, så prototypens manuelle `sheetVisibleH()`-måling falt bort.
+
+Dårligere, altså **fire steder porten måtte legge noe til**:
+
+1. **`contentRestKey` — sheeten som vindu, ikke liste.** Produksjonens tak følger innholdet (`max = min(contentHeight, 86%)`), som er riktig for en liste og feil for en fane-flate: målt i Chrome krympet hele sheeten i det man byttet fane. Nå fryses hvilestillingen ved første måling under nøkkelen, OG innholdstaket kobles ut mens nøkkelen står. Målt etterpå: 618 px i alle tre faner, uendret.
+2. **`source: "story"` — ingen modal.** `OPEN_POI` setter fase `poi`, og på mobil ER modalen POI-flaten. Uten en kilde ville et stedstrykk slått opp en 85vh-modal over den setningen som nettopp åpnet seg — den kompleksiteten modusen fjerner. Kilden `"story"` undertrykker den (samme mekanisme som `"faq"`), og kartet flyr likevel.
+3. **To motorer, to uttrykk.** Se neste seksjon.
+4. **`duration-[420ms]` genereres ikke.** Tailwind kaller den tvetydig (transition vs. animasjon) og hopper over den; `[transition-duration:420ms]` virker. Samme felle ligger i `duration-[600ms]` andre steder i kodebasen — verdt å sjekke ved neste anledning.
+
+### Markørene: samme regel, to uttrykk
+
+Rapportert av Andreas på 3D-boardet: *«jeg ser at punkter ikke filtreres i kartet når kategorien velges?»* Riktig — og det var ikke en glipp, det var en motor-forskjell som måtte navngis.
+
+Mapbox demper: omvisningen gir hver markør en `emphasis` — `named` (de tre, større pin), `scene` (kategorien rundt, .6) og `texture` (resten av nabolaget, .26). Dekningen skal SYNES, den er det megleren betaler for.
+
+Google 3D kan ikke dempe på samme måte: der er markørene en **monterings**-beslutning (`useBoardMarkerSet` → `markerPOIs`), og fila advarer eksplisitt mot opacity-arbeid på markør-stien (WebGL-kontekst-churn). Samme regel — *stoppet eier kartet* — er derfor uttrykt som et filter: bare stoppets kategori står montert. Målt: 189 / 39 / 42 / 52 markører per stopp, 464 tilbake etter «Avslutt».
+
+Signalet heter `storyStop` og er BEVISST ikke `activeCategoryId`: satte omvisningen kategori-valget, ville Mapbox mistet teksturen. Ett felt, to motorer, ingen delt løgn. Pinnene er inerte i begge (trykkflaten er stedene i flaten) — i 3D via en ref, ellers ville `handlePOIClick` fått ny identitet i det omvisningen starter og defeatet markør-memoen for alle 189.
+
+### Verifisering
+
+Chrome, mot hovedrepoet på `:3000`, tre boards:
+
+- **1440×900, `megler-harstad/strindfjordvegen-10-…` (nivå 1, 2D):** hodet festet i kolonnens overkant (12 px luft over spørsmålet, 16 px gap ned til fanene — samme tall som ble målt i prototypen), raden ruller bort under det, 21 rader i utsnittet med 3 stjerner, «161 steder utenfor utsnittet», kameraet rammer bolig + tre steder, stedstrykk gir gangrute + mini-popup.
+- **390×844, samme board:** `display: contents` på hodet (spørsmålet alene festet), handle 30 px, dekk 75 px i rammens underkant, sheet 618 px i alle tre faner, hvit flate uten synlig maske-stripe, stoppbytte flytter raden og rammer nytt kamera, «Avslutt» gir krem flate + «I nærheten» + 6 kategorikort + hvilestilling 287.
+- **1440×900, `placy-demo/strindfjordvegen-10` (nivå 1, 3D-addon):** markør-filteret over, inerte pinner, 3D-kameraet flyr til åpnet sted (range 1600 → 296 m) fordi regissøren alt reagerer på åpnet punkt.
+- **`bane-nor-eiendom/stasjonskvartalet` (med VO):** urørt — krem sidekolonne, adressetittel på plass, ingen play-knapp, ingen konsollfeil.
+
+Konsollen ren på alle (bare Mapbox' to vanlige advarsler om `place-labels` og terreng-cutoff). Gates: `tsc` 0, `eslint` 0 errors, **3 179 tester** (47 nye: 22 på modellen, 20 på flaten mot ekte providere, 5 på 3D-filter-grenen), `npm run build` grønn.
+
+### Bevisste avvik fra prototypen
+
+- **Desktop gir mini-popup og gangrute ved stedstrykk.** Prototypen har ingen av dem; produksjonen har begge, og de gjør stoppet rikere uten å ta over flaten.
+- **Stedsnavn i FAQ-svar er fortsatt klikkbare** — de flyr kartet og undertrykker modalen. Prototypen strippet dem fordi den ikke hadde noe å åpne.
+- **Logoen blir stående i kolonne-headeren**, bare adressen faller bort. Prototypens baseline hadde ingen logo. Ingen av testboardene har en, så grenen er ikke visuelt sett.
+- **Navnene på 3D-pinnene styres av deklutteringen som før.** I 2D undertrykker omvisningen alle labels unntatt det åpnede stedet; et satellittbilde uten stedsnavn er vanskeligere å lese enn et vektorkart.
+
+### Åpne tråder
+
+1. **Kamera-intent per stopp i 3D.** Etablerings-bildet (bolig + de tre) mangler på 3D-motoren: kameraet der er regissør-drevet (`board-3d-camera-director`), så rammen må inn som en intent — ikke som et `fitBounds`. Egen runde, ikke gjort.
+2. **Stedstekster med kulepunkter renner sammen.** `grounding.curated.narrative` kan bære `\n\n- …`-lister; de rendres som ett avsnitt (samme som i prototypen, men Ferjemannsveien har flere av dem). `whitespace-pre-line` er hele fiksen.
+3. **`/proto-port`-kommandoen er ikke skrevet.** Denne porten er malen den skal kodifisere.
+
+**Git:** ingenting committet, ingenting pushet — vi står på `main`, og branch lages når Andreas sier fra. Prototypen `04` er urørt av porten og ligger fortsatt som iterasjon.
+
+---
+
+## 2026-08-25 (natt) — MAGNETEN ER TATT UT: FLATEN GJØR BARE DET FINGEREN GJØR
+
+**Kontekst:** Andreas testet gest-arbeidet fra dagen på telefon og sendte et skjermopptak: *«her ser du at når jeg slipper scrollen, så «snapper» den litt, som om den finner tilbake til et punkt den vil være på. det er ikke ønsket oppførsel, sheeten bør være 100% fluid i den form at det er touch som bestemmer hvordan den skal oppføre seg.»*
+
+Det han så var magneten: `SNAP_THRESHOLD_PX = 44`. Stanset utrullingen innenfor 44 piksler av et av de tre stoppene, gikk flaten helt dit. Tallet er produksjonens eget (`NeighbourhoodSheet.tsx`), og oppførselen var **riktig implementert og feil oppførsel**. På enhet leses den ikke som at flaten rydder opp etter seg; den leses som at flaten overprøver deg — du slipper, og så flytter den seg en gang til, til en høyde du ikke pekte på.
+
+Ironien er at forbedringen fra dagen gjorde den *mer* merkbar. Feil 1 i oppføringen under handlet om å regne ut landingen analytisk (`v / -ln(decay)`) i stedet for å gjette med 190 ms. Jo presist magneten traff stoppet, jo tydeligere var det at noe annet enn fingeren bestemte.
+
+### Hva som er borte
+
+`nearestStop`, `glideLanding`, `sheetSettle` og `sheetLand` er slettet, sammen med konstanten. `release` kaller nå `sheetGlideOn` direkte, og utrullingen ender i `flushWhenSheetSettles()` — ingenting korrigerer posisjonen etterpå.
+
+```js
+// FØR: farten projiseres, og treffer den nær et stopp, går flaten HELT dit
+function sheetSettle(outer, v) {
+  const stop = nearestStop(glideLanding(outer.scrollTop, v));
+  if (stop !== null && outer.scrollTop <= sheetTravel) return sheetGoTo(outer, stop);
+  sheetGlideOn(outer, v);
+}
+
+// ETTER: farten fortsetter, og der den dør, står flaten
+sheetGlideOn(d.outer, d.v);
+```
+
+Det flytter de tre stoppene fra å være **stillinger flaten faller inn i** til å være **utgangspunkter**: alt mellom dem er en gyldig høyde. De lever videre som trykk-mål på handlen, uendret (`sheetGoTo` brukes nå bare derfra) — og der er de et valg brukeren tar, ikke en korreksjon hen får. «Ingen gesture skal være eneste vei til noe» holder altså fortsatt, men nå er trykket den *eneste* veien til et stopp.
+
+### Én ting måtte følge med: magneten skjulte at et trykk flyttet flaten
+
+Draget skrev `scrollTop` fra første `pointermove`, også under slop-terskelen, og magneten dro de pikslene tilbake etterpå. Uten den ville hvert trykk på en rad latt flaten stå noen piksler feil, og pikslene ville lagt seg oppå hverandre gjennom en økt. Nå skrives ingenting før terskelen er krysset (`d.moved`), og draget forankres **der krysningen skjedde** (`d.anchorY`) — ellers hopper flaten de ti pikslene terskelen spiste, i det den løsner.
+
+Generell regel, verdt å ha med videre: **en korreksjon kan skjule en feil i det den korrigerer.** Fjerner du korreksjonen, må du lete etter hva den dekket over — ikke bare måle at den er borte.
+
+### Verifisering (Chrome, 390×844, mot hovedrepoet på `:4400`)
+
+`00-niva1-baseline`: slippes flaten 32 px fra hvilestillingen (240) står den der — 0 px drift over ti målinger på ett sekund, begge retninger (272 og 208). Et kast fra taket går **rett gjennom** hvilestillingen (476 → 398 → 334 → 281 → 238 → 201 …) og lander fritt på 62; ingen reversering i noen måling. Handle-trykk sykler fortsatt 240 → 679 → 0 → 240, og fra en fri stilling (300) tar trykket neste stopp over (679). Et trykk på et kategorikort med 6 px bevegelse (under slop) etterlater posisjonen på 240 og åpner drill-in — altså både låsen og gjennomgangen intakt.
+
+`04-fortelling-i-boardet`: fri stilling 18 og 36 px fra hvilestillingen står stille med 0 px drift, `sheetVisibleH()` følger (353 px), og både fri stilling (120) og sammenslått (0) overlever et bytte av sted i fortellingen. Konsollen ren på begge.
+
+**Delt arbeidsmappe:** en annen sesjon itererte på `04/index.html` i samme mappe samtidig. Ingenting av dette rører den fila. Deres endring i omvisningen (handlens bakgrunn og strek borte, `padding-bottom: 0`) gjør `--grab-h` **22 px i omvisningsmodus, ikke 28** — gesten er upåvirket fordi `sizeMobileSurface` måler tallet hver gang i stedet for å huske det: krysset følger med på `top: 22px`, og sammenslått flate blir 93 px synlig (22 px handle rett på det 71 px høye dekket).
+
+**Åpent, og bare enheten kan avgjøre det:** bremsehalen. `SHEET_V_STOP = 0.02` px/ms betyr at siste stykke kryper ~2 px per 100 ms før utrullingen erklæres ferdig. Målingene viser halen tydelig (94 → 84 → 74 → 64 → 62). Kjennes den seig, er terskelen spaken — ikke dempingen.
+
+**Dokumentasjon oppdatert samtidig:** `prototypes/README.md` (stoppene beskrevet som utgangspunkter, med hvorfor magneten er ute), `_shared/baseline.css` (`AVVIK`-merknad: produksjonen er høyde-drevet med magnet, prototypen er scroll-drevet og fri), og `docs/solutions/ui-patterns/mobil-sheet-en-scroller-tre-stopp-20260825.md` (ny seksjon «Etterspill samme dag: magneten er tatt ut», og feil 1 merket som læring for dem som *velger* å snappe). Ingenting committet, ingenting pushet.
+
+---
+
 ## 2026-08-25 — SHEETEN BLE ÉN SCROLLER MED TRE STOPP: DRA, SCROLL OG SLÅ SAMMEN ER SAMME BEVEGELSE (branch `feat/sheet-gesture`, worktree `../placy-sheet-gest`)
 
 **Kontekst:** Andreas sendte en skjermopptak fra Citymapper og beskrev effekten han ville gjenskape: *«her ser du hvordan sheet er drabar ved drag/touch. når det er igjen 10% (ca) av høyden, stopper den selve draget av sheet-kroppen, og det blir da en sticky header med inline scroll i selve sheeten. slik går det også på vei tilbake.»* Han la til at radene i lista er trykkbare igjen så snart draget slutter — *«det er som om at appen detekterer at jeg har vært borti touch med finger, og låser av punktene i lista mens jeg drar»* — og spurte om dette i det hele tatt er mulig på web eller om det er native-only. Etter første leveranse kom den avgjørende korreksjonen: *«jeg ser at jeg ikke får dratt den ned noe mer enn ca 50% av høyden av viewheight. Det er jo som på citymapper, at brukeren drar ned sheet for å få mer plass til å bruke kartet.»*

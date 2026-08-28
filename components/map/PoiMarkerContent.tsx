@@ -21,10 +21,10 @@ import {
  * ## Boksen MÅ være kvadratisk (og hvorfor)
  *
  * `MarkerElement`s anker er `anchorLeft: -50%` / `anchorTop: -100%` — prosent av
- * ELEMENTETS EGEN boks. Verifisert i browser: disc + label i flex-flyt gjorde
- * verts-boksen 132 px bred, og `-50%` av den flyttet disc-en 46 px bort fra
- * punktet sin — og motsatt vei når labelen flippet side. En naken 40×40 disc og
- * en 40×40 disc med absolutt plassert label fikk derimot IDENTISK
+ * ELEMENTETS EGEN boks. Verifisert i browser (målt da disc-en var 40 px): disc +
+ * label i flex-flyt gjorde verts-boksen 132 px bred, og `-50%` av den flyttet
+ * disc-en 46 px bort fra punktet sin — og motsatt vei når labelen flippet side.
+ * En naken disc og en disc med absolutt plassert label fikk derimot IDENTISK
  * `translate(623.5px, 497.005px)`.
  *
  * Derfor: disc-en er en `position: relative` boks på nøyaktig {@link PIN_SIZE},
@@ -42,6 +42,15 @@ import {
  * satellittfoto, ikke et lyst karttema, så konturen er ikke pynt — den er det
  * som gjør navnet lesbart.
  *
+ * ## Skalaen
+ *
+ * `scale` kommer fra kollisjonskullingen, som leser den av kameraet når det
+ * faller til ro ({@link poiPinScaleForZoom}). Den ganger disc, ikon, prikk OG
+ * navnet — hele markøren, ikke bare skiva, for det var teksten som ble for
+ * liten på nær zoom. Boksen vokser med den, og siden Googles anker er PROSENT
+ * av elementets egen boks (se over) blir markøren stående på punktet sitt uten
+ * at noe anker må regnes om.
+ *
  * ## Pointer-events
  *
  * DOM-markøren tar over hit-testingen fra WebGL-canvaset (verifisert:
@@ -51,11 +60,21 @@ import {
  * verten, ikke av React-handlere her.
  */
 
-/** Markør-diameter. Speiles av `PIN_HALF` i kollisjonskullingen. */
-export const PIN_SIZE = 40;
+/**
+ * Markør-diameter — ÉN kilde for hele 3D-stien: kollisjonskullingen
+ * (`use-3d-marker-declutter`), reveal-lagets legend-pin og den rasteriserte
+ * `Marker3DPin` importerer alle denne. De hadde hver sin kopi av tallet, og en
+ * kopi driver fra originalen ved første justering.
+ *
+ * 32 px, ikke 40 (2026-08-27): 40 leste som store fargeklumper over
+ * satellittfoto — flaten er tettere enn et lyst karttema, så samme disc bærer
+ * mer visuell vekt her. 32 er dessuten NØYAKTIG den inaktive 2D-markøren
+ * (`BoardMarker`s `containerSize`), så samme sted er like stort i begge motorer.
+ */
+export const PIN_SIZE = 32;
 /** Prikken en demotert markør tegnes som. Speiles av `DOT_HALF`. */
 export const DOT_SIZE = 14;
-/** Ikon-ratio 0,50 — 40 px disc → 20 px ikon, samme som 2D-markørene og lista. */
+/** Ikon-ratio 0,50 — 32 px disc → 16 px ikon, samme som 2D-markørene og lista. */
 const ICON_RATIO = 0.5;
 
 /** Nær-svart, samme som 2D-labelen. */
@@ -86,6 +105,13 @@ export interface PoiMarkerContentProps {
   labelSide?: LabelSide;
   /** Tegn som ren farge-prikk i stedet for full ikon-pin (demotert/compact). */
   compact?: boolean;
+  /**
+   * Zoom-avhengig størrelse, 1 = {@link PIN_SIZE}. Ganger disc, ikon, prikk og
+   * label-typografi. Kilden er `poiPinScaleForZoom`, lest ved kamera-ro — og
+   * kollisjonskullingen MÅ regne med samme tall, ellers reserverer den plass til
+   * en annen markør enn den som tegnes.
+   */
+  scale?: number;
 }
 
 export function PoiMarkerContent({
@@ -96,18 +122,26 @@ export function PoiMarkerContent({
   label,
   labelSide = "right",
   compact = false,
+  scale = 1,
 }: PoiMarkerContentProps) {
-  // Prikken beholder markørens 40×40 boks, så ankeret ikke flytter seg når en
-  // markør demoteres. Bare det tegnede innholdet krymper.
-  const iconSize = Math.round(PIN_SIZE * ICON_RATIO);
+  // Prikken beholder markørens fulle {@link PIN_SIZE}-boks, så ankeret ikke
+  // flytter seg når en markør demoteres. Bare det tegnede innholdet krymper.
+  const pin = Math.round(PIN_SIZE * scale);
+  const dot = Math.round(DOT_SIZE * scale);
+  const iconSize = Math.round(pin * ICON_RATIO);
+  // Størrelsen skifter i trinn ved kamera-ro, ikke per frame — uten en overgang
+  // ville hvert trinn vært et hopp. Transformen eier Google, så vi animerer bare
+  // boksen og typografien.
+  const grow = "width 180ms ease-out, height 180ms ease-out";
 
   return (
     <div
       data-poi-marker=""
       style={{
         position: "relative",
-        width: PIN_SIZE,
-        height: PIN_SIZE,
+        width: pin,
+        height: pin,
+        transition: grow,
         // Ingen `overflow` her: labelen SKAL stikke utenfor boksen. Google
         // klipper ikke marker-innhold (verifisert: overflow visible, contain
         // none), og kartelementets egen `contain: content` holder den likevel
@@ -120,15 +154,16 @@ export function PoiMarkerContent({
             position: "absolute",
             left: "50%",
             top: "50%",
-            width: DOT_SIZE,
-            height: DOT_SIZE,
-            marginLeft: -DOT_SIZE / 2,
-            marginTop: -DOT_SIZE / 2,
+            width: dot,
+            height: dot,
+            marginLeft: -dot / 2,
+            marginTop: -dot / 2,
             borderRadius: "50%",
             background: color,
             border: "2px solid #ffffff",
             boxShadow: "0 1px 2px rgba(0,0,0,0.35)",
             boxSizing: "border-box",
+            transition: grow,
           }}
         />
       ) : (
@@ -183,17 +218,17 @@ export function PoiMarkerContent({
             // Labelen starter utenfor disc-kanten, på den siden
             // kollisjonskullingen valgte. `LABEL_GAP_X` er delt med 2D-stien.
             ...(labelSide === "right"
-              ? { left: PIN_SIZE + LABEL_GAP_X }
-              : { right: PIN_SIZE + LABEL_GAP_X }),
-            maxWidth: LABEL_MAX_W,
+              ? { left: pin + LABEL_GAP_X * scale }
+              : { right: pin + LABEL_GAP_X * scale }),
+            maxWidth: LABEL_MAX_W * scale,
             // Linjebrytingen er nå CSS-ens jobb. SVG-<text> brøt ikke selv, og
             // det er derfor `wrapLabelLines` fantes.
             display: "-webkit-box",
             WebkitBoxOrient: "vertical",
             WebkitLineClamp: LABEL_MAX_LINES,
             overflow: "hidden",
-            fontSize: LABEL_FONT_SIZE,
-            lineHeight: `${LABEL_LINE_H}px`,
+            fontSize: LABEL_FONT_SIZE * scale,
+            lineHeight: `${LABEL_LINE_H * scale}px`,
             fontWeight: 600,
             fontFamily: "system-ui, -apple-system, Helvetica Neue, sans-serif",
             color: LABEL_FILL,

@@ -28,7 +28,10 @@
  * etterprøve på kartet må stemme.
  */
 
-import { faqQuestionsForTheme } from "@/lib/editorial/category-specs";
+import {
+  AREA_BOARD_QUESTIONS,
+  faqQuestionsForTheme,
+} from "@/lib/editorial/category-specs";
 import {
   formatHourRange,
   parseWeekdayText,
@@ -838,64 +841,285 @@ export function generateCategoryFaq(input: FaqGeneratorInput): FaqEntry[] {
   return entries;
 }
 
+export interface AreaFaqTheme {
+  id: string;
+  label: string;
+  /** Temaets board-filtrerte POI-er. Utelatt = temaet bidrar bare med lenke. */
+  pois?: readonly POI[];
+}
+
 export interface GlobalFaqInput {
   boardFacts?: ReportBoardFacts;
   curated?: readonly ReportFaqAnswer[];
-  /** Tema-IDer og etiketter som finnes på boardet — kilden til kategorilenker. */
-  themes: ReadonlyArray<{ id: string; label: string }>;
+  /** Tema-IDer, etiketter og POI-settene deres. Etikettene er kilden til
+   *  kategorilenker; POI-settene er kilden til de tverrgående svarene. */
+  themes: ReadonlyArray<AreaFaqTheme>;
+  /** Boligens koordinat. Kun brukt til å sortere steder uten målt gangtid. */
+  center?: Coordinates;
 }
 
 /** Spørsmåls-id for det deterministiske reise-svaret på boardnivå. */
 export const GLOBAL_TRANSIT_ID = "til-byen";
 
 /**
- * Den globale nabolags-FAQ-en: få spørsmål, vist når ingen kategori er valgt.
+ * Den ene kuraterte id-en som IKKE blir en FAQ-rad: den er OMRÅDETS INTRO.
  *
- * Bevisst SLANK. Den skal binde flatene sammen, ikke konkurrere med
- * kategori-FAQ-ene — derfor lenker svarene inn i kategoriene framfor å
- * gjenta innholdet deres.
+ * «Hva kjennetegner området?» er spørsmålet en intro besvarer, og på
+ * områdestoppet står svaret som prosa øverst — slik hvert tema har sin
+ * body-tekst over utvalget sitt (2026-08-27). Å ha det begge steder ville vist
+ * samme avsnitt to ganger på samme flate; å ha det bare i trekkspillet gjorde
+ * strøkets egen stemme til den ene raden ingen åpnet.
+ *
+ * Id-en er kontrakten: kurator-arbeidsflyten (`curate-area`) er uendret, og
+ * strøk som allerede har svaret får introen uten ny kurering.
+ */
+export const GLOBAL_INTRO_ID = "karakteristikk";
+
+/** Områdets intro fra strøkets kuraterte svar, eller undefined. Ingen
+ *  deterministisk erstatning: har vi ikke strøkets ord, dikter vi ikke opp et
+ *  avsnitt om det (flaten faller tilbake på én navigerende setning). */
+export function areaIntroFromCurated(
+  curated: readonly ReportFaqAnswer[] | undefined,
+): string | undefined {
+  const svar = curated?.find((c) => c.id === GLOBAL_INTRO_ID)?.svar?.trim();
+  return svar || undefined;
+}
+
+// ── Områdets svarbyggere ────────────────────────────────────────────────────
+//
+// Samme regler som tema-byggerne over (positive påstander, gangtid kun der den
+// er målt, ingen diktede svar), med ett tillegg: de er TVERRGÅENDE. Et svar her
+// ser hele boardet, og det er hele grunnen til at spørsmålet ikke bor i et tema.
+
+type AreaAnswerBuilder = (input: GlobalFaqInput) => string | undefined;
+
+/** Grensen for «i gangavstand» i områdesvarene — samme tall som ellers. */
+const AREA_NEAR_MIN = 5;
+
+/** Fra dette klokkeslettet regnes et sted som åpent på kvelden. */
+const AREA_LATE_MIN = 21 * 60;
+
+/**
+ * Boardets steder, hvert sted ÉN gang.
+ *
+ * Temaene er disjunkte i `REPORT_THEME_DEFAULTS`, men et sted som likevel havner
+ * i to temaer skal ikke telles to ganger i et tall leseren kan etterprøve mot
+ * kartet.
+ */
+function areaPois(input: GlobalFaqInput): POI[] {
+  const seen = new Map<string, POI>();
+  for (const theme of input.themes) {
+    for (const poi of theme.pois ?? []) {
+      if (!seen.has(poi.id)) seen.set(poi.id, poi);
+    }
+  }
+  return [...seen.values()];
+}
+
+/** `[Transport & Mobilitet](category:transport)` når temaet nådde boardet. */
+function themeLink(theme: AreaFaqTheme): string {
+  return `[${theme.label}](category:${theme.id})`;
+}
+
+/** «ett sted» / «4 steder». Samme grunn som `minutter`: «1 steder» er en feil
+ *  leseren legger merke til før hun legger merke til tallet. */
+function steder(n: number): string {
+  return n === 1 ? "ett sted" : `${n} steder`;
+}
+
+/**
+ * Klokkeslettet alene, i den formen en dør skriver det: «23», «21.30».
+ *
+ * Midnatt får ordet, ikke tallet: Google lagrer stengetiden som 24.00, og «har
+ * åpent til 24» leses som en skrivefeil selv når det er riktig.
+ */
+function klokkeslett(min: number): string {
+  if (min >= 1440) return "midnatt";
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? String(h) : `${h}.${String(m).padStart(2, "0")}`;
+}
+
+/**
+ * TIL BYEN — formen er REISETID MED LENKE INN. Fakta er de samme som
+ * transportmalens `til-sentrum`; forskjellen er at områdets versjon sender
+ * leseren videre til temaet i stedet for å utdype selv.
+ */
+function tilByen(input: GlobalFaqInput): string | undefined {
+  const sentrum = cityCentreSentence(input.boardFacts);
+  if (!sentrum) return undefined;
+  const transport = input.themes.find((t) => t.id === "transport");
+  const lenke = transport
+    ? ` Se ${themeLink(transport)} for holdeplassene i nabolaget.`
+    : "";
+  return `${sentrum}${lenke}`;
+}
+
+/**
+ * NÆRMEST — formen er NAVN MED MINUTTER I PARENTES, og den finnes bare her:
+ * ingen kategori kan svare, fordi svaret går på tvers av alle.
+ */
+function naermest(input: GlobalFaqInput): string | undefined {
+  const nærmeste = areaPois(input)
+    .filter((p) => walkMinutes(p) !== undefined)
+    .sort(
+      (a, b) =>
+        walkMinutes(a)! - walkMinutes(b)! || a.name.localeCompare(b.name, "nb"),
+    )
+    .slice(0, 3);
+  const [først] = nærmeste;
+  if (!først) return undefined;
+  const navn = nærmeste.map((p) => namedPoi(p));
+  const tid = walkMinutes(først)!;
+  // Tre steder med samme tall leser som en feil, ikke som tre naboer. Da sies
+  // tallet ÉN gang — det er samme opplysning, ikke tre.
+  if (nærmeste.every((p) => walkMinutes(p) === tid)) {
+    return nærmeste.length === 1
+      ? endSentence(`${navn[0]} ligger ${minutter(tid)} unna`)
+      : endSentence(`${ogJoin(navn)} ligger alle ${minutter(tid)} unna`);
+  }
+  const deler = nærmeste.map(
+    (p) => `${namedPoi(p)} (${minutter(walkMinutes(p)!)})`,
+  );
+  return endSentence(`Nærmest ligger ${ogJoin(deler)}`);
+}
+
+/**
+ * GANGAVSTAND — formen er TERSKLER. To tall, ikke en vurdering: hvor mye som
+ * ligger under ti minutter, og hvor mye av det som ligger under fem.
+ *
+ * Bare målte tider telles, så tallet er alltid et gulv — aldri en påstand om at
+ * resten ligger LENGER unna (poolen er recall-begrenset, og en manglende måling
+ * er ikke en avstand).
+ */
+function gangavstand(input: GlobalFaqInput): string | undefined {
+  const tider = areaPois(input)
+    .map((p) => walkMinutes(p))
+    .filter((m): m is number => m !== undefined);
+  const innenTi = tider.filter((m) => m <= WALK_RADIUS_MIN).length;
+  if (innenTi === 0) return undefined;
+  const innenFem = tider.filter((m) => m <= AREA_NEAR_MIN).length;
+  const først = steder(innenTi);
+  const parts = [
+    `${først[0].toLocaleUpperCase("nb-NO")}${først.slice(1)} på kartet ligger innenfor ti minutter til fots.`,
+  ];
+  // «Innenfor», ikke «under»: grensene er inklusive (ti minutter er i
+  // gangavstand), og et sted som ligger PÅ streken skal ikke telles i en setning
+  // som sier at det ligger under den.
+  //
+  // Bare når det andre tallet sier noe nytt: «Ett sted ligger innenfor ti
+  // minutter. Ett av dem innenfor fem» er samme sted, talt to ganger.
+  if (innenFem > 0 && innenFem < innenTi) {
+    parts.push(
+      innenFem === 1
+        ? "Ett av dem ligger innenfor fem."
+        : `${innenFem} av dem ligger innenfor fem.`,
+    );
+  }
+  return parts.join(" ");
+}
+
+/**
+ * MEST AV — formen er RANGERING MED LENKER. Den svarer på hva slags nabolag
+ * dette er i tall, og den er samtidig veien videre: begge navnene bytter stopp.
+ */
+function mestAv(input: GlobalFaqInput): string | undefined {
+  const rangert = input.themes
+    .map((theme) => ({ theme, n: theme.pois?.length ?? 0 }))
+    .filter((x) => x.n > 0)
+    .sort((a, b) => b.n - a.n || a.theme.label.localeCompare(b.theme.label, "nb"));
+  const [først, andre] = rangert;
+  if (!først) return undefined;
+  const parts = [`${themeLink(først.theme)} er størst, med ${steder(først.n)}.`];
+  if (andre) parts.push(`${themeLink(andre.theme)} følger med ${steder(andre.n)}.`);
+  return parts.join(" ");
+}
+
+/**
+ * ÅPENT SENT — formen er KLOKKESLETT. Hverdagskonsensus, ikke «ofte åpent
+ * sent»: står det et tall, gjelder det alle fem hverdagene.
+ */
+function apentSent(input: GlobalFaqInput): string | undefined {
+  const sene = areaPois(input)
+    .map((poi) => ({ poi, tid: hverdagstider(poi) }))
+    .filter(
+      (x): x is { poi: POI; tid: DayHours } =>
+        x.tid !== null && x.tid.closeMin >= AREA_LATE_MIN,
+    )
+    .sort(
+      (a, b) =>
+        b.tid.closeMin - a.tid.closeMin ||
+        a.poi.name.localeCompare(b.poi.name, "nb"),
+    )
+    .slice(0, MAX_NAMED);
+  const [først, andre] = sene;
+  if (!først) return undefined;
+  const sent = klokkeslett(først.tid.closeMin);
+  // Samme stengetid = én setning med to navn, av samme grunn som i `naermest`.
+  if (andre && andre.tid.closeMin === først.tid.closeMin) {
+    return `${namedPoi(først.poi)} og ${namedPoi(andre.poi)} har åpent til ${sent} på hverdager.`;
+  }
+  const parts = [`${namedPoi(først.poi)} har åpent til ${sent} på hverdager.`];
+  if (andre) {
+    parts.push(
+      `${namedPoi(andre.poi)} stenger ${klokkeslett(andre.tid.closeMin)}.`,
+    );
+  }
+  return parts.join(" ");
+}
+
+const AREA_ANSWER_BUILDERS: Record<string, AreaAnswerBuilder> = {
+  "til-byen": tilByen,
+  naermest,
+  gangavstand,
+  "mest-av": mestAv,
+  "apent-sent": apentSent,
+};
+
+/**
+ * Områdets FAQ — boardets første stopp, der ingen kategori er valgt.
+ *
+ * Samme fletting som `generateCategoryFaq`, mot `AREA_BOARD_QUESTIONS`: kuratert
+ * svar på en katalog-id VINNER og beholder plassen sin, kurators egne id-er
+ * legges til til slutt. Den ene forskjellen er `GLOBAL_INTRO_ID`, som aldri blir
+ * en rad — den er introen over lista.
  */
 export function generateGlobalFaq(input: GlobalFaqInput): FaqEntry[] {
+  const curatedById = new Map((input.curated ?? []).map((c) => [c.id, c]));
+  const brukt = new Set<string>([GLOBAL_INTRO_ID]);
   const entries: FaqEntry[] = [];
-  const brukt = new Set<string>();
 
-  // Kuratert først: «hva kjennetegner området?» er strøkets stemme, og den
-  // står øverst når den finnes.
+  for (const question of AREA_BOARD_QUESTIONS) {
+    const kuratert = curatedById.get(question.id);
+    if (kuratert) {
+      brukt.add(question.id);
+      entries.push({
+        id: question.id,
+        question: kuratert.spørsmål ?? question.spørsmål,
+        answer: kuratert.svar,
+        source: "curated",
+      });
+      continue;
+    }
+    const svar = AREA_ANSWER_BUILDERS[question.id]?.(input);
+    if (!svar) continue; // Uten faktum, ingen rad. Aldri et diktet svar.
+    entries.push({
+      id: question.id,
+      question: question.spørsmål,
+      answer: svar,
+      source: "deterministic",
+    });
+  }
+
   for (const kuratert of input.curated ?? []) {
-    if (kuratert.id === GLOBAL_TRANSIT_ID) continue; // håndteres under
+    if (brukt.has(kuratert.id)) continue;
     if (!kuratert.spørsmål) continue;
-    brukt.add(kuratert.id);
     entries.push({
       id: kuratert.id,
       question: kuratert.spørsmål,
       answer: kuratert.svar,
       source: "curated",
     });
-  }
-
-  const transitQuestion = "Hvordan kommer jeg meg til byen?";
-  const kuratertTransit = (input.curated ?? []).find((c) => c.id === GLOBAL_TRANSIT_ID);
-  if (kuratertTransit) {
-    entries.push({
-      id: GLOBAL_TRANSIT_ID,
-      question: kuratertTransit.spørsmål ?? transitQuestion,
-      answer: kuratertTransit.svar,
-      source: "curated",
-    });
-  } else {
-    const sentrum = cityCentreSentence(input.boardFacts);
-    if (sentrum) {
-      const transport = input.themes.find((t) => t.id === "transport");
-      const lenke = transport
-        ? ` Se [${transport.label}](category:${transport.id}) for holdeplassene i nabolaget.`
-        : "";
-      entries.push({
-        id: GLOBAL_TRANSIT_ID,
-        question: transitQuestion,
-        answer: `${sentrum}${lenke}`,
-        source: "deterministic",
-      });
-    }
   }
 
   return entries;

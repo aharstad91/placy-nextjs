@@ -426,6 +426,22 @@ describe("decideCameraIntent — autoOrbit:false (basic-tier hold)", () => {
 // Satelitt (overhead, R8a): vedvarende director-eid ovenfra-tilstand — alle
 // poser klampes til tilt 0 / heading 0, og directoren eier kameraet også i fri
 // kameramodus (basic-boards står i «free», men POI-/kategoriklikk skal fly, R5).
+describe("decideCameraIntent — omvisning", () => {
+  it("skrå sti: åpen POI under omvisningen gir ingen poi-intent", () => {
+    const intent = decideCameraIntent(
+      baseInput({ storyActive: true, activePOI: { lat: 63.42, lng: 10.41 } }),
+    );
+    expect(intent.kind).not.toBe("poi");
+  });
+
+  it("uten omvisning er POI-flyvningen uendret", () => {
+    const intent = decideCameraIntent(
+      baseInput({ activePOI: { lat: 63.42, lng: 10.41 } }),
+    );
+    expect(intent.kind).toBe("poi");
+  });
+});
+
 describe("decideCameraIntent — overhead (Satelitt)", () => {
   const overheadInput = (overrides: Partial<CameraDecisionInputs> = {}) =>
     baseInput({ overhead: true, ...overrides });
@@ -450,6 +466,20 @@ describe("decideCameraIntent — overhead (Satelitt)", () => {
       overheadInput({ cameraMode: "free", activePOI: { lat: 63.42, lng: 10.41 } }),
     );
     expect(intent.kind).toBe("poi");
+  });
+
+  it("omvisningen kjører → åpen POI flytter IKKE kameraet (stoppet eier rammen)", () => {
+    const intent = decideCameraIntent(
+      overheadInput({
+        cameraMode: "free",
+        storyActive: true,
+        activePOI: { lat: 63.42, lng: 10.41 },
+      }),
+    );
+    // overheadRest, ikke poi: rammen står. Det imperative laget flytter ikke et
+    // kamera som alt ligger ovenfra, så et rad-trykk blir en ren no-op — likt
+    // som i 3D, der fri kameramodus står stille.
+    expect(intent.kind).toBe("overheadRest");
   });
 
   it("kategori med config → overheadCategory pan+zoom-intent, ALDRI cinematic, ingen cut", () => {

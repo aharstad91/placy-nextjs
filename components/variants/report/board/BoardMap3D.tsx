@@ -4,8 +4,12 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapView3D, type Map3DInstance } from "@/components/map/map-view-3d";
 import { useBoardRoute } from "./board-route";
-import { DEFAULT_CAMERA_LOCK, type PendingCamera } from "@/components/map/motor-camera";
+import {
+  DEFAULT_CAMERA_LOCK,
+  type PendingCamera,
+} from "@/components/map/motor-camera";
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
+import { useStoryTourOptional } from "./story/story-tour";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { BoardTravelChip3D } from "./BoardTravelChip3D";
@@ -27,7 +31,10 @@ import {
 } from "./board-flythrough-orchestrator";
 import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
 import { isMarker3DTarget } from "@/components/map/marker-3d-selectors";
-import { useCurrentTrack, useAudioTourPhase } from "@/lib/stores/audio-tour-store";
+import {
+  useCurrentTrack,
+  useAudioTourPhase,
+} from "@/lib/stores/audio-tour-store";
 import type { CategoryCameraConfig } from "@/lib/types";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 
@@ -48,12 +55,26 @@ interface Props {
    */
   pendingCamera: PendingCamera | null;
   /**
-   * Sidebar-okkludering på venstre side i piksler. Beholdt for grensesnitt-
-   * paritet med 2D-varianten; den cinematiske drone-orbiten IGNORERER den og
-   * sentrerer på prosjektet (se board-3d-camera-director) for stabil orbit.
-   * Prosjektet lander i skjerm-senter, godt til høyre for sidebaren.
+   * Sidekolonnens okkludering på venstre side i piksler.
+   *
+   * KAMERAET ignorerer den fortsatt: den cinematiske drone-orbiten sentrerer på
+   * prosjektet (se board-3d-camera-director) for stabil orbit, og prosjektet
+   * lander i skjerm-senter — godt til høyre for panelet.
+   *
+   * UTSNITTET gjør det ikke. Kartelementet dekker hele flaten på desktop, også
+   * bak panelet (2026-08-27), så det publiserte rektangelet må trekke fra det
+   * panelet skjuler — ellers lister nabolagsflaten steder ingen kan se.
    */
   mapPaddingLeft?: number;
+  /**
+   * Bredden (px) kart-elementet stikker ut TIL HØYRE for det synlige vinduet.
+   *
+   * Elementet strekkes forbi vindukanten for å få sikte­punktet i midten av det
+   * SYNLIGE kartet (se kommentaren over `BoardMap3D`-monteringen i BoardMap).
+   * Stripen er rendret, men ingen ser den — så alt som regner i elementets
+   * piksler må trekke den fra. Default 0.
+   */
+  overhangRightPx?: number;
   /** Kameramodus (auto/fri), løftet til BoardMap så Auto/Fri-toggelen kan bo i
    *  den felles BoardMapControls-komponenten nederst-midt. */
   cameraMode: CameraMode;
@@ -138,6 +159,8 @@ export function BoardMap3D({
   publishViewport = false,
   isFront = false,
   mapPaddingBottom = 0,
+  mapPaddingLeft = 0,
+  overhangRightPx = 0,
   onMapReady,
   overhead = false,
   onOverheadBreak,
@@ -153,7 +176,9 @@ export function BoardMap3D({
   const { data: routeData } = useBoardRoute();
 
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
-  const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(null);
+  const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(
+    null,
+  );
 
   // URL-flagg-state lest ÉN gang ved mount (board-url-flags hjemler kontrakten:
   // hvilke flagg finnes + semantikk — AC1/AC6). Semantikk i korthet:
@@ -170,7 +195,9 @@ export function BoardMap3D({
   );
   const establishingShot = useMemo(
     () =>
-      establishingFlag ? getEstablishingShot(data.projectSlug ?? "") : undefined,
+      establishingFlag
+        ? getEstablishingShot(data.projectSlug ?? "")
+        : undefined,
     [establishingFlag, data.projectSlug],
   );
   const establishingMode = !!establishingShot;
@@ -250,12 +277,36 @@ export function BoardMap3D({
   // Hvilke POI-er som mountes (markerPOIs), reveal-kaskaden (revealItems/window),
   // og de avledede signalene hasVoiceOver (data-drevet, IKKE tier — PRD 6 §9 #5)
   // + orbitRange. hasVoiceOver styrer BÅDE markørsettet OG autoOrbit nedenfor.
+  // Omvisningen (`board/story`) når den kjører. `Optional`-varianten fordi
+  // BoardMap3D også monteres utenfor board-treet — der er den null og
+  // markørsettet velges som før.
+  const story = useStoryTourOptional();
+  const storyStop = useMemo(
+    () =>
+      story?.on && story.stop
+        ? { category: story.stop, activePoiId: state.activePOIId }
+        : null,
+    [story?.on, story?.stop, state.activePOIId],
+  );
+  // Omvisningen står på et TEMA, ikke på området. Skillet er gaten for begge
+  // reglene under: på områdestoppet er kartet et overblikk — ingen vekting,
+  // ingen ramme å holde — og da må pinnene være klikkbare, ellers er det ingen
+  // vei inn til et sted som ikke tilhører stoppet du står på (2026-08-27).
+  const storyStopActive = !!story?.on && !story.onArea;
+
+  // Refen holder `handlePOIClick` referanse-stabil: callbacken ligger i
+  // `Marker3DItems`' memo-props, så en ny identitet i det omvisningen starter
+  // ville defeatet memo for HVER markør (S1).
+  const storyOnRef = useRef(false);
+  storyOnRef.current = storyStopActive;
+
   const { markerPOIs, revealItems, revealWindowMs, hasVoiceOver, orbitRange } =
     useBoardMarkerSet({
       data,
       statePhase: state.phase,
       hiddenIds: subFilter.hiddenIds,
       activeCategory,
+      storyStop,
       filmMode,
       flyMode,
       establishingMode,
@@ -319,12 +370,18 @@ export function BoardMap3D({
     [onMapReady],
   );
 
-  // Viewport-publisering (mobil nabolagsflate, R9/R12). Gated på at 3D er den
+  // Viewport-publisering (nabolagsflaten, R9/R12). Gated på at 3D er den
   // fremste motoren — se propen. Alt nedstrøms er delt med 2D-stien.
+  //
+  // Begge okklusjonene sendes inn: sheeten nedenfra på mobil, sidekolonnen fra
+  // venstre på desktop. Kartelementet dekker hele flaten der, også bak panelet,
+  // så uten venstre-leddet ville lista tatt med steder ingen kan se.
   use3DViewportPublish({
     map3d: map3dInstance,
     enabled: publishViewport,
     occludedBottomPx: mapPaddingBottom,
+    occludedLeftPx: mapPaddingLeft,
+    overhangRightPx,
   });
 
   // Stabil click-handler — sitter i Marker3DItems memo-props, så en fersk inline
@@ -332,6 +389,11 @@ export function BoardMap3D({
   // referansen så memo holder (S1).
   const handlePOIClick = useCallback(
     (poiId: string) => {
+      // På et TEMA-stopp er pinnene illustrasjon: trykkflaten er stedene i
+      // flaten, der teksten åpner seg der raden står. Ett interaksjonsmønster,
+      // ikke to — samme regel som `emphasis` gir Mapbox-markørene. På
+      // områdestoppet finnes ingen slik rad, så der klikker man pinnen.
+      if (storyOnRef.current) return;
       for (const cat of data.categories) {
         const found = cat.pois.find((p) => p.id === poiId);
         if (found) {
@@ -370,7 +432,10 @@ export function BoardMap3D({
   const activePOICoords = useMemo(
     () =>
       activePOI
-        ? { lat: activePOI.raw.coordinates.lat, lng: activePOI.raw.coordinates.lng }
+        ? {
+            lat: activePOI.raw.coordinates.lat,
+            lng: activePOI.raw.coordinates.lng,
+          }
         : null,
     [activePOI],
   );
@@ -413,6 +478,10 @@ export function BoardMap3D({
     reducedMotion,
     overhead,
     outroActive: isOutroBeat,
+    // Omvisningen eier kameraet mens den står på et tema: stoppets ramme står,
+    // og et åpnet sted flytter ingenting. Uten dette rykket Satelitt inn til
+    // 300 m og sentrerte punktet på hvert rad-trykk, mens 3D (fri) sto stille.
+    storyActive: storyStopActive,
     skipSkraaReentryRef,
     orbitRange,
     // Basic-tier (uten voice-over): ingen idle-orbit. Etter intro-flythrough-en
@@ -465,6 +534,11 @@ export function BoardMap3D({
     // Mini-popupen viser navnet — da skal ikke pinnen vise det også.
     suppressActiveLabel: popupMode === "mini",
     enabled: !compactMarkers && markerPOIs.length > 0,
+    // Kollisjonen skal avgjøres blant de synlige: elementet er både bredere enn
+    // vinduet og delvis dekket av panelet, og uten disse ville et navn ingen ser
+    // kunnet vinne plassen fra et navn som står midt i bildet.
+    visibleLeftPx: mapPaddingLeft,
+    overhangRightPx,
   });
 
   // cameraMode styres nå av BoardMap (felles BoardMapControls). Vi speiler den i
@@ -564,6 +638,7 @@ export function BoardMap3D({
         markerLabels={declutter.labels}
         demotedMarkerIds={declutter.demotedIds}
         markerZIndexes={declutter.zIndexes}
+        markerScale={declutter.pinScale}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}
@@ -599,7 +674,10 @@ export function BoardMap3D({
           (rendret av BoardMap, sentrert nederst-midt). Drag-takeover-lytteren
           over varsler BoardMap via onDragTakeover. */}
       {popupMode === "mini" && state.activePOIId && (
-        <BoardPOI3DMiniPopup map3d={map3dInstance} />
+        <BoardPOI3DMiniPopup
+          map3d={map3dInstance}
+          pinScale={declutter.pinScale}
+        />
       )}
       {authorMode && (
         <CameraWaypointAuthor

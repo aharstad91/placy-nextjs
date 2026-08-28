@@ -1,30 +1,47 @@
 import { describe, it, expect, vi } from "vitest";
-import { render as rtlRender, fireEvent } from "@testing-library/react";
+import {
+  render as rtlRender,
+  cleanup,
+  fireEvent,
+  within,
+} from "@testing-library/react";
+import { afterEach } from "vitest";
 import { useEffect } from "react";
-import type { ViewportRect } from "@/lib/board/board-types";
-import type { BoardCategory, BoardData } from "../board/board-data";
-import { adaptBoardData } from "../board/board-data";
-import type { ReportData, ReportTheme } from "../report-data";
-import type { FaqEntry } from "@/lib/generators/faq-generator";
-import type { POI } from "@/lib/types";
+import type { MapCameraApi } from "@/lib/board/board-types";
+import type { BoardData, BoardPOI } from "../board/board-data";
 import { BoardProvider, useBoard } from "../board/board-state";
-import { SidebarContentPreview, type SidebarPreviewCategory } from "./DesktopStorySidebar";
+import { StoryTourProvider, useStoryTour } from "../board/story/story-tour";
+import {
+  DISCLOSURE_LABEL,
+  DISCLOSURE_ROW,
+} from "../board/Disclosure";
+import { StoryColumn } from "./DesktopStorySidebar";
 import type { RealtimeData } from "@/lib/hooks/useRealtimeData";
 
+/**
+ * Desktop-kolonnen ER omvisningen (2026-08-27).
+ *
+ * Den beige indeksen — «Hele nabolaget», temakortene, drill-in-panelet — er
+ * slettet, og testene her holder de sømmene som erstattet den: at kolonnen slår
+ * omvisningen på selv og ankommer på OMRÅDET, at raden legger stedet først, at
+ * desktop har to faner og ikke tre, og at megler-kortet ligger sist i scrollen
+ * i stedet for pinnet.
+ */
+
 // Sanntids-hooket mockes: transport-rader (poi != null) får levende data,
-// ikke-transport-rader (poi == null) får tom tilstand. Dette speiler den
-// null-trygge kontrakten i POIHighlightRow (isTransport-gatingen).
+// ikke-transport-rader (poi == null) får tom tilstand. Speiler den null-trygge
+// kontrakten i PlaceRow (gaten er «utvalgt sted» + «raden står åpen»).
 const LIVE: RealtimeData = {
   loading: false,
   error: null,
-  lastUpdated: new Date("2026-07-05T12:00:00Z"),
+  lastUpdated: new Date("2026-08-27T12:00:00Z"),
   entur: {
     stopName: "Strindfjordvegen",
     departures: [
       {
-        departureTime: "2026-07-05T12:05:00Z",
+        departureTime: "2026-08-27T12:05:00Z",
         isRealtime: true,
-        destination: "Grillstad",
+        destination: "Grilstad",
         lineCode: "20",
         transportMode: "bus",
       },
@@ -39,439 +56,451 @@ vi.mock("@/lib/hooks/useRealtimeData", () => ({
 vi.mock("@/lib/utils/format-time", () => ({
   formatRelativeDepartureTime: () => "5 min",
 }));
+vi.mock("next/image", () => ({
+  default: ({ src, alt }: { src: string; alt: string }) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={typeof src === "string" ? src : ""} alt={alt} />
+  ),
+}));
 
-// Panelet leser board-contexten (kartutsnitt + kamera for «ramm inn») fra
-// 2026-08-13, og lever alltid under BoardProvider i produksjon. Testene wrapper
-// derfor renderen i en minimal ekte provider i stedet for å mocke contexten.
-const BOARD_DATA = {
-  projectSlug: "test",
-  home: { name: "Hjem", coordinates: { lat: 63.43, lng: 10.4 }, address: "Gata 1" },
-  categories: [],
-  poisById: new Map(),
-  audioTourEnabled: false,
-} as unknown as BoardData;
+afterEach(() => cleanup());
 
-function BoardWrapper({ children }: { children: React.ReactNode }) {
-  return <BoardProvider data={BOARD_DATA}>{children}</BoardProvider>;
-}
-
-const render = (ui: React.ReactElement) => rtlRender(ui, { wrapper: BoardWrapper });
-
-function makeCategory(
-  overrides: Partial<SidebarPreviewCategory> = {},
-): SidebarPreviewCategory {
+function poi(
+  id: string,
+  name: string,
+  extra: Partial<BoardPOI["raw"]> = {},
+): BoardPOI {
+  const coordinates = { lat: 63.43, lng: 10.4 };
   return {
-    id: "transport",
-    label: "Transport & Mobilitet",
-    color: "#3b82f6",
-    count: 4,
-    editorial: {
-      body: "Linje 20 går langs fjorden.",
-      highlights: [
-        {
-          id: "entur-NSR-StopPlace-60260",
-          name: "Strindfjordvegen bussholdeplass",
-          icon: "Bus",
-          color: "#4d93f8",
-          enturStopplaceId: "NSR:StopPlace:60260",
-        },
-        {
-          id: "poi-uten-kobling",
-          name: "Grilstad mall",
-          icon: "ShoppingBag",
-          color: "#9973f8",
-        },
-      ],
-    },
-    ...overrides,
+    id: id as BoardPOI["id"],
+    name,
+    coordinates,
+    categoryId: "hverdagsliv" as BoardPOI["categoryId"],
+    raw: {
+      id,
+      name,
+      coordinates,
+      category: { id: "grocery", name: "Dagligvare", icon: "ShoppingCart", color: "#22c55e" },
+      travelTime: { walk: 3 },
+      ...extra,
+    } as BoardPOI["raw"],
   };
 }
 
-describe("SidebarContentPreview — sanntid i drill-in-panelet (PRD 11 Unit 7 AC1)", () => {
-  it("aktiv nivå-2-kategori viser highlights med live avganger for transport-rader", () => {
-    const { getByText } = render(
-      <SidebarContentPreview
-        categories={[makeCategory()]}
-        activeCategoryId="transport"
-      />,
-    );
-    expect(getByText("Verdt å merke seg")).not.toBeNull();
-    expect(getByText("Strindfjordvegen bussholdeplass")).not.toBeNull();
-    // Live-avgangen fra useRealtimeData rendres via POIRealtimeSection
-    expect(getByText("20")).not.toBeNull();
-    expect(getByText(/Grillstad/)).not.toBeNull();
-    expect(getByText("5 min")).not.toBeNull();
-  });
-
-  it("ikke-transport-highlight rendrer rad uten sanntidsseksjon", () => {
-    const { getByText, queryByText } = render(
-      <SidebarContentPreview
-        categories={[
-          makeCategory({
-            editorial: {
-              body: "Tekst.",
-              highlights: [
-                {
-                  id: "poi-uten-kobling",
-                  name: "Grilstad mall",
-                  icon: "ShoppingBag",
-                  color: "#9973f8",
-                },
-              ],
-            },
-          }),
-        ]}
-        activeCategoryId="transport"
-      />,
-    );
-    expect(getByText("Grilstad mall")).not.toBeNull();
-    expect(queryByText("5 min")).toBeNull();
-  });
-
-  it("kategori uten editorial (nivå 1) viser index-lista, ikke drill-in", () => {
-    const { getByText, queryByText } = render(
-      <SidebarContentPreview
-        categories={[makeCategory({ editorial: undefined })]}
-        activeCategoryId="transport"
-      />,
-    );
-    expect(getByText("Hele nabolaget")).not.toBeNull();
-    expect(queryByText("Verdt å merke seg")).toBeNull();
-  });
-});
-
-describe("kategori-panelet: viewport-scopet liste + ærlig dekning (2026-08-13)", () => {
-  /**
-   * Panelet lister kategoriens steder i det brukeren faktisk ser på kartet.
-   * Mobilens kategoriside gjør bevisst det motsatte (R16) — her er lista ved
-   * siden av kartet, så «det du ser» er det ærlige svaret, og dekningsbrøken
-   * sier eksplisitt hvor mange som ligger utenfor.
-   */
-  const RECT: ViewportRect = {
-    west: 10.39,
-    east: 10.41,
-    south: 63.42,
-    north: 63.44,
-  };
-  const FAR = { lat: 63.505, lng: 10.51 };
-
-  function poi(id: string, opts: { lat?: number; lng?: number; walk?: number } = {}) {
-    const coordinates = { lat: opts.lat ?? 63.43, lng: opts.lng ?? 10.4 };
-    return {
-      id,
-      name: id,
-      coordinates,
-      categoryId: "transport",
-      raw: {
-        id,
-        name: id,
-        coordinates,
-        category: { id: "bus", name: "Buss", icon: "Bus", color: "#3b82f6" },
-        travelTime: opts.walk === undefined ? undefined : { walk: opts.walk },
-      },
-    };
-  }
-
-  const BOARD_CATEGORY = {
-    id: "transport",
-    label: "Transport & Mobilitet",
-    lead: "",
-    body: "",
-    icon: "Bus",
-    color: "#3b82f6",
-    pois: [
-      poi("Naerstopp", { walk: 3 }),
-      poi("Mellomstopp", { walk: 8 }),
-      poi("Langtstopp", { ...FAR, walk: 24 }),
-    ],
-    topRankedPois: [],
-  } as unknown as BoardCategory;
-
-  /** Rendrer panelet under en ekte provider med gitt utsnitt og åpen POI. */
-  function renderPanel({
-    rect = RECT,
-    openPoiId,
-    boardCategories = [BOARD_CATEGORY],
-    utenKamera = false,
-  }: {
-    rect?: ViewportRect | null;
-    openPoiId?: string;
-    boardCategories?: BoardCategory[];
-    utenKamera?: boolean;
-  } = {}) {
-    const data = {
-      projectSlug: "test",
-      home: { name: "Hjem", coordinates: { lat: 63.43, lng: 10.4 }, address: "Gata 1" },
-      categories: boardCategories,
-      poisById: new Map(),
-      audioTourEnabled: false,
-    } as unknown as BoardData;
-
-    function Driver() {
-      const { setViewportRect, dispatch, setMapCamera } = useBoard();
-      useEffect(() => {
-        setViewportRect(rect);
-      }, [setViewportRect]);
-      useEffect(() => {
-        if (openPoiId) dispatch({ type: "OPEN_POI", id: openPoiId as never });
-      }, [dispatch]);
-      useEffect(() => {
-        // BoardMap registrerer dette i produksjon (kun på publiserende flater).
-        if (!utenKamera) {
-          setMapCamera({ snapshot: () => null, restore: () => {}, fitVisible: () => {} } as never);
-        }
-      }, [setMapCamera]);
-      return null;
-    }
-
-    return rtlRender(
-      <BoardProvider data={data}>
-        <Driver />
-        <SidebarContentPreview
-          categories={[makeCategory()]}
-          boardCategories={boardCategories}
-          activeCategoryId="transport"
-        />
-      </BoardProvider>,
-    );
-  }
-
-  it("lister kategoriens steder i utsnittet, med gangtid", () => {
-    const { getAllByTestId } = renderPanel();
-    const rows = getAllByTestId("viewport-row").map((el) => el.textContent);
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toContain("Naerstopp");
-    expect(rows[0]).toContain("3 min");
-    expect(rows[1]).toContain("Mellomstopp");
-  });
-
-  it("viser ærlig dekningsbrøk i stedet for et rått totaltall", () => {
-    const { getByTestId } = renderPanel();
-    expect(getByTestId("category-subline").textContent).toBe("2 av 3 synlig · 3–8 min");
-  });
-
-  it("tilbyr «ramm inn» med antallet som ligger utenfor utsnittet", () => {
-    const { getByTestId } = renderPanel();
-    const rad = getByTestId("outside-viewport");
-    expect(rad.textContent).toContain("1 sted ligger");
-    expect(rad.textContent).toContain("utenfor utsnittet");
-    // Knappen finnes bare når kamera-API-et er registrert — ingen død knapp.
-    expect(rad.querySelector('[data-testid="reframe-category"]')).not.toBeNull();
-  });
-
-  it("viser antallet uten «ramm inn»-knapp når kamera-API-et mangler", () => {
-    // Provideren i denne testen registrerer aldri et kamera (ingen BoardMap),
-    // så knappen skal utebli mens tallet fortsatt informerer.
-    const { queryByTestId, getByTestId } = renderPanel({ utenKamera: true });
-    expect(getByTestId("outside-viewport")).not.toBeNull();
-    expect(queryByTestId("reframe-category")).toBeNull();
-  });
-
-  it("skjuler «ramm inn» når alt er synlig", () => {
-    const { queryByTestId, getByTestId } = renderPanel({ rect: null });
-    expect(queryByTestId("reframe-category")).toBeNull();
-    expect(getByTestId("category-subline").textContent).toBe("3 steder · 3–24 min");
-  });
-
-  it("tom tilstand når ingenting er i utsnittet — highlights står fortsatt", () => {
-    const { getByTestId, queryAllByTestId } = renderPanel({
-      rect: { west: 11, east: 11.1, south: 64, north: 64.1 },
-    });
-    expect(getByTestId("viewport-list-empty")).not.toBeNull();
-    expect(queryAllByTestId("viewport-row")).toHaveLength(0);
-    // Redaksjonelt utvalg er IKKE utsnitts-filtrert.
-    expect(getByTestId("highlights-section")).not.toBeNull();
-  });
-
-  it("pinner den åpne POI-en utenfor scroll-området og ute av lista", () => {
-    const { getByTestId, getAllByTestId } = renderPanel({ openPoiId: "Naerstopp" });
-    expect(getByTestId("pinned-active-row").textContent).toContain("Naerstopp");
-    expect(
-      getAllByTestId("viewport-row").map((el) => el.textContent?.trim()),
-    ).not.toContain("Naerstopp");
-  });
-
-  it("beholder den pinnede raden når POI-en er panorert ut av utsnittet", () => {
-    // Explorer-buggen fra februar: raden brukeren leste forsvant ved panorering.
-    const { getByTestId } = renderPanel({ openPoiId: "Langtstopp" });
-    expect(getByTestId("pinned-active-row").textContent).toContain("Langtstopp");
-    expect(getByTestId("pinned-active-row").textContent).toContain("24 min");
-  });
-
-  it("klikk på en viewport-rad åpner POI-en på kartet", () => {
-    const onOpenPoi = vi.fn();
-    const data = {
-      projectSlug: "test",
-      home: { name: "Hjem", coordinates: { lat: 63.43, lng: 10.4 }, address: "Gata 1" },
-      categories: [BOARD_CATEGORY],
-      poisById: new Map(),
-      audioTourEnabled: false,
-    } as unknown as BoardData;
-    const { getAllByTestId } = rtlRender(
-      <BoardProvider data={data}>
-        <SidebarContentPreview
-          categories={[makeCategory()]}
-          boardCategories={[BOARD_CATEGORY]}
-          activeCategoryId="transport"
-          onOpenPoi={onOpenPoi}
-        />
-      </BoardProvider>,
-    );
-    fireEvent.click(getAllByTestId("viewport-row")[0]);
-    expect(onOpenPoi).toHaveBeenCalledWith("Naerstopp", "transport");
-  });
-
-  it("uten board-kategorier vises panelet uten liste (prosa + highlights som før)", () => {
-    const { queryByTestId, getByTestId } = renderPanel({ boardCategories: [] });
-    expect(queryByTestId("viewport-list")).toBeNull();
-    expect(getByTestId("category-subline").textContent).toBe("4 steder i nærheten");
-  });
-});
-
-// ── FAQ-en i drill-in og på forsiden ───────────────────────────────────────
-
-describe("FAQ i sidebaren", () => {
-  /**
-   * Bygger boardet gjennom den EKTE adapterkjeden (ReportData →
-   * `adaptBoardData`) i stedet for en håndbygd map. Det er hele poenget med
-   * testen: `poisById` nøkles på lowercased id mens POI-en bærer sin egen
-   * skrivemåte, og en håndbygd fixture der de to er like ville aldri fanget
-   * lowercase-fella.
-   */
-  function boardWithFaq(faq: FaqEntry[], globalFaq: FaqEntry[] = []) {
-    const stopPoi: POI = {
-      id: "entur-NSR-StopPlace-60260",
-      name: "Strindfjordvegen bussholdeplass",
-      coordinates: { lat: 63.4351, lng: 10.5053 },
-      category: { id: "bus", name: "Buss", icon: "Bus", color: "#4d93f8" },
-      enturStopplaceId: "NSR:StopPlace:60260",
-    };
-    const theme = {
-      id: "transport",
-      name: "Transport & Mobilitet",
-      icon: "Bus",
-      color: "#4d93f8",
-      upperNarrative: "Kollektivdekningen er god.",
-      faq,
-      pois: [stopPoi],
-      allPOIs: [stopPoi],
-      topRanked: [stopPoi],
-      hiddenPOIs: [],
-      richnessScore: 10,
-      score: { total: 50, breakdown: { count: 50, rating: 50, proximity: 50, variety: 50 } },
-      quote: "",
-      stats: {
-        totalPOIs: 1, ratedPOIs: 0, avgRating: null, totalReviews: 0,
-        editorialCount: 0, uniqueCategories: 1,
-      },
-    } as unknown as ReportTheme;
-
-    return adaptBoardData({
-      projectName: "Test",
+function boardData(): BoardData {
+  return {
+    projectSlug: "test",
+    home: {
+      name: "Strindfjordvegen 10",
       address: "Strindfjordvegen 10",
-      centerCoordinates: { lat: 63.4351, lng: 10.5053 },
-      heroMetrics: {} as never,
-      themes: [theme],
-      allProjectPOIs: [stopPoi],
-      globalFaq,
-    } as unknown as ReportData);
-  }
-
-  function previewFrom(data: BoardData) {
-    return data.categories.map((c) => ({
-      id: c.id,
-      label: c.label,
-      color: c.color,
-      count: c.pois.length,
-      lead: c.lead,
-      editorial: c.editorial,
-    }));
-  }
-
-  const faqEntry = (over: Partial<FaqEntry> & { id: string }): FaqEntry => ({
-    question: `Spørsmål ${over.id}?`,
-    answer: `Svar ${over.id}.`,
-    source: "deterministic",
-    ...over,
-  });
-
-  it("viser FAQ-en i drill-in, og en mixed-case POI-referanse blir klikkbar", () => {
-    const data = boardWithFaq([
-      faqEntry({
-        id: "naermeste-holdeplass",
-        answer: "[Strindfjordvegen](poi:entur-NSR-StopPlace-60260) ligger 30 meter fra boligen.",
-      }),
-    ]);
-    const onOpenPoi = vi.fn();
-
-    const { getByTestId } = rtlRender(
-      <BoardProvider data={data}>
-        <SidebarContentPreview
-          categories={previewFrom(data)}
-          boardCategories={data.categories}
-          activeCategoryId="transport"
-          onOpenPoi={onOpenPoi}
-        />
-      </BoardProvider>,
-    );
-
-    fireEvent.click(getByTestId("faq-question"));
-    fireEvent.click(getByTestId("faq-poi-link"));
-    expect(onOpenPoi).toHaveBeenCalledWith("entur-NSR-StopPlace-60260", "transport");
-  });
-
-  it("har ingen FAQ-overskrift i drill-in når kategorien mangler svar", () => {
-    const data = boardWithFaq([]);
-    const { queryByTestId } = rtlRender(
-      <BoardProvider data={data}>
-        <SidebarContentPreview
-          categories={previewFrom(data)}
-          boardCategories={data.categories}
-          activeCategoryId="transport"
-        />
-      </BoardProvider>,
-    );
-    expect(queryByTestId("faq-section")).toBeNull();
-  });
-
-  it("viser den globale FAQ-en på forsiden, og kategorilenken velger kategorien", () => {
-    const data = boardWithFaq([], [
-      faqEntry({
-        id: "til-byen",
+      coordinates: { lat: 63.43, lng: 10.4 },
+      district: "Ranheim",
+      city: "Trondheim",
+    },
+    categories: [
+      {
+        id: "hverdagsliv" as never,
+        label: "Hverdagsliv",
+        question: "Hva kan jeg ordne i nærheten?",
+        lead: "Første avsnitt, første setning. Første avsnitt, andre setning. Første avsnitt, tredje setning.",
+        body: "",
+        icon: "ShoppingCart",
+        color: "#22c55e",
+        editorial: {
+          body:
+            "Første avsnitt, første setning. Første avsnitt, andre setning. " +
+            "Første avsnitt, tredje setning.\n\nAndre avsnitt står også her.",
+          faq: [
+            {
+              id: "q-butikk",
+              question: "Hvor handler jeg dagligvarer?",
+              answer: "På Extra Grilstad.",
+              source: "deterministic",
+            },
+          ],
+          highlights: [
+            { id: "extra" as never, name: "Extra Grilstad", icon: "ShoppingCart", color: "#22c55e" },
+            {
+              id: "holdeplass" as never,
+              name: "Strindfjordvegen",
+              icon: "Bus",
+              color: "#4d93f8",
+              enturStopplaceId: "NSR:StopPlace:60260",
+            },
+          ],
+        },
+        pois: [
+          poi("extra", "Extra Grilstad"),
+          poi("holdeplass", "Strindfjordvegen", {
+            enturStopplaceId: "NSR:StopPlace:60260",
+          }),
+          poi("apotek", "Vitusapotek Ranheim"),
+        ],
+        topRankedPois: [],
+      },
+      {
+        id: "natur" as never,
+        label: "Natur & Friluftsliv",
+        question: "Kommer jeg ut i naturen?",
+        lead: "Strandlinjen er én sammenhengende akse.",
+        body: "",
+        icon: "TreePine",
+        color: "#2f6f4f",
+        pois: [poi("fjaera", "Ranheim fjæra")],
+        topRankedPois: [],
+      },
+    ],
+    globalFaq: [
+      {
+        id: "krets",
+        question: "Hva kjennetegner området?",
+        answer: "Ranheim er et eget tettsted.",
+        source: "deterministic",
+      },
+      {
+        id: "linjer",
         question: "Hvordan kommer jeg meg til byen?",
-        answer: "21 minutter. Se [Transport & Mobilitet](category:transport) for holdeplassene.",
-      }),
-    ]);
-    const onSelect = vi.fn();
+        answer: "Lokaltoget tar deg til Trondheim S.",
+        source: "deterministic",
+      },
+    ],
+    areaIntro:
+      "Ranheim ligger mellom fjorden og marka.\n\nIdrettsparken er samlingspunktet.",
+    brokers: [
+      {
+        name: "Frank Robert Bae",
+        title: "Eiendomsmegler",
+        phone: "911 22 333",
+        email: "frank@example.no",
+        photoUrl: "",
+        officeName: "EiendomsMegler 1",
+      },
+    ],
+    poisById: new Map(),
+    audioTourEnabled: false,
+  } as unknown as BoardData;
+}
 
-    const { getByTestId } = rtlRender(
-      <BoardProvider data={data}>
-        <SidebarContentPreview categories={previewFrom(data)} onSelect={onSelect} />
-      </BoardProvider>,
-    );
+/** Kamera-API-et kolonnen rammer inn gjennom. Uten en registrert instans er
+ *  hver flytur en stille no-op, og testen kan ikke skille «flyr ikke» fra
+ *  «finnes ikke» — se «ankomsten»-testen under. */
+function makeCamera() {
+  return {
+    snapshot: vi.fn(() => ({
+      lng: 10.4,
+      lat: 63.43,
+      zoom: 14,
+      bearing: 0,
+      pitch: 0,
+    })),
+    restore: vi.fn(),
+    fitVisible: vi.fn(),
+    fitCoordinates: vi.fn(),
+    flyToPoint: vi.fn(),
+  };
+}
 
-    fireEvent.click(getByTestId("faq-question"));
-    fireEvent.click(getByTestId("faq-category-link"));
-    expect(onSelect).toHaveBeenCalledWith("transport");
+/** Setter fane-tilstanden mobil kan ha satt. Ingen knapp i kolonnen kan gjøre
+ *  det — det er nettopp poenget med tvangen som testes. */
+function PaneProbe() {
+  const { showPane } = useStoryTour();
+  return (
+    <button
+      type="button"
+      data-testid="force-faq-pane"
+      onClick={() => showPane("faq")}
+    />
+  );
+}
+
+function CameraProbe({ camera }: { camera: MapCameraApi }) {
+  const { setMapCamera } = useBoard();
+  useEffect(() => {
+    setMapCamera(camera);
+    return () => setMapCamera(null);
+  }, [setMapCamera, camera]);
+  return null;
+}
+
+function setup(props: { noBrokers?: boolean } = {}) {
+  const camera = makeCamera();
+  const utils = rtlRender(
+    <BoardProvider data={boardData()}>
+      <StoryTourProvider>
+        <CameraProbe camera={camera as unknown as MapCameraApi} />
+        <PaneProbe />
+        <StoryColumn {...props} />
+      </StoryTourProvider>
+    </BoardProvider>,
+  );
+  return { ...utils, camera };
+}
+
+const rail = (utils: ReturnType<typeof setup>) =>
+  utils.getByRole("tablist", { name: "Stopp" });
+
+describe("kolonnen ER omvisningen", () => {
+  it("slår den på selv, og har ingen utgang — det finnes ikke noe å gå tilbake til", () => {
+    const utils = setup();
+    expect(utils.getByTestId("story-card")).not.toBeNull();
+    expect(utils.queryByTestId("story-exit")).toBeNull();
+    // Indeksen som lå bak utgangen er borte.
+    expect(utils.queryByText("Hele nabolaget")).toBeNull();
+    expect(utils.queryByTestId("story-play")).toBeNull();
   });
 
-  it("viser ingen global FAQ-seksjon når boardet verken har karakteristikk eller transittfakta", () => {
-    const data = boardWithFaq([]);
-    const { queryByTestId } = rtlRender(
-      <BoardProvider data={data}>
-        <SidebarContentPreview categories={previewFrom(data)} />
-      </BoardProvider>,
+  it("legger transporten INNE i det festede hodet, ikke som en rad over det", () => {
+    const utils = setup();
+    expect(utils.getByTestId("story-card").contains(rail(utils))).toBe(true);
+  });
+});
+
+describe("områdestoppet", () => {
+  it("er der kolonnen ankommer: strøkets navn som overskrift, dekningen i tall", () => {
+    const utils = setup();
+    expect(
+      utils.getByRole("heading", { level: 3 }).textContent,
+    ).toBe("Ranheim");
+    // 3 + 1 POI-er, 2 temaer.
+    expect(utils.getByTestId("story-area-subline").textContent).toBe(
+      "4 steder · 2 temaer",
     );
-    expect(queryByTestId("faq-section")).toBeNull();
   });
 
-  it("krymper prosaen til introen når FAQ-en bærer substansen", () => {
-    const data = boardWithFaq([
-      faqEntry({ id: "naermeste-holdeplass" }),
-      faqEntry({ id: "linjer" }),
-      faqEntry({ id: "til-sentrum" }),
+  it("åpner med strøkets intro i avsnitt — samme form som temaenes prosa", () => {
+    const utils = setup();
+    const body = utils.getByTestId("story-card").textContent ?? "";
+    expect(body).toContain("Ranheim ligger mellom fjorden og marka.");
+    expect(body).toContain("Idrettsparken er samlingspunktet.");
+    // Introen står OVER svarene.
+    expect(body.indexOf("Ranheim ligger mellom")).toBeLessThan(
+      body.indexOf("Hva kjennetegner området?"),
+    );
+  });
+
+  it("bærer strøkets egne spørsmål og svar — det indeksen kalte «Om nabolaget»", () => {
+    const utils = setup();
+    const faq = utils.getByTestId("story-area-faq");
+    expect(within(faq).getByText("Hva kjennetegner området?")).not.toBeNull();
+    expect(
+      within(faq).getByText("Hvordan kommer jeg meg til byen?"),
+    ).not.toBeNull();
+  });
+
+  it("rører IKKE kameraet ved ankomst — splashen og intro-flyturen eier det", () => {
+    const utils = setup();
+    expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
+    expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
+    // Men velger man området SELV, flyr det ut til hele nabolaget.
+    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    fireEvent.click(within(rail(utils)).getByText("Beliggenhet"));
+    expect(utils.camera.flyToPoint).toHaveBeenCalledTimes(1);
+  });
+
+  it("har ingen faner: det er kartet som er stedslista her", () => {
+    const utils = setup();
+    expect(utils.queryByRole("tablist", { name: "Svarform" })).toBeNull();
+  });
+});
+
+describe("raden", () => {
+  it("legger området FØRST, foran temaene — med et fast ord, ikke stedsnavnet", () => {
+    const utils = setup();
+    const tabs = within(rail(utils)).getAllByRole("tab");
+    expect(tabs.map((t) => t.textContent)).toEqual([
+      "Beliggenhet",
+      "Hverdagsliv",
+      "Natur & Friluftsliv",
     ]);
-    // board-data har satt `intro` fordi FAQ-en har tre svar
-    expect(data.categories[0].editorial?.intro).toBe("Kollektivdekningen er god.");
+    expect(tabs[0].getAttribute("aria-current")).toBe("true");
+  });
+
+  it("bytter til et tema, og tilbake til området igjen", () => {
+    const utils = setup();
+    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
+      "Hva kan jeg ordne i nærheten?",
+    );
+    fireEvent.click(within(rail(utils)).getByText("Beliggenhet"));
+    expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
+      "Ranheim",
+    );
+  });
+});
+
+describe("temastoppet på desktop", () => {
+  const openTheme = () => {
+    const utils = setup();
+    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    return utils;
+  };
+
+  it("har TO faner — svarene er ikke en tredje", () => {
+    const utils = openTheme();
+    const tabs = within(
+      utils.getByRole("tablist", { name: "Svarform" }),
+    ).getAllByRole("tab");
+    expect(tabs.map((t) => t.textContent)).toEqual([
+      "Om området",
+      "Steder (3)",
+    ]);
+  });
+
+  it("viser svarene i «Om området», under utvalget", () => {
+    const utils = openTheme();
+    const faq = utils.getByTestId("story-faq");
+    expect(
+      within(faq).getByText("Hvor handler jeg dagligvarer?"),
+    ).not.toBeNull();
+    // Utvalget står OVER svarene, ikke under.
+    const body = utils.getByTestId("story-card").textContent ?? "";
+    expect(body.indexOf("Verdt å merke seg")).toBeLessThan(
+      body.indexOf("Hvor handler jeg dagligvarer?"),
+    );
+  });
+
+  it("lar snarveis-kortet til stedslista stå alene, som én linje i full bredde", () => {
+    const utils = openTheme();
+    const grid = utils.getByText("Steder i nærheten").closest("div.grid")!;
+    // Ett kort, og det er stedslistas: kortet til svarene er borte fordi
+    // svarene ligger rett under. (Tittel og undertittel ligger i to søsken-
+    // spans, så en sammensatt streng ville aldri matchet noe uansett.)
+    expect(grid.children).toHaveLength(1);
+    expect(within(grid as HTMLElement).queryByText("Spørsmål og svar")).toBeNull();
+    expect(grid.className).toContain("grid-cols-1");
+    // Én linje, ikke et stablet kort: ikon, navn og tall på samme rad.
+    const rad = utils.getByTestId("story-places-row");
+    expect(rad.className).toContain("items-center");
+    expect(rad.className).not.toContain("flex-col");
+  });
+
+  it("legger stedslista RETT UNDER utvalget, foran svarene", () => {
+    const utils = openTheme();
+    const body = utils.getByTestId("story-card").textContent ?? "";
+    expect(body.indexOf("Verdt å merke seg")).toBeLessThan(
+      body.indexOf("Steder i nærheten"),
+    );
+    expect(body.indexOf("Steder i nærheten")).toBeLessThan(
+      body.indexOf("Hvor handler jeg dagligvarer?"),
+    );
+  });
+
+  it("viser HELE den kuraterte prosaen — kolonnen har ingen drill-in å sende leseren til", () => {
+    const utils = openTheme();
+    const body = utils.getByTestId("story-card").textContent ?? "";
+    expect(body).toContain("Første avsnitt, andre setning.");
+    expect(body).toContain("Andre avsnitt står også her.");
+  });
+
+  it("leser fane-tilstanden «faq» som «om området» — desktop har ingen svar-fane", () => {
+    // Tilstanden er delt med mobil, der svarene ER en tredje fane. En bredde-
+    // endring midt i omvisningen tar den med seg, og uten tvangen ville
+    // kolonnen rendret en fane som ikke finnes: tom flate.
+    const utils = setup();
+    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    fireEvent.click(utils.getByTestId("force-faq-pane"));
+    expect(utils.getByText("Verdt å merke seg")).not.toBeNull();
+    expect(utils.getByText("Steder i nærheten")).not.toBeNull();
+  });
+
+  it("viser sanntid på et utvalgt transport-sted, men bare når raden står åpen", () => {
+    openTheme();
+    const row = document.querySelector(
+      '[data-poi="holdeplass"]',
+    ) as HTMLElement;
+    const li = row.closest("li")!;
+    // «5 min» er den mockede avgangstiden; radens egen gangtid er 3 min.
+    expect(li.textContent).not.toContain("5 min");
+    fireEvent.click(row);
+    expect(li.textContent).toContain("20");
+    expect(li.textContent).toContain("Grilstad");
+    expect(li.textContent).toContain("5 min");
+    // Et utvalgt sted UTEN transport-kobling får ingen sanntidsseksjon, åpent
+    // eller ikke: gaten er transport + åpen, ikke «er et utvalg».
+    const extra = document.querySelector('[data-poi="extra"]') as HTMLElement;
+    fireEvent.click(extra);
+    expect(extra.closest("li")!.textContent).not.toContain("5 min");
+  });
+});
+
+describe("megler-kortet", () => {
+  it("ligger SIST i scroll-innholdet, ikke pinnet utenfor det", () => {
+    const utils = setup();
+    const scroller = utils.getByTestId("story-sidebar");
+    const card = utils.getByText("Frank Robert Bae").closest("div.-mx-6");
+    expect(card).not.toBeNull();
+    // Inne i scroll-containeren, og sist i selve stopp-seksjonen.
+    expect(scroller.contains(card!)).toBe(true);
+    const section = utils.getByTestId("story-card");
+    expect(section.lastElementChild).toBe(card);
+  });
+
+  it("står også på områdestoppet — kontakten er ikke bundet til et tema", () => {
+    const utils = setup();
+    expect(utils.getByText("Ansvarlig megler")).not.toBeNull();
+    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    expect(utils.getByText("Ansvarlig megler")).not.toBeNull();
+  });
+
+  it("er borte i event-modus (noBrokers) — ingen megler-strenger", () => {
+    const utils = setup({ noBrokers: true });
+    expect(utils.queryByText("Ansvarlig megler")).toBeNull();
+    expect(utils.queryByText("Frank Robert Bae")).toBeNull();
+  });
+});
+
+describe("utfoldingslistene har ÉN form", () => {
+  /**
+   * Regresjonen som utløste runden (Andreas, 2026-08-28): svarene lå som løse
+   * kort med gap og en kant på 5 % svart, stedene som nakne rader uten kant —
+   * samme handling, trykk og utfold på stedet, i to uttrykk. Formen ligger nå i
+   * `Disclosure.tsx`, og testene her holder de to flatene på den.
+   *
+   * Assertene går på de EKSPORTERTE klassene og ikke på piksler: det som skal
+   * være umulig er at én av flatene slutter å bruke den delte formen. Hva formen
+   * er, får endre seg.
+   */
+  const openTheme = () => {
+    const utils = setup();
+    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    return utils;
+  };
+
+  /** Alle klassene i et token, uavhengig av rekkefølge (twMerge sorterer ikke,
+   *  men vi skal ikke være avhengig av at den ikke gjør det). */
+  const bruker = (el: Element, token: string) =>
+    token.split(" ").every((klasse) => el.classList.contains(klasse));
+
+  it("stedsrad og svarrad deler radens geometri", () => {
+    const utils = openTheme();
+    const sted = utils.getAllByTestId("story-row")[0];
+    const svar = utils.getAllByTestId("faq-question")[0];
+    expect(bruker(sted, DISCLOSURE_ROW)).toBe(true);
+    expect(bruker(svar, DISCLOSURE_ROW)).toBe(true);
+  });
+
+  it("stedsnavn og spørsmål deler radens typografi", () => {
+    const utils = openTheme();
+    const navn = utils
+      .getAllByTestId("story-row")[0]
+      .querySelector("span.flex-1")!;
+    const sporsmal = utils
+      .getAllByTestId("faq-question")[0]
+      .querySelector("span.flex-1")!;
+    expect(bruker(navn, DISCLOSURE_LABEL)).toBe(true);
+    expect(bruker(sporsmal, DISCLOSURE_LABEL)).toBe(true);
+  });
+
+  it("hver liste er ÉN ramme med hårstreker, ikke n kort med gap", () => {
+    const utils = openTheme();
+    const svarliste =
+      utils.getAllByTestId("faq-question")[0].parentElement!.parentElement!;
+    const stedsliste = utils.getAllByTestId("story-row")[0].closest("ul")!;
+    for (const liste of [svarliste, stedsliste]) {
+      expect(liste.classList.contains("divide-y")).toBe(true);
+      expect(liste.classList.contains("border")).toBe(true);
+      // Gapet var det som gjorde settet til n ting i stedet for én liste.
+      expect([...liste.classList].some((c) => c.startsWith("gap-"))).toBe(false);
+    }
   });
 });

@@ -5,6 +5,7 @@ import { Marker3D, AltitudeMode } from "@vis.gl/react-google-maps";
 import type { POI } from "@/lib/types";
 import { BlobMarker3D } from "./BlobMarker3D";
 import { Marker3DPin } from "./Marker3DPin";
+import { PIN_SIZE } from "./PoiMarkerContent";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { hexLightTint } from "@/lib/utils/marker-color";
 
@@ -47,8 +48,6 @@ const BOUNCE_MS = 280;
  *  nivå som de vanlige pinnene (Marker3DItem bruker 18) for visuell konsistens. */
 const BLOB_ALTITUDE_M = 16;
 const PIN_ALTITUDE_M = 18;
-/** Full størrelse (px) på legend-pin ved skala 1 — matcher inaktiv Marker3DItem. */
-const PIN_SIZE = 40;
 
 /** easeOutBack: starter på 0, ender på 1 med en liten overshoot midtveis. */
 function bounceScale(tMs: number): number {

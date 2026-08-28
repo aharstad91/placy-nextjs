@@ -2,7 +2,12 @@ import { describe, it, expect, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { PoiMarkerContent, PIN_SIZE, DOT_SIZE } from "./PoiMarkerContent";
-import { LABEL_MAX_LINES } from "@/lib/board/label-collision";
+import {
+  LABEL_FONT_SIZE,
+  LABEL_GAP_X,
+  LABEL_MAX_LINES,
+  LABEL_MAX_W,
+} from "@/lib/board/label-collision";
 
 afterEach(cleanup);
 
@@ -22,7 +27,7 @@ const host = (c: HTMLElement) =>
 const label = (c: HTMLElement) =>
   c.querySelector("[data-poi-label]") as HTMLElement | null;
 
-describe("PoiMarkerContent — boksen holder 40×40", () => {
+describe("PoiMarkerContent — boksen holder seg kvadratisk", () => {
   // Dette er testen som beskytter ankeret. `anchorLeft: -50%` er prosent av
   // ELEMENTETS EGEN boks, så vokser boksen med teksten, vandrer disc-en bort fra
   // punktet sitt — og hopper motsatt vei når labelen flipper side. Feiler denne,
@@ -123,9 +128,11 @@ describe("PoiMarkerContent — label", () => {
 });
 
 describe("PoiMarkerContent — disc, ikon og prikk", () => {
-  it("ikon-ratio er 0,50 (40 px disc → 20 px ikon), som 2D og lista", () => {
+  it("ikon-ratio er 0,50 (halve disc-en), som 2D og lista", () => {
     const { getByTestId } = render(<PoiMarkerContent {...base} />);
-    expect(getByTestId("picon").getAttribute("data-w")).toBe("20");
+    expect(getByTestId("picon").getAttribute("data-w")).toBe(
+      String(PIN_SIZE / 2),
+    );
   });
 
   it("disc-en bruker kategorifargen som ring og tinten som bakgrunn", () => {
@@ -161,5 +168,72 @@ describe("PoiMarkerContent — disc, ikon og prikk", () => {
     cleanup();
     const med = render(<PoiMarkerContent {...base} number={3} />);
     expect(med.container.textContent).toContain("3");
+  });
+});
+
+describe("PoiMarkerContent — zoom-skalaen", () => {
+  // Skalaen finnes fordi 10 px navn ble uleselig på gatezoom: der er markøren
+  // den eneste teksten på en satellittflate uten stedsnavn. Den ganger derfor
+  // HELE markøren — det var teksten som var problemet, ikke skiva.
+  it("scale 1 er default og endrer ingenting", () => {
+    const uten = render(<PoiMarkerContent {...base} label="Nille" />);
+    const html = uten.container.innerHTML;
+    cleanup();
+    const med = render(<PoiMarkerContent {...base} label="Nille" scale={1} />);
+    expect(med.container.innerHTML).toBe(html);
+  });
+
+  it("boksen vokser med skalaen — ankeret er prosent av den, så pinnen står", () => {
+    const { container } = render(<PoiMarkerContent {...base} scale={1.45} />);
+    const el = host(container);
+    expect(el.style.width).toBe(`${Math.round(PIN_SIZE * 1.45)}px`);
+    expect(el.style.height).toBe(el.style.width);
+  });
+
+  it("ikonet beholder ratio 0,50 av den SKALERTE disc-en", () => {
+    const { getByTestId } = render(
+      <PoiMarkerContent {...base} scale={1.5} />,
+    );
+    expect(getByTestId("picon").getAttribute("data-w")).toBe(
+      String(Math.round(PIN_SIZE * 1.5) / 2),
+    );
+  });
+
+  it("navnet skaleres — font, linjehøyde, maksbredde og luften til disc-en", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} label="Nille" scale={1.5} />,
+    );
+    const el = label(container)!;
+    expect(el.style.fontSize).toBe(`${LABEL_FONT_SIZE * 1.5}px`);
+    expect(el.style.maxWidth).toBe(`${LABEL_MAX_W * 1.5}px`);
+    expect(el.style.left).toBe(
+      `${Math.round(PIN_SIZE * 1.5) + LABEL_GAP_X * 1.5}px`,
+    );
+  });
+
+  it("venstre-label måler fra samme skalerte kant", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} label="Nille" labelSide="left" scale={1.25} />,
+    );
+    const el = label(container)!;
+    expect(el.style.right).toBe(
+      `${Math.round(PIN_SIZE * 1.25) + LABEL_GAP_X * 1.25}px`,
+    );
+    expect(el.style.left).toBe("");
+  });
+
+  it("prikken skalerer også — ellers vokser pinsene fra teksturen rundt dem", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} compact scale={1.45} />,
+    );
+    const dot = host(container).firstElementChild as HTMLElement;
+    const d = Math.round(DOT_SIZE * 1.45);
+    expect(dot.style.width).toBe(`${d}px`);
+    expect(dot.style.marginLeft).toBe(`${-d / 2}px`);
+  });
+
+  it("størrelsen har en overgang — trinnene ved kamera-ro skal ikke hoppe", () => {
+    const { container } = render(<PoiMarkerContent {...base} scale={1.2} />);
+    expect(host(container).style.transition).toContain("width");
   });
 });

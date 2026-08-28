@@ -63,7 +63,10 @@ describe("computeHasVoiceOver", () => {
     expect(computeHasVoiceOver(empty)).toBe(false);
   });
   it("true når en kategori har audio", () => {
-    const d = { ...empty, categories: [cat({ audio: {} as never })] } as BoardData;
+    const d = {
+      ...empty,
+      categories: [cat({ audio: {} as never })],
+    } as BoardData;
     expect(computeHasVoiceOver(d)).toBe(true);
   });
   it("true når en kategori har reelsAudio", () => {
@@ -74,19 +77,22 @@ describe("computeHasVoiceOver", () => {
     expect(computeHasVoiceOver(d)).toBe(true);
   });
   it("true når welcome finnes", () => {
-    expect(computeHasVoiceOver({ ...empty, welcome: {} as never } as BoardData)).toBe(
-      true,
-    );
+    expect(
+      computeHasVoiceOver({ ...empty, welcome: {} as never } as BoardData),
+    ).toBe(true);
   });
   it("true når home.audio finnes", () => {
     expect(
-      computeHasVoiceOver({ ...empty, home: { audio: {} } } as unknown as BoardData),
+      computeHasVoiceOver({
+        ...empty,
+        home: { audio: {} },
+      } as unknown as BoardData),
     ).toBe(true);
   });
   it("true når outro finnes", () => {
-    expect(computeHasVoiceOver({ ...empty, outro: {} as never } as BoardData)).toBe(
-      true,
-    );
+    expect(
+      computeHasVoiceOver({ ...empty, outro: {} as never } as BoardData),
+    ).toBe(true);
   });
 });
 
@@ -94,7 +100,10 @@ describe("computeHasVoiceOver", () => {
 // Oversikts-/nabolags-/legend-sett.
 // ---------------------------------------------------------------------------
 describe("selectOverviewPOIs", () => {
-  const a = poi("a"), b = poi("b"), c = poi("c"), d = poi("d");
+  const a = poi("a"),
+    b = poi("b"),
+    c = poi("c"),
+    d = poi("d");
   const categories = [cat({ pois: [a, b, c, d], topRanked: [c, a, b, d] })];
 
   it("voice-over → top-3 score-rangert (topRankedPois), maks 3 per kategori", () => {
@@ -147,6 +156,7 @@ describe("selectMarkerPOIs", () => {
     flyMode: false,
     establishingMode: false,
     activeCategory: null,
+    storyStop: null,
     statePhase: "default",
     hiddenIds: new Set<string>(),
     isWelcomeBeat: false,
@@ -157,6 +167,58 @@ describe("selectMarkerPOIs", () => {
     overviewPOIs: over,
     allPOIs: all,
   };
+
+  it("omvisningen mounter BARE stoppets kategori — dekningen filtreres, ikke dempes", () => {
+    const stop = cat({ pois: [poi("s1"), poi("s2")] });
+    expect(
+      selectMarkerPOIs({
+        ...base,
+        storyStop: { category: stop, activePoiId: null },
+      }).map((p) => p.id),
+    ).toEqual(["s1", "s2"]);
+  });
+
+  it("omvisningen vinner over et kategori-valg", () => {
+    const stop = cat({ pois: [poi("s1")] });
+    expect(
+      selectMarkerPOIs({
+        ...base,
+        activeCategory: activeCat,
+        storyStop: { category: stop, activePoiId: null },
+      }).map((p) => p.id),
+    ).toEqual(["s1"]);
+  });
+
+  it("tar med et åpnet punkt fra en ANNEN kategori, så kameraet ikke flyr til et tomt sted", () => {
+    const stop = cat({ pois: [poi("s1")] });
+    expect(
+      selectMarkerPOIs({
+        ...base,
+        storyStop: { category: stop, activePoiId: "a2" },
+      }).map((p) => p.id),
+    ).toEqual(["s1", "a2"]);
+  });
+
+  it("dupliserer ikke det åpne punktet når det ligger i stoppets egen kategori", () => {
+    const stop = cat({ pois: [poi("s1"), poi("s2")] });
+    expect(
+      selectMarkerPOIs({
+        ...base,
+        storyStop: { category: stop, activePoiId: "s2" },
+      }).map((p) => p.id),
+    ).toEqual(["s1", "s2"]);
+  });
+
+  it("capture (?film=1) vinner fortsatt over omvisningen — rent kart", () => {
+    const stop = cat({ pois: [poi("s1")] });
+    expect(
+      selectMarkerPOIs({
+        ...base,
+        filmMode: true,
+        storyStop: { category: stop, activePoiId: null },
+      }),
+    ).toEqual([]);
+  });
 
   it("?film=1 → rent kart [] (også når kategori er valgt) — render-nivå pin-drop", () => {
     expect(
@@ -172,9 +234,11 @@ describe("selectMarkerPOIs", () => {
 
   it("aktiv kategori i default-fase → alle kategoriens pois (ingen filtrering)", () => {
     expect(
-      selectMarkerPOIs({ ...base, activeCategory: activeCat, statePhase: "default" }).map(
-        (p) => p.id,
-      ),
+      selectMarkerPOIs({
+        ...base,
+        activeCategory: activeCat,
+        statePhase: "default",
+      }).map((p) => p.id),
     ).toEqual(["p1", "p2"]);
   });
   it("aktiv kategori med sub-filter (ikke-default fase) skjuler hidden category-id", () => {
@@ -226,23 +290,23 @@ describe("selectMarkerPOIs", () => {
     expect(selectMarkerPOIs({ ...base, isWelcomeBeat: true })).toEqual([]);
   });
   it("home-beat → hele nabolaget (allPOIs)", () => {
-    expect(selectMarkerPOIs({ ...base, isHomeBeat: true }).map((p) => p.id)).toEqual([
-      "a1",
-      "a2",
-      "a3",
-    ]);
+    expect(
+      selectMarkerPOIs({ ...base, isHomeBeat: true }).map((p) => p.id),
+    ).toEqual(["a1", "a2", "a3"]);
   });
   it("outro-beat → hele nabolaget (allPOIs)", () => {
-    expect(selectMarkerPOIs({ ...base, isOutroBeat: true }).map((p) => p.id)).toEqual([
-      "a1",
-      "a2",
-      "a3",
-    ]);
+    expect(
+      selectMarkerPOIs({ ...base, isOutroBeat: true }).map((p) => p.id),
+    ).toEqual(["a1", "a2", "a3"]);
   });
 
   it("basic-tier mens intro flyr → [] (reveal eier), ellers overview", () => {
     expect(
-      selectMarkerPOIs({ ...base, hasVoiceOver: false, basicIntroActive: true }),
+      selectMarkerPOIs({
+        ...base,
+        hasVoiceOver: false,
+        basicIntroActive: true,
+      }),
     ).toEqual([]);
     expect(
       selectMarkerPOIs({
@@ -272,7 +336,12 @@ describe("selectRevealItems", () => {
       bloomAtProgress: 0.02,
     } as unknown as EstablishingPathConfig;
     const categories = [
-      cat({ pois: [poi("near1", "k", 0.0003, 0.005), poi("near2", "k", 0.0003, 0.015)] }),
+      cat({
+        pois: [
+          poi("near1", "k", 0.0003, 0.005),
+          poi("near2", "k", 0.0003, 0.015),
+        ],
+      }),
     ];
     const items = selectRevealItems({
       establishingMode: true,
@@ -327,7 +396,9 @@ describe("Unit 06.7 — ingen @/-import fra UnifiedMapModal i board/motor-filene
   for (const f of files) {
     it(`${f} importerer ikke fra UnifiedMapModal`, () => {
       const src = readFileSync(join(process.cwd(), f), "utf8");
-      expect(/import[^;]*from\s+["'][^"']*UnifiedMapModal["']/.test(src)).toBe(false);
+      expect(/import[^;]*from\s+["'][^"']*UnifiedMapModal["']/.test(src)).toBe(
+        false,
+      );
     });
   }
 
@@ -347,7 +418,12 @@ describe("Unit 06.7 — ingen @/-import fra UnifiedMapModal i board/motor-filene
     // Den gamle eieren (blocks/report-3d-config.ts) ble slettet som dead code
     // ved cutover-trimmen — vakta er nå kun at motor-laget eier konstanten.
     expect(
-      existsSync(join(process.cwd(), "components/variants/report/blocks/report-3d-config.ts")),
+      existsSync(
+        join(
+          process.cwd(),
+          "components/variants/report/blocks/report-3d-config.ts",
+        ),
+      ),
     ).toBe(false);
     const motor = readFileSync(
       join(process.cwd(), "components/map/motor-camera.ts"),

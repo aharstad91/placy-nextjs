@@ -13,6 +13,7 @@ import type {
 } from "@/lib/types";
 import { ReportBoardFactsSchema, ReportThemeGroundingViewSchema } from "@/lib/types";
 import {
+  areaIntroFromCurated,
   generateCategoryFaq,
   generateGlobalFaq,
   type FaqEntry,
@@ -225,6 +226,9 @@ export interface ReportData {
   /** Boardets globale nabolags-FAQ (vist når ingen kategori er valgt). Tom
    *  eller utelatt = ingen seksjon. Event-board har den aldri. */
   globalFaq?: FaqEntry[];
+  /** Områdets intro — strøkets svar på «hva kjennetegner området?», løftet ut
+   *  av FAQ-en og vist som prosa på områdestoppet. Utelatt = ikke kuratert. */
+  areaIntro?: string;
   label?: string;
   heroIntro?: string;
   heroImage?: string;
@@ -715,8 +719,12 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     globalFaq: generateGlobalFaq({
       boardFacts,
       curated: rc?.globalFaq,
-      themes: themes.map((t) => ({ id: t.id, label: t.name })),
+      // POI-settene er med fordi områdets svar er TVERRGÅENDE: det nærmeste
+      // uansett tema, hvor mye som ligger i gangavstand, hva det er mest av.
+      themes: themes.map((t) => ({ id: t.id, label: t.name, pois: t.allPOIs })),
+      center,
     }),
+    areaIntro: areaIntroFromCurated(rc?.globalFaq),
     label: rc?.label,
     heroIntro,
     heroImage: rc?.heroImage,

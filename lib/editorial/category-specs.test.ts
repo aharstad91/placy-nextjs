@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  AREA_BOARD_QUESTIONS,
   BARNEHAGE_SPEC,
   boardQuestions,
   CATEGORY_SPECS,
@@ -172,8 +173,40 @@ describe("board-laget", () => {
     const ids = [
       ...alleBoard.map(({ q }) => q.id),
       ...Object.values(THEME_BOARD_QUESTIONS).flatMap((qs) => qs.map((q) => q.id)),
+      // Områdets spørsmål er i samme navnerom: `til-byen` og transportmalens
+      // `til-sentrum` er to id-er med vilje, ikke ett spørsmål ved et uhell.
+      ...AREA_BOARD_QUESTIONS.map((q) => q.id),
     ];
     expect(new Set(ids).size, `duplikat: ${ids.join(", ")}`).toBe(ids.length);
+  });
+
+  it("områdets spørsmål følger de samme reglene som temaenes", () => {
+    for (const q of AREA_BOARD_QUESTIONS) {
+      expect(q.lag, `omradet/${q.id}`).toBe("board");
+      expect(q.spørsmål.endsWith("?"), `omradet/${q.id} er ikke et spørsmål`).toBe(true);
+      expect(
+        q.spørsmål.length,
+        `omradet/${q.id} er for lang som overskrift`,
+      ).toBeLessThan(90);
+      if (q.kilde === "eget") {
+        expect(q.felt, `omradet/${q.id} mangler felt`).toBeTruthy();
+      }
+    }
+  });
+
+  it("minst fem deklarerte spørsmål på området", () => {
+    // Samme ambisjon som per tema (2026-08-27): områdestoppet er startsiden i
+    // omvisningen, og skal ikke stå med to rader.
+    expect(AREA_BOARD_QUESTIONS.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("områdets spørsmål er TVERRGÅENDE — ikke et tema-spørsmål i forkledning", () => {
+    // Regelen som holder de to katalogene fra hverandre: et spørsmål hører
+    // hjemme på området bare hvis ingen enkeltkategori kan svare. Skolekretsen
+    // og holdeplassene sto her i et utkast, og ville stått som nesten samme
+    // spørsmål to ganger på samme board.
+    const ord = AREA_BOARD_QUESTIONS.map((q) => q.spørsmål.toLowerCase()).join(" ");
+    expect(ord).not.toMatch(/skolekrets|sogner|holdeplass|nærmeste/);
   });
 
   it("tema-spørsmålene følger de samme reglene som malenes", () => {

@@ -7,6 +7,7 @@ import type { BoardPOI } from "./board-data";
 import { hexLightTint, markerCircleStyle } from "./marker-style";
 import type { LabelSide } from "@/lib/board/label-collision";
 import type { BoardZoomTier } from "./use-board-zoom-tier";
+import type { StoryEmphasis } from "./story/story-model";
 
 interface Props {
   poi: BoardPOI;
@@ -44,6 +45,19 @@ interface Props {
    * eller viewport-kanten. Venstre-labels høyrejusteres mot pinnen.
    */
   labelSide: LabelSide;
+  /**
+   * Omvisningens vekt på dette punktet, eller null/utelatt når ingen omvisning
+   * kjører (kartet er da urørt).
+   *
+   * Tre nivåer, ikke to: `named` er de tre stedene stoppet snakker om, `scene`
+   * er kategorien rundt dem, `texture` er resten av nabolaget. Med bare
+   * dempet/ikke-dempet ble alle punktene like viktige som de tre.
+   *
+   * Er verdien satt, er markøren dessuten INERT: i omvisningen er pinnene
+   * illustrasjon, og trykkflaten er stedene i flaten. Ett interaksjonsmønster,
+   * ikke to.
+   */
+  emphasis?: StoryEmphasis | null;
   onClick: () => void;
 }
 
@@ -57,6 +71,7 @@ function BoardMarkerImpl({
   zoomTier,
   suppressLabel,
   labelSide,
+  emphasis = null,
   onClick,
 }: Props) {
   const Icon = getFilledIcon(poi.raw.category.icon || icon);
@@ -80,7 +95,14 @@ function BoardMarkerImpl({
   // (matcher dagens `w-11 h-11`), inaktiv = 32 px (matcher `w-8 h-8`). Dot og
   // IconCircle er absolute-sentrert i samme container, så tap-koordinaten flytter
   // seg ikke når R10-promotion skjer.
-  const containerSize = isActive ? 44 : 32;
+  const containerSize = isActive ? 44 : emphasis === "named" ? 38 : 32;
+
+  // Omvisningens tre nivåer. `named` beholder full styrke og får sin vekt fra
+  // størrelsen over; de to andre trekker seg tilbake.
+  const emphasisOpacity =
+    emphasis === "texture" ? 0.26 : emphasis === "scene" ? 0.6 : 1;
+  // Pinnene er illustrasjon i omvisningen — se `emphasis`.
+  const inert = emphasis !== null;
 
   return (
     <Marker
@@ -89,14 +111,14 @@ function BoardMarkerImpl({
       anchor="bottom"
       offset={[0, 0]}
       onClick={(e) => {
-        if (!isVisible) return;
+        if (!isVisible || inert) return;
         e.originalEvent.stopPropagation();
         onClick();
       }}
       style={{
-        cursor: isVisible ? "pointer" : "default",
+        cursor: isVisible && !inert ? "pointer" : "default",
         zIndex: isActive ? 5 : 1,
-        pointerEvents: isVisible ? "auto" : "none",
+        pointerEvents: isVisible && !inert ? "auto" : "none",
       }}
     >
       {/* Inner container: bærer kategori-fade (isVisible) og overflow:visible
@@ -107,7 +129,7 @@ function BoardMarkerImpl({
           position: "relative",
           width: containerSize,
           height: containerSize,
-          opacity: isVisible ? 1 : 0,
+          opacity: isVisible ? emphasisOpacity : 0,
           transform: isVisible ? "scale(1)" : "scale(0.5)",
           transition:
             "opacity 300ms ease-out, transform 300ms ease-out, width 200ms ease-out, height 200ms ease-out",
@@ -244,5 +266,6 @@ export const BoardMarker = React.memo(
     prev.inCollection === next.inCollection &&
     prev.zoomTier === next.zoomTier &&
     prev.suppressLabel === next.suppressLabel &&
-    prev.labelSide === next.labelSide,
+    prev.labelSide === next.labelSide &&
+    prev.emphasis === next.emphasis,
 );

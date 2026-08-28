@@ -32,6 +32,7 @@ import {
 import { BoardCollectionDrawer } from "../board/event/BoardCollectionDrawer";
 import { EventMobileSheet } from "../board/event/EventMobileSheet";
 import { NeighbourhoodSurface } from "../board/neighbourhood/NeighbourhoodSurface";
+import { StoryTourProvider } from "../board/story/story-tour";
 import { useKompassSelections } from "@/lib/kompass-store";
 import {
   EngagementProvider,
@@ -42,7 +43,12 @@ import type { TravelMode } from "@/lib/types";
 import { ReelsProvider, useReels } from "./reels-state";
 import { ReelsTransport } from "./ReelsTransport";
 import { ReelSwipeStack } from "./ReelSwipeStack";
-import { DesktopStorySidebar } from "./DesktopStorySidebar";
+import {
+  DesktopStorySidebar,
+  SIDEBAR_GUTTER_BOTTOM_PX,
+  SIDEBAR_GUTTER_PX,
+  SIDEBAR_OCCLUSION_PX,
+} from "./DesktopStorySidebar";
 import { IntroReel } from "./IntroReel";
 import { CategoryReel } from "./CategoryReel";
 import { MeglerReel } from "./MeglerReel";
@@ -66,7 +72,6 @@ import {
   useAudioTourActions,
   useAudioTourStore,
 } from "@/lib/stores/audio-tour-store";
-import { getCategoryIllustrationSrc } from "@/lib/themes/category-illustrations";
 import {
   getProjectLogoSrc,
   getProjectSplashImage,
@@ -191,7 +196,8 @@ function Inner({
   // den ferdig (`inputBoardData`). useMemo-grenen unngår å kjøre report-
   // transformasjonen unødvendig i event-modus.
   const reportData = useMemo(
-    () => (inputBoardData ? null : transformToReportData(effectiveProject, locale)),
+    () =>
+      inputBoardData ? null : transformToReportData(effectiveProject, locale),
     [inputBoardData, effectiveProject, locale],
   );
 
@@ -253,7 +259,9 @@ function Inner({
     collection?.poiIds,
     collection?.slug,
   );
-  const collectionPoiIds = eventMode ? collectionApi.collectionPoiIds : undefined;
+  const collectionPoiIds = eventMode
+    ? collectionApi.collectionPoiIds
+    : undefined;
   const [collectionDrawerOpen, setCollectionDrawerOpen] = useState(false);
 
   // Moat-2 engagement-scope (audit-fiks 2026-07-05): ÉN emitter per board-
@@ -312,47 +320,49 @@ function Inner({
 
   return (
     <EngagementProvider emitter={engagement}>
-    <ReelsProvider cards={cards}>
-      <BoardProvider
-        data={boardData}
-        visiblePoiIds={visiblePoiIds}
-        collectionPoiIds={collectionPoiIds}
-      >
-        <BoardReelsSync />
-        <TravelModeEnvelopeSync targetRef={travelModeRef} />
-        {/* ÉN modal-instans for hele boardet. Ligger her og ikke i
+      <ReelsProvider cards={cards}>
+        <BoardProvider
+          data={boardData}
+          visiblePoiIds={visiblePoiIds}
+          collectionPoiIds={collectionPoiIds}
+        >
+          <StoryTourProvider>
+            <BoardReelsSync />
+            <TravelModeEnvelopeSync targetRef={travelModeRef} />
+            {/* ÉN modal-instans for hele boardet. Ligger her og ikke i
             kart-komponentene fordi begge er montert samtidig ved 3D-addon —
             se POIExploreModalHost for hele begrunnelsen. */}
-        <POIExploreModalHost />
-        <ReelsAudioShell>
-          {/* Voiceover-orchestration: lazy søsken (egen chunk), kjører hooken
+            <POIExploreModalHost />
+            <ReelsAudioShell>
+              {/* Voiceover-orchestration: lazy søsken (egen chunk), kjører hooken
               uten å forsinke layout-treet. Erstatter den gamle wrapper-formen. */}
-          <ReelsAudioOrchestrator />
-          <ResponsiveLayout
-            boardData={boardData}
-            has3dAddon={has3dAddon}
-            eventMode={eventMode}
-            hideBrokerCard={
-              effectiveProject.reportConfig?.hideBrokerCard === true
-            }
-            eventFilter={eventMode ? eventFilter : null}
-            collection={eventMode ? collectionApi : null}
-            onOpenCollection={() => setCollectionDrawerOpen(true)}
-            embed={embed}
-            fromEmbed={fromEmbed}
-          />
-        </ReelsAudioShell>
-        {eventMode && (
-          <BoardCollectionDrawer
-            open={collectionDrawerOpen}
-            onClose={() => setCollectionDrawerOpen(false)}
-            collectionPois={collectionBoardPois}
-            onRemove={collectionApi.remove}
-            projectId={project.id}
-          />
-        )}
-      </BoardProvider>
-    </ReelsProvider>
+              <ReelsAudioOrchestrator />
+              <ResponsiveLayout
+                boardData={boardData}
+                has3dAddon={has3dAddon}
+                eventMode={eventMode}
+                hideBrokerCard={
+                  effectiveProject.reportConfig?.hideBrokerCard === true
+                }
+                eventFilter={eventMode ? eventFilter : null}
+                collection={eventMode ? collectionApi : null}
+                onOpenCollection={() => setCollectionDrawerOpen(true)}
+                embed={embed}
+                fromEmbed={fromEmbed}
+              />
+            </ReelsAudioShell>
+          </StoryTourProvider>
+          {eventMode && (
+            <BoardCollectionDrawer
+              open={collectionDrawerOpen}
+              onClose={() => setCollectionDrawerOpen(false)}
+              collectionPois={collectionBoardPois}
+              onRemove={collectionApi.remove}
+              projectId={project.id}
+            />
+          )}
+        </BoardProvider>
+      </ReelsProvider>
     </EngagementProvider>
   );
 }
@@ -394,7 +404,9 @@ function BoardReelsSync() {
   // (prosjekt med reels-lyd). I empty-state (ingen reels-lyd → ingen kategori-
   // kort) driver sidebaren kategori-valget manuelt; da skal ikke denne synken
   // nullstille det (ellers undoes klikk umiddelbart).
-  const reelsDriveCategories = reelsState.cards.some((c) => c.kind === "category");
+  const reelsDriveCategories = reelsState.cards.some(
+    (c) => c.kind === "category",
+  );
 
   useEffect(() => {
     if (!reelsDriveCategories) return;
@@ -531,7 +543,8 @@ function ReelsAudioShell({ children }: { children: React.ReactNode }) {
           // kartet ikke er åpnet. Fanger bl.a. segment-tapp på SAMME kapittel (som
           // reduceren no-op-er → activeIndex-cleanupen treffer ikke) via teaserArmed.
           const s = stateRef.current;
-          if (s.activeIndex !== guardIndex || s.mapOpen || !s.teaserArmed) return;
+          if (s.activeIndex !== guardIndex || s.mapOpen || !s.teaserArmed)
+            return;
           if (targetIndex < s.cards.length) setActiveIndex(targetIndex);
           else audioNext();
         }, delayMs);
@@ -721,28 +734,14 @@ function ResponsiveLayoutInner({
     hasAudioGuide: firstIdx !== -1,
   });
 
-  // Lett-vekts kategori-oversikt for sidebarens empty state (prosjekt uten
-  // reels-lyd) — med POI-antall + lead.
-  const previewCategories = useMemo(
-    () =>
-      boardData.categories.map((c) => ({
-        id: c.id,
-        label: c.label,
-        color: c.color,
-        count: c.pois.length,
-        lead: c.lead,
-        image:
-          getCategoryIllustrationSrc(boardData.projectSlug, c.id, boardData.assets) ??
-          c.illustration?.src,
-        // Nivå-2 (Bedre): kuratert detalj-innhold gjør temakortet til en drill-in.
-        editorial: c.editorial,
-      })),
-    [boardData.categories, boardData.projectSlug, boardData.assets],
-  );
   const logoSrc = getProjectLogoSrc(boardData.projectSlug, boardData.assets);
   const splashHero =
-    getProjectSplashImage(boardData.projectSlug, boardData.assets) ?? home.heroImage;
-  const splashVideo = getProjectSplashVideo(boardData.projectSlug, boardData.assets);
+    getProjectSplashImage(boardData.projectSlug, boardData.assets) ??
+    home.heroImage;
+  const splashVideo = getProjectSplashVideo(
+    boardData.projectSlug,
+    boardData.assets,
+  );
   const subline =
     [home.district, home.city].filter(Boolean).join(", ") || undefined;
 
@@ -788,23 +787,37 @@ function ResponsiveLayoutInner({
   }
 
   if (isDesktop) {
-    // Adaptiv desktop: full-høyde storytelling-sidebar ved siden av kartet i
-    // flex-flow. Sidebar + kart får en entré-animasjon (glir/skalerer inn) ved
-    // "play" mens splash-laget fader ut → følelsen av at kartet "flyr inn".
-    // Mobil-branchen under er urørt (bruker IntroReel-videoen som splash).
+    // Adaptiv desktop: kartet ligger i FULL BREDDE, og storytelling-kolonnen
+    // svømmer over det som et panel med luft rundt (Apple Maps-modellen, ønsket
+    // 2026-08-27). Før sto de to side om side i flex-flow, og kartet begynte der
+    // sidebaren sluttet: da var kolonnen en vegg, og kartet et vindu ved siden av
+    // den. Nå fortsetter kartet bak panelet og ut i luften rundt det, som er det
+    // som gjør at panelet leser som noe som ligger OPPÅ stedet.
+    //
+    // `mapPaddingLeft` er prisen for det: innrammingen må regne med at panelet
+    // dekker venstre tredjedel, ellers sentreres boligen bak det.
+    //
+    // Sidebar + kart får en entré-animasjon (glir/skalerer inn) ved "play" mens
+    // splash-laget fader ut → følelsen av at kartet "flyr inn". Mobil-branchen
+    // under er urørt (bruker IntroReel-videoen som splash).
     return (
-      <div className="relative flex h-[100dvh] w-full overflow-hidden bg-stone-100">
+      <div className="relative h-[100dvh] w-full overflow-hidden bg-stone-100">
         <div
+          style={{
+            padding: SIDEBAR_GUTTER_PX,
+            paddingBottom: SIDEBAR_GUTTER_BOTTOM_PX,
+          }}
           className={cn(
-            "h-full shrink-0 transition-all duration-700 ease-out",
-            boardRevealed ? "translate-x-0 opacity-100" : "-translate-x-6 opacity-0",
+            "absolute inset-y-0 left-0 z-20 transition-all duration-700 ease-out",
+            boardRevealed
+              ? "translate-x-0 opacity-100"
+              : "-translate-x-6 opacity-0",
           )}
         >
           <DesktopStorySidebar
             home={home}
             logoSrc={logoSrc}
             onLogoClick={handleReopenSplash}
-            previewCategories={previewCategories}
             noBrokers={eventMode || hideBrokerCard}
             eventFilter={eventFilter}
             categories={boardData.categories}
@@ -815,7 +828,7 @@ function ResponsiveLayoutInner({
         </div>
         <div
           className={cn(
-            "relative h-full flex-1 transition-transform duration-700 ease-out",
+            "absolute inset-0 transition-transform duration-700 ease-out",
             boardRevealed ? "scale-100" : "scale-[1.04]",
           )}
         >
@@ -830,7 +843,7 @@ function ResponsiveLayoutInner({
               kartet nedenfra, så padding og rotasjon står som før. */}
           <BoardMap
             has3dAddon={has3dAddon}
-            mapPaddingLeft={16}
+            mapPaddingLeft={SIDEBAR_OCCLUSION_PX}
             eventMode={eventMode}
             publishViewport
           />
@@ -1088,7 +1101,10 @@ function ResponsiveLayoutInner({
           z-index løftes over peek-sheeten (z-20) MENS man drar (isDragging) så det
           inn-glidende slidet ikke klippes — ellers z-10 (peek åpner som før). */}
       {!mapIsSurface && (
-        <div className="absolute inset-0" style={{ zIndex: isDragging ? 25 : 10 }}>
+        <div
+          className="absolute inset-0"
+          style={{ zIndex: isDragging ? 25 : 10 }}
+        >
           {isCategoryBeatMobile ? (
             <ReelSwipeStack phase={phase} onDraggingChange={setIsDragging} />
           ) : (
@@ -1137,13 +1153,10 @@ function ResponsiveLayoutInner({
 // false på SSR uansett viewport). Bypass-er hele hydration-fasen ved å
 // laste layouten kun på klient — placeholderen rendres på server og første
 // client-tick, så swappes til ekte tree.
-const ResponsiveLayout = dynamic(
-  () => Promise.resolve(ResponsiveLayoutInner),
-  {
-    ssr: false,
-    loading: () => <div className="h-[100dvh] w-full bg-[#f2e9dc]" />,
-  },
-);
+const ResponsiveLayout = dynamic(() => Promise.resolve(ResponsiveLayoutInner), {
+  ssr: false,
+  loading: () => <div className="h-[100dvh] w-full bg-[#f2e9dc]" />,
+});
 
 function CardRouter({
   cardIndex,
@@ -1161,10 +1174,14 @@ function CardRouter({
     return <IntroReel card={card} isActive={isActive} />;
   }
   if (card.kind === "summary") {
-    return <SummaryReel card={card} isActive={isActive} desktopMode={desktopMode} />;
+    return (
+      <SummaryReel card={card} isActive={isActive} desktopMode={desktopMode} />
+    );
   }
   if (card.kind === "megler") {
-    return <MeglerReel card={card} isActive={isActive} desktopMode={desktopMode} />;
+    return (
+      <MeglerReel card={card} isActive={isActive} desktopMode={desktopMode} />
+    );
   }
   const audioIndex = cardIndexToAudioIndex(state.cards, cardIndex);
   return (

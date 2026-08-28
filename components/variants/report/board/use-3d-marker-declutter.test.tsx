@@ -16,6 +16,7 @@ import {
   useMarker3DDeclutter,
   CAMERA_SETTLE_MS,
 } from "./use-3d-marker-declutter";
+import { POI_PIN_MAX_SCALE } from "@/components/map/poi-pin-scale";
 
 /** Trondheim — samme breddegrad boardene står på. */
 const LAT = 63.44;
@@ -105,6 +106,53 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.useRealTimers();
+});
+
+describe("useMarker3DDeclutter — markør-skala fra kamera-avstand", () => {
+  // Skalaen bor i denne hooken og ikke i en egen kamera-lytter fordi den som
+  // RESERVERER plass må være den som bestemmer hvor stort det tegnes. Testene
+  // her er derfor både på tallet OG på at tallet når geometrien.
+  it("oversikt og strøkszoom står på basis (samme markør som 2D)", () => {
+    for (const range of [3000, 1600, 900]) {
+      const { result, unmount } = setup(makeMap(range), [poi("a", 100, 100, 4)]);
+      settle();
+      expect(result.current.pinScale).toBe(1);
+      unmount();
+    }
+  });
+
+  it("gatezoom vokser, og maks flater ut", () => {
+    const gate = setup(makeMap(322), [poi("a", 100, 100, 4)]);
+    settle();
+    const nær = setup(makeMap(120), [poi("b", 100, 100, 4)]);
+    settle();
+    expect(gate.result.current.pinScale).toBeGreaterThan(1);
+    expect(nær.result.current.pinScale).toBeGreaterThan(
+      gate.result.current.pinScale,
+    );
+    expect(nær.result.current.pinScale).toBe(POI_PIN_MAX_SCALE);
+  });
+
+  it("skalaen når kollisjonen: samme to pins, flippet label på nær zoom", () => {
+    // Projeksjonen er identitet i disse testene, så skjermposisjonene er LIKE i
+    // begge tilfeller — det eneste som skiller dem er at pinnen (og navnet)
+    // tegnes større. Naboens disc rekker da borti «langtnavnet»s label, som må
+    // flippe til venstre. Feiler denne, reserverer kullingen plass til en annen
+    // markør enn den som står på skjermen.
+    const par = () => [poi("aaaaaaaaaa", 200, 300, 5), poi("nabo", 310, 300, 1)];
+    const fjern = setup(makeMap(900), par());
+    settle();
+    const nær = setup(makeMap(120), par());
+    settle();
+    expect(fjern.result.current.labels.aaaaaaaaaa.side).toBe("right");
+    expect(nær.result.current.labels.aaaaaaaaaa.side).toBe("left");
+  });
+
+  it("ulesbart kamera → basis, ingen gjettet oppskalering ved mount", () => {
+    const { result } = setup(makeMap(null), [poi("a", 100, 100, 4)]);
+    settle();
+    expect(result.current.pinScale).toBe(1);
+  });
 });
 
 describe("useMarker3DDeclutter — tier fra kamera-avstand", () => {

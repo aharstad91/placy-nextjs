@@ -105,12 +105,25 @@ export type SelectCategorySource = "scroll" | "rail" | "index" | "audio";
  * `"faq"` = et stedsnavn i et FAQ-svar. Kartet skal fly, men mobilens
  * utforsk-modal skal IKKE ta over skjermen — se `exploreSuppressed`. Utelatt
  * kilde er det normale: markørtrykk, highlight-chip, listerad.
+ *
+ * `"story"` = en stedsrad i omvisningen (`board/story`). Samme behov: stedets
+ * egne ord åpner seg i raden, og en modal over den ville vært nøyaktig den
+ * kompleksiteten omvisningen fjerner. Kartet flyr, flaten står.
  */
-export type OpenPOISource = "faq";
+export type OpenPOISource = "faq" | "story";
 
 export type BoardAction =
-  | { type: "SELECT_CATEGORY"; id: BoardCategoryId; source?: SelectCategorySource }
-  | { type: "OPEN_POI"; id: BoardPOIId; categoryId?: BoardCategoryId; source?: OpenPOISource }
+  | {
+      type: "SELECT_CATEGORY";
+      id: BoardCategoryId;
+      source?: SelectCategorySource;
+    }
+  | {
+      type: "OPEN_POI";
+      id: BoardPOIId;
+      categoryId?: BoardCategoryId;
+      source?: OpenPOISource;
+    }
   | { type: "BACK_TO_ACTIVE" }
   | { type: "BACK_TO_DEFAULT" }
   | { type: "RESET_TO_DEFAULT" }
@@ -142,7 +155,10 @@ function resetNavigation(state: BoardState): BoardState {
   return { ...initialBoardState, travelMode: state.travelMode };
 }
 
-export function boardReducer(state: BoardState, action: BoardAction): BoardState {
+export function boardReducer(
+  state: BoardState,
+  action: BoardAction,
+): BoardState {
   switch (action.type) {
     case "SELECT_CATEGORY": {
       // Spike: scroll-tracking, rail clicks, and audio-tour-sync stay in
@@ -181,9 +197,10 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
         introPlaying: false,
         exploreOpen: false,
         travelMode: state.travelMode,
-        // Kun tekst-referanser undertrykker modalen. Et nytt trykk på selve
-        // punktet kommer uten kilde og åpner den.
-        exploreSuppressed: action.source === "faq",
+        // Kun tekst-referanser og omvisningens egne rader undertrykker
+        // modalen. Et nytt trykk på selve punktet kommer uten kilde og åpner
+        // den.
+        exploreSuppressed: action.source === "faq" || action.source === "story",
       };
 
     case "BACK_TO_ACTIVE":
@@ -348,8 +365,12 @@ export function BoardProvider({
   // Provider-lokal state fordi kanalen går nedenfra og opp: BoardMap publiserer
   // rektangelet, sheeten utleder POI-settet, og BoardMap leser settet tilbake
   // som markør-filter. Alle tre lever i dette subtreet.
-  const [viewportRect, setViewportRectState] = useState<ViewportRect | null>(null);
-  const [viewportPoiIds, setViewportPoiIds] = useState<Set<string> | null>(null);
+  const [viewportRect, setViewportRectState] = useState<ViewportRect | null>(
+    null,
+  );
+  const [viewportPoiIds, setViewportPoiIds] = useState<Set<string> | null>(
+    null,
+  );
   const [mapCamera, setMapCamera] = useState<MapCameraApi | null>(null);
   const [viewportGestures, setViewportGestures] = useState(0);
 
@@ -357,26 +378,26 @@ export function BoardProvider({
   // rektangel skal ikke re-rendre subtreet (sheeten re-rendrer i gest-frekvens
   // — ingenting på kart-stien tåler unødig arbeid). Gest-telleren står UTENFOR
   // dedupen: en panorering som endte der den startet er fortsatt en gest.
-  const setViewportRect = useCallback((
-    rect: ViewportRect | null,
-    meta?: { userGesture?: boolean },
-  ) => {
-    if (meta?.userGesture) setViewportGestures((n) => n + 1);
-    setViewportRectState((prev) => {
-      if (prev === rect) return prev;
-      if (
-        prev &&
-        rect &&
-        prev.west === rect.west &&
-        prev.south === rect.south &&
-        prev.east === rect.east &&
-        prev.north === rect.north
-      ) {
-        return prev;
-      }
-      return rect;
-    });
-  }, []);
+  const setViewportRect = useCallback(
+    (rect: ViewportRect | null, meta?: { userGesture?: boolean }) => {
+      if (meta?.userGesture) setViewportGestures((n) => n + 1);
+      setViewportRectState((prev) => {
+        if (prev === rect) return prev;
+        if (
+          prev &&
+          rect &&
+          prev.west === rect.west &&
+          prev.south === rect.south &&
+          prev.east === rect.east &&
+          prev.north === rect.north
+        ) {
+          return prev;
+        }
+        return rect;
+      });
+    },
+    [],
+  );
 
   // Komponering av de to kildene. Viewport-scopet vinner diskriminatoren når
   // det er satt — selv om et event-filter også skulle være aktivt — fordi
@@ -386,9 +407,9 @@ export function BoardProvider({
     if (!viewportPoiIds) {
       return {
         effectiveVisiblePoiIds: visiblePoiIds,
-        visibleIdsSource: (visiblePoiIds ? "event-filter" : null) as
-          | VisibleIdsSource
-          | null,
+        visibleIdsSource: (visiblePoiIds
+          ? "event-filter"
+          : null) as VisibleIdsSource | null,
       };
     }
     return {
@@ -450,7 +471,10 @@ export function useBoard() {
  */
 export function useAvailableTravelModes(): TravelMode[] {
   const { data } = useBoard();
-  return useMemo(() => availableTravelModes(data.categories), [data.categories]);
+  return useMemo(
+    () => availableTravelModes(data.categories),
+    [data.categories],
+  );
 }
 
 export function useActiveCategory() {

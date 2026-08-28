@@ -286,6 +286,13 @@ export interface CameraDecisionInputs {
    *  (tilt/heading 0) og eier kameraet OGSÅ i fri kameramodus — basic-boards
    *  står i «free», men POI-/kategoriklikk i Satelitt skal fly (R5/R8a). */
   overhead?: boolean;
+  /** Omvisningen (`board/story`) kjører: STOPPET eier kameraet, ikke det åpne
+   *  punktet. Et trykk i en stedsrad skal derfor ikke fly noe sted — i Satelitt
+   *  ville POI-intenten ellers rykket fra oversiktsrangen (1600 m) ned til 300 m
+   *  og sentrert punktet, mens den samme handlingen i 3D (fri kameramodus) står
+   *  helt stille. Flagget gjør de to visningene like: rammen står, og det som
+   *  endrer seg er markørene og teksten. */
+  storyActive?: boolean;
   /** Outro-beaten spiller: orkestratorens (klampede) summary-uttrekk eier
    *  kameraet, så overhead-directoren må yield-e — ellers kjemper to skrivere.
    *  Irrelevant utenfor overhead (der dekker cameraMode «free» det samme). */
@@ -305,7 +312,13 @@ export interface CameraDecisionInputs {
  *  4. `orbit` — fallback (auto, ingen kategori, eller kategori uten waypoints).
  */
 export function decideCameraIntent(input: CameraDecisionInputs): CameraIntent {
-  const { cameraMode, home, activePOI, activeCategoryId, categoryConfig } = input;
+  const { cameraMode, home, activeCategoryId, categoryConfig } = input;
+  // Omvisningen nuller ut det åpne punktet FØR grenene: da faller både
+  // Satelitt-stien og den skrå stien tilbake på hvile/orbit, og ingen av dem
+  // rykker kameraet på et rad-trykk. Kategori-intenten trenger ingen tilsvarende
+  // gard — omvisningen setter aldri `activeCategoryId` (den vil ha hele
+  // nabolaget liggende som tekstur, ikke ett kuratert utvalg).
+  const activePOI = input.storyActive ? null : input.activePOI;
 
   // Intro-flythrough kjører (velkommen-beat / ?fly=1) → den frame-for-frame-
   // drevne innflyvningen i BoardMap3D eier kameraet. Director-en må ikke røre

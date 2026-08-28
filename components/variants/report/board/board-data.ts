@@ -179,6 +179,9 @@ export interface BoardData {
    *  eller utelatt = ingen seksjon (aldri en tom overskrift). Event-board har
    *  den aldri. */
   globalFaq?: FaqEntry[];
+  /** Områdestoppets prosa — strøkets egne ord om nabolaget. Utelatt = ikke
+   *  kuratert, og flaten faller tilbake på én navigerende setning. */
+  areaIntro?: string;
   /** Eksplisitt opt-in for audio-tour-CTA. Default false. */
   audioTourEnabled: boolean;
   /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
@@ -296,6 +299,7 @@ export function adaptBoardData(report: ReportData): BoardData {
     cta: report.cta,
     poisById,
     globalFaq: report.globalFaq ?? [],
+    areaIntro: report.areaIntro,
     audioTourEnabled: report.audioTourEnabled === true,
     assets: report.assets,
     venueType: report.venueType ?? null,

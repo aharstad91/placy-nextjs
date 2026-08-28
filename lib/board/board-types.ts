@@ -87,4 +87,31 @@ export interface MapCameraApi {
   restore: (snapshot: CameraSnapshot) => void;
   /** Rammer inn de nå-synlige markørene sammen med boligen. */
   fitVisible: () => void;
+  /**
+   * Rammer inn et VILKÅRLIG sett koordinater sammen med boligen.
+   *
+   * Finnes for omvisningen (`board/story`), som rammer stoppets tre navngitte
+   * steder og ikke «det som er synlig»: hele kategorien ligger fortsatt på
+   * kartet som dempet tekstur, så `fitVisible` ville zoomet ut til alle
+   * punktene og gjort de tre uleselige.
+   */
+  fitCoordinates: (
+    coords: readonly { lng: number; lat: number }[],
+    opts?: { maxZoom?: number; durationMs?: number },
+  ) => void;
+  /**
+   * Flyr til ett punkt. `minZoom` er et GULV, ikke et mål — står kameraet
+   * nærmere skal en flytur til et sted i nærheten ikke zoome ut.
+   *
+   * `holdFrame` gjør flyturen til en AVSLØRING i stedet for en ramming:
+   * gjeldende zoom beholdes, og kameraet flytter seg bare hvis punktet ligger
+   * utenfor den synlige (ikke-okkluderte) delen av kartet. Omvisningen bruker
+   * den fordi stoppets ramme alt inneholder stedene den snakker om — en
+   * sentrering med zoom-gulv oppå den leser som et rykk brukeren ikke ba om,
+   * og river dessuten de to andre stedene i stoppet ut av bildet.
+   */
+  flyToPoint: (
+    coord: { lng: number; lat: number },
+    opts?: { minZoom?: number; durationMs?: number; holdFrame?: boolean },
+  ) => void;
 }

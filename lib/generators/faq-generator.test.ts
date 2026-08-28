@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  areaIntroFromCurated,
   cleanSchoolName,
   generateCategoryFaq,
   generateGlobalFaq,
@@ -925,55 +926,285 @@ describe("svarformene", () => {
   });
 });
 
-// ── Global nabolags-FAQ ─────────────────────────────────────────────────────
+// ── Områdets FAQ (boardets første stopp) ────────────────────────────────────
 
 describe("generateGlobalFaq", () => {
+  /** Steder med målt gangtid, spredt over to temaer — områdesvarene er
+   *  tverrgående, så fikstursettet må være det også. */
+  const EXTRA = poi({
+    id: "g-extra",
+    name: "Extra Grilstad",
+    categoryId: "supermarket",
+    travelTime: { walk: 4 },
+    openingHoursJson: tider("7:00 AM – 11:00 PM"),
+  });
+  const APOTEK = poi({
+    id: "g-apotek",
+    name: "Apotek 1 Ranheim",
+    categoryId: "pharmacy",
+    travelTime: { walk: 1 },
+  });
+  const FRISOR = poi({
+    id: "g-frisor",
+    name: "Klipp & Co",
+    categoryId: "haircare",
+    travelTime: { walk: 9 },
+  });
+  const LANGT_UNNA = poi({
+    id: "g-langt",
+    name: "Sirkus Shopping",
+    categoryId: "shopping",
+    travelTime: { walk: 34 },
+  });
+  const SJOPARKEN = poi({
+    id: "n-sjoparken",
+    name: "Sjøparken",
+    categoryId: "park",
+    travelTime: { walk: 3 },
+  });
+  const PIZZA = poi({
+    id: "m-pizza",
+    name: "Ranheim pizza",
+    categoryId: "restaurant",
+    travelTime: { walk: 6 },
+    openingHoursJson: tider("2:00 PM – 10:00 PM"),
+  });
+
   const THEMES = [
-    { id: "transport", label: "Transport & Mobilitet" },
-    { id: "mat-drikke", label: "Mat & Drikke" },
+    { id: "transport", label: "Transport & Mobilitet", pois: [STRINDFJORDVEGEN] },
+    { id: "mat-drikke", label: "Mat & Drikke", pois: [PIZZA] },
   ];
+
+  /** Ranheim-formet board: to temaer med steder, transittfakta, målte tider. */
+  const BOARD = [
+    {
+      id: "hverdagsliv",
+      label: "Hverdagsliv",
+      pois: [EXTRA, APOTEK, FRISOR, LANGT_UNNA],
+    },
+    { id: "natur-friluftsliv", label: "Natur & Friluftsliv", pois: [SJOPARKEN] },
+    { id: "mat-drikke", label: "Mat & Drikke", pois: [PIZZA] },
+  ];
+
+  const ids = (entries: { id: string }[]) => entries.map((e) => e.id);
+  const answer = (entries: { id: string; answer: string }[], id: string) =>
+    entries.find((e) => e.id === id)?.answer;
 
   it("svarer på reisen til byen og lenker inn i transport-kategorien", () => {
     const entries = generateGlobalFaq({ boardFacts: FACTS, themes: THEMES });
-    expect(entries).toHaveLength(1);
     expect(entries[0].id).toBe("til-byen");
     expect(entries[0].answer).toContain("Til Trondheim S tar det 21 minutter");
     expect(entries[0].answer).toContain("[Transport & Mobilitet](category:transport)");
   });
 
   it("dropper kategorilenken når temaet ikke nådde boardet", () => {
-    const entries = generateGlobalFaq({ boardFacts: FACTS, themes: [THEMES[1]] });
-    expect(entries[0].answer).not.toContain("category:");
+    const entries = generateGlobalFaq({
+      boardFacts: FACTS,
+      themes: [THEMES[1]],
+    });
+    expect(answer(entries, "til-byen")).not.toContain("category:");
   });
 
-  it("setter det kuraterte karakteristikk-svaret først", () => {
+  it("navngir de tre nærmeste stedene PÅ TVERS av temaene", () => {
+    // Apoteket (1 min), Sjøparken (3) og Extra (4) ligger i tre ulike temaer.
+    // Ingen kategori-FAQ kan svare på dette — det er hele grunnen til at
+    // spørsmålet bor på området.
+    const svar = answer(generateGlobalFaq({ themes: BOARD }), "naermest")!;
+    expect(svar).toBe(
+      "Nærmest ligger [Apotek 1 Ranheim](poi:g-apotek) (ett minutt), [Sjøparken](poi:n-sjoparken) (3 minutter) og [Extra Grilstad](poi:g-extra) (4 minutter).",
+    );
+  });
+
+  it("sier tallet ÉN gang når de nærmeste ligger like nær", () => {
+    // Tre parenteser med samme tall leste som en feil på Ranheim-demoen:
+    // «Grillstadfjæra (ett minutt), Sjøparken (ett minutt) og Strindfjordvegen
+    // (ett minutt)». Det er samme opplysning, ikke tre.
+    const like = (id: string, name: string) =>
+      poi({ id, name, categoryId: "park", travelTime: { walk: 1 } });
+    const svar = answer(
+      generateGlobalFaq({
+        themes: [
+          {
+            id: "natur-friluftsliv",
+            label: "Natur & Friluftsliv",
+            pois: [like("a", "Grillstadfjæra"), like("b", "Sjøparken"), like("c", "Ladestien")],
+          },
+        ],
+      }),
+      "naermest",
+    );
+    expect(svar).toBe(
+      // Navnet avgjør rekkefølgen når tiden er lik — ellers bytter de plass
+      // mellom to renders.
+      "[Grillstadfjæra](poi:a), [Ladestien](poi:c) og [Sjøparken](poi:b) ligger alle ett minutt unna.",
+    );
+  });
+
+  it("teller gangavstand i to terskler, og bare målte tider", () => {
+    // Seks steder har målt tid; fem av dem under ti minutter (34 min faller
+    // utenfor), tre under fem. Steder uten måling telles ikke — et fravær av
+    // måling er ikke en avstand.
+    const svar = answer(generateGlobalFaq({ themes: BOARD }), "gangavstand")!;
+    expect(svar).toBe(
+      "5 steder på kartet ligger innenfor ti minutter til fots. 3 av dem ligger innenfor fem.",
+    );
+  });
+
+  it("teller et sted som ligger i to temaer ÉN gang", () => {
+    const dobbelt = generateGlobalFaq({
+      themes: [
+        { id: "hverdagsliv", label: "Hverdagsliv", pois: [EXTRA] },
+        { id: "mat-drikke", label: "Mat & Drikke", pois: [EXTRA] },
+      ],
+    });
+    // Og da faller den andre terskelen bort: det ene stedet ville blitt talt
+    // to ganger i to setninger.
+    expect(answer(dobbelt, "gangavstand")).toBe(
+      "Ett sted på kartet ligger innenfor ti minutter til fots.",
+    );
+  });
+
+  it("tar med stedene som ligger PÅ tersklene", () => {
+    // Tallene er inklusive: ti minutter ER gangavstand. Derfor «innenfor», ikke
+    // «under» — et sted på streken skal ikke telles i en setning som sier at
+    // det ligger under den.
+    const paa = (id: string, walk: number) =>
+      poi({ id, name: id, categoryId: "park", travelTime: { walk } });
+    const svar = answer(
+      generateGlobalFaq({
+        themes: [
+          { id: "natur-friluftsliv", label: "Natur", pois: [paa("a", 10), paa("b", 5), paa("c", 11)] },
+        ],
+      }),
+      "gangavstand",
+    );
+    expect(svar).toBe(
+      "2 steder på kartet ligger innenfor ti minutter til fots. Ett av dem ligger innenfor fem.",
+    );
+  });
+
+  it("rangerer temaene etter antall steder, med lenker begge veier", () => {
+    const svar = answer(generateGlobalFaq({ themes: BOARD }), "mest-av")!;
+    expect(svar).toBe(
+      "[Hverdagsliv](category:hverdagsliv) er størst, med 4 steder. [Mat & Drikke](category:mat-drikke) følger med ett sted.",
+    );
+  });
+
+  it("sier hvor sent noe er åpent, med hverdagskonsensus", () => {
+    const svar = answer(generateGlobalFaq({ themes: BOARD }), "apent-sent")!;
+    expect(svar).toBe(
+      "[Extra Grilstad](poi:g-extra) har åpent til 23 på hverdager. [Ranheim pizza](poi:m-pizza) stenger 22.",
+    );
+  });
+
+  it("skriver midnatt med ord, og slår sammen to steder som stenger samtidig", () => {
+    // Google lagrer stengetiden som 24.00, og «har åpent til 24» leste som en
+    // skrivefeil selv der det var riktig.
+    const sent = (id: string, name: string) =>
+      poi({
+        id,
+        name,
+        categoryId: "gym",
+        travelTime: { walk: 5 },
+        openingHoursJson: tider("5:00 AM – 12:00 AM"),
+      });
+    const svar = answer(
+      generateGlobalFaq({
+        themes: [
+          {
+            id: "trening-aktivitet",
+            label: "Trening & Aktivitet",
+            pois: [sent("t1", "3T-Ranheim"), sent("t2", "Grilstad mall")],
+          },
+        ],
+      }),
+      "apent-sent",
+    );
+    expect(svar).toBe(
+      "[3T-Ranheim](poi:t1) og [Grilstad mall](poi:t2) har åpent til midnatt på hverdager.",
+    );
+  });
+
+  it("utelater kveldssvaret når ingenting har åpent etter 21", () => {
+    const tidlig = poi({
+      id: "g-tidlig",
+      name: "Frisøren",
+      categoryId: "haircare",
+      travelTime: { walk: 5 },
+      openingHoursJson: tider("9:00 AM – 8:00 PM"),
+    });
+    const entries = generateGlobalFaq({
+      // Ett sted uten cachede tider, ett som stenger klokka 20 — ingen av dem
+      // gjør nabolaget åpent på kvelden.
+      themes: [{ id: "hverdagsliv", label: "Hverdagsliv", pois: [APOTEK, tidlig] }],
+    });
+    expect(ids(entries)).not.toContain("apent-sent");
+  });
+
+  it("gir minst fem svar på en adresse med transittfakta og steder", () => {
+    // Ambisjonen fra 2026-08-27: områdestoppet skal ikke stå med to rader.
+    const entries = generateGlobalFaq({ boardFacts: FACTS, themes: BOARD });
+    expect(entries.length, ids(entries).join(", ")).toBeGreaterThanOrEqual(5);
+  });
+
+  it("står i katalogens rekkefølge, ikke i den rekkefølgen svarene ble laget", () => {
+    const entries = generateGlobalFaq({ boardFacts: FACTS, themes: BOARD });
+    expect(ids(entries)).toEqual([
+      "til-byen",
+      "naermest",
+      "gangavstand",
+      "mest-av",
+      "apent-sent",
+    ]);
+  });
+
+  it("løfter karakteristikk UT av lista — den er områdets intro", () => {
+    const curated = [
+      {
+        id: "karakteristikk",
+        spørsmål: "Hva kjennetegner området?",
+        svar: "Sjøkanten og Ladestien.",
+      },
+    ];
+    const entries = generateGlobalFaq({ boardFacts: FACTS, themes: THEMES, curated });
+    expect(ids(entries)).not.toContain("karakteristikk");
+    expect(areaIntroFromCurated(curated)).toBe("Sjøkanten og Ladestien.");
+  });
+
+  it("har ingen intro uten kuratert svar, og ingen tom streng", () => {
+    expect(areaIntroFromCurated(undefined)).toBeUndefined();
+    expect(areaIntroFromCurated([{ id: "til-byen", svar: "Bussen." }])).toBeUndefined();
+    expect(areaIntroFromCurated([{ id: "karakteristikk", svar: "   " }])).toBeUndefined();
+  });
+
+  it("lar kurator overstyre et katalog-svar uten å flytte det", () => {
+    const entries = generateGlobalFaq({
+      boardFacts: FACTS,
+      themes: BOARD,
+      curated: [{ id: "gangavstand", svar: "Alt ligger i gangavstand." }],
+    });
+    expect(ids(entries)[2]).toBe("gangavstand");
+    expect(answer(entries, "gangavstand")).toBe("Alt ligger i gangavstand.");
+    expect(entries[2].source).toBe("curated");
+    expect(entries[2].question).toBe("Hvor mye ligger i gangavstand?");
+  });
+
+  it("legger kurators eget spørsmål til SIST, og krever at det har en tekst", () => {
     const entries = generateGlobalFaq({
       boardFacts: FACTS,
       themes: THEMES,
       curated: [
-        {
-          id: "karakteristikk",
-          spørsmål: "Hva kjennetegner området?",
-          svar: "Sjøkanten og Ladestien.",
-        },
+        { id: "dugnad", spørsmål: "Er det dugnad her?", svar: "Hver vår." },
+        { id: "uten-sporsmal", svar: "Hjemløst svar." },
       ],
     });
-    expect(entries.map((e) => e.id)).toEqual(["karakteristikk", "til-byen"]);
-    expect(entries[0].source).toBe("curated");
+    expect(ids(entries).at(-1)).toBe("dugnad");
+    expect(ids(entries)).not.toContain("uten-sporsmal");
   });
 
-  it("lar kurator overstyre reise-svaret uten å få det duplisert", () => {
-    const entries = generateGlobalFaq({
-      boardFacts: FACTS,
-      themes: THEMES,
-      curated: [{ id: "til-byen", svar: "Bussen går hvert tiende minutt." }],
-    });
-    expect(entries).toHaveLength(1);
-    expect(entries[0].source).toBe("curated");
-    expect(entries[0].question).toBe("Hvordan kommer jeg meg til byen?");
-  });
-
-  it("gir tom liste når verken kuratert innhold eller transittfakta finnes", () => {
-    expect(generateGlobalFaq({ themes: THEMES })).toEqual([]);
+  it("gir tom liste når verken kuratert innhold, fakta eller steder finnes", () => {
+    expect(generateGlobalFaq({ themes: THEMES.map((t) => ({ ...t, pois: [] })) })).toEqual(
+      [],
+    );
   });
 });

@@ -1036,6 +1036,83 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
 };
 
 /**
+ * OMRÅDETS spørsmål — boardets første stopp, ikke ett tema.
+ *
+ * Områdestoppet er startsiden i omvisningen (`AREA_STEP`, 2026-08-27): hele
+ * nabolaget på kartet, strøkets intro, og disse svarene. Katalogen er skilt
+ * fra `THEME_BOARD_QUESTIONS` fordi den svarer på et annet slags spørsmål —
+ * ikke «hvor er nærmeste apotek», men «hva har jeg rundt meg».
+ *
+ * REGELEN SOM HOLDER DEM FRA HVERANDRE: et spørsmål hører hjemme her bare hvis
+ * INGEN enkeltkategori kan svare på det. Derfor er skolekretsen ikke her (den
+ * er `krets` under skolemalen) og heller ikke holdeplassene (`naermeste-
+ * holdeplass` under transportmalen) — de sto her i et utkast, og ville stått
+ * som nesten samme spørsmål to ganger på samme board. Det som står igjen er
+ * TVERRGÅENDE: det nærmeste uansett tema, hvor mye som ligger i gangavstand,
+ * hva det er mest av, hvor sent noe er åpent, og reisen til byen.
+ *
+ * `til-byen` er unntaket som beviser regelen fra andre siden: transportmalen
+ * har `til-sentrum` med samme fakta, men områdets versjon lenker INN i temaet
+ * («se Transport for holdeplassene»). Kortform med lenke på området, full form
+ * i temaet.
+ *
+ * Minimum-ambisjonen er den samme som per tema: MINST FEM deklarerte, håndhevet
+ * av test. Deklarert er ikke lovet — uten faktum, ingen rad.
+ */
+export const AREA_BOARD_QUESTIONS: SpecQuestion[] = [
+  {
+    id: "til-byen",
+    spørsmål: "Hvordan kommer jeg meg til byen?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "boardFacts.cityCentre (Entur trip)",
+  },
+  {
+    id: "naermest",
+    spørsmål: "Hva ligger nærmest boligen?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "Hele boardets POI-sett + precomputet gangtid, på tvers av temaer",
+  },
+  {
+    id: "gangavstand",
+    spørsmål: "Hvor mye ligger i gangavstand?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "Antall POI-er med precomputet gangtid under 10 og 5 minutter",
+  },
+  {
+    id: "mest-av",
+    spørsmål: "Hva er det mest av i nabolaget?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "Temaenes POI-antall, rangert",
+  },
+  {
+    id: "apent-sent",
+    spørsmål: "Er noe åpent sent på kvelden?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "Cachede åpningstider, hverdagskonsensus",
+  },
+  // Kuratert-eneste: hvor stille et strøk er, står ikke i noe register — og et
+  // deterministisk svar ville måttet gjette fra POI-tetthet, som er en helt
+  // annen påstand. Den står her fordi katalogen skal vise hele bestillingen.
+  {
+    id: "rolig",
+    spørsmål: "Er det rolig i området?",
+    kilde: "søk",
+    kjerne: false,
+    lag: "board",
+  },
+];
+
+/**
  * Board-lag-spørsmålene et TEMA skal svare på i drill-in-FAQ-en.
  *
  * Drill-in er per tema («Barn & Oppvekst»), mens malene er per `category_id`

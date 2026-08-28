@@ -3,6 +3,7 @@ import { render, cleanup } from "@testing-library/react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { Marker3DPin } from "./Marker3DPin";
 import { BlobMarker3D } from "./BlobMarker3D";
+import { PIN_SIZE } from "./PoiMarkerContent";
 
 afterEach(cleanup);
 
@@ -17,16 +18,16 @@ describe("Marker3DPin — SVG-pin, ratio 0.50, full-opacity-mount (AC3/AC1)", ()
     expect(container.querySelector("svg")).toBeTruthy();
   });
 
-  it("default-størrelse = 40 (PIN_SIZE, matcher Marker3DItem)", () => {
+  it("default-størrelse = PIN_SIZE (samme disc som POI-markørene)", () => {
     const { container } = render(<Marker3DPin color="#abc" Icon={StubIcon} />);
     const svg = container.querySelector("svg")!;
-    expect(svg.getAttribute("width")).toBe("40");
-    expect(svg.getAttribute("height")).toBe("40");
+    expect(svg.getAttribute("width")).toBe(String(PIN_SIZE));
+    expect(svg.getAttribute("height")).toBe(String(PIN_SIZE));
   });
 
-  it("ikon-ratio er 0.50 (size 40 → ikon 20)", () => {
+  it("ikon-ratio er 0.50 (halve disc-en, uansett PIN_SIZE)", () => {
     const { getByTestId } = render(<Marker3DPin color="#abc" Icon={StubIcon} />);
-    expect(getByTestId("picon").getAttribute("data-w")).toBe("20");
+    expect(getByTestId("picon").getAttribute("data-w")).toBe(String(PIN_SIZE / 2));
   });
 
   it("monterer på full opacity (opacity default 1)", () => {

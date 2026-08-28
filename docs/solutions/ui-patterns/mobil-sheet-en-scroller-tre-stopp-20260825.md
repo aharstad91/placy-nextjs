@@ -10,9 +10,9 @@ applies_when:
   - "En drabar bottom-sheet skal fortsette som scroll i innholdet i SAMME strøk, og tilbake igjen (iOS Safari)"
   - "Scroll-posisjonen er samtidig flatens høyde, i en app som bygger DOM-en på nytt ved render"
   - "Kart eller annen flate under sheeten må kunne treffes av fingeren"
-  - "Egen momentum-utrulling kombineres med snap-punkter"
+  - "Egen momentum-utrulling skal føles fri — snap-punkter vurderes eller fjernes"
   - "Touch-gester skal verifiseres med verktøy som bare kan sende mus-events"
-tags: [bottom-sheet, gesture, ios-safari, touch-action, pointer-events, momentum-snap, scroll-position, prototypes]
+tags: [bottom-sheet, gesture, ios-safari, touch-action, pointer-events, momentum, snap-removed, scroll-position, prototypes]
 related_components: [mapbox-gl, neighbourhood-sheet, prototypes]
 ---
 
@@ -116,7 +116,9 @@ ekte hendelse).
 
 ## De fire feilene, alle funnet ved å måle
 
-**1. Magneten gjettet landingen med et fast antall millisekunder.**
+**1. Magneten gjettet landingen med et fast antall millisekunder** — og ble til slutt tatt ut helt
+(se «Etterspill» under). Læringen står fordi den gjelder alle som *velger* å snappe.
+
 `MOMENTUM_PROJECTION_MS = 190` var riktig for et drag som bare snappet — det hadde ingen utrulling å
 regne med. Med egen momentum varer utrullingen nærmere 500 ms, så flaten rullet forbi magneten og
 stanset 47 px over et stopp. En høyde som ser ut som en feil, ikke som et valg.
@@ -167,7 +169,41 @@ verdi.**
 **4. «Flaten er i bevegelse»-flagget ble satt ved nedtrykk.**
 Det utsatte renderen 140 ms for *hvert vanlig trykk* — hele flaten gjort treg for å beskytte et drag som
 ikke skjedde. Sett det først når slop-terskelen krysses. Samme sted: et rent trykk skal returnere FØR
-magneten, ellers dras flaten opp av et trykk som handlet om noe annet.
+utrullingen, ellers flyttes flaten av en handling som handlet om noe annet.
+
+## Etterspill samme dag: magneten er tatt ut
+
+Skjermopptak fra telefon, Andreas: *«når jeg slipper scrollen, så «snapper» den litt, som om den finner
+tilbake til et punkt den vil være på. det er ikke ønsket oppførsel, sheeten bør være 100% fluid i den
+form at det er touch som bestemmer hvordan den skal oppføre seg.»*
+
+Magneten er riktig implementert og fortsatt produksjonens oppførsel — men den er **feil oppførsel**. På
+enhet leses den ikke som at flaten rydder opp etter seg; den leses som at flaten overprøver deg. Du
+slipper, og så flytter den seg en gang til, til en høyde du ikke pekte på. Nøyaktigheten i landings-
+projeksjonen (feil 1) gjorde den bare *mer* merkbar: jo presist den traff stoppet, jo tydeligere var det
+at noe annet enn fingeren bestemte.
+
+```js
+// FØR: farten projiseres, og treffer den nær et stopp, går flaten helt dit
+function sheetSettle(outer, v) {
+  const stop = nearestStop(glideLanding(outer.scrollTop, v));
+  if (stop !== null && outer.scrollTop <= sheetTravel) return sheetGoTo(outer, stop);
+  sheetGlideOn(outer, v);
+}
+
+// ETTER: farten fortsetter, og der den dør, står flaten
+sheetGlideOn(d.outer, d.v);
+```
+
+Stoppene blir da **utgangspunkter, ikke stillinger flaten faller inn i** — de nås med trykk på handlen,
+der de er et valg brukeren tar og ikke en korreksjon hen får.
+
+Én ting må følge med når magneten fjernes, ellers bytter man en irritasjon for en verre: **magneten
+skjulte at et trykk flyttet flaten.** Draget skrev `scrollTop` fra første `pointermove`, også under
+slop-terskelen, og magneten dro de pikslene tilbake etterpå. Uten den blir hvert trykk på en rad
+stående noen piksler feil, og pikslene legger seg oppå hverandre. Fiksen er å ikke skrive `scrollTop`
+i det hele tatt før terskelen er krysset — og å forankre draget *der krysningen skjedde*, ikke der
+fingeren landet, slik at flaten ikke hopper de ti pikslene terskelen spiste i det den løsner.
 
 ## Verifisering: hva verktøyet kan og ikke kan
 

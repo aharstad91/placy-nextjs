@@ -56,6 +56,14 @@ interface Props {
    *  kontrollene er der når du vil ha dem, ikke alltid utbrettet. Default false
    *  (desktop/event beholder den fulle pillen). */
   collapsed?: boolean;
+  /**
+   * Bredden (px) en sidekolonne dekker fra venstre. Beholderen starter der i
+   * stedet for i kartets venstre kant, så «sentrert nederst i midten» betyr
+   * midten av det brukeren SER — desktop-panelet ligger oppå kartet
+   * (2026-08-27), og en pille sentrert i lerretet ville krøpet inn under det på
+   * smale vinduer. Default 0 (mobil har ingen sidekolonne).
+   */
+  insetLeftPx?: number;
 }
 
 /** Segment-bredde (px) for Auto/Fri. Tommelen og hver knapp deler denne så
@@ -131,6 +139,7 @@ export function BoardMapControls({
   travelModes = [],
   travelMode = "walk",
   onTravelModeChange,
+  insetLeftPx = 0,
 }: Props) {
   // Auto/Fri vises kun i 3D OG når det finnes en orbit å vise (voice-over-tier).
   // I Satelitt er segmentet også skjult (R4): auto-orbit er av — et roterende
@@ -278,8 +287,9 @@ export function BoardMapControls({
   if (collapsed) {
     return (
       <div
+        style={{ left: insetLeftPx }}
         className={cn(
-          "pointer-events-none absolute inset-0 z-30 transition-[opacity,transform] duration-500 ease-out",
+          "pointer-events-none absolute inset-y-0 right-0 z-30 transition-[opacity,transform] duration-500 ease-out",
           controlsReady ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
         )}
       >
@@ -311,8 +321,9 @@ export function BoardMapControls({
   // ---- Full pille (desktop + event) — uendret ----
   return (
     <div
+      style={{ left: insetLeftPx }}
       className={cn(
-        "pointer-events-none absolute inset-0 z-30 transition-[opacity,transform] duration-500 ease-out",
+        "pointer-events-none absolute inset-y-0 right-0 z-30 transition-[opacity,transform] duration-500 ease-out",
         controlsReady ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
       )}
     >

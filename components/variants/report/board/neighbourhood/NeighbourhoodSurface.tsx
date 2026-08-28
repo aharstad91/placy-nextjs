@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import type { CameraSnapshot } from "@/lib/board/board-types";
 import type { BoardCategoryId } from "../board-data";
 import { useBoard } from "../board-state";
@@ -9,6 +10,11 @@ import { NeighbourhoodCategoryCard } from "./NeighbourhoodCategoryCard";
 import { CategoryPage } from "./CategoryPage";
 import { FAQSection } from "../FAQSection";
 import { useNeighbourhoodList } from "./use-neighbourhood-list";
+import { StoryCard } from "../story/StoryCard";
+import { StoryDeck } from "../story/StoryRail";
+import { StoryPlayCard } from "../story/StoryPlayCard";
+import { useStoryTour } from "../story/story-tour";
+import { areaProse } from "../story/story-model";
 
 /**
  * Nabolagsflaten — navigasjonsstakken (Unit 3b + 4).
@@ -32,6 +38,7 @@ export function NeighbourhoodSurface({
   onSurfaceHeightChange: (heightPx: number) => void;
 }) {
   const { data, dispatch, mapCamera } = useBoard();
+  const story = useStoryTour();
   const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
   const savedCameraRef = useRef<CameraSnapshot | null>(null);
 
@@ -103,6 +110,30 @@ export function NeighbourhoodSurface({
     if (openCategoryId && !openCategory) handleBack();
   }, [openCategoryId, openCategory, handleBack]);
 
+  // Omvisningen eier flaten mens den kjører: indeksen, boardets FAQ og hintet
+  // ligger bak «Avslutt», ikke under fortellingen. Ellers er den bare en ny
+  // header. Egen gren og ikke en betingelse inne i lista, fordi
+  // `useNeighbourhoodList` da hadde fortsatt å scope markørsettet til utsnittet
+  // — og omvisningen vil ha hele nabolaget liggende som tekstur (se
+  // `storyEmphasis`).
+  if (story.on) {
+    return (
+      <>
+        {/* Ingen tittel: spørsmålet i stoppet er overskriften, og «I nærheten»
+            over det gjorde stoppet til andrelinje i sitt eget kort. */}
+        <NeighbourhoodSheet
+          title=""
+          tone="white"
+          onHeightChange={onSurfaceHeightChange}
+          contentRestKey="story"
+        >
+          <StoryCard />
+        </NeighbourhoodSheet>
+        <StoryDeck />
+      </>
+    );
+  }
+
   if (openCategory) {
     return (
       <CategoryPage
@@ -148,6 +179,10 @@ function NeighbourhoodList({
 
   return (
     <NeighbourhoodSheet onHeightChange={onHeightChange}>
+      {/* Inngangen til omvisningen, over indeksen: tettheten møter deg først,
+          men den som ikke selv begynner å zoome og trykke skal ha en vei inn. */}
+      <StoryPlayCard />
+
       {!hintDismissed && (
         <p
           data-testid="neighbourhood-hint"
@@ -173,6 +208,26 @@ function NeighbourhoodList({
             onOpen={onOpenCategory}
           />
         ))
+      )}
+
+      {/* Strøkets egne ord, over svarene. Samme kilde som områdestoppets prosa
+          (`areaIntro`): teksten lå tidligere som FAQ-rad her, og da den ble
+          løftet til intro på omvisningens første stopp, måtte den følge med hit
+          — ellers mistet indeksen strøkets stemme. */}
+      {data.areaIntro && (
+        <div data-testid="neighbourhood-area-intro" className="mt-4 px-1">
+          {areaProse(data.areaIntro).map((p, i) => (
+            <p
+              key={i}
+              className={cn(
+                "text-[14px] leading-[1.55] text-stone-600",
+                i > 0 && "mt-3",
+              )}
+            >
+              {p}
+            </p>
+          ))}
+        </div>
       )}
 
       {/* Boardets egen FAQ, etter kategorikortene: bevisst slank, og svarene

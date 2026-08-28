@@ -149,11 +149,26 @@ export interface Camera3DPose {
   fovDeg: number;
 }
 
-/** Flatens piksel-mål + hvor mye av bunnen sheeten dekker. */
+/** Flatens piksel-mål + hvor mye av den en flate over kartet dekker. */
 export interface Viewport3DMetrics {
   widthPx: number;
   heightPx: number;
   occludedBottomPx: number;
+  /**
+   * Bredden (px) en sidekolonne dekker fra VENSTRE. Desktop-panelet svømmer
+   * oppå et kart i full bredde (2026-08-27), så en tredjedel av lerretet er
+   * skjult bak det — uten dette leddet ville lista lovet «stedene i utsnittet»
+   * og tatt med dem som ligger under panelet. Default 0: mobil har ingen
+   * sidekolonne, og geometrien er da bit-for-bit den samme som før.
+   */
+  occludedLeftPx?: number;
+  /**
+   * Bredden (px) elementet stikker ut TIL HØYRE for det synlige vinduet.
+   * Google-motorens element strekkes forbi vindukanten for å få sikte­punktet i
+   * midten av det synlige kartet (se BoardMap); den stripen er rendret, men
+   * ingen ser den. Default 0.
+   */
+  overhangRightPx?: number;
 }
 
 /**
@@ -183,10 +198,11 @@ export interface Viewport3DMetrics {
  * som faktisk er i bildet — feilen går mot å utelate det fjerneste, aldri mot å
  * påstå at noe usett er synlig.
  *
- * Okkluderingen fra sheeten håndteres i skjerm-rommet før konverteringen: den
- * synlige andelen `v` krymper båndet til `[H(1−2v), H]` langs blikk-retningen,
- * altså både smalere OG forskjøvet bort fra brukeren — samme geometri som når
- * 2D-stien måler høyden `canvas − sheet`.
+ * Okkluderingen fra flatene over kartet håndteres i skjerm-rommet før
+ * konverteringen: den synlige andelen `v` krymper båndet til `[H(1−2v), H]`
+ * langs blikk-retningen, altså både smalere OG forskjøvet bort fra brukeren —
+ * samme geometri som når 2D-stien måler høyden `canvas − sheet`. En sidekolonne
+ * fra venstre gjør det samme på tvers av blikket (`occludedLeftPx`).
  *
  * Returnerer null for degenerert input (ikke-endelige tall, ingen synlig flate).
  * Konsumenten skal da falle tilbake til «vis alt», aldri til en tom liste.
@@ -197,6 +213,8 @@ export function rectFromCamera(
 ): ViewportRect | null {
   const { lat, lng, rangeM, headingDeg, fovDeg } = camera;
   const { widthPx, heightPx, occludedBottomPx } = viewport;
+  const occludedLeftPx = viewport.occludedLeftPx ?? 0;
+  const overhangRightPx = viewport.overhangRightPx ?? 0;
   if (
     !Number.isFinite(lat) ||
     !Number.isFinite(lng) ||
@@ -219,6 +237,17 @@ export function rectFromCamera(
   // Sheeten spiser nedenfra, så det synlige båndet ender på H(1−2v).
   const nearM = halfDepthM * (1 - 2 * visibleFraction);
   const farM = halfDepthM;
+  // Sidekolonnen spiser fra venstre, med nøyaktig samme geometri på tvers av
+  // blikket: dekker den andelen f av bredden, begynner det synlige båndet på
+  // −halvBredde·(1−2f) i stedet for på −halvBredde. f ≥ 0,5 ville snudd båndet,
+  // så det klemmes — en degenerert avlesning skal bli et smalt scope, ikke et
+  // speilvendt.
+  const leftFraction = Math.min(Math.max(occludedLeftPx / widthPx, 0), 0.5);
+  const leftM = -halfWidthM * (1 - 2 * leftFraction);
+  // Overhenget på høyre side er ikke okkludert, men usett — samme sak for et
+  // scope som lover «det du ser».
+  const rightFraction = Math.min(Math.max(overhangRightPx / widthPx, 0), 0.5);
+  const rightM = halfWidthM * (1 - 2 * rightFraction);
 
   const h = (headingDeg * Math.PI) / 180;
   const cosH = Math.cos(h);
@@ -232,7 +261,7 @@ export function rectFromCamera(
   // over-seleksjon ellers (samme kontrakt som 2D-stien).
   const corners: LngLat[] = [];
   for (const forward of [farM, nearM]) {
-    for (const right of [-halfWidthM, halfWidthM]) {
+    for (const right of [leftM, rightM]) {
       const east = right * cosH + forward * sinH;
       const north = -right * sinH + forward * cosH;
       corners.push({

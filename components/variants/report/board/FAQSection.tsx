@@ -1,13 +1,23 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ChevronDown } from "lucide-react";
 import {
   boardLinkResolvers,
   parseLinkedText,
   type LinkedTextNode,
 } from "@/lib/board/poi-link-text";
 import type { FaqEntry } from "@/lib/generators/faq-generator";
+import { cn } from "@/lib/utils";
+import {
+  DISCLOSURE_ITEM_OPEN,
+  DISCLOSURE_LABEL,
+  DISCLOSURE_ROW,
+  DISCLOSURE_ROW_HOVER,
+  DisclosureChevron,
+  DisclosureList,
+  DisclosurePanel,
+} from "./Disclosure";
+import { SIDEBAR_SECTION_TITLE } from "./sidebar-style";
 
 /**
  * «Spørsmål og svar» — det en megler ville svart på visning, for akkurat denne
@@ -24,11 +34,10 @@ import type { FaqEntry } from "@/lib/generators/faq-generator";
  *
  * ## Disclosure, ikke utfoldet liste
  *
- * Default lukket, flere kan stå åpne samtidig, og begge tilstander står i DOM
- * og veksles med CSS — husets expand/collapse-oppskrift
- * (`trip-desktop-accordion-sidebar-20260209`). INGEN auto-scroll ved åpning:
- * høyde-animasjonen er signal nok, og et scroll-hopp river leseren vekk fra
- * spørsmålet hun nettopp trykket på.
+ * Default lukket, og flere kan stå åpne samtidig. Selve formen — rammen rundt
+ * settet, hårstreken mellom radene, chevronen og utfoldingen — er delt med
+ * stedslistene i omvisningen (`Disclosure.tsx`), fordi de to satt med to ulike
+ * uttrykk for nøyaktig samme handling. Se doccen der.
  *
  * ## Klikkbare steder i løpende tekst
  *
@@ -81,18 +90,19 @@ export function FAQSection({
 
   return (
     <section data-testid="faq-section" className={className ?? "mt-5"}>
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
-        {title}
-      </p>
+      {/* Utelatt tittel = ingen overskrift. Omvisningens svar-fane har
+          faneetiketten som overskrift, og en tom overskrift ville lagt igjen
+          luft som lovet en tekst som ikke kommer. */}
+      {title && <p className={cn("mb-2.5", SIDEBAR_SECTION_TITLE)}>{title}</p>}
 
-      <div className="flex flex-col gap-1.5">
+      <DisclosureList>
         {entries.map((entry) => {
           const expanded = open.has(entry.id);
           const panelId = `${idPrefix}-${entry.id}`;
           return (
             <div
               key={entry.id}
-              className="overflow-hidden rounded-xl border border-black/5 bg-white/60 transition-colors duration-150 hover:border-stone-400"
+              className={cn(expanded && DISCLOSURE_ITEM_OPEN)}
             >
               <button
                 type="button"
@@ -101,31 +111,20 @@ export function FAQSection({
                 aria-expanded={expanded}
                 aria-controls={panelId}
                 onClick={() => toggle(entry.id)}
-                className="flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left"
+                /* Toppstilt: et spørsmål kan bre seg over to linjer, og da skal
+                   chevronen stå ved den første — ikke midt i blokken. */
+                className={cn(
+                  DISCLOSURE_ROW,
+                  "items-start",
+                  DISCLOSURE_ROW_HOVER,
+                )}
               >
-                <span className="min-w-0 flex-1 text-[13.5px] font-medium leading-snug text-stone-800">
-                  {entry.question}
-                </span>
-                <ChevronDown
-                  size={16}
-                  aria-hidden
-                  className={`mt-0.5 shrink-0 text-stone-400 transition-transform duration-300 ${
-                    expanded ? "rotate-180" : ""
-                  }`}
-                />
+                <span className={DISCLOSURE_LABEL}>{entry.question}</span>
+                <DisclosureChevron open={expanded} className="mt-[3px]" />
               </button>
 
-              {/* Begge tilstander i DOM, vekslet med CSS. Ingen auto-scroll. */}
-              <div
-                id={panelId}
-                data-testid="faq-answer"
-                data-expanded={expanded}
-                aria-hidden={!expanded}
-                className={`overflow-hidden transition-all duration-300 ease-out ${
-                  expanded ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"
-                }`}
-              >
-                <p className="px-3 pb-3 text-[13.5px] leading-relaxed text-stone-600">
+              <DisclosurePanel id={panelId} open={expanded} testId="faq-answer">
+                <p className="px-3.5 pb-3.5 text-[15px] leading-[1.6] text-stone-600">
                   <AnswerText
                     answer={entry.answer}
                     resolvers={resolvers}
@@ -133,11 +132,11 @@ export function FAQSection({
                     onSelectCategory={onSelectCategory}
                   />
                 </p>
-              </div>
+              </DisclosurePanel>
             </div>
           );
         })}
-      </div>
+      </DisclosureList>
     </section>
   );
 }
@@ -167,7 +166,9 @@ function AnswerText({
           <button
             key={i}
             type="button"
-            data-testid={node.kind === "poi" ? "faq-poi-link" : "faq-category-link"}
+            data-testid={
+              node.kind === "poi" ? "faq-poi-link" : "faq-category-link"
+            }
             data-target={node.kind === "poi" ? node.poiId : node.categoryId}
             onClick={onClick}
             // Treffflaten vokser VERTIKALT (fingerhøyden er det knappe målet),

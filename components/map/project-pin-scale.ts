@@ -3,7 +3,7 @@
  *
  * Google 3D-markører er skjerm-forankret (konstant px uansett zoom). Etter at
  * markøren ble en disc på POI-markørenes størrelse (2026-08-24) er spennet
- * smalt: den skal alltid lese som «litt større enn POI-ene» (som er 40 px), så
+ * smalt: den skal alltid lese som «større enn POI-ene» (som er 32 px), så
  * den krymper bare et hakk mot oversikt i stedet for å halveres slik det store
  * kortet måtte. Alle fire tall er ment å finjusteres på følelse.
  *

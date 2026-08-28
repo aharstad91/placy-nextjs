@@ -208,6 +208,44 @@ describe("motor-forskjellene (3D)", () => {
     const res = computeLabelPlacements([cand("x", 100, 50)], [kvadrat]);
     expect(res.get("x")).toBe("left");
   });
+
+  it("scale gjør label-boksen større i BEGGE akser", () => {
+    const c = cand("x", 100, 50);
+    const en = estimateLabelBox(c, "right");
+    const stor = estimateLabelBox(c, "right", LABEL_OFFSET_X, 1.5);
+    expect(stor.right - stor.left).toBeCloseTo((en.right - en.left) * 1.5, 5);
+    expect(stor.bottom - stor.top).toBeCloseTo((en.bottom - en.top) * 1.5, 5);
+  });
+
+  it("scale flytter linjebrytings-taket med seg, ikke bare teksten", () => {
+    // Et navn som så vidt holder seg på én linje ved skala 1 skal FORTSATT
+    // være på én linje når alt skaleres — taket er 132 px ved skala 1, og
+    // teksten og taket vokser i takt. Ellers hadde en oppskalert markør
+    // plutselig reservert to linjers høyde.
+    const nesten = "x".repeat(Math.floor(LABEL_MAX_W / LABEL_CHAR_W));
+    const c = cand("x", 100, 50, 0, nesten);
+    const en = estimateLabelBox(c, "right");
+    const stor = estimateLabelBox(c, "right", LABEL_OFFSET_X, 1.45);
+    expect(stor.bottom - stor.top).toBeCloseTo((en.bottom - en.top) * 1.45, 5);
+  });
+
+  it("computeLabelPlacements respekterer scale-metrikken", () => {
+    // Samme hindring, samme pin. Ved skala 1 er det plass til navnet på høyre
+    // side; skalert opp rekker den samme teksten borti hindringen og må flippe.
+    // Feiler denne, regner kollisjonen på en mindre tekst enn den som tegnes.
+    // Hindringens venstre kant ligger på 200: «Testbutikken» rekker til 194,8
+    // ved skala 1 og til 226,7 ved 1,45.
+    const obstacles = [{ x: 206, y: 50, halfSize: 6 }];
+    const basis = computeLabelPlacements([cand("x", 100, 50)], obstacles);
+    const skalert = computeLabelPlacements(
+      [cand("x", 100, 50)],
+      obstacles,
+      undefined,
+      { scale: 1.45 },
+    );
+    expect(basis.get("x")).toBe("right");
+    expect(skalert.get("x")).toBe("left");
+  });
 });
 
 describe("LABEL_CHAR_W som overestimat", () => {

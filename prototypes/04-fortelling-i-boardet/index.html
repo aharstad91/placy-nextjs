@@ -55,10 +55,17 @@
        `flex: none` fordi desktop-sidekolonnens `.scroll` er en flex-kolonne —
        uten den krympes flaten og siste linje klippes. */
     .sty { flex: none; margin-bottom: 10px; }
-    /* Presentasjonsmodus har hvit sheet: fortellingen er forgrunnen, ikke et
-       kort som ligger på en beige flate. Dekket arver samme hvite — men bare på
-       mobil: desktop-dekket hører til sidekolonnen og skal ha dens farge. */
-    body[data-story="on"] .sheet { background: #fff; }
+    /* Presentasjonsmodus har hvit flate: fortellingen er forgrunnen, ikke et
+       kort som ligger på en beige bunn. Sidekolonnen følger sheeten — det skal
+       være samme flate på begge bredder, ikke krem på den ene og hvit på den
+       andre. */
+    body[data-story="on"] .sheet,
+    body[data-story="on"] .sidebar { background: #fff; }
+    /* Adressen står i annonsen og i fanen — i omvisningen tok den to linjer
+       over spørsmålet og gjorde stoppet til andrelinje i sitt eget kort, samme
+       feil som telleren gjorde på mobil. Sheeten har ingen tittel i denne
+       modusen (`sheetTitle()` er ""), og nå har ikke kolonnen det heller. */
+    body[data-story="on"] .sidebar-header { display: none; }
     /* Handlen mister sin egen farge i omvisningen. Den beige stripen over det
        hvite kortet leste som en list på toppen av flaten, ikke som kanten av
        den. Hvit — IKKE gjennomsiktig: handlen er sticky, og innholdet går
@@ -108,6 +115,15 @@
 
        Desktop settes tilbake til vanlig flyt: der finnes ingen handle å feste
        seg under, og sidekolonnen har 24 px padding, ikke 16. */
+    /* På mobil skal wrapperen IKKE finnes i layouten. `display: contents` er
+       ikke pynt her: en wrapper med egen boks blir sticky-elementets nye
+       containing block, og et sticky element kan ikke bli stående lenger enn
+       sin egen containing block rekker. Med boksen på plass forsvant det
+       fastlimte spørsmålet opp forbi handlen så snart de 75 pikslene wrapperen
+       er høy hadde rullet ut — altså nøyaktig den feilen vi fikset 2026-08-25.
+       Uten boks er `.sty` containing block igjen, som før wrapperen fantes.
+       Desktop setter den tilbake til `block`, for der ER den festet. */
+    .sty-head { display: contents; }
     .sty-q {
       position: sticky; top: var(--grab-h, 22px); z-index: 2;
       margin: 0 -16px; padding: 4px 56px 10px 16px;
@@ -115,9 +131,33 @@
       font-size: 19px; font-weight: 700;
       line-height: 1.2; letter-spacing: -.02em; color: var(--stone-900);
     }
+    /* Den hvite bakgrunnen hører til sticky-trikset og BARE til det: den er
+       masken som skjuler innholdet som passerer under spørsmålet på mobil.
+       På desktop er det ingenting som passerer — og sidekolonnen er krem
+       (`--sidebar-bg`), så en hvit stripe i full tekstbredde leste som et
+       utfylt skrivefelt i stedet for som en overskrift. Rapportert av Andreas
+       2026-08-26. `transparent` og ikke krem: overskriften skal arve flaten
+       den ligger på, hva enn den er. */
     @media (min-width: 1024px) {
-      .sty-q { position: static; margin: 0; padding: 4px 40px 0 0; }
-      .sty-tabs { margin-top: 10px; }
+      .sty-q { position: static; margin: 0; padding: 4px 40px 0 0; background: transparent; }
+      /* `.sty`-prefikset er nødvendig: `.sty-tabs` setter selv `margin: 0` som
+         shorthand lenger ned i fila, og på lik spesifisitet vinner den på
+         kilderekkefølge. De 10 pikslene som sto her før virket derfor aldri. */
+      .sty .sty-tabs { margin-top: 16px; }
+      /* Her er det HELE toppen av stoppet som blir stående, ikke overskriften
+         alene: krysset, spørsmålet og fanene er én ting, og du skal kunne
+         bytte fane uansett hvor langt ned i en liste på 172 rader du har
+         kommet. Ett feste, ikke tre som må måle seg mot hverandre.
+
+         Full bredde med negativ margin fordi kolonnen har 24 px padding —
+         uten den ville radene skint gjennom i springene på hver side idet de
+         gikk under. Hvit fordi flaten under er hvit i omvisningen. */
+      .sty-head {
+        display: block;
+        position: sticky; top: 0; z-index: 4;
+        margin: 0 -24px; padding: 12px 24px 8px;
+        background: #fff;
+      }
     }
     .sty-lead { font-size: 14px; line-height: 1.55; color: var(--stone-600); }
     .sty-eb { margin: 0 0 6px; }
@@ -197,12 +237,43 @@
     .sty-narr { overflow: hidden; max-height: 0; opacity: 0;
       transition: max-height 420ms cubic-bezier(.32,.72,0,1), opacity 300ms ease-out; }
     .sty-narr[data-expanded="true"] { max-height: 600px; opacity: 1; }
-    .sty-narr p { padding: 0 4px 10px 21px; font-size: 13px; line-height: 1.6; color: var(--stone-600); }
+    /* Innrykket flukter med NAVNET, ikke med raden — og navnet begynner der
+       markør-kolonnen slutter. Den kolonnen har to bredder (14 for prikk og
+       stjerne, 24 for brikke), så tallet er avledet og ikke skrevet inn:
+       13 = radens gap (9) + radens padding (4). Skriv om `--mark-w`, og både
+       navnet og teksten under følger. */
+    .sty-narr p {
+      padding: 0 4px 10px calc(var(--mark-w, 14px) + 13px);
+      font-size: 13px; line-height: 1.6; color: var(--stone-600);
+    }
+    /* Prikk og stjerne deler kolonne — 14 px rommer den bredeste av dem — så
+       navnene står i samme loddrette linje enten stedet er plukket eller ikke.
+       Brikken i Om området får sin egen bredde: den er en annen fane og et
+       annet blikk, og der er det brikkene som setter linja. */
+    .sty-list li { --mark-w: 14px; }
+    .sty-list li.sty-pick { --mark-w: 24px; }
+    .sty-row .sty-mark {
+      display: flex; flex: none; width: var(--mark-w, 14px);
+      align-items: center; justify-content: center;
+    }
+    /* `flex: none` fordi `.hl-icon` bare er `display: flex` i baselinen — i en
+       rad der navnet er `flex: 1` ville de 24 pikslene blitt klemt. */
+    .sty-row .hl-icon { flex: none; height: 24px; width: 24px; }
+    .sty-picks { margin: 16px 0 6px; }
 
-    /* Andre gruppe i steds-fanen: kategoriens nærmeste utover de utvalgte.
-       Uten dem er fanen tre rader og føles som en rest av prosaen; med dem er
-       den en liste. */
-    .sty-more { margin: 10px 0 6px; }
+    /* Stjernen sier «plukket», ikke «plukket av». Utvalget er navnløst — Placy
+       eier stedet — så den bærer ingen byline. Kategorifargen beholdes fra
+       prikken den erstatter, så båndet til kartpinnen står; det er FORMEN som
+       skiller, ikke fargen. Fylt fordi en grå kontur forsvinner i en liste som
+       kan være 40 rader lang. */
+    .sty-star { display: flex; flex: none; }
+    .sty-star svg { fill: currentColor; }
+
+    /* Linja som forklarer at lista er et utsnitt: uten den ser en kort liste ut
+       som en tom kategori i stedet for et trangt kartutsnitt. */
+    .sty-outside {
+      padding: 6px 4px 2px; font-size: 12px; line-height: 1.45; color: var(--stone-400);
+    }
 
     /* Fane 3: kategoriens spørsmål og svar. `faq-item`-idiomet er produksjonens,
        men svaret åpnes gjennom vår egen ruting (`tapFaq`) — baselinens toggle
@@ -243,12 +314,28 @@
       pointer-events: none;
     }
     .sty-deck[hidden] { display: none; }
-    /* Desktop: dekket hører til sidekolonnen, ikke kartet. */
+    /* Det FASTE dekket er et mobil-grep. På telefonen er underkanten der
+       tommelen er, og der skal transporten stå stille mens du leser.
+
+       På desktop er den samme kanten det punktet som er lengst unna både
+       blikket og pekeren — og skal noe likevel stå stille der, er det ikke
+       kategoriene som fortjener plassen: det er spørsmålet og de tre
+       svarformene (`.sty-head`). Transporten ligger derfor i FLYTEN øverst i
+       kolonnen, over stoppet den styrer, og ruller bort når du leser videre.
+       Se `sidebarTop` for hva det koster. */
     @media (min-width: 1024px) {
-      .sty-deck { right: auto; width: var(--sidebar-w); }
+      .sty-deck { display: none; }
     }
     body[data-story="on"] .sheet-body,
     body[data-story="on"] .scroll { padding-bottom: var(--sty-deck-h, 96px); }
+    @media (min-width: 1024px) {
+      /* `padding-top: 0` fordi sticky ikke kan gå over sin egen
+         containing block: med kolonnens 4 px topp-padding festet blokken seg
+         4 px ned, og i den stripen så man innholdet gli forbi over den. */
+      /* Luft i bunnen: siste rad sto klint i kolonnens underkant, og en liste
+         som slutter i kanten ser avkuttet ut selv når den er komplett. */
+      body[data-story="on"] .scroll { padding-top: 0; padding-bottom: 40px; }
+    }
 
     /* ---------- Transporten: kategorinavnene som en tab-rad i dekket ----------
        Seks anonyme streker fortalte HVOR MANGE, ikke HVA. Med navnene i
@@ -334,6 +421,22 @@
       background: #fff; color: var(--stone-900);
       box-shadow: inset 0 0 0 1px rgba(28,25,23,.07), 0 1px 3px rgba(28,25,23,.1);
     }
+    /* Raden på desktop: i flyten, uten slør og uten skygge.
+
+       MÅ stå etter reglene over — like spesifikke velgere avgjøres på
+       kilderekkefølge, og både `padding`-shorthanden og `box-shadow` er satt
+       der. Slør og skygge løftet baren fra det den svømte over; her svømmer
+       den ikke over noe, og da leser de bare som at den gjør det. Uten dem sto
+       den nesten-hvite flaten usynlig på hvit kolonne, så sporet arver
+       faneradens egen grå bunn: to segmenterte rader på samme flate. */
+    @media (min-width: 1024px) {
+      .scroll > .sty-hop { flex: none; padding: 0; }
+      .sty-hop::before, .sty-hop::after { display: none; }
+      .sty-hoptrack {
+        backdrop-filter: none; -webkit-backdrop-filter: none;
+        box-shadow: none; background: rgba(0,0,0,.045);
+      }
+    }
 
     /* ---------- Reisemåte: enheten over minutt-kolonnen ----------
        Lå velgeren i navbaren, hadde den samme form som de seks stoppene —
@@ -409,6 +512,19 @@
     .sty-close {
       position: sticky; top: var(--grab-h, 44px); z-index: 3;
       display: flex; height: 0; justify-content: flex-end;
+    }
+    /* Desktop har ingen handle å forskyve seg under — `--grab-h` settes bare av
+       `sizeMobileSurface`, så her slo reserven på 44 px inn og festet krysset
+       44 px ned i sidekolonnens scroller: midt oppå faneraden, ved siden av
+       spørsmålet i stedet for over det. Rapportert av Andreas 2026-08-26.
+       Krysset er nå statisk der, og festet er `.sty-head` rundt det.
+
+       Regelen MÅ stå her, etter grunnregelen over: `position: sticky` og
+       `position: static` er like spesifikke, og da avgjør kilderekkefølgen.
+       Lagt oppe i `.sty-q`-blokka tapte den, og krysset la seg tilbake 44 px
+       ned — midt på faneraden. Tredje gang samme felle i denne fila. */
+    @media (min-width: 1024px) {
+      .sty-close { position: static; }
     }
     /* `top: 0` er ikke tilfeldig: `.sty-close` er en høyde-0-beholder på
        `.sty`s overkant, altså nøyaktig der overskriftens boks begynner.
@@ -556,8 +672,7 @@
       ferjemannsveien: "klp-eiendom__ferjemannsveien-10",
     };
     const DESKTOP = "(min-width: 1024px)";
-    const PLACES_PER_SCENE = 3;   // fortellingens steder: de kameraet rammer inn
-    const ROWS_PER_SCENE = 6;     // hele steds-fanen, utvalget + de neste nærmeste
+    const PLACES_PER_SCENE = 3;   // meglerens utvalg: de kameraet rammer inn
     const SENTENCES_PER_BEAT = 2;
     /* Trykk på et sted gjør to ting: teksten åpner seg og kartet flyr dit. Skjer
        de samtidig, konkurrerer de om samme blikk. Teksten er det fingeren tok
@@ -635,8 +750,9 @@
       true
     );
 
-    const { esc, icon, minutesOf, byMinutesThenName, state, rerender, redrawMarkers, showAll } =
-      Baseline.util;
+    const {
+      esc, icon, minutesOf, byMinutesThenName, buildList, state, rerender, redrawMarkers, showAll,
+    } = Baseline.util;
 
     let on = entry === "fortelling";
     let step = 0;         // scene-indeks
@@ -667,17 +783,28 @@
       return pool.slice().sort(byMinutesThenName).slice(0, PLACES_PER_SCENE);
     }
 
-    /** Radene under utvalget: kategoriens neste nærmeste, de utvalgte trukket
-     *  fra. Fanen heter «steder å merke seg», og med bare tre rader leste den
-     *  som en rest av prosaen. Med seks er den en liste — og lista peker rett
-     *  videre til «Se alle N» i dekket. Kameraet rammer fortsatt bare de tre:
-     *  fortellingen snakker om dem, resten er der du kan gå videre selv. */
-    function morePlaces(cat) {
-      const taken = new Set(places(cat).map((p) => p.id));
-      return cat.pois
-        .filter((p) => !taken.has(p.id) && minutesOf(p) !== undefined)
-        .sort(byMinutesThenName)
-        .slice(0, Math.max(0, ROWS_PER_SCENE - PLACES_PER_SCENE));
+    /** Steds-fanens liste: kategoriens steder slik KARTUTSNITTET avgrenser dem,
+     *  nærmest først. Ingen todeling i «utvalgt» og «resten» lenger — utvalget
+     *  har flyttet opp i Om området, der det er meglerens anbefaling og ikke
+     *  en overskrift i en liste. Her er alt bare steder, og de utvalgte står
+     *  med en stjerne fordi de tross alt også er steder.
+     *
+     *  Utsnittet er filteret, ikke et tak vi setter: `moveend` rendrer på nytt
+     *  (baseline.js: «Å dra kartet ER filteret»), så lista og tellingen i fanen
+     *  følger kartet slik de gjør i det ekte boardet. Derfor er den heller ikke
+     *  kuttet på antall — dra kartet, og lista svarer.
+     *
+     *  `buildList` er baselinens egen: den trekker det åpne stedet ut av radene
+     *  for å kunne feste det øverst. Her skal rekkefølgen være ren avstand, så
+     *  det legges tilbake — men bare når det faktisk ER i utsnittet, for
+     *  `buildList` beholder det uansett hvor det ligger. */
+    function listPlaces(cat) {
+      const { rows, activeRow, visibleCount, hiddenCount } = buildList(cat, { scoped: true });
+      const inView = activeRow && visibleCount > rows.length ? [activeRow, ...rows] : rows;
+      return {
+        rows: inView.filter((p) => minutesOf(p) !== undefined).sort(byMinutesThenName),
+        hidden: hiddenCount,
+      };
     }
 
     /** Kategoriens spørsmål og svar. Finnes de ikke (ukuraterte kategorier har
@@ -732,17 +859,39 @@
     }
 
     // ---------- render ----------
-    function placeRow(p, cat) {
+    /** Radens venstre kolonne sier hva raden ER, og har tre former:
+     *    brikke   = meglerens anbefaling i Om området, med kuratorens eget
+     *               ikon og farge (de lå før begravd som tre overlappende
+     *               miniatyrer i snarveis-kortet som nå er borte)
+     *    stjerne  = samme sted igjen, nede i steds-lista: plukket, men fortsatt
+     *               bare et sted blant stedene
+     *    prikk    = alle de andre, i kategoriens farge som kartpinnen
+     *  Stjernen ERSTATTER prikken og beholder kategorifargen: da kan du lese
+     *  hvilke som er plukket loddrett nedover venstrekanten, uten at raden
+     *  endrer bredde eller at teksten flytter seg. Sto stjernen etter navnet,
+     *  ville den havnet inntil «3 min» — `.n` er `flex: 1` og skyver alt etter
+     *  seg helt til høyre — og da ville den merket minuttet, ikke stedet. */
+    function placeRow(p, cat, { chip = false, star = false } = {}) {
       const m = minutesOf(p);
       const narr = narrativeOf(p);
       const open = openIds.has(p.id);
+      const c = chip ? chipOf(p, cat) : null;
+      // Markøren ligger i en kolonne med FAST bredde, ikke inntil navnet: en
+      // stjerne er 13 px og en prikk 8, så uten kolonnen rykket navnet fram og
+      // tilbake nedover lista alt etter hvilke steder som var plukket.
+      const mark = chip
+        ? `<span class="hl-icon" style="background:${esc(c.color)}">${icon(c.icon, 14)}</span>`
+        : star
+          ? `<span class="sty-star" style="color:${esc(cat.color)}"
+               title="Meglerens utvalg">${icon("star", 13)}</span>`
+          : `<span class="dot" style="background:${esc(cat.color)}"></span>`;
       // `aria-current` merker stedet som vises på kartet, `aria-expanded` bare
       // de radene som faktisk HAR noe å utvide. Chevron-plassen holdes åpen
       // uansett — ellers rykker høyrekanten på et sted uten tekst.
-      return `<li>
+      return `<li class="${chip ? "sty-pick" : ""}">
         <button class="sty-row" data-story-poi="${esc(p.id)}" aria-current="${open}"
           ${narr ? `aria-expanded="${open}"` : ""}>
-          <span class="dot" style="background:${esc(cat.color)}"></span>
+          <span class="sty-mark">${mark}</span>
           <span class="n">${esc(p.name)}</span>
           ${m !== undefined ? `<span class="m">${m} min</span>` : ""}
           ${narr ? `<span class="chev">${icon("chevron-down", 15)}</span>` : `<span class="chev-gap"></span>`}
@@ -751,24 +900,42 @@
       </li>`;
     }
 
-    const paneTitle = (cat) => (curatedScene(cat) ? "Verdt å merke seg" : "Nærmest hjemmefra");
+    /** Overskriften over anbefalingen i Om området. «Nærmest hjemmefra» når
+     *  veksleren står på «Nærmest»: da er det ingen som har anbefalt noe. */
+    const pickTitle = (cat) => (curatedScene(cat) ? "Verdt å merke seg" : "Nærmest hjemmefra");
 
-    /** Fane 1: svaret i ord, med de to andre fanene som kort under. Kortene er
-     *  halve hver fordi de er likeverdige innganger: stedene og spørsmålene er
-     *  to former av samme svar, ikke ett svar og en fotnote. */
+    /** Fane 1: svaret i ord — OG meglerens anbefaling, som punkter.
+     *
+     *  Anbefalingen lå før som en overskrift («Verdt å merke seg») øverst i
+     *  steds-fanen, med kategoriens neste nærmeste under. To ting gjorde det
+     *  feil. Den ene: steds-lista i det ekte boardet er utsnitts-styrt og
+     *  skifter når du drar kartet, så anbefalingen lå i den flaten som endrer
+     *  seg mest — og de tre stedene noen har valgt ut er nettopp det som IKKE
+     *  skal flytte seg. Den andre: utvalget er innsalget (Moat 1), og det sto
+     *  bak et trykk på en fane, representert av et snarveis-kort med tre
+     *  overlappende ikoner. Nå er det selve svaret på spørsmålet, i ord først
+     *  og i tre navngitte steder rett under.
+     *
+     *  Snarveis-kortet til steds-fanen står, men sier noe annet enn før. Det
+     *  pekte på de TRE — «3 steder å merke seg · Se hvilke» — og de tre står nå
+     *  rett over det. Nå peker det på DEKNINGEN: hele kategorien, med tallet
+     *  utenpå. Det er den veien inn megleren betaler for, og den skal være
+     *  synlig uten at noen først trykker på en fane. Derfor kategoriens egen
+     *  brikke og ikke de tre kuratorbrikkene: de er alt brukt i radene over. */
     function proseTab(cat, ps) {
       const faqs = faqsOf(cat);
       return `${cat.lead ? `<p class="sty-lead">${esc(beat(cat.lead))}</p>` : ""}
+        <div class="sty-ebrow sty-picks">
+          <p class="eyebrow">${pickTitle(cat)}</p>
+          ${modeCell()}
+        </div>
+        <ul class="sty-list">${ps.map((p) => placeRow(p, cat, { chip: true })).join("")}</ul>
         <div class="sty-dual${faqs.length ? "" : " one"}">
           <button class="sty-mini" data-pane="steder">
-            <span class="hl-icons">${ps
-              .map((p) => {
-                const c = chipOf(p, cat);
-                return `<span><span class="hl-icon" style="background:${esc(c.color)}">${icon(c.icon, 14)}</span></span>`;
-              })
-              .join("")}</span>
-            <span class="t">${ps.length} ${ps.length === 1 ? "sted" : "steder"} å merke seg</span>
-            <span class="b"><span class="s">Se hvilke</span>${icon("arrow-right", 14)}</span>
+            <span class="hl-icons"><span><span class="hl-icon"
+              style="background:${esc(cat.color)}">${icon("map-pin", 14)}</span></span></span>
+            <span class="t">Steder i nærheten</span>
+            <span class="b"><span class="s">${cat.pois.length} i alt</span>${icon("arrow-right", 14)}</span>
           </button>
           ${
             faqs.length
@@ -787,17 +954,28 @@
      *  tre — det er skillet mellom en åpen og en ferdig kuratert versjon. Under
      *  dem står kategoriens neste nærmeste, så fanen er en liste og ikke tre
      *  løse rader. */
-    function placesTab(cat, ps) {
-      const more = morePlaces(cat);
+    /** Fane 2: kategoriens steder i utsnittet, nærmest først. Én liste, ingen
+     *  grupper — de utvalgte ligger inne i den, med stjerne, på plassen
+     *  avstanden gir dem. Linja nederst sier hvor mange som ligger utenfor:
+     *  det er den som forklarer at lista er et utsnitt og ikke en fasit, og
+     *  som gjør det tydelig at kartet er filteret. */
+    function placesTab(cat) {
+      const { rows, hidden } = listPlaces(cat);
+      const picked = new Set(places(cat).map((p) => p.id));
       return `<div class="sty-ebrow sty-eb">
-          <p class="eyebrow">${paneTitle(cat)}</p>
+          <p class="eyebrow">I kartutsnittet</p>
           ${modeCell()}
         </div>
-        <ul class="sty-list">${ps.map((p) => placeRow(p, cat)).join("")}</ul>
         ${
-          more.length
-            ? `<p class="eyebrow sty-more">Flere i nærheten</p>
-               <ul class="sty-list">${more.map((p) => placeRow(p, cat)).join("")}</ul>`
+          rows.length
+            ? `<ul class="sty-list">${rows
+                .map((p) => placeRow(p, cat, { star: picked.has(p.id) }))
+                .join("")}</ul>`
+            : `<p class="sty-outside">Ingen av kategoriens steder er i utsnittet.</p>`
+        }
+        ${
+          hidden
+            ? `<p class="sty-outside">${hidden} ${hidden === 1 ? "sted" : "steder"} utenfor utsnittet — zoom ut for å se dem</p>`
             : ""
         }`;
     }
@@ -839,27 +1017,36 @@
       const cat = all[step];
       const ps = places(cat);
       const faqs = faqsOf(cat);
-      const rows = ps.length + morePlaces(cat).length;
+      // Tallet i fanen er hva som ER i utsnittet nå, ikke et fast tak: drar du
+      // kartet, endrer det seg. Det er den samme sannheten som lista under.
+      const rows = listPlaces(cat).rows.length;
       const tab = (id, label) =>
         `<button role="tab" aria-selected="${pane === id}" data-pane="${id}">${label}</button>`;
 
+      // Krysset, spørsmålet og fanene i én blokk: på desktop er det NETTOPP de
+      // tre som skal bli stående når innholdet scroller, og en sticky blokk er
+      // ett feste i stedet for tre som må måle seg mot hverandre. På mobil
+      // gjør blokken ingenting — der er den fastlimte raden spørsmålet alene,
+      // og den regelen står urørt.
       return `<section class="sty" data-story-card>
-        <div class="sty-close">
-          <button class="sty-x" data-story-exit aria-label="Avslutt omvisningen">${icon("x", 15)}</button>
-        </div>
-        <h3 class="sty-q">${esc(cat.question || cat.label)}</h3>
+        <div class="sty-head">
+          <div class="sty-close">
+            <button class="sty-x" data-story-exit aria-label="Avslutt omvisningen">${icon("x", 15)}</button>
+          </div>
+          <h3 class="sty-q">${esc(cat.question || cat.label)}</h3>
 
-        <div class="sty-tabs" role="tablist">
-          ${tab("tekst", "Om området")}${tab("steder", `Steder (${rows})`)}${
-            faqs.length ? tab("faq", `Spørsmål (${faqs.length})`) : ""
-          }
+          <div class="sty-tabs" role="tablist">
+            ${tab("tekst", "Om området")}${tab("steder", `Steder (${rows})`)}${
+              faqs.length ? tab("faq", `Spørsmål (${faqs.length})`) : ""
+            }
+          </div>
         </div>
 
         <div class="sty-tab">
           <div class="sty-pane" role="tabpanel" data-active="${pane === "tekst"}"
             ${pane === "tekst" ? "" : 'aria-hidden="true"'}>${proseTab(cat, ps)}</div>
           <div class="sty-pane" role="tabpanel" data-active="${pane === "steder"}"
-            ${pane === "steder" ? "" : 'aria-hidden="true"'}>${placesTab(cat, ps)}</div>
+            ${pane === "steder" ? "" : 'aria-hidden="true"'}>${placesTab(cat)}</div>
           ${
             faqs.length
               ? `<div class="sty-pane" role="tabpanel" data-active="${pane === "faq"}"
@@ -982,6 +1169,15 @@
     function paintDeck() {
       const deck = document.getElementById("deck");
       if (!deck) return 0;
+      // Desktop har raden i kolonnen (se `sidebarTop`). Det faste dekket er da
+      // tomt og skjult, og kolonnen har ingen bunn å padde for.
+      if (matchMedia(DESKTOP).matches) {
+        deck.hidden = true;
+        deck.innerHTML = "";
+        document.documentElement.style.setProperty("--sty-deck-h", "0px");
+        state().sheetFloorInset = 0;
+        return 0;
+      }
       const rail = deck.querySelector("[data-story-hop]");
       if (on && rail) {
         // Bygges IKKE på nytt: da ville din egen scroll-posisjon i raden blitt
@@ -1023,10 +1219,10 @@
     function fitScene() {
       const s = state();
       const b = new mapboxgl.LngLatBounds();
-      // I steds-fanen strammes rammen til stedene alene. Kartet bekrefter fane-
-      // skiftet samtidig som brikken flytter seg. I ord-fanene (prosa og svar)
-      // står boligen med: teksten handler om området sett fra døra.
-      if (pane !== "steder") b.extend([s.board.home.coordinates.lng, s.board.home.coordinates.lat]);
+      // Boligen står ALLTID med: rammen er området sett fra døra, og de tre
+      // stedene fortellingen navngir. Unntaksregelen for steds-fanen er borte
+      // sammen med kameraet der — se `showPane`.
+      b.extend([s.board.home.coordinates.lng, s.board.home.coordinates.lat]);
       for (const p of places(scene())) b.extend([p.coordinates.lng, p.coordinates.lat]);
 
       // Sheeten dekker underkanten — uten padding for den legger fortellingen
@@ -1172,7 +1368,12 @@
       clearTimeout(pendingFly); // fanebyttet overtar kameraet
       rerender();
       redrawMarkers();
-      settle({ fit: true });
+      // Steds-fanen rammer IKKE inn noe. Lista der ER utsnittet, så et kamera
+      // som strammer seg inn idet du åpner fanen, bestemmer sitt eget innhold:
+      // rammen om de tre utvalgte ville etterlatt en liste på tre steder, og
+      // sett ut som om kategorien ikke hadde mer. De to andre fanene handler om
+      // området sett fra døra, og der rammer vi som før.
+      settle({ fit: next !== "steder" });
     }
 
     function end() {
@@ -1306,7 +1507,14 @@
     // ---------- overstyringer ----------
     Baseline.override({
       sheetTop: () => (on ? storyCard() : playCard()),
-      sidebarTop: () => (on ? storyCard() : playCard()),
+      // Desktop får transporten i flyten ØVERST i kolonnen, ikke i det faste
+      // dekket: den skal rulle bort når du leser, mens spørsmålet og fanene
+      // blir stående. Kostnaden er reell og bevisst — raden bygges nå på nytt
+      // ved hver render (kartet rendrer på hver `moveend`), så en sidelengs
+      // scroll du gjorde selv for å se framover, nullstilles. `positionHop`
+      // setter den tilbake til det aktive stoppet. På mobil er raden fortsatt
+      // i det faste dekket, utenfor `#app`, nettopp for å slippe dette.
+      sidebarTop: () => (on ? storyDeck() + storyCard() : playCard()),
       // Indeksen finnes fortsatt — den ligger bak «Avslutt».
       mobileCard: (c, list) => (on ? "" : Baseline.baseMobileCard(c, list)),
       desktopCard: (c) => (on ? "" : Baseline.baseDesktopCard(c)),

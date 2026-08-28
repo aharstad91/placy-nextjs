@@ -46,6 +46,9 @@ interface Params {
   /** Outro-beaten spiller → overhead-directoren yield-er (orkestratorens
    *  klampede summary-uttrekk eier kameraet). */
   outroActive?: boolean;
+  /** Omvisningen kjører → et åpnet punkt flytter ikke kameraet. Se
+   *  decideCameraIntent. */
+  storyActive?: boolean;
   /** Settes true av drift-flippen (Unit 4: bruker tiltet manuelt i Satelitt →
    *  segmentet flipper til 3D). Da skal sat→3d-overgangen IKKE fly kameraet til
    *  skrå — gesten eier alt posituren. Leses og nullstilles her. */
@@ -117,6 +120,7 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
     autoOrbit,
     overhead = false,
     outroActive = false,
+    storyActive = false,
     skipSkraaReentryRef,
   } = params;
 
@@ -145,6 +149,7 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
       autoOrbit,
       overhead,
       outroActive,
+      storyActive,
       prevIntent,
     });
     prevIntentRef.current = intent;
@@ -345,6 +350,7 @@ export function useBoard3DCamera(params: Params): Board3DCameraState {
     autoOrbit,
     overhead,
     outroActive,
+    storyActive,
     skipSkraaReentryRef,
   ]);
 
