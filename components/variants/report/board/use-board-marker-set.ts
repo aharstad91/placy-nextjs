@@ -9,6 +9,11 @@ import {
 } from "./board-3d-camera-director";
 import { selectBlobPOIs, selectFlyoverBlobs } from "./blob-pois";
 import { toDisplayPOI } from "./board-data";
+import {
+  anchorRepresentsFilter,
+  withAnchorMarkerName,
+  NO_HIDDEN_CATEGORIES,
+} from "@/lib/board/anchor-poi";
 import type { BoardCategory, BoardData } from "./board-data";
 import type { BoardPhase } from "./board-state";
 import type { EstablishingPathConfig } from "./board-establishing-flythrough";
@@ -149,9 +154,23 @@ export function selectMarkerPOIs(input: MarkerSelectionInput): POI[] {
   if (activeCategory) {
     const useFilter = statePhase !== "default" && hiddenIds.size > 0;
     const result: POI[] = [];
+    // Ankeret representerer medlemmene sine (R4). To utslag her: det overlever
+    // et sub-kategori-filter det selv ikke matcher så lenge noe inni gjør det
+    // (uten dette forsvinner seks dagligvarebutikker fra kartet i det brukeren
+    // filtrerer på dagligvare — de er absorbert og har ingen egen markør å
+    // komme tilbake som), og representerer det nøyaktig ETT sted i temaet,
+    // navngir labelen det: «SATS Sirkus — i Sirkus Shopping».
+    const hidden = useFilter ? hiddenIds : NO_HIDDEN_CATEGORIES;
     for (const p of activeCategory.pois) {
-      if (useFilter && hiddenIds.has(p.raw.category.id)) continue;
-      result.push(toDisplayPOI(p));
+      const display = toDisplayPOI(p);
+      if (
+        useFilter &&
+        hiddenIds.has(p.raw.category.id) &&
+        !anchorRepresentsFilter(display, hiddenIds)
+      ) {
+        continue;
+      }
+      result.push(withAnchorMarkerName(display, hidden));
     }
     return result;
   }

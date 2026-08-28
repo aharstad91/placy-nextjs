@@ -932,13 +932,74 @@ verste enkeltgruppe er ~380 px.
 **Merk:** `node_modules` var slettet i BÅDE hovedrepo og worktree da denne enheten startet (rydding
 etter diskstoppen 2026-08-27). Reinstallert i worktreet; hovedrepoet står fortsatt uten.
 
-### Unit 7 — Filter-oppførsel
+### Unit 7 — Filter-oppførsel ✅ FERDIG
 
 Når brukeren har valgt én kategori, skal ankeret representere kun treffene i den kategorien: navn
 blir «Vinmonopolet — i Sirkus Shopping», og registeret åpner på den kategorien. Uten dette mister
 filteret mening for alt som ligger inne i et senter.
 
 Berører `use-board-marker-set.ts:141` (`selectMarkerPOIs`) og markørens labeltekst.
+
+**Resultat (2026-08-28, samme branch).**
+
+| Leveranse | Fil |
+|---|---|
+| Anker-reglene for filter og navn, delt av begge motorer | `lib/board/anchor-poi.ts` |
+| Overlevelse + navngivning i 3D-markørsettet | `use-board-marker-set.ts` — `selectMarkerPOIs` |
+| Overlevelse i 2D-markørsettet | `BoardMap.tsx` — `markerStates` |
+
+**Funnet som styrte enheten: sub-kategori-filteret er dvalende.** Ingenting i UI-et kaller
+`subFilter.toggle` eller `toggleAll`, og både `deriveSubCategories` og `useFilteredActiveCategory`
+har null konsumenter utenfor sine egne tester — chips-raden ble fjernet, rørleggingen ble stående.
+`hiddenIds` er altså alltid tom i produksjon i dag. «Når brukeren har valgt én kategori» er derfor
+lest som **tema-navbaren**, som er den levende mekanismen og nøyaktig den `selectMarkerPOIs`
+forgrener på (`if (activeCategory)`).
+
+Det er samme situasjon som R2 i Unit 4, og håndteres på samme måte: ingen ny maskineri for en
+dvalende spak. `deriveSubCategories` er URØRT — å utvide den ville vært å bygge for et filter ingen
+kan trykke på. Regelen som ER lagt inn i `hiddenIds`-grenen er fire linjer som vokter en gren som
+allerede fantes, og som er dekket av eksisterende tester.
+
+**Navneregelen: navngi kun når ankeret representerer nøyaktig ETT sted.**
+
+```
+Trening & Aktivitet → Sirkus har 1 medlem  → «SATS Sirkus — i Sirkus Shopping»
+Hverdagsliv         → Sirkus har 50        → «Sirkus Shopping»
+```
+
+Dette er R4s halvdel om navngivning, og barna er allerede tema-avgrenset fra Unit 4, så regelen
+trenger ingen ny data. **Vi teller aldri i labelen** («6 dagligvare»): tallet ble forkastet sammen
+med FINN-mønsteret, `+`-merket sier allerede kvalitativt at det er mer inni, og norsk
+flertallsbøyning av kategorinavn er en felle («Apotek» → «apotek», «Kafé» → «kafeer»). En label som
+bøyer feil er verre enn en som lar være.
+
+Kjent grensetilfelle, akseptert og dokumentert i koden: et lite nærsenter som selv hører hjemme i
+temaet OG bare har ett medlem der, får medlemmets navn foran sitt eget. Utsagnet er fortsatt sant,
+og alternativet krever at temaets kategorisett følger med ned i board-laget.
+
+`withAnchorMarkerName` returnerer SAMME objekt når navnet står uendret — `Marker3DItem` er
+memoisert, og et ferskt objekt per render ville re-rendret hele markørsettet ved hver
+kamerabevegelse. Samme disiplin som `toDisplayPOI`.
+
+**2D får overlevelsen, ikke navnet.** At ankeret forsvinner fra kartet når filteret treffer noe
+inni det er en korrekthetsfeil, ikke en markørlag-feature — de absorberte medlemmene har ingen egen
+pin å komme tilbake som, så det er ikke en skjult markør, det er et tomt kart der butikkene lå.
+Regelen er derfor lagt i begge motorer. Labelen er det ikke: `BoardMarker` er `React.memo`-et på
+`poi.id` og sammenligner ikke navnet, så et omdøpt navn ville aldri nådd skjermen uten å endre
+sammenligneren — og 2D-markørlaget ligger utenfor planens scope. Samme divergens som `+`-merket i
+Unit 5.
+
+**«Registeret åpner på den kategorien» krevde ingen kode.** Registeret ER tema-avgrenset fra Unit 4,
+og Unit 6 la til at POI-oppslaget velger kopien fra kategorien brukeren står i. Åpner du Sirkus fra
+«Trening & Aktivitet», inneholder registeret nøyaktig den ene treningsgruppa — og den står åpen,
+fordi ett medlem er godt under auto-åpne-grensen.
+
+**Verifisert.** 3 294 tester / 203 filer grønne (+25), `tsc` rent, lint 0 errors. Nettleser
+(Chrome 151, Strindfjordvegen 10): 465 markører i overblikk, 23 pins med kategori valgt, **null
+console-feil** gjennom kategorivalg, POI-åpning og kamerafly. Anker-labelen kan ikke ses på ekte
+data før Unit 8. Underveis ble det bekreftet at labels bare tegnes på nærmeste zoom-tier
+(`tier === "icon+label"`, range ~295 m ga label, ~816 m ga ingen) — det er eksisterende oppførsel,
+ikke en regresjon fra denne enheten.
 
 ### Unit 8 — Sirkus og Lade i prod, verifisert
 

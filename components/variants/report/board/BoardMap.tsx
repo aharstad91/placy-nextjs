@@ -25,6 +25,7 @@ import type { FlyCapableMap } from "./board-3d-camera-director";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useAudioTourPhase, useCurrentTrack } from "@/lib/stores/audio-tour-store";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
+import { anchorRepresentsFilter } from "@/lib/board/anchor-poi";
 import {
   computeLabelPlacements,
   type LabelCandidate,
@@ -307,7 +308,18 @@ export function BoardMap({
       const useFilter =
         state.phase !== "default" && subFilter.hiddenIds.size > 0;
       for (const p of activeCategory.pois) {
-        if (useFilter && subFilter.hiddenIds.has(p.raw.category.id)) continue;
+        // Ankeret overlever et filter det selv ikke matcher når et av
+        // medlemmene gjør det (R4) — samme regel som 3D-motoren. LABELEN
+        // navngir derimot ikke stedet her: `BoardMarker` er memoisert på
+        // `poi.id`, så et omdøpt navn ville aldri nådd skjermen uten å endre
+        // sammenligneren, og 2D-markørlaget ligger utenfor planens scope.
+        if (
+          useFilter &&
+          subFilter.hiddenIds.has(p.raw.category.id) &&
+          !anchorRepresentsFilter(p.raw, subFilter.hiddenIds)
+        ) {
+          continue;
+        }
         baseVisible.add(p.id);
       }
     }
