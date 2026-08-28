@@ -133,7 +133,15 @@ export function buildAnchorSummary(categoryNames: string[]): string {
 
 export async function resolveProjectAnchors(options: {
   projectId: string;
+  /**
+   * Tørrkjøring: poolen leses og oppløsningen regnes ut som vanlig, men ingen
+   * rad skrives. Tallene i rapporten er dermed nøyaktig det en ekte kjøring
+   * ville gjort — samme kodevei, bare uten `update`. Brukes av
+   * `scripts/anchor-backfill.ts` til å planlegge backfillen før den kjøres.
+   */
+  dryRun?: boolean;
 }): Promise<ResolveAnchorsStepResult> {
+  const dryRun = options.dryRun ?? false;
   const result: ResolveAnchorsStepResult = {
     anchors: [],
     membersLinked: 0,
@@ -264,6 +272,10 @@ export async function resolveProjectAnchors(options: {
       (id) => rowById.get(id)?.parent_poi_id !== anchor.anchorId,
     );
     for (const chunk of chunkIds(changed)) {
+      if (dryRun) {
+        result.membersLinked += chunk.length;
+        continue;
+      }
       const { error } = await db
         .from("pois")
         .update({ parent_poi_id: anchor.anchorId })
@@ -287,20 +299,22 @@ export async function resolveProjectAnchors(options: {
 
     const anchorRow = rowById.get(anchor.anchorId);
     const metadata = { ...(anchorRow?.poi_metadata ?? {}), anchor_resolution: today };
-    const { error: anchorError } = await db
-      .from("pois")
-      .update({
-        anchor_summary: summary || null,
-        poi_metadata: metadata,
-        // Et anker er aldri medlem av noe. Rydder etter en tidligere kjøring
-        // der kandidaten ennå ikke var et anker.
-        parent_poi_id: null,
-      })
-      .eq("id", anchor.anchorId);
-    if (anchorError) {
-      result.warnings.push(
-        `⚠️  Kunne ikke skrive anchor_summary for «${anchor.name}»: ${anchorError.message}`,
-      );
+    if (!dryRun) {
+      const { error: anchorError } = await db
+        .from("pois")
+        .update({
+          anchor_summary: summary || null,
+          poi_metadata: metadata,
+          // Et anker er aldri medlem av noe. Rydder etter en tidligere kjøring
+          // der kandidaten ennå ikke var et anker.
+          parent_poi_id: null,
+        })
+        .eq("id", anchor.anchorId);
+      if (anchorError) {
+        result.warnings.push(
+          `⚠️  Kunne ikke skrive anchor_summary for «${anchor.name}»: ${anchorError.message}`,
+        );
+      }
     }
 
     const via = { containment: 0, address: 0, proximity: 0 };
@@ -332,6 +346,10 @@ export async function resolveProjectAnchors(options: {
     .map((r) => r.id);
 
   for (const chunk of chunkIds(stale)) {
+    if (dryRun) {
+      result.membersUnlinked += chunk.length;
+      continue;
+    }
     const { error } = await db.from("pois").update({ parent_poi_id: null }).in("id", chunk);
     if (error) {
       result.warnings.push(

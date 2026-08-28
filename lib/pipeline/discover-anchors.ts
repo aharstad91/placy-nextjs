@@ -145,6 +145,13 @@ export async function discoverAnchorsForProject(options: {
   minCount?: number;
   /** Terskelen for realitets-gaten. Delt med `resolveAnchors` (Unit 1). */
   minMembers?: number;
+  /**
+   * Tørrkjøring: Google spørres som vanlig (les-kall), men INGENTING skrives.
+   * Rapporten er identisk i form, så en backfill kan planlegges og gjennomgås
+   * før den kjøres. Går gjennom nøyaktig samme kodevei som den ekte kjøringen
+   * — en tørrkjøring som simulerer i en egen gren ville ikke bevist noe.
+   */
+  dryRun?: boolean;
 }): Promise<DiscoverAnchorsStepResult> {
   const {
     projectId,
@@ -154,6 +161,7 @@ export async function discoverAnchorsForProject(options: {
     searchRadiusMeters = ANCHOR_SEARCH_RADIUS_M,
     minCount = ANCHOR_MIN_COUNT,
     minMembers = DEFAULT_MIN_MEMBERS,
+    dryRun = false,
   } = options;
 
   const empty: DiscoverAnchorsStepResult = {
@@ -253,11 +261,13 @@ export async function discoverAnchorsForProject(options: {
   }
 
   try {
-    await persistDiscoveredPOIs(
-      toPersist.map((h) => h.poi),
-      projectId,
-      { label: "discoverAnchorsForProject" }
-    );
+    if (!dryRun) {
+      await persistDiscoveredPOIs(
+        toPersist.map((h) => h.poi),
+        projectId,
+        { label: "discoverAnchorsForProject" }
+      );
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
@@ -268,7 +278,7 @@ export async function discoverAnchorsForProject(options: {
     };
   }
 
-  const summaries = await writeProbedAnchorSummaries(accepted, warnings);
+  const summaries = await writeProbedAnchorSummaries(accepted, warnings, dryRun);
 
   const imported: AnchorImportReport[] = toPersist.map((h) => {
     const probe = accepted.find((a) => a.hit.poi.id === h.poi.id)?.probe;
@@ -316,10 +326,20 @@ export async function discoverAnchorsForProject(options: {
  */
 async function writeProbedAnchorSummaries(
   accepted: Array<{ hit: AnchorHit; probe: AnchorMemberProbe }>,
-  warnings: string[]
+  warnings: string[],
+  dryRun = false
 ): Promise<Map<string, string>> {
   const written = new Map<string, string>();
   if (accepted.length === 0) return written;
+
+  // Tørrkjøring: teksten bygges (det er den som skal gjennomgås) men ingen rad
+  // røres, og Supabase kontaktes ikke i det hele tatt.
+  if (dryRun) {
+    for (const { hit, probe } of accepted) {
+      written.set(hit.poi.id, buildAnchorSummary(probe.categoryNames));
+    }
+    return written;
+  }
 
   let db: ReturnType<ReturnType<typeof createServerClient>["schema"]>;
   try {

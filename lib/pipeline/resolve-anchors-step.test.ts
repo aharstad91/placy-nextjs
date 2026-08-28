@@ -264,6 +264,69 @@ describe("resolveProjectAnchors — Strindfjordvegen 10 (ekte pool)", () => {
   });
 });
 
+describe("resolveProjectAnchors — tørrkjøring", () => {
+  /**
+   * En tørrkjøring som lyver er verre enn ingen tørrkjøring: den er
+   * beslutningsgrunnlaget for en irreversibel backfill mot prod. Disse to
+   * testene binder de to halvdelene — ingen rad røres, og tallene er de samme
+   * som en ekte kjøring ville gitt.
+   */
+  it("skriver INGENTING", async () => {
+    const mock = buildMockSupabase({ rows: boardRows(), categories: CATEGORIES });
+    useMock(mock);
+
+    const result = await resolveProjectAnchors({ projectId: "p1", dryRun: true });
+
+    expect(result.anchors.length).toBeGreaterThan(0);
+    expect(mock.updates).toEqual([]);
+    expect(mock.rows.every((r) => r.parent_poi_id === null)).toBe(true);
+    expect(mock.rows.every((r) => !r.anchor_summary)).toBe(true);
+  });
+
+  it("gir NØYAKTIG samme rapport som en ekte kjøring", async () => {
+    const dryMock = buildMockSupabase({ rows: boardRows(), categories: CATEGORIES });
+    useMock(dryMock);
+    const dry = await resolveProjectAnchors({ projectId: "p1", dryRun: true });
+
+    const wetMock = buildMockSupabase({ rows: boardRows(), categories: CATEGORIES });
+    useMock(wetMock);
+    const wet = await resolveProjectAnchors({ projectId: "p1" });
+
+    expect(dry.anchors).toEqual(wet.anchors);
+    expect(dry.membersLinked).toBe(wet.membersLinked);
+    expect(dry.membersUnlinked).toBe(wet.membersUnlinked);
+    expect(dry.rejected).toEqual(wet.rejected);
+    expect(dry.transportExcluded).toBe(wet.transportExcluded);
+    expect(dry.warnings).toEqual(wet.warnings);
+  });
+
+  it("teller lenker som VILLE blitt ryddet uten å rydde dem", async () => {
+    // En POI som peker på et anker vi vurderer, men som ikke lenger er medlem.
+    const rows = boardRows().map((r) =>
+      r.id === "utenfor-1" ? { ...r, parent_poi_id: SIRKUS } : r,
+    );
+    const withStale = [
+      ...rows,
+      {
+        id: "utdatert-medlem",
+        name: "Flyttet butikk",
+        address: "Et helt annet sted 99, Trondheim",
+        lat: 63.5,
+        lng: 10.9,
+        category_id: "butikk",
+        parent_poi_id: SIRKUS,
+      },
+    ];
+    const mock = buildMockSupabase({ rows: withStale, categories: CATEGORIES });
+    useMock(mock);
+
+    const result = await resolveProjectAnchors({ projectId: "p1", dryRun: true });
+
+    expect(result.membersUnlinked).toBeGreaterThan(0);
+    expect(mock.rows.find((r) => r.id === "utdatert-medlem")!.parent_poi_id).toBe(SIRKUS);
+  });
+});
+
 describe("resolveProjectAnchors — hva som IKKE blir medlem", () => {
   it("holder holdeplasser og bysykkel utenfor selv når de står i inngangen", async () => {
     const sirkus = fixture.malls.find((m) => m.id === SIRKUS)!;

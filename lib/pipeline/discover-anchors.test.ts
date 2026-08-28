@@ -260,6 +260,39 @@ describe("discoverAnchorsForProject", () => {
     expect(result.beyondCircle).toBe(3);
   });
 
+  it("tørrkjøring skriver INGENTING — verken POI-er eller anker-tekst", async () => {
+    // Beslutningsgrunnlaget for en irreversibel backfill mot prod. Går den
+    // gjennom en egen simuleringsgren i stedet for den ekte koden, beviser den
+    // ingenting; her er kravet at samme vei kjøres, bare uten skriv.
+    const result = await discoverAnchorsForProject({ ...BASE, dryRun: true });
+
+    expect(vi.mocked(persistDiscoveredPOIs)).not.toHaveBeenCalled();
+    expect(updates).toEqual([]);
+    expect(result.imported).toHaveLength(3);
+  });
+
+  it("tørrkjøringen bygger anker-teksten som ville blitt skrevet", async () => {
+    // Teksten er det som skal gjennomgås før den lagres — den må stå i
+    // rapporten selv om ingen rad røres.
+    const result = await discoverAnchorsForProject({ ...BASE, dryRun: true });
+    const beyond = result.imported.filter((a) => a.beyondCircle);
+    expect(beyond.length).toBeGreaterThan(0);
+    for (const a of beyond) expect(a.summary).toBeTruthy();
+  });
+
+  it("tørrkjøring og ekte kjøring rapporterer det samme", async () => {
+    const dry = await discoverAnchorsForProject({ ...BASE, dryRun: true });
+    vi.clearAllMocks();
+    vi.mocked(discoverAnchorCandidates).mockResolvedValue(SUNDSOYA);
+    vi.mocked(probeAnchorMembers).mockResolvedValue(REAL_MALL);
+    const wet = await discoverAnchorsForProject(BASE);
+
+    expect(dry.candidatesFound).toBe(wet.candidatesFound);
+    expect(dry.beyondCircle).toBe(wet.beyondCircle);
+    expect(dry.rejected).toEqual(wet.rejected);
+    expect(dry.imported).toEqual(wet.imported);
+  });
+
   it("rapporterer avstand i hele meter og merker hvem som lå utenfor sirkelen", async () => {
     const result = await discoverAnchorsForProject(BASE);
 
