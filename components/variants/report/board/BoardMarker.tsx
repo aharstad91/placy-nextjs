@@ -9,6 +9,7 @@ import type { LabelSide } from "@/lib/board/label-collision";
 import type { BoardZoomTier } from "./use-board-zoom-tier";
 import {
   STORY_EMPHASIS_OPACITY,
+  STORY_EMPHASIS_PIN_SCALE,
   type StoryEmphasis,
 } from "./story/story-model";
 
@@ -98,7 +99,11 @@ function BoardMarkerImpl({
   // (matcher dagens `w-11 h-11`), inaktiv = 32 px (matcher `w-8 h-8`). Dot og
   // IconCircle er absolute-sentrert i samme container, så tap-koordinaten flytter
   // seg ikke når R10-promotion skjer.
-  const containerSize = isActive ? 44 : emphasis === "named" ? 38 : 32;
+  const containerSize = isActive
+    ? 44
+    : emphasis === "named"
+      ? 38
+      : Math.round(32 * (emphasis ? STORY_EMPHASIS_PIN_SCALE[emphasis] : 1));
 
   // Omvisningens tre nivåer. `named` beholder full styrke og får sin vekt fra
   // størrelsen over; de to andre trekker seg tilbake.
@@ -109,9 +114,10 @@ function BoardMarkerImpl({
   // men ikke ta på leser som et kart som har sluttet å virke, så et trykk går nå
   // gjennom uansett nivå; det er flaten som følger etter (se `useMapPinClick`).
   //
-  // Tallene per nivå bor i `STORY_EMPHASIS_OPACITY` (story-model) sammen med
-  // reglene for hvem som får hvilket nivå — og med gulvet på 50 % låst av en
-  // test, slik at det ikke kan gli ned igjen (2026-08-28).
+  // Størrelsen over er hovedsignalet: nabolaget rundt stoppet tegnes mindre, men
+  // beholder ikon, farge og navn (`STORY_EMPHASIS_PIN_SCALE`). Opacityen er bare
+  // et hint om dybde ved siden av — se doccen i story-model for hvorfor den
+  // ikke kan bære skillet alene (2026-08-28).
   const emphasisOpacity = emphasis ? STORY_EMPHASIS_OPACITY[emphasis] : 1;
 
   return (
@@ -221,7 +227,19 @@ function BoardMarkerImpl({
             pointerEvents: "none",
           }}
         >
-          <Icon className={isActive ? "w-5 h-5" : "w-4 h-4"} weight="fill" />
+          {/* Ikonet følger sirkelen: 16 px i en 22 px ring med 2 px kant ville
+              ligget helt inntil kanten. Tallene er de samme forholdene som den
+              fulle pinnen har. */}
+          <Icon
+            className={
+              isActive
+                ? "w-5 h-5"
+                : containerSize < 28
+                  ? "w-3 h-3"
+                  : "w-4 h-4"
+            }
+            weight="fill"
+          />
         </div>
 
         {/* Label — absolute inntil container, side styrt av labelSide

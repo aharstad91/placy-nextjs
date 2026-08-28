@@ -275,6 +275,61 @@ describe("PoiMarkerContent — anker-modus", () => {
   });
 });
 
+describe("PoiMarkerContent — mindre pinne, samme navn", () => {
+  /* Omvisningens kontekst skilles på STØRRELSE, ikke på styrke: et mindre punkt
+     leser som «lenger bak», et blekt punkt som «avskrudd». Andreas, 2026-08-28:
+     «jeg liker poenget med mindre pois men da må de beholde labels». */
+  const disc = (c: HTMLElement) =>
+    host(c).querySelector("span") as HTMLElement;
+
+  it("krymper disc-en og ikonet, men ikke boksen — ankeret står", () => {
+    const full = render(<PoiMarkerContent {...base} />).container;
+    const liten = render(<PoiMarkerContent {...base} pinFactor={0.7} />)
+      .container;
+    // Boksen er den samme: Google forankrer innholdet bunn-midt, og
+    // kollisjonskullingen regner med den fulle boksen.
+    expect(host(liten).style.width).toBe(host(full).style.width);
+    expect(parseFloat(disc(liten).style.width)).toBeLessThan(
+      parseFloat(disc(full).style.width),
+    );
+    const ikon = (c: HTMLElement) =>
+      Number(c.querySelector("[data-testid=picon]")!.getAttribute("data-w"));
+    expect(ikon(liten)).toBeLessThan(ikon(full));
+  });
+
+  it("beholder navnet i full lesbarhet — typografien følger ikke faktoren", () => {
+    const full = render(<PoiMarkerContent {...base} label="Flipper Kafe" />)
+      .container;
+    const liten = render(
+      <PoiMarkerContent {...base} label="Flipper Kafe" pinFactor={0.7} />,
+    ).container;
+    expect(label(liten)?.textContent).toBe("Flipper Kafe");
+    expect(label(liten)!.style.fontSize).toBe(label(full)!.style.fontSize);
+  });
+
+  it("flytter navnet inn mot den mindre disc-en, ikke mot boksens kant", () => {
+    const full = render(
+      <PoiMarkerContent {...base} label="Sjøparken" labelSide="right" />,
+    ).container;
+    const liten = render(
+      <PoiMarkerContent
+        {...base}
+        label="Sjøparken"
+        labelSide="right"
+        pinFactor={0.7}
+      />,
+    ).container;
+    expect(parseFloat(label(liten)!.style.left)).toBeLessThan(
+      parseFloat(label(full)!.style.left),
+    );
+  });
+
+  it("står på full størrelse uten propen", () => {
+    const { container } = render(<PoiMarkerContent {...base} />);
+    expect(disc(container).style.width).toBe(`${PIN_SIZE}px`);
+  });
+});
+
 describe("PoiMarkerContent — styrke er ikke form", () => {
   /* Omvisningens kontekst dempes, den byttes ikke ut. Formen — ikon, størrelse,
      navn — er den samme som stoppets egne steder; det er styrken som skiller.

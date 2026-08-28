@@ -151,6 +151,15 @@ export interface MapView3DProps {
   dimmedMarkerIds?: ReadonlySet<string>;
   /** Styrken `dimmedMarkerIds` tegnes med. 1 = ingen demping. */
   dimmedOpacity?: number;
+  /**
+   * Størrelsen `dimmedMarkerIds` tegnes med, som andel av full pinne. 1 = full.
+   *
+   * Dette er hovedsignalet, og `dimmedOpacity` bare et hint ved siden av: et
+   * mindre punkt leser som «lenger bak», mens et blekt punkt leser som
+   * «avskrudd». Navnet blir stående i full lesbarhet uansett — se
+   * `PoiMarkerContent.pinFactor`.
+   */
+  dimmedPinScale?: number;
 }
 
 /**
@@ -204,6 +213,7 @@ const Marker3DItem = memo(function Marker3DItem({
   scale,
   zIndex,
   opacity,
+  pinFactor,
 }: {
   poi: POI;
   /** Kartinstansen markøren appendes til. */
@@ -228,6 +238,8 @@ const Marker3DItem = memo(function Marker3DItem({
   zIndex?: number;
   /** Markørens styrke, 1 = full. Se `dimmedMarkerIds` på MapView3D. */
   opacity?: number;
+  /** Markørens tegnede størrelse, 1 = full. Se `dimmedPinScale` på MapView3D. */
+  pinFactor?: number;
 }) {
   return (
     <DomMarker3D
@@ -261,6 +273,7 @@ const Marker3DItem = memo(function Marker3DItem({
         compact={compact}
         scale={scale}
         opacity={opacity}
+        pinFactor={pinFactor}
       />
     </DomMarker3D>
   );
@@ -347,6 +360,7 @@ function Map3DInner({
   markerScale,
   dimmedMarkerIds,
   dimmedOpacity = 1,
+  dimmedPinScale = 1,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -437,7 +451,9 @@ function Map3DInner({
           // `markerLabels`-doc: et objekt per markør ville defeatet memo.
           const placement = markerLabels?.[poi.id];
           const compact = compactMarkers || (demotedMarkerIds?.has(poi.id) ?? false);
-          const opacity = dimmedMarkerIds?.has(poi.id) ? dimmedOpacity : 1;
+          const dimmed = dimmedMarkerIds?.has(poi.id) ?? false;
+          const opacity = dimmed ? dimmedOpacity : 1;
+          const pinFactor = dimmed ? dimmedPinScale : 1;
           return (
             <Marker3DItem
               key={poi.id}
@@ -450,6 +466,7 @@ function Map3DInner({
               zIndex={markerZIndexes?.[poi.id]}
               scale={markerScale}
               opacity={opacity}
+              pinFactor={pinFactor}
             />
           );
         })}

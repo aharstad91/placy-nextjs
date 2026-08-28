@@ -10,7 +10,10 @@ import {
 } from "@/components/map/motor-camera";
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { useStoryTourOptional } from "./story/story-tour";
-import { STORY_EMPHASIS_OPACITY } from "./story/story-model";
+import {
+  STORY_EMPHASIS_OPACITY,
+  STORY_EMPHASIS_PIN_SCALE,
+} from "./story/story-model";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { BoardTravelChip3D } from "./BoardTravelChip3D";
@@ -754,6 +757,7 @@ export function BoardMap3D({
         markerScale={declutter.pinScale}
         dimmedMarkerIds={storyTextureIds}
         dimmedOpacity={STORY_EMPHASIS_OPACITY.texture}
+        dimmedPinScale={STORY_EMPHASIS_PIN_SCALE.texture}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}

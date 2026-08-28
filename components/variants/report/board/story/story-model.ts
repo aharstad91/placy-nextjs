@@ -221,17 +221,38 @@ export function storyEmphasis(
 /**
  * Hvor gjennomsiktig markøren er på hvert nivå.
  *
- * Gulvet er 50 %, og det er en nedre grense, ikke en smakssak: laveste nivå lå
- * på 26 %, og et punkt på en fjerdedel leser som avskrudd. Alle tre nivåene tar
- * imot trykk (se `BoardMarker`), så en leser som tror de dempede er slått av,
- * lar en fjerdedel av kartet stå urørt. Andreas, 2026-08-28: «folk må ikke
- * missforstå det som at de er "deaktivert"».
+ * Nesten ingenting, og det er med vilje. Vi prøvde 26 %, 50 % og 75 % på
+ * nabolaget rundt stoppet, og hver runde var samme bytte: nok demping til å
+ * lese temaet ga punkter som så avskrudd ut, og nok styrke til å se levende ga
+ * ingen synlig forskjell. Opacity var feil akse — det er {@link
+ * STORY_EMPHASIS_PIN_SCALE} som bærer skillet nå (Andreas, 2026-08-28: «mulig
+ * det er for dårlig også og at vi må skille på noe annet. jeg liker poenget med
+ * mindre pois men da må de beholde labels»).
  *
- * Mellomnivået løftes med gulvet. Ligger det på 0,6 mens gulvet er 0,5, er tre
- * nivåer i praksis to.
+ * De 5 % som står igjen er ikke et signal, bare et hint om dybde: kontekst-
+ * punktet ligger et hår lenger bak i bildet enn stoppets egne. Alle nivåene tar
+ * imot trykk (se `BoardMarker`).
  */
 export const STORY_EMPHASIS_OPACITY: Record<StoryEmphasis, number> = {
   named: 1,
-  scene: 0.75,
-  texture: 0.5,
+  scene: 1,
+  texture: 0.95,
+};
+
+/**
+ * Markørens STØRRELSE per nivå, som andel av den fulle pinnen.
+ *
+ * Dette er aksen som faktisk skiller: temaet du står i har fulle pinner,
+ * nabolaget rundt har mindre — men de beholder ikon, farge OG navn. Et mindre
+ * punkt leser som «lenger bak», ikke som «avskrudd», og det er nettopp
+ * forskjellen fra opacity: du kan gjøre det tydelig uten å gjøre det utydelig.
+ *
+ * Navnet skalerer IKKE med. Labelen står på 10 px i begge motorer uansett
+ * nivå — en 7 px tekst ville vært et navn du ikke kan lese, og da hadde vi vært
+ * tilbake til prikken uten navn.
+ */
+export const STORY_EMPHASIS_PIN_SCALE: Record<StoryEmphasis, number> = {
+  named: 1,
+  scene: 1,
+  texture: 0.7,
 };

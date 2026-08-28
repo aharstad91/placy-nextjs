@@ -8,6 +8,7 @@ import {
   areaSubline,
   storyBeat,
   STORY_EMPHASIS_OPACITY,
+  STORY_EMPHASIS_PIN_SCALE,
   storyEmphasis,
   storyIsCurated,
   storyMinutes,
@@ -270,13 +271,26 @@ describe("storyEmphasis — tre nivåer, ikke to", () => {
     expect(storyEmphasis("a", "natur", "mat", named)).toBe("named");
   });
 
-  /* Gulvet er en grense, ikke en verdi vi tuner: under 50 % begynner et punkt å
-     lese som avskrudd, og alle tre nivåene tar imot trykk. */
+  /* Gulvet er en grense, ikke en verdi vi tuner: dempede punkter tar imot trykk
+     som alle andre, og for langt ned leser de som avskrudd. */
   it("holder de dempede over 50 % — de er dempet, ikke deaktivert", () => {
     expect(STORY_EMPHASIS_OPACITY.texture).toBeGreaterThanOrEqual(0.5);
-    expect(STORY_EMPHASIS_OPACITY.scene).toBeGreaterThan(
-      STORY_EMPHASIS_OPACITY.texture,
-    );
+  });
+
+  /* Opacityen bærer ikke skillet lenger — den er et hint om dybde. Tre runder
+     (26/50/75 %) viste at aksen ikke kan gjøre begge jobbene: lese temaet OG se
+     levende. Størrelsen gjør det. */
+  it("gir temaets egne punkter full styrke, også de som ikke er navngitt", () => {
     expect(STORY_EMPHASIS_OPACITY.named).toBe(1);
+    expect(STORY_EMPHASIS_OPACITY.scene).toBe(1);
+    expect(STORY_EMPHASIS_OPACITY.texture).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it("skiller på STØRRELSE: nabolaget rundt tegnes mindre enn temaet", () => {
+    expect(STORY_EMPHASIS_PIN_SCALE.named).toBe(1);
+    expect(STORY_EMPHASIS_PIN_SCALE.scene).toBe(1);
+    expect(STORY_EMPHASIS_PIN_SCALE.texture).toBeLessThan(1);
+    // Ikke så lite at ikonet blir uleselig — da er vi tilbake til prikken.
+    expect(STORY_EMPHASIS_PIN_SCALE.texture).toBeGreaterThanOrEqual(0.6);
   });
 });

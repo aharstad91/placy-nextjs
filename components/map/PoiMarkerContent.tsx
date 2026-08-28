@@ -127,6 +127,21 @@ export interface PoiMarkerContentProps {
    */
   scale?: number;
   /**
+   * Hvor stor markøren TEGNES, som andel av den fulle pinnen. 1 = full.
+   *
+   * Boksen står: {@link PIN_SIZE} × `scale`, uansett faktor. Google forankrer
+   * innholdet bunn-midt, så en mindre boks ville flyttet markøren nedover og
+   * ut av takt med kollisjonskullingens geometri — det er samme grunn til at
+   * prikken beholder full boks. Det er DISC-en, ikonet, merket og labelens
+   * avstand som krymper.
+   *
+   * Kilden er omvisningens størrelses-ramp (`STORY_EMPHASIS_PIN_SCALE`):
+   * nabolaget rundt stoppet tegnes mindre, men beholder ikon, farge og navn.
+   * Navnets typografi følger `scale` alene og krymper IKKE med faktoren — en
+   * uleselig label er samme tap som ingen label.
+   */
+  pinFactor?: number;
+  /**
    * Markørens styrke, 1 = full. Under 1 trekker markøren seg tilbake uten å
    * endre FORM: samme ikon, samme størrelse, samme navn — bare svakere.
    *
@@ -155,12 +170,17 @@ export function PoiMarkerContent({
   compact = false,
   scale = 1,
   opacity = 1,
+  pinFactor = 1,
 }: PoiMarkerContentProps) {
-  // Prikken beholder markørens fulle {@link PIN_SIZE}-boks, så ankeret ikke
-  // flytter seg når en markør demoteres. Bare det tegnede innholdet krymper.
+  // Prikken OG den nedskalerte pinnen beholder markørens fulle
+  // {@link PIN_SIZE}-boks, så ankeret ikke flytter seg. Bare det tegnede
+  // innholdet krymper — se `pinFactor`.
   const pin = Math.round(PIN_SIZE * scale);
-  const dot = Math.round(DOT_SIZE * scale);
-  const iconSize = Math.round(pin * ICON_RATIO);
+  const disc = Math.round(pin * pinFactor);
+  /** Luften mellom boksens kant og disc-ens, når disc-en er nedskalert. */
+  const discInset = (pin - disc) / 2;
+  const dot = Math.round(DOT_SIZE * scale * pinFactor);
+  const iconSize = Math.round(disc * ICON_RATIO);
   // Størrelsen skifter i trinn ved kamera-ro, ikke per frame — uten en overgang
   // ville hvert trinn vært et hopp. Transformen eier Google, så vi animerer bare
   // boksen og typografien.
@@ -209,12 +229,20 @@ export function PoiMarkerContent({
           <span
             style={{
               position: "absolute",
-              inset: 0,
+              left: "50%",
+              top: "50%",
+              width: disc,
+              height: disc,
+              marginLeft: -disc / 2,
+              marginTop: -disc / 2,
               borderRadius: "50%",
               background: backgroundColor,
               border: `2px solid ${color}`,
               boxShadow: "0 1.5px 3px rgba(0,0,0,0.35)",
               boxSizing: "border-box",
+              // Størrelsen skifter ved stoppbytte (og ved kamera-ro): samme
+              // rolige overgang som boksen, ellers hopper disc-en.
+              transition: `${grow}, margin 180ms ease-out`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -227,8 +255,8 @@ export function PoiMarkerContent({
               data-poi-badge={anchor && number === undefined ? "anchor" : ""}
               style={{
                 position: "absolute",
-                top: -2,
-                right: -2,
+                top: discInset - 2,
+                right: discInset - 2,
                 minWidth: 16,
                 height: 16,
                 padding: "0 3px",
@@ -256,9 +284,11 @@ export function PoiMarkerContent({
             transform: "translateY(-50%)",
             // Labelen starter utenfor disc-kanten, på den siden
             // kollisjonskullingen valgte. `LABEL_GAP_X` er delt med 2D-stien.
+            // Avstanden måles fra DISC-ens kant, ikke boksens: en nedskalert
+            // pinne skal ha navnet like tett inntil seg som en full.
             ...(labelSide === "right"
-              ? { left: pin + LABEL_GAP_X * scale }
-              : { right: pin + LABEL_GAP_X * scale }),
+              ? { left: discInset + disc + LABEL_GAP_X * scale }
+              : { right: discInset + disc + LABEL_GAP_X * scale }),
             maxWidth: LABEL_MAX_W * scale,
             // Linjebrytingen er nå CSS-ens jobb. SVG-<text> brøt ikke selv, og
             // det er derfor `wrapLabelLines` fantes.

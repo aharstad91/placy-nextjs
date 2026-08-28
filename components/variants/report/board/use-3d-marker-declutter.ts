@@ -16,6 +16,7 @@ import {
   type PinCandidate,
 } from "@/lib/board/pin-declutter";
 import { equivalentZoomForCamera } from "@/lib/board/camera-zoom";
+import { STORY_EMPHASIS_PIN_SCALE } from "./story/story-model";
 import { projectLatLngToScreen } from "@/components/map/project-latlng-to-screen";
 import { scaleForRange } from "@/components/map/project-pin-scale";
 import { projectSitePinBlocker } from "@/components/map/ProjectSitePin";
@@ -131,6 +132,10 @@ const DATA_SETTLE_MS = 100;
  *  to kolliderer. Over Google-ratingens 0–5-skala, så det er lagene som
  *  avgjør — ikke stjernene. */
 const SCENE_PRIORITY_BOOST = 100;
+
+/** Størrelsen kontekst-pinnene faktisk TEGNES med. Kullingen må reservere det
+ *  samme, ellers holder den av plass til en annen markør enn den som står der. */
+const TEXTURE_PIN_SCALE = STORY_EMPHASIS_PIN_SCALE.texture;
 /**
  * Hvor langt utenfor det SYNLIGE vinduet en markør får ligge og fortsatt regnes
  * med. Marginen finnes fordi en label kan stikke inn i bildet fra en pin som så
@@ -229,11 +234,11 @@ export interface UseMarker3DDeclutterParams {
   /**
    * Punkter som er mountet som KONTEKST, ikke som scene — omvisningens tekstur.
    *
-   * Formen deres er uendret: full ikon-pin med navn, akkurat som stoppets egne
-   * steder. Dempingen er en STYRKE og gjøres i markørlaget
-   * (`dimmedMarkerIds` → `PoiMarkerContent.opacity`). Det hooken bruker settet
-   * til, er å avgjøre hvem som taper når to pins kolliderer: kontekst viker
-   * alltid for stoppets egne steder (se {@link SCENE_PRIORITY_BOOST}).
+   * De beholder ikon, farge og navn — det er STØRRELSEN som skiller dem
+   * (`STORY_EMPHASIS_PIN_SCALE`, satt i markørlaget via `dimmedPinScale`).
+   * Hooken bruker settet til to ting: kontekst reserverer mindre plass til
+   * navnet sitt fordi pinnen er mindre, og kontekst viker alltid for stoppets
+   * egne steder når to pinner kolliderer (se {@link SCENE_PRIORITY_BOOST}).
    */
   textureIds?: ReadonlySet<string>;
   /**
@@ -479,10 +484,15 @@ export function useMarker3DDeclutter({
         // Markørene tegnes alltid — tekst under en nabo-pin er like uleselig
         // som tekst under tekst. Demoterte teller som den lille prikken de er,
         // og prikkas senter ligger høyere enn pinnens (samme anker, lavere SVG).
+        // Kontekst-pinnene tegnes mindre (`STORY_EMPHASIS_PIN_SCALE`), og
+        // reserverer tilsvarende mindre: ellers ville de dyttet navn bort fra
+        // plass de ikke bruker.
         obstacles.push({
           x,
           y: isDemoted ? y + pinHalf - dotHalf : y,
-          halfSize: isDemoted ? dotHalf : pinHalf,
+          halfSize: isDemoted
+            ? dotHalf
+            : pinHalf * (isTexture(poi) ? TEXTURE_PIN_SCALE : 1),
         });
         // En prikk bærer ikke navn: navnet ville pekt på noe som ikke lenger
         // ser ut som et sted.
