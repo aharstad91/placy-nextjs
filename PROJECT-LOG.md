@@ -6,6 +6,60 @@
 
 ---
 
+## 2026-08-28 (kveld) — IDRETTSANLEGGET ER ETT STED: ANKERET BLE EN FAMILIE, OG GATE 1 VISTE SEG Å VÆRE TOM
+
+**Kontekst:** Fire skjermbilder fra Andreas — Ranheim, Charlottenlund, Leangen og Lade — med spørsmålet *«hva ser du her? ser du noen mønster?»*. Mønsteret var det samme på alle fire: ett idrettsanlegg rendret som 8–13 pinner. Ingen annen kategori gjør det. REMA, bakeriet, tannklinikken og legesenteret sto 1:1 med virkeligheten på de samme boardene.
+
+### 1. Ankeret var bundet til kjøpesenteret gjennom én konstant
+
+`ANCHOR_CATEGORY = "shopping"`. Hele maskineriet — `parent_poi_id`, `anchor_summary`, ≥4-kravet, arvet reisetid, «teller som én» — sto ferdig og i prod siden 27. august, og idrettsanlegg har nøyaktig samme containment-struktur. Det var altså ikke en ny mekanisme som manglet, men en generalisering.
+
+Ankeret er nå en FAMILIE (`lib/board/anchor-families.ts`). Kjøpesenteret beholder reglene sine byte-identisk; idrettsanlegget får egne, fordi tre målte forskjeller gjør ett felles regelsett umulig:
+
+- **Medlemmene deler kategori med ankeret.** Sirkus er `shopping` og medlemmene er apotek og frisør. «Ranheim Idrettspark» er `idrett`, og det er hvert eneste medlem også. Den gamle regelen (`p.categoryId !== ANCHOR_CATEGORY`) ville utelukket dem alle.
+- **Anlegget er større enn bygget.** Målte spenn: Charlottenlund 197 m, Leangen 237, Ranheim 312, Lade 477 — mot Sirkus' 150. OSM-radene har ingen adresse i det hele tatt, så nærheten må bære hele jobben.
+- **Derfor MÅ medlemskapet være kategori-begrenset.** 500 m rundt Ranheim Idrettspark inneholder REMA 1000 Ranheimsfjæra, tannklinikken og folkebiblioteket. `memberCategoryIds` er den ENE regelen som gjør den store radiusen trygg — uten den er tallet katastrofalt.
+
+### 2. Navnet måtte bli gate, fordi ingen type duger
+
+Google har ingen container-type for idrett. Målt mot Places API: «Ranheim Idrettspark» og «Lade idrettspark» bærer bare `sports_activity_location`, mens `sports_complex` sitter på fire ENKELTHALLER (Ranheim Extra Arena, Charlottenlundhallen, Leangen Curlinghall, islek). OSM er ikke bedre — `leisure=sports_centre` brukes om enkelthaller, «Ranheim idrettsanlegg» er tagget `leisure=pitch`, og bare Lade har en ekte anleggs-polygon (r≈339 m).
+
+Gaten er derfor en LUKKET ordliste med de norske ordene for anlegget — samme form som `OSM_GATE_RULES`, ikke fuzzy navne-matching. `hall`, `arena`, `bane` og `senter` står bevisst UTENFOR: de navngir enheten inne i anlegget, og tar vi dem inn blir stadion ankeret og anlegget medlem.
+
+Radiene ble målt fram, ikke gjettet: 150/300 og 200/400 splitter Lade i to ankre midt i sitt eget område, 250/500 gir fire ankre og ett per anlegg.
+
+### 3. «Hvorfor ble ikke Charlottenlund behandlet?»
+
+Andreas' oppfølging, og den avdekket at forklaringen min var beleilig. Jeg hadde svart «ingen POI der bærer anleggs-navnet» — sant, men ikke grunnen. Grunnen var at jeg lot navnet være ENESTE gate.
+
+Google har containeren: ULF-AN bokseklubb og Chappa fritidsklubb ligger begge inne i «Charlottenlundhallen» (`containingPlaces`), og et tekstsøk på «Charlottenlund idrettsanlegg» gir hallen som øverste treff. Navne-gaten kaster «-hallen» med vilje — riktig på Ranheim, der hallen er ett bygg inne i parken; usant på Charlottenlund, der det ikke finnes noen park over hallen.
+
+Gaten er nå et ELLER: anleggs-ord ELLER minst to andre steder som peker på stedet som sin container. **To** pekere, ikke én: målt over alle 18 idrettsklyngene er én peker et enkeltsted som gjør krav, to er uavhengig enighet. Begge gatene trengs — Ranheim har navnet og NULL containment, Charlottenlund har containment og ikke navnet.
+
+### 4. Det største funnet: gate 1 hadde aldri virket
+
+`containingPlaces` er dokumentert som den autoritative gaten i anker-definisjonen. **4 av 1 908 Google-rader i poolen bar `contained_in_ids`.** Feltet kom inn i `NEARBY_FIELD_MASK` 27. august, og nesten hele poolen er eldre. Kjøpesenter-ankrene har altså kjørt på adresse og nærhet alene siden de ble bygd, uten at noen har sett det.
+
+`lib/pipeline/enrich-containment.ts` fyller hullet uten å re-importere: ett `searchNearby` per POI-klynge i stedet for ett oppslag per rad — **22 kall mot 1 908** for hele poolen, fordi containment per definisjon er et nærhets-fenomen. Steget oppretter aldri en rad og nuller aldri et felt. Resultatet legges også som overlegg på oppløsningen, ellers ville en tørrkjøring vist en annen plan enn den `--commit` faktisk utfører.
+
+### 5. To feil lå under, og begge traff kjøpesentrene like hardt
+
+Ankeret ble skrevet riktig til basen, og Charlottenlund-boardet så ut nøyaktig som før.
+
+- **Ankeret tapte dedupen.** `contentRank` gir seieren til raden med redaksjonell tekst, og poolen har fire rader for hallen — én Google (ankeret) og tre OSM, hvorav én med tekst. Riktig regel da en pin bare representerte seg selv; feil nå, for ankeret bærer et helt register. Skjules det, mister boardet ikke én pin — det mister innholdslista, og medlemmene spretter tilbake som løse pinner. Ankre fredes nå via `protectedIds`.
+- **Backfillen re-hydrerte ikke.** Oppløsningen skriver til POOLEN, boardet rendrer PRODUKTET. Uten re-lenking virket backfillen bare når ankeret tilfeldigvis alt sto på boardet — som Ranheim gjorde og Charlottenlund ikke. Skriptet re-hydrerer nå, men bare produktene som mangler ankeret (1 av 13), siden hydreringen sletter og re-insetter hele `product_pois`.
+
+### 6. To regler til, funnet ved å måle
+
+- **Pass 0 kollapser to kandidater innenfor `tightRadius` til én.** Ranheim er registrert både som «Ranheim Idrettspark» (Google + kuratert seed) og «Ranheim idrettsanlegg» (OSM, 130 m unna); Leangen har samme dublett 50 m fra hverandre. Uten kollaps deler de medlemmene, begge passerer firetallet, og boardet viser to anlegg der det er ett. Rangeringen er selvstendig — kuratert, så anmeldelser, så id — og anmeldelser teller BARE når raden har `google_place_id`: 24 OSM-rader bærer `google_review_count = 10` uten Google-id i det hele tatt.
+- **Firetallet teller STEDER, ikke rader.** 60 av 816 OSM-rader er samme objekt under flere id-former. «Øya stadion» ble ellers et anker på fire rader som er tre steder.
+
+**Verifisering:** Tørrkjørt og deretter kjørt mot prod (sikkerhetskopi av hele anker-tilstanden for alle 5 889 rader tatt først; angre-SQL på `poi_metadata.anchor_family` ruller tilbake idretts-ankrene alene). Resultat: **Ranheim 8 pinner → 1, Leangen 13 → 1, Lade 13 → 1, Charlottenlund 7 → 1**, kjøpesentrene uendret (12 før, 12 etter). Verifisert i nettleseren på Ranheim-boardet — men først etter `rm -rf .next`: de gamle pinnene satt i Next-cachen, ikke i basen, og en restartet dev-server var ikke nok. Registeret viser «PÅ ANLEGGET — Idrettsanlegg (5): Charlottenlund kunstgrasbane, Kunstgress 11-bane, Kunstgress 7-bane, skatepark, Svømmehall». REMA 1000, tannklinikken og legesenteret står fortsatt som egne pinner. 345 → 339 markører, 0 konsollfeil. 3 452 tester grønne, lint 0 errors, `npm run build` grønn. Merget til main som `feat/anlegg-anker` (4 commits).
+
+**Gjenstår:** containment-høstingen bør utvides til butikk-siden (22 kall dekker hele poolen, og kjøpesentrene har aldri hatt gate 1 i praksis), og de 60 overtallige OSM-radene bør slås sammen. Mønsteret er dokumentert i `docs/solutions/architecture-patterns/anker-familien-idrettsanlegg-20260828.md`.
+
+---
+
 ## 2026-08-28 (morgen) — MARKØREN BLE 32 PX, OG FIKK LOV Å VOKSE IGJEN PÅ GATEZOOM
 
 **Kontekst:** To korte meldinger fra Andreas, med skjermbilde av satellittflaten på Ranheim-demoen: *«kan du gjøre ikonene i kartet litt mindre? de er ganske store nå.»* — og etter at endringen sto: *«ja ble bedre. men når vi kommer lengre inn på zoom, så bør pin faktisk bli litt større igjen, for font-size blir for lite.»*
