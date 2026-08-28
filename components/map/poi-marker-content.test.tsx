@@ -274,3 +274,30 @@ describe("PoiMarkerContent — anker-modus", () => {
     expect(badge(container)).toBeNull();
   });
 });
+
+describe("PoiMarkerContent — styrke er ikke form", () => {
+  /* Omvisningens kontekst dempes, den byttes ikke ut. Formen — ikon, størrelse,
+     navn — er den samme som stoppets egne steder; det er styrken som skiller.
+     Andreas, 2026-08-28: «jeg vil jo at de skal være lik som før, og vises som
+     før, bare at de er fadet 50 %». */
+  it("demper hele markøren, og beholder ikon, boks og navn", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} label="Flipper Kafe" opacity={0.5} />,
+    );
+    const el = host(container);
+    expect(el.style.opacity).toBe("0.5");
+    expect(el.style.width).toBe(`${PIN_SIZE}px`);
+    expect(container.querySelector("[data-testid=picon]")).not.toBeNull();
+    expect(label(container)?.textContent).toBe("Flipper Kafe");
+  });
+
+  it("står på full styrke uten propen", () => {
+    const { container } = render(<PoiMarkerContent {...base} />);
+    expect(host(container).style.opacity).toBe("1");
+  });
+
+  it("gir dempingen en rolig overgang — mange markører skifter samtidig", () => {
+    const { container } = render(<PoiMarkerContent {...base} opacity={0.5} />);
+    expect(host(container).style.transition).toContain("opacity 500ms");
+  });
+});

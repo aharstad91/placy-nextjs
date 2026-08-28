@@ -126,6 +126,22 @@ export interface PoiMarkerContentProps {
    * en annen markør enn den som tegnes.
    */
   scale?: number;
+  /**
+   * Markørens styrke, 1 = full. Under 1 trekker markøren seg tilbake uten å
+   * endre FORM: samme ikon, samme størrelse, samme navn — bare svakere.
+   *
+   * Kilden er omvisningens vekting (`STORY_EMPHASIS_OPACITY`), og 3D-motoren
+   * bruker den til det samme Mapbox-siden bruker sin container-opacity til:
+   * nabolaget rundt stoppet ligger igjen som kontekst. Vi prøvde å uttrykke det
+   * som prikk-mot-pin i stedet, siden prikken alt fantes — men da mistet
+   * punktene identiteten sin (Andreas, 2026-08-28: «jeg vil jo at de skal være
+   * lik som før, og vises som før, bare at de er fadet 50 %»).
+   *
+   * Overgangen er den samme rolige 500 ms som 2D-markøren bruker: ved et
+   * stoppbytte endrer mange markører styrke samtidig, og et brått skifte leser
+   * som at kartet blinket.
+   */
+  opacity?: number;
 }
 
 export function PoiMarkerContent({
@@ -138,6 +154,7 @@ export function PoiMarkerContent({
   labelSide = "right",
   compact = false,
   scale = 1,
+  opacity = 1,
 }: PoiMarkerContentProps) {
   // Prikken beholder markørens fulle {@link PIN_SIZE}-boks, så ankeret ikke
   // flytter seg når en markør demoteres. Bare det tegnede innholdet krymper.
@@ -147,7 +164,8 @@ export function PoiMarkerContent({
   // Størrelsen skifter i trinn ved kamera-ro, ikke per frame — uten en overgang
   // ville hvert trinn vært et hopp. Transformen eier Google, så vi animerer bare
   // boksen og typografien.
-  const grow = "width 180ms ease-out, height 180ms ease-out";
+  const grow =
+    "width 180ms ease-out, height 180ms ease-out, opacity 500ms ease-out";
 
   // Et eksplisitt tall vinner over `+`. Nummererte markører er turrekkefølge
   // (Guide), og den rekkefølgen er en påstand vi ikke skal overskrive.
@@ -160,6 +178,7 @@ export function PoiMarkerContent({
         position: "relative",
         width: pin,
         height: pin,
+        opacity,
         transition: grow,
         // Ingen `overflow` her: labelen SKAL stikke utenfor boksen. Google
         // klipper ikke marker-innhold (verifisert: overflow visible, contain

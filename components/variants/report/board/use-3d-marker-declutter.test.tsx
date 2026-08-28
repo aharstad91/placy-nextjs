@@ -417,28 +417,31 @@ describe("useMarker3DDeclutter — ro-signalet", () => {
 
 describe("useMarker3DDeclutter — omvisningens tekstur", () => {
   /**
-   * 3D-motoren har ingen opacity-spak, så nabolaget rundt et stopp uttrykkes som
-   * prikker. Uten dette sto de mountede kontekst-punktene som fulle pins med
-   * navn, og stoppets egne steder forsvant i mengden — eller, før teksturen i
-   * det hele tatt ble mountet: hvert annet tema forsvant fra kartet i det du
-   * trykket på en pinne (2026-08-28).
+   * Kontekst-punktene under et stopp beholder FORMEN sin — full ikon-pin med
+   * navn. Dempingen er en styrke, og den gjøres i markørlaget
+   * (`dimmedMarkerIds` → `PoiMarkerContent.opacity`). Vi prøvde først å uttrykke
+   * den som prikk-mot-pin, siden prikken alt fantes, men da mistet punktene
+   * identiteten sin: «jeg vil jo at de skal være lik som før, og vises som før,
+   * bare at de er fadet 50 %» (Andreas, 2026-08-28).
+   *
+   * Det hooken bruker settet til er rangeringen: kontekst viker for stoppets
+   * egne steder når to pins kolliderer.
    */
-  it("tegner tekstur-punkter som prikk, uansett hvor god plass det er", () => {
+  it("lar kontekst-punktet beholde pinnen og navnet sitt", () => {
     const { result } = setup(
       makeMap(900),
       [poi("scene", 100, 100, 4), poi("tekstur", 600, 600, 5)],
       { textureIds: new Set(["tekstur"]) },
     );
     settle();
-    expect([...result.current.demotedIds]).toEqual(["tekstur"]);
-    // Prikken bærer ikke navn; stoppets eget sted gjør det.
-    expect(result.current.labels["tekstur"]).toBeUndefined();
+    expect([...result.current.demotedIds]).toEqual([]);
+    expect(result.current.labels["tekstur"]?.text).toBe("tekstur");
     expect(result.current.labels["scene"]?.text).toBe("scene");
   });
 
-  it("lar aldri en tekstur-prikk ta pin-plassen fra stoppets sted", () => {
+  it("lar aldri kontekst ta pin-plassen fra stoppets sted", () => {
     // Samme punkt på skjermen: teksturen har HØYERE rating, og ville vunnet
-    // plassen i den grådige kullingen om den fikk delta.
+    // plassen om rangeringen bare var stjerner.
     const { result } = setup(
       makeMap(900),
       [poi("scene", 300, 300, 3), poi("tekstur", 305, 305, 5)],
@@ -451,9 +454,10 @@ describe("useMarker3DDeclutter — omvisningens tekstur", () => {
 
   it("regner på nytt når teksturen endrer seg, selv om markørsettet er likt", () => {
     // Stoppbytte flytter kameraet ikke lenger, og på et board uten voice-over er
-    // markørsettet det SAMME i hvert stopp. Da er teksturen den eneste endringen
-    // — fanger ikke datasett-timeren den, står forrige stopps pins igjen.
-    const pois = [poi("a", 100, 100, 4), poi("b", 600, 600, 5)];
+    // markørsettet det SAMME i hvert stopp. Da er teksturen den eneste
+    // endringen — fanger ikke datasett-timeren den, står forrige stopps
+    // rangering igjen.
+    const pois = [poi("a", 300, 300, 3), poi("b", 305, 305, 5)];
     const { result, rerender } = setup(makeMap(900), pois, {
       textureIds: new Set(["b"]),
     });
@@ -470,14 +474,13 @@ describe("useMarker3DDeclutter — omvisningens tekstur", () => {
     });
     settle();
     expect([...result.current.demotedIds]).toEqual(["a"]);
-    expect(result.current.labels["b"]?.text).toBe("b");
   });
 
-  it("holder det ÅPNE punktet som full pin, også når det er tekstur", () => {
+  it("holder det ÅPNE punktet foran, også om det skulle stå i tekstursettet", () => {
     // Du trykket på det, popupen står over det — da er det ikke kontekst lenger.
     const { result } = setup(
       makeMap(900),
-      [poi("scene", 100, 100, 4), poi("tekstur", 600, 600, 5)],
+      [poi("scene", 300, 300, 4), poi("tekstur", 305, 305, 5)],
       { textureIds: new Set(["tekstur"]), activePOIId: "tekstur" },
     );
     settle();

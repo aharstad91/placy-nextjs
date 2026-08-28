@@ -10,6 +10,7 @@ import {
 } from "@/components/map/motor-camera";
 import { useBoard, useActiveCategory, useActivePOI } from "./board-state";
 import { useStoryTourOptional } from "./story/story-tour";
+import { STORY_EMPHASIS_OPACITY } from "./story/story-model";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { BoardTravelChip3D } from "./BoardTravelChip3D";
@@ -609,21 +610,26 @@ export function BoardMap3D({
     setBloomStarted,
   });
 
-  // Omvisningens tekstur: nabolaget rundt stoppet, tegnet som prikker.
+  // Omvisningens tekstur: nabolaget rundt stoppet, tegnet svakere.
   //
   // Markørsettet under et stopp er stoppets kategori PLUSS oversikts-settet (se
   // `selectMarkerPOIs`), slik at ingen pinne forsvinner når du bytter stopp. De
-  // som ikke er stoppets egne er kontekst, og skal se ut som det. Mapbox-motoren
-  // uttrykker det med opacity; her er språket prikk-mot-pin, som er den samme
-  // spaken utglisningen allerede bruker (ingen remount, ingen WebGL-churn).
+  // som ikke er stoppets egne er kontekst, og dempes med samme tall Mapbox-
+  // markøren bruker (`STORY_EMPHASIS_OPACITY.texture`) — samme ikon, samme
+  // størrelse, samme navn, bare svakere. Det punktet du har ÅPNET er aldri
+  // kontekst: popupen står over det.
   const storyTextureIds = useMemo(() => {
     const stopPois = story?.on ? story.stop?.pois : undefined;
     if (!stopPois) return undefined;
     const scene = new Set(stopPois.map((p) => String(p.id)));
+    const openId = state.activePOIId ? String(state.activePOIId) : null;
     const texture = new Set<string>();
-    for (const poi of markerPOIs) if (!scene.has(poi.id)) texture.add(poi.id);
+    for (const poi of markerPOIs) {
+      if (scene.has(poi.id) || poi.id === openId) continue;
+      texture.add(poi.id);
+    }
     return texture;
-  }, [markerPOIs, story?.on, story?.stop]);
+  }, [markerPOIs, state.activePOIId, story?.on, story?.stop]);
 
   // ── Markør-utglisning + labels ────────────────────────────────────────────
   // 3D-halvdelen av 2D-kartets zoom-baserte markør-logikk: hvilke pins som
@@ -746,6 +752,8 @@ export function BoardMap3D({
         demotedMarkerIds={declutter.demotedIds}
         markerZIndexes={declutter.zIndexes}
         markerScale={declutter.pinScale}
+        dimmedMarkerIds={storyTextureIds}
+        dimmedOpacity={STORY_EMPHASIS_OPACITY.texture}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}

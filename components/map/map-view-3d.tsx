@@ -140,6 +140,17 @@ export interface MapView3DProps {
    * være den som bestemmer hvor stort det tegnes.
    */
   markerScale?: number;
+  /**
+   * POI-ider som skal tegnes SVAKERE enn resten — omvisningens kontekst.
+   *
+   * Samme form som pinnen ellers har: ikon, størrelse og navn står, bare
+   * styrken går ned ({@link dimmedOpacity}). Det er en annen akse enn
+   * `demotedMarkerIds`: den bytter FORM fordi plassen er tatt, denne bytter
+   * VEKT fordi punktet ikke er det stoppet handler om.
+   */
+  dimmedMarkerIds?: ReadonlySet<string>;
+  /** Styrken `dimmedMarkerIds` tegnes med. 1 = ingen demping. */
+  dimmedOpacity?: number;
 }
 
 /**
@@ -192,6 +203,7 @@ const Marker3DItem = memo(function Marker3DItem({
   compact,
   scale,
   zIndex,
+  opacity,
 }: {
   poi: POI;
   /** Kartinstansen markøren appendes til. */
@@ -214,6 +226,8 @@ const Marker3DItem = memo(function Marker3DItem({
    * kameraet snus, så overlapp ville avgjorts av mount-rekkefølge.
    */
   zIndex?: number;
+  /** Markørens styrke, 1 = full. Se `dimmedMarkerIds` på MapView3D. */
+  opacity?: number;
 }) {
   return (
     <DomMarker3D
@@ -246,6 +260,7 @@ const Marker3DItem = memo(function Marker3DItem({
         labelSide={labelSide}
         compact={compact}
         scale={scale}
+        opacity={opacity}
       />
     </DomMarker3D>
   );
@@ -330,6 +345,8 @@ function Map3DInner({
   demotedMarkerIds,
   markerZIndexes,
   markerScale,
+  dimmedMarkerIds,
+  dimmedOpacity = 1,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -420,6 +437,7 @@ function Map3DInner({
           // `markerLabels`-doc: et objekt per markør ville defeatet memo.
           const placement = markerLabels?.[poi.id];
           const compact = compactMarkers || (demotedMarkerIds?.has(poi.id) ?? false);
+          const opacity = dimmedMarkerIds?.has(poi.id) ? dimmedOpacity : 1;
           return (
             <Marker3DItem
               key={poi.id}
@@ -431,6 +449,7 @@ function Map3DInner({
               compact={compact}
               zIndex={markerZIndexes?.[poi.id]}
               scale={markerScale}
+              opacity={opacity}
             />
           );
         })}

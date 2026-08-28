@@ -126,6 +126,11 @@ export const CAMERA_SETTLE_MS = 100;
  * Den begrunnelsen består; bare tallet følger kamera-vinduet ned.
  */
 const DATA_SETTLE_MS = 100;
+
+/** Hvor mye et av stoppets egne steder veier over omvisningens kontekst når de
+ *  to kolliderer. Over Google-ratingens 0–5-skala, så det er lagene som
+ *  avgjør — ikke stjernene. */
+const SCENE_PRIORITY_BOOST = 100;
 /**
  * Hvor langt utenfor det SYNLIGE vinduet en markør får ligge og fortsatt regnes
  * med. Marginen finnes fordi en label kan stikke inn i bildet fra en pin som så
@@ -224,11 +229,11 @@ export interface UseMarker3DDeclutterParams {
   /**
    * Punkter som er mountet som KONTEKST, ikke som scene — omvisningens tekstur.
    *
-   * De tegnes alltid som prikk og bærer aldri navn, uansett hvor god plass det
-   * er. Det er 3D-motorens uttrykk for det Mapbox gjør med opacity: nabolaget
-   * ligger igjen rundt stoppet, uten å ta ordet. De konkurrerer heller ikke om
-   * pin-plassen — en tekstur-prikk skal aldri kunne demotere et av stoppets
-   * egne steder til prikk.
+   * Formen deres er uendret: full ikon-pin med navn, akkurat som stoppets egne
+   * steder. Dempingen er en STYRKE og gjøres i markørlaget
+   * (`dimmedMarkerIds` → `PoiMarkerContent.opacity`). Det hooken bruker settet
+   * til, er å avgjøre hvem som taper når to pins kolliderer: kontekst viker
+   * alltid for stoppets egne steder (se {@link SCENE_PRIORITY_BOOST}).
    */
   textureIds?: ReadonlySet<string>;
   /**
@@ -443,25 +448,27 @@ export function useMarker3DDeclutter({
     // fordi ankeret ER de seksti butikkene inni — demoteres det til prikk,
     // forsvinner hele klyngen som ett navnløst punkt, og «Sirkus Shopping»
     // står ikke lenger noe sted på kartet.
+    //
+    // Omvisningens kontekst (`textureIds`) er fulle pins som alle andre — bare
+    // svakere TEGNET (se `dimmedMarkerIds`). Men der en kontekst-pin og et av
+    // stoppets egne steder kolliderer, skal stoppet beholde ikonet: settet er
+    // hele nabolaget nå, og uten dette kunne en tilfeldig kafé med god rating
+    // gjort en barnehage til prikk under et barne-stopp. Boosten ligger over
+    // Google-ratingens 0–5-skala, så rangeringen INNENFOR hvert lag er
+    // fortsatt ratingens.
+    const isTexture = (poi: POI) => texture?.has(poi.id) ?? false;
     const priorityOf = (poi: POI) =>
       poi.id === activeId || isAnchorPOI(poi)
         ? Number.POSITIVE_INFINITY
-        : (poi.googleRating ?? 0);
+        : (poi.googleRating ?? 0) + (isTexture(poi) ? 0 : SCENE_PRIORITY_BOOST);
 
-    // Teksturen holdes UTENFOR konkurransen og legges rett i demoteringen: den
-    // skal verken kunne vinne en pin-plass eller ta en fra stoppets egne steder.
-    const isTexture = (poi: POI) =>
-      texture !== undefined && texture.has(poi.id) && poi.id !== activeId;
-    const pinCandidates: PinCandidate[] = projected
-      .filter(({ poi }) => !isTexture(poi))
-      .map(({ poi, x, y }) => ({
-        id: poi.id,
-        x,
-        y,
-        priority: priorityOf(poi),
-      }));
+    const pinCandidates: PinCandidate[] = projected.map(({ poi, x, y }) => ({
+      id: poi.id,
+      x,
+      y,
+      priority: priorityOf(poi),
+    }));
     const demotedIds = computePinDemotions(pinCandidates, blockers);
-    for (const { poi } of projected) if (isTexture(poi)) demotedIds.add(poi.id);
 
     const labels: Record<string, LabelPlacement> = {};
     if (tier === "icon+label") {
