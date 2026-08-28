@@ -5,7 +5,11 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 import { createServerClient } from "@/lib/supabase/client";
-import { resolveProjectAnchors, buildAnchorSummary } from "./resolve-anchors-step";
+import {
+  resolveProjectAnchors,
+  buildAnchorSummary,
+  buildAnchorNameSummary,
+} from "./resolve-anchors-step";
 import fixture from "@/lib/board/__fixtures__/anchor-membership.fixture.json";
 
 const SIRKUS = "google-ChIJVZdRQJoxbUYRTcToJ4smjeM";
@@ -26,6 +30,9 @@ interface MockRow {
   entur_stopplace_id?: string | null;
   bysykkel_station_id?: string | null;
   poi_metadata?: Record<string, unknown> | null;
+  source?: string | null;
+  google_place_id?: string | null;
+  google_review_count?: number | null;
 }
 
 function buildMockSupabase(opts: {
@@ -40,6 +47,9 @@ function buildMockSupabase(opts: {
     entur_stopplace_id: null,
     bysykkel_station_id: null,
     poi_metadata: null,
+    source: null,
+    google_place_id: null,
+    google_review_count: null,
     ...r,
   }));
   const updates: Array<{ ids: string[]; payload: Record<string, unknown> }> = [];
@@ -120,6 +130,14 @@ function boardRows(extra: MockRow[] = []): MockRow[] {
     lat: p.lat,
     lng: p.lng,
     category_id: p.categoryId,
+    // Kilde, Google-id og anmeldelser er med fordi anker-rangeringen leser dem:
+    // det er slik «Ranheim Idrettspark» (Google-oppføring) vinner over
+    // «Ranheim idrettsanlegg» (OSM-vei 130 m unna) om hvem som er anlegget.
+    source: "source" in p ? ((p as { source?: string }).source ?? null) : null,
+    google_place_id:
+      "googlePlaceId" in p ? ((p as { googlePlaceId?: string }).googlePlaceId ?? null) : null,
+    google_review_count:
+      "reviewCount" in p ? ((p as { reviewCount?: number }).reviewCount ?? null) : null,
   }));
   return [...rows, ...extra];
 }
@@ -185,6 +203,50 @@ describe("buildAnchorSummary", () => {
   });
 });
 
+describe("buildAnchorNameSummary — sammendraget for idrettsanlegg", () => {
+  // Kategori-varianten kollapser på et anlegg: hvert medlem er `idrett`, så
+  // setningen blir «Idrettsanlegg». Navnene bærer informasjonen i stedet.
+  const leangen = [
+    { name: "islek", reviewCount: 0 },
+    { name: "Leangen Bolig Arena", reviewCount: 2 },
+    { name: "Trondheim Ice Rink", reviewCount: 85 },
+    { name: "Trondheim Curlingklubb", reviewCount: 82 },
+    { name: "Leangen Bydelshall", reviewCount: 32 },
+    { name: "Leangen Curlinghall", reviewCount: 31 },
+    { name: "Sports Field", reviewCount: 0 },
+  ];
+
+  it("leder med stedene folk faktisk kjenner, ikke alfabetet", () => {
+    // Alfabetisk ville dette blitt «islek, Leangen Bolig Arena, …» — de fem
+    // første bokstavene, ikke de fem stedene.
+    expect(buildAnchorNameSummary(leangen)).toBe(
+      "Trondheim Ice Rink, Trondheim Curlingklubb, Leangen Bydelshall, Leangen Curlinghall, Leangen Bolig Arena og mer",
+    );
+  });
+
+  it("beholder stor forbokstav — stedsnavn er egennavn", () => {
+    expect(buildAnchorNameSummary(leangen.slice(2, 5))).toBe(
+      "Trondheim Ice Rink, Trondheim Curlingklubb og Leangen Bydelshall",
+    );
+  });
+
+  it("slår sammen samme navn i ulik kasus og beholder den best kjente raden", () => {
+    // Poolen har samme OSM-objekt under flere id-former: «Extra Arena» og
+    // «EXTRA Arena» er ett sted, og et sammendrag som gjentar seg er verre enn
+    // ingen.
+    const summary = buildAnchorNameSummary([
+      { name: "Extra Arena", reviewCount: 10 },
+      { name: "EXTRA Arena", reviewCount: 0 },
+      { name: "Ranheimshallen", reviewCount: 156 },
+    ]);
+    expect(summary).toBe("Ranheimshallen og Extra Arena");
+  });
+
+  it("tåler tom liste", () => {
+    expect(buildAnchorNameSummary([])).toBe("");
+  });
+});
+
 describe("resolveProjectAnchors — Strindfjordvegen 10 (ekte pool)", () => {
   it("finner de fem sentrene og lenker medlemmene deres", async () => {
     const mock = buildMockSupabase({ rows: boardRows(), categories: CATEGORIES });
@@ -198,12 +260,21 @@ describe("resolveProjectAnchors — Strindfjordvegen 10 (ekte pool)", () => {
     // poolen — discoveryen importerte det aldri. Steget kan bare forankre
     // sentre som faktisk finnes i basen; å hente dem uavhengig av
     // prosjektsirkelen er Unit 3.
-    const names = result.anchors.map((a) => a.name).sort();
-    expect(names).toEqual([
+    const malls = result.anchors.filter((a) => a.family === "Kjøpesenter");
+    expect(malls.map((a) => a.name).sort()).toEqual([
       "Grilstad mall",
       "Hangaren Lade",
       "Lade Arena",
       "Sirkus Shopping",
+    ]);
+
+    // Idrettsanleggene kommer fra samme pool og samme steg, men er sin egen
+    // familie — se `anchor-families.ts` for hvorfor de trenger egne regler.
+    const anlegg = result.anchors.filter((a) => a.family === "Idrettsanlegg");
+    expect(anlegg.map((a) => a.name).sort()).toEqual([
+      "Lade idrettspark",
+      "Leangen Idrettsanlegg",
+      "Ranheim Idrettspark",
     ]);
 
     const sirkus = result.anchors.find((a) => a.id === SIRKUS)!;
@@ -361,8 +432,12 @@ describe("resolveProjectAnchors — hva som IKKE blir medlem", () => {
     expect(mock.rows.find((r) => r.id === "bysykkel-99")!.parent_poi_id).toBeNull();
   });
 
-  it("gjør ingenting når det ikke finnes et kjøpesenter i radiusen", async () => {
-    const rows = boardRows().filter((r) => r.category_id !== "shopping");
+  it("gjør ingenting når ingen familie har en kandidat i radiusen", async () => {
+    // `idrett` må også ut: poolen på Strindfjordvegen 10 inneholder Ranheim,
+    // Leangen og Lade idrettspark, og de er kandidater i anleggs-familien.
+    const rows = boardRows().filter(
+      (r) => r.category_id !== "shopping" && r.category_id !== "idrett",
+    );
     const mock = buildMockSupabase({ rows, categories: CATEGORIES });
     useMock(mock);
 

@@ -84,7 +84,7 @@ interface BoardOutcome {
   discovered: number;
   discoveredBeyond: number;
   discoveredRejected: number;
-  anchors: Array<{ name: string; memberCount: number; summary: string }>;
+  anchors: Array<{ name: string; family: string; memberCount: number; summary: string }>;
   membersLinked: number;
   membersUnlinked: number;
   rejected: Array<{ name: string; memberCount: number }>;
@@ -178,6 +178,7 @@ async function main() {
     const res = await resolveProjectAnchors({ projectId: project.id, dryRun: !commit });
     outcome.anchors = res.anchors.map((a) => ({
       name: a.name,
+      family: a.family,
       memberCount: a.memberCount,
       summary: a.summary,
     }));
@@ -187,14 +188,14 @@ async function main() {
     outcome.warnings.push(...res.warnings);
 
     if (res.anchors.length === 0) {
-      console.log("  Oppløsning: ingen kjøpesenter i radiusen");
+      console.log("  Oppløsning: ingen anker i radiusen");
     } else {
       console.log(
         `  Oppløsning: ${res.anchors.length} ankre · ${res.membersLinked} medlemmer lenket` +
           (res.membersUnlinked > 0 ? ` · ${res.membersUnlinked} lenker ryddet` : ""),
       );
       for (const a of res.anchors) {
-        console.log(`     · ${a.name}: ${a.memberCount} steder — «${a.summary}»`);
+        console.log(`     · [${a.family}] ${a.name}: ${a.memberCount} steder — «${a.summary}»`);
       }
     }
     for (const r of res.rejected) {

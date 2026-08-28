@@ -14,6 +14,18 @@
  * forsvinner som destinasjon. Med anker er senteret ÉN pinne med et
  * innholdsregister, og de 60 navnene lever inne i den.
  *
+ * ## To familier, ikke én kategori (2026-08-28)
+ *
+ * Idrettsanlegg gir nøyaktig samme feil: Ranheim idrettspark er åtte pinner,
+ * Leangen tretten, Lade tretten. Steget kjører derfor `ANCHOR_FAMILIES` etter
+ * hverandre — kjøpesenter først, så idrettsanlegg — og hver familie bærer sine
+ * egne regler for hvem som kan være anker, hvem som kan være medlem og hvor
+ * langt medlemskapet rekker. Se `lib/board/anchor-families.ts` for hvorfor de
+ * ikke kunne dele ett regelsett.
+ *
+ * En POI som allerede er medlem i én familie tilbys ikke til den neste, og
+ * ingen families kandidat kan bli medlem i en annen families anker.
+ *
  * ## Idempotens og kryss-prosjekt-vern
  *
  * `parent_poi_id` ligger på den DELTE poolen (`v2.pois`), ikke per prosjekt —
@@ -41,6 +53,11 @@
  *   UPDATE v2.pois SET anchor_summary = NULL, poi_metadata = poi_metadata - 'anchor_resolution'
  *   WHERE poi_metadata->>'anchor_resolution' IS NOT NULL;
  *
+ * Ankerradene bærer også `poi_metadata.anchor_family`, så én familie kan rulles
+ * tilbake alene — bytt ut betingelsen med
+ * `poi_metadata->>'anchor_family' = 'anlegg'` i begge setningene for å angre
+ * idretts-ankrene uten å røre kjøpesentrene.
+ *
  * Merk at dette også fjerner de fire håndsatte Valentinlyst-lenkene fra
  * 057/058 dersom Valentinlyst ble re-oppløst — de to migrasjonene finnes
  * fortsatt og kan kjøres på nytt.
@@ -54,11 +71,14 @@ import { chunkIds } from "@/lib/supabase/chunk-ids";
 import {
   resolveAnchors,
   type AnchorCandidate,
+  type AnchorResolution,
   type MemberCandidate,
 } from "@/lib/board/anchor-membership";
-
-/** Placy-kategorien Google-typen `shopping_mall` mapper til. */
-const ANCHOR_CATEGORY = "shopping";
+import {
+  ANCHOR_FAMILIES,
+  isFamilyCandidate,
+  type AnchorFamily,
+} from "@/lib/board/anchor-families";
 
 /** Antall kategorinavn `anchor_summary` nevner før den sier «og mer». */
 const SUMMARY_MAX_CATEGORIES = 5;
@@ -66,6 +86,8 @@ const SUMMARY_MAX_CATEGORIES = 5;
 export interface ResolvedAnchorReport {
   id: string;
   name: string;
+  /** Familien ankeret ble akseptert i — «kjøpesenter» eller «idrettsanlegg». */
+  family: string;
   memberCount: number;
   summary: string;
   /** Hvor mange medlemmer som kom inn på hver gate — kalibreringsgrunnlag. */
@@ -78,7 +100,7 @@ export interface ResolveAnchorsStepResult {
   membersLinked: number;
   /** Medlemmer som mistet en lenke til et anker vi faktisk vurderte. */
   membersUnlinked: number;
-  /** Kandidater som bar `shopping` uten å samle nok medlemmer. */
+  /** Kandidater som passerte familiens gate uten å samle nok medlemmer. */
   rejected: Array<{ name: string; memberCount: number }>;
   /** Transport-POI-er holdt utenfor medlemskap (holdeplasser, bysykkel). */
   transportExcluded: number;
@@ -98,20 +120,31 @@ interface PoiRow {
   entur_stopplace_id: string | null;
   bysykkel_station_id: string | null;
   poi_metadata: Record<string, unknown> | null;
+  google_review_count: number | null;
+  source: string | null;
+  google_place_id: string | null;
 }
 
 const POI_COLUMNS =
-  "id, name, address, lat, lng, category_id, contained_in_ids, parent_poi_id, anchor_summary, entur_stopplace_id, bysykkel_station_id, poi_metadata";
+  "id, name, address, lat, lng, category_id, contained_in_ids, parent_poi_id, anchor_summary, entur_stopplace_id, bysykkel_station_id, poi_metadata, google_review_count, source, google_place_id";
 
 /**
  * «Dagligvare, apotek, frisør, vinmonopol, bakeri og mer» — samme form som
  * 057/058 skrev for hånd, nå avledet av medlemmenes faktiske kategorier.
  *
+ * Idrettsanlegg sender STEDSNAVN hit i stedet (`properNouns`), fordi
+ * kategori-varianten kollapser til «Idrettsanlegg» der — hvert medlem har samme
+ * kategori. Da blir setningen «Ranheimshallen, Extra Arena, Ranheim
+ * Friidrettshall og mer».
+ *
  * Deterministisk: sorteres på antall synkende, så navn stigende. Første navn
  * beholder stor forbokstav, resten skrives med liten — det er en setning, ikke
  * en liste med egennavn.
  */
-export function buildAnchorSummary(categoryNames: string[]): string {
+export function buildAnchorSummary(
+  categoryNames: string[],
+  options: { properNouns?: boolean } = {},
+): string {
   if (categoryNames.length === 0) return "";
 
   const counts = new Map<string, number>();
@@ -123,14 +156,79 @@ export function buildAnchorSummary(categoryNames: string[]): string {
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "nb-NO"))
     .map(([name]) => name);
 
+  return joinAnchorSummary(ordered, options.properNouns ?? false);
+}
+
+/**
+ * Sammendrag bygget av medlemmenes STEDSNAVN, sortert på hvor kjent stedet er.
+ *
+ * Alfabetisk rekkefølge (som kategori-varianten arver fra frekvens-sorteringen)
+ * gir «islek, Leangen Bolig Arena, Leangen Bydelshall …» — de fem første
+ * bokstavene i alfabetet, ikke de fem stedene noen kjenner. Sortert på antall
+ * Google-anmeldelser blir samme anlegg til «Trondheim Ice Rink, Trondheim
+ * Curlingklubb, Leangen Bydelshall …», som er hva en beboer faktisk ville sagt.
+ *
+ * Navnene dedupliseres på kasus først: poolen har samme OSM-objekt under flere
+ * id-former, og et sammendrag som gjentar seg er verre enn ingen.
+ */
+export function buildAnchorNameSummary(
+  members: Array<{ name: string; reviewCount: number }>,
+): string {
+  const byName = new Map<string, { name: string; reviewCount: number }>();
+  for (const member of members) {
+    const key = member.name.toLocaleLowerCase("nb-NO");
+    const seen = byName.get(key);
+    if (!seen || member.reviewCount > seen.reviewCount) byName.set(key, member);
+  }
+  const ordered = [...byName.values()]
+    .sort((a, b) => b.reviewCount - a.reviewCount || a.name.localeCompare(b.name, "nb-NO"))
+    .map((m) => m.name);
+  return joinAnchorSummary(ordered, true);
+}
+
+/**
+ * «A, B, C og D», eller «A, B, C, D, E og mer» når lista er lengre enn taket.
+ *
+ * `properNouns` styrer bare kasus: kategorinavn er fellesnavn og skrives med
+ * liten forbokstav inne i setningen, stedsnavn er egennavn og gjør ikke det —
+ * «Ranheimshallen, extra arena» er feil på en måte leseren ser med én gang.
+ */
+function joinAnchorSummary(ordered: string[], properNouns: boolean): string {
+  if (ordered.length === 0) return "";
   const shown = ordered.slice(0, SUMMARY_MAX_CATEGORIES);
-  const words = shown.map((name, i) =>
-    i === 0 ? name : name.toLocaleLowerCase("nb-NO"),
-  );
+  const words = properNouns
+    ? shown
+    : shown.map((name, i) => (i === 0 ? name : name.toLocaleLowerCase("nb-NO")));
 
   if (ordered.length > shown.length) return `${words.join(", ")} og mer`;
   if (words.length === 1) return words[0];
   return `${words.slice(0, -1).join(", ")} og ${words[words.length - 1]}`;
+}
+
+/**
+ * Er raden Placy-eid?
+ *
+ * Samme spørsmål som `contentRank` i `dedupe-colocated-pins` stiller, og av
+ * samme grunn: skriver vi teksten selv, er det raden brukeren skal se. Brukes
+ * som rangeringssignal når to kandidater er samme sted under to navn —
+ * «Ranheim Idrettspark» finnes både som kuratert seed og som OSM-rad.
+ */
+/**
+ * Anmeldelser teller BARE når raden faktisk er et Google-sted.
+ *
+ * Målt i poolen 2026-08-28: 24 OSM-rader bærer `google_review_count = 10` uten
+ * å ha `google_place_id` i det hele tatt — en plassholder fra en tidligere
+ * backfill, ikke ekte anmeldelser. Uten denne gaten vinner OSM-veien «Ranheim
+ * idrettsanlegg» (falske 10) over Google-oppføringen «Ranheim Idrettspark»
+ * (ekte 1), og ankeret får feil navn.
+ */
+function googleReviewCount(row: PoiRow): number {
+  if (!row.google_place_id) return 0;
+  return row.google_review_count ?? 0;
+}
+
+function isCuratedRow(row: PoiRow): boolean {
+  return row.source === "curated-reseed" || row.source === "curated";
 }
 
 export async function resolveProjectAnchors(options: {
@@ -202,41 +300,106 @@ export async function resolveProjectAnchors(options: {
     rows.push(...(data as unknown as PoiRow[]));
   }
 
-  // ── 2. Kandidater og medlemmer ──────────────────────────────────────────
-  const candidates: AnchorCandidate[] = [];
-  const members: MemberCandidate[] = [];
-
+  // ── 2. Kandidater og medlemmer, per familie ─────────────────────────────
+  //
+  // Familiene kjøres ETTER hverandre, ikke sammen, og rekkefølgen er en
+  // beslutning: kjøpesenteret først, så idrettsanlegget. Et treningssenter inne
+  // i Sirkus hører til Sirkus, ikke til et anlegg 200 m unna, og et medlem som
+  // allerede er tatt tilbys aldri til neste familie.
+  //
+  // Ingen families KANDIDAT kan bli medlem i en annen families anker. Uten den
+  // regelen kunne «Ranheim Idrettspark» endt som en butikk-pinne inne i et
+  // kjøpesenter, og anlegget forsvunnet fra kartet.
+  const geo = new Map<string, { lat: number; lng: number }>();
   for (const row of rows) {
     const lat = Number(row.lat);
     const lng = Number(row.lng);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    if (Number.isFinite(lat) && Number.isFinite(lng)) geo.set(row.id, { lat, lng });
+  }
 
-    if (row.category_id === ANCHOR_CATEGORY) {
-      candidates.push({ id: row.id, name: row.name, address: row.address, lat, lng });
-      continue;
+  const candidateIdsByFamily = new Map<string, Set<string>>();
+  const allCandidateIds = new Set<string>();
+  for (const family of ANCHOR_FAMILIES) {
+    const ids = new Set<string>();
+    for (const row of rows) {
+      if (!geo.has(row.id)) continue;
+      if (isFamilyCandidate(family, { name: row.name, categoryId: row.category_id })) {
+        ids.add(row.id);
+        allCandidateIds.add(row.id);
+      }
     }
-    // Transport er veifinning, ikke innhold i senteret.
-    if (row.entur_stopplace_id || row.bysykkel_station_id) {
-      result.transportExcluded++;
-      continue;
+    candidateIdsByFamily.set(family.id, ids);
+  }
+
+  // Transport er veifinning, ikke innhold i senteret. Telles én gang, ikke per
+  // familie — tallet er en egenskap ved poolen.
+  const transportIds = new Set<string>();
+  for (const row of rows) {
+    if (row.entur_stopplace_id || row.bysykkel_station_id) transportIds.add(row.id);
+  }
+  result.transportExcluded = transportIds.size;
+
+  const candidates: AnchorCandidate[] = [];
+  const anchorFamilyById = new Map<string, AnchorFamily>();
+  const resolution: AnchorResolution = { anchors: [], parentByPoiId: new Map(), rejected: [] };
+  const claimedIds = new Set<string>();
+
+  for (const family of ANCHOR_FAMILIES) {
+    const familyCandidateIds = candidateIdsByFamily.get(family.id)!;
+    if (familyCandidateIds.size === 0) continue;
+
+    const familyCandidates: AnchorCandidate[] = [];
+    const familyMembers: MemberCandidate[] = [];
+
+    for (const row of rows) {
+      const point = geo.get(row.id);
+      if (!point) continue;
+
+      if (familyCandidateIds.has(row.id)) {
+        familyCandidates.push({
+          id: row.id,
+          name: row.name,
+          address: row.address,
+          ...point,
+          curated: isCuratedRow(row),
+          reviewCount: googleReviewCount(row),
+          containedInIds: row.contained_in_ids ?? undefined,
+        });
+        continue;
+      }
+      if (allCandidateIds.has(row.id)) continue;
+      if (transportIds.has(row.id)) continue;
+      if (claimedIds.has(row.id)) continue;
+
+      familyMembers.push({
+        id: row.id,
+        name: row.name,
+        address: row.address,
+        ...point,
+        categoryId: row.category_id,
+        containedInIds: row.contained_in_ids ?? undefined,
+      });
     }
-    members.push({
-      id: row.id,
-      name: row.name,
-      address: row.address,
-      lat,
-      lng,
-      categoryId: row.category_id,
-      containedInIds: row.contained_in_ids ?? undefined,
-    });
+
+    const familyResolution = resolveAnchors(familyCandidates, familyMembers, family.options);
+    candidates.push(...familyCandidates);
+    for (const anchor of familyResolution.anchors) {
+      anchorFamilyById.set(anchor.anchorId, family);
+      resolution.anchors.push(anchor);
+      for (const id of anchor.memberIds) claimedIds.add(id);
+    }
+    for (const [poiId, anchorId] of familyResolution.parentByPoiId) {
+      resolution.parentByPoiId.set(poiId, anchorId);
+    }
+    resolution.rejected.push(...familyResolution.rejected);
   }
 
   if (candidates.length === 0) {
-    // Ikke en feil: de fleste boards har ingen kjøpesenter i radiusen.
+    // Ikke en feil: de fleste boards har verken kjøpesenter eller idrettsanlegg
+    // i radiusen.
     return result;
   }
 
-  const resolution = resolveAnchors(candidates, members);
   result.rejected = resolution.rejected
     .filter((r) => r.memberCount > 0)
     .map((r) => ({ name: r.name, memberCount: r.memberCount }));
@@ -291,16 +454,31 @@ export async function resolveProjectAnchors(options: {
       result.membersLinked += chunk.length;
     }
 
-    const summary = buildAnchorSummary(
-      anchor.memberIds
-        .map((id) => rowById.get(id)?.category_id)
-        .filter((c): c is string => Boolean(c))
-        .map((c) => categoryNameById.get(c))
-        .filter((n): n is string => Boolean(n)),
-    );
-
     const anchorRow = rowById.get(anchor.anchorId);
-    const metadata = { ...(anchorRow?.poi_metadata ?? {}), anchor_resolution: today };
+    const family = anchorFamilyById.get(anchor.anchorId);
+
+    const summary =
+      family?.summaryFrom === "names"
+        ? buildAnchorNameSummary(
+            anchor.memberIds
+              .map((id) => rowById.get(id))
+              .filter((r): r is PoiRow => Boolean(r))
+              .map((r) => ({ name: r.name, reviewCount: googleReviewCount(r) })),
+          )
+        : buildAnchorSummary(
+            anchor.memberIds
+              .map((id) => rowById.get(id)?.category_id)
+              .filter((c): c is string => Boolean(c))
+              .map((c) => categoryNameById.get(c))
+              .filter((n): n is string => Boolean(n)),
+          );
+    const metadata = {
+      ...(anchorRow?.poi_metadata ?? {}),
+      anchor_resolution: today,
+      // Hvilken familie ankeret kom fra. Gjør angre kirurgisk: idretts-ankrene
+      // kan rulles tilbake uten å røre kjøpesentrene.
+      anchor_family: family?.id ?? "kjopesenter",
+    };
     if (!dryRun) {
       const { error: anchorError } = await db
         .from("pois")
@@ -325,6 +503,7 @@ export async function resolveProjectAnchors(options: {
     result.anchors.push({
       id: anchor.anchorId,
       name: anchor.name,
+      family: family?.label ?? "Kjøpesenter",
       memberCount: anchor.memberIds.length,
       summary,
       via,

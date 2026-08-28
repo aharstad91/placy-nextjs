@@ -37,6 +37,19 @@ export interface AnchorCandidate {
   address: string | null;
   lat: number;
   lng: number;
+  /**
+   * Placy-eid rad (kuratert seed eller redaksjonell tekst). Vinner rangeringen
+   * når to kandidater er samme sted under to navn — se `ranked` under.
+   */
+  curated?: boolean;
+  /** Googles antall anmeldelser. Siste skille når ingen annen evidens skiller. */
+  reviewCount?: number;
+  /**
+   * Som på medlemmet. Trengs fordi en kandidat som TAPER kan bli medlem
+   * (`absorbRejectedCandidates`), og da skal Googles containment gjelde for den
+   * på samme måte som for alle andre.
+   */
+  containedInIds?: readonly string[];
 }
 
 export interface MemberCandidate {
@@ -104,6 +117,43 @@ export interface AnchorOptions {
    * og skal ikke absorberes.
    */
   tightRadiusM?: number;
+  /**
+   * Kategoriene et medlem kan ha. `undefined` = alle (kjøpesenteret, som er
+   * blandet bruk per definisjon).
+   *
+   * Idrettsanlegget MÅ sette den. Nærhets-gaten står på 150 m der mot
+   * kjøpesenterets 60 m, og 300 m rundt Ranheim Idrettspark inneholder REMA
+   * 1000, tannklinikken og folkebiblioteket. Uten kategori-skranken sluker
+   * anlegget nabolagets dagligvare.
+   */
+  memberCategoryIds?: ReadonlySet<string>;
+  /**
+   * Skal en kandidat som taper mot en annen kandidat bli MEDLEM av den, i
+   * stedet for å bli stående som sin egen pinne?
+   *
+   * Av som standard: kjøpesenter-familien lar «Falkenborgvegen 3» stå som sin
+   * egen pinne, slik den har gjort siden 2026-08-27.
+   *
+   * På for idrettsanlegg, fordi samme anlegg er registrert TO ganger under to
+   * navn — «Ranheim Idrettspark» hos Google (og som kuratert seed) og «Ranheim
+   * idrettsanlegg» i OSM, 130 m unna. Leangen har samme dublett 50 m fra
+   * hverandre. Uten regelen deler de to radene medlemmene mellom seg, begge
+   * passerer firetallet, og boardet viser TO anlegg der det er ett.
+   *
+   * Regelen slår inn to steder, og begge trengs:
+   *
+   *   1. FØR oppløsningen — to kandidater innenfor `tightRadiusM` av hverandre
+   *      er samme sted. Den beste beholder kandidatstatusen, den andre blir
+   *      medlem. Dette er det som hindrer at anlegget splittes i to ankre.
+   *   2. ETTER oppløsningen — en kandidat som ikke nådde firetallet, men som
+   *      ligger innenfor gatene til et anker som gjorde det, blir medlem der.
+   *
+   * Merk hva regelen IKKE gjør: «Lade idrettspark» (fotball og cricket) og
+   * «Lade idrettsanlegg» (tennis og friidrett) ligger 460 m fra hverandre, godt
+   * utenfor `tightRadiusM`, og forblir to ankre. Det er riktig — det ER to
+   * anlegg som deler adresse.
+   */
+  absorbRivalCandidates?: boolean;
 }
 
 export const DEFAULT_MIN_MEMBERS = 4;
@@ -114,6 +164,18 @@ export const DEFAULT_TIGHT_RADIUS_M = 60;
 const ANCHOR_CATEGORY = "shopping";
 
 const METERS_PER_DEGREE_LAT = 111_320;
+
+/**
+ * Samme normalisering som `dedupe-colocated-pins.normalizeName` — bare kasus og
+ * skilletegn, ingen stemming. Duplisert med vilje: `lib/board/` skal ikke
+ * importere fra `lib/pipeline/`, og regelen er tre linjer.
+ */
+function normalizedName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, " ")
+    .trim();
+}
 
 export function distanceMeters(
   a: { lat: number; lng: number },
@@ -255,16 +317,76 @@ export function resolveAnchors(
   const maxDistance = options.maxMemberDistanceM ?? DEFAULT_MAX_MEMBER_DISTANCE_M;
   const tightRadius = options.tightRadiusM ?? DEFAULT_TIGHT_RADIUS_M;
 
-  const sortedCandidates = [...candidates].sort((a, b) =>
+  const allSorted = [...candidates].sort((a, b) =>
     a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
   );
+
+  // ---- Pass 0: to kandidater på samme sted er ÉN kandidat -----------------
+  //
+  // Rangeringen her er med vilje selvstendig — den kan ikke bruke medlemstall,
+  // for det er nettopp medlemstallet som blir feil når anlegget er registrert
+  // to ganger. `curated` først (Placy-eid rad er raden brukeren skal se), så
+  // antall Google-anmeldelser (anlegget publikum omtaler ER anlegget), så id
+  // for determinisme.
+  //
+  // Målt: «Leangen Idrettsanlegg» (341 anmeldelser) slår OSM-noden «Leangen
+  // idrettspark» (null) 50 m unna, og «Ranheim Idrettspark» (kuratert seed)
+  // slår OSM-veien «Ranheim idrettsanlegg» 130 m unna.
+  const demotedCandidates: AnchorCandidate[] = [];
+  let sortedCandidates = allSorted;
+  if (options.absorbRivalCandidates) {
+    const byStrength = [...allSorted].sort(
+      (a, b) =>
+        Number(b.curated ?? false) - Number(a.curated ?? false) ||
+        (b.reviewCount ?? 0) - (a.reviewCount ?? 0) ||
+        (a.id < b.id ? -1 : 1),
+    );
+    const kept: AnchorCandidate[] = [];
+    for (const candidate of byStrength) {
+      if (kept.some((k) => distanceMeters(k, candidate) <= tightRadius)) {
+        demotedCandidates.push(candidate);
+      } else {
+        kept.push(candidate);
+      }
+    }
+    const keptIds = new Set(kept.map((k) => k.id));
+    sortedCandidates = allSorted.filter((c) => keptIds.has(c.id));
+  }
+
   const candidateIds = new Set(sortedCandidates.map((c) => c.id));
 
   // Et anker kan aldri være medlem av et annet anker: da ville City Lade blitt
   // slukt av Lade Arena og senterets eget navn forsvunnet fra kartet.
-  const members = pois.filter(
-    (p) => !candidateIds.has(p.id) && p.categoryId !== ANCHOR_CATEGORY,
+  //
+  // Kategori-skranken er FAMILIENS, ikke global. Kjøpesenteret utelukker hele
+  // `shopping` (der er kandidatlista og kategorien det samme settet).
+  // Idrettsanlegget kan derimot ikke det: medlemmene DELER kategori med
+  // ankeret — «Ranheim Idrettspark» er `idrett`, og det er hver eneste bane og
+  // hall inne i den også. Der er `memberCategoryIds` skranken i stedet, og den
+  // er det som holder dagligvaren og tannlegen utenfor 300 m-radiusen.
+  const memberCategoryIds = options.memberCategoryIds;
+  const members: MemberCandidate[] = pois.filter(
+    (p) =>
+      !candidateIds.has(p.id) &&
+      (memberCategoryIds
+        ? p.categoryId !== null && memberCategoryIds.has(p.categoryId)
+        : p.categoryId !== ANCHOR_CATEGORY),
   );
+
+  // De degraderte fra pass 0 er medlemmer på lik linje med alle andre. De
+  // slipper kategori-skranken fordi de per definisjon bærer familiens egen
+  // kategori — det var derfor de var kandidater.
+  for (const demoted of demotedCandidates) {
+    members.push({
+      id: demoted.id,
+      name: demoted.name,
+      address: demoted.address,
+      lat: demoted.lat,
+      lng: demoted.lng,
+      categoryId: null,
+      containedInIds: demoted.containedInIds,
+    });
+  }
 
   // Husnummer-settet bygges fra naboene innenfor tightRadius. Det er slik
   // Sirkus' 1/5/9 fanges uten å dra inn 35/38 (som ligger opptil 419 m unna).
@@ -360,12 +482,27 @@ export function resolveAnchors(
     ownSupport.set(anchor.id, { containment, own: ownNumber, total: claims.length });
   }
 
+  //
+  // To signaler til, og de fyrer bare når evidensen over er lik. De ble lagt
+  // til for idrettsanlegget (2026-08-28), der ingen kandidat har containment og
+  // OSM-radene ikke har adresse i det hele tatt: «Ranheim Idrettspark» og
+  // «Ranheim idrettsanlegg» er 130 m fra hverandre, ser begge hele klyngen, og
+  // ville ellers blitt skilt av id-en — altså tilfeldig.
+  //
+  //   `curated`    Placy-eid rad slår importert rad. Samme prioritet som
+  //                `contentRank` i dedupliseringen: skriver vi teksten selv,
+  //                er det raden brukeren skal se.
+  //   `reviewCount` Anlegget publikum faktisk omtaler ER anlegget. Målt:
+  //                «Leangen Idrettsanlegg» har 341 anmeldelser, OSM-noden
+  //                «Leangen idrettspark» har null.
   const ranked = [...sortedCandidates].sort((a, b) => {
     const sa = ownSupport.get(a.id)!;
     const sb = ownSupport.get(b.id)!;
     return (
       sb.containment - sa.containment ||
       sb.own - sa.own ||
+      Number(b.curated ?? false) - Number(a.curated ?? false) ||
+      (b.reviewCount ?? 0) - (a.reviewCount ?? 0) ||
       sb.total - sa.total ||
       (a.id < b.id ? -1 : 1)
     );
@@ -399,13 +536,43 @@ export function resolveAnchors(
   const rejected: AnchorResolution["rejected"] = [];
   const parentByPoiId = new Map<string, string>();
 
+  // En degradert rival er SAMME STED som ankeret. Den kan derfor ikke være
+  // bevis for at fire ANDRE steder ligger der, og teller ikke i realitets-gaten
+  // — den blir bare absorbert. Uten dette skillet ville «Jakobsli
+  // idrettsplass» blitt et anker på tre kopier av seg selv pluss én
+  // sandvolleyballbane.
+  const demotedIds = new Set(demotedCandidates.map((c) => c.id));
+  const nameById = new Map(pois.map((p) => [p.id, normalizedName(p.name)]));
+
+  /**
+   * Firetallet teller STEDER, ikke rader. To grunner, begge målt i poolen:
+   *
+   *   - Samme OSM-objekt ligger inne under opptil tre id-former («way/84078489»,
+   *     «osm-way84078489», «osm-w84078489»). 60 av 816 OSM-rader er slike
+   *     overtallige kopier. De skjules på boardet av `dedupe-colocated-pins`,
+   *     men her ville de talt som tre bevis for at anlegget finnes.
+   *   - «Øya stadion» samler fire rader som er tre steder — Trondheim Spektrum,
+   *     Nidarø tennisanlegg og Øya tennishall (to ganger). Talt som rader blir
+   *     den et anker på et falskt firetall.
+   *
+   * Én normalisert navnekollisjon innenfor ett anlegg (høyst ~500 m på tvers)
+   * er samme sted. «Lade 1» og «Lade 2» kolliderer ikke.
+   */
+  const countPlaces = (hits: Array<{ poiId: string }>): number =>
+    new Set(
+      hits
+        .filter((h) => !demotedIds.has(h.poiId))
+        .map((h) => nameById.get(h.poiId) ?? h.poiId),
+    ).size;
+
   for (const candidate of sortedCandidates) {
     const hits = grouped.get(candidate.id) ?? [];
-    if (hits.length < minMembers) {
+    const placeCount = countPlaces(hits);
+    if (placeCount < minMembers) {
       rejected.push({
         anchorId: candidate.id,
         name: candidate.name,
-        memberCount: hits.length,
+        memberCount: placeCount,
       });
       continue;
     }
@@ -422,6 +589,71 @@ export function resolveAnchors(
       houseNumbers: [...(houseNumbersByAnchor.get(candidate.id) ?? [])].sort(),
       via,
     });
+  }
+
+  // ---- Pass 4: kandidatene som tapte blir medlemmer ----------------------
+  //
+  // Bare når familien ber om det. Målt tilfelle: Ranheim er registrert som
+  // BÅDE «Ranheim Idrettspark» (Google + kuratert seed, Ranheimsvegen 166) og
+  // «Ranheim idrettsanlegg» (OSM, 130 m øst). Begge bærer anleggs-ordet, begge
+  // ser hele klyngen, og pass 2 gir alle medlemmene til vinneren. Uten dette
+  // passet blir taperen stående igjen som en ensom tvillingpinne inntil
+  // ankeret — og boardet viser fortsatt to anlegg der det er ett.
+  //
+  // Gatene er de samme som for et hvilket som helst medlem. En taper som
+  // ligger for langt unna, eller som ikke deler adresse eller nærhet med noe
+  // anker, beholder pinnen sin. Det er tilsiktet: «Lade idrettsanlegg» (tennis
+  // og friidrett) taper mot «Lade idrettspark» (fotball og cricket) 460 m unna,
+  // og skal IKKE absorberes — det er to anlegg, ikke ett.
+  if (options.absorbRivalCandidates && anchors.length > 0) {
+    const anchorByCandidateId = new Map(anchors.map((a) => [a.anchorId, a]));
+    const acceptedCandidates = sortedCandidates.filter((c) =>
+      anchorByCandidateId.has(c.id),
+    );
+
+    for (const loser of sortedCandidates) {
+      if (anchorByCandidateId.has(loser.id)) continue;
+
+      let claimed: { anchorId: string; via: MembershipVia; distance: number } | null = null;
+      for (const anchor of acceptedCandidates) {
+        const distance = distanceMeters(anchor, loser);
+        if (distance > maxDistance) continue;
+        const parsed = parseAddress(loser.address);
+        const anchorStreet = streetByAnchor.get(anchor.id);
+        const anchorNumbers = houseNumbersByAnchor.get(anchor.id);
+
+        let via: MembershipVia | null = null;
+        if (loser.containedInIds?.includes(anchor.id)) {
+          via = "containment";
+        } else if (
+          parsed &&
+          anchorStreet === parsed.street &&
+          parsed.houseNumbers.some((n) => anchorNumbers?.has(n))
+        ) {
+          via = "address";
+        } else if (distance <= tightRadius) {
+          via = "proximity";
+        }
+        if (via === null) continue;
+
+        // Beste gate først, så nærmeste, så id — samme determinisme som pass 2.
+        if (
+          !claimed ||
+          VIA_RANK[via] < VIA_RANK[claimed.via] ||
+          (VIA_RANK[via] === VIA_RANK[claimed.via] &&
+            (distance < claimed.distance ||
+              (distance === claimed.distance && anchor.id < claimed.anchorId)))
+        ) {
+          claimed = { anchorId: anchor.id, via, distance };
+        }
+      }
+
+      if (!claimed) continue;
+      const anchor = anchorByCandidateId.get(claimed.anchorId)!;
+      anchor.memberIds = [...anchor.memberIds, loser.id].sort();
+      anchor.via[loser.id] = claimed.via;
+      parentByPoiId.set(loser.id, claimed.anchorId);
+    }
   }
 
   return { anchors, parentByPoiId, rejected };
