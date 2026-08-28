@@ -115,7 +115,7 @@ export function BoardPathMidpointMarker() {
         {open && (
           <div
             className={cn(
-              "pointer-events-auto absolute left-1/2 w-48 -translate-x-1/2 rounded-xl border border-stone-200 bg-white/97 p-1.5 shadow-xl ring-1 ring-black/5 backdrop-blur",
+              "pointer-events-auto absolute left-1/2 w-48 -translate-x-1/2 rounded-xl border border-stone-200 bg-white/95 p-1.5 shadow-xl ring-1 ring-black/5 backdrop-blur",
               foldUp ? "bottom-full mb-2" : "top-full mt-2",
             )}
           >
