@@ -1,5 +1,7 @@
 "use client";
 
+import { labelHaloShadow } from "@/lib/board/label-collision";
+
 /**
  * SVG-markør for prosjektstedet.
  * Vises som Marker3D over selve tomten — alltid synlig uavhengig av tab-filter.
@@ -272,15 +274,14 @@ export function ProjectSitePin({
 }
 
 /** Fire-veis hvit kontur. SVG-stien tegnet teksten to ganger for samme effekt. */
+/**
+ * Prosjektnavnets kontur. Samme harde kant som POI-labelene
+ * (`labelHaloShadow`) — to tekststiler på samme kartflate leser som en feil —
+ * men tykkere, fordi teksten her er 13 px bold der POI-labelen er 10 px: en
+ * 1-px kant forsvinner i den vekten.
+ */
 function haloShadow(w: number): string {
-  const r = Math.max(1, w / 2);
-  return [
-    `0 0 ${r}px ${HALO}`,
-    `${r}px ${r}px ${r}px ${HALO}`,
-    `-${r}px ${r}px ${r}px ${HALO}`,
-    `${r}px -${r}px ${r}px ${HALO}`,
-    `-${r}px -${r}px ${r}px ${HALO}`,
-  ].join(",");
+  return labelHaloShadow(Math.max(1, w / 2.5), HALO);
 }
 
 /** Building2 (Lucide) i aksentfargen. Beholdt som SVG — det er TEKSTEN som

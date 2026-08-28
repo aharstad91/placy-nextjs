@@ -85,6 +85,37 @@ export const LABEL_FONT_SIZE = 10;
 export const LABEL_MAX_LINES = 2;
 /** Luft mellom markør-kanten og labelens nærmeste tekstkant. */
 export const LABEL_GAP_X = 8;
+
+/**
+ * Kontur rundt kart-tekst: åtte harde skygger, ingen blur.
+ *
+ * Halo-en var tidligere en myk glød (`0 0 2px` + fire diagonaler med 2 px
+ * blur). På satellittfoto la den en dis rundt hver bokstav, og teksten så
+ * uskarp ut selv om den var skarp — Andreas, 2026-08-28: «nå er det text shadow
+ * som er ganske bred, kan vi få en langt mer crisp look på teksten?»
+ *
+ * Uten blur blir konturen en KANT: åtte retninger dekker hjørnene også, så
+ * bokstaven får jevn hvit ramme i stedet for fire tapper. Delt mellom begge
+ * motorene og prosjektpinnen, slik at samme kartflate ikke har to tekststiler.
+ *
+ * @param width Konturens tykkelse i px. 1 til POI-labelen (10 px tekst),
+ *              tykkere til større tekst — en 1 px kant forsvinner i 13 px bold.
+ */
+export function labelHaloShadow(width = 1, color = "#ffffff"): string {
+  const w = Math.round(Math.max(1, width) * 10) / 10;
+  return [
+    [w, 0],
+    [-w, 0],
+    [0, w],
+    [0, -w],
+    [w, w],
+    [w, -w],
+    [-w, w],
+    [-w, -w],
+  ]
+    .map(([x, y]) => `${x}px ${y}px 0 ${color}`)
+    .join(",");
+}
 /** Default container-halvbredde (32 px inaktiv 2D-markør) + {@link LABEL_GAP_X}.
  *  3D-pinnen er like bred, men VOKSER på nær zoom, og sender derfor inn sin egen
  *  `offsetX` via {@link LabelMetrics}. */

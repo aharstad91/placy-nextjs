@@ -5,7 +5,10 @@ import React from "react";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import type { BoardPOI } from "./board-data";
 import { hexLightTint, markerCircleStyle } from "./marker-style";
-import type { LabelSide } from "@/lib/board/label-collision";
+import {
+  labelHaloShadow,
+  type LabelSide,
+} from "@/lib/board/label-collision";
 import type { BoardZoomTier } from "./use-board-zoom-tier";
 import {
   STORY_EMPHASIS_OPACITY,
@@ -263,8 +266,9 @@ function BoardMarkerImpl({
             fontWeight: 600,
             lineHeight: 1.2,
             color: "#1c1917",
-            textShadow:
-              "0 0 3px rgba(255, 255, 255, 0.9), 0 0 6px rgba(255, 255, 255, 0.6)",
+            // Hard kontur, ikke glød: den myke halo-en la en dis rundt hver
+            // bokstav og fikk skarp tekst til å se uskarp ut (2026-08-28).
+            textShadow: labelHaloShadow(),
             WebkitFontSmoothing: "antialiased",
             // Absolutt posisjonert i 32 px-containeren → shrink-to-fit ville
             // kollapset bredden til lengste enkeltord (ett ord per linje).

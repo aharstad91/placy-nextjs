@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeLabelPlacements,
   estimateLabelBox,
+  labelHaloShadow,
   LABEL_CHAR_W,
   LABEL_MAX_W,
   LABEL_OFFSET_X,
@@ -292,5 +293,25 @@ describe("LABEL_CHAR_W som overestimat", () => {
     );
     expect(langt.bottom - langt.top).toBeGreaterThan(kort.bottom - kort.top);
     expect(langt.right - langt.left).toBe(LABEL_MAX_W);
+  });
+});
+
+describe("labelHaloShadow", () => {
+  /* Konturen skal være en KANT, ikke en glød: den gamle halo-en hadde 2 px blur
+     og la en dis rundt bokstavene på satellittfoto (2026-08-28). */
+  it("har ingen blur — hver skygge er hard", () => {
+    for (const del of labelHaloShadow().split(",")) {
+      // «Xpx Ypx 0 #fff» — tredje ledd er blur-radius.
+      expect(del.trim().split(" ")[2]).toBe("0");
+    }
+  });
+
+  it("dekker åtte retninger, så bokstaven får jevn ramme og ikke fire tapper", () => {
+    expect(labelHaloShadow().split(",")).toHaveLength(8);
+  });
+
+  it("tar tykkelse for større tekst, og aldri under 1 px", () => {
+    expect(labelHaloShadow(2)).toContain("2px");
+    expect(labelHaloShadow(0.2)).toContain("1px");
   });
 });

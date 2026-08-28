@@ -2,6 +2,7 @@
 
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import {
+  labelHaloShadow,
   LABEL_FONT_SIZE,
   LABEL_GAP_X,
   LABEL_LINE_H,
@@ -79,15 +80,8 @@ const ICON_RATIO = 0.5;
 
 /** Nær-svart, samme som 2D-labelen. */
 const LABEL_FILL = "#1c1917";
-const LABEL_HALO = "#ffffff";
-/** Fire-veis kontur. SVG-stien tegnet to <text>-noder for samme effekt. */
-const LABEL_TEXT_SHADOW = [
-  `0 0 2px ${LABEL_HALO}`,
-  `1px 1px 2px ${LABEL_HALO}`,
-  `-1px 1px 2px ${LABEL_HALO}`,
-  `1px -1px 2px ${LABEL_HALO}`,
-  `-1px -1px 2px ${LABEL_HALO}`,
-].join(",");
+/** Åtte-veis hard kontur — delt med 2D-labelen, se `labelHaloShadow`. */
+const LABEL_TEXT_SHADOW = labelHaloShadow();
 
 export interface PoiMarkerContentProps {
   /** Kategorifarge — ring rundt disc-en og ikon-fyll. */
