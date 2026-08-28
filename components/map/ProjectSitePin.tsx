@@ -281,7 +281,7 @@ export function ProjectSitePin({
  * 1-px kant forsvinner i den vekten.
  */
 function haloShadow(w: number): string {
-  return labelHaloShadow(Math.max(1, w / 2.5), HALO);
+  return labelHaloShadow(Math.max(1, w / 2.5), HALO, 0.85);
 }
 
 /** Building2 (Lucide) i aksentfargen. Beholdt som SVG — det er TEKSTEN som

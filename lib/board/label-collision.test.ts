@@ -314,4 +314,19 @@ describe("labelHaloShadow", () => {
     expect(labelHaloShadow(2)).toContain("2px");
     expect(labelHaloShadow(0.2)).toContain("1px");
   });
+
+  /* Den mørke skyen gir kontrast der underlaget selv er lyst — en hvit kant mot
+     en hvit husvegg på satellittfoto er ingen kant. */
+  it("legger den mørke skyen SIST, så kanten blir liggende over den", () => {
+    // Komma inne i `rgba(...)` hører til fargen, ikke til listen.
+    const deler = labelHaloShadow(1, "#ffffff", 0.85).split(/,(?![^(]*\))/);
+    expect(deler).toHaveLength(10);
+    // De åtte første er kanten (hard, hvit), de to siste er skyen (myk, svart).
+    expect(deler.slice(0, 8).every((d) => d.includes("#ffffff"))).toBe(true);
+    expect(deler.slice(8).every((d) => d.includes("rgba(0,0,0,"))).toBe(true);
+  });
+
+  it("har ingen sky når styrken er 0 — det lyse karttemaet vil ikke ha den", () => {
+    expect(labelHaloShadow(1, "#ffffff", 0)).toBe(labelHaloShadow());
+  });
 });

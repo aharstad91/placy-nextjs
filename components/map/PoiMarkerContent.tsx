@@ -80,8 +80,14 @@ const ICON_RATIO = 0.5;
 
 /** Nær-svart, samme som 2D-labelen. */
 const LABEL_FILL = "#1c1917";
-/** Åtte-veis hard kontur — delt med 2D-labelen, se `labelHaloShadow`. */
-const LABEL_TEXT_SHADOW = labelHaloShadow();
+/**
+ * Åtte-veis hard kontur pluss en mørk sky bak — se `labelHaloShadow`.
+ *
+ * Skyen er med HER og ikke i 2D-labelen fordi underlaget er forskjellig: dette
+ * er satellittfoto, der en hvit kant forsvinner mot en hvit husvegg og teksten
+ * ligger flatt på bildet. Det lyse karttemaet trenger den ikke.
+ */
+const LABEL_TEXT_SHADOW = labelHaloShadow(1, "#ffffff", 0.85);
 
 export interface PoiMarkerContentProps {
   /** Kategorifarge — ring rundt disc-en og ikon-fyll. */

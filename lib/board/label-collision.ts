@@ -87,9 +87,10 @@ export const LABEL_MAX_LINES = 2;
 export const LABEL_GAP_X = 8;
 
 /**
- * Kontur rundt kart-tekst: åtte harde skygger, ingen blur.
+ * Kontur rundt kart-tekst: åtte harde skygger, ingen blur — og valgfritt en
+ * mørk, uskarp skygge BAK dem.
  *
- * Halo-en var tidligere en myk glød (`0 0 2px` + fire diagonaler med 2 px
+ * Halo-en var tidligere bare en myk glød (`0 0 2px` + fire diagonaler med 2 px
  * blur). På satellittfoto la den en dis rundt hver bokstav, og teksten så
  * uskarp ut selv om den var skarp — Andreas, 2026-08-28: «nå er det text shadow
  * som er ganske bred, kan vi få en langt mer crisp look på teksten?»
@@ -98,12 +99,28 @@ export const LABEL_GAP_X = 8;
  * bokstaven får jevn hvit ramme i stedet for fire tapper. Delt mellom begge
  * motorene og prosjektpinnen, slik at samme kartflate ikke har to tekststiler.
  *
+ * `backdrop` legger en mørk sky UTENFOR den hvite kanten. Den gjør to ting den
+ * hvite kanten ikke kan: løfter teksten fra flaten, og gir kontrast der
+ * underlaget selv er lyst — hvit kant mot hvit husvegg på satellittfoto er
+ * ingen kant. Rekkefølgen er derfor kritisk: CSS tegner FØRSTE skygge øverst,
+ * så den mørke må ligge sist i lista, ellers legger den seg over kanten og
+ * teksten blir grumsete. Andreas, 2026-08-28: «en mørk blur skygge i bakgrunn
+ * samtidig som vi har en 1px skygge på teksten … spesielt viktig for
+ * satelitt/3d».
+ *
  * @param width Konturens tykkelse i px. 1 til POI-labelen (10 px tekst),
  *              tykkere til større tekst — en 1 px kant forsvinner i 13 px bold.
+ * @param backdrop Styrken på den mørke skyen, 0–1. 0 = av (lyst karttema, der
+ *              nær-svart tekst allerede har kontrast og en mørk sky bare ville
+ *              smusset flaten).
  */
-export function labelHaloShadow(width = 1, color = "#ffffff"): string {
+export function labelHaloShadow(
+  width = 1,
+  color = "#ffffff",
+  backdrop = 0,
+): string {
   const w = Math.round(Math.max(1, width) * 10) / 10;
-  return [
+  const outline = [
     [w, 0],
     [-w, 0],
     [0, w],
@@ -112,9 +129,20 @@ export function labelHaloShadow(width = 1, color = "#ffffff"): string {
     [w, -w],
     [-w, w],
     [-w, -w],
-  ]
-    .map(([x, y]) => `${x}px ${y}px 0 ${color}`)
-    .join(",");
+  ].map(([x, y]) => `${x}px ${y}px 0 ${color}`);
+  if (backdrop <= 0) return outline.join(",");
+  // To lag: en tett skygge rett under bokstaven (løftet), og en bredere,
+  // svakere sky rundt (kontrast mot lyst underlag). Radiene er målt mot
+  // satellittfoto ved 3× oppskalering: mindre enn dette forsvinner skyen bak
+  // den hvite kanten, mer og den begynner å lese som uskarphet.
+  const near = Math.round(Math.max(3, w * 3) * 10) / 10;
+  const far = near * 2;
+  const a = Math.min(1, backdrop);
+  return [
+    ...outline,
+    `0 ${w}px ${near}px rgba(0,0,0,${Math.round(a * 100) / 100})`,
+    `0 0 ${far}px rgba(0,0,0,${Math.round(a * 70) / 100})`,
+  ].join(",");
 }
 /** Default container-halvbredde (32 px inaktiv 2D-markør) + {@link LABEL_GAP_X}.
  *  3D-pinnen er like bred, men VOKSER på nær zoom, og sender derfor inn sin egen
