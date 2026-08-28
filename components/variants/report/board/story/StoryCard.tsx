@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import {
   ArrowRight,
   MapPin,
@@ -329,15 +329,21 @@ function StoryFaq({
  *
  * `useViewportCategoryList` trekker det åpne punktet UT av radene for å kunne
  * feste det øverst (fiksen fra `active-poi-card-pinned-sidebar-20260208`). Her
- * skal rekkefølgen være ren avstand, så det legges tilbake — men bare når det
- * faktisk ER i utsnittet, for hooken beholder det uansett hvor det ligger.
+ * skal rekkefølgen være ren avstand, så det legges tilbake.
+ *
+ * ALLTID, ikke bare når punktet er i utsnittet (2026-08-28). Et trykk på en
+ * kartpinne åpner raden i denne lista, og betingelsen «bare hvis i utsnittet»
+ * kunne da la handlingen ende i ingenting: utsnittet er kartet MINUS flatene som
+ * dekker det, så en pinne som står så vidt utenfor det målte rektangelet er
+ * fortsatt en pinne du kan se og trykke på. Prisen er at faneetiketten kan si én
+ * mer enn utsnittet inneholder. Det er den riktige avveiingen — en rad som
+ * mangler er en ødelagt handling, et tall som er én av er en unøyaktighet.
  */
 function placesInView(
   list: ReturnType<typeof useViewportCategoryList>,
 ): NeighbourhoodRow<BoardPOI>[] {
-  const { rows, activeRow, visibleCount } = list;
-  const all =
-    activeRow && visibleCount > rows.length ? [activeRow, ...rows] : rows;
+  const { rows, activeRow } = list;
+  const all = activeRow ? [activeRow, ...rows] : rows;
   return all.slice().sort((a, b) => {
     const ma = a.minutes ?? Number.POSITIVE_INFINITY;
     const mb = b.minutes ?? Number.POSITIVE_INFINITY;
@@ -571,7 +577,7 @@ function PlaceRow({
   mark: "chip" | "star" | "dot";
 }) {
   const { state } = useBoard();
-  const { isPlaceOpen, togglePlace } = useStoryTour();
+  const { isPlaceOpen, togglePlace, focusPoiId } = useStoryTour();
   const minutes = storyMinutes(poi, state.travelMode);
   const narrative = storyNarrative(poi);
   const open = isPlaceOpen(String(poi.id));
@@ -589,8 +595,44 @@ function PlaceRow({
   // ha chevron, ellers finnes det ingen affordans for avgangene.
   const expandable = !!narrative || live;
 
+  // Raden KARTET peker på. Se `focusPoiId` i story-tour: den settes bare av et
+  // pinnetrykk, og bare på én rad.
+  const focused = focusPoiId === String(poi.id);
+  const rowRef = useRef<HTMLLIElement | null>(null);
+  useEffect(() => {
+    if (!focused) return;
+    // Raden skal være synlig uten at leseren må leite etter den. `center` og
+    // ikke `nearest`: hodet i kolonnen er festet og over hundre piksler høyt, så
+    // «så vidt innenfor» kan bety «gjemt under headeren». Rolig, fordi det er en
+    // bevegelse leseren ikke ba om direkte — hun trykket i kartet, og flaten
+    // svarer.
+    rowRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "center",
+    });
+  }, [focused]);
+
   return (
-    <li className={cn(open && DISCLOSURE_ITEM_OPEN)}>
+    <li
+      ref={rowRef}
+      data-focused={focused || undefined}
+      className={cn("relative", open && DISCLOSURE_ITEM_OPEN)}
+    >
+      {/* Merket for «kartet pekte hit»: en strek i kategoriens farge langs
+          venstrekanten — samme farge som pinnen som ble trykket. Den åpne
+          tonen sier at raden er utfoldet; streken sier hvorfor. En ramme rundt
+          raden kunne ikke gjort samme jobb: radene ligger i ÉN ramme med
+          hårstreker mellom seg (se Disclosure), og en ekstra kant inni den
+          leser som at lista har gått i stykker. */}
+      {focused && (
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-[3px]"
+          style={{ backgroundColor: category.color }}
+        />
+      )}
       <button
         type="button"
         data-testid="story-row"

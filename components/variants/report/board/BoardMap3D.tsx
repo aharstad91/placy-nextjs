@@ -17,7 +17,10 @@ import { type CameraMode } from "./BoardMapControls";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
 import { useBoard3DCamera } from "./use-board-3d-camera";
+import type { FlyCapableMap } from "./board-3d-camera-director";
 import { use3DViewportPublish } from "./use-3d-viewport-publish";
+import { useMapPinClick } from "./use-map-pin-click";
+import { rectFromCamera } from "./board-camera-fit";
 import { deriveCategoryCameraConfig } from "./board-category-camera";
 import { readBoardUrlFlagsFromWindow } from "./board-url-flags";
 import { getEstablishingShot } from "./board-establishing-shots";
@@ -36,7 +39,29 @@ import {
   useAudioTourPhase,
 } from "@/lib/stores/audio-tour-store";
 import type { CategoryCameraConfig } from "@/lib/types";
-import { useEngagement } from "@/lib/instrumentation/engagement-scope";
+import type { MapCameraApi } from "@/lib/board/board-types";
+
+/**
+ * Kamera-feltene vi LESER av Map3DElement. Alt er nullable: Google deriverer dem,
+ * og de kan mangle før første scene er rendret. Samme minimale flate
+ * `use-3d-viewport-publish` leser — de to må se samme kamera.
+ */
+interface Map3DPoseLike {
+  center?: { lat: number; lng: number } | null;
+  heading?: number | null;
+  range?: number | null;
+  tilt?: number | null;
+  fov?: number | null;
+}
+
+/** Googles dokumenterte default for `fov` når den ikke er satt eksplisitt. */
+const DEFAULT_FOV_DEG = 35;
+
+/** Panoreringen ved et trykk i en stedsrad. Samme varighet som 2D-stiens
+ *  `holdFrame`-easeTo, så de to motorene beveger seg i samme tempo. «Rolig» er
+ *  hele poenget: bevegelsen skal leses som at kartet følger deg, ikke som et
+ *  hopp du må orientere deg etter på nytt. */
+const PAN_MS = 900;
 
 // RouteLayer3D lazy-loaded — samme bundling-strategi som ReportThemeSection
 // (tunge Google Maps-imports holdes ute av 2D-bundlen).
@@ -165,8 +190,7 @@ export function BoardMap3D({
   overhead = false,
   onOverheadBreak,
 }: Props) {
-  const { state, data, dispatch, subFilter } = useBoard();
-  const engagement = useEngagement();
+  const { state, data, dispatch, subFilter, setMapCamera } = useBoard();
   const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
   const popupMode = useBoardPopupMode();
@@ -288,18 +312,6 @@ export function BoardMap3D({
         : null,
     [story?.on, story?.stop, state.activePOIId],
   );
-  // Omvisningen står på et TEMA, ikke på området. Skillet er gaten for begge
-  // reglene under: på områdestoppet er kartet et overblikk — ingen vekting,
-  // ingen ramme å holde — og da må pinnene være klikkbare, ellers er det ingen
-  // vei inn til et sted som ikke tilhører stoppet du står på (2026-08-27).
-  const storyStopActive = !!story?.on && !story.onArea;
-
-  // Refen holder `handlePOIClick` referanse-stabil: callbacken ligger i
-  // `Marker3DItems`' memo-props, så en ny identitet i det omvisningen starter
-  // ville defeatet memo for HVER markør (S1).
-  const storyOnRef = useRef(false);
-  storyOnRef.current = storyStopActive;
-
   const { markerPOIs, revealItems, revealWindowMs, hasVoiceOver, orbitRange } =
     useBoardMarkerSet({
       data,
@@ -362,6 +374,105 @@ export function BoardMap3D({
     return DEFAULT_CAMERA_LOCK;
   }, [pendingCamera]);
 
+  // ── Kamera-kanalen: den FREMSTE motoren eier den ────────────────────────────
+  // `mapCamera` på BoardContext er ÉN slot, og den ble skrevet av Mapbox-stien
+  // alene. I 3D-visning er Mapbox unmountet, så `mapRef.current` var null og hele
+  // API-et en stille no-op: et trykk i en stedsrad flyttet ingenting på
+  // Google-motoren, som er default på rapport-boards.
+  //
+  // Her registreres derfor 3D-halvdelen, gated på `isFront` slik at de to aldri
+  // skriver samtidig. Bare `flyToPoint` er koblet: det er den ENE bevegelsen
+  // flaten ber om (rad → rolig panorering). `fitVisible`/`fitCoordinates` krever
+  // en invers av `rectFromCamera` (bounds → range) som ikke finnes ennå, og å
+  // gjette den ville satt Google-kameraet i bevegelse på hvert stopp-bytte og ved
+  // hver kategoriside-push — en større endring i føleisen enn det som er bedt om.
+  // De står derfor som eksplisitte no-ops, ikke som skjulte hull.
+  const paddingBottomRef = useRef(mapPaddingBottom);
+  paddingBottomRef.current = mapPaddingBottom;
+  const paddingLeftRef = useRef(mapPaddingLeft);
+  paddingLeftRef.current = mapPaddingLeft;
+  const overhangRightRef = useRef(overhangRightPx);
+  overhangRightRef.current = overhangRightPx;
+  const mapInstanceRef = useRef<Map3DInstance | null>(null);
+  mapInstanceRef.current = map3dInstance;
+
+  const cameraApi = useMemo<MapCameraApi>(
+    () => ({
+      snapshot: () => null,
+      restore: () => {},
+      fitVisible: () => {},
+      fitCoordinates: () => {},
+      flyToPoint: (coord, opts) => {
+        const map = mapInstanceRef.current as
+          | (FlyCapableMap & Map3DPoseLike)
+          | null;
+        if (!map?.flyCameraTo) return;
+        const center = map.center;
+        const range = map.range;
+        // `> 0` og ikke `!= null`: Google deriverer feltene, og etter en
+        // umiddelbar flytur (durationMillis 0) er `range` målt som 0 i en kort
+        // periode. En panorering med avstand 0 er ikke en bevegelse — den er en
+        // ulest positur, og da skal kameraet stå.
+        if (!center || typeof range !== "number" || !(range > 0)) return;
+        // `holdFrame`: ingen endring i avstand, og ingen bevegelse i det hele
+        // tatt hvis punktet alt ligger i det brukeren ser. Samme regel som
+        // 2D-stien, men målt i geografi framfor i piksler — Google-motoren har
+        // ingen `project()`.
+        //
+        // Rektangelet er ALT en underestimering av det synlige (`rectFromCamera`
+        // regner ikke med tilt), så det trengs ingen egen margin: et punkt som
+        // ligger så vidt utenfor det, ligger nær kanten av bildet — og skal
+        // hentes inn.
+        if (opts?.holdFrame) {
+          const box = (map as unknown as HTMLElement).getBoundingClientRect();
+          const rect = rectFromCamera(
+            {
+              lat: center.lat,
+              lng: center.lng,
+              rangeM: range,
+              headingDeg: map.heading ?? 0,
+              fovDeg: map.fov ?? DEFAULT_FOV_DEG,
+            },
+            {
+              widthPx: box.width,
+              heightPx: box.height,
+              occludedBottomPx: paddingBottomRef.current,
+              occludedLeftPx: paddingLeftRef.current,
+              overhangRightPx: overhangRightRef.current,
+            },
+          );
+          if (
+            rect &&
+            coord.lng >= rect.west &&
+            coord.lng <= rect.east &&
+            coord.lat >= rect.south &&
+            coord.lat <= rect.north
+          ) {
+            return;
+          }
+        }
+        // Bare SIKTEPUNKTET flyttes. Avstand, tilt og heading bæres videre, så
+        // bevegelsen er en panorering og ikke en ny positur.
+        map.flyCameraTo({
+          endCamera: {
+            center: { lat: coord.lat, lng: coord.lng, altitude: 0 },
+            range,
+            tilt: map.tilt ?? 0,
+            heading: map.heading ?? 0,
+          },
+          durationMillis: opts?.durationMs ?? PAN_MS,
+        });
+      },
+    }),
+    [],
+  );
+
+  useEffect(() => {
+    if (!isFront || !map3dInstance) return;
+    setMapCamera(cameraApi);
+    return () => setMapCamera(null);
+  }, [isFront, map3dInstance, cameraApi, setMapCamera]);
+
   const handleMapReady = useCallback(
     (m: Map3DInstance | null) => {
       setMap3dInstance(m);
@@ -384,33 +495,9 @@ export function BoardMap3D({
     overhangRightPx,
   });
 
-  // Stabil click-handler — sitter i Marker3DItems memo-props, så en fersk inline
-  // arrow per render ville defeate memo for HVER markør. useCallback bevarer
-  // referansen så memo holder (S1).
-  const handlePOIClick = useCallback(
-    (poiId: string) => {
-      // På et TEMA-stopp er pinnene illustrasjon: trykkflaten er stedene i
-      // flaten, der teksten åpner seg der raden står. Ett interaksjonsmønster,
-      // ikke to — samme regel som `emphasis` gir Mapbox-markørene. På
-      // områdestoppet finnes ingen slik rad, så der klikker man pinnen.
-      if (storyOnRef.current) return;
-      for (const cat of data.categories) {
-        const found = cat.pois.find((p) => p.id === poiId);
-        if (found) {
-          // Ingen `categoryId` i actionen: markørklikk skal ikke kapre
-          // kategorien (2026-08-13). Kategori-oppslaget beholdes fordi
-          // analytics-signalet fortsatt bærer `category_id`.
-          dispatch({ type: "OPEN_POI", id: found.id });
-          engagement.emit("poi_clicked", {
-            poiId: found.id,
-            payload: { category_id: cat.id },
-          });
-          return;
-        }
-      }
-    },
-    [data.categories, dispatch, engagement],
-  );
+  // Trykk på en pinne: punkt + måling + flatens oppfølging, delt med 2D-stien.
+  // Callbacken er referanse-stabil (S1) — se hooken.
+  const handlePOIClick = useMapPinClick();
 
   // Klikk på kart-bakgrunn (ikke markør) → lukk POI-popup. Speiler 2D-mappens
   // onClick på <Map>. gmp-click fyrer for alle klikk i map-elementet inkludert
@@ -478,10 +565,13 @@ export function BoardMap3D({
     reducedMotion,
     overhead,
     outroActive: isOutroBeat,
-    // Omvisningen eier kameraet mens den står på et tema: stoppets ramme står,
-    // og et åpnet sted flytter ingenting. Uten dette rykket Satelitt inn til
-    // 300 m og sentrerte punktet på hvert rad-trykk, mens 3D (fri) sto stille.
-    storyActive: storyStopActive,
+    // Omvisningen eier kameraet SÅ LENGE DEN KJØRER — også på områdestoppet
+    // (2026-08-28). Directorens POI-intent rykker inn til 300 m og sentrerer
+    // punktet; det er nøyaktig det et trykk i kartet IKKE skal gjøre, og et
+    // trykk i en rad skal panorere rolig i stedet. Omvisningen gjør begge selv
+    // (se `flyToPoint` over), så directoren må holde fingrene av kameraet.
+    // Gaten sto på temastoppet alene, og på områdestoppet fløy den derfor.
+    storyActive: !!story?.on,
     skipSkraaReentryRef,
     orbitRange,
     // Basic-tier (uten voice-over): ingen idle-orbit. Etter intro-flythrough-en

@@ -22,6 +22,7 @@ import {
   useAvailableTravelModes,
 } from "./board-state";
 import { useStoryTourOptional } from "./story/story-tour";
+import { useMapPinClick } from "./use-map-pin-click";
 import { BoardMarker } from "./BoardMarker";
 import { useBoardZoomTier } from "./use-board-zoom-tier";
 import { HomeMarker } from "./HomeMarker";
@@ -317,7 +318,14 @@ export function BoardMap({
   // BoardMap også monteres utenfor board-treet (event-flaten) — der er den null
   // og markørene oppfører seg som før.
   const story = useStoryTourOptional();
+  // Markørtrykk (delt med 3D-stien): åpner punktet, måler trykket, og lar flaten
+  // følge etter i sekvens.
+  const handlePinClick = useMapPinClick();
   const storyEmphasisOf = story?.on ? story.emphasisOf : null;
+  // Stoppets kategori-id (primitiv, så memo-deps holder seg stabile): den avgjør
+  // hvilken kategori et anker presenteres som når det ligger i flere. Se dedupen
+  // i `markerStates`.
+  const storyStopId = story?.stop?.id != null ? String(story.stop.id) : null;
 
   const markerStates = useMemo(() => {
     const baseVisible = new Set<string>();
@@ -350,7 +358,14 @@ export function BoardMap({
     // `visiblePoiIds` er undefined (boligrapport, eller event uten aktivt filter)
     // er settet uberørt → ren phase-/kategori-synlighet som før.
     const visibleIds = intersectVisible(baseVisible, visiblePoiIds);
-    return data.categories.flatMap((cat) =>
+    // ÉN markør per POI, ikke én per tema den ligger i (2026-08-28).
+    //
+    // Et anker løftes inn i HVERT tema et medlem hører hjemme i (`report-data`),
+    // så samme POI kommer flere ganger ut av en flatMap over kategoriene. React
+    // fikk da to barn med samme key og mountet markøren én gang per tema — en
+    // rød feiloverlay over hele 2D-kartet. Samme dedupe-regel som
+    // `selectOverviewPOIs`/`selectLegendPOIs` fikk på 3D-siden.
+    const all = data.categories.flatMap((cat) =>
       cat.pois.map((p) => ({
         poi: p,
         // Delt derivasjon (marker-style): samme ikon/farge som listeradene for
@@ -362,8 +377,28 @@ export function BoardMap({
         // Unit 5: event-board "Min samling"-highlight. Lagrede POIer får en egen
         // ring (BoardMarker.inCollection). Uberørt for boligrapporter (undefined).
         inCollection: collectionPoiIds?.has(p.id) ?? false,
+        categoryId: String(cat.id),
       })),
     );
+    // Førstemann beholder PLASSEN (rekkefølgen er stablingen på kartet), men
+    // innholdet kan overtas av ÉN kategori med forrang: den leseren står i —
+    // valgt kategori, ellers omvisningens stopp. Kategorien avgjør både
+    // farge/ikon og vekt, og et anker som også ligger i temaet du leser skal se
+    // ut slik det gjør DER.
+    const preferred =
+      activeCategory?.id != null ? String(activeCategory.id) : storyStopId;
+    const slotById: Record<string, number> = {};
+    const states: typeof all = [];
+    for (const m of all) {
+      const slot = slotById[m.poi.id];
+      if (slot === undefined) {
+        slotById[m.poi.id] = states.length;
+        states.push(m);
+      } else if (preferred !== null && m.categoryId === preferred) {
+        states[slot] = m;
+      }
+    }
+    return states;
   }, [
     state.phase,
     activeCategory,
@@ -372,6 +407,7 @@ export function BoardMap({
     visiblePoiIds,
     collectionPoiIds,
     storyEmphasisOf,
+    storyStopId,
   ]);
 
   // Synlige POI-er for kamera-fit (tour-bounds). Inkluderer ikke fade-out-
@@ -752,11 +788,18 @@ export function BoardMap({
     }),
     [],
   );
+  // Den FREMSTE motoren eier kamera-kanalen (2026-08-28). Gaten sto på
+  // `publishViewport` alene, så Mapbox-stien registrerte API-et også i
+  // 3D-visning — der den er unmountet og `mapRef.current` null. Resultatet var et
+  // registrert API der hver metode var en stille no-op, og et trykk i en stedsrad
+  // flyttet ingenting på Google-motoren. `showMapbox` er den samme gaten som
+  // avgjør om <Map> i det hele tatt finnes; 3D-halvdelen registrerer seg selv på
+  // `isFront` (se BoardMap3D).
   useEffect(() => {
-    if (!publishViewport) return;
+    if (!publishViewport || !showMapbox) return;
     setMapCamera(cameraApi);
     return () => setMapCamera(null);
-  }, [publishViewport, cameraApi, setMapCamera]);
+  }, [publishViewport, showMapbox, cameraApi, setMapCamera]);
 
   // Event-board filter-fit (Unit 4): events har ingen audio-tour (tourActive er
   // alltid false), så tour-fitten over fyrer aldri. I stedet fitter vi kameraet
@@ -1062,10 +1105,9 @@ export function BoardMap({
                       suppressLabel={suppressLabel}
                       labelSide={placement ?? "right"}
                       emphasis={emphasis}
-                      // Ingen `categoryId`: et klikk på kartet er en i-kontekst-
-                      // handling («hva er dette stedet?») og skal ikke også bytte
-                      // kategori, filtrere markørsettet og drille sidebaren inn.
-                      onClick={() => dispatch({ type: "OPEN_POI", id: poi.id })}
+                      // Samme vei inn som 3D-pinnene: punkt + måling + flatens
+                      // oppfølging. Se `useMapPinClick`.
+                      onClick={() => handlePinClick(String(poi.id))}
                     />
                   );
                 },

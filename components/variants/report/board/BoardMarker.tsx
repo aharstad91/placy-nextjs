@@ -99,10 +99,14 @@ function BoardMarkerImpl({
 
   // Omvisningens tre nivåer. `named` beholder full styrke og får sin vekt fra
   // størrelsen over; de to andre trekker seg tilbake.
+  //
+  // Vekten er VISUELL, ikke en gate på trykk (2026-08-28). Pinnene var inerte
+  // under et stopp — `pointer-events: none` så snart et nivå var satt — med
+  // begrunnelsen at trykkflaten var radene i flaten. En dempet pinne du kan se
+  // men ikke ta på leser som et kart som har sluttet å virke, så et trykk går nå
+  // gjennom uansett nivå; det er flaten som følger etter (se `useMapPinClick`).
   const emphasisOpacity =
     emphasis === "texture" ? 0.26 : emphasis === "scene" ? 0.6 : 1;
-  // Pinnene er illustrasjon i omvisningen — se `emphasis`.
-  const inert = emphasis !== null;
 
   return (
     <Marker
@@ -111,14 +115,14 @@ function BoardMarkerImpl({
       anchor="bottom"
       offset={[0, 0]}
       onClick={(e) => {
-        if (!isVisible || inert) return;
+        if (!isVisible) return;
         e.originalEvent.stopPropagation();
         onClick();
       }}
       style={{
-        cursor: isVisible && !inert ? "pointer" : "default",
+        cursor: isVisible ? "pointer" : "default",
         zIndex: isActive ? 5 : 1,
-        pointerEvents: isVisible && !inert ? "auto" : "none",
+        pointerEvents: isVisible ? "auto" : "none",
       }}
     >
       {/* Inner container: bærer kategori-fade (isVisible) og overflow:visible

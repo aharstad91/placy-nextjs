@@ -6,6 +6,7 @@ import type { BoardData, BoardPOI } from "../board-data";
 import { BoardProvider, useBoard } from "../board-state";
 import { NeighbourhoodSurface } from "../neighbourhood/NeighbourhoodSurface";
 import { StoryTourProvider, useStoryTourOptional } from "./story-tour";
+import { useMapPinClick } from "../use-map-pin-click";
 
 /**
  * Omvisningen i flaten — mot EKTE providere, ikke mot mocks.
@@ -13,7 +14,8 @@ import { StoryTourProvider, useStoryTourOptional } from "./story-tour";
  * Det som testes er sømmene: at inngangen tar over flaten, at de tre navngitte
  * stedene står i «Om området» og igjen med stjerne i stedslista, at kameraet
  * rammer stoppet og ikke hele kategorien, at et stedstrykk IKKE åpner
- * POI-modalen (`exploreSuppressed`), og at «Avslutt» gir indeksen tilbake.
+ * POI-modalen (`exploreSuppressed`), at et KART-trykk får flaten til å følge
+ * etter uten å røre kameraet, og at «Avslutt» gir indeksen tilbake.
  */
 
 const CONTAINER_H = 800;
@@ -160,11 +162,17 @@ const spy = {
     hasStop: false,
     emphasis: null as string | null,
   },
+  /* Markørtrykket, EKTE: samme hook begge kart-motorene kaller. Testene kan da
+     ikke bomme på halve kjeden — dispatch, måling og flatens oppfølging henger
+     sammen i den, og et trykk som bare flyttet flaten ville mistet merket med
+     én gang (se fokus-invarianten i story-tour). */
+  clickPin: (() => {}) as (poiId: string) => void,
 };
 
 function Probe({ camera }: { camera: MapCameraApi }) {
   const ctx = useBoard();
   const tour = useStoryTourOptional();
+  spy.clickPin = useMapPinClick();
   spy.story = {
     on: tour?.on ?? false,
     onArea: tour?.onArea ?? false,
@@ -396,6 +404,131 @@ describe("et stedstrykk", () => {
   });
 });
 
+describe("et kart-trykk", () => {
+  /** Trykk på markøren til `id`, gjennom den ekte kjeden. */
+  const clickPin = (id: string) =>
+    act(() => {
+      spy.clickPin(id);
+    });
+  /** Hvilken svarform som står valgt akkurat nå. */
+  const selectedPane = () =>
+    [...document.querySelectorAll("[data-story-pane]")].find(
+      (el) => el.getAttribute("aria-selected") === "true",
+    )?.getAttribute("data-story-pane") ?? null;
+
+  it("lar flaten STÅ til popupen har landet, og følger etter da", () => {
+    vi.useFakeTimers();
+    try {
+      const { begin } = setup();
+      begin();
+      clickPin("tredje");
+      // Så langt har bare kartet svart: punktet er åpent (popup + rutelinje),
+      // men flaten har ikke rørt seg.
+      expect(spy.activePOIId).toBe("tredje");
+      expect(selectedPane()).toBe("about");
+      expect(document.querySelector("li[data-focused]")).toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(selectedPane()).toBe("places");
+      const focused = document.querySelector("li[data-focused]");
+      expect(
+        focused?.querySelector("[data-poi]")?.getAttribute("data-poi"),
+      ).toBe("tredje");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("finner STOPPET punktet ligger i, ikke bare raden", () => {
+    vi.useFakeTimers();
+    try {
+      const { begin, getByText } = setup();
+      begin(); // stopp 0 = «Mat & drikke»
+      clickPin("park"); // ligger i «Natur & friluft»
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(getByText("Kommer jeg ut i naturen?")).not.toBeNull();
+      expect(
+        document
+          .querySelector("li[data-focused] [data-poi]")
+          ?.getAttribute("data-poi"),
+      ).toBe("park");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("rører ALDRI kameraet: brukeren dro seg dit selv", () => {
+    vi.useFakeTimers();
+    try {
+      const { begin, camera } = setup();
+      begin();
+      camera.fitCoordinates.mockClear();
+      clickPin("tredje");
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      expect(camera.flyToPoint).not.toHaveBeenCalled();
+      expect(camera.fitCoordinates).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("gir en rad til et punkt UTENFOR utsnittet også — du trykket på pinnen", () => {
+    vi.useFakeTimers();
+    try {
+      const { begin } = setup();
+      begin();
+      clickPin("langt"); // ligger utenfor RECT
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(
+        document
+          .querySelector("li[data-focused] [data-poi]")
+          ?.getAttribute("data-poi"),
+      ).toBe("langt");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("slipper merket når punktet lukkes", () => {
+    vi.useFakeTimers();
+    try {
+      const { begin } = setup();
+      begin();
+      clickPin("tredje");
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      const row = document.querySelector('[data-poi="tredje"]') as HTMLElement;
+      act(() => fireEvent.click(row)); // lukker raden → punktet slippes
+      expect(document.querySelector("li[data-focused]")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("starter ALDRI omvisningen: er den av, ligger indeksen der", () => {
+    vi.useFakeTimers();
+    try {
+      const utils = setup();
+      clickPin("naer");
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(spy.story.on).toBe(false);
+      expect(utils.queryByTestId("story-card")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("transporten", () => {
   it("bytter stopp, og hvert stopp begynner med spørsmålet", () => {
     const { begin, getByText, getByTestId } = setup();
@@ -477,15 +610,16 @@ describe("områdestoppet", () => {
     expect(utils.camera.flyToPoint).toHaveBeenCalledTimes(1);
   });
 
-  it("lar kartet være et overblikk: ingen vekting, og derfor klikkbare pinner", () => {
+  it("lar kartet være et overblikk: ingen vekting av markørene", () => {
     const utils = setup();
     utils.begin();
-    // På et temastopp vektes markørene, og pinnene er illustrasjon.
+    // På et temastopp vektes markørene i tre nivåer.
     expect(spy.story).toMatchObject({ on: true, onArea: false, hasStop: true });
     expect(spy.story.emphasis).toBe("named");
     act(() => fireEvent.click(railTabs()[0]));
-    // På området er vekten borte — det er signalet BoardMap3D bruker for å
-    // slippe pinne-klikkene gjennom igjen.
+    // På området er vekten borte: alle pinnene står i full styrke, fordi
+    // området ER overblikket. Vekten sier ikke lenger noe om hva som er
+    // KLIKKBART — pinnene tar imot trykk på alle stopp (2026-08-28).
     expect(spy.story).toMatchObject({ on: true, onArea: true, hasStop: false });
     expect(spy.story.emphasis).toBeNull();
   });
