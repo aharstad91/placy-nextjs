@@ -6,6 +6,7 @@ import { getIcon } from "@/lib/utils/map-icons";
 import { buildNeighbourhoodList } from "@/lib/board/neighbourhood-list";
 import type { BoardCategory, BoardCategoryId, BoardPOIId } from "../board-data";
 import { useBoard } from "../board-state";
+import { TravelModeHeaderControl } from "./TravelModeHeaderControl";
 import { FAQSection } from "../FAQSection";
 import { categorySubline } from "./NeighbourhoodCategoryCard";
 
@@ -57,20 +58,27 @@ export function CategoryPage({
    *  kategorien ikke legger punkter bak panelet. */
   onHeightChange: (heightPx: number) => void;
 }) {
-  const { mapCamera, data, dispatch } = useBoard();
+  const { mapCamera, data, dispatch, state } = useBoard();
   const frameRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const savedScrollRef = useRef(0);
   const [peeked, setPeeked] = useState(false);
 
-  // Hele kategorien, gangtidssortert: samme modell som nabolagslista, men uten
-  // utsnitt (R16) og uten rad-tak.
+  // Hele kategorien, sortert på aktiv reisemåte: samme modell som
+  // nabolagslista, men uten utsnitt (R16) og uten rad-tak.
+  //
+  // `travelMode` sto ikke her før. Uten den falt `buildNeighbourhoodList`
+  // tilbake på sin egen default («walk»), så tallene og undertittelen på
+  // kategorisiden viste gangtid uansett hvilken modus boardet faktisk sto i —
+  // og et modusbytte gjorde ingenting synlig her. Speiler
+  // `use-neighbourhood-list.ts`, som gjør det riktig for sheet-lista.
   const page = useMemo(
     () =>
       buildNeighbourhoodList([category], null, {
         rowsPerCategory: Number.POSITIVE_INFINITY,
+        travelMode: state.travelMode,
       }).categories[0],
-    [category],
+    [category, state.travelMode],
   );
 
   // Prosaen som gjør siden til en STEDSBESKRIVELSE og ikke en trefliste.
@@ -111,6 +119,39 @@ export function CategoryPage({
     if (peeked || !scrollRef.current) return;
     scrollRef.current.scrollTop = savedScrollRef.current;
   }, [peeked]);
+
+  /* Et modusbytte re-sorterer HELE lista — kategorisiden har ikke noe rad-tak,
+   * og sorteringen er modus-avledet. Kontrollen sitter i den faste
+   * overskriftsraden, altså utenfor scrolleren, så den er trykkbar uansett hvor
+   * langt ned brukeren har kommet. Uten forankring blir `scrollTop` stående på
+   * samme pikselverdi mens radene bytter plass under den, og stedet hun så på er
+   * plutselig et annet.
+   *
+   * Forankrer på STEDET, ikke på pikslene: raden som lå øverst i utsnittet før
+   * byttet legges tilbake øverst etterpå. */
+  const anchorPoiRef = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    const id = anchorPoiRef.current;
+    anchorPoiRef.current = null;
+    if (!el || !id) return;
+    const row = el.querySelector<HTMLElement>(`[data-poi-row="${CSS.escape(id)}"]`);
+    if (row) el.scrollTop = Math.max(0, row.offsetTop - 8);
+  }, [state.travelMode]);
+
+  /** Raden som ligger øverst i utsnittet nå — ankeret et modusbytte lander på. */
+  const rememberAnchor = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || el.scrollTop <= 0) return;
+    const top = el.getBoundingClientRect().top;
+    const rows = el.querySelectorAll<HTMLElement>("[data-poi-row]");
+    for (const row of rows) {
+      if (row.getBoundingClientRect().bottom > top) {
+        anchorPoiRef.current = row.dataset.poiRow ?? null;
+        return;
+      }
+    }
+  }, []);
 
   const peek = useCallback(() => {
     savedScrollRef.current = scrollRef.current?.scrollTop ?? 0;
@@ -204,7 +245,14 @@ export function CategoryPage({
             <ChevronUp size={20} aria-hidden className="shrink-0 text-stone-400" />
           </button>
         ) : (
-          <div className="flex shrink-0 items-center gap-3 px-4 pb-2 pt-4">{header}</div>
+          <div className="flex shrink-0 items-center gap-3 px-4 pb-2 pt-4">
+            {header}
+            {/* Kontrollen kan IKKE ligge inne i `header`: kikk-grenen over gjør
+                hele stripa til én <button>, og en knapp inni en knapp er ugyldig
+                markup som ville stjålet gjenåpnings-trykket. I kikk-tilstand er
+                lista skjult, så det finnes uansett ingen tall å merke der. */}
+            <TravelModeHeaderControl className="ml-auto" onBeforeChange={rememberAnchor} />
+          </div>
         )}
 
         <div
@@ -248,6 +296,7 @@ export function CategoryPage({
             {page.rows.map((row) => (
               <li
                 key={row.poi.id}
+                data-poi-row={row.poi.id}
                 className="flex items-baseline gap-3 border-b border-black/5 py-2.5 last:border-b-0"
               >
                 <span className="min-w-0 flex-1 truncate text-[14.5px] text-stone-800">

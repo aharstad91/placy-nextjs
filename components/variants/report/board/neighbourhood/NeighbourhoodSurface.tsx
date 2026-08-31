@@ -10,6 +10,7 @@ import { NeighbourhoodCategoryCard } from "./NeighbourhoodCategoryCard";
 import { CategoryPage } from "./CategoryPage";
 import { FAQSection } from "../FAQSection";
 import { useNeighbourhoodList } from "./use-neighbourhood-list";
+import { TravelModeHeaderControl } from "./TravelModeHeaderControl";
 import { StoryCard } from "../story/StoryCard";
 import { StoryDeck } from "../story/StoryRail";
 import { StoryPlayCard } from "../story/StoryPlayCard";
@@ -188,7 +189,12 @@ function NeighbourhoodList({
           data-testid="neighbourhood-hint"
           className="mb-2 rounded-xl bg-stone-900/[0.045] px-3 py-2 text-[12.5px] leading-snug text-stone-600"
         >
-          Dra i kartet — lista viser stedene i utsnittet, med gangtid hjemmefra.
+          {/* Teksten sa «med gangtid hjemmefra» uansett hvilken modus som var
+              aktiv. Det er samme defekt som selve kontrollen under finnes for:
+              flaten påstår en reisemåte i prosa mens tilstanden kan være en
+              annen. Nøytral formulering, så den ikke kan drifte på nytt. */}
+          Dra i kartet — lista viser stedene i utsnittet, med reisetid
+          hjemmefra.
         </p>
       )}
 
@@ -201,13 +207,22 @@ function NeighbourhoodList({
           boligen.
         </p>
       ) : (
-        list.categories.map((category) => (
-          <NeighbourhoodCategoryCard
-            key={category.id}
-            category={category}
-            onOpen={onOpenCategory}
-          />
-        ))
+        <>
+          {/* Enheten tallene i kortene under er i. Én kontroll over hele lista,
+              ikke én per kategorikort: sheeten stabler ett kort PER kategori, så
+              en kontroll i kortet ville gitt seks på skjermen samtidig.
+              Høyrestilt så den lander over minutt-kolonnen. */}
+          <div className="mb-1 flex justify-end">
+            <TravelModeHeaderControl />
+          </div>
+          {list.categories.map((category) => (
+            <NeighbourhoodCategoryCard
+              key={category.id}
+              category={category}
+              onOpen={onOpenCategory}
+            />
+          ))}
+        </>
       )}
 
       {/* Strøkets egne ord, over svarene. Samme kilde som områdestoppets prosa

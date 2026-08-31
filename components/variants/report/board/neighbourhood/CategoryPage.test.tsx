@@ -107,6 +107,78 @@ function setup(cat: BoardCategory = category()) {
   return { ...utils, onBack, onHeightChange };
 }
 
+/* ---------- Reisemåte-kontrollen i sidens overskriftsrad ---------- */
+
+/** Samme holdeplass, men med tider for alle tre modus. `STOP_POI` har bare
+ *  gangtid, og da er det ikke noe valg å ta. */
+const MULTI_STOP: BoardPOI = {
+  ...STOP_POI,
+  raw: { ...STOP_POI.raw, travelTime: { walk: 12, bike: 5, car: 3 } } as BoardPOI["raw"],
+};
+
+const multiCategory = () => category({ pois: [MULTI_STOP] });
+
+describe("CategoryPage — reisemåte som enhet over minutt-kolonnen", () => {
+  it("rendrer kontrollen i overskriftsraden i normal tilstand", () => {
+    setup(multiCategory());
+    expect(screen.getByTestId("travel-mode-header-control")).toBeTruthy();
+  });
+
+  it("tallene følger aktiv modus, ikke gangtid", () => {
+    // Regresjonen dette låser: siden leste aldri state.travelMode, så
+    // buildNeighbourhoodList falt tilbake på «walk» og et modusbytte gjorde
+    // ingenting synlig her.
+    setup(multiCategory());
+    expect(screen.getByTestId("category-poi-list").textContent).toContain("12 min");
+
+    fireEvent.click(screen.getByTestId("travel-mode-header-control"));
+    fireEvent.click(screen.getByRole("button", { name: /Bil/ }));
+
+    const lista = screen.getByTestId("category-poi-list").textContent ?? "";
+    expect(lista).toContain("3 min");
+    expect(lista).not.toContain("12 min");
+  });
+
+  it("undertittelen under kategorinavnet følger samme modus", () => {
+    const { container } = setup(multiCategory());
+    fireEvent.click(screen.getByTestId("travel-mode-header-control"));
+    fireEvent.click(screen.getByRole("button", { name: /Sykkel/ }));
+
+    const subline = container.querySelector("h2")?.nextElementSibling?.textContent ?? "";
+    expect(subline).toContain("5 min");
+  });
+
+  it("ingen kontroll i kikk-tilstand, og gjenåpning er fortsatt ett trykk", () => {
+    setup(multiCategory());
+    // Kikk-tilstanden nås via et stedsnavn i et FAQ-svar.
+    fireEvent.click(screen.getByTestId("faq-question"));
+    fireEvent.click(screen.getByRole("button", { name: /Strindfjordvegen/ }));
+
+    expect(screen.queryByTestId("travel-mode-header-control")).toBeNull();
+    const restore = screen.getByTestId("panel-peek-restore");
+    fireEvent.click(restore);
+    expect(screen.getByTestId("travel-mode-header-control")).toBeTruthy();
+  });
+
+  it("overskriftsraden har ingen nøstede knapper i noen av de to grenene", () => {
+    const { container } = setup(multiCategory());
+    expect(container.querySelector("button button")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("faq-question"));
+    fireEvent.click(screen.getByRole("button", { name: /Strindfjordvegen/ }));
+    expect(container.querySelector("button button")).toBeNull();
+  });
+
+  it("kategori uten data for valgt modus viser ingen tall — aldri «undefined min»", () => {
+    setup(multiCategory());
+    fireEvent.click(screen.getByTestId("travel-mode-header-control"));
+    fireEvent.click(screen.getByRole("button", { name: /Bil/ }));
+    expect(screen.getByTestId("category-poi-list").textContent).not.toContain("undefined");
+  });
+});
+
+
+
 describe("CategoryPage — FAQ", () => {
   it("rendrer samme FAQ-innhold som desktop for samme kategori", () => {
     setup();

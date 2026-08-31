@@ -58,6 +58,13 @@ export function TravelModeSelector({
   // flaten ser ut som før modusen fantes.
   if (modes.length < 2) return null;
 
+  /* Finnes det i det hele tatt et tall å ta forbehold om? Ikke det samme som
+   * «ble `minutesByMode` sendt inn»: et kallsted kan levere `{}` — da er hver
+   * rad «–», og «alle tider er omtrentlige» ville stått over ingenting. */
+  const hasAnyMinutes =
+    minutesByMode !== undefined &&
+    modes.some((m) => typeof minutesByMode[m] === "number");
+
   if (variant === "segment") {
     return (
       <div
@@ -141,9 +148,14 @@ export function TravelModeSelector({
           </button>
         );
       })}
-      <p className="mt-1 border-t border-black/5 px-2.5 pt-1.5 text-[11.5px] text-stone-400">
-        Alle tider er omtrentlige
-      </p>
+      {/* Forbeholdet gjelder TALLENE, så det rendres bare når det finnes noen.
+          Listeoverskriften i nabolagsflaten åpner panelet uten `minutesByMode`
+          — der er det ingen tider å ta forbehold om. */}
+      {hasAnyMinutes && (
+        <p className="mt-1 border-t border-black/5 px-2.5 pt-1.5 text-[11.5px] text-stone-400">
+          Alle tider er omtrentlige
+        </p>
+      )}
     </div>
   );
 }
