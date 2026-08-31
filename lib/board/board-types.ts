@@ -63,13 +63,46 @@ export interface ViewportRect {
 
 /** Fullt kamera-utsnitt — nok til å gjenopprette et utsnitt EKSAKT, ikke
  *  «omtrent samme sted» (R18). */
-export interface CameraSnapshot {
+/**
+ * Mapbox-stiens positur. `zoom` er den bærende størrelsen der.
+ */
+export interface MapboxCameraSnapshot {
+  engine: "mapbox";
   lng: number;
   lat: number;
   zoom: number;
   bearing: number;
   pitch: number;
 }
+
+/**
+ * Google Maps 3D-stiens positur.
+ *
+ * `gmp-map-3d` har ingen `zoom` — avstanden fra kamera til siktepunkt
+ * (`range`) er størrelsen alt annet regnes fra. En felles form med `zoom` i
+ * ville krevd en konvertering som ikke finnes, og R18 sier «nøyaktig samme
+ * utsnitt»: da må posituren lagres i motorens egne tall.
+ */
+export interface Camera3DSnapshot {
+  engine: "3d";
+  lng: number;
+  lat: number;
+  /** Avstand kamera → siktepunkt i meter (Googles `range`). */
+  rangeM: number;
+  headingDeg: number;
+  tiltDeg: number;
+}
+
+/**
+ * Et lagret utsnitt, merket med motoren som tok det.
+ *
+ * Merkelappen er ikke pynt: brukeren kan bytte mellom 2D og 3D mens en
+ * kategoriside står åpen, og da får `restore` et utsnitt fra den ANDRE motoren.
+ * Uten diskriminatoren ville tallene blitt lest som om de var motorens egne —
+ * en `range` på 900 m tolket som zoom-nivå 900. Med den kan mottakeren se at
+ * utsnittet ikke er dens, og la kameraet stå.
+ */
+export type CameraSnapshot = MapboxCameraSnapshot | Camera3DSnapshot;
 
 /**
  * Kamera-handlingene den monterte kart-motoren tilbyr flatene over seg.
@@ -83,7 +116,8 @@ export interface CameraSnapshot {
 export interface MapCameraApi {
   /** Gjeldende utsnitt, eller null når kartet ikke er klart. */
   snapshot: () => CameraSnapshot | null;
-  /** Gjenoppretter et lagret utsnitt eksakt og UMIDDELBART. */
+  /** Gjenoppretter et lagret utsnitt eksakt og UMIDDELBART. Et utsnitt fra en
+   *  annen motor ignoreres — se {@link CameraSnapshot}. */
   restore: (snapshot: CameraSnapshot) => void;
   /** Rammer inn de nå-synlige markørene sammen med boligen. */
   fitVisible: () => void;

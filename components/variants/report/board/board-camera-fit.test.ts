@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   computeFitBounds,
+  deriveFocusCamera3D,
+  DEFAULT_FOV_DEG,
   rectFromCamera,
   rectFromCorners,
   shouldFitToFilter,
@@ -309,5 +311,204 @@ describe("rectFromCamera (Google Maps 3D)", () => {
     expect(rectFromCamera({ ...EQUATOR, lat: NaN }, SQUARE)).toBeNull();
     expect(rectFromCamera({ ...EQUATOR, fovDeg: NaN }, SQUARE)).toBeNull();
     expect(rectFromCamera(EQUATOR, { ...SQUARE, heightPx: 0 })).toBeNull();
+  });
+});
+
+// ── deriveFocusCamera3D (innramming i 3D) ───────────────────────────────────
+//
+// Testen er en RUNDTUR mot `rectFromCamera`, ikke en pinning av tall: rammen er
+// bare riktig hvis det utsnittet den lander på faktisk inneholder stedene. To
+// hardkodede koordinater ville bestått selv om geometrien var speilvendt.
+
+/** Telefon i portrett — flaten omvisningen står på i det trange tilfellet. */
+const PHONE = { widthPx: 390, heightPx: 844 };
+/** Desktop med sidekolonnen svømmende oppå kartet (2026-08-27-mønsteret). */
+const DESKTOP = { widthPx: 1440, heightPx: 900 };
+
+/** Ligger alle punktene innenfor utsnittet kameraet lander på? */
+function allInsideFrame(
+  points: { lng: number; lat: number }[],
+  viewport: {
+    widthPx: number;
+    heightPx: number;
+    occludedBottomPx: number;
+    occludedLeftPx?: number;
+    overhangRightPx?: number;
+  },
+  headingDeg = 0,
+): boolean {
+  const camera = deriveFocusCamera3D({
+    points,
+    viewport,
+    fovDeg: DEFAULT_FOV_DEG,
+    headingDeg,
+  });
+  if (!camera) return false;
+  const rect = rectFromCamera(
+    {
+      lat: camera.lat,
+      lng: camera.lng,
+      rangeM: camera.rangeM,
+      headingDeg,
+      fovDeg: DEFAULT_FOV_DEG,
+    },
+    viewport,
+  );
+  if (!rect) return false;
+  return points.every(
+    (p) =>
+      p.lat >= rect.south &&
+      p.lat <= rect.north &&
+      p.lng >= rect.west &&
+      p.lng <= rect.east,
+  );
+}
+
+describe("deriveFocusCamera3D", () => {
+  const places = [
+    { lng: 10.398, lat: 63.4322 },
+    { lng: 10.404, lat: 63.4341 },
+    { lng: 10.393, lat: 63.4356 },
+  ];
+
+  it("returnerer null uten punkter (kameraet skal stå)", () => {
+    expect(
+      deriveFocusCamera3D({
+        points: [],
+        viewport: { ...PHONE, occludedBottomPx: 0 },
+        fovDeg: DEFAULT_FOV_DEG,
+        headingDeg: 0,
+      }),
+    ).toBeNull();
+  });
+
+  it("returnerer null når sheeten dekker hele kartet (ingen ærlig ramme finnes)", () => {
+    expect(
+      deriveFocusCamera3D({
+        points: places,
+        viewport: { ...PHONE, occludedBottomPx: PHONE.heightPx },
+        fovDeg: DEFAULT_FOV_DEG,
+        headingDeg: 0,
+      }),
+    ).toBeNull();
+  });
+
+  it("returnerer null når panel + overheng ikke levner noen bredde", () => {
+    expect(
+      deriveFocusCamera3D({
+        points: places,
+        viewport: {
+          ...DESKTOP,
+          occludedBottomPx: 0,
+          occludedLeftPx: DESKTOP.widthPx / 2,
+          overhangRightPx: DESKTOP.widthPx / 2,
+        },
+        fovDeg: DEFAULT_FOV_DEG,
+        headingDeg: 0,
+      }),
+    ).toBeNull();
+  });
+
+  it("uten okklusjon havner alle punktene innenfor utsnittet", () => {
+    expect(allInsideFrame(places, { ...PHONE, occludedBottomPx: 0 })).toBe(true);
+  });
+
+  it("med sheeten over halve flaten havner de fortsatt innenfor det SYNLIGE båndet", () => {
+    expect(allInsideFrame(places, { ...PHONE, occludedBottomPx: 480 })).toBe(
+      true,
+    );
+  });
+
+  it("okklusjonen forskyver senteret bort fra flaten", () => {
+    const frame = (occludedBottomPx: number) =>
+      deriveFocusCamera3D({
+        points: places,
+        viewport: { ...PHONE, occludedBottomPx },
+        fovDeg: DEFAULT_FOV_DEG,
+        headingDeg: 0,
+      })!;
+    // Senteret trekkes SØR for stedene (nord opp), så de havner i den øvre —
+    // synlige — delen av skjermen i stedet for bak flaten brukeren leser i.
+    expect(frame(480).lat).toBeLessThan(frame(0).lat);
+  });
+
+  it("okklusjonen utvider rammen når det er DYBDEN som er trang", () => {
+    // Nord–sør-spredte steder: da er det den okkluderte høyden som binder, ikke
+    // bredden. (Er stedene spredt øst–vest binder bredden i stedet, og rammen
+    // er allerede vid nok — okklusjonen forskyver den bare.)
+    const northSouth = [
+      { lng: 10.398, lat: 63.4305 },
+      { lng: 10.3985, lat: 63.4362 },
+    ];
+    const frame = (occludedBottomPx: number) =>
+      deriveFocusCamera3D({
+        points: northSouth,
+        viewport: { ...PHONE, occludedBottomPx },
+        fovDeg: DEFAULT_FOV_DEG,
+        headingDeg: 0,
+      })!;
+    expect(frame(480).rangeM).toBeGreaterThan(frame(0).rangeM);
+    expect(allInsideFrame(northSouth, { ...PHONE, occludedBottomPx: 480 })).toBe(
+      true,
+    );
+  });
+
+  it("sidekolonnen flytter stedene ut av panelet, ikke bare zoomer ut", () => {
+    // Panelet ligger til venstre, så det synlige kartet er den HØYRE delen av
+    // lerretet. `center` er midt på hele elementet — også den delen som ligger
+    // bak panelet — så for at stedene skal havne i den høyre stripen må senteret
+    // trekkes VESTOVER, ikke østover. Uten dette leddet ville rammen bare zoomet
+    // ut rundt et senter som fortsatt lå bak panelet.
+    const frame = (occludedLeftPx: number) =>
+      deriveFocusCamera3D({
+        points: places,
+        viewport: { ...DESKTOP, occludedBottomPx: 0, occludedLeftPx },
+        fovDeg: DEFAULT_FOV_DEG,
+        headingDeg: 0,
+      })!;
+    expect(frame(480).lng).toBeLessThan(frame(0).lng);
+  });
+
+  it("stedene havner i det synlige båndet med panel OG overheng", () => {
+    expect(
+      allInsideFrame(places, {
+        ...DESKTOP,
+        occludedBottomPx: 0,
+        occludedLeftPx: 480,
+        overhangRightPx: 120,
+      }),
+    ).toBe(true);
+  });
+
+  it("ett sted kollapser ikke: rammen får en range som holder kameraet over hustakene", () => {
+    const camera = deriveFocusCamera3D({
+      points: [places[0]],
+      viewport: { ...PHONE, occludedBottomPx: 380 },
+      fovDeg: DEFAULT_FOV_DEG,
+      headingDeg: 0,
+    })!;
+    expect(camera.rangeM).toBeGreaterThan(300);
+    expect(allInsideFrame([places[0]], { ...PHONE, occludedBottomPx: 380 })).toBe(
+      true,
+    );
+  });
+
+  it("rammen følger heading: samme punkter, rotert blikk → annet kamerasenter", () => {
+    const north = deriveFocusCamera3D({
+      points: places,
+      viewport: { ...PHONE, occludedBottomPx: 380 },
+      fovDeg: DEFAULT_FOV_DEG,
+      headingDeg: 0,
+    })!;
+    const east = deriveFocusCamera3D({
+      points: places,
+      viewport: { ...PHONE, occludedBottomPx: 380 },
+      fovDeg: DEFAULT_FOV_DEG,
+      headingDeg: 90,
+    })!;
+    expect(east.lng).not.toBeCloseTo(north.lng, 4);
+    expect(
+      allInsideFrame(places, { ...PHONE, occludedBottomPx: 380 }, 90),
+    ).toBe(true);
   });
 });
