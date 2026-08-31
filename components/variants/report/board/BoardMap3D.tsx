@@ -24,7 +24,11 @@ import { useBoard3DCamera } from "./use-board-3d-camera";
 import type { FlyCapableMap } from "./board-3d-camera-director";
 import { use3DViewportPublish } from "./use-3d-viewport-publish";
 import { useMapPinClick } from "./use-map-pin-click";
-import { rectFromCamera } from "./board-camera-fit";
+import {
+  DEFAULT_FOV_DEG,
+  deriveFocusCamera3D,
+  rectFromCamera,
+} from "./board-camera-fit";
 import { deriveCategoryCameraConfig } from "./board-category-camera";
 import { readBoardUrlFlagsFromWindow } from "./board-url-flags";
 import { getEstablishingShot } from "./board-establishing-shots";
@@ -58,14 +62,17 @@ interface Map3DPoseLike {
   fov?: number | null;
 }
 
-/** Googles dokumenterte default for `fov` når den ikke er satt eksplisitt. */
-const DEFAULT_FOV_DEG = 35;
-
 /** Panoreringen ved et trykk i en stedsrad. Samme varighet som 2D-stiens
  *  `holdFrame`-easeTo, så de to motorene beveger seg i samme tempo. «Rolig» er
  *  hele poenget: bevegelsen skal leses som at kartet følger deg, ikke som et
  *  hopp du må orientere deg etter på nytt. */
 const PAN_MS = 900;
+
+/** Innramming av markørsettet. Speiler 2D-stiens `fitToVisiblePois`. */
+const FIT_MS = 800;
+/** Innramming av et gitt sett steder (omvisningens stopp). Speiler
+ *  `fitCoordinates` i 2D-stien. */
+const FIT_COORDS_MS = 1100;
 
 // RouteLayer3D lazy-loaded — samme bundling-strategi som ReportThemeSection
 // (tunge Google Maps-imports holdes ute av 2D-bundlen).
@@ -385,12 +392,14 @@ export function BoardMap3D({
   // Google-motoren, som er default på rapport-boards.
   //
   // Her registreres derfor 3D-halvdelen, gated på `isFront` slik at de to aldri
-  // skriver samtidig. Bare `flyToPoint` er koblet: det er den ENE bevegelsen
-  // flaten ber om (rad → rolig panorering). `fitVisible`/`fitCoordinates` krever
-  // en invers av `rectFromCamera` (bounds → range) som ikke finnes ennå, og å
-  // gjette den ville satt Google-kameraet i bevegelse på hvert stopp-bytte og ved
-  // hver kategoriside-push — en større endring i føleisen enn det som er bedt om.
-  // De står derfor som eksplisitte no-ops, ikke som skjulte hull.
+  // skriver samtidig.
+  //
+  // Innrammingen (`fitVisible`/`fitCoordinates`) sto lenge som eksplisitte
+  // no-ops fordi `gmp-map-3d` ikke har noen `fitBounds`, og fordi den inversen
+  // Mapbox får gratis — fra en ramme til en avstand — måtte regnes for hånd.
+  // `deriveFocusCamera3D` er den utregningen, og den bruker NØYAKTIG samme
+  // geometri som `rectFromCamera` leser utsnittet med. Innrammingen og
+  // avlesningen er derfor én modell, ikke to som må holdes i takt.
   const paddingBottomRef = useRef(mapPaddingBottom);
   paddingBottomRef.current = mapPaddingBottom;
   const paddingLeftRef = useRef(mapPaddingLeft);
@@ -399,13 +408,112 @@ export function BoardMap3D({
   overhangRightRef.current = overhangRightPx;
   const mapInstanceRef = useRef<Map3DInstance | null>(null);
   mapInstanceRef.current = map3dInstance;
+  // Markørsettet og boligen bak samme ref-triks som 2D-stien bruker: `fitVisible`
+  // rammer «det som står på kartet nå», og det endrer seg med hvert kategori- og
+  // stoppbytte.
+  const markerPOIsRef = useRef(markerPOIs);
+  markerPOIsRef.current = markerPOIs;
+  const homeRef = useRef(data.home.coordinates);
+  homeRef.current = data.home.coordinates;
+
+  /** Felles innramming for de to fit-metodene: regn posituren, og fly dit.
+   *  Ligger utenfor `cameraApi` så begge kan dele den uten å bli ustabile. */
+  const flyToFrame = useCallback(
+    (points: readonly { lng: number; lat: number }[], durationMs: number) => {
+      const map = mapInstanceRef.current as
+        | (FlyCapableMap & Map3DPoseLike)
+        | null;
+      if (!map?.flyCameraTo) return;
+      const el = map as unknown as HTMLElement;
+      const box = el.getBoundingClientRect();
+      // Boligen er alltid med, som i 2D-stien: uten den kollapser rammen til ett
+      // punkt når settet er lite, og leseren mister forankringen til hvor hun bor.
+      const camera = deriveFocusCamera3D({
+        points: [...points, homeRef.current],
+        viewport: {
+          widthPx: box.width,
+          heightPx: box.height,
+          occludedBottomPx: paddingBottomRef.current,
+          occludedLeftPx: paddingLeftRef.current,
+          overhangRightPx: overhangRightRef.current,
+        },
+        fovDeg: map.fov ?? DEFAULT_FOV_DEG,
+        // Rammen regnes i den retningen kameraet FAKTISK ser. Regnet vi den mot
+        // nord ville en roterende drone-orbit fått stedene til å gli ut av
+        // bildet i det innrammingen landet.
+        headingDeg: map.heading ?? 0,
+      });
+      // null = degenerert flate (sheeten dekker alt, eller ingen punkter).
+      // Kameraet skal da stå — en gjetning her er verre enn ingen bevegelse.
+      if (!camera) return;
+      map.flyCameraTo({
+        endCamera: {
+          center: { lat: camera.lat, lng: camera.lng, altitude: 0 },
+          range: camera.rangeM,
+          // Tilt og heading bæres videre: innrammingen er en RAMME, ikke en ny
+          // positur. Bytter vi blikkvinkelen samtidig, leser det som at kartet
+          // hoppet til et annet sted.
+          tilt: map.tilt ?? 0,
+          heading: map.heading ?? 0,
+        },
+        durationMillis: durationMs,
+      });
+    },
+    [],
+  );
 
   const cameraApi = useMemo<MapCameraApi>(
     () => ({
-      snapshot: () => null,
-      restore: () => {},
-      fitVisible: () => {},
-      fitCoordinates: () => {},
+      snapshot: () => {
+        const map = mapInstanceRef.current as Map3DPoseLike | null;
+        const center = map?.center;
+        const range = map?.range;
+        // `> 0`: Google deriverer feltene, og rett etter en umiddelbar flytur er
+        // `range` målt som 0 i en kort periode. En positur uten avstand er ikke
+        // lest ennå — og et utsnitt vi ikke kan gjenopprette er verre enn ingen.
+        if (!center || typeof range !== "number" || !(range > 0)) return null;
+        return {
+          engine: "3d" as const,
+          lng: center.lng,
+          lat: center.lat,
+          rangeM: range,
+          headingDeg: map?.heading ?? 0,
+          tiltDeg: map?.tilt ?? 0,
+        };
+      },
+      restore: (snapshot) => {
+        // Utsnittet ble tatt på Mapbox-stien (motoren ble byttet mens
+        // kategorisiden sto åpen). Tallene betyr noe annet der — se
+        // `CameraSnapshot` — så kameraet skal stå.
+        if (snapshot.engine !== "3d") return;
+        const map = mapInstanceRef.current as
+          | (FlyCapableMap & Map3DPoseLike)
+          | null;
+        if (!map?.flyCameraTo) return;
+        // `durationMillis: 0`, ikke en animasjon: gjenopprettingen må være
+        // SYNKRON av samme grunn som `jumpTo` er det i 2D-stien — nabolagslista
+        // remonteres i neste commit og publiserer et utsnitt fra der kameraet
+        // står. Leste den en halvferdig flytur, ble lista scopet til et utsnitt
+        // brukeren aldri så.
+        map.flyCameraTo({
+          endCamera: {
+            center: { lat: snapshot.lat, lng: snapshot.lng, altitude: 0 },
+            range: snapshot.rangeM,
+            tilt: snapshot.tiltDeg,
+            heading: snapshot.headingDeg,
+          },
+          durationMillis: 0,
+        });
+      },
+      fitVisible: () => {
+        flyToFrame(
+          markerPOIsRef.current.map((p) => p.coordinates),
+          FIT_MS,
+        );
+      },
+      fitCoordinates: (coords, opts) => {
+        flyToFrame(coords, opts?.durationMs ?? FIT_COORDS_MS);
+      },
       flyToPoint: (coord, opts) => {
         const map = mapInstanceRef.current as
           | (FlyCapableMap & Map3DPoseLike)

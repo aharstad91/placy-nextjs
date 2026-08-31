@@ -34,6 +34,7 @@ import { BoardPOIMiniPopup } from "./BoardPOIMiniPopup";
 import { BoardMap3D } from "./BoardMap3D";
 import type { Map3DInstance } from "@/components/map/map-view-3d";
 import type { TravelMode } from "@/lib/types";
+import type { CameraSnapshot } from "@/lib/board/board-types";
 import type { FlyCapableMap } from "./board-3d-camera-director";
 import { useBoardPopupMode } from "./use-popup-mode";
 import {
@@ -677,6 +678,7 @@ export function BoardMap({
         if (!map) return null;
         const center = map.getCenter();
         return {
+          engine: "mapbox" as const,
           lng: center.lng,
           lat: center.lat,
           zoom: map.getZoom(),
@@ -689,13 +691,11 @@ export function BoardMap({
       // nytt utsnitt fra kameraets nåværende posisjon — leste den en
       // halvferdig animasjon, ville lista blitt scopet til et utsnitt brukeren
       // aldri så. «Nøyaktig samme utsnitt» (R18) betyr dessuten nøyaktig.
-      restore: (s: {
-        lng: number;
-        lat: number;
-        zoom: number;
-        bearing: number;
-        pitch: number;
-      }) => {
+      restore: (s: CameraSnapshot) => {
+        // Utsnittet ble tatt på Google-motoren og bæres i dens tall (`range`,
+        // ikke `zoom`). Motoren ble byttet mens siden sto åpen — da er det
+        // ingenting her å gjenopprette, og kameraet skal stå.
+        if (s.engine !== "mapbox") return;
         mapRef.current?.getMap().jumpTo({
           center: [s.lng, s.lat],
           zoom: s.zoom,

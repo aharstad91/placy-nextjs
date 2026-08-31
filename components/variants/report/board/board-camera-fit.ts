@@ -272,3 +272,173 @@ export function rectFromCamera(
   }
   return rectFromCorners(corners);
 }
+
+// ── Innramming for Google Maps 3D ───────────────────────────────────────────
+
+/** Googles dokumenterte default for `fov` når den ikke er satt eksplisitt.
+ *  Delt med `use-3d-viewport-publish` — samme kamera, samme antakelse. */
+export const DEFAULT_FOV_DEG = 35;
+
+/** Luft rundt punktene, som andel av deres egen utstrekning. Speiler
+ *  `FIT_EDGE_PADDING_PX` i 2D-stien: et sted helt inntil kanten leser som at
+ *  det ligger utenfor. */
+const FOCUS_PADDING_FACTOR = 1.2;
+/** Gulv for luften, i meter. Et stopp med ETT sted har null utstrekning, og en
+ *  ren prosentmargin ville da vært null — kameraet ville stått i bakken. */
+const FOCUS_MIN_MARGIN_M = 150;
+/**
+ * Klamping av `range`. Gulvet holder kameraet over hustakene.
+ *
+ * Taket er bevisst høyt. Med vertikal `fov` på 35° og en telefon i portrett er
+ * det BREDDEN som koster: halv bredde = range · tan(fov/2) · (W/H), og på 390 ×
+ * 844 px er den siste faktoren 0,46 — et stopp med et halvt kilometer mellom
+ * ytterpunktene øst–vest krever da flere kilometer range. Et lavt tak ville
+ * klippet stedene bort i stedet for å ramme dem, og 2D-stien (`fitBounds` med
+ * `maxZoom`) zoomer ut så langt den må. Taket er derfor der for ekstremtilfellet,
+ * ikke for normalbruk.
+ */
+const FOCUS_RANGE_MIN_M = 380;
+const FOCUS_RANGE_MAX_M = 4000;
+
+/** Kamera-posituren en innramming lander på (heading/tilt eies av kalleren). */
+export interface FocusCamera3D {
+  lat: number;
+  lng: number;
+  rangeM: number;
+}
+
+export interface FocusCamera3DInput {
+  /** Punktene som skal ligge i det IKKE-okkluderte båndet. */
+  points: readonly LngLat[];
+  viewport: Viewport3DMetrics;
+  fovDeg: number;
+  /** Kompass-retningen rammen regnes i. Omvisningen bruker 0 (nord opp). */
+  headingDeg: number;
+}
+
+/**
+ * Inversen av {@link rectFromCamera}: gitt punktene som SKAL være i bildet,
+ * hvilket kamerasenter og hvilken `range` gir det?
+ *
+ * `gmp-map-3d` har ingen `fitBounds`. Mapbox-stien kan be om en ramme med
+ * padding og få kartet til å regne; her må vi regne selv. Vi bruker nøyaktig den
+ * samme geometrien avlesningen bruker — halv dybde = range · tan(fov/2), halv
+ * bredde = halv dybde · sideforhold, kameraet lest som om det så rett ned — så
+ * det som rammes inn og det som senere leses ut er samme modell, ikke to.
+ *
+ * Okkluderingen løses i BEGGE retninger, som den må: rammen må både være VIDERE
+ * (bare en andel av flaten er synlig) og FORSKJØVET (det synlige båndet ligger
+ * ikke midt i bildet). Bare å zoome ut ville lagt stedene rett bak flatene
+ * brukeren leser i.
+ *
+ * De tre okkluderings-leddene er de samme tre `rectFromCamera` trekker fra, og
+ * må være det — ellers rammer vi inn mot ett bilde og leser av et annet:
+ *
+ *  - `occludedBottomPx` (sheeten på mobil) spiser nedenfra langs blikket. Det
+ *    synlige båndet får halv dybde `halvDybde · v` og midtpunkt
+ *    `halvDybde · (1 − v)` foran kameraet.
+ *  - `occludedLeftPx` (sidekolonnen på desktop) og `overhangRightPx` (stripen
+ *    Google-elementet strekker forbi vindukanten) spiser på tvers. Båndet får
+ *    halv bredde `halvBredde · (1 − f − r)` og midtpunkt `halvBredde · (f − r)`
+ *    — altså forskjøvet mot HØYRE når panelet står til venstre, som er
+ *    nøyaktig der det synlige kartet ligger.
+ *
+ * Returnerer null for degenerert input — ingen punkter, en flate som dekker
+ * hele kartet, eller okkludering som ikke levner noen bredde. Kalleren skal da
+ * la kameraet stå.
+ */
+export function deriveFocusCamera3D(
+  input: FocusCamera3DInput,
+): FocusCamera3D | null {
+  const { points, viewport, fovDeg, headingDeg } = input;
+  const { widthPx, heightPx, occludedBottomPx } = viewport;
+  if (points.length === 0) return null;
+  if (!Number.isFinite(fovDeg) || fovDeg <= 0) return null;
+  if (widthPx <= 0 || heightPx <= 0) return null;
+
+  const visibleFraction = Math.min(1, (heightPx - occludedBottomPx) / heightPx);
+  if (visibleFraction <= 0) return null;
+
+  // Samme klamping som `rectFromCamera`: en andel over 0,5 ville snudd båndet,
+  // og en degenerert avlesning skal bli et smalt utsnitt, ikke et speilvendt.
+  const leftFraction = Math.min(
+    Math.max((viewport.occludedLeftPx ?? 0) / widthPx, 0),
+    0.5,
+  );
+  const rightFraction = Math.min(
+    Math.max((viewport.overhangRightPx ?? 0) / widthPx, 0),
+    0.5,
+  );
+  /** Andelen av halv bredde som faktisk er synlig. 0 → panel + overheng dekker
+   *  alt; da finnes ingen ærlig ramme og kameraet skal stå. */
+  const acrossFraction = 1 - leftFraction - rightFraction;
+  if (acrossFraction <= 0) return null;
+
+  let latSum = 0;
+  let lngSum = 0;
+  for (const p of points) {
+    if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return null;
+    latSum += p.lat;
+    lngSum += p.lng;
+  }
+  const originLat = latSum / points.length;
+  const originLng = lngSum / points.length;
+  const metersPerDegLng =
+    METERS_PER_DEG_LAT * Math.cos((originLat * Math.PI) / 180);
+  if (!Number.isFinite(metersPerDegLng) || metersPerDegLng === 0) return null;
+
+  // Punktene inn i kameraets eget aksekors: `forward` er blikkretningen,
+  // `right` står vinkelrett på den. Invers av projeksjonen i `rectFromCamera`.
+  const h = (headingDeg * Math.PI) / 180;
+  const cosH = Math.cos(h);
+  const sinH = Math.sin(h);
+  let minF = Infinity;
+  let maxF = -Infinity;
+  let minR = Infinity;
+  let maxR = -Infinity;
+  for (const p of points) {
+    const east = (p.lng - originLng) * metersPerDegLng;
+    const north = (p.lat - originLat) * METERS_PER_DEG_LAT;
+    const forward = east * sinH + north * cosH;
+    const right = east * cosH - north * sinH;
+    if (forward < minF) minF = forward;
+    if (forward > maxF) maxF = forward;
+    if (right < minR) minR = right;
+    if (right > maxR) maxR = right;
+  }
+
+  const halfSpanF = (maxF - minF) / 2;
+  const halfSpanR = (maxR - minR) / 2;
+  const needF = halfSpanF * FOCUS_PADDING_FACTOR + FOCUS_MIN_MARGIN_M;
+  const needR = halfSpanR * FOCUS_PADDING_FACTOR + FOCUS_MIN_MARGIN_M;
+  // Dybden må romme `needF` innenfor det synlige båndet (halv dybde · v), og
+  // bredden må romme `needR` innenfor båndets halve bredde
+  // (halv dybde · W/H · acrossFraction).
+  const halfDepthNeeded = Math.max(
+    needF / visibleFraction,
+    (needR * heightPx) / (widthPx * acrossFraction),
+  );
+
+  const tanHalfFov = Math.tan((fovDeg * Math.PI) / 360);
+  const rangeM = Math.max(
+    FOCUS_RANGE_MIN_M,
+    Math.min(FOCUS_RANGE_MAX_M, halfDepthNeeded / tanHalfFov),
+  );
+  // Klampingen kan ha flyttet dybden, og forskyvningene under må regnes på den
+  // dybden kameraet FAKTISK får — ikke på den vi ba om.
+  const halfDepth = rangeM * tanHalfFov;
+  const halfWidth = halfDepth * (widthPx / heightPx);
+
+  // Punktenes midtpunkt skal ligge i det synlige båndets midtpunkt, så kameraet
+  // trekkes like langt motsatt vei — langs blikket og på tvers av det.
+  const centerF = (maxF + minF) / 2 - halfDepth * (1 - visibleFraction);
+  const centerR =
+    (maxR + minR) / 2 - halfWidth * (leftFraction - rightFraction);
+  const east = centerR * cosH + centerF * sinH;
+  const north = -centerR * sinH + centerF * cosH;
+  return {
+    lat: originLat + north / METERS_PER_DEG_LAT,
+    lng: originLng + east / metersPerDegLng,
+    rangeM,
+  };
+}
