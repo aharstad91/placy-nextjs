@@ -6,6 +6,75 @@
 
 ---
 
+## 2026-09-01 — WORKTREE-RYDDING SOM BLE EN LEVERANSE: KAMERA-INVERSEN FOR GOOGLE-MOTOREN, HENTET UT AV EN DØENDE BRANCH
+
+**Kontekst:** Andreas med et Finder-skjermbilde: *«vi har mange worktrees nå, hva er status på dem?»* Fem stykker. Svaret viste seg å være at to var ferdige, én var levende, og to var utdaterte — men at den ene av de utdaterte hadde 817 linjer ukommitert arbeid liggende som ingen visste om.
+
+### 1. Statusen, målt
+
+| Worktree | Branch | Status |
+|---|---|---|
+| `placy-anker` | `feat/kjopesenter-anker` | 0 unike commits, 18 bak main → **fullt merget** |
+| `placy-sheet-gest` | `feat/sheet-gesture` | 0 unike, 30 bak → **fullt merget** |
+| `placy-poi-sidebar` | `feat/poi-i-sidebar` | 2 unike (28. aug), rent tre → **levende arbeid** |
+| `placy-omvisning` | `feat/omvisning-nabolagsflaten` | 18 unike, 29 bak, **14 ukommiterte filer** |
+| `placy-reisemate` | `feat/reisemate-enhet-fluid-sheet` | 11 unike, ancestor av omvisning |
+
+De to ferdige er fjernet og brancene slettet. Det døde `/private/tmp/.../placy-premerge` ble prunet.
+
+### 2. Det ukommiterte arbeidet var svaret på en kjent blokker
+
+`placy-omvisning` hadde 817 linjer liggende i arbeidstreet fra 26.–27. august. Kjernen: `deriveFocusCamera3D` — inversen av `rectFromCamera`.
+
+Verdien lot seg lese rett ut av main sin egen kode. `BoardMap3D.tsx` hadde denne kommentaren over kamera-API-et: *«`fitVisible`/`fitCoordinates` krever en invers av `rectFromCamera` (bounds → range) som ikke finnes ennå, og å gjette den ville satt Google-kameraet i bevegelse på hvert stopp-bytte».* Det ukommiterte arbeidet ER den inversen — nøyaktig den kjente blokkeren «omvisningens kamera er no-op på Google-motoren».
+
+Arbeidet ble først sikret som `230bfe1` på sin egen branch, med `--no-verify` og en ærlig commit-melding: worktreet har ingen `node_modules`, så verken vitest, tsc, eslint eller build hadde kjørt mot koden.
+
+### 3. En rett merge var feil handling, og det lot seg måle
+
+`git merge-tree` mot main: 5 konfliktfiler. Men konfliktene var ikke problemet. Det mergede treet inneholdt **to komplette, konkurrerende omvisninger samtidig** — `neighbourhood/Walkthrough*` (8 filer + `lib/board/walkthrough.ts`) ved siden av `story/` (8 filer), med `NeighbourhoodSurface.tsx` som vertskap for begge. Branchen tok av 26. august; `story/`-kolonnen erstattet den 27.–28.
+
+Valget ble derfor: **land innholdet, ikke commitene.** Alt som var ekte nytt, ingenting som var erstattet.
+
+### 4. Det som landet — kamera-inversen
+
+`gmp-map-3d` har ingen `fitBounds`. Mapbox kan be om en ramme med padding og få kartet til å regne; på Google-motoren må vi regne selv. `deriveFocusCamera3D` bruker nøyaktig samme geometri som avlesningen — halv dybde = `range · tan(fov/2)`, kameraet lest som om det så rett ned — så innramming og avlesning er én modell, ikke to som må holdes i takt.
+
+Branchens versjon kjente bare sheeten nedenfra. Main hadde flyttet seg etterpå og fått to ledd til (`occludedLeftPx` for desktop-sidekolonnen, `overhangRightPx` for stripen elementet strekker forbi vindukanten), så utregningen måtte utvides før den kunne kobles på. Hvert ledd gjør to ting: rammen må både bli VIDERE og FORSKJØVET. Bare å zoome ut ville lagt stedene rett bak flatene brukeren leser i.
+
+**Funn underveis, fra en test som feilet:** med panelet til venstre flytter kamerasenteret seg VESTOVER, ikke østover. `center` er midt på hele elementet — også den delen som ligger bak panelet — så for at stedene skal havne i den synlige høyre stripen må senteret trekkes motsatt vei. Min første testpåstand var speilvendt. Testene er derfor skrevet som RUNDTUR mot `rectFromCamera` og ikke som pinning av koordinater: en speilvendt geometri ville bestått en tall-sammenligning.
+
+Alle fire kamera-metodene er nå ekte på 3D-stien, ikke bare `flyToPoint`. `snapshot`/`restore` krevde at `CameraSnapshot` ble en union merket med motoren som tok utsnittet — brukeren kan bytte 2D/3D mens en kategoriside står åpen, og uten merkelappen ville en `range` på 900 m blitt lest som zoom-nivå 900.
+
+**Merk at dette er en merkbar oppførselsendring:** et kategori-trykk flytter nå Google-kameraet der det før sto helt stille. Riktig, og likt Mapbox — men ikke sett på en telefon ennå.
+
+### 5. Det som landet — reisemåte som enhet, og tre defekter den avdekket
+
+`TravelModeHeaderControl` fra reisemate-branchen. Lista sa «3 min» uten å si 3 min MED HVA: kart-kontrollen og rute-chipene eide hver sin flate, men tallene leses i sheeten, og der fantes ingen kontroll. Én kontroll over hele lista, ikke én per kategorikort — sheeten stabler ett kort per kategori.
+
+Tre defekter fulgte med, alle fortsatt levende i main:
+
+- `CategoryPage` kalte `buildNeighbourhoodList` uten `travelMode` → falt tilbake på funksjonens default «walk». Tallene og undertittelen viste gangtid uansett hvilken modus boardet sto i.
+- Hintet over lista påstod «med gangtid hjemmefra» uansett aktiv modus — samme defekt i prosa.
+- `TravelModeSelector` viste «Alle tider er omtrentlige» også når kallstedet ikke ga noen tider. Gaten spør nå om det finnes et TALL, ikke om objektet ble sendt inn: `{}` er også ingen tider.
+
+To avvik fra branchen, begge fordi main har flyttet seg: `bg-white/97` skrevet om til `/95` (klassen ble aldri en regel — `1af0b28`, og vakten i `tailwind-opacity-scale.test.ts` ville fanget den), og panelets høydemåling peker på `category-panel` i stedet for `data-panel-surface`, som aldri ble satt på noen flate i det hele tatt.
+
+### 6. Bevisst utelatt
+
+`HighlightsDisclosure` fra reisemate-branchen: main har bygd en generell `Disclosure`-familie (`DisclosureChevron`/`DisclosureList`/`DisclosurePanel`) og bruker den i `StoryCard`. Branchens variant er erstattet, ikke manglende. Hele `Walkthrough*`-omvisningen: erstattet av `story/`.
+
+**Verifisering:** 3 485 tester grønne (11 nye i `board-camera-fit`, 10 i `TravelModeHeaderControl`, 6 i `CategoryPage`), 0 lint-errors, `npm run build` grønn. Merget til main som `2099ad2` (11 filer, +1 025 linjer). **Ikke verifisert i nettleser** — og det er nettopp kamera-oppførselen som trenger det.
+
+**Gjenstår:**
+- Kamera-endringen må kjennes på en ekte telefon på et 3D-board, ikke bare leses i tester.
+- `fitCoordinates` har fortsatt ingen kaller på NOEN av motorene — den er del av grensesnittet og nå implementert begge steder, men omvisningen bruker `flyToPoint`-med-`holdFrame` i stedet.
+- Main ligger 21 commits foran `origin/main`, upushet.
+- `placy-omvisning` og `placy-reisemate` står igjen som worktrees. Innholdet deres er landet, men brancene beholdes til noen har sett kamera-endringen i drift.
+- `placy-poi-sidebar` er uferdig arbeid Andreas eksplisitt vil videre på.
+
+---
+
 ## 2026-08-28 (kveld) — IDRETTSANLEGGET ER ETT STED: ANKERET BLE EN FAMILIE, OG GATE 1 VISTE SEG Å VÆRE TOM
 
 **Kontekst:** Fire skjermbilder fra Andreas — Ranheim, Charlottenlund, Leangen og Lade — med spørsmålet *«hva ser du her? ser du noen mønster?»*. Mønsteret var det samme på alle fire: ett idrettsanlegg rendret som 8–13 pinner. Ingen annen kategori gjør det. REMA, bakeriet, tannklinikken og legesenteret sto 1:1 med virkeligheten på de samme boardene.
