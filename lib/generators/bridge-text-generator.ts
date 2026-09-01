@@ -142,18 +142,25 @@ function barnOppvekst(pois: POI[], c: Coordinates, exclude: Set<string>): string
 
   const parts: string[] = [];
 
+  // Tallet må være de barnehagene som FAKTISK ligger i gangavstand, ikke alle i
+  // temaet. `bhg` er hele importen innenfor discovery-radien (3 km i Trondheim),
+  // og på Wesselsløkka ga det setningen «med 64 barnehager i gangavstand» — en
+  // påstand boardet ikke kan innfri, i et produkt som selges på at det navngir
+  // riktig. 15 minutter er samme gangavstands-definisjon resten av fila bruker.
+  const bhgWalk = countWithin(bhg, c, 15);
+
   // Sentence 1: barnevennlighet + lekeplass/barnehage character
-  if (lek[0] && bhg.length > 2) {
+  if (lek[0] && bhgWalk > 2) {
     parts.push(
-      `Et trygt og barnevennlig nabolag med ${bhg.length} barnehager i gangavstand og lekeplass ved ${clean(lek[0])}.`,
+      `Et trygt og barnevennlig nabolag med ${bhgWalk} barnehager i gangavstand og lekeplass ved ${clean(lek[0])}.`,
     );
   } else if (lek[0]) {
     parts.push(
       `Rolige omgivelser der barna kan leke trygt — ${clean(lek[0])} ${prox(lek[0], c)}.`,
     );
-  } else if (bhg.length > 2) {
+  } else if (bhgWalk > 2) {
     parts.push(
-      `Et barnevennlig område med ${bhg.length} barnehager i nabolaget.`,
+      `Et barnevennlig område med ${bhgWalk} barnehager i nabolaget.`,
     );
   } else {
     parts.push("Et rolig og barnevennlig nabolag.");
@@ -201,8 +208,14 @@ function hverdagsliv(pois: POI[], c: Coordinates, exclude: Set<string>): string 
       }
     }
   } else if (butikker.length >= 2) {
+    // Avstanden står i `prox()` alene. Sto den også som et fast ledd på slutten,
+    // kolliderte de to hver gang nærmeste butikk lå under tre minutter — da
+    // returnerer `prox()` nettopp «i gangavstand», og setningen ble «SUMART
+    // Dagligvare og Bunnpris Angelltrøa i gangavstand gir godt utvalg i
+    // gangavstand» (Wesselsløkka, 181 m). Kollisjonen traff altså bare boardene
+    // med den beste geometrien.
     parts.push(
-      `${clean(butikker[0])} og ${clean(butikker[1])} ${prox(butikker[0], c)} gir godt utvalg i gangavstand.`,
+      `${clean(butikker[0])} og ${clean(butikker[1])} ${prox(butikker[0], c)} gir godt utvalg.`,
     );
     const walkable = countWithin(pois, c, 15);
     if (walkable >= 5) {

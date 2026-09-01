@@ -199,6 +199,18 @@ describe("kuratert vs. ukuratert", () => {
     expect(storyPickTitle(category([poi("a")]))).toBe("Nærmest hjemmefra");
   });
 
+  it("`generated`-flagget teller som maskinens utvalg, selv med highlights", () => {
+    // Regresjon (Wesselsløkka, 2026-09-01): et nivå-1-board FÅR alltid
+    // highlights — `pickGeneratedHighlights` fyller dem. `storyIsCurated` så
+    // bare på lengden, så maskinens tre punkter sto under «Verdt å merke seg»,
+    // som er løftet om et menneskes utvalg. Flagget fantes allerede; det ble
+    // bare ikke lest.
+    const generated = category([poi("a")], [{ id: "a" }]);
+    generated.editorial = { ...generated.editorial!, generated: true };
+    expect(storyIsCurated(generated)).toBe(false);
+    expect(storyPickTitle(generated)).toBe("Nærmest hjemmefra");
+  });
+
   it("brikken arver kuratorens identitet, ellers kategoriens", () => {
     const p = poi("a");
     const curated = category(

@@ -147,6 +147,7 @@ export function storyPicks(
 /** Er stoppets utvalg et menneskes? Skillet mellom en åpen og en ferdig
  *  kuratert versjon ligger her — ikke i OM omvisningen finnes. */
 export const storyIsCurated = (category: BoardCategory): boolean =>
+  category.editorial?.generated !== true &&
   (category.editorial?.highlights ?? []).length > 0;
 
 /** Overskriften over utvalget. «Nærmest hjemmefra» når ingen har anbefalt noe:

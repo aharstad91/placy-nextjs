@@ -292,6 +292,26 @@ describe("adaptBoardData", () => {
       expect(data.categories[0].editorial?.generated).toBe(true);
     });
 
+    it("genererte highlights er de NÆRMESTE, ikke de høyest score-rangerte", () => {
+      // Regresjon (Wesselsløkka, 2026-09-01): uten tier-1-extractor falt
+      // utvelgelsen til `theme.topRanked` — score-rangert, uten avstandsledd. På
+      // et ekte board ga det «Kiropraktor … 20 min» og «Geo Seabed Instruments
+      // AS» øverst under Hverdagsliv, mens dagligvaren 181 m unna ikke var med.
+      // `topRanked` er her satt i MOTSATT rekkefølge av avstanden, så testen
+      // faller hvis noen kobler den inn igjen.
+      const near = makePOI("naer", { coordinates: { lat: 63.4005, lng: 10.4005 } });
+      const mid = makePOI("mid", { coordinates: { lat: 63.404, lng: 10.404 } });
+      const far = makePOI("fjern", { coordinates: { lat: 63.42, lng: 10.42 } });
+      const theme = makeTheme("x", [far, mid, near], {
+        topRanked: [far, mid, near],
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].editorial?.generated).toBe(true);
+      expect(
+        data.categories[0].editorial?.highlights.map((h) => h.id),
+      ).toEqual(["naer", "mid", "fjern"]);
+    });
+
     it("genererte highlights capper på 3 (speiler arve-stegets MAX_HIGHLIGHTS)", () => {
       const pois = ["p1", "p2", "p3", "p4", "p5"].map((id) => makePOI(id));
       const data = adaptBoardData(makeReportData([makeTheme("x", pois)]));

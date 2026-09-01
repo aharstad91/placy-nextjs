@@ -89,3 +89,63 @@ describe("source purity (template-based, build-time only)", () => {
     expect(src).not.toMatch(/export\s+(const|default)?\s*GENERATORS\b/);
   });
 });
+
+describe("generateBridgeText — «i gangavstand» står bare én gang", () => {
+  // Regresjon (Wesselsløkka, 2026-09-01): hverdagsliv-templaten interpolerte
+  // `prox()` OG hadde «i gangavstand» som fast ledd på slutten. Under tre
+  // minutter returnerer `prox()` nettopp den frasen, så setningen ble «SUMART
+  // Dagligvare og Bunnpris Angelltrøa i gangavstand gir godt utvalg i
+  // gangavstand». Kollisjonen traff bare boards der nærmeste butikk lå tettest
+  // på — altså den beste geometrien fikk den dårligste setningen.
+  it("dobler ikke frasen når nærmeste butikk ligger under tre minutter", () => {
+    const text = generateBridgeText(
+      "hverdagsliv",
+      [
+        // ~120 m fra CENTER → prox() gir «i gangavstand»
+        poi("s1", "SUMART Dagligvare", "supermarket", 63.4309, 10.3912),
+        poi("s2", "Bunnpris Angelltrøa", "supermarket", 63.4318, 10.3925),
+      ],
+      CENTER,
+    );
+    expect(text).toBeDefined();
+    expect(text!).toContain("i gangavstand");
+    expect(text!.match(/i gangavstand/g)).toHaveLength(1);
+  });
+
+  it("beholder minutt-formen når butikken ligger lenger unna", () => {
+    const text = generateBridgeText(
+      "hverdagsliv",
+      [
+        poi("s1", "Coop Mega", "supermarket", 63.4385, 10.3985),
+        poi("s2", "Bunnpris", "supermarket", 63.4390, 10.3990),
+      ],
+      CENTER,
+    );
+    expect(text).toBeDefined();
+    expect(text!).toMatch(/minutters gange/);
+    expect(text!).not.toContain("i gangavstand");
+  });
+});
+
+describe("generateBridgeText — «i gangavstand» teller bare det som er det", () => {
+  // Regresjon (Wesselsløkka, 2026-09-01): barn-oppvekst brukte HELE
+  // barnehage-importen innenfor discovery-radien (3 km) som tall for «i
+  // gangavstand». Boardet skrev «med 64 barnehager i gangavstand».
+  it("teller bare barnehagene innenfor gangavstand, ikke hele importen", () => {
+    const naere = [1, 2, 3].map((n) =>
+      poi(`b${n}`, `Nær barnehage ${n}`, "barnehage", 63.4305, 10.3905),
+    );
+    // ~7 km unna — innenfor en romslig discovery-radius, langt utenfor gange
+    const fjerne = [1, 2, 3, 4, 5].map((n) =>
+      poi(`f${n}`, `Fjern barnehage ${n}`, "barnehage", 63.49, 10.45),
+    );
+    const text = generateBridgeText(
+      "barn-oppvekst",
+      [...naere, ...fjerne, poi("l1", "Lekeplassen", "lekeplass", 63.4306, 10.3906)],
+      CENTER,
+    );
+    expect(text).toBeDefined();
+    expect(text!).toContain("3 barnehager i gangavstand");
+    expect(text!).not.toContain("8 barnehager");
+  });
+});

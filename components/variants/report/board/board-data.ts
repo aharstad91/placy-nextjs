@@ -10,7 +10,7 @@ import type {
 } from "@/lib/types";
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
 import type { FaqEntry } from "@/lib/generators/faq-generator";
-import { getHeroInsightPOIIds } from "../hero-insight-pois";
+import { estimateWalkMin, getHeroInsightPOIIds } from "../hero-insight-pois";
 import { getProjectBrokers } from "@/lib/themes/project-brand";
 import { computeSpreadCoordinates } from "@/lib/board/spread-co-located";
 import { isAnchorPOI } from "@/lib/board/anchor-poi";
@@ -420,7 +420,7 @@ export function shrinkToIntro(body: string): string {
  * hero-insight-kortet) — nærmeste skole, viktigste holdeplass osv. bridgeText
  * navngir bevisst tier-2-POIer (komplement-designet fra Brøset-gullstandarden),
  * så generert tekst og punkter overlapper ikke. Tema uten tier-1-extractor
- * faller tilbake til score-rangerte topp-POIer.
+ * rangerer på nærhet — se begrunnelsen i kroppen.
  */
 function pickGeneratedHighlights(
   theme: ReportTheme,
@@ -429,10 +429,25 @@ function pickGeneratedHighlights(
   fallback: { icon: string; color: string },
 ): BoardCategoryEditorial["highlights"] {
   const heroIds = getHeroInsightPOIIds(theme.id, theme.allPOIs, center);
+  // Uten tier-1-extractor: de NÆRMESTE, ikke de høyest rangerte.
+  //
+  // `TIER1_EXTRACTORS` dekker bare `transport` og `opplevelser`. De fem andre
+  // temaene falt derfor til `theme.topRanked` — en score-rangering uten
+  // avstandsledd. På Wesselsløkka ga det «Kiropraktor Jamie Coyne-Stacey
+  // (20 min)», «Frisør´n AS (29 min)» og «Geo Seabed Instruments AS» under
+  // Hverdagsliv, mens SUMART Dagligvare lå 181 m unna. En rangering som
+  // tilfeldigvis har tre på topp er ikke et utvalg.
+  //
+  // Nærhet er den ærlige ordningen når ingen har valgt for oss: det er nøyaktig
+  // det `storyPickTitle` lover når utvalget ikke er kuratert («Nærmest
+  // hjemmefra»). `estimateWalkMin` bruker MÅLT gangtid der den finnes, ellers et
+  // haversine-anslag — samme kilde raden viser minuttene fra.
   const source =
     heroIds.size > 0
       ? theme.allPOIs.filter((p) => heroIds.has(p.id))
-      : theme.topRanked;
+      : [...theme.allPOIs].sort(
+          (a, b) => estimateWalkMin(a, center) - estimateWalkMin(b, center),
+        );
   return source.slice(0, GENERATED_HIGHLIGHTS_MAX).map((p) => ({
     id: p.id as BoardPOIId,
     name: p.name,
