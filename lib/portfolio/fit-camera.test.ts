@@ -66,7 +66,7 @@ describe("fitPortfolioCamera", () => {
       { width: 900, height: 900 }, // desktop-kartrute
       { width: 390, height: 480 }, // mobil-kartrute
     ]) {
-      const { widthM, heightM } = groundFootprint(cam.range, viewport, cam.center.lat);
+      const { widthM, heightM } = groundFootprint(cam.range, viewport);
       const cosLat = Math.cos((cam.center.lat * Math.PI) / 180);
       const spanW = (cam.bounds.east - cam.bounds.west) * 111_320 * cosLat;
       const spanH = (cam.bounds.north - cam.bounds.south) * 110_574;
@@ -88,7 +88,6 @@ describe("fitPortfolioCamera", () => {
 function groundFootprint(
   range: number,
   viewport: { width: number; height: number },
-  _latDeg: number,
 ) {
   const fovVRad = (35 * Math.PI) / 180;
   const aspect = viewport.width / viewport.height;

@@ -53,6 +53,30 @@ export interface CameraLock {
   heading?: number;
 }
 
+/**
+ * Én chip i `projectSites`. Ferdig avgjort visningsmodell — kartlaget tar ingen
+ * beslutning om tilstand, det tegner det det får (se `portfolio-pins`).
+ */
+export interface MapView3DSite {
+  id: string;
+  lat: number;
+  lng: number;
+  name: string;
+  subtitle?: string;
+  /** `"board"` = aksent-ring og glød, `"muted"` = samme familie uten. */
+  tone?: "board" | "muted";
+  /** Markeringsring utenpå. */
+  selected?: boolean;
+  /** Navn ved siden av disc-en. */
+  showName?: boolean;
+  /** Disc-størrelse, 1 = intrinsisk 52 px. */
+  scale?: number;
+  /** Tekst-størrelse, når disc-en er liten men navnet skal være lesbart. */
+  labelScale?: number;
+  /** Tegne-rekkefølge — Google depth-sorterer ikke DOM-markører. */
+  zIndex?: number;
+}
+
 export interface MapView3DProps {
   center: { lat: number; lng: number; altitude?: number };
   cameraLock: CameraLock;
@@ -76,6 +100,20 @@ export interface MapView3DProps {
     /** Kvadratisk thumbnail (data-URI) for markøren. Undefined → bygnings-glyph. */
     imageSrc?: string;
   };
+  /**
+   * FLERE prosjekt-chips, tegnet med samme markør som `projectSite`.
+   *
+   * Additiv akse ved siden av `projectSite`: porteføljekartet viser en hel
+   * kjedes prosjekter, der hvert punkt er et STED og ikke en POI. Syntetiske
+   * POI-er med oppdiktet kategori ville gitt ikonpins fra et kategorispråk som
+   * ikke finnes. Er propen usatt — som i boardet — er ingenting endret, og
+   * `projectSite` er fortsatt bevisst ikke-interaktiv.
+   */
+  projectSites?: MapView3DSite[];
+  /** Klikk på en chip i `projectSites`. */
+  onProjectSiteClick?: (id: string) => void;
+  /** Hover inn/ut på en chip i `projectSites`. `null` = ut. */
+  onProjectSiteHover?: (id: string | null) => void;
   /**
    * Når true: `pois` rendres som kompakte farge-prikker (`BlobMarker3D`) i
    * stedet for fulle ikon-pins. Brukes i mobil story-mode-peek (sekundær flate)
@@ -348,6 +386,9 @@ function Map3DInner({
   activated = true,
   mapId,
   projectSite,
+  projectSites,
+  onProjectSiteClick,
+  onProjectSiteHover,
   revealItems,
   showReveal = false,
   animateReveal = true,
@@ -445,6 +486,44 @@ function Map3DInner({
             />
           </DomMarker3D>
         )}
+
+        {/* Prosjekt-chips (porteføljekartet). Egen løkke, ikke POI-løkka:
+            punktene er STEDER uten kategori, og de skal aldri utglisnes eller
+            dempes av boardets kollisjonskulling. */}
+        {projectSites?.map((site) => (
+          <DomMarker3D
+            key={site.id}
+            map3d={mapInstance}
+            lat={site.lat}
+            lng={site.lng}
+            altitude={30}
+            title={site.name}
+            // Valgt chip legges over de andre. Uten dette avgjør mount-
+            // rekkefølgen hvem som dekker hvem — Google depth-sorterer ikke
+            // DOM-markører — og en chip valgt fra lista kunne blitt liggende
+            // under naboen sin i en tett klynge.
+            zIndex={site.zIndex ?? (site.selected ? Z_PROJECT_PIN + 1 : Z_PROJECT_PIN)}
+            onClick={
+              onProjectSiteClick ? () => onProjectSiteClick(site.id) : undefined
+            }
+          >
+            <ProjectSitePin
+              name={site.name}
+              subtitle={site.subtitle}
+              scale={site.scale ?? 1}
+              labelScale={site.labelScale}
+              tone={site.tone}
+              selected={site.selected}
+              showName={site.showName}
+              clickable={Boolean(onProjectSiteClick)}
+              onHoverChange={
+                onProjectSiteHover
+                  ? (hovered) => onProjectSiteHover(hovered ? site.id : null)
+                  : undefined
+              }
+            />
+          </DomMarker3D>
+        ))}
 
         {pois.map((poi) => {
           // Oppslagene gjøres HER og sendes videre som primitiver — se
