@@ -20,6 +20,7 @@ import type {
 } from "@/lib/board/board-types";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
 import { availableTravelModes } from "@/lib/board/neighbourhood-list";
+import { contourTravelModes } from "@/lib/board/contour-modes";
 import type { TravelMode } from "@/lib/types";
 import {
   useSubCategoryFilter,
@@ -69,6 +70,16 @@ export interface BoardState {
    * hører til ett punkt eller én kategori. Se `resetNavigation`.
    */
   travelMode: TravelMode;
+  /**
+   * Rekkevidde-konturene (5/10/15 min) vises på kartet.
+   *
+   * Av ved hver sidelasting: konturene er et visningsvalg leseren slår på, ikke
+   * et permanent lag. Følger `travelMode`-regelen ellers — INGEN navigasjons-
+   * action nullstiller feltet, for valget er et perspektiv leseren har valgt,
+   * ikke en tilstand som hører til ett punkt eller én kategori. Se
+   * `resetNavigation`.
+   */
+  showContours: boolean;
   /**
    * Den aktive POI-en ble åpnet fra en TEKST-referanse, ikke fra kartet.
    *
@@ -131,7 +142,8 @@ export type BoardAction =
   | { type: "END_INTRO" }
   | { type: "OPEN_EXPLORE" }
   | { type: "CLOSE_EXPLORE" }
-  | { type: "SET_TRAVEL_MODE"; mode: TravelMode };
+  | { type: "SET_TRAVEL_MODE"; mode: TravelMode }
+  | { type: "TOGGLE_CONTOURS" };
 
 export const initialBoardState: BoardState = {
   phase: "default",
@@ -140,19 +152,25 @@ export const initialBoardState: BoardState = {
   introPlaying: false,
   exploreOpen: false,
   travelMode: "walk",
+  showContours: false,
   exploreSuppressed: false,
 };
 
 /**
- * Standardtilstand som BEVARER reisemodus.
+ * Standardtilstand som BEVARER reisemodus og konturvalget.
  *
  * To grener returnerte tidligere `initialBoardState` direkte — `RESET_TO_DEFAULT`
  * og `BACK_TO_ACTIVE` uten aktiv kategori. Begge ville nullstilt modusen under
  * leseren, midt i en sesjon der hun bevisst hadde slått på sykkel. Går man via
- * denne, er regelen «navigasjon rører ikke modus» uttrykt på ett sted.
+ * denne, er regelen «navigasjon rører ikke leserens perspektiv» uttrykt på ett
+ * sted — den gjelder både reisemåten og rekkevidde-konturene.
  */
 function resetNavigation(state: BoardState): BoardState {
-  return { ...initialBoardState, travelMode: state.travelMode };
+  return {
+    ...initialBoardState,
+    travelMode: state.travelMode,
+    showContours: state.showContours,
+  };
 }
 
 export function boardReducer(
@@ -179,6 +197,8 @@ export function boardReducer(
         exploreOpen: false,
         // Bæres videre, aldri nullstilt — se BoardState.travelMode.
         travelMode: state.travelMode,
+        // Samme regel: leserens perspektiv følger med gjennom navigasjonen.
+        showContours: state.showContours,
         exploreSuppressed: false,
       };
     }
@@ -197,6 +217,7 @@ export function boardReducer(
         introPlaying: false,
         exploreOpen: false,
         travelMode: state.travelMode,
+        showContours: state.showContours,
         // Kun tekst-referanser og omvisningens egne rader undertrykker
         // modalen. Et nytt trykk på selve punktet kommer uten kilde og åpner
         // den.
@@ -251,6 +272,11 @@ export function boardReducer(
       // en åpen modal — leseren ser samme sted i et nytt lys.
       if (action.mode === state.travelMode) return state;
       return { ...state, travelMode: action.mode };
+
+    case "TOGGLE_CONTOURS":
+      // Samme kontrakt som modusbyttet: rører BARE visningsvalget. Konturene
+      // er en ramme rundt hele boardet, ikke noe som hører til ett punkt.
+      return { ...state, showContours: !state.showContours };
 
     default:
       return state;
@@ -475,6 +501,15 @@ export function useAvailableTravelModes(): TravelMode[] {
     () => availableTravelModes(data.categories),
     [data.categories],
   );
+}
+
+/**
+ * Reisemåtene boardet har rekkevidde-konturer for. Tom liste = ingen konturer
+ * i det hele tatt, og da skal av/på-valget ikke finnes.
+ */
+export function useContourTravelModes(): TravelMode[] {
+  const { data } = useBoard();
+  return useMemo(() => contourTravelModes(data.isochrones), [data.isochrones]);
 }
 
 export function useActiveCategory() {

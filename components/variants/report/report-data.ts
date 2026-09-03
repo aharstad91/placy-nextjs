@@ -4,6 +4,7 @@ import type {
   Coordinates,
   TrailCollection,
   ReportBoardFacts,
+  IsochroneSet,
   ReportSummary,
   BrokerInfo,
   ReportCTA,
@@ -11,7 +12,11 @@ import type {
   ReportThemeEditorial,
   ProjectAssetFlags,
 } from "@/lib/types";
-import { ReportBoardFactsSchema, ReportThemeGroundingViewSchema } from "@/lib/types";
+import {
+  IsochroneSetSchema,
+  ReportBoardFactsSchema,
+  ReportThemeGroundingViewSchema,
+} from "@/lib/types";
 import {
   areaIntroFromCurated,
   generateCategoryFaq,
@@ -61,6 +66,22 @@ function parseBoardFactsOrLog(raw: unknown, project: Project): ReportBoardFacts 
   const result = ReportBoardFactsSchema.safeParse(raw);
   if (result.success) return result.data;
   console.error("[boardFacts] Zod-parse failed — skipping", {
+    projectId: `${project.customer}/${project.urlSlug}`,
+    issue: result.error.issues[0]?.message ?? "unknown",
+  });
+  return undefined;
+}
+
+/**
+ * Zod-parse rekkevidde-konturene ved render-boundary. Samme kontrakt som
+ * board-faktaene: ugyldig eller ukjent versjon gir ingen konturer og én
+ * server-log, aldri en krasj i lesestien.
+ */
+function parseIsochronesOrLog(raw: unknown, project: Project): IsochroneSet | undefined {
+  if (!raw) return undefined;
+  const result = IsochroneSetSchema.safeParse(raw);
+  if (result.success) return result.data;
+  console.error("[isochrones] Zod-parse failed — skipping", {
     projectId: `${project.customer}/${project.urlSlug}`,
     issue: result.error.issues[0]?.message ?? "unknown",
   });
@@ -230,6 +251,9 @@ export interface ReportData {
   /** Områdets intro — strøkets svar på «hva kjennetegner området?», løftet ut
    *  av FAQ-en og vist som prosa på områdestoppet. Utelatt = ikke kuratert. */
   areaIntro?: string;
+  /** Rekkevidde-konturer (5/10/15 min per reisemåte), hentet build-time.
+   *  Utelatt = kartet viser ingen konturer og av/på-valget skjules. */
+  isochrones?: IsochroneSet;
   label?: string;
   heroIntro?: string;
   heroImage?: string;
@@ -609,6 +633,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
   // dem — teksten lagres aldri, så malene kan itereres uten re-provisjonering.
   const boardFacts = parseBoardFactsOrLog(project.reportConfig?.boardFacts, project);
 
+  // Rekkevidde-konturene, hentet build-time i provisjoneringens steg 7c.
+  const isochrones = parseIsochronesOrLog(project.reportConfig?.isochrones, project);
+
   for (const themeDef of themeDefinitions) {
     const cats = new Set(themeDef.categories);
     const themePOIs = withRepresentingAnchors(
@@ -778,6 +805,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       center,
     }),
     areaIntro: areaIntroFromCurated(rc?.globalFaq),
+    isochrones,
     label: rc?.label,
     heroIntro,
     heroImage: rc?.heroImage,

@@ -18,7 +18,12 @@ describe("EVENT_TYPES", () => {
       "poi_clicked",
       "poi_explore_opened",
       "poi_outbound_clicked",
+      "isochrones_toggled",
     ]);
+  });
+
+  it("rekkevidde-konturenes type er kjent av parse-guarden (migrasjon 091)", () => {
+    expect(isEventType("isochrones_toggled")).toBe(true);
   });
 
   it("Utforsk-typene er kjent av isEventType (parse-guarden ved utrygge grenser)", () => {

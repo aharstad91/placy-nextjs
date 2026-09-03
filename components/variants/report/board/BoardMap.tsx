@@ -20,10 +20,13 @@ import {
   useBoard,
   useActiveCategory,
   useAvailableTravelModes,
+  useContourTravelModes,
 } from "./board-state";
 import { useStoryTourOptional } from "./story/story-tour";
 import { useMapPinClick } from "./use-map-pin-click";
 import { BoardMarker } from "./BoardMarker";
+import { BoardContourLayer } from "./BoardContourLayer";
+import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { useBoardZoomTier } from "./use-board-zoom-tier";
 import { HomeMarker } from "./HomeMarker";
 import { BoardPathLayer } from "./BoardPathLayer";
@@ -181,6 +184,9 @@ export function BoardMap({
   } = useBoard();
   const activeCategory = useActiveCategory();
   const availableModes = useAvailableTravelModes();
+  // Konturene gates på data: har ingen reisemåte konturer, finnes ikke knappen.
+  const contourModes = useContourTravelModes();
+  const engagement = useEngagement();
   const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -879,6 +885,16 @@ export function BoardMap({
     [dispatch],
   );
 
+  // Av/på logges her og ikke i kontrollen: reduceren eier tilstanden, så det
+  // er her den NYE verdien er kjent uten å gjette. Reisemåten ligger alt i
+  // kontekst-konvolutten og dupliseres ikke i nyttelasten.
+  const handleContoursToggle = useCallback(() => {
+    engagement.emit("isochrones_toggled", {
+      payload: { enabled: !state.showContours },
+    });
+    dispatch({ type: "TOGGLE_CONTOURS" });
+  }, [dispatch, engagement, state.showContours]);
+
   const handleModeChange = useCallback(
     (mode: BoardView) => {
       // Klikk på det aktive segmentet er no-op (R9); setView under er ellers
@@ -1113,6 +1129,9 @@ export function BoardMap({
                 },
               )}
 
+              {/* Konturene FØRST i lista: linje-lag legges i Mapbox i den
+                  rekkefølgen de monteres, så rutelinja tegnes over dem. */}
+              <BoardContourLayer mapRef={mapRef} mapLoaded={mapLoaded} />
               <BoardPathLayer />
               <BoardPathMidpointMarker />
               <BoardPOILabel />
@@ -1152,6 +1171,9 @@ export function BoardMap({
             travelModes={availableModes}
             travelMode={state.travelMode}
             onTravelModeChange={handleTravelModeChange}
+            showContourToggle={contourModes.length > 0}
+            contoursOn={state.showContours}
+            onContoursToggle={handleContoursToggle}
             cameraMode={cameraMode}
             onCameraModeChange={handleCameraModeChange}
             showCameraMode={hasVoiceOver}

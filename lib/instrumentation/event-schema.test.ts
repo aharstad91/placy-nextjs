@@ -145,3 +145,41 @@ describe("kontekst-konvoluttens travel_mode", () => {
     ).toEqual({ ...CONTEXT, travel_mode: "car" });
   });
 });
+
+describe("isochrones_toggled (migrasjon 091)", () => {
+  it("godtar av/på-tilstanden", () => {
+    const result = logEventSchema.safeParse({
+      eventType: "isochrones_toggled",
+      projectId: "broset-utvikling-as_wesselslokka",
+      payload: { enabled: true },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("krever payload — et event uten tilstand er verdiløst som signal", () => {
+    const result = logEventSchema.safeParse({
+      eventType: "isochrones_toggled",
+      projectId: "broset-utvikling-as_wesselslokka",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("avviser et ukjent felt (skjemaet er strengt)", () => {
+    const result = logEventSchema.safeParse({
+      eventType: "isochrones_toggled",
+      projectId: "broset-utvikling-as_wesselslokka",
+      payload: { enabled: true, travel_mode: "walk" },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("bærer ikke poi_id — konturene hører til boardet, ikke til ett sted", () => {
+    const result = logEventSchema.safeParse({
+      eventType: "isochrones_toggled",
+      projectId: "broset-utvikling-as_wesselslokka",
+      poiId: "google-abc",
+      payload: { enabled: false },
+    });
+    expect(result.success).toBe(false);
+  });
+});

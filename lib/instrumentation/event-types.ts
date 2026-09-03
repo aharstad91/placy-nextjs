@@ -21,6 +21,11 @@ export const EVENT_TYPES = [
   //   poi_outbound_clicked — fallback-lenken ble klikket (POI uten innhold)
   "poi_explore_opened",
   "poi_outbound_clicked",
+  // Rekkevidde-konturene slått av/på (migrasjon 091). Konturene er et
+  // visningsvalg leseren gjør selv, og både kamera-ramming etter kontur og
+  // kontur-filtrering av lista er utsatt i påvente av at dette tallet viser om
+  // valget brukes i det hele tatt.
+  "isochrones_toggled",
 ] as const;
 
 // Avledet fra tuppelen (ikke en duplikat-union — én sannhetskilde).
@@ -104,6 +109,18 @@ export interface EventPayloads {
   /** Fallback-lenken til Google klikket (POI-et hadde ikke nok innhold). */
   poi_outbound_clicked: {
     category_id?: string;
+    context?: EngagementContextEnvelope;
+  };
+  /**
+   * Rekkevidde-konturene slått av eller på.
+   *
+   * `enabled` er den NYE tilstanden, ikke den forrige — et av-slag er også et
+   * signal, og uten feltet ville to hendelser vært umulige å skille.
+   * Reisemåten bæres IKKE her: den ligger alt i kontekst-konvolutten, og
+   * duplisert ville de to kunnet drifte fra hverandre.
+   */
+  isochrones_toggled: {
+    enabled: boolean;
     context?: EngagementContextEnvelope;
   };
 }

@@ -1,6 +1,7 @@
 import type {
   BrokerInfo,
   Coordinates,
+  IsochroneSet,
   POI,
   ProjectAssetFlags,
   ReportCTA,
@@ -200,6 +201,9 @@ export interface BoardData {
   /** Områdestoppets prosa — strøkets egne ord om nabolaget. Utelatt = ikke
    *  kuratert, og flaten faller tilbake på én navigerende setning. */
   areaIntro?: string;
+  /** Rekkevidde-konturer (5/10/15 min per reisemåte), hentet build-time.
+   *  Utelatt = kartet tegner ingen konturer og av/på-valget skjules. */
+  isochrones?: IsochroneSet;
   /** Eksplisitt opt-in for audio-tour-CTA. Default false. */
   audioTourEnabled: boolean;
   /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
@@ -337,6 +341,7 @@ export function adaptBoardData(report: ReportData): BoardData {
     poisById,
     globalFaq: report.globalFaq ?? [],
     areaIntro: report.areaIntro,
+    isochrones: report.isochrones,
     audioTourEnabled: report.audioTourEnabled === true,
     assets: report.assets,
     venueType: report.venueType ?? null,

@@ -24,66 +24,19 @@
  */
 
 import { z } from "zod";
+import { PolygonalGeometrySchema } from "@/lib/geo/geojson-schema";
 import { REPORT_THEME_DEFAULTS } from "@/lib/pipeline/report-defaults";
 
 const VALID_THEME_IDS = REPORT_THEME_DEFAULTS.map((t) => t.id);
 
 // ── GeoJSON boundary ──────────────────────────────────────────────────────
 
-/** Én posisjon: [lng, lat] (+ valgfri høyde fra tegneverktøy som geojson.io). */
-const PositionSchema = z
-  .array(z.number())
-  .min(2, "Posisjon må ha minst [lng, lat]")
-  .max(3, "Posisjon kan maks ha [lng, lat, høyde]")
-  .superRefine((pos, ctx) => {
-    const [lng, lat] = pos;
-    if (lng < -180 || lng > 180) {
-      ctx.addIssue({
-        code: "custom",
-        message: `lng ${lng} er utenfor [-180, 180] — husk GeoJSON-rekkefølgen [lng, lat]`,
-      });
-    }
-    if (lat < -90 || lat > 90) {
-      ctx.addIssue({
-        code: "custom",
-        message: `lat ${lat} er utenfor [-90, 90] — husk GeoJSON-rekkefølgen [lng, lat]`,
-      });
-    }
-  });
-
-const LinearRingSchema = z
-  .array(PositionSchema)
-  .min(4, "Ring må ha minst 4 punkter (inkludert lukkepunktet)")
-  .superRefine((ring, ctx) => {
-    const first = ring[0];
-    const last = ring[ring.length - 1];
-    if (first[0] !== last[0] || first[1] !== last[1]) {
-      ctx.addIssue({
-        code: "custom",
-        message:
-          "Ring er ikke lukket — første og siste punkt må være identiske",
-      });
-    }
-  });
-
-const PolygonSchema = z.object({
-  type: z.literal("Polygon"),
-  coordinates: z
-    .array(LinearRingSchema)
-    .min(1, "Polygon må ha minst én ring (den ytre)"),
-});
-
-const MultiPolygonSchema = z.object({
-  type: z.literal("MultiPolygon"),
-  coordinates: z
-    .array(z.array(LinearRingSchema).min(1, "Polygon må ha minst én ring (den ytre)"))
-    .min(1, "MultiPolygon må ha minst ett polygon"),
-});
-
-export const BoundarySchema = z.discriminatedUnion("type", [
-  PolygonSchema,
-  MultiPolygonSchema,
-]);
+/**
+ * Flate-skjemaene bor i `@/lib/geo/geojson-schema` fordi rekkevidde-konturene
+ * i `lib/types.ts` validerer samme form. Re-eksporten holder den etablerte
+ * `BoundarySchema`-importen i `scripts/fetch-area-boundary.ts` i live.
+ */
+export { PolygonalGeometrySchema as BoundarySchema } from "@/lib/geo/geojson-schema";
 
 // ── report_editorial ──────────────────────────────────────────────────────
 
@@ -227,14 +180,14 @@ export const AreaStagingSchema = z
     areaId: z.string().min(1, "areaId må være en ikke-tom streng"),
     /** Kun nødvendig når curate-area skal OPPRETTE raden (INSERT) */
     meta: AreaMetaSchema.optional(),
-    boundary: BoundarySchema,
+    boundary: PolygonalGeometrySchema,
     report_editorial: ReportEditorialSchema,
   })
   .strict();
 
 export type AreaMeta = z.infer<typeof AreaMetaSchema>;
 export type AreaStaging = z.infer<typeof AreaStagingSchema>;
-export type AreaStagingBoundary = z.infer<typeof BoundarySchema>;
+export type AreaStagingBoundary = z.infer<typeof PolygonalGeometrySchema>;
 export type ThemeEditorialStaging = z.infer<typeof ThemeEditorialStagingSchema>;
 export type GlobalEditorialStaging = z.infer<typeof GlobalEditorialStagingSchema>;
 export type FaqAnswerStaging = z.infer<typeof FaqAnswerStagingSchema>;

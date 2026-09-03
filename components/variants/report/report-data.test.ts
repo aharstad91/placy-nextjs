@@ -356,3 +356,69 @@ describe("transformToReportData — ankeret overlever avstand (R2)", () => {
     expect(theme.allPOIs).toHaveLength(2);
   });
 });
+
+describe("rekkevidde-konturer i lesestien", () => {
+  function ring(offset: number): number[][] {
+    return [
+      [CENTER.lng - offset, CENTER.lat - offset],
+      [CENTER.lng + offset, CENTER.lat - offset],
+      [CENTER.lng + offset, CENTER.lat + offset],
+      [CENTER.lng - offset, CENTER.lat + offset],
+      [CENTER.lng - offset, CENTER.lat - offset],
+    ];
+  }
+
+  const contours = () => ({
+    "5": { type: "Polygon", coordinates: [ring(0.004)] },
+    "10": { type: "Polygon", coordinates: [ring(0.008)] },
+    "15": { type: "Polygon", coordinates: [ring(0.012)] },
+  });
+
+  function projectWithIsochrones(isochrones: unknown) {
+    const project = makeProject([makePOI({ id: "a" })], ["restaurant"]) as unknown as {
+      reportConfig: Record<string, unknown>;
+    };
+    project.reportConfig.isochrones = isochrones;
+    return project as unknown as Parameters<typeof transformToReportData>[0];
+  }
+
+  it("gyldig sett når fram til rapport-dataene", () => {
+    const data = transformToReportData(
+      projectWithIsochrones({
+        isochronesVersion: 1,
+        fetchedAt: "2026-09-03T08:00:00.000Z",
+        byMode: { walk: contours() },
+      }),
+    );
+    expect(data.isochrones?.byMode.walk).toBeDefined();
+    expect(data.isochrones?.byMode.bike).toBeUndefined();
+  });
+
+  it("manglende konturer gir undefined uten loggført feil", () => {
+    const errors: unknown[] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]) => errors.push(args);
+    try {
+      const data = transformToReportData(makeProject([makePOI({ id: "a" })], ["restaurant"]));
+      expect(data.isochrones).toBeUndefined();
+    } finally {
+      console.error = original;
+    }
+    expect(errors.filter((e) => JSON.stringify(e).includes("isochrones"))).toHaveLength(0);
+  });
+
+  it("ugyldig sett gir undefined og én loggført feil, ingen kast", () => {
+    const errors: unknown[] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]) => errors.push(args);
+    try {
+      const data = transformToReportData(
+        projectWithIsochrones({ isochronesVersion: 2, fetchedAt: "x", byMode: { walk: contours() } }),
+      );
+      expect(data.isochrones).toBeUndefined();
+    } finally {
+      console.error = original;
+    }
+    expect(errors.filter((e) => JSON.stringify(e).includes("isochrones"))).toHaveLength(1);
+  });
+});
