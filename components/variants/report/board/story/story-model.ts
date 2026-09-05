@@ -32,15 +32,21 @@ export function areaLabel(home: {
 }
 
 /**
- * Brikkens ord i raden — og bevisst IKKE stedsnavnet.
+ * Utgangsbrikkens ord i raden — og bevisst IKKE stedsnavnet.
  *
  * «Ranheim» sto i brikken og som overskrift rett under, to centimeter fra
- * hverandre. Brikken skal si hva DENNE inngangen er, og overskriften hvor du er:
- * de fem temaene ved siden av heter ikke stedet sitt heller. Ordet er
- * salgsoppgavens eget, det har samme lengde uansett adresse, og det leser som en
- * startside — der et stedsnavn leser som et sjette tema.
+ * hverandre. Brikken skal si hva den GJØR, og overskriften hvor du er: de fem
+ * temaene ved siden av heter ikke stedet sitt heller.
+ *
+ * Ordet var lenge «Beliggenhet», som var riktig så lenge brikken var første
+ * stopp i en rekkefølge: den beskrev stedet temaene ligger i. Etter at
+ * rutenettet (`StoryThemeGrid`) overtok inngangen, er brikken ikke lenger et
+ * stopp du kommer FRA — den er den eneste veien tilbake dit, festet til venstre
+ * i baren (2026-09-05). Da skal den hete det den er. «Tilbake» sier hva et
+ * trykk gjør, det er like sant på enhver adresse, og det leser som en utgang
+ * der et stedsnavn leser som et sjuende tema.
  */
-export const AREA_RAIL_LABEL = "Beliggenhet";
+export const AREA_RAIL_LABEL = "Tilbake";
 
 /**
  * Områdets undertittel: dekningen i tall, der kategori-stoppene har spørsmålet

@@ -298,17 +298,17 @@ describe("temarutenettet på områdestoppet (2026-09-05)", () => {
     expect(utils.queryByTestId("story-theme-grid")).toBeNull();
     const tabs = within(rail(utils)).getAllByRole("tab");
     expect(tabs.map((t) => t.textContent)).toEqual([
-      "Beliggenhet",
+      "Tilbake",
       "Hverdagsliv",
       "Natur & Friluftsliv",
     ]);
     expect(tabs[2].getAttribute("aria-current")).toBe("true");
   });
 
-  it("«Beliggenhet» i raden er veien tilbake: rutenettet igjen, raden borte", () => {
+  it("«Tilbake» i raden er veien tilbake: rutenettet igjen, raden borte", () => {
     const utils = setup();
     enterTheme(utils);
-    fireEvent.click(within(rail(utils)).getByText("Beliggenhet"));
+    fireEvent.click(within(rail(utils)).getByText("Tilbake"));
     expect(utils.getByRole("heading", { level: 3 }).textContent).toBe("Ranheim");
     expect(grid(utils)).not.toBeNull();
     expect(utils.queryByRole("tablist", { name: "Stopp" })).toBeNull();
@@ -353,7 +353,7 @@ describe("områdestoppet", () => {
     expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
     // Et stoppbytte bytter pinner, ikke utsnitt (2026-08-28).
     enterTheme(utils);
-    fireEvent.click(within(rail(utils)).getByText("Beliggenhet"));
+    fireEvent.click(within(rail(utils)).getByText("Tilbake"));
     expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
     expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
   });
@@ -365,16 +365,31 @@ describe("områdestoppet", () => {
 });
 
 describe("raden", () => {
-  it("legger området FØRST, foran temaene — med et fast ord, ikke stedsnavnet", () => {
+  it("legger utgangen FØRST, foran temaene — festet, med et fast ord", () => {
     const utils = setup();
     enterTheme(utils);
     const tabs = within(rail(utils)).getAllByRole("tab");
     expect(tabs.map((t) => t.textContent)).toEqual([
-      "Beliggenhet",
+      "Tilbake",
       "Hverdagsliv",
       "Natur & Friluftsliv",
     ]);
     expect(tabs[1].getAttribute("aria-current")).toBe("true");
+  });
+
+  it("fester utgangen UTENFOR sporet — den kan ikke rulle ut av syne", () => {
+    // Etter at rutenettet overtok inngangen er brikken den eneste veien
+    // tilbake, og en desktop-mus kan ikke sveipe raden sidelengs (2026-09-05).
+    const utils = setup();
+    enterTheme(utils);
+    const bar = rail(utils);
+    const spor = bar.querySelector('[role="presentation"]');
+    expect(spor).not.toBeNull();
+    const tilbake = within(bar).getByText("Tilbake").closest('[role="tab"]')!;
+    expect(spor!.contains(tilbake)).toBe(false);
+    // Temaene ligger derimot i sporet, og ruller.
+    const tema = within(bar).getByText("Hverdagsliv").closest('[role="tab"]')!;
+    expect(spor!.contains(tema)).toBe(true);
   });
 
   it("bytter til et tema, og tilbake til området igjen", () => {
@@ -383,7 +398,7 @@ describe("raden", () => {
     expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
       "Hva kan jeg ordne i nærheten?",
     );
-    fireEvent.click(within(rail(utils)).getByText("Beliggenhet"));
+    fireEvent.click(within(rail(utils)).getByText("Tilbake"));
     expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
       "Ranheim",
     );

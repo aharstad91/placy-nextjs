@@ -108,7 +108,7 @@ describe("området — rekkefølgens første brikke", () => {
   it("brikkens ord er fast, og ALDRI stedsnavnet", () => {
     // Navnet står som overskrift rett under. To like ord i to komponenter
     // to centimeter fra hverandre gjorde brikken til et sjette tema.
-    expect(AREA_RAIL_LABEL).toBe("Beliggenhet");
+    expect(AREA_RAIL_LABEL).toBe("Tilbake");
     // Og det er et annet slags ord enn stedsnavnets nødutgang.
     expect(AREA_RAIL_LABEL).not.toBe(areaLabel({}));
   });

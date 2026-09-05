@@ -32,10 +32,23 @@ Andreas prøvde den og fant tre ting, som hver traff et eget problem:
 
 **c) Raden anker-scrollet i det den kom.** *«jeg ser at tab-cat da scroller bortover raskt som en slags anchor effekt … det må skje før den vises.»* `StoryRail` posisjonerte aktivt stopp i en `useEffect`, og sporet har `scroll-behavior: smooth` — som gjelder tilordninger av `scrollLeft` også. Første posisjonering er nå en `useLayoutEffect` med `scroll-behavior: auto` slått på for akkurat den ene (`mountedRef`), så plasseringen er gjort før nettleseren tegner. Senere stoppbytter glir fortsatt mykt. Verifisert med MutationObserver på innsettingsøyeblikket: `scrollLeft` er 349 (desktop) / 267 (mobil) i første frame og står stille i 20 frames etter.
 
-### 4. Åpent
+### 4. «Beliggenhet» ble «Tilbake», og festet til venstre i baren
+
+Andreas, med to utsnitt av raden: *«den er ikke like ille på mac med magic mouse, for da kan jeg enkelt slide bortover som på en mobil. men på en desktop mus … så jeg tenker at vi muligens må ha sticky left «beliggenhet» funksjonen som omdøpes til «Tilbake», for det er jo nettopp det hele funksjonen egentlig er.»*
+
+Brikken lå FØRST i sporet, altså inne i det som ruller — og kunne derfor rulle ut av syne. Det gikk så lenge kategoriene også fantes som faner andre steder; etter at rutenettet overtok inngangen samme dag er brikken den eneste veien tilbake, og en eneste vei ut kan ikke ligge bak en horisontal scroll man trenger en Magic Mouse for å betjene.
+
+Baren er derfor delt i to: en fast venstredel (utgangen) og et rullende spor (temaene), begge inne i den samme avrundede flaten, så den fortsatt leser som én ting. `role="tablist"` flyttet ut på baren og sporet fikk `role="presentation"`, slik at brikkene fortsatt eksponeres som faner i tilgjengelighetstreet — testene som spør etter `[aria-label="Stopp"] [role="tab"]` er uendret. En ny test låser strukturen: «Tilbake» skal IKKE ligge inne i sporet, temaene skal.
+
+To følgeendringer fulgte av omdøpingen, begge fordi ordet endret hva brikken ER: ikonet gikk fra kartnål til venstrepil (en nål under ordet «Tilbake» beskriver et sted, ikke en handling), og chevronen mellom utgang og temaer ble en loddrett strek (en høyrepil rett ved siden av en venstrepil er to piler i hver sin retning). Kantklippet i sporet ble en maske i stedet for et gradient-overlegg, fordi overlegget lå i barens koordinater og nå ville dekket den faste brikken — og masken toner bare den kanten det faktisk ligger mer bak (`edges`-state, lest på scroll).
+
+Verifisert i Chrome på 1400 og 390 px med sporet rullet helt til høyre: utgangen står synlig, ligger utenfor sporet, og sporet har ingen synlig rullefelt (`offsetHeight − clientHeight` = 0). Merk: den svarte «N»-sirkelen som ligger over nedre venstre hjørne i dev er Next.js sin egen dev-indikator, ikke noe i produktet.
+
+### 5. Åpent
 
 - **Mobil-inngangen.** «La nabolaget presentere seg» i mobil-indeksen starter fortsatt på første tema, ikke på Beliggenhet-rutenettet (indeksen har alt sin egen kategoriliste). Andreas må avgjøre om mobil-play skal lande på området slik desktop-kolonnen gjør.
 - Raden ruller aktivt tema til 44 px fra venstre, så «Beliggenhet» (veien tilbake) ligger ofte utenfor synsfeltet etter et kort-trykk. Pre-eksisterende, men mer synlig nå som rutenettet er inngangen.
+- **Temaer langt til høyre er tunge å nå med vanlig mus.** Utgangen er løst, men selve sporet krever fortsatt shift+hjul på en mus uten sidelengs sveip. En mulig neste spak er å oversette vanlig hjul til horisontal scroll i sporet; ikke bygd, fordi det kan kapre sidescrollen.
 - **~300 ms hovedtråd-stall ved lagbytte.** Målt: tema→tema stopper hovedtråden i ~100 ms, mens område↔tema stopper den i ~300 ms (board-render + montering/avmontering av rutenettet eller raden). Det er derfor raden dukker opp ~400 ms etter trykket og ikke ~120 ms. Selve animasjonene går på kompositoren og er glatte; stallet er død luft FØR dem. Ikke rørt — det krever at det tunge arbeidet flyttes inn i utton-fasen.
 
 ---
