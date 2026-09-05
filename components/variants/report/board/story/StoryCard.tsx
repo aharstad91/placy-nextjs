@@ -32,6 +32,7 @@ import { SIDEBAR_PROSE, SIDEBAR_SECTION_TITLE } from "../sidebar-style";
 import { findBoardPOI } from "../board-data";
 import { useViewportCategoryList } from "../neighbourhood/use-viewport-category-list";
 import { StoryTravelCell } from "./StoryTravelCell";
+import { StoryThemeGrid } from "./StoryThemeGrid";
 import { useStoryTour, type StoryPane } from "./story-tour";
 import {
   areaLabel,
@@ -140,7 +141,9 @@ export function StoryCard({
   return (
     <section
       data-testid="story-card"
-      className={cn("shrink-0", column ? "pb-4" : "pb-[84px]")}
+      /* Mobil: luft til dekket i underkanten — bare når dekket ER der. På
+         områdestoppet er raden borte, og 84 px tom bunn leste som et hull. */
+      className={cn("shrink-0", column ? "pb-4" : onArea ? "pb-6" : "pb-[84px]")}
     >
       {/* `contents` på mobil — se doccen over. */}
       <div className="contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white/85 lg:px-6 lg:pb-2 lg:pt-3 lg:backdrop-blur-xl">
@@ -154,9 +157,11 @@ export function StoryCard({
             kolonnen ER omvisningen (2026-08-27). Den gamle indeksen med
             temakortene er borte, og stedet den representerte — nabolaget selv —
             ligger nå som første brikke i transporten. */}
-        {head ? (
-          <div className="mb-2.5">{head}</div>
-        ) : (
+        {/* Transporten står IKKE på områdestoppet (2026-09-05): der er du ikke
+            inne i rekkefølgen ennå, og temaene ligger som rutenett i innholdet
+            (`StoryThemeGrid`). Raden kommer inn når et tema er valgt. */}
+        {head && !onArea && <div className="mb-2.5">{head}</div>}
+        {!head && (
           <div className="sticky top-0 z-[3] flex h-0 justify-end">
             <button
               type="button"
@@ -174,7 +179,7 @@ export function StoryCard({
             teksten LØSER SEG OPP i headeren i stedet for å bli kuttet av en
             kant. `hidden lg:block` — på mobil er wrapperen `display: contents`
             og har ingen boks å ligge absolutt i. */}
-        {head && (
+        {head && !onArea && (
           <span
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-full hidden h-6 bg-gradient-to-b from-white/95 to-transparent lg:block"
@@ -261,6 +266,10 @@ export function StoryCard({
  * spørsmål og svar.
  * Ingen stedsliste her: kartet ER lista på dette stoppet, og temaene under
  * bærer sine egne.
+ *
+ * Temaene står som rutenett MELLOM introen og svarene (2026-09-05): det er
+ * inngangen til omvisningen, og den skal leses som et valg — ikke som seks
+ * brikker i en rad ingen har introdusert. Se `StoryThemeGrid`.
  */
 function AreaPane() {
   const { data } = useBoard();
@@ -273,11 +282,12 @@ function AreaPane() {
           {p}
         </p>
       ))}
+      <StoryThemeGrid className="mt-5" />
       <div data-testid="story-area-faq">
         <StoryFaq
           entries={data.globalFaq ?? []}
           title="Spørsmål og svar"
-          className="mt-5"
+          className="mt-6"
         />
       </div>
     </>

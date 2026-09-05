@@ -18,6 +18,12 @@ import { AREA_STEP, useStoryTour } from "./story-tour";
  * innholdet ruller inni den. Rullet baren selv, ville endene forsvunnet ut av
  * syne og flaten sluttet å lese som én ting.
  *
+ * ## Raden vises ikke på områdestoppet (2026-09-05)
+ *
+ * Der er brukeren ikke inne i rekkefølgen ennå, og seks brikker i en rad ingen
+ * har introdusert leste ikke som et valg. Temaene står i stedet som et rutenett
+ * i innholdet (`StoryThemeGrid`); raden kommer inn når et tema er valgt.
+ *
  * ## Området står først, og er skilt fra temaene
  *
  * Første brikke er STEDET (`AREA_STEP`) — «Beliggenhet», ikke et tema — med
@@ -68,6 +74,13 @@ export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
     const max = Math.max(0, track.scrollWidth - track.clientWidth);
     track.scrollLeft = Math.min(Math.max(0, btn.offsetLeft - 44), max);
   }, [step]);
+
+  // Raden er transport, og på områdestoppet er det ingenting å transportere
+  // ennå: temaene ligger som rutenett i innholdet der (`StoryThemeGrid`,
+  // 2026-09-05). Den kommer inn når et tema er valgt — og «Beliggenhet» er
+  // veien tilbake til overblikket. Etter hookene: React krever samme
+  // hook-rekkefølge på hver render, uansett hva vi returnerer.
+  if (onArea) return null;
 
   return (
     <div
@@ -222,6 +235,9 @@ function RailChip({
  * så det ikke oppstår en synlig kant der uskarpheten begynner.
  */
 export function StoryDeck() {
+  const { onArea } = useStoryTour();
+  // Uten rad er dekket bare et slør over bunnen av sheeten — se `StoryRail`.
+  if (onArea) return null;
   return (
     <div
       data-testid="story-deck"
