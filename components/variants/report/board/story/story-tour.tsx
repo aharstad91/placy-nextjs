@@ -95,9 +95,20 @@ const EXIT_ZOOM = 14.4;
  * nye — transporten først, resten etter (se `story-enter-*` i globals.css).
  * Tema til tema er samme lag, og bytter rett.
  *
- * Må matche `story-leave` i globals.css.
+ * ## De to retningene er IKKE like lange
+ *
+ * INN i et tema må overgangen forklare noe: rutenettet du trykket i er borte,
+ * og valget ditt ligger nå som en brikke i en rad. Den bruker tid på det.
+ *
+ * TILBAKE forklarer ingenting — du trykket «Beliggenhet» og vet hvor du skal
+ * (Andreas, 2026-09-05: «det går for sakte å gå tilbake fra cat-tabs, da vet en
+ * på et vis at man skal tilbake»). Da er den samme tiden bare venting, og
+ * returen går derfor nesten rett.
+ *
+ * Må matche `.story-leave` / `.story-leave-back` i globals.css.
  */
-export const STORY_LAYER_LEAVE_MS = 160;
+export const STORY_LAYER_LEAVE_MS = 120;
+export const STORY_LAYER_LEAVE_BACK_MS = 80;
 
 /** Bevegelse er på når brukeren ikke har bedt om mindre av den. Spurt POSITIVT
  *  (`no-preference`), så en testpolyfill som svarer «false» på alt gir et
@@ -133,9 +144,11 @@ interface StoryTourApi {
   /** Omvisningen står på området selv (rekkefølgens første brikke). Kartet skal
    *  da se ut som et overblikk: ingen vekting, klikkbare pinner. */
   onArea: boolean;
-  /** Flaten er på vei UT av sitt lag (område ↔ tema): innholdet toner ut i
-   *  {@link STORY_LAYER_LEAVE_MS} før det nye laget kommer. */
-  leaving: boolean;
+  /** Flaten er på vei UT av sitt lag (område ↔ tema), og verdien er laget den
+   *  er på vei TIL: innholdet toner ut før det nye kommer. `null` ellers.
+   *  Returen til området er kortere enn veien inn — se
+   *  {@link STORY_LAYER_LEAVE_BACK_MS}. */
+  leaving: "area" | "theme" | null;
   step: number;
   pane: StoryPane;
   /** Stoppets tre navngitte steder (meglerens utvalg, ellers de nærmeste målte). */
@@ -201,7 +214,7 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
   /* Raden kartet peker på — se `focusPoiId` i API-en. */
   const [focusPoiId, setFocusPoiId] = useState<string | null>(null);
 
-  const [leaving, setLeaving] = useState(false);
+  const [leaving, setLeaving] = useState<"area" | "theme" | null>(null);
   const on = tour !== null;
   const step = tour?.step ?? 0;
   /* Gjeldende steg lest fra en ref i `goto`: den skal vite om byttet krysser
@@ -238,7 +251,7 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
     revealTimerRef.current = null;
     if (layerTimerRef.current !== null) clearTimeout(layerTimerRef.current);
     layerTimerRef.current = null;
-    setLeaving(false);
+    setLeaving(null);
   }, []);
   useEffect(() => cancelPending, [cancelPending]);
 
@@ -328,12 +341,16 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
       const crossesArea =
         (stepRef.current === AREA_STEP) !== (clamped === AREA_STEP);
       if (!crossesArea || !motionOk()) return apply();
-      setLeaving(true);
-      layerTimerRef.current = setTimeout(() => {
-        layerTimerRef.current = null;
-        setLeaving(false);
-        apply();
-      }, STORY_LAYER_LEAVE_MS);
+      const toArea = clamped === AREA_STEP;
+      setLeaving(toArea ? "area" : "theme");
+      layerTimerRef.current = setTimeout(
+        () => {
+          layerTimerRef.current = null;
+          setLeaving(null);
+          apply();
+        },
+        toArea ? STORY_LAYER_LEAVE_BACK_MS : STORY_LAYER_LEAVE_MS,
+      );
     },
     [cancelPending, clearOpen, dispatch, emitStop, stops],
   );

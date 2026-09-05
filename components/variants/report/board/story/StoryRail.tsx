@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { ChevronRight } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { cn } from "@/lib/utils";
@@ -63,16 +63,38 @@ export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
   const { stops, step, goto, onArea } = useStoryTour();
   const trackRef = useRef<HTMLDivElement | null>(null);
 
+  /* Første posisjonering er en PLASSERING, ikke en bevegelse. Se hooken under. */
+  const mountedRef = useRef(false);
+
   // Raden forskyver seg i takt med fortellingen: det aktive stoppet legges mot
   // venstre kant, men ikke helt inntil — 44 px igjen til det forrige navnet, så
   // raden viser at den har en bakside. Det er progresjonen, uttrykt som
   // bevegelse i stedet for som et tall.
-  useEffect(() => {
+  //
+  // MEN første gang raden monteres skal den ikke bevege seg i det hele tatt:
+  // der kommer den inn som svaret på et trykk i rutenettet, og en rad som
+  // ruller bortover i det den dukker opp leser som at noe river seg løs
+  // (Andreas, 2026-09-05: «jeg ser at tab-cat da scroller bortover raskt som en
+  // slags anchor effekt … det må skje før den vises»). Sporet har
+  // `scroll-behavior: smooth` i CSS, som gjelder tilordninger av `scrollLeft`
+  // også — den slås derfor av for akkurat den første. `useLayoutEffect` og ikke
+  // `useEffect`: plasseringen må være gjort FØR nettleseren tegner, ellers ser
+  // man ett bilde av raden i utgangsposisjon.
+  useLayoutEffect(() => {
     const track = trackRef.current;
     const btn = track?.querySelector<HTMLElement>('[aria-current="true"]');
     if (!track || !btn) return;
     const max = Math.max(0, track.scrollWidth - track.clientWidth);
-    track.scrollLeft = Math.min(Math.max(0, btn.offsetLeft - 44), max);
+    const left = Math.min(Math.max(0, btn.offsetLeft - 44), max);
+    if (mountedRef.current) {
+      track.scrollLeft = left;
+      return;
+    }
+    mountedRef.current = true;
+    const smooth = track.style.scrollBehavior;
+    track.style.scrollBehavior = "auto";
+    track.scrollLeft = left;
+    track.style.scrollBehavior = smooth;
   }, [step]);
 
   // Raden er transport, og på områdestoppet er det ingenting å transportere
@@ -249,7 +271,7 @@ export function StoryDeck() {
       className={cn(
         "pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden",
         /* På vei tilbake til området toner dekket ut sammen med innholdet. */
-        leaving && "story-leave",
+        leaving && (leaving === "area" ? "story-leave-back" : "story-leave"),
       )}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >

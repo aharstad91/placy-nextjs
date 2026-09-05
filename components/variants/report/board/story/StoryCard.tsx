@@ -149,7 +149,7 @@ export function StoryCard({
         column ? "pb-4" : onArea ? "pb-6" : "pb-[84px]",
         /* Lagbyttet (område ↔ tema): innholdet toner ut FØR det nye kommer.
            Se STORY_LAYER_LEAVE_MS i story-tour. */
-        leaving && "story-leave",
+        leaving && (leaving === "area" ? "story-leave-back" : "story-leave"),
       )}
     >
       {/* `contents` på mobil — se doccen over. */}
@@ -167,7 +167,7 @@ export function StoryCard({
         {/* Transporten står IKKE på områdestoppet (2026-09-05): der er du ikke
             inne i rekkefølgen ennå, og temaene ligger som rutenett i innholdet
             (`StoryThemeGrid`). Raden kommer inn når et tema er valgt. */}
-        {head && !onArea && <div className="mb-2.5">{head}</div>}
+        {head && !onArea && <div className="mb-4">{head}</div>}
         {!head && (
           <div className="sticky top-0 z-[3] flex h-0 justify-end">
             <button
@@ -209,7 +209,7 @@ export function StoryCard({
           key={onArea ? "area" : "theme"}
           className={cn(
             "contents",
-            onArea ? "story-enter-first" : "story-enter-rest",
+            onArea ? "story-enter-back" : "story-enter-rest",
           )}
         >
           <h3 className="sticky top-0 z-[2] -mx-4 bg-white px-4 pb-2.5 pr-14 pt-1 text-[20px] font-bold leading-[1.2] tracking-[-0.02em] text-stone-900 lg:static lg:m-0 lg:bg-transparent lg:p-0 lg:pt-1">
@@ -243,7 +243,13 @@ export function StoryCard({
       {/* Fanene bytter enkelt: den inaktive tas ut av layouten. Flaten står
           stille gjennom hele omvisningen, så en fane som er høyere enn en annen
           gir bare mer å scrolle — ikke en flate som flytter seg. */}
-      <div key={onArea ? "area" : "theme"} className="story-enter-rest pt-3">
+      <div
+        key={onArea ? "area" : "theme"}
+        className={cn(
+          "pt-3",
+          onArea ? "story-enter-back-rest" : "story-enter-rest",
+        )}
+      >
         {onArea ? (
           <AreaPane />
         ) : (

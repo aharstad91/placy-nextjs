@@ -115,13 +115,21 @@ gmp-popover::part(dialog) {
 
 /* Apple-style map modal — full-height slide from bottom */
 @keyframes map-modal-slide-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes map-modal-slide-down {
-  from { transform: translateY(0); }
-  to { transform: translateY(100%); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
 }
 
 /* Card-activation morph inside the map-modal bottom-carousel.
@@ -143,7 +151,8 @@ gmp-popover::part(dialog) {
 }
 
 .map-modal-card--active {
-  animation: map-modal-card-activate 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: map-modal-card-activate 150ms cubic-bezier(0.16, 1, 0.3, 1)
+    forwards;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   /* Lift above the map body when scale makes the card grow past its
      container's top edge. */
@@ -177,8 +186,12 @@ gmp-popover::part(dialog) {
 
 /* Modal animations */
 @keyframes modal-backdrop-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modal-in {
@@ -218,8 +231,14 @@ gmp-popover::part(dialog) {
 
 /* Quick fade-in for hover tooltips */
 @keyframes fade-in {
-  from { opacity: 0; transform: translate(-50%, 4px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 .animate-fade-in {
@@ -234,8 +253,14 @@ gmp-popover::part(dialog) {
 
 /* Nav pill fade-in (product toggle appearing) */
 @keyframes nav-pill-in {
-  from { opacity: 0; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .animate-nav-pill-in {
@@ -254,13 +279,25 @@ gmp-popover::part(dialog) {
    Foreldreelementet er overflow-hidden, så det inn-rullende innholdet klippes
    til en «slot». */
 @keyframes nowplaying-roll-up {
-  from { opacity: 0; transform: translateY(90%); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(90%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes nowplaying-roll-down {
-  from { opacity: 0; transform: translateY(-90%); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-90%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-nowplaying-roll-up {
@@ -318,7 +355,7 @@ gmp-popover::part(dialog) {
 }
 
 .skeleton-shimmer::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
@@ -385,45 +422,130 @@ gmp-popover::part(dialog) {
 }
 
 /* Default: hide everything except icon (safe fallback) */
-.adaptive-marker__dot { opacity: 0; position: absolute; }
-.adaptive-marker__icon { opacity: 1; }
-.adaptive-marker__rating { opacity: 0; pointer-events: none; }
-.adaptive-marker__label { opacity: 0; pointer-events: none; max-width: 0; overflow: hidden; }
-.adaptive-marker__sparkle { opacity: 1; }
+.adaptive-marker__dot {
+  opacity: 0;
+  position: absolute;
+}
+.adaptive-marker__icon {
+  opacity: 1;
+}
+.adaptive-marker__rating {
+  opacity: 0;
+  pointer-events: none;
+}
+.adaptive-marker__label {
+  opacity: 0;
+  pointer-events: none;
+  max-width: 0;
+  overflow: hidden;
+}
+.adaptive-marker__sparkle {
+  opacity: 1;
+}
 
 /* ── Dot state ── */
-[data-zoom-state="dot"] .adaptive-marker__dot { opacity: 1; position: static; }
-[data-zoom-state="dot"] .adaptive-marker__icon { opacity: 0; position: absolute; pointer-events: none; }
-[data-zoom-state="dot"] .adaptive-marker__rating { opacity: 0; }
-[data-zoom-state="dot"] .adaptive-marker__label { opacity: 0; max-width: 0; }
-[data-zoom-state="dot"] .adaptive-marker__sparkle { opacity: 0; pointer-events: none; }
+[data-zoom-state="dot"] .adaptive-marker__dot {
+  opacity: 1;
+  position: static;
+}
+[data-zoom-state="dot"] .adaptive-marker__icon {
+  opacity: 0;
+  position: absolute;
+  pointer-events: none;
+}
+[data-zoom-state="dot"] .adaptive-marker__rating {
+  opacity: 0;
+}
+[data-zoom-state="dot"] .adaptive-marker__label {
+  opacity: 0;
+  max-width: 0;
+}
+[data-zoom-state="dot"] .adaptive-marker__sparkle {
+  opacity: 0;
+  pointer-events: none;
+}
 
 /* Active markers at dot state promote to icon size */
-[data-zoom-state="dot"] .adaptive-marker--active .adaptive-marker__dot { opacity: 0; position: absolute; }
-[data-zoom-state="dot"] .adaptive-marker--active .adaptive-marker__icon { opacity: 1; position: static; pointer-events: auto; width: 28px; height: 28px; }
+[data-zoom-state="dot"] .adaptive-marker--active .adaptive-marker__dot {
+  opacity: 0;
+  position: absolute;
+}
+[data-zoom-state="dot"] .adaptive-marker--active .adaptive-marker__icon {
+  opacity: 1;
+  position: static;
+  pointer-events: auto;
+  width: 28px;
+  height: 28px;
+}
 
 /* ── Icon state ── */
-[data-zoom-state="icon"] .adaptive-marker__dot { opacity: 0; position: absolute; }
-[data-zoom-state="icon"] .adaptive-marker__icon { opacity: 1; position: static; }
-[data-zoom-state="icon"] .adaptive-marker__rating { opacity: 0; }
-[data-zoom-state="icon"] .adaptive-marker__label { opacity: 0; max-width: 0; }
+[data-zoom-state="icon"] .adaptive-marker__dot {
+  opacity: 0;
+  position: absolute;
+}
+[data-zoom-state="icon"] .adaptive-marker__icon {
+  opacity: 1;
+  position: static;
+}
+[data-zoom-state="icon"] .adaptive-marker__rating {
+  opacity: 0;
+}
+[data-zoom-state="icon"] .adaptive-marker__label {
+  opacity: 0;
+  max-width: 0;
+}
 
 /* ── Icon + Rating state ── */
-[data-zoom-state="icon-rating"] .adaptive-marker__dot { opacity: 0; position: absolute; }
-[data-zoom-state="icon-rating"] .adaptive-marker__icon { opacity: 1; position: static; }
-[data-zoom-state="icon-rating"] .adaptive-marker__rating { opacity: 1; pointer-events: auto; }
-[data-zoom-state="icon-rating"] .adaptive-marker__label { opacity: 0; max-width: 0; }
+[data-zoom-state="icon-rating"] .adaptive-marker__dot {
+  opacity: 0;
+  position: absolute;
+}
+[data-zoom-state="icon-rating"] .adaptive-marker__icon {
+  opacity: 1;
+  position: static;
+}
+[data-zoom-state="icon-rating"] .adaptive-marker__rating {
+  opacity: 1;
+  pointer-events: auto;
+}
+[data-zoom-state="icon-rating"] .adaptive-marker__label {
+  opacity: 0;
+  max-width: 0;
+}
 
 /* ── Full Label state ── */
-[data-zoom-state="full-label"] .adaptive-marker__dot { opacity: 0; position: absolute; }
-[data-zoom-state="full-label"] .adaptive-marker__icon { opacity: 1; position: static; width: 36px; height: 36px; }
-[data-zoom-state="full-label"] .adaptive-marker__rating { opacity: 1; pointer-events: auto; }
-[data-zoom-state="full-label"] .adaptive-marker__label { opacity: 1; pointer-events: auto; max-width: 140px; }
+[data-zoom-state="full-label"] .adaptive-marker__dot {
+  opacity: 0;
+  position: absolute;
+}
+[data-zoom-state="full-label"] .adaptive-marker__icon {
+  opacity: 1;
+  position: static;
+  width: 36px;
+  height: 36px;
+}
+[data-zoom-state="full-label"] .adaptive-marker__rating {
+  opacity: 1;
+  pointer-events: auto;
+}
+[data-zoom-state="full-label"] .adaptive-marker__label {
+  opacity: 1;
+  pointer-events: auto;
+  max-width: 140px;
+}
 
 /* ── Venue cluster count badge: visible whenever icon is visible ── */
-.adaptive-marker__count { opacity: 1; }
-[data-zoom-state="dot"] .adaptive-marker__count { opacity: 0; pointer-events: none; }
-[data-zoom-state="dot"] .adaptive-marker--active .adaptive-marker__count { opacity: 1; pointer-events: auto; }
+.adaptive-marker__count {
+  opacity: 1;
+}
+[data-zoom-state="dot"] .adaptive-marker__count {
+  opacity: 0;
+  pointer-events: none;
+}
+[data-zoom-state="dot"] .adaptive-marker--active .adaptive-marker__count {
+  opacity: 1;
+  pointer-events: auto;
+}
 
 /* ── Hover / Active interactions ── */
 .adaptive-marker--hover {
@@ -442,8 +564,12 @@ gmp-popover::part(dialog) {
   max-width: 0;
 }
 /* Active/hovered markers always show labels even when budget exceeded */
-[data-label-budget-exceeded="true"] .adaptive-marker--active .adaptive-marker__label,
-[data-label-budget-exceeded="true"] .adaptive-marker--hover .adaptive-marker__label {
+[data-label-budget-exceeded="true"]
+  .adaptive-marker--active
+  .adaptive-marker__label,
+[data-label-budget-exceeded="true"]
+  .adaptive-marker--hover
+  .adaptive-marker__label {
   opacity: 1;
   max-width: 140px;
 }
@@ -631,7 +757,9 @@ gmp-popover::part(dialog) {
   padding: 0.25rem 0.75rem !important;
   border-radius: 9999px !important;
   margin: 0 !important;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 .grounding-search-entry .chip:hover,
 .grounding-search-entry .chip:focus {
@@ -651,8 +779,31 @@ gmp-popover::part(dialog) {
    To trinn. Først toner det gamle innholdet ut (`story-leave`, varigheten må
    matche STORY_LAYER_LEAVE_MS i story-tour.tsx). Så monteres det nye laget:
    det første elementet (raden i temalaget, overskriften på området) glir inn
-   fra sin egen kant, og resten toner inn litt etter. Tema til tema bruker
-   ingen av disse — det er samme lag. */
+   fra sin egen kant, og resten toner inn ETTER at det har landet. Tema til
+   tema bruker ingen av disse — det er samme lag.
+
+   Avstanden i tid er hele poenget (Andreas, 2026-09-05: «det er langt i fra
+   enkelt for meg å forstå at den kategorien jeg trykte på vises i toppen …
+   det må være større avstand mellom dem»). Kom raden og innholdet samtidig,
+   var det to ting som dukket opp på én gang, og ingenting sa at den ene var
+   SVARET på trykket. Raden får derfor scenen alene: den lander helt
+   (`--story-enter-first-ms`) før resten begynner å tone inn. Nesten et
+   hundredels sekunds pause mellom dem, og rekkefølgen leses som årsak og
+   virkning i stedet for som en samtidig innlasting.
+
+   Reisen er også lengre (14 px, ikke 8): en glidning på åtte piksler er nesten
+   ikke en bevegelse, og det var den bevegelsen som skulle trekke blikket opp
+   til raden i det den kom. */
+:root {
+  /* Ett sted, fordi resten av trinnene henger på denne: raden må ha landet før
+     innholdet begynner. */
+  --story-enter-first-ms: 300ms;
+  /* Raden er ferdig på 300 ms. Ventetiden er 160 ms LENGER enn det, ikke like
+     lang: skal rekkefølgen leses som «først raden, så svaret», må det finnes et
+     øyeblikk der raden står ferdig og alene. Med 40 ms imellom (første forsøk)
+     overlappet de to bevegelsene i praksis, og alt kom på én gang. */
+  --story-enter-rest-delay: 460ms;
+}
 @keyframes story-leave {
   to {
     opacity: 0;
@@ -661,7 +812,7 @@ gmp-popover::part(dialog) {
 @keyframes story-enter-down {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-14px);
   }
   to {
     opacity: 1;
@@ -671,48 +822,75 @@ gmp-popover::part(dialog) {
 @keyframes story-enter-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+/* Resten kommer med et hint av samme retning som raden, bare mye kortere: nok
+   til at den leser som noe som ANKOMMER etter, ikke som en flate som allerede
+   lå der og lyste opp. */
 @keyframes story-enter-fade {
   from {
     opacity: 0;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
 .story-leave {
-  animation: story-leave 160ms ease-out forwards;
+  animation: story-leave 120ms ease-out forwards;
+  pointer-events: none;
+}
+/* Returen til området: se retnings-doccen ved STORY_LAYER_LEAVE_BACK_MS. */
+.story-leave-back {
+  animation: story-leave 80ms ease-out forwards;
   pointer-events: none;
 }
 .story-enter-first {
-  animation: story-enter-down 260ms cubic-bezier(0.22, 0.9, 0.26, 1) both;
+  animation: story-enter-down var(--story-enter-first-ms)
+    cubic-bezier(0.22, 0.9, 0.26, 1) both;
 }
 .story-enter-first-up {
-  animation: story-enter-up 260ms cubic-bezier(0.22, 0.9, 0.26, 1) both;
+  animation: story-enter-up var(--story-enter-first-ms)
+    cubic-bezier(0.22, 0.9, 0.26, 1) both;
 }
 .story-enter-rest {
-  animation: story-enter-fade 260ms ease-out 110ms both;
+  animation: story-enter-fade 300ms ease-out var(--story-enter-rest-delay) both;
+}
+
+/* TILBAKE til området. Ingen rad å introdusere, ingen rekkefølge å forklare —
+   bare den forsiden brukeren allerede vet at hun er på vei til. Ett trinn, kort,
+   og overskriften og rutenettet kommer praktisk talt sammen. */
+.story-enter-back {
+  animation: story-enter-fade 190ms ease-out both;
+}
+.story-enter-back-rest {
+  animation: story-enter-fade 190ms ease-out 50ms both;
 }
 /* `display: contents` har ingen boks å animere; da animeres barna. */
 .story-enter-first.contents > *,
-.story-enter-rest.contents > * {
+.story-enter-rest.contents > *,
+.story-enter-back.contents > * {
   animation: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .story-leave,
+  .story-leave-back,
   .story-enter-first,
   .story-enter-first-up,
   .story-enter-rest,
+  .story-enter-back,
+  .story-enter-back-rest,
   .story-enter-first.contents > *,
-  .story-enter-rest.contents > * {
+  .story-enter-rest.contents > *,
+  .story-enter-back.contents > * {
     animation: none !important;
   }
 }

@@ -22,10 +22,21 @@ Første forsøk var View Transitions med delt `view-transition-name` per tema, s
 
 Bygd som to trinn i `story-tour`: `goto` som krysser `AREA_STEP` setter `leaving` (→ `.story-leave`, 160 ms fade, `STORY_LAYER_LEAVE_MS`) og bytter steg først etter det. Det nye laget monteres med `key={onArea ? "area" : "theme"}` på overskrift/faner og på innholdet, så de animeres ved LAGBYTTE men ikke tema til tema. Raden er `story-enter-first` (fra toppen; `-up` fra bunnen på mobil-dekket), resten `story-enter-rest` (fade, 110 ms forsinket). Bevegelsen gates på `prefers-reduced-motion: no-preference` spurt positivt, så testenes matchMedia-polyfill (svarer false) gir øyeblikkelig bytte, og en bruker med redusert bevegelse får det samme. Målt i Chrome: leave-klasse ved 60 ms med gridet fortsatt i DOM, rad + nytt innhold ved 310 ms, alt på opacity 1 ved 810 ms; tema→tema utløser ingen lag-animasjon.
 
-### 3. Åpent
+### 3. Tre tweaks samme dag, alle på overgangen
+
+Andreas prøvde den og fant tre ting, som hver traff et eget problem:
+
+**a) Raden og innholdet kom for likt.** *«det er langt i fra enkelt for meg å forstå det at den kategorien jeg trykte på, vises i toppen der … det må være større avstand mellom dem.»* Målt: raden var ferdig på 300 ms, innholdet startet på 340 — 40 ms mellom to bevegelser leses som én. Nå starter innholdet på 460 ms (`--story-enter-rest-delay`), altså 160 ms etter at raden har landet, og raden reiser 14 px i stedet for 8. Luften under raden på desktop økte fra 10 til 16 px, så den leser som sitt eget bånd. Frosset frame i Chrome bekrefter beatet: raden står ferdig og alene med den trykkede brikken hvit, innholdet på opacity 0.
+
+**b) Returen var for treg.** *«det går for sakte å gå tilbake fra cat-tabs, da vet en på et vis at man skal tilbake.»* Retningene er nå ulike, og det er en regel, ikke en finjustering: veien INN forklarer noe (valget ditt har skiftet form), returen forklarer ingenting. Egen `STORY_LAYER_LEAVE_BACK_MS` (80 mot 120) og egne `story-enter-back*`-klasser (190 ms, 50 ms forsinkelse) mot temalagets 300/460. Målt over tre runder: forsiden synlig etter ~218 ms og ferdig etter ~663 ms, mot ~400 ms / ~1 180 ms inn i et tema.
+
+**c) Raden anker-scrollet i det den kom.** *«jeg ser at tab-cat da scroller bortover raskt som en slags anchor effekt … det må skje før den vises.»* `StoryRail` posisjonerte aktivt stopp i en `useEffect`, og sporet har `scroll-behavior: smooth` — som gjelder tilordninger av `scrollLeft` også. Første posisjonering er nå en `useLayoutEffect` med `scroll-behavior: auto` slått på for akkurat den ene (`mountedRef`), så plasseringen er gjort før nettleseren tegner. Senere stoppbytter glir fortsatt mykt. Verifisert med MutationObserver på innsettingsøyeblikket: `scrollLeft` er 349 (desktop) / 267 (mobil) i første frame og står stille i 20 frames etter.
+
+### 4. Åpent
 
 - **Mobil-inngangen.** «La nabolaget presentere seg» i mobil-indeksen starter fortsatt på første tema, ikke på Beliggenhet-rutenettet (indeksen har alt sin egen kategoriliste). Andreas må avgjøre om mobil-play skal lande på området slik desktop-kolonnen gjør.
 - Raden ruller aktivt tema til 44 px fra venstre, så «Beliggenhet» (veien tilbake) ligger ofte utenfor synsfeltet etter et kort-trykk. Pre-eksisterende, men mer synlig nå som rutenettet er inngangen.
+- **~300 ms hovedtråd-stall ved lagbytte.** Målt: tema→tema stopper hovedtråden i ~100 ms, mens område↔tema stopper den i ~300 ms (board-render + montering/avmontering av rutenettet eller raden). Det er derfor raden dukker opp ~400 ms etter trykket og ikke ~120 ms. Selve animasjonene går på kompositoren og er glatte; stallet er død luft FØR dem. Ikke rørt — det krever at det tunge arbeidet flyttes inn i utton-fasen.
 
 ---
 
