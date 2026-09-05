@@ -6,6 +6,29 @@
 
 ---
 
+## 2026-09-05 — BELIGGENHET SOM STARTSIDE: TEMA-RUTENETT I STEDET FOR EN RAD INGEN INTRODUSERTE, OG ET LAGBYTTE MELLOM DEM
+
+**Kontekst:** Andreas med et skjermbilde av områdestoppet på Wesselsløkka: *«da er det ikke så gitt at de kan velge blant kategorier. kategori-bar i topp ligger der, klart, men den blir ikke særlig introdusert her.»* Beliggenhet fungerte alt som startside (2026-08-27), men inngangen til temaene var seks små brikker i en rad, og setningen «Velg et tema» pekte på noe som ikke så ut som et valg. Worktree `../placy-kategorigrid`, branch `feat/kategori-grid-forside`, ikke pushet.
+
+### 1. Rutenettet erstatter raden på områdestoppet
+
+Ny `StoryThemeGrid` (2 kolonner, ikon + navn + «N steder») ligger i `AreaPane` mellom strøkets intro og «Spørsmål og svar». Raden (`StoryRail`) og mobil-dekket (`StoryDeck`) returnerer `null` mens `onArea` er sann, og desktop-hodet i `StoryCard` rendrer ikke `head` da. Et trykk på et kort er `goto(n)`: temaet åpnes, og raden kommer inn med det temaet aktivt. «Beliggenhet» i raden er veien tilbake til rutenettet. Samme form på mobil og desktop, verifisert i Chrome på 1400 og 390 px, 0 konsollfeil.
+
+Desktop-testene gikk inn i temaene via raden fra ankomsten, som nå ikke finnes der; de går via rutenettet (`enterTheme`-hjelper), og fire nye tester dekker vekslingen rutenett/rad.
+
+### 2. Overgangen: morfing forkastet, lagbytte valgt
+
+Første forsøk var View Transitions med delt `view-transition-name` per tema, så kortet gled og krympet inn i brikken sin. Teknisk virket det (ready/finished begge veier), men Andreas så det og sa nei: *«den overgangen der var ikke helt heldig»*. Det han ville ha var et **lagbytte**: forside-innholdet toner ut, og på den nye siden kommer tab-raden først, med en liten glidning fra toppen, så resten av innholdet. Samme tilbake. Og bare til/fra området, aldri tema til tema.
+
+Bygd som to trinn i `story-tour`: `goto` som krysser `AREA_STEP` setter `leaving` (→ `.story-leave`, 160 ms fade, `STORY_LAYER_LEAVE_MS`) og bytter steg først etter det. Det nye laget monteres med `key={onArea ? "area" : "theme"}` på overskrift/faner og på innholdet, så de animeres ved LAGBYTTE men ikke tema til tema. Raden er `story-enter-first` (fra toppen; `-up` fra bunnen på mobil-dekket), resten `story-enter-rest` (fade, 110 ms forsinket). Bevegelsen gates på `prefers-reduced-motion: no-preference` spurt positivt, så testenes matchMedia-polyfill (svarer false) gir øyeblikkelig bytte, og en bruker med redusert bevegelse får det samme. Målt i Chrome: leave-klasse ved 60 ms med gridet fortsatt i DOM, rad + nytt innhold ved 310 ms, alt på opacity 1 ved 810 ms; tema→tema utløser ingen lag-animasjon.
+
+### 3. Åpent
+
+- **Mobil-inngangen.** «La nabolaget presentere seg» i mobil-indeksen starter fortsatt på første tema, ikke på Beliggenhet-rutenettet (indeksen har alt sin egen kategoriliste). Andreas må avgjøre om mobil-play skal lande på området slik desktop-kolonnen gjør.
+- Raden ruller aktivt tema til 44 px fra venstre, så «Beliggenhet» (veien tilbake) ligger ofte utenfor synsfeltet etter et kort-trykk. Pre-eksisterende, men mer synlig nå som rutenettet er inngangen.
+
+---
+
 ## 2026-09-01 — WORKTREE-RYDDING SOM BLE EN LEVERANSE: KAMERA-INVERSEN FOR GOOGLE-MOTOREN, HENTET UT AV EN DØENDE BRANCH
 
 **Kontekst:** Andreas med et Finder-skjermbilde: *«vi har mange worktrees nå, hva er status på dem?»* Fem stykker. Svaret viste seg å være at to var ferdige, én var levende, og to var utdaterte — men at den ene av de utdaterte hadde 817 linjer ukommitert arbeid liggende som ingen visste om.

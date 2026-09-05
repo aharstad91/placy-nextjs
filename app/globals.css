@@ -644,3 +644,75 @@ gmp-popover::part(dialog) {
 .grounding-search-entry .headline {
   display: none !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Omvisningens lagbytte: område (rutenett) ↔ tema (rad). 2026-09-05.
+
+   To trinn. Først toner det gamle innholdet ut (`story-leave`, varigheten må
+   matche STORY_LAYER_LEAVE_MS i story-tour.tsx). Så monteres det nye laget:
+   det første elementet (raden i temalaget, overskriften på området) glir inn
+   fra sin egen kant, og resten toner inn litt etter. Tema til tema bruker
+   ingen av disse — det er samme lag. */
+@keyframes story-leave {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes story-enter-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes story-enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes story-enter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.story-leave {
+  animation: story-leave 160ms ease-out forwards;
+  pointer-events: none;
+}
+.story-enter-first {
+  animation: story-enter-down 260ms cubic-bezier(0.22, 0.9, 0.26, 1) both;
+}
+.story-enter-first-up {
+  animation: story-enter-up 260ms cubic-bezier(0.22, 0.9, 0.26, 1) both;
+}
+.story-enter-rest {
+  animation: story-enter-fade 260ms ease-out 110ms both;
+}
+/* `display: contents` har ingen boks å animere; da animeres barna. */
+.story-enter-first.contents > *,
+.story-enter-rest.contents > * {
+  animation: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-leave,
+  .story-enter-first,
+  .story-enter-first-up,
+  .story-enter-rest,
+  .story-enter-first.contents > *,
+  .story-enter-rest.contents > * {
+    animation: none !important;
+  }
+}

@@ -87,6 +87,11 @@ export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
       className={cn(
         "relative flex items-stretch",
         variant === "deck" ? "px-3.5 pb-2 pt-1.5" : "shrink-0",
+        /* Raden er det FØRSTE som kommer i temalaget: den toner inn med en
+           liten glidning fra sin egen kant (toppen på desktop, bunnen på
+           mobil), og resten av innholdet følger etter. Kjører ved montering —
+           og raden monteres bare når laget byttes, ikke tema til tema. */
+        variant === "deck" ? "story-enter-first-up" : "story-enter-first",
       )}
     >
       {/* Toninger i barens egne kanter: en brikke klippet midt i et ord leser
@@ -235,13 +240,17 @@ function RailChip({
  * så det ikke oppstår en synlig kant der uskarpheten begynner.
  */
 export function StoryDeck() {
-  const { onArea } = useStoryTour();
+  const { onArea, leaving } = useStoryTour();
   // Uten rad er dekket bare et slør over bunnen av sheeten — se `StoryRail`.
   if (onArea) return null;
   return (
     <div
       data-testid="story-deck"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden"
+      className={cn(
+        "pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden",
+        /* På vei tilbake til området toner dekket ut sammen med innholdet. */
+        leaving && "story-leave",
+      )}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div

@@ -103,7 +103,8 @@ export function StoryCard({
   footer?: ReactNode;
 }) {
   const { data } = useBoard();
-  const { stop, onArea, pane, showPane, end, picks, stops } = useStoryTour();
+  const { stop, onArea, leaving, pane, showPane, end, picks, stops } =
+    useStoryTour();
   // Kategoriens steder slik KARTUTSNITTET avgrenser dem. Hentes her, ikke i
   // fanen: tallet i faneetiketten og lista i fanen må være samme sannhet.
   const list = useViewportCategoryList(stop);
@@ -143,7 +144,13 @@ export function StoryCard({
       data-testid="story-card"
       /* Mobil: luft til dekket i underkanten — bare når dekket ER der. På
          områdestoppet er raden borte, og 84 px tom bunn leste som et hull. */
-      className={cn("shrink-0", column ? "pb-4" : onArea ? "pb-6" : "pb-[84px]")}
+      className={cn(
+        "shrink-0",
+        column ? "pb-4" : onArea ? "pb-6" : "pb-[84px]",
+        /* Lagbyttet (område ↔ tema): innholdet toner ut FØR det nye kommer.
+           Se STORY_LAYER_LEAVE_MS i story-tour. */
+        leaving && "story-leave",
+      )}
     >
       {/* `contents` på mobil — se doccen over. */}
       <div className="contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white/85 lg:px-6 lg:pb-2 lg:pt-3 lg:backdrop-blur-xl">
@@ -193,37 +200,50 @@ export function StoryCard({
             masken som skjuler innholdet som passerer under spørsmålet på mobil.
             På desktop passerer ingenting, og en hvit stripe i full tekstbredde
             leste som et utfylt skrivefelt i stedet for som en overskrift. */}
-        <h3 className="sticky top-0 z-[2] -mx-4 bg-white px-4 pb-2.5 pr-14 pt-1 text-[20px] font-bold leading-[1.2] tracking-[-0.02em] text-stone-900 lg:static lg:m-0 lg:bg-transparent lg:p-0 lg:pt-1">
-          {onArea ? areaLabel(data.home) : stop!.question || stop!.label}
-        </h3>
+        {/* `key` på laget: overskrift og faner monteres på nytt når området
+            byttes mot et tema (og animeres inn), men IKKE tema til tema — da
+            er det samme lag, og bare teksten skifter. På området er
+            overskriften det første som kommer; i temalaget kommer raden først
+            og overskriften i andre rekke. */}
+        <div
+          key={onArea ? "area" : "theme"}
+          className={cn(
+            "contents",
+            onArea ? "story-enter-first" : "story-enter-rest",
+          )}
+        >
+          <h3 className="sticky top-0 z-[2] -mx-4 bg-white px-4 pb-2.5 pr-14 pt-1 text-[20px] font-bold leading-[1.2] tracking-[-0.02em] text-stone-900 lg:static lg:m-0 lg:bg-transparent lg:p-0 lg:pt-1">
+            {onArea ? areaLabel(data.home) : stop!.question || stop!.label}
+          </h3>
 
-        {onArea ? (
-          <p
-            data-testid="story-area-subline"
-            className="text-[13px] font-medium tabular-nums text-stone-500"
-          >
-            {areaSubline(stops)}
-          </p>
-        ) : (
-          /* Segmentert kontroll: svar på samme spørsmål. Den valgte brikken
+          {onArea ? (
+            <p
+              data-testid="story-area-subline"
+              className="text-[13px] font-medium tabular-nums text-stone-500"
+            >
+              {areaSubline(stops)}
+            </p>
+          ) : (
+            /* Segmentert kontroll: svar på samme spørsmål. Den valgte brikken
              løftes med hvitt og skygge; det er den bevegelsen som viser at et
              trykk på et av snarveis-kortene i «Om området» gjorde noe. */
-          <div
-            role="tablist"
-            aria-label="Svarform"
-            className="flex gap-0.5 rounded-full bg-black/[0.045] p-[3px] lg:mt-4"
-          >
-            {tab("about", "Om området")}
-            {tab("places", `Steder (${visibleRows.length})`)}
-            {faqTab && tab("faq", `Spørsmål (${faqs.length})`)}
-          </div>
-        )}
+            <div
+              role="tablist"
+              aria-label="Svarform"
+              className="flex gap-0.5 rounded-full bg-black/[0.045] p-[3px] lg:mt-4"
+            >
+              {tab("about", "Om området")}
+              {tab("places", `Steder (${visibleRows.length})`)}
+              {faqTab && tab("faq", `Spørsmål (${faqs.length})`)}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Fanene bytter enkelt: den inaktive tas ut av layouten. Flaten står
           stille gjennom hele omvisningen, så en fane som er høyere enn en annen
           gir bare mer å scrolle — ikke en flate som flytter seg. */}
-      <div className="pt-3">
+      <div key={onArea ? "area" : "theme"} className="story-enter-rest pt-3">
         {onArea ? (
           <AreaPane />
         ) : (
