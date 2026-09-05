@@ -8,7 +8,8 @@ import {
 
 describe("EVENT_TYPES", () => {
   it("speiler DB-CHECK-en events_event_type_check nøyaktig", () => {
-    // Startsettet er 070_baseline.sql:347; utvidet av 085_event_types_utforsk.sql.
+    // Startsettet er 070_baseline.sql:347; utvidet av 085_event_types_utforsk.sql
+    // og 086_event_type_faq_opened.sql.
     // Endres dette settet MÅ DB-CHECK-en utvides i samme slengen
     // (to-stegs-grensen). Denne testen ER snubletråden.
     expect([...EVENT_TYPES]).toEqual([
@@ -18,6 +19,7 @@ describe("EVENT_TYPES", () => {
       "poi_clicked",
       "poi_explore_opened",
       "poi_outbound_clicked",
+      "faq_opened",
     ]);
   });
 

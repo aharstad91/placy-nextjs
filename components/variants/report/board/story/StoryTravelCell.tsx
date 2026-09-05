@@ -18,13 +18,20 @@ import {
  * av tall lenger opp. En tab-rad der én av brikkene er en innstilling lover et
  * stopp som ikke finnes.
  *
- * Her står den der tallene står, høyrestilt rett over «N min»-kolonnen. Da leser
+ * Her står den der tallene står, i overskriftsraden rett over lista. Da leser
  * den som en enhet — «disse tidene er i gange» — og ikke som en destinasjon.
- * `mr-[39px]` er ikke pynt, men målt inn i stedslista: rammens kant (1) + radens
- * padding (14) + radens chevron-kolonne (18) + radens gap (12) minus knappens
- * egen padding (6). Da lander «Gange» nøyaktig over «3 min» og ikke over
- * chevronen. Tallet endrer seg med radens geometri — den ligger i
- * `Disclosure.tsx`.
+ *
+ * ## Helt ut i høyre kant (2026-09-02)
+ *
+ * Den lå før på `mr-[39px]`, målt inn i stedslista slik at etiketten landet
+ * nøyaktig over «3 min»-kolonnen og ikke over chevronen. Målingen var riktig og
+ * likevel feil: en brikke som står 39 px inn fra kanten leser ikke som «over
+ * minuttene», den leser som tilfeldig plassert (Andreas, 2026-09-02). Raden den
+ * står i har overskriften flust i venstre kant, og da er den eneste kanten
+ * brikken kan svare på den høyre.
+ *
+ * `-mr-1.5` nuller knappens egen vannrette padding, så det er TEKSTEN som
+ * flukter med kanten av lista under — ikke den usynlige treffflaten rundt den.
  *
  * Panelet er `TravelModeSelector variant="panel"` — samme komponent chipen på
  * ruta bruker. To innganger til samme tilstand er med vilje; er de ulike, leser
@@ -74,7 +81,7 @@ export function StoryTravelCell() {
         aria-expanded={open}
         aria-label="Reisemåte"
         className={cn(
-          "mr-[39px] flex items-center gap-[3px] rounded-lg px-1.5 py-[3px]",
+          "-mr-1.5 flex items-center gap-[3px] rounded-lg px-1.5 py-[3px]",
           "text-[12.5px] font-semibold tracking-[0.02em] whitespace-nowrap",
           "transition-colors duration-150",
           open

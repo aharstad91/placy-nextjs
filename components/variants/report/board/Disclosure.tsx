@@ -81,16 +81,26 @@ export function DisclosureList({
 export const DISCLOSURE_ROW =
   "flex w-full cursor-pointer gap-3 px-3.5 py-3 text-left transition-colors duration-150";
 
-/** Radens hviletilstand: bunnen svarer på pekeren, men ligger flatt. */
+/** Radens hviletilstand: bunnen svarer på pekeren, men ligger flatt. Legges
+ *  BARE på lukkede rader — se {@link DISCLOSURE_ITEM_OPEN}. */
 export const DISCLOSURE_ROW_HOVER = "hover:bg-stone-900/[0.03]";
 
 /**
- * Åpen rad. Ligger på HELE raden — knappen og utfoldingen under den — og ikke
- * bare på knappen: en tone som stoppet ved knappens underkant delte den åpne
- * raden i to, en grå stripe med en hvit tekstblokk under. Med tonen rundt begge
- * leser den som ett utfoldet felt.
+ * Åpen rad — HVIT, ikke tonet (2026-09-02).
+ *
+ * Den var grå (`bg-stone-900/[0.03]`), slik at den åpne raden og utfoldingen
+ * under den leste som ett felt. Prisen var at raden du nettopp ga
+ * oppmerksomhet var den ENESTE som lå i grått, og grått på hvitt leser som
+ * deaktivert (Andreas, 2026-09-02: «et aktivt accordion element må ikke føles
+ * deaktivert når det først gis oppmerksomhet»). Den utfoldede teksten er
+ * signalet, sammen med chevronen som har snudd — den trenger ingen tone.
+ *
+ * Ligger fortsatt på HELE raden, knappen og utfoldingen, av samme grunn som
+ * før: en bakgrunn som stopper ved knappens underkant deler den åpne raden i
+ * to. Og fordi hvilebunnen er en TONE, må hoveren av på åpne rader — ellers
+ * kommer den grå stripen tilbake i det pekeren står over knappen.
  */
-export const DISCLOSURE_ITEM_OPEN = "bg-stone-900/[0.03]";
+export const DISCLOSURE_ITEM_OPEN = "bg-white";
 
 /**
  * Radens tekst. Bryter som default (et spørsmål på to linjer skal ikke kuttes);
@@ -101,10 +111,10 @@ export const DISCLOSURE_LABEL =
   "min-w-0 flex-1 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-stone-900";
 
 /**
- * Bredden chevronen tar. Eksportert fordi to ting må regne på den: rader som
- * IKKE kan utfoldes må holde plassen av (ellers står «17 min» lenger til høyre
- * enn «4 min» rett over), og reisemåte-velgeren står rett over minutt-kolonnen
- * og må måle seg inn forbi den.
+ * Bredden chevronen tar. Eksportert fordi rader som IKKE folder seg ut må holde
+ * plassen av — ellers står «17 min» lenger til høyre enn «4 min» rett over.
+ * Gjelder både rader uten utfolding (steder uten tekst) og rader som bærer en
+ * pil i stedet for en chevron (snarveiene i utvalgets liste).
  */
 export const DISCLOSURE_CHEVRON_SIZE = 18;
 

@@ -163,6 +163,12 @@ interface Props {
    * krever et brukertrykk i denne fanen (nettleser-policy), derfor knapp.
    */
   fromEmbed?: boolean;
+  /**
+   * Inngangskilde (`?src=`), normalisert av BoardEmbedGate. Reiser i Moat-2-
+   * konvolutten på hvert event i økten — svarer på «hvilken flate sendte dem
+   * hit» (QR på papir, FINN «Nyttige lenker», visningsbekreftelse, SOME).
+   */
+  source?: string;
 }
 
 export default function ReportReelsPage(props: Props) {
@@ -180,6 +186,7 @@ function Inner({
   collection,
   embed = false,
   fromEmbed = false,
+  source,
 }: Props) {
   const { locale } = useLocale();
 
@@ -277,8 +284,9 @@ function Inner({
       // Startverdien. Den faktiske verdien leses fra travelModeRef ved emit —
       // se under.
       travel_mode: "walk",
+      ...(source ? { source } : {}),
     }),
-    [eventMode, has3dAddon, boardData.categories, locale],
+    [eventMode, has3dAddon, boardData.categories, locale, source],
   );
   // Aktiv reisemodus må leses ved EMIT-tidspunktet, ikke fryses i konvolutten:
   // et poi_clicked i bil-modus er et annet signal enn samme klikk i gå-modus.

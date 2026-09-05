@@ -18,6 +18,7 @@ import {
   DisclosurePanel,
 } from "./Disclosure";
 import { SIDEBAR_SECTION_TITLE } from "./sidebar-style";
+import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 
 /**
  * «Spørsmål og svar» — det en megler ville svart på visning, for akkurat denne
@@ -56,6 +57,7 @@ export function FAQSection({
   categoryIds,
   onOpenPoi,
   onSelectCategory,
+  categoryId,
   title = "Spørsmål og svar",
   className,
 }: {
@@ -68,11 +70,18 @@ export function FAQSection({
   onOpenPoi?: (poiId: string) => void;
   /** Klikk på en kategorilenke i den globale FAQ-en → velg kategorien. */
   onSelectCategory?: (categoryId: string) => void;
+  /**
+   * Temaet spørsmålene vises under — reiser med `faq_opened`-eventet så
+   * aggregeringen kan skille «skole-spørsmål i barn-tema» fra den globale
+   * nabolags-FAQ-en. Utelatt for global FAQ.
+   */
+  categoryId?: string;
   title?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set());
   const idPrefix = useId();
+  const engagement = useEngagement();
 
   // Ingen svar → ingen seksjon. En tom overskrift ville lovet innhold som
   // ikke finnes, og på en ukuratert adresse er tomhet den normale tilstanden
@@ -81,12 +90,19 @@ export function FAQSection({
 
   const resolvers = boardLinkResolvers(poisById, categoryIds);
 
-  const toggle = (id: string) =>
+  const toggle = (id: string) => {
+    // Moat 2: bare ÅPNING logges (uttalt behov). Lukking er ikke et signal.
+    if (!open.has(id)) {
+      engagement.emit("faq_opened", {
+        payload: categoryId ? { faq_id: id, category_id: categoryId } : { faq_id: id },
+      });
+    }
     setOpen((prev) => {
       const next = new Set(prev);
       if (!next.delete(id)) next.add(id);
       return next;
     });
+  };
 
   return (
     <section data-testid="faq-section" className={className ?? "mt-5"}>
@@ -116,7 +132,7 @@ export function FAQSection({
                 className={cn(
                   DISCLOSURE_ROW,
                   "items-start",
-                  DISCLOSURE_ROW_HOVER,
+                  !expanded && DISCLOSURE_ROW_HOVER,
                 )}
               >
                 <span className={DISCLOSURE_LABEL}>{entry.question}</span>

@@ -281,6 +281,7 @@ export function CategoryPage({
             entries={faq}
             poisById={data.poisById}
             categoryIds={data.categories.map((c) => c.id)}
+            categoryId={category.id}
             onOpenPoi={handleFaqPoi}
             className="mt-3"
           />

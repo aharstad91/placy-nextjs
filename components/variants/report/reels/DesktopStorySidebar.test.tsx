@@ -360,19 +360,19 @@ describe("temastoppet på desktop", () => {
     );
   });
 
-  it("lar snarveis-kortet til stedslista stå alene, som én linje i full bredde", () => {
+  it("legger snarveien til stedslista INN i utvalgets liste, som siste rad", () => {
     const utils = openTheme();
-    const grid = utils.getByText("Steder i nærheten").closest("div.grid")!;
-    // Ett kort, og det er stedslistas: kortet til svarene er borte fordi
-    // svarene ligger rett under. (Tittel og undertittel ligger i to søsken-
-    // spans, så en sammensatt streng ville aldri matchet noe uansett.)
-    expect(grid.children).toHaveLength(1);
-    expect(within(grid as HTMLElement).queryByText("Spørsmål og svar")).toBeNull();
-    expect(grid.className).toContain("grid-cols-1");
-    // Én linje, ikke et stablet kort: ikon, navn og tall på samme rad.
     const rad = utils.getByTestId("story-places-row");
+    // Samme boks som meglerens utvalg, ikke et løst kort ved siden av den: det
+    // var gapet som gjorde de to til uavhengige ting (2026-09-02).
+    const list = rad.closest("ul")!;
+    expect(within(list).getByText("Extra Grilstad")).not.toBeNull();
+    expect(list.lastElementChild).toBe(rad.closest("li"));
+    // Én linje, som stedsradene over: ikon, navn og tall på samme rad.
     expect(rad.className).toContain("items-center");
     expect(rad.className).not.toContain("flex-col");
+    // Snarveien til svarene finnes ikke på desktop — svarene ligger rett under.
+    expect(utils.queryByTestId("story-faq-row")).toBeNull();
   });
 
   it("legger stedslista RETT UNDER utvalget, foran svarene", () => {

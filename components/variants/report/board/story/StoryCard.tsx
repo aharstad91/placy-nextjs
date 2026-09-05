@@ -361,10 +361,9 @@ function placesInView(
  * stedene noen har valgt ut er nettopp det som IKKE skal flytte seg. Den andre:
  * utvalget er innsalget (Moat 1), og det sto bak et trykk på en fane.
  *
- * Snarveis-kortet til steds-fanen står, men sier noe annet enn før: det peker
- * på DEKNINGEN — hele kategorien, med tallet utenpå. Det er den veien inn
- * megleren betaler for, og den skal være synlig uten at noen først trykker på en
- * fane.
+ * Snarveien til steds-fanen står, men sier noe annet enn før: den peker på
+ * DEKNINGEN — hele kategorien, med tallet utenpå. Det er den veien inn megleren
+ * betaler for, og den skal være synlig uten at noen først trykker på en fane.
  */
 function AboutPane({
   category,
@@ -379,9 +378,9 @@ function AboutPane({
 }) {
   const { showPane } = useStoryTour();
   const faqs = category.editorial?.faq ?? [];
-  // Kortet er veien til svarene når de ligger bak en fane. Ligger de rett under,
-  // ville kortet pekt på noe leseren allerede ser.
-  const faqCard = !withFaq && faqs.length > 0;
+  // Snarveien er veien til svarene når de ligger bak en fane. Ligger de rett
+  // under, ville den pekt på noe leseren allerede ser.
+  const faqShortcut = !withFaq && faqs.length > 0;
   const paragraphs = storyProse(category, withFaq);
 
   return (
@@ -399,45 +398,41 @@ function AboutPane({
         <StoryTravelCell />
       </div>
 
+      {/* Dekningen ligger RETT UNDER utvalget — og fra 2026-09-02 INNE i samme
+          liste, som en siste rad.
+          Den lå som et løst kort med 12 px luft over, og da var utvalget én ting
+          og veien videre en annen (Andreas, 2026-09-02: «nå er de separert og har
+          ikke tilhørighet til hverandre»). Det er den samme feilen hårstrekene
+          løste for svarene i august: gapet gjorde beslektede rader til
+          uavhengige bokser. Utvalget ER de tre stedene, og lista er alt det
+          andre — samme tanke, og derfor samme boks.
+
+          Snarveien skiller seg fra en stedsrad på ÉN ting: pilen til høyre der
+          stedene har en chevron. Chevron = folder seg ut her, pil = tar deg et
+          annet sted. */}
       <DisclosureList as="ul">
         {picks.map((poi) => (
           <PlaceRow key={poi.id} poi={poi} category={category} mark="chip" />
         ))}
-      </DisclosureList>
-
-      {/* Dekningen ligger RETT UNDER utvalget, ikke nederst.
-          To grunner: utvalget er tre steder og lista er alt det andre — det er
-          samme tanke, fortsatt — og på desktop står svarene under her, så et kort
-          etter dem ville ligget en halv skjerm fra det det handler om.
-
-          Formen skifter med hvor mange kort det er. Ett kort er en LINJE i full
-          bredde: en bred flate med ett navn i leser som «trykk her», og et høyt
-          kort på full bredde leste som «det finnes ÉN ting mer her». To kort står
-          som et par og sier at svaret har flere former og at du velger. */}
-      <div
-        className={cn(
-          "grid gap-2 pb-1 pt-3",
-          faqCard ? "grid-cols-2" : "grid-cols-1",
-        )}
-      >
-        <MiniCard
+        <ShortcutRow
           color={category.color}
           Icon={MapPin}
           title="Steder i nærheten"
           sub={`${category.pois.length} i alt`}
-          row={!faqCard}
+          testId="story-places-row"
           onClick={() => showPane("places")}
         />
-        {faqCard && (
-          <MiniCard
+        {faqShortcut && (
+          <ShortcutRow
             color={category.color}
             Icon={MessageCircleQuestion}
             title="Spørsmål og svar"
             sub={`${faqs.length} svar`}
+            testId="story-faq-row"
             onClick={() => showPane("faq")}
           />
         )}
-      </div>
+      </DisclosureList>
 
       {withFaq && faqs.length > 0 && (
         <div data-testid="story-faq">
@@ -640,7 +635,11 @@ function PlaceRow({
         onClick={() => togglePlace(poi)}
         aria-current={open}
         aria-expanded={expandable ? open : undefined}
-        className={cn(DISCLOSURE_ROW, "items-center", DISCLOSURE_ROW_HOVER)}
+        className={cn(
+          DISCLOSURE_ROW,
+          "items-center",
+          !open && DISCLOSURE_ROW_HOVER,
+        )}
       >
         {/* Markøren ligger i en kolonne med FAST bredde, ikke inntil navnet: en
             stjerne er 13 px og en prikk 8, så uten kolonnen rykket navnet fram
@@ -719,70 +718,59 @@ function PlaceRow({
   );
 }
 
-/** Snarveien ut av prosaen. Disse ER kort, på hvit flate: en svak grå bunn i
- *  stedet for hvitt-på-hvitt. */
-function MiniCard({
+/**
+ * Veien videre, som en rad i utvalgets liste — ikke som et kort ved siden av
+ * den (2026-09-02).
+ *
+ * Geometrien er PlaceRow-ens, ned til markørkolonnens bredde og
+ * minutt-kolonnens plass: radene skal stå i samme loddrette linjer, ellers er
+ * de ikke i samme liste i praksis. Det som skiller er pilen — se AboutPane.
+ */
+function ShortcutRow({
   color,
   Icon,
   title,
   sub,
-  row = false,
+  testId,
   onClick,
 }: {
   color: string;
   Icon: LucideIcon;
   title: string;
   sub: string;
-  /** Én linje i full bredde i stedet for et stablet kort. Se AboutPane. */
-  row?: boolean;
+  testId: string;
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      data-testid={row ? "story-places-row" : undefined}
-      onClick={onClick}
-      className={cn(
-        "rounded-2xl border border-stone-300/80 bg-stone-50 text-left transition-colors duration-150 hover:bg-stone-100",
-        row
-          ? "flex items-center gap-3 px-3.5 py-2.5"
-          : "flex flex-col items-start gap-2 p-3",
-      )}
-    >
-      <span
-        aria-hidden
-        className={cn(
-          "flex items-center justify-center rounded-full text-white",
-          row ? "h-7 w-7 shrink-0" : "h-6 w-6 shadow-[0_0_0_2px_#fff]",
-        )}
-        style={{ backgroundColor: color }}
-      >
-        <Icon size={14} />
-      </span>
-      <span
-        className={cn(
-          "block text-[14px] font-semibold leading-[1.3] text-stone-900",
-          row && "min-w-0 flex-1 truncate",
-        )}
-      >
-        {title}
-      </span>
-      <span
-        className={cn(
-          "flex items-center gap-1.5",
-          row ? "shrink-0" : "w-full",
-        )}
+    <li>
+      <button
+        type="button"
+        data-testid={testId}
+        onClick={onClick}
+        className={cn(DISCLOSURE_ROW, "items-center", DISCLOSURE_ROW_HOVER)}
       >
         <span
-          className={cn(
-            "min-w-0 text-[12.5px] text-stone-600",
-            row ? "tabular-nums" : "flex-1",
-          )}
+          aria-hidden
+          className="flex shrink-0 items-center justify-center"
+          style={{ width: MARK_WIDTH.chip }}
         >
+          <span
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white"
+            style={{ backgroundColor: color }}
+          >
+            <Icon size={14} />
+          </span>
+        </span>
+        <span className={cn(DISCLOSURE_LABEL, "truncate")}>{title}</span>
+        <span className="shrink-0 text-[14px] tabular-nums text-stone-600">
           {sub}
         </span>
-        <ArrowRight size={14} aria-hidden className="shrink-0 text-stone-400" />
-      </span>
-    </button>
+        <ArrowRight
+          size={DISCLOSURE_CHEVRON_SIZE}
+          aria-hidden
+          className="shrink-0 text-stone-400"
+        />
+      </button>
+    </li>
   );
 }

@@ -24,7 +24,9 @@ const MAX_ID_LEN = 256; // poi_id er fri TEXT (Google place-id, entur, ...) — 
 const MAX_CATEGORY_ID_LEN = 128;
 const MAX_LOCALE_LEN = 16;
 const MAX_SEGMENT_LEN = 128;
-const MAX_CATEGORIES_PRESENTED = 64; // et board viser en håndfull kategorier; 64 er raust
+const MAX_CATEGORIES_PRESENTED = 64;
+const MAX_SOURCE_LEN = 32; // `?src=`-verdier er korte kanalnavn (qr, finn, mail …)
+const MAX_FAQ_ID_LEN = 128; // et board viser en håndfull kategorier; 64 er raust
 /**
  * Total-cap på hele den serialiserte inputen (payload + id-er). Zod validerer
  * felt-for-felt, men et dypt/bredt objekt innenfor felt-cappene kan fortsatt bli
@@ -68,6 +70,14 @@ const contextEnvelope = z
     // manglende nøkkel i basen ikke kan skilles fra «gå» ved aggregering — da er
     // det bedre å skrive verdien enn å utelate den.
     travel_mode: z.enum(["walk", "bike", "car"]).default("walk"),
+    // Inngangskilde (`?src=`). Optional; låst til et lite tegnsett så feltet
+    // aldri blir en fri-tekst-kanal inn i jsonb.
+    source: z
+      .string()
+      .min(1)
+      .max(MAX_SOURCE_LEN)
+      .regex(/^[a-z0-9_-]+$/)
+      .optional(),
   })
   .strict();
 
@@ -102,6 +112,13 @@ const payloadByType = {
     .strict(),
   poi_outbound_clicked: z
     .object({ category_id: categoryId.optional(), context: optionalContext })
+    .strict(),
+  faq_opened: z
+    .object({
+      faq_id: z.string().min(1).max(MAX_FAQ_ID_LEN),
+      category_id: categoryId.optional(),
+      context: optionalContext,
+    })
     .strict(),
 } as const;
 
@@ -168,6 +185,15 @@ export const logEventSchema = z.discriminatedUnion("eventType", [
       productId,
       poiId: opaqueId.optional(),
       payload: payloadByType.poi_outbound_clicked.optional(),
+    })
+    .strict(),
+  // Payload PÅKREVD: et faq_opened uten faq_id er ingenting å aggregere på.
+  z
+    .object({
+      eventType: z.literal("faq_opened"),
+      projectId,
+      productId,
+      payload: payloadByType.faq_opened,
     })
     .strict(),
 ]);

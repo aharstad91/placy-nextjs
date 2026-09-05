@@ -111,6 +111,55 @@ describe("poi_outbound_clicked", () => {
  * events blitt avvist uten en eneste feilmelding. Et nytt konvolutt-felt må
  * utvides på begge steder i samme commit.
  */
+describe("faq_opened", () => {
+  it("godtar faq_id + kategori + konvolutt", () => {
+    const result = logEventSchema.safeParse({
+      eventType: "faq_opened",
+      projectId: "placy-demo_sundsoya",
+      payload: { faq_id: "skolekrets", category_id: "barn-oppvekst", context: CONTEXT },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("godtar global FAQ uten kategori", () => {
+    const result = logEventSchema.safeParse({
+      eventType: "faq_opened",
+      payload: { faq_id: "til-byen", context: CONTEXT },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("avviser manglende payload — uten faq_id er det ingenting å aggregere", () => {
+    expect(logEventSchema.safeParse({ eventType: "faq_opened" }).success).toBe(false);
+  });
+
+  it("avviser poi_id på top-level (attribusjonen hører ikke til FAQ)", () => {
+    const result = logEventSchema.safeParse({
+      eventType: "faq_opened",
+      poiId: "osm-1",
+      payload: { faq_id: "skolekrets" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("kontekst-konvoluttens source (inngangskilde)", () => {
+  const withContext = (context: Record<string, unknown>) =>
+    logEventSchema.safeParse({ eventType: "board_viewed", payload: { context } });
+
+  it.each(["qr", "finn", "mail", "some-story_2"])("godtar %s", (source) => {
+    expect(withContext({ ...CONTEXT, source }).success).toBe(true);
+  });
+
+  it("utelatt → godtas (de fleste økter har ingen kilde)", () => {
+    expect(withContext(CONTEXT).success).toBe(true);
+  });
+
+  it.each(["FINN", "fra facebook", "x".repeat(33), ""])("avviser %j", (source) => {
+    expect(withContext({ ...CONTEXT, source }).success).toBe(false);
+  });
+});
+
 describe("kontekst-konvoluttens travel_mode", () => {
   const withContext = (context: Record<string, unknown>) =>
     logEventSchema.safeParse({

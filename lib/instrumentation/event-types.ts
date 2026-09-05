@@ -21,6 +21,11 @@ export const EVENT_TYPES = [
   //   poi_outbound_clicked — fallback-lenken ble klikket (POI uten innhold)
   "poi_explore_opened",
   "poi_outbound_clicked",
+  // FAQ-spørsmål åpnet (migrasjon 086). Et åpnet spørsmål er UTTALT behov —
+  // det sterkeste segment-signalet boardet har uten å spørre brukeren direkte
+  // («hvilken skolekrets?» ≠ «finnes det treningssenter?»). Logges bare ved
+  // åpning, aldri ved lukking; spørsmåls-id er kontrakten (FAQ-katalogen).
+  "faq_opened",
 ] as const;
 
 // Avledet fra tuppelen (ikke en duplikat-union — én sannhetskilde).
@@ -72,6 +77,14 @@ export interface EngagementContextEnvelope {
    * sykkel-/bildata sender `"walk"`.
    */
   travel_mode: TravelMode;
+  /**
+   * Inngangskilde for økten, lest fra `?src=` ved board-mount (qr / finn /
+   * mail / some / embed …). Optional: de fleste økter har ingen. Feltet er det
+   * eneste som svarer på «hvor mange av dem som får lenken, åpner den» — og
+   * dermed Clarity-spørsmålet mot FINN Nabolagsprofil. Normalisert til
+   * [a-z0-9_-], maks 32 tegn, ellers droppet (ingen fri tekst i basen).
+   */
+  source?: string;
 }
 
 // Typede payloads per event-type. poi_clicket sin poi_id går i top-level
@@ -103,6 +116,18 @@ export interface EventPayloads {
   };
   /** Fallback-lenken til Google klikket (POI-et hadde ikke nok innhold). */
   poi_outbound_clicked: {
+    category_id?: string;
+    context?: EngagementContextEnvelope;
+  };
+  /**
+   * FAQ-spørsmål åpnet. `faq_id` er spørsmåls-id-en fra katalogen
+   * (`lib/editorial/category-specs.ts` / kurators egen id); `category_id`
+   * er temaet spørsmålet ble vist under — utelatt for den globale nabolags-
+   * FAQ-en. Teksten lagres IKKE: id-en er kontrakten, teksten slås opp ved
+   * aggregering.
+   */
+  faq_opened: {
+    faq_id: string;
     category_id?: string;
     context?: EngagementContextEnvelope;
   };
