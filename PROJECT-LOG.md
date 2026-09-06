@@ -6,6 +6,44 @@
 
 ---
 
+## 2026-09-06 — KATEGORINAVNENE BLE ETT ORD: RADEN VISER FEM TEMAER I STEDET FOR TRE
+
+**Kontekst:** Andreas med et skjermbilde av kategori-raden: *«jeg vil ha korte kategorier. og jeg ser at det ikke er tenkt gjennom så mye hva de ulike labels er for kategoriene nå.»* Forslaget hans var Oppvekst, Transport, Natur og Aktivitet. Tre av fire ble stående.
+
+### 1. Problemet var ikke estetikk, det var avkorting
+
+Tema-navnene var aldri designet som et sett — de er lagt til én og én over tid. «Barn & Oppvekst», «Transport & Mobilitet» og «Natur & Friluftsliv» er hver for seg presise, men i raden over boardet betydde de at bare tre chips fikk plass før avkortingen. Brukeren så altså ikke hva boardet inneholdt uten å scrolle sidelengs. Etter kuttet får fem og en halv plass i samme bredde — målt på Wesselsløkka.
+
+### 2. To valg som ikke fulgte forslaget
+
+**«Aktivitet» ble «Trening».** Forslaget kolliderte med barne-temaet, som i bolig-profilen het «Barn & Aktivitet». Temaet inneholder gym, svømmehall, spa og treningspark — «Trening» beskriver innholdet, «Aktivitet» beskriver to temaer samtidig.
+
+**«Mat» ble «Servering».** Andreas spurte etter et alternativ til «Mat», og «Servering» er det eneste enkeltordet som faktisk dekker alle fire kategoriene i temaet: restaurant, kafé, bar og bakeri. «Spisesteder» er dobbelt så langt som nabo-chipsene og utelater baren; «Uteliv» betyr kveld og drikke og gjør bakeriet hjemløst.
+
+Settet ble: **Hverdag · Oppvekst · Servering · Natur · Transport · Trening**. Næringsprofilen fulgte med: Hverdagstjenester → Tjenester, Nabolaget → Nabolag.
+
+Event-profilen er urørt. Halvparten av navnene der er alt ettordsnavn (Scener, Fasiliteter, Camping), og «Transport & Inngang» mister mening om den kuttes.
+
+### 3. Navnene finnes to steder, og bare den ene er kode
+
+Dette er funnet verdt å huske. Å endre `report-defaults.ts`, `bransjeprofiler.ts` og `default-themes.ts` gir nye navn på **nye** boards — men hvert eksisterende board har en egen kopi av tema-navnet lagret i `products.config.reportConfig.themes`, og merge-semantikken i `getReportThemes()` er `{ ...profilDefault, ...reportConfigOverride }`. Den lagrede kopien vinner. Uten en datamigrasjon hadde kodeendringen vært usynlig på alle 12 boardene.
+
+Alle 12 er oppdatert med et navne-oppslag som bare bytter navn som eksakt matcher et kjent standardnavn — kuraterte navn overlever. Backup av alle configs ble skrevet før første PATCH.
+
+### 4. Grilstad ble et unntak som ble tatt med
+
+Grilstad Marina hadde tre håndskrevne navn som ikke var standard: «Sjø, strand & friluft», «Marina & båtliv» og «Trening & Helse». De overlevde automatikken korrekt, men sto igjen som de eneste ampersandene i produktet. Etter avklaring med Andreas: Sjøliv, Båtliv, Trening.
+
+### 5. Verifisering
+
+`revalidateTag("product:...")` per board — de nye navnene kom først på ANDRE lasting, fordi `revalidateTag(tag, "max")` er stale-while-revalidate og første forespørsel serverer det gamle. Verdt å vite neste gang noe «ikke virker» etter en cache-bust.
+
+Wesselsløkka verifisert i browser (skjermbilde, ny rad synlig). Grilstad verifisert i data med lesebekreftelse, ikke som skjermbilde — det er et VO-board der kategori-raden ligger bak flythrough-en. 3 516 tester passerer; ingen testet mot navnene, de bygger sine egne fixtures.
+
+Prod leser samme Supabase, så navnene gjelder der umiddelbart — men prod-boardenes Next-cache kan vi ikke buste utenfra siden admin er avslått i prod (juli). De slår inn når deployen fra `841e1f2` er kald.
+
+---
+
 ## 2026-09-01 — WORKTREE-RYDDING SOM BLE EN LEVERANSE: KAMERA-INVERSEN FOR GOOGLE-MOTOREN, HENTET UT AV EN DØENDE BRANCH
 
 **Kontekst:** Andreas med et Finder-skjermbilde: *«vi har mange worktrees nå, hva er status på dem?»* Fem stykker. Svaret viste seg å være at to var ferdige, én var levende, og to var utdaterte — men at den ene av de utdaterte hadde 817 linjer ukommitert arbeid liggende som ingen visste om.
