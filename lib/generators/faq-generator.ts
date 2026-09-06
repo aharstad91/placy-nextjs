@@ -362,6 +362,21 @@ function minutter(w: number): string {
   return w === 1 ? "ett minutt" : `${w} minutter`;
 }
 
+/**
+ * Åpningstiden slik en beboer sier den. «10–16», men «døgnåpent» når døra
+ * aldri stenger.
+ *
+ * `formatHourRange` gir «00–24» for et døgnåpent sted, som er riktig og som
+ * ingen sier høyt. TrenHer på Wesselsløkka er døgnåpent, og raden om å trene
+ * før jobb svarte «holder åpent 00–24 på hverdager» — teknisk sant, og det
+ * leseren måtte regne ut selv.
+ */
+function apningstid(tider: DayHours): string {
+  return tider.openMin === 0 && tider.closeMin >= 1440
+    ? "døgnåpent"
+    : formatHourRange(tider);
+}
+
 /** Hverdagenes felles åpningstid fra de cachede tidene, eller null. */
 function hverdagstider(poi: POI): DayHours | null {
   const days = parseWeekdayText(poi.openingHoursJson?.weekday_text);
@@ -776,7 +791,11 @@ function kafe(input: FaqGeneratorInput): string | undefined {
   const [naermest] = naermesteMedTid(input, "cafe");
   if (!naermest) return undefined;
   const tider = hverdagstider(naermest);
-  const hale = tider ? `, med åpent ${formatHourRange(tider)} på hverdager` : "";
+  const hale = tider
+    ? tider.openMin === 0 && tider.closeMin >= 1440
+      ? ", og er døgnåpent"
+      : `, med åpent ${formatHourRange(tider)} på hverdager`
+    : "";
   const w = minutter(walkMinutes(naermest)!);
   return erINaerheten(naermest)
     ? `${namedPoi(naermest)} ligger ${w} til fots${hale}.`
@@ -822,7 +841,7 @@ function sondagsapent(input: FaqGeneratorInput): string | undefined {
 
   const navngitt = aapne
     .slice(0, MAX_NAMED)
-    .map(({ poi, tider }) => `${namedPoi(poi)} (${formatHourRange(tider)})`);
+    .map(({ poi, tider }) => `${namedPoi(poi)} (${apningstid(tider)})`);
   const flere = aapne.length - Math.min(aapne.length, MAX_NAMED);
   const hale = flere > 0 ? `, og ${flere} til` : "";
   return `På søndager holder ${ogJoin(navngitt)} åpent${hale}.`;
@@ -928,6 +947,17 @@ function treneTidligSent(input: FaqGeneratorInput): string | undefined {
     .filter((g): g is { poi: FaqPoi; tider: DayHours } => g.tider !== null);
   if (medTider.length === 0) return undefined;
 
+  // Et døgnåpent senter svarer på BEGGE halvdelene av spørsmålet alene, og
+  // gjør de to ytterpunktene til en omvei: «TrenHer åpner 00 på hverdager, og
+  // Fresh Fitness stenger først ved midnatt» sier omstendelig det «TrenHer er
+  // døgnåpent» sier rett fram.
+  const døgnapen = medTider.find(
+    (g) => g.tider.openMin === 0 && g.tider.closeMin >= 1440,
+  );
+  if (døgnapen) {
+    return `${namedPoi(døgnapen.poi)} er døgnåpent på hverdager.`;
+  }
+
   const tidligst = medTider.reduce((a, b) => (b.tider.openMin < a.tider.openMin ? b : a));
   const senest = medTider.reduce((a, b) => (b.tider.closeMin > a.tider.closeMin ? b : a));
   const erTidlig = tidligst.tider.openMin <= TRENE_TIDLIG_MIN;
@@ -935,7 +965,9 @@ function treneTidligSent(input: FaqGeneratorInput): string | undefined {
 
   if (erTidlig && erSent) {
     if (tidligst.poi === senest.poi) {
-      return `Både tidlig og sent: ${namedPoi(tidligst.poi)} holder åpent ${formatHourRange(tidligst.tider)} på hverdager.`;
+      return tidligst.tider.openMin === 0 && tidligst.tider.closeMin >= 1440
+        ? `Både tidlig og sent: ${namedPoi(tidligst.poi)} er døgnåpent på hverdager.`
+        : `Både tidlig og sent: ${namedPoi(tidligst.poi)} holder åpent ${formatHourRange(tidligst.tider)} på hverdager.`;
     }
     const stengetid =
       senest.tider.closeMin === 1440
@@ -1005,6 +1037,57 @@ function sammeKort(a: FaqPoi, b: FaqPoi): boolean {
 }
 
 /**
+ * Er «navnet» bare kategoriordet?
+ *
+ * Poolen har seks POI-er som heter «Idrettsbane» og to som heter «Hundepark».
+ * Det er ikke en feil — `GENERISKE_NAVN` i pipelinen setter den norske formen
+ * på steder Google ikke har et egennavn for. Men i en setning blir det en
+ * ringslutning: «Idrettsbane er nærmeste idrettsanlegg, 6 minutter til fots»
+ * bruker halve setningen på å si det samme to ganger.
+ *
+ * Da er det bedre å la stedet være unavngitt. Avstanden er faktumet leseren
+ * kom for, og den står igjen.
+ */
+const KATEGORIORD: ReadonlySet<string> = new Set([
+  "idrettsbane",
+  "idrettsanlegg",
+  "idrettshall",
+  "lekeplass",
+  "hundepark",
+  "bibliotek",
+  "kirke",
+  "kapell",
+  "museum",
+  "kino",
+  "park",
+  "badeplass",
+  "svømmehall",
+  "treningssenter",
+  "apotek",
+  "bakeri",
+  "kafé",
+  "kafe",
+  "restaurant",
+  "bar",
+  "legesenter",
+  "tannlege",
+  "barnehage",
+  "skole",
+  "kjøpesenter",
+  "butikk",
+  "dagligvare",
+]);
+
+function erNavnlost(poi: FaqPoi, slag: string): boolean {
+  const navn = cleanPoiName(poi.name).toLocaleLowerCase("nb-NO");
+  return (
+    navn === slag.toLocaleLowerCase("nb-NO") ||
+    navn === poi.category.name.toLocaleLowerCase("nb-NO") ||
+    KATEGORIORD.has(navn)
+  );
+}
+
+/**
  * Den vanligste svarformen i katalogen: nærmeste sted med SLAGSORD, og den
  * neste som hale.
  *
@@ -1021,12 +1104,21 @@ function naermesteAvSlag(
   const [naermest] = kandidater;
   if (!naermest) return undefined;
   const w = walkMinutes(naermest)!;
+  const ord = slag(naermest);
   const parts = [
-    w <= radius
-      ? `${namedPoi(naermest)} er nærmeste ${slag(naermest)}, ${minutter(w)} til fots.`
-      : `Nærmeste ${slag(naermest)} på kartet er ${namedPoi(naermest)}, ${reisetid(naermest)}.`,
+    erNavnlost(naermest, ord)
+      ? // Uten et egennavn å nevne bærer setningen avstanden alene. «Nærmeste
+        // idrettsanlegg ligger 6 minutter til fots» er hele opplysningen.
+        w <= radius
+        ? `Nærmeste ${ord} ligger ${minutter(w)} til fots.`
+        : `Nærmeste ${ord} på kartet ligger ${reisetid(naermest)} unna.`
+      : w <= radius
+        ? `${namedPoi(naermest)} er nærmeste ${ord}, ${minutter(w)} til fots.`
+        : `Nærmeste ${ord} på kartet er ${namedPoi(naermest)}, ${reisetid(naermest)}.`,
   ];
-  const neste = kandidater.find((p) => !sammeKort(p, naermest));
+  // Hale kun med et sted som faktisk har et navn — et nummer to uten egennavn
+  // legger ingenting til.
+  const neste = kandidater.find((p) => !sammeKort(p, naermest) && !erNavnlost(p, slag(p)));
   if (neste) parts.push(`${namedPoi(neste)} ligger ${unna(neste)}.`);
   return parts.join(" ");
 }
@@ -1133,14 +1225,18 @@ function idrettsanlegg(input: FaqGeneratorInput): string | undefined {
   if (!naermest) return undefined;
   const w = walkMinutes(naermest)!;
   const parts = [
-    w <= WALK_RADIUS_MIN
-      ? `${namedPoi(naermest)} er nærmeste idrettsanlegg, ${minutter(w)} til fots.`
-      : `Nærmeste idrettsanlegg på kartet er ${namedPoi(naermest)}, ${reisetid(naermest)}.`,
+    erNavnlost(naermest, "idrettsanlegg")
+      ? w <= WALK_RADIUS_MIN
+        ? `Nærmeste idrettsanlegg ligger ${minutter(w)} til fots.`
+        : `Nærmeste idrettsanlegg på kartet ligger ${reisetid(naermest)} unna.`
+      : w <= WALK_RADIUS_MIN
+        ? `${namedPoi(naermest)} er nærmeste idrettsanlegg, ${minutter(w)} til fots.`
+        : `Nærmeste idrettsanlegg på kartet er ${namedPoi(naermest)}, ${reisetid(naermest)}.`,
   ];
   const andreSort = erIdrettshall(naermest)
     ? alle.find((p) => p !== naermest && !erIdrettshall(p))
     : alle.find((p) => p !== naermest && erIdrettshall(p));
-  if (andreSort) {
+  if (andreSort && !erNavnlost(andreSort, "idrettsanlegg")) {
     const ord = erIdrettshall(andreSort) ? "idrettshall" : "bane";
     parts.push(`${namedPoi(andreSort)} er nærmeste ${ord}, ${reisetid(andreSort)}.`);
   }

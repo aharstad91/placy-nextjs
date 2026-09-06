@@ -52,6 +52,42 @@ const ENGELSKE_ETIKETTER = [
   "Grocery Store", "Parking", "Parking Lot", "Bus Stop", "Beach",
 ];
 
+/**
+ * Engelske ord et NORSK stedsnavn ikke bruker.
+ *
+ * Etikett-lista over treffer bare navn som ER en etikett («Church»). Den
+ * bommer på engelske EGENNAVN — «Trondheim Public Library Moholt»,
+ * «Valentinlyst Dental Office», «Trondheim Maritime Museum» — som er samme
+ * feil i en annen form: Google har det norske navnet, vi spurte på feil språk.
+ *
+ * Ordene er valgt slik at den NORSKE formen er et annet ord: office/kontor,
+ * club/klubb, center/senter, school/skole, church/kirke. Da kan et ekte norsk
+ * navn ikke treffe ved et uhell. «Museum» står IKKE her, for det er også
+ * norsk («Sjøfartsmuseum») — «maritime» fanger det tilfellet i stedet.
+ *
+ * VIKTIG at lista ikke fanger våre EGNE norske generiske navn. «Idrettsbane»
+ * er formen `GENERISKE_NAVN` bevisst setter på et navnløst anlegg; spurte vi
+ * Google om den, kunne vi fått «Sports Field» tilbake og byttet et godt navn
+ * mot et dårlig. Ingen av ordene under finnes i et norsk ord.
+ *
+ * En falsk positiv er billig: masken er `displayName` = Essentials-SKU ($0),
+ * og navnet byttes bare når Google svarer med noe ANNET enn det vi har.
+ */
+const ENGELSKE_ORD = [
+  "public", "library", "dental", "office", "club", "church", "school",
+  "kindergarten", "center", "shopping", "maritime", "society", "association",
+  "the", "and", "house", "square", "street", "bridge", "garden", "beach",
+  "swimming", "playground", "cemetery", "store", "shop", "market", "hall of",
+] as const;
+
+/** Bærer navnet et engelsk ord? Ordgrense, så «Centeret» ikke treffer «center». */
+function baererEngelskOrd(navn: string): boolean {
+  const ord = new Set(
+    navn.toLocaleLowerCase("nb-NO").split(/[^\p{L}]+/u).filter(Boolean),
+  );
+  return ENGELSKE_ORD.some((e) => (e.includes(" ") ? navn.toLowerCase().includes(e) : ord.has(e)));
+}
+
 interface PoiRad {
   id: string;
   name: string;
@@ -96,7 +132,13 @@ async function main() {
   console.log(`Leste ${pois.length} POI-er fra poolen`);
 
   const etiketter = new Set(ENGELSKE_ETIKETTER.map((e) => e.toLowerCase()));
-  const navneKandidater = pois.filter((p) => etiketter.has(p.name.trim().toLowerCase()));
+  const navneKandidater = pois.filter(
+    (p) =>
+      etiketter.has(p.name.trim().toLowerCase()) ||
+      // Engelske egennavn kan bare rettes av Google — regelen vår kan ikke
+      // gjette «Trondhjems Sjøfartsmuseum» ut av «Trondheim Maritime Museum».
+      (p.google_place_id !== null && baererEngelskOrd(p.name)),
+  );
   const feilkategori = pois.filter(
     (p) => p.category_id && isNameCategoryMismatch(p.name, p.category_id)
   );

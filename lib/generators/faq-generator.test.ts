@@ -2315,3 +2315,103 @@ describe("siste-buss når nattbussen ender et annet sted", () => {
     );
   });
 });
+
+describe("døgnåpent", () => {
+  const døgn = tider("12:00 AM – 12:00 AM");
+
+  it("trene tidlig/sent sier døgnåpent, ikke «00–24»", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [poi({ id: "g1", name: "TrenHer", categoryId: "gym", travelTime: { walk: 9 }, openingHoursJson: døgn })],
+        }),
+      ),
+      "trene-tidlig-sent",
+    );
+    expect(svar).toBe("[TrenHer](poi:g1) er døgnåpent på hverdager.");
+  });
+
+  it("kaféhalen sier døgnåpent framfor et klokkeslettspenn", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "mat-drikke",
+          categoryIds: ["cafe"],
+          pois: [poi({ id: "c1", name: "Nattkafeen", categoryId: "cafe", travelTime: { walk: 4 }, openingHoursJson: døgn })],
+        }),
+      ),
+      "kafe",
+    );
+    expect(svar).toBe("[Nattkafeen](poi:c1) ligger 4 minutter til fots, og er døgnåpent.");
+  });
+
+  it("beholder klokkeslettene når døra faktisk stenger", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "mat-drikke",
+          categoryIds: ["cafe"],
+          pois: [
+            poi({ id: "c2", name: "Dagkafeen", categoryId: "cafe", travelTime: { walk: 4 }, openingHoursJson: tider("8:00 AM – 4:00 PM") }),
+          ],
+        }),
+      ),
+      "kafe",
+    );
+    expect(svar).toContain("med åpent 08–16 på hverdager");
+  });
+});
+
+describe("navnløse steder", () => {
+  it("lar være å navngi et sted som bare heter kategorien sin", () => {
+    // Poolen har seks POI-er som heter «Idrettsbane». «Idrettsbane er nærmeste
+    // idrettsanlegg» sier det samme to ganger.
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [poi({ id: "i1", name: "Idrettsbane", categoryId: "idrett", travelTime: { walk: 6 } })],
+        }),
+      ),
+      "idrettsanlegg",
+    );
+    expect(svar).toBe("Nærmeste idrettsanlegg ligger 6 minutter til fots.");
+  });
+
+  it("navngir det likevel når stedet HAR et egennavn", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [poi({ id: "i2", name: "Eberg kunstgress", categoryId: "idrett", travelTime: { walk: 6 } })],
+        }),
+      ),
+      "idrettsanlegg",
+    );
+    expect(svar).toBe("[Eberg kunstgress](poi:i2) er nærmeste idrettsanlegg, 6 minutter til fots.");
+  });
+
+  it("hopper over et navnløst sted i HALEN — det legger ingenting til", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "natur-friluftsliv",
+          categoryIds: ["hundepark"],
+          pois: [
+            poi({ id: "h1", name: "Brøset Hundepark", categoryId: "hundepark", travelTime: { walk: 3 } }),
+            poi({ id: "h2", name: "Hundepark", categoryId: "hundepark", travelTime: { walk: 32 } }),
+          ],
+        }),
+      ),
+      "hund",
+    );
+    expect(svar).toBe("[Brøset Hundepark](poi:h1) er nærmeste hundepark, 3 minutter til fots.");
+    expect(svar).not.toMatch(/ligger 32/);
+  });
+});
