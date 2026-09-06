@@ -9,28 +9,28 @@ import type { ThemeDefinition } from "./theme-definitions";
 export const DEFAULT_THEMES: ThemeDefinition[] = [
   {
     id: "mat-drikke",
-    name: "Mat & Drikke",
+    name: "Servering",
     icon: "UtensilsCrossed",
     categories: ["restaurant", "cafe", "bar", "bakery"],
     color: "#ef4444",
   },
   {
     id: "kultur-opplevelser",
-    name: "Kultur & Opplevelser",
+    name: "Opplevelser",
     icon: "Landmark",
     categories: ["museum", "library", "cinema", "park", "outdoor", "badeplass"],
     color: "#0ea5e9",
   },
   {
     id: "barnefamilier",
-    name: "Barn & Aktivitet",
+    name: "Oppvekst",
     icon: "GraduationCap",
     categories: ["skole", "barnehage", "lekeplass", "idrett"],
     color: "#f59e0b",
   },
   {
     id: "hverdagsbehov",
-    name: "Hverdagsbehov",
+    name: "Hverdag",
     icon: "ShoppingCart",
     categories: [
       "supermarket",
@@ -48,7 +48,7 @@ export const DEFAULT_THEMES: ThemeDefinition[] = [
   },
   {
     id: "transport",
-    name: "Transport & Mobilitet",
+    name: "Transport",
     icon: "Bus",
     categories: [
       "bus",
@@ -65,7 +65,7 @@ export const DEFAULT_THEMES: ThemeDefinition[] = [
   },
   {
     id: "trening-velvare",
-    name: "Trening & Velvære",
+    name: "Trening",
     icon: "Dumbbell",
     categories: ["gym", "spa", "swimming"],
     color: "#ec4899",

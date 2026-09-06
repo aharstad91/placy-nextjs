@@ -55,14 +55,14 @@ export interface Bransjeprofil {
 const BOLIG_THEMES: ThemeDefinition[] = [
   {
     id: "barn-oppvekst",
-    name: "Barn & Aktivitet",
+    name: "Oppvekst",
     icon: "GraduationCap",
     categories: ["skole", "barnehage", "lekeplass", "idrett"],
     color: "#f8ae17",
   },
   {
     id: "hverdagsliv",
-    name: "Hverdagsliv",
+    name: "Hverdag",
     icon: "ShoppingCart",
     categories: [
       "shopping",
@@ -81,7 +81,7 @@ const BOLIG_THEMES: ThemeDefinition[] = [
   },
   {
     id: "mat-drikke",
-    name: "Mat & Drikke",
+    name: "Servering",
     icon: "UtensilsCrossed",
     categories: ["restaurant", "cafe", "bar", "bakery"],
     color: "#f35a5a",
@@ -95,21 +95,21 @@ const BOLIG_THEMES: ThemeDefinition[] = [
   },
   {
     id: "natur-friluftsliv",
-    name: "Natur & Friluftsliv",
+    name: "Natur",
     icon: "Trees",
     categories: ["park", "outdoor", "badeplass"],
     color: "#22c68d",
   },
   {
     id: "trening-aktivitet",
-    name: "Trening & Aktivitet",
+    name: "Trening",
     icon: "Dumbbell",
     categories: ["gym", "swimming", "spa", "fitness_park"],
     color: "#f05da7",
   },
   {
     id: "transport",
-    name: "Transport & Mobilitet",
+    name: "Transport",
     icon: "Bus",
     categories: [
       "bus",
@@ -132,14 +132,14 @@ const BOLIG_THEMES: ThemeDefinition[] = [
 const NAERING_THEMES: ThemeDefinition[] = [
   {
     id: "mat-drikke",
-    name: "Mat & Drikke",
+    name: "Servering",
     icon: "UtensilsCrossed",
     categories: ["restaurant", "cafe", "bar", "bakery"],
     color: "#ef4444",
   },
   {
     id: "transport",
-    name: "Transport & Mobilitet",
+    name: "Transport",
     icon: "Bus",
     categories: [
       "bus",
@@ -156,21 +156,21 @@ const NAERING_THEMES: ThemeDefinition[] = [
   },
   {
     id: "trening-aktivitet",
-    name: "Trening & Aktivitet",
+    name: "Trening",
     icon: "Dumbbell",
     categories: ["gym", "swimming", "fitness_park"],
     color: "#ec4899",
   },
   {
     id: "hverdagstjenester",
-    name: "Hverdagstjenester",
+    name: "Tjenester",
     icon: "ShoppingCart",
     categories: ["supermarket", "pharmacy", "haircare"],
     color: "#22c55e",
   },
   {
     id: "nabolaget",
-    name: "Nabolaget",
+    name: "Nabolag",
     icon: "MapPin",
     categories: ["park", "outdoor", "hotel", "conference", "museum", "cinema", "library"],
     color: "#8b5cf6",

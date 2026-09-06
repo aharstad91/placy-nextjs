@@ -16,7 +16,7 @@ export interface ReportThemeDefault {
 export const REPORT_THEME_DEFAULTS: ReportThemeDefault[] = [
   {
     id: "hverdagsliv",
-    name: "Hverdagsliv",
+    name: "Hverdag",
     icon: "ShoppingCart",
     categories: [
       "shopping",
@@ -41,7 +41,7 @@ export const REPORT_THEME_DEFAULTS: ReportThemeDefault[] = [
   },
   {
     id: "barn-oppvekst",
-    name: "Barn & Oppvekst",
+    name: "Oppvekst",
     icon: "GraduationCap",
     categories: ["skole", "barnehage", "lekeplass", "idrett", "fritidsklubb"],
     color: "#f8ae17",
@@ -49,7 +49,7 @@ export const REPORT_THEME_DEFAULTS: ReportThemeDefault[] = [
   },
   {
     id: "mat-drikke",
-    name: "Mat & Drikke",
+    name: "Servering",
     icon: "UtensilsCrossed",
     categories: ["restaurant", "cafe", "bar", "bakery"],
     color: "#f35a5a",
@@ -57,7 +57,7 @@ export const REPORT_THEME_DEFAULTS: ReportThemeDefault[] = [
   },
   {
     id: "natur-friluftsliv",
-    name: "Natur & Friluftsliv",
+    name: "Natur",
     icon: "Trees",
     // marina/campground/hundepark var alt natur-mappet i seed-osm-pois.ts,
     // men manglet her — POI-ene lå i poolen uten å rendre (recall-fiks 2026-08-12)
@@ -67,7 +67,7 @@ export const REPORT_THEME_DEFAULTS: ReportThemeDefault[] = [
   },
   {
     id: "transport",
-    name: "Transport & Mobilitet",
+    name: "Transport",
     icon: "Bus",
     categories: [
       "bus",
@@ -85,7 +85,7 @@ export const REPORT_THEME_DEFAULTS: ReportThemeDefault[] = [
   },
   {
     id: "trening-aktivitet",
-    name: "Trening & Aktivitet",
+    name: "Trening",
     icon: "Dumbbell",
     categories: ["gym", "swimming", "spa", "fitness_park"],
     color: "#f05da7",
@@ -105,7 +105,7 @@ export const REPORT_THEME_DEFAULTS: ReportThemeDefault[] = [
 export const NAERING_THEME_DEFAULTS: ReportThemeDefault[] = [
   {
     id: "mat-drikke",
-    name: "Mat & Drikke",
+    name: "Servering",
     icon: "UtensilsCrossed",
     categories: ["restaurant", "cafe", "bar", "bakery"],
     color: "#f35a5a",
@@ -113,7 +113,7 @@ export const NAERING_THEME_DEFAULTS: ReportThemeDefault[] = [
   },
   {
     id: "transport",
-    name: "Transport & Mobilitet",
+    name: "Transport",
     icon: "Bus",
     categories: ["bus", "train", "tram", "bike", "parking", "carshare", "taxi"],
     color: "#4d93f8",
@@ -121,7 +121,7 @@ export const NAERING_THEME_DEFAULTS: ReportThemeDefault[] = [
   },
   {
     id: "trening-aktivitet",
-    name: "Trening & Aktivitet",
+    name: "Trening",
     icon: "Dumbbell",
     categories: ["gym", "swimming", "fitness_park"],
     color: "#f05da7",
@@ -129,7 +129,7 @@ export const NAERING_THEME_DEFAULTS: ReportThemeDefault[] = [
   },
   {
     id: "hverdagstjenester",
-    name: "Hverdagstjenester",
+    name: "Tjenester",
     icon: "ShoppingCart",
     categories: ["supermarket", "pharmacy", "haircare"],
     color: "#36d16f",
@@ -137,7 +137,7 @@ export const NAERING_THEME_DEFAULTS: ReportThemeDefault[] = [
   },
   {
     id: "nabolaget",
-    name: "Nabolaget",
+    name: "Nabolag",
     icon: "MapPin",
     categories: ["park", "outdoor", "hotel", "museum", "cinema", "library"],
     color: "#22c68d",
