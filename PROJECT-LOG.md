@@ -258,6 +258,53 @@ Derfor er panelet nå TETT i omvisningen (`bg-white`), og hodet har samme verdi.
 
 ---
 
+## 2026-09-03 — REKKEVIDDE-KONTURER: NABOLAGET FIKK EN OMKRETS, OG GOOGLE-MOTOREN FIKK EN KANTLINJE
+
+**Kontekst:** Brainstorm 2026-09-02 fra et hjem.no-skjermbilde: *«jeg synes hjem.no tar helt av»*. Fire fargelagte flater som dekker kartet og skjuler stedene. Vi ville ha det romlige svaret på «hvor stort er nabolaget mitt til fots» uten å ofre lesbarheten. Plan skrevet + dok-reviewet samme dag, bygget i worktree `../placy-rekkevidde` (branch `feat/rekkevidde-konturer`).
+
+### 1. Hva som ligger i prod nå
+
+Tre prikkede konturer for 5/10/15 minutter i valgt reisemåte, som et visningsvalg brukeren slår på. Beregnet ved provisjonering (nytt steg 7c, Mapbox Isochrone, tre kall per prosjekt), lagret i `products.config.reportConfig.isochrones`, lest ved render. Migrasjon 091 kjørt og verifisert mot prod (`isochrones_toggled` i `events_event_type_check`, `faq_opened` bevart). Konturer skrevet til Wesselsløkka og Sundsøya via `scripts/backfill-isochrones.ts`.
+
+### 2. To ting research/verifisering rettet i planens premisser
+
+**«Satellitt» er Google-motoren, ikke en Mapbox-stil.** Brainstormen skrev «Mapbox 2D (Kart / Satellitt)». Feil: `showMapbox = !has3dAddon || view === "2d"`, så Mapbox er avmontert i Satellitt og 3D. Prikket strek er derfor bare mulig i «Kart». Og Satellitt er standardvisningen på 3D-boards uten voice-over — så å droppe konturene der ville tatt dem ut av det leseren ser først.
+
+**`Polygon3DElement` har ingen kantlinje.** Planen sa `gmp-polygon-3d`. Målt i nettleseren på API 3.66.3d: elementet finnes, men `outerColor` gjør ikke (`"outerColor" in probe === false`). En 2 px mørk strek uten kantlinje er nesten usynlig over mørk vegetasjon og forsvinner over lyse hustak. Byttet til **lukket `Polyline3DElement`** med lys kantlinje — samme grep rutelinja alt bruker på samme motor, og da er polygonet bare en flate vi ikke fyller. Bekreftet visuelt side ved side før byttet.
+
+### 3. R2-akseptansen: premisset holder, men terskelen min målte feil ting
+
+Påstanden var at konturene og POI-minuttene deler veinett, så et sted med 7 min gangtid ligger innenfor 10-minutt-konturen. Målt på Wesselsløkka med `scripts/check-isochrone-consistency.ts`:
+
+| Profil | Innenfor | Utenfor | Ekte avvik |
+|---|---|---|---|
+| gange | 90/103 (15 min) | 13 | **1** (0,9 %) |
+| sykkel | 622/622 | 0 | 0 |
+| bil | 978/987 (15 min) | 9 | 9 (0,9 %) |
+
+Første kjøring flagget 10,3 % og 12,6 % som «systematisk». Marginmålingen avgjorde det: **4 av 4 avvik på 10 min hadde margin 0** — altså POI-er målt til nøyaktig 10 min som faller rett på streken. Minuttene rundes opp (`Math.ceil`) og konturen er forenklet med `generalize`, så budsjettgrensen er en sone på noen titalls meter, ikke en strek. Planens egen stoppbetingelse sier «UNDER 10 min», og terskelen måler nå det: margin ≥ 2 min.
+
+Restavvik verdt å huske: **9 POI-er målt til 9 min bilkjøring faller utenfor 15-minutt-bilkonturen** (Dragvoll-området, Burmaklippen, Devlebukta) — margin 6 min, altså ikke randsone. Uforklart. Sannsynlig årsak `generalize=100` på bilprofilen eller ulike hastighetsantakelser. 0,9 % og bare på ytterste bilkontur, så det blokkerer ingenting, men det er den ene tråden som ikke er trukket ut.
+
+### 4. Mobil: jeg gjorde en eksisterende overflyt verre, og fikset begge
+
+Ved 320 px var kontroll-popoveren alt 360 px bred — overflyt fra før. Med «Rekkevidde» som tekst-knapp ble den 409 px og rant 105 px ut over venstre skjermkant (målt). To grep: knappen er **ikon-bare på mobil** (betydningen bæres av `aria-label`), og popoveren fikk `flex-wrap` + `max-w-[calc(100vw-2rem)]` så den brekker til to rader. Ved 320 px: 288 px bred, ingen overflyt, radar-ikonet nåbart på andre rad. Nestet vannrett scroller var forkastet — én scroller per flate er prinsippet på mobil.
+
+### 5. Verifisert
+
+`npm run lint` 0 errors · `npx tsc --noEmit` rent · `npm run build` OK · **3 581 tester grønne (214 filer)** serielt. Parallell kjøring ga 2–5 roterende feil i urelaterte filer (poi-discovery, EventMobileSheet, TravelModeSelector, provision) — last-flakiness, ikke våre endringer; alle passerer isolert. Én ekte lekkasje fra egne tester fikset underveis: `process.env = {...env}` i afterEach rev bort nøkler andre testfiler i samme worker satte.
+
+I nystartet Chrome: konturene tegnes i alle tre visninger, etikettene følger kartet, WebGL-kontekster flate (1 → 1) gjennom tre visningsbytter og fire av/på, 0 konsollfeil. På Sundsøya (uten 3D-tillegg) vises knappen, Mapbox-konturene tegnes og **Google lastes aldri** (`window.google` udefinert, 0 `gmp-map-3d`) — AE10 innfridd. Rettet også en utfaset `coordinates`-egenskap på Google-polylinjen til `path`, som fjernet den siste konsoll-advarselen.
+
+### 6. Åpent
+
+- **AE8 i nettleser**: at etikettene forsvinner under zoom-grensen er dekket av enhetstest, men hjul-simuleringen i Chrome hang to ganger og ble aldri fullført manuelt. Etikettene ER verifisert synlige ved åpningszoom.
+- **`denoise=0.5` og `generalize` per profil** er valgt, ikke kalibrert. Wesselsløkka ga bare enkeltflater (ingen MultiPolygon), så flerflate-stien er testdekket men ikke sett i praksis.
+- **Aggregering og demo-data for `isochrones_toggled`** mangler: `lib/insight/` er ukommittert arbeid i hovedrepoet og finnes ikke på denne branchen. Hendelsen logges, men er usynlig i Innsikt-flaten til de to filene får sin case.
+- **Branch ikke merget eller pushet.** `faq_opened` er kjørt i prod men ukommittert i main — migrasjon 091 bevarer den bevisst i typelista.
+
+---
+
 ## 2026-09-01 — WORKTREE-RYDDING SOM BLE EN LEVERANSE: KAMERA-INVERSEN FOR GOOGLE-MOTOREN, HENTET UT AV EN DØENDE BRANCH
 
 **Kontekst:** Andreas med et Finder-skjermbilde: *«vi har mange worktrees nå, hva er status på dem?»* Fem stykker. Svaret viste seg å være at to var ferdige, én var levende, og to var utdaterte — men at den ene av de utdaterte hadde 817 linjer ukommitert arbeid liggende som ingen visste om.

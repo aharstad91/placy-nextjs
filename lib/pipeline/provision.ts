@@ -12,13 +12,15 @@
  *   6. Hydrering (product_pois + featured + categories)
  *   7. Reisetider (Mapbox Matrix → project_pois.travel_times, fail-soft)
  *   7b. Board-fakta (skolekrets fra NSR + transitt fra Entur, fail-soft)
+ *   7c. Rekkevidde-konturer (Mapbox Isochrone → config.reportConfig.isochrones, fail-soft)
  *   8. Nabolags-editorial (arv)   →  9. Revalidering   →  10. Akseptansesjekk
  *
  * Rekkefølgen er load-bearing: trust (5) MÅ kjøre etter discovery (3–4) og før
  * hydrering (6); anker-oppløsning (5b) etter at hele poolen finnes (3–4) og før
  * hydrering (6), som ellers ville sett 60 løse butikker der det ligger ett senter; reisetider (7) etter at POI-poolen er komplett (3–4); board-
- * fakta (7b) og editorial (8) etter at config-en finnes, og 7b før 8 fordi
- * begge gjør read-modify-write mot samme config-rad. Endres den, brytes enten
+ * fakta (7b), rekkevidde-konturer (7c) og editorial (8) etter at config-en
+ * finnes, og 7b → 7c → 8 fordi alle tre gjør read-modify-write mot samme
+ * config-rad. Endres den, brytes enten
  * dedup, trust-filteret eller editorial-arven.
  *
  * Kjernen er kallbar fra BÅDE CLI og server-action (self-serve, Unit 8) uten
@@ -47,6 +49,7 @@ import { resolveProjectAnchors } from "@/lib/pipeline/resolve-anchors-step";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
 import { runBoardFactsStep } from "@/lib/pipeline/board-facts-step";
+import { computeProjectIsochrones } from "@/lib/pipeline/isochrones";
 import { inheritAreaEditorialViaRoute } from "@/lib/pipeline/inherit-area-editorial-via-route";
 import { getDiscoveryRadius, type ReportProfile } from "@/lib/pipeline/report-defaults";
 import {
@@ -328,6 +331,23 @@ export async function provisionReportBoard(
     log(krets.length > 0 ? `Kretsskoler: ${krets.join(", ")}` : "Kretsskoler: ingen (utenfor dekning)");
   } else {
     log("Ingen board-fakta skrevet — FAQ-en står på kuratert innhold alene");
+  }
+
+  // ── Steg 7c: Rekkevidde-konturer (isokroner) ───────────────────────────
+  // Tre Isochrone-kall (gange/sykkel/bil) fra origo. Fail-soft: kaster aldri —
+  // uten konturer skjules av/på-valget på boardet, resten består. Står mellom
+  // 7b og 8 så alle read-modify-write mot config-raden ligger sammenhengende.
+  section("Steg 7c: Rekkevidde-konturer");
+  const isochroneResult = await computeProjectIsochrones({
+    productId: projectResult.productId,
+    centerLat: lat,
+    centerLng: lng,
+  });
+  for (const w of isochroneResult.warnings) warn(w);
+  if (isochroneResult.isochrones && !isochroneResult.skipped) {
+    log(`Konturer (5/10/15 min): ${isochroneResult.fetched.join(", ")}`);
+  } else {
+    log("Ingen rekkevidde-konturer skrevet — visningsvalget skjules på boardet");
   }
 
   // ── Steg 8: Nabolags-editorial ─────────────────────────────────────────

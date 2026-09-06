@@ -50,6 +50,7 @@ npm run create-report -- --name "Teknostallen" --address "Teknostallen, Trondhei
    - Importer Google Places + Entur + Bysykkel, hent CDN-foto
    - Hydrér product_pois, product_categories, featured-scoring
    - Reisetider (Mapbox Matrix)
+   - **Rekkevidde-konturer (Steg 7c):** tre Isochrone-kall (gange/sykkel/bil) for 5/10/15 min, lagret i `config.reportConfig.isochrones`. Fail-soft — mangler de, skjules av/på-valget på boardet.
    - **Nabolags-editorial (Steg 8):** arv fra kuratert strøk hvis funnet. Nivå 2 uten treff = board forblir nivå 1.
    - Revalidér prod-cache
    - **Akseptansesjekk (Steg 10):** verifiser at deklarert nivå er dekket (nivå 2 → editorial på alle temaer)

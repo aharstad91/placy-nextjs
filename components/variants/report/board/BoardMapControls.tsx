@@ -1,6 +1,6 @@
 "use client";
 
-import { Hand, Orbit, SlidersHorizontal, X } from "lucide-react";
+import { Hand, Orbit, Radar, SlidersHorizontal, X } from "lucide-react";
 import { Fragment, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { TravelMode } from "@/lib/types";
@@ -51,6 +51,17 @@ interface Props {
   travelModes?: readonly TravelMode[];
   travelMode?: TravelMode;
   onTravelModeChange?: (mode: TravelMode) => void;
+  /**
+   * Vis av/på-knappen for rekkevidde-konturer (5/10/15 min).
+   *
+   * Gates på DATA, ikke på et flagg: kalleren setter den bare når minst én
+   * reisemåte har konturer. Et board uten konturer skal ikke ha en knapp som
+   * ikke gjør noe. Default false.
+   */
+  showContourToggle?: boolean;
+  /** Konturene vises nå. */
+  contoursOn?: boolean;
+  onContoursToggle?: () => void;
   /** Progressiv avsløring (mobil to-flate, R11): kollaps kontrollene til ett ⚙
    *  FAB som åpner en popover med Auto/Fri + Kart/3D. Holder kart-flaten ren —
    *  kontrollene er der når du vil ha dem, ikke alltid utbrettet. Default false
@@ -139,6 +150,9 @@ export function BoardMapControls({
   travelModes = [],
   travelMode = "walk",
   onTravelModeChange,
+  showContourToggle = false,
+  contoursOn = false,
+  onContoursToggle,
   insetLeftPx = 0,
 }: Props) {
   // Auto/Fri vises kun i 3D OG når det finnes en orbit å vise (voice-over-tier).
@@ -146,6 +160,7 @@ export function BoardMapControls({
   // rett-ovenfra-kart er desorienterende, og «nord opp» er selve posituren.
   const showCamera = view === "3d" && showCameraMode;
   const showTravelModes = travelModes.length > 1 && Boolean(onTravelModeChange);
+  const showContours = showContourToggle && Boolean(onContoursToggle);
   const isFree = cameraMode === "free";
   const seg = compact ? SEG_COMPACT : SEG_DEFAULT;
   // Touch-vennlig høyde på mobil (44px) vs. kompakt desktop (32px).
@@ -167,7 +182,7 @@ export function BoardMapControls({
             onChange={onTravelModeChange!}
             compact={compact}
           />
-          {(showCamera || showViewToggle) && (
+          {(showCamera || showViewToggle || showContours) && (
             <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />
           )}
         </>
@@ -218,7 +233,7 @@ export function BoardMapControls({
           </div>
 
           {/* Divider mellom kameramodus og motor-bytte. */}
-          {showViewToggle && (
+          {(showViewToggle || showContours) && (
             <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />
           )}
         </>
@@ -262,12 +277,47 @@ export function BoardMapControls({
         })}
       </div>
       )}
+
+      {/* Rekkevidde-konturer — av/på. Står SIST fordi den er et lag oppå
+          kartet, ikke et valg av kart: rekkefølgen i pillen leser da som
+          «hvordan reiser jeg · hvordan står kameraet · hvilket kart · hva
+          legges oppå». */}
+      {showContours && (
+        <>
+          {/* Bare kartvisnings-gruppa mangler egen etterfølgende strek —
+              reisemåte og kameramodus sender ut sin når noe følger etter. */}
+          {showViewToggle && (
+            <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />
+          )}
+          <button
+            type="button"
+            onClick={onContoursToggle}
+            aria-pressed={contoursOn}
+            aria-label="Vis rekkevidde-konturer"
+            className={cn(
+              "inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
+              compact ? "px-3" : "px-3.5",
+              btnH,
+              contoursOn
+                ? "bg-stone-900 text-white shadow-sm"
+                : "text-stone-500 hover:text-stone-700",
+            )}
+          >
+            <Radar className="h-4 w-4" />
+            {/* Ikon-bare på mobil. Pillen sto alt på kapasitetsgrensen ved
+                320 px, og en tekst-etikett i tillegg dyttet den ut over
+                venstre kant (målt 2026-09-03). Betydningen bæres av
+                aria-label, som skjermlesere leser uansett bredde. */}
+            {!compact && <span>Rekkevidde</span>}
+          </button>
+        </>
+      )}
     </>
   );
 
   // Ingen segmenter = ingen pille. En tom, halvtransparent kapsel midt på kartet
   // er verre enn ingen kontroll.
-  if (!showTravelModes && !showCamera && !showViewToggle) return null;
+  if (!showTravelModes && !showCamera && !showViewToggle && !showContours) return null;
 
   // Recovery-hint (delt) — sentrert over kontrollene etter drag-takeover.
   const freeHint = showCamera ? (
@@ -295,9 +345,16 @@ export function BoardMapControls({
       >
         {freeHint}
 
-        {/* Popover med kontrollene — folder ut UNDER FAB-en (topp-høyre). */}
+        {/* Popover med kontrollene — folder ut UNDER FAB-en (topp-høyre).
+
+            `flex-wrap` + `max-w`: innholdet er bredere enn 320 px når alle
+            gruppene vises, og uten brekking rant popoveren ut over venstre
+            skjermkant (målt 2026-09-03). En nestet vannrett scroller er
+            forkastet — én scroller per flate er prinsippet på mobil. Radiusen
+            går fra pille til avrundet boks når den brekker, ellers ville andre
+            rad hatt en halvmåne-kant. */}
         {fabOpen && (
-          <div className="pointer-events-auto absolute right-4 top-16 flex items-center gap-1 rounded-full border border-white/50 bg-white/85 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
+          <div className="pointer-events-auto absolute right-4 top-16 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-1 rounded-3xl border border-white/50 bg-white/85 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
             {controlsBody}
           </div>
         )}

@@ -17,6 +17,8 @@ import {
 import { useBoardPopupMode } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { BoardTravelChip3D } from "./BoardTravelChip3D";
+import { BoardContourLabels3D } from "./BoardContourLabels3D";
+import { contourRingsForMode } from "@/lib/board/contour-geometry";
 import { type CameraMode } from "./BoardMapControls";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
@@ -80,6 +82,15 @@ const RouteLayer3D = dynamic(
   () =>
     import("@/components/map/route-layer-3d").then((mod) => ({
       default: mod.RouteLayer3D,
+    })),
+  { ssr: false },
+);
+
+// Konturlaget bærer samme Google-import — lazy av samme grunn.
+const ContourLayer3D = dynamic(
+  () =>
+    import("@/components/map/contour-layer-3d").then((mod) => ({
+      default: mod.ContourLayer3D,
     })),
   { ssr: false },
 );
@@ -209,6 +220,16 @@ export function BoardMap3D({
   // Rute for RouteLayer3D — samme delte kilde som rutelinja og chipen i 2D,
   // i aktiv reisemodus (BoardRouteProvider).
   const { data: routeData } = useBoardRoute();
+
+  // Rekkevidde-konturene for aktiv reisemåte. Tom liste når valget er av eller
+  // profilen mangler konturer — laget beholder da instansene, se ContourLayer3D.
+  const contourRings = useMemo(
+    () =>
+      state.showContours
+        ? contourRingsForMode(data.isochrones, state.travelMode)
+        : [],
+    [state.showContours, state.travelMode, data.isochrones],
+  );
 
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(
@@ -880,12 +901,16 @@ export function BoardMap3D({
           imageSrc: getProjectPinThumbnail(data.projectSlug, data.assets),
         }}
       />
+      <ContourLayer3D map3d={map3dInstance} rings={contourRings} />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />
       {/* Tids-chipen. Lå tidligere som en inline-SVG inne i RouteLayer3D, men
           `Marker3DInteractiveElement` kan ikke bære et utvidbart panel — se
           BoardTravelChip3D. Rendres bare når 3D er den fremste motoren, ellers
           ville begge motorenes chip stått samtidig. */}
       {isFront && <BoardTravelChip3D map3d={map3dInstance} />}
+      {/* Etikettene er HTML-overlegg, så de skal bare projiseres når Google er
+          den fremste motoren — ellers ville de svevd over Mapbox-kartet. */}
+      {isFront && <BoardContourLabels3D map3d={map3dInstance} />}
       <CameraCutOverlay
         visible={cutVisible}
         // Kategorier bruker sin egen label; Nabolaget/Oppsummert har ingen
