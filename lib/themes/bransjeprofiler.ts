@@ -253,13 +253,12 @@ const EVENT_THEMES: ThemeDefinition[] = [
  * `BransjeprofilFeatures.disabledThemes` — filteret tar union av begge.
  */
 export const GLOBAL_DISABLED_REPORT_THEMES: string[] = [
-  // Opplevelser midlertidig deaktivert (2026-04-28) pga. utilstrekkelig
-  // innholdskvalitet (kultur/museum/bibliotek/kino/teater). Re-aktiver
-  // ved å fjerne strengen fra denne arrayen — eksisterende grounding-data
-  // i Supabase er bevart, så kategorien dukker opp igjen umiddelbart
-  // uten rebuild eller migrasjon.
-  // Se docs/plans/2026-04-28-002-feat-deaktiver-opplevelser-kategori-plan.md
-  "opplevelser",
+  // TOM 2026-09-06. «opplevelser» sto her fra 2026-04-28 fordi temaet ikke
+  // hadde innhold å vise — kategoriene var deklarert, men ingen bolig-profil
+  // eide dem, og FAQ-en hadde ingen spørsmål. Begge hullene er nå tettet:
+  // temaet er det sjuende i REPORT_THEME_DEFAULTS (05a48d7), og katalogens
+  // fire S-spørsmål har byggere med navnefiltrene som luker forsknings-
+  // bibliotek, monumenter og sykehjemskapell (58765ba).
 ];
 
 /**

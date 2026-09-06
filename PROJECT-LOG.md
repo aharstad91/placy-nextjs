@@ -6,6 +6,67 @@
 
 ---
 
+## 2026-09-06 — FAQ-BYGGERNE: ELLEVE NYE SVAR, OG TRE FEIL SOM BARE EKTE DATA KUNNE VISE
+
+**Kontekst:** Fable leverte setningsformene til de 46 manglende FAQ-byggerne som et dokument (`docs/research/2026-09-06-faq-byggere-setningsformer-fable.md`, commit `2dc572a`). Denne sesjonen implementerte dem. Andreas: *«kjør på»*, og senere *«kan jeg nå se dette en plass? er det 10 faq per kategori nå?»*
+
+### 1. Hva ble bygd
+
+Elleve av de tolv S-spørsmålene — de katalogen sier kan bygges av data boardet alt har:
+
+- **Tema:** `skolevei`, `legesenter`, `pizza`, `hund`, `idrettsanlegg`, og Opplevelsers `bibliotek`, `kino`, `kirke`, `museum`.
+- **Området:** `tjenester-samme-sted` (anker + ærendtyper) og `regnvaersdag` (to ulike innendørs-slag).
+- **`uten-bil` flyttet** fra Hverdagsliv til Området, slik katalogens § 6 bestemte. Den leser nå hele boardet med ankermedlemmer, ikke bare ett tema.
+
+Nye hjelpere: `bikeMinutes`/`carMinutes` (samme kontrakt som `walkMinutes` — et målt tall eller ingenting), `reisetid`/`unna`, `navnefilter`, `aerendtyper`, `naermesteAvSlag`, `sammeKort`.
+
+**Ett alternativ, aldri to.** `reisetid` gir «42 minutter til fots eller 18 med sykkel» — sykkel når sykkelturen er innenfor et kvarter, ellers bil. Katalogens eksempler skrev «37 til fots, 17 med sykkel eller 9 med bil», og det er en liste, ikke en setning.
+
+**`barnehage-alder` ble IKKE bygd.** Katalogen har den som S, men `importBarnehagefakta` lagrer bare navn og koordinat på POI-en. `AlderstrinnFra` fra Barnehagefakta når aldri boardet, så spørsmålet er S+ til importeren tar feltet med.
+
+### 2. Opplevelser var deaktivert hele tiden
+
+Temaet ble åpnet i `05a48d7` med kategorier, farge og ikon — men strengen `"opplevelser"` sto fortsatt i `GLOBAL_DISABLED_REPORT_THEMES` (`lib/themes/bransjeprofiler.ts`) fra 2026-04-28, satt fordi temaet den gang ikke hadde innhold å vise. Filteret kjører etter merge, så temaet ble stille strøket fra hvert board uansett hva konfigen sa. Nå fjernet: begge hullene som begrunnet flagget er tettet.
+
+### 3. Tre feil som testene ikke kunne fange
+
+Alle tre kom av å kjøre byggerne mot Wesselsløkka-poolen headless (`transformToReportData`), ikke av å lese kode.
+
+**`library` er en skitten kategori, og det er målt nå.** 71 rader i poolen, rundt 20 er folkebibliotek. Resten er universitetsfilialer (NTNU har elleve), fylkesbibliotekene, Nasjonalbiblioteket, bokbytteskap i telefonkiosker — og ting som ikke er bibliotek i det hele tatt: «Kafén i Ila», «LINK arkitektur AS Bergen», «Bergen Dansesenter». Wesselsløkka-raden navnga «Telefonkiosk i Thornesparken» som nest nærmeste bibliotek.
+
+Fable-dokumentet foreslo en ren ekskluderingsliste, med begrunnelsen at en allowlist på «bibliotek» ville miste Oslo-filialene. Dataen viste at det var feil vei: Deichman er den ENE operatøren som bruker merkenavn i stedet for ordet, og den kan navngis eksplisitt. Filteret ble `krever` + `utelukker`, og luker 48 av 51 feil. De siste seks (BAS biblioteket, Europarettsbiblioteket, Gunnerus Library, KVT Bibliotek, Musikkbiblioteket, Tibi) har ingenting felles leksikalsk — å liste dem ved navn ville vært kuratering, ikke data. Det ærlige fikset står fortsatt i katalogen: Nasjonalbibliotekets Base Bibliotek med `bibliotektype = folkebibliotek`.
+
+**Google skriver «Hospital», ikke «sykehus».** Kirke-filteret ekskluderte sykehjem og sykehus, men «St. Olavs Hospital Kapell» slapp gjennom på den engelske formen. Samme klasse feil som den filteret ble bygd for. Menighetskontoret og kirkelig fellesråd er også lagt til — et kontor er ikke en kirke du kan gå inn i.
+
+**To navn på én dør.** Trondheim Film Club og Cinemateket ligger begge i Olavskvartalet. Begge er ankermedlemmer, så begge lenket til samme kort med samme minuttall: «X er nærmeste kino. Y ligger 38 minutter unna» pekte to ganger på det samme bygget. `sammeKort` sammenligner ankerets id, ikke POI-ens, og halen hopper over naboen i samme bygg. Regelen om maks to navngitte steder handlet alltid om to STEDER.
+
+### 4. Svaret på «er det 10 per kategori nå?» er nei
+
+Målt på Wesselsløkka etter endringen — katalogens ambisjon er ti per tema:
+
+| Tema | Rader nå |
+|---|---|
+| Området | 7 |
+| Hverdag | 5 |
+| Oppvekst | 5 |
+| Servering | 5 |
+| Transport | 5 |
+| Trening | 4 |
+| Natur | 3 |
+| Opplevelser | 3 |
+
+Gapet er ikke byggere som mangler kode, det er kilder som mangler kobling: 27 av katalogens 46 er S+ og venter på én navngitt datakilde hver (Turrutebasen, Bring, Vinmonopolets API, Entur-frekvens, SSB). De 7 K-spørsmålene venter på kurator.
+
+### 5. `kirke` er hjemløs på Wesselsløkka
+
+Kategorien flyttet fra Hverdagsliv til Opplevelser i `05a48d7`, men boardets egen `reportConfig.themes[].categories` er skrevet før flyttingen og lister `kirke` ingen av stedene. 36 kirke-POI-er er koblet til prosjektet uten å ha et tema å rendre i, og `kirke`-raden uteblir. Samme mekanisme som ettordsnavnene 2026-09-06: **den lagrede konfigen vinner over kodens defaults.** Krever en config-patch per board eller re-provisjonering. Ikke gjort — det er en prod-datamutasjon.
+
+### 6. Verifisering
+
+3 624 tester passerer (fra 3 618; 6 nye), ESLint rent, `tsc` rent. Byggerne kjørt headless mot Wesselsløkka-poolen tre ganger under arbeidet — det var den tredje kjøringen som bekreftet at Telefonkiosken og Cinemateket var borte. Commits: `58765ba` (byggerne), pluss Opplevelser-avblokkeringen og de tre datafiksene. Ingenting pushet.
+
+---
+
 ## 2026-09-06 — KATEGORINAVNENE BLE ETT ORD: RADEN VISER FEM TEMAER I STEDET FOR TRE
 
 **Kontekst:** Andreas med et skjermbilde av kategori-raden: *«jeg vil ha korte kategorier. og jeg ser at det ikke er tenkt gjennom så mye hva de ulike labels er for kategoriene nå.»* Forslaget hans var Oppvekst, Transport, Natur og Aktivitet. Tre av fire ble stående.

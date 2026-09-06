@@ -1540,6 +1540,36 @@ describe("reisetiden utenfor gangavstand", () => {
     expect(svar).toBe("[Nova Kinosenter](poi:k1) er nærmeste kino, 6 minutter til fots.");
   });
 
+  it("navngir ALDRI to steder som åpner samme kort på kartet", () => {
+    // Trondheim Film Club og Cinemateket ligger begge i Olavskvartalet. Begge
+    // navnene lenker til senterets kort, så raden ga to navn på én dør.
+    const SENTER = poi({
+      id: "olavskvartalet",
+      name: "Olavskvartalet",
+      categoryId: "shopping",
+      travelTime: { walk: 38 },
+      anchorSummary: "Kulturkvartal",
+    });
+    const medlem = (id: string, name: string) =>
+      poi({ id, name, categoryId: "cinema", parentPoiId: SENTER.id, travelTime: { walk: 38 } });
+    const NOVA = poi({ id: "nova", name: "Nova Kinosenter", categoryId: "cinema", travelTime: { walk: 41 } });
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "opplevelser",
+          categoryIds: ["cinema", "shopping"],
+          pois: [SENTER, NOVA],
+          allPois: [SENTER, NOVA, medlem("film", "Trondheim Film Club"), medlem("cine", "Cinemateket")],
+        }),
+      ),
+      "kino",
+    );
+    expect(svar).toContain("Nærmeste kino på kartet er [Trondheim Film Club i Olavskvartalet](poi:olavskvartalet)");
+    // Nummer to er stedet med et EGET kort, ikke naboen i samme bygg.
+    expect(svar).toContain("[Nova Kinosenter](poi:nova) ligger 41 minutter unna.");
+    expect(svar.match(/olavskvartalet/g)!.length).toBe(1);
+  });
+
   it("skriver halen med norsk ordstilling: «unna til fots, eller … med sykkel»", () => {
     const entries = generateCategoryFaq(
       input({
@@ -1758,7 +1788,7 @@ describe("Opplevelser-filtrene (Wesselsløkka 2026-09-06)", () => {
     );
   });
 
-  it("bibliotek: filteret er en ekskluderingsliste — Deichman Grünerløkka bærer ikke ordet, og teller", () => {
+  it("bibliotek: Deichman-filialene bærer merkenavnet, ikke ordet — og teller likevel", () => {
     const svar = answerFor(
       opplevelser([
         poi({ id: "b3", name: "Deichman Grünerløkka", categoryId: "library", travelTime: { walk: 7 } }),
@@ -1768,11 +1798,42 @@ describe("Opplevelser-filtrene (Wesselsløkka 2026-09-06)", () => {
     expect(svar).toBe("[Deichman Grünerløkka](poi:b3) er nærmeste bibliotek, 7 minutter til fots.");
   });
 
+  it("bibliotek: bokbytteskapet i telefonkiosken er ikke et bibliotek", () => {
+    // Sto som nummer to i Wesselsløkka-raden før filteret ble målt mot poolen.
+    const entries = opplevelser([
+      poi({ id: "b4", name: "Telefonkiosk i Thornesparken i Trondheim", categoryId: "library", travelTime: { walk: 33 } }),
+      poi({ id: "b5", name: "Knappen bokbytteskap", categoryId: "library", travelTime: { walk: 12 } }),
+    ]);
+    expect(entries.find((e) => e.id === "bibliotek")).toBeUndefined();
+  });
+
+  it("bibliotek: kaféen og arkitektkontoret som Google kaller library, teller ikke", () => {
+    const entries = opplevelser([
+      poi({ id: "b6", name: "Kafén i Ila", categoryId: "library", travelTime: { walk: 4 } }),
+      poi({ id: "b7", name: "LINK arkitektur AS Bergen", categoryId: "library", travelTime: { walk: 6 } }),
+    ]);
+    expect(entries.find((e) => e.id === "bibliotek")).toBeUndefined();
+  });
+
   it("bibliotek: utelates når bare forskningsbibliotek finnes", () => {
     const entries = opplevelser([
       poi({ id: "b1", name: "Trøndelag fylkesbibliotek", categoryId: "library", travelTime: { walk: 5 } }),
     ]);
     expect(entries.find((e) => e.id === "bibliotek")).toBeUndefined();
+  });
+
+  it("kirke: sykehuskapellet på engelsk faller på «hospital», ikke på «sykehus»", () => {
+    const entries = opplevelser([
+      poi({ id: "c9", name: "St. Olavs Hospital Kapell", categoryId: "kirke", travelTime: { walk: 6 } }),
+    ]);
+    expect(entries.find((e) => e.id === "kirke")).toBeUndefined();
+  });
+
+  it("kirke: menighetskontoret er administrasjon, ikke et gudshus", () => {
+    const entries = opplevelser([
+      poi({ id: "c8", name: "Menighetskontoret Oppdal", categoryId: "kirke", travelTime: { walk: 4 } }),
+    ]);
+    expect(entries.find((e) => e.id === "kirke")).toBeUndefined();
   });
 
   it("kirke: sykehjemskapellet 7 minutter unna er ikke en menighet", () => {
@@ -1830,6 +1891,19 @@ describe("Opplevelser-filtrene (Wesselsløkka 2026-09-06)", () => {
       "museum",
     );
     expect(svar).toBe("[Rockheim](poi:m3) er nærmeste museum, 9 minutter til fots.");
+  });
+
+  it("museum: parkeringsplassen arver museets åpningstider, og teller likevel ikke", () => {
+    const entries = opplevelser([
+      poi({
+        id: "m4",
+        name: "NTNU Ringve botaniske hage Parkering",
+        categoryId: "museum",
+        travelTime: { walk: 8 },
+        openingHoursJson: tider("10:00 AM – 5:00 PM"),
+      }),
+    ]);
+    expect(entries.find((e) => e.id === "museum")).toBeUndefined();
   });
 
   it("museum: utelates når bare monumenter finnes", () => {

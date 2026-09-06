@@ -990,6 +990,21 @@ function treningspark(input: FaqGeneratorInput): string | undefined {
 // sammen med gangtiden, og brukes bare der de er det.
 
 /**
+ * Åpner de to stedene SAMME kort på kartet?
+ *
+ * Er begge medlemmer av det samme ankeret, lenker begge navnene til
+ * senterets kort, og «X er nærmeste kino. Y ligger 38 minutter unna» blir to
+ * navn på én dør. Målt på Wesselsløkka: Trondheim Film Club og Cinemateket
+ * ligger begge i Olavskvartalet, og raden navnga dem begge med samme
+ * minuttall og samme lenke.
+ */
+function sammeKort(a: FaqPoi, b: FaqPoi): boolean {
+  const kortA = a.faqAnchor?.id ?? a.id;
+  const kortB = b.faqAnchor?.id ?? b.id;
+  return kortA === kortB;
+}
+
+/**
  * Den vanligste svarformen i katalogen: nærmeste sted med SLAGSORD, og den
  * neste som hale.
  *
@@ -1003,7 +1018,7 @@ function naermesteAvSlag(
   slag: (poi: FaqPoi) => string,
   radius: number = WALK_RADIUS_MIN,
 ): string | undefined {
-  const [naermest, neste] = kandidater;
+  const [naermest] = kandidater;
   if (!naermest) return undefined;
   const w = walkMinutes(naermest)!;
   const parts = [
@@ -1011,6 +1026,7 @@ function naermesteAvSlag(
       ? `${namedPoi(naermest)} er nærmeste ${slag(naermest)}, ${minutter(w)} til fots.`
       : `Nærmeste ${slag(naermest)} på kartet er ${namedPoi(naermest)}, ${reisetid(naermest)}.`,
   ];
+  const neste = kandidater.find((p) => !sammeKort(p, naermest));
   if (neste) parts.push(`${namedPoi(neste)} ligger ${unna(neste)}.`);
   return parts.join(" ");
 }
@@ -1132,27 +1148,81 @@ function idrettsanlegg(input: FaqGeneratorInput): string | undefined {
 }
 
 /**
- * Bibliotek som IKKE låner ut til publikum. En ekskluderingsliste med vilje:
- * en allowlist på «bibliotek» ville tatt hele Oslo, der filialene heter
- * «Deichman Grünerløkka» uten ordet i navnet. Det ærlige neste skrittet er
- * Nasjonalbibliotekets Base Bibliotek med `bibliotektype = folkebibliotek`.
+ * Ordene et folkebibliotek faktisk heter. `deichman` står der fordi Oslos 22
+ * filialer er den ene store operatøren som bruker merkenavn i stedet for ordet
+ * («Deichman Stovner», «Deichman meråpent») — uten den mister Oslo hele raden.
+ * Ingen annen operatør i poolen gjør det samme.
+ */
+const BIBLIOTEK_ORD = ["bibliotek", "library", "bokbuss", "deichman"] as const;
+
+/**
+ * Bibliotek som IKKE låner ut til publikum, eller ikke er et bibliotek i det
+ * hele tatt.
+ *
+ * MÅLT PÅ HELE POOLEN 2026-09-06: 71 `library`-rader, og bare rundt 20 av dem
+ * er folkebibliotek. Kategorien rommer universitetsfilialer (NTNU har elleve),
+ * fylkesbibliotekene (bibliotekenes bibliotek, ikke publikums),
+ * Nasjonalbiblioteket, bokbytteskap i telefonkiosker — og ting som ikke er
+ * bibliotek i det hele tatt: «Kafén i Ila», «LINK arkitektur AS», «Bergen
+ * Dansesenter».
+ *
+ * Navnegaten tar 48 av de 51 feilene. De siste seks som slipper gjennom
+ * (BAS biblioteket, Europarettsbiblioteket, Gunnerus Library, KVT Bibliotek,
+ * Musikkbiblioteket, Tibi) har ingenting felles leksikalsk, og å liste dem ved
+ * navn ville vært kuratering, ikke data. Det ÆRLIGE fikset er kilden
+ * katalogen alt navngir: Nasjonalbibliotekets Base Bibliotek med
+ * `bibliotektype = folkebibliotek`. Til den er koblet på, er dette gulvet.
  */
 const IKKE_UTLAAN_ORD = [
+  // Studiested og forskning
   "ntnu",
   "universitet",
+  "university",
   "høgskole",
   "høyskole",
-  "fylkesbibliotek",
-  "forsknings",
-  "marin",
-  "skolebibliotek",
+  "oslomet",
+  "uib",
+  "student",
+  "akademi",
   "institutt",
   "fakultet",
+  "skolebibliotek",
+  "ungdomsskole",
+  "videregående",
+  "sophus",
+  "sverdrup",
+  "humsam",
+  "realfag",
+  "teknologi",
+  "økonomi",
+  "juridisk",
+  "medisin",
+  "samfunnsvitenskap",
+  "arkitektur",
+  "marin",
+  "forsknings",
+  // Bibliotekenes bibliotek og depotene — ikke publikumsutlån
+  "fylkesbibliotek",
+  "national library",
+  "nasjonalbibliotek",
+  "fellesmagasin",
+  "magasin",
+  "depot",
+  "dora",
+  "picture collection",
+  "sykehus",
+  // Bokbytteskap og lesekiosker: et skap er ikke et bibliotek
+  "telefonkiosk",
+  "phone booth",
+  "bokbytte",
+  "bokskap",
+  "lesekiosk",
+  "lesesal",
 ] as const;
 
 /** Er stedet et utlånsbibliotek, slik spørsmålet mener det? */
 function erUtlaansbibliotek(poi: POI): boolean {
-  return navnefilter(poi, { utelukker: IKKE_UTLAAN_ORD });
+  return navnefilter(poi, { krever: BIBLIOTEK_ORD, utelukker: IKKE_UTLAAN_ORD });
 }
 
 /** BIBLIOTEK — nærmeste utlånsbibliotek, med det ordet navnet bærer. */
@@ -1169,19 +1239,29 @@ function kino(input: FaqGeneratorInput): string | undefined {
 }
 
 /**
- * Steder i `kirke`-kategorien som ikke er en menighet med åpne tilbud:
- * sykehjemskapellet, gravlundskapellet, krematoriet.
+ * Steder i `kirke`-kategorien som ikke er et gudshus med åpne tilbud.
+ *
+ * To slag, begge målt på poolen 2026-09-06: institusjonskapellet (Zion bo- og
+ * servicesenter, St. Olavs Hospital Kapell — merk at Google skriver den
+ * engelske formen, så «sykehus» alene fanget den ikke) og
+ * ADMINISTRASJONEN (menighetskontoret, kirkelig fellesråd, Frelsesarmeens
+ * divisjonskontor). Et kontor er ikke en kirke du kan gå inn i.
  */
 const IKKE_MENIGHET_ORD = [
   "sykehjem",
   "bo- og service",
   "helsehus",
   "sykehus",
+  "hospital",
   "omsorgssenter",
   "krematorium",
   "gravlund",
   "gravplass",
   "kirkegård",
+  "menighetskontor",
+  "fellesråd",
+  "ecclesiastical council",
+  "divisjon",
 ] as const;
 
 /** Er stedet en menighet med åpne tilbud, slik spørsmålet mener det? */
@@ -1216,6 +1296,10 @@ const MUSEUM_ORD = ["museum", "museet", "musea", "samling", "galleri", "kunsthal
  * ikke har.
  */
 function erMuseum(poi: POI): boolean {
+  // Parkeringsplassen til et museum er ikke et museum, og den arver
+  // åpningstidene som ellers ville sluppet den gjennom porten under
+  // («NTNU Ringve botaniske hage Parkering», målt i poolen).
+  if (navnefilter(poi, { krever: ["parkering", "parking"] })) return false;
   return (
     navnefilter(poi, { krever: MUSEUM_ORD }) ||
     parseWeekdayText(poi.openingHoursJson?.weekday_text) !== null
