@@ -81,6 +81,20 @@ const DINING_RADIUS_MIN = 15;
 /** Så mange steder et svar navngir før det blir en liste framfor en setning. */
 const MAX_NAMED = 2;
 
+/**
+ * Sykkeltiden som gjør at et sted utenfor gangavstand fortsatt nevnes med
+ * sykkel og ikke bil. Over dette er bilen det ærlige alternativet.
+ */
+const BIKE_RADIUS_MIN = 15;
+
+/**
+ * «I nærheten» for innendørs-spørsmålet på Området: et kvarter til fots ELLER
+ * et kvarter med sykkel. Familiens regnværsdag går lenger enn ærendet, men
+ * Området skal ikke sende dem 40 minutter av gårde — det svaret bor i
+ * Opplevelsers egne rader.
+ */
+const INNENDORS_RADIUS_MIN = 15;
+
 export interface FaqGeneratorInput {
   themeId: string;
   /** Temaets `category_id`-liste — broen til malverket. */
@@ -201,6 +215,77 @@ function findSchoolPoi(
 function walkMinutes(poi: POI): number | undefined {
   const walk = poi.travelTime?.walk;
   return typeof walk === "number" && Number.isFinite(walk) ? walk : undefined;
+}
+
+/** Precomputet sykkeltid. Samme kontrakt som `walkMinutes`: et tall eller ingenting. */
+function bikeMinutes(poi: POI): number | undefined {
+  const bike = poi.travelTime?.bike;
+  return typeof bike === "number" && Number.isFinite(bike) ? bike : undefined;
+}
+
+/** Precomputet biltid. Samme kontrakt som `walkMinutes`. */
+function carMinutes(poi: POI): number | undefined {
+  const car = poi.travelTime?.car;
+  return typeof car === "number" && Number.isFinite(car) ? car : undefined;
+}
+
+/**
+ * Det raskere alternativet til å gå, når stedet ligger utenfor gangavstand.
+ *
+ * Sykkel når sykkelturen er innenfor `BIKE_RADIUS_MIN`, ellers bil. ALDRI
+ * begge: «37 til fots, 17 med sykkel eller 9 med bil» er en liste, ikke en
+ * setning, og leseren trenger ett alternativ — det hun faktisk ville valgt.
+ * Innenfor gangavstand finnes ikke noe alternativ å nevne: da går man.
+ */
+function alternativTid(poi: POI): string | undefined {
+  const w = walkMinutes(poi);
+  if (w === undefined || w <= WALK_RADIUS_MIN) return undefined;
+  const bike = bikeMinutes(poi);
+  if (bike !== undefined && bike <= BIKE_RADIUS_MIN) return `${bike} med sykkel`;
+  const car = carMinutes(poi);
+  return car !== undefined ? `${car} med bil` : undefined;
+}
+
+/**
+ * Reisetiden i en leddsetning: «8 minutter til fots», eller utenfor
+ * gangavstand «42 minutter til fots eller 18 med sykkel». Bare målte tall —
+ * kalleren har alt filtrert på `walkMinutes`.
+ */
+function reisetid(poi: POI): string {
+  const tilFots = `${minutter(walkMinutes(poi)!)} til fots`;
+  const alt = alternativTid(poi);
+  return alt ? `${tilFots} eller ${alt}` : tilFots;
+}
+
+/**
+ * Samme opplysning etter «ligger»: «12 minutter unna», eller «42 minutter unna
+ * til fots, eller 18 med sykkel». Egen ordstilling fordi «ligger 42 minutter
+ * til fots eller 18 med sykkel unna» ikke er norsk.
+ */
+function unna(poi: POI): string {
+  const w = minutter(walkMinutes(poi)!);
+  const alt = alternativTid(poi);
+  return alt ? `${w} unna til fots, eller ${alt}` : `${w} unna`;
+}
+
+/**
+ * Kategori-portet ordfilter på navnet.
+ *
+ * Google-kategorien er ofte bredere enn spørsmålet: `library` rommer NTNU
+ * Marinbiblioteket, `kirke` rommer sykehjemskapellet, `doctor` rommer
+ * urologen. Filteret går ALDRI på navnet alene — kalleren har allerede
+ * begrenset til én kategori, og ordet avgjør bare innenfor den (samme regel
+ * som `norskStedsnavn` i pipelinen). `krever` er en allowlist (minst ett ord
+ * må finnes), `utelukker` en blocklist (ingen av ordene får finnes).
+ */
+function navnefilter(
+  poi: POI,
+  filter: { krever?: readonly string[]; utelukker?: readonly string[] },
+): boolean {
+  const navn = poi.name.toLocaleLowerCase("nb-NO");
+  if (filter.utelukker?.some((ord) => navn.includes(ord))) return false;
+  if (filter.krever && !filter.krever.some((ord) => navn.includes(ord))) return false;
+  return true;
 }
 
 /** Nærmest først. POI-er uten målt gangtid havner sist, sortert på luftlinje. */
@@ -634,10 +719,10 @@ function kjopesenter(input: FaqGeneratorInput): string | undefined {
 }
 
 /**
- * UTEN BIL — terskelspørsmålet. Svaret er hvilke ÆREND-typer som dekkes til
- * fots, ikke hvilke butikker: én forelder med handlepose bryr seg om «får jeg
- * gjort det», ikke om kjedenavnet. Ærendene navngis bare når de er dekket —
- * aldri «resten krever bil», for det vet ikke poolen.
+ * Ærendtypene bak `uten-bil` og `tjenester-samme-sted`. Svaret er hvilke
+ * TYPER som dekkes, ikke hvilke butikker: én forelder med handlepose bryr seg
+ * om «får jeg gjort det», ikke om kjedenavnet. Ærendene navngis bare når de er
+ * dekket — aldri «resten krever bil», for det vet ikke poolen.
  */
 const ÆREND: ReadonlyArray<{ navn: string; cats: string[] }> = [
   { navn: "dagligvare", cats: ["supermarket", "convenience"] },
@@ -656,30 +741,12 @@ const ÆREND: ReadonlyArray<{ navn: string; cats: string[] }> = [
   { navn: "bysykkel", cats: ["bike"] },
 ];
 
-/**
- * Ærendene, målt mot HELE boardet og ikke bare temaets liste.
- *
- * `uten-bil` er katalogens ene TERSKELSPØRSMÅL — det spør om summen av
- * hverdagen, ikke om én kategori — og det er nettopp derfor det ikke kan lese
- * bare Hverdagsliv-temaets POI-er. Bakeriet ligger i Mat & drikke,
- * treningssenteret i Trening, barnehagen i Oppvekst. Alle er ærend du gjør til
- * fots, og ingen av dem talte med.
- */
-function utenBil(input: FaqGeneratorInput): string | undefined {
-  const dekket = ÆREND.filter(({ cats }) => {
+/** Ærendtypene et sett steder dekker, i `ÆREND`-lista si rekkefølge. */
+function aerendtyper(pois: readonly POI[]): string[] {
+  return ÆREND.filter(({ cats }) => {
     const set = new Set(cats);
-    return input.allPois.some(
-      (p) => set.has(p.category.id) && erINaerheten(p),
-    );
+    return pois.some((p) => set.has(p.category.id));
   }).map(({ navn }) => navn);
-
-  if (dekket.length >= 4) {
-    return `Hverdagsærendene er i gangavstand: ${ogJoin(dekket)} ligger alle innenfor ${WALK_RADIUS_MIN} minutter til fots.`;
-  }
-  if (dekket.length >= 2) {
-    return `Deler av hverdagen er i gangavstand: ${ogJoin(dekket)} ligger innenfor ${WALK_RADIUS_MIN} minutter til fots.`;
-  }
-  return undefined; // Én eller null ærend-typer: ikke nok til et ærlig ja.
 }
 
 /** LEKEPLASS — nærmeste først, antallet innenfor radiusen som hale. */
@@ -905,6 +972,262 @@ function treningspark(input: FaqGeneratorInput): string | undefined {
     : `Nærmeste utendørs treningspark på kartet er ${namedPoi(naermest)}, ${w} til fots.`;
 }
 
+// ── Katalogens S-spørsmål (2026-09-06) ──────────────────────────────────────
+//
+// Setningsformene er skrevet i `docs/research/2026-09-06-faq-byggere-
+// setningsformer-fable.md` og implementeres her ordrett. Tre ting går igjen:
+//
+// FILTERET ER ET KRAV, IKKE EN FINPUSS. Målt på Wesselsløkka 2026-09-06 var
+// tre av fire «nærmeste» i Opplevelser feil sted: et forskningsbibliotek, et
+// monument, et sykehjemskapell. Google-kategorien er bredere enn spørsmålet, og
+// `navnefilter` lukker gapet innenfor kategorien.
+//
+// «PÅ KARTET» UTENFOR RADIUSEN, som ellers i fila. Radiusen er `WALK_RADIUS_MIN`
+// med mindre spørsmålet er et serverings-spørsmål (`DINING_RADIUS_MIN`).
+//
+// REISETIDEN BÆRER ETT ALTERNATIV utenfor gangavstand (`reisetid`): sykkel når
+// den er innenfor et kvarter, ellers bil. Sykkel- og biltid er precomputet
+// sammen med gangtiden, og brukes bare der de er det.
+
+/**
+ * Den vanligste svarformen i katalogen: nærmeste sted med SLAGSORD, og den
+ * neste som hale.
+ *
+ * «[X] er nærmeste legesenter, 8 minutter til fots.» innenfor radiusen;
+ * «Nærmeste legesenter på kartet er [X], 42 minutter til fots eller 18 med
+ * sykkel.» utenfor. Slagsordet er en funksjon fordi noen spørsmål svarer med
+ * det ordet navnet bærer (folkebibliotek, kapell, menighetshus).
+ */
+function naermesteAvSlag(
+  kandidater: readonly FaqPoi[],
+  slag: (poi: FaqPoi) => string,
+  radius: number = WALK_RADIUS_MIN,
+): string | undefined {
+  const [naermest, neste] = kandidater;
+  if (!naermest) return undefined;
+  const w = walkMinutes(naermest)!;
+  const parts = [
+    w <= radius
+      ? `${namedPoi(naermest)} er nærmeste ${slag(naermest)}, ${minutter(w)} til fots.`
+      : `Nærmeste ${slag(naermest)} på kartet er ${namedPoi(naermest)}, ${reisetid(naermest)}.`,
+  ];
+  if (neste) parts.push(`${namedPoi(neste)} ligger ${unna(neste)}.`);
+  return parts.join(" ");
+}
+
+/** Nærmeste i kategorien(e) fra ET VILKÅRLIG sett, kun POI-er med målt gangtid. */
+function naermesteMedTidFra(
+  pois: readonly FaqPoi[],
+  center: Coordinates,
+  ...cats: string[]
+): FaqPoi[] {
+  return byWalkThenDistance(inCategories(pois, ...cats), center).filter(
+    (p) => walkMinutes(p) !== undefined,
+  );
+}
+
+/**
+ * SKOLEVEI — formen er ET TALL, ikke nærhet. Skolen er gitt av kretsen, aldri
+ * «nærmeste skole-POI», så det finnes ingen «på kartet»-variant: spørsmålet
+ * lover ikke at skolen er nær, det spør hvor langt det er. Mangler én av
+ * skolene målt gangtid, utelates DEN setningen — aldri et estimat.
+ */
+function skolevei(input: FaqGeneratorInput): string | undefined {
+  const schools = input.boardFacts?.schools;
+  const maal = (fact: { navn: string; orgnr: string } | undefined) => {
+    if (!fact) return undefined;
+    const poi = findSchoolPoi(input.allPois, fact);
+    const w = poi ? walkMinutes(poi) : undefined;
+    return w === undefined ? undefined : { lenke: poiLink(fact.navn, poi), w };
+  };
+  const barn = maal(schools?.barneskole);
+  const ung = maal(schools?.ungdomsskole);
+
+  if (barn && ung) {
+    return `Skoleveien til ${barn.lenke} er ${minutter(barn.w)} til fots, og til ${ung.lenke}, der ungdomstrinnet hører til, ${minutter(ung.w)}.`;
+  }
+  if (barn) return `Skoleveien til ${barn.lenke} er ${minutter(barn.w)} til fots.`;
+  if (ung) {
+    return `Skoleveien til ${ung.lenke}, der ungdomstrinnet hører til, er ${minutter(ung.w)} til fots.`;
+  }
+  return undefined;
+}
+
+/**
+ * Ord som gjør en `doctor`-rad til et LEGESENTER. En allowlist, ikke en
+ * blocklist: kategorien rommer gynekolog, urolog og nevrolog, og lista over
+ * spesialister er lengre enn lista over ord for allmennlege.
+ */
+const LEGESENTER_ORD = [
+  "legesenter",
+  "legekontor",
+  "legegruppe",
+  "fastlege",
+  "helsesenter",
+  "medisinsk",
+] as const;
+
+/** LEGESENTER — nærmeste allmennlege. Ledig fastlegeplass påstås aldri. */
+function legesenter(input: FaqGeneratorInput): string | undefined {
+  const kandidater = naermesteMedTid(input, "doctor").filter((p) =>
+    navnefilter(p, { krever: LEGESENTER_ORD }),
+  );
+  return naermesteAvSlag(kandidater, () => "legesenter");
+}
+
+/**
+ * PIZZA — Google-typen `pizza_restaurant` lagres ikke i poolen (katalogen § 5
+ * pkt 9), så porten er ordet i navnet innenfor `restaurant`. Ingen
+ * merkevareliste: en liste over kjeder er kuratering, ikke data.
+ */
+function pizza(input: FaqGeneratorInput): string | undefined {
+  const kandidater = naermesteMedTid(input, "restaurant").filter((p) =>
+    navnefilter(p, { krever: ["pizza", "pizzeria"] }),
+  );
+  return naermesteAvSlag(kandidater, () => "pizzasted", DINING_RADIUS_MIN);
+}
+
+/**
+ * HUNDEPARK — kategorien `hundepark` ELLER en `park` med ordet i navnet:
+ * begge Wesselsløkka-parkene ligger som `park` til de er omkategorisert.
+ * Inngjerding påstås aldri — derfor sier spørsmålet hundepark, ikke løsområde.
+ */
+function hund(input: FaqGeneratorInput): string | undefined {
+  const kandidater = naermesteMedTid(input, "hundepark", "park").filter(
+    (p) => p.category.id === "hundepark" || navnefilter(p, { krever: ["hundepark"] }),
+  );
+  return naermesteAvSlag(kandidater, () => "hundepark");
+}
+
+/** Er idrettsanlegget en HALL? Svømmehallen er sitt eget spørsmål. */
+function erIdrettshall(poi: POI): boolean {
+  return navnefilter(poi, { krever: ["hall", "arena"], utelukker: ["svømme"] });
+}
+
+/**
+ * IDRETTSANLEGG — leser `idrett` fra HELE boardet: kategorien ligger i
+ * Oppvekst-temaet, spørsmålet i Trening (katalogen § 5 pkt 8). Spørsmålet
+ * nevner både baner og haller, så halen er den andre sorten når begge finnes:
+ * det er de to navngitte stedene. Ingen antall — ankere teller som én på
+ * kartet, og «11 anlegg» ville ikke stemt med det leseren ser.
+ */
+function idrettsanlegg(input: FaqGeneratorInput): string | undefined {
+  const alle = naermesteMedTidFra(input.allPois, input.center, "idrett");
+  const [naermest] = alle;
+  if (!naermest) return undefined;
+  const w = walkMinutes(naermest)!;
+  const parts = [
+    w <= WALK_RADIUS_MIN
+      ? `${namedPoi(naermest)} er nærmeste idrettsanlegg, ${minutter(w)} til fots.`
+      : `Nærmeste idrettsanlegg på kartet er ${namedPoi(naermest)}, ${reisetid(naermest)}.`,
+  ];
+  const andreSort = erIdrettshall(naermest)
+    ? alle.find((p) => p !== naermest && !erIdrettshall(p))
+    : alle.find((p) => p !== naermest && erIdrettshall(p));
+  if (andreSort) {
+    const ord = erIdrettshall(andreSort) ? "idrettshall" : "bane";
+    parts.push(`${namedPoi(andreSort)} er nærmeste ${ord}, ${reisetid(andreSort)}.`);
+  }
+  return parts.join(" ");
+}
+
+/**
+ * Bibliotek som IKKE låner ut til publikum. En ekskluderingsliste med vilje:
+ * en allowlist på «bibliotek» ville tatt hele Oslo, der filialene heter
+ * «Deichman Grünerløkka» uten ordet i navnet. Det ærlige neste skrittet er
+ * Nasjonalbibliotekets Base Bibliotek med `bibliotektype = folkebibliotek`.
+ */
+const IKKE_UTLAAN_ORD = [
+  "ntnu",
+  "universitet",
+  "høgskole",
+  "høyskole",
+  "fylkesbibliotek",
+  "forsknings",
+  "marin",
+  "skolebibliotek",
+  "institutt",
+  "fakultet",
+] as const;
+
+/** Er stedet et utlånsbibliotek, slik spørsmålet mener det? */
+function erUtlaansbibliotek(poi: POI): boolean {
+  return navnefilter(poi, { utelukker: IKKE_UTLAAN_ORD });
+}
+
+/** BIBLIOTEK — nærmeste utlånsbibliotek, med det ordet navnet bærer. */
+function bibliotek(input: FaqGeneratorInput): string | undefined {
+  const kandidater = naermesteMedTid(input, "library").filter(erUtlaansbibliotek);
+  return naermesteAvSlag(kandidater, (p) =>
+    navnefilter(p, { krever: ["folkebibliotek"] }) ? "folkebibliotek" : "bibliotek",
+  );
+}
+
+/** KINO — traff riktig på Wesselsløkka uten filter. Bussreisen er ikke målt. */
+function kino(input: FaqGeneratorInput): string | undefined {
+  return naermesteAvSlag(naermesteMedTid(input, "cinema"), () => "kino");
+}
+
+/**
+ * Steder i `kirke`-kategorien som ikke er en menighet med åpne tilbud:
+ * sykehjemskapellet, gravlundskapellet, krematoriet.
+ */
+const IKKE_MENIGHET_ORD = [
+  "sykehjem",
+  "bo- og service",
+  "helsehus",
+  "sykehus",
+  "omsorgssenter",
+  "krematorium",
+  "gravlund",
+  "gravplass",
+  "kirkegård",
+] as const;
+
+/** Er stedet en menighet med åpne tilbud, slik spørsmålet mener det? */
+function erMenighet(poi: POI): boolean {
+  return navnefilter(poi, { utelukker: IKKE_MENIGHET_ORD });
+}
+
+/**
+ * Slagsordet et gudshus bærer i navnet. Rekkefølgen er bevisst: «kirkesenter»
+ * inneholder «kirke» og må prøves først.
+ */
+const KIRKE_SLAG = ["menighetshus", "bedehus", "kirkesenter", "kapell", "kirke"] as const;
+
+function kirkeSlag(poi: POI): string {
+  const navn = poi.name.toLocaleLowerCase("nb-NO");
+  return KIRKE_SLAG.find((ord) => navn.includes(ord)) ?? "kirke";
+}
+
+/** KIRKE — nærmeste menighet. Menighetshusets faste tilbud er kuratert (K). */
+function kirke(input: FaqGeneratorInput): string | undefined {
+  const kandidater = naermesteMedTid(input, "kirke").filter(erMenighet);
+  return naermesteAvSlag(kandidater, kirkeSlag);
+}
+
+/** Ord som sier at stedet er et museum med publikum, ikke et monument. */
+const MUSEUM_ORD = ["museum", "museet", "musea", "samling", "galleri", "kunsthall"] as const;
+
+/**
+ * Kvalifiserer stedet som museum? Navnet ELLER cachede åpningstider: Berlin
+ * Wall Segments har ingen av delene, et museum med publikum har begge.
+ * Åpningstidene er stedfortreder for «åpent for publikum» — feltet poolen
+ * ikke har.
+ */
+function erMuseum(poi: POI): boolean {
+  return (
+    navnefilter(poi, { krever: MUSEUM_ORD }) ||
+    parseWeekdayText(poi.openingHoursJson?.weekday_text) !== null
+  );
+}
+
+/** MUSEUM — nærmeste museum med publikum. */
+function museum(input: FaqGeneratorInput): string | undefined {
+  const kandidater = naermesteMedTid(input, "museum").filter(erMuseum);
+  return naermesteAvSlag(kandidater, () => "museum");
+}
+
 /**
  * Ankerets medlemmer, tilbake i lista de ble absorbert ut av.
  *
@@ -971,10 +1294,11 @@ const ANSWER_BUILDERS: Record<string, AnswerBuilder> = {
   "til-sentrum": tilSentrum,
   // Tema-spørsmålene (2026-08-23). `turstier`, `marka` og `idrettslag` har
   // ingen bygger med vilje — de er kuratert-eneste, se THEME_BOARD_QUESTIONS.
+  // `uten-bil` bodde her til 2026-09-06 og flyttet til Området (katalogen § 6):
+  // det er tverrgående, og Hverdagsliv slapp id-en.
   apotek,
   tannlege,
   kjopesenter,
-  "uten-bil": utenBil,
   lekeplass,
   "oppvekst-fritid": oppvekstFritid,
   kafe,
@@ -991,6 +1315,16 @@ const ANSWER_BUILDERS: Record<string, AnswerBuilder> = {
   "trene-tidlig-sent": treneTidligSent,
   svommehall,
   treningspark,
+  // Katalogens S-spørsmål (2026-09-06), setningsformene fra Fable-leveransen.
+  skolevei,
+  legesenter,
+  pizza,
+  hund,
+  idrettsanlegg,
+  bibliotek,
+  kino,
+  kirke,
+  museum,
 };
 
 // ── Montering ───────────────────────────────────────────────────────────────
@@ -1355,12 +1689,123 @@ function apentSent(input: GlobalFaqInput): string | undefined {
   return parts.join(" ");
 }
 
+/**
+ * UTEN BIL — terskelspørsmålet. Det spør om summen av hverdagen, ikke om én
+ * kategori, og det er derfor det bor på Området og ikke i Hverdagsliv
+ * (katalogen § 6, flyttet 2026-09-06): bakeriet ligger i Mat & drikke,
+ * treningssenteret i Trening, barnehagen i Oppvekst. Alle er ærend du gjør til
+ * fots. Medlemmene av et kjøpesenter teller med — apoteket inne i senteret er
+ * et apotek du kan gå til.
+ */
+function utenBil(input: GlobalFaqInput): string | undefined {
+  const dekket = aerendtyper(areaPoisWithMembers(input).filter(erINaerheten));
+
+  if (dekket.length >= 4) {
+    return `Hverdagsærendene er i gangavstand: ${ogJoin(dekket)} ligger alle innenfor ${WALK_RADIUS_MIN} minutter til fots.`;
+  }
+  if (dekket.length >= 2) {
+    return `Deler av hverdagen er i gangavstand: ${ogJoin(dekket)} ligger innenfor ${WALK_RADIUS_MIN} minutter til fots.`;
+  }
+  return undefined; // Én eller null ærend-typer: ikke nok til et ærlig ja.
+}
+
+/**
+ * TJENESTER SAMME STED — formen er ANKER MED ÆRENDTYPER. Anker-registeret
+ * (kjøpesenter-familien, `parentPoiId`) er nøyaktig denne dataen. Medlemmene
+ * beskrives som typer, ikke butikknavn — det er slik `uten-bil` alt snakker,
+ * og det er det som holder maks-to-navn-regelen: de to ankrene er de to
+ * navngitte stedene. Et anker som bare dekker ÉN ærendtype er ikke «samle», og
+ * telles ikke.
+ *
+ * Området eier medlemslista (katalogen § 6); Hverdagslivs `kjopesenter` skal
+ * ikke liste medlemmer.
+ */
+function tjenesterSammeSted(input: GlobalFaqInput): string | undefined {
+  const alle = input.allPois ?? [];
+  const ankre = alle
+    .filter((a) => isAnchorPOI(a) && walkMinutes(a) !== undefined)
+    .sort((a, b) => walkMinutes(a)! - walkMinutes(b)!)
+    .map((anker) => ({
+      anker,
+      aerend: aerendtyper(alle.filter((p) => p.parentPoiId === anker.id)),
+    }))
+    .filter(({ aerend }) => aerend.length >= 2);
+
+  const [først, neste] = ankre;
+  if (!først) return undefined;
+  const w = walkMinutes(først.anker)!;
+  const parts = [
+    w <= WALK_RADIUS_MIN
+      ? `På ${namedPoi(først.anker)} ligger ${ogJoin(først.aerend)} samlet, ${minutter(w)} til fots.`
+      : `Nærmeste sted på kartet som samler flere ærender er ${namedPoi(først.anker)}, ${reisetid(først.anker)}, med ${ogJoin(først.aerend)}.`,
+  ];
+  if (neste) {
+    parts.push(`${namedPoi(neste.anker)} samler ${ogJoin(neste.aerend)}, ${reisetid(neste.anker)}.`);
+  }
+  return parts.join(" ");
+}
+
+/**
+ * Innendørs-kategoriene bak `regnvaersdag`, med ordet svaret bruker om dem.
+ * `idrett` er med bare når stedet er en hall — en kunstgressbane er ikke et
+ * sted å gå inn i når det regner.
+ */
+const INNENDORS_SLAG: ReadonlyArray<{ cat: string; slag: string; port?: (poi: POI) => boolean }> = [
+  { cat: "library", slag: "bibliotek", port: erUtlaansbibliotek },
+  { cat: "swimming", slag: "svømmehall" },
+  { cat: "museum", slag: "museum", port: erMuseum },
+  { cat: "cinema", slag: "kino" },
+  { cat: "gym", slag: "treningssenter" },
+  { cat: "idrett", slag: "idrettshall", port: erIdrettshall },
+];
+
+/** Innenfor for regnværsdagen: et kvarter til fots ELLER et kvarter med sykkel. */
+function erInnendorsNaer(poi: POI): boolean {
+  const w = walkMinutes(poi);
+  const b = bikeMinutes(poi);
+  return (
+    (w !== undefined && w <= INNENDORS_RADIUS_MIN) ||
+    (b !== undefined && b <= INNENDORS_RADIUS_MIN)
+  );
+}
+
+/**
+ * REGNVÆRSDAG — formen er TO STEDER AV ULIKT SLAG. To kinoer svarer ikke på
+ * «hva finnes»; nærmeste i hver kategori navngis, og de to nærmeste
+ * kategoriene blir svaret. Ingen «på kartet»-variant: spørsmålet lover
+ * nærhet, og utenfor et kvarter utelates raden — det svaret bor i
+ * Opplevelsers egne rader. Samme filtre som der: et forskningsbibliotek er
+ * ikke mer innendørs-tilbud for en familie her enn i Opplevelser.
+ */
+function regnvaersdag(input: GlobalFaqInput): string | undefined {
+  const steder = areaPoisWithMembers(input)
+    .filter((p) => walkMinutes(p) !== undefined && erInnendorsNaer(p))
+    .sort((a, b) => walkMinutes(a)! - walkMinutes(b)!);
+  const perSlag = INNENDORS_SLAG.map(({ cat, slag, port }) => {
+    const naermest = steder.find((p) => p.category.id === cat && (!port || port(p)));
+    return naermest ? { poi: naermest, slag } : undefined;
+  })
+    .filter((x): x is { poi: FaqPoi; slag: string } => x !== undefined)
+    .sort((a, b) => walkMinutes(a.poi)! - walkMinutes(b.poi)!)
+    .slice(0, MAX_NAMED);
+
+  const [først, andre] = perSlag;
+  if (!først) return undefined;
+  const del = (x: { poi: FaqPoi; slag: string }) =>
+    `${namedPoi(x.poi)} er nærmeste ${x.slag}, ${reisetid(x.poi)}`;
+  if (!andre) return `${del(først)}.`;
+  return `${del(først)}, og ${namedPoi(andre.poi)} nærmeste ${andre.slag}, ${reisetid(andre.poi)}.`;
+}
+
 const AREA_ANSWER_BUILDERS: Record<string, AreaAnswerBuilder> = {
   "til-byen": tilByen,
   naermest,
   gangavstand,
   "mest-av": mestAv,
   "apent-sent": apentSent,
+  "uten-bil": utenBil,
+  "tjenester-samme-sted": tjenesterSammeSted,
+  regnvaersdag,
 };
 
 /**

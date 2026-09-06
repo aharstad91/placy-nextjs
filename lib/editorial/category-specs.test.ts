@@ -282,6 +282,7 @@ describe("faqQuestionsForTheme", () => {
       "barnehage-dekning",
       "lekeplass",
       "oppvekst-fritid",
+      "skolevei",
     ]);
   });
 
@@ -295,7 +296,22 @@ describe("faqQuestionsForTheme", () => {
   });
 
   it("tema utenfor katalogen gir tom liste, ikke feil", () => {
-    expect(faqQuestionsForTheme("opplevelser", OPPLEVELSER)).toEqual([]);
+    expect(faqQuestionsForTheme("ukjent-tema", OPPLEVELSER)).toEqual([]);
+  });
+
+  it("Opplevelser deklarerer katalogens fire S-spørsmål og de tre kuratert-eneste", () => {
+    // Katalogen (§ 4.8) har ti; de tre S+ trenger en kilde som ikke er koblet
+    // på, og står ikke her før byggeren finnes.
+    const ids = faqQuestionsForTheme("opplevelser", OPPLEVELSER).map((f) => f.question.id);
+    expect(ids).toEqual([
+      "bibliotek",
+      "kino",
+      "kirke",
+      "museum",
+      "samlingspunkt",
+      "voksenaktivitet",
+      "kulturskole",
+    ]);
   });
 
   it("tema uten mal-dekning får likevel sine tema-spørsmål", () => {
@@ -304,7 +320,7 @@ describe("faqQuestionsForTheme", () => {
     const ids = faqQuestionsForTheme("natur-friluftsliv", ["park", "outdoor"]).map(
       (f) => f.question.id,
     );
-    expect(ids).toEqual(["gronntomrade", "bading", "turstier", "batliv", "marka"]);
+    expect(ids).toEqual(["gronntomrade", "bading", "turstier", "batliv", "marka", "hund"]);
   });
 
   it("normaliserer alias-tema-id til den kanoniske", () => {
@@ -337,6 +353,7 @@ describe("faqQuestionsForTheme", () => {
       "natur-friluftsliv": ["park", "outdoor", "badeplass", "marina", "campground", "hundepark"],
       transport: ["bus", "train", "tram", "bike", "parking", "carshare", "taxi", "charging_station", "fuel"],
       "trening-aktivitet": ["gym", "swimming", "spa", "fitness_park"],
+      opplevelser: ["library", "cinema", "museum", "kirke", "theatre", "bowling"],
     };
     for (const [themeId, cats] of Object.entries(THEME_CATEGORIES)) {
       const n = faqQuestionsForTheme(themeId, cats).length;

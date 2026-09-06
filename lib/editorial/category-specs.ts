@@ -183,7 +183,7 @@ export const SKOLE_SPEC: CategorySpec = {
     // om sogning — ellers lover boardet en plass ingen kan love.
     {
       id: "vgs-naerhet",
-      spørsmål: "Hvor er nærmeste videregående, og hvor lang tid tar bussen?",
+      spørsmål: "Hvilke videregående skoler kan jeg nå med buss?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
@@ -191,7 +191,7 @@ export const SKOLE_SPEC: CategorySpec = {
     },
     {
       id: "sfo",
-      spørsmål: "Finnes det SFO?",
+      spørsmål: "Hvilket SFO-tilbud hører til barneskolen?",
       kilde: "søk",
       kjerne: false,
     },
@@ -629,7 +629,7 @@ export const TRANSPORT_SPEC: CategorySpec = {
     },
     {
       id: "linjer",
-      spørsmål: "Hvilke linjer går herfra, og hvor går de?",
+      spørsmål: "Hvor går linjene fra nærmeste holdeplass?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
@@ -648,7 +648,7 @@ export const TRANSPORT_SPEC: CategorySpec = {
     // et kuratert svar på samme id; det vinner der, dette dekker alle andre.
     {
       id: "tog",
-      spørsmål: "Går det tog herfra?",
+      spørsmål: "Hvor er nærmeste togstasjon?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
@@ -864,15 +864,20 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
       lag: "board",
       felt: "POI-pool shopping + precomputet gangtid",
     },
-    // Terskelspørsmålet — det sammensatte svaret ingen enkeltkategori kan gi.
+    // Legesenter, med navnegate: `doctor` blander fastlege, hudlege og
+    // urolog, så byggeren krever et allmennlege-ord i navnet (katalogen § 6).
+    // Ledig fastlegeplass påstås aldri.
     {
-      id: "uten-bil",
-      spørsmål: "Klarer jeg hverdagsærendene til fots?",
+      id: "legesenter",
+      spørsmål: "Hvor er nærmeste legesenter?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
-      felt: "Ærendkategorier med gangtid ≤ 10 min",
+      felt: "POI-pool doctor + navnegate + precomputet gangtid",
     },
+    // `uten-bil` bodde her til 2026-09-06. Det er terskelspørsmålet på tvers av
+    // temaene, og katalogen (§ 6) flyttet det til Området — se
+    // AREA_BOARD_QUESTIONS.
   ],
   "barn-oppvekst": [
     {
@@ -887,17 +892,27 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
     // vinner der; det deterministiske laget svarer med fritidsklubben ellers.
     {
       id: "oppvekst-fritid",
-      spørsmål: "Hva finnes for barna utenom skole og barnehage?",
+      spørsmål: "Hva kan barna gjøre etter skoletid?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
       felt: "POI-pool fritidsklubb + precomputet gangtid",
     },
+    // Skoleveien er kretsskolens gangtid — ikke nærmeste skole-POI. Mangler
+    // målt gangtid, utelates raden; aldri et estimat.
+    {
+      id: "skolevei",
+      spørsmål: "Hvor lang er skoleveien til fots?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "boardFacts.schools + precomputet gangtid til kretsskolen",
+    },
   ],
   "mat-drikke": [
     {
       id: "kafe",
-      spørsmål: "Finnes det kafé i nabolaget?",
+      spørsmål: "Hvor er nærmeste kafé?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
@@ -913,7 +928,7 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
     },
     {
       id: "uteliv",
-      spørsmål: "Er det en pub eller bar i nærheten?",
+      spørsmål: "Hvor er nærmeste pub eller bar?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
@@ -921,11 +936,21 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
     },
     {
       id: "sondagsapent",
-      spørsmål: "Er noe åpent på søndag?",
+      spørsmål: "Hvilke spisesteder er åpne på søndag?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
       felt: "Cachede åpningstider, søndagslinja",
+    },
+    // Google-typen `pizza_restaurant` lagres ikke i poolen (katalogen § 5 pkt
+    // 9), så porten er ordet i navnet innenfor `restaurant`.
+    {
+      id: "pizza",
+      spørsmål: "Hvor er nærmeste pizzasted?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool restaurant + navnegate pizza + precomputet gangtid",
     },
   ],
   "natur-friluftsliv": [
@@ -951,7 +976,7 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
     // Overpass-geometrien (`reportConfig.trails`), som har navngitte ruter.
     {
       id: "turstier",
-      spørsmål: "Hvor går turstiene?",
+      spørsmål: "Hvor kommer jeg inn på nærmeste tursti?",
       kilde: "søk",
       kjerne: false,
       lag: "board",
@@ -967,16 +992,26 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
     // Kuratert-eneste: «marka» er et strøksbegrep registrene ikke kjenner.
     {
       id: "marka",
-      spørsmål: "Kommer jeg meg i marka?",
+      spørsmål: "Hvor lang tid tar det til marka?",
       kilde: "søk",
       kjerne: false,
       lag: "board",
+    },
+    // Kategorien `hundepark` ELLER en `park` med ordet i navnet — begge
+    // Wesselsløkka-parkene ligger som `park` til de er omkategorisert.
+    {
+      id: "hund",
+      spørsmål: "Hvor er nærmeste hundepark?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool hundepark/park + navnegate + precomputet gangtid",
     },
   ],
   transport: [
     {
       id: "lading",
-      spørsmål: "Hvor lader jeg elbilen?",
+      spørsmål: "Hvor finnes offentlig elbillading i nærheten?",
       kilde: "eget",
       kjerne: true,
       lag: "board",
@@ -1027,25 +1062,92 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
     // Kuratert-eneste: idrettsmiljøet er strøkets historie, ikke et registerfelt.
     {
       id: "idrettslag",
-      spørsmål: "Hva er idrettsmiljøet her?",
+      spørsmål: "Hvilke idrettslag holder til i nabolaget?",
+      kilde: "søk",
+      kjerne: false,
+      lag: "board",
+    },
+    // Leser `idrett` fra HELE boardet: kategorien ligger i Oppvekst-temaet,
+    // spørsmålet i Trening (katalogen § 5 pkt 8).
+    {
+      id: "idrettsanlegg",
+      spørsmål: "Hvor finnes baner og idrettshaller i nærheten?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool idrett (hele boardet) + navnegate hall + precomputet gangtid",
+    },
+  ],
+  // OPPLEVELSER (2026-09-06). Katalogen (`docs/research/2026-09-06-faq-katalog-
+  // sammenslatt.md` § 4.8) har ti: de fire S-spørsmålene har bygger, de tre
+  // K-spørsmålene står som kuratert-eneste (samme mønster som `turstier` og
+  // `idrettslag` — vises bare der strøket har et kuratert svar). De tre S+
+  // (kulturscene, frivilligsentral, bowling-aktivitet) deklareres først når
+  // kilden er koblet på — `theatre` og `bowling` fylles ved neste
+  // provisjonering, og en id uten bygger er en lovnad boardet ikke kan holde.
+  //
+  // Tre av de fire har et NAVNEFILTER som krav, målt på Wesselsløkka: nærmeste
+  // `library` var NTNU Marinbiblioteket, nærmeste `museum` Berlin Wall
+  // Segments, nærmeste `kirke` Zion bo- og servicesenter kapell. Kategorien er
+  // bredere enn spørsmålet, og byggeren luker innenfor den.
+  opplevelser: [
+    {
+      id: "bibliotek",
+      spørsmål: "Hvor er nærmeste bibliotek?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool library + navnegate utlån + precomputet gangtid",
+    },
+    {
+      id: "kino",
+      spørsmål: "Hvor er nærmeste kino?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool cinema + precomputet gangtid",
+    },
+    {
+      id: "kirke",
+      spørsmål: "Hvor er nærmeste kirke eller menighetshus?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool kirke + navnegate menighet + precomputet gangtid",
+    },
+    {
+      id: "museum",
+      spørsmål: "Hvor er nærmeste museum?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool museum + navnegate/åpningstider + precomputet gangtid",
+    },
+    // Kuratert-eneste: møteplasser, kor/kurs/klubb og kulturskolen er
+    // strøkets kunnskap, ikke et registerfelt. Kurator fyller formen fra
+    // Fable-leveransen; gangtid bare fra pipelinens POI-er, aldri egne tall.
+    {
+      id: "samlingspunkt",
+      spørsmål: "Hvilke møteplasser er åpne for alle?",
+      kilde: "søk",
+      kjerne: false,
+      lag: "board",
+    },
+    {
+      id: "voksenaktivitet",
+      spørsmål: "Hvor kan jeg bli med på kor, kurs eller klubb?",
+      kilde: "søk",
+      kjerne: false,
+      lag: "board",
+    },
+    {
+      id: "kulturskole",
+      spørsmål: "Hvor går barna på kulturskole?",
       kilde: "søk",
       kjerne: false,
       lag: "board",
     },
   ],
-  // OPPLEVELSER (2026-09-06) — temaet er åpnet, spørsmålene er ikke skrevet.
-  //
-  // Katalogen (`docs/research/2026-09-06-faq-katalog-sammenslatt.md` §4.8) har
-  // ti: bibliotek, kino, kulturscene, samlingspunkt, voksenaktivitet, kirke,
-  // frivilligsentral, bowling-aktivitet, museum, kulturskole. Fire av dem er S
-  // — de kan bygges av data temaet nå har på boardet.
-  //
-  // Lista står tom med vilje i stedet for å deklarere spørsmål uten byggere:
-  // katalogen skiller mellom DEKLARERT og VIST, og en id her uten en bygger
-  // ville stått som en tom rad på hvert board. Temaets kategorier svarer
-  // imidlertid alt gjennom mal-spørsmålene per kategori (`CATEGORY_SPECS`), så
-  // Opplevelser er ikke stumt før byggerne kommer.
-  opplevelser: [],
 };
 
 /**
@@ -1073,6 +1175,9 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
  * av test. Deklarert er ikke lovet — uten faktum, ingen rad.
  */
 export const AREA_BOARD_QUESTIONS: SpecQuestion[] = [
+  // Rekkefølgen er katalogens (§ 4.1, 2026-09-06). `naermest` og `mest-av`
+  // gikk til reserve der — de står sist her, ikke slettet: byggerne virker, og
+  // katalogen sier reserve, ikke ut.
   {
     id: "til-byen",
     spørsmål: "Hvordan kommer jeg meg til byen?",
@@ -1080,6 +1185,63 @@ export const AREA_BOARD_QUESTIONS: SpecQuestion[] = [
     kjerne: true,
     lag: "board",
     felt: "boardFacts.cityCentre (Entur trip)",
+  },
+  {
+    id: "gangavstand",
+    spørsmål: "Hva finnes innen ti minutters gange?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "Antall POI-er med precomputet gangtid under 10 og 5 minutter",
+  },
+  // Terskelspørsmålet — det sammensatte svaret ingen enkeltkategori kan gi.
+  // Bodde i Hverdagsliv til 2026-09-06; katalogen (§ 6) flyttet det hit fordi
+  // bakeriet, treningssenteret og barnehagen ligger i andre temaer.
+  {
+    id: "uten-bil",
+    spørsmål: "Hvilke ærender kan jeg gjøre til fots?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "Ærendkategorier på hele boardet med gangtid ≤ 10 min",
+  },
+  // Kuratert-eneste inntil støykartet er koblet på: hvor stille et strøk er,
+  // står ikke i poolen — og et deterministisk svar ville måttet gjette fra
+  // POI-tetthet, som er en helt annen påstand.
+  {
+    id: "rolig",
+    spørsmål: "Ligger boligen i støysone fra vei?",
+    kilde: "søk",
+    kjerne: false,
+    lag: "board",
+  },
+  // Anker-registeret (kjøpesenter-familien) er nøyaktig denne dataen. Området
+  // eier medlemslista; Hverdagslivs `kjopesenter` lister ikke medlemmer.
+  {
+    id: "tjenester-samme-sted",
+    spørsmål: "Hvor kan jeg samle flere ærender på én tur?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "Ankere (parentPoiId) med ≥ 2 ærendtyper + precomputet gangtid",
+  },
+  {
+    id: "apent-sent",
+    spørsmål: "Er noe åpent sent på kvelden?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "Cachede åpningstider, hverdagskonsensus",
+  },
+  // Innendørs på tvers av Opplevelser, Trening og Oppvekst — ingen
+  // enkeltkategori kan svare. Opplevelser beholder bibliotek og kino som egne.
+  {
+    id: "regnvaersdag",
+    spørsmål: "Hva finnes innendørs i nærheten?",
+    kilde: "eget",
+    kjerne: true,
+    lag: "board",
+    felt: "Innendørs-kategorier på hele boardet, gangtid ≤ 15 eller sykkeltid ≤ 15",
   },
   {
     id: "naermest",
@@ -1090,38 +1252,12 @@ export const AREA_BOARD_QUESTIONS: SpecQuestion[] = [
     felt: "Hele boardets POI-sett + precomputet gangtid, på tvers av temaer",
   },
   {
-    id: "gangavstand",
-    spørsmål: "Hvor mye ligger i gangavstand?",
-    kilde: "eget",
-    kjerne: true,
-    lag: "board",
-    felt: "Antall POI-er med precomputet gangtid under 10 og 5 minutter",
-  },
-  {
     id: "mest-av",
     spørsmål: "Hva er det mest av i nabolaget?",
     kilde: "eget",
     kjerne: true,
     lag: "board",
     felt: "Temaenes POI-antall, rangert",
-  },
-  {
-    id: "apent-sent",
-    spørsmål: "Er noe åpent sent på kvelden?",
-    kilde: "eget",
-    kjerne: true,
-    lag: "board",
-    felt: "Cachede åpningstider, hverdagskonsensus",
-  },
-  // Kuratert-eneste: hvor stille et strøk er, står ikke i noe register — og et
-  // deterministisk svar ville måttet gjette fra POI-tetthet, som er en helt
-  // annen påstand. Den står her fordi katalogen skal vise hele bestillingen.
-  {
-    id: "rolig",
-    spørsmål: "Er det rolig i området?",
-    kilde: "søk",
-    kjerne: false,
-    lag: "board",
   },
 ];
 
