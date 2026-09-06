@@ -20,6 +20,12 @@ tags: [security, api-routes, input-validation, key-leakage, google-places]
 
 All Google Places API proxy routes (`/api/places`, `/api/places/photo`, `/api/places/[placeId]`) had security vulnerabilities:
 
+> **Oppdatert 2026-09-06:** to av de tre rutene finnes ikke lenger. `/api/places`
+> og `/api/places/photo` ble slettet da foto-proxyen ble faset ut — se
+> [`dead-code-api-route-audit-20260216.md`](dead-code-api-route-audit-20260216.md).
+> `/api/places/[placeId]` består, og bærer fortsatt fiks 2 og 3 under.
+> Forebyggingsreglene nederst gjelder uendret for alle API-ruter.
+
 1. **API key leakage**: GET response included full Google URLs with `&key=` parameter, exposing the API key to any browser/network tab
 2. **No input validation**: `placeId`, `photoReference`, `maxWidth`, `lat`, `lng`, `radius`, and `type` parameters were interpolated directly into Google API URLs without validation
 3. **Unbounded cache**: In-memory Map had no size limit — an attacker could exhaust server memory with unique placeId requests
@@ -31,6 +37,10 @@ Original routes were written as minimal proxies without security considerations.
 ## Solution
 
 ### 1. API key removed from responses
+
+*Historisk: begge rutene i dette eksempelet er slettet. Regelen står — nøkkelen
+skal aldri i et JSON-svar — men foto går nå en annen vei, via CDN-URL-er hentet
+i `lib/google-places/photo-api.ts` og servert gjennom `app/api/image-proxy/`.*
 
 Photo URLs in GET response now use internal proxy path instead of direct Google URLs:
 
@@ -77,9 +87,9 @@ try {
 
 | File | Change |
 |------|--------|
-| `app/api/places/route.ts` | placeId/fields validation, key removed from URLs, POST input validation |
-| `app/api/places/photo/route.ts` | photoReference regex, maxWidth clamping |
-| `app/api/places/[placeId]/route.ts` | placeId regex, cache size cap |
+| `app/api/places/route.ts` | placeId/fields validation, key removed from URLs, POST input validation — *ruten er senere slettet* |
+| `app/api/places/photo/route.ts` | photoReference regex, maxWidth clamping — *ruten er senere slettet* |
+| `app/api/places/[placeId]/route.ts` | placeId regex, cache size cap — *begge står uendret i koden i dag* |
 | `scripts/refresh-photo-urls.ts` | --days 0 bug fix (>= instead of >) |
 
 ## Prevention
@@ -92,5 +102,14 @@ try {
 
 ## Related
 
-- `docs/solutions/best-practices/places-api-new-photo-migration-20260216.md` — Places API (New) migration
+- [`places-api-new-photo-migration-20260216.md`](places-api-new-photo-migration-20260216.md) — Places API (New) migration
+- [`dead-code-api-route-audit-20260216.md`](dead-code-api-route-audit-20260216.md) — hvorfor to av de tre rutene her ble slettet
 - PR #47
+
+## Senere herding, ikke dokumentert her
+
+`/api/places/[placeId]` fikk en per-IP-grense i en audit 2026-07-06 — en
+uautentisert proxy mot et betalt API trenger en, og det er en risiko denne
+læringen ikke dekket. Samme audit la SSRF-håndtering og et svartak på
+bilde-proxyen. Ingen av delene har fått sitt eget dokument; kjør `/ce-compound`
+neste gang du er i det området.

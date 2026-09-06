@@ -15,6 +15,7 @@ Placy er en lokasjonsbasert plattform med tre produkter: **Explorer** (utforsk f
 | `PRD.md` | Gjeldende oppgaveliste og status |
 | `COMMANDS.md` | Alle kommandoer og scripts |
 | `docs/solutions/` | Dokumenterte løsninger på tidligere problemer (bugs, arkitektur-mønstre, konvensjoner), organisert per kategori med YAML-frontmatter (`module`, `tags`, `problem_type`). Relevant når du implementerer eller debugger i et dokumentert område. |
+| `CONCEPTS.md` | **Domeneordbok** — begreper med prosjektspesifikk betydning (poolen, board, provisjonering, strøk, døgntak). Relevant når du orienterer deg i kodebasen eller diskuterer domenebegreper. |
 
 **Når bruker sier "sjekk loggen" / "sjekk worklogen":** Les `PROJECT-LOG.md` — spesielt siste sesjon. Bruk den som kontekst for sparring og beslutninger på teknisk/operasjonelt nivå.
 

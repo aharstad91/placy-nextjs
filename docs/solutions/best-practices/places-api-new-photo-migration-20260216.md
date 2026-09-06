@@ -59,6 +59,10 @@ Headers: X-Goog-Api-Key: KEY
 
 5. **Photo proxy kept**: `app/api/places/photo/route.ts` still needed as fallback for components using `photoReference` directly. Will be deleted when all components use `featuredImage`.
 
+   *Etterskrift: det skjedde. Ruten er slettet — se
+   [`dead-code-api-route-audit-20260216.md`](dead-code-api-route-audit-20260216.md).
+   Foto går nå utelukkende via lagrede CDN-URL-er.*
+
 ## Files changed
 
 | File | Change |
@@ -81,3 +85,7 @@ Headers: X-Goog-Api-Key: KEY
 
 - `docs/solutions/best-practices/google-places-photo-cost-reduction-20260216.md` — Phase 1: freshness tracking
 - `docs/solutions/performance-issues/google-api-runtime-cost-leakage-20260215.md` — Original cost discovery
+- [`dry-run-koster-fullt-i-places-backfill.md`](../performance-issues/dry-run-koster-fullt-i-places-backfill.md)
+  — samme feltmaske-regel sett fra den DYRE siden: åpningstider ligger i
+  Enterprise-settet, så et kall som ber om dem kan ikke bli billig per kall.
+  Regelen har siden fått håndheving i `lib/api-budget.ts`.

@@ -20,6 +20,15 @@ tags: [google-places, api-cost, caching, supabase, performance]
 339 NOK Google Maps Platform costs in first half of February 2026. Three sources:
 
 1. **useOpeningHours hook** — fetched Places Details (Contact + Atmosphere fields) for up to 10 POIs per viewport change. Expensive SKU ($0.017/call).
+
+> **Presisering 2026-09-06:** prisnivået følger ikke endepunktet, men FELTMASKEN.
+> $0,017 per kall er Enterprise-nivået, og kallet havner der fordi maska ba om
+> åpningstider og kontaktfelt — ikke fordi Places Details i seg selv er dyrt. Ber
+> maska bare om id og navn, er samme endepunkt gratis. Se
+> [`places-api-new-photo-migration-20260216.md`](../best-practices/places-api-new-photo-migration-20260216.md)
+> for regelen, og
+> [`dry-run-koster-fullt-i-places-backfill.md`](dry-run-koster-fullt-i-places-backfill.md)
+> for et gjennomarbeidet tilfelle på den dyre siden.
 2. **Photo proxy** — `/api/places/photo` called on every image render. Each call = 1 Places Photo API request.
 3. **In-memory cache** — `Map()` cache in `/api/places/[placeId]` resets on every Vercel cold start/deploy, making it useless.
 
@@ -66,6 +75,13 @@ Storing `open_now` from Google would create stale data (snapshot at fetch time).
 
 ## Files Changed
 
+*Tabellen er et historisk øyeblikksbilde fra februar 2026. Fire av stiene finnes
+ikke lenger: `lib/public-queries.ts`, `lib/supabase/queries.ts`,
+`components/poi/poi-card-expanded.tsx` og hele `app/(public)/`-flaten ble slettet
+i v2-cutoveren sommeren 2026. Lesestien er nå `lib/supabase/v2-queries.ts`.
+Endringene under er likevel de som ble gjort den gangen, og forklarer hvorfor
+åpningstider ligger cachet i basen i dag.*
+
 | File | Change |
 |------|--------|
 | `lib/types.ts` | Added `googlePhone`, `openingHoursJson` to POI |
@@ -86,6 +102,11 @@ Storing `open_now` from Google would create stale data (snapshot at fetch time).
 - Never fetch Google API at runtime for data that changes slowly (hours, phone, photos)
 - In-memory caches on Vercel serverless are worthless — use Supabase
 - When caching time-dependent data: store the raw schedule, compute state client-side
+- **Sjekk døgntaket før en batch-kjøring.** Dette dokumentet er fra februar 2026
+  og er eldre enn kostnadsvernet: `lib/api-budget.ts` (august 2026) håndhever nå
+  et tak per SKU per døgn og fører en lokal logg. `npx tsx scripts/api-usage.ts`
+  viser brukt mot tak. Taket stopper en løpsk løkke — det er ikke ment å tillate
+  en stor planlagt kjøring, og skal heves eksplisitt når den er villet.
 
 ## Expected Impact
 
