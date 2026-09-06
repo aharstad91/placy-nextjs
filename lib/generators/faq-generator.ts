@@ -1396,10 +1396,14 @@ function frekvens(input: FaqGeneratorInput): string | undefined {
   if (!f) return undefined;
   const stopp = poiLink(f.stopName, stopPoi(input, f.stopPlaceId));
   const antall = (n: number) => (n === 1 ? "én avgang" : `${n} avganger`);
+  // Klokkeslettene padres til to sifre. Setningen bærer BÅDE klokkeslett og
+  // antall, og «Mellom 7 og 9 går det 12 avganger» lar leseren lure på hvilke
+  // tall som er hva. «07» er utvetydig en tid.
+  const time = (h: number) => String(h).padStart(2, "0");
   return (
-    `Mellom ${f.morgen.fraTime} og ${f.morgen.tilTime} på hverdager går det ` +
+    `Mellom ${time(f.morgen.fraTime)} og ${time(f.morgen.tilTime)} på hverdager går det ` +
     `${antall(f.morgen.avganger)} mot ${f.retning} fra ${stopp}, og ` +
-    `${antall(f.kveld.avganger)} mellom ${f.kveld.fraTime} og ${f.kveld.tilTime}.`
+    `${antall(f.kveld.avganger)} mellom ${time(f.kveld.fraTime)} og ${time(f.kveld.tilTime)}.`
   );
 }
 
@@ -1452,15 +1456,40 @@ function sisteBuss(input: FaqGeneratorInput): string | undefined {
   const d = input.boardFacts?.lastDeparture;
   const hverdag = d?.hverdag;
   if (!d || !hverdag) return undefined;
+
+  const til = (x: { tilNavn?: string }) => (x.tilNavn ? ` til ${x.tilNavn}` : "");
+  const sammeSted = d.helg?.tilNavn === hverdag.tilNavn;
+  const sammeLinje =
+    d.helg !== undefined &&
+    d.helg.lines.length === hverdag.lines.length &&
+    d.helg.lines.every((l) => hverdag.lines.includes(l));
+
+  // Går siste avgang likt hele uka, er ukedagsdelingen ikke en opplysning —
+  // den er en gjentakelse. Da sies tallet én gang, og at det gjelder også i
+  // helga.
+  if (d.helg && sammeSted && sammeLinje && d.helg.minutt === hverdag.minutt) {
+    return `Siste avgang fra ${d.fraNavn}${til(hverdag)} går ${klokkeslettDøgn(hverdag.minutt)}${linjeHale(hverdag.lines)}, også natt til lørdag og søndag.`;
+  }
+
+  // Ender de to reisene ULIKE steder, må destinasjonen stå på hver av dem.
+  // «Siste avgang til Valentinlyst … natt til lørdag går den 01.27» ville
+  // påstått at nattbussen også ender på Valentinlyst, og det gjør den ikke.
+  if (d.helg && !sammeSted) {
+    return (
+      `Siste avgang fra ${d.fraNavn} går ${klokkeslettDøgn(hverdag.minutt)} på hverdager,` +
+      `${linjeHale(hverdag.lines)}${til(hverdag)}. ` +
+      `Natt til lørdag og søndag går den ${klokkeslettDøgn(d.helg.minutt)},` +
+      `${linjeHale(d.helg.lines)}${til(d.helg)}.`
+    );
+  }
+
   const parts = [
-    `Siste avgang fra ${d.fraNavn} til ${d.tilNavn} går ${klokkeslettDøgn(hverdag.minutt)} på hverdager${linjeHale(hverdag.lines)}.`,
+    `Siste avgang fra ${d.fraNavn}${til(hverdag)} går ${klokkeslettDøgn(hverdag.minutt)} på hverdager${linjeHale(hverdag.lines)}.`,
   ];
   if (d.helg) {
-    const sammeLinje =
-      d.helg.lines.length === hverdag.lines.length &&
-      d.helg.lines.every((l) => hverdag.lines.includes(l));
-    const hale = sammeLinje ? "" : linjeHale(d.helg.lines);
-    parts.push(`Natt til lørdag og søndag går den ${klokkeslettDøgn(d.helg.minutt)}${hale}.`);
+    parts.push(
+      `Natt til lørdag og søndag går den ${klokkeslettDøgn(d.helg.minutt)}${sammeLinje ? "" : linjeHale(d.helg.lines)}.`,
+    );
   }
   return parts.join(" ");
 }

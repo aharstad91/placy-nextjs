@@ -244,26 +244,30 @@ export async function computeBoardFacts(options: {
   }
 
   let lastDeparture: ReportBoardFacts["lastDeparture"];
-  if (cityCentre && naermesteStopp && sentrumsLinjer.length > 0) {
+  if (cityCentre && naermesteStopp) {
     try {
       const [hverdag, helg] = await Promise.all([
         fetchLastDepartureHome({
           centreStopPlaceId: cityCentre.id,
-          homeLines: sentrumsLinjer,
+          homeLat: lat,
+          homeLng: lng,
           weekdays: WEEKDAYS,
           now,
         }),
         fetchLastDepartureHome({
           centreStopPlaceId: cityCentre.id,
-          homeLines: sentrumsLinjer,
+          homeLat: lat,
+          homeLng: lng,
           weekdays: WEEKEND_NIGHTS,
           now,
         }),
       ]);
       if (hverdag || helg) {
+        // Holdeplassen hver reise faktisk ender på. Den kan være en annen enn
+        // boligens nærmeste — den siste turen hjem er ofte en annen linje til
+        // et annet stopp, og resten går man.
         lastDeparture = {
           fraNavn: cityCentre.label,
-          tilNavn: naermesteStopp.name,
           ...(hverdag ? { hverdag } : {}),
           ...(helg ? { helg } : {}),
         };

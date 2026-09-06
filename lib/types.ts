@@ -367,13 +367,19 @@ const BoardLastDepartureLegSchema = z.object({
    *  ikke 30 — ellers ville en nattavgang sortert som tidlig morgen. */
   minutt: z.number().int().min(0).max(2880),
   lines: z.array(z.string().min(1)).default([]),
+  /**
+   * Holdeplassen reisen ender på. PER UKEDAGSTYPE, ikke felles: nattbussen er
+   * en annen linje enn kveldsbussen og går ofte til et annet stopp. Målt på
+   * Wesselsløkka ender hverdagsreisen på Valentinlyst med linje 22, mens
+   * natt til lørdag går linje 102 — og et felles destinasjonsnavn ville
+   * påstått at de ender samme sted.
+   */
+  tilNavn: z.string().min(1).optional(),
 });
 
 const BoardLastDepartureSchema = z.object({
   /** Sentrumsstoppet reisen går fra — samme stopp som `cityCentre`. */
   fraNavn: z.string().min(1),
-  /** Holdeplassen reisen ender på, nærmest boligen. */
-  tilNavn: z.string().min(1),
   hverdag: BoardLastDepartureLegSchema.optional(),
   /** Natt til lørdag og søndag. Utelatt når helgeoppslaget ikke ga svar. */
   helg: BoardLastDepartureLegSchema.optional(),

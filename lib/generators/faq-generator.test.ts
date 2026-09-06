@@ -2136,7 +2136,7 @@ describe("frekvens", () => {
 
   it("teller avganger i vinduet, ikke per time, og lenker holdeplassen", () => {
     expect(answerFor(medFrekvens(14, 6), "frekvens")).toBe(
-      "Mellom 7 og 9 på hverdager går det 14 avganger mot Marienborg via Strindh.-sentrum fra [Strindfjordvegen](poi:entur-nsr-stopplace-60260), og 6 avganger mellom 19 og 21.",
+      "Mellom 07 og 09 på hverdager går det 14 avganger mot Marienborg via Strindh.-sentrum fra [Strindfjordvegen](poi:entur-nsr-stopplace-60260), og 6 avganger mellom 19 og 21.",
     );
   });
 
@@ -2203,9 +2203,8 @@ describe("siste-buss", () => {
           ...FACTS,
           lastDeparture: {
             fraNavn: "Trondheim S",
-            tilNavn: "Strindfjordvegen",
-            ...(hverdag ? { hverdag } : {}),
-            ...(helg ? { helg } : {}),
+            ...(hverdag ? { hverdag: { ...hverdag, tilNavn: "Strindfjordvegen" } } : {}),
+            ...(helg ? { helg: { ...helg, tilNavn: "Strindfjordvegen" } } : {}),
           },
         },
       }),
@@ -2238,5 +2237,81 @@ describe("siste-buss", () => {
   it("utelates uten hverdagsavgang — helgen alene svarer ikke på spørsmålet", () => {
     const entries = medSiste(undefined, { minutt: 1470, lines: ["N1"] });
     expect(entries.find((e) => e.id === "siste-buss")).toBeUndefined();
+  });
+});
+
+describe("siste-buss når uka er lik", () => {
+  it("sier klokkeslettet ÉN gang når helga har samme avgang — ikke to like setninger", () => {
+    // Målt på Wesselsløkka 2026-09-06: linje 12 går 00.23 både mandag og fredag.
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "transport",
+          categoryIds: ["bus"],
+          boardFacts: {
+            ...FACTS,
+            lastDeparture: {
+              fraNavn: "Trondheim S",
+              hverdag: { minutt: 1463, lines: ["12"], tilNavn: "Brøset Hageby" },
+              helg: { minutt: 1463, lines: ["12"], tilNavn: "Brøset Hageby" },
+            },
+          },
+        }),
+      ),
+      "siste-buss",
+    );
+    expect(svar).toBe(
+      "Siste avgang fra Trondheim S til Brøset Hageby går 00.23 med linje 12, også natt til lørdag og søndag.",
+    );
+    expect(svar.match(/00\.23/g)!.length).toBe(1);
+  });
+
+  it("deler i to setninger når helga faktisk går senere", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "transport",
+          categoryIds: ["bus"],
+          boardFacts: {
+            ...FACTS,
+            lastDeparture: {
+              fraNavn: "Trondheim S",
+              hverdag: { minutt: 1463, lines: ["12"], tilNavn: "Brøset Hageby" },
+              helg: { minutt: 1440 + 150, lines: ["N12"], tilNavn: "Brøset Hageby" },
+            },
+          },
+        }),
+      ),
+      "siste-buss",
+    );
+    expect(svar).toContain("Natt til lørdag og søndag går den 02.30 med linje N12.");
+  });
+});
+
+describe("siste-buss når nattbussen ender et annet sted", () => {
+  it("navngir destinasjonen på HVER reise — nattbussen går ikke dit kveldsbussen går", () => {
+    // Målt på Wesselsløkka: hverdag linje 22 til Valentinlyst, natt til lørdag
+    // linje 102 til et annet stopp. Ett felles «til X» ville påstått at begge
+    // ender samme sted.
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "transport",
+          categoryIds: ["bus"],
+          boardFacts: {
+            ...FACTS,
+            lastDeparture: {
+              fraNavn: "Trondheim S",
+              hverdag: { minutt: 1468, lines: ["22"], tilNavn: "Valentinlyst" },
+              helg: { minutt: 1527, lines: ["102"], tilNavn: "Moholt" },
+            },
+          },
+        }),
+      ),
+      "siste-buss",
+    );
+    expect(svar).toBe(
+      "Siste avgang fra Trondheim S går 00.28 på hverdager, med linje 22 til Valentinlyst. Natt til lørdag og søndag går den 01.27, med linje 102 til Moholt.",
+    );
   });
 });

@@ -223,36 +223,6 @@ export function countDeparturesInWindow(
 }
 
 /**
- * Siste avgang i settet, med linjene som kjører akkurat den.
- *
- * Minuttet er DØGNFORTSATT: en avgang 00.30 dagen etter start-datoen blir
- * 1470, ikke 30. Uten det ville nattbussen sortert som tidlig morgen og
- * «siste avgang» blitt 06.10.
- */
-export function findLastDeparture(
-  calls: readonly DepartureCall[],
-  startDato: string,
-): { minutt: number; lines: string[] } | undefined {
-  const medDøgn = calls.map((c) => ({
-    ...c,
-    absolutt: c.dato === startDato ? c.minutt : c.minutt + 1440,
-  }));
-  const siste = medDøgn.reduce<(typeof medDøgn)[number] | undefined>(
-    (best, c) => (!best || c.absolutt > best.absolutt ? c : best),
-    undefined,
-  );
-  if (!siste) return undefined;
-  const lines = [
-    ...new Set(
-      medDøgn
-        .filter((c) => c.absolutt === siste.absolutt && c.line)
-        .map((c) => c.line as string),
-    ),
-  ].sort((a, b) => a.localeCompare(b, "no"));
-  return { minutt: siste.absolutt, lines };
-}
-
-/**
  * Grupper avgangene per quay. Rekkefølgen på destinasjoner og linjer er
  * frekvens først, deretter alfabetisk — deterministisk mellom kjøringer, og
  * den hyppigste retningen står først, som er den en beboer mener med «bussen».
@@ -622,34 +592,116 @@ export function velgSentrumsretning(
 const LAST_DEPARTURE_FROM_HOUR = 21;
 const LAST_DEPARTURE_RANGE_S = 6 * 3600;
 
+/** Reisealternativer i søkevinduet. Høyt nok til at den siste er med. */
+const LAST_TRIP_PATTERNS = 50;
+
 /**
- * Siste avgang fra sentrumsstoppet som faktisk går hjem.
+ * Reiser fra sentrum hjem i et søkevindu. `aimedStartTime` er det spørsmålet
+ * handler om: når må du gå fra byen for å komme deg hjem.
+ */
+const LAST_TRIP_QUERY = `
+  query PlacyLastTrip($from: Location!, $to: Location!, $dt: DateTime!, $window: Int!, $n: Int!) {
+    trip(
+      from: $from
+      to: $to
+      dateTime: $dt
+      searchWindow: $window
+      numTripPatterns: $n
+      modes: {
+        accessMode: foot
+        egressMode: foot
+        directMode: foot
+        transportModes: [
+          { transportMode: bus }
+          { transportMode: rail }
+          { transportMode: tram }
+          { transportMode: metro }
+          { transportMode: water }
+        ]
+      }
+    ) {
+      tripPatterns {
+        aimedStartTime
+        legs {
+          mode
+          line { publicCode }
+          toEstimatedCall { quay { name stopPlace { name } } }
+        }
+      }
+    }
+  }
+`;
+
+interface RawLastLeg {
+  mode?: string;
+  line?: { publicCode?: string | null } | null;
+  toEstimatedCall?: {
+    quay?: { name?: string | null; stopPlace?: { name?: string | null } | null } | null;
+  } | null;
+}
+
+/**
+ * Siste REISE hjem fra sentrum, ikke siste avgang på en gjettet linje.
  *
- * Filteret på linjer er det som gjør svaret sant: sentrumsstoppet betjener hele
- * byen, og den siste avgangen derfra kan gå stikk motsatt veg. Bare avganger på
- * linjene som inngår i sentrumsreisen teller som «hjem».
+ * TO FILTRE VAR FEIL FØR DETTE. Å filtrere sentrumsstoppets avganger på linjene
+ * i rushtidsreisen bommer på nattbussene, som kjører egne linjenummer. Å kreve
+ * at linja betjener BEGGE stoppene bommer på reiser med bytte — målt på
+ * Wesselsløkka går linje 12 aldri fra Trondheim S, og reisen hjem er linje 10
+ * pluss et bytte. Begge filtrene var gjetninger om hva «hjem» betyr.
+ *
+ * Reiseplanleggeren vet det. En reise i svaret ER en reise som kommer fram,
+ * bytter og nattbusser inkludert, og `aimedStartTime` på den siste av dem er
+ * nøyaktig det spørsmålet spør om.
  */
 export async function fetchLastDepartureHome(options: {
   centreStopPlaceId: string;
-  homeLines: readonly string[];
+  homeLat: number;
+  homeLng: number;
   weekdays: readonly number[];
   now?: Date;
-}): Promise<{ minutt: number; lines: string[] } | undefined> {
-  if (options.homeLines.length === 0) return undefined;
+}): Promise<{ minutt: number; lines: string[]; tilNavn?: string } | undefined> {
   const start = nextOsloDayAt({
     weekdays: options.weekdays,
     hour: LAST_DEPARTURE_FROM_HOUR,
     now: options.now,
   });
-  const data = await graphql(DEPARTURES_QUERY, {
-    id: options.centreStopPlaceId,
-    start,
-    range: LAST_DEPARTURE_RANGE_S,
-    n: FREQUENCY_DEPARTURES_CAP,
+  const data = await graphql(LAST_TRIP_QUERY, {
+    from: { place: options.centreStopPlaceId },
+    to: { coordinates: { latitude: options.homeLat, longitude: options.homeLng } },
+    dt: start,
+    window: LAST_DEPARTURE_RANGE_S / 60,
+    n: LAST_TRIP_PATTERNS,
   });
-  const sett = new Set(options.homeLines);
-  const hjem = parseDepartureCalls(data).filter((c) => c.line && sett.has(c.line));
-  return findLastDeparture(hjem, start.slice(0, 10));
+
+  const startDato = start.slice(0, 10);
+  let beste: { minutt: number; lines: string[]; tilNavn?: string } | undefined;
+  for (const p of extractArray(data, ["trip", "tripPatterns"]) as Array<{
+    aimedStartTime?: string;
+    legs?: RawLastLeg[] | null;
+  }>) {
+    const t = p.aimedStartTime ? parseLocalClock(p.aimedStartTime) : null;
+    if (!t) continue;
+    const minutt = t.dato === startDato ? t.minutt : t.minutt + 1440;
+    if (beste && minutt <= beste.minutt) continue;
+    const transit = (Array.isArray(p.legs) ? p.legs : []).filter(
+      (l) => l.mode && l.mode !== "foot",
+    );
+    // En reise helt til fots er ikke en avgang. Spørsmålet er når det siste
+    // TILBUDET går; kan du gå hjem, går du hjem når du vil.
+    if (transit.length === 0) continue;
+    const sisteBein = transit[transit.length - 1];
+    beste = {
+      minutt,
+      lines: transit
+        .map((l) => l.line?.publicCode?.trim())
+        .filter((c): c is string => Boolean(c)),
+      tilNavn:
+        sisteBein.toEstimatedCall?.quay?.stopPlace?.name?.trim() ||
+        sisteBein.toEstimatedCall?.quay?.name?.trim() ||
+        undefined,
+    };
+  }
+  return beste;
 }
 
 function message(e: unknown): string {
