@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import {
   ArrowRight,
+  ChevronRight,
   MapPin,
   MessageCircleQuestion,
   Star,
@@ -29,6 +30,7 @@ import {
   DisclosurePanel,
 } from "../Disclosure";
 import { SIDEBAR_PROSE, SIDEBAR_SECTION_TITLE } from "../sidebar-style";
+import { PoiDetailBody, hasGoogleFacts, poiNarrativeText } from "../PoiDetail";
 import { findBoardPOI } from "../board-data";
 import { useViewportCategoryList } from "../neighbourhood/use-viewport-category-list";
 import { StoryTravelCell } from "./StoryTravelCell";
@@ -40,7 +42,6 @@ import {
   areaSubline,
   storyBeat,
   storyMinutes,
-  storyNarrative,
   storyPickIdentity,
   storyPickTitle,
 } from "./story-model";
@@ -607,11 +608,15 @@ function PlaceRow({
   category: BoardCategory;
   mark: "chip" | "star" | "dot";
 }) {
-  const { state } = useBoard();
-  const { isPlaceOpen, togglePlace, focusPoiId } = useStoryTour();
+  const { state, dispatch } = useBoard();
+  const { isPlaceOpen, togglePlace, showPlace, focusPoiId } = useStoryTour();
   const minutes = storyMinutes(poi, state.travelMode);
-  const narrative = storyNarrative(poi);
+  const narrative = poiNarrativeText(poi);
   const open = isPlaceOpen(String(poi.id));
+  /* Ankeret folder seg ikke ut her — det åpner sin egen side over kolonnen.
+     Se `StoryPoiPanel` for hvorfor grensen går ved «inneholder andre steder»
+     og ikke ved tekstmengde. */
+  const anchor = poi.isAnchor === true;
   const identity = mark === "chip" ? storyPickIdentity(poi, category) : null;
   const ChipIcon = identity ? getIcon(identity.icon) : null;
   const isTransport = !!(
@@ -623,8 +628,10 @@ function PlaceRow({
   // Hooket er null-trygt: uten POI pollens ingenting.
   const realtimeData = useRealtimeData(live && open ? poi.raw : null);
   // Sanntid er også noe å utfolde: en holdeplass uten redaksjonell tekst skal
-  // ha chevron, ellers finnes det ingen affordans for avgangene.
-  const expandable = !!narrative || live;
+  // ha chevron, ellers finnes det ingen affordans for avgangene. Google-faktaene
+  // teller på samme måte — vurdering, åpningstid, telefon og nettside er
+  // innhold vi HAR, og raden var lenge det ene stedet det ikke fantes.
+  const expandable = !anchor && (!!narrative || live || hasGoogleFacts(poi));
 
   // Raden KARTET peker på. Se `focusPoiId` i story-tour: den settes bare av et
   // pinnetrykk, og bare på én rad.
@@ -668,9 +675,21 @@ function PlaceRow({
         type="button"
         data-testid="story-row"
         data-poi={String(poi.id)}
-        onClick={() => togglePlace(poi)}
+        onClick={() => {
+          if (!anchor) {
+            togglePlace(poi);
+            return;
+          }
+          // To dispatcher i samme handler, i denne rekkefølgen: `showPlace`
+          // åpner punktet med `source: "story"` (som undertrykker utforsk), og
+          // OPEN_EXPLORE slår det på igjen. Rekkefølgen er hele poenget —
+          // motsatt vei ville laget blitt stengt i samme frame det åpnet.
+          showPlace(poi);
+          dispatch({ type: "OPEN_EXPLORE" });
+        }}
         aria-current={open}
         aria-expanded={expandable ? open : undefined}
+        aria-haspopup={anchor ? "dialog" : undefined}
         className={cn(
           DISCLOSURE_ROW,
           "items-center",
@@ -716,8 +735,17 @@ function PlaceRow({
           </span>
         )}
         {/* Chevron-plassen holdes av også når stedet mangler tekst, ellers står
-            «17 min» lenger til høyre enn «4 min» rett over. */}
-        {expandable ? (
+            «17 min» lenger til høyre enn «4 min» rett over. Ankeret får pil mot
+            HØYRE: en nedover-chevron lover en utfolding under raden, og det er
+            ikke det som skjer — du går et sted. */}
+        {anchor ? (
+          <ChevronRight
+            size={DISCLOSURE_CHEVRON_SIZE}
+            strokeWidth={2}
+            aria-hidden
+            className="shrink-0 text-stone-500"
+          />
+        ) : expandable ? (
           <DisclosureChevron open={open} />
         ) : (
           <span
@@ -728,20 +756,24 @@ function PlaceRow({
         )}
       </button>
 
-      {/* Stedets tekst åpner seg der raden står. Ingen modal, ingen ny flate —
-          det er hele poenget med modusen. Innrykket flukter med NAVNET:
-          26 = radens padding (14) + radens gap (12). */}
+      {/* Stedet åpner seg DER RADEN STÅR. Ingen modal, ingen ny flate — det er
+          hele poenget med modusen, og fra 2026-08-28 gjelder det hele stedet:
+          bildene, begge avsnittene, vurderingen, åpningstiden, telefonen og
+          nettsiden. Det lå i modalen bak «Utforsk» i kart-popupen, og kolonnen
+          — som ER lesestoffet — viste første setning og stoppet der.
+
+          Samme blokk som modalen og anker-siden rendrer (`PoiDetailBody`), så
+          en ny faktalinje havner alle tre stedene på én gang. Innrykket flukter
+          med NAVNET: 26 = radens padding (14) + radens gap (12). */}
       {expandable && (
         <DisclosurePanel open={open} testId="story-narrative">
           <div
             className="pb-3 pr-3.5"
             style={{ paddingLeft: MARK_WIDTH[mark] + 26 }}
           >
-            {narrative && (
-              <p className="text-[15px] leading-[1.6] text-stone-600">
-                {narrative}
-              </p>
-            )}
+            {/* Bildestripa blør bare mot HØYRE: venstrekanten er innrykket som
+                flukter med navnet, og den skal stå. */}
+            <PoiDetailBody poi={poi} galleryClassName="-mr-3.5 pr-3.5" />
             {live && (
               <div className={cn(narrative && "mt-2")}>
                 <POIRealtimeSection realtimeData={realtimeData} />

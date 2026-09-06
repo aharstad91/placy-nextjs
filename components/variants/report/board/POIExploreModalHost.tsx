@@ -4,11 +4,9 @@ import { useCallback } from "react";
 import { useBoard, useActivePOI } from "./board-state";
 import { useBoardPopupMode } from "./use-popup-mode";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
-import {
-  POIExploreModal,
-  hasExploreContent,
-  hasGroundedNarrative,
-} from "./POIExploreModal";
+import { POIExploreModal } from "./POIExploreModal";
+import { hasExploreContent, hasGroundedNarrative } from "./PoiDetail";
+import { useStoryTourOptional } from "./story/story-tour";
 import type { BoardPOI } from "./board-data";
 
 /**
@@ -31,6 +29,18 @@ export function POIExploreModalHost() {
   const poi = useActivePOI();
   const popupMode = useBoardPopupMode();
   const engagement = useEngagement();
+  // Kjører omvisningen, EIER sidekolonnen stedsflaten på desktop (2026-08-28):
+  // teksten står i raden, og ankeret får sitt eget panel over kolonnen. Da skal
+  // ikke en modal legge seg oppå den samme informasjonen.
+  //
+  // Gaten er omvisningen og ikke bredden, fordi kolonnen ikke alltid ER
+  // omvisningen: på boards med spillbar lyd viser den reels og har ingen
+  // stedsliste (`showStoryColumn` i DesktopStorySidebar). Der er modalen
+  // fortsatt den eneste veien inn til stedet, akkurat som før.
+  // Optional-varianten: hosten monteres inne i provideren i produksjon, men
+  // event-flaten og testene rendrer den uten, og en manglende omvisning er
+  // ikke en feil — den betyr bare at modalen eier stedet som før.
+  const tourOwnsPlaces = useStoryTourOptional()?.on ?? false;
 
   /**
    * Moat 2-signalet. Emittes herfra og ikke fra popupene fordi hosten er den
@@ -68,7 +78,7 @@ export function POIExploreModalHost() {
   // samme øyeblikk. Modalen åpnes ved påfølgende trykk på selve punktet.
   const open = isMobileSurface
     ? state.phase === "poi" && hasContent && !state.exploreSuppressed
-    : state.exploreOpen && hasContent;
+    : state.exploreOpen && hasContent && !tourOwnsPlaces;
 
   const handleClose = () => {
     // Mobil: modalen ER POI-flaten, så lukking skal forlate POI-fasen helt slik
