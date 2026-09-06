@@ -40,7 +40,13 @@ Headers: X-Goog-Api-Key: KEY, X-Goog-FieldMask: photos
 → { photos: [{ name: "places/X/photos/REF" }] }
 ```
 
-**`resolvePhotoUri(photoName, apiKey, maxWidthPx)`** — $0:
+**`resolvePhotoUri(photoName, apiKey, maxWidthPx)`** — ~~$0~~ **3 USD per 1 000**:
+
+> **Rettet 2026-09-06:** dette kallet er ikke gratis. `photo-api.ts:94` belaster
+> `places-photo`, priset til 3 USD per 1 000 i `lib/api-budget.ts:72`. Det er
+> `fetchPhotoNames` som er $0 (`photo-api.ts:51` → `places-details-essentials`).
+> Gratis er altså å SPØRRE hvilke bilder et sted har; å hente URL-en koster.
+> Forskjellen betyr noe når man batcher.
 ```typescript
 GET https://places.googleapis.com/v1/{photoName}/media?maxWidthPx=800&skipHttpRedirect=true
 Headers: X-Goog-Api-Key: KEY

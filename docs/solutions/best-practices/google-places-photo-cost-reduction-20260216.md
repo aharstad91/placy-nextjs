@@ -95,4 +95,9 @@ Tighter feedback loop for CDN URL freshness. Note: this is global (affects all r
 
 - PR #45: fix/google-api-cost-reduction
 - Migration 041_add_photo_resolved_at.sql
-- Next priority: Migrate to Places API (New) for free photo-only calls
+- ~~Next priority: Migrate to Places API (New) for free photo-only calls~~
+  **Gjennomført samme måned** — se
+  [`places-api-new-photo-migration-20260216.md`](places-api-new-photo-migration-20260216.md).
+  Men «free» stemte ikke: bare navneoppslaget (`fetchPhotoNames`) er $0. Selve
+  URL-hentingen belastes `places-photo`, 3 USD per 1 000
+  (`lib/api-budget.ts:72`).
