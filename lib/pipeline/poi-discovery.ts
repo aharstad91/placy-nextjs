@@ -50,6 +50,14 @@ export interface DiscoveredPOI {
    * derfor er adresse- og nærhets-gatene der.
    */
   containedInIds?: string[];
+  /** Googles egen driftsstatus (OPERATIONAL / CLOSED_TEMPORARILY / …). */
+  googleBusinessStatus?: string;
+  /**
+   * Åpningstidenes tekstlinjer, én per ukedag, på engelsk.
+   * Lagres som `opening_hours_json.weekday_text` — samme form som
+   * `refresh-opening-hours.ts` skriver, slik at de to kildene er utbyttbare.
+   */
+  openingHoursWeekdayText?: string[];
   // Editorial fields (added later via Claude or manual editing)
   editorialHook?: string;
   localInsight?: string;
@@ -318,6 +326,7 @@ interface GooglePlaceResult {
   shortFormattedAddress?: string;
   types?: string[];
   containingPlaces?: Array<{ id?: string; name?: string }>;
+  regularOpeningHours?: { weekdayDescriptions?: string[] };
 }
 
 // Feltmaske = eksakt det discovery-filteret/POI-byggingen konsumerer.
@@ -336,7 +345,45 @@ const NEARBY_FIELD_MASK = [
   // Ligger i Pro-SKU-en (samme nivå som displayName/businessStatus), og masken
   // ber alt om rating/userRatingCount (Enterprise) — tillegget hever ikke prisen.
   "places.containingPlaces",
+  // Åpningstider (2026-09-06). Fram til nå ble `opening_hours_json` KUN skrevet
+  // av `scripts/refresh-opening-hours.ts`, et manuelt Place Details-pass per
+  // prosjekt — så et nyprovisjonert board hadde null åpningstider, og de fem
+  // FAQ-radene som hviler på dem var tomme. På Wesselsløkka hadde ingen av de
+  // 13 stedene i gangavstand tider, mens byens sentrum hadde det fra en annen
+  // kjøring; «er noe åpent på søndag?» svarte derfor med Midtbyen.
+  //
+  // Underfelt-masken henter BARE tekstlinjene vi bruker, ikke `periods`.
+  // `regularOpeningHours` er Enterprise, og masken ber alt om
+  // rating/userRatingCount (Enterprise) — SKU-en er uendret.
+  //
+  // SPRÅK: målt mot searchNearby 2026-09-06 uten `languageCode` — dagsnavnene
+  // kommer på ENGELSK («Monday: 8:00 AM – 10:00 PM») mens stedsnavnene forblir
+  // norske. Det er nøyaktig kombinasjonen konsumentene krever: `computeIsOpen`
+  // og `parseWeekdayText` matcher engelske dagsnavn og AM/PM (se
+  // OPENING_HOURS_LANGUAGE i places-backfill-lib.ts). Å sette languageCode:"en"
+  // ville i tillegg oversatt stedsnavnene, og det er nettopp derfor den IKKE
+  // settes.
+  "places.regularOpeningHours.weekdayDescriptions",
 ].join(",");
+
+/**
+ * Feltmasken for TEKSTSØKET — den samme, minus åpningstidene.
+ *
+ * Tekstsøket sender `languageCode: "no"` (norske søkeord treffer norske
+ * oppføringer), og det påvirker ALLE tekstfelt i svaret. Målt 2026-09-06:
+ * samme sted gir «Monday: 8:00 AM – 10:00 PM» uten languageCode og
+ * «mandag: 08:00–18:00» med `no`. Konsumentene (`parseWeekdayText`,
+ * `computeIsOpen`) matcher engelske dagsnavn og AM/PM, så den norske formen
+ * ville blitt lagret og deretter STILLE ignorert — verre enn ingen tider, for
+ * `--force`-logikken i refresh-scriptet ville trodd stedet var hentet.
+ *
+ * Derfor ber tekstsøket ikke om feltet i det hele tatt. De fire kategoriene det
+ * dekker (trafikkskole, ungdomsklubb, legesenter) får tidene sine fra
+ * `refresh-opening-hours.ts`, som setter språket eksplisitt.
+ */
+const TEXT_FIELD_MASK = NEARBY_FIELD_MASK.split(",")
+  .filter((f) => !f.startsWith("places.regularOpeningHours"))
+  .join(",");
 
 const NEARBY_TIMEOUT_MS = 10_000;
 
@@ -646,6 +693,8 @@ export async function discoverGooglePlaces(
           googleReviewCount: place.userRatingCount,
           source: "google",
           containedInIds: mapContainingPlaces(place.containingPlaces),
+          googleBusinessStatus: place.businessStatus,
+          openingHoursWeekdayText: place.regularOpeningHours?.weekdayDescriptions,
         });
 
         addedCount++;
@@ -922,7 +971,7 @@ async function searchTextPage(
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": `${NEARBY_FIELD_MASK},nextPageToken`,
+        "X-Goog-FieldMask": `${TEXT_FIELD_MASK},nextPageToken`,
       },
       body: JSON.stringify({
         textQuery: query,
@@ -1036,6 +1085,9 @@ export async function discoverGooglePlacesByText(
           googleReviewCount: place.userRatingCount,
           source: "google",
           containedInIds: mapContainingPlaces(place.containingPlaces),
+          // Ingen åpningstider her — se TEXT_FIELD_MASK. Statusen er
+          // språkuavhengig og bæres videre som i searchNearby-stien.
+          googleBusinessStatus: place.businessStatus,
         });
         addedCount++;
       }

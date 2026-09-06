@@ -775,6 +775,10 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       // POI-settene er med fordi områdets svar er TVERRGÅENDE: det nærmeste
       // uansett tema, hvor mye som ligger i gangavstand, hva det er mest av.
       themes: themes.map((t) => ({ id: t.id, label: t.name, pois: t.allPOIs })),
+      // Temalistene over har ankermedlemmene absorbert inn i senterets kort.
+      // «Hva ligger nærmest» og «er noe åpent sent» spør om dører og trenger
+      // dem tilbake; `gangavstand` teller fortsatt det leseren ser på kartet.
+      allPois: allPOIs,
       center,
     }),
     areaIntro: areaIntroFromCurated(rc?.globalFaq),

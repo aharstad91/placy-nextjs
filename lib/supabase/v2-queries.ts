@@ -38,9 +38,46 @@ type V2Product = TablesV2<"products">;
 // Trust-filter + transformere (flyttet hit fra legacy queries.ts ved cutover)
 // ============================================
 
-/** Filter out untrusted POIs. null = show (backward compatible), score < threshold = hide. */
+/**
+ * Statusene som betyr at døra er lukket når leseren kommer dit.
+ *
+ * `CLOSED_PERMANENTLY` fanges allerede av trust-scoren (`calculateHeuristicTrust`
+ * gir 0 og hard-feiler), men BARE for rader som faktisk er scoret — en
+ * uscoret rad har `trust_score: null`, og «null = vis» slipper den rett
+ * gjennom. Statusen står derfor på egne bein her, uavhengig av scoren.
+ *
+ * `CLOSED_TEMPORARILY` var IKKE filtrert noe sted. Kommentaren i
+ * `poi-quality.ts` sier «trust-systemet håndterer det», og det gjør det ikke:
+ * Frumento på Wesselsløkka er midlertidig stengt med trust 0,85 og sto som
+ * spisested på boardet. Verre i FAQ-en, der de cachede åpningstidene gjorde et
+ * stengt sted til svaret på «er noe åpent på søndag?».
+ */
+const CLOSED_BUSINESS_STATUSES: ReadonlySet<string> = new Set([
+  "CLOSED_PERMANENTLY",
+  "CLOSED_TEMPORARILY",
+]);
+
+/**
+ * Read-path-porten: hører denne POI-en hjemme på et board?
+ *
+ * To uavhengige grunner til å utelate et sted, og de MÅ være uavhengige:
+ * lav tillit (heuristikken tror oppføringen er søppel) og lukket dør
+ * (Google sier virksomheten ikke tar imot noen). Et sted kan ha høy trust og
+ * lukket dør samtidig — det er nettopp kombinasjonen som slapp gjennom før.
+ *
+ * `null`-status betyr «vet ikke», ikke «stengt»: 601 av Wesselsløkkas 1 615
+ * rader er registerimport (NSR-skoler, Entur-holdeplasser, bysykkelstativ) som
+ * aldri har hatt en Google-status. De skal vises.
+ *
+ * Åpner et sted igjen, kommer det tilbake ved neste provisjonering — statusen
+ * hentes på nytt der. Prisen er akseptert: et stengt sted på boardet er en feil
+ * leseren oppdager foran døra, et manglende sted er en hun aldri ser.
+ */
 export function filterTrustedPOIs(pois: POI[]): POI[] {
   return pois.filter((poi) => {
+    if (poi.googleBusinessStatus && CLOSED_BUSINESS_STATUSES.has(poi.googleBusinessStatus)) {
+      return false;
+    }
     if (poi.trustScore == null) return true;
     return poi.trustScore >= MIN_TRUST_SCORE;
   });

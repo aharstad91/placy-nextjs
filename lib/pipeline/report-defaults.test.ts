@@ -14,6 +14,7 @@ import { GOOGLE_CATEGORY_MAP, TRANSPORT_CATEGORIES } from "./poi-discovery";
 import { PUBLIC_POI_CATEGORIES } from "./import-public-pois";
 import {
   BOLIG_GOOGLE_CATEGORIES,
+  BOLIG_TEXT_QUERIES,
   NAERING_GOOGLE_CATEGORIES,
 } from "./enrich-report-pois";
 
@@ -42,6 +43,18 @@ function boligProducibleCategoryIds(): string[] {
     ...PUBLIC_POI_CATEGORIES.map((c) => c.id),
     ...NATUR_LINK_CATEGORIES,
     ...Object.values(TRANSPORT_CATEGORIES).map((c) => c.id),
+  ];
+}
+
+/**
+ * Alle kilder samlet: Google-typer, tekstsøk, offentlige registre, natur-lenking
+ * og transport. Motstykket til `boligProducibleCategoryIds` sett fra temaets
+ * side — brukes av «ingen tema-kategori uten produsent»-testen.
+ */
+function allBoligSources(): string[] {
+  return [
+    ...boligProducibleCategoryIds(),
+    ...BOLIG_TEXT_QUERIES.map((q) => q.category.id),
   ];
 }
 
@@ -127,6 +140,31 @@ describe("tema↔kategori-kontrakt (driftvern)", () => {
       "utf8"
     );
     expect(src).toContain(`["lekeplass", "badeplass", "park", "outdoor"]`);
+  });
+
+  it("ingen tema-kategori uten produsent — motsatt retning av orphan-testen", () => {
+    // Orphan-testen over spør «kan pipelinen lage noe som ikke vises?». Denne
+    // spør det motsatte: «lover et tema noe pipelinen ikke kan lage?». Det
+    // hullet sto åpent til 2026-09-06 og kostet tre kategorier: `fitness_park`
+    // (1 rad i hele poolen), `carshare` (55, alle fra et engangs-OSM-seed) og
+    // `bowling` (1) hadde ingen kilde i det hele tatt. `treningspark`-raden i
+    // FAQ-en kunne derfor aldri besvares, uansett adresse.
+    //
+    // Feiler denne: enten gi kategorien en kilde, eller ta den ut av temaet.
+    // Å la den stå er å love leseren noe boardet ikke kan vise.
+    const produsert = new Set(allBoligSources());
+    const uten = [...themeCategoryUnion(REPORT_THEME_DEFAULTS)]
+      .filter((id) => !produsert.has(id))
+      .sort();
+    // `hospital` er den ENE som står igjen, og den er en åpen produktbeslutning
+    // (rapportert, ikke avgjort her): Google-typen finnes og gir treff, men
+    // svarer med SEKS pins på St. Olavs — Gastrosenteret, Nevrosenteret,
+    // Akutten og Kunnskapssenteret er bygg inne i det samme sykehuset, og
+    // anker-logikken dekker foreløpig bare kjøpesentre. `doctor` (legesenter)
+    // har både søketype og eget tekstsøk og bærer hverdagens helse-spørsmål.
+    // Utveiene er to: gi sykehuset anker-behandling, eller ta kategorien ut av
+    // temaet. Å legge til søketypen som den er ville gjort boardet dårligere.
+    expect(uten).toEqual(["hospital"]);
   });
 
   it("natur-linkede kategorier har tema-hjem i bolig-temaene", () => {

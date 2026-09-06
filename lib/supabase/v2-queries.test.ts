@@ -231,6 +231,39 @@ describe("getProductFromSupabaseV2 — komposisjon", () => {
     expect(project!.pois.map((p) => p.id).sort()).toEqual(["trusted", "unscored"]);
   });
 
+  it("stengt dør holdes utenfor boardet, uansett hvor høy tilliten er", async () => {
+    // Frumento på Wesselsløkka: CLOSED_TEMPORARILY med trust 0,85. Trust-gaten
+    // slapp den gjennom, og de cachede åpningstidene gjorde et stengt sted til
+    // svaret på «er noe åpent på søndag?». `null` er «vet ikke», ikke «stengt»:
+    // 601 av boardets rader er registerimport uten Google-status.
+    enqueue("projects", { data: PROJECT_ROW, error: null });
+    enqueue("products", { data: PRODUCT_ROW, error: null });
+    enqueue("project_pois", { data: [], error: null });
+    enqueue("product_pois", {
+      data: [
+        { poi_id: "apen", featured: false, sort_order: 1 },
+        { poi_id: "midlertidig", featured: false, sort_order: 2 },
+        { poi_id: "permanent", featured: false, sort_order: 3 },
+        { poi_id: "register", featured: false, sort_order: 4 },
+      ],
+      error: null,
+    });
+    enqueue("pois", {
+      data: [
+        poiRow("apen", { trust_score: 0.9, google_business_status: "OPERATIONAL" }),
+        poiRow("midlertidig", { trust_score: 0.85, google_business_status: "CLOSED_TEMPORARILY" }),
+        poiRow("permanent", { trust_score: null, google_business_status: "CLOSED_PERMANENTLY" }),
+        poiRow("register", { trust_score: null, google_business_status: null }),
+      ],
+      error: null,
+    });
+    enqueue("categories", { data: [CAT_ROW], error: null });
+    enqueue("product_categories", { data: [], error: null });
+
+    const project = await getProductFromSupabaseV2("intern", "pilot", "report");
+    expect(project!.pois.map((p) => p.id).sort()).toEqual(["apen", "register"]);
+  });
+
   it("tom product_categories → kategorier avledes fra POI-ene", async () => {
     enqueue("projects", { data: PROJECT_ROW, error: null });
     enqueue("products", { data: PRODUCT_ROW, error: null });

@@ -116,6 +116,20 @@ export const BOLIG_TEXT_QUERIES = [
     query: "legesenter",
     category: { id: "doctor", name: "Legesenter", icon: "Stethoscope", color: "#3b82f6" },
   },
+  // Bildeling (2026-09-06). `carshare` sto i transport-temaet uten at NOEN
+  // kilde produserte den. Google har ingen bildelings-type, og `car_rental`
+  // kan ikke brukes: den dekker Avis og Hertz like godt som Hyre, og et
+  // bilutleiekontor er ikke bildeling. Målt i produksjons-bboxen 2026-09-06:
+  // «Hyre bildeling» ga 6 treff, alle Hyre-stasjoner; «bilkollektivet» ga
+  // Trondheim Bilkollektiv og ingenting annet. Merkenavnene ER presisjonen.
+  {
+    query: "Hyre bildeling",
+    category: { id: "carshare", name: "Bildeling", icon: "Car", color: "#6366f1" },
+  },
+  {
+    query: "bilkollektivet",
+    category: { id: "carshare", name: "Bildeling", icon: "Car", color: "#6366f1" },
+  },
 ];
 
 /** Google Places-kategorier for næringsprofilen: hotel inn (gjeste-/kunde-

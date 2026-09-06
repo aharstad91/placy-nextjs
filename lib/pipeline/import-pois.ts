@@ -224,8 +224,20 @@ function convertToPOIImportData(
     trust_flags: [],
     trust_score_updated_at: null,
     google_website: null,
-    google_business_status: null,
+    // Googles egen status, båret helt fram. Fram til 2026-09-06 sto det `null`
+    // her selv om discovery hadde verdien: import-kvalitetsfilteret droppet
+    // CLOSED_PERMANENTLY, men CLOSED_TEMPORARILY gikk gjennom og ble lagret som
+    // «vet ikke». Read-path-porten (`filterTrustedPOIs`) kunne derfor ikke se
+    // en stengt dør på en fersk import.
+    google_business_status: poi.googleBusinessStatus || null,
     google_price_level: null,
+    // `undefined` når Google ikke ga tider — merge-laget lar da den
+    // eksisterende verdien stå. `null` ville slettet tider fra
+    // `refresh-opening-hours.ts`.
+    opening_hours_json:
+      poi.openingHoursWeekdayText && poi.openingHoursWeekdayText.length > 0
+        ? { weekday_text: poi.openingHoursWeekdayText }
+        : undefined,
     // Speiler Google. Fravær lagres som null, ikke som tom liste — «Google sa
     // ingenting» og «ligger ikke i noe bygg» er ikke samme påstand.
     contained_in_ids: poi.containedInIds ?? null,

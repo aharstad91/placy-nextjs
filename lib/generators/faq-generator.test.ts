@@ -1208,3 +1208,281 @@ describe("generateGlobalFaq", () => {
     );
   });
 });
+
+// ── Ankermedlemmer, radius og terskler (2026-09-06) ─────────────────────────
+//
+// Alle fire feilene i denne blokken sto samtidig på Wesselsløkka-boardet og ble
+// funnet i FAQ-katalogens verifikasjonsrunde. De har samme form: svaret var
+// SANT, men svarte på et annet spørsmål enn det som sto over det.
+
+describe("ankermedlemmer i svarene", () => {
+  const SENTER = poi({
+    id: "google-valentinlyst",
+    name: "Valentinlyst Senter",
+    categoryId: "shopping",
+    travelTime: { walk: 8 },
+    anchorSummary: "Kjøpesenter med 30 virksomheter",
+  });
+  const BOOTS = poi({
+    id: "google-boots",
+    name: "Boots Apotek",
+    categoryId: "pharmacy",
+    travelTime: { walk: 8 },
+    parentPoiId: "google-valentinlyst",
+  });
+  const APOTEK_LANGT = poi({
+    id: "google-apotek-strindheim",
+    name: "Apotek 1 Strindheim",
+    categoryId: "pharmacy",
+    travelTime: { walk: 17 },
+  });
+  const HVERDAG = {
+    themeId: "hverdagsliv",
+    categoryIds: ["shopping", "supermarket", "pharmacy"],
+  };
+
+  it("ser apoteket INNE i kjøpesenteret, ikke bare det som står alene på kartet", () => {
+    // Board-laget absorberer BOOTS inn i senterets kort, så temaets liste har
+    // bare senteret og det fjerne apoteket. Uten fiksen svarer raden «17
+    // minutter» mens Boots ligger 8 minutter unna.
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          ...HVERDAG,
+          pois: [SENTER, APOTEK_LANGT],
+          allPois: [SENTER, APOTEK_LANGT, BOOTS],
+        }),
+      ),
+      "apotek",
+    );
+    expect(svar).toBe("[Boots Apotek i Valentinlyst Senter](poi:google-valentinlyst) ligger 8 minutter unna.");
+  });
+
+  it("lenker medlemmet til ANKERET — medlemmet har ingen markør å åpne", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({ ...HVERDAG, pois: [SENTER], allPois: [SENTER, BOOTS] }),
+      ),
+      "apotek",
+    );
+    expect(svar).toContain("poi:google-valentinlyst");
+    expect(svar).not.toContain("poi:google-boots");
+  });
+
+  it("gjentar ikke senternavnet når butikken alt bærer det", () => {
+    const fresh = poi({
+      id: "google-fresh",
+      name: "Fresh Fitness Valentinlyst",
+      categoryId: "gym",
+      travelTime: { walk: 6 },
+      parentPoiId: "google-valentinlyst",
+    });
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym", "swimming"],
+          // Senteret er LØFTET inn i temaet fordi et medlem hører hjemme her
+          // (R4) — det beholder sin egen kategori `shopping`, så det er ikke
+          // selv et treningssenter.
+          pois: [SENTER],
+          allPois: [SENTER, fresh],
+        }),
+      ),
+      "treningssenter",
+    );
+    expect(svar).toBe("[Fresh Fitness Valentinlyst](poi:google-valentinlyst) ligger 6 minutter unna.");
+  });
+
+  it("slipper ikke medlemmer inn i et tema kategorien deres ikke hører til", () => {
+    // Senteret står i Hverdagsliv; restauranten inne i det hører til Mat &
+    // drikke. Uten kategori-porten ville apotek-raden i Mat & drikke fått den.
+    const restaurant = poi({
+      id: "google-r",
+      name: "Egon Valentinlyst",
+      categoryId: "restaurant",
+      travelTime: { walk: 8 },
+      parentPoiId: "google-valentinlyst",
+    });
+    const entries = generateCategoryFaq(
+      input({
+        ...HVERDAG,
+        pois: [SENTER],
+        allPois: [SENTER, restaurant],
+      }),
+    );
+    expect(entries.map((e) => e.answer).join(" ")).not.toContain("Egon");
+  });
+});
+
+describe("nærhet i spørsmålsteksten", () => {
+  const MAT = { themeId: "mat-drikke", categoryIds: ["restaurant", "cafe", "bar", "bakery"] };
+
+  it("scoper kafé-svaret til kartet når «i nabolaget» ikke er sant", () => {
+    const filo = poi({
+      id: "c1",
+      name: "Filo Café",
+      categoryId: "cafe",
+      travelTime: { walk: 22 },
+    });
+    expect(answerFor(generateCategoryFaq(input({ ...MAT, pois: [filo] })), "kafe")).toBe(
+      "Nærmeste kafé på kartet er [Filo Café](poi:c1), 22 minutter til fots.",
+    );
+  });
+
+  it("beholder den enkle formen når kaféen faktisk ligger i nabolaget", () => {
+    const naer = poi({
+      id: "c2",
+      name: "Dromedar",
+      categoryId: "cafe",
+      travelTime: { walk: 6 },
+    });
+    expect(answerFor(generateCategoryFaq(input({ ...MAT, pois: [naer] })), "kafe")).toBe(
+      "[Dromedar](poi:c2) ligger 6 minutter til fots.",
+    );
+  });
+
+  it("holder søndagslista innenfor spiseavstand", () => {
+    const naer = poi({
+      id: "s-naer",
+      name: "Kafé Nær",
+      categoryId: "cafe",
+      travelTime: { walk: 7 },
+      openingHoursJson: tider("8:00 AM – 4:00 PM", "Saturday: Closed", "Sunday: 11:00 AM – 5:00 PM"),
+    });
+    const fjern = poi({
+      id: "s-fjern",
+      name: "Kafé Fjern",
+      categoryId: "cafe",
+      travelTime: { walk: 40 },
+      openingHoursJson: tider("8:00 AM – 4:00 PM", "Saturday: Closed", "Sunday: 11:00 AM – 5:00 PM"),
+    });
+    const svar = answerFor(
+      generateCategoryFaq(input({ ...MAT, pois: [naer, fjern] })),
+      "sondagsapent",
+    );
+    expect(svar).toContain("Kafé Nær");
+    expect(svar).not.toContain("Kafé Fjern");
+  });
+});
+
+describe("trene tidlig eller sent", () => {
+  const TRENING = { themeId: "trening-aktivitet", categoryIds: ["gym", "swimming"] };
+
+  it("lar raden falle bort når ingen åpner tidlig eller stenger sent", () => {
+    // Et studentvelferdskontor feilkategorisert som treningssenter — 08–15.45,
+    // 37 minutter unna — var svaret på «kan jeg trene før jobb?» før fiksen.
+    const kontortid = poi({
+      id: "gym-kontor",
+      name: "Sit Idrett",
+      categoryId: "gym",
+      travelTime: { walk: 37 },
+      openingHoursJson: tider("8:00 AM – 3:45 PM"),
+    });
+    const entries = generateCategoryFaq(input({ ...TRENING, pois: [kontortid] }));
+    expect(entries.find((e) => e.id === "trene-tidlig-sent")).toBeUndefined();
+  });
+
+  it("svarer når noen faktisk stenger sent", () => {
+    const sent = poi({
+      id: "gym-sent",
+      name: "3T Rosenborg",
+      categoryId: "gym",
+      travelTime: { walk: 9 },
+      openingHoursJson: tider("6:30 AM – 11:30 PM"),
+    });
+    expect(answerFor(generateCategoryFaq(input({ ...TRENING, pois: [sent] })), "trene-tidlig-sent")).toBe(
+      "[3T Rosenborg](poi:gym-sent) holder åpent til 23.30 på hverdager.",
+    );
+  });
+});
+
+describe("uten bil", () => {
+  it("teller ærend som ligger i ANDRE temaer enn Hverdagsliv", () => {
+    // Bakeriet ligger i Mat & drikke, treningssenteret i Trening. Begge er
+    // gåturer i hverdagen, og ingen av dem talte med da svaret leste temaets
+    // egen liste.
+    const butikk = poi({ id: "u1", name: "Rema", categoryId: "supermarket", travelTime: { walk: 3 } });
+    const bakeri = poi({ id: "u2", name: "Godt Brød", categoryId: "bakery", travelTime: { walk: 5 } });
+    const gym = poi({ id: "u3", name: "3T", categoryId: "gym", travelTime: { walk: 7 } });
+    const barnehage = poi({ id: "u4", name: "Sol barnehage", categoryId: "barnehage", travelTime: { walk: 4 } });
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "hverdagsliv",
+          categoryIds: ["supermarket", "pharmacy", "shopping"],
+          pois: [butikk],
+          allPois: [butikk, bakeri, gym, barnehage],
+        }),
+      ),
+      "uten-bil",
+    );
+    expect(svar).toMatch(/^Hverdagsærendene er i gangavstand/);
+    expect(svar).toContain("bakeri");
+    expect(svar).toContain("treningssenter");
+    expect(svar).toContain("barnehage");
+  });
+});
+
+describe("områdets «åpent sent»", () => {
+  const dogn = tider("12:00 AM – 11:59 PM");
+  const PARK = poi({
+    id: "a-park",
+    name: "Dokkparken",
+    categoryId: "park",
+    travelTime: { walk: 4 },
+    openingHoursJson: dogn,
+  });
+  const RESTAURANT = poi({
+    id: "a-rest",
+    name: "VYDA",
+    categoryId: "restaurant",
+    travelTime: { walk: 4 },
+    openingHoursJson: tider("11:00 AM – 10:00 PM"),
+  });
+  const FJERN = poi({
+    id: "a-fjern",
+    name: "Nattbaren",
+    categoryId: "bar",
+    travelTime: { walk: 40 },
+    openingHoursJson: tider("4:00 PM – 11:59 PM"),
+  });
+  const svarFor = (pois: POI[], allPois?: POI[]) =>
+    generateGlobalFaq({
+      themes: [{ id: "hverdagsliv", label: "Hverdag", pois }],
+      allPois,
+    }).find((e) => e.id === "apent-sent")?.answer;
+
+  it("regner ikke en park som et sted med åpent — den har ingen dør", () => {
+    expect(svarFor([PARK, RESTAURANT])).toBe("[VYDA](poi:a-rest) har åpent til 22 på hverdager.");
+  });
+
+  it("ser bort fra steder utenfor gangavstand", () => {
+    expect(svarFor([RESTAURANT, FJERN])).toBe("[VYDA](poi:a-rest) har åpent til 22 på hverdager.");
+  });
+
+  it("finner butikken inne i kjøpesenteret", () => {
+    const senter = poi({
+      id: "a-senter",
+      name: "Valentinlyst Senter",
+      categoryId: "shopping",
+      travelTime: { walk: 8 },
+      anchorSummary: "Kjøpesenter",
+    });
+    const rema = poi({
+      id: "a-rema",
+      name: "REMA 1000",
+      categoryId: "supermarket",
+      travelTime: { walk: 8 },
+      parentPoiId: "a-senter",
+      openingHoursJson: tider("7:00 AM – 11:00 PM"),
+    });
+    expect(svarFor([senter], [senter, rema])).toBe(
+      "[REMA 1000 i Valentinlyst Senter](poi:a-senter) har åpent til 23 på hverdager.",
+    );
+  });
+
+  it("lar raden falle bort når ingenting i gangavstand holder åpent sent", () => {
+    expect(svarFor([PARK, FJERN])).toBeUndefined();
+  });
+});

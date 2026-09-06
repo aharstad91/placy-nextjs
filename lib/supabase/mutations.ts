@@ -37,6 +37,15 @@ export interface POIImportData {
   google_website: string | null;
   google_business_status: string | null;
   google_price_level: number | null;
+  /**
+   * Åpningstidene på lagringsformen `{ weekday_text: [...] }`.
+   *
+   * `undefined` betyr «kilden sa ingenting» og lar den lagrede verdien stå.
+   * Skriv ALDRI `null` eller `{}` hit: en park uten åpningstider skal ikke se
+   * ut som «hentet, tomt», og en import uten tider skal ikke slette tidene
+   * `refresh-opening-hours.ts` har hentet.
+   */
+  opening_hours_json?: { weekday_text?: string[] } | null;
   source?: string | null;
   /**
    * Googles `containingPlaces` på Placy-id-form. Speiler Google: `null` når
@@ -71,6 +80,8 @@ interface TrustFields {
   google_website: string | null;
   google_business_status: string | null;
   google_price_level: number | null;
+  /** Lagrede åpningstider — bevares når importen ikke har noen. */
+  opening_hours_json: { weekday_text?: string[] } | null;
 }
 
 /**
@@ -166,7 +177,7 @@ export async function upsertPOIsWithEditorialPreservation(
   const readExisting = (ids: string[]) =>
     db
       .from("pois")
-      .select("id, editorial_hook, local_insight, story_priority, editorial_sources, featured_image, description, trust_score, trust_flags, trust_score_updated_at, google_website, google_business_status, google_price_level, poi_tier, tier_reason, is_chain, is_local_gem, poi_metadata, tier_evaluated_at")
+      .select("id, editorial_hook, local_insight, story_priority, editorial_sources, featured_image, description, trust_score, trust_flags, trust_score_updated_at, google_website, google_business_status, google_price_level, opening_hours_json, poi_tier, tier_reason, is_chain, is_local_gem, poi_metadata, tier_evaluated_at")
       .in("id", ids);
 
   const existingPois: NonNullable<Awaited<ReturnType<typeof readExisting>>["data"]> = [];
@@ -195,6 +206,7 @@ export async function upsertPOIsWithEditorialPreservation(
       google_website: poi.google_website,
       google_business_status: poi.google_business_status,
       google_price_level: poi.google_price_level,
+      opening_hours_json: poi.opening_hours_json as { weekday_text?: string[] } | null,
       poi_tier: poi.poi_tier as 1 | 2 | 3 | null,
       tier_reason: poi.tier_reason as string | null,
       is_chain: poi.is_chain as boolean,
@@ -223,6 +235,7 @@ export async function upsertPOIsWithEditorialPreservation(
       google_website: poi.google_website ?? existing?.google_website ?? null,
       google_business_status: poi.google_business_status ?? existing?.google_business_status ?? null,
       google_price_level: poi.google_price_level ?? existing?.google_price_level ?? null,
+      opening_hours_json: poi.opening_hours_json ?? existing?.opening_hours_json ?? null,
       // Preserve existing tier fields
       poi_tier: existing?.poi_tier ?? null,
       tier_reason: existing?.tier_reason ?? null,

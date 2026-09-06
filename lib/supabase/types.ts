@@ -173,6 +173,8 @@ export type Database = {
           facebook_url: string | null;
           source: string | null;
           nsr_id: string | null;
+          opening_hours_json: Json | null;
+          opening_hours_updated_at: string | null;
           barnehagefakta_id: string | null;
           osm_id: string | null;
           poi_tier: number | null;
@@ -217,6 +219,8 @@ export type Database = {
           facebook_url?: string | null;
           source?: string | null;
           nsr_id?: string | null;
+          opening_hours_json?: Json | null;
+          opening_hours_updated_at?: string | null;
           barnehagefakta_id?: string | null;
           osm_id?: string | null;
           poi_tier?: number | null;
@@ -261,6 +265,8 @@ export type Database = {
           facebook_url?: string | null;
           source?: string | null;
           nsr_id?: string | null;
+          opening_hours_json?: Json | null;
+          opening_hours_updated_at?: string | null;
           barnehagefakta_id?: string | null;
           osm_id?: string | null;
           poi_tier?: number | null;

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   discoverGooglePlaces,
+  discoverGooglePlacesByText,
   discoverAnchorCandidates,
   probeAnchorMembers,
   discoverEnturStops,
@@ -182,6 +183,66 @@ describe("discoverGooglePlaces — filterkjeden (stille dropp/slipp)", () => {
     const result = await discoverGooglePlaces(baseConfig(["cafe"]), "key");
 
     expect(result).toHaveLength(3);
+  });
+});
+
+describe("discoverGooglePlaces — åpningstider og driftsstatus", () => {
+  it("ber om dagslinjene i feltmasken, ikke hele periods-strukturen", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([googlePlace({ id: "p1", name: "Coop Mega", types: ["supermarket"] })])
+    );
+    await discoverGooglePlaces(baseConfig(["supermarket"]), "key");
+
+    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
+    expect(headers["X-Goog-FieldMask"]).toContain(
+      "places.regularOpeningHours.weekdayDescriptions",
+    );
+    expect(headers["X-Goog-FieldMask"]).not.toContain("periods");
+  });
+
+  it("setter IKKE languageCode — den ville oversatt stedsnavnene", async () => {
+    // Målt 2026-09-06: uten languageCode kommer dagsnavnene på engelsk (som
+    // `parseWeekdayText` krever) mens stedsnavnene forblir norske.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([googlePlace({ id: "p1", name: "Coop Mega", types: ["supermarket"] })])
+    );
+    await discoverGooglePlaces(baseConfig(["supermarket"]), "key");
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body).not.toHaveProperty("languageCode");
+  });
+
+  it("bærer åpningstidene og statusen helt fram til POI-en", async () => {
+    const weekday = [
+      "Monday: 9:00 AM – 10:00 PM",
+      "Tuesday: 9:00 AM – 10:00 PM",
+      "Wednesday: 9:00 AM – 10:00 PM",
+      "Thursday: 9:00 AM – 10:00 PM",
+      "Friday: 9:00 AM – 10:00 PM",
+      "Saturday: 9:00 AM – 8:00 PM",
+      "Sunday: Closed",
+    ];
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        {
+          ...googlePlace({ id: "p1", name: "Coop Mega", types: ["supermarket"] }),
+          regularOpeningHours: { weekdayDescriptions: weekday },
+        },
+      ])
+    );
+    const [poi] = await discoverGooglePlaces(baseConfig(["supermarket"]), "key");
+    expect(poi.openingHoursWeekdayText).toEqual(weekday);
+    expect(poi.googleBusinessStatus).toBe("OPERATIONAL");
+  });
+
+  it("lar feltene stå udefinert når Google ikke oppgir tider", async () => {
+    // `undefined`, ikke tom liste: importen bruker det til å la lagrede tider
+    // fra `refresh-opening-hours.ts` overleve.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([googlePlace({ id: "p1", name: "Brøset Hundepark", types: ["dog_park"] })])
+    );
+    const [poi] = await discoverGooglePlaces(baseConfig(["dog_park"]), "key");
+    expect(poi.openingHoursWeekdayText).toBeUndefined();
   });
 });
 
@@ -766,5 +827,26 @@ describe("discoverBysykkelStations", () => {
     const result = await discoverBysykkelStations({ center: CENTER, radius: 2000 });
 
     expect(result).toEqual([]);
+  });
+});
+
+describe("discoverGooglePlacesByText — språk og feltmaske", () => {
+  it("ber IKKE om åpningstider: languageCode «no» ville gitt uparserbare dagsnavn", async () => {
+    // Målt 2026-09-06: samme sted gir «Monday: 8:00 AM – 10:00 PM» uten
+    // languageCode og «mandag: 08:00–18:00» med `no`. Den norske formen ville
+    // blitt lagret og deretter stille ignorert av `parseWeekdayText`.
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([googlePlace({ id: "t1", name: "Øya legesenter", types: ["doctor"] })])
+    );
+    await discoverGooglePlacesByText(
+      { center: CENTER, radius: 3000 },
+      [{ query: "legesenter", category: GOOGLE_CATEGORY_MAP.doctor }],
+      "key",
+    );
+
+    const [, init] = fetchMock.mock.calls[0];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["X-Goog-FieldMask"]).not.toContain("regularOpeningHours");
+    expect(JSON.parse(init.body as string).languageCode).toBe("no");
   });
 });
