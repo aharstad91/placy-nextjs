@@ -77,14 +77,15 @@ describe("tema↔kategori-kontrakt (driftvern)", () => {
     }
   });
 
-  it("bolig: produserbare kategorier uten tema-hjem er NØYAKTIG de tre kjente (museum/library/cinema — rapportert funn)", () => {
-    // KJENT GJELD (rapportert til Andreas, ikke fikset her): bolig-discovery
-    // bestiller museum/library/movie_theater, men ingen bolig-temaer inkluderer
-    // id-ene museum/library/cinema → POI-ene importeres (koster Places-kvote),
-    // lagres og linkes, men rendres aldri på bolig-board. Testen låser at
-    // gjelden ikke VOKSER: en ny kategori uten tema-hjem feiler her, og en
-    // beslutning om de tre kjente (tema-hjem eller ut av discovery-lista)
-    // krever bevisst oppdatering av lista under.
+  it("bolig: produserbar kategori uten tema-hjem er NØYAKTIG én — hotel", () => {
+    // Gjelden testen ble skrevet for er BETALT 2026-09-06: museum, library og
+    // cinema ble importert, lagret og linket på hvert boligboard uten at noe
+    // tema eide dem — de var deklarert BARE i nærings-profilens «nabolaget».
+    // På Wesselsløkka gjaldt det 19 museer, 16 bibliotek og 6 kinoer. De tre
+    // hører nå hjemme i Opplevelser sammen med kirke.
+    //
+    // Testen står igjen som vekstvern: en NY kategori uten tema-hjem feiler
+    // her, og å legge en til krever en bevisst oppdatering av lista under.
     const union = themeCategoryUnion(REPORT_THEME_DEFAULTS);
     const orphans = [...new Set(boligProducibleCategoryIds())]
       .filter((id) => !union.has(id))
@@ -92,7 +93,7 @@ describe("tema↔kategori-kontrakt (driftvern)", () => {
     // hotel kom inn i BOLIG_GOOGLE_CATEGORIES i recall-fiksen 2026-08-12 som
     // BEVISST datalag-kategori uten bolig-tema («svigermor-spørsmålet» — POI-en
     // skal finnes i poolen/søk, men har ikke pin-plass på bolig-boardet ennå).
-    expect(orphans).toEqual(["cinema", "hotel", "library", "museum"]);
+    expect(orphans).toEqual(["hotel"]);
   });
 
   it("næring: ALLE produserbare kategorier har tema-hjem (0 orphans)", () => {

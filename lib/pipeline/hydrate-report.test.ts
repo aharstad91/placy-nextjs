@@ -179,9 +179,14 @@ describe("hydrateReport — Unit 4", () => {
     // hydrateReport bruker REPORT_THEME_DEFAULTS ubetinget — også for nærings-
     // boards (rapportert funn). Denne pinner dagens kontrakt: rekkefølgen
     // kommer fra bolig-temaenes flatMap, og en kategori utenfor alle bolig-
-    // temaer (f.eks. museum) sorteres sist med 999.
+    // temaer (f.eks. hotel) sorteres sist med 999.
+    //
+    // Var `museum` til 2026-09-06 — den fikk tema-hjem da Opplevelser ble
+    // åpnet, og testen mistet dermed sin hjemløse kategori. `hotel` er den
+    // eneste som er igjen, og den er hjemløs med vilje (se orphan-testen i
+    // report-defaults.test.ts).
     const mixed: TestPoi[] = [
-      { id: "p-museum", category_id: "museum", lat: 63.412, lng: 10.77, google_rating: 4.0, google_review_count: 10 },
+      { id: "p-hotel", category_id: "hotel", lat: 63.412, lng: 10.77, google_rating: 4.0, google_review_count: 10 },
       { id: "p-rest", category_id: "restaurant", lat: 63.413, lng: 10.77, google_rating: 4.0, google_review_count: 10 },
       { id: "p-skole", category_id: "skole", lat: 63.414, lng: 10.77, google_rating: null, google_review_count: null },
     ];
@@ -209,8 +214,8 @@ describe("hydrateReport — Unit 4", () => {
     const orderOf = (cat: string) => rows.find((r) => r.category_id === cat)!.display_order;
     // skole (Barn & Oppvekst, tema 2) kommer før restaurant (Mat & Drikke, tema 3)
     expect(orderOf("skole")).toBeLessThan(orderOf("restaurant"));
-    // museum finnes ikke i noe bolig-tema → 999 (sist)
-    expect(orderOf("museum")).toBe(999);
+    // hotel finnes ikke i noe bolig-tema → 999 (sist)
+    expect(orderOf("hotel")).toBe(999);
     // radene er sortert stigende på display_order
     expect(rows.map((r) => r.display_order)).toEqual(
       [...rows.map((r) => r.display_order)].sort((a, b) => a - b)

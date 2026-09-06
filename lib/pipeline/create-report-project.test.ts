@@ -131,7 +131,7 @@ describe("createReportProject — Unit 1", () => {
     vi.clearAllMocks();
   });
 
-  it("happy path: oppretter prosjekt med container-ID og 6 temaer", async () => {
+  it("happy path: oppretter prosjekt med container-ID og alle bolig-temaene", async () => {
     const mockSupabase = buildMockSupabase();
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
 
@@ -310,7 +310,7 @@ describe("createReportProject — Unit 1", () => {
     expect(result.projectId).toBe("intern_intern-test");
   });
 
-  it("report-defaults.ts: alle 6 aktive temaer har ikke-tom leadText", () => {
+  it("report-defaults.ts: alle 7 aktive temaer har ikke-tom leadText", () => {
     const ids = REPORT_THEME_DEFAULTS.map((t) => t.id);
     expect(ids).toContain("hverdagsliv");
     expect(ids).toContain("barn-oppvekst");
@@ -318,7 +318,11 @@ describe("createReportProject — Unit 1", () => {
     expect(ids).toContain("natur-friluftsliv");
     expect(ids).toContain("transport");
     expect(ids).toContain("trening-aktivitet");
-    expect(ids).not.toContain("opplevelser");
+    // «opplevelser» sto som `not.toContain` fra efea2ce (den første
+    // auto-provisjoneringen) — temaet var planlagt, men ikke bygget, og
+    // pinnen holdt det ute til noen tok beslutningen. Den ble tatt
+    // 2026-09-06: kategoriene lå alt i poolen uten tema-hjem.
+    expect(ids).toContain("opplevelser");
 
     for (const theme of REPORT_THEME_DEFAULTS) {
       expect(theme.leadText.trim().length, `leadText mangler for ${theme.id}`).toBeGreaterThan(0);

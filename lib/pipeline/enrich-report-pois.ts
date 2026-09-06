@@ -97,6 +97,12 @@ export const BOLIG_GOOGLE_CATEGORIES = [
   "hiking_area",
   "dog_park",
   "sports_activity_location",
+  // Opplevelser-temaet (2026-09-06): scene og bowling hadde ingen produsent.
+  // Måletall og rekkefølge-begrunnelse står i GOOGLE_CATEGORY_MAP.
+  "performing_arts_theater",
+  "concert_hall",
+  "cultural_center",
+  "bowling_alley",
 ];
 
 /** Norske tekstsøk for hverdagssteder uten pålitelig Google-type.

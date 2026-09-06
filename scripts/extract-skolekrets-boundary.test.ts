@@ -35,11 +35,14 @@ describe("r08.5 drift-guard: Python THEME_IDS stemmer med TS THEME_IDS", () => {
     expect(blockPos).toBeGreaterThan(markerPos);
   });
 
-  it("THEME_IDS er bolig-profil — 6 temaer (naering deferred)", () => {
+  it("THEME_IDS er bolig-profil — 7 temaer (naering deferred)", () => {
     const pythonIds = parsePythonThemeIds(pythonSrc);
     const boligIds = getThemeDefaults("bolig").map((t) => t.id);
     expect(pythonIds).toEqual(boligIds);
-    expect(pythonIds).toHaveLength(6);
+    // 7 siden Opplevelser ble åpnet 2026-09-06 (var 6). Tallet står som pin
+    // og ikke som boligIds.length med vilje: da ville testen bestått selv om
+    // BEGGE sidene av kodegenen drev i samme retning.
+    expect(pythonIds).toHaveLength(7);
   });
 
   it("buildPythonBlock-output matcher faktisk Python-fil (ingen drift)", () => {

@@ -47,6 +47,7 @@ THEME_IDS = [
     "natur-friluftsliv",
     "transport",
     "trening-aktivitet",
+    "opplevelser",
 ]
 
 transformer = Transformer.from_crs("EPSG:25832", "EPSG:4326", always_xy=True)

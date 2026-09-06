@@ -68,8 +68,9 @@ const INGEN_TEKST = new Set<string>();
 // ── Klassifisering av ett område ──────────────────────────────────────────
 
 describe("classifyArea", () => {
-  it("har seks bolig-temaer å måle mot", () => {
-    expect(BOLIG_THEME_IDS).toHaveLength(6);
+  it("har sju bolig-temaer å måle mot", () => {
+    // 7 siden Opplevelser ble åpnet 2026-09-06 (var 6).
+    expect(BOLIG_THEME_IDS).toHaveLength(7);
     expect(BOLIG_THEME_IDS).toContain("transport");
     expect(BOLIG_THEME_IDS).toContain("mat-drikke");
   });
@@ -85,14 +86,15 @@ describe("classifyArea", () => {
     delvis[BOLIG_THEME_IDS[0]] = { body: "", highlightCandidates: [] };
     const s = classifyArea(area({ report_editorial: delvis }), () => true);
     expect(s.status).toBe("geometri");
-    expect(s.temaerMedTekst).toBe(5);
+    expect(s.temaerMedTekst).toBe(BOLIG_THEME_IDS.length - 1);
   });
 
   it("gir 'kuratert' når alle temaer har tekst men høydepunktene mangler tekst", () => {
     const editorial = alleTemaer();
     const s = classifyArea(area({ report_editorial: editorial }), () => false);
     expect(s.status).toBe("kuratert");
-    expect(s.hoydepunkter).toBe(12);
+    // To høydepunkter per tema i fixturen — tallet følger antall temaer.
+    expect(s.hoydepunkter).toBe(BOLIG_THEME_IDS.length * 2);
     expect(s.hoydepunkterMedTekst).toBe(0);
   });
 
@@ -157,13 +159,14 @@ describe("classifyArea", () => {
     const editorial = alleTemaer();
     editorial[BOLIG_THEME_IDS[0]] = { body: "   ", highlightCandidates: ["x"] };
     const s = classifyArea(area({ report_editorial: editorial }), () => true);
-    expect(s.temaerMedTekst).toBe(5);
+    expect(s.temaerMedTekst).toBe(BOLIG_THEME_IDS.length - 1);
   });
 
   it("teller ikke næring-temaer med", () => {
     const editorial = { ...alleTemaer(), nabolaget: { body: "Næring-tema.", highlightCandidates: ["n1"] } };
     const s = classifyArea(area({ report_editorial: editorial }), () => true);
-    expect(s.temaerMedTekst).toBe(6);
+    // Poenget er at nabolaget (næring) ikke telles — ikke tallet i seg selv.
+    expect(s.temaerMedTekst).toBe(BOLIG_THEME_IDS.length);
   });
 });
 

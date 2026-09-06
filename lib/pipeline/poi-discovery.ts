@@ -88,6 +88,23 @@ const GOOGLE_CATEGORY_MAP: Record<string, Category> = {
   library: { id: "library", name: "Bibliotek", icon: "BookOpen", color: "#14b8a6" },
   park: { id: "park", name: "Park", icon: "TreePine", color: "#10b981" },
   movie_theater: { id: "cinema", name: "Kino", icon: "Film", color: "#f472b6" },
+  // Opplevelser-temaet (2026-09-06). `theatre` og `bowling` sto som deklarerte
+  // tema-kategorier uten en eneste produsent — 0 rader i poolen, som ser
+  // nøyaktig ut som «det finnes ingen scene i Trondheim».
+  //
+  // Målt mot produksjons-bboxen (5 km fra Wesselsløkka) samme dag:
+  //   performing_arts_theater → 19 (Olavshallen, Trøndelag Teater, Rosendal)
+  //   concert_hall            → 12 (Trondheim Spektrum, Dokkhuset)
+  //   cultural_center         → 13 (Kultursenteret ISAK, Byscenen)
+  //   bowling_alley           →  3 (Centrum Bowling, Dora 1 Bowling & Biljard)
+  //
+  // Rekkefølgen er ikke tilfeldig: dedupliseringen lar FØRSTE treff eie
+  // kategorien, og Olavshallen bærer alle tre scene-typene. Den skal bli en
+  // scene, ikke et kulturhus.
+  performing_arts_theater: { id: "theatre", name: "Teater", icon: "Drama", color: "#0ea5e9" },
+  concert_hall: { id: "theatre", name: "Teater", icon: "Drama", color: "#0ea5e9" },
+  cultural_center: { id: "theatre", name: "Teater", icon: "Drama", color: "#0ea5e9" },
+  bowling_alley: { id: "bowling", name: "Bowling", icon: "Disc", color: "#0ea5e9" },
   hospital: { id: "hospital", name: "Sykehus", icon: "Hospital", color: "#ef4444" },
   doctor: { id: "doctor", name: "Legesenter", icon: "Stethoscope", color: "#3b82f6" },
   dentist: { id: "dentist", name: "Tannlege", icon: "Smile", color: "#22d3ee" },

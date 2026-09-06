@@ -1033,6 +1033,19 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
       lag: "board",
     },
   ],
+  // OPPLEVELSER (2026-09-06) — temaet er åpnet, spørsmålene er ikke skrevet.
+  //
+  // Katalogen (`docs/research/2026-09-06-faq-katalog-sammenslatt.md` §4.8) har
+  // ti: bibliotek, kino, kulturscene, samlingspunkt, voksenaktivitet, kirke,
+  // frivilligsentral, bowling-aktivitet, museum, kulturskole. Fire av dem er S
+  // — de kan bygges av data temaet nå har på boardet.
+  //
+  // Lista står tom med vilje i stedet for å deklarere spørsmål uten byggere:
+  // katalogen skiller mellom DEKLARERT og VIST, og en id her uten en bygger
+  // ville stått som en tom rad på hvert board. Temaets kategorier svarer
+  // imidlertid alt gjennom mal-spørsmålene per kategori (`CATEGORY_SPECS`), så
+  // Opplevelser er ikke stumt før byggerne kommer.
+  opplevelser: [],
 };
 
 /**

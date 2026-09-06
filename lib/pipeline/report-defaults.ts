@@ -30,8 +30,9 @@ export const REPORT_THEME_DEFAULTS: ReportThemeDefault[] = [
       "haircare",
       "bank",
       "post",
-      // Recall-fiks 2026-08-12 (Straumen-fasitøvelsen)
-      "kirke",
+      // Recall-fiks 2026-08-12 (Straumen-fasitøvelsen). `kirke` lå her til
+      // 2026-09-06 og flyttet til Opplevelser: menigheten er et møtested, ikke
+      // et ærend, og det er der katalogens spørsmål om den bor.
       "veterinar",
       "trafikkskole",
       "butikk",
@@ -90,6 +91,22 @@ export const REPORT_THEME_DEFAULTS: ReportThemeDefault[] = [
     categories: ["gym", "swimming", "spa", "fitness_park"],
     color: "#f05da7",
     leadText: "Treningssentre, svømmehaller og aktivitetstilbud.",
+  },
+  // Opplevelser (2026-09-06). Katalogens sjuende tema, og det eneste som ikke
+  // fantes i koden. Kategoriene lå i poolen uten hjem: 19 museer, 16
+  // bibliotek, 6 kinoer og 36 kirker var importert til Wesselsløkka mens
+  // ingen bolig-tema eide dem. Museum/kino/bibliotek var deklarert BARE i
+  // nærings-profilens «nabolaget», så på et boligboard fløt de fritt.
+  //
+  // `theatre` og `bowling` hadde ingen produsent før i dag — se
+  // BOLIG_GOOGLE_CATEGORIES, der de fire Google-typene er lagt til og målt.
+  {
+    id: "opplevelser",
+    name: "Opplevelser",
+    icon: "Film",
+    categories: ["library", "cinema", "museum", "kirke", "theatre", "bowling"],
+    color: "#a06cf5",
+    leadText: "Bibliotek, kino, museer og scener i nærheten.",
   },
 ];
 
