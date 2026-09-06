@@ -57,13 +57,23 @@ Målt på Wesselsløkka etter endringen — katalogens ambisjon er ti per tema:
 
 Gapet er ikke byggere som mangler kode, det er kilder som mangler kobling: 27 av katalogens 46 er S+ og venter på én navngitt datakilde hver (Turrutebasen, Bring, Vinmonopolets API, Entur-frekvens, SSB). De 7 K-spørsmålene venter på kurator.
 
-### 5. `kirke` er hjemløs på Wesselsløkka
+### 5. `kirke` var hjemløs — og konfig-patchen viste hvor liten skaden var
 
-Kategorien flyttet fra Hverdagsliv til Opplevelser i `05a48d7`, men boardets egen `reportConfig.themes[].categories` er skrevet før flyttingen og lister `kirke` ingen av stedene. 36 kirke-POI-er er koblet til prosjektet uten å ha et tema å rendre i, og `kirke`-raden uteblir. Samme mekanisme som ettordsnavnene 2026-09-06: **den lagrede konfigen vinner over kodens defaults.** Krever en config-patch per board eller re-provisjonering. Ikke gjort — det er en prod-datamutasjon.
+Kategorien flyttet fra Hverdagsliv til Opplevelser i `05a48d7`, men boardenes egen `reportConfig.themes[].categories` er skrevet før flyttingen. Samme mekanisme som ettordsnavnene tidligere samme dag: **den lagrede konfigen vinner over kodens defaults.**
+
+Survey av alle 12 boards viste at skaden var avgrenset til to:
+
+- **2 boards har Opplevelser-temaet** (Wesselsløkka, StasjonsKvartalet) og listet `kirke` ingen steder. På Wesselsløkka betydde det 36 koblede kirke-POI-er uten et tema å rendre i.
+- **6 boards har `kirke` i Hverdagsliv og intet Opplevelser-tema.** Der virker raden fortsatt, i det gamle hjemmet. Å flytte den ville FJERNET innhold, så de er urørt.
+- **4 boards har ingen av delene.** Ingenting å gjøre.
+
+Patchet de to, etter full backup av alle 12 configs (`products-backup-*.json`) og med lesebekreftelse mot databasen per board pluss en diff som verifiserte at ingen andre temaer endret seg. Wesselsløkka fikk også `theatre` — konfigen listet `theater`, som matcher null rader i poolen mens `theatre` matcher elleve. Samme klasse feil: en kategori uten hjem.
+
+Resultat: Opplevelser gikk fra 29 til 64 steder og fra 3 til 4 FAQ-rader. Kirke-raden svarer «Strindheim kirke er nærmeste kirke, 8 minutter til fots» — og filteret gjorde jobben sin, for Zion bo- og servicesenter kapell ligger 7 minutter unna og ble luket. Cache bustet via `/api/revalidate` for begge boards.
 
 ### 6. Verifisering
 
-3 624 tester passerer (fra 3 618; 6 nye), ESLint rent, `tsc` rent. Byggerne kjørt headless mot Wesselsløkka-poolen tre ganger under arbeidet — det var den tredje kjøringen som bekreftet at Telefonkiosken og Cinemateket var borte. Commits: `58765ba` (byggerne), pluss Opplevelser-avblokkeringen og de tre datafiksene. Ingenting pushet.
+3 624 tester passerer (fra 3 618; 6 nye), ESLint rent, `tsc` rent. Byggerne kjørt headless mot Wesselsløkka-poolen tre ganger under arbeidet — det var den tredje kjøringen som bekreftet at Telefonkiosken og Cinemateket var borte. Commits: `58765ba` (byggerne) og `a535c3d` (av-blokkering + datafiksene). Konfig-patchen lever i Supabase, ikke i git — backupen ligger i scratchpad. Ingenting pushet.
 
 ---
 
